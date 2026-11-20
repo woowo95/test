@@ -725,13 +725,13 @@ export function brandVal(s: State, p: Person): BrandMal | undefined {
 
 // ---------- att släcka (steg.ts) ----------
 // hur lätt den brinnande rutan i släcks (det svåraste som brinner där; 1 om inget finns kvar)
-const latt = (s: State, i: number) => bransleAv(s)(i)?.[2] ?? 1;
+const latt = (bransle: ReturnType<typeof bransleAv>, i: number) => bransle(i)?.[2] ?? 1;
 // medan man släcker med händerna: den närmaste brinnande rutan inom räckhåll släcks lite i taget, och man kan bränna sig
 export function slackaSteg(s: State, p: Person, t: Task, dtSec: number) {
   const b = s.brand;
   if (t.tool) return; // vattensäcken fylls
   if (!b) { t.until = s.now; return; }
-  const k = kartaOf(b);
+  const k = kartaOf(b), bransle = bransleAv(s); // högarna slås upp en gång (steg 12.1.104): släckningen ändrar inga högar i slingan
   // tiden räcker till flera rutor (steg 9.9.4): när en ruta är släckt går resten av tiden till nästa inom räckhåll. Förut gick
   // resten förlorad, så att ingen släckte mer än en ruta per slag hur fort hen än arbetade
   let kvar = dtSec;
@@ -752,7 +752,7 @@ export function slackaSteg(s: State, p: Person, t: Task, dtSec: number) {
       }
     }
     t.ref = r[0];
-    const takt = BRAND.hand * latt(s, r[0]) / HOUR_S, tid = Math.min(kvar, (1 - r[3]) / Math.max(1e-9, takt));
+    const takt = BRAND.hand * latt(bransle, r[0]) / HOUR_S, tid = Math.min(kvar, (1 - r[3]) / Math.max(1e-9, takt));
     r[3] += takt * tid; kvar -= tid;
     if (!(b.slackare ??= []).includes(p.id)) b.slackare.push(p.id); // (steg 12.1.131)
     if (k[r[0]] === 1 && ur(s, p.id, 3864 + varv * 17) < chans(BRAND.brannHand, tid)) {

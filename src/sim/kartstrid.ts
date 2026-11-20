@@ -80,8 +80,7 @@ export const stridBild = { pa: false, slag: [] as SlagBild[] };
 export const bildKrok: { spara?: (s: State, p: Person, t?: number) => void } = {};
 function tillBilden(g: KartStrid, n0: number) {
   const st = g.st;
-  for (const h of slagen(st)) {
-    if (h.rad < n0) continue;
+  for (const h of slagen(st, n0)) {
     const a = st.kampar.find(k => k.id === h.fran), b = st.kampar.find(k => k.id === h.mot);
     if (!a || !b) continue;
     if (stridBild.slag.length > 400) stridBild.slag.shift(); // ingen tar emot dem (ikappräkningen): de äldsta faller bort

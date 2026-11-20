@@ -293,7 +293,6 @@ export const bladen = (s: State) => tingOf(s).filter(t => t.skrift);
 export const bockerna = (s: State) => tingOf(s).filter(t => t.k === 'bok');
 // alla skrifter på blad och i böcker
 const skrifter = (s: State) => { const a: Skrift[] = []; for (const t of tingOf(s)) { if (t.skrift) a.push(t.skrift); else if (t.delar) a.push(...t.delar); } return a; };
-const harBlad = (s: State, f: (k: Skrift) => boolean) => skrifter(s).some(f);
 // boken där en del av slaget kan skrivas: tom eller av samma slag och med en ledig del; den som har flest delar av slaget först
 export function bokPlats(s: State, slag: SkriftSlag) {
   if (!SKRIFTER[slag].stadier.includes('bok')) return undefined;
@@ -320,7 +319,8 @@ function starkastBev(s: State, p: Person) {
 // p:s lust att skriva ett blad av varje slag, den starkaste gånger slagets färdighet; halveras för varje blad p redan skrivit
 export function skrivLust(s: State, p: Person): SkrivLust | undefined {
   if (p.gast || ageOf(p, s.now) < ALDER.vuxen) return undefined;
-  const c: SkrivLust[] = [];
+  const c: SkrivLust[] = [], alla = skrifter(s); // skrifterna hämtas en gång (steg 12.1.104): inget skrivs medan lusten räknas
+  const harBlad = (_s: State, f: (k: Skrift) => boolean) => alla.some(f); // som förut, men på listan
   for (const { d, w } of sorgen(s, p)) if (!harBlad(s, k => k.slag === 'minne' && k.om?.id === d.id)) c.push({ w, slag: 'minne', om: { id: d.id, namn: d.name } });
   const bd = bedriften(s, p, b => harBlad(s, k => k.slag === 'handelse' && k.om?.id === p.id && k.bev?.[0]?.t === b.t));
   if (bd) c.push({ w: bd.w, slag: 'handelse', om: { id: p.id, namn: p.name }, bev: bd.bev });
@@ -339,7 +339,7 @@ export function skrivLust(s: State, p: Person): SkrivLust | undefined {
   }
   // i boken (steg 10.6.6): en handbok om en teknik hen kan, helst om det få i byn kan, och trons heliga kväden
   if (bokPlats(s, 'kunskap')) {
-    const folk = living(s).filter(q => !q.gast), skrivna = new Set(skrifter(s).filter(k => k.tek).map(k => k.tek!));
+    const folk = living(s).filter(q => !q.gast), skrivna = new Set(alla.filter(k => k.tek).map(k => k.tek!));
     let tek: string | undefined, tw = 0;
     for (const id in p.tek ?? {}) {
       const t = TEK[id];
@@ -360,7 +360,7 @@ export function skrivLust(s: State, p: Person): SkrivLust | undefined {
   if (bl) c.push(bl);
   const ko = kopiaLust(s);
   if (ko) c.push(ko);
-  const avtar = SKRIFT.avtar ** skrifter(s).filter(k => k.av.id === p.id).length, blad = getable(s, p, 'pergament') >= 1;
+  const avtar = SKRIFT.avtar ** alla.filter(k => k.av.id === p.id).length, blad = getable(s, p, 'pergament') >= 1;
   let best: SkrivLust | undefined;
   for (const l of c) {
     const bok = bokPlats(s, l.slag); // en ledig del i en bok framför ett blad

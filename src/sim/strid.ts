@@ -577,13 +577,15 @@ function markSlag(st: Strid, n0: number, vant: number) {
 }
 // ett anfall som händelse: när, hur länge, vem som anföll (fran) och vem det gällde (mot), vapnet, om det kastades och hur det gick
 export interface SlagHandelse { t: number; l: number; fran: number; mot: number; v?: Vapen; kast?: 1; utfall: Handelse; rad: number }
-export function slagen(st: Strid): SlagHandelse[] {
+// fran: raderna före den hoppas över (bilden tar bara det nya efter varje stridssteg, steg 12.1.104)
+export function slagen(st: Strid, fran = 0): SlagHandelse[] {
   const ut: SlagHandelse[] = [];
-  st.logg.forEach((r, rad) => {
-    if (!r.sl) return;
+  for (let rad = Math.max(0, fran); rad < st.logg.length; rad++) {
+    const r = st.logg[rad];
+    if (!r.sl) continue;
     const forsvar = r.h === 'parera' || r.h === 'duck';
     ut.push({ t: r.t, l: r.l ?? 0, fran: (forsvar ? r.b : r.a)!, mot: (forsvar ? r.a : r.b)!, v: forsvar ? undefined : r.v, kast: r.kast, utfall: r.h, rad });
-  });
+  }
   return ut;
 }
 export const chansMot = (a: Kampe, b: Kampe, skick: number) => clamp((STRID.traffBas + (skick - b.st.skicklighet) * STRID.traffPer - (b.st.smidighet - 10) * STRID.smidUndan) * (1 - STRID.trott * (1 - a.ork)), STRID.traffMin, STRID.traffMax) * (b.lage === 'nere' || b.lage === 'flykt' || b.ligger || b.bocker ? STRID.utsatt : 1); // den som ligger, böjer sig ner eller vänt ryggen är lätt att träffa

@@ -130,9 +130,20 @@ export function tornadoBana(s: State, start: number, storlek = tornadoStorlek(s,
 }
 const banLangd = (b: number[]) => { let L = 0; for (let k = 2; k < b.length; k += 2) L += Math.hypot(b[k] - b[k - 2], b[k + 1] - b[k - 1]); return L; };
 // när tornadon i tidsåldern som börjar vid start kommer, och när den har gått sin bana (hela sekunder)
+// Svaret beror bara på byns frö och tidsålderns start, så det sparas per by (steg 12.1.104): motgangNu frågar varje slag
+const tider = new WeakMap<State, Map<string, { fran: number; till: number }>>();
 export function tornadoTid(s: State, start: number) {
-  const fran = start + Math.round((TORNADO.borjar[0] + tal(s, start, 3821) * (TORNADO.borjar[1] - TORNADO.borjar[0])) * 24) * HOUR;
-  return { fran, till: fran + Math.round(banLangd(tornadoBana(s, start)) * TORNADO.fart) * SEC };
+  let m = tider.get(s);
+  if (!m) tider.set(s, (m = new Map()));
+  const nyckel = s.seed + ':' + start;
+  let r = m.get(nyckel);
+  if (!r) {
+    const fran = start + Math.round((TORNADO.borjar[0] + tal(s, start, 3821) * (TORNADO.borjar[1] - TORNADO.borjar[0])) * 24) * HOUR;
+    r = { fran, till: fran + Math.round(banLangd(tornadoBana(s, start)) * TORNADO.fart) * SEC };
+    if (m.size > 8) m.clear();
+    m.set(nyckel, r);
+  }
+  return { fran: r.fran, till: r.till };
 }
 // drar en tornado fram vid tiden t? (vädret, vader.ts)
 export const tornadoNu = (s: State, t = s.now) => motgangNu(s, t)?.id === 'tornado' || !!s.tornado?.test && t >= s.tornado.fran && t < s.tornado.till;
