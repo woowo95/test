@@ -85,7 +85,6 @@ export const BRAND = balans('brand', {
   aska: 0.32, // gräset på en ruta som brunnit (0 till 1; just över bar jord, så att det inte blir en stig)
   trad: 0.5, // träden dör när så här stor del av rutan har brunnit
   vaggSkick: 1.2, // en vägg tappar så här mycket av sitt skick gånger andelen som brunnit
-  maxR: 40, // elden tar sig aldrig längre än så här många rutor från där den började
   svart: 3, // marken syns svart så här många dygn (år i spelet) efter att den brunnit
   sagd: 3, // branden syns i loggen när så här många rutor har börjat brinna ...
   stor: 20, // ... och i krönikan när den bränt så här många, eller när den kommit nära byn
@@ -131,7 +130,7 @@ export type BrandRuta = [number, number, number, number];
 // branden som pågår: när och var den började (kalla = gnistor eller blixten), rutorna som brinner och de som brunnit klart,
 // hur många rutor som tagit eld, och vad den gjort
 // brann = det av trä som brunnit upp (golv, dörrar, stationer, möbler och redskap), namnet och hur många (steg 6.4.3)
-export interface Brand { brann_p?: number[]; t: number; x: number; y: number; kalla: 'gnista' | 'blixt'; r: BrandRuta[]; ut: number[]; n: number; trad: number; vagg: number; saker: number; skadade: number; slackt: number; hot?: 1; sagd?: 1; kallor?: number[]; brann?: Record<string, number> }
+export interface Brand { brann_p?: number[]; t: number; x: number; y: number; kalla: 'gnista' | 'blixt'; r: BrandRuta[]; ut: number[]; n: number; trad: number; vagg: number; saker: number; skadade: number; slackt: number; hot?: 1; sagd?: 1; brann?: Record<string, number> }
 
 // ett tal mellan 0 och 1 ur byns frö, tiden (i steg), en ruta eller person och ett salt (hash3 i slump.ts, drar inget ur
 // slumpföljderna)
@@ -139,8 +138,6 @@ const hash = hash3;
 const ur = (s: State, a: number, salt: number) => hash(s.seed + salt * 7919, Math.round(s.now / 100), a); // (tiondels sekunder: ett eget tal i varje kort steg, steg 10.2.17)
 const chans = (takt: number, dtSec: number) => 1 - Math.exp(-takt * dtSec / HOUR_S); // takt i timmen under dtSec sekunder
 
-// branden sprids högst BRAND.maxR rutor från där den började, eller från en ruta som tänts i testläget (kallor, steg 4.5.6.6)
-const nara = (b: Brand, x: number, y: number) => Math.hypot(x - b.x, y - b.y) <= BRAND.maxR || !!b.kallor?.some(i => Math.hypot(x - i % W, y - Math.floor(i / W)) <= BRAND.maxR);
 // hur torr marken är (0 till 1): torra timmar, tidsåldern, och snön som blöter marken
 export function torrhet(s: State) {
   const sno = 1 - BRAND.sno * Math.max(0, Math.min(1, snoPaMarken(s))); // snön blöter marken (steg 9.2.102)
@@ -271,9 +268,7 @@ export function tandTest(s: State, x: number, y: number): { ok: boolean; text: s
   const g = groundOf(s), vad = g.tiles[i] === T.Vatten ? 'vatten' : !isSoil(g.tiles[i]) ? 'sten' : markslag(g, i) === 'bar' ? 'bar jord' : 'inget som brinner';
   const fu = bransleAv(s)(i);
   if (!fu) return { ok: false, text: `Inget brinner där (${vad})` };
-  const ny = !s.brand;
   tand(s, i, 'blixt', 0);
-  if (!ny) (s.brand!.kallor ??= []).push(i);
   const e = eldPlats(s), d = Math.round(Math.hypot(x - e.x, y - e.y));
   // hur torr marken är och hur fort branden väntas sprida sig till en grannruta av samma slag (steg 9.2.24): en chans per
   // delsteg (5 sekunder, spelets tid) på sprid × antändningen × torrheten
@@ -310,11 +305,10 @@ export function blixtTest(s: State, x: number, y: number): { ok: boolean; text: 
   else if (!fu) text = `Blixten slog ner ${var_} ${vad}, och inget tog eld`;
   else if (dry <= 0) text = `Blixten slog ner ${var_}, men marken är för blöt och inget tog eld`;
   else {
-    const ny = !s.brand, fore = s.brand?.n ?? 0;
+    const fore = s.brand?.n ?? 0;
     count(s, 'blixtProv'); // varje blixt får en egen slumpsiffra, räknad i byn och inte i modulen (regel 4)
     tand(s, i, 'blixt', hash(s.seed + 3860, Math.round(s.now / SEC), s.stat!.blixtProv) / dry);
     const tande = (s.brand?.n ?? 0) > fore;
-    if (tande && !ny) (s.brand!.kallor ??= []).push(i);
     text = tande ? `Blixten slog ner ${var_} och tände marken` : `Blixten slog ner ${var_} men tände inte (marken är ${dry < 0.5 ? 'bara lite' : 'ganska'} torr, och det var tur)`;
   }
   log(s, 'Testläget: ' + text + '.', 'world');
@@ -346,7 +340,6 @@ export function brandSteg(s: State, dtSec: number) {
         const nx = x + dx, ny = y + dy, j = ny * W + nx, c = sprid * fv[(dy + 1) * 3 + dx + 1];
         if ((!dx && !dy) || !inMap(nx, ny) || k[j]) continue;
         kant = true;
-        if (!nara(b, nx, ny)) continue;
         const u = hash(s.seed + 3851, slag, i * 9 + (dy + 1) * 3 + dx + 1);
         if (u >= c) continue; // antändningen är högst 1: slå bara upp det som brinner när det kan behövas
         const fu = bransle(j);

@@ -1776,7 +1776,7 @@ SCENARIER.brand = {
       const tv = SIM.tandTest(tb, vattenRuta % W, Math.floor(vattenRuta / W));
       const t1 = SIM.tandTest(tb, mitt % W, Math.floor(mitt / W)), tIgen = SIM.tandTest(tb, mitt % W, Math.floor(mitt / W));
       let andra = -1;
-      for (let i = 0; i < W * W && andra < 0; i++) { const d = Math.hypot(i % W - e.x, Math.floor(i / W) - e.y); if (d >= 20 && d <= 60 && Math.hypot(i % W - mitt % W, Math.floor(i / W) - Math.floor(mitt / W)) > SIM.BRAND.maxR + 5 && g.trees[i] >= FOREST && tat(i) >= 24) andra = i; }
+      for (let i = 0; i < W * W && andra < 0; i++) { const d = Math.hypot(i % W - e.x, Math.floor(i / W) - e.y); if (d >= 20 && d <= 60 && Math.hypot(i % W - mitt % W, Math.floor(i / W) - Math.floor(mitt / W)) > 45 && g.trees[i] >= FOREST && tat(i) >= 24) andra = i; }
       const t2 = andra >= 0 ? SIM.tandTest(tb, andra % W, Math.floor(andra / W)) : { ok: false, text: 'ingen andra skog' };
       const testRad = tb.log.filter(l => l.text.startsWith('Testläget: en brand tändes')).length; // (direkt, innan loggen fylls)
       kor(tb, 6, torka);
