@@ -19,7 +19,7 @@ import { LARM } from './rykten';
 import { SAKER, SAK_LIST } from './saker';
 import { vattenNu } from './sjo';
 import { clamp, hash3, rnd } from './slump';
-import { SLAGSMAL, VAPEN, personKampe, slitKastat, svartSkadad } from './strid';
+import { STRID, SLAGSMAL, VAPEN, personKampe, slitKastat, svartSkadad, type Kampe } from './strid';
 import { isLight, lightLevel } from './tid';
 import { larmAvbryter } from './handlingar';
 import { lagGaller } from './lagar';
@@ -45,7 +45,7 @@ import { tingOf, type Ting } from './agande';
 import { viktOf } from './saker';
 import { LARMHOT, rollVid, viljaKrok } from './roller';
 import { KartStrid, djurIKartStrid, kartStridBorja, kartStridMed, kartStrider } from './kartstrid';
-import { EFTER, FAROR, gastKrok } from './efterstrid';
+import { EFTER, FAROR, MED, gastKrok } from './efterstrid';
 
 // ---------- rövarflocken (steg 4.4.5, Striden på kartan i designdokumentet) ----------
 // När byn är rik (Byns rikedom, varde.ts, med försvaret räknat emot) kan ett gäng rövare komma: folk från en grannklan som inte
@@ -572,7 +572,7 @@ function slaSteg(c: RCtx) {
   // byn kuvar när fängelset har ledig plats och seden lutar mot Förlikning (steg 11.12.6): då ger rövarna upp i stället för att fly
   const avsikt = fangelseLedigt(s) && s.seder.v.fejd < 0 ? 'kuva' : 'skada';
   const ny = kartStridBorja(s, avsikt, [mot, rov], f.anfall ? 'rövare i byn' : 'rövare vid byn', { typ: 'rovare', egen: true, flock: f.id });
-  for (const k of ny.st.kampar) { const p = k.pid !== undefined ? byId(s, k.pid) : undefined; if (p && !p.gast) k.st.mod += 20 * overtygelse(s, f, p); if (p?.gast && f.mal !== undefined) k.jagar = f.mal; } // övertygelsen (steg 8.8.8), och hämnden riktar sig mot målet (steg 8.8.5)
+  for (const k of ny.st.kampar) { const p = k.pid !== undefined ? byId(s, k.pid) : undefined; if (p && !p.gast) overtygad(s, f, k, p); if (p?.gast && f.mal !== undefined) k.jagar = f.mal; } // övertygelsen (steg 8.8.8), och hämnden riktar sig mot målet (steg 8.8.5)
   f.strider = (f.strider ?? 0) + 1;
   count(s, 'rovarStrid');
   for (const p of mot) { p.larm = { t: s.now, vad: 'rovare', storlek: f.gissning ?? f.folk.length, led: p.larm?.led ?? 0, varnat: 1 }; hors(s, p, LARM.hor * (isLight(s.now) ? 1 : LARM.natt)); } // striden hörs: de som slåss ropar
@@ -779,6 +779,14 @@ export function fangeMal(s: State, q: Person): { x: number; y: number } | undefi
   return inne && { x: inne.x + 0.5, y: inne.y + 0.5 };
 }
 // striden med rövarna är slut (EFTER i efterstrid.ts): raden om den, klanen och tankarna. Såren och de döda är redan på riktigt
+// övertygelsen i det heliga kriget (steg 8.8.8) läggs till modet och till stridsmodet, som räknas ur modet när striden börjar,
+// också för den som kommer till striden senare (MED, steg 12.1.58)
+function overtygad(s: State, f: Rovarflock, k: Kampe, p: Person) {
+  const o = 20 * overtygelse(s, f, p);
+  if (o <= 0) return;
+  k.st.mod += o; k.modNu = Math.min(1, k.modNu + o / 20 * STRID.modMod);
+}
+MED.rovare = (s, e, k, p) => { const f = flockar(s).find(q => q.id === e.flock); if (f && !p.gast) overtygad(s, f, k as Kampe, p); };
 EFTER.rovare = (s, e, vinnare, strid) => {
   const g = strid as KartStrid, st = g.st, f = flockar(s).find(q => q.id === e.flock);
   const bybor = st.kampar.filter(k => k.sida === 0).map(k => ({ k, p: k.pid !== undefined ? byId(s, k.pid) : undefined })), rov = st.kampar.filter(k => k.sida === 1);

@@ -20,7 +20,7 @@ import { KROPPSDELAR, forlora, skada } from './halsa';
 import { blodas } from './blod';
 import { blodtorst } from './humor';
 import { isFamily, ranEfter, setRanStrid } from './behov';
-import { EFTER, Efter, FAROR, STRIDSLAG, gastKrok } from './efterstrid';
+import { EFTER, Efter, FAROR, MED, STRIDSLAG, gastKrok } from './efterstrid';
 import { ovning } from './folk';
 import { eldPlats } from './karta';
 import { avbryt } from './lager';
@@ -142,6 +142,7 @@ export function kartStridMed(s: State, g: KartStrid, p: Person, sida: 0 | 1) {
   if (g.fri?.includes(p.id)) return; // den som lämnat striden går inte in i den igen
   const id = Math.max(0, ...g.st.kampar.map(k => k.id)) + 1;
   laggTill(g.st, { ...personKampe(s, p, id, sida, p.x, p.y), fly: flyMal(s, p) });
+  if (g.efter) MED[g.efter.typ]?.(s, g.efter, g.st.kampar[g.st.kampar.length - 1], p); // det stridens slag ger den som kommer senare (steg 12.1.58)
   avbryt(s, p); stridsUppgift(s, p, g.orsak);
   count(s, 'kartStridMed');
 }
@@ -167,6 +168,9 @@ function varldAv(s: State, g: KartStrid): StridVarld {
       count(s, 'kartSar');
       return dog;
     },
+    // personens sår blöder i hälsan, med ansträngningen i striden (HALSA.stridBlod), och trycket gäller personens öppna sår
+    halsaBlod: k => { const p = personAv(s, k); return !!p && p.died === undefined; },
+    tryck: k => { const p = personAv(s, k); for (const w of p?.skador ?? []) if (w.b > 0) w.b = 0; },
     // den som dör i striden är död direkt
     fall: (k, h) => {
       const p = personAv(s, k);

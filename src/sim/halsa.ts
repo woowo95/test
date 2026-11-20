@@ -53,6 +53,7 @@ import { fangeMal } from './rovare'; // fången bärs till fängelset (steg 11.1
 // ---------- balanstal (regel 8) ----------
 export const HALSA = balans('halsa', {
   blodTim: 0.6, // ett öppet sår av grad 1 (och blod 1 i SKADOR) tar så här mycket blod i timmen (1 = allt blod) ...
+  stridBlod: 6, // i en strid på kartan blöder såren så här många gånger fortare av ansträngningen (steg 12.1.58: som stridens egen blödning förut)
   levrar: 1.5, // ... och har levrat sig efter levrar × (0,5 + graden) timmar
   // blödningens tre storlekar (steg 9.5.14): ett litet sår (grad under smaSar) levrar sig fort, ett medelstort (under storSar)
   // långsamt (medelLevrar gånger längre), och ett stort inte alls; när tiden kvar till förblödning är under kortTim syns den
@@ -333,7 +334,8 @@ export function tidKvar(p: Person) { const b = blodning(p); return b > 0 ? Math.
 // blodet personen förlorar i timmen just nu
 export function blodning(p: Person) {
   let v = 0;
-  for (const w of p.skador ?? []) v += HALSA.blodTim * SKADA[w.k].blod * w.g * w.b * (w.fast ? HALSA.fastPlugg : 1) * (w.drog !== undefined ? HALSA.draBlod : 1); // pluggat av vapnet, mer när det dragits ut (steg 9.5.21)
+  const f = p.task?.act === 'strid' ? HALSA.stridBlod : 1;
+  for (const w of p.skador ?? []) v += f * HALSA.blodTim * SKADA[w.k].blod * w.g * w.b * (w.fast ? HALSA.fastPlugg : 1) * (w.drog !== undefined ? HALSA.draBlod : 1); // pluggat av vapnet, mer när det dragits ut (steg 9.5.21)
   return v;
 }
 // hälsan som visas och som valet läser: den gamla hälsan (svält, kyla, törst, sjukdom), blodet och smärtan

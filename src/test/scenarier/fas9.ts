@@ -502,7 +502,16 @@ SCENARIER.pilisaret = {
     const w = q.skador![0], drogs = !w.fast && w.drog !== undefined;
     w.b = 1; w.f = undefined; const efter = blodning(q);
     s.now += (HALSA.draTim + 0.1) * SIM.HOUR; halsaSteg(s, q, 1); const sen = blodning(q);
+    // en pil som träffar sticker (kastets eget slag, steg 12.1.58): ett sticksår, och pilen kan sitta kvar
+    const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, x: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 12, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 16 }, vapen, klader: [], fart: 1, x, y: 7 });
+    let traffar = 0, stick = 0, fastnat = 0;
+    for (let f = 0; f < 300; f++) {
+      const st = SIM.nyStrid({ avsikt: 'skada', w: 20, h: 14, kampar: [m(1, 0, 'bage', 4), m(2, 1, 'hand', 8)] }, f), [a, b] = st.kampar;
+      SIM.kasta(st, a, b);
+      if (b.skador.length) { traffar++; if (b.skador.every(x => x.k === 'sticksar' || x.k === 'skarsar')) stick++; if (b.skador.some(x => x.fast)) fastnat++; } // ett grunt stick är ett skärsår (SLAGEN)
+    }
     return [
+      [`en pil som träffar ger ett stick, inget blåmärke, och kan sitta kvar (${traffar} träffar, ${stick} stick- eller skärsår, ${fastnat} fastnade)`, traffar > 0 && stick === traffar && fastnat > 0],
       [`pilen sitter kvar i såret som kastspjutet (${pil ? 'ja' : 'nej'})`, pil],
       [`vapnet pluggar såret (${med.toFixed(3)} mot ${utan.toFixed(3)} i timmen) och hindrar delen (${felMed.toFixed(2)} mot ${felUtan.toFixed(2)})`, med < utan && felMed > felUtan],
       [`vårdaren drar ut det (${drogs ? 'ja' : 'nej'}), och såret blöder mer en stund (${efter.toFixed(3)}) och sedan som vanligt (${sen.toFixed(3)})`, drogs && efter > utan * 0.99 && sen < efter],
