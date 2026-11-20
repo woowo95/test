@@ -197,9 +197,9 @@ const ORDNING = ACT_LIST.flatMap(a => Object.keys(ACTS[a].redskap ?? {}));
 const plats = (k: string) => { const i = ORDNING.indexOf(k); return i < 0 ? ORDNING.length : i; };
 export const GORS: Record<string, string[]> = {};
 for (const k of SAK_LIST) if (SAKER[k]!.gors) (GORS[gruppOf(k)] ??= []).push(k);
-for (const ks of Object.values(GORS)) ks.sort((a, b) => plats(a) - plats(b));
+for (const ks of Object.values(GORS)) ks.sort((a, b) => plats(a) - plats(b) || (SAKER[b]!.rang ?? 0) - (SAKER[a]!.rang ?? 0)); // järnskölden före träskölden (steg 12.2.8)
 // hur många byn har av gruppen g (hur många den vill ha: villAv i forradsmal.ts, steg 6.2.17)
-export const harAv = (s: State, g: string) => GORS[g].reduce((a, k) => a + nTools(s, k), 0);
+export const harAv = (s: State, g: string) => tingOf(s).reduce((a, t) => a + (gruppOf(t.k) === g ? 1 : 0), 0); // alla i gruppen, också järnsakerna som smids (steg 12.2.8)
 // taket för gruppen g (steg 10.2.74): över det byn behöver är ett till värt mindre ju närmare taket
 export const takAv = (s: State, g: string) => Math.ceil(villAv(s, g) * REDSKAP.tak - 1e-9);
 // ting i gruppen g som kan ersättas av ett bättre (steg 10.2.74): av ett slag som är mindre värt än det bästa någon i byn kan

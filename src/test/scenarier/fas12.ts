@@ -324,3 +324,24 @@ SCENARIER.jarnskrot = {
     ];
   },
 };
+
+SCENARIER.jarnvapen = {
+  text: 'Järnvapnen (steg 12.2.8): järnspjutet smids i smedjan och tas före stenspjuten, och järnskölden görs vid snickarbänken och tar 5 av 10 slag och 8 av 10 pilar',
+  kor: () => {
+    const R = SIM.RECEPT, V = SIM.VAPEN as Record<string, { skada: number; skarpa: number; kast?: { skada: number } }>;
+    const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    SIM.addTool(s, 'flintspjut', p); SIM.addTool(s, 'jarnspjut', p);
+    const jakt = SIM.toolGroups('jakt').spjut;
+    const kamp = (k: string) => { s.ting = SIM.tingOf(s).filter(t => !['skold', 'jarnskold', 'flintspjut', 'jarnspjut'].includes(t.k)); if (k) SIM.addTool(s, k, p); SIM.addTool(s, 'kniv', p); return SIM.personKampe(s, p, 1, 0, 0, 0); };
+    const tra = kamp('skold'), jarn = kamp('jarnskold');
+    const gors = SIM.GORS.skold;
+    return [
+      [`järnspjutet: ${JSON.stringify(R.jarnspjut.av)} i smedjan på ${R.jarnspjut.min} minuter, skada ${V.jarnspjut.skada}, skärpa ${V.jarnspjut.skarpa}, kast ${V.jarnspjut.kast?.skada}`, R.jarnspjut.av.jarn === 1 && R.jarnspjut.av.rep === 1 && R.jarnspjut.tek === 'smedja' && V.jarnspjut.skada === 0.55 && V.jarnspjut.skarpa === 0.8 && V.jarnspjut.kast?.skada === 0.5],
+      [`järnspjutet tas före stenspjuten i jakten och fisket (${jakt.join(', ')})`, jakt[0] === 'jarnspjut' && Object.keys(SIM.ACTS.fiske.redskap!).indexOf('jarnspjut') < Object.keys(SIM.ACTS.fiske.redskap!).indexOf('flintspjut')],
+      [`järnskölden: ${JSON.stringify(R.jarnskold.av)} vid snickarbänken på ${R.jarnskold.min} minuter, och görs hellre än träskölden (${gors.join(', ')})`, R.jarnskold.av.jarn === 1 && R.jarnskold.av.lader === 1 && R.jarnskold.av.ved === 3 && R.jarnskold.bank === 'snickarbank' && gors[0] === 'jarnskold'],
+      [`den som har järnskölden håller en järnsköld i striden (${!!jarn.skoldJarn}), träskölden en vanlig (${!!tra.skold}, ${!!tra.skoldJarn})`, !!jarn.skold && !!jarn.skoldJarn && !!tra.skold && !tra.skoldJarn],
+      [`järnskölden tar ${SIM.STRID.jarnSkoldSlag * 10} av 10 slag och ${SIM.STRID.jarnSkoldPil * 10} av 10 pilar (träskölden ${SIM.STRID.skoldSlag * 10} och ${SIM.STRID.skoldPil * 10})`, SIM.STRID.jarnSkoldSlag === 0.5 && SIM.STRID.jarnSkoldPil === 0.8],
+      [`järnyxan och järnkniven är vapen med skärpa över stenens (${V.jarnyxa.skarpa}, ${V.jarnkniv.skarpa})`, V.jarnyxa.skarpa > 1 && V.jarnkniv.skarpa > V.kniv.skarpa && SIM.MANNISKOVAPEN.includes('jarnspjut' as never)],
+    ];
+  },
+};

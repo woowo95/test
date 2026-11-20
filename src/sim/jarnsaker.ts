@@ -33,6 +33,7 @@ export const JARNSAKER: Record<string, JarnsakDef> = {
   jarnyxa: { grupp: 'yxa', tek: 'yxa', text: 'Smider en järnyxa på städet.', forsta: '{namn} smidde byns första järnyxa. Den fäller ett träd på en tredjedel av tiden.' },
   jarnkniv: { grupp: 'kniv', tek: 'kniv', text: 'Smider en järnkniv på städet.', forsta: '{namn} smidde byns första järnkniv.' },
   lie: { grupp: 'skara', tek: 'kniv', text: 'Smider en lie på städet.', forsta: '{namn} smidde byns första lie. Med den slås ängen tre gånger så fort som med skäran.' },
+  jarnspjut: { grupp: 'spjut', tek: 'flintspjut', text: 'Smider en spets av järn och surrar den på ett skaft.', forsta: '{namn} smidde byns första järnspjut.' }, // steg 12.2.8
 };
 // smedjan som p kan smida vid nu: färdig, och ässjan brinner eller det finns kol att tända den med
 const smedjan = (s: State, p: Person) => stationerOf(s).find(t => t.k === 'smedja' && isKlar(t) && eldKan(s, p, t));
