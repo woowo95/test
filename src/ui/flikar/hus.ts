@@ -1,5 +1,5 @@
 import { stOrd } from '../../sim/ord';
-import { DAY, KOM, NYSS_HUS, fangEldBrinner, fangar, husVisas, rumVisas, rumMinus, bitsOf, byId, dorrDef, fnOf, gridOf, husById, insulation, komOf, sakNamn, sovplatser } from '../../sim';
+import { DAY, KOM, NYSS_HUS, fangEldBrinner, fangar, husVisas, rumVisas, rumMinus, rumPlus, bitsOf, byId, dorrDef, fnOf, gridOf, husById, insulation, komOf, sakNamn, sovplatser } from '../../sim';
 import { iconImg, tecknet } from '../../ikoner';
 import { cap, esc, fmtN, hjalpKnapp, hjalpText, omUngefar, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -35,7 +35,8 @@ export const hus: Flik = {
     const rumRad = rum.filter(r => r.tiles.length).map(r => {
       const tg = rumVisas(s, r).map(t => `<span title="${esc(`${t.namn}: ${t.om}`)}" aria-label="${esc(t.namn)}">${tecknet(t.ikon, t.ikon, 16)}</span>`).join(' ');
       const mi = rumMinus(s, r).map(m => `<span class="muted" title="${esc(m.namn)}" aria-label="${esc(m.namn)}">⚠</span>`).join('');
-      return tg || mi ? `<span>${tg}${mi}</span>` : '';
+      const pl = rumPlus(s, r).map(m => `<span title="${esc(`${m.namn}: ${m.om}`)}" aria-label="${esc(m.namn)}">+</span>`).join(''); // rummens plus (steg 12.1.143): en platshållare tills symbolen är ritad
+      return tg || mi || pl ? `<span>${tg}${pl}${mi}</span>` : '';
     }).filter(x => x).join(' · ');
     // det som nyss hänt med huset (steg 9.2.94)
     const nytt = h.nytt && s.now - h.nytt.t < NYSS_HUS ? `<p class="nytt">${esc(h.nytt.text)}</p>` : '';

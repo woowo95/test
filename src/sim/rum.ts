@@ -7,6 +7,8 @@ import { SMUTS, flackNu, flackarOf } from './smuts';
 import { isKlar, stationDef, stationerOf, storlekAv } from './stationer';
 import { living } from './folk';
 import { HOUR, State, W } from './typer';
+import { ljusAt } from './ljus';
+import { isLight } from './tid';
 
 // ---------- rummen och deras taggar (steg 7.2.1) ----------
 // Ett rum är det som är inneslutet av väggar och dörrar (gridOf i byggnad.ts räknar fram det när en vägg ändras). Funktionen,
@@ -25,6 +27,11 @@ export const RUM = balans('rum', {
   vilaKok: 0.12, // så mycket sämre man vilar i ett kök (rök)
   vilaVerkstad: 0.08, // så mycket sämre man vilar i en verkstad (oljud och spån)
   vilaScen: 0.05, // så mycket sämre man vilar bredvid en scen (oljud på kvällen)
+  // rummens plus (steg 12.1.143)
+  ljusMin: 0.5, // ljuset inne som räknas som ljust när det är mörkt ute
+  plusLjust: 0.04, // tanken för den som sover eller äter i ett varmt och ljust rum
+  plusPynt: 0.04, // tanken för den som sover eller äter i ett fint pyntat rum
+  plusEget: 0.06, // så mycket bättre man vilar i ett eget rum
 });
 
 // det som står i rummet, räknat en gång per rum
@@ -37,11 +44,12 @@ export interface RumsTyp {
   namn: string; ikon: string; om: string; slag: RumSlag;
   krav: (i: RumInfo, t: Set<string>) => boolean;
   delar?: string[]; // kombinationen visas i stället för de här taggarna
+  sova?: true; ata?: true; // här sover eller äter man (rummens plus, steg 12.1.143)
 }
 export const RUMSTYPER = {
-  sovrum: { namn: 'Sovrum', ikon: '🛏️', slag: 'grund', om: 'En eller två sover här', krav: i => i.sov >= 1 && i.sov <= RUM.sovrumMax },
-  sovsal: { namn: 'Sovsal', ikon: '🛏️', slag: 'grund', om: 'Tre eller fler kan sova här', krav: i => i.sov > RUM.sovrumMax },
-  matsal: { namn: 'Matsal', ikon: 'bord', slag: 'grund', om: 'Här står ett bord, så att man kan äta under tak', krav: i => i.bord >= 1 },
+  sovrum: { namn: 'Sovrum', ikon: '🛏️', slag: 'grund', om: 'En eller två sover här', sova: true, krav: i => i.sov >= 1 && i.sov <= RUM.sovrumMax },
+  sovsal: { namn: 'Sovsal', ikon: '🛏️', slag: 'grund', om: 'Tre eller fler kan sova här', sova: true, krav: i => i.sov > RUM.sovrumMax },
+  matsal: { namn: 'Matsal', ikon: 'bord', slag: 'grund', om: 'Här står ett bord, så att man kan äta under tak', ata: true, krav: i => i.bord >= 1 },
   kok: { namn: 'Kök', ikon: 'lagereld', slag: 'grund', om: 'Här finns en härd, ett örtkök, en bakugn eller en kvarnsten', krav: i => i.eld >= 1 || i.kok >= 1 }, // steg 10.2.92
   forrad: { namn: 'Förråd', ikon: '📦', slag: 'grund', om: 'Hyllor, kistor, ställ eller lagerrutor', krav: i => i.forvar >= RUM.forradMin },
   verkstad: { namn: 'Verkstad', ikon: 'verkstad', slag: 'grund', om: 'Här står en arbetsbänk', krav: i => i.arbete >= 1 },
@@ -75,6 +83,20 @@ export const RUM_MINUS: RumMinus[] = [
   { namn: 'Råttor vid sovplatserna', a: ['forrad'], b: ['sovrum', 'sovsal'] },
   { namn: 'Trångt och smutsigt', a: ['trangt'], b: ['smutsigt'] },
 ];
+
+// taggar som passar bra ihop ger ett plus (steg 12.1.143), på samma sätt som RUM_MINUS. krav frågar taggarna (t) och om det är ljust
+// inne när det är mörkt ute (ljust); vila = så mycket bättre man vilar där, tanke = den goda tanken hos den som sover eller äter där.
+// Villkoren läser RUMSTYPER (sova, ata och slag), inte en fast lista, så att en ny tagg räknas med av sig själv
+export interface RumPlus { id: string; namn: string; ikon: string; om: string; krav: (t: Set<string>, ljust: boolean) => boolean; vila?: number; tanke?: number }
+const sover = (t: Set<string>) => [...t].some(k => TYPER[k]?.sova), ater = (t: Set<string>) => [...t].some(k => TYPER[k]?.ata);
+export const RUM_PLUS: RumPlus[] = [
+  { id: 'ljust', namn: 'Varmt och ljust', ikon: 'lagereld', om: 'Ett varmt rum med ljus inne när det är mörkt ute', krav: (t, ljust) => t.has('varmt') && ljust, get tanke() { return RUM.plusLjust; } },
+  { id: 'pynt', namn: 'Fint pyntat', ikon: 'kruka', om: 'Ett prytt rum där man sover eller äter', krav: t => t.has('prytt') && (sover(t) || ater(t)), get tanke() { return RUM.plusPynt; } },
+  // ett sovrum som inte delas med någon annan funktion: ingen annan grundtagg i RUMSTYPER
+  { id: 'eget', namn: 'Eget rum', ikon: '🛏️', om: 'Ett sovrum som inte delas med någon annan funktion', krav: t => t.has('sovrum') && [...t].every(k => k === 'sovrum' || TYPER[k]?.slag !== 'grund'), get vila() { return RUM.plusEget; } },
+];
+const PLUS_TANKE: Record<string, string> = { ljust: 'Varmt och ljust inne', pynt: 'Fint pyntat omkring sig', eget: 'Har ett eget rum' };
+export const rumPlusTanke = (id: string) => PLUS_TANKE[id] ?? id;
 
 export function rumInfo(s: State, r: Rum): RumInfo {
   const rutor = new Set(r.tiles), i: RumInfo = { rutor: r.tiles.length, sov: sovplatser(s, r), folk: 0, bord: 0, eld: 0, arbete: 0, forvar: 0, scen: 0, tork: 0, pynt: 0, smuts: 0, slakt: 0, krubba: 0, kok: 0, bara: new Set() };
@@ -129,16 +151,32 @@ export function rumVisas(s: State, r: Rum): RumsTyp[] {
   for (const k of t) for (const d of TYPER[k].delar ?? []) bort.add(d);
   return [...t].filter(k => !bort.has(k)).map(k => TYPER[k]);
 }
+// det som passar bra ihop i rummet just nu (steg 12.1.143): räknas högst en gång i timmen per rum, som taggarna
+const plusCache = new WeakMap<State, { v: string; m: Map<string, RumPlus[]> }>();
+export function rumPlus(s: State, r: Rum): RumPlus[] {
+  const v = `${s.byggV ?? 0}:${Math.floor(s.now / HOUR)}:${stationerOf(s).length}`, key = r.tiles.length ? String(Math.min(...r.tiles)) : `t${r.id}`;
+  let c = plusCache.get(s);
+  if (!c || c.v !== v) { c = { v, m: new Map() }; plusCache.set(s, c); }
+  let l = c.m.get(key);
+  if (l) return l;
+  const t = rumTaggar(s, r) as Set<string>;
+  let ljust = false;
+  if (!isLight(s.now) && t.has('varmt')) for (const i of r.tiles) if (ljusAt(s, i % W + 0.5, Math.floor(i / W) + 0.5) >= RUM.ljusMin) { ljust = true; break; }
+  l = RUM_PLUS.filter(p => p.krav(t, ljust));
+  c.m.set(key, l);
+  return l;
+}
 // det som passar dåligt ihop i rummet
 export function rumMinus(s: State, r: Rum): RumMinus[] {
   const t = rumTaggar(s, r);
   return RUM_MINUS.filter(m => m.a.some(k => t.has(k)) && m.b.some(k => t.has(k)));
 }
-// så stor del av vilan man får i rummet (1 = allt): det som passar dåligt ihop med att sova
+// så stor del av vilan man får i rummet (1 = allt): det som passar dåligt ihop med att sova, och det som passar bra ihop
 export function rumVila(s: State, r: Rum | undefined) {
   if (!r) return 1;
   let v = 1;
   for (const m of rumMinus(s, r)) if (m.vila) v *= 1 - m.vila;
+  for (const m of rumPlus(s, r)) if (m.vila) v *= 1 + m.vila; // det som passar bra ihop (steg 12.1.143)
   return v;
 }
 // ett färdigt hus där inget står (inget rum har en tagg) heter tomt hus tills något står där (steg 10.2.39)

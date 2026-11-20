@@ -22,7 +22,7 @@ import { angIVagen, angMark } from './slatter';
 import { tamFaraSteg } from './djurflykt';
 import { hoRegn } from './vattenho';
 import { djurTorstSteg } from './djurtorst';
-import { rumVila } from './rum';
+import { rumPlus, rumPlusTanke, rumVila } from './rum';
 import { PLAN, planBuild, stepByggplan } from './byggplan';
 import { FALLOR, FISKAR, MJARDE, mjardarOf, sattUt, sattVid, stepMjardar, valjFisk, vittja } from './fisk';
 import { TILLVERKA, TILLVERKA_LIST, tillverkAv } from './tillverka';
@@ -130,7 +130,7 @@ import { allaTing } from './agande';
 import { och } from './ord';
 import { stepPynt } from './pynt';
 import { glomByten, stadaByten } from './byte';
-import { stationById, stationFlyttTimme, stationFor, kvVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
+import { vidBordet, stationById, stationFlyttTimme, stationFor, kvVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, workStation } from './stationer';
 import { forbrukTimme, underBuffert, villHaAv } from './forradsmal';
 import { notis } from './notiser';
 import { stepKrukor } from './kruka';
@@ -729,6 +729,8 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
     p.rest = clamp(p.rest + dtSec / HOUR_S * KROPP[tak] * e, 0, 1);
     if (p.task!.act === 'sova') think(p, VILOTANKE[tak][0], VILOTANKE[tak][1] * e, now, 8 * HOUR);
   }
+  // rummens plus (steg 12.1.143): en god tanke hos den som sover eller äter i ett rum där taggarna passar bra ihop
+  if (v.rum && (tak && p.task!.act === 'sova' || vidBordet(p))) for (const m of rumPlus(s, v.rum)) if (m.tanke) think(p, rumPlusTanke(m.id), m.tanke, now, 8 * HOUR);
   if (heat > KROPP.eldNara) { // välbehaget ur eldstaden för den eld som värmer mest (steg 10.2.109)
     const fh = varmasteHard(s, p.x, p.y);
     think(p, 'Värms av elden', fh.comfort, now, HOUR);
