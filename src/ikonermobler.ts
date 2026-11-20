@@ -75,7 +75,7 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
     '..kj...kk...jk..', '..kj...kk...jk..', '..kkkkkkkkkkkk..', '..kSsSsSsSsSsk..',
     '.kSvvvvvvvvvvSk.', '.ksvVvvvvvVvvsk.', '.kSvvvvvvvvvvSk.', '..kSsSsSsSsSsk..',
     '..ksSsSsSsSsSk..', '...kkkkkkkkkk...', '................', '................'],
-    pal: { ...TRA, S: '#8a9c9e', s: '#61767a', v: '#233035', V: '#3b6ea5', y: '#a0947d' } },
+    pal: { ...TRA, S: '#8a9c9e', s: '#61767a', v: '#233035', V: '#3e5156', y: '#a0947d' } },
   // utedasset (steg 12.4.9): ett smalt litet hus av plankor med ett sluttande tak och en dörr med ett hål
   utedass: { pix: [
     '................', '.....kkkkkk.....', '....kdddddddk...', '...kddddddddk...',
