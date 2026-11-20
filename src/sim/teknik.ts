@@ -464,9 +464,11 @@ export function laraVal(s: State, p: Person): { m: Person; spot: { x: number; y:
 export function stepLarlingar(s: State) {
   const ppl = living(s);
   for (const p of ppl) if (p.lar && !ppl.some(m => m.id === p.lar!.av)) halvminne(s, p); // mästaren har flyttat
+  // hur många som kan varje teknik, räknat en gång per teknik (steg 12.1.104): ingen lär sig något medan lärlingarna väljs
+  const kunniga = new Map<string, number>(), antal = (id: string) => { let n = kunniga.get(id); if (n === undefined) kunniga.set(id, n = ppl.filter(q => knows(q, id)).length); return n; };
   for (const m of ppl) {
     if (ageOf(m, s.now) < ALDER.uppfinner || ppl.some(q => q.lar?.av === m.id)) continue;
-    const tek = TEKNIK.filter(t => t.niva >= 4 && knows(m, t.id)).sort((a, b) => ppl.filter(q => knows(q, a.id)).length - ppl.filter(q => knows(q, b.id)).length);
+    const tek = TEKNIK.filter(t => t.niva >= 4 && knows(m, t.id)).sort((a, b) => antal(a.id) - antal(b.id));
     for (const t of tek) {
       const sk = t.forsok?.skill ?? t.omr.map(a => ACTS[a]?.ovar).find(Boolean) ?? 'hantverk', poang = (q: Person) => q.skill[sk] + (q.tek?.[t.id] ?? 0) * 10;
       const c = ppl.filter(q => q !== m && !q.lar && ageOf(q, s.now) >= ALDER.uppfinner && canThink(q, t)).sort((a, b) => poang(b) - poang(a) || a.id - b.id)[0];

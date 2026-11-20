@@ -486,8 +486,6 @@ function hotar(s: State, b: Brand) {
   const ut = bynsAvstand(s);
   return b.r.some(r => ut.at(r[0]) <= BRAND.hot || vardeNara(s, r[0]) >= BRAND.hotVarde);
 }
-// rutan i är värd att släcka: nära byn, eller nära något som är värt mycket
-const hotad = (s: State, ut: ReturnType<typeof bynsAvstand>, i: number) => ut.at(i) <= BRAND.hot || vardeNara(s, i) >= BRAND.hotVarde;
 // värdet på kartan (grundvärdet av husens bitar, högarna, stationerna och fälten), räknat en gång i timmen
 const vardeKarta = new WeakMap<State, { h: number; v: Float32Array }>();
 function vardeNara(s: State, i: number) {
@@ -651,8 +649,8 @@ function slackare(s: State, utom: Person) {
 // vad det är värt för p att släcka den brinnande rutan i (steg 10.11.3): värdet av det som står nära (och byn), delat med hur
 // många som redan släcker där; en kantruta väger mer än en inre, och en nära mer än en långt bort. 0 om inget hotas där
 function slackVarde(s: State, b: Brand, i: number, p: { x: number; y: number }, ut: ReturnType<typeof bynsAvstand>, m: Map<number, number>) {
-  const v = vardeNara(s, i) + (ut.at(i) <= BRAND.hot ? BRAND.byVarde : 0);
-  if (!(v > 0) || !hotad(s, ut, i)) return 0;
+  const vn = vardeNara(s, i), nara = ut.at(i) <= BRAND.hot, v = vn + (nara ? BRAND.byVarde : 0);
+  if (!(v > 0) || !(nara || vn >= BRAND.hotVarde)) return 0; // hotad, med summan som redan är räknad (steg 12.1.104)
   const d = Math.hypot(i % W + 0.5 - p.x, Math.floor(i / W) + 0.5 - p.y);
   return v * (inreOf(b)[i] ? BRAND.inreVikt : 1) / (1 + (m.get(i) ?? 0)) / (1 + d / BRAND.slackGang);
 }

@@ -372,24 +372,26 @@ function familjensFalt(s: State, p: Person) {
   const fri = faltOf(s).find(f => !agareLever(s, f));
   return fri ? [fri] : [];
 }
-// grödan som sås på en ruta: den med högst poäng (grodorNu, steg 9.6.11) som p har frön till
-const grodaRuta = (s: State, p: Person, i?: number) => grodorNu(s).find(g => froRutor(s, p, g) >= 1 && (i === undefined || (GRODOR[g] as GrodaDef).bord === undefined || bordighet(s, i) >= (GRODOR[g] as GrodaDef).bord!)); // en krävande gröda bara på bördig jord (steg 9.7.8)
+// grödan som sås på en ruta: den med högst poäng (grodorNu, steg 9.6.11) som p har frön till. gr = grodorNu(s), som den som frågar
+// för många rutor räknar en gång (steg 12.1.104)
+const grodaRuta = (s: State, p: Person, i?: number, gr = grodorNu(s)) => gr.find(g => froRutor(s, p, g) >= 1 && (i === undefined || (GRODOR[g] as GrodaDef).bord === undefined || bordighet(s, i) >= (GRODOR[g] as GrodaDef).bord!)); // en krävande gröda bara på bördig jord (steg 9.7.8)
 // poängen för arbetet på ruta k: den mogna först (den övermogna mer bråttom), sedan röjning, sådd och grävning
-function rutPoang(s: State, p: Person, f: Falt, k: number) {
+function rutPoang(s: State, p: Person, f: Falt, k: number, gr: () => GrodaSlag[]) {
   const r = rutorAv(f)[k];
   if (r.st === 'mogen') return ODLING.pMogen * (2 - skordAndel(s, f, k));
   if (r.st === 'roja') return iVagen(s, faltRuta(f, k)) ? 0 : ODLING.pRoja;
   if (r.st === 'bereda') return ODLING.pBereda;
-  if (r.st === 'sa') return grodaRuta(s, p, faltRuta(f, k)) ? ODLING.pSa : 0; // en gröda som trivs på just den rutan (steg 9.9.3)
+  if (r.st === 'sa') return grodaRuta(s, p, faltRuta(f, k), gr()) ? ODLING.pSa : 0; // en gröda som trivs på just den rutan (steg 9.9.3)
   return 0;
 }
 // den ruta på fälten fs som ger mest poäng, minus vägen dit (ingen slump: samma i spelet och ikappräkningen)
 function bastaRuta(s: State, p: Person, fs: Falt[], st?: FaltSteg) {
-  let best: { f: Falt; k: number } | undefined, bp = 0;
+  let best: { f: Falt; k: number } | undefined, bp = 0, lista: GrodaSlag[] | undefined;
+  const gr = () => (lista ??= grodorNu(s));
   for (const f of fs) for (let k = 0; k < f.n; k++) {
     const r = rutorAv(f)[k];
     if (st && r.st !== st) continue;
-    const v = rutPoang(s, p, f, k);
+    const v = rutPoang(s, p, f, k, gr);
     if (v <= 0) continue;
     const c = rutaMitt(f, k), poang = v - ODLING.pAvst * Math.hypot(c.x - p.x, c.y - p.y);
     if (!best || poang > bp) { best = { f, k }; bp = poang; }
@@ -439,10 +441,11 @@ function kvarTid(s: State, p: Person, f: Falt, st: FaltSteg) {
 // nästa ruta i steget st på fältet, närmast ruta k (den som arbetar står kvar och tar rutorna i ordning)
 function nastaI(s: State, p: Person, f: Falt, st: FaltSteg, k: number) {
   const r = rutorAv(f);
+  let lista: GrodaSlag[] | undefined;
   for (let d = 0; d < f.n; d++) for (const j of [k + d, k - d]) {
     if (j < 0 || j >= f.n || r[j].st !== st) continue;
     if (st === 'roja' && iVagen(s, faltRuta(f, j))) continue;
-    if (st === 'sa' && !grodaRuta(s, p, faltRuta(f, j))) continue; // ingen gröda trivs på den här rutan: nästa
+    if (st === 'sa' && !grodaRuta(s, p, faltRuta(f, j), (lista ??= grodorNu(s)))) continue; // ingen gröda trivs på den här rutan: nästa
     return j;
   }
   return -1;

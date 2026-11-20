@@ -204,14 +204,16 @@ export const nagonEld = (s: State) => eldarOf(s).some(f => f.lit);
 // någon eld brinner eller glöder
 export const nagonGlod = (s: State) => eldarOf(s).some(f => f.lit || emberOn(s, f));
 // p:s egen önskan om ved på elden f; vc = hur mycket byn fryser 0–1. vid = p sitter vid elden eller är på väg dit
-function fireWish(s: State, p: Person, vc: number, f: Fire, vid: boolean): Wish {
-  const light = isLight(s.now), cold = coldOf(temperature(s)), sd = s.seder.v;
+// det som är detsamma för alla (dagsljuset, kylan, sederna, har byn haft eld), räknat en gång per steg (steg 12.1.104)
+const eldLage = (s: State) => ({ light: isLight(s.now), cold: coldOf(temperature(s)), aldrig: !eldarOf(s).some(e => e.lightings) });
+function fireWish(s: State, p: Person, vc: number, f: Fire, vid: boolean, l = eldLage(s)): Wish {
+  const { light, cold } = l, sd = s.seder.v;
   const opts: Wish[] = [
     { v: clamp((1 - p.warm) * ELD.onskaFryser + cold * ELD.onskaKyla, 0, 1), why: p.warm < 0.5 ? 'Fryser och vill ha mer värme' : `Det är kallt och ${han(p)} vill hålla värmen` },
     { v: clamp(vc * (p.pot.empati / ELD.onskaEmpati) * (ELD.onskaGemBas + ELD.onskaGem * sd.gemenskap), 0, 1), why: 'Andra i byn fryser' },
   ];
   if (vid) opts.push({ v: (light ? ELD.trivsDag : ELD.trivsNatt) * clamp(ELD.trivsMood - moodOf(p, s.now), ELD.trivsMin, 1), why: light ? 'Vill ha en trivsam eld' : 'Vill ha en trivsam eld att samlas kring i mörkret' });
-  if (!eldarOf(s).some(e => e.lightings)) opts.push({ v: ELD.forstaEld * (ELD.forstaBas + p.pot.nyfikenhet / ELD.forstaNyfiken), why: 'Byn har aldrig haft eld' });
+  if (l.aldrig) opts.push({ v: ELD.forstaEld * (ELD.forstaBas + p.pot.nyfikenhet / ELD.forstaNyfiken), why: 'Byn har aldrig haft eld' });
   const b = opts.reduce((a, o) => (o.v > a.v ? o : a));
   return { v: b.v * hearthOf(f).maxFuel, why: b.why };
 }
@@ -446,12 +448,12 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   const alla = eldarOf(s);
   for (const e of alla) brinner(s, e, dtSec);
   // vilja: varje invånare som är vaken vill ha olika mycket ved på de eldar hen använder (steg 6.3.1)
-  const vc = byFryser(ppl);
+  const vc = byFryser(ppl), l = eldLage(s);
   for (const f of alla) { f.want = 0; f.wantBy = undefined; f.wantWhy = undefined; f.brukare = 0; }
   for (const p of ppl) {
     if (!alive(p) || p.task?.act === 'sova' || p.task?.act === 'gomma' || ligger(p, s.now) || halsa(p) < KROPP.svag || ageOf(p, s.now) < ALDER.hjalper) continue; // den som sover, gömmer sig eller ligger sjuk vill inget
     for (const f of eldarFor(s, p)) {
-      const w = fireWish(s, p, vc, f, sitterVid(s, p, f));
+      const w = fireWish(s, p, vc, f, sitterVid(s, p, f), l);
       f.brukare = (f.brukare ?? 0) + 1;
       if (w.v > (f.want ?? 0)) { f.want = w.v; f.wantBy = p.id; f.wantWhy = w.why; }
     }
