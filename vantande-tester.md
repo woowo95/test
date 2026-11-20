@@ -22,6 +22,13 @@
 - natt-jarn (12.1.1–12.1.3, 12.2.1–12.2.13 och 12.3.1): skyldig koll med nytt facit (myren, torven och isborrens gräns på 30 cm ändrar byarna), likhet (tillsynen, 12.2.2) och balansen (`npm run balans -- 24 35`). 12.2.5 är prövat med `npm run samma`.
 - 18 scenarier var röda på varld redan före ihopslagningarna (39c496fa, efter 12.1.33): kista, handlare, slaktbank, virke, ikoner, symboler, tidsord, borta, varldtillstand, varldslag, forhistoria, kallelse, gomma, handelsresa, vagmote, turne, talt, kyrkanutlyser. De hör till 12.1-stegen från 12.1.9 och rättas innan 12.1 testas med kedjan.
 
+## Grenen par-tester (12.1.159, 12.1.160, 12.1.162, 12.1.115, 12.1.130)
+
+- Bara testskripten, scenarierna och dokumenten ändrade; spelet räknar som förut (12.1.159 lägger bara till en lyssnare, halVakt, som testerna läser). Skyldig koll (scenarierna arbetstid och bjornrovare är nya kontroller; det stora testet bygger kartan för riktad med den nya täckningen, tackning.mjs) och `npm run utseende` i alla fall (inzoomningen och bilderna med teknikträdet).
+- 12.1.159: vattenlarmet i by 80191 (dygn 33,9) ska vara borta i `npm run balans -- 24 35`.
+- 12.1.162: `npm run strid` ska visa björnens strider mot rövarna som en egen rad (Björnen mot rövarna).
+- 12.1.130: koll ska mätas på MacBooken efter ihopslagningen: klocktiden och de fem längsta jobben mot 85 minuter.
+
 ## Frågor till Björn (från natten till 20 november)
 
 - Benspaden görs inte längre i någon av testbyarna på 50 dygn (50 år i spelet, sju veckor i verkligheten): benen går först till sylen, nålarna och snarorna. Den står nu bland det sällsynta i testet. Ska benen räcka till spaden tidigare (en sak för fasens Balans), eller är det rätt att den kommer sent?
