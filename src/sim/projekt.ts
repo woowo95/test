@@ -146,7 +146,7 @@ const station = (k: StationSlag): ProjektDef => {
   return {
     namn: d.namn, vikt: (PROJEKT_TAL as Record<string, number>)[k] ?? (d.smak ? (PROJEKT_TAL as Record<string, number>)[d.smak] : undefined) ?? 1, // alla mattor väger som en (steg 10.7.6)
     // någon i familjen sover under tak utan en bädd, eller p vill ha en egen kista (steg 2.10.18): den byggs också som pyssel på fritiden
-    egen: d.sover ? (s, fam) => utanEgenBadd(s, fam) : d.forvar?.privat ? (s, _fam, p) => p && villKista(s, p) ? 1 : 0 : undefined,
+    egen: d.sover && !d.ersatter ? (s, fam) => utanEgenBadd(s, fam) : d.forvar?.privat ? (s, _fam, p) => p && villKista(s, p) ? 1 : 0 : undefined,
     brist: s => stationBrist(s, k), // bufferten står i forradsmal.ts (steg 6.2.17)
     kostnad: () => varuVarde(d.av, d.min / 60 * ARBETE),
     kan: (s, p) => kanBygga(s, p, k),

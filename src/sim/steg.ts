@@ -719,9 +719,9 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   p.warm = p.brinner !== undefined ? KROPP.maxVarm : nyVarme(p.warm, v, dtSec / HOUR_S); // den som brinner har kroppens högsta värme tills elden är släckt (steg 9.2.135)
   const tak = viloTak(s, p, v.rum);
   if (tak) { // man vilar bättre under tak, och bäst på ett golv
-    const e = takEffekt(s, p, tak);
-    p.rest = clamp(p.rest + dtSec / HOUR_S * KROPP[tak] * e, 0, 1);
-    if (p.task!.act === 'sova') think(p, VILOTANKE[tak][0], VILOTANKE[tak][1] * e, now, 8 * HOUR);
+    const e = takEffekt(s, p, tak), bv = tak === 'restBadd' ? baddVila(s, p) : undefined; // sängen vilar bättre än halmbädden (steg 12.4.3)
+    p.rest = clamp(p.rest + dtSec / HOUR_S * (bv?.tim ?? KROPP[tak]) * e, 0, 1);
+    if (p.task!.act === 'sova') { think(p, bv?.tanke ?? VILOTANKE[tak][0], (bv?.glad ?? VILOTANKE[tak][1]) * e, now, 8 * HOUR); if (bv) bredvidKaresta(s, p); }
   }
   if (heat > KROPP.eldNara) { // välbehaget ur eldstaden för den eld som värmer mest (steg 10.2.109)
     const fh = varmasteHard(s, p.x, p.y);
@@ -1768,3 +1768,4 @@ import { avlivaKlar, klippKlar, mjolkaKlar, stepBoskap } from './boskap';
 import { tatKlar } from './tatuering';
 import { angKlar, slaKlar, stepVinter, hamlaKlar } from './slatter';
 import { stepHons } from './hons';
+import { baddVila, bredvidKaresta } from './mobler';

@@ -34,3 +34,4 @@
 - Committerna för 12.4.1–12.4.14 på par-mobler har bara typkontrollen och stegens egna scenarier (filen src/test/scenarier/mobler.ts) bakom sig. Systemet är skyldigt hela kedjan när det slagits ihop med varld: `npm run kedja -- "npm run -s koll" "npm run -s likhet"`, med nytt facit.
 - 12.4.1 (drejskivan): lerkrukan görs nu vid en station (plats station i stället för elden), så den som formar en kruka utan drejskiva sätter sig där hantverket görs i byn; byarna blir annorlunda.
 - 12.4.2 (oljelampan): brännoljan är nu en vätska (VATSKOR) som kokas i en ledig oljelampa eller liten lerkruka; brännolja som ligger i stackar i gamla sparfiler blir liggande utan funktion (ingen uppgradering). Byn vill ha en oljelampa till varje plats för ljus, och tomma lampor fylls på (projektet lampa).
+- 12.4.3 (sängen): en familj med något över byter halmbädden mot en säng (projektet sang, Hemmen blir finare); sängen vilar mer. Läs i Balansen om sängarna byggs och vad de kostar byarna.

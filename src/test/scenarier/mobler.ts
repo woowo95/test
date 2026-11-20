@@ -70,3 +70,42 @@ SCENARIER.oljelampa = {
     ];
   },
 };
+
+SCENARIER.sang = {
+  text: 'Sängen (steg 12.4.3, mobler.ts): en säng av 3 plankor och 2 ull (18 minuter, tekniken Säng) som vilar 0,13 per timme mot halmbäddens 0,105 och ger tanken Sov gott i sängen; skinnfällen passar i den, en familj med något över byter halmbädden mot den (Hemmen blir finare), och ett par vars sängar står intill varandra får tanken Sov bredvid sin käresta',
+  kor: () => {
+    const d = SIM.stationDef('sang')!, tek = SIM.TEKNIK.find(t => t.id === 'sang');
+    const s = SIM.createState(1, START), [p, q] = SIM.living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen);
+    klockan(s, 23);
+    // två halmbäddar intill varandra, och en skinnfäll i den ena
+    const a = medBank(s, 'halmbadd'), b0 = medBank(s, 'halmbadd'); b0.x = a.x; b0.y = a.y + 1; b0.rot = a.rot; SIM.touch(s);
+    a.ag = p.id; b0.ag = q.id; a.med = ['skinnfall'] as typeof a.med;
+    // ingen har något över: ingen säng
+    const utanOver = SIM.finareBrist(s, 'sang');
+    // p blir rik: en hög silver som är hens
+    for (const x of SIM.living(s)) SIM.put(s, 'silver', 10, { [x.id]: 10 });
+    SIM.put(s, 'silver', 200, { [p.id]: 200 });
+    const medOver = SIM.finareBrist(s, 'sang'), site = SIM.stationSite(s, 'sang', p), paBadden = !!site && site.x === a.x && site.y === a.y;
+    // bygget börjar: halmbädden tas isär och sängen får dess ägare och skinnfäll
+    const ny: SIM.Station = { id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'sang', x: a.x, y: a.y, kvar: 0, inne: 1 };
+    SIM.ersatt(s, a, ny); (s.stationer ??= []).push(ny); SIM.touch(s);
+    const bytt = !SIM.stationerOf(s).includes(a) && ny.ag === p.id && (ny.med as string[] | undefined)?.includes('skinnfall') && SIM.tillbehorStationer(s, 'skinnfall').includes(ny);
+    // vilan i sängen och i halmbädden
+    p.x = ny.x + 0.5; p.y = ny.y + 0.5; q.x = b0.x + 0.5; q.y = b0.y + 0.5;
+    const vSang = SIM.baddVila(s, p), vHalm = SIM.baddVila(s, q);
+    // käresta i sängen intill
+    p.partner = q.id; q.partner = p.id;
+    p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.HOUR, carry: 0, why: '' } as SIM.Task;
+    q.task = { ...p.task, tx: q.x, ty: q.y };
+    SIM.bredvidKaresta(s, p); const halmBredvid = p.thoughts.some(t => t.text === 'Sov bredvid sin käresta');
+    const b: SIM.Station = { ...b0, k: 'sang' }; s.stationer = SIM.stationerOf(s).map(t => t === b0 ? b : t); SIM.touch(s);
+    SIM.bredvidKaresta(s, p); const sangBredvid = p.thoughts.find(t => t.text === 'Sov bredvid sin käresta');
+    return [
+      [`sängen står inne, ${d.w} × ${d.h}, av ${JSON.stringify(d.av)} på ${d.min} minuter med tekniken ${tek?.namn} (kräver ${tek?.krav})`, !!d.inne && !!d.sover && d.av.plankor === 3 && d.av.ull === 2 && d.min === 18 && !!tek && tek.krav.includes('halmbadd') && tek.krav.includes('snickarbank')],
+      [`sängen vilar ${vSang?.tim} per timme med tanken ${vSang?.tanke} (${vSang?.glad}); halmbädden har egna tal i KROPP (${vHalm === undefined})`, vSang?.tim === 0.13 && vSang.glad === 0.11 && vHalm === undefined && SIM.KROPP.restBadd === 0.105],
+      [`utan något över byts ingen halmbädd (${utanOver}), med något över byts p:s egen (${medOver.toFixed(2)})`, utanOver === 0 && medOver > 0 && paBadden],
+      [`när bygget börjar tas halmbädden isär, och sängen får ägaren och skinnfällen`, !!bytt],
+      [`ett par i en säng och en halmbädd intill får ingen tanke, i två sängar intill varandra tanken Sov bredvid sin käresta (${sangBredvid?.v})`, !halmBredvid && sangBredvid?.v === 0.03 && sangBredvid.until === s.now + 8 * SIM.HOUR],
+    ];
+  },
+};
