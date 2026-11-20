@@ -14,6 +14,11 @@
 - 12.1.82 (vården, striden och vargarna): läs räknarna `vargVantar`, `vargDorrStrid` och `vargTrottnade` i fasens Balans (`npm run balans -- 24 35`). Väntar vargarna utanför en dörr i färre än var fjärde by tas väntan bort med sitt stycke i dokumentet.
 - 12.1.21 (rikedomen lockar): `npm run strid` före (på 141bbace) och efter (85a3aff3), en gång var, som information om flockarna.
 
+## System 12.5 Järnredskapen (grenen par-jarnredskap, 12.5.1–12.5.6, ab1ebb9 till den senaste committen på grenen)
+
+- Bara typkontrollen och stegens egna scenarier (sag, ullsax, jarnnal, hacka, gryta, las) är körda, och de närmaste (vard, tatuering, stridvard, vardval, kokning, byggsten, fangelse, tradorr, dorr, teknik, tider, arbetstid, ord, ikoner, symboler, jarnredskap, jarnskrot, isborr, eldstal, heltal). Systemet är skyldigt hela kedjan när grenen slagits ihop med varld: `npm run kedja -- "npm run -s koll" "npm run -s likhet"`, med nytt facit.
+- Det som ändrar byarna: sågen vid klyvplatsen (plankorna går fortare), ullsaxen och järnhackan (nya rader i klippningen och brytandet, och REDSKAPMAL vill ha dem), järnnålen (bennålen och järnnålen är nu en grupp i REDSKAPSGRUPPER, och byn vill ha en nål när någon kan smida och byn har en slöjdbänk), järngrytan (kokningen kan ge dubbel sats) och den låsta dörren (en ny teknik och en dörr som är bommad också när huset är tomt, så rövarna och anfallarna hugger längre). Likheten bör köras eftersom klippningen och brytandet fått en redskapsrad.
+
 ## Hopslagna nattgrenar
 
 - natt-bildstil (12.1.69, 12.1.70, 12.1.102): src/portrattkarna.ts är omskriven (samma porträtt punkt för punkt); skyldig samma-kollen och `npm run utseende`.
