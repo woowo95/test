@@ -181,3 +181,7 @@
 - Stegen byggdes tidigare i dag (8ef60b2, 495200a, 1b810ad, f189eb6, 684d98b) och finns redan i varld; de var bara inte avbockade. Skyldiga `npm run kedja -- "npm run -s koll" "npm run -s likhet"` som en del av 12.1 (de ändrar vården i byn, blödningen i striden, vargjakten och förlossningen, så facit ändras).
 - Scenariot undsattning blev rött av 12.1.177 (ef10eae, långsammare i skenet): den fallne låg redan längre bort än STRID.hjalpAvst från rövaren och vårdades på stället utan att bäras. Rättat i scenariots uppställning (den fallne ligger mellan raddaFri och hjalpAvst), inte i striden.
 - Gröna i molnet: vard, blodning, halsoflik, strid, pilisaret, rader, varg, bjornjakt, forlossning, rovarstrid, vargskydd, undsattning, olyckshugg.
+
+## Grenen par-styre (12.1.27, 12.1.60, 12.1.61)
+
+- Koden för alla tre stegen fanns redan på varld när grenen började; grenen ändrar bara texten "Inga påbud just nu." i fliken Styre och bockar av stegen. Scenarierna pabud, omrostning, ledare, skatt, makten, budget, fangelse, utlysa, graven, kyrkan och sederfas8 är gröna i molnet. Stegen ändrar spelet (rädslan i byar utan ledare, legitimiteten, skatten på höns och bikupor, nödlistan, prästens mat, begravningen, gravgåvan), så de är skyldiga `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit, tillsammans med resten av 12.1.
