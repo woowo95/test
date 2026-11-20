@@ -408,14 +408,18 @@ export function lasLardom(s: State, q: Person, l: Lardom, av: number) {
   (q.lardomar ??= []).push({ k: l.k, a: l.a, ...(l.sl !== undefined ? { sl: l.sl } : {}), v: l.v, ...(l.g !== undefined ? { g: l.g } : {}), c: l.c, t: l.t, src: av, led: (l.led ?? 0) + 1, ...(l.om ? { om: l.om } : {}) });
   trim(s, q);
 }
+// hur mycket b tror på a när a berättar (mindre på en lögnare, steg 3.3.3), och att berätta eller höra något igen stärker
+// minnet med säkerheten c (kodgenomgången, fynd 175)
+export const tillit = (a: Person, b: Person, r: Rel) => clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a);
+export const stark = (c: number) => Math.min(1, c + MINNE.berattaStark * (1 - c));
 // en rättelse är en nyhet i två dygn
 export const nyhet = (s: State, l: Lardom) => l.ny !== undefined && s.now - l.ny < MINNE.nyhetDygn * DAY;
 export function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   // att berätta stärker det egna minnet, men platsen sågs inte nu (t, återväxten räknas därifrån)
-  l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));
+  l.c = stark(l.c);
   if (l.k === 'pris') delade('pris', 'silver', prisOm(s, l)); // samtalets ämne (steg 3.9.5, 10.5.15)
   else delade(l.k === 'fara' || l.k === 'flod' ? 'fara' : 'plats', LARDOMAR[l.k].ikon, l.k === 'fara' ? (l.om?.endsWith(' där') ? `platsen där ${l.om.slice(0, -4)}` : 'en farlig plats') : l.k === 'flod' ? 'översvämningen' : LARDOMAR[l.k].vad); // högvattnet är en fara, inte en plats där något finns (steg 12.1.118) // samtalets ämne (steg 3.9.5)
-  const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a); // mindre på en lögnare (steg 3.3.3)
+  const trust = tillit(a, b, r);
   const c = l.c * trust * MINNE.troDel;
   // man överdriver gärna, särskilt det som är farligt
   const v = l.k === 'flod' || l.k === 'pris' ? l.v : clamp(l.v * (l.k === 'fara' ? 1 + (rnd(s, 'minne', a) - MINNE.overFara) * MINNE.overFaraSpann : 1 + (rnd(s, 'minne', a) - MINNE.over) * MINNE.overSpann), 0, l.k === 'fara' ? MINNE.vMaxFara : l.k === 'vatten' ? 1 : MINNE.vMax);
@@ -523,7 +527,7 @@ const prisOm = (s: State, l: Lardom) => `vad ${byNamn(s, l.a)} betalar för ${l.
 export function larPris(s: State, p: Person, by: number, sl: string, c: number, src?: number) {
   const v = prisKrok.radPris(s, by, sl), e = findL(p, 'pris', by, sl), fel = !!e && Math.abs(e.v - v) >= MINNE.prisFel - 1e-9;
   if (e) {
-    if (c < e.c && !fel) { e.c = Math.min(1, e.c + MINNE.berattaStark * (1 - e.c)); return; } // det man redan tror säkrare stärks bara
+    if (c < e.c && !fel) { e.c = stark(e.c); return; } // det man redan tror säkrare stärks bara
     e.v = v; e.c = c; e.t = s.now; e.src = src; e.led = src === undefined ? 0 : 1;
     if (fel) { e.ny = s.now; count(s, 'prisRattat'); } else delete e.ny;
     return;

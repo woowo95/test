@@ -7,7 +7,7 @@ import { alive, count, living, log } from './folk';
 import { drabbadHus, upplev } from './uppvaxt';
 import { kanGa, skada, Kroppsdel } from './halsa';
 import { bynsMitt } from './omrade';
-import { STRECK } from './karta';
+import { streckAv } from './ord';
 import { avbryt, minska, nagotPa, stacksOf, tidy } from './lager';
 import { die } from './liv';
 import { groundOf } from './mark';
@@ -189,7 +189,7 @@ export function skickaTornado(s: State, storlek?: TornadoStorlek): { ok: boolean
   t.fran = s.now; t.till = s.now + tid; t.test = 1;
   s.tornado = t;
   const e = bynsMitt(s), v = Math.atan2(t.bana[1] - e.y - 0.5, t.bana[0] - e.x - 0.5);
-  const text = `Testläget: en ${t.storlek === 'medel' ? 'medelstor' : t.storlek} tornado kommer från ${STRECK[(Math.round(v / (Math.PI / 4)) + 8) % 8]} och är på kartan i ${Math.round(tid / MIN)} minuter`;
+  const text = `Testläget: en ${t.storlek === 'medel' ? 'medelstor' : t.storlek} tornado kommer från ${streckAv(v)} och är på kartan i ${Math.round(tid / MIN)} minuter`;
   log(s, text + '.', 'world');
   return { ok: true, text };
 }

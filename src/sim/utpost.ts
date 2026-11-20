@@ -12,9 +12,9 @@ import { mots } from './byrel';
 import { count } from './folk';
 import { byGrannar } from './grannat';
 import { byPlats, hinder, LandmarkId, LANDMARKEN, laggPlats, varldPlatsNr, VarldPlats } from './landmarken';
-import { gruppAv, radHar, radRikedomUr, radVaror, radVill, VARUGRUPP_IDS, VarugruppId } from './priser';
-import { lever, portionerPerDygn, rikMal, styrkaMal } from './rad';
-import { radNr, VarldRad } from './radtal';
+import { radHar, radLaggTill, radOverskott, radRikedomUr, radVaror, sakGrupp, VARUGRUPP_IDS } from './priser';
+import { lever, portionerPerDygn, styrkaMal } from './rad';
+import { radNr, tomTal, VarldRad } from './radtal';
 import { grundvarde } from './varde';
 import { varldHandelse } from './varldkronika';
 import { KOHANDELSER, PERIODRADER, antalUr, laggIKo, periodSlut, varldSlump } from './varldslag';
@@ -51,19 +51,13 @@ export const FYNDINNE: Partial<Record<MarkId, { sak: string; n: [number, number]
 const A = { grunda: 41, val: 42, bryt: 43, hl: 44 };
 
 // platsens innehåll (fyndplatsen): räknas ur platsens frö första gången
-export function fyndInne(_vl: Varlden, v: VarldMark | undefined, p: VarldPlats): Record<string, number> {
+export function fyndInne(v: VarldMark | undefined, p: VarldPlats): Record<string, number> {
   if (p.inne) return p.inne;
   const f = v ? FYNDINNE[MARK_IDS[v.mark[p.y * v.w + p.x]]] : undefined;
   const r = (p.fro % 1000) / 1000;
   return p.inne = f ? { [f.sak]: Math.round(f.n[0] + r * (f.n[1] - f.n[0])) } : {};
 }
 const innehall = (p: VarldPlats) => Object.values(p.inne ?? {}).reduce((a, n) => a + (n ?? 0), 0);
-// varugruppen i moderbyn för en sak, och värdet i gruppens mått
-export const tillGrupp = (sak: string): VarugruppId => gruppAv(sak) ?? 'redskap';
-export function laggTillRad(r: VarldRad, g: VarugruppId, n: number) {
-  if (g === 'mat') { r.tal.mat += n; return; }
-  const v = radVaror(r); v[g] = (v[g] ?? 0) + n; r.tal.rikedom = radRikedomUr(r);
-}
 // den närmaste lediga rutan för en plats av sorten k från rutan a, inom n världsrutor
 function ledigRuta(vl: Varlden, v: VarldMark, k: LandmarkId, ax: number, ay: number, n: number): number | undefined {
   const mk = LANDMARKEN[k].mark as readonly string[], fria = new Set<number>();
@@ -89,11 +83,11 @@ function nyRad(vl: Varlden, v: VarldMark, r: VarldRad, p: VarldPlats, sort: 'utp
 // fyndplatserna inom räckhåll från byn r som har något kvar och ingen utpost
 function kallor(vl: Varlden, v: VarldMark, r: VarldRad): VarldPlats[] {
   const tagna = new Set((vl.rader ?? []).filter(q => q.sort === 'utpost' && q.tal.folk > 0 && q.kalla !== undefined).map(q => q.kalla!));
-  return (vl.platser ?? []).filter(p => p.k === 'fyndplats' && r.x !== undefined && r.y !== undefined && Math.max(Math.abs(p.x - r.x), Math.abs(p.y - r.y)) <= UTPOST.rutor && !tagna.has(p.nr) && innehall({ ...p, inne: fyndInne(vl, v, p) }) > 0);
+  return (vl.platser ?? []).filter(p => p.k === 'fyndplats' && r.x !== undefined && r.y !== undefined && Math.max(Math.abs(p.x - r.x), Math.abs(p.y - r.y)) <= UTPOST.rutor && !tagna.has(p.nr) && (fyndInne(v, p), innehall(p)) > 0);
 }
 // det en utpost vid fyndplatsen p ger byn per dygn utöver arbetet hemma, i grundvärde
-export function utpostVinst(vl: Varlden, v: VarldMark | undefined, p: VarldPlats): number {
-  const inne = fyndInne(vl, v, p), [sak] = Object.keys(inne);
+export function utpostVinst(v: VarldMark | undefined, p: VarldPlats): number {
+  const inne = fyndInne(v, p), [sak] = Object.keys(inne);
   return sak ? UTPOST.folk * (UTPOST.perDygn * grundvarde(sak) - UTPOST.arbete) : -1;
 }
 // byn r skickar folk till en fyndplats; undefined om ingen plats finns
@@ -120,7 +114,7 @@ export function grundaUtposter(s: State, vl: Varlden, n: number) {
     if ((vl.rader ?? []).some(q => q.sort === 'utpost' && q.fran === r.nr && q.tal.folk > 0)) continue; // byn har redan en
     if (varldSlump(vl, r.nr, n, A.grunda) >= UTPOST.chans) continue;
     let bast: VarldPlats | undefined, b = 0;
-    for (const p of kallor(vl, v, r)) { const x = utpostVinst(vl, v, p); if (x > b) { b = x; bast = p; } }
+    for (const p of kallor(vl, v, r)) { const x = utpostVinst(v, p); if (x > b) { b = x; bast = p; } }
     if (bast) nyUtpost(s, vl, r, bast, periodSlut(vl, 'dygn', n));
   }
 }
@@ -128,20 +122,19 @@ export function grundaUtposter(s: State, vl: Varlden, n: number) {
 export function utpostTimme(s: State, vl: Varlden, u: VarldRad, n: number) {
   const t = periodSlut(vl, 'timme', n), moder = radNr(vl, u.fran), kalla = u.kalla !== undefined ? varldPlatsNr(vl, u.kalla) : undefined;
   if (!moder || !lever(vl, moder)) { overge(s, vl, u, t); return; }
-  const inne = kalla ? fyndInne(vl, varldMark(s), kalla) : {}, [sak] = Object.keys(inne).filter(k => (inne[k] ?? 0) > 0);
+  const inne = kalla ? fyndInne(varldMark(s), kalla) : {}, [sak] = Object.keys(inne).filter(k => (inne[k] ?? 0) > 0);
   if (!kalla || !sak) { if (kalla) taBortPlats(vl, kalla); overge(s, vl, u, t); return; }
   const m = Math.min(inne[sak], antalUr(u.tal.folk * UTPOST.perDygn / 24, varldSlump(vl, u.nr, n, A.bryt)));
   if (m <= 0) return;
   inne[sak] -= m;
-  laggTillRad(moder, tillGrupp(sak), Math.round(m * grundvarde(sak))); // hela värden (radens tal är hela)
+  radLaggTill(moder, sakGrupp(sak), Math.round(m * grundvarde(sak))); // hela värden (radens tal är hela)
   count(s, 'utpost_brutet', m);
   if (inne[sak] <= 0 && innehall(kalla) <= 0) { taBortPlats(vl, kalla); overge(s, vl, u, t); }
 }
 
 // ---- handelslägret ----
-const overskott = (r: VarldRad, g: VarugruppId) => Math.floor(radHar(r, g) - radVill(r, g, rikMal(r)));
 // det byn r har över (utom maten), i grundvärde
-export const overskottVarde = (r: VarldRad) => VARUGRUPP_IDS.reduce((a, g) => a + (g === 'mat' ? 0 : Math.max(0, overskott(r, g))), 0);
+export const overskottVarde = (r: VarldRad) => VARUGRUPP_IDS.reduce((a, g) => a + (g === 'mat' ? 0 : Math.max(0, radOverskott(r, g))), 0);
 // byn r slår upp ett handelsläger nära sig; undefined om ingen plats finns
 export function nyttHandelslager(s: State, vl: Varlden, r: VarldRad, t: number): VarldRad | undefined {
   const v = varldMark(s), hem = byPlats(vl, r.nr);
@@ -153,7 +146,7 @@ export function nyttHandelslager(s: State, vl: Varlden, r: VarldRad, t: number):
   const varor = radVaror(h), rv = radVaror(r);
   for (const g of VARUGRUPP_IDS) {
     if (g === 'mat') continue;
-    const m = Math.floor(Math.max(0, overskott(r, g)) * HLAGER.andel);
+    const m = Math.floor(Math.max(0, radOverskott(r, g)) * HLAGER.andel);
     if (m > 0) { rv[g] = (rv[g] ?? 0) - m; varor[g] = (varor[g] ?? 0) + m; }
   }
   r.tal.rikedom = radRikedomUr(r); h.tal.rikedom = radRikedomUr(h);
@@ -188,7 +181,7 @@ export function overge(_s: State, vl: Varlden, u: VarldRad, t: number) {
     for (const g of VARUGRUPP_IDS) { const m = Math.floor(radHar(u, g)); if (m > 0) data['v_' + g] = m; } // det de bär, per grupp
     laggIKo(vl, t + (dygn ?? 1) * DAY, 'hemTill', { sak: mal.nr, data });
   }
-  u.t = t; u.tal = { folk: 0, mat: 0, rikedom: 0, silver: 0, styrka: 0 }; delete u.varor; delete u.ledare;
+  u.t = t; u.tal = tomTal(); delete u.varor; delete u.ledare;
   u.tek = []; // utan folk kan ingen något
   if (p) taBortPlats(vl, p);
   varldHandelse(vl, 'upplost', t, { by: u.nr });
@@ -198,7 +191,7 @@ KOHANDELSER.hemTill = (_s, vl, p) => {
   const m = radNr(vl, p.sak!), d = p.data!;
   if (!m || !lever(vl, m)) return; // byn finns inte längre
   m.tal.folk += d.n; m.tal.silver += d.silver ?? 0;
-  for (const g of VARUGRUPP_IDS) if (d['v_' + g]) laggTillRad(m, g, d['v_' + g]);
+  for (const g of VARUGRUPP_IDS) if (d['v_' + g]) radLaggTill(m, g, d['v_' + g]);
 };
 // handelslägret bryts upp vid sin tid
 KOHANDELSER.handelslagerSlut = (s, vl, p) => {

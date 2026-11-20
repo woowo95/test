@@ -7,6 +7,7 @@ import { MOTGANG, hardGrader, motgangVid } from './motgang';
 import { TORKA, torkaNu } from './torka';
 import { FLOD, flodRegn } from './flod';
 import { TORNADO, tornadoNu } from './tornado';
+import { streckAv } from './ord';
 
 // Balanstal (regel 8): temperaturen och hur fort man kyls
 export const VADER = balans('vader', {
@@ -161,8 +162,7 @@ export function vaderNu(s: State, t = s.now): Vader {
   return v;
 }
 // varifrån vinden kommer, i ord ("väster")
-const STRECK = ['öster', 'sydost', 'söder', 'sydväst', 'väster', 'nordväst', 'norr', 'nordost'];
-export const vindFran = (rikt: number) => STRECK[(Math.round((rikt + Math.PI) / (Math.PI / 4)) % 8 + 8) % 8];
+export const vindFran = (rikt: number) => streckAv(rikt + Math.PI);
 // regnar eller snöar det nu?
 export const nederbord = (s: State) => vaderNu(s).nb > 0;
 const minneOf = (s: State) => (s.vader ??= { fukt: 0.5, sno: 0 });

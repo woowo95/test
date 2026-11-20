@@ -4,6 +4,7 @@
 // nyckel med en hash, så att samma värld får samma namn utan att röra byns slump, och ett namn som redan finns i världen väljs
 // aldrig igen. Förlederna gånger efterlederna räcker till fler byar och platser än en full värld rymmer.
 import { hash3 } from './slump';
+import { gen } from './ord';
 import { LandmarkId } from './landmarken';
 import { Varlden } from './varlden';
 
@@ -35,8 +36,8 @@ export const NAMNSLAG: Record<LandmarkId, NamnSlag> = {
   fyndplats: 'plats', karavanrest: 'plats', gomma: 'plats', rastplats: 'plats', bro: 'bro', spang: 'bro', passage: 'bro', silvergruva: 'plats', jarngruva: 'plats',
 };
 
-const gen = (n: string) => /s$/.test(n) ? n : n + 's';
-function satt(forled: string, efter: string) {
+// förled och efterled (kodgenomgången, fynd 222): efter ett mellanslag med genitiv, annars ihop
+export function sattNamn(forled: string, efter: string) {
   if (efter.startsWith(' ')) return gen(forled) + efter;
   return forled + (forled.endsWith('s') && efter[0] === 's' ? efter.slice(1) : efter); // Ängs + stad blir Ängstad
 }
@@ -47,11 +48,11 @@ export function varldNamn(vl: Varlden, slag: NamnSlag, nyckel: number, upptagna 
   const e = VARLDNAMN[slag].efter, n = FORLED.length * e.length;
   const start = Math.floor(hash3(vl.fro, nyckel, 0x4e414d4e) * n);
   for (let k = 0; k < n; k++) {
-    const i = (start + k * 7919) % n, namn = satt(FORLED[i % FORLED.length]!, e[Math.floor(i / FORLED.length)]!);
+    const i = (start + k * 7919) % n, namn = sattNamn(FORLED[i % FORLED.length]!, e[Math.floor(i / FORLED.length)]!);
     if (!upptagna.has(namn)) return namn;
   }
   // alla kombinationer tagna: samma namn med ett tal efter (händer inte i en värld av den här storleken)
-  let k = 2; const bas = satt(FORLED[start % FORLED.length]!, e[0]!);
+  let k = 2; const bas = sattNamn(FORLED[start % FORLED.length]!, e[0]!);
   while (upptagna.has(`${bas} ${k}`)) k++;
   return `${bas} ${k}`;
 }

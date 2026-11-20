@@ -22,6 +22,7 @@ import { ledareOf } from './styre';
 import { kronika } from './historik';
 import { notis } from './notiser';
 import { balans } from './balans';
+import { sattNamn } from './varldnamn';
 import { klanerOf } from './klaner';
 import type { UpplevelseTyp } from './uppvaxt';
 import type { IntryckTyp } from './rykten';
@@ -124,16 +125,13 @@ const RADER = Object.keys(BYNAMN) as BynamnRad[];
 
 // ---------- namnen ----------
 export interface Kandidat { namn: string; rad: BynamnRad; om?: number }
-const gen = (n: string) => /s$/.test(n) ? n : n + 's';
 // ett led ur byns frö: samma by väljer samma led varje gång, utan spelets slump
 const ur = <X>(s: State, lista: X[], nyckel: string) => {
   let k = 0; for (const c of nyckel) k = (k * 31 + c.charCodeAt(0)) | 0;
   return lista[Math.floor(hash(s.seed, k, 9109) * lista.length)];
 };
 function bygg(s: State, rad: BynamnRad, forled: string) {
-  const e = ur(s, DEF[rad].efter, rad + forled);
-  if (e.startsWith(' ')) return gen(forled) + e;
-  return forled + (forled.endsWith(e[0]) && e[0] === 's' ? e.slice(1) : e);
+  return sattNamn(forled, ur(s, DEF[rad].efter, rad + forled));
 }
 // trons förled: ur gudens område hos byns största tro
 function troForled(s: State) {

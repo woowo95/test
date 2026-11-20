@@ -317,7 +317,7 @@ export interface Upplevelse { k: import('./uppvaxt').UpplevelseTyp; a: number; e
 // Slagen står i registret LARDOMAR i minne.ts
 // ny: när någon kom dit och såg att platsen var sämre än man trott (växterna har flyttat eller den är tömd).
 // Det är en nyhet som gärna berättas vidare i ett par dygn.
-export interface Lardom { k: import('./minne').LKind; a: number; sl?: string; v: number; g?: number; c: number; t: number; src?: number; led?: number; om?: string; ny?: number; fr?: number } // fr: den som först berättade ett rykte om en plats i världen (ort.ts, steg 11.4.5)
+export interface Lardom { k: import('./minne').LKind; a: number; sl?: string; v: number; g?: number; c: number; t: number; src?: number; led?: number; om?: string; ny?: number }
 
 // flags: 1 = nära vänner loggat, 2 = ovänner loggat, 4 = rivaler loggat, 8 = bästa vänner loggat (relationer.ts).
 // par: när de blev ett par, gift: när de gifte sig, lart: hur många gånger den äldre lärt den yngre något (steg 3.1.1)

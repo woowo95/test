@@ -49,7 +49,7 @@ import { MARK_IDS } from './varldmark';
 import { KARTA } from './kartflytt';
 import { byggMinne, somna } from './vacktsomna';
 import { byggFasta } from './vacktfasta';
-import { larOrt, ORT, O_BESOKT, O_KANT, radKanner } from './ort';
+import { gastSakerhet, larOrt, O_BESOKT, O_KANT, radensPlatser, radKanner } from './ort';
 import { varldPlatsNr } from './landmarken';
 
 export const VACKT = balans('vackt', {
@@ -219,8 +219,7 @@ export function byggKunskap(b: State, r: VarldRad) {
 export function byggPlatser(b: State, r: VarldRad) {
   const vl = b.varld, egen = vl && byPlats(vl, r.nr);
   if (!vl || !egen) return;
-  const nr = new Set<number>(r.besokt ?? []);
-  for (const x of egen.grannar ?? []) { nr.add(x.nr); for (const y of varldPlatsNr(vl, x.nr)?.grannar ?? []) nr.add(y.nr); }
+  const nr = radensPlatser(vl, r);
   nr.delete(egen.nr);
   const platser = [...nr].sort((a, c) => a - c).map(n => [n, radKanner(vl, r, n)] as const).filter(([n, v]) => v !== undefined && varldPlatsNr(vl, n));
   for (const p of b.people) {
@@ -228,7 +227,7 @@ export function byggPlatser(b: State, r: VarldRad) {
     for (const [n, v] of platser) {
       if (rnd(b, 'vackt') >= VACKT.ort) continue;
       const niva = v === O_BESOKT && rnd(b, 'vackt') >= VACKT.ortBesokt ? O_KANT : v!;
-      larOrt(b, p, n, niva, niva === O_BESOKT ? 1 : niva === O_KANT ? ORT.gastKant : ORT.gastRykte);
+      larOrt(b, p, n, niva, gastSakerhet(niva));
     }
   }
 }

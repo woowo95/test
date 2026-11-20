@@ -8,15 +8,14 @@
 import { balans } from './balans';
 import { alive, byId, count, stat } from './folk';
 import { delade } from './berattelser';
-import { findL, MINNE, trimLardomar, UPPDRAGKROK } from './minne';
-import { lognFaktor } from './rykten';
-import { clamp } from './slump';
+import { findL, MINNE, stark, tillit, trimLardomar, UPPDRAGKROK } from './minne';
 import { put } from './lager';
 import { kyrkaId } from './egendom';
 import { troNamn } from './religion';
 import { LandmarkId, varldPlatsNr } from './landmarken';
 import { radNr } from './radtal';
-import { laggTillRad, tillGrupp } from './utpost';
+import './utpost'; // laddas här som förut, så att världens periodrader (PERIODRADER) står i samma ordning
+import { radLaggTill, sakGrupp } from './priser';
 import { grundvarde } from './varde';
 import { KOHANDELSER, antalUr, laggIKo, varldSlump } from './varldslag';
 import { Varlden } from './varlden';
@@ -83,7 +82,6 @@ export const UPPDRAG = {
   leverans: { namn: 'Leveransen', utlosare: 'brist', plats: ['by'], utlysare: ['person', 'styre'], belon: 'utlyst', krav: 'sparning', gor: 'leverera', text: 'att föra en sak till {plats}' },
 } as const satisfies Record<string, UppdragDef>;
 export type UppdragId = keyof typeof UPPDRAG;
-export const UPPDRAG_IDS = Object.keys(UPPDRAG) as UppdragId[];
 export const uppdragDef = (k: UppdragId): UppdragDef => UPPDRAG[k];
 
 // den som utlyst: en person i huvudbyn (id), huvudbyns styre eller kyrka, eller en by i världen (radens nummer)
@@ -120,7 +118,7 @@ function aterLamna(s: State, vl: Varlden, u: Utlyst) {
   const r = u.av.rad !== undefined ? radNr(vl, u.av.rad) : undefined;
   for (const [k, n] of Object.entries(u.belon)) {
     if (n < 1) continue;
-    if (r) { if (lever(vl, r)) laggTillRad(r, tillGrupp(k), Math.round(n * grundvarde(k))); continue; } // en by i världen: i radens varor
+    if (r) { if (lever(vl, r)) radLaggTill(r, sakGrupp(k), Math.round(n * grundvarde(k))); continue; } // en by i världen: i radens varor
     if (u.av.tro !== undefined && s.tron?.some(t => t.id === u.av.tro && t.slut === undefined)) { put(s, k, n, { [kyrkaId(u.av.tro)]: n }); continue; } // tillbaka till kyrkans förråd
     const agare = u.av.person !== undefined && s.people.some(p => p.id === u.av.person && alive(p)) ? u.av.person : undefined;
     put(s, k, n, agare !== undefined ? { [agare]: n } : undefined); // huvudbyn: tillbaka till personen, annars till byn
@@ -165,7 +163,7 @@ export function taRuin(s: State, vl: Varlden, r: VarldRad, t: number, bar: numbe
 // v = den trodda belöningens värde, g = platsens nummer: båda är det personen tror, och finns kvar när uppdraget är taget eller slut
 export function larUppdrag(s: State, p: Person, id: number, c: number, o: { t: number; v: number; mal: number; k: UppdragId; src?: number; led?: number }): Lardom {
   const e = findL(p, 'uppdrag', id);
-  if (e) { e.c = Math.max(e.c, c, Math.min(1, e.c + MINNE.berattaStark * (1 - e.c))); return e; }
+  if (e) { e.c = Math.max(c, stark(e.c)); return e; }
   const l: Lardom = { k: 'uppdrag', a: id, v: Math.round(o.v), g: o.mal, om: o.k, c, t: o.t, led: o.led ?? (o.src === undefined ? 0 : 1), ...(o.src !== undefined ? { src: o.src } : {}) };
   (p.lardomar ??= []).push(l);
   trimLardomar(s, p);
@@ -192,10 +190,10 @@ export function saFynd(s: State, vl: Varlden, p: Person, r: VarldRad, nr: number
 }
 export const tilltro = (s: State, l: Lardom) => l.c * 0.5 ** (Math.max(0, s.now - l.t) / (UPPDRAGTAL.tilltro * DAY));
 export function berattaUppdrag(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
-  l.c = Math.min(1, l.c + MINNE.berattaStark * (1 - l.c));
+  l.c = stark(l.c);
   const vl = s.varld, u = vl && uppdragNr(vl, l.a), q = u && vl && varldPlatsNr(vl, u.mal);
   delade('fjarran', 'karta', u ? `${uppdragDef(u.k).namn.toLowerCase()}${q ? ` vid ${q.namn}` : ''}` : 'ett uppdrag');
-  const trust = clamp(MINNE.troBas + r.op / MINNE.troDiv, MINNE.troMin, MINNE.troMax) * lognFaktor(b, a), fore = findL(b, 'uppdrag', l.a);
+  const trust = tillit(a, b, r), fore = findL(b, 'uppdrag', l.a);
   larUppdrag(s, b, l.a, l.c * trust * MINNE.troDel, { t: l.t, v: l.v, mal: l.g ?? -1, k: (l.om ?? 'leverans') as UppdragId, src: a.id, led: (l.led ?? 0) + 1 });
   if (!fore) count(s, 'uppdragBerattat');
 }

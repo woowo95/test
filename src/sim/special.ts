@@ -10,6 +10,7 @@ import { DAY, HOUR, Person, State } from './typer';
 import { balans } from './balans';
 import { count, log, think } from './folk';
 import { rnd } from './slump';
+import { gen } from './ord';
 import { kronika } from './historik';
 import { KATEGORIER, rattInfo, smakSak } from './ratter';
 import { smaka, smakAv, RYKTE } from './rykten';
@@ -23,7 +24,6 @@ export const SPECIAL = balans('special', {
 });
 export interface Special { sort: string; namn: string; kock: number; av: string[]; t: number; n: number; trad?: 1 }
 const ARSORD = ['vinter', 'vår', 'sommar', 'höst'];
-const gen = (n: string) => /[sxz]$/.test(n) ? n : n + 's';
 // sorten för saken k: rätten utan hållbarheten (r_kott_gryta_fin), eller drycken
 export const sortAv = (k: string) => { const r = rattInfo(k); return r ? `r_${r.huvud}_${r.kat}_${r.niva}` : k; };
 export const specialAv = (s: State, k: string) => s.special?.find(x => x.sort === sortAv(k));

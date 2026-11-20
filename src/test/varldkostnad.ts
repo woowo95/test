@@ -8,7 +8,9 @@
 import './utc';
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { KOHANDELSER, PERIODRADER, VACKT, VARLDKOSTNAD, medVarld, nastaSteg, step, vackTestNarmast, varldSteg } from '../sim';
+import { KOHANDELSER, PERIODRADER, VACKT, medVarld, nastaSteg, step, vackTestNarmast, varldSteg } from '../sim';
+// världens rader får tillsammans kosta högst så stor del av huvudbyns datortid (Världens kostnad och lagringen)
+const VARLDKOSTNAD = { andel: 0.02 };
 import { lasBy } from './delby';
 
 const DIR = fileURLToPath(new URL('../../test/facit-byar/', import.meta.url));

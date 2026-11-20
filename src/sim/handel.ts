@@ -151,7 +151,7 @@ export interface HandelsMal { k: string; n: number; till: number; kvar: number }
 export function handelsMalRakna(s: State) {
   s.handelsMal = undefined;
   const sorter = handlarKrok.sorter(s); // de sorter grannbyarna skulle skicka (byhandling.ts)
-  if (!sorter.length) sorter.push('vandrande');
+  if (!sorter.length) return; // ingen grannby kan skicka en handlare: inga varor att göra för den (steg 12.1.64)
   const medel = (f: (x: typeof HANDLARSORTER[string]) => number) => sorter.reduce((a, x) => a + f(HANDLARSORTER[x]), 0) / sorter.length;
   const silver = medel(x => (x.silver[0] + x.silver[1]) / 2), pack = medel(x => HANDLAR_UTR[x.utr].vikt * (1 - HANDEL.fylla));
   let varde = 0, vikt = 0;
@@ -345,19 +345,20 @@ function kommer(s: State, tvinga?: boolean, rad?: number) {
   h.framme = s.now + Math.hypot(mal.x - ut.x, mal.y - ut.y) / handlarFart(h) * SEC;
   const nyckel = gastNyckel(kh.klan.id, kh.person.namn), fodd = kh.person.fodd ??= foddNar(s.seed, nyckel, 'handlare', s.now); // samma person varje gång, drar ingen slump
   // handlaren är en person bland folket (steg 9.2.111, gast.ts), med samma id som i bytena
-  s.people.push(nyGast(s, { id: h.id, namn: kh.person.namn, sex, fodd, rad: { sort: 'handlare', klan: kh.klan.id, hem: kh.klan.hem }, x: ut.x, y: ut.y, nyckel, skill: { handel: heltMellan(s, HANDEL.handel) } }));
-  gastTillbaka(s, s.people[s.people.length - 1]); // samma person som förra gången, om hen varit här (steg 9.2.114)
+  const hpers = nyGast(s, { id: h.id, namn: kh.person.namn, sex, fodd, rad: { sort: 'handlare', klan: kh.klan.id, hem: kh.klan.hem }, x: ut.x, y: ut.y, nyckel, skill: { handel: heltMellan(s, HANDEL.handel) } });
+  s.people.push(hpers);
+  gastTillbaka(s, hpers); // samma person som förra gången, om hen varit här (steg 9.2.114)
   if (h.vagnar) karavanFolje(s, h, kh.klan.id, kh.klan.hem, (last?.folk ?? 1) - 1, mal, ut); // följet och lägret (steg 11.11.6)
   if (s.varld?.huvud !== undefined) { const hb = byPlats(s.varld, s.varld.huvud); if (hb) radBesoker(s.varld, kh.klan.rad, hb.nr); trampaFard(s, kh.klan.rad, s.varld.huvud, sallskapTyngd(last?.folk ?? 1)); } // handlarens by har besökt huvudbyn (steg 11.4.10), och hen trampade vägen (steg 11.5.1)
-  gastensPlatser(s, s.people[s.people.length - 1]); // det hens by känner (steg 11.4.11)
+  gastensPlatser(s, hpers); // det hens by känner (steg 11.4.11); handlaren själv, inte den sista i följet (steg 12.1.64)
   h.varor = last ? last.varor : packa(s, rymmer(h));
   handlarKarta(s, h); // ibland en karta över det hens by känner (steg 11.7.5)
-  turnePrat(s, kh.klan.rad, hp(s, h)); // hen talar om den som uppträdde i hens by (steg 11.8.18)
+  turnePrat(s, kh.klan.rad, hpers); // hen talar om den som uppträdde i hens by (steg 11.8.18)
   if (fard) delete fard.last; // lasten bärs nu av hen
-  const smitta = barSmitta(s); if (smitta) hp(s, h).smitta = smitta; // ibland bär hen en sjukdom utifrån (steg 9.5.5)
+  const smitta = barSmitta(s); if (smitta) hpers.smitta = smitta; // ibland bär hen en sjukdom utifrån (steg 9.5.5)
   s.handlare = h;
   count(s, 'handlare');
-  log(s, `En handlare, ${hp(s, h).name} från ${kh.klan.namn} vid ${hp(s, h).gast!.hem!}, kommer gående mot byn.`, 'world');
+  log(s, `En handlare, ${hpers.name} från ${kh.klan.namn} vid ${hpers.gast!.hem!}, kommer gående mot byn.`, 'world');
   return true;
 }
 

@@ -13,8 +13,7 @@ import { larPris } from './minne';
 import { larOrt, O_KANT, O_RYKTE } from './ort';
 import { gruppSlag, radPaslag } from './priser';
 import { BYSORTER, radNr } from './radtal';
-import { BEHALL, dagbok, resenarer, SAKNADKROK, Sallskap, sallskapNu, tappa } from './resa';
-import { FOOD } from './saker';
+import { dagbok, saljbar, resenarer, SAKNADKROK, Sallskap, sallskapNu, tappa } from './resa';
 import { grundvarde } from './varde';
 import { PERIODER, PERIODRADER, periodSlut } from './varldslag';
 import { Varlden, varldMark } from './varlden';
@@ -75,7 +74,7 @@ function mote(s: State, vl: Varlden, sl: Sallskap, f: RadFard, t: number) {
   let fick = 0, salda = 0;
   if (f.t2 !== undefined && t >= f.t1 && (f.silver ?? 0) > 0 && BYSORTER[r.sort].folk) {
     for (const sak of Object.keys(sl.pack).sort()) {
-      if (BEHALL.includes(sak) || FOOD.includes(sak) || !(grundvarde(sak) > 0)) continue;
+      if (!saljbar(sak)) continue;
       const per = grundvarde(sak) * radPaslag(s, r, sak), m = Math.min(Math.floor(sl.pack[sak]!), Math.floor((f.silver ?? 0) / per + 1e-9));
       if (m <= 0) continue;
       const pay = Math.floor(m * per);

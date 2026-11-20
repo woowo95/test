@@ -13,8 +13,8 @@ import { varldHandelseText, type VarldHandelseId } from './varldkronika';
 
 // slaget i byns krönika för en rad ur världens krönika (kategorin i KRONIKA_KAT); de andra blir nyheter
 const SLAG: Partial<Record<VarldHandelseId, string>> = {
-  nyLedare: 'ledare', svalt: 'motgang', farsot: 'sjukdom', delad: 'utbrytning', rad: 'rovare', lager: 'rovare',
-  krig: 'sandebud', fred: 'sandebud', forbund: 'sandebud', uppdrag: 'uppdrag', handelslager: 'handel', utpost: 'bygge', platsbygge: 'bygge',
+  nyLedare: 'ledare', svalt: 'motgang', delad: 'utbrytning', rad: 'rovare', lager: 'rovare',
+  krig: 'sandebud', fred: 'sandebud', handelslager: 'handel', utpost: 'bygge', platsbygge: 'bygge',
 };
 export function byggKronika(b: State, r: VarldRad) {
   const vl = b.varld, rader: [number, string, string][] = [];

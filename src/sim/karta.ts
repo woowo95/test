@@ -1,6 +1,7 @@
 import { State, kartNamn, mapKey, markNu, receptNu } from './typer';
 import type { MarkId } from './varldmark';
 import { skapaKarta, type KartData, type KartReceptId } from './kartrecept';
+import { streckAv } from './ord';
 
 // ---------- karta ----------
 export function hash(seed: number, x: number, y: number) {
@@ -42,5 +43,4 @@ export const getMap = perKarta((seed): MapData => skapaKarta(seed, (receptNu() ?
 // var elden står nu: där kartan lade den, eller dit byn flyttat den (steg 2.10.4, eldflytt.ts)
 export const eldPlats = (s: State) => s.fire.at ?? getMap(s.seed).fire;
 // åt vilket håll (x, y) ligger sett från elden: norr, nordost … (testlägets rader, steg 4.5.6.4)
-export const STRECK = ['öster', 'sydost', 'söder', 'sydväst', 'väster', 'nordväst', 'norr', 'nordost'];
-export const vaderstreck = (s: State, x: number, y: number) => { const e = eldPlats(s); return STRECK[(Math.round(Math.atan2(y - e.y - 0.5, x - e.x - 0.5) / (Math.PI / 4)) + 8) % 8]; };
+export const vaderstreck = (s: State, x: number, y: number) => { const e = eldPlats(s); return streckAv(Math.atan2(y - e.y - 0.5, x - e.x - 0.5)); };

@@ -305,7 +305,7 @@ export function budForbjuder(s: State, p: Person, act: Act): BudId | undefined {
   return undefined;
 }
 // den heliga dagen (steg 10.3.16): ett dygn av sju (ett år i spelet av sju), och dygnet då en högtid hålls. Alla bud om heliga dagar frågar den
-export const heligDag = (s: State, tr: Tro) => { const d = Math.floor(s.now / DAY); return d % KYRKA.vecka === tr.id % KYRKA.vecka || tr.hogtidDag === d; };
+export const heligDag = (s: State, tr: Tro) => { const d = dagNr(s.now); return d % KYRKA.vecka === tr.id % KYRKA.vecka || tr.hogtidDag === d; };
 // håller budet id p från något just nu (steg 10.3.22): p följer det, och ett bud om heliga dagar bara på den heliga dagen
 export const budHindrar = (s: State, p: Person, id: BudId) => { const tr = troOf(s, p.tro); return !!tr && budIn(tr, id) && foljer(p, id) && (!BDEF[id].dag || heligDag(s, tr)); };
 export const vilodagNu = (s: State, p: Person) => { const tr = troOf(s, p.tro); return budIn(tr, 'vilodag') && foljer(p, 'vilodag') && heligDag(s, tr); };
@@ -509,7 +509,7 @@ export const harBud = (s: State, p: Person | undefined, id: BudId) => { const tr
 let doda: (s: State, p: Person) => void = () => {};
 export const satOffrad = (f: typeof doda) => { doda = f; };
 function budDygn(s: State) {
-  const dag = Math.floor(s.now / DAY), fodda = (s.stat?.fodda ?? 0) + (s.stat?.doda ?? 0);
+  const dag = dagNr(s.now), fodda = (s.stat?.fodda ?? 0) + (s.stat?.doda ?? 0);
   for (const tr of s.tron ?? []) {
     if (tr.slut !== undefined || !tr.bud?.length) continue;
     const vuxna = troende(s, tr).filter(p => ageOf(p, s.now) >= ALDER.vuxen), med = (id: BudId) => budIn(tr, id) ? vuxna.filter(p => foljer(p, id)) : [];
@@ -739,3 +739,4 @@ export function valkomnaHandlare(s: State, h: Handlare) {
   if (MAT.anvand(s, hp(s, h)) > 0) count(s, 'handlare_valkommen');
 }
 import { specialHuvud } from './special';
+import { dagNr } from './tid';
