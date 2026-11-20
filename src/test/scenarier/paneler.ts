@@ -151,3 +151,27 @@ SCENARIER.skenet = {
     ];
   },
 };
+
+SCENARIER.skentakt = {
+  text: 'Steg 12.1.177: inom en ljuskällas räckvidd är arbetstakten full, i det svaga skenet utanför (räckvidden till räckvidden gånger 1 + MORKER.skenUt) går gången och arbetet med takten MORKER.skenFart, och i mörkret utanför med MORKER.fart. Det gäller alla ljuskällor, var och en efter sin räckvidd',
+  kor: () => {
+    const s = SIM.createState(3, START), e = SIM.eldXY(s, s.fire), ex = e.x + 0.5, ey = e.y + 0.5, [p] = SIM.living(s);
+    s.now = Date.UTC(2026, 6, 1, 22); s.fire.lit = true; s.fire.fuel = 99;
+    for (const q of SIM.living(s)) if (q !== p) { q.x = ex; q.y = ey; } // ingen annan bär en fackla långt bort
+    const r = SIM.eldRackvidd(s, s.fire), ut = SIM.MORKER.skenUt;
+    // ett håll från elden där inget hus står i vägen
+    const hall = [0, 1, 2, 3, 4, 5, 6, 7].map(a => a / 8 * 2 * Math.PI).find(a => [r - 1, r * (1 + ut / 2), r * (1 + ut) + 1].every(d => !SIM.roomAt(s, Math.floor(ex + Math.cos(a) * d), Math.floor(ey + Math.sin(a) * d)))) ?? 0;
+    const takt = (d: number) => { p.x = ex + Math.cos(hall) * d; p.y = ey + Math.sin(hall) * d; return SIM.morkFart(s, p); };
+    const ljus = takt(r - 1), sken = takt(r * (1 + ut / 2)), mork = takt(r * (1 + ut) + 1);
+    // facklan efter sin räckvidd: en uppsatt fackla långt från elden
+    const fx = ex + Math.cos(hall) * (r * (1 + ut) + 20), fy = ey + Math.sin(hall) * (r * (1 + ut) + 20);
+    (s.uppsatta ??= []).push({ x: Math.floor(fx), y: Math.floor(fy), c: 1, tand: true });
+    const F = SIM.FACKLA.r, vid = (d: number) => { p.x = Math.floor(fx) + 0.5 + d; p.y = Math.floor(fy) + 0.5; return SIM.morkFart(s, p); };
+    const fLjus = vid(F - 1), fSken = vid(F * (1 + ut / 2)), fMork = vid(F * (1 + ut) + 1);
+    return [
+      [`vid elden: full takt i ljuset (${ljus}), ${SIM.MORKER.skenFart} i det svaga skenet (${sken}) och ${SIM.MORKER.fart} i mörkret (${mork})`, ljus === 1 && sken === SIM.MORKER.skenFart && mork === SIM.MORKER.fart],
+      [`skenets takt ligger mellan ljusets och mörkrets (${SIM.MORKER.fart} < ${SIM.MORKER.skenFart} < 1)`, SIM.MORKER.fart < SIM.MORKER.skenFart && SIM.MORKER.skenFart < 1],
+      [`vid en uppsatt fackla, efter dess räckvidd ${F}: ${fLjus}, ${fSken} och ${fMork}`, fLjus === 1 && fSken === SIM.MORKER.skenFart && fMork === SIM.MORKER.fart],
+    ];
+  },
+};

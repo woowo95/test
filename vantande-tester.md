@@ -44,3 +44,4 @@
 - 12.1.170 (mjukare sken utan raster): bara bilden (ui/natt.ts) och utseendetestet (src/test/utseende.ts räknar färger mellan två steg av samma palettfärg som ljusets övergång). Prövat här: `FALL=natt LAGE=ljust npm run utseende` gav 0 punkter utanför paletten och 5 747 i övergången. Skyldig hela `npm run utseende` och samma-kollen.
 - 12.1.172 (skenet tonar ut mjukare och längre): bara bilden (ui/natt.ts, ui/terrang.ts, ui/eldskugga.ts) och balanstalet MORKER.skenUt (läses bara av bilden). Skyldig `npm run utseende` på natten och samma-kollen.
 - 12.1.176 (facklan 12 rutor, samma kurva för alla ljus): ändrar spelet (FACKLA.r 9 → 12); skyldig koll med nytt facit, `npm run likhet` och `npm run utseende` på natten.
+- 12.1.177 (långsammare arbete i det svaga skenet): ändrar spelet (MORKER.skenFart 0,8 i skenet utanför räckvidden, iSkenet i sim/ljus.ts). Skyldig koll med nytt facit; likhet körd i molnet (se commiten).

@@ -23,6 +23,7 @@ import { byId, alive, count, forstaGang, living, log } from './folk';
 
 export const MORKER = balans('morker', {
   fart: 0.6, // den som är vaken i totalmörker går och arbetar så här fort
+  skenFart: 0.8, // ... och i det svaga skenet utanför en ljuskällas räckvidd (MORKER.skenUt) så här fort (steg 12.1.177)
   // ljusets räckvidd (steg 12.1.169): cirkeln där folk kan arbeta är samma cirkel som syns i bilden (ui/terrang.ts läser talen)
   eldR: 14, // en eld som brinner för fullt lyser så här många rutor bort ...
   branningR: 2, // en kolmila eller blästerugn som brinner lyser lite, så här många rutor bort (steg 12.2.1 och 12.2.3)
@@ -92,8 +93,16 @@ export function ljusAt(s: State, x: number, y: number, utan?: number) {
 }
 // totalmörker på platsen: natt och inget ljus där
 export const iMorker = (s: State, x: number, y: number) => lightLevel(s.now) <= 0 && ljusAt(s, x, y) <= 0;
-// gången och arbetet gånger detta
-export const morkFart = (s: State, p: Person) => iMorker(s, p.x, p.y) ? MORKER.fart : 1;
+// i det svaga skenet (steg 12.1.177): utanför varje ljuskällas räckvidd men inom MORKER.skenUt av den utanför, som bilden ritar
+export function iSkenet(s: State, x: number, y: number, utan?: number) {
+  for (const k of KALLOR) for (const l of k.kallor(s)) {
+    if (utan !== undefined && l.bar === utan) continue;
+    if (Math.hypot(x - l.x, y - l.y) < l.r * (1 + MORKER.skenUt)) return true;
+  }
+  return false;
+}
+// gången och arbetet gånger detta: full takt i ljuset, MORKER.skenFart i det svaga skenet och MORKER.fart i totalmörker
+export const morkFart = (s: State, p: Person) => !iMorker(s, p.x, p.y) ? 1 : iSkenet(s, p.x, p.y) ? MORKER.skenFart : MORKER.fart;
 // en gång i timmen (steg.ts): den som är vaken i mörkret får lite sämre humör en stund
 export function morkHumor(s: State, p: Person) {
   if (p.task && ACTS[p.task.act]?.vila) return;
