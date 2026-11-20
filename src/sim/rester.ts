@@ -27,7 +27,7 @@ export const REST = balans('rester', {
   kompostRest: 10, // så många rester blir en färdig kompost ...
   kompostDygn: 3, // ... på så många dygn i värme (långsamt i kyla)
   latrin: 5, // en tömd latrin ger komposten så här många rester
-  tomMin: 15, // minuter att tömma latrinen i komposten (handlingen tomma_latrin)
+  tomMin: 4, // minuter att tömma latrinen i komposten (handlingen tomma_latrin, en liten sak)
   varm: 5, // över så många grader mognar komposten i full takt ...
   kylaTakt: 0.3, // ... annars i så här stor del av takten
   godsla: 0.3, // en färdig kompost höjer bördigheten på en ruta så här mycket

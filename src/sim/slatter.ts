@@ -32,7 +32,7 @@ export const VINTER = balans('vinter', {
   angMin: 3, angMax: 10, // ... med sidan mellan så här många rutor
   angMatMin: 3, // minuter för att märka ut en äng
   ho: 3, // så mycket hö en ruta högt gräs ger när den slås
-  slaMin: 10, // minuter för att slå en ruta
+  slaMin: 4, // minuter för att slå en ruta (en liten sak)
   ovning: 0.02, // djurskötseln växer så här mycket när man slår
   kylaHunger: 1 / 48, // ett djur utan fähus i istiden blir så här mycket hungrigare i timmen av kylan ...
   frysTim: 72, // ... och fryser ihjäl efter så här många timmar (tre dygn) ute i istiden

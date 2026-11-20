@@ -41,7 +41,7 @@ export const HAGE = balans('hage', {
   grasMat: 0.25, // ... och stillar så mycket hunger
   buskMat: 0.5, // en buske stillar så mycket hunger (geten äter upp den)
   tradMat: 0.3, // ett ungträd stillar så mycket hunger (geten äter upp det)
-  vallaMin: 15, // minuter för att leda ett djur med rep in i hagen
+  vallaMin: 5, // minuter för att leda ett djur med rep in i hagen (en stor sak)
   ovning: 0.03, // djurskötseln växer så mycket när man vallar
   fri: 12, // ett djur utan hage strövar högst så här långt (rutor) från byns mitt
   flyttDygn: 1, // en hage vars bete räcker kortare än så här många dygn för djuren i den är nedbetad: djuren flyttas (steg 9.8.6)

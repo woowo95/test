@@ -27,10 +27,10 @@ export const BOSKAP = balans('boskap', {
   beteDygn: 2, // ett ungt föds bara när betet i någon hage räcker så här många dygn också för det (steg 10.2.33)
   sistVarde: 5, // det sista djuret av sitt kön i arten är så här mycket mer värt att behålla
   ullTim: 1 / 48, // ullen växer ut på två dygn (två år i spelet)
-  klippMin: 20, // minuter det tar att klippa ett får
+  klippMin: 5, // minuter det tar att klippa ett får (en stor sak i Arbetstider)
   ovning: 0.03, // djurskötseln växer så här mycket när man klipper
   mjolkTim: 1 / 12, // en vuxen get har mjölk att ge två gånger om dygnet (utom i istiden)
-  mjolkMin: 15, // minuter det tar att mjölka en get
+  mjolkMin: 3, // minuter det tar att mjölka en get (en liten sak)
 });
 // de levande djuren som handlaren säljer, och vilken art de blir
 export const LEVANDE: Record<string, TamArtId> = Object.fromEntries((Object.keys(TAMDJUR) as TamArtId[]).filter(id => tamArt(id).lev).map(id => [tamArt(id).lev!, id]));
@@ -148,7 +148,7 @@ const mjolkKar = (s: State, n: number) => {
 // de djur byn inte har hö till över istiden (steg 9.8.9)
 export const SLAKTDJUR = balans('slaktdjur', {
   kvarLiv: 0.2, // ett djur slaktas när mindre än så här stor del av livet är kvar (steg 10.2.33; förr vid 75 %)
-  min: 15, // minuter det tar att avliva djuret och bära det till slaktbänken
+  min: 5, // minuter det tar att avliva djuret och bära det till slaktbänken (en stor sak)
 });
 export const SLAKTAD: Record<string, string> = { far: 'slaktfar', get: 'slaktget', ko: 'slaktko', oxe: 'slaktko', gris: 'slaktgris' }; // oxen slaktas som kon, hästen inte (steg 10.10.3)
 // fodret i förrådet räcker över istiden för de djur av arten som inte betar (grisen, steg 10.10.13): en sak om dygnet per djur (hungern
