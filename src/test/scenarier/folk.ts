@@ -8,7 +8,7 @@ import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
 import { medTal, testBy, stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank , utanWebblasare } from './hjalp';
-import { garIBilden, stalle, SITTA, vidArbetet } from '../../ui/stalle';
+import { garIBilden, stalle, SITTA, vidArbetet, vidStationen } from '../../ui/stalle';
 import { styre as styreFlikF } from '../../ui/flikar/styre';
 import { setByn, ui as uiLage } from '../../ui/lage';
 import { hjalpKlick } from '../../ui/hjalp';
@@ -2791,10 +2791,19 @@ SCENARIER.anfallet = {
 };
 
 SCENARIER.stalle = {
-  text: 'Steg 10.2.55 och 12.1.13: figuren sitter bara på en sittplats och går bara när simuleringen flyttar den. En by går tolv timmar med spåren påslagna som i spelet, och varje person prövas flera gånger i varje slag med bildens egen indata (garIBilden och stalle i ui/stalle.ts): ingen ritas sitta utan en sittplats, ingen går när spåret står still (utom leken, som går mellan sina punkter), den som samtalar utan sittplats står, och den som arbetar med en ruta står intill den',
+  text: 'Steg 10.2.55, 12.1.13 och 12.1.154: figuren sitter bara på en sittplats och går bara när simuleringen flyttar den. En by går tolv timmar med spåren påslagna som i spelet, och varje person prövas flera gånger i varje slag med bildens egen indata (garIBilden och stalle i ui/stalle.ts): ingen ritas sitta utan en sittplats, ingen går när spåret står still (utom leken, som går mellan sina punkter), den som samtalar utan sittplats står, och den som arbetar med en ruta står intill den och vid en station är vänd mot den',
   kor: () => {
     const s = createState(7, START); klockan(s, 8); medHus(s); SIM.setAmount(s, 'yxa', 2); tidyTools(s); // yxorna: någon fäller och hugger (steg 10.2.78)
-    let sittUtan = 0, garStilla = 0, sitter = 0, gar = 0, star = 0, forst = '', arbeten = 0, felArbete = 0;
+    let sittUtan = 0, garStilla = 0, sitter = 0, gar = 0, star = 0, forst = '', arbeten = 0, felArbete = 0, vidSt = 0, felSt = 0;
+    // vänd mot bänken (steg 12.1.154): stationen ligger åt det håll figuren är vänd, sett från där hen står
+    const motSt = (t: SIM.Station, x: number, y: number, rikt: string) => {
+      const q = SIM.arbetsDel(t), cx = q.x + q.w / 2, cy = q.y + q.h / 2;
+      return { bak: cy < y, fram: cy > y, sida: cx > x, vast: cx < x }[rikt] && (rikt === 'bak' || rikt === 'fram' ? Math.abs(cy - y) >= Math.abs(cx - x) : Math.abs(cx - x) > Math.abs(cy - y));
+    };
+    const provSt: SIM.Station[] = [];
+    { const b = createState(7, START); medHus(b); for (const k of ['slaktbank', 'klyvplats', 'stenhuggarplats', 'smedja', 'vavstol']) { const t = medBank(b, k); if (t) provSt.push(t); }
+      for (const t of provSt) { const d = SIM.stationDef(t.k)!, at = SIM.vidStation(t);
+        for (const [dx, dy] of [[0, 0], [0.6, 0], [-0.6, 0], [0, 0.4]]) { const v = vidStationen(b, d.gor[0], at.x + dx, at.y + dy); vidSt++; if (!v || v.st !== t || !motSt(t, at.x + dx, at.y + dy, v.rikt)) { felSt++; forst ||= `vid ${t.k} vänd ${v?.rikt ?? 'ingenstans'}`; } } } }
     const per = new Map<string, { n: number; ga: number }>(); // per handling i ACTS: prov där hen gör den på platsen, och hur många av dem hen går
     SIM.spar.pa = true;
     try {
@@ -2817,6 +2826,8 @@ SCENARIER.stalle = {
             const rx = Math.floor(x), ry = Math.floor(y), vx = Math.floor(va.x), vy = Math.floor(va.y), mot = { bak: ry < vy, fram: ry > vy, sida: rx > vx, vast: rx < vx }[va.rikt];
             if (rx === vx && ry === vy || Math.abs(rx - vx) + Math.abs(ry - vy) !== 1 || !mot) { felArbete++; forst ||= `${p.name} ${gor} på sin egen ruta eller med ryggen mot arbetet`; }
           }
+          const vs = gor && !va && l !== 'ga' && l !== 'ligga' ? vidStationen(s, gor, x, y) : undefined;
+          if (vs) { vidSt++; if (!motSt(vs.st, x, y, vs.rikt)) { felSt++; forst ||= `${p.name} ${gor} vid ${vs.st.k} med ryggen mot den`; } }
         }
       }
     } finally { SIM.spar.pa = false; SIM.spar.v = new WeakMap(); SIM.spar.u = new WeakMap(); }
@@ -2830,6 +2841,7 @@ SCENARIER.stalle = {
       [`bildens indata prövad för ${sedda.length} handlingar i ACTS`, sedda.length >= 10],
       [`den som samtalar utan sittplats står (${star} gånger)`, star > 0],
       [`den som arbetar med en ruta står intill och är vänd mot den (${arbeten} gånger, ${felArbete} fel; steg 10.2.78)`, arbeten > 0 && felArbete === 0],
+      [`den som arbetar vid en station är vänd mot den (${vidSt} gånger vid ${provSt.map(t => t.k).join(', ')} och i byn, ${felSt} fel; steg 12.1.154)`, provSt.length >= 4 && vidSt > 0 && felSt === 0],
     ];
   },
 };

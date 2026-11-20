@@ -1,7 +1,7 @@
 // hur figuren står i bilden (steg 10.2.55): sitter, går eller står. Ingen ritning här, så att testet (scenariot stalle) kan
 // gå igenom en by med samma regler som bilden. Sittanimationen visas bara på en sittplats (en stubbe eller stol vid ett bord,
 // stationRutor i stationer.ts) eller på stolen vid en bänk, och gåanimationen bara när figuren flyttat sig sedan förra bilden
-import { ACTS, blocked, forflyttar, isKlar, kroppFart, lekGang, sittAt, sparUppgift, stationAt, stationDef, storlekAv, type Person, type State, type Station } from '../sim';
+import { ACTS, STATION, arbetsDel, blocked, forflyttar, isKlar, kroppFart, lekGang, sittAt, sparUppgift, stationAt, stationDef, stationerOf, storlekAv, vidStation, type Person, type State, type Station } from '../sim';
 
 // handlingarna man gör sittande när det finns en plats att sitta på; annars står man
 export const SITTA = new Set(['maltid', 'samtal', 'vila', 'lyssna', 'beratta']);
@@ -35,6 +35,23 @@ export function vidArbetet(s: State, gor: string | undefined, x: number, y: numb
   }
   return forsta ?? { x: rx + 0.5, y: ry + 1.5, rikt: 'bak' };
 }
+
+// vänd mot bänken (steg 12.1.154): den som arbetar vid en station (bänken, ställningen, ugnen, smedjan) står framför delen man
+// arbetar vid (vidStation) och är vänd mot den, vilket håll hen än kom ifrån och vilken rörelse arbetet än har. Riktningen
+// sätts ur var stationen ligger, som vid arbetet på en ruta (steg 10.2.78). Bilden och scenariot stalle frågar samma funktion
+export function vidStationen(s: State, gor: string | undefined, x: number, y: number): { st: Station; rikt: Riktning } | undefined {
+  if (!gor) return undefined;
+  for (const t of stationerOf(s)) {
+    if (!isKlar(t) || !stationDef(t.k)?.gor.includes(gor as never)) continue;
+    const at = vidStation(t);
+    if (Math.hypot(x - at.x, y - at.y) >= STATION.vidBank) continue;
+    const q = arbetsDel(t), dx = q.x + q.w / 2 - x, dy = q.y + q.h / 2 - y;
+    return { st: t, rikt: mot(dx, dy) };
+  }
+  return undefined;
+}
+// hållet mot en punkt dx, dy bort: 'sida' är österut, 'vast' västerut, 'fram' söderut (mot betraktaren) och 'bak' norrut
+export const mot = (dx: number, dy: number): Riktning => Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'sida' : 'vast') : dy > 0 ? 'fram' : 'bak';
 
 // om figuren går i bilden vid tiden t (steg 12.1.13, Det visuella: En källa för rörelsen): simuleringens spår (forflyttar i
 // steg.ts), leken som går i gångfart mellan sina punkter (lekGang i gang.ts) och jägaren under de delar av försöket då hen går

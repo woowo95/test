@@ -27,7 +27,7 @@ import { jaktPlats } from './jakt';
 import { kartKampe, slagAv } from './stridbild';
 import { stridAnsikte } from './stridansikte';
 import { slag } from './animation';
-import { garIBilden, iSangen, stalle, vidArbetet } from './stalle';
+import { garIBilden, iSangen, stalle, vidArbetet, vidStationen } from './stalle';
 import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
@@ -428,13 +428,18 @@ export function drawPeople(t: number) {
     // stå vid arbetet (steg 10.2.78): på en ruta intill arbetsrutan och vänd mot den
     const va = !ligger ? vidArbetet(s, gor, q.x, q.y, samRuta) : undefined;
     if (va) { x = va.x * TS; y = va.y * TS; rikt = va.rikt; }
+    // vänd mot bänken (steg 12.1.154): den som arbetar vid en station är vänd mot den, inte åt det håll hen gick, och
+    // arbetets rörelse vänder hen inte bort från rutan eller stationen
+    const vs = !ligger && !vidBank && !va && st !== 'ga' ? vidStationen(s, gor, q.x, q.y) : undefined;
+    if (vs) rikt = vs.rikt;
+    const vand = !!(va || vs);
     if (vidBank) { rikt = 'bak'; x = (bank!.x + storlekAv(bank!).w / 2) * TS; y = (bank!.y + storlekAv(bank!).h) * TS + TS / 2 - r * 0.9; }
     // arbetet i bild (steg 5.1.9.4, ui/arbetsbild.ts): rörelsen från sidan, en bild per slag, förskjutet per person
     const strid = gor === 'strid' && !ligger && !kk?.bar ? stridNu(p) : undefined; // den som bär en fallen slåss inte (steg 12.1.87)
     const arb = strid ? STRIDBILD[strid.vapen] ?? STRIDBILD.hand : !ligger && (!sitter || vidBank) && gor && (gor === 'bygga' || !barNagot) ? ARBETEN[gor] : undefined; // byggaren har materialet i händerna medan hen bygger (steg 9.2.90)
     const ab = arb ? arbetsBild(arb, strid?.ruta ?? slag() + p.id) : undefined; // i striden på kartan styr slaget rörelsen, inte klockan
     if (strid?.mot) rikt = strid.mot.x < q.x ? 'vast' : 'sida'; // vänd mot motståndaren (steg 5.1.9.5)
-    else if (ab && !vidBank && rikt !== 'sida' && rikt !== 'vast') rikt = p.id % 2 ? 'vast' : 'sida';
+    else if (ab && !vidBank && !vand && rikt !== 'sida' && rikt !== 'vast') rikt = p.id % 2 ? 'vast' : 'sida';
     const steg = st === 'ga' ? GANG[(slag() + p.id) % 4] : undefined;
     const ben: Ben = sitter ? 'sitta' : ab ? ab.ben : steg ? steg[0] : 'sta';
     let arm: Arm = barNagot && gor !== 'bygga' ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
