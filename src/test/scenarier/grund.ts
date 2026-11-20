@@ -566,9 +566,6 @@ SCENARIER.kunskap = {
     for (const p of [m1, m2]) p.lardomar = [{ k: 'samla', a: 0, v: 0.5, c: 1, t: s.now, led: 0 }];
     forget(s, 72);
     const c1 = m1.lardomar?.[0]?.c ?? 0, c2 = m2.lardomar?.[0]?.c ?? 0;
-    // gammal sparfil: byns svampkunskap flyttas till var och en, och alla får egenskapen Minne
-    const g = createState(32, START); g.kunskap = { svamp: 0.8 }; for (const p of g.people) delete (p.pot as Record<string, number>).minne;
-    g.v = 1; migrate(g); // som en sparfil från före v40
     return [
       [`ingen minns några platser från början (${ute} personer gör det)`, ute === 0],
       [`lärdomar sprids i samtal (upp till ${hort} hörda, ${led2} i andra hand eller längre)`, hort > 10 && led2 > 0],
@@ -577,7 +574,6 @@ SCENARIER.kunskap = {
       [`rädsla efter olyckan: ${radd0} genast, upp till ${radd} under åtta dygn`, radd0 >= 1 && radd > radd0],
       [`svampkunskap sprids utan förgiftning (${kan} har lärt sig)`, kan >= 2],
       [`spelaren ser lärdomar som inte stämmer (${fel})`, fel > 0],
-      ['gammal sparfil flyttas', g.kunskap === undefined && g.people.every(p => p.pot.minne > 0 && kn(p, 'svamp') === 0.8)],
     ];
   },
 };

@@ -471,11 +471,3 @@ export function kunskapDod(s: State, p: Person) {
   const konst = och(borta.map(t => gora(t))); // "att odla och att leda byn"
   kronika(s, `Med ${p.name} dog konsten ${konst}.${halv.length ? ` ${lista(halv.map(q => q.name))} hade inte lärt sig klart och minns det bara till hälften.` : ''}`, 'forlust');
 }
-
-// äldre sparfiler: den som redan gjort yxor eller spjut kan det
-export function migrateTek(s: State) {
-  for (const p of s.people) {
-    if ((p.habit?.yxa ?? 0) > 0 || p.fame.some(f => f.includes('första yxa'))) (p.tek ??= {}).yxa = 1;
-    if ((p.habit?.spjut ?? 0) > 0) (p.tek ??= {}).fiskespjut = 1;
-  }
-}

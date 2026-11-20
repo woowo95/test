@@ -1,5 +1,5 @@
 // Scenarier. Redskap: stenring, spjut, redskap, slitage och teknik.
-import { createState, addTool, twineRope, makeTool, wearUsed, isSpear, step, living, cloneState, pilesOf, zoneOf, amountOf, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, ageOf, spears, SPJUT_FORSOK, getMap, DAY, HOUR, W, State, takenOf, migrate, bynsMitt, knows, thinkWhileWorking, die, isWall, H, richness, setAmount, tingOf, wantsTool, makeTask, wantsFlint, ALDER, KROPP, inMap, canLight, dangers, toolGain, chooseTask } from '../../sim';
+import { createState, addTool, twineRope, makeTool, wearUsed, isSpear, step, living, cloneState, pilesOf, zoneOf, amountOf, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, ageOf, spears, SPJUT_FORSOK, getMap, DAY, HOUR, W, State, takenOf, bynsMitt, knows, thinkWhileWorking, die, isWall, H, richness, setAmount, tingOf, wantsTool, makeTask, wantsFlint, ALDER, KROPP, inMap, canLight, dangers, toolGain, chooseTask } from '../../sim';
 import * as SIM from '../../sim';
 import { BEAT, START } from '../kor';
 import { tekInfo } from '../../ui/flikar/teknik';
@@ -17,11 +17,6 @@ SCENARIER.stenring = {
     const tand = s.fire.lightings > 0, ring = !!s.fire.ring;
     Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined }); // elden slocknar
     kor(s, 2);
-    // en äldre sparfil med gniststen: den blir flinta, och byn som haft eld har sin ring
-    const g = createState(2, START);
-    g.items = { gniststen: 1 }; g.stackar = [{ k: 'gniststen', n: 1, x: 1, y: 1, c: 1 }]; g.fire.lightings = 3;
-    delete (g.fire as { ring?: boolean }).ring;
-    g.v = 1; migrate(g); // som en sparfil från före v40
     // flinta till en yxa är en förbättring: när maten inte räcker letar ingen efter den. Flinta till elden letas när byn inte svälter (steg 2.12.3)
     // Sedan steg 6.1.17 letas flinta till en yxa när yxan är ett projekt som saknar flinta: de vuxna kan göra en yxa, och veden
     // räcker, så att Försörjningen inte går före
@@ -109,7 +104,6 @@ SCENARIER.stenring = {
       [`stenarna blir en ring runt elden (${kvar.toFixed(1)} stenar kvar i förrådet)`, ring && kvar < 1],
       ['elden tänds med flinta, gniststen finns inte', s.fire.log.some(e => e.k === 'tänd') && !(s.stackar ?? []).some(a => a.k === 'gniststen')],
       ['ringen ligger kvar när elden slocknat', !!s.fire.ring],
-      ['äldre sparfil: gniststenen blir flinta och ringen finns', amountOf(g, 'flinta') === 1 && !('items' in g) && g.stackar!.every(a => a.k !== 'gniststen') && !!g.fire.ring],
     ];
   },
 };

@@ -7,7 +7,7 @@ import { kanonisk } from '../pool';
 import { setItems, setFood, Koll, kor, SCENARIER, testBy, utanWebblasare } from './hjalp';
 import { setByn } from '../../ui/lage';
 import { tal as talFlik, talVal } from '../../ui/flikar/tal';
-import { lasBy, lasEllerFlytta, minnesBas, sparaBy } from '../../ui/lagring';
+import { lasBy, lasEllerFlytta, lasFel, minnesBas, sparaBy, tolkaText } from '../../ui/lagring';
 
 SCENARIER.historik = {
   lang: true,
@@ -133,16 +133,16 @@ SCENARIER.sparning = {
     const delar = serializeParts(s), hel = serialize(s);
     const ater = JSON.parse(joinParts(Object.values(delar))), ny = migrate(JSON.parse(joinParts(Object.values(delar))));
     const kb = Object.fromEntries(Object.entries(delar).map(([d, t]) => [d, Math.round(t.length / 1024)]));
-    // en by från före v40 (sparversion 1) med gamla fält från gången i levande läget uppgraderas en gång, i nummerordning
-    const gammal = JSON.parse(hel), gp = gammal.people.find((p: Person) => p.task);
-    gammal.v = 1; Object.assign(gp.task, { fynd: 2, wx: 1, wy: 1, hold: 5, stint: 3 }); (gp.rngs ??= {}).levande = 7;
+    // en by sparad i v378 (sparversion 24, den äldsta som går att öppna) uppgraderas en gång, i nummerordning; en äldre by
+    // går inte att öppna, och felet säger att den är för gammal (steg 12.1.71)
+    const gammal = JSON.parse(hel); gammal.v = SIM.ALDSTA_SPARNING;
     migrate(gammal);
-    const uppgr = gammal.v === SPARVERSION && !['fynd', 'wx', 'wy', 'hold', 'stint'].some(k => k in gp.task) && !('levande' in gp.rngs);
+    const uppgr = gammal.v === SPARVERSION;
     const igen = JSON.stringify(gammal); migrate(gammal);
-    // en sparfil från före v40 där redskapen bara fanns som summor i s.items, bredvid annat: varje helt redskap blir ett ting
-    const forr = JSON.parse(hel); delete forr.ting; delete forr.stackar; forr.items = { yxa: 2, grenar: 7 }; forr.v = 1;
-    for (const p of forr.people) p.task = undefined;
-    const fm = migrate(forr), yxor = tingOf(fm).filter(t => t.k === 'yxa').length, gamlaGrenar = amountOf(fm, 'grenar');
+    const forGammal = (v: number | undefined) => { const o = JSON.parse(hel); o.v = v; try { migrate(o); return ''; } catch (e) { return e instanceof SIM.ForGammalBy ? e.message : String(e); } };
+    const avvisad = [SIM.ALDSTA_SPARNING - 1, 1, undefined].map(forGammal);
+    const gTxt = JSON.parse(hel); gTxt.v = SIM.ALDSTA_SPARNING - 1; lasFel.forGammal = '';
+    const spelet = tolkaText(JSON.stringify(gTxt)) === null && lasFel.forGammal.includes('för gammal'); lasFel.forGammal = '';
     // sparningen bara läser: en by som sparas varje timme som gränssnittet gör (serialize och serializeParts) blir samma
     // by som en som aldrig sparas. Två döda med en relation: den städas bort i timblocket (compact, steg.ts) i båda
     const sparaSomUI = (v: State) => { serialize(v); serializeParts(v); };
@@ -163,8 +163,8 @@ SCENARIER.sparning = {
       [`relationer mellan två döda städas bort i simuleringen (${relDoda} relationer före)`, dodaStadat],
       [`byn delas i ${Object.keys(delar).join(', ')} (${Object.entries(kb).map(([d, n]) => `${d} ${n} KB`).join(', ')})`, ['byn', 'folket', 'kartor', 'loggen'].every(d => d in delar) && delar.folket.includes('"people"') && !delar.byn.includes('"people"')],
       ['delarna blir samma by igen', isDeepStrictEqual(ater, JSON.parse(hel)) && ny.people.length === s.people.length && ny.now === s.now],
-      [`en gammal by uppgraderas till sparversion ${SPARVERSION} och gamla fält försvinner`, uppgr],
-      [`redskapen i en sparfil från före v40 blir ting (${yxor} yxor av 2, ${gamlaGrenar} grenar av 7)`, yxor === 2 && Math.abs(gamlaGrenar - 7) < 1e-6],
+      [`en by från v378 uppgraderas till sparversion ${SPARVERSION}`, uppgr],
+      [`en by sparad före v378 går inte att öppna, och felet säger att den är för gammal (${avvisad[0]})`, avvisad.every(m => m.includes('för gammal')) && spelet],
       ['en uppgraderad by ändras inte av att uppgraderas igen', JSON.stringify(gammal) === igen],
       [`en ny by har den senaste sparversionen (${s.v})`, s.v === SPARVERSION],
       // näringsvärdena och mättnaden avrundas var för sig; profilen får inte jämnas ut till mättnaden vid inläsningen

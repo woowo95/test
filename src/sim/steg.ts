@@ -226,7 +226,6 @@ const MEDAN: Partial<Record<Act, Krok>> = {
   runsten: (s, p, t) => runstenBorja(s, p, t), // stenarna tas när ristningen börjar (steg 10.6.1)
   gravvard: (s, p, t) => gravvardBorja(s, p, t), // materialet tas när arbetet börjar (steg 10.4.2)
   tvinna: (s, p, _t, dtSec) => twineRope(s, p, dtSec / HOUR_S, villHaAv(s, 'rep') + handelsTill(s, 'rep')), // till bufferten plus handelsmålet (steg 10.5.13)
-  hantverk: (s, p, t, dtSec) => { if (t.tool === 'rep') twineRope(s, p, dtSec / HOUR_S); }, // äldre sparfiler: rep tvinnades i handarbetet
   tanda: (s, p, t, dtSec) => {
     const f = eldById(s, t.ref); // lägerelden eller en lägereld till (task.ref, brasor.ts)
     if (!f) { p.task = undefined; return; }

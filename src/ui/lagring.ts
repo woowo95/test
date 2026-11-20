@@ -6,7 +6,7 @@
 // En by som sparats på det gamla sättet (hela byn som en text i det enkla minnet) läses därifrån och flyttas över första
 // gången: den skrivs i databasen och tas sedan bort ur det enkla minnet.
 // Filen frågar bara simuleringen, så att scenariot sparbas kan pröva den med en databas i minnet (minnesBas).
-import { State, arVacktDel, joinParts, lasVackta, migrate, serializeParts } from '../sim';
+import { ForGammalBy, State, arVacktDel, joinParts, lasVackta, migrate, serializeParts } from '../sim';
 
 // en by i databasen: delarnas texter och det som hör till byn utöver den (en annan bys tid, byar.ts)
 export interface Post<E> { delar: Record<string, string>; extra?: E }
@@ -26,9 +26,12 @@ export function tolka(post: Post<unknown> | undefined): State | null {
   if (s) try { lasVackta(s, post.delar); } catch { /* en trasig väckt by tappas; huvudbyn läses ändå */ }
   return s; // de väckta byarna i egna delar (steg 11.13.9)
 }
+// texten om den senaste byn som inte gick att läsa för att den är sparad i en för gammal version (steg 12.1.71); '' annars
+export const lasFel = { forGammal: '' };
 export function tolkaText(txt: string | null | undefined): State | null {
   if (!txt) return null;
-  try { const o = JSON.parse(txt); return o && typeof o.v === 'number' && Array.isArray(o.people) ? migrate(o) : null; } catch { return null; }
+  try { const o = JSON.parse(txt); return o && typeof o.v === 'number' && Array.isArray(o.people) ? migrate(o) : null; }
+  catch (e) { if (e instanceof ForGammalBy) lasFel.forGammal = e.message; return null; }
 }
 export const sparaBy = (bas: Bas, by: string, s: State, extra?: unknown) => bas.skriv(by, serializeParts(s), extra);
 export async function lasBy<E>(bas: Bas, by: string): Promise<{ by: State; extra?: E } | undefined> {

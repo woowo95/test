@@ -626,11 +626,11 @@ SCENARIER.vattensack = {
     return [
       [`att fylla säcken vid vattnet tar ${fyllSek} sekunder`, fyllSek === 5],
       ['den som har brutit benet kan inte gå och ligger hemma', kanInte],
-      [`utan säck väntar hen (${utan ?? 'inget'}) och en annan bär vatten i händerna`, utan !== 'fatt' && utan !== 'dricka' && hander],
-      [`med en säck i byn väntar hen på den (${vantar ?? 'inget'})`, vantar !== 'fatt' && vantar !== 'dricka'],
+      [`utan säck väntar hen (${utan ?? 'inget'}) och en annan bär vatten i händerna`, utan !== 'dricka' && hander],
+      [`med en säck i byn väntar hen på den (${vantar ?? 'inget'})`, vantar !== 'dricka'],
       [`en annan vuxen tar säcken och hämtar vatten (${hamtar}, ${tar})`, hamtar === 'vatten' && tar === 'vattensack'],
       [`vattnet kommer fram inom fyra timmar och säcken slits (${fick}, ${sliten})`, fick && sliten],
-      [`farligt törstig väntar hen också på den som bär vatten (${farligt ?? 'inget'})`, farligt !== 'fatt' && farligt !== 'dricka'],
+      [`farligt törstig väntar hen också på den som bär vatten (${farligt ?? 'inget'})`, farligt !== 'dricka'],
       ['säcken sys bara vid slöjdbänken med bensylen, och tekniken kommer efter skinnkläderna', !!fl.bara?.includes('vattensack') && fl.kraver?.vattensack === 'bensyl' && !!tek?.krav.includes('skinnklader')],
     ];
   },

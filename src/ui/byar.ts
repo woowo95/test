@@ -1,5 +1,5 @@
 import { DAY, State, createState } from '../sim';
-import { gammalNyckel, lasEllerFlytta, sparaBy, webbBas } from './lagring';
+import { gammalNyckel, lasEllerFlytta, lasFel, sparaBy, webbBas } from './lagring';
 import { esc } from './hjalp';
 import { s, ui } from './lage';
 
@@ -46,7 +46,7 @@ export async function bytTill(id: string | undefined) {
   byte.fore?.();
   if (!id) { ui.annanBy = undefined; ui.forskjut = 0; sattAktiv(undefined); await byte.egen?.(); return; }
   const r = await lasAnnan(id);
-  if (!r) { ui.byFel = 'Byn gick inte att läsa.'; return; }
+  if (!r) { ui.byFel = lasFel.forGammal || 'Byn gick inte att läsa.'; lasFel.forGammal = ''; return; }
   ui.annanBy = id; ui.forskjut = r.forskjut; sattAktiv(id);
   await byte.ladda?.(r.by);
 }

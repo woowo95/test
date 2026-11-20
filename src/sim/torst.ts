@@ -195,7 +195,6 @@ export function drick(s: State, p: Person, t: Task) {
   const torstFore = p.torst;
   p.torst = 1;
   if (t.act === 'smalta') { if (t.ref !== undefined && dryckKrok.snoDrick(s, t.ref)) count(s, 'smalt sno'); else { p.torst = torstFore; count(s, 'smaltUtanKruka'); } return; } // snön har smält i krukan; krukan kan ha tagits
-  if (t.act === 'fatt') { count(s, 'fick vatten'); return; } // (en uppgift från en äldre sparad by)
   count(s, 'drack');
   const x = Math.floor(t.tx), y = Math.floor(t.ty);
   observe(s, p, 'vatten', x, y);
