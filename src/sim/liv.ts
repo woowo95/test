@@ -8,7 +8,8 @@ import { kronika } from './historik';
 import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, isParent, living, log, makeName, paKartan, newPerson, raddAkt, relKey, startSkills, think, uppkalladLogg } from './folk';
 import { pair, stallVagn } from './varld';
 import { avgMood } from './humor';
-import { chance, clamp, pick, pickViktat, rnd } from './slump';
+import { chance, clamp, hash3, pick, pickViktat, rnd } from './slump';
+import { klanTatKrok } from './tatkrok';
 import { Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, State, T, W } from './typer';
 import { vattenNu } from './sjo';
 import { tileOf } from './mark';
@@ -302,6 +303,7 @@ export function framling(s: State, tvinga?: { tek?: string; ja?: boolean }, fran
   p.id = nyttGastId(s); p.x = ut.x; p.y = ut.y;
   p.gast = { sort: 'framling', klan: k.id, hem: k.hem, blir, fas: 'kommer', ...(tek ? { tek } : {}), ...(tvinga?.ja !== undefined ? { ja: tvinga.ja } : {}), ...(egen ? { hemRad: fran } : {}) };
   gastensPlatser(s, p); // det hens by känner (steg 11.4.11)
+  { let i = 0; klanTatKrok.klan(s, p, k.id, () => hash3(s.seed, blir, i++, 0x7a71e5)); } // klanens märken, ur hens egen slump (steg 12.1.165)
   s.people.push(p);
   count(s, 'framlingKommer');
   log(s, `En främling från ${k.namn} kommer gående mot byn.`, 'move', [p.id]);

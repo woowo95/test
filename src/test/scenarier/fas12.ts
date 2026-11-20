@@ -845,3 +845,28 @@ SCENARIER.eldruta = {
     ];
   },
 };
+
+SCENARIER.klantatuering = {
+  text: 'Gäster och inflyttade bär sin klans tatueringar (steg 12.1.165): en vuxen från en annan klan har ibland märken, alltid i den klanens stil (ur klanens nummer), och barn har inga',
+  kor: () => {
+    const s = SIM.createState(6, START);
+    for (const c of SIM.klanerOf(s)) c.inst = 50;
+    const fr: SIM.Person[] = [];
+    for (let i = 0; i < 40; i++) { const g = SIM.framling(s); if (g) fr.push(g); }
+    const medTat = fr.filter(g => g.tat?.length), stilRatt = fr.every(g => (g.tat ?? []).every(t => t.stil === SIM.klanStil(g.gast!.klan!)));
+    const enPerPlats = fr.every(g => new Set((g.tat ?? []).map(t => t.p)).size === (g.tat ?? []).length);
+    const k = SIM.klanerOf(s)[0]!, gaster: SIM.Person[] = [];
+    for (let i = 0; i < 40; i++) gaster.push(SIM.nyGast(s, { id: -1000 - i, namn: 'Gäst', sex: 'm', fodd: s.now - 30 * SIM.DAY, rad: { sort: 'handlare', klan: k.id }, x: 1, y: 1, nyckel: 900 + i }));
+    const barn = SIM.nyGast(s, { id: -2000, namn: 'Barn', sex: 'k', fodd: s.now - 6 * SIM.DAY, rad: { sort: 'handlare', klan: k.id }, x: 1, y: 1, nyckel: 999 });
+    const gMed = gaster.filter(g => g.tat?.length), gStil = gaster.every(g => (g.tat ?? []).every(t => t.stil === SIM.klanStil(k.id)));
+    const stilar = new Set(SIM.klanerOf(s).map(c => SIM.klanStil(c.id)));
+    return [
+      [`en del främlingar bär märken (${medTat.length} av ${fr.length}), alla i sin klans stil`, medTat.length > 0 && medTat.length < fr.length && stilRatt],
+      ['en plats rymmer ett märke', enPerPlats],
+      [`gästerna från en klan bär klanens stil (${gMed.length} av ${gaster.length} med märken, ${SIM.TAT_STILNAMN[SIM.klanStil(k.id)]})`, gMed.length > 0 && gStil],
+      ['ett barn som följer med har inga märken', !barn.tat?.length],
+      [`klanerna har olika stilar (${stilar.size} stilar bland ${SIM.klanerOf(s).length} klaner)`, SIM.klanerOf(s).length < 2 || stilar.size > 1],
+      ['porträttet visar märket i klanens stil', !medTat[0] || SIM.tatDel(medTat[0], medTat[0].tat![0].p) === `tat-${SIM.klanStil(medTat[0].gast!.klan!)}-${medTat[0].tat![0].p}`],
+    ];
+  },
+};

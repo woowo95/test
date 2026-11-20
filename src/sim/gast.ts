@@ -10,6 +10,7 @@ import { KLOCKA, SLAGHINDER } from './klocka';
 import type { Person, State, Stat, Skill } from './typer';
 import { STATS, SKILLS } from './typer';
 import { hash3 } from './slump';
+import { klanTatKrok } from './tatkrok';
 import { EGENSKAP, count } from './folk';
 import { SAKER } from './saker';
 import type { KlanPerson } from './klaner';
@@ -84,6 +85,7 @@ function utrusta(s: State, p: Person, r: () => number) {
   const reserv = valj(u.reserv, r()); if (reserv && reserv !== vapen) ny(reserv, undefined);
   for (const v of Object.values(u.plagg)) { const k = valj(v, r()); if (k) ny(k, SAKER[k]?.klad ? 'bar' : undefined); } // plaggen på sig, det andra (facklan) löst
   for (let i = 0; i < 2; i++) if (r() < u.arr) (p.arr ??= []).push({ d: ARRDELAR[Math.floor(r() * ARRDELAR.length)], n: Math.floor(r() * 10) + 1 });
+  if (p.gast!.klan !== undefined) klanTatKrok.klan(s, p, p.gast!.klan, r); // klanens märken (steg 12.1.165)
   if (u.drakt) { const b = r(); p.gast!.drakt = { ...(b < u.drakt.luva ? { bonad: 'luva' as const } : b < u.drakt.luva + u.drakt.duk ? { bonad: 'duk' as const } : {}), ...(r() < u.drakt.rovarskinn ? { rovarskinn: true as const } : {}) }; }
 }
 // vapnet gästen har i handen (slaget), om något

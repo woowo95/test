@@ -13,6 +13,7 @@ import { getable } from './behov';
 import { personHand } from './personlogg';
 import { rnd } from './slump';
 import { tatKrok } from './uppvaxt';
+import { klanTatKrok } from './tatkrok';
 
 export type TatPlats = 'panna' | 'kind' | 'hals';
 export interface TatDef { namn: string; plats: TatPlats; sed: Sed; text: string }
@@ -31,6 +32,7 @@ export const TAT_STILAR = ['linjer', 'prickar', 'flator', 'djur'] as const;
 export type TatStil = typeof TAT_STILAR[number];
 export const TAT_STILNAMN: Record<TatStil, string> = { linjer: 'linjer', prickar: 'prickar', flator: 'flätor', djur: 'djurtecken' };
 export const byStil = (s: State): TatStil => TAT_STILAR[Math.abs(s.seed) % TAT_STILAR.length];
+export const klanStil = (klan: number): TatStil => TAT_STILAR[Math.abs(klan) % TAT_STILAR.length];
 
 export const TATU = balans('tatuering', {
   bas: 0.3, sed: 0.7, // lusten att märka en händelse: bas + sed × byns värde i motivets sed
@@ -41,6 +43,7 @@ export const TATU = balans('tatuering', {
   min: 4, // arbetstiden i minuter (Arbetstider: en liten sak)
   radie: 8, // så långt bort går den som tatuerar
   ovning: 0.02,
+  gast: 0.3, // en vuxen som kommer från en annan klan (gäst eller inflyttad) bär varje märke med den här chansen, i klanens stil (steg 12.1.165)
 });
 
 // en händelse som kan märkas (upplevelsen fastnade hos en vuxen, eller hen gick igenom vuxenblivandet)
@@ -86,5 +89,18 @@ export function tatKlar(s: State, g: Person, ref?: number) {
   if (forstaGang(s, 'forstaTatuering')) log(s, `${g.name} gjorde byns första tatuering: ${TAT_STILNAMN[stil]} i ${gen(q.name)} ${TAT_PLATSORD[d.plats].obest}, för att ${han(q)} ${d.text}.`, 'world', [g.id, q.id]);
 }
 const gen = (n: string) => /s$/.test(n) ? n : n + 's';
+// den som kommer från en annan klan bär den klanens märken (steg 12.1.165, "Tatueringar" i fliken Människan): en vuxen har varje
+// motiv med chansen TATU.gast, i klanens stil, gjorda när hen blev vuxen. Räknat ur r (gästens egen slump, aldrig spelets
+// slumpföljder), så att en inflyttad och en gäst känns igen
+export function klanTat(s: State, p: Person, klan: number, r: () => number) {
+  if (ageOf(p, s.now) < ALDER.vuxen) return;
+  const stil = klanStil(klan), t = p.born + ALDER.vuxen * DAY;
+  for (const m of Object.keys(DEF) as TatMotiv[]) {
+    const d = DEF[m];
+    if (r() >= TATU.gast || p.tat?.some(x => x.p === d.plats)) continue; // en plats rymmer en
+    (p.tat ??= []).push({ m, p: d.plats, stil, t });
+  }
+}
+klanTatKrok.klan = klanTat;
 // tatueringarnas delar i porträttet (PORTRATT: tat-<stil>-<plats>)
 export const tatDel = (p: Person, plats: TatPlats) => { const t = p.tat?.find(x => x.p === plats); return t ? `tat-${t.stil}-${plats}` : null; };
