@@ -212,6 +212,25 @@ SCENARIER.fritid = {
     ];
   },
 };
+SCENARIER.fritidreg = {
+  lang: true,
+  text: 'Fritiden som register (steg 12.1.140): det man gör på fritiden är rader i FRITID, med vad saken kräver, ger och vad som drar dit; valen är desamma som förut (npm run samma och likhet)',
+  kor: () => {
+    const ids = SIM.FRITID.map(f => f.id), vikt = SIM.FRITID.filter(f => f.vikt), forsta = vikt.findIndex(f => !f.bas);
+    const s = createState(5, START);
+    s.kal = nyKalender(s.now, 2); // sommar
+    setFood(s, 40); setAmount(s, 'ved', 40); // gott ställt, tid över
+    const valda = new Set<string>(), ror = new Set<string>(SIM.FRITID.flatMap(f => f.akt));
+    kor(s, 48, s => { for (const p of living(s)) if (p.task && ror.has(p.task.act)) valda.add(p.task.act); });
+    return [
+      [`raderna finns (${ids.join(', ')})`, ['lara', 'besokFange', 'gravbesok', 'be', 'skrift', 'vila', 'hantverk', 'samtal', 'promenad', 'bada', 'strand', 'sport', 'titta'].every(k => ids.includes(k))],
+      ['varje rad prövas först eller har en vikt och något som görs', SIM.FRITID.every(f => !!f.prova !== !!(f.vikt && f.gor))],
+      ['varje rad säger vad den kräver, ger och vad som drar dit, och vilka handlingar den kan välja', SIM.FRITID.every(f => f.kraver && f.ger && f.drar && f.akt.length > 0 && f.akt.every(a => a in ACTS))],
+      ['raderna som alltid går står först bland vikterna', forsta > 0 && vikt.slice(forsta).every(f => !f.bas)],
+      [`på två dygn i en by med tid över väljs flera av raderna (${[...valda].join(', ')})`, valda.size >= 3],
+    ];
+  },
+};
 
 SCENARIER.promenad = {
   lang: true,

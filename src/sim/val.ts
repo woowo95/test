@@ -1349,64 +1349,125 @@ function projektVal(v: Val, u: Uppgift, why: string) {
   if (u.ref !== undefined) v.ref = u.ref;
 }
 
-// egen lust: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden. u = hur akut byn behöver arbete
+// ---------- fritiden (steg 12.1.140): registret FRITID ----------
+// Det man kan göra på fritiden är rader här. Två sorter, i registrets ordning:
+// - prova: prövas först, en i taget, var och en med sitt eget slumptal mot vilan, hantverket, umgänget och promenaden (och
+//   lärandet också mot badet och stranden). Vinner raden görs den, annars prövas nästa.
+// - vikt: sist väljs en av dessa med en dragning över vikterna. De med bas går alltid; de andra (sporten, matchen) kan bli
+//   utan (ingen följer med, matchen är slut) och lämnar då dragningen åt bas-raderna, i samma andel.
+// Bas-raderna står först bland vikt-raderna. En ny fritidssak är en ny rad; ordningen och slumptalen är de som gällde förut.
+export interface FritidC { s: State; p: Person; v: Val; u: number; lazy: number; calm: number; temp: number; shore: { x: number; y: number } | undefined; w: number[] }
+export interface FritidRad {
+  id: string;
+  kraver: string; // vad saken kräver
+  ger: string; // vad den ger
+  drar: string; // vilka egenskaper eller lägen som drar dit
+  akt: readonly Act[]; // handlingarna raden kan välja
+  prova?: (c: FritidC) => boolean;
+  vikt?: (c: FritidC) => number;
+  bas?: true;
+  gor?: (c: FritidC) => boolean;
+}
+// slumptalet mot de n första bas-vikterna, adderade i samma ordning som förut
+const fritidMot = (c: FritidC, w: number, n: number) => { let d = w; for (let i = 0; i < n; i++) d += c.w[i]!; return d + 1e-9; };
+const fritidChans = (c: FritidC, w: number, n: number) => rnd(c.s, 'val', c.p) < w / fritidMot(c, w, n);
+const fritidAnnan = (c: FritidC) => c.w[0]! + c.w[1]! + c.w[2]! + c.w[3]!; // vilan, hantverket, umgänget och promenaden
+export const FRITID: readonly FritidRad[] = [
+  { id: 'lara', kraver: 'en mästare som arbetar med tekniken', ger: 'färdighet', drar: 'nyfikenheten', akt: ['lara'],
+    // lärlingen väger lärandet mot vilan, hantverket, umgänget, promenaden, badet och stranden, efter sin egen lust (steg 10.11.12)
+    prova: c => {
+      const lv = laraVal(c.s, c.p);
+      if (!lv || !fritidChans(c, VAL.laraFritid * stat(c.p, 'nyfikenhet', c.s.now) / VAL.laraNyfiken, 6)) return false;
+      set(c.v, 'lara', `Har tid över. Går i lära hos ${lv.m.name}.`); c.v.spot = lv.spot; c.v.dur = lv.min * MIN; return true;
+    } },
+  { id: 'besokFange', kraver: 'familj eller en vän i fängelset', ger: 'sällskap', drar: 'närheten till fången', akt: ['besokFange'],
+    // besöket vid fängelsets dörr (steg 11.12.4): familj och vänner går dit och pratar, bredvid vilan och umgänget
+    prova: c => {
+      const fb = besokVal(c.s, c.p);
+      if (!fb || !fritidChans(c, fb.w, 4)) return false;
+      set(c.v, 'besokFange', fb.why); c.v.spot = fb.spot; c.v.ref = fb.ref; c.v.dur = FANG.besokMin * MIN; return true;
+    } },
+  { id: 'gravbesok', kraver: 'en grav eller en sänkt död man stod nära', ger: 'humör', drar: 'bandet till den döda', akt: ['gravbesok'],
+    // besöket vid graven (steg 10.4.8): lusten är bandet till den döda, bredvid vilan och umgänget
+    prova: c => {
+      const gb = gravbesokVal(c.s, c.p);
+      if (!gb || !fritidChans(c, gb.w, 4)) return false;
+      const v = c.v; set(v, 'gravbesok', gb.why); v.spot = gb.spot; v.ref = gb.vem; v.tool = gb.laga ? 'laga' : undefined; v.gava = gravGava(c.s, c.p, gb.b) || undefined; v.dur = gb.min * MIN; return true;
+    } },
+  { id: 'be', kraver: 'en tro', ger: 'humör och tro', drar: 'andligheten', akt: ['be'],
+    // bönen (steg 8.5.2): lusten följer andligheten, bredvid vilan och umgänget. Slumptalet dras också utan tro
+    prova: c => {
+      const { s, p, v } = c;
+      if (!fritidChans(c, bonVikt(s, p), 4)) return false;
+      if (viltBikta(s, p)) { set(v, 'be', BONER.bikt.text()); v.tool = 'bikt'; v.dur = BONER.bikt.min * MIN; return true; } // bikten (steg 8.6.9)
+      const b = bonFritid(s, p);
+      if (b) { set(v, 'be', BONER[b.id].text(s, p, b.o)); v.tool = b.id; v.spot = b.spot ?? { x: p.x, y: p.y }; v.dur = BONER[b.id].min * MIN; return true; }
+      return false;
+    } },
+  { id: 'skrift', kraver: 'blad, bläck och ljus', ger: 'skrift och kunskap', drar: 'skrivlusten och läslusten', akt: ['skriva', 'lasa'],
+    // att skriva och att läsa (steg 10.6.5, skrift.ts): bredvid bönen och berättandet, där det finns blad, bläck och ljus
+    prova: c => skrift(c.s, c.p, c.v, platsIByn(c.s, c.p, 'val'), fritidAnnan(c)) },
+  { id: 'vila', kraver: 'inget', ger: 'vila', drar: 'tröttheten och latheten', akt: ['vila'], bas: true,
+    vikt: c => (c.p.rest < VAL.vilaDag ? (1 - c.p.rest) * VAL.vilaVikt : 0) + c.lazy * VAL.vilaLat,
+    gor: c => { paus(c.v, c.lazy > 0.5 ? 'Har det bra och tar det lugnt' : 'Tar en paus'); return true; } },
+  { id: 'hantverk', kraver: 'material till något', ger: 'saker', drar: 'hantverket och fliten', akt: ['slakta', 'rensa', 'torka', 'grilla', 'lara', 'forsok', 'samtal'], bas: true,
+    vikt: c => (c.p.skill.hantverk / VAL.hantSkill + c.p.pot.flit / VAL.hantFlit) * (c.u < VAL.hantLugn ? VAL.hantLugnVikt : VAL.hantAkutVikt),
+    gor: c => { craft(c.s, c.p, c.v, c.u < VAL.hantLugn ? 'Byn har det gott ställt, det finns tid för hantverk' : 'Tycker om att göra handarbete'); return true; } },
+  { id: 'samtal', kraver: 'sällskap', ger: 'umgänge', drar: 'det saknade umgänget', akt: ['samtal'], bas: true,
+    vikt: c => (1 - c.p.social) * VAL.umgasVikt,
+    gor: c => { set(c.v, 'samtal', 'Vill umgås'); return true; } },
+  { id: 'promenad', kraver: 'inget', ger: 'humör', drar: 'nyfikenheten; nyfikna och modiga går längre', akt: ['promenad'], bas: true,
+    vikt: c => (VAL.promBas + stat(c.p, 'nyfikenhet', c.s.now) / VAL.promNyfiken) * c.calm,
+    gor: c => {
+      const { s, p, v } = c, far = VAL.promNar + (stat(p, 'nyfikenhet', s.now) + stat(p, 'mod', s.now)) / 40 * VAL.promBort;
+      set(v, 'promenad', far > 12 ? 'Är nyfiken och vill se vad som finns längre bort' : 'Vill sträcka på benen');
+      v.spot = walkSpot(s, p, far); v.dur = (VAL.promMin + rnd(s, 'val', p) * VAL.promSpann) * MIN * VAL.pass; return true;
+    } },
+  { id: 'bada', kraver: 'varmt vatten, en badplats och torrt väder', ger: 'svalka och humör', drar: 'värmen', akt: ['bada'], bas: true,
+    // lusten att bada följer gränsen för för varm (steg 12.1.19)
+    vikt: c => {
+      const varm = forVarm(c.s, c.p) ? VAL.badVarm * (c.p.warm - 1) : 0;
+      return c.temp >= VAL.badTemp && c.shore && vaderTillater(c.s, 'torrt') ? (clamp((c.temp - VAL.badNoll) / VAL.badSpann, 0, VAL.badMax) + varm) * c.calm : 0;
+    },
+    gor: c => { const { s, p, v } = c; set(v, 'bada', `Det är varmt (${Math.round(c.temp)} grader) och skönt att bada`); v.spot = bryggSpot(s, p) ?? c.shore; v.dur = (VAL.badPassMin + rnd(s, 'val', p) * VAL.badPassSpann) * MIN * VAL.pass; return true; } },
+  { id: 'strand', kraver: 'en strand', ger: 'lugn', drar: 'den som inte är så sällskaplig', akt: ['strand'], bas: true,
+    // sitta vid stranden och se ut över vattnet: lugnt, året om, mest för den som inte är så sällskaplig
+    vikt: c => c.shore ? (VAL.strandBas + (20 - stat(c.p, 'empati', c.s.now)) / VAL.strandDiv) * c.calm : 0,
+    gor: c => {
+      // ser ut över sjön eller tjärnen hen sitter vid, och över isen när den ligger (steg 9.2.131); skälet bär namnet till kortet (taskName)
+      const { s, p, v } = c;
+      v.spot = bryggSpot(s, p) ?? strandSpot(s, p);
+      const n = v.spot ? sjoVid(s, v.spot.x, v.spot.y) : -1, namn = n >= 0 ? sjoNamn(s, n) : 'Sjön';
+      set(v, 'strand', islagt(s) ? `Ser ut över isen på ${namn.charAt(0).toLowerCase() + namn.slice(1)}` : `Ser ut över ${namn.charAt(0).toLowerCase() + namn.slice(1)}`);
+      v.dur = (VAL.strandMin + rnd(s, 'val', p) * VAL.strandSpann) * MIN * VAL.pass; return true;
+    } },
+  { id: 'sport', kraver: 'ett överskott, sportens redskap och andra som vill spela', ger: 'humör och sällskap', drar: 'styrkan och smidigheten', akt: ['sport'],
+    vikt: c => sportVikt(c.s, c.p, c.calm), // sporten när byn har ett överskott (steg 4.3.1, sport.ts)
+    gor: c => { const sp = sportVal(c.s, c.p); if (!sp) return false; const v = c.v; set(v, 'sport', sp.why); v.spot = sp.spot; v.dur = sp.dur; v.ref = sp.ref; v.tool = sp.tool; return true; } },
+  { id: 'titta', kraver: 'en match som pågår', ger: 'humör', drar: 'lugnet', akt: ['titta'],
+    vikt: c => tittaVikt(c.s, c.p, c.calm), // att titta på matchen (steg 10.7.16)
+    gor: c => { const ti = tittaVal(c.s, c.p); if (!ti) return false; const v = c.v; set(v, 'titta', ti.why); v.spot = ti.spot; v.dur = ti.dur; v.ref = ti.ref; v.tool = ti.tool; return true; } },
+];
+const FRITID_PROVA = FRITID.filter(f => f.prova), FRITID_VIKT = FRITID.filter(f => f.vikt), FRITID_BAS = FRITID_VIKT.filter(f => f.bas);
+// egen lust på fritiden, rad för rad i FRITID. u = hur akut byn behöver arbete
 function leisure(s: State, p: Person, v: Val, u: number, lazy: number) {
-  const now = s.now;
-  const wv = (p.rest < VAL.vilaDag ? (1 - p.rest) * VAL.vilaVikt : 0) + lazy * VAL.vilaLat;
-  const wh = (p.skill.hantverk / VAL.hantSkill + p.pot.flit / VAL.hantFlit) * (u < VAL.hantLugn ? VAL.hantLugnVikt : VAL.hantAkutVikt);
-  const wsoc = (1 - p.social) * VAL.umgasVikt;
-  // promenad: den nyfikne går gärna ut och ser sig omkring. Bad: när det är varmt i vattnet
-  const calm = u < VAL.lugn ? 1 : VAL.lugnAkut, temp = temperature(s), shore = bathSpot(s);
-  const wp = (VAL.promBas + stat(p, 'nyfikenhet', now) / VAL.promNyfiken) * calm;
-  const varm = forVarm(s, p) ? VAL.badVarm * (p.warm - 1) : 0; // lusten att bada följer gränsen för för varm (steg 12.1.19)
-  const wb = temp >= VAL.badTemp && shore && vaderTillater(s, 'torrt') ? (clamp((temp - VAL.badNoll) / VAL.badSpann, 0, VAL.badMax) + varm) * calm : 0;
-  // sitta vid stranden och se ut över vattnet: lugnt, året om, mest för den som inte är så sällskaplig
-  const ws = shore ? (VAL.strandBas + (20 - stat(p, 'empati', now)) / VAL.strandDiv) * calm : 0;
-  // lärlingen väger lärandet mot vilan, hantverket, umgänget och promenaden, efter sin egen lust (steg 10.11.12)
-  const lv = laraVal(s, p), wl = lv ? VAL.laraFritid * stat(p, 'nyfikenhet', now) / VAL.laraNyfiken : 0;
-  if (lv && rnd(s, 'val', p) < wl / (wl + wv + wh + wsoc + wp + wb + ws + 1e-9)) { set(v, 'lara', `Har tid över. Går i lära hos ${lv.m.name}.`); v.spot = lv.spot; v.dur = lv.min * MIN; return; }
-  const wsp = sportVikt(s, p, calm); // sporten när byn har ett överskott (steg 4.3.1, sport.ts)
-  const wt = tittaVikt(s, p, calm); // att titta på matchen (steg 10.7.16)
-  // besöket vid graven (steg 10.4.8): lusten är bandet till den döda, bredvid vilan och umgänget
-  const gb = gravbesokVal(s, p);
-  // besöket vid fängelsets dörr (steg 11.12.4): familj och vänner går dit och pratar, bredvid vilan och umgänget
-  const fb = besokVal(s, p);
-  if (fb && rnd(s, 'val', p) < fb.w / (fb.w + wv + wh + wsoc + wp + 1e-9)) { set(v, 'besokFange', fb.why); v.spot = fb.spot; v.ref = fb.ref; v.dur = FANG.besokMin * MIN; return; }
-  if (gb && rnd(s, 'val', p) < gb.w / (gb.w + wv + wh + wsoc + wp + 1e-9)) { set(v, 'gravbesok', gb.why); v.spot = gb.spot; v.ref = gb.vem; v.tool = gb.laga ? 'laga' : undefined; v.gava = gravGava(s, p, gb.b) || undefined; v.dur = gb.min * MIN; return; }
-  // bönen (steg 8.5.2): lusten följer andligheten, bredvid vilan och umgänget
-  if (rnd(s, 'val', p) < bonVikt(s, p) / (bonVikt(s, p) + wv + wh + wsoc + wp + 1e-9)) {
-    if (viltBikta(s, p)) { set(v, 'be', BONER.bikt.text()); v.tool = 'bikt'; v.dur = BONER.bikt.min * MIN; return; } // bikten (steg 8.6.9)
-    const b = bonFritid(s, p);
-    if (b) { set(v, 'be', BONER[b.id].text(s, p, b.o)); v.tool = b.id; v.spot = b.spot ?? { x: p.x, y: p.y }; v.dur = BONER[b.id].min * MIN; return; }
-  }
-  // att skriva och att läsa (steg 10.6.5, skrift.ts): bredvid bönen och berättandet, där det finns blad, bläck och ljus
-  if (skrift(s, p, v, platsIByn(s, p, 'val'), wv + wh + wsoc + wp)) return;
-  let r = rnd(s, 'val', p) * (wv + wh + wsoc + wp + wb + ws + wsp + wt);
-  if (r >= wv + wh + wsoc + wp + wb + ws + wsp) {
-    const ti = tittaVal(s, p);
-    if (ti) { set(v, 'titta', ti.why); v.spot = ti.spot; v.dur = ti.dur; v.ref = ti.ref; v.tool = ti.tool; return; }
-    r = (r - wv - wh - wsoc - wp - wb - ws - wsp) / wt * (wv + wh + wsoc + wp + wb + ws);
-  } else if (r >= wv + wh + wsoc + wp + wb + ws) {
-    const sp = sportVal(s, p);
-    if (sp) { set(v, 'sport', sp.why); v.spot = sp.spot; v.dur = sp.dur; v.ref = sp.ref; v.tool = sp.tool; return; }
-    r = (r - wv - wh - wsoc - wp - wb - ws) / wsp * (wv + wh + wsoc + wp + wb + ws); // följer ingen med: något annat på fritiden
-  }
-  if (r < wv) paus(v, lazy > 0.5 ? 'Har det bra och tar det lugnt' : 'Tar en paus');
-  else if (r < wv + wh) craft(s, p, v, u < VAL.hantLugn ? 'Byn har det gott ställt, det finns tid för hantverk' : 'Tycker om att göra handarbete');
-  else if (r < wv + wh + wsoc) set(v, 'samtal', 'Vill umgås');
-  else if (r < wv + wh + wsoc + wp) {
-    // nyfikna och modiga går längre bort
-    const far = VAL.promNar + (stat(p, 'nyfikenhet', now) + stat(p, 'mod', now)) / 40 * VAL.promBort;
-    set(v, 'promenad', far > 12 ? 'Är nyfiken och vill se vad som finns längre bort' : 'Vill sträcka på benen');
-    v.spot = walkSpot(s, p, far); v.dur = (VAL.promMin + rnd(s, 'val', p) * VAL.promSpann) * MIN * VAL.pass;
-  } else if (r < wv + wh + wsoc + wp + wb) { set(v, 'bada', `Det är varmt (${Math.round(temp)} grader) och skönt att bada`); v.spot = bryggSpot(s, p) ?? shore; v.dur = (VAL.badPassMin + rnd(s, 'val', p) * VAL.badPassSpann) * MIN * VAL.pass; }
-  else {
-    // ser ut över sjön eller tjärnen hen sitter vid, och över isen när den ligger (steg 9.2.131); skälet bär namnet till kortet (taskName)
-    v.spot = bryggSpot(s, p) ?? strandSpot(s, p);
-    const n = v.spot ? sjoVid(s, v.spot.x, v.spot.y) : -1, namn = n >= 0 ? sjoNamn(s, n) : 'Sjön';
-    set(v, 'strand', islagt(s) ? `Ser ut över isen på ${namn.charAt(0).toLowerCase() + namn.slice(1)}` : `Ser ut över ${namn.charAt(0).toLowerCase() + namn.slice(1)}`);
-    v.dur = (VAL.strandMin + rnd(s, 'val', p) * VAL.strandSpann) * MIN * VAL.pass;
-  }
+  const c: FritidC = { s, p, v, u, lazy, calm: u < VAL.lugn ? 1 : VAL.lugnAkut, temp: temperature(s), shore: bathSpot(s), w: [] };
+  for (const f of FRITID_BAS) c.w.push(f.vikt!(c));
+  for (const f of FRITID_PROVA) if (f.prova!(c)) return;
+  const w = FRITID_VIKT.map((f, i) => f.bas ? c.w[i]! : f.vikt!(c));
+  let tot = 0;
+  for (const x of w) tot += x;
+  let r = rnd(s, 'val', p) * tot, i = 0;
+  for (let cum = 0; i < w.length - 1; i++) { cum += w[i]!; if (r < cum) break; }
+  if (FRITID_VIKT[i]!.gor!(c)) return;
+  // blev inget av (ingen följer med, matchen är slut): dragningen räknas om till bas-raderna, i samma andel
+  let bas = 0;
+  for (let j = 0; j < FRITID_BAS.length; j++) bas += w[j]!;
+  for (let j = 0; j < i; j++) r -= w[j]!;
+  r = r / w[i]! * bas;
+  let k = 0;
+  for (let cum = 0; k < FRITID_BAS.length - 1; k++) { cum += w[k]!; if (r < cum) break; }
+  FRITID_BAS[k]!.gor!(c);
 }
 
 // skriva eller läsa ett blad: skrivvikten och läsvikten mot resten av fritiden (annan), där at är platsen hen skulle skriva på
