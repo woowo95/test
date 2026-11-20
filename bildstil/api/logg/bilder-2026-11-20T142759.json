@@ -1,0 +1,15 @@
+{
+ "kommando": "tre",
+ "args": [
+  "las=nya versioner: tre idéer som skiljer sig tydligt i form, till exempel ett runt hänglås med hög bygel, en avlång låsplåt som ligger ner med en regel som sticker ut, och en stor nyckel bredvid ett litet lås"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 0.35,
+  "hog": 0.75
+ },
+ "dollar": 0.248,
+ "rapport": [
+  "las: 3 versioner till valdelen (kortet bild_las)"
+ ]
+}
