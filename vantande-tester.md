@@ -175,3 +175,9 @@
 - 12.1.112: bara scenariot handlare (gränsen från 12.1.48). virke, slaktbank och kista är gröna; varldtillstand blir grönt först när koll sparat nya testbyar.
 - 12.1.114: gåvan och det vänliga beskedet dämpas av fejden. Ändrar världen: skyldig koll med nytt facit, likhet och `npm run radanfall` som information. I scenariots värld på 40 dygn (40 år i spelet) skickas nu ett ovänligt besked men inget krig bryter ut, eftersom relationerna sällan sjunker under −20 och beskedet gick vid −94, nära golvet −100.
 - 12.1.9 och 12.1.10 var redan byggda (761bd327, b7d0e189) och står under "Fas 12.1 från 12.1.9" ovan.
+
+## Grenen par-strid (12.1.57, 12.1.58, 12.1.59, 12.1.82, 12.1.87: vården, striden, jakten och rovdjuren)
+
+- Stegen byggdes tidigare i dag (8ef60b2, 495200a, 1b810ad, f189eb6, 684d98b) och finns redan i varld; de var bara inte avbockade. Skyldiga `npm run kedja -- "npm run -s koll" "npm run -s likhet"` som en del av 12.1 (de ändrar vården i byn, blödningen i striden, vargjakten och förlossningen, så facit ändras).
+- Scenariot undsattning blev rött av 12.1.177 (ef10eae, långsammare i skenet): den fallne låg redan längre bort än STRID.hjalpAvst från rövaren och vårdades på stället utan att bäras. Rättat i scenariots uppställning (den fallne ligger mellan raddaFri och hjalpAvst), inte i striden.
+- Gröna i molnet: vard, blodning, halsoflik, strid, pilisaret, rader, varg, bjornjakt, forlossning, rovarstrid, vargskydd, undsattning, olyckshugg.
