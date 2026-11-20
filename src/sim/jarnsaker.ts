@@ -12,7 +12,7 @@ import { addTool, nTools, skrotKrok } from './agande';
 import { addTo, put } from './lager';
 import { SAKER } from './saker';
 import { knows } from './teknik';
-import { isKlar, kvVid, stationerOf, vidStation } from './stationer';
+import { isKlar, kvVid, nyttVid, stationerOf, vidStation } from './stationer';
 import { eldKan } from './stationseld';
 import { laggTillProjekt } from './projekt';
 import { villAv } from './forradsmal';
@@ -36,6 +36,7 @@ export const JARNSAKER: Record<string, JarnsakDef> = {
   isborr: { grupp: 'isborr', tek: 'smedja', text: 'Smider en isborr.', forsta: '{namn} smidde byns första isborr. Den borrar genom den tjockaste isen.' }, // steg 12.2.11
   eldstal: { grupp: 'eldstal', tek: 'smedja', text: 'Smider ett eldstål.', forsta: '{namn} smidde byns första eldstål. Mot en flinta ger det gnistor som tänder på ett par försök.' }, // steg 12.2.12
   svard: { grupp: 'svard', tek: 'vapensmide', text: 'Smider ett svärd.', forsta: '{namn} smidde byns första svärd, det första som bara är ett vapen.' }, // steg 12.2.9
+  sag: { grupp: 'sag', tek: 'klyvplats', text: 'Smider en såg.', forsta: '{namn} smidde byns första såg. Vid klyvplatsen blir en planka klar på en tredjedel av tiden.' }, // steg 12.5.1
   jarnspjut: { grupp: 'spjut', tek: 'flintspjut', text: 'Smider en spets av järn och surrar den på ett skaft.', forsta: '{namn} smidde byns första järnspjut.' }, // steg 12.2.8
 };
 // smedjan som p kan smida vid nu: färdig, och ässjan brinner eller det finns kol att tända den med
@@ -55,6 +56,7 @@ export function smidaKlar(s: State, p: Person, tk: Task) {
   for (const [m, n] of Object.entries(receptAv(k))) takeMaterial(s, p, m, n);
   const t = addTool(s, k, p); t.av = p.id; t.gjord = s.now;
   nyKvalitet(s, p, t, kvVid(s, p, 'smida'), SAKER[k]!.namn.toLowerCase());
+  nyttVid(s, t); // sågen läggs vid klyvplatsen om dess plats står tom, och blir byns (steg 12.5.1)
   count(s, 'smitt_' + k);
   if (forstaGang(s, 'smitt_' + k)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }

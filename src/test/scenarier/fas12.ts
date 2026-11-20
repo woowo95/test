@@ -807,3 +807,40 @@ SCENARIER.branningljus = {
     ];
   },
 };
+
+SCENARIER.sag = {
+  text: 'Sågen (steg 12.5.1): en handsåg från smedjan (1 järn och 1 grenar, 4 minuter) som ligger vid klyvplatsen, gör en planka på en tredjedel av tiden och ger det minsta såret vid en amputation',
+  kor: () => {
+    const R = SIM.RECEPT.sag;
+    const s = SIM.createState(1, START), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), [p, q, r] = vuxna;
+    klockan(s, 10);
+    for (const v of vuxna) Object.assign((v.tek ??= {}), { smedja: 1, klyvplats: 1, kniv: 1 });
+    const smedja = medBank(s, 'smedja'), klyv = medBank(s, 'klyvplats');
+    SIM.setStock(s, { jarn: 4, grenar: 4, kol: 4, virke: 4 });
+    // amputationen: med sågen blir stumpen mindre än med kniven
+    const stump = (g: SIM.Person, k?: string) => {
+      if (k) SIM.addTool(s, k, g);
+      const w = { d: 'handV', k: 'skarsar', g: 0.3, b: 0, inf: 0.9 } as SIM.Skada; q.skador = [w];
+      const v = SIM.VARD.amputera, kan = SIM.vardKan(s, g, v, q);
+      v.gor(s, g, q, w);
+      const st = q.skador?.[q.skador.length - 1]; q.skador = []; q.saknas = []; return kan ? st?.g : undefined;
+    };
+    const medKniv = stump(r, 'kniv');
+    const utan = SIM.PROJEKT.klyva_plank!.uppgift(s, p)?.min ?? 0, brist = SIM.jarnBrist(s, 'sag'), u = SIM.PROJEKT.sag!.uppgift(s, p);
+    // smidet: sågen läggs vid klyvplatsen och blir byns
+    const tk = { act: 'smida', phase: 'do', tx: smedja.x, ty: smedja.y, until: s.now, carry: 0, why: '', tool: 'sag', ref: smedja.id } as SIM.Task;
+    p.task = tk; SIM.smidaKlar(s, p, tk); p.task = undefined;
+    const sag = SIM.tingOf(s).find(t => t.k === 'sag'), med = SIM.PROJEKT.klyva_plank!.uppgift(s, p)?.min ?? 0, bristEfter = SIM.jarnBrist(s, 'sag');
+    // den slits för varje planka
+    const c0 = sag?.c ?? 0; SIM.slitRedskapVid(s, 'klyva_plank', 2); const c1 = sag?.c ?? 0;
+    const medSag = stump(r); // sågen vid klyvplatsen är byns
+    return [
+      [`sågen: ${JSON.stringify(R.av)} på ${R.min} minuter i smedjan`, R.av.jarn === 1 && R.av.grenar === 1 && R.min === 4 && R.tek === 'smedja' && !!SIM.JARNSAKER.sag],
+      [`byn med en klyvplats utan såg saknar en (${brist}), och den smids vid städet (${u?.act}, ${u?.tool})`, brist > 0 && u?.act === 'smida' && u.tool === 'sag'],
+      [`sågen ligger vid klyvplatsen och är byns (vid ${sag?.vid}, ägare ${sag?.agare}), och byn saknar ingen längre (${bristEfter})`, sag?.vid === klyv.id && sag.agare === SIM.BYN && bristEfter === 0],
+      [`en planka blir klar på en tredjedel av tiden (${utan} min utan, ${med.toFixed(2)} med)`, Math.abs(utan / med - 3) < 1e-9],
+      [`sågen slits för varje planka (${c0.toFixed(4)} till ${c1.toFixed(4)}) och håller ${SIM.ACTS.klyva_plank.redskap!.sag.haller} plankor`, c1 < c0 && SIM.ACTS.klyva_plank.redskap!.sag.haller === 300],
+      [`amputationen med sågen ger det minsta såret (${medSag} mot ${medKniv} med kniven)`, medSag === SIM.HALSA.ampSag && medKniv === SIM.HALSA.ampKniv && medSag! < medKniv!],
+    ];
+  },
+};
