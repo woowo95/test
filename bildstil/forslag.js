@@ -86,8 +86,7 @@
         for (let i = 0; i < A.px.length; i++) A.px[i] = P.i('kol', 0);
         for (const [D, y0] of [[B, 0], [C, B.h + 4]]) for (let y = 0; y < D.h; y++) for (let x = 0; x < D.w; x++) { const c = D.px[y * D.w + x]; if (c >= 0) A.satt(x, y0 + y, c); }
         M = A; }
-      const c = document.createElement('canvas'); tillCanvas(M, c, 0); const t = document.createElement('canvas'); t.width = M.w * skala; t.height = M.h * skala;
-      const g = t.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(c, 0, 0, t.width, t.height); return t.toDataURL('image/png').split(',')[1];
+      return KONTROLL.png(M, skala);
     },
     // behållarna som finns i spelet (Björn efter bildstil v237: inga nya behållare): den stora lerkrukan och näverasken
     behallarePng(skala = 4) {

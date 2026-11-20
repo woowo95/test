@@ -16,10 +16,12 @@ const blandning = sida.filter(r => /^const (hx2|tillHex|blanda) =/.test(r));
 const karna = fran(sk, '  const PR = PORTRATT', '  // figuren på gräset').filter(r => !/^  const \$ = |^  const lagra = /.test(r));
 const arv = fran(sk, '  // ---------- slump och arv', '  // ---------- skaparen');
 // delar med ny: true är inte godkända av Björn än (granskningen i bildstilen) och kommer inte med i spelet
-const PR_RA = fs.readFileSync(path.join(BS, 'portratt.json'), 'utf8').trim(), PR_OBJ = JSON.parse(PR_RA);
+const PR_OBJ = JSON.parse(fs.readFileSync(path.join(BS, 'portratt.json'), 'utf8'));
 const NYA = new Set(PR_OBJ.delar.filter(d => d.ny).map(d => d.id));
-const PORTRATT = NYA.size ? JSON.stringify({ ...PR_OBJ, delar: PR_OBJ.delar.filter(d => !d.ny) }, null, 2) : PR_RA;
-const DELAR = Object.fromEntries(fs.readdirSync(path.join(BS, 'delar')).filter(f => f.endsWith('.json')).sort().map(f => { const o = JSON.parse(fs.readFileSync(path.join(BS, 'delar', f), 'utf8')); return [o.id, o]; }).filter(([id]) => !NYA.has(id)));
+// spelet läser bara bilderna: bildstilens arbetstexter (om, av, ritad) följer inte med, och registret skrivs på en rad
+const { om: _om, ...PR_SPEL } = PR_OBJ;
+const PORTRATT = JSON.stringify({ ...PR_SPEL, delar: PR_OBJ.delar.filter(d => !d.ny) });
+const DELAR = Object.fromEntries(fs.readdirSync(path.join(BS, 'delar')).filter(f => f.endsWith('.json')).sort().map(f => { const o = JSON.parse(fs.readFileSync(path.join(BS, 'delar', f), 'utf8')); const { om, av, ritad, ...bild } = o; return [o.id, bild]; }).filter(([id]) => !NYA.has(id)));
 const text = `// @ts-nocheck
 // GENERERAD av bildstil/portratttillspelet.cjs ur bildstil/skapare.js, sida.js, portratt.json och delar/ (steg 5.2.3.1).
 // Ändra inte här: ändra i bildstilen och kör node bildstil/portratttillspelet.cjs. Gränssnittet mot spelet är src/ui/utseende.ts.

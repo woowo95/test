@@ -231,7 +231,7 @@
   // den dras åt och håller fast. Stigen går här rakt mot betraktaren, så att öglan som hänger tvärs över den syns hel.
   // Haren är den godkända haren ur djur.js (version 2).
   const HARE = { o: 'jord0', d: 'jord1', m: 'jord2', l: 'jord3', c: 'ben2', b: 'ben3', k: 'kol0', r: 'rost2' };
-  const hare = (B, rikt, x, y) => { const K = window.DJURBILD && window.DJURBILD.KANIN[1]; if (K) lagg(B, K[rikt], HARE, x, y); };
+  const hare = (B, rikt, x, y) => { const K = window.DJURBILD && window.DJURBILD.KANIN[0]; if (K) lagg(B, K[rikt], HARE, x, y); };
   const SW = 64, SH = 48;
   const harstig = (B, s) => {
     gras(B);

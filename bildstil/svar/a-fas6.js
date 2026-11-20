@@ -1,5 +1,5 @@
 // Björns svar på fyra kort (grodden, den som brinner, siffrorna och det som torkar): nya versioner som byter ut korten i VAL
-// med samma id. Ritfunktionerna som behövs är kopierade hit ur fas6.js och fas8/8.1-rattelser.js (de är inte exporterade).
+// med samma id. Ritfunktionerna som behövs är kopierade hit ur den förra fas6.js och fas8/8.1-rattelser.js (de är inte exporterade).
 (() => {
   const S = 'Steg ';
   const byt = kort => { const i = VAL.findIndex(s => s.id === kort.id); if (i >= 0) VAL[i] = kort; else VAL.push(kort); };

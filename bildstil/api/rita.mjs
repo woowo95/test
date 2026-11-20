@@ -20,14 +20,12 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createRequire } from 'module';
 import Anthropic from '@anthropic-ai/sdk';
+import { MODELL, PRIS, TOMT_NEJ, klient, svarText, batch, utanBilder, sidan } from './gemensamt.mjs';
 
 const HAR = path.dirname(fileURLToPath(import.meta.url)), BILDSTIL = path.resolve(HAR, '..');
 const REGISTER = path.join(BILDSTIL, 'portratt.json'), DELAR = path.join(BILDSTIL, 'delar'), UT = path.join(HAR, 'ut');
-const MODELL = 'claude-opus-5-5', INSATS = 'high', MAXTOKENS = 32000;
-// pris per miljon tokens med batch (halva standardpriset för Claude Opus 5.5: 4 och 20 dollar)
-const PRIS = { in: 2, ut: 10, cacheLas: 0.1, cacheSkriv: 2.5 };
+const INSATS = 'high', MAXTOKENS = 32000;
 const ANSIKTET = ['huvudform', 'ora', 'nasa', 'oga', 'ogonbryn', 'mun'];
 const VERSIONER = 3;
 
@@ -61,20 +59,7 @@ function skrivRegister() {
 }
 
 // ---------- bilderna: sidan öppnas i en webbläsare, och delen ritas på det neutrala ansiktet ----------
-let webblasare = null, sida = null;
-async function oppnaSidan() {
-  if (sida) return sida;
-  const require = createRequire(import.meta.url);
-  let pw; try { pw = require('playwright'); } catch (e) { throw new Error('Playwright behövs för bilderna (finns i molnmiljön).'); }
-  const html = path.join(BILDSTIL, 'bildstil.html');
-  if (!fs.existsSync(html)) throw new Error('Bygg sidan först: node bildstil/bygg.cjs');
-  webblasare = await pw.chromium.launch();
-  sida = await webblasare.newPage();
-  await sida.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
-  await sida.goto('file://' + html);
-  await sida.waitForFunction(() => window.PORTRATTEN);
-  return sida;
-}
+const { oppna: oppnaSidan, stang: stangSidan } = sidan(() => window.PORTRATTEN);
 // en bild (PNG, base64) med delen i alla sina lägen på kvinnans, mannens och barnets neutrala ansikte, fyra gånger större
 async function bildAvDel(id, sort, data) {
   const pg = await oppnaSidan();
@@ -92,7 +77,6 @@ async function bildAvDel(id, sort, data) {
     return c.toDataURL('image/png').split(',')[1];
   }, { id, sort, data, lagen: lagenFor(sort) });
 }
-async function stangSidan() { if (webblasare) await webblasare.close(); webblasare = sida = null; }
 
 // ---------- frågan ----------
 const TECKEN = Object.entries(PR.tecken).filter(([k]) => k !== 'om').map(([k, v]) => `${k} = ${v ?? 'genomskinligt'}`).join(', ');
@@ -191,38 +175,8 @@ function kontrollera(sort, d, svar) {
 }
 
 // ---------- API:t ----------
-// Nyckeln är Björns och ligger i miljön som BJORN_API_NYCKEL (miljön släpper inte igenom ANTHROPIC_API_KEY). Adressen anges
-// här, eftersom ANTHROPIC_BASE_URL i miljön pekar någon annanstans (steg 5.2.2).
-const ADRESS = 'https://api.anthropic.com';
-function klient() {
-  const nyckel = process.env.BJORN_API_NYCKEL;
-  if (!nyckel) { console.error('BJORN_API_NYCKEL saknas i miljön. Lägg in den som en hemlighet i miljöns inställningar och starta en ny chatt.'); process.exit(1); }
-  return new Anthropic({ apiKey: nyckel, baseURL: ADRESS });
-}
-const svarText = m => m.content.filter(b => b.type === 'text').map(b => b.text).join('');
-const kostnad = u => ((u.input_tokens || 0) * PRIS.in + (u.output_tokens || 0) * PRIS.ut + (u.cache_read_input_tokens || 0) * PRIS.cacheLas + (u.cache_creation_input_tokens || 0) * PRIS.cacheSkriv) / 1e6;
-async function batch(client, fragor, namn) {
-  console.log(`Skickar ${fragor.length} frågor i en batch (${namn}) …`);
-  const b = await client.messages.batches.create({ requests: fragor });
-  let st;
-  for (;;) {
-    st = await client.messages.batches.retrieve(b.id);
-    if (st.processing_status === 'ended') break;
-    console.log(`  ${namn}: ${st.request_counts.succeeded} klara, ${st.request_counts.processing} kvar …`);
-    await new Promise(r => setTimeout(r, 30_000));
-  }
-  const ut = {}; let summa = 0; const tokens = { in: 0, ut: 0, cacheLas: 0, cacheSkriv: 0 };
-  for await (const r of await client.messages.batches.results(b.id)) {
-    if (r.result.type !== 'succeeded') { ut[r.custom_id] = { fel: `${r.result.type}${r.result.type === 'errored' ? ': ' + r.result.error?.type : ''}` }; continue; }
-    const m = r.result.message, u = m.usage; summa += kostnad(u);
-    tokens.in += u.input_tokens || 0; tokens.ut += u.output_tokens || 0; tokens.cacheLas += u.cache_read_input_tokens || 0; tokens.cacheSkriv += u.cache_creation_input_tokens || 0;
-    if (m.stop_reason === 'refusal') { ut[r.custom_id] = { fel: 'avböjd' }; continue; }
-    if (m.stop_reason === 'max_tokens') { ut[r.custom_id] = { fel: 'svaret blev för långt' }; continue; }
-    try { ut[r.custom_id] = { svar: JSON.parse(svarText(m)), usage: m.usage }; } catch (e) { ut[r.custom_id] = { fel: 'svaret var inte JSON' }; }
-  }
-  console.log(`  ${namn} klar: ungefär ${summa.toFixed(2)} dollar.`);
-  return { ut, summa, tokens };
-}
+// Nyckeln är Björns och ligger i miljön som BJORN_API_NYCKEL (miljön släpper inte igenom ANTHROPIC_API_KEY); klienten och
+// batchen står i gemensamt.mjs.
 function spara(d, ritning, av) {
   const ritad = (d.ritad || 0) + 1, gammal = lasDel(d.id);
   // den förra ritningen sparas med, så att kortet visar den bredvid den nya (Björn efter 5.2.2.7)
@@ -233,12 +187,12 @@ function spara(d, ritning, av) {
 }
 
 // ---------- val av delar ----------
-function delarSomSkaRitas(args, allaRitade = false, baraOmritning = false) {
+function delarSomSkaRitas(args, baraOmritning = false) {
   if (baraOmritning) return [];
   const val = args.length ? args : ANSIKTET;
   const ut = [];
   for (const a of val) {
-    if (SORT[a]) { const [forebild, ...resten] = delarAv(a); if (!SORT[a].ritas) throw new Error(`Sorten ${a} kan inte ritas med skriptet än.`); ut.push(...resten.filter(d => allaRitade || !(d.ritad > 0))); void forebild; }
+    if (SORT[a]) { const [, ...resten] = delarAv(a); if (!SORT[a].ritas) throw new Error(`Sorten ${a} kan inte ritas med skriptet än.`); ut.push(...resten.filter(d => !(d.ritad > 0))); }
     else { const d = PR.delar.find(x => x.id === a); if (!d) throw new Error(`Okänd sort eller del: ${a}`); ut.push(d); }
   }
   return ut;
@@ -282,9 +236,9 @@ try {
     const delar = delarSomSkaRitas(args);
     fs.mkdirSync(UT, { recursive: true });
     const fragor = []; for (const d of delar) fragor.push(await fraga(d, { version: 1 }));
-    fs.writeFileSync(path.join(UT, 'fragor.json'), JSON.stringify(fragor.map(f => ({ ...f, params: { ...f.params, messages: f.params.messages.map(m => ({ ...m, content: m.content.map(c => c.type === 'image' ? { type: 'image', bild: `${c.source.data.length} tecken base64` } : c) })) } })), null, 1));
+    fs.writeFileSync(path.join(UT, 'fragor.json'), JSON.stringify(fragor.map(utanBilder), null, 1));
     // ett exempel på valet, med förebilden som tre låtsade versioner, så att frågan kan läsas utan att något skickas
-    if (delar.length) { const d = delar[0], fb = lasDel(delarAv(d.sort)[0].id); const vf = await valet(d, [1, 2, 3].map(nr => ({ nr, svar: fb }))); fs.writeFileSync(path.join(UT, 'valet.json'), JSON.stringify({ ...vf, params: { ...vf.params, messages: vf.params.messages.map(m => ({ ...m, content: m.content.map(c => c.type === 'image' ? { type: 'image', bild: `${c.source.data.length} tecken base64` } : c) })) } }, null, 1)); }
+    if (delar.length) { const d = delar[0], fb = lasDel(delarAv(d.sort)[0].id); const vf = await valet(d, [1, 2, 3].map(nr => ({ nr, svar: fb }))); fs.writeFileSync(path.join(UT, 'valet.json'), JSON.stringify(utanBilder(vf), null, 1)); }
     const u = await uppskattning(delar, kommando === 'kostnad' ? klient() : null);
     console.log(`${kommando === 'kostnad' ? 'Räknat' : 'Uppskattat'}: ${u.text}`);
     console.log(`Frågorna (utan bilderna) står i ${path.relative(process.cwd(), path.join(UT, 'fragor.json'))}.`);
@@ -294,8 +248,8 @@ try {
     if (kommando === 'omrita') { const d = PR.delar.find(x => x.id === args[0]); if (!d || !args[1]) throw new Error('Skriv: omrita <id> "<kommentar>"'); delar = [d]; kommentarer[d.id] = args[1]; }
     else {
       const om = args.filter(a => a.includes('=')).map(a => [a.slice(0, a.indexOf('=')), a.slice(a.indexOf('=') + 1)]);
-      delar = delarSomSkaRitas(args.filter(a => !a.includes('=')), false, args.length > 0 && om.length === args.length);
-      for (const [id, k] of om) { const d = PR.delar.find(x => x.id === id); if (!d) throw new Error('Okänd del: ' + id); if (!delar.includes(d)) delar.push(d); kommentarer[id] = k.trim() || 'Björn sa nej till förra ritningen utan att skriva varför: rita en bättre.'; }
+      delar = delarSomSkaRitas(args.filter(a => !a.includes('=')), args.length > 0 && om.length === args.length);
+      for (const [id, k] of om) { const d = PR.delar.find(x => x.id === id); if (!d) throw new Error('Okänd del: ' + id); if (!delar.includes(d)) delar.push(d); kommentarer[id] = k.trim() || TOMT_NEJ; }
     }
     if (!delar.length) { console.log('Inget att rita.'); process.exit(0); }
     const fore = await uppskattning(delar);

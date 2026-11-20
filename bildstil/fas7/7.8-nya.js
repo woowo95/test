@@ -2,7 +2,7 @@
 // ha ändrat ritas på nytt här. Hans förra kommentar står i kortets text.
 (() => {
   const { KORT, former, ell, linje, och, rakt, poly, lagg, bildfil, gras, hash, bredd } = window.F7;
-  const BORT = ['f7_gadda', 'f7_mort', 'f7_huggen_sten', 'f7_plankor', 'f7_lader', 'f7_vargtand', 'f7_trad', 'f7_tunika', 'f7_vavstol', 'f7_mjarde', 'f7_linfalt', 'f7_blot_ved', 'f7_bro', 'f7_brygga', 'f7_stockvag', 'f7_karra', 'f6_i_bjorndodare', 'f6_prickar',
+  const BORT = ['f7_gadda', 'f7_mort', 'f7_huggen_sten', 'f7_plankor', 'f7_lader', 'f7_vargtand', 'f7_trad', 'f7_tunika', 'f7_vavstol', 'f7_mjarde', 'f7_linfalt', 'f7_blot_ved', 'f7_bro', 'f7_karra', 'f6_i_bjorndodare', 'f6_prickar',
     'f7_samlingssal', 'f7_torkhus', 'f7_vedbod', 'f7_torg', // ska inte vara bilder: de syns som hus, väggar och väg
     'f7_stenhuggarplats', 'f7_klyvplats', 'f7_ortkok', 'f7_fangstbank', 'f7_harden', 'f7_snara', 'f7_linfron', 'f7_lin', 'f7_lintyg'];
   for (let i = VAL.length - 1; i >= 0; i--) if (BORT.includes(VAL[i].id)) VAL.splice(i, 1);

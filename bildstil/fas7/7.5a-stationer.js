@@ -65,7 +65,7 @@
       B.satt(Math.round(cx + Math.cos(a) * rx * d), Math.round(cy + Math.sin(a) * ry * d), B.P.i('skiffer', hash(i, s, 3) < 0.5 ? 2 : 3));
     }
   };
-  // en liten låga med foten i (x, y), som i fas6.js
+  // en liten låga med foten i (x, y)
   function laga(B, x, y, hojd = 5) {
     for (let i = 0; i < hojd; i++) {
       const [ramp, ton] = i === 0 ? ['ben', 3] : i < hojd - 2 ? ['senap', 3 - (i > 2)] : ['rost', 2];
@@ -211,7 +211,7 @@
       B.satt(xx, yy, B.P.i('ben', i < 8 ? 2 : 1)); if (i % 3 === 0) B.satt(xx + 1, yy, B.P.i('ben', 1));
     }
   }
-  function morkt(B, cx, cy, r, max = 4) { // natten runt ljuset, som i fas6.js
+  function morkt(B, cx, cy, r, max = 4) { // natten runt ljuset
     for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) { const d = Math.hypot(x - cx, y - cy) / r, n = Math.floor(d * 2 + ((x + y) % 2) * 0.5 + ((x * 3 + y) % 4) * 0.12) - 1; for (let i = 0; i < Math.min(max, n); i++) B.morka(x, y); }
   }
   const HARDEN = (text, v) => ({ text, w: 48, h: 48, rita: (B) => harden(B, v) });

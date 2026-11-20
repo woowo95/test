@@ -16,13 +16,11 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createRequire } from 'module';
-import Anthropic from '@anthropic-ai/sdk';
+import { MODELL, PRIS, klient, batch, bildBlock, sidan } from './gemensamt.mjs';
 
 const HAR = path.dirname(fileURLToPath(import.meta.url)), BILDSTIL = path.resolve(HAR, '..');
 const MAPP = path.join(BILDSTIL, 'bestar'), UT = path.join(HAR, 'ut', 'bestar');
-const MODELL = 'claude-opus-5-5', INSATS = 'high', MAXTOKENS = 48000;
-const PRIS = { in: 2, ut: 10, cacheLas: 0.1, cacheSkriv: 2.5 }; // per miljon tokens med batch
+const INSATS = 'high', MAXTOKENS = 48000;
 const KALLA = fs.readFileSync(path.join(BILDSTIL, 'bestskapare.js'), 'utf8');
 
 // ---------- planen: hur många av varje lager ----------
@@ -50,24 +48,12 @@ const PLAN = {
 const kodFor = namn => { const a = KALLA.indexOf(`  const ${namn} = [`); const b = KALLA.indexOf('\n  ]', a), c = KALLA.indexOf('\n', b + 1); return a < 0 ? '' : KALLA.slice(a, c < 0 ? undefined : c); };
 
 // ---------- sidan ----------
-let webblasare = null, sida = null;
-async function oppnaSidan() {
-  if (sida) return sida;
-  const pw = createRequire(import.meta.url)('playwright');
-  const html = path.join(BILDSTIL, 'bildstil.html');
-  if (!fs.existsSync(html)) throw new Error('Bygg sidan först: node bildstil/bygg.cjs');
-  webblasare = await pw.chromium.launch(); sida = await webblasare.newPage();
-  await sida.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
-  await sida.setContent('<meta charset="utf-8">' + fs.readFileSync(html, 'utf8'), { waitUntil: 'load' }); // utan charset gissar Chromium ibland fel på filen await sida.waitForFunction(() => window.BESTAR?.prov);
-  return sida;
-}
-const stangSidan = async () => { if (webblasare) await webblasare.close(); webblasare = sida = null; };
+const { oppna: oppnaSidan, stang: stangSidan } = sidan(() => window.BESTAR?.prov, { text: true });
 const bild = async (over, skala = 3) => (await oppnaSidan()).evaluate(([o, s]) => window.BESTAR.bild(o, s), [over, skala]);
 const prov = async (lager, d, over, skala = 3) => (await oppnaSidan()).evaluate(([l, x, o, s]) => window.BESTAR.prov(l, x, o, s), [lager, d, over, skala]);
 const handgjorda = async lager => (await oppnaSidan()).evaluate(l => window.BESTAR.LAGER.find(x => x.id === l).delar.filter(d => !d.api).map(d => ({ id: d.id, namn: d.namn, text: d.text })), lager);
 
 // ---------- frågorna ----------
-const bildBlock = b64 => ({ type: 'image', source: { type: 'base64', media_type: 'image/png', data: b64 } });
 const MATERIALTEXT = 'kropp (huden; texturen läggs på den), horn, skal, platta (ryggplattor), hard (förhårdnader och benpansar), man (manen), tecken (lysande tecken), hinna (vingens hud), fjader, oga, mun (munnen inuti), tand, klo, slem, mossa, kristall, glod (glöd), benrest (ben som syns i sår), hal (ett hål in i kroppen), flack (fläckar)';
 const SYSTEM = `Du ritar delar till bestskaparen i bildstilen för spelet Samhällssimulatorn: en by av nordbor under järnåldern i pixelkonst, med en smutsig och dämpad mid century-palett. Besten är det legendariska odjuret som hotar byn. Den byggs av delar i lager (kropp, ben, huvud, horn, vingar, svans, textur, skal, plattor, förhårdnader, prydnader, färger) som spelaren kombinerar fritt, och den syns bara från sidan med huvudet åt höger (koden spegelvänder den).
 
@@ -199,9 +185,10 @@ function formFel(s, namn) {
 const formerFel = (f, namn) => (Array.isArray(f) && f.length ? f.flatMap((s, i) => formFel(s, `${namn} ${i + 1}`)) : [`${namn}: inga former`]);
 const monsterFel = (m, namn) => (!m ? [] : !Array.isArray(m.rader) || !m.rader.length || m.rader.some(r => typeof r !== 'string' || !/^[=\-.+*]+$/.test(r)) ? [`${namn}: mönstrets rader får bara ha tecknen = - . + *`] : m.rader.length > 16 || m.rader.some(r => r.length > 16) ? [`${namn}: mönstret är större än 16 × 16`] : []);
 const delarFel = (lista, namn, medAnkare) => (Array.isArray(lista) ? lista.flatMap((p, i) => [...formerFel(p.former, `${namn} ${i + 1}`), ...monsterFel(p.monster, `${namn} ${i + 1}`), ...(medAnkare && !FASTEN.includes(p.ankare) ? [`${namn} ${i + 1}: okänd fästpunkt ${p.ankare}`] : [])]) : [`${namn}: ingen lista`]);
-const FASTEN = ['panna', 'oga', 'nos', 'hornet', 'nacke0', 'nacke1', 'rygg', 'f', 'h', 'vinge', 'svans', 'spets', 'led', 'skena'];
 const RAMPER = ['kol', 'jord', 'senap', 'rost', 'oliv', 'barr', 'skiffer', 'ben'];
-const MATERIAL = ['kropp', 'horn', 'skal', 'platta', 'hard', 'man', 'tecken', 'hinna', 'fjader', 'oga', 'mun', 'tand', 'klo', 'slem', 'mossa', 'kristall', 'glod', 'benrest', 'hal', 'flack'];
+// fästpunkterna och materialen hämtas från bestskaparen på sidan, så att listorna står på ett ställe
+let FASTEN = null, MATERIAL = null;
+const listor = async () => { if (!MATERIAL) ({ FASTEN, MATERIAL } = await (await oppnaSidan()).evaluate(() => ({ FASTEN: window.BESTAR.FASTEN, MATERIAL: window.BESTAR.MATERIAL }))); };
 function datafel(lager, d) {
   const f = [];
   switch (lager) {
@@ -239,13 +226,13 @@ function datafel(lager, d) {
     case 'skal': if (!['band', 'kupol'].includes(d.typ)) f.push('typ ska vara band eller kupol'); f.push(...monsterFel(d.monster, 'monster')); break;
     case 'plattor': if (!Array.isArray(d.form) || d.form.length < 3 || !d.form.every(pkt)) f.push('form behöver minst 3 punkter [u,v]'); if (!Array.isArray(d.hojd) || d.hojd.length !== 2) f.push('hojd ska vara [min, max]'); f.push(...monsterFel(d.monster, 'monster')); break;
     case 'ogon': if (!Array.isArray(d.delar) || !d.delar.length) f.push('delar saknas'); else d.delar.forEach((p, i) => { if (!(Array.isArray(p.pkt) && p.pkt.length && p.pkt.every(pkt)) && !p.former) f.push(`del ${i + 1}: pkt eller former saknas`); if (p.former) f.push(...formerFel(p.former, `del ${i + 1}`)); if (p.pkt?.some(q => Math.abs(q[0]) > 12 || Math.abs(q[1]) > 8)) f.push(`del ${i + 1}: punkter för långt från ögat`); }); break;
-    case 'hard': f.push(...delarFel(d.delar, 'delar', true)); break;
-    case 'pryd': f.push(...delarFel(d.delar, 'delar', true)); break;
+    case 'hard': case 'pryd': f.push(...delarFel(d.delar, 'delar', true)); break;
   }
   return f.slice(0, 10);
 }
 // varje del läses, kontrolleras och ritas i besten (texturerna på båda färgerna)
 async function provaDelar(fraga, svar) {
+  await listor();
   const P = PLAN[fraga.lager], ut = [];
   for (const [i, s] of (svar.delar || []).entries()) {
     let data = null, fel = [];
@@ -263,36 +250,6 @@ async function provaDelar(fraga, svar) {
   return ut;
 }
 
-// ---------- API:t ----------
-const ADRESS = 'https://api.anthropic.com';
-function klient() {
-  const nyckel = process.env.BJORN_API_NYCKEL;
-  if (!nyckel) { console.error('BJORN_API_NYCKEL saknas i miljön.'); process.exit(1); }
-  return new Anthropic({ apiKey: nyckel, baseURL: ADRESS });
-}
-const svarText = m => m.content.filter(b => b.type === 'text').map(b => b.text).join('');
-const kostnad = u => ((u.input_tokens || 0) * PRIS.in + (u.output_tokens || 0) * PRIS.ut + (u.cache_read_input_tokens || 0) * PRIS.cacheLas + (u.cache_creation_input_tokens || 0) * PRIS.cacheSkriv) / 1e6;
-async function batch(client, fragor, namn) {
-  console.log(`Skickar ${fragor.length} frågor i en batch (${namn}) …`);
-  const b = await client.messages.batches.create({ requests: fragor.map(f => ({ custom_id: f.custom_id, params: f.params })) });
-  let st;
-  for (;;) {
-    st = await client.messages.batches.retrieve(b.id);
-    if (st.processing_status === 'ended') break;
-    console.log(`  ${namn}: ${st.request_counts.succeeded} klara, ${st.request_counts.processing} kvar …`);
-    await new Promise(r => setTimeout(r, 30_000));
-  }
-  const ut = {}; let summa = 0;
-  for await (const r of await client.messages.batches.results(b.id)) {
-    if (r.result.type !== 'succeeded') { ut[r.custom_id] = { fel: `${r.result.type}${r.result.type === 'errored' ? ': ' + r.result.error?.error?.message : ''}` }; continue; }
-    const m = r.result.message; summa += kostnad(m.usage);
-    if (m.stop_reason === 'refusal') { ut[r.custom_id] = { fel: 'avböjd' }; continue; }
-    if (m.stop_reason === 'max_tokens') { ut[r.custom_id] = { fel: 'svaret blev för långt' }; continue; }
-    try { ut[r.custom_id] = { svar: JSON.parse(svarText(m)), usage: m.usage }; } catch (e) { ut[r.custom_id] = { fel: 'svaret var inte JSON' }; }
-  }
-  console.log(`  ${namn} klar: ungefär ${summa.toFixed(2)} dollar.`);
-  return { ut, summa };
-}
 
 // ---------- att spara ----------
 const lasFil = lager => { const f = path.join(MAPP, lager + '.json'); return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : { lager, om: '', delar: [] }; };

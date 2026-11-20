@@ -69,10 +69,10 @@
     { id: 'odla', namn: 'Ödla', text: 'lång och låg, med magen nära marken och halsen rak fram',
       bal: [[34, 56], [40, 50], [52, 47], [66, 47], [78, 49], [85, 54], [84, 60], [74, 64], [56, 65], [42, 64], [35, 61]],
       nacke: [[80, 53], [93, 50]], nackeR: [7.5, 5.5], h: [44, 59], f: [76, 59], svans: [36, 56], vinge: [66, 49], lang: [38, 84] },
-    { id: 'orm', namn: 'Lindorm', text: 'en orm utan ben som ligger i bågar längs marken och reser framkroppen', ny: true, utan: ['ben', 'svans'],
+    { id: 'orm', namn: 'Lindorm', text: 'en orm utan ben som ligger i bågar längs marken och reser framkroppen', utan: ['ben', 'svans'],
       former: [{ typ: 'kapsel', pts: [[5, 71], [13, 69], [22, 66], [30, 60], [38, 57], [46, 61], [54, 66], [62, 64], [69, 57], [74, 49], [77, 43]], r: [1, 2.4, 3.8, 4.8, 5.4, 6, 6.6, 7, 7, 6.8, 6.5] }],
       nacke: [[77, 45], [89, 34]], nackeR: [6.5, 5.5], h: [42, 61], f: [64, 63], svans: [9, 70], vinge: [57, 58], lang: [26, 80] },
-    { id: 'snigel', namn: 'Snäckbest', text: 'en jättesnigel på en slemmig fot, med ett snäckskal i spiral på ryggen', ny: true, utan: ['ben', 'svans', 'skal'],
+    { id: 'snigel', namn: 'Snäckbest', text: 'en jättesnigel på en slemmig fot, med ett snäckskal i spiral på ryggen', utan: ['ben', 'svans', 'skal'],
       former: [{ typ: 'kapsel', pts: [[20, 71], [30, 68.5], [46, 67], [64, 67], [75, 64.5], [82, 58]], r: [2, 4.5, 6, 6, 5.8, 5.4] }],
       nacke: [[81, 61], [89, 50]], nackeR: [5.5, 5], h: [40, 67], f: [70, 65], svans: [22, 70], vinge: [52, 26], lang: [32, 74],
       delar: [{ former: [{ typ: 'ell', c: [51, 44], r: [21, 20] }], mat: 'skal', z: 'skal', rygg: true,
@@ -537,15 +537,15 @@
   const OGON = [
     { id: 'djupt', namn: 'Djupa', text: 'små ögon djupt under en mörk panna, och de lyser',
       delar: [{ ...MORK, pkt: [[-1, -1], [0, -1], [1, -1], [2, -1], [-1, 0]] }, { mat: 'oga', lyser: true, pkt: [[0, 0], [1, 0]] }] },
-    { id: 'spalt', namn: 'Spalter', text: 'en smal lysande spalt i en mörk håla, som hos en orm', ny: true,
+    { id: 'spalt', namn: 'Spalter', text: 'en smal lysande spalt i en mörk håla, som hos en orm',
       delar: [{ ...MORK, pkt: [[-1, -1], [0, -1], [1, -1], [2, -1], [3, -1], [-1, 0], [3, 0], [0, 1], [1, 1], [2, 1]] }, { mat: 'oga', lyser: true, pkt: [[0, 0], [1, 0], [2, 0]] }] },
-    { id: 'manga', namn: 'Många', text: 'en klunga små lysande ögon, som hos en spindel', ny: true,
+    { id: 'manga', namn: 'Många', text: 'en klunga små lysande ögon, som hos en spindel',
       delar: [{ ...MORK, pkt: halaRunt([[0, 0], [3, 0], [1, -2], [-2, -1], [2, 2]]) }, { mat: 'oga', lyser: true, pkt: [[0, 0], [3, 0], [1, -2], [-2, -1], [2, 2]] }] },
-    { id: 'rad', namn: 'Ögonrad', text: 'tre par ögon i rad bakåt längs huvudet', ny: true,
+    { id: 'rad', namn: 'Ögonrad', text: 'tre par ögon i rad bakåt längs huvudet',
       delar: [{ ...MORK, pkt: [[-1, -1], [0, -1], [1, -1], [2, -1], [-5, 0], [-4, 0], [-3, 0], [-9, 1], [-8, 1], [-7, 1]] }, { mat: 'oga', lyser: true, pkt: [[0, 0], [1, 0], [-4, 1], [-3, 1], [-8, 2], [-7, 2]] }] },
-    { id: 'blind', namn: 'Blinda', text: 'mjölkvita ögon utan pupill, som inte lyser: besten är blind och luktar sig fram', ny: true,
+    { id: 'blind', namn: 'Blinda', text: 'mjölkvita ögon utan pupill, som inte lyser: besten är blind och luktar sig fram',
       delar: [{ ...MORK, pkt: [[-1, -2], [0, -2], [1, -2], [2, -2], [-1, -1], [2, -1]] }, { mat: 'tand', ton: -1, pkt: [[0, -1], [1, -1], [0, 0], [1, 0]] }] },
-    { id: 'hala', namn: 'Tomma hålor', text: 'tomma ögonhålor som på en dödskalle, med en glödande punkt längst in', ny: true,
+    { id: 'hala', namn: 'Tomma hålor', text: 'tomma ögonhålor som på en dödskalle, med en glödande punkt längst in',
       delar: [{ mat: 'kol', pkt: [[-1, -1], [0, -1], [1, -1], [2, -1], [-1, 0], [0, 0], [2, 0], [0, 1], [1, 1]] }, { mat: 'oga', lyser: true, pkt: [[1, 0]] }] },
   ].map(d => ({ ...d, ogon: (o, klipp) => ogonDelar(d.delar, o, klipp) }));
 
@@ -993,8 +993,8 @@
   function prov(lager, d, over = {}, skala = 4, spegel = false) {
     const L = LAGER.find(x => x.id === lager), fel = [];
     let del;
-    try { del = apiDel(lager, d); } catch (e) { return { fel: ['kunde inte läsas: ' + e.message] }; }
-    L.delar.push(del);
+    try { del = apiDel(lager, d); if (lager === 'kropp') nerOY(del); } catch (e) { return { fel: ['kunde inte läsas: ' + e.message] }; }
+    L.delar.push(del); // en kropp flyttas ner OY som kropparna vid start, så att prov ritar samma bild som sidan
     try {
       const v = { ...val, ...over, [lager]: del.id }, B = Bild(W, H, P);
       const fr = dels(v, 'farg');
@@ -1014,5 +1014,5 @@
     return c.toDataURL('image/png').split(',')[1];
   }
   function bild(over = {}, skala = 4, spegel = false) { return png(ritaBest({ ...val, ...over }, spegel), skala); }
-  window.BESTAR = { LAGER, ritaBest, val, visa, prov, bild, MATERIAL, FASTEN };
+  window.BESTAR = { LAGER, prov, bild, MATERIAL, FASTEN }; // till api/bestar.mjs
 })();

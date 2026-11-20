@@ -17,7 +17,7 @@
     const w = Math.max(...rader.map(r => r.length));
     return former(w + 2, rader.length + 2, [[(x, y) => (rader[fx(y) - 1] || '')[fx(x) - 1] > '.', (x, y) => rader[fx(y) - 1][fx(x) - 1]]]);
   }
-  // en liten låga med foten i (x, y), som i fas6.js
+  // en liten låga med foten i (x, y)
   function laga(B, x, y, hojd = 5) {
     for (let i = 0; i < hojd; i++) {
       const [ramp, ton] = i === 0 ? ['ben', 3] : i < hojd - 2 ? ['senap', 3 - (i > 2)] : ['rost', 2];

@@ -58,11 +58,9 @@
   const skalat = (t, W, H, lista, X = 0) => { const S = t.s || 1;
     return former(Math.round(W * S), Math.round(H * S), lista.map(([f, ton]) => [(x, y) => f(x / S - X, y / S), typeof ton === 'function' ? (x, y) => ton(x / S - X, y / S) : ton])); };
   const oga = (t, px, py, X = 0) => { const S = t.s || 1; return (x, y) => Math.floor((x + X) * S) === Math.floor((px + X + 0.5) * S) && Math.floor(y * S) === Math.floor((py + 0.5) * S); };
-  // de tre vargarna: mått i punkter, foten på raden h - 1
+  // vargen (Björns val, den smala och arga): mått i punkter, foten på raden h - 1
   const VARGTYP = [
-    { namn: 'smal', ben: 7.5, kropp: 3.1, ruff: 3.2, huvud: 2.8, nos: 4.4, svans: 1.8, sank: 0.6, mask: false, arg: true },
-    { namn: 'tung', ben: 6, kropp: 3.8, ruff: 4.4, huvud: 3.1, nos: 3.6, svans: 2.6, sank: 0, mask: false },
-    { namn: 'lag', ben: 7, kropp: 3.2, ruff: 3.4, huvud: 2.7, nos: 4.9, svans: 2, sank: 3, mask: true },
+    { namn: 'smal', ben: 7.5, kropp: 3.1, ruff: 3.2, huvud: 2.8, nos: 4.4, svans: 1.8, sank: 0.6, arg: true },
   ];
   function vargSida(t) {
     const W = 34, H = 26, fot = H - 1, ben = t.ben, bot = fot - ben, mitt = bot - t.kropp; // mitt: kroppens mittlinje
@@ -95,8 +93,8 @@
       [hals, (x, y) => (y > mitt - 0.5 || x > hx - 2.5 && y > hy + 1) ? 'c' : y < rygg + 1 + t.sank * 0.5 ? 'd' : 'm'],
       [och(framBen(19.5), bakBen(9)), (x, y) => y > fot - 1.6 ? 'l' : 'm'],
       [ora(hx - 1.6), 'd'], [ora(hx + 0.8), (x, y) => x > hx + 0.2 && x < hx + 1.2 && y > hy - t.huvud - 1.6 ? 'k' : 'm'],
-      [huvud, (x, y) => y < hy - 0.6 ? 'm' : t.mask && y > hy - 0.4 ? 'c' : 'l'],
-      [nos, (x, y) => x > nx - 1.4 && y < hy + 1.7 ? 'k' : y > hy + 0.8 ? 'c' : t.mask ? 'c' : 'l'],
+      [huvud, (x, y) => y < hy - 0.6 ? 'm' : 'l'],
+      [nos, (x, y) => x > nx - 1.4 && y < hy + 1.7 ? 'k' : y > hy + 0.8 ? 'c' : 'l'],
       ...(t.arg ? [
         [och(punkt(18, Math.floor(rygg) - 1), punkt(20, Math.floor(rygg) - 1), punkt(22, Math.floor(rygg) - 1), punkt(21, Math.floor(rygg) - 2)), 'd'], // rest nackhår
         [punkt(ex, ey), 'a'], [punkt(ex + 1, ey), 'k'], // gult öga med mörk ögonvrå, inga ögonbryn (Björn)
@@ -116,7 +114,7 @@
       [ell(c, hy + r + 0.2, r - 0.2, 1), 'd'], // skuggan under hakan
       [och(linje([[c - 1.3, bot - 1], [c - 1.4, fot - 0.4]], 0.75), linje([[c + 1.3, bot - 1], [c + 1.4, fot - 0.4]], 0.75)), (x, y) => y > fot - 1.6 ? 'l' : 'm'],
       [och(ora(-1), ora(1)), (x, y) => Math.abs(x - c) > 2.2 && Math.abs(x - c) < 3.4 && y > hy - r - 0.5 ? 'k' : 'm'],
-      [ell(c, hy, r + 0.9, r), (x, y) => y < hy - 0.8 ? 'm' : Math.abs(x - c) > r - 0.6 ? 'l' : t.mask ? 'c' : 'l'],
+      [ell(c, hy, r + 0.9, r), (x, y) => y < hy - 0.8 ? 'm' : 'l'],
       [ell(c, hy + r * 0.65, 1.7, 1.4), 'c'], // nosen
       [och(oga(t, Math.floor(c) - 2, Math.floor(hy)), oga(t, Math.floor(c) + 2, Math.floor(hy)), oga(t, Math.floor(c), Math.floor(hy + r * 0.45))), t.arg ? (x, y) => Math.abs(x - c) > 1 ? 'a' : 'k' : 'k'],
       ...(t.arg ? [
@@ -143,40 +141,6 @@
 
   // ---------- haren (spelets kanin) ----------
   const KANIN = [
-    { // version 1: sitter med öronen rakt upp
-      sida: [
-        '........o.o.',
-        '.......olol.',
-        '.......olol.',
-        '......ommmo.',
-        '..ooooomlkmo',
-        '.ommlllmmmmo',
-        'obmlllllmmo.',
-        'obmmmmmmmdo.',
-        '.oddmmmmddo.',
-        '..oko.ooko..'],
-      fram: [
-        '.o....o.',
-        'olo..olo',
-        'olo..olo',
-        '.omoomo.',
-        'omlllmmo',
-        'okmllmko',
-        '.omcrmo.',
-        'omcbbcmo',
-        'odcbbcdo',
-        '.okooko.'],
-      bak: [
-        '.o....o.',
-        'olo..olo',
-        'olo..olo',
-        '.omoomo.',
-        'omllllmo',
-        'omllllmo',
-        'odlllmdo',
-        'odmbbmdo',
-        'oddbbddo',
-        '.oko.ko.'] },
     { // version 2: längre öron med svarta spetsar, som en skogshare, och höga bakben
       sida: [
         '.........k.k',
@@ -245,6 +209,6 @@
   ];
 
   // ritningarna till spelet (bildstil/djurtillspelet.cjs skriver src/djurbilder.ts). Björns val är inbyggda i steg 5.1.11:
-  // vargen version 1 och haren version 2 och 3
-  window.DJURBILD = { VARG, KANIN, PALS, FAST, vargen: t => ({ sida: vargSida(t), fram: vargFram(t), bak: vargBak(t) }), VARGTYP };
+  // vargen version 1 och haren version 2 och 3 (KANIN[0] och KANIN[1] här)
+  window.DJURBILD = { VARG, KANIN, PALS, FAST, vargen: t => ({ sida: vargSida(t), fram: vargFram(t), bak: vargBak(t) }) };
 })();
