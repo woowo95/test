@@ -2,7 +2,7 @@
 // En knapp i sidhuvudet (kartans tecken) öppnar världskartan över hela fönstret. Kartan går att dra med musen eller fingret
 // och zooma med hjulet eller två fingrar; Esc, krysset eller knappen igen stänger den. Musen över en ruta visar marken och
 // platserna där, och ett tryck utan att dra skriver det under kartan. Själva bilden räknas i ui/varldbild.ts.
-import { vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, SAKER, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
+import { vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { gaIn, huvud, s } from './lage';
 import { omUngefar } from './hjalp';
@@ -94,7 +94,6 @@ function ritaGommor(g: CanvasRenderingContext2D) {
   const vl = s?.varld, v = s && varldMark(s);
   if (!vl || !v) return;
   for (const gr of vl.gravar ?? []) g.drawImage(tecken('kors'), (gr.ruta % v.w) * VK, Math.floor(gr.ruta / v.w) * VK); // gravarna vid leden (steg 11.5.18, platshållare: korset)
-  for (const gm of vl.gommor ?? []) g.drawImage(tecken('packning'), (gm.ruta % v.w) * VK, Math.floor(gm.ruta / v.w) * VK);
 }
 function ritaSallskap(g: CanvasRenderingContext2D) {
   if (!s) return;
@@ -237,10 +236,6 @@ function rutaHtml(x: number, y: number): string {
   }
   const vm = varldMark(s!);
   for (const gr of vl.gravar ?? []) if (vm && gr.ruta === y * vm.w + x) delar.push(`<div class="vkPlats"><b>✝ Grav</b>: ${esc(gr.namn)}<div>Begravd vid leden år ${kalender(s!, gr.t).ar}</div></div>`); // steg 11.5.18
-  for (const gm of vl.gommor ?? []) { // en gömma på rutan (steg 11.5.17)
-    if (!vm || gm.ruta !== y * vm.w + x) continue;
-    delar.push(`<div class="vkPlats"><b>🎒 Gömma</b>: ${Object.entries(gm.saker).map(([k, n]) => `${n} ${esc((SAKER[k]?.namn ?? k).toLowerCase())}`).join(', ')}<div>Gömdes år ${kalender(s!, gm.t).ar}</div></div>`);
-  }
   for (const sl of sallskapNu(vl)) { // sällskapet på rutan (steg 11.5.12)
     const l = sallskapLage(s, sl);
     if (!l || Math.round(l.x) !== x || Math.round(l.y) !== y) continue;

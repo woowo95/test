@@ -145,7 +145,7 @@ export const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver', 'packsadel', 
 export interface ResmalDef { namn: string; mal: readonly LandmarkId[]; stannar: number }
 export const RESMAL = {
   handel: { namn: 'Handel', mal: ['by', 'handelslager'], stannar: 1 },
-  uppdrag: { namn: 'Uppdrag', mal: ['by', 'ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'utpost', 'rovarlager'], stannar: 1 },
+  uppdrag: { namn: 'Uppdrag', mal: ['by', 'ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'utpost', 'rovarlager', 'gomma'], stannar: 1 },
   turne: { namn: 'Turné', mal: ['by'], stannar: 1 },
   slakt: { namn: 'Besök hos släkt', mal: ['by'], stannar: 2 },
   se: { namn: 'Se en plats', mal: ['ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'karavanrest', 'rastplats', 'by', 'handelslager', 'utpost'], stannar: 0.25 },
@@ -642,7 +642,7 @@ function inteIvag(s: State, sl: Sallskap) {
 }
 export function resaBehov(s: State, dt: number) {
   const vl = s.varld;
-  if (vl?.gommor?.length) vl.gommor = vl.gommor.filter(g => s.now - g.t < RESA.gommaDygn * DAY); // gömmorna ligger kvar en tid (steg 11.5.17)
+  if (vl?.gommor) delete vl.gommor; // (en äldre sparning: gömmorna är platser i världen sedan steg 12.1.9)
   for (const sl of sallskapNu(s.varld)) {
     if (!PA_VAGEN.includes(sl.skede)) { inteIvag(s, sl); continue; }
     SAKNADKROK.koll?.(s, sl); // den som inte kommit hem i tid blir saknad (steg 11.8.6, vilsegang.ts)
@@ -788,6 +788,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   const ruin = ruinRad(vl, sl.mal);
   if (ruin) for (const p of folk) saFynd(s, vl, p, ruin, sl.mal, t); // de som sett ruinen minns det som finns kvar (steg 11.8.8)
   if (plats.k === 'gravhog') for (const p of folk) FYNDSETT.grav?.(s, p, sl.mal, t); // och gravgåvorna i högen (steg 11.13.28)
+  if (plats.k === 'gomma') for (const p of folk) FYNDSETT.gomma?.(s, p, sl.mal, t); // och det som ligger i gömman (steg 12.1.9)
   if (!r || !BYSORTER[r.sort].folk || r.tal.folk <= 0) return;
   const k = r.syn;
   if (sl.skal === 'sandebud') budFram(s, sl, r, t);
@@ -1196,14 +1197,16 @@ const malNamn = (s: State, sl: Sallskap) => s.varld?.platser?.find(p => p.nr ===
 export interface UppdragUtfall { namn: string; hur: 'klart' | 'tomt' | 'misslyckat'; fick: Record<string, number> }
 // fynden med egna filer: det vaktade föremålet i ett rövarläger (steg 11.13.27, vaktat.ts) och gravgåvorna (steg 11.13.28, gravfynd.ts)
 type FramKrok = (s: State, sl: Sallskap, t: number) => (UppdragUtfall & { text: string }) | undefined;
-export const UPPDRAGFRAM: { vaktat?: FramKrok; grav?: FramKrok } = {};
+export const UPPDRAGFRAM: { vaktat?: FramKrok; grav?: FramKrok; gomma?: FramKrok } = {};
 // den som kommer till en plats ser fyndet där (steg 11.13.28): gravfynd.ts sätter kroken
-export const FYNDSETT: { grav?: (s: State, p: Person, nr: number, t: number) => void } = {};
+export const FYNDSETT: { grav?: (s: State, p: Person, nr: number, t: number) => void; gomma?: (s: State, p: Person, nr: number, t: number) => void } = {};
+// gömman längs leden (steg 12.1.9): gomma.ts sätter kroken
+export const GOMMAKROK: { lagg?: (s: State, sl: Sallskap, saker: Record<string, number>, t: number) => unknown } = {};
 // p känner till en vilsegång på vägen till platsen nr (steg 11.8.6)
 const vilseVid = (p: Person, nr: number) => !!p.lardomar?.some(l => l.k === 'uppdrag' && l.om === 'vilsegang' && l.g === nr);
 export function uppdragFram(s: State, sl: Sallskap, t: number) {
   const vl = s.varld!, u = sl.uppdrag !== undefined ? uppdragNr(vl, sl.uppdrag) : undefined, ruin = ruinRad(vl, sl.mal);
-  const vk = !u || u.mal !== sl.mal || u.k === 'vaktat' ? UPPDRAGFRAM.vaktat?.(s, sl, t) ?? UPPDRAGFRAM.grav?.(s, sl, t) : undefined; // det vaktade också när någon utlyst en belöning för det (steg 11.8.11)
+  const vk = !u || u.mal !== sl.mal || u.k === 'vaktat' ? UPPDRAGFRAM.vaktat?.(s, sl, t) ?? UPPDRAGFRAM.grav?.(s, sl, t) ?? UPPDRAGFRAM.gomma?.(s, sl, t) : undefined; // det vaktade också när någon utlyst en belöning för det (steg 11.8.11)
   if (vk) { uppdragUtfall(s, sl, vk.namn, vk.hur, vk.fick, vk.text, t); return; }
   const fick: Record<string, number> = {};
   let namn = u ? uppdragDef(u.k).namn : ruin ? 'Ruinskatten' : 'Uppdraget', hur: UppdragUtfall['hur'] = 'tomt', text: string;
@@ -1573,8 +1576,7 @@ export const UTVAGAR: Record<string, UtvagDef> = {
       const vl = s.varld;
       if (!vl || sl.ruta === undefined || !Object.keys(l.slapp).length) return;
       for (const [k, n] of Object.entries(l.slapp)) tappa(sl, k, n);
-      (vl.gommor ??= []).push({ ruta: sl.ruta, saker: { ...l.slapp }, t, by: sl.by });
-      count(s, 'resa gömma');
+      GOMMAKROK.lagg?.(s, sl, { ...l.slapp }, t); // en gömma i världen som de minns (steg 12.1.9, gomma.ts)
       dagbok(s, sl, 'ut', `Lasten var för tung; sällskapet gömde ${Object.entries(l.slapp).map(([k, n]) => `${n} ${(SAKER[k]?.namn ?? k).toLowerCase()}`).join(', ')} vid vägen.`, t);
     },
   },

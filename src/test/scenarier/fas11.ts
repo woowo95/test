@@ -2213,9 +2213,10 @@ SCENARIER.utvagar = {
     const tung = ny(2, { pack: { sten: 30 } }); delete tung.sk.skador; tung.sl.pack.brod = 6;
     const lage = SIM.utvagLage(tung.s, tung.sl)!;
     SIM.UTVAGAR.slappa!.gor(tung.s, tung.sl, lage, tung.s.now);
-    const gm = tung.s.varld!.gommor ?? [];
+    const gm = (tung.s.varld!.platser ?? []).filter(p => p.k === 'gomma'), vt = SIM.varldMark(tung.s)!;
     const lastEfter = SIM.lastFart(tung.s, tung.sl);
-    tung.s.now += 21 * SIM.DAY; SIM.resaBehov(tung.s, 600 * SIM.SEC);
+    tung.s.now += 21 * SIM.DAY; SIM.platserUpphor(tung.s.varld!, tung.s.now);
+    const kvarG = (tung.s.varld!.platser ?? []).filter(p => p.k === 'gomma').length;
     return [
       [`ett mål långt bort (${mal.namn})`, !!mal],
       [`den med brutna ben är långsam (${fartSkadad.toFixed(2)} mot gränsen ${SIM.RESA.langsam})`, fartSkadad < SIM.RESA.langsam],
@@ -2227,8 +2228,51 @@ SCENARIER.utvagar = {
       [`den som lämnades går hem ensam (${ensam?.skede}, ${kall.sl.medl.includes(kall.sk.id) ? 'kvar' : 'ute ur sällskapet'})`, !!ensam && ensam.skede === 'hemat' && !kall.sl.medl.includes(kall.sk.id)],
       [`den som läkt går själv igen`, gar],
       [`den tunga lasten: ${Object.entries(lage.slapp).map(([k, n]) => `${n} ${k}`).join(', ')} släpps (värde ${Math.round(lage.slappVarde)}), lasten bromsar inte längre (${lastEfter.toFixed(2)})`, Object.keys(lage.slapp).length > 0 && lastEfter === 1 && Object.values(lage.slapp).every(Number.isInteger)],
-      [`det släppta blir en gömma på rutan (${gm.length})`, gm.length === 1 && gm[0]!.ruta === tung.sl.ruta],
-      [`gömman är borta efter ${SIM.RESA.gommaDygn} dygn (${tung.s.varld!.gommor?.length ?? 0} kvar)`, !(tung.s.varld!.gommor?.length)],
+      [`det släppta blir en gömma på rutan eller intill (${gm.length})`, gm.length === 1 && Math.max(Math.abs(gm[0]!.x - tung.sl.ruta! % vt.w), Math.abs(gm[0]!.y - Math.floor(tung.sl.ruta! / vt.w))) <= 2],
+      [`gömman är borta efter ${SIM.RESA.gommaDygn} dygn (${kvarG} kvar)`, kvarG === 0],
+    ];
+  },
+};
+
+SCENARIER.gomma = {
+  text: 'Gömmorna längs leden (steg 12.1.9, gomma.ts): det ett sällskap släpper för att komma undan ligger i en gömma, en hemlig plats i världen, i hela saker. Resenärerna minns var den ligger och vad som ligger där (ett fynd), en senare resa väger gömman som mål, och den som kommer dit tar det som ryms i packningen. Efter RESA.gommaDygn dygn är gömman borta',
+  kor: () => {
+    const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50 && SIM.kanGa(q));
+    const hb = SIM.byPlats(vl0, vl0.huvud!)!, v0 = SIM.varldMark(s0)!;
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl0, g.nr)!).filter(p => p && SIM.vagMellan(vl0, v0, hb.y * v0.w + hb.x, p.y * v0.w + p.x, 'fots', s0.now)).sort((x, y) => Math.hypot(y.x - hb.x, y.y - hb.y) - Math.hypot(x.x - hb.x, x.y - hb.y))[0]!;
+    // ett sällskap på väg med en tung last av yxor, som släpper en del vid vägen
+    const s = SIM.cloneState(s0), folk = vuxna.slice(0, 2).map(q => s.people.find(x => x.id === q.id)!);
+    const sl = SIM.nyttSallskap(s, folk[0]!, mal.nr, 'handel')!; SIM.foljMed(s.varld!, sl, folk[1]!);
+    for (const x of folk) { SIM.gaBort(s, x); delete x.skador; delete x.sjuk; x.blod = 1; }
+    const v = SIM.varldMark(s)!, vag = SIM.vagMellan(s.varld!, v, hb.y * v.w + hb.x, mal.y * v.w + mal.x, 'fots', s.now)!;
+    sl.skede = 'ute'; sl.vag = { fran: vag.fran, till: vag.till, steg: vag.steg };
+    const r = SIM.vagenRutor(s, sl); sl.pos = Math.floor((r.length - 1) * 0.3); sl.ruta = r[sl.pos]; sl.gang = 0;
+    sl.pack = { brod: 6, vattensack: 4, yxa: 3 }; sl.behov = { matt: 1, vatska: 1, ork: 1, fulla: 4, foder: 0 };
+    const lage = { ...SIM.utvagLage(s, sl)!, slapp: { yxa: 3 }, slappVarde: 3 * SIM.grundvarde('yxa') };
+    SIM.UTVAGAR.slappa!.gor(s, sl, lage, s.now);
+    const g = (s.varld!.platser ?? []).find(p => p.k === 'gomma');
+    const minns = folk.map(q => q.lardomar?.find(l => l.k === 'uppdrag' && l.a === SIM.fyndId(g?.nr ?? -9)));
+    const vet = folk.every(q => g && SIM.kannerOrt(s, q, g.nr) !== undefined);
+    const varde = g ? SIM.uppdragVid(s, folk[0]!, g.nr)?.varde ?? 0 : 0;
+    // en senare resa till gömman: den som kommer fram tar det som ryms
+    const s2 = SIM.cloneState(s), f2 = vuxna.slice(2, 4).length === 2 ? vuxna.slice(2, 4) : vuxna.slice(0, 2), led2 = s2.people.find(q => q.id === f2[0]!.id)!;
+    if (g) SIM.saGomma(s2, led2, g.nr, s2.now);
+    const sl2 = g ? SIM.nyttSallskap(s2, led2, g.nr, 'uppdrag') : undefined;
+    if (sl2) { for (const id of [f2[1]!.id]) SIM.foljMed(s2.varld!, sl2, s2.people.find(q => q.id === id)!); sl2.uppdrag = SIM.fyndId(g!.nr); for (const id of sl2.medl) SIM.gaBort(s2, s2.people.find(q => q.id === id)!); sl2.pack = {}; SIM.uppdragFram(s2, sl2, s2.now); }
+    const g2 = g && SIM.varldPlatsNr(s2.varld!, g.nr);
+    // en resa till, när gömman är tom
+    const s3 = s2 && sl2 ? SIM.cloneState(s2) : undefined, led3 = s3 && SIM.living(s3).find(q => SIM.ageOf(q, s3.now) >= 18 && !(s3.varld!.sallskap ?? []).some(x => x.medl.includes(q.id))), sl3 = s3 && g && led3 ? SIM.nyttSallskap(s3, led3, g.nr, 'uppdrag') : undefined; // en annan, som inte redan är på väg
+    if (sl3) { sl3.pack = {}; SIM.uppdragFram(s3!, sl3, s3!.now); }
+    // tiden går ut
+    const s4 = SIM.cloneState(s); s4.now += (SIM.RESA.gommaDygn + 1) * SIM.DAY; SIM.platserUpphor(s4.varld!, s4.now);
+    return [
+      [`det släppta ligger i en gömma i världen (${g ? JSON.stringify(g.inne) : 'ingen'}), i hela saker`, !!g && g.inne?.yxa === 3 && Object.values(g.inne).every(Number.isInteger) && !sl.pack.yxa],
+      ['gömman är hemlig och upphör efter en tid', !!g && !!(SIM.LANDMARKEN.gomma as { hemlig?: true }).hemlig && g.till === g.fran + SIM.RESA.gommaDygn * SIM.DAY],
+      [`resenärerna minns var den ligger och vad som ligger där (${minns.map(l => l?.v ?? '-').join(', ')})`, vet && minns.every(l => !!l && l.v > 0)],
+      [`gömman väger som mål för en resa (värde ${Math.round(varde)})`, varde > 0 && (SIM.RESMAL.uppdrag.mal as readonly string[]).includes('gomma')],
+      [`den som kommer dit tar det som ryms (${sl2?.utfall?.hur}: ${JSON.stringify(sl2?.pack)}, kvar ${JSON.stringify(g2?.inne)})`, sl2?.utfall?.hur === 'klart' && sl2.pack.yxa === 3 && !Object.keys(g2?.inne ?? {}).length],
+      [`nästa resa finner gömman tom (${sl3?.utfall?.hur})`, sl3?.utfall?.hur === 'tomt'],
+      [`gömman är borta efter ${SIM.RESA.gommaDygn} dygn`, !(s4.varld!.platser ?? []).some(p => p.k === 'gomma')],
     ];
   },
 };
