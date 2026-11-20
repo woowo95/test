@@ -2796,7 +2796,8 @@ SCENARIER.handelsresa = {
     const [X, Y, Z] = byar as [SIM.VarldPlats, SIM.VarldPlats, SIM.VarldPlats];
     const rX = SIM.radNr(vl, X.by!)!, rY = SIM.radNr(vl, Y.by!)!;
     // a känner bara till X och Y; Z vet a inget om
-    for (const p of SIM.living(s)) p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'pris' && !(l.k === 'ort' && byar.some(q => q.nr === l.a)));
+    // (alla platser utom hemmet och inga uppdrag: ett rykte om en tom byplats eller ett uppdrag drog annars a dit, steg 12.1.112)
+    for (const p of SIM.living(s)) p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'pris' && l.k !== 'uppdrag' && !(l.k === 'ort' && l.a !== hem.nr));
     for (const q of [X, Y]) SIM.larOrt(s, a, q.nr, SIM.O_BESOKT, 1); // besökta: ingen nyfikenhet drar a dit
     const varor = (Object.keys(SIM.MATERIALMAL) as (keyof typeof SIM.MATERIALMAL)[]).filter(k => !SIM.FOOD.includes(k) && SIM.grundvarde(k) > 0 && !!SIM.gruppAv(k) && SIM.gruppAv(k) !== 'mat' && SIM.viktOf(k) <= 2);
     const salj = varor[0]!, kop = (Object.keys(SIM.MATERIALMAL) as (keyof typeof SIM.MATERIALMAL)[]).filter(k => !SIM.FOOD.includes(k) && SIM.grundvarde(k) > 0 && !!SIM.gruppAv(k) && SIM.gruppAv(k) !== 'mat' && SIM.gruppAv(k) !== SIM.gruppAv(salj) && SIM.viktOf(k) <= 5)
