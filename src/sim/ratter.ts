@@ -62,7 +62,6 @@ export const MALTIDSNIVA = {
   fest: { namn: 'Fest', humor: MALTID.fest, tanke: 'Åt en festmåltid' }, // bara ur kokgropen (steg 10.7.28, matlagning.ts)
 } satisfies Record<string, { namn: string; humor: number; tanke: string }>;
 export type Maltidsniva = keyof typeof MALTIDSNIVA;
-export const MALTIDSNIVA_LIST = Object.keys(MALTIDSNIVA) as Maltidsniva[];
 // nivån för en lagad rätt med de här grupperna: två grupper är lagad, tre med smak bland dem är fin
 // nivån på en sak man äter: rätten i krukan har sin, det grillade och torkade är enkelt, annars är det rått
 export const maltidsNiva = (k: string): Maltidsniva => rattInfo(k)?.niva ?? (/^(grill|torr|rok|salt|brod)/.test(k) ? 'enkel' : 'ratt');

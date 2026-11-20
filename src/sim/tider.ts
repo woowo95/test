@@ -6,6 +6,11 @@ import type { Act } from './typer';
 import { ACTS } from './handlingar';
 import { GORS } from './redskap';
 import { TORST } from './torst';
+import { BOSKAP, SLAKTDJUR } from './boskap';
+import { HAGE } from './hage';
+import { REST } from './rester';
+import { STYCK } from './styckning';
+import { VINTER } from './slatter';
 
 // ---------- arbetstiderna (steg 2.12.8) ----------
 // Riktlinjen för hur lång tid ett arbete får ta (Arbete, Arbetstider i designdokumentet). Spelet följer klockan, så det är
@@ -20,8 +25,6 @@ export const TIDSLAG = {
   vagg: { namn: 'Vägg (per ruta)', min: 20, max: 20 },
   golv: { namn: 'Golv (per ruta)', min: 5, max: 10 },
   falt: { namn: 'Fältruta', min: 1, max: 8 }, // 1: att så en ruta tar en minut (steg 3.10.23.4; 2 före)
-  // inte i riktlinjen: att slakta, rensa, grilla och torka en bit (förslag, Björn kan ändra)
-  bearbeta: { namn: 'Bearbeta mat och vilt', min: 2, max: 8 },
   fylla: { namn: 'Fylla ett kärl vid vattnet', min: 5 / 60, max: 5 / 60 }, // fem sekunder (steg 12.1.37); hålet i isen räknas för sig
 };
 export type TidSlag = keyof typeof TIDSLAG;
@@ -33,6 +36,10 @@ export function allaTider(): { namn: string; slag: TidSlag | undefined; min: num
   for (const d of [...Object.values(STATIONER), ...Object.values(TILLBEHOR), ...Object.values(DORRAR)]) ut.push({ namn: d.namn, slag: 'station', min: d.min });
   for (const m of Object.values(MATERIAL)) if (m.k === 'vagg' || m.k === 'golv') ut.push({ namn: m.namn, slag: m.k, min: m.tim * 60 });
   ut.push({ namn: 'Fylla ett kärl vid vattnet', slag: 'fylla', min: TORST.fyllSek / 60 }); // steg 12.1.37
+  // djuren och resterna (steg 12.1.75): att mjölka, stycka en del, tömma latrinen och slå en ruta är små saker, att klippa,
+  // avliva och valla stora
+  for (const [namn, slag, min] of [['Mjölka en get', 'liten', BOSKAP.mjolkMin], ['Stycka en del', 'liten', STYCK.minPerDel], ['Tömma latrinen', 'liten', REST.tomMin], ['Slå en ruta äng', 'liten', VINTER.slaMin],
+    ['Klippa ett får', 'stor', BOSKAP.klippMin], ['Avliva ett djur', 'stor', SLAKTDJUR.min], ['Valla ett djur', 'stor', HAGE.vallaMin]] as const) ut.push({ namn, slag, min });
   for (const [k, n] of [['röja', ODLING.rojaMin], ['gräva', ODLING.beredaMin], ['så', ODLING.saMin], ['skörda', ODLING.skordaMin]] as const) ut.push({ namn: `Fältruta: ${k}`, slag: 'falt', min: n });
   return ut;
 }
@@ -48,12 +55,11 @@ export const TID_MARG = 1.5;
 // Slaget räknas för varje handling i ACTS: ett hantverk efter sakerna det gör (skaffa.slag i saker.ts, den längsta), en station, ett tillbehör och en dörr är en station, och resten en stund. En ny
 // handling får alltså alltid ett slag (en ny sak kräver redan sitt slag, steg 2.12.8)
 // att slakta, rensa, grilla och torka görs i omgångar (en hel fångst i ett pass, SLAKT i redskap.ts), så passet är en stund;
-// tiden per bit står i SLAKT och prövas av scenariot tider
-const BEARBETA = new Set<string>(), STATION_AKT = new Set(['station', 'tillbehor', 'dorr']), FYLLA = new Set(['vatten']); // att hämta vatten är att fylla ett kärl (steg 12.1.37)
+// tiden per bit står i recepten (liten eller stor sak) och prövas av scenariot tider
+const STATION_AKT = new Set(['station', 'tillbehor', 'dorr']), FYLLA = new Set(['vatten']); // att hämta vatten är att fylla ett kärl (steg 12.1.37)
 let tidAkt: Record<Act, TidSlag | 'stund'> | undefined; // räknas när den behövs (saker.ts läser den här filen när den laddas)
 export function tidSlagAv(a: Act): TidSlag | 'stund' {
   tidAkt ??= Object.fromEntries((Object.keys(ACTS) as Act[]).map(x => {
-    if (BEARBETA.has(x)) return [x, 'bearbeta'];
     if (STATION_AKT.has(x)) return [x, 'station'];
     if (FYLLA.has(x)) return [x, 'fylla'];
     const ks = GORS[x];

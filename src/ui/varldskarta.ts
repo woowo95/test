@@ -7,7 +7,7 @@
 import { byFlikar, PlatsRuta, Sallskap, TEKNIK, vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { gaIn, huvud, s } from './lage';
-import { esc, omUngefar } from './hjalp';
+import { durTxt, esc, omUngefar } from './hjalp';
 import { TECKEN, TECKENPAL, VK, huvudbynsPlats, Vy, begransa, dra, helaKartan, namnPaKartan, NAMNZOOM, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
 import { bildDuk } from './bildduk';
 
@@ -279,7 +279,7 @@ function sidaHtml(): string {
   else if (byFlik === 'styre') inne = `<table>${tal('led')}<tr><th>Tro</th><td>${f.tro ? `${esc(f.tro.namn)}, ${f.tro.andel} %${viss(r)}` : r.visshet ? `Ingen${viss(r)}` : OKAND}</td></tr>${tal('lyder')}</table>`;
   else if (byFlik === 'kunskap') inne = f.tek ? (f.tek.length ? `<ul>${f.tek.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${viss(r)}` : `<div>Inga tekniker${viss(r)}</div>`) : OKAND;
   else if (byFlik === 'historia') inne = `${f.grundad !== undefined ? `<div>Grundad år ${f.grundad}${f.ursprung ? ` av folk från ${esc(f.ursprung)}` : ''}${viss(r)}</div>` : `<div>Ursprung ${OKAND}</div>`}${f.historia.length ? `<ul>${f.historia.slice(-30).reverse().map(h => `<li>År ${h.ar}: ${esc(h.text)}</li>`).join('')}</ul>` : '<div class="vkOkand">Byn har inte hört något om den i världens krönika</div>'}`;
-  else inne = r.egen ? '<div>Den egna byn</div>' : f.forb ? `<table><tr><th>Hållning</th><td>${f.forb.hallning ? `${esc(f.forb.hallning)} (${f.forb.inst})${viss(r)}` : OKAND}</td></tr><tr><th>Krig eller fred</th><td>${f.forb.lage ? esc(f.forb.lage) : 'Inget'}</td></tr><tr><th>Räder</th><td>${f.forb.rader}</td></tr><tr><th>Vägen dit</th><td>${f.forb.dygn !== undefined ? `${String(f.forb.dygn).replace('.', ',')} dygn till fots` : 'Ingen känd väg'}</td></tr></table>` : OKAND;
+  else inne = r.egen ? '<div>Den egna byn</div>' : f.forb ? `<table><tr><th>Hållning</th><td>${f.forb.hallning ? `${esc(f.forb.hallning)} (${f.forb.inst})${viss(r)}` : OKAND}</td></tr><tr><th>Krig eller fred</th><td>${f.forb.lage ? esc(f.forb.lage) : 'Ingetdera'}</td></tr><tr><th>Räder</th><td>${f.forb.rader}</td></tr><tr><th>Vägen dit</th><td>${f.forb.dygn !== undefined ? `${durTxt(f.forb.dygn * DAY)} till fots` : 'Ingen känd väg'}</td></tr></table>` : OKAND;
   const namn = BYFLIKAR.find(x => x.id === byFlik)!.namn;
   return `<div><b>${esc(r.sort)} ${esc(r.namn)}</b>${viss(r)}</div>${flikar}<div class="vkFlikNamn vkOkand">${namn}</div>${inne}`;
 }

@@ -50,10 +50,14 @@ export const RT = balans('recept', {
 // trä till ett bord som tar w × h rutor, med stubbar på platserna runt det (platserAv i stationer.ts)
 const bordSkiva = (w: number, h: number) => Math.ceil(w * h / 2) * RT.bordVirke; // skivan av plankor (steg 10.2.90): en planka för varje två rutor, och ett virke till stubbarna (litet bord 1, bord 2, långbord 3)
 
+// det som skärs ur ett slaktat djur med kniven: lika för varje art, min minuter av slaget slag
+function slakt<const K extends string>(ks: readonly K[], min: number, slag: 'liten' | 'stor') {
+  return Object.fromEntries(ks.map(k => [k, { var: 'sak' as const, min, slag, tek: 'kniv' }])) as Record<K, { var: 'sak'; min: number; slag: 'liten' | 'stor'; tek: string }>;
+}
 const DEF = {
   // sakerna (saker.ts): redskapen, maten som lagas och det som slaktas
-  kott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
-  fisk: { var: 'sak', av: { abborre: 1 }, min: 2, slag: 'bearbeta' },
+  kott: { var: 'sak', min: 3, slag: 'liten', tek: 'kniv' },
+  fisk: { var: 'sak', av: { abborre: 1 }, min: 2, slag: 'liten' },
   // steg 7.5: stationerna och det som görs där
   stenhuggarplats: { var: 'station', av: { sten: 4, virke: 1 }, min: 20, slag: 'stor', tek: 'stenhuggarplats' },
   klyvplats: { var: 'station', av: { virke: 1, ved: 2 }, min: 15, slag: 'stor', tek: 'klyvplats' },
@@ -64,7 +68,7 @@ const DEF = {
   vavstol: { var: 'station', av: { virke: 2, sten: 4, rep: 1 }, min: 20, slag: 'stor', tek: 'vavstol' },
   harden: { var: 'station', av: { huggen_sten: 6 }, min: 20, slag: 'stor', tek: 'harden' },
   huggen_sten: { var: 'sak', av: { sten: 2 }, min: 5, slag: 'stor', tek: 'stenhuggarplats' },
-  plankor: { var: 'sak', av: { virke: 1 }, min: 8, slag: 'bearbeta', tek: 'klyvplats' },
+  plankor: { var: 'sak', av: { virke: 1 }, min: 5, slag: 'stor', tek: 'klyvplats' },
   salva: { var: 'sak', av: { rolleka: 2, talg: 1 }, min: 5, slag: 'stor', tek: 'ortkok' },
   tjara: { var: 'sak', av: { ved: 3 }, min: 5, slag: 'stor', tek: 'ortkok' },
   benlim: { var: 'sak', av: { ben: 2 }, min: 5, slag: 'stor', tek: 'ortkok' },
@@ -72,7 +76,7 @@ const DEF = {
   lader: { var: 'sak', av: { skinn: 1, talg: 1 }, min: 5, slag: 'stor', tek: 'garvning' },
   bok: { var: 'sak', av: { pergament: 8, plankor: 2 }, min: 5, slag: 'stor', tek: 'bok', bank: 'snickarbank', bara: true }, // steg 10.6.6: 8 blad mellan 2 plankor
   pergament: { var: 'sak', av: { skinn: 1 }, min: 5, slag: 'stor', tek: 'pergament' }, // steg 10.6.4: ett skinn blir 4 blad vid garvningsställningen
-  lin: { var: 'sak', av: { ratlin: 1 }, min: 5, slag: 'bearbeta', tek: 'tork' },
+  lin: { var: 'sak', av: { ratlin: 1 }, min: 4, slag: 'liten', tek: 'tork' },
   trad: { var: 'sak', av: { lin: 2 }, min: 3, slag: 'liten', tek: 'slanda' },
   lintyg: { var: 'sak', av: { trad: 3 }, min: 5, slag: 'stor', tek: 'vavstol' },
   ulltrad: { var: 'sak', av: { ull: 2 }, min: 3, slag: 'liten', tek: 'slanda' }, ylle: { var: 'sak', av: { ulltrad: 3 }, min: 5, slag: 'stor', tek: 'vavstol' }, // ullen (steg 9.8.14): som linet
@@ -96,33 +100,29 @@ const DEF = {
   skjorta: { var: 'plagg', mangd: 2, av: {}, min: 5 },
   hatt: { var: 'plagg', mangd: 2, av: {}, min: 3 }, // halmhatten (steg 12.1.34): två hö, en liten sak
   kappa: { var: 'plagg', mangd: 3, av: {}, min: 5 }, sjal: { var: 'plagg', mangd: 1, av: {}, min: 3 }, // ullens plagg (steg 9.8.15)
-  braxkott: { var: 'sak', av: { braxen: 1 }, ger: 2, min: 3, slag: 'bearbeta' }, /* en braxen ger två kött (rensa i DJUR) */ sikkott: { var: 'sak', av: { sik: 1 }, min: 3, slag: 'bearbeta' }, // steg 9.6.17
-  rokfisk: { var: 'sak', av: { fisk: 1 }, min: 2, slag: 'bearbeta' }, rokkott: { var: 'sak', av: { kott: 1 }, min: 2, slag: 'bearbeta' }, // steg 9.6.8
-  saltfisk: { var: 'sak', av: { fisk: 4, salt: 1 }, ger: 4, min: 3, slag: 'bearbeta' }, saltkott: { var: 'sak', av: { kott: 4, salt: 1 }, ger: 4, min: 3, slag: 'bearbeta' }, // steg 9.6.19
-  malt: { var: 'sak', av: { korn: 4 }, ger: 4, min: 2, slag: 'bearbeta' }, mjol: { var: 'sak', av: { korn: 4 }, ger: 4, min: 4, slag: 'bearbeta' }, brod: { var: 'sak', av: { mjol: 4 }, ger: 4, min: 3, slag: 'bearbeta' }, // steg 9.6.13, 9.6.22 och 9.6.23
-  gaddkott: { var: 'sak', av: { gadda: 1 }, min: 3, slag: 'bearbeta' }, // gäddan ger 2 kött (steg 7.4.3)
-  mortkott: { var: 'sak', av: { mort: 2 }, min: 2, slag: 'bearbeta' }, // 2 mörtar rensas till 1 kött
+  braxkott: { var: 'sak', av: { braxen: 1 }, ger: 2, min: 3, slag: 'liten' }, /* en braxen ger två kött (rensa i DJUR) */ sikkott: { var: 'sak', av: { sik: 1 }, min: 3, slag: 'liten' }, // steg 9.6.17
+  rokfisk: { var: 'sak', av: { fisk: 1 }, min: 2, slag: 'liten' }, rokkott: { var: 'sak', av: { kott: 1 }, min: 2, slag: 'liten' }, // steg 9.6.8
+  saltfisk: { var: 'sak', av: { fisk: 4, salt: 1 }, ger: 4, min: 3, slag: 'liten' }, saltkott: { var: 'sak', av: { kott: 4, salt: 1 }, ger: 4, min: 3, slag: 'liten' }, // steg 9.6.19
+  malt: { var: 'sak', av: { korn: 4 }, ger: 4, min: 2, slag: 'liten' }, mjol: { var: 'sak', av: { korn: 4 }, ger: 4, min: 4, slag: 'liten' }, brod: { var: 'sak', av: { mjol: 4 }, ger: 4, min: 3, slag: 'liten' }, // steg 9.6.13, 9.6.22 och 9.6.23
+  gaddkott: { var: 'sak', av: { gadda: 1 }, min: 3, slag: 'liten' }, // gäddan ger 2 kött (steg 7.4.3)
+  mortkott: { var: 'sak', av: { mort: 2 }, min: 2, slag: 'liten' }, // 2 mörtar rensas till 1 kött
   fangstbank: { var: 'station', av: { virke: 2, grenar: 2 }, min: 20, slag: 'stor', tek: 'fangstbank' }, // steg 7.4.1
   mjarde: { var: 'sak', av: { torrgras: 3, rep: 1 }, min: 5, slag: 'stor', tek: 'mjarde' }, // steg 7.4.2: görs bara vid fångstbänken
   yxa: { var: 'sak', av: { flinta: 1, grenar: 1 }, min: 5, slag: 'stor', tek: 'yxa' },
   fiskespjut: { var: 'sak', av: { grenar: 1 }, min: 4, slag: 'liten', tek: 'fiskespjut', verktyg: { yxa: 'yxan', flinta: 'en flintsten' }, bank: 'snickarbank' },
   korg: { var: 'sak', av: { torrgras: 3 }, min: 5, slag: 'stor', tek: 'korg' },
   rep: { var: 'sak', av: { torrgras: 2 }, min: 4, slag: 'liten', tek: 'rep' },
-  talg: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
-  ben: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
+  talg: { var: 'sak', min: 3, slag: 'liten', tek: 'kniv' },
+  ben: { var: 'sak', min: 3, slag: 'liten', tek: 'kniv' },
   flintspjut: { var: 'sak', av: { flinta: 1, rep: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'flintspjut', bank: 'snickarbank' },
   nat: { var: 'sak', av: { trad: 8, rep: 1, sten: 2 }, min: 5, slag: 'stor', tek: 'nat' }, // nätet (steg 9.6.16): mycket tråd, knutet vid slöjdbänken, med stenar som sänken
   metspo: { var: 'sak', av: { rep: 1, ben: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'metspo', bank: 'snickarbank' },
   kniv: { var: 'sak', av: { flinta: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'kniv' },
-  skinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
-  vargkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
-  radjurkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, farkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, getkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, kokott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, svinkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, // steg 10.3.14
-  fagelkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' }, bjornkott: { var: 'sak', min: 3, slag: 'bearbeta', tek: 'kniv' },
-  farskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' }, getskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' }, kohud: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' }, svinskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' }, vitskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
-  vargskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
-  fjadrar: { var: 'sak', min: 2, slag: 'bearbeta', tek: 'kniv' },
-  radjursskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
-  bjornskinn: { var: 'sak', min: 5, slag: 'bearbeta', tek: 'kniv' },
+  skinn: { var: 'sak', min: 5, slag: 'stor', tek: 'kniv' },
+  ...slakt(['vargkott', 'radjurkott', 'farkott', 'getkott', 'kokott', 'svinkott', 'fagelkott', 'bjornkott'], 3, 'liten'), // köttet av varje art (steg 10.3.14)
+  ...slakt(['farskinn', 'getskinn', 'kohud', 'svinskinn', 'vitskinn', 'vargskinn'], 5, 'stor'), // skinnen
+  fjadrar: { var: 'sak', min: 2, slag: 'liten', tek: 'kniv' },
+  ...slakt(['radjursskinn', 'bjornskinn'], 5, 'stor'),
   bensyl: { var: 'sak', av: { ben: 1 }, min: 4, slag: 'liten', tek: 'bensyl', verktyg: { sten: 'en sten', flinta: 'en flinta' } },
   boll: { var: 'sak', av: { skinn: 1, torrgras: 1 }, min: 4, slag: 'liten', tek: 'boll' },
   slagtra: { var: 'sak', av: { ved: 1 }, min: 4, slag: 'liten', tek: 'slagtra', verktyg: { kniv: 'kniven', flinta: 'en flinta' }, bank: 'snickarbank' },
@@ -132,12 +132,12 @@ const DEF = {
   lyra: { var: 'sak', av: { ved: 1, rep: 1 }, min: 5, slag: 'stor', tek: 'lyra', verktyg: { kniv: 'kniven', flinta: 'en flinta' }, bank: 'snickarbank', bara: true, kniv: true },
   skara: { var: 'sak', av: { flinta: 1, grenar: 1, rep: 1 }, min: 4, slag: 'liten', tek: 'kniv' }, // skäran till slåttern (steg 9.8.9)
   benspade: { var: 'sak', av: { ben: 3, rep: 1, grenar: 1 }, min: 5, slag: 'stor', tek: 'benspade' },
-  grillfisk: { var: 'sak', av: { fisk: 1 }, min: 7.5, slag: 'bearbeta', tek: 'grill' },
-  grillkott: { var: 'sak', av: { kott: 1 }, min: 7.5, slag: 'bearbeta', tek: 'grill' },
-  torrkott: { var: 'sak', av: { kott: 1 }, min: 5, slag: 'bearbeta', tek: 'tork' },
-  torrfisk: { var: 'sak', av: { fisk: 1 }, min: 5, slag: 'bearbeta', tek: 'tork' },
-  grillgadda: { var: 'sak', av: { gaddkott: 1 }, min: 7.5, slag: 'bearbeta', tek: 'grill' }, grillmort: { var: 'sak', av: { mortkott: 1 }, min: 7.5, slag: 'bearbeta', tek: 'grill' },
-  torrgadda: { var: 'sak', av: { gaddkott: 1 }, min: 5, slag: 'bearbeta', tek: 'tork' }, torrmort: { var: 'sak', av: { mortkott: 1 }, min: 5, slag: 'bearbeta', tek: 'tork' },
+  grillfisk: { var: 'sak', av: { fisk: 1 }, min: 4, slag: 'liten', tek: 'grill' },
+  grillkott: { var: 'sak', av: { kott: 1 }, min: 4, slag: 'liten', tek: 'grill' },
+  torrkott: { var: 'sak', av: { kott: 1 }, min: 4, slag: 'liten', tek: 'tork' },
+  torrfisk: { var: 'sak', av: { fisk: 1 }, min: 4, slag: 'liten', tek: 'tork' },
+  grillgadda: { var: 'sak', av: { gaddkott: 1 }, min: 4, slag: 'liten', tek: 'grill' }, grillmort: { var: 'sak', av: { mortkott: 1 }, min: 4, slag: 'liten', tek: 'grill' },
+  torrgadda: { var: 'sak', av: { gaddkott: 1 }, min: 4, slag: 'liten', tek: 'tork' }, torrmort: { var: 'sak', av: { mortkott: 1 }, min: 4, slag: 'liten', tek: 'tork' },
   talgljus: { var: 'sak', av: { talg: 2, torrgras: 1 }, min: 3, slag: 'liten', tek: 'fackla' },
   vaxljus: { var: 'sak', av: { bivax: 1, torrgras: 1 }, min: 3, slag: 'liten', tek: 'fackla' }, // steg 10.10.24: ett ljus av bivax som brinner dubbelt så länge
   slanda: { var: 'sak', av: { grenar: 1, sten: 1 }, min: 3, slag: 'liten', tek: 'slanda', bank: 'snickarbank' }, // steg 7.7.8: en pinne med en tyngd av sten

@@ -3,7 +3,7 @@
 // är att släkten finns på riktigt: föräldrarna, syskonen, partnern och barnen som bor i byn är de som står i livet, när de föddes
 // och när paret gifte sig. Den vars föräldrar inte finns i byn har förlorat dem: de har ett namn, dog vid en ålder ur fröet, och
 // dog de efter att byn grundades ligger de begravda på byns gravplats. Byns historik i världens krönika (grundandet, svälten,
-// farsoten, krigen, de nya ledarna) står i livet hos dem som levde då. Allt räknas ur byns frö och personens id med hash3, utan
+// krigen, de nya ledarna) står i livet hos dem som levde då. Allt räknas ur byns frö och personens id med hash3, utan
 // spelets slump, så att samma rad ger samma liv
 import { ageOf, byId, childrenOf, relKey } from './folk';
 import { gastLiv, type LivRad, type Slakting } from './gastliv';
@@ -37,8 +37,7 @@ function byHandelse(vl: NonNullable<State['varld']>, r: VarldRad, h: VarldHandel
     case 'grundad': return fodd ? undefined : `Var med och grundade ${by}`;
     case 'delad': return h.mot === r.nr ? (fodd ? undefined : `Lämnade ${radNamnV(vl, h.by)} och var med och grundade ${by}`) : `Såg en grupp lämna ${by} och grunda ${radNamnV(vl, h.mot)}`;
     case 'svalt': return `Klarade svälten i ${by}`;
-    case 'farsot': return `Överlevde farsoten som gick genom ${by}`;
-    case 'krig': case 'fred': case 'forbund': case 'nyLedare': case 'gattUnder': return varldHandelseText(vl, h);
+    case 'krig': case 'fred': case 'nyLedare': case 'gattUnder': return varldHandelseText(vl, h);
     default: return VARLDSHANDELSER[h.k].stor ? varldHandelseText(vl, h) : undefined;
   }
 }

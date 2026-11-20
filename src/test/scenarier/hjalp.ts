@@ -8,6 +8,9 @@ import { BEAT, START, STEG_TIM, korBy } from '../kor';
 import { lasBy } from '../delby';
 
 // förrådet i proven: stackarna är det enda som sparas (steg 1.1.2), så proven ställer in förrådet genom lagret
+// styrets och kyrkans timme som i TAKTER (steg 12.1.97, fynd 130): kvällen och kyrkans dygn är egna rader, i samma ordning som förut
+export const styreTimme = (s: State) => { SIM.kvallForeStyret(s); SIM.stepStyre(s); SIM.styretsKvall(s); };
+export const kyrkansTimme = (s: State) => { SIM.kyrkaTimme(s); SIM.kyrkaDygn(s); SIM.andligTimme(s); };
 export const setItems = (s: State, m: Record<string, number>) => {
   for (const k of STACK_ORDER) if (!isFood(k) && k !== 'ved' && !isTool(k)) setAmount(s, k, m[k] ?? 0);
   for (const k of STACK_ORDER) if (isTool(k)) setAmount(s, k, m[k] ?? 0);
@@ -302,7 +305,7 @@ export function valjer(s: State, varv = 40) {
   const n: Record<string, number> = {}, vuxna = living(s).filter(p => ageOf(p, s.now) >= SIM.ALDER.vuxen);
   let tot = 0, sok = 0;
   for (let i = 0; i < varv; i++) {
-    for (const p of vuxna) { Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, sickUntil: undefined }); p.task = undefined; }
+    for (const p of vuxna) { Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1 }); p.task = undefined; }
     tidyTools(s); // redskapen som togs i handen förra varvet blir lediga igen
     for (const p of vuxna) { SIM.chooseTask(s, p); const t = p.task!; n[t.act] = (n[t.act] ?? 0) + 1; tot++; if (t.sok) sok++; }
   }

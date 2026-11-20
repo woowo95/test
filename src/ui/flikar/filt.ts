@@ -1,3 +1,4 @@
+import { styck } from '../../sim/ord';
 import { redogKlick } from '../notiser';
 import { ByteMinne, ByteVara, Filt, byId, filtMot, grundvarde, handelBerattelse, sakNamn } from '../../sim';
 import { iconImg } from '../../ikoner';
@@ -41,7 +42,7 @@ function minneHtml() {
 function forsokHtml(b: ByteMinne) {
   if (!b.forsok?.length) return '';
   const rader = b.forsok.map((f, i) => {
-    const t = `Bud ${i + 1}: ${b.an} ville ha ${f.vill.map(w => `${w.n} ${sakNamn(w.k).toLowerCase()}`).join(', ')} och bjöd ${f.bud.map(w => `${w.n} ${sakNamn(w.k).toLowerCase()}`).join(', ')}, värt ${f.bjod} silver för ${b.bn}${f.tro !== undefined && f.tro !== f.bjod ? ` (${b.an} trodde ${f.tro})` : ''}, som ville ha ${f.krav}. ${b.bn} sa ${f.ja ? 'ja' : 'nej'}.`;
+    const t = `Bud ${i + 1}: ${b.an} ville ha ${f.vill.map(w => styck(w.n, w.k)).join(', ')} och bjöd ${f.bud.map(w => styck(w.n, w.k)).join(', ')}, värt ${f.bjod} silver för ${b.bn}${f.tro !== undefined && f.tro !== f.bjod ? ` (${b.an} trodde ${f.tro})` : ''}, som ville ha ${f.krav}. ${b.bn} sa ${f.ja ? 'ja' : 'nej'}.`;
     return `<li class="bud ${f.ja ? 'ja' : 'nej'}" title="${esc(t)}"><span class="muted">${i + 1}</span> ${varorSym(f.vill)} ⇐ ${varorSym(f.bud)} <span class="muted">${f.tro !== undefined && f.tro !== f.bjod ? `<s tabindex="0" title="${esc(`${b.an} trodde att budet var värt ${f.tro} silver, men för ${b.bn} var det värt ${f.bjod}`)}">${f.tro}</s> ` : ''}${f.bjod}/${f.krav}</span>${iconImg('silver', 12)} ${f.ja ? '{sym_handslag}' : '{sym_nej}'}</li>`;
   }).join('');
   const r = b.rel, d = r ? r[1] - r[0] : 0;

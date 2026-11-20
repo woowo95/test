@@ -11,6 +11,7 @@ import { count } from './folk';
 import { byPlats } from './landmarken';
 import { anfallUtr, flockStorlek, BYANFALL } from './radanfall';
 import { VarldRad } from './radtal';
+import { radDoda } from './rad';
 import { radTar } from './priser';
 import { dagbok, dorPaVagen, resenarer, Sallskap, tappa, VAGHANDELSER } from './resa';
 import { SAKER, FOOD } from './saker';
@@ -18,7 +19,7 @@ import { grundvarde } from './varde';
 import { varldMark } from './varlden';
 import { ledKlass } from './leder';
 import { rnd } from './slump';
-import { kanGa, skada } from './halsa';
+import { KROPPSDELAR, forlora, kanGa, skada } from './halsa';
 import { STRIDSLAG } from './efterstrid';
 import { Kampe, StridVarld, Uppstallning, djurKampe, nyStrid, personKampe, stridTillSlut } from './strid';
 import { ROVARE } from './rovare';
@@ -104,7 +105,8 @@ export function vagStrid(s: State, sl: Sallskap, fiender: Uppstallning['kampar']
     skada: (k, w) => {
       const p = person(k);
       if (!p || p.dodVag) return false;
-      const dod = skada(s, p, w.d, w.k, w.g, (sl0?.orsak ?? 'drap') as Parameters<typeof skada>[5], 'på resan');
+      const dod = skada(s, p, w.d, w.k, w.g, (sl0?.orsak ?? 'drap') as Parameters<typeof skada>[5], 'på resan', true);
+      if (!dod && w.av && !(KROPPSDELAR[w.d] as { livsviktig?: true }).livsviktig) forlora(s, p, w.d, 'höggs av'); // olyckshugget (steg 9.5.22): striden avgör (steg 12.1.82)
       if (dod) dorPaVagen(s, sl, p, dod, t);
       return !!dod;
     },
@@ -117,9 +119,9 @@ export function vagStrid(s: State, sl: Sallskap, fiender: Uppstallning['kampar']
 // en rövare ur lägret L som kämpe (rövarnas kropp ur ROVARE, vapnet efter lägrets utrustning)
 const mitt = ([a, b]: readonly number[]) => (a + b) / 2;
 export function rovarKampe(L: VarldRad): Uppstallning['kampar'][number] {
-  const vapen = anfallUtr(L) >= 1.5 ? 'yxa' : anfallUtr(L) >= 1.2 ? 'flintspjut' : 'kniv';
+  const u = anfallUtr(L), vapen = u >= 1.5 ? 'yxa' : u >= 1.2 ? 'flintspjut' : 'kniv';
   return { id: 0, namn: 'Rövare', sida: 1, gast: 1, vapen, klader: [], fart: 1, x: 0, y: 0,
-    st: { styrka: mitt(ROVARE.styrka), uthallighet: mitt(ROVARE.uthallighet), mod: mitt(ROVARE.mod), smidighet: mitt(ROVARE.smidighet), skicklighet: 5 + Math.max(0, (mitt(ROVARE.skicklighet) - 5) * 2) / 2 } };
+    st: { styrka: mitt(ROVARE.styrka), uthallighet: mitt(ROVARE.uthallighet), mod: mitt(ROVARE.mod), smidighet: mitt(ROVARE.smidighet), skicklighet: Math.max(5, mitt(ROVARE.skicklighet)) } };
 }
 
 VAGHANDELSER.ran = {
@@ -146,7 +148,7 @@ VAGHANDELSER.ran = {
       return;
     }
     const u = vagStrid(s, sl, Array.from({ length: n }, () => rovarKampe(L)), 'rovare', t);
-    L.tal.folk = Math.max(0, L.tal.folk - u.doda); L.tal.styrka = Math.max(0, Math.min(L.tal.styrka - u.doda, L.tal.folk));
+    radDoda(L, u.doda);
     if (u.vann) { dagbok(s, sl, 'strid', `${n} rövare från ${L.namn} anföll${val === 'fly' ? ' när sällskapet försökte fly' : ''}. Sällskapet slog dem tillbaka${u.doda ? ` och ${u.doda} rövare dog` : ''}.`, t); return; }
     const tog = taUrPack(sl, (n - u.doda) * BYANFALL.bar); ge(tog);
     dagbok(s, sl, 'strid', `${n} rövare från ${L.namn} anföll och vann striden. De tog ${tog.length ? lista(tog) : 'inget'}.`, t);

@@ -100,17 +100,20 @@ BUDGET.uppdrag = {
   saknar: s => { const v = nodNu(s).reduce((a, n) => a + n.varde, 0), m = Math.floor(UTLYSA.styre * v / grundvarde('silver')); const ut: Record<string, number> = {}; if (m >= 1) ut.silver = m; return ut; },
   ge: (s, k, n) => {
     const vl = s.varld, nod = nodNu(s), sum = nod.reduce((a, x) => a + x.varde, 0), led = ledareOf(s);
-    if (!vl || !nod.length || sum <= 0) return;
-    for (const x of nod) {
+    if (!vl || !nod.length || sum <= 0) return 0;
+    let gav = 0;
+    const kvar = nod.filter(x => {
       const m = Math.floor(n * x.varde / sum + 1e-9);
-      if (m < 1) continue;
+      if (m < 1) return true;
       use(s, undefined, k, m, true);
       const u = utlys(vl, x.k, x.mal, { k: 'styre' }, { [k]: m }, s.now, x.om !== undefined ? { om: x.om } : {});
-      if (!u) { put(s, k, m); continue; } // ingen plats att utlysa mot: silvret tillbaka i byns förråd
+      if (!u) { put(s, k, m); return true; } // ingen plats att utlysa mot: silvret tillbaka i byns förråd, och nöden finns kvar
       if (led) larUppdrag(s, led, u.id, 1, { t: s.now, v: belonVarde(u), mal: u.mal, k: u.k });
-      count(s, 'utlysa styret');
-    }
-    delete vl.nod;
+      count(s, 'utlysa styret'); gav += m;
+      return false;
+    });
+    if (kvar.length) vl.nod = kvar; else delete vl.nod; // det som inte kunde utlysas väntar (steg 12.1.60), tills det är för gammalt (nodNu)
+    return gav;
   },
   vill: () => 0.5,
 };

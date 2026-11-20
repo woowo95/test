@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { createState } from '../../sim';
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { medVatska, SCENARIER, kor, klockan, medBank, medHus, setMat, vardPa, setFood, tandEld, utanWebblasare, vidStack, bearbetaVid, harHamtat } from './hjalp';
+import { rovarGang, medVatska, SCENARIER, kor, klockan, medBank, medHus, setMat, vardPa, setFood, tandEld, utanWebblasare, vidStack, bearbetaVid, harHamtat } from './hjalp';
 import { falt as faltFlik } from '../../ui/flikar/falt';
 import { setByn, ui } from '../../ui/lage';
 
@@ -471,7 +471,7 @@ SCENARIER.roller = {
 };
 
 SCENARIER.undsattning = {
-  text: 'Steg 9.5.20: undsättningen. De vuxna som inte slåss följer med som hjälpare, håller sig på avstånd från fienderna, drar undan den som fallit när ingen fiende står nära och trycker på såret; hjälparna slåss inte, och striden avgörs av kämparna',
+  text: 'Steg 9.5.20 och 12.1.87: undsättningen. De vuxna som inte slåss följer med som hjälpare, håller sig på avstånd från fienderna, lyfter upp den som fallit när ingen fiende står nära, bär hen till väntplatsen och trycker på såret; hjälparna slåss inte, och striden avgörs av kämparna. På kartan går byns hjälpare vid ett larm in i striden mot rövarna, och den som bärs följer bäraren',
   kor: () => {
     const m = (id: number, sida: 0 | 1, x: number, hjalp = false) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 14, smidighet: 10, skicklighet: 10 }, vapen: 'kniv' as SIM.Vapen, klader: [], fart: 1, x, y: 7, ...(hjalp ? { hjalp: true as const } : {}) });
     const st = SIM.nyStrid({ avsikt: 'skada', w: 32, h: 14, kampar: [m(1, 0, 24), m(2, 0, 18), m(3, 0, 6, true), m(4, 1, 26)] }, 5);
@@ -479,11 +479,33 @@ SCENARIER.undsattning = {
     fallen.lage = 'nere'; fallen.skador = [{ d: 'bal', k: 'sticksar', g: 0.8, ny: 1 }]; fallen.blod = 0.7;
     let narmast = Infinity, raddad = false;
     for (let i = 0; i < 400 && !st.slut; i++) { SIM.stridSteg(st); if (fiende.lage === 'strid') narmast = Math.min(narmast, Math.hypot(h.x - fiende.x, h.y - fiende.y)); if (st.logg.some(r => r.h === 'raddar' && r.a === h.id)) raddad = true; }
-    const slogs = st.logg.some(r => (r.h === 'traff' || r.h === 'miss') && r.a === h.id);
+    const slogs = st.logg.some(r => (r.h === 'traff' || r.h === 'miss') && r.a === h.id), lyfte = st.logg.some(r => r.h === 'lyfter' && r.a === h.id);
+    // på kartan (steg 12.1.87): en rövare slåss med en bybo, en annan bybo ligger och blöder, och en tredje är hjälpare vid larmet
+    const s = createState(1, START), [a, b, hp] = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen && SIM.kanGa(p));
+    const e = SIM.eldPlats(s), plats = (dx: number) => SIM.freeNear(s, e.x + 0.5 + dx, e.y + 3.5);
+    const f = rovarGang(s, 1, plats(-4)), rov = SIM.rovarna(s, f)[0];
+    Object.assign(a, plats(-2)); Object.assign(b, plats(3)); Object.assign(hp, plats(9));
+    const g = SIM.kartStridBorja(s, 'skada', [[a, b], [rov]], 'rövare vid byn', { typ: 'rovare', egen: true, flock: f.id });
+    const kb = g.st.kampar.find(k => k.pid === b.id)!;
+    kb.lage = 'nere'; kb.skador = [{ d: 'bal', k: 'sticksar', g: 0.8, ny: 1 }];
+    hp.task = { act: 'hjalpaRovare', phase: 'do', tx: hp.x, ty: hp.y, until: s.now + SIM.HOUR, carry: 0, why: 'Rövare är nära' };
+    let gickIn = false, bars = false, foljer = true, kartLyft = false, kartRaddad = false, hpSlogs = false;
+    for (let i = 0; i < 400 && !g.st.slut && !kartRaddad; i++) {
+      SIM.step(s, SIM.nastaSteg(s));
+      const kh = g.st.kampar.find(k => k.pid === hp.id);
+      if (kh?.hjalp) gickIn = true;
+      if (kh?.bar === kb.id) { bars = true; if (Math.hypot(b.x - hp.x, b.y - hp.y) > 0.01) foljer = false; }
+      if (kh && g.st.logg.some(r => r.h === 'lyfter' && r.a === kh.id)) kartLyft = true;
+      if (kh && g.st.logg.some(r => r.h === 'raddar' && r.a === kh.id)) kartRaddad = true;
+      if (kh && g.st.logg.some(r => (r.h === 'traff' || r.h === 'miss') && r.a === kh.id)) hpSlogs = true;
+    }
     return [
-      [`hjälparen drar undan den fallne och trycker på såret (${raddad ? 'ja' : 'nej'})`, raddad],
+      [`hjälparen lyfter upp den fallne (${lyfte ? 'ja' : 'nej'}), bär hen undan och trycker på såret (${raddad ? 'ja' : 'nej'})`, lyfte && raddad],
       [`hjälparen slåss inte (${slogs ? 'slogs' : 'slogs inte'})`, !slogs],
       [`striden avgörs av kämparna, inte hjälparen (${st.slut ? 'avgjord' : 'pågår'})`, !!st.slut],
+      [`på kartan går hjälparen vid larmet in i striden som hjälpare (${gickIn ? 'ja' : 'nej'})`, gickIn],
+      [`hen lyfter upp den fallne (${kartLyft ? 'ja' : 'nej'}), som följer bäraren (${bars ? (foljer ? 'följer' : 'följer inte') : 'bars aldrig'}), och trycker på såret vid väntplatsen (${kartRaddad ? 'ja' : 'nej'})`, kartLyft && bars && foljer && kartRaddad],
+      [`hjälparen slåss inte på kartan (${hpSlogs ? 'slogs' : 'slogs inte'})`, !hpSlogs],
     ];
   },
 };
@@ -502,7 +524,16 @@ SCENARIER.pilisaret = {
     const w = q.skador![0], drogs = !w.fast && w.drog !== undefined;
     w.b = 1; w.f = undefined; const efter = blodning(q);
     s.now += (HALSA.draTim + 0.1) * SIM.HOUR; halsaSteg(s, q, 1); const sen = blodning(q);
+    // en pil som träffar sticker (kastets eget slag, steg 12.1.58): ett sticksår, och pilen kan sitta kvar
+    const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, x: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 12, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 16 }, vapen, klader: [], fart: 1, x, y: 7 });
+    let traffar = 0, stick = 0, fastnat = 0;
+    for (let f = 0; f < 300; f++) {
+      const st = SIM.nyStrid({ avsikt: 'skada', w: 20, h: 14, kampar: [m(1, 0, 'bage', 4), m(2, 1, 'hand', 8)] }, f), [a, b] = st.kampar;
+      SIM.kasta(st, a, b);
+      if (b.skador.length) { traffar++; if (b.skador.every(x => x.k === 'sticksar' || x.k === 'skarsar')) stick++; if (b.skador.some(x => x.fast)) fastnat++; } // ett grunt stick är ett skärsår (SLAGEN)
+    }
     return [
+      [`en pil som träffar ger ett stick, inget blåmärke, och kan sitta kvar (${traffar} träffar, ${stick} stick- eller skärsår, ${fastnat} fastnade)`, traffar > 0 && stick === traffar && fastnat > 0],
       [`pilen sitter kvar i såret som kastspjutet (${pil ? 'ja' : 'nej'})`, pil],
       [`vapnet pluggar såret (${med.toFixed(3)} mot ${utan.toFixed(3)} i timmen) och hindrar delen (${felMed.toFixed(2)} mot ${felUtan.toFixed(2)})`, med < utan && felMed > felUtan],
       [`vårdaren drar ut det (${drogs ? 'ja' : 'nej'}), och såret blöder mer en stund (${efter.toFixed(3)}) och sedan som vanligt (${sen.toFixed(3)})`, drogs && efter > utan * 0.99 && sen < efter],
@@ -628,15 +659,21 @@ SCENARIER.benbrott = {
 };
 
 SCENARIER.forlossning = {
-  text: 'Steg 9.5.29: förlossningen. Födseln tar tid: modern lägger sig, förloppet dras ur registret FORLOPP, den som bäst kan hjälpa kommer, och hjälparens vård (Läkekonst, egna barn, rena händer, värme, kokt vatten och remsor) sänker riskerna; texten om förloppet står i notisen',
+  text: 'Steg 9.5.29: förlossningen. Födseln tar tid: modern lägger sig, förloppet dras ur registret FORLOPP, den som väljer att hjälpa kommer (en rad i vårdregistret, steg 12.1.82), och hjälparens vård (Läkekonst, egna barn, rena händer, värme, kokt vatten och remsor) sänker riskerna; texten om förloppet står i notisen',
   kor: () => {
     const { borjaForlossning, birth, forlossRisk, vardKvalitet, FORLOPP, FORLOPP_LIST } = SIM;
     const s = createState(1, START), m = SIM.living(s).find(r => r.sex === 'k' && SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     const g = SIM.living(s).find(r => r !== m && SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     m.pregnantSince = s.now - 400 * SIM.DAY; m.pregnantBy = m.partner;
     g.x = m.x + 2; g.y = m.y;
+    for (const r of SIM.living(s)) if (r !== m && r !== g) { r.x = 5; r.y = 5; } // bara g är nära nog att höra
     borjaForlossning(s, m);
-    const foder = m.task?.act === 'foder' && !!m.foder, hjalper = SIM.living(s).some(r => r.task?.act === 'forlossa' && r.task.ref === m.id);
+    const foder = m.task?.act === 'foder' && !!m.foder, tvingad = SIM.living(s).some(r => r.task?.act === 'forlossa');
+    // hjälpen är en rad i vårdregistret som valet väger (steg 12.1.82): g väljer att gå dit, och stannar när hen kommer fram
+    const val = SIM.vardVal(s, g, false);
+    g.x = m.x + 1; g.y = m.y; g.task = { act: 'varda', phase: 'do', tx: m.x, ty: m.y, until: s.now, carry: 0, ref: m.id, why: '' };
+    SIM.vardKlar(s, g, g.task);
+    const hjalper = g.task?.act === 'forlossa' && m.foder?.hjalp === g.id && g.task.until === m.foder.till;
     const summa = FORLOPP_LIST.reduce((a, k) => a + FORLOPP[k].p, 0);
     // vården sänker riskerna
     const utan = (() => { const c = SIM.cloneState(s), mm = c.people.find(r => r.id === m.id)!; mm.foder = { f: 'fel', till: c.now }; return forlossRisk(c, mm).mor; })();
@@ -646,7 +683,8 @@ SCENARIER.forlossning = {
     const fodd = s.people.length > fore || (s.stat?.dodfodda ?? 0) > 0;
     return [
       [`förloppen är rader med sannolikheter som blir 1 (${FORLOPP_LIST.join(', ')})`, Math.abs(summa - 1) < 1e-9],
-      [`modern lägger sig och föder (${foder ? 'ja' : 'nej'}), och en hjälpare kommer (${hjalper ? 'ja' : 'nej'})`, foder && hjalper],
+      [`modern lägger sig och föder (${foder ? 'ja' : 'nej'}), och ingen tvingas dit (${tvingad ? 'nej' : 'ja'})`, foder && !tvingad],
+      [`den som är nära väljer att hjälpa (${val?.why ?? 'inget val'}) och stannar tills barnet kommit (${hjalper ? 'ja' : 'nej'})`, val?.ref === m.id && hjalper],
       [`en skicklig hjälpare sänker risken för modern när barnet ligger fel (${(utan * 100).toFixed(1)} % → ${(med * 100).toFixed(1)} %, vården ${vardKvalitet(s, g, m).toFixed(2)})`, med < utan],
       [`när tiden gått föds barnet (${fodd ? 'ja' : 'nej'})`, fodd && !m.foder],
     ];
@@ -761,14 +799,16 @@ SCENARIER.kokning = {
     const pa = !!kr.kok && amountOf(s, 'fisk') === 2 && amountOf(s, 'rotter') === 2 && amountOf(s, 'rolleka') === ro - 1;
     p.task = undefined; p.hunger = 0.9; p.rest = 1; chooseTask(s, p);
     const akt = (p.task as SIM.Person["task"])?.act, annat = akt !== "koka_mat" && !!kr.kok;
-    s.fire.lit = false; stepKok(s); const vantar = !!kr.kok;
-    s.fire.lit = true; stepKok(s);
+    s.fire.lit = false; stepKok(s, 3600); const vantar = !!kr.kok;
+    s.fire.lit = true; stepKok(s, (SIM.KATEGORIER.gryta.passiv - 1) * 60); const inteAn = !!kr.kok; // grytan sjuder 10 minuter (steg 12.1.63)
+    stepKok(s, 60);
     const klar = !kr.kok && amountOf(s, rattId('fisk', 'gryta', 'fin')) === 4;
     return [
       [`grilla och koka är rader i TILLAGNING (${Object.keys(TILLAGNING).join(', ')})`, !!TILLAGNING.grilla && !!TILLAGNING.koka],
       [`av fisk, rötter och rölleka blir det ${namn || 'inget'}`, namn === 'Fiskgryta · Fin'],
       [`kocken kan laga maten (${kan ? 'ja' : 'nej'}), och grytan står på elden i krukan med råvarorna (${pa ? 'ja' : 'nej'})`, kan && pa],
       [`kocken gör annat medan grytan sjuder (${akt})`, annat],
+      [`grytan är inte klar efter ${SIM.KATEGORIER.gryta.passiv - 1} minuter på elden (${inteAn ? 'står kvar' : 'klar'}) men efter ${SIM.KATEGORIER.gryta.passiv}`, inteAn && !kr.kok],
       [`utan eld kokar den inte (${vantar ? 'står kvar' : 'klar'}), och med eld blir den fyra portioner i förrådet (${klar ? 'ja' : 'nej'})`, vantar && klar],
     ];
   },
@@ -822,7 +862,7 @@ SCENARIER.favorit = {
     const { ratt, smakAv, favoriter, stepRykten, berattaSmak, MAT, setAmount, rattId, RYKTE } = SIM;
     const s = createState(1, START), [p, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
     p.smak = {}; q.smak = {};
-    for (let i = 0; i < 3000 && smakAv(p, 'm:fisk') > -RYKTE.smakFavorit; i++) { ratt(s, p, { fisk: 1 }, 1); p.sjuk = undefined; p.sickUntil = undefined; }
+    for (let i = 0; i < 3000 && smakAv(p, 'm:fisk') > -RYKTE.smakFavorit; i++) { ratt(s, p, { fisk: 1 }, 1); p.sjuk = undefined; }
     const avsky = smakAv(p, 'm:fisk'), fav = favoriter(p).some(f => f.k === 'fisk' && f.v < 0);
     berattaSmak(p, q, 60); const spred = smakAv(q, 'm:fisk');
     for (let h = 0; h < 5 * 24; h++) stepRykten(s, () => 0.5);
@@ -1141,9 +1181,9 @@ SCENARIER.lok = {
 };
 
 SCENARIER.stek = {
-  text: 'Steg 9.6.21 och 10.2.87: stekhällen. En flat sten på härden inne i huset där kött och fisk steks med talg till stek, som smakar bättre (en rad i TILLAGNING). Steken görs bara vid härden, när den brinner, och en stekhäll som ligger vid grillen flyttas till härden när det finns en',
+  text: 'Steg 9.6.21 och 10.2.87: stekhällen. En flat sten på härden inne i huset där kött och fisk steks med talg till stek, som smakar bättre (en rad i TILLAGNING). Steken görs bara vid härden, när den brinner, och inte vid en stekhäll som ligger vid grillen',
   kor: () => {
-    const { stekaKlar, kanSteka, setAmount, amountOf, rattId, stepStationer, newFire, TILLAGNING, TILLBEHOR, MAT, ACTS } = SIM;
+    const { stekaKlar, kanSteka, setAmount, amountOf, rattId, newFire, TILLAGNING, TILLBEHOR, MAT, ACTS } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     setMat(s, {});
     setAmount(s, 'kott', 4); setAmount(s, 'talg', 2);
@@ -1151,10 +1191,8 @@ SCENARIER.stek = {
     const grill = { id: 994, k: 'grill', x: 1, y: 1, kvar: 0, med: ['stekhall'] } as SIM.Station;
     s.stationer = [...(s.stationer ?? []), grill];
     const vidGrill = kanSteka(s, p);
-    const hard: SIM.Fire = { ...newFire(), id: 995, at: { x: 6, y: 6 }, hearth: 'hard', folk: [] };
+    const hard: SIM.Fire = { ...newFire(), id: 995, at: { x: 6, y: 6 }, hearth: 'hard', folk: [], med: ['stekhall'] };
     s.eldar = [...(s.eldar ?? []), hard];
-    stepStationer(s);
-    const flyttad = !grill.med?.includes('stekhall') && !!hard.med?.includes('stekhall');
     const slackt = kanSteka(s, p);
     hard.lit = true; hard.fuel = 3;
     const med = kanSteka(s, p);
@@ -1164,7 +1202,7 @@ SCENARIER.stek = {
     const gott = p.thoughts.some(t => t.text === 'Åt en stek');
     return [
       [`steka är en rad i TILLAGNING (${TILLAGNING.steka.namn}) och stekhällen ett tillbehör till härden (${TILLBEHOR.stekhall.till}), där man steker (${ACTS.steka.plats})`, !!TILLAGNING.steka && TILLBEHOR.stekhall.till === 'hard' && ACTS.steka.plats === 'hard'],
-      [`vid grillen steker ingen (${vidGrill ? 'ja' : 'nej'}), och stekhällen där flyttas till härden (${flyttad ? 'ja' : 'nej'})`, !vidGrill && flyttad],
+      [`vid grillen steker ingen (${vidGrill ? 'ja' : 'nej'})`, !vidGrill],
       [`på en släckt härd steker ingen (${slackt ? 'ja' : 'nej'}), på en brinnande ja (${med ? 'ja' : 'nej'})`, !slackt && med],
       [`två kött och en talg blir ${stek} köttstek (${amountOf(s, 'talg')} talg kvar)`, stek === 2],
       [`steken smakar bättre (${gott ? 'ja' : 'nej'})`, gott],
@@ -1217,7 +1255,7 @@ SCENARIER.brod = {
 };
 
 SCENARIER.svalt = {
-  text: 'Steg 9.6.24: skämd mat i valet av mat. Maten man äter väljs efter skicket och hungern: den som nyss blivit hungrig tar färsk mat och låter den skämda ligga, och den som är mycket hungrig äter skämd mat när inget bättre finns, med samma risk för magsjuka som förut',
+  text: 'Steg 9.6.24: skämd mat i valet av mat. Maten man äter väljs efter skicket och hungern: den som nyss blivit hungrig tar färsk mat först och den skämda sist (steg 12.1.77: skicket är en faktor i ordningen, ingen spärr), med samma risk för magsjuka som förut',
   kor: () => {
     const { MAT, setAmount, amountOf, stacksOf, KROPP, skickKrav } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
@@ -1228,7 +1266,7 @@ SCENARIER.svalt = {
     p.hunger = 0.02; const at = MAT.anvand(s, p);
     return [
       [`den som nyss blivit hungrig tar de färska rötterna (${tog.rotter}) och låter den skämda fisken ligga (${tog.fisk})`, tog.rotter > 0 && tog.fisk === 0],
-      [`finns bara skämd mat äter hen inte än (${lat}, kravet på skicket ${skickKrav({ ...p, hunger: KROPP.hungrig - 0.01 } as SIM.Person).toFixed(2)})`, lat === 0],
+      [`finns bara skämd mat äter hen den ändå, sist i ordningen (${lat}, kravet på skicket ${skickKrav({ ...p, hunger: KROPP.hungrig - 0.01 } as SIM.Person).toFixed(2)})`, lat > 0],
       [`den mycket hungrige äter den skämda fisken när inget bättre finns (${at})`, at > 0],
     ];
   },
@@ -1332,7 +1370,7 @@ SCENARIER.vattning = {
 SCENARIER.sophog = {
   text: 'Steg 9.7.5: resterna och sophögen. All slakt ger slaktrens och all skörd ger växtrester, som ruttnar bort med tiden; i byn ger de smuts, och de bärs till sophögen i utkanten, där de ruttnar bort',
   kor: () => {
-    const { DJUR, setAmount, amountOf, smutsIByn, soporKlar, sophog, stepSophog, utanforByn, resterIByn } = SIM;
+    const { DJUR, setAmount, amountOf, smutsPunkter, soporKlar, sophog, stepSophog, utanforByn, resterIByn } = SIM;
     const s = createState(1, START); klockan(s, 10);
     const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     setAmount(s, 'vilt', 4); setAmount(s, 'kniv', 1); (p.tek ??= {}).kniv = 1; // viltet: fisken ger fiskrens sedan steg 9.8.7
@@ -1340,8 +1378,8 @@ SCENARIER.sophog = {
     bearbetaVid(s, p, DJUR.kanin, 1);
     const rens = amountOf(s, 'slaktrens');
     setAmount(s, 'vaxtrest', 6);
-    const fore = smutsIByn(s).punkter.length;
-    s.now += SIM.HOUR; const smuts = smutsIByn(s).punkter.length;
+    const fore = smutsPunkter(s).length;
+    s.now += SIM.HOUR; const smuts = smutsPunkter(s).length;
     harHamtat(s, p, 'sopor', { slaktrens: amountOf(s, 'slaktrens'), vaxtrest: amountOf(s, 'vaxtrest') });
     soporKlar(s, p);
     const h = sophog(s), kvar = resterIByn(s), pa = h.n;

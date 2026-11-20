@@ -35,14 +35,15 @@ export function slagAv(pid: number, nu: number): { andel: number; mot: { x: numb
 export function streckNu(nu: number): { h: SlagBild; kvar: number }[] {
   return aktiva.filter(h => nu >= h.t && nu <= h.t + SLAGBILD.streck).map(h => ({ h, kvar: 1 - (nu - h.t) / SLAGBILD.streck }));
 }
-// kämpen som är personen p i en strid på kartan: vapnet, den hen har som mål och om hen ligger
+// kämpen som är personen p i en strid på kartan: vapnet, den hen har som mål, om hen ligger, och om hen bär en fallen (bar) eller
+// bärs (buren, steg 12.1.87)
 export function kartKampe(s: State, p: Person) {
   for (const g of kartStrider(s) as KartStrid[]) {
     if (g.fri?.includes(p.id)) continue;
     const k = g.st.kampar.find(x => x.pid === p.id);
     if (!k) continue;
     const m = k.mal !== undefined ? g.st.kampar.find(x => x.id === k.mal) : undefined;
-    return { k, mot: m ? { x: m.x, y: m.y } : undefined, ligger: k.lage === 'nere' || k.lage === 'dod' || !!k.ligger };
+    return { k, mot: m ? { x: m.x, y: m.y } : undefined, ligger: k.lage === 'nere' || k.lage === 'dod' || !!k.ligger, bar: k.bar !== undefined, buren: g.st.kampar.some(x => x.bar === k.id) };
   }
   return undefined;
 }

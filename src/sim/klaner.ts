@@ -44,17 +44,6 @@ export const KLAN_ROLLER: Record<string, { namn: string }> = {
   grundare: { namn: 'Grundare' },
   barn: { namn: 'Barn' },
 };
-// var klanerna bodde i en sparad by från före v531, och vad som var sällsynt där (priset i en sådan by tills den fått sin plats i
-// världen). Gästernas liv i gastliv.ts reser dit
-export const KLAN_HEM: readonly { namn: string; sallsynt: readonly string[] }[] = [
-  { namn: 'kusten i söder', sallsynt: ['skinn', 'vargskinn', 'ved'] },
-  { namn: 'fjällen i norr', sallsynt: ['rovfron', 'artfron', 'bar'] },
-  { namn: 'skogarna i öster', sallsynt: ['fisk', 'torrfisk', 'flinta'] },
-  { namn: 'sjöarna i väster', sallsynt: ['flinta', 'sten', 'kott'] },
-  { namn: 'älvdalen', sallsynt: ['skinn', 'ben', 'torrkott'] },
-  { namn: 'byarna vid havet', sallsynt: ['ved', 'rep', 'torrkott'] },
-];
-export const KLAN_HEM_NAMN = KLAN_HEM.map(h => h.namn);
 
 export interface KlanPerson { namn: string; sex: 'm' | 'k'; roll: string; id?: number; fodd?: number; rel?: Record<number, import('./gastrel').GastRel>; kropp?: Omit<Person, 'id' | 'x' | 'y' | 'task' | 'gast'>; borta?: number } // id = personens id i byn, för den som kom därifrån; fodd = när hen föddes (gästens liv, steg 4.5.7.7, gastliv.ts); rel = handlarens relationer till byborna (steg 4.5.7.11, gastrel.ts); kropp = hela personen medan hen är hemma, borta = sedan när (steg 9.2.114, gast.ts)
 export interface Klan {
@@ -82,7 +71,7 @@ export const klanerAndrade = (s: State) => { if (s.varld?.rader) lista.delete(s.
 export const klanById = (s: State, id: number | undefined) => id === undefined ? undefined : klanerOf(s).find(k => k.id === id);
 // hur nära byn ligger: 1 inom KLAN.naraDygn, sedan i proportion mot restiden
 export const narhet = (k: Klan) => k.dygn === undefined ? 1 : Math.min(1, KLAN.naraDygn / Math.max(1e-6, k.dygn));
-const mellan = (s: State, [a, b]: readonly number[]) => a + rnd(s, 'klan') * (b - a);
+export const klanMellan = (s: State, [a, b]: readonly number[]) => a + rnd(s, 'klan') * (b - a);
 export const instText = (v: number) => v >= 50 ? 'vänner' : v >= 15 ? 'vänliga' : v > -15 ? 'neutrala' : v > -50 ? 'misstänksamma' : 'fientliga';
 
 // en ny förbindelse med en by (grannbyar.ts ger den en rad i världen): en hövding och en äldste med namn
@@ -94,11 +83,10 @@ export function nyKlan(s: State, folk: number, inst: number, namn: string, hem: 
     id, namn, hem, folk: Math.round(folk), styrka: 0, resurser: 0, inst: Math.round(inst),
     personer: personer ?? [per('hovding'), per('aldste'), ...(rnd(s, 'klan') < 0.5 ? [per('jagare')] : [])],
   };
-  k.styrka = Math.round(k.folk * mellan(s, KLAN.styrka));
-  k.resurser = Math.round(k.folk * mellan(s, KLAN.resurser));
+  k.styrka = Math.round(k.folk * klanMellan(s, KLAN.styrka));
+  k.resurser = Math.round(k.folk * klanMellan(s, KLAN.resurser));
   return k;
 }
-export const klanMellan = mellan;
 
 // inställningen ändras (handel, utbrytning, invandring): hela tal mellan −100 och 100
 export function andraInst(k: Klan, d: number) { k.inst = clamp(Math.round(k.inst + d), -100, 100); }
@@ -122,12 +110,12 @@ export function klanHandlare(s: State, klan: Klan): { klan: Klan; person: KlanPe
 
 // ---------- priset hos en grannby (steg 10.5.14; från steg 11.6.3 radens pris, priser.ts) ----------
 // Priset hos en grannby är priset i dess rad: gruppens påslag ur bristen gånger sakens eget (radPaslag). En förbindelse utan rad
-// (en sparad by från före v531) har priset det som är sällsynt där ger. Det handlaren köper sänker priset och det hen säljer
+// får alltid sin rad (nyRad i grannbyar.ts). Det handlaren köper sänker priset och det hen säljer
 // höjer det (radPrisAndras). priser.ts sätter krokarna när den laddas
 type R = import('./radtal').VarldRad;
 export const prisKrok = {
   pris: (_s: State, _r: R, _slag: string) => 1, andras: (_s: State, _r: R, _slag: string, _varde: number, _upp: 1 | -1) => {},
-  satt: (_s: State, _r: R, _slag: string, _v: number) => {}, sallsynt: () => 0.5,
+  satt: (_s: State, _r: R, _slag: string, _v: number) => {},
   radPris: (_s: State, _nr: number, _sl: string) => 1, // priset på en sak, eller en grupp ("grupp:mat"), i byn med numret nr (prisminnet, minne.ts)
   grupp: (_k: string): string | undefined => undefined, gruppNamn: (_id: string) => '',
 };
@@ -135,7 +123,7 @@ const radAv = (s: State, k: Klan) => k.rad === undefined ? undefined : s.varld?.
 export const klanPris = (s: State, k: Klan | undefined, slag: string) => {
   if (!k) return 1;
   const r = radAv(s, k);
-  return r ? prisKrok.pris(s, r, slag) : 1 + ((k.sallsynt ?? KLAN_HEM.find(h => h.namn === k.hem)?.sallsynt)?.includes(slag) ? prisKrok.sallsynt() : 0);
+  return r ? prisKrok.pris(s, r, slag) : 1;
 };
 // för scenarierna: priserna hos förbindelsen k blir de här
 export function sattKlanPris(s: State, k: Klan, p: Record<string, number>) { const r = radAv(s, k); if (r) for (const [sl, v] of Object.entries(p)) prisKrok.satt(s, r, sl, v); }

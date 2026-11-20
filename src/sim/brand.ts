@@ -1,3 +1,4 @@
+import { gen } from './ord';
 import { kartaBorta } from './ort';
 import { han, mark, tal } from './ord';
 import { tabortBuske } from './buskar';
@@ -85,7 +86,6 @@ export const BRAND = balans('brand', {
   aska: 0.32, // gräset på en ruta som brunnit (0 till 1; just över bar jord, så att det inte blir en stig)
   trad: 0.5, // träden dör när så här stor del av rutan har brunnit
   vaggSkick: 1.2, // en vägg tappar så här mycket av sitt skick gånger andelen som brunnit
-  maxR: 40, // elden tar sig aldrig längre än så här många rutor från där den började
   svart: 3, // marken syns svart så här många dygn (år i spelet) efter att den brunnit
   sagd: 3, // branden syns i loggen när så här många rutor har börjat brinna ...
   stor: 20, // ... och i krönikan när den bränt så här många, eller när den kommit nära byn
@@ -109,11 +109,9 @@ export const BRAND = balans('brand', {
   sackR: 2.5, // ... inom så här många rutor från där den hälls
   brannHand: 0.15, // chansen i timmen att få en brännskada när man släcker med händerna ...
   brannHandGrad: [0.1, 0.4], // ... så här svår (slumpas mellan)
-  iElden: 3, // den som står i en brinnande ruta bränns med den här takten (i timmen) ...
-  iEldenGrad: [0.2, 0.7], // ... så här svårt (slumpas mellan)
-  // den som brinner (steg 6.4.16): kläderna eller håret tar eld, och hen bränns tills elden är släckt
-  tarEld: 0.5, // chansen att man börjar brinna när man bränns i en brinnande ruta ...
-  tarEldHand: 0.2, // ... när man bränns medan man släcker med händerna ...
+  // den som brinner (steg 6.4.16): kläderna eller håret tar eld, och hen bränns tills elden är släckt. Det är att brinna som skadar
+  // den som är i elden (steg 12.1.80)
+  tarEldHand: 0.2, // chansen att man börjar brinna när man bränns medan man släcker med händerna ...
   vaggEld: 0.3, // ... och i timmen när man står bredvid en brinnande vägg (elden hoppar över)
   smitta: 3, // elden smittar (steg 9.2.134): den som går eller står på en ruta som brinner börjar brinna med den här takten i sekunden
   // (en sekund är några minuter i spelet), så nästan säkert också den som bara går igenom ...
@@ -133,7 +131,7 @@ export type BrandRuta = [number, number, number, number];
 // branden som pågår: när och var den började (kalla = gnistor eller blixten), rutorna som brinner och de som brunnit klart,
 // hur många rutor som tagit eld, och vad den gjort
 // brann = det av trä som brunnit upp (golv, dörrar, stationer, möbler och redskap), namnet och hur många (steg 6.4.3)
-export interface Brand { brann_p?: number[]; t: number; x: number; y: number; kalla: 'gnista' | 'blixt'; r: BrandRuta[]; ut: number[]; n: number; trad: number; vagg: number; saker: number; skadade: number; slackt: number; hot?: 1; sagd?: 1; kallor?: number[]; brann?: Record<string, number> }
+export interface Brand { brann_p?: number[]; t: number; x: number; y: number; kalla: 'gnista' | 'blixt'; r: BrandRuta[]; ut: number[]; n: number; trad: number; vagg: number; saker: number; skadade: number; slackt: number; hot?: 1; sagd?: 1; brann?: Record<string, number> }
 
 // ett tal mellan 0 och 1 ur byns frö, tiden (i steg), en ruta eller person och ett salt (hash3 i slump.ts, drar inget ur
 // slumpföljderna)
@@ -141,8 +139,6 @@ const hash = hash3;
 const ur = (s: State, a: number, salt: number) => hash(s.seed + salt * 7919, Math.round(s.now / 100), a); // (tiondels sekunder: ett eget tal i varje kort steg, steg 10.2.17)
 const chans = (takt: number, dtSec: number) => 1 - Math.exp(-takt * dtSec / HOUR_S); // takt i timmen under dtSec sekunder
 
-// branden sprids högst BRAND.maxR rutor från där den började, eller från en ruta som tänts i testläget (kallor, steg 4.5.6.6)
-const nara = (b: Brand, x: number, y: number) => Math.hypot(x - b.x, y - b.y) <= BRAND.maxR || !!b.kallor?.some(i => Math.hypot(x - i % W, y - Math.floor(i / W)) <= BRAND.maxR);
 // hur torr marken är (0 till 1): torra timmar, tidsåldern, och snön som blöter marken
 export function torrhet(s: State) {
   const sno = 1 - BRAND.sno * Math.max(0, Math.min(1, snoPaMarken(s))); // snön blöter marken (steg 9.2.102)
@@ -273,9 +269,7 @@ export function tandTest(s: State, x: number, y: number): { ok: boolean; text: s
   const g = groundOf(s), vad = g.tiles[i] === T.Vatten ? 'vatten' : !isSoil(g.tiles[i]) ? 'sten' : markslag(g, i) === 'bar' ? 'bar jord' : 'inget som brinner';
   const fu = bransleAv(s)(i);
   if (!fu) return { ok: false, text: `Inget brinner där (${vad})` };
-  const ny = !s.brand;
   tand(s, i, 'blixt', 0);
-  if (!ny) (s.brand!.kallor ??= []).push(i);
   const e = eldPlats(s), d = Math.round(Math.hypot(x - e.x, y - e.y));
   // hur torr marken är och hur fort branden väntas sprida sig till en grannruta av samma slag (steg 9.2.24): en chans per
   // delsteg (5 sekunder, spelets tid) på sprid × antändningen × torrheten
@@ -312,11 +306,10 @@ export function blixtTest(s: State, x: number, y: number): { ok: boolean; text: 
   else if (!fu) text = `Blixten slog ner ${var_} ${vad}, och inget tog eld`;
   else if (dry <= 0) text = `Blixten slog ner ${var_}, men marken är för blöt och inget tog eld`;
   else {
-    const ny = !s.brand, fore = s.brand?.n ?? 0;
+    const fore = s.brand?.n ?? 0;
     count(s, 'blixtProv'); // varje blixt får en egen slumpsiffra, räknad i byn och inte i modulen (regel 4)
     tand(s, i, 'blixt', hash(s.seed + 3860, Math.round(s.now / SEC), s.stat!.blixtProv) / dry);
     const tande = (s.brand?.n ?? 0) > fore;
-    if (tande && !ny) (s.brand!.kallor ??= []).push(i);
     text = tande ? `Blixten slog ner ${var_} och tände marken` : `Blixten slog ner ${var_} men tände inte (marken är ${dry < 0.5 ? 'bara lite' : 'ganska'} torr, och det var tur)`;
   }
   log(s, 'Testläget: ' + text + '.', 'world');
@@ -348,7 +341,6 @@ export function brandSteg(s: State, dtSec: number) {
         const nx = x + dx, ny = y + dy, j = ny * W + nx, c = sprid * fv[(dy + 1) * 3 + dx + 1];
         if ((!dx && !dy) || !inMap(nx, ny) || k[j]) continue;
         kant = true;
-        if (!nara(b, nx, ny)) continue;
         const u = hash(s.seed + 3851, slag, i * 9 + (dy + 1) * 3 + dx + 1);
         if (u >= c) continue; // antändningen är högst 1: slå bara upp det som brinner när det kan behövas
         const fu = bransle(j);
@@ -372,7 +364,7 @@ export function brandSteg(s: State, dtSec: number) {
   if (hot && !b.hot) { b.hot = 1; log(s, 'Elden närmar sig byn!', 'world'); count(s, 'brand hot'); }
   ser(s, b);
   soker(s, b, hot);
-  iElden(s, b, dtSec);
+  eldSmittar(s, b, dtSec);
   brandKarta(s);
   if (b.r.length) return;
   // branden är slut
@@ -397,8 +389,9 @@ function gnistor(s: State, dtSec: number, dry: number) {
     const R = BRAND.gnistaR, nx = x + Math.round((ur(s, salt, 3853) * 2 - 1) * R + fx), ny = y + Math.round((ur(s, salt, 3854) * 2 - 1) * R + fy);
     if (inMap(nx, ny) && (nx !== x || ny !== y)) tand(s, ny * W + nx, 'gnista', ur(s, salt, 3855));
   };
-  if (s.fire.lit) { const e = eldPlats(s); fran(e.x, e.y, (HEARTHS.find(h => h.id === s.fire.hearth) ?? HEARTHS[0]).spread, 0); }
+  if (s.fire.lit) { const e = eldPlats(s); fran(e.x, e.y, hearthOf(s.fire).spread, 0); }
   for (const f of brasorOf(s)) if (f.lit) fran(f.at!.x, f.at!.y, hearthOf(f).spread, f.id! + 1); // de andra lägereldarna gnistrar som den första (steg 4.5.6.8)
+  for (const b of s.branningar ?? []) { const t = b.slut > s.now ? stationerOf(s).find(q => q.id === b.st) : undefined; if (t) fran(t.x + 1, t.y + 1, HEARTHS[0].spread, 50000 + t.id); } // kolmilan och blästerugnen gnistrar som en lägereld medan de brinner (steg 12.2.1 och 12.2.3)
   if (Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR) && blixtNu(s) && ur(s, 0, 3856) < BRAND.blixt) {
     const e = bynsMitt(s), R = BRAND.blixtR, nx = e.x + Math.round((ur(s, 0, 3857) * 2 - 1) * R), ny = e.y + Math.round((ur(s, 0, 3858) * 2 - 1) * R);
     if (inMap(nx, ny)) { count(s, 'blixt nara'); nedslag(s, nx, ny); tand(s, ny * W + nx, 'blixt', ur(s, 0, 3859) / dry); }
@@ -508,13 +501,6 @@ function vardeNara(s: State, i: number) {
   for (let y = Math.max(0, y0 - R); y <= Math.min(H - 1, y0 + R); y++) for (let x = Math.max(0, x0 - R); x <= Math.min(W - 1, x0 + R); x++) n += c.v[y * W + x];
   return n;
 }
-// den brinnande rutan närmast byns område
-function narmastByn(s: State, b: Brand) {
-  const ut = bynsAvstand(s);
-  let best = -1, bd = Infinity;
-  for (const r of b.r) { const d = ut.at(r[0]); if (d < bd) { bd = d; best = r[0]; } }
-  return best;
-}
 // den närmaste brinnande rutan till (x, y) och avståndet dit
 function narmast(b: Brand, x: number, y: number, utom?: (i: number) => boolean) {
   let best = -1, bd = Infinity;
@@ -542,19 +528,9 @@ function soker(s: State, b: Brand, hot: boolean) {
     avbryt(s, p); count(s, 'brand avbryter');
   }
 }
-// den som står i en brinnande ruta bränns
-function iElden(s: State, b: Brand, dtSec: number) {
-  const k = kartaOf(b), DELAR: Kroppsdel[] = ['fotV', 'fotH', 'benV', 'benH', 'handV', 'handH', 'bal'];
-  for (const p of living(s)) {
-    const x = Math.floor(p.x), y = Math.floor(p.y);
-    if (!alive(p) || !inMap(x, y) || k[y * W + x] !== 1 || ur(s, p.id, 3860) >= chans(BRAND.iElden, dtSec)) continue;
-    const d = DELAR[Math.floor(ur(s, p.id, 3861) * DELAR.length)], g = BRAND.iEldenGrad[0] + ur(s, p.id, 3862) * (BRAND.iEldenGrad[1] - BRAND.iEldenGrad[0]);
-    b.skadade++; count(s, 'brand skadad');
-    const dod = skada(s, p, d, 'brannskada', g, 'brand', 'i elden');
-    if (dod) { die(s, p, dod); continue; }
-    upplev(s, p, 'drabbad', 'eldsvådan'); // steg 4.1.1.2
-    if (ur(s, p.id, 3867) < BRAND.tarEld) antand(s, p, 'i elden');
-  }
+// elden smittar (steg 9.2.134): den som är i elden tar eld, och det är att brinna som skadar (brinnerSteg)
+function eldSmittar(s: State, b: Brand, dtSec: number) {
+  const k = kartaOf(b);
   // elden smittar (steg 9.2.134): den som är på en ruta som brinner börjar nästan säkert brinna, också den som bara går igenom; och
   // elden hoppar över från en brinnande vägg, och med en lägre chans från marken som brinner, till den som står bredvid
   for (const p of living(s)) {
@@ -596,15 +572,17 @@ export function brinnerSteg(s: State, dtSec: number) {
     if (ur(s, p.id, 3871) < chans(BRAND.brinnSkada, dtSec)) {
       const d = DELAR[Math.floor(ur(s, p.id, 3872) * DELAR.length)], g = BRAND.brinnGrad[0] + ur(s, p.id, 3873) * (BRAND.brinnGrad[1] - BRAND.brinnGrad[0]);
       count(s, 'brinner skadad');
+      if (s.brand?.brann_p?.includes(p.id)) { s.brand.skadade++; count(s, 'brand skadad'); } // i branden (steg 12.1.80)
       const dod = skada(s, p, d, 'brannskada', g, 'brand', 'när hen brann');
       if (dod) { die(s, p, dod); delete p.brinner; continue; }
+      if (s.brand?.brann_p?.includes(p.id)) upplev(s, p, 'drabbad', 'eldsvådan'); // steg 4.1.1.2
     }
     const pl = paSig(s, p).filter(t => !SAKER[t.k]?.brinnerInte);
     if (pl.length && ur(s, p.id, 3874) < chans(BRAND.plaggBrinner, dtSec)) {
       const t = pl[Math.floor(ur(s, p.id, 3875) * pl.length)];
       s.ting = tingOf(s).filter(q => q !== t); kartaBorta(s, t);
       count(s, 'brinner plagg');
-      log(s, `${p.name}s ${SAKER[t.k]?.namn ?? t.k} brann upp.`, 'world', [p.id]);
+      log(s, `${gen(p.name)} ${SAKER[t.k]?.namn ?? t.k} brann upp.`, 'world', [p.id]);
     }
   }
 }
@@ -626,7 +604,7 @@ function utEld(s: State, p: Person) {
 export function slackaSigVal(s: State, p: Person) {
   if (p.brinner === undefined) return;
   const vatten = naVattnet(s, p) ? drickPlats(s, p) : undefined;
-  if (vatten && Math.hypot(vatten.x - p.x, vatten.y - p.y) <= BRAND.vattenR) return { act: 'slackaSig' as const, why: 'Brinner och springer i vattnet', spot: vatten, dur: 0.2 * MIN };
+  if (vatten && Math.hypot(vatten.x - p.x, vatten.y - p.y) <= BRAND.vattenR) return { act: 'slackaSig' as const, why: 'Brinner och springer i vattnet', skal: 'vatten' as const, spot: vatten, dur: 0.2 * MIN };
   const spot = utEld(s, p); // ur elden först, så att hen inte rullar i det som brinner och tar eld igen (steg 10.2.17)
   const pl = paSig(s, p).find(t => !SAKER[t.k]?.brinnerInte);
   if (pl) return { act: 'slackaSig' as const, why: `Brinner och sliter av sig ${SAKER[pl.k]?.namn ?? pl.k}`, spot, dur: 0.3 * MIN, ref: pl.id };
@@ -650,7 +628,7 @@ export function hjalpaVal(s: State, p: Person) {
 export function slackaSigKlar(s: State, p: Person, t: Task) {
   const pl = t.ref !== undefined ? tingOf(s).find(q => q.id === t.ref && q.bar === p.id) : undefined;
   if (pl) { delete pl.bar; const x = Math.floor(p.x), y = Math.floor(p.y); if (!nagotPa(s, x, y)) { pl.x = x; pl.y = y; } } // ligger något redan där får plagget en plats i förrådet (placeTools)
-  slacktP(s, p, pl ? 'plagget' : t.why?.includes('vattnet') ? 'vattnet' : 'rullade');
+  slacktP(s, p, pl ? 'plagget' : t.skal === 'vatten' ? 'vattnet' : 'rullade');
 }
 export function hjalpaKlar(s: State, p: Person, t: Task) {
   const q = living(s).find(o => o.id === t.ref);
@@ -688,14 +666,13 @@ function brandMal(s: State, b: Brand, p: Person, hot: boolean): BrandMal | undef
   if (!kanGa(p) || !b.r.length) return;
   const n = narmast(b, p.x, p.y);
   if (hot && ageOf(p, s.now) >= ALDER.vuxen) {
-    const mal = narmastByn(s, b); // det som brinner närmast byn först
-    if (freeTools(s, p, 'vattensack') >= 1 && naVattnet(s, p)) {
-      const spot = drickPlats(s, p);
-      if (spot) return { act: 'slacka', why: 'Hämtar vatten i säcken till elden', spot, dur: TORST.fyllSek * SEC, tool: 'vattensack', ref: mal };
-    }
     // var och en väljer den ruta som är mest värd att släcka (steg 10.11.3): det som står nära, delat med hur många som redan
-    // släcker där, och kanten före det inre
+    // släcker där, och kanten före det inre; också den med vattensäcken (steg 12.1.80)
     const i = bastSlack(s, b, p, slackare(s, p));
+    if (i >= 0 && freeTools(s, p, 'vattensack') >= 1 && naVattnet(s, p)) {
+      const spot = drickPlats(s, p);
+      if (spot) return { act: 'slacka', why: 'Hämtar vatten i säcken till elden', spot, dur: TORST.fyllSek * SEC, tool: 'vattensack', ref: i };
+    }
     const fot = i >= 0 ? fotfaste(s, b, i, p) : undefined;
     if (fot) return { act: 'slacka', why: 'Släcker elden med händerna', spot: fot, dur: BRAND.handMin * MIN, ref: i };
   }

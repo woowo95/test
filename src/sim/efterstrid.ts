@@ -8,6 +8,9 @@ import type { State } from './typer';
 export type Efter = { typ: string; egen?: boolean } & Record<string, number | string | boolean | undefined>;
 // vinnare: sidan som vann (0 = den som började), −1 om ingen vann. g = striden (KartStrid i kartstrid.ts)
 export const EFTER: Record<string, (s: State, efter: Efter, vinnare: 0 | 1 | -1, strid: unknown) => void> = {};
+// den som kommer till en strid som redan pågår (kartStridMed): det som stridens slag ger hen (övertygelsen i rövarnas heliga
+// krig, rovare.ts). kampe = hen i striden (Kampe i strid.ts)
+export const MED: Record<string, (s: State, efter: Efter, kampe: unknown, p: import('./typer').Person) => void> = {};
 // en gäst som dör i en strid på kartan (rövaren: rovare.ts lägger sin krok här). av = den som fällde hen
 export const gastKrok: { dod?: (s: State, p: import('./typer').Person, av?: import('./typer').Person) => void; spara?: (s: State, p: import('./typer').Person, t?: number) => void; ger?: (s: State, p: import('./typer').Person, avsikt: string) => void } = {};
 // fler faror som gör att byn går i korta steg (rövare nära byborna, rovare.ts); kartstrid.ts frågar dem i faraNara

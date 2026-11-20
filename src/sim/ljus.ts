@@ -9,7 +9,7 @@ import { balans } from './balans';
 import { antal } from './ord';
 import { gruppOf } from './saker';
 import { BRAND, brandLjus } from './brand';
-import { eldXY, eldarOf, fireHeat } from './eld';
+import { eldXY, eldarOf, fireHeat, nagonEld } from './eld';
 import { roomAt } from './byggnad';
 import { ACTS } from './handlingar';
 import { lightLevel } from './tid';
@@ -24,6 +24,7 @@ import { byId, alive, count, forstaGang, living, log } from './folk';
 export const MORKER = balans('morker', {
   fart: 0.6, // den som är vaken i totalmörker går och arbetar så här fort
   eldR: 6, // en eld som brinner för fullt lyser så här många rutor bort ...
+  branningR: 2, // en kolmila eller blästerugn som brinner lyser lite, så här många rutor bort (steg 12.2.1 och 12.2.3)
   eldMin: 0.5, // ... och en liten eld så här stor del av det
 });
 // facklan (steg 6.3.6)
@@ -63,6 +64,8 @@ export const LJUSKALLOR = {
   ljus: { namn: 'Talgljusen', kallor: s => (s.ljus ?? []).filter(l => l.tand).flatMap(l => { const st = stationById(s, l.st); return st ? [{ x: st.x + 0.5, y: st.y + 0.5, r: LJUS.r, rum: roomAt(s, st.x, st.y) }] : []; }) },
   // branden lyser (steg 9.2.20): rutorna i brandens kant, som ljus för dem som släcker eller arbetar och på kartan
   brand: { namn: 'Branden', kallor: s => brandLjus(s).map(i => ({ x: i % W + 0.5, y: Math.floor(i / W) + 0.5, r: BRAND.ljusR })) },
+  // kolmilan och blästerugnen som brinner (brann.ts): lite ljus mitt i stationen
+  branning: { namn: 'Kolmilan och blästerugnen', kallor: s => (s.branningar ?? []).filter(b => b.slut > s.now).flatMap(b => { const t = stationById(s, b.st); return t ? [{ x: t.x + 1, y: t.y + 1, r: MORKER.branningR }] : []; }) },
   uppsatt: { namn: 'Uppsatta facklor', kallor: s => (s.uppsatta ?? []).filter(u => u.tand).map(u => ({ x: u.x + 0.5, y: u.y + 0.5, r: FACKLA.r, rum: roomAt(s, u.x, u.y) })) }, // inne lyser den upp rummet (steg 9.2.11)
 } satisfies Record<string, Ljuskalla>;
 const KALLOR = Object.values(LJUSKALLOR) as Ljuskalla[];
@@ -97,10 +100,11 @@ export function morkHumor(s: State, p: Person) {
 // medan den brinner och är borta när den brunnit FACKLA.brinnTim timmar. Den som inte behöver ljuset längre (nästa uppgift är
 // inne, i ljuset eller i sömnen, eller dagen har kommit) släcker den, och tänder den igen nästa gång
 export const facklaHos = (s: State, p: Person) => tingOf(s).find(t => t.k === 'fackla' && t.tand === p.id);
-// det som brunnit sedan förra gången räknas av; true = den brann ut
+// det som brunnit sedan förra gången räknas av, för en fackla eller ett ljus som brinner tim timmar; true = den brann ut
+const brunnit = (s: State, u: { c: number; tandT?: number }, tim: number) => { u.c -= (s.now - (u.tandT ?? s.now)) / (tim * HOUR); u.tandT = s.now; return !(u.c > 1e-9); };
+// facklan räknas av; true = den brann ut
 function brinn(s: State, t: Ting) {
-  t.c -= (s.now - (t.tandT ?? s.now)) / (FACKLA.brinnTim * HOUR); t.tandT = s.now;
-  if (t.c > 1e-9) return false;
+  if (!brunnit(s, t, FACKLA.brinnTim)) return false;
   s.ting = tingOf(s).filter(x => x !== t); count(s, 'facklorBrunna');
   return true;
 }
@@ -120,7 +124,7 @@ export function facklaVal(s: State, p: Person) {
   }
   const t = facklaHos(s, p), behov = behoverLjus(s, p);
   if (t) { if (!behov) slack(s, t); return; }
-  if (!behov || !eldarOf(s).some(f => f.lit)) return;
+  if (!behov || !nagonEld(s)) return;
   const fri = friFackla(s);
   if (!fri) return;
   fri.tand = p.id; fri.tandT = s.now; count(s, 'facklorTanda');
@@ -147,10 +151,11 @@ function tand(s: State, u: Uppsatt | TalgLjus) {
   if (u.tand || lightLevel(s.now) > 0) return;
   u.tand = true; u.tandT = s.now; count(s, 'uppsattaTanda');
 }
+// den uppsatta facklan eller ljuset tänds när någon behöver det och släcks annars
+function tandEfter(s: State, u: Uppsatt | TalgLjus, behov: boolean) { if (behov) tand(s, u); else if (u.tand) { u.tand = undefined; u.tandT = undefined; } }
 // det som brunnit sedan förra gången; true = den brann ut och är borta
 function brinnUppsatt(s: State, u: Uppsatt) {
-  u.c -= (s.now - (u.tandT ?? s.now)) / (FACKLA.brinnTim * HOUR); u.tandT = s.now;
-  if (u.c > 1e-9) return false;
+  if (!brunnit(s, u, FACKLA.brinnTim)) return false;
   s.uppsatta = (s.uppsatta ?? []).filter(x => x !== u); count(s, 'facklorBrunna');
   return true;
 }
@@ -161,7 +166,7 @@ function uppsattaTimme(s: State) {
   for (const u of (s.uppsatta ?? []).slice()) {
     if (u.tand && brinnUppsatt(s, u)) continue;
     const behov = lightLevel(s.now) <= 0 && living(s).some(q => vaken(q) && (nara(u, q.x, q.y) || !!q.task && nara(u, q.task.tx, q.task.ty)));
-    if (behov) tand(s, u); else if (u.tand) { u.tand = undefined; u.tandT = undefined; }
+    tandEfter(s, u, behov);
   }
 }
 // platsen där en fackla behövs mest: där folk varit vakna i mörker flest timmar (rutan och de fyra intill), minst UPPSATT.trosk,
@@ -253,11 +258,10 @@ function ljusTimme(s: State) {
   for (const l of (s.ljus ?? []).slice()) {
     if (!stationById(s, l.st)) { s.ljus = s.ljus!.filter(x => x !== l); continue; } // bordet är borta, och ljuset med det
     if (l.tand) {
-      l.c -= (s.now - (l.tandT ?? s.now)) / (LJUSSORTER[ljusSort(l)]!.brinnTim * HOUR); l.tandT = s.now;
-      if (l.c <= 1e-9) { s.ljus = s.ljus!.filter(x => x !== l); count(s, 'ljusBrunna'); continue; }
+      if (brunnit(s, l, LJUSSORTER[ljusSort(l)]!.brinnTim)) { s.ljus = s.ljus!.filter(x => x !== l); count(s, 'ljusBrunna'); continue; }
     }
     const behov = lightLevel(s.now) <= 0 && living(s).some(q => vaken(q) && (iRummet(s, l, { tx: q.x, ty: q.y }) || !!q.task && iRummet(s, l, q.task)));
-    if (behov) tand(s, l); else if (l.tand) { l.tand = undefined; l.tandT = undefined; }
+    tandEfter(s, l, behov);
   }
 }
 // när arbetet är klart (KLAR.ljus i steg.ts): ljuset ställs på bordet eller hyllan (task.ref)

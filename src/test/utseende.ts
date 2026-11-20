@@ -11,7 +11,7 @@
 import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { State, ageIndex, bynsMitt, createState, hourOf, rovarnaKommer, serialize, stallUpp, step } from '../sim';
+import { State, ageIndex, bynsMitt, createState, hourOf, rovarnaKommer, serializeParts, stallUpp, step } from '../sim';
 import { FARGER, MORKARE } from '../palett';
 import { BEAT, START } from './kor';
 
@@ -100,10 +100,14 @@ async function main() {
   for (const f of FALL.filter(f => !process.env.FALL || process.env.FALL.split(',').includes(f.namn))) {
     if (!tills(s, f.ai, f.h)) { larm.push(`${f.namn}: byn kom aldrig dit`); continue; }
     if ('rovare' in f) { rovarnaKommer(s, 4, true); const c = bynsMitt(s); if (s.rovare) stallUpp(s, s.rovare, c.x + 8, c.y + 2); }
-    const fil = serialize(s), t = s.now;
+    const delar = serializeParts(s), t = s.now;
     for (const sk of SKARMAR.filter(k => k.namn === 'dator' || f.namn === 'dag' || process.env.ALLA)) for (const lg of LAGEN.filter(l => !process.env.LAGE || process.env.LAGE === l.namn)) {
       const ctx = await b.newContext({ ...sk.opt, timezoneId: 'Europe/Stockholm', colorScheme: lg.schema });
-      await ctx.addInitScript(`try { if (!sessionStorage.getItem('klar')) { localStorage.setItem('samhalle-save-v1', ${JSON.stringify(fil)}); sessionStorage.setItem('klar', '1'); } } catch (e) {}`);
+      // byn läggs i webbläsarens databas som spelet sparar den (ui/lagring.ts, egen by): en post per del och en för byn. Skrivningen
+      // börjar före spelets egen läsning, och databasen gör transaktionerna i den ordning de börjar
+      await ctx.addInitScript(`try { if (!sessionStorage.getItem('klar')) { sessionStorage.setItem('klar', '1'); const delar = ${JSON.stringify(delar)}; const r = indexedDB.open('samhallssimulatorn', 1);
+        r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('delar')) r.result.createObjectStore('delar'); };
+        r.onsuccess = () => { const db = r.result, t = db.transaction('delar', 'readwrite'), st = t.objectStore('delar'); for (const d in delar) st.put(delar[d], 'egen/' + d); st.put({ delar: Object.keys(delar) }, 'egen'); t.oncomplete = () => db.close(); }; } } catch (e) {}`);
       const pg = await ctx.newPage();
       await pg.clock.install({ time: t });
       const fel: string[] = [];

@@ -33,8 +33,6 @@ export const GASTREL = balans('gastrel', {
 export interface GastRel { chem: number; op: number; irr: number; n: number; lurad?: number; lurat?: number }
 
 const tal = (s: State, nyckel: number, n: number) => hash3(s.seed, nyckel, n, 0x6c8e9cf5, 23);
-// handlarens egenskaper (1–20) som relationen frågar efter, ur fröet och nyckeln: samma person har samma egenskaper varje gång
-export const gastStat = (s: State, nyckel: number, k: Stat) => 4 + Math.floor(tal(s, nyckel, k.length * 31 + k.charCodeAt(0)) * 13);
 const LIKHET: Stat[] = ['nyfikenhet', 'flit', 'empati', 'mod'];
 
 // personen i grannklanen som är handlaren (där relationerna sparas)
@@ -54,11 +52,11 @@ export function gastRel(s: State, h: Handlare, p: Person): GastRel | undefined {
 export function gillar(s: State, h: Handlare, p: Person) {
   const r = gastRel(s, h, p);
   if (!r) return 0;
-  const nyckel = handlarNyckel(s, h), now = s.now;
+  const now = s.now, g = hp(s, h); // handlarens egna egenskaper, de som står i personrutan (steg 12.1.83)
   let d = 0;
-  for (const k of LIKHET) d += Math.abs(gastStat(s, nyckel, k) - p.pot[k]);
+  for (const k of LIKHET) d += Math.abs(g.pot[k] - p.pot[k]);
   const likhet = 1 - d / 40, charm = (stat(p, 'karisma', now) + stat(p, 'skonhet', now)) / 2;
-  const ut = r.chem * SAMTAL.utKemi + likhet * SAMTAL.utLikhet + (gastStat(s, nyckel, 'empati') + stat(p, 'empati', now)) / SAMTAL.utEmpati - SAMTAL.utAvdrag + (charm - 8) / SAMTAL.charmDiv;
+  const ut = r.chem * SAMTAL.utKemi + likhet * SAMTAL.utLikhet + (stat(g, 'empati', now) + stat(p, 'empati', now)) / SAMTAL.utEmpati - SAMTAL.utAvdrag + (charm - 8) / SAMTAL.charmDiv;
   return clamp(ut * GASTREL.ut + r.op / 100 - r.irr, -1, 1);
 }
 // det handlaren kräver gånger det här: mindre för den hen gillar, mer för den hen inte gillar

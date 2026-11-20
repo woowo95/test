@@ -1,6 +1,6 @@
 // Scenarier för fas 11: världen.
 import * as SIM from '../../sim';
-import { medVatska, SCENARIER, varldEfter, klockan, kor, korTills, medHus, packatSomISpelet, rovarGang, testBy, utanWebblasare } from './hjalp';
+import { medVatska, nyInvanare, SCENARIER, varldEfter, klockan, kor, korTills, medHus, packatSomISpelet, rovarGang, setItems, testBy, utanWebblasare } from './hjalp';
 import { START } from '../kor';
 import { farg, iPaletten } from '../../palett';
 import { lasBy, minnesBas, sparaBy } from '../../ui/lagring';
@@ -150,7 +150,8 @@ SCENARIER.borta = {
       [`den som är borta röstar inte i byn (${roster0} gånger)`, roster0 === 0],
       ['den som är borta äter, dricker, smittas och flyttar sig inte i byn', orort],
       ['när alla är borta grundas byn inte om och ingen ny kommer', inteOmgrundad],
-      ['alla kommer hem och är i byn igen', SIM.living(s).length === alla.length],
+      // var och en av dem som var borta (ett barn kan ha fötts under timmen efter, steg 12.1.112)
+      ['alla kommer hem och är i byn igen', alla.every(p => SIM.living(s).includes(p))],
     ];
   },
 };
@@ -507,6 +508,7 @@ SCENARIER.varldskarta = {
 
 SCENARIER.varldslag = {
   text: 'Världens slag och slump (steg 11.2.17): perioderna (en timme och ett dygn) räknas från världens början i ordning, kön räknas vid sin tid, och slumpen är en hash, så levande läge och ikappräkning ger exakt samma värld',
+  env: { BALANS: 'byanfall.skicka=0' }, // inga anfall skickas: ett anfall som når huvudbyn är byns egen händelse (nedan)
   kor: () => {
     // provrader: varje period och varje post i kön skriver in sig i en logg och drar ur världens slump; posterna lägger nya poster
     const logg = new WeakMap<SIM.Varlden, string[]>(), skriv = (vl: SIM.Varlden, t: string) => { const l = logg.get(vl) ?? []; l.push(t); logg.set(vl, l); };
@@ -517,7 +519,8 @@ SCENARIER.varldslag = {
     SIM.PERIODRADER.push(...rader);
     SIM.KOHANDELSER.prov = (_s, vl, p) => { skriv(vl, `k${p.sak}@${p.t}`); if ((p.sak ?? 0) % 2) SIM.laggIKo(vl, p.t + 1800e3, 'prov', { sak: (p.sak ?? 0) + 1000 }); };
     try {
-      const ny = () => { const s = SIM.cloneState(testBy(10)); SIM.medVarld(s); return s; };
+      // ett anfall som når huvudbyn är byns egen händelse (rövarna går in på kartan med byns slump) och prövas inte här
+      const ny = () => { const s = SIM.cloneState(testBy(10)); SIM.medVarld(s); const vl = s.varld!; vl.farder = vl.farder?.filter(f => !(f.anfall && f.till === vl.huvud)); return s; };
       const levande = ny(), ikapp = ny(), p0 = { ...levande.varld!.perioder }, slut = levande.now + 4 * 86400e3 + 1234e3; // fyra dygn (fyra år i spelet)
       while (levande.now < slut) { levande.now = Math.min(slut, levande.now + 300e3); SIM.varldSteg(levande); }
       ikapp.now = slut; SIM.varldSteg(ikapp);
@@ -532,7 +535,10 @@ SCENARIER.varldslag = {
       // slumpen
       const sl = [0, 1, 2].map(i => SIM.varldSlump(vl, 7, 3, i)), igen = SIM.varldSlump(vl, 7, 3, 0) === sl[0];
       let summa = 0; for (let n = 0; n < 4000; n++) summa += SIM.antalUr(1.25, SIM.varldSlump(vl, 9, n, 5));
-      const rng = JSON.stringify(levande.rngs) === JSON.stringify(ny().rngs);
+      // byns slump dras bara när något ur världen går in i byn (en flock som anfaller huvudbyn, steg 11.6.20: då är det byns
+      // händelse), och då likadant i levande läge och ikappräkningen; utan det är byns slump orörd
+      const inne = levande.stat?.varldsanfall ?? 0, rngLika = JSON.stringify(levande.rngs) === JSON.stringify(ikapp.rngs);
+      const rng = rngLika && (inne > 0 || JSON.stringify(levande.rngs) === JSON.stringify(ny().rngs));
       // en by utan värld
       const utan = SIM.cloneState(testBy(10)); delete utan.varld; utan.now += 86400e3; SIM.varldSteg(utan);
       const takt = SIM.TAKTER.some(r => r.namn === 'världen');
@@ -542,7 +548,7 @@ SCENARIER.varldslag = {
         [`kön räknas vid sin tid och i tidsordning med perioderna (${poster} poster)`, poster > 0 && iOrdning && kvar],
         ['slumpen är en hash: samma frö, sak, period och ärende ger samma tal, ett annat ärende ett annat', igen && sl[0] !== sl[1] && sl[1] !== sl[2]],
         [`ett väntat antal blir hela händelser (1,25 i snitt: ${(summa / 4000).toFixed(3)})`, Math.abs(summa / 4000 - 1.25) < 0.03],
-        ['världen rör inte byns slump', rng],
+        [`världen rör inte byns slump, utom när något ur världen går in i byn, och då likadant i båda lägena (${inne} anfall in i byn)`, rng],
         ['en by utan värld får ingen', !utan.varld],
         ['världen har sin rad i TAKTER', takt],
       ];
@@ -563,22 +569,22 @@ SCENARIER.varldskronika = {
     // många händelser: de stora står kvar, de små stannar vid taket och de äldsta små försvinner
     const by = vl.platser!.filter(p => p.k === 'by' && p.by === undefined).slice(0, 2);
     const t0 = s.now, tak = SIM.VARLDKRONIKA.smaTak, stora0 = (vl.kronika ?? []).filter(h => SIM.VARLDSHANDELSER[h.k].stor).length;
-    for (let i = 0; i < tak + 50; i++) SIM.varldHandelse(vl, i % 2 ? 'svalt' : 'farsot', t0 + i * 3600e3, { by: vl.huvud });
+    for (let i = 0; i < tak + 50; i++) SIM.varldHandelse(vl, i % 2 ? 'svalt' : 'nyLedare', t0 + i * 3600e3, { by: vl.huvud });
     for (let i = 0; i < 20; i++) SIM.varldHandelse(vl, 'krig', t0 + i * 7200e3, { by: vl.huvud, mot: 999 });
-    SIM.varldHandelse(vl, 'karavan', t0 + (tak + 40) * 3600e3 - 1000, { plats: by[0]?.nr }); // i efterhand, mellan två andra
+    SIM.varldHandelse(vl, 'platsbygge', t0 + (tak + 40) * 3600e3 - 1000, { by: vl.huvud, plats: by[0]?.nr }); // i efterhand, mellan två andra
     const kr = vl.kronika!, sma = kr.filter(h => !SIM.VARLDSHANDELSER[h.k].stor), stora = kr.filter(h => SIM.VARLDSHANDELSER[h.k].stor);
     const iOrdning = kr.every((h, i) => i === 0 || h.t >= kr[i - 1].t);
-    const aldstaBort = !sma.some(h => h.t < t0 + 50 * 3600e3 && h.k !== 'karavan');
-    const karavan = SIM.varldHandelseText(vl, kr.find(h => h.k === 'karavan') ?? kr[0]);
-    const alla = ['grundad', 'gattUnder', 'delad', 'nyLedare', 'krig', 'fred', 'forbund', 'svalt', 'farsot', 'rad', 'karavan', 'uppdrag'].every(k => k in SIM.VARLDSHANDELSER);
+    const aldstaBort = !sma.some(h => h.t < t0 + 50 * 3600e3 && h.k !== 'platsbygge');
+    const bygge = SIM.varldHandelseText(vl, kr.find(h => h.k === 'platsbygge') ?? kr[0]);
+    const alla = ['grundad', 'gattUnder', 'delad', 'nyLedare', 'krig', 'fred', 'svalt', 'rad', 'platsbygge'].every(k => k in SIM.VARLDSHANDELSER);
     // sparas med världen
     const igen = JSON.parse(JSON.stringify(vl)) as SIM.Varlden;
     return [
-      ['registret har slagen grundad, gått under, delad, ny ledare, krig, fred, förbund, svält, farsot, räd, plundrad karavan och uppdrag', alla],
+      ['registret har slagen grundad, gått under, delad, ny ledare, krig, fred, svält, räd och bygge på leden', alla],
       [`huvudbyns grundande står först i världens krönika ("${text}")`, grundad && text.includes(r.namn) && !!r.namn],
       [`de stora sparas för alltid (${stora0} + 20 = ${stora.length} stora)`, stora.length === stora0 + 20],
       [`de små har ett tak (${sma.length} av högst ${tak}), och de äldsta försvinner först`, sma.length === tak && aldstaBort],
-      [`krönikan står i tidsordning, också när en händelse skrivs i efterhand ("${karavan}")`, iOrdning && karavan.startsWith('En karavan plundras vid')],
+      [`krönikan står i tidsordning, också när en händelse skrivs i efterhand ("${bygge}")`, iOrdning && bygge.includes(' byggde ')],
       ['krönikan sparas med världen', igen.kronika?.length === kr.length],
     ];
   },
@@ -680,7 +686,7 @@ SCENARIER.klanbort = {
     SIM.varldSteg(t);
     const foljer = kt.every(c => { const r = t.varld!.rader!.find(x => x.nr === c.rad)!; return r.tal.folk === c.folk && r.tal.styrka === c.styrka && r.tal.rikedom === c.resurser; });
     // en sparad by från före v531: grannklanerna (och en till än grannätet rymmer) blir byar i världen
-    const g = SIM.cloneState(s), gamla = SIM.klanerOf(g).map(c => ({ ...c, rad: undefined, dygn: undefined, sallsynt: undefined, hem: SIM.KLAN_HEM_NAMN[1] }));
+    const g = SIM.cloneState(s), gamla = SIM.klanerOf(g).map(c => ({ ...c, rad: undefined, dygn: undefined, sallsynt: undefined, hem: 'fjällen i norr' }));
     const extra = { ...gamla[0], id: 99, namn: 'Extrafolket', personer: [] };
     g.klaner = [...gamla, extra]; delete g.varld; g.v = 55; g.klanNr = 99; SIM.migrate(g);
     const kg = SIM.klanerOf(g), ex = kg.find(c => c.id === 99);
@@ -856,8 +862,6 @@ SCENARIER.byrelation = {
     const gava = SIM.relation(vl, b.nr, a.nr)! - SIM.grundlage(vl, b.nr, a.nr), andraHallet = SIM.relation(vl, a.nr, b.nr) === samma;
     SIM.byHandelse(vl, 'plundring', c.nr, b.nr);
     const plund = SIM.relation(vl, b.nr, c.nr)!;
-    SIM.byHandelse(vl, 'muta', a.nr, c.nr);
-    const muta = (vl.mutor?.[`${c.nr}>${a.nr}`] ?? 0) === SIM.BYREL.muta;
     const k = a.syn!, i0 = k.inst;
     SIM.klanHandelse(vl, k, 'handel');
     const huvud = k.inst === i0 + SIM.BYREL.handel && SIM.relation(vl, a.nr, vl.huvud!) === k.inst;
@@ -872,7 +876,6 @@ SCENARIER.byrelation = {
       ['när byarna möts börjar talet åt båda hållen i grundläget', motts],
       [`en gåva gör mottagaren vänligare (+${gava}) och ändrar inte givarens syn`, gava === 3 * SIM.BYREL.gava && andraHallet],
       [`plundringen gör offret ovänligt (${plund})`, plund < SIM.grundlage(vl, b.nr, c.nr) - 10],
-      ['mutan går till ledaren och sparas för sig', muta],
       ['huvudbyns förbindelse bär byns syn på huvudbyn', huvud],
       [`talet glöms mot grundläget (${b0} → ${glomt}, grundläget ${mal}), i hela tal mellan −100 och 100`, Math.abs(glomt - mal) < Math.abs(b0 - mal) / 2 && hela],
     ];
@@ -1082,7 +1085,7 @@ SCENARIER.radkunskap = {
 };
 
 SCENARIER.radledare = {
-  text: 'Ledaren och de fasta personerna (steg 11.3.10, radperson.ts): ledaren med en bybos egenskaper ur sin nyckel, bytet vid en känd tid och mutorna som förlorar hälften av sin verkan',
+  text: 'Ledaren och de fasta personerna (steg 11.3.10, radperson.ts): ledaren med en bybos egenskaper ur sin nyckel, och bytet vid en känd tid',
   kor: () => {
     const s = SIM.createState(6, Date.UTC(2026, 0, 1)), vl = s.varld!;
     // samma nyckel ger samma person
@@ -1099,13 +1102,6 @@ SCENARIER.radledare = {
     const alla = med.every(r => SIM.radLedare(r)?.roll === 'ledare');
     const r = med.find(x => x.syn)!, l0 = SIM.radLedare(r)!;
     const hovding = r.syn!.personer.find(q => q.roll === 'hovding');
-    // en muta före bytet
-    SIM.byHandelse(vl, 'muta', vl.huvud!, r.nr, 4);
-    const muta = vl.mutor![`${r.nr}>${vl.huvud}`], inst0 = r.syn!.inst;
-    // hållningen direkt: bytet tar bort hälften av mutan
-    const kopia = structuredClone({ rader: vl.rader, mutor: vl.mutor, huvud: vl.huvud }) as typeof vl, kr = kopia.rader!.find(x => x.nr === r.nr)!;
-    SIM.ledarBytet(kopia, r.nr);
-    const instDirekt = kr.syn!.inst;
     // ledaren dör vid sin tid
     const k0 = (vl.kronika ?? []).length;
     s.now = l0.dor! + 1; r.tal.folk = Math.max(r.tal.folk, 10);
@@ -1120,7 +1116,6 @@ SCENARIER.radledare = {
       [`varje by som ska ha en ledare har en efter en timme (${med.length} byar), och den första är hövdingen huvudbyn känner (${l0.namn})`, alla && !!hovding && hovding.namn === l0.namn],
       [`ledaren byts när hen dör (${l0.namn} → ${l1?.namn}), vid den kända tiden, och världens krönika får Ny ledare`, !!l1 && l1.nyckel !== l0.nyckel && l1.fodd < s.now && krona && r.fasta.length === 1],
       [`den nya ledaren är hövding i huvudbyns förbindelse (${nyH.map(q => q.namn).join(', ')})`, nyH.length === 1 && nyH[0].namn === l1?.namn],
-      [`mutan förlorar hälften av sin verkan (${muta} → ${vl.mutor?.[`${r.nr}>${vl.huvud}`] ?? 0}, hållningen ${inst0} → ${instDirekt})`, (vl.mutor?.[`${r.nr}>${vl.huvud}`] ?? 0) === muta - Math.trunc(muta / 2) && instDirekt === inst0 - Math.trunc(muta / 2)],
     ];
   },
 };
@@ -1215,7 +1210,9 @@ SCENARIER.splittring = {
 
 SCENARIER.forhistoria = {
   text: 'Förhistorien (steg 11.3.13, forhistoria.ts): världen har levt FORHIST.ar år när huvudbyn grundas, med byar som vuxit, delats och gått under efter radens regler, en krönika och grannbyar som lever',
-  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,forhist.ar=100' },
+  // förhistoriens längd som i spelet: på 100 år hinner byarna sällan bli stora nog att delas (NYBY.moder), och där berodde den
+  // enda delningen på slumpen (12.1.21 tog bort den, steg 12.1.112)
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,forhist.ar=400' }, lang: true,
   kor: () => {
     const s = SIM.createState(7, Date.UTC(2026, 0, 1)), vl = s.varld!;
     const fore = (vl.kronika ?? []).filter(h => h.t < s.founded), antal = (k: string) => fore.filter(h => h.k === k).length;
@@ -1227,9 +1224,11 @@ SCENARIER.forhistoria = {
     const levandeKlaner = klaner.length > 0 && klaner.every(k => { const r = radAv(k); return !!r && SIM.lever(vl, r) && k.namn === r.namn; });
     // samma frö ger samma förhistoria
     const t = SIM.createState(7, Date.UTC(2026, 0, 1)), lika = JSON.stringify(t.varld!.rader) === JSON.stringify(vl.rader) && JSON.stringify(t.varld!.kronika) === JSON.stringify(vl.kronika);
+    // en by delar sig bara när den vuxit sig stor, några gånger på hundra år i en värld: frågan gäller några världar
+    const delade = antal('delad') || [1, 4, 6, 8].reduce((n, f) => n || (() => { const u = SIM.createState(f, Date.UTC(2026, 0, 1)); return (u.varld!.kronika ?? []).filter(h => h.t < u.founded && h.k === 'delad').length; })(), 0);
     return [
       [`världen började ${SIM.FORHIST.ar} år före grundandet (${Math.round((s.founded - (vl.borjan ?? s.founded)) / SIM.DAY)} år)`, vl.borjan !== undefined && Math.round((s.founded - vl.borjan) / SIM.DAY) === SIM.FORHIST.ar],
-      [`vid grundandet finns ${levande.length} byar och ${ruiner.length} ruiner, och krönikan har ${fore.length} händelser (grundad ${antal('grundad')}, delad ${antal('delad')}, gått under ${antal('gattUnder')})`, levande.length > 0 && ruiner.length > 0 && antal('delad') > 0 && antal('gattUnder') > 0],
+      [`vid grundandet finns ${levande.length} byar och ${ruiner.length} ruiner, och krönikan har ${fore.length} händelser (grundad ${antal('grundad')}, delad ${antal('delad')}, gått under ${antal('gattUnder')}; delad i någon av fem världar ${delade})`, levande.length > 0 && ruiner.length > 0 && delade > 0 && antal('gattUnder') > 0],
       [`en gammal by kan mindre än en yngre (${gamla.length} byar med ${Math.min(...levande.map(r => r.tek.length))}–${Math.max(...levande.map(r => r.tek.length))} tekniker)`, omvant],
       [`huvudbyn har förbindelse med ${klaner.length} grannbyar, alla levande byar ur raden`, levandeKlaner],
       ['samma frö ger samma förhistoria', lika],
@@ -1267,22 +1266,24 @@ SCENARIER.ort = {
     const andra = () => (p.lardomar ?? []).filter(l => l.k !== 'ort').length, andraFore = andra();
     const pl = vl.platser!.filter(q => q.by !== vl.huvud).slice(0, SIM.ORT.max + 2);
     const a = pl[0]!.nr;
-    SIM.larOrt(s, p, a, SIM.O_RYKTE, 0.4, { src: 999, fr: 999 });
-    const rykte = SIM.ortNiva(p, a) === SIM.O_RYKTE && SIM.findL(p, 'ort', a)?.fr === 999;
-    SIM.larOrt(s, p, a, SIM.O_KANT, 0.3);
-    const kant = SIM.ortNiva(p, a) === SIM.O_KANT && SIM.findL(p, 'ort', a)!.c >= 0.4 && SIM.findL(p, 'ort', a)?.fr === undefined;
+    SIM.larOrt(s, p, a, SIM.O_RYKTE, 0.4, { src: 999 });
+    const rykte = SIM.ortNiva(p, a) === SIM.O_RYKTE && SIM.findL(p, 'ort', a)?.src === 999;
+    SIM.larOrt(s, p, a, SIM.O_KANT, 0.3, { t: s.now + 500 }); // egna, nyare uppgifter
+    const kant = SIM.ortNiva(p, a) === SIM.O_KANT && SIM.findL(p, 'ort', a)!.c >= 0.4 && SIM.findL(p, 'ort', a)?.src === undefined;
     const c0 = SIM.findL(p, 'ort', a)!.c;
-    SIM.larOrt(s, p, a, SIM.O_RYKTE, 0.2);
+    SIM.larOrt(s, p, a, SIM.O_RYKTE, 0.2, { src: 998, t: s.now + 1000 });
     const starkt = SIM.ortNiva(p, a) === SIM.O_KANT && SIM.findL(p, 'ort', a)!.c > c0;
+    const egenKvar = SIM.findL(p, 'ort', a)?.src === undefined && SIM.findL(p, 'ort', a)?.t === s.now + 1000; // egen resa skrivs inte över av ett rykte (steg 12.1.83)
     // fler platser än taket: de minst säkra trängs undan
     pl.slice(1).forEach((q, i) => SIM.larOrt(s, p, q.nr, SIM.O_BESOKT, 0.5 + i * 0.01));
     const orter = p.lardomar!.filter(l => l.k === 'ort');
     const minst = orter.every(l => l.a !== pl[1]!.nr && l.a !== a) || orter.every(l => l.a !== pl[1]!.nr && l.a !== pl[2]!.nr);
     const d = SIM.describe(s, orter.find(l => l.v === SIM.O_BESOKT)!);
     return [
-      [`ett rykte är en lärdom av slaget ort med den som först berättade`, rykte],
-      ['en högre nivå ersätter en lägre och tar bort ryktets förskjutning', kant],
+      ['ett rykte är en lärdom av slaget ort med den som berättade', rykte],
+      ['en högre nivå ersätter en lägre, och egna nyare uppgifter har ingen annan som källa', kant],
       ['att höra om platsen igen på en lägre nivå sänker inte nivån men stärker minnet', starkt],
+      ['den som själv vet om platsen behåller sig själv som källa när hen hör ett nyare rykte, men tiden följer med', egenKvar],
       [`högst ${SIM.ORT.max} platser (${orter.length}), och de minst säkra trängs undan`, orter.length === SIM.ORT.max && minst],
       [`de andra lärdomarna är kvar (${andra()} av ${andraFore})`, andra() === andraFore],
       [`lärdomen i ord: "${d.what}", ${d.src}`, d.what.includes(vl.platser!.find(q => q.nr === orter.find(l => l.v === SIM.O_BESOKT)!.a)!.namn) && d.src === 'egen resa'],
@@ -1353,7 +1354,7 @@ SCENARIER.ortblekna = {
 };
 
 SCENARIER.fjarran = {
-  text: 'Platserna sprids i samtal (steg 11.4.4, berattaOrt i ort.ts): ämnet Fjärran platser i AMNEN, och ett led i berättandet tar bort en nivå: den som besökt en plats berättar, lyssnaren känner den, och nästa lyssnare har ett rykte med den som först berättade det',
+  text: 'Platserna sprids i samtal (steg 11.4.4, berattaOrt i ort.ts): ämnet Fjärran platser i AMNEN, och ett led i berättandet tar bort en nivå: den som besökt en plats berättar, lyssnaren känner den, och nästa lyssnare har ett rykte',
   kor: () => {
     const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b, c] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
     const nr = vl.platser!.find(x => x.k === 'by' && x.by !== vl.huvud)!.nr;
@@ -1373,7 +1374,7 @@ SCENARIER.fjarran = {
     return [
       [`samtalets ämne är Fjärran platser (${amne.k}: ${amne.o})`, amne.k === 'fjarran' && SIM.AMNEN.fjarran.namn === 'Fjärran platser'],
       [`den som hör det av den som varit där känner platsen, ett led bort (${lb?.v}, led ${lb?.led})`, lb?.v === SIM.O_KANT && lb.src === a!.id && lb.led === 1],
-      [`nästa lyssnare har ett rykte, med den som först berättade det som rykte (${lc?.v}, led ${lc?.led})`, lc?.v === SIM.O_RYKTE && lc.fr === b!.id && lc.led === 2],
+      [`nästa lyssnare har ett rykte (${lc?.v}, led ${lc?.led})`, lc?.v === SIM.O_RYKTE && lc.led === 2],
       ['den som varit där har kvar sin nivå', SIM.ortNiva(a!, nr) === SIM.O_BESOKT],
       [`i samtalen sprids platsen bland det andra man vet (${vet} av ${andra.length} känner den efter 400 berättelser)`, vet > 0],
     ];
@@ -1381,23 +1382,27 @@ SCENARIER.fjarran = {
 };
 
 SCENARIER.ryktlage = {
-  text: 'Ryktets läge (steg 11.4.5, ryktesLage i ort.ts): ett rykte är ett område med en radie och en förskjuten mitt, så att platsen alltid ligger inom området men inte i mitten; mitten räknas ur världens frö, platsen och den som först berättade',
+  text: 'Ryktets läge (steg 11.4.5, ryktesLage i ort.ts): ett rykte är ett område med en radie och en förskjuten mitt, så att platsen alltid ligger inom området men inte i mitten; mitten räknas ur världens frö och platsens nummer, lika för alla',
   kor: () => {
     const s = SIM.cloneState(testBy(3)), vl = s.varld!, p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= 18)!;
     const pl = vl.platser!.filter(x => x.by !== vl.huvud).slice(0, 20);
     let inom = 0, inteMitt = 0, n = 0, olika = 0;
-    for (const q of pl) for (const fr of [3, 17, 41]) {
-      const l = { k: 'ort', a: q.nr, v: SIM.O_RYKTE, c: 1, t: s.now, fr } as SIM.Lardom, o = SIM.ryktesLage(s, l)!, d = Math.hypot(q.x + 0.5 - o.x, q.y + 0.5 - o.y);
+    let lika = 0;
+    for (const q of pl) {
+      const l = { k: 'ort', a: q.nr, v: SIM.O_RYKTE, c: 1, t: s.now, src: 3 } as SIM.Lardom, o = SIM.ryktesLage(s, l)!, d = Math.hypot(q.x + 0.5 - o.x, q.y + 0.5 - o.y);
       n++; if (d < o.r) inom++; if (d >= SIM.ORT.ryktFran * o.r - 1e-9) inteMitt++;
-      const o2 = SIM.ryktesLage(s, { ...l, fr: fr + 1 })!;
-      if (Math.hypot(o2.x - o.x, o2.y - o.y) > 0.1) olika++;
+      const o2 = SIM.ryktesLage(s, { ...l, src: 17 })!;
+      if (Math.hypot(o2.x - o.x, o2.y - o.y) < 1e-9) lika++;
+      const ox = q.x + 0.5 - o.x, oy = q.y + 0.5 - o.y; // förskjutningen åt olika håll för olika platser
+      if (pl.some(z => z !== q && (() => { const u = SIM.ryktesLage(s, { ...l, a: z.nr })!; return Math.hypot(z.x + 0.5 - u.x - ox, z.y + 0.5 - u.y - oy) > 0.1; })())) olika++;
     }
-    const l = SIM.larOrt(s, p, pl[0]!.nr, SIM.O_RYKTE, 0.5, { fr: 5 }), a = SIM.ryktesLage(s, l)!, b = SIM.ryktesLage(s, { ...l })!;
+    const l = SIM.larOrt(s, p, pl[0]!.nr, SIM.O_RYKTE, 0.5, { src: 5 }), a = SIM.ryktesLage(s, l)!, b = SIM.ryktesLage(s, { ...l })!;
     return [
       [`radien är en halv dags gång (${SIM.ryktesLage(s, l)!.r} världsrutor)`, a.r === SIM.ORT.ryktRadie * SIM.VARLD.gangPerDygn],
       [`platsen ligger alltid inom området (${inom} av ${n})`, inom === n],
       [`och aldrig i mitten (${inteMitt} av ${n})`, inteMitt === n],
-      [`en annan första berättare ger en annan mitt (${olika} av ${n})`, olika > n * 0.9],
+      [`ryktet ligger på samma ställe vem som än berättade (${lika} av ${n})`, lika === n],
+      [`olika platser har förskjutningen åt olika håll (${olika} av ${n})`, olika > n * 0.9],
       ['samma rykte ligger på samma ställe', a.x === b.x && a.y === b.y],
     ];
   },
@@ -1442,7 +1447,7 @@ SCENARIER.kartlager = {
   kor: () => {
     const s = SIM.cloneState(testBy(3)), vl = s.varld!, v = SIM.varldMark(s)!, K = VB.VK, [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
     const langt = vl.platser!.filter(x => x.by !== vl.huvud && !SIM.iNaromradet(s, x.nr) && !(SIM.LANDMARKEN[x.k] as SIM.LandmarkDef).folk), kand = langt[0]!, rykt = langt.find(x => Math.hypot(x.x - kand.x, x.y - kand.y) > 4)!;
-    SIM.larOrt(s, a!, kand.nr, SIM.O_KANT, 1); SIM.larOrt(s, b!, rykt.nr, SIM.O_RYKTE, 1, { fr: b!.id });
+    SIM.larOrt(s, a!, kand.nr, SIM.O_KANT, 1); SIM.larOrt(s, b!, rykt.nr, SIM.O_RYKTE, 1);
     // en hemlig plats långt borta
     const hx = rykt.x, hy = rykt.y, gom = { ...kand, nr: 99999, k: 'gomma' as const, namn: 'Gömman' }; // på den kända platsens ruta, långt från närområdet
     vl.platser!.push(gom);
@@ -1458,7 +1463,7 @@ SCENARIER.kartlager = {
     let blek = -1, bx = 0, by = 0;
     for (let y = 0; y < v.h && blek < 0; y++) for (let x = 0; x < v.w; x++) if (lag(x, y) === 'blek' && !vl.platser!.some(q => q.x === x && q.y === y)) { blek = 1; bx = x; by = y; break; }
     const gomSynsFore = !VB.rutaText(vl, v, gom.x, gom.y, kn).includes('Gömma') && !SIM.syns(kn, gom); // kn frågar byn när den används
-    SIM.larOrt(s, b!, gom.nr, SIM.O_RYKTE, 1, { fr: b!.id }); SIM.raknaBynVet(s);
+    SIM.larOrt(s, b!, gom.nr, SIM.O_RYKTE, 1); SIM.raknaBynVet(s);
     const kn2 = SIM.bynsKarta(s)!;
     return [
       [`närområdet och den kända platsen är tydliga (${lag(hb.x, hb.y)}, ${lag(kand.x, kand.y)})`, lag(hb.x, hb.y) === 'kant' && lag(kand.x, kand.y) === 'kant'],
@@ -1501,18 +1506,20 @@ SCENARIER.byhistorik = {
 };
 
 SCENARIER.bynyhet = {
-  text: 'Nyheterna (steg 11.4.9, trorOmBy och storForandring i ort.ts): det en person tror om en by är byns tal vid tiden för uppgiften, och nyare uppgifter där något stort ändrats (ny ledare, invånarna ändrade med mer än 30 %, svält, gått under) är en nyhet i två dygn som berättas hellre och förs vidare som en nyhet',
+  text: 'Nyheterna (steg 11.4.9, radVid och storForandring i ort.ts): det en person tror om en by är byns tal vid tiden för uppgiften, och nyare uppgifter där något stort ändrats (ny ledare, invånarna ändrade med mer än 30 %, svält, gått under) är en nyhet i två dygn som berättas hellre och förs vidare som en nyhet',
   kor: () => {
+    // det personen tror om byn: byns bild vid tiden för uppgiften, som spelet frågar (ortensRad och radVid); ett rykte ger inget
+    const trorOmBy = (x: SIM.State, l: SIM.Lardom) => { const r = l.v > SIM.O_RYKTE ? SIM.ortensRad(x, l.a) : undefined; return r && SIM.radVid(r, l.t); };
     const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b, c, d] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
     const t0 = s.now - 30 * SIM.DAY;
     // en by som varken svultit eller delats under tiden (det är också nyheter)
     const r = vl.rader!.find(x => SIM.lever(vl, x) && vl.platser!.some(q => q.by === x.nr) && !(x.svalt! > t0) && !vl.rader!.some(y => y.fran === x.nr && y.grundad > t0))!, nr = vl.platser!.find(q => q.by === r.nr)!.nr;
     r.hist = [{ t: t0, tal: { ...r.tal, folk: 20 }, led: 'Ulf' }, { t: t0 + 10 * SIM.DAY, tal: { ...r.tal, folk: 22 }, led: 'Ulf' }, { t: t0 + 20 * SIM.DAY, tal: { ...r.tal, folk: 22 }, led: 'Tora' }, { t: t0 + 25 * SIM.DAY, tal: { ...r.tal, folk: 40 }, led: 'Tora' }];
-    const la = SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + SIM.HOUR }), tror = SIM.trorOmBy(s, la);
+    const la = SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + SIM.HOUR }), tror = trorOmBy(s, la);
     SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + 11 * SIM.DAY }); const liten = SIM.nyhet(s, la); // 20 till 22: ingen nyhet
     SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + 21 * SIM.DAY }); const ledare = SIM.nyhet(s, la); // ny ledare
     const lb = SIM.larOrt(s, b!, nr, SIM.O_KANT, 1, { t: t0 + 11 * SIM.DAY });
-    SIM.larOrt(s, b!, nr, SIM.O_KANT, 1, { t: t0 + 26 * SIM.DAY }); const folk = SIM.nyhet(s, lb), tror2 = SIM.trorOmBy(s, lb); // 22 till 40
+    SIM.larOrt(s, b!, nr, SIM.O_KANT, 1, { t: t0 + 26 * SIM.DAY }); const folk = SIM.nyhet(s, lb), tror2 = trorOmBy(s, lb); // 22 till 40
     SIM.berattaOrt(s, b!, c!, lb, SIM.getRel(s, b!, c!)); const vidare = SIM.nyhet(s, SIM.findL(c!, 'ort', nr)!);
     const rykte = SIM.larOrt(s, d!, nr, SIM.O_RYKTE, 1);
     // vikten i samtalen: samma plats med och utan nyhet
@@ -1527,7 +1534,7 @@ SCENARIER.bynyhet = {
       ['nyheten förs vidare som en nyhet', vidare],
       [`en nyhet berättas hellre (${vNy} mot ${vGammal})`, vNy === SIM.ORT.nyVikt * vGammal],
       ['efter två dygn är den ingen nyhet längre', !sedan],
-      ['ett rykte ger bara sorten och namnet', SIM.trorOmBy(s, rykte) === undefined],
+      ['ett rykte ger bara sorten och namnet', trorOmBy(s, rykte) === undefined],
     ];
   },
 };
@@ -1681,7 +1688,7 @@ SCENARIER.sallskap = {
     SIM.djurMed(sl, 7);
     const kopia = JSON.parse(JSON.stringify(s)) as SIM.State, k = kopia.varld!.sallskap![0]!;
     return [
-      ['varje skäl har namn och mål', SIM.RESMAL_IDS.every(id => SIM.RESMAL[id].namn && SIM.RESMAL[id].mal.length > 0)],
+      ['varje skäl har namn och mål', (Object.keys(SIM.RESMAL) as SIM.ResmalId[]).every(id => SIM.RESMAL[id].namn && SIM.RESMAL[id].mal.length > 0)],
       [`sällskapet har ledare, mål, skäl och skedet samlas (${sl.skede})`, sl.ledare === a!.id && sl.mal === mal && sl.skal === 'handel' && sl.skede === 'samlas' && sl.by === vl.huvud],
       ['ledaren kan inte leda två sällskap', !igen],
       ['en till följer med, men bara en gång', med && !tva && sl.medl.length === 2],
@@ -1942,7 +1949,7 @@ SCENARIER.samlaresa = {
     const modig = SIM.resaPlan(s, a, 99, 99), forsiktig = SIM.resaPlan(s, b, 99, 99), nod = SIM.resaPlan(s, a, SIM.resaPlan(s, a, 99, 99)!.dygn * 0.1, 99);
     // under torkan väger a sitt eget fält som vissnar medan hen är borta (hemmaForlust)
     const st = SIM.cloneState(s), at = st.people.find(q => q.id === a.id)!;
-    st.falt = [{ id: 1, x: 0, y: 0, w: 3, dir: 1, n: 6, agare: a.id, steg: 'vaxer', klara: 0, kvar: 0, sadda: 6, groda: 'arter', vuxit: 0, rord: st.now, vatten: 0.1 } as SIM.Falt]; // vattnet räcker bara ett par timmar till
+    st.falt = [{ id: 1, x: 0, y: 0, w: 3, dir: 1, n: 6, agare: a.id, steg: 'vaxer', klara: 0, kvar: 0, sadda: 6, groda: 'arter', vuxit: 0, rord: st.now, r: Array.from({ length: 6 }, () => ({ st: 'vaxer' as const, g: 'arter' as const, v: 0, fu: 0.1 })) } as SIM.Falt]; // rutorna är torra om ett par timmar (steg 12.1.79)
     st.sjoTorr = { niva: 0, tomma: [], v: 0, t: st.now, ...st.sjoTorr, pa: true };
     const forlust = SIM.hemmaForlust(st, at, modig!.dygn), torr = SIM.resaPlan(st, at, 99, 99);
     // a väger raderna på Förbättra: resan vinner, och a samlar och går till samlingsplatsen, där sällskapet packar
@@ -1951,9 +1958,11 @@ SCENARIER.samlaresa = {
     const kand = SIM.forbattraKandidater(s1, a1).sort((x, y) => y.sc - x.sc), plats = kand.findIndex(k => k.id === 'samlaResa'), vann = kand[plats];
     // (vilken rad som vinner beror på målet och på byns andra arbeten, alltså på balansen: här prövas att resan är en av de
     // främsta raderna och att den som väljer den samlar och packar)
+    // (a kan ha lett en resa förut: bara ett nytt sällskap räknas)
+    const fore1 = new Set((s1.varld!.sallskap ?? []).map(x => x.id)), nytt = () => s1.varld!.sallskap?.find(x => x.ledare === a1.id && !fore1.has(x.id));
     if (vann) vann.gor(); // valet: nästa gång a väljer går hen till samlingsplatsen (resaVal, nivån Tillfälle)
-    const sl = s1.varld!.sallskap?.find(x => x.ledare === a1.id);
-    korTills(s1, () => sl?.skede !== 'samlas', 12 * 3600);
+    korTills(s1, () => !!nytt() && nytt()!.skede !== 'samlas', 12 * 3600);
+    const sl = nytt();
     // samma by i nöd: maten är slut
     const s2 = SIM.cloneState(s);
     for (const f of SIM.FOOD) SIM.setAmount(s2, f, 0);
@@ -1965,7 +1974,7 @@ SCENARIER.samlaresa = {
       [`den försiktiga får lägre poäng (${forsiktig?.sc.toFixed(3)})`, !!forsiktig && forsiktig.sc < modig!.sc],
       [`under torkan vägs det egna fältet som vissnar medan a är borta (förlust ${forlust}, poäng ${torr?.sc.toFixed(3) ?? 0})`, forlust > 0 && (torr?.sc ?? 0) < modig!.sc],
       [`med mat för en kort tid hemma blir poängen låg (${nod?.sc.toFixed(3) ?? 0})`, (nod?.sc ?? 0) < modig!.sc * 0.2],
-      [`resan är en av de främsta raderna på Förbättra (plats ${plats + 1} av ${kand.length}: ${kand.slice(0, 3).map(k => `${k.id} ${k.sc.toFixed(2)}`).join(', ')})`, plats >= 0 && plats <= 1],
+      [`resan är en av de främsta raderna på Förbättra (plats ${plats + 1} av ${kand.length}: ${kand.slice(0, 3).map(k => `${k.id} ${k.sc.toFixed(2)}`).join(', ')})`, plats >= 0 && plats <= 2],
       [`a samlade till resan och gick till samlingsplatsen, där sällskapet packade (${sl?.skede ?? 'inget sällskap'})`, !!sl && sl.mal === mal.nr && sl.skal === 'se' && (sl.skede === 'packar' || sl.skede === 'gar' || sl.skede === 'ute')],
       [`i en by utan mat samlar ingen till en resa (${nya2()} sällskap)`, nya2() === 0],
     ];
@@ -1975,14 +1984,20 @@ SCENARIER.samlaresa = {
 SCENARIER.kallelse = {
   text: 'Kallelsen (steg 11.5.11, kallelse och samlasSteg i resa.ts): ledaren kallar som vid björnjakten, och de villigaste följer med tills kraften räcker mot ledens fara; en kort och ofarlig resa går ledaren ensam, eftersom fler bara späder andelarna. Resenärerna går till samlingsplatsen; den som inte kommit inom en timme är inte med, och räcker inte kraften ställs resan in',
   kor: () => {
-    const s0 = SIM.cloneState(testBy(30)), vl0 = s0.varld!, hem = SIM.byPlats(vl0, vl0.huvud!)!;
-    const vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 18 && SIM.ageOf(q, s0.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, s0.now));
-    for (const q of vuxna) { q.pot.mod = 16; q.pot.nyfikenhet = 14; }
+    // den första testbyn med sex vuxna som kan följa med, så att kraften kan räcka mot en farlig led (testbyn efter 30 dygn
+    // har fyra, med kraften 3,2 mot kravet 4,5; steg 12.1.112)
+    const kan = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.ageOf(q, b.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, b.now));
+    const s0 = SIM.cloneState(testBy(30, b => kan(b).length >= 6)), vl0 = s0.varld!, hem = SIM.byPlats(vl0, vl0.huvud!)!;
+    const vuxna = kan(s0);
+    // modet och nyfikenheten i anlagen också: uppväxten räknar om pot ur anlagen när någon får en upplevelse (raknaPot i
+    // uppvaxt.ts), och då föll modet tillbaka medan sällskapet samlades (steg 12.1.112)
+    const satt = (q: SIM.Person, k: 'mod' | 'nyfikenhet', v: number) => { if (q.anlag) q.anlag[k] += v - q.pot[k]; q.pot[k] = v; };
+    for (const q of vuxna) { satt(q, 'mod', 16); satt(q, 'nyfikenhet', 14); }
     const vm = SIM.varldMark(s0)!, mal = vl0.platser!.filter(q => q.nr !== hem.nr && q.k !== 'by' && !(SIM.LANDMARKEN[q.k] as { tillfallig?: true }).tillfallig).sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y)).find(q => SIM.vagDygn(s0, hem.y * vm.w + hem.x, q.y * vm.w + q.x))!;
     const plan = (fara: number): SIM.ResPlan => ({ mal: mal.nr, namn: mal.namn, skal: 'se', varde: 30, dygn: 6, fara, sc: 1, varor: [] });
     // en farlig resa: fler följer med tills kraften räcker
     const s1 = SIM.cloneState(s0), led1 = s1.people.find(q => q.id === vuxna[0]!.id)!;
-    const sl1 = SIM.samlaResa(s1, led1, plan(0.3))!;
+    const sl1 = SIM.samlaResa(s1, led1, plan(0.2))!; // farlig nog att fler behövs, men inte mer än testbyns villiga räcker till
     const kraft1 = SIM.sallskapKraft(s1, sl1), utanSista = kraft1 - SIM.resKraft(s1, s1.people.find(q => q.id === sl1.medl.at(-1))!);
     // en ofarlig resa: ledaren går ensam
     const s2 = SIM.cloneState(s0), led2 = s2.people.find(q => q.id === vuxna[0]!.id)!;
@@ -2365,8 +2380,8 @@ SCENARIER.gomma = {
     const sl2 = g ? SIM.nyttSallskap(s2, led2, g.nr, 'uppdrag') : undefined;
     if (sl2) { for (const id of [f2[1]!.id]) SIM.foljMed(s2.varld!, sl2, s2.people.find(q => q.id === id)!); sl2.uppdrag = SIM.fyndId(g!.nr); for (const id of sl2.medl) SIM.gaBort(s2, s2.people.find(q => q.id === id)!); sl2.pack = {}; SIM.uppdragFram(s2, sl2, s2.now); }
     const g2 = g && SIM.varldPlatsNr(s2.varld!, g.nr);
-    // en resa till, när gömman är tom
-    const s3 = s2 && sl2 ? SIM.cloneState(s2) : undefined, led3 = s3 && SIM.living(s3).find(q => SIM.ageOf(q, s3.now) >= 18 && !(s3.varld!.sallskap ?? []).some(x => x.medl.includes(q.id))), sl3 = s3 && g && led3 ? SIM.nyttSallskap(s3, led3, g.nr, 'uppdrag') : undefined; // en annan, som inte redan är på väg
+    // en resa till, när gömman är tom (en ny vuxen leder den när alla byns vuxna redan är med i sällskapen, steg 12.1.112)
+    const s3 = s2 && sl2 ? SIM.cloneState(s2) : undefined, led3 = s3 && (SIM.living(s3).find(q => SIM.ageOf(q, s3.now) >= 18 && !(s3.varld!.sallskap ?? []).some(x => x.medl.includes(q.id))) ?? nyInvanare(s3, 'm', 30)), sl3 = s3 && g && led3 ? SIM.nyttSallskap(s3, led3, g.nr, 'uppdrag') : undefined; // en annan, som inte redan är på väg
     if (sl3) { sl3.pack = {}; SIM.uppdragFram(s3!, sl3, s3!.now); }
     // tiden går ut
     const s4 = SIM.cloneState(s); s4.now += (SIM.RESA.gommaDygn + 1) * SIM.DAY; SIM.platserUpphor(s4.varld!, s4.now);
@@ -2434,11 +2449,11 @@ SCENARIER.reslikhet = {
     const vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 18 && SIM.ageOf(q, s0.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, s0.now));
     for (const q of vuxna) { q.pot.mod = 16; q.pot.nyfikenhet = 14; }
     const mal = vl0.platser!.filter(q => q.nr !== hem.nr && q.k !== 'by' && !(SIM.LANDMARKEN[q.k] as { tillfallig?: true }).tillfallig).sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y)).find(q => SIM.vagDygn(s0, hem.y * vm.w + hem.x, q.y * vm.w + q.x))!;
-    const sl0 = SIM.samlaResa(s0, s0.people.find(q => q.id === vuxna[0]!.id)!, { mal: mal.nr, namn: mal.namn, skal: 'se', varde: 30, dygn: 6, fara: 0.3, sc: 1, varor: [] })!;
+    const sl0 = SIM.samlaResa(s0, s0.people.find(q => q.id === vuxna[0]!.id)!, { mal: mal.nr, namn: mal.namn, skal: 'se', varde: 30, dygn: 6, fara: 0.1, sc: 1, varor: [] })!; // en ofarlig resa: kraften räcker med de som vill följa med i testbyn
     // klockans rest (tiden som inte räckt till ett helt slag) hör till hur anropen delats, inte till byn
     const hash = (s: SIM.State) => { const j = JSON.parse(kanonisk(SIM.serialize(s))); delete j.skuld; delete j.stegRest; return createHash('sha1').update(JSON.stringify(j)).digest('hex'); };
     const [spel, ikapp, lang] = [0, 1, 2].map(() => SIM.cloneState(s0));
-    const id = sl0.id, skede = (s: SIM.State) => s.varld!.sallskap!.find(x => x.id === id)!.skede;
+    const id = sl0.id, skede = (s: SIM.State) => s.varld!.sallskap?.find(x => x.id === id)?.skede ?? 'upplöst';
     const sett = new Set<string>(), DYGN = 4;
     let olik = -1;
     for (let d = 1; d <= DYGN && olik < 0; d++) {
@@ -2454,7 +2469,7 @@ SCENARIER.reslikhet = {
       const [a, b, c] = [spel, ikapp, lang].map(hash);
       if (a !== b || a !== c) olik = d;
     }
-    const sl = spel.varld!.sallskap!.find(x => x.id === id)!;
+    const sl = spel.varld!.sallskap?.find(x => x.id === id) ?? sl0;
     return [
       [`ett sällskap till ${mal.namn} med ${sl0.medl.length} resenärer`, sl0.medl.length > 0],
       [`resan gick igenom skedena: ${[...sett].join(', ')}`, sett.has('gar') || sett.has('ute') || sett.has('framme') || sett.has('hemat')],
@@ -2584,38 +2599,39 @@ SCENARIER.byhandlingar = {
     const r = vl.rader!.find(x => SIM.lever(vl, x) && SIM.BYSORTER[x.sort].ledare && SIM.radGrannar(vl, x).length >= 2)!;
     const gr = SIM.radGrannar(vl, r), mot = gr[0];
     const har = !!r && gr.length >= 2;
-    // låg relation mot en granne: fjäsket lönar sig, och relationen hos grannen stiger
+    // låg relation mot en granne: det vänliga beskedet lönar sig
     for (const g of gr) { SIM.mots(vl, r.nr, g.nr); }
     const c = SIM.byCtx(s, vl, r, mot);
     c.rel = -20;
-    const lag = SIM.BYHANDLINGAR.fjask.poang(c);
+    const van = () => { const b = SIM.beskedTon(c); return b.ton === 'besked' ? b.p : -1; };
+    const lag = van();
     c.rel = 60;
-    const hog = SIM.BYHANDLINGAR.fjask.poang(c);
+    const hog = van();
     // karisma väger: samma läge med en ledare utan och med karisma
-    c.rel = 0; c.led = { ...(c.led ?? {} as Record<SIM.Stat, number>), karisma: 2 }; const utan = SIM.BYHANDLINGAR.fjask.poang(c);
-    c.led = { ...c.led, karisma: 19 }; const med = SIM.BYHANDLINGAR.fjask.poang(c);
-    // krigisk tro fjäskar mindre
-    c.krig = 0; const frid = SIM.BYHANDLINGAR.fjask.poang(c); c.krig = 1; const krigisk = SIM.BYHANDLINGAR.fjask.poang(c);
+    c.rel = 0; c.led = { ...(c.led ?? {} as Record<SIM.Stat, number>), karisma: 2 }; const utan = van();
+    c.led = { ...c.led, karisma: 19 }; const med = van();
+    // en krigisk tro skickar vänliga besked mer sällan
+    c.krig = 0; const frid = van(); c.krig = 1; const krigisk = van();
     // en period: byn gör det den valt, och grannens syn på byn ändras
     const fore = gr.map(g => SIM.relation(vl, g.nr, r.nr) ?? 0);
     const val = SIM.byVal(s, vl, r, 5);
     SIM.byarnasHandlingar(s, vl, 5);
     const efter = gr.map(g => SIM.relation(vl, g.nr, r.nr) ?? 0);
-    const i = val ? gr.indexOf(val.c.mot) : -1, andrad = !val ? true : val.id === 'handel' || val.id === 'gava' ? !!vl.farder?.some(x => x.fran === r.nr && x.till === val.c.mot.nr) : efter[i] === fore[i] + SIM.BYREL.fjask || efter[i] === 100;
+    const andrad = !val || (s.stat?.[`byhandling_${val.id}`] ?? 0) > 0 || efter.some((x, i) => x !== fore[i]);
     // samma värld väljer samma sak
     const a = SIM.cloneState(testBy(10)), b = SIM.cloneState(testBy(10));
     const valen = (x: SIM.State) => JSON.stringify((x.varld!.rader ?? []).filter(q => SIM.lever(x.varld!, q)).map(q => { const v = SIM.byVal(x, x.varld!, q, 7); return v ? [v.id, v.c.mot.nr] : 0; }));
-    // många byar fjäskar under 20 dygn i en hel värld
+    // många byar skickar besked under 20 dygn i en hel värld
     const w = SIM.cloneState(testBy(10)); for (let n = 0; n < 20; n++) SIM.byarnasHandlingar(w, w.varld!, 100 + n);
     const f = (x: number) => x.toFixed(2);
     return [
       ['byn har grannar i grannätet', har],
-      [`fjäsket lönar sig vid låg relation (${f(lag)}) men inte vid hög (${f(hog)})`, lag > 0 && hog <= 0],
-      [`en ledare med karisma fjäskar mer (${f(utan)} → ${f(med)})`, med > utan],
-      [`en krigisk tro fjäskar mindre (${f(frid)} → ${f(krigisk)})`, krigisk < frid],
-      [`det valda görs (${val?.id ?? 'inget'}: fjäsket ändrar grannens syn på byn, handeln skickar en färd)`, andrad],
+      [`det vänliga beskedet lönar sig vid låg relation (${f(lag)}) men inte vid hög (${f(hog)})`, lag > 0 && hog <= 0],
+      [`en ledare med karisma skickar det hellre (${f(utan)} → ${f(med)})`, med > utan],
+      [`en krigisk tro skickar det mer sällan (${f(frid)} → ${f(krigisk)})`, krigisk < frid],
+      [`det valda görs (${val?.id ?? 'inget'})`, andrad],
       ['samma värld väljer samma sak', valen(a) === valen(b)],
-      [`byarna fjäskar under 20 dygn (${w.stat?.byhandling_fjask ?? 0} gånger)`, (w.stat?.byhandling_fjask ?? 0) > 0],
+      [`byarna skickar besked under 20 dygn (${w.stat?.byhandling_besked ?? 0} gånger)`, (w.stat?.byhandling_besked ?? 0) > 0],
     ];
   },
 };
@@ -2784,7 +2800,8 @@ SCENARIER.handelsresa = {
     const [X, Y, Z] = byar as [SIM.VarldPlats, SIM.VarldPlats, SIM.VarldPlats];
     const rX = SIM.radNr(vl, X.by!)!, rY = SIM.radNr(vl, Y.by!)!;
     // a känner bara till X och Y; Z vet a inget om
-    for (const p of SIM.living(s)) p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'pris' && !(l.k === 'ort' && byar.some(q => q.nr === l.a)));
+    // (alla platser utom hemmet och inga uppdrag: ett rykte om en tom byplats eller ett uppdrag drog annars a dit, steg 12.1.112)
+    for (const p of SIM.living(s)) p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'pris' && l.k !== 'uppdrag' && !(l.k === 'ort' && l.a !== hem.nr));
     for (const q of [X, Y]) SIM.larOrt(s, a, q.nr, SIM.O_BESOKT, 1); // besökta: ingen nyfikenhet drar a dit
     const varor = (Object.keys(SIM.MATERIALMAL) as (keyof typeof SIM.MATERIALMAL)[]).filter(k => !SIM.FOOD.includes(k) && SIM.grundvarde(k) > 0 && !!SIM.gruppAv(k) && SIM.gruppAv(k) !== 'mat' && SIM.viktOf(k) <= 2);
     const salj = varor[0]!, kop = (Object.keys(SIM.MATERIALMAL) as (keyof typeof SIM.MATERIALMAL)[]).filter(k => !SIM.FOOD.includes(k) && SIM.grundvarde(k) > 0 && !!SIM.gruppAv(k) && SIM.gruppAv(k) !== 'mat' && SIM.gruppAv(k) !== SIM.gruppAv(salj) && SIM.viktOf(k) <= 5)
@@ -2833,7 +2850,7 @@ SCENARIER.vagmote = {
     // färden från A är på väg hem från B med silver; en färd från B går samma väg mot A samtidigt
     const f: SIM.RadFard = { id: 9001, fran: A.by!, till: B.by!, g: 'virke', n: 0, t0: tb - 36 * H, t1: tb - 12 * H, t2: tb + 12 * H, silver: 200 };
     const f2: SIM.RadFard = { id: 9002, fran: B.by!, till: A.by!, g: 'virke', n: 0, t0: f.t1, t1: f.t2!, t2: f.t2! + 24 * H };
-    (vl.farder ??= []).push(f, f2);
+    vl.farder = [f, f2]; // bara de två: testbyns värld kan ha en egen färd från A på samma väg (steg 12.1.112)
     const ruta = SIM.fardSpar(vl, f, tb - H, tb, w).filter(r => !byRuta.has(r))[0]!;
     const a = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.kanGa(q))[0]!;
     a.lardomar = (a.lardomar ?? []).filter(l => !((l.k === 'ort' && l.a === A.nr) || (l.k === 'pris' && l.a === A.by)));
@@ -2947,52 +2964,6 @@ SCENARIER.bygava = {
   },
 };
 
-SCENARIER.muta = {
-  text: 'Mutan och fjäsket (steg 11.6.15): en by med silver mutar en starkare grannes ledare när relationen är låg; silvret går till ledaren själv och inte till byns förråd, mutan verkar när den kommit fram, och hälften av verkan faller bort när ledaren byts. Fjäsket kostar inget silver',
-  kor: () => {
-    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
-    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.nr !== vl.huvud && SIM.BYSORTER[x.sort].ledare && SIM.radGrannar(vl, x).some(g => g.nr !== vl.huvud && SIM.BYSORTER[g.sort].ledare))!;
-    const mot = SIM.radGrannar(vl, r).find(g => g.nr !== vl.huvud && SIM.BYSORTER[g.sort].ledare)!;
-    SIM.mots(vl, r.nr, mot.nr);
-    r.tal.silver = 200;
-    const c = SIM.byCtx(s, vl, r, mot);
-    c.rel = -20; const lag = SIM.BYHANDLINGAR.muta.poang(c);
-    c.rel = 80; const hog = SIM.BYHANDLINGAR.muta.poang(c);
-    c.rel = 0; c.led = { ...(c.led ?? {} as Record<SIM.Stat, number>), intelligens: 2 }; const dum = SIM.BYHANDLINGAR.muta.poang(c);
-    c.led = { ...c.led, intelligens: 19 }; const listig = SIM.BYHANDLINGAR.muta.poang(c);
-    const fattig = SIM.BYHANDLINGAR.muta.poang({ ...c, r: { ...r, tal: { ...r.tal, silver: 0, mat: 0 }, varor: {} } });
-    // mutan ges: silvret lämnar byn genast, mottagarens syn ändras först när den kommit fram
-    const s0 = r.tal.silver, ms0 = mot.tal.silver, rel0 = SIM.relation(vl, mot.nr, r.nr) ?? 0;
-    vl.mutor = {};
-    SIM.BYHANDLINGAR.muta.gor(c);
-    const ut = r.tal.silver === s0 - SIM.BYHANDLING.muta, fore = SIM.relation(vl, mot.nr, r.nr) === rel0;
-    const p = vl.ko!.find(q => q.typ === 'muta' && q.sak === mot.nr)!;
-    SIM.KOHANDELSER.muta(s, vl, p);
-    const rel1 = SIM.relation(vl, mot.nr, r.nr) ?? 0, d = rel1 - rel0;
-    const ledaren = mot.tal.silver === ms0 && (vl.mutor?.[`${mot.nr}>${r.nr}`] ?? 0) === d;
-    // ledaren byts: hälften faller bort
-    SIM.ledarBytet(vl, mot.nr);
-    const rel2 = SIM.relation(vl, mot.nr, r.nr) ?? 0;
-    // utan silver mutar byn med det den har mest över, i hela saker
-    const r3 = SIM.cloneState(testBy(10)), vl3 = r3.varld!, q = vl3.rader!.find(x => x.nr === r.nr)!, qm = vl3.rader!.find(x => x.nr === mot.nr)!;
-    SIM.mots(vl3, q.nr, qm.nr); q.tal.silver = 0; SIM.radVaror(q); fyllEfterVilja(q); q.varor!.virke = Math.round(SIM.radVill(q, 'virke', SIM.rikMal(q))) + 50; q.tal.rikedom = SIM.radRikedomUr(q);
-    const qv0 = q.varor!.virke!;
-    SIM.BYHANDLINGAR.muta.gor(SIM.byCtx(r3, vl3, q, qm));
-    const medVaror = q.varor!.virke === qv0 - SIM.BYHANDLING.muta && q.tal.silver === 0 && vl3.ko!.some(x => x.typ === 'muta' && x.sak === qm.nr);
-    // en värld i 30 dygn: byarna mutar
-    const w = varldEfter(10, 30);
-    return [
-      [`mutan lönar sig vid låg relation (${f2(lag)}) men inte vid hög (${f2(hog)}) eller utan något att muta med (${f2(fattig)})`, lag > 0 && hog <= 0 && fattig < 0],
-      [`utan silver mutar byn med det den har mest över (${qv0} → ${q.varor!.virke} virke)`, medVaror],
-      [`en listig ledare mutar mer (${f2(dum)} → ${f2(listig)})`, listig > dum],
-      [`silvret lämnar byn genast (${s0} → ${r.tal.silver}), men grannens syn ändras först när mutan kommit fram`, ut && fore],
-      [`mutan höjer grannens syn med ${d}, och silvret går till ledaren, inte byns förråd`, d === Math.min(SIM.BYREL.muta, 100 - rel0) && ledaren],
-      [`när ledaren byts faller hälften bort (${rel1} → ${rel2})`, rel2 === rel1 - Math.trunc(d / 2)],
-      [`byarna i en värld mutar på 30 dygn (${w.stat?.radmuta_fram ?? 0} mutor fram, ${w.stat?.byhandling_fjask ?? 0} fjäsk)`, (w.stat?.radmuta_fram ?? 0) > 0],
-    ];
-  },
-};
-
 SCENARIER.radanfall = {
   text: 'Anfall mellan två rader (steg 11.6.16): en flock ur byns styrka anfaller en granne den ser ner på; när den kommer fram avgörs anfallet av antal och utrustning mot försvararnas antal, utrustning och skydd, med utfallet i hela döda och hela saker som de överlevande bär hem',
   kor: () => {
@@ -3101,7 +3072,7 @@ SCENARIER.utpost = {
       f = SIM.laggPlats(vl, v, 'fyndplats', x, y, s.now);
     }
     if (f) f.inne = { flinta: 12 };
-    const vinst = f ? SIM.utpostVinst(vl, v, f) : -1, leraVinst = SIM.UTPOST.folk * (SIM.UTPOST.perDygn * SIM.grundvarde('lera') - SIM.UTPOST.arbete);
+    const vinst = f ? SIM.utpostVinst(v, f) : -1, leraVinst = SIM.UTPOST.folk * (SIM.UTPOST.perDygn * SIM.grundvarde('lera') - SIM.UTPOST.arbete);
     const folk0 = r.tal.folk, u = f ? SIM.nyUtpost(s, vl, r, f, s.now) : undefined;
     const up = u && SIM.byPlats(vl, u.nr), gick = !!u && u.tal.folk === SIM.UTPOST.folk && r.tal.folk === folk0 - SIM.UTPOST.folk;
     const kron = (vl.kronika ?? []).some(h => h.k === 'utpost' && h.by === r.nr && h.mot === u?.nr);
@@ -3246,7 +3217,7 @@ SCENARIER.vagran = {
 };
 
 SCENARIER.bykrig = {
-  text: 'Kriget mellan två byar (steg 11.6.22): en by går i krig mot en granne den ser långt ner på, mer med en aggressiv ledare; i krig handlar byarna inte med varandra och vill plundra varandra fullt ut, och freden kommer när tröttheten väger mer än fejden. Läget står i registret BYLAGEN',
+  text: 'Kriget mellan två byar (steg 11.6.22 och 12.1.114): en by går i krig mot en granne den ser långt ner på och redan gett ett ovänligt besked, när relationen sjunkit vidare, mer med en aggressiv ledare; i krig handlar byarna inte med varandra och vill plundra varandra fullt ut, och freden kommer när tröttheten väger mer än fejden. Läget står i registret BYLAGEN',
   kor: () => {
     const s = SIM.cloneState(testBy(10)), vl = s.varld!;
     // två grannbyar som skulle handla med varandra i fred
@@ -3254,8 +3225,13 @@ SCENARIER.bykrig = {
     for (const x of vl.rader!) if (SIM.lever(vl, x) && x.nr !== vl.huvud && SIM.BYSORTER[x.sort].ledare) for (const g of SIM.radGrannar(vl, x)) if (g.nr !== vl.huvud && SIM.BYSORTER[g.sort].ledare) par.push([x, g]);
     for (const [x, g] of par) SIM.mots(vl, x.nr, g.nr);
     const [r, mot] = par.find(([x, g]) => SIM.fardAffar({ ...SIM.byCtx(s, vl, x, g), rel: 50 })) ?? par[0]!;
-    const c = SIM.byCtx(s, vl, r, mot);
+    const c = SIM.byCtx(s, vl, r, mot), nyckel = `${r.nr}>${mot.nr}`;
     const med = (rel: number, agg?: number) => SIM.BYHANDLINGAR.krig.poang({ ...c, rel, ...(agg !== undefined ? { led: { ...(c.led ?? {} as Record<SIM.Stat, number>), aggression: agg } } : {}) });
+    // det ovänliga beskedet först (steg 12.1.114): utan det går kriget inte att välja, och efter det inte beskedet igen
+    delete vl.ovanligt?.[nyckel]; delete vl.ovanligt?.[`${mot.nr}>${r.nr}`];
+    const utanBesked = med(-95), beskedFore = SIM.BYHANDLINGAR.besked.poang({ ...c, rel: -95 });
+    vl.ovanligt = { ...vl.ovanligt, [nyckel]: -95 }; const sammaRel = med(-95), beskedEfter = SIM.BYHANDLINGAR.besked.poang({ ...c, rel: -95 });
+    vl.ovanligt[nyckel] = -50;
     const vanner = med(20), fiender = med(-95), lugn = med(-95, 2), arg = med(-95, 19);
     // i fred: plundringen och handeln som vanligt
     const pl0 = SIM.BYHANDLINGAR.plundra.poang({ ...c, rel: 0 });
@@ -3278,6 +3254,8 @@ SCENARIER.bykrig = {
     const w = varldEfter(10, 40);
     const lagst = Math.min(...Object.values(w.varld?.rel ?? {}));
     return [
+      [`utan ett ovänligt besked först går kriget inte att välja (${f2(utanBesked)}); beskedet går (${f2(beskedFore)})`, utanBesked < 0 && beskedFore > 0],
+      [`efter beskedet är beskedet inget val mot den grannen (${f2(beskedEfter)}), och kriget först när relationen sjunkit vidare (${f2(sammaRel)} vid samma relation)`, beskedEfter < 0 && sammaRel < 0],
       [`kriget lönar sig mot en granne byn ser långt ner på (${f2(fiender)}) men inte mot en vän (${f2(vanner)})`, fiender > 0 && vanner < 0],
       [`en aggressiv ledare vill mer (${f2(lugn)} → ${f2(arg)})`, arg > lugn],
       ['kriget gäller åt båda hållen, och ingen förklarar krig igen mitt i ett', iKrig && igen < 0],
@@ -3626,7 +3604,7 @@ SCENARIER.uppdrag = {
   text: 'Uppdragen (steg 11.8.1, uppdrag.ts): registret UPPDRAG säger för varje uppdrag utlösaren, platsen, vem som utlyser, belöningen, kravet, tiden och vad som sker; ett utlyst uppdrag är en post med belöningen i hela saker, och när tiden är ute går belöningen tillbaka till den som utlyste',
   kor: () => {
     const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
-    const rader = SIM.UPPDRAG_IDS.map(k => SIM.uppdragDef(k));
+    const rader = (Object.keys(SIM.UPPDRAG) as SIM.UppdragId[]).map(k => SIM.uppdragDef(k));
     const hela = rader.every(d => d.namn && d.utlosare && d.plats.length && d.utlysare.length && d.krav && d.gor && d.plats.every(x => x === 'narhet' || x in SIM.LANDMARKEN));
     const utlosare = new Set(rader.map(d => d.utlosare)).size === rader.length;
     const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
@@ -4008,6 +3986,7 @@ SCENARIER.turne = {
     const vuxna = modigaste(s);
     const p = vuxna[0]!;
     p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'uppdrag');
+    p.bedrift = undefined; // en färsk bedrift som väger mer (påhittig, 0,5 mot turnéns 0,4) står annars kvar (steg 12.1.112)
     const q = narmasteBy(vl, hem, x => x.by !== undefined && !!SIM.radNr(vl, x.by)?.syn && SIM.radNr(vl, x.by)!.tal.folk > 0);
     const r = SIM.radNr(vl, q.by!)!;
     SIM.larOrt(s, p, q.nr, SIM.O_KANT, 1);
@@ -4038,7 +4017,7 @@ SCENARIER.turne = {
       [`en ovänlig grannby tar inte emot en turné (${ovan?.skal ?? 'ingen resa'})`, ovan?.skal !== 'turne' || ovan.mal !== q.nr],
       [`gåvan är hela silver ur grannbyns silver (${gava}), i packningen och dagboken`, gava > 0 && Number.isInteger(gava) && sl.dagbok.some(d => d[2] === 'turne')],
       [`grannbyn tycker bättre om byn (${rel0} → ${rel1}) och minns ${p.name}`, rel1 > rel0 && r.turne?.id === p.id],
-      [`${p.name} får bedriften och en rad i krönikan ("${krn?.[1] ?? ''}")`, p.bedrift?.h === 'turne' && !!krn],
+      [`${p.name} får bedriften och en rad i krönikan ("${krn?.[1] ?? ''}")`, (p.bedrift as SIM.Person['bedrift'])?.h === 'turne' && !!krn],
       ['en handlare därifrån talar om hen', prat],
     ];
   },
@@ -4071,7 +4050,7 @@ SCENARIER.kartnamn = {
   kor: () => {
     const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
     const langt = vl.platser!.filter(x => x.by !== vl.huvud && !SIM.iNaromradet(s, x.nr) && !(SIM.LANDMARKEN[x.k] as SIM.LandmarkDef).folk), kand = langt[0]!, rykt = langt.find(x => x !== kand)!;
-    SIM.larOrt(s, a!, kand.nr, SIM.O_KANT, 1); SIM.larOrt(s, b!, rykt.nr, SIM.O_RYKTE, 1, { fr: b!.id });
+    SIM.larOrt(s, a!, kand.nr, SIM.O_KANT, 1); SIM.larOrt(s, b!, rykt.nr, SIM.O_RYKTE, 1);
     const gom = { ...kand, nr: 99999, k: 'gomma' as const, namn: 'Gömman' };
     vl.platser!.push(gom);
     SIM.raknaBynVet(s);
@@ -4201,8 +4180,10 @@ SCENARIER.silvergruva = {
 SCENARIER.talt = {
   text: 'Tältet (steg 11.11.1): saken tält sys vid slöjdbänken av skinn, grenar och rep och rymmer fyra; tälten packas när resan har en natt på vägen, nattens tapp av ork gäller bara dem som inte ryms i tälten, och byn vill ha så många tält som dess största sällskap med en natt behövde det senaste året',
   kor: () => {
-    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!, mal = hb.grannar![0]!.nr;
-    const vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.kanGa(q)).slice(0, 5);
+    // fem vuxna som kan gå: den första testbyn som har så många (testbyn efter fem dygn har fyra, steg 12.1.112)
+    const gaende = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.kanGa(q));
+    const s = SIM.cloneState(testBy(3, b => gaende(b).length >= 5)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!, mal = hb.grannar![0]!.nr;
+    const vuxna = gaende(s).slice(0, 5);
     const sl = SIM.nyttSallskap(s, vuxna[0]!, mal, 'handel')!;
     for (const q of vuxna.slice(1)) SIM.foljMed(vl, sl, q);
     // en kall natt
@@ -4621,7 +4602,7 @@ SCENARIER.fangar = {
     const rovGer = arena('kuva', 1), byFly = arena('kuva', 0), skadaFly = arena('skada', 1);
     // byn med ett fängelse och seden Förlikning, och två rövare som anfaller
     const by = (fangelse: boolean) => {
-      const s = SIM.createState(6, START); klockan(s, 10); medHus(s);
+      const s = SIM.createState(1, START); klockan(s, 10); medHus(s); // en by där de som är hemma kan vinna över två rädda rövare
       for (const c of SIM.klanerOf(s)) c.inst = -60;
       s.seder.v.fejd = -1;
       if (fangelse) { const h = SIM.housesOf(s)[0]; h.fn = 'fangelse'; SIM.fangelseDorr(s, h)!.dorr = 'tradorr'; SIM.touch(s); }
@@ -5668,7 +5649,9 @@ SCENARIER.gravplats = {
 SCENARIER.kyrkanutlyser = {
   text: 'Kyrkan utlyser (steg 11.13.29, kyrkuppdrag.ts): när en by i världen med samma tro har svultit nyligen och en troende känner till den, kan kyrkan lägga undan en belöning ur sitt förråd och utlysa hjälpen dit; den som talar för tron vet om uppdraget, och tar tiden slut går belöningen tillbaka till förrådet',
   kor: () => {
-    const s = SIM.cloneState(testBy(3)), vl = s.varld!;
+    // den första testbyn som har en tro med troende (efter fem dygn har testbyarna ingen tro längre, steg 12.1.112)
+    const harTro = (b: SIM.State) => !!b.tron?.some(t => t.slut === undefined && SIM.troende(b, t).length);
+    const s = SIM.cloneState(testBy(3, harTro)), vl = s.varld!;
     let tr = s.tron?.find(t => t.slut === undefined && SIM.troende(s, t).length);
     if (!tr) return [['byn har en tro', false]];
     tr.sk = { ...(tr.sk ?? {}), oppen: 20 };
@@ -5884,6 +5867,49 @@ SCENARIER.rikedomlockar = {
       [`det som finns över bärbördan lockar ändå (bärbördan ${tak}, bytet ${Math.round(b40)}: ${Math.round(lock1)} → ${Math.round(lock40)} → ${Math.round(lock80)})`, lock40 > tak * 1.5 && lock80 > lock40],
       ['men långsammare ju mer det är', lock80 - lock40 < lock40 - tak && lock40 < b40],
       ['en klan lika rik per person som byn har inget skäl att plundra, en mycket fattigare har det', !lika && fattigare],
+    ];
+  },
+};
+
+SCENARIER.resfel = {
+  text: 'Fel i resorna, gästerna och världen (steg 12.1.64): den som dött på vägen äter inte, gästens törst tar hälsa och dödsorsaken blir törst, karavanens ledare känner sin bys platser, en väckt by känner sin egen plats, dygnet följer lokal midnatt och byn gör inga handelsvaror när ingen grannby kan skicka en handlare',
+  kor: () => {
+    // ett sällskap på tre framme vid målet, där en dött på vägen: en måltid tar två portioner, inte tre
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b, c] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const hb = SIM.byPlats(vl, vl.huvud!)!, sl = SIM.nyttSallskap(s, a!, hb.grannar![0]!.nr, 'handel')!; SIM.foljMed(vl, sl, b!); SIM.foljMed(vl, sl, c!);
+    sl.skede = 'framme'; sl.framme = s.now; sl.pack = { torrmort: 20 }; sl.behov = { matt: SIM.KROPP.hungrig - 0.01, vatska: 1, ork: 1, fulla: 0, foder: 0 };
+    SIM.dorPaVagen(s, sl, c!, 'svalt', s.now);
+    s.now += 600 * SIM.SEC; SIM.resaBehov(s, 600 * SIM.SEC);
+    const atit = 20 - (sl.pack.torrmort ?? 0);
+    // en väckt by känner sin egen plats och inte huvudbyns
+    const v = SIM.cloneState(testBy(3)), vv = v.varld!, annan = vv.platser!.find(q => q.k === 'by' && q.by !== undefined && q.by !== vv.huvud)!;
+    v.vackt = annan.by;
+    const egen = SIM.bynKanner(v, annan.nr)?.v === SIM.O_BESOKT, huvudBesokt = SIM.bynKanner(v, SIM.byPlats(vv, vv.huvud!)!.nr)?.v === SIM.O_BESOKT;
+    // dygnet: ett nytt nummer vid midnatt lokal tid
+    const mid = SIM.dygnStart(s.now), dygn = SIM.dagNr(mid) === SIM.dagNr(mid + 3600000) && SIM.dagNr(mid - 1) === SIM.dagNr(mid) - 1;
+    // ingen grannby som kan skicka en handlare: inget mål för handelsvarorna
+    const u = SIM.cloneState(testBy(3)); u.varld = undefined; for (const x of u.people) x.tek = { ...x.tek, rep: 1 };
+    setItems(u, { torrgras: 200, rep: 0 }); SIM.handelsMalRakna(u);
+    // karavanen: ledaren känner platserna runt sin by, och en gäst utan vatten dör av törst
+    const bas = testBy(3, x => !x.handlare && !x.people.some(p => p.gast && p.died === undefined)), rad = SIM.klanerOf(bas).map(k => k.rad).find(nr => nr !== undefined && bas.varld!.rader?.some(r => r.nr === nr))!;
+    const k = SIM.cloneState(bas), r = k.varld!.rader!.find(x => x.nr === rad)!;
+    r.tal.folk = 80; r.tal.rikedom = 100000; r.tek = [...new Set([...r.tek, 'ryggsack', 'vagn'])];
+    handlarenKommer(k, rad, SIM.packaRad(r, mulberry(7), () => 100000, 'vagn', 'oxe'));
+    const h = k.handlare as SIM.Handlare | undefined, led = h && SIM.hp(k, h), platser = (led?.lardomar ?? []).filter(l => l.k === 'ort').length;
+    const g = k.people.find(p => p.gast?.sort === 'folje' && p.died === undefined) ?? led;
+    let orsak: string | undefined;
+    if (g) {
+      g.hunger = 1; g.torst = 0; g.health = 1e-4; g.gast!.vatten = 0; g.gast!.mat = 5;
+      SIM.gastVardag(k, 60, () => 1);
+      orsak = g.cause;
+    }
+    return [
+      [`den som dött äter inte: en måltid för två av tre tog ${atit} portioner`, atit === 2],
+      ['en väckt by känner sin egen plats som besökt, och inte huvudbyns', egen && !huvudBesokt],
+      ['dygnet byter nummer vid midnatt lokal tid, som kalendern', dygn],
+      [`utan grannbyar som kan skicka en handlare görs inga handelsvaror (${u.handelsMal?.k ?? 'inget mål'})`, !u.handelsMal],
+      [`karavanens ledare känner platserna runt sin by (${platser})`, !!h?.vagnar && platser > 0],
+      [`en gäst utan vatten tappar hälsa och dör av törst (${orsak ?? 'lever'})`, orsak === 'av törst'],
     ];
   },
 };

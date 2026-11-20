@@ -1,6 +1,6 @@
 import { husNytt } from './byggnad';
 import { omtankeOm } from './omtanke';
-import { gen, hans } from './ord';
+import { bestamd, gen, hans, iMening, stor, tal } from './ord';
 import { upplev } from './uppvaxt';
 import { ALDER, ageOf, count, andraGor, forstaGang, livet, living, log } from './folk';
 import { kronikaBer, personFalt } from './berattelser';
@@ -8,7 +8,7 @@ import { bitAt, vagBort, Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById,
 import { vaderSlit } from './vader';
 import { groundOf, nyttVatten, punktIRuta } from './mark';
 import { kunnighet } from './ekonomi';
-import { sparas } from './forradsmal';
+import { eldReserv } from './forradsmal';
 import { ARSTID, iIstiden } from './tid';
 import { knows } from './teknik';
 import { amountOf, changed, enPerRuta, ownMove, ownsAmount, ownsId, put, use, zonesOf } from './lager';
@@ -19,13 +19,12 @@ import { budgetAv, budgetFor, budgetId } from './budget';
 import { fellingTiles, kronaOver } from './skog';
 import { stubbeOn } from './stubbar';
 import { FOREST } from './vag';
-import { HUS, bedTile, familjOf, fnOf, husKlar } from './byggnader';
+import { HUS, bedTile, familjOf, fnOf, husKlar, sovPersoner } from './byggnader';
 import { GRANNAR4, HOUR_S, Person, State, Task, W, inMap } from './typer';
 import { iVattnetNu } from './sjo';
 import { FLOD } from './flod';
 import { balans } from './balans';
 import { vidElden } from './eldflytt';
-import { } from './eld';
 import { notis } from './notiser';
 
 // ---------- balanstal (regel 8) ----------
@@ -38,7 +37,6 @@ export const BYGG = balans('bygg', {
   radiePerPerson: 0.25, // ... plus så många per invånare
   utomVikt: 1, // en plats får så många poäng (färre är bättre) för varje ruta utanför det byn omsluter, så att byn håller ihop ...
   mittVikt: 0.2, // ... och så många för varje ruta från områdets mitt (bynsMitt), bland platserna innanför ...
-  lagerMarg: 1, // ett hus står minst så här många rutor från en lagerplats
   byggareInt: 4, // när byn väljer byggare väger intelligensen så här många gånger mindre än hantverket
   omforsok: 12, // timmar innan byn försöker planera ett hus igen när det inte fanns någon plats
   perHus: 4, // så många får bygga på varje hus (platserna på bygget); fler väger en tredjedel (arbetarna, steg 6.1.13 i val.ts)
@@ -65,7 +63,7 @@ interface Job { bit: Bit; repair: boolean; item?: string; need: number; missing:
 // det som finns att bygga med (av p: det p kan få, behov.ts, och till ett familjehus också familjens), utom det som sparas.
 // Den som får ta av andra (getable = allt i byn) har redan familjens med: aldrig mer än allt
 // Ett bygge i en del av budgeten (steg 10.5.7) får också det delen fått
-export const avail = (s: State, k: string, p?: Person, hus?: number, b?: Bit) => husTro(s, hus) !== undefined ? Math.floor(ownsId(s, kyrkaId(husTro(s, hus)!), k) + 1e-9) : (p ? Math.min(amountOf(s, k), getable(s, p, k) + famOwn(s, p, k, hus) + budgetAv(s, b, k)) : amountOf(s, k)) - sparas(s, k);
+export const avail = (s: State, k: string, p?: Person, hus?: number, b?: Bit) => husTro(s, hus) !== undefined ? Math.floor(ownsId(s, kyrkaId(husTro(s, hus)!), k) + 1e-9) : (p ? Math.min(amountOf(s, k), getable(s, p, k) + famOwn(s, p, k, hus) + budgetAv(s, b, k)) : amountOf(s, k)) - eldReserv(s, k);
 // trons hus (steg 10.3.19): byggs bara av det kyrkan äger
 const husTro = (s: State, hus?: number) => hus === undefined ? undefined : husById(s, hus)?.tro;
 const famHus = (s: State, hus?: number) => { const h = husById(s, hus); return h?.ag !== undefined ? h : undefined; };
@@ -170,8 +168,8 @@ export function deliver(b: Bit, n: number, repair: boolean) { if (repair) b.lm =
 // ---------- var materialet kom ifrån ----------
 // Varje hus minns var materialet till det kom ifrån, så att det kan visas när man trycker på huset. Nycklarna är
 // `hur:vem:slag`: byn (byns förråd), eget (byggarens), familj (familjens, som man får ta), gava (skänkt av vem),
-// stold (taget utan lov av vem), fallt (stockar från träd som vem fällde eller högg för bygget). Ändrar inget i spelet
-export const KOM = ['byn', 'eget', 'familj', 'gava', 'fallt', 'stold', 'kyrka'] as const;
+// stold (taget utan lov av vem). Ändrar inget i spelet
+export const KOM = ['byn', 'eget', 'familj', 'gava', 'stold', 'kyrka'] as const;
 export function noteKom(s: State, husId: number | undefined, kom: Record<string, number>) {
   const h = husById(s, husId);
   if (!h) return;
@@ -180,18 +178,6 @@ export function noteKom(s: State, husId: number | undefined, kom: Record<string,
 }
 export function komOf(h: Hus) {
   return Object.entries(h.kom ?? {}).map(([key, n]) => { const [hur, vem, k] = key.split(':'); return { hur: hur as typeof KOM[number], vem: +vem, k, n }; });
-}
-// stockar till ett hus som byggs läggs direkt i väggarna: från träd som stod där huset ska stå, eller som fälldes
-// för bygget (hus = husets id). Ger hur mycket som gick åt
-export function toWalls(s: State, x: number, y: number, n: number, hus?: number, by?: Person) {
-  const h = housesOf(s).find(q => !q.klar && q.tro === undefined && (hus ? q.id === hus : x >= q.x && y >= q.y && x < q.x + q.w && y < q.y + q.h));
-  n = Math.floor(n + 1e-9); // bara hela stockar går till väggarna; resten ligger kvar på stammen
-  if (!h || n <= 0) return 0;
-  let used = 0;
-  const walls = bitsOf(s).filter(b => b.hus === h.id && b.k === 'vagg' && b.b < 1 && MATERIAL[b.m].item === 'ved' && lacks(b)).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y));
-  for (const b of walls) { const d = Math.min(needOf(b), n - used); deliver(b, d, false); used += d; if (used >= n - 1e-9) break; }
-  if (by && used > 1e-9) noteKom(s, h.id, { [`fallt:${by.id}:ved`]: used });
-  return used;
 }
 // en stunds arbete på en ruta. Ger true när rutan är klar
 // har = materialet som byggaren håller i händerna (steg 3.6.5): det läggs i bygget först när biten är klar
@@ -244,15 +230,16 @@ export function husKlart(s: State, h: Hus, p: Person) {
     if (h.varKlar !== undefined) return;
     livet(s, p, 'hus'); // satte sista biten (steg 3.9.8)
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
-    if (fnOf(h).sover) log(s, `${h.namn} är färdigt. Nu kan ${n} sova under tak.`, 'world', [p.id]);
-    notis(s, 'hus', `${p.name} satte sista biten: ${h.namn} är färdigt.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
-    { const hf = husFalt(h.namn); kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...hf, hus2: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hans(p)} `) }); } husKlar(s, h);
+    const hf = husFalt(h.namn);
+    if (fnOf(h).sover) log(s, `${stor(hf.hus)} är ${hf.klart}. Nu kan ${tal(sovPersoner(n))} sova under tak.`, 'world', [p.id]); // golvrutorna räknas om till personer (steg 12.1.119)
+    notis(s, 'hus', `${p.name} satte sista biten: ${hf.hus} är ${hf.klart}.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
+    { const hf = husFalt(h.namn); kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...hf, hus2: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hans(p)} `), hus3: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hf.klart === 'färdigt' ? 'sitt' : 'sin'} `) }); } husKlar(s, h); // hus3: när ägaren är subjektet ("gjorde klart sitt hus")
     if ((h.byggare?.length ?? 0) > 1) for (const q of living(s)) if (h.byggare!.includes(q.id)) upplev(s, q, 'byggdeHus', husFalt(h.namn).hus); // de byggde tillsammans (steg 4.5.4.9)
     h.byggare = undefined;
   }
 }
-// materialet i bitarna (det som burits dit), per sak: ved, virke och plankor (timret är virke sedan steg 10.2.70, golvet plankor sedan 10.2.90)
-export const tramat = (bs: Bit[]) => { const r: Record<string, number> = {}; for (const b of bs) { const k = MATERIAL[b.m].item; if (k === 'ved' || k === 'virke' || k === 'plankor') r[k] = (r[k] ?? 0) + b.mat; } return r; };
+// materialet i bitarna (det som burits dit), per sak: virke och plankor (timret är virke sedan steg 10.2.70, golvet plankor sedan 10.2.90)
+export const tramat = (bs: Bit[]) => { const r: Record<string, number> = {}; for (const b of bs) { const k = MATERIAL[b.m].item; if (k === 'virke' || k === 'plankor') r[k] = (r[k] ?? 0) + b.mat; } return r; };
 // HUS.rivTillbaka av träet i bitarna går till ägaren (eller byn), hela saker. Ger hur många saker det blev
 export function tillbaka(s: State, h: Hus, mat: Record<string, number>) {
   let n = 0;
@@ -260,10 +247,10 @@ export function tillbaka(s: State, h: Hus, mat: Record<string, number>) {
   return n;
 }
 // ett hus rivs: bitarna och huset försvinner, och HUS.rivTillbaka av träet går till ägaren (eller byn). Ger hur mycket trä det blev
-export function rivHus(s: State, h: Hus) {
-  const mat = tramat(bitsOf(s).filter(b => b.hus === h.id));
+export function rivHus(s: State, h: Hus, tillByn = false) {
+  const mat = tramat(bitsOf(s).filter(b => b.hus === h.id)); // virket och veden i väggarna (timret är virke, steg 10.2.70)
   s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
-  const ved = tillbaka(s, h, mat);
+  const ved = tillbaka(s, tillByn ? { ...h, ag: undefined } : h, mat); // till ägaren, eller till byn
   touch(s); changed(s); count(s, 'rivet');
   return ved;
 }
@@ -273,10 +260,10 @@ function flyttKlar(s: State, h: Hus) {
   const g = husById(s, h.flyttFran);
   h.flyttFran = undefined;
   if (!g) return;
-  h.fn = g.fn; h.slag = g.slag; h.ag = g.ag; h.tro = g.tro;
+  h.fn = g.fn; h.ag = g.ag; h.tro = g.tro;
   const ved = rivHus(s, g);
   count(s, 'husFlyttat');
-  log(s, `${h.namn} står klart närmare byns mitt, och ${g.namn.toLowerCase()} som skadades revs.${ved ? ` ${ved} trä kom tillbaka.` : ''}`, 'world');
+  log(s, `${stor(iMening(h.namn))} står klart närmare byns mitt, och ${g.namn.toLowerCase()} som skadades revs.${ved ? ` ${ved} trä kom tillbaka.` : ''}`, 'world');
 }
 // material som inte längre finns i huset (en vägg som rasat eller rivits) räknas inte till det
 function glomKom(h: Hus, k: string, n: number) {
@@ -317,7 +304,7 @@ function slutUt(s: State, h: Hus, p: Person) {
   h.x = ut.x; h.y = ut.y; h.w = ut.w; h.h = ut.h; h.ut = undefined;
   if (fnOf(h).lager) for (const z of zonesOf(s)) if (z.hus === h.id) { z.x = h.x + 1; z.y = h.y + 1; z.w = h.w - 2; z.h = h.h - 2; changed(s); }
   count(s, 'utbyggt'); touch(s); husNytt(s, h, 'ut', 'Nyss utbyggt.');
-  log(s, `${h.namn} är utbyggt.`, 'world', [p.id]);
+  log(s, `${stor(iMening(h.namn))} är utbyggt.`, 'world', [p.id]);
 }
 // en vägg som just blivit klar: den som står där kliver åt sidan, och det som ligger där (stackar och redskap) flyttas
 function clearTile(s: State, b: Bit) {
@@ -387,7 +374,7 @@ export function kanHangaDorr(s: State, p: Person, k: DorrSlag) {
   const d: DorrDef = DORRAR[k];
   if (!d.tek.some(t => knows(p, t))) return false;
   const gor = andraGor(s, 'dorr', p), utan = utanDorr(s, k).length;
-  return utan > gor && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + sparas(s, m));
+  return utan > gor && Object.entries(d.av).every(([m, n]) => getable(s, p, m) >= n + eldReserv(s, m));
 }
 // platsen dit den som hänger dörren går: i den första öppningen som saknar den
 export function dorrSpot(s: State, k: DorrSlag) {
@@ -407,12 +394,11 @@ export function finishDorr(s: State, p: Person, tk: Task) {
 }
 // husets namn mitt i en mening ('långhuset', 'Stevids hus') och färdig eller färdigt efter genus (steg 4.5.1.4)
 // huset i krönikan: "Förrådshus 2" blir "det andra förrådshuset" (inga siffror i texten, steg 6.7.4), "Hydda 3" "den tredje hyddan"
-const NUMMER = ['', 'första', 'andra', 'tredje', 'fjärde', 'femte', 'sjätte', 'sjunde', 'åttonde', 'nionde', 'tionde', 'elfte', 'tolfte'];
 function husFalt(namn: string) {
   const m = namn.match(/^(\S+) (\d+)$/);
   if (m) {
-    const bas = m[1].toLowerCase(), ett = /hus$/.test(bas), best = ett ? `${bas}et` : bas.replace(/a$/, 'an'), n = +m[2];
-    return { hus: n < NUMMER.length ? `${ett ? 'det' : 'den'} ${NUMMER[n]} ${best}` : `ännu ${ett ? 'ett' : 'en'} ${bas}`, klart: ett ? 'färdigt' : 'färdig' };
+    const ett = bestamd(m[1])[1] === 'det';
+    return { hus: iMening(namn), klart: ett ? 'färdigt' : 'färdig' };
   }
   return { hus: / hus$/.test(namn) ? namn : namn.charAt(0).toLowerCase() + namn.slice(1), klart: /(et|hus)$/.test(namn) ? 'färdigt' : 'färdig' };
 }

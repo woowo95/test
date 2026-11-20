@@ -1,5 +1,5 @@
 // Scenarier. Redskap: stenring, spjut, redskap, slitage och teknik.
-import { createState, addTool, twineRope, makeTool, wearUsed, isSpear, step, living, cloneState, pilesOf, zoneOf, amountOf, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, ageOf, spears, SPJUT_FORSOK, getMap, DAY, HOUR, W, State, takenOf, migrate, bynsMitt, knows, thinkWhileWorking, die, isWall, H, richness, setAmount, tingOf, wantsTool, makeTask, wantsFlint, ALDER, KROPP, inMap, canLight, dangers, toolGain, chooseTask } from '../../sim';
+import { createState, addTool, twineRope, makeTool, wearUsed, isSpear, step, living, cloneState, pilesOf, zoneOf, amountOf, wearStore, dropLoad, isLight, T, condOf, FOOD, isStored, ageOf, spears, SPJUT_FORSOK, getMap, DAY, HOUR, W, State, takenOf, bynsMitt, knows, thinkWhileWorking, die, isWall, H, richness, setAmount, tingOf, wantsTool, makeTask, wantsFlint, ALDER, KROPP, inMap, canLight, dangers, toolGain, chooseTask } from '../../sim';
 import * as SIM from '../../sim';
 import { BEAT, START } from '../kor';
 import { tekInfo } from '../../ui/flikar/teknik';
@@ -17,11 +17,6 @@ SCENARIER.stenring = {
     const tand = s.fire.lightings > 0, ring = !!s.fire.ring;
     Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined }); // elden slocknar
     kor(s, 2);
-    // en äldre sparfil med gniststen: den blir flinta, och byn som haft eld har sin ring
-    const g = createState(2, START);
-    g.items = { gniststen: 1 }; g.stackar = [{ k: 'gniststen', n: 1, x: 1, y: 1, c: 1 }]; g.fire.lightings = 3;
-    delete (g.fire as { ring?: boolean }).ring;
-    g.v = 1; migrate(g); // som en sparfil från före v40
     // flinta till en yxa är en förbättring: när maten inte räcker letar ingen efter den. Flinta till elden letas när byn inte svälter (steg 2.12.3)
     // Sedan steg 6.1.17 letas flinta till en yxa när yxan är ett projekt som saknar flinta: de vuxna kan göra en yxa, och veden
     // räcker, så att Försörjningen inte går före
@@ -70,7 +65,7 @@ SCENARIER.stenring = {
     };
     const ensam = letare(false), fler = letare(true);
     // den som hämtar tändmaterial åt en släckt eld fortsätter på en plats utan bär, och slutar när tändmaterialet räcker.
-    // Buskarna runt platsen töms, för annars går man vidare till nästa (nastaBuske, steg 2.12.4)
+    // Buskarna runt platsen töms, för annars går man vidare till nästa (rundan, steg 4.5.6.1)
     const r = createState(4, START), rm = getMap(r.seed);
     r.now = new Date(r.now).setHours(10, 0, 0, 0); Object.assign(r.fire, { lit: false, fuel: 0, emberUntil: undefined, ring: true });
     setItems(r, { flinta: 1, torrgras: 0, grenar: 0, naver: 0 }); setFood(r, 100); // inget tändmaterial i förrådet
@@ -109,7 +104,6 @@ SCENARIER.stenring = {
       [`stenarna blir en ring runt elden (${kvar.toFixed(1)} stenar kvar i förrådet)`, ring && kvar < 1],
       ['elden tänds med flinta, gniststen finns inte', s.fire.log.some(e => e.k === 'tänd') && !(s.stackar ?? []).some(a => a.k === 'gniststen')],
       ['ringen ligger kvar när elden slocknat', !!s.fire.ring],
-      ['äldre sparfil: gniststenen blir flinta och ringen finns', amountOf(g, 'flinta') === 1 && !('items' in g) && g.stackar!.every(a => a.k !== 'gniststen') && !!g.fire.ring],
     ];
   },
 };
@@ -427,7 +421,7 @@ function materialForrad(v: State) {
   let h = medHus(v);
   for (let i = 0; i < 4 && h?.fn !== 'forrad'; i++) h = medHus(v); // ett familjehus kan komma före
   const z = SIM.zonesOf(v).find(q => q.hus === h?.id);
-  if (h && z) { h.slag = 'material'; z.slag = 'material'; }
+  if (z) z.slag = 'material';
   fyll.forEach((k, i) => SIM.setAmount(v, k, forut[i]));
   SIM.touch(v);
   return z;
@@ -565,7 +559,7 @@ SCENARIER.kista = {
     const byggd = !!k && isKlar(k) && k.ag === p.id && !!k.inne && b !== undefined && !!stationRum(s, k)?.tiles.includes(b);
     // det egna som ingen har i handen ligger i kistan, inte byns spjut, och det syns inte i lagret
     const iKistan = (t: SIM.Ting) => !!k && t.vid === k.id && t.x === k.x && t.y === k.y;
-    const lediga = egna.filter(t => t.hos === undefined && t.bar === undefined && t.lass === undefined);
+    const lediga = egna.filter(t => t.agare === p.id && t.hos === undefined && t.bar === undefined && t.lass === undefined); // det p bytt bort eller gett bort är inte p:s längre
     const iLagret = pilesOf(s).some(a => k && a.x === k.x && a.y === k.y);
     const iKistanNu = lediga.filter(iKistan).length, egetOk = lediga.length > 0 && lediga.every(iKistan) && !iKistan(byns) && !iLagret;
     // q lånar yxan: när q är klar ligger den i kistan igen

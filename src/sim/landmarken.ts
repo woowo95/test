@@ -1,7 +1,6 @@
 // ---------- landmärkena (steg 11.2.8, Flera samhällen: Världen i tal: landmärkena) ----------
 // Allt som har en plats i världen är en rad i registret LANDMARKEN: namnet, tecknet på världskartan, vilken mark den får
-// ligga på, minsta avstånd till andra platser, om den är tillfällig, om den har ett innehåll i hela saker (ett fynd), om den
-// byggs som ett projekt och vad den gör med kostnaden på sin ruta. En plats är en post i världen (Varlden.platser): nummer,
+// ligga på, minsta avstånd till andra platser, om den är tillfällig och vad den gör med kostnaden på sin ruta. En plats är en post i världen (Varlden.platser): nummer,
 // sort, ruta, namn, eget frö, när den uppstod, när den upphör och vilken by den hör till. Bron tar bort flodens kostnad och
 // släpper över vagnen, spången tar bort myrens (men en vagn kommer inte fram på den), och den röjda passagen gör tät skog
 // till skog. Var platserna läggs ut
@@ -17,8 +16,6 @@ export interface LandmarkDef {
   mark: readonly MarkId[]; // marken platsen får ligga på
   avst: number; // minsta avstånd i världsrutor till en annan plats
   tillfallig?: true; // platsen upphör (ett läger bryts upp, en gömma töms)
-  fynd?: true; // har ett innehåll i hela saker
-  projekt?: true; // byggs som ett projekt
   flodFri?: true; // tar bort flodens kostnad och släpper över vagnen (bron)
   blir?: Partial<Record<MarkId, MarkId>>; // gör rutans mark till en annan när man går (den röjda passagen)
   kostnad?: Partial<Record<MarkId, number>>; // kostnaden att gå på marken, utan att fler färdsätt kommer fram (spången)
@@ -32,17 +29,17 @@ export const LANDMARKEN = {
   by: { namn: 'By', tecken: 'hus', mark: ['slatt', 'skog'], avst: 1, folk: true }, // inte på en annan bys karta; hur nära grannen ligger säger ingen regel
   handelslager: { namn: 'Handelsläger', tecken: 'talt', mark: ['slatt', 'skog'], avst: 4, tillfallig: true, folk: true },
   rovarlager: { namn: 'Rövarläger', tecken: 'eldstad', mark: ['skog', 'tat', 'berg'], avst: 4, tillfallig: true, folk: true, karta: true },
-  utpost: { namn: 'Utpost', tecken: 'torn', mark: ['slatt', 'skog', 'berg'], avst: 3, projekt: true, folk: true },
-  ruin: { namn: 'Ruin', tecken: 'ruin', mark: LAND, avst: 3, fynd: true, karta: true },
+  utpost: { namn: 'Utpost', tecken: 'torn', mark: ['slatt', 'skog', 'berg'], avst: 3, folk: true },
+  ruin: { namn: 'Ruin', tecken: 'ruin', mark: LAND, avst: 3, karta: true },
   helig: { namn: 'Helig plats', tecken: 'sten', mark: LAND, avst: 3, tathet: 0.004, karta: true },
   gravhog: { namn: 'Gravhög', tecken: 'hog', mark: ['slatt', 'skog'], avst: 2, tathet: 0.005, karta: true },
-  runsten: { namn: 'Runsten', tecken: 'runsten', mark: ['slatt', 'skog'], avst: 2, projekt: true, tathet: 0.003, karta: true },
-  fyndplats: { namn: 'Fyndplats', tecken: 'kors', mark: LAND, avst: 2, fynd: true, tillfallig: true, tathet: 0.004, karta: true },
-  karavanrest: { namn: 'Karavanrest', tecken: 'vagn', mark: LAND, avst: 1, fynd: true, tillfallig: true, karta: true },
-  gomma: { namn: 'Gömma', tecken: 'packning', mark: LAND, avst: 1, fynd: true, tillfallig: true, hemlig: true, karta: true },
-  bro: { namn: 'Bro', tecken: 'bro', mark: ['slatt', 'skog', 'tat', 'myr'], avst: 1, projekt: true, flodFri: true },
-  spang: { namn: 'Spång', tecken: 'spang', mark: ['myr'], avst: 1, projekt: true, kostnad: { myr: 1 } },
-  passage: { namn: 'Röjd passage', tecken: 'stubbe', mark: ['tat'], avst: 1, projekt: true, blir: { tat: 'skog' } },
+  runsten: { namn: 'Runsten', tecken: 'runsten', mark: ['slatt', 'skog'], avst: 2, tathet: 0.003, karta: true },
+  fyndplats: { namn: 'Fyndplats', tecken: 'kors', mark: LAND, avst: 2, tillfallig: true, tathet: 0.004, karta: true },
+  karavanrest: { namn: 'Karavanrest', tecken: 'vagn', mark: LAND, avst: 1, tillfallig: true, karta: true },
+  gomma: { namn: 'Gömma', tecken: 'packning', mark: LAND, avst: 1, tillfallig: true, hemlig: true, karta: true },
+  bro: { namn: 'Bro', tecken: 'bro', mark: ['slatt', 'skog', 'tat', 'myr'], avst: 1, flodFri: true },
+  spang: { namn: 'Spång', tecken: 'spang', mark: ['myr'], avst: 1, kostnad: { myr: 1 } },
+  passage: { namn: 'Röjd passage', tecken: 'stubbe', mark: ['tat'], avst: 1, blir: { tat: 'skog' } },
   rastplats: { namn: 'Rastplats', tecken: 'eld', mark: ['slatt', 'skog'], avst: 2, tathet: 0.003, karta: true },
   silvergruva: { namn: 'Silvergruva', tecken: 'gruva', mark: ['berg'], avst: 3 }, // läggs ut av laggGruvor (gruva.ts, steg 11.10.1)
   jarngruva: { namn: 'Järngruva', tecken: 'jarngruva', mark: ['berg'], avst: 3 }, // läggs ut av laggJarngruvor (gruva.ts, steg 12.2.13)

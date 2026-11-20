@@ -1,3 +1,4 @@
+import { antal, bestamd, och } from './ord';
 // Bränningarna (steg 12.2.1, Landskapet och järnet: Järnet: Kolmilan, Bränningarna). Kolmilan (och blästerugnen i 12.2.3) är en
 // station där något läggs in, brinner en känd tid efter klockan och tas ut. Varje sort är en rad i registret BRANNINGAR: vad
 // som läggs in, vad som kommer ut, hur länge det går och hur lång tid det tar att ladda och tända och att tömma. Inget räknas
@@ -10,8 +11,8 @@
 // då ved till milan, eftersom projektets recept är bränningens (BRANNINGAR). En mila som brunnit klart töms av den som har tid
 // (raden kolmila i ARBETEN, val.ts)
 import { balans } from './balans';
-import { ALDER, ageOf, count, forstaGang, living, log } from './folk';
-import { clamp, rnd } from './slump';
+import { ALDER, ageOf, count, forstaGang, log, annanGor } from './folk';
+import { rnd } from './slump';
 import { hourOf, isLight } from './tid';
 import { HOUR, Person, State, Task } from './typer';
 import { Station, isKlar, stationerOf, vidStation } from './stationer';
@@ -31,8 +32,6 @@ export const BRANN = balans('brann', {
   kolMiss: 2, // varje missad tillsyn vid milan ger så här mycket mindre kol (steg 12.2.2)
   tillsynMin: 2, // en tillsyn tar så här många minuter ...
   tillsynSen: 0.5, // ... och kommer ingen inom så här många timmar efter tiden är den missad
-  passVarde: 6, // värdet som står på spel (i grundvärde) där tillsynen väger fullt; mindre värde väger mindre
-  passMin: 0.2, // ... men aldrig mindre än så här
   ugnMalm: 8, ugnKol: 10, // en blåsning i blästerugnen tar så här mycket malm och kol (steg 12.2.3) ...
   ugnUt: 6, // ... och ger så här mycket järn
   ugnTim: 4, // ugnen går så här många timmar efter klockan
@@ -48,10 +47,11 @@ export interface BranningDef {
   ladda_text: string; tomma_text: string;
   tillsyn: number[]; miss: Record<string, number>; // tiderna att se till (timmar efter tändningen) och vad en missad tillsyn kostar (steg 12.2.2)
   tillsyn_text: string;
+  tom: string; // verbet i loggen när den första töms: "rev byns första kolmila" (steg 12.1.118)
 }
 export const BRANNINGAR: Record<string, BranningDef> = {
   kolmila: {
-    namn: 'Kolmila', station: 'kolmila', tek: 'kolmila', act: 'kola', in: { ved: BRANN.kolVed }, ut: { kol: BRANN.kolUt }, tim: BRANN.kolTim,
+    namn: 'Kolmila', tom: 'rev', station: 'kolmila', tek: 'kolmila', act: 'kola', in: { ved: BRANN.kolVed }, ut: { kol: BRANN.kolUt }, tim: BRANN.kolTim,
     ladda: BRANN.kolLadda, tomma: BRANN.kolTomma, torr: 'ved',
     ladda_text: 'Reser och täcker ved till en kolmila och tänder den.', tomma_text: 'River kolmilan och tar ut kolet.',
     tillsyn: [1, 2, 3], miss: { kol: BRANN.kolMiss }, tillsyn_text: 'Tätar sprickorna i kolmilan.',
@@ -59,7 +59,7 @@ export const BRANNINGAR: Record<string, BranningDef> = {
   // blästerugnen (steg 12.2.3): malm och kol blir järn. Malmen rostas på ugnens eld när den laddas, och luppen (järnklumpen) och
   // slaggen finns bara i texten och bilden. Vid passen trampas bälgen
   blasterugn: {
-    namn: 'Blåsning', station: 'blasterugn', tek: 'blasterugn', act: 'blasa', in: { malm: BRANN.ugnMalm, kol: BRANN.ugnKol }, ut: { jarn: BRANN.ugnUt }, tim: BRANN.ugnTim,
+    namn: 'Blåsning', tom: 'tömde blästerugnen efter', station: 'blasterugn', tek: 'blasterugn', act: 'blasa', in: { malm: BRANN.ugnMalm, kol: BRANN.ugnKol }, ut: { jarn: BRANN.ugnUt }, tim: BRANN.ugnTim,
     ladda: BRANN.ugnLadda, tomma: BRANN.ugnTomma,
     ladda_text: 'Rostar malmen, laddar blästerugnen med malm och kol och tänder.', tomma_text: 'Bryter ut luppen ur blästerugnen och slår ur slaggen.',
     tillsyn: [1, 2, 3], miss: { jarn: BRANN.ugnMiss }, tillsyn_text: 'Trampar bälgen vid blästerugnen.',
@@ -112,15 +112,14 @@ export function branningKlar(s: State, p: Person, tk: Task) {
   for (const [k, n] of Object.entries(ut)) if (n > 0) tk.items[k] = (tk.items[k] ?? 0) + n;
   dropLoad(s, tk, p.x, p.y);
   for (const [k, n] of Object.entries(ut)) count(s, 'brant_' + k, n);
-  if (forstaGang(s, 'branningTomd_' + id)) log(s, `${p.name} rev byns första ${d.namn.toLowerCase()} och tog ut ${Object.entries(d.ut).map(([k, n]) => `${n} ${k}`).join(' och ')}.`, 'world', [p.id]);
+  if (forstaGang(s, 'branningTomd_' + id)) log(s, `${p.name} ${d.tom} byns första ${d.namn.toLowerCase()} och tog ut ${och(Object.entries(ut).filter(([, n]) => n >= 1).map(([k, n]) => antal(n, k))) || 'ingenting'}.`, 'world', [p.id]);
 }
 // det som kommer ut med så många missade tillsyner (aldrig under noll)
 export const utfall = (d: BranningDef, miss: number) => Object.fromEntries(Object.entries(d.ut).map(([k, n]) => [k, Math.max(0, n - miss * (d.miss[k] ?? 0))]));
 // ---------- tillsynen (steg 12.2.2, Järnet: Tillsynen) ----------
 // En bränning ska ses till vid kända tider (tillsyn, timmar efter tändningen). Kommer ingen inom BRANN.tillsynSen timmar efter
 // tiden är tillsynen missad, och varje missad tillsyn ger mindre ut (miss). Tiderna är en regel om världen; vem som går är ingen
-// regel: raden passa i ARBETEN (val.ts) är ett Tillfälle, vars brådska är värdet som står på spel och hur nära tiden är
-// (passaBradska), och sömnen, hungern och farorna vägs som vanligt
+// regel: raden passa i ARBETEN (val.ts) är ett Tillfälle som prövas när tiden för tillsynen är inne, och farorna går före som vanligt
 const tidFor = (b: Branning, d: BranningDef, k: number) => b.t0 + d.tillsyn[k] * HOUR;
 // tillsynen som kan göras nu vid bränningen b: den första vars tid har kommit och som varken gjorts eller missats
 export function tillsynNu(s: State, b: Branning) {
@@ -152,18 +151,10 @@ export function passaVal(s: State, p: Person) {
   for (const b of branningarOf(s)) {
     const d = BRANNINGAR[b.b], n = tillsynNu(s, b), t = stationerOf(s).find(x => x.id === b.st);
     if (!n || !t || !knows(p, d.tek)) continue;
-    if (living(s).some(q => q !== p && q.task?.act === 'passa' && q.task.ref === t.id)) continue;
+    if (annanGor(s, p, 'passa', t.id)) continue;
     return { b, t, n, d };
   }
   return undefined;
-}
-// brådskan (bradska i ARBETEN): hur nära tiden är (från tidens början till sista stund) gånger värdet som står på spel
-export function passaBradska(s: State, p: Person) {
-  const v = passaVal(s, p);
-  if (!v) return 0;
-  const varde = Object.entries(v.d.miss).reduce((a, [k, n]) => a + grundvarde(k) * n, 0);
-  const nara = clamp((s.now - v.n.fran) / Math.max(1, v.n.till - v.n.fran), 0, 1);
-  return clamp(varde / BRANN.passVarde, BRANN.passMin, 1) * (BRANN.passMin + (1 - BRANN.passMin) * nara);
 }
 export const passaUppgift = (v: NonNullable<ReturnType<typeof passaVal>>) => ({ act: 'passa' as const, text: v.d.tillsyn_text, min: BRANN.tillsynMin, spot: vidStation(v.t), ref: v.t.id });
 // tillsynen är gjord (KLAR i steg.ts): den räknas, om den inte hann bli missad medan den gjordes
@@ -172,7 +163,7 @@ export function passaKlar(s: State, p: Person, tk: Task) {
   if (!b || !n) return;
   b.sedd = (b.sedd ?? 0) | (1 << n.k);
   count(s, 'tillsyn_' + b.b);
-  if (forstaGang(s, 'tillsynForsta_' + b.b)) log(s, `${p.name} såg till ${BRANNINGAR[b.b].namn.toLowerCase()}n.`, 'world', [p.id]);
+  if (forstaGang(s, 'tillsynForsta_' + b.b)) log(s, `${p.name} såg till ${bestamd(BRANNINGAR[b.b].namn)[0]}.`, 'world', [p.id]);
 }
 // utfallet som väntas om bränningen tänds vid tiden t: tillsynerna som faller på dagen antas bli gjorda, de på natten
 // missas (projektet kol tänder hellre när tillsynen faller på dagen)

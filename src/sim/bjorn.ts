@@ -9,7 +9,7 @@ import { balans } from './balans';
 import { SLAGHINDER, kanNa, nasTid } from './klocka';
 import { GANG } from './gang';
 import { kronikaBer, och, personFalt } from './berattelser';
-import { tal } from './ord';
+import { han, honom, svaraText, tal } from './ord';
 import { blodas } from './blod';
 import { blocked, freeNear, roomAt } from './byggnad';
 import { bjornVarden, bjornarOf, dodaDjur, halsaOf, satDjurHalsa } from './djur';
@@ -81,7 +81,7 @@ export function bjornSteg(s: State) {
     if (mott.ids.includes(p.id)) continue;
     mott.ids.push(p.id);
     count(s, 'bjornmote');
-    if (!s.bjornJakt?.jagare) s.bjornJakt = { ar, sedd: s.now, sag: p.id, x: b.x, y: b.y }; // byn vet var björnen går (björnjakten, steg 6.6.6), och märket står där (steg 9.2.122)
+    if (!s.bjornJakt?.jagare) s.bjornJakt = { ar, sedd: s.now, sag: p.id, x: b.x, y: b.y, timme: s.bjornJakt?.timme }; // timmen behålls: chansen till jakt slås en gång i timmen, inte vid varje nytt möte (steg 12.1.59) // byn vet var björnen går (björnjakten, steg 6.6.6), och märket står där (steg 9.2.122)
     if (rnd(s, 'bjorn') < (ungar.length ? BJORNMOTE.anfallUngar : BJORNMOTE.anfall)) {
       const folk = living(s).filter(q => q === p || vaken(q) && q.task?.act !== 'strid' && !roomAt(s, q.x, q.y) && Math.hypot(q.x - p.x, q.y - p.y) <= BJORNMOTE.med);
       for (const q of folk) if (!mott.ids.includes(q.id)) mott.ids.push(q.id);
@@ -170,7 +170,7 @@ export function bjornjaktSteg(s: State, p: Person, tk: Task) {
     count(s, 'bjornjaktGick');
     for (const q of med) { q.task!.until = s.now; q.task!.prog = 1; }
     log(s, `Björnen märkte jägarna och gick undan innan ${p.name} och de andra hann fram.`, 'world', med.map(q => q.id));
-    kronikaBer(s, 'k_bjornSprang', p.id, { ...personFalt(p), med: med.length > 1 ? ` med ${tal(med.length - 1)} till` : '' });
+    kronikaBer(s, 'k_bjornSprang', p.id, { ...personFalt(p), med: med.length > 1 ? ` med ${tal(med.length - 1)} till` : '', de: med.length > 1 ? 'de' : han(p), dem: med.length > 1 ? 'dem' : honom(p) });
     return;
   }
   bjornStrid(s, b.id, med, alla.some(d => d.art === 'bjornunge'), 'doda');
@@ -229,12 +229,12 @@ function bjornSlut(s: State, efter: Efter, vinnare: 0 | 1 | -1, g: KartStrid) {
   });
   if (falld && !bar) { count(s, 'bjornKvar'); lamnaFallt(s, 'bjorn', 1, folk[0].x, folk[0].y); }
   blodas(s, folk[0].x, folk[0].y, 'jakt', 1);
-  const namn = och(folk.map(p => p.name)), svaraText = svara.length ? ` ${och(svara)} skadades svårt.` : '';
+  const namn = och(folk.map(p => p.name)), svaraT = svaraText(folk, svara);
   const text = jakt ? `${namn} gick på björnjakt. ${falld ? 'Björnen dog.' : 'Björnen kom undan.'}`
     : `En björn${medUngar ? ' med ungar' : ''} anföll ${namn}. ${falld ? 'Björnen dog.' : vinnare === 0 ? 'Björnen gav sig av.' : 'Björnen vann och gick sin väg.'}`;
   log(s, text, 'world', folk.map(p => p.id)); notis(s, 'strid', text, folk.map(p => p.id), { x: Math.floor(folk[0].x), y: Math.floor(folk[0].y) });
-  if (jakt) kronikaBer(s, falld ? 'k_bjornjakt' : 'k_bjornjaktMiss', folk[0].id, { folk: namn, svara: svaraText });
-  else kronikaBer(s, 'k_bjornAnfall', folk[0].id, { folk: namn, svara: svaraText });
+  if (jakt) kronikaBer(s, falld ? 'k_bjornjakt' : 'k_bjornjaktMiss', folk[0].id, { folk: namn, svara: svaraT });
+  else kronikaBer(s, 'k_bjornAnfall', folk[0].id, { folk: namn, svara: svaraT });
   if (!falld) bjornGarUndan(s, folk[0].x, folk[0].y); // björnen som vunnit eller gett upp går bort från byn (steg 9.2.30)
 }
 EFTER.bjorn = (s, efter, vinnare, g) => bjornSlut(s, efter, vinnare, g as KartStrid);

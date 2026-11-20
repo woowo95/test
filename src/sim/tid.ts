@@ -11,7 +11,6 @@ export const kallTid = (ai: number) => foreIstiden(ai) || iIstiden(ai); // infö
 // Balanstalen (regel 8): hur tidsåldern påverkar byn. Faktorerna gäller i tiden som metoden i namnet säger, annars 1
 export const ARSTID = balans('arstid', {
   // vad byn väljer (val.ts)
-  byggKall: 1.4, // bygget väger så mycket mer inför och under istiden
   vedKall: 1.3, // veden väger så mycket mer inför och under istiden
   // att skaffa och förvara
   hoPerTid: [0.25, 0.6, 1, 1.3], // hur mycket hö det finns att samla, per tidsålder (istid, vår, sommar, höst)
@@ -29,7 +28,8 @@ export const ARSTID = balans('arstid', {
 // måndagen b0 (dagens nummer). En ny koloni börjar med vårtid fram till den måndag som ligger minst en vecka bort (7–13 dygn),
 // och en äldre by kommer i fas när den läses in (inFas). Allt som frågar om tidsålder, dag eller år frågar kalender().
 interface Kal { ai: number; dag: number; av: number; ar: number; start: number; slut: number } // dag av av i tidsåldern
-const dagNr = (t: number) => { const d = new Date(t); return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY); };
+// dygnets (årets i spelet) nummer, efter midnatt lokal tid som kalendern; heliga dagar, högtider och fester frågar här (steg 12.1.64)
+export const dagNr = (t: number) => { const d = new Date(t); return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY); };
 const midnatt = (n: number) => { const d = new Date(n * DAY); return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()).getTime(); };
 // när dygnet (året i spelet) som tiden t ligger i började: midnatt, lokal tid (björnen, steg 6.6.4)
 export const dygnStart = (t: number) => midnatt(dagNr(t));

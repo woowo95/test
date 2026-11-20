@@ -24,7 +24,7 @@ lyssnaPaTexter((mall, i, text, f) => {
   const k = `${mall}#${i}`, o = olika.get(k) ?? new Set<string>();
   olika.set(k, o); o.add(text); v.u = o.size;
   if (v.ex.length < EXEMPEL && !v.ex.includes(text)) v.ex.push(text);
-  for (const k of kollaText(text, f, kon, mall === 'beskrivning', mall === 'beskrivning')) {
+  for (const k of kollaText(text, f, kon, mall === 'beskrivning', mall === 'beskrivning' || i === -2)) { // -2: en text utanför mallarna, en hel mening (steg 12.1.118)
     const x = (fel[k.id] ??= { n: 0, ex: [] });
     x.n++;
     if (x.ex.length < 8 && !x.ex.some(e => e.text === text)) x.ex.push({ mall, vad: k.vad, text });

@@ -7,7 +7,7 @@ import { balans } from './balans';
 import { nyAndlighet } from './religion';
 import { RYKTE, ryktbarhet } from './rykten';
 import { hourOf } from './tid';
-import { lista, och, tal } from './ord';
+import { horText, lista, och, tal } from './ord';
 
 // ---------- balanstal (regel 8) ----------
 // Kroppen: mätarna hunger, rest, warm, social, toa och health går från 0 (slut) till 1 (full). Här står gränserna där folk
@@ -73,10 +73,6 @@ export const KROPP = balans('kropp', {
   toaAvbryt: 0.08, // under detta avbryter nöden det man håller på med
   // hälsa (health)
   svag: 0.4, // under detta är man för svag för att orka något
-  sjukTim: 40, // timmar som sjukdomen tar från full hälsa
-  sjukMin: 3, // en sjukdom varar minst så många timmar ...
-  sjukSpann: 8, // ... och upp till så många timmar till
-  svartSjuk: 8, // en sjukdom som varar längre än så här loggas som svår
   // risken per dygn att dö av olycka eller ålder (Gompertz): dodBas + dodAlder * e^(dodTakt * ålder), dodBarn extra för små barn
   dodBas: 0.0015,
   dodAlder: 0.00004,
@@ -230,8 +226,7 @@ export const ageOf = (p: Person, now: number) => ((p.died ?? p.left ?? now) - p.
 // går inte i slaget, ritas inte och väljs inte till något
 export const paKartan = (p: Person) => alive(p) && p.ute === undefined;
 export function living(s: State) { return s.people.filter(paKartan); }
-// sjuk just nu (sickUntil är aldrig 0 eller NaN i spelet; då ger uttrycket ändå samma svar som !!sickUntil &&)
-export { isSick } from './sjukdom'; // sjukdomarna (steg 9.5.1, sjukdom.ts); den gamla klockan sickUntil räknas tills den gått ut
+export { isSick } from './sjukdom'; // sjuk just nu: sjukdomen har visat sig (steg 9.5.1, sjukdom.ts)
 export function byId(s: State, id?: number) { return id === undefined ? undefined : s.people.find(p => p.id === id); }
 // gör någon levande (utom `utom`) handlingen act just nu? (drar ingen slump)
 // arbetsordningens mjuka tak för det som annars bara en i hela byn fick göra (steg 10.2.5): en till tar handlingen med chansen
@@ -243,23 +238,21 @@ export const ARBETARE = balans('arbetare', {
 });
 const actKod = (a: string) => { let h = 7; for (let i = 0; i < a.length; i++) h = Math.imul(h, 31) + a.charCodeAt(i) | 0; return h; };
 export function enTill(s: State, act: Act, p?: Person) {
-  let n = 0;
-  for (const q of s.people) if (q !== p && alive(q) && q.task?.act === act) n++;
+  const n = andraGor(s, act, p);
   return !n || hash3(p?.id ?? 0, Math.floor(s.now / 60000), actKod(act)) < ARBETARE.fler ** n;
 }
 // samma sak för ett mål (steg 10.11.8): fler kan hjälpas åt med samma törstande, fält, djur eller vattenho, men chansen att en
 // till tar det faller med hur många som redan gör det där (ar väljer uppgifterna med samma mål)
 export function enTillDar(s: State, act: Act, p: Person, ar: (t: Task) => boolean, mal = 0) {
-  let n = 0;
-  for (const q of s.people) if (q !== p && alive(q) && q.task?.act === act && ar(q.task)) n++;
+  const n = andraGor(s, act, p, ar);
   return !n || hash3(p.id, Math.floor(s.now / 60000), actKod(act) + mal) < ARBETARE.fler ** n;
 }
-// så många andra som gör handlingen just nu
-export function andraGor(s: State, act: Act, utom?: Person) { let n = 0; for (const q of s.people) if (q !== utom && alive(q) && q.task?.act === act) n++; return n; }
-export function doingAct(s: State, act: Act, utom?: Person) {
-  for (const q of s.people) if (q !== utom && alive(q) && q.task?.act === act) return true;
-  return false;
-}
+// byns vuxna (de som lever i byn, gästerna med)
+export const vuxnaOf = (s: State) => living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen);
+// gör någon annan än p handlingen act med målet ref just nu
+export const annanGor = (s: State, p: Person, act: Act, ref: number) => living(s).some(q => q !== p && q.task?.act === act && q.task.ref === ref);
+// så många andra som gör handlingen just nu (och, med ar, med det målet)
+export function andraGor(s: State, act: Act, utom?: Person, ar?: (t: Task) => boolean) { let n = 0; for (const q of s.people) if (q !== utom && alive(q) && q.task?.act === act && (!ar || ar(q.task))) n++; return n; }
 
 export function stat(p: Person, k: Stat, now: number) {
   const a = ageOf(p, now);
@@ -400,6 +393,7 @@ export function similarity(a: Person, b: Person) {
 // redan bland de senaste i loggen, inom slagets fönster (SAMLA), byggs den på med den nya delen och flyttas överst, i stället
 // för att en ny rad läggs till. Bara texten: statistiken räknar varje händelse som förut
 export function log(s: State, text: string, kind: LogEntry['kind'], ids: number[] = [], sam?: { slag: SamSlag; k: number; n: string; d: string }) {
+  horText('log', text);
   if (sam) {
     const def = SAMLA[sam.slag], f = def.fonster(s.now);
     for (let i = s.log.length - 1; i >= Math.max(0, s.log.length - SAMLA_BAKAT); i--) {
@@ -448,10 +442,10 @@ export type SamSlag = keyof typeof SAMLA;
 // räknar det som händer i byn (statistiken i s.stat)
 export const count = (s: State, k: string, n = 1) => { (s.stat ??= {})[k] = (s.stat[k] ?? 0) + n; };
 // en olycka gör de som såg den rädda för handlingen (steg 8.4.10, lagar.ts sätter funktionen när allt är laddat)
-type AktRadd = (s: State, p: Person, act: Act | undefined, om: string, orsak?: string) => void;
+type AktRadd = (s: State, p: Person, act: Act | undefined) => void;
 let aktRaddF: AktRadd = () => {};
 export const satAktRadd = (f: AktRadd) => { aktRaddF = f; };
-export const raddAkt: AktRadd = (s, p, act, om, orsak) => aktRaddF(s, p, act, om, orsak);
+export const raddAkt: AktRadd = (s, p, act) => aktRaddF(s, p, act);
 // buden som verkar i andra system (steg 8.6.6–8.6.10, kyrka.ts sätter funktionen när allt är laddat). Tillfället säger var:
 // en främling kommer (p), två ska bli ett par (p och q), p skadades av q, p vill tala illa om en död, p vill fälla trädet (x, y).
 // true = budet stoppar det
@@ -484,6 +478,7 @@ export function gjortDygn(s: State, p: Person, k: string) {
 // räknar k och ger true första gången det händer i byn (för raderna om 'byns första …' i loggen)
 export const forstaGang = (s: State, k: string) => { count(s, k); return s.stat![k] === 1; };
 export function think(p: Person, text: string, v: number, now: number, dur: number) {
+  horText('tanke', text);
   p.thoughts = p.thoughts.filter(t => t.text !== text);
   p.thoughts.push({ text, v, until: now + dur });
 }

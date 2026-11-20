@@ -129,7 +129,7 @@ SCENARIER.tecken = {
       // ett svårt sjukt barn som blir friskt är ett tecken för föräldrarna
       const mo = nyInvanare(s, 'k', 30), fa = nyInvanare(s, 'm', 30); mo.andlig = 100;
       const barn = SIM.newPerson(s, 'k', s.now - 8 * SIM.DAY, mo, fa); s.people.push(barn); Object.assign(barn, { x: mo.x, y: mo.y, health: 1 });
-      barn.svartSjuk = 1; barn.sickUntil = s.now - 1;
+      barn.svartSjuk = 1;
       SIM.stepReligion(s);
       const sag = !!mo.upp?.some(u => u.k === 'tecken' && u.om?.includes(barn.name));
       // den som var med om samma sak delar tron som just uppstod
@@ -167,7 +167,12 @@ SCENARIER.tecken = {
         SIM.bjornSteg(k);
         if (!(k.stat?.bjornstrid ?? 0) && !SIM.djurIKartStrid(k, 'bjorn')) { bjMote++; if (p.upp?.some(u => u.k === 'tecken' && u.om === SIM.teckenText('bjornVande'))) bjSag++; }
       }
+      // fältet som gav dubbelt mot de andra (fynd 343): skörden på en ruta mot de andra fältens skörd per ruta
+      const fx = { id: 901, n: 4 } as SIM.Falt, fb = { id: 902, n: 4, gav: [6, 2] } as SIM.Falt, falt0 = s.falt;
+      s.falt = [fx]; const ensamFalt = !SIM.gavDubbelt(s, fx, 100);
+      s.falt = [fx, fb]; const dubbel = SIM.gavDubbelt(s, fx, 6) && !SIM.gavDubbelt(s, fx, 5.9); s.falt = falt0;
       return [
+        [`ett fält som ger dubbelt mot de andras skörd per ruta är ett tecken, men inte utan andra fält (fynd 343)`, ensamFalt && dubbel],
         [`tvillingar som föds levande är ett tecken för båda föräldrarna (${tvForsok} försök)`, tvSag],
         [`den som möter björnen utan att den anfaller minns björnen som vände om (${bjSag} av ${bjMote} möten)`, bjMote > 0 && bjSag === bjMote],
         [`den världsliga (andlighet 0) tolkar inte blixten som en tro (${varldslig.filter(p => p.tro !== undefined).length} av 60)`, varldslig.every(p => p.tro === undefined)],
@@ -361,7 +366,7 @@ SCENARIER.religionsflik = {
       [`den minsta tron (${minst}) ligger under Övriga trosriktningar och syns när man öppnar dem`, html.includes('Övriga trosriktningar') && !tron(html).includes(minst) && tron(oppen).includes(minst)],
       [`trons bud och högtider är rader som fälls ut: högtiden säger när och vad man gör, och båda varför (steg 11.1.24)`, budOk],
       ['trons tyngd står inte som tal: etiketten står ensam, och talet med delarna i förklaringen (steg 11.1.20)', !html.includes('· tyngd') && new RegExp(`title="[^"]*Tyngd [^"]*"><b>${SIM.troEtikett(s, stor.tr).namn}</b></p>`).test(html)],
-      ['andligheten och trons styrka förklaras som 0 till 10, utan talet 0 till 100 (steg 11.1.21)', /title="Tron är [\d,]+ av 10 stark hos/.test(html) && /title="Andlighet [\d,]+ av 10:/.test(html) && !/av 100 stark/.test(html)],
+      ['andligheten och trons styrka förklaras som 0 till 10, utan talet 0 till 100 (steg 11.1.21)', /title="Tron hos [^"]* är [\d,]+ av 10 i styrka/.test(html) && /title="Andlighet [\d,]+ av 10:/.test(html) && !/av 100 stark/.test(html)],
       [`rubrikerna: De troende (N) i varje tro och Andligheten i byn sist (steg 11.1.19)`, html.includes('<h3>De troende (5)</h3>') && html.includes('<h3>Andligheten i byn</h3>') && !html.includes('<h3>Personer</h3>')],
       ['alla i byn står med andlighet och tro', html.includes('<h3>Andligheten i byn</h3>') && SIM.living(s).every(p => html.includes(`data-id="${p.id}"`))],
     ];

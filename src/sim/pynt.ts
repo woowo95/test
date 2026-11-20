@@ -9,7 +9,7 @@ import { isKlar, krukaHemma, sovrum, stationDef, stationRum, stationerOf } from 
 
 // ---------- pyntet i hemmen (steg 4.3.4) ----------
 // Lerkrukan (ett ting, kruka.ts) och mattorna (pynt i STATIONER, stationer.ts) är bara till för att pynta.
-// Var och en som är vuxen och sover inne bygger ett åt sig själv, av den sort hen tycker om (pyntSort), och ställer det i
+// Var och en som är vuxen och sover inne bygger ett åt sig själv, av den sort hen tycker om (gillarPynt i stationer.ts), och ställer det i
 // rummet där hen sover: i familjens hus eller i byns hus där hen sover. Högst ett var, så att byn inte fylls av små saker.
 // Som alla möbler får det en kvalitet när det blir klart, och ett mästerverk kan få en berättelse och ett motiv (4.3.3).
 // Varje timme: ägaren som är i rummet trivs (en tanke, mer ju finare pyntet är), och de andra som är vakna där ser det och

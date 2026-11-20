@@ -1,0 +1,19 @@
+{
+ "kommando": "rita",
+ "args": [
+  "bild_hatt_halm!=Rita hatten både som den ligger och som den sitter på kolonistens huvud: kullen över hjässan och brättet runt, i alla riktningar och i porträttet.",
+  "bild_jarnhjalm_jarn!=Rita hjälmen både som den ligger och som den sitter på kolonistens huvud, över hjässan ner mot pannan, i alla riktningar och i porträttet. Ansiktet syns.",
+  "bild_ringbrynja_jarn!=Rita brynjan både som den ligger och som den sitter på kolonisten: över bålen och överarmarna ner mot låren, ovanpå det andra, i alla riktningar och i porträttet (axlarna och bröstet)."
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 3.31,
+  "hog": 7.09
+ },
+ "dollar": 3.266,
+ "rapport": [
+  "bild_hatt_halm: 3 versioner",
+  "bild_jarnhjalm_jarn: 3 versioner",
+  "bild_ringbrynja_jarn: 3 versioner"
+ ]
+}

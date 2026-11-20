@@ -16,7 +16,7 @@ import { bordPlats } from './utrustning';
 
 export const STYCK = balans('styckning', {
   delVikt: 10, // en styckdel väger så här mycket; djuret blir vikten / delVikt delar, avrundat uppåt
-  minPerDel: 10, // så här många minuter tar det att skära loss en del
+  minPerDel: 3, // så här många minuter tar det att skära loss en del (en liten sak)
 });
 
 // arten vars fällda djur ligger i förrådet som sak k

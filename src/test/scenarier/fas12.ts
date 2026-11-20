@@ -347,6 +347,10 @@ SCENARIER.jarnredskap = {
     const i = SIM.tileOf(p.x, p.y), fall = (k: string) => { const q: SIM.Task = { act: 'falla', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', tool: k } as SIM.Task; SIM.startWork(s, p, q); return q.until - s.now; };
     const sten = fall('yxa'), jarn = fall('jarnyxa');
     void i;
+    // det som täljs med kniven blir oftare bra med järnkniven
+    const utanKniv = SIM.knivKv(s, p, 'slagtra');
+    SIM.addTool(s, 'jarnkniv', p);
+    const medKniv = SIM.knivKv(s, p, 'slagtra'), ejKniv = SIM.knivKv(s, p, 'korg');
     return [
       [`recepten: järnyxa ${JSON.stringify(R.jarnyxa.av)} ${R.jarnyxa.min} min, järnkniv ${JSON.stringify(R.jarnkniv.av)} ${R.jarnkniv.min} min, lie ${JSON.stringify(R.lie.av)} ${R.lie.min} min`, R.jarnyxa.av.jarn === 2 && R.jarnyxa.av.grenar === 1 && R.jarnyxa.min === 5 && R.jarnkniv.av.jarn === 1 && R.jarnkniv.min === 4 && R.lie.av.jarn === 2 && R.lie.min === 5],
       [`de ligger i grupperna yxa, kniv och skära med högre rang än stensaken`, SIM.gruppOf('jarnyxa') === 'yxa' && SIM.gruppOf('jarnkniv') === 'kniv' && SIM.gruppOf('lie') === 'skara' && (SIM.SAKER.jarnyxa!.rang ?? 0) > (SIM.SAKER.yxa!.rang ?? 0)],
@@ -355,6 +359,7 @@ SCENARIER.jarnredskap = {
       [`järnyxan tas före flintyxan (${tagen?.k})`, tagen?.k === 'jarnyxa'],
       [`järnyxan fäller ett träd på en tredjedel av tiden (${Math.round(sten / 1000)} s mot ${Math.round(jarn / 1000)} s)`, Math.abs(sten / jarn - 3) < 1e-6],
       [`hugga och klyva ger tre gånger så mycket med järnyxan, slakten går tre gånger så fort med järnkniven`, A.hugga.redskap!.jarnyxa.ger === 3 && A.klyva.redskap!.jarnyxa.ger === 3 && A.slakta.redskap!.jarnkniv.fart === 3 && A.falla.redskap!.jarnyxa.fart === 3],
+      [`det som täljs med kniven får oftare bra kvalitet med järnkniven (+${medKniv.toFixed(2)}, utan ${utanKniv}, korgen ${ejKniv})`, medKniv > 0 && utanKniv === 0 && ejKniv === 0],
       [`järnsakerna håller fyra till fem gånger så länge (yxan ${A.falla.redskap!.jarnyxa.haller} träd mot ${A.falla.redskap!.yxa.haller}, kniven ${A.slakta.redskap!.jarnkniv.haller} mot ${A.slakta.redskap!.kniv.haller})`, A.falla.redskap!.jarnyxa.haller! / A.falla.redskap!.yxa.haller! >= 4 && A.slakta.redskap!.jarnkniv.haller! / A.slakta.redskap!.kniv.haller! >= 4],
     ];
   },
@@ -405,6 +410,8 @@ SCENARIER.jarnvapen = {
       [`järnskölden: ${JSON.stringify(R.jarnskold.av)} vid snickarbänken på ${R.jarnskold.min} minuter, och görs hellre än träskölden (${gors.join(', ')})`, R.jarnskold.av.jarn === 1 && R.jarnskold.av.lader === 1 && R.jarnskold.av.ved === 3 && R.jarnskold.bank === 'snickarbank' && gors[0] === 'jarnskold'],
       [`den som har järnskölden håller en järnsköld i striden (${!!jarn.skoldJarn}), träskölden en vanlig (${!!tra.skold}, ${!!tra.skoldJarn})`, !!jarn.skold && !!jarn.skoldJarn && !!tra.skold && !tra.skoldJarn],
       [`järnskölden tar ${SIM.STRID.jarnSkoldSlag * 10} av 10 slag och ${SIM.STRID.jarnSkoldPil * 10} av 10 pilar (träskölden ${SIM.STRID.skoldSlag * 10} och ${SIM.STRID.skoldPil * 10})`, SIM.STRID.jarnSkoldSlag === 0.5 && SIM.STRID.jarnSkoldPil === 0.8],
+      ...(() => { const q = SIM.createState(1, START), qp = SIM.living(q).find(r => SIM.ageOf(r, q.now) >= SIM.ALDER.vuxen)!; q.ting = SIM.tingOf(q).filter(t => !SIM.MANNISKOVAPEN.includes(t.k as never)); const t = SIM.addTool(q, 'jarnkniv', qp); t.q = 4; const fin = SIM.personKampe(q, qp, 1, 0, 0, 0); t.q = 0; const usel = SIM.personKampe(q, qp, 1, 0, 0, 0); t.q = undefined; const normal = SIM.personKampe(q, qp, 1, 0, 0, 0);
+        return [[`ett vapen av hög kvalitet skadar mycket mer i striden (${fin.vapen}: fin ${fin.kv?.jarnkniv}, usel ${usel.kv?.jarnkniv}, normal ${normal.kv?.jarnkniv ?? 1})`, fin.vapen === 'jarnkniv' && fin.kv?.jarnkniv === SIM.STRID.kvSkada[4] && usel.kv?.jarnkniv === SIM.STRID.kvSkada[0] && !normal.kv && SIM.STRID.kvSkada[4] >= 1.4] as [string, boolean]]; })(),
       [`järnyxan och järnkniven är vapen med skärpa över stenens (${V.jarnyxa.skarpa}, ${V.jarnkniv.skarpa})`, V.jarnyxa.skarpa > 1 && V.jarnkniv.skarpa > V.kniv.skarpa && SIM.MANNISKOVAPEN.includes('jarnspjut' as never)],
     ];
   },
@@ -454,7 +461,7 @@ SCENARIER.isborr = {
   text: 'Isborren (steg 12.2.11): smids av 1 järn och 1 grenar på 4 minuter i smedjan och borrar genom den tjockaste isen tre gånger så fort som yxan; yxan, spjutet och spaden tar sig bara genom is upp till 30 cm',
   kor: () => {
     const R = SIM.RECEPT.isborr;
-    const hal = (borr: boolean) => {
+    const halet = (borr: boolean) => {
       const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
       s.is = { vatten: 0, cm: 40 } as typeof s.is;
       SIM.addTool(s, 'yxa', p); SIM.addTool(s, 'flintspjut', p);
@@ -462,11 +469,19 @@ SCENARIER.isborr = {
       const h = SIM.halVal(s, p);
       return { h: h?.id, min: h ? SIM.halMin(s, p) : undefined };
     };
-    const med = hal(true), utan = hal(false);
+    const med = halet(true), utan = halet(false);
+    // borren slits: den håller 200 hål
+    const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    s.is = { vatten: 0, cm: 40 } as typeof s.is;
+    SIM.addTool(s, 'isborr', p);
+    let hal = 0;
+    while (SIM.nTools(s, 'isborr') > 0 && hal < 1000) { SIM.halGjort(s, p); hal++; }
     return [
       [`isborren: ${JSON.stringify(R.av)} på ${R.min} minuter i smedjan`, R.av.jarn === 1 && R.av.grenar === 1 && R.min === 4 && R.tek === 'smedja' && !!SIM.JARNSAKER.isborr],
       [`genom 40 cm is får byn med borr upp hålet på 4 minuter (${med.h}, ${med.min} minuter)`, med.h === 'isborr' && Math.abs((med.min ?? 0) - 4) < 1e-9],
       [`byn utan borr får inte upp något (${utan.h ?? 'inget'})`, !utan.h],
+      [`isborren håller ${SIM.IS.borrHal} hål (${hal})`, hal === SIM.IS.borrHal],
+      ...(() => { const q = SIM.createState(1, START), qp = SIM.living(q)[0], t = SIM.addTool(q, 'isborr', qp), y = SIM.addTool(q, 'yxa', qp); SIM.wearStore(q, 24 * 3600); return [[`isborren slits i förvaringen som allt annat (skick ${t.c.toFixed(3)} efter ett dygn, flintyxan ${y.c.toFixed(3)})`, t.c < 1 && t.c > 0 && Math.abs((1 - t.c) - (1 - y.c)) < 0.5 * (1 - y.c) + 1e-9] as [string, boolean]]; })(),
     ];
   },
 };
@@ -760,6 +775,35 @@ SCENARIER.blotbord = {
       [`veden ur den blöta högen är blöt i bördan (${buret} ved, ${iBordan} av den blöt)`, buret > 0 && iBordan === 1],
       [`högen i förrådet är blöt (${inne.length} högar)`, inne.length > 0 && blotaInne],
       [`den som eldar med byns blöta ved får blöt ved fast grannen har torr (${tog} tog, ${blotEld} blöt)`, tog > 0 && blotEld === 1],
+    ];
+  },
+};
+
+SCENARIER.branningljus = {
+  text: 'Kolmilan och blästerugnen lyser lite och gnistrar som en lägereld medan de brinner (steg 12.2.1 och 12.2.3): ljuset i LJUSKALLOR och gnistorna i brand.ts',
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,forhist.ar=0,brand.gnista=0.05' }, // fler gnistor, så att det syns på kort tid
+  kor: () => {
+    const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    klockan(s, 23);
+    (p.tek ??= {}).kolmila = 1;
+    const t = medBank(s, 'kolmila');
+    SIM.setStock(s, { ved: 30 });
+    const mitt = { x: t.x + 1, y: t.y + 1 }, langt = { x: t.x + 1 + SIM.MORKER.branningR + 2, y: t.y + 1 };
+    const fore = SIM.ljusAt(s, mitt.x, mitt.y);
+    SIM.branningKlar(s, p, { act: 'kola', phase: 'do', tx: t.x, ty: t.y, until: s.now, carry: 0, why: '', ref: t.id } as SIM.Task);
+    const ljus = SIM.ljusAt(s, mitt.x, mitt.y), bort = SIM.ljusAt(s, langt.x, langt.y);
+    // gnistorna: elden i byn är släckt och marken torr; milan tänder till sist något runt sig
+    s.fire.lit = false;
+    let brand: SIM.Brand | undefined;
+    for (let i = 0; i < 3000 && !brand; i++) { s.now += 300000; if (s.now >= SIM.branningarOf(s)[0].slut - 600000) s.now -= 3 * 3600000; SIM.torkaTest(s); SIM.brandSteg(s, 300); brand = s.brand?.kalla === 'gnista' ? s.brand : undefined; }
+    // utan milan: samma tid med släckt eld ger ingen gnista
+    const u = SIM.createState(1, START); klockan(u, 23); u.fire.lit = false;
+    for (let i = 0; i < 3000 && !u.brand; i++) { u.now += 300000; SIM.torkaTest(u); SIM.brandSteg(u, 300); }
+    const utan = u.brand?.kalla === 'gnista';
+    const nara = !utan && !!brand && Math.hypot(brand.x - mitt.x, brand.y - mitt.y) <= SIM.BRAND.gnistaR + SIM.BRAND.gnistVind + 2;
+    return [
+      [`milan lyser lite medan den brinner (före ${fore}, mitt i ${ljus.toFixed(2)}, ${SIM.MORKER.branningR + 2} rutor bort ${bort}), mindre än elden (${SIM.MORKER.branningR} mot ${SIM.MORKER.eldR} rutor)`, fore === 0 && ljus > 0 && bort === 0 && SIM.MORKER.branningR < SIM.MORKER.eldR],
+      [`milan gnistrar och kan tända en brand intill (${brand ? `vid ${brand.x}, ${brand.y}` : 'ingen'})`, nara],
     ];
   },
 };

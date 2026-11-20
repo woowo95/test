@@ -9,14 +9,14 @@ import { Act, HOUR, Person, State, Task } from './typer';
 import { getable, takeMaterial } from './behov';
 import { count } from './folk';
 import { halvOf } from './agande';
-import { amountOf, capacity, dropLoad, iHelaForradet, iRackhall, load, mayTake, helaAv, narmasteMed, ownsAmount, use, blotUttaget, vedIBordan } from './lager';
+import { amountOf, capacity, dropLoad, iHelaForradet, iRackhall, load, mayTake, helaAv, narmasteMed, ownsAmount, use, blotUttaget, vedIBordan, forstaMat } from './lager';
 import { vardHamtas } from './halsa';
 import { fartVid, halvbyggd, nastaAv, stationDef, tillbehorDef } from './stationer';
 import { PROJEKT } from './projekt';
 import { DORRAR, type DorrSlag } from './byggnad';
 import { troOf } from './religion';
 import { addDel, kyrkaId, sumOf } from './egendom';
-import { FOOD, SAKER, viktOf } from './saker';
+import { SAKER, viktOf } from './saker';
 import { DJURARTER, GORS, REP_TIMME, borjaTool, djurKvar } from './redskap';
 import { REST, RESTER, resterOver } from './rester';
 import { farorNu, heligtAvstar } from './kultlatt';
@@ -98,7 +98,7 @@ HAMTAS.fiske = { av: (s, p): Record<string, number> | undefined => mayTake(s, p,
 HAMTAS.tanda = { av: (s, p, tk) => tandHamtas(s, p, tk), byns: true };
 
 // måltiden vid bordet (val.ts, steg 11.1.77): en portion av den första maten hen får ta, bärd till bordet
-HAMTAS.maltid = { av: (s, p) => { const k = FOOD.find(q => mayTake(s, p, q) >= 1); return k ? { [k]: 1 } : undefined; } };
+HAMTAS.maltid = { av: (s, p) => { const k = forstaMat(s, p); return k ? { [k]: 1 } : undefined; } }; // den mat hen sedan äter (steg 12.1.56)
 
 // packningen till resan (resa.ts, steg 12.1.8): resenärens del, buren till samlingsplatsen
 HAMTAS.resa = { av: resaHamtas, byns: true };

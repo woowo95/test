@@ -1,7 +1,8 @@
+import { husIMening } from './ord';
 import { DAY, HOUR, MIN, Person, State, W } from './typer';
 import { balans } from './balans';
 import { clamp } from './slump';
-import { REL, byId, count, log, relKey, stat, think } from './folk';
+import { REL, byId, count, isKin, log, relKey, stat, think } from './folk';
 import { bitsOf, dorrDef, gridOf, housesOf, husById, type Hus } from './byggnad';
 import { moodOf } from './humor';
 
@@ -131,7 +132,7 @@ export function brytKlar(s: State, p: Person, ref?: number) {
   b.dorr = undefined; count(s, 'dorr_sonder'); count(s, 'rymning');
   const h = husById(s, p.fange.hus);
   slapps(s, p);
-  log(s, `${p.name} slog sönder dörren och rymde ur ${h ? h.namn.toLowerCase() : 'fängelset'}.`, 'world', [p.id]);
+  log(s, `${p.name} slog sönder dörren och rymde ur ${h ? husIMening(h.namn) : 'fängelset'}.`, 'world', [p.id]);
   fangelseKrok.larma(s, p);
   if (!p.gast) fangelseKrok.brott(s, p);
 }
@@ -204,8 +205,7 @@ export const fangEldBrinner = (s: State, hus: number) => (s.fangEld?.[hus] ?? 0)
 // ---------- mat och vatten till fången (steg 11.12.2) ----------
 // hur nära p står fången q: familj och partner 1, en vän FANG.van, annars FANG.framling
 export function fangNarhet(s: State, p: Person, q: Person) {
-  if (p.partner === q.id || q.partner === p.id || p.mother === q.id || p.father === q.id || q.mother === p.id || q.father === p.id) return 1;
-  if (p.mother !== undefined && (p.mother === q.mother || p.father === q.father)) return 1; // syskon
+  if (p.partner === q.id || q.partner === p.id || isKin(p, q)) return 1; // partnern, föräldrarna, barnen och syskonen (steg 12.1.60)
   const op = s.rels[relKey(p.id, q.id)]?.op ?? 0;
   return op > REL.van ? FANG.van : FANG.framling;
 }

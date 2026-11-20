@@ -4,28 +4,22 @@ import { delarAv, delarIRad, rivStation, stationAt, stationDef } from './station
 import { nyaGrannbyar } from './grannbyar';
 import { gastVapenSatt, gastAv, nyGast, nyttGastId } from './gast';
 import { gastNyckel } from './gastliv';
-import { migrateTek } from './teknik';
 import { stepDelning } from './delning';
-import { inZone, put, setStock, storeFromSums, zonesOf } from './lager';
+import { inZone, put, setStock, zonesOf } from './lager';
 import { kyrkaId } from './egendom';
-import { isTool } from './saker';
-import { migrateTools, newTing, toolsFromItems } from './agande';
+import { newTing } from './agande';
 import { MATERIAL, isWall } from './byggnad';
 import { enOrd, stor } from './ord';
 import { kladNyckel } from './klader';
-import { migrateFalt } from './odling';
 import { KARTA, behoverStorreKarta, storreKarta } from './kartflytt';
-import { VAR, inFas, nyKalender } from './tid';
-import { ageOf, alive, byId, getRel, log, newPerson, startSkills, stridSkills, think, SKALD_START, handelStart } from './folk';
-import { newSeder, sederTarget, TAGS } from './seder';
-import { clamp, gauss, rnd } from './slump';
-import { Act, DAY, MIN, Person, SEC, State, simulera, useMap } from './typer';
+import { VAR, nyKalender } from './tid';
+import { ageOf, getRel, log, newPerson, startSkills, think } from './folk';
+import { newSeder, sederTarget } from './seder';
+import { rnd } from './slump';
+import { DAY, MIN, Person, State, simulera, useMap } from './typer';
 import { startSmak } from './rykten';
-import { nyAndlighet } from './religion';
 import { hogtidForm, hogtidVarde, hogtider } from './kult';
 import { newFire } from './eld';
-import { UPPREPAT, lasAlder, lasArt, packaAlder, packaArt } from './trad';
-import { historikKolumner } from './historik';
 import { laggGruvor } from './gruva';
 import { varldMark } from './varlden';
 
@@ -77,193 +71,13 @@ function skapaBy(seed: number, now: number, storlek: { W: number; H: number }): 
 // ---------- uppgradering av sparade byar ----------
 // Varje ändring av hur en by sparas får en rad här, med nästa nummer. s.v är numret på den senaste uppgraderingen
 // byn fått; migrate kör de som är nyare, i nummerordning. En ny by får det senaste numret och behöver inga.
-// en post med nya nycklar (ny), när något byter namn i en uppgradering
-const nycklar = <T>(r: Record<string, T> | undefined, ny: (k: string) => string) => r && Object.fromEntries(Object.entries(r).map(([k, v]) => [ny(k), v]));
+// En by sparad före v378 (s.v under ALDSTA_SPARNING) går inte att öppna (steg 12.1.71): migrate kastar ForGammalBy, och
+// spelet säger att byn är för gammal. Uppgraderingarna före den är borttagna.
+export const ALDSTA_SPARNING = 24; // uppgraderingen i v378
+export class ForGammalBy extends Error {
+  constructor(public v: number) { super(`Byn är sparad i en för gammal version av spelet (sparversion ${v}, före v378) och går inte att öppna.`); this.name = 'ForGammalBy'; }
+}
 const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
-  [2, 'allt före v40: äldre fält, sammanslagna saker, redskap som ting och en brinnande eld i de allra första byarna', s => {
-    for (const p of s.people) {
-      const sk = p.skill as Record<string, number>; // eldkonsten, som inte är en färdighet sedan steg 3.10.8 (uppgradering 14)
-      if (sk.elda === undefined) sk.elda = clamp((ageOf(p, s.now) - 10) * 0.15, 0, 6);
-      if (p.warm === undefined) p.warm = 1;
-      if (p.toa === undefined) p.toa = 1;
-      if (!p.habit) p.habit = {};
-      if (p.pot.minne === undefined) p.pot.minne = clamp(10 + gauss(s, 'folk') * 7, 1, 20);
-      // äldre sparfiler: fälten hette _by och _guard
-      const o = p as Person & { _by?: number; _guard?: number };
-      if (o._by !== undefined) { p.pregnantBy ??= o._by; delete o._by; }
-      if (o._guard !== undefined) { p.guardDay ??= o._guard; delete o._guard; }
-      // byns gemensamma kunskap om svamp flyttas till var och en
-      if (s.kunskap?.svamp && p.died === undefined && !p.kunskap?.svamp) p.kunskap = { ...p.kunskap, svamp: { v: s.kunskap.svamp, t: s.now } };
-    }
-    delete s.kunskap;
-    s.kal ??= inFas(s); // byar från före kalendern kommer i fas med veckan
-    // äldre sparfiler: det som räknades ur loggen räknas nu i statistiken
-    if (s.log.some(l => l.text.includes('byns första yxa'))) (s.stat ??= {}).yxa1 ??= 1;
-    for (const l of s.log) if (l.kind === 'skill') { const m = l.text.match(/ kallas nu för (.+)\.$/), p = byId(s, l.ids?.[0]); const tag = m && p && TAGS.find(t => t.tag.toLowerCase() === m[1])?.tag; if (tag && !p.kallad?.includes(tag)) (p.kallad ??= []).push(tag); }
-    migrateTek(s);
-    if (!s.items && !s.stackar && !s.marken) s.items = { flinta: 1, torrgras: 8, grenar: 8 }; // de allra första sparfilerna
-    s.items ??= {};
-    // gniststenen finns inte längre: elden tänds med flinta
-    if (s.items.gniststen) { s.items.flinta = (s.items.flinta ?? 0) + s.items.gniststen; delete s.items.gniststen; }
-    for (const a of s.stackar ?? []) if (a.k === 'gniststen') a.k = 'flinta';
-    // små pinnar finns inte längre: de räknas som grenar
-    if (s.items.pinnar) { s.items.grenar = (s.items.grenar ?? 0) + s.items.pinnar; delete s.items.pinnar; }
-    for (const a of s.stackar ?? []) if (a.k === 'pinnar') a.k = 'grenar';
-    if (!s.ting) toolsFromItems(s); // först, eftersom stackarna skapar en tom lista med ting
-    if ('food' in s || s.mat || s.egna || Object.keys(s.items).some(k => !isTool(k))) storeFromSums(s); // äldre sparfiler (före v40): summorna blir stackar
-    migrateTools(s); // och redskapen bara ting
-    if (s.stackar) s.stackar = s.stackar.filter(a => !isTool(a.k));
-    for (const p of s.people) { const t = p.task; if (t?.items?.pinnar) { t.items.grenar = (t.items.grenar ?? 0) + t.items.pinnar; delete t.items.pinnar; if (t.cond?.pinnar !== undefined) { t.cond.grenar ??= t.cond.pinnar; delete t.cond.pinnar; } } }
-    if (!s.fire) {
-      s.fire = newFire();
-      Object.assign(s.fire, { lit: true, fuel: 4, litAt: s.founded, lightings: 1, litSec: (s.now - s.founded) / SEC });
-      s.fire.log.push({ t: s.founded, k: 'tänd' });
-    }
-    s.fire.ring ??= s.fire.lightings > 0; // en by som redan haft eld har sin stenring
-    if (!s.seder) { s.seder = newSeder(); s.seder.v = sederTarget(s); }
-  }],
-  [3, 'v40: femminuterstakten. Gamla fält för gång i levande läget och fynd per tur tas bort', s => {
-    for (const p of s.people) {
-      const t = p.task as (Record<string, unknown> & object) | undefined;
-      if (t) for (const k of ['fynd', 'wx', 'wy', 'hold', 'stint']) delete t[k];
-      if (p.rngs) delete (p.rngs as Record<string, unknown>).levande; // följden för det levande läget finns inte längre
-    }
-    if (s.rngs) delete (s.rngs as Record<string, unknown>).levande;
-  }],
-  [4, 'v48: vaktdygnet räknas efter kalendern (byts kl. 7), inte från grundandet. De gamla vaktdygnen glöms och en ny vakt väljs', s => {
-    delete s.lastGuardDay;
-    for (const p of s.people) delete p.guardDay;
-  }],
-  [5, 'v58: stationerna är tekniker (steg 2.2.11). Står en station i byn kan de som kunde det som räckte förut (kniven, korgen eller repet) bygga den', s => {
-    const forut: Record<string, string[]> = { slaktbank: ['kniv'], flatarbank: ['korg', 'rep'] };
-    for (const st of s.stationer ?? []) for (const p of s.people) if (forut[st.k]?.some(k => (p.tek?.[k] ?? 0) >= 1)) (p.tek ??= {})[st.k] = 1;
-    // den som kunde korg utan att kunna slöjdbänken kan fortfarande korg; tekniken lärs ut bara till den som kan bänken
-  }],
-  [6, 'v79: törsten (steg 2.4.1). Alla börjar otörstiga', s => {
-    for (const p of s.people) if (p.torst === undefined) p.torst = 1;
-  }],
-  [7, 'v80: kroppen (steg 2.5.1). Alla har allt sitt blod och inga skador', s => {
-    for (const p of s.people) if (p.blod === undefined) p.blod = 1;
-  }],
-  [8, 'v87: matlagningen (steg 2.8.1). Färdigheten Matlagning är snittet av samling och eldkonst', s => {
-    for (const p of s.people) if (p.skill.matlagning === undefined) p.skill.matlagning = (p.skill.samla + (p.skill as Record<string, number>).elda) / 2;
-  }],
-  [9, 'v110: fälten görs ruta för ruta (steg 2.10.13). Ett äldre fält blir 2 × 2 rutor', s => migrateFalt(s)],
-  [10, 'v124: matens dygn räknas av vad byn äter (steg 2.12.4), ungefär 0,45 av de gamla dygnen. Snittet räknas om lika mycket', s => { if (s.matSnitt !== undefined) s.matSnitt *= 0.45; }],
-  [11, 'v143: seden Jämlikhet – Rangordning (steg 3.5.1) börjar på 0', s => { s.seder.v.rang ??= 0; }],
-  [12, 'v146: egenskaperna Smidighet och Aggression (steg 3.7.6) slumpas för dem som redan finns', s => {
-    for (const p of s.people) for (const k of ['smidighet', 'aggression'] as const) {
-      if (p.pot[k] === undefined) p.pot[k] = clamp(10 + gauss(s, 'anlag') * 5, 1, 20);
-      if (p.anlag && p.anlag[k] === undefined) p.anlag[k] = p.pot[k];
-    }
-  }],
-  [13, 'v148: färdigheterna Närstrid och Träffsäkerhet (steg 3.7.2) efter ålder för dem som redan finns', s => {
-    for (const p of s.people) if (p.skill.narstrid === undefined) { if (alive(p)) stridSkills(s, p, ageOf(p, s.now)); else p.skill.narstrid = p.skill.traff = 0; }
-  }],
-  [14, 'v190: eldkonsten är ingen färdighet (steg 3.10.8). Den tas bort, och den som hade en mentor i att elda har ingen', s => {
-    for (const p of s.people) {
-      delete (p.skill as Record<string, number>).elda;
-      if ((p.mentorSk as string | undefined) === 'elda') { p.mentor = undefined; p.mentorSk = undefined; }
-    }
-  }],
-  [15, 'v194: kläderna är plagg av material (steg 3.10.12). Skinnrocken blir en rock av kaninskinn, vargpälsen en rock av vargskinn, skinnskorna skor av kaninskinn och bältet ett bälte av rep; att sy en skinnrock och skinnskor heter att sy en rock och skor', s => {
-    const SAK: Record<string, string> = { skinnrock: 'rock_kaninskinn', vargpals: 'rock_vargskinn', skinnskor: 'skor_kaninskinn', balte: 'balte_rep' };
-    const ACT: Record<string, string> = { skinnrock: 'rock', skinnskor: 'skor' };
-    const STAT: Record<string, string> = { skinnrockar: 'rock_kaninskinn', vargpalsar: 'rock_vargskinn', skinnskor: 'skor_kaninskinn', balten: 'balte_rep' };
-    const sak = (k: string) => SAK[k] ?? k;
-    for (const t of s.ting ?? []) { t.k = sak(t.k); if (t.halv) t.halv.gor = sak(t.halv.gor); }
-    for (const p of s.people) {
-      if (p.task) { if (ACT[p.task.act]) p.task.act = ACT[p.task.act] as Act; if (p.task.tool) p.task.tool = sak(p.task.tool); }
-      p.habit = nycklar(p.habit, k => ACT[k] ?? k)!;
-      p.smak = nycklar(p.smak, k => k.startsWith('a:') && ACT[k.slice(2)] ? 'a:' + ACT[k.slice(2)] : k);
-      for (const st of p.stulet ?? []) st.k = sak(st.k);
-      for (const e of p.intryck ?? []) for (const b of e.bev ?? []) if (b.sak) b.sak = sak(b.sak);
-    }
-    // räknarna: det som gjorts av varje slag, och de som har ett slag (stold_, utb_sonder_) eller en handling (prod_) sist.
-    // tek_balte och tekTim_balte är tekniken, som heter som förut
-    const efter: [string, Record<string, string>][] = [['stold_', SAK], ['utb_sonder_', SAK], ['prod_', ACT]];
-    s.stat = nycklar(s.stat, k => STAT[k] ?? efter.map(([f, r]) => k.startsWith(f) && r[k.slice(f.length)] ? f + r[k.slice(f.length)] : '').find(x => x) ?? k);
-  }],
-  [16, 'v207: ärter i stället för korn och två sorters frön (steg 3.10.23.8). Kornet blir ärter, också på fälten, och fröna delas lika på rovfrön och ärtfrön (det udda till rovfröna)', s => {
-    const sak = (k: string) => k === 'korn' ? 'arter' : k === 'fron' ? 'rovfron' : k;
-    // hälften av n hela saker där ag är vems de är (resten är byns): ärtfröna av var och ens del och av byns, och ag minskas
-    // med dem. Svaret är hur många som blir ärtfrön och vems de är
-    const halften = (n: number, ag?: Record<string, number>) => {
-      const agA: Record<string, number> = {};
-      let egna = 0, m = 0;
-      for (const o in ag ?? {}) { egna += ag![o]; agA[o] = Math.floor(ag![o] / 2); ag![o] -= agA[o]; m += agA[o]; }
-      m += Math.floor(Math.max(0, n - egna) / 2);
-      return { m, ag: ag ? agA : undefined };
-    };
-    // det som räknas i delar (arbetet mot nästa sak, det som försvunnit och det som blivit över) delas exakt
-    const delar = (r: Record<string, number> | undefined) => {
-      if (!r) return;
-      if (r.korn !== undefined) { r.arter = (r.arter ?? 0) + r.korn; delete r.korn; }
-      if (r.fron !== undefined) { r.rovfron = (r.rovfron ?? 0) + r.fron / 2; r.artfron = (r.artfron ?? 0) + r.fron / 2; delete r.fron; }
-    };
-    for (const o in s.delar ?? {}) delar(s.delar![o]);
-    delar(s.forlust); delar(s.andelRest);
-    for (const p of s.people) {
-      delar(p.delar);
-      const t = p.task;
-      if (t) {
-        // det som bärs: kornet byter namn, och av fröna blir hälften ärtfrön, med samma skick
-        const n = t.items?.fron;
-        if (n !== undefined) {
-          const h = halften(n, t.ag?.fron);
-          t.items!.fron = n - h.m;
-          if (h.m > 0) { t.items!.artfron = h.m; if (h.ag) t.ag!.artfron = h.ag; if (t.cond?.fron !== undefined) t.cond.artfron = t.cond.fron; }
-        }
-        for (const r of [t.items, t.cond, t.ag, t.kom] as (Record<string, unknown> | undefined)[]) if (r) for (const k of ['korn', 'fron']) if (k in r) { r[sak(k)] = r[k]; delete r[k]; }
-        if (t.tool) t.tool = sak(t.tool);
-      }
-      p.smak = nycklar(p.smak, k => k === 'm:korn' ? 'm:arter' : k);
-      for (const st of p.stulet ?? []) st.k = sak(st.k);
-      for (const e of p.intryck ?? []) for (const b of e.bev ?? []) if (b.sak) b.sak = sak(b.sak);
-    }
-    for (const f of s.falt ?? []) if ((f.groda as string | undefined) === 'korn') f.groda = 'arter';
-    // stackarna: kornet byter namn, och av varje stack med frön läggs hälften av var och ens (och byns) som ärtfrön i förrådet
-    const nya: [number, Record<string, number> | undefined, number][] = [];
-    for (const a of s.stackar ?? []) {
-      if (a.k !== 'korn' && a.k !== 'fron') continue;
-      if (a.k === 'fron') { const h = halften(a.n, a.ag); a.n -= h.m; if (h.m > 0) nya.push([h.m, h.ag, a.c]); }
-      a.k = sak(a.k);
-    }
-    for (const [n, ag, c] of nya) put(s, 'artfron', n, ag, c);
-    s.stat = nycklar(s.stat, k => k === 'stold_korn' ? 'stold_arter' : k === 'stold_fron' ? 'stold_rovfron' : k);
-  }],
-  [17, 'v211: andligheten (steg 4.1.1.1). De som redan finns får sin ur sin egen följd, barnen delvis efter föräldrarna', s => {
-    for (const p of [...s.people].sort((a, b) => a.born - b.born)) if (p.andlig === undefined) p.andlig = nyAndlighet(s, p, byId(s, p.mother), byId(s, p.father));
-  }],
-  [18, 'v234: färdigheten Skaldskap (steg 4.3.2.5) börjar av berättandet för dem som redan finns', s => {
-    for (const p of s.people) if (p.skill.skaldskap === undefined) p.skill.skaldskap = (p.skill.berattande ?? 0) * SKALD_START;
-  }],
-  [19, 'v240: färdigheten Handel (steg 4.4.1.4) börjar av berättandet och hantverket för dem som redan finns', s => {
-    for (const p of s.people) if (p.skill.handel === undefined) p.skill.handel = handelStart(p);
-  }],
-  [20, 'v242: grannklanerna (steg 4.4.3; från v531 uppgradering 56)', () => {}],
-  [21, 'v263: sederna formas bara av personerna (steg 4.5.4.9): händelsernas egna drag tas bort', s => { const sd = s.seder as { ev?: unknown; log?: unknown }; delete sd.ev; delete sd.log; }],
-  [22, 'v284: varje färdig brasa blir en lägereld på samma plats (steg 4.5.6.8, eld.ts), med samma nummer så att den som bär ved dit fortsätter', s => {
-    type Gammal = { id: number; k: string; x: number; y: number; kvar: number; klar?: number; eld?: { fuel: number; lit?: 1; litAt?: number; ut?: number; folk?: number[] } };
-    const br = ((s.stationer ?? []) as Gammal[]).filter(t => t.k === 'brasa' && t.kvar <= 0);
-    if (!br.length) return;
-    s.stationer = s.stationer!.filter(t => !br.includes(t as Gammal));
-    for (const t of br) {
-      const f = newFire(), e = t.eld;
-      Object.assign(f, { id: t.id, at: { x: t.x, y: t.y }, ring: true, klar: t.klar ?? s.now, folk: e?.folk ?? [], fuel: e?.fuel ?? 0, lit: !!e?.lit, litAt: e?.litAt, ut: e?.ut, lightings: e?.lit || e?.litAt !== undefined ? 1 : 0 });
-      (s.eldar ??= []).push(f);
-    }
-    s.byggV = (s.byggV ?? 0) + 1;
-  }],
-  [23, 'v377: mindre sparfil (steg 5.5.6): trädens ålder och sort som upprepningar, och ett byte som en bybo minns står bara med numret i loggen', s => {
-    if (s.tradAlder && !s.tradAlder.startsWith(UPPREPAT)) s.tradAlder = packaAlder(lasAlder(s.tradAlder));
-    if (s.tradSort && !s.tradSort.startsWith(UPPREPAT)) s.tradSort = packaArt(lasArt(s.tradSort));
-    for (const l of s.log) {
-      const b = l.byte, p = b && [b.a, b.b].map(id => byId(s, id)).find(q => q?.byten?.some(x => x.nr === b.nr));
-      if (b && p) { l.bnr = b.nr; delete l.byte; }
-    }
-  }],
-  [24, 'v378: historikens kolumner (eld sedan v357) i registrets ordning redan när byn läses in (steg 5.5.7)', s => historikKolumner(s)],
   [25, 'v510: de nya vågskålarna (steg 8.3.4 och 8.3.5) börjar på noll', s => { s.seder.v.fortjanst ??= 0; s.seder.v.fejd ??= 0; s.seder.v.krig ??= 0; s.seder.v.natur ??= 0; s.seder.v.andlig ??= 0; }],
   [26, 'v513: färdigheten Läkekonst (steg 9.5.7) börjar på noll', s => { for (const p of s.people) p.skill.lakekonst ??= 0; }],
   [27, 'v518: handlaren är en person bland folket (steg 9.2.111, gast.ts): namnet, hemmet, klanen, platsen och färdigheten flyttar till personen', s => {
@@ -472,9 +286,11 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }
 function uppgradera(s: State) {
+  if ((s.v ?? 1) < ALDSTA_SPARNING) throw new ForGammalBy(s.v ?? 1);
   { const g = s as State & { tabun?: unknown; tabuAkt?: unknown }; delete g.tabun; delete g.tabuAkt; } // tabun togs bort (steg 10.2.41)
   if (s.stationer?.some(t => (t.k as string) === 'vaggbrade')) s.stationer = s.stationer.filter(t => (t.k as string) !== 'vaggbrade'); // väggbrädet togs bort (steg 10.2.47)
   for (const p of s.people) if (p.tek?.vaggbrade !== undefined) delete p.tek.vaggbrade;
+  for (const p of s.people) delete (p as { sickUntil?: number }).sickUntil; // den gamla sjukklockan (före steg 9.5.1) togs bort (steg 12.1.91)
   if (s.plockat) for (const k in s.plockat) if (k.startsWith('ho:')) delete s.plockat[k]; // hötuvorna finns inte: höet är gräset (steg 10.10.9)
   useMap(s);
   if (behoverStorreKarta(s)) storreKarta(s); // först av allt, innan något räknats på den gamla kartan (steg 2.10.9, kartflytt.ts)

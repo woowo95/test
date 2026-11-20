@@ -5,10 +5,9 @@
 // (KROPP.dodBas, dodAlder och dodTakt), så bytet sker vid en känd tid: det ligger i världens kö (KOHANDELSER.ledare).
 // De fasta personerna sparas i liten form (FastPerson i radtal.ts: namn, kön, född, roll, nyckeln och dödsdagen);
 // egenskaperna byggs ur nyckeln när de behövs (fastEgenskaper). Den första ledaren är hövdingen huvudbyn redan känner (eller
-// grundaren av en by som bröt sig ur), och vid bytet blir den nya hövding i huvudbyns förbindelse. När ledaren byts faller
-// hälften av mutornas verkan bort (ledarBytet i byrel.ts), och världens krönika får raden Ny ledare.
+// grundaren av en by som bröt sig ur), och vid bytet blir den nya hövding i huvudbyns förbindelse. När ledaren byts får
+// världens krönika raden Ny ledare.
 import { balans } from './balans';
-import { ledarBytet } from './byrel';
 import { KROPP, egenskaperUr, namnUr } from './folk';
 import { lever } from './rad';
 import { BYSORTER, FastPerson, radNr, VarldRad } from './radtal';
@@ -61,12 +60,11 @@ export function tillsatt(vl: Varlden, r: VarldRad, t: number, forsta = false): F
   return f;
 }
 
-// ledaren dör vid sin tid: en ny tillsätts i en by som lever, och mutorna förlorar hälften av sin verkan
+// ledaren dör vid sin tid: en ny tillsätts i en by som lever
 KOHANDELSER.ledare = (_s: State, vl: Varlden, p) => {
   const r = radNr(vl, p.sak), l = r && radLedare(r);
   if (!r || !l || l.nyckel !== p.data?.nyckel) return;
   r.fasta.splice(r.ledare!, 1); delete r.ledare;
-  ledarBytet(vl, r.nr);
   if (!lever(vl, r) || !BYSORTER[r.sort].ledare) return;
   synLedare(r, tillsatt(vl, r, p.t), l);
   varldHandelse(vl, 'nyLedare', p.t, { by: r.nr });

@@ -1,4 +1,4 @@
-import { bedTile, sovplatser } from './byggnader';
+import { HUS, bedTile, sovplatser } from './byggnader';
 import { Hus, Rum, gridOf } from './byggnad';
 import { balans } from './balans';
 import { brasorOf } from './brasor';
@@ -20,7 +20,6 @@ export const RUM = balans('rum', {
   pryttMin: 3, // så många saker som pryder innan rummet är prytt
   smutsMin: 0.2, // en fläck på golvet räknas som smuts när den är så här tydlig
   hyddaMax: 12, // rutor: ett rum med sovplatser och kök räknas som en hydda upp till den här ytan
-  langhusSov: 8, // så många sovplatser ett långhus har
   salPlatser: 8, // så många sittplatser (bord gånger bordPlatser) en samlingssal har
   bordPlatser: 4, // ungefär så många sitter vid ett bord
   vilaKok: 0.12, // så mycket sämre man vilar i ett kök (rök)
@@ -30,7 +29,7 @@ export const RUM = balans('rum', {
 
 // det som står i rummet, räknat en gång per rum
 export interface RumInfo {
-  rutor: number; sida: number; sov: number; folk: number; bord: number; eld: number; arbete: number; forvar: number; scen: number;
+  rutor: number; sov: number; folk: number; bord: number; eld: number; arbete: number; forvar: number; scen: number;
   tork: number; pynt: number; smuts: number; slakt: number; krubba: number; kok: number; bara: Set<string>; smedja?: number;
 }
 export type RumSlag = 'grund' | 'egenskap' | 'kombination';
@@ -57,7 +56,7 @@ export const RUMSTYPER = {
   trangt: { namn: 'Trångt', ikon: '👥', slag: 'egenskap', om: 'Fler sover här än ytan räcker till', krav: i => i.folk > i.sov },
   smutsigt: { namn: 'Smutsigt', ikon: '😣', slag: 'egenskap', om: 'Smuts på golvet', krav: i => i.smuts >= 1 },
   hydda: { namn: 'Hydda', ikon: '🏠', slag: 'kombination', om: 'Man sover och lagar mat i samma lilla rum', krav: (i, t) => (t.has('sovrum') || t.has('sovsal')) && t.has('kok') && i.rutor <= RUM.hyddaMax, delar: ['sovrum', 'sovsal', 'kok'] },
-  langhus: { namn: 'Långhus', ikon: '🏠', slag: 'kombination', om: 'Sovsal, kök och matsal i ett', krav: (i, t) => t.has('sovsal') && t.has('kok') && t.has('matsal') && i.sov >= RUM.langhusSov, delar: ['sovsal', 'kok', 'matsal'] },
+  langhus: { namn: 'Långhus', ikon: '🏠', slag: 'kombination', om: 'Sovsal, kök och matsal i ett', krav: (i, t) => t.has('sovsal') && t.has('kok') && t.has('matsal') && i.sov >= HUS.langhus, delar: ['sovsal', 'kok', 'matsal'] },
   storstuga: { namn: 'Storstuga', ikon: '🏠', slag: 'kombination', om: 'Kök och matsal, och ingen sover här', krav: (i, t) => t.has('kok') && t.has('matsal') && i.sov === 0, delar: ['kok', 'matsal'] },
   samlingssal: { namn: 'Samlingssal', ikon: '🪑', slag: 'kombination', om: 'Bord i ett varmt rum med många sittplatser, och ingen sover här', krav: (i, t) => t.has('matsal') && t.has('varmt') && i.bord * RUM.bordPlatser >= RUM.salPlatser && i.sov === 0, delar: ['matsal', 'varmt'] },
   gillesal: { namn: 'Gillesal', ikon: 'scen', slag: 'kombination', om: 'En samlingssal med en scen', krav: (_i, t) => t.has('samlingssal') && t.has('scensal'), delar: ['samlingssal', 'scensal'] },
@@ -78,11 +77,7 @@ export const RUM_MINUS: RumMinus[] = [
 ];
 
 export function rumInfo(s: State, r: Rum): RumInfo {
-  const rutor = new Set(r.tiles), i: RumInfo = { rutor: r.tiles.length, sida: 0, sov: sovplatser(s, r), folk: 0, bord: 0, eld: 0, arbete: 0, forvar: 0, scen: 0, tork: 0, pynt: 0, smuts: 0, slakt: 0, krubba: 0, kok: 0, bara: new Set() };
-  if (r.tiles.length) {
-    const xs = r.tiles.map(t => t % W), ys = r.tiles.map(t => Math.floor(t / W));
-    i.sida = Math.min(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) + 1;
-  }
+  const rutor = new Set(r.tiles), i: RumInfo = { rutor: r.tiles.length, sov: sovplatser(s, r), folk: 0, bord: 0, eld: 0, arbete: 0, forvar: 0, scen: 0, tork: 0, pynt: 0, smuts: 0, slakt: 0, krubba: 0, kok: 0, bara: new Set() };
   for (const p of living(s)) { const t = bedTile(s, p); if (t !== undefined && rutor.has(t)) i.folk++; }
   for (const t of stationerOf(s)) {
     if (!isKlar(t)) continue;
@@ -149,5 +144,3 @@ export function rumVila(s: State, r: Rum | undefined) {
 // ett färdigt hus där inget står (inget rum har en tagg) heter tomt hus tills något står där (steg 10.2.39)
 export const husTomt = (s: State, h: Hus) => !!h.klar && gridOf(s).rooms.filter(r => r.hus === h.id && r.tiles.length).every(r => rumTaggar(s, r).size === 0);
 export const husVisas = (s: State, h: Hus) => husTomt(s, h) ? 'Tomt hus' : h.namn;
-// rummets namn efter taggarna, till gränssnittet
-export const rumNamn = (s: State, r: Rum) => rumVisas(s, r).map(t => t.namn).join(', ');

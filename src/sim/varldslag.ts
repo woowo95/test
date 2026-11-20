@@ -70,6 +70,3 @@ export function varldTill(s: State, till: number) {
   }
 }
 
-// världens rader får tillsammans kosta högst så stor del av huvudbyns datortid (Världens kostnad och lagringen); mäts med
-// npm run varldkostnad (steg 11.2.18)
-export const VARLDKOSTNAD = { andel: 0.02 };

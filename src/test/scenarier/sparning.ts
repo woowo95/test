@@ -7,7 +7,7 @@ import { kanonisk } from '../pool';
 import { setItems, setFood, Koll, kor, SCENARIER, testBy, utanWebblasare } from './hjalp';
 import { setByn } from '../../ui/lage';
 import { tal as talFlik, talVal } from '../../ui/flikar/tal';
-import { lasBy, lasEllerFlytta, minnesBas, sparaBy } from '../../ui/lagring';
+import { lasBy, lasFel, minnesBas, sparaBy, tolkaText } from '../../ui/lagring';
 
 SCENARIER.historik = {
   lang: true,
@@ -133,16 +133,16 @@ SCENARIER.sparning = {
     const delar = serializeParts(s), hel = serialize(s);
     const ater = JSON.parse(joinParts(Object.values(delar))), ny = migrate(JSON.parse(joinParts(Object.values(delar))));
     const kb = Object.fromEntries(Object.entries(delar).map(([d, t]) => [d, Math.round(t.length / 1024)]));
-    // en by från före v40 (sparversion 1) med gamla fält från gången i levande läget uppgraderas en gång, i nummerordning
-    const gammal = JSON.parse(hel), gp = gammal.people.find((p: Person) => p.task);
-    gammal.v = 1; Object.assign(gp.task, { fynd: 2, wx: 1, wy: 1, hold: 5, stint: 3 }); (gp.rngs ??= {}).levande = 7;
+    // en by sparad i v378 (sparversion 24, den äldsta som går att öppna) uppgraderas en gång, i nummerordning; en äldre by
+    // går inte att öppna, och felet säger att den är för gammal (steg 12.1.71)
+    const gammal = JSON.parse(hel); gammal.v = SIM.ALDSTA_SPARNING;
     migrate(gammal);
-    const uppgr = gammal.v === SPARVERSION && !['fynd', 'wx', 'wy', 'hold', 'stint'].some(k => k in gp.task) && !('levande' in gp.rngs);
+    const uppgr = gammal.v === SPARVERSION;
     const igen = JSON.stringify(gammal); migrate(gammal);
-    // en sparfil från före v40 där redskapen bara fanns som summor i s.items, bredvid annat: varje helt redskap blir ett ting
-    const forr = JSON.parse(hel); delete forr.ting; delete forr.stackar; forr.items = { yxa: 2, grenar: 7 }; forr.v = 1;
-    for (const p of forr.people) p.task = undefined;
-    const fm = migrate(forr), yxor = tingOf(fm).filter(t => t.k === 'yxa').length, gamlaGrenar = amountOf(fm, 'grenar');
+    const forGammal = (v: number | undefined) => { const o = JSON.parse(hel); o.v = v; try { migrate(o); return ''; } catch (e) { return e instanceof SIM.ForGammalBy ? e.message : String(e); } };
+    const avvisad = [SIM.ALDSTA_SPARNING - 1, 1, undefined].map(forGammal);
+    const gTxt = JSON.parse(hel); gTxt.v = SIM.ALDSTA_SPARNING - 1; lasFel.forGammal = '';
+    const spelet = tolkaText(JSON.stringify(gTxt)) === null && lasFel.forGammal.includes('för gammal'); lasFel.forGammal = '';
     // sparningen bara läser: en by som sparas varje timme som gränssnittet gör (serialize och serializeParts) blir samma
     // by som en som aldrig sparas. Två döda med en relation: den städas bort i timblocket (compact, steg.ts) i båda
     const sparaSomUI = (v: State) => { serialize(v); serializeParts(v); };
@@ -163,8 +163,8 @@ SCENARIER.sparning = {
       [`relationer mellan två döda städas bort i simuleringen (${relDoda} relationer före)`, dodaStadat],
       [`byn delas i ${Object.keys(delar).join(', ')} (${Object.entries(kb).map(([d, n]) => `${d} ${n} KB`).join(', ')})`, ['byn', 'folket', 'kartor', 'loggen'].every(d => d in delar) && delar.folket.includes('"people"') && !delar.byn.includes('"people"')],
       ['delarna blir samma by igen', isDeepStrictEqual(ater, JSON.parse(hel)) && ny.people.length === s.people.length && ny.now === s.now],
-      [`en gammal by uppgraderas till sparversion ${SPARVERSION} och gamla fält försvinner`, uppgr],
-      [`redskapen i en sparfil från före v40 blir ting (${yxor} yxor av 2, ${gamlaGrenar} grenar av 7)`, yxor === 2 && Math.abs(gamlaGrenar - 7) < 1e-6],
+      [`en by från v378 uppgraderas till sparversion ${SPARVERSION}`, uppgr],
+      [`en by sparad före v378 går inte att öppna, och felet säger att den är för gammal (${avvisad[0]})`, avvisad.every(m => m.includes('för gammal')) && spelet],
       ['en uppgraderad by ändras inte av att uppgraderas igen', JSON.stringify(gammal) === igen],
       [`en ny by har den senaste sparversionen (${s.v})`, s.v === SPARVERSION],
       // näringsvärdena och mättnaden avrundas var för sig; profilen får inte jämnas ut till mättnaden vid inläsningen
@@ -240,7 +240,7 @@ SCENARIER.slump = {
     for (const q of h.people) q.tek = { ...q.tek, yxa: 1 };
     const sett = new Set<string>();
     const hd = drag(h, 'val', () => {
-      for (const [mat, flinta, ved] of [[200, 1, 50], [200, 0, 50], [200, 1, 0]]) {
+      for (const [mat, flinta, ved] of [[200, 1, 50], [200, 0, 300], [200, 1, 0]]) { // utan flinta och med ved nog letar man flinta (raden leta, steg 12.1.39)
         setFood(h, mat); setItems(h, { flinta, torrgras: 20, grenar: 20 }); setAmount(h, 'ved', ved);
         for (const q of hv()) addTool(h, 'yxa', q);
         for (let i = 0; i < 200; i++) {
@@ -354,7 +354,7 @@ SCENARIER.kartminne = {
 };
 
 SCENARIER.sparbas = {
-  text: 'Sparningen i webbläsarens databas (steg 11.2.1): byn sparas som en post per del och blir exakt samma by igen, och en by sparad på det gamla sättet går att ladda och flyttas över',
+  text: 'Sparningen i webbläsarens databas (steg 11.2.1): byn sparas som en post per del och blir exakt samma by igen',
   kor: async () => {
     const s = cloneState(testBy(3)), bas = minnesBas();
     await sparaBy(bas, 'egen', s);
@@ -365,16 +365,6 @@ SCENARIER.sparbas = {
     // byn som lästs in utvecklas exakt som den som sparades
     let sammaSen = false;
     if (r) { kor(s, 2); kor(r.by, 2); sammaSen = kanonisk(serialize(r.by)) === kanonisk(serialize(s)); }
-    // en by sparad på det gamla sättet: hela byn som en text i det enkla minnet
-    const gbas = minnesBas(), gtxt = serialize(createState(7, START));
-    let glomd = false;
-    const gammal = { hamta: () => (glomd ? null : gtxt), glom: () => { glomd = true; } };
-    const g = await lasEllerFlytta(gbas, 'egen', gammal), igen = await lasBy(gbas, 'egen');
-    const gOk = !!g && kanonisk(serialize(g.by)) === kanonisk(gtxt);
-    // en annan by med sin tid (byar.ts): den gamla posten { t, vagg } flyttas över med tiden
-    const abas = minnesBas(), atxt = JSON.stringify({ t: gtxt, vagg: 12345 });
-    const a = await lasEllerFlytta<{ vagg?: number }>(abas, 'samhalle-by-x', { hamta: () => atxt, glom: () => {} }, t => { const o = JSON.parse(t); return { t: o.t, extra: { vagg: o.vagg } }; });
-    const a2 = await lasBy<{ vagg?: number }>(abas, 'samhalle-by-x');
     // en ny by sparad på samma plats har färre veckor i historiken: de gamla delarna försvinner
     await sparaBy(bas, 'egen', createState(5, START));
     const kvar = [...bas.poster.keys()].filter(k => k.startsWith('egen/')), nyDelar = Object.keys(serializeParts(createState(5, START)));
@@ -382,9 +372,6 @@ SCENARIER.sparbas = {
       [`en post per del och en för byn (${delposter.length} delar, ${Object.keys(delar).length} i sparningen)`, enPerDel],
       ['byn som läses är exakt den som sparades', lika],
       ['och den utvecklas exakt likadant två timmar framåt', sammaSen],
-      ['en by sparad på det gamla sättet går att ladda', gOk],
-      ['den flyttas över: den står i databasen och tas bort ur det enkla minnet', glomd && !!igen && kanonisk(serialize(igen.by)) === kanonisk(gtxt)],
-      ['en annan by flyttas över med sin tid', a?.extra?.vagg === 12345 && a2?.extra?.vagg === 12345 && !!a2],
       [`en ny by på samma plats lämnar inga gamla delar kvar (${kvar.length} delar)`, kvar.length === nyDelar.length && kvar.every(k => nyDelar.includes(k.slice(5)))],
     ];
   },

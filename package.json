@@ -29,7 +29,6 @@
     "vacktmatt": "tsx src/test/vacktmatt.ts",
     "hus": "tsx src/test/hus.ts",
     "strid": "tsx src/test/strid.ts",
-    "prov": "tsx src/test/prov.ts",
     "talen": "tsx src/test/talen.ts",
     "recept": "tsx src/test/recept.ts",
     "vard": "tsx src/test/vard.ts",

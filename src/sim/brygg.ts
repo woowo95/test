@@ -7,7 +7,7 @@ import { balans } from './balans';
 import { isFood } from './saker';
 import { foodDays } from './ekonomi';
 import { buffert, villHaAv, Materialslag } from './forradsmal';
-import { count, forstaGang, gjort, living, log } from './folk';
+import { count, forstaGang, gjort, log } from './folk';
 import { Station, isKlar, stationerOf } from './stationer';
 import { DAY, HOUR, MIN, Person, State } from './typer';
 import { temperature } from './vader';
@@ -89,10 +89,7 @@ export function maltaKlar(s: State, p: Person, ref?: number) {
 }
 // ölet (steg 9.6.13): byn kommer på det när den har korn och har gjort vin några gånger
 export function olUpptackt(s: State) {
-  if ((s.stat?.brygt_vin ?? 0) < BRYGG.olVin || living(s).some(p => knows(p, 'ol'))) return;
-  const nya = living(s).filter(p => knows(p, 'bryggkar') && knows(p, 'sadesodling'));
-  for (const p of nya) learn(s, p, TEK.ol);
-  if (nya.length && forstaGang(s, 'olForsta')) log(s, `${nya[0].name} förstår att kornet kan jäsa till öl som bären till vin.`, 'world', [nya[0].id]);
+  if ((s.stat?.brygt_vin ?? 0) >= BRYGG.olVin) upptack(s, TEK.ol, p => knows(p, 'bryggkar') && knows(p, 'sadesodling'), 'olForsta', p => `${p.name} förstår att kornet kan jäsa till öl som bären till vin.`);
 }
 // ---------- brännpannan (steg 10.7.26, Mat, matlagning och dryck: Spriten) ----------
 // Pannan är ett tillbehör på bryggkaret med en egen liten eld (ELDSTATIONER.bryggkar). Bränningen har tre led: en kruka vin eller
@@ -122,10 +119,7 @@ export function brannKlar(s: State, p: Person, ref?: number) {
 brannKrok.tim = (_s, t) => { const b = (t as Station).bran; return (b ? Math.max(0, b.kvar) : BRYGG.brannKok * MIN) / HOUR; };
 // mjödet (steg 10.7.25): byn kommer på det när den har honung och har gjort vin några gånger
 export function mjodUpptackt(s: State) {
-  if ((s.stat?.brygt_vin ?? 0) < BRYGG.mjodVin || amountOf(s, 'honung') < 1 || living(s).some(p => knows(p, 'mjod'))) return;
-  const nya = living(s).filter(p => knows(p, 'bryggkar'));
-  for (const p of nya) learn(s, p, TEK.mjod);
-  if (nya.length && forstaGang(s, 'mjodForsta')) log(s, `${nya[0].name} förstår att honungen kan jäsa i vatten som bären till vin.`, 'world', [nya[0].id]);
+  if ((s.stat?.brygt_vin ?? 0) >= BRYGG.mjodVin && amountOf(s, 'honung') >= 1) upptack(s, TEK.mjod, p => knows(p, 'bryggkar'), 'mjodForsta', p => `${p.name} förstår att honungen kan jäsa i vatten som bären till vin.`);
 }
 // arbetet är klart (KLAR i steg.ts): en ny sats i karet, eller den klara satsen upphälld i krukorna
 export function bryggKlar(s: State, p: Person, ref?: number) {
@@ -176,7 +170,7 @@ export function stepBrygg(s: State) {
 export type { VatskaId };
 import { TORK, torkarna } from './matlagning';
 import { utsadeKrok } from './ratter';
-import { TEK, learn } from './teknik';
+import { TEK, upptack } from './teknik';
 import { rnd } from './slump';
 import { amountOf } from './lager';
 import { brannKrok, eldKan, stationBrinner } from './stationseld';

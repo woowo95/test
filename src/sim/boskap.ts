@@ -1,3 +1,4 @@
+import { gen } from './ord';
 // ---------- boskapen: får och getter (fas 9.8, Djuren i detalj) ----------
 // Fåren och getterna köps av handlaren som levande djur (varorna levfar och levget i HANDLARVAROR, handel.ts): när en sådan vara
 // ligger i byn blir den ett djur (tamdjur.ts) som ägs av den som köpte det och betar i hagen (hage.ts). På våren får en vuxen
@@ -7,7 +8,7 @@
 // (stepBoskap, steg.ts), likadant i båda lägena, med byns följd 'tamdjur'.
 import { balans } from './balans';
 import { spand } from './agande';
-import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning } from './folk';
+import { ALDER, ageOf, byId, count, forstaGang, gjort, log, ovning, annanGor } from './folk';
 import { desperatMat, getable } from './behov';
 import { rnd } from './slump';
 import { amountOf, changed, gain, put, stacksOf, tidy } from './lager';
@@ -27,10 +28,10 @@ export const BOSKAP = balans('boskap', {
   beteDygn: 2, // ett ungt föds bara när betet i någon hage räcker så här många dygn också för det (steg 10.2.33)
   sistVarde: 5, // det sista djuret av sitt kön i arten är så här mycket mer värt att behålla
   ullTim: 1 / 48, // ullen växer ut på två dygn (två år i spelet)
-  klippMin: 20, // minuter det tar att klippa ett får
+  klippMin: 5, // minuter det tar att klippa ett får (en stor sak i Arbetstider)
   ovning: 0.03, // djurskötseln växer så här mycket när man klipper
   mjolkTim: 1 / 12, // en vuxen get har mjölk att ge två gånger om dygnet (utom i istiden)
-  mjolkMin: 15, // minuter det tar att mjölka en get
+  mjolkMin: 3, // minuter det tar att mjölka en get (en liten sak)
 });
 // de levande djuren som handlaren säljer, och vilken art de blir
 export const LEVANDE: Record<string, TamArtId> = Object.fromEntries((Object.keys(TAMDJUR) as TamArtId[]).filter(id => tamArt(id).lev).map(id => [tamArt(id).lev!, id]));
@@ -95,7 +96,7 @@ export function klippVal(s: State, p: Person) {
   let b: Tamdjur | undefined, bd = 40;
   for (const d of tamdjurOf(s)) {
     if (!tamArt(d.art).ull || (d.ull ?? 0) < 1 || !vuxen(s, d) || (d.agare !== undefined && d.agare !== p.id)) continue;
-    if (living(s).some(q => q !== p && q.task?.act === 'klippa' && q.task.ref === d.id)) continue;
+    if (annanGor(s, p, 'klippa', d.id)) continue;
     const dd = Math.hypot(d.x - p.x, d.y - p.y);
     if (dd < bd) { b = d; bd = dd; }
   }
@@ -118,7 +119,7 @@ export function mjolkaVal(s: State, p: Person) {
   let b: Tamdjur | undefined, bd = 40;
   for (const d of tamdjurOf(s)) {
     if (!tamArt(d.art).mjolk || (d.mjolk ?? 0) < 1 || (d.agare !== undefined && d.agare !== p.id)) continue;
-    if (living(s).some(q => q !== p && q.task?.act === 'mjolka' && q.task.ref === d.id)) continue;
+    if (annanGor(s, p, 'mjolka', d.id)) continue;
     const dd = Math.hypot(d.x - p.x, d.y - p.y);
     if (dd < bd) { b = d; bd = dd; }
   }
@@ -148,7 +149,7 @@ const mjolkKar = (s: State, n: number) => {
 // de djur byn inte har hö till över istiden (steg 9.8.9)
 export const SLAKTDJUR = balans('slaktdjur', {
   kvarLiv: 0.2, // ett djur slaktas när mindre än så här stor del av livet är kvar (steg 10.2.33; förr vid 75 %)
-  min: 15, // minuter det tar att avliva djuret och bära det till slaktbänken
+  min: 5, // minuter det tar att avliva djuret och bära det till slaktbänken (en stor sak)
 });
 export const SLAKTAD: Record<string, string> = { far: 'slaktfar', get: 'slaktget', ko: 'slaktko', oxe: 'slaktko', gris: 'slaktgris' }; // oxen slaktas som kon, hästen inte (steg 10.10.3)
 // fodret i förrådet räcker över istiden för de djur av arten som inte betar (grisen, steg 10.10.13): en sak om dygnet per djur (hungern
@@ -189,7 +190,7 @@ export function avlivaVal(s: State, p: Person) {
   const svalt = farorNu(s).svalt;
   for (const d of tamdjurOf(s)) {
     if (heligtAvstar(s, p, d.art, svalt)) continue; // det heliga djuret avlivas inte, utom i svält (steg 10.3.15)
-    if (living(s).some(q => q !== p && q.task?.act === 'avliva' && q.task.ref === d.id)) continue;
+    if (annanGor(s, p, 'avliva', d.id)) continue;
     if (slaktOrsak(s, d, p)) return d;
   }
   return undefined;
@@ -206,7 +207,7 @@ export function avlivaKlar(s: State, p: Person, ref?: number) {
   if (orsak === 'stold' && agare) {
     count(s, 'boskapsstold');
     handelse(s, p, 'boskapsstold', agare, tamArt(d.art).ord[1], agare);
-    log(s, `${p.name} slaktade ${agare.name}s ${tamArt(d.art).ord[1]} i hungern.`, 'rel', [p.id, agare.id]);
+    log(s, `${p.name} slaktade ${gen(agare.name)} ${tamArt(d.art).ord[1]} i hungern.`, 'rel', [p.id, agare.id]);
   }
   count(s, 'tamDog_slaktad'); count(s, `slaktad_${orsak}`); gjort(s, p, 'avlivat');
   if (forstaGang(s, 'slaktatTamdjur')) log(s, `${p.name} avlivade ${tamArt(d.art).ord[3]} och bar det till slaktbänken.`, 'world', [p.id]);

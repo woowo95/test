@@ -1,3 +1,4 @@
+import { stor as storOrd, tal } from './ord';
 import { clamp, gauss, pick, rnd } from './slump';
 import { SKRIFT } from './skriftTal';
 import { troshusKlart } from './troshus';
@@ -31,8 +32,7 @@ export const TRO = balans('tro', {
   takTro: 4, // högst så många trosriktningar samtidigt i byn (steg 8.5.11)
   spridBy: 0.5, // så mycket ett samtal kan få den som tvivlar att byta tro (steg 8.5.12)
   // den första tron (steg 4.1.2.1, "Den första tron" i designdokumentet)
-  grunda: 70, // så andlig måste den vara som tolkar ett tecken till en egen tro ...
-  grundaChans: 0.3, // ... och chansen att hen gör det när hen är med om tecknet
+  grunda: 70, // så andlig måste den vara som tolkar ett tecken till en egen tro (chansen står i TECKENTAL)
   namn: 3, // när så här många tror får tron ett namn, en symbol och en berättelse (steg 4.1.2.3)
   styrka: 60, // så stark är tron hos den som grundar den (0–100)
   bekrafta: 10, // ett nytt tecken gör tron så här mycket starkare hos den som redan tror
@@ -260,7 +260,7 @@ export const TECKEN = {
 } satisfies Record<string, TeckenDef>;
 export type TeckenTyp = keyof typeof TECKEN;
 const TDEF: Record<TeckenTyp, TeckenDef> = TECKEN;
-// chansen att tolka varje tecken till en egen tro (steg 8.5.18), ett balanstal per rad; det som saknas har TRO.grundaChans
+// chansen att tolka varje tecken till en egen tro (steg 8.5.18), ett balanstal per rad
 // alla trosnamnen (raden i världen, steg 11.3.11)
 export const TRONAMN: readonly string[] = Object.values(TECKEN).flatMap(d => (d as TeckenDef).namn);
 export const TECKENTAL = balans('tecken', {
@@ -287,6 +287,7 @@ export const tolkning = (tr: Tro) => `${tr.bakom} vill ${tr.vill}. Om man sviker
 // mycket andlig och inte tror på något kan tolka det till en egen tro. Drar ur personens följd 'tro'
 export function tecken(s: State, p: Person, k: TeckenTyp, om?: string) {
   if (!alive(p) || ageOf(p, s.now) < UPPV.fran) return;
+  count(s, 'tecken_' + k); // byns statistik: tecknen som någon var med om
   const text = teckenText(k, om);
   upplev(s, p, 'tecken', text);
   const egen = troOf(s, p.tro);
@@ -298,14 +299,22 @@ export function tecken(s: State, p: Person, k: TeckenTyp, om?: string) {
   grunda(s, p, k, om);
 }
 export const TRO_PROV = { utanTak: false }; // scenarierna som prövar många tecken i samma by
-export function grunda(s: State, p: Person, k: TeckenTyp, om?: string) {
-  const d = TDEF[k], tron = (s.tron ??= []);
-  if (!TRO_PROV.utanTak && tron.filter(t => t.slut === undefined).length >= TRO.takTro) return; // högst några trosriktningar samtidigt (steg 8.5.11)
-  const tr: Tro = {
-    id: tron.length + 1, grundare: p.id, gnamn: p.name, t: s.now, ar: yearNo(s), k, ...om ? { om } : {},
+// trons grundvärden ur tecknet d och grundaren p (fynd 195): vem som står bakom, vad den vill och skalorna, slumpen i den här ordningen
+function nyTro(s: State, p: Person, d: (typeof TDEF)[TeckenTyp], huvud: Pick<Tro, 'id' | 'grundare' | 'gnamn' | 't' | 'ar' | 'k' | 'om'>): Tro {
+  return {
+    ...huvud,
     bakom: pick(s, d.bakom, 'tro', p), vill: pick(s, d.vill, 'tro', p), svek: pick(s, d.svek, 'tro', p),
     natur: Math.round(clamp(d.natur + gauss(s, 'tro', p) * TRO.skalaSlump, 0, 100)), manga: Math.round(clamp(rnd(s, 'tro', p) * 100, 0, 100)), bekr: s.now, x: Math.floor(p.x), y: Math.floor(p.y),
   };
+}
+// gudens berättelse: anden i i (form ande) eller guden som en människa, med tecknet h, året ar och trons namn tro (fynd 195)
+const gudBer = (form: 'ande' | 'gud', h: string, ar: number, tro: string, namn: string, om: string, i?: string) => form === 'ande'
+  ? `Det började med ${h}, år ${ar}. De som tror på ${liten(tro)} förstod att det var anden i ${i} som visat sig. Anden heter ${namn} och råder över ${om}.`
+  : `År ${ar}, med ${h}, visade sig ${namn} för dem som tror på ${liten(tro)}. ${namn} ser ut som en människa och råder över ${om}.`;
+export function grunda(s: State, p: Person, k: TeckenTyp, om?: string) {
+  const d = TDEF[k], tron = (s.tron ??= []);
+  if (!TRO_PROV.utanTak && tron.filter(t => t.slut === undefined).length >= TRO.takTro) return; // högst några trosriktningar samtidigt (steg 8.5.11)
+  const tr = nyTro(s, p, d, { id: tron.length + 1, grundare: p.id, gnamn: p.name, t: s.now, ar: yearNo(s), k, ...om ? { om } : {} });
   tron.push(tr);
   for (const sk of s.troSkalor ?? []) satSkala(s, tr, sk); // skalorna som redan låsts upp i byn
   p.tro = tr.id; p.troStyrka = TRO.styrka;
@@ -339,7 +348,7 @@ function namnge(s: State, tr: Tro, folk: Person[]) {
   tr.sym = d.sym; tr.ber = berattelse(s, tr, p);
   nyGud(s, tr, d.omr, teckenText(tr.k, tr.om), p); // den första guden kommer ur tecknet
   count(s, 'tro_namn');
-  log(s, `${folk.length} tror nu på ${liten(tr.bakom)}. Tron har fått ett namn: ${tr.namn}.`, 'rel', folk.map(q => q.id));
+  log(s, `${storOrd(tal(folk.length))} tror nu på ${liten(tr.bakom)}. Tron har fått ett namn: ${tr.namn}.`, 'rel', folk.map(q => q.id));
   kronika(s, `År ${yearNo(s)}: ${tr.namn} fick sitt namn. ${tr.ber}`, 'tro');
 }
 
@@ -373,10 +382,10 @@ function nyGud(s: State, tr: Tro, omr: GudOmr, h: string, p: Person | undefined)
   if (fp) g = forfader(s, tr, fp, omr);
   else if (tr.natur < GUD.ande) {
     const i = pick(s, d.i, 'tro', p), namn = gudNamn(s, omr, p);
-    g = { omr: [omr], namn, form: 'ande', i, t: s.now, ar, bekr: s.now, ber: `Det började med ${h}, år ${ar}. De som tror på ${liten(tro)} förstod att det var anden i ${i} som visat sig. Anden heter ${namn} och råder över ${d.om}.` };
+    g = { omr: [omr], namn, form: 'ande', i, t: s.now, ar, bekr: s.now, ber: gudBer('ande', h, ar, tro, namn, d.om, i) };
   } else {
     const namn = gudNamn(s, omr, p);
-    g = { omr: [omr], namn, form: 'gud', t: s.now, ar, bekr: s.now, ber: `År ${ar}, med ${h}, visade sig ${namn} för dem som tror på ${liten(tro)}. ${namn} ser ut som en människa och råder över ${d.om}.` };
+    g = { omr: [omr], namn, form: 'gud', t: s.now, ar, bekr: s.now, ber: gudBer('gud', h, ar, tro, namn, d.om) };
   }
   (tr.gudar ??= []).push(g);
   count(s, 'gud_ny'); count(s, 'gud_' + g.form);
@@ -490,19 +499,15 @@ export function troUrRad(s: State, rt: { namn: string; krig: number }, folk: Per
   let h = 0; for (let i = 0; i < rt.namn.length; i++) h = (h * 31 + rt.namn.charCodeAt(i)) >>> 0;
   const k = ids.find(x => TDEF[x].namn.includes(rt.namn)) ?? ids[h % ids.length], d = TDEF[k], tron = (s.tron ??= []);
   const fran = Math.min(s.now, Math.max(t, p.born + ALDER.vuxen * DAY)), ar = yearNo(s, fran);
-  const tr: Tro = {
-    id: tron.length + 1, grundare: p.id, gnamn: p.name, t: fran, ar, k,
-    bakom: pick(s, d.bakom, 'tro', p), vill: pick(s, d.vill, 'tro', p), svek: pick(s, d.svek, 'tro', p),
-    natur: Math.round(clamp(d.natur + gauss(s, 'tro', p) * TRO.skalaSlump, 0, 100)), manga: Math.round(clamp(rnd(s, 'tro', p) * 100, 0, 100)), bekr: s.now, x: Math.floor(p.x), y: Math.floor(p.y),
-  };
+  const tr = nyTro(s, p, d, { id: tron.length + 1, grundare: p.id, gnamn: p.name, t: fran, ar, k });
   tron.push(tr);
   for (const sk of s.troSkalor ?? []) satSkala(s, tr, sk);
   (tr.sk ??= {}).krig = Math.round(rt.krig); // läggningen ur raden
   tr.namn = rt.namn; tr.sym = d.sym; tr.ber = berattelse(s, tr, p);
   const g = GUD_OMR[d.omr], namn = gudNamn(s, d.omr, p), hh = teckenText(k);
   const i = tr.natur < GUD.ande ? pick(s, g.i, 'tro', p) : undefined;
-  tr.gudar = [i ? { omr: [d.omr], namn, form: 'ande', i, t: fran, ar, bekr: s.now, ber: `Det började med ${hh}, år ${ar}. De som tror på ${liten(rt.namn)} förstod att det var anden i ${i} som visat sig. Anden heter ${namn} och råder över ${g.om}.` }
-    : { omr: [d.omr], namn, form: 'gud', t: fran, ar, bekr: s.now, ber: `År ${ar}, med ${hh}, visade sig ${namn} för dem som tror på ${liten(rt.namn)}. ${namn} ser ut som en människa och råder över ${g.om}.` }];
+  tr.gudar = [i ? { omr: [d.omr], namn, form: 'ande', i, t: fran, ar, bekr: s.now, ber: gudBer('ande', hh, ar, rt.namn, namn, g.om, i) }
+    : { omr: [d.omr], namn, form: 'gud', t: fran, ar, bekr: s.now, ber: gudBer('gud', hh, ar, rt.namn, namn, g.om) }];
   for (const q of folk) { q.tro = tr.id; q.troStyrka = TRO.styrka; }
   return tr;
 }

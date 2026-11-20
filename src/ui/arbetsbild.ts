@@ -1,8 +1,8 @@
 // Arbetena i bild (steg 5.1.9.4): bildstilens rörelser, redskap och effekter (anim.js, steg 5.2.4.8), så att den som
 // hugger, gräver eller slår flinta syns göra det. Få och generella delar (Björn 2026-11-04: inte en animation per sak):
-//   RORELSER: kroppens rörelse i fyra bilder, som kartfigurens armlägen (slå, stöta, pyssla och kasta)
+//   RORELSER: kroppens rörelse i fyra bilder, som kartfigurens armlägen (slå och stöta)
 //   REDSKAP:  redskapet i handen som skaft och huvud, ritat ur handen i armens riktning (ett nytt redskap är en rad)
-//   MATERIAL: färgerna på splittret (trä, sten, jord, blod, vatten, snö)
+//   MATERIAL: färgerna på splittret (trä, sten, jord och blod)
 //   ARBETEN:  en rad per handling i spelet: rörelsen, redskapet, effekten och materialet
 // Bilden väljs efter animationernas klocka (ui/animation.ts), en bild per slag och förskjutet per person, så att byn rör sig
 // i samma rytm men inte i takt. Bara utseende: spelets räkning ändras inte.
@@ -13,36 +13,34 @@ import type { Arm, Ben } from './folkbild';
 type Ramp = 'kol' | 'jord' | 'senap' | 'rost' | 'oliv' | 'barr' | 'skiffer' | 'ben';
 type Ton = [Ramp, number];
 // en bild: ben och arm i kartfiguren, riktningen redskapet pekar (r: framåt, nedåt), steg (1 träffen, 2 efteråt), ut
-// (kroppen en punkt fram eller bak) och för kasta om saken är i handen (hand)
-export interface RorelseBild { arm: Arm; ben?: Ben; r?: [number, number]; steg?: 1 | 2; ut?: number; hand?: boolean }
-export const RORELSER: Record<string, { namn: string; sitta?: boolean; bilder: RorelseBild[] }> = {
+// (kroppen en punkt fram eller bak)
+export interface RorelseBild { arm: Arm; ben?: Ben; r?: [number, number]; steg?: 1 | 2; ut?: number }
+export const RORELSER: Record<string, { namn: string; bilder: RorelseBild[] }> = {
   sla: { namn: 'Slå', bilder: [{ arm: 'lyfta', r: [0, -1] }, { arm: 'lyfta', r: [-1, -1] }, { arm: 'sla', r: [1, 1], steg: 1 }, { arm: 'sla', r: [1, 1], steg: 2 }] },
   stota: { namn: 'Stöta', bilder: [{ arm: 'framfor', r: [1, 0] }, { arm: 'framfor', r: [1, 0], ut: -1 }, { arm: 'sla', r: [1, 0], ut: 1, steg: 1 }, { arm: 'sla', r: [1, 0], steg: 2 }] },
-  pyssla: { namn: 'Pyssla', sitta: true, bilder: [{ arm: 'framfor', r: [1, 1] }, { arm: 'gang1', r: [1, 1], steg: 1 }, { arm: 'framfor', r: [1, 1] }, { arm: 'gang1', r: [1, 1], steg: 1 }] },
-  kasta: { namn: 'Kasta', bilder: [{ arm: 'framfor', r: [1, -1], hand: true }, { arm: 'lyfta', r: [-1, -1], hand: true }, { arm: 'sla', r: [1, 0] }, { arm: 'hanga' }] },
 };
 // skaft: hur långt (punkter från handen), bak: hur långt bakom handen (spjutet hålls på mitten), huvud: formen i änden
 export const REDSKAP: Record<string, { skaft: number; bak?: number; huvud: string }> = {
   yxa: { skaft: 3, huvud: 'blad' }, spade: { skaft: 5, huvud: 'spade' }, klubba: { skaft: 4, huvud: 'klubba' },
-  spjut: { skaft: 7, bak: 3, huvud: 'spets' }, kniv: { skaft: 1, huvud: 'egg' }, nal: { skaft: 0, huvud: 'nal' },
-  sten: { skaft: 0, huvud: 'sten' }, snoboll: { skaft: 0, huvud: 'snoboll' },
+  spjut: { skaft: 7, bak: 3, huvud: 'spets' }, kniv: { skaft: 1, huvud: 'egg' },
+  sten: { skaft: 0, huvud: 'sten' },
 };
 export const MATERIAL: Record<string, [Ton, Ton]> = {
   tra: [['senap', 3], ['jord', 3]], sten: [['skiffer', 3], ['ben', 2]], jord: [['jord', 1], ['jord', 2]],
-  blod: [['rost', 1], ['rost', 2]], vatten: [['ben', 3], ['skiffer', 3]], sno: [['ben', 3], ['ben', 2]],
+  blod: [['rost', 1], ['rost', 2]],
 };
 // en handling i spelet: rörelsen, redskapet, effekten (splitter), materialet och riktningen vid slaget
 export interface Arbete { rorelse: keyof typeof RORELSER; redskap?: string; effekt?: 'splitter' | 'traff'; material?: string; rSla?: [number, number] }
 const HUGGA: Arbete = { rorelse: 'sla', redskap: 'yxa', effekt: 'splitter', material: 'tra' };
 const GRAVA: Arbete = { rorelse: 'sla', redskap: 'spade', effekt: 'splitter', material: 'jord' };
+const BYGGA: Arbete = { rorelse: 'sla', redskap: 'klubba', effekt: 'splitter', material: 'tra' };
 const FLINTA: Arbete = { rorelse: 'sla', redskap: 'sten', effekt: 'splitter', material: 'sten' };
 export const ARBETEN: Record<string, Arbete> = {
   falla: HUGGA, hugga: HUGGA, klyva: HUGGA,                        // hugga
   krossa: FLINTA, yxa: FLINTA, kniv: FLINTA, spjut: FLINTA,          // slå flinta (och sten)
   odla: GRAVA, // gräva
   grava: GRAVA, stubbe: GRAVA, // graven och stubben grävs som latrinen och fältet (steg 9.2.48)
-  bygga: { rorelse: 'sla', redskap: 'klubba', effekt: 'splitter', material: 'tra' },
-  dorr: { rorelse: 'sla', redskap: 'klubba', effekt: 'splitter', material: 'tra' },
+  bygga: BYGGA, dorr: BYGGA, // dörren byggs som allt annat
   slakta: { rorelse: 'stota', redskap: 'kniv', effekt: 'splitter', material: 'blod', rSla: [1, 1] },
   samla: { rorelse: 'stota' }, // den som plockar från marken stöter med handen, utan redskap (steg 6.8.7)
   ved: { rorelse: 'stota' },
@@ -58,7 +56,7 @@ export const STRIDBILD: Record<string, Arbete> = {
 // bilden just nu för handlingen: benen, armen och var kroppen står (ut)
 export function arbetsBild(a: Arbete, ruta: number) {
   const R = RORELSER[a.rorelse], b = R.bilder[ruta % 4];
-  return { b, ben: (b.ben ?? (R.sitta ? 'sitta' : 'sta')) as Ben, arm: b.arm };
+  return { b, ben: (b.ben ?? 'sta') as Ben, arm: b.arm };
 }
 
 // redskapet, saken och splittret ur handen (hx, hy i världen), fram = 1 åt höger och -1 åt vänster, k = figurens storlek
@@ -77,14 +75,13 @@ export function ritaArbete(g: PIXI.Graphics, a: Arbete, b: RorelseBild, hx: numb
       case 'klubba': at(0, 0, ['jord', 3]); at(m[0], m[1], ['jord', 2]); at(-m[0], -m[1], ['jord', 2]); at(rx, ry, ['jord', 3]); break;
       case 'spets': at(0, 0, ['skiffer', 3]); at(rx, ry, ['skiffer', 2]); break;
       case 'egg': at(0, 0, ['skiffer', 3]); at(rx, ry, ['skiffer', 3]); break;
-      case 'nal': at(0, 0, ['ben', 3]); break;
-      case 'sten': case 'snoboll': { const [rp, a1, b1]: [Ramp, number, number] = R.huvud === 'sten' ? ['jord', 2, 0] : ['ben', 3, 2]; at(0, 0, [rp, a1]); at(1, 0, [rp, b1]); at(0, 1, [rp, b1]); at(1, 1, [rp, b1]); break; }
+      case 'sten': at(0, 0, ['jord', 2]); at(1, 0, ['jord', 0]); at(0, 1, ['jord', 0]); at(1, 1, ['jord', 0]); break;
     }
   }
-  // splittret: steg 1 nära träffen, steg 2 längre bort och högre; när man pysslar bara ett korn
+  // splittret: steg 1 nära träffen, steg 2 längre bort och högre
   if (b.steg && a.effekt === 'splitter') {
-    const M = MATERIAL[a.material ?? 'tra'] ?? MATERIAL.tra, liten = RORELSER[a.rorelse].sitta;
-    const lista = liten ? [[1, -1]] : b.steg === 1 ? [[1, -2], [-1, -1], [2, 0]] : [[3, -4], [-2, -3], [4, -1]];
+    const M = MATERIAL[a.material ?? 'tra'] ?? MATERIAL.tra;
+    const lista = b.steg === 1 ? [[1, -2], [-1, -1], [2, 0]] : [[3, -4], [-2, -3], [4, -1]];
     lista.forEach(([dx, dy], i) => p(t[0] + dx * fram, t[1] + dy, M[i % 2]));
   }
   // träffen: en ljus stjärna där slaget tar, bara i själva träffen (som bildstilens traff)

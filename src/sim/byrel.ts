@@ -4,8 +4,7 @@
 // det talet är relationen från den byn till huvudbyn. Grundläget räknas ur tron (samma tro drar ihop, en annan tro stöter bort
 // efter hur krigisk den egna tron är) och släktbanden (moderbyn och giftermålen, vl.slakt), och talet glöms mot grundläget med
 // BYREL.glom per dygn, minst ett steg (raden 'relationerna glöms' i PERIODRADER, rad.ts). Det som ändrar talet är raderna i
-// registret BYHANDELSER: den som tar emot handlingen ändrar sin syn på den som gjorde den. En muta går till ledaren själv
-// (vl.mutor); hälften av verkan faller bort när ledaren byts (steg 11.3.10).
+// registret BYHANDELSER: den som tar emot handlingen ändrar sin syn på den som gjorde den.
 import { balans } from './balans';
 import { Klan, andraInst } from './klaner';
 import { clamp } from './slump';
@@ -20,18 +19,16 @@ export const BYREL = balans('byrel', {
   slaktTak: 30, // ... högst så mycket
   moderby: 3, // en by och dess moderby har så många släktband från början
   // verkan av handlingarna i BYHANDELSER
-  handel: 2, gava: 1, muta: 4, fjask: 2, turne: 5, besked: 3, ovanligt: 6, mottagen: 3, bortvisad: 6,
+  handel: 2, gava: 1, turne: 5, besked: 3, ovanligt: 6, mottagen: 3, bortvisad: 6,
   lurad: 10, ran: 10, plundring: 20, dodade: 15, skandad: 5, bruten: 25, slappt: 6, avrattad: 20,
   turneMinns: 6, // en by minns den från huvudbyn som uppträtt där så många dygn (år i spelet), och dess handlare talar om hen så länge (steg 11.8.18)
 });
 type Tal = keyof typeof BYREL;
-export interface ByHandelse { namn: string; tal: Tal; tecken: 1 | -1; ledare?: true }
+export interface ByHandelse { namn: string; tal: Tal; tecken: 1 | -1 }
 // det som ändrar relationen: mottagarens syn på den som gjorde det, BYREL[tal] gånger mängden (gåvan: värdet i tiotal)
 export const BYHANDELSER = {
   handel: { namn: 'genomförd handel', tal: 'handel', tecken: 1 },
   gava: { namn: 'gåva', tal: 'gava', tecken: 1 },
-  muta: { namn: 'muta', tal: 'muta', tecken: 1, ledare: true },
-  fjask: { namn: 'fjäsk', tal: 'fjask', tecken: 1 },
   turne: { namn: 'turné', tal: 'turne', tecken: 1 },
   besked: { namn: 'vänligt besked', tal: 'besked', tecken: 1 },
   ovanligt: { namn: 'ovänligt besked', tal: 'ovanligt', tecken: -1 },
@@ -102,7 +99,6 @@ export function byHandelse(vl: Varlden, id: ByHandelseId, gor: number, mot: numb
   const h: ByHandelse = BYHANDELSER[id], d = Math.round(h.tecken * BYREL[h.tal] * mangd);
   mots(vl, gor, mot);
   satt(vl, mot, gor, relation(vl, mot, gor)! + d);
-  if (h.ledare) { const k = nyckel(mot, gor); (vl.mutor ??= {})[k] = (vl.mutor[k] ?? 0) + d; }
 }
 // gåvans verkan på mottagarens syn (steg 11.6.14): värdet (i grundvärde) i tiotal gånger BYREL.gava, i hela tal och lägst 1
 export const gavaRel = (varde: number) => Math.max(1, Math.round(BYREL.gava * varde / 10));
@@ -110,16 +106,6 @@ export const gavaRel = (varde: number) => Math.max(1, Math.round(BYREL.gava * va
 export function klanHandelse(vl: Varlden | undefined, k: Klan, id: ByHandelseId, mangd = 1) {
   if (vl && vl.huvud !== undefined && k.rad !== undefined) byHandelse(vl, id, vl.huvud, k.rad, mangd);
   else { const h: ByHandelse = BYHANDELSER[id]; andraInst(k, h.tecken * BYREL[h.tal] * mangd); }
-}
-// ledaren i byn nr byts (radperson.ts, steg 11.3.10): hälften av mutornas verkan på byns syn faller bort
-export function ledarBytet(vl: Varlden, nr: number) {
-  for (const k of Object.keys(vl.mutor ?? {})) {
-    const [a, b] = k.split('>').map(Number);
-    if (a !== nr) continue;
-    const m = vl.mutor![k], bort = Math.trunc(m / 2), v = relation(vl, a, b);
-    if (v !== undefined) satt(vl, a, b, v - bort);
-    if (m - bort) vl.mutor![k] = m - bort; else delete vl.mutor![k];
-  }
 }
 // en gång om dygnet (ett år i spelet): varje relation glöms mot grundläget, minst ett steg
 const glom = (v: number, mal: number) => v === mal ? v : v - Math.sign(v - mal) * Math.min(Math.abs(v - mal), Math.max(1, Math.round(Math.abs(v - mal) * BYREL.glom)));

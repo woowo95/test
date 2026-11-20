@@ -1,3 +1,4 @@
+import { gen } from './ord';
 import { overskott } from './teknik';
 // Sporten (steg 4.3.1, Kultur, sport och konst): barnens lekar blir sport för de vuxna. Några sociala sporter med enkla
 // föremål, när byn har ett överskott av mat och ved och folk har fritid. Sporten ger glädje och tränar bara färdigheter
@@ -20,16 +21,15 @@ import { FOREST } from './vag';
 import { HALSA, kanGa } from './halsa';
 import { ACTS, isWork } from './handlingar';
 import { duty } from './seder';
-import { raddFor } from './lagar';
-import { kartStridAv } from './kartstrid';
-import { rnd } from './slump';
+import { raddFor } from './radsla';
+import { kartStridAv, kartStridBorja } from './kartstrid';
+import { clamp, rnd } from './slump';
 import { hourOf } from './tid';
 import { snoPaMarken } from './vader';
 import { balans } from './balans';
 import { notis } from './notiser';
 import { och, tal } from './ord';
 import { STRID } from './strid';
-import { kartStridBorja } from './kartstrid';
 import { EFTER } from './efterstrid';
 // kampen i brottningen är slut: ringen är ledig igen (steg 10.1.7)
 EFTER.brottning = s => { if (s.sport) s.sport.brott = s.now; };
@@ -39,7 +39,6 @@ import { FEST, festNu, festVann } from './kultlatt';
 import { betalning } from './framtradande';
 import { ledareOf, legitimitet } from './styre';
 import { handelse } from './rykten';
-import { clamp } from './slump';
 
 export interface SportDef {
   id: string; namn: string;
@@ -101,7 +100,6 @@ export const SPORT = balans('sport', {
   vikt: 0.4, // vikten i fritiden (leisure i val.ts) att börja en match, gånger lugnet och (styrka + smidighet) / 20 ...
   med: 12, // ... och gånger så här mycket när en match väntar på spelare
   mat: 1.1, ved: 2, // fullt ut när maten räcker så här många dygn och veden så här många, mindre med mindre (overskott i teknik.ts, steg 10.2.43)
-  alderTill: 50, // över detta spelar man inte
   minuter: 10, spann: 10, // en match varar så här många minuter från att den börjar, plus upp till spann (steg 10.7.13)
   vanta: 10, // minuter: så länge väntar man på spelare; matchen börjar senast då, om det kommit nog
   // samlingen (steg 10.7.12): den som ropar hörs nara rutor. Var och en som hör vill vara med med chansen folj gånger överskottet
@@ -132,7 +130,7 @@ export const SPORT = balans('sport', {
 // matchen som pågår eller väntar på spelare: sporten, platsen, när den började (spelarnas task.ref) och slutar
 // p: den som samlade, lista: de som ville vara med vid ropet (raden sport i val.ts för dem dit), platser: var och ens plats,
 // titta: publiken i den ordning de kom (steg 10.7.16), igang: alla som var på väg har kommit fram (eller väntan är slut) och matchen har börjat
-export interface Match { k: string; x: number; y: number; start: number; slut: number; p?: number; lista?: number[]; platser?: Record<number, { x: number; y: number }>; igang?: true; borjar?: number; lag?: Record<number, 0 | 1>; spelat?: true; avgjord?: true; n?: number; brott?: number; brottare?: number[]; titta?: number[]; pris?: { t: number; k: string; av: number } } // pris: tävlingens pris, tinget och ledaren som satte upp det (steg 10.7.20) // brott: när kampen i brottningen (steg 9.2.92) är slut // n: så många som gått med (platsen i laget)
+export interface Match { k: string; x: number; y: number; start: number; slut: number; p?: number; lista?: number[]; platser?: Record<number, { x: number; y: number }>; igang?: true; borjar?: number; lag?: Record<number, 0 | 1>; spelat?: true; avgjord?: true; n?: number; brott?: number; brottare?: number[]; bud?: number[]; titta?: number[]; pris?: { t: number; k: string; av: number } } // pris: tävlingens pris, tinget och ledaren som satte upp det (steg 10.7.20) // brott: när kampen i brottningen (steg 9.2.92) är slut // bud: de som avstått från kampen för budet om ingen strid (fynd 322) // n: så många som gått med (platsen i laget)
 
 // matchens sammanställning (steg 5.4.8.1, Sporten i designdokumentet): sparas när matchen avgörs eller ställs in, inte ur
 // loggen. Raden i Händelser och notisen pekar dit med numret (LogEntry.match), och fliken Matchen (ui/flikar/match.ts) visar
@@ -174,12 +172,12 @@ function oppen(s: State) {
 }
 // hur många av föremålet k (ett redskap) byn vill ha: ett, när byn har vuxna nog till en sport som behöver det (VILL i redskap.ts)
 export const sportFor = (s: State, k: string) => SPORTER.some(d => d.foremal.includes(k) && vuxna(s) >= d.min) ? 1 : 0;
-const vuxna = (s: State) => living(s).filter(q => { const a = ageOf(q, s.now); return a >= ALDER.vuxen && a <= SPORT.alderTill; }).length;
+const vuxna = (s: State) => living(s).filter(q => ageOf(q, s.now) >= ALDER.vuxen).length;
 
 // vikten för sport i fritiden (leisure i val.ts): calm är lugnet där (1 när byn inte behöver arbete)
 export function sportVikt(s: State, p: Person, calm: number) {
   const a = ageOf(p, s.now);
-  if (a < ALDER.vuxen || a > SPORT.alderTill) return 0;
+  if (a < ALDER.vuxen) return 0; // ingen åldersgräns uppåt: kroppen (styrkan och smidigheten) avgör (fynd 557)
   const m = oppen(s);
   if (!m && s.sport) return 0; // en match i taget
   if (m?.titta?.includes(p.id)) return 0; // den som tittar spelar inte (steg 10.7.16)
@@ -224,12 +222,12 @@ export function sportListaVal(s: State, p: Person) {
   const d = SPORT_AV[m.k];
   return { why: `Följer med ${byId(s, m.p ?? -1)?.name ?? 'de andra'} och spelar ${d.namn.toLowerCase()}`, spot: platsFor(s, p, m), dur: m.slut - s.now, ref: m.start, tool: d.id };
 }
-// hör q ropet från p och kan komma: en vuxen upp till SPORT.alderTill inom hörhåll, vaken, kan gå, strider inte, gör inget som
+// hör q ropet från p och kan komma: en vuxen inom hörhåll, vaken, kan gå, strider inte, gör inget som
 // inte ens ett larm avbryter, bär ingen död (den som bär en kropp till graven lägger inte ner den för att spela) och är inte
 // rädd för att spela
 function horRopet(s: State, p: Person, q: Person) {
   const a = ageOf(q, s.now), t = q.task;
-  return paKartan(q) && !q.gast && a >= ALDER.vuxen && a <= SPORT.alderTill && Math.hypot(q.x - p.x, q.y - p.y) <= SPORT.nara && kanGa(q)
+  return paKartan(q) && !q.gast && a >= ALDER.vuxen && Math.hypot(q.x - p.x, q.y - p.y) <= SPORT.nara && kanGa(q)
     && !(t && (t.act === 'sport' || t.act === 'sova' || t.act === 'badd' || ACTS[t.act]?.fortsatter?.length)) && !kartStridAv(s, q) && !raddFor(s, q, 'sport') && !s.kvarlevor?.some(k => k.bars === q.id);
 }
 // chansen att q vill vara med när p samlar: överskottet, kroppen, tycket om p och, för den som arbetar, pliktkänslan
@@ -300,11 +298,13 @@ export function sportSteg(s: State, p: Person, t: Task, dtSec: number) {
   // brottningen (steg 9.2.92): två och två med stridens system, utan vapen och med svaga slag. En kamp i taget i ringen
   if (d.kamp && s.now >= (m.brott ?? 0)) { // en kamp börjar så fort ringen är ledig
     const orkar = (q: Person) => q.health > 0 && (q.blod ?? 1) >= HALSA.slass; // den som förlorat mycket blod orkar inte slåss (steg 9.5.17) och brottas inte
-    const mot = orkar(p) ? har.filter(q => q !== p && orkar(q)) : [];
+    // den heliga dagen (steg 10.3.22): den som följer budet börjar ingen kamp men står kvar i ringen och övar; det räknas en gång per match (fynd 322)
+    const bud = budHindrar(s, p, 'ingenStrid');
+    if (bud && !m.bud?.includes(p.id)) { (m.bud ??= []).push(p.id); count(s, 'bud_ingenStrid'); }
+    const mot = orkar(p) && !bud ? har.filter(q => q !== p && orkar(q)) : [];
     if (mot.length) {
       // kampen sker på kartan och tar tid (steg 10.1.7): ringen är upptagen tills den är slut (EFTER.brottning)
       const q = mot[Math.floor(rnd(s, 'sport', p) * mot.length)];
-      if (budHindrar(s, p, 'ingenStrid')) { count(s, 'bud_ingenStrid'); return; } // den heliga dagen (steg 10.3.22)
       kartStridBorja(s, 'brottning', [[p], [q]], 'i brottningen', { typ: 'brottning' });
       m.brott = s.now + (STRID.maxTid + 60) * SEC; m.brottare = [p.id, q.id]; count(s, 'brottningar');
     }
@@ -409,7 +409,7 @@ function delaUt(s: State, m: Match, d: SportDef, bast: Person, har: Person[]): P
   if (!bast.fame.includes(titel)) { bast.fame.push(titel); personHand(s, bast, 'titel', `${titel}.`); }
   handelse(s, bast, 'tavling', undefined, gren);
   think(bast, `Vann ${p.sak} i tävlingen`, SPORT.gladje, s.now, SPORT.gladjeTim * HOUR);
-  kronika(s, bast === l ? `${l.name} satte upp ${p.sak} som pris i ${gren} och vann själv.` : `${bast.name} vann tävlingen i ${gren} och fick ${l.name}s ${p.sak}.`, 'fritid');
+  kronika(s, bast === l ? `${l.name} satte upp ${p.sak} som pris i ${gren} och vann själv.` : `${bast.name} vann tävlingen i ${gren} och fick ${gen(l.name)} ${p.sak}.`, 'fritid');
   count(s, 'tavlingVunnen');
   return p;
 }

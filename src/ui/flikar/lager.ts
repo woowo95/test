@@ -1,3 +1,4 @@
+import { num } from '../../sim';
 import { LAGER, condOf, lagerHinder, living, sakNamn, zonesOf } from '../../sim';
 import { carryTxt, esc, hallCirkel, hjalpKnapp, hjalpText, kvOrdning, kvRubrik, pLink, pileTxt } from '../hjalp';
 import { outPilesAt, piles, s, ui, uppgiftVid } from '../lage';
@@ -26,7 +27,7 @@ export const lager: Flik = {
     const vaxer = z.hus !== undefined ? 'Golvet i ett förrådshus: det växer inte och krymper inte.' : 'Byn gör lagerplatsen större när den blir full och mindre när den står tom.';
     return `
     <div class="phead"><div><h2>${esc(z.namn ?? 'Lagret')}</h2></div>${hjalpKnapp('lager', 'Hur fungerar lagret?')}</div>
-    ${hjalpText('lager', `<p class="muted small">${what}${vaxer}${zs.length > 1 ? ` Byn lägger saker här som nummer ${nr} av ${zs.length} lagerplatser.` : ''}</p>`)}
+    ${hjalpText('lager', `<p class="muted small">${what}${vaxer}${zs.length > 1 ? ` Lagerplats ${nr} av ${zs.length}.` : ''}</p>`)}
     ${kvRubrik('Stackar')}${ps.length ? `<dl class="kv stk">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${hallCirkel(condOf(p))}</dd>`).join('')}</dl>` : '<p class="muted">Lagret är tomt.</p>'}
     <h3>På väg med saker</h3>${barare.length ? `<ul class="rels">${barare.map(p => `<li>${pLink(p)}<span></span><span></span><span class="muted">${esc(carryTxt(p))}</span></li>`).join('')}</ul>` : '<p class="muted">Ingen bär något just nu.</p>'}
     ${ui.testMode ? `<h3>Testläget</h3><p><button type="button" class="ghost" data-test="lagerbort" title="Ta bort" aria-label="Ta bort"${lagerHinder(s) ? ' disabled' : ''}>🗑️</button>${lagerHinder(s) ? ` <span class="muted">${esc(lagerHinder(s)!)}.</span>` : ' <span class="muted">Det som ligger här blir kvar på marken.</span>'}</p>` : ''}`;
@@ -43,7 +44,7 @@ export const hog: Flik = {
     const who = living(s).filter(p => p.task?.act === 'bara' && Math.floor(p.task.tx) === at.x && Math.floor(p.task.ty) === at.y);
     return `
     <div class="phead"><div><h2>${mark ? 'På marken' : 'Bredvid lagret'}</h2></div>${hjalpKnapp('hog', 'Varför ligger det här?')}</div>
-    ${hjalpText('hog', `<p class="muted small">${mark ? 'Lades ner av någon som kallades bort till något annat.' : 'Fick inte plats i lagret.'} Slits ${LAGER.ute} gånger fortare än i lagret.</p>`)}
+    ${hjalpText('hog', `<p class="muted small">${mark ? 'Lades ner av någon som kallades bort till något annat.' : 'Fick inte plats i lagret.'} Slits ${num(LAGER.ute)} gånger så fort som i lagret.</p>`)}
     ${kvRubrik('Här ligger')}<dl class="kv stk">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${hallCirkel(condOf(p))}</dd>`).join('')}</dl>
     ${who.length ? `<p class="muted">${who.map(p => pLink(p)).join(', ')} är på väg för att bära in det.</p>` : ''}`;
   },

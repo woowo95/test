@@ -1,13 +1,11 @@
 import { bynsMitt } from './omrade';
-import { ALDER, KROPP, ageOf, count, isSick, living, log, think } from './folk';
+import { ALDER, KROPP, count, isSick, living, log, think } from './folk';
 import { halsa } from './halsa';
 import { eldPlats } from './karta';
-import { avbryt } from './lager';
 import { ELD } from './eld';
 import { grundvarde } from './varde';
 import { ledig, stationDef, stationerOf } from './stationer';
 import { bitsOf, gridOf, housesOf, roomAt } from './byggnad';
-import { isLight } from './tid';
 import { kronika } from './historik';
 import { HOUR, Person, State, W, inMap } from './typer';
 import { balans } from './balans';
@@ -79,7 +77,7 @@ export function eldFlyttKvar(s: State, p: Person) {
 
 // en gång i timmen: ska elden flyttas, och vem gör det?
 export function stepEldFlytt(s: State) {
-  const f = s.fire, ppl = living(s);
+  const f = s.fire;
   raknaFlytt(s);
   if (f.flytt && !eldKanSta(s, f.flytt.x, f.flytt.y)) delete f.flytt; // platsen har tagits: en ny väljs nedan
   if (!f.flytt) {
@@ -95,20 +93,14 @@ export function stepEldFlytt(s: State) {
       if (ny) f.flytt = { ...ny, varfor: 'vuxit' };
     }
   }
-  if (!f.flytt || ppl.some(p => p.task?.act === 'flyttaeld')) return;
-  // elden flyttas på dagen; glöden bärs med till den nya platsen (flyttaElden), så att den kan blåsas liv i där (steg 10.2.8)
-  if (!isLight(s.now)) return;
+}
+// raden flyttaeld i valet av aktivitet (steg 12.1.76): när elden ska flyttas gör en vuxen som orkar det, på dagen (raden), en i
+// taget. Glöden bärs med till den nya platsen (flyttaElden), så att den kan blåsas liv i där (steg 10.2.8)
+export function flyttaEldVal(s: State, p: Person, a: number): { spot: { x: number; y: number }; dur: number; why: string } | undefined {
+  const f = s.fire;
+  if (!f.flytt || a < ALDER.vuxen || isSick(p, s.now) || halsa(p) < KROPP.svag || living(s).some(q => q.task?.act === 'flyttaeld')) return undefined;
   const e = eldPlats(s);
-  let best: Person | undefined, bs = Infinity;
-  for (const p of ppl) {
-    const t = p.task;
-    if (ageOf(p, s.now) < ALDER.vuxen || isSick(p, s.now) || halsa(p) < KROPP.svag || t && (t.act === 'sova' || t.phase === 'back' && t.carry > 0 || t.items)) continue;
-    const sc = Math.hypot(p.x - e.x, p.y - e.y) - p.skill.hantverk;
-    if (sc < bs) { bs = sc; best = p; }
-  }
-  if (!best) return;
-  avbryt(s, best); // bördan läggs ner där hen står
-  best.task = { act: 'flyttaeld', phase: 'go', tx: e.x + 0.5, ty: e.y + 1.3, until: s.now + ELDFLYTT.gang * HOUR, carry: 0, why: f.flytt.varfor === 'plats' ? 'Ett hus ska byggas där elden står' : 'Byn har vuxit ifrån elden', dark: false };
+  return { spot: { x: e.x + 0.5, y: e.y + 1.3 }, dur: ELDFLYTT.gang * HOUR, why: f.flytt.varfor === 'plats' ? 'Ett hus ska byggas där elden står' : 'Byn har vuxit ifrån elden' };
 }
 
 // arbetet är klart: elden släcks och står sedan på den nya platsen, med ringen av stenar. Grillställningen flyttas med

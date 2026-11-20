@@ -1,3 +1,4 @@
+import { han, hans } from './ord';
 import { nagonEld } from './eld';
 // Lerkrukan (steg 9.4.11, Arbetsstationer och möbler: Leran och lerkrukan, Tre storlekar): ett ting med kvalitet, skick och
 // ägare, inte en möbel, i tre storlekar som är rader i registret KRUKOR. Den byggs upp för hand av lera med sand i (1, 2 eller 4
@@ -5,11 +6,11 @@ import { nagonEld } from './eld';
 // bränningen är väntan och inget arbete. Om krukan spricker i bränningen avgör kvaliteten; en sprucken kruka blir skärvor.
 // Medan den torkar och bränns (t.ler) är den inte färdig och går inte att använda
 import { balans } from './balans';
-import { tingOf, Ting } from './agande';
+import { tingOf, Ting, ingenHar } from './agande';
 import { villAv } from './forradsmal';
 import { krukaHemma, pyntLust, pyntOf, sittAt, sovrum, stationAt } from './stationer';
 import { temperature, vaderNu } from './vader';
-import { ALDER, ageOf, count, forstaGang, living, log, ovning } from './folk';
+import { ALDER, ageOf, count, forstaGang, living, log, ovning, annanGor } from './folk';
 import { clamp, rnd } from './slump';
 import { PERFEKT, kvOf } from './kvalitet';
 import { HOUR, Person, State, Task, W } from './typer';
@@ -20,7 +21,6 @@ export const KRUKOR = {
   mellan: { namn: 'Mellanstor lerkruka', lera: 2, rymmer: 5, vikt: 1, min: 4 },
   stor: { namn: 'Stor lerkruka', lera: 4, rymmer: 10, vikt: 2, min: 4 },
 } satisfies Record<string, KrukaDef>;
-export type KrukSlag = keyof typeof KRUKOR;
 export const krukaAv = (sak: string): KrukaDef | undefined => (KRUKOR as Record<string, KrukaDef>)[sak.replace(/^lerkruka_/, '')] && sak.startsWith('lerkruka_') ? (KRUKOR as Record<string, KrukaDef>)[sak.replace(/^lerkruka_/, '')] : undefined;
 export const KRUKA = balans('kruka', {
   torkTim: 24, // en kruka torkar på ungefär så här många timmar i vanligt väder ...
@@ -55,10 +55,10 @@ export function stepKrukor(s: State) {
 // igen. Raden krukaHem i ARBETEN (val.ts) väljer det bland det man gör för att göra det bättre; hen går till krukan, tar upp den
 // (KLAR i steg.ts), bär den till en fri ruta i rummet och ställer ner den där (LAMNA i steg.ts)
 const fri = (s: State, x: number, y: number) => !stationAt(s, x, y) && !sittAt(s, x, y) && !tingOf(s).some(t => t.x === x && t.y === y) && !(s.stackar ?? []).some(a => a.x === x && a.y === y);
-const barsHem = (s: State, p: Person, t: Ting) => living(s).some(q => q !== p && q.task?.act === 'krukaHem' && q.task.ref === t.id);
+const barsHem = (s: State, p: Person, t: Ting) => annanGor(s, p, 'krukaHem', t.id);
 export function krukaHemVal(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || pyntOf(s, p)) return undefined;
-  const rum = sovrum(s, p), k = rum && tingOf(s).find(t => t.k.startsWith('lerkruka_') && t.agare === p.id && t.ler === undefined && t.kok === undefined /* en rätt som lagas på elden flyttas inte */ && t.hos === undefined && t.lass === undefined && t.bar === undefined && t.krok === undefined && t.x !== undefined && t.y !== undefined && !barsHem(s, p, t));
+  const rum = sovrum(s, p), k = rum && tingOf(s).find(t => t.k.startsWith('lerkruka_') && t.agare === p.id && t.ler === undefined && t.kok === undefined /* en rätt som lagas på elden flyttas inte */ && ingenHar(t) && t.krok === undefined && t.x !== undefined && t.y !== undefined && !barsHem(s, p, t));
   if (!rum || !k) return undefined;
   const i = rum.tiles.find(j => fri(s, j % W, Math.floor(j / W)));
   return i === undefined ? undefined : { t: k, i };
@@ -69,7 +69,7 @@ export function krukaUpp(s: State, p: Person, tk: Task) {
   if (!v || v.t.id !== tk.ref) return;
   const k = v.t;
   k.hos = p.id; k.x = k.y = k.vid = undefined;
-  tk.phase = 'back'; tk.tx = v.i % W + 0.5; tk.ty = Math.floor(v.i / W) + 0.5; tk.why = 'Bär sin lerkruka till rummet där hen sover';
+  tk.phase = 'back'; tk.tx = v.i % W + 0.5; tk.ty = Math.floor(v.i / W) + 0.5; tk.why = `Bär sin lerkruka till rummet där ${han(p)} sover`;
 }
 // framme i rummet: krukan ställs på rutan, eller där hen står om rutan blivit upptagen
 export function krukaNer(s: State, p: Person, tk: Task) {
@@ -126,7 +126,7 @@ export const krukaPyntQ = (t: Ting) => Math.min(PERFEKT, kvOf(t) + (krukaBlommar
 // krukan står på en ruta (inte i någons händer, på en kälke eller i en möbel): bara där sätts och plockas något (steg 10.10.11)
 const paRuta = (q: Ting) => q.hos === undefined && q.lass === undefined && q.vid === undefined && q.x !== undefined && q.y !== undefined;
 // någon annan arbetar redan vid krukan
-const upptagen = (s: State, p: Person, t: Ting) => living(s).some(q => q !== p && (q.task?.act === 'ortPlocka' || q.task?.act === 'ortSatta') && q.task.ref === t.id);
+const upptagen = (s: State, p: Person, t: Ting) => annanGor(s, p, 'ortPlocka', t.id) || annanGor(s, p, 'ortSatta', t.id);
 // p:s lediga kruka, där en växt kan sättas
 const ledigKruka = (s: State, p: Person) => tingOf(s).find(q => q.agare === p.id && (q.k === 'lerkruka_liten' || q.k === 'lerkruka_mellan') && q.ler === undefined && !q.inne && !q.vaxt && !q.kok && paRuta(q) && !upptagen(s, p, q));
 // poängen för växten g i p:s kruka
@@ -175,7 +175,7 @@ export function ortPlockaKlar(s: State, p: Person, ref?: number) {
   const g = t.vaxt.g as GrodaSlag;
   put(s, GRODOR[g].sak, ORTKRUKA.plock, { [p.id]: ORTKRUKA.plock });
   t.vaxt.v = ORTKRUKA.ater; count(s, 'ortKruka'); ovning(p, 'odling', ORTKRUKA.ovning);
-  if (forstaGang(s, 'ortKruka')) log(s, `${p.name} plockade röllekan som växer i hens lerkruka.`, 'world', [p.id]);
+  if (forstaGang(s, 'ortKruka')) log(s, `${p.name} plockade röllekan som växer i ${hans(p)} lerkruka.`, 'world', [p.id]);
 }
 // ... och sätter ett frö i en ledig kruka (Förbättra, bredvid staketet): den växt som väger mest av dem hen har frö till (steg 10.7.3)
 export function ortSattaVal(s: State, p: Person) {

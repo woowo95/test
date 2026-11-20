@@ -295,7 +295,6 @@ const FLOCK_LIST = () => Object.values(FLOCKARTER);
 const flockAvGrupp = (g: number): FlockArt | undefined => { let b: FlockArt | undefined; if (g < FAG_G) for (const f of FLOCK_LIST()) if (g >= f.G && (!b || f.G > b.G)) b = f; return b; };
 export const flockArtAv = (id: number) => flockAvGrupp(Math.floor(id / 8));
 export const arRadjur = (id: number) => flockArtAv(id)?.art === 'radjur';
-export const arFlockdjur = (id: number) => !!flockArtAv(id);
 // platserna där flocken kan dyka upp, så som marken var när byn grundades: skogskanten (en öppen ruta med skog inom kant
 // rutor) eller inne i skogen, minst hemAvst rutor från byplatsen
 const flockPlatser: Record<string, (seed: number) => number[]> = {};
@@ -341,7 +340,6 @@ export function flockGrupper(s: State, f: FlockArt, t = s.now, bara?: (x: number
 export const radjurGrupper = (s: State, t = s.now, bara?: (x: number, y: number) => boolean) => flockGrupper(s, FLOCKARTER.radjur, t, bara);
 // så långt (rutor) ett djur kan stå från flockens mitt: betet, flykten och vägen till land
 export const flockUt = (f: FlockArt) => f.tal.spridd + 1 + f.tal.fly * f.tal.flyMax + 5.5 * Math.SQRT2 + 1;
-export const RADJUR_UT = flockUt(FLOCKARTER.radjur);
 // artens djur vid tiden t: vart och ett betar kring flockens mitt och springer undan från folk som kommer nära (folk: var folket
 // syns, från gränssnittet). Ett fällt djur är borta
 export function flockOf(s: State, f: FlockArt, t = s.now, folk?: readonly { x: number; y: number }[], bara?: (x: number, y: number) => boolean): Djur[] {
@@ -652,10 +650,12 @@ export function halsaOf(s: State, id: number): { blod: number; sar: number; dod:
   return { blod: Math.min(1, h.blod + INDIVID.blodTim * tim), sar: Math.max(0, h.sar - INDIVID.sarTim * tim), dod: false };
 }
 // efter en strid: djurets blod och sår just nu, eller att det dog. Läkta och glömda djur tas bort samtidigt
+// ett djur som förlorat blod eller har sår minns byn; det som läkt helt glöms (steg 12.1.59: samma villkor på båda ställena)
+const skadat = (h: { blod: number; sar: number }) => h.blod < 1 || h.sar > 0;
 export function satDjurHalsa(s: State, id: number, blod: number, sar: number) {
   if (blod <= 0) { dodaDjur(s, id); return; }
-  const h = (s.djurHalsa ?? []).filter(x => x.id !== id && halsaOf(s, x.id).blod < 1);
-  if (blod < 1 || sar > 0) h.push({ id, blod, sar, t: s.now });
+  const h = (s.djurHalsa ?? []).filter(x => x.id !== id && skadat(halsaOf(s, x.id)));
+  if (skadat({ blod, sar })) h.push({ id, blod, sar, t: s.now });
   s.djurHalsa = h.length ? h : undefined;
 }
 export function dodaDjur(s: State, id: number) {

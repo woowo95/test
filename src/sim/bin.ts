@@ -1,3 +1,4 @@
+import { antal, spelTid } from './ord';
 // ---------- bina (system 10.10, steg 10.10.14–10.10.27; Djuren i detalj: Bina) ----------
 // Binas drag (steg 10.10.14): hur mycket som blommar för bina på en plats, ett tal mellan 0 och 1. Det som blommar är rader i
 // registret DRAGKALLOR, och en ny dragväxt är en ny rad. Summan inom BIN.r rutor delas med BIN.dragFullt, och talet är högst 1.
@@ -13,7 +14,7 @@ import { fyndAt, vildboKrok } from './fynd';
 import { H, HOUR_S, MIN, State, W, inMap } from './typer';
 import { Station, isKlar, stationerOf } from './stationer';
 import { antalPa, chance, rnd } from './slump';
-import { count, forstaGang, log } from './folk';
+import { count, forstaGang, log, annanGor } from './folk';
 import { notis } from './notiser';
 import { hardVinter } from './vader';
 import { ALDER, ageOf, alive, byId, gjort, living, ovning } from './folk';
@@ -24,7 +25,7 @@ import { viktOf } from './saker';
 import { wearUsed } from './redskap';
 import type { Person } from './typer';
 import { blocked } from './byggnad';
-import { kanGa, retadStick } from './halsa';
+import { SKADOR, kanGa, retadStick } from './halsa';
 import { avbryt } from './lager';
 import { kartStrider } from './kartstrid';
 import { tamArt, tamDor, tamEg, tamdjurOf } from './tamdjur';
@@ -222,7 +223,7 @@ export function skattaVal(s: State, p: Person) {
     if (t.ag !== undefined && t.ag !== p.id) continue;
     const n = attTa(t, p), d = Math.hypot(t.x - p.x, t.y - p.y);
     if (n < 1 || n < bn || (n === bn && d >= bd)) continue;
-    if (living(s).some(q => q !== p && q.task?.act === 'skatta' && q.task.ref === t.id)) continue;
+    if (annanGor(s, p, 'skatta', t.id)) continue;
     b = t; bn = n; bd = d;
   }
   return b;
@@ -241,7 +242,7 @@ export function skattaKlar(s: State, p: Person, ref?: number) {
   if (vax > 0) { t.skattat -= vax * BIN.vaxPer; put(s, 'bivax', vax, { [ag]: vax }); count(s, 'bivax', vax); }
   if (p.task?.tool === 'fackla') wearUsed(s, p, 1); // facklan slits som andra redskap
   ovning(p, 'skotsel', BIN.ovning); gjort(s, p, 'skattat'); count(s, 'honungKupa', n);
-  if (forstaGang(s, 'forstaSkattning')) log(s, `${p.name} skattade byns första bikupa och fick ${n} honungskakor.`, 'world', [p.id]);
+  if (forstaGang(s, 'forstaSkattning')) log(s, `${p.name} skattade byns första bikupa och fick ${antal(n, 'honung')}.`, 'world', [p.id]);
 }
 
 // ---------- det uppretade boet (steg 10.10.27, Djuren i detalj: Det uppretade boet) ----------
@@ -274,7 +275,7 @@ export function retaBo(s: State, orsak: keyof typeof RETAR, x: number, y: number
   count(s, 'boRetat'); count(s, 'boRetat ' + orsak);
   const nara = living(s).filter(p => Math.hypot(p.x - x, p.y - y) <= BIN.retadR + 1).map(p => p.id);
   log(s, `Bina blev uppretade av ${rad.namn} och sticker alla som kommer nära.`, 'world', nara);
-  notis(s, 'retat', `Bina i ${kupa !== undefined || orsak === 'kupa' ? 'en bikupa' : 'ett vildbo'} blev uppretade av ${rad.namn}. De sticker alla inom ${BIN.retadR} rutor i ${BIN.retadTid} minuter.`, nara, { x, y });
+  notis(s, 'retat', `Bina i ${kupa !== undefined || orsak === 'kupa' ? 'en bikupa' : 'ett vildbo'} blev uppretade av ${rad.namn}. De sticker alla som kommer nära under ${spelTid(BIN.retadTid * MIN)}.`, nara, { x, y });
   return true;
 }
 // närmaste uppretade bo inom räckhåll r från (x, y)
@@ -325,11 +326,10 @@ export function retadeSteg(s: State, dt: number) {
   if (kvar.length < s.retade.length) log(s, 'De uppretade bina lugnade sig.', 'world');
   if (kvar.length) s.retade = kvar; else delete s.retade;
 }
-// djurens stick läker på samma tid som människans (SKADA.bistick.lakTim): en rad i TAKTER var tionde minut
+// djurens stick läker på samma tid som människans (SKADOR.bistick.lakTim): en rad i TAKTER var tionde minut
 export function djurStickSteg(s: State, dt: number) {
-  for (const d of tamdjurOf(s)) if (d.bistick) { d.bistick.g -= dt / HOUR_S / BISTICK_LAK; if (d.bistick.g <= 0) d.bistick = undefined; }
+  for (const d of tamdjurOf(s)) if (d.bistick) { d.bistick.g -= dt / HOUR_S / SKADOR.bistick.lakTim; if (d.bistick.g <= 0) d.bistick = undefined; }
 }
-const BISTICK_LAK = 12;
 // den som dött av bistick får en notis
 export function binDod(s: State, p: Person) { notis(s, 'retat', `${p.name} dog av bistick.`, [p.id], { x: p.x, y: p.y }); }
 FAROR.push(s => !!s.retade?.length); // korta slag medan bina sticker

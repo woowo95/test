@@ -15,7 +15,7 @@ const HAR = path.dirname(fileURLToPath(import.meta.url)), html = path.join(HAR, 
 if (!fs.existsSync(html)) { console.error('Bygg sidan först: node bildstil/bygg.cjs'); process.exit(1); }
 const args = process.argv.slice(2), bilder = args.includes('--bilder'), ids = args.filter(a => !a.startsWith('--'));
 const pw = createRequire(import.meta.url)('playwright');
-const b = await pw.chromium.launch(), sida = await b.newPage();
+const b = await pw.chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}), sida = await b.newPage();
 const sidfel = []; sida.on('pageerror', e => sidfel.push(e.message));
 await sida.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
 await sida.goto('file://' + html); await sida.waitForFunction(() => window.KONTROLL && window.BILDERNA);

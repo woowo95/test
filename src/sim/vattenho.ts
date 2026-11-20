@@ -12,7 +12,7 @@ import { tamdjurOf } from './tamdjur';
 import { vaderNu } from './vader';
 import { blocked } from './byggnad';
 import { bynsMitt } from './omrade';
-import { count, forstaGang, log } from './folk';
+import { count, log } from './folk';
 import { H, HOUR_S, Person, State, T, W } from './typer';
 
 export const HO = balans('vattenho', {
@@ -29,12 +29,13 @@ const iHagen = (h: Hage, x: number, y: number) => x >= h.x && x < h.x + h.w && y
 export const hoarOf = (s: State) => stationerOf(s).filter(t => t.k === 'vattenho');
 // hon i hagen, om det står en (färdig eller påbörjad)
 export const hoI = (s: State, h: Hage) => hoarOf(s).find(t => iHagen(h, t.x, t.y));
-// hagarna med djur som inte når vattnet och saknar en ho
-const utanHo = (s: State) => hagarOf(s).filter(h => tamdjurOf(s).some(d => d.hage === h.id) && !hageVidVatten(s, h) && !hoI(s, h));
+// hagarna med djur som inte når vattnet (de behöver en ho), och de av dem som saknar en
+const behoverHo = (s: State) => hagarOf(s).filter(h => tamdjurOf(s).some(d => d.hage === h.id) && !hageVidVatten(s, h));
+const utanHo = (s: State) => behoverHo(s).filter(h => !hoI(s, h));
 // en ho i varje hage med djur som inte når vattnet (stationBrist i forradsmal.ts)
 export function hoBrist(s: State) {
-  const behov = hagarOf(s).filter(h => tamdjurOf(s).some(d => d.hage === h.id) && !hageVidVatten(s, h));
-  return behov.length ? utanHo(s).length / behov.length : 0;
+  const behov = behoverHo(s);
+  return behov.length ? behov.filter(h => !hoI(s, h)).length / behov.length : 0;
 }
 // platsen för hon: en ledig ruta i en hage som saknar en, så nära byns mitt som möjligt (kort väg för den som fyller den)
 export function siteHo(s: State) {
@@ -53,8 +54,9 @@ export function hoFyll(s: State, ho: Station, k: Ting, p?: Person) {
   if (n <= 0) return 0;
   ho.vatten = (ho.vatten ?? 0) + n; k.inne.n -= n;
   if (k.inne.n <= 0) k.inne = undefined;
+  const forst = !s.stat?.hoFylld;
   count(s, 'hoFylld', n);
-  if (p && forstaGang(s, 'hoFylld')) log(s, `${p.name} hällde vatten i vattenhon åt djuren.`, 'world', [p.id]);
+  if (p && forst) log(s, `${p.name} hällde vatten i vattenhon åt djuren.`, 'world', [p.id]);
   return n;
 }
 // regnet fyller hon per tid (TAKTER): HO.regnTim gånger hur mycket det regnar; snön fyller den inte

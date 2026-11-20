@@ -1,3 +1,4 @@
+import { gen } from './ord';
 import { liten, talOrd } from './ord';
 import { KROPP, ageOf, alive, count, isParent, isSick, livet, living, log, paKartan } from './folk';
 import { pick, rnd } from './slump';
@@ -106,7 +107,7 @@ export const UPPLEVELSER = {
   // det oförklarliga (steg 4.1.2.1, TECKEN i religion.ts): om = vad det var
   bonHjalpte: { text: 'Bönen i nöd hjälpte', chans: 0.5, e: [{ mod: 1 }, { empati: 1 }], vem: 'bada', sed: { forsiktighet: 1 }, vuxenTal: true, ande: true }, // steg 8.5.4
   bonInte: { text: 'Bönen i nöd hjälpte inte', chans: 0.5, e: [{ mod: -1 }, { nyfikenhet: 1 }], vem: 'bada', sed: { nyfikenhet: 1 }, vuxenTal: true, ande: true },
-  tecken: { text: 'Var med om något oförklarligt: {om}', chans: 0.5, e: [{ nyfikenhet: 1 }, { mod: -1 }, { minne: 1 }], vem: 'bada', sed: { forsiktighet: 1, nyfikenhet: -1 }, vuxenTal: true, ande: true },
+  tecken: { text: 'Var med om något oförklarligt, {om}', chans: 0.5, e: [{ nyfikenhet: 1 }, { mod: -1 }, { minne: 1 }], vem: 'bada', sed: { forsiktighet: 1, nyfikenhet: -1 }, vuxenTal: true, ande: true },
   // de som formar sederna i stället för de gamla händelserna (steg 4.5.4.9)
   byggdeHus: { text: 'Byggde {om} tillsammans med andra', chans: 0.5, e: [{ empati: 1 }, { flit: 1 }], vem: 'bada', vuxenTal: true, sed: { gemenskap: 1 }, kort: 'Byggde ett hus tillsammans med andra' },
   forstaMastare: { text: 'Såg {om} bli byns första mästare', chans: 0.3, e: [{ nyfikenhet: 1 }, { flit: 1 }], vem: 'bada', vuxenTal: true, sed: { nyfikenhet: 1 }, kort: 'Såg någon bli byns första mästare' },
@@ -124,7 +125,7 @@ export const upplevelseKort = (k: UpplevelseTyp) => DEF[k].kort ?? DEF[k].text.r
 const styrka = (u: Upplevelse) => Object.values(u.e).reduce((a, v) => a + Math.abs(v ?? 0), 0);
 // en sparad by från före steg 6.7.2 har bara namnet: då står det förälder och barn som förut
 const omText = (u: Upplevelse) => !u.om || u.om.includes(' ') ? u.om ?? '' : u.k === 'foralder' ? `förälder ${u.om}` : u.k === 'barnDod' ? `sitt barn ${u.om}` : u.om;
-export const upplevelseText = (u: Upplevelse) => DEF[u.k].text.replace('{om}', omText(u));
+export const upplevelseText = (u: Upplevelse) => DEF[u.k].text.replace('{om}s', gen(omText(u))).replace('{om}', omText(u));
 export const formas = (s: State, p: Person) => alive(p) && ageOf(p, s.now) < UPPV.alder;
 // u är från vuxenlivet (steg 4.1.1.2); de andra är från barndomen
 export const vuxenUpp = (u: Upplevelse) => u.v === 1;
@@ -140,14 +141,14 @@ function raknaPot(p: Person) {
 }
 // chansen och effekten för ett barn eller en vuxen (steg 4.1.1.2)
 function chansFor(d: UpplevelseDef, vuxen: boolean) {
-  if (d.vuxenTal) return vuxen ? d.chans : Math.min(1, d.chans * 3);
+  if (d.vuxenTal) return vuxen ? d.chans : Math.min(1, d.chans / UPPV.vuxenChans);
   return vuxen ? d.chans * UPPV.vuxenChans : d.chans;
 }
 function effektFor(d: UpplevelseDef, e: Partial<Record<Stat, number>>, vuxen: boolean) {
   const ut: Partial<Record<Stat, number>> = {};
   for (const k in e) {
     const v = e[k as Stat]!;
-    ut[k as Stat] = d.vuxenTal ? (vuxen ? v : v * 2) : vuxen ? Math.sign(v) * Math.max(1, Math.round(Math.abs(v) * UPPV.vuxenEffekt)) : v;
+    ut[k as Stat] = d.vuxenTal ? (vuxen ? v : v / UPPV.vuxenEffekt) : vuxen ? Math.sign(v) * Math.max(1, Math.round(Math.abs(v) * UPPV.vuxenEffekt)) : v;
   }
   return ut;
 }
@@ -233,19 +234,19 @@ function blekna(s: State, p: Person) {
   raknaPot(p);
 }
 // en gång i timmen (steg.ts, utan att ändra någon annans slump): nära svält eller köld, svårt sjuk, lek och trygghet
+// det man kan vara nära att dö av: nära svält, köld och svårt sjuk
+const NARA_DODEN: [UpplevelseTyp, (p: Person, now: number) => boolean][] = [
+  ['svalt', p => p.hunger <= 0 && p.health < UPPV.naraHalsa],
+  ['frys', p => p.warm < KROPP.frysdod && p.health < UPPV.naraHalsa],
+  ['sjuk', (p, now) => svartSjukNu(p, now) || isSick(p, now) && p.health < UPPV.sjukHalsa],
+];
 export function stepUppvaxt(s: State) {
   const overflod = foodDays(s) > UPPV.overflodDygn;
   for (const p of s.people) {
-    if (paKartan(p)) { // det hen överlevt (i byn; den som är borta, steg 11.2.4), i alla åldrar (steg 3.9.8)
-      if (p.hunger <= 0 && p.health < UPPV.naraHalsa) livet(s, p, 'svalt', true);
-      if (p.warm < KROPP.frysdod && p.health < UPPV.naraHalsa) livet(s, p, 'frys', true);
-      if (svartSjukNu(p, s.now) || isSick(p, s.now) && p.health < UPPV.sjukHalsa) livet(s, p, 'sjuk', true);
-    }
+    if (paKartan(p)) for (const [k, nara] of NARA_DODEN) if (nara(p, s.now)) livet(s, p, k, true); // det hen överlevt (i byn; den som är borta, steg 11.2.4), i alla åldrar (steg 3.9.8)
     if (!alive(p) || ageOf(p, s.now) < UPPV.fran) continue;
     if (p.upp?.some(vuxenUpp)) blekna(s, p);
-    if (p.hunger <= 0 && p.health < UPPV.naraHalsa) upplev(s, p, 'svalt'); // barn och vuxna (steg 4.1.1.2)
-    if (p.warm < KROPP.frysdod && p.health < UPPV.naraHalsa) upplev(s, p, 'frys');
-    if (svartSjukNu(p, s.now) || isSick(p, s.now) && p.health < UPPV.sjukHalsa) upplev(s, p, 'sjuk');
+    for (const [k, nara] of NARA_DODEN) if (nara(p, s.now)) upplev(s, p, k); // barn och vuxna (steg 4.1.1.2)
     if (overflod) upplev(s, p, 'overflod');
     if (!formas(s, p)) continue;
     if (p.task?.act === 'leka' && p.task.phase === 'do') upplev(s, p, 'lek');

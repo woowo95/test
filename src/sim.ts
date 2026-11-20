@@ -123,6 +123,7 @@ export * from './sim/grav';
 export * from './sim/skrift';
 export * from './sim/rost';
 export * from './sim/lagar';
+export * from './sim/radsla';
 export * from './sim/byggnad';
 export * from './sim/bygg';
 export * from './sim/byggnader';

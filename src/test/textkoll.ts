@@ -7,6 +7,8 @@ import { personRader, State, alive, byId, living } from '../sim';
 import { Fyllning, beskrivning, pratText, relationText, sakBerattelse } from '../sim/berattelser';
 import { SAKER, sakNamn } from '../sim/saker';
 import { STATIONER } from '../sim/stationer';
+import { DAY, framBerattelse, handelBerattelse, matchBerattelse } from '../sim';
+import { bortaBerattelse } from '../ui/borta';
 
 // ord som inte fanns på järnåldern
 const NYA_ORD = ['procent', 'kilo', 'kilogram', 'meter', 'centimeter', 'minut', 'minuter', 'minuten', 'sekund', 'sekunder', 'klockan', 'okej', 'ok', 'jobb', 'jobbet', 'jobba', 'jobbar', 'kille', 'tjej', 'pengar', 'kronor', 'socker', 'potatis', 'kaffe', 'papper', 'dator', 'krut', 'gevär', 'telefon', 'bil', 'tåg', 'fabrik', 'polis', 'kontor', 'skola', 'skolan', 'stress', 'semester', 'cigarett', 'tobak', 'glasögon'];
@@ -50,7 +52,7 @@ export const KONTROLLER: Kontroll[] = [
     for (const n of namn) if (/[ae]$/.test(n) && [...t.matchAll(new RegExp(`${n}(en|n|na|et)(?=[^\\p{L}]|$)`, 'gu'))].some(m => !VANLIGA.has(m[0].toLowerCase()) && !namn.some(v => new RegExp(`(^|[^\\p{L}])${m[0]}(?=[^\\p{L}]|$)`, 'u').test(v)))) return n; // Arka och Arkan är två namn, också i samma fält (Ragma och Ulvan)
     return /\p{Ll}(aen|een|aet|eet)(?=[^\p{L}]|$)/u.exec(t)?.[0];
   } },
-  { id: 'siffra', namn: 'En siffra före ett ord (1 rutor, efter 3 försök); utom ålder, år och årtal', hitta: t => { const m = /(^|[^\p{L}\d.,])(\d+) (\p{L}+)/u.exec(t); return m && !/^(år|års|dygn|timmar|timme|kg)$/u.test(m[3]) && !/(^|[^\p{L}])år $/u.test(t.slice(0, m.index + m[1].length)) ? `${m[2]} ${m[3]}` : undefined; } }, // "år 17 dog" är ett årtal
+  { id: 'siffra', namn: 'En siffra före ett ord (1 rutor, efter 3 försök); utom ålder, år och årtal', hitta: t => { const m = /(^|[^\p{L}\d.,])(\d+) (\p{L}+)/u.exec(t); return m && !/^(år|års|dygn|timmar|timme|kg)$/u.test(m[3]) && !/(^|[^\p{L}])år $/iu.test(t.slice(0, m.index + m[1].length)) ? `${m[2]} ${m[3]}` : undefined; } }, // "år 17 dog" är ett årtal
   { id: 'ochoch', namn: 'Namn fogade med och … och (A och B och C)', hitta: t => /(\p{Lu}\p{Ll}+) och (\p{Lu}\p{Ll}+) och (\p{Lu}\p{Ll}+)/u.exec(t)?.[0] },
 ];
 // vanliga ord som råkar vara ett namn med en ändelse (Inge + n = Ingen)
@@ -91,4 +93,15 @@ export function titta(s: State) {
   for (const p of s.people.filter(p => !alive(p)).slice(-5)) beskrivning(s, p);
   for (const t of s.ting ?? []) if (t.ber) sakBerattelse(s, t, sakNamn(t.k));
   for (const st of s.stationer ?? []) if (st.ber) sakBerattelse(s, st, (STATIONER as Record<string, { namn: string }>)[st.k]?.namn ?? st.k);
+  // det som skrivs när spelaren öppnar en affär, ett framträdande, en match och sammanfattningen efter tiden borta (steg 12.1.122)
+  for (const b of [...s.log.map(e => e.byte), ...s.people.flatMap(p => p.byten ?? []), ...(s.handlare?.bytt ?? []).map(x => x.m)]) if (b) handelBerattelse(s, b); // samma ställen som fliken läser (byteMinne i ui/flikar/filt.ts)
+  for (const m of s.framtradanden ?? []) framBerattelse(s, m);
+  for (const m of s.matcher ?? []) matchBerattelse(s, m);
+  const kr = s.hist?.kronika ?? [];
+  for (const d of [0.2, 1, 3, 9]) {
+    const fran = s.now - d * DAY;
+    if (fran <= s.founded) continue;
+    const sedan = (slag: string) => kr.filter(k => k[0] >= fran && k[2] === slag).length; // födda och döda sedan dess, ur krönikan
+    bortaBerattelse(s, { fran, fodda: (s.stat?.fodda ?? 0) - sedan('k_fodd'), doda: (s.stat?.doda ?? 0) - sedan('k_dog') - sedan('k_dogSpad') });
+  }
 }

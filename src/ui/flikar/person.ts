@@ -1,3 +1,5 @@
+import { styck } from '../../sim/ord';
+import { gen } from '../../sim/ord';
 import { areaCenter, larmRollNu, LARMHOT, ROLLNAMN, blodSteg, BLODSTEG, tidKvar, VARD, vardNasta, hp, sjukText, personRader, PERSONLOGG, gastLever } from '../../sim';
 import { kvOf, paSigVikt, klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
 import { vana, pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, arvAnseende, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
@@ -46,12 +48,8 @@ export const person: Flik = {
       ${delar.length === 1 ? ensamDel(flik, delar[0].html(p) + (g && delar[0].gast ? delar[0].gast(g) : '')) : delar.map((d, i) => delHtml(d, i, d.kort?.(p), () => d.html(p) + (g && d.gast ? d.gast(g) : ''))).join('')}`;
   },
   klick(el) {
-    const ti = el.closest<HTMLElement>('.tid [data-t]');
-    if (ti) { tidVald = tidVald === ti.dataset.t ? undefined : ti.dataset.t; return true; }
     const ln = el.closest<HTMLElement>('[data-lnal]'); // en lärdoms plats: kameran dit och en nål på kartan, ett tryck till tar bort nålen (steg 10.2.63)
     if (ln) { const a = Number(ln.dataset.lnal); if (ui.nal?.a === a) ui.nal = undefined; else { const c = areaCenter(a); ui.nal = { a, ...c }; visaPaKartan(c.x, c.y, 6); } return true; }
-    const tg = el.closest<HTMLElement>('[data-ptek]'); // en teknik i kunskapen: rutan om den visas eller döljs
-    if (tg) { kunTek = kunTek === tg.dataset.ptek ? undefined : tg.dataset.ptek; return true; }
     const f = el.closest<HTMLElement>('[data-pfall]'); // en dels rubrik: fäll ut eller ihop (steg 5.3.4.2)
     if (f) { const id = f.dataset.pfall!; ui.personFall[id] = !utfalld(id, f.dataset.forst === '1'); return true; }
     const b = el.closest<HTMLElement>('[data-pdel]');
@@ -205,7 +203,7 @@ function presHtml(p: Person) {
 function gangRad(p: Person) {
   const gf = gangDelar(s, p);
   return rad(p, 'gang', '🚶 Gångfart', `${bar(gf.fart, gf.fart < LAG.halsa ? 'low' : '')}<span>${Math.round(gf.fart * 100)} %</span>`, gf.delar.map(d => ({ namn: `${d.tecken} ${d.namn}`, v: d.v })), ' %',
-    'Hur fort hen går, mot en frisk vuxen på kort gräs eller en stig. Det som drar ner farten tas gånger varandra.');
+    'Hur fort hen går, mot en frisk vuxen på kort gräs eller en stig. Det som drar ner farten multipliceras med varandra.');
 }
 // livet före besöket hos en invånare i en väckt by (steg 11.13.16, vacktliv.ts): de döda föräldrarna och händelserna, senaste först
 const forrFam = (p: Person) => p.forr?.familj.length ? `<p class="muted">${p.forr.familj.map(f => `${esc(f.namn)} (${f.roll === 'mor' ? 'mor' : f.roll === 'far' ? 'far' : f.roll}, död)`).join(', ')}</p>` : '';
@@ -469,7 +467,7 @@ function ryktenHtml(p: Person) {
   const huvud = `<div class="anshuvud klick falla" ${fallUt(hid)} title="${esc(sam)}">${ansStapel(p.id)}<span class="ansskala"><span>Dåligt</span><span>Neutralt</span><span>Gott</span></span></div>${hjalpText(hid, `<p class="muted small">${esc(sam)}</p>`)}`;
   // arvet (steg 10.8.5): en del av det byn tycker om mor och far räknas i anseendet
   const arv = arvAnseende(s, p.id).a, fo = [p.father, p.mother].map(id => id !== undefined ? byId(s, id) : undefined).filter((q): q is Person => !!q);
-  const arvRad = Math.abs(arv) >= 0.05 ? `<p class="muted small ansarv" title="${esc(`En del av det byn tycker om ${fo.map(q => q.name).join(' och ')} räknas i ${p.name}s anseende`)}"><span class="riktn${arv > 0 ? '' : ' ned'}">${arv > 0 ? '▲' : '▼'}</span> Ärvt från föräldrarna: ${fo.map(q => pLink(q)).join(' och ')}</p>` : '';
+  const arvRad = Math.abs(arv) >= 0.05 ? `<p class="muted small ansarv" title="${esc(`En del av det byn tycker om ${fo.map(q => q.name).join(' och ')} räknas i ${gen(p.name)} anseende`)}"><span class="riktn${arv > 0 ? '' : ' ned'}">${arv > 0 ? '▲' : '▼'}</span> Ärvt från föräldrarna: ${fo.map(q => pLink(q)).join(' och ')}</p>` : '';
   const bid = (k: IntryckTyp) => `by-${p.id}-${k}`, upp = (k: IntryckTyp) => INTRYCK[k].tecken > 0;
   const vemMinne = new Map<IntryckTyp, { q: Person; e: NonNullable<ReturnType<typeof intryckOm>> }[]>(); // en gång per intryck och omritning
   const vem = (k: IntryckTyp) => { let v = vemMinne.get(k); if (!v) vemMinne.set(k, v = living(s).flatMap(q => { const e = intryckOm(q, p.id, k); return e ? [{ q, e }] : []; }).sort((a, b) => b.e.v * b.e.c - a.e.v * a.e.c)); return v; };
@@ -514,7 +512,7 @@ const skickRing = (c: number, hand: boolean, stor: boolean) => ringSvg(c, (stor 
 function gearHtml(p: Person) {
   const hand = heldBy(s, p), own = ownedBy(s, p).filter(t => t !== hand && t.bar !== p.id);
   const whose = (t: Ting) => t.agare === p.id ? 'eget' : t.agare === BYN ? 'byns' : `lånat av ${byId(s, t.agare)?.name ?? 'någon'}`;
-  const where = (t: Ting) => t.bar !== undefined ? `${byId(s, t.bar)?.name ?? 'någon'} har det på sig` : t.krok !== undefined ? `i ${byId(s, t.krok)?.name ?? 'någon'}s bälte` : t.hos === undefined ? 'i förrådet' : `${byId(s, t.hos)?.name ?? 'någon'} har det i handen`;
+  const where = (t: Ting) => t.bar !== undefined ? `${byId(s, t.bar)?.name ?? 'någon'} har det på sig` : t.krok !== undefined ? `i ${gen(byId(s, t.krok)?.name ?? 'någon')} bälte` : t.hos === undefined ? 'i förrådet' : `${byId(s, t.hos)?.name ?? 'någon'} har det i handen`;
   const ting = (t: Ting, title: string, cls = 'kan', px = 16) => `<span class="tnod liten ${cls}" tabindex="0" data-sak="t:${t.id}" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(t.halv?.gor ?? t.k, px)}${kvSvg(t.q, px > 20 ? 14 : 9) && `<span class="kvhorn">${kvSvg(t.q, px > 20 ? 14 : 9)}</span>`}${t.halv ? `<span class="halvmark">${framstegSvg(halvKlar(t.halv), 4)}</span>` : ''}${skickRing(t.c, cls.includes('hand'), px > 20)}</span>`;
   const t = uppgiftVid(p), borda = t ? load(t, s) : 0, bar = !!t && borda > 0, u = utrustning(s, p, bar), ih = bordaIHander(s, p, t, u), kg = (n: number) => `${kortTal(n)} kg`; // vikten i kg överallt (steg 11.1.49)
   const bordaTxt = bar ? `bär ${carryTxt(p).replace(/^Bär /, '')}` : '';
@@ -568,9 +566,8 @@ function stockHtml(p: Person) {
   const own = Object.entries(ownedStock(s, p)).filter(([k, n]) => n >= 0.5 && STACK[k]).sort((a, b) => b[1] - a[1]);
   if (!own.length) return '';
   const txt = fmtN;
-  return `<p class="utretik">Hens del i förrådet</p><div class="tekrad">${own.map(([k, n]) => { const title = `Äger i förrådet: ${txt(n)} ${sakNamn(k).toLowerCase()}`; return `<span class="tnod liten pa" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(k, 16)}<span class="antal">${txt(n)}</span></span>`; }).join('')}</div>`;
+  return `<p class="utretik">Hens del i förrådet</p><div class="tekrad">${own.map(([k, n]) => { const title = `Äger i förrådet: ${styck(n, k, txt)}`; return `<span class="tnod liten pa" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(k, 16)}<span class="antal">${txt(n)}</span></span>`; }).join('')}</div>`;
 }
-let kunTek: string | undefined; // tekniken vars ruta är öppen i kunskapen
 // kunskap (alltid rätt) och lärdomar (det personen tror, kan vara fel). Spelaren ser vad som inte stämmer.
 function knowledgeHtml(p: Person) {
   const ks = Object.entries(p.kunskap ?? {}).filter(([, e]) => e.v >= 0.05);
@@ -579,9 +576,10 @@ function knowledgeHtml(p: Person) {
   const lt = ls.filter(l => LARDOMAR[l.k].kat === 'tro'), lv = ls.filter(l => LARDOMAR[l.k].kat !== 'tro');
   // teknik som symboler: det hen kan fullt, det hen funderar på blekt med en ring som visar hur långt hen kommit.
   // Ett tryck visar samma ruta om tekniken som i teknikfliken (tekInfo), här under symbolerna
+  const tid = (t: string) => `ptek-${p.id}-${t}`, kunTek = TEKNIK.find(x => hjalpOppen(tid(x.id)))?.id; // tekniken vars ruta är öppen
   const tk = TEKNIK.filter(x => (p.tek?.[x.id] ?? 0) > 0.01).map(x => {
     const v = p.tek![x.id], kan = v >= 1, title = `${kan ? 'Kan göra' : 'Funderar på'} ${x.namn.toLowerCase()}${kan ? '' : ` (${Math.round(v * 100)} %)`}`;
-    return `<button type="button" class="tnod liten ${kan ? 'kan' : 'pa'}${kunTek === x.id ? ' sel' : ''}" data-ptek="${x.id}" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(x.id, 16)}${kan ? '' : `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(v * 100)} 100"/></svg>`}</button>`;
+    return `<button type="button" class="tnod liten ${kan ? 'kan' : 'pa'}${kunTek === x.id ? ' sel' : ''}" data-hjalp="${tid(x.id)}" data-hjalp-grupp="ptek-${p.id}-" title="${esc(title)}" aria-label="${esc(title)}">${iconImg(x.id, 16)}${kan ? '' : `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" pathLength="100" stroke-dasharray="${Math.round(v * 100)} 100"/></svg>`}</button>`;
   });
   const rows = ks.map(([k, e]) => ({ n: KUNSKAPER[k]?.namn ?? k, v: e.v }));
   // rubrikerna (steg 11.1.51): Tekniker, Kunnande, Lärdomar och Föreställningar
@@ -619,7 +617,6 @@ const HABIT_GROUPS = () => habitGroups ??= (() => {
 // tårtdiagram över den vakna tiden de senaste dygnen (vanorna bleknar, seder.ts). Bara de allra minsta delarna slås ihop
 // till Annat (steg 3.10.5)
 const SMA = 0.01;
-let tidVald: string | undefined; // namnet på delen som är markerad med ett tryck
 // musen över en del av tårtan eller en rad: båda lyser och resten bleknar, hur många delar det än är
 if (typeof document !== 'undefined') document.addEventListener('mouseover', e => {
   const t = e.target instanceof Element ? e.target : null, el = t?.closest<HTMLElement>('.tid [data-i]'), tid = el?.closest('.tid');
@@ -647,12 +644,15 @@ function tidHtml(p: Person) {
   const annatVad = all.filter(x => x.v < SMA).map(x => x.g.name.toLowerCase()); // det som är för litet för en egen bit (steg 11.1.46)
   if (annat > 0) bitar.push({ name: 'Annat', ikon: '<span class="tecken">…</span>', v: annat });
   const farg = (i: number) => tartFarg(i, bitar.length);
-  const tart = tartSvg(bitar.map((b, i) => ({ v: b.v, titel: `${esc(b.name)}: ${Math.round(b.v * 100)} %`, attr: `style="--f:${farg(i)}" data-i="${i}" data-t="${esc(b.name)}"${b.name === tidVald ? ' class="vald"' : ''}` })));
+  // delen som är markerad med ett tryck: en i taget, samma ruta på tårtan och i listan
+  const did = (n: string) => `ptid-${p.id}-${n}`, tidVald = bitar.find(b => hjalpOppen(did(b.name)))?.name;
+  const valAttr = (n: string) => `data-hjalp="${esc(did(n))}" data-hjalp-grupp="ptid-${p.id}-"${n === tidVald ? ' class="vald"' : ''}`;
+  const tart = tartSvg(bitar.map((b, i) => ({ v: b.v, titel: `${esc(b.name)}: ${Math.round(b.v * 100)} %`, attr: `style="--f:${farg(i)}" data-i="${i}" ${valAttr(b.name)}` })));
   const vald = bitar.some(b => b.name === tidVald);
   const hid = `tidforkl-${p.id}`;
   return `<p class="tidrub"><b>De senaste ${VANA_AR} åren</b> ${hjalpKnapp(hid, 'Vad visar tårtan?')}</p>${hjalpText(hid, `<p class="muted small">Den vakna tiden de senaste ${VANA_AR} åren, och det senaste väger mest. Tryck på en del eller en rad, eller håll musen över den, så lyser båda.${annatVad.length ? ` Annat är det som var för sig är under en procent: ${esc(annatVad.join(', '))}.` : ''}</p>`)}
     <div class="tid${vald ? ' har-vald' : ''}">${tart}
-    <ul class="tidlista">${bitar.map((b, i) => `<li title="${esc(b.name === 'Annat' ? `Annat, var för sig under en procent: ${annatVad.join(', ')}` : b.name)}: ${Math.round(b.v * 100)} %" data-i="${i}" data-t="${esc(b.name)}"${b.name === tidVald ? ' class="vald"' : ''}><span class="fg" style="background:${farg(i)}"></span>${b.ikon}<span class="namn">${esc(b.name)}</span><span class="pc">${Math.round(b.v * 100)} %</span></li>`).join('')}</ul></div>
+    <ul class="tidlista">${bitar.map((b, i) => `<li title="${esc(b.name === 'Annat' ? `Annat, var för sig under en procent: ${annatVad.join(', ')}` : b.name)}: ${Math.round(b.v * 100)} %" data-i="${i}" ${valAttr(b.name)}><span class="fg" style="background:${farg(i)}"></span>${b.ikon}<span class="namn">${esc(b.name)}</span><span class="pc">${Math.round(b.v * 100)} %</span></li>`).join('')}</ul></div>
     ${p.pratArbete ? `<p class="muted small">${iconImg('a_prata', 12)} ${p.pratArbete} samtal under arbetet</p>` : ''}
     ${pliktRad(p)}`;
 }

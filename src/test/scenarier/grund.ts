@@ -123,7 +123,7 @@ SCENARIER.egnaeldar = {
     setAmount(s, 'ved', 40);
     Object.assign(s.fire, { lit: true, fuel: 0.2, lightings: 1 });
     stepFire(s, 1, ppl);
-    const langtBort = s.fire.want ?? 0, ingenHamtar = !ppl.some(p => p.task?.act === 'elda');
+    const langtBort = s.fire.want ?? 0, ingenHamtar = !ppl.some(p => SIM.eldaVal(s, p)); // raden elda i valet (steg 12.1.76)
     // en sätter sig vid elden: den trivsamma elden räknas från henom
     const a = vuxna[0];
     a.x = e.x + 0.5; a.y = e.y + 2;
@@ -136,7 +136,8 @@ SCENARIER.egnaeldar = {
     for (const p of ppl) p.task = undefined;
     b.x = at.x + 0.5; b.y = at.y + 2;
     stepFire(s, 1, ppl);
-    const eldare = ppl.filter(p => p.task?.act === 'elda'), tillForsta = eldare.filter(p => p.task!.ref === undefined).length, tillBrasan = eldare.filter(p => p.task!.ref === br.id).length;
+    // den som sitter vid en eld väljer att lägga ved på just den (raden elda, steg 12.1.76)
+    const va = SIM.eldaVal(s, a), vb = SIM.eldaVal(s, b), tillForsta = va && va.ref === undefined ? 1 : 0, tillBrasan = vb?.ref === br.id ? 1 : 0;
     // eldens ruta (steg 11.1.53): Sedan byn grundades med samma radnamn som under den här elden, veden som 4 av 6 ved, ingen
     // rad Mest trä, tändningen hopfälld under ▸ och pricken förklarad
     utanWebblasare(); setByn(s); ui.eld = undefined; const er = eldFlik.html!();
@@ -149,7 +150,7 @@ SCENARIER.egnaeldar = {
       [`ingen vid elden: ingen trivsam önskan (${langtBort.toFixed(2)} ved) och ingen hämtar ved`, langtBort < 1 && ingenHamtar],
       [`${a.name} vid elden vill ha en trivsam eld (${vid.toFixed(2)} ved: ${why.toLowerCase()})`, vid > langtBort && /trivsam/.test(why)],
       [`brasan får sin önskan från ${b.name} som sitter där (${(br.want ?? 0).toFixed(2)} ved)`, (br.want ?? 0) > 1],
-      [`båda eldarna fylls på samtidigt (till den första ${tillForsta}, till brasan ${tillBrasan})`, tillForsta === 1 && tillBrasan === 1],
+      [`båda eldarna fylls på samtidigt, var och en av den som sitter vid den (till den första ${tillForsta}, till brasan ${tillBrasan})`, tillForsta === 1 && tillBrasan === 1],
     ];
   },
 };
@@ -514,7 +515,12 @@ SCENARIER.svamp = {
     setMat(f, { svamp: 12 }); setAmount(f, 'giftsvamp', 10);
     for (let i = 0; i < 50 && !f.stat?.forgiftad; i++) eatPoison(f, r);
     const fGift = amountOf(f, 'giftsvamp'), fSvamp = amountOf(f, 'svamp');
+    // syner bara av förgiftningen (steg 12.1.63): många måltider utan giftsvamp ger inga
+    const h = createState(21, START), hp = living(h)[0]!; setMat(h, { svamp: 12 });
+    for (let i = 0; i < 50; i++) eatPoison(h, hp);
+    const synUtan = h.stat?.tecken_svampsyn ?? 0, synMed = f.stat?.tecken_svampsyn ?? 0;
     return [
+      [`svampsyner bara vid förgiftning (${synUtan} på 50 måltider utan gift, ${synMed} hos den förgiftade)`, synUtan === 0],
       [`en ensam giftsvamp (0,9997) kan förgifta (${e.stat?.forgiftad ?? 0} förgiftad)`, (e.stat?.forgiftad ?? 0) === 1],
       [`bortsorterad giftsvamp försvinner ur svampen (svamp 12 till ${fSvamp.toFixed(2)}, gift 9 till ${fGift.toFixed(2)})`, (f.stat?.forgiftad ?? 0) === 1 && fGift < 9 && Math.abs((12 - fSvamp) - (9 - fGift)) < 1e-6],
       [`den förgiftade lär sig om svampen (${kn0.toFixed(2)} till ${kn1.toFixed(2)}) och sorterar bort giften (${gift.toFixed(1)} av 9 kvar; ${sum('forgiftad')} förgiftade i byarna)`, (g.stat?.forgiftad ?? 0) === 1 && kn1 > kn0 && gift < 9],
@@ -566,9 +572,6 @@ SCENARIER.kunskap = {
     for (const p of [m1, m2]) p.lardomar = [{ k: 'samla', a: 0, v: 0.5, c: 1, t: s.now, led: 0 }];
     forget(s, 72);
     const c1 = m1.lardomar?.[0]?.c ?? 0, c2 = m2.lardomar?.[0]?.c ?? 0;
-    // gammal sparfil: byns svampkunskap flyttas till var och en, och alla får egenskapen Minne
-    const g = createState(32, START); g.kunskap = { svamp: 0.8 }; for (const p of g.people) delete (p.pot as Record<string, number>).minne;
-    g.v = 1; migrate(g); // som en sparfil från före v40
     return [
       [`ingen minns några platser från början (${ute} personer gör det)`, ute === 0],
       [`lärdomar sprids i samtal (upp till ${hort} hörda, ${led2} i andra hand eller längre)`, hort > 10 && led2 > 0],
@@ -577,7 +580,6 @@ SCENARIER.kunskap = {
       [`rädsla efter olyckan: ${radd0} genast, upp till ${radd} under åtta dygn`, radd0 >= 1 && radd > radd0],
       [`svampkunskap sprids utan förgiftning (${kan} har lärt sig)`, kan >= 2],
       [`spelaren ser lärdomar som inte stämmer (${fel})`, fel > 0],
-      ['gammal sparfil flyttas', g.kunskap === undefined && g.people.every(p => p.pot.minne > 0 && kn(p, 'svamp') === 0.8)],
     ];
   },
 };
@@ -999,7 +1001,7 @@ SCENARIER.oversvamning = {
       fyll.forEach((k, i) => SIM.setAmount(h, k, forut[i]));
       const z = SIM.zonesOf(h).find(q => q.hus === hh?.id);
       if (!hh || !z) continue;
-      hh.slag = 'material'; z.slag = 'material'; SIM.touch(h);
+      z.slag = 'material'; SIM.touch(h);
       (h.stationer ??= []).push({ id: h.nextStation = (h.nextStation ?? 0) + 1, k: 'hylla', x: z.x + (z.w > 1 ? 1 : 0), y: z.y, kvar: 0, inne: 1 } as SIM.Station); SIM.touch(h);
       SIM.stepStationer(h);
       if (!SIM.stationerOf(h).some(q => q.k === 'hylla')) continue;
@@ -1077,7 +1079,7 @@ SCENARIER.flodrest = {
     tandEld(s); setMat(s, { bar: 40, torkat: 40 });
     let b0 = m.start; while (!SIM.flodNiva(s, b0 + HOUR)) b0 += HOUR;
     kor(s, (b0 - s.now) / HOUR);
-    for (const x of living(s)) Object.assign(x, { health: 1, sickUntil: undefined, sjuk: undefined, skador: [] }); // (friska vuxna som kan bära: en sjukdom i byn är inte det som prövas)
+    for (const x of living(s)) Object.assign(x, { health: 1, sjuk: undefined, skador: [] }); // (friska vuxna som kan bära: en sjukdom i byn är inte det som prövas)
     const { land } = SIM.djupOf(s.seed), g = getMap(s.seed).tiles, c = SIM.bynsMitt(s);
     const fritt = (x: number, y: number) => x > 0 && y > 0 && x < W - 1 && y < W - 1 && g[y * W + x] !== T.Sten && g[y * W + x] !== T.Vatten && SIM.ledig(s, x, y) && !SIM.bitAt(s, x, y);
     const nara = (f: (i: number) => boolean, ej: { x: number; y: number }[] = []) => {
@@ -1315,6 +1317,7 @@ SCENARIER.tornadokarna = {
     s.stackar!.push({ k: 'sten', n: 6, c: 1, x: pk.x, y: pk.y });
     (s.stockar ??= []).push({ id: (s.nextStock = (s.nextStock ?? 0) + 1), x: pk.x + 0.5, y: pk.y + 0.5, ...SIM.stamAv(g, pk.y * W + pk.x) });
     g.trees[pt.y * W + pt.x] = 1; g.trees[pk.y * W + pk.x] = 0;
+    const gi = pp.y * W + pp.x; g.tiles[gi] = T.Gras; g.cover[gi] = 1; const jord = SIM.isSoil(g.tiles[gi]); // högt gräs där människan står
     const offer = living(s)[0], stam0 = (s.stockar ?? []).length;
     let iVagen = true;
     for (let k = 0; k < 900 && s.tornado; k++) {
@@ -1332,6 +1335,7 @@ SCENARIER.tornadokarna = {
       [`stenarna och stammen gick sönder (${stenKvar} stenar kvar, stammen ${stamKvar ? 'kvar' : 'borta'})`, stenKvar === 0 && !stamKvar],
       [`trädet välttes till en liggande stam (${g.trees[pt.y * W + pt.x] >= FOREST ? 'står' : 'vält'}, ${stamTrad ? 'stam' : 'ingen stam'})`, g.trees[pt.y * W + pt.x] < FOREST && stamTrad],
       [`människan dog i tornadon (${living(s).includes(offer) ? 'lever' : 'död'}; ${st['tornado dod'] ?? 0} döda)`, !living(s).includes(offer) && !iVagen && (st['tornado dod'] ?? 0) >= 1],
+      [`gräset i kärnan slets upp till bar jord i tornadons spår (täcke ${g.cover[gi].toFixed(2)}${jord ? '' : ', ingen jord'})`, jord && g.cover[gi] < 0.05 && (s.tornadoStig ?? []).includes(gi)],
       [`händelserna säger vad den gjorde (${st['tornado forstort'] ?? 0} saker förstörda, ${stam0} stammar före)`, (st['tornado forstort'] ?? 0) >= 2],
     ];
   },
@@ -1768,7 +1772,7 @@ SCENARIER.brand = {
       const tv = SIM.tandTest(tb, vattenRuta % W, Math.floor(vattenRuta / W));
       const t1 = SIM.tandTest(tb, mitt % W, Math.floor(mitt / W)), tIgen = SIM.tandTest(tb, mitt % W, Math.floor(mitt / W));
       let andra = -1;
-      for (let i = 0; i < W * W && andra < 0; i++) { const d = Math.hypot(i % W - e.x, Math.floor(i / W) - e.y); if (d >= 20 && d <= 60 && Math.hypot(i % W - mitt % W, Math.floor(i / W) - Math.floor(mitt / W)) > SIM.BRAND.maxR + 5 && g.trees[i] >= FOREST && tat(i) >= 24) andra = i; }
+      for (let i = 0; i < W * W && andra < 0; i++) { const d = Math.hypot(i % W - e.x, Math.floor(i / W) - e.y); if (d >= 20 && d <= 60 && Math.hypot(i % W - mitt % W, Math.floor(i / W) - Math.floor(mitt / W)) > 45 && g.trees[i] >= FOREST && tat(i) >= 24) andra = i; }
       const t2 = andra >= 0 ? SIM.tandTest(tb, andra % W, Math.floor(andra / W)) : { ok: false, text: 'ingen andra skog' };
       const testRad = tb.log.filter(l => l.text.startsWith('Testläget: en brand tändes')).length; // (direkt, innan loggen fylls)
       kor(tb, 6, torka);

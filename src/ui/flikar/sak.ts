@@ -1,3 +1,4 @@
+import { gen } from '../../sim/ord';
 import { runstenRubrik, tornadoAndel, tornadoPos, hageById, hageBete, djurIHagen, hageKant, harStaket, hageDygn, TAMDJUR, tamAlder, vaderstreck, kvOf, NORMAL, SKYDD, KROPPSDELAR, GravStil, GRAVAR, gravSkick, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf, egetNamn, specialText } from '../../sim';
 import { iconImg, tecknet } from '../../ikoner';
 import { condBar, durTxt, esc, fallUt, hjalpText, kvOrd, kvText, pLink } from '../hjalp';
@@ -58,7 +59,7 @@ const GRAVSTIL: Record<GravStil, string> = { jord: 'Begravd i jorden', bal: 'En 
 function grav(i: number) {
   const g = gravAt(s, i % W, Math.floor(i / W));
   if (!g) return '<p class="muted">Graven finns inte längre.</p>';
-  return `<div class="phead">${iconImg('grav', 32)}<div><h2>${esc(g.namn)}s grav</h2></div></div><p>${esc(GRAVSTIL[g.stil])}${g.ovardig ? ', utan heder' : ''}${g.stil === 'bal' ? '' : g.vard ? `, med ${GRAVAR[g.vard].namn.toLowerCase()}` : ', en jordhög'}. Begravd för ${durTxt(s.now - g.t)} sedan.</p><p class="small">${skickOrd(gravSkick(s, g))}${g.gavor ? `, ${g.gavor === 1 ? 'en gåva' : `${g.gavor} gåvor`} har lagts här` : ''}.</p>${g.text ? `<p><i>”${esc(g.text)}”</i></p><p class="small muted">Ristat av ${esc(g.textAv?.namn ?? 'någon')}.</p>` : ''}${g.med?.length ? `<p class="small">${g.stil === 'bal' ? 'Brändes med' : 'I graven'}: ${esc(g.med.map(k => sakNamn(k)).join(', '))}</p>` : ''}`;
+  return `<div class="phead">${iconImg('grav', 32)}<div><h2>${gen(esc(g.namn))} grav</h2></div></div><p>${esc(GRAVSTIL[g.stil])}${g.ovardig ? ', utan heder' : ''}${g.stil === 'bal' ? '' : g.vard ? `, med ${GRAVAR[g.vard].namn.toLowerCase()}` : ', en jordhög'}. Begravd för ${durTxt(s.now - g.t)} sedan.</p><p class="small">${skickOrd(gravSkick(s, g))}${g.gavor ? `, ${g.gavor === 1 ? 'en gåva' : `${g.gavor} gåvor`} har lagts här` : ''}.</p>${g.text ? `<p><i>”${esc(g.text)}”</i></p><p class="small muted">Ristat av ${esc(g.textAv?.namn ?? 'någon')}.</p>` : ''}${g.med?.length ? `<p class="small">${g.stil === 'bal' ? 'Brändes med' : 'I graven'}: ${esc(g.med.map(k => sakNamn(k)).join(', '))}</p>` : ''}`;
 }
 // runstenen (steg 10.6.1): runorna överst och texten på svenska under
 function runsten(id: number) {
@@ -159,7 +160,7 @@ function stock(id: number) {
 function agarRader(ag: Record<string, number> | undefined, n: number) {
   const eg = Object.entries(ag ?? {}).map(([id, m]) => ({ q: byId(s, Number(id)), m: Math.round(m) })).filter(r => r.m >= 1).sort((a, b) => b.m - a.m);
   const byns = n - eg.reduce((a, r) => a + r.m, 0);
-  return [...byns >= 1 ? [`<div>Byns ${byns}</div>`] : [], ...eg.map(r => `<div>${r.q ? pLink(r.q) : 'Någon som inte finns kvar'} ${r.m}</div>`)].join('') || '<div>Byns</div>';
+  return [...byns >= 1 ? [`<div>Byn: ${byns}</div>`] : [], ...eg.map(r => `<div>${r.q ? pLink(r.q) : 'Någon som inte finns kvar'} ${r.m}</div>`)].join('') || '<div>Byns</div>';
 }
 // ett slag i förrådet: ägarna summeras över stackarna i förrådet, och för redskap och plagg över tingen
 function agareAvSlag(k: string) {

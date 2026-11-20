@@ -1,5 +1,5 @@
 // Blodet (Björn efter v93): blod som hamnar på marken i olika sammanhang och bleknar bort på ett par dygn. Det rör inte byns
-// slumpföljder. Blod inne i byn sänker humöret hos dem som ser det, och mat i det ruttnar fortare (steg 3.6.10, smutsIByn och
+// slumpföljder. Blod inne i byn sänker humöret hos dem som ser det, och mat i det ruttnar fortare (steg 3.6.10, smutsPunkter och
 // ruttSmuts i smuts.ts). Två register:
 // - BLODFORM: hur blodet ligger (pöl, stänk, droppar, släpspår) och hur fort det bleknar.
 // - BLOD: sammanhangen (slakt, skada, blödning, förblödning, jakt): vilka former de ger och hur mycket. Strid och annat som
@@ -8,7 +8,7 @@
 // som blivit för stor rinner över till en ny bredvid, så att mycket blod täcker ett större område. Bilden (ui/blod.ts) ritar
 // alla fläckar i ett fält, så att pölar som ligger nära varandra flyter ihop till en större
 import { HOUR, MIN, Person, SEC, State } from './typer';
-import { clamp } from './slump';
+import { clamp, r3 } from './slump';
 import { balans } from './balans';
 
 export const BLODET = balans('blod', {
@@ -56,7 +56,7 @@ const hash = (a: number, b: number) => { const h = Math.sin(a * 12.9898 + b * 78
 
 // mängd m av formen f vid (x, y): i en fläck av samma form nära, annars en ny. Det som inte ryms rinner över bredvid
 // Platsen avrundas till åttondels rutor (bildens punkter) och talen så att en sparad by blir likadan
-const r8 = (v: number) => Math.round(v * 8) / 8, r3 = (v: number) => Math.round(v * 1000) / 1000;
+const r8 = (v: number) => Math.round(v * 8) / 8;
 function lagg(s: State, f: BlodForm, x0: number, y0: number, m: number, a0: number | undefined, n = 0) {
   const d = FORM[f]!, ut = blodOf(s), x = r8(x0), y = r8(y0), a = a0 === undefined ? undefined : r3(a0);
   let b = ut.find(g => g.f === f && Math.hypot(g.x - x, g.y - y) < d.nara && blodNu(g, s.now) > 0);

@@ -1,5 +1,5 @@
 import { MIN, State, Person } from './typer';
-import { REDSKAP_SLAG, REDSKAPSGRUPPER, SAKER, gruppOf, iSlag, isTool } from './saker';
+import { REDSKAPSGRUPPER, SAKER, gruppOf, iSlag } from './saker';
 import { ACTS, usesTool } from './handlingar';
 import { alive, byId } from './folk';
 import { kvHaller } from './kvalitet';
@@ -22,6 +22,8 @@ interface Halv { gor: string; av: Record<string, number>; kvar: number; ag: numb
 // vid = stationen tinget hör till och ligger vid när ingen använder det (kniven vid slaktbänken, stationer.ts), bar = den
 // som har plagget på sig (utrustning.ts, steg 2.3.2)
 export interface Ting { djur?: number; vaxt?: { g: string; v: number }; kok?: { r: string; n: number; kvar: number; ag: Record<string, number>; h?: number; q?: number; vatska?: 1 }; pa?: number; inne?: { v: import('./vatskor').VatskaId; n: number; q?: number; t?: number }; ler?: number; id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv; vid?: number; bar?: number; av?: number; gjord?: number; kopt?: number; q?: number; ber?: import('./berattelser').SakMinne; tand?: number; tandT?: number; krok?: number; fylld?: 1; helig?: number; skrift?: import('./skrift').Skrift; delar?: import('./skrift').Skrift[] } // delar = bokens delar (steg 10.6.6) // skrift = det som står på ett skrivet blad (steg 10.6.5, skrift.ts) // kok = rätten som står på elden i krukan, hur många portioner, den passiva tiden kvar och vems den blir (steg 9.6.3, matlagning.ts) // pa = protesen sitter på personen med det id:t (steg 9.5.11, protes.ts); inne = vätskan i behållaren och hur mycket (steg 9.4.14, vatskor.ts; fylld är det gamla: en fylld vattensäck) // helig = tinget är heligt i tron med det id:t och står på altaret (steg 10.3.20, kyrka.ts) // ler = lerkrukan torkar (0–1) och bränns sedan; utan ler är den färdig (steg 9.4.11, kruka.ts); av, gjord: vem som gjorde det och när (steg 2.3.5), kopt: när det köptes av en handlare (steg 5.3.5.3), q = kvaliteten (kvalitet.ts), ber = berättelsen om ett mästerverk eller en usel sak (steg 3.9.4), tand = den som bär facklan tänd och tandT = när den senast räknades (ljus.ts, steg 6.3.6), krok = den i vars bälte redskapet hänger medan hen arbetar med ett annat (steg 7.1.1)
+// ingen har tinget: inte i handen, inte i en börda och inte buret (steg 12.1.90)
+export const ingenHar = (t: Ting) => t.hos === undefined && t.lass === undefined && t.bar === undefined;
 export const tingOf = (s: State) => (s.ting ??= []);
 // är dragdjuret med id:t spänt för en släde som är ute på en tur (steg 10.10.3, fordon.ts)?
 export const spand = (s: State, djur: number) => tingOf(s).some(g => g.djur === djur && g.lass !== undefined);
@@ -78,7 +80,7 @@ export const ownsFree = (s: State, p: Person, k: string) => freeOf(s, p, k).some
 // p tar ett redskap av slaget k i handen, ur bältet om det hänger där. Det hen hade i handen hängs i bältet om det får
 // plats där (steg 7.1.1), annars läggs det i förrådet
 export function take(s: State, p: Person, k: string): Ting | undefined {
-  const c = freeOf(s, p, k).sort((a, b) => bast(a.k) - bast(b.k) || rank(p, a) - rank(p, b) || b.c - a.c)[0]; // den bästa saken i gruppen först (steg 12.2.5)
+  const c = ledigtTing(s, p, k); // den bästa saken i gruppen först (steg 12.2.5)
   if (!c) return;
   c.krok = undefined;
   for (const t of tingOf(s)) if (t.hos === p.id && t !== c) { t.hos = undefined; if (kanHanga(s, p, t)) t.krok = p.id; }
@@ -115,37 +117,6 @@ export function tidyTools(s: State) {
     if (!q || !alive(q)) t.hos = undefined;
     else if (usesTool(q.task) !== t.k && t.agare !== q.id && !(q.task && ACTS[q.task.act].vapen)) t.hos = undefined; // vakten har byns vapen i handen hela natten (vakt.ts), och den som väntar på vargarna (varg.ts)
   }
-}
-// äldre sparfiler: redskapen räknades bara som summor (s.items, och i v30 ägarlistor). Varje helt redskap blir ett ting.
-// Före v40 fanns redskapen också som summor och stackar bredvid tingen, och de som bars låg i s.tingVag
-export function migrateTools(s: State) {
-  if (!s.ting) toolsFromItems(s);
-  const vag = s.tingVag ?? [];
-  for (const p of s.people) {
-    const tk = p.task;
-    for (const k in tk?.items ?? {}) {
-      if (!isTool(k)) continue;
-      for (let n = tk!.items![k]; n > 1e-6;) {
-        const i = vag.findIndex(t => t.k === k), t: Ting = i >= 0 ? vag.splice(i, 1)[0] : newTing(s, k, Math.min(1, n), BYN);
-        if (i >= 0) tingOf(s).push(t);
-        t.c = Math.min(t.c, n); n -= t.c; t.hos = undefined; t.lass = p.id; (tk!.ting ??= []).push(t.id);
-      }
-      delete tk!.items![k]; if (tk!.cond) delete tk!.cond[k];
-    }
-    if (tk?.items && !Object.keys(tk.items).length) tk.items = undefined;
-  }
-  delete s.tingVag; delete s.items;
-}
-// varje helt redskap i s.items (och ägarlistorna i v30) blir ett ting. s.items lämnas, eftersom storeFromSums läser det
-export function toolsFromItems(s: State) {
-  s.ting = [];
-  for (const k of REDSKAP_SLAG) {
-    let n = s.items?.[k] ?? 0;
-    const ag = s.agare?.[k] ?? [];
-    for (let i = 0; n > 1e-6; i++) { const c = Math.min(1, n); newTing(s, k, c, ag[i] ?? BYN); n -= c; }
-  }
-  delete s.agare;
-  for (const p of s.people) { const k = usesTool(p.task); if (k && alive(p)) take(s, p, k); }
 }
 // vad p äger
 export const ownedBy = (s: State, p: Person) => allaTing(s).filter(t => t.agare === p.id);

@@ -16,11 +16,11 @@ import { KLOCKA, SLAGHINDER, nasTid } from './klocka';
 import { GANG } from './gang';
 import { blocked, freeNear } from './byggnad';
 import { ALDER, ageOf, alive, byId, count, gjort, living, log, relKey, stat, paKartan } from './folk';
-import { KROPPSDELAR, forlora, skada } from './halsa';
+import { KROPPSDELAR, forlora, kanGa, skada } from './halsa';
 import { blodas } from './blod';
 import { blodtorst } from './humor';
 import { isFamily, ranEfter, setRanStrid } from './behov';
-import { EFTER, Efter, FAROR, STRIDSLAG, gastKrok } from './efterstrid';
+import { EFTER, Efter, FAROR, MED, STRIDSLAG, gastKrok } from './efterstrid';
 import { ovning } from './folk';
 import { eldPlats } from './karta';
 import { avbryt } from './lager';
@@ -30,6 +30,7 @@ import { handelse, larma } from './rykten';
 import { clamp, rnd } from './slump';
 import { AVSIKTER, Avsikt, Kampe, SLAGSMAL, STRID, laggTill, Strid, StridVarld, Uppstallning, efterStrid, foljet, iVarlden, nyStrid, personKampe, skilj, slagen, slitKastat, starKvar, stridRad, stridSteg, vadretIStriden } from './strid';
 import { ledareOf } from './styre';
+import { larmRollNu } from './roller';
 import { Act, H, HOUR, Person, SEC, State, W } from './typer';
 import { upplev } from './uppvaxt';
 import { husPlats, kanterna } from './varg';
@@ -47,6 +48,7 @@ export const KARTSTRID = balans('kartstrid', {
   skiljChans: 0.12, // chansen per sekund att de slutar när någon står emellan, gånger 1 + (karisma + styrka − 20) / 20 ...
   skiljLedare: 2, // ... gånger detta för byns ledare ...
   skiljTorst: 3, // ... delat med 1 + detta gånger den blodtörstigastes blodtörst
+  hjalpMed: 15, // en hjälpare vid ett larm går in i striden mot hotet när en bybo slåss så här nära (rutor, steg 12.1.87)
 });
 
 // en strid som pågår på kartan. val = vad de som sett striden valt (personens id: skilja, undan eller kvar), fri = de som lämnat den
@@ -137,13 +139,27 @@ export function kartStridBorja(s: State, avsikt: Avsikt, sidor: [Person[], Perso
 }
 
 // en till ger sig in i en strid som pågår, där hen står (steg 10.1.14): den som kommer till när sidorna möts
-export function kartStridMed(s: State, g: KartStrid, p: Person, sida: 0 | 1) {
+// hjalp = en hjälpare: slåss inte, väntar på avstånd och bär undan de fallna (steg 12.1.87)
+export function kartStridMed(s: State, g: KartStrid, p: Person, sida: 0 | 1, hjalp?: true) {
   if (g.st.slut || g.st.kampar.some(k => k.pid === p.id && !g.fri?.includes(p.id))) return;
   if (g.fri?.includes(p.id)) return; // den som lämnat striden går inte in i den igen
   const id = Math.max(0, ...g.st.kampar.map(k => k.id)) + 1;
-  laggTill(g.st, { ...personKampe(s, p, id, sida, p.x, p.y), fly: flyMal(s, p) });
-  avbryt(s, p); stridsUppgift(s, p, g.orsak);
-  count(s, 'kartStridMed');
+  laggTill(g.st, { ...personKampe(s, p, id, sida, p.x, p.y), fly: flyMal(s, p), ...(hjalp ? { hjalp } : {}) });
+  if (g.efter && !hjalp) MED[g.efter.typ]?.(s, g.efter, g.st.kampar[g.st.kampar.length - 1], p); // det stridens slag ger den som kommer senare (steg 12.1.58)
+  avbryt(s, p); stridsUppgift(s, p, hjalp ? `Hjälper de fallna (${g.orsak})` : g.orsak);
+  count(s, hjalp ? 'kartStridHjalp' : 'kartStridMed');
+}
+// byns hjälpare vid ett larm (rollen hjälpare mot samma hot, Tre roller vid larm) går in i striden mot hotet när en bybo slåss nära,
+// som hjälpare (steg 12.1.87)
+function hjalparnaMed(s: State, g: KartStrid) {
+  if (!g.efter?.egen || g.st.slut) return; // striderna mot hotet (rövarna, vargarna, björnen, vildsvinet)
+  const kamp = g.st.kampar.filter(k => k.sida === 0 && k.lage === 'strid' && !k.hjalp && personAv(s, k) && !personAv(s, k)!.gast);
+  if (!kamp.length) return;
+  for (const p of living(s)) {
+    const r = larmRollNu(s, p);
+    if (p.gast || r?.roll !== 'hjalpare' || r.hot !== g.efter.typ || p.svimmat || !kanGa(p) || g.fri?.includes(p.id) || ['strid', 'sova', 'medvetslos'].includes(p.task?.act ?? '')) continue;
+    if (kamp.some(k => Math.hypot(k.x - p.x, k.y - p.y) <= KARTSTRID.hjalpMed)) kartStridMed(s, g, p, 0, true);
+  }
 }
 
 // ---------- världen striden frågar ----------
@@ -160,13 +176,16 @@ function varldAv(s: State, g: KartStrid): StridVarld {
       if (!p || p.died !== undefined) return false;
       if (sport && w.g < STRID.lek) return false; // brottningen: de svaga slagen gör ont men blir ingen skada (steg 9.2.92)
       const slag = g.efter && !p.gast ? STRIDSLAG[g.efter.typ] : undefined; // striden med rövare eller djur: såret och döden heter efter den
-      const dog = !!skada(s, p, w.d, w.k, w.g, (slag?.orsak ?? 'drap') as Parameters<typeof skada>[5], slag?.text ?? `i ${lek ? 'ett lekslagsmål' : 'en strid'} med ${av.namn}`);
+      const dog = !!skada(s, p, w.d, w.k, w.g, (slag?.orsak ?? 'drap') as Parameters<typeof skada>[5], slag?.text ?? `i ${lek ? 'ett lekslagsmål' : 'en strid'} med ${av.namn}`, true);
       if (!dog) slag?.sar?.(s, p, w);
       if (w.fast && p.skador?.length) p.skador[p.skador.length - 1].fast = 1; // spjutet sitter kvar till vården (steg 3.7.7)
       if (!dog && w.av && !(KROPPSDELAR[w.d] as { livsviktig?: true }).livsviktig) forlora(s, p, w.d, 'höggs av'); // olyckshugget (steg 9.5.22)
       count(s, 'kartSar');
       return dog;
     },
+    // personens sår blöder i hälsan, med ansträngningen i striden (HALSA.stridBlod), och trycket gäller personens öppna sår
+    halsaBlod: k => { const p = personAv(s, k); return !!p && p.died === undefined; },
+    tryck: k => { const p = personAv(s, k); for (const w of p?.skador ?? []) if (w.b > 0) w.b = 0; },
     // den som dör i striden är död direkt
     fall: (k, h) => {
       const p = personAv(s, k);
@@ -193,6 +212,7 @@ export function kartStridSteg(s: State, dtSec: number) {
   if (!s.kartStrider?.length) return;
   for (const g of [...s.kartStrider]) {
     const st = g.st, v = varldAv(s, g), sport = sportAv(st.avsikt);
+    hjalparnaMed(s, g);
     g.rest += dtSec;
     while (g.rest >= STRID.tick - 1e-9 && !st.slut) {
       g.rest -= STRID.tick;
@@ -217,7 +237,7 @@ export function kartStridSteg(s: State, dtSec: number) {
         if (sport) continue; // brottaren har matchen som uppgift
         if (k.lage === 'ger' || k.lage === 'borta') { // har lämnat striden: väljer på nytt
           (g.fri ??= []).push(p.id);
-          if (g.efter?.typ === 'rovare' && !p.gast) p.gavSig = s.now;
+          if (g.efter?.typ === 'rovare' && !p.gast) { p.gavSig = s.now; p.larmRoll = undefined; }
           if (p.gast && k.lage === 'ger') gastKrok.ger?.(s, p, st.avsikt); // gästen som gett upp för den som kuvar (steg 11.12.6, rovare.ts) // flydde eller gav upp för rövarna: gömmer sig sedan (rovarSkydd i rovare.ts)
           if (p.task?.act === 'strid') p.task.until = s.now;
         } else if (k.lage === 'strid' || k.lage === 'flykt') { // den som står eller flyr är kvar i striden, också när en skada avbrutit det hen gjorde

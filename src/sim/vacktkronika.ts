@@ -13,12 +13,12 @@ import { varldHandelseText, type VarldHandelseId } from './varldkronika';
 
 // slaget i byns krönika för en rad ur världens krönika (kategorin i KRONIKA_KAT); de andra blir nyheter
 const SLAG: Partial<Record<VarldHandelseId, string>> = {
-  nyLedare: 'ledare', svalt: 'motgang', farsot: 'sjukdom', delad: 'utbrytning', rad: 'rovare', lager: 'rovare',
-  krig: 'sandebud', fred: 'sandebud', forbund: 'sandebud', uppdrag: 'uppdrag', handelslager: 'handel', utpost: 'bygge', platsbygge: 'bygge',
+  nyLedare: 'ledare', svalt: 'motgang', delad: 'utbrytning', rad: 'rovare', lager: 'rovare',
+  krig: 'sandebud', fred: 'sandebud', handelslager: 'handel', utpost: 'bygge', platsbygge: 'bygge',
 };
 export function byggKronika(b: State, r: VarldRad) {
   const vl = b.varld, rader: [number, string, string][] = [];
-  for (const h of vl?.kronika ?? []) if ((h.by === r.nr || h.mot === r.nr) && h.t <= b.now) rader.push([h.t, varldHandelseText(vl!, h), SLAG[h.k] ?? 'nyhet']);
+  for (const h of vl?.kronika ?? []) if ((h.by === r.nr || h.mot === r.nr) && h.t <= b.now) rader.push([h.t, varldHandelseText(vl!, h) + '.', SLAG[h.k] ?? 'nyhet']);
   const doda = new Set<string>();
   for (const p of b.people) {
     const mor = byId(b, p.mother)?.name ?? p.forr?.familj.find(f => f.roll === 'mor')?.namn, far = byId(b, p.father)?.name ?? p.forr?.familj.find(f => f.roll === 'far')?.namn;

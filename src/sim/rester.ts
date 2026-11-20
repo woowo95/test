@@ -1,5 +1,5 @@
 // Resterna och sophögen (steg 9.7.5, Odlingen i detalj: Resterna och sophögen). All slakt ger slaktrens och all skörd ger
-// växtrester, två saker i SAKER som ruttnar bort med tiden. Så länge de ligger i byn ger de smuts (smutsIByn i smuts.ts), och
+// växtrester, två saker i SAKER som ruttnar bort med tiden. Så länge de ligger i byn ger de smuts (smutsPunkter i smuts.ts), och
 // poängen för att bära dem till sophögen i utkanten, nära latrinen, kommer ur smutsen (raden sopor i ARBETEN, val.ts): de bärs
 // bort när de stör och får ligga när annat är viktigare. Sophögen är en plats och ingen station (s.sophog); resterna ruttnar bort där.
 import { balans } from './balans';
@@ -27,7 +27,7 @@ export const REST = balans('rester', {
   kompostRest: 10, // så många rester blir en färdig kompost ...
   kompostDygn: 3, // ... på så många dygn i värme (långsamt i kyla)
   latrin: 5, // en tömd latrin ger komposten så här många rester
-  tomMin: 15, // minuter att tömma latrinen i komposten (handlingen tomma_latrin)
+  tomMin: 4, // minuter att tömma latrinen i komposten (handlingen tomma_latrin, en liten sak)
   varm: 5, // över så många grader mognar komposten i full takt ...
   kylaTakt: 0.3, // ... annars i så här stor del av takten
   godsla: 0.3, // en färdig kompost höjer bördigheten på en ruta så här mycket
@@ -88,11 +88,7 @@ export function latrinTomKlar(s: State, p: Person) {
 // en gång i timmen: den som odlar kan märka att det växer bättre där resterna legat (tekniken Gödsel) och komposten mognar
 export function stepKompost(s: State) {
   const h = s.sophog;
-  if (h && h.n >= REST.upptack && !living(s).some(p => knows(p, 'kompost')) && hash(s.seed ^ 0x7c0, Math.floor(s.now / HOUR), 7) < REST.upptackTim) {
-    const nya = living(s).filter(p => knows(p, 'odling'));
-    for (const p of nya) learn(s, p, TEK.kompost);
-    if (nya.length && forstaGang(s, 'godsel')) log(s, `${nya[0].name} märker att det växer bättre där resterna på sophögen har legat.`, 'world', [nya[0].id]);
-  }
+  if (h && h.n >= REST.upptack && hash(s.seed ^ 0x7c0, Math.floor(s.now / HOUR), 7) < REST.upptackTim) upptack(s, TEK.kompost, p => knows(p, 'odling'), 'godsel', p => `${p.name} märker att det växer bättre där resterna på sophögen har legat.`);
   const ko = komposten(s);
   if (!ko) return;
   if (h?.n) { ko.kompost = { rest: (ko.kompost?.rest ?? 0) + Math.floor(h.n), mogna: ko.kompost?.mogna ?? 0 }; h.n = 0; } // sophögen blir komposten
@@ -105,8 +101,7 @@ export function stepKompost(s: State) {
   if (forstaGang(s, 'kompostKlar')) log(s, 'Den första komposten är färdig. Den gör fälten bördigare.', 'world');
 }
 import { isKlar } from './stationer';
-import { living } from './folk';
-import { TEK, knows, learn } from './teknik';
+import { TEK, knows, upptack } from './teknik';
 import { hash } from './karta';
 import { temperature } from './vader';
 import { put } from './lager';

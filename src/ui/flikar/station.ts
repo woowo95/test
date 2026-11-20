@@ -1,3 +1,5 @@
+import { MIN } from '../../sim';
+import { bestamd, gen, spelTid, stor } from '../../sim/ord';
 import { fritidLista } from './fram';
 import { PYNT } from '../../sim/pynt';
 import { kvOf } from '../../sim/kvalitet';
@@ -26,7 +28,7 @@ function dragRad(st: { x: number; y: number }) {
   const v = drag(s, st.x, st.y), delar = dragDelar(s, st.x, st.y);
   const vaxter = DRAG_LIST.filter(k => (delar[k] ?? 0) > 0).map(k => `<span ${tip(`${DRAGKALLOR[k].namn}: ${fmtN(Math.round(delar[k] * 10) / 10)}`)}>${iconImg(DRAGKALLOR[k].ikon)}</span>`).join('');
   const t = st as { bi?: number }, kakor = t.bi === undefined ? '' : `<p ${tip(`Ett bisamhälle bor här. ${fmtN(Math.floor(t.bi))} hela honungskakor av ${BIN.rymmer}`)}>${iconImg('honung')} ${fmtN(Math.floor(t.bi))} / ${BIN.rymmer} ${condBar(t.bi / BIN.rymmer)}</p>`;
-  return `<h3>Bin</h3>${kakor || `<p class="muted" ${tip('Ingen svärm har flyttat in än. På sommaren kan en svärm från vildbina eller en annan kupa komma')}>Tom</p>`}<h3>Drag</h3><p ${tip(`Så mycket blommar för bina här: ${Math.round(v * 100)} %. Hösten och istiden blommar inget`)}>${condBar(v)}<span>${Math.round(v * 100)} %</span> ${vaxter}</p>`;
+  return `<h3>Bin</h3>${kakor || `<p class="muted" ${tip('Ingen svärm har flyttat in än. På sommaren kan en svärm från vildbina eller en annan kupa komma')}>Tom</p>`}<h3>Drag</h3><p ${tip(`Så mycket blommar för bina här: ${Math.round(v * 100)} %. På hösten och i istiden blommar inget`)}>${condBar(v)}<span>${Math.round(v * 100)} %</span> ${vaxter}</p>`;
 }
 function testRad(id: number) {
   if (!ui.testMode) return '';
@@ -80,7 +82,7 @@ export const station: Flik = {
         const k = har[i];
         if (!k) return `<dt ${tip(`Tom plats: byn gör en ny ${namn}`)}>${iconImg(slag)}</dt><dd class="muted">tom</dd>`;
         const var_ = k.hos !== undefined ? `används av ${pLink(byId(s, k.hos))}` : k.lass !== undefined ? 'bärs' : 'ligger här';
-        return `<dt class="tryck" data-sak="t:${k.id}" ${tip(`Bänkens ${namn}, skick ${Math.round(k.c * 100)} %`)}>${iconImg(slag)}</dt><dd>${condBar(k.c)} ${var_}</dd>`;
+        return `<dt class="tryck" data-sak="t:${k.id}" ${tip(`${gen(stor(bestamd(d.namn, d.ett)[0]))} ${namn}, skick ${Math.round(k.c * 100)} %`)}>${iconImg(slag)}</dt><dd>${condBar(k.c)} ${var_}</dd>`;
       }).join('');
     }).join('');
     // tillbehören som hör till den (TILLBEHOR i stationer.ts): det som ligger i den, och det som saknas
@@ -110,7 +112,7 @@ export const station: Flik = {
     // talgljuset på bordet eller hyllan (ljus.ts, steg 6.3.8): om det brinner och hur mycket som är kvar
     const tl = s.ljus?.find(q => q.st === st.id);
     const ljuset = tl ? `<p ${tip(`${sakNamn(ljusSort(tl))}, ${tl.tand ? 'tänt' : 'släckt'}, ${Math.round(tl.c * 100)} % kvar`)}>${iconImg(ljusSort(tl))} ${tl.tand ? 'Tänt' : 'Släckt'} ${condBar(tl.c)}<span>${Math.round(tl.c * 100)} %</span></p>` : '';
-    const fyllt = ljuset + (hanger ? `<p>${hanger}</p>` : '') + (d.gor.includes('toa') && klar ? `<p ${tip(`Fylld till ${Math.round((st.fyllt ?? 0) * 100)} %. När den är full fylls den igen med jord, och byn gräver en ny`)}>${iconImg('latrin')} Full ${Math.round((st.fyllt ?? 0) * 100)} %</p>` : '');
+    const fyllt = ljuset + (hanger ? `<p>${hanger}</p>` : '') + (d.gor.includes('toa') && klar ? `<p ${tip(`Fylld till ${Math.round((st.fyllt ?? 0) * 100)} %. När den är full fylls den igen med jord, och byn gräver en ny`)}>${iconImg('latrin')} Fylld till ${Math.round((st.fyllt ?? 0) * 100)} %</p>` : '');
     // det som används just nu (steg 3.6.6): den som arbetar, sakerna på bänken och hur långt arbetet kommit
     const ib = klar ? iBruk(st) : undefined;
     const bruk = ib ? `<h3>Används nu</h3><p>${pLink(ib.p)} ${esc(verbOf(ib.p.task!.act))} ${ib.saker.map(k => `<span ${tip(sakNamn(k))}>${iconImg(k)}</span>`).join('')}${ib.gor ? ` → <span ${tip(sakNamn(ib.gor))}>${iconImg(ib.gor)}</span>` : ''}</p>`
@@ -123,7 +125,7 @@ export const station: Flik = {
     ${bruk}
     ${d.utkant?.drag ? dragRad(st) : ''}
     ${d.gor.length ? `<h3>Här görs</h3><dl class="kv">${d.gor.map(a => gorRad(a, !!d.bara?.includes(a))).join('')}</dl>` : ''}
-    <h3>Material</h3><p ${tip(`${d.tek.length ? `Kräver ${d.tek.length > 1 ? 'någon av teknikerna' : 'tekniken'} ${d.tek.map(k => TEKNIK.find(q => q.id === k)?.namn ?? k).join(' eller ')}` : 'Kräver ingen teknik'}`)}>${av}</p><p>Arbete ${d.min} min</p>
+    <h3>Material</h3><p ${tip(`${d.tek.length ? `Kräver ${d.tek.length > 1 ? 'någon av teknikerna' : 'tekniken'} ${d.tek.map(k => TEKNIK.find(q => q.id === k)?.namn ?? k).join(' eller ')}` : 'Kräver ingen teknik'}`)}>${av}</p><p>Arbete ${spelTid(d.min * MIN)}</p>
     ${platser ? `<h3>Redskap</h3><dl class="kv">${platser}</dl>` : ''}
     ${d.forvar ? `${kvRubrik('Förvaring')}${inne ? `<dl class="kv stk">${inne}</dl>` : '<p class="muted">tom</p>'}<p class="muted">${forvar}</p>` : ''}
     ${d.platser ? `<h3>Platser</h3><p ${tip('Här äter man tillsammans och blir glad av det, och här samtalar man')}>${stubbar || `<span class="muted">${bordPlatser(st).length} stubbar när bordet är klart</span>`}</p>` : ''}

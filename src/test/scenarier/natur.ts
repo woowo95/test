@@ -618,7 +618,7 @@ SCENARIER.slaktbank = {
     bearbetaVid(u, uq, DJUR.abborre, 1);
     const kvar = Math.abs(amountOf(u, 'vilt') - 3 * KANIN) < 1e-9 && amountOf(u, 'kott') < 1e-9 && Math.abs(amountOf(u, 'abborre') - 3) < 1e-9 && amountOf(u, 'fisk') < 1e-9;
     // jaktfärdigheten: mer kött för den som jagat mycket
-    const kott = (jakt: number) => { p.skill.jakt = jakt; setMat(s, { vilt: 3 * KANIN }); bearbetaVid(s, p, DJUR.kanin, 1); return amountOf(s, 'kott'); };
+    const kott = (jakt: number) => { p.skill.jakt = jakt; setMat(s, { vilt: 3 * KANIN }); for (let i = 0; i < 3 && amountOf(s, 'vilt') > 0; i++) bearbetaVid(s, p, DJUR.kanin, 1); return amountOf(s, 'kott'); }; // (viltet kan ligga i två stackar)
     const ny = kott(0), van = kott(REDSKAP.kottFull);
     // vargen (steg 3.7.14): eget kött och skinn, samma ben
     setMat(s, { vilt: 0 }); const k0 = amountOf(s, 'kott'), b0 = amountOf(s, 'ben'), vk0 = amountOf(s, 'vargkott');
@@ -709,9 +709,9 @@ SCENARIER.flatarbank = {
 };
 
 SCENARIER.stationsteknik = {
-  text: 'Varje station är en teknik i teknikträdet som byn måste komma på innan den kan byggas (steg 2.2.11): slaktbänken efter kniven, slöjdbänken efter repet och korgen efter slöjdbänken. En station som redan står i en sparad by kan byggas av dem som kunde det som räckte förut',
+  text: 'Varje station är en teknik i teknikträdet som byn måste komma på innan den kan byggas (steg 2.2.11): slaktbänken efter kniven, slöjdbänken efter repet och korgen efter slöjdbänken',
   kor: () => {
-    const { STATIONER, STATION_LIST, TEK, kanBygga, thinkWhileWorking, knows, migrate, SPARVERSION } = SIM;
+    const { STATIONER, STATION_LIST, TEK, kanBygga, thinkWhileWorking, knows } = SIM;
     // en storlek av en annan station (de större borden, steg 2.2.15) har den stationens teknik
     const register = STATION_LIST.every(k => { if ((STATIONER[k] as SIM.StationDef).brasa || (STATIONER[k] as SIM.StationDef).tro || (STATIONER[k] as SIM.StationDef).vrak) return !STATIONER[k].tek.length; const tk = STATIONER[k].tek[0]; if ((STATIONER[k] as SIM.StationDef).smak) return STATIONER[k].tek.length === 1 && tk === (STATIONER[k] as SIM.StationDef).smak && !!TEK[tk]; /* mattorna: en teknik för alla storlekar (steg 10.7.6) */ if ((STATIONER[k] as SIM.StationDef).hage) return STATIONER[k].tek.length === 1 && tk === 'staket'; /* vattenhon: hagens teknik (steg 10.10.30) */ return STATIONER[k].tek.length === 1 && !!TEK[tk] && (tk === k || (STATIONER as Record<string, SIM.StationDef>)[tk]?.tek[0] === tk); });
     const ordning = TEK.slaktbank.krav.includes('kniv') && TEK.flatarbank.krav.includes('rep') && TEK.korg.krav.includes('flatarbank');
@@ -734,20 +734,12 @@ SCENARIER.stationsteknik = {
     kq.pot.nyfikenhet = kq.pot.intelligens = 16; kq.tek = { rep: 1 }; setAmount(k, 'torrgras', 40);
     for (let i = 0; i < 400; i++) thinkWhileWorking(k, kq, 'samla', 600);
     const ingenKorg = (kq.tek.korg ?? 0) === 0;
-    // en sparad by från före steget med en slaktbänk: de som kan kniven kan bygga den
-    const g = createState(1, START), gp = living(g).find(r => ageOf(r, g.now) >= 18)!, gn = living(g).find(r => r !== gp)!;
-    gp.tek = { kniv: 1 }; gn.tek = {};
-    const at = SIM.stationSite(g, 'slaktbank')!;
-    (g.stationer ??= []).push({ id: 1, k: 'slaktbank', x: at.x, y: at.y, kvar: 0 });
-    g.v = 4; migrate(g);
-    const sparad = knows(gp, 'slaktbank') && !knows(gn, 'slaktbank') && g.v === SPARVERSION;
     return [
       ['varje station är en teknik med samma namn, och tekniken är det som krävs för att bygga den (brasan, trons möbler och grundarnas vagn kräver ingen, vattenhon hagens)', register],
       ['slaktbänken kommer efter kniven, slöjdbänken efter repet och korgen efter slöjdbänken', ordning],
       ['den som kan kniven och repet men inte stationerna bygger ingen; med teknikerna kan hen', utan && med],
       ['den som jagar med kniv och tvinnar rep kommer på slaktbänken och slöjdbänken', kommer],
       ['korgen kommer man inte på utan slöjdbänken', ingenKorg],
-      ['i en sparad by med en slaktbänk kan de som kan kniven bygga den', sparad],
       ['varje teknik har en nivå (steg 2.12.9): 1 utan krav, annars ett mer än det högsta den kräver, och det finns ett mål i dygn för varje nivå', SIM.TEKNIK.every(t => t.niva === (t.krav.length ? 1 + Math.max(...t.krav.map(k => TEK[k].niva)) : 1) && t.niva <= SIM.TEKTAL.nivaDygn.length && t.tid > 0)],
       ['trädet på bredden (steg 2.12.7): grillen efter slaktbänken, torkställningen efter grillen, hyllorna efter bordet, metspöet efter träspjutet, skinndörren och skinnfällen efter skinnkläderna', ([['grill', 'slaktbank'], ['tork', 'grill'], ['hylla', 'bord'], ['metspo', 'fiskespjut'], ['skinndorr', 'skinnklader'], ['skinnfall', 'skinnklader']] as const).every(([t, k]) => TEK[t].krav.includes(k))],
     ];
@@ -1347,7 +1339,7 @@ SCENARIER.eldbrand = {
   kor: () => {
     const { tandSatt, kanTanda, nyEld, eldById, eldPlats, vidEld, iVattnetNu } = SIM;
     const s = createState(1, START); klockan(s, 10); tandEld(s, 6);
-    setAmount(s, 'ved', 60); setAmount(s, 'grenar', 6); setAmount(s, 'torrgras', 10); setAmount(s, 'flinta', 1);
+    setAmount(s, 'ved', 60); setAmount(s, 'grenar', 60); setAmount(s, 'torrgras', 60); setAmount(s, 'flinta', 1); // nog tändmaterial: ingen hämtar mer i slaget då elden tar fyr
     s.rovarVila = s.now;
     // en lägereld tio rutor från den första elden, släckt
     const e = eldPlats(s);
@@ -1482,11 +1474,6 @@ SCENARIER.brasa = {
       hog = (b.stackar ?? []).some(a => a.k === 'sten' && a.x === 1 && a.y === 1 && a.n >= RT.brasaSten);
       ateranv = !!b.brasa && brasaStenMal(b) === 0; // stenarna i högen räcker till nästa: ingen behöver leta
     }
-    // en sparad by från före v284: en färdig brasa (en station med en egen eld) blir en lägereld på samma plats
-    const g = createState(1, START); klockan(g); tandEld(g);
-    (g.stationer ??= []).push({ id: 77, k: 'brasa', x: 9, y: 11, kvar: 0, eld: { fuel: 3, lit: 1, folk: [1] } } as unknown as SIM.Station);
-    g.v = 21; delete g.eldar; SIM.migrate(g);
-    const ge = brasorOf(g)[0], sparad = !!ge && ge.id === 77 && ge.at!.x === 9 && ge.at!.y === 11 && ge.lit && ge.fuel === 3 && !!ge.ring && !stationerOf(g).some(t => t.k === 'brasa');
     return [
       ['utan hus sover man vid elden, och byn vill inte ha någon lägereld till', ingen],
       ['de sover långt bort och det är kallt: byn vill ha en lägereld till', vill],
@@ -1497,7 +1484,6 @@ SCENARIER.brasa = {
       ['vid den brinnande lägerelden är det varmare än den första elden ensam ger', varm],
       ['en släckt lägereld som ingen sover nära tas isär, och stenarna läggs i en hög', isar && hog],
       ['stenarna i högen används till nästa lägereld', ateranv],
-      ['en sparad by: varje färdig brasa blir en lägereld på samma plats', sparad],
     ];
   },
 };
@@ -1686,22 +1672,6 @@ SCENARIER.falt = {
       if (SIM.iByn(gs, x, y)) innanfor++; // innanför byns område (steg 6.2.4)
     }
     const narmast = site ? SIM.utanforByn(gs, site.x + 1.5, site.y + 0.5) : Infinity;
-    // en sparad by från före steg 2.10.13: fältet blir 2 × 2 rutor när byn laddas
-    const gm = cloneState(s);
-    gm.falt = [{ id: 1, x: 10, y: 10, agare: 0, steg: 'vaxer', groda: 'rovor', vuxit: 0.5, rord: gm.now } as unknown as SIM.Falt];
-    gm.v = 8; SIM.migrate(gm);
-    const gf = gm.falt[0], gammalt = gf.w === 2 && gf.n === 4 && gf.sadda === 4 && SIM.faltRutor(gf).length === 4;
-    // en sparad by från före steg 3.10.23.8: kornet blir ärter, också på fältet, och fröna delas lika på rovfrön och ärtfrön
-    // (det udda till rovfröna), också vems de är och det som bärs
-    const gk = cloneState(s), gp = living(gk)[0], gc = bynsMitt(gk);
-    gk.stackar = (gk.stackar ?? []).filter(a => !['rovfron', 'artfron', 'arter'].includes(a.k));
-    gk.stackar.push({ k: 'fron', n: 9, c: 0.8, x: Math.floor(gc.x) + 1, y: Math.floor(gc.y), ag: { [gp.id]: 5 } }, { k: 'korn', n: 4, c: 1, x: Math.floor(gc.x) + 1, y: Math.floor(gc.y) + 1 });
-    gp.task = { act: 'samla', items: { fron: 7, korn: 2 }, ag: { fron: { [gp.id]: 3 } } } as unknown as SIM.Task;
-    gk.falt = [{ ...gk.falt?.[0] ?? gf, groda: 'korn' as SIM.GrodaSlag }];
-    gk.v = 15; SIM.migrate(gk);
-    const gs1 = (k: string) => (gk.stackar ?? []).filter(a => a.k === k).reduce((a, b) => a + b.n, 0), gt = gp.task!;
-    const kornFron = gs1('rovfron') === 5 && gs1('artfron') === 4 && gs1('arter') === 4 && !gs1('fron') && !gs1('korn') && amountOf(gk, 'artfron') === 4 &&
-      gt.items?.rovfron === 4 && gt.items?.artfron === 3 && gt.items?.arter === 2 && gt.ag?.artfron?.[gp.id] === 1 && gt.ag?.rovfron?.[gp.id] === 2 && gk.falt?.[0]?.groda === 'arter';
     return [
       [`byn röjer ett fält när den kan odla och har frön (${fs.length} fält, ${f ? SIM.FALT_STEG[f.steg].namn.toLowerCase() : '-'})`, fs.length > 0],
       [`fälten ligger på jord utan stora träd, inte på varandra och inte på lagret (${fel} fel)`, fel === 0],
@@ -1718,8 +1688,6 @@ SCENARIER.falt = {
       ['fältet blir inte gräs direkt efter att grödan gått förlorad', kvarEfter],
       ['frosten i istiden dödar grödan, och ingen sår något nytt förrän det hinner mogna', frost && ingenSadd],
       ['ett fält som ingen skött på länge blir gräs igen', gras],
-      ['ett fält i en sparad by från före steget blir 2 × 2 rutor när byn laddas', gammalt],
-      ['i en sparad by från före steg 3.10.23.8 blir kornet ärter, också på fältet, och fröna delas lika på rovfrön och ärtfrön, också det som bärs och vems de är', kornFron],
       [`ett nytt fält ligger utanför byns hus, stationer och lagerplatser med minst ${stig} rutor fritt emellan och utanför byns område (${inpa} rutor för nära, ${innanfor} innanför området, ${narmast.toFixed(1)} rutor från byn)`, !!site && inpa === 0 && innanfor === 0 && narmast <= SIM.ODLING.faltTill],
     ];
   },
@@ -1761,7 +1729,7 @@ SCENARIER.regntvatt = {
 SCENARIER.smutsibyn = {
   text: 'Steg 3.6.10: blod och toa-högar inne i byn ger en tanke som sänker humöret hos dem som ser dem, och mat som ligger i en blodfläck eller på eller bredvid en toa-hög ruttnar fortare',
   kor: () => {
-    const { blodas, akel, toaBesok, slitageNu, smutsIByn, SMUTS, zoneOf, utanforByn } = SIM;
+    const { blodas, akel, toaBesok, slitageNu, smutsPunkter, SMUTS, zoneOf, utanforByn } = SIM;
     const s = createState(1, START); klockan(s); tandEld(s);
     const [p, q] = living(s).filter(r => ageOf(r, s.now) >= 18) as [SIM.Person, SIM.Person];
     const z = zoneOf(s), bx = z.x + 0.5, by = z.y + 0.5;
@@ -1775,14 +1743,14 @@ SCENARIER.smutsibyn = {
     const pa = slitageNu(s, { k: 'bar', x: z.x, y: z.y }).per, rent = slitageNu(s, ren).per;
     Object.assign(q, { x: z.x + 0.5, y: z.y + z.h - 1 + 0.5, task: undefined }); toaBesok(s, q); // i lagrets andra hörn
     const toa = slitageNu(s, { k: 'bar', x: z.x + 1, y: z.y + z.h - 1 }).per;
-    const ibyn = smutsIByn(s).punkter.length, inne = utanforByn(s, z.x, z.y) <= SMUTS.byn;
-    // nytt blod i en bleknad fläck (samma antal fläckar) syns genast, inte först nästa timme (smutsIByn, kodgenomgången 3.10.25)
+    const ibyn = smutsPunkter(s).length, inne = utanforByn(s, z.x, z.y) <= SMUTS.byn;
+    // nytt blod i en bleknad fläck (samma antal fläckar) syns genast, inte först nästa timme (smutsPunkter, kodgenomgången 3.10.25)
     const u = createState(1, START); klockan(u); tandEld(u);
     const uz = zoneOf(u);
     u.blod = [{ x: uz.x + 0.5, y: uz.y + 0.5, f: 'droppar', m: 1, t: u.now - 18 * HOUR }];
-    const bleknad = smutsIByn(u).punkter.length;
+    const bleknad = smutsPunkter(u).length;
     blodas(u, uz.x + 0.5, uz.y + 0.5, 'blodning', 1);
-    const farsk = smutsIByn(u).punkter.length, antal = u.blod.length;
+    const farsk = smutsPunkter(u).length, antal = u.blod.length;
     // samma toahög ute och inne (steg 11.1.73): inne i ett hus äcklar den mer, och den väger tyngre i rummets smuts
     const w = createState(1, START); klockan(w); medHus(w);
     const rum = SIM.gridOf(w).rooms.find(r => r.tiles.length > 2)!, [a, b2] = living(w).filter(r => ageOf(r, w.now) >= 18) as [SIM.Person, SIM.Person];

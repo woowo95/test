@@ -1,3 +1,4 @@
+import { gen } from './ord';
 // Omröstningarna och maktens delar (system 8.3). Allt byn avgör är en fråga i registret FRAGOR: vem som får lägga fram den, vilka som
 // röstar (kretsen) och vad ett ja gör. Frågan avgörs genom handuppräckning vid elden klockan 20 (rostKvall, från stepStyre). Alla vuxna
 // röstar efter egna åsikter och eget intresse, och summan av vikterna avgör (`vikter`, samma tal som i sederna). Här finns också
@@ -144,7 +145,7 @@ export const FRAGOR: Record<string, FragaDef> = {
       for (const k of pabudTal(d)) ny[k] = d[k] as number;
       st.pabud = ny;
       if (d.om !== undefined) st.tystnad = { id: d.om as number, namn: d.namn as string };
-      if (fram) log(s, `Byn gick på ${fram.name}s förslag om ${(pabudFraga(d.k as string)?.namn ?? '').toLowerCase()}.`, 'world', [fram.id]);
+      if (fram) log(s, `Byn gick på ${gen(fram.name)} förslag om ${(pabudFraga(d.k as string)?.namn ?? '').toLowerCase()}.`, 'world', [fram.id]);
     },
   },
   minister: {
@@ -221,11 +222,10 @@ export function seOverMinistrar(s: State) {
     if (!m.nar(s)) continue;
     const q = m.vem(s);
     if (!q) continue;
-    if ((s.seder.v.rang ?? 0) > 0.5) { (st.ministrar ??= {})[id] = q.id; log(s, `${l.name} gjorde ${q.name} till ${m.namn.toLowerCase()}.`, 'world', [l.id, q.id]); count(s, 'minister'); oppnaHarkomst(s); }
-    else { laggFram(s, 'minister', { post: id, id: q.id, namn: q.name }, l); oppnaHarkomst(s); }
+    if ((s.seder.v.rang ?? 0) > 0.5) { (st.ministrar ??= {})[id] = q.id; log(s, `${l.name} gjorde ${q.name} till ${m.namn.toLowerCase()}.`, 'world', [l.id, q.id]); count(s, 'minister'); oppnaSed(s, 'fortjanst'); }
+    else { laggFram(s, 'minister', { post: id, id: q.id, namn: q.name }, l); oppnaSed(s, 'fortjanst'); }
   }
 }
-const oppnaHarkomst = (s: State) => oppnaSed(s, 'fortjanst');
 // en vågskål låses upp (Skalor som låses upp): den börjar där byn redan lutar, inte på noll
 export function oppnaSed(s: State, k: Sed) {
   const st = styreAv(s);
@@ -301,7 +301,7 @@ export function lognOmLedaren(s: State, ertappare: Person, berattare: Person, om
   const f = s.styre?.frak, l = ledareOf(s);
   if (!f || !l || l.id !== om || !f.med.includes(berattare.id) || ertappare === l || (s.rels[relKey(ertappare.id, l.id)]?.op ?? 0) < MISS.lojal) return;
   const t = `${berattare.name} spred lögner om ${l.name} och blev avslöjad.`;
-  kronika(s, t, 'ledare'); notis(s, 'ledare', t, [berattare.id, l.id]); count(s, 'fulspel_avslojat');
+  kronika(s, t, 'ledare'); notis(s, 'ledare', t, [berattare.id, l.id], undefined, { ton: { [berattare.id]: 'ont', [l.id]: 'gott' } }); count(s, 'fulspel_avslojat');
   avslojad(s, l, f, ertappare);
 }
 function avslojad(s: State, l: Person, f: Fraktion, ang: Person) {
@@ -323,7 +323,7 @@ function stortas(s: State, l: Person, f: Fraktion) {
   if (fejd <= MISS.fejd) {
     count(s, 'avsatt'); st.frakVald = led.id; st.satt = 0.7;
     const t = `Byn sade ifrån vid elden, och ${l.name} fick lämna ledarskapet.`;
-    log(s, t, 'world', [l.id, led.id]); notis(s, 'ledare', t, [l.id, led.id]);
+    log(s, t, 'world', [l.id, led.id]); notis(s, 'ledare', t, [l.id, led.id], undefined, { ton: { [l.id]: 'ont', [led.id]: 'gott' } });
     slutarStyre(s, 'avsattes'); missnojeNoll(s);
     return;
   }

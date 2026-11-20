@@ -1,3 +1,4 @@
+import { horText } from './ord';
 // Notiserna (steg 5.4.3): små meddelanden om det som hänt, som ligger kvar tills spelaren tar bort dem och läses ett i taget.
 // Fem slag (Björn efter bildstil v105) i NOTIS_SLAG: samma brev med olika sigill (symbolen sym_notis_<slag>). Varje sorts
 // notis är en rad i NOTISER (slaget, rubriken, hur viktig den är). Byn sparar dem i s.notiser (en egen del i sparfilen, inte
@@ -6,7 +7,7 @@
 // får samma notiser. En ny sorts notis är en rad i NOTISER och ett anrop `notis(s, id, text, ids, plats)` där det händer.
 import { State } from './typer';
 import { kalender } from './tid';
-import { personNotis } from './personlogg';
+import { personNotis, type Ton } from './personlogg';
 
 export type NotisSlag = 'fara' | 'dod' | 'folk' | 'framsteg' | 'handel';
 export const NOTIS_SLAG: Record<NotisSlag, { namn: string; farg: string; bild: string }> = {
@@ -79,8 +80,9 @@ export interface Notis {
 }
 export interface Notiser { nr: number; lista: Notis[] }
 
-export function notis(s: State, id: string, text: string, ids: number[] = [], plats?: { x: number; y: number }, ref: { fram?: number; match?: number; resa?: number } = {}) { // ref: framträdandet eller matchen raden pekar på
+export function notis(s: State, id: string, text: string, ids: number[] = [], plats?: { x: number; y: number }, ref: { fram?: number; match?: number; resa?: number; ton?: Ton | Record<number, Ton> } = {}) { // ref: framträdandet eller matchen raden pekar på; ton: god eller ond för dem den gäller, eller per person (personens händelser)
   if (!NOTISER[id]) throw new Error(`okänd notis: ${id}`);
+  horText('notis', text);
   const N = (s.notiser ??= { nr: 0, lista: [] }), ar = kalender(s, s.now).ar;
   let n = N.lista.find(x => x.id === id && x.ar === ar);
   if (!n) {
@@ -93,7 +95,7 @@ export function notis(s: State, id: string, text: string, ids: number[] = [], pl
   n.rader.push(text); if (n.rader.length > NOTIS.rader) { n.rader.shift(); n.fram?.shift(); n.match?.shift(); n.resa?.shift(); }
   for (const i of ids) if (!n.ids.includes(i)) n.ids.push(i);
   if (plats) n.plats = plats;
-  personNotis(s, id, text, ids); // en rad hos dem den gäller (steg 9.2.107)
+  personNotis(s, id, text, ids, ref.ton); // en rad hos dem den gäller (steg 9.2.107)
   return n;
 }
 // de som finns, viktigast och senast först (genomgången, ui/notiser.ts)

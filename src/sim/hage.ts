@@ -1,8 +1,9 @@
+import { gen } from './ord';
 // ---------- hagen (steg 9.8.4–9.8.6, Djuren i detalj: Hagen) ----------
 // En egen fil för hagen och betet, så att tamdjur.ts (som varg.ts och arv.ts läser tidigt) inte drar in marken och odlingen.
 import { balans } from './balans';
 import { spand } from './agande';
-import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning } from './folk';
+import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning, annanGor } from './folk';
 import { getable, takeMaterial } from './behov';
 import { rnd } from './slump';
 import { H, Person, State, T, W, inMap } from './typer';
@@ -41,7 +42,7 @@ export const HAGE = balans('hage', {
   grasMat: 0.25, // ... och stillar så mycket hunger
   buskMat: 0.5, // en buske stillar så mycket hunger (geten äter upp den)
   tradMat: 0.3, // ett ungträd stillar så mycket hunger (geten äter upp det)
-  vallaMin: 15, // minuter för att leda ett djur med rep in i hagen
+  vallaMin: 5, // minuter för att leda ett djur med rep in i hagen (en stor sak)
   ovning: 0.03, // djurskötseln växer så mycket när man vallar
   fri: 12, // ett djur utan hage strövar högst så här långt (rutor) från byns mitt
   flyttDygn: 1, // en hage vars bete räcker kortare än så här många dygn för djuren i den är nedbetad: djuren flyttas (steg 9.8.6)
@@ -110,7 +111,7 @@ export function hageUppgift(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || !knows(p, 'staket')) return undefined;
   const v = hageVal(s, p);
   if (v) return { act: 'hage' as const, text: 'Sätter staket runt hagen, så att djuren inte rymmer.', min: STAKET.min, spot: { x: v.i % W + 0.5, y: Math.floor(v.i / W) + 0.5 }, ref: v.i };
-  if (!nyHageBehov(s) || living(s).some(q => q !== p && q.task?.act === 'hage' && q.task.ref === -1)) return undefined;
+  if (!nyHageBehov(s) || annanGor(s, p, 'hage', -1)) return undefined;
   const n = hageSida(s), at = faltSite(s, n, n * n);
   return at && { act: 'hage' as const, text: 'Märker ut en hage åt djuren.', min: HAGE.matMin, spot: { x: at.x + 0.5, y: at.y + 0.5 }, ref: -1 };
 }
@@ -128,7 +129,7 @@ function laggUtHage(s: State, p: Person) {
 export function hageVal(s: State, p: Person) {
   if (!knows(p, 'staket') || getable(s, p, 'grenar') < STAKET.grenar || !isLight(s.now)) return undefined;
   for (const h of hagarOf(s)) {
-    const i = hageKant(s, h).find(j => !harStaket(s, j) && !living(s).some(q => q !== p && q.task?.act === 'hage' && q.task.ref === j));
+    const i = hageKant(s, h).find(j => !harStaket(s, j) && !annanGor(s, p, 'hage', j));
     if (i !== undefined) return { h, i };
   }
   return undefined;
@@ -174,7 +175,7 @@ function stepBete(s: State, d: Tamdjur) {
     d.hage = undefined; d.x = hx + 0.5 + ux * 2; d.y = hy + 0.5 + uy * 2; h = undefined;
     count(s, 'tamRymde');
     const q = d.agare !== undefined ? byId(s, d.agare) : undefined;
-    log(s, `${q ? `${q.name}s` : 'Byns'} ${tamArt(d.art).ord[1]} rymde genom ett hål i hagens staket.`, 'world', q ? [q.id] : []);
+    log(s, `${q ? `${gen(q.name)}` : 'Byns'} ${tamArt(d.art).ord[1]} rymde genom ett hål i hagens staket.`, 'world', q ? [q.id] : []);
   }
   if (d.hunger < HAGE.bettMin) return;
   let rs: number[];
@@ -215,7 +216,7 @@ export function vallaVal(s: State, p: Person) {
   if (!hagarOf(s).some(h => hageHel(s, h))) return undefined;
   let b: Tamdjur | undefined, bd = TAM.mataR * 2;
   for (const d of betesdjurOf(s)) {
-    if (d.fahus !== undefined || living(s).some(q => q !== p && q.task?.act === 'valla' && q.task.ref === d.id)) continue; // djuren i fähuset står kvar
+    if (d.fahus !== undefined || annanGor(s, p, 'valla', d.id)) continue; // djuren i fähuset står kvar
     const h = hageById(s, d.hage);
     if (h && !(nedbetad(s, h) && malHage(s, flocken(s, p, d).length, h))) continue;
     const dd = Math.hypot(d.x - p.x, d.y - p.y);

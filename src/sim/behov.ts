@@ -22,8 +22,8 @@ import { ata } from './naring';
 import { ratt } from './matlagning';
 import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
-import { EKONOMI, kroppensMat, matPerDygn } from './ekonomi';
-import { REDSKAPMAL, arMaterial, buffert, sparas, villHaAv } from './forradsmal';
+import { kroppensMat, matPerDygn } from './ekonomi';
+import { REDSKAPMAL, arMaterial, buffert, eldReserv, villHaAv } from './forradsmal';
 import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
 import { dampning, handelse, smakMat } from './rykten';
@@ -49,7 +49,7 @@ export interface Behov {
   per?: Record<string, number>; // hur mycket ett av slaget fyller (ved: en gren är 0,4 ved); annars 1
   minst: number; // minsta mängd som hjälper
   mangd: (p: Person, now: number) => number; // hur mycket man tar eller ber om på en gång
-  kvar: number; // så mycket av sitt eget behåller den som ger till någon utanför familjen
+  kvar: (s: State, p: Person) => number; // så mycket av sitt eget behåller p när hen ger till någon utanför familjen
   behover: (s: State, p: Person) => boolean; // p behöver det nu
   fara: (s: State, p: Person) => number; // hur nära döden bristen har fört p: 0 = ingen fara, 1 = död
   anvand: (s: State, p: Person, fran?: Person) => number; // p tar och använder det (fran = stjäl av den personen); ger mängden
@@ -125,20 +125,25 @@ export function ataPortion(s: State, p: Person, k: string) {
   const per = { [k]: KROPP.mattar };
   ata(p, per); smakMat(s, p, per); maltidTanke(s, p, per); count(s, 'atit', 1);
 }
+// maten som smakar lite extra gott, i den ordning tankarna kommer: steken (steg 9.6.21), jordgubbarna (steg 9.7.9) och det
+// rökta, det som rökeriet gör (ROKAS i matlagning.ts, steg 9.6.8). glad läses när någon äter: balanstalen står i matlagning.ts
+const GOTT: { tanke: string; ar: (k: string) => boolean; glad: () => number }[] = [
+  { tanke: 'Åt en stek', ar: k => rattInfo(k)?.kat === 'stek', glad: () => STEK.glad },
+  { tanke: 'Åt jordgubbar', ar: k => k === 'jordgubbar', glad: () => ROK.glad * 3 },
+  { tanke: 'Åt rökt mat', ar: k => ROKAS.some(r => r.blir === k), glad: () => ROK.glad },
+];
 // måltidens nivå (steg 9.6.2, ratter.ts): en lagad eller fin måltid ger en tanke som höjer humöret
 function maltidTanke(s: State, p: Person, per: Record<string, number>) {
-  const n = MALTIDSNIVA[basta(per)];
-  if (n.humor > 0) { think(p, n.tanke, n.humor, s.now, RATT.tankeTim * HOUR); count(s, 'maltid_' + basta(per)); }
-  if (basta(per) === 'fin') { const k = Object.keys(per).find(x => MALTIDSNIVA[maltidsNiva(x)] === MALTIDSNIVA.fin); if (k) smakFinMaltid(p, smakSak(k)); } // en favorit (steg 9.6.6)
+  const niva = basta(per), n = MALTIDSNIVA[niva];
+  if (n.humor > 0) { think(p, n.tanke, n.humor, s.now, RATT.tankeTim * HOUR); count(s, 'maltid_' + niva); }
+  if (niva === 'fin') { const k = Object.keys(per).find(x => MALTIDSNIVA[maltidsNiva(x)] === MALTIDSNIVA.fin); if (k) smakFinMaltid(p, smakSak(k)); } // en favorit (steg 9.6.6)
   // variationen (steg 9.6.5): den som ätit samma protein för många gånger tröttnar på det
   let mest = '', mn = 0; for (const k in per) { const pr = proteinAv(k, x => SAKER[x]?.namn ?? x); if (pr && per[k] > mn) { mest = pr; mn = per[k]; } }
   if (mest) {
     const m = (p.protMinne ??= []); m.push(mest); if (m.length > VARIATION.minns) m.shift();
     if (m.filter(x => x === mest).length >= VARIATION.trott) { think(p, `${mest} igen`, VARIATION.tanke, s.now, VARIATION.tankeTim * HOUR); count(s, 'trott_pa_mat'); }
   }
-  if (Object.keys(per).some(x => rattInfo(x)?.kat === 'stek' && per[x] > 0)) think(p, 'Åt en stek', STEK.glad, s.now, RATT.tankeTim * HOUR); // steken smakar bättre (steg 9.6.21)
-  if ((per.jordgubbar ?? 0) > 0) think(p, 'Åt jordgubbar', ROK.glad * 3, s.now, RATT.tankeTim * HOUR); // jordgubbarna gör folk glada (steg 9.7.9)
-  if (Object.keys(per).some(x => x.startsWith('rok') && per[x] > 0)) think(p, 'Åt rökt mat', ROK.glad, s.now, RATT.tankeTim * HOUR); // det rökta smakar lite bättre (steg 9.6.8)
+  for (const g of GOTT) if (Object.keys(per).some(x => per[x] > 0 && g.ar(x))) think(p, g.tanke, g.glad(), s.now, RATT.tankeTim * HOUR);
   const k = kockGlad(s, per); if (k > 0.005) think(p, 'Maten var vällagad', k, s.now, RATT.tankeTim * HOUR); // kockens hand (steg 9.6.4)
   specialTanke(s, p, per); // byns egen rätt som blivit en tradition (steg 10.7.29)
 }
@@ -146,9 +151,8 @@ function maltidTanke(s: State, p: Person, per: Record<string, number>) {
 const vidBordet = (p: Person) => p.task?.act === 'maltid' && p.task.phase === 'do';
 export const MAT: Behov = {
   id: 'mat', namn: 'mat', slag: FOOD, minst: 0.3, mangd: portionOf,
-  // det man själv äter på ett dygn. En getter, så att talet läses först när det behövs: behov.ts, ekonomi.ts och halsa.ts
-  // importerar varandra i en ring, så EKONOMI kan vara odefinierad när den här filen läses in
-  get kvar() { return EKONOMI.matPerDygn; },
+  // det man själv äter på ett dygn, efter kroppen (kroppensMat i ekonomi.ts)
+  kvar: (s, p) => kroppensMat(p, s.now),
   // vid bordet äter man lite tidigare än annars: det är därför man satt sig där
   // i en hård by med knapp mat äter den som inte kan arbeta först när hen är hungrigare (steg 9.5.30)
   behover: (s, p) => p.hunger < KROPP.hungrig && (p.hunger < KROPP.hungrig * VARDRATT.snal || !mindreMat(s, p, () => foodDays(s)))
@@ -182,12 +186,13 @@ export function bynsMatAndel(s: State) {
 export function familjMatDygn(s: State, fam: readonly Person[]) {
   let n = 0;
   for (const q of fam) n += ownFor(s, q, MAT);
-  return n / (MAT.kvar * Math.max(1, fam.length));
+  const d = fam.reduce((a, q) => a + MAT.kvar(s, q), 0);
+  return d > 0 ? n / d : 0;
 }
 export function egnaMatDygn(s: State, p: Person) {
   let n = hasFor(s, p, MAT);
   for (const q of living(s)) if (q !== p && isFamily(q, p)) n += ownFor(s, q, MAT);
-  return n / MAT.kvar;
+  return n / MAT.kvar(s, p);
 }
 
 // varje steg: den som behöver något tar av sitt eget och byns. Finns inget ber hen någon i närheten om det, och i
@@ -251,7 +256,7 @@ export const forsorjer = (s: State, g: Person, m: Person) => isParent(g, m) && !
 // det g har över att ge m. En förälder delar med sitt barn som hen försörjer också det sista, partner och släkt behåller en portion
 // åt sig själva, andra så mycket de själva behöver (b.kvar)
 export const overOf = (s: State, g: Person, b: Behov, m: Person) =>
-  ownFor(s, g, b) - (forsorjer(s, g, m) ? 0 : isFamily(g, m) ? b.mangd(g, s.now) : b.kvar);
+  ownFor(s, g, b) - (forsorjer(s, g, m) ? 0 : isFamily(g, m) ? b.mangd(g, s.now) : b.kvar(s, g));
 // kretsen m frågar: de i närheten som har det m behöver (har), de som helst ger (w) först. Familjen kan man väcka. En gåva
 // ger bara den som vill ge (w > 0), ett byte gör man med alla man inte är osams med
 const osams = (s: State, g: Person, m: Person) => getRel(s, g, m).op < REL.osams;
@@ -259,7 +264,7 @@ function kretsen(s: State, m: Person, har: (g: Person) => boolean, w: (g: Person
   return living(s).filter(g => g !== m && narvarande(g, m) && har(g) && !osams(s, g, m))
     .map(g => ({ g, w: w(g) })).filter(x => byte || x.w > 0).sort((a, b) => b.w - a.w || a.g.id - b.g.id).map(x => x.g);
 }
-const vilja = (s: State, m: Person, b: Behov) => (g: Person) => willing(s, g, m, ownFor(s, g, b) / b.kvar, true);
+const vilja = (s: State, m: Person, b: Behov) => (g: Person) => willing(s, g, m, ownFor(s, g, b) / b.kvar(s, g), true);
 // m ber den i närheten som har över och helst ger (familjen först)
 function askAround(s: State, m: Person, b: Behov) {
   const g = kretsen(s, m, g => overOf(s, g, b, m) >= b.minst, vilja(s, m, b))[0];
@@ -294,7 +299,7 @@ function delAv(s: State, g: Person, b: Behov, rest: number) {
 // m ber g om det m saknar. Ger g? (Hur gärna man ger: agande.ts)
 function gift(s: State, m: Person, g: Person, n: Behov) {
   const over = overOf(s, g, n, m);
-  if (over < n.minst || rnd(s, 'dela', g) >= willing(s, g, m, ownFor(s, g, n) / n.kvar, true)) return false;
+  if (over < n.minst || rnd(s, 'dela', g) >= willing(s, g, m, ownFor(s, g, n) / n.kvar(s, g), true)) return false;
   let rest = Math.min(over, n.mangd(m, s.now));
   const want = rest;
   const gavs: Vara[] = [];
@@ -343,7 +348,7 @@ export function askForGift(s: State, a: Person, b: Person) {
 // elden på kvällar och nätter (val.ts), så det är då de flesta sådana byten blir av
 function eveningTrade(s: State, a: Person, b: Person) {
   for (const n of BEHOV()) for (const [m, g] of [[a, b], [b, a]]) {
-    const rest = Math.min(n.kvar - ownFor(s, m, n), ownFor(s, g, n) - n.kvar);
+    const rest = Math.min(n.kvar(s, m) - ownFor(s, m, n), ownFor(s, g, n) - n.kvar(s, g));
     if (rest < n.minst) continue;
     if (byte(s, m, g, delAv(s, g, n, rest), { behov: behovAv(s, m, n.slag[0]), minst: n.minst, fara: 0, typ: n.id, utom: n.slag, delad: true })) return true;
   }
@@ -378,7 +383,7 @@ export function noticeTheft(s: State, p: Person, key: string) {
     const r = getRel(s, p, t), w = l ? clamp(n * grundvarde(key) / DELA.stoldVarde, 0, 1) : 1;
     r.op = clamp(r.op - (l ? DELA.stoldLindrig * w : DELA.stoldOp), -100, 100);
     if (w < DELA.stoldTanke) continue;
-    think(p, `${t.name} tog av min ${namnOf(key)}`, l ? -0.04 : -0.1, s.now, 12 * HOUR);
+    think(p, `${t.name} tog av det jag sparat (${namnOf(key).toLowerCase()})`, l ? -0.04 : -0.1, s.now, 12 * HOUR);
     if (alive(t)) think(t, `${p.name} vet att jag tog`, -0.05, s.now, 6 * HOUR);
     handelse(s, t, l ? 'stoldLindrig' : 'stold', p, namnOf(key), p); // bara den bestulne vet, och kan berätta det (steg 3.3.1)
     if (!l) { livet(s, t, 'stal'); log(s, `${p.name} märkte att ${t.name} hade stulit ${hans(p)} ${namnOf(key)}.`, 'rel', [p.id, t.id]); upplev(s, p, 'bestulen', t.name); upplev(s, t, 'tjuv', p.name); }
@@ -397,12 +402,12 @@ const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= DELA.st
 export const getable = (s: State, p: Person, k: string) => (aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k)) + iBordan(p, k); // med det hen bär till arbetet (steg 11.1.74)
 // det p har till hands till sitt arbete av slaget k (steg 11.1.74): det hen bär dit och det som ligger inom räckhåll, utom det
 // som sparas (till elden)
-export const tillHands = (s: State, p: Person, k: string) => iBordan(p, k) + Math.max(0, iRackhall(p.x, p.y, () => getable(s, p, k) - iBordan(p, k)) - sparas(s, k));
+export const tillHands = (s: State, p: Person, k: string) => iBordan(p, k) + Math.max(0, iRackhall(p.x, p.y, () => getable(s, p, k) - iBordan(p, k)) - eldReserv(s, k));
 // det första material i receptet av som p inte kan få tag i (med det som sparas till elden, sparas i ekonomi.ts), annars undefined (steg 6.1.17)
 // receptet till ett projekt när p kunde göra det om materialet eller redskapet fanns (steg 6.2.19): materialet, redskapet
-// som behövs och hur mycket av varje som sparas (annars sparas() i forradsmal.ts)
+// som behövs och hur mycket av varje som sparas (annars eldReserv() i forradsmal.ts)
 export interface Recept { av: Record<string, number>; verktyg?: string; spar?: (m: string) => number }
-export const saknatAv = (s: State, p: Person, av: Record<string, number>, extra = (_m: string) => sparas(s, _m)) => Object.entries(av).find(([m, n]) => getable(s, p, m) < n + (iBordan(p, m) >= n ? 0 : extra(m)) - 1e-9)?.[0];
+export const saknatAv = (s: State, p: Person, av: Record<string, number>, extra = (_m: string) => eldReserv(s, _m)) => Object.entries(av).find(([m, n]) => getable(s, p, m) < n + (iBordan(p, m) >= n ? 0 : extra(m)) - 1e-9)?.[0];
 // materialet till ett redskap efter receptet (saker.ts: skaffa.av), till ens eget arbete: hur mycket av varje som togs
 export function takeRecipe(s: State, p: Person, k: string) {
   const av: Record<string, number> = {};
@@ -561,12 +566,12 @@ export function behovAv(s: State, p: Person, k: string) {
   if (!b) return k === 'silver' && p.skatteskuld ? DELA.over * skuldFaktor(s, p) : DELA.over; // skatteskulden gör silvret mer värt (steg 10.5.5)
   const own = ownFor(s, p, b);
   if (b.behover(s, p) && own < b.minst) return DELA.saknar * (1 + b.fara(s, p));
-  return own <= b.kvar ? 1 : DELA.over;
+  return own <= b.kvar(s, p) ? 1 : DELA.over;
 }
 // det p har över av behovet b: det hen själv behöver (b.kvar), och för maten det familjen behöver till sin buffert (steg 10.5.12):
 // så stor del av bufferten i FORRADSMAL som byn inte delar, gånger det familjen äter på ett dygn, mot det familjen äger
 function overEget(s: State, p: Person, b: Behov) {
-  const egen = ownFor(s, p, b) - b.kvar;
+  const egen = ownFor(s, p, b) - b.kvar(s, p);
   if (b.id !== 'mat') return egen;
   const fam = familjOf(s, p.id), fp = fam.length ? fam : [p];
   const har = fp.reduce((a, q) => a + ownFor(s, q, b), 0), buf = buffert(s, 'mat') * (1 - (s.delning?.andel ?? 1)) * fp.reduce((a, q) => a + kroppensMat(q, s.now), 0);
@@ -600,7 +605,7 @@ export function personPart(s: State, p: Person, silver = true): Part {
 // det byn behåller av materialet k när den byter: bufferten i förrådsmålen (villHaAv), och utsädet (steg 10.2.32)
 const behalla = (s: State, k: string) => Math.max(arMaterial(k) ? villHaAv(s, k) : 0, utsadeKrok.av(s, k));
 export const bynsDel = (s: State, k: string) => { let n = amountOf(s, k); for (const p of living(s)) n -= ownsAmount(s, p, k); return Math.max(0, helt(n)); };
-function bynNod(s: State, b: Behov) { let n = 0; for (const j of b.slag) n += amountOf(s, j) * perOf(b, j); return { har: n, behover: living(s).length * b.kvar }; }
+function bynNod(s: State, b: Behov) { let n = 0; for (const j of b.slag) n += amountOf(s, j) * perOf(b, j); return { har: n, behover: living(s).reduce((a, q) => a + b.kvar(s, q), 0) }; }
 // byns del av mat eller ved, och bufferten för den, i behovets enheter
 function bynBuffert(s: State, b: Behov) {
   let har = 0;
@@ -828,6 +833,6 @@ export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[]
 export const luraI = (s: State, M: Part, G: Part, betal: Vara[], utom: readonly string[], ger: number, fatt: Vara[] = []) => lura(s, M, G, betal, betalVaror(M, G, utom), ger, fatt);
 import { foodDays } from './ekonomi';
 import { MALTIDSNIVA, RATT, VARIATION, basta, maltidsNiva, proteinAv, rattInfo, smakSak } from './ratter';
-import { ROK, STEK, kockGlad } from './matlagning';
+import { ROK, ROKAS, STEK, kockGlad } from './matlagning';
 import { smakFinMaltid } from './rykten';
 import { specialTanke } from './special';

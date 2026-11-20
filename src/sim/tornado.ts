@@ -7,7 +7,7 @@ import { alive, count, living, log } from './folk';
 import { drabbadHus, upplev } from './uppvaxt';
 import { kanGa, skada, Kroppsdel } from './halsa';
 import { bynsMitt } from './omrade';
-import { STRECK } from './karta';
+import { streckAv } from './ord';
 import { avbryt, minska, nagotPa, stacksOf, tidy } from './lager';
 import { die } from './liv';
 import { groundOf } from './mark';
@@ -189,7 +189,7 @@ export function skickaTornado(s: State, storlek?: TornadoStorlek): { ok: boolean
   t.fran = s.now; t.till = s.now + tid; t.test = 1;
   s.tornado = t;
   const e = bynsMitt(s), v = Math.atan2(t.bana[1] - e.y - 0.5, t.bana[0] - e.x - 0.5);
-  const text = `Testläget: en ${t.storlek === 'medel' ? 'medelstor' : t.storlek} tornado kommer från ${STRECK[(Math.round(v / (Math.PI / 4)) + 8) % 8]} och är på kartan i ${Math.round(tid / MIN)} minuter`;
+  const text = `Testläget: en ${t.storlek === 'medel' ? 'medelstor' : t.storlek} tornado kommer från ${streckAv(v)} och är på kartan i ${Math.round(tid / MIN)} minuter`;
   log(s, text + '.', 'world');
   return { ok: true, text };
 }
@@ -452,12 +452,13 @@ function karnan(s: State, t: Tornado, rutor: number[]) {
     const x = i % W, y = Math.floor(i / W);
     if (g.trees[i] >= FOREST) {
       const stam = stamAv(g, i);
-      g.trees[i] = 0; g.cover[i] = 1;
+      g.trees[i] = 0;
       stocks(s).push({ id: (s.nextStock = (s.nextStock ?? 0) + 1), x: x + 0.5, y: y + 0.5, ...stam });
       nyStubbe(s, x, y, stam.ved);
       t.trad++; count(s, 'tornado trad');
     } else if (g.trees[i] > 0) g.trees[i] = 0;
     if (s.halvfallt) delete s.halvfallt[i];
+    if (isSoil(g.tiles[i]) && !g.built?.[i]) { if (g.cover[i] > 0) count(s, 'tornado stig'); g.cover[i] = 0; (s.tornadoStig ??= []).push(i); } // gräset slits upp till bar jord, som nära (steg 12.1.63)
     const v = bitAt(s, x, y);
     if (v?.k === 'vagg' && v.b >= 1) { const h = rasar(s, v); t.vagg++; count(s, 'tornado vagg'); drabbadHus(s, h, 'tornadon som förstörde huset'); rev = true; }
     else if (v?.k === 'golv' && v.m !== 'jord') { if (MATERIAL[v.m].vag) vagBort(s, v); else v.m = 'jord'; borta(); rev = true; }

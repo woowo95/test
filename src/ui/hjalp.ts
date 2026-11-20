@@ -1,6 +1,7 @@
+import { spelTid, styck } from '../sim/ord';
 import { iconImg, kvSvg, tecknet } from '../ikoner';
 import { framstegSvg } from './framsteg';
-import { DAY, halsa, moodOf, kalender, NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, anseende, sak, sakNamn, skadeLista, timeLabel, egetNamn } from '../sim';
+import { halsa, moodOf, kalender, NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, anseende, sak, sakNamn, skadeLista, timeLabel, egetNamn } from '../sim';
 import { s, ui, uppgiftVid, vidNyBy } from './lage';
 
 // små hjälpare för text, tal, färger och staplar som alla delar av gränssnittet använder
@@ -10,11 +11,8 @@ export { num }; // decimalkomma (format.ts), här för gränssnittets skull
 export const fmtN = (n: number) => String(n > 0 && n < 1 ? 1 : Math.round(n)); // förråd och stackar: alltid hela tal
 export const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 export const times = (n: number) => `${n} ${n === 1 ? 'gång' : 'gånger'}`;
-export function durTxt(ms: number) {
-  const h = ms / HOUR;
-  const min = Math.max(1, Math.round(ms / MIN));
-  return h >= 24 ? `${num(h / 24)} år` : h >= 1 ? `${num(h)} timmar` : `${min} ${min === 1 ? 'minut' : 'minuter'}`;
-}
+// ett tidsspann i spelets tid, i hela tal (steg 12.1.120, spelTid i ordlagret): "två månader", "ett år"
+export const durTxt = (ms: number) => spelTid(Math.max(0, ms));
 // året och tidsstaven i sidhuvudet har samma förklaring (steg 11.1.5): kopplingen till den riktiga klockan, dagen i tidsåldern och klockan
 const klSlag = (t: number) => { const d = new Date(t); return `kl. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 export function tidForklaring(t: number) {
@@ -51,6 +49,7 @@ export const LAG = {
 export const condBar = (c: number) => bar(c, c < LAG.skick ? 'low' : '');
 // förklaringar bakom en ?-knapp (symboler först): knappen och texten har samma id, och ett tryck på knappen visar eller döljer texten
 const oppna = new Set<string>();
+export const stangAllaHjalp = () => oppna.clear(); // scenariokörningen: inget är utfällt när nästa scenario börjar (steg 12.1.113)
 // en berättelse som fälls ut (steg 11.1.3): boksymbolen i stället för ?-knappen, som bara är till för förklaringar
 export const berattelseKnapp = (id: string, title: string) => `<button type="button" class="hjalp bok" data-hjalp="${id}" aria-expanded="${oppna.has(id)}" title="${esc(title)}" aria-label="${esc(title)}">${tecknet('berattelse', '📜', 14)}</button>`;
 // delraden överst i en flik (steg 11.1.25): symbolen med namnet under, som runstenarna, så att ingen rubrik behöver upprepa delens
@@ -60,10 +59,7 @@ export const delRad = (attr: string, delar: readonly { id: string; tecken: strin
 // en länk till en kategori i Krönikan (steg 11.1.40): öppnar Krönikan med kategorin vald (panel.ts)
 export const kronikaLank = (kat: string, text: string, ar?: number) => `<button type="button" class="lank" data-visa="kronika" data-kkat-lank="${kat}"${ar !== undefined ? ` data-kar-lank="${ar}"` : ''}>${esc(text)}</button>`; // ar = krönikan öppnas på det året (steg 11.1.64)
 // hur länge det är kvar, i spelets ord (steg 11.1.40): "ungefär 2 år", "en tidsålder", "några timmar"
-export function omUngefar(ms: number) {
-  const ar = ms / DAY;
-  return ar >= 7 ? `${Math.round(ar / 7)} ${Math.round(ar / 7) === 1 ? 'tidsålder' : 'tidsåldrar'}` : ar >= 1.5 ? `${Math.round(ar)} år` : ar >= 0.75 ? 'ett år' : durTxt(Math.max(0, ms));
-}
+export const omUngefar = (ms: number) => spelTid(Math.max(0, ms)); // samma ord överallt (steg 12.1.120)
 // en länk till en annan flik (steg 11.1.15): ett tryck öppnar den (panel.ts)
 export const flikLank = (flik: string, text: string) => `<button type="button" class="lank" data-visa="${flik}">${esc(text)}</button>`;
 export const hjalpKnapp = (id: string, title: string) => `<button type="button" class="hjalp" data-hjalp="${id}" aria-expanded="${oppna.has(id)}" title="${esc(title)}" aria-label="${esc(title)}">?</button>`;
@@ -124,7 +120,7 @@ export const mittStapel = (v: number, cls = '') => { const w = Math.round(Math.m
 // pilen med ändringen från a till b (minustecknet är −, steg 11.1.60); lika = det som står när inget ändrats
 export const andring = (a: number, b: number, lika = '=') => { const d = b - a; return d > 0 ? `{sym_pil_upp} +${d}` : d < 0 ? `{sym_pil_ned} −${-d}` : lika; };
 // varorna som symboler med antalet, och namnet när musen är över
-export const varorSym = (v: readonly { k: string; n: number }[], storlek = 14) => v.map(w => `<span title="${esc(`${w.n} ${sakNamn(w.k).toLowerCase()}`)}">${iconImg(w.k, storlek)}${w.n > 1 ? w.n : ''}</span>`).join(' ') || '–';
+export const varorSym = (v: readonly { k: string; n: number }[], storlek = 14) => v.map(w => `<span title="${esc(styck(w.n, w.k))}">${iconImg(w.k, storlek)}${w.n > 1 ? w.n : ''}</span>`).join(' ') || '–';
 export const sickNow = (p: Person) => isSick(p, s.now);
 // det behov som är lägst (steg 11.1.43): av mat, värme, hälsa och humör under sin gräns det som ligger längst under, och dess
 // symbol står vid namnet i stället för ett utropstecken. Gränserna är desamma som förut (LAG och KROPP.svag)
@@ -146,7 +142,7 @@ const MARKEN: { har: (p: Person) => boolean; namn: (p: Person) => string; forkl:
   { har: p => ledareOf(s)?.id === p.id, namn: () => 'Byns ledare', forkl: 'Lägger fram påbud och lagar och väger tyngst i sederna och omröstningarna. Tryck för Styre', ikon: () => 'ledarskap', visa: 'styre' },
   { har: p => !!p.skador?.length, namn: p => `Skadad: ${skadeLista(p, s.now).map(r => r.namn.toLowerCase()).join(', ')}`, forkl: 'Går och arbetar sämre tills skadorna läkt. Tryck för hälsan', ikon: p => skadeLista(p, s.now)[0].ikon, oppnar: 'halsa' },
   { har: p => isSick(p, s.now), namn: () => 'Sjuk', forkl: 'Vilar mer och orkar mindre tills hen blivit frisk. Tryck för hälsan', ikon: () => 's_inf', oppnar: 'halsa' },
-  { har: p => p.pregnantSince !== undefined, namn: () => 'Väntar barn', forkl: 'Barnet föds inom några år. Tryck för att se hur långt det gått', ikon: () => 's_barn', oppnar: 'halsa' },
+  { har: p => p.pregnantSince !== undefined, namn: () => 'Väntar barn', forkl: 'Barnet föds efter nio månader. Tryck för att se hur långt det gått', ikon: () => 's_barn', oppnar: 'halsa' },
 ];
 // märkena som symboler med namnet och förklaringen vid musen (steg 9.2.6); ord = ordet skrivs också ut (rutan i hörnet, som inte går
 // att hålla musen över)
@@ -183,9 +179,9 @@ export const pileTxt = (p: { k: string; n: number; max: number; gor?: string; kl
 // det p bär vid tiden som visas (uppgiftVid, steg 6.1.1), som kartan
 export function carryTxt(p: Person) {
   const t = uppgiftVid(p), orkar = capacity(s, p), parts: string[] = [];
-  const kg = (n: number) => `${num(n).replace(',0', '')} kg`, styck = (k: string, n: number) => `${fmtN(n)} ${sakNamn(k).toLowerCase()} (${kg(n * viktOf(k))})`;
-  if (t && t.carry > 0) parts.push(styck(carryKind(t.act), t.carry));
-  for (const k in t?.items ?? {}) if (t!.items![k] > 0 && !sak(k)?.dold) parts.push(styck(k, t!.items![k]));
+  const kg = (n: number) => `${num(n).replace(',0', '')} kg`, bors = (k: string, n: number) => `${styck(n, k, fmtN)} (${kg(n * viktOf(k))})`;
+  if (t && t.carry > 0) parts.push(bors(carryKind(t.act), t.carry));
+  for (const k in t?.items ?? {}) if (t!.items![k] > 0 && !sak(k)?.dold) parts.push(bors(k, t!.items![k]));
   return parts.length ? `Bär ${parts.join(' och ')}, ${kg(load(t!, s))} (${Math.round(load(t!, s) / orkar * 100)} % av vad hen orkar)` : `Bär inget just nu, orkar bära ${kg(orkar)} med båda händerna och ${kg(orkar / 2)} i en`;
 }
 // en rad i loggen där namnen går att trycka på

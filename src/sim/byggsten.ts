@@ -11,7 +11,7 @@ import { dropLoad } from './lager';
 import { groundOf } from './mark';
 import { bynsMitt, omrade } from './omrade';
 import { viktOf } from './saker';
-import { H, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
+import { GRANNAR4, H, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { iPlatsMinne } from './stationer';
 import { FORDON, lassAv } from './fordon';
 import { tingOf } from './agande';
@@ -30,7 +30,6 @@ export const BYGGSTEN = balans('byggsten', {
 export const STENBEHOV: Record<string, (s: State) => number> = {};
 export const stenTillPlan = (s: State) => Object.values(STENBEHOV).reduce((a, f) => a + f(s), 0);
 
-const GR4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
 const stenarPa = (s: State, x: number, y: number) => (s.stackar ?? []).filter(q => q.x === x && q.y === y && q.k === 'byggsten').reduce((a, q) => a + q.n, 0);
 // rutan närmast byns mitt som är land intill berget och har plats för en sten till i högen (en gång i projektvalet)
 export const bergPlats = (s: State) => iPlatsMinne('byggsten', () => sokBerg(s));
@@ -42,7 +41,7 @@ function sokBerg(s: State) {
     if (d >= bd || !inMap(x, y)) continue;
     const i = y * W + x;
     if (t[i] === T.Sten || t[i] === T.Vatten) continue;
-    if (!GR4.some(([dx, dy]) => inMap(x + dx, y + dy) && t[(y + dy) * W + x + dx] === T.Sten)) continue;
+    if (!GRANNAR4.some(([dx, dy]) => inMap(x + dx, y + dy) && t[(y + dy) * W + x + dx] === T.Sten)) continue;
     if (stenarPa(s, x, y) >= BYGGSTEN.perRuta) continue;
     bd = d; bast = { x: x + 0.5, y: y + 0.5 };
   }

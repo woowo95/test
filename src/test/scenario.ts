@@ -14,6 +14,8 @@ import { dirname } from 'node:path';
 import { RODA, Utfall, korSkript, pool, prioAv } from './pool';
 import { lasTackning, sparaKarta, tackningsMapp } from './kartan';
 import { ui } from '../ui/lage';
+import { stangAllaHjalp } from '../ui/hjalp';
+import * as SIM from '../sim';
 
 const GRUPP = 6; // så många korta scenarier i varje process
 // hur lång tid varje scenario tog förra gången (processorns tid, s), sparat när alla körs (steg 9.2.64): kön startar de
@@ -47,9 +49,13 @@ async function korHar(namn: string) {
   uttagVakt.lyss = (_s, p, k, _n, x, y) => { if (p && svavar(p, x, y)) { nSvav++; svav ??= `${p.name} (${p.task?.act ?? 'ingen uppgift'}) tog ${k} ${Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y).toFixed(0)} rutor bort`; } };
   // gränssnittets läge börjar som i ett nytt spel: i en grupp lämnade ett scenario annars kvar en vald flik åt nästa (handlarrel
   // lämnade relationerna öppna, och handslag såg då inte bytena)
-  Object.assign(ui, structuredClone(UI_START));
+  Object.assign(ui, structuredClone(UI_START)); stangAllaHjalp(); // och inget är utfällt (gudar lämnade Övriga trosriktningar öppna, steg 12.1.113)
+  const register0 = registerBild();
   const cpu0 = process.threadCpuUsage(), k = await sc.kor(); // ett scenario får vänta på något (sparbas: databasen)
   gangVakt.lyss = undefined; uttagVakt.lyss = undefined;
+  // vakten för det som blir kvar (steg 12.1.113): ett register eller annat i simuleringen som scenariot ändrat och inte ställt tillbaka
+  const andrat = registerAndrat(register0);
+  if (andrat.length) k.push([`vakten: scenariot lämnar ${andrat.join(', ')} ändrat efter sig (ställ tillbaka det i en finally)`, false]);
   if (svav) k.push([`vakten: något svävar (${nSvav} ggr), första: ${svav}`, false]);
   if (langsam) k.push([`vakten: någon går mycket långsamt utan flera skäl (${nLangsam} ggr), första: ${langsam}`, false]);
   const ok = k.every(([, b]) => b);
@@ -58,6 +64,17 @@ async function korHar(namn: string) {
   if (!sc.lang && Number(tid) >= LANG_S) console.log(`VARNING: ${namn} tar ${tid} s (processorns tid) och bör märkas lang: true (i sin fil i src/test/scenarier/)`);
   for (const [t, b] of k) if (!ok || !b || process.env.ALLA) console.log(`     ${b ? '✓' : '✗'} ${t}`);
   if (!ok) process.exitCode = 1;
+}
+// allt simuleringen exporterar som inte är en funktion, som text: register, balanstal och provlägen (som TRO_PROV). Det som
+// skiljer sig efter ett scenario blir kvar till nästa scenario i samma process (steg 12.1.113)
+function registerBild() {
+  const ut = new Map<string, string>();
+  for (const [k, v] of Object.entries(SIM)) if (v !== null && typeof v === 'object') { try { ut.set(k, JSON.stringify(v)); } catch { /* går inte att skriva som text */ } }
+  return ut;
+}
+function registerAndrat(fore: Map<string, string>) {
+  const nu = registerBild();
+  return [...fore].filter(([k, v]) => nu.get(k) !== v).map(([k]) => k);
 }
 // en grupp korta scenarier i en process, efter varandra (uppstarten tar mer tid än de flesta scenarier). Före vart och ett
 // skrivs en rad med namnet, så att utskriften kan delas upp igen

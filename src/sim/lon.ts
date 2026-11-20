@@ -13,10 +13,10 @@ import { balans } from './balans';
 import { clamp } from './slump';
 import { ALDER, ageOf, count, living, log, think } from './folk';
 import { LAGAR, LagTalDef, lagGaller, lagTal } from './lagar';
-import { drar } from './seder';
+import { fjardedel, lutning } from './seder';
 import { ARBETE, grundvarde } from './varde';
 import { ownMove, ownsId } from './lager';
-import { BUDGET, BUDGET_LIST, BudgetDef, budgetId, bynsAv, budgetLonKrok } from './budget';
+import { BUDGET, BUDGET_LIST, BudgetDef, BUDGET_KVAR, budgetId, bynsAv, budgetLonKrok } from './budget';
 import { fromByn } from './lager';
 import { bitById } from './byggnad';
 import { FOOD } from './saker';
@@ -35,12 +35,10 @@ export const LON = balans('lon', {
   lutar: 0.3, // så mycket lutningen mot Sammanhållning flyttar rösten om lönelagen och lönen var och en vill ha
 });
 
-const lutning = (s: State, p: Person) => clamp(drar(s, p).gemenskap ?? 0, -1, 1);
 export const lonNu = (s: State) => lagGaller(s, 'lon') && lagGaller(s, 'skatt');
 const vuxna = (s: State) => living(s).filter(p => !p.gast && ageOf(p, s.now) >= ALDER.vuxen);
 // föräldern som försörjer p, modern först
 const forsorjare = (s: State, p: Person) => [p.mother, p.father].map(id => living(s).find(q => q.id === id)).find(g => !!g && forsorjer(s, g, p));
-const fjardedel = (x: number) => clamp(Math.round(x * 4) / 4, 0, 1);
 
 // budgetdelen som p:s arbete just nu betalas ur, om det är arbete för byn
 export function lonDel(s: State, tk?: Task): string | undefined {
@@ -87,11 +85,14 @@ export function lonDygn(s: State) {
       const silver = Math.floor(Math.min(n, ownsId(s, budgetId(d), 'silver')) + 1e-9), m = silver >= 1 ? ownMove(s, 'silver', silver, budgetId(d), till.id) : 0;
       let kvar = n - m;
       if (m >= 1) count(s, 'lonSilver', m);
-      // resten i hela saker av den mat byn har över bufferten, så länge en sak inte är värd mer än det som är kvar
+      // resten i hela saker av den mat byn har över bufferten, så länge en sak inte är värd mer än det som är kvar: byns egen,
+      // och den som ingen matdel i budgeten fått (BUDGET_KVAR, steg 12.1.77)
       for (const k of FOOD) {
         const v = grundvarde(k);
-        while (kvar >= v - 1e-9 && v > 0 && bynsAv(s, k) >= 1 && foodDaysAll(s) > buffert(s, 'mat')) {
-          if (fromByn(s, k, 1, till.id) < 1) break;
+        while (kvar >= v - 1e-9 && v > 0 && foodDaysAll(s) > buffert(s, 'mat')) {
+          if (bynsAv(s, k) >= 1) { if (fromByn(s, k, 1, till.id) < 1) break; }
+          else if (ownsId(s, BUDGET_KVAR, k) >= 1) { if (ownMove(s, k, 1, BUDGET_KVAR, till.id) < 1) break; }
+          else break;
           kvar -= v; count(s, 'lonVaror', 1);
         }
       }
@@ -127,9 +128,11 @@ const DELAR: Record<string, BudgetDef> = {
     finns: lonNu, saknar: s => { const n = vuxna(s).length * LON.medborgar; const m: Record<string, number> = {}; if (n > 0) m.silver = n; return m; },
     ge: (s, k, n) => {
       const vv = vuxna(s), per = Math.floor(n / Math.max(1, vv.length));
-      if (per < 1) return;
-      for (const p of vv) count(s, 'medborgarlon', fromByn(s, k, per, p.id));
-      log(s, `Varje vuxen fick ${per} silver i medborgarlön ur byns förråd.`, 'world');
+      if (per < 1) return 0;
+      let gav = 0;
+      for (const p of vv) { const m = fromByn(s, k, per, p.id); count(s, 'medborgarlon', m); gav += m; }
+      if (gav >= 1) log(s, `Varje vuxen fick ${per} silver i medborgarlön ur byns förråd.`, 'world');
+      return gav;
     },
     vill: (s, p) => fjardedel(0.25 + 0.5 * lutning(s, p)),
   },

@@ -1,9 +1,10 @@
 // Det lilla av tron som resten av spelet frågar om: om en ruta är helig, om någon är präst, kön till ritualerna och gravgåvan. Egen fil utan
 // tunga beroenden, eftersom lager, skogen, kläderna, döden och relationerna läses tidigt (kult.ts läser dem).
-import { DAY, Person, State } from './typer';
+import { Person, State } from './typer';
 import type { Ting } from './agande';
 import type { Ritual, RitualId } from './kult';
 import { balans } from './balans';
+import { dagNr } from './tid';
 // den heliga platsens värde i budet En helig plats (steg 10.3.10): rutan
 export const heligVarde = (x: number, y: number) => `${x},${y}`;
 // platsen vanhelgas: den förlorar sitt bud men visas kvar (steg 10.3.10)
@@ -20,7 +21,7 @@ export const arPrast = (s: State, p: Person) => !!s.tron?.some(t => t.prast === 
 // hör musik eller sång den dagen dansar, och glädjen blir dans gånger större
 export const FEST = balans('fest', { tim: 16, lust: 3, dans: 1.3, brollopFore: 2 }); // brollopFore: bröllopet utlyses så många timmar innan det börjar (en månad i spelet), så att festmåltiden hinner lagas (steg 10.7.28)
 export interface Fest { tro: number; namn: string; dag: number; x: number; y: number; at: number; fram: string[]; vann: Record<string, number> }
-export const festNu = (s: State) => !!s.fest && Math.floor(s.now / DAY) === s.fest.dag;
+export const festNu = (s: State) => !!s.fest && dagNr(s.now) === s.fest.dag;
 export function festFram(s: State, namn: string) { if (festNu(s) && !s.fest!.fram.includes(namn)) s.fest!.fram.push(namn); }
 export function festVann(s: State, namn: string[]) { if (festNu(s)) for (const n of namn) s.fest!.vann[n] = (s.fest!.vann[n] ?? 0) + 1; }
 export function nyRitual(s: State, k: RitualId, d: Partial<Ritual> = {}) { (s.ritualKo ??= []).push({ k, start: s.now, slut: 0, x: d.x ?? 0, y: d.y ?? 0, ...d }); }

@@ -1,6 +1,8 @@
+import { antal, och } from './ord';
 // ---------- skulden och förlåtelsen (steg 10.8.1–10.8.3, Kunskap och lärdomar: Skuld och förlåtelse) ----------
 // Den som i ett utbrott gjort någon illa bär en skuld (humor.ts skapar den). Den tynger humöret och bleknar. Den som bär en
 // skuld väljer hellre den hen gjort illa att samtala med och ber om förlåtelse med en botgåva ur det hen har över
+import { honom } from './ord';
 import { ALDER, REL, ageOf, alive, count, getRel, isParent, living, log, stat, think } from './folk';
 import { HANDELSER, vittnen } from './rykten';
 import { personHand } from './personlogg';
@@ -11,7 +13,6 @@ import { Anger, DAY, HOUR, Person, State } from './typer';
 import { Vara, flytta, gavaKlar } from './byte';
 import { behovAv, payable, personPart } from './behov';
 import { grundvarde } from './varde';
-import { SAKER } from './saker';
 
 export const SKULD = balans('skuld', {
   bas: 0.15, // styrkan: bas × allvaret × empatin / 10 × hur mycket man bryr sig × (1 + andelen vuxna som vet), ...
@@ -96,7 +97,7 @@ export function botGava(s: State, g: Person, allv: number): Vara[] | undefined {
   }
   return ut;
 }
-const varorNamn = (v: Vara[]) => v.map(w => `${w.t || w.n === 1 ? (SAKER[w.k]?.ett ? 'ett' : 'en') : w.n} ${(SAKER[w.k]?.namn ?? w.k).toLowerCase()}`).join(' och ');
+const varorNamn = (v: Vara[]) => och(v.map(w => antal(w.t ? 1 : w.n, w.k))); // utan siffror (steg 12.1.121)
 // a samtalar med b, och det är inget gräl: den av dem som bär en skuld mot den andra kan be om förlåtelse. Chansen växer
 // tillbaka efter ett försök. Den som inget har över ber inte nu
 export function beOmForlatelse(s: State, a: Person, b: Person) {
@@ -119,7 +120,6 @@ export function forlatChans(s: State, p: Person, q: Person, x: Anger) {
   const igen = Math.max(0, (getRel(s, p, q).minns?.illa ?? 1) - 1);
   return clamp(SKULD.ja + SKULD.jaEmp * (stat(q, 'empati', s.now) - 10) / 10 + SKULD.jaOp * x.op0 / 100 - SKULD.jaAllv * x.allv - SKULD.jaIgen * igen, SKULD.jaMin, SKULD.jaMax);
 }
-const hen = (p: Person) => p.sex === 'k' ? 'henne' : 'honom';
 export function forlat(s: State, p: Person, q: Person, x: Anger, gava: Vara[]) {
   if (rnd(s, 'skuld', q) >= forlatChans(s, p, q, x)) { // nej: inget byter ägare, skulden sitter kvar och bleknar
     think(p, `${q.name} förlät mig inte`, -0.03, s.now, 12 * HOUR);
@@ -144,10 +144,10 @@ export function forlat(s: State, p: Person, q: Person, x: Anger, gava: Vara[]) {
   p.angr = p.angr!.filter(e => e !== x);
   if (!p.angr.length) p.angr = undefined;
   count(s, 'skuldForlaten');
-  const text = `${q.name} förlät ${p.name}, som ${x.text} ${hen(q)}, och fick ${vad} som bot.`;
+  const text = `${q.name} förlät ${p.name}, som ${x.text} ${honom(q)}, och fick ${vad} som bot.`;
   log(s, text, 'rel', [p.id, q.id]);
-  personHand(s, p, 'relation', `Bad ${q.name} om förlåtelse och blev förlåten.`);
-  personHand(s, q, 'relation', `Förlät ${p.name} och fick ${vad} som bot.`);
+  personHand(s, p, 'relation', `Bad ${q.name} om förlåtelse och blev förlåten.`, 'gott');
+  personHand(s, q, 'relation', `Förlät ${p.name} och fick ${vad} som bot.`, 'gott');
   if (x.allv >= SKULD.kronika) kronika(s, text, 'forlat');
 }
 // q svarar på p:s bön om skulden x med den botgåva p har (scenarierna och gränssnittet)

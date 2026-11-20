@@ -45,4 +45,3 @@ export const kampeSort = (sort?: string): KampeSort => (KAMPAR as Record<string,
 export interface DjurStrid { namn: string; art: string; alder: number; styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number; fart: number; vapen: Vapen }
 export const djurStrid = (sort: string): DjurStrid => { const d = kampeSort(sort); return { namn: d.namn, art: d.art, alder: d.alder ?? 0, ...d.kropp!, fart: d.fart, vapen: d.vapen[0] }; };
 // djuren i registret (allt utom människan)
-export const STRIDSDJUR = () => KAMPE_LIST.filter(a => a !== 'manniska');

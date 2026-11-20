@@ -21,6 +21,7 @@ import { renderRaden } from './ui/raden';
 import { renderPorts, startFollow, stopFollow } from './ui/portratt';
 import { gaster, rovarGastId } from './ui/gaster';
 import { catchUp, ikapp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
+import { lasFel } from './ui/lagring';
 import { aktivBy, byarHtml, byte, bytTill, laggTillTestby, taBort, testbyIAdressen } from './ui/byar';
 import './ui/interaktion';
 import './ui/ram';
@@ -70,6 +71,8 @@ function dropTest() { if (ui.testMode) { ($('testToggle') as HTMLInputElement).c
 // klockan för den valda byn: den egna går i klockans tid, en annan by så långt efter som den låg stilla (steg 9.2.16)
 const klockan = () => Date.now() - ui.forskjut;
 function nyBy() {
+  // den sparade byn är från en för gammal version (steg 12.1.71): spelet säger det innan en ny by grundas
+  if (lasFel.forGammal) { const t = lasFel.forGammal; lasFel.forGammal = ''; try { window.alert(`${t} En ny by grundas.`); } catch { /* utan dialog */ } }
   ui.annanBy = undefined; ui.forskjut = 0; // en ny by ersätter den egna byn
   setByn(createState(Math.floor(Math.random() * 2 ** 31), Date.now()));
   cam.x = -1; layout();

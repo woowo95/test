@@ -61,9 +61,9 @@ const dev = (v: number) => (v - SED.mitt) / SED.spann;
 // sin personlighet (q = egenskaperna, barn = personen är förälder). Alla börjar på 0. Ordningen sparas, så nya seder läggs sist
 interface SedDef { pos: string; neg: string; effect: string; dra: (q: Person['pot'], barn: boolean) => number }
 const DEF = {
-  arbete: { pos: 'Plikt', neg: 'Vila', effect: 'Pliktkänsla: hur mycket man jobbar för byn och hur mycket man vilar.', dra: q => dev(q.flit) },
+  arbete: { pos: 'Plikt', neg: 'Vila', effect: 'Pliktkänsla: hur mycket man arbetar för byn och hur mycket man vilar.', dra: q => dev(q.flit) },
   gemenskap: { pos: 'Sammanhållning', neg: 'Självförsörjning', effect: 'Hur mycket man bryr sig om att andra fryser och hjälper dem med elden, och hur stor del av det man skaffar som går till byn.', dra: q => dev(q.empati) },
-  barn: { pos: 'Ättens växt', neg: 'Ättens bärkraft', effect: 'Hur gärna par skaffar barn, och om barnen får leka eller måste hjälpa till.', dra: (q, barn) => dev(q.empati) * SED.barnEmpati + (barn ? SED.barnForalder : 0) },
+  barn: { pos: 'Många barn', neg: 'Få barn', effect: 'Hur gärna par skaffar barn, och om barnen får leka eller måste hjälpa till.', dra: (q, barn) => dev(q.empati) * SED.barnEmpati + (barn ? SED.barnForalder : 0) },
   nyfikenhet: { pos: 'Förnyelse', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.', dra: q => dev((q.nyfikenhet + q.intelligens) / 2) },
   forsiktighet: { pos: 'Förutseende', neg: 'Dagens behov', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.', dra: q => -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt },
   // den första vågskålen (steg 3.5.1): låst (står på 0) tills byn fått sin första ledare (sedOppen i styre.ts)
@@ -71,8 +71,8 @@ const DEF = {
   fejd: { pos: 'Fejd', neg: 'Förlikning', effect: 'Om konflikter löses med ord eller med styrka: Fejd flyttar vikt till krigarna, och ledaren kan störtas i strid.', dra: q => dev(q.aggression) - dev(q.empati) },
   krig: { pos: 'Krig', neg: 'Fred', effect: 'Om byn går i strid eller söker fred: Krig gör fler villiga att slåss.', dra: q => dev(q.aggression) * 0.7 + dev(q.mod) * 0.3 - dev(q.empati) * 0.5 }, // steg 8.4.11
   natur: { pos: 'Bruka', neg: 'Värna', effect: 'Om naturen är till för att brukas: fällda träd och dödade djur ger sämre humör för dem som drar åt Värna.', dra: q => dev(q.flit) * 0.5 - dev(q.empati) * 0.5 }, // steg 8.4.13
-  andlig: { pos: 'Andlig', neg: 'Världslig', effect: 'Om makten kommer från folket eller från gudarna: Andlig flyttar vikt till prästerna, och kyrkan välsignar eller fördömer ledaren.', dra: q => dev(q.minne) * 0.05 }, // steg 8.6.1
-  rang: { pos: 'Envälde', neg: 'Allmogen', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt ledaren straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
+  andlig: { pos: 'Andlig', neg: 'Världslig', effect: 'Om makten kommer från folket eller från gudarna: Andlig flyttar vikt till prästerna, och kyrkan välsignar eller fördömer ledaren.', dra: () => 0 }, // steg 8.6.1: andligheten läggs till i drar() och sedLaggning
+  rang: { pos: 'Envälde', neg: 'Folkstyre', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt ledaren straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
   // steg 10.8.6: låst tills byn berättat RYKTE.pratOppna dåliga rykten (rykten.ts). Den nyfikna och karismatiska drar åt Pratsamhet, den empatiska åt Förtegenhet
   prat: { pos: 'Pratsamhet', neg: 'Förtegenhet', effect: 'Hur fritt man talar om andra: i en pratsam by berättas rykten oftare och skvallret väger mindre, i en förtegen by tvärtom.', dra: q => (dev(q.nyfikenhet) + dev(q.karisma)) * 0.5 - dev(q.empati) * 0.5 },
 } satisfies Record<string, SedDef>;
@@ -101,6 +101,10 @@ function foraldrar(s: State) {
   foraldrarCache.set(s, { key, ids });
   return ids;
 }
+// hur p lutar mot Sammanhållning (-1 till 1): budgeten, lönen och skatten läser den
+export const lutning = (s: State, p: Person) => clamp(drar(s, p).gemenskap ?? 0, -1, 1);
+// x avrundat till närmaste fjärdedel, mellan 0 och 1
+export const fjardedel = (x: number) => clamp(Math.round(x * 4) / 4, 0, 1);
 export function drar(s: State, p: Person) {
   const barn = foraldrar(s).has(p.id), d = nollor();
   for (const k of SED_LIST) d[k] = SEDER[k].dra(p.pot, barn);
@@ -188,13 +192,15 @@ export function stepSeder(s: State) {
 
 // ---------- vilja ----------
 // pliktkänsla 0–1: hur mycket personen jobbar för byn i stället för sig själv
+// lagens del: arbetsplikten och samhällstjänsten (steg 8.4.1, 8.4.8), en gång för duty och pliktDelar (fynd 251)
+const pliktLag = (s: State, p: Person) => (lagGaller(s, 'arbetsplikt') ? LAG.plikt * efterlevs(s) : 0) + ((p.tjanst ?? 0) > s.now ? LAG.plikt : 0);
 export function duty(s: State, p: Person) {
-  const lag = (lagGaller(s, 'arbetsplikt') ? LAG.plikt * efterlevs(s) : 0) + ((p.tjanst ?? 0) > s.now ? LAG.plikt : 0); // arbetsplikten och samhällstjänsten (steg 8.4.1, 8.4.8)
+  const lag = pliktLag(s, p);
   return clamp(SED.pliktBas + (p.pot.flit - SED.mitt) * SED.pliktFlit + (p.pot.empati - SED.mitt) * SED.pliktEmpati + s.seder.v.arbete * SED.pliktSed + lag, SED.pliktMin, SED.pliktMax);
 }
 // pliktkänslans delar för gränssnittet (steg 11.1.46): samma tal som duty räknar, var för sig. Ändrar inget i byn
 export function pliktDelar(s: State, p: Person) {
-  const lag = (lagGaller(s, 'arbetsplikt') ? LAG.plikt * efterlevs(s) : 0) + ((p.tjanst ?? 0) > s.now ? LAG.plikt : 0);
+  const lag = pliktLag(s, p);
   return { bas: SED.pliktBas, flit: (p.pot.flit - SED.mitt) * SED.pliktFlit, empati: (p.pot.empati - SED.mitt) * SED.pliktEmpati, sed: s.seder.v.arbete * SED.pliktSed, lag };
 }
 export const VANA_AR = SED.vanaDygn; // vanorna bleknar på så här många dygn (år i spelet), tårtan i personens Tiden (steg 11.1.46)

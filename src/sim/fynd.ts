@@ -1,3 +1,4 @@
+import { tal } from './ord';
 import { Avst, bynsAvstand, bynsMitt } from './omrade';
 import { upplev } from './uppvaxt';
 import { PLATS, rektAvstand } from './plats';
@@ -9,7 +10,6 @@ import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
 import { underBuffert } from './forradsmal';
 import { LAGER, addTo, amountOf, foodOf } from './lager';
-import { nTools } from './agande';
 import { DAY, H, HOUR, OX, OY, Person, State, T, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
 import { FOREST, Ground, HIGH, VAG, isSoil } from './vag';
 import { ACTS, RedskapDef, SNABBARE } from './handlingar';
@@ -566,18 +566,6 @@ export function richnessDelar(s: State, k: Lager, x: number, y: number): { rich:
   const r = ls.map(j => richness(s, j, x, y));
   return { rich: r.reduce((a, b) => a + b, 0), r };
 }
-// hur mycket platsens värde (richnessDelar) sjunker för varje bär man tar där, när uttaget delas mellan lagren som i
-// takeFrom. Bara på land och utan djur (r finns); annars 0
-export function sankning(s: State, k: Lager, x: number, y: number, rich: number, r?: number[]) {
-  if (!r || rich <= 0) return 0;
-  const i = tileOf(x, y), d = takenOf(s);
-  let v = 0;
-  lagren(k).forEach((j, n) => {
-    const u = FYND[j].uttag, kv = u && karna(u.reach);
-    if (kv && d[j]) v += vaxerAt(s, j, i) * kv.v[kv.v.length >> 1].w / kv.sum * (u.reach + 1) / u.full * r[n] / rich;
-  });
-  return v;
-}
 // hur många gånger byn tagit ur kartan: gränssnittet ritar om den när det ändrats (simuleringen läser det aldrig)
 const plock = new WeakMap<State, number>();
 export const plockOf = (s: State) => plock.get(s) ?? 0;
@@ -682,8 +670,6 @@ function naraMark(s: State, f: (g: Ground, i: number) => boolean) {
 // flinta hittas oftast vid stenarna, ibland i sanden vid stranden och sällan annars
 // hur lätt det är att hitta flinta på platsen just nu: platser där man hittat flinta har mindre kvar ett tag
 export const flintFactor = (s: State, x: number, y: number) => richness(s, 'flinta', x, y);
-// flintorna och yxorna i byn. Yxorna räknas i styck, som i skog.ts (axes): en sliten yxa är fortfarande en yxa
-export const flintorOchYxor = (s: State) => amountOf(s, 'flinta') + nTools(s, 'yxa');
 // byn behöver flinta att tända eld med och till en yxa
 export const wantsFlint = (s: State) => underBuffert(s, 'flinta'); // efter förbrukningen, minst TROSKEL.flintaMinsta (steg 10.2.12)
 // en plats att samla på nära stenarna, där flinta är vanlig. I lägret och där flintan redan plockats finns ingen.
@@ -705,7 +691,6 @@ export function flintSpot(s: State, q: Person, area?: (x: number, y: number) => 
 // Kantarellen är god. Den orangea spindlingen liknar den men är giftig. Den som blir förgiftad lär sig skilja dem åt
 // och kan sedan lära andra (kunskap.ts, minne.ts).
 const GIFT = 'giftsvamp'; // giftig svamp som av misstag hamnat i förrådet (syns inte för invånarna)
-// svamp som hittas under en stund av samling i skogen; ger hur mycket ätlig mat som hittades.
 // Kantarellen och spindlingen har var sitt lager, så de växer på olika ställen.
 // en svamp plockad på rundan (steg 9.2.53–9.2.55): kantarellen är mat, och den giftiga spindlingen låter den stå som känner igen
 // den; annars läggs den i bördan som giftsvamp (som förr i forageItems). Svarar med det som hamnar i bördan
@@ -718,12 +703,12 @@ export function svampPlock(s: State, p: Person, slag: 'kantarell' | 'spindling')
 }
 // när någon äter: finns giftig svamp i förrådet kan hen få i sig den
 export function eatPoison(s: State, p: Person) {
-  if (rnd(s, 'halsa', p) < 0.2) tecken(s, p, 'svampsyn'); // svampen som gav syner (steg 8.5.18)
   const gift = amountOf(s, GIFT);
   // en ensam giftsvamp förfaller lite redan första slaget, så gränsen är nära noll och inte 1
   if (gift < 1e-3 || rnd(s, 'halsa', p) >= Math.min(FANGST.giftMax, gift / Math.max(1, foodOf(s)) * FANGST.giftAndel)) return;
   addTo(s, GIFT, -Math.min(1, gift));
   count(s, 'forgiftad');
+  tecken(s, p, 'svampsyn'); // förgiftningen ger syner: svampen som gav syner (steg 8.5.18 och 12.1.63)
   insjukna(s, p, 'svampforgiftning'); // steg 9.5.1: förgiftningen är en sjukdom som kan döda (motgiftet kommer i 9.5.14)
   p.poisonUntil = s.now + (FANGST.giftSjukMin + rnd(s, 'halsa', p) * FANGST.giftSjukSpann) * HOUR; p.sickWhy = 'Förgiftad av svamp';
   p.health = clamp(p.health - FANGST.giftHalsa, 0, 1);
@@ -759,7 +744,7 @@ export function handFish(s: State, p: Person, x: number, y: number, ageF: number
   if (rnd(s, 'arbete', p) >= hold) return 0;
   st.k++; count(s, 'prod_fiske'); gjort(s, p, 'fisk'); sjoRakna(s, x, y, 'fisk', p); const forsta = forstaGang(s, 'fisk'); if (spear) count(s, 'spjutFisk'); if (gear === 'metspo') count(s, 'metFisk');
   takeFrom(s, 'fiske', x, y, 1); // prod_fiske: fångsten som det arbetet gett, som de andra arbetena räknar i workStep (takt.ts, steg 6.1.4)
-  if (forsta) log(s, `${p.name} fångade byns första abborre ${spear ? 'med spjut' : gear === 'metspo' ? 'med metspö' : 'med händerna'}, efter ${s.stat!.fiskeForsok} försök.`, 'world', [p.id]);
+  if (forsta) log(s, `${p.name} fångade byns första abborre ${spear ? 'med spjut' : gear === 'metspo' ? 'med metspö' : 'med händerna'}, efter ${tal(s.stat!.fiskeForsok, true)} försök.`, 'world', [p.id]);
   return 1;
 }
 import { myrMalm, paMyr } from './myr';
