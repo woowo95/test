@@ -14,7 +14,7 @@ import { DAY, H, State, T, W, inMap } from './typer';
 // nästan inget regn på hela sommaren, så att markens fukt sjunker mot noll (vader.ts). Sjöarna krymper vid kanten till torr
 // sjöbotten (T.Lera, vattnet som det är nu i sjo.ts) som går att gå på, och små sjöar torkar ut helt. Fisken samlas i det
 // vatten som är kvar, bär, rötter och svamp växer sämre (fältet torka i FYND), kaninerna söker sig mot vattnet (fynd.ts) och
-// grödor som inte vattnas vissnar (odling.ts). Vattnet kommer tillbaka med regnet, en ruta i taget.
+// rutornas fukt sjunker, så att grödor som inte vattnas vissnar (odling.ts). Vattnet kommer tillbaka med regnet, en ruta i taget.
 // Fisken och kaninerna under torkan har sina tal i FANGST (fynd.ts). Allt som ändrar vattnet sker här, i timsteget, så att det levande läget och ikappräkningen får samma sjöar.
 
 // Balanstal (regel 8)
@@ -24,8 +24,7 @@ export const TORKA = balans('torka', {
   sjunker: [2, 4], // så många dygn (år i spelet) in i torkan har sjöarna sjunkit en och två rutor vid kanten ...
   liten: 40, // ... och vid två rutor torkar sjöar med högst så här många rutor vatten ut helt
   stigRegn: 1, // efter torkan stiger vattnet ett steg för varje så här mycket regn (timmar i det kraftigaste regnet): först fylls de uttorkade sjöarna, sedan kanten
-  falt: 24, // timmar som en gröda klarar sig utan vatten under torkan innan den vissnar ...
-  vattna: 0.5, // ... ägaren vattnar när det är mindre än så här kvar ...
+  fuktTim: 24, // under torkan sjunker rutornas fukt så att en ruta som ingen vattnar går från blöt till torr på så här många timmar (odling.ts) ...
   sackRutor: 10, // ... och en vattensäck räcker till så här många rutor
 });
 

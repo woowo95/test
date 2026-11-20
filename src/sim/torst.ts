@@ -217,13 +217,12 @@ function smutsigt(s: State, p: Person, i: number) {
 // skulle ha druckit själv) och bär den till hen. Det väljs som vården, före förbättringarna (val.ts). Säcken slits en gång per tur
 // fler kan bära vatten åt samma törstande, fält eller örtkök (steg 10.11.8): chansen att en till gör det faller med hur många som redan gör det
 const hamtas = (s: State, p: Person, q: Person) => !enTillDar(s, 'vatten', p, t => !t.falt && !t.ho && t.ref === q.id, q.id);
-// under torkan (steg 3.8.2) vattnar ägaren sitt fält med säcken när grödan snart vissnar, om ingen annan redan gör det
+// ägaren vattnar sitt fält när rutorna är torra, också under torkan (steg 3.8.2), om ingen annan redan gör det
 const vattnas = (s: State, p: Person, f: Falt) => !enTillDar(s, 'vatten', p, t => !!t.falt && t.ref === f.id, f.id);
-// ett fält som behöver vatten: under torkan när grödan snart vissnar (steg 3.8.2), och annars när rutor på familjens fält är torrare än
-// det p vattnar till (steg 9.7.4)
-// hur torrt fältet är, 0 till 1: vattnet i torkan, annars andelen torra rutor
-const faltTorrt = (s: State, p: Person, f: Falt) => s.sjoTorr?.pa && f.vatten !== undefined ? 1 - f.vatten : torraRutor(f, p).length / Math.max(1, f.n);
-const torrtFalt = (s: State, p: Person) => faltOf(s).find(f => (f.agare === p.id || familjOf(s, p.id).some(q => q.id === f.agare)) && f.vuxit !== undefined && !vattnas(s, p, f) && (s.sjoTorr?.pa && (f.vatten ?? 1) < TORKA.vattna || torraRutor(f, p).length >= JORD.karlRutor));
+// ett fält som behöver vatten: rutor på familjens fält är torrare än det p vattnar till (steg 9.7.4); under torkan torkar de fortare
+// hur torrt fältet är, 0 till 1: andelen torra rutor
+const faltTorrt = (_s: State, p: Person, f: Falt) => torraRutor(f, p).length / Math.max(1, f.n);
+const torrtFalt = (s: State, p: Person) => faltOf(s).find(f => (f.agare === p.id || familjOf(s, p.id).some(q => q.id === f.agare)) && f.vuxit !== undefined && !vattnas(s, p, f) && torraRutor(f, p).length >= JORD.karlRutor);
 // örtköket behöver vatten (steg 7.6.6): ingen säck står fylld, ingen fyller en, och byn vill ha något som kokas med vatten och som
 // någon kan göra. ref = FYLL i uppgiften: säcken fylls och blir stående fylld
 const FYLL = 0;
@@ -284,12 +283,10 @@ export function vattenFram(s: State, p: Person, t: Task) {
   if (t.ho) { hoKrok.fram(s, p, t); p.task = undefined; return; } // vattnet hälls i hon (djurtorst.ts, steg 10.10.31)
   if (t.falt) { // vattnet på fältet: en säck räcker till TORKA.sackRutor rutor
     const f = faltById(s, t.ref), n = t.tool === 'lerkruka_mellan' ? JORD.karlRutor : TORKA.sackRutor;
-    if (f && f.vatten !== undefined) {
-      f.vatten = Math.min(1, f.vatten + n / f.n);
+    if (f && vattnaRutor(s, f, p, n) > 0) { // per ruta (steg 9.7.4), också under torkan (steg 12.1.79)
       count(s, 'vattnat');
-      if (forstaGang(s, 'vattnat falt')) log(s, `${p.name} bar vatten i säcken till sitt fält för att grödan inte skulle vissna i torkan.`, 'world', [p.id]);
+      if (forstaGang(s, 'vattnadeRutor')) log(s, `${p.name} vattnade rutorna på fältet, så att grödan fick rätt fukt.`, 'world', [p.id]);
     }
-    if (f && vattnaRutor(s, f, p, n) > 0 && forstaGang(s, 'vattnadeRutor')) log(s, `${p.name} vattnade rutorna på fältet, så att grödan fick rätt fukt.`, 'world', [p.id]); // per ruta (steg 9.7.4)
     if (f) wearUsed(s, p, 1);
     p.task = undefined; return;
   }

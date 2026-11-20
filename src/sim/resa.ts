@@ -1174,8 +1174,8 @@ export function hemmaForlust(s: State, p: Person, dygn: number) {
   if (!s.sjoTorr?.pa) return 0;
   let v = 0;
   for (const f of s.falt ?? []) {
-    if (f.agare !== p.id || (f.vatten ?? 1) * TORKA.falt * HOUR >= dygn * DAY) continue;
-    for (const x of rutorAv(f)) if (x.st === 'vaxer' && x.g) v += GRODOR[x.g].perRuta * grundvarde(GRODOR[x.g].sak);
+    if (f.agare !== p.id) continue;
+    for (const x of rutorAv(f)) if (x.st === 'vaxer' && x.g && (x.fu ?? 1) * TORKA.fuktTim * HOUR < dygn * DAY) v += GRODOR[x.g].perRuta * grundvarde(GRODOR[x.g].sak); // rutan torkar ut innan hen är tillbaka (steg 12.1.79)
   }
   return v;
 }

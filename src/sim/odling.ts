@@ -124,7 +124,7 @@ export type FaltSteg = keyof typeof FALT_STEG;
 // r = rutorna (steg 9.7.1): varje ruta är en enhet med sitt eget steg, sin gröda, hur långt den vuxit, när den mognade och
 // arbetet som är kvar på den. Fältets steg, gröda, vuxit och mogen är en sammanfattning av rutorna (sammanfatta), för bilden
 export interface Ruta { st: FaltSteg; g?: GrodaSlag; v?: number; m?: number; kvar?: number; fu?: number; sj?: number } // sj = sjuk sedan den tiden (steg 9.7.12) // fu = fukten (steg 9.7.2)
-export interface Falt { offrat?: number; r?: Ruta[]; id: number; x: number; y: number; w: number; dir: number; n: number; agare: number; steg: FaltSteg; klara: number; kvar: number; sadda?: number; groda?: GrodaSlag; vuxit?: number; mogen?: number; rord: number; vatten?: number; fore?: number[]; bered?: number[]; skott?: number[] } // vatten: hur länge grödan klarar sig under torkan (1 = nyss vattnad, torka.ts)
+export interface Falt { offrat?: number; r?: Ruta[]; id: number; x: number; y: number; w: number; dir: number; n: number; agare: number; steg: FaltSteg; klara: number; kvar: number; sadda?: number; groda?: GrodaSlag; vuxit?: number; mogen?: number; rord: number; fore?: number[]; bered?: number[]; skott?: number[] }
 // fore, bered och skott (steg 3.10.6, rutan i panelen) per ruta k: vad som växte där innan fältet (MARK_FORE), när den bereddes och
 // när någon sist arbetade på den
 // arbetet per ruta i steget (ms)
@@ -554,7 +554,6 @@ function forlorad(s: State, f: Falt, varfor: string, rutor?: Set<number>) {
   log(s, `${varfor} tog ${d.namn.toLowerCase()}na på ${agare ? agare.name + 's' : 'ett'} fält.`, 'world', agare ? [agare.id] : undefined);
   count(s, varfor === 'Sjukdomen' ? 'vaxtsjukDod' : varfor === 'Fåglarna' ? 'fagelAt' : varfor === 'Hararna' ? 'hareAt' : varfor === 'Frosten' ? 'frostdod' : varfor === 'Torkan' ? 'vissnat' : varfor === 'Översvämningen' ? 'drankt falt' : varfor === 'Elden' ? 'brant falt' : varfor === 'Tornadon' ? 'tornado falt' : 'ruttnat');
   for (const k of ks) r[k] = { st: 'sa' };
-  if (!r.some(x => x.st === 'vaxer' || x.st === 'mogen')) f.vatten = undefined;
   f.rord = s.now; // gräset börjar ta fältet först nu, när det står utan gröda (inte från sådden)
   sammanfatta(f);
 }
@@ -587,11 +586,10 @@ export function stepOdling(s: State) {
       const rutt = new Set<number>();
       for (let k = 0; k < f.n; k++) if (r[k].st === 'mogen' && skordAndel(s, f, k) <= 0) rutt.add(faltRuta(f, k));
       if (rutt.size) forlorad(s, f, 'Rötan', rutt);
-      // under torkan vissnar grödan om ingen vattnar den (steg 3.8.2, torst.ts)
-      if (r.some(x => x.st === 'vaxer')) {
-        if (s.sjoTorr?.pa) { f.vatten = (f.vatten ?? 1) - 1 / TORKA.falt; if (f.vatten <= 0) forlorad(s, f, 'Torkan'); }
-        else f.vatten = undefined;
-      }
+      // en växande ruta som torkat ut vissnar (steg 3.8.2 och 12.1.79): under torkan sjunker fukten, och den som vattnar räddar rutorna (torst.ts)
+      const torr = new Set<number>();
+      for (let k = 0; k < f.n; k++) if (r[k].st === 'vaxer' && (r[k].fu ?? 1) <= 0) torr.add(faltRuta(f, k));
+      if (torr.size) forlorad(s, f, 'Torkan', torr);
       if (temp > ODLING.vaxGrad && !istid) for (const x of r) if (x.st === 'vaxer' && x.sj === undefined) { /* en sjuk planta växer inte (steg 9.7.12) */ x.v = Math.min(1, (x.v ?? 0) + vaxtFaktor(s) * fuktFaktor(x.fu, GRODOR[x.g!].fukt) * kravFaktor(s, f, r.indexOf(x), x.g!, temp) / (GRODOR[x.g!].dygn * 24)); if (x.v >= 1) { x.st = 'mogen'; x.m = s.now; x.v = undefined; } } // fortare i blöt mark (steg 2.11.1)
       sammanfatta(f);
       continue;
@@ -700,7 +698,7 @@ import { FORRADSMAL, buffert } from './forradsmal';
 // ---------- jordens värden (steg 9.7.2, Odlingen i detalj: Jorden) ----------
 // Bördigheten ligger i marken (s.bord, bara de rutor där den inte är full) och finns kvar när fältet växer igen: den sjunker med
 // varje skörd och kommer långsamt tillbaka där inget växer. Den drar ner skörden (bordSkord). Fukten finns per ruta på fältet:
-// den stiger med regnet och närheten till vatten och sjunker i värmen. Båda syns när man håller musen över rutan
+// den stiger med regnet och närheten till vatten och sjunker i värmen, och under torkan mot noll. Båda syns när man håller musen över rutan
 export const JORD = balans('jord', {
   skord: 0.08, // så mycket av bördigheten tar en skörd
   ater: 0.03, // så mycket kommer tillbaka per dygn där inget växer
@@ -723,12 +721,13 @@ export const fuktAv = (f: Falt, k: number) => rutorAv(f)[k]?.fu ?? 0.5;
 // närheten till vatten (0–1): 1 vid stranden
 const vattenNara = (s: State, i: number) => JORD.torrMark + (1 - JORD.torrMark) * clamp(1 - djupOf(s.seed).land[i] / JORD.naraRutor, 0, 1); // fukten jorden dras mot
 function jordTimme(s: State) {
-  const temp = temperature(s), regn = vaderNu(s).nb > 0, odlat = new Set<number>();
+  const temp = temperature(s), regn = vaderNu(s).nb > 0, torka = !!s.sjoTorr?.pa, odlat = new Set<number>();
   for (const f of faltOf(s)) {
     const r = rutorAv(f);
     for (let k = 0; k < f.n; k++) {
       const i = faltRuta(f, k), x = r[k], fu = x.fu ?? vattenNara(s, i) * 0.5 + 0.25;
-      x.fu = clamp(fu + (regn ? JORD.regn : 0) - JORD.torka * Math.max(0.2, 1 + (temp - 15) / 10) + JORD.nara * (vattenNara(s, i) - fu), 0, 1);
+      // under torkan regnar det inte och sjöarna sjunker: fukten sjunker så att en blöt ruta är torr på TORKA.fuktTim timmar
+      x.fu = torka ? clamp(fu - 1 / TORKA.fuktTim, 0, 1) : clamp(fu + (regn ? JORD.regn : 0) - JORD.torka * Math.max(0.2, 1 + (temp - 15) / 10) + JORD.nara * (vattenNara(s, i) - fu), 0, 1);
       if (x.st === 'vaxer' || x.st === 'mogen') odlat.add(i);
     }
   }

@@ -1952,7 +1952,7 @@ SCENARIER.samlaresa = {
     const modig = SIM.resaPlan(s, a, 99, 99), forsiktig = SIM.resaPlan(s, b, 99, 99), nod = SIM.resaPlan(s, a, SIM.resaPlan(s, a, 99, 99)!.dygn * 0.1, 99);
     // under torkan väger a sitt eget fält som vissnar medan hen är borta (hemmaForlust)
     const st = SIM.cloneState(s), at = st.people.find(q => q.id === a.id)!;
-    st.falt = [{ id: 1, x: 0, y: 0, w: 3, dir: 1, n: 6, agare: a.id, steg: 'vaxer', klara: 0, kvar: 0, sadda: 6, groda: 'arter', vuxit: 0, rord: st.now, vatten: 0.1 } as SIM.Falt]; // vattnet räcker bara ett par timmar till
+    st.falt = [{ id: 1, x: 0, y: 0, w: 3, dir: 1, n: 6, agare: a.id, steg: 'vaxer', klara: 0, kvar: 0, sadda: 6, groda: 'arter', vuxit: 0, rord: st.now, r: Array.from({ length: 6 }, () => ({ st: 'vaxer' as const, g: 'arter' as const, v: 0, fu: 0.1 })) } as SIM.Falt]; // rutorna är torra om ett par timmar (steg 12.1.79)
     st.sjoTorr = { niva: 0, tomma: [], v: 0, t: st.now, ...st.sjoTorr, pa: true };
     const forlust = SIM.hemmaForlust(st, at, modig!.dygn), torr = SIM.resaPlan(st, at, 99, 99);
     // a väger raderna på Förbättra: resan vinner, och a samlar och går till samlingsplatsen, där sällskapet packar
