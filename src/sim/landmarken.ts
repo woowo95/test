@@ -68,6 +68,8 @@ function reg(l: VarldPlats[]) {
   return c;
 }
 export const varldPlatsNr = (vl: Varlden, nr: number) => vl.platser ? reg(vl.platser).nr.get(nr) : undefined;
+// platsen som den finns i världen, eller som byn minns den sedan den tagits bort (minnesplatserna, steg 12.1.146, ort.ts)
+export const kandPlats = (vl: Varlden, nr: number) => varldPlatsNr(vl, nr) ?? vl.minnesplatser?.find(p => p.nr === nr);
 export function byPlats(vl: Varlden, rad: number): VarldPlats | undefined {
   const l = vl.platser;
   if (!l) return undefined;

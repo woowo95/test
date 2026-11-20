@@ -18,7 +18,7 @@ import { bynsMitt, utanforByn } from './omrade';
 import { blocked, freeNear } from './byggnad';
 import { gaBort, ute } from './ute';
 import { Varlden, varldMark } from './varlden';
-import { byPlats, varldPlatserPa } from './landmarken';
+import { byPlats, kandPlats, varldPlatserPa, varldPlatsNr } from './landmarken';
 import { clamp } from './slump';
 import { ryggsack } from './utrustning';
 import { Tamdjur, tamArt, tamdjurOf, tamEg } from './tamdjur';
@@ -42,7 +42,7 @@ import { rnd } from './slump';
 import { DAY } from './typer';
 import { kanGa } from './halsa';
 import { SEC } from './typer';
-import { kannerOrt, O_RYKTE } from './ort';
+import { kannerOrt, O_RYKTE, vetBorta } from './ort';
 import { MATERIALMAL, villHaAv } from './forradsmal';
 import { kannerPris, trorPris } from './minne';
 import { PAB, pabud } from './styre';
@@ -144,7 +144,7 @@ export const RESA = balans('resa', {
 // det sällskapet behåller för vägen och inte säljer (maten säljs inte heller)
 export const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver', 'packsadel', 'ridsadel', 'vagn'];
 // sällskapets mål och hemby i världen (kodgenomgången, fynd 185)
-const slMal = (s: State, sl: Sallskap) => s.varld?.platser?.find(p => p.nr === sl.mal);
+const slMal = (s: State, sl: Sallskap) => s.varld && kandPlats(s.varld, sl.mal); // också en plats byn tror finns men som tagits bort (steg 12.1.146)
 const slHem = (s: State, sl: Sallskap) => s.varld && byPlats(s.varld, sl.by);
 // det sällskapet kan sälja eller ge bort: inte det det behåller eller maten, och bara det som har ett värde (kodgenomgången, fynd 185)
 export const saljbar = (k: string) => !BEHALL.includes(k) && !FOOD.includes(k) && grundvarde(k) > 0;
@@ -178,6 +178,7 @@ export interface Sallskap {
   forlust?: [number | 'by', number, number][]; // det rövarna tog: ägaren, värdet och lägrets rad, för utlysningen hemma (steg 11.8.11, utlysa.ts)
   hjalp?: 1; hjalpTim?: number; // uppdraget är att hjälpa en by, och timmarna sällskapet arbetat i den väckta byn (steg 11.13.23)
   insatser: Insats[];
+  borta?: 1; // framme fanns platsen inte längre (steg 12.1.146)
   dagbok: [number, string, DagbokId?][]; // resans dagbok: tiden, texten och händelsens slag (steg 11.5.13)
   att?: Record<string, number>; // det ledaren bestämt att packa, som resenärerna hämtar ur förrådet och bär till samlingsplatsen (steg 12.1.8)
   ut?: Utgang; vid?: number[]; packar?: number; // samlingsplatsen och kanten, de som är framme vid samlingsplatsen och när packningen började (steg 11.5.5)
@@ -844,6 +845,7 @@ export function hemkomst(s: State, sl: Sallskap, t: number) {
   vagnHem(s, sl, in_.x, in_.y);
   delaHemma(s, sl);
   beskedet(s, sl); // den som dog på vägen: arvet delas nu (steg 11.5.18)
+  if (sl.borta) vetBorta(s, living(s).filter(p => !p.gast), sl.mal); // nyheten att platsen är borta når byn (steg 12.1.146)
   sl.skede = 'hemma'; sl.t = t;
   count(s, 'resa hemma');
   redogorelse(s, sl, t);
@@ -899,6 +901,11 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   const vl = s.varld, plats = slMal(s, sl);
   if (!vl || !plats) return;
   const folk = resenarer(s, sl);
+  if (!varldPlatsNr(vl, sl.mal)) { // platsen är borta (steg 12.1.146): de ser det, glömmer den och berättar det hemma
+    vetBorta(s, folk, sl.mal); sl.borta = 1;
+    dagbok(s, sl, 'fram', `Kom fram till platsen där ${plats.namn} låg, men där fanns ingen längre.`, t);
+    return;
+  }
   for (const p of folk) larOrt(s, p, sl.mal, O_BESOKT, 1, { t });
   const r = plats.by !== undefined ? radNr(vl, plats.by) : undefined;
   dagbok(s, sl, 'fram', `Kom fram till ${plats.namn}.`, t);
@@ -1115,7 +1122,7 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
   if (!vl || !v || !hem || p.gast || ute(p) || sallskapFor(vl, p.id)) return undefined;
   const ny = stat(p, 'nyfikenhet', s.now), mod = stat(p, 'mod', s.now), utfar = Math.max(0, 1 + pabud(s, 'utfarder') * PAB.utfarMax); // påbudet Utfärder (steg 11.8.15)
   let bast: ResPlan | undefined;
-  for (const q of vl.platser ?? []) {
+  for (const q of [...vl.platser ?? [], ...vl.minnesplatser ?? []]) { // och platserna byn tror finns (steg 12.1.146)
     if (q.nr === hem.nr) continue;
     const niva = kannerOrt(s, p, q.nr);
     if (niva === undefined) continue;
