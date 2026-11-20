@@ -38,6 +38,7 @@ export const JARNSAKER: Record<string, JarnsakDef> = {
   svard: { grupp: 'svard', tek: 'vapensmide', text: 'Smider ett svärd.', forsta: '{namn} smidde byns första svärd, det första som bara är ett vapen.' }, // steg 12.2.9
   sag: { grupp: 'sag', tek: 'klyvplats', text: 'Smider en såg.', forsta: '{namn} smidde byns första såg. Vid klyvplatsen blir en planka klar på en tredjedel av tiden.' }, // steg 12.5.1
   ullsax: { grupp: 'ullsax', tek: 'kniv', text: 'Smider en ullsax.', forsta: '{namn} smidde byns första ullsax. Med den klipps ett får på en tredjedel av tiden.' }, // steg 12.5.2
+  jarnnal: { grupp: 'nal', tek: 'bensyl', text: 'Smider två järnnålar.', forsta: '{namn} smidde byns första järnnålar. Med dem sys kläderna tre gånger så fort.' }, // steg 12.5.3
   jarnspjut: { grupp: 'spjut', tek: 'flintspjut', text: 'Smider en spets av järn och surrar den på ett skaft.', forsta: '{namn} smidde byns första järnspjut.' }, // steg 12.2.8
 };
 // smedjan som p kan smida vid nu: färdig, och ässjan brinner eller det finns kol att tända den med
@@ -55,9 +56,12 @@ export function smidaKlar(s: State, p: Person, tk: Task) {
   const k = tk.tool, d = k ? JARNSAKER[k] : undefined;
   if (!k || !d || !Object.entries(receptAv(k)).every(([m, n]) => getable(s, p, m) >= n)) return;
   for (const [m, n] of Object.entries(receptAv(k))) takeMaterial(s, p, m, n);
-  const t = addTool(s, k, p); t.av = p.id; t.gjord = s.now;
-  nyKvalitet(s, p, t, kvVid(s, p, 'smida'), SAKER[k]!.namn.toLowerCase());
-  nyttVid(s, t); // sågen läggs vid klyvplatsen om dess plats står tom, och blir byns (steg 12.5.1)
+  const q = kvVid(s, p, 'smida');
+  for (let i = 0; i < (SAKER[k]!.skaffa!.ger ?? 1); i++) { // 1 järn ger 2 järnnålar (steg 12.5.3)
+    const t = addTool(s, k, p); t.av = p.id; t.gjord = s.now;
+    nyKvalitet(s, p, t, q, SAKER[k]!.namn.toLowerCase());
+    nyttVid(s, t); // sågen läggs vid klyvplatsen om dess plats står tom, och blir byns (steg 12.5.1)
+  }
   count(s, 'smitt_' + k);
   if (forstaGang(s, 'smitt_' + k)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }

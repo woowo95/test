@@ -873,3 +873,34 @@ SCENARIER.ullsax = {
     ];
   },
 };
+
+SCENARIER.jarnnal = {
+  text: 'Järnnålen (steg 12.5.3): en bättre bennål från smedjan (1 järn ger 2 nålar, 3 minuter); kläder sys tre gånger så fort och får oftare bra kvalitet, och nålen håller fyra gånger så länge',
+  kor: () => {
+    const R = SIM.RECEPT.jarnnal, S = SIM.SAKER;
+    const s = SIM.createState(1, START), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), [p, q] = vuxna;
+    klockan(s, 10);
+    for (const v of vuxna) Object.assign((v.tek ??= {}), { smedja: 1, bensyl: 1 });
+    const smedja = medBank(s, 'smedja'); medBank(s, 'flatarbank');
+    SIM.setStock(s, { jarn: 2, kol: 4 });
+    const fart0 = SIM.nalFart(s, q, 'rock'), kv0 = SIM.nalKv(s, q, 'rock_kaninskinn'), brist = SIM.jarnBrist(s, 'jarnnal');
+    const tk = { act: 'smida', phase: 'do', tx: smedja.x, ty: smedja.y, until: s.now, carry: 0, why: '', tool: 'jarnnal', ref: smedja.id } as SIM.Task;
+    p.task = tk; SIM.smidaKlar(s, p, tk); p.task = undefined;
+    const nalar = SIM.tingOf(s).filter(t => t.k === 'jarnnal').length, jarnKvar = SIM.amountOf(s, 'jarn');
+    for (const t of SIM.tingOf(s)) if (t.k === 'jarnnal') t.agare = SIM.BYN;
+    const fart = SIM.nalFart(s, q, 'rock'), kv = SIM.nalKv(s, q, 'rock_kaninskinn'), smitt = SIM.nalFart(s, q, 'jarnhjalm');
+    // ett sår sys med järnnålen som med bennålen
+    const sy = SIM.VARD.sy, w = { d: 'armV', k: 'skarsar', g: 0.8, b: 0.5 } as SIM.Skada; q.skador = [w];
+    SIM.setAmount(s, 'rep', 2); p.skill.lakekonst = Math.max(p.skill.lakekonst, sy.fardighet ?? 0);
+    const syr = sy.krav(s, q, w, p) && SIM.vardKan(s, p, sy, q);
+    return [
+      [`järnnålen: ${JSON.stringify(R.av)} ger ${R.ger} nålar på ${R.min} minuter i smedjan`, R.av.jarn === 1 && R.ger === 2 && R.min === 3 && R.tek === 'smedja' && !!SIM.JARNSAKER.jarnnal],
+      [`byn som syr vid slöjdbänken och kan smida saknar en (${brist})`, brist > 0],
+      [`smidet tar 1 järn (kvar ${jarnKvar}) och ger ${nalar} nålar`, nalar === 2 && jarnKvar === 1],
+      [`med järnnålen sys en rock tre gånger så fort (${fart0} → ${fart}), men det som smids går inte fortare (${smitt})`, fart0 === 1 && fart === 3 && smitt === 1],
+      [`och den blir oftare bra (+${kv.toFixed(2)}, utan ${kv0})`, kv > 0 && kv0 === 0],
+      [`järnnålen ligger i bennålens grupp och syr ett sår som den (${syr})`, SIM.gruppOf('jarnnal') === 'nal' && (S.jarnnal!.rang ?? 0) > (S.nal!.rang ?? 0) && syr],
+      [`den håller fyra gånger så länge som bennålen (slits ${S.jarnnal!.slits} mot ${S.nal!.slits})`, Math.abs(S.nal!.slits! / S.jarnnal!.slits! - 4) < 1e-9],
+    ];
+  },
+};
