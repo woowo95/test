@@ -166,3 +166,31 @@ SCENARIER.brannolja = {
     ];
   },
 };
+
+SCENARIER.kladmaterial = {
+  text: 'Steg 12.1.20: materialet till kläderna. Ett plagg som väntar på läder, lintyg eller ylle ärver genom projektet som gör materialet (garvningen, vävningen), och skinnet det i sin tur väntar på hämtas genom jakten (KALLA i projekt.ts). Byn vill ha en slöjdbänk per tolv vuxna',
+  kor: () => {
+    const s = createState(1, START);
+    medHus(s);
+    const p = s.people.find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!, f = SIM.dangers(s);
+    for (const id of ['skinnklader', 'garvning', 'kniv', 'flatarbank']) (p.tek ??= {})[id] = 1;
+    SIM.setAmount(s, 'skinn', 0); SIM.setAmount(s, 'talg', 5);
+    (s.stationer ??= []).push({ id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'garvning', x: 1, y: 5, kvar: 0, delar: SIM.delarIRad('garvning', 1, 5) } as Station); s.byggV = (s.byggV ?? 0) + 1;
+    const jakt = SIM.hamtas('skinn')?.act === 'jakt' && SIM.hamtas('radjursskinn')?.act === 'jakt';
+    const viaGarvning = SIM.fattas(s, p, 'garva', f), lader = SIM.arv(s, p, 'lader', f);
+    // slöjdbänken: ingen ger brist; en räcker till tolv vuxna; fler vuxna vill ha en till
+    const bank = (n: number) => { s.stationer = (s.stationer ?? []).filter(t => t.k !== 'flatarbank'); for (let i = 0; i < n; i++) (s.stationer ??= []).push({ id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'flatarbank', x: 1 + 3 * i, y: 1, kvar: 0 } as Station); };
+    const vuxna = () => SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen).length;
+    bank(0); const ingen = SIM.stationBrist(s, 'flatarbank');
+    bank(1); const en = SIM.stationBrist(s, 'flatarbank'), v0 = vuxna();
+    for (let i = 0; vuxna() <= 12; i++) s.people.push({ ...p, id: 90000 + i, tek: { ...p.tek } });
+    const fler = SIM.stationBrist(s, 'flatarbank'), v1 = vuxna();
+    bank(2); const tva = SIM.stationBrist(s, 'flatarbank');
+    return [
+      ['skinnen hämtas genom jakten', jakt],
+      [`garvningen väntar på skinn (${viaGarvning}), och lädret ärver genom garvningen till jakten efter skinn (${lader?.sak})`, viaGarvning === 'skinn' && lader?.sak === 'skinn'],
+      [`utan slöjdbänk vill byn ha en (${ingen}); en räcker till ${v0} vuxna (${en})`, ingen === 1 && (v0 > 12 || en === 0)],
+      [`${v1} vuxna vill ha en till (${fler}), och med två är det nog (${tva})`, fler === 1 && tva === 0],
+    ];
+  },
+};

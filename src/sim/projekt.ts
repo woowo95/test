@@ -408,13 +408,19 @@ export function fattas(s: State, p: Person, k: string, f: ProjektFara) {
 }
 // arbetet som hämtar materialet m (skaffa.act i SAKER: hö och flinta samlas, grenar och ved med arbetet ved) och om det letas
 // vid stenarna (det sällsynta, flintan). Annat material (skinn, ben) kommer av andra arbeten, och då väntar projektet
+// Materialet till kläderna (steg 12.1.20): skinnen som jakten ger (viltet slaktas sedan till skinn) står i KALLA, så att ett plagg
+// som väntar på skinn ger jakten värde, som virket till ett hus ger fällningen värde
+export const KALLA: Record<string, Act> = { skinn: 'jakt', vitskinn: 'jakt', radjursskinn: 'jakt' };
 export function hamtas(m: string): { act: Act; leta?: true } | undefined {
+  if (KALLA[m]) return { act: KALLA[m] };
   const sk = SAKER[m]?.skaffa, a = sk?.act ? ACTS[sk.act as Act]?.arbete : undefined;
   return a ? { act: a as Act, leta: sk!.sallsynt ? true : undefined } : undefined;
 }
 // det som saknas ärver nivån och värdet (steg 6.2.19): ett redskap eller material som självt är ett projekt (yxan, kniven,
 // virket, repet) görs, och saknas något till det i sin tur går man ett steg till; ett material som hämtas blir sak
-function arv(s: State, p: Person, m: string, f: ProjektFara, djup = 0): { u?: Uppgift; sak?: string } | undefined {
+export function arv(s: State, p: Person, m: string, f: ProjektFara, djup = 0): { u?: Uppgift; sak?: string } | undefined {
+  // ett material som görs av ett eget projekt (lädret garvas, lintyget och yllet vävs, tråden spinns, steg 12.1.20) ärver genom det
+  if (!PROJEKT[m]) for (const k of TILLVERKA_LIST) if (TILLVERKA[k].ger === m && PROJEKT[k]) { const a = arv(s, p, k, f, djup); if (a) return a; }
   if (PROJEKT[m]) {
     const u = projektNu(s, p, m, f);
     if (u) return { u };
