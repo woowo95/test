@@ -128,3 +128,9 @@
 - 12.1.172 (skenet tonar ut mjukare och längre): bara bilden (ui/natt.ts, ui/terrang.ts, ui/eldskugga.ts) och balanstalet MORKER.skenUt (läses bara av bilden). Skyldig `npm run utseende` på natten och samma-kollen.
 - 12.1.176 (facklan 12 rutor, samma kurva för alla ljus): ändrar spelet (FACKLA.r 9 → 12); skyldig koll med nytt facit, `npm run likhet` och `npm run utseende` på natten.
 - 12.1.177 (långsammare arbete i det svaga skenet): ändrar spelet (MORKER.skenFart 0,8 i skenet utanför räckvidden, iSkenet i sim/ljus.ts). Skyldig koll med nytt facit; `npm run likhet` körd i molnet på ef10eae: 4 av 4 byar exakt lika i 720 timmar.
+## Grenen par-teknik (12.1.158, 12.1.151, 12.1.126, 12.1.174)
+
+- ddf63f1 (12.1.158): det som läggs ner framför en station hamnar bredvid (dropLoad i lager.ts), och benet ärver till slaktbänken (KALLA). Ändrar grunden för var bördor läggs: skyldig koll med nytt facit och `npm run likhet`.
+- 9c0ae22 (12.1.151): en slaktad kanin ger två ben. Skyldig koll med nytt facit.
+- 12.1.126 ändrade bara designdokumentet.
+- c1eb08d (12.1.174): röjningens och stubbarnas brist följer det som är kvar per plats. Ändrar vad byarna gör på Förbättra: skyldig koll med nytt facit, `npm run likhet` och en titt i fasens Balans (`npm run balans -- 24 35`) på att byarna fortfarande röjer.

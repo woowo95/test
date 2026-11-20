@@ -6,7 +6,7 @@ import { FOREST, isSoil } from '../../sim/vag';
 import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import { sjo as sjoFlik } from '../../ui/flikar/sjo';
 import { setByn, ui } from '../../ui/lage';
-import { jaktFran, stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare, testBy, vidStack, bearbetaVid, harHamtat } from './hjalp';
+import { slakteri, jaktFran, stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare, testBy, vidStack, bearbetaVid, harHamtat } from './hjalp';
 
 // en vargflock med n vargar som stryker omkring vid (x, y) med hungern hunger, med nästa nummer i byn och det som står i mer
 const nyFlock = (s: State, n: number, x: number, y: number, hunger: number, mer: Partial<SIM.Vargflock> = {}) => {
@@ -67,7 +67,7 @@ SCENARIER.djur = {
     setMat(s, {}); setMat(s, { vilt: 3 * KANIN }); setAmount(s, 'ben', 0); setAmount(s, 'skinn', 0); setAmount(s, 'rep', 0);
     const kan = canProcess(s, p, DJUR.kanin);
     bearbetaVid(s, p, DJUR.kanin, 1);
-    const slakt = amountOf(s, 'kott') === 3 * SIM.kottAv(p, SLAKT.kott) && amountOf(s, 'vilt') < 1e-9 && Math.abs(amountOf(s, 'ben') - 3) < 1e-9 && Math.abs(amountOf(s, 'skinn') - 3) < 1e-9; // köttet i hela saker (steg 2.10.7)
+    const slakt = amountOf(s, 'kott') === 3 * SIM.kottAv(p, SLAKT.kott) && amountOf(s, 'vilt') < 1e-9 && Math.abs(amountOf(s, 'ben') - 3 * SLAKT.ben) < 1e-9 && Math.abs(amountOf(s, 'skinn') - 3) < 1e-9; // köttet i hela saker (steg 2.10.7)
     // senorna blir ibland ett rep, men bara för den som kan tekniken Rep
     const repAv = (kan: boolean) => { let r = 0; for (let i = 0; i < 200; i++) { setMat(s, { vilt: KANIN }); setAmount(s, 'rep', 0); p.tek = { ...p.tek, rep: kan ? 1 : 0 }; bearbetaVid(s, p, DJUR.kanin, 1); r += amountOf(s, 'rep'); } return r; };
     const medRep = repAv(true), utanRep = repAv(false);
@@ -85,7 +85,7 @@ SCENARIER.djur = {
       [`jakt utan redskap fångar hela kaniner (${kaniner} på ett dygn)`, kaniner >= 1 && hela],
       [`kaninen bärs hem hel, en i taget (${hem} gång, ${annat} med annat)`, hem >= 1 && annat === 0],
       ['utan kniv slaktas inget; kniven görs av en flinta och en gren och en flinta sparas till elden', utan && kniv && kan],
-      ['en slaktad kanin ger mer kött än den uppätna, och ett ben och ett skinn', slakt && SLAKT.kott > KANIN],
+      [`en slaktad kanin ger mer kött än den uppätna, ${SLAKT.ben} ben och ett skinn`, slakt && SLAKT.kott > KANIN],
       [`det ett djur ger har ett recept av djuret i saker.ts, som ungefär stämmer med DJUR (${recept})`, receptOk],
       [`senorna blir ibland ett rep för den som kan Rep (${medRep} rep av 200 kaniner), aldrig annars (${utanRep})`, medRep >= 200 * DJUR.kanin.rep * 0.5 && medRep <= 200 * DJUR.kanin.rep * 1.5 && utanRep === 0],
     ];
@@ -637,6 +637,39 @@ SCENARIER.slaktbank = {
       ['utan bänk slaktas och rensas inget: viltet och abborren ligger kvar att ätas som de är', ingenSlakt && kvar],
       [`en fälld varg slaktas till ${varg.kott} vargkött, ${varg.skinn} vargskinn och ${varg.ben} ben (benen är samma sak som kaninens; steg 3.7.14)`, vargOk],
       [`jaktfärdigheten avgör köttet: ${ny.toFixed(2)} kött av tre kaniner för den ovane, ${van.toFixed(2)} för den vane`, kottOk && van > ny],
+    ];
+  },
+};
+
+SCENARIER.slaktfram = {
+  text: 'Steg 12.1.158: den som bär viltet till slaktbänken och lägger ner det där lägger det bredvid sig, inte på rutan där man står och arbetar, så att bänken inte blir stängd och viltet slaktas. Benet kommer ur viltet som skinnet: ett projekt som saknar ben när oslaktat vilt ligger i förrådet och byn saknar bänken ger bänken värde (KALLA)',
+  kor: () => {
+    const s = createState(1, START); klockan(s);
+    const p = living(s).find(r => ageOf(r, s.now) >= 18)!;
+    slakteri(s, p); setMat(s, {});
+    const bank = SIM.stationerOf(s).find(t => t.k === 'slaktbank')!, vid = SIM.vidStation(bank);
+    p.x = vid.x; p.y = vid.y;
+    // hen har hämtat viltet och kallas bort (laggVid och dropLoad gör samma sak): bördan läggs ner där hen står
+    const tk = { act: 'slakta', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, why: 'prov', tool: 'kniv', items: { vilt: 2 * KANIN }, hamtad: 1 } as unknown as SIM.Task;
+    p.task = tk; SIM.dropLoad(s, tk, p.x, p.y); p.task = undefined;
+    const fram = SIM.framfor(bank), paFram = (s.stackar ?? []).filter(a => fram.some(q => q.x === a.x && q.y === a.y)).length;
+    const nara = (s.stackar ?? []).filter(a => a.k === 'vilt' && SIM.iRackvidd(p, a)).reduce((n, a) => n + a.n, 0);
+    const oppen = SIM.framFri(s, bank) && SIM.stationFor(s, 'slakta') === bank;
+    // och då slaktas viltet med det som ligger till hands: en timme vid bänken ger ben
+    bearbetaVid(s, p, DJUR.kanin, 1);
+    const ben = amountOf(s, 'ben');
+    // utan bänk: ett projekt som saknar ben ärver till slaktbänken medan viltet ligger oslaktat
+    const u = createState(1, START); klockan(u);
+    const q = living(u).find(r => ageOf(r, u.now) >= 18)!;
+    for (const r of u.people) r.tek = { ...r.tek, kniv: 1, slaktbank: 1 };
+    setMat(u, { vilt: 2 * KANIN, bar: 100 }); setAmount(u, 'virke', 6);
+    const a = SIM.arv(u, q, 'ben', { kyla: false, gras: 0 });
+    return [
+      [`det som läggs ner framför bänken hamnar bredvid (${paFram} stackar på rutorna framför)`, paFram === 0],
+      [`viltet ligger inom räckhåll för den som står vid bänken (${nara} av ${2 * KANIN})`, nara >= 2 * KANIN],
+      ['bänken är fri (inget står på rutorna framför den)', oppen],
+      [`viltet slaktas och ger ben (${ben})`, ben >= 1],
+      [`benet ärver till slaktbänken när viltet ligger oslaktat (${a?.u?.act ?? a?.sak ?? 'inget'} ${a?.u?.tool ?? ''})`, a?.u?.act === 'station' && a.u.tool === 'slaktbank'],
     ];
   },
 };

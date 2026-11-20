@@ -100,7 +100,7 @@ export function twineRope(s: State, p: Person, hours: number, vill: number = vil
 
 // ---------- redskap: kniv och slakt ----------
 // En flintkniv är en vass flintskärva med ett skaft. Utan kniv och slaktbänk äter byn direkt av det fällda djuret. Med kniv
-// slaktas det vid slaktbänken till mer kött, ett ben och ett skinn. Ett djur med senor ger dessutom ibland ett rep, men bara om den som
+// slaktas det vid slaktbänken till mer kött, två ben och ett skinn. Ett djur med senor ger dessutom ibland ett rep, men bara om den som
 // slaktar kan tekniken Rep (fisk har inga senor). Köttet och skinnet är eget för varje art (kaninkött, vargkött, kaninskinn,
 // vargskinn; steg 3.7.14), men benen är samma sak. Talgen, djurfettet, är också samma sak för alla arter: kaninen ger 1, vargen 3
 // (rådjuret 2 och björnen 6 när de kommer; steg 6.3.5).
@@ -121,7 +121,8 @@ export interface Djurart { sak: string; kott?: string; mat: number; slakt: Recor
 const slaktas = <T extends Omit<Djurart, 'act' | 'maxTim' | 'minDel'> & Partial<Djurart>>(d: T) => ({ act: 'slakta' as Act, kniv: true as const, maxTim: 2, minDel: 1, ...d });
 export const DJUR = {
   kanin: slaktas({ art: 'kanin', sak: 'vilt', kott: 'kott', mat: 2, // en kanin är två fällt vilt (4 kg styck sedan steg 4.5.5.1)
-    slakt: { kott: 3, ben: 1, skinn: 1, talg: 1 }, vinter: { skinn: 'vitskinn' }, rep: 0.15, timme: 15, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.' }),
+    slakt: { kott: 3, ben: 2, skinn: 1, talg: 1 }, vinter: { skinn: 'vitskinn' }, // två ben, så att benspaden kommer tidigare (steg 12.1.151)
+    rep: 0.15, timme: 15, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ben och ett skinn.' }),
   abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensat', forsta: '{namn} rensade byns första abborre. Den blev fiskkött.' },
   gadda: { sak: 'gadda', mat: 1, slakt: { gaddkott: 2 }, rep: 0, timme: 20, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensatGadda', forsta: '{namn} rensade byns första gädda. Den gav två bitar kött.' },
   braxen: { sak: 'braxen', mat: 1, slakt: { braxkott: 2 }, rep: 0, timme: 20, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensatBraxen', forsta: '{namn} rensade byns första braxen.' }, // steg 9.6.17

@@ -1140,7 +1140,8 @@ export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN
   storeTings(s, t, at);
   tomBorda(t);
 }
-// den som kallas bort lägger ner bördan där hen står; ligger den långt från lagret får någon bära in den senare
+// den som kallas bort lägger ner bördan där hen står; ligger den långt från lagret får någon bära in den senare. Står hen
+// framför en station lägger hen den bredvid, inom räckhåll: rutan där man arbetar ska vara fri (framFri, stationer.ts)
 export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
   const tx = Math.floor(x), ty = Math.floor(y);
   if (isStored(s, tx, ty)) { storeLoad(s, t, x, y, owner); return; }
@@ -1158,6 +1159,7 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
     let n = h.n, ag = h.ag;
     for (let r = 0; r <= 4 && n > 1e-9; r++) for (let y = ty - r; y <= ty + r && n > 1e-9; y++) for (let x = tx - r; x <= tx + r && n > 1e-9; x++) {
       if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r || !inMap(x, y)) continue;
+      if (r === 0 && sittAt(s, x, y)) continue; // där man står eller sitter vid en station eller ett bord läggs inget, inte heller det man burit dit (steg 12.1.158)
       if (r > 0 && (!usable(s, x, y) || stubbeOn(s, x, y) || isStored(s, x, y) || st.some(q => q.x === x && q.y === y && q.k !== k && q.n > 1e-6))) continue;
       let g = st.find(q => q.x === x && q.y === y && q.k === k);
       const v = Math.min(n, Math.max(0, helt(rymd(s, x, y, k)) - (g?.n ?? 0)));

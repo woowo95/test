@@ -64,22 +64,27 @@ export function kronaOver(s: State, h: { x: number; y: number; w: number; h: num
   }
   return ut;
 }
-// där träd ska fällas: lagerplatser och fält som röjs, stationer ute, runt husen och gångstråken
-export function skaRojas(s: State) {
-  const g = groundOf(s), ut: number[] = [];
-  for (const z of s.lagren ?? []) if (z.rojs && z.hus === undefined) for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (g.trees[y * W + x] >= FOREST) ut.push(y * W + x);
-  for (const f of faltOf(s)) for (let k = 0; k < f.n; k++) if (rutorAv(f)[k].st === 'roja') { const i = faltRuta(f, k); if (g.trees[i] >= FOREST) ut.push(i); } // rutorna som ska röjas (steg 9.7.1)
-  // en station på en plats med träd: de fälls som en del av bygget (steg 8.1.14)
-  for (const t of s.stationer ?? []) if (!t.inne) { const { w, h } = storlekAv(t); for (let y = t.y; y < t.y + h; y++) for (let x = t.x; x < t.x + w; x++) if (g.trees[y * W + x] >= FOREST) ut.push(y * W + x); }
-  // träden runt husen (steg 9.2.49): en ruta fri från träd runt varje byggnad och station ute, och de träd vars krona når in över
-  // ett hus (kronaOver)
-  { const sett = new Set(ut), lagg = (i: number) => { if (g.trees[i] >= FOREST && !sett.has(i)) { sett.add(i); ut.push(i); } };
-    for (const h of housesOf(s)) { for (let y = h.y - 1; y <= h.y + h.h; y++) for (let x = h.x - 1; x <= h.x + h.w; x++) if (inMap(x, y)) lagg(y * W + x); for (const i of kronaOver(s, h)) lagg(i); }
-    for (const t of s.stationer ?? []) if (!t.inne) { const { w, h } = storlekAv(t); for (let y = t.y - 1; y <= t.y + h; y++) for (let x = t.x - 1; x <= t.x + w; x++) if (inMap(x, y)) lagg(y * W + x); } }
+// där träd ska fällas: lagerplatser och fält som röjs, stationer ute, runt husen och gångstråken. Platserna (en lista med rutor
+// per lagerplats, fält, station, hus och stråk) är alla rutor som ska vara fria från träd, med eller utan träd
+function rojPlatser(s: State) {
+  const pl: number[][] = [], ram = (x0: number, y0: number, x1: number, y1: number) => { const r: number[] = []; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (inMap(x, y)) r.push(y * W + x); return r; };
+  for (const z of s.lagren ?? []) if (z.rojs && z.hus === undefined) pl.push(ram(z.x, z.y, z.x + z.w - 1, z.y + z.h - 1));
+  for (const f of faltOf(s)) { const r: number[] = []; for (let k = 0; k < f.n; k++) if (rutorAv(f)[k].st === 'roja') r.push(faltRuta(f, k)); if (r.length) pl.push(r); } // rutorna som ska röjas (steg 9.7.1)
+  // en station på en plats med träd: de fälls som en del av bygget (steg 8.1.14), och en ruta runt den (steg 9.2.49)
+  for (const t of s.stationer ?? []) if (!t.inne) { const { w, h } = storlekAv(t); pl.push(ram(t.x - 1, t.y - 1, t.x + w, t.y + h)); }
+  // träden runt husen (steg 9.2.49): en ruta fri från träd runt varje byggnad, och de träd vars krona når in över ett hus (kronaOver)
+  for (const h of housesOf(s)) pl.push([...ram(h.x - 1, h.y - 1, h.x + h.w, h.y + h.h), ...kronaOver(s, h)]);
   // ett träd som står i ett gångstråk fälls (steg 9.2.35, strak.ts)
-  const sett = new Set(ut); for (const v of straken(s).vagar) for (const i of v.rutor) if (g.trees[i] >= FOREST && !sett.has(i)) { sett.add(i); ut.push(i); }
+  for (const v of straken(s).vagar) pl.push(v.rutor);
+  return pl;
+}
+export function skaRojas(s: State) {
+  const g = groundOf(s), sett = new Set<number>(), ut: number[] = [];
+  for (const r of rojPlatser(s)) for (const i of r) if (g.trees[i] >= FOREST && !sett.has(i)) { sett.add(i); ut.push(i); }
   return ut;
 }
+// bristen i projektet rojning (steg 12.1.174): hur stor del av en plats som har träd kvar, den plats där mest är kvar
+export const rojBrist = (s: State) => { const g = groundOf(s); let b = 0; for (const r of rojPlatser(s)) if (r.length) b = Math.max(b, r.filter(i => g.trees[i] >= FOREST).length / r.length); return b; };
 // det närmaste trädet att fälla i ett lager eller på ett fält i skogen, som ingen annan fäller (projektet rojning i projekt.ts)
 // Träden i gångstråken fälls först (steg 9.2.35): de står där folk går varje dag
 export function rojSpot(s: State, p: Person) {
@@ -179,6 +184,24 @@ export function skaGravas(s: State) {
   for (const f of faltOf(s)) for (let k = 0; k < f.n; k++) if (rutorAv(f)[k].st === 'roja') falt.add(faltRuta(f, k));
   const lager = (x: number, y: number) => (s.lagren ?? []).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h);
   return s.stubbar.filter(k => { const i = k.y * W + k.x; return !!g.built?.[i] || falt.has(i) || lager(k.x, k.y); });
+}
+// bristen i projektet stubbe (steg 12.1.174): hur stor del av en plats där något ska stå (en lagerplats, ett fält, ett hus eller en
+// station) som har stubbar kvar, den plats där mest är kvar. Det andra som byggs (vägarna) räknas som en egen plats
+export function stubbBrist(s: State) {
+  const kvar = skaGravas(s);
+  if (!kvar.length) return 0;
+  const sk = new Set(kvar.map(k => k.y * W + k.x)), sett = new Set<number>(), pl: number[][] = [];
+  const ram = (x0: number, y0: number, w: number, h: number) => { const r: number[] = []; for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) if (inMap(x, y)) { r.push(y * W + x); sett.add(y * W + x); } return r; };
+  for (const z of s.lagren ?? []) pl.push(ram(z.x, z.y, z.w, z.h));
+  for (const f of faltOf(s)) { const r: number[] = []; for (let k = 0; k < f.n; k++) if (rutorAv(f)[k].st === 'roja') { r.push(faltRuta(f, k)); sett.add(faltRuta(f, k)); } if (r.length) pl.push(r); }
+  for (const h of housesOf(s)) pl.push(ram(h.x, h.y, h.w, h.h));
+  for (const t of s.stationer ?? []) { const { w, h } = storlekAv(t); pl.push(ram(t.x, t.y, w, h)); }
+  const g = groundOf(s), annat: number[] = [];
+  if (g.built) for (let i = 0; i < g.built.length; i++) if (g.built[i] && !sett.has(i)) annat.push(i);
+  pl.push(annat);
+  let b = 0;
+  for (const r of pl) if (r.length) b = Math.max(b, r.filter(i => sk.has(i)).length / r.length);
+  return b;
 }
 // den närmaste stubbe att gräva bort som ingen annan gräver
 export function stubbeSpot(s: State, p: Person) {
