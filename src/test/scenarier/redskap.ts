@@ -565,7 +565,7 @@ SCENARIER.kista = {
     const byggd = !!k && isKlar(k) && k.ag === p.id && !!k.inne && b !== undefined && !!stationRum(s, k)?.tiles.includes(b);
     // det egna som ingen har i handen ligger i kistan, inte byns spjut, och det syns inte i lagret
     const iKistan = (t: SIM.Ting) => !!k && t.vid === k.id && t.x === k.x && t.y === k.y;
-    const lediga = egna.filter(t => t.hos === undefined && t.bar === undefined && t.lass === undefined);
+    const lediga = egna.filter(t => t.agare === p.id && t.hos === undefined && t.bar === undefined && t.lass === undefined); // det p bytt bort eller gett bort är inte p:s längre
     const iLagret = pilesOf(s).some(a => k && a.x === k.x && a.y === k.y);
     const iKistanNu = lediga.filter(iKistan).length, egetOk = lediga.length > 0 && lediga.every(iKistan) && !iKistan(byns) && !iLagret;
     // q lånar yxan: när q är klar ligger den i kistan igen

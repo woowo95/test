@@ -893,7 +893,7 @@ function siteInne(s: State, k: string, bara?: Rum, far?: (h: Hus) => boolean) {
         const x = i0 % W, y = (i0 - x) / W;
         let fri = true, sc = rot * STATION.vriden + bonus;
         for (let j = 0; j < h && fri; j++) for (let i = 0; i < w && fri; i++) fri = golvFri(s, rum, x + i, y + j);
-        for (let i = 0; i < w && fri; i++) fri = rum.has((y + h) * W + x + i) && !stationRutor(s).at.has((y + h) * W + x + i); // golvet framför
+        if (arbetar(d)) for (let i = 0; i < w && fri; i++) fri = rum.has((y + h) * W + x + i) && !stationRutor(s).at.has((y + h) * W + x + i); // golvet framför, där man står och arbetar (framfor); det andra nås från golvet (golvNas)
         if (!fri || iIngang(s, x, y, w, h)) continue; // ingenting i ingången (steg 3.10.1 och 12.1.36)
         runtOm(s, x, y, w, h, k => { if (k === 'vagg') sc -= STATION.badd; else if (k === 'oppning') sc += STATION.dorr; });
         if (sc < bs && golvNas(s, r, rutorAv(x, y, w, h).map(q => q.y * W + q.x))) { bs = sc; best = rot ? { x, y, rot, inne: 1 } : { x, y, inne: 1 }; } // och golvet nås från dörren (steg 12.1.36)

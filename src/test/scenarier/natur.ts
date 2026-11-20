@@ -1347,7 +1347,7 @@ SCENARIER.eldbrand = {
   kor: () => {
     const { tandSatt, kanTanda, nyEld, eldById, eldPlats, vidEld, iVattnetNu } = SIM;
     const s = createState(1, START); klockan(s, 10); tandEld(s, 6);
-    setAmount(s, 'ved', 60); setAmount(s, 'grenar', 6); setAmount(s, 'torrgras', 10); setAmount(s, 'flinta', 1);
+    setAmount(s, 'ved', 60); setAmount(s, 'grenar', 60); setAmount(s, 'torrgras', 60); setAmount(s, 'flinta', 1); // nog tändmaterial: ingen hämtar mer i slaget då elden tar fyr
     s.rovarVila = s.now;
     // en lägereld tio rutor från den första elden, släckt
     const e = eldPlats(s);
