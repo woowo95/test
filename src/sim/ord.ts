@@ -72,6 +72,7 @@ const SAKORD: Record<string, Ord> = {
   grillfisk: ['en', 'grillad fisk', 'grillade fiskar'], grillkott: ['en', 'bit grillat kött', 'bitar grillat kött'], torrkott: ['en', 'bit torkat kött', 'bitar torkat kött'],
   torrfisk: ['en', 'torkad fisk', 'torkade fiskar'], talgljus: ['ett', 'talgljus', 'talgljus'], talt: ['ett', 'tält', 'tält'], packsadel: ['en', 'packsadel', 'packsadlar'], ridsadel: ['en', 'ridsadel', 'ridsadlar'], vagn: ['en', 'vagn', 'vagnar'], vaxljus: ['ett', 'vaxljus', 'vaxljus'], fackla: ['en', 'fackla', 'facklor'], slanda: ['en', 'slända', 'sländor'], kalke: ['en', 'kälke', 'kälkar'], slade: ['en', 'släde', 'slädar'], levoxe: ['en', 'oxe', 'oxar'], levhast: ['en', 'häst', 'hästar'], kulting: ['en', 'kulting', 'kultingar'], slaktgris: ['en', 'slaktad gris', 'slaktade grisar'], bur: ['en', 'bur', 'burar'], bagborr: ['en', 'bågborr', 'bågborrar'], hus: ['ett', 'hus', 'hus'], vattensack: ['en', 'vattensäck', 'vattensäckar'],
   rovfron: ['ett', 'rovfrö', 'rovfrön'], rovor: ['en', 'rova', 'rovor'], arter: ['en', 'ärta', 'ärter'], artfron: ['ett', 'ärtfrö', 'ärtfrön'],
+  rokelse: ['en', 'bit rökelse', 'bitar rökelse'], // steg 12.1.48
   silver: ['en', 'bit silver', 'bitar silver'], salt: ['en', 'näve salt', 'nävar salt'], virke: ['ett', 'stycke virke', 'stycken virke'], naver: ['en', 'bit näver', 'bitar näver'],
   vargdel: ['ett', 'vargstycke', 'vargstycken'], radjurdel: ['ett', 'rådjursstycke', 'rådjursstycken'], vildsvindel: ['ett', 'vildsvinsstycke', 'vildsvinsstycken'], vildsvin: ['ett', 'fällt vildsvin', 'fällda vildsvin'], svinkott: ['en', 'bit fläsk', 'bitar fläsk'], svinskinn: ['ett', 'svinskinn', 'svinskinn'], bjorndel: ['ett', 'björnstycke', 'björnstycken'],
   appel: ['ett', 'äpple', 'äpplen'], pilar: ['en', 'pil', 'pilar'], vaxtrest: ['en', 'växtrest', 'växtrester'], bonor: ['en', 'böna', 'bönor'], kalfron: ['ett', 'kålfrö', 'kålfrön'], jordgubbar: ['en', 'jordgubbe', 'jordgubbar'], notter: ['en', 'hasselnöt', 'hasselnötter'], lok: ['en', 'lök', 'lökar'], kal: ['ett', 'kålhuvud', 'kålhuvuden'], // steg 12.1.118: namnen i SAKER som står i plural eller inte går att räkna
@@ -79,11 +80,14 @@ const SAKORD: Record<string, Ord> = {
   krok: ['en', 'krok', 'krokar'], krycka: ['en', 'krycka', 'kryckor'], remsa: ['en', 'remsa', 'remsor'], nal: ['en', 'bennål', 'bennålar'], naverask: ['en', 'näverask', 'näveraskar'], lerkruka_liten: ['en', 'liten lerkruka', 'små lerkrukor'], lerkruka_mellan: ['en', 'mellanstor lerkruka', 'mellanstora lerkrukor'], lerkruka_stor: ['en', 'stor lerkruka', 'stora lerkrukor'],
   skara: ['en', 'skära', 'skäror'], slunga: ['en', 'slunga', 'slungor'], bage: ['en', 'pilbåge', 'pilbågar'], skold: ['en', 'sköld', 'sköldar'], isborr: ['en', 'isborr', 'isborrar'], lie: ['en', 'lie', 'liar'], jarnyxa: ['en', 'järnyxa', 'järnyxor'], jarnkniv: ['en', 'järnkniv', 'järnknivar'], bok: ['en', 'bok', 'böcker'],
 };
+const RATT_ADJ: Record<string, string> = { Rått: 'rå', Enkel: 'enkel', Lagad: 'lagad', Fin: 'fin', Fest: 'festlig' }; // måltidens nivå (MALTIDSNIVA i ratter.ts) som ett ord
 // orden för en sak: ur SAKORD, annars sakens namn i SAKER (samma i ental och flertal)
 export function sakOrd(k: string): Ord {
   const o = SAKORD[k];
   if (o) return o;
-  const d = SAKER[k], n = (d?.namn ?? k).split(' · ')[0].toLowerCase(); // rätterna: "Rotgröt · Lagad" blir "rotgröt"
+  const d = SAKER[k], [namn, niva] = (d?.namn ?? k).split(' · '), n = namn.toLowerCase();
+  // rätterna (steg 12.1.48): "Rotgröt · Fin" blir "en portion fin rotgröt" och "sju portioner fin rotgröt", med måltidens nivå som ett ord
+  if (niva) { const r = `${RATT_ADJ[niva] ?? niva.toLowerCase()} ${n}`; return ['en', `portion ${r}`, `portioner ${r}`]; }
   return [d?.ett ? 'ett' : 'en', n, n];
 }
 // en eller ett framför saken
