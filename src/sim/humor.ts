@@ -200,7 +200,7 @@ export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, tin
     const van = k === 'slut' && p.partner !== mal.id;
     const op0 = getRel(s, p, mal).op; // relationen innan, till skulden
     log(s, `${p.name} mår dåligt och ${van ? 'bryter vänskapen med' : rad.text} ${mal.name}.`, 'rel', [p.id, mal.id]);
-    if (van) { personHand(s, p, 'relation', `Bröt vänskapen med ${mal.name}.`); personHand(s, mal, 'relation', `${p.name} bröt vänskapen.`); } // steg 9.2.107
+    if (van) { personHand(s, p, 'relation', `Bröt vänskapen med ${mal.name}.`, 'ont'); personHand(s, mal, 'relation', `${p.name} bröt vänskapen.`, 'ont'); } // steg 9.2.107
     if (k === 'elak') {
       think(mal, `${p.name} var elak mot mig`, -HUMOR.elakHumor, s.now, HUMOR.elakTim * HOUR);
       { const r = getRel(s, p, mal); r.op = clamp(r.op - HUMOR.elakOp, -100, 100); }

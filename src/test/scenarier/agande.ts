@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 // Scenarier. Ägande och ekonomi: ägande, gåvor, byte, egendom, delning, arv och värde.
 import { isDeepStrictEqual } from 'node:util';
 import { Person, Act, Task, createState, ownedBy, tidyTools, addTool, toolsOf, heldBy, take, usesTool, wearTool, freeSpear, getRel, isTool, BYN, makeTool, step, living, pilesOf, amountOf, capacity, handOrkar, ryms, VIKT_STACK, isLight, isStored, spears, HOUR, State, migrate, die, bitsOf, KANIN, DJUR, askForTool, askForGift, gain, takeFood, takeFuel, ownsAmount, ownedStock, ownedSum, sumOf, addTo, setAmount, foodOf, STACK_ORDER, needLadder, takeMaterial, stepDelning, rikedom, rikedomDelar, grundvarde, nivaOf, DELNING, packUp, releaseOwner, willing, tingOf, placeTools, EKONOMI, SAK_LIST, ownedAll, leave, chooseTask, stackOf, birth, SAKER, viktOf, handerFor, bordPlats, utrustning, bordaIHander, PLATS_LIST, cloneState, pickUp, load, byId } from '../../sim';
@@ -2892,6 +2892,10 @@ SCENARIER.kronikakat = {
     const s = createState(6, START);
     for (let i = 0; i < 3 * STEG_DYGN; i++) step(s, BEAT);
     const K = s.hist!.kronika, okanda = [...new Set(K.filter(r => r[2] !== undefined && !SIM.kronikaKat(r[2])).map(r => r[2]))];
+    // alla slag som koden skriver (kronika, kronikaVid och kronikaBer med ett fast slag), jämförda med registret (steg 12.1.65)
+    const simMapp = new URL('../../sim/', import.meta.url), kod = readdirSync(simMapp).filter(f => f.endsWith('.ts')).map(f => readFileSync(new URL(f, simMapp), 'utf8')).join('\n');
+    const iKoden = [...new Set([...kod.matchAll(/\bkronika(?:Vid)?\(s,[^;]*?, '(\w+)'\)/g), ...kod.matchAll(/\bkronikaBer\(s, '(\w+)'/g)].map(m => m[1]))];
+    const utanKat = iKoden.filter(k => !SIM.kronikaKat(k));
     const a = living(s)[0];
     SIM.kronikaBer(s, 'k_fodd', a.id, { ...SIM.personFalt(a), mor: a.name, far: a.name });
     const fodd = K[K.length - 1];
@@ -2907,6 +2911,7 @@ SCENARIER.kronikakat = {
     const symboler = (alla.match(/data-kkat=/g) ?? []).length;
     return [
       [`alla slag i krönikan har en kategori${okanda.length ? ` (saknas: ${okanda.join(', ')})` : ''}`, okanda.length === 0],
+      [`alla ${iKoden.length} slag som koden skriver har en kategori${utanKat.length ? ` (saknas: ${utanKat.join(', ')})` : ''}`, iKoden.length > 20 && utanKat.length === 0],
       [`en födsel hamnar under Liv (${fodd[2]} → ${SIM.kronikaKat(fodd[2])})`, SIM.kronikaKat(fodd[2]) === 'liv'],
       [`raden med kategoriernas symboler: sju i Händelser, Skrifter och Fritid är egna delar (${symboler}, steg 11.1.34)`, symboler === SIM.KRONIKA_KAT.length - 2 && /data-kdel="skrifter"/.test(alla) && /data-kdel="fritid"/.test(alla) && !/data-kkat="(skrift|fritid)"/.test(alla)],
       ['Liv visar födseln, Strid inte', liv.includes(fodd[1].slice(0, 10)) && !strid.includes(fodd[1].slice(0, 10))],

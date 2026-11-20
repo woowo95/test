@@ -10,11 +10,14 @@ import { DAY, MIN, Person, State } from './typer';
 import type { Sed } from './seder';
 import { getable, takeMaterial } from './behov';
 import { personHand } from './personlogg';
+import { han } from './ord';
 import { rnd } from './slump';
 import { tatKrok } from './uppvaxt';
 
 export type TatPlats = 'panna' | 'kind' | 'hals';
 export interface TatDef { namn: string; plats: TatPlats; sed: Sed; text: string }
+// platsens ord: i pannan (bestämd form) och i hens panna (obestämd form)
+export const TAT_PLATSORD: Record<TatPlats, { best: string; obest: string }> = { panna: { best: 'pannan', obest: 'panna' }, kind: { best: 'kinden', obest: 'kind' }, hals: { best: 'halsen', obest: 'hals' } };
 export const TATUERINGAR = {
   vuxen: { namn: 'Vuxenblivandet', plats: 'kind', sed: 'andlig', text: 'blev vuxen' },
   jakt: { namn: 'Jakten', plats: 'panna', sed: 'natur', text: 'fällde ett stort djur' },
@@ -82,8 +85,8 @@ export function tatKlar(s: State, g: Person, ref?: number) {
   const d = DEF[v.m], stil = byStil(s);
   (q.tat ??= []).push({ m: v.m, p: d.plats, stil, t: s.now, av: g.id });
   ovning(g, 'hantverk', TATU.ovning); gjort(s, g, 'tatuerat'); count(s, 'tatuering'); count(s, 'tatuering_' + v.m);
-  personHand(s, q, 'markt', `Fick ett märke i ${d.plats === 'panna' ? 'pannan' : d.plats === 'kind' ? 'kinden' : 'halsen'} av ${g.name}, ${TAT_STILNAMN[stil]}, efter att hen ${d.text}.`);
-  if (forstaGang(s, 'forstaTatuering')) log(s, `${g.name} gjorde byns första tatuering: ${TAT_STILNAMN[stil]} i ${gen(q.name)} ${d.plats === 'panna' ? 'panna' : d.plats === 'kind' ? 'kind' : 'hals'}, för att hen ${d.text}.`, 'world', [g.id, q.id]);
+  personHand(s, q, 'markt', `Fick ett märke i ${TAT_PLATSORD[d.plats].best} av ${g.name}, ${TAT_STILNAMN[stil]}, efter att ${han(q)} ${d.text}.`);
+  if (forstaGang(s, 'forstaTatuering')) log(s, `${g.name} gjorde byns första tatuering: ${TAT_STILNAMN[stil]} i ${gen(q.name)} ${TAT_PLATSORD[d.plats].obest}, för att ${han(q)} ${d.text}.`, 'world', [g.id, q.id]);
 }
 const gen = (n: string) => /s$/.test(n) ? n : n + 's';
 // tatueringarnas delar i porträttet (PORTRATT: tat-<stil>-<plats>)

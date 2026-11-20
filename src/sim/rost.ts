@@ -301,7 +301,7 @@ export function lognOmLedaren(s: State, ertappare: Person, berattare: Person, om
   const f = s.styre?.frak, l = ledareOf(s);
   if (!f || !l || l.id !== om || !f.med.includes(berattare.id) || ertappare === l || (s.rels[relKey(ertappare.id, l.id)]?.op ?? 0) < MISS.lojal) return;
   const t = `${berattare.name} spred lögner om ${l.name} och blev avslöjad.`;
-  kronika(s, t, 'ledare'); notis(s, 'ledare', t, [berattare.id, l.id]); count(s, 'fulspel_avslojat');
+  kronika(s, t, 'ledare'); notis(s, 'ledare', t, [berattare.id, l.id], undefined, { ton: { [berattare.id]: 'ont', [l.id]: 'gott' } }); count(s, 'fulspel_avslojat');
   avslojad(s, l, f, ertappare);
 }
 function avslojad(s: State, l: Person, f: Fraktion, ang: Person) {
@@ -323,7 +323,7 @@ function stortas(s: State, l: Person, f: Fraktion) {
   if (fejd <= MISS.fejd) {
     count(s, 'avsatt'); st.frakVald = led.id; st.satt = 0.7;
     const t = `Byn sade ifrån vid elden, och ${l.name} fick lämna ledarskapet.`;
-    log(s, t, 'world', [l.id, led.id]); notis(s, 'ledare', t, [l.id, led.id]);
+    log(s, t, 'world', [l.id, led.id]); notis(s, 'ledare', t, [l.id, led.id], undefined, { ton: { [l.id]: 'ont', [led.id]: 'gott' } });
     slutarStyre(s, 'avsattes'); missnojeNoll(s);
     return;
   }

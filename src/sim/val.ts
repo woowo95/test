@@ -483,8 +483,8 @@ const tinderNeeded = (s: State) => !nagonGlod(s) && !canLight(s) && (needTinder(
 const BALTE_FORBAND = new Set<Act>(['jakt', 'vargjakt', 'bjornjakt', 'forsvar', 'forsvarRovare', 'strid']);
 // den som ska i strid eller på jakt tar en remsa i bältet (steg 9.5.16), när det ligger en där hen står (steg 11.1.77)
 export function balteForband(s: State, p: Person, act: Act) { if (BALTE_FORBAND.has(act) && !p.forbandMed) iRackhall(p.x, p.y, () => { if (getable(s, p, 'remsa') >= 1) { takeMaterial(s, p, 'remsa', 1); p.forbandMed = 1; } }); }
-export interface Val { paus?: true; /* vilan är en paus när inget annat lockar, inte trötthet (steg 11.1.72) */ fordon?: number; dragdjur?: number; stanna?: boolean; act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true | 'sten' | 'flinta'; hot?: 'rovare' | 'varg'; tandmat?: true; falt?: true; ho?: true; gava?: true; hamtar?: string; lon?: string }
-const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; v.paus = undefined; return true; };
+export interface Val { skal?: Task['skal']; paus?: true; /* vilan är en paus när inget annat lockar, inte trötthet (steg 11.1.72) */ fordon?: number; dragdjur?: number; stanna?: boolean; act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true | 'sten' | 'flinta'; hot?: 'rovare' | 'varg'; tandmat?: true; falt?: true; ho?: true; gava?: true; hamtar?: string; lon?: string }
+const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; v.paus = undefined; v.skal = undefined; return true; };
 const paus = (v: Val, why: string) => { set(v, 'vila', why); v.paus = true; return true; }; // vilan när inget annat lockar (steg 11.1.72)
 
 // Registret ARBETEN (steg 6.1.11, "Arbetsordningen" i designdokumentet): en rad per uppgift, i den ordning valet prövar dem.
@@ -640,7 +640,7 @@ function forbKandidat(c: Ctx, f: ForbRad) {
 export const ARBETEN: readonly Arbete[] = [
   // 1 Fara: vargar är nära (steg 3.7.15), en tornado kommer (steg 3.8.4), det brinner (steg 3.8.5) eller vattnet stiger (steg 3.8.7)
   // den som brinner släcker sig själv först, och de som står nära hjälper hen före allt annat (steg 6.4.16)
-  { id: 'brinner', niva: 1, prova: ({ s, p, v }) => { const m = slackaSigVal(s, p); if (!m) return false; set(v, m.act, m.why); v.spot = m.spot; v.dur = m.dur; v.ref = m.ref; return true; } },
+  { id: 'brinner', niva: 1, prova: ({ s, p, v }) => { const m = slackaSigVal(s, p); if (!m) return false; set(v, m.act, m.why); v.skal = m.skal; v.spot = m.spot; v.dur = m.dur; v.ref = m.ref; return true; } },
   // larmet rymning (steg 11.12.5, fangelse.ts): den som hört det och är modig nog går till fängelsets dörr
   { id: 'stoppa', niva: 1, prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen) return false; const d = stoppaVal(s, p); if (!d) return false; set(v, 'stoppa', d.why); v.spot = d.spot; v.ref = d.ref; v.dur = FANG.stoppMin * MIN; return true; } },
   { id: 'hjalpBrinnande', niva: 1, prova: ({ s, p, v }) => { const m = hjalpaVal(s, p); if (!m) return false; set(v, m.act, m.why); v.spot = m.spot; v.dur = m.dur; v.ref = m.ref; return true; } },
@@ -659,7 +659,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'flod', niva: 1, prova: ({ s, p, v, a }) => {
     const fl = !s.flodHot || a < ALDER.vuxen || isSick(p, s.now) || !kanGa(p) ? undefined : flodUndan(s);
     if (!fl) return false;
-    set(v, 'bara', fl.why); v.spot = fl; v.dur = VAL.baraTim * HOUR; count(s, 'flod undan'); return true;
+    set(v, 'bara', fl.why); v.skal = 'flod'; v.spot = fl; v.dur = VAL.baraTim * HOUR; count(s, 'flod undan'); return true;
   } },
   // 2 Nöd och vård (sjuk, svag, fryser farligt, måste på toa genast)
   // den som ser ett slagsmål går emellan eller går undan (steg 10.1.4, narStridVal i kartstrid.ts)
@@ -900,7 +900,7 @@ export const ARBETEN: readonly Arbete[] = [
   // kolmilan som brunnit klart (steg 12.2.1, brann.ts): den rivs och kolet tas ut
   { id: 'kolmila', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, v, a } = c; if (!dag(c).works || !forbNu(c) || a < ALDER.vuxen) return false; const t = attTomma(s); if (!t) return false; projektVal(v, branningUppgift(s, t), 'Kolmilan har brunnit klart'); return true; } },
   { id: 'brygga', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, p, v, a } = c; if (!dag(c).works || !forbNu(c)) return false; if (a < ALDER.vuxen) return false; const b = bryggVal(s, p); if (!b) return false; projektVal(v, { act: b.act, text: b.act === 'tappa' ? (b.v === 'sprit' ? 'Häller upp spriten ur brännpannan i en liten lerkruka.' : 'Silar satsen och häller upp den i lerkrukor.') : b.act === 'branna' ? 'Häller vin eller öl i brännpannan och eldar under den.' : b.act === 'malta' ? 'Blöter korn och hänger upp det på torkställningen till malt.' : BRYGD[b.v].gor, min: b.act === 'tappa' ? BRYGG.tappMin : b.act === 'branna' ? BRYGG.brannMin : b.act === 'malta' ? BRYGG.maltMin : BRYGG.prepMin, spot: vidStation(b.kar), ref: b.kar.id }, b.act === 'tappa' ? 'Satsen i bryggkaret har jäst klart' : 'Byn vill ha mer att dricka'); return true; } }, // steg 9.6.12–9.6.13
-  { id: 'tatuera', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, p, v } = c; if (!dag(c).works || !forbNu(c)) return false; const d = tatVal(s, p); if (!d) return false; projektVal(v, { act: 'tatuera', text: `Gör ett märke i huden på ${d.q.name} med bennålen och kol.`, min: TATU.min, tool: 'nal', spot: { x: d.q.x, y: d.q.y }, ref: d.q.id }, `${d.q.name} vill minnas att hen ${TATUERINGAR[d.m].text}`); return true; } }, // steg 10.7.5
+  { id: 'tatuera', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, p, v } = c; if (!dag(c).works || !forbNu(c)) return false; const d = tatVal(s, p); if (!d) return false; projektVal(v, { act: 'tatuera', text: `Gör ett märke i huden på ${d.q.name} med bennålen och kol.`, min: TATU.min, tool: 'nal', spot: { x: d.q.x, y: d.q.y }, ref: d.q.id }, `${d.q.name} vill minnas att ${han(d.q)} ${TATUERINGAR[d.m].text}`); return true; } }, // steg 10.7.5
   { id: 'klippa', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, p, v } = c; if (!dag(c).works || !forbNu(c)) return false; const d = klippVal(s, p); if (!d) return false; projektVal(v, { act: 'klippa', text: 'Klipper ullen av fåret med kniven.', min: BOSKAP.klippMin / tamEg(d).tamhet, tool: 'kniv', spot: { x: d.x, y: d.y }, ref: d.id }, 'Fårets ull har vuxit ut'); return true; } }, // steg 9.8.5
   { id: 'hamla', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, p, v } = c; if (!dag(c).works || !forbNu(c)) return false; const i = hamlaVal(s, p); if (i === undefined) return false; const ny = !hamlatPa(s, i); projektVal(v, { act: 'hamla', text: ny ? 'Kapar grenarna på en björk, så att den skjuter nya skott med löv åt djuren.' : 'Skär skotten med lövet på den hamlade björken till lövkärvar.', min: VINTER.hamlaMin, spot: { x: i % W + 0.5, y: Math.floor(i / W) + 1.2 }, ref: i }, ny ? 'Höet räcker inte åt djuren' : 'Den hamlade björken har nya skott'); return true; } }, // lövtäkten (steg 9.8.16)
   { id: 'ortSatta', niva: 8, nar: 'dag', kort: true, prova: c => { const { s, p, v } = c; if (!dag(c).works || !forbNu(c)) return false; const o = ortSattaVal(s, p); if (!o) return false; projektVal(v, { act: 'ortSatta', text: 'Sätter en växt i sin lediga lerkruka.', min: ORTKRUKA.sattMin, spot: { x: o.t.x! + 0.5, y: o.t.y! + 0.5 }, ref: o.t.id }, 'En kruka står tom'); return true; } }, // steg 10.10.11
@@ -1000,7 +1000,7 @@ function valjTask(s: State, p: Person) {
   }
   if (v.tandmat && !v.spot) v.spot = tandStalle(s, p); // tändmaterialet hämtas där hö och kvistar finns, närmast (steg 12.1.39)
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
-  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, hot: v.hot, falt: v.falt, ho: v.ho, gava: v.gava, hamtar: v.hamtar, lon: v.lon, stanna: v.stanna, pass: v.pass !== undefined ? s.now + v.pass : undefined };
+  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, hot: v.hot, falt: v.falt, ho: v.ho, gava: v.gava, skal: v.skal, hamtar: v.hamtar, lon: v.lon, stanna: v.stanna, pass: v.pass !== undefined ? s.now + v.pass : undefined };
   balteForband(s, p, v.act);
   if (ACTS[v.act].plats === 'station') { const st = stationFor(s, v.act, p); if (st && Math.hypot(sp.x - vidStation(st).x, sp.y - vidStation(st).y) < 2) stationBrukad(s, st); } // hur mycket stationen används (steg 9.4.8)
   if (v.act === 'samtal' && !v.spot) samtalMed(s, p); // fram till den man vill prata med (steg 4.5.6.7)

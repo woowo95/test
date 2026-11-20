@@ -117,7 +117,7 @@ export function stepRelationer(s: State) {
     if (ny !== undefined && p.bast !== ny && p.id < ny) {
       const r = rel(p, q!)!; count(s, 'bastaVan');
       if (!(r.flags & 8)) { r.flags |= 8; loggBer(s, 'l_bastaVanner', p.id * 997 + ny, { namn: p.name, med: q!.name }, 'rel', [p.id, ny]); }
-      personHand(s, p, 'relation', `Blev bästa vän med ${q!.name}.`); personHand(s, q!, 'relation', `Blev bästa vän med ${p.name}.`); // steg 9.2.107
+      personHand(s, p, 'relation', `Blev bästa vän med ${q!.name}.`, 'gott'); personHand(s, q!, 'relation', `Blev bästa vän med ${p.name}.`, 'gott'); // steg 9.2.107
       upplev(s, p, 'bastaVan', q!.name); upplev(s, q!, 'bastaVan', p.name); // barn minns sin bästa vän (steg 3.1.2)
     }
     p.bast = ny;
@@ -141,8 +141,8 @@ export function stepRelationer(s: State) {
     r.par ??= s.now; // par från äldre sparfiler räknas härifrån
     if (r.gift === undefined && s.now - r.par >= RELT.giftDygn * DAY && r.op > REL.van) {
       r.gift = s.now; count(s, 'gift');
-      log(s, `${p.name} och ${q.name} har gift sig.`, 'rel', [p.id, q.id]); notis(s, 'par', `${p.name} och ${q.name} har gift sig.`, [p.id, q.id]);
-      personNara(s, p, `${p.name} och ${q.name} har gift sig.`, [q.id]); personNara(s, q, `${p.name} och ${q.name} har gift sig.`, [p.id]); // steg 9.2.107
+      log(s, `${p.name} och ${q.name} har gift sig.`, 'rel', [p.id, q.id]); notis(s, 'par', `${p.name} och ${q.name} har gift sig.`, [p.id, q.id], undefined, { ton: 'gott' });
+      personNara(s, p, `${p.name} och ${q.name} har gift sig.`, [q.id], 'gott'); personNara(s, q, `${p.name} och ${q.name} har gift sig.`, [p.id], 'gott'); // steg 9.2.107
       kronikaBer(s, 'k_gift', p.id, { a: p.name, b: q.name }); // till berättelsen om tiden borta (steg 5.4.4)
       nyRitual(s, 'brollop', { om: [p.id, q.id], namn: `Bröllopet mellan ${p.name} och ${q.name}`, fran: s.now + FEST.brollopFore * HOUR }); // steg 8.5.13; utlyst i förväg (steg 10.7.28)
       think(p, `Gifte sig med ${q.name}`, 0.15, s.now, DAY); think(q, `Gifte sig med ${p.name}`, 0.15, s.now, DAY);

@@ -52,7 +52,7 @@ const AMNE = {
   handelse: (s: State, p: Person) => minneAmne(s, p) ?? 'när byn kom till sjön',
 };
 export const FRAMTRADANDEN: FramDef[] = [
-  { id: 'kvade', namn: 'Kväde', text: '{namn} kväder vid elden om {amne}, och de andra lyssnar.', da: '{namn} kvad vid elden om {amne}, och de andra lyssnade.', bud: true, kval: 0.6, amne: 'minne', vrid: 2 },
+  { id: 'kvade', namn: 'Kväde', text: '{namn} kväder om {amne}, och de andra lyssnar.', da: '{namn} kvad om {amne}, och de andra lyssnade.', bud: true, kval: 0.6, amne: 'minne', vrid: 2 },
   { id: 'tal', namn: 'Tal', text: '{namn} håller ett tal om {amne}.', da: '{namn} höll ett tal om {amne}.', bud: true, min: 2, kval: 0.8, amne: 'byn' },
   { id: 'forelasning', namn: 'Föreläsning', text: '{namn} lär de andra vad {hen} vet om {amne}.', da: '{namn} lärde de andra vad {hen} visste om {amne}.', min: 4, kval: 0.8, amne: 'kunskap' },
   { id: 'teater', namn: 'Teater', text: '{namn} spelar upp en berättelse för de andra om {amne}, med röster och rörelser.', da: '{namn} spelade upp en berättelse för de andra om {amne}, med röster och rörelser.', bud: true, min: 6, kval: 1.3, amne: 'handelse', vrid: 2.5, grupp: 4 },
@@ -85,7 +85,7 @@ export const FRAM = balans('framtradande', {
   sent: 10, // minuter: så här nära slutet går ingen ny dit för att lyssna
   minuter: 30, spann: 30, // ett framträdande varar så här många minuter från att det börjar, plus upp till spann
   gladje: 0.06, gladjeTim: 10, // publikens glädje: gladje × formens kval × kvaliteten, i så här många timmar
-  egen: 0.05, // den som uppträder blir så här glad när publiken är minst publik
+  egen: 0.05, // den som uppträder blir så här glad när någon kom och lyssnade (annars ingen)
   op: 3, // publiken tycker så här mycket bättre om den som uppträder, gånger (kvaliteten − 0,5)
   ovning: 0.3, // övning i färdigheten per timme man uppträder
   sparas: 20, // så här många framträdanden sparas i s.framtradanden
@@ -479,7 +479,7 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   if (l && !s.styre?.hanForbud) laggFram(s, 'hanforbud', { led: l.id }, l); // efter ett hån lägger ledaren fram ett förbud (steg 8.3.13)
   for (const x of alla) {
     if (l && alive(l) && x !== l) { const r = getRel(s, l, x); r.op = clamp(r.op - FRAM.hanOp, -100, 100); }
-    think(x, `Uppträdde för ${pub.length} vid elden`, FRAM.egen, s.now, FRAM.gladjeTim * HOUR);
+    think(x, `Uppträdde för ${pub.length}`, FRAM.egen, s.now, FRAM.gladjeTim * HOUR);
     gjort(s, x, 'upptradt');
   }
   count(s, 'framPublik', pub.length);

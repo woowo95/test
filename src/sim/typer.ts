@@ -142,7 +142,8 @@ export interface Task {
   cond?: Record<string, number>; // skicket på det som bärs, per slag (lager.ts)
   ag?: Record<string, Record<string, number>>; // vems det som bärs är, per slag (egendom.ts)
   ting?: number[]; // redskapen i bördan (agande.ts)
-  why?: string; // varför personen valde uppgiften
+  why?: string; // varför personen valde uppgiften (bara text som visas: koden läser skal)
+  skal?: 'flod' | 'vatten'; // skälet som koden läser (steg 12.1.65): flod = bär undan maten från vattnet (flod.ts), vatten = släcker sig i vattnet (brand.ts)
   dark?: boolean; // påbörjad under mörk tid
   med?: number; // den man samtalar med och står bredvid (steg 4.5.6.7, samtalMed i samtal.ts)
   stracka?: number[]; // rutorna samlaren valt att gå till i tur och ordning (steg 10.2.21, nastaPaStrackan i steg.ts)

@@ -146,8 +146,8 @@ export function forlat(s: State, p: Person, q: Person, x: Anger, gava: Vara[]) {
   count(s, 'skuldForlaten');
   const text = `${q.name} förlät ${p.name}, som ${x.text} ${hen(q)}, och fick ${vad} som bot.`;
   log(s, text, 'rel', [p.id, q.id]);
-  personHand(s, p, 'relation', `Bad ${q.name} om förlåtelse och blev förlåten.`);
-  personHand(s, q, 'relation', `Förlät ${p.name} och fick ${vad} som bot.`);
+  personHand(s, p, 'relation', `Bad ${q.name} om förlåtelse och blev förlåten.`, 'gott');
+  personHand(s, q, 'relation', `Förlät ${p.name} och fick ${vad} som bot.`, 'gott');
   if (x.allv >= SKULD.kronika) kronika(s, text, 'forlat');
 }
 // q svarar på p:s bön om skulden x med den botgåva p har (scenarierna och gränssnittet)

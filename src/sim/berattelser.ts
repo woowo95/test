@@ -1749,7 +1749,7 @@ const MDEF = {
   // berättelsen om ett framträdande (steg 5.4.7.2, framber.ts): {namn} = den som uppträdde, {amne} = vad det handlade om,
   // {inst} = instrumentet (bestämd form), form = formens id, bud = budskapet, {om} = den det handlade om, {ledare}, {betalt}
   f_start: [
-    { t: '{Namn} kvad vid elden om {amne}.', om: f => f.form === 'kvade' },
+    { t: '{Namn} kvad om {amne}.', om: f => f.form === 'kvade' },
     { t: 'När elden brann som bäst började {namn} kväda om {amne}.', om: f => f.form === 'kvade' },
     { t: '{Namn} reste sig och höll ett tal om {amne}.', om: f => f.form === 'tal' },
     { t: 'Alla tystnade när {namn} började tala om {amne}.', om: f => f.form === 'tal' },
@@ -2189,7 +2189,7 @@ export function gebinamn(s: State, p: Person, k: IntryckTyp, v: number) {
   const text = berattelse(s, heder ? 'hedersnamn' : 'oknamn', p.id, f);
   log(s, `${heder ? '🏅' : '🗯️'} ${text}`, 'rel', [p.id]);
   kronika(s, text, heder ? 'hedersnamn' : 'oknamn');
-  p.fame.push(`Kallades ${heltNamn(p)}${fore ? ` (förut ${fore.namn})` : ''}`); personHand(s, p, 'titel', `Kallas ${heltNamn(p)}.`);
+  p.fame.push(`Kallades ${heltNamn(p)}${fore ? ` (förut ${fore.namn})` : ''}`); personHand(s, p, 'titel', `Kallas ${heltNamn(p)}.`, heder ? 'gott' : 'ont');
   count(s, 'binamn'); count(s, heder ? 'hedersnamn' : 'oknamn');
 }
 // för personrutan: symbolen (heder eller skam) och förklaringen
@@ -2847,7 +2847,7 @@ export function personRader(s: State, p: Person): VisadRad[] {
   return ut;
 }
 function kanslaRad(s: State, p: Person, k: PersonloggId, r: PersonRad) {
-  const d: PersonloggSlag = PERSONLOGG[k], ton = typeof d.ton === 'function' ? d.ton(r[2]) : d.ton;
+  const d: PersonloggSlag = PERSONLOGG[k], ton = r[4] ?? (typeof d.ton === 'function' ? d.ton(r[2]) : d.ton);
   if (!ton) return '';
   const hum = (r[3] ?? 5) / 9, mod = stat(p, 'mod', r[0]);
   const f = { hen: han(p), honom: honom(p), orolig: mod <= PLOGG.orolig, modig: mod >= PLOGG.modig, talfor: stat(p, 'karisma', r[0]) >= PLOGG.talfor, glad: hum > PLOGG.glad, nere: hum < PLOGG.nere };

@@ -408,7 +408,7 @@ function valj(s: State) {
   if (forsta) { st.oppna.push('rang'); best.fame.push('Byns första ledare'); kronikaBer(s, 'k_forstaLedare', best.id, { ...personFalt(best), titel: titel.toLowerCase() }); }
   else kronikaBer(s, 'k_ledare', best.id, { ...personFalt(best), titel: titel.toLowerCase() });
   const lt = forsta ? `Byn har fått sin första ledare: ${best.name}, ${titel.toLowerCase()}. Byn börjar fundera på om alla är lika mycket värda.` : `${best.name} är byns nya ledare, ${titel.toLowerCase()}.`;
-  log(s, lt, 'world', [best.id]); notis(s, 'ledare', lt, [best.id]);
+  log(s, lt, 'world', [best.id]); notis(s, 'ledare', lt, [best.id], undefined, { ton: 'gott' });
 }
 // de som svalt eller frusit ihjäl i byn
 const nodDod = (s: State) => (s.stat?.['dog av svält'] ?? 0) + (s.stat?.['dog av kyla'] ?? 0);

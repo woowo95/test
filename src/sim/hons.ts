@@ -28,7 +28,8 @@ export function honsDor(s: State, n: number, orsak: string) {
   const h = honsOf(s);
   if (!h || n < 1) return;
   n = Math.min(h.n, n); h.n -= n; count(s, 'honsDog', n);
-  log(s, `${n === h.n + n ? 'Alla' : n} ${n === 1 ? 'höna' : 'hönor'} i byns flock dog ${orsak}.`, 'world', h.agare !== undefined ? [h.agare] : []);
+  const alla = h.n === 0, text = alla && n === 1 ? 'Byns enda höna' : alla ? 'Alla hönor i byns flock' : `${n} ${n === 1 ? 'höna' : 'hönor'} i byns flock`;
+  log(s, `${text} dog ${orsak}.`, 'world', h.agare !== undefined ? [h.agare] : []);
 }
 
 export function stepHons(s: State) {

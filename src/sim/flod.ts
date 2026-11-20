@@ -86,7 +86,7 @@ export function stepFlod(s: State) {
 // hjälps åt (steg 10.11.16): chansen att en till avbryter faller med hur många som redan bär undan (enTillDar i folk.ts), och så
 // länge det finns mat kvar att bära (flodUndan) kommer fler. Det som fortsätter i en brand (strid, vård, den som bärs eller föder)
 // fortsätter också nu
-const barUndan = (t: Task) => !!t.why?.startsWith('Vattnet stiger');
+const barUndan = (t: Task) => t.skal === 'flod';
 function serFloden(s: State) {
   if (!flodUndan(s)) return;
   for (const p of living(s)) {

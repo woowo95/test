@@ -112,7 +112,10 @@ export const RYKTE = balans('rykte', {
 // vikt = hur mycket intrycket väger i anseendet och ryktbarheten (steg 4.5.3.7), 1 om inget står
 // sed = vilken sed minnet av en död drar mot (steg 10.4.9), med upplevelsernas skala: 1 lite, 2 tydligt, minus är sedens andra sida
 // dampar = de val intrycket dämpar och hur mycket (steg 10.8.4): talet gånger intryckets styrka, och beteende = vad det betyder
-interface IntryckDef { namn: string; tecken: 1 | -1; op: number; sym: string; som?: string; betyder: string; vikt?: number; sed?: Partial<Record<Sed, number>>; dampar?: Partial<Record<Dampval, number>>; beteende?: string }
+interface IntryckDef { namn: string; tecken: 1 | -1; op: number; sym: string; som?: string; betyder: string; vikt?: number; vardag?: Vardag; sed?: Partial<Record<Sed, number>>; dampar?: Partial<Record<Dampval, number>>; beteende?: string }
+// vardag = ett vardagsintryck som man ser hos den man är nära (vardagIntryck), i gruppen arbetet, ägandet eller tiggeriet: det
+// närmar sig det man ser och glöms när personen dör (steg 12.1.65)
+type Vardag = 'arbete' | 'agande' | 'tigger';
 // valen som ett intryck kan dämpa: viljan att ge, valet av mentor, förälskelsen och barnens val av vem de pratar med
 export type Dampval = 'ge' | 'mentor' | 'karlek' | 'barnSamtal';
 const IDEF = {
@@ -121,15 +124,15 @@ const IDEF = {
   elak: { namn: 'elak', tecken: -1, op: -20, sym: '😠', betyder: 'Har varit elak mot någon.' },
   logn: { namn: 'lögnare', tecken: -1, op: -20, sym: '🤥', som: 'en lögnare', betyder: 'Har ljugit eller överdrivit om någon. Man tror mindre på det lögnaren berättar.', dampar: { mentor: 0.6, karlek: 0.4 }, beteende: 'Man väljer ogärna en lögnare till mentor, och blir ogärna förälskad i en.' },
   klapare: { namn: 'klåpare', tecken: -1, op: -6, sym: '🤡', som: 'en klåpare', betyder: 'Har gjort en usel sak, eller träffat någon av misstag i en strid.' },
-  lat: { namn: 'lat', tecken: -1, op: -8, sym: '💤', betyder: 'Arbetar mycket mindre än de andra i byn.' },
-  fattig: { namn: 'fattig', tecken: -1, op: 0, vikt: RYKTE.fattigVikt, sym: '🪶', betyder: 'Äger mycket mindre än de andra i byn.' },
-  tigger: { namn: 'tiggare', tecken: -1, op: 0, vikt: RYKTE.fattigVikt, sym: '🤲', som: 'en tiggare', betyder: 'Har fått mat av någon utanför familjen det senaste året, för att hen inte hade någon.' }, // steg 10.5.11
+  lat: { namn: 'lat', tecken: -1, op: -8, vardag: 'arbete', sym: '💤', betyder: 'Arbetar mycket mindre än de andra i byn.' },
+  fattig: { namn: 'fattig', tecken: -1, op: 0, vardag: 'agande', vikt: RYKTE.fattigVikt, sym: '🪶', betyder: 'Äger mycket mindre än de andra i byn.' },
+  tigger: { namn: 'tiggare', tecken: -1, op: 0, vardag: 'tigger', vikt: RYKTE.fattigVikt, sym: '🤲', som: 'en tiggare', betyder: 'Har fått mat av någon utanför familjen det senaste året, för att hen inte hade någon.' }, // steg 10.5.11
   generos: { namn: 'generös', tecken: 1, op: 15, sym: '🎁', sed: { gemenskap: 1 }, betyder: 'Ger bort saker till andra.' },
   hjalpsam: { namn: 'hjälpsam', tecken: 1, op: 25, sym: '🤝', sed: { gemenskap: 2 }, betyder: 'Har gett något till någon som höll på att dö.' },
   skicklig: { namn: 'skicklig', tecken: 1, op: 12, sym: '⭐', sed: { arbete: 1 }, betyder: 'Har gjort ett mästerverk.' },
-  flitig: { namn: 'flitig', tecken: 1, op: 8, sym: '{sym_flitig}', betyder: 'Arbetar mycket mer än de andra i byn.' },
-  valbargad: { namn: 'välbärgad', tecken: 1, op: 0, sym: '👛', betyder: 'Äger mer än de flesta i byn.' }, // steg 4.5.4.7
-  rik: { namn: 'rik', tecken: 1, op: 0, sym: '💰', betyder: 'Äger mycket mer än de andra i byn.' },
+  flitig: { namn: 'flitig', tecken: 1, op: 8, vardag: 'arbete', sym: '{sym_flitig}', betyder: 'Arbetar mycket mer än de andra i byn.' },
+  valbargad: { namn: 'välbärgad', tecken: 1, op: 0, vardag: 'agande', sym: '👛', betyder: 'Äger mer än de flesta i byn.' }, // steg 4.5.4.7
+  rik: { namn: 'rik', tecken: 1, op: 0, vardag: 'agande', sym: '💰', betyder: 'Äger mycket mer än de andra i byn.' },
   rattvis: { namn: 'rättvis', tecken: 1, op: 10, sym: '⚖️', betyder: 'Har dömt rättvist som ledare.' }, // ledarens straff (steg 3.5.3, styre.ts)
   orattvis: { namn: 'orättvis', tecken: -1, op: -15, sym: '🙅', betyder: 'Har dömt orättvist som ledare.' },
   arrig: { namn: 'ärrig', tecken: -1, op: 0, sym: '😣', som: 'ärrig', betyder: 'Har ett ärr i ansiktet.' }, // steg 8.2.4
@@ -145,6 +148,8 @@ const IDEF = {
 } satisfies Record<string, IntryckDef>;
 export type IntryckTyp = keyof typeof IDEF;
 export const INTRYCK: Record<IntryckTyp, IntryckDef> = IDEF;
+// vardagsintrycken per grupp, i registrets ordning
+const VARDAG = (['arbete', 'agande', 'tigger'] as Vardag[]).map(v => [v, (Object.keys(INTRYCK) as IntryckTyp[]).filter(k => INTRYCK[k].vardag === v)] as const);
 // hur mycket ett intryck väger i det samlade (anseendet, ryktbarheten och det byn tycker)
 const vikt = (e: Intryck) => styrka(e) * (INTRYCK[e.k].vikt ?? 1);
 const DAMP_K = (Object.keys(IDEF) as IntryckTyp[]).filter(k => INTRYCK[k].dampar);
@@ -426,8 +431,8 @@ export function stepRykten(s: State, mood: (p: Person, now: number) => number) {
     const rik = wm >= RYKTE.rikMin ? (w[i] > mitt * RYKTE.rik ? 'rik' : w[i] > mitt * RYKTE.valbargad ? 'valbargad' : w[i] < mitt * RYKTE.fattig ? 'fattig' : undefined) : undefined;
     for (const q of folk) {
       if (q === p || Math.hypot(q.x - p.x, q.y - p.y) >= RYKTE.syn) continue;
-      for (const grupp of [['flitig', 'lat'], ['valbargad', 'rik', 'fattig'], ['tigger']] as IntryckTyp[][]) {
-        const mal = grupp[0] === 'flitig' ? flit : grupp[0] === 'tigger' ? tig : rik;
+      for (const [v, grupp] of VARDAG) {
+        const mal = v === 'arbete' ? flit : v === 'tigger' ? tig : rik;
         for (const k of grupp) {
           const e = intryckOm(q, p.id, k);
           if (k === mal) intryck(s, q, p, k, RYKTE.vardagTakt * (1 - (e?.v ?? 0)), 1);
@@ -496,7 +501,7 @@ export function rykteDod(s: State, p: Person) {
   if (r >= RYKTE.dodLog) {
     const top = samlatIntryck(s, p.id)[0];
     if (top) { log(s, `Byn minns ${p.name} som ${INTRYCK[top[0]].namn}.`, 'death', [p.id]); count(s, 'rykte_minns'); }
-    if (r >= RYKTE.legend) { p.fame.push(a >= 0 ? 'Blev en legend i byn' : 'Blev ökänd'); personHand(s, p, 'titel', a >= 0 ? 'Blev en legend i byn.' : 'Blev ökänd.'); }
+    if (r >= RYKTE.legend) { p.fame.push(a >= 0 ? 'Blev en legend i byn' : 'Blev ökänd'); personHand(s, p, 'titel', a >= 0 ? 'Blev en legend i byn.' : 'Blev ökänd.', a >= 0 ? 'gott' : 'ont'); }
   }
 }
 // en gång i timmen: intrycken bleknar, de allvarliga långsammare, och minnet av en död långsammare ju ryktbarare hen var.
@@ -516,7 +521,7 @@ export function glomRykten(s: State, hours: number) {
     const tau = 24 * (RYKTE.glomDygn + stat(p, 'minne', s.now) / RYKTE.glomMinne);
     p.intryck = p.intryck.filter(e => {
       const q = byId(s, e.om), dod = !q || !alive(q);
-      if (e.k === 'flitig' || e.k === 'lat' || e.k === 'valbargad' || e.k === 'rik' || e.k === 'fattig') { if (dod) return false; return e.t >= s.now - hours * HOUR || styrka(e) >= RYKTE.glomGrans; } // det som ses nu glöms inte
+      if (INTRYCK[e.k].vardag) { if (dod) return false; return e.t >= s.now - hours * HOUR || styrka(e) >= RYKTE.glomGrans; } // det som ses nu glöms inte
       let t = tau * ((e.bev?.[0] && HANDELSER[e.bev[0].h].vikt >= RYKTE.tungVikt) ? RYKTE.glomTung : 1);
       if (dod) t *= RYKTE.dodGlom + rOf(e.om) / RYKTE.dodRykte;
       if (dod && q && isKin(p, q)) t *= RYKTE.dodSlakt;

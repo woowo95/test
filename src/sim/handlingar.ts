@@ -284,7 +284,7 @@ const DEF = {
   grilla: { namn: 'Grillar mat över elden', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, tyst: true, stilla: true, verb: 'grillar', plats: 'station' }, // bara på grillställningen när elden brinner (matlagning.ts, steg 2.8.1)
   torka: { namn: 'Hänger upp mat på torkställningen', slag: 'hantverk', hantverk: true, stilla: true, verb: 'hänger upp', plats: 'station' }, // och tar ner det som torkat (matlagning.ts, steg 2.8.2)
   bygga: { namn: 'Bygger', yrke: 'Byggare', slag: 'bygga', verktyg: { laga: 'Lagar en vägg', lagaGolv: 'Lagar golvet', golv: 'Lägger golv', vagg: 'Bygger en vägg' }, hantverk: true, tungt: true, stilla: true },
-  station: { namn: 'Bygger en station', slag: 'bygga', verktyg: { slaktbank: 'Bygger en slaktbänk', flatarbank: 'Bygger en slöjdbänk', halmbadd: 'Bäddar en halmbädd', hylla: 'Bygger en hylla', kista: 'Bygger en kista', stall: 'Bygger ett redskapsställ', bokhylla: 'Bygger en bokhylla', latrin: 'Gräver en latrin', grill: 'Sätter upp en grillställning', tork: 'Sätter upp en torkställning', bord: 'Bygger ett litet bord', bord2: 'Bygger ett bord', bord3: 'Bygger ett långbord', brasa: 'Lägger en ring till en lägereld' }, hantverk: true, stilla: true, plats: 'station', framme: true }, // stationer.ts; task.tool = slaget. En ny station får en rad i verktyg (STATIONER kan inte läsas här: cirkulärt)
+  station: { namn: 'Bygger en station', slag: 'bygga', verktyg: {}, hantverk: true, stilla: true, plats: 'station', framme: true }, // stationer.ts; task.tool = slaget. Namnen per slag fylls ur STATIONER när stationer.ts laddas (steg 12.1.65)
   // fälten (steg 2.10.3, odling.ts): steget på fältet är task.tool, och arbetet sparas i fältet om det avbryts
   odla: { namn: 'Odlar', slag: 'odla', verktyg: { roja: 'Röjer ett fält', bereda: 'Gräver upp jorden på fältet', sa: 'Sår', mogen: 'Skördar' }, tungt: true, stilla: true, framme: true },
   dorr: { namn: 'Hänger en dörr', slag: 'bygga', verktyg: { skinndorr: 'Hänger en hud i dörröppningen', tradorr: 'Hänger en dörr av trä i dörröppningen' }, hantverk: true, stilla: true, framme: true }, // i en öppning (DORRAR i byggnad.ts, steg 2.2.16); task.tool = sorten
@@ -307,7 +307,7 @@ const DEF = {
   flyttStation: { namn: 'Flyttar en station', slag: 'bygga', hantverk: true, stilla: true, framme: true, tungt: true }, // närmare dem som använder den (stationer.ts, steg 9.4.8)
   flyttLager: { namn: 'Märker ut en lagerplats', slag: 'bygga', stilla: true, framme: true }, // en lagerplats flyttas närmare byns mitt (lager.ts, steg 9.4.7)
   uppsatt: { namn: 'Sätter upp en fackla', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // där folk ofta är vakna i mörker (ljus.ts, steg 6.3.7)
-  tillbehor: { namn: 'Gör ett tillbehör', slag: 'hantverk', verktyg: { skinnfall: 'Lägger en skinnfäll i halmbädden' }, hantverk: true, stilla: true, framme: true }, // till en station eller möbel (TILLBEHOR i stationer.ts); task.tool = sorten
+  tillbehor: { namn: 'Gör ett tillbehör', slag: 'hantverk', verktyg: {}, hantverk: true, stilla: true, framme: true }, // till en station eller möbel (TILLBEHOR i stationer.ts); task.tool = sorten
   // utbrotten (steg 3.2.2, humor.ts): den som mår mycket dåligt brister ut. Platsen väljs i val.ts (utbrottVal). Symbolen är gradens
   // (steg 3.10.13), och över huvudet utbrottets egen (task.tool, utbIkon i humor.ts)
   grata: { namn: 'Gråter för sig själv', tecken: '😢', ikon: 'utb1', dygn: true, stilla: true, plats: 'avsides' },

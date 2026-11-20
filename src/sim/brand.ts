@@ -627,7 +627,7 @@ function utEld(s: State, p: Person) {
 export function slackaSigVal(s: State, p: Person) {
   if (p.brinner === undefined) return;
   const vatten = naVattnet(s, p) ? drickPlats(s, p) : undefined;
-  if (vatten && Math.hypot(vatten.x - p.x, vatten.y - p.y) <= BRAND.vattenR) return { act: 'slackaSig' as const, why: 'Brinner och springer i vattnet', spot: vatten, dur: 0.2 * MIN };
+  if (vatten && Math.hypot(vatten.x - p.x, vatten.y - p.y) <= BRAND.vattenR) return { act: 'slackaSig' as const, why: 'Brinner och springer i vattnet', skal: 'vatten' as const, spot: vatten, dur: 0.2 * MIN };
   const spot = utEld(s, p); // ur elden först, så att hen inte rullar i det som brinner och tar eld igen (steg 10.2.17)
   const pl = paSig(s, p).find(t => !SAKER[t.k]?.brinnerInte);
   if (pl) return { act: 'slackaSig' as const, why: `Brinner och sliter av sig ${SAKER[pl.k]?.namn ?? pl.k}`, spot, dur: 0.3 * MIN, ref: pl.id };
@@ -651,7 +651,7 @@ export function hjalpaVal(s: State, p: Person) {
 export function slackaSigKlar(s: State, p: Person, t: Task) {
   const pl = t.ref !== undefined ? tingOf(s).find(q => q.id === t.ref && q.bar === p.id) : undefined;
   if (pl) { delete pl.bar; const x = Math.floor(p.x), y = Math.floor(p.y); if (!nagotPa(s, x, y)) { pl.x = x; pl.y = y; } } // ligger något redan där får plagget en plats i förrådet (placeTools)
-  slacktP(s, p, pl ? 'plagget' : t.why?.includes('vattnet') ? 'vattnet' : 'rullade');
+  slacktP(s, p, pl ? 'plagget' : t.skal === 'vatten' ? 'vattnet' : 'rullade');
 }
 export function hjalpaKlar(s: State, p: Person, t: Task) {
   const q = living(s).find(o => o.id === t.ref);
