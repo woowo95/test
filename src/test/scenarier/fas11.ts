@@ -5674,7 +5674,9 @@ SCENARIER.gravplats = {
 SCENARIER.kyrkanutlyser = {
   text: 'Kyrkan utlyser (steg 11.13.29, kyrkuppdrag.ts): när en by i världen med samma tro har svultit nyligen och en troende känner till den, kan kyrkan lägga undan en belöning ur sitt förråd och utlysa hjälpen dit; den som talar för tron vet om uppdraget, och tar tiden slut går belöningen tillbaka till förrådet',
   kor: () => {
-    const s = SIM.cloneState(testBy(3)), vl = s.varld!;
+    // den första testbyn som har en tro med troende (efter fem dygn har testbyarna ingen tro längre, steg 12.1.112)
+    const harTro = (b: SIM.State) => !!b.tron?.some(t => t.slut === undefined && SIM.troende(b, t).length);
+    const s = SIM.cloneState(testBy(3, harTro)), vl = s.varld!;
     let tr = s.tron?.find(t => t.slut === undefined && SIM.troende(s, t).length);
     if (!tr) return [['byn har en tro', false]];
     tr.sk = { ...(tr.sk ?? {}), oppen: 20 };
