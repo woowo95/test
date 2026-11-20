@@ -7,6 +7,11 @@ import { SCENARIER, kor, klockan, medBank, medHus, setFood, tandEld, utanWebblas
 import { falt as faltFlik } from '../../ui/flikar/falt';
 import { setByn, ui } from '../../ui/lage';
 
+// odlingen: ett fält (nummer 1) med hörnet dx, dy rutor från personen p, som äger det, w brett med n rutor i steget steg, och
+// rutorna r; och uppgiften att odla (tool) på fältet ref i en timme där p står
+const nyttFalt = (s: SIM.State, p: SIM.Person, dx: number, dy: number, w: number, n: number, steg: SIM.Falt['steg'], r?: SIM.Falt['r']): SIM.Falt =>
+  ({ id: 1, x: Math.floor(p.x) + dx, y: Math.floor(p.y) + dy, w, dir: 1, n, agare: p.id, steg, klara: 0, kvar: 0, rord: s.now, ...(r ? { r } : {}) });
+const odlaUppg = (s: SIM.State, p: SIM.Person, tool: string, ref: number) => ({ act: 'odla', tool, ref, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y }) as unknown as SIM.Task;
 SCENARIER.andrade = {
   lang: true,
   text: 'Steg 9.1.1: platserna växer bara tillbaka där något tagits. Varje ruta där ett lager har tagits ur står i lagrets lista, så att ingen ruta glöms när resten av kartan inte räknas',
@@ -1239,7 +1244,7 @@ SCENARIER.rutan = {
     const [p, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
     p.partner = q.id; q.partner = p.id;
     for (const r of [p, q]) r.tek = { ...(r.tek ?? {}), odling: 1 };
-    const f: SIM.Falt = { id: 1, x: Math.floor(p.x) - 8, y: Math.floor(p.y), w: 4, dir: 1, n: 8, agare: p.id, steg: 'sa', klara: 0, kvar: 0, rord: s.now };
+    const f = nyttFalt(s, p, -8, 0, 4, 8, 'sa');
     f.r = [{ st: 'sa' }, { st: 'sa' }, { st: 'sa' }, { st: 'sa' }, { st: 'vaxer', g: 'rovor', v: 0.99 }, { st: 'bereda' }, { st: 'bereda' }, { st: 'bereda' }];
     s.falt = [f]; sammanfatta(f);
     for (const k of ['rovfron', 'artfron']) setAmount(s, k, 0);
@@ -1249,7 +1254,7 @@ SCENARIER.rutan = {
     klockan(s, 10); for (let k = 0; k < 4; k++) f.r![k] = { st: 'sa' }; sammanfatta(f);
     const mogen = f.r![4].st === 'mogen';
     const u = faltUppgift(s, q);
-    const tk = { act: 'odla', tool: 'sa', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task;
+    const tk = odlaUppg(s, p, 'sa', f.id);
     workOdla(s, p, tk, SIM.ODLING.saMin * 60 * 4);
     const grodor = new Set(f.r!.filter(r => r.st === 'vaxer').map(r => r.g));
     const fam = familjOf(s, p.id).length, behov = faltBehov(s, p);
@@ -1273,7 +1278,7 @@ SCENARIER.jord = {
     const falt = (id: number, i: number): SIM.Falt => ({ id, x: i % SIM.W, y: Math.floor(i / SIM.W), w: 1, dir: 1, n: 1, agare: p.id, steg: 'mogen', klara: 0, kvar: 0, rord: s.now, r: [{ st: 'mogen', g: 'rovor', m: s.now }] });
     const a = falt(1, nara), b = falt(2, langt); s.falt = [a, b]; sammanfatta(a); sammanfatta(b);
     const i = faltRuta(a, 0), b0 = bordighet(s, i);
-    workOdla(s, p, { act: 'odla', tool: 'mogen', ref: a.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, SIM.ODLING.skordaMin * 60);
+    workOdla(s, p, odlaUppg(s, p, 'mogen', a.id), SIM.ODLING.skordaMin * 60);
     const b1 = bordighet(s, i);
     for (let h = 0; h < 48; h++) stepOdling(s);
     const b2 = bordighet(s, i), fn = fuktAv(a, 0), fl = fuktAv(b, 0);
@@ -1295,7 +1300,7 @@ SCENARIER.fukt = {
     const gissar = vattnaTill(p, 'rovor');
     const f: SIM.Falt = { id: 1, x: p.x + 3, y: p.y, w: 4, dir: 1, n: 8, agare: p.id, steg: 'mogen', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 8 }, () => ({ st: 'mogen' as const, g: 'rovor' as const, m: s.now, fu: ideal })) };
     s.falt = [f]; sammanfatta(f);
-    workOdla(s, p, { act: 'odla', tool: 'mogen', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, SIM.ODLING.skordaMin * 60 * 8);
+    workOdla(s, p, odlaUppg(s, p, 'mogen', f.id), SIM.ODLING.skordaMin * 60 * 8);
     const lart = kn(p, 'fukt'), vet = vattnaTill(p, 'rovor');
     return [
       [`rovorna växer bäst i sin fukt (${ideal}): i rätt fukt ${ratt}, i torr jord ${torrt.toFixed(2)}, i blöt ${blott.toFixed(2)}`, ratt === 1 && torrt < 1 && blott < 1],
@@ -1312,7 +1317,7 @@ SCENARIER.vattning = {
     const { vattenVal, vattenFram, addTool, sammanfatta, vattnaTill, JORD } = SIM;
     const s = createState(1, START); klockan(s, 10);
     const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 };
-    const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 3, y: Math.floor(p.y), w: 4, dir: 1, n: 8, agare: p.id, steg: 'vaxer', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 8 }, (_, k) => ({ st: 'vaxer' as const, g: 'rovor' as const, v: 0.2, fu: k < 6 ? 0.1 : 0.9 })) };
+    const f = nyttFalt(s, p, 3, 0, 4, 8, 'vaxer', Array.from({ length: 8 }, (_, k) => ({ st: 'vaxer' as const, g: 'rovor' as const, v: 0.2, fu: k < 6 ? 0.1 : 0.9 })));
     s.falt = [f]; sammanfatta(f);
     const kr = addTool(s, 'lerkruka_mellan', p); kr.hos = undefined;
     const v = vattenVal(s, p);
@@ -1374,9 +1379,9 @@ SCENARIER.kompost = {
     setAmount(s, 'kompost', 0);
     for (let h = 0; h < 24 * 10 && amountOf(s, 'kompost') < 1; h++) { s.now += SIM.HOUR; stepKompost(s); }
     const klar = amountOf(s, 'kompost');
-    const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 3, y: Math.floor(p.y), w: 1, dir: 1, n: 1, agare: p.id, steg: 'bereda', klara: 0, kvar: 0, rord: s.now, r: [{ st: 'bereda' }] };
+    const f = nyttFalt(s, p, 3, 0, 1, 1, 'bereda', [{ st: 'bereda' }]);
     s.falt = [f]; sammanfatta(f); const i = faltRuta(f, 0); s.bord = { [i]: 0.4 };
-    workOdla(s, p, { act: 'odla', tool: 'bereda', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, SIM.ODLING.beredaMin * 60);
+    workOdla(s, p, odlaUppg(s, p, 'bereda', f.id), SIM.ODLING.beredaMin * 60);
     return [
       [`den som odlar märker att det växer bättre vid sophögen och kommer på gödseln (${kom ? 'ja' : 'nej'})`, kom],
       [`sophögen blir komposten; den fulla latrinen fylls inte igen utan väntar, och handlingen Tömmer latrinen tömmer den där (${tomd ? 'ja' : 'nej'}, ${ko.kompost?.rest} rester)`, tomd],
@@ -1393,9 +1398,9 @@ SCENARIER.odlare = {
     const prov = (skill: number) => {
       const s = createState(1, START); klockan(s, 10);
       const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 }; p.skill.odling = skill;
-      const f: SIM.Falt = { id: 1, x: Math.floor(p.x) - 8, y: Math.floor(p.y), w: 4, dir: 1, n: 8, agare: p.id, steg: 'mogen', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 8 }, () => ({ st: 'mogen' as const, g: 'rovor' as const, m: s.now })) };
+      const f = nyttFalt(s, p, -8, 0, 4, 8, 'mogen', Array.from({ length: 8 }, () => ({ st: 'mogen' as const, g: 'rovor' as const, m: s.now })));
       s.falt = [f]; sammanfatta(f); setAmount(s, 'rovor', 0);
-      workOdla(s, p, { act: 'odla', tool: 'mogen', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, ODLING.skordaMin * 60 * 4);
+      workOdla(s, p, odlaUppg(s, p, 'mogen', f.id), ODLING.skordaMin * 60 * 4);
       return { rutor: f.r!.filter(r => r.st !== 'mogen').length, rovor: amountOf(s, 'rovor'), skill: p.skill.odling };
     };
     const ovan = prov(0), van = prov(20);
@@ -1431,9 +1436,9 @@ SCENARIER.flerarig = {
     const { workOdla, stepOdling, sammanfatta, amountOf, nyKalender } = SIM;
     const s = createState(1, START); klockan(s, 10);
     const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 };
-    const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 3, y: Math.floor(p.y), w: 2, dir: 1, n: 2, agare: p.id, steg: 'mogen', klara: 0, kvar: 0, rord: s.now, r: [{ st: 'mogen', g: 'jordgubbar', m: s.now }, { st: 'mogen', g: 'jordgubbar', m: s.now }] };
+    const f = nyttFalt(s, p, 3, 0, 2, 2, 'mogen', [{ st: 'mogen', g: 'jordgubbar', m: s.now }, { st: 'mogen', g: 'jordgubbar', m: s.now }]);
     s.falt = [f]; sammanfatta(f);
-    workOdla(s, p, { act: 'odla', tool: 'mogen', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, SIM.ODLING.skordaMin * 60 * 2);
+    workOdla(s, p, odlaUppg(s, p, 'mogen', f.id), SIM.ODLING.skordaMin * 60 * 2);
     const igen = f.r!.every(r => r.st === 'vaxer' && r.g === 'jordgubbar'), bar = amountOf(s, 'jordgubbar');
     // fältets ruta (steg 11.1.54): stapeln heter Mogen och tidsraden Mognar
     utanWebblasare(); setByn(s); ui.faltId = f.id; ui.faltRuta = 0; const fr = faltFlik.html!(); ui.faltRuta = -1;
@@ -1455,7 +1460,7 @@ SCENARIER.staket = {
     const { staketVal, staketKlar, staketRutor, faltInhagnat, sammanfatta, setAmount, harStaket } = SIM;
     const s = createState(1, START); klockan(s, 10);
     const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1, staket: 1 };
-    const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 4, y: Math.floor(p.y) + 2, w: 3, dir: 1, n: 6, agare: p.id, steg: 'vaxer', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 6 }, () => ({ st: 'vaxer' as const, g: 'rovor' as const, v: 0.2 })) };
+    const f = nyttFalt(s, p, 4, 2, 3, 6, 'vaxer', Array.from({ length: 6 }, () => ({ st: 'vaxer' as const, g: 'rovor' as const, v: 0.2 })));
     s.falt = [f]; sammanfatta(f); setAmount(s, 'grenar', 100);
     const rutor = staketRutor(s, f).length, fore = faltInhagnat(s, f);
     let n = 0; for (let st = staketVal(s, p); st && n < 100; st = staketVal(s, p), n++) staketKlar(s, p, st.i);
@@ -1474,7 +1479,7 @@ SCENARIER.skadedjur = {
     const prov = (v: number, skydd: boolean) => {
       const s = createState(1, START); klockan(s, 12);
       const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
-      const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 4, y: Math.floor(p.y) + 3, w: 8, dir: 1, n: 40, agare: p.id, steg: 'vaxer', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 40 }, () => ({ st: 'vaxer' as const, g: 'rovor' as const, v })) };
+      const f = nyttFalt(s, p, 4, 3, 8, 40, 'vaxer', Array.from({ length: 40 }, () => ({ st: 'vaxer' as const, g: 'rovor' as const, v })));
       s.falt = [f]; sammanfatta(f);
       if (skydd) { setAmount(s, 'grenar', 4); setAmount(s, 'torrgras', 4); skrammaKlar(s, p, f.id); s.staket = staketRutor(s, f); }
       for (let h = 0; h < 72; h++) { s.now += SIM.HOUR; for (const r of f.r!) if (r.st === 'vaxer') r.v = v; stepOdling(s); }
@@ -1496,7 +1501,7 @@ SCENARIER.vaxtsjuk = {
     const prov = (fu: number, blandat: boolean, timmar = 24 * 6) => {
       const s = createState(1, START); klockan(s, 12); s.kal = SIM.nyKalender(s.now, 2);
       const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
-      const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 4, y: Math.floor(p.y) + 3, w: 8, dir: 1, n: 64, agare: p.id, steg: 'vaxer', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 64 }, (_, k) => ({ st: 'vaxer' as const, g: (blandat && k % 2 ? 'arter' : 'rovor') as SIM.GrodaSlag, v: 0.3, fu })) };
+      const f = nyttFalt(s, p, 4, 3, 8, 64, 'vaxer', Array.from({ length: 64 }, (_, k) => ({ st: 'vaxer' as const, g: (blandat && k % 2 ? 'arter' : 'rovor') as SIM.GrodaSlag, v: 0.3, fu })));
       s.falt = [f]; sammanfatta(f); s.staket = SIM.staketRutor(s, f); s.skramma = [f.id];
       for (let h = 0; h < timmar; h++) { s.now += SIM.HOUR; for (const r of f.r!) { if (r.st === 'vaxer') { r.fu = fu; r.v = Math.min(r.v ?? 0, 0.5); } } stepOdling(s); }
       return { sjuk: s.stat?.vaxtsjuk ?? 0, dod: s.stat?.vaxtsjukDod ?? 0 };
@@ -1516,9 +1521,9 @@ SCENARIER.trad = {
     const { GRODOR, workOdla, sammanfatta, amountOf, FYND, SAKER, froFynd, richness, VILDA } = SIM;
     const s = createState(1, START); klockan(s, 10);
     const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 };
-    const f: SIM.Falt = { id: 1, x: Math.floor(p.x) + 3, y: Math.floor(p.y), w: 2, dir: 1, n: 2, agare: p.id, steg: 'mogen', klara: 0, kvar: 0, rord: s.now, r: [{ st: 'mogen', g: 'appeltrad', m: s.now }, { st: 'mogen', g: 'hassel', m: s.now }] };
+    const f = nyttFalt(s, p, 3, 0, 2, 2, 'mogen', [{ st: 'mogen', g: 'appeltrad', m: s.now }, { st: 'mogen', g: 'hassel', m: s.now }]);
     s.falt = [f]; sammanfatta(f);
-    workOdla(s, p, { act: 'odla', tool: 'mogen', ref: f.id, fr: 0, until: s.now + SIM.HOUR, tx: p.x, ty: p.y } as unknown as SIM.Task, SIM.ODLING.skordaMin * 60 * 2);
+    workOdla(s, p, odlaUppg(s, p, 'mogen', f.id), SIM.ODLING.skordaMin * 60 * 2);
     const igen = f.r!.every(r => r.st === 'vaxer' && (r.v ?? 0) > 0.5);
     let plats: { x: number; y: number } | undefined;
     s.kal = SIM.nyKalender(s.now, 3);
