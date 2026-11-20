@@ -1093,10 +1093,10 @@ SCENARIER.sedlista = {
     const lastSist = (h: string) => { const i = h.indexOf('class="muted lastsed"'); return i > 0 && !/data-hjalp="sed-/.test(h.slice(i).split('</ul>')[0]) && /(❔|sym_fragetecken)/.test(h.slice(i)); };
     const lagg = SIM.sedLaggning(s), drag = SIM.sedDrag(s), mal = SIM.sederTarget(s);
     const summa = SIM.SED_LIST.filter(x => SIM.sedOppen(s, x) && Math.abs(mal[x]) < 1).map(x => ({ k: x, rad: lagg[x] + drag.reduce((a, r) => a + r.d[x], 0), mal: mal[x] }));
-    // vågen visar vart den är på väg (steg 11.1.12): pilen när vågen lutar åt andra hållet, ingen när den står vid målet
+    // ingen pil vid vågen (steg 12.1.28), och alla rader som drar seden står under den utan tryck
     const v0 = s.seder.v[k];
-    s.seder.v[k] = -Math.sign(mal[k] || 1) * 0.6; const motH = sederFlik.html(), pilen = new RegExp(`data-hjalp="sed-${k}"[\\s\\S]*?class="sedmot" title="På väg mot [^"]*sederna rör sig långsamt[^"]*">${mal[k] >= 0 ? '→' : '←'}<`).test(motH);
-    s.seder.v[k] = mal[k]; const vid = sederFlik.html(), ingen = !new RegExp(`data-hjalp="sed-${k}"[^>]*>(?:(?!</li>)[\\s\\S])*?class="sedmot"`).test(vid);
+    s.seder.v[k] = -Math.sign(mal[k] || 1) * 0.6; const motH = sederFlik.html(), ingenPil = !motH.includes('sedmot');
+    const radAntal = (Math.abs(lagg[k]) >= 0.005 ? 1 : 0) + drag.filter(r => Math.abs(r.d[k]) >= 0.005).length, under = (motH.split(`data-hjalp="sed-${k}"`)[1] ?? '').split('</li>')[0]!.split('class="sedupp"').length - 1;
     s.seder.v[k] = v0;
     return [
       [`sederna går att trycka på och listan är stängd från början (${SIM.SEDER[k].neg} – ${SIM.SEDER[k].pos})`, stangd.includes(`data-hjalp="sed-${k}"`) && !stangd.includes('class="sedlista"')],
@@ -1105,7 +1105,7 @@ SCENARIER.sedlista = {
       [`hur många och vilka som minns den (${v.length})`, lista.includes(`${v.length} minns det`) && alla],
       ['vågskålen i Styre öppnar samma lista, och ett tryck till stänger', iStyre && !igen],
       // steg 11.1.11: läggningen är en egen rad, och raderna under en sed summerar till byns mål för seden
-      [`vågen har en pil åt det håll den är på väg när det som drar pekar åt andra hållet, och ingen när den står vid målet`, pilen && ingen],
+      [`ingen pil vid vågen, och alla ${radAntal} rader som drar seden står under den utan tryck (${under}, steg 12.1.28)`, ingenPil && under === radAntal],
       ['rubrikerna heter Störst inflytande i Seder och Maktens seder i Styre, med en länk till fliken Seder (steg 11.1.15)', sederFlik.html().includes('<h3>Störst inflytande</h3>') && !sederFlik.html().includes('Tyngsta röster') && /<h3>Maktens seder<\/h3><\/div><button type="button" class="lank" data-visa="seder">/.test(styreH) && !styreH.includes('Vågskålar')],
       [`en sed som inte är upplåst står sist som en grå rad med frågetecken och namnet, i Seder och Styre, utan att säga när den kommer`, lastSist(sederFlik.html()) && lastSist(styreH) && !/Kommer senare/.test(sederFlik.html() + styreH)],
       [`invånarnas läggning är en egen rad i listan`, lista.includes('Invånarnas läggning')],

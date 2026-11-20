@@ -1,4 +1,4 @@
-import { MAKT_SEDER, SEDER, SED_LIST, type Sed, ageOf, byId, roster, sedDrag, sedLaggning, sedOppen, sederTarget, upplevelseKort, yrkeNamn } from '../../sim';
+import { MAKT_SEDER, SEDER, SED_LIST, type Sed, ageOf, byId, roster, sedDrag, sedLaggning, sedOppen, upplevelseKort, yrkeNamn } from '../../sim';
 import { tecknet } from '../../ikoner';
 import { esc, fallUt, hjalpKnapp, hjalpOppen, hjalpText, pLink } from '../hjalp';
 import { s } from '../lage';
@@ -9,11 +9,11 @@ import { vagSvg } from '../framsteg';
 export const seder: Flik = {
   namn: 'Seder',
   html() {
-    const sd = s.seder, mal = sederTarget(s);
+    const sd = s.seder;
     const voices = roster(s).slice(0, 5); // med ledarens extra vikt (steg 4.5.4.10)
     return `<div class="tekhead">${hjalpKnapp('seder', 'Vad är seder?')}</div>
     ${hjalpText('seder', '<p class="muted">Byns seder är vad invånarna tillsammans tycker är viktigt. Var och en drar dem efter sin personlighet och det hen varit med om. Äldre och karismatiska röster väger tyngst. Sederna påverkar vad var och en väljer att göra.</p><p class="muted small">Under vågen står det som drar seden: invånarnas läggning och det de varit med om, med pilar åt det håll det drar (fler pilar drar mer) och hur många som minns det. Tryck på en sed för hela listan och vad seden gör.</p>')}
-    <ul class="seder">${SED_LIST.filter(k => sedOppen(s, k) && !MAKT_SEDER.includes(k)).map(k => `<li ${sedKlick(k)}>${sedVag(sd.v[k], SEDER[k].neg, SEDER[k].pos, mal[k])}${sedFormat(k)}${sedLista(k)}</li>`).join('')}${SED_LIST.filter(k => !sedOppen(s, k) && !MAKT_SEDER.includes(k)).map(k => lastSed(`${SEDER[k].neg} – ${SEDER[k].pos}`)).join('')}</ul>
+    <ul class="seder">${SED_LIST.filter(k => sedOppen(s, k) && !MAKT_SEDER.includes(k)).map(k => `<li ${sedKlick(k)}>${sedVag(sd.v[k], SEDER[k].neg, SEDER[k].pos)}${sedFormat(k)}${sedLista(k)}</li>`).join('')}${SED_LIST.filter(k => !sedOppen(s, k) && !MAKT_SEDER.includes(k)).map(k => lastSed(`${SEDER[k].neg} – ${SEDER[k].pos}`)).join('')}</ul>
     <h3>Störst inflytande</h3>${voices.length ? `<ul class="rels">${voices.map(x => `<li>${pLink(x.p)}<span>${esc(yrkeNamn(s, x.p) ?? '')}</span><span class="muted">${Math.floor(ageOf(x.p, s.now))} år</span><span title="Andel av inflytandet över byns seder">${Math.round(x.andel * 100)} %</span></li>`).join('')}</ul>` : '<p class="muted">–</p>'}
 `;
   },
@@ -24,14 +24,10 @@ export const seder: Flik = {
 const VIKTER = 5;
 // långa ord delas vid sammansättningen med ett mjukt bindestreck, som i skissen (Själv-försörjning)
 const bryt = (o: string) => o.replace(/^(Själv|Samman|Gemen)(?=\S{5})/, '$1&shy;');
-// vart vågen är på väg (steg 11.1.12): när det som drar (mal, byns mål) pekar åt ett annat håll än vågen lutar, eller mycket
-// längre, står en liten pil vid vågen åt det hållet. Skillnaden som räcker är en halv vikt
-const PIL_SKILLNAD = 0.5 / VIKTER;
-export function sedVag(v: number, neg = '', pos = '', mal?: number) {
+// ingen pil vid vågen (steg 12.1.28): vart seden är på väg syns på raderna under den
+export function sedVag(v: number, neg = '', pos = '') {
   const n = Math.min(VIKTER, Math.round(Math.abs(v) * VIKTER));
-  const d = mal === undefined ? 0 : mal - v, pil = Math.abs(d) >= PIL_SKILLNAD
-    ? `<span class="sedmot" title="${esc(`På väg mot ${(d > 0 ? pos : neg).replace(/&shy;/g, '').toLowerCase()}: det som drar seden pekar dit, men sederna rör sig långsamt, så vågen följer efter en tid`)}">${d > 0 ? tecknet('sym_pil_hoger', '→') : tecknet('sym_pil_vanster', '←')}</span>` : '';
-  return `<div class="sedvag"><span class="sedord">${bryt(neg)}</span><span class="vag" role="img" aria-label="${n ? `${n} av ${VIKTER} åt ${v < 0 ? 'vänster' : 'höger'}` : 'i jämvikt'}">${d < 0 ? pil : ''}${vagSvg(n, v < 0 ? -1 : 1)}${d > 0 ? pil : ''}</span><span class="sedord">${bryt(pos)}</span></div>`;
+  return `<div class="sedvag"><span class="sedord">${bryt(neg)}</span><span class="vag" role="img" aria-label="${n ? `${n} av ${VIKTER} åt ${v < 0 ? 'vänster' : 'höger'}` : 'i jämvikt'}">${vagSvg(n, v < 0 ? -1 : 1)}</span><span class="sedord">${bryt(pos)}</span></div>`;
 }
 export function sedBar(v: number) {
   const w = Math.round(Math.abs(v) * 50);
@@ -61,8 +57,9 @@ function sedRader(): Rad[] {
   const l = sedLaggning(s), vuxna = roster(s).filter(x => x.w > 0).map(x => x.p.id);
   return [{ lagg: true, n: vuxna.length, vem: vuxna, d: l }, ...sedDrag(s)];
 }
+// alla rader står under vågen utan tryck (steg 12.1.28): läggningen, varje upplevelse och minnena av de döda
 export function sedFormat(k: Sed) {
-  const alla = sedRader().filter(r => Math.abs(r.d[k]) >= 0.005), rader = alla.slice().sort((a, b) => +!!b.lagg - +!!a.lagg || Math.abs(b.d[k]) - Math.abs(a.d[k])).slice(0, 5);
+  const rader = sedRader().filter(r => Math.abs(r.d[k]) >= 0.005).sort((a, b) => +!!b.lagg - +!!a.lagg || Math.abs(b.d[k]) - Math.abs(a.d[k]));
   if (!rader.length) return '';
   return `<div class="sedformat">${rader.map(r => {
     const d = r.d[k], m = Math.abs(d), pil = (d > 0 ? tecknet('sym_pil_hoger', '→') : tecknet('sym_pil_vanster', '←')).repeat(m >= 0.15 ? 3 : m >= 0.05 ? 2 : 1), mot = d > 0 ? SEDER[k].pos : SEDER[k].neg;
