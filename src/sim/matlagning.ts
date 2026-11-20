@@ -1,3 +1,4 @@
+import { nagonEld } from './eld';
 import { matAvstar } from './kultlatt';
 import { DAY, HOUR, MIN, Person, State, Task } from './typer';
 import { alive, byId, count, enTill, forstaGang, gjort, log, ovning, stat, think } from './folk';
@@ -304,11 +305,11 @@ export const kokarNu = (s: State) => tingOf(s).filter(t => t.kok);
 const rattMat = (s: State) => RATT_SAKER.reduce((n, k) => n + amountOf(s, k) * (SAKER[k]?.mat ?? 1), 0) + kokarNu(s).reduce((n, t) => n + (t.kok!.vatska ? 0 : t.kok!.n), 0);
 const ratterBehovs = (s: State) => rattMat(s) < matPerDygn(s) * KOK.dygn;
 // p kan laga mat: kan krukan, elden brinner, en ledig kruka, något att koka, byn har för få rätter och ingen annan lagar mat
-export const kanKoka = (s: State, p: Person) => knows(p, 'kruka') && s.fire.lit && !!ledigKruka(s) && ratterBehovs(s) && enTill(s, 'koka_mat', p) && !!kokRecept(s, p);
+export const kanKoka = (s: State, p: Person) => knows(p, 'kruka') && nagonEld(s) && !!ledigKruka(s) && ratterBehovs(s) && enTill(s, 'koka_mat', p) && !!kokRecept(s, p);
 // förberedelsen är klar (KLAR i steg.ts): råvarorna tas, och rätten ställs på elden i krukan
 export function kokaKlar(s: State, p: Person) {
   const r = kokRecept(s, p), t = ledigKruka(s);
-  if (!r || !t || !s.fire.lit) return;
+  if (!r || !t || !nagonEld(s)) return;
   const ag: Record<string, number> = {};
   for (const [k, n] of [[r.huvud, RATT.huvud], [r.andra, RATT.andra], ...(r.smak ? [[r.smak, RATT.smak]] : [])] as [string, number][]) addDel(ag, takeMaterial(s, p, k, n), 1);
   let n = 0; for (let i = 0; i < RATT.portioner; i++) if (rnd(s, 'mat', p) >= brannDel(p)) n++; // varje portion bränns eller inte (steg 9.6.4)
@@ -323,7 +324,7 @@ export function kokaKlar(s: State, p: Person) {
 export function stepKok(s: State) {
   stepGrop(s); // kokgropen (steg 10.7.28)
   for (const t of kokarNu(s)) {
-    if (s.fire.lit) t.kok!.kvar -= HOUR;
+    if (nagonEld(s)) t.kok!.kvar -= HOUR;
     if (t.kok!.kvar > 0) continue;
     if (t.kok!.vatska) { t.inne = { v: t.kok!.r as import('./vatskor').VatskaId, n: t.kok!.n, q: t.kok!.q, t: s.now }; count(s, 'kokt_' + t.kok!.r, t.kok!.n); t.kok = undefined; continue; } // buljongen står kvar i krukan (steg 10.7.24)
     const tot = Object.values(t.kok!.ag).reduce((a, b) => a + b, 0) || 1, ag: Del = {};

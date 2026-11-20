@@ -1,3 +1,4 @@
+import { nagonEld } from './eld';
 // Törst (steg 2.4.1 och 2.4.2). Törsten är ett eget behov (p.torst, 1 = släckt, 0 = uttorkad) och slås inte ihop med mättnaden.
 // Man dricker vid vattnet och bär inte hem det. Vattnet är olika smutsigt på olika ställen (smutsOf i sjo.ts); smutsigt vatten
 // ger ont i magen, och var vattnet är rent eller smutsigt blir lärdomar (slaget 'vatten' i minne.ts) som sprids i samtal.
@@ -70,7 +71,7 @@ export const DRICKA: DrickaDef[] = [
   // en dryck hemma (steg 10.2.34): mjölk, saft eller kokt vatten ur byns krukor, en vald handling som tar en stund
   { act: 'dryck', why: 'Är törstig och dricker hemma', min: () => TORST.drickMin, nar: (s, p) => kanGa(p) && hemma(s, p) && !!dryckKrok.finns(s) },
   // isen ligger på sjön: den som kan smälter snö i en lerkruka vid en brinnande eld (steg 10.2.50), annars hugger man upp ett hål i isen
-  { act: 'smalta', why: 'Är törstig och smälter snö i en kruka vid elden', min: () => TORST.snoMin, nar: s => islagt(s) && s.fire.lit && dryckKrok.snoKruka(s) },
+  { act: 'smalta', why: 'Är törstig och smälter snö i en kruka vid elden', min: () => TORST.snoMin, nar: s => islagt(s) && nagonEld(s) && dryckKrok.snoKruka(s) },
   { act: 'dricka', why: 'Är törstig och går och dricker vid vattnet', min: () => TORST.drickMin, nar: () => true },
   // snön (steg 9.6.18): väljs bara när inget bättre finns nära (drickVal), sämst av sätten att dricka
   { act: 'ata_sno', why: 'Är törstig och äter snö', min: () => TORST.snoAtMin, nar: () => false },

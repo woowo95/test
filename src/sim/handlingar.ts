@@ -89,6 +89,7 @@ interface ActDef {
   radie?: number; // avstånd från elden, för plats 'elden'
   fortsatter?: readonly Larmslag[]; // larmen som inte avbryter handlingen (brand.ts, tornado.ts, varg.ts)
   nodFri?: true; // nöden (toa) avbryter den inte (steg.ts)
+  iNod?: true; // mitt i en fara eller nöd: den som gör det fyller inte på elden samtidigt (fyllare i eld.ts, steg 12.1.55)
   gast?: readonly import('./gast').GastSort[]; // en gästs egen handling (steg 9.2.113, gastvardag.ts): bara de sorterna gör den, aldrig byborna
 }
 export type Larmslag = 'brand' | 'tornado' | 'varg';
@@ -119,12 +120,12 @@ const DEF = {
   vakt: { namn: 'Håller vakt', yrke: 'Väktare', tecken: '👁️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.6, fortsatter: ['varg'] as const },
   // när vargar är nära (steg 3.7.15, varg.ts): de svaga gömmer sig i huset, de modiga väntar med vapen vid elden
   // nöden avbryter inte den som gömmer sig eller väntar med vapen (nodFri): faran väljer ändå samma sak igen, och förut valde den som behövde gå på toa om sin uppgift i varje slag så länge vargarna var nära
-  gomma: { namn: 'Gömmer sig', tecken: '🫣', dygn: true, stilla: true, plats: 'sang', nodFri: true, fortsatter: ['varg'] as const },
-  forsvar: { namn: 'Väntar på vargarna med vapen', tecken: '🛡️', social: true, tyst: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.2, nodFri: true, fortsatter: ['varg'] as const },
+  gomma: { iNod: true, namn: 'Gömmer sig', tecken: '🫣', dygn: true, stilla: true, plats: 'sang', nodFri: true, fortsatter: ['varg'] as const },
+  forsvar: { iNod: true, namn: 'Väntar på vargarna med vapen', tecken: '🛡️', social: true, tyst: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.2, nodFri: true, fortsatter: ['varg'] as const },
   // mot rövare (steg 9.2.74, rovare.ts): man väntar vid förrådet, dit rövarna är på väg, och platsen sätts i rovarSkydd
   budRovare: { namn: 'Hämtar folk', tecken: '🏃', social: true, skamfri: true, dygn: true, fortsatter: ['varg'] as const }, // budbäraren (steg 9.2.117)
-  hjalpaRovare: { namn: 'Håller sig bakom kämparna', tecken: '🤲', social: true, skamfri: true, dygn: true, stilla: true, nodFri: true, fortsatter: ['varg'] as const }, // steg 9.2.116
-  forsvarRovare: { namn: 'Väntar på rövarna med vapen', tecken: '🛡️', social: true, tyst: true, skamfri: true, dygn: true, stilla: true, vapen: true, nodFri: true, fortsatter: ['varg'] as const },
+  hjalpaRovare: { iNod: true, namn: 'Håller sig bakom kämparna', tecken: '🤲', social: true, skamfri: true, dygn: true, stilla: true, nodFri: true, fortsatter: ['varg'] as const }, // steg 9.2.116
+  forsvarRovare: { iNod: true, namn: 'Väntar på rövarna med vapen', tecken: '🛡️', social: true, tyst: true, skamfri: true, dygn: true, stilla: true, vapen: true, nodFri: true, fortsatter: ['varg'] as const },
   sova: { namn: 'Sover', slag: 'vila', under: { go: 'går och lägger sig' }, vila: true, stilla: true, plats: 'sang' },
   elda: { namn: 'Lägger ved på elden', yrke: 'Eldvaktare', slag: 'elda', under: { go: 'hämtar ved', back: 'bär ved till elden' }, ger: 'ved' },
   tanda: { namn: 'Försöker tända elden', yrke: 'Eldvaktare', slag: 'elda' },
@@ -137,7 +138,7 @@ const DEF = {
   ata_sno: { namn: 'Äter snö', tecken: '🧊', stilla: true }, // den törstige när inget bättre finns nära (steg 9.6.18, torst.ts)
   smalta: { namn: 'Smälter snö vid elden och dricker', tecken: '🫗', plats: 'elden' }, // i istiden, när sjön är frusen
   // vården (steg 2.5.2, halsa.ts): platsen är den skadade, och den som inte kan gå bärs hem eller får vatten där hen ligger
-  varda: { namn: 'Vårdar', tecken: '🩹', under: { back: 'bär den skadade' }, stilla: true, framme: true, fortsatter: ['brand', 'tornado', 'varg'] as const },
+  varda: { iNod: true, namn: 'Vårdar', tecken: '🩹', under: { back: 'bär den skadade' }, stilla: true, framme: true, fortsatter: ['brand', 'tornado', 'varg'] as const },
   // tron och graven (system 8.5, kult.ts och kvarlevor.ts)
   be: { namn: 'Ber', tecken: '✨', ikon: 'a_be', framme: true, stilla: true, skamfri: true },
   gravbesok: { namn: 'Står vid graven', tecken: '✨', ikon: 'a_be', framme: true, stilla: true, skamfri: true }, // besöket vid graven (steg 10.4.8)
@@ -319,23 +320,23 @@ const DEF = {
   undan: { namn: 'Går undan för tornadon', tecken: '🌪️', stilla: true, fortsatter: ['brand', 'tornado'] as const }, // steg 3.8.4 (tornado.ts)
   // eldsvådorna (steg 3.8.5, brand.ts): de vuxna släcker en eld nära byn, med vattensäcken (fylls vid vattnet och töms över
   // elden) eller med händerna, och de andra går undan
-  slacka: { namn: 'Släcker elden', tecken: '🧯', under: { go: 'hämtar vatten', back: 'bär vatten till elden' }, redskap: { vattensack: { namn: 'Släcker elden med vattensäcken', tar: 'Tar vattensäcken.', haller: 150 } }, slits: { enhet: 'turer med vatten', per: 'gang' }, tungt: true, framme: true, fortsatter: ['brand'] as const },
-  flyBin: { namn: 'Flyr från bina', tecken: '🏃', stilla: true }, // det uppretade boet (steg 10.10.27, bin.ts)
-  flyEld: { namn: 'Går undan för elden', tecken: '🔥', stilla: true, fortsatter: ['brand'] as const },
+  slacka: { iNod: true, namn: 'Släcker elden', tecken: '🧯', under: { go: 'hämtar vatten', back: 'bär vatten till elden' }, redskap: { vattensack: { namn: 'Släcker elden med vattensäcken', tar: 'Tar vattensäcken.', haller: 150 } }, slits: { enhet: 'turer med vatten', per: 'gang' }, tungt: true, framme: true, fortsatter: ['brand'] as const },
+  flyBin: { iNod: true, namn: 'Flyr från bina', tecken: '🏃', stilla: true }, // det uppretade boet (steg 10.10.27, bin.ts)
+  flyEld: { iNod: true, namn: 'Går undan för elden', tecken: '🔥', stilla: true, fortsatter: ['brand'] as const },
   // den som brinner släcker sig själv, och de som står nära hjälper till (steg 6.4.16, brand.ts)
-  slackaSig: { namn: 'Släcker elden i kläderna', tecken: '🔥', stilla: true, fortsatter: ['brand'] as const },
-  hjalpaBrinnande: { namn: 'Släcker elden på någon', tecken: '🧯', stilla: true, fortsatter: ['brand'] as const },
-  fly: { namn: 'Flyr ut i skogen', tecken: '🏃', ikon: 'utb2', vandra: { r: 3, h0: 1, h1: 3, v: 1.1 }, dygn: true },
+  slackaSig: { iNod: true, namn: 'Släcker elden i kläderna', tecken: '🔥', stilla: true, fortsatter: ['brand'] as const },
+  hjalpaBrinnande: { iNod: true, namn: 'Släcker elden på någon', tecken: '🧯', stilla: true, fortsatter: ['brand'] as const },
+  fly: { iNod: true, namn: 'Flyr ut i skogen', tecken: '🏃', ikon: 'utb2', vandra: { r: 3, h0: 1, h1: 3, v: 1.1 }, dygn: true },
   badd: { namn: 'Ligger i bädden och orkar inte gå upp', tecken: '🛌', ikon: 'utb3', vila: true, dygn: true, stilla: true, plats: 'sang' }, // steg 3.2.3
   slut: { namn: 'Gör slut', tecken: '💔', ikon: 'utb3', dygn: true, stilla: true },
   sla: { namn: 'Slår någon', tecken: '👊', ikon: 'utb3', verktyg: { misshandel: 'Misshandlar någon', drap: 'Slår ihjäl någon' }, dygn: true, stilla: true },
-  varna: { namn: 'Varnar', tecken: '⚠', social: true, tyst: true, skamfri: true, stilla: true, nodFri: true, fortsatter: ['varg'] as const }, // steg 10.1.12 (rovare.ts): varnar de andra för rövarna
-  skilja: { namn: 'Går emellan', tecken: '🤝', social: true, tyst: true, skamfri: true, dygn: true, nodFri: true }, // steg 10.1.4 (kartstrid.ts): går emellan dem som slåss
+  varna: { iNod: true, namn: 'Varnar', tecken: '⚠', social: true, tyst: true, skamfri: true, stilla: true, nodFri: true, fortsatter: ['varg'] as const }, // steg 10.1.12 (rovare.ts): varnar de andra för rövarna
+  skilja: { iNod: true, namn: 'Går emellan', tecken: '🤝', social: true, tyst: true, skamfri: true, dygn: true, nodFri: true }, // steg 10.1.4 (kartstrid.ts): går emellan dem som slåss
   undanStrid: { namn: 'Går undan från slagsmålet', tecken: '🚶', dygn: true }, // steg 10.1.4: går undan från en strid
-  strid: { namn: 'Slåss', tecken: '⚔️', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true }, // steg 3.7.2 (strid.ts): står kvar i striden medan de andra behoven väntar
+  strid: { iNod: true, namn: 'Slåss', tecken: '⚔️', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true }, // steg 3.7.2 (strid.ts): står kvar i striden medan de andra behoven väntar
   resa: { namn: 'Reser', tecken: '🎒', skamfri: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 11.5.5 (resa.ts): packar och går till samlingsplatsen vid byns utkant, och ut ur kartan med sällskapet
-  bjornjakt: { namn: 'Jagar björn', slag: 'jaga', ger: 'bjorn', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 6.6.6 (bjorn.ts): en stor grupp med spjut, och den fällda björnen styckas och bärs hem
-  vargjakt: { namn: 'Jagar varg', slag: 'jaga', ger: 'varg', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 3.7.1 (varg.ts): ledaren samlar jägare, och den fällda vargen bärs hem
+  bjornjakt: { iNod: true, namn: 'Jagar björn', slag: 'jaga', ger: 'bjorn', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 6.6.6 (bjorn.ts): en stor grupp med spjut, och den fällda björnen styckas och bärs hem
+  vargjakt: { iNod: true, namn: 'Jagar varg', slag: 'jaga', ger: 'varg', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 3.7.1 (varg.ts): ledaren samlar jägare, och den fällda vargen bärs hem
   // gästernas egna handlingar (steg 9.2.113, gastvardag.ts): sorten är kravet
   gastKommer: { namn: 'Går till byn', tecken: '🚶', gast: ['handlare', 'rovare', 'framling', 'folje', 'besok'] as const },
   gastLager: { namn: 'Sitter i lägret', tecken: '🔥', stilla: true, gast: ['folje'] as const }, // karavanens följe utanför byn (steg 11.11.6, handel.ts)

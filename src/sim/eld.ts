@@ -2,8 +2,8 @@ import { stationsVarme } from './stationseld';
 import { han } from './ord';
 import { tal } from './ord';
 import { allaBarn } from './uppvaxt';
-import { kronikaBer, loggBer, personFalt } from './berattelser';
-import { addTo, amountOf, avbryt, fetchSpot, iBordan, takeLimit, use, paMarken } from './lager';
+import { kronikaBer, personFalt } from './berattelser';
+import { addTo, amountOf, blotUttaget, avbryt, fetchSpot, iBordan, takeLimit, use, paMarken } from './lager';
 import { Materialslag, forbrukat, overOchUnder, tandBuffert, underBuffert } from './forradsmal';
 import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
@@ -16,8 +16,6 @@ import { allaTing, nTools, wearTool } from './agande';
 import { kroppFart } from './gang';
 import { SAKER } from './saker';
 import { halsa } from './halsa';
-import { flintFactor, stoneDist, takeFrom } from './fynd';
-import { observe } from './minne';
 import { eldPlats } from './karta';
 import { MARK, groundOf, tileOf } from './mark';
 import { BAR, VAG, isSoil } from './vag';
@@ -27,7 +25,7 @@ import { arBuske, grenFaktor } from './buskar';
 import { moodOf } from './humor';
 import { duty } from './seder';
 import { kunnighet } from './ekonomi';
-import { chance, clamp, rnd } from './slump';
+import { clamp, rnd } from './slump';
 import { BLOTVED, torrVed } from './blotved';
 import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
 import { ACTS, SNABBARE } from './handlingar';
@@ -36,7 +34,6 @@ import { balans } from './balans';
 import { num } from './format';
 import { vedPerEld, BRASA } from './brasor';
 import { iVattnetNu } from './sjo';
-import { tecken } from './religion';
 
 // ---------- balanstal (regel 8) ----------
 // Elden: hur stark den är, vad var och en vill ha på den, hur den tänds och fylls på, och hur tändmaterial, stenar och flinta
@@ -82,12 +79,9 @@ export const ELD = balans('eld', {
   // tändmaterialet på rutan (steg 9.3.4, tandPaRutan): hö i gräset och kvistar på all mark, hela saker, efter årstiden
   kvistSaker: 6, // kvistar på en ruta (gånger ARSTID.grenarIstid i istiden och fler vid buskarna)
   tandAter: 16, // det som plockats av tändmaterialet växer tillbaka med så här många saker per dygn (år i spelet)
-  stenTakt: 0.8, // stenar till eldringen ...
   stenNara: 1, stenNaraDel: 3, // ... gånger Nara dit stenarna ligger inom så många rutor ...
   stenMedel: 3, stenMedelDel: 1.5, // ... Del inom så många ...
   stenAnnars: 0.4, // ... och annars
-  flintaTakt: 0.04, // flinta: chans per arbetstimme gånger hur lätt den är att hitta på platsen (flintFactor)
-  flintaOkand: 0.4, // hur lätt den är att hitta när platsen inte är känd
   flintaStenar: 2, flintaSand: 1, // över Stenar är det vid stenarna (och platsen läggs på minnet), över Sand i sanden vid stranden
 });
 
@@ -137,8 +131,8 @@ export const fuelFor = (s: State, p: Person, fran?: Person) => takeLimit(s, 'ved
 // p = den som tar det: byns ved först, sedan sin egen (egendom.ts). ag får vems bränslet var, räknat i ved
 export function takeFuel(s: State, n: number, p?: Person, ag?: Del, fran?: Person) {
   const v = Math.min(n, takeLimit(s, 'ved', p, fran) + (fran ? 0 : iBordan(p, 'ved')));
-  if (p?.task && v > 0) p.task.blotVed = Math.min(1, Math.max(0, v - torrVed(s)) / v); // torr ved tas först (steg 7.3.4)
-  const w = use(s, p, 'ved', v, true, fran?.id);
+  const b0 = blotUttaget(), w = use(s, p, 'ved', v, true, fran?.id);
+  if (p?.task) p.task.blotVed = v > 0 ? Math.min(1, (blotUttaget() - b0) / v) : 0; // det som togs: torr ved tas först (steg 7.3.4), och ur det hen får ta (steg 12.1.55)
   // torven (steg 12.1.3, torv.ts): den torra efter veden och före grenarna, den blöta sist, i hela torv
   const hel = (k: string, kvar: number) => kvar <= 1e-9 ? 0 : Math.min(Math.floor(takeLimit(s, k, p, fran) + (fran ? 0 : iBordan(p, k)) + 1e-9), Math.ceil(kvar / TORV.varde - 1e-9));
   const tt = hel('torv', n - v);
@@ -440,8 +434,7 @@ function brinner(s: State, f: Fire, dtSec: number) {
 type Kand = { p: Person; w: Wish };
 // vem som fyller på elden f: den som vill ha klart mer ved än det som ligger på, plikttrogna och nära först
 // den som är mitt i en fara eller nöd (vårdar, slåss, gömmer sig, släcker en brand, flyr, varnar) gör inte två saker samtidigt
-const I_NOD = new Set<string>(['varda', 'strid', 'gomma', 'forsvar', 'forsvarRovare', 'hjalpaRovare', 'slacka', 'slackaSig', 'fly', 'varna', 'skilja']);
-const iNod = (p: Person) => !!p.task && (I_NOD.has(p.task.act) || !!(ACTS[p.task.act] as { nodFri?: true }).nodFri);
+const iNod = (p: Person) => !!p.task && !!(ACTS[p.task.act]?.iNod || ACTS[p.task.act]?.nodFri); // registret (iNod i handlingar.ts)
 function fyllare(s: State, f: Fire, cands: Kand[]) {
   const h = hearthOf(f), e = eldXY(s, f), fx = e.x + 0.5, fy = e.y + 0.5;
   let best: Kand | undefined, bs = -1e9;
@@ -529,20 +522,6 @@ export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Recor
   // där hen är när arbetet räcker. Finns inget kvar där blir det inget, och arbetet väntar (högst en sak)
   if (plocka('torrgras')) tandTa(s, p, got, 'torrgras', ELD.hoTakt * ARSTID.hoPerTid[ai] * sk * vaxer);
   if (plocka('grenar')) tandTa(s, p, got, 'grenar', ELD.grenarTakt * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * sk * vaxer * (p.task ? grenFaktor(groundOf(s), tileOf(p.task.tx, p.task.ty)) : 1)); // fler vid buskarna (steg 6.5.3)
-  // stenar till eldringen: många vid stenarna, några i sanden, få annars
-  if (needStones(s) || plocka('sten')) {
-    const d = p.task ? stoneDist(s.seed)[tileOf(p.task.tx, p.task.ty)] : 9;
-    got.sten = ELD.stenTakt * (d <= ELD.stenNara ? ELD.stenNaraDel : d <= ELD.stenMedel ? ELD.stenMedelDel : ELD.stenAnnars) * sk * hrs;
-  }
-  // flinta är ovanlig och hittas oftast vid stenarna. Den slås mot en sten för att tända eld, och med en pinne blir den en yxa
-  const ff = p.task ? flintFactor(s, p.task.tx, p.task.ty) : ELD.flintaOkand;
-  if (underBuffert(s, 'flinta', p.task?.items?.flinta ?? 0) && chance(s, ELD.flintaTakt * ff * sk * SNABBARE / HOUR_S, dtSec, 'arbete', p)) {
-    got.flinta = 1; count(s, ff > ELD.flintaStenar ? 'flintaSten' : 'flintaAnnan');
-    if (p.task) takeFrom(s, 'flinta', p.task.tx, p.task.ty, 1);
-    if (ff > ELD.flintaStenar && p.task) observe(s, p, 'flinta', p.task.tx, p.task.ty);
-    loggBer(s, 'l_flinta', p.id, { namn: p.name, plats: ff > ELD.flintaStenar ? 'vid stenarna' : ff > ELD.flintaSand ? 'i sanden vid stranden' : '' }, 'world', [p.id]);
-    if (ff <= ELD.flintaSand) tecken(s, p, 'fynd', 'flintan där ingen trodde att den fanns'); // fyndet på den märkliga platsen (steg 8.5.18)
-  }
   return Object.keys(got).length ? got : undefined;
 }
 // den närmaste rutan från p med både hö och kvistar (steg 12.1.39): dit går den som hämtar tändmaterial först. Hö och kvistar

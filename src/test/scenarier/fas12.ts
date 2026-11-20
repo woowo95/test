@@ -733,3 +733,33 @@ SCENARIER.tandmaterial = {
     ];
   },
 };
+
+SCENARIER.blotbord = {
+  text: 'Blöt ved som bärs är blöt (steg 12.1.55): veden som plockas ur en blöt hög är blöt i bördan och gör högen den läggs på blöt, och den som eldar får det blöta hen själv tog, inte byns torra ved i genomsnitt',
+  kor: () => {
+    const s = SIM.createState(3, START), z = SIM.zonesOf(s)[0], p = SIM.living(s)[0], q = SIM.living(s)[1];
+    SIM.setStock(s, { ved: 0 });
+    const tom = (x: number, y: number) => !(s.stackar ?? []).some(a => a.x === x && a.y === y && a.n > 0);
+    // en blöt hög utanför lagret: den som bär in den lägger blöt ved i förrådet
+    let ute = { x: z.x + z.w + 2, y: z.y }; for (let d = 2; d < 12 && SIM.isStored(s, ute.x, ute.y); d++) ute = { x: z.x + z.w + d, y: z.y };
+    s.stackar = (s.stackar ?? []).filter(a => !(a.x === ute.x && a.y === ute.y));
+    s.stackar.push({ k: 'ved', n: 4, c: 1, x: ute.x, y: ute.y, blot: 1 } as typeof s.stackar[number]);
+    SIM.changed(s);
+    const t = { act: 'bara', phase: 'do', tx: ute.x, ty: ute.y, until: s.now, carry: 0, why: '' } as SIM.Task;
+    SIM.pickUp(s, p, t, () => true);
+    const iBordan = t.blotVed ?? 0, buret = t.items?.ved ?? 0;
+    SIM.storeLoad(s, t);
+    const inne = SIM.stacksOf(s).filter(a => a.k === 'ved' && SIM.isStored(s, a.x, a.y)), blotaInne = inne.every(a => (a as { blot?: 1 }).blot === 1);
+    // torr ved som bara grannen äger: den som eldar med byns blöta ved får blöt ved
+    let sp = { x: z.x, y: z.y }; for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (tom(x, y)) sp = { x, y };
+    s.stackar!.push({ k: 'ved', n: 6, c: 1, x: sp.x, y: sp.y, ag: { [q.id]: 6 } } as typeof s.stackar[number]);
+    SIM.changed(s);
+    p.task = { act: 'elda', phase: 'go', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as SIM.Task;
+    const tog = SIM.takeFuel(s, 2, p), blotEld = p.task.blotVed ?? 0;
+    return [
+      [`veden ur den blöta högen är blöt i bördan (${buret} ved, ${iBordan} av den blöt)`, buret > 0 && iBordan === 1],
+      [`högen i förrådet är blöt (${inne.length} högar)`, inne.length > 0 && blotaInne],
+      [`den som eldar med byns blöta ved får blöt ved fast grannen har torr (${tog} tog, ${blotEld} blöt)`, tog > 0 && blotEld === 1],
+    ];
+  },
+};

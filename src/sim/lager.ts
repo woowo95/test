@@ -638,7 +638,16 @@ function delAv(ag: Del | undefined, v: number, tot: number): Del | undefined {
 }
 const minus = (ag: Del | undefined, d: Del | undefined) => { if (!ag) return ag; const ut: Del = { ...ag }; for (const o in d) { ut[+o] -= d[+o]; if (!(ut[+o] > 0)) delete ut[+o]; } return Object.keys(ut).length ? ut : undefined; };
 // lägg v med skicket c på stacken a (skicket blir ett viktat snitt). ag = vems det är, f gånger så mycket av varje del
+// blöt ved som läggs på en hög gör högen blöt (steg 7.3.4 och 12.1.55): satt medan en börda med blöt ved läggs ner
+let laggsBlot = false;
+// all blöt ved som någonsin tagits ur stackarna (och ur det någon bär, efter hur blött det är): den som tar ser hur mycket av
+// det hen fick som var blött genom att jämföra före och efter (takeFuel i eld.ts, hamtat i hamtning.ts)
+let vedBlot = 0;
+export const blotUttaget = () => vedBlot;
+// bördan t fick g ved till, varav b blöt: så stor del av veden hen bär som är blöt
+export function vedIBordan(t: Task, had: number, g: number, b: number) { if (g > 0) t.blotVed = Math.min(1, ((t.blotVed ?? 0) * had + b) / (had + g)); }
 function addToStack(s: State, a: Stack, v: number, c: number, ag?: Del, f = 1) {
+  if (laggsBlot && a.k === 'ved' && v > 0) { a.blot = 1; a.tork = undefined; a.vat = undefined; }
   a.c = (a.c * a.n + c * v) / (a.n + v); a.n += v;
   if (ag) { a.ag = addDel(a.ag ?? {}, ag, f); cleanDel(s, a); }
 }
@@ -683,6 +692,7 @@ function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fra
         const has = dold ? a.dold! : o === BYN ? a.n - sumOf(a.ag) : a.ag?.[o] ?? 0, v = Math.min(w, has);
         if (v <= 0) continue;
         if (dold) a.dold! -= v; else { a.n -= v; if (o !== BYN) { a.ag![o] -= v; if (a !== bs) cleanDel(s, a); } }
+        if (k === 'ved') vedBlot += a === bs ? v * (tk?.blotVed ?? 0) : a.blot ? v : 0; // hur mycket av veden som var blöt
         if (a === bs) urB += v;
         else {
           hamtatI(s, a.x, a.y, v); // hur mycket som hämtas på lagerplatsen (steg 9.4.7)
@@ -1197,7 +1207,9 @@ export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN
   if ((all.virke ?? 0) > 1e-9) count(s, 'virkeBuret', all.virke); // virket som burits hem: släden prövas fram av den som ofta bär virke (steg 10.10.2)
   const fo = t.ting?.map(id => tingOf(s).find(g => g.id === id)).find(g => g && SAKER[g.k]?.fordon);
   if (fo) { count(s, `fordonTur_${fo.k}`); count(s, 'fordonTur'); if (fo.djur !== undefined) count(s, 'dragdjurTur'); count(s, 'fordonSaker', Object.values(all).reduce((n, v) => n + v, 0)); } // turerna med kälken och det den drog (steg 10.10.2)
-  for (const k in all) if (all[k] > 1e-9) place(s, k, all[k], t.cond?.[k] ?? 1, shareOf(t.ag?.[k], all[k], t.act === 'bara' ? BYN : owner, s, k), at);
+  laggsBlot = (all.ved ?? 0) > 1e-9 && (t.blotVed ?? 0) > 1e-9; // blöt ved i bördan gör högen blöt
+  try { for (const k in all) if (all[k] > 1e-9) place(s, k, all[k], t.cond?.[k] ?? 1, shareOf(t.ag?.[k], all[k], t.act === 'bara' ? BYN : owner, s, k), at); }
+  finally { laggsBlot = false; }
   storeTings(s, t, at);
   tomBorda(t);
 }
@@ -1207,7 +1219,8 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
   if (isStored(s, tx, ty)) { storeLoad(s, t, x, y, owner); return; }
   aterlagt(s, t);
   const all = loadOf(t), st = stacksOf(s), who = t.act === 'bara' ? BYN : owner;
-  for (const k in all) {
+  laggsBlot = (all.ved ?? 0) > 1e-9 && (t.blotVed ?? 0) > 1e-9; // blöt ved i bördan gör högen blöt
+  try { for (const k in all) {
     if (all[k] < 1e-6) continue;
     const h = hela(s, k, all[k], SAKER[k]?.i ? undefined : shareOf(t.ag?.[k], all[k], who, s, k)); // bara hela saker (steg 2.10.7)
     if (h.n <= 0) continue;
@@ -1227,7 +1240,7 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
       addToStack(s, g, v, c, del); n -= v;
     }
     if (n > 1e-9) { let g = st.find(q => q.x === tx && q.y === ty && q.k === k); if (!g) st.push(g = { x: tx, y: ty, k, n: 0, c }); addToStack(s, g, n, c, ag); } // runt omkring är fullt
-  }
+  } } finally { laggsBlot = false; }
   for (const id of t.ting ?? []) { const g = tingOf(s).find(q => q.id === id); if (g) { g.lass = undefined; g.x = tx; g.y = ty; } }
   t.ting = undefined;
   tomBorda(t);
@@ -1348,6 +1361,7 @@ export function pickUp(s: State, p: Person, t: Task, ryms: (b: Record<string, nu
     const had = t.items?.[g.k] ?? 0;
     if (g.dold) { const d = DOLD_I[g.k], m = f >= 1 ? g.dold : helt(g.dold * f); if (m > 0) { (t.items ??= {})[d] = (t.items[d] ?? 0) + m; g.dold -= m; } }
     if (v > 0) {
+      if (g.k === 'ved') vedIBordan(t, had, v, g.blot ? v : 0); // blöt ved är blöt i bördan också (steg 12.1.55)
       (t.items ??= {})[g.k] = had + v;
       (t.cond ??= {})[g.k] = ((t.cond[g.k] ?? 1) * had + g.c * v) / (had + v);
       const m = minska(s, g, v);

@@ -1,3 +1,4 @@
+import { nagonEld } from './eld';
 // Lerkrukan (steg 9.4.11, Arbetsstationer och möbler: Leran och lerkrukan, Tre storlekar): ett ting med kvalitet, skick och
 // ägare, inte en möbel, i tre storlekar som är rader i registret KRUKOR. Den byggs upp för hand av lera med sand i (1, 2 eller 4
 // lera), torkar fortare i värme och torka och långsammare i kyla och regn, och bränns sedan i en eld som brinner. Torkningen och
@@ -36,7 +37,7 @@ export function stepKrukor(s: State) {
   for (const t of [...tingOf(s)]) {
     if (t.ler === undefined) continue;
     if (t.ler < 1) { t.ler = Math.min(1, t.ler + torka); continue; }
-    if (!s.fire.lit) continue;
+    if (!nagonEld(s)) continue;
     // bränningen i elden: kvaliteten avgör om den spricker
     if (rnd(s, 'kvalitet') < KRUKA.spricka[kvOf(t)]) {
       s.ting = tingOf(s).filter(q => q !== t);

@@ -30,7 +30,7 @@ import { addDel } from './egendom';
 import { RECEPT } from './recept';
 import { stepBlotVed } from './blotved';
 import { stepUppvaxt, upplev } from './uppvaxt';
-import { stepReligion } from './religion';
+import { stepReligion, tecken } from './religion';
 import { stepMotgang } from './motgang';
 import { stepTorka } from './torka';
 import { stepFlod } from './flod';
@@ -55,10 +55,10 @@ import { DJURARTER, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { arbetaBredvid, forsokKlar, forsokSteg, haftSteg, stepLarlingar, thinkWhileWorking } from './teknik';
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
-import { FYND, fyndAt, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, pickMushrooms, richness, richnessDelar, richnessFor, type Lager, sankning, takeFrom } from './fynd';
+import { FYND, fyndAt, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, richness, richnessDelar, richnessFor, type Lager, sankning, takeFrom } from './fynd';
 import { halMin, halVal, islagt, stepIs } from './is';
 import { blotSteg, coldOf, forVarm, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
-import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight } from './eld';
+import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight, nagonEld } from './eld';
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat, think } from './folk';
 import { BIN, binDod, binSteg, djurStickSteg, retadeSteg, skattaKlar } from './bin';
@@ -294,7 +294,7 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
   for (const [q, n] of Object.entries(av)) { if (getable(s, p, q) < n) return; }
   const sack = d.vatten ? fylldSack(s) : undefined;
   if (d.vatten && !sack) return; // vattnet är borta: inget blir gjort, och materialet ligger kvar
-  if (d.eld && !stationFor(s, d.act) && !s.fire.lit) return; // teet kokas vid en eld som brinner om byn inte har örtköket (steg 9.5.8)
+  if (d.eld && !stationFor(s, d.act) && !nagonEld(s)) return; /* vilken eld som helst (steg 12.1.55) */ // teet kokas vid en eld som brinner om byn inte har örtköket (steg 9.5.8)
   const kar = ar_vatska(d.ger) ? ledigFor(s, d.ger) : undefined;
   if (ar_vatska(d.ger) && !kar) return; // ingen ledig behållare som passar (steg 9.4.14): inget blir gjort
   if (sack) sack.inne = undefined; // säcken töms men finns kvar (steg 7.6.6)
@@ -1116,31 +1116,25 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     else { tk.carry += got.ved / SKOG.virkeVed; bar('grenar', got.grenar); if (got.done) tk.until = s.now; }
     return true;
   },
-  samla: (s, p, tk, { y, rich, delar, rd, dtSec, bar }) => {
-    if (plockSlag !== undefined) { // på rundan (steg 9.2.55): det som plockades, en hel sak
+  samla: (s, p, tk, { rd, dtSec, bar }) => {
+    { // på rundan (steg 9.2.55): det som plockades, en hel sak. Allt samlande går på rundan, så plockSlag är alltid satt
       if (plockSlag === 'rotter') { bar('rotter', rd?.rotter ?? 1); count(s, 'samlat_rotter', 1); gjort(s, p, 'samlat', 1); }
       else if (plockSlag === 'sten') bar('sten', 1);
-      else if (plockSlag === 'flinta') { // flintan vid stenarna (som forageItems i eld.ts räknade den)
+      else if (plockSlag === 'flinta') { // flintan vid stenarna eller i sanden: bara här hittas flinta, och då står det i loggen (steg 12.1.55)
         const ff = flintFactor(s, tk.tx, tk.ty); count(s, ff > ELD.flintaStenar ? 'flintaSten' : 'flintaAnnan'); bar('flinta', 1);
         if (ff > ELD.flintaStenar) observe(s, p, 'flinta', tk.tx, tk.ty);
+        loggBer(s, 'l_flinta', p.id, { namn: p.name, plats: ff > ELD.flintaStenar ? 'vid stenarna' : ff > ELD.flintaSand ? 'i sanden vid stranden' : '' }, 'world', [p.id]);
+        if (ff <= ELD.flintaSand) tecken(s, p, 'fynd', 'flintan där ingen trodde att den fanns'); // fyndet på den märkliga platsen (steg 8.5.18)
       }
       else if (plockSlag === 'kantarell' || plockSlag === 'spindling') { const f = svampPlock(s, p, plockSlag); for (const k in f) bar(k, f[k]); }
       else if (plockSlag === 'honung') { const g = BIN.vildTim * dtSec / HOUR_S; takeFrom(s, 'honung', Math.floor(tk.tx) + 0.5, Math.floor(tk.ty) + 0.5, g); bar('honung', g); binStick(s, p, dtSec, BIN.vildStick * fyndAt(s, 'honung', Math.floor(tk.ty) * W + Math.floor(tk.tx))); count(s, 'honungVild', g); if (g > 0 && !s.stat?.vildboHittat && forstaGang(s, 'vildboHittat')) log(s, `${p.name} hittade ett bo med vildbin och tog honung ur det.`, 'world', [p.id]); } // vildboet (steg 10.10.15)
       else if (plockSlag) { tk.carry += 1; count(s, 'samlat_bar', 1); gjort(s, p, 'samlat', 1); }
-    } else if (y > 0) {
-      // rötterna efter hur mycket av platsen som var rötter före uttaget; med benspaden gräver man fram fler (steg 2.7.2)
-      const rot = delar?.[lagren('samla').indexOf('rotter')] ?? richness(s, 'rotter', tk.tx, tk.ty);
-      const r = rich > 0 ? y * Math.min(1, rot / rich) : 0;
-      tk.carry += y - r; bar('rotter', r * (rd?.rotter ?? 1));
-      count(s, 'samlat_bar', y - r); count(s, 'samlat_rotter', r); // vad som samlats av varje slag (scenariot rotter)
-      gjort(s, p, 'samlat', y);
     }
     // på rundan hittar man det andra (hö, kvistar, ägg, frön) under hela tiden ute, också gången sedan förra plocket (tk.letat)
-    const pa = plockSlag !== undefined ? dtSec + (tk.letat ?? 0) : dtSec;
-    if (plockSlag !== undefined) tk.letat = undefined;
-    const fart = ACTS[tk.act].fart ?? 1, got = (plockSlag !== undefined ? utanStenar(forageItems(s, p, pa, fart)) : forageItems(s, p, pa, fart)) ?? {}, dt = pa * fart; // det som växer på platsen hittar man lika mycket fortare (steg 2.12.4); stenarna och flintan plockas på rundan
+    const pa = dtSec + (tk.letat ?? 0);
+    tk.letat = undefined;
+    const fart = ACTS[tk.act].fart ?? 1, got = forageItems(s, p, pa, fart) ?? {}, dt = pa * fart; // det som växer på platsen hittar man lika mycket fortare (steg 2.12.4); stenarna och flintan plockas som saker på rundan
     if (tk.tandmat) { for (const k of ['torrgras', 'grenar']) if (got[k]) bar(k, got[k]); return true; } // den som hämtar tändmaterial tar bara det (steg 12.1.39)
-    if (plockSlag === undefined) bar('svamp', pickMushrooms(s, p, tk.tx, tk.ty, dt, got)); // på rundan plockas svampen som en sak (svampPlock)
     for (const k in got) bar(k, got[k]); // tändmaterialet först, så att mossan inte tar händerna från den som hämtar det
     { const r = vildNara(s, 'rolleka', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'rolleka', r.x, r.y, g); bar('rolleka', g); count(s, 'samlat_rolleka', g); } } // den första örten (steg 7.6.3) växer vild på kartan (steg 9.7.15)
     if (blommaVill(s) > amountOf(s, 'blomma')) { const r = vildNara(s, 'blomma', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * ROLLEKA; takeFrom(s, 'blomma', r.x, r.y, g); bar('blomma', g); } } // ängsblommorna, när byn vill ha blommor till krukorna (steg 10.7.3)
@@ -1456,7 +1450,6 @@ function rundaRutaIn(s: State, p: Person, tk: Task, left: number, a: number, lea
   if (n) { tk.tx = n.x + 0.5; tk.ty = n.y + 0.5; tk.hopp = true; } else tk.until = s.now;
   return 1e-3;
 }
-const utanStenar = (g?: Record<string, number>) => { if (g) { delete g.sten; delete g.flinta; } return g; }; // på rundan plockas de som saker
 let plockSlag: string | undefined; // på rundan: slaget som plockades nu (bär eller rötter, sten eller flinta, grenar), '' medan plocket pågår; för UTFALL
 // sträckan (steg 10.2.21): samlaren väljer de rutor med saker hen ser på en gång, närmast först och sedan närmast den förra,
 // högst RUNDA.stracka, och går dem i tur och ordning. En ruta som blivit tom på vägen hoppas över; när sträckan är slut väljs en

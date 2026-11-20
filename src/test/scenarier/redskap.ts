@@ -82,6 +82,7 @@ SCENARIER.stenring = {
     for (const k of SIM.lagren('samla')) for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) if (inMap(tom.x + dx, tom.y + dy)) takenOf(r)[k]![SIM.tileOf(tom.x + dx, tom.y + dy)] = 1;
     const valt = th.task?.act === 'samla' && !!th.task.tandmat;
     Object.assign(th.task!, { tx: tom.x, ty: tom.y, phase: 'do', until: r.now + 3 * HOUR }); th.x = tom.x; th.y = tom.y;
+    for (const q of living(r)) if (q !== th) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: r.now + HOUR, carry: 0, why: '' }; // de andra sover: med många som hämtar (tandArbetare) räcker tändmaterialet annars på tio sekunder
     kor(r, 1 / 360); // tio sekunder: tändmaterialet hittas lika fort som bären (steg 2.12.4), och det räcker snart (en tändning, steg 10.2.7)
     // rundan (steg 4.5.6.1): hen går omkring från ruta till ruta med hö och kvistar och drar hemåt (steg 12.1.38), inte längre bort än hen var
     const nara = () => th.task?.act === 'samla' && !!th.task.tandmat && th.task.phase === 'do' && utanforBynXY(th.task.tx, th.task.ty) <= utanforBynXY(tom.x, tom.y) + 2;
@@ -705,8 +706,8 @@ SCENARIER.forradsmal = {
     setItems(s, { grenar: Math.ceil(tak) + 1 }); s.forbruk = { grenar: 60 }; SIM.arbetsTimme(s);
     q.task.hamtar = 'grenar';
     const g2 = SIM.forageItems(s, q, 3600) ?? {};
-    // sten: ingen ring behövs och ingen förbrukning, så ingen sten plockas
-    const sten = !SIM.needStones(s) ? (g2.sten ?? 0) : 0;
+    // sten och flinta plockas aldrig i forageItems, bara som saker på rundan (steg 12.1.55)
+    const sten = (g1.sten ?? 0) + (g2.sten ?? 0) + (g1.flinta ?? 0) + (g2.flinta ?? 0);
     // virket: bufferten är förbrukningen och det projekten väntar på
     s.forbruk = { virke: 6 }; SIM.arbetsTimme(s);
     const bVirke = SIM.materialBuffert(s, 'virke'), brist = SIM.PROJEKT.virke.brist(s);
@@ -718,7 +719,7 @@ SCENARIER.forradsmal = {
       [`taket är högre än bufferten, högst så mycket lagret rymmer (${tak.toFixed(1)})`, tak > bGren && tak <= SIM.FORRAD.materialMatt * bGren],
       [`under bufferten plockas hö och grenar (${Object.keys(g1).join(', ')})`, (g1.torrgras ?? 0) > 0 && (g1.grenar ?? 0) > 0],
       [`över taket plockas inga grenar, inte heller av den som hämtar dem (${g2.grenar ?? 0})`, !g2.grenar],
-      [`ingen sten plockas när ingen behövs (${sten})`, sten === 0],
+      [`ingen sten eller flinta i det som hittas på rutan (${sten})`, sten === 0],
       [`bufferten för virke följer förbrukningen och det som väntar (${bVirke}), och virket fattas (${brist.toFixed(2)})`, bVirke >= 6 / SIM.FORRAD.forbrukDygn * SIM.FORRAD.materialDygn && brist === 1],
     ];
   },

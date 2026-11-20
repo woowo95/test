@@ -176,7 +176,7 @@ export const BYGGNADER = {
 const torkForlust = (s: State) => (s.ruttet ?? 0) * HUS.matVarde;
 function vedForlust(s: State) {
   let alla = 0, blot = 0;
-  for (const a of stacksOf(s)) if (a.k === 'ved') { alla += a.n; if (a.blot) blot += a.n; }
+  for (const a of stacksOf(s)) if (a.k === 'ved' && isStored(s, a.x, a.y)) { alla += a.n; if (a.blot) blot += a.n; } // veden i förrådet (steg 12.1.55)
   return alla > 0 ? vedPerDygn(s) * blot / alla * BLOTVED.brann * grundvarde('ved') : 0;
 }
 const omkringAkut = (forlust: number) => Math.min(1, forlust * HUS.omkringDygn / HUS.omkringKostnad);

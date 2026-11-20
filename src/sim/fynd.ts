@@ -4,14 +4,13 @@ import { PLATS, rektAvstand } from './plats';
 import { count, forstaGang, franMitt, gjort, stat, log, think } from './folk';
 import { getMap, hash, perKarta, vnoise } from './karta';
 import { Markslag, groundOf, markslag, startGround, tileOf } from './mark';
-import { chance, clamp, clampI, pickNarmaste, rnd } from './slump';
+import { clamp, clampI, pickNarmaste, rnd } from './slump';
 import { kn, learnK, useK } from './kunskap';
 import { ageIndex } from './tid';
-import { kunnighet } from './ekonomi';
 import { underBuffert } from './forradsmal';
 import { LAGER, addTo, amountOf, foodOf } from './lager';
 import { nTools } from './agande';
-import { DAY, H, HOUR, HOUR_S, OX, OY, Person, State, T, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
+import { DAY, H, HOUR, OX, OY, Person, State, T, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
 import { FOREST, Ground, HIGH, VAG, isSoil } from './vag';
 import { ACTS, RedskapDef, SNABBARE } from './handlingar';
 import { balans } from './balans';
@@ -55,7 +54,6 @@ export const FANGST = balans('fangst', {
   flintaRik: 1, // ... och har mer än så här stor chans att hitta flinta (flintFactor)
   flintaUrval: 8, // den väljs bland så här många av de närmaste
   // svamp
-  svampTakt: 0.5, // chans att hitta svamp per arbetstimme gånger kunnigheten och hur rik platsen är
   svampUttag: 0.5, // varje svamp som hittas tar så här mycket ur platsen
   kandSkill: 40, kandInt: 100, kandMax: 0.98, // chansen att känna igen den giftiga: kunskapen plus färdigheten delad med Skill plus intelligensen delad med Int, högst Max
   giftAndel: 4, giftMax: 0.6, // att äta giftig svamp ur förrådet: chansen är andelen gift av maten gånger Andel, högst Max
@@ -709,26 +707,8 @@ export function flintSpot(s: State, q: Person, area?: (x: number, y: number) => 
 const GIFT = 'giftsvamp'; // giftig svamp som av misstag hamnat i förrådet (syns inte för invånarna)
 // svamp som hittas under en stund av samling i skogen; ger hur mycket ätlig mat som hittades.
 // Kantarellen och spindlingen har var sitt lager, så de växer på olika ställen.
-export function pickMushrooms(s: State, p: Person, x: number, y: number, dtSec: number, got: Record<string, number>) {
-  const kv = richness(s, 'kantarell', x, y), gv = richness(s, 'spindling', x, y);
-  if (kv + gv <= 0) return 0;
-  const rate = FANGST.svampTakt * SNABBARE * kunnighet(p.skill.samla) * (kv + gv);
-  if (!chance(s, rate / HOUR_S, dtSec, 'arbete', p)) return 0;
-  if (rnd(s, 'arbete', p) < kv / (kv + gv)) {
-    takeFrom(s, 'kantarell', x, y, FANGST.svampUttag);
-    if (forstaGang(s, 'svamp')) log(s, `${p.name} hittade kantareller i skogen.`, 'world', [p.id]);
-    return 1;
-  }
-  // den giftiga: känner man igen den låter man den stå
-  const sure = clamp(kn(p, 'svamp') + p.skill.samla / FANGST.kandSkill + stat(p, 'intelligens', s.now) / FANGST.kandInt, 0, FANGST.kandMax);
-  if (rnd(s, 'arbete', p) < sure) { count(s, 'giftsvampKand'); useK(p, 'svamp', s.now); return 0; }
-  takeFrom(s, 'spindling', x, y, FANGST.svampUttag);
-  count(s, GIFT);
-  got[GIFT] = (got[GIFT] ?? 0) + 1;
-  return 1; // den ser ut som mat och läggs i förrådet
-}
 // en svamp plockad på rundan (steg 9.2.53–9.2.55): kantarellen är mat, och den giftiga spindlingen låter den stå som känner igen
-// den; annars läggs den i bördan som giftsvamp (samma som pickMushrooms). Svarar med det som hamnar i bördan
+// den; annars läggs den i bördan som giftsvamp (som förr i forageItems). Svarar med det som hamnar i bördan
 export function svampPlock(s: State, p: Person, slag: 'kantarell' | 'spindling'): Record<string, number> {
   if (slag === 'kantarell') { if (forstaGang(s, 'svamp')) log(s, `${p.name} hittade kantareller i skogen.`, 'world', [p.id]); return { svamp: 1 }; }
   const sure = clamp(kn(p, 'svamp') + p.skill.samla / FANGST.kandSkill + stat(p, 'intelligens', s.now) / FANGST.kandInt, 0, FANGST.kandMax);

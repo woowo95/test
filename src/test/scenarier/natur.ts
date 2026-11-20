@@ -302,7 +302,7 @@ SCENARIER.samlarrunda = {
         for (let i = 0; i < 6 * 360; i++) {
           step(s, 10);
           for (const p of living(s)) {
-            const t = p.task, runda = t?.act === 'samla' && t.phase === 'do' && !t.sok;
+            const t = p.task, runda = t?.act === 'samla' && t.phase === 'do' && !t.sok && !t.tandmat; // den som hämtar tändmaterial drar hemåt (steg 12.1.38)
             if (runda) nar.set(p.id, Math.max(nar.get(p.id) ?? 0, utanforByn(s, p.x, p.y)));
             else if (nar.has(p.id)) { langst.push(nar.get(p.id)!); nar.delete(p.id); }
           }

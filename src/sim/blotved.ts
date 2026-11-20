@@ -2,7 +2,7 @@ import { balans } from './balans';
 import { roofed } from './byggnad';
 import { KROPP } from './folk';
 import { heatAt } from './eld';
-import { amountOf, stacksOf } from './lager';
+import { amountOf, isStored, stacksOf } from './lager';
 import { HOUR_S, State } from './typer';
 import { nederbord, temperature, vaderNu } from './vader';
 import { stationerOf } from './stationer';
@@ -47,6 +47,6 @@ export function stepBlotVed(s: State, dtSec: number) {
 // så mycket torr ved byn har
 export function torrVed(s: State) {
   let n = amountOf(s, 'ved');
-  for (const a of stacksOf(s)) if (a.k === 'ved' && a.blot) n -= a.n;
+  for (const a of stacksOf(s)) if (a.k === 'ved' && a.blot && isStored(s, a.x, a.y)) n -= a.n; // bara det som räknas i förrådet (steg 12.1.55)
   return Math.max(0, n);
 }

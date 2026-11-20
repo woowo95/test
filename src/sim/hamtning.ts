@@ -9,7 +9,7 @@ import { Act, HOUR, Person, State, Task } from './typer';
 import { getable, takeMaterial } from './behov';
 import { count } from './folk';
 import { halvOf } from './agande';
-import { amountOf, capacity, dropLoad, iHelaForradet, iRackhall, load, mayTake, helaAv, narmasteMed, ownsAmount, use } from './lager';
+import { amountOf, capacity, dropLoad, iHelaForradet, iRackhall, load, mayTake, helaAv, narmasteMed, ownsAmount, use, blotUttaget, vedIBordan } from './lager';
 import { vardHamtas } from './halsa';
 import { fartVid, halvbyggd, nastaAv, stationDef, tillbehorDef } from './stationer';
 import { PROJEKT } from './projekt';
@@ -158,9 +158,11 @@ export function hamtat(s: State, p: Person, tk: Task) {
       // bara hela saker bärs, för varje ägare: en ägares del av en sak (påbörjad) blir kvar som påbörjad
       // det som är en annan ägares (kyrkans mat vid högtiden) tas av hens, resten som vanligt
       const fk = agareAv(fran, k, tk), nf = fk === undefined ? 0 : typeof fran === 'object' ? Math.min(v, Math.ceil(fran[k]![1] - (tk.ag?.[k]?.[fk] ?? 0) - 1e-9)) : v;
+      const had = tk.items?.[k] ?? 0, b0 = blotUttaget();
       const a = nf > 0 ? use(s, p, k, nf, true, fk) : {}, b = v - sumOf(a) > 1e-9 && (typeof fran === 'object' || fk === undefined) ? takeMaterial(s, p, k, v - sumOf(a), byns) : {};
       const d = helaAv(s, k, { ...a, ...Object.fromEntries(Object.entries(b).map(([o, x]) => [o, x + (a[+o] ?? 0)])) }), g = sumOf(d);
       if (g <= 1e-9) continue;
+      if (k === 'ved') vedIBordan(tk, had, g, blotUttaget() - b0); // den blöta veden är blöt i bördan också (steg 12.1.55)
       (tk.items ??= {})[k] = (tk.items[k] ?? 0) + g; addDel((tk.ag ??= {})[k] ??= {}, d); fick += g;
     }
   });
