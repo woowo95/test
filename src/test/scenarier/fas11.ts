@@ -4207,8 +4207,10 @@ SCENARIER.silvergruva = {
 SCENARIER.talt = {
   text: 'Tältet (steg 11.11.1): saken tält sys vid slöjdbänken av skinn, grenar och rep och rymmer fyra; tälten packas när resan har en natt på vägen, nattens tapp av ork gäller bara dem som inte ryms i tälten, och byn vill ha så många tält som dess största sällskap med en natt behövde det senaste året',
   kor: () => {
-    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!, mal = hb.grannar![0]!.nr;
-    const vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.kanGa(q)).slice(0, 5);
+    // fem vuxna som kan gå: den första testbyn som har så många (testbyn efter fem dygn har fyra, steg 12.1.112)
+    const gaende = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.kanGa(q));
+    const s = SIM.cloneState(testBy(3, b => gaende(b).length >= 5)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!, mal = hb.grannar![0]!.nr;
+    const vuxna = gaende(s).slice(0, 5);
     const sl = SIM.nyttSallskap(s, vuxna[0]!, mal, 'handel')!;
     for (const q of vuxna.slice(1)) SIM.foljMed(vl, sl, q);
     // en kall natt
