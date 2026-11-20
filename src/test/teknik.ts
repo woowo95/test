@@ -3,7 +3,7 @@
 // (stat tekTim_, teknik.ts). En by som inte lade några timmar räknas som ointresserad, inte som långsam (steg 2.12.9).
 // Byarna körs samtidigt, en per processorkärna (ca 40 s datortid per by)
 import './utc';
-import { createState, step, living, TEKNIK, TEK, TEKTAL, knows, canThink, hasMaterial, ageOf, ALDER, DAY } from '../sim';
+import { createState, step, living, TEKNIK, TEK, TEKTAL, knows, canThink, hasMaterial, ageOf, ALDER, DAY, tingOf, amountOf } from '../sim';
 import { BEAT, START, STEG_DYGN, STEG_TIM } from './kor';
 import { korJson, pool } from './pool';
 
@@ -11,12 +11,16 @@ interface Rad { oppen?: number; pa?: number; tim: number }
 const DYGN = 90;
 const dygn = (s: { now: number; founded: number }) => Math.round((s.now - s.founded) / DAY * 10) / 10;
 
+// det som görs av ben (steg 12.1.151): hur många sylar, nålar och benspadar byn gjort (statistiken), och flest snaror samtidigt
+const BENSAKER = { bensyl: 'bensylGjorda', nal: 'nalarGjorda', benspade: 'benspadarGjorda' }, SNARA = 'snara';
 function enBy(seed: number) {
   const s = createState(seed, START), r: Record<string, Rad> = Object.fromEntries(TEKNIK.map(t => [t.id, { tim: 0 }]));
+  let snaror = 0;
   for (let i = 0; i < DYGN * STEG_DYGN; i++) {
     step(s, BEAT);
     if (i % STEG_TIM) continue;
     const vuxna = living(s).filter(p => ageOf(p, s.now) >= ALDER.uppfinner);
+    snaror = Math.max(snaror, tingOf(s).filter(t => t.k === SNARA).length + amountOf(s, SNARA));
     for (const t of TEKNIK) {
       const x = r[t.id];
       if (x.pa === undefined && living(s).some(p => knows(p, t.id))) x.pa = dygn(s);
@@ -24,7 +28,8 @@ function enBy(seed: number) {
     }
   }
   for (const t of TEKNIK) r[t.id].tim = Math.round(((s.stat?.['tekTim_' + t.id] as number) ?? 0) * 10) / 10;
-  return { seed, folk: living(s).length, r };
+  const ben: Record<string, number> = { ...Object.fromEntries(Object.entries(BENSAKER).map(([k, st]) => [k, Math.round((s.stat?.[st] as number) ?? 0)])), [SNARA]: snaror };
+  return { seed, folk: living(s).length, r, ben };
 }
 
 // medianen, med medelvärdet av de två mittersta (median i nyckeltal.ts tar det övre) och NaN för en tom lista (skrivs –)
@@ -55,5 +60,10 @@ async function main() {
     let langst = 0, fran = 0; [0, ...pa].forEach((d, i, a) => { if (i && d - a[i - 1] > langst) { langst = d - a[i - 1]; fran = a[i - 1]; } });
     console.log(`by ${b.seed}: ${b.folk} invånare, ${pa.length} tekniker, längst utan något nytt ${f(langst)} dygn (från dygn ${f(fran)})`);
   }
+  // det som görs av ben (steg 12.1.151): dygnen till benspaden, och sylarna, nålarna och benspadarna som gjorts och flest snaror samtidigt
+  console.log('Benet: by, dygn till benspaden, gjorda sylar, nålar och benspadar, flest snaror samtidigt');
+  for (const b of byar) console.log(`  by ${b.seed}: benspaden ${b.r.benspade?.pa === undefined ? 'aldrig' : `dygn ${f(b.r.benspade.pa)}`}, ${Object.entries(b.ben).map(([k, n]) => `${k} ${n}`).join(', ')}`);
+  const sum = (k: string) => byar.reduce((n, b) => n + (b.ben[k] ?? 0), 0);
+  console.log(`  alla: ${Object.keys(byar[0]?.ben ?? {}).map(k => `${k} ${sum(k)}`).join(', ')}`);
 }
 main();
