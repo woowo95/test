@@ -31,6 +31,10 @@ import { getable, takeMaterial } from './behov';
 import { bedFor } from './bygg';
 import { freeNear, roomAt } from './byggnad';
 import { tileOf } from './mark';
+import { fordonI } from './fordon';
+import { isCm } from './is';
+import { iVattnetNu } from './sjo';
+import { tamArt, tamdjurOf } from './tamdjur';
 import { eldPlats } from './karta';
 import { antalPa, chance, clamp, pick, rnd } from './slump';
 import { BIN, kupor, retaBo } from './bin';
@@ -75,6 +79,7 @@ export const HALSA = balans('halsa', {
   minst: 0.2, // händigheten går aldrig under detta (rörligheten aldrig under GANG.rorGolv, gang.ts)
   skicklig: 25, // risken för en olycka gånger 1 − färdigheten / skicklig ...
   smidig: 0.3, // ... och gånger 1 − smidig × (smidigheten − 10) / 10 (steg 3.7.6)
+  isTunn: 12, // isen bär sämre ju tunnare den är under så här många cm: risken att gå genom den gånger 1 − cm / isTunn (steg 12.1.141)
   // vården (steg 2.5.2)
   infRisk: 0.015, // chansen i timmen att ett öppet sår blir infekterat (steg 9.5.26: ett ovårdat bett eller sticksår infekteras i ungefär hälften av fallen) ...
   fastInf: 4, // ... gånger detta medan ett spjut sitter kvar i såret (steg 3.7.7)
@@ -191,6 +196,7 @@ export const SKADOR = {
   hjarnskakning: { namn: 'Hjärnskakning', ett: 'en hjärnskakning', tecken: '💫', blod: 0, smarta: 0.6, fel: 0.3, lakTim: 48 }, // ett hårt slag mot huvudet
   forfrysning: { namn: 'Förfrysning', ett: 'en förfrysning', tecken: '🥶', blod: 0, smarta: 0.5, fel: 0.6, lakTim: 72 }, // av kylan (steg 8.2.3)
   bistick: { namn: 'Bistick', ett: 'ett bistick', tecken: '📍', blod: 0, get smarta() { return BIN.smarta; }, fel: 0.02, lakTim: 12 }, // per kroppsdel med ett antal (n), svullnar och läker på 12 timmar (steg 10.10.22, bin.ts); tecknet är en platshållare
+  kalltvatten: { namn: 'Kallt vatten', ett: 'kallt vatten', tecken: '💧', blod: 0, smarta: 0.6, fel: 0.8, lakTim: 24 }, // i lungorna, av att gå genom isen (steg 12.1.141); tecknet är en platshållare
   brannskada: { namn: 'Brännskada', ett: 'en brännskada', tecken: '🔥', blod: 0, smarta: 0.8, fel: 0.4, lakTim: 72, inf: 1.5 }, // av elden i en eldsvåda (steg 3.8.5, brand.ts)
 } satisfies Record<string, SkadaDef>;
 export type SkadaTyp = keyof typeof SKADOR;
@@ -206,8 +212,18 @@ const oppet = (w: Skada) => SKADA[w.k].blod > 0; // ett öppet sår (inte ett be
 // spann (de flesta skador är lätta: min + slump² × (max − min)), dödsorsaken om den dödar direkt och när det hände
 // fardighet = färdigheten som sänker risken (annars arbetets), lugnar = redskapen som lugnar och hur stor del av risken som blir kvar
 // med dem (steg 10.10.22), riskAv = hur risken växer med det man arbetar vid, bistick = skadan är bistick, ett antal per kroppsdel
-interface OlyckaDef { risk: number; typer: SkadaTyp[]; delar: Kroppsdel[]; min: number; max: number; dod: Dodsorsak; nar: string; fardighet?: Skill; lugnar?: Record<string, number>; riskAv?: (s: State, p: Person) => number; bistick?: true }
+interface OlyckaDef { risk: number; typer: SkadaTyp[]; delar: Kroppsdel[]; min: number; max: number; dod: Dodsorsak; nar: string; fardighet?: Skill; lugnar?: Record<string, number>; riskAv?: (s: State, p: Person) => number; bistick?: true; lage?: (s: State, p: Person) => number }
 let skattaRisk: number | undefined; // ett prov kan sätta risken (BIN.stick annars)
+// djuret man sköter sparkar: hur mycket efter arten (spark i TAMDJUR, tamdjur.ts), djurskötseln sänker risken
+const SPARK: OlyckaDef = { risk: 0.01, typer: ['blamarke', 'krossar', 'benbrott'], delar: [...BEN, ...ARMAR, 'bal', 'huvud'], min: 0.05, max: 0.9, dod: 'olycka', nar: 'när ett djur sparkade hen', fardighet: 'skotsel', riskAv: (s, p) => { const d = tamdjurOf(s).find(q => q.id === p.task?.ref); return d ? tamArt(d.art).spark ?? 0 : 0; } };
+const SMEDJA: OlyckaDef = { risk: 0.01, typer: ['brannskada'], delar: [...HANDER, ...ARMAR], min: 0.05, max: 0.7, dod: 'olycka', nar: 'vid smedjan', fardighet: 'hantverk' };
+// olyckorna som hör till läget och inte till handlingen (steg 12.1.141): lage ger hur mycket av risken som gäller just nu (0 = ingen)
+export const OLYCKOR_LAGE: Record<string, OlyckaDef> = {
+  // den som kör eller åker en vagn eller släde och är på väg faller av; djurskötseln sänker risken
+  vagn: { risk: 0.005, typer: ['blamarke', 'benbrott', 'krossar'], delar: [...ARMAR, ...BEN, 'bal', 'huvud'], min: 0.05, max: 0.9, dod: 'olycka', nar: 'när hen föll från vagnen', fardighet: 'skotsel', lage: (s, p) => { const t = p.task, f = t && t.phase !== 'do' && t.ting?.length ? fordonI(s, t)?.f : undefined; return f && (f.sak === 'vagn' || f.sak === 'slade') ? 1 : 0; } },
+  // den som går eller fiskar på sjöns is när den är tunn går igenom den: kallt vatten i lungorna, och ibland drunknar man
+  genomIsen: { risk: 0.3, typer: ['kalltvatten'], delar: ['lungor'], min: 0.3, max: 1, dod: 'drunkning', nar: 'när isen brast', lage: (s, p) => { const cm = isCm(s); return cm > 0 && cm < HALSA.isTunn && iVattnetNu(s, tileOf(p.x, p.y)) ? 1 - cm / HALSA.isTunn : 0; } },
+};
 export const OLYCKOR: Partial<Record<Act, OlyckaDef>> = {
   jakt: { risk: 0.01, typer: ['bett', 'klos', 'benbrott'], delar: [...ARMAR, ...HANDER, ...BEN, ...FOTTER, 'bal'], min: 0.1, max: 1, dod: 'jakt', nar: 'under en jakt' },
   falla: { risk: 0.03, typer: ['krossar', 'benbrott'], delar: [...BEN, ...FOTTER, ...ARMAR, 'huvud'], min: 0.15, max: 1, dod: 'olycka', nar: 'när ett träd föll' },
@@ -216,6 +232,9 @@ export const OLYCKOR: Partial<Record<Act, OlyckaDef>> = {
   rensa: { risk: 0.005, typer: ['skarsar'], delar: HANDER, min: 0.05, max: 0.6, dod: 'olycka', nar: 'när hen rensade fisk' },
   kniv: { risk: 0.01, typer: ['skarsar'], delar: HANDER, min: 0.05, max: 0.7, dod: 'olycka', nar: 'när hen slog flinta' },
   // bisticken vid kupan (steg 10.10.22): BIN.stick stick i timmen för den ovana vid ett fullt bo, gånger honungen i kupan
+  // fler olyckor (steg 12.1.141): sparken av ett stort tamdjur (djurets spark i TAMDJUR) och brännskadan vid smedjan
+  mjolka: SPARK, klippa: SPARK, valla: SPARK, mata: SPARK,
+  blasa: SMEDJA, smida: SMEDJA, jarnhjalm: SMEDJA, ringbrynja: SMEDJA, spanne: SMEDJA,
   skatta: { get risk() { return skattaRisk ?? BIN.stick; }, set risk(v: number) { skattaRisk = v; }, typer: ['bistick'], delar: [...HANDER, ...ARMAR, 'huvud'], min: 1, max: 1, dod: 'bistick', nar: 'vid bikupan', fardighet: 'skotsel', get lugnar() { return { fackla: BIN.rok }; }, riskAv: (s, p) => { const t = kupor(s).find(q => q.id === p.task?.ref); return t?.bi ? t.bi / BIN.rymmer : 0; }, bistick: true },
 };
 // bina sticker den som arbetar vid ett bo (steg 10.10.22): risken per timme (rad = olyckans rad, storlek = boets storlek gånger det
@@ -405,7 +424,7 @@ export const FORMAGOR = {
 // ---------- varje steg ----------
 // en ny skada: loggen, byns räknare, rädsla för platsen och att arbetet avbryts. Returnerar dödsorsaken om den dödar direkt
 // hen i texten om när det hände: efter ett verb som slog eller straffade är den skadade föremålet (honom), annars subjektet (han)
-const narOm = (nar: string, p: Person) => nar.replace(/(slog|straffade) hen\b/, (_m, v: string) => `${v} ${honom(p)}`).replace(/\bhen\b/g, han(p));
+const narOm = (nar: string, p: Person) => nar.replace(/(slog|straffade|sparkade) hen\b/, (_m, v: string) => `${v} ${honom(p)}`).replace(/\bhen\b/g, han(p));
 // iStrid: såret kom i en strid, där striden själv avgör om delen huggs av (olyckshugget i strid.ts, steg 12.1.82)
 export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number, dod: Dodsorsak, nar: string, iStrid = false): Dodsorsak | undefined {
   d = finDel(s, p, d);
@@ -478,13 +497,25 @@ function laktSkada(s: State, p: Person, w: Skada) {
     if (ansikte && !p.binamn && rnd(s, 'halsa', p) < HALSA.arrBinamn) gebinamn(s, p, 'arrig', 1);
   }
 }
-// olyckor i det farliga arbete man gör just nu (OLYCKOR)
+// olyckor i det farliga arbete man gör just nu (OLYCKOR) och i läget man är i (OLYCKOR_LAGE, steg 12.1.141)
 function olyckaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undefined {
   const t = p.task, o = t && t.phase === 'do' ? OLYCKOR[t.act] : undefined;
-  if (!o) return undefined;
-  if (o.bistick) { binStick(s, p, dtSec, o.riskAv ? o.riskAv(s, p) : 1, o); return undefined; } // bisticken (steg 10.10.22)
-  const pd = ACTS[t!.act], sk: Skill | undefined = o.fardighet ?? pd.arbete ?? (pd.hantverk ? 'hantverk' : undefined);
-  const lugn = t!.tool && o.lugnar?.[t!.tool] !== undefined ? o.lugnar[t!.tool] : 1, av = o.riskAv ? o.riskAv(s, p) : 1;
+  if (o?.bistick) { binStick(s, p, dtSec, o.riskAv ? o.riskAv(s, p) : 1, o); return undefined; } // bisticken (steg 10.10.22)
+  if (o) {
+    const pd = ACTS[t!.act], dod = olycka(s, p, dtSec, o, o.fardighet ?? pd.arbete ?? (pd.hantverk ? 'hantverk' : undefined), o.riskAv ? o.riskAv(s, p) : 1);
+    if (dod) return dod;
+  }
+  for (const k in OLYCKOR_LAGE) {
+    const l = OLYCKOR_LAGE[k]!, av = l.lage!(s, p);
+    if (av <= 0) continue;
+    const dod = olycka(s, p, dtSec, l, l.fardighet, av);
+    if (dod) return dod;
+  }
+  return undefined;
+}
+// risken per tid för en rad, sänkt av färdigheten sk, smidigheten och redskapen som lugnar, gånger av
+function olycka(s: State, p: Person, dtSec: number, o: OlyckaDef, sk: Skill | undefined, av: number): Dodsorsak | undefined {
+  const t = p.task, lugn = t?.tool && o.lugnar?.[t.tool] !== undefined ? o.lugnar[t.tool] : 1;
   if (!chance(s, o.risk * (1 - (sk ? p.skill[sk] : 0) / HALSA.skicklig) * (1 - HALSA.smidig * franMitt(p, 'smidighet', s.now)) * lugn * av / HOUR_S, dtSec, 'halsa', p)) return undefined;
   const k = pick(s, o.typer, 'halsa', p), d = pick(s, o.delar, 'halsa', p), u = rnd(s, 'halsa', p);
   count(s, 'olyckor'); // skadorna i arbetet (de i slagsmål och straff räknas inte här)

@@ -107,6 +107,7 @@ const DOD = {
   alderdom: { text: 'av ålderdom' },
   barnsjukdom: { text: 'av en barnsjukdom' },
   olycka: { text: 'i en olycka' },
+  drunkning: { text: 'under isen', gud: 'vintern', sorg: true }, // genom isen (OLYCKOR_LAGE i halsa.ts, steg 12.1.141)
   barnsang: { text: 'i barnsäng', gud: 'atten' },
   varg: { text: 'av vargar', gud: 'jakt', sorg: true }, // steg 3.7.1 (varg.ts)
   bjorn: { text: 'av en björn', gud: 'jakt', sorg: true }, // steg 6.6.5 (bjorn.ts)

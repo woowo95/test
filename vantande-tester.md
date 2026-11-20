@@ -64,3 +64,4 @@
 ## Grenen par-register (12.1.139–12.1.143, 12.1.149, 12.1.150)
 
 - 12.1.139 (yrkena präst, skald, skrivare, bryggare, vävare och krukmakare; bryggningen flyttad från kocken): bara typkontrollen och scenariot yrken. Yrkestaggen är bara ett namn och påverkar inte vad man gör, men taggen skrivs i loggen och personens hand, så facit kan visa annan utveckling. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` när grenen förts in i varld.
+- 12.1.141 (fler olyckor: sparken, vagnen, smedjan och isen; dödsorsaken drunkning): scenarierna olyckor och kropp gick igenom i molnet. Ändrar spelet (nya slumptal i hälsan), så samma och facit visar annan utveckling. Läs räknaren `olyckor` och dödsorsaken "under isen" i fasens Balans.

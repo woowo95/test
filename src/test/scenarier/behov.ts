@@ -580,7 +580,7 @@ SCENARIER.kropp = {
     // varje farligt arbete ger sina skador i sina delar
     const fel: string[] = [];
     for (const [act, o] of Object.entries(OLYCKOR)) {
-      if (o!.bistick) continue; // bisticken prövas i scenariot bistick
+      if (o!.bistick || o!.riskAv) continue; // bisticken prövas i scenariot bistick, och det som beror på något runt omkring (sparken) i olyckor
       fyll(); s.stat = {}; p.task = { act: act as Act, phase: 'do', tx: p.x, ty: p.y, until: s.now + 1000 * HOUR, carry: 0, why: '' };
       for (let i = 0; i < 2000 && !s.stat.skador; i++) halsaSteg(s, p, MIN60 * 30);
       const w = p.skador?.[0];
@@ -606,12 +606,53 @@ SCENARIER.kropp = {
       [`ett mycket svårt skärsår kan förblöda (${dogSvart ?? 'överlevde'})`, dogSvart === 'blod'],
       [`ett brutet ben går långsammare (${fart0.toFixed(2)} → ${fart1.toFixed(2)}), och ett skärsår i handen arbetar långsammare (${(arb1 / arb0).toFixed(2)} av farten)`, fart1 < fart0 && arb1 < arb0],
       [`en svår skada avbryter arbetet, och hälsan blir ${halsa1.toFixed(2)}`, avbrot && halsa1 < KROPP.svag + 0.2],
-      [`olyckorna i ${Object.keys(OLYCKOR).filter(k => !OLYCKOR[k as Act]!.bistick).join(', ')} ger sina skador i sina delar${fel.length ? ` (fel: ${fel.join(', ')})` : ''}`, !fel.length],
+      [`olyckorna i ${Object.keys(OLYCKOR).filter(k => !OLYCKOR[k as Act]!.bistick && !OLYCKOR[k as Act]!.riskAv).join(', ')} ger sina skador i sina delar${fel.length ? ` (fel: ${fel.join(', ')})` : ''}`, !fel.length],
       [`på tio dygn i två byar: ${skador} olyckor (risken säger ${vantat.toFixed(1)}), ${blod} förblödde`, vantat > 0 && skador <= 3 * vantat + 3],
     ];
   },
 };
 
+SCENARIER.olyckor = {
+  text: 'Fler olyckor (steg 12.1.141): sparken av ett stort tamdjur, fallet från vagnen, brännskadan vid smedjan och isen som brister (och kan dränka)',
+  kor: () => {
+    const { OLYCKOR_LAGE, HALSA, nyttTamdjur, halsaSteg, cloneState: klona } = SIM;
+    const bas = createState(5, START), MIN60 = 60;
+    const prov = (forbered: (s: SIM.State, p: Person) => void, timmar = 2000) => {
+      const s = klona(bas), p = living(s).find(q => ageOf(q, s.now) >= 18)!;
+      p.skador = undefined; s.stat = {}; forbered(s, p);
+      let n = 0;
+      for (; n < timmar && !s.stat.olyckor && p.died === undefined; n++) halsaSteg(s, p, MIN60 * 60);
+      return { s, p, n, w: (p.skador as SIM.Skada[] | undefined)?.[0] };
+    };
+    const task = (act: Act, ref?: number): Task => ({ act, phase: 'do', tx: 0, ty: 0, until: Infinity, carry: 0, why: '', ...(ref !== undefined ? { ref } : {}) });
+    // sparken: kon sparkar, hunden inte; den skicklige blir sparkad mer sällan
+    const ko = prov((s, p) => { const d = nyttTamdjur(s, 'ko', p.x, p.y); p.task = task('mjolka', d.id); });
+    const hund = prov((s, p) => { const d = nyttTamdjur(s, 'hund', p.x, p.y); p.task = task('mata', d.id); }, 300);
+    const risk = (sk: number) => { const s = klona(bas), p = living(s).find(q => ageOf(q, s.now) >= 18)!; const d = nyttTamdjur(s, 'ko', p.x, p.y); p.task = task('valla', d.id); p.skill.skotsel = sk; return OLYCKOR.valla!.riskAv!(s, p) * OLYCKOR.valla!.risk * (1 - sk / HALSA.skicklig); };
+    // smedjan
+    const smed = prov((_s, p) => { p.task = task('smida'); });
+    // vagnen: läget räknar bara den som är på väg med en vagn
+    const vagnLage = (med: boolean, fas: 'go' | 'do' = 'go') => { const s = klona(bas), p = living(s)[0]!; p.task = { ...task('bara'), phase: fas }; if (med) p.task.ting = [SIM.addTool(s, 'vagn', p).id]; return OLYCKOR_LAGE.vagn!.lage!(s, p); };
+    // isen: tunn is på en vattenruta, tjock is och öppet vatten ger ingen risk
+    const pVatten = (s: SIM.State, p: Person) => { const i = SIM.vattenNu(s).findIndex(x => x === T.Vatten); p.x = i % W + 0.5; p.y = Math.floor(i / W) + 0.5; };
+    const isLage = (cm: number) => { const s = klona(bas), p = living(s)[0]!; pVatten(s, p); s.is = { vatten: 0, cm }; return OLYCKOR_LAGE.genomIsen!.lage!(s, p); };
+    const is = prov((s, p) => { pVatten(s, p); s.is = { vatten: 0, cm: 2 }; p.task = task('fiske'); });
+    // samma by och samma person timme för timme: den som överlevt torkar upp och går ut på isen igen, tills någon drunknar
+    let drunknade = 0, ggr = 0;
+    { const s = klona(bas), p = living(s).find(q => ageOf(q, s.now) >= 18)!; pVatten(s, p); s.is = { vatten: 0, cm: 1 }; p.task = task('fiske');
+      for (let h = 0; h < 20000 && !drunknade; h++) { const d = halsaSteg(s, p, 3600); if (d === 'drunkning') drunknade++; if (p.skador) { ggr++; p.skador = undefined; } } }
+    return [
+      [`kon sparkar den som mjölkar (efter ${ko.n} timmar: ${ko.w ? `${ko.w.k} i ${ko.w.d}` : 'ingen'})`, !!ko.w && OLYCKOR.mjolka!.typer.includes(ko.w.k)],
+      [`hunden sparkar inte (${hund.w ? hund.w.k : 'ingen skada'} på ${hund.n} timmar)`, !hund.w],
+      [`djurskötseln sänker risken (${risk(0).toFixed(4)} → ${risk(20).toFixed(4)} i timmen)`, risk(20) < risk(0)],
+      [`smeden får en brännskada (efter ${smed.n} timmar: ${smed.w?.k ?? 'ingen'})`, smed.w?.k === 'brannskada'],
+      [`den som är på väg med en vagn kan falla av (${vagnLage(true)}), men inte utan vagn (${vagnLage(false)}) eller när vagnen står still (${vagnLage(true, 'do')})`, vagnLage(true) > 0 && vagnLage(false) === 0 && vagnLage(true, 'do') === 0],
+      [`tunn is bär sämre än tjock (2 cm: ${isLage(2).toFixed(2)}, 20 cm: ${isLage(20)}, öppet vatten: ${isLage(0)})`, isLage(2) > isLage(8) && isLage(20) === 0 && isLage(0) === 0],
+      [`den som fiskar på tunn is går igenom den (efter ${is.n} timmar: ${is.w?.k ?? (is.p.died !== undefined ? is.p.cause : 'inget')})`, is.w?.k === 'kalltvatten' || is.p.cause === SIM.DODSORSAKER.drunkning.text],
+      [`ibland drunknar den som gått genom isen (${drunknade ? `efter ${ggr} gånger genom isen` : `ingen på ${ggr} gånger`})`, drunknade > 0],
+    ];
+  },
+};
 SCENARIER.vattensack = {
   text: 'Steg 2.10.1: vattensäcken sys av skinn vid slöjdbänken med bensylen. Med den hämtar en vuxen vatten åt den som inte kan gå och ligger hemma. Inget vatten kommer ur tomma luften (steg 10.2.35): utan säck bär en vuxen vatten i händerna, och den som ligger väntar också när törsten blir farlig',
   kor: () => {
