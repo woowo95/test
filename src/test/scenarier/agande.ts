@@ -1147,7 +1147,7 @@ function byHandel(): [string, boolean][] {
   setAmount(s, 'flinta', 0); setAmount(s, 'torrfisk', 120); setAmount(s, 'silver', 10); // (silver att betala flintan med)
   SIM.projektSaknarRakna(s);
   const behov = s.projektSaknar?.flinta?.n ?? 0;
-  h.varor = [{ k: 'flinta', n: behov + 5 }]; h.silver = 40;
+  h.varor = [{ k: 'flinta', n: behov + 1 }]; h.silver = 40; // (lite flinta, så att handlaren har plats för betalningen i ryggsäcken)
   const b0 = s.stat?.handelByten ?? 0;
   vuxen(s).skill.handel = 20; // (en skicklig som handlar för byn: affären går igenom)
   kannerPriser(s, h);

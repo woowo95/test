@@ -673,7 +673,7 @@ SCENARIER.verkstad = {
     const inburen = !!ut?.inne && stationRum(u, ut)?.hus === B?.id;
     return [
       [`byn vill bygga en slöjdbänk men den får inte plats i sovsalen (${living(s).length} bor där, ${hemlosa} utan sovplats)`, vill === 'flatarbank' && hemlosa === 0],
-      [`byn vill ha en verkstad (hur akut ${a.v}, ${a.plats} golvrutor)`, a.v === HUS.verkstadAkut && a.plats === 2 * 2 + HUS.verkstadExtra],
+      [`byn vill ha en verkstad (hur akut ${a.v}, ${a.plats} golvrutor)`, a.v === HUS.verkstadAkut && a.plats === SIM.verkstadPlats('flatarbank')],
       [`byn planerar ${B?.namn.toLowerCase() ?? 'inget hus'}`, B?.fn === 'verkstad' && B.namn === 'Verkstaden'],
       [`slöjdbänken byggs i verkstaden på ${h} timmar`, iB],
       [`verkstaden är en verkstad efter det som står där (${fnB.join(', ')}), sovsalen ett sovrum (${fnA.join(', ')})`, fnB.includes('Verkstad') && !fnB.includes('Sovrum') && fnA.includes('Sovrum') && !fnA.includes('Verkstad')],

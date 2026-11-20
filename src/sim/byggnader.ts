@@ -57,8 +57,10 @@ export const HUS = balans('hus', {
   salMin: 8, // ... och så många rutor den har minst
   verkstadHyllor: 2, // en lagerplats med det stationerna använder för så här många stationer i verkstaden (steg 7.2.9)
   verkstadAkut: 0.5, // hur akut det är att få plats inne för en station som inte får plats i något hus (0 till 1, steg 2.2.17) ...
-  verkstadExtra: 2, // ... och så här många golvrutor fler än stationen och golvet framför den
+  verkstadExtra: 2, // ... och så här många golvrutor fler än stationen, golvet framför den och rutan innanför dörren (verkstadPlats)
 });
+// verkstadens golv: stationen, golvet framför den, rutan innanför dörren som alltid är fri (steg 12.1.36) och lite till
+export const verkstadPlats = (k: string) => { const { w, h } = storlek(k); return w * (h + 1) + 1 + HUS.verkstadExtra; };
 
 // ---------- byggnaderna: vad ett hus är till för ----------
 // Varje sorts byggnad är en rad i registret BYGGNADER (sedan steg 1.6.1): vilket behov den fyller, hur viktigt behovet är
@@ -142,8 +144,7 @@ export const BYGGNADER = {
     akut: s => {
       const k = inneUtanPlats(s);
       if (!k || housesOf(s).some(h => h.fn === 'verkstad' && !stationerOf(s).some(t => stationRum(s, t)?.hus === h.id))) return { v: 0, plats: 0 };
-      const { w, h } = storlek(k);
-      return { v: HUS.verkstadAkut, plats: w * (h + 1) + HUS.verkstadExtra };
+      return { v: HUS.verkstadAkut, plats: verkstadPlats(k) };
     },
     namnFor: (_s, _w, _h, same) => same ? `Verkstad ${same + 1}` : 'Verkstaden',
   },

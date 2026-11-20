@@ -4,8 +4,8 @@
 // samma rad alltid ger samma by. Den väckta byn går sedan i samma slag som huvudbyn (s.vackta, steg 11.13.1)
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, familjOf, living, newPerson, startSkills } from './folk';
-import { BYGGNADER, Fn, HUS, homeless } from './byggnader';
-import { delarIRad, fyllPlatser, STATIONER, StationDef, StationSlag, stationSite, storlek } from './stationer';
+import { BYGGNADER, Fn, HUS, homeless, verkstadPlats } from './byggnader';
+import { delarIRad, fyllPlatser, STATIONER, StationDef, StationSlag, stationSite } from './stationer';
 import { knows } from './teknik';
 import { nyKvalitet } from './kvalitet';
 import { nyEld } from './brasor';
@@ -294,7 +294,7 @@ export function byggHus(b: State, r: VarldRad) {
     if (!p || kr > kvar) continue;
     let at = stationSite(b, k, p);
     if (!at && d.inne && b.people.some(q => (q.tek?.timmervagg ?? 0) >= 1)) { // en verkstad åt den
-      const { w, h } = storlek(k), hus = planeraHus(b, 'verkstad', { v: HUS.verkstadAkut, plats: w * (h + 1) + HUS.verkstadExtra });
+      const hus = planeraHus(b, 'verkstad', { v: HUS.verkstadAkut, plats: verkstadPlats(k) });
       if (hus) { byggFardigt(b, hus); at = stationSite(b, k, p); }
     }
     if (!at) continue;
