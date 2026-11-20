@@ -1,7 +1,8 @@
 // Scenarier för kartbilden och panelerna i fas 12 (grenen par-paneler).
 import * as SIM from '../../sim';
 import { SCENARIER } from './hjalp';
-import { START } from '../kor';
+import { START, kronikaVakt } from '../kor';
+import { readdirSync, readFileSync } from 'node:fs';
 import { hasIcon } from '../../ikoner';
 import { ROLLSYMBOLER, SKYLT, rollAv, synligaSkyltar, type Skylt } from '../../ui/namnskyltar';
 
@@ -34,6 +35,37 @@ SCENARIER.namnskyltar = {
       [`när alla står tätt syns bara några namn och inga täcker varandra (${tat.size} av ${alla.length})`, tat.size > 0 && tat.size < alla.length && !overlapp],
       [`i trängseln går rollerna före: de namn som syns är ledarens eller prästens (${[...tat].map(id => SIM.byId(s, id)?.name).join(', ')})`, [...tat].every(id => id === led.id || id === pr.id)],
       [`namnen under den valdas stora skylt göms (${stor.size})`, stor.size === 0],
+    ];
+  },
+};
+
+SCENARIER.kronikakat2 = {
+  text: 'Steg 12.1.137: slagen från de nya systemen har sin kategori i KRONIKA_KAT (dom och avrättning i Styre, epidemin i Motgångar, utflyttningen i Liv, troshuset i Tro, grannarnas händelser i Handel och grannar och byns egen rätt i Bygge och uppfinningar), en vakt i testerna larmar för en krönikerad utan kategori, och sex nya rader i NOTISER skrivs när det händer',
+  kor: () => {
+    const kat = (sl: string) => SIM.kronikaKat(sl);
+    const slagen: [string, string][] = [['ledare', 'styre'], ['sjukdom', 'motgang'], ['utflytt', 'liv'], ['tro', 'tro'], ['grannar', 'grannar'], ['sandebud', 'grannar'], ['nyhet', 'grannar'], ['mat', 'bygge']];
+    const felKat = slagen.filter(([sl, k]) => kat(sl) !== k);
+    // vakten: en rad med ett okänt slag och en utan slag larmar, de andra inte
+    const s = SIM.createState(5, START), larm: string[] = [];
+    SIM.kronika(s, 'En rad med kategori.', 'bygge'); kronikaVakt(s, t => larm.push(t));
+    const forut = larm.length;
+    SIM.kronika(s, 'En rad med ett påhittat slag.', 'paahittat'); s.hist!.kronika.push([s.now, 'En rad utan slag.']); kronikaVakt(s, t => larm.push(t));
+    // notiserna: en ny tro, en ny lag och det första tamdjuret skrivs när det händer; domen, avrättningen och skörden i koden
+    const nya = ['dom', 'avrattning', 'lag', 'tro', 'skord', 'tamdjur'], saknas = nya.filter(id => !SIM.NOTISER[id]);
+    const har = (id: string) => (s.notiser?.lista ?? []).some(n => n.id === id);
+    const [p] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
+    SIM.grunda(s, p, 'blixt');
+    SIM.FRAGOR.nylag?.gor(s, { id: Object.keys(SIM.LAGAR)[0] }, p);
+    SIM.nyttTamdjur(s, 'hund', p.x, p.y, p.id); SIM.nyttTamdjur(s, 'hund', p.x, p.y, p.id);
+    const tamN = (s.notiser?.lista ?? []).filter(n => n.id === 'tamdjur').reduce((a, n) => a + n.n, 0);
+    const simMapp = new URL('../../sim/', import.meta.url), kod = readdirSync(simMapp).filter(f => f.endsWith('.ts')).map(f => readFileSync(new URL(f, simMapp), 'utf8')).join('\n');
+    const iKoden = nya.filter(id => new RegExp(`notis\\(s, '${id}'`).test(kod));
+    return [
+      [`de nya systemens slag har sin kategori${felKat.length ? ` (fel: ${felKat.map(([sl]) => `${sl} → ${kat(sl)}`).join(', ')})` : ''}`, !felKat.length],
+      [`vakten larmar för en rad med ett okänt slag och en utan slag, men inte för en med kategori (${forut} före, ${larm.length - forut} efter)`, forut === 0 && larm.length - forut === 2],
+      [`sex nya rader i NOTISER${saknas.length ? ` (saknas: ${saknas.join(', ')})` : ''}`, !saknas.length],
+      [`en ny tro, en ny lag och det första tamdjuret ger sin notis, och tamdjuret bara det första (${['tro', 'lag', 'tamdjur'].filter(har).join(', ')}; ${tamN} tamdjursrad)`, har('tro') && har('lag') && har('tamdjur') && tamN === 1],
+      [`alla sex skrivs i simuleringen (${iKoden.join(', ')})`, iKoden.length === nya.length],
     ];
   },
 };

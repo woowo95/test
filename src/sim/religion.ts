@@ -1,3 +1,4 @@
+import { notis } from './notiser';
 import { clamp, gauss, pick, rnd } from './slump';
 import { SKRIFT } from './skriftTal';
 import { troshusKlart } from './troshus';
@@ -311,6 +312,7 @@ export function grunda(s: State, p: Person, k: TeckenTyp, om?: string) {
   p.tro = tr.id; p.troStyrka = TRO.styrka;
   count(s, 'tro_ny');
   log(s, `${p.name} tolkade ${teckenText(k, om)} som ett tecken. ${tolkning(tr)}`, 'rel', [p.id]);
+  notis(s, 'tro', `${p.name} tolkade ${teckenText(k, om)} som ett tecken, och en ny tro började i byn. ${tolkning(tr)}`, [p.id]); // (steg 12.1.137)
 }
 
 // ---------- namnet och berättelsen (steg 4.1.2.3) ----------

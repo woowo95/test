@@ -5,6 +5,7 @@
 // ärvs som redskapen (arv.ts); byns rikedom räknar djuren (varde.ts). Djurskötsel är en färdighet som växer när man matar,
 // mjölkar, klipper och vallar, så att någon blir byns herde. Allt stegas en gång i timmen (stepTamdjur, steg.ts), likadant i
 // båda lägena, med byns följd 'tamdjur'.
+import { notis } from './notiser';
 import { balans } from './balans';
 import { farorNu } from './kult';
 import { KOTTSLAG, isFood } from './saker';
@@ -78,6 +79,7 @@ export function nyttTamdjur(s: State, art: TamArtId, x: number, y: number, agare
   s.nextTam = id - TAM_ID0 + 1;
   const d: Tamdjur = { id, art, born, hunger: 0, x, y, agare, hona: hash3(s.seed, id, 0x7a6d) < 0.5 };
   l.push(d); count(s, `tam_${art}`);
+  if (forstaGang(s, 'tamForst')) { const a = tamArt(art), q = agare !== undefined ? byId(s, agare) : undefined; notis(s, 'tamdjur', `Byn fick sitt första tamdjur: ${q ? `${q.name}s ${a.ord[1]}` : a.ord.slice(0, 2).join(' ')}.`, q ? [q.id] : [], { x, y }); } // (steg 12.1.137)
   return d;
 }
 // djuret dör (av hunger, ålder eller ett rovdjur) och tas bort ur byn

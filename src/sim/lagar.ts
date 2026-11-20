@@ -1,6 +1,7 @@
 // Lagarna (system 8.4). En lag är en rad i registret LAGAR: vad den gäller, vilket straff den har från början och hur den väcks av det
 // som hänt. Att stifta, ändra och ta bort en lag är frågor i röstsystemet (FRAGOR i rost.ts). Vad som tas upp en kväll väljs ur registret
 // TAS_UPP, efter prioritet (steg 8.4.5). En lag läser spelet med `lagGaller`; ett brott i `doma` (styre.ts) får straffet i lagen.
+import { notis } from './notiser';
 import { Act, HOUR, Person, State } from './typer';
 import { rnd } from './slump';
 import { REL, byId } from './folk';
@@ -271,7 +272,7 @@ FRAGOR.nylag = {
     (st.lagar ??= []).push({ id, t: s.now, straff: startStraff(s, id), av: fram?.id ?? -1, om: def.om ?? '' });
     count(s, 'lag_ny');
     const t = `Byn stiftade en lag: ${def.namn.toLowerCase()}.`;
-    log(s, t, 'world', fram ? [fram.id] : []); kronika(s, t, 'ledare');
+    log(s, t, 'world', fram ? [fram.id] : []); kronika(s, t, 'ledare'); notis(s, 'lag', t, fram ? [fram.id] : []); // (steg 12.1.137)
   },
 };
 FRAGOR.bortlag = {
