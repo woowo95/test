@@ -17,7 +17,8 @@ function laga(g: PIXI.Graphics, x: number, y: number, l: number, f: number) {
 import { farg, fargTal } from '../palett';
 import { sinHash as hash } from './pixel';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
-import { Ikoner, TS, bubbleG, figurLayer, labels, symbolLayer, peopleG } from './scen';
+import { Ikoner, TS, bubbleG, figurLayer, labels, symbolLayer, peopleG, world } from './scen';
+import { SKYLT, rollAv, synligaSkyltar, type Skylt } from './namnskyltar';
 import { type Arm, type Ben, type Rikt, figurHand, figurTex } from './folkbild';
 import { ARBETEN, STRIDBILD, arbetsBild, ritaArbete } from './arbetsbild';
 import { rovarSkapad, handlarSkapad, skapad } from './utseende';
@@ -27,7 +28,7 @@ import { jaktPlats } from './jakt';
 import { kartKampe, slagAv } from './stridbild';
 import { stridAnsikte } from './stridansikte';
 import { slag } from './animation';
-import { garIBilden, iSangen, stalle, vidArbetet } from './stalle';
+import { garNu, iSangen, stalle, vidArbetet, vidStationen } from './stalle';
 import { hasIcon, iconCanvas, kartbild, ljusSymbol } from '../ikoner';
 
 // människorna på kartan: kroppen, det de bär, pratbubblor, symbolen för vad de gör och namnet
@@ -292,7 +293,12 @@ function bar(k: string, cx: number, cy: number, storlek: number) {
 // Pixelify Sans som brödtexten (steg 5.3.2.3), i panelens ljusa och mörka färg; när typsnittet laddats ritas namnen om med det
 const NAMNFONT = '"Pixelify Sans", system-ui, sans-serif';
 const nameStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: 22, fill: 0xdad0bb, stroke: 0x24201d, strokeThickness: 5, fontWeight: '700' });
-if (typeof document !== 'undefined') document.fonts?.ready.then(() => { nameStyle.fontFamily = 'system-ui'; nameStyle.fontFamily = NAMNFONT; });
+// namnen vid alla (steg 12.1.157, ui/namnskyltar.ts): mindre text under fötterna, en text per person som återanvänds
+const smaStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: SKYLT.hojd * 2, fill: 0xdad0bb, stroke: 0x24201d, strokeThickness: 4, fontWeight: '700' });
+if (typeof document !== 'undefined') document.fonts?.ready.then(() => { for (const st of [nameStyle, smaStyle]) { st.fontFamily = 'system-ui'; st.fontFamily = NAMNFONT; } });
+const smaNamn = new Map<number, PIXI.Text>();
+const rollIkoner = new Ikoner(labels);
+const figurFot = new Map<number, { x: number; y: number }>(); // var figuren ritades i bildrutan: mitten och fötterna
 const nameTags = [0, 1].map(() => { const tx = new PIXI.Text('', nameStyle); tx.scale.set(0.5); tx.anchor.set(0.5, 1); tx.visible = false; labels.addChild(tx); return tx; });
 // tiden kvar till förblödning (steg 9.5.14): en röd siffra i minuter över huvudet när den är kort (HALSA.kortTim)
 const blodStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: 20, fill: 0xa14808, stroke: 0x24201d, strokeThickness: 5, fontWeight: '700' });
@@ -322,7 +328,8 @@ const forra = new Map<number, { x: number; y: number; rikt: Rikt; rorde: boolean
 const GANG: [Ben, Arm][] = [['gang1', 'gang1'], ['sta', 'hanga'], ['gang2', 'gang2'], ['sta', 'hanga']];
 // figuren går bara när den flyttat sig sedan förra bilden (steg 10.2.55): den som står still går aldrig i bilden
 const gar = (id: number) => !!forra.get(id)?.rorde;
-vidNyBy.push(() => forra.clear());
+const simForra = new Map<number, { x: number; y: number }>(); // platsen i simuleringen i förra bilden (garNu i ui/stalle.ts)
+vidNyBy.push(() => { forra.clear(); simForra.clear(); });
 const SVANG = 2; // hur mycket större det nya hållet ska vara för att figuren ska vända sig (steg 6.8.2)
 // gar = om hen går (garIBilden i ui/stalle.ts, steg 12.1.13), ur simuleringen och aldrig ur platserna i bilden. Gästerna utan
 // den frågan går när platsen de fått från simuleringen (gaster.ts) flyttat sig
@@ -395,7 +402,7 @@ function utseendeAv(p: Person) {
 }
 export function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();
-  sedd.clear();
+  sedd.clear(); figurFot.clear();
   const skugga = skuggFolk().clear().beginFill(0xffffff); // skuggorna vid fötterna (steg 5.1.8, ui/skugga.ts)
   const ppl = living(s), pos = new Map<number, { x: number; y: number }>();
   synlig = sprid(ppl); synligNu = ui.nu;
@@ -421,20 +428,25 @@ export function drawPeople(t: number) {
     // rörelse i armarna
     const bank = gor && !ligger ? stationAt(s, q.x, q.y - 1) : undefined, bd = bank && isKlar(bank) ? stationDef(bank.k) : undefined;
     const vidBank = !!(bank && bd?.sitt && bd.gor.includes(gor as never) && Math.floor(q.y) === bank.y + storlekAv(bank).h);
-    let rikt = riktning(p.id, q.x, q.y, garIBilden(s, p, ui.nu, jaktPlats(p)));
+    let rikt = riktning(p.id, q.x, q.y, garNu(s, p, ui.nu, simForra, jaktPlats(p))); // benen bara när platsen i simuleringen ändrats (steg 12.1.129)
     // sitter bara på en sittplats, går bara när hen flyttat sig (steg 10.2.55, ui/stalle.ts)
     const st = stalle(s, { ligger, gor, x: q.x, y: q.y, vidBank, rorde: gar(p.id) }), sitter = st === 'sitta'; // (platsen i bilden: q är posOf)
     if (sitter && rikt === 'bak') rikt = 'fram';
     // stå vid arbetet (steg 10.2.78): på en ruta intill arbetsrutan och vänd mot den
     const va = !ligger ? vidArbetet(s, gor, q.x, q.y, samRuta) : undefined;
     if (va) { x = va.x * TS; y = va.y * TS; rikt = va.rikt; }
+    // vänd mot bänken (steg 12.1.154): den som arbetar vid en station är vänd mot den, inte åt det håll hen gick, och
+    // arbetets rörelse vänder hen inte bort från rutan eller stationen
+    const vs = !ligger && !vidBank && !va && st !== 'ga' ? vidStationen(s, gor, q.x, q.y) : undefined;
+    if (vs) rikt = vs.rikt;
+    const vand = !!(va || vs);
     if (vidBank) { rikt = 'bak'; x = (bank!.x + storlekAv(bank!).w / 2) * TS; y = (bank!.y + storlekAv(bank!).h) * TS + TS / 2 - r * 0.9; }
     // arbetet i bild (steg 5.1.9.4, ui/arbetsbild.ts): rörelsen från sidan, en bild per slag, förskjutet per person
     const strid = gor === 'strid' && !ligger && !kk?.bar ? stridNu(p) : undefined; // den som bär en fallen slåss inte (steg 12.1.87)
     const arb = strid ? STRIDBILD[strid.vapen] ?? STRIDBILD.hand : !ligger && (!sitter || vidBank) && gor && (gor === 'bygga' || !barNagot) ? ARBETEN[gor] : undefined; // byggaren har materialet i händerna medan hen bygger (steg 9.2.90)
     const ab = arb ? arbetsBild(arb, strid?.ruta ?? slag() + p.id) : undefined; // i striden på kartan styr slaget rörelsen, inte klockan
     if (strid?.mot) rikt = strid.mot.x < q.x ? 'vast' : 'sida'; // vänd mot motståndaren (steg 5.1.9.5)
-    else if (ab && !vidBank && rikt !== 'sida' && rikt !== 'vast') rikt = p.id % 2 ? 'vast' : 'sida';
+    else if (ab && !vidBank && !vand && rikt !== 'sida' && rikt !== 'vast') rikt = p.id % 2 ? 'vast' : 'sida';
     const steg = st === 'ga' ? GANG[(slag() + p.id) % 4] : undefined;
     const ben: Ben = sitter ? 'sitta' : ab ? ab.ben : steg ? steg[0] : 'sta';
     let arm: Arm = barNagot && gor !== 'bygga' ? 'bara' : gor && SLA.has(gor) ? 'sla' : gor === 'station' ? 'framfor' : 'hanga';
@@ -460,6 +472,7 @@ export function drawPeople(t: number) {
     if (arb && ab && hand) ritaArbete(peopleG, arb, ab.b, sp.position.x + hand[0], sp.position.y + hand[1], rikt === 'vast' ? -1 : 1, 1);
     sp.zIndex = y + r * 0.9 + (kk?.buren ? 1 : 0); // fötterna (ordningen söderut, steg 5.1.4.5); den som bärs framför bäraren
     huvud.set(p.id, sang ? sp.position.y - h / 2 : sp.position.y);
+    figurFot.set(p.id, { x: sp.position.x + w / 2, y: sang ? sp.position.y + h / 2 : Math.round(sp.zIndex) });
     if (!ligger) fotSkugga(skugga, x - 4, Math.round(sp.zIndex) - 1, 4, 2, skuggLangd());
     sp.visible = true; sedd.add(p.id);
     // den som brinner (steg 6.4.16): Björns val i bildstilen (f6_brinner, den vänstra figuren, steg 8.10.1): sex lågor på
@@ -538,6 +551,8 @@ export function drawPeople(t: number) {
   }
   markIcons.end();
   let n = 0;
+  const stora = new Set<number>(), upptaget: { x: number; y: number; w: number; h: number }[] = [];
+  rollIkoner.start();
   for (const p of [byId(s, ui.selected), ui.hovered !== ui.selected ? byId(s, ui.hovered) : undefined]) {
     if (!p || !paKartan(p)) continue; // den som är borta från byn (steg 11.2.3) har inget namn på kartan
     const tx = nameTags[n++];
@@ -545,8 +560,34 @@ export function drawPeople(t: number) {
     // namnet ovanför figuren, det hen bär på huvudet och symbolen över huvudet (steg 9.2.27), så att det inte täcker figuren
     // eller den som står bredvid
     const q = posOf(p), topp = huvud.get(p.id) ?? q.y * TS - 13; tx.position.set(q.x * TS, topp - SYMBOL_LUFT - 6); tx.visible = true;
+    stora.add(p.id); upptaget.push({ x: q.x * TS - tx.width / 2, y: tx.position.y - tx.height, w: tx.width, h: tx.height });
+    const roll = rollAv(s, p); // rollens symbol till vänster om namnet (steg 12.1.157)
+    if (roll && hasIcon(roll.ikon)) rollIkoner.add(roll.ikon, Math.round(q.x * TS - tx.width / 2 - SKYLT.ikon - 1), Math.round(tx.position.y - tx.height / 2 - SKYLT.ikon / 2), 1);
   }
   for (; n < nameTags.length; n++) nameTags[n].visible = false;
+  // namnen vid alla andra (steg 12.1.157, ui/namnskyltar.ts): i liten text under fötterna, med rollens symbol till vänster, och
+  // gömda när kartan är utzoomad eller när de skulle täcka varandra
+  const skyltar: Skylt[] = [];
+  for (const p of ppl) {
+    const f = figurFot.get(p.id);
+    if (!f || !sedd.has(p.id) || stora.has(p.id) || !paKartan(p)) continue;
+    let tx = smaNamn.get(p.id);
+    if (!tx) { tx = new PIXI.Text('', smaStyle); tx.scale.set(0.5); tx.anchor.set(0.5, 1); labels.addChild(tx); smaNamn.set(p.id, tx); }
+    if (tx.text !== p.name) tx.text = p.name;
+    const roll = rollAv(s, p);
+    skyltar.push({ id: p.id, x: f.x, y: f.y + 1 + SKYLT.hojd, w: tx.width, ikon: roll && hasIcon(roll.ikon) ? roll.ikon : undefined, forst: roll ? 1 : 0 });
+  }
+  const syns = synligaSkyltar(skyltar, world.scale.x, upptaget);
+  for (const k of skyltar) {
+    const tx = smaNamn.get(k.id)!;
+    tx.visible = syns.has(k.id);
+    if (!tx.visible) continue;
+    const iw = k.ikon ? SKYLT.ikon + 1 : 0, x0 = k.x - (k.w + iw) / 2;
+    tx.position.set(x0 + iw + k.w / 2, k.y);
+    if (k.ikon) rollIkoner.add(k.ikon, Math.round(x0), Math.round(k.y - SKYLT.ikon), 1);
+  }
+  rollIkoner.end();
+  for (const [id, tx] of smaNamn) if (!sedd.has(id) || stora.has(id)) { if (!sedd.has(id)) { tx.destroy(); smaNamn.delete(id); } else tx.visible = false; }
   let b = 0;
   for (const p of living(s)) {
     const kvar = tidKvar(p);

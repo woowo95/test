@@ -58,6 +58,9 @@ export const PAL: Record<string, Record<string, string>> = {
   skogsvard: { k: '#3f2415', j: '#5e3c24', g: '#4b4f00', G: '#647025', L: '#898b4c', b: '#dad0bb', o: '#24201d' },
   // ledarskapet: ledaren och folket (Björn valde version 3 efter v193, steg 3.10.13)
   ledarskap: { o: '#24201d', a: '#d8b25f', b: '#61767a' },
+  // rollernas symboler vid namnet på kartan (steg 12.1.157, platshållare)
+  roll_ledare: { o: '#24201d', a: '#d8b25f' },
+  roll_prast: { o: '#24201d', a: '#d8b25f' },
   // grödorna från fälten och grodden på fältet (steg 2.10.3, platshållare i bildstilens palett)
   grodd: { G: '#647025', L: '#898b4c', g: '#4b4f00' },
   grodd_liten: { G: '#647025', L: '#898b4c', g: '#4b4f00', j: '#7d5b40' },
@@ -1126,6 +1129,28 @@ export const PIX: Record<string, string[]> = {
     '..ooGGoo........',
     '....oo..........',
     '................',
+  ],
+  // rollernas symboler vid namnet på kartan (steg 12.1.157, platshållare, 8 × 8 punkter i hel skala): ledaren med armarna ut
+  // och prästens solhjul
+  roll_ledare: [
+    '..oooo..',
+    '..oaao..',
+    'o.oaao.o',
+    'oaoaaoao',
+    '.oaaaao.',
+    '..oaao..',
+    '..oaao..',
+    '..o..o..',
+  ],
+  roll_prast: [
+    '..oooo..',
+    '.oaaaao.',
+    'oaoaaoao',
+    'oaaaaaao',
+    'oaaaaaao',
+    'oaoaaoao',
+    '.oaaaao.',
+    '..oooo..',
   ],
   // ledarskapet: ledaren med armarna ut mellan två mindre (Björn valde version 3 efter v193, steg 3.10.13)
   ledarskap: [

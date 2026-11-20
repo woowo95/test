@@ -64,6 +64,13 @@ export const NOTISER: Record<string, { slag: NotisSlag; rubrik: string; vikt: nu
   retat: { slag: 'fara', rubrik: 'Uppretade bin', vikt: 2 }, // ett bo som retats upp och den som dött av bistick (steg 10.10.27)
   bin: { slag: 'framsteg', rubrik: 'Bina', vikt: 2 }, // byns första bisamhälle (steg 10.10.17) och ett samhälle som dör (steg 10.10.18)
   smitta: { slag: 'fara', rubrik: 'En smitta i byn', vikt: 3 }, // det första fallet av en sjukdom som smittar
+  // de nya systemen (steg 12.1.137)
+  dom: { slag: 'folk', rubrik: 'En dom', vikt: 2 }, // tinget eller ledaren dömde någon (styre.ts)
+  avrattning: { slag: 'dod', rubrik: 'En avrättning', vikt: 3 }, // någon dömdes till döden (styre.ts)
+  lag: { slag: 'folk', rubrik: 'En ny lag', vikt: 2 }, // byn stiftade en lag (lagar.ts)
+  tro: { slag: 'folk', rubrik: 'En ny tro', vikt: 2 }, // en tro grundades i byn (religion.ts)
+  skord: { slag: 'framsteg', rubrik: 'Den första skörden', vikt: 2 }, // byn skördade sitt första fält (odling.ts)
+  tamdjur: { slag: 'framsteg', rubrik: 'Det första tamdjuret', vikt: 2 }, // byn fick sitt första tamdjur (tamdjur.ts)
 };
 export const NOTIS = {
   max: 300, // högst så många notiser sparas; den äldsta lästa (annars den äldsta) tas bort när det blir fler

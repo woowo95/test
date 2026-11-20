@@ -9,7 +9,7 @@ import { balans } from './balans';
 import { antal } from './ord';
 import { gruppOf } from './saker';
 import { BRAND, brandLjus } from './brand';
-import { eldXY, eldarOf, fireHeat, nagonEld } from './eld';
+import { eldXY, eldarOf, fireHeat, nagonEld, emberOn } from './eld';
 import { roomAt } from './byggnad';
 import { ACTS } from './handlingar';
 import { lightLevel } from './tid';
@@ -23,14 +23,18 @@ import { byId, alive, count, forstaGang, living, log } from './folk';
 
 export const MORKER = balans('morker', {
   fart: 0.6, // den som är vaken i totalmörker går och arbetar så här fort
-  eldR: 6, // en eld som brinner för fullt lyser så här många rutor bort ...
+  skenFart: 0.8, // ... och i det svaga skenet utanför en ljuskällas räckvidd (MORKER.skenUt) så här fort (steg 12.1.177)
+  // ljusets räckvidd (steg 12.1.169): cirkeln där folk kan arbeta är samma cirkel som syns i bilden (ui/terrang.ts läser talen)
+  eldR: 14, // en eld som brinner för fullt lyser så här många rutor bort ...
   branningR: 2, // en kolmila eller blästerugn som brinner lyser lite, så här många rutor bort (steg 12.2.1 och 12.2.3)
   eldMin: 0.5, // ... och en liten eld så här stor del av det
+  glodR: 1.5, // glöden som är kvar när elden slocknat lyser så här många rutor
+  skenUt: 0.25, // skenet i bilden fortsätter svagt så här stor del av räckvidden utanför den (steg 12.1.172); där räcker ljuset inte att arbeta i
 });
 // facklan (steg 6.3.6)
 export const FACKLA = balans('fackla', {
   brinnTim: 5, // en fackla brinner så här många timmar innan den brunnit ut
-  r: 4, // ... och lyser så här många rutor bort
+  r: 12, // ... och lyser så här många rutor bort, nästan som elden (steg 12.1.176)
 });
 
 // de uppsatta facklorna (steg 6.3.7)
@@ -49,10 +53,10 @@ export const LJUSKALLOR = {
   eld: { namn: 'Elden', kallor: s => {
     const ut: Ljuspunkt[] = [];
     for (const f of eldarOf(s)) {
-      const I = fireHeat(s, f);
-      if (!I) continue;
+      const r = eldRackvidd(s, f);
+      if (!r) continue;
       const e = eldXY(s, f);
-      ut.push({ x: e.x + 0.5, y: e.y + 0.5, r: MORKER.eldR * (MORKER.eldMin + (1 - MORKER.eldMin) * I), rum: roomAt(s, e.x, e.y) });
+      ut.push({ x: e.x + 0.5, y: e.y + 0.5, r, rum: roomAt(s, e.x, e.y) });
     }
     return ut;
   } },
@@ -70,6 +74,12 @@ export const LJUSKALLOR = {
   uppsatt: { namn: 'Uppsatta facklor', kallor: s => (s.uppsatta ?? []).filter(u => u.tand).map(u => ({ x: u.x + 0.5, y: u.y + 0.5, r: FACKLA.r, rum: roomAt(s, u.x, u.y) })) }, // inne lyser den upp rummet (steg 9.2.11)
 } satisfies Record<string, Ljuskalla>;
 const KALLOR = Object.values(LJUSKALLOR) as Ljuskalla[];
+// hur långt en eld lyser just nu (steg 12.1.169): en som brinner efter hur het den är, glöden lite, en släckt inte alls.
+// Samma tal ger arbetsljuset här och skenet i bilden (ui/terrang.ts)
+export function eldRackvidd(s: State, f: Parameters<typeof fireHeat>[1]) {
+  const I = fireHeat(s, f);
+  return I > 0 ? MORKER.eldR * (MORKER.eldMin + (1 - MORKER.eldMin) * I) : emberOn(s, f) ? MORKER.glodR : 0;
+}
 
 // hur ljust det är på platsen från ljuskällorna (0–1; dagsljuset räknas inte). utan = den vars egen fackla inte räknas
 export function ljusAt(s: State, x: number, y: number, utan?: number) {
@@ -84,8 +94,16 @@ export function ljusAt(s: State, x: number, y: number, utan?: number) {
 }
 // totalmörker på platsen: natt och inget ljus där
 export const iMorker = (s: State, x: number, y: number) => lightLevel(s.now) <= 0 && ljusAt(s, x, y) <= 0;
-// gången och arbetet gånger detta
-export const morkFart = (s: State, p: Person) => iMorker(s, p.x, p.y) ? MORKER.fart : 1;
+// i det svaga skenet (steg 12.1.177): utanför varje ljuskällas räckvidd men inom MORKER.skenUt av den utanför, som bilden ritar
+export function iSkenet(s: State, x: number, y: number, utan?: number) {
+  for (const k of KALLOR) for (const l of k.kallor(s)) {
+    if (utan !== undefined && l.bar === utan) continue;
+    if (Math.hypot(x - l.x, y - l.y) < l.r * (1 + MORKER.skenUt)) return true;
+  }
+  return false;
+}
+// gången och arbetet gånger detta: full takt i ljuset, MORKER.skenFart i det svaga skenet och MORKER.fart i totalmörker
+export const morkFart = (s: State, p: Person) => !iMorker(s, p.x, p.y) ? 1 : iSkenet(s, p.x, p.y) ? MORKER.skenFart : MORKER.fart;
 // en gång i timmen (steg.ts): den som är vaken i mörkret får lite sämre humör en stund
 export function morkHumor(s: State, p: Person) {
   if (p.task && ACTS[p.task.act]?.vila) return;
@@ -227,7 +245,7 @@ export function finishUppsatt(s: State, p: Person, tk: { tx: number; ty: number 
 export const LJUS = balans('talgljus', {
   brinnTim: 8, // ett talgljus brinner så här många timmar
   vaxTim: 16, // ... och ett vaxljus (steg 10.10.24)
-  r: 2, // ... och lyser så här långt utanför rummet (inne lyser det upp hela rummet)
+  r: 5, // ... och lyser så här långt utanför rummet (inne lyser det upp hela rummet; steg 12.1.169)
   min: 5, // minuter att ställa fram ett
   oljaTim: 12, // en oljelampa brinner så här många timmar på en brännolja (steg 12.4.2) ...
   fyllMin: 1, // ... och att fylla på den tar så här många minuter

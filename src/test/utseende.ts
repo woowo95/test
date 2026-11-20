@@ -51,10 +51,23 @@ const req = createRequire(import.meta.url);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { chromium } = req('playwright') as any;
 const palett = [...new Set([...FARGER, ...MORKARE.flat()])].map(h => parseInt(h.slice(1), 16));
+// ljusets övergång (steg 12.1.170): färgen blandas steglöst mellan två steg av mörker av samma palettfärg, och de färgerna
+// räknas inte som fel. Paren är varje färg och samma färg ett steg mörkare
+const hex = (h: string) => parseInt(h.slice(1), 16);
+const steglos = FARGER.flatMap((_, i) => MORKARE.slice(0, -1).map((m, k) => [hex(m[i]), hex(MORKARE[k + 1][i])]));
 // mätningen i sidan, som text (tsx lägger annars till hjälpfunktioner som sidan inte har): bilderna i världen som inte
 // ritas i hel skala med skarpa punkter, och punkterna på skärmen med en färg utanför paletten (namnskyltarna döljs medan)
-const MATA = `pal => {
-  const by = window.__byn, app = by.app, world = by.world, P = new Set(pal), skalor = {}, text = [];
+const MATA = `(pal, par) => {
+  const by = window.__byn, app = by.app, world = by.world, P = new Set(pal), skalor = {}, text = [], blandad = new Map();
+  // en färg mellan två steg av samma palettfärg (ljusets steglösa övergång, steg 12.1.170)
+  const mellan = c => { let v = blandad.get(c); if (v !== undefined) return v; v = false;
+    const r = c >> 16, g = (c >> 8) & 255, b = c & 255;
+    for (const [x, y] of par) { const xr = x >> 16, xg = (x >> 8) & 255, xb = x & 255, dr = (y >> 16) - xr, dg = ((y >> 8) & 255) - xg, db = (y & 255) - xb, n = dr * dr + dg * dg + db * db;
+      if (!n) continue; const t = ((r - xr) * dr + (g - xg) * dg + (b - xb) * db) / n;
+      if (t < -0.01 || t > 1.01) continue;
+      if (Math.abs(xr + t * dr - r) <= 2 && Math.abs(xg + t * dg - g) <= 2 && Math.abs(xb + t * db - b) <= 2) { v = true; break; } }
+    blandad.set(c, v); return v; };
+  let iOvergang = 0;
   const ga = c => {
     for (const ch of c.children || []) {
       if (!ch.visible) continue;
@@ -77,20 +90,21 @@ const MATA = `pal => {
     if (px[i + 3] < 255) continue;
     ritade++;
     const c = (px[i] << 16) | (px[i + 1] << 8) | px[i + 2];
+    if (!P.has(c) && mellan(c)) { iOvergang++; continue; }
     if (!P.has(c)) { utanfor++; const k = '#' + c.toString(16).padStart(6, '0'); ex[k] = (ex[k] || 0) + 1; const q = i / 4, x = q % W, y = Math.floor(q / W), r = Math.floor(x / 40) + ',' + Math.floor(y / 40); rutor[r] = (rutor[r] || 0) + 1; }
   }
   const topp = Object.entries(ex).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => k + ' ' + n);
   // LAGER=1: vilket lager punkterna kommer från (hur många som försvinner när lagret döljs)
   const lager = [];
   if (window.__lager) {
-    const rakna = () => { const q = app.renderer.extract.pixels(app.stage, app.screen); let n = 0; for (let i = 0; i < q.length; i += 4) if (q[i + 3] === 255 && !P.has((q[i] << 16) | (q[i + 1] << 8) | q[i + 2])) n++; return n; };
+    const rakna = () => { const q = app.renderer.extract.pixels(app.stage, app.screen); let n = 0; for (let i = 0; i < q.length; i += 4) { const c = (q[i] << 16) | (q[i + 1] << 8) | q[i + 2]; if (q[i + 3] === 255 && !P.has(c) && !mellan(c)) n++; } return n; };
     const alla = [...app.stage.children.map((c, i) => ['scen ' + i, c]), ...world.children.map((c, i) => ['värld ' + i, c]), ...(world.children[0].children || []).map((c, i) => ['mörk ' + i, c])];
     text.forEach(t => { t.visible = false; });
     for (const [namn, c] of alla) { if (!c.visible) continue; c.visible = false; const n = rakna(); c.visible = true; if (n < utanfor) lager.push(namn + ' (' + (c.constructor && c.constructor.name) + ') ' + (utanfor - n)); }
     text.forEach(t => { t.visible = true; });
   }
   const var_ = Object.entries(rutor).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, n]) => k.split(',').map(v => v * 40 / app.renderer.resolution).join(',') + ' ' + n);
-  return { varld: world.scale.x * app.renderer.resolution, lager, var: var_, skalor, utanfor, ritade, topp, klocka: (document.getElementById('calTime') || {}).textContent, nu: new Date().toString(), by: new Date(by.s.now).toString() };
+  return { iOvergang, varld: world.scale.x * app.renderer.resolution, lager, var: var_, skalor, utanfor, ritade, topp, klocka: (document.getElementById('calTime') || {}).textContent, nu: new Date().toString(), by: new Date(by.s.now).toString() };
 }`;
 
 async function main() {
@@ -121,10 +135,10 @@ async function main() {
       await pg.clock.runFor(SPELA_MS);
       await pg.waitForTimeout(1500);
       await pg.screenshot({ path: `${MAPP}/${f.namn}-${sk.namn}${lg.fil}.png`, timeout: 120000 }); // mobilens bild är stor
-      const r = await pg.evaluate(`(${MATA})(${JSON.stringify(palett)})`) as { varld: number; skalor: Record<string, number>; utanfor: number; ritade: number; topp: string[]; var: string[]; lager: string[]; klocka: string; nu: string; by: string };
+      const r = await pg.evaluate(`(${MATA})(${JSON.stringify(palett)}, ${JSON.stringify(steglos)})`) as { iOvergang: number; varld: number; skalor: Record<string, number>; utanfor: number; ritade: number; topp: string[]; var: string[]; lager: string[]; klocka: string; nu: string; by: string };
       if (process.env.DEBUG) console.log(new Date(t).toString(), '|', r.nu, '|', r.by, '|', r.klocka, '\n   var (x,y i skärmpunkter):', r.var.join('; '));
       const andel = r.ritade ? r.utanfor / r.ritade : 1;
-      const rad = `${f.namn.padEnd(14)} ${sk.namn.padEnd(6)} ${lg.namn.padEnd(5)} ${(andel * 100).toFixed(2).padStart(6)} % utanför paletten (${r.utanfor} av ${r.ritade} punkter)${r.topp.length ? ': ' + r.topp.join(', ') : ''}`;
+      const rad = `${f.namn.padEnd(14)} ${sk.namn.padEnd(6)} ${lg.namn.padEnd(5)} ${(andel * 100).toFixed(2).padStart(6)} % utanför paletten (${r.utanfor} av ${r.ritade} punkter; ${r.iOvergang} i ljusets steglösa övergång)${r.topp.length ? ': ' + r.topp.join(', ') : ''}`;
       console.log(rad);
       const nya = Object.keys(r.skalor);
       if (nya.length) console.log('   skala som inte är hel:', nya.map(k => `${k} ×${r.skalor[k]}`).join(', '));

@@ -76,3 +76,23 @@
     ]),
   ] });
 })();
+
+// fas 12: rollernas symboler vid namnet på kartan (steg 12.1.157). Varje kolonist har sitt namn i liten text under figuren,
+// och den som har en roll en symbol på 8 × 8 punkter till vänster om namnet, i hel skala. Visas på gräset med en mörk rand
+// där namnet står. Ritade av programmeringschatten.
+(() => {
+  const PAL = { o: '#24201d', a: '#d8b25f', r: '#a14808', y: '#d8b25f', b: '#61767a', w: '#dad0bb' };
+  const VID_NAMNET = (text, rader) => ({ text, w: 40, h: 16, rita: (B, P) => {
+    const g = P.i('oliv', 2); for (let y = 0; y < 16; y++) for (let x = 0; x < 40; x++) B.satt(x, y, g);
+    rader.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') B.satt(4 + x, 4 + y, P.av(PAL[ch])); }));
+    for (let x = 14; x < 36; x++) for (let y = 5; y < 11; y++) B.satt(x, y, P.av(y === 5 || y === 10 ? '#24201d' : (x % 4 === 3 ? '#24201d' : '#dad0bb'))); // namnet som en rand
+  } });
+  VAL.push({ id: 'f12_roll_prast', namn: 'Prästens symbol vid namnet', typ: 'tre', slag: ['symbol'], vad: 'Steg 12.1.157: varje kolonist har sitt namn i liten text på kartan, och prästen får en liten symbol till vänster om namnet, 8 × 8 punkter. I spelet är den nu ett guldhjul (platshållare). Bilden visar symbolen på gräset och namnet som en ljus rand bredvid.', versioner: [
+    VID_NAMNET('Solhjulet: en guldskiva med fyra skåror, som solen tron ofta ber till.', ['..oooo..', '.oaaaao.', 'oaoaaoao', 'oaaaaaao', 'oaaaaaao', 'oaoaaoao', '.oaaaao.', '..oooo..']),
+    VID_NAMNET('Huvan: prästen själv, ett huvud i huva och en mantel som vidgas nedåt.', ['...oo...', '..oaao..', '.oaooao.', '.oaooao.', '..oaao..', '.oaaaao.', 'oaaaaaao', 'oooooooo']),
+    VID_NAMNET('Offerskålen: en skål med en låga i, det prästen bär fram vid blotet.', ['...oo...', '..orro..', '..oyyo..', '.oyrryo.', 'oooooooo', 'oaaaaaao', '.oaaaao.', '..oooo..']),
+  ] });
+  VAL.push({ id: 'f12_roll_ledare', namn: 'Ledarens symbol vid namnet', typ: 'janej', vad: 'Steg 12.1.157: ledaren får en liten symbol till vänster om namnet på kartan. Det är ledarskapets symbol (ledaren med armarna ut) i 8 × 8 punkter, så att den ritas i hel skala bredvid den lilla texten.', versioner: [
+    VID_NAMNET('Ledaren med armarna ut, i guld, i 8 × 8 punkter.', ['..oooo..', '..oaao..', 'o.oaao.o', 'oaoaaoao', '.oaaaao.', '..oaao..', '..oaao..', '..o..o..']),
+  ] });
+})();

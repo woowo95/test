@@ -11,6 +11,7 @@ import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 import { lyssnaPaTexter } from '../sim/berattelser';
 import { gastLever } from '../sim/gast';
 import { radVakt } from '../sim/rad';
+import { kronikaKat } from '../sim/historik';
 import { gangLangsam, gangVakt } from '../sim/gang';
 import { kollaText, konI, titta } from './textkoll';
 export const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
@@ -128,6 +129,14 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
 const decimal = (v: number) => Math.abs(v - Math.round(v)) > 1e-6;
 type Larm = (typ: string, text: () => string) => void;
 const fin = (v: number | undefined) => v === undefined || Number.isFinite(v);
+const kronikaSedd = new WeakMap<State, number>(); // så många rader i krönikan som vakten prövat
+// krönikans kategorier (steg 12.1.137): varje rad i krönikan har ett slag med en kategori i KRONIKA_KAT, så att ingen rad
+// hamnar utanför filtren. Raderna läggs i tidsordning, så de sista några prövas igen varje gång (scenariot kronikakat2 prövar den)
+export function kronikaVakt(s: State, larm: (typ: string, text: () => string) => void) {
+  const kr = s.hist?.kronika ?? [], fr = Math.max(0, (kronikaSedd.get(s) ?? 0) - 20);
+  for (let i = fr; i < kr.length; i++) if (!kronikaKat(kr[i][2])) larm('krönikerad utan kategori', () => `${kr[i][2] ?? 'inget slag'}: ${kr[i][1]}`);
+  kronikaSedd.set(s, kr.length);
+}
 function vakta(s: State, larm: Larm, timme: boolean) {
   const lever = new Set<number>(), finns = new Map<number, Person>();
   for (const p of s.people) { finns.set(p.id, p); if (alive(p)) lever.add(p.id); }
@@ -146,6 +155,9 @@ function vakta(s: State, larm: Larm, timme: boolean) {
   if (!Number.isFinite(f.fuel) || f.fuel < 0) larm('eldens bränsle', () => `fuel ${f.fuel}`);
   if (s.delning && !Number.isFinite(s.delning.andel)) larm('delning', () => JSON.stringify(s.delning));
   if (!timme) return;
+  // krönikans kategorier (steg 12.1.137): varje rad i krönikan har ett slag med en kategori i KRONIKA_KAT, så att ingen rad
+  // hamnar utanför filtren. Raderna läggs i tidsordning, så de sista några prövas igen varje timme
+  kronikaVakt(s, larm);
   // en gång i timmen: ägare, redskap, stackar och hus
   const ids = new Set<number>();
   for (const t of s.ting ?? []) {

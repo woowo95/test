@@ -3,6 +3,7 @@
 // TAS_UPP, efter prioritet (steg 8.4.5). En lag läser spelet med `lagGaller`; ett brott i `doma` (styre.ts) får straffet i lagen.
 import { HOUR, Person, State } from './typer';
 import { byId } from './folk';
+import { notis } from './notiser';
 import { balans } from './balans';
 import { clamp } from './slump';
 import { ALDER, ageOf, count, living, log, relKey } from './folk';
@@ -204,7 +205,7 @@ FRAGOR.nylag = {
     (st.lagar ??= []).push({ id, t: s.now, straff: startStraff(s, id), av: fram?.id ?? -1, om: def.om ?? '' });
     count(s, 'lag_ny');
     const t = `Byn stiftade en lag: ${def.namn.toLowerCase()}.`;
-    log(s, t, 'world', fram ? [fram.id] : []); kronika(s, t, 'ledare');
+    log(s, t, 'world', fram ? [fram.id] : []); kronika(s, t, 'ledare'); notis(s, 'lag', t, fram ? [fram.id] : []); // (steg 12.1.137)
   },
 };
 FRAGOR.bortlag = {

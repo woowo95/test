@@ -19,6 +19,16 @@ export const GRAFER: Record<string, Graf> = { // i den ordning de står i Byns t
   eld: { namn: 'Trä på elden', serier: [{ tal: 'eld', farg: 'rost' }] },
   forrad: { namn: 'Förrådet', serier: [{ tal: 'mat', farg: 'oliv' }, { tal: 'tra', farg: 'jord' }], enhet: 'st' },
   rik: { namn: 'Byns rikedom', serier: () => rikSerier(), enhet: 'rik', topp: () => rikTopp() },
+  // fler grafer (steg 12.1.138)
+  silver: { namn: 'Silver i byn', serier: [{ tal: 'silver', farg: 'skiffer' }], enhet: 'st', forkl: 'Hur mycket silver som ligger i byns förråd.' },
+  tamdjur: { namn: 'Tamdjur', serier: [{ tal: 'tamdjur', farg: 'jord' }], enhet: 'st', forkl: 'Hur många tamdjur byn har: hundarna, fåren, getterna, korna och de andra.' },
+  skord: { namn: 'Skörd', serier: [{ tal: 'skord', farg: 'oliv' }], enhet: 'st', forkl: 'Hur mycket mat fälten gett sedan byns början.' },
+  sjuka: { namn: 'Sjuka', serier: [{ tal: 'sjuka', farg: 'rost' }], enhet: 'st', forkl: 'Hur många som är sjuka och har tecken på det.' },
+  troende: { namn: 'Troende', serier: [{ tal: 'troende', farg: 'senap' }], enhet: 'st', forkl: 'Hur många som har en tro.' },
+  fangar: { namn: 'Fångar', serier: [{ tal: 'fangar', farg: 'jord' }], enhet: 'st', forkl: 'Hur många som sitter fångna i byn.' },
+  strider: { namn: 'Strider', serier: [{ tal: 'strider', farg: 'rost' }], enhet: 'st', forkl: 'Hur många strider det varit i byn sedan dess början: mot rövare, vargar och björnar, holmgångar och slagsmål.' },
+  resor: { namn: 'Resor', serier: [{ tal: 'resor', farg: 'skiffer' }], enhet: 'st', forkl: 'Hur många sällskap som rest ut i världen och kommit hem sedan byns början.' },
+  bocker: { namn: 'Böcker', serier: [{ tal: 'bocker', farg: 'senap' }], enhet: 'st', forkl: 'Hur många böcker byn börjat skriva sedan dess början.' },
   matlagning: { namn: 'Matlagningen', serier: [{ tal: 'grillat', farg: 'senap' }, { tal: 'brant', farg: 'rost' }], enhet: 'st', forkl: 'Hur mycket mat som grillas och hur mycket som bränns vid elden. En ovan kock bränner mer, och den som lagat mat länge bränner mindre.' }, // det som grillats och bränts (steg 9.2.62)
 };
 

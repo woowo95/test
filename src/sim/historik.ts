@@ -10,6 +10,8 @@ import { formogenheter, rikedomDelar } from './varde';
 import { SAK_LIST, isTool } from './saker';
 import { tingOf } from './agande';
 import { samhallen } from './bin';
+import { tamdjurOf } from './tamdjur';
+import { isSick } from './sjukdom';
 
 // ---------- byns historik ----------
 // Några nyckeltal sparas en gång i timmen (en timme är ca 15 dagar i spelet). Efter en vecka (en tidsålder) slås
@@ -37,6 +39,16 @@ export const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; va
   { id: 'grillat', namn: 'Grillat sedan byns början', hur: 'sist', varde: s => Math.round((s.stat?.grillat as number) ?? 0) },
   { id: 'brant', namn: 'Bränt sedan byns början', hur: 'sist', varde: s => Math.round((s.stat?.brant as number) ?? 0) },
   { id: 'bisamhallen', namn: 'Bisamhällen', hur: 'sist', varde: s => samhallen(s).length }, // steg 10.10.17
+  // fler grafer i Byns tal (steg 12.1.138): hur många det finns just då, och det som räknas sedan byns början i byns statistik
+  { id: 'silver', namn: 'Silver i byn', hur: 'snitt', varde: s => amountOf(s, 'silver') },
+  { id: 'tamdjur', namn: 'Tamdjur', hur: 'snitt', varde: s => tamdjurOf(s).length },
+  { id: 'sjuka', namn: 'Sjuka', hur: 'snitt', varde: s => living(s).filter(p => isSick(p, s.now)).length },
+  { id: 'troende', namn: 'Troende', hur: 'snitt', varde: s => living(s).filter(p => p.tro !== undefined).length },
+  { id: 'fangar', namn: 'Fångar', hur: 'snitt', varde: s => living(s).filter(p => p.fange).length },
+  { id: 'skord', namn: 'Skördat sedan byns början', hur: 'sist', varde: s => Math.round((s.stat?.skord as number) ?? 0) },
+  { id: 'strider', namn: 'Strider sedan byns början', hur: 'sist', varde: s => (s.stat?.strider as number) ?? 0 },
+  { id: 'resor', namn: 'Resor sedan byns början', hur: 'sist', varde: s => (s.stat?.['resa hemma'] as number) ?? 0 },
+  { id: 'bocker', namn: 'Böcker sedan byns början', hur: 'sist', varde: s => (s.stat?.bocker as number) ?? 0 },
 ];
 
 const ny = (): Historik => ({ tal: HISTORIK_TAL.map(t => t.id), tim: [], dygn: [], kronika: [] });

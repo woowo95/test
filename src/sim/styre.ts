@@ -545,6 +545,8 @@ function doma(s: State, l: Person) {
     count(s, 'straff'); count(s, 'straff_' + steg);
     log(s, `${l.name} ${STRAFF_REG[steg].nu} ${q.name} för att ${hon(q)} ${brottText(b)}.`, 'rel', [l.id, q.id]);
     if (steg !== 3 && steg !== 6) kronikaBer(s, 'k_ratt', q.id, { ...personFalt(q), ledare: l.name, brott: brottText(b), straff: STRAFF_REG[steg].nu }); // tinget dömde (steg 12.1.135); utvisningen och döden har sina rader
+    if (steg === 6) notis(s, 'avrattning', `${q.name} avrättades. ${l.name} dömde ${q.sex === 'k' ? 'henne' : 'honom'} till döden för att ${hon(q)} ${brottText(b)}.`, [q.id, l.id]); // (steg 12.1.137)
+    else notis(s, 'dom', `${l.name} ${STRAFF_REG[steg].nu} ${q.name} för att ${hon(q)} ${brottText(b)}.`, [l.id, q.id]);
     allmant(s, q, b, STR.hord, sett); // de som ser straffet får höra om brottet
     tanke(q, 'straffad', now, { namn: l.name, v: -STR.tanke * (steg + 1), tid: STR.tankeDygn * DAY });
     barnTill(s, q, undefined, 'foralderDomd', q.name); // barnen (steg 12.1.133)

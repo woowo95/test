@@ -9,7 +9,7 @@ import { nyKalender } from '../../sim';
 import { BEAT, START, STEG_TIM } from '../kor';
 import { eld as eldFlik } from '../../ui/flikar/eld';
 import { setByn, ui } from '../../ui/lage';
-import { hittaBy, medTal, jaktFran, setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, utanWebblasare, nyInvanare, klockan, medHus, slakteri, bearbetaVid } from './hjalp';
+import { testBy, hittaBy, medTal, jaktFran, setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, utanWebblasare, nyInvanare, klockan, medHus, slakteri, bearbetaVid } from './hjalp';
 
 SCENARIER.glanta = {
   lang: true,
@@ -364,8 +364,10 @@ SCENARIER.uppsatt = {
 
 // steg 9.2.11: utan platser där folk varit vakna i mörker vill byn ändå ha ljus över hela byn, långt från elden, och en fackla
 // inne sitter på väggen och lyser upp rummet
+// En nygrundad by ligger hela inom eldens ljus (steg 12.1.156), så det prövas i en testby som vuxit, utan mörka platser och facklor
 function helaByn(): [string, boolean][] {
-  const s = createState(1, START), e = SIM.eldXY(s, s.fire), m = SIM.morkStalle(s);
+  const s = testBy(10); s.morkPlats = undefined; s.uppsatta = [];
+  const e = SIM.eldXY(s, s.fire), m = SIM.morkStalle(s);
   const iByn = !!m && SIM.iByn(s, m.x, m.y), langt = !!m && Math.hypot(m.x - e.x, m.y - e.y) > SIM.FACKLA.r * 1.5;
   const hus = medHus(s), bit = hus && SIM.bitsOf(s).find(b => b.hus === hus.id && SIM.roomAt(s, b.x, b.y) && [[0, -1], [-1, 0], [1, 0], [0, 1]].some(([dx, dy]) => SIM.isWall(s, b.x + dx, b.y + dy)));
   let inne = false, rum = false;
