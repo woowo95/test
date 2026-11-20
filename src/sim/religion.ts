@@ -79,6 +79,16 @@ export function nyAndlighet(s: State, p: Person, mother?: Person, father?: Perso
   const snitt = (andlighet(s, mother) + andlighet(s, father)) / 2;
   return Math.round(clamp(ANDE.arv * snitt + (1 - ANDE.arv) * egen + gauss(s, 'tro', p) * ANDE.arvSlump, 0, 100));
 }
+// ett barn växer upp i föräldrarnas tro (steg 12.1.22, Religion: Tron får fäste): det föds in i den tro föräldrarna som lever
+// har, och har den som vuxen om inte något hen varit med om (tvivlet, en annan tro, en syn) får hen att lämna den. Tror
+// föräldrarna olika växer barnet upp i den ena, oftare den vars tro är starkast. Drar ur barnets egen följd 'tro'
+export function fodTro(s: State, p: Person, mother?: Person, father?: Person) {
+  const f = [mother, father].filter((q): q is Person => !!q && alive(q) && troOf(s, q.tro) !== undefined);
+  if (!f.length) return;
+  const vikt = (q: Person) => Math.max(1, q.troStyrka ?? 0);
+  const q = f.length === 2 && f[0].tro !== f[1].tro && rnd(s, 'tro', p) * (vikt(f[0]) + vikt(f[1])) >= vikt(f[0]) ? f[1] : f[0];
+  p.tro = q.tro; p.troStyrka = TRO.styrkaNy;
+}
 // andligheten: den man föddes med (alla har en: en äldre sparfil får den i migrate, varld.ts) plus det upplevelserna flyttat
 // (u.n, steg 4.1.1.3), inom 0–100
 export function andlighet(_s: State, p: Person) {

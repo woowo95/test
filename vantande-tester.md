@@ -34,6 +34,11 @@
 - natt-jarn (12.1.1–12.1.3, 12.2.1–12.2.13 och 12.3.1): skyldig koll med nytt facit (myren, torven och isborrens gräns på 30 cm ändrar byarna), likhet (tillsynen, 12.2.2) och balansen (`npm run balans -- 24 35`). 12.2.5 är prövat med `npm run samma`.
 - 18 scenarier var röda på varld redan före ihopslagningarna (39c496fa, efter 12.1.33): kista, handlare, slaktbank, virke, ikoner, symboler, tidsord, borta, varldtillstand, varldslag, forhistoria, kallelse, gomma, handelsresa, vagmote, turne, talt, kyrkanutlyser. De hör till 12.1-stegen från 12.1.9 och rättas innan 12.1 testas med kedjan.
 
+## Grenen par-smatt (12.1.22, 12.1.110, 12.1.153, 12.1.155, 12.1.163, 12.1.165, 12.1.166)
+
+- Committerna på par-smatt har bara typkontrollen och stegens egna scenarier bakom sig. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit när grenen förts in i varld.
+- 12.1.22 (barnet föds in i föräldrarnas tro): ändrar byarna (fler troende, tron dör senare ut). Trons tre balanstal ses över i fasens Balans (12.6.6), som mäter att en tro grundas i de flesta byar med minst 20 vuxna inom 35 dygn och att minst nio av tio vuxna har en tro när byn haft en tro i 20 dygn.
+
 ## Frågor till Björn (från natten till 20 november)
 
 - Benspaden görs inte längre i någon av testbyarna på 50 dygn (50 år i spelet, sju veckor i verkligheten): benen går först till sylen, nålarna och snarorna. Den står nu bland det sällsynta i testet. Ska benen räcka till spaden tidigare (en sak för fasens Balans), eller är det rätt att den kommer sent?
