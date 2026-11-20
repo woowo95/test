@@ -2,7 +2,7 @@
 import { Person, createState, getRel, step, living, temperature, nyKalender, amountOf, bordPlats, bordSlag, ryms, isLight, T, FOOD, ageOf, getMap, HOUR, W, tileOf, stat, bynsMitt, gain, takeFuel, ownsAmount, addTo, setAmount, needLadder, MAT, ownFor, takeMaterial, getable, fuelFor, DELA, spar, isWork, ACTS, groundOf, varmeDelar, nyVarme, varmeRaknas, addTool, stepKlader, chooseTask, iSkugga, KROPP, spotFor, shoreOf, torstDelar, drickPlats, areaOf, halsaLage, describe, halsaSteg, skada, blodning, halsa, rorlighet, workRate, OLYCKOR, Act, GANG, HALSA, kanGa, kroppFaktor, hemma, skadeLista, skadeText, delSkada, FORMAGOR, smarta, handighet, NARINGAR, NARING, naringOf, naringNu, naringSjunker, mattnad, sjunker, bristGrad, bristSteg, berattaBrist, onskan, matOrdning, takeFood, vilaTim, skorbjugg, NARINGBAL, DODSORSAKER, converse, Naring, STATIONER, TEKNIK, tingOf, vaderNu, type Task } from '../../sim';
 import { medvetande } from '../../sim/halsa';
 import { BIN } from '../../sim/bin';
-import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools } from '../../sim';
+import { cloneState, stepIs, stepVader, isCm, vattenGrader, halVal, halMin, drickVal, iIstiden, ageIndex, tidyTools, vilaHellre } from '../../sim';
 import * as SIM from '../../sim';
 import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import { medLagar, medTal, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, bastaJaktruta, SCENARIER, rikBy, tandOchFlinta, vidForradet } from './hjalp';
@@ -186,7 +186,8 @@ SCENARIER.fritid = {
     kor(s, 4 * 24, s => {
       for (const p of living(s)) {
         const t = p.task;
-        if (ageOf(p, s.now) >= 16) { const l = isLight(s.now), v = t?.act === 'vila' ? 1 : 0; if (l) { vila.dag += v; vila.dagN++; } else { vila.natt += v; vila.nattN++; } }
+        // den som vilar för en skada (raden vilaSkadad) räknas inte: det är tröttheten som prövas, och skadorna kommer av striderna
+        if (ageOf(p, s.now) >= 16 && !vilaHellre(p)) { const l = isLight(s.now), v = t?.act === 'vila' ? 1 : 0; if (l) { vila.dag += v; vila.dagN++; } else { vila.natt += v; vila.nattN++; } }
         if (t?.phase !== 'do') continue;
         const c = bynsMitt(s), ny = !sett.has(t); sett.add(t); // varje promenad, bad och stund vid stranden räknas en gång
         if (t.act === 'promenad') { if (ny) prom++; gang.set(p.id, Math.max(gang.get(p.id) ?? 0, Math.hypot(t.tx - c.x - 0.5, t.ty - c.y - 0.5))); }
