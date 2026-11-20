@@ -138,6 +138,8 @@ const ENKLA: Act[] = ['yxa', 'kniv', 'bensyl', 'balte', 'boll', 'benflojt', 'fac
 const TRA_ACT: Partial<Record<keyof typeof RECEPT, Act>> = { leksak: 'gor_leksak', fiskespjut: 'spjut', flintspjut: 'spjut', metspo: 'metspo', slagtra: 'slagtra', mal: 'mal', trumma: 'trumma', slanda: 'slanda', pilar: 'gor_pilar', skold: 'skold', bage: 'bage', lyra: 'lyra', bok: 'bok', krycka: 'krycka', traben: 'traben', krok: 'krok', bagborr: 'bagborr', kalke: 'kalke', slade: 'slade', vagn: 'vagn' };
 const traVid = (b: string, f: (r: ReceptRad) => boolean = () => true) => [...new Set((Object.keys(TRA_ACT) as (keyof typeof RECEPT)[]).filter(k => { const r: ReceptRad = RECEPT[k]; return r.bank === b && f(r); }).map(k => TRA_ACT[k]!))];
 const SNICKAR = traVid('snickarbank');
+// plaggen som görs vid stationen st (PlaggDef.station i klader.ts: hjälmen och brynjan i smedjan, steg 12.2.9)
+const plaggVid = (st: string) => (Object.keys(PLAGG) as Act[]).filter(k => (PLAGG as Record<string, { station?: string }>)[k].station === st);
 // ---------- den vävda mattan (steg 10.7.6, Pynt och smycken: Den vävda mattan) ----------
 // Mattan är ett pynt som ligger på golvet i rummet där ägaren sover, av lintyg eller ylle. Storlekarna är rader i MATTOR; varje
 // storlek finns i båda tygen som en station (matta_<storlek>_<tyg>), och smaken (PYNT_SMAK) är en för alla mattor
@@ -396,7 +398,7 @@ export const STATIONER = {
   // smedjan (steg 12.2.4, smedja.ts): inne, med ässjan som brinner på kol och städet där man arbetar. Allt smide görs bara här
   smedja: {
     delar: [{ namn: 'Ässjan', ikon: 'smedja_assja', w: 2, h: 2 }, { namn: 'Städet', ikon: 'smedja_stad', w: 1, h: 2, arbete: true }],
-    kv: STATION.kvMer, namn: 'Smedja', ikon: 'smedja', w: 3, h: 2, tek: ['smedja'], av: RECEPT.smedja.av, min: RECEPT.smedja.min, inne: true, gor: ['smida'], bara: ['smida'],
+    kv: STATION.kvMer, namn: 'Smedja', ikon: 'smedja', w: 3, h: 2, tek: ['smedja'], av: RECEPT.smedja.av, min: RECEPT.smedja.min, inne: true, gor: ['smida', ...plaggVid('smedja')], bara: ['smida', ...plaggVid('smedja')], fart: Object.fromEntries(plaggVid('smedja').map(a => [a, STATION.redskapFart])),
     bygger: 'Bygger en smedja med ässja och städ.',
     forsta: '{namn} byggde byns första smedja. Järnet i den blev hammaren och tången, och vid städet smids järnet.',
   },
@@ -1705,3 +1707,4 @@ export function stepStationer(s: State) {
 // namnet efter 'byns första': adjektivet i bestämd form ('lilla bord'; steg 4.5.1.4)
 const forstaForm = (namn: string) => namn.toLowerCase().replace(/^litet /, 'lilla ').replace(/^(\p{L}+)at /u, '$1ade ');
 import { iSlag } from './saker';
+import { PLAGG } from './klader';

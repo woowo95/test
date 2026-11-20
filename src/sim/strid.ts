@@ -195,6 +195,7 @@ export const VAPEN = {
   fiskespjut: { skarpa: 0.3, namn: 'Träspjutet', skada: 0.32, takt: 1.3, rack: 1.8, slag: 'stick', ord: 'sticker', tecken: '🔱', kast: { rack: 6, skada: 0.3, skott: 1, fastnar: true, reserv: true } },
   // järnvapnen (steg 12.2.8): järnspjutet, och järnyxan och järnkniven (steg 12.2.6); skärpan får vara över 1
   jarnspjut: { skarpa: 0.8, namn: 'Järnspjutet', skada: 0.55, takt: 1.3, rack: 1.8, slag: 'stick', ord: 'sticker', tecken: '🔱', kast: { rack: 6, skada: 0.5, skott: 1, fastnar: true, reserv: true } },
+  svard: { skarpa: 1.3, namn: 'Svärdet', skada: 0.7, takt: 1.1, rack: 1.3, slag: 'hugg', ord: 'hugger', tecken: '🗡️' }, // vapensmidet (steg 12.2.9)
   jarnyxa: { skarpa: 1.2, namn: 'Järnyxan', skada: 0.6, takt: 1.5, rack: 1.1, slag: 'hugg', ord: 'hugger', tecken: '🪓', liten: true },
   jarnkniv: { skarpa: 0.8, namn: 'Järnkniven', skada: 0.38, takt: 0.9, rack: 0.9, slag: 'hugg', ord: 'skär', tecken: '🔪', liten: true },
   flintspjut: { skarpa: 0.5, namn: 'Flintspjutet', skada: 0.45, takt: 1.3, rack: 1.8, slag: 'stick', ord: 'sticker', tecken: '🔱', kast: { rack: 6, skada: 0.42, skott: 1, fastnar: true, reserv: true } },

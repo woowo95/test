@@ -345,3 +345,27 @@ SCENARIER.jarnvapen = {
     ];
   },
 };
+
+SCENARIER.vapensmide = {
+  text: 'Vapensmidet (steg 12.2.9): tekniken Vapensmide ger svärdet, järnhjälmen och ringbrynjan, och plaggens register säger att hjälmen och brynjan smids i smedjan',
+  kor: () => {
+    const R = SIM.RECEPT, tek = SIM.TEKNIK.find(t => t.id === 'vapensmide'), V = SIM.VAPEN as Record<string, { skada: number; skarpa: number }>;
+    const d = SIM.stationDef('smedja')!, fl = SIM.stationDef('flatarbank')!;
+    const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    klockan(s, 10);
+    Object.assign((p.tek ??= {}), { smedja: 1, rustning: 1, vapensmide: 1 });
+    SIM.setStock(s, { jarn: 12, lader: 3, kol: 4 });
+    s.vargar = undefined;
+    const utan = SIM.kanGoras(s, 'jarnhjalm' as SIM.Act, p);
+    medBank(s, 'smedja');
+    const med = SIM.kanGoras(s, 'jarnhjalm' as SIM.Act, p);
+    const brynja = SIM.kladSkyddStrid('ringbrynja_jarn'), hjalm = SIM.kladSkyddStrid('jarnhjalm_jarn');
+    return [
+      [`tekniken ${tek?.namn} kräver ${tek?.krav}`, !!tek && tek.krav.includes('smedja') && tek.krav.includes('rustning')],
+      [`svärdet: ${JSON.stringify(R.svard.av)} på ${R.svard.min} minuter, skada ${V.svard.skada}, skärpa ${V.svard.skarpa}`, R.svard.av.jarn === 3 && R.svard.av.lader === 1 && V.svard.skada === 0.7 && V.svard.skarpa === 1.3 && SIM.MANNISKOVAPEN.includes('svard' as never)],
+      [`hjälmen (${SIM.receptAv('jarnhjalm', 'jarn') ? JSON.stringify(SIM.receptAv('jarnhjalm', 'jarn')) : ''}) och brynjan (${JSON.stringify(SIM.receptAv('ringbrynja', 'jarn'))}) är plagg av järn`, SIM.receptAv('jarnhjalm', 'jarn').jarn === 2 && SIM.receptAv('ringbrynja', 'jarn').jarn === 8 && SIM.receptAv('ringbrynja', 'jarn').lader === 1],
+      [`de smids i smedjan och bara där (${d.gor.join(', ')}), inte vid slöjdbänken`, d.gor.includes('jarnhjalm' as SIM.Act) && d.gor.includes('ringbrynja' as SIM.Act) && !!d.bara?.includes('ringbrynja' as SIM.Act) && !fl.gor.includes('jarnhjalm' as SIM.Act) && !utan && med],
+      [`skyddet: brynjan hugg ${brynja?.tar.hugg}, hjälmen hugg ${hjalm?.tar.hugg}`, brynja?.tar.hugg === 0.85 && hjalm?.tar.hugg === 0.7],
+    ];
+  },
+};

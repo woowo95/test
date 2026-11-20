@@ -50,8 +50,13 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
   // järnvapnen (steg 12.2.8): järnspjutet, och järnskölden: rundskölden med grå järnbuckla och brun läderkant
   jarnspjut: { pix: ['................', '..............kS', '.............kSk', '............kSk.', '...........jk...', '..........j.....', '.........j......', '........j.......', '.......j........', '......j.........', '.....j..........', '....j...........', '...j............', '..j.............', '................', '................'], pal: { k: '#233035', S: '#8a9c9e', j: '#7d5b40' } },
   jarnskold: { pix: ['................', '................', '.....jjjjjj.....', '....jJJJJJJj....', '...jJJJJJJJJj...', '..jJJJJkkJJJJj..', '..jJJJkSSkJJJj..', '..jJJJkSSkJJJj..', '..jJJJJkkJJJJj..', '...jJJJJJJJJj...', '....jJJJJJJj....', '.....jjjjjj.....', '................', '................', '................', '................'], pal: { j: '#5e3c24', J: '#987e62', k: '#233035', S: '#8a9c9e' } },
+  // vapensmidet (steg 12.2.9): svärdet, järnhjälmen och ringbrynjan
+  svard: { pix: ['................', '.............kS.', '............kSk.', '...........kSk..', '..........kSk...', '.........kSk....', '........kSk.....', '.......kSk......', '...j..kSk.......', '...jjkSk........', '....jjk.........', '....jjj.........', '...jj.jj........', '..jj............', '................', '................'], pal: { k: '#233035', S: '#8a9c9e', j: '#5e3c24' } },
+  jarnhjalm_jarn: { pix: ['................', '................', '................', '.....kkkkkk.....', '....kSSSSSSk....', '...kSSsSSSSSk...', '...kSSSSSSSSk...', '...kSkkSkkSSk...', '...kk..k...kk...', '................', '................', '................', '................', '................', '................', '................'], pal: { k: '#233035', S: '#8a9c9e', s: '#61767a' } },
+  ringbrynja_jarn: { pix: ['................', '....kkk..kkk....', '...kSsSkkSsSk...', '..kSsSsSsSsSsk..', '..kSsSsSsSsSsk..', '..kskSsSsSsksk..', '..kk.SsSsSs.kk..', '.....sSsSsS.....', '.....SsSsSs.....', '.....sSsSsS.....', '.....kkkkkk.....', '................', '................', '................', '................', '................'], pal: { k: '#233035', S: '#8a9c9e', s: '#61767a' } },
 };
 export function laggTillJarn(PIX: Pix, PAL: Pal) {
   for (const [k, b] of Object.entries(BILDER)) { PIX[k] = b.pix; PAL[k] = b.pal; }
+  PIX.vapensmide = PIX.svard; PAL.vapensmide = PAL.svard; // tekniken Vapensmide har svärdets bild
   for (const k of ['kolmila', 'blasterugn', 'smedja']) { PIX[k + '_karta_v'] = PIX[k + '_karta']; PAL[k + '_karta_v'] = PAL[k + '_karta']; }
 }

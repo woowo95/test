@@ -251,6 +251,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   axelrem: spjutVill, // en per spjut (steg 7.1.2)
   ryggsack: s => perVuxna(s, VILLTAL.korgPerVuxna), // lika många som korgarna, till dem som samlar (steg 7.1.3)
   rustning: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), hjalm: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), skold: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), bage: s => vapenVill(s, VILLTAL.bageBas, VILLTAL.bageHot), slunga: s => vapenVill(s, VILLTAL.bageBas, VILLTAL.bageHot), horn: () => 1, // vapnen och rustningen efter de vuxna och hoten (steg 10.2.75); // vapnen och rustningen (system 8.7)
+  jarnhjalm: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), ringbrynja: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), svard: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), // vapensmidet (steg 12.2.9): som läderrustningen
   skara: s => (s.angar?.length ?? 0) > 0 ? 1 : 0, // en skära när byn har en slåtteräng (steg 9.8.9)
   benspade: () => 1, // en, latrinen och rötterna (steg 2.7.2)
   bagborr: () => 1, // ett tänddon till elden (steg 10.6.13)
