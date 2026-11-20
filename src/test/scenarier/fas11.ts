@@ -1,6 +1,6 @@
 // Scenarier för fas 11: världen.
 import * as SIM from '../../sim';
-import { medVatska, SCENARIER, varldEfter, klockan, kor, korTills, medHus, packatSomISpelet, rovarGang, testBy, utanWebblasare } from './hjalp';
+import { medVatska, nyInvanare, SCENARIER, varldEfter, klockan, kor, korTills, medHus, packatSomISpelet, rovarGang, testBy, utanWebblasare } from './hjalp';
 import { START } from '../kor';
 import { farg, iPaletten } from '../../palett';
 import { lasBy, minnesBas, sparaBy } from '../../ui/lagring';
@@ -2377,8 +2377,8 @@ SCENARIER.gomma = {
     const sl2 = g ? SIM.nyttSallskap(s2, led2, g.nr, 'uppdrag') : undefined;
     if (sl2) { for (const id of [f2[1]!.id]) SIM.foljMed(s2.varld!, sl2, s2.people.find(q => q.id === id)!); sl2.uppdrag = SIM.fyndId(g!.nr); for (const id of sl2.medl) SIM.gaBort(s2, s2.people.find(q => q.id === id)!); sl2.pack = {}; SIM.uppdragFram(s2, sl2, s2.now); }
     const g2 = g && SIM.varldPlatsNr(s2.varld!, g.nr);
-    // en resa till, när gömman är tom
-    const s3 = s2 && sl2 ? SIM.cloneState(s2) : undefined, led3 = s3 && SIM.living(s3).find(q => SIM.ageOf(q, s3.now) >= 18 && !(s3.varld!.sallskap ?? []).some(x => x.medl.includes(q.id))), sl3 = s3 && g && led3 ? SIM.nyttSallskap(s3, led3, g.nr, 'uppdrag') : undefined; // en annan, som inte redan är på väg
+    // en resa till, när gömman är tom (en ny vuxen leder den när alla byns vuxna redan är med i sällskapen, steg 12.1.112)
+    const s3 = s2 && sl2 ? SIM.cloneState(s2) : undefined, led3 = s3 && (SIM.living(s3).find(q => SIM.ageOf(q, s3.now) >= 18 && !(s3.varld!.sallskap ?? []).some(x => x.medl.includes(q.id))) ?? nyInvanare(s3, 'm', 30)), sl3 = s3 && g && led3 ? SIM.nyttSallskap(s3, led3, g.nr, 'uppdrag') : undefined; // en annan, som inte redan är på väg
     if (sl3) { sl3.pack = {}; SIM.uppdragFram(s3!, sl3, s3!.now); }
     // tiden går ut
     const s4 = SIM.cloneState(s); s4.now += (SIM.RESA.gommaDygn + 1) * SIM.DAY; SIM.platserUpphor(s4.varld!, s4.now);
@@ -4051,7 +4051,7 @@ SCENARIER.turne = {
       [`en ovänlig grannby tar inte emot en turné (${ovan?.skal ?? 'ingen resa'})`, ovan?.skal !== 'turne' || ovan.mal !== q.nr],
       [`gåvan är hela silver ur grannbyns silver (${gava}), i packningen och dagboken`, gava > 0 && Number.isInteger(gava) && sl.dagbok.some(d => d[2] === 'turne')],
       [`grannbyn tycker bättre om byn (${rel0} → ${rel1}) och minns ${p.name}`, rel1 > rel0 && r.turne?.id === p.id],
-      [`${p.name} får bedriften och en rad i krönikan ("${krn?.[1] ?? ''}")`, p.bedrift?.h === 'turne' && !!krn],
+      [`${p.name} får bedriften och en rad i krönikan ("${krn?.[1] ?? ''}")`, (p.bedrift as SIM.Person['bedrift'])?.h === 'turne' && !!krn],
       ['en handlare därifrån talar om hen', prat],
     ];
   },
