@@ -47,3 +47,4 @@
 - 12.4.11 (fyrfatet): ELDSTATIONER har fått fältet gnistor (brand.ts gnistrar från stationseldar med det); byn ställer ett fyrfat i ett rum där folk sover utan härd och lägger kol i det när det är kallt (projektet fyrfat). Vaggan och fyrfatet tar ingen sovplats när de ställs (siteInne).
 - Röda redan på varld (255ee7f), inte av 12.4: scenariot brinner (branden i snön sprids inte).
 - 12.4.12 (tvålen i vården): vårdaren som kan Rena händer tar en tvål till såret (vardHamtas) och tvättar händerna med den; tvålen går nu åt, så byar med örtkök kokar mer tvål.
+- 12.4.13 (ylle och väta): den som bär en kappa eller mantel av ylle fryser hälften så mycket av att vara blöt (VADER.ullBlot); personrutan visar det.

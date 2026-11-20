@@ -17,7 +17,9 @@ import { type Rum, roomAt, husById } from './byggnad';
 import { sjukKrok, sovPlats } from './byggnader';
 import { ELDSTATIONER } from './stationseld';
 import { rumTaggar } from './rum';
-import { coldOf, temperature } from './vader';
+import { coldOf, temperature, vaderKrok } from './vader';
+import { KLADMATERIAL, PLAGG, kladAv } from './klader';
+import { paSig } from './utrustning';
 import { lakKrok, SKADOR } from './halsa';
 import { isSick } from './sjukdom';
 import { gruppOf } from './saker';
@@ -193,3 +195,9 @@ export function fyrfatKol(s: State) {
 }
 moblerKrok.fyrfatRum = s => fyrfatRum(s); moblerKrok.fyrfatKol = fyrfatKol;
 finareKrok.fyrfat = s => fyrfatRum(s) ? 1 : 0;
+
+// ---------- ylle och väta (steg 12.4.13, Fler kläder: Ylle och väta) ----------
+// den som är blöt fryser som om det vore kallare (vaderGrader i vader.ts); under ett ytterplagg av ylle (kappan eller manteln)
+// blir bara VADER.ullBlot av den kylan kvar. Personrutan visar det
+export const ylleYtter = (s: State, p: Person) => paSig(s, p).some(t => { const a = kladAv(t.k); return !!a && PLAGG[a.plagg].plats === 'yttre' && KLADMATERIAL[a.mat].slag === 'ull'; });
+vaderKrok.ylle = ylleYtter;

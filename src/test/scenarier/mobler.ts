@@ -402,3 +402,25 @@ SCENARIER.tval = {
     ];
   },
 };
+
+SCENARIER.ullregn = {
+  text: 'Ylle värmer också blött (steg 12.4.13, mobler.ts): den som bär ett ytterplagg av ylle fryser hälften så mycket av att vara blöt, och det syns i personrutan',
+  kor: () => {
+    const s = SIM.createState(1, START), p = vuxen(s);
+    klockan(s, 12);
+    s.ting = SIM.tingOf(s).filter(t => t.bar !== p.id);
+    p.blot = 1;
+    const naken = SIM.vaderGrader(s, p, false);
+    const mantel = SIM.addTool(s, 'mantel_vargskinn', p); mantel.hos = undefined; mantel.bar = p.id;
+    const skinn = SIM.vaderGrader(s, p, false);
+    s.ting = SIM.tingOf(s).filter(t => t !== mantel);
+    const kappa = SIM.addTool(s, 'kappa_ylle', p); kappa.hos = undefined; kappa.bar = p.id;
+    const ylle = SIM.vaderGrader(s, p, false), syns = SIM.ylleYtter(s, p);
+    p.blot = undefined; const torr = SIM.vaderGrader(s, p, false);
+    return [
+      [`blöt utan ylle känns ${naken} grader kallare, med en mantel av skinn lika (${skinn})`, naken === SIM.VADER.blotGrader && skinn === naken],
+      [`med en kappa av ylle hälften (${ylle})`, ylle === naken * SIM.VADER.ullBlot && SIM.VADER.ullBlot === 0.5 && syns],
+      [`torr spelar yllet ingen roll (${torr})`, torr === 0],
+    ];
+  },
+};
