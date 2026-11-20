@@ -19,6 +19,7 @@ export interface RedskapDef {
   napp?: number; hall?: number; // fiske: chansen att det nappar per försök, och att fisken sitter kvar när den nappat (fynd.ts, handFish)
   haller?: number; // hur länge redskapet håller: så många av det handlingen slits per (slits.enhet), oberoende av hur fort arbetet går (steg 2.3.12)
   rotter?: number; // samla: så många gånger fler rötter man gräver fram med redskapet (benspaden, steg 2.7.2)
+  fart?: number; kvalitet?: number; // så många gånger fortare arbetet går med redskapet, och hur mycket oftare det som görs blir bra (steg 12.2.5); stenredskapen 1
   kravs?: true; // arbetet går inte utan redskapet: går det sönder slutar man (ett träd står kvar halvfällt)
 }
 // slagen av arbete: symbolen över huvudet visar vad man håller på med, aldrig samma symbol som en sak eller ett redskap
@@ -377,6 +378,8 @@ export const verbOf = (a: Act) => ACTS[a].verb ?? 'gör';
 // redskapet en uppgift använder (task.tool kan också vara t.ex. vagg eller rep, eller det spjut som görs) och dess rad
 export const toolRow = (t?: Task) => t?.tool ? ACTS[t.act].redskap?.[t.tool] : undefined;
 export const usesTool = (t?: Task) => toolRow(t) ? t!.tool : undefined;
+// redskapets tal i arbetet act (steg 12.2.5): fart och kvalitet, 1 när raden inte säger något (stenredskapen)
+export const redskapTal = (act: Act, k?: string) => { const r = k ? ACTS[act]?.redskap?.[k] : undefined; return { fart: r?.fart ?? 1, kvalitet: r?.kvalitet ?? 1 }; };
 // handlingarna där redskapet används, i registrets ordning (tabellen byggs en gång)
 const ACTS_AV: Record<string, Act[]> = {};
 for (const a of ACT_LIST) for (const k in ACTS[a].redskap ?? {}) (ACTS_AV[k] ??= []).push(a);

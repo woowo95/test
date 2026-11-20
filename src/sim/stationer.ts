@@ -1377,7 +1377,7 @@ export function tillbehorVarme(s: State, p: Person, rum: unknown) {
 
 // ---------- redskapsplatserna (knivplatsen, bensylen) ----------
 // redskapen av slaget k som hör till stationen
-export const redskapVid = (s: State, t: Station, k: string) => tingOf(s).filter(q => q.vid === t.id && q.k === k);
+export const redskapVid = (s: State, t: Station, k: string) => tingOf(s).filter(q => q.vid === t.id && iSlag(q.k, k)); // knivplatsen tar vilken kniv som helst (steg 12.2.5)
 // ligger redskapet k i stationen där man gör act (sländan i vävstolen, steg 7.7.9)?
 export const verktygVid = (s: State, act: Act, k: string) => { const t = stationFor(s, act); return !!t && redskapVid(s, t, k).length > 0; };
 const platserFor = (t: Station, k: string) => stationDef(t.k)?.vid?.[k] ?? 0;
@@ -1387,7 +1387,7 @@ export function tommaPlatser(s: State, k: string) {
   for (const t of stationerOf(s)) {
     const pl = isKlar(t) ? platserFor(t, k) : 0;
     if (pl <= 0) continue;
-    if (!vid) { vid = new Map(); for (const q of tingOf(s)) if (q.k === k) vid.set(q.vid, (vid.get(q.vid) ?? 0) + 1); }
+    if (!vid) { vid = new Map(); for (const q of tingOf(s)) if (iSlag(q.k, k)) vid.set(q.vid, (vid.get(q.vid) ?? 0) + 1); }
     n += Math.max(0, pl - (vid.get(t.id) ?? 0));
   }
   return n;
@@ -1704,3 +1704,4 @@ export function stepStationer(s: State) {
 }
 // namnet efter 'byns första': adjektivet i bestämd form ('lilla bord'; steg 4.5.1.4)
 const forstaForm = (namn: string) => namn.toLowerCase().replace(/^litet /, 'lilla ').replace(/^(\p{L}+)at /u, '$1ade ');
+import { iSlag } from './saker';

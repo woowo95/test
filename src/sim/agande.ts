@@ -1,5 +1,5 @@
 import { MIN, State, Person } from './typer';
-import { REDSKAP_SLAG, SAKER, gruppOf, isTool } from './saker';
+import { REDSKAP_SLAG, REDSKAPSGRUPPER, SAKER, gruppOf, iSlag, isTool } from './saker';
 import { ACTS, usesTool } from './handlingar';
 import { alive, byId } from './folk';
 import { kvHaller } from './kvalitet';
@@ -29,10 +29,10 @@ export const spand = (s: State, djur: number) => tingOf(s).some(g => g.djur === 
 export const allaTing = (s: State) => s.gastTing?.length ? tingOf(s).concat(s.gastTing) : tingOf(s);
 // hur stor del av arbetet med ett påbörjat redskap som är gjort (0 till 1), för framstegscirkeln på kartan och i panelerna
 export const halvKlar = (h: Halv) => Math.min(1, Math.max(0, 1 - h.kvar / ((SAKER[h.gor]?.skaffa?.min ?? 1) * MIN)));
-export const toolsOf = (s: State, k: string) => tingOf(s).filter(t => t.k === k);
+export const toolsOf = (s: State, k: string) => tingOf(s).filter(t => iSlag(t.k, k)); // en grupp (yxa, kniv, skara): alla i gruppen (steg 12.2.5)
 // en vattensäck som står fylld (steg 7.6.6): örtköket tar vattnet ur den, och säcken töms men finns kvar
 export const fylldSack = (s: State) => tingOf(s).find(t => t.inne?.v === 'vatten' && t.inne.n > 0); // en behållare med vatten i (steg 9.4.14)
-export const nTools = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (t.k === k ? 1 : 0), 0);
+export const nTools = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (iSlag(t.k, k) ? 1 : 0), 0);
 // det redskap av slagen ks som p har påbörjat (paborjat.ts)
 export const halvOf = (s: State, p: Person, ks: readonly string[]) => tingOf(s).find(t => t.halv?.ag === p.id && ks.includes(t.halv.gor));
 export const heldBy = (s: State, p: Person) => allaTing(s).find(t => t.hos === p.id);
@@ -46,7 +46,7 @@ const krokar = (s: State, p: Person) => { let n = 0; for (const t of tingOf(s)) 
 // enligt sakregistret, och bältet har en ledig krok utöver den som redskapet i handen hänger i när hen bär
 const kanHanga = (s: State, p: Person, t: Ting) => t.agare === p.id && SAKER[t.k]?.hanger === 'balte' && !t.halv && iKroken(s, p).filter(x => x !== t).length < krokar(s, p) - 1;
 // redskapet av slaget k som p har i handen
-export const redskapIHanden = (s: State, p: Person, k: string) => tingOf(s).find(t => t.hos === p.id && t.k === k);
+export const redskapIHanden = (s: State, p: Person, k: string) => tingOf(s).find(t => t.hos === p.id && iSlag(t.k, k));
 
 export function newTing(s: State, k: string, c: number, agare: number): Ting {
   const t = { id: s.nextTing = (s.nextTing ?? 0) + 1, k, c, agare };
@@ -62,7 +62,7 @@ function usable(s: State, p: Person, t: Ting) {
   if (t.lass !== undefined || (t.bar !== undefined && t.bar !== p.id) || (t.krok !== undefined && t.krok !== p.id)) return false;
   if (t.hos !== undefined && t.hos !== p.id) {
     const q = byId(s, t.hos);
-    if (q && (q.ute !== undefined || alive(q) && usesTool(q.task) === t.k)) return false; // den som är borta har det med sig (steg 11.2.3)
+    if (q && (q.ute !== undefined || alive(q) && iSlag(t.k, usesTool(q.task) ?? ''))) return false; // den som är borta har det med sig (steg 11.2.3)
   }
   return lends(s, t.agare, p);
 }
@@ -71,12 +71,14 @@ const rank = (p: Person, t: Ting) => harMed(p, t) ? 0 : t.agare === p.id ? 1 : t
 const freeOf = (s: State, p: Person, k: string) => toolsOf(s, k).filter(t => usable(s, p, t));
 export const freeTools = (s: State, p: Person, k: string) => freeOf(s, p, k).length;
 // det lediga tinget av slaget k som p helst tar (sitt eget, byns, sist lånat), eller undefined (kälken, fordon.ts)
-export const ledigtTing = (s: State, p: Person, k: string) => freeOf(s, p, k).sort((a, b) => rank(p, a) - rank(p, b) || b.c - a.c)[0];
+export const ledigtTing = (s: State, p: Person, k: string) => freeOf(s, p, k).sort((a, b) => bast(a.k) - bast(b.k) || rank(p, a) - rank(p, b) || b.c - a.c)[0];
+// i en grupp (yxa, kniv, skara) tas den bästa saken först (rang i SAKER); utan grupp 0 (steg 12.2.5)
+const bast = (k: string) => REDSKAPSGRUPPER.includes(gruppOf(k)) ? -(SAKER[k]?.rang ?? 0) : 0;
 export const ownsFree = (s: State, p: Person, k: string) => freeOf(s, p, k).some(t => t.agare === p.id);
 // p tar ett redskap av slaget k i handen, ur bältet om det hänger där. Det hen hade i handen hängs i bältet om det får
 // plats där (steg 7.1.1), annars läggs det i förrådet
 export function take(s: State, p: Person, k: string): Ting | undefined {
-  const c = freeOf(s, p, k).sort((a, b) => rank(p, a) - rank(p, b) || b.c - a.c)[0];
+  const c = freeOf(s, p, k).sort((a, b) => bast(a.k) - bast(b.k) || rank(p, a) - rank(p, b) || b.c - a.c)[0]; // den bästa saken i gruppen först (steg 12.2.5)
   if (!c) return;
   c.krok = undefined;
   for (const t of tingOf(s)) if (t.hos === p.id && t !== c) { t.hos = undefined; if (kanHanga(s, p, t)) t.krok = p.id; }

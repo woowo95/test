@@ -15,7 +15,7 @@ import { MATERIAL, bitAt, blocked, lagretsMitt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
 import { temperature, vaderSlit } from './vader';
 import { BYN, Del, addDel, kyrkaId, sumOf, takeOrder } from './egendom';
-import { FOOD, SAKER, SAK_LIST, STACK_ORDER, isFood, isTool, rutaOf, sakNamn, viktOf } from './saker';
+import { FOOD, SAKER, SAK_LIST, STACK_ORDER, isFood, isTool, rutaOf, sakNamn, viktOf, iSlag } from './saker';
 import { balans } from './balans';
 import { flodHotad, iVattnetNu, underMinnet } from './sjo';
 import { FLOD } from './flod';
@@ -182,7 +182,7 @@ function agOf(s: State, k: string) {
 }
 // hur mycket byn har av ett slag. Redskapen räknas på tingen (agande.ts)
 export function amountOf(s: State, k: string) {
-  if (isTool(k)) { let n = 0; for (const t of tingOf(s)) if (t.k === k) n += t.c; return n; }
+  if (isTool(k)) { let n = 0; for (const t of tingOf(s)) if (iSlag(t.k, k)) n += t.c; return n; } // en grupp: alla i den (steg 12.2.5)
   if (nara) { const h = SAKER[k]?.i; let n = 0; for (const a of stored(s, h ?? k)) n += h ? a.dold ?? 0 : a.n; return n; } // i räckhåll
   return (summa(s).n[k] ?? 0) + (vidPlats ? vidArbetet(s, k) : 0);
 }

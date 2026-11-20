@@ -3,7 +3,7 @@ import { knows } from './teknik';
 import { clamp, rnd } from './slump';
 import { Act, HOUR, State, Person } from './typer';
 import { ACTS, ACT_LIST, toolRow } from './handlingar';
-import { SAKER, SAK_LIST, gruppOf, isTool, sakNamn } from './saker';
+import { SAKER, SAK_LIST, gruppOf, iSlag, isTool, sakNamn } from './saker';
 import { NORMAL, kvOf, nyKvalitet } from './kvalitet';
 import { amountOf, gain, harTillHands, iBordan, put, use } from './lager';
 import { getable, Recept, saknatAv, takeMaterial, takeRecipe, tillHands } from './behov';
@@ -154,7 +154,7 @@ export const djurKvar = (s: State, art: Djurart) => amountOf(s, art.sak) / art.m
 // p kan slakta eller rensa arten: byn har stationen om det bara görs där (viltet och fisken vid slaktbänken), det finns
 // tillräckligt, en kniv som ingen annan slaktar med (om det behövs; hen kan kniven eller äger en köpt, steg 4.5.4.16), och ingen
 // annan gör det redan
-export const canProcess = (s: State, p: Person, art: Djurart) => kanGoras(s, art.act, p) && (!art.kniv || (knows(p, 'kniv') || tingOf(s).some(t => t.agare === p.id && t.k === 'kniv')) && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && (ACTS[art.act]?.plats === 'station' ? !!stationFor(s, art.act, p) : enTill(s, art.act, p)); // en bänk rymmer sin arbetare (steg 10.2.5)
+export const canProcess = (s: State, p: Person, art: Djurart) => kanGoras(s, art.act, p) && (!art.kniv || (knows(p, 'kniv') || tingOf(s).some(t => t.agare === p.id && iSlag(t.k, 'kniv'))) && freeTools(s, p, 'kniv') >= 1) && djurKvar(s, art) >= 1 / art.minDel && (ACTS[art.act]?.plats === 'station' ? !!stationFor(s, art.act, p) : enTill(s, art.act, p)); // en bänk rymmer sin arbetare (steg 10.2.5)
 // slakta eller rensa i hours timmar. Köttet, benet, skinnet och senorna är deras som ägde djuren, inte den som gör det
 export function bearbeta(s: State, p: Person, art: Djurart, hours: number) {
   const n = Math.min(hours * art.timme, harTillHands(s, p, art.sak) / art.mat); // det hen har till hands (steg 11.1.74)

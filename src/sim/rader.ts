@@ -192,7 +192,7 @@ export function huggDorr(s: State, f: Rovarflock, folk: Person[], mal?: Bit) {
   if (!vill) return false;
   const b = mal ?? stangdDorrBit(s);
   if (!b) return false;
-  const yxa = f.folk.some(id => (s.gastTing ?? []).some(t => t.agare === id && t.k === 'yxa')) /* en yxa bland det de bär (steg 10.1.8) */, bom = bommad(s, b) ? RADER.dorrBom : 1;
+  const yxa = f.folk.some(id => (s.gastTing ?? []).some(t => t.agare === id && iSlag(t.k, 'yxa'))) /* en yxa bland det de bär (steg 10.1.8) */, bom = bommad(s, b) ? RADER.dorrBom : 1;
   f.hugger = { bit: b.id, till: s.now + (yxa ? RADER.dorrYxa : RADER.dorrMin) * bom * MIN };
   count(s, bom > 1 ? 'dorr_bommad' : 'dorr_hugg');
   larma(s, 'rovare', f.folk.length, folk.slice(0, 1));
@@ -211,3 +211,4 @@ export function tandaHus(s: State, f: Rovarflock) {
 export const storRad = (f: Rovarflock | undefined) => !!f?.rad && f.folk.length >= RADER.storStrid;
 // pågår en stor strid med någon av flockarna (steg 8.8.9): den stannar ikappräkningen
 export const storStridNu = (s: State) => [s.rovare, ...(s.rovareFler ?? [])].some(f => storRad(f) && f!.gor === 'slass');
+import { iSlag } from './saker';

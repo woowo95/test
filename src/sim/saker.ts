@@ -26,6 +26,7 @@ export interface SakDef {
   redskap?: true; // räknas styckvis; skicket är hur mycket som finns kvar av redskapet
   hanger?: 'balte' | 'axel'; // var redskapet hänger när det inte används (steg 7.1.1): i bältet eller på axeln (axelremmen, steg 7.1.2). Saknas = det hänger ingenstans
   grupp?: string; // redskap av samma slag som kan ersätta varandra (alla spjut), och görs på samma sätt (redskap.ts)
+  rang?: number; // i en av redskapens grupper (yxa, kniv, skara): den med högst rang tas först (järnet före stenen, steg 12.2.5); saknas = 0
   trasig?: { stat: string; text?: string }; // när redskapet går sönder i arbetet: det som räknas, och texten första gången ({namn} = den som arbetade)
   dold?: true; // syns inte för invånarna
   i?: string; // ligger gömd i stackarna av det slaget (stack.dold) och har ingen egen stack
@@ -337,6 +338,11 @@ export const isFood = (k: string) => SAKER[k]?.mat !== undefined;
 export const isTool = (k: string) => !!SAKER[k]?.redskap;
 export const REDSKAP_SLAG = SAK_LIST.filter(isTool); // alla redskapsslag, i registrets ordning
 export const gruppOf = (k: string) => SAKER[k]?.grupp ?? k;
+// redskapens grupper (steg 12.2.5, Järnet: Järnsakerna): yxorna, knivarna och skärorna. Den som frågar efter gruppens namn
+// (yxa, kniv, skara) får vilken sak som helst i gruppen (sakerna med grupp eller id lika med namnet), den bästa först
+// (GORS i redskap.ts). Spjuten är en grupp sedan förut och frågas efter med sina slag (SPJUT i redskap.ts)
+export const REDSKAPSGRUPPER: readonly string[] = ['yxa', 'kniv', 'skara'];
+export const iSlag = (tk: string, k: string) => tk === k || REDSKAPSGRUPPER.includes(k) && gruppOf(tk) === k;
 export const KLAD_SLAG = SAK_LIST.filter(k => SAKER[k]!.klad); // klädesplaggen (steg 2.3.2)
 // mappar i listan över allt byn äger; maten med det som håller längst först. summa = antalen läggs ihop på mappens rad
 const MAPP_SUMMA = new Set(['Mat', 'Bränsle']);

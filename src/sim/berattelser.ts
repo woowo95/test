@@ -6,7 +6,7 @@ import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
 import { kronika } from './historik';
 import { Bevis, HANDELSER, INTRYCK, IntryckTyp, bevisText, intryckOm, intryckText, foralderRykte, kandVikt, samlatIntryck } from './rykten';
-import { SAKER, sakNamn } from './saker';
+import { SAKER, gruppOf, sakNamn } from './saker';
 import { moodOf } from './humor';
 import { Hus, housesOf, husById, roomAt } from './byggnad';
 import { bedTile, fnId } from './byggnader';
@@ -2617,7 +2617,7 @@ const EFTERLED: Record<SakGrupp, string[]> = {
 const SOM = ['', ', som aldrig frös', ', som alltid kommer hem', ', mitt ljus', ', som skrattar', ', av hela mitt hjärta', ', som jag aldrig glömmer', ', i vinter och i sommar'];
 const sakGrupp = (k: string): SakGrupp => {
   const d = SAKER[k];
-  return !d ? 'mobel' : d.klad ? 'klad' : d.grupp === 'spjut' ? 'vapen' : k === 'kniv' || k === 'yxa' ? 'egg' : 'redskap';
+  return !d ? 'mobel' : d.klad ? 'klad' : d.grupp === 'spjut' ? 'vapen' : gruppOf(k) === 'kniv' || gruppOf(k) === 'yxa' ? 'egg' : 'redskap';
 };
 // sakens namn i bestämd form och pronomenet: flintkniven/den, träspjutet/det, skorna av kaninskinn/de (ett plagg av ett
 // material, klader.ts: bara plagget får bestämd form)
