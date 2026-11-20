@@ -1,0 +1,72 @@
+{
+ "id": "blottorv",
+ "w": 12,
+ "h": 8,
+ "rader": [
+  ".kkkkkkkkkk.",
+  "knSSSnnnmnmk",
+  "knTTmlmmlmlk",
+  "knmmlmEmlmlk",
+  "kmmlmmlmEllk",
+  "kllllllllllk",
+  "klllllllkkkk",
+  ".kkkkkkkkkk."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "k": "#24201d",
+  "l": "#2f261d",
+  "m": "#372f25",
+  "n": "#474138"
+ },
+ "versioner": [
+  {
+   "ide": "Ett skarpkantat, rakt skuret torvblock som ligger platt på långsidan, sett snett ovanifrån som vedträet: ovansidan är en liggande rektangel på ungefär 12 × 5 punkter och framsidan ett smalt band på 2–3 punkter nedtill, med kontur i kol0 runt hela blocket. Ovansidan kornas punkt för punkt i kol2 och kol1 med enstaka jord0 som spår av rötter, framsidan i kol1 och kol0, och spadens snitt syns som en rak, lite ljusare kant (kol3) längs övre vänstra hörnet. Vattnet visas av en eller två glanspunkter i skiffer3 uppe till vänster på ovansidan och en kort ljusrand i skiffer2 längs vänstra överkanten.",
+   "rader": [
+    ".kkkkkkkkkk.",
+    "knSSSnnnmnmk",
+    "knTTmlmmlmlk",
+    "knmmlmEmlmlk",
+    "kmmlmmlmEllk",
+    "kllllllllllk",
+    "klllllllkkkk",
+    ".kkkkkkkkkk."
+   ],
+   "om": "Ett skarpkantat torvblock, 12 × 8 punkter, som ligger platt på långsidan och ses snett ovanifrån som vedträet, med kontur i kol0 runt hela blocket. Ovansidan är rad 1–4 och kornas i kol2 och kol1, med två punkter jord0 som spår av rötter. Spadens snitt syns som en ljusare kant i kol3 längs vänster och överkanten. Vattnet syns som en kort rand i skiffer2 längs vänstra överkanten och två glanspunkter i skiffer3 uppe till vänster. Framsidan är ett band på två punkter (rad 5–6) i kol1 som mörknar mot kol0 åt höger och nedåt, så att ljuset kommer från övre vänstra hörnet. Granskningen: Ritningen följer idén och reglerna. Den är 12 × 8 punkter, vilket är rimligt mot kolonisten (14 × 20). Vinkeln är snett ovanifrån som vedträet: ovansidan är 4 rader inom konturen och framsidan ett band på 2 rader. Blocket är symmetriskt i formen, och spadens snitt i kol3 och vattnet (skiffer2-randen och två glanspunkter i skiffer3) ligger uppe till vänster. Konturen i kol0 gör det svarta blocket tydligt mot gräset. En sak är rättad: den ensamma kol0-pricken mitt i framsidans nedre rad (rad 7, punkt 6) var en mörk fläck. Raden går nu i kol1 och blir kol0 först mot högra hörnet, så att framsidan mörknar mot nedre högra hörnet i stället för att ha en lös prick."
+  },
+  {
+   "ide": "Ett mjukt, sviktande torvblock som sjunkit ihop av sin egen väta: samma tegelform men med rundade hörn, en lätt kupad ovansida och sidor som buktar ut och hänger ner mot marken, så att silhuetten blir som en låg limpa med platt botten, cirka 11 × 7 punkter. Ytan kornas i kol1 och kol2 med tunna stråk av jord0 och jord1 där fibrerna syns, framsidans band (2 punkter) i kol0, och konturen är kol0 runt om. Glansen ligger på kupans högsta punkt uppe till vänster som två punkter i skiffer3, och en kort, våt ljusrand i skiffer2 följer den rundade övre vänstra kanten.",
+   "rader": [
+    "..kkkkkkk..",
+    ".kSSmmlmmk.",
+    "kSTTmmFFmlk",
+    "kSmmlmmmllk",
+    "kmlEEmmlEEk",
+    "klllllllkkk",
+    "kkllllkkkkk",
+    ".kkkkkkkkk."
+   ],
+   "om": "Blöt torv som en låg, sviktande limpa på 11 × 7 punkter med rundade hörn och platt botten. Ovansidan är kupad och tar fem rader. Den kornas i kol2 åt vänster och kol1 åt höger, så att ljuset kommer från övre vänstra hörnet, med korta fiberstråk i jord0 och jord1. Glansen är två punkter skiffer3 på kupans högsta del uppe till vänster, och en våt rand i skiffer2 följer den rundade övre vänstra kanten. Framsidans band är två rader kol0 som buktar ut mot marken och smälter ihop med konturen i kol0 runt om, så blocket läses som svart och tungt av vatten. Granskningen: Storleken (11 × 8) håller sig inom 12 × 8 och är rimlig mot kolonisten. Silhuetten är symmetrisk, och glansen i skiffer3 med ljusranden i skiffer2 ligger rätt uppe till vänster. Jag rättade tre saker. Framsidans band var helt i kol0 och flöt ihop med konturen till en svart klump, så kupan och den låga limpformen syntes inte. Bandet är nu två rader i kol1 som mörknar mot kol0 åt höger, så att ljuset går från vänster till höger, och kol0 ligger kvar som kontur under. Därför blev bilden en rad högre, 8 i stället för 7. Fibrerna i jord0 och jord1 var ensamma prickar, och ett E mitt på ytan läste som en mörk fläck. De är nu korta vågräta stråk på två punkter (FF och EE). Kornet i kol1 och kol2 på ovansidan är jämnat så att inga ensamma prickar finns kvar. Blocket är medvetet mörkare än gräset eftersom blöt torv är svart, men den kalla glansen och konturen gör att det ändå syns tydligt på marken."
+  },
+  {
+   "ide": "En snedskuren torvsoda som en kil: blocket ligger platt men ena kortänden är rak och spadskuren medan den andra är snett avsliten och trasig, så att silhuetten blir ett trapets som smalnar åt höger, ungefär 12 × 6 punkter med ett framkantsband på 2 punkter. I den avslitna högra änden sticker två eller tre korta, böjda rottrådar i jord1 och G ut en punkt utanför konturen, medan resten av ytan kornas i kol1, kol2 och lite jord0, med kontur i kol0. Den raka, nyskurna vänsterändens kant fångar ljuset med en blank punkt i skiffer3 och en i skiffer2, så att det blöta syns först där spaden gått igenom.",
+   "rader": [
+    "kkkkkkk.....",
+    "kTnmlmnkkk..",
+    "kSmlEmlnmlk.",
+    "knlmnlmlmlkG",
+    "kmlmlEmnlkF.",
+    "kElElEllEk..",
+    "kEEllEElk...",
+    "kkkkkkkk...."
+   ],
+   "om": "Blöt torv som en kil: en platt soda som smalnar åt höger. Vänsteränden är rak och spadskuren, och där fångar den blöta kanten ljuset med en punkt i skiffer3 och en i skiffer2. Högeränden är snett avsliten och trasig, med två korta rottrådar (G och F) som sticker ut en punkt utanför konturen. Ovansidan är kornad i kol1, kol2, kol3 och lite jord0. Framkantsbandet är 2 punkter i jord0 och kol1, och konturen är kol0. Granskningen: Inget behövde rättas. Bilden är 12 × 8 punkter och fyller rutan. Mot kolonisten (14 × 20) har den en rimlig storlek för en torvsoda. Den ses snett uppifrån: ovansidan i kol1, kol2, kol3 och lite jord0 tar raderna 1–4, och framkanten är ett band på 2 punkter i jord0 och kol1. Vänsteränden är rak och spadskuren med de två våta glanspunkterna (skiffer3 och skiffer2) uppe till vänster, där ljuset kommer ifrån. Högeränden är snett avsliten, med två rottrådar (G och F) som sticker ut en punkt utanför konturen. Konturen i kol0 passar, eftersom blöt torv faktiskt är svart och kol0 då är materialets mörkaste ton. Den svarta konturen och de ljusare kornprickarna gör att den syns mot gräset. Ingen symmetri krävs, eftersom sodan är avsiktligt snedskuren. Den följer idén."
+  }
+ ]
+}
