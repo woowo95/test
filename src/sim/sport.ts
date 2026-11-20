@@ -17,7 +17,7 @@ import { bitAt, freeNear, roomAt } from './byggnad';
 import { ledig } from './stationer';
 import { groundOf } from './mark';
 import { FOREST } from './vag';
-import { kanGa } from './halsa';
+import { HALSA, kanGa } from './halsa';
 import { ACTS, isWork } from './handlingar';
 import { duty } from './seder';
 import { raddFor } from './lagar';
@@ -299,7 +299,8 @@ export function sportSteg(s: State, p: Person, t: Task, dtSec: number) {
   m.spelat = true;
   // brottningen (steg 9.2.92): två och två med stridens system, utan vapen och med svaga slag. En kamp i taget i ringen
   if (d.kamp && s.now >= (m.brott ?? 0)) { // en kamp börjar så fort ringen är ledig
-    const mot = har.filter(q => q !== p && q.health > 0);
+    const orkar = (q: Person) => q.health > 0 && (q.blod ?? 1) >= HALSA.slass; // den som förlorat mycket blod orkar inte slåss (steg 9.5.17) och brottas inte
+    const mot = orkar(p) ? har.filter(q => q !== p && orkar(q)) : [];
     if (mot.length) {
       // kampen sker på kartan och tar tid (steg 10.1.7): ringen är upptagen tills den är slut (EFTER.brottning)
       const q = mot[Math.floor(rnd(s, 'sport', p) * mot.length)];
