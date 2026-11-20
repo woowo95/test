@@ -12,7 +12,7 @@ import { svavar, uttagVakt } from '../sim/lager';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { RODA, Utfall, korSkript, pool, prioAv } from './pool';
-import { lasTackning, sparaKarta, tackningsMapp } from './kartan';
+import { lasTackning, sparaKarta, tackningsMapp, tackningsMiljo } from './kartan';
 import { ui } from '../ui/lage';
 import { stangAllaHjalp } from '../ui/hjalp';
 import * as SIM from '../sim';
@@ -97,8 +97,8 @@ else {
     .sort((a, b) => tid(b) - tid(a));
   const svar: Record<string, Utfall> = {}, tackning: Record<string, Set<string>> = {};
   // med --karta får varje process en mapp för täckningen, och funktionerna räknas för alla scenarier i den
-  const tack = (g: string[]): Record<string, string> => karta ? { NODE_V8_COVERAGE: tackningsMapp(g[0]) } : {};
-  const lasT = (g: string[], env: Record<string, string>) => { if (env.NODE_V8_COVERAGE) { const f = lasTackning(env.NODE_V8_COVERAGE); for (const n of g) tackning[n] = f; } };
+  const tack = (g: string[]): Record<string, string> => karta ? tackningsMiljo(tackningsMapp(g[0])) : {};
+  const lasT = (g: string[], env: Record<string, string>) => { if (env.TACKNING) { const f = lasTackning(env.TACKNING); for (const n of g) tackning[n] = f; } };
   // ingen tidsgräns efter förra gångens tid: ett scenario som hängt sig stoppas av pulsen (pool.ts), ett långsamt aldrig
   await pool(grupper.map(g => async () => {
     const kant = g.every(n => forraTid[n] !== undefined), prio = prioAv(kant ? tid(g) : undefined), env = tack(g);

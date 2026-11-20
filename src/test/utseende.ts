@@ -5,7 +5,7 @@
 // varje bild i världen ska ritas i hel skala med skarpa punkter. Felkoden är 1 om något larmar.
 //   npm run utseende -- [mapp] [by]   (mappen utseende/ och by 3 om inget anges). Mobilen tas bara på dagen (den ritar nio
 //   gånger fler punkter och är det som tar tid; färgerna och skalan är desamma som på datorn), och spelet går SPELA_MS innan
-//   bilden tas: 13 bilder. ALLA=1 tar mobilen i alla fall (24 bilder, över en timme i en stor by). LAGE=ljust eller
+//   bilden tas: 18 bilder, och var och en en gång till med teknikträdet öppet (-stationer sist i namnet). ALLA=1 tar mobilen i alla fall (32 bilder, över en timme i en stor by). LAGE=ljust eller
 //   LAGE=morkt tar bara det ena läget, FALL=dag,natt bara de fallen. Sökhjälp: LAGER=1 visar vilket lager punkterna utanför
 //   paletten kommer från, och DEBUG=1 var på skärmen de ligger
 import { createRequire } from 'node:module';
@@ -114,7 +114,10 @@ async function main() {
       pg.on('pageerror', (e: Error) => fel.push(e.message));
       if (process.env.LAGER) await ctx.addInitScript('window.__lager = true');
       await pg.goto(SIDA);
-      if ('zoom' in f) await pg.evaluate(`(() => { const by = window.__byn, f = by.s.fire; by.cam.zoom = ${f.zoom}; by.layout(); })()`);
+      // byn läses in efter att sidan laddats (boot i main.ts): vänta tills den finns innan något i den läses (steg 12.1.160)
+      for (let i = 0; i < 600 && !(await pg.evaluate('!!(window.__byn && window.__byn.s)')); i++) { await pg.clock.runFor(100); await pg.waitForTimeout(50); }
+      if (!(await pg.evaluate('!!(window.__byn && window.__byn.s)'))) { larm.push(`${f.namn} ${sk.namn} ${lg.namn}: byn laddades aldrig`); await ctx.close(); continue; }
+      if ('zoom' in f) await pg.evaluate(`(() => { const by = window.__byn; by.cam.zoom = ${f.zoom}; by.layout(); })()`);
       await pg.clock.runFor(SPELA_MS);
       await pg.waitForTimeout(1500);
       await pg.screenshot({ path: `${MAPP}/${f.namn}-${sk.namn}${lg.fil}.png`, timeout: 120000 }); // mobilens bild är stor
@@ -132,6 +135,12 @@ async function main() {
       if ('zoom' in f) console.log(`   kartans skala: ${r.varld.toFixed(3)} punkter på skärmen per punkt i världen`);
       if (r.utanfor) larm.push(`${f.namn} ${sk.namn} ${lg.namn}: ${r.utanfor} punkter utanför paletten`);
       if (nya.length) larm.push(`${f.namn} ${sk.namn} ${lg.namn}: bilder i en skala som inte är hel`);
+      // samma bild med teknikträdet öppet, där stationerna och möblerna visas förminskade (steg 12.1.72 och 12.1.160): bara en
+      // bild att titta på, panelen är text och mäts inte
+      await pg.evaluate(`window.__byn.visa('teknik')`);
+      await pg.clock.runFor(500);
+      await pg.waitForTimeout(500);
+      await pg.screenshot({ path: `${MAPP}/${f.namn}-${sk.namn}${lg.fil}-stationer.png`, timeout: 120000 });
       if (fel.length) larm.push(`${f.namn} ${sk.namn} ${lg.namn}: fel på sidan`);
       await ctx.close();
     }

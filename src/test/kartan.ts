@@ -1,4 +1,5 @@
-// Kartan för den riktade kollen (npm run riktad): vilka funktioner i src varje scenario kör, ur V8:s täckning (NODE_V8_COVERAGE).
+// Kartan för den riktade kollen (npm run riktad): vilka funktioner i src varje scenario kör, ur V8:s täckning (tackning.mjs, steg
+// 12.1.130: bara om en funktion körts, inte NODE_V8_COVERAGE:s räknare i varje block, som gjorde scenarierna dubbelt så långsamma).
 // Den byggs under det stora testets scenarier (npm run koll, testkedjan efter v530), där korta scenarier går i grupper: en grupps
 // funktioner räknas då för alla scenarier i gruppen, så att riktad hellre kör ett scenario för mycket än ett för lite. npm run
 // riktad -- --karta bygger den ensam, ett scenario i taget. Kartan sparas i node_modules/.cache/riktad och är inte med i git.
@@ -18,6 +19,9 @@ export function tackningsMapp(namn: string): string {
   rmSync(dir, { recursive: true, force: true }); mkdirSync(dir, { recursive: true });
   return dir;
 }
+// miljön som ger en process (och det den startar) täckningen i mappen dir
+const TACKNING = new URL('./tackning.mjs', import.meta.url).href;
+export const tackningsMiljo = (dir: string): Record<string, string> => ({ TACKNING: dir, NODE_OPTIONS: [process.env.NODE_OPTIONS, `--import=${TACKNING}`].filter(Boolean).join(' ') });
 // funktionerna ("fil#namn") som kördes enligt täckningen i mappen; mappen tas bort
 export function lasTackning(dir: string): Set<string> {
   const f = new Set<string>();

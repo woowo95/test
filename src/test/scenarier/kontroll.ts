@@ -6,7 +6,8 @@ import { Person, createState, step, living, serializeParts, serialize, isLight, 
 import * as SIM from '../../sim';
 import { hasIcon, PAL } from '../../ikoner';
 import { FARGER, MORKARE, PALETT, iPaletten, kornPa, rasterSteg } from '../../palett';
-import { BEAT, START } from '../kor';
+import { BEAT, START, halTidVid } from '../kor';
+import { stridOrsak } from '../stridorsak';
 import { KARNA } from '../../portrattkarna';
 import { KARTBILDER, SYMNAMN } from '../../kartbilder';
 import { symDelar, symUtan } from '../../ui/symboler';
@@ -461,10 +462,39 @@ SCENARIER.arbetstid = {
     const nu = 0, MIN = 60_000;
     const kniv30 = SIM.forLangtArbete({ act: 'kniv', until: nu + 30 * MIN }, nu), kniv3 = SIM.forLangtArbete({ act: 'kniv', until: nu + 3 * MIN }, nu);
     const vila = SIM.forLangtArbete({ act: 'vila', until: nu + 300 * MIN }, nu);
+    // vattnet genom isen (steg 12.1.159): hålet hör inte till arbetet, och vakten drar av den tid hålet tog när arbetet
+    // började, också när yxan sedan tagits av någon annan i samma slag
+    const s = createState(1, START), p = living(s).find(q => ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    s.is = { vatten: 0, cm: 20 } as typeof s.is; SIM.setStock(s, { sten: 0 });
+    const yxa = SIM.addTool(s, 'yxa', p), hal = SIM.halMin(s, p);
+    const vt = { act: 'vatten', phase: 'do', until: s.now, tool: 'vattensack' } as SIM.Task; SIM.startWork(s, p, vt);
+    s.ting = tingOf(s).filter(t => t !== yxa);
+    const efter = SIM.halMin(s, p), vattenLarm = SIM.forLangtArbete(vt, s.now, halTidVid(s, p, vt)), utanMinne = SIM.forLangtArbete(vt, s.now, efter);
     return [
+      [`vatten genom 20 cm is med yxan: hålet ${hal.toFixed(1)} min, arbetet ${((vt.until - s.now) / MIN).toFixed(2)} min, och utan yxan svarar halMin ${efter} efteråt`, hal > 0 && efter < hal && Math.abs((vt.until - s.now) / MIN - hal - SIM.TORST.fyllSek / 60) < 1e-6],
+      [`vakten larmar inte när yxan tagits under slaget (${vattenLarm ?? 'inget larm'}), som den gjorde med halMin efteråt (${utanMinne ?? 'inget larm'})`, !vattenLarm && !!utanMinne],
       [`kniven har slaget ${SIM.tidSlagAv('kniv')}, och vakten larmar när den får 30 minuter (${kniv30 ?? 'inget larm'})`, SIM.tidSlagAv('kniv') !== 'stund' && !!kniv30],
       ['men inte när den tar 3 minuter', !kniv3],
       [`att vila är en stund (${SIM.tidSlagAv('vila')}) och får ta hur lång tid som helst`, SIM.tidSlagAv('vila') === 'stund' && !vila],
+    ];
+  },
+};
+
+SCENARIER.bjornrovare = {
+  text: 'Steg 12.1.162: npm run strid räknar björnens strider mot rövare för sig (Björnen mot rövarna) och inte som anfall mot byn',
+  kor: () => {
+    const strid = (rovare: boolean) => {
+      const s = createState(1, START);
+      if (rovare) SIM.rovarnaKommer(s, 4, true);
+      const folk = rovare ? (s.rovare ? SIM.rovarna(s, s.rovare) : []) : living(s).filter(p => ageOf(p, s.now) >= SIM.ALDER.vuxen).slice(0, 2);
+      SIM.bjornStrid(s, 999, folk, false, 'skada');
+      const g = SIM.kartStrider(s)[SIM.kartStrider(s).length - 1];
+      return { n: folk.length, orsak: g ? stridOrsak(s, g) : 'ingen strid' };
+    };
+    const r = strid(true), b = strid(false);
+    return [
+      [`björnen mot ${r.n} rövare räknas som ${r.orsak}`, r.n > 0 && r.orsak === 'Björnen mot rövarna'],
+      [`björnen mot ${b.n} bybor räknas som ${b.orsak}`, b.n > 0 && b.orsak === 'Anfölls av en björn'],
     ];
   },
 };

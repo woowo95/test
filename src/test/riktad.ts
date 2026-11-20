@@ -16,7 +16,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { ALLVARLIGT, RODA, korSkript, pool, scenarioSammanfattning, sek, typkontroll, typRad, vaktByar } from './pool';
-import { KARTA, Karta, lasTackning, sparaKarta, tackningsMapp } from './kartan';
+import { KARTA, Karta, lasTackning, sparaKarta, tackningsMapp, tackningsMiljo } from './kartan';
 import { matUnderTestet } from './matare';
 matUnderTestet(); // klocktiden och den aktiva tiden per kärna sist (steg 10.2.65)
 import './scenarier/alla';
@@ -33,7 +33,7 @@ if (arg[0] === '--karta') {
   const scen: Record<string, Set<string>> = {}, fel: string[] = [];
   await pool(namn.map(n => async () => {
     const dir = tackningsMapp(n);
-    const u = await korSkript('scenario.ts', [n], { ...SCENARIER[n]!.env, NODE_V8_COVERAGE: dir });
+    const u = await korSkript('scenario.ts', [n], { ...SCENARIER[n]!.env, ...tackningsMiljo(dir) });
     if (u.code) fel.push(n);
     scen[n] = lasTackning(dir);
   }));
