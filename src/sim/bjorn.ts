@@ -20,7 +20,7 @@ import { isLight, yearNo } from './tid';
 import { halsa, kanGa } from './halsa';
 import { avbryt, foodOf } from './lager';
 import { notis } from './notiser';
-import { handelse, larmNu } from './rykten';
+import { handelse, larma, larmNu } from './rykten';
 import { clamp, rnd } from './slump';
 import { SLAGSMAL, VAPEN, Avsikt, personKampe, efterKampen } from './strid';
 import { DjurMed, KartStrid, djurIKartStrid, kartStridBorja, kartStridMed } from './kartstrid';
@@ -29,7 +29,7 @@ import { lamnaFallt, styckaFallt } from './styckning';
 import { upplev } from './uppvaxt';
 import { tecken } from './religion';
 import { H, HOUR, MIN, Person, SEC, State, Task, W } from './typer';
-import { bynsMitt } from './omrade';
+import { bynsMitt, utanforByn } from './omrade';
 
 export const BJORNMOTE = balans('bjornmote', {
   nara: 2.5, // så nära (rutor) man ska komma björnen för att överraska den ...
@@ -39,6 +39,7 @@ export const BJORNMOTE = balans('bjornmote', {
   rädd: 0.25, // så mycket sämre humör den får som ser björnen på nära håll
   räddTim: 6, // i så många timmar
   med: 2.5, // de som är så här nära (rutor) den som anfalls slåss med
+  larmNara: 25, // den som möter björnen ropar när björnen är högst så här många rutor utanför byn (steg 12.1.142): björnen håller sig oftast längre bort
   undanTim: 4, // efter en strid som björnen vunnit eller gett upp går den bort från byn och kommer inte tillbaka på så här många timmar (steg 9.2.30) ...
   undanR: 30, // ... så här många rutor bort från platsen
   gaMed: 0.6, // den som jagar nära en björnstrid går med om modet (0 till 1) är minst så här stort, annars håller hen sig undan (steg 9.2.29)
@@ -82,6 +83,7 @@ export function bjornSteg(s: State) {
     if (mott.ids.includes(p.id)) continue;
     mott.ids.push(p.id);
     count(s, 'bjornmote');
+    if (utanforByn(s, b.x, b.y) <= BJORNMOTE.larmNara && larmNu(s, p)?.vad !== 'bjorn') { larma(s, 'bjorn', 1 + ungar.length, [p]); count(s, 'bjorn larm'); } // den som ser björnen nära byn ropar (steg 12.1.142)
     if (!s.bjornJakt?.jagare) s.bjornJakt = { ar, sedd: s.now, sag: p.id, x: b.x, y: b.y, timme: s.bjornJakt?.timme }; // timmen behålls: chansen till jakt slås en gång i timmen, inte vid varje nytt möte (steg 12.1.59) // byn vet var björnen går (björnjakten, steg 6.6.6), och märket står där (steg 9.2.122)
     if (rnd(s, 'bjorn') < (ungar.length ? BJORNMOTE.anfallUngar : BJORNMOTE.anfall)) {
       const folk = living(s).filter(q => q === p || vaken(q) && q.task?.act !== 'strid' && !roomAt(s, q.x, q.y) && Math.hypot(q.x - p.x, q.y - p.y) <= BJORNMOTE.med);

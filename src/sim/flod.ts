@@ -11,6 +11,7 @@ import { iVattnetNu, vattenNu } from './sjo';
 import { vattnetAndrat } from './torka';
 import { areaOf, bynsMinne } from './minne';
 import { eldPlats } from './karta';
+import { larma, larmNu } from './rykten';
 import { DAY, HOUR, State, T, Task, W } from './typer';
 
 // Översvämningen (steg 3.8.3, "Motgångarna i spelet" i designdokumentet). En av motgångarna i registret MOTGANGAR
@@ -43,6 +44,8 @@ export const FLOD = balans('flod', {
   blotTim: 12, // en ruta är blöt (ingen sover där) så här många timmar efter att vattnet gått undan
   leraTim: 48, // ett jordgolv som legat under vatten är lera så här många timmar efter att vattnet gått undan
   vaggSlit: 3, // en vägg i vattnet slits så här många gånger fortare
+  ser: 8, // den som är vaken och högst så här många rutor från vattnet som just steg ser det och ropar (steg 12.1.142) ...
+  husNara: 3, // ... när det steg så här nära ett hus
   minneSaker: 0.3, // byn bygger inte där vattnet nått så länge någon är så här säker på minnet (lärdomens c)
 });
 
@@ -104,6 +107,7 @@ function andras(s: State, niva: number, fore: number, minne: number) {
   if (niva > fore) {
     s.flodHot = Math.max(niva + FLOD.hotPlus, minne); // maten bärs undan härifrån (flodUndan i lager.ts)
     dranker(s, gammalt);
+    flodRop(s, gammalt, niva);
     const f = eldPlats(s);
     if (s.fire.lit && iVattnetNu(s, f.y * W + f.x)) s.fire.fuel = 0; // elden i vattnet slocknar (stepFire i eld.ts)
     count(s, 'flod stiger');
@@ -139,6 +143,18 @@ function lera(s: State) {
     } else if (b.m === 'lera' && s.now >= (b.lera ?? 0)) { b.m = 'jord'; delete b.lera; andrat = true; }
   }
   if (andrat) touch(s);
+}
+// den som ser vattnet stiga mot husen ropar (steg 12.1.142): de vakna nära rutorna som just hamnat under vatten, när någon av dem
+// ligger nära ett hus. Ropet går vidare som de andra larmen, och var och en som hör väljer själv vad hen gör
+export function flodRop(s: State, fore: Uint8Array, niva: number, efter: Uint8Array = vattenNu(s)) { // efter: vattnet nu (scenariot larm2 ger ett eget)
+  const nya: number[] = [];
+  for (let i = 0; i < efter.length; i++) if (efter[i] === T.Vatten && fore[i] !== T.Vatten) nya.push(i);
+  const r = FLOD.husNara, hus = nya.some(i => { const x = i % W, y = Math.floor(i / W); for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (roofed(s, x + dx, y + dy)) return true; return false; });
+  if (!hus) return;
+  const ser = living(s).filter(p => p.ute === undefined && p.task?.act !== 'sova' && p.task?.act !== 'badd' && larmNu(s, p)?.vad !== 'flod' && nya.some(i => Math.hypot(i % W + 0.5 - p.x, Math.floor(i / W) + 0.5 - p.y) <= FLOD.ser));
+  if (!ser.length) return;
+  larma(s, 'flod', niva, ser);
+  count(s, 'flod larm');
 }
 // det som vattnet nådde: maten förstörs och lätta saker flyter bort ute; tunga saker och det i kistor och på hyllor ligger kvar
 function dranker(s: State, fore: Uint8Array) {

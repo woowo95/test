@@ -1529,6 +1529,56 @@ SCENARIER.vapentycke = {
   },
 };
 
+SCENARIER.larm2 = {
+  text: 'Fler larm (steg 12.1.142): den som ser en björn nära byn ropar, och den som ser vattnet stiga mot husen ropar; ropen går vidare som de andra larmen',
+  kor: () => {
+    const { T } = SIM;
+    // björnen: en person ställs bredvid den, med och utan att björnen räknas som nära byn
+    const b0 = createState(6, START), mor = (t: number) => SIM.bjornarOf(b0, t).find(d => d.art === 'bjorn');
+    let tNara: number | undefined, tLangt: number | undefined;
+    for (let t = b0.now; t < b0.now + 90 * DAY && (tNara === undefined || tLangt === undefined); t += 20 * 60_000) {
+      const m = mor(t); if (!m) continue;
+      const u = SIM.utanforByn(b0, m.x, m.y);
+      if (u <= SIM.BJORNMOTE.larmNara - 1) tNara ??= t; else if (u > SIM.BJORNMOTE.larmNara + 5) tLangt ??= t;
+    }
+    const bjorn = (t: number | undefined) => {
+      if (t === undefined) return { p: 'ingen tid', q: 'ingen tid' };
+      const k = SIM.cloneState(b0); k.now = t;
+      const m = SIM.bjornarOf(k, t).find(d => d.art === 'bjorn')!, [p, q] = living(k);
+      for (const x of living(k)) { x.x = 2; x.y = 2; x.larm = undefined; x.task = undefined; }
+      p!.x = m.x + 1; p!.y = m.y; q!.x = m.x + 6; q!.y = m.y;
+      SIM.bjornSteg(k);
+      return { p: p!.larm?.vad, q: q!.larm?.vad };
+    };
+    const bNara = bjorn(tNara), bLangt = bjorn(tLangt);
+    // översvämningen: vattnet stiger till en ruta två steg från ett hus, eller långt från husen
+    const harHus = (b: SIM.State) => { for (let i = 0; i < SIM.W * SIM.W; i++) if (SIM.roofed(b, i % SIM.W, Math.floor(i / SIM.W))) return true; return false; };
+    const s = testBy(3, harHus), fore = SIM.vattenNu(s), folk = living(s);
+    let hus = -1;
+    for (let i = 0; i < fore.length && hus < 0; i++) if (SIM.roofed(s, i % SIM.W, Math.floor(i / SIM.W))) hus = i;
+    const flod = (i: number) => {
+      const k = SIM.cloneState(s), efter = Uint8Array.from(fore), x = i % SIM.W, y = Math.floor(i / SIM.W);
+      efter[i] = T.Vatten;
+      const lev = living(k);
+      for (const q of lev) { q.x = 2; q.y = 2; q.larm = undefined; q.task = undefined; q.ute = undefined; }
+      lev[0]!.x = x + 0.5; lev[0]!.y = y + 3.5; lev[1]!.x = x + 10.5; lev[1]!.y = y + 0.5;
+      SIM.flodRop(k, fore, 1, efter);
+      return { ser: lev[0]!.larm?.vad, hor: lev[1]!.larm?.vad, n: (k.stat?.['flod larm'] as number | undefined) ?? 0 };
+    };
+    const utanHus = (i: number) => { const x = i % SIM.W, y = Math.floor(i / SIM.W); for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) if (SIM.roofed(s, x + dx, y + dy)) return false; return x > 12 && y > 12 && x < SIM.W - 12 && y < SIM.W - 12; };
+    let langt = -1;
+    for (let i = 0; i < fore.length && langt < 0; i++) if (fore[i] !== T.Vatten && utanHus(i)) langt = i;
+    const fNara = hus >= 0 ? flod(hus + 2) : undefined, fLangt = langt >= 0 ? flod(langt) : undefined;
+    return [
+      [`björnen nära byn: den som ser den ropar (${bNara.p ?? 'inget'}) och den bredvid hör (${bNara.q ?? 'inget'})`, bNara.p === 'bjorn' && bNara.q === 'bjorn'],
+      [`björnen långt från byn: inget larm (${bLangt.p ?? 'inget'})`, bLangt.p === undefined],
+      ['larmen har ord', !!SIM.LARM_VAD.bjorn && !!SIM.LARM_VAD.flod],
+      [`testbyn har ett hus (${folk.length} invånare)`, hus >= 0],
+      [`vattnet stiger nära ett hus: den som ser det ropar (${fNara?.ser ?? 'inget'}) och den som är tio rutor bort hör (${fNara?.hor ?? 'inget'})`, fNara?.ser === 'flod' && fNara.hor === 'flod' && fNara.n === 1],
+      [`vattnet stiger långt från husen: inget larm (${fLangt?.ser ?? 'inget'})`, fLangt?.ser === undefined && fLangt?.n === 0],
+    ];
+  },
+};
 SCENARIER.larm = {
   text: 'Varningar, larm och dimma (steg 3.7.11): ropet från ett slagsmål hörs runt 15 rutor, längre på natten, och sprids vidare genom byn med storleken lite förvrängd; den som har ett utbrott kan ropa falskt larm; dimman ligger på morgonen och mest på hösten, gör att man ser kortare och träffar sämre på avstånd',
   kor: () => {
