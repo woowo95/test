@@ -1,6 +1,6 @@
 // Scenarier för fas 12: myren och järnet.
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, kor, medBank, medHus, nyInvanare, setItems, setMat, tandEld } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, medHus, nyInvanare, setFood, setItems, setMat, tandEld, tandOchFlinta } from './hjalp';
 import { START } from '../kor';
 
 // en by med myr: det första fröet från start vars karta har myr (kartan räknas utan att byn skapas)
@@ -804,6 +804,35 @@ SCENARIER.branningljus = {
     return [
       [`milan lyser lite medan den brinner (före ${fore}, mitt i ${ljus.toFixed(2)}, ${SIM.MORKER.branningR + 2} rutor bort ${bort}), mindre än elden (${SIM.MORKER.branningR} mot ${SIM.MORKER.eldR} rutor)`, fore === 0 && ljus > 0 && bort === 0 && SIM.MORKER.branningR < SIM.MORKER.eldR],
       [`milan gnistrar och kan tända en brand intill (${brand ? `vid ${brand.x}, ${brand.y}` : 'ingen'})`, nara],
+    ];
+  },
+};
+
+// steg 12.1.45: barnets hjälp väljs med samma poäng som de vuxnas rader, och fattas inget leker barnet
+SCENARIER.barnhjalp = {
+  text: 'Barnens hjälp följer behovet (steg 12.1.45): när veden och maten räcker länge hjälper barnen inte till med dem, och när veden är slut hjälper de till med veden och säger det',
+  kor: () => {
+    const prov = (ved: number) => {
+      const s = SIM.createState(1, START); klockan(s, 10); tandEld(s); tandOchFlinta(s);
+      setFood(s, 3000); SIM.setAmount(s, 'ved', ved);
+      const barn = nyInvanare(s, 'k', SIM.ALDER.vuxen - 2);
+      const varv: string[] = [];
+      for (let i = 0; i < 200; i++) {
+        Object.assign(barn, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, task: undefined });
+        SIM.chooseTask(s, barn);
+        varv.push(`${barn.task?.act}|${barn.task?.why ?? ''}`);
+        s.now += 7 * 60000;
+        if (new Date(s.now).getUTCHours() >= 16) klockan(s, 10);
+      }
+      return varv;
+    };
+    const full = prov(3000), tom = prov(0);
+    const vedFull = full.filter(r => r.includes('Hjälper till') && r.includes('ved')), vedTom = tom.filter(r => r.includes('Hjälper till. Byn behöver ved'));
+    const lekFull = full.filter(r => r.startsWith('leka|')).length, hjalpFull = full.filter(r => r.includes('Hjälper till'));
+    return [
+      [`veden räcker länge: inget barn hjälper till med veden (${vedFull.length} av ${full.length}${vedFull[0] ? `, t.ex. ${vedFull[0]}` : ''})`, vedFull.length === 0],
+      [`förråden räcker: barnet hjälper inte till (${hjalpFull.length} av ${full.length}${hjalpFull[0] ? `, t.ex. ${hjalpFull[0]}` : ''}) utan leker (${lekFull})`, hjalpFull.length === 0 && lekFull > full.length / 2],
+      [`veden är slut: barnet hjälper till med veden och säger det (${vedTom.length} av ${tom.length})`, vedTom.length > 0],
     ];
   },
 };

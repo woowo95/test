@@ -804,9 +804,12 @@ export const ARBETEN: readonly Arbete[] = [
     // byn behöver arbete; barnet leker med chansen lek / (lek + hjälp)
     const lek = (VAL.lekBas + VAL.lekSed * s.seder.v.barn) * (1 + VAL.lekUng * (1 - a / ALDER.vuxen)), hjalp = a / ALDER.vuxen * (VAL.barnHjalp + d.u);
     if (rnd(s, 'val', p) < lek / Math.max(1e-9, lek + hjalp)) return set(v, 'leka', lekText(s));
-    const tand = d.best === 'samla' && needTinder(s);
-    set(v, d.best, `Hjälper till. ${tand ? 'Byn behöver tändmaterial till elden' : ACTS[d.best].behov === 'ved' ? `Byn behöver ved, förrådet räcker ${dygn(d.wd)}` : d.fd < d.matBuf ? `Byn behöver mat, förrådet räcker ${dygn(d.fd)}` : `Mer mat till förrådet, som räcker ${dygn(d.fd)}`}.`);
-    if (tand) v.tandmat = true;
+    // hjälpen väljs med samma poäng som de vuxnas rader på nivån (steg 12.1.45): den går till det som fattas, och skälet är
+    // radens eget. Barnet som hjälper arbetar i dag; fattas inget (ingen rad har poäng eller alla har sina arbetare) leker det
+    const cb: Ctx = { ...c, d: { ...d, works: true } };
+    const w = vinnare(cb, POANGRADER[6].filter(r => (!r.nar || r.nar === 'dag') && vaderTillater(s, r.vader)));
+    if (!w?.prova(cb)) return set(v, 'leka', lekText(s));
+    v.why = `Hjälper till. ${v.why}`;
     return true;
   } },
   { id: 'byggPabud', niva: 6, nar: 'dag', prova: c => {
@@ -890,7 +893,8 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'fara', niva: 8, nar: 'dag', prova: c => {
     const d = dag(c), f = faror(c);
     if (!d.works || !(f.kyla || f.svalt)) return false;
-    arbeta(c, d.best, ACTS[d.best].behov === 'ved' ? `Byn behöver ved, förrådet räcker ${dygn(d.wd)}` : `Byn behöver mat, förrådet räcker ${dygn(d.fd)}`); return true;
+    // skälet är faran (steg 12.1.45): kylan när kylan är faran, inte att byn behöver ved när veden räcker
+    arbeta(c, d.best, ACTS[d.best].behov === 'ved' ? (f.kyla ? `Folk fryser, veden räcker ${dygn(d.wd)}` : `Byn behöver ved, förrådet räcker ${dygn(d.wd)}`) : `Byn behöver mat, förrådet räcker ${dygn(d.fd)}`); return true;
   } },
   // 9 Fritid: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden
   { id: 'fritid', niva: 9, nar: 'dag', prova: c => { leisure(c.s, c.p, c.v, dag(c).u, c.lazy); return true; } },

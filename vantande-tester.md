@@ -60,3 +60,8 @@
 
 - Ihopslagna i 2c526786, deda7f08, dcf71ca1 och 323ddd0f; varje ihopslagning har typkontrollen och de berörda scenarierna bakom sig. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` på den senaste committen, som täcker raderna för alla fyra grenarna ovan. Grenarna ändrar spelet (12.1.64, 12.1.83, 12.1.84, 12.1.114), så koll sparar nytt facit.
 - Samma-kollens facit (test/samma.json) är sparat på nytt efter ihopslagningarna. 12.1.93 och 12.1.94 är prövade med samma mot facit från 12.1.89 (på 037fbe41 med rättningen 8f048a2d): samma utveckling som förut.
+
+## Grenen par-val (12.1.45–12.1.49, 12.1.52, 12.1.53: valet av aktivitet efter granskningen)
+
+- Committerna på par-val har bara typkontrollen och stegens egna scenarier bakom sig. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` när grenen förts in i varld; stegen ändrar spelet, så koll sparar nytt facit.
+- 12.1.45 (barnens hjälp följer behovet): barnet som hjälper till väljer bland nivå 6:s rader med poäng, som de vuxna, och leker när inget fattas. Scenario: barnhjalp. Vakten Skälet stämmer (12.1.42) finns inte i grenen; pröva den för barnen när felsok-12-1 är inne.
