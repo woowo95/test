@@ -462,6 +462,12 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
       for (let i = t.delar.length - 1; i >= 0 && kvar > 0; i--) { const n = Math.min(kvar, (dl[i]?.min ?? 1) * MIN); t.delar[i].kvar = n; t.delar[i].mat = 1; kvar -= n; }
     }
   }],
+  [61, 'v535: påbuden görs om (steg 12.1.27): Skriv ner lagarna och Fängelse finns inte längre, och frågorna om påbud som väntar har det gamla formatet (de tas upp igen)', s => {
+    const st = s.styre;
+    if (!st) return;
+    if (st.pabud) { const pb = st.pabud as Record<string, number>; delete pb.lagskrift; delete pb.fangelse; }
+    if (st.fragor) st.fragor = st.fragor.filter(f => f.f !== 'pabud');
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

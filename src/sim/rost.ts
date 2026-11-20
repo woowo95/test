@@ -11,7 +11,7 @@ import { kronika } from './historik';
 import { ljugOm } from './rykten';
 import { SED_LIST, drar, influence } from './seder';
 import type { Sed } from './seder';
-import { PABUD, Pabud, ledareOf, ledarVikt, legitimitet, slutarStyre, styreAv, utvisa } from './styre';
+import { PABUD, pabudFraga, pabudFran, ledareOf, ledarVikt, legitimitet, slutarStyre, styreAv, utvisa } from './styre';
 import { notis } from './notiser';
 import { kartStridBorja, stridPagar } from './kartstrid';
 import { EFTER } from './efterstrid';
@@ -109,7 +109,9 @@ export interface Rost { id: number; namn: string; w: number; ja: boolean; why: s
 export interface Omrostning { t: number; f: string; namn: string; fram: number; framNamn: string; roster: Rost[]; ja: number; nej: number; gick: boolean; varfor?: string; om?: string; andr?: RostAndring } // om: vad lagen eller påbudet gör (steg 10.2.58)
 export interface Fraga { f: string; d: FragaData; fram: number; prio?: number }
 // vad en omröstning ändrar, från vad och till vad (steg 11.1.28): k = 'pabud:<påbud>' eller 'lagtal:<lag>:<tal>', så att fliken skriver talen
-export interface RostAndring { k: string; fran: number; till: number }
+export interface RostAndring { k: string; fran: number; till: number; del?: RostAndring[] } // del: alla talen när ett påbud har flera (steg 12.1.27)
+// talen ett förslag om ett påbud sätter
+const pabudTal = (d: FragaData) => (pabudFraga(d.k as string)?.tal ?? []).filter(k => typeof d[k] === 'number');
 export type FragaData = Record<string, string | number | undefined>;
 export interface FragaDef {
   namn(s: State, d: FragaData): string;
@@ -124,15 +126,26 @@ export interface FragaDef {
 }
 export const FRAGOR: Record<string, FragaDef> = {
   // påbuden som finns blir de första frågorna (steg 8.3.1)
+  // d.k är påbudet (PABUD_FRAGOR, steg 12.1.27) och d[tal] talen förslaget sätter
   pabud: {
-    namn: (_s, d) => `${PABUD[d.k as Pabud].namn}${d.namn ? ` om ${d.namn}` : ''}: ändra påbudet`, om: (_s, d) => PABUD[d.k as Pabud].text, krets: 'byn',
-    andr: (s, d) => { const om = d.om as number | undefined; return { k: `pabud:${d.k}`, fran: om === undefined || s.styre?.tystnad?.id === om ? s.styre?.pabud?.[d.k as Pabud] ?? 0 : 0, till: d.v as number }; },
-    rost: (s, p, d) => {
-      const k = d.k as Pabud, om = d.om as number | undefined, egen = PABUD[k].asikt(s, p, om), nytt = d.v as number, gamla = om === undefined || s.styre?.tystnad?.id === om ? s.styre?.pabud?.[k] ?? 0 : 0;
-      const v = Math.abs(egen - gamla) - Math.abs(egen - nytt);
-      return { v, why: v > 0 ? `Vill ha det så (${PABUD[k].namn.toLowerCase()})` : 'Tycker att det är bra som det är' };
+    namn: (_s, d) => `${pabudFraga(d.k as string)?.namn ?? d.k}${d.namn ? ` om ${d.namn}` : ''}: ändra påbudet`, om: (_s, d) => pabudFraga(d.k as string)?.text ?? '', krets: 'byn',
+    andr: (s, d) => {
+      const om = d.om as number | undefined, del = pabudTal(d).map(k => ({ k: `pabud:${k}`, fran: pabudFran(s, k, om), till: d[k] as number })).filter(a => a.fran !== a.till);
+      return del.length ? { ...del[0]!, del: del.length > 1 ? del : undefined } : undefined;
     },
-    gor: (s, d, fram) => { const st = styreAv(s); st.pabud = { ...st.pabud, [d.k as Pabud]: d.v as number }; if (d.om !== undefined) st.tystnad = { id: d.om as number, namn: d.namn as string }; if (fram) log(s, `Byn gick på ${fram.name}s förslag om ${PABUD[d.k as Pabud].namn.toLowerCase()}.`, 'world', [fram.id]); },
+    rost: (s, p, d) => {
+      const om = d.om as number | undefined, f = pabudFraga(d.k as string);
+      let v = 0;
+      for (const k of pabudTal(d)) { const egen = PABUD[k].asikt(s, p, om), gamla = pabudFran(s, k, om); v += Math.abs(egen - gamla) - Math.abs(egen - (d[k] as number)); }
+      return { v, why: v > 0 ? `Vill ha det så (${(f?.namn ?? '').toLowerCase()})` : 'Tycker att det är bra som det är' };
+    },
+    gor: (s, d, fram) => {
+      const st = styreAv(s), ny = { ...st.pabud };
+      for (const k of pabudTal(d)) ny[k] = d[k] as number;
+      st.pabud = ny;
+      if (d.om !== undefined) st.tystnad = { id: d.om as number, namn: d.namn as string };
+      if (fram) log(s, `Byn gick på ${fram.name}s förslag om ${(pabudFraga(d.k as string)?.namn ?? '').toLowerCase()}.`, 'world', [fram.id]);
+    },
   },
   minister: {
     namn: (_s, d) => `${MINISTRAR[d.post as string].namn}: ${d.namn}`, krets: 'byn',
@@ -188,15 +201,15 @@ export function rostKvall(s: State) {
   }
 }
 // ---------- ministrarna (steg 8.3.8) ----------
-export interface MinisterDef { namn: string; kort: string; om: string; nar(s: State): boolean; vem(s: State): Person | undefined; pabud?: Pabud[]; sektion(s: State): number }
+export interface MinisterDef { namn: string; kort: string; om: string; nar(s: State): boolean; vem(s: State): Person | undefined; pabud?: string[]; sektion(s: State): number } // pabud: påbuden (PABUD_FRAGOR) posten lägger fram
 const basta = (s: State, f: (p: Person) => number) => { let b: Person | undefined, bv = -Infinity; for (const p of living(s)) if (vuxenRost(s, p) && f(p) > bv) { bv = f(p); b = p; } return b; };
 export const MINISTRAR: Record<string, MinisterDef> = {
   overstePrast: { namn: 'Överstepräst', kort: 'leder tron', om: 'Den främsta prästen i byns största tro. Talar för de troende i styret.', nar: s => !!overstePrast(s), vem: s => overstePrast(s), sektion: s => living(s).filter(p => p.tro !== undefined).length / 3 }, // steg 8.6.16
   krigshovding: { namn: 'Krigshövding', kort: 'leder striderna', om: 'Väljs när byn har stridit ofta. Den skickligaste kämpen leder vargjakterna och försvaret.', nar: s => (s.stat?.vargjakt ?? 0) + (s.stat?.vargstrid ?? 0) + (s.stat?.rovarstrid ?? 0) >= 6 && krigare(s).length >= 3, vem: s => basta(s, p => p.skill.narstrid + p.pot.mod / 4), sektion: s => krigare(s).length },
   domare: { namn: 'Domare', kort: 'dömer på tinget', om: 'Väljs när byn har lagar. Den klokaste avgör skuld och straff.', nar: s => (s.styre?.lagar?.length ?? 0) >= 2, vem: s => basta(s, p => p.pot.intelligens + p.pot.empati / 2), sektion: () => 1 }, // steg 8.4.16
-  forvaltare: { namn: 'Förvaltare', kort: 'sköter förråden', om: 'Väljs när byn blivit rik. Lägger fram påbuden om mat, ved och torkat.', nar: s => rikedom(s) >= 800, vem: s => basta(s, p => p.pot.intelligens + p.skill.handel / 2), pabud: ['matlager', 'vedlager', 'torkat'], sektion: s => living(s).length / 4 },
+  forvaltare: { namn: 'Förvaltare', kort: 'sköter förråden', om: 'Väljs när byn blivit rik. Lägger fram påbudet om förråden.', nar: s => rikedom(s) >= 800, vem: s => basta(s, p => p.pot.intelligens + p.skill.handel / 2), pabud: ['forrad'], sektion: s => living(s).length / 4 },
 };
-export const framFor = (s: State, k: Pabud) => { for (const [id, m] of Object.entries(MINISTRAR)) if (m.pabud?.includes(k)) { const p = byId(s, s.styre?.ministrar?.[id]); if (p && alive(p)) return p; } return undefined; };
+export const framFor = (s: State, k: string) => { for (const [id, m] of Object.entries(MINISTRAR)) if (m.pabud?.includes(k)) { const p = byId(s, s.styre?.ministrar?.[id]); if (p && alive(p)) return p; } return undefined; };
 // posterna ses över varje årstid, som titeln. Vid Envälde utser ledaren, annars väljer byn
 export function seOverMinistrar(s: State) {
   const l = ledareOf(s), st = styreAv(s);

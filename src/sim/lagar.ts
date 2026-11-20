@@ -9,7 +9,7 @@ import { clamp } from './slump';
 import { ALDER, ageOf, count, living, log, relKey, satAktRadd, stat } from './folk';
 import { kronika } from './historik';
 import { FRAGOR, ROST, Fraga, framFor, laggFram, rostaOm, vikter } from './rost';
-import { PABUD, Pabud, STRAFF_NAMN, ledarHard, legitimitet, ledareOf, styreAv } from './styre';
+import { PABUD, PABUD_FRAGOR, pabudFran, pabudOm, STRAFF_NAMN, ledarHard, legitimitet, ledareOf, styreAv } from './styre';
 import { fangelseLedigt } from './fangelse';
 import { knows } from './teknik';
 import type { HandelseTyp } from './rykten';
@@ -153,12 +153,16 @@ export function framlaggare(s: State): Person[] {
 const personNamn = (s: State, id: number) => byId(s, id)?.name ?? s.people.flatMap(p => p.intryck ?? []).find(e => e.om === id)?.namn ?? '';
 export interface LagForslag { fr: Fraga; prio: number; varfor: string }
 export const TAS_UPP: { id: string; lista(s: State, p: Person): LagForslag[] }[] = [
-  { id: 'pabud', lista: (s, p) => (Object.keys(PABUD) as Pabud[]).filter(k => (framFor(s, k) ?? ledareOf(s)) === p).flatMap(k => {
+  // ett påbud är en fråga med ett eller flera tal (steg 12.1.27, PABUD_FRAGOR): den som får lägga fram föreslår alla talen så som hen
+  // själv vill ha dem, när något av dem skiljer sig nog från det som gäller
+  { id: 'pabud', lista: (s, p) => PABUD_FRAGOR.filter(f => (framFor(s, f.id) ?? ledareOf(s)) === p).flatMap(f => {
     // ett påbud som pekar ut en person (tystnaden, steg 10.4.10): en annan person börjar från noll
-    const om = PABUD[k].vem?.(s, p), pd = PABUD[k].vem ? (om === undefined ? undefined : { om, namn: personNamn(s, om) }) : {};
-    if (!pd) return [];
-    const ny = PABUD[k].asikt(s, p, om), gamla = om === undefined || s.styre?.tystnad?.id === om ? s.styre?.pabud?.[k] ?? 0 : 0, d = Math.abs(ny - gamla);
-    return d >= ROST.skillnad ? [{ fr: { f: 'pabud', d: { k, v: Math.round(ny * 100) / 100, ...pd }, fram: p.id }, prio: d, varfor: `${p.name} vill ändra påbudet om ${PABUD[k].namn.toLowerCase()}${om !== undefined ? ` om ${pd.namn}` : ''}` }] : [];
+    const o = pabudOm(s, f, p);
+    if (!o) return [];
+    const pd = o.om === undefined ? {} : { om: o.om, namn: personNamn(s, o.om) }, nya: Record<string, number> = {};
+    let d = 0;
+    for (const k of f.tal) { const ny = PABUD[k].asikt(s, p, o.om); nya[k] = Math.round(ny * 100) / 100; d = Math.max(d, Math.abs(ny - pabudFran(s, k, o.om))); }
+    return d >= ROST.skillnad ? [{ fr: { f: 'pabud', d: { k: f.id, ...nya, ...pd }, fram: p.id }, prio: d, varfor: `${p.name} vill ändra påbudet om ${f.namn.toLowerCase()}${o.om !== undefined ? ` om ${pd.namn}` : ''}` }] : [];
   }) },
   { id: 'nylag', lista: (s, p) => knows(p, 'lag') ? Object.keys(LAGAR).flatMap(id => {
     if (lagGaller(s, id) || LAGAR[id].kan?.(s) === false || (LAGAR[id].tek && !knows(p, LAGAR[id].tek!)) || LAGAR[id].rost(s, p).v <= 0) return [];

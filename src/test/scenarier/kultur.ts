@@ -402,7 +402,7 @@ SCENARIER.forelasning = {
 };
 
 SCENARIER.lagskrift = {
-  text: 'Steg 10.6.10: skrivna lagar. En lag som står skriven på en runsten, ett blad eller i en lagbok behöver byn inte hålla i minnet, så varje skriven lag höjer taket för antalet lagar med ett, upp till 12. Ändras straffet eller tas lagen bort räknas skriften inte, och påbudet Skriv ner lagarna styr hur gärna det görs',
+  text: 'Steg 10.6.10: skrivna lagar. En lag som står skriven på en runsten, ett blad eller i en lagbok behöver byn inte hålla i minnet, så varje skriven lag höjer taket för antalet lagar med ett, upp till 12. Ändras straffet eller tas lagen bort räknas skriften inte. Hur gärna det görs kommer av hur många lagar som är oskrivna och hur nära taket byn är; det finns inget påbud om det (steg 12.1.27)',
   kor: () => {
     const s = createState(6, START), v = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen), p = v[0]!;
     for (const r of v) { r.sorg = []; r.bedrift = undefined; r.tro = undefined; }
@@ -422,22 +422,23 @@ SCENARIER.lagskrift = {
     const takStraff = SIM.lagTak(s);
     l.straff = kvar.straff;
     s.styre!.lagar = s.styre!.lagar!.filter(x => x !== l);
-    const takBort = SIM.lagTak(s), skrivenBort = SIM.skrivenLag(s, { ...l });
+    const takBort = SIM.lagTak(s), skrivenBort = SIM.skrivenLag(s, { ...l }), stenKvar = (s.runstenar?.length ?? 0) === 1;
     // tretton skrivna lagar: taket blir aldrig över 12
     const t = createState(6, START); t.styre = { historia: [], oppna: [] } as NonNullable<State['styre']>; t.styre!.lagar = ids.slice(0, 13).map(lag);
     t.runstenar = t.styre!.lagar!.map((x, i) => ({ id: i + 1, x: i, y: 0, t: t.now, slag: 'lag' as const, av: { id: p.id, namn: p.name }, om: { id: i, namn: x.id }, text: '', runor: '', lag: { id: x.id, straff: x.straff } }));
     const takMax = SIM.lagTak(t);
-    // påbudet på lägsta: ingen vill skriva
-    const ledare = v[1]!;
-    s.styre = { historia: [{ id: ledare.id, namn: ledare.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: ledare.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: { matlager: 0, vedlager: 0, torkat: 0, lagskrift: -1 } as never, lagar: ids.slice(0, 6).map(lag) } as NonNullable<State['styre']>;
+    // lusten (steg 12.1.27): sex oskrivna lagar vid taket ger full lust, och när alla står skrivna finns ingen
+    s.styre = { historia: [], oppna: [], lagar: ids.slice(0, 6).map(lag) } as NonNullable<State['styre']>; s.runstenar = [];
+    const full = SIM.lagSkrivVikt(s);
+    s.runstenar = s.styre!.lagar!.map((x, i) => ({ id: i + 1, x: i, y: 0, t: s.now, slag: 'lag' as const, av: { id: p.id, namn: p.name }, om: { id: i, namn: x.id }, text: '', runor: '', lag: { id: x.id, straff: x.straff } }));
     const lagst = SIM.lagSkrivVikt(s), lustLagst = SIM.runstenLust(s, p)?.slag;
     return [
       [`med sex lagar och taket ${tak0} ristas två lagar, och taket blir ${tak2}`, tak0 === 6 && stenar === 2 && tak2 === 8],
       [`en sten rivs och taket blir ${tak1}`, tak1 === 7],
       [`ett ändrat straff gör att skriften inte räknas (taket ${takStraff})`, takStraff === 6],
-      [`en borttagen lag räknas inte heller (taket ${takBort}, men stenen står kvar)`, takBort === 6 && (s.runstenar?.length ?? 0) === 1 && skrivenBort],
+      [`en borttagen lag räknas inte heller (taket ${takBort}, men stenen står kvar)`, takBort === 6 && stenKvar && skrivenBort],
       [`taket går aldrig över 12 (${takMax} med 13 skrivna lagar)`, takMax === 12],
-      [`med påbudet på lägsta skriver ingen (vikten ${lagst}, ${lustLagst ?? 'ingen lust'})`, lagst === 0 && lustLagst !== 'lag'],
+      [`sex oskrivna lagar vid taket ger full lust (${full}), och när alla står skrivna vill ingen skriva en lag (vikten ${lagst}, ${lustLagst ?? 'ingen lust'})`, full === 1 && lagst === 0 && lustLagst !== 'lag'],
     ];
   },
 };
@@ -1018,13 +1019,13 @@ SCENARIER.omrostning = {
     s.seder.v.rang = 1;
     const envalde = SIM.vikter(s), led = envalde.find(x => x.p === l)!.andel;
     s.seder.v.rang = 0;
-    const fr = { f: 'pabud', d: { k: 'matlager', v: 0.9 }, fram: l.id };
+    const fr = { f: 'pabud', d: { k: 'forrad', matlager: 0.9 }, fram: l.id };
     SIM.rostaOm(s, fr);
     const o = s.styre!.roster![0];
     const allaVuxna = o.roster.length === v.length && o.roster.every(r => r.why);
     // en fråga i kön tas upp klockan 20, och ett ja gör det raden säger
     s.seder.v.rang = 1;
-    SIM.laggFram(s, 'pabud', { k: 'vedlager', v: 0.7 }, l); SIM.laggFram(s, 'pabud', { k: 'vedlager', v: 0.7 }, l);
+    SIM.laggFram(s, 'pabud', { k: 'forrad', vedlager: 0.7 }, l); SIM.laggFram(s, 'pabud', { k: 'forrad', vedlager: 0.7 }, l);
     const iKo = s.styre!.fragor!.length;
     SIM.rostKvall(s);
     const satt = s.styre!.pabud!.vedlager === 0.7;
@@ -1044,7 +1045,7 @@ SCENARIER.rostlista = {
     utanWebblasare();
     const s = createState(6, START), v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), l = v[0];
     s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: { matlager: 0, vedlager: 0, torkat: 0 } as never };
-    SIM.rostaOm(s, { f: 'pabud', d: { k: 'matlager', v: 0.9 }, fram: l.id });
+    SIM.rostaOm(s, { f: 'pabud', d: { k: 'forrad', matlager: 0.9 }, fram: l.id });
     const o = s.styre.roster![0];
     setByn(s); ui.styreDel = 'styre';
     const tryck = (id: string) => hjalpKlick({ closest: () => ({ dataset: { hjalp: id, hjalpGrupp: id.slice(0, id.indexOf('-') + 1) } }) } as unknown as HTMLElement);
@@ -4052,5 +4053,39 @@ SCENARIER.namnbyte = {
       [`vanan: ${vana0} vid Nybygget, ${vana10.toFixed(2)} efter 10 dygn och ${vana30.toFixed(2)} efter 30`, vana0 === 0 && Math.abs(vana10 - 0.15) < 1e-9 && vana30 === 0.3],
       [`en avsatt ledares namn stämmer hälften så bra (${fore} → ${efter})`, fore === 1 && efter === 0.5],
     ] as [string, boolean][];
+  },
+};
+
+SCENARIER.pabud = {
+  text: 'Steg 12.1.27: påbuden görs om. Mat, Ved, Torkat och Inför vintern är ett påbud, Förråden, med fyra tal: en fråga i röstningen och ett kort i fliken. Påbuden Skriv ner lagarna och Fängelse finns inte längre, utfärderna är en hållning med tre lägen, och fliken visar bara påbud som gör skillnad',
+  kor: () => {
+    const a = medLedare(), s = a.s, l = a.l;
+    const forrad = SIM.pabudFraga('forrad'), borta = !SIM.pabudFraga('lagskrift') && !SIM.pabudFraga('fangelse') && !('lagskrift' in SIM.PABUD) && !('fangelse' in SIM.PABUD);
+    // ledarens förslag: ett förslag om förråden med alla fyra talen
+    l.pot.intelligens = 18; s.seder.v.forsiktighet = -1;
+    const fl = SIM.TAS_UPP.find(r => r.id === 'pabud')!.lista(s, l), ff = fl.find(f => f.fr.d.k === 'forrad');
+    const fyra = !!ff && ['matlager', 'vedlager', 'torkat', 'vinter'].every(k => typeof ff.fr.d[k] === 'number') && !fl.some(f => ['matlager', 'vedlager', 'torkat', 'vinter'].includes(f.fr.d.k as string));
+    // utfärderna: tre lägen
+    const lagen = new Set<number>();
+    for (const n of [1, 6, 10, 14, 19]) { l.pot.nyfikenhet = n; l.pot.mod = n; lagen.add(SIM.PABUD.utfarder.asikt(s, l)); }
+    // omröstningen ändrar två tal och sparar båda
+    SIM.rostaOm(s, { f: 'pabud', d: { k: 'forrad', matlager: 1, torkat: 1 }, fram: l.id });
+    const o = s.styre!.roster!.at(-1)!, tva = o.andr?.del?.length === 2;
+    // fliken: bara talen som gör skillnad
+    s.styre!.pabud = {}; s.seder.v.forsiktighet = 0;
+    utanWebblasare(); setByn(s); ui.styreDel = 'pabud';
+    const tom = styreFlik.html();
+    s.seder.v.rang = 1; s.styre!.pabud = { matlager: 1 };
+    const med = styreFlik.html();
+    const matSyns = /Förråden/.test(med) && /Mat: <b>/.test(med) && !/Torkat: <b>/.test(med) && !/Ved: <b>/.test(med);
+    const ingenSkillnad = !/kortsort">påbud/.test(tom);
+    return [
+      [`Förråden är ett påbud med fyra tal (${forrad?.tal.join(', ') ?? 'saknas'}), och Skriv ner lagarna och Fängelse finns inte`, forrad?.tal.length === 4 && borta],
+      [`ledaren lägger fram förråden som ett förslag med alla fyra talen (${ff ? JSON.stringify(ff.fr.d) : 'inget förslag'})`, fyra],
+      [`hållningen till utfärder har tre lägen (${[...lagen].sort().join(', ')})`, lagen.size === 3 && [...lagen].every(x => x === -1 || x === 0 || x === 1)],
+      [`omröstningen sparar båda talen den ändrar (${JSON.stringify(o.andr)})`, tva],
+      ['utan påbud som gör skillnad visas inget påbudskort', ingenSkillnad],
+      ['med ett påbud om maten visar kortet Förråden bara maten', matSyns],
+    ];
   },
 };

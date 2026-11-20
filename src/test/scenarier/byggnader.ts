@@ -1071,14 +1071,16 @@ SCENARIER.strakprov = {
 SCENARIER.fangelse = {
   env: { BALANS: 'fangelse.vakt=0,fangelse.stoppBas=-9' }, // ingen vaktar och ingen går dit (det prövar fangvakt)
   lang: true,
-  text: 'Fängelset (steg 11.12.1, fangelse.ts): ett hus med en trädörr, som byn vill bygga när påbudet Fängelse gäller. Den som sitter inne går inte ut, en annan går in och ut, med lågt humör slår fången sönder dörren på 20 minuter, larmet rymning går, och byn hänger en ny dörr',
+  text: 'Fängelset (steg 11.12.1, fangelse.ts): ett hus med en trädörr, som byn vill bygga efter hårda domar (steg 12.1.27: inget påbud). Den som sitter inne går inte ut, en annan går in och ut, med lågt humör slår fången sönder dörren på 20 minuter, larmet rymning går, och byn hänger en ny dörr',
   kor: () => {
     const s = createState(6, START); klockan(s, 10); medHus(s);
-    // påbudet: utan Rang vill byn inget fängelse, med Rang gäller påbudet och byggbehovet finns
+    // viljan (steg 12.1.27, inget påbud): utan hårda domar vill byn inget fängelse, inte heller med seden Rang ensam; med hårda domar
+    // nyligen och Rang finns byggbehovet
     const l0 = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
-    s.seder.v.rang = 1; const utanLedare = SIM.fangelseAkut(s).v; s.seder.v.rang = 0;
-    s.styre = { historia: [{ id: l0.id, namn: l0.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l0.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: {} as never };
-    const utan = SIM.fangelseAkut(s).v; s.seder.v.rang = 1; s.styre.pabud = { fangelse: 1 } as never; const med = SIM.fangelseAkut(s);
+    s.seder.v.rang = 0; const utanLedare = SIM.fangelseAkut(s).v;
+    s.styre = { historia: [{ id: l0.id, namn: l0.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l0.id, sedan: s.now, titel: 'Ålderman', satt: 1 };
+    s.seder.v.rang = 1; const utan = SIM.fangelseAkut(s).v;
+    s.styre.ratt = [0, 1, 2, 3].map(i => ({ t: s.now - i * SIM.HOUR, led: l0.id, ledNamn: l0.name, om: l0.id, namn: l0.name, steg: 3 }) as never); const med = SIM.fangelseAkut(s); s.styre.ratt = [];
     const h = housesOf(s)[0]; h.fn = 'fangelse';
     const dorr = SIM.fangelseDorr(s, h)!; dorr.dorr = 'tradorr'; SIM.touch(s);
     const klart = SIM.fangelseKlart(s, h);
@@ -1100,7 +1102,7 @@ SCENARIER.fangelse = {
     q.tek = { ...(q.tek ?? {}), tradorr: 1 }; SIM.setAmount(s, 'plankor', 10); SIM.setAmount(s, 'rep', 5);
     let ny = false; kor(s, 24, v => { if (SIM.fangelseDorr(v, h)?.dorr === 'tradorr') ny = true; }); // ett helt dygn: dörrar hängs på dagen
     return [
-      [`utan ledare vill byn inget fängelse (${utanLedare}), inte heller med en ledare utan seden Rang (${utan}), och när ledaren påbjuder det vill byn bygga ett (${med.v}, ${med.plats} plats)`, utanLedare === 0 && utan === 0 && med.v > 0 && med.plats >= 1],
+      [`utan domar och utan seden Rang vill byn inget fängelse (${utanLedare}), inte heller med Rang ensam (${utan}), och efter fyra hårda domar vill byn bygga ett (${med.v}, ${med.plats} plats)`, utanLedare === 0 && utan === 0 && med.v > 0 && med.plats >= 1],
       ['fängelset räknas som byggt när huset är klart och trädörren hänger', klart],
       ['den som sitter inne med gott humör går inte ut på sex timmar', satt6],
       ['en annan går in och ut som vanligt (sitter inte fast)', qUte],

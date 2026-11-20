@@ -1,7 +1,7 @@
-import { FANG, fangelseAsikt, fangelseDygn, fangelseLedigt, fangelsePabud, satt } from './fangelse';
+import { FANG, fangelseDygn, fangelseLedigt, satt } from './fangelse';
 import { honom, slaktOrd } from './ord';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, think } from './folk';
-import { efterlevs, lagDygn, lagForBrott, lagTak, lagarNu, straffNu, tasUppKvall } from './lagar';
+import { efterlevs, lagDygn, lagForBrott, straffNu, tasUppKvall } from './lagar';
 import type { Lag } from './lagar';
 import { ROST, FRAGOR, rostaOm, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, rostKvall, seOverMinistrar, vikter } from './rost';
 import type { Fraga, Fraktion, Omrostning, Rost } from './rost';
@@ -81,6 +81,7 @@ export const PAB = balans('pabud', {
   // Utfärder (steg 11.8.15, resa.ts): ledarens åsikt = ((nyfikenheten + modet) / 2 − 10) / utfarDiv, från -1 till 1; påbudet
   // gånger utfarMax flyttar vikten för resor (1 + påbudet × utfarMax)
   utfarDiv: 5, utfarMax: 0.5,
+  hallning: 1 / 3, // en åsikt längre än så här från noll blir en hållning åt det hållet (utfärderna, steg 12.1.27)
 });
 export const FORM = balans('form', {
   starkt: 0.7, lut: 0.25, mitt: 0.1, // gränserna mellan styrelseformerna, i sederna (steg 8.3.7)
@@ -167,35 +168,57 @@ export const VAGSKALAR: { id: string; sed?: Sed; namn: string; steg?: string }[]
   { id: 'fejd', sed: 'fejd', namn: 'Förlikning – Fejd' },
   { id: 'andlig', sed: 'andlig', namn: 'Världslig – Andlig' },
 ];
-// påbuden: vad ledaren tycker (åt vilket håll från byns egen sed, som en sed från -1 till 1). sed = byns egen sed som påbudet
-// blandas med (saknas: 0). ruta = påbuden som visas tillsammans i en ruta i Styre (steg 4.5.4.2; saknas: en egen ruta).
-// Hur påbudet används står i val.ts
+// påbuden (steg 12.1.27, Ledarskap: Påbuden görs om): ett påbud är något styret bestämmer om hur byn arbetar. Registret PDEF har
+// ett tal per rad: vad ledaren tycker (åt vilket håll från byns egen sed, som en sed från -1 till 1). sed = byns egen sed som talet
+// blandas med (saknas: 0). grupp = talen som är ett påbud tillsammans (PAB_GRUPPER, Förråden med fyra tal): en fråga i röstningen
+// och ett kort i fliken. noll = talet står i sitt nollage och gör ingen skillnad (fliken visar det inte). Hur talet används står i
+// val.ts, forradsmal.ts och resa.ts
 // vem = påbudet pekar ut en person (tystnaden, steg 10.4.10): vem ledaren vill att det gäller; asikt får då personen som om
-interface PabudDef { namn: string; text: string; sed?: Sed; ruta?: string; asikt: (s: State, l: Person, om?: number) => number; vem?: (s: State, l: Person) => number | undefined }
+interface PabudDef { namn: string; text: string; sed?: Sed; grupp?: string; asikt: (s: State, l: Person, om?: number) => number; vem?: (s: State, l: Person) => number | undefined }
 const PDEF = {
-  matlager: { ruta: 'Förrådsmålen', namn: 'Matlager', text: 'Hur många dygn mat byn ska ha i förrådet innan den slappnar av', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
-  vedlager: { ruta: 'Förrådsmålen', namn: 'Vedlager', text: 'Hur många dygn ved byn ska ha i förrådet', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
-  torkat: { ruta: 'Förrådsmålen', namn: 'Torkat', text: 'Hur mycket av köttet och fisken som torkas på torkställningen', asikt: (s, l) => lagerAsikt(s, l) },
-  // arbetsordningen (steg 6.1.19, val.ts): ett påbud kan flytta en rad en nivå upp eller ge den fler händer
-  bygg: { ruta: 'Arbetet', namn: 'Bygg före allt', text: 'Hur ofta bygget går före försörjningen med mat och ved', asikt: s => clamp(PAB.byggUtan * homeless(s) / Math.max(1, living(s).length) - 1, -1, 1) },
-  vinter: { ruta: 'Arbetet', namn: 'Samla för vintern', text: 'Hur många fler som arbetar med maten och veden', asikt: (s, l) => lagerAsikt(s, l) },
+  matlager: { grupp: 'forrad', namn: 'Mat', text: 'Hur många dygn mat byn ska ha i förrådet innan den slappnar av', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
+  vedlager: { grupp: 'forrad', namn: 'Ved', text: 'Hur många dygn ved byn ska ha i förrådet', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
+  torkat: { grupp: 'forrad', namn: 'Torkat', text: 'Hur mycket av köttet och fisken som torkas på torkställningen', asikt: (s, l) => lagerAsikt(s, l) },
+  vinter: { grupp: 'forrad', namn: 'Inför vintern', text: 'Hur många fler som arbetar med maten och veden', asikt: (s, l) => lagerAsikt(s, l) },
+  // arbetsordningen (steg 6.1.19, val.ts): ett påbud kan flytta en rad en nivå upp
+  bygg: { namn: 'Bygg före allt', text: 'Hur ofta bygget går före försörjningen med mat och ved', asikt: s => clamp(PAB.byggUtan * homeless(s) / Math.max(1, living(s).length) - 1, -1, 1) },
   // nattvakten (steg 10.1.20, vaktHot i val.ts): en försiktig ledare vill ha fler som vaktar
-  vakt: { ruta: 'Arbetet', namn: 'Nattvakten', text: 'Hur många som håller vakt om natten', sed: 'forsiktighet', asikt: (s, l) => clamp(drar(s, l).forsiktighet, -1, 1) },
-  // de skrivna lagarna (steg 10.6.10, skrift.ts): ledaren vill ha mer ju närmare taket byn är
-  lagskrift: { ruta: 'Arbetet', namn: 'Skriv ner lagarna', text: 'Hur gärna lagarna skrivs ner, så att byn klarar fler', asikt: s => clamp(lagarNu(s).length / Math.max(1, lagTak(s)), 0, 1) }, // 0 utan lagar, 1 vid taket
+  vakt: { namn: 'Nattvakten', text: 'Hur många som håller vakt om natten', sed: 'forsiktighet', asikt: (s, l) => clamp(drar(s, l).forsiktighet, -1, 1) },
   // hånet (steg 4.3.2.3, framtradande.ts): en ledare med låg empati förbjuder att man hånar hen när man uppträder
   han: { namn: 'Hån mot ledaren', /* steg 11.1.29 */ text: 'Om den som uppträder får håna ledaren', asikt: (s, l) => clamp((stat(l, 'empati', s.now) - PAB.hanEmp) / PAB.hanDiv, -1, 1) },
-  // fängelset (steg 11.12.1, fangelse.ts): viljan växer med de hårda domarna, seden Rang och ledarens aggression
-  fangelse: { ruta: 'Arbetet', namn: 'Fängelse', text: 'Om byn ska ha ett fängelse där den som dömts kan sitta inlåst', sed: 'rang', asikt: (s, l) => fangelseAsikt(s, l) },
   // tystnaden (steg 10.4.10): en person, levande eller död, som inte ska nämnas
   tystnad: { namn: 'Tystnad', text: 'Att en viss person inte ska nämnas', vem: (s, l) => tystVem(s, l),
     asikt: (s, l, om) => om === undefined || om === l.id ? 0 : clamp(-asiktOm(s, l, om) / 100 * PAB.tystOp + (PAB.tystEmp - stat(l, 'empati', s.now)) / PAB.tystDiv, 0, 1) },
-  // Utfärder (steg 11.8.15, resaPlan i resa.ts): en nyfiken och modig ledare vill att byn reser mer, en försiktig mindre
-  utfarder: { ruta: 'Arbetet', namn: 'Utfärder', text: 'Hur gärna byn ger sig ut på resor och uppdrag', asikt: (s, l) => clamp(((stat(l, 'nyfikenhet', s.now) + stat(l, 'mod', s.now)) / 2 - 10) / PAB.utfarDiv, -1, 1) },
+  // hållningen till utfärder (steg 11.8.15 och 12.1.27, resaPlan i resa.ts): tre lägen, håll er hemma (−1), ingen hållning (0) och
+  // utfärder är viktiga (1). En nyfiken och modig ledare vill att byn reser mer, en försiktig mindre. Hållningen flyttar resans
+  // vikt i valet av aktivitet och säger aldrig vart, hur många eller hur ofta
+  utfarder: { namn: 'Utfärder', text: 'Styrets hållning till resor och uppdrag', asikt: (s, l) => hallning(((stat(l, 'nyfikenhet', s.now) + stat(l, 'mod', s.now)) / 2 - 10) / PAB.utfarDiv) },
 } satisfies Record<string, PabudDef>;
 export type Pabud = keyof typeof PDEF;
 export const PABUD: Record<Pabud, PabudDef> = PDEF;
 export const PABUD_LIST = Object.keys(PDEF) as Pabud[];
+// en åsikt från -1 till 1 som en av tre hållningar
+const hallning = (x: number) => x < -PAB.hallning ? -1 : x > PAB.hallning ? 1 : 0;
+// påbuden som består av flera tal (steg 12.1.27): namnet och texten för hela påbudet
+export const PAB_GRUPPER: Record<string, { namn: string; text: string }> = {
+  forrad: { namn: 'Förråden', text: 'Hur försiktig byn är med sina förråd' },
+};
+// påbuden som frågor och kort: ett per grupp och ett per tal utan grupp, med talen det har
+export interface PabudFraga { id: string; namn: string; text: string; tal: Pabud[] }
+export const PABUD_FRAGOR: PabudFraga[] = [
+  ...Object.entries(PAB_GRUPPER).map(([id, g]) => ({ id, ...g, tal: PABUD_LIST.filter(k => (PABUD[k] as PabudDef).grupp === id) })),
+  ...PABUD_LIST.filter(k => !(PABUD[k] as PabudDef).grupp).map(k => ({ id: k, namn: PABUD[k].namn, text: PABUD[k].text, tal: [k] })),
+];
+export const pabudFraga = (id: string) => PABUD_FRAGOR.find(f => f.id === id);
+// talet som gäller nu för påbudet k; ett påbud som pekar ut en annan person än den det gäller börjar från noll
+export const pabudFran = (s: State, k: Pabud, om?: number) => om === undefined || s.styre?.tystnad?.id === om ? s.styre?.pabud?.[k] ?? 0 : 0;
+// den som påbudet pekar ut (tystnaden): undefined när påbudet inte pekar ut någon, null när ledaren inte har någon att peka ut
+export function pabudOm(s: State, f: PabudFraga, l: Person): { om?: number } | null {
+  const vem = (PABUD[f.tal[0]!] as PabudDef).vem;
+  if (!vem) return {};
+  const om = vem(s, l);
+  return om === undefined ? null : { om };
+}
 // den ledaren tycker sämst om bland de tystTopp som byn talar mest om (ryktbarheten), levande eller död
 function tystVem(s: State, l: Person) {
   const ids = new Set<number>();
@@ -644,8 +667,6 @@ EFTER.holmgang = (s, e, vinnare) => {
   if (stn.utanHolm.length > 40) stn.utanHolm.shift();
 };
 
-// påbudet Fängelse gäller (steg 11.12.1): fangelse.ts frågar, så att filerna inte importerar varandra
-fangelsePabud.galler = s => !!ledareOf(s) && pabud(s, 'fangelse') > FANG.galler; // bara med en ledare: styret vill ha det
 // ledaren i en väckt by (steg 11.13.19, vacktro.ts): radens ledare har lett byn sedan sedan, med titeln som passar byn nu.
 // Utan rader i loggen och notiser: det hände före besöket
 export function ledareUrRad(s: State, l: Person, sedan: number) {

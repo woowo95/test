@@ -16,8 +16,8 @@ export const FANG = balans('fangelse', {
   rang: 0.3, // seden Rang drar så här mycket
   aggression: 0.04, // och ledarens aggression över mitten (10) så här mycket per steg
   bas: 0.5, // viljan börjar så här långt under noll
-  galler: 0.33, // påbudet gäller över så här
-  akut: 0.6, // byggbehovets vikt när påbudet gäller och byn saknar fängelse, eller det är fullt
+  galler: 0.33, // byn vill ha ett fängelse när viljan är över så här
+  akut: 0.6, // byggbehovets vikt när byn vill ha ett fängelse och saknar ett, eller det är fullt
   bryt: 0.75, // fången börjar slå sönder dörren när viljan att komma ut går över detta
   modV: 0.04, // viljan att komma ut: modet över mitten (10), per steg ...
   humorV: 0.8, // ... lågt humör (1 − humöret) ...
@@ -53,10 +53,12 @@ export const FANG = balans('fangelse', {
 export const fangelseKrok: { larma(s: State, p: Person): void; brott(s: State, p: Person): void; brinner(s: State, x: number, y: number): boolean; matStack(s: State, p: Person, ved?: boolean): { x: number; y: number } | undefined; slass(s: State, vakter: Person[], q: Person): void; taMat(s: State, p: Person, ved?: boolean): string | undefined; ata(s: State, q: Person, k: string): void; upplev(s: State, p: Person, om: string, ggr: number): void } = { larma: () => undefined, brott: () => undefined, brinner: () => false, matStack: () => undefined, taMat: () => undefined, ata: () => undefined, upplev: () => undefined, slass: () => undefined };
 const HARDA = new Set([2, 3, 6, 9]); // Slag, Utvisning, Döden och Fängelse i STRAFF_REG (styre.ts)
 export const hardaDomar = (s: State) => (s.styre?.ratt ?? []).filter(r => s.now - r.t < FANG.domDygn * DAY && HARDA.has(r.steg)).length;
-// hur mycket ledaren l vill ha ett fängelse (påbudet Fängelse i styre.ts), −1 till 1
-export const fangelseAsikt = (s: State, l: Person) => clamp(hardaDomar(s) * FANG.domVikt + (s.seder.v.rang ?? 0) * FANG.rang + (stat(l, 'aggression', s.now) - 10) * FANG.aggression - FANG.bas, -1, 1);
-// påbudet gäller (sätts av styre.ts, så att filerna inte importerar varandra)
-export const fangelsePabud = { galler: (_s: State) => false };
+// hur mycket byn vill ha ett fängelse (steg 12.1.27: ett byhus som andra, inget påbud), −1 till 1: de hårda domarna, seden Rang
+// och ledarens aggression om byn har en ledare
+export function fangelseVilja(s: State) {
+  const l = s.styre?.ledare === undefined ? undefined : s.people.find(p => p.id === s.styre!.ledare && p.died === undefined);
+  return clamp(hardaDomar(s) * FANG.domVikt + (s.seder.v.rang ?? 0) * FANG.rang + (l ? (stat(l, 'aggression', s.now) - 10) * FANG.aggression : 0) - FANG.bas, -1, 1);
+}
 export const fangelseHus = (s: State) => housesOf(s).filter(h => h.fn === 'fangelse');
 // dörröppningen i fängelset
 export const fangelseDorr = (s: State, h: Hus) => bitsOf(s).find(b => b.hus === h.id && b.k === 'oppning');
@@ -69,9 +71,9 @@ const platsNr = (p: Person, n: number) => ((p.id % Math.max(1, n)) + Math.max(1,
 const rutorI = (s: State, h: Hus) => gridOf(s).rooms.filter(r => r.hus === h.id).flatMap(r => r.tiles);
 // platserna: så många som sitter där nu och en till (ett tomt fängelse har en plats), så att det byggs ut när det är fullt
 export const fangelsePlatser = (s: State) => Math.max(1, fangar(s).length + 1);
-// byggbehovet (BYGGNADER.fangelse): när påbudet gäller och byn saknar ett fängelse, eller det som finns är fullt
+// byggbehovet (BYGGNADER.fangelse): när byn vill ha ett fängelse och saknar ett, eller det som finns är fullt
 export function fangelseAkut(s: State) {
-  if (!fangelsePabud.galler(s)) return { v: 0, plats: 0 };
+  if (fangelseVilja(s) <= FANG.galler) return { v: 0, plats: 0 };
   const hs = fangelseHus(s), fullt = hs.length > 0 && hs.every(h => rutorI(s, h).length > 0 && fangar(s, h).length >= rutorI(s, h).length);
   return !hs.length || fullt ? { v: FANG.akut, plats: fangelsePlatser(s) } : { v: 0, plats: 0 };
 }

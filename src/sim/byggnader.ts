@@ -149,9 +149,9 @@ export const BYGGNADER = {
   },
   // trons hus (steg 10.3.19, troshus.ts): när trons plan är klar, så många golvrutor som planen vill ha och trons hus inte har.
   // Behovet är trons (Akut.tro): bara de troende bygger, av det kyrkan äger, och det hindrar inte byns andra byggen (byggplan.ts)
-  // fängelset (steg 11.12.1, fangelse.ts): när påbudet Fängelse gäller och byn saknar ett, eller det är fullt
+  // fängelset (steg 11.12.1 och 12.1.27, fangelse.ts): när byn vill ha ett och saknar det, eller det är fullt
   fangelse: {
-    namn: 'Fängelse', ikon: 'fangelse', behov: 'Styret vill kunna hålla den som dömts inlåst', fara: false, vikt: 1,
+    namn: 'Fängelse', ikon: 'fangelse', behov: 'Byn vill kunna hålla den som dömts inlåst', fara: false, vikt: 1,
     akut: s => fangelseAkut(s),
     namnFor: (_s, _w, _h, same) => same ? `Fängelse ${same + 1}` : 'Fängelset',
   },

@@ -129,7 +129,7 @@ SCENARIER.arbetspabud = {
     setFood(s, 1); setAmount(s, 'ved', 1);
     s.styre = { historia: [], oppna: [], ledare: l.id, sedan: s.now, pabud: { bygg: -1, vinter: -1 } };
     SIM.arbetsTimme(s); const utan = { ...s.arbBehov!.arb }, byggUtan = SIM.pabud(s, 'bygg');
-    s.styre.pabud = { bygg: 1, vinter: 1 };
+    s.styre.pabud = { bygg: 1, vinter: 1, matlager: 1, vedlager: 1 };
     SIM.arbetsTimme(s); const med = { ...s.arbBehov!.arb }, byggMed = SIM.pabud(s, 'bygg');
     // i ord i Styre (steg 9.2.123): hur ofta och hur många fler, inte procent; ledaren vill under det lägsta värdet: ingen pil
     setByn(s); const html = pabudKort();

@@ -26,7 +26,6 @@ import { helig, prastOf } from './kult';
 import { Tro, troNamn, troOf } from './religion';
 import { troshusAv } from './troshus';
 import { LAGAR, type Lag, lagTak, lagarNu, skrivenLag } from './lagar';
-import { pabud } from './styre';
 import { STRAFF_NAMN } from './styre';
 import { kvVid, stationDef, stationFor, vidStation } from './stationer';
 import { O_BESOKT, O_KANT, O_RYKTE, kannerOrt, larOrt, ortensRad, radVid } from './ort';
@@ -105,13 +104,11 @@ export function runstenLust(s: State, p: Person): Lust | undefined {
 // ---------- de skrivna lagarna (steg 10.6.10) ----------
 // En lag som står skriven behöver byn inte hålla i minnet: varje gällande lag som finns i minst en skrift av slaget lag med samma
 // straff och tal som nu höjer taket (lagTak i lagar.ts). Lusten att skriva en lag är andelen lagar som är oskrivna, gånger hur nära
-// taket byn är, gånger påbudet Skriv ner lagarna: fullt påbud hela, inget halva och ett påbud emot ingen. Den som skriver väljer den
-// oskrivna lag hen själv röstar starkast för
+// taket byn är; det finns inget påbud om det (steg 12.1.27). Den som skriver väljer den oskrivna lag hen själv röstar starkast för
 export function lagSkrivVikt(s: State) {
   const lag = lagarNu(s);
   if (!lag.length) return 0;
-  const v = pabud(s, 'lagskrift'), f = v < 0 ? 0 : 0.5 + 0.5 * v;
-  return lag.filter(l => !skrivenLag(s, l)).length / lag.length * Math.min(1, lag.length / Math.max(1, lagTak(s))) * f;
+  return lag.filter(l => !skrivenLag(s, l)).length / lag.length * Math.min(1, lag.length / Math.max(1, lagTak(s)));
 }
 function lagLust(s: State, p: Person): { w: number; lag: SkriftLag } | undefined {
   const w = SKRIFT.lag * lagSkrivVikt(s);

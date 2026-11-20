@@ -1,4 +1,4 @@
-import { BUDGET, sederTarget, budgetAndel, budgetNu, sakNamn, type Omrostning, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagTakDelar, lagarNu, skrivenVar, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_LIST, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
+import { BUDGET, sederTarget, budgetAndel, budgetNu, sakNamn, type Omrostning, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagTakDelar, lagarNu, skrivenVar, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_FRAGOR, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, delRad, esc, fallUt, flikLank, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -66,19 +66,33 @@ export const styre: Flik = {
 const ordAv = (v: number, ord: string[]) => { const x = Math.max(0, v); return x < 0.05 ? ord[0] : ord[Math.min(ord.length - 1, 1 + Math.floor((x - 0.05) / (0.95 / (ord.length - 1))))]; };
 // tystnaden (steg 10.4.10): vem den gäller och hur hårt
 const tystVarde = (v: number) => v < 0.05 || !s.styre?.tystnad ? 'ingen' : `${s.styre.tystnad.namn} nämns ${v < 0.4 ? 'mer sällan' : v < 0.75 ? 'sällan' : 'nästan aldrig'}`;
-const varde = (k: Pabud, v: number) => k === 'tystnad' ? tystVarde(v) : k === 'han' ? (v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas') : k === 'torkat' ? `${Math.round(torkAndel(v) * 100)} %` : k === 'bygg' ? ordAv(v, ['aldrig', 'ibland', 'ofta', 'alltid']) : k === 'vinter' ? ordAv(v, ['som vanligt', 'några fler', 'många fler']) : `${k === 'vedlager' ? 'ved' : 'mat'} för ${num(onskatDygn(k === 'vedlager' ? 'ved' : 'mat', v))} år`; // förrådsmålen i år (steg 11.1.65)
+const VARDE: Record<Pabud, (v: number) => string> = {
+  matlager: v => `mat för ${num(onskatDygn('mat', v))} år`, vedlager: v => `ved för ${num(onskatDygn('ved', v))} år`, // förrådsmålen i år (steg 11.1.65)
+  torkat: v => `${Math.round(torkAndel(v) * 100)} %`, vinter: v => ordAv(v, ['som vanligt', 'några fler', 'många fler']),
+  bygg: v => ordAv(v, ['aldrig', 'ibland', 'ofta', 'alltid']), vakt: v => v < -1 / 3 ? 'färre vakter' : v > 1 / 3 ? 'fler vakter' : 'som vanligt',
+  han: v => v < -0.33 ? 'förbjudet' : v > 0.33 ? 'tillåtet' : 'ogillas', tystnad: tystVarde,
+  utfarder: v => v < -0.5 ? 'håll er hemma' : v > 0.5 ? 'utfärder är viktiga' : 'ingen hållning', // tre lägen (steg 12.1.27)
+};
+const varde = (k: Pabud, v: number) => VARDE[k](v);
 // lagar och påbud ser likadana ut (steg 11.1.29): kort i en och samma lista, med namnet, vad det säger med sitt tal och ett litet
 // ord om det är en lag eller ett påbud. Ett tryck fäller ut resten: straffet och vem som lade fram lagen, och vad ledaren vill mot
 // vad byn själv vill för påbudet
 const kort = (id: string, namn: string, sort: 'lag' | 'påbud', sager: string, mer: string, extra = '') =>
   `<li class="klick falla lagkort" ${fallUt(id, 'kort-')} title="${esc(namn)}"><span class="kortnamn"><b>${esc(namn)}</b> <span class="kortsort">${sort}</span>${extra}</span><span class="small">${sager}</span>${hjalpText(id, `<span class="small muted kortmer">${mer}</span>`)}</li>`;
+// ett påbud per kort (steg 12.1.27, PABUD_FRAGOR): Förråden har fyra tal. Bara talen som gör skillnad visas, alltså de där det
+// byn gör med påbudet skiljer sig från det byn gör av sig själv; ett påbud där inget tal gör skillnad visas inte
 export function pabudKort() {
   const st = s.styre, l = ledareOf(s);
   if (!l || !st?.pabud) return '';
-  return PABUD_LIST.map(k => {
-    const d = PABUD[k], egen = d.sed ? s.seder.v[d.sed] : 0, led = st.pabud![k] ?? egen;
-    return kort(`kort-pabud-${k}`, d.namn, 'påbud', `${esc(d.text)}: <b>${esc(varde(k, pabud(s, k)))}</b>`, `${esc(l.name)} vill ${esc(varde(k, led))}, byn själv ${esc(varde(k, egen))}. Byn följer påbudet så mycket som den lyssnar på ledaren.`);
+  const kortlista = PABUD_FRAGOR.map(f => {
+    const tal = f.tal.map(k => { const d = PABUD[k], egen = d.sed ? s.seder.v[d.sed] : 0; return { k, d, egen, led: st.pabud![k] ?? egen, nu: pabud(s, k) }; })
+      .filter(x => varde(x.k, x.nu) !== varde(x.k, x.egen));
+    if (!tal.length) return '';
+    const sager = tal.map(x => `${esc(f.tal.length > 1 ? x.d.namn : x.d.text)}: <b>${esc(varde(x.k, x.nu))}</b>`).join('<br>');
+    const mer = tal.map(x => `${f.tal.length > 1 ? `${esc(x.d.namn)}: ` : ''}${esc(l.name)} vill ${esc(varde(x.k, x.led))}, byn själv ${esc(varde(x.k, x.egen))}.`).join(' ');
+    return kort(`kort-pabud-${f.id}`, f.namn, 'påbud', f.tal.length > 1 ? `${esc(f.text)}<br>${sager}` : sager, `${mer} Byn följer påbudet så mycket som den lyssnar på ledaren.`);
   }).join('');
+  return kortlista || '<li class="small muted lagkort">Inga påbud gör någon skillnad just nu.</li>';
 }
 export function pabudDel() {
   const l = ledareOf(s);
@@ -119,7 +133,7 @@ function ministrar() {
 // vad omröstningen ändrar, från vad och till vad (steg 11.1.28): "Torkat: från 30 % till 50 %", med påbudets eller lagtalets egna ord
 function andrText(a: NonNullable<Omrostning['andr']>) {
   const [slag, id, k] = a.k.split(':');
-  if (slag === 'pabud' && PABUD[id as Pabud]) return `${PABUD[id as Pabud].namn}: från ${varde(id as Pabud, a.fran)} till ${varde(id as Pabud, a.till)}`;
+  if (slag === 'pabud' && PABUD[id as Pabud]) return (a.del ?? [a]).map(x => { const k = x.k.split(':')[1] as Pabud; return `${PABUD[k].namn}: från ${varde(k, x.fran)} till ${varde(k, x.till)}`; }).join(', '); // alla talen (steg 12.1.27)
   if (slag === 'lagstraff') return `Straffet: från ${STRAFF_NAMN[a.fran]?.toLowerCase() ?? '?'} till ${STRAFF_NAMN[a.till]?.toLowerCase() ?? '?'}`; // steg 11.12.3
   const td = slag === 'lagtal' ? LAGAR[id]?.tal?.[k] : undefined;
   return td ? `${td.namn}: från ${td.visa(a.fran)} till ${td.visa(a.till)}` : '';
