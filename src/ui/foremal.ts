@@ -289,7 +289,7 @@ export function drawStructures(t: number) {
     if ((st.q ?? 0) >= MASTERVERK) glans(st.x * TS + w - 3, st.y * TS + 3, t, st.id, st.q === PERFEKT);
     // stubbarna (Björn valde den korta stocken efter v89) är en ruta stora: framför bänken och runt bordet
     if (d?.sitt) pileIcons.add(SITT, st.x * TS + w / 2 - TS / 2, (st.y + bh) * TS, TS / iconCanvas(SITT).width);
-    for (const q of bordPlatser(st)) pileIcons.add(SITT, q.x * TS, q.y * TS, TS / iconCanvas(SITT).width);
+    bordPlatser(st).forEach((q, i) => { const k = st.sate?.[i] && hasIcon('kb_' + st.sate[i]) ? 'kb_' + st.sate[i] : SITT; pileIcons.add(k, q.x * TS, q.y * TS, TS / iconCanvas(k).width); }); // pallen och stolen i stubbens ställe (steg 12.4.4)
     for (const k of st.med ?? []) { const b = 'kb_' + tillbehorDef(k)?.ikon + v; if (kb && hasIcon(b)) pileIcons.add(b, x0, y0, 1); else pileIcons.add(tillbehorDef(k)?.ikon + '_karta' + v, x0, y0, 2); } // tillbehören i den (skinnfällen i bädden), i bildstilen lagd ovanpå bädden
     if (st.tork?.length) hangande(st, x0, y0);
     const yta = (v ? YTA[st.k]?.v : YTA[st.k]) ?? { x: 2, y: 2 };

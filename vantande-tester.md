@@ -35,3 +35,4 @@
 - 12.4.1 (drejskivan): lerkrukan görs nu vid en station (plats station i stället för elden), så den som formar en kruka utan drejskiva sätter sig där hantverket görs i byn; byarna blir annorlunda.
 - 12.4.2 (oljelampan): brännoljan är nu en vätska (VATSKOR) som kokas i en ledig oljelampa eller liten lerkruka; brännolja som ligger i stackar i gamla sparfiler blir liggande utan funktion (ingen uppgradering). Byn vill ha en oljelampa till varje plats för ljus, och tomma lampor fylls på (projektet lampa).
 - 12.4.3 (sängen): en familj med något över byter halmbädden mot en säng (projektet sang, Hemmen blir finare); sängen vilar mer. Läs i Balansen om sängarna byggs och vad de kostar byarna.
+- 12.4.4 (pallen och stolen): byar med en snickarbänk och familjer med något över gör pallar och stolar till borden hemma (gruppen sate i REDSKAPMAL, projektet satta); den som sitter bättre vilar mer och är gladare av måltiden.

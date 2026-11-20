@@ -1,7 +1,7 @@
 // Scenarier för system 12.4: möblerna och sakerna i hemmet (drejskivan, oljelampan, sängen, stolen, vaggan, tunnan, osten,
 // brunnen, utedasset, sjukstugan, fyrfatet, tvålen, yllet och fjäderpennan).
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, medBank } from './hjalp';
+import { SCENARIER, klockan, medBank, medHus } from './hjalp';
 import { START } from '../kor';
 
 const vuxen = (s: SIM.State) => SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
@@ -106,6 +106,48 @@ SCENARIER.sang = {
       [`utan något över byts ingen halmbädd (${utanOver}), med något över byts p:s egen (${medOver.toFixed(2)})`, utanOver === 0 && medOver > 0 && paBadden],
       [`när bygget börjar tas halmbädden isär, och sängen får ägaren och skinnfällen`, !!bytt],
       [`ett par i en säng och en halmbädd intill får ingen tanke, i två sängar intill varandra tanken Sov bredvid sin käresta (${sangBredvid?.v})`, !halmBredvid && sangBredvid?.v === 0.03 && sangBredvid.until === s.now + 8 * SIM.HOUR],
+    ];
+  },
+};
+
+SCENARIER.stol = {
+  text: 'Pallen och stolen (steg 12.4.4, mobler.ts): sittplatserna vid bordet har tre nivåer, stubben, pallen (1 planka, 5 minuter) och stolen (2 plankor, 1 skinn och 1 ull, 12 minuter, tekniken Stol), båda bara vid snickarbänken; en familj med något över ställer dem vid borden hemma, och den som sitter bättre vilar mer, får en bättre tanke av måltiden och väljer den bästa lediga platsen',
+  kor: () => {
+    const R = SIM.RECEPT, tek = SIM.TEKNIK.find(t => t.id === 'stol'), sn = SIM.stationDef('snickarbank')!;
+    const s = SIM.createState(1, START), [p, q] = SIM.living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen);
+    klockan(s, 12);
+    const hus = medHus(s), bord = medBank(s, 'bord');
+    if (hus) { bord.x = hus.x + 2; bord.y = hus.y + 2; bord.inne = 1; bord.rot = undefined; SIM.touch(s); }
+    const r = SIM.roomAt(s, bord.x, bord.y), h = r && SIM.husById(s, r.hus);
+    if (!h) return [['ett bord inne i ett hus', false]];
+    h.ag = p.id;
+    for (const x of SIM.living(s)) SIM.put(s, 'silver', 10, { [x.id]: 10 });
+    const fattig = SIM.sateMal(s);
+    SIM.put(s, 'silver', 200, { [p.id]: 200 });
+    (p.tek ??= {}).snickarbank = 1;
+    const pallMal = SIM.sateMal(s);
+    p.tek.stol = 1;
+    const stolMal = SIM.sateMal(s), platser = SIM.bordPlatser(bord).length;
+    // en ledig stol ställs vid bordet
+    const stol = SIM.addTool(s, 'stol', p), v = SIM.sattaPlats(s);
+    const tk = { act: 'satta', phase: 'do', tx: (v?.x ?? 0) + 0.5, ty: (v?.y ?? 0) + 0.5, until: s.now, carry: 0, why: '', ref: v?.t.id } as SIM.Task;
+    SIM.sattaKlar(s, p, tk);
+    const stalld = !!v && bord.sate?.[v.i] === 'stol' && !SIM.tingOf(s).includes(stol) && SIM.sateMal(s) === stolMal - 1;
+    // den som sitter på stolen och äter
+    p.x = tk.tx; p.y = tk.ty; p.task = { ...tk, act: 'maltid' };
+    const glad = SIM.sittGlad(s, p), vila = SIM.sittVila(s, p);
+    const pl = SIM.bordPlatser(bord), stubbe = pl.findIndex((_, i) => i !== v?.i);
+    p.x = pl[stubbe].x + 0.5; p.y = pl[stubbe].y + 0.5; const pa = SIM.sittGlad(s, p);
+    // den som ska sätta sig väljer stolen fast en stubbe ligger närmare
+    q.x = pl[stubbe].x + 0.5; q.y = pl[stubbe].y + 0.5; p.task = undefined;
+    const val = SIM.ledigPlats(s, q), valdeStol = !!val && Math.floor(val.x) === v?.x && Math.floor(val.y) === v?.y;
+    return [
+      [`pallen av ${JSON.stringify(R.pall.av)} på ${R.pall.min} minuter och stolen av ${JSON.stringify(R.stol.av)} på ${R.stol.min} minuter görs bara vid snickarbänken`, R.pall.av.plankor === 1 && R.pall.min === 5 && R.stol.av.plankor === 2 && R.stol.av.skinn === 1 && R.stol.av.ull === 1 && R.stol.min === 12 && sn.gor.includes('sate' as SIM.Act) && !!sn.bara?.includes('sate' as SIM.Act)],
+      [`tekniken ${tek?.namn} kräver ${tek?.krav}`, !!tek && tek.krav.join() === 'snickarbank'],
+      [`utan något över vill familjen inga (${fattig}); med något över pallar till platserna (${pallMal} av ${platser}) och stolar när någon kan Stol (${stolMal})`, fattig === 0 && pallMal === platser && stolMal === platser],
+      [`stolen ställs på en plats vid bordet`, stalld],
+      [`på stolen är måltiden bättre (${glad.toFixed(2)} mot ${pa.toFixed(2)} på stubben) och vilan större (${vila.toFixed(3)} per timme)`, glad > pa && pa === 1 && vila > 0],
+      [`den som ska sätta sig väljer stolen fast stubben är närmare`, valdeStol],
     ];
   },
 };

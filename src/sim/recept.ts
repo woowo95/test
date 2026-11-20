@@ -161,6 +161,8 @@ const DEF = {
   smedja: { var: 'station', av: { huggen_sten: 6, lera: 2, skinn: 2, virke: 1, jarn: 1 }, min: 20 }, // järnet är hammaren och tången (steg 12.2.4)
   drejskiva: { var: 'station', av: { virke: 2, huggen_sten: 1 }, min: 15, slag: 'stor', tek: 'drejskiva' }, // drejskivan (steg 12.4.1): en skiva av trä på en axel, med en sten som svänghjul
   sang: { var: 'station', av: { plankor: 3, ull: 2 }, min: 18 }, // sängen (steg 12.4.3): en ram av plankor med ett bolster av ull
+  pall: { var: 'sak', av: { plankor: 1 }, min: 5, slag: 'stor', tek: 'snickarbank', bank: 'snickarbank', bara: true }, // pallen (steg 12.4.4): en sittplats vid bordet, bättre än stubben
+  stol: { var: 'sak', av: { plankor: 2, skinn: 1, ull: 1 }, min: 12, slag: 'station', tek: 'stol', bank: 'snickarbank', bara: true }, // stolen: en pall med ryggstöd och dyna av skinn och ull
   oljelampa: { var: 'sak', av: { lera: 1 }, min: 3, slag: 'liten', tek: 'oljelampa', bank: 'drejskiva' }, // oljelampan (steg 12.4.2): formas av lera som krukan, torkar och bränns
   // järnredskapen (steg 12.2.6): smids i smedjan och bara där (handlingen smida, jarnsaker.ts)
   jarnyxa: { var: 'sak', av: { jarn: 2, grenar: 1 }, min: 5, slag: 'stor', tek: 'smedja' },

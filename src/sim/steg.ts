@@ -359,6 +359,7 @@ KLAR.passa = passaKlar; // tillsynen vid en bränning (brann.ts, steg 12.2.2)
 KLAR.smida = smidaKlar; // ett järnredskap är smitt (jarnsaker.ts, steg 12.2.6)
 KLAR.stubbe = stubbeGravd; // stubben är bortgrävd och blir lite trä (skog.ts, steg 6.5.7)
 KLAR.plantera = plantaUppgravd; // plantan är uppgrävd och bärs till platsen (skogsvard.ts, steg 6.5.2)
+KLAR.satta = sattaKlar; // pallen eller stolen ställs vid bordet (mobler.ts, steg 12.4.4)
 KLAR.fyll_lampa = fyllLampa; // oljelampan fylls med brännolja (ljus.ts, steg 12.4.2)
 KLAR.ljus = (s, p, t) => finishLjus(s, p, t); // ett talgljus på ett bord eller en hylla (ljus.ts, steg 6.3.8) // en uppsatt fackla (ljus.ts, steg 6.3.7)
 MEDAN.forsok = forsokSteg; KLAR.forsok = forsokKlar; // försöken mot en teknik på nivå 4–5 (teknik.ts, steg 4.2.1.1)
@@ -723,6 +724,7 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
     p.rest = clamp(p.rest + dtSec / HOUR_S * (bv?.tim ?? KROPP[tak]) * e, 0, 1);
     if (p.task!.act === 'sova') { think(p, bv?.tanke ?? VILOTANKE[tak][0], (bv?.glad ?? VILOTANKE[tak][1]) * e, now, 8 * HOUR); if (bv) bredvidKaresta(s, p); }
   }
+  p.rest = clamp(p.rest + dtSec / HOUR_S * sittVila(s, p), 0, 1); // den som sitter på en pall eller stol vilar mer (steg 12.4.4)
   if (heat > KROPP.eldNara) { // välbehaget ur eldstaden för den eld som värmer mest (steg 10.2.109)
     const fh = varmasteHard(s, p.x, p.y);
     think(p, 'Värms av elden', fh.comfort, now, HOUR);
@@ -1768,4 +1770,4 @@ import { avlivaKlar, klippKlar, mjolkaKlar, stepBoskap } from './boskap';
 import { tatKlar } from './tatuering';
 import { angKlar, slaKlar, stepVinter, hamlaKlar } from './slatter';
 import { stepHons } from './hons';
-import { baddVila, bredvidKaresta } from './mobler';
+import { baddVila, bredvidKaresta, sittVila, sattaKlar } from './mobler';

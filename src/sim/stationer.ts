@@ -115,6 +115,9 @@ export const STATION = balans('station', {
   // pyntet (steg 4.3.4, pynt.ts): möbler som bara är till för att pynta, i rummet där ägaren sover
   drejFart: 2, // så många gånger fortare lerkrukorna formas på drejskivan (steg 12.4.1)
   sangVila: 0.13, sangGlad: 0.11, // sängen (steg 12.4.3): vilan per timme (halmbädden KROPP.restBadd) och tanken Sov gott i sängen, gånger kvaliteten
+  // sittplatserna vid bordet (steg 12.4.4): stubben, pallen och stolen (nivån i SATEN). Per nivå: så mycket mer vila per timme för den som
+  // sitter, så mycket bättre tanken av måltiden vid bordet, och så många rutor närmare en bättre plats känns när man väljer var man sätter sig
+  sittVila: 0.02, sittGlad: 0.25, sittVal: 2,
   bredvidGlad: 0.03, bredvidTim: 8, // ett par vars sängar står intill varandra får tanken Sov bredvid sin käresta så här mycket och så här många timmar
 });
 
@@ -140,7 +143,7 @@ export interface StationDef { ersatter?: string; vila?: { tim: number; tanke: st
 const ENKLA: Act[] = ['yxa', 'kniv', 'bensyl', 'balte', 'boll', 'benflojt', 'fackla', 'talgljus', 'naverask', 'ogonlapp', 'nal'];
 // träsakerna vid snickarbänken (steg 9.4.5): receptets kolumn bank säger var det görs fortare och bättre, bara att det bara görs
 // där och kniv att det täljs med kniven på bänken. Handlingen som gör varje recept
-const TRA_ACT: Partial<Record<keyof typeof RECEPT, Act>> = { leksak: 'gor_leksak', fiskespjut: 'spjut', flintspjut: 'spjut', metspo: 'metspo', slagtra: 'slagtra', mal: 'mal', trumma: 'trumma', slanda: 'slanda', pilar: 'gor_pilar', skold: 'skold', bage: 'bage', lyra: 'lyra', bok: 'bok', krycka: 'krycka', traben: 'traben', krok: 'krok', bagborr: 'bagborr', kalke: 'kalke', slade: 'slade', vagn: 'vagn' };
+const TRA_ACT: Partial<Record<keyof typeof RECEPT, Act>> = { leksak: 'gor_leksak', fiskespjut: 'spjut', flintspjut: 'spjut', metspo: 'metspo', slagtra: 'slagtra', mal: 'mal', trumma: 'trumma', slanda: 'slanda', pilar: 'gor_pilar', skold: 'skold', bage: 'bage', lyra: 'lyra', bok: 'bok', krycka: 'krycka', traben: 'traben', krok: 'krok', bagborr: 'bagborr', kalke: 'kalke', slade: 'slade', vagn: 'vagn', pall: 'sate', stol: 'sate' };
 const traVid = (b: string, f: (r: ReceptRad) => boolean = () => true) => [...new Set((Object.keys(TRA_ACT) as (keyof typeof RECEPT)[]).filter(k => { const r: ReceptRad = RECEPT[k]; return r.bank === b && f(r); }).map(k => TRA_ACT[k]!))];
 const SNICKAR = traVid('snickarbank');
 // det som formas av lera på drejskivan (steg 12.4.1): lerkrukorna (handlingen lerkruka, kruka.ts) och oljelampan (steg 12.4.2)
@@ -435,7 +438,7 @@ for (const [k, d] of Object.entries(STATIONER as Record<string, StationDef>)) if
 // med = tillbehören som ligger i den (TILLBEHOR, t.ex. skinnfällen i bädden), fyllt = hur full latrinen är (0–1, smuts.ts)
 // tork = det som hänger på torkställningen (matlagning.ts): råvaran, hur mycket, när det hängdes upp och vems det är
 // ag = ägaren till en kista i sovrummet (steg 2.10.18)
-export interface Station { vatten?: number; regn?: number; /* vattnet i vattenhon och regnet mot nästa hela vatten (steg 10.10.30) */ bi?: number; /* bisamhället i kupan: honungen i kakor (steg 10.10.17) */ skattat?: number; /* skattade kakor mot nästa bivax (steg 10.10.20) */ skattare?: number; /* den som skattade sist (steg 10.10.21) */ grop?: { r: string; n: number; kvar: number; ag: Record<string, number>; h?: number }; /* festmåltiden i kokgropen (steg 10.7.28) */ tro?: number; kompost?: { rest: number; mogna: number }; deg?: { n: number; kvar: number; ag: Record<string, number> }; sats?: { v: import('./vatskor').VatskaId; n: number; jas: number; dygn: number; klar?: 1; sur?: 1 }; bran?: { n: number; kvar: number }; /* bran = det som bränns i brännpannan: så mycket sprit och tiden kvar (steg 10.7.26) */ brygt?: number; brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1; kvar?: number; mat?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; anv?: number; /* anv = senaste besöket i latrinen (steg 11.1.71) */ q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number>; rok?: number }[]; ag?: number; eld?: { ved: number; lit?: 1; glod?: number } } // rok: ms det rökts (steg 10.2.85); eld: stationens egen eld (stationseld.ts)
+export interface Station { sate?: string[]; /* det som står på bordets platser, i bordPlatser-ordning (pallen och stolen, steg 12.4.4) */ vatten?: number; regn?: number; /* vattnet i vattenhon och regnet mot nästa hela vatten (steg 10.10.30) */ bi?: number; /* bisamhället i kupan: honungen i kakor (steg 10.10.17) */ skattat?: number; /* skattade kakor mot nästa bivax (steg 10.10.20) */ skattare?: number; /* den som skattade sist (steg 10.10.21) */ grop?: { r: string; n: number; kvar: number; ag: Record<string, number>; h?: number }; /* festmåltiden i kokgropen (steg 10.7.28) */ tro?: number; kompost?: { rest: number; mogna: number }; deg?: { n: number; kvar: number; ag: Record<string, number> }; sats?: { v: import('./vatskor').VatskaId; n: number; jas: number; dygn: number; klar?: 1; sur?: 1 }; bran?: { n: number; kvar: number }; /* bran = det som bränns i brännpannan: så mycket sprit och tiden kvar (steg 10.7.26) */ brygt?: number; brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1; kvar?: number; mat?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; anv?: number; /* anv = senaste besöket i latrinen (steg 11.1.71) */ q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number>; rok?: number }[]; ag?: number; eld?: { ved: number; lit?: 1; glod?: number } } // rok: ms det rökts (steg 10.2.85); eld: stationens egen eld (stationseld.ts)
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 // finns det en möbel bara för slaget k (bokhyllan för blad och böcker, steg 10.6.16)?
@@ -696,7 +699,7 @@ export function iPlatsMinne<T>(q: string, f: () => T): T {
   if (!platsMinne.has(q)) platsMinne.set(q, f());
   return platsMinne.get(q) as T;
 }
-const sokSite = (s: State, k: string, p?: Person) => stationDef(k)?.ersatter ? ersattKrok.site(s, k, p) : stationDef(k)?.hage ? siteHo(s) : stationDef(k)?.tro ? siteTro(s, k, p) : siteSal(s, k, p) || (stationDef(k)?.forvar?.privat || stationDef(k)?.pynt ? p && siteKista(s, k, p) : stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? somUtanLager(() => siteUte(s, k, sokUtkant, 'utkant:' + k)) : stationDef(k)?.inne ? siteInne(s, k, undefined, h => farBygga(s, h, p)) : somUtanLager(() => siteUte(s, k)));
+const sokSite = (s: State, k: string, p?: Person) => stationDef(k)?.ersatter ? moblerKrok.site(s, k, p) : stationDef(k)?.hage ? siteHo(s) : stationDef(k)?.tro ? siteTro(s, k, p) : siteSal(s, k, p) || (stationDef(k)?.forvar?.privat || stationDef(k)?.pynt ? p && siteKista(s, k, p) : stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? somUtanLager(() => siteUte(s, k, sokUtkant, 'utkant:' + k)) : stationDef(k)?.inne ? siteInne(s, k, undefined, h => farBygga(s, h, p)) : somUtanLager(() => siteUte(s, k)));
 // trons möbler (steg 10.3.19): i rummet i trons hus, för den troende p
 function siteTro(s: State, k: string, p?: Person) {
   const tr = p && troOf(s, p.tro), r = tr && troshusRum(s, tr);
@@ -1253,7 +1256,7 @@ export function startStation(s: State, p: Person, tk: Task) {
       if (delar && d.delar) { delar.forEach((q, i) => { q.kvar = (d.delar![i].min ?? 1) * MIN; }); delar[0].mat = 1; summaKvar(t); } // varje del sitt bygge (steg 12.1.17)
       if (tro) t.tro = tro.id;
       if (d.forvar?.privat || d.pynt || d.agd) t.ag = p.id; // kistan och pyntet är hens (steg 2.10.18, 4.3.4)
-      if (gammal) ersattKrok.ersatt(s, gammal, t); // halmbädden tas isär, och sängen får dess ägare och skinnfäll (mobler.ts)
+      if (gammal) moblerKrok.ersatt(s, gammal, t); // halmbädden tas isär, och sängen får dess ägare och skinnfäll (mobler.ts)
       (s.stationer ??= []).push(t);
       if (!t.inne && !d.forvar) { const { w, h } = storlekAv(t); for (const z of zonesOf(s).filter(z => z.hus === undefined && rutorAv(t!.x, t!.y, w, h).some(q => inZone(z, q.x, q.y)))) flyttaLager(s, z); } // lagret i vägen (steg 8.1.15)
       s.byggV = (s.byggV ?? 0) + 1; // en ny sak på kartan: vägarna och platserna räknas om
@@ -1333,6 +1336,10 @@ export const platserAv = (k: string) => { const d = stationDef(k); return !d?.pl
 // de färdiga borden, och alla platser vid dem
 export const bordenOf = (s: State) => stationerOf(s).filter(t => isKlar(t) && stationDef(t.k)?.platser);
 export const allaPlatser = (s: State) => bordenOf(s).reduce((n, t) => n + platserAv(t.k), 0);
+// sittplatserna vid bordet (steg 12.4.4, mobler.ts): nivån av det som står på platsen; en plats utan något är en stubbe (0)
+export const SATEN: Record<string, number> = { pall: 1, stol: 2 };
+// nivån på bordets plats nummer i (bordPlatser)
+export const sateNiva = (t: Station, i: number) => SATEN[t.sate?.[i] ?? ''] ?? 0;
 // handlingarna man gör sittande vid bordet
 const VID_BORDET = new Set<Act>(['maltid', 'samtal', 'beratta']);
 // den lediga plats vid ett bord som ligger närmast p (mitt på stubben): ingen annan sitter där eller är på väg dit
@@ -1347,8 +1354,8 @@ export function ledigPlats(s: State, p: Person) {
   const hemma = sovHus(s, p);
   for (const t of borden) {
     const hus = husAv(s, t), borta = hus?.ag !== undefined && hus.id !== hemma ? STATION.bordHemma : 0;
-    for (const q of bordPlatser(t)) {
-    const d = Math.hypot(q.x + 0.5 - p.x, q.y + 0.5 - p.y) + borta + (inneHellre && !roofed(s, q.x, q.y) ? STATION.bordUte : 0);
+    for (const [i, q] of bordPlatser(t).entries()) {
+    const d = Math.hypot(q.x + 0.5 - p.x, q.y + 0.5 - p.y) + borta + (inneHellre && !roofed(s, q.x, q.y) ? STATION.bordUte : 0) - STATION.sittVal * sateNiva(t, i); // den bästa lediga platsen (steg 12.4.4)
     if (d < bd && !tagen.has(q.y * W + q.x) && !blocked(s, q.x + 0.5, q.y + 0.5)) { bd = d; best = { x: q.x + 0.5, y: q.y + 0.5 }; } // inte en plats där något står i vägen (då flyttade freeNear i val.ts en bit från bordet)
   }
   }
@@ -1827,5 +1834,9 @@ export function stepStationer(s: State) {
 const forstaForm = (namn: string) => namn.toLowerCase().replace(/^litet /, 'lilla ').replace(/^(\p{L}+)at /u, '$1ade ');
 import { iSlag } from './saker';
 import { PLAGG } from './klader';
-// Hemmen blir finare (steg 12.4.3): platsen och bytet för en möbel som ersätter en enklare, satta i mobler.ts (som läses efter den här filen)
-export const ersattKrok = { site: (_s: State, _k: string, _p?: Person) => undefined as { x: number; y: number; rot?: 1; inne?: 1 } | undefined, ersatt: (_s: State, _g: Station, _n: Station) => undefined as void };
+// möblerna i hemmet (system 12.4), satta i mobler.ts (som läses efter den här filen): platsen och bytet för en möbel som ersätter en
+// enklare (Hemmen blir finare, steg 12.4.3), tanken av måltiden på platsen och platsen dit en ledig pall eller stol ställs (steg 12.4.4)
+export const moblerKrok = {
+  site: (_s: State, _k: string, _p?: Person) => undefined as { x: number; y: number; rot?: 1; inne?: 1 } | undefined, ersatt: (_s: State, _g: Station, _n: Station) => undefined as void,
+  sittGlad: (_s: State, _p: Person) => 1, sattaPlats: (_s: State) => undefined as { t: Station; i: number; x: number; y: number } | undefined,
+};

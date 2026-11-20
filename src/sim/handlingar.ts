@@ -289,6 +289,8 @@ const DEF = {
   dorr: { namn: 'Hänger en dörr', slag: 'bygga', verktyg: { skinndorr: 'Hänger en hud i dörröppningen', tradorr: 'Hänger en dörr av trä i dörröppningen' }, hantverk: true, stilla: true, framme: true }, // i en öppning (DORRAR i byggnad.ts, steg 2.2.16); task.tool = sorten
   talgljus: { namn: 'Gör ett talgljus', verktyg: { vaxljus: 'Gör ett vaxljus' }, slag: 'hantverk', hantverk: true, verb: 'doppar', plats: 'station' },
   ljus: { namn: 'Ställer fram ett ljus', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // på ett bord eller en hylla inne (ljus.ts, steg 6.3.8)
+  sate: { namn: 'Gör en sittplats', verktyg: { pall: 'Gör en pall', stol: 'Gör en stol' }, slag: 'hantverk', hantverk: true, verb: 'fogar', plats: 'station' }, // pallen och stolen vid snickarbänken (steg 12.4.4, mobler.ts)
+  satta: { namn: 'Ställer en sittplats vid bordet', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // pallen eller stolen i stället för stubben (steg 12.4.4, mobler.ts)
   oljelampa: { namn: 'Formar en oljelampa', slag: 'hantverk', hantverk: true, verb: 'formar', plats: 'station' }, // på drejskivan om byn har en, annars för hand (steg 12.4.2, ljus.ts)
   fyll_lampa: { namn: 'Fyller oljelampan', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // med brännolja, på bordet eller hyllan (steg 12.4.2, ljus.ts)
   // skogsvården (steg 6.5.2, skogsvard.ts): en planta grävs upp och bärs dit byn vill ha skog

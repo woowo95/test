@@ -14,7 +14,7 @@ import { coldOf, temperature } from './vader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
 import { GORS, ersattAv, harAv, makeTask, receptTill, takAv, wantsRope, wantsTool } from './redskap';
-import { STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, receptStation, receptTillbehor, stationSpot, medPlatsMinne, villKista, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
+import { moblerKrok, STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, receptStation, receptTillbehor, stationSpot, medPlatsMinne, villKista, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './bygg';
 import { GRODOR, ODLING, STAKET, faltBrist, faltUppgift } from './odling';
@@ -307,6 +307,14 @@ export const PROJEKT: Record<string, ProjektDef> = {
     kostnad: () => Math.min(...Object.keys(LJUSSORTER).map(grundvarde)) + LJUS.min / 60 * ARBETE,
     kan: (s, p) => !!friLjus(s) && ljusPlatser(s).length > 0 && enTill(s, 'ljus', p),
     uppgift: s => { const st = ljusPlatser(s)[0]; return st && { act: 'ljus', text: 'Ställer fram ett ljus inne.', min: LJUS.min, spot: { x: st.x + 0.5, y: st.y + 0.5 }, ref: st.id }; },
+  },
+  // en pall eller stol ställs vid bordet hemma i stället för stubben eller pallen (steg 12.4.4, mobler.ts)
+  satta: {
+    namn: 'Sittplats vid bordet', vikt: PROJEKT_TAL.ljus,
+    brist: s => moblerKrok.sattaPlats(s) ? 1 : 0,
+    kostnad: () => grundvarde('pall') + LJUS.fyllMin / 60 * ARBETE,
+    kan: (s, p) => !!moblerKrok.sattaPlats(s) && enTill(s, 'satta', p),
+    uppgift: s => { const v = moblerKrok.sattaPlats(s); return v && { act: 'satta', text: 'Ställer en sittplats vid bordet.', min: LJUS.fyllMin, spot: { x: v.x + 0.5, y: v.y + 0.5 }, ref: v.t.id }; },
   },
   // en tom oljelampa på ett bord eller en hylla fylls med brännolja (steg 12.4.2, ljus.ts)
   lampa: {

@@ -259,6 +259,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   slade: s => tamdjurOf(s).some(d => tamArt(d.art).styrka) ? 1 : 0, // en släde när byn har ett dragdjur att spänna för (steg 10.10.3)
   fackla: () => 1, // en, den som går ut i mörkret (steg 6.3.6, ljus.ts)
   talgljus: s => ljusPlatser(s).length, // ett till varje bord och hylla inne där folk är vakna i mörker (steg 6.3.8, ljus.ts)
+  sate: s => finareKrok.sate(s), // pallar och stolar till de platser vid borden hemma som familjen har råd att göra finare (steg 12.4.4, mobler.ts)
   oljelampa: s => ljusPlatser(s).length, // oljelampan till samma platser (steg 12.4.2): den blir kvar och fylls på
   slanda: () => 1, // en, dem som spinner, och en i vävstolen (steg 7.7.8)
   vattensack: () => 1, // en, den som inte kan gå (steg 2.10.1)
@@ -313,4 +314,4 @@ export function stationBrist(s: State, k: StationSlag) {
     : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1;
 }
 // sängen i stället för halmbädden (steg 12.4.3): bristen sätts i mobler.ts, som läses efter den här filen
-export const finareKrok = { brist: (_s: State, _k: string) => 0 };
+export const finareKrok = { brist: (_s: State, _k: string) => 0, sate: (_s: State) => 0 };

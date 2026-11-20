@@ -35,6 +35,19 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
     '..kJwwwwWWYYYYYYYYYYyYYYYYYYJk..', '..kJwwwwWWYYYYYYYYYYYYYYYYYYJk..', '..kJJJJJJJJJJJJJJJJJJJJJJJJJJk..', '..kjjjjjjjjjjjjjjjjjjjjjjjjjjk..',
     '..kkkkkkkkkkkkkkkkkkkkkkkkkkkk..', '..kd........................dk..', '................................', '................................'],
     pal: { ...TRA, w: '#dad0bb', W: '#bdb39b', y: '#a0947d', Y: '#bdb39b' } },
+  // pallen och stolen (steg 12.4.4): en fyrkantig sits av plankor på fyra ben, och stolen med ryggstöd och en ljus dyna
+  pall: { pix: [
+    '................', '................', '................', '................',
+    '................', '....kkkkkkkk....', '....kJJJJJJk....', '....kJjjjjJk....',
+    '....kJJJJJJk....', '....kkkkkkkk....', '....kd....dk....', '....kd....dk....',
+    '....kk....kk....', '................', '................', '................'],
+    pal: { ...TRA } },
+  stol: { pix: [
+    '................', '................', '....kkkkkkkk....', '....kJJJJJJk....',
+    '....kJjjjjJk....', '....kJJJJJJk....', '....kkkkkkkk....', '....kwWWWWwk....',
+    '....kWWWWWWk....', '....kkkkkkkk....', '....kd....dk....', '....kd....dk....',
+    '....kk....kk....', '................', '................', '................'],
+    pal: { ...TRA, w: '#dad0bb', W: '#bdb39b' } },
 };
 // stationerna som är en ruta stora har samma bild på kartan
 const KARTA = ['drejskiva'];
@@ -43,6 +56,7 @@ const VRIDS = ['sang'];
 const vrid = (r: string[]) => Array.from({ length: r[0].length }, (_, x) => r.map(rad => rad[x]).reverse().join(''));
 export function laggTillMobler(PIX: Pix, PAL: Pal) {
   for (const [k, b] of Object.entries(BILDER)) { PIX[k] = b.pix; PAL[k] = b.pal; }
+  for (const k of ['pall', 'stol']) { PIX['kb_' + k] = PIX[k]; PAL['kb_' + k] = PAL[k]; } // på platsen vid bordet
   for (const v of ['', '_tand']) { PIX['kb_oljelampa2' + v] = PIX['kb_oljelampa1' + v]; PAL['kb_oljelampa2' + v] = PAL['kb_oljelampa1' + v]; } // lampan ser likadan ut på bordet och hyllan
   for (const k of KARTA) for (const e of ['_karta', '_karta_v']) { PIX[k + e] = PIX[k]; PAL[k + e] = PAL[k]; }
   for (const k of VRIDS) { PIX[k + '_karta_v'] = vrid(PIX[k + '_karta']); PAL[k + '_karta_v'] = PAL[k + '_karta']; }

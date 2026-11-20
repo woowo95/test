@@ -326,6 +326,11 @@ const DEF = {
   // oljelampan (steg 12.4.2, ljus.ts): en liten lampa av lera, som torkar och bränns som krukan, och en behållare för brännoljan (vatskor.ts)
   oljelampa: { namn: 'Oljelampa', skaffa: RECEPT.oljelampa, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'lamporTrasiga', text: '{namn}s oljelampa sprack.' },
     gors: { text: 'Formar en liten oljelampa av lera.', stat: 'lamporGjorda', forsta: '{namn} formade byns första oljelampa av lera. Den ska torka och brännas i elden, och sedan brinner den på brännolja.' } },
+  // pallen och stolen (steg 12.4.4, mobler.ts): sittplatserna vid bordet, i gruppen sate; stolen är den bättre
+  stol: { namn: 'Stol', grupp: 'sate', rang: 1, skaffa: RECEPT.stol, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true,
+    gors: { text: 'Fogar en stol med ryggstöd och en dyna av skinn och ull.', stat: 'stolarGjorda', forsta: '{namn} fogade byns första stol. Den är skönare att sitta på än pallen.' } },
+  pall: { namn: 'Pall', grupp: 'sate', skaffa: RECEPT.pall, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true,
+    gors: { text: 'Fogar en pall av en planka.', stat: 'pallarGjorda', forsta: '{namn} fogade byns första pall. Den är bättre att sitta på än stubben.' } },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;
