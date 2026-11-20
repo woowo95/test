@@ -22,6 +22,7 @@ import { Ting, tingOf } from './agande';
 import type { Skrift } from './skrift';
 import { yearNo } from './tid';
 import { BYSORTER, radNr, RadtalId, VarldRad } from './radtal';
+import { KOHANDELSER } from './varldslag';
 
 export const ORT = balans('ort', {
   max: 10, // så många platser i världen minns en person högst (utöver de andra lärdomarna); det minst säkra trängs undan
@@ -220,6 +221,14 @@ export function taBortPlats(s: State, vl: Varlden, p: VarldPlats) {
   const { by: _by, grannar: _g, inne: _i, ...kopia } = p;
   (vl.minnesplatser ??= []).push(kopia);
 }
+// en tillfällig plats (en gömma) tas bort när dess tid är slut (steg 12.1.164); en rads egen plats (handelslägret) tas bort när
+// raden upplöses, av radens egen regel
+KOHANDELSER.platsUpphor = (s, vl, k) => {
+  const p = k.sak !== undefined ? varldPlatsNr(vl, k.sak) : undefined;
+  if (!p || (p.by !== undefined && byPlats(vl, p.by) === p)) return;
+  taBortPlats(s, vl, p);
+  count(s, 'platsUpphorde');
+};
 // folk ser eller hör att platsen nr är borta: de glömmer den
 export function vetBorta(s: State, folk: Person[], nr: number) {
   for (const p of folk) if (findL(p, 'ort', nr)) p.lardomar = p.lardomar!.filter(l => !(l.k === 'ort' && l.a === nr));
