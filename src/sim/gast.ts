@@ -51,8 +51,8 @@ export const GASTUTRUSTNING: Record<GastSort, GastUtrustning> = {
   },
   handlare: {
     vapen: [['kniv', 2], [null, 3]], reserv: [[null, 1]],
-    plagg: { rock: [['rock_kaninskinn', 3], ['rock_vargskinn', 1], ['kappa_ylle', 1], [null, 1]], byxor: [['byxor_kaninskinn', 2], ['byxor_lader', 2], [null, 1]], skor: [['skor_kaninskinn', 4], [null, 1]], mossa: [['mossa_kaninskinn', 1], [null, 3]], balte: [['balte_rep', 3], [null, 1]] },
-    arr: 0.08,
+    plagg: { rock: [['rock_kaninskinn', 3], ['rock_vargskinn', 1], ['kappa_ylle', 1], [null, 1]], byxor: [['byxor_kaninskinn', 2], ['byxor_lader', 2], [null, 1]], skor: [['skor_kaninskinn', 4], [null, 1]], mossa: [['mossa_kaninskinn', 1], [null, 3]], balte: [['balte_rep', 3], [null, 1]], fackla: [['fackla', 1]] },
+    arr: 0.08, // facklan sätts upp vid lägret när det är mörkt (steg 12.1.152, handel.ts)
   },
   sandebud: { // budet går lätt klätt, med en kniv ibland (steg 11.6.23)
     vapen: [['kniv', 1], [null, 3]], reserv: [[null, 1]],

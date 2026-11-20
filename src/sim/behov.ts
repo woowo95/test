@@ -800,17 +800,26 @@ export function betalVaror(M: Part, G: Part, utom: readonly string[]) {
     .filter(w => w.ut > 1e-9).sort((a, b) => b.ut / b.in - a.ut / a.in || +!!a.t - +!!b.t);
 }
 // det M betalar för att G ska få mal (för G), i hela saker: man betalar hellre lite för mycket (steg 2.10.7). fick = värt för G, kost = värt för M
-export function betalaAv(varor: ReturnType<typeof betalVaror>, G: Part, mal: number) {
+// Kan G bara bära en viss vikt (handlaren, steg 4.4.1.3) räknas vikten först (steg 12.1.148): frigjord är vikten av det G ger
+// bort i bytet, och en vara som inte ger nog värde per vikt för att nå målet i det rum som är kvar avstås från i första
+// vändan, så att lasten inte fylls av tunga varor innan målet nåtts; räcker det ändå inte tas det som får plats
+export function betalaAv(varor: ReturnType<typeof betalVaror>, G: Part, mal: number, frigjord = 0) {
   const ut: Vara[] = [];
-  let f = 0, k = 0, rum = G.rymmer?.() ?? Infinity; // det G får, för G, och det M ger, för M, och hur mycket mer G kan bära (vikt)
-  for (const w of varor) {
-    if (f >= mal - 1e-9) break;
-    let n = w.t ? 1 : Math.min(w.n, Math.ceil((mal - f) / w.ut - 1e-6));
-    if (n * viktOf(w.k) > rum + 1e-9) n = w.t ? 0 : Math.floor((rum + 1e-9) / viktOf(w.k)); // handlaren tar inte emot mer än hen kan bära (steg 4.4.1.3)
-    if (n <= 0) continue;
-    rum -= n * viktOf(w.k);
-    ut.push({ k: w.k, n, t: w.t }); f += n * w.ut; k += n * w.in;
-  }
+  let f = 0, k = 0, rum = (G.rymmer?.() ?? Infinity) + frigjord; // det G får, för G, och det M ger, för M, och hur mycket mer G kan bära (vikt)
+  const ta = (w: (typeof varor)[number], tat: boolean) => {
+    const fore = ut.find(x => x.k === w.k && x.t === w.t)?.n ?? 0, vikt = viktOf(w.k);
+    let n = w.t ? (fore ? 0 : 1) : Math.min(w.n - fore, Math.ceil((mal - f) / w.ut - 1e-6));
+    if (tat && vikt > 0 && n * vikt > rum + 1e-9 && w.ut / vikt < (mal - f) / Math.max(1e-9, rum)) return; // för tungt för det den är värd: avstås från
+    if (n * vikt > rum + 1e-9) n = w.t ? 0 : Math.floor((rum + 1e-9) / vikt); // handlaren tar inte emot mer än hen kan bära
+    if (n <= 0) return;
+    rum -= n * vikt;
+    const x = ut.find(y => y.k === w.k && y.t === w.t);
+    if (x) x.n += n; else ut.push({ k: w.k, n, t: w.t });
+    f += n * w.ut; k += n * w.in;
+  };
+  const tat = isFinite(rum);
+  for (const w of varor) { if (f >= mal - 1e-9) break; ta(w, tat); }
+  if (tat) for (const w of varor) { if (f >= mal - 1e-9) break; ta(w, false); } // det som avstods från, så långt det får plats
   return { betal: ut, fick: f, kost: k };
 }
 // ett byte som båda gått med på genomförs: M får fatt av G och betalar betal. Sakerna flyttas, båda är nöjda och övar Handel,

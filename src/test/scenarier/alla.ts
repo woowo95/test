@@ -21,3 +21,4 @@ import './fas10';
 import './fas11';
 import './fas12';
 import './mobler';
+import './resor12';

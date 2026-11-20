@@ -66,6 +66,7 @@ export const LJUSKALLOR = {
   brand: { namn: 'Branden', kallor: s => brandLjus(s).map(i => ({ x: i % W + 0.5, y: Math.floor(i / W) + 0.5, r: BRAND.ljusR })) },
   // kolmilan och blästerugnen som brinner (brann.ts): lite ljus mitt i stationen
   branning: { namn: 'Kolmilan och blästerugnen', kallor: s => (s.branningar ?? []).filter(b => b.slut > s.now).flatMap(b => { const t = stationById(s, b.st); return t ? [{ x: t.x + 1, y: t.y + 1, r: MORKER.branningR }] : []; }) },
+  handlare: { namn: 'Handlarens fackla', kallor: s => s.handlare?.fackla ? [{ x: s.handlare.fackla.x + 0.5, y: s.handlare.fackla.y + 0.5, r: FACKLA.r }] : [] }, // uppsatt vid lägret när det är mörkt (steg 12.1.152, handel.ts)
   uppsatt: { namn: 'Uppsatta facklor', kallor: s => (s.uppsatta ?? []).filter(u => u.tand).map(u => ({ x: u.x + 0.5, y: u.y + 0.5, r: FACKLA.r, rum: roomAt(s, u.x, u.y) })) }, // inne lyser den upp rummet (steg 9.2.11)
 } satisfies Record<string, Ljuskalla>;
 const KALLOR = Object.values(LJUSKALLOR) as Ljuskalla[];

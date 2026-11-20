@@ -34,7 +34,7 @@ export const VARLDKRONIKA = balans('varldkronika', {
 });
 
 // en rad i världens krönika: by och mot är radernas nummer, plats platsens
-export interface VarldHandelse { nr: number; t: number; k: VarldHandelseId; by?: number; mot?: number; plats?: number }
+export interface VarldHandelse { nr: number; t: number; k: VarldHandelseId; by?: number; mot?: number; plats?: number; byNamn?: string; motNamn?: string } // namnen sparas när raden tas bort ur världen (steg 12.1.146)
 
 export function varldHandelse(vl: Varlden, k: VarldHandelseId, t: number, o: { by?: number; mot?: number; plats?: number } = {}): VarldHandelse {
   const kr = vl.kronika ??= [], h: VarldHandelse = { nr: vl.nastaHandelse = (vl.nastaHandelse ?? 0) + 1, t, k, ...o };
@@ -53,6 +53,6 @@ export function varldHandelse(vl: Varlden, k: VarldHandelseId, t: number, o: { b
 export function varldHandelseText(vl: Varlden, h: VarldHandelse): string {
   const rad = (nr?: number) => vl.rader?.find(r => r.nr === nr)?.namn || vl.platser?.find(p => p.by === nr)?.namn || 'en by';
   const plats = (nr?: number) => vl.platser?.find(p => p.nr === nr)?.namn ?? 'en plats';
-  const t = VARLDSHANDELSER[h.k].text.replace('{by}', rad(h.by)).replace('{mot}', rad(h.mot)).replace('{plats}', plats(h.plats));
+  const t = VARLDSHANDELSER[h.k].text.replace('{by}', h.byNamn ?? rad(h.by)).replace('{mot}', h.motNamn ?? rad(h.mot)).replace('{plats}', plats(h.plats));
   return t[0].toUpperCase() + t.slice(1);
 }

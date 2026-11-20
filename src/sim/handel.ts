@@ -14,7 +14,8 @@ import { eldPlats, getMap, vaderstreck } from './karta';
 import { bitAt, blocked, freeNear } from './byggnad';
 import { ledig } from './stationer';
 import { clamp, pick, rnd } from './slump';
-import { iIstiden, ageIndex, hourOf } from './tid';
+import { iIstiden, ageIndex, hourOf, lightLevel } from './tid';
+import { iMorker, MORKER } from './ljus';
 import { grundvarde, VARDE } from './varde';
 import { SAKER, isTool, viktOf } from './saker';
 import { GORS, canMake } from './redskap';
@@ -212,6 +213,7 @@ export interface HVara { k: string; n: number; q?: number; skrift?: Skrift } // 
 export interface Handlare {
   id: number; // negativt, så att det aldrig är en bybos id (en part i ett byte, byte.ts); handlaren är personen med samma id i folket (steg 9.2.111, gast.ts): namnet, hemmet, klanen, kroppen, färdigheten Handel och var hen står
   mx: number; my: number; // vart hen går
+  fackla?: { x: number; y: number }; // rutan där facklan står uppsatt vid lägret när det är mörkt (steg 12.1.152)
   fran: { x: number; y: number; t: number }; framme: number; // varifrån och när hen började gå, och när hen är framme (bilden ritar hen på vägen)
   fas: 'kommer' | 'vantar' | 'handlar' | 'gar'; // vantar: framme, väntar på kvällen (steg 4.5.4.11)
   kvall?: number; // när hen lägger ut filten (vantar)
@@ -547,6 +549,7 @@ export function handelSteg(s: State, dtSec: number) {
   }
   const h = s.handlare;
   if (!h) return;
+  handlarFackla(s, h);
   if (h.fas === 'kommer') { if (gaSteg(s, h)) framme(s, h); }
   else if (h.fas === 'vantar') { if (s.now >= h.kvall!) lagUt(s, h); }
   else if (h.fas === 'handlar') { if (s.now >= h.gar) gar(s, h); else { glomAffar(s, h); visaFiltar(s, h); } }
@@ -762,7 +765,7 @@ function budNu(s: State, h: Handlare, a: Affar, M: Part) {
   }
   while (a.kop.length) {
     const ger = vardFor(a.kop, H_), far = vardFor(a.kop, M, true);
-    const b = betalaAv(betalVaror(M, H_, a.kop.map(w => w.k)), H_, ger * a.f);
+    const b = betalaAv(betalVaror(M, H_, a.kop.map(w => w.k)), H_, ger * a.f, a.kop.reduce((x, w) => x + w.n * viktOf(w.k), 0)); // det köpta lämnar handlarens last (steg 12.1.148)
     if (b.betal.length && b.fick >= ger * a.f - 1e-9 && b.kost < far) { a.bud = b.betal; return true; }
     let i = 0;
     for (let j = 1; j < a.kop.length; j++) if (M.varde(a.kop[j].k) < M.varde(a.kop[i].k)) i = j;
@@ -808,8 +811,24 @@ function nastaBud(s: State, h: Handlare, a: Affar, p: Person) {
   if (ut.length) a.fas = 'hamta';
   else { a.fas = 'bud'; a.dur = mellan(s, HANDEL.budSek) * SEC; }
 }
-// vart kunden ska nu (handlaVal), och vad hen gör under Gör just nu
+// handlarens fackla (steg 12.1.152): en rad i utrustningen (GASTUTRUSTNING i gast.ts), som hen sätter upp mellan filtarna när
+// det är mörkt och tar ner när det ljusnar eller hen går. Den lyser som en uppsatt fackla (raden handlare i LJUSKALLOR, ljus.ts)
+function handlarFackla(s: State, h: Handlare) {
+  const p = hp(s, h), har = (s.gastTing ?? []).some(x => x.k === 'fackla' && x.agare === p.id);
+  const uppe = har && (h.fas === 'vantar' || h.fas === 'handlar') && lightLevel(s.now) <= 0;
+  if (!uppe) { if (h.fackla) delete h.fackla; return; }
+  if (h.fackla) return;
+  const hf = s.filtar?.find(f => f.handlare === h.id) ?? { x: p.x, y: p.y };
+  h.fackla = { x: Math.floor(hf.x), y: Math.floor(hf.y + FILT_MOT / 2) };
+  count(s, 'handlarFackla');
+}
+// vart kunden ska nu (handlaVal), och vad hen gör under Gör just nu. I totalmörker tar det längre tid, som allt annat arbete
+// (MORKER.fart, steg 12.1.152)
 function affarSteg(s: State, h: Handlare, a: Affar) {
+  const st = affarStegLjust(s, h, a);
+  return iMorker(s, st.spot.x, st.spot.y) ? { ...st, dur: st.dur / MORKER.fart } : st;
+}
+function affarStegLjust(s: State, h: Handlare, a: Affar) {
   a.t = s.now;
   const spot = kundPlats(s, h), ref = h.id;
   switch (a.fas) {

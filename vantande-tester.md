@@ -49,7 +49,6 @@
 ## Frågor till Björn (från natten till 20 november)
 
 - Benspaden görs inte längre i någon av testbyarna på 50 dygn (50 år i spelet, sju veckor i verkligheten): benen går först till sylen, nålarna och snarorna. Den står nu bland det sällsynta i testet. Ska benen räcka till spaden tidigare (en sak för fasens Balans), eller är det rätt att den kommer sent?
-- Världens rader för handelsläger som brutits upp blir kvar för alltid (ungefär 1,6 nya per dygn, alltså per år i spelet). Med tiden växer världens del av sparningen förbi gränsen 512 KB. Ska ett upplöst läger glömmas efter en tid, som ett minne som bleknar?
 - Att grunda en värld med 400 års förhistoria tar ungefär 45 s datortid. Det märks när en ny by grundas. Går det bra, eller ska förhistorien räknas medan spelet redan visas?
 - Steg 12.1.11 (vägarna i världen snabbare) säger att det inte ändrar spelet, men bara en av de tre delarna gör det. Vägarna slås nu upp per par i stället för att letas i en lista (byggt, samma spel). De två andra delarna ändrar spelet. Att glömma vägar ingen använt på länge gör att resans plan räknar med fågelvägen gånger omvägen tills vägen gåtts igen. Att räkna resans poäng en gång i timmen (sex minuter i verkligheten) gör att en resenär väljer på poäng som kan vara upp till en timme gamla. Ska de byggas ändå, så att spelet blir lite annorlunda, eller räcker uppslagningen per par tills mätningen (`npm run varldkostnad`) visar att resorna kostar för mycket?
 
@@ -94,3 +93,13 @@
 - 12.4.13 (ylle och väta): den som bär en kappa eller mantel av ylle fryser hälften så mycket av att vara blöt (VADER.ullBlot); personrutan visar det.
 - 12.4.14 (fjäderpennan): byar med en skrivpulpet skär en penna (gruppen penna, en per pulpet), och skrivandet sliter den 1/20 per blad och ger 0,1 högre chans till bra kvalitet.
 - Bildstilen: ingen av de nya sakerna har ännu tre versioner i valdelen (se slutrapporten); platshållarna står i src/ikonermobler.ts.
+
+## Grenen par-resor (12.1.144–146, 148, 152, 164: resorna, handeln och platserna i världen)
+
+- Committerna på par-resor har bara typkontrollen och stegens egna scenarier bakom sig. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` när grenen förts in i varld; facit ändras (nya rader i VAGHANDELSER drar slumptal på resorna).
+- 12.1.144 (trasigt hjul och vilt på vägen): scenariot vaghandelser gick igenom.
+- 12.1.145 (Släppa utrustning undantar inget; maten, vattnet, fodret och tälten väger RESA.behovVarde så länge resan behöver dem): scenarierna utvagar och gomma gick igenom.
+- 12.1.146 (handelslägrets rad och plats tas bort vid sluttiden; platser som tas bort blir minnesplatser så länge byn minns dem, vl.minnesplatser): scenarierna lagerslut (nytt, src/test/scenarier/resor12.ts), utpost, bysorter, landmarken, handelsresa, bynvet, ort och radbesok gick igenom. Sparningen får fältet minnesplatser; kör sparning och sparstorlek i koll.
+- 12.1.148 (betalningen räknar vikten först i betalaAv, behov.ts: det köpta lämnar handlarens last, och för tunga varor avstås från i första vändan): scenarierna handlare (röd före steget), byte, bytessystem, forhandling, handelsko, handslag, kopta, silver och handelsvaror gick igenom.
+- 12.1.152 (handlarens fackla: en rad i GASTUTRUSTNING, uppsatt mellan filtarna när det är mörkt, raden handlare i LJUSKALLOR och en rad i ui/foremal.ts som ritar den med den uppsatta facklans bild; handeln tar längre tid i totalmörker): scenarierna handlarfackla (nytt), handlare, morker, fackla, uppsatt och gastutrustning gick igenom. Skyldig `npm run utseende` (en natt med handlaren) när par-paneler förts in.
+- 12.1.164 (en plats med sluttid får posten platsUpphor i världens kö, laggPlats i landmarken.ts, och tas bort vid sin tid som minnesplats om någon minns den; ett handelslägers plats tas bort av lägrets egen regel): scenarierna gomslut (nytt), gomma, utvagar, lagerslut, utpost, landmarken, platser, varldslag, radvakt, sparning, sparstorlek och varldskronika gick igenom. Gömmor i en värld sparad före steget har ingen post i kön och ligger kvar.

@@ -304,6 +304,8 @@ export function drawStructures(t: number) {
     const vagg = u.vx !== undefined, k = (vagg ? 'kb_uppsatt_vagg' : 'uppsatt_mark') + (u.tand ? '_tand' : ''), c = iconCanvas(k); // på väggen sitter den i en hållare (steg 9.2.11)
     pileIcons.add(k, u.x * TS + ((TS - c.width) >> 1) + (u.vx ?? 0) * 5, u.y * TS + TS - 2 - c.height + (u.vy ?? 0) * 5, 1);
   }
+  const hf = s.handlare?.fackla; // handlarens fackla vid lägret (steg 12.1.152), som en uppsatt
+  if (hf) { const c = iconCanvas('uppsatt_mark_tand'); pileIcons.add('uppsatt_mark_tand', hf.x * TS + ((TS - c.width) >> 1), hf.y * TS + TS - 2 - c.height, 1); }
   // talgljusen på borden och hyllorna (steg 6.3.8, ljus.ts): mitt på möbeln, två utseenden efter möbeln, det tända med lågan
   for (const l of s.ljus ?? []) {
     const st = stationById(s, l.st);
