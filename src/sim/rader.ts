@@ -10,7 +10,7 @@ import { kronika } from './historik';
 import { notis } from './notiser';
 import { Klan, klanById } from './klaner';
 import { rikedom } from './varde';
-import { Rovarflock, rovarnaKommer } from './rovare';
+import { Rovarflock, rovarnaKommer, rovarFlockar } from './rovare';
 import { gastAv } from './gast';
 import { vanhelgaPlats } from './kultlatt';
 import { andlighet, troNamn, troende } from './religion';
@@ -211,5 +211,5 @@ export function tandaHus(s: State, f: Rovarflock) {
 }
 export const storRad = (f: Rovarflock | undefined) => !!f?.rad && f.folk.length >= RADER.storStrid;
 // pågår en stor strid med någon av flockarna (steg 8.8.9): den stannar ikappräkningen
-export const storStridNu = (s: State) => [s.rovare, ...(s.rovareFler ?? [])].some(f => storRad(f) && f!.gor === 'slass');
+export const storStridNu = (s: State) => rovarFlockar(s).some(f => storRad(f) && f!.gor === 'slass');
 import { iSlag } from './saker';

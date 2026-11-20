@@ -383,7 +383,7 @@ export const bristNu = (s: State, k: string) => {
 };
 export function personVarde(s: State, k: string, fam: readonly Person[], om: number, p?: Person) {
   const d = PROJEKT[k], e = d.egen ? d.egen(s, fam, p) : 0;
-  return d.vikt * kylFaktor(s, d) * (bristNu(s, k) * om + e) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad());
+  return d.vikt * kylFaktor(s, d) * ((om ? bristNu(s, k) * om : 0) + e) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad());
 }
 // den i familjen som sover under tak utan en bädd
 function utanEgenBadd(s: State, fam: readonly Person[]) {

@@ -1,4 +1,5 @@
 import { styck } from '../sim/ord';
+import { rovarFlockar } from '../sim/rovare';
 import { kartKampe } from './stridbild';
 import { ROVARHANDLINGAR, type RovarGor, hp, gastLever, gastTingOf, TEK, HANDEL, HANDLAR_UTR, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, rovarna, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
 import type { ByteMinne, GastLiv, GastRel, Person, Roll, State } from '../sim';
@@ -56,7 +57,7 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
   },
   // rövarflocken (steg 4.4.5): rövarna i en klunga där flocken står
   (s, t) => {
-    return [s.rovare, ...s.rovareFler ?? []].flatMap(r => {
+    return rovarFlockar(s).flatMap(r => {
     if (!r) return [];
     const gor = r.gor === 'kommer' ? 'Går mot byn' : r.gor === 'vantar' ? 'Rastar' : r.gor === 'slass' ? 'Slåss' : r.gor === 'rotar' ? 'Tar ur förrådet' : r.gor === 'letar' ? 'Letar hus för hus' : 'Flyr', n = r.folk.length;
     return rovarna(s, r).map((q, i) => {

@@ -4,6 +4,7 @@
 // egna handlingar (gå till byn, vänta, handla vid filten, plundra, fly, gå hem) är rader i handlingsregistret med sorten som
 // krav (ACTS[act].gast); gastAkt sätter den som passar det sorten gör just nu. Allt dras ur gästens egna slumpföljder (p.rngs),
 // aldrig byns, så att byn utvecklas likadant vare sig en gäst kommer eller inte, så länge gästen inte behöver något av byn
+import { rovarFlockar } from './rovare';
 import type { Act, Person, State } from './typer';
 import { H, HOUR, HOUR_S, T, W } from './typer';
 import { vattenNu } from './sjo';
@@ -51,7 +52,7 @@ function gastAkt(s: State, p: Person): Act {
     return h.fas === 'kommer' ? 'gastKommer' : h.fas === 'vantar' ? 'gastVantar' : h.fas === 'handlar' ? 'gastHandla' : 'gaHem';
   }
   if (g.sort === 'rovare') {
-    const f = [s.rovare, ...s.rovareFler ?? []].find(f => f?.folk.includes(p.id));
+    const f = rovarFlockar(s).find(f => f?.folk.includes(p.id));
     if (!f) return 'gaHem';
     return f.gor === 'kommer' ? 'gastKommer' : f.gor === 'vantar' ? 'gastVantar' : f.gor === 'flyr' ? 'gastFly' : 'plundra';
   }
@@ -129,7 +130,7 @@ export function gastDor(s: State, p: Person, orsak: string) {
   count(s, 'gaster doda');
   nyKvarleva(s, 'framling', p, p.name); // en egen rad i KVARLEVOR (steg 10.4.13)
   if (p.gast!.sort === 'handlare' && s.handlare?.id === p.id) handlarenDog(s, s.handlare);
-  for (const f of [s.rovare, ...s.rovareFler ?? []]) if (f) f.folk = f.folk.filter(id => id !== p.id);
+  for (const f of rovarFlockar(s)) if (f) f.folk = f.folk.filter(id => id !== p.id);
   const t = `${p.name}${p.gast!.hem ? ' från ' + p.gast!.hem : ''} dog ${orsak}.`;
   log(s, t, 'death', [p.id]); notis(s, 'gast', t, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
 }

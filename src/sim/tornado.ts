@@ -1,4 +1,5 @@
 import { balans } from './balans';
+import { rovarFlockar } from './rovare';
 import { KLOCKA, SLAGHINDER } from './klocka';
 import { hp } from './gast';
 import { rasar } from './bygg';
@@ -140,7 +141,7 @@ function nyBana(s: State, start: number, storlek = tornadoStorlek(s, start), mot
   const bana = tornadoBana(s, start, storlek, mot), fran = tornadoTid(s, start).fran, till = fran + Math.round(banLangd(bana) * TORNADO.fart) * SEC;
   return { start, storlek, fran, till, bana, L: banLangd(bana), u: 0, trad: 0, vagg: 0, lyft: 0, sonder: 0, skadade: 0 };
 }
-export interface Tornado { test?: 1; storlek?: TornadoStorlek; doda?: number; djur?: number; forstort?: number; start: number; fran: number; till: number; bana: number[]; L: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[]; lyftRutor?: number[]; tagna?: number[]; flyg?: Flygt[]; storm?: number[]; stormN?: number }
+export interface Tornado { test?: 1; storlek?: TornadoStorlek; doda?: number; djur?: number; forstort?: number; start: number; fran: number; till: number; bana: number[]; L: number; u: number; trad: number; vagg: number; lyft: number; sonder: number; skadade: number; traff?: number[]; lyftRutor?: number[]; flyg?: Flygt[]; storm?: number[]; stormN?: number }
 // det som flyger (steg 6.4.13, bara för bilden): slaget (en sak, 'folk' eller 'glod'), varifrån, vart och när
 export interface Flygt { k: string; fx: number; fy: number; tx: number; ty: number; t: number }
 // så länge något syns flyga (spelets tid, ms)
@@ -228,17 +229,15 @@ function svep(s: State, t: Tornado, a: number, b: number, gaster?: TornadoGaster
   // punkter längs banan från a till b, en halv ruta isär (och till slutet när den är framme)
   const pkt: { x: number; y: number }[] = [];
   for (let d = a * L; ; d += 0.5) { const e = Math.min(d, b * L); pkt.push(tornadoPos(t, e / L)); if (e >= b * L) break; }
-  const tagna = new Set(t.tagna), karna: number[] = [], nara: number[] = [], utkant: number[] = [], fa = a * L, fb = b * L;
+  const karna: number[] = [], nara: number[] = [], utkant: number[] = [], fa = a * L, fb = b * L;
   const xs = pkt.map(p => p.x), ys = pkt.map(p => p.y);
   for (let y = Math.max(0, Math.floor(Math.min(...ys) - R)); y <= Math.min(H - 1, Math.floor(Math.max(...ys) + R)); y++)
     for (let x = Math.max(0, Math.floor(Math.min(...xs) - R)); x <= Math.min(W - 1, Math.floor(Math.max(...xs) + R)); x++) {
-      if (tagna.has(y * W + x)) continue;
       const np = narmastPa(t, x + 0.5, y + 0.5), d = Math.floor(np.d);
       if (d > z[2] || !(np.f > fa || a === 0 && np.f >= 0) || !(np.f <= fb || b >= 1)) continue;
       (d <= z[0] ? karna : d <= z[1] ? nara : utkant).push(y * W + x);
     }
   const alla = [...karna, ...nara, ...utkant];
-  if (alla.length) (t.tagna ??= []).push(...alla);
   if (karna.length) karnan(s, t, karna);
   if (nara.length) naraZon(s, t, nara);
   if (karna.length || nara.length) eldarna(s, t, new Set([...karna, ...nara]));
@@ -305,7 +304,7 @@ function stormen(s: State, t: Tornado, b: number) {
 // rövarna och handlaren (steg 6.4.12) drabbas som byborna, en gång per tornado: i kärnan dör de, nära och i utkanten
 // flyger de och kan dö eller skadas. Handlaren tappar en del av packningen och går hem, rövarna flyr
 function gasterna(s: State, t: Tornado, zonVid: (x: number, y: number) => number, L: number, { rovarTornado, handlarTornado, handlarPlats }: TornadoGaster) {
-  for (const f of [s.rovare, ...(s.rovareFler ?? [])]) { // alla flockar på kartan (steg 8.7.18)
+  for (const f of rovarFlockar(s)) { // alla flockar på kartan (steg 8.7.18)
     const fk = -1e6 - (f?.id ?? 0);
     if (!f || t.traff?.includes(fk)) continue;
     const zon = zonVid(f.x, f.y);
@@ -450,13 +449,8 @@ function karnan(s: State, t: Tornado, rutor: number[]) {
   if (s.stockar.length < fore) borta(fore - s.stockar.length);
   for (const i of rutor) {
     const x = i % W, y = Math.floor(i / W);
-    if (g.trees[i] >= FOREST) {
-      const stam = stamAv(g, i);
-      g.trees[i] = 0;
-      stocks(s).push({ id: (s.nextStock = (s.nextStock ?? 0) + 1), x: x + 0.5, y: y + 0.5, ...stam });
-      nyStubbe(s, x, y, stam.ved);
-      t.trad++; count(s, 'tornado trad');
-    } else if (g.trees[i] > 0) g.trees[i] = 0;
+    if (g.trees[i] >= FOREST) fall(s, t, i); // trädet blir en liggande stam, och marken under slits upp nedan
+    else if (g.trees[i] > 0) g.trees[i] = 0;
     if (s.halvfallt) delete s.halvfallt[i];
     if (isSoil(g.tiles[i]) && !g.built?.[i]) { if (g.cover[i] > 0) count(s, 'tornado stig'); g.cover[i] = 0; (s.tornadoStig ??= []).push(i); } // gräset slits upp till bar jord, som nära (steg 12.1.63)
     const v = bitAt(s, x, y);

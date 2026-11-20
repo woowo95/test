@@ -1082,6 +1082,14 @@ export const SLAGSMAL = balans('slagsmal', {
 });
 // svårt skadad efter striden (krönikan, steg 3.7.16): föll av smärtan, eller en skada som är svår i personrutan (HALSA.avbryt)
 export function svartSkadad(k: Kampe) { return k.lage === 'nere' || k.skador.some(w => w.g >= HALSA.avbryt); }
+// efter en strid med rövare eller djur, för var och en i byn som var med: det kastade slits, den svårt skadade skrivs upp (svara),
+// närstriden övas och hen minns hur det gick (tanke, vann)
+export function efterKampen(s: State, p: Person, st: Strid, k: Kampe, svara: string[] | undefined, tanke: string, vann: boolean) {
+  slitKastat(s, p, st, k);
+  if (svara && svartSkadad(k)) svara.push(p.name);
+  ovning(p, 'narstrid', SLAGSMAL.ovning);
+  think(p, tanke, vann ? SLAGSMAL.vann : -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
+}
 
 // blåsten, dimman och halkan (lera och snö, steg 3.7.8) i en strid i byn just nu
 export function vadretIStriden(s: State): Pick<Uppstallning, 'vind' | 'dimma' | 'halt'> {

@@ -299,18 +299,33 @@ export const arRadjur = (id: number) => flockArtAv(id)?.art === 'radjur';
 // rutor) eller inne i skogen, minst hemAvst rutor från byplatsen
 const flockPlatser: Record<string, (seed: number) => number[]> = {};
 const platserAv = (f: FlockArt) => flockPlatser[f.art] ??= perKarta((seed): number[] => {
-  const g = startGround(seed), m = getMap(seed), ut: number[] = [], k = Math.max(1, f.tal.kant);
-  for (let y = k; y < H - k; y++) for (let x = k; x < W - k; x++) {
-    const i = y * W + x;
-    if (!isSoil(m.tiles[i]) || Math.hypot(x - m.fire.x, y - m.fire.y) < f.tal.hemAvst) continue;
-    if (f.plats === 'skog') { if (g.trees[i] >= FOREST) ut.push(i); continue; }
-    if (g.trees[i] >= FOREST) continue;
-    let skog = false;
-    for (let dy = -k; dy <= k && !skog; dy++) for (let dx = -k; dx <= k; dx++) if (g.trees[i + dy * W + dx] >= FOREST) { skog = true; break; }
-    if (skog) ut.push(i);
-  }
+  const ut: number[] = [];
+  markRutor(seed, Math.max(1, f.tal.kant), f.tal.hemAvst, f.plats === 'skog', (i, iSkog, vidSkog) => { if (f.plats === 'skog' ? iSkog : !iSkog && vidSkog) ut.push(i); });
   return ut;
 });
+// jordrutorna minst hemAvst rutor från byplatsen, så som marken var när byn grundades, med om rutan är skog och (när
+// baraSkog inte är satt) om en öppen ruta har skog inom k rutor: platserna för flockarna och fåglarna
+function markRutor(seed: number, k: number, hemAvst: number, baraSkog: boolean, gor: (i: number, iSkog: boolean, vidSkog: boolean) => void) {
+  const g = startGround(seed), m = getMap(seed);
+  for (let y = k; y < H - k; y++) for (let x = k; x < W - k; x++) {
+    const i = y * W + x;
+    if (!isSoil(m.tiles[i]) || Math.hypot(x - m.fire.x, y - m.fire.y) < hemAvst) continue;
+    if (g.trees[i] >= FOREST) { gor(i, true, true); continue; }
+    if (baraSkog) continue;
+    let skog = false;
+    for (let dy = -k; dy <= k && !skog; dy++) for (let dx = -k; dx <= k; dx++) if (g.trees[i + dy * W + dx] >= FOREST) { skog = true; break; }
+    gor(i, false, skog);
+  }
+}
+// en slumpad plats för en flock på platserna pl, en bit från de andra flockarna, och hur många den har (flockarna och fåglarna)
+function slumpStart<P>(pl: readonly P[], ruta: (p: P) => number, salt: number, andra: readonly { x: number; y: number }[], avst: number, storlek: readonly number[]): { x: number; y: number; n: number; p: P } | undefined {
+  for (let n = 0; n < 12; n++) {
+    const p = pl[Math.floor(hash(salt, n, 3) * pl.length)], i = ruta(p), x = (i % W) + 0.5, y = Math.floor(i / W) + 0.5;
+    if (n < 11 && andra.some(a => Math.hypot(a.x - x, a.y - y) < avst)) continue;
+    return { x, y, p, n: storlek[0] + Math.floor(hash(salt, 1, 5) * (storlek[1] - storlek[0] + 1)) };
+  }
+  return undefined;
+}
 const flockTid = (f: FlockArt, k: number) => (k * f.tal.livTim * HOUR) / f.tal.grupper;
 // var flock k håller till under sin tid e, och hur många den har: en slumpad ruta på artens platser, en bit från de andra
 function flockStart(s: State, f: FlockArt, k: number, e: number): { x: number; y: number; n: number } | undefined {
@@ -318,12 +333,8 @@ function flockStart(s: State, f: FlockArt, k: number, e: number): { x: number; y
   if (!pl.length) return undefined;
   const salt = s.seed * f.salt[0] + k * f.salt[1] + e * f.salt[2], andra: { x: number; y: number }[] = [];
   for (let j = 0; j < k; j++) { const a = flockStart(s, f, j, Math.floor((flockTid(f, k) + e * LIV - flockTid(f, j)) / LIV)); if (a) andra.push(a); }
-  for (let n = 0; n < 12; n++) {
-    const i = pl[Math.floor(hash(salt, n, 3) * pl.length)], x = (i % W) + 0.5, y = Math.floor(i / W) + 0.5;
-    if (n < 11 && andra.some(a => Math.hypot(a.x - x, a.y - y) < f.tal.startAvst)) continue;
-    return { x, y, n: f.tal.storlek[0] + Math.floor(hash(salt, 1, 5) * (f.tal.storlek[1] - f.tal.storlek[0] + 1)) };
-  }
-  return undefined;
+  const st = slumpStart(pl, i => i, salt, andra, f.tal.startAvst, f.tal.storlek);
+  return st && { x: st.x, y: st.y, n: st.n };
 }
 // artens flockar vid tiden t: platsen och hur långt de flytt från jägare (som kaninernas, gruppFlyr)
 export function flockGrupper(s: State, f: FlockArt, t = s.now, bara?: (x: number, y: number) => boolean): Kaningrupp[] {
@@ -412,15 +423,8 @@ export const arFagel = (id: number) => id >= FAG_G * 8 && id < BJ_G * 8; // bjö
 // platserna där fåglar kan dyka upp: jord i skogen och på öppen mark, så som marken var när byn grundades, med utseendet
 // efter platsen (0 orre, 1 ripa, 2 skogsduva)
 const fagelPlatser = perKarta((seed): { i: number; u: number }[] => {
-  const g = startGround(seed), m = getMap(seed), ut: { i: number; u: number }[] = [], k = FAGEL.kant;
-  for (let y = k; y < H - k; y++) for (let x = k; x < W - k; x++) {
-    const i = y * W + x;
-    if (!isSoil(m.tiles[i]) || Math.hypot(x - m.fire.x, y - m.fire.y) < FAGEL.hemAvst) continue;
-    if (g.trees[i] >= FOREST) { ut.push({ i, u: 2 }); continue; }
-    let skog = false;
-    for (let dy = -k; dy <= k && !skog; dy++) for (let dx = -k; dx <= k; dx++) if (g.trees[i + dy * W + dx] >= FOREST) { skog = true; break; }
-    ut.push({ i, u: skog ? 0 : 1 });
-  }
+  const ut: { i: number; u: number }[] = [];
+  markRutor(seed, FAGEL.kant, FAGEL.hemAvst, false, (i, iSkog, vidSkog) => ut.push({ i, u: iSkog ? 2 : vidSkog ? 0 : 1 }));
   return ut;
 });
 const fagTid = (k: number) => (k * FAG_LIV) / FAGEL.grupper;
@@ -430,12 +434,8 @@ function fagStart(s: State, k: number, e: number): { x: number; y: number; n: nu
   if (!pl.length) return undefined;
   const salt = s.seed * 59 + k * 1031 + e * 7919, andra: { x: number; y: number }[] = [];
   for (let j = 0; j < k; j++) { const a = fagStart(s, j, Math.floor((fagTid(k) + e * FAG_LIV - fagTid(j)) / FAG_LIV)); if (a) andra.push(a); }
-  for (let f = 0; f < 12; f++) {
-    const p = pl[Math.floor(hash(salt, f, 3) * pl.length)], x = (p.i % W) + 0.5, y = Math.floor(p.i / W) + 0.5;
-    if (f < 11 && andra.some(a => Math.hypot(a.x - x, a.y - y) < FAGEL.startAvst)) continue;
-    return { x, y, u: p.u, n: FAGEL.storlek[0] + Math.floor(hash(salt, 1, 5) * (FAGEL.storlek[1] - FAGEL.storlek[0] + 1)) };
-  }
-  return undefined;
+  const st = slumpStart(pl, p => p.i, salt, andra, FAGEL.startAvst, FAGEL.storlek);
+  return st && { x: st.x, y: st.y, n: st.n, u: st.p.u };
 }
 // har fåglarna vid (x, y) flugit bort från kartan vid tiden t
 const borta = (s: State, x: number, y: number, t: number) => !!s.faglarBorta?.some(b => t >= b.t && t < b.t + FAGEL.aterTim * HOUR && Math.hypot(b.x - x, b.y - y) < FAGEL.bort);
@@ -495,9 +495,7 @@ export const BJORN = balans('bjorn', {
   tvaUngar: 0.5, // av dem har den två ungar så här ofta
   ungeAvst: 1.4, // ungarna går så här nära (rutor) kring björnen
 });
-// björnens värden i striden (steg 6.6.5 och 6.6.6): hög styrka och uthållighet, långsam att vända men biter och slår hårt
-export const bjornVarden = (): DjurStrid => djurStrid('bjorn');
-// artens värden i striden: djurregistret (DJUR i redskap.ts), björnen ur bjornVarden
+// artens värden i striden: djurregistret (DJUR i redskap.ts), också björnens (steg 6.6.5 och 6.6.6: hög styrka och uthållighet, långsam att vända men biter och slår hårt)
 // björnungen (steg 6.6.5): liten och svag, men björnen försvarar den
 export const stridOf = (art: Djur['art']): DjurStrid => djurStrid(art);
 // stranden där björnen fiskar, en bit från byplatsen, så som kartan var när byn grundades

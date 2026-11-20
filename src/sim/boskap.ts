@@ -153,7 +153,7 @@ export const SLAKTDJUR = balans('slaktdjur', {
 });
 export const SLAKTAD: Record<string, string> = { far: 'slaktfar', get: 'slaktget', ko: 'slaktko', oxe: 'slaktko', gris: 'slaktgris' }; // oxen slaktas som kon, hästen inte (steg 10.10.3)
 // fodret i förrådet räcker över istiden för de djur av arten som inte betar (grisen, steg 10.10.13): en sak om dygnet per djur (hungern
-// växer med TAM.hungerTim × ater, och en sak foder tar bort mattar × 2), i en tidsålder (VINTER.hoPerDjur dygn, som höet)
+// växer med TAM.hungerTim × ater, och en sak foder gör djuret mätt), i en tidsålder (VINTER.hoPerDjur dygn, som höet)
 export const foderRacker = (s: State, art: TamArtId) => {
   const a = tamArt(art), n = tamdjurOf(s).filter(q => q.art === art).length;
   return a.foder.reduce((x, k) => x + amountOf(s, k), 0) >= n * a.ater * VINTER.hoPerDjur;

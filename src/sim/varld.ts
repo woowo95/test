@@ -1,4 +1,5 @@
 import { balans } from './balans';
+import { rovarFlockar } from './rovare';
 import { TROSHUS_DELAR, planRutor, vaggSorter, vuxnaTroende } from './troshus';
 import { delarAv, delarIRad, rivStation, stationAt, stationDef } from './stationer';
 import { nyaGrannbyar } from './grannbyar';
@@ -90,7 +91,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   }],
   [28, 'v518: rövarna är personer bland folket (steg 9.2.112, rovare.ts): flocken minns bara deras id', s => {
     type Gammal = { namn: string; sex: 'm' | 'k'; st: { styrka: number; uthallighet: number; mod: number; smidighet: number; skicklighet: number }; vapen: import('./strid').Vapen; blod: number; fodd?: number; x?: number; y?: number; spar?: number[]; bar?: Record<string, number>; anhorig?: string };
-    for (const f of [s.rovare, ...(s.rovareFler ?? [])]) {
+    for (const f of rovarFlockar(s)) {
       if (!f || !f.folk.some(r => typeof r !== 'number')) continue;
       f.folk = (f.folk as unknown as Gammal[]).map(r => {
         const ov = Math.max(0, (r.st.skicklighet - 5) * 2);
@@ -148,7 +149,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   [36, 'v525: striderna sker på kartan (system 10.1). Strider som pågick på det gamla sättet (uppspelade vid sidan av kartan) avbryts, de sparade striderna för arenan tas bort, och ett rövargäng på kartan fortsätter efter det nya förloppet', s => {
     const o = s as unknown as Record<string, unknown>;
     delete o.strider; delete o.djurStrider;
-    for (const f of [s.rovare, ...(s.rovareFler ?? [])]) if (f) delete (f as unknown as Record<string, unknown>).strid;
+    for (const f of rovarFlockar(s)) if (f) delete (f as unknown as Record<string, unknown>).strid;
     for (const p of s.people) { delete p.framme; if (p.task?.act === 'strid' && !s.kartStrider?.length) p.task.until = Math.min(p.task.until, s.now); }
   }],
   [37, 'v527: timret är virke (steg 10.2.70): väggarna står kvar, och det som burits till en timmervägg räknas om från ved till virke (5 ved är 1 virke)', s => {

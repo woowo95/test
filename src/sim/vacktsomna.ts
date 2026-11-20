@@ -13,7 +13,7 @@ import { count } from './folk';
 import { lasRad, radNr, RADTAL_IDS } from './radtal';
 import { State, useMap } from './typer';
 import { faltOf, faltRutor, sammanfatta, type Falt, type Ruta } from './odling';
-import { hageKant, hagarOf } from './hage';
+import { hagarOf, nyHage } from './hage';
 import { changed } from './lager';
 import { groundOf } from './mark';
 import { nyaFasta } from './vacktfasta';
@@ -85,10 +85,6 @@ export function byggMinne(b: State, m: VacktMinne | undefined, fardigt: (b: Stat
     for (const i of faltRutor(f)) { g.trees[i] = 0; g.cover[i] = 0; }
     sammanfatta(f);
   }
-  for (const q of m.hagar ?? []) {
-    const h = { id: (b.hagar?.length ?? 0) + 1, ...q };
-    (b.hagar ??= []).push(h);
-    for (const i of hageKant(b, h)) if (!(b.staket ?? []).includes(i)) (b.staket ??= []).push(i);
-  }
+  for (const q of m.hagar ?? []) nyHage(b, q);
   b.byggV = (b.byggV ?? 0) + 1;
 }

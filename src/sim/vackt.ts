@@ -37,15 +37,13 @@ import { byggLiven } from './vacktliv';
 import { byggRelationer } from './vacktrel';
 import { byggTro } from './vacktro';
 import { byggFalt } from './vacktfalt';
-import { inFas, kalender } from './tid';
 import { byggKronika } from './vacktkronika';
 import { count } from './folk';
 import { KOHANDELSER, laggIKo, PERIODRADER } from './varldslag';
 import { lever } from './rad';
 import { sallskapNu, vackKrok } from './resa';
-import { pair, tomBy } from './varld';
-import { varldMark } from './varlden';
-import { MARK_IDS } from './varldmark';
+import { pair } from './varld';
+import { tomKarta } from './vacktplats';
 import { KARTA } from './kartflytt';
 import { byggMinne, somna } from './vacktsomna';
 import { byggFasta } from './vacktfasta';
@@ -89,12 +87,12 @@ export const BYGGARE: Byggare[] = [
 // byns frö: ur huvudbyns frö och radens nummer, så att samma rad alltid får samma karta
 export const vacktFro = (s: State, nr: number) => ((s.seed * 7919 + nr * 104729) % 2147483646) + 1;
 
+// någon i byn kan timmerväggen: annars finns inga hus, som i en by som inte kommit så långt
+const kanTimra = (b: State) => b.people.some(p => (p.tek?.timmervagg ?? 0) >= 1);
 // den tomma byn: marken ur byns frö och världsrutans marksort
 export function vacktGrund(s: State, r: VarldRad, now = s.now): State {
-  const vl = s.varld, v = varldMark(s), p = vl && byPlats(vl, r.nr);
-  const mark = v && p ? MARK_IDS[v.mark[p.y * v.w + p.x]] : undefined;
-  const b = tomBy(vacktFro(s, r.nr), r.grundad, now, { W: KARTA.bredd, H: KARTA.hojd }, { varld: vl, vackt: r.nr, kal: { ...(s.kal ?? inFas(s)) }, lastAgeIdx: kalender(s, now).ai, ...(mark && mark !== 'hav' && mark !== 'sjo' ? { varldmark: mark } : {}) });
-  b.seder = newSeder(); // (kalendern är huvudbyns: hela världen har samma årstid)
+  const b = tomKarta(s, s.varld && byPlats(s.varld, r.nr), vacktFro(s, r.nr), r.grundad, now, { W: KARTA.bredd, H: KARTA.hojd }, { vackt: r.nr });
+  b.seder = newSeder();
   return b;
 }
 // väck raden nr: byn byggs med alla rader i BYGGARE
@@ -252,7 +250,7 @@ export function byggFardigt(b: State, h: Hus) {
 // sovsalar. Husen är av det material teknikerna ger, som när byn bygger själv (planeraHus i byggplan.ts). Utan väggar att bygga
 // med (timmerväggen) finns inga hus, som i en by som inte kommit så långt
 export function byggHem(b: State) {
-  if (!b.people.some(p => (p.tek?.timmervagg ?? 0) >= 1)) return;
+  if (!kanTimra(b)) return;
   for (const o of [...b.people].sort((a, c) => a.id - c.id)) {
     const pa = byId(b, o.partner);
     if (!pa || !alive(pa) || pa.id < o.id) continue;
@@ -267,7 +265,7 @@ export function byggHem(b: State) {
 }
 // sovsalar tills alla har en sovplats under tak, och familjehus som byggs ut när familjen inte ryms (BYGGNADER.familjehus)
 function sovsalar(b: State) {
-  if (!b.people.some(p => (p.tek?.timmervagg ?? 0) >= 1)) return;
+  if (!kanTimra(b)) return;
   for (let n = 0; n < 20; n++) {
     const f = BYGGNADER.familjehus.akut(b), u = homeless(b);
     const h = f.v > 0 && f.hus !== undefined ? planeraHus(b, 'familjehus', f) : u > 0 ? planeraHus(b, 'sovsal', { v: 1, plats: u }) : undefined;
@@ -292,7 +290,7 @@ export function byggHus(b: State, r: VarldRad) {
     const p = b.people.filter(q => d.tek.some(t => knows(q, t))).sort((a, c) => a.id - c.id)[0];
     if (!p || kr > kvar) continue;
     let at = stationSite(b, k, p);
-    if (!at && d.inne && b.people.some(q => (q.tek?.timmervagg ?? 0) >= 1)) { // en verkstad åt den
+    if (!at && d.inne && kanTimra(b)) { // en verkstad åt den
       const hus = planeraHus(b, 'verkstad', { v: HUS.verkstadAkut, plats: verkstadPlats(k) });
       if (hus) { byggFardigt(b, hus); at = stationSite(b, k, p); }
     }
@@ -368,7 +366,7 @@ function iLagret(b: State, hus = true) {
   }
   const a = BYGGNADER.forrad.akut(b);
   // byggaren lägger förrådshuset en gång; att det byggs ut eller får sällskap sker när byn lever, så att återbygget (steg 11.13.22) inte lägger ett nytt vid varje besök
-  if (hus && a.v > 0 && !housesOf(b).some(h => h.fn === 'forrad') && b.people.some(p => (p.tek?.timmervagg ?? 0) >= 1)) { const h = planeraHus(b, 'forrad', a); if (h) byggFardigt(b, h); }
+  if (hus && a.v > 0 && !housesOf(b).some(h => h.fn === 'forrad') && kanTimra(b)) { const h = planeraHus(b, 'forrad', a); if (h) byggFardigt(b, h); }
 }
 // testknappen Väck: den närmaste levande grannbyn till huvudbyn väcks, eller somnar om den redan är väckt
 export function vackTestNarmast(s: State): { ok: boolean; text: string } {

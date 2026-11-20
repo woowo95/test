@@ -87,7 +87,7 @@ import { FAGEL, djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { bjornSteg, bjornjaktSteg } from './bjorn';
 import { resaSteg, resaBehov, ridBredvid } from './resa';
-import { rovarPrat, rovarSteg, rovarTornado } from './rovare';
+import { rovarPrat, rovarSteg, rovarTornado, rovarFlockar } from './rovare';
 import { skrivHuvudRad } from './radtal';
 import { varldSteg } from './varldslag';
 import { projektSaknarRakna } from './projekt';
@@ -580,16 +580,19 @@ export const TAKTER: Takt[] = [
     const social = c.social.filter(p => kanPrata(s, p)); // en brottning kan ha börjat under steget (steg 9.2.100)
     for (const p of social) {
       if (!alive(p)) continue;
-      const nara = social.filter(q => q !== p && alive(q) && horHar(s, p, q));
-      const t = p.task!, med = t.med !== undefined ? nara.find(q => q.id === t.med) : undefined, others = med ? [med] : nara; // den man står bredvid (steg 4.5.6.7)
+      // vilka som hörs räknas först när det blir ett samtal: innan dess räcker det att veta om någon hörs (fynd 432)
+      const hors = (q: Person) => q !== p && alive(q) && horHar(s, p, q);
+      const t = p.task!, med = t.med !== undefined ? social.find(q => q.id === t.med && hors(q)) : undefined; // den man står bredvid (steg 4.5.6.7)
+      const finns = !!med || social.some(hors);
       if (t.act === 'samtal') {
         if (t.med !== undefined && !med) { t.until = Math.min(t.until, c.now); count(s, 'samtal for langt'); continue; } // den andra gick
-        t.ensam = others.length ? 0 : (t.ensam ?? 0) + dt;
+        t.ensam = finns ? 0 : (t.ensam ?? 0) + dt;
         if (t.ensam > SAMTAL.ensamSek) { t.until = Math.min(t.until, c.now); count(s, 'samtal ensam'); continue; }
       }
-      if (!others.length) continue;
+      if (!finns) continue;
       const expect = dt / STEG.samtalSek * (STEG.samtalBas + stat(p, 'empati', c.now) / STEG.samtalEmpati) * (p.sinnen === undefined ? 1 : tal(p) * STEG.samtalTal + horsel(p) * STEG.samtalHorsel + 1 - STEG.samtalTal - STEG.samtalHorsel); // talet och hörseln (steg 8.2.2)
       let n = Math.floor(expect); if (rnd(s, 'samtal', p) < expect - n) n++;
+      const others = n ? (med ? [med] : social.filter(hors)) : [];
       for (let i = 0; i < n; i++) { const g = converse(s, p, others, c.events); if (g) gralBlirSlagsmal(s, p, g); } // ett gräl kan bli ett slagsmål (strid.ts)
       if (n) { count(s, 'samtal', n); if (!ACTS[t.act].social) p.pratArbete = (p.pratArbete ?? 0) + n; } // samtalen under arbetet (steg 8.1.12)
     }
@@ -1297,7 +1300,7 @@ function drag(s: State, p: Person, tk: Task) {
   ut -= RUNDA.mork * (isLight(now) ? clamp(1 - (19 - h) / RUNDA.morkTim, 0, 1) : 1);
   ut -= RUNDA.kyla * (Math.min(1, coldOf(temperature(s))) + (p.warm < KROPP.kallt ? 1 : 0));
   const mod = clamp(MINNE.radslaMax - stat(p, 'mod', now) / 20, MINNE.radslaMin, MINNE.radslaMax);
-  const hot = [...(s.vargar ?? []), ...(s.rovare ? [s.rovare] : []), ...(s.rovareFler ?? [])]; // alla rövarflockar (steg 8.7.18)
+  const hot = [...(s.vargar ?? []), ...rovarFlockar(s)]; // alla rövarflockar (steg 8.7.18)
   const fara = (x: number, y: number) => {
     let v = 0;
     for (const f of hot) { const d = Math.hypot(f.x - x - 0.5, f.y - y - 0.5); if (d < RUNDA.vargR) v += RUNDA.vargRadsla * (1 - d / RUNDA.vargR) * mod; }
