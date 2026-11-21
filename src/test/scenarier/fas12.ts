@@ -1520,3 +1520,22 @@ SCENARIER.larmsort = {
     ];
   },
 };
+
+SCENARIER.flodbort = {
+  text: 'Maten bärs undan från vattnet (steg 12.1.214): den som bär mat från en lagerplats som vattnet kan nå lägger den tillbaka på rutan bara när rutan fortfarande tar emot maten; annars går hen till en säker ruta',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), { land } = SIM.djupOf(s.seed);
+    // en ruta i en lagerplats som tar emot bär, och vattnet som kan nå den
+    let t: { x: number; y: number } | undefined;
+    for (const z of SIM.zonesOf(s)) for (let y = z.y; y < z.y + z.h && !t; y++) for (let x = z.x; x < z.x + z.w && !t; x++) if (SIM.allows(z, 'bar') && land[y * SIM.W + x] >= 1 && SIM.zoneAt(s, x, y) >= 0) t = { x, y };
+    if (!t) return [['testbyn har en lagerplats', false]];
+    const task = { act: 'bara', phase: 'do', tx: t.x + 0.5, ty: t.y + 0.5, until: s.now, carry: 0, items: { bar: 2 } } as unknown as SIM.Task;
+    const fore = SIM.backSpot(s, task);
+    s.flodHot = land[t.y * SIM.W + t.x];
+    const efter = SIM.backSpot(s, task), ei = Math.floor(efter.y) * SIM.W + Math.floor(efter.x);
+    return [
+      [`utan vatten: tillbaka på sin ruta i lagret (${Math.floor(fore.x)},${Math.floor(fore.y)}, rutan ${t.x},${t.y})`, Math.floor(fore.x) === t.x && Math.floor(fore.y) === t.y],
+      [`när vattnet kan nå rutan bärs maten till en säker ruta (${Math.floor(efter.x)},${Math.floor(efter.y)}, ${land[ei]} rutor upp på land, vattnet når ${s.flodHot})`, !(Math.floor(efter.x) === t.x && Math.floor(efter.y) === t.y) && !SIM.flodHotad(s, ei)],
+    ];
+  },
+};
