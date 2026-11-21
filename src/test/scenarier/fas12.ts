@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, kor, testBy, medBank, medHus, nyInvanare, setFood, setItems, setMat, tandEld, tandOchFlinta } from './hjalp';
+import { SCENARIER, klockan, kor, testBy, styreTimme, medBank, medHus, nyInvanare, setFood, setItems, setMat, tandEld, tandOchFlinta } from './hjalp';
 import { START } from '../kor';
 
 // en by med myr: det första fröet från start vars karta har myr (kartan räknas utan att byn skapas)
@@ -1736,6 +1736,35 @@ SCENARIER.vavstol = {
     return [
       [`med sländan i handen slits den, inte sländan i vävstolen (handen ${f(c0.hand)} → ${f(c1.hand)}, vävstolen ${f(c0.stol)} → ${f(c1.stol)})`, c1.hand < c0.hand && c1.stol === c0.stol],
       [`utan slända i handen slits sländan i vävstolen med en tråd (${f(c1.stol)} → ${f(c2.stol)}, en tråd ${f(per)}), och den i handen inte (${f(c2.hand)})`, Math.abs(c1.stol - c2.stol - per) < 1e-9 && c2.hand === c1.hand],
+    ];
+  },
+};
+
+SCENARIER.utvisning = {
+  text: 'Utvisningen ger en notis och en rad i krönikan (steg 12.1.253, egenRad i STRAFF_REG, styre.ts): straffen med en egen rad (utvisningen och döden) får ingen rad och notis för domen, de andra får den',
+  kor: () => {
+    const t = SIM.createState(11, START);
+    klockan(t, 11);
+    for (const [x, a] of [['m', 33], ['k', 29], ['m', 26], ['k', 31]] as const) nyInvanare(t, x, a);
+    const vuxna = SIM.living(t).filter(p => SIM.ageOf(p, t.now) >= SIM.ALDER.vuxen), [l, tjuv, offer] = vuxna;
+    (l!.tek ??= {}).ledarskap = 1;
+    for (const q of vuxna) if (q !== l) SIM.getRel(t, l!, q).op = 40;
+    styreTimme(t);
+    let forsok = 0;
+    for (; forsok < 20 && SIM.alive(tjuv!) && tjuv!.left === undefined; forsok++) {
+      t.now += SIM.DAY; klockan(t, 11);
+      t.styre!.lagar = [{ id: 'stoldforbud', t: t.now - SIM.DAY, straff: 3, av: l!.id, om: '' } as never]; // stölden ger utvisning (ledaren kan föreslå ett annat straff)
+      for (const q of vuxna) { q.x = l!.x + 1; q.y = l!.y; }
+      SIM.handelse(t, tjuv!, 'stold', offer!, 'mat');
+      SIM.allmant(t, tjuv!, { h: 'stold', t: t.now, mot: offer!.id, motNamn: offer!.name, sak: 'mat' }, 0.5, []);
+      klockan(t, SIM.STR.timme); styreTimme(t);
+    }
+    const rader = (t.notiser?.lista ?? []).flatMap(n => n.rader.map(r => [n.id, r] as const)).filter(([, r]) => r.includes(tjuv!.name));
+    const utv = rader.filter(([, r]) => /utvis|driver ut/.test(r));
+    return [
+      ['utvisningen och döden har en egen rad, slag och böter inte', SIM.straffEgenRad(3) && SIM.straffEgenRad(6) && !SIM.straffEgenRad(2) && !SIM.straffEgenRad(4)],
+      [`tjuven drevs ut (${forsok} försök, ${t.stat?.utvisad ?? 0} utvisade, ${t.stat?.straff ?? 0} straff, ${t.stat?.lag_ej_efterlevd ?? 0} ej efterlevd, ${Object.entries(t.stat ?? {}).filter(([k]) => /straff_|holm|fri/.test(k)).map(([k, n]) => `${k} ${n}`).join(", ")})`, (t.stat?.utvisad ?? 0) === 1],
+      [`en notis om utvisningen (${utv.map(([id, r]) => `${id}: ${r}`).join(' | ')})`, utv.length === 1],
     ];
   },
 };

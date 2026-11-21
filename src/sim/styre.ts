@@ -474,15 +474,17 @@ export const STRAFF_REG = [
   { id: 0, namn: 'Tillrättavisning', da: 'tillrättavisade', inf: 'få höra hur fel det var', nu: 'tillrättavisar' },
   { id: 1, namn: 'Skam', da: 'skämde ut', inf: 'skämmas ut inför alla', nu: 'skämmer ut' },
   { id: 2, hard: true, namn: 'Slag', da: 'slog', inf: 'få stryk', nu: 'slår' },
-  { id: 3, hard: true, namn: 'Utvisning', da: 'drev ut', inf: 'drivas ut ur byn', nu: 'driver ut' },
+  { id: 3, hard: true, egenRad: true, namn: 'Utvisning', da: 'drev ut', inf: 'drivas ut ur byn', nu: 'driver ut' },
   { id: 4, namn: 'Böter', da: 'dömde till böter', inf: 'betala böter till den drabbade', nu: 'dömer till böter' },
   { id: 5, namn: 'Samhällstjänst', da: 'dömde till extra arbete', inf: 'arbeta extra för byn', nu: 'dömer till extra arbete' },
-  { id: 6, hard: true, namn: 'Döden', da: 'dömde till döden', inf: 'dö', nu: 'dömer till döden' },
+  { id: 6, hard: true, egenRad: true, namn: 'Döden', da: 'dömde till döden', inf: 'dö', nu: 'dömer till döden' },
   { id: 7, namn: 'Förlorad rätt', da: 'tog rösten från', inf: 'förlora rösten', nu: 'tar rösten från' },
   { id: 8, namn: 'Ingen vård', da: 'tog rätten till vård från', inf: 'inte få vård', nu: 'tar rätten till vård från' }, // steg 9.5.30
   { id: 9, hard: true, namn: 'Fängelse', da: 'satte i fängelse', inf: 'sitta i fängelset', nu: 'sätter i fängelse' }, // steg 11.12.3: kräver ett fängelse med ledig plats (fangelse.ts)
 ] as const;
 satHardStraff(steg => STRAFF_REG.some(r => r.id === steg && 'hard' in r && r.hard));
+// straffet har en egen rad i krönikan och en egen notis när det verkställs (utvisningen och döden), i stället för domens (steg 12.1.253)
+export const straffEgenRad = (steg: number) => STRAFF_REG.some(r => r.id === steg && 'egenRad' in r && r.egenRad);
 const BROTT = new Set<HandelseTyp>(['budbrott', 'stold', 'stoldLindrig', 'sla', 'misshandel', 'drap', 'logn', 'overdrev', 'rymning']); // rymningen ur fängelset (steg 11.12.1)
 // straffets steg (0 till 3, eller Fängelse 9 när byn har ett med ledig plats) för vikten v gånger hårdheten
 function stegOf(v: number, h: HandelseTyp, rang: number, fang = false) {
@@ -549,9 +551,11 @@ function doma(s: State, l: Person) {
     ratt.push(r);
     count(s, 'straff'); count(s, 'straff_' + steg);
     log(s, `${l.name} ${STRAFF_REG[steg].nu} ${q.name} för att ${hon(q)} ${brottText(b)}.`, 'rel', [l.id, q.id]);
-    if (steg !== 3 && steg !== 6) kronikaBer(s, 'k_ratt', q.id, { ...personFalt(q), ledare: l.name, brott: brottText(b), straff: STRAFF_REG[steg].nu }); // tinget dömde (steg 12.1.135); utvisningen och döden har sina rader
+    if (!straffEgenRad(steg)) { // tinget dömde (steg 12.1.135); utvisningen och döden har sina rader och notiser (steg 12.1.253)
+      kronikaBer(s, 'k_ratt', q.id, { ...personFalt(q), ledare: l.name, brott: brottText(b), straff: STRAFF_REG[steg].nu });
+      notis(s, 'dom', `${l.name} ${STRAFF_REG[steg].nu} ${q.name} för att ${hon(q)} ${brottText(b)}.`, [l.id, q.id]);
+    }
     if (steg === 6) notis(s, 'avrattning', `${q.name} avrättades. ${l.name} dömde ${q.sex === 'k' ? 'henne' : 'honom'} till döden för att ${hon(q)} ${brottText(b)}.`, [q.id, l.id]); // (steg 12.1.137)
-    else notis(s, 'dom', `${l.name} ${STRAFF_REG[steg].nu} ${q.name} för att ${hon(q)} ${brottText(b)}.`, [l.id, q.id]);
     allmant(s, q, b, STR.hord, sett); // de som ser straffet får höra om brottet
     tanke(q, 'straffad', now, { namn: l.name, v: -STR.tanke * (steg + 1), tid: STR.tankeDygn * DAY });
     barnTill(s, q, undefined, 'foralderDomd', q.name); // barnen (steg 12.1.133)
