@@ -8,7 +8,7 @@ import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
 import { medTal, testBy, stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank, utanWebblasare, styreTimme } from './hjalp';
-import { GANG_MIN, garNu, simPlats, stalle, sittande, vidArbetet, vidStationen } from '../../ui/stalle';
+import { type BildSteg, bildSteg, garNu, simPlats, stalle, sittande, vidArbetet, vidStationen } from '../../ui/stalle';
 import { styre as styreFlikF } from '../../ui/flikar/styre';
 import { setByn, ui as uiLage } from '../../ui/lage';
 import { hjalpKlick } from '../../ui/hjalp';
@@ -2840,7 +2840,8 @@ SCENARIER.stalle = {
   kor: () => {
     const s = createState(7, START); klockan(s, 8); medHus(s); SIM.setAmount(s, 'yxa', 2); tidyTools(s); // yxorna: någon fäller och hugger (steg 10.2.78)
     let sittUtan = 0, garStilla = 0, sitter = 0, gar = 0, star = 0, forst = '', arbeten = 0, felArbete = 0, vidSt = 0, felSt = 0, garUtan = 0, sammaBild = 0, sammaGar = 0;
-    const forraPlats = new Map<number, { x: number; y: number }>();
+    const forraPlats = new Map<number, { x: number; y: number }>(), forraBild = new Map<number, BildSteg>(), egenForra = new Map<number, { x: number; y: number }>();
+    let motRikt = 0;
     // vänd mot bänken (steg 12.1.154): stationen ligger åt det håll figuren är vänd, sett från där hen står
     const motSt = (t: SIM.Station, x: number, y: number, rikt: string) => {
       const q = SIM.arbetsDel(t), cx = q.x + q.w / 2, cy = q.y + q.h / 2;
@@ -2860,8 +2861,14 @@ SCENARIER.stalle = {
         for (const p of living(s)) for (let j = 0; j < 4; j++) {
           const t = t0 + (s.now - t0) * (j + 0.5) / 4, tk = SIM.sparUppgift(p, t, s.now), sp = SIM.sparPlats(p, t), x = sp?.x ?? p.x, y = sp?.y ?? p.y;
           // gånganimationen (steg 12.1.129): benen bara när platsen i simuleringen ändrats sedan förra bilden
-          const fore = forraPlats.get(p.id), rorde = garNu(s, p, t, forraPlats), nu = simPlats(s, p, t), flyttas = !!sp && !sp.still;
-          if (rorde && (!fore || Math.hypot(nu.x - fore.x, nu.y - fore.y) <= GANG_MIN)) { garUtan++; forst ||= `${p.name} går utan att ha flyttat sig (${tk?.act} ${tk?.phase})`; }
+          // bildens steg per bildruta (steg 12.1.257): samma bildSteg som bilden, med figuren på sin plats i simuleringen. Om platsen
+          // flyttats sedan förra bilden räknar scenariot själv, med sina egna förra platser
+          const nu = simPlats(s, p, t), fore = egenForra.get(p.id), flyttas = !!sp && !sp.still;
+          egenForra.set(p.id, nu);
+          const bs = bildSteg(forraBild, p.id, nu.x, nu.y, garNu(s, p, t, forraPlats)), rorde = bs.rorde;
+          if (rorde && (!fore || nu.x === fore.x && nu.y === fore.y)) { garUtan++; forst ||= `${p.name} går utan att ha flyttat sig (${tk?.act} ${tk?.phase})`; }
+          // den som går är aldrig vänd bort från hållet hen går åt
+          if (rorde && fore) { const dx = nu.x - fore.x, dy = nu.y - fore.y, langs = { sida: dx, vast: -dx, fram: dy, bak: -dy }[bs.rikt]; if (Math.abs(dx) + Math.abs(dy) > 0.01 && langs < 0) { motRikt++; forst ||= `${p.name} går baklänges (${bs.rikt}, ${dx.toFixed(2)}, ${dy.toFixed(2)})`; } }
           const ligger = tk?.act === 'sova' && tk.phase === 'do' || !SIM.kanGa(p), gor = tk?.phase === 'do' ? tk.act : undefined;
           const l = stalle(s, { ligger, gor, x, y, vidBank: false, rorde });
           if (gor) { const r = per.get(gor) ?? { n: 0, ga: 0 }; r.n++; if (l === 'ga') r.ga++; per.set(gor, r); }
@@ -2891,6 +2898,7 @@ SCENARIER.stalle = {
       [`den som samtalar utan sittplats står (${star} gånger)`, star > 0],
       [`den som arbetar med en ruta står intill och är vänd mot den (${arbeten} gånger, ${felArbete} fel; steg 10.2.78)`, arbeten > 0 && felArbete === 0],
       [`ingen ritas med gånganimationen utan att platsen i simuleringen ändrats sedan förra bilden (${garUtan} gånger; steg 12.1.129)`, garUtan === 0],
+      [`den som går i bilden är aldrig vänd bort från hållet hen går åt (${motRikt} gånger; bildSteg, steg 12.1.257)`, motRikt === 0],
       [`samma bild två gånger vid samma tid: ingen går i den andra (${sammaGar} av ${sammaBild})`, sammaBild > 0 && sammaGar === 0],
       [`den som arbetar vid en station är vänd mot den (${vidSt} gånger vid ${provSt.map(t => t.k).join(', ')} och i byn, ${felSt} fel; steg 12.1.154)`, provSt.length >= 4 && vidSt > 0 && felSt === 0],
     ];

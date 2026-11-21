@@ -84,6 +84,29 @@ export function garNu(s: State, p: Person, t: number, forra: Map<number, { x: nu
   return !!f && Math.hypot(q.x - f.x, q.y - f.y) > GANG_MIN && garIBilden(s, p, t, jakt);
 }
 
+// bildens steg per bildruta (steg 12.1.257): riktningen och om benen rör sig, ur platsen i bilden och förra bildens plats
+// per figur (forraBild). gar = svaret från garNu för byborna; gästerna utan den frågan går när platsen de fått flyttat sig.
+// Den som går snett håller sin riktning tills hen svänger tydligt (steg 6.8.2): den gamla riktningen står kvar så länge hen
+// fortfarande rör sig åt det hållet och det andra hållet inte är minst SVANG gånger större. Bilden och scenariot stalle
+// anropar samma funktion
+export const SVANG = 2;
+export type BildSteg = { x: number; y: number; rikt: Riktning; rorde: boolean };
+export function bildSteg(forraBild: Map<number, BildSteg>, id: number, x: number, y: number, gar?: boolean): BildSteg {
+  const f = forraBild.get(id); let rikt: Riktning = f?.rikt ?? 'fram', rorde = false;
+  if (f) {
+    const dx = x - f.x, dy = y - f.y;
+    if (Math.abs(dx) + Math.abs(dy) > 0.01) {
+      const langs = rikt === 'sida' ? dx : rikt === 'vast' ? -dx : rikt === 'fram' ? dy : -dy;
+      const tvars = rikt === 'sida' || rikt === 'vast' ? Math.abs(dy) : Math.abs(dx);
+      if (!(langs > 0 && tvars < langs * SVANG)) rikt = mot(dx, dy);
+    }
+    rorde = gar ?? Math.abs(dx) + Math.abs(dy) > GANG_MIN;
+  }
+  const v = { x, y, rikt, rorde };
+  forraBild.set(id, v);
+  return v;
+}
+
 // sängen (steg 6.8.5 och 12.1.14): den som sover i en färdig säng ligger längs den mitt i bädden, med huvudet i huvudänden
 // (vänster i den liggande bädden, uppåt i den stående) och ansiktet uppåt, vilken väg hen än kom ifrån. Har bädden ett
 // tillbehör (fällen) ligger den över kroppen så att bara huvudet syns; utan den syns hela kroppen
