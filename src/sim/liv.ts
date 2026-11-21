@@ -14,6 +14,7 @@ import { Act, DAY, HOUR_S, MIN, Person, SEC, State, T, W } from './typer';
 import { vattenNu } from './sjo';
 import { tileOf } from './mark';
 import { foodDays } from './ekonomi';
+import { ageIndex, foreIstiden, kallTid, kalender } from './tid';
 import { avbryt, put, releaseOwner } from './lager';
 import { inherit, packUp } from './arv';
 import { balans } from './balans';
@@ -71,6 +72,9 @@ export const LIV = balans('liv', {
   matGottFran: 0.6, matGottSpann: 1.5, matStart: 4, // (1 och 2,5 före steg 3.10.26, samma skäl som STEG.matDygn; 1,4 och 2,7 före steg 2.12.6: hela familjer flyttade fast maten räckte) // en by som ännu saknar snitt räknas som om den hade Start dygns mat
   matSnittDygn: 1, // snittet glider över så många dygn (ett år i spelet)
   barnMatTapp: 0.6, barnMatFran: 6, barnMatSpann: 4, // knapp mat ger så här mycket färre barn, från sju invånare (full effekt vid Fran + Spann)
+  // barnen och vinterns mat (steg 12.6.5): inför och under istiden räknas maten mot den byn behöver för att klara vintern, dygnen
+  // kvar till istidens slut gånger så här mycket (det som inte går att skaffa i istiden). 0: maten räknas som förut (matGott)
+  barnVinter: 0,
   hungerTakt: 0.6, hungerFran: 7, hungerSpann: 4, // knapp mat får så här många att flytta per dygn, från åtta invånare
   // vilka som flyttar (emigrate)
   parFran: 18, parTill: 38, // ett par där hen som valts är över Fran och under Till flyttar tillsammans (med sina barn under ALDER.vuxen)
@@ -232,7 +236,12 @@ export const matGottAv = (snitt: number) => clamp((snitt - LIV.matGottFran) / LI
 export const barnMatAv = (gott: number, pop: number) => 1 - LIV.barnMatTapp * (1 - gott) * clamp((pop - LIV.barnMatFran) / LIV.barnMatSpann, 0, 1); // färre barn: från sju invånare
 export const hungerFlyttAv = (gott: number, pop: number) => LIV.hungerTakt * (1 - gott) * clamp((pop - LIV.hungerFran) / LIV.hungerSpann, 0, 1); // flyttar per dygn
 export const matGott = (s: State) => matGottAv(s.matSnitt ?? LIV.matStart);
-export const barnMat = (s: State, pop: number) => barnMatAv(matGott(s), pop);
+// hur väl maten räcker vintern ut (steg 12.6.5): 0 utan mat, 1 när förrådet räcker barnVinter gånger dygnen kvar till istidens slut
+export function vinterGott(s: State) {
+  const k = kalender(s), kvar = (k.slut - s.now) / DAY + (foreIstiden(k.ai) ? 7 : 0);
+  return clamp(foodDays(s) / Math.max(1, LIV.barnVinter * kvar), 0, 1);
+}
+export const barnMat = (s: State, pop: number) => barnMatAv(LIV.barnVinter > 0 && kallTid(ageIndex(s)) ? vinterGott(s) : matGott(s), pop);
 export const hungerFlytt = (s: State, pop: number) => hungerFlyttAv(matGott(s), pop);
 export function regulate(s: State, dtSec: number) {
   const pop = living(s).length;

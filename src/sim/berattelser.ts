@@ -406,6 +406,17 @@ const MDEF = {
     '{Hen} minns fortfarande något från när {hen} var {vid}: {hen} {minne}.',
     'Ett minne {hen} bär med sig är från {vid} års ålder: {hen} {minne}.',
   ],
+  // det starkaste minnet från första året, innan hen fyllt ett år: {minne} = upplevelsen
+  besk_minneSpad: [
+    '{Hen} var bara ett spädbarn när {hen} {minne}.',
+    '{Hen} var inte ens ett år när {hen} {minne}.',
+    'Det första som präglade {honom} hände innan {hen} fyllt ett år: {hen} {minne}.',
+    '{Hen} minns det inte själv, men {hen} var bara ett spädbarn när {hen} {minne}.',
+    '{Hans} liv började svårt, för {hen} {minne} innan {hen} kunde gå.',
+    'Andra har berättat för {honom} att {hen} {minne} som spädbarn.',
+    'Det hände innan {hen} fyllt ett år, och det har format {honom}: {hen} {minne}.',
+    '{Hen} var för liten för att minnas det, men {hen} {minne}.',
+  ],
   // vem hen är i byn (steg 3.9.7). {ny} = grundade byn på nytt, {kvar} = lever
   besk_grundare: [
     '{namn} var en av dem som grundade byn.',
@@ -2720,7 +2731,7 @@ export const BESK_DELAR: BeskDel[] = [
   { id: 'minne', vikt: b => starkastUpp(b.p) ? 0.4 : 0, text: b => {
     const u = starkastUpp(b.p)!;
     b.f.minne = liten(upplevelseText(u)); b.f.vid = u.a;
-    return mening(b, 'besk_minne', 5);
+    return mening(b, u.a < 1 ? 'besk_minneSpad' : 'besk_minne', 5);
   } },
 ];
 // mer ur livet (steg 3.9.8). Familjen: [mallen, vikten, fyllningen], den som sticker ut mest

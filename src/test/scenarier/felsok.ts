@@ -32,7 +32,7 @@ SCENARIER.konstigt = {
     await sparaRapport({ doc: (path: string) => ({ set: async (v: unknown) => { skrivet.set(path, v); ordning.push(path); } }) }, r, fil);
     const hopsatt = Array.from({ length: r.filBitar }, (_, i) => (skrivet.get(`rapportfil/${r.id}-${i}`) as { t: string }).t).join('');
     const delar = r.text === 'Står still vid elden' && r.valt.vad === p.name && r.person?.namn === p.name && r.person.act === p.task!.act && r.person.skal === p.task!.why
-      && !!r.person.plats && !!r.person.bar && r.person.logg.length > 0 && /mat .* dygn/.test(r.forrad) && !!r.behov && r.handelser.length > 0 && !!r.version;
+      && !!r.person.plats && !!r.person.bar && r.person.logg.length > 0 && /mat .* dagar/.test(r.forrad) && !!r.behov && r.handelser.length > 0 && !!r.version;
     // rutan: symbolen i de fyra rutorna och inte i andra, och ett tryck öppnar raden
     utanWebblasare();
     const v = { selected: p.id, husId: 1, stationId: -1, sak: '' };

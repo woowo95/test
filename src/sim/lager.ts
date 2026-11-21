@@ -1124,20 +1124,19 @@ export function matUtanPlats(s: State) {
 }
 export const utanPlatsNu = (s: State) => s.utanPlats?.v ?? 0;
 // finns ingen ledig ruta i någon lagerplats där saken får ligga?
-// en ruta där ett träd ännu står i ett lager i skogen, eller en stubbe, rymmer inget än (roomIn): den är inte ledig
-const sparrad = (s: State, z: Zone, x: number, y: number) => (z.rojs && groundOf(s).trees[key(x, y)] >= FOREST) || stubbeOn(s, x, y);
+// en ruta där ett träd ännu står i ett lager i skogen, eller en stubbe, rymmer inget än (roomIn). Trädet fälls ändå (rojPlatser i
+// skog.ts), så när byn frågar om lagret är fullt är rutan snart ledig: annars växte lagret in i skogen, fick fler träd och växte
+// igen. Stubben grävs bara bort när den står i vägen, så den rutan är inte ledig
+const sparrad = (s: State, z: Zone, x: number, y: number, tradLedigt = false) => (!tradLedigt && z.rojs && groundOf(s).trees[key(x, y)] >= FOREST) || stubbeOn(s, x, y);
 export const lagerFullt = (s: State, k: string) => {
   const all = things(s);
-  return !zonesOf(s).some(z => {
-    if (!allows(z, k)) return false;
-    return ledigaI(s, z, all) > 0;
-  });
+  return !zonesOf(s).some(z => allows(z, k) && ledigaI(s, z, all, true) > 0);
 };
 // de lediga rutorna i lagerplatsen z: ingen stack och inget som spärrar
-function ledigaI(s: State, z: Zone, all: Stack[]) {
+function ledigaI(s: State, z: Zone, all: Stack[], tradLedigt = false) {
   const upptagen = new Set(all.filter(a => inZone(z, a.x, a.y)).map(a => key(Math.floor(a.x), Math.floor(a.y))));
   let n = 0;
-  for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!upptagen.has(key(x, y)) && !sparrad(s, z, x, y)) n++;
+  for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!upptagen.has(key(x, y)) && !sparrad(s, z, x, y, tradLedigt)) n++;
   return n;
 }
 // Lagret är ett byggbehov (steg 7.2.18): det som inte fått plats ligger bredvid, och Byggplanen väljer mellan att göra en
@@ -1325,7 +1324,8 @@ function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: numb
   for (let r = 0; r <= 4 && n > 1e-9; r++) for (let y = ty - r; y <= ty + r && n > 1e-9; y++) for (let x = tx - r; x <= tx + r && n > 1e-9; x++) {
     if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r || !inMap(x, y) || eld.has(key(x, y))) continue;
     if (r === 0 && sittAt(s, x, y)) continue; // där man står eller sitter vid en station eller ett bord läggs inget, inte heller det man burit dit (steg 12.1.158)
-    if (r > 0 && (!usable(s, x, y) && !ledigtGolv(s, x, y) || stubbeOn(s, x, y) || isStored(s, x, y) || st.some(q => q.x === x && q.y === y && q.k !== k && q.n > 1e-6))) continue;
+    if (r > 0 && (!usable(s, x, y) && !ledigtGolv(s, x, y) || stubbeOn(s, x, y) || isStored(s, x, y))) continue;
+    if (st.some(q => q.x === x && q.y === y && q.k !== k && q.n > 1e-6)) continue; // där något annat redan ligger, också på rutan själv
     let g = st.find(q => q.x === x && q.y === y && q.k === k);
     const v = Math.min(n, Math.max(0, helt(rymd(s, x, y, k)) - (g?.n ?? 0)));
     if (v <= 0) continue;

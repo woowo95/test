@@ -359,7 +359,7 @@ SCENARIER.religionsflik = {
     const minst = SIM.troNamn(andra[2].tr), tron = (h: string) => h.split('<h3>Andligheten i byn</h3>')[0]; // trosriktningarna, utan listan över personer
     return [
       ['fliken syns inte innan någon tror, sedan syns den', !fore && religion.syns!()],
-      [`den största tron står med namn och antal troende (${stor.tr.namn})`, html.includes(stor.tr.namn!) && html.includes('👥 5')],
+      [`den största tron står med namn och antal troende (${stor.tr.namn})`, html.includes(stor.tr.namn!) && /title="Så många tror">[^]*? 5<\/span>/.test(html)],
       ['grundaren står med', html.includes(`data-id="${stor.a.id}"`) && html.includes('Grundare')],
       ['skalorna Natur – Människa och Många – En syns', html.includes('Natur') && html.includes('Människa') && html.includes('Många')],
       ['upplevelsen som rör tron syns', html.includes('en blixt som slog ner i granen')],

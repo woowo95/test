@@ -3827,7 +3827,7 @@ SCENARIER.sprit = {
     medVatska(s, p, 'lerkruka_stor', 'vin', 5);
     SIM.setAmount(s, 'ved', 6);
     const val = SIM.bryggVal(s, p);
-    p.x = 3; p.y = 4;
+    const vid = SIM.vidStation(kar); p.x = vid.x; p.y = vid.y; // framför karet, som är tre rutor långt
     const tk = { act: 'branna', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.BRYGG.brannMin * SIM.MIN, carry: 0, why: '', ref: kar.id } as SIM.Task;
     const tand = SIM.eldaForst(s, p, tk);
     SIM.brannKlar(s, p, kar.id);

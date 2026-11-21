@@ -1,4 +1,4 @@
-import { antal, spelTid, stor } from './ord';
+import { antal, liten, spelTid, stor } from './ord';
 import { MIN } from './typer';
 import { TROSKEL } from './forradsmal';
 import { hearthOf, woodDays } from './eld';
@@ -652,9 +652,9 @@ FRAGOR.kyrkutgift = {
   gor: (s, d) => { const tr = troOf(s, d.tro as number); if (tr) KYRKUTGIFTER[d.vad as string]?.gor(s, tr); },
 };
 FRAGOR.taBortBud = {
-  namn: (s, d) => `${troNamn(troOf(s, d.tro as number)!)}: ta bort ${budNamn(s, { id: d.id as BudId, v: d.v }).toLowerCase()}`, krets: 'tro',
+  namn: (s, d) => `${troNamn(troOf(s, d.tro as number)!)}: ta bort ${liten(budNamn(s, { id: d.id as BudId, v: d.v }))}`, krets: 'tro',
   rost: (s, p, d) => { const tr = troOf(s, d.tro as number); if (!tr) return { v: 0, why: '' }; const r = budRost(s, p, tr, d.id as BudId, d.v as BudVarde | undefined); return { v: -r.v > 0 && tr.skrift ? -r.v * SKRIFT.heligTrog : -r.v, why: r.why }; }, // en helig skrift gör budet svårare att rösta bort (steg 10.6.3)
-  gor: (s, d) => { const tr = troOf(s, d.tro as number)!, b = { id: d.id as BudId, v: d.v as BudVarde | undefined }; taBortBud(s, tr, b); count(s, 'bud_bort'); const t = `${troNamn(tr)} tog bort budet ${budNamn(s, b).toLowerCase()}.`; log(s, t, 'rel', []); kronika(s, t, 'tro'); },
+  gor: (s, d) => { const tr = troOf(s, d.tro as number)!, b = { id: d.id as BudId, v: d.v as BudVarde | undefined }; taBortBud(s, tr, b); count(s, 'bud_bort'); const t = `${troNamn(tr)} tog bort budet ${liten(budNamn(s, b))}.`; log(s, t, 'rel', []); kronika(s, t, 'tro'); },
 };
 // budet som röstats in läggs in i tron (nyttBud och bytBud)
 function laggInBud(s: State, tr: Tro, d: FragaData): AntagetBud {
@@ -663,7 +663,7 @@ function laggInBud(s: State, tr: Tro, d: FragaData): AntagetBud {
   return b;
 }
 FRAGOR.bytBud = {
-  namn: (s, d) => `${troNamn(troOf(s, d.tro as number)!)}: ${budNamn(s, { id: d.id as BudId, v: d.v })} i stället för ${budNamn(s, { id: d.gid as BudId, v: d.gv }).toLowerCase()}`, krets: 'tro',
+  namn: (s, d) => `${troNamn(troOf(s, d.tro as number)!)}: ${budNamn(s, { id: d.id as BudId, v: d.v })} i stället för ${liten(budNamn(s, { id: d.gid as BudId, v: d.gv }))}`, krets: 'tro',
   rost: (s, p, d) => {
     const tr = troOf(s, d.tro as number); if (!tr) return { v: 0, why: '' };
     const ny = budRost(s, p, tr, d.id as BudId, d.v as BudVarde | undefined), gl = budRost(s, p, tr, d.gid as BudId, d.gv as BudVarde | undefined), v = ny.v - gl.v;
@@ -672,13 +672,13 @@ FRAGOR.bytBud = {
   gor: (s, d) => {
     const tr = troOf(s, d.tro as number)!; taBortBud(s, tr, { id: d.gid as BudId, v: d.gv as BudVarde | undefined });
     const b = laggInBud(s, tr, d); count(s, 'bud_byte');
-    const t = `${troNamn(tr)} bytte ${budNamn(s, { id: d.gid as BudId, v: d.gv }).toLowerCase()} mot ${budNamn(s, b).toLowerCase()}.`; log(s, t, 'rel', []); kronika(s, t, 'tro');
+    const t = `${troNamn(tr)} bytte ${liten(budNamn(s, { id: d.gid as BudId, v: d.gv }))} mot ${liten(budNamn(s, b))}.`; log(s, t, 'rel', []); kronika(s, t, 'tro');
   },
 };
 FRAGOR.nyttBud = {
   namn: (s, d) => `${troNamn(troOf(s, d.tro as number)!)}: ${budNamn(s, { id: d.id as BudId, v: d.v })}`, krets: 'tro',
   rost: (s, p, d) => { const tr = troOf(s, d.tro as number); if (!tr) return { v: 0, why: '' }; const r = budRost(s, p, tr, d.id as BudId, d.v as BudVarde | undefined); return { v: r.v, why: r.why }; },
-  gor: (s, d) => { const tr = troOf(s, d.tro as number)!, b = laggInBud(s, tr, d); count(s, 'bud_ny'); const t = `${troNamn(tr)} fick ett nytt bud: ${budNamn(s, b).toLowerCase()}.`; log(s, t, 'rel', []); kronika(s, t, 'tro'); },
+  gor: (s, d) => { const tr = troOf(s, d.tro as number)!, b = laggInBud(s, tr, d); count(s, 'bud_ny'); const t = `${troNamn(tr)} fick ett nytt bud: ${liten(budNamn(s, b))}.`; log(s, t, 'rel', []); kronika(s, t, 'tro'); },
 };
 }
 

@@ -1109,9 +1109,10 @@ export function vadretIStriden(s: State): Pick<Uppstallning, 'vind' | 'dimma' | 
 // Den som gav sig av utan att någon slag tagit vågade inte slåss; annars gav upp, flydde eller vann
 // (s.log); när någon vann eller ingen vann skrivs raden ur mallen l_slagsmal (steg 6.7.7)
 export function stridRad(s: State, st: Strid, namn: (sd: 0 | 1) => string, orsak: string, ids: number[]) {
-  const v = st.slut!.vinnare, slogs = `${namn(0)} och ${namn(1)} slogs (${orsak}).`;
+  const v = st.slut!.vinnare;
   // fler än två: alla namnen i en lista ("Sia, Ymgerd och Svae"), inte "Sia och Ymgerd och Svae"
   const alla = [namn(0), namn(1)].flatMap(x => x.split(/, | och /)), forsta = alla.length > 2 ? alla.slice(0, -1).join(', ') : namn(0), sista = alla.length > 2 ? alla[alla.length - 1] : namn(1);
+  const slogs = `${forsta} och ${sista} slogs (${orsak}).`;
   const mall = () => loggBer(s, 'l_slagsmal', ids[0] * 997 + (ids[1] ?? 0), { namn: forsta, mot: sista, orsak, vinnare: v === -1 ? '' : namn(v as 0 | 1), ingen: v === -1 }, 'rel', ids);
   if (v === -1) return mall();
   const f = (1 - v) as 0 | 1, fk = st.kampar.filter(k => k.sida === f), bort = (k: Kampe) => k.lage === 'flykt' || k.lage === 'borta' || k.lage === 'ger';

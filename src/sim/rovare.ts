@@ -232,24 +232,27 @@ export function gaMot(s: State, r: Person, mx: number, my: number, sek: number, 
       const ux = (nx % W) + 0.5 - wx, uy = Math.floor(nx / W) + 0.5 - wy, ul = Math.hypot(ux, uy) || 1, o = sidaOm(r), sx = wx - uy / ul * o, sy = wy + ux / ul * o; // vägens riktning, inte rövarens
       if (inMap(sx, sy) && !iVatten(s, sx, sy) && !bitAt(s, sx, sy)) { wx = sx; wy = sy; }
     }
-    const runt = runtOm(s, r, wx, wy, mx, my); // ingen går genom en människa: man kliver åt sidan runt hen
+    // ingen går genom en människa: man kliver åt sidan runt hen. Står rövaren redan där (vägen går tätt bakom den hen gått
+    // runt), tränger hen sig förbi
+    const runt = (q => q && Math.hypot(q.x - r.x!, q.y - r.y!) > 1e-3 ? q : undefined)(runtOm(s, r, wx, wy, mx, my));
     if (runt) { wx = runt.x; wy = runt.y; }
     const fart = GANG.fart * fartF * Math.max(0.5, markFart(g, tileOf(r.x!, r.y!)));
     const d = Math.hypot(wx - r.x!, wy - r.y!), kan = (sek - tid) * fart;
     if (d > kan) { r.x! += (wx - r.x!) / d * kan; r.y! += (wy - r.y!) / d * kan; spara(s, r, t0 + sek * SEC); return d - kan + (gr(r).path?.length ?? 0); }
     r.x = wx; r.y = wy; tid += d / fart;
-    if (runt) { if (d < 1e-6) { spara(s, r, t0 + tid * SEC); return 1 + (gr(r).path?.length ?? 0); } continue; } // förbi: vidare mot vägen
+    if (runt) continue; // förbi: vidare mot vägen
     if (sist) { spara(s, r, t0 + tid * SEC); return 0; }
     gr(r).path!.shift(); spara(s, r, t0 + tid * SEC);
   }
 }
 // en människa i byn som står på sträckan från rövaren r till (wx, wy) närmare än halva STRID.kropp: punkten bredvid hen, på
-// rövarens sida, dit r kliver först (gaMot). Den rövaren går mot (målet mx, my) går hen fram till
+// rövarens sida, dit r kliver först (gaMot). Den rövaren går mot (målet mx, my) går hen fram till, och förbi den som står
+// tätt intill nästa punkt på vägen tränger hen sig
 function runtOm(s: State, r: Person, wx: number, wy: number, mx: number, my: number) {
   const ux = wx - r.x!, uy = wy - r.y!, l2 = ux * ux + uy * uy, halv = STRID.kropp / 2;
   if (l2 < 1e-9) return undefined;
   for (const q of living(s)) {
-    if (q.gast || q.ute !== undefined || Math.hypot(q.x - mx, q.y - my) < STRID.kropp) continue;
+    if (q.gast || q.ute !== undefined || Math.hypot(q.x - mx, q.y - my) < STRID.kropp || Math.hypot(q.x - wx, q.y - wy) < STRID.kropp) continue; // den som står på vägen själv går det inte att gå runt
     const t = clamp(((q.x - r.x!) * ux + (q.y - r.y!) * uy) / l2, 0, 1), px = r.x! + ux * t - q.x, py = r.y! + uy * t - q.y;
     if (Math.hypot(px, py) >= halv || Math.hypot(r.x! - q.x, r.y! - q.y) < halv) continue;
     const l = Math.sqrt(l2), sida = (r.x! - q.x) * -uy / l + (r.y! - q.y) * ux / l >= 0 ? 1 : -1; // åt det håll rövaren redan står
