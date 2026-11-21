@@ -11,7 +11,6 @@ import { DAY, MIN, Person, State } from './typer';
 import type { Sed } from './seder';
 import { getable } from './behov';
 import { personHand } from './personlogg';
-import { rnd } from './slump';
 import { tatKrok } from './uppvaxt';
 import { tanke } from './tankar';
 import { klanTatKrok } from './tatkrok';
@@ -40,7 +39,6 @@ export const TATU = balans('tatuering', {
   bas: 0.3, sed: 0.7, // lusten att märka en händelse: bas + sed × byns värde i motivets sed
   dygn: 3, // lusten är starkast så här många dygn (år i spelet) efter händelsen ...
   sen: 0.3, // ... och sedan så här stor
-  chans: 0.15, // chansen att den som kan välja arbetet gör det, gånger lusten och hantverket
   hantverk: 0.5, // så mycket väger färdigheten: 1 - hantverk + hantverk × hantverk / 10
   min: 4, // arbetstiden i minuter (Arbetstider: en liten sak)
   radie: 8, // så långt bort går den som tatuerar
@@ -74,8 +72,7 @@ export function tatVal(s: State, g: Person) {
   }
   if (!bast) return undefined;
   const h = 1 - TATU.hantverk + TATU.hantverk * g.skill.hantverk / 10;
-  if (rnd(s, 'val', g) >= TATU.chans * bast.l * h) return undefined;
-  return { q: bast.q, m: bast.v.m, dur: TATU.min * MIN };
+  return { q: bast.q, m: bast.v.m, dur: TATU.min * MIN, sc: bast.l * h }; // sc: lusten gånger hantverket, poängen i valet (raden tatuera i FORBATTRA, val.ts)
 }
 // när arbetet är klart: den som tatueras får märket, om hen är kvar intill
 export function tatKlar(s: State, g: Person, ref?: number) {

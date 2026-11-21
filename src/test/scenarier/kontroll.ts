@@ -329,8 +329,7 @@ SCENARIER.tatuering = {
     const utanNal = SIM.tatVal(s, g);
     SIM.addTool(s, 'nal', g); SIM.setAmount(s, 'kol', 3);
     q.x = g.x + 0.5; q.y = g.y;
-    let d: ReturnType<typeof SIM.tatVal>, forsok = 0;
-    for (; forsok < 400 && !d; forsok++) { d = SIM.tatVal(s, g); s.now += SIM.MIN; }
+    const d = SIM.tatVal(s, g); // valet väger lusten gånger hantverket (raden tatuera i FORBATTRA), utan tärningskast
     const fore = skapad(s, q), B0 = KARNA.portratt(fore);
     SIM.tatKlar(s, g, d?.q.id);
     const efter = skapad(s, q), B1 = KARNA.portratt(efter);
@@ -346,7 +345,7 @@ SCENARIER.tatuering = {
       [`lusten följer seden: striden märks i en by som drar åt Krig, jakten inte i en som drar åt Värna (${vill})`, vill === 'strid' && ingenJakt],
       [`den som dödat någon vill ha märket när upplevelsen fastnat (${markt} av ${fastnat})`, fastnat > 0 && markt === fastnat],
       ['utan bennål tatuerar ingen', !utanNal],
-      [`den som har bennålen väljer att tatuera (${d?.q.name ?? 'ingen'} efter ${forsok} försök), i 4 minuter`, d?.q === q && d.m === 'strid' && d.dur === 4 * SIM.MIN],
+      [`den som har bennålen väljer att tatuera (${d?.q.name ?? 'ingen'}, poängen ${d ? d.sc.toFixed(2) : '–'}), i 4 minuter`, d?.q === q && d.m === 'strid' && d.dur === 4 * SIM.MIN],
       [`märket i pannan i byns stil (${del}), och inget kol går åt (${SIM.amountOf(s, 'kol')} kvar, fynd 502)`, del === `tat-${stil}-panna` && !efter.del.tatKind && SIM.amountOf(s, 'kol') === 3 && !q.tatV],
       [`det syns i porträttet (${skilda} punkter), bara i paletten`, skilda > 0 && utanfor === 0],
       [`och står i berättelsen (${rad?.[2] ?? ''})`, !!rad],
