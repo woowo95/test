@@ -13,7 +13,7 @@ import { getMap, hash } from './karta';
 import { groundOf } from './mark';
 import { FOREST, VAG } from './vag';
 import { knows, tankePa } from './teknik';
-import { getable, takeMaterial } from './behov';
+import { bynsDel, getable, takeMaterial } from './behov';
 import { utsadeKrok } from './ratter';
 import { freeTools, nTools, wearTool } from './agande';
 import { SAKER } from './saker';
@@ -224,25 +224,35 @@ export function grodorNu(s: State): GrodaSlag[] {
 }
 // materialet till kläderna (steg 12.1.20): det projekten saknar (s.projektSaknar, en gång i timmen i projekt.ts) ger värde åt
 // grödan som materialet görs av, som virket till ett hus ger värde åt fällningen. Bristen följer kedjan av recept framåt (det
-// rått lin görs till, det det görs till, högst GJORS_DJUP steg): den största bristen bland det som ännu saknas
+// rått lin görs till, det det görs till, högst GJORS_DJUP steg) och räknas bakåt med receptens tal (3 tråd per tyg, 2 lin per
+// tråd); byns del av varje led dras av, som virket till ett hus (steg 12.1.206). Svaret är den största bristen bland det som
+// ännu saknas
 const GJORS_DJUP = 3;
-let gjorsAv: Map<string, string[]> | undefined;
-// det som görs av materialet k: saker vars recept tar k, och det som tillverkas av k (TILLVERKA)
+let gjorsAv: Map<string, { x: string; per: number }[]> | undefined;
+// det som görs av materialet k: saker vars recept tar k, och det som tillverkas av k (TILLVERKA), med hur mycket k en sak tar
 function gorsAv(k: string) {
   if (!gjorsAv) {
     gjorsAv = new Map();
-    const lagg = (m: string, x: string) => { const l = gjorsAv!.get(m) ?? []; if (!l.includes(x)) l.push(x); gjorsAv!.set(m, l); };
-    for (const x in SAKER) for (const m in SAKER[x]!.skaffa?.av ?? {}) lagg(m, x);
-    for (const d of Object.values(TILLVERKA)) for (const m in d.av) lagg(m, d.ger);
+    const lagg = (m: string, x: string, per: number) => { const l = gjorsAv!.get(m) ?? []; if (!l.some(e => e.x === x)) l.push({ x, per }); gjorsAv!.set(m, l); };
+    for (const x in SAKER) { const sk = SAKER[x]!.skaffa; for (const m in sk?.av ?? {}) lagg(m, x, sk!.av![m] / (sk!.ger ?? 1)); }
+    for (const d of Object.values(TILLVERKA)) for (const m in d.av) lagg(m, d.ger, d.av[m] / (d.n || 1));
   }
   return gjorsAv.get(k) ?? [];
 }
-export function projektenSaknar(s: State, k: string, djup = 0): number {
+export const projektenSaknar = (s: State, k: string) => saknasLed(s, k, 0).b;
+// hur mycket av k som saknas (n), det projekten själva behöver och det som behövs till det som saknas längre fram i kedjan,
+// med byns del av k avdragen, och den största bristen (b) bland det som saknas
+function saknasLed(s: State, k: string, djup: number): { n: number; b: number } {
   const L = s.projektSaknar;
-  if (!L) return 0;
-  let b = (L[k]?.n ?? 0) > 0 ? L[k].b : 0;
-  if (djup < GJORS_DJUP) for (const x of gorsAv(k)) b = Math.max(b, projektenSaknar(s, x, djup + 1));
-  return b;
+  if (!L) return { n: 0, b: 0 };
+  const e = L[k];
+  let beh = e?.beh ?? 0, b = (e?.n ?? 0) > 0 ? e!.b : 0;
+  if (djup < GJORS_DJUP) for (const { x, per } of gorsAv(k)) {
+    const f = saknasLed(s, x, djup + 1);
+    if (f.n > 0) { beh += f.n * per; b = Math.max(b, f.b); }
+  }
+  const n = beh > 0 ? Math.max(0, beh - bynsDel(s, k)) : 0;
+  return { n, b: n > 0 ? b : 0 };
 }
 // kornet (steg 9.6.11): när byn fått sitt första korn av handlarna kommer de som kan odla på sädesodlingen
 export function kornUpptackt(s: State) {

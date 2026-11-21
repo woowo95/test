@@ -217,11 +217,17 @@ SCENARIER.kladmaterial = {
     const lin = SIM.projektenSaknar(s, 'ratlin'), med = SIM.grodaPoang(s, 'lin');
     s.projektSaknar = undefined;
     const utan = SIM.grodaPoang(s, 'lin'), korn = SIM.projektenSaknar(s, 'ratlin');
+    // tråden i förrådet räcker till tyget: då saknas inget rått lin (steg 12.1.206); en tråd för lite och linet behövs igen
+    s.projektSaknar = { lintyg: { beh: 3, n: 3, b: 0.8 } };
+    SIM.setAmount(s, 'trad', 9); const medTrad = SIM.projektenSaknar(s, 'ratlin');
+    SIM.setAmount(s, 'trad', 8); const nastanTrad = SIM.projektenSaknar(s, 'ratlin');
+    s.projektSaknar = undefined; SIM.setAmount(s, 'trad', 0);
     return [
       ['skinnen hämtas genom jakten', jakt],
       [`garvningen väntar på skinn (${viaGarvning}), och lädret ärver genom garvningen till jakten efter skinn (${lader?.sak})`, viaGarvning === 'skinn' && lader?.sak === 'skinn'],
       [`utan tyg och vävare vill byn inga tunikor (${utanVavare}), inte heller när vävningen är halvvägs lärd (${halvLard}), med en vävare en var (${medVavare})`, utanVavare === 0 && halvLard === 0 && medVavare === SIM.living(s).length],
       [`lintyget projekten saknar ger det råa linet värde genom kedjan (${lin}, utan brist ${korn})`, lin === 0.8 && korn === 0],
+      [`med tråd nog till tyget i förrådet saknas inget rått lin (${medTrad}), med en tråd för lite saknas det igen (${nastanTrad})`, medTrad === 0 && nastanTrad === 0.8],
       [`linet är mer värt att så när projekten saknar tyg (${med.toFixed(2)} mot ${utan.toFixed(2)})`, med > utan * 1.5],
     ];
   },
