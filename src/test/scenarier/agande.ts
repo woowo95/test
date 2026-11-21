@@ -2078,7 +2078,7 @@ SCENARIER.rovare = {
     for (const p of living(t)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: t.now + 8 * HOUR, carry: 0 };
     const t0 = forrad(t), ft = rovarGang(t, 3, { x: malet(t).x + 12, y: malet(t).y }, { anfaller: true });
     korTills(t, () => !!ft.klar || !t.rovare, 3600);
-    const tyst = (t.stat?.rovarTyst ?? 0) === 1 && forrad(t) < t0 && (t.stat?.rovat ?? 0) >= 1 && (t.hist?.kronika ?? []).some(x => x[2] === 'rovare');
+    const tyst = (t.stat?.rovarTyst ?? 0) === 1 && forrad(t) < t0 && (t.stat?.rovat ?? 0) >= 1 && (t.hist?.kronika ?? []).some(x => x[2] === 'rovare' || x[2] === 'k_rovare');
     // de vuxna står emot: en strid
     const c = cloneState(bas), fc = rovarGang(c, 3, { x: malet(c).x + 12, y: malet(c).y }, { anfaller: true });
     const vuxna = living(c).filter(p => SIM.ageOf(p, c.now) >= SIM.ALDER.vaktFran && SIM.ageOf(p, c.now) < SIM.ALDER.vaktTill).slice(0, 2);
@@ -2848,7 +2848,7 @@ SCENARIER.forvarlista = {
       ['kistan visar yxan i lagrets lista med skicket', /<dl class="kv stk">/.test(k) && k.includes(SIM.sakNamn('yxa')) && k.includes(`data-sak="t:${yxa.id}"`) && k.includes('50 %')],
       ['hyllan visar stenarna med antalet, som i lagret', /<dl class="kv stk">/.test(h) && /Sten 3 st/.test(h) && h.includes('100 %')],
       ['en tom kista säger att den är tom', t.includes('tom') && !/<dl class="kv stk">/.test(t)],
-      ['rubrikerna står i samma ordning för alla stationer (Här görs, Material, Redskap, Förvaring, Platser, Sovplats, Tillbehör), och arbetstiden på en egen rad (steg 11.1.56)', [k, h].every(x => { const ord = ['Här görs', 'Material', 'Redskap', 'Förvaring', 'Platser', 'Sovplats', 'Tillbehör'].map(r => x.search(new RegExp(`<h3[^>]*>${r}`))).filter(i => i >= 0); return ord.every((v, i) => i === 0 || v > ord[i - 1]) && /<p>Arbete \d+ min<\/p>/.test(x); })],
+      ['rubrikerna står i samma ordning för alla stationer (Här görs, Material, Redskap, Förvaring, Platser, Sovplats, Tillbehör), och arbetstiden på en egen rad i hela ord (steg 11.1.56, 12.1.227)', [k, h].every(x => { const ord = ['Här görs', 'Material', 'Redskap', 'Förvaring', 'Platser', 'Sovplats', 'Tillbehör'].map(r => x.search(new RegExp(`<h3[^>]*>${r}`))).filter(i => i >= 0); return ord.every((v, i) => i === 0 || v > ord[i - 1]) && /<p>Arbete [a-zåäö ]+<\/p>/.test(x) && !/<p>Arbete [^<]*\d/.test(x); })],
     ];
   },
 };

@@ -342,7 +342,7 @@ SCENARIER.ho = {
     const b0 = g.buske![i]; g.buske![i] = BUSKE; const buske = hoPaRutan(s, x, y); g.buske![i] = b0;
     s.hagar = [{ x, y, w: 1, h: 1 } as SIM.Hage]; const hage = hoPaRutan(s, x, y); s.hagar = [];
     s.angar = [{ x, y, w: 1, h: 1 } as NonNullable<SIM.State['angar']>[number]]; const ang = hoPaRutan(s, x, y); s.angar = [];
-    const c = SIM.cloneState(s); c.plockat = { 'ho:5': { n: 2, t: s.now }, 'kvist:5': { n: 1, t: s.now } }; SIM.migrate(c);
+    const c = SIM.cloneState(s); c.v = 61; c.plockat = { 'ho:5': { n: 2, t: s.now }, 'kvist:5': { n: 1, t: s.now } }; SIM.migrate(c);
     const gammal = !c.plockat?.['ho:5'] && !!c.plockat?.['kvist:5'];
     return [
       [`en orörd ruta har 3 hö (${orord}) och en nedtrampad 2 (${trampad})`, orord === 3 && trampad === 2],
@@ -350,7 +350,7 @@ SCENARIER.ho = {
       [`under stubben finns inget hö, och den tomplockade rutan är inte bar jord (${g.cover[i].toFixed(2)})`, tom && inteBar],
       [`höet kommer tillbaka när gräset växer (${fore.toFixed(2)} blev ${efter.toFixed(2)} på två dygn)`, tillbaka],
       [`inget hö under träd (${trad}), på en buske (${buske}), i hagen (${hage}) eller på ängen (${ang})`, trad + buske + hage + ang === 0],
-      ['en sparad by rensas från de gamla hötuvorna', gammal],
+      ['en sparad by från före rensningen (uppgradering 62) rensas från de gamla hötuvorna', gammal],
     ];
   },
 };

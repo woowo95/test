@@ -410,7 +410,7 @@ function marken(s: State, p: Person, nr: number): KartMarke[] {
 // gånger andelen av ett fullt blad, delat med antalet exemplar som finns av kartan (samma kid), och avskriften får sin egen
 // kvalitet, så att en dålig avskrivare gör fler platser till rykten
 const exemplar = (s: State, kid: number) => skrifter(s).filter(k => k.kid === kid).length;
-function kopiaLust(s: State): SkrivLust | undefined {
+export function kopiaLust(s: State): SkrivLust | undefined {
   let best: SkrivLust | undefined;
   for (const t of tingOf(s)) {
     const k = t.skrift;

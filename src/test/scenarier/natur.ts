@@ -746,7 +746,7 @@ SCENARIER.stationsteknik = {
   kor: () => {
     const { STATIONER, STATION_LIST, TEK, kanBygga, thinkWhileWorking, knows } = SIM;
     // en storlek av en annan station (de större borden, steg 2.2.15) har den stationens teknik
-    const register = STATION_LIST.every(k => { if ((STATIONER[k] as SIM.StationDef).brasa || (STATIONER[k] as SIM.StationDef).tro || (STATIONER[k] as SIM.StationDef).vrak) return !STATIONER[k].tek.length; const tk = STATIONER[k].tek[0]; if ((STATIONER[k] as SIM.StationDef).smak) return STATIONER[k].tek.length === 1 && tk === (STATIONER[k] as SIM.StationDef).smak && !!TEK[tk]; /* mattorna: en teknik för alla storlekar (steg 10.7.6) */ if ((STATIONER[k] as SIM.StationDef).hage) return STATIONER[k].tek.length === 1 && tk === 'staket'; /* vattenhon: hagens teknik (steg 10.10.30) */ return STATIONER[k].tek.length === 1 && !!TEK[tk] && (tk === k || (STATIONER as Record<string, SIM.StationDef>)[tk]?.tek[0] === tk); });
+    const register = STATION_LIST.every(k => { if ((STATIONER[k] as SIM.StationDef).brasa || (STATIONER[k] as SIM.StationDef).tro || (STATIONER[k] as SIM.StationDef).vrak) return !STATIONER[k].tek.length; const tk = STATIONER[k].tek[0]; if ((STATIONER[k] as SIM.StationDef).smak) return STATIONER[k].tek.length === 1 && tk === (STATIONER[k] as SIM.StationDef).smak && !!TEK[tk]; /* mattorna: en teknik för alla storlekar (steg 10.7.6) */ if ((STATIONER[k] as SIM.StationDef).hage) return STATIONER[k].tek.length === 1 && tk === 'staket'; /* vattenhon: hagens teknik (steg 10.10.30) */ return STATIONER[k].tek.length === 1 && !!TEK[tk] && (tk === k || (STATIONER as Record<string, SIM.StationDef>)[tk]?.tek[0] === tk || (SIM.RUMSTYPER as Record<string, { ikon: string }>)[tk]?.ikon === k); }); /* eller rummet som stationen gör (sjukbädden och Sjukstugan, steg 12.1.227) */
     const ordning = TEK.slaktbank.krav.includes('kniv') && TEK.flatarbank.krav.includes('rep') && TEK.korg.krav.includes('flatarbank');
     // den som kan kniven men inte slaktbänken bygger ingen; när hen kommit på den kan hen
     const s = createState(1, START); klockan(s); tandEld(s); medHus(s);
@@ -768,7 +768,7 @@ SCENARIER.stationsteknik = {
     for (let i = 0; i < 400; i++) thinkWhileWorking(k, kq, 'samla', 600);
     const ingenKorg = (kq.tek.korg ?? 0) === 0;
     return [
-      ['varje station är en teknik med samma namn, och tekniken är det som krävs för att bygga den (brasan, trons möbler och grundarnas vagn kräver ingen, vattenhon hagens)', register],
+      ['varje station är en teknik med samma namn, och tekniken är det som krävs för att bygga den (brasan, trons möbler och grundarnas vagn kräver ingen, vattenhon hagens, sjukbädden sitt rums: Sjukstuga)', register],
       ['slaktbänken kommer efter kniven, slöjdbänken efter repet och korgen efter slöjdbänken', ordning],
       ['den som kan kniven och repet men inte stationerna bygger ingen; med teknikerna kan hen', utan && med],
       ['den som jagar med kniv och tvinnar rep kommer på slaktbänken och slöjdbänken', kommer],

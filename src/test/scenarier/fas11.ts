@@ -3478,7 +3478,7 @@ SCENARIER.kartkopia = {
   kor: () => {
     const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
     const v = SIM.living(s).filter(r => !r.gast && SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
-    const [p, q, o, u] = v as [SIM.Person, SIM.Person, SIM.Person, SIM.Person];
+    const [p, q, , u] = v as [SIM.Person, SIM.Person, SIM.Person, SIM.Person];
     for (const r of v) { r.sorg = []; r.bedrift = undefined; r.intryck = []; r.lardomar = []; r.skill.berattande = 10; }
     s.ting = SIM.tingOf(s).filter(t => !t.skrift && !t.delar);
     const nr = hb.grannar!.slice(0, 3).map(g => g.nr);
@@ -3488,9 +3488,9 @@ SCENARIER.kartkopia = {
     const skriv = (r: SIM.Person) => { SIM.setAmount(s, 'pergament', 1); SIM.fyllVatska(s, 'black', 2, kr); r.task = { act: 'skriva', phase: 'do', tx: r.x, ty: r.y, until: s.now, carry: 0, why: '' }; SIM.skrivKlar(s, r); SIM.placeTools(s); };
     const fore = SIM.skrivLust(s, q);
     skriv(p); SIM.setAmount(s, 'pergament', 1);
-    const lq = SIM.skrivLust(s, q), vq = SIM.skrivVal(s, q, { x: q.x, y: q.y }), w1 = SIM.skrivLust(s, o)?.w ?? 0;
+    const lq = SIM.skrivLust(s, q), vq = SIM.skrivVal(s, q, { x: q.x, y: q.y }), w1 = SIM.kopiaLust(s)?.w ?? 0;
     skriv(q); SIM.setAmount(s, 'pergament', 1);
-    const kartor = SIM.tingOf(s).filter(t => t.skrift?.slag === 'karta'), w2 = SIM.skrivLust(s, o)?.w ?? 0;
+    const kartor = SIM.tingOf(s).filter(t => t.skrift?.slag === 'karta'), w2 = SIM.kopiaLust(s)?.w ?? 0;
     const [a, b] = kartor;
     const lika = !!a && !!b && a.skrift!.kid !== undefined && a.skrift!.kid === b.skrift!.kid && b.skrift!.platser!.map(x => x.nr).join() === a.skrift!.platser!.map(x => x.nr).join();
     const kopia = kartor.find(t => t.skrift!.av.id === q.id);
@@ -3749,16 +3749,18 @@ SCENARIER.uppdragmal = {
     p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'uppdrag');
     const q = narmasteBy(vl, hem);
     SIM.larOrt(s, p, q.nr, SIM.O_KANT, 1);
-    const fore = SIM.resaPlan(s, p, 99, 99);
+    // resans poäng räknas en gång per timme och person (steg 12.1.11): varje plan räknas på en kopia, så att den räknas om (steg 12.1.227)
+    const plan = (t: SIM.State) => { const c = SIM.cloneState(t); return SIM.resaPlan(c, SIM.byId(c, p.id)!, 99, 99); };
+    const fore = plan(s);
     const u = SIM.utlys(vl, 'leverans', q.nr, { k: 'styre', rad: q.by }, { silver: 400 }, s.now)!;
     const l = SIM.larUppdrag(s, p, u.id, 1, { t: s.now, v: SIM.belonVarde(u), mal: u.mal, k: u.k });
-    const med = SIM.resaPlan(s, p, 99, 99);
+    const med = plan(s);
     // samma uppgift, gammal: tilltron har sjunkit och poängen med den
     const s2 = SIM.cloneState(s); s2.now += 4 * SIM.UPPDRAGTAL.tilltro * SIM.DAY;
-    const gammal = SIM.resaPlan(s2, SIM.byId(s2, p.id)!, 99, 99);
+    const gammal = plan(s2);
     // en liten belöning är inte värd resan
     l.v = 1;
-    const liten = SIM.resaPlan(s, p, 99, 99);
+    const liten = plan(s);
     const sc = (x?: SIM.ResPlan) => x ? `${x.skal} till ${x.namn}, ${x.sc.toFixed(2)}` : 'ingen resa';
     return [
       [`${p.name} vill resa för uppdraget till ${q.namn} (före: ${sc(fore)}, med uppdraget: ${sc(med)})`, med?.skal === 'uppdrag' && med.mal === q.nr && med.uppdrag === u.id],
@@ -5225,7 +5227,7 @@ SCENARIER.vacktkronika = {
     const kat = fore.every(x => x[2] !== undefined && SIM.kronikaKat(x[2]) !== undefined);
     const samma = JSON.stringify(SIM.vackBy(s, r.nr)!.hist?.kronika) === JSON.stringify(k);
     return [
-      [`världens händelser om byn står i krönikan (${varld.length} st: ${varld.slice(0, 3).map(h => SIM.varldHandelseText(vl, h)).join('; ')})`, varld.every(h => k.some(x => x[0] === Math.round(h.t) && x[1] === SIM.varldHandelseText(vl, h)))],
+      [`världens händelser om byn står i krönikan (${varld.length} st: ${varld.slice(0, 3).map(h => SIM.varldHandelseText(vl, h)).join('; ')})`, varld.every(h => k.some(x => x[0] === Math.round(h.t) && x[1] === SIM.varldHandelseText(vl, h) + '.'))],
       [`de som föddes i byn står där (${fodda.length})`, fodda.every(p => k.some(x => x[2] === 'k_fodd' && x[1].startsWith(p.name + ' föddes')))],
       [`paren och de döda står där (${fore.filter(x => x[2] === 'k_gift').length} bröllop, ${fore.filter(x => x[2] === 'k_dog').length} döda)`, fore.some(x => x[2] === 'k_gift' || x[2] === 'k_dog')],
       ['i tidsordning', iOrdning],
