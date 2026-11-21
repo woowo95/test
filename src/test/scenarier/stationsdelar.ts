@@ -208,6 +208,8 @@ SCENARIER.kladmaterial = {
     // linet: utan tyg och utan vävare vill byn inga tunikor; med en vävare vill den en var, och bristen följer kedjan bakåt
     const tunikor = () => SIM.REDSKAPMAL.tunika(s);
     const utanVavare = tunikor();
+    for (const q of SIM.living(s)) (q.tek ??= {}).vavstol = 0.5; // halvvägs lärd: ingen kan väva än (steg 12.1.205)
+    const halvLard = tunikor();
     for (const q of SIM.living(s)) for (const id of ['vavstol', 'slanda', 'lin', 'odling']) (q.tek ??= {})[id] = 1;
     const medVavare = tunikor();
     SIM.setAmount(s, 'lintyg', 0); SIM.setAmount(s, 'trad', 0); SIM.setAmount(s, 'lin', 0); SIM.setAmount(s, 'ratlin', 0);
@@ -218,7 +220,7 @@ SCENARIER.kladmaterial = {
     return [
       ['skinnen hämtas genom jakten', jakt],
       [`garvningen väntar på skinn (${viaGarvning}), och lädret ärver genom garvningen till jakten efter skinn (${lader?.sak})`, viaGarvning === 'skinn' && lader?.sak === 'skinn'],
-      [`utan tyg och vävare vill byn inga tunikor (${utanVavare}), med en vävare en var (${medVavare})`, utanVavare === 0 && medVavare === SIM.living(s).length],
+      [`utan tyg och vävare vill byn inga tunikor (${utanVavare}), inte heller när vävningen är halvvägs lärd (${halvLard}), med en vävare en var (${medVavare})`, utanVavare === 0 && halvLard === 0 && medVavare === SIM.living(s).length],
       [`lintyget projekten saknar ger det råa linet värde genom kedjan (${lin}, utan brist ${korn})`, lin === 0.8 && korn === 0],
       [`linet är mer värt att så när projekten saknar tyg (${med.toFixed(2)} mot ${utan.toFixed(2)})`, med > utan * 1.5],
     ];

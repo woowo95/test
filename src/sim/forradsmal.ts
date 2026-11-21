@@ -38,6 +38,7 @@ import { torkBrist } from './matlagning';
 import { DAY, GREN, State, WEEK } from './typer';
 import { TillverkDef } from './tillverka';
 import { protesVill } from './protes';
+import { knows } from './teknik';
 
 export const FORRAD = balans('forrad', {
   forsiktig: 0.25, // en försiktig by (seden Förutseende eller påbudet) vill ha så mycket större förråd
@@ -218,14 +219,15 @@ export function hotNu(s: State) {
 // vapnen och rustningen växer med de vuxna och hoten (steg 10.2.75): bas i fred och upp till bas + hot vid fullt hot, andelar av de vuxna
 const vapenVill = (s: State, bas: number, hot: number) => Math.ceil(vuxna(s, ALDER.vuxen) * (bas + hot * hotNu(s)) - 1e-9);
 // tygets plagg görs när någon kan väva eller tyget finns, ullens när det finns ull i något led eller får som ger den (steg 12.1.20)
-const tygPlagg = (s: State) => amountOf(s, 'lintyg') + amountOf(s, 'ylle') > 0 || living(s).some(p => !!p.tek?.vavstol);
-const ullPlagg = (s: State) => amountOf(s, 'ylle') > 0 || living(s).some(p => !!p.tek?.vavstol) && (amountOf(s, 'ulltrad') + amountOf(s, 'ull') > 0 || tamdjurOf(s).some(d => !!tamArt(d.art).ull));
+// (att någon kan tekniken frågas som i resten av tekniksystemet, knows, steg 12.1.205)
+const tygPlagg = (s: State) => amountOf(s, 'lintyg') + amountOf(s, 'ylle') > 0 || living(s).some(p => knows(p, 'vavstol'));
+const ullPlagg = (s: State) => amountOf(s, 'ylle') > 0 || living(s).some(p => knows(p, 'vavstol')) && (amountOf(s, 'ulltrad') + amountOf(s, 'ull') > 0 || tamdjurOf(s).some(d => !!tamArt(d.art).ull));
 export const REDSKAPMAL: Record<string, (s: State) => number> = {
   spjut: spjutVill,
   metspo: spjutVill, // ett metspö per spjut
   nat: s => Math.ceil(spjutVill(s) / 3), // ett nät på tre fiskare (steg 9.6.16)
   korg: s => perVuxna(s, VILLTAL.korgPerVuxna),
-  nal: s => living(s).some(p => p.skill.lakekonst >= 2 || !!p.tatV?.length) || living(s).some(p => !!p.tek?.smedja) && harStation(s, 'flatarbank') ? 1 : 0, // en bennål när någon kan sy ett sår (steg 9.5.15) eller vill ha ett märke (tatuering.ts, steg 10.7.5), och en järnnål när någon kan smida och byn syr vid slöjdbänken (steg 12.5.3)
+  nal: s => living(s).some(p => p.skill.lakekonst >= 2 || !!p.tatV?.length) || living(s).some(p => knows(p, 'smedja')) && harStation(s, 'flatarbank') ? 1 : 0, // en bennål när någon kan sy ett sår (steg 9.5.15) eller vill ha ett märke (tatuering.ts, steg 10.7.5), och en järnnål när någon kan smida och byn syr vid slöjdbänken (steg 12.5.3)
   krycka: s => protesVill(s, 'krycka'), traben: s => protesVill(s, 'traben'), krok: s => protesVill(s, 'krok'), ogonlapp: s => protesVill(s, 'ogonlapp'), // proteserna (steg 9.5.11, protes.ts)
   naverask: s => ortkokKan(s) ? villHaAv(s, 'salva') + villHaAv(s, 'benlim') : 0, // näveraskarna (steg 9.4.14): salvan och limmet som byn vill ha förvaras i dem
   lerkruka: s => Math.round(living(s).reduce((n, p) => n + (villPynt(s, p, 'kruka') ? pyntLust(s, p) : 0), 0)) + // lusten efter en kruka till avtar (steg 10.2.43)
