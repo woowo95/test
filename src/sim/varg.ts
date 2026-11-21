@@ -23,6 +23,7 @@ import { findPath } from './vag';
 import { addTo, amountOf, avbryt, foodOf, zoneOf } from './lager';
 import { anseende, handelse, larma, larmNu } from './rykten';
 import { KOTTSLAG, SAKER } from './saker';
+import { DJUR, type Djurart } from './redskap';
 import { vattenNu } from './sjo';
 import { avst, clamp, rnd, chansPer } from './slump';
 import { SLAGSMAL, VAPEN, Avsikt, djurKampe, personKampe, efterKampen } from './strid';
@@ -492,13 +493,16 @@ function vanta(s: State, f: Vargflock, folk: Person[], dtSec: number) {
   if (f.gor !== 'flyr') nyttMal(s, f, ut);
 }
 
-// flocken tar mat ur förrådet: köttet först, hela saker. Listan går art för art (hela kroppar, kött, fisk, det lagade);
-// en fälld varg i förrådet kan också tas (det är avsiktligt, kodgenomgången 3.10.25)
-const STJALS = ['vilt', 'fagel', 'varg', 'vargdel', 'radjur', 'radjurdel', 'vildsvin', 'vildsvindel', 'bjorn', 'bjorndel', ...KOTTSLAG, 'fisk', 'abborre', 'grillkott', 'torrkott'];
+// flocken tar mat ur förrådet: köttet först, hela saker. Listan går art för art ur slaktregistret DJUR (redskap.ts: den fällda
+// eller slaktade kroppen och delen, inte fisken som rensas), sedan köttslagen, fisken och det lagade köttet; en fälld varg i
+// förrådet kan också tas (det är avsiktligt, kodgenomgången 3.10.25). Listan byggs första gången, eftersom redskap.ts genom
+// sina importer läser den här filen
+let stjals: string[] | undefined;
+const STJALS = () => stjals ??= [...new Set([...Object.values(DJUR as Record<string, Djurart & { del?: string }>).filter(d => d.act !== 'rensa').flatMap(d => d.del ? [d.sak, d.del] : [d.sak]), ...KOTTSLAG, 'fisk', 'abborre', 'grillkott', 'torrkott', 'rokkott'])];
 function stjal(s: State, f: Vargflock) {
   let n = Math.max(1, Math.round(f.vargar.length * VARG.stjalPer)), tog = 0;
   const tagna: Record<string, number> = {};
-  for (const k of STJALS) while (n > 0 && SAKER[k] && amountOf(s, k) >= 1) { addTo(s, k, -1); n--; tog++; tagna[k] = (tagna[k] ?? 0) + 1; }
+  for (const k of STJALS()) while (n > 0 && SAKER[k] && amountOf(s, k) >= 1) { addTo(s, k, -1); n--; tog++; tagna[k] = (tagna[k] ?? 0) + 1; }
   if (!tog) return;
   f.hunger = Math.max(0, f.hunger - VARG.stjalMat * tog);
   count(s, 'vargStal', tog);
