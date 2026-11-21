@@ -516,6 +516,9 @@ const slatterRad = ({ s, p, v }: Ctx, i = slaVal(s, p)) => { if (i === undefined
 const forbNu = (c: Ctx) => { const f = faror(c), ch = (f.kyla || f.svalt ? VAL.projFara : 1) * kroppLust(c.p, c.s.now); return ch >= 1 || (c.forb ??= rnd(c.s, 'val', c.p) < ch); };
 // lat: hur mycket tidigare den lata tar grundbehoven
 const fryser = (c: Ctx) => c.p.warm < KROPP.kallt + KROPP.latVarme * c.lazy;
+// raderna elda och tanda (steg 12.1.76): ved på elden och att tända den, med eldens önskan, plikten och avståndet som poäng
+const eldaRad = ({ s, p, v }: Ctx) => { const d = eldaVal(s, p); if (!d) return false; v.spot = d.spot; v.dur = d.dur; v.ref = d.ref; return set(v, 'elda', d.why); };
+const tandaRad = ({ s, p, v }: Ctx) => { const d = tandaVal(s, p); if (!d) return false; v.spot = d.spot; v.dur = d.dur; v.ref = d.ref; v.brand = d.brand; v.kalla = d.kalla; return set(v, 'tanda', d.why); };
 export interface Arbete {
   id: string; niva: Niva;
   nar?: 'dag' | 'natt'; // utan nar: både dag och natt
@@ -632,9 +635,11 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'toaGenast', niva: 2, prova: ({ p, v }) => p.toa < KROPP.toaGenast && set(v, 'toa', 'Måste gå på toa genast') },
   { id: 'torstFarligt', niva: 2, prova: ({ s, p, v }) => tortarFarligt(p) && dricka(s, p, v) }, // också den som är sjuk eller svag dricker
   { id: 'vardaSig', niva: 2, prova: ({ s, p, v }) => varda(s, p, v, true) }, // sina egna sår: trycka på, lägga förband och rengöra (steg 2.5.2)
+  // den som fryser farligt söker sig till en eld som brinner, också den sjuka och svaga: att ligga kvar i kylan tär på hälsan
+  // tills hen fryser ihjäl (steg 12.1.229)
+  { id: 'fryserFarligt', niva: 2, prova: ({ s, p, v }) => p.warm < KROPP.farligt && nagonEld(s) && set(v, 'varma', 'Fryser farligt') },
   { id: 'sjuk', niva: 2, prova: ({ s, p, v }) => ligger(p, s.now) && set(v, 'sova', 'Är sjuk') }, // med feber eller svårt sjuk lägger man sig (steg 9.5.1)
   { id: 'svag', niva: 2, prova: ({ p, v }) => halsa(p) < KROPP.svag && set(v, 'sova', 'Är för svag för att orka något') }, // också av blodförlust och smärta (halsa.ts)
-  { id: 'fryserFarligt', niva: 2, prova: ({ s, p, v }) => p.warm < KROPP.farligt && nagonEld(s) && set(v, 'varma', 'Fryser farligt') },
   // elden går inte att tända för att tändmaterial saknas: den som fryser men orkar hämtar det i stället för att gå in.
   // Kylan är faran och elden det enda som hjälper mot den (några räcker; de andra går in och väntar)
   // Det som fattas hämtas: hö och kvistar, eller flintan och stenarna till ringen, som man letar efter (rövarna kan ha tagit flintan)
@@ -644,6 +649,10 @@ export const ARBETEN: readonly Arbete[] = [
     if (!mjuk(c.s, c.p, 'leta')) return false;
     arbeta(c, 'samla', `Fryser, men utan ${needStones(c.s) ? 'stenar till ringen' : 'flinta'} blir det ingen eld`, { leta: true }); return true;
   } },
+  // elden är botemedlet mot kylan (steg 12.1.229): den som fryser lägger ved på elden eller tänder den, om hen är den som ska
+  // (eldaVal och tandaVal, samma poäng som raderna elda och tanda på nivå 4), innan hen går in i ett kallt hus och lägger sig
+  { id: 'eldaFryser', niva: 2, prova: c => fryser(c) && eldaRad(c) },
+  { id: 'tandaFryser', niva: 2, prova: c => fryser(c) && tandaRad(c) },
   { id: 'fryserFarligtInne', niva: 2, prova: ({ s, p, v }) => p.warm < KROPP.farligt && bedTile(s, p) !== undefined && set(v, 'vila', 'Fryser farligt och går in i huset') },
   { id: 'varda', niva: 2, prova: ({ s, p, v }) => varda(s, p, v, false) }, // en skadad är en fara: vården går före förbättringarna (steg 2.5.2)
   { id: 'vatten', niva: 2, prova: ({ s, p, v }) => hamtaVatten(s, p, v) }, // vatten i säcken åt den som inte kan gå (steg 2.10.1)
@@ -728,8 +737,8 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'utbrott', niva: 4, nar: 'dag', prova: ({ s, p, v }) => utbrottVal(s, p, v) },
   // elden (steg 12.1.76): att lägga ved på elden och att tända den är grundbehov för dem som hör till elden, med eldens önskan,
   // plikten och avståndet som poäng (eldaVal och tandaVal i eld.ts)
-  { id: 'elda', niva: 4, prova: ({ s, p, v }) => { const d = eldaVal(s, p); if (!d) return false; v.spot = d.spot; v.dur = d.dur; v.ref = d.ref; return set(v, 'elda', d.why); } },
-  { id: 'tanda', niva: 4, prova: ({ s, p, v }) => { const d = tandaVal(s, p); if (!d) return false; v.spot = d.spot; v.dur = d.dur; v.ref = d.ref; v.brand = d.brand; v.kalla = d.kalla; return set(v, 'tanda', d.why); } },
+  { id: 'elda', niva: 4, prova: c => eldaRad(c) },
+  { id: 'tanda', niva: 4, prova: c => tandaRad(c) },
   // nattens vakt (byts varje natt kl. 7)
   { id: 'vakt', niva: 6, nar: 'natt', prova: ({ s, p, v, a }) => vaktVal(s, p, v, a) },
   // barnen leker; de lite större hjälper till (raden arbete)
