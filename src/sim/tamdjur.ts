@@ -91,15 +91,18 @@ export function nyttTamdjur(s: State, art: TamArtId, x: number, y: number, agare
   return d;
 }
 // djuret dör (av hunger, ålder eller ett rovdjur) och tas bort ur byn
+// hur ett tamdjur dog, skrivet efter "dog": orsaken som byns statistik räknar (tamDog_svalt …) och orden i texten
+const DOG_HUR: Record<string, string> = { svalt: 'av hunger', alder: 'av ålder', 'frös ihjäl': 'av kölden' };
 export function tamDor(s: State, d: Tamdjur, orsak: string) {
   d.dog = s.now; s.tamdjur = (s.tamdjur ?? []).filter(q => q !== d);
   count(s, `tamDog_${orsak}`);
   const a = tamArt(d.art), q = d.agare !== undefined ? byId(s, d.agare) : undefined;
   if (orsak === 'rymde') return; // den som rymde har redan sin rad i loggen (hundRymmer)
-  kronikaBer(s, 'k_djur', d.id, { djur: `${a.ord[0]} ${a.ord[1]}`, hur: orsak === 'svalt' ? 'av hunger' : orsak === 'alder' ? 'av ålder' : orsak, agare: q?.name }); // byn miste ett djur (steg 12.1.135)
+  const hur = DOG_HUR[orsak] ?? orsak; // det som följer på "dog" (steg 12.1.199)
+  kronikaBer(s, 'k_djur', d.id, { djur: `${a.ord[0]} ${a.ord[1]}`, hur, agare: q?.name }); // byn miste ett djur (steg 12.1.135)
   const sk = q && alive(q) ? q : byId(s, mestMatat(s, d)?.[0]); // ägaren, eller den som matat djuret mest (steg 12.1.131)
   if (sk && alive(sk)) tanke(sk, 'mittDjurDog', s.now);
-  log(s, `${q ? `${gen(q.name)} ` : 'Byns '}${a.ord[1]} dog ${orsak === 'svalt' ? 'av hunger' : orsak === 'alder' ? 'av ålder' : orsak}.`, 'world', q ? [q.id] : []);
+  log(s, `${q ? `${gen(q.name)} ` : 'Byns '}${a.ord[1]} dog ${hur}.`, 'world', q ? [q.id] : []);
 }
 // vad djuret äter av det som finns, det bästa först (undefined: inget att ge det)
 // det djuret äter som också är mat åt människorna (hundens kött) ges inte när byn svälter, efter samma mått som valet av aktivitet (steg 10.2.1)

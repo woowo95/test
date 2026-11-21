@@ -64,7 +64,7 @@ export function inherit(s: State, p: Person) {
   // djuren (steg 9.8.1) ärvs som redskapen, ett i taget till den som hittills fått minst. Hunden ärvs inte: den går till den som matat den mest (steg 9.8.3, tamdjur.ts)
   for (const d of tamdjurOf(s).filter(d => d.agare === p.id && d.art !== 'hund').sort((a, b) => a.id - b.id)) ge(`${tamArt(d.art).ord[0]} ${tamArt(d.art).ord[1]}`, tamArt(d.art).varde, id => { d.agare = id; });
   // bikupan (steg 10.10.16) ärvs som hönsen, en kupa i taget till den som hittills fått minst
-  for (const t of stationerOf(s).filter(t => t.ag === p.id && stationDef(t.k)?.agd).sort((a, b) => a.id - b.id)) ge(stationDef(t.k)!.namn.toLowerCase(), varuVarde(stationDef(t.k)!.av) + (t.bi !== undefined ? BIN.varde : 0), id => { t.ag = id; });
+  for (const t of stationerOf(s).filter(t => t.ag === p.id && stationDef(t.k)?.agd).sort((a, b) => a.id - b.id)) ge(stationDef(t.k)!.namn.toLowerCase(), varuVarde(stationDef(t.k)!.av) + (t.bi !== undefined ? BIN.varde : 0), id => { t.ag = id; }, t.k); // räknas ihop per slag: "två bikupor"
   if (s.hons?.agare === p.id) { const h = s.hons; ge('hönsen', honsVarde(s), id => { h.agare = id; }); } // hönsen (steg 9.8.10)
   const eget = ownedAll(s, p.id);
   const rest = varuVarde(eget);

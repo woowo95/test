@@ -52,6 +52,7 @@ export const lista = (l: string[], max = 4) => l.length <= max ? och(l) : `${l[0
 // [artikel, ental, flertal] med gemen: där namnet i SAKER inte går att räkna (harkött, hö) står ett mått framför
 type Ord = readonly [art: 'en' | 'ett', ental: string, flertal: string];
 const SAKORD: Record<string, Ord> = {
+  bikupa: ['en', 'bikupa', 'bikupor'], // byns ägda stationer som ärvs och räknas ihop (arv.ts, steg 12.1.199)
   bar: ['ett', 'bär', 'bär'], rotter: ['en', 'rot', 'rötter'], kott: ['en', 'bit harkött', 'bitar harkött'], fisk: ['en', 'bit fiskkött', 'bitar fiskkött'],
   svamp: ['en', 'svamp', 'svampar'], ved: ['ett', 'vedträ', 'vedträn'], grenar: ['en', 'gren', 'grenar'], torrgras: ['en', 'famn hö', 'famnar hö'],
   kol: ['en', 'bit kol', 'bitar kol'], flinta: ['en', 'flinta', 'flintor'], yxa: ['en', 'flintyxa', 'flintyxor'], fiskespjut: ['ett', 'träspjut', 'träspjut'],

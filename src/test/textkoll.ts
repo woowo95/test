@@ -52,7 +52,7 @@ export const KONTROLLER: Kontroll[] = [
     for (const n of namn) if (/[ae]$/.test(n) && [...t.matchAll(new RegExp(`${n}(en|n|na|et)(?=[^\\p{L}]|$)`, 'gu'))].some(m => !VANLIGA.has(m[0].toLowerCase()) && !namn.some(v => new RegExp(`(^|[^\\p{L}])${m[0]}(?=[^\\p{L}]|$)`, 'u').test(v)))) return n; // Arka och Arkan är två namn, också i samma fält (Ragma och Ulvan)
     return /\p{Ll}(aen|een|aet|eet)(?=[^\p{L}]|$)/u.exec(t)?.[0];
   } },
-  { id: 'siffra', namn: 'En siffra före ett ord (1 rutor, efter 3 försök); utom ålder, år och årtal', hitta: t => { const m = /(^|[^\p{L}\d.,])(\d+) (\p{L}+)/u.exec(t); return m && !/^(år|års|dygn|timmar|timme|kg)$/u.test(m[3]) && !/(^|[^\p{L}])år $/iu.test(t.slice(0, m.index + m[1].length)) ? `${m[2]} ${m[3]}` : undefined; } }, // "år 17 dog" är ett årtal
+  { id: 'siffra', namn: 'En siffra före ett ord (1 rutor, efter 3 försök); utom ålder, år, årtal och ett namn med nummer (Hydda 2)', hitta: t => { const m = /(^|[^\p{L}\d.,])(\d+) (\p{L}+)/u.exec(t); return m && !/^(år|års|dygn|timmar|timme|kg)$/u.test(m[3]) && !/(^|[^\p{L}])år $/iu.test(t.slice(0, m.index + m[1].length)) && !/\p{Lu}\p{Ll}+ $/u.test(t.slice(0, m.index + m[1].length)) ? `${m[2]} ${m[3]}` : undefined; } }, // "år 17 dog" är ett årtal
   // noll av något (steg 12.1.50): "bygga ut huset med 0 rutor"; "under noll" och "från noll" är inget antal
   { id: 'noll', namn: 'Noll av något (med 0 rutor, noll stycken)', hitta: t => { const m = /(^|[^\p{L}\d.,])(0|noll) (\p{L}+)/iu.exec(t); return m && !/(^|[^\p{L}])(under|över|från|till|mot) $/iu.test(t.slice(0, m.index + m[1].length)) ? `${m[2]} ${m[3]}` : undefined; } },
   // ett namn med liten bokstav (steg 12.1.50): "ylvgerds hus". Bara i genitiv, eftersom ett kort namn kan vara ett vanligt ord (Alla, Torka)

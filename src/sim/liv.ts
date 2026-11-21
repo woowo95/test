@@ -1,4 +1,4 @@
-import { gen } from './ord';
+import { gen, heltOrd } from './ord';
 import { antal, honom, och, tal, talOrd } from './ord';
 import { gastensPlatser, horOmGast, raknaBynVet } from './ort';
 import { personNara } from './personlogg';
@@ -459,7 +459,7 @@ function emigrate(s: State, skal: FlyttSkal) {
   const group = [a, b, ...barn(a, b)], pop = living(s).length;
   leave(s, ...group);
   const n = group.length - 2, ny = utbrytning(s, group, pop);
-  utflyttade(s, group, `${FLYTT_SKAL[skal]} ${a.name} och ${b.name} lämnade byn${n ? ` med ${n} barn` : ''} för att grunda en egen boplats.`, !ny);
+  utflyttade(s, group, `${FLYTT_SKAL[skal]} ${a.name} och ${b.name} lämnade byn${n ? ` med ${n === 1 ? 'ett' : heltOrd(n)} barn` : ''} för att grunda en egen boplats.`, !ny);
   if (!ny) radKrok.utflytt(s, group.length); // ur en mycket stor by blir de en ny by i världen (steg 4.4.4.1, grannbyar.ts), annars går de till en by i världen (byflytt.ts, steg 11.3.5)
 }
 

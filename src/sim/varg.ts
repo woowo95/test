@@ -1,4 +1,4 @@
-import { gen } from './ord';
+import { gen, heltOrd } from './ord';
 import { doljISno } from './utrustning';
 import { heligtAvstar } from './kultlatt';
 import { antal, han, honom, lista, stor, svaraText, tal } from './ord';
@@ -553,7 +553,7 @@ export function jaktBeslut(s: State, f: Vargflock, folk: Person[]) {
   for (const q of vill) avbryt(s, q);
   kallar.task = { act: 'vargjakt', phase: 'go', tx: sp.x, ty: sp.y, until: f.jaktTill, carry: 0, why: 'Kallar till vargjakt' };
   count(s, 'vargjakt');
-  log(s, `${kallar.name} kallade till vargjakt${vill.length > 1 ? `, och ${vill.length - 1} följde med` : ''} (${f.vargar.length > 1 ? `en flock på ${f.vargar.length}` : 'en ensam varg'}).`, 'world', vill.map(q => q.id));
+  log(s, `${kallar.name} kallade till vargjakt${vill.length > 1 ? `, och ${heltOrd(vill.length - 1)} följde med` : ''} (${f.vargar.length > 1 ? `en flock på ${heltOrd(f.vargar.length)}` : 'en ensam varg'}).`, 'world', vill.map(q => q.id));
 }
 
 // nivån Tillfälle (val.ts, steg 6.1.14): den som ska följa med på vargjakten och ännu inte gått

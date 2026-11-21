@@ -19,7 +19,7 @@ import { LAGER, matUtanPlats, utanPlatsNu, amountOf, changed, flyttaLager, inZon
 import { tingOf } from './agande';
 import { BAR, findPath } from './vag';
 import { paMyr } from './myr';
-import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, harArbete, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
+import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husIText, husNamn, harArbete, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
 import { kronika } from './historik';
 import { clamp } from './slump';
 import { ledareOf } from './styre';
@@ -911,7 +911,7 @@ function utfor(s: State, f: Forslag, u: ByggBehov, byggare: Person[], ppl: Perso
   if (f.at === 'egetRum') {
     for (const a of f.ritning) bytMaterial(bitAt(s, a.x, a.y)!, a.m);
     touch(s); count(s, 'forbRum');
-    log(s, `${by.name} vill dela upp ${f.hus!.namn.toLowerCase()}, så att familjen får ett eget rum.`, 'world', [by.id]);
+    log(s, `${by.name} vill dela upp ${husIText(f.hus!)}, så att familjen får ett eget rum.`, 'world', [by.id]);
     return;
   }
   bygg(s, f, u, by);

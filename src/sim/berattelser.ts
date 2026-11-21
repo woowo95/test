@@ -2376,7 +2376,7 @@ const MDEF = {
     { t: '{agare} miste {djur}, som dog {hur}.', om: f => iBy(f) && !f.forsta && !!f.agare },
     { t: 'Byn miste {djur}, som dog {hur}.', om: f => iBy(f) && !f.forsta && !f.agare },
     { t: 'Det var {arstid} när {djur} dog {hur}.', om: f => iBy(f) && !f.forsta },
-    { t: '{djur} dog {hur}, och byn hade ett djur mindre.', om: f => iBy(f) && !f.forsta },
+    { t: '{Djur} dog {hur}, och byn hade ett djur mindre.', om: f => iBy(f) && !f.forsta },
     { t: 'Byn sörjde inte länge, men {djur} som dog {hur} var saknad.', om: f => iBy(f) && !f.forsta },
     { t: '{namn} växte upp med djur.', om: iPerson },
     { t: '{Hen} är van vid djuren sedan barndomen.', om: iPerson },

@@ -63,7 +63,7 @@ export function bortaBerattelse(st: State, b: Borta): string[] {
   if (L.dela === 'en') return [stycke(st, rader, L.max, b.fran)];
   const nu = living(st).length, fore = b.folk ?? nu - ((st.stat?.fodda ?? 0) - b.fodda) + ((st.stat?.doda ?? 0) - b.doda);
   const t0 = tal(rader);
-  ut.push(berattelse(st, 'b_inledning', b.fran, { ar: talOrd(Math.round(ar)), fore: heltOrd(fore), nu: heltOrd(nu), foreTal: fore, nuTal: nu, fodda: talOrd(t0.foddaTal, true), doda: talOrd(t0.dodaTal), ...t0 }));
+  ut.push(berattelse(st, 'b_inledning', b.fran, { ar: talOrd(Math.round(ar)), fore: heltOrd(fore), nu: heltOrd(nu), foreTal: fore, nuTal: nu, fodda: heltOrd(t0.foddaTal, true), doda: heltOrd(t0.dodaTal), ...t0 }));
   // grupperna: ett år (kalenderns år) eller en tidsålder (kalenderns start), i tidsordning
   const grupper: { nyckel: number; fran: number; till: number; ai: number; rader: Rad[] }[] = [];
   for (let t = b.fran; t < st.now + 1; t += L.dela === 'ar' ? DAY : WEEK / 7) {
