@@ -1145,10 +1145,15 @@ SCENARIER.handelretur = {
       kop.push(`${k} ${n}`);
       if (n < 1 || salj < pris - 1e-9) fel.push(`${k}: köper ${n} för ${pris}, sedan ${over} över för ${salj}`);
     }
+    // två matslag i samma köp (steg 12.1.217): det första slaget dras från bristen innan det andra får sitt antal
+    for (const k of ['bar', 'rotter']) SIM.setAmount(s, k, 0);
+    const valt = new Map<SIM.Behov, number>(), bar = SIM.bynKopAntal(s, 'bar', valt); SIM.kopValt(valt, 'bar', bar);
+    const rotEnsam = SIM.bynKopAntal(s, 'rotter'), rotEfter = SIM.bynKopAntal(s, 'rotter', valt);
     const ratt = Object.keys(SIM.SAKER).find(k => SIM.SAKER[k]?.namn.endsWith(' · Fin'))!;
     const ord = SIM.varorText([{ k: 'jordgubbsplanta', n: 1 }, { k: 'appelplanta', n: 1 }, { k: 'remsa', n: 4 }, { k: 'rokelse', n: 2 }, { k: ratt, n: 7 }]);
     return [
       [`det köpta säljs inte tillbaka billigare än det köptes (${kop.join(', ')})${fel.length ? `: ${fel.join('; ')}` : ''}`, !fel.length],
+      [`två matslag köps till bufferten en gång (bär ${bar}, sedan rötter ${rotEfter} i stället för ${rotEnsam})`, bar >= 1 && rotEnsam >= 1 && rotEfter < rotEnsam],
       [`orden: "${ord}"`, ord.includes('en jordgubbsplanta') && ord.includes('en äppelplanta') && ord.includes('fyra remsor') && ord.includes('två bitar rökelse') && /sju portioner fin \S+/.test(ord) && !ord.includes('·')],
     ];
   },

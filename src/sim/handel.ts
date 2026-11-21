@@ -22,7 +22,7 @@ import { GORS, canMake } from './redskap';
 import { amountOf } from './lager';
 import { arMaterial, villHaAv } from './forradsmal';
 import { ARBETE } from './varde';
-import { DELA, bynKopAntal, forByn, villGrupp, behovAv, betalVaror, betalaAv, bynPart, genomfor, luraI, personPart } from './behov';
+import { type Behov, DELA, bynKopAntal, kopValt, forByn, villGrupp, behovAv, betalVaror, betalaAv, bynPart, genomfor, luraI, personPart } from './behov';
 import { BYTE, BYTESPRIS, FILT_MOT, Part, Vara, filtFri, filtMot, filtNara, loggaByte, nyttPar, satPersonFlytt, vardeAv, vardeOf, gerVarde, vidByte, vidLura, varorText } from './byte';
 import type { Skrift } from './skrift';
 import { newTing, tingOf } from './agande';
@@ -783,9 +783,11 @@ function valj(s: State, h: Handlare, a: Affar, M: Part, p: Person) {
   // byn köper det den saknar och det projekten saknar (steg 10.5.17), det mest värda först, och av projektens material så många som saknas.
   // Annars så många som byn tar emot innan det blir över (bynKopAntal, steg 12.1.48), samma gräns som när byn säljer
   const lista = s.projektSaknar;
-  const byKop = (w: Vara) => w.skrift ? w.n : Math.max(lista?.[w.k]?.n ?? 0, bynKopAntal(s, w.k));
+  // Det som redan valts i köpet dras från behovets brist innan nästa slag får sitt antal (valt, steg 12.1.217)
+  const valt = new Map<Behov, number>();
+  const byKop = (w: Vara) => { if (w.skrift) return w.n; const n = Math.min(w.n, Math.max(lista?.[w.k]?.n ?? 0, bynKopAntal(s, w.k, valt))); kopValt(valt, w.k, n); return n; };
   a.kop = a.andra ? [] : (a.byn ? h.varor.filter(w => (w.skrift?.platser ? kartNytta(w, M) >= HANDEL.nytta : M.varde(w.k) >= DELA.saknar) || (lista?.[w.k]?.n ?? 0) >= 1).sort((x, y) => M.varde(y.k) - M.varde(x.k)) : vill(s, h, p).slice(0, HANDEL.egnaMax))
-    .map(w => ({ k: w.k, n: isTool(w.k) ? 1 : a.byn ? Math.min(w.n, byKop(w)) : Math.min(w.n, HANDEL.egnaAvVarje), q: w.q, ...(w.skrift ? { skrift: w.skrift } : {}) })).filter(w => w.n >= 1);
+    .map(w => ({ k: w.k, n: isTool(w.k) ? 1 : a.byn ? byKop(w) : Math.min(w.n, HANDEL.egnaAvVarje), q: w.q, ...(w.skrift ? { skrift: w.skrift } : {}) })).filter(w => w.n >= 1);
   if (a.kop.length && budNu(s, h, a, M)) return true;
   const sal = saljaAv(s, h, M, p);
   if (!sal.length) return false;

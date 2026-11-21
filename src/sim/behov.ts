@@ -657,13 +657,16 @@ function bynBehovUtan(s: State, k: string) {
 }
 // så många av k som byn tar emot innan det blir över (steg 12.1.48): samma gräns som bynOver säljer från (behalla eller bufferten),
 // så att det som just köpts inte är överskott. Saknar byn saken helt tas minst en. Redskapen köps ett i taget (handel.ts)
-export function bynKopAntal(s: State, k: string) {
+// valt = det som redan valts i samma köp, per behov (steg 12.1.217): det dras från bristen innan nästa slag får sitt antal, som när byn säljer
+export function bynKopAntal(s: State, k: string, valt?: Map<Behov, number>) {
   if (isTool(k)) return 1;
   const minst = bynBehovUtan(s, k) >= DELA.saknar ? 1 : 0, b = behovMed(k);
   if (!b) return Math.max(minst, Math.ceil(behalla(s, k) - amountOf(s, k) - 1e-9));
-  const { har, buf } = bynBuffert(s, b);
-  return Math.max(minst, Math.ceil((buf - har) / perOf(b, k) - 1e-9));
+  const { har, buf } = bynBuffert(s, b), fore = valt?.get(b) ?? 0;
+  return Math.max(fore > 0 ? 0 : minst, Math.ceil((buf - har - fore) / perOf(b, k) - 1e-9));
 }
+// n av slaget k har valts i köpet: det räknas i behovet (steg 12.1.217)
+export function kopValt(valt: Map<Behov, number>, k: string, n: number) { const b = behovMed(k); if (b && !isTool(k)) valt.set(b, (valt.get(b) ?? 0) + n * perOf(b, k)); }
 function bynOver(s: State, utom: readonly string[]): Vara[] {
   const ut: Vara[] = [], rest = new Map<Behov, number>(), grupper = new Map<string, number>(), gruppNr = new Map<string, number>();
   for (const k of SAK_LIST) {
