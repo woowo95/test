@@ -3,14 +3,14 @@ import { KROPP, count, enTill, forstaGang, gjort, living, log } from './folk';
 import { knows } from './teknik';
 import { clamp, rnd } from './slump';
 import { Act, HOUR, State, Person } from './typer';
-import { ACTS, ACT_LIST, redskapTal, toolRow } from './handlingar';
+import { ACTS, ACT_LIST, laggRedskap, redskapTal, toolRow } from './handlingar';
 import { SAKER, SAK_LIST, gruppOf, iSlag, isTool, sakNamn } from './saker';
 import { NORMAL, kvOf, nyKvalitet } from './kvalitet';
 import { amountOf, gain, harTillHands, iBordan, put, use } from './lager';
 import { getable, Recept, saknatAv, takeMaterial, takeRecipe, tillHands } from './behov';
 import { addDel } from './egendom';
 import { eldReserv, villAv, villHaAv } from './forradsmal';
-import { addTool, freeTools, halvOf, nTools, ownsFree, tingOf, wearTool } from './agande';
+import { addTool, freeTools, halvOf, nTools, ownsFree, take, tingOf, wearTool } from './agande';
 import { KLADER, KLADMATERIAL, PLAGG, PLAGG_LIST, kladAv, materialTill, valMaterial } from './klader';
 import { ageIndex, iIstiden, kallTid } from './tid';
 import { grundvarde } from './varde';
@@ -29,6 +29,7 @@ import { SAK_ART, heligtBrutet } from './kultlatt';
 // i saker.ts) och läses därifrån (RECEPT); hur länge det håller och vad det ger står i handlingens rad (handlingar.ts).
 export const REDSKAP = balans('redskap', {
   nalFart: 3, nalKv: 1.5, // den som syr ett plagg med en järnnål syr så här många gånger fortare, och med kvaliteten nalKv som järnkniven (steg 12.5.3)
+  nalPlagg: 40, // så många plagg en järnnål håller (steg 12.1.239)
   kvRedskap: 0.2, // ett redskap med kvaliteten 2 (järnkniven) gör det som görs med det lika mycket bättre som en station med kv 0,2 (steg 12.2.6)
   tak: 1.5, // projekten över bufferten (steg 10.2.74): byn vill ha upp till så här många gånger det den behöver av en grupp
   maskPerGrav: 4, // en grävning ger så här många maskar
@@ -47,6 +48,10 @@ const REP = av('rep');
 // både till fiske och jakt. Med spjut får man fisk mycket oftare än med händerna, men träspjutet slits fort.
 // Varje spjut är ett eget ting med skick och ägare (agande.ts); den som fiskar eller jagar har det i handen.
 // Vad ett redskap ger i ett arbete och hur länge det håller står i handlingens rad (handlingar.ts).
+// sömnaden (steg 12.5.3, 12.1.239): plaggen som inte smids sys, och var och en har en rad för järnnålen i ACTS.redskap, som
+// håller REDSKAP.nalPlagg plagg. Raden har ingen text för att ta den i valet: den som syr tar en ledig nål när arbetet börjar (taNal)
+const SYDDA = new Set<string>(PLAGG_LIST.filter(g => !(PLAGG[g] as { station?: string }).station));
+for (const a of SYDDA) if (a in ACTS) laggRedskap(a as Act, 'jarnnal', { haller: REDSKAP.nalPlagg });
 // redskapen i ett arbete i grupper av sådana som kan ersätta varandra (alla spjut), det bästa först
 export function toolGroups(act: Act) {
   const g: Record<string, string[]> = {};
@@ -342,9 +347,11 @@ export const flintaTillVerktyg = (s: State) => {
 // (steg 12.2.6): knivens tal kvalitet i slaktens rad (handlingar.ts) gånger REDSKAP.kvRedskap, som en bättre station
 // järnnålen (steg 12.5.3): den som syr ett plagg (det som inte smids) och har en ledig järnnål syr tre gånger så fort, och
 // plagget blir oftare bra, som det som täljs med järnkniven
-const SYDDA = new Set<string>(PLAGG_LIST.filter(g => !(PLAGG[g] as { station?: string }).station));
 const harJarnnal = (s: State, p: Person) => freeTools(s, p, 'jarnnal') > 0 || tingOf(s).some(t => t.k === 'jarnnal' && t.hos === p.id);
 export const nalFart = (s: State, p: Person, act: string) => SYDDA.has(act) && harJarnnal(s, p) ? REDSKAP.nalFart : 1;
+// den som börjar sy tar en ledig järnnål i handen (steg 12.1.239), och den slits för varje plagg som blir klart
+export function taNal(s: State, p: Person, act: string) { if (SYDDA.has(act) && !tingOf(s).some(t => t.k === 'jarnnal' && t.hos === p.id) && freeTools(s, p, 'jarnnal') > 0) take(s, p, 'jarnnal'); }
+export function slitNal(s: State, p: Person, act: string) { if (SYDDA.has(act) && tingOf(s).some(t => t.k === 'jarnnal' && t.hos === p.id)) wearTool(s, p, 'jarnnal', 1 / REDSKAP.nalPlagg); }
 export const nalKv = (s: State, p: Person, k: string) => SYDDA.has(gruppOf(k)) && harJarnnal(s, p) ? (REDSKAP.nalKv - 1) * REDSKAP.kvRedskap : 0;
 export function knivKv(s: State, p: Person, k: string) {
   const r = SAKER[k]?.skaffa as { verktyg?: Record<string, string>; kniv?: true } | undefined;

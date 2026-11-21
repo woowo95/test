@@ -411,3 +411,5 @@ const ACTS_AV: Record<string, Act[]> = {};
 for (const a of ACT_LIST) for (const k in ACTS[a].redskap ?? {}) (ACTS_AV[k] ??= []).push(a);
 const INGA: readonly Act[] = [];
 export const actsOf = (k: string): readonly Act[] => ACTS_AV[k] ?? INGA;
+// en rad för redskapet k i handlingen a, lagd av ett system som läses efter registret (järnnålen i sömnaden, steg 12.1.239, redskap.ts)
+export function laggRedskap(a: Act, k: string, r: RedskapDef) { (ACTS[a].redskap ??= {})[k] = r; (ACTS_AV[k] ??= []).push(a); }

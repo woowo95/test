@@ -899,6 +899,14 @@ SCENARIER.jarnnal = {
     const nalar = SIM.tingOf(s).filter(t => t.k === 'jarnnal').length, jarnKvar = SIM.amountOf(s, 'jarn');
     for (const t of SIM.tingOf(s)) if (t.k === 'jarnnal') t.agare = SIM.BYN;
     const fart = SIM.nalFart(s, q, 'rock'), kv = SIM.nalKv(s, q, 'rock_kaninskinn'), smitt = SIM.nalFart(s, q, 'jarnhjalm');
+    // nålen i sömnaden (steg 12.1.239): en rad i ACTS.redskap, den som syr tar nålen, den slits per plagg, och sluttiden följer farten
+    const rad = SIM.ACTS.rock.redskap?.jarnnal;
+    SIM.taNal(s, q, 'rock'); const nal = SIM.tingOf(s).find(t => t.k === 'jarnnal' && t.hos === q.id), c0 = nal?.c ?? 0;
+    SIM.slitNal(s, q, 'rock'); const slits = c0 - (nal?.c ?? 0);
+    const halv = SIM.newTing(s, 'paborjat', 1, q.id); halv.halv = { gor: 'rock_kaninskinn', av: {}, kvar: 10 * SIM.MIN, ag: q.id };
+    const sk = { act: 'rock', phase: 'do', tx: q.x, ty: q.y, until: s.now + SIM.HOUR, carry: 0, why: '', ref: halv.id } as SIM.Task;
+    SIM.workHalf(s, q, sk, 60); const fartNu = SIM.fartVid(s, q, 'rock') * SIM.nalFart(s, q, 'rock'), slutNal = sk.until - s.now, vantat = halv.halv.kvar / fartNu;
+    s.ting = SIM.tingOf(s).filter(t => t !== halv);
     // ett sår sys med järnnålen som med bennålen
     const sy = SIM.VARD.sy, w = { d: 'armV', k: 'skarsar', g: 0.8, b: 0.5 } as SIM.Skada; q.skador = [w];
     SIM.setAmount(s, 'rep', 2); p.skill.lakekonst = Math.max(p.skill.lakekonst, sy.fardighet ?? 0);
@@ -909,6 +917,9 @@ SCENARIER.jarnnal = {
       [`smidet tar 1 järn (kvar ${jarnKvar}) och ger ${nalar} nålar`, nalar === 2 && jarnKvar === 1],
       [`med järnnålen sys en rock tre gånger så fort (${fart0} → ${fart}), men det som smids går inte fortare (${smitt})`, fart0 === 1 && fart === 3 && smitt === 1],
       [`och den blir oftare bra (+${kv.toFixed(2)}, utan ${kv0})`, kv > 0 && kv0 === 0],
+      [`sömnaden har en rad för nålen (håller ${rad?.haller} plagg), och den som syr tar nålen i handen (${!!nal})`, rad?.haller === SIM.REDSKAP.nalPlagg && !!nal],
+      [`nålen slits per plagg (${slits.toFixed(4)}, en fyrtiondel efter kvaliteten)`, Math.abs(slits - 1 / SIM.REDSKAP.nalPlagg / SIM.kvHaller(nal)) < 1e-9],
+      [`sluttiden räknas ur farten just nu (${(slutNal / SIM.MIN).toFixed(2)} min kvar, väntat ${(vantat / SIM.MIN).toFixed(2)})`, Math.abs(slutNal - vantat) < 1 && fartNu >= 3],
       [`järnnålen ligger i bennålens grupp och syr ett sår som den (${syr})`, SIM.gruppOf('jarnnal') === 'nal' && (S.jarnnal!.rang ?? 0) > (S.nal!.rang ?? 0) && syr],
       [`den håller fyra gånger så länge som bennålen (slits ${S.jarnnal!.slits} mot ${S.nal!.slits})`, Math.abs(S.nal!.slits! / S.jarnnal!.slits! - 4) < 1e-9],
     ];
