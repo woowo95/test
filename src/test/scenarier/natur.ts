@@ -2149,10 +2149,10 @@ SCENARIER.patrull = {
 };
 
 SCENARIER.vargskydd = {
-  text: 'Skydd när vargen kommer (steg 3.7.15): när ropet hörs eller vakten väcker byn går barnen, de gamla, de sjuka och de svårt skadade in i närmaste hus (utan hus till elden), en förälder stannar hos sina små barn, och de modiga vuxna tar ett vapen och väntar vid elden. Efter en stund läggs vapnen tillbaka',
+  text: 'Skydd när vargen kommer (steg 3.7.15): när ropet hörs eller vakten väcker byn går barnen, de gamla, de sjuka och de svårt skadade in i närmaste hus om det är varmare där än vid elden (annars till elden), en förälder stannar hos sina små barn, och de modiga vuxna tar ett vapen och väntar vid elden. Efter en stund läggs vapnen tillbaka',
   kor: () => {
     const prov = (hus: boolean, seed: number) => {
-      const s = createState(seed, START); s.kal = nyKalender(s.now, 0); klockan(s, 20); tandEld(s);
+      const s = createState(seed, START); s.kal = nyKalender(s.now, hus ? SIM.SOMMAR : 0); klockan(s, 20); tandEld(s); // i huset när det är varmare där än vid elden (steg 12.1.229): på sommaren
       if (hus) medHus(s);
       for (let i = 0; i < 4; i++) SIM.newTing(s, 'fiskespjut', 1, SIM.BYN);
       kor(s, 0.2);

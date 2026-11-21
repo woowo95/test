@@ -26,7 +26,7 @@ import { brandHetta, brandUndan, brandVal, hjalpaVal, slackaSigVal } from './bra
 import { foodDays, foodDaysAll } from './ekonomi';
 import { ACTS, WORK, redskapTal, usesTool } from './handlingar';
 import { flyttaEldVal } from './eldflytt';
-import { eldaVal, tandaVal, tandStalle, igniterOf, canLight, eldFor, eldXY, nagonEld, nagonGlod, eldarOf, emberOn, vidEld, needStones, needTinder, tinderShort, woodDays } from './eld';
+import { eldaVal, tandaVal, tandStalle, igniterOf, canLight, eldFor, eldXY, nagonEld, nagonGlod, eldarOf, emberOn, vidEld, needStones, needTinder, tinderShort, woodDays, fuelStock, hearthOf } from './eld';
 import { ALDER, KROPP, REL, ageOf, count, enTill, enTillDar, familjOf, isSick, living, relKey, stat } from './folk';
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
@@ -516,6 +516,7 @@ const slatterRad = ({ s, p, v }: Ctx, i = slaVal(s, p)) => { if (i === undefined
 const forbNu = (c: Ctx) => { const f = faror(c), ch = (f.kyla || f.svalt ? VAL.projFara : 1) * kroppLust(c.p, c.s.now); return ch >= 1 || (c.forb ??= rnd(c.s, 'val', c.p) < ch); };
 // lat: hur mycket tidigare den lata tar grundbehoven
 const fryser = (c: Ctx) => c.p.warm < KROPP.kallt + KROPP.latVarme * c.lazy;
+const fryserFarligt = ({ s, p, v }: Ctx) => p.warm < KROPP.farligt && nagonEld(s) && set(v, 'varma', 'Fryser farligt');
 // raderna elda och tanda (steg 12.1.76): ved på elden och att tända den, med eldens önskan, plikten och avståndet som poäng
 const eldaRad = ({ s, p, v }: Ctx) => { const d = eldaVal(s, p); if (!d) return false; v.spot = d.spot; v.dur = d.dur; v.ref = d.ref; return set(v, 'elda', d.why); };
 const tandaRad = ({ s, p, v }: Ctx) => { const d = tandaVal(s, p); if (!d) return false; v.spot = d.spot; v.dur = d.dur; v.ref = d.ref; v.brand = d.brand; v.kalla = d.kalla; return set(v, 'tanda', d.why); };
@@ -631,6 +632,8 @@ export const ARBETEN: readonly Arbete[] = [
   // den som är mycket hungrig (under det man äter av även när maten ska räcka, VARDRATT.snal) går till maten före vilan, och
   // det lilla barnet och den som ligger sjuk eller svag går dit så fort hen är hungrig och kan gå (steg 11.1.77)
   { id: 'hungrig', niva: 2, prova: ({ s, p, v, a }) => (p.hunger < KROPP.hungrig * VARDRATT.snal || a < ALDER.smabarn || ligger(p, s.now) || halsa(p) < KROPP.svag) && kanGa(p) && ataVal(s, p, v) },
+  // ett litet barn som fryser farligt kommer till elden innan det läggs att sova, som de andra (fryserFarligt nedan, steg 12.1.229)
+  { id: 'smabarnFryser', niva: 2, prova: c => c.a < ALDER.smabarn && fryserFarligt(c) },
   { id: 'smabarn', niva: 2, prova: ({ v, a }) => a < ALDER.smabarn && set(v, 'sova', 'Är ett litet barn') },
   { id: 'toaGenast', niva: 2, prova: ({ p, v }) => p.toa < KROPP.toaGenast && set(v, 'toa', 'Måste gå på toa genast') },
   { id: 'torstFarligt', niva: 2, prova: ({ s, p, v }) => tortarFarligt(p) && dricka(s, p, v) }, // också den som är sjuk eller svag dricker
@@ -642,7 +645,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'tandaFryser', niva: 2, prova: c => fryser(c) && tandaRad(c) },
   // den som fryser farligt söker sig till en eld som brinner, också den sjuka och svaga: att ligga kvar i kylan tär på hälsan
   // tills hen fryser ihjäl (steg 12.1.229)
-  { id: 'fryserFarligt', niva: 2, prova: ({ s, p, v }) => p.warm < KROPP.farligt && nagonEld(s) && set(v, 'varma', 'Fryser farligt') },
+  { id: 'fryserFarligt', niva: 2, prova: c => fryserFarligt(c) },
   { id: 'sjuk', niva: 2, prova: ({ s, p, v }) => ligger(p, s.now) && set(v, 'sova', 'Är sjuk') }, // med feber eller svårt sjuk lägger man sig (steg 9.5.1)
   { id: 'svag', niva: 2, prova: ({ p, v }) => halsa(p) < KROPP.svag && set(v, 'sova', 'Är för svag för att orka något') }, // också av blodförlust och smärta (halsa.ts)
   // elden går inte att tända för att tändmaterial saknas: den som fryser men orkar hämtar det i stället för att gå in.
@@ -653,6 +656,12 @@ export const ARBETEN: readonly Arbete[] = [
     if (tinderShort(c.s)) return mjuk(c.s, c.p, 'tand') && (c.v.tandmat = true) && set(c.v, 'samla', 'Fryser, men utan tändmaterial blir det ingen eld');
     if (!mjuk(c.s, c.p, 'leta')) return false;
     arbeta(c, 'samla', `Fryser, men utan ${needStones(c.s) ? 'stenar till ringen' : 'flinta'} blir det ingen eld`, { leta: true }); return true;
+  } },
+  // veden är slut: det som fattas till elden hämtas, som tändmaterialet ovan. Den som fryser och vet att förrådet inte räcker till
+  // en full lägereld samlar grenar, också på natten (steg 12.1.229)
+  { id: 'vedFryser', niva: 2, prova: c => {
+    if (!(fryser(c) && c.a >= ALDER.vuxen && fuelStock(c.s) < hearthOf(c.s.fire).maxFuel && mjuk(c.s, c.p, 'ved'))) return false;
+    arbeta(c, 'ved', 'Fryser, men utan ved blir det ingen eld'); return true;
   } },
   { id: 'fryserFarligtInne', niva: 2, prova: ({ s, p, v }) => p.warm < KROPP.farligt && bedTile(s, p) !== undefined && set(v, 'vila', 'Fryser farligt och går in i huset') },
   { id: 'varda', niva: 2, prova: ({ s, p, v }) => varda(s, p, v, false) }, // en skadad är en fara: vården går före förbättringarna (steg 2.5.2)
