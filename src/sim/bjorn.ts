@@ -242,12 +242,11 @@ function jagareVidStriden(s: State) {
   const g = djurIKartStrid(s, 'bjorn');
   if (!g) return;
   for (const p of living(s)) {
-    if (g.g.st.kampar.some(k => k.pid === p.id) || !p.task || !JAGAR.has(p.task.act) || Math.hypot(p.x - g.k.x, p.y - g.k.y) > BJORNMOTE.med) continue;
+    if (g.g.st.kampar.some(k => k.pid === p.id) || !p.task || p.task.act !== 'jakt' || Math.hypot(p.x - g.k.x, p.y - g.k.y) > BJORNMOTE.med) continue;
     if (stat(p, 'mod', s.now) / 20 >= BJORNMOTE.gaMed) { kartStridMed(s, g.g, p, 0); count(s, 'bjornstridGickMed'); }
     else { avbryt(s, p); tanke(p, 'sagBjornSlass', s.now, { v: -BJORNMOTE.rädd, tid: BJORNMOTE.räddTim * HOUR }); count(s, 'bjornstridUndan'); }
   }
 }
-const JAGAR = new Set(['jakt', 'kaninjakt', 'radjurjakt', 'fageljakt']); // de som jagar byte (inte björnjakten, som redan slåss)
 // björnen som vunnit eller gett upp (steg 9.2.30) går bort från byn och människorna, och kommer inte tillbaka på några timmar
 function bjornGarUndan(s: State, x: number, y: number) {
   const e = bynsMitt(s), v = Math.atan2(y - e.y, x - e.x) || 0;

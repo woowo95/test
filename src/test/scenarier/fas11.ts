@@ -4572,7 +4572,7 @@ SCENARIER.karavanattack = {
       const P = SIM.gastAv(s, h.id)!, filt = SIM.handlarPlats(s, h, s.now); P.x = filt.x; P.y = filt.y;
       for (const p of SIM.living(s)) { if (p.gast) continue; Object.assign(p, SIM.freeNear(s, filt.x + 40, filt.y + 40)); p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * SIM.HOUR, carry: 0 }; }
       // det dyraste per vikt finns bara i handlarens last
-      const k = SIM.SAK_LIST.filter(q => !SIM.SAKER[q]!.redskap && !SIM.SAKER[q]!.klad && !q.startsWith('lev') && SIM.grundvarde(q) > 0).sort((a, b) => SIM.grundvarde(b) / Math.max(0.1, SIM.viktOf(b)) - SIM.grundvarde(a) / Math.max(0.1, SIM.viktOf(a)))[0];
+      const k = SIM.SAK_LIST.filter(q => !SIM.SAKER[q]!.redskap && !SIM.SAKER[q]!.klad && !SIM.SAKER[q]!.levande && SIM.grundvarde(q) > 0).sort((a, b) => SIM.grundvarde(b) / Math.max(0.1, SIM.viktOf(b)) - SIM.grundvarde(a) / Math.max(0.1, SIM.viktOf(a)))[0];
       SIM.setAmount(s, k, 0); h.varor.push({ k, n: 6 });
       return { s, h, P, k, djur0: JSON.stringify((s.tamdjur ?? []).map(d => d.id)) };
     };

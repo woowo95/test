@@ -36,7 +36,7 @@ export const VAKTAT = balans('vaktat', {
   pris: 1.5, // rövarna säljer tillbaka sakerna för så många gånger värdet
 });
 
-export const behalls = (k: string) => k !== 'silver' && !isFood(k) && !k.startsWith('lev') && !!SAKER[k] && grundvarde(k) >= VAKTAT.minVarde;
+export const behalls = (k: string) => k !== 'silver' && !isFood(k) && !!SAKER[k] && !SAKER[k]!.levande && grundvarde(k) >= VAKTAT.minVarde;
 radTarKrok.behall = (r, k, n) => {
   if (r.sort !== 'rovarlager' || !behalls(k)) return false;
   (r.stulet ??= {})[k] = (r.stulet[k] ?? 0) + Math.floor(n);

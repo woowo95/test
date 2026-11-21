@@ -26,8 +26,8 @@ export const FANG = balans('fangelse', {
   humorV: 0.8, // ... lågt humör (1 − humöret) ...
   dygnV: 0.05, // ... varje dygn som återstår ...
   brandV: 1, // ... och mycket när det brinner nära
-  brytMin: 20, // trädörrens tid utan yxa och bom (RADER.dorrMin, Dörrar mot anfallare), i minuter
   fangenMin: 30, // så länge går fången till sin plats innan hen väljer igen (minuter)
+  brytMin: 20, // trädörrens tid utan yxa och bom (RADER.dorrMin, Dörrar mot anfallare), i minuter: en kopia, eftersom rader.ts genom sina importer läser fangelse.ts
   lasGanger: 2, // bakom en låst dörr tar det så här många gånger längre (steg 12.5.6)
   // mat och vatten till fången (steg 11.12.2): var och en går när fångens hunger eller törst gånger närheten är minst hjalp
   hjalp: 0.15, // familj och partner (närhet 1) går tidigt ...
@@ -56,8 +56,10 @@ export const FANG = balans('fangelse', {
 });
 // larmet, brottet och branden sätts av steg.ts, så att den här filen inte drar in dem (och importerna inte går runt)
 export const fangelseKrok: { larma(s: State, p: Person): void; brott(s: State, p: Person): void; brinner(s: State, x: number, y: number): boolean; matStack(s: State, p: Person, ved?: boolean): { x: number; y: number } | undefined; slass(s: State, vakter: Person[], q: Person): void; taMat(s: State, p: Person, ved?: boolean): string | undefined; ata(s: State, q: Person, k: string): void; upplev(s: State, p: Person, om: string, ggr: number): void } = { larma: () => undefined, brott: () => undefined, brinner: () => false, matStack: () => undefined, taMat: () => undefined, ata: () => undefined, upplev: () => undefined, slass: () => undefined };
-const HARDA = new Set([2, 3, 6, 9]); // Slag, Utvisning, Döden och Fängelse i STRAFF_REG (styre.ts)
-export const hardaDomar = (s: State) => (s.styre?.ratt ?? []).filter(r => s.now - r.t < FANG.domDygn * DAY && HARDA.has(r.steg)).length;
+// domarna till ett hårt straff (fältet hard i STRAFF_REG, styre.ts, som sätter hardStraff när den laddas: styre.ts läser fangelse.ts)
+let hardStraff: (steg: number) => boolean = () => false;
+export const satHardStraff = (f: typeof hardStraff) => { hardStraff = f; };
+export const hardaDomar = (s: State) => (s.styre?.ratt ?? []).filter(r => s.now - r.t < FANG.domDygn * DAY && hardStraff(r.steg)).length;
 // hur mycket byn vill ha ett fängelse (steg 12.1.27: ett byhus som andra, inget påbud), −1 till 1: de hårda domarna, seden Rang
 // och ledarens aggression om byn har en ledare
 export function fangelseVilja(s: State) {

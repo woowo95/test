@@ -19,6 +19,7 @@ export interface SakDef {
   mat?: number; // mat: i vilken ordning den äts, lägst först (det som förstörs fortast)
   naring?: Partial<Record<import('./naring').Naring, number>>; // mat: hur mycket den har av varje näring, jämfört med de andra (naring.ts); en portion höjer ändå mättnaden lika mycket
   ra?: true; // rått kött eller rå fisk: den som äter det blir lite sur och kan bli matförgiftad (matlagning.ts, steg 2.8.1)
+  levande?: true; // ett levande djur som köps, säljs och stjäls som en sak och blir ett djur i byn
   haller?: number; // mat och sådant som ruttnar som mat: hur många dygn (år i spelet) den håller i lagret i rumstemperatur och utan tak (LAGER i lager.ts)
   slits?: number; // det som försvinner av skicket per timme
   blir?: { k: string; per: number }; // det den faller sönder till när skicket är slut, och hur många av den per styck
@@ -292,9 +293,9 @@ const DEF = {
   jordgubbsplanta: { namn: 'Jordgubbsplanta', varde: 1, stack: 25, vikt: 0.1, mapp: 'Material', haller: 20 },
   appel: { namn: 'Äpplen', skaffa: { tid: 0.3, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3.8, naring: { vitamin: 1.6, energi: 0.9, mineral: 0.3 }, haller: 8 }, // steg 9.7.13
   ull: { namn: 'Ull', varde: 3, stack: 20, vikt: 0.2, mapp: 'Material' }, // klipps av fåren (steg 9.8.5, boskap.ts)
-  levfar: { namn: 'Levande får', ett: true, varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levget: { namn: 'Levande get', varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levko: { namn: 'Levande ko', varde: 60, stack: 1, vikt: 0, mapp: 'Material' }, // kon (steg 10.10.1)
-  levoxe: { namn: 'Levande oxe', varde: 50, stack: 1, vikt: 0, mapp: 'Material' }, levhast: { namn: 'Levande häst', varde: 80, stack: 1, vikt: 0, mapp: 'Material' }, kulting: { namn: 'Kulting', varde: 10, stack: 1, vikt: 0, mapp: 'Material' }, slaktgris: { vikt: 15, namn: 'Slaktad gris', varde: 25, stack: 1, mapp: 'Material', haller: 3 }, // grisen (steg 10.10.13) // dragdjuren (steg 10.10.3)
-  levhons: { namn: 'Höna', varde: 4, stack: 20, vikt: 0, mapp: 'Material' }, // köps av handlaren och blir ett djur (steg 9.8.5)
+  levfar: { namn: 'Levande får', levande: true, ett: true, varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levget: { namn: 'Levande get', levande: true, varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levko: { namn: 'Levande ko', levande: true, varde: 60, stack: 1, vikt: 0, mapp: 'Material' }, // kon (steg 10.10.1)
+  levoxe: { namn: 'Levande oxe', levande: true, varde: 50, stack: 1, vikt: 0, mapp: 'Material' }, levhast: { namn: 'Levande häst', levande: true, varde: 80, stack: 1, vikt: 0, mapp: 'Material' }, kulting: { namn: 'Kulting', levande: true, varde: 10, stack: 1, vikt: 0, mapp: 'Material' }, slaktgris: { vikt: 15, namn: 'Slaktad gris', varde: 25, stack: 1, mapp: 'Material', haller: 3 }, // grisen (steg 10.10.13) // dragdjuren (steg 10.10.3)
+  levhons: { namn: 'Höna', levande: true, varde: 4, stack: 20, vikt: 0, mapp: 'Material' }, // köps av handlaren och blir ett djur (steg 9.8.5)
   appelplanta: { namn: 'Äppelplanta', varde: 2, stack: 10, vikt: 0.5, mapp: 'Material', haller: 20 },
   bivax: { namn: 'Bivax', ett: true, varde: 2, stack: 30, vikt: 0.2, mapp: 'Material' }, // de tomma vaxkakorna som skärs bort när bikupan skattas (steg 10.10.20): blir vaxljus
   honung: { namn: 'Honungskaka', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6, naring: { energi: 2.2, vitamin: 0.2, mineral: 0.2 } }, // steg 10.7.25: vaxkakan med honungen i, från vildbin i skogen; ruttnar inte
