@@ -539,7 +539,7 @@ function occupancy(s: State, ts = tingOf(s)) {
   m.redskap = new Map();
   m.eld = eldRutor(s); // i elden läggs inget (steg 12.1.153)
   const g = lagerRutor(s);
-  for (const a of stacksOf(s)) if (lagradI(s, g, a.x, a.y)) { const i = key(a.x, a.y); m.set(i, a); if (isTool(a.k)) m.redskap.set(i, (m.redskap.get(i) ?? 0) + a.n); } // redskapen i ett ställ tar var sin plats
+  for (const a of stacksOf(s)) if (lagradI(s, g, a.x, a.y)) { const i = key(a.x, a.y); if (a.n <= 1e-6 && m.has(i)) continue; /* en tom stack tar inte platsen från det som ligger där */ m.set(i, a); if (isTool(a.k)) m.redskap.set(i, (m.redskap.get(i) ?? 0) + a.n); } // redskapen i ett ställ tar var sin plats
   for (const t of ts) if (paRutan(t) && lagradI(s, g, t.x!, t.y!)) { const i = key(t.x!, t.y!); m.set(i, asStack(t)); m.redskap.set(i, (m.redskap.get(i) ?? 0) + 1); }
   return m;
 }

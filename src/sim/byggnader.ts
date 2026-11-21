@@ -457,7 +457,7 @@ function verkstadensHyllor(s: State) {
     const i = r?.tiles.find(t => !upp.at.has(t) && !upp.sitt.has(t) && !zonesOf(s).some(z => z.x === t % W && z.y === Math.floor(t / W)));
     if (i === undefined) continue;
     zonesOf(s).push({ x: i % W, y: Math.floor(i / W), w: 1, h: 1, namn: `Hyllan i ${husIMening(h.namn)}`, slag: 'material', prio: 2, hus: h.id });
-    changed(s); count(s, 'verkstadHylla');
+    changed(s); enPerRuta(s); count(s, 'verkstadHylla'); // det som redan låg där blir en sak per ruta, som i förrådshuset
   }
 }
 
