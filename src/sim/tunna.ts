@@ -18,12 +18,14 @@ export const TUNNA = balans('tunna', {
   regnTim: 2, // så många vatten i timmen fyller regnet en tunna ute med, när det regnar som mest (som vattenhon)
   mognGlad: 0.5, // tanken av att dricka är så här mycket bättre för varje steg drycken mognat
   mognVarde: 0.3, // och värdet av en del så här mycket mer per steg
+  mognStart: 2, // kvaliteten på en dryck som just hällts upp (steg 12.1.255)
+  vinKruka: [5, 15], vinTunna: [5, 15, 25], mjodTunna: [5, 15], // dygnen (år i spelet) till varje kvalitet efter mognStart
 });
-export const MOGNAD_START = 2; // kvaliteten på en dryck som just hällts upp
-// dygnen till varje kvalitet efter MOGNAD_START, per dryck och behållare
-export const MOGNAD: Record<string, Record<string, number[]>> = {
-  vin: { lerkruka_stor: [5, 15], tunna: [5, 15, 25] },
-  mjod: { tunna: [5, 15] },
+export const MOGNAD_START = TUNNA.mognStart;
+// dygnen till varje kvalitet efter MOGNAD_START, per dryck och behållare (talen i TUNNA)
+export const MOGNAD: Record<string, Record<string, readonly number[]>> = {
+  vin: { lerkruka_stor: TUNNA.vinKruka, tunna: TUNNA.vinTunna },
+  mjod: { tunna: TUNNA.mjodTunna },
 };
 // hur många steg vätskan v mognar i behållaren k (0 = inte alls)
 export const mognarI = (v: string, k: string) => MOGNAD[v]?.[k]?.length ?? 0;
