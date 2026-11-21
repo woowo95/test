@@ -26,6 +26,7 @@ import { tystISporten } from './sport';
 // -100 till 100 och humöret från 0 till 1 (gränserna för relationen, REL, står i folk.ts, åldern för flirt i ALDER)
 export const SAMTAL = balans('samtal', {
   lagTanke: 0.5, // lag kommer man på hälften så fort som ledarskap, när man redan kan det
+  lonTanke: 0.5, // lön likaså, när byn tagit in nog i skatt
   radie: 4, // så nära (rutor) måste två vara för att prata, utan en hel vägg mellan sig (steg 10.2.16)
   ensamSek: 60, // den som har gått för att samtala och inte har någon att prata med så här länge (sekunder) slutar (steg 10.2.16)
   // den som väljer att samtala går fram till någon (steg 4.5.6.7): bland dem som gör något socialt inom sokR rutor från platsen
@@ -228,7 +229,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     share(s, a, b, r, SAMTALSSLAG[kind]); // man berättar vad man vet och lär ut vad man kan
     predika(s, a, b, r, kind); // och den som tror försöker övertyga (steg 4.1.2.2, religion.ts)
     if (a.tek?.ledarskap) tankePa(s, a, 'lag', SAMTAL.ledTanke * SAMTAL.lagTanke); // och sedan på lag (steg 8.4.1)
-    if (lonTankbar(s, a)) tankePa(s, a, 'lon', SAMTAL.ledTanke * SAMTAL.lagTanke); // och på lön, när byn tagit in nog i skatt (steg 10.5.9)
+    if (lonTankbar(s, a)) tankePa(s, a, 'lon', SAMTAL.ledTanke * SAMTAL.lonTanke); // och på lön, när byn tagit in nog i skatt (steg 10.5.9)
     tankePa(s, a, 'ledarskap', SAMTAL.ledTanke); // och kommer på vad som krävs för att leda (steg 3.5.1)
     berattaSmak(a, b, r.op); // och om sin favoritmat eller det man avskyr (steg 9.6.6)
     berattaSpecial(s, a, b, r.op); // och om byns egen rätt (steg 10.7.29)

@@ -23,6 +23,7 @@ import { kronikaBer } from './berattelser';
 
 // ---------- balanstal (regel 8) ----------
 export const ANDE = balans('andlighet', {
+  dromDygn: 7, dromOp: 50, // den som sover ensam drömmer om en död hen stått nära (bättre relation än dromOp) som dött de senaste dromDygn dygnen
   arv: 0.6, // så stor del av ett barns andlighet kommer från föräldrarnas snitt; resten är en egen dragning
   arvSlump: 8, // så mycket (gånger gauss) det ärvda ändras
   // upplevelserna som flyttar andligheten (steg 4.1.1.3, "Andlighetens riktning" i designdokumentet)
@@ -478,7 +479,7 @@ export function predika(s: State, a: Person, b: Person, r: Rel, kind: string, ga
 export function stepReligion(s: State) {
   for (const p of living(s)) {
     if (p.task?.act === 'sova' && rnd(s, 'tro', p) < TRO.drom) {
-      const d = p.partner === undefined ? s.people.find(q => !alive(q) && q.died !== undefined && s.now - q.died < 7 * DAY && (s.rels[relKey(p.id, q.id)]?.op ?? 0) > 50) : undefined;
+      const d = p.partner === undefined ? s.people.find(q => !alive(q) && q.died !== undefined && s.now - q.died < ANDE.dromDygn * DAY && (s.rels[relKey(p.id, q.id)]?.op ?? 0) > ANDE.dromOp) : undefined;
       if (d) tecken(s, p, 'dodDrom', d.name); else tecken(s, p, 'drom');
     }
     if (p.svartSjuk && !isSick(p, s.now)) {

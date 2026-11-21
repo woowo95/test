@@ -88,6 +88,7 @@ export const FORM = balans('form', {
   starkt: 0.7, lut: 0.25, mitt: 0.1, // gränserna mellan styrelseformerna, i sederna (steg 8.3.7)
 });
 export const TRON = balans('tron', {
+  minister: 40, // vid Envälde väger en minister så här mycket mer än relationen när ledaren utser sin efterträdare
   prast: 0.4, // så här mycket Andlig ger att översteprästen utser (steg 8.6.16)
   arv: 0.3, // så här mycket Härkomst ger arv (steg 8.3.6)
   utse: 0.4, // ... så här mycket Envälde att ledaren utser sin efterträdare
@@ -368,7 +369,7 @@ function valj(s: State) {
   if (!forstaVal) oppnaSed(s, 'fortjanst'); // Förtjänst – Härkomst låses upp första gången en ny ska väljas (steg 8.3.4)
   let best: Person | undefined, satt = 1;
   const fv = byId(s, stn.frakVald); stn.frakVald = undefined;
-  if (fv && alive(fv) && vuxna.includes(fv)) { best = fv; satt = stn.satt ?? 0.7; }
+  if (fv && alive(fv) && vuxna.includes(fv)) { best = fv; satt = stn.satt ?? ROST.frakSatt; }
   else {
     const satet = tronfoljd(s);
     if (satet === 'arv') best = arvinge(s, vuxna);
@@ -441,7 +442,7 @@ function seOverTitel(s: State, l: Person) {
   seOverMinistrar(s);
   if ((s.seder.v.rang ?? 0) >= TRON.utse) { // vid Envälde utser ledaren sin efterträdare, oftast en minister eller en nära vän (steg 8.3.6)
     let b: Person | undefined, bv = -Infinity;
-    for (const q of vuxnaOf(s)) { if (q === l || !knows(q, 'ledarskap')) continue; const v = (s.rels[relKey(l.id, q.id)]?.op ?? 0) + (Object.values(st.ministrar ?? {}).includes(q.id) ? 40 : 0); if (v > bv) { bv = v; b = q; } }
+    for (const q of vuxnaOf(s)) { if (q === l || !knows(q, 'ledarskap')) continue; const v = (s.rels[relKey(l.id, q.id)]?.op ?? 0) + (Object.values(st.ministrar ?? {}).includes(q.id) ? TRON.minister : 0); if (v > bv) { bv = v; b = q; } }
     if (b) st.arvinge = b.id;
   }
   if (ny === forr) return;

@@ -24,6 +24,10 @@ import { Tro, skalaV, troOf, troende } from './religion';
 import { tanke } from './tankar';
 
 export const ROST = balans('rost', {
+  krigStrider: 6, krigKrigare: 3, // krigshövdingen väljs efter så många strider, när byn har så många krigare
+  domareLagar: 2, // domaren väljs när byn har så många lagar
+  forvaltareRik: 800, // förvaltaren väljs när byn är så här rik
+  frakSatt: 0.7, // så stort stöd har den fraktionen satt på platsen, när den tog makten
   sparas: 14, // så många omröstningar sparas
   kvall: 1, // så många frågor tas upp varje kväll
   gillar: 0.25, // så mycket det betyder att man gillar den som lägger fram frågan
@@ -40,6 +44,10 @@ export const VIKT = balans('vikt', {
   krigare: 8, // den som har minst så här i närstrid räknas som krigare
 });
 export const MISS = balans('missnoje', {
+  stortUt: 0.4, // chansen att den störtade ledaren drivs ut ur byn
+  hardFejd: 0.5, // hur hårt ledaren svarar fraktionen: 1 + Envälde + Fejd × detta
+  utvisadMiss: 0.1, // så mycket missnöjet växer hos dem i fraktionen när ledaren driver ut den som ledde den
+  gavEfter: 0.5, // missnöjet i fraktionen gånger detta, när ledaren ger efter
   svalt: 0.012, kyla: 0.008, // så mycket missnöjet växer i timmen den som svälter och fryser
   seder: 0.002, // ... långsamt när sederna ligger långt från ens egna åsikter (mer än sederAvst)
   sederAvst: 0.6,
@@ -209,9 +217,9 @@ export interface MinisterDef { namn: string; kort: string; om: string; nar(s: St
 const basta = (s: State, f: (p: Person) => number) => { let b: Person | undefined, bv = -Infinity; for (const p of living(s)) if (vuxenRost(s, p) && f(p) > bv) { bv = f(p); b = p; } return b; };
 export const MINISTRAR: Record<string, MinisterDef> = {
   overstePrast: { namn: 'Överstepräst', kort: 'leder tron', om: 'Den främsta prästen i byns största tro. Talar för de troende i styret.', nar: s => !!overstePrast(s), vem: s => overstePrast(s), sektion: s => living(s).filter(p => p.tro !== undefined).length / 3 }, // steg 8.6.16
-  krigshovding: { namn: 'Krigshövding', kort: 'leder striderna', om: 'Väljs när byn har stridit ofta. Den skickligaste kämpen leder vargjakterna och försvaret.', nar: s => (s.stat?.vargjakt ?? 0) + (s.stat?.vargstrid ?? 0) + (s.stat?.rovarstrid ?? 0) >= 6 && krigare(s).length >= 3, vem: s => basta(s, p => p.skill.narstrid + p.pot.mod / 4), sektion: s => krigare(s).length },
-  domare: { namn: 'Domare', kort: 'dömer på tinget', om: 'Väljs när byn har lagar. Den klokaste avgör skuld och straff.', nar: s => (s.styre?.lagar?.length ?? 0) >= 2, vem: s => basta(s, p => p.pot.intelligens + p.pot.empati / 2), sektion: () => 1 }, // steg 8.4.16
-  forvaltare: { namn: 'Förvaltare', kort: 'sköter förråden', om: 'Väljs när byn blivit rik. Lägger fram påbudet om förråden.', nar: s => rikedom(s) >= 800, vem: s => basta(s, p => p.pot.intelligens + p.skill.handel / 2), pabud: ['forrad'], sektion: s => living(s).length / 4 },
+  krigshovding: { namn: 'Krigshövding', kort: 'leder striderna', om: 'Väljs när byn har stridit ofta. Den skickligaste kämpen leder vargjakterna och försvaret.', nar: s => (s.stat?.vargjakt ?? 0) + (s.stat?.vargstrid ?? 0) + (s.stat?.rovarstrid ?? 0) >= ROST.krigStrider && krigare(s).length >= ROST.krigKrigare, vem: s => basta(s, p => p.skill.narstrid + p.pot.mod / 4), sektion: s => krigare(s).length },
+  domare: { namn: 'Domare', kort: 'dömer på tinget', om: 'Väljs när byn har lagar. Den klokaste avgör skuld och straff.', nar: s => (s.styre?.lagar?.length ?? 0) >= ROST.domareLagar, vem: s => basta(s, p => p.pot.intelligens + p.pot.empati / 2), sektion: () => 1 }, // steg 8.4.16
+  forvaltare: { namn: 'Förvaltare', kort: 'sköter förråden', om: 'Väljs när byn blivit rik. Lägger fram påbudet om förråden.', nar: s => rikedom(s) >= ROST.forvaltareRik, vem: s => basta(s, p => p.pot.intelligens + p.skill.handel / 2), pabud: ['forrad'], sektion: s => living(s).length / 4 },
 };
 export const framFor = (s: State, k: string) => { for (const [id, m] of Object.entries(MINISTRAR)) if (m.pabud?.includes(k)) { const p = byId(s, s.styre?.ministrar?.[id]); if (p && alive(p)) return p; } return undefined; };
 // posterna ses över varje årstid, som titeln. Vid Envälde utser ledaren, annars väljer byn
@@ -313,9 +321,9 @@ function avslojad(s: State, l: Person, f: Fraktion, ang: Person) {
   if (!q) return;
   log(s, `${ang.name} berättade för ${l.name} att ${q.name} och några till vill byta ledare.`, 'rel', [l.id, ang.id, q.id]);
   tanke(ang, 'angav', s.now);
-  const hard = 1 + (s.seder.v.rang ?? 0) + (s.seder.v.fejd ?? 0) * 0.5;
-  if (hard >= MISS.hard) { utvisa(s, q, l, 'för att ha velat störta ledaren'); for (const id of f.med) { const m = byId(s, id); if (m && m !== q) m.missnoje = clamp((m.missnoje ?? 0) + 0.1, 0, 1); } }
-  else { for (const id of f.med) { const m = byId(s, id); if (m) m.missnoje = (m.missnoje ?? 0) * 0.5; } log(s, `${l.name} gav efter för missnöjet och lyssnade på ${q.name}.`, 'rel', [l.id, q.id]); }
+  const hard = 1 + (s.seder.v.rang ?? 0) + (s.seder.v.fejd ?? 0) * MISS.hardFejd;
+  if (hard >= MISS.hard) { utvisa(s, q, l, 'för att ha velat störta ledaren'); for (const id of f.med) { const m = byId(s, id); if (m && m !== q) m.missnoje = clamp((m.missnoje ?? 0) + MISS.utvisadMiss, 0, 1); } }
+  else { for (const id of f.med) { const m = byId(s, id); if (m) m.missnoje = (m.missnoje ?? 0) * MISS.gavEfter; } log(s, `${l.name} gav efter för missnöjet och lyssnade på ${q.name}.`, 'rel', [l.id, q.id]); }
 }
 // avsättning, kupp och uppror (steg 8.3.12)
 function stortas(s: State, l: Person, f: Fraktion) {
@@ -324,7 +332,7 @@ function stortas(s: State, l: Person, f: Fraktion) {
   const vuxna = living(s).filter(p => vuxenRost(s, p));
   if (!led) return;
   if (fejd <= MISS.fejd) {
-    count(s, 'avsatt'); st.frakVald = led.id; st.satt = 0.7;
+    count(s, 'avsatt'); st.frakVald = led.id; st.satt = ROST.frakSatt;
     const t = `Byn sade ifrån vid elden, och ${l.name} fick lämna ledarskapet.`;
     log(s, t, 'world', [l.id, led.id]); notis(s, 'ledare', t, [l.id, led.id], undefined, { ton: { [l.id]: 'ont', [led.id]: 'gott' } });
     slutarStyre(s, 'avsattes'); missnojeNoll(s);
@@ -347,7 +355,7 @@ EFTER.ledarstrid = (s, e, vinnare) => {
   if (!led || !l) return;
   if (vinnare === 0) {
     st.frakVald = alive(led) ? led.id : undefined; st.satt = 0.5;
-    if (alive(l)) { if (rnd(s, 'strid') < 0.4) utvisa(s, l, led, 'efter att ha störtats'); else slutarStyre(s, 'störtades'); }
+    if (alive(l)) { if (rnd(s, 'strid') < MISS.stortUt) utvisa(s, l, led, 'efter att ha störtats'); else slutarStyre(s, 'störtades'); }
     if (s.styre?.ledare !== undefined) slutarStyre(s, 'störtades');
     missnojeNoll(s);
   } else {

@@ -226,3 +226,12 @@
 ## 12.1.185 (personen i fast form)
 
 - `npm run samma` gav samma utveckling som förut (fem byar, på koden före och efter). Skyldig `npm run -s koll` och `npm run -s likhet` i kedjan med resten av 12.1.
+
+## 12.1.104 (optimeringar, be6b54af–9ffad9ed)
+
+- `npm run samma` gav samma utveckling som förut (fem byar, på koden före och efter alla fynden). Skyldig `npm run -s koll` och `npm run -s likhet` i kedjan med resten av 12.1.
+
+## 12.1.107 (lösa tal och regler som räknas per anrop, från c53aff53)
+
+- Fynden 370, 373, 374, 377, 389 och 390 ändrar inget i spelet. Fynden 379 och 391 (4ea4a174) och 369 räknar med tiden sedan sist från TAKTER: första gången efter grundandet eller när klockan flyttats är tiden kort, och en timme i registret är sällan exakt 3600 s, så byarna kan utvecklas lite annorlunda. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit.
+- Scenariot torka är rött på varld redan före 12.1.107 (en by med en som dör av törst och ett vattnat fält som vissnar).

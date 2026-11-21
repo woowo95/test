@@ -41,6 +41,8 @@ import { prastMinns, handelse } from './rykten';
 
 export { farorNu, satFaror } from './kultlatt'; // farorna över byn (steg 10.11.18: i kultlatt.ts, så att förrådet också kan läsa dem)
 export const KULT = balans('kult', {
+  rokelse: 0.2, // chansen att den som ber tänder rökelse, när byn har
+  hogtidMer: 25, hogtidIngen: 75, // under hogtidMer i festens skala firar tron två högtider till, över hogtidIngen inga
   myrVarde: 10, myrTak: 2, // offret i myren (steg 12.1.5): tron växer gånger 1 + sakens värde / myrVarde, högst myrTak
   heligR: 15, // man ber vid den närmaste heliga platsen inom så här många rutor, och röstar för en plats så nära hemmet (steg 10.3.10)
   heligTak: 3, // en tro har högst så här många heliga platser
@@ -108,7 +110,7 @@ export function bonKlar(s: State, p: Person, t: { tool?: string; ref?: number; w
 }
 // ber p i trons hus där ett heligt ting står på altaret (steg 10.3.20)?
 const vidHeligtTing = (s: State, p: Person) => { const tr = troOf(s, p.tro); if (!tr || !(s.ting ?? []).some(t => t.helig === tr.id)) return false; const r = troshusRum(s, tr); return !!r && roomAt(s, Math.floor(p.x), Math.floor(p.y)) === r; };
-const rokelse = (s: State, p: Person) => { if (amountOf(s, 'rokelse') < 1 || rnd(s, 'tro', p) > 0.2) return false; takeMaterial(s, p, 'rokelse', 1); return true; };
+const rokelse = (s: State, p: Person) => { if (amountOf(s, 'rokelse') < 1 || rnd(s, 'tro', p) > KULT.rokelse) return false; takeMaterial(s, p, 'rokelse', 1); return true; };
 // bär prästen sin dräkt eller sin mask (steg 10.3.11)
 export const barDrakt = (s: State, p: Person) => (s.ting ?? []).some(t => t.bar === p.id && (kladAv(t.k)?.plagg === 'prastdrakt' || kladAv(t.k)?.plagg === 'mask'));
 const barTecken = (s: State, p: Person) => (s.ting ?? []).some(t => t.bar === p.id && (kladAv(t.k)?.plagg === 'tecken' || kladAv(t.k)?.plagg === 'prastdrakt'));
@@ -366,7 +368,7 @@ function livsRiter(s: State) {
 }
 // högtiderna (steg 8.5.14 och 10.3.3): en tro har 0–4, var och en ett bud knutet till en tidsålder. Skalan Fest – Försakelse avgör bara hur
 // många som föreslås; formen (gille eller fasta) sparas i budet när det antas och står kvar när skalan flyttar sig
-export const hogtider = (tr: Tro) => { const f = skalaV(tr, 'fest') ?? 50; return f < KULT.fest ? 2 + (f < 25 ? 2 : 0) : f > 75 ? 0 : 1; };
+export const hogtider = (tr: Tro) => { const f = skalaV(tr, 'fest') ?? 50; return f < KULT.fest ? 2 + (f < KULT.hogtidMer ? 2 : 0) : f > KULT.hogtidIngen ? 0 : 1; };
 export type HogtidForm = 'gille' | 'fasta';
 const HOGTIDSNAMN = ['Isblotet', 'Vårfesten', 'Midsommarnatten', 'Skördenatten'];
 const TIDSALDER = ['istiden', 'vårtiden', 'sommartiden', 'hösttiden'];

@@ -19,6 +19,10 @@ import { byId } from './folk';
 // Sederna (arbete, gemenskap, barn, nyfikenhet, försiktighet, rang, från -1 till 1) rör sig långsamt mot det invånarna drar åt:
 // var och en efter sin personlighet och de upplevelser hen minns (steg 4.5.4.9). Åldrarna för rösten i sederna och för yrkestaggarna står i ALDER (folk.ts)
 export const SED = balans('seder', {
+  fortInt: 0.5, fortBarn: 0.15, fortBarnlos: 0.05, // Förtjänst: intelligensen drar åt Förtjänst, barn åt Härkomst och barnlöshet åt Förtjänst
+  krigAggr: 0.7, krigMod: 0.3, krigEmp: 0.5, // Krig: aggressionen och modet drar åt Krig, empatin åt Fred
+  naturFlit: 0.5, naturEmp: 0.5, // Bruka: fliten drar åt Bruka, empatin åt Värna
+  pratDra: 0.5, pratEmp: 0.5, // Pratsamhet: nyfikenheten och karisman drar åt Pratsamhet, empatin åt Förtegenhet
   varnaFran: -0.2, varnaTanke: 0.05, // den som drar mer åt Värna än så här blir ledsen, så här mycket per steg
   mitt: 10, // en vanlig människas egenskap (egenskaper går från 1 till 20) ...
   spann: 6, // ... och så mycket över eller under är ett helt steg åt ena hållet
@@ -67,14 +71,14 @@ const DEF = {
   nyfikenhet: { pos: 'Förnyelse', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.', dra: q => dev((q.nyfikenhet + q.intelligens) / 2) },
   forsiktighet: { pos: 'Förutseende', neg: 'Dagens behov', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.', dra: q => -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt },
   // den första vågskålen (steg 3.5.1): låst (står på 0) tills byn fått sin första ledare (sedOppen i styre.ts)
-  fortjanst: { pos: 'Härkomst', neg: 'Förtjänst', effect: 'Den duglige eller släkten: Härkomst flyttar vikt till släkternas äldste och ger arv när ledaren byts.', dra: (q, barn) => -dev(q.intelligens) * 0.5 + (barn ? 0.15 : -0.05) },
+  fortjanst: { pos: 'Härkomst', neg: 'Förtjänst', effect: 'Den duglige eller släkten: Härkomst flyttar vikt till släkternas äldste och ger arv när ledaren byts.', dra: (q, barn) => -dev(q.intelligens) * SED.fortInt + (barn ? SED.fortBarn : -SED.fortBarnlos) },
   fejd: { pos: 'Fejd', neg: 'Förlikning', effect: 'Om konflikter löses med ord eller med styrka: Fejd flyttar vikt till krigarna, och ledaren kan störtas i strid.', dra: q => dev(q.aggression) - dev(q.empati) },
-  krig: { pos: 'Krig', neg: 'Fred', effect: 'Om byn går i strid eller söker fred: Krig gör fler villiga att slåss.', dra: q => dev(q.aggression) * 0.7 + dev(q.mod) * 0.3 - dev(q.empati) * 0.5 }, // steg 8.4.11
-  natur: { pos: 'Bruka', neg: 'Värna', effect: 'Om naturen är till för att brukas: fällda träd och dödade djur ger sämre humör för dem som drar åt Värna.', dra: q => dev(q.flit) * 0.5 - dev(q.empati) * 0.5 }, // steg 8.4.13
+  krig: { pos: 'Krig', neg: 'Fred', effect: 'Om byn går i strid eller söker fred: Krig gör fler villiga att slåss.', dra: q => dev(q.aggression) * SED.krigAggr + dev(q.mod) * SED.krigMod - dev(q.empati) * SED.krigEmp }, // steg 8.4.11
+  natur: { pos: 'Bruka', neg: 'Värna', effect: 'Om naturen är till för att brukas: fällda träd och dödade djur ger sämre humör för dem som drar åt Värna.', dra: q => dev(q.flit) * SED.naturFlit - dev(q.empati) * SED.naturEmp }, // steg 8.4.13
   andlig: { pos: 'Andlig', neg: 'Världslig', effect: 'Om makten kommer från folket eller från gudarna: Andlig flyttar vikt till prästerna, och kyrkan välsignar eller fördömer ledaren.', dra: () => 0 }, // steg 8.6.1: andligheten läggs till i drar() och sedLaggning
   rang: { pos: 'Envälde', neg: 'Folkstyre', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt ledaren straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
   // steg 10.8.6: låst tills byn berättat RYKTE.pratOppna dåliga rykten (rykten.ts). Den nyfikna och karismatiska drar åt Pratsamhet, den empatiska åt Förtegenhet
-  prat: { pos: 'Pratsamhet', neg: 'Förtegenhet', effect: 'Hur fritt man talar om andra: i en pratsam by berättas rykten oftare och skvallret väger mindre, i en förtegen by tvärtom.', dra: q => (dev(q.nyfikenhet) + dev(q.karisma)) * 0.5 - dev(q.empati) * 0.5 },
+  prat: { pos: 'Pratsamhet', neg: 'Förtegenhet', effect: 'Hur fritt man talar om andra: i en pratsam by berättas rykten oftare och skvallret väger mindre, i en förtegen by tvärtom.', dra: q => (dev(q.nyfikenhet) + dev(q.karisma)) * SED.pratDra - dev(q.empati) * SED.pratEmp },
 } satisfies Record<string, SedDef>;
 export type Sed = keyof typeof DEF;
 export const SEDER: Record<Sed, SedDef> = DEF;

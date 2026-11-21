@@ -31,6 +31,9 @@ import { tanke } from './tankar';
 // kroppen ligger kvar där personen dog. En vuxen, helst någon nära, bär den till gravplatsen och gräver (nivån Rädda i arbetsordningen). Grävandet
 // går fortare med spade. Graven är en ruta (10.1.3 bygger vidare på den). Tron ger stilen och samlingen vid graven (ritualerna, kult.ts)
 export const GRAV = balans('grav', {
+  vakaKl: 20, // vakan vid den döda börjar vid det här klockslaget (steg 10.4.12)
+  jordgravDygn: 84, // en jordgrav (och bålets) utan vård är utsliten efter så här många dygn
+  avrustaMin: 2, // så många minuter per sak det tar att ta hand om det en död fiende bar
   handMin: 3, spadeMin: 2, // så många minuter (i verkligheten) det tar att gräva för hand och med spade (en stor sak)
   avst: 5, // gravplatsen ligger så här långt utanför byn
   naraTim: 0.5, annanTim: 2, // så länge det i medel dröjer innan den som stod den döda nära, och någon annan, vill bära hen till graven (timmar, steg 10.4.5)
@@ -176,7 +179,6 @@ export function begravaVal(s: State, p: Person) {
   return { spot: { x: q.x + 0.5, y: q.y + 0.5 }, ref: q.id, why: `Bär ${q.namn} till graven` };
 }
 // vakan är inte över än: den har inte börjat, pågår eller väntar i kön (steg 10.4.12)
-const VAKA_KL = 20;
 const vakaVantar = (s: State, q: Kvarleva) => q.vaka !== undefined && (s.now < q.vaka + BEGRAVNINGAR.vaka.tim! * HOUR || s.ritual?.kropp === q.id || !!s.ritualKo?.some(r => r.kropp === q.id));
 // framme vid kroppen: hen tas upp och bärs till platsen där graven ska vara
 export function kroppUpp(s: State, p: Person, t: Task) {
@@ -309,7 +311,7 @@ const avrustbart = (s: State, p: Person, k: Kvarleva) => (k.saker ? Object.value
 export function avrustaVal(s: State, p: Person) {
   const q = s.kvarlevor?.find(k => k.k === 'fiende' && avrustbart(s, p, k) > 0 && !living(s).some(o => o !== p && o.task?.act === 'avrusta' && o.task.ref === k.id));
   if (!q) return undefined;
-  return { spot: { x: q.x + 0.5, y: q.y + 0.5 }, ref: q.id, min: 2 * avrustbart(s, p, q), why: `Tar hand om det ${q.namn} bar` };
+  return { spot: { x: q.x + 0.5, y: q.y + 0.5 }, ref: q.id, min: GRAV.avrustaMin * avrustbart(s, p, q), why: `Tar hand om det ${q.namn} bar` };
 }
 export function avrustaKlar(s: State, p: Person, t: Task) {
   const q = kvarById(s, t.ref ?? -1);
@@ -469,7 +471,7 @@ kroppKrok.f = (s, q, d) => {
   if (tr) { sederVidDod(s, tr, storDod(s, d, tr)); q.bud = (tr.bud ?? []).map(b => b.id).filter(id => GRAVBUD.has(id)); }
   // vakan (steg 10.4.12): de nära sitter hos kroppen från kl. 20 kvällen efter dödsfallet
   if (tr && q.bud?.includes('vaka')) {
-    const h = hourOf(s.now), fran = Math.floor((s.now + (((VAKA_KL - h + 24) % 24) || 24) * HOUR) / MIN) * MIN; q.vaka = fran;
+    const h = hourOf(s.now), fran = Math.floor((s.now + (((GRAV.vakaKl - h + 24) % 24) || 24) * HOUR) / MIN) * MIN; q.vaka = fran;
     nyRitual(s, 'vaka', { tro: tr.id, om: [d.id], kropp: q.id, fran, x: q.x, y: q.y, namn: `Vakan för ${d.name}` });
   }
   const vanta = (tim: number) => s.now - Math.log(1 - rnd(s, 'val')) * tim * HOUR;
@@ -489,8 +491,7 @@ export const BESOK = balans('gravbesok', {
   trost: 0.02, // humöret av tanken "Stod vid graven"
   laga: 0.5, // graven lagas när skicket är under så här
 });
-const JORDGRAV_DYGN = 84; // en jordgrav (och bålets) utan vård är utsliten efter så här många dygn
-const livstid = (g: Grav) => (g.vard ? GRAVAR[g.vard].dygn : JORDGRAV_DYGN) * DAY;
+const livstid = (g: Grav) => (g.vard ? GRAVAR[g.vard].dygn : GRAV.jordgravDygn) * DAY;
 // skicket från 1 till 0, räknat ur tiden sedan graven gjordes eller lagades
 export const gravSkick = (s: State, g: Grav) => Math.max(0, Math.min(1, 1 - (s.now - (g.lagad ?? g.t)) / livstid(g)));
 // bandet till en död

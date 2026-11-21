@@ -41,6 +41,8 @@ import { hp } from './gast';
 import type { Handlare } from './handel';
 
 export const KYRKA = balans('kyrka', {
+  utgiftFran: 60, utgiftUnder: 40, // kyrkan försörjer prästen över utgiftFran i skalan, ger åt de fattiga och betalar ett framträdande under utgiftUnder
+  valsignOp: 20, // översteprästen välsignar ledaren över så här god relation och fördömer under minus detta
   offerChans: 0.03, // chansen per timme att en andlig ger en gåva till kyrkan ...
   offerAnde: 55, // ... från den här andligheten
   skatt: 1, // kyrkskatten: så mycket ved per dygn ur byns förråd till kyrkan, per fem troende
@@ -383,14 +385,14 @@ function skattDygn(s: State) {
 export interface KyrkUtgift { namn: string; vikt: (s: State, tr: Tro) => number; gor: (s: State, tr: Tro) => void }
 export const KYRKUTGIFTER: Record<string, KyrkUtgift> = {
   // försörja prästen (Präster)
-  prast: { namn: 'försörja prästen', vikt: (s, tr) => { const v = skalaV(tr, 'prast') ?? 50; return v > 60 && prastOf(s, tr) && kyrkansMat(s, tr, 1) ? (v - 50) / 50 : 0; },
+  prast: { namn: 'försörja prästen', vikt: (s, tr) => { const v = skalaV(tr, 'prast') ?? 50; return v > KYRKA.utgiftFran && prastOf(s, tr) && kyrkansMat(s, tr, 1) ? (v - 50) / 50 : 0; },
     gor: (s, tr) => { const pr = prastOf(s, tr), m = kyrkansMat(s, tr, 1); if (pr && m && kyrkanTar(s, tr, m, 1)) { ata(pr, { [m]: KROPP.mattar }); count(s, 'atit', 1); tanke(pr, 'prastMat', s.now); } } }, // prästen äter den (steg 12.1.61)
   // gåvor till de fattiga (Öppen)
-  fattig: { namn: 'ge åt de fattiga', vikt: (s, tr) => { const v = skalaV(tr, 'oppen') ?? 50; return v < 40 && kyrkansMat(s, tr, 2) ? (50 - v) / 50 : 0; },
+  fattig: { namn: 'ge åt de fattiga', vikt: (s, tr) => { const v = skalaV(tr, 'oppen') ?? 50; return v < KYRKA.utgiftUnder && kyrkansMat(s, tr, 2) ? (50 - v) / 50 : 0; },
     gor: (s, tr) => { const q = living(s).filter(p => p.hunger < 0.6).sort((a, b) => a.hunger - b.hunger)[0], m = kyrkansMat(s, tr, 1); if (q && m && kyrkanTar(s, tr, m, 1)) { ata(q, { [m]: KROPP.mattar }); count(s, 'atit', 1); tanke(q, 'trosMat', s.now); } } }, // en portion som äts (steg 10.11.10)
   // ett framträdande som sprider tron eller minnet av en död troende (Sprider sig, steg 10.7.18): kyrkan lägger undan
   // KYRKA.framPris hela saker av det den har mest av, och den troende som nästa gång uppträder med ett budskap får dem (kyrkFram)
-  fram: { namn: 'betala ett framträdande', vikt: (s, tr) => { const v = skalaV(tr, 'sprid'); return v !== undefined && v < 40 && !tr.framPris && framSak(s, tr) ? (50 - v) / 50 : 0; },
+  fram: { namn: 'betala ett framträdande', vikt: (s, tr) => { const v = skalaV(tr, 'sprid'); return v !== undefined && v < KYRKA.utgiftUnder && !tr.framPris && framSak(s, tr) ? (50 - v) / 50 : 0; },
     gor: (s, tr) => { const k = framSak(s, tr); if (k) { tr.framPris = k; count(s, 'kyrkFramBeslut'); } } },
 };
 // det kyrkan har mest av, när den har minst KYRKA.framPris hela
@@ -497,7 +499,7 @@ export const overstePrast = (s: State) => { const tr = (s.tron ?? []).filter(t =
 function valsignaDygn(s: State) {
   const o = overstePrast(s), l = ledareOf(s), st = s.styre;
   if (!st || !l || !o || o === l) { if (st) st.kyrka = undefined; return; }
-  const op = s.rels[relKey(o.id, l.id)]?.op ?? 0, andlig = Math.max(0, s.seder.v.andlig ?? 0), ny = op > 20 ? 1 : op < -20 ? -1 : 0;
+  const op = s.rels[relKey(o.id, l.id)]?.op ?? 0, andlig = Math.max(0, s.seder.v.andlig ?? 0), ny = op > KYRKA.valsignOp ? 1 : op < -KYRKA.valsignOp ? -1 : 0;
   if (ny !== (st.kyrka ?? 0) && andlig > 0.2) log(s, ny > 0 ? `${o.name} välsignade ${l.name}.` : ny < 0 ? `${o.name} fördömde ${l.name}.` : `${o.name} teg om ${l.name}.`, 'rel', [o.id, l.id]);
   st.kyrka = ny; st.kyrkaVikt = andlig * KYRKA.valsigna;
 }
