@@ -450,7 +450,7 @@ export const STATIONER = {
   // fyrfatet (steg 12.4.11, mobler.ts): ett fat av lera med glödande kol, som värmer ett litet rum utan härd. Elden är en rad i
   // ELDSTATIONER med bränslet kol, och den som lägger kol i det (handlingen fyrfat) fyller det. Det går inte att laga mat på
   fyrfat: {
-    namn: 'Fyrfat', ikon: 'fyrfat', w: 1, h: 1, tek: ['fyrfat'], av: RECEPT.fyrfat.av, min: RECEPT.fyrfat.min, gor: ['fyrfat'], inne: true, mobel: true, flera: true, varmer: true,
+    namn: 'Fyrfat', ett: true, ikon: 'fyrfat', w: 1, h: 1, tek: ['fyrfat'], av: RECEPT.fyrfat.av, min: RECEPT.fyrfat.min, gor: ['fyrfat'], inne: true, mobel: true, flera: true, varmer: true,
     bygger: 'Formar ett fyrfat av lera.', forsta: '{namn} formade byns första fyrfat. Med glödande kol i värmer det ett rum utan härd.',
   },
   // sjukbädden (steg 12.4.10, mobler.ts): en bädd inne där den sjuke eller skadade hellre lägger sig och läker lite fortare. Ett rum
@@ -1826,7 +1826,7 @@ function inredningen(s: State) {
     const egen = sovHus(s, o), namn = d.namn.toLowerCase();
     const at = utan(s, t, () => d.sover ? siteInne(s, t.k, undefined, q => egen !== undefined ? q.id === egen : q.ag === undefined) : siteKista(s, t.k, o));
     count(s, 'möbel utflyttad');
-    if (at) { flytta(s, t, at); log(s, `${o.name} bar ${sinOrd(d)} ${namn} till ${husAv(s, t)?.namn.toLowerCase() ?? `huset där ${han(o)} sover`}.`, 'world', [o.id]); continue; }
+    if (at) { flytta(s, t, at); log(s, `${o.name} bar ${sinOrd(d)} ${namn} till ${husAv(s, t) ? husIMening(husAv(s, t)!.namn) : `huset där ${han(o)} sover`}.`, 'world', [o.id]); continue; }
     if (!annans) { t.ag = undefined; touch(s); log(s, `${o.name} lämnade ${sinOrd(d)} ${namn} i ${h ? husIMening(h.namn) : 'huset'} åt den som sover där.`, 'world', [o.id]); continue; }
     taBort(s, t); log(s, `${gen(o.name)} ${namn} i ${husIMening(h.namn)} togs isär, eftersom ${d.ett ? 'det' : 'den'} inte fick plats där ${han(o)} sover.`, 'world', [o.id]);
   }
