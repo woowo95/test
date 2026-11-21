@@ -1,4 +1,5 @@
 import { bynsMitt } from './omrade';
+import { talOrd } from './ord';
 import { balans } from './balans';
 import { ALDER, ageOf, count, enTillDar, living, log } from './folk';
 import { motgangNu, motgangTal } from './motgang';
@@ -133,7 +134,7 @@ function minns(s: State, n: number) {
   const f = bynsMitt(s), a = areaOf(f.x, f.y);
   for (const p of living(s)) bynsMinne(s, p, 'flod', a, n);
   count(s, 'flod minns');
-  log(s, `Byn minns att vattnet nådde ${n === 1 ? 'en ruta' : `${n} rutor`} upp på land. Där bygger man inte igen.`, 'world');
+  log(s, `Byn minns att vattnet nådde ${n === 1 ? 'en ruta' : `${talOrd(n)} rutor`} upp på land. Där bygger man inte igen.`, 'world');
 }
 // jordgolv under vatten blir lera, och leran blir jordgolv igen leraTim timmar efter att vattnet gått undan
 function lera(s: State) {
