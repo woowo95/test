@@ -16,6 +16,7 @@ function laga(g: PIXI.Graphics, x: number, y: number, l: number, f: number) {
 }
 import { farg, fargTal } from '../palett';
 import { sinHash as hash } from './pixel';
+import { ejLig } from './hjalp';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, figurLayer, labels, symbolLayer, peopleG, world } from './scen';
 import { SKYLT, rollAv, synligaSkyltar, type Skylt } from './namnskyltar';
@@ -292,8 +293,6 @@ function bar(k: string, cx: number, cy: number, storlek: number) {
 // namnet över den valda och den under musen. Två texter som återanvänds: att skapa en text varje bildruta är dyrt
 // Pixelify Sans som brödtexten (steg 5.3.2.3), i panelens ljusa och mörka färg; när typsnittet laddats ritas namnen om med det
 const NAMNFONT = '"Pixelify Sans", system-ui, sans-serif';
-// typsnittet slår ihop fi och fl till fel tecken (steg 12.1.50): ett osynligt tecken emellan håller dem isär
-const ejLig = (t: string) => t.replace(/f(?=[il])/g, 'f\u200c');
 const nameStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: 22, fill: fargTal(farg('ben', 3)), stroke: fargTal(farg('kol', 0)), strokeThickness: 5, fontWeight: '700' });
 // namnen vid alla (steg 12.1.157, ui/namnskyltar.ts): mindre text under fötterna, en text per person som återanvänds
 const smaStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: SKYLT.hojd * 2, fill: fargTal(farg('ben', 3)), stroke: fargTal(farg('kol', 0)), strokeThickness: 4, fontWeight: '700' });

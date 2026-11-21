@@ -7,7 +7,7 @@
 import { byFlikar, PlatsRuta, Sallskap, TEKNIK, vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { gaIn, huvud, s } from './lage';
-import { durTxt, esc, omUngefar } from './hjalp';
+import { durTxt, ejLig, esc, omUngefar } from './hjalp';
 import { TECKEN, TECKENPAL, VK, huvudbynsPlats, Vy, begransa, dra, helaKartan, namnPaKartan, NAMNZOOM, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
 import { bildDuk } from './bildduk';
 
@@ -129,8 +129,9 @@ function ritaNamn(g: CanvasRenderingContext2D, dpr: number) {
   for (const n of namnPaKartan(vl, bynsKarta(s!))) {
     const sx = ((n.x + 0.5) * VK - vy.x) * vy.z, sy = ((n.y + 1) * VK - vy.y) * vy.z + 1;
     g.font = `${n.egen ? 700 : 500} 12px "Pixelify Sans", system-ui, sans-serif`;
-    g.strokeStyle = farg('ben', 3); g.strokeText(n.namn, sx, sy);
-    g.fillStyle = n.egen ? farg('rost', 0) : farg('kol', 1); g.fillText(n.namn.replace(/f(?=[il])/g, 'f\u200c'), sx, sy); // fi och fl slås inte ihop (steg 12.1.50)
+    const namn = ejLig(n.namn); // fi och fl slås inte ihop, i kanten och fyllningen (steg 12.1.50, 12.1.204)
+    g.strokeStyle = farg('ben', 3); g.strokeText(namn, sx, sy);
+    g.fillStyle = n.egen ? farg('rost', 0) : farg('kol', 1); g.fillText(namn, sx, sy);
   }
 }
 const senare = () => { if (!ritas) { ritas = true; requestAnimationFrame(rita); } };

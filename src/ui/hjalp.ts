@@ -216,3 +216,7 @@ export const matchKnapp = (nr: number) => redogKnapp('match', nr, 'Visa hela mat
 export const framKnapp = (nr: number) => redogKnapp('fram', nr, 'Visa hela framträdandet', iconImg('scen', 14));
 export const resaKnapp = (nr: number) => redogKnapp('resa', nr, 'Visa hela resan', '🎒');
 export const byteKnapp = (nr: number) => redogKnapp('byte', nr, 'Visa hela bytet', iconImg('handslag', 14));
+
+// typsnittet slår ihop fi och fl till fel tecken (steg 12.1.50): ett osynligt tecken emellan håller dem isär. Kanten och
+// fyllningen runt ett namn ritas ur samma text (steg 12.1.204)
+export const ejLig = (t: string) => t.replace(/f(?=[il])/g, 'f\u200c');
