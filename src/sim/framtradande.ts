@@ -21,7 +21,7 @@ import { tingVarde } from './varde';
 import { predika, troende, troNamn, troOf } from './religion';
 import type { Tro } from './religion';
 import { clamp, rnd } from './slump';
-import { hourOf, isLight } from './tid';
+import { hourOf } from './tid';
 import { coldOf, nederbord, temperature } from './vader';
 import { Station, isKlar, redskapVid, stationById, stationerOf, storlekAv, vidStation } from './stationer';
 import { kvHaller } from './kvalitet';
@@ -327,7 +327,7 @@ const SOVER = new Set<string>(['sova', 'vila', 'badd']); // på kvällen och nat
 const kanKomma = (q: Person) => alive(q) && kanGa(q) && !(q.task && (SOVER.has(q.task.act) || ACTS[q.task.act]?.fortsatter?.length));
 // på kvällen (fritiden i val.ts, steg 10.7.9): p vill uppträda och kallar. Hen väljer form, instrument och budskap, går till
 // scenen eller elden och väntar FRAM.vanta minuter. De som vill lyssna avbryter det de gör och går dit (lyssnaVal)
-export function framVal(s: State, p: Person, plats?: (q: Person) => { x: number; y: number }): { act: 'upptrada'; why: string; dur: number; ref: number; tool: string; spot?: { x: number; y: number } } | undefined {
+export function framVal(s: State, p: Person): { act: 'upptrada'; why: string; dur: number; ref: number; tool: string; spot?: { x: number; y: number } } | undefined {
   const h = hourOf(s.now);
   if (s.fram && s.now < s.fram.slut || ageOf(p, s.now) < ALDER.vuxen || h < FRAM.fran || h >= FRAM.till || s.framKvall === kvall(s.now) || isSick(p, s.now)) return undefined;
   const fran = Math.max(p.framProv ?? -Infinity, s.now - (h - FRAM.fran) * HOUR);
@@ -354,13 +354,8 @@ export function framVal(s: State, p: Person, plats?: (q: Person) => { x: number;
   count(s, 'framtradanden');
   // de som vill och kan avbryter det de gör och väljer igen, där lyssna är ett Tillfälle (lyssnaVal); den som sover väcks inte
   for (const id of lista) { const q = byId(s, id); if (q && q.task && kanKomma(q)) avbryt(s, q); }
-  // medspelarna går till scenen och ställer sig på rad bredvid den som leder
-  const spot = sc ? vidStation(sc) : plats?.(p);
-  grupp.forEach((g, j) => {
-    const q = byId(s, g.id)!, u = spot ? radPlats(s, spot, j) : { x: q.x, y: q.y };
-    avbryt(s, q);
-    q.task = { act: 'upptrada', phase: 'go', tx: u.x, ty: u.y, until: slut, carry: 0, ref: start, tool: d.id, dark: !isLight(s.now), why: `${d.namn} med ${p.name}` };
-  });
+  // medspelarna avbryter det de gör och väljer igen som lyssnarna, där upptrada vid sin plats på raden är samma Tillfälle (lyssnaVal)
+  for (const g of grupp) { const q = byId(s, g.id); if (q && q.task && kanKomma(q)) avbryt(s, q); }
   return { act: 'upptrada', why: `${d.namn}: ${text}`, dur: borjar - start, ref: start, tool: d.id, spot: sc && vidStation(sc) }; // på scenen när byn har en
 }
 // gruppen (steg 10.7.11): bland de vuxna i listan som kan komma vill var och en, en gång, stå på scenen med chansen
@@ -408,9 +403,16 @@ function publikPlats(s: State, f: Fram, q: Person, plats: (q: Person) => { x: nu
 // det är tillräckligt mycket kvar
 export function lyssnaVal(s: State, p: Person, plats: (q: Person) => { x: number; y: number }) {
   const f = framOppen(s);
-  if (!f?.lista?.includes(p.id) || p.task?.act === 'lyssna' && p.task.ref === f.start || p.rest < KROPP.trottNatt) return undefined; // den som är trött sover vidare
-  const d = FRAM_AV[f.k]!, vem = byId(s, f.p);
-  return { why: `Lyssnar på ${gen(vem?.name ?? 'någon')} ${d.namn.toLowerCase()}`, dur: f.slut - s.now, ref: f.start, tool: f.k, spot: publikPlats(s, f, p, plats) };
+  if (!f || p.rest < KROPP.trottNatt) return undefined; // den som är trött sover vidare
+  const d = FRAM_AV[f.k]!, vem = byId(s, f.p), j = f.grupp?.findIndex(g => g.id === p.id) ?? -1;
+  // en medspelare (steg 10.7.11) går till scenen och ställer sig på rad bredvid den som leder
+  if (j >= 0) {
+    if (p.task?.act === 'upptrada' && p.task.ref === f.start) return undefined;
+    const sc = f.scen !== undefined ? stationById(s, f.scen) : undefined, spot = sc ? vidStation(sc) : vem && plats(vem);
+    return { act: 'upptrada' as const, why: `${d.namn} med ${vem?.name ?? 'någon'}`, dur: f.slut - s.now, ref: f.start, tool: f.k, spot: spot ? radPlats(s, spot, j) : { x: p.x, y: p.y } };
+  }
+  if (!f.lista?.includes(p.id) || p.task?.act === 'lyssna' && p.task.ref === f.start) return undefined;
+  return { act: 'lyssna' as const, why: `Lyssnar på ${gen(vem?.name ?? 'någon')} ${d.namn.toLowerCase()}`, dur: f.slut - s.now, ref: f.start, tool: f.k, spot: publikPlats(s, f, p, plats) };
 }
 // brådskan i arbetsordningen: stiger under väntan, som hos handlaren
 // medan man uppträder (MEDAN i steg.ts): övning, och de som lyssnar räknas till publiken

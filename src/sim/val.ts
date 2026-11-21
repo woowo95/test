@@ -687,7 +687,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'lyssna', niva: 3, prova: ({ s, p, v }) => {
     const l = skams(p, s.now) ? undefined : lyssnaVal(s, p, q => spotFor(s, 'beratta', q));
     if (!l) return false;
-    set(v, 'lyssna', l.why); v.spot = l.spot; v.dur = l.dur; v.ref = l.ref; v.tool = l.tool; return true;
+    set(v, l.act, l.why); v.spot = l.spot; v.dur = l.dur; v.ref = l.ref; v.tool = l.tool; return true;
   } },
   // tillsynen vid en kolmila (steg 12.2.2, brann.ts): ett Tillfälle när tiden för tillsynen är inne
   { id: 'passa', niva: 3, prova: ({ s, p, v }) => { const b = passaVal(s, p); if (!b) return false; projektVal(v, passaUppgift(b), 'Det är dags att se till kolmilan'); return true; } },
@@ -738,7 +738,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'leka', niva: 9, nar: 'dag', prova: ({ s, v, a }) => a < ALDER.hjalper && set(v, 'leka', lekText(s)) },
   // ett framträdande vid scenen eller elden (steg 4.3.2 och 10.7.9, framtradande.ts): den som vill uppträda kallar
   { id: 'framtradande', niva: 9, nar: 'natt', prova: ({ s, p, v }) => {
-    const fr = skams(p, s.now) ? undefined : framVal(s, p, q => spotFor(s, 'beratta', q));
+    const fr = skams(p, s.now) ? undefined : framVal(s, p);
     if (!fr) return false;
     set(v, fr.act, fr.why); v.spot = fr.spot ?? spotFor(s, 'beratta', p); v.dur = fr.dur; v.ref = fr.ref; v.tool = fr.tool; return true;
   } },
