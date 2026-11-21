@@ -262,7 +262,10 @@ export const mayTake = (s: State, p: Person, k: string) => ownsAmount(s, p, k) +
 const kyrkornas = (s: State, k: string) => { const d = agOf(s, k); let n = 0; if (d) for (const o in d) if (+o < BYN) n += d[o]; return n; };
 export const takeLimit = (s: State, k: string, p?: Person, fran?: Person) => fran ? ownsAmount(s, fran, k) : p ? mayTake(s, p, k) : amountOf(s, k) - kyrkornas(s, k);
 // allt p äger i förrådet, per slag (i den ordning slagen först har ägare bland stackarna, som förut)
-export function ownedStock(s: State, p: Person | number) {
+// hela förrådet också när frågan ställs inom räckhåll (iRackhall): agOf räknar då bara stackarna där, och ett slag som
+// bara ligger utom räckhåll gav inga ägare (kraschen i lagens röst, steg 12.1.229)
+export function ownedStock(s: State, p: Person | number) { return iHelaForradet(() => ownedStockHela(s, p)); }
+function ownedStockHela(s: State, p: Person | number) {
   const id = typeof p === 'number' ? p : p.id, out: Record<string, number> = {}, sett = new Set<string>();
   for (const a of summa(s).st) {
     if (!a.ag || sett.has(a.k) || !isStored(s, a.x, a.y)) continue;
