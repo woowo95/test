@@ -442,7 +442,7 @@ setRovarVal(rovarSkydd);
 //     per sak), och bär hem det när hen bär så mycket hen orkar eller inget mer finns.
 export type RovarGor = 'tillRast' | 'rasta' | 'gaOmkring' | 'prata' | 'motMalet' | 'sla' | 'hota' | 'taBorda' | 'ta' | 'baraHem' | 'fly';
 interface RCtx { ev?: TalkEvent[]; s: State; f: Rovarflock; r: Person; folk: Person[]; dt: number; mal: { x: number; y: number }; fiende?: Person; ivagen?: Person; // fiende = den närmaste som står emot, ivagen = en vuxen som inte står emot men står i vägen
-  hot: number; last: number; kvar: number }
+  hot: number; last: number; kvar: number; brus: (k: string) => number } // brus: rövarens slumptal för handlingen k, dragna en gång per val
 // den som står emot: väntar med vapen, håller vakt eller slåss
 const starEmot = (q: Person) => forsvarar(q) || q.task?.act === 'vakt' || q.task?.act === 'strid';
 // ... och kan det: frisk nog att slåss. Den som nyss fallit, flytt eller gett upp ser rövaren inte som någon i vägen så länge rädslan varar
@@ -490,8 +490,8 @@ export const ROVARHANDLINGAR: Record<RovarGor, { namn: string; poang: (c: RCtx) 
   sla: { namn: 'Slåss', poang: c => c.fiende ? 1.5 + ROVARE.slaMod * (stat(c.r, 'mod', c.s.now) - 10) / 10 - ROVARE.slaHot * Math.max(0, c.hot - 1) : c.ivagen ? ROVARE.slaIvagen * stat(c.r, 'aggression', c.s.now) / 10 + rnd(c.s, 'rovare') * ROVARE.valBrus : -1, gor: c => slaSteg(c) },
   // mötet på vägen (steg 10.2.26): den som inte står emot men är nära kan hotas bort eller bli av med det hen bär, efter modet och
   // målet; annars går rövaren förbi mot byn. Slumpen (valBrus) gör att olika rövare väljer olika
-  hota: { namn: 'Hotar', poang: c => c.ivagen && !c.fiende ? ROVARE.hotaPoang * stat(c.r, 'mod', c.s.now) / 10 + rnd(c.s, 'rovare') * ROVARE.valBrus : -1, gor: c => motet(c, false) },
-  taBorda: { namn: 'Tar det hen bär', poang: c => c.ivagen && !c.fiende && !!c.ivagen.task && isCarrying(c.ivagen.task) ? ROVARE.taBordaPoang * (1 - c.last / ROVARE.bar) + rnd(c.s, 'rovare') * ROVARE.valBrus : -1, gor: c => motet(c, true) },
+  hota: { namn: 'Hotar', poang: c => c.ivagen && !c.fiende ? ROVARE.hotaPoang * stat(c.r, 'mod', c.s.now) / 10 + c.brus('hota') * ROVARE.valBrus : -1, gor: c => motet(c, false) },
+  taBorda: { namn: 'Tar det hen bär', poang: c => c.ivagen && !c.fiende && !!c.ivagen.task && isCarrying(c.ivagen.task) ? ROVARE.taBordaPoang * (1 - c.last / ROVARE.bar) + c.brus('taBorda') * ROVARE.valBrus : -1, gor: c => motet(c, true) },
   // tar ur förrådet när ingen står emot i närheten
   ta: { namn: 'Tar ur förrådet', poang: c => c.f.anfaller && !c.fiende && !gr(c.r).nojd && avst(c.r, c.mal) <= ROVARE.nara + 0.5 && !c.f.klar ? 1.2 : -1, gor: c => taSteg(c) },
   // bär hem bytet
@@ -674,7 +674,7 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
     if (!r) continue;
     const ser = avst(r, q) <= KLOCKA.faraSyn, vet = ser || (q.larm?.vad === 'rovare' && s.now - q.larm.t < ROVARE.larmTim * HOUR);
     if (!vet) continue;
-    if (avst(r, q) < ROVARE.moter && !flockStrid(s, f)) { slaSteg({ s, f, r, folk, dt: dtSec, mal: r, fiende: q, hot: 1, last: 0, kvar: f.folk.length }); continue; }
+    if (avst(r, q) < ROVARE.moter && !flockStrid(s, f)) { slaSteg({ s, f, r, folk, dt: dtSec, mal: r, fiende: q, hot: 1, last: 0, kvar: f.folk.length, brus: () => 0 }); continue; } // (striden väljer inget, så inga slumptal)
     const tk = q.task!, m = ser ? r : (f.anfaller ? malFor(s, f, r) : r);
     if (Math.hypot(tk.tx - m.x, tk.ty - m.y) > 1.5) { const at = freeNear(s, m.x, m.y); tk.tx = at.x; tk.ty = at.y; /* man går dit på land, aldrig ut i vattnet */ tk.phase = 'go'; tk.path = undefined; tk.pk = undefined; tk.why = ser ? 'Rövarna är här, går mot dem' : 'Går dit rövarna är på väg'; }
   }
@@ -688,7 +688,12 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
     const narmast1 = (l: Person[]) => l.sort((a, b) => avst(a, r) - avst(b, r))[0];
     const fiende = narmast1(folk.filter(q => alive(q) && vaken(q) && kanStaEmot(s, q) && avst(q, r) < ROVARE.moter));
     const ivagen = fiende ? undefined : narmast1(folk.filter(q => alive(q) && vaken(q) && !starEmot(q) && !gavSigNyss(s, q) && kanGa(q) && ageOf(q, s.now) >= ALDER.vuxen && avst(q, r) < ROVARE.moter)); // den som rövaren ser på vägen (steg 10.2.26)
-    const c: RCtx = { ev, s, f, r, folk, dt: dtSec, mal: malFor(s, f, r), fiende, ivagen, hot: hotMot(s, f, r, folk), last: lastAv(r), kvar: f.folk.length };
+    // slumptalen i valet dras en gång per val: när valets tid är slut eller rövaren ser någon ny (en fiende eller någon i vägen),
+    // så att valet inte slumpas om varje slag och ett möte på vägen får sitt slumptal en gång
+    const sag = fiende ? fiende.id : ivagen ? -1 - ivagen.id : undefined, nytt = s.now >= (g.gorTill ?? 0) || g.sag !== sag;
+    if (nytt || !g.brus) { g.brus = {}; g.sag = sag; }
+    const brus = (k: string) => g.brus![k] ??= rnd(s, 'rovare');
+    const c: RCtx = { ev, s, f, r, folk, dt: dtSec, mal: malFor(s, f, r), fiende, ivagen, hot: hotMot(s, f, r, folk), last: lastAv(r), kvar: f.folk.length, brus };
     // valet: högst poäng, och det hen redan gör har ett litet försteg; en vila eller en promenad på rastplatsen varar en stund
     let bast: RovarGor = 'rasta', bp = -Infinity;
     const lugn = g.gor === 'rasta' || g.gor === 'gaOmkring' || g.gor === 'prata';
@@ -696,10 +701,12 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
       let p = ROVARHANDLINGAR[k].poang(c);
       if (p < 0 && k !== 'fly') continue;
       if (k === g.gor && (!lugn || s.now < (g.gorTill ?? 0))) p += ROVARE.valKvar;
-      else if (k === 'rasta' || k === 'gaOmkring' || k === 'prata') p += rnd(s, 'rovare') * ROVARE.valBrus;
+      else if (k === 'rasta' || k === 'gaOmkring' || k === 'prata') p += brus(k) * ROVARE.valBrus;
       if (p > bp) { bp = p; bast = k; }
     }
-    if (bast !== g.gor) { g.gor = bast; g.gorTill = s.now + mellan(s, ROVARE.rastSek) * SEC; g.vx = undefined; g.vy = undefined; g.taTid = 0; }
+    const bytt = bast !== g.gor;
+    if (bytt) { g.gor = bast; g.vx = undefined; g.vy = undefined; g.taTid = 0; }
+    if (bytt || nytt) g.gorTill = s.now + mellan(s, ROVARE.rastSek) * SEC; // valet varar en stund, också när rövaren väljer samma igen
     lagen[bast] = (lagen[bast] ?? 0) + 1;
     ROVARHANDLINGAR[bast].gor(c);
     if (bast === 'sla') g.varStrid = true;
