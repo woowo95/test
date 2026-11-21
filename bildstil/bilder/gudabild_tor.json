@@ -1,0 +1,26 @@
+{
+"id": "gudabild_tor",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 16,
+"h": 16,
+"rader": [
+".....aaaaaa.....",
+"....abbcbcca....",
+"...abbcbcccda...",
+"...abaccccada...",
+"...abccbccdda...",
+"..ababcbcccada..",
+"..abcabccdadda..",
+"..acccabcaddda..",
+"..aceffgggheda..",
+"..acegghghheda..",
+"..acdabbccadda..",
+"..acdacbcdadda..",
+".abcacdaacdacda.",
+".acddddddddddda.",
+".adddddddddddda.",
+"..aaaaaaaaaaaa.."
+],
+"pal": {"a":"#3f2415","b":"#987e62","c":"#7d5b40","d":"#5e3c24","e":"#233035","f":"#8a9c9e","g":"#61767a","h":"#3e5156"}
+}

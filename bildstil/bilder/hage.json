@@ -1,0 +1,26 @@
+{
+"id": "hage",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 16,
+"h": 16,
+"rader": [
+"aabaaacaaabaaaaa",
+"aaaabaaaaaaacaab",
+"baaaaaadaaaaaaaa",
+"aacaaaaaabaaaaaa",
+"aaaaabaaaaaaadaa",
+"adaaaaaacaaaaaaa",
+"aaaaaaaaaaabaaca",
+"aaaefacaaaaefaaa",
+"aaaegaaaadaegaba",
+"efaegfaaefaegfaa",
+"fghegghefghegghe",
+"gheeghefgheeghef",
+"hefegefghefegefg",
+"efgegfghefgegfgh",
+"fghegghefghegghe",
+"hhgghhgghhgghhgg"
+],
+"pal": {"a":"#647025","b":"#4b4f00","c":"#898b4c","d":"#505e3e","e":"#987e62","f":"#7d5b40","g":"#5e3c24","h":"#3f2415"}
+}

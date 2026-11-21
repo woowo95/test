@@ -1,0 +1,22 @@
+{
+"id": "notter",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 21,
+"h": 12,
+"rader": [
+".......aaa...........",
+"......abcca..........",
+"......addea......ff..",
+"...aaaaaaaaaaa..fghf.",
+"..abccabccabccaiiff..",
+"..addeabdeaddea.ifghf",
+"..adeeadeeadeea...ff.",
+".aaaaaaaaaaaaaaa.....",
+"abccabccabccabcca....",
+"abdeaddeabdeaddea....",
+"adeeadeeadeeadeea....",
+".aaaaaaaaaaaaaaa....."
+],
+"pal": {"a":"#3f2415","b":"#987e62","c":"#a0947d","d":"#7d5b40","e":"#5e3c24","f":"#353204","g":"#898b4c","h":"#647025","i":"#4b4f00"}
+}

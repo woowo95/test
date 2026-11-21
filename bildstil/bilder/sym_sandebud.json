@@ -1,0 +1,23 @@
+{
+"id": "sym_sandebud",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 16,
+"h": 13,
+"rader": [
+"................",
+"................",
+"................",
+"................",
+"...kkkkkkkkkkk..",
+"..kwwkwwRrwwwkk.",
+".kWwwwwwRrwkwkWk",
+".kwwwkwwRrwwwkwk",
+".kWwwwwwRrwwwkWk",
+"..kwwwkwRrwkwkk.",
+"...kkkkkkkkkkk..",
+"........rr......",
+".......r..r....."
+],
+"pal": {"k":"#24201d","w":"#dad0bb","R":"#742a01","r":"#a14808","W":"#a0947d"}
+}

@@ -1,0 +1,31 @@
+{
+"id": "ortkruka_mellan",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 14,
+"h": 21,
+"rader": [
+"....aa..aa....",
+"....ba..ab....",
+"....c.dd.c....",
+".....cddc.....",
+"....c.de.c....",
+"...fffdefff...",
+"...fggdehif...",
+"....fghiif....",
+".ffffghiiffff.",
+"fgf.fghiif.fif",
+"fhfghhhhiiifif",
+"ffgghhhhhhiiff",
+"fghhhhhhhhiiif",
+"fjkkkkkkkkklmf",
+"fghlhhlhhlhiif",
+"fjkkkkkkkkllmf",
+".fhhhhhhhiiif.",
+"..fhhhhhiiif..",
+"...fhhhiiif...",
+"....fhiiif....",
+"...ffffffff..."
+],
+"pal": {"a":"#dad0bb","b":"#bdb39b","c":"#647025","d":"#4b4f00","e":"#353204","f":"#521100","g":"#bd753e","h":"#a14808","i":"#742a01","j":"#d8b25f","k":"#b2921b","l":"#906f0f","m":"#694902"}
+}

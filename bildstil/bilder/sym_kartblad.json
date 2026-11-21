@@ -1,0 +1,24 @@
+{
+"id": "sym_kartblad",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 16,
+"h": 14,
+"rader": [
+"................",
+"................",
+".kkk........kkk.",
+"kWwWkkkkkkkkWwWk",
+"kWwWwwwwbbbwWwWk",
+"kWwWwgwwbBbwWwWk",
+"kWwWgggwwbwwWwWk",
+"kWwWwgwjwwwwWwWk",
+"kWwWwwjwjwwwWwWk",
+"kWwWwjwwwjwrWwWk",
+"kWwWwrwwwwjwWwWk",
+"kWwWwwwwwwwwWwWk",
+"kWwWkkkkkkkkWwWk",
+".kkk........kkk."
+],
+"pal": {"k":"#24201d","W":"#bdb39b","w":"#dad0bb","b":"#61767a","g":"#647025","B":"#3e5156","j":"#5e3c24","r":"#742a01"}
+}

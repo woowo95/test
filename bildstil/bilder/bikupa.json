@@ -1,0 +1,26 @@
+{
+"id": "bikupa",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 16,
+"h": 16,
+"rader": [
+"................",
+"................",
+"......aaaa......",
+"....abccbbda....",
+"...abcccbbbda...",
+"...addbddddaa...",
+"..abccbcbbbdda..",
+"..addddddddaaa..",
+"..abcbcbbbdbda..",
+"..adddddddddaa..",
+"..abcbbcbbdbda..",
+"..adbddeedddda..",
+"..aaaaeffeaaaa..",
+"..ghig....gijg..",
+"...gg......gg...",
+"................"
+],
+"pal": {"a":"#694902","b":"#b2921b","c":"#d8b25f","d":"#906f0f","e":"#2f261d","f":"#24201d","g":"#3f2415","h":"#987e62","i":"#7d5b40","j":"#5e3c24"}
+}

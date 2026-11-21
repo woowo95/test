@@ -1,0 +1,23 @@
+{
+"id": "vildsvin_2",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 24,
+"h": 13,
+"rader": [
+"....aa..................",
+"...abca.aaaaaaaaaa......",
+"..acbccacbccbcccccaa....",
+"..abccccccbccccccdcca...",
+".accecccdcccdcccdcddda..",
+".accccdcddcddcddddddda.a",
+"abcccddfdddfddddfdddfaa.",
+"accgddadfddddfdddfddfa..",
+".aaaaafddfdddfddfddffa..",
+".....addaaaaaaaaaaadda..",
+".....ada.ha....ha.ada...",
+".....ada.ha....ha.ada...",
+".....ee..ee....ee.ee...."
+],
+"pal": {"a":"#3f2415","b":"#a0947d","c":"#987e62","d":"#7d5b40","e":"#24201d","f":"#5e3c24","g":"#bdb39b","h":"#2f261d"}
+}

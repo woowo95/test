@@ -1,0 +1,26 @@
+{
+"id": "sym_kyrkoforrad",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 16,
+"h": 16,
+"rader": [
+"................",
+"................",
+"...oooooooooo...",
+"..obbbbbbbbbJo..",
+"..obJJJJJJJJjo..",
+"..okkkkkkkkkko..",
+"..obbbboobbbjo..",
+"..obbboYyobbjo..",
+"..obbboyzobbjo..",
+"..oJJJJooJJJjo..",
+"..okkkkkkkkkko..",
+"..ojjjjjjjjjjo..",
+"..oooooooooooo..",
+"................",
+"................",
+"................"
+],
+"pal": {"o":"#24201d","b":"#987e62","J":"#7d5b40","j":"#5e3c24","k":"#372f25","Y":"#d8b25f","y":"#b2921b","z":"#906f0f"}
+}

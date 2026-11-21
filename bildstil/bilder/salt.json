@@ -1,0 +1,23 @@
+{
+"id": "salt",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 10,
+"h": 13,
+"rader": [
+"...aaaa...",
+"..abbcca..",
+".abcbccda.",
+"ecbccdcfde",
+"edcdcdfdfe",
+"ebcccccdde",
+"eghgghghie",
+"ecbccdcdae",
+"ebcdccddae",
+"eccdcdcaae",
+"eghgghghie",
+"ecdcddaaae",
+".eeeeeeee."
+],
+"pal": {"a":"#7e7362","b":"#dad0bb","c":"#bdb39b","d":"#a0947d","e":"#372f25","f":"#8a9c9e","g":"#7d5b40","h":"#5e3c24","i":"#3f2415"}
+}

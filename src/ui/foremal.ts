@@ -74,7 +74,12 @@ function drawPile(pl: Pile, t: number) {
   // lerkrukan (steg 10.7.2): ett av tre utseenden efter krukan själv, och växten i den
   const kruka = pl.k.startsWith('lerkruka_') ? ting : undefined;
   if (kruka) {
-    const b = krukaBild(kruka), ik = hasIcon(b.ikon) ? b.ikon : pl.k; ensam(ik);
+    const b = krukaBild(kruka), ik = hasIcon(b.ikon) ? b.ikon : pl.k;
+    // Björns val (steg 12.6.1): den rundade krukan med vätskan i mynningen (VATSKA_BILD) och med röllekan när den vuxit
+    const vb = inne && ik === pl.k ? VATSKA_BILD[inne.v] : undefined, ort = b.vaxt?.g === 'rolleka' && b.vaxt.v >= KRUKA_VUXEN && ik === pl.k ? ORTKRUKA_BILD[pl.k] : undefined;
+    const bild = vb?.[0] === pl.k ? 'kb_' + vb[1] : ort ? 'kb_' + ort : undefined; // ritas där krukan står (botten mot botten), utan ytan
+    if (bild && hasIcon(bild)) { const kc = iconCanvas(ik), bc = iconCanvas(bild), stor = kc.width > 8; pileIcons.add(bild, x0 + (stor ? 0 : 4), y0 + (stor ? -3 : 3) + kc.height - bc.height, 1); hogGlans(); return; }
+    ensam(ik);
     if (b.vaxt) vaxtIKruka(x0 + 8, y0 - 3 + (KRUKKANT[ik] ?? 3), b.vaxt.v, b.vaxt.g === 'blomma', !!b.vaxt.blommar);
     hogGlans();
     return;
@@ -93,6 +98,10 @@ function drawPile(pl: Pile, t: number) {
   if (pl.max === 1 || iconCanvas(pl.k).width > 8) { ensam(pl.k); hogGlans(); return; }
   for (const [dx, dy] of PILE_LAYOUT[n - 1]) pileIcons.add(pl.k, x0 + dx, y0 + dy, 1);
 }
+// Björns val (steg 12.6.1): vätskan i sin kruka (krukan, bilden) och röllekan i den lilla och den mellanstora krukan när den vuxit så här långt
+const VATSKA_BILD: Partial<Record<string, [string, string]>> = { te: ['lerkruka_liten', 'vatska_te'], ol: ['lerkruka_stor', 'vatska_ol'], vin: ['lerkruka_stor', 'vatska_vin'], mjolk: ['lerkruka_mellan', 'vatska_mjolk'] };
+const ORTKRUKA_BILD: Partial<Record<string, string>> = { lerkruka_liten: 'ortkruka_liten', lerkruka_mellan: 'ortkruka_mellan' };
+const KRUKA_VUXEN = 0.5;
 // växten i krukan (steg 10.7.2, platshållare): stjälkar upp från kanten och, när den vuxit, röllekans vita blomkorgar.
 // KRUKKANT = raden i krukans bild där kanten är
 const KRUKKANT: Record<string, number> = { lerkruka_hog: 1, lerkruka_liten: 6, lerkruka_mellan: 0, lerkruka_stor: 0 };
@@ -276,7 +285,9 @@ export function drawStructures(t: number) {
       continue;
     }
     const kb = stationBild(d?.ikon ?? 'slaktbank', v, st.id), { w: bw, h: bh } = storlekAv(st), w = bw * TS;
-    const tom = st.k === 'vattenho' && !((st.vatten ?? 0) > 0) && kb && hasIcon('kb_' + kb + '_tom') ? '_tom' : ''; // vattenhon utan vatten (steg 10.10.30)
+    // stationens läge (steg 10.10.30, 12.6.1): vattenhon utan vatten, bikupan med ett samhälle och bryggkaret med en sats som jäser
+    const lage = st.k === 'vattenho' && !((st.vatten ?? 0) > 0) ? '_tom' : st.k === 'bikupa' && st.bi !== undefined ? '_bin' : st.k === 'bryggkar' && st.sats ? '_jas' : '';
+    const tom = lage && kb && hasIcon('kb_' + kb + lage) ? lage : '';
     const ik = kb ? 'kb_' + kb + tom : (d?.ikon ?? 'slaktbank') + '_karta' + v, sk = kb ? 1 : iconCanvas(ik).width > 8 * bw ? 1 : 2, upp = iconCanvas(ik).height * sk - bh * TS; // sk: 16 punkter per ruta (steg 4.3.2.2) eller 8 som förut
     const x0 = st.x * TS + (kb ? Math.round((w - iconCanvas(ik).width) / 2) : 0);
     // bildens övre vänstra hörn: bildstilens bild mitt över rutorna och med foten på den nedersta. Inne går den aldrig genom väggen

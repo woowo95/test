@@ -1,0 +1,28 @@
+{
+"id": "vatska_vin",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 14,
+"h": 18,
+"rader": [
+"....aaaaaa....",
+"...abcdccea...",
+"....abffea....",
+".....afea.....",
+".aaa.afea.aaa.",
+"a...abfeea...a",
+"a..abffffea..a",
+"a.abffffffea.a",
+".abbffffffeea.",
+"abffffffffffea",
+"agghhhhhhhhhia",
+"abfffffffffeea",
+"afffffffffffea",
+"aghhhhhhhhhhia",
+".afffffffffea.",
+"..affffffeea..",
+"...affffeea...",
+"....aaaaaa...."
+],
+"pal": {"a":"#521100","b":"#bd753e","c":"#5e3c24","d":"#7d5b40","e":"#742a01","f":"#a14808","g":"#b2921b","h":"#906f0f","i":"#694902"}
+}

@@ -1,0 +1,24 @@
+{
+"id": "lovkarve",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 16,
+"h": 14,
+"rader": [
+"...........a....",
+".........bbabb..",
+".......bbcdaecb.",
+"......bcecdcadcb",
+".....bcdcdedceda",
+"....bcdecdcddcfb",
+"....becdacddffb.",
+"...ghcdaddffb...",
+"..ghhiaffbb.....",
+"..gaihig........",
+"..gajig.........",
+".gjag...........",
+"gkag............",
+"gjg............."
+],
+"pal": {"a":"#7e7362","b":"#353204","c":"#898b4c","d":"#647025","e":"#906f0f","f":"#4b4f00","g":"#3f2415","h":"#7d5b40","i":"#5e3c24","j":"#a0947d","k":"#bdb39b"}
+}

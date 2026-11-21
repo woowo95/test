@@ -1,0 +1,30 @@
+{
+"id": "tam_ko_3",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 28,
+"h": 20,
+"rader": [
+"..a...a.....................",
+"..bcccb.....................",
+"cbaaaddbc...................",
+".caaaddccccccccccccccccccc..",
+".ceadedbaaaafffaaadaaaaddcc.",
+".cadddbbaadaffffadaadadddcc.",
+".cdddbcbdaddfffgdddaddddbcc.",
+".chhhhcbddddgfgdddddddbdbcc.",
+".cghhgcbbdddddddbddddbdbbcc.",
+"..cccc.cbbdbddbddbdbdbbbbcc.",
+".......cbbbbdbbbbbbdbbbbbcg.",
+"........cbbbbbbbbbbbbbbbc.g.",
+"........cdbcbccciijcbcdbc.g.",
+"........cdbcbc..j.j.bcdbc...",
+"........cdbcbc......bcdbc...",
+"........cdbcbc......bcdbc...",
+"........cdbcbc......bcdbc...",
+"........cdbcbc......bcdbc...",
+"........ckkckc......kckkc...",
+"........cccccc......ccccc..."
+],
+"pal": {"a":"#bdb39b","b":"#7e7362","c":"#3f2415","d":"#a0947d","e":"#24201d","f":"#7d5b40","g":"#5e3c24","h":"#987e62","i":"#bd753e","j":"#a14808","k":"#372f25"}
+}

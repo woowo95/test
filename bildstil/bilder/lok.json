@@ -1,25 +1,22 @@
 {
 "id": "lok",
 "ritad": 1,
-"av": "Claude, ur Björns val i bildstilen (steg 10.11.1)",
-"w": 9,
-"h": 15,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 13,
+"h": 12,
 "rader": [
-"..I.I.I..",
-".ILILIKI.",
-"..ILLKI..",
-"...IKI...",
-"...EHE...",
-"..EHGFE..",
-".EHWHFGE.",
-"EHHFHGFGE",
-"EHHFGGFGE",
-"EHGFHGFGE",
-"EHHFGGFFE",
-".EGFGGFE.",
-"..EEEEE..",
-"...ttt...",
-"..t.t.t.."
+"a..a.........",
+"ab.ba........",
+".abca........",
+"..acddddd....",
+"...deeeefd...",
+"...degeeffd..",
+"...deefeffd..",
+"...defefffd..",
+"...dffefffd..",
+"....dffffdh..",
+".....ddddhi..",
+"........i.h.."
 ],
-"pal": {"E": "#521100", "F": "#742a01", "G": "#a14808", "H": "#bd753e", "I": "#353204", "K": "#647025", "L": "#898b4c", "W": "#bdb39b", "t": "#7d5b40"}
+"pal": {"a":"#4b4f00","b":"#898b4c","c":"#647025","d":"#742a01","e":"#bd753e","f":"#a14808","g":"#d8b25f","h":"#a0947d","i":"#bdb39b"}
 }

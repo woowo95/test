@@ -1,0 +1,21 @@
+{
+"id": "tam_gris_3",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 20,
+"h": 11,
+"rader": [
+"...aa.aaaaaaaaa.....",
+"..abcabbbbddcceca.a.",
+".abbbbbbcdddaececa.a",
+"abbfbbbcbdacececeaa.",
+"aggbbcbccceceddaea..",
+"aagcbcccececddaaea..",
+".accccecececeaaeea..",
+"..accececeeeeeeea...",
+"...aceaaaaaaaceaa...",
+"...acea.....acea....",
+"...ffff.....ffff...."
+],
+"pal": {"a":"#5e3c24","b":"#bdb39b","c":"#a0947d","d":"#7d5b40","e":"#7e7362","f":"#3f2415","g":"#bd753e"}
+}

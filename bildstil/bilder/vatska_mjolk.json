@@ -1,0 +1,26 @@
+{
+"id": "vatska_mjolk",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 14,
+"h": 16,
+"rader": [
+"...aaaaaaaa...",
+"...abbbbbca...",
+"....adeffa....",
+".aaaadeffaaaa.",
+"ada.adeffa.afa",
+"aeadeeeefffafa",
+"aaddeeeeeeffaa",
+"adeeeeeeeefffa",
+"aghhhhhhhhhija",
+"adeieeieeieffa",
+"aghhhhhhhhiija",
+".aeeeeeeefffa.",
+"..aeeeeefffa..",
+"...aeeefffa...",
+"....aefffa....",
+"...aaaaaaaa..."
+],
+"pal": {"a":"#521100","b":"#dad0bb","c":"#bdb39b","d":"#bd753e","e":"#a14808","f":"#742a01","g":"#d8b25f","h":"#b2921b","i":"#906f0f","j":"#694902"}
+}

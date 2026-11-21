@@ -1,0 +1,26 @@
+{
+"id": "sym_kk_tro",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 16,
+"h": 16,
+"rader": [
+"................",
+"................",
+".......b........",
+"...b..bcb..b....",
+"..bcb.bcb.bcb...",
+"...bcbcccbcb....",
+"..bbbcccccbbb...",
+".bcccccbcddddb..",
+"..bbbcccddbbb...",
+"...bcbcddbdb....",
+"..bcb.bdb.bdb...",
+"...b..bdb..b....",
+".......b........",
+"................",
+"................",
+"................"
+],
+"pal": {"b":"#24201d","c":"#d8b25f","d":"#b2921b"}
+}

@@ -1,0 +1,26 @@
+{
+"id": "sym_troende",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 16,
+"h": 16,
+"rader": [
+".o............o.",
+"owo..........owo",
+"owo...oooo...owo",
+".owo.oRRRro.owo.",
+".owo.oRRrro.owo.",
+"..owo.orro.owo..",
+"..obJooooooJjo..",
+"...obJbbbbJjo...",
+"....obbbbbjo....",
+"....obbbbJjo....",
+"...obbbbbJJjo...",
+"...obbbbJJjjo...",
+"..obbbbJJJjjjo..",
+"..oooooooooooo..",
+"................",
+"................"
+],
+"pal": {"o":"#24201d","w":"#dad0bb","R":"#bd753e","r":"#a14808","b":"#987e62","J":"#7d5b40","j":"#5e3c24"}
+}

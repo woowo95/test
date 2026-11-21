@@ -1,3 +1,4 @@
+import { tecknet } from '../ikoner';
 import { styck } from '../sim/ord';
 import { rovarFlockar } from '../sim/rovare';
 import { kartKampe } from './stridbild';
@@ -95,7 +96,7 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
       id: p.id, namn: p.name, sex: p.sex, sort: 'Sändebud', ...rovarPlats(p, ui.nu), p,
       gor: g.fas === 'pratar' ? 'Framför beskedet' : g.fas === 'gar' ? 'Går hem' : 'På väg mot byn',
       fran: k ? `${k.namn} vid ${k.hem}` : undefined,
-      rader: [{ namn: 'Besked', varde: g.besked === 'ovanligt' ? '📜 Ovänligt' : '📜 Vänligt', title: 'Beskedet budet bär; det verkar efter samtalet med ledaren' },
+      rader: [{ namn: 'Besked', varde: `${tecknet('sym_sandebud', '📜')} ${g.besked === 'ovanligt' ? 'Ovänligt' : 'Vänligt'}`, title: 'Beskedet budet bär; det verkar efter samtalet med ledaren' },
         ...g.gava?.length ? [{ namn: 'Gåva', varde: esc(g.gava.map(w => styck(w.n, w.k)).join(', ')), title: 'Det budet bär som gåva' }] : []],
       liv: livFor(s, g.klan, p.name, p.sex, 'gast', p.born),
     };

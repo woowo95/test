@@ -1,0 +1,18 @@
+{
+"id": "vatska_te",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 8,
+"h": 8,
+"rader": [
+"..aaaa..",
+".abcdea.",
+"..abfa..",
+".abffea.",
+"abffffea",
+"aghhhhia",
+".affeea.",
+"..aaaa.."
+],
+"pal": {"a":"#521100","b":"#bd753e","c":"#4b4f00","d":"#353204","e":"#742a01","f":"#a14808","g":"#b2921b","h":"#906f0f","i":"#694902"}
+}

@@ -186,7 +186,7 @@ const lador = new Map<number, { w: number; h: number; fot: number }>();
 // de andra har en platshållare (TAMDJUR.ikon): ett djur utan egen bild (hasIcon) ritas med den
 function tamBild(d: { id: number; art: string; born: number }): (h: DjurHall) => string | undefined {
   const a = d.art;
-  const ung = a === 'hund' && (ui.nu - d.born) / DAY < TAMDJUR.hund.vuxen, art = ung ? 'valp' : a, v = 1 + Math.abs(d.id) % 3;
+  const ung = a === 'hund' && (ui.nu - d.born) / DAY < TAMDJUR.hund.vuxen, art = ung ? 'valp' : a, n = hasIcon(`kb_tam_${art}_4_sida`) ? 4 : 3, v = 1 + Math.abs(d.id) % n; // kon har fyra utseenden (steg 12.6.1)
   return h => { const k = `kb_tam_${art}_${v}_${h}`; return hasIcon(k) ? k : undefined; };
 }
 // djuren där de syns just nu (det man trycker på, interaktion.ts, och djurfliken)

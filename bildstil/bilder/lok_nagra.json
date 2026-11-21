@@ -1,0 +1,26 @@
+{
+"id": "lok_nagra",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 23,
+"h": 16,
+"rader": [
+".....a..a..............",
+".....ab.ba.............",
+"......abca.............",
+".......acddddd.........",
+"a..a....deaeead........",
+"ab.ba...deabebad.......",
+".abca...deeabcad.......",
+"..acdddddefeacddddd....",
+"...deeeefdfefdeeeefd...",
+"...degeeffdffdegeeffd..",
+"...deefeffddddeefeffd..",
+"...defefffd..defefffd..",
+"...dffefffd..dffefffd..",
+"....dffffdh...dffffdh..",
+".....ddddhi....ddddhi..",
+"........i.h.......i.h.."
+],
+"pal": {"a":"#4b4f00","b":"#898b4c","c":"#647025","d":"#742a01","e":"#bd753e","f":"#a14808","g":"#d8b25f","h":"#a0947d","i":"#bdb39b"}
+}

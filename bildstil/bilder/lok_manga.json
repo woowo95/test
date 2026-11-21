@@ -1,0 +1,30 @@
+{
+"id": "lok_manga",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 33,
+"h": 20,
+"rader": [
+"..........a..a...................",
+"..........ab.ba..................",
+"...........abca..................",
+"............acddddd..............",
+".....a..a....deaeead.............",
+".....ab.ba...deabebad............",
+"......abca...deeabcad............",
+".......acdddddefeacddddd.........",
+"a..a....deaeeadfefdeaeead........",
+"ab.ba...deabebadffdeabebad.......",
+".abca...deeabcaddddeeabcad.......",
+"..acdddddefeacdddddefeacddddd....",
+"...deeeefdfefdeeeefdfefdeeeefd...",
+"...degeeffdffdegeeffdffdegeeffd..",
+"...deefeffddddeefeffddddeefeffd..",
+"...defefffd..defefffd..defefffd..",
+"...dffefffd..dffefffd..dffefffd..",
+"....dffffdh...dffffdh...dffffdh..",
+".....ddddhi....ddddhi....ddddhi..",
+"........i.h.......i.h.......i.h.."
+],
+"pal": {"a":"#4b4f00","b":"#898b4c","c":"#647025","d":"#742a01","e":"#bd753e","f":"#a14808","g":"#d8b25f","h":"#a0947d","i":"#bdb39b"}
+}

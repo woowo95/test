@@ -1,0 +1,26 @@
+{
+"id": "sym_helgon",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 16,
+"h": 16,
+"rader": [
+"....oooooooo....",
+"...oYYyyyyyzo...",
+"...oyoooooozo...",
+"....oooooooo....",
+".....oooooo.....",
+"....oWwwwWWo....",
+"....owwwwWWo....",
+"....owowwoWo....",
+"....owwwwWWo....",
+"....oWwwwWWo....",
+".....oWWWWo.....",
+"...oooooooooo...",
+"..obbbbbbbbJJo..",
+"..obbbbbbbJJjo..",
+"..oooooooooooo..",
+"................"
+],
+"pal": {"o":"#24201d","Y":"#d8b25f","y":"#b2921b","z":"#906f0f","W":"#bdb39b","w":"#dad0bb","b":"#987e62","J":"#7d5b40","j":"#5e3c24"}
+}

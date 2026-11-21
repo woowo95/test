@@ -346,7 +346,7 @@ export const STATIONER = {
     forsta: '{namn} lade byns första kvarnsten. Där mals kornet till mjöl som går att spara.',
   },
   bryggkar: { // steg 9.6.12 (brygg.ts): ett urholkat stockkar med lock, där vinet och ölet jäser
-    namn: 'Bryggkar', ett: true, ikon: 'bryggkar', w: 1, h: 1, tek: ['bryggkar'], av: RECEPT.bryggkar.av, min: RECEPT.bryggkar.min, gor: ['brygga', 'tappa', 'branna'], bara: ['brygga', 'tappa', 'branna'],
+    namn: 'Bryggkar', ett: true, ikon: 'bryggkar', w: 3, h: 1, tek: ['bryggkar'], av: RECEPT.bryggkar.av, min: RECEPT.bryggkar.min, gor: ['brygga', 'tappa', 'branna'], bara: ['brygga', 'tappa', 'branna'],
     bygger: 'Hugger ur ett bryggkar av virke med yxan.',
     forsta: '{namn} högg ur byns första bryggkar. Där jäser bären till vin.',
   },

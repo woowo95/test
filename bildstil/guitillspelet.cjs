@@ -67,6 +67,9 @@ const bredda = b => {
   return { ...b, w: kol.length, rader: b.rader.map(r => kol.map(i => r[i]).join('')) };
 };
 for (const id of Object.keys(band)) band[id] = bredda(band[id]);
+// bandet överst i Seder (Björns val f12_sederband, steg 12.6.1): flätan från kant till kant, ritad 240 punkter bred; mitten tas, 180 punkter
+{ const s = require('./sederband.json'), w = s.rader[0].length, x0 = Math.floor((w - BANDBREDD) / 2);
+  band.seder = { w: BANDBREDD, h: s.rader.length, rader: s.rader.map(r => r.slice(x0, x0 + BANDBREDD)), pal: s.pal }; }
 const farg = Object.fromEntries(FLIKAR.map(([id, hu, an]) => [id, { hu: RAMPER[hu], an: RAMPER[an] }]));
 
 // vågbandet längst ner i raden överst (steg 5.3.1.2): Björns ja till g_vag, en ruta som upprepas över hela bredden, och grunden bakom

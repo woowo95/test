@@ -1,0 +1,18 @@
+{
+"id": "sym_amne_mat",
+"ritad": 1,
+"av": "Claude, ur Björns val i bildstilen (steg 12.6.1)",
+"w": 8,
+"h": 8,
+"rader": [
+"..b..b..",
+".b..b...",
+".rRrRYy.",
+"kkkkkkkk",
+".kjjjjk.",
+".kjjjjk.",
+"..kjjk..",
+"..kkkk.."
+],
+"pal": {"b":"#3e5156","r":"#a14808","R":"#bd753e","Y":"#b2921b","y":"#906f0f","k":"#24201d","j":"#7d5b40"}
+}
