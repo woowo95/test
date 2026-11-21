@@ -1339,8 +1339,10 @@ SCENARIER.tork = {
     // byn behåller det rått som den äter innan det ruttnar
     setMat(s, { fisk: Math.floor(spara() * 0.9) });
     const sparar = !kanTorka(s, p);
-    // det torkade håller så länge något får hålla i lagret och äts sist
-    const haller = SAKER.torrfisk!.haller === LAGER.maxDygn && SAKER.torrkott!.haller === LAGER.maxDygn && FOOD.slice(-2).sort().join() === 'torrfisk,torrkott';
+    // det torkade håller så länge något får hålla i lagret, ingen mat håller längre, och det som äts sist är det som håller
+    // längst (steg 12.1.193: osten sade 40 dygn mot lagrets tak)
+    const langst = Math.max(...FOOD.map(k => SAKER[k]!.haller ?? 0));
+    const haller = SAKER.torrfisk!.haller === LAGER.maxDygn && SAKER.torrkott!.haller === LAGER.maxDygn && langst <= LAGER.maxDygn && FOOD.slice(-2).every(k => SAKER[k]!.haller === langst);
     // under istiden fryser maten och ruttnar nästan inte
     const frost = ruttTemp(-5) === LAGER.frost && ruttTemp(-5) < ruttTemp(20) / 10;
     const tek = SIM.TEKNIK.find(x => x.id === 'tork'), tekOk = !!tek && tek.krav.includes('rep');
