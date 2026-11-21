@@ -55,6 +55,11 @@ export const O_RYKTE = 0, O_KANT = 1, O_BESOKT = 2;
 // ny: uppgiften är en nyhet sedan den tiden (den som berättar en nyhet för den vidare, steg 11.4.9)
 export function larOrt(s: State, p: Person, nr: number, niva: number, c: number, o: { t?: number; src?: number; led?: number; ny?: number } = {}): Lardom {
   const t = o.t ?? s.now, led = o.led ?? (o.src === undefined ? 0 : 1), e = findL(p, 'ort', nr);
+  const borta = p.ortBorta?.[nr];
+  if (borta !== undefined) { // den som vet att platsen är borta tror inte på äldre uppgifter om den (steg 12.1.245)
+    if (t <= borta) return { k: 'ort', a: nr, v: niva, c: 0, t };
+    delete p.ortBorta![nr]; if (!Object.keys(p.ortBorta!).length) p.ortBorta = undefined; // aldrig delete på en person (MALL i folk.ts)
+  }
   if (e) {
     const egen = e.src === undefined && niva < e.v; // det man själv sett skrivs inte över av mindre uppgifter (steg 12.1.83)
     if (niva > e.v) { e.v = niva; e.c = Math.max(e.c, c); }
@@ -205,9 +210,10 @@ export function raknaBynVet(s: State) {
     count(s, 'ortGlomdIByn');
   }
   s.bynVet = { t: s.now, p: ny };
-  // en minnesplats som ingen längre minns, inte heller den som är ute eller en karta, glöms också av världen (steg 12.1.146)
+  // en minnesplats som ingen längre minns, inte heller den som är ute eller en karta, glöms också av världen (steg 12.1.146);
+  // bara huvudbyn rensar dem, eftersom det är dess minne (steg 12.1.245)
   const vl = s.varld;
-  if (vl?.minnesplatser?.length) { vl.minnesplatser = vl.minnesplatser.filter(q => minns(s, q.nr)); if (!vl.minnesplatser.length) delete vl.minnesplatser; }
+  if (s.vackt === undefined && s.vacktPlats === undefined && vl?.minnesplatser?.length) { vl.minnesplatser = vl.minnesplatser.filter(q => minns(s, q.nr)); if (!vl.minnesplatser.length) delete vl.minnesplatser; }
 }
 // ---------- platser som tas bort ur världen (steg 12.1.146, Flera samhällen: Raden i tal) ----------
 // När en plats tas bort ur världen (ett handelsläger som brutits upp, en utpost som övergetts) vet byn inget om det förrän någon
@@ -229,9 +235,13 @@ KOHANDELSER.platsUpphor = (s, vl, k) => {
   taBortPlats(s, vl, p);
   count(s, 'platsUpphorde');
 };
-// folk ser eller hör att platsen nr är borta: de glömmer den
-export function vetBorta(s: State, folk: Person[], nr: number) {
-  for (const p of folk) if (findL(p, 'ort', nr)) p.lardomar = p.lardomar!.filter(l => !(l.k === 'ort' && l.a === nr));
+// folk ser eller hör att platsen nr är borta: de glömmer den.
+// Att platsen är borta är en uppgift med sin tid (t, nu om inget anges): en karta eller ett rykte med äldre uppgifter lär inte ut den igen (steg 12.1.245)
+export function vetBorta(s: State, folk: Person[], nr: number, t = s.now) {
+  for (const p of folk) {
+    if (findL(p, 'ort', nr)) p.lardomar = p.lardomar!.filter(l => !(l.k === 'ort' && l.a === nr));
+    (p.ortBorta ??= {})[nr] = Math.max(p.ortBorta[nr] ?? -Infinity, t);
+  }
   count(s, 'ortSagBorta');
 }
 // kartorna (steg 11.7.4): varje skrift med platser på ett blad eller i en bok, med tinget den står i

@@ -274,6 +274,7 @@ export interface Person {
   halvminne?: string[]; // tekniker hen var lärling i när mästaren dog: det hen hunnit lära sig finns kvar i tek (steg 4.2.3.4)
   kunskap?: Record<string, { v: number; t: number }>; // det personen kan (alltid rätt), 0–1, och när det senast användes
   lardomar?: Lardom[]; // det personen tror om platser (kan vara fel, överdrivet eller inaktuellt)
+  ortBorta?: Record<number, number>; // platserna personen vet är borta, med tiden för uppgiften: äldre uppgifter om dem lärs inte (steg 12.1.245, ort.ts)
   raddAkt?: Record<string, number>; // rädslan för en handling efter en olycka, per rad i RADD_AKT (steg 8.4.10)
   thoughts: Thought[];
   drom?: { k: import('./drommar').DromId; namn?: string };

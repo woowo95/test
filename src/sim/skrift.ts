@@ -429,7 +429,7 @@ export function kartRykten(s: State, p: Person, pl: KartPlats[], q: number): Kar
 const kartNamn = (s: State, pl: KartPlats[]) => { const n = pl.map(x => platsText(s, x.nr)); return n.length <= 2 ? n.join(' och ') : `${n.slice(0, 2).join(', ')} och ${n.length - 2} till`; };
 // det nya på kartan för q: platserna q känner sämre än de är ritade
 // det på kartan som q inte känner, och i boken om en by (steg 11.7.7) också uppgifter som är nyare än de q har
-const kartNya = (s: State, q: Person, k: Skrift) => (k.platser ?? []).filter(x => (kannerOrt(s, q, x.nr) ?? -1) < x.v || k.slag === 'byn' && (findL(q, 'ort', x.nr)?.t ?? -Infinity) < x.t || nyaMarken(q, x).length > 0);
+const kartNya = (s: State, q: Person, k: Skrift) => (k.platser ?? []).filter(x => x.t > (q.ortBorta?.[x.nr] ?? -Infinity) && ((kannerOrt(s, q, x.nr) ?? -1) < x.v || k.slag === 'byn' && (findL(q, 'ort', x.nr)?.t ?? -Infinity) < x.t || nyaMarken(q, x).length > 0));
 // märkena q inte känner, eller känner med en äldre uppgift (steg 11.8.14)
 const nyaMarken = (q: Person, x: KartPlats) => (x.m ?? []).filter(y => (findL(q, 'uppdrag', y.a)?.t ?? -Infinity) < y.t);
 // ljuset att skriva och läsa i på (x, y): dagsljuset, annars elden, facklan och ljusen (ljus.ts)

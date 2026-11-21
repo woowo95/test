@@ -344,7 +344,7 @@ export const MALL: Record<keyof Person, undefined> = {
   naring: undefined, byteNej: undefined, langtan: undefined, habit: undefined, fange: undefined, paus: undefined, sjuk: undefined,
   immun: undefined, sickWhy: undefined, poisonUntil: undefined, forgiftadT: undefined, stulet: undefined, pregnantSince: undefined, pregnantBy: undefined,
   lastBirth: undefined, guardDay: undefined, fiske: undefined, gjort: undefined, tek: undefined, byten: undefined, hopp: undefined,
-  lar: undefined, halvminne: undefined, kunskap: undefined, lardomar: undefined, raddAkt: undefined, thoughts: undefined, drom: undefined, vardadAv: undefined, x: undefined,
+  lar: undefined, halvminne: undefined, kunskap: undefined, lardomar: undefined, ortBorta: undefined, raddAkt: undefined, thoughts: undefined, drom: undefined, vardadAv: undefined, x: undefined,
   y: undefined, task: undefined, fame: undefined, hand: undefined, sportVinst: undefined, kallad: undefined, hue: undefined, tag: undefined,
   bast: undefined, arke: undefined, rivaler: undefined, rivalom: undefined, mentor: undefined, mentorSk: undefined, upp: undefined,
   anlag: undefined, andlig: undefined, tro: undefined, troStyrka: undefined, svartSjuk: undefined, prat: undefined, binamn: undefined,

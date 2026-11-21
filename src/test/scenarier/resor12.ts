@@ -32,19 +32,30 @@ SCENARIER.lagerslut = {
     SIM.raknaBynVet(b.s);
     const minne = (b.vl.minnesplatser ?? []).find(q => q.nr === nb), tror = SIM.bynKanner(b.s, nb)?.v === SIM.O_KANT && SIM.platsText(b.s, nb) === b.p.namn;
     const ute = !SIM.varldPlatsNr(b.vl, nb) && !SIM.radNr(b.vl, b.h.nr);
+    // en väckt by som inget minns räknar sin kunskap: huvudbyns minnesplats ligger kvar (steg 12.1.245)
+    SIM.raknaBynVet({ ...b.s, people: [], ting: [], vackt: 999 } as SIM.State);
+    const vacktRor = (b.vl.minnesplatser ?? []).some(q => q.nr === nb);
     // x reser dit: framme är platsen tom, x glömmer den, och hemma får byn veta
     const sl = SIM.nyttSallskap(b.s, x!, nb, 'se')!;
     sl.skede = 'ute'; SIM.radBesok(b.s, sl, b.s.now);
     const sag = !SIM.findL(x!, 'ort', nb) && !!SIM.findL(y!, 'ort', nb) && sl.dagbok.some(d => d[1].includes('fanns ingen längre'));
     SIM.hemkomst(b.s, sl, b.s.now); SIM.raknaBynVet(b.s);
     const glomd = !SIM.findL(y!, 'ort', nb) && SIM.bynKanner(b.s, nb) === undefined && !(b.vl.minnesplatser ?? []).some(q => q.nr === nb);
+    // att lägret är borta är en uppgift med sin tid: en karta med äldre uppgifter lär inte ut det igen, en nyare gör det (steg 12.1.245)
+    const bortaT = y!.ortBorta?.[nb];
+    SIM.larOrt(b.s, y!, nb, SIM.O_KANT, 1, { t: b.s.now - SIM.HOUR, src: x!.id });
+    const aldreInte = !SIM.findL(y!, 'ort', nb);
+    SIM.larOrt(b.s, y!, nb, SIM.O_KANT, 1, { t: b.s.now + 1, src: x!.id });
+    const nyareJa = !!SIM.findL(y!, 'ort', nb) && y!.ortBorta?.[nb] === undefined;
     return [
       [`vid sluttiden tas lägret ${a.h.namn}s rad och plats bort ur världen, och ingen minns det`, radBorta],
       [`byarnas relationer och lägen med lägret glöms`, relBorta],
       [`krönikan behåller lägrets namn (${kron.join(' / ')})`, namnKvar],
       [`två som vet om lägret: platsen ligger kvar som minnesplats, och byn tror att den finns (${minne?.namn ?? 'ingen'})`, !!minne && tror && ute],
       [`den som reser dit ser att lägret är borta och glömmer det, den andra tror det ännu`, sag],
+      [`en väckt by rensar inte huvudbyns minnesplatser`, vacktRor],
       [`hemma berättar sällskapet det, och minnesplatsen tas bort när ingen längre minns den`, glomd],
+      [`att lägret är borta är en uppgift med sin tid (${bortaT !== undefined}): en äldre karta lär inte ut det, en nyare gör det`, bortaT !== undefined && aldreInte && nyareJa],
     ];
   },
 };
