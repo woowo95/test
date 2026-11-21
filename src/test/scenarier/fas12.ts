@@ -679,6 +679,7 @@ SCENARIER.svalaplagg = {
       [`med hatten kyler kläderna (${kv.toFixed(3)}) och hettan är mindre (${hettaMed.toFixed(3)} mot ${hettaUtan.toFixed(3)})`, kv < 0 && hettaMed < hettaUtan],
       [`riktigt varmt: mössan av (${byter1}) och hatten på (${hattPa})`, het > 0 && byter1 && hattPa],
       [`när kylan är en fara tas hatten av (${hattAv}) och mössan på igen (${mossaPa})`, kall > 0 && hattAv && mossaPa],
+      [`rutorna skriver ett svalt plagg som svalkande (${SIM.varmeText(v('hatt_halm'))}) och ett varmt som värmande (${SIM.varmeText(v('skjorta_ylle'))}; steg 12.1.260)`, SIM.varmeText(v('hatt_halm')) === `Svalkar ${Math.round(-v('hatt_halm') * 100)} %` && SIM.varmeText(v('skjorta_ylle')).startsWith('Värmer ')],
       [`hatten skyddar inte mot kylan i projekten (${!!projekt?.motKyla}), rocken gör det (${!!rock?.motKyla})`, !!projekt && !projekt.motKyla && !!rock?.motKyla],
     ];
   },

@@ -237,6 +237,8 @@ export const paSigVikt = (s: State, p: Person) => { let v = 0; for (const t of a
 // hur stor del av kylan plagget t (av slaget k) tar bort: ett finare plagg värmer lite mer (kvalitet.ts)
 // Ett svalt plagg (värmen under noll, steg 12.1.34) ger lika mycket mer kyla och mindre hetta
 export const kladSkydd = (k: string, t?: { q?: number }) => Math.max(-UTRUSTNING.maxVarme, Math.min(UTRUSTNING.maxVarme, (SAKER[k]?.klad?.varme ?? 0) * kvEffekt(t)));
+// plaggets värme i ord (steg 12.1.260): ett varmt plagg "Värmer 20 %", ett svalt "Svalkar 15 %", i sakens och personens ruta
+export const varmeText = (v: number) => `${v < 0 ? 'Svalkar' : 'Värmer'} ${Math.round(Math.abs(v) * 100)} %`;
 // hur mycket kläderna skyddar mot kylan (0 = inget, 1 = helt, under noll när de svala plaggen kyler mer än de varma värmer):
 // varje plagg tar bort sin del av det som är kvar
 export function kladVarme(s: State, p: Person) {
