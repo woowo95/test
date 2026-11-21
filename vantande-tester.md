@@ -16,6 +16,7 @@
 - 12.1.11 (vägarna glöms efter tio dygn, resans poäng räknas en gång per timme): ändrar spelet. Skyldig koll med nytt facit och `npm run likhet` (reslikhet var grön).
 
 - Röda scenarier redan på cc9dac54 (riktad för 12.1.211–212, och lika röda före stegen): karavanattack (kraschar: ingen handlare), vacktspar (den halvt väckta blev färdig 1 s efter), vacktkronika (världens händelser om byn i krönikan), resfel (karavanens ledare känner inga platser; gästen utan vatten dör inte av törst), rovarmotet (en gick igenom en fiende), utbrott (bara tjura). Rättas i systemets testvarv innan 12.1 publiceras.
+- Scenariot vildbo är rött efter 12.1.262 (1c88c76c): "samlarna tog 0.8 kakor … 0 hela kakor". Steg 12.1.263 är inte byggt: samlarens platsval (richness 'samla') räknar bara bär och rötter, och ett vildbo ger ca 36 mat i timmen mot ca 144 för bär, så boet väljs inte. Väntar på Björns beslut.
 - Vaktlarmet text lucka i by 1001 ("träspjut med .": verktyget slets ut innan saken blev klar) rättat efter 12.1.221 (ordFor i redskap.ts).
 
 ## Grenen par-texter (12.1.118–12.1.122, texterna efter granskningen)
