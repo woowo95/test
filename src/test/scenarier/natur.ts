@@ -237,7 +237,13 @@ SCENARIER.rotter = {
       const s = createState(seed, START);
       s.kal = nyKalender(s.now, (vecka + 1) % 4);
       setMat(s, { grillkott: 300 }); // grillat kött äts före bär och rötter, så det man samlar blir kvar (och ingen blir sjuk av rått)
-      kor(s, 48);
+      if (vecka !== 3) kor(s, 48);
+      // i istiden kan byn lika gärna jaga (sedan steg 12.1.229 gör den det): provet gäller vad som går att samla, så de vuxna sätts
+      // att samla en tur i taget, där de står
+      else for (let h = 0; h < 48; h += 4) {
+        for (const p of living(s)) if (ageOf(p, s.now) >= 18 && p.task?.act !== 'samla') p.task = { act: 'samla', phase: 'do', tx: p.x, ty: p.y, until: s.now + 3 * HOUR, carry: 0, why: 'test', dark: false };
+        kor(s, 4);
+      }
       const b = s.stat?.samlat_bar ?? 0, r = s.stat?.samlat_rotter ?? 0;
       return { b, r, skild: !pilesOf(s).some(p => p.k === 'bar' && p.n > p.max + 1e-6) }; // i en förvaring ryms flera stackar på rutan
     };
