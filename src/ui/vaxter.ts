@@ -1,7 +1,7 @@
 import { handlarDjur, hasselVaxer, karavanLagret, richness } from '../sim';
 import { rovarFlockar } from '../sim/rovare';
 import { BJORNJAKT, DAY, Djur, FLYGTID, H, sakerPaMarken, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, flockdjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, TAMDJUR, TAM_ID0, honsOf, iIstiden, vildboSyns, samhallen } from '../sim';
-import { farg, fargTal } from '../palett';
+import { farg, fargTal, narmast } from '../palett';
 import { s, ui, vidNyBy } from './lage';
 import * as PIXI from 'pixi.js';
 import { Ikoner, TS, app, djurFx, djurMarkLayer, figurLayer, plantLayer, rokBakLayer, world } from './scen';
@@ -276,10 +276,10 @@ export function drawAnimals() {
   }
   for (const k of jagas.kast) { // spjutet eller stenen i luften, i en låg båge
     const x = (k.fran.x + (k.till.x - k.fran.x) * k.k) * TS, y = (k.fran.y + (k.till.y - k.fran.y) * k.k) * TS - Math.sin(k.k * Math.PI) * 6;
-    if (k.sten) djurFx.beginFill(0x8a8f94).drawCircle(x, y, 1.2).endFill();
+    if (k.sten) djurFx.beginFill(STEN_FX).drawRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2).endFill(); // en punkt i palettens ton
     else {
       const vx = k.till.x - k.fran.x, vy = k.till.y - k.fran.y, v = Math.hypot(vx, vy) || 1;
-      djurFx.lineStyle(1, 0x8a6a40, 1).moveTo(x - vx / v * 4, y - vy / v * 4).lineTo(x, y).lineStyle(0);
+      djurFx.lineStyle(1, SPJUT_FX, 1).moveTo(x - vx / v * 4, y - vy / v * 4).lineTo(x, y).lineStyle(0);
     }
   }
   // det markerade djuret (steg 3.10.4): en vit kant runt symbolen, som allt annat som är markerat
@@ -301,8 +301,8 @@ function ritaTornadoSpar() {
   const g = groundOf(s);
   for (const i of s.tornadoStig ?? []) {
     if (g.cover[i] >= 0.3) continue;
-    const x = (i % W) * TS, y = Math.floor(i / W) * TS, a = 0.6 * (1 - g.cover[i] / 0.3);
-    djurFx.beginFill(FARA, a).drawRect(x + 2, y + 4, 10, 1).drawRect(x + 5, y + 9, 9, 1).drawRect(x + 1, y + 13, 7, 1).endFill();
+    const x = (i % W) * TS, y = Math.floor(i / W) * TS, n = g.cover[i] < 0.1 ? 3 : g.cover[i] < 0.2 ? 2 : 1; // fårorna försvinner i steg när gräset växer tillbaka
+    djurFx.beginFill(FARA).drawRect(x + 2, y + 4, 10, 1); if (n >= 2) djurFx.drawRect(x + 5, y + 9, 9, 1); if (n >= 3) djurFx.drawRect(x + 1, y + 13, 7, 1); djurFx.endFill();
   }
   for (const f of s.tornado?.flyg ?? []) {
     const k = (ui.nu - f.t) / FLYGTID;
@@ -325,7 +325,9 @@ function hotMarken() {
 }
 // utropstecknet över kaninen som ser någon och flyr
 const larm = (x: number, y: number) => larmIkoner.add('kanin_larm', x * TS - 3, y * TS - 15, 1);
-// dammet efter en kanin som springer
+// kastens och dammets färger: palettens närmaste toner (bildstilen: bara palettens färger, inga halvgenomskinliga)
+const STEN_FX = fargTal(narmast('#8a8f94')), SPJUT_FX = fargTal(narmast('#8a6a40')), DAMM_FX = fargTal(narmast('#d8c8a0'));
+// dammet efter en kanin som springer: punkter som blir mindre i steg bakåt, i stället för genomskinliga cirklar
 function damm(x: number, y: number, vx: number, vy: number) {
-  for (let k = 1; k <= 3; k++) djurFx.beginFill(0xd8c8a0, 0.5 - k * 0.12).drawCircle((x - vx * k * 0.35) * TS, (y - vy * k * 0.35) * TS + 1, 1.6 - k * 0.3).endFill();
+  for (let k = 1; k <= 3; k++) { const n = k === 1 ? 2 : 1; djurFx.beginFill(DAMM_FX).drawRect(Math.round((x - vx * k * 0.35) * TS), Math.round((y - vy * k * 0.35) * TS + 1), n, n).endFill(); }
 }

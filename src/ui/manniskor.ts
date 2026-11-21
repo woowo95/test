@@ -124,7 +124,7 @@ function snoCykel(id: number, m: Match, t: number) {
 // dess skugga på marken
 function flyg(ax: number, ay: number, bx: number, by: number, f: number, ramp: number[], ton: number, h: number) {
   const x = Math.round(ax + (bx - ax) * f), y = Math.round(ay + (by - ay) * f - h * 4 * f * (1 - f)), gy = Math.round(ay + (by - ay) * f) + 2;
-  pt(x - 1, gy, 0x372f25, 3, 1);
+  pt(x - 1, gy, fargTal(farg('kol', 2)), 3, 1);
   for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
     const r = Math.abs(dx) + Math.abs(dy);
     if (r > 2 && !(Math.abs(dx) < 2 && Math.abs(dy) < 2)) continue;
@@ -263,10 +263,10 @@ function markOf(p: Person): string | undefined {
 }
 // pratbubblan (steg 3.10.3): samma ruta som arbetssymbolerna, med pratbubblan i pixlar eller ämnets symbol (ikon, steg 3.9.5).
 // Kanten följer samtalet och relationen: rött gräl, rosa flirt eller kärlek, guld berättelse, grönt vänner, mörkrött ovänner
-const PRAT_FARG = 0xdad0bb, PRAT_KANT = 0x372f25; // pratbubblans ljusa botten och mörka kant
+const PRAT_FARG = fargTal(farg('ben', 3)), PRAT_KANT = fargTal(farg('kol', 2)); // pratbubblans ljusa botten och mörka kant
 function pratRuta(x: number, top: number, bob: number, kind: string | undefined, rel: 'karlek' | 'van' | 'ovan' | 'neutral', ikon?: string) {
-  const kant = kind === 'gräl' ? 0xa14808 : kind === 'flirt' ? 0xbd753e : kind === 'berättelse' ? 0xd8b25f
-    : rel === 'karlek' ? 0xbd753e : rel === 'ovan' ? 0x742a01 : rel === 'van' ? 0x647025 : undefined;
+  const kant = kind === 'gräl' ? fargTal(farg('rost', 2)) : kind === 'flirt' ? fargTal(farg('rost', 3)) : kind === 'berättelse' ? fargTal(farg('senap', 3))
+    : rel === 'karlek' ? fargTal(farg('rost', 3)) : rel === 'ovan' ? fargTal(farg('rost', 1)) : rel === 'van' ? fargTal(farg('oliv', 2)) : undefined;
   // en ljus, rundad pratbubbla med en spets ner mot den som pratar, så att den inte ser ut som arbetets mörka ruta (steg 4.5.6.9)
   const y0 = top + bob, linje = kant ?? PRAT_KANT, b = kant !== undefined ? 1.2 : 0.8;
   // en enda storlek, den lilla (steg 9.2.10): tecknet i 8 punkter. Ett ämne har sin egen symbol i 8 punkter (amneIkon), och en
@@ -294,16 +294,16 @@ function bar(k: string, cx: number, cy: number, storlek: number) {
 const NAMNFONT = '"Pixelify Sans", system-ui, sans-serif';
 // typsnittet slår ihop fi och fl till fel tecken (steg 12.1.50): ett osynligt tecken emellan håller dem isär
 const ejLig = (t: string) => t.replace(/f(?=[il])/g, 'f\u200c');
-const nameStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: 22, fill: 0xdad0bb, stroke: 0x24201d, strokeThickness: 5, fontWeight: '700' });
+const nameStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: 22, fill: fargTal(farg('ben', 3)), stroke: fargTal(farg('kol', 0)), strokeThickness: 5, fontWeight: '700' });
 // namnen vid alla (steg 12.1.157, ui/namnskyltar.ts): mindre text under fötterna, en text per person som återanvänds
-const smaStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: SKYLT.hojd * 2, fill: 0xdad0bb, stroke: 0x24201d, strokeThickness: 4, fontWeight: '700' });
+const smaStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: SKYLT.hojd * 2, fill: fargTal(farg('ben', 3)), stroke: fargTal(farg('kol', 0)), strokeThickness: 4, fontWeight: '700' });
 if (typeof document !== 'undefined') document.fonts?.ready.then(() => { for (const st of [nameStyle, smaStyle]) { st.fontFamily = 'system-ui'; st.fontFamily = NAMNFONT; } });
 const smaNamn = new Map<number, PIXI.Text>();
 const rollIkoner = new Ikoner(labels);
 const figurFot = new Map<number, { x: number; y: number }>(); // var figuren ritades i bildrutan: mitten och fötterna
 const nameTags = [0, 1].map(() => { const tx = new PIXI.Text('', nameStyle); tx.scale.set(0.5); tx.anchor.set(0.5, 1); tx.visible = false; labels.addChild(tx); return tx; });
 // tiden kvar till förblödning (steg 9.5.14): en röd siffra i minuter över huvudet när den är kort (HALSA.kortTim)
-const blodStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: 20, fill: 0xa14808, stroke: 0x24201d, strokeThickness: 5, fontWeight: '700' });
+const blodStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: 20, fill: fargTal(farg('rost', 2)), stroke: fargTal(farg('kol', 0)), strokeThickness: 5, fontWeight: '700' });
 const blodTexter: PIXI.Text[] = [];
 // figurerna, en sprite per person som återanvänds
 const figurer = new Map<number, PIXI.Sprite>(), sedd = new Set<number>();
@@ -547,7 +547,7 @@ export function drawPeople(t: number) {
     const m = markOf(p);
     if (m) {
       const bob = Math.sin(t / 500 + p.id) * 0.6;
-      bubbleG.beginFill(0x24201d).drawRoundedRect(x - 5, top - 5 + bob, 10, 10, 3).endFill();
+      bubbleG.beginFill(fargTal(farg('kol', 0))).drawRoundedRect(x - 5, top - 5 + bob, 10, 10, 3).endFill();
       markIcons.add(m, x - 4, top - 4 + bob, 8 / iconCanvas(m).width);
     }
   }

@@ -1,4 +1,4 @@
-import { rasterPa } from '../palett';
+import { farg, fargTal, rasterPa } from '../palett';
 import { HOUR, W, blodOf, flackNu, flackarOf } from '../sim';
 import { ritaBlod } from './blod';
 import { s, ui } from './lage';
@@ -12,9 +12,9 @@ let ritad = '';
 // en brun fläck utan lukt som bleknar. Från den starkaste: från vilken styrka bilden gäller, raderna (8 × 8 punkter på rutan)
 // och färgerna med genomskinlighet
 const TOA: { fran: number; rader: string[]; farg: Record<string, [number, number]> }[] = [
-  { fran: 0.7, rader: ['....v...', '..Vv....', '.V..v...', '..V..v..', '....v...', '...cCc..', '..kccck.'], farg: { v: [0x898b4c, 0.85], V: [0x898b4c, 0.45], c: [0x5e3c24, 1], C: [0x7d5b40, 1], k: [0x3f2415, 1] } },
-  { fran: 0.3, rader: ['', '', '', '', '', '...hhh..', '..hhhhh.'], farg: { h: [0x5e3c24, 0.55] } },
-  { fran: 0, rader: ['', '', '', '', '', '', '...n.n..'], farg: { n: [0x5e3c24, 0.26] } },
+  { fran: 0.7, rader: ['....v...', '..Vv....', '.V..v...', '..V..v..', '....v...', '...cCc..', '..kccck.'], farg: { v: [fargTal(farg('oliv', 3)), 0.85], V: [fargTal(farg('oliv', 3)), 0.45], c: [fargTal(farg('jord', 1)), 1], C: [fargTal(farg('jord', 2)), 1], k: [fargTal(farg('jord', 0)), 1] } },
+  { fran: 0.3, rader: ['', '', '', '', '', '...hhh..', '..hhhhh.'], farg: { h: [fargTal(farg('jord', 1)), 0.55] } },
+  { fran: 0, rader: ['', '', '', '', '', '', '...n.n..'], farg: { n: [fargTal(farg('jord', 1)), 0.26] } },
 ];
 const P = TS / 8;
 function toaBild(x: number, y: number, v: number) {
