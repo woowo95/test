@@ -73,7 +73,8 @@ function rojPlatser(s: State) {
   // en station på en plats med träd: de fälls som en del av bygget (steg 8.1.14), och en ruta runt den (steg 9.2.49)
   for (const t of s.stationer ?? []) if (!t.inne) { const { w, h } = storlekAv(t); pl.push(ram(t.x - 1, t.y - 1, t.x + w, t.y + h)); }
   // träden runt husen (steg 9.2.49): en ruta fri från träd runt varje byggnad, och de träd vars krona når in över ett hus (kronaOver)
-  for (const h of housesOf(s)) pl.push([...ram(h.x - 1, h.y - 1, h.x + h.w, h.y + h.h), ...kronaOver(s, h)]);
+  // Varje ruta räknas en gång per plats (steg 12.1.222): ett träd på raden under huset finns både i ramen och under kronorna
+  for (const h of housesOf(s)) pl.push([...new Set([...ram(h.x - 1, h.y - 1, h.x + h.w, h.y + h.h), ...kronaOver(s, h)])]);
   // ett träd som står i ett gångstråk fälls (steg 9.2.35, strak.ts)
   for (const v of straken(s).vagar) pl.push(v.rutor);
   return pl;

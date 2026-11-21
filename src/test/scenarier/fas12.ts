@@ -1626,3 +1626,24 @@ SCENARIER.golvlagg = {
     ];
   },
 };
+
+// steg 12.1.222: träden vid huset räknas en gång i röjningen
+SCENARIER.rojhus = {
+  text: 'Träden vid huset räknas en gång (steg 12.1.222): ett träd på raden under huset står både i ramen runt huset och under kronorna, och räknas ändå en gång i röjningens brist.',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10); medHus(s);
+    const h = SIM.housesOf(s)[0];
+    if (!h) return [['byn har ett hus', false]];
+    const g = SIM.groundOf(s);
+    // inga andra platser att röja, och inga träd runt huset utom ett vuxet på raden under det
+    s.lagren = []; s.stationer = []; s.falt = [];
+    for (let y = h.y - 1; y <= h.y + h.h + 3; y++) for (let x = h.x - 1; x <= h.x + h.w; x++) if (SIM.inMap(x, y)) g.trees[y * SIM.W + x] = 0;
+    const i = (h.y + h.h) * SIM.W + h.x; g.trees[i] = 1; if (g.alder) g.alder[i] = 0;
+    const krona = SIM.kronaOver(s, h), ram = (h.w + 2) * (h.h + 2), unika = new Set([...krona]).size + ram - krona.filter(k => Math.floor(k / SIM.W) <= h.y + h.h).length;
+    const b = SIM.rojBrist(s), vag = SIM.straken(s).vagar.length;
+    return [
+      [`trädet under huset står under kronorna (${krona.includes(i)})`, krona.includes(i)],
+      [`röjningens brist räknar trädet en gång (${b.toFixed(4)}, en av ${unika} rutor = ${(1 / unika).toFixed(4)}; stråk ${vag})`, Math.abs(b - 1 / unika) < 1e-9],
+    ];
+  },
+};
