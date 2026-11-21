@@ -510,7 +510,7 @@ export function nastaAv(k: string, t?: Station): Record<string, number> {
 export function rivDel(s: State, t: Station, i: number) {
   const dl = stationDef(t.k)?.delar?.[i], q = t.delar?.[i];
   if (!dl || !q || (q.kvar ?? 0) > 0) return false;
-  q.kvar = (dl.min ?? 1) * MIN; delete q.mat;
+  q.kvar = delMin(stationDef(t.k)!, i) * MIN; delete q.mat;
   for (const [k, n] of Object.entries(dl.av ?? {})) { const m = Math.floor(n * HUS.rivTillbaka); if (m > 0) put(s, k, m); }
   if (dl.eld) delete t.eld;
   summaKvar(t);
@@ -530,8 +530,19 @@ export function nyPlatsDel(s: State, t: Station, i: number, x: number, y: number
   }
   return false;
 }
+// minuterna att bygga del i (steg 12.1.230): delens egen tid, annars dess andel av det som är kvar av stationens tid när
+// delarna med egen tid är dragna. Bygget, rivningen och framstegscirkeln frågar den
+export function delMin(d: StationDef, i: number) {
+  const dl = d.delar?.[i];
+  if (!dl) return d.min;
+  if (dl.min !== undefined) return dl.min;
+  const egna = d.delar!.reduce((a, q) => a + (q.min ?? 0), 0), utan = d.delar!.filter(q => q.min === undefined).length;
+  return Math.max(1, (d.min - egna) / utan);
+}
+// hela stationens tid: delarnas tider tillsammans, eller stationens
+export const stationMin = (d: StationDef) => d.delar ? d.delar.reduce((a, _q, i) => a + delMin(d, i), 0) : d.min;
 // hur stor del av bygget som är gjort (0 till 1), för framstegscirkeln på kartan
-export const stationKlar = (t: Station) => Math.min(1, Math.max(0, 1 - t.kvar / ((stationDef(t.k)?.min ?? 1) * MIN)));
+export const stationKlar = (t: Station) => { const d = stationDef(t.k); return Math.min(1, Math.max(0, 1 - t.kvar / ((d ? stationMin(d) : 1) * MIN))); };
 // rutorna stationen tar (bredd och djup i registret, bytta när den står vriden; en okänd sort tar en ruta)
 // En station med delar (steg 9.4.1) tar så mycket som delarna i en rad, bredvid varandra, när den byggs; står delarna sedan
 // var för sig är storleken rutan runt dem alla (storlekAv), och t.x, t.y dess hörn uppe till vänster
@@ -1302,7 +1313,7 @@ export function startStation(s: State, p: Person, tk: Task) {
       if (at.rot) t.rot = 1;
       if ('inne' in at) t.inne = 1;
       const delar = delarIRad(k, at.x, at.y, at.rot); if (delar) t.delar = delar; // delarna i en rad, som de byggs (steg 9.4.1)
-      if (delar && d.delar) { delar.forEach((q, i) => { q.kvar = (d.delar![i].min ?? 1) * MIN; }); delar[0].mat = 1; summaKvar(t); } // varje del sitt bygge (steg 12.1.17)
+      if (delar && d.delar) { delar.forEach((q, i) => { q.kvar = delMin(d, i) * MIN; }); delar[0].mat = 1; summaKvar(t); } // varje del sitt bygge (steg 12.1.17)
       if (tro) t.tro = tro.id;
       if (d.forvar?.privat || d.pynt || d.agd) t.ag = p.id; // kistan och pyntet är hens (steg 2.10.18, 4.3.4)
       if (gammal) moblerKrok.ersatt(s, gammal, t); // halmbädden tas isär, och sängen får dess ägare och skinnfäll (mobler.ts)

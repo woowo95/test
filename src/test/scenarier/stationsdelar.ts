@@ -39,7 +39,11 @@ SCENARIER.stationsdelar = {
       const golv = gridOf(s).rooms.flatMap(r => r.tiles).find(i => !SIM.stationAt(s, i % W, Math.floor(i / W)) && !SIM.sittAt(s, i % W, Math.floor(i / W)));
       const inne = golv !== undefined && SIM.flyttaDel(s, t, 1, golv % W, Math.floor(golv / W));
       const delad = inne && !SIM.helStation(s, t) && SIM.stationFor(s, 'tvinna') === undefined;
+      // delarna utan egen tid delar stationens tid (steg 12.1.230): smedjan tar sina 20 minuter, inte en minut per del
+      const sm = REG.smedja, smMin = [0, 1].map(i => SIM.delMin(sm, i)), ok = REG.ortkok;
+      const tid230 = smMin.every(m => m === sm.min / 2) && SIM.stationMin(sm) === sm.min && SIM.stationMin(ok) === ok.delar!.reduce((a, q) => a + (q.min ?? 0), 0);
       return [
+        [`delarna utan egen tid delar stationens tid: smedjans ässja och städ ${smMin.join(' + ')} min av ${sm.min} (steg 12.1.230)`, tid230],
         [`stationen byggs med delarna i en rad och varje del tar sina rutor (${rad})`, iRad],
         ['man arbetar framför delen med arbete (bänken)', vidBank],
         [`en del flyttas för sig och tar sina nya rutor (rutan runt delarna ${bbox.w} × ${bbox.h})`, flytt && gammal && ny && bbox.w === 6 && bbox.h === 5],
