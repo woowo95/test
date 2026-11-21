@@ -3,6 +3,7 @@ import { balans } from './balans';
 // skriftens balanstal (skrift.ts, system 10.6), i en egen fil så att tron (religion.ts, kult.ts, kyrka.ts) kan läsa dem utan att
 // läsa skrift.ts, som själv läser tron
 export const SKRIFT = balans('skrift', {
+  egenBas: 0.5, egenEmpati: 20, // stoltheten över det egna: egenBas + (egenEmpati − empatin) / egenEmpati, den som har låg empati bryr sig mer om sig själv
   vikt: 0.4, // projektets vikt (som stenhuggarplatsen)
   pennaKv: 0.1, pennaBlad: 20, // det som skrivs med en fjäderpenna får så här mycket högre chans till bra kvalitet, och pennan håller så här många blad (steg 12.4.14)
   stenar: 3, min: 15, // huggna stenar och minuter för en runsten

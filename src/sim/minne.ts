@@ -28,6 +28,7 @@ import { ORT, berattaOrt, describeOrt, ortBleknar } from './ort';
 // Lärdomar: hur många man minns, hur mycket man tror på dem, hur de sprids och hur fort de glöms. Värdet (v) mäts i det en
 // rik plats ger (toppOf i fynd.ts) och säkerheten (c) går från 0 till 1. Hur nära ett område ligger lägret står i PLATS
 export const MINNE = balans('minne', {
+  prisNyhet: 2, // ett pris som är en nyhet väger så här mycket i samtalet (ett gammalt 1)
   max: 20, // så många lärdomar minns man högst; det minst säkra trängs undan
   faraVikt: 2, // en rädsla, och minnet av högvattnet (steg 3.8.7), räknas så här många gånger så säker när det trängs undan ...
   vattenVikt: 2, // ... och vattnet, rent eller smutsigt (steg 9.9.5 och 10.2.42): man vet sällan mer än ett par ställen att dricka
@@ -134,7 +135,7 @@ const LDEF = {
   fara: { vad: '', namn: 'farliga platser', ikon: 'l_fara', tecken: '⚠️', kat: 'tro', vikt: () => MINNE.faraVikt, dela: () => MINNE.delaFara, glom: () => MINNE.glomFara, max: () => MINNE.vMaxFara, over: () => [MINNE.overFara, MINNE.overFaraSpann], utanVarde: true },
   vatten: { vad: 'vatten', namn: 'rent och smutsigt vatten', ikon: 'a_vatten', tecken: '💧', vikt: () => MINNE.vattenVikt, dela: () => 1, max: () => 1 },
   flod: { vad: 'högvattnet', namn: 'högvattnet', ikon: 'm_oversvamning', tecken: '🌊', vikt: () => MINNE.faraVikt, dela: () => 1, glom: () => MINNE.glomFlod, ordagrant: true, utanVarde: true }, // hur högt en översvämning nådde (steg 3.8.7, flod.ts): v = rutor upp på land
-  pris: { vad: 'priser', namn: 'priser hos grannklanerna', ikon: 'silver', tecken: '💰', tak: () => MINNE.prisMax, dela: (s, l) => nyhet(s, l) ? 2 : 1, glom: () => MINNE.prisGlom, max: () => Infinity, ordagrant: true, utanVarde: true }, // vad en grannklan betalar (steg 10.5.15): a = klanens id, sl = slaget, v = påslaget på grundvärdet
+  pris: { vad: 'priser', namn: 'priser hos grannklanerna', ikon: 'silver', tecken: '💰', tak: () => MINNE.prisMax, dela: (s, l) => nyhet(s, l) ? MINNE.prisNyhet : 1, glom: () => MINNE.prisGlom, max: () => Infinity, ordagrant: true, utanVarde: true }, // vad en grannklan betalar (steg 10.5.15): a = klanens id, sl = slaget, v = påslaget på grundvärdet
   ort: { vad: 'platser i världen', namn: 'platser i världen', ikon: 'karta', tecken: '📍', tak: () => ORT.max, dela: (s, l) => ORT.dela * (nyhet(s, l) ? ORT.nyVikt : 1), utanVarde: true }, // en plats i världen (steg 11.4.1, ort.ts): a = platsens nummer, v = nivån (ORTNIVA)
   uppdrag: { vad: 'uppdrag', namn: 'uppdrag', ikon: 'karta', tecken: '📜', tak: () => 0, dela: () => 0, utanVarde: true }, // uppdrag.ts sätter tak, dela och glom ur sina balanstal // ett utlyst uppdrag (steg 11.8.3, uppdrag.ts): a = uppdragets nummer, t = när det utlystes
 } satisfies Record<string, LardomDef>;

@@ -18,6 +18,7 @@ export const VACKT_REL = balans('vacktrel', {
   ar: 15, // efter så många år ihop (dygn) har relationen kommit hela vägen; före det en del
   samtal: 1, // så många samtal per år ihop
   par: 0.4, // chansen att två ensamma vuxna som är goda vänner blivit ett par
+  parOp: 55, parRom: 75, // det paret minst har i relation och romantik
 });
 const opAv = (u: number) => { for (let i = 1; i < RELFORDELNING.length; i++) { const [u1, o1] = RELFORDELNING[i], [u0, o0] = RELFORDELNING[i - 1]; if (u <= u1) return o0 + (o1 - o0) * (u - u0) / (u1 - u0); } return RELFORDELNING.at(-1)![1]; };
 
@@ -47,7 +48,7 @@ export function byggRelationer(b: State, r: VarldRad) {
     if (!bast || rnd(b, 'vackt') >= VACKT_REL.par) continue;
     const rel = getRel(b, p, bast);
     p.partner = bast.id; bast.partner = p.id;
-    rel.op = Math.max(rel.op, 55); rel.rom = Math.max(rel.rom, 75);
+    rel.op = Math.max(rel.op, VACKT_REL.parOp); rel.rom = Math.max(rel.rom, VACKT_REL.parRom);
     rel.par = b.now - Math.floor(rnd(b, 'vackt') * Math.min(RELT.giftDygn, ihop(p, bast))) * DAY; // (de gifter sig efter RELT.giftDygn)
   }
   // bästa vän och ärkefiende som stepRelationer (relationer.ts) väljer dem

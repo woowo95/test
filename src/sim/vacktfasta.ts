@@ -12,8 +12,11 @@ import { newPerson, nyPerson, relKey } from './folk';
 import { freeNear } from './byggnad';
 import { eldPlats } from './karta';
 import { DAY, Person, State } from './typer';
+import { balans } from './balans';
 
-const STANDARD_ALDER = 35; // år i spelet, för den som saknar födelsedag
+const VACKTFASTA = balans('vacktfasta', {
+  alder: 35, // år i spelet, för den som saknar födelsedag
+});
 // de fasta i raden: personerna i förbindelsen, sedan radens fasta som inte redan finns där
 export function fastaI(r: VarldRad, t: number): { namn: string; kon: 'm' | 'k'; fodd?: number; roll: string; kp?: KlanPerson; fp?: FastPerson }[] {
   const ut: ReturnType<typeof fastaI> = [];
@@ -37,7 +40,7 @@ export function byggFasta(b: State, r: VarldRad) {
       p.mother = undefined; p.father = undefined; p.partner = undefined; // släkten finns i den andra byn
       const at = freeNear(b, f0.x + 1, f0.y + 1); p.x = at.x; p.y = at.y;
     } else {
-      p = newPerson(b, q.kon, q.fodd ?? b.now - STANDARD_ALDER * DAY);
+      p = newPerson(b, q.kon, q.fodd ?? b.now - VACKTFASTA.alder * DAY);
       p.name = q.namn;
       const eg = q.fp && fastEgenskaper(q.fp);
       if (eg) p.pot = { ...eg };

@@ -7,6 +7,7 @@
 // tillbaka i packningen. Den som dog i byn är död på vägen (dorPaVagen), och byn får veta det när beskedet kommer hem
 import type { Person, State } from './typer';
 import { SEC, useMap } from './typer';
+import { balans } from './balans';
 import { BESOKET, gastAv, gastGar, nyttGastId } from './gast';
 import { GASTVARD } from './gastvardag';
 import { skrivVanor } from './vanor';
@@ -23,9 +24,9 @@ import { hjalpBygge, hjalpSteg } from './vackthjalp';
 import { vackPlats } from './vacktplats';
 import { dorPaVagen, resenarer, Sallskap, sallskapNu, tappa, vackKrok } from './resa';
 
-export const VACKTGAST = {
+export const VACKTGAST = balans('vacktgast', {
   nara: 1.5, // så nära elden stannar besökaren (rutor)
-};
+});
 const vacktBy = (s: State, sl: Sallskap) => { const nr = s.varld?.platser?.find(p => p.nr === sl.mal && p.k === 'by')?.by; return nr === undefined ? s.vackta?.find(b => b.vacktPlats === sl.mal) : s.vackta?.find(b => b.vackt === nr && b.vackI === undefined); }; // en by, eller platsens lilla karta (steg 11.13.25)
 // sällskapet framme: resenärerna kliver in i den väckta byn, om byn dit är väckt och färdig
 export function besokIn(s: State, sl: Sallskap) {

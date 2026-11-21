@@ -82,7 +82,9 @@ export function hourOf(t: number) {
   if (t !== memoT) { const d = new Date(t); memoT = t; memoH = d.getHours() + d.getMinutes() / 60; }
   return memoH;
 }
-export function isLight(t: number) { const h = hourOf(t); return h >= 7 && h < 19; }
+// dagen är ljus från DAG_BORJAR till DAG_SLUTAR (klockslag); sporten slutar när det blir mörkt (sport.ts)
+export const DAG_BORJAR = 7, DAG_SLUTAR = 19;
+export function isLight(t: number) { const h = hourOf(t); return h >= DAG_BORJAR && h < DAG_SLUTAR; }
 export function lightLevel(t: number) {
   const h = hourOf(t);
   if (h >= 7.5 && h < 18.5) return 1;

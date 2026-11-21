@@ -36,6 +36,7 @@ export const byStil = (s: State): TatStil => TAT_STILAR[Math.abs(s.seed) % TAT_S
 export const klanStil = (klan: number): TatStil => TAT_STILAR[Math.abs(klan) % TAT_STILAR.length];
 
 export const TATU = balans('tatuering', {
+  nara: 1.5, // den som tatueras är kvar intill när arbetet är klart: inom så här många rutor
   bas: 0.3, sed: 0.7, // lusten att märka en händelse: bas + sed × byns värde i motivets sed
   dygn: 3, // lusten är starkast så här många dygn (år i spelet) efter händelsen ...
   sen: 0.3, // ... och sedan så här stor
@@ -79,7 +80,7 @@ export function tatVal(s: State, g: Person) {
 // när arbetet är klart: den som tatueras får märket, om hen är kvar intill
 export function tatKlar(s: State, g: Person, ref?: number) {
   const q = living(s).find(o => o.id === ref);
-  if (!q || !alive(q) || Math.hypot(q.x - g.x, q.y - g.y) > 1.5) { count(s, 'tatueringMiste'); return; }
+  if (!q || !alive(q) || Math.hypot(q.x - g.x, q.y - g.y) > TATU.nara) { count(s, 'tatueringMiste'); return; }
   const i = (q.tatV ?? []).reduce((b, v, j, a) => tatLust(s, v) > tatLust(s, a[b]) ? j : b, 0), v = q.tatV?.[i];
   if (!v) return;
   q.tatV!.splice(i, 1); if (!q.tatV!.length) q.tatV = undefined;

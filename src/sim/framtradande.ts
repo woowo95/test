@@ -88,7 +88,8 @@ export const FRAM = balans('framtradande', {
   minuter: 30, spann: 30, // ett framträdande varar så här många minuter från att det börjar, plus upp till spann
   gladje: 0.06, gladjeTim: 10, // publikens glädje: gladje × formens kval × kvaliteten, i så här många timmar
   egen: 0.05, // den som uppträder blir så här glad när någon kom och lyssnade (annars ingen)
-  op: 3, // publiken tycker så här mycket bättre om den som uppträder, gånger (kvaliteten − 0,5)
+  op: 3, // publiken tycker så här mycket bättre om den som uppträder, gånger (kvaliteten − mottagning)
+  mottagning: 0.5, // under den här kvaliteten var framträdandet dåligt: publiken tycker sämre om dem på scenen, och berättelsen säger det (framber.ts)
   ovning: 0.3, // övning i färdigheten per timme man uppträder
   sparas: 20, // så här många framträdanden sparas i s.framtradanden
   slit: 0.03, // instrumentet slits så här mycket per framträdande (steg 4.3.2.2)
@@ -480,7 +481,7 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
     if (dans) tanke(b, 'dansade', s.now, { till: med.length ? namn : `${gen(p.name)} ${d.namn.toLowerCase()}`, ...gv });
     else tanke(b, 'lyssnade', s.now, { pa: med.length ? `${d.namn.toLowerCase()} av ${namn}` : `${gen(p.name)} ${d.namn.toLowerCase()}`, ...gv });
     const r = getRel(s, b, p), r0 = r.op, l0 = ledd && b !== ledd ? getRel(s, b, ledd).op : undefined, tro0 = b.tro;
-    for (const x of alla) if (x !== b) { const rx = getRel(s, b, x); rx.op = clamp(rx.op + FRAM.op * (q - 0.5), -100, 100); } // alla på scenen får mottagningen
+    for (const x of alla) if (x !== b) { const rx = getRel(s, b, x); rx.op = clamp(rx.op + FRAM.op * (q - FRAM.mottagning), -100, 100); } // alla på scenen får mottagningen
     if (f.lar && forelasLar(s, p, b, f.lar, (f.slut - (f.borjar ?? f.start)) / HOUR, q)) (m.lart ??= []).push(b.name); // föreläsningen lär ut ämnet och inget annat (steg 10.6.9)
     const spred = f.bud ? BUDSKAP[f.bud].verkan(s, p, b, q, f) : undefined;
     const lyss: FramLyss = { id: b.id, namn: b.name, r0: Math.round(r0), r1: Math.round(getRel(s, b, p).op) };

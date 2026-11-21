@@ -6,13 +6,12 @@
 // framträdandets nummer, så att samma framträdande alltid berättas likadant och ingen slump dras.
 import type { State } from './typer';
 import type { FramMinne } from './framtradande';
-import { INSTRUMENT } from './framtradande';
+import { FRAM, INSTRUMENT } from './framtradande';
 import { balans } from './balans';
 import { fyll, och, talOrd, valjVariant } from './berattelser';
 
 export const FRAMBER = balans('framber', {
   bra: 0.9, // från den här kvaliteten (framKval × instrumentet, 0 till ungefär 3) var det ett gott framträdande
-  dalig: 0.5, // under den här ett dåligt (då tycker publiken sämre om den som uppträdde, FRAM.op)
 });
 
 export function framBerattelse(s: State, m: FramMinne): string {
@@ -21,7 +20,7 @@ export function framBerattelse(s: State, m: FramMinne): string {
   const f = { // gruppen står som den som uppträdde (steg 10.7.11)
     namn: m.grupp?.length ? och([m.namn, ...m.grupp.map(g => g.namn)]) : m.namn, form: m.k, amne: m.amne ?? 'det som hänt', inst: m.inst ? INSTRUMENT[m.inst]?.ord ?? m.inst : '', bud: m.bud ?? '',
     om: m.om ?? '', ledare: m.ledare ?? '', betalt: m.betalt ?? '', kyrka: m.kyrka ?? '', bestallt: m.bestallt ?? '', n: talOrd(m.n), nTal: m.n,
-    bra: m.q >= FRAMBER.bra, dalig: m.q < FRAMBER.dalig, ner: d < 0,
+    bra: m.q >= FRAMBER.bra, dalig: m.q < FRAM.mottagning, ner: d < 0,
     rykte: och(m.rykte ?? []), tro: och(m.tro ?? []), hanad: och(m.hanad ?? []),
   };
   const mening = (mall: 'f_start' | 'f_bud' | 'f_publik' | 'f_mott' | 'f_verkan' | 'f_inget', i: number, g = {}) => { const x = { ...f, ...g }; return fyll(valjVariant(s, mall, (m.nr ?? 0) * 16 + i, x, 0), x); };

@@ -24,7 +24,7 @@ import { duty } from './seder';
 import { raddFor } from './radsla';
 import { kartStridAv, kartStridBorja } from './kartstrid';
 import { clamp, rnd } from './slump';
-import { hourOf } from './tid';
+import { DAG_SLUTAR, hourOf } from './tid';
 import { snoPaMarken } from './vader';
 import { balans } from './balans';
 import { notis } from './notiser';
@@ -196,7 +196,7 @@ export function sportVal(s: State, p: Person): { why: string; spot: { x: number;
   if (m && !harEgen(s, p, SPORT_AV[m.k])) return undefined;
   const ny = !m;
   if (!m) {
-    const morkt = s.now + (19 - hourOf(s.now)) * HOUR; // sporten spelas på dagen (isLight i tid.ts): matchen slutar när det blir mörkt
+    const morkt = s.now + (DAG_SLUTAR - hourOf(s.now)) * HOUR; // sporten spelas på dagen (isLight i tid.ts): matchen slutar när det blir mörkt
     if (morkt - s.now < (SPORT.vanta + SPORT.minuter + SPORT.spann) * MIN) return undefined; // väntan och den längsta matchen ryms före mörkret
     // den som samlar ropar, och var och en som hör avgör en gång om hen vill vara med
     const pris = prisAv(s), n = vuxna(s);
@@ -290,7 +290,7 @@ export function sportSteg(s: State, p: Person, t: Task, dtSec: number) {
     }
     // tiden räknas från att matchen börjar, och mörkret kapar den
     m.igang = true; m.borjar = s.now;
-    m.slut = Math.min(s.now + (19 - hourOf(s.now)) * HOUR, s.now + (SPORT.minuter + rnd(s, 'sport', p) * SPORT.spann) * MIN);
+    m.slut = Math.min(s.now + (DAG_SLUTAR - hourOf(s.now)) * HOUR, s.now + (SPORT.minuter + rnd(s, 'sport', p) * SPORT.spann) * MIN);
     for (const q of [...spelare(s, m, false), ...publiken(s, m, false)]) q.task!.until = m.slut;
     if (d.lag) delaLag(s, m, d, har);
   } else if (spelare(s, m, false).length < d.min) { s.sport = undefined; t.until = s.now; return; } // de andra har gått: matchen är slut

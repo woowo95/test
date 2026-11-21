@@ -27,6 +27,7 @@ export const FANG = balans('fangelse', {
   dygnV: 0.05, // ... varje dygn som återstår ...
   brandV: 1, // ... och mycket när det brinner nära
   brytMin: 20, // trädörrens tid utan yxa och bom (RADER.dorrMin, Dörrar mot anfallare), i minuter
+  fangenMin: 30, // så länge går fången till sin plats innan hen väljer igen (minuter)
   lasGanger: 2, // bakom en låst dörr tar det så här många gånger längre (steg 12.5.6)
   // mat och vatten till fången (steg 11.12.2): var och en går när fångens hunger eller törst gånger närheten är minst hjalp
   hjalp: 0.15, // familj och partner (närhet 1) går tidigt ...
@@ -123,7 +124,7 @@ export function fangeVal(s: State, p: Person): boolean {
     return true;
   }
   const i = rutor[platsNr(p, rutor.length)];
-  p.task = { act: 'fangen', phase: 'go', tx: i % W + 0.5, ty: Math.floor(i / W) + 0.5, until: s.now + 30 * MIN, carry: 0, why: f.varfor, dark: false };
+  p.task = { act: 'fangen', phase: 'go', tx: i % W + 0.5, ty: Math.floor(i / W) + 0.5, until: s.now + FANG.fangenMin * MIN, carry: 0, why: f.varfor, dark: false };
   return true;
 }
 // dörren är sönder (KLAR i steg.ts): hen är fri, larmet rymning går, och för en bybo är rymningen ett brott

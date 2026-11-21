@@ -88,7 +88,7 @@ function sorgen(s: State, p: Person): { d: Person; w: number }[] {
 function bedriften(s: State, p: Person, finns: (b: NonNullable<Person['bedrift']>) => boolean): { w: number; bev: Bevis[] } | undefined {
   const b = p.bedrift;
   if (!b || HANDELSER[b.h].vikt < SKRIFT.bedriftMin || finns(b)) return undefined;
-  const kvar = 1 - (s.now - b.t) / (SKRIFT.stolthetDygn * DAY), egen = 0.5 + Math.max(0, 20 - stat(p, 'empati', s.now)) / 20;
+  const kvar = 1 - (s.now - b.t) / (SKRIFT.stolthetDygn * DAY), egen = SKRIFT.egenBas + Math.max(0, SKRIFT.egenEmpati - stat(p, 'empati', s.now)) / SKRIFT.egenEmpati;
   return kvar > 0 ? { w: SKRIFT.stolthet * HANDELSER[b.h].vikt * egen * kvar, bev: [{ ...b, sett: undefined }] } : undefined;
 }
 export function runstenLust(s: State, p: Person): Lust | undefined {

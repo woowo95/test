@@ -32,6 +32,7 @@ export const NYBYGGET = 'Nybygget';
 export const bynsNamn = (s: State) => s.bynamn?.namn ?? NYBYGGET;
 
 export const BYNT = balans('bynamn', {
+  fragaPrio: 2, // frågan om bynamnet i tinget: prioriteten är så här mycket gånger hur mycket bättre förslagsställaren tycker om namnet (troskeln i LAG.troskel)
   sjo: 10, // sjön: fullt sant vid stranden, inget så här många rutor bort
   skog: 12, skogFull: 0.5, // granen och björken: skog av arten inom så här många rutor från elden, fullt vid den här andelen
   minne: 0.15, // vargen, björnen, branden och vintern: fullt när så stor del av de vuxna bär minnet
@@ -194,9 +195,6 @@ export function bastaNamn(s: State, p: Person) {
 // om det än om det byn heter. Utan ledare föreslår den vuxna med mest karisma, och namnet är det enda som tas upp utan ledare.
 // Var och en röstar efter hur mycket bättre hen tycker om det nya namnet än det byn heter. Ett nej gör att samma namn inte tas
 // upp igen på BYNT.nejDygn dygn
-export const BYNAMN_FRAGA = {
-  prio: 2, // prioriteten: så här mycket gånger hur mycket bättre förslagsställaren tycker om namnet (troskeln i LAG.troskel)
-};
 export const nuvarande = (s: State): { rad: string; om?: number } => s.bynamn ?? { rad: 'nybygget' };
 // hur mycket bättre p tycker om namnet k än det byn heter
 export const battre = (s: State, p: Person, k: { rad: string; om?: number }) => gilla(s, p, k) - gilla(s, p, nuvarande(s)) - namnVana(s, p);
@@ -208,7 +206,7 @@ export function namnForslag(s: State, p: Person) {
   if (!slagitSigNer(s) && !s.bynamn) return undefined;
   const b = bastaNamn(s, p);
   if (!b || b.namn === bynsNamn(s) || (s.bynamnNej?.[b.namn] ?? 0) > s.now) return undefined;
-  const prio = BYNAMN_FRAGA.prio * battre(s, p, b);
+  const prio = BYNT.fragaPrio * battre(s, p, b);
   return prio > 0 ? { b, prio } : undefined;
 }
 const harHaftLedare = (s: State) => s.people.some(p => p.ledde);

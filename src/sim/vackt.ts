@@ -53,12 +53,14 @@ import { varldPlatsNr } from './landmarken';
 export const VACKT = balans('vackt', {
   inkorning: 6, // timmar i verkligheten som byn går i simuleringen före ankomsten (ett kvarts år i spelet), steg 11.13.8
   parFran: 19, parTill: 52, // de vuxnas åldrar i ett hushåll (år i spelet)
+  mannenFran: -3, mannenTill: 6, // så mycket äldre än kvinnan mannen är (år i spelet)
   barnMax: 4, // så många barn som mest i ett hushåll
   modersAlder: 17, // modern är minst så mycket äldre än barnet
   ensam: 0.15, // chansen att ett hushåll är en ensam äldre
   aldreFran: 50, aldreTill: 72, // den ensammas ålder
   kunskap: 0.7, // chansen att en vuxen kan en teknik på nivå 1; varje nivå högre gånger detta igen (steg 11.13.4)
   lar: 6, larVuxen: 20, // åldern då man börjar kunna tekniker och då man kan dem som en vuxen
+  skickAr: 0.25, skickBas: 0.4, // färdigheten i teknikens arbete: år över ALDER.skickFran gånger skickAr, gånger skickBas + slumpen
   stationer: 0.4, // stationerna och möblerna kostar högst så stor del av radens rikedom, i grundvärdet av materialet (steg 11.13.6)
   ort: 0.6, // chansen att en vuxen minns en plats byn känner (steg 11.13.15) ...
   ortBesokt: 0.3, // ... och att den som minns en plats byn besökt själv varit där; annars känner hen den
@@ -178,7 +180,7 @@ export function byggFolk(b: State, r: VarldRad) {
   while (b.people.length < n) {
     const kvar = n - b.people.length;
     if (kvar === 1 || rnd(b, 'vackt') < VACKT.ensam) { ny(rnd(b, 'vackt') < 0.5 ? 'm' : 'k', mellan(b, VACKT.aldreFran, VACKT.aldreTill)); continue; }
-    const ka = mellan(b, VACKT.parFran, VACKT.parTill), ma = Math.max(VACKT.parFran, ka + mellan(b, -3, 6));
+    const ka = mellan(b, VACKT.parFran, VACKT.parTill), ma = Math.max(VACKT.parFran, ka + mellan(b, VACKT.mannenFran, VACKT.mannenTill));
     const k = ny('k', ka), m = ny('m', ma);
     pair(b, k, m, true);
     const barn = Math.min(n - b.people.length, Math.floor(rnd(b, 'vackt') * (VACKT.barnMax + 1)), Math.max(0, Math.floor(ka - VACKT.modersAlder)));
@@ -206,7 +208,7 @@ export function byggKunskap(b: State, r: VarldRad) {
     const a = alder.get(p.id)!;
     for (const id in p.tek ?? {}) for (const act of TEK[id]?.omr ?? []) {
       const k = ACTS[act]?.arbete;
-      if (k) p.skill[k] = Math.max(p.skill[k] ?? 0, clamp((a - ALDER.skickFran) * 0.25 * (0.4 + rnd(b, 'vackt')) * (p.pot.intelligens / 12), 0, 12));
+      if (k) p.skill[k] = Math.max(p.skill[k] ?? 0, clamp((a - ALDER.skickFran) * VACKT.skickAr * (VACKT.skickBas + rnd(b, 'vackt')) * (p.pot.intelligens / 12), 0, 12));
     }
   }
 }
