@@ -290,6 +290,11 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     for (const p of s.people) { if (p.tek?.vaggbrade !== undefined) delete p.tek.vaggbrade; delete (p as { sickUntil?: number }).sickUntil; }
     if (s.plockat) for (const k in s.plockat) if (k.startsWith('ho:')) delete s.plockat[k];
   }],
+  [63, 'en person minns ett larm per sort (steg 12.1.211): det senaste larmet blir larmet av sin sort', s => {
+    const om = (p: { larm?: unknown }) => { const l = p.larm as { vad?: unknown } | undefined; if (l && typeof l.vad === 'string') p.larm = { [l.vad]: l }; };
+    for (const p of s.people) om(p);
+    for (const r of s.varld?.rader ?? []) for (const k of r.syn?.personer ?? []) if (k.kropp) om(k.kropp as { larm?: unknown });
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

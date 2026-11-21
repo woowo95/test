@@ -1548,7 +1548,7 @@ SCENARIER.larm2 = {
       for (const x of living(k)) { x.x = 2; x.y = 2; x.larm = undefined; x.task = undefined; }
       p!.x = m.x + 1; p!.y = m.y; q!.x = m.x + 6; q!.y = m.y;
       SIM.bjornSteg(k);
-      return { p: p!.larm?.vad, q: q!.larm?.vad };
+      return { p: p!.larm?.bjorn?.vad, q: q!.larm?.bjorn?.vad };
     };
     const bNara = bjorn(tNara), bLangt = bjorn(tLangt);
     // översvämningen: vattnet stiger till en ruta två steg från ett hus, eller långt från husen
@@ -1563,7 +1563,7 @@ SCENARIER.larm2 = {
       for (const q of lev) { q.x = 2; q.y = 2; q.larm = undefined; q.task = undefined; q.ute = undefined; }
       lev[0]!.x = x + 0.5; lev[0]!.y = y + 3.5; lev[1]!.x = x + 10.5; lev[1]!.y = y + 0.5;
       SIM.flodRop(k, fore, 1, efter);
-      return { ser: lev[0]!.larm?.vad, hor: lev[1]!.larm?.vad, n: (k.stat?.['flod larm'] as number | undefined) ?? 0 };
+      return { ser: lev[0]!.larm?.flod?.vad, hor: lev[1]!.larm?.flod?.vad, n: (k.stat?.['flod larm'] as number | undefined) ?? 0 };
     };
     const utanHus = (i: number) => { const x = i % SIM.W, y = Math.floor(i / SIM.W); for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) if (SIM.roofed(s, x + dx, y + dy)) return false; return x > 12 && y > 12 && x < SIM.W - 12 && y < SIM.W - 12; };
     let langt = -1;
@@ -1587,7 +1587,7 @@ SCENARIER.larm = {
     folk.forEach((q, i) => { q.x = 10 + i * 5; q.y = 10; q.task = undefined; q.larm = undefined; });
     while (!SIM.isLight(t.now)) t.now += HOUR;
     const dag = SIM.larma(t, 'slagsmål', 2, [p]);
-    const leden = Math.max(0, ...dag.map(q => q.larm!.led));
+    const leden = Math.max(0, ...dag.map(q => q.larm!['slagsmål']!.led));
     // långt bort: en ensam på 20 rutor hör inte på dagen, men på natten
     folk.forEach((q, i) => { q.x = 10 + i * 40; q.larm = undefined; }); const r = folk[1]; r.x = p.x + 20;
     const dagLangt = SIM.larma(t, 'slagsmål', 2, [p]).includes(r);
@@ -1598,16 +1598,16 @@ SCENARIER.larm = {
     let forvrangt = false;
     for (let i = 0; i < 20 && !forvrangt; i++) {
       folk.forEach((q, j) => { q.x = 10 + j * 5; q.larm = undefined; });
-      forvrangt = SIM.larma(t, 'fara', 4, [p]).some(q => q.larm!.storlek !== 4);
+      forvrangt = SIM.larma(t, 'fara', 4, [p]).some(q => q.larm!.fara!.storlek !== 4);
     }
     // ett slagsmål i byn: de som slåss ropar
     folk.forEach((q, j) => { q.x = 10 + j * 3; q.larm = undefined; q.task = undefined; });
     const fore = t.stat?.larm ?? 0;
     stridIByn(t, 'slagsmal', [[folk[0]], [folk[1]]], 'för att pröva');
-    const slagsmal = (t.stat?.larm ?? 0) > fore && folk.slice(2).some(q => q.larm?.vad === 'slagsmål');
+    const slagsmal = (t.stat?.larm ?? 0) > fore && folk.slice(2).some(q => q.larm?.['slagsmål'] !== undefined);
     // falskt larm ur ett utbrott
     let falskt = false;
-    for (let i = 0; i < 200 && !falskt; i++) { folk.forEach(q => { q.larm = undefined; }); SIM.utbrottBorjar(t, p, 'krossa'); falskt = folk.some(q => q.larm?.falskt); }
+    for (let i = 0; i < 200 && !falskt; i++) { folk.forEach(q => { q.larm = undefined; }); SIM.utbrottBorjar(t, p, 'krossa'); falskt = folk.some(q => q.larm?.fara?.falskt); }
     // dimman: ett år i sex byar
     const morgon = [0, 0], hostVar = [0, 0];
     for (const seed of [1, 2, 3, 4, 5, 6]) {
@@ -1637,8 +1637,8 @@ SCENARIER.larm = {
     const jagare = bf[3]; jagare.x = eld.x; jagare.y = y0 + (y0 < 60 ? 1 : -1) * (SIM.ROVARE.horhall + 8);
     const gang = rovarGang(b, 3, { x: bf[0].x + sida * (SIM.ROVARE.folkSer - 4), y: y0 });
     let varnar = false, jagareFick = false;
-    korTills(b, () => bf.slice(0, 3).every(q => q.larm?.varnat), 300, () => { if (bf.some(q => q.task?.act === 'varna')) varnar = true; if (jagare.larm) jagareFick = true; });
-    const led = bf.slice(0, 3).map(q => q.larm?.led ?? -1), vst = b.stat ?? {};
+    korTills(b, () => bf.slice(0, 3).every(q => q.larm?.rovare?.varnat), 300, () => { if (bf.some(q => q.task?.act === 'varna')) varnar = true; if (jagare.larm) jagareFick = true; });
+    const led = bf.slice(0, 3).map(q => q.larm?.rovare?.led ?? -1), vst = b.stat ?? {};
     const sag = led[0] === 0 && gang.sedd !== undefined, ledvis = led[1] >= 1 && led[2] > led[1];
     return [
       [`den som ser rövarna får larmet själv (led ${led[0]}) och väljer att varna (handlingen ${SIM.ACTS.varna?.namn ?? 'saknas'}: ${varnar})`, sag && varnar && !!SIM.ACTS.varna],
@@ -3014,7 +3014,7 @@ SCENARIER.vaktser = {
     for (let i = 0; i < 20 && f.sedd === undefined; i++) step(s, 1);
     return [
       [`vakten står ${d.toFixed(0)} rutor från gänget på rastplatsen, på andra sidan byn (folk ser ${SIM.ROVARE.folkSer})`, !!rast && d > SIM.ROVARE.lur],
-      [`vakten ser gänget och vet om det (${f.sedd !== undefined ? 'ja' : 'nej'})`, f.sedd !== undefined && vakt.larm?.vad === 'rovare'],
+      [`vakten ser gänget och vet om det (${f.sedd !== undefined ? 'ja' : 'nej'})`, f.sedd !== undefined && vakt.larm?.rovare !== undefined],
     ];
   },
 };

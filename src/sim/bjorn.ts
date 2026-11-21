@@ -84,7 +84,7 @@ export function bjornSteg(s: State) {
     if (mott.ids.includes(p.id)) continue;
     mott.ids.push(p.id);
     count(s, 'bjornmote');
-    if (utanforByn(s, b.x, b.y) <= BJORNMOTE.larmNara && larmNu(s, p)?.vad !== 'bjorn') { larma(s, 'bjorn', 1 + ungar.length, [p]); count(s, 'bjorn larm'); } // den som ser björnen nära byn ropar (steg 12.1.142)
+    if (utanforByn(s, b.x, b.y) <= BJORNMOTE.larmNara && !larmNu(s, p, 'bjorn')) { larma(s, 'bjorn', 1 + ungar.length, [p]); count(s, 'bjorn larm'); } // den som ser björnen nära byn ropar (steg 12.1.142)
     if (!s.bjornJakt?.jagare) s.bjornJakt = { ar, sedd: s.now, sag: p.id, x: b.x, y: b.y, timme: s.bjornJakt?.timme }; // timmen behålls: chansen till jakt slås en gång i timmen, inte vid varje nytt möte (steg 12.1.59) // byn vet var björnen går (björnjakten, steg 6.6.6), och märket står där (steg 9.2.122)
     if (rnd(s, 'bjorn') < (ungar.length ? BJORNMOTE.anfallUngar : BJORNMOTE.anfall)) {
       const folk = living(s).filter(q => q === p || vaken(q) && q.task?.act !== 'strid' && !roomAt(s, q.x, q.y) && Math.hypot(q.x - p.x, q.y - p.y) <= BJORNMOTE.med);
@@ -111,7 +111,7 @@ function jaktBeslut(s: State, bx: number, by: number) {
   const j = s.bjornJakt!;
   if (j.jagare || j.ar !== yearNo(s, s.now) || !isLight(s.now) || s.now - j.sedd > BJORNJAKT.vet * HOUR) return;
   const folk = living(s);
-  const kan = folk.filter(q => ageOf(q, s.now) >= ALDER.vaktFran && ageOf(q, s.now) < ALDER.vaktTill && !isSick(q, s.now) && halsa(q) >= KROPP.svag && kanGa(q) && q.task?.act !== 'strid' && q.task?.act !== 'vargjakt' && q.task?.act !== 'bjornjakt' && !larmNu(s, q)?.falskt && harSpjut(s, q));
+  const kan = folk.filter(q => ageOf(q, s.now) >= ALDER.vaktFran && ageOf(q, s.now) < ALDER.vaktTill && !isSick(q, s.now) && halsa(q) >= KROPP.svag && kanGa(q) && q.task?.act !== 'strid' && q.task?.act !== 'vargjakt' && q.task?.act !== 'bjornjakt' && !larmNu(s, q, 'fara')?.falskt && harSpjut(s, q));
   if (!kan.length) return;
   const kraftAv = (l: Person[]) => l.reduce((a, q) => a + BJORNJAKT.kraftBas + BJORNJAKT.kraftSkada * VAPEN[personKampe(s, q, 0, 0, 0, 0).vapen].skada, 0);
   // hur många som vågar och om jakten blir av kommer ur jägarnas styrka mot björnens (steg 10.1.17), inte ur fasta antal

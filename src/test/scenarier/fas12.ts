@@ -1498,3 +1498,25 @@ SCENARIER.pais = {
     ];
   },
 };
+
+SCENARIER.larmsort = {
+  text: 'Ett larm per sort (steg 12.1.211): ett rop om björnen skriver inte över det man vet om rövarna; en person minns det senaste larmet av varje sort, varje system frågar efter sitt, och en äldre sparning får sitt larm under rätt sort',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), folk = SIM.living(s), p = folk[0];
+    for (const q of folk) { q.larm = undefined; q.task = undefined; }
+    SIM.larma(s, 'rovare', 3, [p]);
+    s.now += 10 * SIM.MIN;
+    SIM.larma(s, 'bjorn', 1, [p]);
+    const rov = SIM.larmNu(s, p, 'rovare'), bj = SIM.larmNu(s, p, 'bjorn');
+    // en äldre sparning: larmet låg i ett fält utan sort
+    const g = SIM.cloneState(s), gp = SIM.living(g)[0];
+    (gp as { larm?: unknown }).larm = { t: g.now, vad: 'varg', storlek: 2, led: 0 };
+    g.v = 62;
+    const u = SIM.cloneState(g), up = SIM.living(u)[0];
+    return [
+      [`björnropet kom efter rövarlarmet och båda finns kvar (rövare ${rov?.storlek ?? 'inget'}, björn ${bj?.storlek ?? 'inget'})`, rov?.storlek === 3 && bj?.storlek === 1],
+      ['rövarlarmet är detsamma som förut: hen har inte varnat än och larmet är hens eget (led 0)', !!rov && !rov.varnat && rov.led === 0],
+      ['en äldre sparning får sitt larm under rätt sort', up.larm?.varg?.storlek === 2 && SIM.larmNu(u, up, 'varg') !== undefined],
+    ];
+  },
+};

@@ -1077,7 +1077,7 @@ SCENARIER.fangelse = {
     p.thoughts = [{ text: 'Vill ut', v: -1, until: s.now + 30 * SIM.DAY }];
     const t0 = s.now; let sonder = -1;
     kor(s, 2, v => { if (sonder < 0 && !SIM.fangelseDorr(v, h)!.dorr) sonder = v.now; });
-    const min = (sonder - t0) / SIM.MIN, fri = !p.fange, larm = s.people.some(q => q.larm?.vad === 'rymning');
+    const min = (sonder - t0) / SIM.MIN, fri = !p.fange, larm = s.people.some(q => q.larm?.rymning !== undefined);
     // byn hänger en ny trädörr: den som kan tekniken och har materialet
     q.tek = { ...(q.tek ?? {}), tradorr: 1 }; SIM.setAmount(s, 'plankor', 10); SIM.setAmount(s, 'rep', 5);
     let ny = false; kor(s, 24, v => { if (SIM.fangelseDorr(v, h)?.dorr === 'tradorr') ny = true; }); // ett helt dygn: dörrar hängs på dagen

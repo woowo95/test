@@ -771,7 +771,7 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
   const harHorn = ropare.some(p => (s.ting ?? []).some(t => t.k === 'horn' && (t.hos === p.id || t.agare === p.id || t.agare === undefined))), harTrumma = !harHorn && ropare.some(p => (s.ting ?? []).some(t => t.k === 'trumma' && (t.hos === p.id || t.agare === p.id)));
   const hor = harHorn ? 1e4 : LARM.hor * (isLight(s.now) ? 1 : LARM.natt) * (harTrumma ? LARM.trumma : 1);
   const vet = new Set<Person>(ropare), hort: Person[] = [];
-  for (const p of ropare) p.larm = { t: s.now, vad, storlek, led: 0, ...(falskt ? { falskt: true as const } : {}) };
+  for (const p of ropare) horLarm(p, { t: s.now, vad, storlek, led: 0, ...(falskt ? { falskt: true as const } : {}) });
   let ropar = [...ropare];
   for (let led = 1; ropar.length; led++) {
     const nya: Person[] = [];
@@ -780,8 +780,8 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
       const fran = ropar.find(r => Math.hypot(r.x - q.x, r.y - q.y) <= hor);
       if (!fran) continue;
       vet.add(q); hort.push(q);
-      const st = Math.max(1, Math.round((fran.larm?.storlek ?? storlek) * (1 + LARM.forvrang * (2 * rnd(s, 'rykte', q) - 1))));
-      q.larm = { t: s.now, vad, storlek: st, led, ...(falskt ? { falskt: true as const } : {}) };
+      const st = Math.max(1, Math.round((fran.larm?.[vad]?.storlek ?? storlek) * (1 + LARM.forvrang * (2 * rnd(s, 'rykte', q) - 1))));
+      horLarm(q, { t: s.now, vad, storlek: st, led, ...(falskt ? { falskt: true as const } : {}) });
       tanke(q, 'hordeRop', s.now, { vad, v: -LARM.oro, tid: LARM.oroTim * HOUR });
       count(s, 'larm_hort');
       if (rnd(s, 'rykte', q) < LARM.vidare) nya.push(q);
@@ -793,7 +793,17 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
   if (hort.length) loggBer(s, 'l_larm', ropare[0].id, { namn: lista(ropare.map(p => p.name)), vad, vadtext: LARM_VAD[vad] ?? vad, n: tal(hort.length), ensam: hort.length === 1, falskt }, 'rel', ropare.map(p => p.id));
   return hort;
 }
-// minns p ett larm nu?
-export const larmNu = (s: State, p: Person) => p.larm && s.now - p.larm.t < LARM.tim * HOUR ? p.larm : undefined;
+// En person minns ett larm per sort (steg 12.1.211): ett rop om björnen skriver inte över det man vet om rövarna, och varje
+// system frågar efter sitt
+export function horLarm(p: Person, l: Larm) { (p.larm ??= {})[l.vad] = l; }
+export const larmOm = (p: Person, vad: string) => p.larm?.[vad];
+// minns p ett larm om vad nu?
+export const larmNu = (s: State, p: Person, vad: string) => { const l = p.larm?.[vad]; return l && s.now - l.t < LARM.tim * HOUR ? l : undefined; };
+// det senaste larmet p hört, av vilken sort som helst
+export function senasteLarm(p: Person): Larm | undefined {
+  let b: Larm | undefined;
+  for (const k in p.larm) { const l = p.larm[k]; if (l && (!b || l.t > b.t)) b = l; }
+  return b;
+}
 import { smakSak } from './ratter';
 import { tanke } from './tankar';

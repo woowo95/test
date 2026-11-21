@@ -1999,7 +1999,7 @@ SCENARIER.varg = {
     const harVakt = living(nv).some(q => q.task?.act === 'vakt');
     flock(nv, 4, 12, 0.3); kor(nv, 1);
     const vakt = nv.stat?.vargVackt ?? 0, sedd = nv.stat?.vargSedd ?? 0;
-    const vaken = living(nv).filter(q => q.larm?.vad === 'varg' && q.task && q.task.act !== 'sova').length;
+    const vaken = living(nv).filter(q => q.larm?.varg !== undefined && q.task && q.task.act !== 'sova').length;
     // en hungrig flock anfaller den som är ensam långt från byn
     const an = by(12), e = SIM.eldPlats(an), tl = SIM.getMap(an.seed).tiles, ensam = living(an).find(q => ageOf(q, an.now) >= 18)!;
     const land = (a: number, r: number) => { const x = Math.round(e.x + Math.cos(a) * r), y = Math.round(e.y + Math.sin(a) * r); return SIM.inMap(x, y) && tl[y * W + x] !== SIM.T.Vatten ? { x: x + 0.5, y: y + 0.5 } : undefined; };
@@ -2169,14 +2169,14 @@ SCENARIER.vargskydd = {
         Object.assign(f, { x: fast.x, y: fast.y, mx: fast.x, my: fast.y, gor: 'stryker' }); // flocken står kvar nära byn
         if (!SIM.vargarNara(v)) return;
         nara++;
-        for (const q of living(v)) if (q.larm?.vad === 'varg' && ageOf(q, v.now) >= SIM.ALDER.vaktFran) { if (q.task?.act === 'samtal') prat++; }
+        for (const q of living(v)) if (q.larm?.varg !== undefined && ageOf(q, v.now) >= SIM.ALDER.vaktFran) { if (q.task?.act === 'samtal') prat++; }
       });
-      haller = living(s).filter(q => q.larm?.vad === 'varg' && ['gomma', 'forsvar', 'hjalpaRovare'].includes(q.task?.act ?? '')).length;
+      haller = living(s).filter(q => q.larm?.varg !== undefined && ['gomma', 'forsvar', 'hjalpaRovare'].includes(q.task?.act ?? '')).length;
       const roller = living(s).map(q => q.task ? SIM.taskName(q.task) : '').filter(n => /vargarna|bakom/.test(n));
       s.vargar = undefined; // flocken drar vidare
       const e = SIM.eldPlats(s);
       for (const q of living(s)) {
-        if (q.larm?.vad !== 'varg') continue;
+        if (q.larm?.varg === undefined) continue;
         const a = ageOf(q, s.now), svag = a < SIM.ALDER.vaktFran || a >= SIM.ALDER.gammal;
         const at = q.task?.phase === 'go' ? { x: q.task.tx, y: q.task.ty } : q;
         if (svag) { svaga++; if (q.task?.act === 'gomma' || q.task?.act === 'sova' && SIM.roomAt(s, Math.floor(q.x), Math.floor(q.y))) { gom++; if (SIM.roomAt(s, Math.floor(at.x), Math.floor(at.y))) iHus++; else if (Math.hypot(at.x - e.x - 0.5, at.y - e.y - 0.5) < 5) vidEld++; } }

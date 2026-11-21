@@ -154,7 +154,7 @@ export function flodRop(s: State, fore: Uint8Array, niva: number, efter: Uint8Ar
   for (let i = 0; i < efter.length; i++) if (efter[i] === T.Vatten && fore[i] !== T.Vatten) nya.push(i);
   const r = FLOD.husNara, hus = nya.some(i => { const x = i % W, y = Math.floor(i / W); for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (roofed(s, x + dx, y + dy)) return true; return false; });
   if (!hus) return;
-  const ser = living(s).filter(p => p.ute === undefined && p.task?.act !== 'sova' && p.task?.act !== 'badd' && larmNu(s, p)?.vad !== 'flod' && nya.some(i => Math.hypot(i % W + 0.5 - p.x, Math.floor(i / W) + 0.5 - p.y) <= FLOD.ser));
+  const ser = living(s).filter(p => p.ute === undefined && p.task?.act !== 'sova' && p.task?.act !== 'badd' && !larmNu(s, p, 'flod') && nya.some(i => Math.hypot(i % W + 0.5 - p.x, Math.floor(i / W) + 0.5 - p.y) <= FLOD.ser));
   if (!ser.length) return;
   larma(s, 'flod', niva, ser);
   count(s, 'flod larm');

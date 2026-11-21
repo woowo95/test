@@ -491,15 +491,15 @@ function karnan(s: State, t: Tornado, rutor: number[]) {
 // de som är vakna och ser tornadon ropar (som vid vargen)
 function ser(s: State, t: Tornado) {
   const pos = tornadoPos(t, t.u), sikt = TORNADO.sikt * (isLight(s.now) ? 1 : TORNADO.siktNatt);
-  const ser = living(s).filter(p => p.task?.act !== 'sova' && p.task?.act !== 'badd' && larmNu(s, p)?.vad !== 'tornado' && Math.hypot(p.x - pos.x, p.y - pos.y) <= sikt);
+  const ser = living(s).filter(p => p.task?.act !== 'sova' && p.task?.act !== 'badd' && !larmNu(s, p, 'tornado') && Math.hypot(p.x - pos.x, p.y - pos.y) <= sikt);
   if (!ser.length) return;
-  if (!living(s).some(p => larmNu(s, p)?.vad === 'tornado')) count(s, 'tornado sedd');
+  if (!living(s).some(p => !!larmNu(s, p, 'tornado'))) count(s, 'tornado sedd');
   larma(s, 'tornado', 1, ser);
 }
 // den som vet om tornadon och är nära banan som är kvar avbryter det hen gör och går undan (inte den som slåss, vårdar eller bärs)
 function soker(s: State, t: Tornado) {
   for (const p of living(s)) {
-    if (!p.task || !larmAvbryter(p.task.act, 'tornado') || larmNu(s, p)?.vad !== 'tornado' || !fara(s, t, p)) continue;
+    if (!p.task || !larmAvbryter(p.task.act, 'tornado') || !larmNu(s, p, 'tornado') || !fara(s, t, p)) continue;
     avbryt(s, p); count(s, 'tornado undan');
   }
 }
@@ -517,7 +517,7 @@ function fara(s: State, t: Tornado, p: Person) {
 // tornadon kommer och p vet om det och är nära dess väg: hen går undan (val.ts, som vid vargen)
 export function tornadoSkydd(s: State, p: Person): { act: 'undan'; why: string; spot: { x: number; y: number }; dur: number } | undefined {
   const t = s.tornado;
-  if (!t || !kanGa(p) || larmNu(s, p)?.vad !== 'tornado') return;
+  if (!t || !kanGa(p) || !larmNu(s, p, 'tornado')) return;
   const f = fara(s, t, p);
   return f && { act: 'undan', why: 'En tornado kommer, går undan från dess väg', spot: f.spot, dur: f.dur };
 }

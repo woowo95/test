@@ -181,7 +181,7 @@ export function stoppaVilja(s: State, p: Person, q: Person) {
 }
 // den som slår på dörren just nu och som p hört larmet om (raden stoppa i ARBETEN)
 export function stoppaVal(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string } | undefined {
-  if (p.fange || p.larm?.vad !== 'rymning' || s.now - p.larm.t > FANG.stoppMin * MIN) return undefined;
+  if (p.fange || !p.larm?.rymning || s.now - p.larm.rymning.t > FANG.stoppMin * MIN) return undefined;
   const q = s.people.find(o => o.fange && o.task?.act === 'rymma');
   const h = q && husById(s, q.fange!.hus), spot = h && utanforDorr(s, h);
   return q && spot && stoppaVilja(s, p, q) > 0 ? { spot, ref: q.id, why: `Hör att ${q.name} slår på fängelsets dörr och går dit` } : undefined;

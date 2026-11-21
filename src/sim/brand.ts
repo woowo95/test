@@ -527,16 +527,16 @@ function narmast(b: Brand, x: number, y: number, utom?: (i: number) => boolean) 
 // de som är vakna och ser elden ropar (som vid vargen och tornadon)
 function ser(s: State, b: Brand) {
   const sikt = BRAND.sikt * (isLight(s.now) ? 1 : BRAND.siktNatt);
-  const ser = living(s).filter(p => p.task?.act !== 'sova' && p.task?.act !== 'badd' && larmNu(s, p)?.vad !== 'brand' && narmast(b, p.x, p.y).d <= sikt);
+  const ser = living(s).filter(p => p.task?.act !== 'sova' && p.task?.act !== 'badd' && !larmNu(s, p, 'brand') && narmast(b, p.x, p.y).d <= sikt);
   if (!ser.length) return;
-  if (!living(s).some(p => larmNu(s, p)?.vad === 'brand')) count(s, 'brand sedd');
+  if (!living(s).some(p => !!larmNu(s, p, 'brand'))) count(s, 'brand sedd');
   larma(s, 'brand', 1, ser);
   for (const p of ser) tecken(s, p, b.kalla === 'blixt' ? 'blixt' : 'brand'); // det oförklarliga (steg 4.1.2.1)
 }
 // den som vet om elden avbryter det hen gör när hen ska släcka eller gå undan (inte den som slåss, vårdar eller bärs)
 function soker(s: State, b: Brand, hot: boolean) {
   for (const p of living(s)) {
-    if (!p.task || !larmAvbryter(p.task.act, 'brand') || larmNu(s, p)?.vad !== 'brand' || !brandMal(s, b, p, hot)) continue;
+    if (!p.task || !larmAvbryter(p.task.act, 'brand') || !larmNu(s, p, 'brand') || !brandMal(s, b, p, hot)) continue;
     avbryt(s, p); count(s, 'brand avbryter');
   }
 }
@@ -726,7 +726,7 @@ function fotfaste(s: State, b: Brand, i: number, p: { x: number; y: number }) {
 // det p väljer när hen vet om branden (val.ts, efter vargen och tornadon)
 export function brandVal(s: State, p: Person): BrandMal | undefined {
   const b = s.brand;
-  if (!b || larmNu(s, p)?.vad !== 'brand') return;
+  if (!b || !larmNu(s, p, 'brand')) return;
   return brandMal(s, b, p, !!b.hot && hotar(s, b));
 }
 
