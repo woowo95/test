@@ -282,7 +282,7 @@ export const STATIONER = {
   // grundarnas trasiga vagn (steg 11.6.13): byns grundare kom som ett resande sällskap långt bortifrån, och vagnen står på
   // startplatsen i lagret med de första sakerna i. Ingen kan bygga en (ingen teknik), och den slits som annat i lagret
   vagn: {
-    namn: 'Trasig vagn', ikon: 'vagnsvrak', w: 1, h: 1, tek: [], av: {}, min: 10, gor: [], mobel: true, ett: true, vrak: true, forvar: { rymmer: STATION.vagnRymmer },
+    namn: 'Trasig vagn', ikon: 'vagnsvrak', w: 1, h: 1, tek: [], av: {}, min: 10, gor: [], mobel: true, vrak: true, forvar: { rymmer: STATION.vagnRymmer },
     bygger: 'Ingen bygger en trasig vagn.',
     forsta: 'Grundarnas vagn gick sönder här, och här slog de sig ner.',
   },

@@ -154,6 +154,20 @@ for (const [ks, why] of [
   [['skatta', 'bivax', 'vaxljus'], 'bikupan (steg 10.10.16) kommer först när byn tagit honung ur vildbon, och skattningen och vaxet efter det; scenarierna bikupa, skattning och vaxljus prövar dem'],
   [['benspade'], 'benspaden (steg 2.7.2) kräver tre ben, och benen går först till sylen, nålarna och snarorna, så den görs sent eller inte alls på 50 dygn; scenarierna latrin och lera prövar den'],
   [['naver'], 'nävern (steg 6.3.3) täljs bara när en eld tänds med försök och höet inte räcker, och sedan 10.6.12 tänds eldarna oftast med en brand från en eld som brinner; scenariot naver prövar den'],
+  [['kolmila', 'kola', 'passa', 'blasterugn', 'blasa', 'malm', 'jarn', 'jarnskrot', 'smedja', 'smida'], 'järnet (system 12.2) börjar med kolmilan, en teknik på nivå 4 efter örtköket, och blästerugnen och smedjan på nivå 5, och malmen hämtas i bergen eller myren; scenarierna kolmila, blaster, jarngruva, jarnskrot och smedja prövar det'],
+  [['jarnspjut', 'jarnskold', 'jarnhjalm', 'jarnhjalm_jarn', 'ringbrynja', 'ringbrynja_jarn', 'svard', 'vapensmide'], 'järnvapnen och rustningen (steg 12.2.7–12.2.9) smids i smedjan med vapensmidet, nivå 6; scenarierna vapensmide och jarnvapen prövar dem'],
+  [['isborr', 'sag', 'ullsax', 'jarnnal', 'jarnhacka', 'jarngryta', 'eldstal', 'jarnyxa', 'jarnkniv', 'lie', 'spanne', 'spanne_jarn', 'las'], 'redskapen av järn (steg 12.2.10–12.2.17) smids i smedjan, nivå 5–6, och kräver järnet; scenarierna jarnredskap, jarnsmycke, isborr, sag, ullsax, jarnnal, hacka, gryta och las prövar dem'],
+  [['torv'], 'torven (system 12.2) grävs med benspaden i myren, och både benspaden och en myr nära byn är sällsynta; scenariot torv prövar den'],
+  [['drejskiva'], 'drejskivan (steg 12.4.1) är en teknik på nivå 4 efter lerkrukan och stenhuggarplatsen; scenariot drejskiva prövar den'],
+  [['fyll_lampa'], 'oljelampan (steg 12.4.2) kräver brännolja och en lampa; scenarierna brannolja och oljelampa prövar den'],
+  [['stol', 'sang'], 'stolen och sängen (steg 12.4.3–12.4.4) görs vid snickarbänken, nivå 4; scenarierna stol och sang prövar dem'],
+  [['tunna', 'laggkar'], 'tunnan (steg 12.4.6) laggas vid snickarbänken med laggkärlet, nivå 5 efter bryggkaret; scenariot tunna prövar den'],
+  [['ost', 'ysta'], 'osten (steg 12.4.7) ystas av mjölk, och mjölk har bara en by med tamdjur; scenariot ost prövar den'],
+  [['brunn'], 'brunnen (steg 12.4.8) kräver benspaden och stenhuggarplatsen, nivå 4; scenariot brunn prövar den'],
+  [['utedass'], 'utedasset (steg 12.4.9) är en teknik på nivå 5 efter latrinen och klyvplatsen; scenariot utedass prövar det'],
+  [['sjukstuga'], 'sjukstugan (steg 12.4.10) är en teknik på nivå 5 efter halmbädden och örtteet; scenariot sjukstuga prövar den'],
+  [['fyrfat'], 'fyrfatet (steg 12.4.11) är en teknik på nivå 4 efter lerkrukan, och elden i det tänds bara när det är kallt inne; scenariot fyrfat prövar det'],
+  [['penna'], 'fjäderpennan (steg 12.4.14) skärs när någon ska skriva, och att skriva kräver pergamentet, nivå 6; scenariot skriva prövar den'],
 ] as [string[], string][]) for (const k of ks) SALLSYNT[k] ??= why;
 
 // aldrig: allt i registren används, i minst en av testbyarna

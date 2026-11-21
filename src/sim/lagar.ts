@@ -233,7 +233,7 @@ FRAGOR.lagtal = {
     (l.tal ??= {})[d.k as string] = d.v as number;
     count(s, 'lag_tal');
     const led = ledareOf(s), ensam = !!led && (vikter(s).find(x => x.p === led)?.andel ?? 0) > 0.5;
-    const t = `${ensam ? `${led!.name} påbjöd en ändring av` : 'Byn ändrade'} lagen ${LAGAR[l.id].namn}: ${td.namn} från ${td.visa(fore)} till ${td.visa(d.v as number)}.`;
+    const t = `${ensam ? `${led!.name} påbjöd en ändring av` : 'Byn ändrade'} lagen ${LAGAR[l.id].namn}: ${td.namn} är nu ${td.visa(d.v as number)} (förut ${td.visa(fore)}).`;
     log(s, t, 'world', fram ? [fram.id] : []); kronika(s, t, 'ledare');
   },
 };

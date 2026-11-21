@@ -13,7 +13,7 @@ import { eldPlats, getMap } from './karta';
 import { groundOf } from './mark';
 import { PLATS, rektAvstand } from './plats';
 import { type Station, delarAv, nyPlatsDel, rivDel, rivStation, stangerIn, stationDef, stationRutor, stationerOf, storlekAv, uteStation } from './stationer';
-import { enOrd, stor, tal, husIMening } from './ord';
+import { enOrd, heltOrd, stor, tal, husIMening } from './ord';
 import { knows } from './teknik';
 import { LAGER, matUtanPlats, utanPlatsNu, amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
@@ -577,7 +577,7 @@ export function rivOmTomt(s: State) {
     s.byggen = bitsOf(s).filter(b => b.hus !== h.id); s.hus = housesOf(s).filter(q => q !== h);
     const ved = tillbaka(s, h, mat); // till ägaren: virket och veden (steg 10.2.70)
     touch(s); changed(s); count(s, 'rivet');
-    log(s, `${namn} stod tomt och revs. ${ved} trä gick till ägaren.`, 'world'); kronika(s, `${namn} revs.`, 'bygge');
+    log(s, `${namn} stod tomt och revs. ${stor(heltOrd(ved))} trä gick till ägaren.`, 'world'); kronika(s, `${namn} revs.`, 'bygge');
     return;
   }
 }

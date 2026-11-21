@@ -7,6 +7,7 @@
 // lätt sällskap och mer sällan med djur, vagn och den som inte kan gå; misslyckas den blir det strid. Striden räknas med stridens
 // regler (strid.ts) på sällskapets personer: såren sitter på dem som hemma, och den som dör begravs vid leden.
 import { balans } from './balans';
+import { heltOrd, och, sakOrd, stor } from './ord';
 import { count } from './folk';
 import { byPlats } from './landmarken';
 import { anfallUtr, flockStorlek, BYANFALL } from './radanfall';
@@ -14,7 +15,7 @@ import { VarldRad } from './radtal';
 import { radDoda } from './rad';
 import { radTar } from './priser';
 import { dagbok, dorPaVagen, resenarer, Sallskap, tappa, VAGHANDELSER } from './resa';
-import { SAKER, FOOD } from './saker';
+import { FOOD } from './saker';
 import { grundvarde } from './varde';
 import { varldMark } from './varlden';
 import { ledKlass } from './leder';
@@ -91,7 +92,7 @@ export function taUrPack(sl: Sallskap, v: number, ut?: (k: string) => boolean): 
   }
   return tog;
 }
-export const lista = (t: [string, number][]) => t.map(([k, n]) => `${n} ${(SAKER[k]?.namn ?? k).toLowerCase()}`).join(', ');
+export const lista = (t: [string, number][]) => och(t.map(([k, n]) => { const [art, en, fler] = sakOrd(k); return n === 1 ? `${art} ${en}` : `${heltOrd(n)} ${fler}`; }));
 
 // striden på vägen: sällskapet (sida 0) mot fienderna (sida 1); svarar med vinnaren och hur många fiender som dog
 export function vagStrid(s: State, sl: Sallskap, fiender: Uppstallning['kampar'], slag: string, t: number): { vann: boolean; doda: number } {
@@ -139,19 +140,19 @@ VAGHANDELSER.ran = {
     const ge = (tog: [string, number][]) => { for (const [k, m] of tog) radTar(L, k, m); VAKTKROK.ranad(s, sl, L, t); VAKTKROK.forlorat(s, sl, L, tog); }; // bytet går till lägret, och det värdefulla vaktas där (steg 11.13.27)
     if (val === 'betala') {
       const tog = taUrPack(sl, krav); ge(tog);
-      dagbok(s, sl, 'ran', `${n} rövare från ${L.namn} stoppade sällskapet. De betalade ${tog.length ? lista(tog) : 'inget, för de hade inget'} och fick gå.`, t);
+      dagbok(s, sl, 'ran', `${stor(heltOrd(n))} rövare från ${L.namn} stoppade sällskapet. De betalade ${tog.length ? lista(tog) : 'inget, för de hade inget'} och fick gå.`, t);
       return;
     }
     if (val === 'fly' && rnd(s, 'resa') < flyChans(s, sl)) {
       sl.forlorat = (sl.forlorat ?? 0) + VAGRAN.flyTim;
-      dagbok(s, sl, 'ran', `${n} rövare från ${L.namn} kom emot sällskapet. De flydde och kom undan, men förlorade ${VAGRAN.flyTim} timmar.`, t);
+      dagbok(s, sl, 'ran', `${stor(heltOrd(n))} rövare från ${L.namn} kom emot sällskapet. De flydde och kom undan, men förlorade ${VAGRAN.flyTim} timmar.`, t);
       return;
     }
     const u = vagStrid(s, sl, Array.from({ length: n }, () => rovarKampe(L)), 'rovare', t);
     radDoda(L, u.doda);
-    if (u.vann) { dagbok(s, sl, 'strid', `${n} rövare från ${L.namn} anföll${val === 'fly' ? ' när sällskapet försökte fly' : ''}. Sällskapet slog dem tillbaka${u.doda ? ` och ${u.doda} rövare dog` : ''}.`, t); return; }
+    if (u.vann) { dagbok(s, sl, 'strid', `${stor(heltOrd(n))} rövare från ${L.namn} anföll${val === 'fly' ? ' när sällskapet försökte fly' : ''}. Sällskapet slog dem tillbaka${u.doda ? ` och ${u.doda} rövare dog` : ''}.`, t); return; }
     const tog = taUrPack(sl, (n - u.doda) * BYANFALL.bar); ge(tog);
-    dagbok(s, sl, 'strid', `${n} rövare från ${L.namn} anföll och vann striden. De tog ${tog.length ? lista(tog) : 'inget'}.`, t);
+    dagbok(s, sl, 'strid', `${stor(heltOrd(n))} rövare från ${L.namn} anföll och vann striden. De tog ${tog.length ? lista(tog) : 'inget'}.`, t);
   },
 };
 
@@ -167,15 +168,15 @@ VAGHANDELSER.rovdjur = {
     if (val === 'betala') {
       const tog: [string, number][] = []; let kvar = krav;
       for (const k of Object.keys(sl.pack).filter(k => FOOD.includes(k)).sort()) { const m = Math.min(kvar, Math.floor(sl.pack[k] ?? 0)); if (m > 0) { tappa(sl, k, m); tog.push([k, m]); kvar -= m; } }
-      dagbok(s, sl, 'ran', `${n} vargar följde sällskapet. De kastade ${lista(tog)} åt dem och kom undan.`, t);
+      dagbok(s, sl, 'ran', `${stor(heltOrd(n))} vargar följde sällskapet. De kastade ${lista(tog)} åt dem och kom undan.`, t);
       return;
     }
     if (val === 'fly' && rnd(s, 'resa') < flyChans(s, sl)) {
       sl.forlorat = (sl.forlorat ?? 0) + VAGRAN.flyTim;
-      dagbok(s, sl, 'ran', `${n} vargar kom emot sällskapet. De tog en omväg och förlorade ${VAGRAN.flyTim} timmar.`, t);
+      dagbok(s, sl, 'ran', `${stor(heltOrd(n))} vargar kom emot sällskapet. De tog en omväg och förlorade ${VAGRAN.flyTim} timmar.`, t);
       return;
     }
     const u = vagStrid(s, sl, Array.from({ length: n }, (_, j) => djurKampe('varg', j, 1, 0, 0)), 'varg', t);
-    dagbok(s, sl, 'strid', `${n} vargar anföll sällskapet. ${u.vann ? `De drev bort dem${u.doda ? ` och dödade ${u.doda}` : ''}.` : 'Vargarna vann striden.'}`, t);
+    dagbok(s, sl, 'strid', `${stor(heltOrd(n))} vargar anföll sällskapet. ${u.vann ? `De drev bort dem${u.doda ? ` och dödade ${heltOrd(u.doda)}` : ''}.` : 'Vargarna vann striden.'}`, t);
   },
 };

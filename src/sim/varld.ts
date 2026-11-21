@@ -6,7 +6,7 @@ import { nyaGrannbyar } from './grannbyar';
 import { gastVapenSatt, gastAv, nyGast, nyttGastId } from './gast';
 import { gastNyckel } from './gastliv';
 import { stepDelning } from './delning';
-import { inZone, put, setStock, zonesOf } from './lager';
+import { ingetIElden, inZone, put, setStock, zonesOf } from './lager';
 import { kyrkaId } from './egendom';
 import { newTing } from './agande';
 import { MATERIAL, isWall } from './byggnad';
@@ -306,6 +306,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     const haft = (s.tamdjur?.length ?? 0) > 0 || Object.keys(s.stat ?? {}).some(k => k.startsWith('tam_') && (s.stat![k] ?? 0) > 0);
     if (haft && !s.stat?.forstaTamdjur) (s.stat ??= {}).forstaTamdjur = 1;
   }],
+  [67, 'det som en äldre version lagt på en eldruta (en ny station på en släckt lägereld, nödplatsen bredvid lagret) flyttas ut ur elden (steg 12.1.229)', s => ingetIElden(s)],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }
