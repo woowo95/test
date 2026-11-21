@@ -11,7 +11,7 @@ import * as PIXI from 'pixi.js';
 import { FARGER, MORKARE } from '../palett';
 import { MORKER, W } from '../sim';
 import { platt } from './pixel';
-import { SKUGGA } from './eldskugga';
+import { SKUGGA, skrivsOm } from './eldskugga';
 
 const RAND = 0.03, KART = W * 16, SVEP_MS = 60000; // randens bredd som del av kartan, kartans bredd i världens punkter, svepets tid
 
@@ -118,7 +118,7 @@ export const nattFilter = new PIXI.Filter(undefined, FRAG, {
 // når, styrkan 0–1). En negativ styrka är elden (steg 6.8.15): fullt ljus ut till ungefär en tredjedel av räckvidden och sedan en mjuk kurva, steglöst utan raster, som fortsätter svagt en bit utanför räckvidden (steg 12.1.169, 12.1.170 och 12.1.172); de andra
 // avtar jämnt. Mörkret avrundas till hela steg; när steget byts sveper randen över kartan (steg 6.8.17)
 const svep = { fran: -1, till: -1, t0: 0 };
-let skuggSatt = false;
+const skuggSkrivet: { rader?: Uint8Array[] } = {}; // strålarna som står i skuggbilden (skrivsOm i ui/eldskugga.ts)
 // folk: människorna (x och y i världens punkter, cirkelns radie), som var och en har en liten, svag ljuscirkel (steg 9.2.69). Den
 // finns bara i bilden och är ingen ljuskälla i simuleringen
 // skuggor: strålarna för de första eldarna (ui/eldskugga.ts, steg 12.3.2), och ny = om de räknats om sedan förra bilden
@@ -141,10 +141,10 @@ export function stallNatt(lager: PIXI.Container, varld: PIXI.Container, m: numbe
   const hs = u.uHarSkugga as Float32Array; hs.fill(0);
   if (skuggor) {
     skuggor.rader.slice(0, MAX_ELDAR).forEach((_, i) => { hs[i] = 1; });
-    if (skuggor.ny || !skuggSatt) {
+    if (skrivsOm(skuggSkrivet, skuggor.rader)) {
       skuggData.fill(255);
       skuggor.rader.slice(0, MAX_ELDAR).forEach((r, i) => { for (let a = 0; a < SKUGGA.hall; a++) skuggData[(i * SKUGGA.hall + a) * 4] = r[a]; });
-      skuggTex.baseTexture.update(); skuggSatt = true;
+      skuggTex.baseTexture.update();
     }
   }
   const fo = u.uFolk as Float32Array; fo.fill(0);

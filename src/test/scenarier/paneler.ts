@@ -1,7 +1,7 @@
 // Scenarier för kartbilden och panelerna i fas 12 (grenen par-paneler).
 import * as SIM from '../../sim';
 import { SCENARIER, medHus, utanWebblasare } from './hjalp';
-import { INGEN, SKUGGA, eldSkuggor, iSkuggan } from '../../ui/eldskugga';
+import { INGEN, SKUGGA, eldSkuggor, iSkuggan, skrivsOm } from '../../ui/eldskugga';
 import { GRAFER, grafHtml } from '../../ui/graf';
 import { setByn } from '../../ui/lage';
 import { START, kronikaVakt } from '../kor';
@@ -102,7 +102,7 @@ SCENARIER.grafer = {
 };
 
 SCENARIER.eldskugga = {
-  text: 'Steg 12.3.2: elden kastar skuggor. För varje lägereld räknas hur långt ljuset når åt 360 håll innan det träffar en vägg eller en stam (ui/eldskugga.ts), och nattfiltret gör det som ligger bakom ett eller två steg mörkare. Väggen själv är upplyst, det bakom den i skuggan, det framför den inte, och strålarna räknas om bara när något ändrats. Bara bilden',
+  text: 'Steg 12.3.2 och 12.1.259: elden kastar skuggor. För varje lägereld räknas hur långt ljuset når åt 360 håll innan det träffar en vägg eller en stam (ui/eldskugga.ts), och nattfiltret gör det som ligger bakom ett eller två steg mörkare. Väggen själv är upplyst, det bakom den i skuggan, det framför den inte, och strålarna räknas om bara när något ändrats. Bara bilden',
   kor: () => {
     const s = SIM.createState(3, START); medHus(s);
     const f = SIM.eldXY(s, s.fire), fx = f.x + 0.5, fy = f.y + 0.5;
@@ -118,7 +118,14 @@ SCENARIER.eldskugga = {
     // ett hus till ändrar nyckeln, och strålarna räknas om
     SIM.touch(s);
     const omraknad = eldSkuggor(s, [{ x: fx, y: fy }]).ny;
+    // byta by (steg 12.1.259): bilden är en för hela sidan, minnet per by. Tillbaka i den första byn är strålarna gamla i dess
+    // minne men andra än de som står i bilden, och bilden skrivs om
+    const b = SIM.createState(5, START), fb = SIM.eldXY(b, b.fire), skrivet: { rader?: Uint8Array[] } = {};
+    const forsta = skrivsOm(skrivet, eldSkuggor(s, [{ x: fx, y: fy }]).rader), sammaIgen = skrivsOm(skrivet, eldSkuggor(s, [{ x: fx, y: fy }]).rader);
+    const andra = skrivsOm(skrivet, eldSkuggor(b, [{ x: fb.x + 0.5, y: fb.y + 0.5 }]).rader);
+    const tillbaka = eldSkuggor(s, [{ x: fx, y: fy }]), tillbakaSkrivs = skrivsOm(skrivet, tillbaka.rader);
     return [
+      [`skuggbilden skrivs om när man byter by och byter tillbaka, fast strålarna är gamla i byns minne (${[forsta, sammaIgen, andra, tillbakaSkrivs].map(x => x ? 'skrivs' : 'står').join(', ')}, minnet ${tillbaka.ny ? 'nytt' : 'gammalt'}; steg 12.1.259)`, forsta && !sammaIgen && andra && tillbakaSkrivs && !tillbaka.ny],
       [`det finns en vägg nära elden (${vagg ? bd.toFixed(1) : '–'} rutor bort) och strålar som träffar något (${skuggade} av ${SKUGGA.hall} håll)`, !!vagg && skuggade > 0],
       [`bakom väggen är det skugga, framför och på väggen inte (${bakom ? 'skugga' : 'ljust'} bakom, ${framfor ? 'skugga' : 'ljust'} framför, ${sjalv ? 'skugga' : 'ljust'} på väggen)`, bakom && !framfor && !sjalv],
       [`strålarna räknas en gång och sedan om bara när något ändrats (${ny ? 'ny' : 'gammal'}, ${igen.ny ? 'ny' : 'gammal'}, efter ett nytt hus ${omraknad ? 'ny' : 'gammal'})`, ny && !igen.ny && omraknad],

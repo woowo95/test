@@ -58,3 +58,11 @@ export function eldSkuggor(s: State, eldar: { x: number; y: number }[]): { rader
   minne.set(s, { k, rader });
   return { rader, ny: true };
 }
+// nattfiltrets bild av strålarna (ui/natt.ts) skrivs om när strålarna är andra än de som skrevs senast (steg 12.1.259). Bilden
+// är en för hela sidan men minnet är per by: byter man by kan strålarna vara gamla i den nya byns minne (ny = false) och ändå
+// andra än de i bilden. skrivet = de strålar som står i bilden nu
+export function skrivsOm(skrivet: { rader?: Uint8Array[] }, rader: Uint8Array[]): boolean {
+  if (skrivet.rader === rader) return false;
+  skrivet.rader = rader;
+  return true;
+}
