@@ -251,10 +251,11 @@ export const latrinFyllt = (t: Station) => clamp(t.fyllt ?? 0, 0, 1);
 export const latrinVantNu = (s: State) => { const v = s.latrinVant; return v ? v.m * Math.pow(0.5, (s.now - v.t) / (SMUTS.latrinVantDygn * DAY)) : 0; };
 // en annan latrin är ledig nära p (steg 11.1.71): då är väntan ingen brist på latriner
 export const latrinLedigNara = (s: State, p: Person, utom: Station) => latriner(s).some(t => t !== utom && isKlar(t) && (t.fyllt ?? 0) < 1 && Math.hypot(t.x + 0.5 - p.x, t.y + 0.5 - p.y) <= SMUTS.latrinUpptagen && !latrinUpptagen(s, t, p));
-// en latrin som ingen använt på SMUTS.latrinGlomDygn växer igen och försvinner (steg 11.1.71), som en full som fylls igen.
+// en latrin som ingen använt på SMUTS.latrinGlomDygn växer igen och försvinner (steg 11.1.71), som en full som fylls igen;
+// bara en grop gör det (vaxerIgen på raden), utedasset står kvar (steg 12.1.244).
 // Räknas glest (TAKTER i steg.ts); tiden räknas från senaste besöket, eller från att den blev klar
 export function latrinerVaxerIgen(s: State) {
-  for (const t of latriner(s)) if (isKlar(t) && (t.fyllt ?? 0) < STATION.latrinNy && s.now - (t.anv ?? t.klar ?? s.now) >= SMUTS.latrinGlomDygn * DAY) {
+  for (const t of latriner(s)) if (stationDef(t.k)?.vaxerIgen && isKlar(t) && (t.fyllt ?? 0) < STATION.latrinNy && s.now - (t.anv ?? t.klar ?? s.now) >= SMUTS.latrinGlomDygn * DAY) {
     fyllIgen(s, t, false); count(s, 'latriner igenvuxna');
   }
 }

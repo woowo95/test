@@ -150,11 +150,12 @@ moblerKrok.vaggaRum = vaggaRum;
 // Utedasset är en latrin med väggar och tak (raden utedass i STATIONER): det töms till komposten och står kvar (rester.ts), smutsar
 // vattnet mindre (dass.smuts, smuts.ts) och står därför närmare husen, och den som går på toa där håller sig torr (iDass).
 // Det byggs i stället för latrinen när byn har något över (finare): det största överskottet bland familjerna med eget hus,
-// när byn behöver en toalett eller har en grävd latrin kvar
+// när byn behöver en toalett eller har fler grävda latriner kvar än utedass (steg 12.1.244)
 export const byOverskott = (s: State) => { let m = 0; for (const h of (s.hus ?? [])) if (h.ag !== undefined && byId(s, h.ag)) m = Math.max(m, hemOverskott(s, h.ag)); return Math.min(1, m); };
 finareKrok.finare = (s, k) => {
   const d = stationDef(k)!, gammal = d.finare!;
-  const behov = Math.max(stationerOf(s).some(t => t.k === gammal && isKlar(t)) ? 1 : 0, finareKrok.toa(s));
+  const st = stationerOf(s), kvar = st.filter(t => t.k === gammal && isKlar(t)).length - st.filter(t => t.k === k).length; // latrinerna som inget utedass ersatt (steg 12.1.244)
+  const behov = Math.max(Math.min(1, Math.max(0, kvar)), finareKrok.toa(s));
   return behov > 0 ? behov * byOverskott(s) : 0;
 };
 // p sitter på toa i ett utedass

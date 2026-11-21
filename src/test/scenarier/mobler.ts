@@ -325,14 +325,21 @@ SCENARIER.utedass = {
     const hus = medHus(s); if (hus) hus.ag = p.id;
     for (const x of SIM.living(s)) SIM.put(s, 'silver', 10, { [x.id]: 10 });
     SIM.put(s, 'silver', 200, { [p.id]: 200 });
+    const lika = SIM.stationBrist(s, 'utedass'); // en latrin och ett utedass: inget fler behövs (steg 12.1.244)
+    const lat3 = medBank(s, 'latrin');
     const rik = SIM.stationBrist(s, 'utedass');
+    // ett tömt utedass som ingen använt på länge står kvar; en grop som ingen använt växer igen (steg 12.1.244)
+    lat3.anv = dass.anv = s.now; s.now += (SIM.SMUTS.latrinGlomDygn + 1) * SIM.DAY;
+    SIM.latrinerVaxerIgen(s);
+    const dassStar = SIM.stationerOf(s).includes(dass), gropBorta = !SIM.stationerOf(s).includes(lat3);
     return [
       [`utedasset tar 1 ruta, av ${JSON.stringify(d.av)} på ${d.min} minuter med ${d.verktyg}, tekniken ${tek?.namn} (kräver ${tek?.krav})`, d.av.plankor === 4 && d.min === 15 && d.verktyg === 'benspade' && !!tek && tek.krav.includes('latrin') && tek.krav.includes('klyvplats')],
       [`det står närmare byn än latrinen (högst ${d.utkant?.till} mot ${l0.utkant?.till} rutor)`, (d.utkant?.till ?? 99) < (l0.utkant?.till ?? 0) && (d.utkant?.avst ?? 99) < (l0.utkant?.avst ?? 0)],
       [`utedasset smutsar vattnet bredvid mindre (${smDass.toFixed(3)} mot ${smLat.toFixed(3)})`, smDass < smLat],
       [`en latrin som tömts i komposten är borta, utedasset töms och står kvar`, latBorta && dassKvar],
       [`den som går på toa i utedasset håller sig torr`, torr],
-      [`byn bygger utedasset när den har något över (fattig ${fattig}, rik ${rik.toFixed(2)})`, fattig === 0 && rik > 0],
+      [`byn bygger utedasset när den har något över och fler latriner än utedass (fattig ${fattig}, rik ${rik.toFixed(2)}, en av varje ${lika})`, fattig === 0 && rik > 0 && lika === 0],
+      [`ett utedass som ingen använt står kvar, en grävd latrin växer igen (vaxerIgen på raden)`, dassStar && gropBorta && !!SIM.stationDef('latrin')?.vaxerIgen && !d.vaxerIgen],
     ];
   },
 };
