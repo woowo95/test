@@ -24,6 +24,7 @@ import { newFire } from './eld';
 import { laggGruvor } from './gruva';
 import { varldMark } from './varlden';
 import { tanke } from './tankar';
+import { ACTS } from './handlingar';
 
 // ---------- skapa värld ----------
 // storlek: kartans storlek, för testerna av äldre byar (en ny by får KARTA.bredd × KARTA.hojd, kartflytt.ts)
@@ -294,6 +295,9 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     const om = (p: { larm?: unknown }) => { const l = p.larm as { vad?: unknown } | undefined; if (l && typeof l.vad === 'string') p.larm = { [l.vad]: l }; };
     for (const p of s.people) om(p);
     for (const r of s.varld?.rader ?? []) for (const k of r.syn?.personer ?? []) if (k.kropp) om(k.kropp as { larm?: unknown });
+  }],
+  [64, 'en uppgift vars handling inte längre finns (flyttLager, steg 12.1.78) töms hos alla, också gästerna (steg 12.1.231); de väckta byarna uppgraderas var för sig när de läses', s => {
+    for (const p of s.people) if (p.task && !(p.task.act in ACTS)) p.task = undefined;
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];

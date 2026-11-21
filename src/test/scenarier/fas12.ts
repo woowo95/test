@@ -1647,3 +1647,27 @@ SCENARIER.rojhus = {
     ];
   },
 };
+
+// steg 12.1.231: en handling som tagits bort ur ACTS ligger kvar som uppgift i en sparad by; uppgraderingen tömmer den hos alla
+SCENARIER.gammaluppgift = {
+  text: 'Steg 12.1.231: en uppgift vars handling inte längre finns (flyttLager) töms när en sparad by läses, hos byborna och gästerna, och byn går vidare utan att krascha',
+  kor: () => {
+    const s = SIM.cloneState(testBy(1)), [p] = SIM.living(s);
+    const g = { ...SIM.cloneState(s).people[0], id: 99999, gast: { sort: 'handlare' } } as unknown as SIM.Person;
+    s.people.push(g);
+    const gammal = { act: 'flyttLager', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.HOUR, carry: 0, why: '' } as unknown as SIM.Task;
+    p.task = { ...gammal }; g.task = { ...gammal };
+    s.v = 63;
+    const b = SIM.migrate(JSON.parse(JSON.stringify(s)) as SIM.State);
+    const bp = SIM.byId(b, p.id)!, bg = b.people.find(q => q.id === 99999)!;
+    b.people = b.people.filter(q => q.id !== 99999);
+    let gick = true;
+    try { for (let i = 0; i < 60; i++) SIM.step(b, SIM.BEAT); } catch { gick = false; }
+    return [
+      [`bybons gamla uppgift är tömd (${bp.task?.act ?? 'ingen'})`, (bp.task?.act as string | undefined) !== 'flyttLager'],
+      [`gästens gamla uppgift är tömd (${bg.task?.act ?? 'ingen'})`, bg.task === undefined],
+      ['byn går vidare utan att krascha', gick],
+      [`den sparade byn har den nya versionen (${b.v})`, b.v === SIM.SPARVERSION],
+    ];
+  },
+};
