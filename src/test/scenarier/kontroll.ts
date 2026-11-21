@@ -7,7 +7,6 @@ import * as SIM from '../../sim';
 import { hasIcon, PAL } from '../../ikoner';
 import { FARGER, MORKARE, PALETT, iPaletten, kornPa, rasterSteg } from '../../palett';
 import { BEAT, START, halTidVid } from '../kor';
-import { stridOrsak } from '../stridorsak';
 import { KARNA } from '../../portrattkarna';
 import { KARTBILDER, SYMNAMN } from '../../kartbilder';
 import { symDelar, symUtan } from '../../ui/symboler';
@@ -480,19 +479,29 @@ SCENARIER.arbetstid = {
 };
 
 SCENARIER.bjornrovare = {
-  text: 'Steg 12.1.162: npm run strid räknar björnens strider mot rövare för sig (Björnen mot rövarna) och inte som anfall mot byn',
+  text: 'Steg 12.1.162 och 12.1.258: npm run strid räknar björnens strider mot rövare för sig (Björnen mot rövarna) och inte som anfall mot byn, också när alla rövare dog; striden bär själv vad den gällde',
   kor: () => {
-    const strid = (rovare: boolean) => {
+    // doda = alla rövare dör i striden och tas ur s.people före slutet (steg 12.1.258): striden bär själv vad den gällde
+    const strid = (rovare: boolean, doda = false) => {
       const s = createState(1, START);
       if (rovare) SIM.rovarnaKommer(s, 4, true);
       const folk = rovare ? (s.rovare ? SIM.rovarna(s, s.rovare) : []) : living(s).filter(p => ageOf(p, s.now) >= SIM.ALDER.vuxen).slice(0, 2);
       SIM.bjornStrid(s, 999, folk, false, 'skada');
       const g = SIM.kartStrider(s)[SIM.kartStrider(s).length - 1];
-      return { n: folk.length, orsak: g ? stridOrsak(s, g) : 'ingen strid' };
+      if (doda && g) { // alla rövare dör och tas ur s.people; striden går till slut och rapporten säger vad den gällde
+        const ids = new Set(folk.map(p => p.id));
+        for (const p of folk) p.died = s.now;
+        s.people = s.people.filter(p => !ids.has(p.id));
+        for (let i = 0; i < 200 && SIM.kartStrider(s).includes(g); i++) step(s, 5);
+        const rp = s.stridRapporter?.[s.stridRapporter.length - 1];
+        return { n: folk.length, orsak: SIM.kartStrider(s).includes(g) ? 'striden tog inte slut' : rp?.orsak ?? 'ingen rapport' };
+      }
+      return { n: folk.length, orsak: g ? g.orsak : 'ingen strid' };
     };
-    const r = strid(true), b = strid(false);
+    const r = strid(true), d = strid(true, true), b = strid(false);
     return [
-      [`björnen mot ${r.n} rövare räknas som ${r.orsak}`, r.n > 0 && r.orsak === 'Björnen mot rövarna'],
+      [`björnen mot ${r.n} rövare räknas som ${r.orsak}`, r.n > 0 && r.orsak === SIM.BJORN_MOT_ROVARNA],
+      [`björnen mot ${d.n} rövare som alla dog räknas som ${d.orsak}`, d.n > 0 && d.orsak === SIM.BJORN_MOT_ROVARNA],
       [`björnen mot ${b.n} bybor räknas som ${b.orsak}`, b.n > 0 && b.orsak === 'Anfölls av en björn'],
     ];
   },

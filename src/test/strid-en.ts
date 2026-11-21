@@ -3,7 +3,6 @@
 import './utc';
 import { korBy } from './kor';
 import { ALDER, ageOf, living, stridProv } from '../sim';
-import { stridOrsak } from './stridorsak';
 const [seed, dagar] = process.argv.slice(2).map(Number);
 const rader: unknown[] = [];
 stridProv.slut = (s, m) => {
@@ -13,7 +12,7 @@ stridProv.slut = (s, m) => {
     const h: Record<string, number> = {};
     for (const x of st.logg) h[x.h] = (h[x.h] ?? 0) + 1;
     const kom = h.kommer ?? 0;
-    const orsak = stridOrsak(s, m);
+    const orsak = m.orsak;
     rader.push({ dag: +((s.now - s.founded) / 86400000).toFixed(1), orsak, vinnare: st.slut?.vinnare ?? -1, sek: Math.round(st.slut?.t ?? st.t), vuxna, kom, by: per(0), mot: per(1), h });
 };
 const r = korBy(seed, dagar);

@@ -182,12 +182,16 @@ export function bjornjaktSteg(s: State, p: Person, tk: Task) {
 // (steg 10.1.18, kartstrid.ts): björnen är en kämpe där den står och människorna där de står, och såren sitter på folket när
 // slaget träffar (STRIDSLAG.bjorn). När den är slut gör bjornSlut resten. En fälld björn styckas och bärs hem av den första som
 // står kvar och kan stycka den; annars ligger den kvar där den föll
+export const BJORN_MOT_ROVARNA = 'Björnen mot rövarna';
 export function bjornStrid(s: State, id: number, folk: Person[], medUngar: boolean, avsikt: Avsikt) {
   const d = djurStrid('bjorn'), b = bjornarOf(s).find(q => q.id === id) ?? { x: folk[0].x + 1, y: folk[0].y }, bp = freeNear(s, b.x, b.y);
   const k: DjurMed['k'] = { id: 0, namn: d.namn, sida: 1, djur: 'bjorn', st: { styrka: d.styrka, uthallighet: d.uthallighet, mod: d.mod * (medUngar ? BJORNJAKT.ungarMod : 1), smidighet: d.smidighet, skicklighet: d.skicklighet }, vapen: d.vapen, klader: [], fart: d.fart, x: bp.x, y: bp.y };
   const med = folk.filter(p => p.gast ? p.died === undefined && p.left === undefined : alive(p)) /* också rövarna (steg 10.2.29) */, jakt = avsikt === 'doda';
   if (!med.length) return;
-  kartStridBorja(s, avsikt, [med, []], jakt ? 'På björnjakt' : 'Anfölls av en björn', { typ: 'bjorn', egen: true, djur: id, avsikt, ...(medUngar ? { ungar: true } : {}) }, [{ art: 'bjorn', id, k, blod: halsaOf(s, id).blod }]);
+  // striden bär själv vad den gällde (steg 12.1.258): björnen mot rövarna är inget anfall mot byn, och det avgörs när striden
+  // börjar, inte ur vilka som lever när den är slut (de döda rövarna tas ur s.people)
+  const rovarna = med.every(p => p.gast?.sort === 'rovare');
+  kartStridBorja(s, avsikt, [med, []], jakt ? 'På björnjakt' : rovarna ? BJORN_MOT_ROVARNA : 'Anfölls av en björn', { typ: 'bjorn', egen: true, djur: id, avsikt, ...(medUngar ? { ungar: true } : {}) }, [{ art: 'bjorn', id, k, blod: halsaOf(s, id).blod }]);
   count(s, 'djurStrid');
 }
 STRIDSLAG.bjorn = { orsak: 'bjorn', text: 'i en strid med en björn', dod: s => count(s, 'dodBjorn') };
