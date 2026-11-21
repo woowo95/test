@@ -22,7 +22,8 @@ import { tecken } from './religion';
 import { insjukna } from './sjukdom';
 import { NARA } from './nara';
 // hur rikt vildbinas lager måste vara för att ett bo ska finnas där (BIN.boSyns, satt av bin.ts så att filerna inte importerar varandra)
-export const vildboKrok = { syns: () => 0.6 };
+// och hur många kakor i timmen den som står vid boet tar (BIN.vildTim, steg 12.1.263)
+export const vildboKrok = { syns: () => 0.6, tim: () => 6 };
 
 // ---------- balanstal (regel 8) ----------
 // Fångst och insamling: var viltet håller sig borta, hur fort platserna tömmas och växer tillbaka, fiske, flinta och svamp.
@@ -109,6 +110,7 @@ interface FyndDef {
   uttag?: Uttag;
   saker?: number; // så många hela saker har en full ruta (steg 9.2.53, sakerPaRutan i steg.ts): rikedomen delad med topp gånger det, nedåt
   vatten?: number; // lagret finns i vattnet; man står på stranden och når så många rutor ut
+  ruta?: () => number; // fyndet ligger samlat på en enda ruta (vildboet): så många saker i timmen tas där (samlarens tur, steg 12.1.263)
   regn?: true; // platsen fylls bara på när det regnar, mer ju mer det regnar, och vattnet i en översvämning lämnar det där det står (leran, steg 9.4.10)
 }
 const SVAMP_SEASON = [0, 0.15, 0.8, 1.5];
@@ -251,6 +253,7 @@ const DEF = {
     // honungen finns bara i ett bo: där lagret är så rikt att boet syns (BIN.boSyns), annars ingen alls (steg 10.10.15)
     bas: (s, i, m) => { const v = land(s, i) && groundOf(s).trees[i] >= FOREST ? m * orortOf(s)[i] : 0; return v >= vildboKrok.syns() ? v : 0; },
     uttag: { full: 1, reach: 1, regrow: [0, 0, 1 / 400, 1 / 400] },
+    ruta: () => vildboKrok.tim(),
   },
   // torven (steg 12.1.3, torv.ts): på hela myren, och den tar aldrig slut
   torv: {
@@ -281,6 +284,8 @@ barKrok.saUt = (s, g) => {
 };
 export type FyndId = keyof typeof DEF;
 export const FYND: Record<FyndId, FyndDef> = DEF;
+// fynden som ligger samlade på en enda ruta (vildboet): samlaren väger dem efter vad rutan ger per timme (steg 12.1.263)
+export const RUTFYND = (Object.keys(FYND) as FyndId[]).filter(j => FYND[j].ruta);
 export const FYND_IDS = Object.keys(FYND) as FyndId[];
 export const UTTAG_IDS = FYND_IDS.filter(k => FYND[k].uttag);
 // en handling kan ta ur flera lager: den som samlar tar både bär och rötter. Tabellen byggs en gång,

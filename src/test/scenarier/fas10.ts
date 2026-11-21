@@ -564,10 +564,10 @@ SCENARIER.drag = {
   },
 };
 SCENARIER.vildbo = {
-  text: 'Steg 10.10.15: vildbona syns. Boet syns på sommaren och hösten där vildbinas lager är rikt och ett vuxet träd står, inte på våren och inte där trädet fällts. Samlaren väljer platsen efter honungen som efter svampen, står vid boet och tar BIN.vildTim kakor i timmen, och byn räknar den vilda honungen',
+  text: 'Steg 10.10.15 och 12.1.263: vildbona syns. Boet syns på sommaren och hösten där vildbinas lager är rikt och ett vuxet träd står, inte på våren och inte där trädet fällts. Samlaren väger boet efter vad rutan ger per timme (turRuta i minne.ts): när bären är slut eller bara finns långt bort väljer hen boet, när det finns bär nära väljer hen bären. Vid boet tas BIN.vildTim kakor i timmen, och byn räknar den vilda honungen',
   kor: () => {
-    const { BIN, vildboSyns, nyKalender, SOMMAR, HOST, VAR, groundOf, fyndAt, FOREST } = SIM;
-    const s = createState(42, START), W = SIM.W;
+    const { BIN, vildboSyns, nyKalender, SOMMAR, HOST, VAR, groundOf, fyndAt, FOREST, takenOf, lagren, spotFor, living, ageOf, ALDER } = SIM;
+    const s = createState(10, START), W = SIM.W; // by 10 har bon inom en halv dags gång
     s.kal = nyKalender(s.now, SOMMAR);
     let bo = -1; for (let i = 0; i < W * SIM.H && bo < 0; i++) if (fyndAt(s, 'honung', i) >= BIN.boSyns && groundOf(s).trees[i] >= FOREST) bo = i;
     const sommar = bo >= 0 && vildboSyns(s, bo);
@@ -575,14 +575,34 @@ SCENARIER.vildbo = {
     s.kal = nyKalender(s.now, VAR); const var_ = bo >= 0 && vildboSyns(s, bo);
     s.kal = nyKalender(s.now, SOMMAR);
     const tr = groundOf(s).trees[bo]; groundOf(s).trees[bo] = 0; const fallt = vildboSyns(s, bo); groundOf(s).trees[bo] = tr;
-    // en by utan mat på sommaren i tolv timmar: samlarna hittar bona och bär hem honung
+    // valet av plats: tio val med bären kvar och tio när bären och rötterna är plockade överallt
+    const p = living(s).find(q => ageOf(q, s.now) >= ALDER.vuxen)!;
+    const vidBo = (at: { x: number; y: number }) => SIM.richness(s, 'honung', Math.floor(at.x) + 0.5, Math.floor(at.y) + 0.5) > 0;
+    let medBar = 0; for (let n = 0; n < 10; n++) if (vidBo(spotFor(s, 'samla', p))) medBar++;
+    const tagna = takenOf(s), forut = lagren('samla').map(j => tagna[j as keyof typeof tagna]?.slice());
+    for (const j of lagren('samla')) tagna[j as keyof typeof tagna]?.fill(1);
+    SIM.touch(s);
+    // samlaren har gått runt och sett att bären är plockade: hen minns varje område inom en halv dags gång som tomt
+    const mid = SIM.bynsMitt(s);
+    for (let y = Math.max(0, mid.y - SIM.PLATS.dagY); y <= Math.min(SIM.H - 1, mid.y + SIM.PLATS.dagY); y += SIM.AREA) for (let x = Math.max(0, mid.x - SIM.PLATS.dagX); x <= Math.min(W - 1, mid.x + SIM.PLATS.dagX); x += SIM.AREA) SIM.observe(s, p, 'samla', x, y);
+    let utanBar = 0; for (let n = 0; n < 10; n++) if (vidBo(spotFor(s, 'samla', p))) utanBar++;
+    // ... och när bären bara finns kvar långt bort, mer än dubbelt så långt från byn som bona (5–7 rutor)
+    lagren('samla').forEach((j, n) => { const f = forut[n], tj = tagna[j as keyof typeof tagna]; if (f && tj) for (let i = 0; i < f.length; i++) tj[i] = SIM.utanforByn(s, i % W, Math.floor(i / W)) > 16 ? f[i] : 1; });
+    SIM.touch(s);
+    for (let y = Math.max(0, mid.y - SIM.PLATS.dagY); y <= Math.min(SIM.H - 1, mid.y + SIM.PLATS.dagY); y += SIM.AREA) for (let x = Math.max(0, mid.x - SIM.PLATS.dagX); x <= Math.min(W - 1, mid.x + SIM.PLATS.dagX); x += SIM.AREA) SIM.observe(s, p, 'samla', x, y);
+    let langtBar = 0; for (let n = 0; n < 10; n++) if (vidBo(spotFor(s, 'samla', p))) langtBar++;
+    for (const j of lagren('samla')) tagna[j as keyof typeof tagna]?.fill(1);
+    SIM.touch(s);
+    // en by utan mat och utan bär på sommaren i tolv timmar: samlarna går till bona och bär hem honung
     setMat(s, {}); SIM.setAmount(s, 'ved', 300);
     const tid: number[] = [];
-    for (let h = 0; h < 12 * 3600; h++) { SIM.step(s, 1); for (const p of SIM.living(s)) if (p.task?.act === 'samla' && p.task.phase === 'do' && !p.task.hopp && SIM.richness(s, 'honung', Math.floor(p.task.tx) + 0.5, Math.floor(p.task.ty) + 0.5) > 0) tid.push(p.id); }
+    for (let h = 0; h < 12 * 3600; h++) { SIM.step(s, 1); for (const q of living(s)) if (q.task?.act === 'samla' && q.task.phase === 'do' && !q.task.hopp && SIM.richness(s, 'honung', Math.floor(q.task.tx) + 0.5, Math.floor(q.task.ty) + 0.5) > 0) tid.push(q.id); }
     const vild = s.stat?.honungVild ?? 0, hemma = SIM.amountOf(s, 'honung');
     const takt = tid.length ? vild / (tid.length / 3600) : 0;
+    lagren('samla').forEach((j, n) => { const f = forut[n]; if (f) tagna[j as keyof typeof tagna]!.set(f); });
     return [
       [`boet syns på sommaren (${sommar}) och hösten (${host}), inte på våren (${var_}) och inte där trädet fällts (${fallt})`, sommar && host && !var_ && !fallt],
+      [`med bär nära väljer samlaren bären (${10 - medBar} av 10 val), när bären är slut boet (${utanBar} av 10) och när bären bara finns långt bort boet (${langtBar} av 10)`, medBar <= 2 && utanBar >= 8 && langtBar >= 6],
       [`samlarna tog ${vild.toFixed(1)} kakor vild honung och ${hemma} hela kakor kom hem`, vild > 1 && hemma >= 1],
       [`vid boet tas ungefär ${BIN.vildTim} kakor i timmen (${takt.toFixed(2)})`, takt > BIN.vildTim * 0.7 && takt <= BIN.vildTim * 1.05],
     ];

@@ -32,7 +32,7 @@ import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
 import { VARDRATT, halsa, hemma, kanGa, kroppLust, vardBehov, vardVal, vilaHellre, vilaSkal } from './halsa';
 import { MAT, bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial } from './behov';
-import { FANGST, Kind, flintSpot } from './fynd';
+import { FANGST, type FyndId, Kind, RUTFYND, flintSpot, richnessFor } from './fynd';
 import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
@@ -349,7 +349,7 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
     return isForest(s, y * W + x); // grenar och vilt finns i skogen
   };
   // arbetsplatser räknas från byns läger (eld och lagerplatser), inte bara från elden
-  const cands: { x: number; y: number; d: number }[] = [], mid = bynsMitt(s);
+  const cands: { x: number; y: number; d: number; ruta?: FyndId }[] = [], mid = bynsMitt(s);
   const min = plats === 'ang' || plats === 'avsides' ? VAL.narAvstAng : VAL.narAvst, max = plats === 'avsides' ? VAL.langtAvsides : Infinity;
   for (let i = 0; i < VAL.provar; i++) {
     const x = Math.floor(mid.x + (rnd(s, 'val', p) - 0.5) * (2 * PLATS.dagX)), y = Math.floor(mid.y + (rnd(s, 'val', p) - 0.5) * (2 * PLATS.dagY));
@@ -357,6 +357,16 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
     const d = utanforByn(s, x, y);
     if (d < min || d > max) continue;
     if (want(m.tiles[y * W + x], x, y)) cands.push({ x, y, d });
+  }
+  // fynden som ligger samlade på en enda ruta (vildboet, steg 12.1.263) syns på håll: samlaren väger varje sådan ruta inom en
+  // halv dags gång, så som de slumpade rutorna
+  if (d.resurs === 'samla') for (const j of RUTFYND) {
+    const rik = richnessFor(s, [j]);
+    for (let y = Math.max(0, Math.floor(mid.y - PLATS.dagY)); y <= Math.min(H - 1, Math.floor(mid.y + PLATS.dagY)); y++) for (let x = Math.max(0, Math.floor(mid.x - PLATS.dagX)); x <= Math.min(W - 1, Math.floor(mid.x + PLATS.dagX)); x++) {
+      if (!(rik(0, y * W + x) > 0) || bitAt(s, x, y)) continue;
+      const dd = utanforByn(s, x, y);
+      if (dd >= min && dd <= max) cands.push({ x, y, d: dd, ruta: j });
+    }
   }
   cands.sort((a, b) => a.d - b.d);
   // mat: gå dit det finns mest att hämta, inte för långt bort; annars en av de närmaste platserna

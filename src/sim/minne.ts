@@ -5,7 +5,7 @@ import { PLATS } from './plats';
 import { byId, count, forstaGang, gjort, isParent, living, log, stat } from './folk';
 import { delade, larFalt, loggBer } from './berattelser';
 import { teach } from './teknik';
-import { FANGST, FYND, Kind, type Lager, lagren, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsFor, synsOf, toppOf, vaxerAt } from './fynd';
+import { FANGST, FYND, type FyndId, Kind, type Lager, lagren, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsFor, synsOf, toppOf, vaxerAt } from './fynd';
 import { getMap } from './karta';
 import { groundOf, tileOf } from './mark';
 import { KUNSKAPER, kn, learnK } from './kunskap';
@@ -343,19 +343,28 @@ export function turPerTimme(v: number, dit: number, hem: number, t: Tur) {
   const n = Math.min(t.borda, tat * Math.PI * R.syn * R.syn), sak = R.plock + 1 / Math.sqrt(tat) / t.fart;
   return n / ((dit + hem) / t.fart + n * sak) * HOUR_S;
 }
+// turen till ett fynd som ligger samlat på en enda ruta (steg 12.1.263): de n saker som finns där (högst en full börda) tas i
+// rutans takt (tim saker i timmen), med gången dit och hem. Ett vildbo med en kaka lönar sig så när bären är slut eller långt bort
+export function turRuta(n: number, dit: number, hem: number, t: Tur, tim: number) {
+  const m = Math.min(t.borda, n);
+  if (!(m > 0) || !(tim > 0)) return 0;
+  return m / ((dit + hem) / t.fart + m / tim * HOUR_S) * HOUR_S;
+}
 // rundans tal (RUNDA i steg.ts, som sätter kroken: filen läses efter minne.ts)
 export const turKrok: { runda?: { plock: number; syn: number } } = {};
 // det som är detsamma för alla platser personen väger (turFor i val.ts): bördan i saker och farten
 export interface Tur { borda: number; fart: number }
 // den plats personen väljer: det hen tror ger mest och inte är för långt bort; för samlaren det turen ger per timme med gången
 // (turPerTimme). Väl framme ser hen sig omkring och går till den bästa rutan i närheten.
-export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: number; d: number }[], tur?: Tur) {
-  let best: { x: number; y: number; d: number } | undefined, bs = -1e9;
+export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: number; d: number; ruta?: FyndId }[], tur?: Tur) {
+  let best: { x: number; y: number; d: number; ruta?: FyndId } | undefined, bs = -1e9;
   const sight = sightOf(s, p), u = trustUnknown(s, p), syns = (i: number) => synsOf(s, k, i);
   if (tur) {
     // samlaren (steg 12.1.203): turen räknas på det hen tror finns, utan rädslan; rädslan dras sedan ifrån som en kostnad och
     // slumpen läggs till, båda mätta mot den bästa turen bland platserna, så en fruktad plats utan fynd får sämre poäng än en tom
-    const tpt = cands.map(c => turPerTimme(perceive(s, p, k, c.x, c.y, sight, u, syns, true), Math.hypot(c.x + 0.5 - p.x, c.y + 0.5 - p.y), c.d + smutsAvdrag(s, c.x, c.y), tur));
+    // ett fynd på en enda ruta (vildboet, steg 12.1.263) väger efter vad rutan ger per timme: boet syns, så hen vet vad som finns där
+    const tpt = cands.map(c => { const dit = Math.hypot(c.x + 0.5 - p.x, c.y + 0.5 - p.y), hem = c.d + smutsAvdrag(s, c.x, c.y), f = c.ruta && FYND[c.ruta];
+      return f ? turRuta(richness(s, c.ruta!, c.x + 0.5, c.y + 0.5) / f.topp * (f.saker ?? 1), dit, hem, tur, f.ruta!()) : turPerTimme(perceive(s, p, k, c.x, c.y, sight, u, syns, true), dit, hem, tur); });
     const ref = Math.max(1e-9, ...tpt);
     cands.forEach((c, i) => {
       const sc = tpt[i] - fear(s, p, areaOf(c.x, c.y)) * MINNE.radslaTur * ref + (rnd(s, 'val', p) - 0.5) * MINNE.valBrus * ref;
@@ -369,7 +378,7 @@ export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: nu
     if (sc > bs) { bs = sc; best = c; }
     }
   }
-  if (!best || sees(s, p, best.x, best.y, sight)) return best;
+  if (!best || best.ruta || sees(s, p, best.x, best.y, sight)) return best; // till fyndet på rutan går hen raka vägen
   // väl framme letar hen upp den bästa platsen i området, med samma krav som platserna hen valde bland (spotFor i val.ts):
   // inte i ett hus, och för samlandet räknas toa-smutsen som en längre väg (steg 10.11.14). Närmare lägret går bra: där
   // växer inget
