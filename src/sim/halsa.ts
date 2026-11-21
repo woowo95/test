@@ -140,6 +140,7 @@ export const HALSA = balans('halsa', {
   menChans: 0.3, // ... med den här chansen
   menFel: 0.25, // ... och delen blir så här mycket sämre för alltid
   menOnt: 0.15, // ... eller så här mycket kronisk smärta
+  menLust: 0.4, // den kroniska smärtan dämpar lusten mildare än ett öppet sår: lusten blir 1 − menLust × smärtan av menen (steg 12.1.219), aldrig noll
   medSmarta: 0.35, medBlod: 0.6, medInf: 0.3, medTrott: 0.12, medTorst: 0.25, medSvalt: 0.25, medHuvud: 0.5, // så mycket medvetandet sjunker av var sak (steg 8.2.5)
   medLag: 0.7, // under det här medvetandet går arbetet långsammare ...
   medArbete: 0.5, // ... ned till så här fort när medvetandet är noll
@@ -334,6 +335,9 @@ export function medvetande(p: Person) {
   return clamp(v, 0, 1);
 }
 const medArbete = (p: Person) => { const m = medvetande(p); return m >= HALSA.medLag ? 1 : HALSA.medArbete + (1 - HALSA.medArbete) * m / HALSA.medLag; };
+// smärtan av de öppna skadorna och av menen (kronisk smärta, steg 8.2.4) var för sig: vilan och lusten läser dem (steg 12.1.219)
+export function smartaSar(p: Person) { let v = 0; for (const w of p.skador ?? []) v += SKADA[w.k].smarta * w.g * (w.n ?? 1) + HALSA.infSmarta * (w.inf ?? 0); return Math.min(1, v); }
+export function smartaMen(p: Person) { let v = 0; for (const m of p.men ?? []) v += m.ont; return Math.min(1, v); }
 export function smarta(p: Person) {
   let v = 0;
   for (const w of p.skador ?? []) v += SKADA[w.k].smarta * w.g * (w.n ?? 1) + HALSA.infSmarta * (w.inf ?? 0);
@@ -837,14 +841,18 @@ export function burenSteg(s: State, p: Person, t: Task) {
   if (!g || !alive(g) || g.task?.act !== 'varda' || g.task.bar !== p.id) p.task = undefined;
 }
 // den skadade vilar hellre än arbetar: när det gör mycket ont eller ett sår är infekterat
-const skadadVilar = (p: Person) => !!p.skador?.length && (smarta(p) >= HALSA.vilaOnt || infektion(p) > 0);
+// den öppna skadan gör att man hellre vilar; menen gör det aldrig, de dämpar bara lusten (steg 12.1.219)
+const skadadVilar = (p: Person) => !!p.skador?.length && (smartaSar(p) >= HALSA.vilaOnt || infektion(p) > 0);
 export const vilaHellre = (p: Person) => skadadVilar(p) || !!p.sjuk && p.sjuk.grad >= SJUK.vilaFran && p.sjuk.st !== undefined; // också den sjuke med tydliga tecken (steg 9.5.4)
 // varför p vilar hellre (steg 12.1.46): den som vilar för sjukdomen står som sjuk, inte skadad
-export const vilaSkal = (p: Person, now: number) => skadadVilar(p) || !!p.skador?.length && !isSick(p, now) ? 'Är skadad och vilar' : 'Är sjuk och vilar';
+// och den som vilar för sina men står som en som har värk (steg 12.1.219): samma källor som lusten
+export const vilaSkal = (p: Person, now: number) => skadadVilar(p) || !!p.skador?.length && !isSick(p, now) ? 'Är skadad och vilar'
+  : isSick(p, now) || !p.men?.length ? 'Är sjuk och vilar' : 'Har värk och vilar';
 // hur gärna kroppen vill det som inte är brådskande: sporten, leken och förbättringarna (steg 12.1.46). 0 för den som hellre vilar,
-// annars mindre ju mer ont hen har och ju längre sjukdomen har kommit; 1 för den som är frisk och hel
+// annars mindre ju mer ont de öppna skadorna gör och ju längre sjukdomen har kommit; 1 för den som är frisk och hel.
+// Menen dämpar lusten mildare och aldrig till noll (HALSA.menLust, steg 12.1.219)
 export const kroppLust = (p: Person, now: number) => vilaHellre(p) ? 0
-  : (1 - clamp(smarta(p) / HALSA.vilaOnt, 0, 1)) * (!isSick(p, now) ? 1 : p.sjuk ? 1 - clamp(p.sjuk.grad / SJUK.ligga, 0, 1) : 0);
+  : (1 - clamp(smartaSar(p) / HALSA.vilaOnt, 0, 1)) * (1 - HALSA.menLust * smartaMen(p)) * (!isSick(p, now) ? 1 : p.sjuk ? 1 - clamp(p.sjuk.grad / SJUK.ligga, 0, 1) : 0);
 
 // ---------- förbandet (steg 2.5.2, 9.5.15 och 12.1.6) ----------
 // w.f: 1 = mossa, 2 = en remsa, 3 = mossa under en remsa. Mossan plockas i myren (mossa.ts)

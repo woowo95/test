@@ -1084,7 +1084,15 @@ SCENARIER.sjukvila = {
       return { ...n, lust };
     };
     const bf = barnVal(false), bs = barnVal(true);
+    // menen (steg 12.1.219): kronisk smärta dämpar lusten mildare och aldrig till noll, och den som vilar för dem har värk
+    const menad = nyInvanare(s, 'm', 30), menBarn = nyInvanare(s, 'k', 8);
+    menad.men = [{ d: 'benH', fel: 0, ont: SIM.HALSA.menOnt }]; const kl1 = kl(menad);
+    menad.men = [0, 1, 2, 3].map(() => ({ d: 'benH' as const, fel: 0, ont: SIM.HALSA.menOnt })); const kl4 = kl(menad);
+    menBarn.men = [{ d: 'armV', fel: 0, ont: SIM.HALSA.menOnt }];
+    const menSkal = SIM.vilaSkal(menBarn, s.now);
     return [
+      [`menen dämpar lusten mildare (ett men ${kl1.toFixed(2)}, fyra ${kl4.toFixed(2)}) och aldrig till noll`, kl1 > 0.85 && kl1 < 1 && kl4 > 0.5 && kl4 < kl1],
+      [`barnet med ett men vilar för värken, inte som sjukt: "${menSkal}"`, menSkal === 'Har värk och vilar' && !SIM.vilaHellre(menBarn)],
       [`det skadade barnet hjälper till mer sällan och vilar (friskt: hjälper ${bf.hjalp}, leker ${bf.leka}, vilar ${bf.vila}; skadat med lusten ${bs.lust.toFixed(2)}: hjälper ${bs.hjalp}, leker ${bs.leka}, vilar ${bs.vila}${bs.annat.size ? `, annat: ${[...bs.annat].slice(0, 3).join('; ')}` : ''})`, bs.lust > 0 && bs.lust < 1 && bs.vila > 0 && bs.hjalp < bf.hjalp * (bs.lust + 1) / 2],
       [`den friska vill fullt ut (${kl(frisk).toFixed(2)})`, kl(frisk) === 1],
       [`den lätt skadade vill mindre (${kl(latt).toFixed(2)}), och sporten lockar mindre (${sv(latt).toFixed(3)} mot ${sv(frisk).toFixed(3)})`, kl(latt) > 0 && kl(latt) < 1 && sv(latt) <= sv(frisk)],
