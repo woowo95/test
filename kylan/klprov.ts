@@ -1,0 +1,15 @@
+import '../src/test/utc';
+import { korBy } from '../src/test/kor';
+import { living, temperature } from '../src/sim';
+import { SAKER } from '../src/sim/saker';
+import { tingOf } from '../src/sim/agande';
+const [seed, dagar] = process.argv.slice(2).map(Number);
+const r = korBy(seed, dagar), s = r.s;
+const kl = tingOf(s).filter(t => SAKER[t.k]?.klad);
+console.log('temp', temperature(s).toFixed(1), 'folk', living(s).length, 'plagg', kl.length, 'på sig', kl.filter(t => t.bar !== undefined).length);
+console.log(kl.map(t => `${t.k}${t.bar !== undefined ? '*' : ''} c${t.c.toFixed(2)}`).join(', '));
+console.log(Object.entries(s.stat ?? {}).filter(([k]) => /klad|plagg|frys/i.test(k)).map(([k, v]) => `${k}=${Math.round(v)}`).join(' '));
+import { amountOf } from '../src/sim/lager';
+console.log('kan skinnklader', living(s).filter(p => (p.tek?.skinnklader ?? 0) >= 1).length, 'skinn', amountOf(s, 'skinn'), 'läder', amountOf(s, 'lader'));
+console.log('tek', [...new Set(living(s).flatMap(p => Object.keys(p.tek ?? {}).filter(k => (p.tek![k] ?? 0) >= 1)))].join(','));
+console.log(Object.entries(s.stat ?? {}).filter(([k]) => /skinn|tekTim|jakt|slakt/i.test(k)).map(([k, v]) => `${k}=${Math.round(v)}`).join(' '));
