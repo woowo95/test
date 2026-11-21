@@ -223,6 +223,7 @@ export const PAL: Record<string, Record<string, string>> = {
   s_ren: { a: '#8a9c9e', f: '#dad0bb', F: '#dad0bb', A: '#dad0bb', c: '#3e5156' },
   s_kall: { g: '#233035', G: '#3e5156', q: '#24201d' },
   fangelse: { a: '#474138', b: '#7d5b40', c: '#a0947d' }, // platshållare: gallret (steg 11.12.1)
+  konstigt: { a: '#474138', b: '#a0947d' }, // platshållare: förstoringsglaset för Det här är konstigt (steg 12.1.41)
   n_energi: { A: '#dad0bb', a: '#d8b25f', D: '#7d5b40' },
   b_energi: { D: '#7d5b40', a: '#d8b25f' },
   n_protein: { A: '#a0947d', a: '#a14808', D: '#742a01' },
@@ -3367,6 +3368,16 @@ export const PIX: Record<string, string[]> = {
     '..ccc...',
   ],
   // kallbrand: samma klump som infektionen, lila och mörkare (Björn efter v89)
+  konstigt: [ // platshållare: ett förstoringsglas (steg 12.1.41, ui/konstigt.ts)
+    '..aaa...',
+    '.abbba..',
+    'abb.bba.',
+    'ab...ba.',
+    'abb.bba.',
+    '.abbbaa.',
+    '..aaa.aa',
+    '.......a',
+  ],
   fangelse: [ // platshållare: dörr med galler (steg 11.12.1)
     'bbbbbbbb',
     'bcacacab',

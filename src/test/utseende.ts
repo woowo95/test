@@ -8,13 +8,16 @@
 //   bilden tas: 18 bilder, och var och en en gång till med teknikträdet öppet (-stationer sist i namnet). ALLA=1 tar mobilen i alla fall (32 bilder, över en timme i en stor by). LAGE=ljust eller
 //   LAGE=morkt tar bara det ena läget, FALL=dag,natt bara de fallen. Sökhjälp: LAGER=1 visar vilket lager punkterna utanför
 //   paletten kommer från, och DEBUG=1 var på skärmen de ligger
+// Vakterna för formen (steg 12.1.43, formvakter.ts): i fallet dag öppnas varje flik och personens ruta, var och en mäts och
+// fotograferas (mappen/flikar/), och larmen skrivs sist. De gör inte felkoden röd (FORM_FEL=1 gör det); UTAN_FORM=1 hoppar över dem
 import { createRequire } from 'node:module';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { State, ageIndex, bynsMitt, createState, hourOf, rovarnaKommer, serializeParts, stallUpp, step } from '../sim';
 import { FARGER, MORKARE } from '../palett';
 import { BEAT, START } from './kor';
 import { TACK_MATA, TACK_MAX } from './tackvakt';
+import { FORM, FORMVAKTER, FORM_MATA, type FormLarm } from './formvakter';
 
 process.env.TZ = 'Europe/Stockholm'; // klockslagen i byn och i webbläsaren är svensk tid
 const MAPP = resolve(process.argv[2] ?? 'utseende'), BY = Number(process.argv[3] ?? 3);
@@ -108,10 +111,30 @@ const MATA = `(pal, par) => {
   return { iOvergang, varld: world.scale.x * app.renderer.resolution, lager, var: var_, skalor, utanfor, ritade, topp, klocka: (document.getElementById('calTime') || {}).textContent, nu: new Date().toString(), by: new Date(by.s.now).toString() };
 }`;
 
+// varje flik och personens ruta i sidan som visas: en bild var i mappen/flikar/ och formvakternas mått (steg 12.1.43)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function formRunda(pg: any, skarm: string, lage: string, fil: string): Promise<FormLarm[]> {
+  mkdirSync(`${MAPP}/flikar`, { recursive: true });
+  const ut: FormLarm[] = [], mobil = skarm === 'mobil';
+  const flikar = await pg.evaluate(`[...document.querySelectorAll('.tabs button[data-tab]')].filter(b => b.getAttribute('aria-disabled') !== 'true').map(b => b.dataset.tab)`) as string[];
+  const mat = async (flik: string) => {
+    await pg.clock.runFor(300);
+    await pg.screenshot({ path: `${MAPP}/flikar/${flik}-${skarm}${fil}.png`, timeout: 120000 });
+    ut.push(...(await pg.evaluate(`(${FORM_MATA})(${JSON.stringify({ pal: palett, form: FORM, flik: `${flik} (${skarm}, ${lage})`, mobil })})`) as FormLarm[]));
+  };
+  for (const id of flikar) { await pg.evaluate(`document.querySelector('.tabs button[data-tab="${id}"]').click()`); await mat(id); }
+  // personens ruta: den första i porträttraden, med den högra panelen stängd
+  const har = await pg.evaluate(`(() => { document.querySelector('[data-stang="h"]')?.click(); const b = document.querySelector('[data-id]'); if (!b) return false; b.click(); return true; })()`);
+  if (har) await mat('person');
+  return ut;
+}
+
 async function main() {
   mkdirSync(MAPP, { recursive: true });
   const s = createState(BY, START), larm: string[] = [], tack: string[] = [];
-  const b = await chromium.launch(process.env.CLAUDE_CODE_REMOTE ? { executablePath: '/opt/pw-browsers/chromium' } : {}); // i molnet: webbläsaren som finns där
+  const formLarm: FormLarm[] = [];
+  // i molnet finns Chromium under /opt/pw-browsers (projektets Playwright är en annan version)
+  const b = await chromium.launch(process.env.CLAUDE_CODE_REMOTE && existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : {});
   for (const f of FALL.filter(f => !process.env.FALL || process.env.FALL.split(',').includes(f.namn))) {
     if (!tills(s, f.ai, f.h)) { larm.push(`${f.namn}: byn kom aldrig dit`); continue; }
     if ('rovare' in f) { rovarnaKommer(s, 4, true); const c = bynsMitt(s); if (s.rovare) stallUpp(s, s.rovare, c.x + 8, c.y + 2); }
@@ -161,11 +184,21 @@ async function main() {
       for (const [nar, rader] of [['utan panel', tackUtan], ['med panelen öppen', await pg.evaluate(TACK_MATA) as string[]]] as const)
         for (const x of rader.slice(0, TACK_MAX)) tack.push(`${f.namn} ${sk.namn} ${lg.namn} ${nar}: ${x}`);
       if (fel.length) larm.push(`${f.namn} ${sk.namn} ${lg.namn}: fel på sidan`);
+      if (f.namn === 'dag' && !process.env.UTAN_FORM) formLarm.push(...await formRunda(pg, sk.namn, lg.namn, lg.fil));
       await ctx.close();
     }
   }
   await b.close();
   if (tack.length) { console.log(`\nKNAPPAR SOM TÄCKER ANNAT (steg 12.1.51):\n  ${tack.join('\n  ')}`); if (process.env.FORM_FEL) larm.push(`${tack.length} knappar täcker annat`); }
+  if (formLarm.length) {
+    console.log('\nVakterna för formen (steg 12.1.43):');
+    for (const v of FORMVAKTER) {
+      const l = formLarm.filter(x => x.vakt === v.id);
+      console.log(`${l.length ? 'LARM' : 'OK  '} ${v.id} (${v.namn}): ${l.length}`);
+      for (const x of l.slice(0, 8)) console.log(`       ${x.flik}: ${x.sak} — ${x.matt}`);
+    }
+    if (process.env.FORM_FEL) larm.push(`${formLarm.length} larm från vakterna för formen`);
+  }
   console.log(larm.length ? `\nLARM:\n  ${larm.join('\n  ')}` : '\nAllt i paletten och i hel skala.');
   console.log(`Bilderna: ${MAPP}`);
   process.exit(larm.length ? 1 : 0);

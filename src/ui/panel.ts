@@ -22,6 +22,7 @@ import { religion } from './flikar/religion';
 import { styre } from './flikar/styre';
 import { tal } from './flikar/tal';
 import { $, hjalpKlick } from './hjalp';
+import { konstigHtml, konstigKlick } from './konstigt';
 import { OPPNAR, bubblaKlick } from './bubbla';
 import { piles, s, satRitaOm, ui, vidNyBy } from './lage';
 import { renderPorts, startFollow, stopFollow } from './portratt';
@@ -99,7 +100,8 @@ function skriv(sd: Sida, id: FlikId | undefined, force: boolean) {
   sd.el.hidden = !id;
   if (!id) { sd.html = ''; return; }
   if (!force && (ui.busy || performance.now() - ui.lastPointer < 800 || sd.musOver)) return;
-  const html = bandHtml(ALLA[id].band?.() ?? id) + ALLA[id].html(); // bandet överst i fliken (steg 5.3.3.1)
+  if (!force && sd.body.contains(document.activeElement) && document.activeElement?.matches('input[type="text"]')) return; // den som skriver i rutan (steg 12.1.41) blir inte avbruten
+  const html = bandHtml(ALLA[id].band?.() ?? id) + konstigHtml(id, ui) + ALLA[id].html(); // bandet överst i fliken (steg 5.3.3.1); knappen Det här är konstigt (steg 12.1.41, konstigt.ts)
   if (!force && html === sd.html) return;
   sd.html = html; sd.body.innerHTML = html;
 }
@@ -169,6 +171,7 @@ document.addEventListener('click', e => {
   const b = el.closest<HTMLElement>('[data-id]');
   if (b) { selectPerson(Number(b.dataset.id)); return; }
   if (hjalpKlick(el)) { renderPanel(true); return; }
+  if (konstigKlick(el)) { renderPanel(true); setTimeout(() => { renderPanel(true); (document.getElementById('konstigText') as HTMLInputElement | null)?.focus(); }, 0); return; } // steg 12.1.41
   const fo = el.closest<HTMLElement>('[data-folj]'); // ögat vid namnet i personrutan följer personen med kartan (steg 11.1.42)
   if (fo) { const id = Number(fo.dataset.folj); if (ui.follow === id) stopFollow(); else startFollow(id, gaster().find(g => g.id === id)?.namn); renderPanel(true); return; }
   if (el.closest('[data-kvsort]')) { ui.kvSort = !ui.kvSort; renderPanel(true); return; } // stackarna efter kvalitet (steg 9.2.18)
