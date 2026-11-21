@@ -1,0 +1,27 @@
+{
+ "kommando": "rita",
+ "args": [
+  "jarn=Nya versioner: gör en enklare tacka.",
+  "jarnskrot=",
+  "kolmila=",
+  "spanne_jarn=",
+  "svard=Gör eggen längre och handtaget kortare.",
+  "smedja=Behåll städet och ässjan (eldstaden) precis som de är i den här ritningen. Gör om bälgen.",
+  "jarnyxa=Utgå från samma modell som flintyxan (den nuvarande ritningen): byt flinthuvudet mot ett smitt huvud av grått järn med skafthål, och ta bort surrningen."
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 2.45,
+  "hog": 5.24
+ },
+ "dollar": 2.319,
+ "rapport": [
+  "jarn: 3 versioner till valdelen (kortet bild_jarn); kvar: olika: version 2 har nästan samma form som version 1 (96 % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.; olika: version 3 har nästan samma form som version 2 (91 % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.",
+  "jarnskrot: 3 versioner till valdelen (kortet bild_jarnskrot)",
+  "kolmila: 3 versioner till valdelen (kortet bild_kolmila)",
+  "spanne_jarn: 3 versioner till valdelen (kortet bild_spanne_jarn)",
+  "svard: 3 versioner till valdelen (kortet bild_svard)",
+  "smedja: 3 versioner till valdelen (kortet bild_smedja)",
+  "jarnyxa: 3 versioner till valdelen (kortet bild_jarnyxa)"
+ ]
+}

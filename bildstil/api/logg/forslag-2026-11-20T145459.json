@@ -1,0 +1,29 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f10_bivax!=Gör tre nya utan förlaga. Gör en bivaxkaka där man tydligt ser det typiska mönstret av sexkantiga celler.",
+  "f10_bur!",
+  "f10_snokruka!",
+  "f9_korn_stack!",
+  "f10_tamhet=Det ska vara en rund bjällra (en liten kula med en springa), inte en klocka.",
+  "f9_jordgubbsplanta=Gör jordgubbarna mer röda.",
+  "f11_sym_troshus=Gör tre varianter av den här stenkyrkan (Björn valde den): samma idé, men olika i form, t.ex. med torn, med absid eller med annat tak.",
+  "bild_ringbrynja_jarn=Gör brynjan smalare."
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 4.2,
+  "hog": 8.99
+ },
+ "dollar": 3.474,
+ "rapport": [
+  "f10_bivax: 3 versioner",
+  "f10_bur: 3 versioner",
+  "f10_snokruka: 3 versioner; kontrollerna varnar fortfarande: version 3: olika",
+  "f9_korn_stack: 3 versioner",
+  "f10_tamhet: 3 versioner; kontrollerna varnar fortfarande: version 3: olika",
+  "f9_jordgubbsplanta: 3 versioner; kontrollerna varnar fortfarande: version 2: olika; version 3: olika; version 3: olika",
+  "f11_sym_troshus: 3 versioner",
+  "bild_ringbrynja_jarn: 3 versioner"
+ ]
+}

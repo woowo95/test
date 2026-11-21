@@ -4,13 +4,13 @@
  "h": 9,
  "rader": [
   ".....IIII.....",
-  "....ILLKKI....",
-  "..IIILKKJIII..",
-  ".ILLILKJKIKKI.",
-  "ILKJIKJKJIKJKI",
-  "IKJKKIIIIJJJKI",
-  "IKJKKJKKJJJKJI",
-  ".IJJKJJJJJJJI.",
+  "..IIILLLKIII..",
+  ".IKKILKLKIKJI.",
+  "IKJKIKJJJIJKJI",
+  "IKKJIJJJJIKJJI",
+  "IJKJFGFGFFJKJI",
+  "IKJKJKJKJKJKJI",
+  ".IJKJKJKJKJJI.",
   "..IIIIIIIIII.."
  ],
  "ritad": 1,
@@ -23,51 +23,20 @@
   "K": "#b2921b",
   "L": "#d8b25f"
  },
- "versioner": [
-  {
-   "ide": "Rund kupol på ovalt brätte: hatten ligger rättvänd och ses snett ovanifrån, så brättet blir en vågrät oval som fyller hela bredden (14 punkter) och nedre två tredjedelar av höjden, och en halvklotformad kulle (cirka 6 punkter bred) reser sig mitt på, något bakom mitten, så att mer av brättet syns framför den än bakom. Allt är flätat hö i senap (senap3 överst till vänster på kullen och brättets bakkant, senap2 som grundton, senap1 i ett snett flätmönster som byts punkt för punkt) med kontur i senap0; brättets framkant är ett smalt band på en till två punkter i senap1 och kullens skugga nere till höger på brättet ritas som en mörkare senap1-båge, inte som markskugga. Formen är spegelsymmetrisk; bara ljuset skiljer sidorna åt.",
-   "rader": [
-    ".....IIII.....",
-    "....ILLKKI....",
-    "..IIILKKJIII..",
-    ".ILLILKJKIKKI.",
-    "ILKJIKJKJIKJKI",
-    "IKJKKIIIIJJJKI",
-    "IKJKKJKKJJJKJI",
-    ".IJJKJJJJJJJI.",
-    "..IIIIIIIIII.."
-   ],
-   "om": "Halmhatt, 14×9: ett ovalt brätte i hela bredden med en rund kulle på sex punkter mitt på, något bakom mitten. Senap0 är konturen, senap3 ljuset uppe till vänster på kullen och brättets bakkant, senap2 grundtonen och senap1 flätmönstret, framkanten och kullens skuggbåge nere till höger på brättet. Formen är spegelsymmetrisk. Granskningen: Oförändrad. Hatten är 14 × 9 punkter och fyller rutan, vilket passar mot kolonisten (14 × 20). Formen är spegelsymmetrisk: en oval brättekontur och en kulle på 6 punkter i mitten med basen på rad 5. Mer av brättet syns framför kullen än bakom, så hatten ses snett uppifrån. Bara senaptoner används och konturen är senap0. Ljuset ligger uppe till vänster i senap3 på kullen och brättets bakkant. Grundtonen är senap2 med senap1 i ett flätkorn som byts punkt för punkt. Kullens skugga är en senap1-båge nere till höger på brättet, och framkanten är ett smalt senap1-band. Den ljusa, mättade senapsgula hatten med mörk kontur syns tydligt mot det oliv- och barrgröna gräset."
-  },
-  {
-   "ide": "Platt kulle med band, som en båthatt: kullen är en låg rak cylinder, sedd snett uppifrån som en mindre oval topp (senap3 och senap2) ovanpå en kort lodrät sida på två punkter i senap1, och runt sidans fot går ett tvinnat band av mörkare torrt hö i jord1 och jord2 som skiljer kullen från brättet. Brättet är en platt, jämn oval i senap2 med flätrader som går runt i ringar (växlande senap2 och senap1 punkt för punkt) och kontur i senap0, så silhuetten blir kantig och stram i stället för rund. Hela hatten är spegelsymmetrisk kring en lodrät mittlinje.",
-   "rader": [
-    ".....IIII.....",
-    "..IIILLLKIII..",
-    ".IKKILKLKIKJI.",
-    "IKJKIKJJJIJKJI",
-    "IKKJIJJJJIKJJI",
-    "IJKJFGFGFFJKJI",
-    "IKJKJKJKJKJKJI",
-    ".IJKJKJKJKJJI.",
-    "..IIIIIIIIII.."
-   ],
-   "om": "Halmhatt (båthatt), 14×9 punkter, spegelsymmetrisk kring mittlinjen. Kullen är en låg cylinder: en oval topp i senap3 och senap2 (rad 0–2), en lodrät sida på två punkter i senap1 (rad 3–4) och ett tvinnat band av torrt hö i jord1/jord2 vid foten (rad 5). Brättet är en platt, stram oval som syns runt hela kullen, med flätrader där senap2 och senap1 växlar punkt för punkt. Hela hatten har kontur i senap0. Ljuset kommer uppifrån vänster, så vänstra sidan är ljusare och den högra domineras av senap1. Granskningen: Storleken (14 × 9) och vinkeln var rätt, och hatten syns på gräset. Problemet var att kullen gick nästan kant i kant: toppen fyllde 8 av 14 punkter och brättet syntes bara som en smal list. Därför såg hatten ut som en limpa och inte som en båthatt. Jag smalnade av kullen till 6 punkter (med konturen inräknad), centrerad i kolumn 4–9, så att det breda brättet syns runt hela kullen, även bakom den i rad 1–2. Toppen är nu en liten oval i senap3/senap2 med kontur i senap0 och ljuset uppe till vänster. Kullens sida är två rader i senap1. Det tvinnade bandet i jord1/jord2 ligger vid kullens fot på rad 5. Brättet har flätrader i senap2/senap1 och kontur i senap0. Formen är spegelsymmetrisk rad för rad; bara ljuset och kornet skiljer sidorna åt."
-  },
-  {
-   "ide": "Hatten ligger upp och ned med öppningen uppåt, som den läggs ifrån sig på högen: brättet syns som en bred oval ring, och mitt i den ses kullens insida ovanifrån som en djup oval grop i senap1 och senap0, mörkast i övre vänstra kanten av gropen eftersom ljuset kommer uppifrån vänster och kanten skuggar in. Brättets ovansida är ljus senap3 och senap2 med flätmönster, och längs brättets ytterkant sticker några korta lösa hostrån ut en punkt som ger en lätt fransig, mjukt vågig silhuett; under brättets framkant syns en smal rundad bit av kullens utsida i senap1 som en låg fot. Formen är symmetrisk, konturen senap0 och inga andra material behövs.",
-   "rader": [
-    "...IIIIIIII...",
-    ".KILLKLLKLKIK.",
-    ".ILKIIIIIIKJI.",
-    "ILKIIIJJJJJKJI",
-    "IKLIJJJJJJJKJI",
-    ".ILKLKLKLKKJI.",
-    ".KIIIIIIIIIIK.",
-    "....IKJJJI....",
-    ".....IIII....."
-   ],
-   "om": "Halmhatten ligger upp och ned med öppningen uppåt. Brättet är en bred oval ring i senap3 och senap2 med flätmönster, och i mitten ses kullens insida som en oval grop i senap1, mörkast (senap0) i övre vänstra kanten. Den nedre högra innerväggen är något ljusare. Några lösa hostrån i senap2 sticker ut vid sidorna och ger en fransig kant. Under brättets framkant syns kullens rundade utsida som en låg fot i senap1. Konturen är senap0 och formen symmetrisk, 14×9 punkter. Granskningen: Storleken (14 × 9), vinkeln, den symmetriska formen, den ljusa brättekanten mot gräset och foten under framkanten stämmer och är kvar. Jag rättade gropen, kullens insida. Två ljusa senap2-punkter mitt i den (rad 4) gav en ljus fläck där idén säger senap1 och senap0, och gropens kant var ojämn (en J-punkt på rad 2 och en K-punkt på rad 4 inne i gropen). Nu är gropen en jämn oval i senap0 och senap1. Den är mörkast i övre vänstra kanten, med hela överkanten och de tre första punkterna på rad 3 i senap0, och ljusnar mot nedre högra innerväggen som ljuset faller på. Brättets flätmönster, de lösa strån i ytterkanten och konturen är oförändrade."
-  }
- ]
+ "om": "Platt kulle med band, som en båthatt: kullen är en låg rak cylinder, sedd snett uppifrån som en mindre oval topp (senap3 och senap2) ovanpå en kort lodrät sida på två punkter i senap1, och runt sidans fot går ett tvinnat band av mörkare torrt hö i jord1 och jord2 som skiljer kullen från brättet. Brättet är en platt, jämn oval i senap2 med flätrader som går runt i ringar (växlande senap2 och senap1 punkt för punkt) och kontur i senap0, så silhuetten blir kantig och stram i stället för rund. Hela hatten är spegelsymmetrisk kring en lodrät mittlinje. Halmhatt (båthatt), 14×9 punkter, spegelsymmetrisk kring mittlinjen. Kullen är en låg cylinder: en oval topp i senap3 och senap2 (rad 0–2), en lodrät sida på två punkter i senap1 (rad 3–4) och ett tvinnat band av torrt hö i jord1/jord2 vid foten (rad 5). Brättet är en platt, stram oval som syns runt hela kullen, med flätrader där senap2 och senap1 växlar punkt för punkt. Hela hatten har kontur i senap0. Ljuset kommer uppifrån vänster, så vänstra sidan är ljusare och den högra domineras av senap1. Granskningen: Storleken (14 × 9) och vinkeln var rätt, och hatten syns på gräset. Problemet var att kullen gick nästan kant i kant: toppen fyllde 8 av 14 punkter och brättet syntes bara som en smal list. Därför såg hatten ut som en limpa och inte som en båthatt. Jag smalnade av kullen till 6 punkter (med konturen inräknad), centrerad i kolumn 4–9, så att det breda brättet syns runt hela kullen, även bakom den i rad 1–2. Toppen är nu en liten oval i senap3/senap2 med kontur i senap0 och ljuset uppe till vänster. Kullens sida är två rader i senap1. Det tvinnade bandet i jord1/jord2 ligger vid kullens fot på rad 5. Brättet har flätrader i senap2/senap1 och kontur i senap0. Formen är spegelsymmetrisk rad för rad; bara ljuset och kornet skiljer sidorna åt.",
+ "vald": 2,
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".....IIII.....",
+   "....ILLKKI....",
+   "..IIILKKJIII..",
+   ".ILLILKJKIKKI.",
+   "ILKJIKJKJIKJKI",
+   "IKJKKIIIIJJJKI",
+   "IKJKKJKKJJJKJI",
+   ".IJJKJJJJJJJI.",
+   "..IIIIIIIIII.."
+  ]
+ }
 }

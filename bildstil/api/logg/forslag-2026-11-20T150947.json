@@ -1,0 +1,19 @@
+{
+ "kommando": "rita",
+ "args": [
+  "bild_ringbrynja_jarn=Gör brynjan smalare.",
+  "bild_hatt_halm=Björn valde den här halmhatten; rita exakt den på kolonisten och i porträttet.",
+  "bild_jarnhjalm_jarn=Björn valde den här järnhjälmen; rita exakt den på kolonisten och i porträttet."
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 1.15,
+  "hog": 2.47
+ },
+ "dollar": 0.84,
+ "rapport": [
+  "bild_ringbrynja_jarn: 1 versioner",
+  "bild_hatt_halm: 1 versioner",
+  "bild_jarnhjalm_jarn: 1 versioner"
+ ]
+}

@@ -2,7 +2,7 @@
  "kort": "f10_bur",
  "namn": "Buren",
  "slag": null,
- "vad": "Steg 10.10.13: buren är en fälla från fångstbänken (4 grenar och 2 rep) som sätts ut i skogen och ibland fångar en kulting. En ruta stor Din kommentar förra gången: ”gör tre nya verison utan förlaga”",
+ "vad": "Steg 10.10.13: buren är en fälla från fångstbänken (4 grenar och 2 rep) som sätts ut i skogen och ibland fångar en kulting. En ruta stor Din kommentar förra gången: ”rita om utan förlaga”",
  "av": "API:t (claude-opus-5-5), tre idéer",
  "versioner": [
   {
@@ -10,27 +10,54 @@
     {
      "namn": "f10_bur",
      "rader": [
-      ".....HE..GE.....",
-      "......GEGE......",
-      ".....owqqpo.....",
-      ".....oqpqpo.....",
-      "......oppo......",
-      ".....HEFEGE.....",
-      "....GE.FE.FE....",
-      "....HE.FF.GE....",
-      "...GE.F..E.FE...",
-      "...HE.FppE.GE...",
-      "...GEqF..EpGE...",
-      "..HEqF....EpFE..",
-      "..GEwqqpqqppGE..",
-      ".HE..........FE.",
-      ".GE..........GE.",
-      "................"
+      "................",
+      "..EEE......EEE..",
+      ".EHGFE....EGGFE.",
+      "EEEEEEEEEEEEEEEE",
+      "EHqpqGHGHGGqpoFE",
+      "EGppoFGFGFFpooFE",
+      "EEEEEEEEEEEEEEEE",
+      "EHFHFHqHFpFGFGFE",
+      "EGFHFHFqpGFGFGFE",
+      "EHFGFHpHFoFGFGFE",
+      "EGFHFGFGFGFGFGFE",
+      "EEEEEEEEEEEEEEEE",
+      "EHGHGHHGHGGHGGFE",
+      "EGFFGFFFFFFFFFFE",
+      "EEHGFEEEEEEGFFEE",
+      "..EEE......EEE.."
      ]
     }
    ],
-   "anteckning": "Buren står fritt på marken som en spetsig pyramid av fyra grenar, sedd snett uppifrån. De två främre grenarna går längst ner till markfoten (rad 14) och är ljusast på vänsterkanten. De två bakre syns förkortade mellan dem och slutar högre upp (rad 11), så att foten blir en tillplattad fyrkant. Grenarna korsar varandra i toppen: spetsarna sticker upp ovanför toppknuten av rep i ben2 och ben3 med kontur i ben0. Det andra repet går runt alla fyra grenarna nära marken. Det syns som en ljus linje framtill (rad 12), som snett längs sidorna och som en mörkare bit baktill (ben1), eftersom den delen ligger bakom. Mellan grenarna är det genomskinligt så att marken syns igenom. Formen är spegelsymmetrisk; bara ljuset skiljer sidorna åt. Buren är tom, för kultingen som ibland fångas är ett eget djur. Den ryms i en ruta: 14 × 15 punkter. Granskningen: Granskad och oförändrad. Storleken stämmer med idén: 14 × 15 punkter inom rutan, rimligt mot kolonisten (14 × 20). Formen är spegelsymmetrisk kring mitten, både grenarna, knuten och repbandet; bara ljuset skiljer sidorna åt (H/G till vänster, G/F till höger, kontur i jord0). Vinkeln är snett uppifrån. De främre grenarna når längst ner (rad 14). De bakre är förkortade, tunnare och mörkare och slutar högre upp (rad 11). Repbandet bildar en tillplattad fyrkant: bakkanten ligger mellan de bakre grenarna och framkanten tvärs över, strax ovanför de främre fötterna. Toppknuten är i ben2 och ben3 med kontur i ben0, och grenändarna korsas ovanför surrningen. Glansen är bara två punkter ben3. Jordtonerna med mörk kontur och de ljusa repen syns mot gräset, och mellan grenarna är det genomskinligt. Ingen regel bryts.",
-   "ide": "Pyramidburen: fyra raka grenar står lutade mot varandra och är surrade ihop i toppen med det ena repet, medan det andra repet går runt grenarna nära marken som ett band, så att buren blir en spetsig, spegelsymmetrisk pyramid ungefär 14 punkter bred och 15 hög. Snett uppifrån syns markfoten som en tillplattad fyrkant (de två främre grenarna tydligast och längst ner, de bakre förkortade bakom), toppknuten i ben2 och ben3 och repbandet som en ljus linje tvärs över grenarna. Grenarna är jord1 och jord2 med kontur i jord0 och ljuset på de vänstra kanterna. Mellan grenarna är det genomskinligt så att marken syns."
+   "anteckning": "Buren står på marken i skogen, sedd snett ovanifrån som stationerna. De fyra grenarna är timrade två och två: bakre och främre grenen ligger underst och sidogrenarna korsar ovanpå, med de grova ändarna utstickande i alla fyra hörnen. Locket av tätt lagda käppar ligger tvärs över sidogrenarna och ses ovanifrån, så det tar större delen av höjden. Repen syns bara där de logiskt syns: som lindningar där sidogrenarna binds mot den bakre grenen och som ett kryss mitt på locket som håller käpparna. Framkanten är ett smalt band av den främre grenen i jord1 och jord0, och där skär sidogrenarnas ändar fram i genomskärning. Formen är spegelsymmetrisk; bara ljuset uppe till vänster och kornet skiljer sidorna. Bilden är en ruta, 16 × 16, utan kulting i: den visar den utsatta fällan. Granskningen: Ritade om buren efter idén. Version 1 såg ut som en kista eller låda: två höga stolpar stod upp baktill, framsidan var 5 rader hög med ben, nästan som en sidovy, och locket saknade käppar. Nu är buren en låg, timrad stockram ovanifrån. Den bakre grenen (rad 3–6) och den främre grenen (rad 11–12) ligger tvärs över hela bredden, och sidogrenarnas grova ändar sticker ut vid de fyra hörnen (rad 1–2 bak, rad 14–15 fram). Mellan grenarna ligger ett lock av tätt lagda smala käppar som lodräta streck i jord3/jord2 med jord1 i springorna, och tillsammans med grenarna tar ytan ungefär tre fjärdedelar av höjden. Framkanten är ett smalt band på 2 rader i jord1/jord0. Repen syns som ben2/ben1-lindningar vid de två bakre hörnen och som ett litet kryss mitt på locket. Konturen är jord0 och ljuset kommer uppifrån vänster (jord3 till vänster, jord2/jord1 till höger). Silhuetten är spegelsymmetrisk och ryms i en ruta, och den är lagom låg mot kolonisten.",
+   "ide": "Låg fyrkantig bur, timrad som en liten stockram: fyra grenar ligger två och två korsade i en kvadrat (omkring 14 × 10 punkter) med de grova ändarna utstickande vid hörnen, och ovanpå ligger ett lock av tätt lagda smala käppar som en rad ljusa streck, ritat ovanifrån så att det tar tre fjärdedelar av höjden. Framkanten är ett smalt band på 2–3 punkter i jord1 och jord0 där de nedersta grenarna syns i genomskärning, och de två repen syns som korta ben2/ben1-lindningar vid de två bakre hörnen och ett kryss mitt på locket. Trä i jord1–jord3 med jord0-kontur och korn längs grenarna, ljust uppe till vänster, och formen är spegelsymmetrisk med bara ljuset som skiljer sidorna."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_bur",
+     "rader": [
+      ".....EH..GE.....",
+      "......EHGE......",
+      ".....oqqppo.....",
+      ".....EHFFGE.....",
+      "....EHEGFEGE....",
+      "....EGEGFEFE....",
+      "...EHEGEEFEGE...",
+      "...oqqpqppqpo...",
+      "...EHEFEEFEFE...",
+      "..EHEGEHGEFEGE..",
+      "..EGEGEHGEFEFE..",
+      "..oqqpEHFEpppo..",
+      ".EHEEqpHGpoEEGE.",
+      ".EGEEFEHFEEFEFE.",
+      ".EHEFEEGFEFEEGE.",
+      ".EH....HF....GE."
+     ]
+    }
+   ],
+   "anteckning": "Buren står fritt på marken som ett litet spetsigt tält och ses snett ovanifrån. De fyra grenarna står i en fyrkant och lutar ihop mot toppen, där det ena repet (ben1/ben2) är surrat och grenändarna korsar varandra ovanför surrningen. De bakre grenarna syns som tunnare, mörkare linjer inne i buren och slutar högre upp, eftersom bakkanten ligger längre bort. De främre grenarna bär silhuetten och är ljusa på vänster sida (H) och mörkare på höger (G/F), med jord0 som kontur. Det andra repet går i två vågräta varv mellan grenarna. Det nedre varvet sjunker i mitten, så att öppningen blir lägre där den lösa käppen står som dörr framför. Mellan banden ser man in på den mörka marken i jord0. Mot marken syns bara stumparna av de två främre grenarna och käppens fot. Formen är spegelsymmetrisk; bara ljuset och kornet skiljer sidorna åt. Ingen kulting ritas, bara den tomma fällan. Granskningen: Granskat mot reglerna. Storleken (14 × 16 punkter, en ruta) stämmer mot kolonisten. Vinkeln är snett ovanifrån, med de bakre grenarna högre upp och slutande bakom det nedre repvarvet. Silhuetten är spegelsymmetrisk kring mittlinjen, och det är bara ljuset och kornet som skiljer sidorna åt. Ljuset kommer uppifrån vänster, med H på vänsterkanterna och G/F på högerkanterna. Repbanden är q/p, ljusast till vänster, och har ben0 i ändarna. Konturen är jord0 runt trät och inte svart. Toppen är surrad med ett rep där grenändarna korsar, dörrkäppen står i den lägre öppningen i mitten, och bara de två främre stumparna och käppen når marken. Idén följs, och buren syns tydligt på gräset tack vare de ljusa repbanden. Det enda som bröt mot reglerna var den nedersta marken inuti buren: två släta block av jord0 på 4 × 3 punkter läste som mörka fläckar. Där lade jag in jord1 som korn (rad 13–14), så att ytan inte blir slät. Allt annat är oförändrat.",
+   "ide": "Hög spetsig bur som ett litet tält: fyra grenar står i en fyrkant på marken (omkring 14 punkter brett nertill) och lutar ihop mot en topp där de är surrade med det ena repet, så att silhuetten blir en förkortad pyramid omkring 15 punkter hög sedd snett ovanifrån. Det andra repet är virat runt grenarna i två varv som vågräta ben1/ben2-band mellan stolparna och bildar burens galler, och mellan banden ser man in mot den mörkare marken inuti i jord0 och E-ton; den främre öppningen är lite lägre i mitten där en lös käpp står som dörr. Bara de två främre grenarnas nedre ändar syns som korta stumpar mot marken, och tältformen är symmetrisk kring mittlinjen."
   },
   {
    "bilder": [
@@ -38,70 +65,26 @@
      "namn": "f10_bur",
      "rader": [
       "................",
-      "EEEEEEEEEEEEEEE.",
-      "EqHGHHGHGHHGHpE.",
-      "EHEEEpEEEEpEEGE.",
-      "EGE..p....p.EFE.",
-      "EHE..q....p.EGE.",
-      "EGE..p....q.EFE.",
-      "EHEppqppppqpEFE.",
-      "EGE..p....p.EFE.",
-      "EHE..q....p.EFE.",
-      "EGEEEpEEEEoEEFE.",
-      "EpFGFFGFFGFFFoE.",
-      "EEEEEEEEEEEEEEE.",
-      ".......FEq......",
-      ".......FE.pq....",
-      ".......EE...ppo."
+      "................",
+      ".EE.............",
+      ".EHEEE..........",
+      ".EHHFHEEE.......",
+      ".EGHHFGHHEEE....",
+      ".EGHGGFHGGFGEE..",
+      ".EGFGHGFGHGFGFE.",
+      "EEEFFFFGFFGFGHE.",
+      "EHEHEEFFFGFGGFE.",
+      "EHEHqEEEEFFFFGE.",
+      "EGEHEqEEEEEEFFE.",
+      "EGEGEEptEEEEqpE.",
+      "EHHGHGHGGHGGpqE.",
+      "EGFFGFFFGFFFoFE.",
+      ".EEEEEEEEEEEEE.."
      ]
     }
    ],
-   "anteckning": "Fallburen ligger på marken snett uppifrån, en ruta stor. Fyra grenar är surrade till en låg fyrkantig ram, 15 × 11 punkter, med korta repändar i ben1 vid hörnen. Bakkanten ligger mot marken och är ljusast i jord3 och jord2 eftersom den vetter mot ljuset uppe till vänster. Den högra sidan är mörkare i jord1 och jord0. Framkanten är lyft och syns som ett smalt band i jord1 över en kant i jord0. Det första repet är spänt i kors som ett glest nät i ben1 och ben2, med ljusare knutar där trådarna korsar varandra. Mellan trådarna är det genomskinligt, så att marken syns genom nätet. Under framkantens mitt står den korta stödpinnen av samma gren ner till marken. Från pinnen hänger det andra repet löst ut åt höger som utlösare. När pinnen rycks bort faller ramen ner över kultingen. Granskningen: Rättat: ramen saknade kontur uppe och till vänster, där den ljusa grenen låg ytterst. Nu har hela ramen en kontur i jord0 runt om, även på grenarnas insida mot nätet. Ljuset kommer fortfarande från övre vänstra hörnet: vänster gren och bakkanten är i jord2 och jord3, höger gren och framkantens band i jord1 och jord0. De lösa ben-prickarna ovanför ramen och bredvid stödpinnen var ensamma prickar och är borttagna. Repändarna sitter i stället som surrningar i ramens fyra hörn. Utlösarrepet går nu i en sammanhängande diagonal från stödpinnen ut åt höger. Det glesa nätet (två lodräta och ett vågrätt rep), stödpinnen under framkanten och storleken (15 × 12 punkter, en ruta) är oförändrade.",
-   "ide": "Fallburen: de fyra grenarna är surrade till en fyrkantig ram med repändar i hörnen och det ena repet spänt i kors som ett glest nät över ramen, och ramen ligger snett uppfälld med bakkanten mot marken och framkanten lyft på en kort pinne av samma gren. Snett uppifrån tar nätramen nästan hela rutan som en lutande, låg fyrkant (cirka 15 × 11 punkter), där framkantens gren är ett smalt mörkare band i jord1 och E och bakkanten ljusare i jord2 och H. Det andra repet hänger löst från stödpinnen ut åt höger som fällans utlösare i ben1 och ben2."
-  },
-  {
-   "bilder": [
-    {
-     "namn": "f10_bur_vagrat",
-     "rader": [
-      "..EEEEEEEEEEEE..",
-      ".EHHGqHGHGqGGFE.",
-      "EHGFFpFGFFpFFGFE",
-      "EHGEEpEEEEpEEGFE",
-      "EHGE.p....p.EGFE",
-      "EGHE.p....p.EGFE",
-      "EHGEEpEEEEpEEGFE",
-      "EGHHGqHGHGqGGGFE",
-      "EGFFFpFGFFpFFFFE",
-      "EGFEEoEEEEoEEFFE",
-      "EFFE........EFFE",
-      ".EE..........EE."
-     ]
-    },
-    {
-     "namn": "f10_bur_lodrat",
-     "rader": [
-      "...EEEEEEEE...",
-      "..EHHGHGHGFE..",
-      ".EHGFGFFGFGFE.",
-      "EHGEEEHGEEEGFE",
-      "EHGE.EHGE.EGFE",
-      "EqqpppqqppppoE",
-      "EGFE.EHGE.EFFE",
-      "EGHE.EGFE.EEE.",
-      "Eqqpppqqppppo.",
-      "EHGE.EGFE.....",
-      "EGFE.EHGEEEEE.",
-      "EHHGHGHGHGGGFE",
-      "EGFFGFFGFFGFFE",
-      "EGFEEEEEEEEGFE",
-      "EFFEEEEEEEEFFE",
-      ".EEE......EEE."
-     ]
-    }
-   ],
-   "anteckning": "Buren står på marken som en liggande halvtunna. Två bågar av böjda grenar sitter nedstuckna i jorden, en i varje ände. Två raka grenar ligger längs dem: åsen överst och en sidoribba fram. Glesa repvarv binder ihop dem, med ljus ovansida i ben2 och resten i ben1. Snett uppifrån syns åsens ovansida i ljuset uppe till vänster och ribbans framsida mörkare. Mellan grenarna syns marken genom buren, eftersom fällan bara är fyra grenar och två rep. Den vänstra öppningen, där kultingen går in, är en mörk båge i jord0 mellan den främre bågens ben. Konturen är jord0 och grenarna jord1–jord3. Buren kan stå längs eller tvärs på kartan, så den är ritad åt båda håll. Vågrät är den en ruta bred och 11 punkter hög. Lodrät går tunneln uppåt: öppningen vetter mot betraktaren och den bakre bågen syns som ett band upptill. Granskningen: Ritade om båda bilderna. Den vågräta (16 × 12) var osymmetrisk: den vänstra bågen var dubbelt så tjock som den högra, och nederkanten var sned. Nu har den två lika smala bågar vid ändarna. Åsgrenen ligger överst med ljuset uppe till vänster och sidoribban framtill. De två repvarven sitter spegelvänt i kolumn 5 och 10, i ben2 på ovansidan och ben1 längre ner. Silhuetten är spegelsymmetrisk, och bara ljuset och kornet skiljer sidorna åt. Mellanrummen mellan grenarna är genomskinliga, så gräset syns genom buren. Det gör den luftigare och tydligare som bur än den förra ytan, som var nästan helt i jord0, och de ljusa grenarna syns på gräset. Den mörka bågen innanför den vänstra bågen är öppningen. Den lodräta var bara 11 punkter bred, för smal för att visa en liggande halvtunna sedd snett uppifrån, och repen stack ut utanför konturen. Nu är den 14 × 16. Den bakre bågen syns som en rundad båge överst och den främre som en bredare båge nedtill med den mörka öppningen i jord0. Åsen går mitt i längs tunneln och sidoribban längs vänster sida. Två repvarv går tvärs över och binder ihop allt. Ingen del är större än en ruta, och storleken mot kolonisten är oförändrad.",
-   "ide": "Tunnelburen: två grenar är böjda till låga bågar och nedstuckna i marken vid var sin ände, och två raka grenar ligger längs med bågarna som ås och sidoribba, så att buren blir en avlång, liggande halvtunna ungefär 16 punkter bred och 10 hög, vågrät på rutan. Repen är virade i glesa varv runt tunneln (ben1 och ben2 med ljus ovansida) och binder ihop bågarna med de raka grenarna, och den vänstra öppningen syns som en mörk båge i jord0 där kultingen ska gå in. Grenarna är jord1 och jord2 med jord0-kontur, och ovansidan av åsgrenen får ljuset uppe till vänster."
+   "anteckning": "Buren ligger på marken och ses snett ovanifrån som stationerna: ramen av två långa och två korta grenar ligger platt (vänster gren och den främre grenen syns, med ett smalt mörkare framband i jord1 och kontur i jord0). Locket av flätade kvistar ligger ovanpå ramen. Det är lyft i vänstra änden, och eftersom vi ser snett uppifrån flyttas den änden uppåt i bilden, så att locket blir en lutande platta. Högra änden vilar på ramen och är surrad med en ljus replindning i ben1–ben2 vid gångjärnet. Under den lyfta änden öppnar sig en kilformad springa i jord0. I den syns den lodräta pinnen som håller upp lockkanten, och från pinnens topp går repet snett ner till betet: en enda rostprick, det enda mättade i bilden. Den bakre grenen och den högra grenen ligger dolda under locket, som logiskt är. Ljuset kommer uppifrån vänster: flätningen är ljusast i jord3 uppe till vänster och mörknar mot jord1 nere till höger. Buren är en ruta stor och har ingen skugga. Granskningen: Rättat: 1) Locket såg ut som en slät skiva eller ett kistlock. Det har nu ett flätmönster av kvistar i jord1–jord3, med mörka korsningar i jord1 som löper snett, så att det läser som flätverk. Det är ljusast uppe till vänster. 2) Den lodräta pinnen under den lyfta vänstra änden hade ett glapp mot locket. Nu är den en hel stolpe i kolumn 3 från ramen upp till lockets kant. 3) Repet från pinnen till betet går nu från pinnens topp diagonalt ner (ben2, ben2, ben1) till betet. Betet är en enda rost2-prick och flyttad en punkt inåt under locket, så att den mörka springan syns runt den. Behållet: storleken (15 × 14, en ruta, i rätt proportion mot kolonisten), vinkeln snett uppifrån med ramens framkant som ett smalt band, jord0-konturen, lindningen vid gångjärnsänden till höger och den medvetna asymmetrin enligt idén.",
+   "ide": "Fallbur med lyft lock, avlång och asymmetrisk med flit: en låg rektangulär ram av två långa och två korta grenar ligger på marken (omkring 15 × 8 punkter) ritad ovanifrån, och över den ligger ett lock av flätade kvistar som är lyft i den vänstra änden och vilar på en lodrät pinne medan den högra änden ligger kvar mot ramen. Det ena repet går från pinnens topp diagonalt in under locket till en liten utlagd bit bete (en enda röd eller senapsgul prick som är det enda mättade i bilden), och det andra repet binder locket till ramen vid gångjärnsänden som en ljus lindning. Under det lyfta locket syns en mörk springa i jord0 som visar att buren är gillrad, och trät hålls i jord1–jord3 med jord0-kontur och repen i ben1–ben2."
   }
  ]
 }

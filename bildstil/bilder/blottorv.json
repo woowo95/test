@@ -4,12 +4,12 @@
  "h": 8,
  "rader": [
   ".kkkkkkkkkk.",
-  "knSSSnnnmnmk",
-  "knTTmlmmlmlk",
-  "knmmlmEmlmlk",
-  "kmmlmmlmEllk",
-  "kllllllllllk",
-  "klllllllkkkk",
+  "kTmmEmmEmmEk",
+  "kmTFFmEmmElk",
+  "kEmmEmFFmElk",
+  "kmEmlEmlElEk",
+  "klllllllllkk",
+  "kllkllkllkkk",
   ".kkkkkkkkkk."
  ],
  "ritad": 2,
@@ -27,48 +27,19 @@
   "R": "#3e5156",
   "Q": "#233035"
  },
- "versioner": [
-  {
-   "ide": "Ett enda långt torvblock som ligger vågrätt, skuret med spade så att kanterna är raka men lite rundade och sviktande av vätan, omkring 12 punkter brett och 6–7 högt. Ovansidan syns snett uppifrån och tar ungefär fyra rader i kol2 och jord0 med korn av kol1 och några trådar av fibrer i jord1. Framkanten är ett mörkt band på två rader i kol1 och kol0. Konturen är kol0, eftersom den blöta torven verkligen är nästan svart, och en eller två punkter skiffer3 uppe till vänster på ovansidan blänker som vatten.",
-   "rader": [
-    ".kkkkkkkkkk.",
-    "kTmmEmmEmmEk",
-    "kmTFFmEmmElk",
-    "kEmmEmFFmElk",
-    "kmEmlEmlElEk",
-    "klllllllllkk",
-    "kllkllkllkkk",
-    ".kkkkkkkkkk."
-   ],
-   "om": "Ett enda långt blött torvblock, 12×7 punkter, som ligger vågrätt. Ovansidan syns snett uppifrån på fyra rader i kol2 och jord0, med korn av kol1 och korta fibertrådar i jord1. Den mörknar mot nedre högra hörnet. Två punkter skiffer3 uppe till vänster blänker som vatten. Framkanten är ett band i kol1 över kol0, och de rundade hörnen ger blocket en mjuk, våt svikt. Konturen är kol0, eftersom den blöta torven verkligen är nästan svart. Formen följer torvens block så att de två hör ihop. Granskningen: Rättat: framkanten var bara en rad kol1 ovanför konturen, men idén och stilguiden kräver ett band på två till tre rader. Jag lade till en andra rad i kol1 och kol0 (mörkare mot höger) under den första. Blocket blir då 12 × 8 punkter och fyller rutan. Ovansidan tar fortfarande fyra rader och ses snett uppifrån.\n\nOförändrat: ovansidan är kol2 och jord0 med korn av kol1 och fibertrådar i jord1. De två blänkpunkterna i skiffer3 sitter uppe till vänster. Konturen är kol0, vilket är motiverat eftersom blöt torv verkligen är nästan svart. Formen är spegelsymmetrisk med rundade hörn. Mot gräset läses blocket på den mörka silhuetten och blänket. Storleken är rimlig mot kolonisten (14 × 20)."
-  },
-  {
-   "ide": "En liten trave av tre blöta torvblock: två korta block ligger sida vid sida nederst och ett tredje ligger tvärs ovanpå mitt över dem, så att silhuetten blir en låg trappstegsformad pyramid, omkring 11 punkter bred och 8 hög. Varje block har en ovansida i kol2 och jord0 med korn av kol1 och en framkant på två punkter i kol1. Konturen är kol0 runt varje block så att skarvarna syns. Den övre kanten på det översta blocket får en eller två punkter skiffer2–skiffer3 som vattenglans uppe till vänster, och små droppar av skiffer1 rinner ner längs framkanterna.",
-   "rader": [
-    "..kkkkk..",
-    ".kTSmEk..",
-    ".kEmlmkk.",
-    "kkkkkkkTk",
-    "kmEkTmkEk",
-    "kElkEmkmk",
-    "kllklRkRk",
-    "kkkkkkkkk",
-    ".lllllll."
-   ],
-   "om": "Tre blöta torvblock i en låg trappstegsformad trave, 12 punkter bred och 8 hög. Två block ligger sida vid sida nederst med skarven i mitten, och det tredje ligger tvärs ovanpå mitt över dem. Ovansidorna är kol2 och jord0 med korn av kol1, och framkanterna är två punkter kol1. Konturen är kol0 runt varje block. Vattenglansen är skiffer3 och skiffer2 uppe till vänster på det översta blocket, och droppar av skiffer1 rinner ner längs framkanterna. Granskningen: Byggde om blocken så att travens logik går att läsa. Förut gick en sammanhängande kol1-rad över hela botten, och de nedre blockens ovansidor och framkanter flöt ihop. Nu har varje block ovansida och framkant i en tydlig ordning. Översta blocket (punkt 3–8) har ovansidan i kol2/jord0 med glansen TS uppe till vänster, en framkant i kol1 och en bottenkontur i kol0 som skiljer det från blocken under. De två nedre blocken syns med ovansida på var sin sida om det översta och har en framkant på två punkter i kol1 med korn av kol2. Skarven mellan dem är en dubbel kol0-linje mitt under, så silhuetten blir spegelsymmetrisk som en låg trappstegspyramid, 12 × 8. Tog bort de ensamma skiffer1-prickarna mitt i ytorna och samlade vattnet till droppar som rinner ner längs framkanterna: en på översta blockets framkant, en tvåpunkters strimma på vänstra blocket och en på högra. Kol0 behålls som kontur, eftersom blöt torv verkligen är svart; det följer idén och den godkända torven och ger en tydlig kant mot gräset. Programmeringschatten gjorde traven högre och smalare, så att den skiljer sig från det ensamma blocket."
-  },
-  {
-   "ide": "Två nygrävda block som ligger kvar i en grund pöl av myrvatten: ett lutar på det andra, och vattnet runt dem glänser grått.",
-   "rader": [
-    "...kkkk.....",
-    "..kTmEmk.kkk",
-    ".QkEmlmkkmTk",
-    "QRklllkRkElk",
-    "QRRkkkRSRkkQ",
-    ".QRRSRRRRRQ.",
-    "..QQQQQQQQ.."
-   ],
-   "om": "Ritad av programmeringschatten i stället för API:ts version 3, som blev samma block som version 1."
-  }
- ]
+ "om": "Ett enda långt torvblock som ligger vågrätt, skuret med spade så att kanterna är raka men lite rundade och sviktande av vätan, omkring 12 punkter brett och 6–7 högt. Ovansidan syns snett uppifrån och tar ungefär fyra rader i kol2 och jord0 med korn av kol1 och några trådar av fibrer i jord1. Framkanten är ett mörkt band på två rader i kol1 och kol0. Konturen är kol0, eftersom den blöta torven verkligen är nästan svart, och en eller två punkter skiffer3 uppe till vänster på ovansidan blänker som vatten. Ett enda långt blött torvblock, 12×7 punkter, som ligger vågrätt. Ovansidan syns snett uppifrån på fyra rader i kol2 och jord0, med korn av kol1 och korta fibertrådar i jord1. Den mörknar mot nedre högra hörnet. Två punkter skiffer3 uppe till vänster blänker som vatten. Framkanten är ett band i kol1 över kol0, och de rundade hörnen ger blocket en mjuk, våt svikt. Konturen är kol0, eftersom den blöta torven verkligen är nästan svart. Formen följer torvens block så att de två hör ihop. Granskningen: Rättat: framkanten var bara en rad kol1 ovanför konturen, men idén och stilguiden kräver ett band på två till tre rader. Jag lade till en andra rad i kol1 och kol0 (mörkare mot höger) under den första. Blocket blir då 12 × 8 punkter och fyller rutan. Ovansidan tar fortfarande fyra rader och ses snett uppifrån.\n\nOförändrat: ovansidan är kol2 och jord0 med korn av kol1 och fibertrådar i jord1. De två blänkpunkterna i skiffer3 sitter uppe till vänster. Konturen är kol0, vilket är motiverat eftersom blöt torv verkligen är nästan svart. Formen är spegelsymmetrisk med rundade hörn. Mot gräset läses blocket på den mörka silhuetten och blänket. Storleken är rimlig mot kolonisten (14 × 20).",
+ "vald": 1,
+ "forra": {
+  "ritad": 2,
+  "rader": [
+   ".kkkkkkkkkk.",
+   "knSSSnnnmnmk",
+   "knTTmlmmlmlk",
+   "knmmlmEmlmlk",
+   "kmmlmmlmEllk",
+   "kllllllllllk",
+   "klllllllkkkk",
+   ".kkkkkkkkkk."
+  ]
+ }
 }

@@ -28,48 +28,19 @@
   "q": "#bdb39b",
   "s": "#742a01"
  },
- "versioner": [
-  {
-   "ide": "Rak kniv med träskaft: en smal diagonal från nedre vänstra hörnet till övre högra, där skaftet tar de nedre tre punkterna i jord1 och jord2 med jord0 som kontur, och bladet de övre fyra–fem punkterna. Bladet är två punkter brett i skiffer2 och skiffer3, med eggen på undersidan i skiffer1 och ryggen kantad av skiffer0, och spetsen blir en enda punkt i övre högra hörnet. Mellan skaft och blad sitter en punkt rost1 som en liten järnhylsa, och en glanspunkt i skiffer3 ligger uppe till vänster på bladet.",
-   "rader": [
-    ".......Q",
-    ".....QTQ",
-    "....QTSQ",
-    "...QTSRQ",
-    "..QSSRQ.",
-    ".EsRQ...",
-    "EHFE....",
-    "EFE....."
-   ],
-   "om": "Rak järnkniv på 8×8, snett från nedre vänstra till övre högra hörnet. Spetsen är en ensam punkt i skiffer0 längst upp till höger. Bladet går i fyra steg och är två punkter brett i skiffer3 och skiffer2, med eggen på undersidan i skiffer1 och konturen i skiffer0. Den ljusaste skiffer3 ligger på bladets övre vänstra sida som glans. Hylsan är en punkt rost1 mellan blad och skaft. Skaftet är tre punkter trä i jord3, jord2 och jord1 med kontur i jord0. Granskningen: Kniven följer reglerna och idén. Storleken (8 × 8, diagonalt) passar mot kolonisten. Kniven syns som en sak på marken snett uppifrån. Bladet i ljus skiffer och skaftet i jord med jord0 som kontur syns tydligt mot olivgräset. Ljuset faller från övre vänster: skiffer3 på ryggsidan och skiffer1 mot eggen nere till höger. Hylsan i rost1 sitter mellan skaft och blad, och spetsen är en enda punkt i övre högra hörnet. En liten rättelse: skiffer3 löpte som en jämn rand längs hela bladet, så ytan blev slät och det fanns ingen egen glanspunkt. Den nedersta skiffer3-punkten (rad 5, kolumn 4) blev därför skiffer2. Då samlas det ljusa uppe till vänster som glans, och bladet får korn i stället för raka ränder. I övrigt är punkterna oförändrade."
-  },
-  {
-   "ide": "Kniv med hornskaft och krökt rygg: skaftet nere till vänster är något tjockare och ljust i ben1 och ben2 med ben0 som kontur och en rundad knopp längst ut. Bladet går snett uppåt höger och har en svagt böjd rygg som sjunker mot spetsen, i skiffer2 med skiffer3 längs den ljusa ryggen uppe till vänster och skiffer1 mot eggen nere till höger. Silhuetten blir en mjuk båge i stället för en rak linje, och kniven ligger platt så att man ser bladets flatsida snett ovanifrån.",
-   "rader": [
-    "....QQ..",
-    "...QTTQ.",
-    "...QTSRQ",
-    "..oQSRQ.",
-    ".oqpQQ..",
-    "oqpo....",
-    "oppo....",
-    ".oo....."
-   ],
-   "om": "Järnkniv med hornskaft, 8×8 punkter, snett från nedre vänstra till övre högra hörnet. Bladet har en välvd rygg som är högst i översta raden och sjunker mot spetsen till höger. Bladet har skiffer0 som kontur, skiffer3 längs ryggen uppe till vänster, skiffer2 i mitten och skiffer1 mot eggen nere till höger. Där bladet möter skaftet sitter en kort mörk övergång i skiffer0. Hornskaftet är tjockare än bladet, i ben2 och ben1 med ben0 som kontur, och slutar i en rundad knopp nere till vänster. Kniven ligger platt så att man ser bladets flatsida. Granskningen: Rättade bladets form. Toppen var en platt rad på tre punkter (QQQ) och en lodrät kant i högerkanten, så bladet såg trubbigt och brett ut, som en kil. Nu har det en spets i (rad 2, kolumn 7), och ryggen går i en mjuk båge från övre vänstra hörnet och sjunker mot spetsen, som idén säger. Bladet blev samtidigt något smalare. Tonerna följer ljuset: skiffer3 längs ryggen uppe till vänster, skiffer2 i mitten och skiffer1 mot eggen nere till höger, med skiffer0 som kontur. Hornskaftet (ben1/ben2 med ben0 som kontur och rundad knopp nere till vänster) är oförändrat. Storleken håller sig inom 8 × 8, vilket passar en kniv bredvid en kolonist på 14 × 20. Kniven ligger platt och ses snett ovanifrån, och de ljusa tonerna i ben och skiffer syns mot det olivgröna gräset."
-  },
-  {
-   "ide": "Kort bred kniv, nästan som en seax: bladet är bredare (tre punkter) och kortare, med rak egg och en rygg som bryts av snett ner till spetsen i övre högra hörnet. Den bredare kilformen i skiffer1 till skiffer3 har skiffer0 som kontur. Det korta träskaftet nere till vänster i jord1 och jord2 är lindat med ett band i rost1 och avslutat med en punkt jord0, så att knivens tyngd ligger i det breda bladet.",
-   "rader": [
-    ".....QQQ",
-    "...QQTSQ",
-    "..QTTSRQ",
-    ".QTSSRQ.",
-    ".QSRRQ..",
-    "EsQQQ...",
-    "GFE.....",
-    "EE......"
-   ],
-   "om": "Järnkniven är en kort, bred kniv som liknar en seax och ligger snett från nedre vänstra till övre högra hörnet. Det kilformade bladet är tre till fyra punkter brett, med skiffer0 som kontur. Det är ljust i skiffer3 mot ryggen uppe till vänster och mörkare i skiffer2 och skiffer1 mot den raka eggen nere till höger. Ryggen bryts av snett ner mot spetsen i övre högra hörnet. Det korta träskaftet i jord1 och jord2 är lindat med ett band i rost1 närmast bladet och slutar med jord0 nere till vänster. Därför ligger tyngden i det breda bladet. Granskningen: Oförändrad. Storleken stämmer: 8 × 8 punkter fyller rutan och är rimlig i handen på en kolonist på 14 × 20 punkter. Kniven ligger snett som en sak på marken, inte som en platt sidovy. Den följer idén: det breda, kilformade bladet är tre punkter brett, i skiffer1 till skiffer3 med kontur i skiffer0. Eggen är rak och ryggen bryts snett ner mot spetsen i övre högra hörnet. Ljuset faller rätt, med skiffer3 längs övre vänstra kanten och skiffer1 nere till höger. Det korta skaftet i jord1 och jord2 har ett band i rost1 och slutar med jord0. Bladets grå toner är ljusare än gräset och syns på det. Den ljusa punkten i jord2 längst till vänster i skaftet saknar kontur, men den räknas som skaftets belysta ände och syns ändå mot gräset."
-  }
- ]
+ "om": "Rak kniv med träskaft: en smal diagonal från nedre vänstra hörnet till övre högra, där skaftet tar de nedre tre punkterna i jord1 och jord2 med jord0 som kontur, och bladet de övre fyra–fem punkterna. Bladet är två punkter brett i skiffer2 och skiffer3, med eggen på undersidan i skiffer1 och ryggen kantad av skiffer0, och spetsen blir en enda punkt i övre högra hörnet. Mellan skaft och blad sitter en punkt rost1 som en liten järnhylsa, och en glanspunkt i skiffer3 ligger uppe till vänster på bladet. Rak järnkniv på 8×8, snett från nedre vänstra till övre högra hörnet. Spetsen är en ensam punkt i skiffer0 längst upp till höger. Bladet går i fyra steg och är två punkter brett i skiffer3 och skiffer2, med eggen på undersidan i skiffer1 och konturen i skiffer0. Den ljusaste skiffer3 ligger på bladets övre vänstra sida som glans. Hylsan är en punkt rost1 mellan blad och skaft. Skaftet är tre punkter trä i jord3, jord2 och jord1 med kontur i jord0. Granskningen: Kniven följer reglerna och idén. Storleken (8 × 8, diagonalt) passar mot kolonisten. Kniven syns som en sak på marken snett uppifrån. Bladet i ljus skiffer och skaftet i jord med jord0 som kontur syns tydligt mot olivgräset. Ljuset faller från övre vänster: skiffer3 på ryggsidan och skiffer1 mot eggen nere till höger. Hylsan i rost1 sitter mellan skaft och blad, och spetsen är en enda punkt i övre högra hörnet. En liten rättelse: skiffer3 löpte som en jämn rand längs hela bladet, så ytan blev slät och det fanns ingen egen glanspunkt. Den nedersta skiffer3-punkten (rad 5, kolumn 4) blev därför skiffer2. Då samlas det ljusa uppe till vänster som glans, och bladet får korn i stället för raka ränder. I övrigt är punkterna oförändrade.",
+ "vald": 1,
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   ".......Q",
+   ".....QTQ",
+   "....QTSQ",
+   "...QTSRQ",
+   "..QSSRQ.",
+   ".EsRQ...",
+   "EHFE....",
+   "EFE....."
+  ]
+ }
 }
