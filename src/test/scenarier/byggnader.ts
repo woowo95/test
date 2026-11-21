@@ -523,7 +523,8 @@ SCENARIER.lager = {
     kor(s, 18);
     // när lagerplatsen krymper hamnar en stack ibland utanför en stund, och bärs in igen inom några timmar (också veden från
     // ett träd som fällts en bit bort, som i den glesare skogen sedan steg 5.1.4.1 kan ligga kvar vid stubben en stund)
-    for (let i = 0; i < 72 && pilesOf(s).some(p => p.out); i++) kor(s, 1); // längre när en lagerplats flyttats för ett hus (steg 8.1.15)
+    // väntan slutar när högst två stackar ligger ute (veden vid en stubbe), så att den inte löper in i nästa flytt för ett hus
+    for (let i = 0; i < 72 && pilesOf(s).filter(p => p.out).length > 2; i++) kor(s, 1); // längre när en lagerplats flyttats för ett hus (steg 8.1.15)
     const z = zoneOf(s), ps = pilesOf(s), stor = z.w * z.h;
     const summaOk = Object.keys(STACK).filter(k => !SIM.isTool(k)).every(k => Math.abs(ps.filter(p => p.k === k && p.stored).reduce((a, p) => a + p.n, 0) - amountOf(s, k)) <= 1 + 1e-6); // det som ligger utanför är inte i förrådet än; en sak kan vara på väg till den nya lagerplatsen // ett redskap kan vara i bruk
     // bära: kör en stund med gående invånare och se hur mycket de bär hem

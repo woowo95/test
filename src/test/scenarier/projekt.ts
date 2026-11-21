@@ -148,8 +148,9 @@ SCENARIER.fullaforrad = {
   text: 'Förråden till taket (steg 6.2.15, mjukt tak i steg 10.2.4): på Förbättra fylls förråden mellan bufferten och taket i FORRADSMAL, och över taket allt mer sällan; en by med fulla förråd arbetar vidare mot nästa teknik. I en by som kan alla tekniker och inte saknar något projekt (projektens brist sätts till noll under provet, och vedens buffert halveras och taket sänks till bufferten, så att det ryms i lagret, alla har en sovplats under tak och byn delar all mat) fyller ingen på maten eller veden under en arbetsdag (8 timmar) när förråden nått taken, ingen samlar grenar eller hö över taket, och de vuxna får fritid. I samma by vars förråd bara når bufferten fylls de',
   lang: true,
   kor: () => {
-    const brist = PROJEKT_LIST.map(k => PROJEKT[k].brist), ved = SIM.FORRADSMAL.ved as { matt: number; dygn: number }, vedMatt = ved.matt, vedDygn = ved.dygn;
-    for (const k of PROJEKT_LIST) PROJEKT[k].brist = () => 0;
+    const brist = PROJEKT_LIST.map(k => PROJEKT[k].brist), egen = PROJEKT_LIST.map(k => PROJEKT[k].egen), ved = SIM.FORRADSMAL.ved as { matt: number; dygn: number }, vedMatt = ved.matt, vedDygn = ved.dygn;
+    // inget projekt saknas, varken för byn eller för någon själv (det egna: en egen kista, egna kläder, som sedan steg 12.1.20 går att göra av läder)
+    for (const k of PROJEKT_LIST) { PROJEKT[k].brist = () => 0; PROJEKT[k].egen = undefined; }
     ved.matt = 1; ved.dygn = vedDygn / 2;
     try {
       const fyll = (full: boolean) => {
@@ -196,7 +197,7 @@ SCENARIER.fullaforrad = {
         [`de vuxna i den fulla byn får fritid när inget finns kvar att göra (${fri(full)} gånger; ${fri(halv)} i byn vid bufferten när den fyllt på)`, fri(full) > 0],
       ];
     } finally {
-      PROJEKT_LIST.forEach((k, i) => { PROJEKT[k].brist = brist[i]; });
+      PROJEKT_LIST.forEach((k, i) => { PROJEKT[k].brist = brist[i]; PROJEKT[k].egen = egen[i]; });
       ved.matt = vedMatt; ved.dygn = vedDygn;
     }
   },

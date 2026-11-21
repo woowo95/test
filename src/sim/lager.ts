@@ -1094,8 +1094,9 @@ export function tidyStore(s: State) {
   // större och nya lagerplatser föreslås av Byggplanen (steg 7.2.18, lagerStorre och lagerNy nedan)
   // mindre: ta bort en kant när mer än hälften har stått tom i sex timmar (krympTim) och det som ligger där får plats i resten
   for (let i = 0; i < zs.length; i++) {
+    // ett träd som ska fällas eller en stubbe är ingen tom ruta (ledigaI)
     const z = zs[i], all = things(s), have = z.w * z.h, n = all.filter(a => inZone(z, a.x, a.y)).length;
-    if (z.hus !== undefined || have <= LAGER.krympMin || have - n <= have / LAGER.krympDel) { if (z.tom !== undefined) zs[i] = { ...z, tom: undefined }; continue; }
+    if (z.hus !== undefined || have <= LAGER.krympMin || ledigaI(s, z, all) <= have / LAGER.krympDel) { if (z.tom !== undefined) zs[i] = { ...z, tom: undefined }; continue; }
     if (z.tom === undefined) { zs[i] = { ...z, tom: s.now }; continue; }
     if (s.now - z.tom < LAGER.krympTim * HOUR) continue;
     const opts: Zone[] = [{ ...z, w: z.w - 1 }, { ...z, h: z.h - 1 }, { ...z, x: z.x + 1, w: z.w - 1 }, { ...z, y: z.y + 1, h: z.h - 1 }].filter(c => c.w >= LAGER.minSida && c.h >= LAGER.minSida);
@@ -1116,7 +1117,22 @@ export function matUtanPlats(s: State) {
 }
 export const utanPlatsNu = (s: State) => s.utanPlats?.v ?? 0;
 // finns ingen ledig ruta i någon lagerplats där saken får ligga?
-export const lagerFullt = (s: State, k: string) => { const all = things(s); return !zonesOf(s).some(z => allows(z, k) && all.filter(a => inZone(z, a.x, a.y)).length < z.w * z.h); };
+// en ruta där ett träd ännu står i ett lager i skogen, eller en stubbe, rymmer inget än (roomIn): den är inte ledig
+const sparrad = (s: State, z: Zone, x: number, y: number) => (z.rojs && groundOf(s).trees[key(x, y)] >= FOREST) || stubbeOn(s, x, y);
+export const lagerFullt = (s: State, k: string) => {
+  const all = things(s);
+  return !zonesOf(s).some(z => {
+    if (!allows(z, k)) return false;
+    return ledigaI(s, z, all) > 0;
+  });
+};
+// de lediga rutorna i lagerplatsen z: ingen stack och inget som spärrar
+function ledigaI(s: State, z: Zone, all: Stack[]) {
+  const upptagen = new Set(all.filter(a => inZone(z, a.x, a.y)).map(a => key(Math.floor(a.x), Math.floor(a.y))));
+  let n = 0;
+  for (let y = z.y; y < z.y + z.h; y++) for (let x = z.x; x < z.x + z.w; x++) if (!upptagen.has(key(x, y)) && !sparrad(s, z, x, y)) n++;
+  return n;
+}
 // Lagret är ett byggbehov (steg 7.2.18): det som inte fått plats ligger bredvid, och Byggplanen väljer mellan att göra en
 // lagerplats större, en ny lagerplats och ett förrådshus. Antalet lagerplatser har inget tak, utom marken själv
 export function lagerStorre(s: State) {
