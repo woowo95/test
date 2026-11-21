@@ -472,7 +472,7 @@ SCENARIER.isborr = {
       SIM.addTool(s, 'yxa', p); SIM.addTool(s, 'flintspjut', p);
       if (borr) SIM.addTool(s, 'isborr', p);
       const h = SIM.halVal(s, p);
-      return { h: h?.id, min: h ? SIM.halMin(s, p) : undefined };
+      return { h: h?.id, min: h ? SIM.halMin(s, p, p.x, p.y) : undefined };
     };
     const med = halet(true), utan = halet(false);
     // borren slits: den håller 200 hål
@@ -480,7 +480,7 @@ SCENARIER.isborr = {
     s.is = { vatten: 0, cm: 40 } as typeof s.is;
     SIM.addTool(s, 'isborr', p);
     let hal = 0;
-    while (SIM.nTools(s, 'isborr') > 0 && hal < 1000) { SIM.halGjort(s, p); hal++; }
+    while (SIM.nTools(s, 'isborr') > 0 && hal < 1000) { SIM.halGjort(s, p, p.x, p.y); hal++; }
     return [
       [`isborren: ${JSON.stringify(R.av)} på ${R.min} minuter i smedjan`, R.av.jarn === 1 && R.av.grenar === 1 && R.min === 4 && R.tek === 'smedja' && !!SIM.JARNSAKER.isborr],
       [`genom 40 cm is får byn med borr upp hålet på 4 minuter (${med.h}, ${med.min} minuter)`, med.h === 'isborr' && Math.abs((med.min ?? 0) - 4) < 1e-9],

@@ -100,19 +100,24 @@ export function halVal(s: State, p: Person) {
 }
 // p hugger eller borrar upp ett hål nu (fisket, vattnet, att dricka): isborren slits för varje hål (steg 12.2.11). Går den
 // sönder räknas det, och första gången står det i loggen
-export function halGjort(s: State, p: Person) {
-  if (!islagt(s) || halVal(s, p)?.id !== 'isborr') return;
+export function halGjort(s: State, p: Person, x: number, y: number) {
+  if (!islagt(s) || brunnKrok.vid(s, x, y) || halVal(s, p)?.id !== 'isborr') return; // vid brunnen behövs inget hål (steg 12.1.237)
   if (!wearTool(s, p, 'isborr', 1 / IS.borrHal)) return;
   if (forstaGang(s, 'isborrTrasig')) log(s, `${gen(p.name)} isborr var utsliten.`, 'world', [p.id]); else count(s, 'isborrTrasig');
 }
-// kan p nå vattnet: isen ligger inte, eller hen kan hugga upp ett hål
-export const naVattnet = (s: State, p: Person) => !islagt(s) || !!halVal(s, p) || brunnFinns(s); // brunnens vatten fryser inte (steg 12.4.8)
+// två frågor (steg 12.1.237): når p sjön (isen ligger inte, eller hen kan hugga upp ett hål), och når p vattnet alls (sjön,
+// eller brunnen, vars vatten inte fryser, steg 12.4.8). Fisket frågar sjön, att dricka och hämta vatten frågar vattnet
+export const naSjon = (s: State, p: Person) => !islagt(s) || !!halVal(s, p);
+export const naVattnet = (s: State, p: Person) => naSjon(s, p) || brunnFinns(s);
+// står (x, y) vid en brunn (vidBrunn i torst.ts, som läses efter den här filen)
+export const brunnKrok = { vid: (_s: State, _x: number, _y: number) => false };
 export const brunnFinns = (s: State) => !!s.stationer?.some(t => t.k === 'brunn' && t.kvar <= 0);
 // vakten för arbetstiderna (kor.ts) får veta hur lång tid hålet tog när vattnet började hämtas (steg 12.1.159): halMin
 // senare i slaget kan svara annat, när någon annan tagit yxan eller isborren gått sönder. Ändrar inget i spelet
 export const halVakt: { lyss?: (t: object, min: number) => void } = {};
-// så många minuter det tar för p att hugga upp hålet (0 när isen inte ligger eller det inte går)
-export function halMin(s: State, p: Person) {
+// så många minuter det tar för p att hugga upp hålet vid (x, y) (0 när isen inte ligger, vid brunnen eller när det inte går)
+export function halMin(s: State, p: Person, x: number, y: number) {
+  if (brunnKrok.vid(s, x, y)) return 0;
   const h = halVal(s, p);
   return h ? h.minPerCm * isCm(s) : 0;
 }

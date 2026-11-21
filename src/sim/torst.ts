@@ -17,7 +17,7 @@ import { bitAt, gridOf } from './byggnad';
 import { isKlar, stationRutor, stationerOf, vidStation } from './stationer';
 import { groundOf } from './mark';
 import { clamp, rnd } from './slump';
-import { brunnFinns, halMin, halVal, islagt, naVattnet } from './is';
+import { brunnFinns, brunnKrok, halMin, halVal, islagt, naVattnet } from './is';
 import { Act, GRANNAR4, H, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { hemma, kanGa, kroppLust } from './halsa';
@@ -82,7 +82,7 @@ export const dryckKrok: { finns: (s: State) => boolean; drick: (s: State, p: Per
 // framme vid elden (paborjat.ts): en ledig lerkruka fylls med snö och ställs vid elden (steg 10.2.50)
 export function startSmalta(s: State, p: Person, tk: Task) { if (tk.act === 'smalta') tk.ref = dryckKrok.snoIn(s, p); }
 // så många minuter man dricker när man kommit fram (paborjat.ts: tiden räknas från framkomsten), med hålet i isen
-export const drickMin = (s: State, p: Person, act: Act) => (DRICKA.find(d => d.act === act)?.min() ?? 0) + (act === 'dricka' && !(p.task && vidBrunn(s, p.task.tx, p.task.ty)) ? halMin(s, p) : 0); // vid brunnen inget hål (steg 12.4.8)
+export const drickMin = (s: State, p: Person, act: Act) => (DRICKA.find(d => d.act === act)?.min() ?? 0) + (act === 'dricka' && p.task ? halMin(s, p, p.task.tx, p.task.ty) : 0); // vid brunnen inget hål (steg 12.4.8)
 
 // törsten per timme just nu, och delarna den beror på (personrutan visar dem)
 export function torstDelar(p: Person) {
@@ -191,6 +191,7 @@ export function drickPlats(s: State, p: Person) {
 // en vattenruta (vattenSmuts i smuts.ts: latrinen och smutsen nära), så en latrin nära brunnen ger magsjuka
 export const brunnarna = (s: State) => stationerOf(s).filter(t => t.k === 'brunn' && isKlar(t));
 export const vidBrunn = (s: State, x: number, y: number) => brunnarna(s).some(t => { const at = vidStation(t); return Math.hypot(at.x - x, at.y - y) < 0.5; });
+brunnKrok.vid = vidBrunn;
 // det som väljs när man är törstig (val.ts): handlingen, skälet, hur länge och var. undefined = inget vatten att nå
 export function drickVal(s: State, p: Person) {
   const d = DRICKA.find(x => x.nar(s, p))!;

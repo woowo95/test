@@ -270,6 +270,13 @@ SCENARIER.brunn = {
     const naIs = SIM.naVattnet(s, p), val = SIM.drickVal(s, p);
     p.task = { act: 'dricka', phase: 'do', tx: at.x, ty: at.y, until: s.now, carry: 0, why: '' } as SIM.Task;
     const min = SIM.drickMin(s, p, 'dricka');
+    // sjön och vattnet är två frågor (steg 12.1.237): utan något att hugga med nås inte sjön, så fisket väljs inte; med en isborr
+    // huggs inget hål vid brunnen, och borren slits inte där
+    const sjonUtan = SIM.naSjon(s, p);
+    const borr = SIM.addTool(s, 'isborr', p), c0 = borr.c;
+    const halBrunn = SIM.halMin(s, p, at.x, at.y), halSjon = SIM.halMin(s, p, at.x + 30, at.y);
+    SIM.halGjort(s, p, at.x, at.y); const sliten = borr.c !== c0;
+    s.ting = SIM.tingOf(s).filter(x => x !== borr);
     s.is = { ...(s.is ?? {}), cm: 0 } as typeof s.is; p.task = undefined;
     // en latrin intill smutsar brunnen
     const l: SIM.Station = { id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'latrin', x: t.x + 1, y: t.y, kvar: 0, fyllt: 0.8 };
@@ -278,6 +285,8 @@ SCENARIER.brunn = {
     return [
       [`brunnen tar 1 ruta, av ${JSON.stringify(d.av)} på ${d.min} minuter med ${d.verktyg}, tekniken ${tek?.namn} (kräver ${tek?.krav})`, d.w === 1 && d.h === 1 && d.av.huggen_sten === 6 && d.av.virke === 1 && d.av.rep === 1 && d.min === 20 && d.verktyg === 'benspade' && !!tek && tek.krav.includes('benspade') && tek.krav.includes('stenhuggarplats')],
       [`den som står vid brunnen dricker där (förut vid stranden: ${!!fore})`, dricker],
+      [`på isen utan yxa når man vattnet vid brunnen men inte sjön, så fisket väljs inte (${naIs}, ${sjonUtan})`, naIs && !sjonUtan],
+      [`med isborren huggs inget hål vid brunnen (${halBrunn} min, ${halSjon} min vid sjön) och borren slits inte där (${sliten})`, halBrunn === 0 && halSjon > 0 && !sliten],
       [`vattnet i brunnen är rent från början (${ren.toFixed(2)})`, ren === 0],
       [`under isen når man vattnet vid brunnen, utan hål i isen (${min} minuter) och utan att smälta snö (${val?.act})`, naIs && val?.act === 'dricka' && !!val.spot && SIM.vidBrunn(s, val.spot.x, val.spot.y) && min === SIM.TORST.drickMin],
       [`en latrin intill smutsar brunnens vatten (${smutsig.toFixed(2)})`, smutsig > 0],

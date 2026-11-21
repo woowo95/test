@@ -544,7 +544,7 @@ SCENARIER.is = {
     b.fire.lit = false; b.is = { vatten: 0, cm: 25 };
     const ingetVatten = drickVal(b, p) === undefined;
     setAmount(b, 'sten', 1); const sten = med(10);
-    setAmount(b, 'yxa', 1); tidyTools(b); const yxa = med(25), minYxa = halMin(b, p);
+    setAmount(b, 'yxa', 1); tidyTools(b); const yxa = med(25), minYxa = halMin(b, p, p.x, p.y);
     b.is = { vatten: 0, cm: 25 }; const dryck = drickVal(b, p), yxDryck = !!dryck && /hål i isen med yxan/.test(dryck.why);
     setAmount(b, 'yxa', 0); setAmount(b, 'fiskespjut', 1); tidyTools(b); const spjut = med(40);
     // två dygn (två år i spelet) i istiden med is på sjön: man pimplar

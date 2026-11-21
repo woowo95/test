@@ -34,7 +34,7 @@ export interface Resultat { seed: number; n: Nyckeltal; vakter: string[]; s: Sta
 // inte vad halMin svarar senare i slaget (steg 12.1.159)
 const halVid = new WeakMap<object, number>();
 halVakt.lyss = (t, min) => { halVid.set(t, min); };
-export const halTidVid = (s: State, p: Person, t: object) => halVid.get(t) ?? halMin(s, p);
+export const halTidVid = (s: State, p: Person, t: object) => halVid.get(t) ?? halMin(s, p, (t as { tx?: number }).tx ?? p.x, (t as { ty?: number }).ty ?? p.y);
 export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => void, fran?: State): Resultat {
   const okanda = okandaBalans();
   if (okanda.length) throw new Error(`BALANS: inget balanstal heter ${okanda.join(', ')} (se npm run talen)`);

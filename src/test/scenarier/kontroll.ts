@@ -465,10 +465,10 @@ SCENARIER.arbetstid = {
     // började, också när yxan sedan tagits av någon annan i samma slag
     const s = createState(1, START), p = living(s).find(q => ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
     s.is = { vatten: 0, cm: 20 } as typeof s.is; SIM.setStock(s, { sten: 0 });
-    const yxa = SIM.addTool(s, 'yxa', p), hal = SIM.halMin(s, p);
+    const yxa = SIM.addTool(s, 'yxa', p), hal = SIM.halMin(s, p, p.x, p.y);
     const vt = { act: 'vatten', phase: 'do', until: s.now, tool: 'vattensack' } as SIM.Task; SIM.startWork(s, p, vt);
     s.ting = tingOf(s).filter(t => t !== yxa);
-    const efter = SIM.halMin(s, p), vattenLarm = SIM.forLangtArbete(vt, s.now, halTidVid(s, p, vt)), utanMinne = SIM.forLangtArbete(vt, s.now, efter);
+    const efter = SIM.halMin(s, p, p.x, p.y), vattenLarm = SIM.forLangtArbete(vt, s.now, halTidVid(s, p, vt)), utanMinne = SIM.forLangtArbete(vt, s.now, efter);
     return [
       [`vatten genom 20 cm is med yxan: hålet ${hal.toFixed(1)} min, arbetet ${((vt.until - s.now) / MIN).toFixed(2)} min, och utan yxan svarar halMin ${efter} efteråt`, hal > 0 && efter < hal && Math.abs((vt.until - s.now) / MIN - hal - SIM.TORST.fyllSek / 60) < 1e-6],
       [`vakten larmar inte när yxan tagits under slaget (${vattenLarm ?? 'inget larm'}), som den gjorde med halMin efteråt (${utanMinne ?? 'inget larm'})`, !vattenLarm && !!utanMinne],

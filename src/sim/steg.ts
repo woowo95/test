@@ -1088,8 +1088,8 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     if (tk.hal === undefined && islagt(s)) {
       const h = halVal(s, p);
       if (!h) { tk.until = s.now; return; }
-      tk.hal = halMin(s, p) * 60;
-      halGjort(s, p); // isborren slits (steg 12.2.11)
+      tk.hal = halMin(s, p, tk.tx, tk.ty) * 60;
+      halGjort(s, p, tk.tx, tk.ty); // isborren slits (steg 12.2.11)
       if (forstaGang(s, 'pimplade')) log(s, `${p.name} högg upp ett hål i isen med ${h.namn} och pimplade, byns första fiske genom isen.`, 'world', [p.id]);
     }
     if (tk.hal) { const d = Math.min(tk.hal, tk.prog); tk.hal -= d; tk.prog -= d; if (tk.hal > 0) return; }

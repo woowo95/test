@@ -70,7 +70,7 @@ import { FOOD, SAKER, isFood, sakNamn, viktOf } from './saker';
 import { TILLVERKA } from './tillverka';
 import { materialBuffert, tandBuffert } from './forradsmal';
 import { balans } from './balans';
-import { islagt, naVattnet } from './is';
+import { islagt, naSjon } from './is';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
 import { latrinFor } from './smuts';
 import { stationBrukad, bordenOf, ledigPlats, sittAt, stationAt, stationDef, stationFor, stationRutor, storlekAv, vidStation } from './stationer';
@@ -1195,7 +1195,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     if (d.vid === 'vatten' && !vaderTillater(s, 'lugnt')) continue; // inget fiske i storm (steg 6.1.12)
     const tinder = !!d.tand && needTinder(s);
     // nytta för byn; det platserna har kvar väger också in hur mycket de ger just nu, och att fiske med händerna ger lite
-    const yieldR = !d.resurs ? 1 : clamp(prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (d.vid === 'vatten' ? FANGST.handFiske * (naVattnet(s, p) ? 1 : 0) : 1) * toolGain(s, p, w, fara); // genom isen bara med ett hål (is.ts)
+    const yieldR = !d.resurs ? 1 : clamp(prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (d.vid === 'vatten' ? FANGST.handFiske * (naSjon(s, p) ? 1 : 0) : 1) * toolGain(s, p, w, fara); // genom isen bara med ett hål (is.ts)
     const yieldF = tinder ? 1 : yieldR, season = d.sasong![ai];
     // maten som någon längtar efter är mer värd att hämta (steg 2.6.2)
     const col = need * (!d.resurs ? 1 : tinder ? Math.max(VAL.tandMin, season) * VAL.tandVikt : season * yieldF * onskan(p, w, s.now))
