@@ -83,10 +83,16 @@ async function medForhistoria<T>(f: () => T): Promise<T> {
 async function nyBy() {
   // den sparade byn är från en för gammal version (steg 12.1.71): spelet säger det innan en ny by grundas
   if (lasFel.forGammal) { const t = lasFel.forGammal; lasFel.forGammal = ''; try { window.alert(`${t} En ny by grundas.`); } catch { /* utan dialog */ } }
-  ui.annanBy = undefined; ui.forskjut = 0; // en ny by ersätter den egna byn
-  setByn(await medForhistoria(() => createState(Math.floor(Math.random() * 2 ** 31), Date.now())));
-  cam.x = -1; layout();
-  drawTerrain(true, false); drawPlants(true); saveLocal(); saveDb(); // kartan ritas efter hand, det som syns först
+  // sidan är upptagen under hela bytet (steg 12.1.232): medan förhistorien räknas går inget slag, så att byn som visas inte
+  // räknas ikapp med den nya klockan och sparas som den egna. Klockan byts först när den nya byn finns
+  ui.busy = true;
+  try {
+    const ny = await medForhistoria(() => createState(Math.floor(Math.random() * 2 ** 31), Date.now()));
+    ui.annanBy = undefined; ui.forskjut = 0; // en ny by ersätter den egna byn
+    setByn(ny);
+    cam.x = -1; layout();
+    drawTerrain(true, false); drawPlants(true); saveLocal(); saveDb(); // kartan ritas efter hand, det som syns först
+  } finally { ui.busy = false; }
 }
 // en inläst by, räknad ikapp till nu. Kartan ritas först när byn är ikapp (catchUp), och då efter hand i bildrutorna,
 // det som syns först: en stor by tar annars flera sekunder att rita, och en minut i en mobil
