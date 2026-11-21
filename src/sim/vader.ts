@@ -178,12 +178,12 @@ export const torrTim = (s: State) => s.vader?.torr ?? 0;
 // slår blixten ner den här timmen? (loggen här och elden den kan tända, brand.ts)
 export const blixtNu = (s: State) => vaderNu(s).aska && hash(s.seed, Math.floor(s.now / HOUR), 7) < VADER.blixt;
 
-// varje timme (steg.ts): fukten och snön på marken, och blixten
-export function stepVader(s: State) {
+// varje timme (steg.ts): fukten och snön på marken, och blixten. h: timmarna sedan sist (steg 12.1.107)
+export function stepVader(s: State, h = 1) {
   const v = vaderNu(s), mi = minneOf(s), temp = temperature(s);
-  mi.fukt = clamp(mi.fukt + (v.sno ? 0 : v.nb * VADER.fuktRegn) - VADER.fuktTorkar * (1 + Math.max(0, temp) / 10) * (torkaNu(s) ? TORKA.torkar : 1), 0, 1); // fortare under en torka (steg 3.8.2)
-  mi.sno = clamp(mi.sno + (v.sno ? v.nb * VADER.snoFaller : 0) - Math.max(0, temp) * VADER.snoSmalter, 0, 1);
-  mi.torr = mi.fukt > VADER.torrFukt ? Math.max(0, (mi.torr ?? 0) - VADER.torrBlot) : Math.min(VADER.torrMax, (mi.torr ?? 0) + 1);
+  mi.fukt = clamp(mi.fukt + ((v.sno ? 0 : v.nb * VADER.fuktRegn) - VADER.fuktTorkar * (1 + Math.max(0, temp) / 10) * (torkaNu(s) ? TORKA.torkar : 1)) * h, 0, 1); // fortare under en torka (steg 3.8.2)
+  mi.sno = clamp(mi.sno + ((v.sno ? v.nb * VADER.snoFaller : 0) - Math.max(0, temp) * VADER.snoSmalter) * h, 0, 1);
+  mi.torr = mi.fukt > VADER.torrFukt ? Math.max(0, (mi.torr ?? 0) - VADER.torrBlot * h) : Math.min(VADER.torrMax, (mi.torr ?? 0) + h);
   count(s, 'vader_' + v.lage);
   if (blixtNu(s)) {
     count(s, 'blixt');

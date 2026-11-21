@@ -51,14 +51,14 @@ export const isCm = (s: State) => s.is?.cm ?? 0;
 export const islagt = (s: State) => isCm(s) > 0;
 export const vattenGrader = (s: State) => s.is?.vatten ?? Math.max(0, temperature(s)); // ändrar inget (gränssnittet frågar)
 
-// varje timme (steg.ts)
-export function stepIs(s: State) {
+// varje timme (steg.ts). h: timmarna sedan sist (steg 12.1.107)
+export function stepIs(s: State, h = 1) {
   const m = minneOf(s), t = temperature(s);
   if (m.cm <= 0) {
-    m.vatten += (t - m.vatten) / IS.vattenTim;
+    m.vatten += (t - m.vatten) * Math.min(1, h / IS.vattenTim);
     if (m.vatten < 0) { if (m.cm === 0) for (const p of living(s)) if (rnd(s, 'tro', p) < IS.frosSyn) tecken(s, p, 'frosjo'); m.cm = -m.vatten * IS.forst; m.vatten = 0; } // sjön som frös (steg 8.5.18)
-  } else if (t < 0) m.cm += IS.vaxer * -t / (IS.bas + m.cm) * (1 - IS.snoSkyddar * snoPaMarken(s));
-  else m.cm = Math.max(0, m.cm - IS.smalter * t);
+  } else if (t < 0) m.cm += IS.vaxer * -t / (IS.bas + m.cm) * (1 - IS.snoSkyddar * snoPaMarken(s)) * h;
+  else m.cm = Math.max(0, m.cm - IS.smalter * t * h);
 }
 
 // hur p hugger upp ett hål i isen just nu: det snabbaste sättet hen har som går igenom isen. undefined = det går inte

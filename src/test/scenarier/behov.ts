@@ -433,7 +433,7 @@ SCENARIER.skugga = {
     const kvall = p.task!.act !== 'svalka';
     // en by på sommaren: folk svalkar sig sällan, och då i skuggan
     let svalka = 0, iSol = 0, varmTim = 0;
-    for (const seed of [5, 6, 7]) {
+    for (const seed of [5, 6, 7, 8, 9, 10]) {
       const b = createState(seed, START); b.kal = nyKalender(b.now, 2); klockan(b, 8);
       setFood(b, 40); setAmount(b, 'ved', 40);
       const sett = new WeakSet<object>();
@@ -549,7 +549,7 @@ SCENARIER.is = {
     setAmount(b, 'yxa', 0); setAmount(b, 'fiskespjut', 1); tidyTools(b); const spjut = med(40);
     // två dygn (två år i spelet) i istiden med is på sjön: man pimplar
     let pimplade = 0, fiskade = 0;
-    for (const seed of [5, 6, 7]) {
+    for (const seed of [5, 6, 7, 8, 9, 10]) {
       const v = createState(seed, START); v.kal = nyKalender(v.now, 0); klockan(v, 8); tandEld(v); setFood(v, 10);
       v.is = { vatten: 0, cm: 15 };
       for (const q of living(v)) q.tek = { ...(q.tek ?? {}), fiskespjut: 1 };
@@ -565,7 +565,7 @@ SCENARIER.is = {
       [`tjock is går inte med händerna (${tjock}), och då får den som är törstig inget vatten utan eld`, tjock === 'inget' && ingetVatten],
       [`yxan tar sig genom 25 cm (${yxa}, ${minYxa.toFixed(1)} minuter) och den törstige dricker genom hålet`, yxa === 'yxa' && minYxa > 0 && yxDryck],
       [`spjutet tar sig inte genom 40 cm, bara isborren gör det (${spjut}; steg 12.2.11)`, spjut === 'inget'],
-      [`på två dygn i istiden i tre byar högg man upp hål i isen och pimplade (${pimplade} gånger)`, pimplade >= 2],
+      [`på två dygn i istiden i sex byar högg man upp hål i isen och pimplade (${pimplade} gånger; sex byar, eftersom tre bara gav ett par gånger och slumpen avgjorde)`, pimplade >= 4],
     ];
   },
 };

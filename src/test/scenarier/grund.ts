@@ -227,7 +227,7 @@ SCENARIER.morker = {
     const vidElden = SIM.morkFart(s, p), ljus = SIM.ljusAt(s, p.x, p.y);
     p.x = e.x + 0.5 + 20;
     const langtBort = SIM.morkFart(s, p);
-    SIM.morkHumor(s, p);
+    SIM.morkHumor(s, p, 1);
     const delar: { namn: string; v: number }[] = []; SIM.moodOf(p, s.now, delar);
     const mork = delar.some(d => d.namn === 'Mörkt');
     klockan(s, 12);
@@ -235,7 +235,7 @@ SCENARIER.morker = {
     klockan(s, 23);
     const q = living(s).find(x => x !== p)!;
     q.x = p.x; q.y = p.y; q.morkT = undefined; q.task = { act: 'sova' } as SIM.Task;
-    SIM.morkHumor(s, q);
+    SIM.morkHumor(s, q, 1);
     Object.assign(s.fire, { lit: false, fuel: 0 });
     p.x = e.x + 0.5; p.y = e.y + 1.5;
     const slocknad = SIM.morkFart(s, p);
@@ -327,7 +327,7 @@ SCENARIER.uppsatt = {
     klockan(s, 23);
     const x = e.x + 12, y = e.y + 3;
     p.x = x + 0.5; p.y = y + 0.5; p.task = { act: 'samla', tx: x + 0.5, ty: y + 0.5 } as SIM.Task;
-    for (let h = 0; h < 4; h++) SIM.morkHumor(s, p);
+    for (let h = 0; h < 4; h++) SIM.morkHumor(s, p, 1);
     const stalle = SIM.morkStalle(s);
     s.ting = (s.ting ?? []).filter(t => t.k !== 'fackla');
     const utan = SIM.PROJEKT.uppsatt.kan(s, p, { kyla: false, gras: 0 });
@@ -401,7 +401,7 @@ SCENARIER.talgljus = {
     const sover = (r: SIM.Person) => { r.x = inne!.x + 40; r.task = { act: 'sova', tx: r.x, ty: inne!.y } as SIM.Task; };
     for (const r of living(s)) if (r !== p) sover(r);
     p.x = inne!.x + 0.5; p.y = inne!.y + 0.5; p.task = { act: 'samla', tx: p.x, ty: p.y } as SIM.Task;
-    for (let h = 0; h < 4; h++) SIM.morkHumor(s, p);
+    for (let h = 0; h < 4; h++) SIM.morkHumor(s, p, 1);
     const plats = SIM.ljusPlatser(s).some(st => st.id === bord.id);
     s.ting = (s.ting ?? []).filter(t => t.k !== 'talgljus');
     const utan = SIM.PROJEKT.ljus.kan(s, p, { kyla: false, gras: 0 });

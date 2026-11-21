@@ -105,11 +105,12 @@ export function iSkenet(s: State, x: number, y: number, utan?: number) {
 // gången och arbetet gånger detta: full takt i ljuset, MORKER.skenFart i det svaga skenet och MORKER.fart i totalmörker
 export const morkFart = (s: State, p: Person) => !iMorker(s, p.x, p.y) ? 1 : iSkenet(s, p.x, p.y) ? MORKER.skenFart : MORKER.fart;
 // en gång i timmen (steg.ts): den som är vaken i mörkret får lite sämre humör en stund
-export function morkHumor(s: State, p: Person) {
+// h: timmarna sedan sist (steg 12.1.107: räknas per tid, inte per anrop)
+export function morkHumor(s: State, p: Person, h: number) {
   if (p.task && ACTS[p.task.act]?.vila) return;
   if (!iMorker(s, p.x, p.y)) return;
   p.morkT = s.now;
-  const m = (s.morkPlats ??= {}), i = tileOf(p.x, p.y); m[i] = (m[i] ?? 0) + 1; // var folk är vakna i mörker (steg 6.3.7)
+  const m = (s.morkPlats ??= {}), i = tileOf(p.x, p.y); m[i] = (m[i] ?? 0) + h; // var folk är vakna i mörker (steg 6.3.7)
 }
 
 // ---------- facklan (steg 6.3.6) ----------
@@ -150,8 +151,8 @@ export function facklaVal(s: State, p: Person) {
   if (forstaGang(s, 'facklaForsta')) log(s, `${p.name} tände en fackla vid elden och gick ut i mörkret.`, 'world', [p.id]);
 }
 // en gång i timmen (steg.ts): facklorna brinner, och den som inte längre lever, sover eller behöver ljuset släcker sin
-export function facklorTimme(s: State) {
-  uppsattaTimme(s); ljusTimme(s);
+export function facklorTimme(s: State, h = 1) {
+  uppsattaTimme(s, h); ljusTimme(s);
   for (const t of tingOf(s).slice()) {
     if (t.tand === undefined) continue;
     const p = byId(s, t.tand);
@@ -179,9 +180,9 @@ function brinnUppsatt(s: State, u: Uppsatt) {
   return true;
 }
 const vaken = (q: Person) => !(q.task && ACTS[q.task.act]?.vila);
-function uppsattaTimme(s: State) {
-  const m = s.morkPlats;
-  if (m) for (const k in m) { m[k] *= UPPSATT.avta; if (m[k] < 0.05) delete m[k]; }
+function uppsattaTimme(s: State, h: number) {
+  const m = s.morkPlats, avta = UPPSATT.avta ** h; // avtar per timme sedan sist
+  if (m) for (const k in m) { m[k] *= avta; if (m[k] < 0.05) delete m[k]; }
   for (const u of (s.uppsatta ?? []).slice()) {
     if (u.tand && brinnUppsatt(s, u)) continue;
     const behov = lightLevel(s.now) <= 0 && living(s).some(q => vaken(q) && (nara(u, q.x, q.y) || !!q.task && nara(u, q.task.tx, q.task.ty)));
