@@ -1761,9 +1761,10 @@ SCENARIER.brand = {
       // gnistorna: i en by med torr mark tänder lägerelden förr eller senare marken (en gnista i timmen är ovanlig: vänta upp till 720 timmar, 30 dygn)
       const gn = cloneState(s);
       let gnistTim = 0;
-      // (runt elden är marken ofta stig, sand eller strand där inget brinner: hö på marken nära elden är det gnistorna tänder)
-      { const e = SIM.eldPlats(gn), tl = getMap(gn.seed).tiles; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const x = e.x + dx, y = e.y + dy; if ((dx || dy) && tl[y * W + x] !== T.Vatten && tl[y * W + x] !== T.Sten && !SIM.bitAt(gn, x + 0.5, y + 0.5)) gn.stackar!.push({ k: 'torrgras', n: 3, c: 1, x, y }); } SIM.touch(gn); }
-      while (!(gn.stat?.['brand gnista']) && gnistTim < 720) { kor(gn, 1, torka); gnistTim++; }
+      // (runt elden är marken ofta stig, sand eller strand där inget brinner: hö på marken nära elden är det gnistorna tänder. Byborna
+      // tvinnar rep av höet och bär in det inom några timmar, så det läggs tillbaka varje timme: här prövas gnistorna, inte höet)
+      const hoRunt = () => { const e = SIM.eldPlats(gn), tl = getMap(gn.seed).tiles; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const x = e.x + dx, y = e.y + dy; if ((dx || dy) && tl[y * W + x] !== T.Vatten && tl[y * W + x] !== T.Sten && !SIM.bitAt(gn, x + 0.5, y + 0.5) && !gn.stackar!.some(a => a.x === x && a.y === y && a.n > 0)) gn.stackar!.push({ k: 'torrgras', n: 3, c: 1, x, y }); } SIM.touch(gn); };
+      while (!(gn.stat?.['brand gnista']) && gnistTim < 720) { hoRunt(); kor(gn, 1, torka); gnistTim++; }
       // skogsbranden: en ruta mitt i tät skog 25 till 35 rutor från elden (gnistor från lägerelden blir en del av samma brand)
       const e = SIM.eldPlats(s), g = groundOf(s);
       const tat = (i: number) => { let n = 0; const x = i % W, y = Math.floor(i / W); for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (SIM.inMap(x + dx, y + dy) && g.trees[(y + dy) * W + x + dx] >= FOREST) n++; return n; };
