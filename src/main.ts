@@ -3,7 +3,7 @@ import { brandKnapp, testSvara } from './ui/interaktion';
 import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
 import { iconImg, tecknet } from './ikoner';
-import { s, setByn, ui, nyBild, vidNyBy, huvud, hem, gaHem } from './ui/lage';
+import { s, setByn, ui, pekarIn, nyBild, vidNyBy, huvud, hem, gaHem } from './ui/lage';
 import { visatNamn } from './ui/vacktvy'; // en väckt by visas i hela spelet (steg 11.13.11)
 import { TS, app, cam, layout, view, world } from './ui/scen';
 import { drawNight, drawSkuggor, drawTerrain } from './ui/terrang';
@@ -111,9 +111,9 @@ function nyareIMolnet(by: State) {
 }
 // testläget byter till en kopia av byn och tillbaka: det som är valt i panelen är kvar (finns det inte visar fliken det)
 function bytBy(n: State) {
-  const { husId, stationId, hogAt, sak, faltId, faltRuta } = ui;
+  const u = ui as Record<string, unknown>, kvar = Object.fromEntries(Object.keys(pekarIn()).map(k => [k, u[k]])); // allt som pekar in i byn (steg 12.1.249)
   setByn(n);
-  Object.assign(ui, { husId, stationId, hogAt, sak, faltId, faltRuta });
+  Object.assign(ui, kvar);
 }
 $('testToggle').addEventListener('change', async e => {
   const on = (e.target as HTMLInputElement).checked;

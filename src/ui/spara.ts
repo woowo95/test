@@ -3,7 +3,7 @@ import { FranArbetaren, Overlamning, TillArbetaren } from './ikappkarna';
 import { lasBy, sparaBy, tolkaText, webbBas } from './lagring';
 import { $, esc } from './hjalp';
 import { bortaHtml, forloppText, ikappHtml, spolaText } from './borta';
-import { gaHem, huvud, s, setByn, ui } from './lage';
+import { gaHem, huvud, pekarIn, s, setByn, ui } from './lage';
 import { drawTerrain } from './terrang';
 import { drawPlants } from './vaxter';
 import { sparaAnnan } from './byar';
@@ -171,9 +171,9 @@ function startaArbetare(): Worker | undefined {
 }
 // byn som arbetaren räknat fram tar över, och det spelaren pekade på står kvar (som bytBy i main.ts)
 function bytTill(delar: Overlamning) {
-  const { husId, stationId, hogAt, sak, faltId, faltRuta } = ui;
+  const u = ui as Record<string, unknown>, kvar = Object.fromEntries(Object.keys(pekarIn()).map(k => [k, u[k]])); // allt som pekar in i byn (steg 12.1.249)
   setByn(franOverlamning(delar));
-  Object.assign(ui, { husId, stationId, hogAt, sak, faltId, faltRuta });
+  Object.assign(ui, kvar);
 }
 export async function catchUp(target: number) {
   gaHem(); // ikappräkningen visar huvudbyn (steg 11.13.11)
