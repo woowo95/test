@@ -240,3 +240,8 @@
 
 - Fynden 375, 376, 392, 393, 394 och 396 ändrar inget i spelet. Fynden 387, 388 och 395 räknar med tiden sedan sist från TAKTER (samma tal vid en timmes takt), 371 och 386 ändrar vad rövarlägret sparar och vargarna stjäl, 383 gör tatueringen till en rad i FORBATTRA, 367 drar rövarnas slumptal en gång per val och 399 låter medspelarna välja scenen som ett Tillfälle. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit; likheten är viktig för 367 och 399.
 - Scenarierna heligting (ingen tar det heliga plagget på sig) och rovare (ett tyst anfall plundrar förrådet osett) är röda på varld redan före 12.1.108 (5b77427f).
+
+## 12.1.109 (händelseloggen, paletten och registren i bilden, 05d713f3–31b6e86c)
+
+- Fynden 372 och 384 ändrar bara vad testerna läser (byns statistik i stället för händelseloggen) och lägger till räknare; 380, 397 och 382 ändrar bara bilden. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` i kedjan med resten av 12.1, och `npm run utseende` för 380 och 397 (stenen, spjutet, dammet, tornadons fåror och stridens streck ritas nu ogenomskinligt med paletten; inga nya färger ska synas).
+- Scenariot symboler är rött på varld redan före 12.1.109 (05d713f3): tolv emojier i sim/berattelser.ts, resa.ts och rykten.ts saknar symbol.
