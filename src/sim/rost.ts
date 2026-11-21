@@ -250,19 +250,19 @@ export function oppnaSed(s: State, k: Sed) {
 const SED_NAMN: Partial<Record<Sed, string>> = { fortjanst: 'om det är dugligheten eller släkten som ska räknas', fejd: 'om konflikter ska lösas med ord eller med styrka', prat: 'om det är rätt att tala om andra' };
 
 // ---------- missnöjet (steg 8.3.10) ----------
-export function missnojeTimme(s: State) {
+export function missnojeTimme(s: State, h = 1) { // h: timmarna sedan sist (TAKTER)
   const st = s.styre;
   if (!st?.historia.length) return;
-  const f = Math.exp(-1 / 24 / MISS.bleknarDygn);
+  const f = Math.exp(-h / 24 / MISS.bleknarDygn);
   const sv = s.seder.v;
   for (const p of living(s)) {
     if (!vuxenRost(s, p)) continue;
     let m = (p.missnoje ?? 0) * f;
-    if (p.hunger < 0.1) m += MISS.svalt;
-    if (p.warm < 0.3) m += MISS.kyla;
+    if (p.hunger < 0.1) m += MISS.svalt * h;
+    if (p.warm < 0.3) m += MISS.kyla * h;
     const d = drar(s, p); let av = 0, n = 0;
     for (const k of SED_LIST) if (sv[k]) { av += Math.abs(clamp(d[k], -1, 1) - sv[k]); n++; }
-    if (n && av / n > MISS.sederAvst) m += MISS.seder;
+    if (n && av / n > MISS.sederAvst) m += MISS.seder * h;
     p.missnoje = m < 0.001 ? undefined : clamp(m, 0, 1);
   }
   fraktionTimme(s);

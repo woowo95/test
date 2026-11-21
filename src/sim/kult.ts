@@ -6,7 +6,7 @@ import { troshusPlats, troshusRum } from './troshus';
 import { personHand } from './personlogg';
 import { DAY, HOUR, MIN, Person, State, T, W, inMap } from './typer';
 import { balans } from './balans';
-import { clamp, rnd } from './slump';
+import { chansTid, clamp, rnd } from './slump';
 import { ALDER, KROPP, ageOf, alive, byId, count, gjort, isParent, living, log, stat } from './folk';
 import { kronika } from './historik';
 import { tatKrok, upplev } from './uppvaxt';
@@ -197,8 +197,8 @@ function prastSteg(s: State, tr: Tro, folk: Person[]) {
 // ---------- profeten (steg 8.5.10) ----------
 // chansen att profetens syn grundar en ny tro och hur mycket den annars flyttar en skala
 export const profetTal = (tr: Tro) => ({ nyTro: KULT.nyTro * (tr.skrift ? SKRIFT.heligNyTro : 1), skala: KULT.profetSkala * (tr.skrift ? SKRIFT.heligTrog : 1) });
-function profetSteg(s: State, p: Person) {
-  if (p.profet || p.tro === undefined || andlighet(s, p) < KULT.profetAnde || stat(p, 'karisma', s.now) < KULT.profetKarisma || rnd(s, 'tro', p) >= KULT.profetChans) return;
+function profetSteg(s: State, p: Person, h = 1) {
+  if (p.profet || p.tro === undefined || andlighet(s, p) < KULT.profetAnde || stat(p, 'karisma', s.now) < KULT.profetKarisma || rnd(s, 'tro', p) >= chansTid(KULT.profetChans, 1, h)) return;
   const tr = troOf(s, p.tro);
   if (!tr) return;
   p.profet = true; count(s, 'profet'); p.fame.push('Fick en syn');
@@ -490,8 +490,8 @@ function myrOffra(s: State, tr: Tro): number {
   return Math.min(KULT.myrTak, 1 + o.v / KULT.myrVarde);
 }
 // ---------- varje timme ----------
-export function kultTimme(s: State) {
-  for (const p of living(s)) { bonSvar(s, p); profetSteg(s, p); }
+export function kultTimme(s: State, h = 1) { // h: timmarna sedan sist (TAKTER)
+  for (const p of living(s)) { bonSvar(s, p); profetSteg(s, p, h); }
   livsRiter(s);
   for (const tr of levande(s)) {
     const folk = troende(s, tr);

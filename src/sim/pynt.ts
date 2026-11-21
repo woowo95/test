@@ -22,10 +22,11 @@ export const PYNT = balans('pynt', {
 });
 
 // står p i rummet rum?
-const iRum = (s: State, p: Person, rum: unknown) => !!rum && roomAt(s, Math.floor(p.x), Math.floor(p.y)) === rum;
+const iRum = (s: State, p: Person, rum: unknown, rumAv: Map<Person, unknown>) => { if (!rum) return false; if (!rumAv.has(p)) rumAv.set(p, roomAt(s, Math.floor(p.x), Math.floor(p.y))); return rumAv.get(p) === rum; }; // (rummet frågas en gång per person)
 
 // en gång i timmen (steg.ts)
-export function stepPynt(s: State) {
+export function stepPynt(s: State, h = 1) { // h: timmarna sedan sist (TAKTER)
+  const rumAv = new Map<Person, unknown>();
   // pyntet räknas på det som står i rummet (steg 9.4.12): möblerna och lerkrukorna i rummet där ägaren sover
   const pynt: { o: Person; rum: unknown; q: number; namn: string }[] = [];
   for (const t of stationerOf(s)) {
@@ -37,7 +38,7 @@ export function stepPynt(s: State) {
   for (const o of living(s)) { const k = krukaHemma(s, o); if (k) pynt.push({ o, rum: sovrum(s, o), q: krukaPyntQ(k), namn: 'lerkruka' }); } // en blommande kruka är ett steg finare (steg 10.7.3)
   // ägaren trivs av det finaste pyntet i rummet där hen är (en tanke, inte en per pynt)
   const glad = new Map<Person, number>();
-  for (const { o, rum, q } of pynt) if (PYNT.glad[q] > 0 && iRum(s, o, rum)) glad.set(o, Math.max(glad.get(o) ?? 0, PYNT.glad[q]));
+  for (const { o, rum, q } of pynt) if (PYNT.glad[q] > 0 && iRum(s, o, rum, rumAv)) glad.set(o, Math.max(glad.get(o) ?? 0, PYNT.glad[q]));
   for (const [o, v] of glad) { tanke(o, 'pynt', s.now, { v, tid: PYNT.gladTim * HOUR }); count(s, 'pyntGlad'); }
   // de som ser det får intrycket av det finaste pyntet ägaren har i rummet, inte ett per pynt (steg 10.7.2)
   const finast: typeof pynt = [];
@@ -45,8 +46,8 @@ export function stepPynt(s: State) {
   for (const { o, rum, q, namn } of finast) {
     if (PYNT.syn[q] <= 0) continue;
     for (const v of living(s)) {
-      if (v === o || v.task?.act === 'sova' || !iRum(s, v, rum)) continue;
-      handelse(s, o, 'pynt', undefined, namn, v, PYNT.syn[q]);
+      if (v === o || v.task?.act === 'sova' || !iRum(s, v, rum, rumAv)) continue;
+      handelse(s, o, 'pynt', undefined, namn, v, PYNT.syn[q] * h);
       count(s, 'pyntSedd');
     }
   }

@@ -464,8 +464,8 @@ function arbetstimmar(p: Person) {
 }
 // en gång i timmen: de som är nära varandra ser om den andra är flitig eller lat och välbärgad, rik eller fattig. Intrycket närmar sig
 // det man ser; det som inte stämmer längre bleknar bort
-export function stepRykten(s: State, mood: (p: Person, now: number) => number) {
-  stepSmak(s, mood); // tycke och smak, också när bara en vuxen är kvar
+export function stepRykten(s: State, mood: (p: Person, now: number) => number, tim = 1) { // tim: timmarna sedan sist (TAKTER)
+  stepSmak(s, mood, tim); // tycke och smak, också när bara en vuxen är kvar
   const folk = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen);
   if (folk.length < 2) return;
   let ht = 0, wt = 0;
@@ -473,6 +473,7 @@ export function stepRykten(s: State, mood: (p: Person, now: number) => number) {
   const hm = ht / folk.length, wm = wt / folk.length;
   // förmögenheten jämförs med den mittersta i byn, så att en enda rik inte gör alla andra fattiga (steg 4.5.4.7)
   const ws = [...w].sort((a, b) => a - b), mitt = Math.max(RYKTE.rikMin, ws.length % 2 ? ws[ws.length >> 1] : (ws[ws.length / 2 - 1] + ws[ws.length / 2]) / 2);
+  const takt = 1 - (1 - RYKTE.vardagTakt) ** tim; // intrycket närmar sig så här mycket på timmarna sedan sist
   for (let i = 0; i < folk.length; i++) {
     const p = folk[i];
     const flit = hm > 0 ? (h[i] > hm * RYKTE.flitig ? 'flitig' : h[i] < hm * RYKTE.lat ? 'lat' : undefined) : undefined;
@@ -484,8 +485,8 @@ export function stepRykten(s: State, mood: (p: Person, now: number) => number) {
         const mal = v === 'arbete' ? flit : v === 'tigger' ? tig : rik;
         for (const k of grupp) {
           const e = intryckOm(q, p.id, k);
-          if (k === mal) intryck(s, q, p, k, RYKTE.vardagTakt * (1 - (e?.v ?? 0)), 1);
-          else if (e) { const f = styrka(e); e.v *= 1 - RYKTE.vardagTakt; relEffekt(s, q, p.id, k, styrka(e) - f); }
+          if (k === mal) intryck(s, q, p, k, takt * (1 - (e?.v ?? 0)), 1);
+          else if (e) { const f = styrka(e); e.v *= 1 - takt; relEffekt(s, q, p.id, k, styrka(e) - f); }
         }
       }
     }
@@ -654,21 +655,21 @@ export function startSmak(s: State, p: Person) {
 }
 // en gång i timmen: barnet nära en förälder som arbetar får tycke för arbetet, och den vuxne som är glad eller ledsen när hen
 // arbetar får tycke eller avsmak för det
-function stepSmak(s: State, mood: (p: Person, now: number) => number) {
+function stepSmak(s: State, mood: (p: Person, now: number) => number, h = 1) {
   const folk = living(s);
   for (const p of folk) {
     const act = p.task?.act;
     if (ageOf(p, s.now) < ALDER.vuxen) {
       const f = folk.find(q => isParent(q, p) && Math.hypot(q.x - p.x, q.y - p.y) < RYKTE.syn && q.task?.act !== undefined && arArbete(q.task.act));
-      if (f) smaka(p, 'a:' + f.task!.act, RYKTE.smakBarn);
+      if (f) smaka(p, 'a:' + f.task!.act, RYKTE.smakBarn * h);
       continue;
     }
     // smaken för mat bleknar om den inte förnyas (steg 9.6.6), som andra minnen
-    for (const k in p.smak ?? {}) if (k.startsWith('m:')) smaka(p, k, -Math.sign(p.smak![k]) * Math.min(Math.abs(p.smak![k]), Math.abs(p.smak![k]) * RYKTE.smakBlekna + 1e-4));
+    for (const k in p.smak ?? {}) if (k.startsWith('m:')) smaka(p, k, -Math.sign(p.smak![k]) * Math.min(Math.abs(p.smak![k]), (Math.abs(p.smak![k]) * RYKTE.smakBlekna + 1e-4) * h));
     if (!act || !arArbete(act)) continue;
     const m = mood(p, s.now);
-    if (m > RYKTE.smakGlad) smaka(p, 'a:' + act, RYKTE.smakArbete);
-    else if (m < RYKTE.smakLedsen) smaka(p, 'a:' + act, -RYKTE.smakArbete);
+    if (m > RYKTE.smakGlad) smaka(p, 'a:' + act, RYKTE.smakArbete * h);
+    else if (m < RYKTE.smakLedsen) smaka(p, 'a:' + act, -RYKTE.smakArbete * h);
   }
 }
 // när p äter (behov.ts): ett barn med en förälder nära får tycke för maten, och den som tycker om (eller inte) det hen äter

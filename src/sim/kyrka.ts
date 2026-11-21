@@ -8,7 +8,7 @@ import { hearthOf, woodDays } from './eld';
 import { Act, DAY, HOUR, Person, State } from './typer';
 import { MAT } from './behov';
 import { balans } from './balans';
-import { clamp, rnd } from './slump';
+import { chansTid, clamp, rnd } from './slump';
 import { HUMOR, moodOf } from './humor';
 import { type Sed, drarSed, habitShare } from './seder';
 import { ata } from './naring';
@@ -361,10 +361,10 @@ const kyrkansMat = (s: State, tr: Tro, n: number) => { let b: string | undefined
 export const forradSum = (s: State, tr: Tro) => Object.values(kyrkansForrad(s, tr)).reduce((a, b) => a + Math.floor(b + 1e-9), 0);
 // kyrkans egna utgifter: n av slaget k ur kyrkans del, och bara ur den
 export const kyrkanTar = (s: State, tr: Tro, k: string, n: number) => kyrkansAv(s, tr, k) >= n ? (use(s, undefined, k, n, true, kyrkaId(tr.id)), true) : false;
-function offerTimme(s: State, tr: Tro, folk: Person[]) {
+function offerTimme(s: State, tr: Tro, folk: Person[], h = 1) {
   let saknar: Record<string, number> | undefined;
   for (const p of folk) {
-    if (andlighet(s, p) < KYRKA.offerAnde || rnd(s, 'tro', p) >= KYRKA.offerChans) continue;
+    if (andlighet(s, p) < KYRKA.offerAnde || rnd(s, 'tro', p) >= chansTid(KYRKA.offerChans, 1, h)) continue;
     const k = [...Object.keys(saknar ??= troshusSaknar(s, tr)), 'ved', 'grenar', 'sten', 'bar', 'rep'].find(q => ownsAmount(s, p, q) >= 1); // helst det trons hus saknar (steg 10.3.19)
     if (!k) continue;
     gavaIn(s, tr, k, 1, p); count(s, 'kyrka_gava');
@@ -600,9 +600,9 @@ function heligaTingKvar(s: State, tr: Tro) {
   }
 }
 // ---------- varje timme ----------
-export function kyrkaTimme(s: State) {
+export function kyrkaTimme(s: State, h = 1) { // h: timmarna sedan sist (TAKTER)
   for (const tr of s.tron ?? []) if (tr.bud?.length) heligaTingKvar(s, tr);
-  for (const tr of s.tron ?? []) { if (tr.slut !== undefined) continue; const folk = troende(s, tr); if (folk.length) offerTimme(s, tr, folk); }
+  for (const tr of s.tron ?? []) { if (tr.slut !== undefined) continue; const folk = troende(s, tr); if (folk.length) offerTimme(s, tr, folk, h); }
 }
 // kyrkans dygn (raden kyrkans dygn i TAKTER, kl. KYRKA_TIMME; klockslaget frågas när raden räknas direkt efter en laddning)
 export const KYRKA_TIMME = 12;

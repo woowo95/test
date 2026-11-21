@@ -1,6 +1,6 @@
 import { stor as storOrd, tal } from './ord';
 import { notis } from './notiser';
-import { clamp, gauss, pick, rnd } from './slump';
+import { chansTid, clamp, gauss, pick, rnd } from './slump';
 import { SKRIFT } from './skriftTal';
 import { troshusKlart } from './troshus';
 import { DAY, HOUR, Person, Rel, State } from './typer';
@@ -430,12 +430,12 @@ export function gudHandelse(s: State, omr: GudOmr, h: string) {
   for (const tr of s.tron ?? []) if (tr.namn && tr.slut === undefined && tr.gudar?.length) gudFor(s, tr, omr, h);
 }
 // varje timme: en tro på Människa-sidan kan göra en död bybo till förfader, och en gud som inget bekräftat på länge glöms
-function gudSteg(s: State, tr: Tro) {
+function gudSteg(s: State, tr: Tro, h = 1) {
   const gudar = gudarOf(tr);
   if (!gudar.length) return;
   if (tr.natur > GUD.forfader && tr.manga <= GUD.en) {
     const p = gudPerson(s, tr);
-    if (p && rnd(s, 'tro', p) < GUD.forfaderChans) {
+    if (p && rnd(s, 'tro', p) < chansTid(GUD.forfaderChans, 1, h)) {
       const fp = s.people.find(q => !alive(q) && forfaderOmr(s, tr, q));
       if (fp) {
         const g = forfader(s, tr, fp, forfaderOmr(s, tr, fp)!);
@@ -476,9 +476,9 @@ export function predika(s: State, a: Person, b: Person, r: Rel, kind: string, ga
 
 // ---------- varje timme (steg.ts) ----------
 // drömmarna, barnet som blev friskt, tron som fick sitt namn och tron som dog med sin sista troende
-export function stepReligion(s: State) {
+export function stepReligion(s: State, h = 1) { // h: timmarna sedan sist (TAKTER)
   for (const p of living(s)) {
-    if (p.task?.act === 'sova' && rnd(s, 'tro', p) < TRO.drom) {
+    if (p.task?.act === 'sova' && rnd(s, 'tro', p) < chansTid(TRO.drom, 1, h)) {
       const d = p.partner === undefined ? s.people.find(q => !alive(q) && q.died !== undefined && s.now - q.died < ANDE.dromDygn * DAY && (s.rels[relKey(p.id, q.id)]?.op ?? 0) > ANDE.dromOp) : undefined;
       if (d) tecken(s, p, 'dodDrom', d.name); else tecken(s, p, 'drom');
     }
@@ -492,7 +492,7 @@ export function stepReligion(s: State) {
     const folk = troende(s, tr);
     if (!folk.length) { tr.slut = s.now; releaseOwner(s, kyrkaId(tr.id)); count(s, 'tro_slut'); continue; } // kyrkans del blir byns (steg 10.3.17)
     if (!tr.namn && folk.length >= TRO.namn) namnge(s, tr, folk);
-    gudSteg(s, tr);
+    gudSteg(s, tr, h);
   }
   // skalorna som låses upp när det de styr dyker upp
   for (const k of SKALA_IDS) if (SDEF[k].oppnas && !s.troSkalor?.includes(k) && SDEF[k].oppnas!(s)) {

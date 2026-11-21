@@ -632,7 +632,7 @@ export function styretsKvall(s: State) {
   if (l && kvall(s)) { doma(s, l); rostKvall(s); if (!s.styre?.fragor?.length) tasUppKvall(s); }
 }
 // ---------- en gång i timmen ----------
-export function stepStyre(s: State) {
+export function stepStyre(s: State, h = 1) { // h: timmarna sedan sist (TAKTER)
   const st = s.styre;
   if (!st && !living(s).some(p => knows(p, 'ledarskap'))) return;
   const ai = ageIndex(s);
@@ -654,7 +654,7 @@ export function stepStyre(s: State) {
   // de andra skalorna låses upp när det de styr finns i byn (steg 8.4.11–8.4.13)
   if (!s.styre!.oppna.includes('krig') && (s.stat?.rovarstrid ?? 0) + (s.stat?.vargstrid ?? 0) > 0) oppnaSed(s, 'krig');
   if (!s.styre!.oppna.includes('natur') && (s.fallda ?? 0) > 0) oppnaSed(s, 'natur');
-  missnojeTimme(s);
+  missnojeTimme(s, h);
 }
 // skammen: den straffade håller sig undan bordet och elden (val.ts)
 export const skams = (p: Person, now: number) => p.skam !== undefined && p.skam > now;
