@@ -96,3 +96,59 @@
     VID_NAMNET('Ledaren med armarna ut, i guld, i 8 × 8 punkter.', ['..oooo..', '..oaao..', 'o.oaao.o', 'oaoaaoao', '.oaaaao.', '..oaao..', '..oaao..', '..o..o..']),
   ] });
 })();
+
+// fas 12: den öppna flikens namn i panelen (steg 12.1.128). Tre sätt att skriva namnet vid bandet överst i fliken, visade
+// för tre flikar på panelens beige och i dess bredd (240 punkter, två skärmpunkter per punkt som i spelet). Bokstäverna är
+// 3 × 5 punkter, i samma storlek som spelets text i rubrikerna. Ritade av programmeringschatten.
+(() => {
+  const BOKST = {
+    A: ['.#.', '#.#', '###', '#.#', '#.#'], D: ['##.', '#.#', '#.#', '#.#', '##.'], E: ['###', '#..', '##.', '#..', '###'], F: ['###', '#..', '##.', '#..', '#..'],
+    I: ['###', '.#.', '.#.', '.#.', '###'], K: ['#.#', '##.', '#..', '##.', '#.#'], N: ['#..#', '##.#', '#.##', '#..#', '#..#'], O: ['.#.', '#.#', '#.#', '#.#', '.#.'],
+    R: ['##.', '#.#', '##.', '#.#', '#.#'], S: ['.##', '#..', '.#.', '..#', '##.'],
+  };
+  const OVER = { Å: ['A', '.#.'], Ö: ['O', '#.#'] };
+  const bredd = namn => [...namn].reduce((s, ch) => s + BOKST[(OVER[ch] || [ch])[0]][0].length + 1, 0) - 1;
+  // namnet med versalernas överkant i y (prickarna över Ö och ringen över Å två rader ovanför)
+  const skriv = (B, namn, x, y, f) => {
+    for (const ch of namn) {
+      const [bas, over] = OVER[ch] || [ch, null], g = BOKST[bas];
+      if (over) [...over].forEach((c, dx) => { if (c === '#') B.satt(x + dx, y - 2, f); });
+      g.forEach((rad, dy) => [...rad].forEach((c, dx) => { if (c === '#') B.satt(x + dx, y + dy, f); }));
+      x += g[0].length + 1;
+    }
+  };
+  const W = 240, FLIKAR = [['kronika', 'KRÖNIKA'], ['seder', 'SEDER'], ['forrad', 'FÖRRÅD']].filter(([id]) => GUI.band[id]);
+  // bandet som i spelet: remsan i bandets vanligaste färg med konturen ut till kanterna, och bilden i mitten
+  const farg = b => { const n = {}; b.rader.forEach(r => [...r].forEach(k => { if (k !== '.' && k !== 'a') n[k] = (n[k] || 0) + 1; })); return [b.pal[Object.keys(n).sort((x, y) => n[y] - n[x])[0]], b.pal.a]; };
+  const band = (B, P, b, y0) => {
+    const [bf, bk] = farg(b);
+    for (let x = 0; x < W; x++) for (let y = 9; y < 17; y++) B.satt(x, y0 + y + 1, P.av(y === 9 || y === 16 ? bk : bf));
+    const x0 = Math.round((W - b.w) / 2);
+    b.rader.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') B.satt(x0 + x, y0 + y, P.av(b.pal[ch])); }));
+  };
+  // en version: varje flik får sin höjd (fore ovanför bandet, efter under) och ritas med rita(B, P, b, namn, y för bandet)
+  const VERSION = (text, fore, efter, rita) => {
+    const h = FLIKAR.reduce((s, [id]) => s + fore + GUI.band[id].h + efter + 6, 4);
+    return { text, w: W, h, rita: (B, P) => {
+      for (let y = 0; y < h; y++) for (let x = 0; x < W; x++) B.satt(x, y, P.i('ben', 3));
+      let y = 4;
+      for (const [id, namn] of FLIKAR) { const b = GUI.band[id]; band(B, P, b, y + fore); rita(B, P, b, namn, y + fore); y += fore + b.h + efter + 6; }
+    } };
+  };
+  VAL.push({ id: 'f12_fliknamn', namn: 'Flikens namn i panelen', typ: 'tre', slag: [], vad: 'Steg 12.1.128: den öppna flikens namn ska synas i panelen, vid bandet överst i fliken. I dag syns namnet bara när musen är över runstenen. Tre sätt, visade för Krönikan, Seder och Förrådet i panelens bredd. Det valda byggs in för alla flikar och rutor.', versioner: [
+    VERSION('En skylt hänger i två korta kedjor under medaljongen, i bandets färg med mörk kant, och namnet står på skylten i ljusa bokstäver (mörka på en ljus skylt).', 0, 14, (B, P, b, namn, y0) => {
+      const [bf, bk] = farg(b), sw = bredd(namn) + 10, sx = Math.round((W - sw) / 2), sy = y0 + b.h + 3;
+      for (const kx of [sx + 3, sx + sw - 4]) for (let y = y0 + b.h - 2; y < sy; y++) B.satt(kx, y, P.av(bk));
+      for (let y = sy; y < sy + 11; y++) for (let x = sx; x < sx + sw; x++) B.satt(x, y, P.av(y === sy || y === sy + 10 || x === sx || x === sx + sw - 1 ? bk : bf));
+      for (let x = sx + 1; x < sx + sw - 1; x++) B.satt(x, sy + 9, P.av(bk)); // skuggan i skyltens nederkant
+      const ljus = parseInt(bf.slice(1, 3), 16) * 0.3 + parseInt(bf.slice(3, 5), 16) * 0.59 + parseInt(bf.slice(5, 7), 16) * 0.11 > 120; // mörka bokstäver på en ljus skylt
+      skriv(B, namn, sx + 5, sy + 3, ljus ? P.i('kol', 0) : P.i('ben', 3));
+    }),
+    VERSION('Namnet på en egen rad över bandet, mörka bokstäver på panelens beige, mitt över medaljongen.', 9, 0, (B, P, b, namn, y0) => {
+      skriv(B, namn, Math.round((W - bredd(namn)) / 2), y0 - 7, P.i('kol', 0));
+    }),
+    VERSION('Namnet på en egen rad under bandet, mörka bokstäver på panelens beige, mitt under medaljongen.', 0, 9, (B, P, b, namn, y0) => {
+      skriv(B, namn, Math.round((W - bredd(namn)) / 2), y0 + b.h + 4, P.i('kol', 0));
+    }),
+  ] });
+})();
