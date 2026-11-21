@@ -16,6 +16,9 @@ import { tecken } from './religion';
 import { count, forstaGang, living, log } from './folk';
 import { wearTool } from './agande';
 import { rnd } from './slump';
+import { getMap } from './karta';
+import { T, W } from './typer';
+import { iVattnetNu, narmasteLand } from './sjo';
 
 export const IS = balans('is', {
   frosSyn: 0.2, // chansen att var och en ser tecknet när sjön frös (steg 8.5.18)
@@ -27,6 +30,13 @@ export const IS = balans('is', {
   bas: 2,
   snoSkyddar: 0.5, // ... och upp till så här mycket långsammare med snö på isen
   smalter: 0.3, // cm per timme och grad över noll
+  // man går på isen (steg 12.1.209): sjön går att gå över när isen ligger. Ju tunnare isen är, desto mer väger risken att gå
+  // igenom (genomIsen i halsa.ts): vägen över isen kostar mer, och fiskaren som väljer en plats ute på isen väger risken.
+  // Tjockleken räknas i nivåer (nivaer stycken upp till tunn), så att vägarna bara söks om när isen byter nivå
+  tunnKost: 20, // en ruta helt tunn is kostar som så här många rutors gång (vägsökningen), mindre ju tjockare
+  tunnRadsla: 1, // fiskeplatsen ute på isen är värd så här mycket mindre gånger hur tunn isen är
+  nivaer: 3,
+  tunn: 12, // isen bär sämre ju tunnare den är under så här många cm: risken att gå genom den gånger 1 − cm / tunn (genomIsen i halsa.ts, steg 12.1.141)
 });
 export interface IsMinne { vatten: number; cm: number } // vattnets temperatur (grader) och isens tjocklek (cm)
 
@@ -49,6 +59,12 @@ const minneOf = (s: State) => (s.is ??= { vatten: Math.max(0, temperature(s)), c
 // isens tjocklek i cm (0 = öppet vatten) och vattnets temperatur
 export const isCm = (s: State) => s.is?.cm ?? 0;
 export const islagt = (s: State) => isCm(s) > 0;
+// isens nivå (steg 12.1.209): 0 = ingen is, 1 till nivaer = tunn is, nivaer + 1 = is som bär (IS.tunn cm eller mer)
+export const isNiva = (s: State) => { const cm = isCm(s); return cm > 0 ? 1 + Math.min(IS.nivaer, Math.floor(cm / (IS.tunn / IS.nivaer))) : 0; };
+// hur tunn isen är (1 = helt tunn, 0 = den bär), efter nivån
+export const isTunnhet = (s: State) => { const n = isNiva(s); return n ? 1 - (n - 1) / IS.nivaer : 0; };
+// vad en ruta på isen kostar i vägsökningen (findPath), undefined = ingen is: vattnet går inte att gå på
+export const isKost = (s: State) => isNiva(s) ? 1 + IS.tunnKost * isTunnhet(s) : undefined;
 export const vattenGrader = (s: State) => s.is?.vatten ?? Math.max(0, temperature(s)); // ändrar inget (gränssnittet frågar)
 
 // varje timme (steg.ts). h: timmarna sedan sist (steg 12.1.107)
@@ -59,7 +75,22 @@ export function stepIs(s: State, h = 1) {
     if (m.vatten < 0) { if (m.cm === 0) for (const p of living(s)) if (rnd(s, 'tro', p) < IS.frosSyn) tecken(s, p, 'frosjo'); m.cm = -m.vatten * IS.forst; m.vatten = 0; } // sjön som frös (steg 8.5.18)
   } else if (t < 0) m.cm += IS.vaxer * -t / (IS.bas + m.cm) * (1 - IS.snoSkyddar * snoPaMarken(s)) * h;
   else m.cm = Math.max(0, m.cm - IS.smalter * t * h);
+  if (m.cm <= 0) iLand(s);
 }
+// när isen har gått upp tar sig den som står ute på sjön i land (steg 12.1.209): till närmaste ruta på land, och vägen söks om
+function iLand(s: State) {
+  const m = getMap(s.seed).tiles;
+  for (const p of living(s)) {
+    const i = Math.floor(p.y) * W + Math.floor(p.x);
+    if (m[i] !== T.Vatten || !iVattnetNu(s, i)) continue; // sjön, inte översvämningen
+    const l = narmasteLand(s, Math.floor(p.x), Math.floor(p.y));
+    if (!l) continue;
+    p.x = l.x + 0.5; p.y = l.y + 0.5;
+    if (p.task) { p.task.path = undefined; p.task.pk = undefined; }
+    count(s, 'iLandIsen');
+  }
+}
+
 
 // hur p hugger upp ett hål i isen just nu: det snabbaste sättet hen har som går igenom isen. undefined = det går inte
 // (eller isen ligger inte: då behövs inget hål, se halMin)

@@ -19,7 +19,7 @@ import { temperature, vaderSlit } from './vader';
 import { BYN, Del, addDel, kyrkaId, sumOf, takeOrder } from './egendom';
 import { FOOD, SAKER, SAK_LIST, isFood, isTool, rutaOf, sakNamn, viktOf, iSlag } from './saker';
 import { balans } from './balans';
-import { flodHotad, iVattnetNu, underMinnet } from './sjo';
+import { flodHotad, iVattnetNu, narmasteLand, underMinnet } from './sjo';
 import { FLOD } from './flod';
 import { forbrukat } from './forradsmal';
 import { strakI } from './strak';
@@ -1297,7 +1297,8 @@ function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: numb
 // den som kallas bort lägger ner bördan där hen står; ligger den långt från lagret får någon bära in den senare. Står hen
 // framför en station lägger hen den bredvid, inom räckhåll: rutan där man arbetar ska vara fri (framFri, stationer.ts)
 export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
-  const tx = Math.floor(x), ty = Math.floor(y);
+  let tx = Math.floor(x), ty = Math.floor(y);
+  if (getMap(s.seed).tiles[ty * W + tx] === T.Vatten && iVattnetNu(s, ty * W + tx)) { const l = narmasteLand(s, tx, ty); if (l) { tx = l.x; ty = l.y; } } // ute på isen läggs bördan på stranden (steg 12.1.209)
   if (isStored(s, tx, ty)) { storeLoad(s, t, x, y, owner); return; }
   aterlagt(s, t);
   const all = loadOf(t), st = stacksOf(s), who = t.act === 'bara' ? BYN : owner, eld = eldRutor(s);

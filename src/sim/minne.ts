@@ -12,6 +12,7 @@ import { KUNSKAPER, kn, learnK } from './kunskap';
 import { clamp, clampI, pickViktat, rnd } from './slump';
 import { ageIndex, lightLevel } from './tid';
 import { DAY, H, HOUR, HOUR_S, Lardom, Person, Rel, State, T, W, egen, tvaDelar, visning } from './typer';
+import { IS, isTunnhet, islagt } from './is';
 import { FOREST } from './vag';
 import { balans } from './balans';
 import type { SamtalDef } from './samtal';
@@ -360,9 +361,13 @@ export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: nu
       const sc = tpt[i] - fear(s, p, areaOf(c.x, c.y)) * MINNE.radslaTur * ref + (rnd(s, 'val', p) - 0.5) * MINNE.valBrus * ref;
       if (sc > bs) { bs = sc; best = c; }
     });
-  } else for (const c of cands) {
-    const sc = perceive(s, p, k, c.x, c.y, sight, u, syns) - c.d * PLATS.avstandPris + rnd(s, 'val', p) * MINNE.valBrus;
+  } else {
+    // ute på isen väger fiskaren risken att gå igenom den (steg 12.1.209): mer ju tunnare den är
+    const vt = vattenNu(s), isRisk = k === 'fiske' && islagt(s) ? IS.tunnRadsla * isTunnhet(s) : 0;
+    for (const c of cands) {
+    const sc = perceive(s, p, k, c.x, c.y, sight, u, syns) - c.d * PLATS.avstandPris + rnd(s, 'val', p) * MINNE.valBrus - (isRisk && vt[c.y * W + c.x] === T.Vatten ? isRisk : 0);
     if (sc > bs) { bs = sc; best = c; }
+    }
   }
   if (!best || sees(s, p, best.x, best.y, sight)) return best;
   // väl framme letar hen upp den bästa platsen i området, med samma krav som platserna hen valde bland (spotFor i val.ts):
@@ -370,12 +375,14 @@ export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: nu
   // växer inget
   const x0 = Math.max(0, best.x - MINNE.sokR), y0 = Math.max(0, best.y - MINNE.sokR);
   const tiles = vattenNu(s), shore = strandNu(s); // vattnet som det är nu (torkan, steg 3.8.2)
+  const paIsen = k === 'fiske' && islagt(s), isRisk = paIsen ? IS.tunnRadsla * isTunnhet(s) : 0; // ute på isen (steg 12.1.209)
   const smuts = (x: number, y: number) => k === 'samla' ? smutsAvdrag(s, x, y) : 0; // toa-smutsen som en längre väg (steg 10.11.14)
-  let r = best, rs = richness(s, k, best.x + 0.5, best.y + 0.5) - smuts(best.x, best.y) * MINNE.sokPris;
+  let r = best, rs = richness(s, k, best.x + 0.5, best.y + 0.5) - smuts(best.x, best.y) * MINNE.sokPris - (paIsen && tiles[best.y * W + best.x] === T.Vatten ? isRisk : 0);
   for (let y = y0; y < Math.min(H, best.y + MINNE.sokR + 1); y++) for (let x = x0; x < Math.min(W, best.x + MINNE.sokR + 1); x++) {
     const i = y * W + x; // bara land, och för fiske bara stranden
-    if (tiles[i] === T.Vatten || (k === 'fiske' && !shore[i]) || bitAt(s, x, y)) continue;
-    const v = richness(s, k, x + 0.5, y + 0.5) - (Math.hypot(x - best.x, y - best.y) + smuts(x, y)) * MINNE.sokPris;
+    const is = paIsen && tiles[i] === T.Vatten;
+    if (tiles[i] === T.Vatten && !is || (k === 'fiske' && !shore[i] && !is) || bitAt(s, x, y)) continue;
+    const v = richness(s, k, x + 0.5, y + 0.5) - (Math.hypot(x - best.x, y - best.y) + smuts(x, y)) * MINNE.sokPris - (is ? isRisk : 0);
     if (v > rs) { rs = v; r = { x, y, d: utanforByn(s, x, y) }; }
   }
   return r;

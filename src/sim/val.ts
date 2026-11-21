@@ -15,7 +15,7 @@ import { facklaVal, ljusAt } from './ljus';
 import { OMRADE, bynsAvstand, bynsMitt, iByn, omrade, platsIByn, utanforByn } from './omrade';
 import { SKRIFT, lasVal, skrivPlats, skrivVal } from './skrift';
 import { GANG, kroppFart } from './gang';
-import { iVattnetNu, sjoNamn, sjoVid, strandNu } from './sjo';
+import { iVattnetNu, sjoNamn, sjoVid, strandNu, vattenNu } from './sjo';
 import { freeTools, take } from './agande';
 import { PLATS } from './plats';
 import { vargSkydd, vargjaktVal } from './varg';
@@ -340,9 +340,10 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
   if (plats === 'lek') return platsIByn(s, p, 'val'); // barnen leker var som helst i byn (omrade.ts); byn har ingen lekplats
   // ute på marken: vid stranden, på ängen och i skogen, eller avsides (toa)
   const strand = plats === 'strand' ? strandNu(s) : undefined; // under en torka flyttar stranden ut (steg 3.8.2)
+  const paIsen = d.resurs === 'fiske' && islagt(s), vt = paIsen ? vattenNu(s) : undefined; // fiskaren pimplar också ute på isen (steg 12.1.209)
   const want = (t: number, x: number, y: number) => {
     if (bitAt(s, x, y)) return false; // inte i husen
-    if (strand) return strand[y * W + x] === 1;
+    if (strand) return strand[y * W + x] === 1 || !!vt && vt[y * W + x] === T.Vatten;
     if (plats === 'ang') return t === T.Gras || t === T.Skog;
     if (plats === 'avsides') return (t === T.Gras || t === T.Skog || t === T.Sand) && !vidBanken(s, x, y); // aldrig bredvid ett bord eller en bänk (steg 3.10.3)
     return isForest(s, y * W + x); // grenar och vilt finns i skogen

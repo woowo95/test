@@ -56,7 +56,7 @@ import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './pabor
 import { arbetaBredvid, forsokKlar, forsokSteg, haftSteg, stepLarlingar, thinkWhileWorking } from './teknik';
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
 import { FYND, fyndAt, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, richness, richnessDelar, richnessFor, type Lager, takeFrom } from './fynd';
-import { halMin, halVal, islagt, stepIs, halGjort } from './is';
+import { halMin, halVal, isKost, isNiva, islagt, stepIs, halGjort } from './is';
 import { blotSteg, coldOf, forVarm, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight, nagonEld, plockatKvar, woodDays } from './eld';
 import { gastLever } from './gast';
@@ -880,13 +880,14 @@ const sida = (p: Person, f: number) => (((p.id * 37) % 7) - 3) * f / 3;
 const vagar = new WeakMap<State, { key: string; m: Map<number, number[] | null> }>();
 function pathFor(s: State, g: ReturnType<typeof groundOf>, x0: number, y0: number, x1: number, y1: number) {
   // under en brand ändras vägarna med elden (steg 9.2.136): de räknas om varje gång, och den som är instängd går ut genom elden
-  if (g.brand) { stationRutor(s); return findPath(g, x0, y0, x1, y1) ?? findPath(g, x0, y0, x1, y1, true); } // stänger elden in en, går man ut genom den
-  const key = `${Math.floor(s.now / (4 * HOUR))},${s.byggV ?? 0}`;
+  const is = isKost(s); // över sjöns is när den ligger (steg 12.1.209)
+  if (g.brand) { stationRutor(s); return findPath(g, x0, y0, x1, y1, false, is) ?? findPath(g, x0, y0, x1, y1, true, is); } // stänger elden in en, går man ut genom den
+  const key = `${Math.floor(s.now / (4 * HOUR))},${s.byggV ?? 0},${isNiva(s)}`;
   let c = vagar.get(s);
   if (c?.key !== key) vagar.set(s, c = { key, m: new Map() });
   const k = tileOf(x0, y0) * W * H + tileOf(x1, y1);
   let v = c.m.get(k);
-  if (v === undefined) { stationRutor(s); c.m.set(k, v = findPath(g, x0, y0, x1, y1)); } // en hylla byggd i det här steget räknas med
+  if (v === undefined) { stationRutor(s); c.m.set(k, v = findPath(g, x0, y0, x1, y1, false, is)); } // en hylla byggd i det här steget räknas med
   return v ? v.slice() : null; // null = ingen väg dit
 }
 // att gå mot målet ruta för ruta runt vatten, gärna längs stigar. Ger tiden det tog och om man kom fram
@@ -913,7 +914,7 @@ function walk(s: State, p: Person, tk: Task, left: number) {
   const g = groundOf(s);
   if (g.brand && tk.path?.some(i => g.brand![i] === 1)) tk.pk = undefined; // en ruta på vägen började brinna: vägen söks om (steg 9.2.136)
   // (nyckeln byggs bara om när målet eller byggversionen har ändrats: den frågas i varje steg av varje som går)
-  const bv = s.byggV ?? 0;
+  const bv = (s.byggV ?? 0) * 8 + isNiva(s); // och isen: när den lägger sig, byter nivå eller går upp söks vägen om (steg 12.1.209)
   let nk = vagNycklar.get(tk);
   if (!nk || nk.x !== tk.tx || nk.y !== tk.ty || nk.v !== bv) vagNycklar.set(tk, nk = { x: tk.tx, y: tk.ty, v: bv, key: `${tk.tx.toFixed(2)},${tk.ty.toFixed(2)},${bv}` }); // en ny vägg kan stänga vägen
   const key = nk.key;

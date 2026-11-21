@@ -46,6 +46,7 @@ const stepCost = (g: Ground, i: number) => (isSoil(g.tiles[i]) ? VAG.stigBas + V
 
 // vatten, väggar och hyllor går man inte genom
 const stop = (g: Ground, i: number) => g.tiles[i] === T.Vatten || g.solid?.[i] === 1 || g.hinder?.[i] === 1;
+const stopIs = (g: Ground, i: number, is?: number) => g.tiles[i] === T.Vatten && is === undefined || g.solid?.[i] === 1 || g.hinder?.[i] === 1; // på isen går man förbi vattnets hörn
 
 // heapen ligger i typade fält som växer vid behov (kodgenomgången 3.10.25); jämförelserna är desamma som förut
 class Heap {
@@ -107,7 +108,8 @@ function nySokning() {
 // A* med 8 riktningar. Inte över vatten, väggar eller hyllor (målet får vara en hylla) och inte snett förbi en hörna. Start och mål får vara vatten.
 // Ger rutorna mellan start och mål (utan båda), eller null om det inte finns någon väg.
 // genomBrand: den som är instängd av elden går den kortaste vägen ut, genom elden (steg 9.2.136); annars går vägen aldrig genom en ruta som brinner
-export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: number, genomBrand = false): number[] | null {
+// is: vad en ruta på sjöns is kostar när isen ligger (isKost i is.ts, steg 12.1.209); utan den går vägen inte över vattnet
+export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: number, genomBrand = false, is?: number): number[] | null {
   const sx = clampI(x0, W), sy = clampI(y0, H), gx = clampI(x1, W), gy = clampI(y1, H);
   const start = sy * W + sx, goal = gy * W + gx;
   if (start === goal) return [];
@@ -123,9 +125,9 @@ export function findPath(g: Ground, x0: number, y0: number, x1: number, y1: numb
     for (let dy = y > 0 ? -1 : 0, ye = y < H - 1 ? 1 : 0; dy <= ye; dy++) for (let dx = xa; dx <= xe; dx++) { // grannarna på kartan
       if (!dx && !dy) continue;
       const nx = x + dx, ny = y + dy, ni = ny * W + nx;
-      if (stangd[ni] === gen || ((tiles[ni] === T.Vatten || solid?.[ni] || hinder?.[ni] || brand?.[ni] === 1) && ni !== goal)) continue;
-      if (dx && dy && (stop(g, y * W + nx) || stop(g, ny * W + x))) continue;
-      if (kostad[ni] !== gen) { kostad[ni] = gen; kost[ni] = (tiles[ni] === T.Vatten ? 1 : stepCost(g, ni)) + (brand?.[ni] === 2 ? VAG.brandNara : 0); }
+      if (stangd[ni] === gen || ((tiles[ni] === T.Vatten && is === undefined || solid?.[ni] || hinder?.[ni] || brand?.[ni] === 1) && ni !== goal)) continue;
+      if (dx && dy && (stopIs(g, y * W + nx, is) || stopIs(g, ny * W + x, is))) continue;
+      if (kostad[ni] !== gen) { kostad[ni] = gen; kost[ni] = (tiles[ni] === T.Vatten ? is ?? 1 : stepCost(g, ni)) + (brand?.[ni] === 2 ? VAG.brandNara : 0); }
       const ng = gi + (dx && dy ? SQ2 : 1) * kost[ni];
       if (ng < (sedd[ni] === gen ? gs[ni] : Infinity)) { sedd[ni] = gen; gs[ni] = ng; came[ni] = i; heap.push(ni, ng + avst[(ny - gy + H) * aW + nx - gx + W] * sv); }
     }

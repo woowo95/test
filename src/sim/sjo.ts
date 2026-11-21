@@ -151,6 +151,16 @@ function vattenOf(s: State) {
 }
 const strandStart = perKarta(seed => strandAv(getMap(seed).tiles));
 export const vattenNu = (s: State) => vattenOf(s).tiles;
+// närmaste ruta på land från (x, y), ring för ring (den som står på isen, steg 12.1.209)
+export function narmasteLand(s: State, x: number, y: number) {
+  const m = getMap(s.seed).tiles;
+  for (let r = 0; r < Math.max(W, H); r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+    const nx = x + dx, ny = y + dy;
+    if (inMap(nx, ny) && !iVattnetNu(s, ny * W + nx) && m[ny * W + nx] !== T.Sten) return { x: nx, y: ny };
+  }
+  return undefined;
+}
 export const strandNu = (s: State) => vattenOf(s).strand;
 // är rutan i vatten just nu (kartans vatten utom den torra sjöbottnen, och översvämningens vatten)
 export const iVattnetNu = (s: State, i: number) => vattenOf(s).tiles[i] === T.Vatten;

@@ -526,7 +526,7 @@ export function standAt(s: State, k: Lager, x: number, y: number, fn: (i: number
   const cx = clampI(x, W), cy = clampI(y, H), i = cy * W + cx, r = FYND[lagren(k)[0]].vatten;
   if (!r) return fn(i);
   const tiles = vattenNu(s);
-  if (tiles[i] === T.Vatten) return 0;
+  if (tiles[i] === T.Vatten && !((s.is?.cm ?? 0) > 0)) return 0; // ute på isen fiskar man genom hålet där man står (steg 12.1.209)
   let sum = 0, n = 0;
   for (const { dx, dy, w } of karna(r).v) {
     const j = iVattnet(tiles, cx, cy, dx, dy, w);

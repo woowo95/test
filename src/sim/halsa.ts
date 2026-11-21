@@ -32,7 +32,7 @@ import { bedFor } from './bygg';
 import { freeNear, roomAt } from './byggnad';
 import { tileOf } from './mark';
 import { fordonI } from './fordon';
-import { isCm } from './is';
+import { IS, isCm } from './is';
 import { iVattnetNu } from './sjo';
 import { tamArt, tamdjurOf } from './tamdjur';
 import { eldPlats } from './karta';
@@ -80,7 +80,6 @@ export const HALSA = balans('halsa', {
   minst: 0.2, // händigheten går aldrig under detta (rörligheten aldrig under GANG.rorGolv, gang.ts)
   skicklig: 25, // risken för en olycka gånger 1 − färdigheten / skicklig ...
   smidig: 0.3, // ... och gånger 1 − smidig × (smidigheten − 10) / 10 (steg 3.7.6)
-  isTunn: 12, // isen bär sämre ju tunnare den är under så här många cm: risken att gå genom den gånger 1 − cm / isTunn (steg 12.1.141)
   // vården (steg 2.5.2)
   infRisk: 0.015, // chansen i timmen att ett öppet sår blir infekterat (steg 9.5.26: ett ovårdat bett eller sticksår infekteras i ungefär hälften av fallen) ...
   fastInf: 4, // ... gånger detta medan ett spjut sitter kvar i såret (steg 3.7.7)
@@ -223,7 +222,7 @@ export const OLYCKOR_LAGE: Record<string, OlyckaDef> = {
   // den som kör eller åker en vagn eller släde och är på väg faller av; djurskötseln sänker risken
   vagn: { risk: 0.005, typer: ['blamarke', 'benbrott', 'krossar'], delar: [...ARMAR, ...BEN, 'bal', 'huvud'], min: 0.05, max: 0.9, dod: 'olycka', nar: 'när hen föll från vagnen', fardighet: 'skotsel', lage: (s, p) => { const t = p.task, f = t && t.phase !== 'do' && t.ting?.length ? fordonI(s, t)?.f : undefined; return f && (f.sak === 'vagn' || f.sak === 'slade') ? 1 : 0; } },
   // den som går eller fiskar på sjöns is när den är tunn går igenom den: kallt vatten i lungorna, och ibland drunknar man
-  genomIsen: { risk: 0.3, typer: ['kalltvatten'], delar: ['lungor'], min: 0.3, max: 1, dod: 'drunkning', nar: 'när isen brast', lage: (s, p) => { const cm = isCm(s); return cm > 0 && cm < HALSA.isTunn && iVattnetNu(s, tileOf(p.x, p.y)) ? 1 - cm / HALSA.isTunn : 0; } },
+  genomIsen: { risk: 0.3, typer: ['kalltvatten'], delar: ['lungor'], min: 0.3, max: 1, dod: 'drunkning', nar: 'när isen brast', lage: (s, p) => { const cm = isCm(s); return cm > 0 && cm < IS.tunn && iVattnetNu(s, tileOf(p.x, p.y)) ? 1 - cm / IS.tunn : 0; } },
 };
 export const OLYCKOR: Partial<Record<Act, OlyckaDef>> = {
   jakt: { risk: 0.01, typer: ['bett', 'klos', 'benbrott'], delar: [...ARMAR, ...HANDER, ...BEN, ...FOTTER, 'bal'], min: 0.1, max: 1, dod: 'jakt', nar: 'under en jakt' },

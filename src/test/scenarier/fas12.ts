@@ -1451,3 +1451,50 @@ SCENARIER.hogflytt = {
     ];
   },
 };
+
+SCENARIER.pais = {
+  text: 'Man går på isen (steg 12.1.209): när isen ligger går vägen över sjön, och den kostar mer ju tunnare isen är. Fiskaren pimplar också ute på isen, där hen fiskar genom hålet hen står på. Ute på tunn is kan isen brista, men inte på is som bär. Det man bär läggs ner på stranden, och när isen går upp tar sig den som står ute på sjön i land',
+  kor: () => {
+    const s = SIM.createState(5, START), g = SIM.groundOf(s), m = SIM.getMap(s.seed).tiles;
+    // den största sjön: en väg från ena stranden till den andra, rakt över
+    const sjo = SIM.sjoarna(s.seed).rutor.slice().sort((a, b) => b.length - a.length)[0];
+    let fran = -1, till = -1, bast = 0;
+    const strand = SIM.strandNu(s);
+    const kanter = [] as number[];
+    for (const i of sjo) { const x = i % SIM.W, y = Math.floor(i / SIM.W); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const j = (y + dy) * SIM.W + x + dx; if (SIM.inMap(x + dx, y + dy) && m[j] !== SIM.T.Vatten && strand[j] && !kanter.includes(j)) kanter.push(j); } }
+    for (let a = 0; a < kanter.length; a += 3) for (let b = a + 1; b < kanter.length; b += 3) { const d = Math.hypot(kanter[a] % SIM.W - kanter[b] % SIM.W, Math.floor(kanter[a] / SIM.W) - Math.floor(kanter[b] / SIM.W)); if (d > bast) { bast = d; fran = kanter[a]; till = kanter[b]; } }
+    const xy = (i: number) => [i % SIM.W + 0.5, Math.floor(i / SIM.W) + 0.5] as const;
+    const [x0, y0] = xy(fran), [x1, y1] = xy(till);
+    const langd = (v: number[] | null) => v ? v.length : Infinity, overVatten = (v: number[] | null) => (v ?? []).filter(i => m[i] === SIM.T.Vatten).length;
+    const utan = SIM.findPath(g, x0, y0, x1, y1);
+    s.is = { vatten: 0, cm: 30 }; const tjock = SIM.findPath(g, x0, y0, x1, y1, false, SIM.isKost(s));
+    s.is = { vatten: 0, cm: 2 }; const tunn = SIM.findPath(g, x0, y0, x1, y1, false, SIM.isKost(s));
+    // fisket ute på isen: platsen på sjön ger fisk när isen ligger, och inget utan is
+    const ute = sjo.find(i => { const x = i % SIM.W, y = Math.floor(i / SIM.W); return [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([dx, dy]) => m[(y + dy) * SIM.W + x + dx] === SIM.T.Vatten); })!;
+    const [ux, uy] = xy(ute);
+    s.is = { vatten: 0, cm: 30 }; const fiskIs = SIM.richness(s, 'fiske', ux, uy);
+    s.is = undefined; const fiskUtan = SIM.richness(s, 'fiske', ux, uy);
+    // olyckan: ute på tunn is kan den brista, på is som bär inte
+    const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= 18)!;
+    p.x = ux; p.y = uy;
+    s.is = { vatten: 0, cm: 3 }; const risk = SIM.OLYCKOR_LAGE.genomIsen.lage!(s, p);
+    s.is = { vatten: 0, cm: 30 }; const bar = SIM.OLYCKOR_LAGE.genomIsen.lage!(s, p);
+    // bördan läggs på stranden
+    const tk = { act: 'samla', phase: 'do', carry: 0, items: { sten: 2 } } as unknown as SIM.Task;
+    SIM.dropLoad(s, tk, ux, uy, p.id);
+    const paIsen = SIM.stacksOf(s).filter(a => m[a.y * SIM.W + a.x] === SIM.T.Vatten).length, stenen = SIM.stacksOf(s).filter(a => a.k === 'sten' && a.n > 0 && m[a.y * SIM.W + a.x] !== SIM.T.Vatten).length > 0;
+    // isen går upp (sommarvärme): hen tar sig i land
+    s.is = { vatten: 0, cm: 0.01 };
+    for (let h = 0; h < 3 && SIM.isCm(s) > 0; h++) SIM.stepIs(s);
+    const iLand = m[SIM.tileOf(p.x, p.y)] !== SIM.T.Vatten;
+    return [
+      [`utan is går vägen runt sjön (${langd(utan)} rutor, ${overVatten(utan)} över vattnet)`, overVatten(utan) === 0],
+      [`på is som bär går vägen över sjön (${langd(tjock)} rutor, ${overVatten(tjock)} över isen)`, overVatten(tjock) > 0 && langd(tjock) < langd(utan)],
+      [`på tunn is går vägen mindre över isen (${overVatten(tunn)} rutor) än på tjock is`, overVatten(tunn) < overVatten(tjock)],
+      [`ute på isen ger platsen fisk (${fiskIs.toFixed(2)}), utan is inget (${fiskUtan})`, fiskIs > 0 && fiskUtan === 0],
+      [`tunn is kan brista under den som står på den (${risk.toFixed(2)}), is som bär inte (${bar})`, risk > 0 && bar === 0],
+      ['det hen bar ute på isen läggs på stranden', paIsen === 0 && stenen],
+      [`när isen går upp tar sig den som står på sjön i land (${SIM.isCm(s).toFixed(2)} cm kvar)`, SIM.isCm(s) === 0 && iLand],
+    ];
+  },
+};

@@ -4,7 +4,7 @@ import '../sim'; // först: hela simuleringen i samma ordning som spelet, så at
 import { trangtVidStation as SIM_TRANGT } from '../sim/stationer';
 import { forLangtArbete } from '../sim/tider';
 import { MALL, utanForm } from '../sim/folk';
-import { halMin, halVakt } from '../sim/is';
+import { halMin, halVakt, islagt } from '../sim/is';
 import { kyrkaId } from '../sim/egendom';
 import { budgetAgare } from '../sim/budget';
 import { husFel, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, sparStorlek, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL, uttagVakt, svavar, eldRutor } from '../sim';
@@ -87,7 +87,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
       if (p.task && (p.task.act !== 'elda' && decimal(p.task.carry ?? 0) || Object.values(p.task.items ?? {}).some(decimal))) larm('börda med decimaler', () => `${p.name} (${p.task!.act}) bär ${p.task!.carry} och ${JSON.stringify(p.task!.items ?? {})}`);
       if (!ok01(p.warm / KROPP.maxVarm)) larm('behov warm', () => `${p.name} warm = ${p.warm}`); // värmen går till maxVarm (steg 2.3.4)
       if (!Number.isFinite(p.x) || !Number.isFinite(p.y) || !inMap(p.x, p.y)) larm('position', () => `${p.name} på ${p.x},${p.y}`);
-      else if (tiles()[tileOf(p.x, p.y)] === T.Vatten) larm('i vattnet', () => `${p.name} står i vattnet (${p.task?.act})`);
+      else if (tiles()[tileOf(p.x, p.y)] === T.Vatten && !(islagt(s) && getMap(s.seed).tiles[tileOf(p.x, p.y)] === T.Vatten)) larm('i vattnet', () => `${p.name} står i vattnet (${p.task?.act})`); // på sjöns is går man (steg 12.1.209)
       else if (isWall(s, p.x, p.y)) larm('i en vägg', () => `${p.name} står i en vägg (${p.task?.act})`);
       // den som bär material till ett bygge bär inte mer än det som togs ur förrådet
       if (p.task?.act === 'bygga' && p.task.items) for (const k in p.task.items) if (p.task.items[k] > sumOf(p.task.ag?.[k]) + 1e-6) larm('bygge utan material', () => `${p.name} bär ${p.task!.items![k]} ${k} till bygget men tog ${sumOf(p.task!.ag?.[k])}`);
