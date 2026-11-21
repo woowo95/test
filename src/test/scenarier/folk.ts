@@ -416,9 +416,10 @@ SCENARIER.utbrott = {
   lang: true,
   kor: () => {
     // en by där alla mår mycket dåligt i åtta dygn (åtta år i spelet)
-    // (med ved och en flinta i förrådet: utan dem frös flera ihjäl första natten, steg 5.1.4.1 och 6.1.8, och då mäts inte utbrotten)
+    // (med ved och en flinta i förrådet och elden tänd: utan dem frös flera ihjäl första natten, steg 5.1.4.1 och 6.1.8, och då mäts
+    // inte utbrotten. Flintan tar sällan eld, och sedan kylan i steg 12.1.229 hann ingen tända den innan alla frusit ihjäl)
     const s = createState(9, START);
-    SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'flinta', 1);
+    SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'flinta', 1); tandEld(s);
     for (const p of living(s)) SIM.think(p, 'Sorg', -0.6, s.now, 8 * DAY);
     kor(s, 8 * 24);
     const utb = (s.stat?.utbrott as number) ?? 0, slag = Object.keys(s.stat ?? {}).filter(k => k.startsWith('utb_') && !k.startsWith('utb_sonder')).map(k => k.slice(4));
