@@ -11,7 +11,7 @@ import { faltAt } from './odling';
 import { ruttSmuts } from './smuts';
 import { ALDER, KROPP, alive, byId, count, isSick, living, stat, ageOf, log } from './folk';
 import { matOrdning } from './naring';
-import { eldPlats, getMap } from './karta';
+import { eldPlats, eldensRutor, getMap } from './karta';
 import { Act, DAY, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { MATERIAL, bitAt, blocked, lagretsMitt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
@@ -497,9 +497,9 @@ const paRutan = (t: Ting) => t.x !== undefined && ingenHar(t) && t.krok === unde
 // rutorna där det brinner eller kan brinna: lägereldarna (den första och brasorna, s.eldar), och i en färdig station med eld
 // (ELDSTATIONER, stationseld.ts) delen med elden (örtkökets härd) eller hela stationen. Där läggs inga högar
 export function eldRutor(s: State): Set<number> {
-  const ut = new Set<number>(), f = eldPlats(s);
-  ut.add(key(f.x, f.y));
-  for (const e of s.eldar ?? []) if (e.at) ut.add(key(Math.floor(e.at.x), Math.floor(e.at.y)));
+  const ut = new Set<number>();
+  for (const q of eldensRutor(s.fire, eldPlats(s))) if (inMap(q.x, q.y)) ut.add(key(q.x, q.y));
+  for (const e of s.eldar ?? []) for (const q of eldensRutor(e)) if (inMap(q.x, q.y)) ut.add(key(q.x, q.y));
   for (const t of stationerOf(s)) {
     if (!isKlar(t) || !eldDef(t)) continue;
     const r = delarAv(t), med = r.filter(q => q.del?.eld);

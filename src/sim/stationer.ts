@@ -5,7 +5,7 @@ import { siteHo } from './vattenho';
 import { RECEPT, type ReceptRad } from './recept';
 import { hash3 } from './slump';
 import { Act, DAY, Fire, GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
-import { eldPlats, getMap } from './karta';
+import { eldPlats, eldensRutor, getMap } from './karta';
 import { knows } from './teknik';
 import { ALDER, ageOf, alive, byId, count, andraGor, enTill, familjOf, forstaGang, gjort, living, log } from './folk';
 import { enOrd, han, hans, sinOrd, stor } from './ord';
@@ -15,7 +15,7 @@ import { Ting, freeTools, nTools, redskapSlitet, tingOf, wearTool, ingenHar } fr
 import { BYN, kyrkaId } from './egendom';
 import { troOf } from './religion';
 import { troshusRum, trosMobelBrist } from './troshus';
-import { Zone, amountOf, ingetIElden, bordanAv, flyttaLager, inZone, ownsId, pilesInne, put, stallBorta, usable, use, zoneAt, zonesOf } from './lager';
+import { Zone, amountOf, eldRutor, ingetIElden, bordanAv, flyttaLager, inZone, ownsId, pilesInne, put, stallBorta, usable, use, zoneAt, zonesOf } from './lager';
 import { PLATS } from './plats';
 import { balans } from './balans';
 import { Hus, Rum, bitAt, blocked, gridOf, housesOf, husById, roofed, roomAt, touch } from './byggnad';
@@ -806,10 +806,11 @@ function siteBrasa(s: State) {
   const mal = brasaMal(s);
   if (!mal) return undefined;
   const R = STATION.brasaSok, cx = Math.floor(mal.x), cy = Math.floor(mal.y);
+  const eld = eldRutor(s); // inte på en ruta där en eld redan står (steg 12.1.194)
   let best: { x: number; y: number; rot?: 1 } | undefined, bs = Infinity;
   for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
     const x = cx + dx, y = cy + dy, d = Math.hypot(x + 0.5 - mal.x, y + 0.5 - mal.y);
-    if (d > R || x < 1 || y < 1 || x >= W - 1 || y >= H - 1 || roomAt(s, x, y) || !ledig(s, x, y) || !friRunt(s, [{ x, y }])) continue;
+    if (d > R || x < 1 || y < 1 || x >= W - 1 || y >= H - 1 || eld.has(y * W + x) || roomAt(s, x, y) || !ledig(s, x, y) || !friRunt(s, [{ x, y }])) continue;
     const sc = Math.abs(d - STATION.brasaFran);
     if (sc < bs) { bs = sc; best = { x, y }; }
   }
@@ -911,7 +912,7 @@ function sokUte(s: State, k: string) {
 }
 // inne: en golvruta i rummet där ingen station står, inget ligger och som inte är en lagerplats
 // står en eld eller en härd (två gånger två rutor) på rutan?
-const eldPa = (s: State, x: number, y: number) => (s.eldar ?? []).some(f => f.at && x >= f.at.x && y >= f.at.y && x < f.at.x + (f.hearth === 'hard' ? 2 : 1) && y < f.at.y + (f.hearth === 'hard' ? 2 : 1));
+const eldPa = (s: State, x: number, y: number) => (s.eldar ?? []).some(f => eldensRutor(f).some(q => q.x === x && q.y === y));
 function golvFri(s: State, rum: Set<number>, x: number, y: number) {
   const i = y * W + x;
   return rum.has(i) && !stationRutor(s).at.has(i) && !stationRutor(s).sitt.has(i) && !zonesOf(s).some(z => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)
@@ -928,7 +929,7 @@ const iIngang = (s: State, x: number, y: number, w: number, h: number) => rutorA
 // golv och tar ingen ruta. Ett rum utan öppning (ett hus vars dörr rasat) prövas inte
 export function golvNas(s: State, r: Rum, ny: readonly number[] = []) {
   const at = stationRutor(s).at, eld = new Map<number, number>();
-  for (const [n, f] of (s.eldar ?? []).entries()) if (f.at) { const m = f.hearth === 'hard' ? 2 : 1; for (let j = 0; j < m; j++) for (let i = 0; i < m; i++) eld.set((f.at.y + j) * W + f.at.x + i, -1 - n); }
+  for (const [n, f] of (s.eldar ?? []).entries()) for (const q of eldensRutor(f)) eld.set(q.y * W + q.x, -1 - n);
   // vad som står på rutan: stationens id, en eld (under noll), den nya saken (NaN) eller inget
   const pa = (i: number): number | undefined => ny.includes(i) ? NaN : at.get(i)?.id ?? eld.get(i);
   const ingang = r.tiles.filter(i => GRANNAR4.some(([dx, dy]) => bitAt(s, i % W + dx, Math.floor(i / W) + dy)?.k === 'oppning'));

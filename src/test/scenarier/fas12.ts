@@ -1246,7 +1246,7 @@ SCENARIER.virkeklyv = {
 };
 
 SCENARIER.eldruta = {
-  text: 'Inget ligger i elden (steg 12.1.153): en ruta med en eld, brasa eller härd tar inte emot högar, varken i en lagerplats eller när någon släpper sin börda, och det som redan ligger där flyttas till närmaste fria ruta',
+  text: 'Inget ligger i elden (steg 12.1.153, 12.1.194, 12.1.207): en ruta med en eld, brasa eller härd (husets härd på två gånger två rutor) tar inte emot högar, stenarna från en lägereld som tas isär läggs bredvid andra eldar, varken i en lagerplats eller när någon släpper sin börda, och det som redan ligger där flyttas till närmaste fria ruta',
   kor: () => {
     const s = SIM.createState(9, START), z = SIM.zonesOf(s)[0], at = { x: z.x, y: z.y }, i = at.y * SIM.W + at.x;
     const pa = (x: number, y: number) => SIM.stacksOf(s).filter(a => a.x === x && a.y === y && a.n > 0);
@@ -1272,6 +1272,15 @@ SCENARIER.eldruta = {
     s.stationer!.push(ort);
     const eld = SIM.eldRutor(s), hard = SIM.delarAv(ort).filter(q => q.del?.eld), ovr = SIM.delarAv(ort).filter(q => !q.del?.eld);
     const iHard = hard.length > 0 && hard.every(q => eld.has(q.y * SIM.W + q.x)) && ovr.every(q => !eld.has(q.y * SIM.W + q.x));
+    // husets härd tar två gånger två rutor (steg 12.1.207)
+    const hx = at.x + 3, hy = at.y + 12, husHard = { ...SIM.newFire(), hearth: 'hard', at: { x: hx, y: hy } } as SIM.Fire; s.eldar!.push(husHard);
+    const e2 = SIM.eldRutor(s), fyra = [[0, 0], [1, 0], [0, 1], [1, 1]].every(([dx, dy]) => e2.has((hy + dy) * SIM.W + hx + dx)) && !e2.has((hy + 2) * SIM.W + hx);
+    // en lägereld som står i härdens hörn tas isär: stenarna läggs inte i härden (steg 12.1.194)
+    const brasa = { ...SIM.newFire(), at: { x: hx + 1, y: hy + 1 } } as SIM.Fire; s.eldar!.push(brasa);
+    const stenAlla = () => SIM.stacksOf(s).filter(a => a.k === 'sten' && a.n > 0), stenFore = stenAlla().reduce((t, a) => t + a.n, 0);
+    SIM.taIsar(s, brasa);
+    const e3 = SIM.eldRutor(s), stenNu = stenAlla();
+    const isar = stenNu.reduce((t, a) => t + a.n, 0) > stenFore && stenNu.every(a => !e3.has(a.y * SIM.W + a.x)) && !(s.eldar ?? []).includes(brasa);
     return [
       ['det som låg där brasan lades flyttas', flyttad],
       ['brasans ruta hör till eldrutorna', eld.has(i)],
@@ -1279,6 +1288,8 @@ SCENARIER.eldruta = {
       ['den som släpper sin börda i brasan lägger den bredvid', borda],
       ['inget läggs i den första elden', forsta],
       ['örtkökets härd är en eldruta, men inte resten av köket', iHard],
+      ['husets härd är fyra eldrutor', fyra],
+      ['stenarna från en lägereld som tas isär läggs inte i en annan eld', isar],
     ];
   },
 };
