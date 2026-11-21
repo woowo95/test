@@ -1768,3 +1768,21 @@ SCENARIER.utvisning = {
     ];
   },
 };
+
+SCENARIER.forstatamdjur = {
+  text: 'Steg 12.1.254: en sparad by som redan har tamdjur får ingen notis om sitt första tamdjur när nästa djur föds; uppgraderingen sätter räknaren forstaTamdjur, och en by utan djur får notisen',
+  kor: () => {
+    const s = SIM.cloneState(testBy(1)), [p] = SIM.living(s);
+    const notiser = (b: SIM.State) => (b.notiser?.lista ?? []).filter(n => n.id === 'tamdjur').reduce((a, n) => a + n.n, 0);
+    const med = SIM.cloneState(s); SIM.nyttTamdjur(med, 'get', p!.x, p!.y, p!.id); if (med.stat) delete med.stat.forstaTamdjur; med.notiser = undefined; med.v = 65;
+    const b = SIM.migrate(JSON.parse(JSON.stringify(med)) as SIM.State);
+    SIM.nyttTamdjur(b, 'get', p!.x, p!.y, p!.id);
+    const utan = SIM.cloneState(s); utan.tamdjur = []; for (const k of Object.keys(utan.stat ?? {})) if (k.startsWith('tam_') || k === 'forstaTamdjur') delete utan.stat![k]; utan.notiser = undefined; utan.v = 65;
+    const c = SIM.migrate(JSON.parse(JSON.stringify(utan)) as SIM.State);
+    SIM.nyttTamdjur(c, 'get', p!.x, p!.y, p!.id);
+    return [
+      [`byn med tamdjur får ingen notis om det första (${notiser(b)} notiser, räknaren ${b.stat?.forstaTamdjur})`, notiser(b) === 0],
+      [`byn utan tamdjur får notisen (${notiser(c)})`, notiser(c) === 1],
+    ];
+  },
+};

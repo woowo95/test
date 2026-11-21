@@ -302,6 +302,10 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   [65, 'varje tanke bär nyckeln till sin rad i TANKAR (steg 12.1.234): en sparad tanke utan nyckel får raden vars mönster passar bäst, och en tanke utan rad tas bort', s => {
     for (const p of s.people) p.thoughts = p.thoughts.flatMap(t => { if (t.k !== undefined) return [t]; const k = tankeNyckel(t); return k ? [{ ...t, k }] : []; });
   }],
+  [66, 'en by som har eller har haft tamdjur har fått sitt första (steg 12.1.254): räknaren forstaTamdjur sätts, så att notisen om det första inte kommer', s => {
+    const haft = (s.tamdjur?.length ?? 0) > 0 || Object.keys(s.stat ?? {}).some(k => k.startsWith('tam_') && (s.stat![k] ?? 0) > 0);
+    if (haft && !s.stat?.forstaTamdjur) (s.stat ??= {}).forstaTamdjur = 1;
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }
