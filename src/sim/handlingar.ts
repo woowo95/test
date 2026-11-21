@@ -45,6 +45,9 @@ interface ActDef {
   syn?: true; // arbetet går sämre för den som ser dåligt (steg 8.2.2)
   yrke?: string; // den som gör detta klart mer än andra kallas så (yrkestaggarna, YRKEN i seder.ts)
   slag?: Slag; // slaget av arbete, som syns som en symbol över huvudet medan den görs (SLAG)
+  sitta?: true; // görs sittande när det finns en plats att sitta på (bilden, ui/stalle.ts); annars står man
+  vidRutan?: true; // arbetet görs på en ruta (ett träd, en stam, en stubbe): figuren står på en ruta intill, vänd mot den (ui/stalle.ts)
+  ansikte?: 'arg' | 'lugn' | 'radd'; // ansiktet handlingen ger i striden (ui/stridansikte.ts): arg, allvarlig eller rädd
   tecken?: string; // symbolen för en handling utan slag (personrutans tårtdiagram över tiden)
   ikon?: string; // pixelsymbolen över huvudet (ikoner.ts), t.ex. toa (steg 3.10.3); går före slagets symbol (skattningen, steg 11.14.1)
   verb?: string; // vid en bänk (steg 3.10.3): det man gör, kort, som i "Arkiv rensar" och saken bredvid. Saknas = gör
@@ -115,24 +118,24 @@ const DEF = {
   sport: { namn: 'Spelar', verktyg: {} as Record<string, string>, slag: 'leka', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
   // publiken (steg 10.7.16, sport.ts): står i en ring runt matchen och hejar; task.tool är sporten och task.ref matchens start
   titta: { namn: 'Tittar på matchen', verktyg: {} as Record<string, string>, slag: 'prata', vila: true, social: true, dygn: true, stilla: true, plats: 'lek' },
-  vila: { namn: 'Vilar', yrke: 'Dagdrivare', slag: 'vila', vila: true, dygn: true, plats: 'sang' },
-  samtal: { namn: 'Samtalar vid elden', slag: 'prata', vila: true, social: true, dygn: true, plats: 'elden', varjeSlag: true },
+  vila: { namn: 'Vilar', sitta: true, yrke: 'Dagdrivare', slag: 'vila', vila: true, dygn: true, plats: 'sang' },
+  samtal: { namn: 'Samtalar vid elden', sitta: true, slag: 'prata', vila: true, social: true, dygn: true, plats: 'elden', varjeSlag: true },
   ata: { namn: 'Äter vid förrådet', tecken: '🍽️', vila: true, dygn: true, stilla: true }, // den hungrige går till maten (steg 11.1.77)
-  maltid: { namn: 'Äter vid bordet', tecken: '🍽️', vila: true, social: true, skamfri: true, dygn: true, stilla: true, plats: 'bord' }, // steg 2.2.15
+  maltid: { namn: 'Äter vid bordet', sitta: true, tecken: '🍽️', vila: true, social: true, skamfri: true, dygn: true, stilla: true, plats: 'bord' }, // steg 2.2.15
   // framträdandena (steg 4.3.2, framtradande.ts): på kvällen vid elden; task.tool är formen och task.ref när det började
   upptrada: { namn: 'Uppträder', verktyg: { kvade: 'Kväder', tal: 'Håller tal', forelasning: 'Föreläser', teater: 'Spelar teater', sang: 'Sjunger', musik: 'Spelar musik' }, slag: 'prata', dygn: true, stilla: true, plats: 'elden' },
-  lyssna: { namn: 'Lyssnar', tecken: '👂', vila: true, dygn: true, stilla: true, plats: 'elden' },
-  beratta: { namn: 'Berättar vid elden', yrke: 'Berättare', slag: 'prata', social: true, dygn: true, plats: 'elden' },
+  lyssna: { namn: 'Lyssnar', sitta: true, tecken: '👂', vila: true, dygn: true, stilla: true, plats: 'elden' },
+  beratta: { namn: 'Berättar vid elden', sitta: true, yrke: 'Berättare', slag: 'prata', social: true, dygn: true, plats: 'elden' },
   hantverk: { namn: 'Gör handarbete', yrke: 'Hantverkare', slag: 'hantverk', verktyg: { rep: 'Tvinnar rep' }, vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'elden' },
-  vakt: { namn: 'Håller vakt', yrke: 'Väktare', tecken: '👁️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.6, fortsatter: ['varg'] as const },
+  vakt: { namn: 'Håller vakt', ansikte: 'lugn', yrke: 'Väktare', tecken: '👁️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.6, fortsatter: ['varg'] as const },
   // när vargar är nära (steg 3.7.15, varg.ts): de svaga gömmer sig i huset, de modiga väntar med vapen vid elden
   // nöden avbryter inte den som gömmer sig eller väntar med vapen (nodFri): faran väljer ändå samma sak igen, och förut valde den som behövde gå på toa om sin uppgift i varje slag så länge vargarna var nära
-  gomma: { namn: 'Gömmer sig', tecken: '🫣', dygn: true, stilla: true, plats: 'sang', nodFri: true, fortsatter: ['varg'] as const },
-  forsvar: { namn: 'Väntar på vargarna med vapen', tecken: '🛡️', social: true, tyst: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.2, nodFri: true, fortsatter: ['varg'] as const, varjeSlag: true },
+  gomma: { namn: 'Gömmer sig', ansikte: 'radd', tecken: '🫣', dygn: true, stilla: true, plats: 'sang', nodFri: true, fortsatter: ['varg'] as const },
+  forsvar: { namn: 'Väntar på vargarna med vapen', ansikte: 'arg', tecken: '🛡️', social: true, tyst: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.2, nodFri: true, fortsatter: ['varg'] as const, varjeSlag: true },
   // mot rövare (steg 9.2.74, rovare.ts): man väntar vid förrådet, dit rövarna är på väg, och platsen sätts i rovarSkydd
   budRovare: { namn: 'Hämtar folk', tecken: '🏃', social: true, skamfri: true, dygn: true, fortsatter: ['varg'] as const }, // budbäraren (steg 9.2.117)
-  hjalpaRovare: { namn: 'Håller sig bakom kämparna', tecken: '🤲', social: true, skamfri: true, dygn: true, stilla: true, nodFri: true, fortsatter: ['varg'] as const }, // steg 9.2.116
-  forsvarRovare: { namn: 'Väntar på rövarna med vapen', tecken: '🛡️', social: true, tyst: true, skamfri: true, dygn: true, stilla: true, vapen: true, nodFri: true, fortsatter: ['varg'] as const, varjeSlag: true },
+  hjalpaRovare: { namn: 'Håller sig bakom kämparna', ansikte: 'arg', tecken: '🤲', social: true, skamfri: true, dygn: true, stilla: true, nodFri: true, fortsatter: ['varg'] as const }, // steg 9.2.116
+  forsvarRovare: { namn: 'Väntar på rövarna med vapen', ansikte: 'arg', tecken: '🛡️', social: true, tyst: true, skamfri: true, dygn: true, stilla: true, vapen: true, nodFri: true, fortsatter: ['varg'] as const, varjeSlag: true },
   sova: { namn: 'Sover', slag: 'vila', under: { go: 'går och lägger sig' }, vila: true, stilla: true, plats: 'sang' },
   elda: { namn: 'Lägger ved på elden', yrke: 'Eldvaktare', slag: 'elda', under: { go: 'hämtar ved', back: 'bär ved till elden' }, ger: 'ved' },
   tanda: { namn: 'Försöker tända elden', yrke: 'Eldvaktare', slag: 'elda', varjeSlag: true },
@@ -169,10 +172,10 @@ const DEF = {
   // vattensäcken (steg 2.10.1, torst.ts): fylls vid vattnet och bärs till den som inte kan gå. Den slits en gång per tur
   vatten: { namn: 'Hämtar vatten', tecken: '🫗', under: { go: 'fyller vattensäcken', back: 'bär vatten' }, redskap: { vattensack: { tar: 'Tar vattensäcken.', haller: 150, kravs: true }, lerkruka_mellan: { tar: 'Tar en lerkruka.', haller: 150 } }, slits: { enhet: 'turer med vatten', per: 'gang' }, framme: true }, // eller i en mellanstor lerkruka (steg 9.4.12)
   kol: { namn: 'Hämtar kol ur den slocknade elden', tecken: '⚫', plats: 'kol' },
-  falla: { namn: 'Fäller ett träd med yxa', yrke: 'Trähuggare', slag: 'tra', redskap: { jarnyxa: { haller: 400, kravs: true, fart: 3 }, yxa: { haller: 85, kravs: true } }, slits: { enhet: 'träd', per: 'gang' }, arbete: 'ved', takt: 0, tungt: true, framme: true },
-  hugga: { namn: 'Hugger ved av ett fällt träd', yrke: 'Trähuggare', slag: 'tra', redskap: { jarnyxa: { haller: 400, kravs: true, ger: 3 }, yxa: { haller: 85, kravs: true } }, slits: { enhet: 'träd' }, arbete: 'ved', ger: 'ved', takt: 20, tungt: true },
+  falla: { namn: 'Fäller ett träd med yxa', vidRutan: true, yrke: 'Trähuggare', slag: 'tra', redskap: { jarnyxa: { haller: 400, kravs: true, fart: 3 }, yxa: { haller: 85, kravs: true } }, slits: { enhet: 'träd', per: 'gang' }, arbete: 'ved', takt: 0, tungt: true, framme: true },
+  hugga: { namn: 'Hugger ved av ett fällt träd', vidRutan: true, yrke: 'Trähuggare', slag: 'tra', redskap: { jarnyxa: { haller: 400, kravs: true, ger: 3 }, yxa: { haller: 85, kravs: true } }, slits: { enhet: 'träd' }, arbete: 'ved', ger: 'ved', takt: 20, tungt: true },
   // virket (steg 4.5.5.2): kluvna stockar ur en fälld stam, till stationerna och möblerna. Ett projekt (projekt.ts)
-  klyva: { namn: 'Klyver virke ur ett fällt träd', yrke: 'Trähuggare', slag: 'tra', redskap: { jarnyxa: { haller: 400, kravs: true, ger: 3 }, yxa: { haller: 85, kravs: true } }, slits: { enhet: 'träd' }, arbete: 'ved', ger: 'virke', takt: 5, tungt: true },
+  klyva: { namn: 'Klyver virke ur ett fällt träd', vidRutan: true, yrke: 'Trähuggare', slag: 'tra', redskap: { jarnyxa: { haller: 400, kravs: true, ger: 3 }, yxa: { haller: 85, kravs: true } }, slits: { enhet: 'träd' }, arbete: 'ved', ger: 'virke', takt: 5, tungt: true },
   yxa: { namn: 'Gör en yxa av en pinne och flinta', slag: 'hantverk', hantverk: true, plats: 'station' },
   spjut: { namn: 'Täljer ett spjut', verktyg: { flintspjut: 'Gör ett flintspjut' }, slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' },
   nat: { namn: 'Knyter ett nät', slag: 'hantverk', hantverk: true, plats: 'station' }, // bara vid slöjdbänken (steg 9.6.16)
@@ -317,7 +320,7 @@ const DEF = {
   smida: { namn: 'Smider', yrke: 'Smed', slag: 'hantverk', hantverk: true, plats: 'station', verb: 'smider' }, // vid städet i smedjan (smedja.ts, steg 12.2.4)
   passa: { namn: 'Ser till bränningen', yrke: 'Kolare', slag: 'hantverk', plats: 'station', verb: 'ser till' }, // tillsynen vid en bränning (brann.ts, steg 12.2.2)
   bryta: { namn: 'Bryter sten vid berget', slag: 'bygga', tungt: true, framme: true, redskap: { jarnhacka: { haller: 150, fart: 3 } }, slits: { enhet: 'stenar', per: 'gang' } }, // en byggsten, som blir liggande där (byggsten.ts, steg 10.10.5); järnhackan bryter tre gånger så fort (steg 12.5.4)
-  stubbe: { namn: 'Gräver bort en stubbe', slag: 'odla', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'stubbar', per: 'gang' }, tungt: true, framme: true, framfor: true }, // där något ska byggas (skog.ts, steg 6.5.7)
+  stubbe: { namn: 'Gräver bort en stubbe', vidRutan: true, slag: 'odla', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'stubbar', per: 'gang' }, tungt: true, framme: true, framfor: true }, // där något ska byggas (skog.ts, steg 6.5.7)
   flyttStation: { namn: 'Flyttar en station', slag: 'bygga', hantverk: true, stilla: true, framme: true, tungt: true }, // närmare dem som använder den (stationer.ts, steg 9.4.8)
   uppsatt: { namn: 'Sätter upp en fackla', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // där folk ofta är vakna i mörker (ljus.ts, steg 6.3.7)
   tillbehor: { namn: 'Gör ett tillbehör', slag: 'hantverk', verktyg: {}, hantverk: true, stilla: true, framme: true }, // till en station eller möbel (TILLBEHOR i stationer.ts); task.tool = sorten
@@ -339,14 +342,14 @@ const DEF = {
   // den som brinner släcker sig själv, och de som står nära hjälper till (steg 6.4.16, brand.ts)
   slackaSig: { namn: 'Släcker elden i kläderna', tecken: '🔥', stilla: true, fortsatter: ['brand'] as const, varjeSlag: true },
   hjalpaBrinnande: { namn: 'Släcker elden på någon', tecken: '🧯', stilla: true, fortsatter: ['brand'] as const, varjeSlag: true },
-  fly: { namn: 'Flyr ut i skogen', tecken: '🏃', ikon: 'utb2', vandra: { r: 3, h0: 1, h1: 3, v: 1.1 }, dygn: true },
+  fly: { namn: 'Flyr ut i skogen', ansikte: 'radd', tecken: '🏃', ikon: 'utb2', vandra: { r: 3, h0: 1, h1: 3, v: 1.1 }, dygn: true },
   badd: { namn: 'Ligger i bädden och orkar inte gå upp', tecken: '🛌', ikon: 'utb3', vila: true, dygn: true, stilla: true, plats: 'sang' }, // steg 3.2.3
   slut: { namn: 'Gör slut', tecken: '💔', ikon: 'utb3', dygn: true, stilla: true },
-  sla: { namn: 'Slår någon', tecken: '👊', ikon: 'utb3', verktyg: { misshandel: 'Misshandlar någon', drap: 'Slår ihjäl någon' }, dygn: true, stilla: true },
-  varna: { namn: 'Varnar', tecken: '⚠', social: true, tyst: true, skamfri: true, stilla: true, nodFri: true, fortsatter: ['varg'] as const, varjeSlag: true }, // steg 10.1.12 (rovare.ts): varnar de andra för rövarna
+  sla: { namn: 'Slår någon', ansikte: 'arg', tecken: '👊', ikon: 'utb3', verktyg: { misshandel: 'Misshandlar någon', drap: 'Slår ihjäl någon' }, dygn: true, stilla: true },
+  varna: { namn: 'Varnar', ansikte: 'lugn', tecken: '⚠', social: true, tyst: true, skamfri: true, stilla: true, nodFri: true, fortsatter: ['varg'] as const, varjeSlag: true }, // steg 10.1.12 (rovare.ts): varnar de andra för rövarna
   skilja: { namn: 'Går emellan', tecken: '🤝', social: true, tyst: true, skamfri: true, dygn: true, nodFri: true, varjeSlag: true }, // steg 10.1.4 (kartstrid.ts): går emellan dem som slåss
   undanStrid: { namn: 'Går undan från slagsmålet', tecken: '🚶', dygn: true }, // steg 10.1.4: går undan från en strid
-  strid: { namn: 'Slåss', tecken: '⚔️', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true, varjeSlag: true }, // steg 3.7.2 (strid.ts): står kvar i striden medan de andra behoven väntar
+  strid: { namn: 'Slåss', ansikte: 'arg', tecken: '⚔️', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true, varjeSlag: true }, // steg 3.7.2 (strid.ts): står kvar i striden medan de andra behoven väntar
   resa: { namn: 'Reser', tecken: '🎒', skamfri: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 11.5.5 (resa.ts): packar och går till samlingsplatsen vid byns utkant, och ut ur kartan med sällskapet
   bjornjakt: { namn: 'Jagar björn', slag: 'jaga', ger: 'bjorn', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 6.6.6 (bjorn.ts): en stor grupp med spjut, och den fällda björnen styckas och bärs hem
   vargjakt: { namn: 'Jagar varg', slag: 'jaga', ger: 'varg', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 3.7.1 (varg.ts): ledaren samlar jägare, och den fällda vargen bärs hem

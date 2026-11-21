@@ -469,9 +469,9 @@ function malFor(s: State, f: Rovarflock, r: Person) {
   if (f.gor === 'letar' || f.letar?.length) { const h = f.letar?.length ? husById(s, f.letar[0]) : undefined; if (h) return { x: h.x + h.w / 2, y: h.y + h.h / 2 }; }
   return taPlats(s, r) ?? malet(s);
 }
-export const ROVARHANDLINGAR: Record<RovarGor, { namn: string; poang: (c: RCtx) => number; gor: (c: RCtx) => void }> = {
+export const ROVARHANDLINGAR: Record<RovarGor, { namn: string; ansikte?: 'arg' | 'lugn' | 'radd'; poang: (c: RCtx) => number; gor: (c: RCtx) => void }> = {
   // till rastplatsen utanför byn, innan flocken anfaller
-  tillRast: { namn: 'Går mot rastplatsen', poang: c => !c.f.anfaller && c.f.rast && avst(c.r, c.f.rast) > ROVARE.rastR ? 1 : -1, gor: c => { ga(c, c.f.rast!); } },
+  tillRast: { namn: 'Går mot rastplatsen', ansikte: 'lugn', poang: c => !c.f.anfaller && c.f.rast && avst(c.r, c.f.rast) > ROVARE.rastR ? 1 : -1, gor: c => { ga(c, c.f.rast!); } },
   // på rastplatsen: vilar, går omkring lite och pratar med de andra
   // var och en vilar på sin egen plats runt rastplatsen, så att gänget sprider ut sig (steg 10.2.24)
   rasta: { namn: 'Rastar', poang: c => c.f.anfaller ? -1 : ROVARE.rastaPoang, gor: c => { const g = gr(c.r); if (!c.f.rast) return; if (g.vx === undefined && avst(c.r, c.f.rast) <= ROVARE.rastR && !rovarna(c.s, c.f).some(q => q !== c.r && avst(q, c.r) < 0.8)) { g.vx = c.r.x!; g.vy = c.r.y!; } /* vilar där hen står, om ingen står på samma plats (steg 10.2.94) */ g.vx ??= c.f.rast.x + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; g.vy ??= c.f.rast.y + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; if (avst(c.r, { x: g.vx, y: g.vy }) > 0.6) ga(c, { x: g.vx, y: g.vy }); } },
@@ -484,21 +484,21 @@ export const ROVARHANDLINGAR: Record<RovarGor, { namn: string; poang: (c: RCtx) 
     if (rnd(c.s, 'rovare') < c.dt / ROVARE.pratSek) rovarPrat.prata?.(c.s, c.r, o, c.ev); // ungefär ett samtal på pratSek sekunder
   } },
   // mot målet när flocken anfaller
-  motMalet: { namn: 'Går mot byn', poang: c => c.f.anfaller && !gr(c.r).nojd && !c.f.klar && avst(c.r, c.mal) > ROVARE.nara ? 1 : -1, gor: c => { if (ga(c, c.mal) < 0) gr(c.r).flytt = true; } }, // ingen väg dit: hen ger upp
+  motMalet: { namn: 'Går mot byn', ansikte: 'lugn', poang: c => c.f.anfaller && !gr(c.r).nojd && !c.f.klar && avst(c.r, c.mal) > ROVARE.nara ? 1 : -1, gor: c => { if (ga(c, c.mal) < 0) gr(c.r).flytt = true; } }, // ingen väg dit: hen ger upp
   // slår den som står i vägen: den som står emot inom ROVARE.moter. Modet drar till striden och övermakten från den
   // den som inte står emot men står i vägen slår bara den aggressiva, när inget annat lockar mer
-  sla: { namn: 'Slåss', poang: c => c.fiende ? 1.5 + ROVARE.slaMod * (stat(c.r, 'mod', c.s.now) - 10) / 10 - ROVARE.slaHot * Math.max(0, c.hot - 1) : c.ivagen ? ROVARE.slaIvagen * stat(c.r, 'aggression', c.s.now) / 10 + rnd(c.s, 'rovare') * ROVARE.valBrus : -1, gor: c => slaSteg(c) },
+  sla: { namn: 'Slåss', ansikte: 'arg', poang: c => c.fiende ? 1.5 + ROVARE.slaMod * (stat(c.r, 'mod', c.s.now) - 10) / 10 - ROVARE.slaHot * Math.max(0, c.hot - 1) : c.ivagen ? ROVARE.slaIvagen * stat(c.r, 'aggression', c.s.now) / 10 + rnd(c.s, 'rovare') * ROVARE.valBrus : -1, gor: c => slaSteg(c) },
   // mötet på vägen (steg 10.2.26): den som inte står emot men är nära kan hotas bort eller bli av med det hen bär, efter modet och
   // målet; annars går rövaren förbi mot byn. Slumpen (valBrus) gör att olika rövare väljer olika
-  hota: { namn: 'Hotar', poang: c => c.ivagen && !c.fiende ? ROVARE.hotaPoang * stat(c.r, 'mod', c.s.now) / 10 + c.brus('hota') * ROVARE.valBrus : -1, gor: c => motet(c, false) },
-  taBorda: { namn: 'Tar det hen bär', poang: c => c.ivagen && !c.fiende && !!c.ivagen.task && isCarrying(c.ivagen.task) ? ROVARE.taBordaPoang * (1 - c.last / ROVARE.bar) + c.brus('taBorda') * ROVARE.valBrus : -1, gor: c => motet(c, true) },
+  hota: { namn: 'Hotar', ansikte: 'arg', poang: c => c.ivagen && !c.fiende ? ROVARE.hotaPoang * stat(c.r, 'mod', c.s.now) / 10 + c.brus('hota') * ROVARE.valBrus : -1, gor: c => motet(c, false) },
+  taBorda: { namn: 'Tar det hen bär', ansikte: 'arg', poang: c => c.ivagen && !c.fiende && !!c.ivagen.task && isCarrying(c.ivagen.task) ? ROVARE.taBordaPoang * (1 - c.last / ROVARE.bar) + c.brus('taBorda') * ROVARE.valBrus : -1, gor: c => motet(c, true) },
   // tar ur förrådet när ingen står emot i närheten
-  ta: { namn: 'Tar ur förrådet', poang: c => c.f.anfaller && !c.fiende && !gr(c.r).nojd && avst(c.r, c.mal) <= ROVARE.nara + 0.5 && !c.f.klar ? 1.2 : -1, gor: c => taSteg(c) },
+  ta: { namn: 'Tar ur förrådet', ansikte: 'arg', poang: c => c.f.anfaller && !c.fiende && !gr(c.r).nojd && avst(c.r, c.mal) <= ROVARE.nara + 0.5 && !c.f.klar ? 1.2 : -1, gor: c => taSteg(c) },
   // bär hem bytet
   // bär hem bytet: när hen tagit det hen orkar eller inget mer finns (nojd), när flocken är klar, eller när någon står emot och hen redan bär något
-  baraHem: { namn: 'Bär hem bytet', poang: c => gr(c.r).nojd || c.f.klar || (c.last > 0 && !!c.fiende) ? 2 : -1, gor: c => hemat(c) },
+  baraHem: { namn: 'Bär hem bytet', ansikte: 'radd', poang: c => gr(c.r).nojd || c.f.klar || (c.last > 0 && !!c.fiende) ? 2 : -1, gor: c => hemat(c) },
   // flyr: blodet, övermakten hen ser, modet och hur många i flocken som är kvar
-  fly: { namn: 'Flyr', poang: c => (gr(c.r).flytt ? 3 : -0.6) + ROVARE.flyBlod * (1 - c.r.blod) + ROVARE.flyHot * Math.max(0, c.hot - 1) * (1 - (stat(c.r, 'mod', c.s.now) - 10) / 10) + ROVARE.flyDoda * (1 - c.kvar / Math.max(1, c.f.antal ?? c.kvar)), gor: c => { gr(c.r).flytt = true; hemat(c); } },
+  fly: { namn: 'Flyr', ansikte: 'radd', poang: c => (gr(c.r).flytt ? 3 : -0.6) + ROVARE.flyBlod * (1 - c.r.blod) + ROVARE.flyHot * Math.max(0, c.hot - 1) * (1 - (stat(c.r, 'mod', c.s.now) - 10) / 10) + ROVARE.flyDoda * (1 - c.kvar / Math.max(1, c.f.antal ?? c.kvar)), gor: c => { gr(c.r).flytt = true; hemat(c); } },
 };
 const RGOR = Object.keys(ROVARHANDLINGAR) as RovarGor[];
 // går mot punkten, i en bybos fart med samma vägsökning. Svarar hur långt det är kvar, −1 när det inte finns någon väg

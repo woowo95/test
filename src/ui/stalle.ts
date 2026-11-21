@@ -3,27 +3,26 @@
 // stationRutor i stationer.ts) eller på stolen vid en bänk, och gåanimationen bara när figuren flyttat sig sedan förra bilden
 import { ACTS, STATION, arbetsDel, blocked, forflyttar, isKlar, kroppFart, lekGang, sittAt, sparPlats, sparUppgift, stationAt, stationDef, stationerOf, storlekAv, vidStation, type Person, type State, type Station } from '../sim';
 
-// handlingarna man gör sittande när det finns en plats att sitta på; annars står man
-export const SITTA = new Set(['maltid', 'samtal', 'vila', 'lyssna', 'beratta']);
+// handlingarna man gör sittande när det finns en plats att sitta på (fältet sitta i ACTS); annars står man
+export const sittande = (gor: string) => !!(ACTS as Record<string, { sitta?: true }>)[gor]?.sitta;
 export type Stalle = 'sitta' | 'ga' | 'sta' | 'ligga';
 // gor = handlingen hen gör på platsen (fasen do), vidBank = hen arbetar på stolen vid en bänk, rorde = figuren har flyttat
 // sig sedan förra bilden
 export function stalle(s: State, l: { ligger: boolean; gor?: string; x: number; y: number; vidBank: boolean; rorde: boolean }): Stalle {
   if (l.ligger) return 'ligga';
-  if (l.vidBank || l.gor && SITTA.has(l.gor) && sittAt(s, l.x, l.y)) return 'sitta';
+  if (l.vidBank || l.gor && sittande(l.gor) && sittAt(s, l.x, l.y)) return 'sitta';
   if (l.gor === 'vila') return 'ligga'; // vilan utan sittplats: man ligger på marken, aldrig stående (steg 10.2.76)
   return l.rorde ? 'ga' : 'sta';
 }
 
 // stå vid arbetet (steg 10.2.78): den som arbetar med en ruta (fäller ett träd, hugger eller klyver en stam, gräver bort en stubbe)
 // står på en ruta intill, helst söder om den, och är vänd mot den. Simuleringen har arbetet på rutan; bilden ställer figuren bredvid
-export const RUTA_ARBETEN = new Set(['falla', 'hugga', 'klyva', 'stubbe']);
 export type Riktning = 'fram' | 'bak' | 'sida' | 'vast';
 const SIDOR: [number, number, Riktning][] = [[0, 1, 'bak'], [-1, 0, 'sida'], [1, 0, 'vast'], [0, -1, 'fram']]; // rutan intill och hållet mot arbetet
 // samRuta (steg 12.1.33): rutorna intill som andra som arbetar redan står på i bilden; den som arbetar på samma ruta som en
 // annan står då bredvid, på nästa fria sida, i stället för ovanpå. Är alla sidor tagna står hen på den första
 export function vidArbetet(s: State, gor: string | undefined, x: number, y: number, samRuta?: Set<number>): { x: number; y: number; rikt: Riktning } | undefined {
-  if (!gor || !RUTA_ARBETEN.has(gor)) return undefined;
+  if (!gor || !(ACTS as Record<string, { vidRutan?: true }>)[gor]?.vidRutan) return undefined; // fältet vidRutan i ACTS
   const rx = Math.floor(x), ry = Math.floor(y);
   let forsta: { x: number; y: number; rikt: Riktning } | undefined;
   for (const [dx, dy, rikt] of SIDOR) {

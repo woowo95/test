@@ -8,7 +8,7 @@ import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
 import { medTal, testBy, stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank, utanWebblasare, styreTimme } from './hjalp';
-import { GANG_MIN, garNu, simPlats, stalle, SITTA, vidArbetet, vidStationen } from '../../ui/stalle';
+import { GANG_MIN, garNu, simPlats, stalle, sittande, vidArbetet, vidStationen } from '../../ui/stalle';
 import { styre as styreFlikF } from '../../ui/flikar/styre';
 import { setByn, ui as uiLage } from '../../ui/lage';
 import { hjalpKlick } from '../../ui/hjalp';
@@ -2867,7 +2867,7 @@ SCENARIER.stalle = {
           if (gor) { const r = per.get(gor) ?? { n: 0, ga: 0 }; r.n++; if (l === 'ga') r.ga++; per.set(gor, r); }
           if (l === 'sitta') { sitter++; if (!SIM.sittAt(s, x, y)) { sittUtan++; forst ||= `${p.name} sitter utan sittplats (${tk?.act})`; } }
           if (l === 'ga') { gar++; if (!flyttas && (ACTS as Record<string, { slag?: string }>)[gor ?? '']?.slag !== 'leka') { garStilla++; forst ||= `${p.name} går när spåret står still (${tk?.act} ${tk?.phase})`; } }
-          if (l === 'sta' && gor && SITTA.has(gor)) star++;
+          if (l === 'sta' && gor && sittande(gor)) star++;
           // stå vid arbetet (steg 10.2.78): den som arbetar med en ruta ritas på en ruta intill och vänd mot den
           const va = gor ? vidArbetet(s, gor, x, y) : undefined;
           if (va) {
