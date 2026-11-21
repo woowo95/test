@@ -1182,6 +1182,9 @@ SCENARIER.bubbla = {
     const rad: F = { tag: 'li', attr: { title: 'Tryck för alla röster', 'data-hjalp': 'x' }, cls: 'klick' }, iRad: F = { tag: 'span', attr: { title: 'Ja' }, upp: rad };
     const knapp: F = { tag: 'button', attr: { title: 'Visa', 'data-id': '3' } };
     const svg: F = { tag: 'svg', attr: {}, svgTitle: 'Vikt 4 av 5' }, svgDel: F = { tag: 'path', attr: {}, upp: svg };
+    // runstenarna (steg 12.1.224): den som öppnar en flik ger ingen bubbla efter trycket, den bleka visar vad som krävs
+    const sten: F = { tag: 'button', attr: { title: 'Styre', 'data-tab': 'styre' }, cls: 'runsten' }, stenBild: F = { tag: 'img', attr: {}, upp: sten };
+    const blek: F = { tag: 'button', attr: { title: 'Tro: kräver en tro', 'aria-disabled': 'true' }, cls: 'runsten' };
     // bubblan i ett låtsasdokument
     const g = globalThis as { document?: unknown; innerWidth?: number; innerHeight?: number };
     const [d0, w0, h0] = [g.document, g.innerWidth, g.innerHeight];
@@ -1208,6 +1211,7 @@ SCENARIER.bubbla = {
       ['ett tryck på något annat med förklaring visar dess text', annan],
       ['ett tryck på en knapp visar ingen bubbla', knappIngen],
       // steg 11.1.1: med fingret visar knappar sin förklaring, men en rad som fälls ut gör det inte
+      [`med fingret står ingen bubbla kvar efter trycket på en runsten som öppnar en flik (${forklaringAv(el(stenBild), true)?.text}), den bleka visar vad som krävs (${forklaringAv(el(blek), true)?.text})`, !forklaringAv(el(stenBild), true) && forklaringAv(el(blek), true)?.text === blek.attr.title],
       ['med fingret ger en rad som fälls ut ingen bubbla, men en knapp ger sin förklaring', !forklaringAv(el(iRad), true) && !forklaringAv(el(rad), true) && forklaringAv(el(knapp), true)?.text === 'Visa'],
     ];
   },
