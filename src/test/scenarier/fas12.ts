@@ -1431,7 +1431,10 @@ SCENARIER.bladkand = {
 SCENARIER.ikapparbetare = {
   text: 'Ikappräkningen i en arbetare (steg 12.1.178): byn lämnas över till arbetaren med talen oavrundade och kommer tillbaka exakt som sidan själv hade räknat fram den, också när arbetaren räknar i bitar och skickar ögonblicksbilder under tiden',
   kor: () => {
-    const s = SIM.cloneState(testBy(10)), delar = SIM.overlamna(s), mal = s.now + 3 * SIM.HOUR;
+    // byn räknas i sidan till mitt i en timme, så att minnena med timmen som nyckel finns (steg 12.1.248)
+    const s = SIM.cloneState(testBy(10)), mitt = Math.floor(s.now / SIM.HOUR) * SIM.HOUR + 1.5 * SIM.HOUR;
+    while (s.now < mitt) SIM.step(s, SIM.nastaSteg(s));
+    const delar = SIM.overlamna(s), t0 = s.now, mal = s.now + 3 * SIM.HOUR;
     const igen = SIM.overlamna(SIM.franOverlamning(delar));
     const dir = mkdtempSync(join(tmpdir(), 'ikapp-')), in_ = join(dir, 'in.json');
     writeFileSync(in_, JSON.stringify({ delar, mal }));
@@ -1442,11 +1445,18 @@ SCENARIER.ikapparbetare = {
     const lika = (a: Record<string, string>, b: Record<string, string>) => { const k = Object.keys(a).sort(); return k.join() === Object.keys(b).sort().join() && k.every(d => a[d] === b[d]); };
     const olika = Object.keys(hel.delar).filter(d => hel.delar[d] !== bit.delar[d]);
     const fram = SIM.franOverlamning(bit.delar);
+    // sidan räknar vidare själv, med sina minnen: det blir samma by som arbetarens
+    while (s.now < mal && !SIM.storStridNu(s)) SIM.step(s, SIM.nastaSteg(s));
+    const sida = SIM.overlamna(s), sidaOlika = Object.keys(sida).filter(d => sida[d] !== hel.delar[d]);
+    // fälten i byn kan stå i en annan ordning när sidan själv lagt till dem: innehållet jämförs (steg 12.1.248)
+    const kanon = (v: unknown): unknown => Array.isArray(v) ? v.map(kanon) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map(k => [k, kanon((v as Record<string, unknown>)[k])])) : v;
+    const sammaInnehall = sidaOlika.every(d => !!hel.delar[d] && JSON.stringify(kanon(JSON.parse(sida[d]!))) === JSON.stringify(kanon(JSON.parse(hel.delar[d]!))));
     return [
       ['byn som läses ur överlämningen lämnas över likadant igen', lika(delar, igen)],
       [`arbetaren räknade i ${bit.bitar} bitar och skickade ${bit.bilder} ögonblicksbilder`, bit.bitar >= 2 && bit.bilder >= 1],
       [`byn från arbetaren är exakt den som räknats i ett svep${olika.length ? ' (skiljer: ' + olika.join(', ') + ')' : ''}`, lika(hel.delar, bit.delar)],
-      [`arbetaren räknade ikapp (${((fram.now - s.now) / SIM.HOUR).toFixed(2)} timmar)`, fram.now >= mal || SIM.storStridNu(fram)],
+      [`byn som sidan räknat vidare själv från mitt i timmen (${((t0 % SIM.HOUR) / SIM.MIN).toFixed(0)} min) är exakt arbetarens${sidaOlika.length ? ' (i en annan ordning: ' + sidaOlika.join(', ') + ')' : ''}`, Object.keys(sida).sort().join() === Object.keys(hel.delar).sort().join() && sammaInnehall],
+      [`arbetaren räknade ikapp (${((fram.now - t0) / SIM.HOUR).toFixed(2)} timmar)`, fram.now >= mal || SIM.storStridNu(fram)],
     ];
   },
 };

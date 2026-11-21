@@ -4,6 +4,7 @@
 // ute, framme, hemåt, hemma), en plats på vägen, en gemensam packning i hela saker och en bok över insatserna. Talen för resan
 // står i blocket RESA. Ingen person är med i två sällskap.
 import { balans } from './balans';
+import { TIMMINNEN } from './timminne';
 import { LandmarkId } from './landmarken';
 import { H, HOUR, Person, State, Task, W } from './typer';
 import { isLight } from './tid';
@@ -1127,6 +1128,7 @@ export interface ResPlan { mal: number; namn: string; skal: ResmalId; uppdrag?: 
 // förråd, som bara är en faktor. En resenär väljer alltså på poäng som kan vara en timme gammal (sex minuter i verkligheten)
 interface ResMal extends Omit<ResPlan, 'sc'> { bas: number; d: number } // d: dygnen utan avrundning
 const resMalMinne = new WeakMap<State, Map<number, { h: number; l: ResMal[] }>>();
+TIMMINNEN.resMal = { ut: s => { const m = resMalMinne.get(s); return m?.size ? [...m] : undefined; }, in: (s, v) => { resMalMinne.set(s, new Map(v as [number, { h: number; l: ResMal[] }][])); } }; // (steg 12.1.248)
 // den resa personen helst skulle samla till och dess poäng (utan bruset); fd och wd är dygnen byns mat och ved räcker
 export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan | undefined {
   const vl = s.varld, v = varldMark(s), hem = vl?.huvud !== undefined ? byPlats(vl, vl.huvud) : undefined;

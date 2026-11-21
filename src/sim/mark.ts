@@ -1,4 +1,5 @@
 import { omrade } from './omrade';
+import { TIMMINNEN, binIn, binUt } from './timminne';
 import { eldPlats, getMap, hash, perKarta, vnoise } from './karta';
 import { clampI, rnd } from './slump';
 import { H, HOUR, OX, OY, Person, State, W, inMap } from './typer';
@@ -98,6 +99,11 @@ function lasMark(txt: string | undefined, startAv: () => (i: number) => number, 
 export const lasGras = (s: State) => lasMark(s.mark, () => () => 1);
 export const lasSkog = (s: State) => s.skog ? lasMark(s.skog, () => { const f = startForest(s.seed); return (i: number) => f[i]; }, 0) : undefined;
 export function packGround(s: State) { const g = groundOf(s), sf = startForest(s.seed); s.mark = packaMark(g.cover, () => 1); s.skog = packaMark(g.trees, i => sf[i]); s.tradAlder = packaAlder(g.alder!); s.tradSort = packaArt(g.art!); s.buskar = packaArt(g.buske!); }
+// kartorna oavrundade i överlämningen till arbetaren (steg 12.1.248, timminne.ts)
+TIMMINNEN.mark = {
+  ut: s => { const g = groundOf(s); return { c: binUt(g.cover), t: binUt(g.trees), ...(g.alder ? { a: binUt(g.alder) } : {}) }; },
+  in: (s, v) => { const o = v as { c: string; t: string; a?: string }, g = groundOf(s); g.cover.set(binIn(o.c, Float32Array)); g.trees.set(binIn(o.t, Float32Array)); if (o.a && g.alder) g.alder.set(binIn(o.a, Float32Array)); },
+};
 
 // ängar: fläckar av fuktig mark där det växer högt gräs och träd har svårt att få fäste
 export const angOf = perKarta(seed => {

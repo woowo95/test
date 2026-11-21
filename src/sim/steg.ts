@@ -1,4 +1,5 @@
 import { SKATT, skattDygn, skattRegister } from './skatt';
+import { timminnenIn, timminnenUt } from './timminne';
 import { raknaBynVet, sparaHistorik } from './ort';
 import { budgetDygn, budgetRegister } from './budget';
 import { bynamnRegister } from './bynamn';
@@ -1708,11 +1709,18 @@ function serializeDelar(s: State, avrunda: (this: unknown, k: string, v: unknown
 // Överlämningen mellan sidan och arbetaren som räknar ikapp (steg 12.1.178, ui/ikappkarna.ts): delarna i sparfilen med talen
 // oavrundade, så att byn som läses in ur dem är exakt den by som skrevs (utom cacherna, regel 4)
 function exakt(k: string, v: unknown) { return k === 'vackta' ? undefined : v; }
-export const overlamna = (s: State) => serializeParts(s, exakt);
+// Minnena med timmen som nyckel och kartorna oavrundade följer med i delen timminnen (steg 12.1.248, timminne.ts)
+export function overlamna(s: State) {
+  const d = serializeParts(s, exakt), fore = kartAv(); useMap(s);
+  try { d.timminnen = timminnenUt(s); } finally { useMap(fore); }
+  return d;
+}
 export function franOverlamning(delar: Record<string, string>): State {
-  const namn = Object.keys(delar).filter(d => d !== 'byn' && !arVacktDel(d)).sort();
+  const namn = Object.keys(delar).filter(d => d !== 'byn' && d !== 'timminnen' && !arVacktDel(d)).sort();
   const s = migrate(JSON.parse(joinParts([delar.byn, ...namn.map(d => delar[d])])));
   lasVackta(s, delar);
+  const fore = kartAv(); useMap(s);
+  try { timminnenIn(s, delar.timminnen); } finally { useMap(fore); }
   return s;
 }
 // de väckta byarna (steg 11.13.9): var och en i egna delar med förledet vackt<nr>-, med samma delar och gränser som huvudbyn,

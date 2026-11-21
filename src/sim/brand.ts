@@ -1,4 +1,5 @@
 import { gen } from './ord';
+import { TIMMINNEN, binIn, binUt } from './timminne';
 import { kartaBorta } from './ort';
 import { han, mark, tal } from './ord';
 import { tabortBuske } from './buskar';
@@ -497,6 +498,7 @@ function hotar(s: State, b: Brand) {
 }
 // värdet på kartan (grundvärdet av husens bitar, högarna, stationerna och fälten), räknat en gång i timmen
 const vardeKarta = new WeakMap<State, { h: number; v: Float32Array }>();
+TIMMINNEN.vardeKarta = { ut: s => { const c = vardeKarta.get(s); return c && { h: c.h, v: binUt(c.v) }; }, in: (s, v) => { const o = v as { h: number; v: string }; vardeKarta.set(s, { h: o.h, v: binIn(o.v, Float32Array) }); } }; // (steg 12.1.248)
 function vardeNara(s: State, i: number) {
   const h = Math.floor(s.now / HOUR);
   let c = vardeKarta.get(s);

@@ -1,4 +1,5 @@
 import { iMening, stor } from './ord';
+import { TIMMINNEN, binIn, binUt } from './timminne';
 import { stubbeOn } from './stubbar';
 import { OMRADE, omrade, utanforByn } from './omrade';
 import { groundOf } from './mark';
@@ -1051,6 +1052,7 @@ export function wearStore(s: State, dtSec: number) {
 // gang.ts), så att folk hellre går runt. Rutorna räknas om en gång i timmen, i början av steget (steg.ts), så att alla lägen
 // räknar likadant
 const golvCache = new WeakMap<State, { h: number; g: object }>();
+TIMMINNEN.golv = { ut: s => { const c = golvCache.get(s), g = groundOf(s); return c && c.g === g && g.lost ? { h: c.h, l: binUt(g.lost) } : undefined; }, in: (s, v) => { const o = v as { h: number; l: string }, g = groundOf(s); g.lost = binIn(o.l, Uint8Array); golvCache.set(s, { h: o.h, g }); } }; // (steg 12.1.248)
 export function sakerPaGolvet(s: State) {
   const h = Math.floor(s.now / HOUR), g = groundOf(s), c = golvCache.get(s);
   if (c && c.h === h && c.g === g && g.lost) return;

@@ -1,4 +1,5 @@
 import { tal } from './ord';
+import { TIMMINNEN, binIn, binUt } from './timminne';
 import { Avst, bynsAvstand, bynsMitt } from './omrade';
 import { upplev } from './uppvaxt';
 import { PLATS, rektAvstand } from './plats';
@@ -457,6 +458,11 @@ export function packFynd(s: State) {
   if (noll) ut.push('\0', String.fromCharCode(noll));
   s.fynd = '~' + btoa(ut.join(''));
 }
+// uttagen oavrundade i överlämningen till arbetaren (steg 12.1.248, timminne.ts)
+TIMMINNEN.uttag = {
+  ut: s => { const d = takenOf(s), o: Record<string, string> = {}; for (const k of UTTAG_IDS) o[k] = binUt(d[k]!); return o; },
+  in: (s, v) => { const d = takenOf(s); for (const [k, t] of Object.entries(v as Record<string, string>)) d[k as keyof typeof d]?.set(binIn(t, Float32Array)); },
+};
 // det som tagits ur platserna som en byte per ruta och slag, ur sparfilen (tom text om inget sparats eller det inte går att läsa)
 export function fyndBin(s: State) {
   if (!s.fynd) return '';

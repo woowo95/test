@@ -1,4 +1,5 @@
 import { han, hans } from './ord';
+import { TIMMINNEN } from './timminne';
 import { nagonEld } from './eld';
 // Lerkrukan (steg 9.4.11, Arbetsstationer och möbler: Leran och lerkrukan, Tre storlekar): ett ting med kvalitet, skick och
 // ägare, inte en möbel, i tre storlekar som är rader i registret KRUKOR. Den byggs upp för hand av lera med sand i (1, 2 eller 4
@@ -142,6 +143,7 @@ const krukVal = (s: State, p: Person, finns: (g: GrodaSlag) => boolean) => {
 };
 // hur många blommor byn vill ha: en per ledig kruka vars ägare hellre vill ha en blomma än en ört. Räknas en gång i timmen
 const villCache = new WeakMap<State, { h: number; n: number }>();
+TIMMINNEN.blomVill = { ut: s => villCache.get(s), in: (s, v) => { villCache.set(s, v as { h: number; n: number }); } }; // (steg 12.1.248)
 export function blommaVill(s: State) {
   const h = Math.floor(s.now / HOUR), c = villCache.get(s);
   if (c && c.h === h) return c.n;
