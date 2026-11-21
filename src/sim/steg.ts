@@ -1040,10 +1040,10 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
       if (n <= 0 || !e) p.task = undefined;
       else {
         const at = eldXY(s, e);
-        tk.ag = { ved: {} }; tk.carry = iRackhall(p.x, p.y, () => takeFuel(s, n, p, tk.ag!.ved, fran)); tk.phase = 'back'; const v = vidElden(s, p, at); tk.tx = v.x; tk.ty = v.y;
+        tk.ag = { ved: {} }; tk.tog = {}; tk.carry = iRackhall(p.x, p.y, () => takeFuel(s, n, p, tk.ag!.ved, fran, tk.tog)); tk.phase = 'back'; const v = vidElden(s, p, at); tk.tx = v.x; tk.ty = v.y;
         if (fran) stole(s, p, fran, VED.id, tk.carry); else if ((tk.ag.ved[p.id] ?? 0) > 1e-9) noticeTheft(s, p, VED.id);
       }
-    } else { const e = eldById(s, tk.ref); if (e) addFuel(s, p, tk.carry, e); else giveBack(s, tk.carry); tk.carry = 0; p.task = undefined; }
+    } else { const e = eldById(s, tk.ref); if (e) addFuel(s, p, tk.carry, e); else giveBack(s, tk.carry, tk.tog); tk.carry = 0; p.task = undefined; }
   } else if (tk.act === 'bygga' && tk.phase === 'go' && tk.site) {
     // vid lagret: ta materialet och gå till bygget
     const b = bitById(s, tk.ref), k = b && MATERIAL[b.m].item, har = (k && tk.items?.[k]) || 0, n = b ? needOf(b) - har : 0;

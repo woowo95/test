@@ -1539,3 +1539,31 @@ SCENARIER.flodbort = {
     ];
   },
 };
+
+// steg 12.1.215: bränslet som blir över är samma bränsle
+SCENARIER.bransleover = {
+  text: 'Bränslet som blir över (steg 12.1.215): den som bär bränsle till elden och får över lägger tillbaka samma hela saker som togs, grenar som grenar och torv som torv, och det är fortfarande dens som ägde det.',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10); tandEld(s);
+    const a = s.people.find(p => SIM.alive(p) && SIM.ageOf(p, s.now) >= 16)!;
+    a.task = { act: 'elda', phase: 'go', tx: a.x, ty: a.y, until: s.now, carry: 0, why: '' } as unknown as SIM.Task;
+    // bara grenar, alla a:s
+    SIM.setAmount(s, 'ved', 0); SIM.setAmount(s, 'torv', 0); SIM.setAmount(s, 'blottorv', 0); SIM.setAmount(s, 'grenar', 0);
+    SIM.put(s, 'grenar', 20, { [a.id]: 20 }); const agd0 = SIM.ownsAmount(s, a, 'grenar');
+    const tog: SIM.Tog = {}, fick = SIM.takeFuel(s, 3, a, {}, undefined, tog);
+    const g1 = SIM.amountOf(s, 'grenar'), agd1 = SIM.ownsAmount(s, a, 'grenar');
+    SIM.giveBack(s, 2 * SIM.GREN, tog);
+    const g2 = SIM.amountOf(s, 'grenar'), agd2 = SIM.ownsAmount(s, a, 'grenar'), ved = SIM.amountOf(s, 'ved');
+    // bara torv, byns
+    SIM.setAmount(s, 'grenar', 0); SIM.setAmount(s, 'torv', 10);
+    const tog2: SIM.Tog = {}, fick2 = SIM.takeFuel(s, 2 * SIM.TORV.varde, a, {}, undefined, tog2), t1 = SIM.amountOf(s, 'torv');
+    SIM.giveBack(s, SIM.TORV.varde, tog2);
+    const t2 = SIM.amountOf(s, 'torv'), ved2 = SIM.amountOf(s, 'ved');
+    return [
+      [`a:s grenar togs (fick ${fick.toFixed(2)} ved, grenar ${g1} kvar, a:s ${agd0} → ${agd1.toFixed(1)})`, fick > 0 && g1 < 20 && agd0 === 20 && agd1 < 20],
+      [`två grenar över blir två grenar igen, inte ved (grenar ${g1} → ${g2}, ved ${ved})`, g2 === g1 + 2 && ved === 0],
+      [`grenarna som kom tillbaka är fortfarande a:s (${agd1.toFixed(1)} → ${agd2.toFixed(1)})`, Math.abs(agd2 - agd1 - 2) < 1e-6],
+      [`torven över blir torv igen (fick ${fick2.toFixed(2)}, torv ${t1} → ${t2}, ved ${ved2})`, t2 === t1 + 1 && ved2 === 0],
+    ];
+  },
+};

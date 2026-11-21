@@ -4,7 +4,7 @@ import { han } from './ord';
 import { tal } from './ord';
 import { allaBarn } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
-import { addTo, amountOf, blotUttaget, avbryt, fetchSpot, iBordan, takeLimit, use, paMarken } from './lager';
+import { addTo, amountOf, blotUttaget, avbryt, fetchSpot, iBordan, takeLimit, use, paMarken, put } from './lager';
 import { Materialslag, forbrukat, overOchUnder, tandBuffert, underBuffert } from './forradsmal';
 import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
@@ -127,24 +127,27 @@ export const fuelStock = (s: State) => amountOf(s, 'ved') + amountOf(s, 'grenar'
 export const fuelFor = (s: State, p: Person, fran?: Person) => takeLimit(s, 'ved', p, fran) + takeLimit(s, 'grenar', p, fran) * GREN + (fran ? 0 : iBordan(p, 'ved') + iBordan(p, 'grenar') * GREN) // med det hen bär dit
   + (takeLimit(s, 'torv', p, fran) + takeLimit(s, 'blottorv', p, fran) + (fran ? 0 : iBordan(p, 'torv') + iBordan(p, 'blottorv'))) * TORV.varde; // och torven (steg 12.1.3)
 // ta bränsle ur förrådet: grenarna som inte behövs till tändningen först (steg 12.1.52), sedan veden och de andra grenarna; ger hur
-// mycket som togs. p = den som tar det: byns ved först, sedan sin egen (egendom.ts). ag får vems bränslet var, räknat i ved
-export function takeFuel(s: State, n0: number, p?: Person, ag?: Del, fran?: Person) {
+// mycket som togs. p = den som tar det: byns ved först, sedan sin egen (egendom.ts). ag får vems bränslet var, räknat i ved;
+// tog får det som togs per sort i hela saker och vems det var, så att det som blir över går tillbaka som samma saker (steg 12.1.215)
+export type Tog = Record<string, { n: number; ag: Del }>;
+const minns = (tog: Tog | undefined, k: string, n: number, d: Del | undefined) => { if (!tog || n <= 0) return; const r = tog[k] ??= { n: 0, ag: {} }; r.n += n; addDel(r.ag, d); };
+export function takeFuel(s: State, n0: number, p?: Person, ag?: Del, fran?: Person, tog?: Tog) {
   const gHar = () => Math.floor(takeLimit(s, 'grenar', p, fran) + (fran ? 0 : iBordan(p, 'grenar')) + 1e-9);
   const g0 = Math.min(Math.max(0, gHar() - Math.ceil(tandBuffert(s, 'grenar') - 1e-9)), Math.floor(n0 / GREN + 1e-9)); // hela grenar, aldrig mer än det som behövs
-  if (g0 > 0) { const d = use(s, p, 'grenar', g0, true, fran?.id); forbrukat(s, 'grenar', -g0); if (ag) addDel(ag, d, GREN); }
+  if (g0 > 0) { const d = use(s, p, 'grenar', g0, true, fran?.id); forbrukat(s, 'grenar', -g0); if (ag) addDel(ag, d, GREN); minns(tog, 'grenar', g0, d); }
   const n = n0 - g0 * GREN;
   const v = Math.min(n, takeLimit(s, 'ved', p, fran) + (fran ? 0 : iBordan(p, 'ved')));
-  const b0 = blotUttaget(), w = use(s, p, 'ved', v, true, fran?.id);
+  const b0 = blotUttaget(), w = use(s, p, 'ved', v, true, fran?.id); minns(tog, 'ved', v, w);
   if (p?.task) p.task.blotVed = v > 0 ? Math.min(1, (blotUttaget() - b0) / v) : 0; // det som togs: torr ved tas först (steg 7.3.4), och ur det hen får ta (steg 12.1.55)
   // torven (steg 12.1.3, torv.ts): den torra efter veden och före grenarna, den blöta sist, i hela torv
   const hel = (k: string, kvar: number) => kvar <= 1e-9 ? 0 : Math.min(Math.floor(takeLimit(s, k, p, fran) + (fran ? 0 : iBordan(p, k)) + 1e-9), Math.ceil(kvar / TORV.varde - 1e-9));
   const tt = hel('torv', n - v);
-  if (tt > 0) { const d = use(s, p, 'torv', tt, true, fran?.id); if (ag) addDel(ag, d, TORV.varde); }
+  if (tt > 0) { const d = use(s, p, 'torv', tt, true, fran?.id); if (ag) addDel(ag, d, TORV.varde); minns(tog, 'torv', tt, d); }
   const g = Math.min(gHar(), Math.ceil((n - v - tt * TORV.varde) / GREN - 1e-9)); // hela grenar (steg 3.6.13)
-  if (g > 0) { const d = use(s, p, 'grenar', g, true, fran?.id); forbrukat(s, 'grenar', -g); if (ag) addDel(ag, d, GREN); } // grenarna som bränsle räknas i veden, inte som förbrukat material (steg 6.2.14)
+  if (g > 0) { const d = use(s, p, 'grenar', g, true, fran?.id); forbrukat(s, 'grenar', -g); if (ag) addDel(ag, d, GREN); minns(tog, 'grenar', g, d); } // grenarna som bränsle räknas i veden, inte som förbrukat material (steg 6.2.14)
   const bt = hel('blottorv', n - v - tt * TORV.varde - g * GREN);
   if (bt > 0) {
-    const d = use(s, p, 'blottorv', bt, true, fran?.id); if (ag) addDel(ag, d, TORV.varde);
+    const d = use(s, p, 'blottorv', bt, true, fran?.id); if (ag) addDel(ag, d, TORV.varde); minns(tog, 'blottorv', bt, d);
     const tot = v + tt * TORV.varde + g * GREN + bt * TORV.varde; // den blöta torven brinner som blöt ved
     if (p?.task) p.task.blotVed = Math.min(1, ((p.task.blotVed ?? 0) * v + bt * TORV.varde) / tot);
   }
@@ -152,8 +155,20 @@ export function takeFuel(s: State, n0: number, p?: Person, ag?: Del, fran?: Pers
   return g0 * GREN + v + tt * TORV.varde + g * GREN + bt * TORV.varde;
 }
 // bränsle som inte fick plats går tillbaka till förrådet: hela vedträn som ved och resten som de hela grenar det räcker till
-// (steg 12.1.52: förut blev allt grenar, ett vedträ två och en halv gren, och grenarna växte långt över taket)
-export const giveBack = (s: State, n: number) => { const v = Math.floor(n + 1e-9), g = Math.floor((n - v) / GREN + 1e-9); if (v > 0) addTo(s, 'ved', v); if (g > 0) addTo(s, 'grenar', g); };
+// (steg 12.1.52: förut blev allt grenar, ett vedträ två och en halv gren, och grenarna växte långt över taket).
+// Minns bördan vad som togs (tog, steg 12.1.215), går det tillbaka som samma hela saker till samma ägare, det största först
+const varde = (k: string) => k === 'ved' ? 1 : k === 'grenar' ? GREN : TORV.varde;
+export function giveBack(s: State, n: number, tog?: Tog) {
+  if (!tog) { const v = Math.floor(n + 1e-9), g = Math.floor((n - v) / GREN + 1e-9); if (v > 0) addTo(s, 'ved', v); if (g > 0) addTo(s, 'grenar', g); return; }
+  let kvar = n;
+  for (const k of Object.keys(tog).sort((a, b) => varde(b) - varde(a) || (a < b ? -1 : 1))) {
+    const r = tog[k], m = Math.min(Math.floor(r.n + 1e-9), Math.floor(kvar / varde(k) + 1e-9));
+    if (m <= 0) continue;
+    const f = m / r.n, ag: Del = {};
+    for (const o in r.ag) { ag[o] = r.ag[o] * f; r.ag[o] -= ag[o]; }
+    put(s, k, m, ag); r.n -= m; kvar -= m * varde(k);
+  }
+}
 function fireLog(s: State, e: Omit<FireLog, 't'>, f = s.fire) { f.log.push({ t: s.now, ...e }); if (f.log.length > 80) f.log.splice(0, f.log.length - 80); }
 export const emberOn = (s: State, f = s.fire) => !f.lit && f.emberUntil !== undefined && f.emberUntil > s.now;
 // eldens styrka 0–1 efter hur mycket ved som brinner
@@ -367,8 +382,8 @@ export function takeCoal(s: State, p: Person, verb: string, f = s.fire) {
   log(s, `${p.name} ${verb} ${antal(n, 'kol')} ur den gamla elden och lade ${n === 1 ? 'den' : 'dem'} i förrådet.`, 'world', [p.id]);
 }
 export function addFuel(s: State, p: Person, n: number, f = s.fire) {
-  const h = hearthOf(f);
-  if (!f.lit && !emberOn(s, f) || eldIVatten(s, f)) { giveBack(s, n); return; } // elden hann slockna eller står under vattnet: bränslet går tillbaka
+  const h = hearthOf(f), tog = p.task?.tog;
+  if (!f.lit && !emberOn(s, f) || eldIVatten(s, f)) { giveBack(s, n, tog); return; } // elden hann slockna eller står under vattnet: bränslet går tillbaka
   if (!f.lit) {
     f.lit = true; f.emberUntil = undefined;
     fireLog(s, { k: 'glöd', id: p.id }, f);
@@ -377,7 +392,7 @@ export function addFuel(s: State, p: Person, n: number, f = s.fire) {
   const put = Math.min(n, h.maxFuel - f.fuel);
   const vat = p.task?.blotVed ?? 0;
   if (put > 0) f.blot = (f.fuel * (f.blot ?? 0) + put * vat) / (f.fuel + put); // så mycket av det som brinner som är blött (steg 7.3.4)
-  f.fuel += put; giveBack(s, n - put);
+  f.fuel += put; giveBack(s, n - put, tog);
   f.fills[p.id] = (f.fills[p.id] ?? 0) + 1;
   fireLog(s, { k: 'fyll', id: p.id, n: put }, f);
 }
