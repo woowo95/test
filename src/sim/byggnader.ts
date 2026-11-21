@@ -393,8 +393,12 @@ export function sovKvar(s: State, r: Rum) {
   return golv - b.ovriga.length * HUS.sovPer;
 }
 // så många som sover under tak men inte i en halmbädd
+// rutan i är en bädd: en sovplats (halmbädden, sängen), vaggan för spädbarnet eller sjukbädden för den sjuke (steg 12.1.256)
+export const baddRuta = (s: State, i: number) => { const st = stationRutor(s); return st.sov.has(i) || st.bara.has(i); };
+// p sover i en bädd (steg 12.1.256): rutan p sover på är en bädd av något slag
+export const soverIBadd = (s: State, p: Person) => { const i = bedTile(s, p); return i !== undefined && baddRuta(s, i); };
 export function utanBadd(s: State) {
-  const b = boende(s), st = stationRutor(s).sov;
+  const b = boende(s), st = { has: (i: number) => baddRuta(s, i) };
   if (!b.gemensamt.length) { let n = Math.max(0, b.ovriga.length - b.gemensamt.length); for (const e of new Set(b.egna.values())) n += Math.max(0, e.folk.length - e.tiles.filter(i => st.has(i)).length); return n; } // (de som sover ute utan bädd)
   let n = Math.min(b.ovriga.length, b.gemensamt.length) - Math.min(b.ovriga.length, b.gemensamt.filter(i => st.has(i)).length);
   for (const [h, e] of new Map([...b.egna.values()].map(e => [e.tiles, e]))) n += Math.min(e.folk.length, h.length) - Math.min(e.folk.length, h.filter(i => st.has(i)).length);

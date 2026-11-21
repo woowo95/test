@@ -32,8 +32,7 @@ import { TILLVERKA, TILLVERKA_LIST, tillverkAv } from './tillverka';
 import { RECEPT } from './recept';
 import { knows } from './teknik';
 import { STATION, redskapVidAct, kanGoras, stationSomFattas, stationDef, stationFlyttVal, stationFor, verktygVid, vidStation } from './stationer';
-import { bedTile } from './byggnader';
-import { stationRutor } from './stationer';
+import { bedTile, soverIBadd } from './byggnader';
 import { LJUS, LJUSSORTER, UPPSATT, friFackla, friLjus, ljusPlatser, morkStalle, tommaLampor } from './ljus';
 import { ALDER, ageOf, enTill, living } from './folk';
 import { SKOGSVARD, kanPlantera, planteraUppgift, skogsvardBrist } from './skogsvard';
@@ -437,8 +436,7 @@ export function personVarde(s: State, k: string, fam: readonly Person[], om: num
 }
 // den i familjen som sover under tak utan en bädd
 function utanEgenBadd(s: State, fam: readonly Person[]) {
-  const sov = stationRutor(s).sov;
-  return fam.some(q => { const b = bedTile(s, q); return b !== undefined && !sov.has(b); }) ? 1 : 0;
+  return fam.some(q => bedTile(s, q) !== undefined && !soverIBadd(s, q)) ? 1 : 0; // vaggan och sjukbädden är bäddar (steg 12.1.256)
 }
 // allt byn saknar något av, det mest värda först (scenariot projekt)
 export const projekt = (s: State) => PROJEKT_LIST.map(k => ({ k, d: PROJEKT[k], varde: projektVarde(s, k), brist: PROJEKT[k].brist(s) }))

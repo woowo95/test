@@ -174,8 +174,10 @@ SCENARIER.vagga = {
     const iRummet = !!site && !!rum && SIM.roomAt(s, site.x, site.y) === rum && rum === SIM.roomAt(s, morPlats! % SIM.W, Math.floor(morPlats! / SIM.W));
     if (!site) return [['en plats för vaggan', false]];
     const v: SIM.Station = { id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'vagga', x: site.x, y: site.y, kvar: 0, inne: 1 };
+    const utan0 = SIM.utanBadd(s);
     (s.stationer ??= []).push(v); SIM.touch(s);
     const iVaggan = SIM.sovPlats(s, barn) === v.y * SIM.W + v.x, bristEfter = SIM.stationBrist(s, 'vagga');
+    const iBadd = SIM.soverIBadd(s, barn), utan1 = SIM.utanBadd(s); // vaggan är en bädd (steg 12.1.256)
     barn.x = v.x + 0.5; barn.y = v.y + 0.5;
     const vila = SIM.baddVila(s, barn), vuxenPlats = SIM.sovPlats(s, mor) !== v.y * SIM.W + v.x;
     return [
@@ -183,6 +185,7 @@ SCENARIER.vagga = {
       [`utan vagga sover spädbarnet hos modern, och hemmet vill ha en vagga (${brist}) i rummet där de sover`, hosMor && brist === 1 && iRummet],
       [`med en vagga sover spädbarnet i den, och ingen vuxen sover där`, iVaggan && vuxenPlats && bristEfter === 0],
       [`i vaggan sover barnet bättre (${vila?.tim} per timme, tanken ${vila?.tanke})`, vila?.tim === SIM.STATION.vaggaVila && vila.tim > SIM.KROPP.restBadd],
+      [`barnet i vaggan sover i en bädd, och byn saknar inte fler bäddar för det (${utan0} → ${utan1} utan bädd)`, iBadd && utan1 <= utan0],
     ];
   },
 };
