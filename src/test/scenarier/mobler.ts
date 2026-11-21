@@ -90,6 +90,12 @@ SCENARIER.sang = {
     const ny: SIM.Station = { id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'sang', x: a.x, y: a.y, kvar: 0, inne: 1 };
     SIM.ersatt(s, a, ny); (s.stationer ??= []).push(ny); SIM.touch(s);
     const bytt = !SIM.stationerOf(s).includes(a) && ny.ag === p.id && (ny.med as string[] | undefined)?.includes('skinnfall') && SIM.tillbehorStationer(s, 'skinnfall').includes(ny);
+    // den halvbyggda sängen är p:s, men vem som helst får bygga vidare; en halvbyggd kista bygger bara ägaren (steg 12.1.243)
+    ny.kvar = 5 * SIM.MIN; const sangFri = SIM.halvbyggd(s, 'sang', q) === ny; ny.kvar = 0;
+    const kista: SIM.Station = { id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'kista', x: a.x + 3, y: a.y, kvar: 5 * SIM.MIN, ag: p.id };
+    (s.stationer ??= []).push(kista); SIM.touch(s);
+    const kistaEgen = SIM.halvbyggd(s, 'kista', q) === undefined && SIM.halvbyggd(s, 'kista', p) === kista;
+    s.stationer = SIM.stationerOf(s).filter(t => t !== kista); SIM.touch(s);
     // vilan i sängen och i halmbädden
     p.x = ny.x + 0.5; p.y = ny.y + 0.5; q.x = b0.x + 0.5; q.y = b0.y + 0.5;
     const vSang = SIM.baddVila(s, p), vHalm = SIM.baddVila(s, q);
@@ -105,6 +111,7 @@ SCENARIER.sang = {
       [`sängen vilar ${vSang?.tim} per timme med tanken ${vSang?.tanke} (${vSang?.glad}); halmbädden har egna tal i KROPP (${vHalm === undefined})`, vSang?.tim === 0.13 && vSang.glad === 0.11 && vHalm === undefined && SIM.KROPP.restBadd === 0.105],
       [`utan något över byts ingen halmbädd (${utanOver}), med något över byts p:s egen (${medOver.toFixed(2)})`, utanOver === 0 && medOver > 0 && paBadden],
       [`när bygget börjar tas halmbädden isär, och sängen får ägaren och skinnfällen`, !!bytt],
+      [`den halvbyggda sängen får vem som helst bygga vidare på, den halvbyggda kistan bara ägaren (${sangFri}, ${kistaEgen})`, sangFri && kistaEgen && SIM.agarenBygger(SIM.stationDef('kista')) && !SIM.agarenBygger(d)],
       [`ett par i en säng och en halmbädd intill får ingen tanke, i två sängar intill varandra tanken Sov bredvid sin käresta (${sangBredvid?.v})`, !halmBredvid && sangBredvid?.v === 0.03 && sangBredvid.until === s.now + 8 * SIM.HOUR],
     ];
   },

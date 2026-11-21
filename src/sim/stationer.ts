@@ -1250,7 +1250,10 @@ krubbaKrok.iRum = (s, r) => stationerOf(s).some(t => stationDef(t.k)?.fahus && s
 // ---------- att bygga en station ----------
 // (en kista: p:s egen, steg 2.10.18)
 // (ingen bygger vidare i någon annans hus, steg 3.10.2)
-export const halvbyggd = (s: State, k: string, p?: Person) => stationerOf(s).find(t => t.k === k && !isKlar(t) && (t.ag === undefined || t.ag === p?.id) && (t.tro === undefined || !p || t.tro === p.tro) && (!p || farBygga(s, husAv(s, t), p)));
+// ägaren är också byggaren (kistan, pyntet och det som ägs): bara hen bygger vidare. En säng som får den gamla bäddens ägare
+// kan byggas av vem som helst som får bygga i huset (steg 12.1.243)
+export const agarenBygger = (d: StationDef | undefined) => !!(d?.forvar?.privat || d?.pynt || d?.agd);
+export const halvbyggd = (s: State, k: string, p?: Person) => stationerOf(s).find(t => t.k === k && !isKlar(t) && (t.ag === undefined || !agarenBygger(stationDef(k)) || t.ag === p?.id) && (t.tro === undefined || !p || t.tro === p.tro) && (!p || farBygga(s, husAv(s, t), p)));
 // en annan än p har tagit uppgiften att bygga en ny station av sorten k och har inte börjat på den än (steg 10.2.5)
 const nyPaVag = (s: State, k: string, p?: Person) => living(s).some(q => q !== p && q.task?.act === 'station' && q.task.tool === k);
 // p kan bygga (eller bygga vidare på) en station av sorten k som byn saknar (det byn kan ha flera av: om projektet säger att byn
@@ -1316,7 +1319,7 @@ export function startStation(s: State, p: Person, tk: Task) {
       const delar = delarIRad(k, at.x, at.y, at.rot); if (delar) t.delar = delar; // delarna i en rad, som de byggs (steg 9.4.1)
       if (delar && d.delar) { delar.forEach((q, i) => { q.kvar = delMin(d, i) * MIN; }); delar[0].mat = 1; summaKvar(t); } // varje del sitt bygge (steg 12.1.17)
       if (tro) t.tro = tro.id;
-      if (d.forvar?.privat || d.pynt || d.agd) t.ag = p.id; // kistan och pyntet är hens (steg 2.10.18, 4.3.4)
+      if (agarenBygger(d)) t.ag = p.id; // kistan och pyntet är hens (steg 2.10.18, 4.3.4)
       if (gammal) moblerKrok.ersatt(s, gammal, t); // halmbädden tas isär, och sängen får dess ägare och skinnfäll (mobler.ts)
       (s.stationer ??= []).push(t);
       if (!t.inne && !d.forvar) { const { w, h } = storlekAv(t); for (const z of zonesOf(s).filter(z => z.hus === undefined && rutorAv(t!.x, t!.y, w, h).some(q => inZone(z, q.x, q.y)))) flyttaLager(s, z); } // lagret i vägen (steg 8.1.15)
