@@ -810,11 +810,12 @@ export const ARBETEN: readonly Arbete[] = [
     const d = dag(c);
     // leken och hjälpen ur poängen (steg 10.2.43): leken efter seden Barn och mer för de yngre, hjälpen efter åldern och hur akut
     // byn behöver arbete; barnet leker med chansen lek / (lek + hjälp)
-    // det skadade eller sjuka barnet leker och hjälper mindre och vilar i stället, efter hur svårt (kroppLust, steg 12.1.46)
+    // det skadade eller sjuka barnet leker och hjälper mindre och vilar i stället, efter hur svårt (kroppLust, steg 12.1.46):
+    // lusten är en faktor på både leken och hjälpen (steg 12.1.216), och det de förlorar blir vilan
     const kl = kroppLust(p, s.now), lek = (VAL.lekBas + VAL.lekSed * s.seder.v.barn) * (1 + VAL.lekUng * (1 - a / ALDER.vuxen)), hjalp = a / ALDER.vuxen * (VAL.barnHjalp + d.u);
-    const r = rnd(s, 'val', p) * (lek + hjalp);
-    if (r < (lek + hjalp) * (1 - kl)) return set(v, 'vila', vilaSkal(p, s.now));
-    if (r < lek) return set(v, 'leka', lekText(s));
+    const r = rnd(s, 'val', p) * (lek + hjalp), vila = (lek + hjalp) * (1 - kl);
+    if (r < vila) return set(v, 'vila', vilaSkal(p, s.now));
+    if (r < vila + lek * kl) return set(v, 'leka', lekText(s));
     // hjälpen väljs med samma poäng som de vuxnas rader på nivån (steg 12.1.45): den går till det som fattas, och skälet är
     // radens eget. Barnet som hjälper arbetar i dag; fattas inget (ingen rad har poäng eller alla har sina arbetare) leker det
     const cb: Ctx = { ...c, d: { ...d, works: true } };

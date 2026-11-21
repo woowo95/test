@@ -1069,7 +1069,23 @@ SCENARIER.sjukvila = {
     // "ligger med feber" bara för en sjukdom med feber
     const feberUtan = SIM.valjVariant(s, 'l_svartSjuk', 1, { namn: 'X', feber: false });
     let feberText = 0; for (let n = 0; n < 200; n++) if (String(SIM.valjVariant(s, 'l_svartSjuk', n, { namn: 'X', feber: false })).includes('feber')) feberText++;
+    // barnet (steg 12.1.216): lusten är en faktor på både leken och hjälpen, så det skadade barnet hjälper till mer sällan
+    const barnVal = (skadat: boolean) => {
+      const b0 = SIM.createState(1, START); klockan(b0, 10); tandEld(b0); tandOchFlinta(b0); setFood(b0, 3000); SIM.setAmount(b0, 'ved', 0);
+      const barn = nyInvanare(b0, 'k', SIM.ALDER.vuxen - 2);
+      if (skadat) SIM.skada(b0, barn, 'armV', 'blamarke', 0.4, 'olycka', 'i skogen');
+      const n = { hjalp: 0, vila: 0, leka: 0, annat: new Set<string>() }, lust = SIM.kroppLust(barn, b0.now);
+      for (let i = 0; i < 300; i++) {
+        Object.assign(barn, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, task: undefined });
+        SIM.chooseTask(b0, barn);
+        if (barn.task?.why?.startsWith('Hjälper till')) n.hjalp++; else if (barn.task?.act === 'vila') n.vila++; else if (barn.task?.act === 'leka') n.leka++; else n.annat.add(`${barn.task?.act}|${barn.task?.why}`);
+        b0.now += 7 * 60000; if (new Date(b0.now).getUTCHours() >= 16) klockan(b0, 10);
+      }
+      return { ...n, lust };
+    };
+    const bf = barnVal(false), bs = barnVal(true);
     return [
+      [`det skadade barnet hjälper till mer sällan och vilar (friskt: hjälper ${bf.hjalp}, leker ${bf.leka}, vilar ${bf.vila}; skadat med lusten ${bs.lust.toFixed(2)}: hjälper ${bs.hjalp}, leker ${bs.leka}, vilar ${bs.vila}${bs.annat.size ? `, annat: ${[...bs.annat].slice(0, 3).join('; ')}` : ''})`, bs.lust > 0 && bs.lust < 1 && bs.vila > 0 && bs.hjalp < bf.hjalp * (bs.lust + 1) / 2],
       [`den friska vill fullt ut (${kl(frisk).toFixed(2)})`, kl(frisk) === 1],
       [`den lätt skadade vill mindre (${kl(latt).toFixed(2)}), och sporten lockar mindre (${sv(latt).toFixed(3)} mot ${sv(frisk).toFixed(3)})`, kl(latt) > 0 && kl(latt) < 1 && sv(latt) <= sv(frisk)],
       [`den svårt skadade vill inte alls (${kl(svar).toFixed(2)}) och spelar inte (${sv(svar)})`, kl(svar) === 0 && sv(svar) === 0],
