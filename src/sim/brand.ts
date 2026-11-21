@@ -401,10 +401,13 @@ function gnistor(s: State, dtSec: number, dry: number) {
   for (const f of brasorOf(s)) if (f.lit) fran(f.at!.x, f.at!.y, hearthOf(f).spread, f.id! + 1); // de andra lägereldarna gnistrar som den första (steg 4.5.6.8)
   for (const t of s.stationer ?? []) { const d = t.eld?.lit ? eldDef(t) : undefined; if (d?.gnistor) { const at = eldPlatsAv(t); fran(Math.floor(at.x), Math.floor(at.y), HEARTHS[0].spread * d.gnistor, 60000 + t.id); } } // fyrfatet gnistrar lite (steg 12.4.11)
   for (const b of s.branningar ?? []) { const t = b.slut > s.now ? stationerOf(s).find(q => q.id === b.st) : undefined; if (t) fran(t.x + 1, t.y + 1, HEARTHS[0].spread, 50000 + t.id); } // kolmilan och blästerugnen gnistrar som en lägereld medan de brinner (steg 12.2.1 och 12.2.3)
-  if (Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR) && blixtNu(s) && ur(s, 0, 3856) < BRAND.blixt) {
-    const e = bynsMitt(s), R = BRAND.blixtR, nx = e.x + Math.round((ur(s, 0, 3857) * 2 - 1) * R), ny = e.y + Math.round((ur(s, 0, 3858) * 2 - 1) * R);
-    if (inMap(nx, ny)) { count(s, 'blixt nara'); nedslag(s, nx, ny); tand(s, ny * W + nx, 'blixt', ur(s, 0, 3859) / dry); }
-  }
+}
+// blixten nära byn (raden blixten i TAKTER, en gång i timmen, steg 12.1.107): slår den ner i torr mark kan den tända
+export function blixtTimme(s: State) {
+  const dry = torrhet(s);
+  if (dry <= 0 || !blixtNu(s) || ur(s, 0, 3856) >= BRAND.blixt) return;
+  const e = bynsMitt(s), R = BRAND.blixtR, nx = e.x + Math.round((ur(s, 0, 3857) * 2 - 1) * R), ny = e.y + Math.round((ur(s, 0, 3858) * 2 - 1) * R);
+  if (inMap(nx, ny)) { count(s, 'blixt nara'); nedslag(s, nx, ny); tand(s, ny * W + nx, 'blixt', ur(s, 0, 3859) / dry); }
 }
 
 // rutorna som brunnit klart eller släckts: det som brann där blir aska efter hur stor del som hann brinna

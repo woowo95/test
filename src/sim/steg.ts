@@ -36,7 +36,7 @@ import { stepTorka } from './torka';
 import { stepFlod } from './flod';
 import { tornadoSteg } from './tornado';
 import { fallTanke, plantaSatt, plantaUppgravd, vindfallen } from './skogsvard';
-import { askaSteg, brandHetta, brandSteg, snoSmalt, brinnerSteg, hjalpaKlar, slackaFram, slackaFylld, slackaSigKlar, slackaSteg } from './brand';
+import { askaSteg, brandHetta, blixtTimme, brandSteg, snoSmalt, brinnerSteg, hjalpaKlar, slackaFram, slackaFylld, slackaSigKlar, slackaSteg } from './brand';
 import { loggBer, stepBerattelser } from './berattelser';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
 import { glomRykten, stepRykten } from './rykten';
@@ -91,7 +91,7 @@ import { rovarPrat, rovarSteg, rovarTornado, rovarFlockar } from './rovare';
 import { skrivHuvudRad } from './radtal';
 import { varldSteg } from './varldslag';
 import { projektSaknarRakna } from './projekt';
-import { handelSteg, handlaKlar, handelsMalRakna, handelsTill, handlarPlats, handlarTornado, pratMedHandlare } from './handel';
+import { handelSteg, handlarVantarTimme, handlaKlar, handelsMalRakna, handelsTill, handlarPlats, handlarTornado, pratMedHandlare } from './handel';
 import { vaktSteg } from './vakt';
 import { JAKT, jaktBar, jaktFallt, jaktForsok, jaktKlar } from './jakt';
 import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './naring';
@@ -440,6 +440,7 @@ export const TAKTER: Takt[] = [
   { namn: 'tidsåldern', sek: 60, fn: (s, _dt, c) => { if (c.ai !== s.lastAgeIdx) { s.lastAgeIdx = c.ai; log(s, AGES_BORJAR[c.ai], 'world'); } } },
   { namn: 'kaninerna', sek: 10, fn: (s, dt) => djurSteg(s, dt) }, // kaningrupperna väljer plats när deras tid börjar
   { namn: 'giftermålen', sek: 3600, fn: (s, dt) => giftSteg(s, dt) }, // med någon i en vänlig grannby (giftermal.ts, steg 11.3.6)
+  { namn: 'handlaren som väntar', sek: 3600, fn: s => handlarVantarTimme(s) }, // en handlare som en by skickat går in (handel.ts, steg 12.1.107)
   { namn: 'handlaren', sek: 0, fn: (s, dt) => handelSteg(s, dt) }, // kommer, handlar och går (handel.ts, steg 4.4.1)
   { namn: 'vargarna', sek: 0, fn: (s, dt) => vargSteg(s, dt) }, // under istiden (varg.ts, steg 3.7.1)
   { namn: 'björnen', sek: 0, fn: s => bjornSteg(s) }, // den som kommer nära björnen (bjorn.ts, steg 6.6.5)
@@ -447,6 +448,7 @@ export const TAKTER: Takt[] = [
   { namn: 'främlingen', sek: 0, fn: (s, dt) => framlingSteg(s, dt) }, // som kommer gående (liv.ts, steg 9.2.115)
   { namn: 'besökarna', sek: 0, fn: (s, dt) => besokSteg(s, dt) }, // huvudbyns resenärer i en väckt by (vacktgast.ts, steg 11.13.10)
   { namn: 'tornadon', sek: 0, fn: s => tornadoSteg(s, { rovarTornado, handlarTornado, handlarPlats }) }, // drar fram (tornado.ts, steg 3.8.4), och rövarna och handlaren drabbas (steg 6.4.12)
+  { namn: 'blixten', sek: 3600, fn: s => blixtTimme(s) }, // blixten nära byn (brand.ts, steg 12.1.107)
   { namn: 'branden', sek: 0, fn: (s, dt) => { brandSteg(s, dt); brinnerSteg(s, dt); } }, // gnistor, blixten, elden som sprider sig och den som brinner (brand.ts)
   { namn: 'förrådets slitage', sek: 60, fn: (s, dt) => { wearStore(s, dt); stepBlotVed(s, dt); torvTorkar(s, dt); } }, // slitage, fortare utanför lagret, och veden som blir blöt och torkar (steg 7.3.4), och torven (steg 12.1.3)
   { namn: 'elden', sek: 10, fn: (s, dt, c) => stepFire(s, dt, c.ppl) },

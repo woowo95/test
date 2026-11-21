@@ -540,14 +540,15 @@ function gaSteg(s: State, h: Handlare) {
 }
 
 // varje slag (steg.ts): handlaren kommer, handlar och går
-export function handelSteg(s: State, dtSec: number) {
-  const nyTimme = Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR);
-  // en handlare som en by skickat (steg 11.6.8) går in när ingen annan handlare är i byn, men inte under istiden
-  if (nyTimme && !s.handlare && s.handlarVantar?.length && (!iIstiden(ageIndex(s)) || s.infart?.klar)) {
-    const rad = s.handlarVantar.shift()!;
-    if (!s.handlarVantar.length) delete s.handlarVantar;
-    if (!kommer(s, false, rad)) handlarHem(s, rad); // byn finns inte längre bland grannarna: hen går hem
-  }
+// en handlare som en by skickat (steg 11.6.8) går in när ingen annan handlare är i byn, men inte under istiden (raden
+// handlaren som väntar i TAKTER, en gång i timmen, steg 12.1.107)
+export function handlarVantarTimme(s: State) {
+  if (s.handlare || !s.handlarVantar?.length || iIstiden(ageIndex(s)) && !s.infart?.klar) return;
+  const rad = s.handlarVantar.shift()!;
+  if (!s.handlarVantar.length) delete s.handlarVantar;
+  if (!kommer(s, false, rad)) handlarHem(s, rad); // byn finns inte längre bland grannarna: hen går hem
+}
+export function handelSteg(s: State, _dtSec: number) {
   const h = s.handlare;
   if (!h) return;
   handlarFackla(s, h);
