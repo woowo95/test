@@ -2,6 +2,7 @@
 import { isDeepStrictEqual } from 'node:util';
 import { MIN, Person, Act, createState, addTool, FOREST, HOUR_S, toolsOf, BYN, step, living, sees, ageIndex, cloneState, ageStart, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, dropLoad, T, isStored, zonesOf, allows, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, stat, bynsMitt, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, treeOn, ownsAmount, addTo, setAmount, isFood, grundvarde, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, MATERIAL, usable, dropSpot, ALDER, KROPP, samlingRum, varmareInne, haulJob, fetchFuel, chooseTask, minOf } from '../../sim';
 import * as SIM from '../../sim';
+import { antal } from '../../sim/ord';
 import { findPath } from '../../sim/vag';
 import { KANIN } from '../../sim/redskap';
 import { START, STEG_TIM } from '../kor';
@@ -216,10 +217,14 @@ SCENARIER.agandet = {
     const famFore = agare.filter(x => fam.some(q => q.id === x)).length;
     const bar = s.stat?.baddBuren ?? 0, lamnade = s.stat?.baddLamnad ?? 0; // (byns statistik, aldrig loggen)
     // familjens egen bädd i huset och byns slöjdbänk, som också står där
-    const fri = () => rum.tiles.find(i => rum.tiles.includes(i + 1) && [i, i + 1].every(j => !SIM.stationAt(s, j % W, Math.floor(j / W))));
+    const ingang = (j: number) => SIM.GRANNAR4.some(([dx, dy]) => SIM.bitAt(s, j % W + dx, Math.floor(j / W) + dy)?.k === 'oppning'); // rutan innanför öppningen hålls fri (steg 12.1.36)
+    const fri = () => rum.tiles.find(i => rum.tiles.includes(i + 1) && [i, i + 1].every(j => !SIM.stationAt(s, j % W, Math.floor(j / W)) && !ingang(j)));
     const stall = (k: string, ag?: number) => { const i = fri() ?? i0, t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: i % W, y: Math.floor(i / W), kvar: 0, inne: 1, ag }; s.stationer!.push(t); SIM.touch(s); return t; };
     // den egna bädden åt någon i familjen som inte redan har en (nu när familjens bäddar får plats i huset, steg 9.2.36)
-    const utan = fam.find(q => !SIM.baddOf(s, q)) ?? a, egenB = stall('halmbadd', utan.id), bank = stall('flatarbank');
+    const utan = fam.find(q => !SIM.baddOf(s, q)) ?? a, egenB = stall('halmbadd', utan.id);
+    // fler bäddar ryms i huset nu, så en av familjens andra bäddar flyttas ut för att ge slöjdbänken en ruta
+    if (fri() === undefined) { const ut = stationerOf(s).find(t => iH(t) && t.k === 'halmbadd' && t !== egenB); if (ut) { s.stationer = s.stationer!.filter(t => t !== ut); SIM.touch(s); } }
+    const bank = stall('flatarbank');
     const iHus = iH(egenB);
     const iHuset = iHus && iH(bank);
     // huset byter ägare (som när det köps eller ärvs av någon utanför familjen): familjens bäddar flyttas ut eller tas isär
@@ -1758,7 +1763,7 @@ SCENARIER.arvsskatt = {
     die(s, a, 'drap');
     const tog = s.stat?.arvsskattVarde ?? 0, arv = ownsAmount(s, c, 'silver') - c0, femtedel = (tog + arv) / 5;
     const iTax = s.log.findIndex(e => e.text.startsWith('Byn tog saker värda') && e.text.includes(a.name)), iArv = s.log.findIndex(e => e.text.includes('ärvde') && e.text.includes(a.name));
-    const kron = (s.hist?.kronika ?? []).some(k => k[1] === `Byn tog saker värda ${Math.round(tog)} i arvsskatt efter ${a.name}.` && k[2] === 'arv');
+    const kron = (s.hist?.kronika ?? []).some(k => k[1] === `Byn tog saker värda ${antal(tog / SIM.grundvarde('silver'), 'silver')} i arvsskatt efter ${a.name}.` && k[2] === 'arv');
     // ett dödsbo som bara är ett hus ger inget
     byggare(s); planBuild(s); byggKlart(s);
     const h = housesOf(s)[0]; h.ag = b.id; touch(s);

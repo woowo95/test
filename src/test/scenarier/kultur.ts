@@ -3743,7 +3743,7 @@ SCENARIER.dryckval = {
       ['saften släcker törsten och ger sin tanke, ur raden', slackt],
       [`på kvällen vinet före ölet (${kv}), med smak för öl ölet (${kvOl})`, kv === 'vin' && kvOl === 'ol'],
       ['varje dryck har en rad, och bara de med alkohol tas på kvällen', rader],
-      [`kvällsdrycken är en chans per tid (${(tio * 100).toFixed(0)} % med frågor var 10:e minut, ${(trettio * 100).toFixed(0)} % var 30:e)`, Math.abs(tio - trettio) < 0.1 && Math.abs(tio - (1 - (1 - SIM.RUS.kvall) ** 2)) < 0.1],
+      [`kvällsdrycken är en chans per tid (${(tio * 100).toFixed(0)} % med frågor var 10:e minut, ${(trettio * 100).toFixed(0)} % var 30:e)`, Math.abs(tio - trettio) < 0.1 && Math.abs(tio - (1 - (1 - SIM.RUS.kvall * SIM.rusLust(s, p)) ** 2)) < 0.1],
       ['ölet släcker lite törst och ger rus', ol],
     ];
   },

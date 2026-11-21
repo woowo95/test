@@ -3113,7 +3113,7 @@ SCENARIER.ryktesarv = {
     t.seder.v.fortjanst = 0;
     // delarna som inte är viktigast skiftar från dygn till dygn: inom tio dygn står det med
     let besk = '';
-    for (let d = 0; d < 10 && !besk.includes(`till ${far.name}, som byn kallar`); d++) { besk = SIM.beskrivning(t, son); t.now += SIM.DAY; }
+    for (let d = 0; d < 10 && !besk.includes(`${far.name}, som byn anser vara`); d++) { besk = SIM.beskrivning(t, son); t.now += SIM.DAY; }
     SIM.die(t, far, 'alderdom'); const dod = SIM.arvAnseende(t, son.id).a;
     return [
       [`en fjärdedel av tjuvryktet (${mitt.toFixed(2)}, väntat ${(tjuv / 4).toFixed(2)}); ryktet rik har ingen händelse bakom sig och räknas inte`, Math.abs(mitt - tjuv / 4) < 1e-9],
@@ -3121,7 +3121,7 @@ SCENARIER.ryktesarv = {
       [`hälften vid full Härkomst (${hark.toFixed(2)}), inget vid full Förtjänst (${fort.toFixed(2)})`, Math.abs(hark - tjuv / 2) < 1e-9 && fort === 0],
       [`bara ett led: barnbarnet ärver inget (${bb})`, bb === 0],
       [`också när föräldern är död (${dod.toFixed(2)})`, Math.abs(dod - mitt) < 1e-9],
-      [`beskrivningen: "${besk}"`, besk.includes(`son till ${far.name}, som byn kallar en tjuv`)],
+      [`beskrivningen: "${besk}"`, besk.includes(`${far.name}, som byn anser vara en tjuv`) && /\bson\b/.test(besk)],
     ];
   },
 };

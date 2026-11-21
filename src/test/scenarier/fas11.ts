@@ -3955,6 +3955,7 @@ SCENARIER.utfarder = {
     const plan = (v: number) => {
       s.styre = { historia: [{ id: p.id, namn: p.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: p.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: { utfarder: v } as never } as never;
       s.seder.v.rang = 1;
+      s.now += SIM.RESA.poangTim * SIM.HOUR; // resmålens poäng sparas en stund (steg 12.1.11): nästa påbud prövas efter den
       return SIM.resaPlan(s, p, 99, 99);
     };
     const mitt = plan(0), upp = plan(1), ned = plan(-1);

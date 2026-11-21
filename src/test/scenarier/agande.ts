@@ -2003,7 +2003,7 @@ SCENARIER.grannklaner = {
     // Handlarna, Räderna och Försvaret (steg 11.1.40): rubriken över räknarna, länkarna till krönikan och vaktraderna
     fl.handlarNr = 2; fl.rovarNr = 1; { const fv = fl.varld!, kr = SIM.klanerOf(fl)[0].rad!; (fv.farder ??= []).push({ id: 999, fran: kr, till: fv.huvud!, g: 'mat', n: 0, t0: fl.now, t1: fl.now + 2 * SIM.DAY, handlare: true }); }
     ui.omvDel = 'handlare'; const hH = grannarFlik.html(); ui.omvDel = 'rader'; const rH = grannarFlik.html(); ui.omvDel = 'forsvar'; const fH = grannarFlik.html(); ui.omvDel = 'grannar';
-    const omv40 = /<h4>Sedan byn grundades<\/h4>/.test(hH) && /En handlare från .* är på väg, framme om ungefär 2 år/.test(hH) && /data-kkat-lank="grannar">Bytena i krönikan</.test(hH)
+    const omv40 = /<h4>Sedan byn grundades<\/h4>/.test(hH) && /En handlare från .* är på väg, framme om ungefär två år/.test(hH) && /data-kkat-lank="grannar">Bytena i krönikan</.test(hH)
       && /Rövare som kommit/.test(rH) && /data-kkat-lank="strid">Striderna i krönikan</.test(rH) && /Vaktade i natt/.test(fH) && /Vaktar nu/.test(fH);
     const forkl = /title="Hur de ser på byn: fientliga \(-60 av −100 till 100\)\. De skickar ingen handlare"/.test(stangd);
     return [
@@ -2863,7 +2863,7 @@ SCENARIER.kronikakat = {
     const K = s.hist!.kronika, okanda = [...new Set(K.filter(r => r[2] !== undefined && !SIM.kronikaKat(r[2])).map(r => r[2]))];
     // alla slag som koden skriver (kronika, kronikaVid och kronikaBer med ett fast slag), jämförda med registret (steg 12.1.65)
     const simMapp = new URL('../../sim/', import.meta.url), kod = readdirSync(simMapp).filter(f => f.endsWith('.ts')).map(f => readFileSync(new URL(f, simMapp), 'utf8')).join('\n');
-    const iKoden = [...new Set([...kod.matchAll(/\bkronika(?:Vid)?\(s,[^;]*?, '(\w+)'\)/g), ...kod.matchAll(/\bkronikaBer\(s, '(\w+)'/g)].map(m => m[1]))];
+    const iKoden = [...new Set([...kod.matchAll(/\bkronika(?:Vid)?\(s,[^;]*?, '(\w+)'\)(?!\})/g), ...kod.matchAll(/\bkronikaBer\(s, '(\w+)'/g)].map(m => m[1]))];
     const utanKat = iKoden.filter(k => !SIM.kronikaKat(k));
     const a = living(s)[0];
     SIM.kronikaBer(s, 'k_fodd', a.id, { ...SIM.personFalt(a), mor: a.name, far: a.name });
