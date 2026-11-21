@@ -30,7 +30,8 @@ import { ISTID, ageIndex, hourOf, isLight, kallTid } from './tid';
 import { temperature, vaderNu } from './vader';
 import { notis } from './notiser';
 import { homeless } from './byggnader';
-import { tecken } from './religion';
+import { tecken, troOf } from './religion';
+import { prastOf, prastSort } from './kult';
 import { tanke } from './tankar';
 
 // Styret (steg 3.5, "Ledarskap och makt" i designdokumentet).
@@ -428,7 +429,9 @@ export const ledarTitel = (s: State, l: Person) => titelFor(s, l, vuxnaOf(s));
 // yrket som visas (steg 3.10.19): ledarens titel så länge hen leder, annars yrket. p.tag räknas som förut under tiden och syns igen
 // när hen slutar leda
 // den skickligaste av alla med samma yrke är mästare i det (steg 7.5.9), den som går i lära är lärling
-export const yrkeNamn = (s: State, p: Person) => s.styre?.ledare === p.id && alive(p) && s.styre.titel ? s.styre.titel : mastarNamn(s, p);
+// trons präst heter efter ämbetet på samma sätt (steg 12.1.213): Völva, Gode eller Präst efter tron, och yrket som räknas ur timmarna syns igen när hen inte längre är präst
+export const yrkeNamn = (s: State, p: Person) => s.styre?.ledare === p.id && alive(p) && s.styre.titel ? s.styre.titel : prastAmbete(s, p) ?? mastarNamn(s, p);
+const prastAmbete = (s: State, p: Person) => { const tr = troOf(s, p.tro); return tr && prastOf(s, tr) === p ? prastSort(tr, p.sex) : undefined; };
 function mastarNamn(s: State, p: Person) {
   if (!p.tag || p.tag === 'Dagdrivare' || p.tag === 'Mästare') return p.tag;
   const lika = living(s).filter(q => q.tag === p.tag);

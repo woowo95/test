@@ -234,7 +234,7 @@ const YRKEN: Record<string, number> = {
   Slaktare: 0.1, Korgmakare: 0.06, Snickare: 0.1, Spjutmakare: 0.05, Skinnsömmare: 0.08, Garvare: 0.06, Stenhuggare: 0.08, Odlare: 0.15, Kock: 0.1, Vattenbärare: 0.06, Läkekunnig: 0.05,
   Lärare: 0.04, Vargjägare: 0.03, Kämpe: 0.03, Handlare: 0.05,
   // yrkena från de nya systemen (steg 12.1.139): snäva, så att den som mest brygger är bryggare och inte kock
-  Präst: 0.04, Skald: 0.05, Skrivare: 0.04, Bryggare: 0.06, Vävare: 0.08, Krukmakare: 0.04,
+  Skald: 0.05, Skrivare: 0.04, Bryggare: 0.06, Vävare: 0.08, Krukmakare: 0.04, // trons präst heter efter ämbetet, inte efter timmarna (yrkeNamn i styre.ts, steg 12.1.213)
   Herde: 0.08, Biodlare: 0.02, // den som mest vallar, mjölkar, klipper och matar djuren, och den som sköter bina (steg 12.1.32; handlingarnas yrke i handlingar.ts)
   Kolare: 0.04, // den som kolar och ser till milan (steg 12.2.2)
   Smed: 0.04, // den som blåser järn och smider (steg 12.2.3 och 12.2.4)
@@ -244,7 +244,7 @@ const YRKEN: Record<string, number> = {
 const YRKE_AV: Partial<Record<string, string[]>> = {
   Slaktare: ['slakta', 'rensa'], Korgmakare: ['korg', 'nat'], Snickare: ['station', 'tillbehor', 'klyva_plank', 'gor_leksak', 'slagtra', 'mal', 'trumma', 'metspo', 'slanda', 'gor_pilar', 'skold', 'bage', 'lyra', 'krycka', 'traben', 'krok', 'bagborr', 'kalke', 'slade'], /* och träsakerna vid snickarbänken (steg 9.4.5) */ Spjutmakare: ['spjut'], Skinnsömmare: ['rock', 'skor', 'byxor', 'mossa', 'snoskor'], Garvare: ['garva'],
   Stenhuggare: ['hugga_sten'], Odlare: ['odla'], Kock: ['grilla', 'steka', 'koka_mat', 'gropa', 'koka_buljong', 'baka', 'torka', 'roka'], Vattenbärare: ['vatten'], Läkekunnig: ['varda'], Lärare: ['lara'], Vargjägare: ['vargjakt'], Kämpe: ['strid', 'forsvar', 'forsvarRovare'], Handlare: ['handla'],
-  Präst: ['ritual', 'be'], Skald: ['upptrada'], Skrivare: ['skriva', 'runsten', 'bok', 'gora_pergament', 'riva_black'], Bryggare: ['brygga', 'malta', 'tappa', 'branna'], // steg 12.1.139
+  Skald: ['upptrada'], Skrivare: ['skriva', 'runsten', 'bok', 'gora_pergament', 'riva_black'], Bryggare: ['brygga', 'malta', 'tappa', 'branna'], // steg 12.1.139
   Vävare: ['spinna', 'vava', 'spinna_ull', 'vava_ull'], Krukmakare: ['lerkruka', 'lera'],
 };
 export const TAGS = Object.entries(YRKEN).map(([tag, min]) => ({ tag, min, acts: ACT_LIST.filter(a => ACTS[a].yrke === tag || YRKE_AV[tag]?.includes(a)) }));

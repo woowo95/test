@@ -4181,7 +4181,7 @@ SCENARIER.pabud = {
 };
 
 SCENARIER.yrken = {
-  text: 'Yrkena Herde och Biodlare (steg 12.1.32, YRKEN i seder.ts): den som mest vaktar och sköter djuren kallas herde, och den som sköter bina biodlare; och de sex yrkena präst, skald, skrivare, bryggare, vävare och krukmakare (steg 12.1.139)',
+  text: 'Yrkena Herde och Biodlare (steg 12.1.32, YRKEN i seder.ts): den som mest vaktar och sköter djuren kallas herde, och den som sköter bina biodlare; och yrkena skald, skrivare, bryggare, vävare och krukmakare (steg 12.1.139); trons präst heter efter ämbetet (steg 12.1.213)',
   kor: () => {
     const s = SIM.cloneState(testBy(3)), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18), [h, b, ...ovriga] = vuxna;
     for (const x of vuxna) { x.tag = undefined; x.kallad = undefined; x.habit = { samla: 6, ved: 4, vila: 2 }; }
@@ -4197,11 +4197,11 @@ SCENARIER.yrken = {
     ];
   },
 };
-// steg 12.1.139: sex yrken från de nya systemen, och bryggningen räknas till bryggaren och inte kocken
+// steg 12.1.139: yrken från de nya systemen (Präst heter efter ämbetet sedan steg 12.1.213), och bryggningen räknas till bryggaren och inte kocken
 function nyaYrken(): [string, boolean][] {
   const s = SIM.cloneState(testBy(3)), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
   const fall: [string, Record<string, number>][] = [
-    ['Präst', { ritual: 5, be: 4, samla: 4 }], ['Skald', { upptrada: 6, samla: 5 }], ['Skrivare', { skriva: 4, bok: 2, gora_pergament: 2, samla: 4 }],
+    ['Skald', { upptrada: 6, samla: 5 }], ['Skrivare', { skriva: 4, bok: 2, gora_pergament: 2, samla: 4 }],
     ['Bryggare', { brygga: 4, malta: 3, tappa: 2, koka_mat: 1, samla: 3 }], ['Vävare', { spinna: 4, vava: 4, samla: 4 }], ['Krukmakare', { lerkruka: 5, lera: 2, samla: 5 }],
   ];
   // testbyn har få vuxna: två yrken i taget, och de andra gör vardagligt arbete
@@ -4215,8 +4215,18 @@ function nyaYrken(): [string, boolean][] {
     del.forEach(([y], i) => fick.push([y, vuxna[i]!.name, vuxna[i]!.tag ?? 'inget']));
   }
   const kock = SIM.TAGS.find(t => t.tag === 'Kock'), bry = SIM.TAGS.find(t => t.tag === 'Bryggare');
+  // trons präst heter efter ämbetet (steg 12.1.213): den som ber mest blir ingen präst, och prästen kallas Völva, Gode eller Präst
+  for (const x of vuxna) { x.tag = undefined; x.kallad = undefined; x.habit = { samla: 6, ved: 4, vila: 2 }; }
+  vuxna[0]!.habit = { ritual: 5, be: 4, samla: 4 };
+  SIM.updateTags(s);
+  const berMest = vuxna[0]!.tag ?? 'inget';
+  const t = SIM.cloneState(testBy(25, b => !!b.tron?.length)), tr = t.tron?.[0], q = SIM.living(t).find(x => SIM.ageOf(x, t.now) >= 18 && t.styre?.ledare !== x.id);
+  let ambete = '', utan = '', vantat = '';
+  if (tr && q) { q.tro = tr.id; tr.prast = q.id; ambete = SIM.yrkeNamn(t, q) ?? ''; vantat = SIM.prastSort(tr, q.sex); tr.prast = undefined; utan = SIM.yrkeNamn(t, q) ?? 'inget'; }
   return [
-    [`de sex yrkena finns och har handlingar (${fall.map(([y]) => `${y}: ${SIM.TAGS.find(t => t.tag === y)?.acts.join(', ') ?? 'saknas'}`).join('; ')})`, fall.every(([y]) => (SIM.TAGS.find(t => t.tag === y)?.acts.length ?? 0) > 0)],
+    [`ingen kallas präst för att hen ber mest (${berMest}); Präst är inget av yrkena som räknas ur timmarna`, berMest !== 'Präst' && !SIM.TAGS.some(x => x.tag === 'Präst')],
+    [`trons präst heter efter ämbetet (${ambete || 'ingen tro i testbyn'}), och efter yrket när hen inte är präst (${utan})`, !!ambete && ambete === vantat && utan !== ambete],
+    [`yrkena finns och har handlingar (${fall.map(([y]) => `${y}: ${SIM.TAGS.find(t => t.tag === y)?.acts.join(', ') ?? 'saknas'}`).join('; ')})`, fall.every(([y]) => (SIM.TAGS.find(t => t.tag === y)?.acts.length ?? 0) > 0)],
     ['bryggningen hör till bryggaren och inte kocken', !!bry && !!kock && ['brygga', 'malta', 'tappa', 'branna'].every(a => bry.acts.includes(a as SIM.Act) && !kock.acts.includes(a as SIM.Act))],
     ...fick.map(([y, namn, tag]): [string, boolean] => [`${namn} kallas ${tag} (ska vara ${y})`, tag === y]),
   ];
