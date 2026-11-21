@@ -218,7 +218,8 @@ export function ersattAv(s: State, g: string) {
 }
 // verktyget som används till k (det första som finns i byn), eller undefined. En sliten yxa är fortfarande en yxa
 const verktygFor = (s: State, k: string) => Object.keys(SAKER[k]!.skaffa!.verktyg ?? {}).find(m => isTool(m) ? nTools(s, m) >= 1 : amountOf(s, m) >= 1);
-const ordFor = (s: State, k: string) => { const m = verktygFor(s, k); return m ? SAKER[k]!.skaffa!.verktyg![m] : ''; };
+// verktygets ord; har verktyget slitits ut eller gått åt i arbetet står det första (det vanliga) verktyget, aldrig en lucka
+const ordFor = (s: State, k: string) => { const v = SAKER[k]!.skaffa!.verktyg ?? {}, m = verktygFor(s, k) ?? Object.keys(v)[0]; return m ? v[m] : ''; };
 // p kan få tag i det som behövs till k: verktyget och materialet, och en flinta över att tända eld med.
 // Materialet tas i behovsstegen (behov.ts): sitt eget, byns, en gåva, och annars av andras (en lindrig stöld)
 const hasRecipe = (s: State, p: Person, k: string) => (!SAKER[k]!.skaffa!.verktyg || !!verktygFor(s, k))

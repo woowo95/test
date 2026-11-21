@@ -15,6 +15,9 @@
 - 12.1.21 (rikedomen lockar): `npm run strid` före (på 141bbace) och efter (85a3aff3), en gång var, som information om flockarna.
 - 12.1.11 (vägarna glöms efter tio dygn, resans poäng räknas en gång per timme): ändrar spelet. Skyldig koll med nytt facit och `npm run likhet` (reslikhet var grön).
 
+- Röda scenarier redan på cc9dac54 (riktad för 12.1.211–212, och lika röda före stegen): karavanattack (kraschar: ingen handlare), vacktspar (den halvt väckta blev färdig 1 s efter), vacktkronika (världens händelser om byn i krönikan), resfel (karavanens ledare känner inga platser; gästen utan vatten dör inte av törst), rovarmotet (en gick igenom en fiende), utbrott (bara tjura). Rättas i systemets testvarv innan 12.1 publiceras.
+- Vaktlarmet text lucka i by 1001 ("träspjut med .": verktyget slets ut innan saken blev klar) rättat efter 12.1.221 (ordFor i redskap.ts).
+
 ## Grenen par-texter (12.1.118–12.1.122, texterna efter granskningen)
 
 - Committerna på par-texter har bara typkontrollen och stegens egna scenarier (ord, textfel, tidsord) bakom sig, och ett tjugotal scenarier om texterna. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` när grenen förts in i varld.
