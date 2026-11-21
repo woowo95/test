@@ -159,7 +159,7 @@ export function stepVinter(s: State, dt = 3600) {
     const forst = !d.kyla;
     d.kyla = (d.kyla ?? 0) + tim;
     d.hunger = Math.min(1, d.hunger + VINTER.kylaHunger * tim);
-    if (d.kyla >= VINTER.frysTim * tamEg(d).talighet) tamDor(s, d, 'frös ihjäl'); // det tåliga tål kylan längre (steg 10.10.29)
+    if (d.kyla >= VINTER.frysTim * tamEg(d).talighet) tamDor(s, d, 'av kyla'); // det tåliga tål kylan längre (steg 10.10.29)
     else if (forst) count(s, 'tamFryser');
   }
   if (godsel > 0) {

@@ -321,7 +321,8 @@ export function toolDone(s: State, p: Person, k: string) {
   nyKvalitet(s, p, t, (p.task ? kvVid(s, p, p.task.act) : 0) + knivKv(s, p, k) + nalKv(s, p, k), sakNamn(k).toLowerCase()); // hur bra det blev (kvalitet.ts), och bättre med järnkniven (steg 12.2.6)
   nyttVid(s, t); gjort(s, p, 'gjort');
   slitVid(s, gruppOf(k) as Act, REDSKAP.bensylSlits); // det som kräver bänkens redskap (plaggen och vattensäcken), efter arbetet och inte saken
-  const g = SAKER[k]!.gors!, text = (t: string) => t.replace('{namn}', p.name).replace('{verktyg}', ordFor(s, k));
+  // verktyget kan ha gått sönder under arbetet: då nämns det inte ("täljde byns första träspjut med .", steg 12.1.229)
+  const g = SAKER[k]!.gors!, v = ordFor(s, k), text = (t: string) => t.replace('{namn}', p.name).replace(v ? '{verktyg}' : / med \{verktyg\}/, v);
   if (forstaGang(s, g.stat)) {
     log(s, text(g.forsta), 'world', [p.id]);
     if (g.fame) p.fame.push(g.fame);

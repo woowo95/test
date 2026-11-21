@@ -1,4 +1,5 @@
 import { bynsMitt } from './omrade';
+import { talOrd } from './ord';
 import { balans } from './balans';
 import { ALDER, ageOf, count, enTillDar, living, log } from './folk';
 import { motgangNu, motgangTal } from './motgang';
@@ -133,7 +134,7 @@ function minns(s: State, n: number) {
   const f = bynsMitt(s), a = areaOf(f.x, f.y);
   for (const p of living(s)) bynsMinne(s, p, 'flod', a, n);
   count(s, 'flod minns');
-  log(s, `Byn minns att vattnet nådde ${n === 1 ? 'en ruta' : `${n} rutor`} upp på land. Där bygger man inte igen.`, 'world');
+  log(s, `Byn minns att vattnet nådde ${n === 1 ? 'en ruta' : `${talOrd(n)} rutor`} upp på land. Där bygger man inte igen.`, 'world');
 }
 // jordgolv under vatten blir lera, och leran blir jordgolv igen leraTim timmar efter att vattnet gått undan
 function lera(s: State) {
@@ -169,7 +170,7 @@ function dranker(s: State, fore: Uint8Array) {
     if (isFood(a.k)) { mat += a.n; a.n = 0; a.dold = undefined; }
     else if (viktOf(a.k) <= FLOD.latt && !roofed(s, a.x, a.y)) { bort += a.n; a.n = 0; a.dold = undefined; }
   }
-  if (mat) { count(s, 'flod mat', mat); log(s, `Vattnet förstörde ${mat} mat i lagret.`, 'world'); }
-  if (bort) { count(s, 'flod flot bort', bort); log(s, `${bort} lätta saker flöt bort med vattnet.`, 'world'); }
+  if (mat) { count(s, 'flod mat', mat); log(s, `Vattnet förstörde ${mat > 12 ? 'mycket mat' : 'en del av maten'} i lagret.`, 'world'); }
+  if (bort) { count(s, 'flod flot bort', bort); log(s, `${bort > 12 ? 'Många lätta saker' : bort > 1 ? 'Några lätta saker' : 'En lätt sak'} flöt bort med vattnet.`, 'world'); }
   if (mat || bort) tidy(s);
 }

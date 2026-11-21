@@ -263,7 +263,10 @@ export const mayTake = (s: State, p: Person, k: string) => ownsAmount(s, p, k) +
 const kyrkornas = (s: State, k: string) => { const d = agOf(s, k); let n = 0; if (d) for (const o in d) if (+o < BYN) n += d[o]; return n; };
 export const takeLimit = (s: State, k: string, p?: Person, fran?: Person) => fran ? ownsAmount(s, fran, k) : p ? mayTake(s, p, k) : amountOf(s, k) - kyrkornas(s, k);
 // allt p äger i förrådet, per slag (i den ordning slagen först har ägare bland stackarna, som förut)
-export function ownedStock(s: State, p: Person | number) {
+// hela förrådet också när frågan ställs inom räckhåll (iRackhall): agOf räknar då bara stackarna där, och ett slag som
+// bara ligger utom räckhåll gav inga ägare (kraschen i lagens röst, steg 12.1.229)
+export function ownedStock(s: State, p: Person | number) { return iHelaForradet(() => ownedStockHela(s, p)); }
+function ownedStockHela(s: State, p: Person | number) {
   const id = typeof p === 'number' ? p : p.id, out: Record<string, number> = {}, sett = new Set<string>();
   for (const a of summa(s).st) {
     if (!a.ag || sett.has(a.k) || !isStored(s, a.x, a.y)) continue;
@@ -649,11 +652,11 @@ function besideSpot(s: State, k: string, occ: Occ) {
   if (r) return r;
   const zs = zonesOf(s).filter(z => z.hus === undefined), base = zs.filter(z => allows(z, k));
   // nödlösning när också ringen är full: längre ut, på en ruta där inget annat ligger (aldrig ovanpå en annan sak) och
-  // ingen stubbe står (där lägger roomIn inget, och då hamnade det ovanpå något annat i lagret)
+  // ingen stubbe eller eld står (där lägger roomIn inget, och då hamnade det ovanpå något annat i lagret)
   const upptagen = new Set<number>();
   for (const a of things(s)) if (!(a.k === k && !isTool(k) && a.n < rymd(s, a.x, a.y, k) - 1e-9)) upptagen.add(key(a.x, a.y));
   const z0 = (base.length ? base : zs)[0];
-  for (const r of ringTiles(s, z0, LAGER.bredvid + 1, Math.max(W, H), (x, y) => inMap(x, y) && !upptagen.has(key(x, y)))) if (zoneAt(s, r.x, r.y) < 0 && !stubbeOn(s, r.x, r.y) && nasIFloden(s, key(r.x, r.y)) && !(s.flodHot && isFood(k) && flodHotad(s, key(r.x, r.y)))) return r; // inte dit vattnet stiger (steg 3.8.7)
+  for (const r of ringTiles(s, z0, LAGER.bredvid + 1, Math.max(W, H), (x, y) => inMap(x, y) && !upptagen.has(key(x, y)))) if (zoneAt(s, r.x, r.y) < 0 && !occ.eld.has(key(r.x, r.y)) && !stubbeOn(s, r.x, r.y) && nasIFloden(s, key(r.x, r.y)) && !(s.flodHot && isFood(k) && flodHotad(s, key(r.x, r.y)))) return r; // inte dit vattnet stiger (steg 3.8.7)
   return { x: zs[0].x, y: zs[0].y }; // hela kartan är full
 }
 export const fetchSpot = (s: State, k: string) => {

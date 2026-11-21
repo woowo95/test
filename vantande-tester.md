@@ -249,3 +249,7 @@
 
 - Fynden 372 och 384 ändrar bara vad testerna läser (byns statistik i stället för händelseloggen) och lägger till räknare; 380, 397 och 382 ändrar bara bilden. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` i kedjan med resten av 12.1, och `npm run utseende` för 380 och 397 (stenen, spjutet, dammet, tornadons fåror och stridens streck ritas nu ogenomskinligt med paletten; inga nya färger ska synas).
 - Scenariot symboler är rött på varld redan före 12.1.109 (05d713f3): tolv emojier i sim/berattelser.ts, resa.ts och rykten.ts saknar symbol.
+
+## 12.1.229 (kylan, grenen par-kylan sammanslagen med varld)
+
+- Mätt på Macen med 8 byar i 35 dygn på 61c11aac: tre dör ut, 8 döda av kyla, inga vaktlarm. Ändrar byarna (gömstället, veden för den som fryser, småbarnen, var stationer och högar läggs): skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit. Scenarierna fullaforrad och lager var röda på varld redan före sammanslagningen (515efcd9).

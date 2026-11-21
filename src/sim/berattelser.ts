@@ -2352,7 +2352,7 @@ const MDEF = {
     { t: '{folk} kom hem från {resa} till {mal} och hade mycket att berätta.', om: iBy },
     { t: 'Vägen till {mal} var lång, men {folk} kom hem från {resa}.', om: iBy },
     { t: 'I snön kom {folk} hem från {resa} till {mal}.', om: f => iBy(f) && f.sno === true },
-    { t: '{namn} har varit ute på resa.', om: iPerson },
+    { t: 'Ute på vägarna har {namn} varit förut.', om: iPerson },
     { t: '{Hen} har sett andra platser än byn.', om: iPerson },
     { t: '{namn} har gått långt bort från byn och kommit hem igen.', om: iPerson },
   ],

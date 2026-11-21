@@ -13,7 +13,7 @@ import { PABUD, PABUD_FRAGOR, pabudFran, pabudOm, STRAFF_NAMN, ledarHard, legiti
 import { fangelseLedigt } from './fangelse';
 import { knows } from './teknik';
 import type { HandelseTyp } from './rykten';
-import { amountOf, ownedStock } from './lager';
+import { amountOf, iHelaForradet, ownedStock } from './lager';
 import { FOOD } from './saker';
 import type { SkriftLag } from './skrift';
 
@@ -76,7 +76,8 @@ const lagTalRa = (s: State, id: string, k: string) => s.styre?.lagar?.find(l => 
 const dev = (v: number) => (v - 10) / 10;
 const antal = (s: State, k: string) => s.stat?.[k] ?? 0;
 // äger p mycket mer mat än sin del av byns (lagen om att förrådet delas lika)
-function rikPaMat(s: State, p: Person) {
+function rikPaMat(s: State, p: Person) { return iHelaForradet(() => rikPaMatHela(s, p)); } // hela förrådet, också inom räckhåll
+function rikPaMatHela(s: State, p: Person) {
   const egen = ownedStock(s, p), n = Math.max(1, living(s).length);
   let m = 0, alla = 0;
   for (const k of FOOD) { m += egen[k] ?? 0; alla += amountOf(s, k); }
