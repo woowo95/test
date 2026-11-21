@@ -230,14 +230,16 @@ export function stubbeGravd(s: State, p: Person, t: Task) {
 export function rotStumps(s: State) {
   if (s.stubbar?.length) s.stubbar = s.stubbar.filter(k => s.now - k.t < STUBBE_LIV);
 }
-// hugg ut ved och grenar ur en stam; ger det som blev, och tar bort stammen när den är slut
-export function chopStock(s: State, ref: number | undefined, amount: number) {
+// hugg ut ved och grenar ur en stam; ger det som blev, och tar bort stammen när den är slut. Grenarna dras bara när de tas med
+// (med, steg 12.1.218); de som är kvar när veden är slut (kvar) blir en hög grenar på rutan (steg.ts)
+export function chopStock(s: State, ref: number | undefined, amount: number, med = true) {
   const k = stocks(s).find(q => q.id === ref);
   if (!k) return undefined;
-  const ved = Math.min(k.ved, amount), gr = Math.min(k.grenar, ved * SKOG.stamGrenar / SKOG.stamVed);
+  const ved = Math.min(k.ved, amount), gr = med ? Math.min(k.grenar, ved * SKOG.stamGrenar / SKOG.stamVed) : 0;
   k.ved -= ved; k.grenar -= gr;
-  if (k.ved <= 1e-6) { k.grenar = 0; s.stockar = stocks(s).filter(q => q !== k); }
-  return { ved, grenar: gr, done: k.ved <= 1e-6 };
+  let kvar = 0;
+  if (k.ved <= 1e-6) { kvar = k.grenar; k.grenar = 0; s.stockar = stocks(s).filter(q => q !== k); }
+  return { ved, grenar: gr, done: k.ved <= 1e-6, kvar, x: k.x, y: k.y };
 }
 
 // den fällda stam närmast byn som räcker till ett virke (steg 4.5.5.2)

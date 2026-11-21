@@ -1250,9 +1250,16 @@ SCENARIER.grenartak = {
     SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'grenar', Math.ceil(tak * 2)); const lamnas = !SIM.grenarMed(s, t);
     SIM.setAmount(s, 'grenar', 0); const tas = SIM.grenarMed(s, t);
     SIM.setAmount(s, 'ved', 0); SIM.setAmount(s, 'grenar', Math.ceil(tak * 2)); const vedBrist = SIM.grenarMed(s, t);
+    // steg 12.1.218: grenarna som lämnas dras inte från stammen, och de som är kvar när veden är slut blir en hög på rutan
+    const st = { id: 9901, x: SIM.eldPlats(s).x + 4.5, y: SIM.eldPlats(s).y + 4.5, ved: 6, grenar: 9 };
+    (s.stockar ??= []).push(st as SIM.Stock);
+    const forst = SIM.chopStock(s, 9901, 3, false)!, grenKvar = st.grenar, mark0 = SIM.paMarken(s, 'grenar');
+    const sist = SIM.chopStock(s, 9901, 3, false)!; SIM.laggPaRutan(s, 'grenar', sist.kvar, sist.x, sist.y);
+    const hog = SIM.paMarken(s, 'grenar') - mark0;
     return [
       [`grenarna över bufferten eldas först (grenar ${g0} → ${g1}, ved ${v0} → ${v1}, fick ${fick.toFixed(1)})`, g1 < g0 && v1 === v0 && Math.abs(fick - 4) < 0.5],
       [`vid bufferten tas veden (grenar ${g2}, ved ${v2})`, g2 === Math.ceil(buf) && v2 < 200],
+      [`grenarna som lämnas stannar på stammen (${forst.grenar} tagna, ${grenKvar} kvar) och blir en hög på rutan när veden är slut (${sist.kvar} kvar, ${hog} på marken)`, forst.grenar === 0 && grenKvar === 9 && sist.done && sist.kvar === 9 && hog === 9],
       [`det som inte fick plats går tillbaka som ${tillbaka}`, tillbaka === '2 ved och 1 grenar'],
       [`grenarna från stammen: lämnas när de räcker (${lamnas}), tas när de fattas (${tas}) och när veden fattas (${vedBrist})`, lamnas && tas && vedBrist],
     ];

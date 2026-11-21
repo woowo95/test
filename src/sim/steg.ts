@@ -49,7 +49,7 @@ import { fylldSack, redskapIHanden, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './skog';
 import { needLadder, noticeTheft, stole, takeMaterial, getable, ataPortion } from './behov';
-import { iHelaForradet, stacksOf, isStored, capacity, mayTake, avbryt, backSpot, barHem, bordSlag, carryKind, fetchSpot, helaIBordan, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf, harTillHands, iRackhall, iBordan, bordanAv, narmasteMed, uttagVakt } from './lager';
+import { iHelaForradet, laggPaRutan, stacksOf, isStored, capacity, mayTake, avbryt, backSpot, barHem, bordSlag, carryKind, fetchSpot, helaIBordan, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf, harTillHands, iRackhall, iBordan, bordanAv, narmasteMed, uttagVakt } from './lager';
 import { FOOD, SAKER, isFood, viktOf } from './saker';
 import { DJURARTER, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
@@ -1118,19 +1118,19 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     }
   },
   hugga: (s, p, tk, { y, bar }) => {
-    const k = stocks(s).find(q => q.id === tk.ref), got = chopStock(s, tk.ref, y);
+    const k = stocks(s).find(q => q.id === tk.ref), med = grenarMed(s, tk), got = chopStock(s, tk.ref, y, med);
     if (!got) tk.until = s.now; // stammen är slut
     else {
-      tk.carry += got.ved; if (grenarMed(s, tk)) bar('grenar', got.grenar);
+      tk.carry += got.ved; if (med) bar('grenar', got.grenar); laggPaRutan(s, 'grenar', got.kvar, got.x, got.y); // grenarna som blev kvar (steg 12.1.218)
       if (got.done) { tk.until = s.now; const h = k && husById(s, bitAt(s, Math.floor(k.x), Math.floor(k.y))?.hus); if (h) husKlart(s, h, p); } // stocken var det sista i huset (steg 8.1.13)
     }
     return true;
   },
   // virket (steg 4.5.5.2): varje virke tar SKOG.virkeVed av stammens trä, och grenarna följer med som när man hugger
   klyva: (s, _p, tk, { y, bar }) => {
-    const got = chopStock(s, tk.ref, y * SKOG.virkeVed);
+    const med = grenarMed(s, tk), got = chopStock(s, tk.ref, y * SKOG.virkeVed, med);
     if (!got) tk.until = s.now;
-    else { tk.carry += got.ved / SKOG.virkeVed; if (grenarMed(s, tk)) bar('grenar', got.grenar); if (got.done) tk.until = s.now; }
+    else { tk.carry += got.ved / SKOG.virkeVed; if (med) bar('grenar', got.grenar); laggPaRutan(s, 'grenar', got.kvar, got.x, got.y); if (got.done) tk.until = s.now; }
     return true;
   },
   samla: (s, p, tk, { rd, dtSec, bar, slag: plockSlag }) => {

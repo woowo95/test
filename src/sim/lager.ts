@@ -1277,6 +1277,8 @@ export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN
 // lägg n av slaget k ner kring rutan (tx, ty) utanför förrådet: en ruta rymmer så mycket av slaget som den rymmer (rymd), och
 // det som inte får plats läggs på rutorna närmast runt omkring, där inget annat ligger. Aldrig i en eld (eld, steg 12.1.153).
 // Ägarnas hela delar delas som i förrådet (delAv)
+// n hela av slaget k läggs på marken på rutan (x, y) eller bredvid, byns (grenarna som blev kvar på stammen, steg 12.1.218)
+export function laggPaRutan(s: State, k: string, n: number, x: number, y: number) { n = Math.floor(n + 1e-9); if (n < 1) return; laggBredvid(s, stacksOf(s), eldRutor(s), k, n, 1, undefined, Math.floor(x), Math.floor(y)); changed(s); }
 function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: number, c: number, ag: Del | undefined, tx: number, ty: number): { x: number; y: number } | undefined {
   let forst: { x: number; y: number } | undefined; // rutan där det första lades (det gömda i en flyttad hög läggs där, steg 12.1.208)
   for (let r = 0; r <= 4 && n > 1e-9; r++) for (let y = ty - r; y <= ty + r && n > 1e-9; y++) for (let x = tx - r; x <= tx + r && n > 1e-9; x++) {
