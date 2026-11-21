@@ -1715,3 +1715,27 @@ SCENARIER.gammaluppgift = {
     ];
   },
 };
+
+SCENARIER.vavstol = {
+  text: 'Bara det redskap som används slits (steg 12.1.252, KLAR för TILLVERKA i steg.ts): den som spinner med sländan i handen sliter den, och sländan som ligger i vävstolen slits bara när tråden spinns där med den, en tråd i taget',
+  kor: () => {
+    const s = SIM.createState(5, START), p = SIM.living(s)[0]!;
+    klockan(s);
+    p.tek = { ...p.tek, slanda: 1 } as typeof p.tek;
+    SIM.put(s, 'lin', 12, { [p.id]: 12 });
+    const v = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'vavstol', x: 34, y: 34, kvar: 0 } as SIM.Station;
+    (s.stationer ??= []).push(v); SIM.touch(s);
+    const iStol = SIM.newTing(s, 'slanda', 1, p.id); SIM.nyttVid(s, iStol);
+    const iHand = SIM.newTing(s, 'slanda', 1, p.id);
+    const c0 = { stol: iStol.c, hand: iHand.c };
+    p.task = { act: 'spinna', tool: 'slanda' } as SIM.Task; SIM.KLAR_FOR.spinna!(s, p, p.task, 0);
+    const c1 = { stol: iStol.c, hand: iHand.c };
+    p.task = { act: 'spinna' } as SIM.Task; SIM.KLAR_FOR.spinna!(s, p, p.task, 0);
+    const c2 = { stol: iStol.c, hand: iHand.c }, per = 1 / (SIM.ACTS.spinna.redskap!.slanda!.haller! * SIM.kvHaller(iStol));
+    const f = (x: number) => x.toFixed(4);
+    return [
+      [`med sländan i handen slits den, inte sländan i vävstolen (handen ${f(c0.hand)} → ${f(c1.hand)}, vävstolen ${f(c0.stol)} → ${f(c1.stol)})`, c1.hand < c0.hand && c1.stol === c0.stol],
+      [`utan slända i handen slits sländan i vävstolen med en tråd (${f(c1.stol)} → ${f(c2.stol)}, en tråd ${f(per)}), och den i handen inte (${f(c2.hand)})`, Math.abs(c1.stol - c2.stol - per) < 1e-9 && c2.hand === c1.hand],
+    ];
+  },
+};

@@ -299,8 +299,9 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
   if ((ar_vatska(d.ger) || d.kruka) && !kar) return; // ingen ledig behållare som passar (steg 9.4.14): inget blir gjort
   if (vk) taVatskaFran(s, vk.v, vk.n, kar); // ur krukan där det ska sjuda först, så att den blir ledig
   if (d.vatten) taReceptVatten(s); // vattnet tas ur behållaren, som finns kvar (steg 7.6.6, 12.1.251)
-  if (p.task?.tool && d.verktyg) wearUsed(s, p, 1);
-  slitRedskapVid(s, d.act, d.n, p); // sågen vid klyvplatsen slits för varje planka (steg 12.5.1)
+  // bara det redskap som används slits (steg 12.1.252): det i handen, annars det som ligger vid stationen (sågen vid
+  // klyvplatsen för varje planka, steg 12.5.1, och sländan i vävstolen för varje tråd)
+  if (p.task?.tool && d.verktyg) wearUsed(s, p, 1); else slitRedskapVid(s, d.act, d.n, p);
   const ag: Record<string, number> = {};
   for (const [q, n] of Object.entries(av)) addDel(ag, takeMaterial(s, p, q, n), 1);
   if (kar && d.sjud) { kar.kok = { r: d.ger, n: d.n, kvar: d.sjud * MIN, ag: Object.keys(ag).length ? ag : { [p.id]: 1 }, ...(ar_vatska(d.ger) ? { vatska: 1 as const } : {}), q: rullaKvalitet(s, p, kvVid(s, p, d.act)) }; count(s, 'sjuder_' + d.ger); } // osten blir en sak i förrådet när den sjudit (steg 12.4.7) // buljongen sjuder i krukan på elden (stepKok)
