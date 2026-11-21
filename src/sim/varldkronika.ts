@@ -15,17 +15,13 @@ export const VARLDSHANDELSER = {
   nyLedare: { namn: 'Ny ledare', stor: false, text: '{by} fick en ny ledare' },
   krig: { namn: 'Krig', stor: true, text: '{by} och {mot} gick i krig' },
   fred: { namn: 'Fred', stor: true, text: '{by} och {mot} slöt fred' },
-  forbund: { namn: 'Förbund', stor: true, text: '{by} och {mot} slöt förbund' },
   svalt: { namn: 'Svält', stor: false, text: 'Det blev svält i {by}' },
-  farsot: { namn: 'Farsot', stor: false, text: 'En farsot gick genom {by}' },
   lager: { namn: 'Rövarläger', stor: false, text: 'Hungriga ur {by} slog läger som rövare: {mot}' },
   upplost: { namn: 'Upplöst', stor: false, text: '{by} övergavs' },
   utpost: { namn: 'Utpost', stor: false, text: '{by} satte upp utposten {mot} vid {plats}' },
   handelslager: { namn: 'Handelsläger', stor: false, text: '{by} slog upp handelslägret {mot}' },
   rad: { namn: 'Räd', stor: false, text: '{by} gjorde en räd mot {mot}' },
-  karavan: { namn: 'Plundrad karavan', stor: false, text: 'En karavan plundrades vid {plats}' },
   platsbygge: { namn: 'Bygge på leden', stor: false, text: '{by} byggde {plats}' },
-  uppdrag: { namn: 'Uppdrag', stor: false, text: '{by} sände ut ett uppdrag till {plats}' },
 } as const satisfies Record<string, VarldHandelseDef>;
 export type VarldHandelseId = keyof typeof VARLDSHANDELSER;
 

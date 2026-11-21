@@ -1632,16 +1632,17 @@ SCENARIER.byruta = {
 SCENARIER.hortkronika = {
   text: 'Det byn hört i världens krönika (steg 11.4.13, hortHandelse och nyheten i ort.ts): en händelse är hörd när byns uppgifter om platsen är nyare än händelsen, och en nyhet som når byn skrivs i byns krönika med vem som kom med den och ger en notis, en gång',
   kor: () => {
-    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b, c] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b, c, d] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
     const r = vl.rader!.find(x => SIM.lever(vl, x) && vl.platser!.some(q => q.by === x.nr && !SIM.iNaromradet(s, q.nr)))!, nr = vl.platser!.find(q => q.by === r.nr)!.nr;
     const t0 = s.now - 20 * SIM.DAY;
     r.hist = [{ t: t0, tal: { ...r.tal, folk: 10 }, led: 'Ulf' }, { t: t0 + 10 * SIM.DAY, tal: { ...r.tal, folk: 10 }, led: 'Tora' }];
     const h = SIM.varldHandelse(vl, 'nyLedare', t0 + 10 * SIM.DAY, { by: r.nr }), egen = SIM.varldHandelse(vl, 'svalt', t0, { by: vl.huvud });
-    SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + SIM.HOUR }); SIM.raknaBynVet(s);
+    SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + SIM.HOUR }); SIM.larOrt(s, d!, nr, SIM.O_KANT, 1, { t: t0 + SIM.HOUR }); SIM.raknaBynVet(s);
     const fore = SIM.hortHandelse(s, h);
     const n0 = (s.hist?.kronika ?? []).length, notis0 = (s.notiser?.lista ?? []).reduce((x, n) => x + (n.id === 'nyhet' ? n.n : 0), 0);
     SIM.larOrt(s, a!, nr, SIM.O_KANT, 1, { t: t0 + 11 * SIM.DAY, src: b!.id }); // b kommer hem med nyheten
     SIM.larOrt(s, c!, nr, SIM.O_KANT, 1, { t: t0 + 11 * SIM.DAY, src: b!.id }); // samma nyhet en gång till
+    SIM.larOrt(s, d!, nr, SIM.O_KANT, 1, { t: t0 + 11 * SIM.DAY + SIM.MIN, src: b!.id }); // nyare uppgifter, men inget har ändrats sedan byn hörde det: ingen nyhet (steg 12.1.247)
     const rader = (s.hist?.kronika ?? []).slice(n0).filter(k => k[2] === 'nyhet'), notiser = (s.notiser?.lista ?? []).reduce((x, n) => x + (n.id === 'nyhet' ? n.n : 0), 0) - notis0;
     SIM.raknaBynVet(s);
     return [
@@ -1649,7 +1650,8 @@ SCENARIER.hortkronika = {
       ['en händelse efter byns uppgifter är inte hörd', !fore],
       ['med nyare uppgifter är den hörd', SIM.hortHandelse(s, h)],
       [`nyheten skrivs i byns krönika med vem som kom med den ("${rader[0]?.[1]}")`, rader.length === 1 && String(rader[0]![1]).includes(b!.name) && String(rader[0]![1]).includes('ny ledare')],
-      [`och ger en notis, en gång (${notiser})`, notiser === 1],
+      [`och ger en notis, en gång, också när nyare uppgifter utan något nytt kommer (${notiser})`, notiser === 1],
+      ['förbund, farsot, karavan och uppdrag skrivs inte i världens krönika (steg 12.1.83, 12.1.247)', ['forbund', 'farsot', 'karavan', 'uppdrag'].every(k => !(k in SIM.VARLDSHANDELSER))],
     ];
   },
 };

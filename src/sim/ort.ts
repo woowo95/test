@@ -494,7 +494,7 @@ function nyhetNarByn(s: State, p: Person, nr: number, t0: number, t1: number, sr
   if (!vad.length && fore && nu) {
     if (nu.borta && !fore.borta) vad.push(`${q?.namn ?? 'Byn'} har gått under`);
     else if (nu.led !== fore.led) vad.push(`${q?.namn ?? 'Byn'} har fått en ny ledare${nu.led ? `, ${nu.led}` : ''}`);
-    else { const d = Math.round(nu.tal.folk - fore.tal.folk), b = q?.namn ?? 'Byn'; vad.push(d === 0 ? `${b} är lika stor som förut` : d > 0 ? `${b} har vuxit: ${d === 1 ? 'en person till' : `${tal(d)} fler`} bor där nu` : `${b} har krympt: ${d === -1 ? 'en person' : `${tal(-d)}`} färre bor där nu`); } // utan siffror (steg 12.1.120)
+    else { const d = Math.round(nu.tal.folk - fore.tal.folk), b = q?.namn ?? 'Byn'; if (d !== 0) vad.push(d > 0 ? `${b} har vuxit: ${d === 1 ? 'en person till' : `${tal(d)} fler`} bor där nu` : `${b} har krympt: ${d === -1 ? 'en person' : `${tal(-d)}`} färre bor där nu`); } // utan siffror (steg 12.1.120)
   }
   if (!vad.length) return; // inget har ändrats i spannet: ingen nyhet (steg 12.1.64)
   const kom = src !== undefined ? byId(s, src) : p, text = `Nyheter från ${platsText(s, nr)}: ${vad.join('. ')}. ${kom?.name ?? 'Någon'} kom med nyheten.`;
