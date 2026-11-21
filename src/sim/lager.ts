@@ -1274,17 +1274,20 @@ export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN
   storeTings(s, t, at);
   tomBorda(t);
 }
+// ett färdigt golv inne (inte en väg) utan station, sittruta eller lagerplats duger för det som läggs ner (steg 12.1.221):
+// det som läggs ner inne hamnar inne, inom räckhåll, och inte på andra sidan väggen
+const ledigtGolv = (s: State, x: number, y: number) => { const b = bitAt(s, x, y); return !!b && b.k === 'golv' && b.b >= 1 && !MATERIAL[b.m]?.vag && !stationAt(s, x, y) && !sittAt(s, x, y); };
+// n hela av slaget k läggs på marken på rutan (x, y) eller bredvid, byns (grenarna som blev kvar på stammen, steg 12.1.218)
+export function laggPaRutan(s: State, k: string, n: number, x: number, y: number) { n = Math.floor(n + 1e-9); if (n < 1) return; laggBredvid(s, stacksOf(s), eldRutor(s), k, n, 1, undefined, Math.floor(x), Math.floor(y)); changed(s); }
 // lägg n av slaget k ner kring rutan (tx, ty) utanför förrådet: en ruta rymmer så mycket av slaget som den rymmer (rymd), och
 // det som inte får plats läggs på rutorna närmast runt omkring, där inget annat ligger. Aldrig i en eld (eld, steg 12.1.153).
 // Ägarnas hela delar delas som i förrådet (delAv)
-// n hela av slaget k läggs på marken på rutan (x, y) eller bredvid, byns (grenarna som blev kvar på stammen, steg 12.1.218)
-export function laggPaRutan(s: State, k: string, n: number, x: number, y: number) { n = Math.floor(n + 1e-9); if (n < 1) return; laggBredvid(s, stacksOf(s), eldRutor(s), k, n, 1, undefined, Math.floor(x), Math.floor(y)); changed(s); }
 function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: number, c: number, ag: Del | undefined, tx: number, ty: number): { x: number; y: number } | undefined {
   let forst: { x: number; y: number } | undefined; // rutan där det första lades (det gömda i en flyttad hög läggs där, steg 12.1.208)
   for (let r = 0; r <= 4 && n > 1e-9; r++) for (let y = ty - r; y <= ty + r && n > 1e-9; y++) for (let x = tx - r; x <= tx + r && n > 1e-9; x++) {
     if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r || !inMap(x, y) || eld.has(key(x, y))) continue;
     if (r === 0 && sittAt(s, x, y)) continue; // där man står eller sitter vid en station eller ett bord läggs inget, inte heller det man burit dit (steg 12.1.158)
-    if (r > 0 && (!usable(s, x, y) || stubbeOn(s, x, y) || isStored(s, x, y) || st.some(q => q.x === x && q.y === y && q.k !== k && q.n > 1e-6))) continue;
+    if (r > 0 && (!usable(s, x, y) && !ledigtGolv(s, x, y) || stubbeOn(s, x, y) || isStored(s, x, y) || st.some(q => q.x === x && q.y === y && q.k !== k && q.n > 1e-6))) continue;
     let g = st.find(q => q.x === x && q.y === y && q.k === k);
     const v = Math.min(n, Math.max(0, helt(rymd(s, x, y, k)) - (g?.n ?? 0)));
     if (v <= 0) continue;

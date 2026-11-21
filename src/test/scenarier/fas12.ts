@@ -1603,3 +1603,26 @@ SCENARIER.bransleover = {
     ];
   },
 };
+
+// steg 12.1.221: det som läggs ner inne hamnar inne
+SCENARIER.golvlagg = {
+  text: 'Det som läggs ner inne hamnar inne (steg 12.1.221): den som lägger ner en börda vid en station inne i ett hus lägger den på ett färdigt golv bredvid sig i samma rum, inom räckhåll, och inte på andra sidan väggen.',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10);
+    const bank = medBank(s, 'flatarbank');
+    if (!bank.inne) return [['slöjdbänken står inne i ett hus', false]];
+    const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!, vid = SIM.vidStation(bank);
+    p.x = vid.x; p.y = vid.y;
+    const rum = SIM.roomAt(s, Math.floor(p.x), Math.floor(p.y));
+    const fore = new Set((s.stackar ?? []).map(a => a));
+    const tk = { act: 'samla', phase: 'back', tx: p.x, ty: p.y, until: s.now, carry: 0, why: 'prov', items: { grenar: 3 } } as unknown as SIM.Task;
+    p.task = tk; SIM.dropLoad(s, tk, p.x, p.y); p.task = undefined;
+    const nya = (s.stackar ?? []).filter(a => !fore.has(a) && a.k === 'grenar');
+    const inne = nya.filter(a => rum && SIM.roomAt(s, a.x, a.y)?.id === rum.id), nara = nya.filter(a => SIM.iRackvidd(p, a));
+    return [
+      [`hen står vid bänken inne i ett rum (${Math.floor(p.x)},${Math.floor(p.y)})`, !!rum],
+      [`grenarna läggs i samma rum (${inne.length} av ${nya.length} högar: ${nya.map(a => `${a.x},${a.y}`).join(' ')})`, nya.length > 0 && inne.length === nya.length],
+      [`och inom räckhåll (${nara.length} av ${nya.length})`, nya.length > 0 && nara.length === nya.length],
+    ];
+  },
+};
