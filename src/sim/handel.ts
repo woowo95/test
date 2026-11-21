@@ -449,7 +449,7 @@ export function handlarTornado(s: State, h: Handlare, dod: boolean, del: number,
     const P = hp(s, h);
     gastGar(s, h.id); // hen och packningen är borta (steg 9.2.111)
     s.handlare = undefined;
-    log(s, `Handlaren ${P.name} från ${P.gast!.hem!} dog i tornadon.`, 'world');
+    count(s, 'handlareDogTornado'); log(s, `Handlaren ${P.name} från ${P.gast!.hem!} dog i tornadon.`, 'world');
     notis(s, 'gast', `Handlaren ${P.name} från ${P.gast!.hem!} dog i tornadon.`, [], { x: Math.floor(P.x), y: Math.floor(P.y) });
     return;
   }

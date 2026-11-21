@@ -373,6 +373,7 @@ export function brandSteg(s: State, dtSec: number) {
   if (b.r.length) return;
   // branden är slut
   const delar = [`brände ${mark(b.ut.length)}`, b.trad && `${tal(b.trad, true)} träd`, b.vagg && `rev ${b.vagg === 1 ? 'en vägg' : `${tal(b.vagg)} väggar`}`, b.saker && `${b.saker === 1 ? 'en sak' : `${tal(b.saker)} saker`}`, b.brann && `och det här brann upp: ${brannText(b)}`].filter(Boolean);
+  count(s, 'brandSlocknat');
   log(s, `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${tal(b.skadade)} brändes` : ''}.`, 'world');
   if (b.hot || b.ut.length >= BRAND.stor) {
     notis(s, 'motgang', `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${tal(b.skadade)} brändes` : ''}.`);
@@ -560,7 +561,7 @@ function eldSmittar(s: State, b: Brand, dtSec: number) {
 export function antand(s: State, p: Person, var_: string) {
   if (p.brinner !== undefined || !alive(p)) return;
   p.brinner = s.now;
-  count(s, 'brinner');
+  count(s, 'brinner'); count(s, 'brinner: ' + var_); // och orsaken, för testerna (aldrig ur loggen)
   const b = s.brand; // en rad per person och brand, hur många gånger hen än tar eld (steg 10.2.17)
   if (!b?.brann_p?.includes(p.id)) { if (b) (b.brann_p ??= []).push(p.id); log(s, `${p.name} brinner (${var_.replace(/\bhen\b/, han(p))})!`, 'world', [p.id]); }
   avbryt(s, p);

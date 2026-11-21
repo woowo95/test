@@ -1826,8 +1826,8 @@ function inredningen(s: State) {
     const egen = sovHus(s, o), namn = d.namn.toLowerCase();
     const at = utan(s, t, () => d.sover ? siteInne(s, t.k, undefined, q => egen !== undefined ? q.id === egen : q.ag === undefined) : siteKista(s, t.k, o));
     count(s, 'möbel utflyttad');
-    if (at) { flytta(s, t, at); log(s, `${o.name} bar ${sinOrd(d)} ${namn} till ${husAv(s, t)?.namn.toLowerCase() ?? `huset där ${han(o)} sover`}.`, 'world', [o.id]); continue; }
-    if (!annans) { t.ag = undefined; touch(s); log(s, `${o.name} lämnade ${sinOrd(d)} ${namn} i ${h ? husIMening(h.namn) : 'huset'} åt den som sover där.`, 'world', [o.id]); continue; }
+    if (at) { flytta(s, t, at); count(s, 'baddBuren'); log(s, `${o.name} bar ${sinOrd(d)} ${namn} till ${husAv(s, t)?.namn.toLowerCase() ?? `huset där ${han(o)} sover`}.`, 'world', [o.id]); continue; }
+    if (!annans) { t.ag = undefined; touch(s); count(s, 'baddLamnad'); log(s, `${o.name} lämnade ${sinOrd(d)} ${namn} i ${h ? husIMening(h.namn) : 'huset'} åt den som sover där.`, 'world', [o.id]); continue; }
     taBort(s, t); log(s, `${gen(o.name)} ${namn} i ${husIMening(h.namn)} togs isär, eftersom ${d.ett ? 'det' : 'den'} inte fick plats där ${han(o)} sover.`, 'world', [o.id]);
   }
   for (const t of stationerOf(s)) if (stationDef(t.k)?.sover && isKlar(t)) agaBadd(s, t);

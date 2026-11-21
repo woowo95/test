@@ -1463,13 +1463,13 @@ SCENARIER.tornadogast = {
     }
     if (!ph) return [['en plats för handlaren i utkanten', false]];
     h.fas = 'vantar'; h.kvall = s.now + 10 * HOUR; SIM.hp(s, h).x = h.mx = ph.x; SIM.hp(s, h).y = h.my = ph.y;
-    const varor0 = h.varor.reduce((n, w) => n + w.n, 0), namn = SIM.hp(s, h).name, hem = SIM.hp(s, h).gast!.hem!;
+    const varor0 = h.varor.reduce((n, w) => n + w.n, 0), namn = SIM.hp(s, h).name;
     let hFlog = -1;
     for (let k = 0; k < 900 && s.tornado; k++) {
       step(s, 5);
       if (hFlog < 0 && (h.fas as string) === 'gar') hFlog = Math.hypot(h.fran.x - ph.x, h.fran.y - ph.y);
     }
-    const st = s.stat ?? {}, varor1 = h.varor.reduce((n, w) => n + w.n, 0), dog = s.log.some(l => l.text.includes(`${namn} från ${hem} dog`));
+    const st = s.stat ?? {}, varor1 = h.varor.reduce((n, w) => n + w.n, 0), dog = (st.handlareDogTornado ?? 0) > 0;
     return [
       [`rövarflocken mitt i tornadons väg är borta och rövare dog (${s.rovare === f ? `${f.folk.length} kvar` : 'borta'}; ${st.rovarDoda ?? 0} döda; som byborna överlever en del, efter kroppen)`, s.rovare !== f && (st.rovarDoda ?? 0) >= 1],
       [`handlaren ${namn} flög ${hFlog.toFixed(1)} rutor och gick hem (${h.fas}${dog ? ', dog' : ''}; varorna ${varor0} → ${varor1})`, (h.fas as string) === 'gar' && !dog && hFlog >= 1 && varor1 <= varor0 && varor1 > 0],
@@ -1819,7 +1819,7 @@ SCENARIER.brand = {
       const ensam = cloneState(by); ensam.people = ensam.people.filter(p => p.id === vuxen.id); ensam.handlare = undefined;
       kor(ensam, 2, torka);
       const ensamSack = ensam.stat?.['brand sack'] ?? 0;
-      const t0 = by.now;
+      const slocknat0 = by.stat?.brandSlocknat ?? 0;
       let iVagg = 0, iVattnet = 0, sack = 0, hand = 0, risC = 1, tim = 0;
       const sedda = new Set<number>();
       // elden nära byn är släckt: inget brinner längre inom BRAND.hot rutor från byns eld (den som nått en dunge längre bort får brinna)
@@ -1833,7 +1833,7 @@ SCENARIER.brand = {
           if (p.task?.act === 'slacka' && !sedda.has(p.id * 2 + (p.task.tool ? 1 : 0))) { sedda.add(p.id * 2 + (p.task.tool ? 1 : 0)); if (p.task.tool) sack++; else hand++; }
         }
       }
-      const st = by.stat ?? {}, slocknat = by.log.some(l => l.t >= t0 && l.text.startsWith('Elden har slocknat'));
+      const st = by.stat ?? {}, slocknat = (st.brandSlocknat ?? 0) > slocknat0;
       // det svarta försvinner efter några dygn
       const svart0 = (by.aska ?? []).length, sv = cloneState(by);
       sv.now += (SIM.BRAND.svart * DAY) + HOUR; SIM.askaSteg(sv);
@@ -1881,7 +1881,7 @@ SCENARIER.brandsmitta = {
       y.now += 5 * SIM.SEC; SIM.brandSteg(y, 5);
       for (const p of fy) { if (p.brinner === undefined && SIM.inMap(Math.floor(p.x), Math.floor(p.y))) { hett = Math.max(hett, SIM.brandHetta(y, p.x, p.y)); } p.x = cx + 1.5; }
     }
-    bredvid = (y.log ?? []).filter(l => / brinner \(bredvid elden\)/.test(l.text)).length;
+    bredvid = y.stat?.['brinner: bredvid elden'] ?? 0;
     // 3: vägen från väster till öster om raden går runt elden, aldrig genom en ruta som brinner
     const z = cloneState(s); z.now += SIM.SEC; SIM.brandSteg(z, 1); // kartan över elden för vägsökningen
     const v = SIM.findPath(groundOf(z), cx - 3 + 0.5, cy + 0.5, cx + 3 + 0.5, cy + 0.5), genom = !!v && v.some(i => SIM.brinner(z, i));

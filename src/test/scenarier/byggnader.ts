@@ -214,7 +214,7 @@ SCENARIER.agandet = {
     for (let i = 0; i < 3; i++) stepStationer(s);
     const famBaddar = baddar().filter(t => fam.some(q => q.id === t.ag)), hemma = famBaddar.every(iH);
     const famFore = agare.filter(x => fam.some(q => q.id === x)).length;
-    const bar = s.log.filter(r => /bar sin halmbädd/.test(r.text)).length, lamnade = s.log.filter(r => /lämnade sin halmbädd/.test(r.text)).length;
+    const bar = s.stat?.baddBuren ?? 0, lamnade = s.stat?.baddLamnad ?? 0; // (byns statistik, aldrig loggen)
     // familjens egen bädd i huset och byns slöjdbänk, som också står där
     const fri = () => rum.tiles.find(i => rum.tiles.includes(i + 1) && [i, i + 1].every(j => !SIM.stationAt(s, j % W, Math.floor(j / W))));
     const stall = (k: string, ag?: number) => { const i = fri() ?? i0, t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: i % W, y: Math.floor(i / W), kvar: 0, inne: 1, ag }; s.stationer!.push(t); SIM.touch(s); return t; };
