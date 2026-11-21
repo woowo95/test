@@ -1319,12 +1319,12 @@ function tingRuta(s: State, st: Stack[], eld: Set<number>, tx: number, ty: numbe
   }
   return { x: tx, y: ty };
 }
-function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: number, c: number, ag: Del | undefined, tx: number, ty: number): { x: number; y: number } | undefined {
+function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: number, c: number, ag: Del | undefined, tx: number, ty: number, vid = false): { x: number; y: number } | undefined {
   let forst: { x: number; y: number } | undefined; // rutan där det första lades (det gömda i en flyttad hög läggs där, steg 12.1.208)
   for (let r = 0; r <= 4 && n > 1e-9; r++) for (let y = ty - r; y <= ty + r && n > 1e-9; y++) for (let x = tx - r; x <= tx + r && n > 1e-9; x++) {
     if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r || !inMap(x, y) || eld.has(key(x, y))) continue;
     if (r === 0 && sittAt(s, x, y)) continue; // där man står eller sitter vid en station eller ett bord läggs inget, inte heller det man burit dit (steg 12.1.158)
-    if (r > 0 && (!usable(s, x, y) && !ledigtGolv(s, x, y) || stubbeOn(s, x, y) || isStored(s, x, y))) continue;
+    if (r > 0 && (!usable(s, x, y) && !ledigtGolv(s, x, y) || stubbeOn(s, x, y) || !vid && isStored(s, x, y))) continue;
     // där något annat redan ligger; på rutan själv bara i ett lager, där varje ruta har en sort (en hög på marken får vara blandad)
     if ((r > 0 || isStored(s, x, y)) && st.some(q => q.x === x && q.y === y && q.k !== k && q.n > 1e-6)) continue;
     let g = st.find(q => q.x === x && q.y === y && q.k === k);
@@ -1341,10 +1341,12 @@ function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: numb
 }
 // den som kallas bort lägger ner bördan där hen står; ligger den långt från lagret får någon bära in den senare. Står hen
 // framför en station lägger hen den bredvid, inom räckhåll: rutan där man arbetar ska vara fri (framFri, stationer.ts)
-export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
+// vid: bördan läggs vid arbetsplatsen, där arbetet når den (hamtning.ts, fler vändor), också när platsen är i ett lager:
+// i lagret hade den hamnat på en ledig plats där, utom räckhåll
+export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN, vid = false) {
   let tx = Math.floor(x), ty = Math.floor(y);
   if (getMap(s.seed).tiles[ty * W + tx] === T.Vatten && iVattnetNu(s, ty * W + tx)) { const l = narmasteLand(s, tx, ty); if (l) { tx = l.x; ty = l.y; } } // ute på isen läggs bördan på stranden (steg 12.1.209)
-  if (isStored(s, tx, ty)) { storeLoad(s, t, x, y, owner); return; }
+  if (!vid && isStored(s, tx, ty)) { storeLoad(s, t, x, y, owner); return; }
   aterlagt(s, t);
   const all = loadOf(t), st = stacksOf(s), who = t.act === 'bara' ? BYN : owner, eld = eldRutor(s);
   laggsBlot = (all.ved ?? 0) > 1e-9 && (t.blotVed ?? 0) > 1e-9; // blöt ved i bördan gör högen blöt
@@ -1353,7 +1355,7 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
     const h = hela(s, k, all[k], SAKER[k]?.i ? undefined : shareOf(t.ag?.[k], all[k], who, s, k)); // bara hela saker (steg 2.10.7)
     if (h.n <= 0) continue;
     if (SAKER[k]?.i) { hide(s, SAKER[k]!.i!, h.n, { x: tx, y: ty }); continue; }
-    laggBredvid(s, st, eld, k, h.n, t.cond?.[k] ?? 1, h.ag, tx, ty);
+    laggBredvid(s, st, eld, k, h.n, t.cond?.[k] ?? 1, h.ag, tx, ty, vid);
   } } finally { laggsBlot = false; }
   for (const id of t.ting ?? []) { const g = tingOf(s).find(q => q.id === id); if (g) { const at = eld.has(key(tx, ty)) ? undefined : tingRuta(s, st, eld, tx, ty); g.lass = undefined; g.x = at?.x; g.y = at?.y; } } // i elden läggs inget: placeTools ger redskapet en plats
   t.ting = undefined;

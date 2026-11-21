@@ -176,7 +176,7 @@ export function hamtat(s: State, p: Person, tk: Task) {
 }
 // det som bars till platsen läggs ner där (med ägarna), och bördan är tom
 function laggVid(s: State, p: Person, tk: Task) {
-  if (tk.items) dropLoad(s, tk, p.x, p.y); // (med hamtad kvar: det som läggs ner är inte förbrukat, lager.ts)
+  if (tk.items) dropLoad(s, tk, p.x, p.y, undefined, true); // vid platsen, också i ett lager (med hamtad kvar: det som läggs ner är inte förbrukat, lager.ts)
   tk.vanda = undefined; tk.hamtad = undefined;
 }
 // kolmilan (steg 12.2.1, brann.ts): veden som reses till milan, när den är tom

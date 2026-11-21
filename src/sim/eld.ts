@@ -266,6 +266,7 @@ export function tandHamtas(s: State, p: Person, tk: Task) {
   else if (kanTalja(s) && ved >= 1) av.ved = ved + 1;
   if (amountOf(s, 'grenar') >= ig.sticks) av.grenar = ig.sticks * k + brGrenar; else { av.kol = k; if (brGrenar) av.grenar = brGrenar; }
   if (!SAKER[ig.id]?.redskap) av[ig.id] = 1;
+  if (ig.med) av[ig.med] = 1; // flintan som eldstålet slås mot (steg 12.2.12): utan den går det inte att tända framme vid elden
   if (!f.ring) av.sten = ELD.ring;
   return av;
 }
