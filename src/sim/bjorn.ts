@@ -9,7 +9,7 @@ import { balans } from './balans';
 import { SLAGHINDER, kanNa, nasTid } from './klocka';
 import { GANG } from './gang';
 import { kronikaBer, och, personFalt } from './berattelser';
-import { han, honom, svaraText, tal } from './ord';
+import { han, heltOrd, honom, svaraText, tal } from './ord';
 import { blodas } from './blod';
 import { freeNear, roomAt } from './byggnad';
 import { djurStrid } from './kampar';
@@ -129,7 +129,7 @@ function jaktBeslut(s: State, bx: number, by: number) {
   for (const q of vill) avbryt(s, q);
   kallar.task = { act: 'bjornjakt', phase: 'go', tx: sp.x, ty: sp.y, until: j.jaktTill, carry: 0, why: 'Kallar till björnjakt' };
   count(s, 'bjornjakt');
-  log(s, `${kallar.name} kallade till björnjakt, och ${vill.length - 1} följde med.`, 'world', vill.map(q => q.id));
+  log(s, `${kallar.name} kallade till björnjakt${vill.length > 1 ? `, och ${heltOrd(vill.length - 1)} följde med` : ''}.`, 'world', vill.map(q => q.id));
 }
 
 // jakten är slut: ingen väntar längre på den, och byn måste se björnen igen för en ny jakt

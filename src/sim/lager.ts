@@ -1338,6 +1338,8 @@ function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: numb
   }
   if (n <= 1e-9) return forst;
   if (eld.has(key(tx, ty))) { place(s, k, n, c, ag); return forst; } // runt elden är fullt: i förrådet eller bredvid det
+  // i ett lager rymmer rutan en sak: ligger något annat där läggs resten i förrådet
+  if (isStored(s, tx, ty) && (st.some(q => q.x === tx && q.y === ty && q.k !== k && q.n > 1e-6) || (tingRutor ??= new Set(lying(s).map(t => key(t.x!, t.y!)))).has(key(tx, ty)) || forvarAt(s, tx, ty))) { place(s, k, n, c, ag); return forst; }
   let g = st.find(q => q.x === tx && q.y === ty && q.k === k); if (!g) st.push(g = { x: tx, y: ty, k, n: 0, c }); addToStack(s, g, n, c, ag); // runt omkring är fullt
   return forst ?? { x: tx, y: ty };
 }
