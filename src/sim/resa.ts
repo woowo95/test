@@ -806,11 +806,13 @@ export function sallskapFart(s: State, sl: Sallskap, om: FartOm = {}) {
   const lang = farter.length ? Math.min(...farter) : 1;
   return lang * (buren.some(b => b[1] === 'bar') ? RESA.barFart : 1) * lastFart(s, sl, om) * (snoPaMarken(s) >= RESA.snoFran ? RESA.snoFart : 1) * orkFart(sl, om.ork);
 }
-// vägen bort till målet eller hem igen
+// vägen bort till målet, eller hem igen från rutan där sällskapet står: målet kan vara borta och glömt (steg 12.1.246)
 function satVag(s: State, sl: Sallskap, bort: boolean) {
   const vl = s.varld, v = varldMark(s), hem = slHem(s, sl), mal = slMal(s, sl);
-  if (!vl || !v || !hem || !mal) return;
-  const a = hem.y * v.w + hem.x, b = mal.y * v.w + mal.x, vag = vagMellan(vl, v, bort ? a : b, bort ? b : a, fardsatt(sl), s.now);
+  if (!vl || !v || !hem) return;
+  const a = hem.y * v.w + hem.x, b = bort ? (mal ? mal.y * v.w + mal.x : undefined) : sl.ruta ?? (mal ? mal.y * v.w + mal.x : undefined);
+  if (b === undefined) return;
+  const vag = vagMellan(vl, v, bort ? a : b, bort ? b : a, fardsatt(sl), s.now);
   sl.vag = vag ? { fran: vag.fran, till: vag.till, steg: vag.steg } : undefined; sl.pos = 0; sl.gang = 0; sl.ruta = bort ? a : b;
 }
 export const vagenRutor = (s: State, sl: Sallskap) => { const v = varldMark(s); return v && sl.vag ? vagRutor(sl.vag as VarldVag, v.w) : []; };
@@ -906,7 +908,7 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   if (!vl || !plats) return;
   const folk = resenarer(s, sl);
   if (!varldPlatsNr(vl, sl.mal)) { // platsen är borta (steg 12.1.146): de ser det, glömmer den och berättar det hemma
-    vetBorta(s, folk, sl.mal); sl.borta = 1;
+    vetBorta(s, folk, sl.mal, t); sl.borta = 1;
     dagbok(s, sl, 'fram', `Kom fram till platsen där ${plats.namn} låg, men där fanns ingen längre.`, t);
     return;
   }

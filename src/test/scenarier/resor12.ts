@@ -39,6 +39,13 @@ SCENARIER.lagerslut = {
     const sl = SIM.nyttSallskap(b.s, x!, nb, 'se')!;
     sl.skede = 'ute'; SIM.radBesok(b.s, sl, b.s.now);
     const sag = !SIM.findL(x!, 'ort', nb) && !!SIM.findL(y!, 'ort', nb) && sl.dagbok.some(d => d[1].includes('fanns ingen längre'));
+    // minnesplatsen raderas medan sällskapet är framme: vägen hem räknas från rutan där det står (steg 12.1.246)
+    const mp = b.vl.minnesplatser?.find(q => q.nr === nb), vm = SIM.varldMark(b.s)!, sparat = b.vl.minnesplatser;
+    sl.skede = 'framme'; sl.framme = b.s.now - 30 * SIM.DAY; sl.ruta = mp ? mp.y * vm.w + mp.x : undefined; sl.vag = undefined;
+    b.vl.minnesplatser = undefined;
+    SIM.resaBehov(b.s, 60 * SIM.SEC);
+    const vagHem = (sl.skede as string) === 'hemat' && !!sl.vag && SIM.vagenRutor(b.s, sl).length > 1;
+    b.vl.minnesplatser = sparat;
     SIM.hemkomst(b.s, sl, b.s.now); SIM.raknaBynVet(b.s);
     const glomd = !SIM.findL(y!, 'ort', nb) && SIM.bynKanner(b.s, nb) === undefined && !(b.vl.minnesplatser ?? []).some(q => q.nr === nb);
     // att lägret är borta är en uppgift med sin tid: en karta med äldre uppgifter lär inte ut det igen, en nyare gör det (steg 12.1.245)
@@ -54,6 +61,7 @@ SCENARIER.lagerslut = {
       [`två som vet om lägret: platsen ligger kvar som minnesplats, och byn tror att den finns (${minne?.namn ?? 'ingen'})`, !!minne && tror && ute],
       [`den som reser dit ser att lägret är borta och glömmer det, den andra tror det ännu`, sag],
       [`en väckt by rensar inte huvudbyns minnesplatser`, vacktRor],
+      [`sällskapet får en väg hem från där det står, fast minnesplatsen raderats medan det var framme`, !!mp && vagHem],
       [`hemma berättar sällskapet det, och minnesplatsen tas bort när ingen längre minns den`, glomd],
       [`att lägret är borta är en uppgift med sin tid (${bortaT !== undefined}): en äldre karta lär inte ut det, en nyare gör det`, bortaT !== undefined && aldreInte && nyareJa],
     ];
