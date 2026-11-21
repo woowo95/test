@@ -2843,7 +2843,9 @@ export function skadorText(p: Person) {
     const a = /^Fick ett ärr i (.+)$/.exec(x), f = /^Förlorade (.+)$/.exec(x);
     if (a) arr.set(a[1], (arr.get(a[1]) ?? 0) + 1); else if (f && !borta.includes(f[1])) borta.push(f[1]);
   }
-  const ar = [...arr].slice(-2).map(([d, n]) => `${n === 1 ? 'ett ärr' : `${talOrd(n)} ärr`} i ${d}`), fo = borta.slice(-2).map(d => `förlorat ${d}`);
+  // båda slagen: det senaste av varje, så att meningen inte blir för lång
+  const m = arr.size && borta.length ? 1 : 2;
+  const ar = [...arr].slice(-m).map(([d, n]) => `${n === 1 ? 'ett ärr' : `${talOrd(n)} ärr`} i ${d}`), fo = borta.slice(-m).map(d => `förlorat ${d}`);
   return ar.length && fo.length ? `har ${och(ar)} och har ${och(fo)}` : ar.length ? `har ${och(ar)}` : fo.length ? `har ${och(fo)}` : '';
 }
 // två bedrifter med samma verb säger verbet en gång: 'byggde byns första bord och byns första slaktbänk'
