@@ -8,7 +8,7 @@ import { lasBy } from '../delby';
 import { testBy, rovarGang, korTills, setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare, tandOchFlinta, utanStartKlader, bearbetaVid, vidForradet, vidStack } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
-import { bortaBerattelse, bortaHtml, ikappHtml, spolaText } from '../../ui/borta';
+import { bortaBerattelse, bortaHtml, forloppText, ikappHtml, spolaText } from '../../ui/borta';
 import { person } from '../../ui/flikar/person';
 import { grannar as grannarFlik } from '../../ui/flikar/grannar';
 import { gaster } from '../../ui/gaster';
@@ -3020,7 +3020,14 @@ SCENARIER.sammanfattning = {
     // ikappräkningen (steg 11.1.64): länken I krönikan på året byn lämnades, knappen Se byn spolas fram och förloppet i år
     const lank64 = new RegExp(`data-visa="kronika" data-kkat-lank="" data-kar-lank="${SIM.kalender(s, b.fran).ar}">I krönikan<`).test(html);
     const spara64 = readFileSync(new URL('../../ui/spara.ts', import.meta.url), 'utf8');
-    const ikapp64 = lank64 && spolaText(false).includes('Se byn spolas fram') && spara64.includes('`${arN >= 2 ? `År ${arK} av ${arN} · ` : \'\'}${Math.round(f * 100)} %`');
+    const ikapp64 = lank64 && spolaText(false).includes('Se byn spolas fram') && spara64.includes('forloppText(span, nu - from)') && forloppText(5 * SIM.DAY, 2.5 * SIM.DAY) === 'År 3 av 5 · 50 %';
+    // tiderna i rutan (steg 12.1.225): två dygn och några sekunder är två år, en halvtimme skrivs som den är, och knapparna har spelets typsnitt
+    const halv = bortaHtml({ ...b, fran: s.now - 30 * SIM.MIN });
+    const tider225: [string, boolean][] = [
+      [`två dygn och fem sekunder: ${forloppText(2 * SIM.DAY + 5000, SIM.DAY + 1000)}`, forloppText(2 * SIM.DAY + 5000, SIM.DAY + 1000) === 'År 2 av 2 · 50 %'],
+      [`en halvtimme borta: ${ren(halv).match(/Du var borta i [^)]*\)/)?.[0]}`, /Du var borta i (30|trettio) minuter \((?!en månad)[^)]*i spelet\)/.test(halv)],
+      ['knappen Se byn spolas fram har spelets typsnitt (ghost)', /id="ovSpola" class="ghost"/.test(ikappHtml(false))],
+    ];
     return [
       ['sammanfattningen har länken I krönikan på året byn lämnades, knappen heter Se byn spolas fram och förloppet skrivs År 3 av 5 · 60 % (steg 11.1.64)', ikapp64],
       [`tiden i verkligheten och i spelet (${ren(html).slice(0, 60)}…)`, /Du var borta i två dagar \(två år i spelet\)/.test(html) && !/\d,0/.test(html)],
@@ -3029,7 +3036,7 @@ SCENARIER.sammanfattning = {
       ['utan nya notiser ingen knapp till dem', /Inga nya notiser/.test(tom) && !tom.includes('data-notis')],
       ['ingen lista med händelser', !/<ol|<ul|<li/.test(html)],
       ['knappen öppnar notiserna med den viktigaste först', notisVal.oppen && notisVal.nr === undefined && /Död i byn/.test(notisHtml())],
-      ...berattelseKoll(s),
+      ...berattelseKoll(s), ...tider225,
       ['medan byn räknas ikapp: förloppet och en knapp som visar byn som snabbspolning (steg 5.4.5.1)', ikappHtml(false).includes('id="progBar"') && /id="ovSpola"[^>]*aria-pressed="false"[^>]*>\{sym_oga\} Se byn/.test(ikappHtml(false)) && /aria-pressed="true"[^>]*>\{sym_oga\} Dölj byn/.test(ikappHtml(true)) && !ikappHtml(false, false).includes('ovSpola')],
     ];
   },

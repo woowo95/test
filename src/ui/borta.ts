@@ -95,20 +95,27 @@ export function bortaBerattelse(st: State, b: Borta): string[] {
 
 // rutan medan byn räknas ikapp (steg 5.4.5.1): förloppet, och en knapp som visar kartan under tiden som en snabbspolning
 // (rutan flyttas ner och bakgrunden blir genomskinlig; ui/spara.ts ritar kartan efter varje bit som räknats)
+// förloppet i år (steg 11.1.64): År 3 av 5 · 60 %, och bara procenten när det är mindre än två år. Åren räknas ur hela dygn,
+// så några sekunder över två dygn är två år och inte tre (steg 12.1.225)
+export function forloppText(span: number, gatt: number) {
+  const f = Math.min(1, gatt / span), arN = Math.max(1, Math.floor(span / DAY)), arK = Math.min(arN, Math.floor(gatt / DAY) + 1);
+  return `${arN >= 2 ? `År ${arK} av ${arN} · ` : ''}${Math.round(f * 100)} %`;
+}
 export const spolaText = (pa: boolean) => pa ? '{sym_oga} Dölj byn' : '{sym_oga} Se byn spolas fram'; // (steg 11.1.64)
 export function ikappHtml(spola: boolean, kanSpola = true) {
-  return `<p class="ovLead">Byn har levt vidare medan du var borta.</p><div class="prog"><div id="progBar"></div></div><p class="muted" id="progTxt"></p>${kanSpola ? `<div class="ovKnappar"><button id="ovSpola" type="button" aria-pressed="${spola}">${spolaText(spola)}</button></div>` : ''}`;
+  return `<p class="ovLead">Byn har levt vidare medan du var borta.</p><div class="prog"><div id="progBar"></div></div><p class="muted" id="progTxt"></p>${kanSpola ? `<div class="ovKnappar"><button id="ovSpola" class="ghost" type="button" aria-pressed="${spola}">${spolaText(spola)}</button></div>` : ''}`;
 }
 
 // tiden i verkligheten (en dag är ett år i spelet), efter tiden i spelet i sammanfattningen
 function verkligTid(ms: number) {
-  const d = Math.round(ms / DAY), h = Math.round(ms / HOUR), min = Math.max(1, Math.round(ms * 60 / HOUR)); // hela tal (steg 12.1.120)
-  return d >= 1 ? (d === 1 ? 'en dag' : `${talOrd(d)} dagar`) : h >= 1 ? (h === 1 ? 'en timme' : `${talOrd(h)} timmar`) : min === 1 ? 'en minut' : `${talOrd(min)} minuter`;
+  // hela tal (steg 12.1.120); en tid under en timme skrivs i minuter och under ett dygn i timmar, som den är (steg 12.1.225)
+  const d = Math.round(ms / DAY), h = Math.round(ms / HOUR), min = Math.max(1, Math.round(ms * 60 / HOUR));
+  return ms >= DAY ? (d === 1 ? 'en dag' : `${talOrd(d)} dagar`) : ms >= HOUR ? (h === 1 ? 'en timme' : `${talOrd(Math.min(23, h))} timmar`) : min === 1 ? 'en minut' : `${talOrd(Math.min(59, min))} minuter`;
 }
 export function bortaHtml(b: Borta) {
   const fodda = (s.stat?.fodda ?? 0) - b.fodda, doda = (s.stat?.doda ?? 0) - b.doda;
   // den verkliga tiden och tiden i spelet (ett dygn är ett år); berättelsen under säger vad som hänt under åren (steg 12.1.120–12.1.121)
-  const yrs = spelTid(Math.max(s.now - b.fran, DAY / 12));
+  const yrs = spelTid(s.now - b.fran); // tiden i spelet som den är, också under en månad (steg 12.1.225)
   const n = olasta(s);
   const ber = bortaBerattelse(s, b).map(p => `<p class="ovBer">${p.split('\n').map(esc).join('<br>')}</p>`).join('');
   return `
@@ -117,5 +124,5 @@ export function bortaHtml(b: Borta) {
     <p class="muted">${fodda} födda · ${doda} döda · ${living(s).length} lever nu i byn · ${kronikaLank('', 'I krönikan', kalender(s, b.fran).ar)}</p>
     <p class="ovNotiser">{sym_notis} ${n ? `${n} ${n === 1 ? 'ny notis' : 'nya notiser'}` : 'Inga nya notiser'}</p>
     <div class="ovKnappar">${n ? '<button id="ovNotiser" class="primary" type="button" data-notis="visa">Läs notiserna</button>' : ''}
-    <button id="ovClose" class="${n ? '' : 'primary'}" type="button">Till byn</button></div>`;
+    <button id="ovClose" class="${n ? 'ghost' : 'primary'}" type="button">Till byn</button></div>`;
 }

@@ -1,8 +1,8 @@
-import { storStridNu, nastaSteg, Borta, MIN, State, joinParts, living, serializeParts, spar, step, stridBild, DAY, franOverlamning, overlamna } from '../sim';
+import { storStridNu, nastaSteg, Borta, MIN, State, joinParts, living, serializeParts, spar, step, stridBild, franOverlamning, overlamna } from '../sim';
 import { FranArbetaren, Overlamning, TillArbetaren } from './ikappkarna';
 import { lasBy, sparaBy, tolkaText, webbBas } from './lagring';
 import { $, esc } from './hjalp';
-import { bortaHtml, ikappHtml, spolaText } from './borta';
+import { bortaHtml, forloppText, ikappHtml, spolaText } from './borta';
 import { gaHem, huvud, s, setByn, ui } from './lage';
 import { drawTerrain } from './terrang';
 import { drawPlants } from './vaxter';
@@ -210,9 +210,7 @@ export async function catchUp(target: number) {
     if (!showOverlay) return;
     const f = Math.min(1, (nu - from) / span);
     const bar = document.getElementById('progBar'); if (bar) bar.style.width = (f * 100).toFixed(1) + '%';
-    // förloppet i år (steg 11.1.64): År 3 av 5 · 60 %, och bara procenten när det är mindre än ett år
-    const arN = Math.ceil(span / DAY), arK = Math.min(arN, Math.floor((nu - from) / DAY) + 1);
-    const pt = document.getElementById('progTxt'); if (pt) pt.textContent = `${arN >= 2 ? `År ${arK} av ${arN} · ` : ''}${Math.round(f * 100)} %`;
+    const pt = document.getElementById('progTxt'); if (pt) pt.textContent = forloppText(span, nu - from);
     // kartan som den ser ut nu: byn spolas fram medan den räknas (steg 12.1.179). Nästa bild ritas när det gått minst
     // RITA_GANGER gånger så lång tid som den förra tog att rita, och aldrig oftare än var RITA_MIN_MS: då tar ritningen
     // högst ungefär en femtedel av tiden, också på en långsam dator
