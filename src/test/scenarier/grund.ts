@@ -851,7 +851,8 @@ SCENARIER.torka = {
     SIM.addTool(s, 'vattensack', vuxna[0]);
     // torkan: fyra och ett halvt dygn (år i spelet)
     kor(s, (m.start + 4.5 * DAY - s.now) / HOUR);
-    const utanVatten = living(s).filter(p => !SIM.drickPlats(s, p)).length, torstDoda = s.people.filter(p => /törst/.test(p.cause ?? '')).length;
+    const utanVatten = living(s).filter(p => !SIM.drickPlats(s, p)).length, torstDoda = s.people.filter(p => !p.gast && /törst/.test(p.cause ?? '')).length; // byborna; gästerna får vatten av byborna och räknas sist (steg 12.1.228)
+    const gastTorst = () => s.people.filter(p => p.gast && /törst/.test(p.cause ?? '')).length;
     const lera = SIM.torrRutor(s), tomma = s.sjoTorr?.tomma ?? [], vatten1 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
     const tjarnTorr = tomma.length > 0 && tomma.every(n => SIM.sjoarna(s.seed).rutor[n].every(i => SIM.vattenNu(s)[i] === T.Lera));
     const torrMark = (s.vader?.fukt ?? 1);
@@ -892,6 +893,7 @@ SCENARIER.torka = {
       [`ingen står i vattnet (${iVattnet})`, iVattnet === 0],
       [`fisket från stranden tar ur vattnet som finns kvar (${iVatten.toFixed(3)}) och inget ur den torra sjöbotten (${iTorr.toFixed(3)})`, iVatten > 0 && iTorr === 0],
       [`alla hittar vatten att dricka (${utanVatten} utan) och ingen dör av törst (${torstDoda})`, utanVatten === 0 && torstDoda === 0],
+      [`ingen gäst dör av törst, under eller efter torkan (${gastTorst()}; byborna bar vatten ${s.stat?.['bar vatten'] ?? 0} gånger)`, gastTorst() === 0],
       [`ägaren med säck vattnar sitt fält (${vattnat} säckar, grödan ${kvar ? 'står kvar' : 'vissnade'}), grödan på det andra vissnar (${vissnat})`, vattnat > 0 && kvar && vissnat >= 1],
       [`vattnet kommer tillbaka efter torkan (${efter ? `tillbaka ${tillbaka} timmar efter torkan` : 'redan när torkan slutade'}, ${vatten2} rutor vatten)`, !s.sjoTorr && vatten2 === vatten0],
       [`torkan kom (${s.stat?.motgang_torka ?? 0})`, (s.stat?.motgang_torka ?? 0) === 1],

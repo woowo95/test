@@ -256,10 +256,14 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
   const karl = vattenKarl(s, p); // utan säck eller kruka bärs vattnet i händerna, bara åt en törstig (steg 10.2.35)
   if (ageOf(p, s.now) < ALDER.vuxen || !kanGa(p)) return undefined;
   let best: Person | undefined, bd = TORST.hamtaR;
-  for (const q of living(s)) {
+  // gästen som stannar i byn (handlaren vid filten, besökaren) går inte själv till vattnet; när säcken är tom är hen törstig som en
+  // bybo som inte kan gå, och byborna bär vatten åt hen (steg 12.1.228). Rövarna och fångarna får inget
+  const gaster = gasterNu(s).filter(q => q.gast!.sort !== 'rovare' && q.gast!.sort !== 'fange' && (q.gast!.vatten ?? 1) < 1);
+  for (const q of gaster.length ? [...living(s), ...gaster] : living(s)) {
     const qa = ageOf(q, s.now);
     // den som sitter i fängelset (steg 11.12.2): p går när fångens törst gånger närheten är stor nog (fangelse.ts)
-    if (q.fange) { if (q === p || !hjalperFange(s, p, q, 1 - q.torst)) continue; }
+    if (q.gast) { if (!torstig(q, 0) || !hemma(s, q)) continue; }
+    else if (q.fange) { if (q === p || !hjalperFange(s, p, q, 1 - q.torst)) continue; }
     else if (q === p || kanGa(q) && qa >= ALDER.smabarn || !torstig(q, 0) || qa < TORST.ammaAr && ammas(s, q) || !hemma(s, q)) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);
     if (d >= bd || hamtas(s, p, q)) continue;
@@ -280,6 +284,8 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
 }
 // säcken är fylld (KLAR i steg.ts): bär den till den törstige, eller låt den stå fylld till örtköket (FYLL). Utan säck i handen blir det inget
 // vattenhon (steg 10.10.31): kärlet fylls och bärs dit, och vattnet hälls i (satt i djurtorst.ts, som läses efter den här filen)
+// gästens säck fylls av den som bär vatten till hen (steg 12.1.228; satt i gastvardag.ts, som läses efter den här filen)
+export const gastSackKrok = { fyll: (_q: Person) => undefined as void };
 export const hoKrok = { fylld: (_s: State, _p: Person, _t: Task) => undefined as void, fram: (_s: State, _p: Person, _t: Task) => undefined as void };
 export function vattenFylld(s: State, p: Person, t: Task) {
   if (t.ho) { hoKrok.fylld(s, p, t); return; } // till vattenhon (djurtorst.ts, steg 10.10.31)
@@ -290,7 +296,7 @@ export function vattenFylld(s: State, p: Person, t: Task) {
   }
   if (t.falt) { const f = faltById(s, t.ref); if (!t.tool || !f) return; const r = faltRutor(f), i = r[Math.floor(r.length / 2)]; t.phase = 'back'; t.tx = i % W + 0.5; t.ty = Math.floor(i / W) + 0.5; t.why = 'Vattnar sitt fält'; return; }
   const q = byId(s, t.ref);
-  if (!q || !alive(q)) return; // (i händerna, utan säck eller kruka, bärs vattnet ändå: steg 10.2.35)
+  if (!q || !(alive(q) || gastLever(q))) return; // gästen får också vatten (steg 12.1.228) (i händerna, utan säck eller kruka, bärs vattnet ändå: steg 10.2.35)
   const x = Math.floor(t.tx), y = Math.floor(t.ty);
   observe(s, p, 'vatten', x, y);
   t.vatten = inMap(x, y) ? y * W + x : undefined;
@@ -309,10 +315,11 @@ export function vattenFram(s: State, p: Person, t: Task) {
     p.task = undefined; return;
   }
   const q = byId(s, t.ref);
-  if (q && paKartan(q) && Math.hypot(q.x - p.x, q.y - p.y) <= 2) {
+  if (q && (paKartan(q) || gastLever(q)) && Math.hypot(q.x - p.x, q.y - p.y) <= 2) {
     q.torst = t.tool ? 1 : Math.min(1, q.torst + TORST.hander); // (forstaGang räknar 'bar vatten' varje gång)
+    if (q.gast && t.tool) gastSackKrok.fyll(q); // gästen får också sin säck fylld, så att hen har vatten på vägen (steg 12.1.228)
     tanke(q, 'gavVatten', s.now, { namn: p.name }); count(s, t.tool ? 'bar vatten' : 'bar vatten i handerna');
-    if (forstaGang(s, 'bar vatten')) log(s, `${p.name} bar vatten ${t.tool === 'vattensack' ? 'i säcken' : t.tool ? 'i en kruka' : 'i händerna'} till ${q.name}, ${ageOf(q, s.now) < ALDER.smabarn ? 'som var för liten att gå själv' : 'som inte kunde gå'}.`, 'world', [p.id, q.id]);
+    if (forstaGang(s, 'bar vatten')) log(s, `${p.name} bar vatten ${t.tool === 'vattensack' ? 'i säcken' : t.tool ? 'i en kruka' : 'i händerna'} till ${q.name}, ${q.gast ? 'som var gäst i byn' : ageOf(q, s.now) < ALDER.smabarn ? 'som var för liten att gå själv' : 'som inte kunde gå'}.`, 'world', [p.id, q.id]);
     if (t.vatten !== undefined) smutsigt(s, q, t.vatten);
     if (t.tool) wearUsed(s, p, 1);
   }
@@ -320,3 +327,4 @@ export function vattenFram(s: State, p: Person, t: Task) {
 }
 import { snoVid } from './brand';
 import { tanke } from './tankar';
+import { gasterNu, gastLever } from './gast';

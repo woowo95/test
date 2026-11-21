@@ -642,6 +642,7 @@ SCENARIER.klader = {
 };
 
 SCENARIER.axelrem = {
+  lang: true, // (steg 12.1.228)
   text: 'Steg 7.1.2: axelremmen sys av ett skinn och ett rep vid slöjdbänken av den som kan tekniken, och den som saknar en tar på sig en. När man bär hem hänger spjutet, metspöt eller vattensäcken på axeln och tar inga händer, så den som kommer hem med spjutet bär lika mycket som med tomma händer. Yxan och kniven hänger inte på axeln utan i bältet, och den som har både bälte och axelrem bär spjutet på axeln, yxan i bältet och bördan i båda händerna',
   kor: () => {
     const s = createState(2, START); tandEld(s);

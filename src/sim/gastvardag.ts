@@ -13,7 +13,7 @@ import { chance, clamp } from './slump';
 import { ACTS } from './handlingar';
 import { KROPP, ageOf, count, log } from './folk';
 import { ata, naringSjunker } from './naring';
-import { TORST, torstSteg } from './torst';
+import { TORST, gastSackKrok, torstSteg } from './torst';
 import { halsaLage } from './steg';
 import { forkylning, insjukna, sjukSteg } from './sjukdom';
 import { ageIndex } from './tid';
@@ -36,6 +36,8 @@ export const GASTVARD = balans('gastvard', {
   vakenTim: 18, // timmar vaken från full till tom vila
   klad: 0.85, // så mycket av kylan gästens reskläder tar (gästen är klädd för vägen)
 });
+
+gastSackKrok.fyll = q => { if (q.gast) q.gast.vatten = GASTVARD.sack; }; // vattnet som byborna bär till gästen (torst.ts, steg 12.1.228)
 
 // får p göra handlingen? Gästernas handlingar kräver sorten, och byborna gör dem aldrig
 export function kanGora(p: Person, act: Act) {
