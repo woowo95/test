@@ -4,7 +4,7 @@ import { han } from './ord';
 import { tal } from './ord';
 import { allaBarn } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
-import { addTo, amountOf, blotUttaget, avbryt, fetchSpot, iBordan, takeLimit, use, paMarken, put } from './lager';
+import { addTo, amountOf, type Uttag, avbryt, fetchSpot, iBordan, takeLimit, use, paMarken, put } from './lager';
 import { Materialslag, forbrukat, overOchUnder, tandBuffert, underBuffert } from './forradsmal';
 import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
@@ -137,8 +137,8 @@ export function takeFuel(s: State, n0: number, p?: Person, ag?: Del, fran?: Pers
   if (g0 > 0) { const d = use(s, p, 'grenar', g0, true, fran?.id); forbrukat(s, 'grenar', -g0); if (ag) addDel(ag, d, GREN); minns(tog, 'grenar', g0, d); }
   const n = n0 - g0 * GREN;
   const v = Math.min(n, takeLimit(s, 'ved', p, fran) + (fran ? 0 : iBordan(p, 'ved')));
-  const b0 = blotUttaget(), w = use(s, p, 'ved', v, true, fran?.id); minns(tog, 'ved', v, w);
-  if (p?.task) p.task.blotVed = v > 0 ? Math.min(1, (blotUttaget() - b0) / v) : 0; // det som togs: torr ved tas först (steg 7.3.4), och ur det hen får ta (steg 12.1.55)
+  const ut: Uttag = { blot: 0 }, w = use(s, p, 'ved', v, true, fran?.id, ut); minns(tog, 'ved', v, w);
+  if (p?.task) p.task.blotVed = v > 0 ? Math.min(1, ut.blot / v) : 0; // det som togs: torr ved tas först (steg 7.3.4), och ur det hen får ta (steg 12.1.55)
   // torven (steg 12.1.3, torv.ts): den torra efter veden och före grenarna, den blöta sist, i hela torv
   const hel = (k: string, kvar: number) => kvar <= 1e-9 ? 0 : Math.min(Math.floor(takeLimit(s, k, p, fran) + (fran ? 0 : iBordan(p, k)) + 1e-9), Math.ceil(kvar / TORV.varde - 1e-9));
   const tt = hel('torv', n - v);

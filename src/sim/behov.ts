@@ -16,7 +16,7 @@ import { Ting, newTing, tingOf } from './agande';
 import { kvEffekt } from './kvalitet';
 import { bordVid, moblerKrok } from './stationer';
 import { BYN, Del, addDel, sumOf } from './egendom';
-import { amountOf, helt, iBordan, slagFinns, iRackhall, urBordan, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, use } from './lager';
+import { amountOf, helt, iBordan, slagFinns, iRackhall, urBordan, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, type Uttag, use } from './lager';
 import { eatPoison } from './fynd';
 import { ata } from './naring';
 import { ratt } from './matlagning';
@@ -427,18 +427,18 @@ export function takeRecipe(s: State, p: Person, k: string) {
 }
 // p tar n av slaget k till ett arbete; common = till byns eld eller hus (byns först). Ger vems det var. kom = var det
 // kom ifrån, nycklar som `kom` i bygg.ts skriver dem (eget, byn, familj, gava, stold)
-export function takeMaterial(s: State, p: Person, k: string, n: number, common = false, kom?: Record<string, number>): Del {
+export function takeMaterial(s: State, p: Person, k: string, n: number, common = false, kom?: Record<string, number>, ut?: Uttag): Del { // ut: hur mycket av veden som var blöt (steg 12.1.241)
   const ag: Del = {};
   if (n <= 1e-12) return ag;
   const not = (hur: string, d: Del) => { if (kom) for (const o in d) if (d[o] > 1e-9) { const h = +o === BYN ? 'byn' : +o === p.id ? 'eget' : hur; const key = `${h}:${h === 'byn' ? BYN : o}:${k}`; kom[key] = (kom[key] ?? 0) + d[o]; } };
   // det hen hämtat och bär till arbetet först (steg 11.1.74): det har redan tagits, som eget, byns, gåva eller stöld
-  const bar = urBordan(s, p, k, n, common);
+  const bar = urBordan(s, p, k, n, common, ut);
   addDel(ag, bar); not('familj', bar); n -= sumOf(bar);
   if (n <= 1e-12) return ag;
   // ett byte före byns förråd, när det är till ens eget arbete
   if (!common && ownsAmount(s, p, k) < n - 1e-9) tradeMaterial(s, p, k, n - ownsAmount(s, p, k));
   const egen = Math.min(n, mayTake(s, p, k));
-  const forst = use(s, p, k, egen, common);
+  const forst = use(s, p, k, egen, common, undefined, ut);
   addDel(ag, forst); not('familj', forst);
   if ((ag[p.id] ?? 0) > 1e-9) noticeTheft(s, p, k);
   let rest = n - egen;
@@ -453,7 +453,7 @@ export function takeMaterial(s: State, p: Person, k: string, n: number, common =
       if (rest <= 1e-9) break;
       if (rnd(s, 'dela', g) >= willing(s, g, p, ownsAmount(s, g, k) / bed)) continue;
       const v = ownMove(s, k, Math.min(rest, ownsAmount(s, g, k)), g.id, p.id);
-      const d = use(s, p, k, v, common); addDel(ag, d); rest -= v;
+      const d = use(s, p, k, v, common, undefined, ut); addDel(ag, d); rest -= v;
       if (kom) { const key = `gava:${g.id}:${k}`; kom[key] = (kom[key] ?? 0) + v; }
       const r = getRel(s, p, g); r.op = clamp(r.op + 1, -100, 100); minnsGava(s, g, p); // en gåva som de andra (steg 3.9.6)
       count(s, 'gava_material', v);
@@ -461,7 +461,7 @@ export function takeMaterial(s: State, p: Person, k: string, n: number, common =
   }
   // sist en lindrig stöld
   if (rest > 1e-9 && !aldrigStjal(s, p)) {
-    const d = use(s, p, k, Math.min(rest, amountOf(s, k)), common);
+    const d = use(s, p, k, Math.min(rest, amountOf(s, k)), common, undefined, ut);
     for (const o in d) { const q = +o === BYN || +o === p.id ? undefined : byId(s, +o); if (q) stole(s, p, q, k, d[o], true); }
     addDel(ag, d); not('stold', d);
   }

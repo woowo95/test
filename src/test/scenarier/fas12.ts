@@ -792,11 +792,16 @@ SCENARIER.blotbord = {
     s.stackar!.push({ k: 'ved', n: 6, c: 1, x: sp.x, y: sp.y, ag: { [q.id]: 6 } } as typeof s.stackar[number]);
     SIM.changed(s);
     p.task = { act: 'elda', phase: 'go', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as SIM.Task;
+    const kopia = SIM.cloneState(s);
     const tog = SIM.takeFuel(s, 2, p), blotEld = p.task.blotVed ?? 0;
+    // uttaget svarar själv hur mycket som var blött (steg 12.1.241): samma uttag ur samma by ger samma svar, vad som än hänt förut
+    const ut = { blot: 0 }, kp = SIM.byId(kopia, p.id)!, ag = SIM.use(kopia, kp, 'ved', 1, true, undefined, ut);
+    const ut2 = { blot: 0 }, kopia2 = SIM.cloneState(kopia); SIM.use(kopia2, SIM.byId(kopia2, p.id)!, 'ved', 1, true, undefined, ut2);
     return [
       [`veden ur den blöta högen är blöt i bördan (${buret} ved, ${iBordan} av den blöt)`, buret > 0 && iBordan === 1],
       [`högen i förrådet är blöt (${inne.length} högar)`, inne.length > 0 && blotaInne],
       [`den som eldar med byns blöta ved får blöt ved fast grannen har torr (${tog} tog, ${blotEld} blöt)`, tog > 0 && blotEld === 1],
+      [`uttaget ger tillbaka den blöta veden det tog (${ut.blot} av ${SIM.sumOf(ag)}), och igen ur samma by (${ut2.blot})`, ut.blot === 1 && SIM.sumOf(ag) === 1 && ut2.blot === 1],
     ];
   },
 };

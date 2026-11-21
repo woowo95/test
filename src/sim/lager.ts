@@ -716,7 +716,7 @@ export const iBordan = (p: Person | undefined, k: string) => p?.task?.hamtad ? p
 // det av slaget k som p har till hands: det hen bär till arbetet och det som ligger inom räckhåll (steg 11.1.74)
 export const harTillHands = (s: State, p: Person, k: string) => iBordan(p, k) + iRackhall(p.x, p.y, () => amountOf(s, k));
 export const bordanAv = (p: Person | undefined, id: number, k: string) => p?.task?.hamtad ? p.task.ag?.[k]?.[id] ?? 0 : 0; // det av det som är ägarens id
-export const urBordan = (s: State, p: Person | undefined, k: string, n: number, common = false) => iBordan(p, k) > 1e-9 ? takeOwn(s, k, n, p, common, undefined, true).ag : {};
+export const urBordan = (s: State, p: Person | undefined, k: string, n: number, common = false, ut?: Uttag) => iBordan(p, k) > 1e-9 ? takeOwn(s, k, n, p, common, undefined, true, ut).ag : {};
 
 // ---------- lägga i och ta ur ----------
 // lägg n av ett slag med skicket c i förrådet: på rutan at om det går, annars på bästa lediga plats. ag = vems det är
@@ -764,10 +764,9 @@ const minus = (ag: Del | undefined, d: Del | undefined) => { if (!ag) return ag;
 // lägg v med skicket c på stacken a (skicket blir ett viktat snitt). ag = vems det är, f gånger så mycket av varje del
 // blöt ved som läggs på en hög gör högen blöt (steg 7.3.4 och 12.1.55): satt medan en börda med blöt ved läggs ner
 let laggsBlot = false;
-// all blöt ved som någonsin tagits ur stackarna (och ur det någon bär, efter hur blött det är): den som tar ser hur mycket av
-// det hen fick som var blött genom att jämföra före och efter (takeFuel i eld.ts, hamtat i hamtning.ts)
-let vedBlot = 0;
-export const blotUttaget = () => vedBlot;
+// uttaget svarar hur mycket av veden som var blöt (steg 12.1.241): den som tar ger ett Uttag, och takeOwn lägger till den blöta
+// veden den tog ur stackarna (och ur det någon bär, efter hur blött det är) där (takeFuel i eld.ts, hamtat i hamtning.ts)
+export interface Uttag { blot: number }
 // bördan t fick g ved till, varav b blöt: så stor del av veden hen bär som är blöt
 export function vedIBordan(t: Task, had: number, g: number, b: number) { if (g > 0) t.blotVed = Math.min(1, ((t.blotVed ?? 0) * had + b) / (had + g)); }
 // högen som flyttas (ingetIElden, steg 12.1.208): en ny hög får dess väta och torkning
@@ -797,7 +796,7 @@ export const lyssnaPaUttag = (f: typeof uttagLyss) => { uttagLyss = f; };
 // stacken på rutan x,y ligger utom räckhåll för p (en liten marginal för avrundningen)
 export const svavar = (p: { x: number; y: number }, x: number, y: number) => Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y) > LAGER.rackvidd + 0.01;
 export const uttagVakt: { lyss?: typeof uttagLyss; i: number } = { i: 0 };
-function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fran?: number, baraBordan = false) {
+function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fran?: number, baraBordan = false, ut?: Uttag) {
   const ag: Del = {};
   let got = 0, cw = 0, tagna = 0, urB = 0;
   if (n > 1e-12) {
@@ -819,7 +818,7 @@ function takeOwn(s: State, k: string, n: number, p?: Person, common = false, fra
         const has = dold ? a.dold! : o === BYN ? a.n - sumOf(a.ag) : a.ag?.[o] ?? 0, v = Math.min(w, has);
         if (v <= 0) continue;
         if (dold) a.dold! -= v; else { a.n -= v; if (o !== BYN) { a.ag![o] -= v; if (a !== bs) cleanDel(s, a); } }
-        if (k === 'ved') vedBlot += a === bs ? v * (tk?.blotVed ?? 0) : a.blot ? v : 0; // hur mycket av veden som var blöt
+        if (k === 'ved' && ut) ut.blot += a === bs ? v * (tk?.blotVed ?? 0) : a.blot ? v : 0; // hur mycket av veden som var blöt
         if (a === bs) urB += v;
         else {
           uttagLyss?.(s, p, k, v, a.x, a.y); // vakten för det som svävar (steg 11.1.74), bara i testerna
@@ -865,7 +864,7 @@ export function put(s: State, k: string, n: number, ag?: Del, c = 1) { place(s, 
 export function laggIn(s: State, k: string, n: number, agare?: number) { n = Math.floor(n + 1e-9); if (n > 0) place(s, k, n, 1, agare === undefined ? undefined : { [agare]: n }); }
 export function gain(s: State, p: Person, k: string, n: number) { const w = n > 0 ? arbete(p, k, n) : 0; if (w > 0) place(s, k, w, 1, shareOf(undefined, w, p.id, s, k)); }
 // p tar n av slaget k ur förrådet; common = till byns eld eller hus, fran = av den personens först (stöld). Ger vems det var
-export function use(s: State, p: Person | undefined, k: string, n: number, common = false, fran?: number) { return takeOwn(s, k, n, p, common, fran).ag; }
+export function use(s: State, p: Person | undefined, k: string, n: number, common = false, fran?: number, ut?: Uttag) { return takeOwn(s, k, n, p, common, fran, false, ut).ag; }
 // det av slaget k som ligger i högar på marken utanför lagret (amountOf räknar lagret)
 export const paMarken = (s: State, k: string) => (s.stackar ?? []).reduce((n, a) => a.k === k && !isStored(s, a.x, a.y) ? n + a.n : n, 0);
 // för nya byar och tester: förrådet av slaget k blir n, och det som läggs till är byns
