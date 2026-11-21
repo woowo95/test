@@ -42,6 +42,7 @@ const handlarenKommer = (s: SIM.State, rad: number, last: SIM.RadFard['last']) =
   delete s.handlare; (s as { infart?: unknown }).infart = { klar: true };
   SIM.handlarFram(s, rad);
   s.now = Math.ceil(s.now / SIM.HOUR) * SIM.HOUR + 1;
+  SIM.handlarVantarTimme(s); // den som väntar vid kanten går in en gång i timmen (raden i TAKTER, steg 12.1.107)
   SIM.handelSteg(s, 2);
 };
 // byn har ganger gånger det den vill ha av varje varugrupp (och av maten när mat är satt), och rikedomen räknas om
@@ -2288,7 +2289,7 @@ SCENARIER.vagsjuk = {
     const skadad = [o.p, o.q].filter(x => x.skador?.length).length, sjuka = [o.p, o.q].filter(x => x.sjuk).length;
     const notiser = (o.s.notiser?.lista ?? []).filter(n => n.id === 'resa' && n.resa?.includes(o.sl.id)).reduce((t, n) => t + n.n, 0);
     // sjukdomen räknas på vägen tills den gått över (eller dödat)
-    const sj = ny({}); SIM.insjukna(sj.s, sj.q, 'forkylning'); sj.q.sjuk!.tecken = sj.s.now; sj.q.sjuk!.st = 0;
+    const sj = ny({}); sj.sl.nere = 40; SIM.insjukna(sj.s, sj.q, 'forkylning'); // (sällskapet stannar framme hela provet, så att sjukdomen räknas på vägen) sj.q.sjuk!.tecken = sj.s.now; sj.q.sjuk!.st = 0;
     let timmar = 0; for (; timmar < 40 * 24 && sj.q.sjuk && SIM.alive(sj.q); timmar++) kor(sj, 1);
     // den som förblöder dör på vägen: i dagboken, men ingen kropp på byns karta
     const d = ny({}); SIM.skada(d.s, d.q, 'huvud', 'krossar', 0.3, 'olycka', 'på resan'); d.q.blod = 0.01;
@@ -4762,11 +4763,14 @@ SCENARIER.tvabyar = {
     const nyB = () => { const b = SIM.createState(1511, t0); delete b.varld; b.vackt = 1; return b; };
     const tid = (s: SIM.State) => Math.round(s.now + (s.skuld ?? 0) * 1000);
     const a1 = SIM.createState(6, t0), b1 = nyB();
-    kor(a1, timmar); kor(b1, timmar);
+    kor(a1, timmar);
     const a2 = SIM.createState(6, t0), b2 = nyB();
     b2.vackHall = 1; // hålls vaken som med testknappen: inget sällskap är på väg dit (steg 11.13.8)
     a2.vackta = [b2];
     kor(a2, timmar);
+    // den väckta byn går fram till huvudbyns klocka, och huvudbyn kan ha en del av ett slag kvar (skulden): byn som går för sig får
+    // lika lång tid som den väckta fick (slagen delas aldrig, så det blir samma slag hur tiden än delas upp)
+    SIM.step(b1, (tid(b2) - t0) / SIM.SEC);
     const varldA = SIM.createState(6, t0), timme0 = varldA.varld?.perioder?.timme ?? 0; varldA.vackt = 1; kor(varldA, 2);
     return [
       ['huvudbyn går som för sig', hash(a1) === hash(a2)],

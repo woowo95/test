@@ -570,6 +570,7 @@ SCENARIER.slaktbank = {
     const st = stationerOf(s).find(t => t.k !== 'vagn'), klar = !!st && isKlar(st);
     const logg = s.log.some(l => l.text.includes('första slaktbänk'));
     for (const r of living(s)) r.task = undefined; // (ingen står vid bänken när den prövas, och det som lagts ner framför den bärs bort)
+    SIM.tidyTools(s); for (const t of tingOf(s)) if (t.hos === undefined) SIM.tillbakaVid(s, t); // (det som hölls i arbetet släpps och läggs tillbaka, som lagret gör)
     if (st) { const fr = SIM.framfor(st); s.stackar = (s.stackar ?? []).filter(a => !fr.some(q => q.x === a.x && q.y === a.y)); SIM.touch(s); }
     const sz = st ? SIM.storlekAv(st) : { w: 0, h: 0 }, rutor = Array.from({ length: sz.w * sz.h }, (_, i) => ({ x: st!.x + i % sz.w, y: st!.y + Math.floor(i / sz.w) }));
     const avElden = st ? Math.min(...rutor.map(r => SIM.utanforByn(s, r.x, r.y))) : 0; // till lägret och husen (steg 2.10.16)

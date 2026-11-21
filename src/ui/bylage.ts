@@ -19,7 +19,7 @@ export function folkNu(s: State) {
   return rader.join('\n');
 }
 export function forradNu(s: State) {
-  const r = [`mat ${r1(foodDays(s))} dygn (buffert ${r1(buffert(s, 'mat'))}, tak ${r1(lyxtak(s, 'mat'))}); ved ${r1(woodDays(s))} dygn (buffert ${r1(buffert(s, 'ved'))}, tak ${r1(lyxtak(s, 'ved'))})`];
+  const r = [`mat ${r1(foodDays(s))} dagar (buffert ${r1(buffert(s, 'mat'))}, tak ${r1(lyxtak(s, 'mat'))}); ved ${r1(woodDays(s))} dagar (buffert ${r1(buffert(s, 'ved'))}, tak ${r1(lyxtak(s, 'ved'))})`];
   for (const k of MATERIAL_LIST) r.push(`${sakNamn(k).toLowerCase()} ${Math.floor(amountOf(s, k))} (buffert ${Math.ceil(materialBuffert(s, k))}, tak ${Math.ceil(materialTak(s, k))})`);
   return r.join('\n  ');
 }
