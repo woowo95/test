@@ -19,7 +19,7 @@ import { sinHash as hash } from './pixel';
 import { ejLig } from './hjalp';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, figurLayer, labels, symbolLayer, peopleG, world } from './scen';
-import { SKYLT, rollAv, synligaSkyltar, type Skylt } from './namnskyltar';
+import { SKYLT, figurRam, rollAv, synligaSkyltar, type Skylt } from './namnskyltar';
 import { type Arm, type Ben, type Rikt, figurHand, figurTex } from './folkbild';
 import { ARBETEN, STRIDBILD, arbetsBild, ritaArbete } from './arbetsbild';
 import { rovarSkapad, handlarSkapad, skapad } from './utseende';
@@ -455,8 +455,10 @@ export function drawPeople(t: number) {
     const hand = ab && figurHand(sp.texture);
     if (arb && ab && hand) ritaArbete(peopleG, arb, ab.b, sp.position.x + hand[0], sp.position.y + hand[1], rikt === 'vast' ? -1 : 1, 1);
     sp.zIndex = y + r * 0.9 + (kk?.buren ? 1 : 0); // fötterna (ordningen söderut, steg 5.1.4.5); den som bärs framför bäraren
-    huvud.set(p.id, sang ? sp.position.y - h / 2 : sp.position.y);
-    figurFot.set(p.id, { x: sp.position.x + w / 2, y: sang ? sp.position.y + h / 2 : Math.round(sp.zIndex) });
+    // mitten och foten ur hur figuren ritas (figurRam i ui/namnskyltar.ts, steg 12.1.262): i sängen är ankaret mitten
+    const ram = figurRam({ x: sp.position.x, y: sp.position.y, ax: sp.anchor.x, ay: sp.anchor.y, rot: sp.rotation, sx: sp.scale.x, w, h });
+    huvud.set(p.id, ram.topp);
+    figurFot.set(p.id, { x: ram.x, y: sang ? ram.botten : Math.round(sp.zIndex) });
     if (!ligger) fotSkugga(skugga, x - 4, Math.round(sp.zIndex) - 1, 4, 2, skuggLangd());
     sp.visible = true; sedd.add(p.id);
     // den som brinner (steg 6.4.16): Björns val i bildstilen (f6_brinner, den vänstra figuren, steg 8.10.1): sex lågor på

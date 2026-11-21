@@ -7,10 +7,10 @@ import { setByn } from '../../ui/lage';
 import { START, kronikaVakt } from '../kor';
 import { readdirSync, readFileSync } from 'node:fs';
 import { hasIcon } from '../../ikoner';
-import { ROLLSYMBOLER, SKYLT, rollAv, synligaSkyltar, type Skylt } from '../../ui/namnskyltar';
+import { ROLLSYMBOLER, SKYLT, figurRam, rollAv, synligaSkyltar, type Skylt } from '../../ui/namnskyltar';
 
 SCENARIER.namnskyltar = {
-  text: 'Steg 12.1.157: varje kolonist har sitt namn i liten text vid figuren, och den som har en roll (ledaren, prästen) en symbol vid namnet ur ROLLSYMBOLER. När kartan är utzoomad eller många står tätt göms namnen så att de inte täcker varandra, och rollerna går före',
+  text: 'Steg 12.1.157 och 12.1.262: varje kolonist har sitt namn i liten text vid figuren, och den som har en roll (ledaren, prästen) en symbol vid namnet ur ROLLSYMBOLER. När kartan är utzoomad eller många står tätt göms namnen så att de inte täcker varandra, och rollerna går före',
   kor: () => {
     const s = SIM.createState(3, START), folk = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
     const [led, pr, van] = folk;
@@ -30,7 +30,14 @@ SCENARIER.namnskyltar = {
     const overlapp = synliga.some((a, i) => synliga.some((b, j) => i < j && a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h));
     // den valda har sin stora skylt: namnen bredvid den göms
     const stor = synligaSkyltar(tata, 3, [{ x: 60, y: 80, w: 100, h: 40 }]);
+    // figurens ram (steg 12.1.262): stående med ankaret i hörnet, liggande i sängen (ankaret i mitten, spegelvänd) och i den
+    // stående sängen (en kvarts varv): mitten är där figuren syns, inte ankaret plus halva bredden
+    const R = (o: Partial<Parameters<typeof figurRam>[0]>) => figurRam({ x: 100, y: 50, ax: 0, ay: 0, rot: 0, sx: 1, w: 24, h: 16, ...o });
+    const star = R({}), ligg = R({ ax: 0.5, ay: 0.5, sx: -1 }), stSang = R({ ax: 0.5, ay: 0.5, rot: -Math.PI / 2 });
+    const nara = (a: number, b: number) => Math.abs(a - b) < 1e-9;
+    const ramOk = nara(star.x, 112) && nara(star.topp, 50) && nara(star.botten, 66) && nara(ligg.x, 100) && nara(ligg.topp, 42) && nara(ligg.botten, 58) && nara(stSang.x, 100) && nara(stSang.topp, 38) && nara(stSang.botten, 62);
     return [
+      [`namnet hamnar mitt under figuren, också i sängen (stående ${star.x}/${star.topp}/${star.botten}, i sängen ${ligg.x}/${ligg.topp}/${ligg.botten}, i den stående sängen ${stSang.x.toFixed(1)}/${stSang.topp.toFixed(1)}/${stSang.botten.toFixed(1)}; figurRam, steg 12.1.262)`, ramOk],
       [`ledaren och prästen har sin roll och den vanliga ingen (${rollAv(s, led)?.id}, ${rollAv(s, pr)?.id}, ${rollAv(s, van)?.id ?? 'ingen'})`, rollAv(s, led)?.id === 'ledare' && rollAv(s, pr)?.id === 'prast' && !rollAv(s, van)],
       [`varje roll i ROLLSYMBOLER har sin symbol i ikoner.ts (${ROLLSYMBOLER.map(r => r.ikon).join(', ')})`, ROLLSYMBOLER.every(r => hasIcon(r.ikon))],
       [`inzoomat syns alla ${alla.length} namn när folk står utspridda (${narZoom.size})`, narZoom.size === alla.length],

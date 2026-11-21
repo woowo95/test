@@ -12,6 +12,18 @@ export const ROLLSYMBOLER: { id: string; namn: string; ikon: string; har: (s: St
 ];
 export const rollAv = (s: State, p: Person) => ROLLSYMBOLER.find(r => r.har(s, p));
 
+// figurens ram i bildrutan (steg 12.1.262): mitten, översta och nedersta punkten, ur hur figuren ritas: platsen, ankaret (0 =
+// övre vänstra hörnet, 0,5 = mitten), vridningen (0 eller en kvarts varv, den stående sängen) och spegelvändningen (sx = -1,
+// den liggande sängen). Bilden ställer namnskylten och symbolen ur samma ram, så att den som ligger i en säng får namnet mitt
+// under sig. Scenariot namnskyltar prövar den
+export type FigurRitad = { x: number; y: number; ax: number; ay: number; rot: number; sx: number; w: number; h: number };
+export function figurRam(f: FigurRitad): { x: number; topp: number; botten: number } {
+  const lx = (0.5 - f.ax) * f.w * f.sx, ly = (0.5 - f.ay) * f.h, c = Math.cos(f.rot), sn = Math.sin(f.rot);
+  const cx = f.x + lx * c - ly * sn, cy = f.y + lx * sn + ly * c;
+  const hojd = Math.abs(f.h * c) + Math.abs(f.w * sn);
+  return { x: cx, topp: cy - hojd / 2, botten: cy + hojd / 2 };
+}
+
 export const SKYLT = {
   hojd: 7, // textens höjd i världens punkter (en ruta är 16)
   minSkarm: 9, // namnen syns bara när texten blir minst så här många punkter hög på skärmen; annars är kartan för utzoomad
