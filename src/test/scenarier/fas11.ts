@@ -2358,7 +2358,13 @@ SCENARIER.utvagar = {
     const mycket = ny(2, { pack: { brod: 2000 } }); delete mycket.sk.skador;
     const ml = SIM.utvagLage(mycket.s, mycket.sl)!, mb = SIM.resBehov(mycket.sl, SIM.matLage(mycket.s, mycket.sl).kvar, 2);
     const matKvar = 2000 - (ml.slapp.brod ?? 0);
+    // packsadeln släpps inte för sin egen vikt: utan den bär hästen inget (steg 12.1.250)
+    const sad = ny(2, { hast: true, pack: { sten: 60, packsadel: 1 } }); delete sad.sk.skador; sad.sl.pack.brod = 6;
+    const sl2 = SIM.utvagLage(sad.s, sad.sl)!, sadEfter = SIM.lastFart(sad.s, sad.sl, { pack: Object.fromEntries(Object.entries(sad.sl.pack).map(([k, n]) => [k, n - (sl2.slapp[k] ?? 0)])) });
+    const brodVikt = SIM.packViktAv('brod'), lageBar = SIM.lastLage(sad.s, sad.sl), utanSadel = SIM.lastLage(sad.s, sad.sl, { pack: { ...sad.sl.pack, packsadel: 0 } });
     return [
+      [`packsadeln släpps inte, eftersom hästen då inte bär (${Object.entries(sl2.slapp).map(([k, n]) => `${n} ${k}`).join(', ') || 'inget'} släpps; bärförmågan ${lageBar.bar} med sadeln och ${utanSadel.bar} utan, lasten bromsar sedan ${sadEfter.toFixed(2)})`, !sl2.slapp.packsadel && utanSadel.bar < lageBar.bar && (sl2.slapp.sten ?? 0) > 0 && sadEfter === 1],
+      [`maten väger en per portion i packningen (bröd ${brodVikt})`, brodVikt === 1],
       [`handelsvarorna släpps före maten resan behöver (${Object.entries(hl.slapp).map(([k, n]) => `${n} ${k}`).join(', ') || 'inget'}; 6 bröd av behovet ${hb2.mat})`, (hl.slapp.skinn ?? 0) > 0 && (!hMat || hl.slapp.skinn === 10)],
       [`mat resan inte behöver får släppas, och vattnet den behöver först när maten är nere i behovet (${ml.slapp.brod ?? 0} bröd och ${ml.slapp.vattensack ?? 0} vattensäckar släpps, ${matKvar} bröd kvar av behovet ${mb.mat})`, (ml.slapp.brod ?? 0) > 0 && (!(ml.slapp.vattensack ?? 0) || matKvar <= mb.mat!)],
       [`på väg mot ${mal.namn} är den med brutna ben långsam (${fartSkadad.toFixed(2)} mot gränsen ${SIM.RESA.langsam})`, fartSkadad < SIM.RESA.langsam],

@@ -784,16 +784,23 @@ export function personFart(s: State, p: Person) {
   const a = ageOf(p, s.now), ben = Math.max(0, ...GADELAR.map(d => clamp(delFel(p, d), 0, 1)));
   return Math.min(a < ALDER.vuxen ? RESA.fartBarn : a >= ALDER.gammal ? RESA.fartGammal : 1, 1 - (1 - RESA.fartBen) * ben);
 }
-// packningens vikt (maten väger en per portion, som i packbehov)
-export const packVikt = (sl: Sallskap, pack = sl.pack) => Object.entries(pack).reduce((a, [k, n]) => a + n * (FOOD.includes(k) ? 1 : viktOf(k)), 0);
+// vad en sak väger i packningen: maten en per portion, som i packbehov, annars sakens vikt (steg 12.1.250)
+export const packViktAv = (k: string) => FOOD.includes(k) ? 1 : viktOf(k);
+// packningens vikt
+export const packVikt = (sl: Sallskap, pack = sl.pack) => Object.entries(pack).reduce((a, [k, n]) => a + n * packViktAv(k), 0);
 // en utväg som prövas (UTVAGAR, steg 11.5.17): de som bärs, den som lämnas, packningen och orken som de blir om den väljs
 export interface FartOm { buren?: [number, BurenSatt][]; utan?: number; pack?: Record<string, number>; ork?: number }
-export function lastFart(s: State, sl: Sallskap, om: FartOm = {}) {
+// bärförmågan och lasten med det som prövas: packsadlarna i den prövade packningen avgör hur många djur som bär (steg 12.1.250)
+export function lastLage(s: State, sl: Sallskap, om: FartOm = {}) {
   const buren = om.buren ?? sl.buren ?? [], bars = new Set(buren.map(b => b[0])), bar_ = buren.filter(b => b[1] === 'bar').length;
   const folk = resenarer(s, sl).filter(p => p.id !== om.utan && !bars.has(p.id));
   // den som bärs bär inget; en bår tar två bärares händer, och den som åker på djuret eller vagnen väger som packning
-  const bar = folk.reduce((a, p) => a + barResenar(s, p), 0) - 2 * RESA.hander * bar_ + barDjurAlla(s, sl) + vagnLass(s, sl);
+  const bar = folk.reduce((a, p) => a + barResenar(s, p), 0) - 2 * RESA.hander * bar_ + barDjurAlla(s, sl, om.pack ?? sl.pack) + vagnLass(s, sl);
   const vikt = packVikt(sl, om.pack ?? sl.pack) + RESA.personVikt * (buren.length - bar_);
+  return { bar, vikt };
+}
+export function lastFart(s: State, sl: Sallskap, om: FartOm = {}) {
+  const { bar, vikt } = lastLage(s, sl, om);
   const x = bar > 0 ? vikt / bar : 1;
   return x <= RESA.lastFran ? 1 : Math.max(RESA.lastMin, 1 - (1 - RESA.lastMin) * (x - RESA.lastFran) / (1 - RESA.lastFran));
 }
@@ -1790,17 +1797,22 @@ export function utvagLage(s: State, sl: Sallskap, t = s.now): UtvagLage | undefi
   if (!langsam) return undefined;
   const m = matLage(s, sl, t), f0 = sallskapFart(s, sl);
   const vagKvar = sl.skede === 'hemat' ? m.kvar : m.kvar - stannarFor(sl); // dygnen i gång, utan tiden framme
-  // det som kan släppas: allt i packningen, en sak i taget, den som är värd minst per vikt för resan först, tills lasten inte
-  // bromsar. Maten, vattnet, fodret och tälten är värda mycket (RESA.behovVarde) så länge de behövs för dygnen som återstår
+  // det som kan släppas: allt i packningen, en sak i taget, den som kostar minst per vunnen marginal (bärförmågan minus lasten,
+  // med den prövade packningen: en packsadel som släpps tar djurets lass med sig) först, tills lasten inte bromsar (steg
+  // 12.1.250). Maten, vattnet, fodret och tälten är värda mycket (RESA.behovVarde) så länge de behövs för dygnen som återstår
   // (steg 12.1.145), annars bara sitt grundvärde
   const slapp: Record<string, number> = {}; let slappVarde = 0;
   const pack = { ...sl.pack }, behov = resBehov(sl, m.kvar, resenarer(s, sl).length);
   const kostar = (k: string) => grundvarde(k) + (behovKvar(pack, behov, k) ? RESA.behovVarde : 0);
+  const marg = (pk: Record<string, number>) => { const l = lastLage(s, sl, { pack: pk }); return l.bar - l.vikt; };
   while (lastFart(s, sl, { pack }) < 1) {
     let bast: string | undefined, bv = Infinity;
+    const m0 = marg(pack);
     for (const k of Object.keys(pack).sort()) {
-      if ((pack[k] ?? 0) < 1 || viktOf(k) <= 0) continue;
-      const v = kostar(k) / viktOf(k);
+      if ((pack[k] ?? 0) < 1) continue;
+      const vinst = marg({ ...pack, [k]: pack[k]! - 1 }) - m0;
+      if (vinst <= 1e-9) continue;
+      const v = kostar(k) / vinst;
       if (v < bv) { bv = v; bast = k; }
     }
     if (!bast) break;
