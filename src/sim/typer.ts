@@ -124,7 +124,7 @@ export const AGES_BORJAR = ['Istiden har börjat. Sjön fryser och maten blir kn
 
 export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar brinner fort
 
-export interface Thought { text: string; v: number; until: number }
+export interface Thought { text: string; v: number; until: number; k?: string } // k: raden i TANKAR (steg 12.1.234)
 // Det en person håller på med (p.task, sparas med personen). Fälten utan frågetecken finns alltid
 export interface Task {
   paus?: true; // vilan är en paus när inget annat lockar, inte trötthet (steg 11.1.72)

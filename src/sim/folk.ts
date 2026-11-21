@@ -510,10 +510,10 @@ export function gjortDygn(s: State, p: Person, k: string) {
 }
 // räknar k och ger true första gången det händer i byn (för raderna om 'byns första …' i loggen)
 export const forstaGang = (s: State, k: string) => { count(s, k); return s.stat![k] === 1; };
-export function think(p: Person, text: string, v: number, now: number, dur: number) {
+export function think(p: Person, text: string, v: number, now: number, dur: number, k?: string) {
   horText('tanke', text);
   p.thoughts = p.thoughts.filter(t => t.text !== text);
-  p.thoughts.push({ text, v, until: now + dur });
+  p.thoughts.push(k === undefined ? { text, v, until: now + dur } : { text, v, until: now + dur, k });
 }
 
 // den som ska sova ligger först när hen är framme vid bädden eller platsen; på vägen dit går hen upprätt (steg 9.2.89)

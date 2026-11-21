@@ -4,8 +4,6 @@ import { readdirSync, readFileSync } from 'node:fs';
 import * as SIM from '../../sim';
 import { SCENARIER, medTal, testBy } from './hjalp';
 
-const tankeMonster = SIM.tankeMonster;
-const ALLA = () => (Object.keys(SIM.TANKAR) as SIM.TankeId[]).map(tankeMonster);
 
 SCENARIER.tankar = {
   text: 'Humörets register (steg 12.1.131, tankar.ts): varje tanke är en rad i TANKAR med text, styrka, tid och händelse; ett system ger tanken genom att nämna raden, och alla tankar i testbyarna finns som rader',
@@ -15,14 +13,19 @@ SCENARIER.tankar = {
     const forbi = readdirSync(simMapp).filter(f => f.endsWith('.ts') && f !== 'tankar.ts')
       .flatMap(f => readFileSync(new URL(f, simMapp), 'utf8').split('\n').filter(l => /\bthink\(/.test(l) && !/export function think/.test(l)).map(() => f));
     // varje tanke i en testby har sin rad
-    const mon = ALLA(), s = testBy(20);
+    const s = testBy(20);
     const texter = new Set(s.people.flatMap(p => p.thoughts.map(t => t.text)));
-    const utan = [...texter].filter(t => !mon.some(m => m.test(t)));
+    const utan = s.people.flatMap(p => p.thoughts).filter(t => t.k === undefined || !(t.k in SIM.TANKAR)).map(t => t.text); // tanken frågas om nyckeln (steg 12.1.234)
     // raderna: texten, styrkan och tiden ur raden, f och tid vid anropet
     const p = s.people.find(q => !q.died)!, now = s.now;
     SIM.tanke(p, 'fryser', now); const fr = p.thoughts.find(t => t.text === 'Fryser')!;
     SIM.tanke(p, 'sovBadd', now, { f: 0.5 }); const sb = p.thoughts.find(t => t.text === 'Sov gott i halmbädden')!;
     SIM.tanke(p, 'gifte', now, { namn: 'Ask', tid: SIM.HOUR }); const gi = p.thoughts.find(t => t.text === 'Gifte sig med Ask')!;
+    // tanken känns igen på nyckeln (steg 12.1.234): en björn är ingen match, och en gammal tanke utan nyckel får raden som passar bäst
+    const q = s.people.filter(x => !x.died)[1] ?? p; q.thoughts = [];
+    SIM.tanke(q, 'sagBjorn', now, { v: -0.05, tid: SIM.HOUR });
+    const bjornEjFest = !SIM.harTanke(q, ['sagMatch'], now) && SIM.harTanke(q, ['sagBjorn'], now);
+    const gammal = SIM.tankeNyckel({ text: 'Såg en björn' }), gammalMatch = SIM.tankeNyckel({ text: 'Såg Ask och Embla' });
     let kastar = false; try { SIM.tanke(p, 'harOnt', now); } catch { kastar = true; }
     const utanNar = Object.entries(SIM.TANKAR).filter(([, d]) => !(d as SIM.TankeDef).nar).map(([k]) => k);
     return [
@@ -32,6 +35,8 @@ SCENARIER.tankar = {
       ['f gör raden svagare', sb.v === 0.09 * 0.5 && sb.until === now + 8 * SIM.HOUR],
       ['namnet fylls i och tiden kan ges vid anropet', gi.v === 0.15 && gi.until === now + SIM.HOUR],
       ['en rad utan styrka kräver den vid anropet', kastar],
+      ['tanken bär sin nyckel, och den som såg en björn har inte sett en match', bjornEjFest && q.thoughts[0]?.k === 'sagBjorn'],
+      [`en sparad tanke utan nyckel får raden som passar bäst (${gammal}, ${gammalMatch})`, gammal === 'sagBjorn' && gammalMatch === 'sagMatch'],
       [`varje rad säger vad som ger den${utanNar.length ? ` (${utanNar.join(', ')})` : ''}`, utanNar.length === 0],
       ...nyaTankar(),
     ];

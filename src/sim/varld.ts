@@ -23,7 +23,7 @@ import { hogtidForm, hogtidVarde, hogtider } from './kult';
 import { newFire } from './eld';
 import { laggGruvor } from './gruva';
 import { varldMark } from './varlden';
-import { tanke } from './tankar';
+import { tanke, tankeNyckel } from './tankar';
 import { ACTS } from './handlingar';
 
 // ---------- skapa värld ----------
@@ -298,6 +298,9 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
   }],
   [64, 'en uppgift vars handling inte längre finns (flyttLager, steg 12.1.78) töms hos alla, också gästerna (steg 12.1.231); de väckta byarna uppgraderas var för sig när de läses', s => {
     for (const p of s.people) if (p.task && !(p.task.act in ACTS)) p.task = undefined;
+  }],
+  [65, 'varje tanke bär nyckeln till sin rad i TANKAR (steg 12.1.234): en sparad tanke utan nyckel får raden vars mönster passar bäst, och en tanke utan rad tas bort', s => {
+    for (const p of s.people) p.thoughts = p.thoughts.flatMap(t => { if (t.k !== undefined) return [t]; const k = tankeNyckel(t); return k ? [{ ...t, k }] : []; });
   }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
