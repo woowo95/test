@@ -738,6 +738,7 @@ function place(s: State, k: string, n: number, c: number, ag?: Del, at?: { x: nu
     if (!a) { const ny: Stack = { k, n: 0, c, x: sp.x, y: sp.y }; st.push(ny); occ.set(key(sp.x, sp.y), ny); addToStack(s, ny, v, c, del); } else addToStack(s, a, v, c, del);
     n -= v;
   }
+  changed(s); // förrådets minne får veta om de nya högarna innan det frågas (steg 12.1.202)
   if (n > 1e-9) { // ingen plats alls
     const a = stored(s, k).sort((a, b) => a.n - b.n)[0];
     if (a) addToStack(s, a, n, c, ag);

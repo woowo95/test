@@ -1380,3 +1380,17 @@ SCENARIER.ikapparbetare = {
     ];
   },
 };
+
+SCENARIER.forradminne = {
+  text: 'Förrådets minne räknas om innan det frågas (steg 12.1.202): när mer läggs i förrådet än det rymmer läggs nya högar och resten på den minsta, och minnet av stackarna per slag stämmer med stackarna efteråt',
+  kor: () => {
+    const s = SIM.createState(3, START);
+    SIM.amountOf(s, 'sten'); // minnet är räknat innan något läggs
+    SIM.setAmount(s, 'sten', 4000); // mer än förrådet rymmer
+    const fel = SIM.lagerVakt(s), alla = SIM.stacksOf(s).filter(a => a.k === 'sten').reduce((t, a) => t + a.n, 0);
+    return [
+      [`allt som lades finns i högarna (${alla} av 4000)`, Math.round(alla) === 4000],
+      [`minnet stämmer med stackarna${fel.length ? ` (${fel.slice(0, 3).join('; ')})` : ''}`, fel.length === 0],
+    ];
+  },
+};
