@@ -843,10 +843,12 @@ SCENARIER.vard = {
     // en by i tolv dygn (tolv år i spelet, knappt två veckor i verkligheten): såren vårdas
     // skadorna är få och slumpen avgör vilka sår som behöver vård (ett benbrott behöver inget förband), så byarna prövas tills en har vårdat
     // olyckorna är sällsynta (några på tolv dygn i en by, ofta ingen), så här är de tio gånger vanligare
-    let b = createState(4, START);
+    // mossan finns bara i myren (steg 12.1.6) och scenarierna börjar utan kläder att riva remsor ur, så byarna har en myr
+    const myrByar = [4, 1, 2, 3, 5, 6, 7, 8, 9, 10].filter(n => SIM.harMyr(createState(n, START)));
+    let b = createState(myrByar[0], START);
     medTal(SIM.OLYCKOR, 'risk', r => r * 10, () => {
       kor(b, 288);
-      for (let n = 1; n <= 6 && !((b.stat?.vard ?? 0) > 0); n++) if (n !== 4) { b = createState(n, START); kor(b, 288); }
+      for (const n of myrByar.slice(1, 6)) { if ((b.stat?.vard ?? 0) > 0) break; b = createState(n, START); kor(b, 288); }
     });
     const st = (n: string) => b.stat?.[n] as number ?? 0;
     return [
