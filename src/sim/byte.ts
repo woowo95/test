@@ -40,7 +40,7 @@ export const BYTE = balans('byte', {
   bakom: 1,
 });
 
-export interface Vara { k: string; n: number; t?: Ting; q?: number; hus?: number; varde?: number; skrift?: Skrift } // skrift = kartan på handlarens blad (steg 11.7.5) // hus = huset som byts (k = 'hus', en symbol på filten, steg 7.2.12), varde = vad det är värt i bytet
+export interface Vara { k: string; n: number; t?: Ting; nr?: number; q?: number; hus?: number; varde?: number; skrift?: Skrift } // nr = redskapets ordningstal i gruppen när byn bjuder ut flera (1 = det första som lämnar byn, steg 12.1.201) // skrift = kartan på handlarens blad (steg 11.7.5) // hus = huset som byts (k = 'hus', en symbol på filten, steg 7.2.12), varde = vad det är värt i bytet
 // // q = kvaliteten på handlarens redskap, som inte är ett ting i byn än
 // en part i ett byte. id = personens id, BYN för byn och ett negativt tal för handlaren. p = personen (bybon eller ingen)
 export interface Part {
@@ -70,7 +70,7 @@ export function vardeAv(w: Vara, P: Part, kop: boolean) {
 // steg 12.1.188), annars n gånger värdet av en
 export function gerVarde(w: Vara, P: Part, n = w.n) {
   if (!P.kvar || kartOf(w) || w.hus !== undefined || w.varde !== undefined) return n * vardeAv(w, P, false);
-  if (w.t) return n > 0 ? vardeOf(w) * P.kvar(w.k, 1) : 0;
+  if (w.t) return n > 0 ? vardeOf(w) * P.kvar(w.k, w.nr ?? 1) : 0; // det n:te redskapet i gruppen värderas efter det som blir kvar när det och de före är borta
   let v = 0;
   for (let i = 1; i <= n; i++) v += P.kvar(w.k, i);
   return v * vardeOf(w);

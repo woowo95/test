@@ -1,4 +1,4 @@
-import { bestamd, han, honom, stor } from './ord';
+import { bestamd, han, heltOrd, honom, stor } from './ord';
 import { gastensPlatser, horOmGast, kannerOrt, kartaBorta, O_KANT, ORT, radBesoker } from './ort';
 import { SKRIFT } from './skriftTal';
 import { NORMAL } from './kvalitet';
@@ -709,7 +709,7 @@ const vill = (s: State, h: Handlare, p: Person) => h.varor.map(w => ({ w, v: w.s
 // inte behöver själv, payable i behov.ts) som är värt minst ett helt silver för handlaren, så mycket som hen kan bära.
 // Samma för byn (det byn har gott om), när den handlar (steg 4.5.7.4)
 const salja = (s: State, h: Handlare, p: Person) => saljaAv(s, h, bybonPart(s, p), p);
-function saljaAv(s: State, h: Handlare, M: Part, tro: Person) {
+export function saljaAv(s: State, h: Handlare, M: Part, tro: Person) {
   const ut: Vara[] = [];
   let plats = ledigt(h);
   // det som ger mest silver per vikt först (steg 10.5.17)
@@ -905,7 +905,7 @@ const relTal = (s: State, h: Handlare, p: Person) => Math.round(gillar(s, h, p) 
 // ett byte. Bara loggen och minnet; inget i simuleringen läser det
 function avbrutenAffar(s: State, h: Handlare, a: Affar, p: Person) {
   const minne: ByteMinne = { nr: (s.byteNr = (s.byteNr ?? 0) + 1), t: s.now, a: p.id, an: p.name, b: h.id, bn: hp(s, h).name, ag: [], bg: [], forsok: a.forsok, arg: a.arg, avbruten: true, rel: [a.rel0 ?? relTal(s, h, p), relTal(s, h, p)] };
-  loggaByte(s, log(s, `${p.name} och ${hp(s, h).name} blev inte överens efter ${a.forsok!.length === 1 ? 'ett bud' : `${a.forsok!.length} bud`}.`, 'rel', [p.id]), minne, [p]);
+  loggaByte(s, log(s, `${p.name} och ${hp(s, h).name} blev inte överens efter ${a.forsok!.length === 1 ? 'ett bud' : `${heltOrd(a.forsok!.length)} bud`}.`, 'rel', [p.id]), minne, [p]);
 }
 // den som inte kommit tillbaka till affären på länge (somnat, blivit sjuk) har gett upp den, och den som dött är borta
 function glomAffar(s: State, h: Handlare) {

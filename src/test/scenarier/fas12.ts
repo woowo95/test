@@ -1140,7 +1140,7 @@ SCENARIER.handelretur = {
 
 // steg 12.1.188: den sista av en sak är värd mest, och värdet avgör om den säljs
 SCENARIER.sistasak = {
-  text: 'Den sista av en sak är värd mer (steg 12.1.188): byns värde av det den ger bort stiger ju färre den har kvar, och den sista är värd mest. Byn säljer inte det den nyss köpt till samma pris, och den sista saken säljs först när handlaren betalar riktigt bra; av det byn har gott om säljs till vanligt pris',
+  text: 'Den sista av en sak är värd mer (steg 12.1.188): byns värde av det den ger bort stiger ju färre den har kvar, och den sista är värd mest. Byn säljer inte det den nyss köpt till samma pris, och den sista saken säljs först när handlaren betalar riktigt bra; av det byn har gott om säljs till vanligt pris. Av flera redskap i en grupp värderas vart och ett efter sitt ordningstal (steg 12.1.201), i byns affär med handlaren',
   kor: () => {
     const s = SIM.createState(1, START); klockan(s, 10);
     const x = SIM.eldPlats(s).x, y = SIM.eldPlats(s).y, M = SIM.bynPart(s, x, y);
@@ -1160,11 +1160,26 @@ SCENARIER.sistasak = {
     // av det byn har gott om säljs en till vanligt pris
     SIM.setAmount(s, k, 30);
     const over = M.kvar!(k, 1), vanligt = salj(1);
+    // redskapen (steg 12.1.201) går den väg spelet går: en handlare på plats och byns affär (saljaAv). Två redskap ur en grupp
+    // vars mål är noll: det första säljs till vanligt pris, det sista är värt DELA.saknar och blir kvar
+    SIM.skickaHandlare(s);
+    const h = s.handlare, tro = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    const r = SIM.SAK_LIST.find(q => SIM.isTool(q) && SIM.grundvarde(q) >= 2 && (SIM.REDSKAPMAL[SIM.gruppOf(q)]?.(s) ?? 0) === 0 && SIM.viktOf(q) <= 1 && !SIM.tingOf(s).some(t => SIM.gruppOf(t.k) === SIM.gruppOf(q)));
+    let rSalda = -1, rNr = '', rSista = 0;
+    if (h && r) {
+      for (let i = 0; i < 2; i++) SIM.newTing(s, r, 1, SIM.BYN);
+      const M2 = SIM.bynPart(s, x, y, tro), bjuds = M2.over(['silver']).filter(w => w.k === r);
+      rNr = bjuds.map(w => w.nr).join(','); rSista = bjuds.length === 2 ? SIM.gerVarde(bjuds[1], M2, 1) / SIM.grundvarde(r) : 0;
+      rSalda = SIM.saljaAv(s, h, M2, tro).filter(w => w.k === r).length;
+    }
     return [
       [`den sista är värd mest (${sista} mot ${over} när byn har gott om)`, sista === SIM.DELA.saknar && over < sista],
       [`det byn nyss köpt för att den saknade det (värt ${kopVarde}) säljs inte tillbaka till samma pris (${samma} sålda)`, samma === 0 && hade1 === 1],
       [`den sista säljs när handlaren betalar riktigt bra (${hogt} såld, ${hade2} kvar)`, hogt === 1 && hade2 === 0],
       [`av det byn har gott om säljs en till vanligt pris (${vanligt})`, vanligt === 1],
+      [`en handlare kom och ett redskap utan mål finns att pröva (${r})`, !!h && !!r],
+      [`byns två redskap bjuds ut med sina ordningstal (${rNr}), och det sista är värt det byn saknar (${rSista})`, rNr === '1,2' && rSista === SIM.DELA.saknar],
+      [`byn säljer det första till vanligt pris och behåller det sista (${rSalda} sålt)`, rSalda === 1],
     ];
   },
 };

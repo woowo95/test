@@ -665,15 +665,15 @@ export function bynKopAntal(s: State, k: string) {
   return Math.max(minst, Math.ceil((buf - har) / perOf(b, k) - 1e-9));
 }
 function bynOver(s: State, utom: readonly string[]): Vara[] {
-  const ut: Vara[] = [], rest = new Map<Behov, number>(), grupper = new Map<string, number>();
+  const ut: Vara[] = [], rest = new Map<Behov, number>(), grupper = new Map<string, number>(), gruppNr = new Map<string, number>();
   for (const k of SAK_LIST) {
     if (utom.includes(k) || !grundvarde(k)) continue;
     if (isTool(k)) {
       // byns redskap av slaget, så länge gruppen har fler än målet (REDSKAPMAL); utan mål också det sista, som då är värt mest (bynKvar, steg 12.1.188)
       const g = gruppOf(k), egna = tingOf(s).filter(t => t.k === k && t.agare === BYN && t.halv === undefined && t.hos === undefined && t.bar === undefined && t.krok === undefined);
-      let over = grupper.get(g) ?? iGruppen(s, g).length - (REDSKAPMAL[g]?.(s) ?? 0);
-      for (const t of egna) { if (over < 1) break; ut.push({ k, n: 1, t }); over--; }
-      grupper.set(g, over);
+      let over = grupper.get(g) ?? iGruppen(s, g).length - (REDSKAPMAL[g]?.(s) ?? 0), nr = gruppNr.get(g) ?? 0;
+      for (const t of egna) { if (over < 1) break; ut.push({ k, n: 1, t, nr: ++nr }); over--; } // varje redskap bär sitt ordningstal i gruppen (steg 12.1.201)
+      grupper.set(g, over); gruppNr.set(g, nr);
       continue;
     }
     if (amountOf(s, k) < 1 - 2e-6) continue; // inte en hel sak i förrådet: byns del blir ingen hel sak (bynsDel), och då behöver ingen räknas
