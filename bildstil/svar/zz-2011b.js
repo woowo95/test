@@ -3,7 +3,7 @@
 (() => {
   const B = (val, text) => ({ val, steg: '12.6.1', text: text ? text + ' Byggs in i steg 12.6.1.' : undefined });
   Object.assign(BESLUT, {
-    f10_gris: B(1), f10_ko: B(1), f10_vildsvin: B(1), f9_hage: B(1), f9_salt: B(2), f11_platstecken: B(1), f12_jarngruva: B(1),
+    f10_gris: B(1), f10_ko: B(1), f10_vildsvin: B(1), f9_hage: B(1), f9_salt: B(1), f11_platstecken: B(1), f12_jarngruva: B(1),
     f12_sederband: B(1), f11_ruinmur: B(1), f11_utsmyckning: B(1), f9_lok_stack: B(1), f9_ortkruka_mellan: B(1),
     f11_pergament: B(1, 'Stilen gäller; kartan i ramen är hela världen, den stora kontinenten i mitten och småöarna runt om.'),
     f10_gudabild_fler: B(1, 'Alla fem gudabilderna används, som olika gudar.'),
