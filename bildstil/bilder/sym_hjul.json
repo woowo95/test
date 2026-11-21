@@ -1,0 +1,32 @@
+{
+ "id": "sym_hjul",
+ "ritad": 1,
+ "av": "programmeringschatten (platshållare, steg 12.1.192)",
+ "om": "Ett trähjul med nav och ekrar, där en bit av fälgen saknas.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  ".....kkkkk......",
+  "...kkJJJJJkk....",
+  "..kJjkkJkkjJk...",
+  ".kJk..kJk..kJk..",
+  ".kJk..kJk...k...",
+  "kJk.k.kJk.k.....",
+  "kJkkJkklkkJkk...",
+  "kJJJJkllkkJJJJk.",
+  "kJkkJkklkkJkkJk.",
+  "kJk.k.kJk.k.kJk.",
+  ".kJk..kJk..kJk..",
+  ".kJk..kJk..kJk..",
+  "..kJjkkJkkjJk...",
+  "...kkJJJJJkk....",
+  ".....kkkkk......"
+ ],
+ "pal": {
+  "J": "#7d5b40",
+  "j": "#5e3c24",
+  "k": "#24201d",
+  "l": "#987e62"
+ }
+}

@@ -20,7 +20,7 @@ export const VARUGRUPPER = {
   bransle: { andel: 0.1, namn: 'Bränsle', ikon: '🔥', mapp: ['Bränsle'], saker: ['talg', 'brannolja', 'bivax'] },
   sten: { andel: 0.08, namn: 'Sten och flinta', ikon: '🪨', mapp: ['Sten'], saker: ['huggen_sten'] },
   skinn: { andel: 0.25, namn: 'Skinn och ull', ikon: '🧥', mapp: ['Kläder'], saker: ['remsa', 'skinn', 'farskinn', 'getskinn', 'svinskinn', 'kohud', 'vitskinn', 'vargskinn', 'radjursskinn', 'bjornskinn', 'lader', 'pergament', 'ull', 'ulltrad', 'ylle', 'fjadrar', 'lin', 'ratlin', 'lintyg'] },
-  virke: { andel: 0.15, namn: 'Virke och rep', ikon: '🌲', saker: ['rep', 'trad', 'virke', 'plankor', 'tjara', 'benlim', 'mossa'] },
+  virke: { andel: 0.15, namn: 'Virke och rep', ikon: '🌲', saker: ['rep', 'trad', 'virke', 'plankor', 'tjara', 'benlim', 'mossa', 'las'] },
   redskap: { andel: 0.25, namn: 'Redskap och vapen', ikon: '🪓', mapp: ['Redskap'], saker: ['ben', 'djurhorn'] },
   dryck: { andel: 0.07, namn: 'Dryck och salt', ikon: '🧂', saker: ['salt', 'malt', 'rolleka', 'salva', 'tval', 'rokelse'] },
   prydnad: { andel: 0.1, namn: 'Prydnad', ikon: '✨', borjar: ['tecken_', 'halsband_', 'mask_'], saker: ['vargtand', 'blomma', 'leksak', 'trumma', 'benflojt', 'lyra', 'boll', 'bok'] },

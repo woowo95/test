@@ -1,0 +1,34 @@
+{
+ "id": "sym_ol",
+ "ritad": 1,
+ "av": "programmeringschatten (platshållare, steg 12.1.192)",
+ "om": "En stop av trä med band runt och skum över kanten.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "...kkkkkkkk.....",
+  "..kwwwwwwwwk....",
+  ".kwwbwwwbwwwk...",
+  "..kwwwwwwwwk....",
+  "..kJJJJJJJJkkk..",
+  "..kKKKKKKKKkJJk.",
+  "..kJllJJJJJk.kJk",
+  "..kJllJJJJJk.kJk",
+  "..kKKKKKKKKk.kJk",
+  "..kJllJJJJJk.kJk",
+  "..kJllJJJJJkkJk.",
+  "..kKKKKKKKKkkk..",
+  "..kJJJJJJJJk....",
+  "...kkkkkkkk.....",
+  "................"
+ ],
+ "pal": {
+  "J": "#7d5b40",
+  "K": "#474138",
+  "b": "#bdb39b",
+  "k": "#24201d",
+  "l": "#987e62",
+  "w": "#dad0bb"
+ }
+}

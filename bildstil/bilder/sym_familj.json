@@ -1,0 +1,34 @@
+{
+ "id": "sym_familj",
+ "ritad": 1,
+ "av": "programmeringschatten (platshållare, steg 12.1.192)",
+ "om": "Två vuxna och ett barn mellan dem, sida vid sida.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "..kk........kk..",
+  ".kbbk......kbbk.",
+  ".kbbk......kbbk.",
+  "..kk...kk...kk..",
+  ".kjjk.kbbk.krrk.",
+  "kjJJjkkbbkkrorrk",
+  "kjJJjk.kk.krorrk",
+  "kjJJjkkrrkkrorrk",
+  "kjJJjkrorrkrorrk",
+  ".kJJk.kork.krrk.",
+  ".kjjk.kjjk.kjjk.",
+  ".kjjk.kjjk.kjjk.",
+  ".kkkk.kkkk.kkkk.",
+  "................",
+  "................"
+ ],
+ "pal": {
+  "J": "#7d5b40",
+  "b": "#bdb39b",
+  "j": "#5e3c24",
+  "k": "#24201d",
+  "o": "#bd753e",
+  "r": "#a14808"
+ }
+}

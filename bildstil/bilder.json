@@ -501,6 +501,18 @@
     {"id": "utedass", "sort": "kar-station", "namn": "Utedasset", "w": 16, "h": 28, "vad": "utedasset, en ruta: ett smalt litet hus av plankor med sluttande tak och en dörr, byggt över en grop (steg 12.4.9)", "ritad": 1, "utanGammal": true, "slag": ["station"], "medManniska": true},
     {"id": "sjukbadd", "sort": "kar-mobel", "namn": "Sjukbädden", "w": 32, "h": 20, "vad": "sjukbädden på bredden, två rutor: en låg bädd av hö på en ram av grenar med ett brunt skinn över och en ljus kudde (steg 12.4.10)", "ritad": 1, "utanGammal": true, "inne": true, "medManniska": true},
     {"id": "fyrfat", "sort": "kar-mobel", "namn": "Fyrfatet", "w": 16, "h": 14, "vad": "fyrfatet, en ruta inne: ett grunt fat av bränd lera på tre korta fötter, fyllt med glödande kol (steg 12.4.11)", "ritad": 2, "utanGammal": true, "inne": true},
-    {"id": "penna", "sort": "sak-redskap", "namn": "Fjäderpenna", "w": 11, "h": 11, "vad": "fjäderpennan: en lång ljus fjäder med en snedskuren spets, snett över rutan (steg 12.4.14)", "ritad": 1, "utanGammal": true}
+    {"id": "penna", "sort": "sak-redskap", "namn": "Fjäderpenna", "w": 11, "h": 11, "vad": "fjäderpennan: en lång ljus fjäder med en snedskuren spets, snett över rutan (steg 12.4.14)", "ritad": 1, "utanGammal": true},
+    {"id": "sym_familj", "sort": "sym-logg", "namn": "Familj", "w": 16, "h": 16, "vad": "en familj: namnet efter en släkting och nyheterna om släkten", "tecken": ["👪"], "ritad": 1, "godkand": true, "platshallare": true},
+    {"id": "sym_hjul", "sort": "sym-logg", "namn": "Trasigt hjul", "w": 16, "h": 16, "vad": "ett trasigt vagnshjul: en motgång på resan", "tecken": ["🛞"], "ritad": 1, "godkand": true, "platshallare": true},
+    {"id": "sym_vilt", "sort": "sym-logg", "namn": "Vilt", "w": 16, "h": 16, "vad": "vilt på vägen: ett rådjur som sällskapet kan jaga", "tecken": ["🦌"], "ritad": 1, "godkand": true, "platshallare": true},
+    {"id": "sym_ort", "sort": "sym-logg", "namn": "Botare", "w": 16, "h": 16, "vad": "en ört: ryktet botare, den som botat en sjuk eller skadad", "tecken": ["🌿"], "ritad": 1, "godkand": true, "platshallare": true},
+    {"id": "sym_scen", "sort": "sym-logg", "namn": "Bra på scenen", "w": 16, "h": 16, "vad": "en glad mask: ryktet bra på scenen, publiken tog väl emot framträdandet", "tecken": ["🎭"], "ritad": 1, "godkand": true, "platshallare": true},
+    {"id": "sym_gaspa", "sort": "sym-logg", "namn": "Dålig på scenen", "w": 16, "h": 16, "vad": "ett gäspande ansikte: ryktet dålig på scenen, publiken tog illa emot framträdandet", "tecken": ["🥱"], "ritad": 1, "godkand": true, "platshallare": true},
+    {"id": "sym_ljus", "sort": "sym-logg", "namn": "From", "w": 16, "h": 16, "vad": "ett tänt ljus: ryktet from, den som ber och offrar mycket", "tecken": ["🕯️"], "ritad": 1, "godkand": true, "platshallare": true},
+    {"id": "sym_kedja", "sort": "sym-logg", "namn": "Gudlös", "w": 16, "h": 16, "vad": "en kedja: ryktet gudlös, den som vanhelgat det heliga eller stötts ut ur tron", "tecken": ["⛓️"], "ritad": 1, "godkand": true, "platshallare": true},
+    {"id": "sym_ol", "sort": "sym-logg", "namn": "Suput", "w": 16, "h": 16, "vad": "en ölstop: ryktet suput, den som ofta är full", "tecken": ["🍺"], "ritad": 1, "godkand": true, "platshallare": true},
+    {"id": "sym_rav", "sort": "sym-logg", "namn": "Lurendrejare", "w": 16, "h": 16, "vad": "en räv: ryktet lurendrejare, den som lurat någon i ett byte", "tecken": ["🦊"], "ritad": 1, "godkand": true, "platshallare": true},
+    {"id": "sym_kompass", "sort": "sym-logg", "namn": "Vittberest", "w": 16, "h": 16, "vad": "ett vandringsminne: ryktet vittberest, den som rest långt och varit borta länge", "tecken": ["🧭"], "ritad": 1, "godkand": true, "platshallare": true},
+    {"id": "sym_las", "sort": "sym-logg", "namn": "Fängelsekund", "w": 16, "h": 16, "vad": "ett lås av järn: ryktet fängelsekund, den som suttit i fängelse", "tecken": ["🔒"], "ritad": 1, "godkand": true, "platshallare": true}
   ]
 }

@@ -1,0 +1,32 @@
+{
+ "id": "sym_rav",
+ "ritad": 1,
+ "av": "programmeringschatten (platshållare, steg 12.1.192)",
+ "om": "Ett rävhuvud framifrån med spetsiga öron och vit nos.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  ".kk..........kk.",
+  ".krk........krk.",
+  ".korkkkkkkkkrok.",
+  ".krrrrrrrrrrrrk.",
+  "krrrrrrrrrrrrrrk",
+  "krkkrrrrrrrrkkrk",
+  "krrrrrrrrrrrrrrk",
+  ".kwrrrrrrrrrrwk.",
+  "..kwwrrrrrrwwk..",
+  "...kwwwrrwwwk...",
+  "....kwwkkwwk....",
+  ".....kwwwwk.....",
+  "......kkkk......",
+  "................",
+  "................"
+ ],
+ "pal": {
+  "k": "#24201d",
+  "o": "#bd753e",
+  "r": "#a14808",
+  "w": "#dad0bb"
+ }
+}
