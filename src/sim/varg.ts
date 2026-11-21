@@ -10,6 +10,7 @@ import { kronikaBer, och, personFalt, sakVarg } from './berattelser';
 import { redskapIHanden } from './agande';
 import { blodas } from './blod';
 import { bedFor } from './bygg';
+import { varmareInne } from './byggnader';
 import { Bit, Rum, bitAt, bitsOf, dorrDef, roomAt, freeNear, gridOf } from './byggnad';
 import { dodaDjur, dragOf, djurOf, grupperOf, halsaOf, satDjurHalsa } from './djur';
 import { upplev } from './uppvaxt';
@@ -30,7 +31,7 @@ import { DjurMed, KartStrid, kartStridBorja, kartStrider } from './kartstrid';
 import { EFTER, Efter, FAROR, STRIDSLAG } from './efterstrid';
 import { jaktFoljer, jaktKallare, jaktPlatsVid, jaktSamlas } from './rovdjursjakt';
 import { ageIndex, iIstiden, isLight } from './tid';
-import { hardVinter } from './vader';
+import { coldOf, hardVinter, temperature } from './vader';
 import { MOTGANG } from './motgang';
 import { GRANNAR4, H, HOUR, MIN, Person, SEC, State, T, Task, Vargflock, W } from './typer';
 import { taVapen } from './vakt';
@@ -313,7 +314,9 @@ export function vargSkydd(s: State, p: Person): Skydd | undefined {
 // vid elden nära de vuxna (mot vargarna och rövarna)
 export function gomSig(s: State, p: Person, vad: string, hot: 'rovare' | 'varg', dur: number): Skydd | undefined {
   if (p.task?.act === 'sova' && iHus(s, p)) return;
-  const hus = husPlats(s, p);
+  // i huset om det är varmare där än vid elden, som sovplatsen (val.ts, plats sang): ett kallt hus skyddar inte mot kylan
+  const plats = husPlats(s, p), c = coldOf(temperature(s)), rum = plats && roomAt(s, plats.x, plats.y);
+  const hus = plats && (!rum || c === 0 || varmareInne(s, rum, c)) ? plats : undefined;
   return { act: 'gomma', why: `${vad} är nära, ${hus ? 'gömmer sig i huset' : 'håller sig vid elden nära de vuxna'}`, hot, spot: hus ?? skyddVidElden(s), dur };
 }
 // den som hör ropet avbryter det hen gör och söker skydd (inte den som slåss, vårdar, bärs eller håller vakt)
