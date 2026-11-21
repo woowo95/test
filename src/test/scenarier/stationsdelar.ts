@@ -209,6 +209,14 @@ SCENARIER.kladmaterial = {
     (s.stationer ??= []).push({ id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'garvning', x: 1, y: 5, kvar: 0, delar: SIM.delarIRad('garvning', 1, 5) } as Station); s.byggV = (s.byggV ?? 0) + 1;
     const jakt = SIM.hamtas('skinn')?.act === 'jakt' && SIM.hamtas('radjursskinn')?.act === 'jakt';
     const viaGarvning = SIM.fattas(s, p, 'garva', f), lader = SIM.arv(s, p, 'lader', f);
+    // jakten efter skinn räknar hur många som fattas (steg 12.1.220): tre skinn fattas, en jägare är ute: en till går; tre ute: ingen
+    const andra = s.people.filter(q => q !== p && SIM.alive(q)).slice(0, 3);
+    s.projektSaknar = { skinn: { beh: 3, n: 3, b: 0.8 } };
+    andra[0].task = { act: 'jakt', phase: 'go', tx: 0, ty: 0, until: s.now + 1e6, carry: 0, why: '', hamtar: 'skinn' } as unknown as SIM.Task;
+    const enUte = SIM.arv(s, p, 'skinn', f)?.sak;
+    for (const q of andra) q.task = { act: 'jakt', phase: 'go', tx: 0, ty: 0, until: s.now + 1e6, carry: 0, why: '', hamtar: 'skinn' } as unknown as SIM.Task;
+    const treUte = SIM.arv(s, p, 'skinn', f)?.sak;
+    for (const q of andra) q.task = undefined; s.projektSaknar = undefined;
     // hur många slöjdbänkar byn vill ha prövas i scenariot slojdbankar (steg 12.1.150)
     // linet: utan tyg och utan vävare vill byn inga tunikor; med en vävare vill den en var, och bristen följer kedjan bakåt
     const tunikor = () => SIM.REDSKAPMAL.tunika(s);
@@ -229,6 +237,7 @@ SCENARIER.kladmaterial = {
     s.projektSaknar = undefined; SIM.setAmount(s, 'trad', 0);
     return [
       ['skinnen hämtas genom jakten', jakt],
+      [`tre skinn fattas: med en jägare ute går en till (${enUte}), med tre ute ingen (${treUte})`, enUte === 'skinn' && treUte === undefined && andra.length === 3],
       [`garvningen väntar på skinn (${viaGarvning}), och lädret ärver genom garvningen till jakten efter skinn (${lader?.sak})`, viaGarvning === 'skinn' && lader?.sak === 'skinn'],
       [`utan tyg och vävare vill byn inga tunikor (${utanVavare}), inte heller när vävningen är halvvägs lärd (${halvLard}), med en vävare en var (${medVavare})`, utanVavare === 0 && halvLard === 0 && medVavare === SIM.living(s).length],
       [`lintyget projekten saknar ger det råa linet värde genom kedjan (${lin}, utan brist ${korn})`, lin === 0.8 && korn === 0],

@@ -479,11 +479,14 @@ export function arv(s: State, p: Person, m: string, f: ProjektFara, djup = 0): {
   }
   const ka = KALLA[m];
   if (ka) { // skinnet är på väg (steg 12.1.123): det fällda djuret som ligger slaktas till skinn, och den som redan jagar efter det bär hem ett
-    if (amountOf(s, ka.ur) > 0) { // det som fattas är det som behövs för att slakta: stationen eller kniven, annars väntar projektet på slakten
+    const ligger = Math.floor(amountOf(s, ka.ur) + 1e-9);
+    if (ligger > 0) { // det som behövs för att slakta fattas: stationen eller kniven ärver
       const art = DJURARTER.find(d => d.sak === ka.ur), st = stationSomFattas(s, art?.act ?? 'slakta') ?? (art?.kniv && freeTools(s, p, 'kniv') < 1 ? 'kniv' : undefined);
-      return st && PROJEKT[st] && djup < 2 ? arv(s, p, st, f, djup + 1) : undefined;
+      if (st) return PROJEKT[st] && djup < 2 ? arv(s, p, st, f, djup + 1) : undefined;
     }
-    if (living(s).some(q => q !== p && q.task?.act === ka.act && q.task.hamtar === m)) return undefined;
+    // det som är på väg räknas i antal, som virket (steg 12.1.220): det som fattas minus ett per jägare som redan är ute och djuret som väntar på slakt
+    const ute = living(s).reduce((n, q) => n + (q !== p && q.task?.act === ka.act && q.task.hamtar === m ? 1 : 0), 0);
+    if (Math.max(1, s.projektSaknar?.[m]?.n ?? 0) - ute - ligger < 1) return undefined;
   }
   return hamtas(m) ? { sak: m } : undefined;
 }
