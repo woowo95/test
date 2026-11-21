@@ -47,7 +47,8 @@ export const MINNE = balans('minne', {
   siktOppet: 10, // ... och så här många annars, gånger siktMork + siktLjus * ljuset (kortare i mörker)
   siktMork: 0.4,
   siktLjus: 0.6,
-  valBrus: 0.15, // slumpen när man väljer plats, mot platsens värde
+  valBrus: 0.15, // slumpen när man väljer plats, mot platsens värde (för samlaren mot den bästa turen)
+  radslaTur: 0.5, // samlarens rädsla för en plats kostar så här stor del av den bästa turen per rädsla (steg 12.1.203)
   sokR: 5, // väl framme letar man efter den bästa rutan inom så här många rutor ...
   sokPris: 0.01, // ... och varje ruta bort från den valda platsen kostar så här mycket
   flintaSaker: 0.25, // man går till ett område efter flinta när lärdomen är säkrare än så här
@@ -258,10 +259,10 @@ export function hoped(s: State, l: Lardom) {
 // syns: vad rutan ser ut att kunna ge, pot: samma för hela området
 const believed = (s: State, l: Lardom | undefined, syns: number, u: number, pot = syns) => l ? Math.min(MINNE.vMax, hoped(s, l)) * l.c * Math.min(MINNE.synsMax, syns / Math.max(MINNE.synsMin, pot)) + syns * u * (1 - l.c) : syns * u;
 // sight, u (trustUnknown) och syns (synsOf för k) räknas en gång när samma person frågas om många rutor
-function perceive(s: State, p: Person, k: Kind, x: number, y: number, sight: number, u: number, syns: (i: number) => number) {
+function perceive(s: State, p: Person, k: Kind, x: number, y: number, sight: number, u: number, syns: (i: number) => number, utanRadsla = false) {
   const a = areaOf(x, y);
   const v = sees(s, p, x, y, sight) ? richness(s, k, x + 0.5, y + 0.5) : believed(s, findL(p, k, a), standAt(s, k, x, y, syns), u, areaValue(s, k, a, 'syns'));
-  return v - fear(s, p, a);
+  return utanRadsla ? v : v - fear(s, p, a);
 }
 // rädsla för ett område: den modige bryr sig mindre
 function fear(s: State, p: Person, a: number) {
@@ -350,11 +351,17 @@ export interface Tur { borda: number; fart: number }
 export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: number; d: number }[], tur?: Tur) {
   let best: { x: number; y: number; d: number } | undefined, bs = -1e9;
   const sight = sightOf(s, p), u = trustUnknown(s, p), syns = (i: number) => synsOf(s, k, i);
-  for (const c of cands) {
-    const v = perceive(s, p, k, c.x, c.y, sight, u, syns);
-    // samlaren: hem är vägen från platsen till byn, och toa-smutsen räknas som en längre väg (steg 10.11.14); slumpen gånger värdet
-    const sc = tur ? turPerTimme(v, Math.hypot(c.x + 0.5 - p.x, c.y + 0.5 - p.y), c.d + smutsAvdrag(s, c.x, c.y), tur) * (1 + (rnd(s, 'val', p) - 0.5) * MINNE.valBrus)
-      : v - c.d * PLATS.avstandPris + rnd(s, 'val', p) * MINNE.valBrus;
+  if (tur) {
+    // samlaren (steg 12.1.203): turen räknas på det hen tror finns, utan rädslan; rädslan dras sedan ifrån som en kostnad och
+    // slumpen läggs till, båda mätta mot den bästa turen bland platserna, så en fruktad plats utan fynd får sämre poäng än en tom
+    const tpt = cands.map(c => turPerTimme(perceive(s, p, k, c.x, c.y, sight, u, syns, true), Math.hypot(c.x + 0.5 - p.x, c.y + 0.5 - p.y), c.d + smutsAvdrag(s, c.x, c.y), tur));
+    const ref = Math.max(1e-9, ...tpt);
+    cands.forEach((c, i) => {
+      const sc = tpt[i] - fear(s, p, areaOf(c.x, c.y)) * MINNE.radslaTur * ref + (rnd(s, 'val', p) - 0.5) * MINNE.valBrus * ref;
+      if (sc > bs) { bs = sc; best = c; }
+    });
+  } else for (const c of cands) {
+    const sc = perceive(s, p, k, c.x, c.y, sight, u, syns) - c.d * PLATS.avstandPris + rnd(s, 'val', p) * MINNE.valBrus;
     if (sc > bs) { bs = sc; best = c; }
   }
   if (!best || sees(s, p, best.x, best.y, sight)) return best;

@@ -1394,3 +1394,33 @@ SCENARIER.forradminne = {
     ];
   },
 };
+
+SCENARIER.radslatur = {
+  text: 'Rädslan i samlarens val (steg 12.1.203): en fruktad plats utan fynd får sämre poäng än en tom plats lika nära: rädslan dras från turen som en kostnad och slumpen läggs till',
+  kor: () => {
+    const s = SIM.createState(3, START); klockan(s);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= 18)!, vat = SIM.vattenNu(s);
+    // två tomma rutor lika långt från samlaren, i olika områden
+    const tomma: { x: number; y: number; d: number }[] = [];
+    for (let r = 6; r < 40 && tomma.length < 2; r++) for (let a = 0; a < 64 && tomma.length < 2; a++) {
+      const x = Math.floor(p.x + r * Math.cos(a / 64 * 2 * Math.PI)), y = Math.floor(p.y + r * Math.sin(a / 64 * 2 * Math.PI));
+      if (x < 0 || y < 0 || x >= SIM.W || y >= SIM.H || vat[y * SIM.W + x] === SIM.T.Vatten || SIM.bitAt(s, x, y) || SIM.richness(s, 'samla', x + 0.5, y + 0.5) > 0) continue;
+      if (tomma.some(t => SIM.areaOf(t.x, t.y) === SIM.areaOf(x, y))) continue;
+      if (tomma.length && Math.abs(Math.hypot(tomma[0].x - p.x, tomma[0].y - p.y) - Math.hypot(x - p.x, y - p.y)) > 1.5) continue;
+      tomma.push({ x, y, d: SIM.utanforByn(s, x, y) });
+    }
+    if (tomma.length < 2) return [['två tomma rutor lika långt bort hittades', false]];
+    const [rädd, lugn] = tomma;
+    (p.lardomar ??= []).push({ k: 'fara', a: SIM.areaOf(rädd.x, rädd.y), v: 0.8, c: 1, t: s.now, led: 0 });
+    let valtRädd = 0;
+    const tur = { borda: 10, fart: 1 };
+    for (let i = 0; i < 40; i++) {
+      const r = SIM.pickSpot(s, p, 'samla', [{ ...rädd }, { ...lugn }], tur);
+      if (r && SIM.areaOf(r.x, r.y) === SIM.areaOf(rädd.x, rädd.y)) valtRädd++;
+      s.now += SIM.MIN;
+    }
+    return [
+      [`den fruktade tomma platsen väljs inte framför den tomma utan rädsla (${valtRädd} av 40)`, valtRädd === 0],
+    ];
+  },
+};
