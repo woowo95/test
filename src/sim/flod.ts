@@ -170,6 +170,6 @@ function dranker(s: State, fore: Uint8Array) {
     else if (viktOf(a.k) <= FLOD.latt && !roofed(s, a.x, a.y)) { bort += a.n; a.n = 0; a.dold = undefined; }
   }
   if (mat) { count(s, 'flod mat', mat); log(s, `Vattnet förstörde ${mat > 12 ? 'mycket mat' : 'en del av maten'} i lagret.`, 'world'); }
-  if (bort) { count(s, 'flod flot bort', bort); log(s, `${bort} lätta saker flöt bort med vattnet.`, 'world'); }
+  if (bort) { count(s, 'flod flot bort', bort); log(s, `${bort > 12 ? 'Många lätta saker' : bort > 1 ? 'Några lätta saker' : 'En lätt sak'} flöt bort med vattnet.`, 'world'); }
   if (mat || bort) tidy(s);
 }
