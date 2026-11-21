@@ -1281,6 +1281,17 @@ export function laggPaRutan(s: State, k: string, n: number, x: number, y: number
 // lägg n av slaget k ner kring rutan (tx, ty) utanför förrådet: en ruta rymmer så mycket av slaget som den rymmer (rymd), och
 // det som inte får plats läggs på rutorna närmast runt omkring, där inget annat ligger. Aldrig i en eld (eld, steg 12.1.153).
 // Ägarnas hela delar delas som i förrådet (delAv)
+// rutan där ett redskap ur bördan läggs (steg 12.1.242): den närmaste fria rutan som för stackarna, inte där man står eller
+// sitter vid en station (rutan framför den) och inte på en hög eller i elden
+function tingRuta(s: State, st: Stack[], eld: Set<number>, tx: number, ty: number) {
+  for (let r = 0; r <= 4; r++) for (let y = ty - r; y <= ty + r; y++) for (let x = tx - r; x <= tx + r; x++) {
+    if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r || !inMap(x, y) || eld.has(key(x, y)) || sittAt(s, x, y)) continue;
+    if (r > 0 && (!usable(s, x, y) && !ledigtGolv(s, x, y) || stubbeOn(s, x, y) || isStored(s, x, y))) continue;
+    if (st.some(q => q.x === x && q.y === y && q.n > 1e-6)) continue;
+    return { x, y };
+  }
+  return { x: tx, y: ty };
+}
 function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: number, c: number, ag: Del | undefined, tx: number, ty: number): { x: number; y: number } | undefined {
   let forst: { x: number; y: number } | undefined; // rutan där det första lades (det gömda i en flyttad hög läggs där, steg 12.1.208)
   for (let r = 0; r <= 4 && n > 1e-9; r++) for (let y = ty - r; y <= ty + r && n > 1e-9; y++) for (let x = tx - r; x <= tx + r && n > 1e-9; x++) {
@@ -1315,7 +1326,7 @@ export function dropLoad(s: State, t: Task, x: number, y: number, owner = BYN) {
     if (SAKER[k]?.i) { hide(s, SAKER[k]!.i!, h.n, { x: tx, y: ty }); continue; }
     laggBredvid(s, st, eld, k, h.n, t.cond?.[k] ?? 1, h.ag, tx, ty);
   } } finally { laggsBlot = false; }
-  for (const id of t.ting ?? []) { const g = tingOf(s).find(q => q.id === id); if (g) { g.lass = undefined; g.x = eld.has(key(tx, ty)) ? undefined : tx; g.y = eld.has(key(tx, ty)) ? undefined : ty; } } // i elden läggs inget: placeTools ger redskapet en plats
+  for (const id of t.ting ?? []) { const g = tingOf(s).find(q => q.id === id); if (g) { const at = eld.has(key(tx, ty)) ? undefined : tingRuta(s, st, eld, tx, ty); g.lass = undefined; g.x = at?.x; g.y = at?.y; } } // i elden läggs inget: placeTools ger redskapet en plats
   t.ting = undefined;
   tomBorda(t);
   changed(s);

@@ -654,6 +654,11 @@ SCENARIER.slaktfram = {
     p.task = tk; SIM.dropLoad(s, tk, p.x, p.y); p.task = undefined;
     const fram = SIM.framfor(bank), paFram = (s.stackar ?? []).filter(a => fram.some(q => q.x === a.x && q.y === a.y)).length;
     const nara = (s.stackar ?? []).filter(a => a.k === 'vilt' && SIM.iRackvidd(p, a)).reduce((n, a) => n + a.n, 0);
+    // ett redskap i bördan läggs också bredvid (steg 12.1.242)
+    const yxa = SIM.newTing(s, 'yxa', 1, p.id); yxa.lass = p.id; yxa.hos = undefined; yxa.x = yxa.y = undefined;
+    const tk2 = { act: 'bara', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, why: 'prov', ting: [yxa.id] } as unknown as SIM.Task;
+    p.task = tk2; SIM.dropLoad(s, tk2, p.x, p.y); p.task = undefined;
+    const yxaFram = fram.some(q => q.x === yxa.x && q.y === yxa.y), yxaNara = yxa.x !== undefined && Math.hypot(yxa.x + 0.5 - p.x, yxa.y! + 0.5 - p.y) < 6;
     const oppen = SIM.framFri(s, bank) && SIM.stationFor(s, 'slakta') === bank;
     // och då slaktas viltet med det som ligger till hands: en timme vid bänken ger ben
     bearbetaVid(s, p, DJUR.kanin, 1);
@@ -667,6 +672,7 @@ SCENARIER.slaktfram = {
     return [
       [`det som läggs ner framför bänken hamnar bredvid (${paFram} stackar på rutorna framför)`, paFram === 0],
       [`viltet ligger inom räckhåll för den som står vid bänken (${nara} av ${2 * KANIN})`, nara >= 2 * KANIN],
+      [`redskapet i bördan läggs på närmaste fria ruta, inte framför bänken (${yxa.x}, ${yxa.y})`, !yxaFram && yxaNara],
       ['bänken är fri (inget står på rutorna framför den)', oppen],
       [`viltet slaktas och ger ben (${ben})`, ben >= 1],
       [`benet ärver till slaktbänken när viltet ligger oslaktat (${a?.u?.act ?? a?.sak ?? 'inget'} ${a?.u?.tool ?? ''})`, a?.u?.act === 'station' && a.u.tool === 'slaktbank'],
