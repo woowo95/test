@@ -1,0 +1,39 @@
+{
+ "kommando": "tre",
+ "args": [
+  "drejskiva",
+  "oljelampa",
+  "sang",
+  "pall",
+  "stol",
+  "vagga",
+  "tunna",
+  "ost",
+  "brunn",
+  "utedass",
+  "sjukbadd",
+  "fyrfat",
+  "penna"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 4.54,
+  "hog": 9.74
+ },
+ "dollar": 4.288,
+ "rapport": [
+  "drejskiva: 3 versioner till valdelen (kortet bild_drejskiva)",
+  "oljelampa: 3 versioner till valdelen (kortet bild_oljelampa)",
+  "sang: 3 versioner till valdelen (kortet bild_sang)",
+  "pall: 3 versioner till valdelen (kortet bild_pall); kvar: olika: version 3 har nästan samma form som version 1 (91 % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.",
+  "stol: 3 versioner till valdelen (kortet bild_stol)",
+  "vagga: 3 versioner till valdelen (kortet bild_vagga)",
+  "tunna: 3 versioner till valdelen (kortet bild_tunna); kvar: olika: version 2 har nästan samma form som version 1 (91 % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.",
+  "ost: 3 versioner till valdelen (kortet bild_ost); kvar: olika: version 3 har nästan samma form som version 1 (94 % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.; olika: version 3 har nästan samma form som version 2 (95 % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.",
+  "brunn: 3 versioner till valdelen (kortet bild_brunn)",
+  "utedass: 3 versioner till valdelen (kortet bild_utedass)",
+  "sjukbadd: 3 versioner till valdelen (kortet bild_sjukbadd)",
+  "fyrfat: 3 versioner till valdelen (kortet bild_fyrfat); kvar: olika: version 2 har nästan samma form som version 1 (93 % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.",
+  "penna: 3 versioner till valdelen (kortet bild_penna)"
+ ]
+}

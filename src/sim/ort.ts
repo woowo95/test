@@ -13,7 +13,7 @@ import { notis } from './notiser';
 import { varldHandelseText, VarldHandelse, VARLDSHANDELSER } from './varldkronika';
 import { sparadVag } from './vagval';
 import { hash3 } from './slump';
-import { byPlats, LANDMARKEN, LandmarkDef, varldPlatsNr, type VarldPlats } from './landmarken';
+import { byPlats, kandPlats, LANDMARKEN, LandmarkDef, varldPlatsNr, type VarldPlats } from './landmarken';
 import { VARLD } from './varldmark';
 import { varldMark, type Varlden } from './varlden';
 import { instText, KLAN_ROLLER, klanById } from './klaner';
@@ -22,6 +22,7 @@ import { Ting, tingOf } from './agande';
 import type { Skrift } from './skrift';
 import { yearNo } from './tid';
 import { BYSORTER, radNr, RadtalId, VarldRad } from './radtal';
+import { KOHANDELSER } from './varldslag';
 
 export const ORT = balans('ort', {
   max: 10, // så många platser i världen minns en person högst (utöver de andra lärdomarna); det minst säkra trängs undan
@@ -54,6 +55,11 @@ export const O_RYKTE = 0, O_KANT = 1, O_BESOKT = 2;
 // ny: uppgiften är en nyhet sedan den tiden (den som berättar en nyhet för den vidare, steg 11.4.9)
 export function larOrt(s: State, p: Person, nr: number, niva: number, c: number, o: { t?: number; src?: number; led?: number; ny?: number } = {}): Lardom {
   const t = o.t ?? s.now, led = o.led ?? (o.src === undefined ? 0 : 1), e = findL(p, 'ort', nr);
+  const borta = p.ortBorta?.[nr];
+  if (borta !== undefined) { // den som vet att platsen är borta tror inte på äldre uppgifter om den (steg 12.1.245)
+    if (t <= borta) return { k: 'ort', a: nr, v: niva, c: 0, t };
+    delete p.ortBorta![nr]; if (!Object.keys(p.ortBorta!).length) p.ortBorta = undefined; // aldrig delete på en person (MALL i folk.ts)
+  }
   if (e) {
     const egen = e.src === undefined && niva < e.v; // det man själv sett skrivs inte över av mindre uppgifter (steg 12.1.83)
     if (niva > e.v) { e.v = niva; e.c = Math.max(e.c, c); }
@@ -98,7 +104,7 @@ export function berattaOrt(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
 // håll och ett avstånd som räknas ur världens frö och platsens nummer, så att platsen alltid ligger inom området men inte i
 // mitten. Samma rykte ligger på samma ställe hos alla (steg 12.1.83)
 export function ryktesLage(s: State, l: Lardom): { x: number; y: number; r: number } | undefined {
-  const vl = s.varld, q = vl && varldPlatsNr(vl, l.a);
+  const vl = s.varld, q = vl && kandPlats(vl, l.a); // också en plats som tagits bort men som byn tror finns (steg 12.1.146)
   if (!q) return undefined;
   const r = ORT.ryktRadie * VARLD.gangPerDygn;
   const vinkel = hash3(vl.fro, l.a, 0x4f52) * 2 * Math.PI, d = r * (ORT.ryktFran + (ORT.ryktTill - ORT.ryktFran) * hash3(vl.fro, l.a, 0x5259));
@@ -107,7 +113,7 @@ export function ryktesLage(s: State, l: Lardom): { x: number; y: number; r: numb
 // platsen nr i text (kodgenomgången, fynd 174): namnet, sorten och namnet ("gravhög Ulvsö") eller som ett rykte ("gravhög som
 // heter Ulvsö"); en plats som tagits bort ur världen har en egen text
 export function platsText(s: State, nr: number, hur: 'namn' | 'sort' | 'rykte' = 'namn'): string {
-  const q = s.varld && varldPlatsNr(s.varld, nr);
+  const q = s.varld && kandPlats(s.varld, nr); // en plats som tagits bort heter det den hette så länge byn minns den (steg 12.1.146)
   if (!q) return 'en plats som inte finns längre';
   const sort = LANDMARKEN[q.k].namn.toLowerCase();
   return hur === 'namn' ? q.namn : hur === 'sort' ? `${sort} ${q.namn}` : `${artikel(LANDMARKEN[q.k].namn)} ${sort} som heter ${q.namn}`;
@@ -158,11 +164,11 @@ export function rovareSedda(s: State, p: Person, klan: number | undefined) {
 
 // lärdomen i ord (describe i minne.ts)
 export function describeOrt(s: State, l: Lardom) {
-  const vl = s.varld, q = vl && varldPlatsNr(vl, l.a), niva = ORTNIVA[l.v] ?? ORTNIVA[0];
+  const vl = s.varld, q = vl && varldPlatsNr(vl, l.a), m = vl && kandPlats(vl, l.a), niva = ORTNIVA[l.v] ?? ORTNIVA[0];
   const what = `${cap(niva.text)} ${platsText(s, l.a, l.v === O_RYKTE ? 'rykte' : 'sort')}`;
   const src = l.src === undefined ? (l.led ? 'fick höra om det' : l.v === O_BESOKT ? 'egen resa' : 'egen erfarenhet') : `hört av ${byId(s, l.src)?.name ?? 'någon'}${(l.led ?? 1) > 1 ? `, ${l.led} led från den som var där` : ''}`;
   const sure = l.c >= 0.75 ? 'säker' : l.c >= 0.4 ? 'ganska säker' : 'osäker';
-  return { text: what, what, place: q?.namn ?? 'okänd plats', src, sure, wrong: q ? '' : 'platsen finns inte längre' };
+  return { text: what, what, place: m?.namn ?? 'okänd plats', src, sure, wrong: q ? '' : 'platsen finns inte längre' };
 }
 const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
 
@@ -204,6 +210,39 @@ export function raknaBynVet(s: State) {
     count(s, 'ortGlomdIByn');
   }
   s.bynVet = { t: s.now, p: ny };
+  // en minnesplats som ingen längre minns, inte heller den som är ute eller en karta, glöms också av världen (steg 12.1.146);
+  // bara huvudbyn rensar dem, eftersom det är dess minne (steg 12.1.245)
+  const vl = s.varld;
+  if (s.vackt === undefined && s.vacktPlats === undefined && vl?.minnesplatser?.length) { vl.minnesplatser = vl.minnesplatser.filter(q => minns(s, q.nr)); if (!vl.minnesplatser.length) delete vl.minnesplatser; }
+}
+// ---------- platser som tas bort ur världen (steg 12.1.146, Flera samhällen: Raden i tal) ----------
+// När en plats tas bort ur världen (ett handelsläger som brutits upp, en utpost som övergetts) vet byn inget om det förrän någon
+// sett platsen eller fått höra det. Så länge någon i byn minns platsen, eller en karta har den, ligger en kopia kvar som
+// minnesplats: den heter det den hette, ryktet ligger där det låg och den går att resa till. Den som kommer fram ser att den är
+// borta och glömmer den, och när sällskapet kommer hem berättar de det för byn. Ingen som minns den: minnesplatsen tas bort.
+const minns = (s: State, nr: number) => s.people.some(q => alive(q) && !q.gast && !!findL(q, 'ort', nr)) || kartSkrifter(s).some(x => x.k.platser?.some(y => y.nr === nr));
+export function taBortPlats(s: State, vl: Varlden, p: VarldPlats) {
+  vl.platser = (vl.platser ?? []).filter(q => q !== p);
+  if (!minns(s, p.nr)) return;
+  const { by: _by, grannar: _g, inne: _i, ...kopia } = p;
+  (vl.minnesplatser ??= []).push(kopia);
+}
+// en tillfällig plats (en gömma) tas bort när dess tid är slut (steg 12.1.164); en rads egen plats (handelslägret) tas bort när
+// raden upplöses, av radens egen regel
+KOHANDELSER.platsUpphor = (s, vl, k) => {
+  const p = k.sak !== undefined ? varldPlatsNr(vl, k.sak) : undefined;
+  if (!p || (p.by !== undefined && byPlats(vl, p.by) === p)) return;
+  taBortPlats(s, vl, p);
+  count(s, 'platsUpphorde');
+};
+// folk ser eller hör att platsen nr är borta: de glömmer den.
+// Att platsen är borta är en uppgift med sin tid (t, nu om inget anges): en karta eller ett rykte med äldre uppgifter lär inte ut den igen (steg 12.1.245)
+export function vetBorta(s: State, folk: Person[], nr: number, t = s.now) {
+  for (const p of folk) {
+    if (findL(p, 'ort', nr)) p.lardomar = p.lardomar!.filter(l => !(l.k === 'ort' && l.a === nr));
+    (p.ortBorta ??= {})[nr] = Math.max(p.ortBorta[nr] ?? -Infinity, t);
+  }
+  count(s, 'ortSagBorta');
 }
 // kartorna (steg 11.7.4): varje skrift med platser på ett blad eller i en bok, med tinget den står i
 export function kartSkrifter(s: State): { t: Ting; k: Skrift }[] {
@@ -455,7 +494,7 @@ function nyhetNarByn(s: State, p: Person, nr: number, t0: number, t1: number, sr
   if (!vad.length && fore && nu) {
     if (nu.borta && !fore.borta) vad.push(`${q?.namn ?? 'Byn'} har gått under`);
     else if (nu.led !== fore.led) vad.push(`${q?.namn ?? 'Byn'} har fått en ny ledare${nu.led ? `, ${nu.led}` : ''}`);
-    else { const d = Math.round(nu.tal.folk - fore.tal.folk), b = q?.namn ?? 'Byn'; vad.push(d === 0 ? `${b} är lika stor som förut` : d > 0 ? `${b} har vuxit: ${d === 1 ? 'en person till' : `${tal(d)} fler`} bor där nu` : `${b} har krympt: ${d === -1 ? 'en person' : `${tal(-d)}`} färre bor där nu`); } // utan siffror (steg 12.1.120)
+    else { const d = Math.round(nu.tal.folk - fore.tal.folk), b = q?.namn ?? 'Byn'; if (d !== 0) vad.push(d > 0 ? `${b} har vuxit: ${d === 1 ? 'en person till' : `${tal(d)} fler`} bor där nu` : `${b} har krympt: ${d === -1 ? 'en person' : `${tal(-d)}`} färre bor där nu`); } // utan siffror (steg 12.1.120)
   }
   if (!vad.length) return; // inget har ändrats i spannet: ingen nyhet (steg 12.1.64)
   const kom = src !== undefined ? byId(s, src) : p, text = `Nyheter från ${platsText(s, nr)}: ${vad.join('. ')}. ${kom?.name ?? 'Någon'} kom med nyheten.`;

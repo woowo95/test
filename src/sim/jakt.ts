@@ -323,7 +323,7 @@ function vildsvinSlut(s: State, efter: Efter, g: KartStrid) {
   let bar = false;
   for (const q of folk) {
     const k = st.kampar.find(o => o.pid === q.id)!;
-    efterKampen(s, q, st, k, undefined, falld ? 'Fällde ett vildsvin som anföll' : 'Anfölls av ett vildsvin', falld);
+    efterKampen(s, q, st, k, undefined, falld ? 'falldeVildsvin' : 'anfollsVildsvin', falld);
     const tid = SLAGSMAL.minst * SEC;
     if (falld && !bar && k.lage === 'strid') { // den första som står kvar styckar det och bär hem det första stycket
       gjort(s, q, 'vildsvin');

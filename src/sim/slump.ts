@@ -40,6 +40,7 @@ export const STROMMAR = {
   gift: 'giftermål med grannbyarna: vem som gifter sig, med vilken by och vem som flyttar (steg 11.3.6, giftermal.ts)',
   skuld: 'skulden: när man ber om förlåtelse och svaret (steg 10.8.2, skuld.ts)',
   resa: 'resorna: vilka sällskapet möter och vad som händer på vägen (fas 11.5, resa.ts)',
+  drom: 'drömmarna: om den som sover drömmer, och vad (steg 12.1.132, drommar.ts)',
   vackt: 'den väckta byn: allt som byggs ur radens tal, folket, deras åldrar och släkt (fas 11.13, vackt.ts)',
 } as const;
 export type Strom = keyof typeof STROMMAR;
@@ -84,7 +85,9 @@ export function antalPa(s: State, lam: number, k: Strom, p?: Person) {
 }
 export function chance(s: State, ratePerSec: number, dtSec: number, k: Strom, p?: Person) { return rnd(s, k, p) < 1 - Math.exp(-ratePerSec * dtSec); }
 // chansen c per period om perSek sekunder, räknad för dtSec sekunder (steg 10.2.15: per tid, aldrig per slag)
-export function chansPer(s: State, c: number, perSek: number, dtSec: number, k: Strom, p?: Person) { return rnd(s, k, p) < 1 - Math.pow(1 - Math.min(1, c), dtSec / perSek); }
+export function chansPer(s: State, c: number, perSek: number, dtSec: number, k: Strom, p?: Person) { return rnd(s, k, p) < chansTid(c, perSek, dtSec); }
+// samma chans som ett tal, för slumpen som slås ur en blandning (hash) i stället för en slumpföljd
+export const chansTid = (c: number, perSek: number, dtSec: number) => 1 - Math.pow(1 - Math.min(1, c), dtSec / perSek);
 
 // ett tal mellan 0 och 1 ur tre heltal, utan att dra ur någon slumpföljd: vädret, motgångarna, eldsvådan och berättelserna
 // (kodgenomgången 3.10.25: fyra kopior blev en). Blandningen får inte ändras, för då får alla byar ett annat väder; k0 och

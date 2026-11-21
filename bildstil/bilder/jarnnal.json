@@ -1,0 +1,71 @@
+{
+ "id": "jarnnal",
+ "w": 6,
+ "h": 9,
+ "rader": [
+  ".....Q",
+  "....TQ",
+  "...SR.",
+  "...TQ.",
+  "..SR..",
+  "..TQ..",
+  ".TR...",
+  "S.Q...",
+  ".Q...."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ },
+ "versioner": [
+  {
+   "ide": "En rak, tunn nål som ligger snett från nedre vänstra hörnet till övre högra och fyller rutan på 6 gånger 9 punkter, med spetsen uppe till höger, där den pekar ut från handen när den hålls. Skaftet är en diagonal linje två punkter bred: överkanten i skiffer3 och skiffer2 med korn, underkanten i skiffer1 och en kontur i skiffer0 som smalnar av till en enda punkt i spetsen. Nere till vänster vidgas änden till en liten oval på tre gånger tre punkter, med en genomskinlig punkt i mitten som öga och en enda glanspunkt i skiffer3 på den övre vänstra kanten.",
+   "rader": [
+    ".....Q",
+    "....TQ",
+    "...SR.",
+    "...TQ.",
+    "..SR..",
+    "..TQ..",
+    ".TR...",
+    "S.Q...",
+    ".Q...."
+   ],
+   "om": "Järnnålen är 6 × 9 punkter och ligger snett från nedre vänster till övre höger. Spetsen uppe till höger är en enda punkt i skiffer0. Skaftet är två punkter brett: ovansidan i skiffer3 och skiffer2 som byts av för kornets skull, undersidan i skiffer1 och konturen runt om i skiffer0. Nere till vänster vidgas änden till en oval på 3 × 3 punkter med en genomskinlig punkt i mitten som öga. Ovalen har en enda glanspunkt i skiffer3 uppe till vänster och skiffer1 på den skuggade högra och nedre sidan. Granskningen: Skaftet var tre till fyra punkter brett med kontur på båda sidor, så nålen läste som en kil eller ett blad. Nu är skaftet två punkter brett som idén säger: den ljusa övre kanten i skiffer3 och skiffer2 växlar punkt för punkt, och den mörka undre kanten i skiffer1 och skiffer0 ligger nere till höger, mot ljuset. Diagonalen går obruten från spetsen, en enda punkt i skiffer0 uppe till höger, ner till ögat nere till vänster. Ögat är en liten oval på tre gånger tre punkter med en genomskinlig punkt i mitten. Glanspunkten i skiffer3 sitter på ovalens övre vänstra kant, och den nedre högra kanten är tecknad i skiffer0. Den ljusa sidan har ingen egen kontur, så att nålen förblir tunn. De ljusa grå tonerna skiljer sig ändå tydligt från det olivgröna gräset. Bilden är fortfarande 6 × 9 punkter och fyller rutan, och den är liten och smal bredvid kolonisten."
+  },
+  {
+   "ide": "En nål med en lätt böj, som en grov segelnål, som går snett från nedre vänstra till övre högra hörnet men svänger svagt uppåt mot spetsen, så att silhuetten blir en mjuk båge i stället för ett rakt streck. Järnet är skiffer2 och skiffer3 på den sida av bågen som vetter mot ljuset uppe till vänster och skiffer1 på undersidan, med kontur i skiffer0 runt om. Ögat i den nedre vänstra änden är ett avlångt hål, en genomskinlig punkt lång i nålens riktning, inramat av skiffer1, och spetsen uppe till höger är en enda punkt i skiffer2.",
+   "rader": [
+    "....S.",
+    "...QTQ",
+    "...QTQ",
+    "..QTRQ",
+    "..QSQ.",
+    ".QRRQ.",
+    "QR.RQ.",
+    "QRRQ..",
+    ".QQ..."
+   ],
+   "om": "Järnnålen är 6×9 punkter och går från nedre vänstra till övre högra hörnet. Upptill är den brantare, så att den svänger svagt uppåt mot spetsen. Spetsen är en enda punkt i skiffer2. Kroppen har skiffer3 och skiffer2 på sidan mot ljuset uppe till vänster och skiffer1 på undersidan, med kontur i skiffer0. Ögat i nedre vänstra änden är en genomskinlig punkt inramad av skiffer1. Granskningen: Den övre delen var fyra punkter bred och läste som en klump på gräset, inte som en tunn nål. Den var också nästan rak och saknade den svaga böjen uppåt mot spetsen. Därför har jag smalnat av skaftet till en enda punkt järn med skiffer0-kontur runt om. Rad 1–2 står rakt upp under spetsen och resten går snett nedåt åt vänster, så att silhuetten blir en mjuk båge som brantar mot spetsen. Ljussidan uppe till vänster är skiffer3 och skiffer2 och undersidan skiffer1 i stegen. Spetsen är en enda punkt i skiffer2. Ögat nere till vänster behålls som ett genomskinligt hål inramat av skiffer1, och där är nålen naturligt något bredare. Storleken (6 × 9) och den sneda vinkeln mot kolonisten är oförändrade."
+  },
+  {
+   "ide": "En kraftigare nål av smitt järn med en flat, spadformad ände nere till vänster, där ögat är slaget genom den utplattade biten, och ett tunt skaft på en punkt som löper snett upp mot spetsen i övre högra hörnet. Den platta änden är fyra punkter lång och tre bred, ljus i skiffer3 och skiffer2 uppe till vänster och mörkare i skiffer1 nere till höger, med ögat som en genomskinlig punkt i mitten och kontur i skiffer0. Skaftet ovanför har skiffer2 med enstaka skiffer1 för kornet och slutar i en vass spets i skiffer1, så att silhuetten blir tung nedtill och nålfin upptill.",
+   "rader": [
+    "....QR",
+    "...QSQ",
+    "..QTQ.",
+    "..QSQ.",
+    ".QTSQ.",
+    "QT.RQ.",
+    "QSSRQ.",
+    "QSRQ..",
+    ".QQ..."
+   ],
+   "om": "Järnnålen ligger snett från nedre vänstra hörnet upp mot det övre högra. Nedtill sitter en flat, spadformad ände som är fyra rader lång och tre punkter bred. Den är ljus i skiffer3 och skiffer2 uppe till vänster och mörkare i skiffer1 nere till höger. Ögat är en genomskinlig punkt mitt i den utplattade biten. Skaftet är en punkt brett, i skiffer2 med lite skiffer1 för kornet, och slutar i en vass spets i skiffer1 i övre högra hörnet. Konturen är skiffer0 runt hela nålen. Silhuetten blir tung nedtill och nålfin upptill. Granskningen: Storleken (6 × 9), vinkeln, den snett liggande silhuetten med tung platt ände nere till vänster, ögat som genomskinlig punkt, konturen i skiffer0 och spetsen i skiffer1 följer idén och reglerna och är oförändrade. Jag rättade bara tonerna. Skaftet och den platta änden var för mörka (mest skiffer1 innanför en mörk kontur) och syntes därför som en mörk fläck på det mellanmörka gräset. Skaftet har nu skiffer2 med en punkt skiffer3 för kornet i stället för skiffer1. I den platta änden har två punkter skiffer1 blivit skiffer2, så att den går från ljust uppe till vänster till skiffer1 bara nere till höger. Nålen blir då ljusare än marken och syns tydligare, utan att färger eller form ändras."
+  }
+ ]
+}

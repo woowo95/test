@@ -4,11 +4,12 @@
 // ute, framme, hemåt, hemma), en plats på vägen, en gemensam packning i hela saker och en bok över insatserna. Talen för resan
 // står i blocket RESA. Ingen person är med i två sällskap.
 import { balans } from './balans';
+import { TIMMINNEN } from './timminne';
 import { LandmarkId } from './landmarken';
 import { H, HOUR, Person, State, Task, W } from './typer';
 import { isLight } from './tid';
 import { temperature, vaderNu } from './vader';
-import { KROPP, count, alive, ageOf, ALDER, makeName, getRel, isSick, living, stat, think, log, ovning } from './folk';
+import { KROPP, count, alive, ageOf, ALDER, makeName, getRel, isSick, living, stat, log, ovning } from './folk';
 import { TORST } from './torst';
 import { SAKER, sakNamn } from './saker';
 import { BYN } from './egendom';
@@ -18,7 +19,7 @@ import { bynsMitt, utanforByn } from './omrade';
 import { blocked, freeNear } from './byggnad';
 import { gaBort, ute } from './ute';
 import { Varlden, varldMark } from './varlden';
-import { byPlats, varldPlatserPa } from './landmarken';
+import { byPlats, kandPlats, varldPlatserPa, varldPlatsNr, type VarldPlats } from './landmarken';
 import { clamp } from './slump';
 import { ryggsack } from './utrustning';
 import { Tamdjur, tamArt, tamdjurOf, tamEg } from './tamdjur';
@@ -42,12 +43,12 @@ import { rnd } from './slump';
 import { DAY } from './typer';
 import { kanGa } from './halsa';
 import { SEC } from './typer';
-import { kannerOrt, O_RYKTE } from './ort';
+import { kannerOrt, O_RYKTE, vetBorta } from './ort';
 import { MATERIALMAL, villHaAv } from './forradsmal';
 import { kannerPris, trorPris } from './minne';
 import { PAB, pabud } from './styre';
 import { avslutaUppdrag, kravPassar, ruinRad, saFynd, taRuin, uppdragDef, uppdragNr, uppdragVid, UPPDRAGTAL } from './uppdrag';
-import { handelse, ryktbarhet } from './rykten';
+import { handelse, ryktbarhet, RYKTE } from './rykten';
 import { DJUR } from './redskap';
 import { SLAKTAD } from './boskap';
 import { handelsPris } from './handel';
@@ -59,7 +60,10 @@ import { GRODOR, rutorAv } from './odling';
 import { TORKA } from './torka';
 import { BYREL, byHandelse, gavaRel } from './byrel';
 import { kronika } from './historik';
-import { antal, hans, honom, horText, och, spelTid, stor, tal } from './ord';
+import { antal, han, hans, honom, horText, och, spelTid, stor, tal } from './ord';
+import { kronikaBer } from './berattelser';
+import { tanke } from './tankar';
+import { upplev } from './uppvaxt';
 // "en sak", "tre saker"
 const saker = (n: number) => n === 1 ? 'en sak' : `${tal(n)} saker`;
 
@@ -100,6 +104,7 @@ export const RESA = balans('resa', {
   turneVan: 10, // grannbyn måste tycka så här bra om byn (hållningen, -100 till 100) för att ta emot en turné
   seVarde: 15, // det väntade värdet av att se en plats man bara hört rykten om, för en medelmåttigt nyfiken (arbetstimmar)
   omvag: 1.5, // en väg ingen gått räknas som fågelvägen gånger så här mycket
+  poangTim: 1, // så ofta (timmar i spelet) resans poäng för varje plats räknas om (steg 12.1.11)
   faraDygn: 0.04, // ledens fara per dygn på vägen i valet av resa: ett fast tal, inte räknat ur vägens händelser
   // kallelsen (steg 11.5.11)
   kraftPerFara: 15, // den kraft sällskapet behöver per del av ledens fara (en medelstark vuxen har kraften 1)
@@ -117,6 +122,10 @@ export const RESA = balans('resa', {
   tappadLast: 2, // risken att tappa något gånger (1 + så här mycket gånger lasten delat med bärförmågan)
   fyndMat: 0.5, // portioner per resenär i ett fynd av mat (minst en hel)
   fyndVarm: 5, fyndKall: 0.3, // under så många grader hittar sällskapet bara så stor del så ofta
+  hjulTim: 8, // timmar det tar att laga ett trasigt hjul för den som inte kan hantverk; den bästa i sällskapet kortar det (fardSank) (steg 12.1.144)
+  viltMin: 0.15, // chansen att fälla viltet för ett sällskap utan jägare; den bästa jägaren höjer den upp till 1 vid full färdighet (steg 12.1.144)
+  viltKott: 3, // kött i packningen när sällskapet fäller viltet (en kanins kött)
+  viltTim: 2, // timmar jakten tar, fälld eller inte
   // när maten tar slut (steg 11.5.15)
   hungerKost: 5, // det ett dygn utan mat kostar en resenär, i värde (samma skala som resans värde)
   tidKost: 3, // det ett dygn längre resa kostar en resenär, i värde
@@ -133,13 +142,14 @@ export const RESA = balans('resa', {
   rastTim: 24, // en rast för att vila upp sig
   lamnaKost: 150, // det kostar ledaren så mycket att lämna någon (i värde), mer för den som bryr sig och om hen tycker om personen
   lamnaEmpati: 0.5, lamnaTycke: 1,
+  behovVarde: 50, // så mycket (i värde) är en portion mat, en vattensäck, ett hö eller ett tält värt när resan behöver det för dygnen som återstår (steg 12.1.145)
   gommaDygn: 20, // det som släpps ligger i en gömma så här många dygn (år i spelet)
   forsvunnen: 3, // kommer ingen hem räknas resenärerna som försvunna efter så många gånger den väntade tiden (steg 11.5.18)
 });
 // det sällskapet behåller för vägen och inte säljer (maten säljs inte heller)
 export const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver', 'packsadel', 'ridsadel', 'vagn'];
 // sällskapets mål och hemby i världen (kodgenomgången, fynd 185)
-const slMal = (s: State, sl: Sallskap) => s.varld?.platser?.find(p => p.nr === sl.mal);
+const slMal = (s: State, sl: Sallskap) => s.varld && kandPlats(s.varld, sl.mal); // också en plats byn tror finns men som tagits bort (steg 12.1.146)
 const slHem = (s: State, sl: Sallskap) => s.varld && byPlats(s.varld, sl.by);
 // det sällskapet kan sälja eller ge bort: inte det det behåller eller maten, och bara det som har ett värde (kodgenomgången, fynd 185)
 export const saljbar = (k: string) => !BEHALL.includes(k) && !FOOD.includes(k) && grundvarde(k) > 0;
@@ -173,6 +183,7 @@ export interface Sallskap {
   forlust?: [number | 'by', number, number][]; // det rövarna tog: ägaren, värdet och lägrets rad, för utlysningen hemma (steg 11.8.11, utlysa.ts)
   hjalp?: 1; hjalpTim?: number; // uppdraget är att hjälpa en by, och timmarna sällskapet arbetat i den väckta byn (steg 11.13.23)
   insatser: Insats[];
+  borta?: 1; // framme fanns platsen inte längre (steg 12.1.146)
   dagbok: [number, string, DagbokId?][]; // resans dagbok: tiden, texten och händelsens slag (steg 11.5.13)
   att?: Record<string, number>; // det ledaren bestämt att packa, som resenärerna hämtar ur förrådet och bär till samlingsplatsen (steg 12.1.8)
   ut?: Utgang; vid?: number[]; packar?: number; // samlingsplatsen och kanten, de som är framme vid samlingsplatsen och när packningen började (steg 11.5.5)
@@ -773,16 +784,23 @@ export function personFart(s: State, p: Person) {
   const a = ageOf(p, s.now), ben = Math.max(0, ...GADELAR.map(d => clamp(delFel(p, d), 0, 1)));
   return Math.min(a < ALDER.vuxen ? RESA.fartBarn : a >= ALDER.gammal ? RESA.fartGammal : 1, 1 - (1 - RESA.fartBen) * ben);
 }
-// packningens vikt (maten väger en per portion, som i packbehov)
-export const packVikt = (sl: Sallskap, pack = sl.pack) => Object.entries(pack).reduce((a, [k, n]) => a + n * (FOOD.includes(k) ? 1 : viktOf(k)), 0);
+// vad en sak väger i packningen: maten en per portion, som i packbehov, annars sakens vikt (steg 12.1.250)
+export const packViktAv = (k: string) => FOOD.includes(k) ? 1 : viktOf(k);
+// packningens vikt
+export const packVikt = (sl: Sallskap, pack = sl.pack) => Object.entries(pack).reduce((a, [k, n]) => a + n * packViktAv(k), 0);
 // en utväg som prövas (UTVAGAR, steg 11.5.17): de som bärs, den som lämnas, packningen och orken som de blir om den väljs
 export interface FartOm { buren?: [number, BurenSatt][]; utan?: number; pack?: Record<string, number>; ork?: number }
-export function lastFart(s: State, sl: Sallskap, om: FartOm = {}) {
+// bärförmågan och lasten med det som prövas: packsadlarna i den prövade packningen avgör hur många djur som bär (steg 12.1.250)
+export function lastLage(s: State, sl: Sallskap, om: FartOm = {}) {
   const buren = om.buren ?? sl.buren ?? [], bars = new Set(buren.map(b => b[0])), bar_ = buren.filter(b => b[1] === 'bar').length;
   const folk = resenarer(s, sl).filter(p => p.id !== om.utan && !bars.has(p.id));
   // den som bärs bär inget; en bår tar två bärares händer, och den som åker på djuret eller vagnen väger som packning
-  const bar = folk.reduce((a, p) => a + barResenar(s, p), 0) - 2 * RESA.hander * bar_ + barDjurAlla(s, sl) + vagnLass(s, sl);
+  const bar = folk.reduce((a, p) => a + barResenar(s, p), 0) - 2 * RESA.hander * bar_ + barDjurAlla(s, sl, om.pack ?? sl.pack) + vagnLass(s, sl);
   const vikt = packVikt(sl, om.pack ?? sl.pack) + RESA.personVikt * (buren.length - bar_);
+  return { bar, vikt };
+}
+export function lastFart(s: State, sl: Sallskap, om: FartOm = {}) {
+  const { bar, vikt } = lastLage(s, sl, om);
   const x = bar > 0 ? vikt / bar : 1;
   return x <= RESA.lastFran ? 1 : Math.max(RESA.lastMin, 1 - (1 - RESA.lastMin) * (x - RESA.lastFran) / (1 - RESA.lastFran));
 }
@@ -796,11 +814,13 @@ export function sallskapFart(s: State, sl: Sallskap, om: FartOm = {}) {
   const lang = farter.length ? Math.min(...farter) : 1;
   return lang * (buren.some(b => b[1] === 'bar') ? RESA.barFart : 1) * lastFart(s, sl, om) * (snoPaMarken(s) >= RESA.snoFran ? RESA.snoFart : 1) * orkFart(sl, om.ork);
 }
-// vägen bort till målet eller hem igen
+// vägen bort till målet, eller hem igen från rutan där sällskapet står: målet kan vara borta och glömt (steg 12.1.246)
 function satVag(s: State, sl: Sallskap, bort: boolean) {
   const vl = s.varld, v = varldMark(s), hem = slHem(s, sl), mal = slMal(s, sl);
-  if (!vl || !v || !hem || !mal) return;
-  const a = hem.y * v.w + hem.x, b = mal.y * v.w + mal.x, vag = vagMellan(vl, v, bort ? a : b, bort ? b : a, fardsatt(sl), s.now);
+  if (!vl || !v || !hem) return;
+  const a = hem.y * v.w + hem.x, b = bort ? (mal ? mal.y * v.w + mal.x : undefined) : sl.ruta ?? (mal ? mal.y * v.w + mal.x : undefined);
+  if (b === undefined) return;
+  const vag = vagMellan(vl, v, bort ? a : b, bort ? b : a, fardsatt(sl), s.now);
   sl.vag = vag ? { fran: vag.fran, till: vag.till, steg: vag.steg } : undefined; sl.pos = 0; sl.gang = 0; sl.ruta = bort ? a : b;
 }
 export const vagenRutor = (s: State, sl: Sallskap) => { const v = varldMark(s); return v && sl.vag ? vagRutor(sl.vag as VarldVag, v.w) : []; };
@@ -834,11 +854,12 @@ function ga(s: State, sl: Sallskap, t: number, dt: number) {
 // sällskapet är hemma: resenärerna kommer in vid kanten de gick ut från, och djuren med dem
 export function hemkomst(s: State, sl: Sallskap, t: number) {
   const in_ = sl.ut?.kant ?? bynsMitt(s);
-  for (const p of resenarer(s, sl)) if (ute(p)) kommHem(s, p, in_.x, in_.y);
+  for (const p of resenarer(s, sl)) if (ute(p)) { const borta = t - (p.ute ?? t); kommHem(s, p, in_.x, in_.y); tanke(p, 'komHem', t); upplev(s, p, 'resaBarn'); if (borta >= RYKTE.berestDygn * DAY) handelse(s, p, 'reste'); } // (steg 12.1.131)
   for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.ute !== undefined) { delete d.ute; d.x = in_.x; d.y = in_.y; }
   vagnHem(s, sl, in_.x, in_.y);
   delaHemma(s, sl);
   beskedet(s, sl); // den som dog på vägen: arvet delas nu (steg 11.5.18)
+  if (sl.borta) vetBorta(s, living(s).filter(p => !p.gast), sl.mal); // nyheten att platsen är borta når byn (steg 12.1.146)
   sl.skede = 'hemma'; sl.t = t;
   count(s, 'resa hemma');
   redogorelse(s, sl, t);
@@ -894,9 +915,15 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
   const vl = s.varld, plats = slMal(s, sl);
   if (!vl || !plats) return;
   const folk = resenarer(s, sl);
+  if (!varldPlatsNr(vl, sl.mal)) { // platsen är borta (steg 12.1.146): de ser det, glömmer den och berättar det hemma
+    vetBorta(s, folk, sl.mal, t); sl.borta = 1;
+    dagbok(s, sl, 'fram', `Kom fram till platsen där ${plats.namn} låg, men där fanns ingen längre.`, t);
+    return;
+  }
   for (const p of folk) larOrt(s, p, sl.mal, O_BESOKT, 1, { t });
   const r = plats.by !== undefined ? radNr(vl, plats.by) : undefined;
   dagbok(s, sl, 'fram', `Kom fram till ${plats.namn}.`, t);
+  if (plats.by === undefined) for (const p of folk) tanke(p, 'sagStort', t); // ett landmärke (steg 12.1.131)
   if (sl.skal === 'uppdrag') uppdragFram(s, sl, t);
   if (sl.skal === 'hamta') dagbok(s, sl, 'fram', `Gick ner i gruvan och stannade där i ${spelTid(stannarFor(sl) * DAY)}.`, t);
   const ruin = ruinRad(vl, sl.mal);
@@ -1104,13 +1131,32 @@ function dygnDit(s: State, fran: { x: number; y: number }, till: { x: number; y:
   return (sparad ? sparad.kostnad : Math.hypot(till.x - fran.x, till.y - fran.y) * RESA.omvag) / VARLD.gangPerDygn;
 }
 export interface ResPlan { mal: number; namn: string; skal: ResmalId; uppdrag?: number; varde: number; dygn: number; fara: number; sc: number; varor: [string, number][]; kop?: [string, number][] }
+// resans poäng för varje plats räknas en gång per RESA.poangTim timmar och person (steg 12.1.11): målen med poängen utan byns
+// förråd, som bara är en faktor. En resenär väljer alltså på poäng som kan vara en timme gammal (sex minuter i verkligheten)
+interface ResMal extends Omit<ResPlan, 'sc'> { bas: number; d: number } // d: dygnen utan avrundning
+const resMalMinne = new WeakMap<State, Map<number, { h: number; l: ResMal[] }>>();
+TIMMINNEN.resMal = { ut: s => { const m = resMalMinne.get(s); return m?.size ? [...m] : undefined; }, in: (s, v) => { resMalMinne.set(s, new Map(v as [number, { h: number; l: ResMal[] }][])); } }; // (steg 12.1.248)
 // den resa personen helst skulle samla till och dess poäng (utan bruset); fd och wd är dygnen byns mat och ved räcker
 export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan | undefined {
   const vl = s.varld, v = varldMark(s), hem = vl?.huvud !== undefined ? byPlats(vl, vl.huvud) : undefined;
   if (!vl || !v || !hem || p.gast || ute(p) || sallskapFor(vl, p.id)) return undefined;
-  const ny = stat(p, 'nyfikenhet', s.now), mod = stat(p, 'mod', s.now), utfar = Math.max(0, 1 + pabud(s, 'utfarder') * PAB.utfarMax); // påbudet Utfärder (steg 11.8.15)
+  let m = resMalMinne.get(s);
+  if (!m) resMalMinne.set(s, m = new Map());
+  const h = Math.floor(s.now / (RESA.poangTim * HOUR));
+  let e = m.get(p.id);
+  if (e?.h !== h) m.set(p.id, e = { h, l: resMal(s, p, vl, hem) });
   let bast: ResPlan | undefined;
-  for (const q of vl.platser ?? []) {
+  for (const x of e.l) {
+    if (x.skal === 'sandebud' && !vl.bud) continue; // budet har redan gått med någon annan under timmen
+    const sc = x.bas * clamp(Math.min(fd, wd) / x.d, 0, 1);
+    if (sc > 0 && (!bast || sc > bast.sc)) { const { bas: _b, d: _d, ...r } = x; bast = { ...r, sc }; }
+  }
+  return bast;
+}
+function resMal(s: State, p: Person, vl: Varlden, hem: VarldPlats): ResMal[] {
+  const ut: ResMal[] = [];
+  const ny = stat(p, 'nyfikenhet', s.now), mod = stat(p, 'mod', s.now), utfar = Math.max(0, 1 + pabud(s, 'utfarder') * PAB.utfarMax); // påbudet Utfärder (steg 11.8.15)
+  for (const q of [...vl.platser ?? [], ...vl.minnesplatser ?? []]) { // och platserna byn tror finns (steg 12.1.146)
     if (q.nr === hem.nr) continue;
     const niva = kannerOrt(s, p, q.nr);
     if (niva === undefined) continue;
@@ -1145,11 +1191,11 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
     if (!skal) continue;
     const dygn = 2 * dygnDit(s, hem, q) + (nere ?? RESMAL[skal].stannar);
     const fara = 1 - Math.exp(-RESA.faraDygn * dygn), forsiktig = clamp((20 - mod) / 10, 0, 2);
-    const lust = (ny + mod) / 20, hemma = clamp(Math.min(fd, wd) / dygn, 0, 1);
-    const sc = RESA.vikt * utfar * (varde - hemmaForlust(s, p, dygn)) / dygn * lust * hemma * Math.max(0, 1 - fara * forsiktig);
-    if (sc > 0 && (!bast || sc > bast.sc)) bast = { mal: q.nr, namn: q.namn, skal, varde: Math.round(varde * 10) / 10, dygn: Math.round(dygn * 100) / 100, fara: Math.round(fara * 1000) / 1000, sc, varor, kop, ...(uid !== undefined ? { uppdrag: uid } : {}) };
+    const lust = (ny + mod) / 20, dygnR = Math.round(dygn * 100) / 100;
+    const bas = RESA.vikt * utfar * (varde - hemmaForlust(s, p, dygn)) / dygn * lust * Math.max(0, 1 - fara * forsiktig);
+    if (bas > 0) ut.push({ mal: q.nr, namn: q.namn, skal, varde: Math.round(varde * 10) / 10, dygn: dygnR, fara: Math.round(fara * 1000) / 1000, varor, kop, ...(uid !== undefined ? { uppdrag: uid } : {}), bas, d: dygn });
   }
-  return bast;
+  return ut;
 }
 // hur lämplig p är att bära byns besked (1 för en medelmåttig): karismen, Handel och släkt i byn (den hen kommer ifrån)
 export const budLamplig = (s: State, p: Person, klan: number | undefined) => stat(p, 'karisma', s.now) / 10 * (1 + p.skill.handel / 20) * (klan !== undefined && p.fran === klan ? 1 + RESA.budSlakt : 1);
@@ -1302,6 +1348,8 @@ export const DAGBOK = {
   ovader: { namn: 'Oväder', sym: '🌧️' },
   tappad: { namn: 'Tappat', sym: '👐' },
   mat: { namn: 'Mat', sym: '🫐' },
+  hjul: { namn: 'Trasigt hjul', sym: '🛞' }, // steg 12.1.144
+  vilt: { namn: 'Vilt', sym: '🦌' },
   ran: { namn: 'Rån', sym: '🗡️', stor: true },
   strid: { namn: 'Strid', sym: '⚔️', stor: true },
   skada: { namn: 'Skada', sym: '🩹', stor: true },
@@ -1390,6 +1438,8 @@ export function redogorelse(s: State, sl: Sallskap, t: number) {
   log(s, text + upp, 'world', folk.map(p => p.id)).resa = sl.id; // minnet hos dem som var med (personens logg)
   notis(s, 'resa', text + upp, folk.map(p => p.id), undefined, { resa: sl.id });
   if (u) { kronika(s, `${text}${upp}`, 'uppdrag'); count(s, 'uppdrag berättat'); } // uppdragets redogörelse (steg 11.8.7)
+  // en vanlig resa (utan uppdrag och turné) står i krönikan med mallen k_resa (steg 12.1.233)
+  else if (sl.turne === undefined && led) kronikaBer(s, 'k_resa', sl.id, { folk: och(folk.map(p => p.name)), resa: RESMAL[sl.skal].resa, mal: malNamn(s, sl) || 'grannbyn', borta: spelTid(dygn * DAY), De: folk.length > 1 ? 'De' : stor(han(led)) });
   // ryktet och upplevelsen (steg 11.8.17): de som ser sällskapet komma hem med ett klarat uppdrag får intrycket äventyrare om var
   // och en som var med, och det sprids som andra rykten. Resan sitter en tid i humöret, glad eller besviken efter hur det gick
   if (sl.turne !== undefined) { // turnén (steg 11.8.18): den som uppträdde får en bedrift, och krönikan en rad
@@ -1398,8 +1448,8 @@ export function redogorelse(s: State, sl: Sallskap, t: number) {
     if (p) { handelse(s, p, 'turne', undefined, r?.namn ?? 'grannbyn'); kronika(s, `${p.name} kom hem från en turné till ${r?.namn ?? 'grannbyn'}${sl.turne ? ` med ${sl.turne} silver i gåva` : ''}.`, 'grannar'); }
   }
   if (u) for (const p of folk) {
-    if (u.hur === 'klart') { handelse(s, p, 'uppdrag', undefined, u.namn.toLowerCase()); think(p, `Klarade ${u.namn.toLowerCase()}`, UPPDRAGTAL.glad, t, UPPDRAGTAL.tanke * DAY); }
-    else think(p, u.hur === 'tomt' ? 'Kom fram till en tom plats' : 'Uppdraget gick inte', -UPPDRAGTAL.besviken, t, UPPDRAGTAL.tanke * DAY);
+    if (u.hur === 'klart') { handelse(s, p, 'uppdrag', undefined, u.namn.toLowerCase()); tanke(p, 'klaradeUppdrag', t, { namn: u.namn.toLowerCase(), v: UPPDRAGTAL.glad, tid: UPPDRAGTAL.tanke * DAY }); }
+    else tanke(p, u.hur === 'tomt' ? 'tomPlats' : 'uppdragGickInte', t, { v: -UPPDRAGTAL.besviken, tid: UPPDRAGTAL.tanke * DAY });
   }
   count(s, 'resa redogörelse');
   // byn minns de senaste resorna; de äldsta som kommit hem glöms
@@ -1471,6 +1521,28 @@ export const VAGHANDELSER: Record<string, VagHandelseDef> = {
       if (!folk.length) return;
       const p = folk[Math.floor(rnd(s, 'resa') * folk.length)]!;
       olycka(s, sl, p, t, [...BEN, ...FOTTER, ...ARMAR], 'på resan', 'resa olycka', `${p.name} föll och skadade sig.`);
+    },
+  },
+  // trasigt hjul (steg 12.1.144): bara för sällskap med ett fordon på hjul; den som kan hantverk bäst sänker risken och lagar fortare
+  hjul: {
+    namn: 'Trasigt hjul', dygn: 0.04, fardighet: 'hantverk',
+    risk: (_s, sl) => sl.fordon.some(k => FORDON[k]?.hjul) ? 1 : 0,
+    gor: (s, sl, t) => {
+      const tim = Math.round(RESA.hjulTim * Math.max(0, 1 - basta(s, sl, 'hantverk') / 20 * RESA.fardSank) * 10) / 10;
+      sl.forlorat = (sl.forlorat ?? 0) + tim;
+      dagbok(s, sl, 'hjul', `Ett hjul på vagnen gick sönder; det tog ${spelTid(tim * HOUR)} att laga det.`, t);
+    },
+  },
+  // vilt (steg 12.1.144): sällskapet får syn på vilt, och den bästa jägaren avgör om det blir kött i packningen
+  vilt: {
+    namn: 'Vilt', dygn: 0.06,
+    gor: (s, sl, t) => {
+      sl.forlorat = (sl.forlorat ?? 0) + RESA.viltTim;
+      const chans = RESA.viltMin + (1 - RESA.viltMin) * basta(s, sl, 'jakt') / 20;
+      if (rnd(s, 'resa') < chans) {
+        sl.pack.kott = (sl.pack.kott ?? 0) + RESA.viltKott; count(s, 'resa fällde vilt');
+        dagbok(s, sl, 'vilt', `Fick syn på vilt och fällde det; ${antal(RESA.viltKott, 'kott')} i packningen.`, t);
+      } else dagbok(s, sl, 'vilt', 'Fick syn på vilt, men det kom undan.', t);
     },
   },
   mat: {
@@ -1614,7 +1686,7 @@ export function vardaPaVagen(s: State, sl: Sallskap, q: Person, folk = resenarer
 // en resenär dör på vägen: hen dör som hemma (die), men kroppen ligger inte på byns karta; sällskapet går vidare utan hen
 export function dorPaVagen(s: State, sl: Sallskap, p: Person, orsak: Dodsorsak, t: number) {
   if (!alive(p) || p.dodVag) return;
-  p.dodVag = { orsak, t }; delete p.sjuk;
+  p.dodVag = { orsak, t }; p.sjuk = undefined;
   if (sl.ledare === p.id) { const ny = resenarer(s, sl)[0]; if (ny) sl.ledare = ny.id; } // den som är kvar leder
   if (sl.buren) { sl.buren = sl.buren.filter(b => b[0] !== p.id); if (!sl.buren.length) delete sl.buren; }
   count(s, 'resa död');
@@ -1638,7 +1710,7 @@ function beskedet(s: State, sl: Sallskap, orsak?: Dodsorsak) {
     const p = s.people.find(q => q.id === id);
     if (!p || !alive(p) || (!p.dodVag && !orsak)) continue;
     const t = p.dodVag?.t ?? s.now, o = (p.dodVag?.orsak ?? orsak) as Dodsorsak;
-    delete p.dodVag;
+    p.dodVag = undefined;
     die(s, p, o); p.died = Math.min(t, s.now); // hen dog när hen dog, även om byn får veta det nu
     count(s, 'resa besked');
   }
@@ -1725,14 +1797,39 @@ export function utvagLage(s: State, sl: Sallskap, t = s.now): UtvagLage | undefi
   if (!langsam) return undefined;
   const m = matLage(s, sl, t), f0 = sallskapFart(s, sl);
   const vagKvar = sl.skede === 'hemat' ? m.kvar : m.kvar - stannarFor(sl); // dygnen i gång, utan tiden framme
-  // det som kan släppas: inte maten, vattnet eller fodret; det som är värt minst per vikt först, tills lasten inte bromsar
+  // det som kan släppas: allt i packningen, en sak i taget, den som kostar minst per vunnen marginal (bärförmågan minus lasten,
+  // med den prövade packningen: en packsadel som släpps tar djurets lass med sig) först, tills lasten inte bromsar (steg
+  // 12.1.250). Maten, vattnet, fodret och tälten är värda mycket (RESA.behovVarde) så länge de behövs för dygnen som återstår
+  // (steg 12.1.145), annars bara sitt grundvärde
   const slapp: Record<string, number> = {}; let slappVarde = 0;
-  const pack = { ...sl.pack }, saker = Object.keys(pack).filter(k => !FOOD.includes(k) && !BEHALL.includes(k) || k === 'silver').sort((a, b) => grundvarde(a) / Math.max(1e-9, viktOf(a)) - grundvarde(b) / Math.max(1e-9, viktOf(b)) || (a < b ? -1 : 1));
-  for (const k of saker) {
-    while ((pack[k] ?? 0) >= 1 && lastFart(s, sl, { pack }) < 1) { pack[k]! -= 1; slapp[k] = (slapp[k] ?? 0) + 1; slappVarde += grundvarde(k); }
+  const pack = { ...sl.pack }, behov = resBehov(sl, m.kvar, resenarer(s, sl).length);
+  const kostar = (k: string) => grundvarde(k) + (behovKvar(pack, behov, k) ? RESA.behovVarde : 0);
+  const marg = (pk: Record<string, number>) => { const l = lastLage(s, sl, { pack: pk }); return l.bar - l.vikt; };
+  while (lastFart(s, sl, { pack }) < 1) {
+    let bast: string | undefined, bv = Infinity;
+    const m0 = marg(pack);
+    for (const k of Object.keys(pack).sort()) {
+      if ((pack[k] ?? 0) < 1) continue;
+      const vinst = marg({ ...pack, [k]: pack[k]! - 1 }) - m0;
+      if (vinst <= 1e-9) continue;
+      const v = kostar(k) / vinst;
+      if (v < bv) { bv = v; bast = k; }
+    }
+    if (!bast) break;
+    slappVarde += kostar(bast); pack[bast]! -= 1; slapp[bast] = (slapp[bast] ?? 0) + 1;
   }
   if (lastFart(s, sl, { pack }) < 1) { for (const k of Object.keys(slapp)) delete slapp[k]; slappVarde = 0; } // hjälper det inte släpps inget
   return { n: folk.length + (sl.buren?.length ?? 0), varde: m.varde, kvar: Math.max(0, vagKvar * f0), hem: m.hem * f0, f0, langsam, led: resenarer(s, sl).find(p => p.id === sl.ledare), slapp, slappVarde };
+}
+// det resan behöver för dygnen som återstår (steg 12.1.145): maten (portionerna i alla sorter tillsammans), en vattensäck per
+// resenär, fodret till djuren och tälten
+export function resBehov(sl: Sallskap, dygn: number, n: number): Record<string, number> {
+  return { mat: Math.ceil(n * RESA.matPerDygn * dygn - 1e-9), vattensack: n, torrgras: Math.ceil(sl.djur.length * RESA.foderPerDygn * dygn - 1e-9), talt: Math.ceil(n / RESA.talt) };
+}
+// behövs den sista av sakerna k i packningen för resan, så att den inte går att släppa utan att något saknas?
+function behovKvar(pack: Record<string, number>, behov: Record<string, number>, k: string) {
+  if (FOOD.includes(k)) return FOOD.reduce((a, q) => a + Math.floor(pack[q] ?? 0), 0) <= (behov.mat ?? 0);
+  return k in behov && Math.floor(pack[k] ?? 0) <= behov[k]!;
 }
 // poängen för varje utväg som går: resans värde minus dygnen i den fart utvägen ger minus det den kostar
 export function utvagVal(s: State, sl: Sallskap, t = s.now) {

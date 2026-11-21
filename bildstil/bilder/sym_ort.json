@@ -1,0 +1,31 @@
+{
+ "id": "sym_ort",
+ "ritad": 1,
+ "av": "programmeringschatten (platshållare, steg 12.1.192)",
+ "om": "En kvist med fem blad längs stjälken.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "...........kk...",
+  "..........kGGk..",
+  ".......kk.kGgk..",
+  "......kGGkkGk...",
+  "......kGgkGk....",
+  ".......kkgGk.kk.",
+  "...kk...kgk.kGGk",
+  "..kGGk..kgk.kGgk",
+  "..kGgkk.kgkkGk..",
+  "...kkgGkkgkGk...",
+  ".....kgGkgkk....",
+  "......kkkgk.....",
+  "........kgk.....",
+  "........kgk.....",
+  "........kkk.....",
+  "................"
+ ],
+ "pal": {
+  "G": "#898b4c",
+  "g": "#647025",
+  "k": "#24201d"
+ }
+}

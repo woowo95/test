@@ -3,14 +3,14 @@ import { KROPP, count, enTill, forstaGang, gjort, living, log } from './folk';
 import { knows } from './teknik';
 import { clamp, rnd } from './slump';
 import { Act, HOUR, State, Person } from './typer';
-import { ACTS, ACT_LIST, redskapTal, toolRow } from './handlingar';
+import { ACTS, ACT_LIST, laggRedskap, redskapTal, toolRow } from './handlingar';
 import { SAKER, SAK_LIST, gruppOf, iSlag, isTool, sakNamn } from './saker';
 import { NORMAL, kvOf, nyKvalitet } from './kvalitet';
 import { amountOf, gain, harTillHands, iBordan, put, use } from './lager';
 import { getable, Recept, saknatAv, takeMaterial, takeRecipe, tillHands } from './behov';
 import { addDel } from './egendom';
 import { eldReserv, villAv, villHaAv } from './forradsmal';
-import { addTool, freeTools, halvOf, nTools, ownsFree, tingOf, wearTool } from './agande';
+import { addTool, freeTools, halvOf, nTools, ownsFree, take, tingOf, wearTool } from './agande';
 import { KLADER, KLADMATERIAL, PLAGG, PLAGG_LIST, kladAv, materialTill, valMaterial } from './klader';
 import { ageIndex, iIstiden, kallTid } from './tid';
 import { grundvarde } from './varde';
@@ -28,6 +28,8 @@ import { SAK_ART, heligtBrutet } from './kultlatt';
 // Vad byn sparar när den gör redskap (hur många den vill ha står i REDSKAPMAL i forradsmal.ts, steg 6.2.17). Hur mycket ett redskap kräver står i receptet (skaffa.av
 // i saker.ts) och läses därifrån (RECEPT); hur länge det håller och vad det ger står i handlingens rad (handlingar.ts).
 export const REDSKAP = balans('redskap', {
+  nalFart: 3, nalKv: 1.5, // den som syr ett plagg med en järnnål syr så här många gånger fortare, och med kvaliteten nalKv som järnkniven (steg 12.5.3)
+  nalPlagg: 40, // så många plagg en järnnål håller (steg 12.1.239)
   kvRedskap: 0.2, // ett redskap med kvaliteten 2 (järnkniven) gör det som görs med det lika mycket bättre som en station med kv 0,2 (steg 12.2.6)
   tak: 1.5, // projekten över bufferten (steg 10.2.74): byn vill ha upp till så här många gånger det den behöver av en grupp
   maskPerGrav: 4, // en grävning ger så här många maskar
@@ -46,6 +48,10 @@ const REP = av('rep');
 // både till fiske och jakt. Med spjut får man fisk mycket oftare än med händerna, men träspjutet slits fort.
 // Varje spjut är ett eget ting med skick och ägare (agande.ts); den som fiskar eller jagar har det i handen.
 // Vad ett redskap ger i ett arbete och hur länge det håller står i handlingens rad (handlingar.ts).
+// sömnaden (steg 12.5.3, 12.1.239): plaggen som inte smids sys, och var och en har en rad för järnnålen i ACTS.redskap, som
+// håller REDSKAP.nalPlagg plagg. Raden har ingen text för att ta den i valet: den som syr tar en ledig nål när arbetet börjar (taNal)
+const SYDDA = new Set<string>(PLAGG_LIST.filter(g => !(PLAGG[g] as { station?: string }).station));
+for (const a of SYDDA) if (a in ACTS) laggRedskap(a as Act, 'jarnnal', { haller: REDSKAP.nalPlagg });
 // redskapen i ett arbete i grupper av sådana som kan ersätta varandra (alla spjut), det bästa först
 export function toolGroups(act: Act) {
   const g: Record<string, string[]> = {};
@@ -99,7 +105,7 @@ export function twineRope(s: State, p: Person, hours: number, vill: number = vil
 
 // ---------- redskap: kniv och slakt ----------
 // En flintkniv är en vass flintskärva med ett skaft. Utan kniv och slaktbänk äter byn direkt av det fällda djuret. Med kniv
-// slaktas det vid slaktbänken till mer kött, ett ben och ett skinn. Ett djur med senor ger dessutom ibland ett rep, men bara om den som
+// slaktas det vid slaktbänken till mer kött, två ben och ett skinn. Ett djur med senor ger dessutom ibland ett rep, men bara om den som
 // slaktar kan tekniken Rep (fisk har inga senor). Köttet och skinnet är eget för varje art (kaninkött, vargkött, kaninskinn,
 // vargskinn; steg 3.7.14), men benen är samma sak. Talgen, djurfettet, är också samma sak för alla arter: kaninen ger 1, vargen 3
 // (rådjuret 2 och björnen 6 när de kommer; steg 6.3.5).
@@ -120,7 +126,8 @@ export interface Djurart { sak: string; kott?: string; mat: number; slakt: Recor
 const slaktas = <T extends Omit<Djurart, 'act' | 'maxTim' | 'minDel'> & Partial<Djurart>>(d: T) => ({ act: 'slakta' as Act, kniv: true as const, maxTim: 2, minDel: 1, ...d });
 export const DJUR = {
   kanin: slaktas({ art: 'kanin', sak: 'vilt', kott: 'kott', mat: 2, // en kanin är två fällt vilt (4 kg styck sedan steg 4.5.5.1)
-    slakt: { kott: 3, ben: 1, skinn: 1, talg: 1 }, vinter: { skinn: 'vitskinn' }, rep: 0.15, timme: 15, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ett ben och ett skinn.' }),
+    slakt: { kott: 3, ben: 2, skinn: 1, talg: 1 }, vinter: { skinn: 'vitskinn' }, // två ben, så att benspaden kommer tidigare (steg 12.1.151)
+    rep: 0.15, timme: 15, minDel: REDSKAP.slaktMinDel, stat: 'slaktat', forsta: '{namn} slaktade byns första vilt med en flintkniv. Det gav mer kött, ben och ett skinn.' }),
   abborre: { sak: 'abborre', mat: 1, slakt: { fisk: 1 }, rep: 0, timme: 30, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensat', forsta: '{namn} rensade byns första abborre. Den blev fiskkött.' },
   gadda: { sak: 'gadda', mat: 1, slakt: { gaddkott: 2 }, rep: 0, timme: 20, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensatGadda', forsta: '{namn} rensade byns första gädda. Den gav två bitar kött.' },
   braxen: { sak: 'braxen', mat: 1, slakt: { braxkott: 2 }, rep: 0, timme: 20, maxTim: 1, act: 'rensa', minDel: 1, stat: 'rensatBraxen', forsta: '{namn} rensade byns första braxen.' }, // steg 9.6.17
@@ -216,7 +223,8 @@ export function ersattAv(s: State, g: string) {
 }
 // verktyget som används till k (det första som finns i byn), eller undefined. En sliten yxa är fortfarande en yxa
 const verktygFor = (s: State, k: string) => Object.keys(SAKER[k]!.skaffa!.verktyg ?? {}).find(m => isTool(m) ? nTools(s, m) >= 1 : amountOf(s, m) >= 1);
-const ordFor = (s: State, k: string) => { const m = verktygFor(s, k); return m ? SAKER[k]!.skaffa!.verktyg![m] : ''; };
+// verktygets ord; har verktyget slitits ut eller gått åt i arbetet står det första (det vanliga) verktyget, aldrig en lucka
+const ordFor = (s: State, k: string) => { const v = SAKER[k]!.skaffa!.verktyg ?? {}, m = verktygFor(s, k) ?? Object.keys(v)[0]; return m ? v[m] : ''; };
 // p kan få tag i det som behövs till k: verktyget och materialet, och en flinta över att tända eld med.
 // Materialet tas i behovsstegen (behov.ts): sitt eget, byns, en gåva, och annars av andras (en lindrig stöld)
 const hasRecipe = (s: State, p: Person, k: string) => (!SAKER[k]!.skaffa!.verktyg || !!verktygFor(s, k))
@@ -309,8 +317,8 @@ export function makeTask(s: State, p: Person, g: string) {
 // plagg (och en vattensäck) sys med bänkens bensyl, och den slits för varje (REDSKAP.bensylSlits)
 export function toolDone(s: State, p: Person, k: string) {
   const t = addTool(s, k, p); t.av = p.id; t.gjord = s.now; // vem som gjorde det och när (inforutan, steg 2.3.5)
-  if (krukaAv(k)) krukaFormad(t); // lerkrukan ska torka och brännas (steg 9.4.11, kruka.ts)
-  nyKvalitet(s, p, t, (p.task ? kvVid(s, p, p.task.act) : 0) + knivKv(s, p, k), sakNamn(k).toLowerCase()); // hur bra det blev (kvalitet.ts), och bättre med järnkniven (steg 12.2.6)
+  if (krukaAv(k) || SAKER[k]?.skaffa?.av?.lera) krukaFormad(t); // det som formas av lera ska torka och brännas (steg 9.4.11, kruka.ts): lerkrukan och oljelampan (steg 12.4.2)
+  nyKvalitet(s, p, t, (p.task ? kvVid(s, p, p.task.act) : 0) + knivKv(s, p, k) + nalKv(s, p, k), sakNamn(k).toLowerCase()); // hur bra det blev (kvalitet.ts), och bättre med järnkniven (steg 12.2.6)
   nyttVid(s, t); gjort(s, p, 'gjort');
   slitVid(s, gruppOf(k) as Act, REDSKAP.bensylSlits); // det som kräver bänkens redskap (plaggen och vattensäcken), efter arbetet och inte saken
   const g = SAKER[k]!.gors!, text = (t: string) => t.replace('{namn}', p.name).replace('{verktyg}', ordFor(s, k));
@@ -337,6 +345,14 @@ export const flintaTillVerktyg = (s: State) => {
 };
 // det som täljs och skärs med kniven (receptets verktyg kniv, eller kniv: täljs med kniven på bänken) blir oftare bra med en järnkniv
 // (steg 12.2.6): knivens tal kvalitet i slaktens rad (handlingar.ts) gånger REDSKAP.kvRedskap, som en bättre station
+// järnnålen (steg 12.5.3): den som syr ett plagg (det som inte smids) och har en ledig järnnål syr tre gånger så fort, och
+// plagget blir oftare bra, som det som täljs med järnkniven
+const harJarnnal = (s: State, p: Person) => freeTools(s, p, 'jarnnal') > 0 || tingOf(s).some(t => t.k === 'jarnnal' && t.hos === p.id);
+export const nalFart = (s: State, p: Person, act: string) => SYDDA.has(act) && harJarnnal(s, p) ? REDSKAP.nalFart : 1;
+// den som börjar sy tar en ledig järnnål i handen (steg 12.1.239), och den slits för varje plagg som blir klart
+export function taNal(s: State, p: Person, act: string) { if (SYDDA.has(act) && !tingOf(s).some(t => t.k === 'jarnnal' && t.hos === p.id) && freeTools(s, p, 'jarnnal') > 0) take(s, p, 'jarnnal'); }
+export function slitNal(s: State, p: Person, act: string) { if (SYDDA.has(act) && tingOf(s).some(t => t.k === 'jarnnal' && t.hos === p.id)) wearTool(s, p, 'jarnnal', 1 / REDSKAP.nalPlagg); }
+export const nalKv = (s: State, p: Person, k: string) => SYDDA.has(gruppOf(k)) && harJarnnal(s, p) ? (REDSKAP.nalKv - 1) * REDSKAP.kvRedskap : 0;
 export function knivKv(s: State, p: Person, k: string) {
   const r = SAKER[k]?.skaffa as { verktyg?: Record<string, string>; kniv?: true } | undefined;
   if (!r?.kniv && !r?.verktyg?.kniv) return 0;

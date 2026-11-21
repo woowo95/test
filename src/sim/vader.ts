@@ -50,6 +50,7 @@ export const VADER = balans('vader', {
   torkarUte: 0.25, // så här mycket torkar man per timme ute när det inte regnar ...
   torkarInne: 0.6, // ... och inne eller vid elden
   blotGrader: 8, // den som är helt blöt fryser som om det var så här många grader kallare
+  ullBlot: 0.5, // under ett ytterplagg av ylle blir så här stor del av kylan av att vara blöt kvar (steg 12.4.13)
   blotTanke: 0.5, // över så här blöt tänker man på det
   blastGrader: 5, // den som är ute i den hårdaste blåsten fryser som om det var så här många grader kallare
   regnEld: 0.5, // en eld ute brinner så här mycket fortare i det kraftigaste regnet
@@ -68,9 +69,9 @@ export const VADER = balans('vader', {
 // ---------- väder: temperatur ----------
 // Temperaturen följer årstiden mjukt (varje tidsålder glider över i nästa), solen över dygnet
 // och ett långsamt slumpmässigt väder. Den räknas fram ur tiden, så den behöver inte sparas.
-// för varm (steg 12.1.19): kroppen är varmare än KROPP.forVarm och det är riktigt varmt i luften. Tanken, lusten att bada och
-// plaggen som tas av följer samma gräns
-export const forVarm = (s: State, p: Person) => p.warm > KROPP.forVarm && temperature(s) >= KROPP.varmGrader;
+// för varm (steg 12.1.19): kroppen är varmare än KROPP.forVarm. Tanken och lusten att bada följer kroppens värme, utan någon
+// gräns i grader; plaggen väljs efter värmen med en poäng (plaggPoang i utrustning.ts, steg 12.1.149)
+export const forVarm = (_s: State, p: Person) => p.warm > KROPP.forVarm;
 export function temperature(s: State, t = s.now) {
   const c = yearPos(s, t); // var i året: 0 = istidens början
   const i = Math.floor(c), q = c - i;
@@ -177,12 +178,12 @@ export const torrTim = (s: State) => s.vader?.torr ?? 0;
 // slår blixten ner den här timmen? (loggen här och elden den kan tända, brand.ts)
 export const blixtNu = (s: State) => vaderNu(s).aska && hash(s.seed, Math.floor(s.now / HOUR), 7) < VADER.blixt;
 
-// varje timme (steg.ts): fukten och snön på marken, och blixten
-export function stepVader(s: State) {
+// varje timme (steg.ts): fukten och snön på marken, och blixten. h: timmarna sedan sist (steg 12.1.107)
+export function stepVader(s: State, h = 1) {
   const v = vaderNu(s), mi = minneOf(s), temp = temperature(s);
-  mi.fukt = clamp(mi.fukt + (v.sno ? 0 : v.nb * VADER.fuktRegn) - VADER.fuktTorkar * (1 + Math.max(0, temp) / 10) * (torkaNu(s) ? TORKA.torkar : 1), 0, 1); // fortare under en torka (steg 3.8.2)
-  mi.sno = clamp(mi.sno + (v.sno ? v.nb * VADER.snoFaller : 0) - Math.max(0, temp) * VADER.snoSmalter, 0, 1);
-  mi.torr = mi.fukt > VADER.torrFukt ? Math.max(0, (mi.torr ?? 0) - VADER.torrBlot) : Math.min(VADER.torrMax, (mi.torr ?? 0) + 1);
+  mi.fukt = clamp(mi.fukt + ((v.sno ? 0 : v.nb * VADER.fuktRegn) - VADER.fuktTorkar * (1 + Math.max(0, temp) / 10) * (torkaNu(s) ? TORKA.torkar : 1)) * h, 0, 1); // fortare under en torka (steg 3.8.2)
+  mi.sno = clamp(mi.sno + ((v.sno ? v.nb * VADER.snoFaller : 0) - Math.max(0, temp) * VADER.snoSmalter) * h, 0, 1);
+  mi.torr = mi.fukt > VADER.torrFukt ? Math.max(0, (mi.torr ?? 0) - VADER.torrBlot * h) : Math.min(VADER.torrMax, (mi.torr ?? 0) + h);
   count(s, 'vader_' + v.lage);
   if (blixtNu(s)) {
     count(s, 'blixt');
@@ -190,8 +191,10 @@ export function stepVader(s: State) {
   }
 }
 // hur många grader kallare det känns för p, av vädret: blöt och i blåsten (bara ute)
+// ylle värmer också blött (steg 12.4.13): satt i mobler.ts, som läses efter den här filen
+export const vaderKrok = { ylle: (_s: State, _p: Person) => false };
 export function vaderGrader(s: State, p: Person, ute: boolean) {
-  return (p.blot ?? 0) * VADER.blotGrader + (ute ? vaderNu(s).vind * VADER.blastGrader : 0);
+  return (p.blot ?? 0) * VADER.blotGrader * (p.blot && vaderKrok.ylle(s, p) ? VADER.ullBlot : 1) + (ute ? vaderNu(s).vind * VADER.blastGrader : 0);
 }
 // p blir blöt ute i regnet och torkar inne, vid elden och när det inte regnar (dt timmar)
 export function blotSteg(s: State, p: Person, ute: boolean, underTrad: boolean, vidElden: boolean, dt: number) {
@@ -201,5 +204,5 @@ export function blotSteg(s: State, p: Person, ute: boolean, underTrad: boolean, 
   else if (v.nb > 0) n += v.nb * VADER.blotTakt * (v.sno ? VADER.blotSno : 1) * (underTrad ? VADER.blotTrad : 1) * dt;
   else n -= VADER.torkarUte * dt;
   n = clamp(n, 0, 1);
-  if (n > 0) p.blot = n; else if (b) delete p.blot;
+  if (n > 0) p.blot = n; else if (b) p.blot = undefined;
 }

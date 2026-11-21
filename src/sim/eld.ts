@@ -4,7 +4,7 @@ import { han } from './ord';
 import { tal } from './ord';
 import { allaBarn } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
-import { addTo, amountOf, blotUttaget, avbryt, fetchSpot, iBordan, takeLimit, use, paMarken } from './lager';
+import { addTo, amountOf, type Uttag, avbryt, fetchSpot, iBordan, takeLimit, use, paMarken, put } from './lager';
 import { Materialslag, forbrukat, overOchUnder, tandBuffert, underBuffert } from './forradsmal';
 import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
@@ -12,7 +12,7 @@ import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
 import { MOTGANG } from './motgang';
 import { isWall, roomAt } from './byggnad';
 import { ligger } from './sjukdom';
-import { ALDER, KROPP, ageOf, alive, count, forstaGang, gjort, living, log, stat, think } from './folk';
+import { ALDER, KROPP, ageOf, alive, count, forstaGang, gjort, living, log, stat } from './folk';
 import { allaTing, nTools, wearTool } from './agande';
 import { kroppFart } from './gang';
 import { SAKER } from './saker';
@@ -126,29 +126,49 @@ export const fuelStock = (s: State) => amountOf(s, 'ved') + amountOf(s, 'grenar'
 // bränslet p får elda med, räknat i ved
 export const fuelFor = (s: State, p: Person, fran?: Person) => takeLimit(s, 'ved', p, fran) + takeLimit(s, 'grenar', p, fran) * GREN + (fran ? 0 : iBordan(p, 'ved') + iBordan(p, 'grenar') * GREN) // med det hen bär dit
   + (takeLimit(s, 'torv', p, fran) + takeLimit(s, 'blottorv', p, fran) + (fran ? 0 : iBordan(p, 'torv') + iBordan(p, 'blottorv'))) * TORV.varde; // och torven (steg 12.1.3)
-// ta bränsle ur förrådet, ved först och sedan grenar; ger hur mycket som togs
-// p = den som tar det: byns ved först, sedan sin egen (egendom.ts). ag får vems bränslet var, räknat i ved
-export function takeFuel(s: State, n: number, p?: Person, ag?: Del, fran?: Person) {
+// ta bränsle ur förrådet: grenarna som inte behövs till tändningen först (steg 12.1.52), sedan veden och de andra grenarna; ger hur
+// mycket som togs. p = den som tar det: byns ved först, sedan sin egen (egendom.ts). ag får vems bränslet var, räknat i ved;
+// tog får det som togs per sort i hela saker och vems det var, så att det som blir över går tillbaka som samma saker (steg 12.1.215)
+export type Tog = Record<string, { n: number; ag: Del }>;
+const minns = (tog: Tog | undefined, k: string, n: number, d: Del | undefined) => { if (!tog || n <= 0) return; const r = tog[k] ??= { n: 0, ag: {} }; r.n += n; addDel(r.ag, d); };
+export function takeFuel(s: State, n0: number, p?: Person, ag?: Del, fran?: Person, tog?: Tog) {
+  const gHar = () => Math.floor(takeLimit(s, 'grenar', p, fran) + (fran ? 0 : iBordan(p, 'grenar')) + 1e-9);
+  const g0 = Math.min(Math.max(0, gHar() - Math.ceil(tandBuffert(s, 'grenar') - 1e-9)), Math.floor(n0 / GREN + 1e-9)); // hela grenar, aldrig mer än det som behövs
+  if (g0 > 0) { const d = use(s, p, 'grenar', g0, true, fran?.id); forbrukat(s, 'grenar', -g0); if (ag) addDel(ag, d, GREN); minns(tog, 'grenar', g0, d); }
+  const n = n0 - g0 * GREN;
   const v = Math.min(n, takeLimit(s, 'ved', p, fran) + (fran ? 0 : iBordan(p, 'ved')));
-  const b0 = blotUttaget(), w = use(s, p, 'ved', v, true, fran?.id);
-  if (p?.task) p.task.blotVed = v > 0 ? Math.min(1, (blotUttaget() - b0) / v) : 0; // det som togs: torr ved tas först (steg 7.3.4), och ur det hen får ta (steg 12.1.55)
+  const ut: Uttag = { blot: 0 }, w = use(s, p, 'ved', v, true, fran?.id, ut); minns(tog, 'ved', v, w);
+  if (p?.task) p.task.blotVed = v > 0 ? Math.min(1, ut.blot / v) : 0; // det som togs: torr ved tas först (steg 7.3.4), och ur det hen får ta (steg 12.1.55)
   // torven (steg 12.1.3, torv.ts): den torra efter veden och före grenarna, den blöta sist, i hela torv
   const hel = (k: string, kvar: number) => kvar <= 1e-9 ? 0 : Math.min(Math.floor(takeLimit(s, k, p, fran) + (fran ? 0 : iBordan(p, k)) + 1e-9), Math.ceil(kvar / TORV.varde - 1e-9));
   const tt = hel('torv', n - v);
-  if (tt > 0) { const d = use(s, p, 'torv', tt, true, fran?.id); if (ag) addDel(ag, d, TORV.varde); }
-  const g = Math.min(Math.floor(takeLimit(s, 'grenar', p, fran) + (fran ? 0 : iBordan(p, 'grenar')) + 1e-9), Math.ceil((n - v - tt * TORV.varde) / GREN - 1e-9)); // hela grenar (steg 3.6.13)
-  if (g > 0) { const d = use(s, p, 'grenar', g, true, fran?.id); forbrukat(s, 'grenar', -g); if (ag) addDel(ag, d, GREN); } // grenarna som bränsle räknas i veden, inte som förbrukat material (steg 6.2.14)
+  if (tt > 0) { const d = use(s, p, 'torv', tt, true, fran?.id); if (ag) addDel(ag, d, TORV.varde); minns(tog, 'torv', tt, d); }
+  const g = Math.min(gHar(), Math.ceil((n - v - tt * TORV.varde) / GREN - 1e-9)); // hela grenar (steg 3.6.13)
+  if (g > 0) { const d = use(s, p, 'grenar', g, true, fran?.id); forbrukat(s, 'grenar', -g); if (ag) addDel(ag, d, GREN); minns(tog, 'grenar', g, d); } // grenarna som bränsle räknas i veden, inte som förbrukat material (steg 6.2.14)
   const bt = hel('blottorv', n - v - tt * TORV.varde - g * GREN);
   if (bt > 0) {
-    const d = use(s, p, 'blottorv', bt, true, fran?.id); if (ag) addDel(ag, d, TORV.varde);
+    const d = use(s, p, 'blottorv', bt, true, fran?.id); if (ag) addDel(ag, d, TORV.varde); minns(tog, 'blottorv', bt, d);
     const tot = v + tt * TORV.varde + g * GREN + bt * TORV.varde; // den blöta torven brinner som blöt ved
     if (p?.task) p.task.blotVed = Math.min(1, ((p.task.blotVed ?? 0) * v + bt * TORV.varde) / tot);
   }
   if (ag) addDel(ag, w);
-  return v + tt * TORV.varde + g * GREN + bt * TORV.varde;
+  return g0 * GREN + v + tt * TORV.varde + g * GREN + bt * TORV.varde;
 }
-// bränsle som inte fick plats går tillbaka till förrådet som grenar
-export const giveBack = (s: State, n: number) => { if (n > 0) addTo(s, 'grenar', n / GREN); };
+// bränsle som inte fick plats går tillbaka till förrådet: hela vedträn som ved och resten som de hela grenar det räcker till
+// (steg 12.1.52: förut blev allt grenar, ett vedträ två och en halv gren, och grenarna växte långt över taket).
+// Minns bördan vad som togs (tog, steg 12.1.215), går det tillbaka som samma hela saker till samma ägare, det största först
+const varde = (k: string) => k === 'ved' ? 1 : k === 'grenar' ? GREN : TORV.varde;
+export function giveBack(s: State, n: number, tog?: Tog) {
+  if (!tog) { const v = Math.floor(n + 1e-9), g = Math.floor((n - v) / GREN + 1e-9); if (v > 0) addTo(s, 'ved', v); if (g > 0) addTo(s, 'grenar', g); return; }
+  let kvar = n;
+  for (const k of Object.keys(tog).sort((a, b) => varde(b) - varde(a) || (a < b ? -1 : 1))) {
+    const r = tog[k], m = Math.min(Math.floor(r.n + 1e-9), Math.floor(kvar / varde(k) + 1e-9));
+    if (m <= 0) continue;
+    const f = m / r.n, ag: Del = {};
+    for (const o in r.ag) { ag[o] = r.ag[o] * f; r.ag[o] -= ag[o]; }
+    put(s, k, m, ag); r.n -= m; kvar -= m * varde(k);
+  }
+}
 function fireLog(s: State, e: Omit<FireLog, 't'>, f = s.fire) { f.log.push({ t: s.now, ...e }); if (f.log.length > 80) f.log.splice(0, f.log.length - 80); }
 export const emberOn = (s: State, f = s.fire) => !f.lit && f.emberUntil !== undefined && f.emberUntil > s.now;
 // eldens styrka 0–1 efter hur mycket ved som brinner
@@ -199,14 +219,16 @@ export const nagonEld = (s: State) => eldarOf(s).some(f => f.lit);
 // någon eld brinner eller glöder
 export const nagonGlod = (s: State) => eldarOf(s).some(f => f.lit || emberOn(s, f));
 // p:s egen önskan om ved på elden f; vc = hur mycket byn fryser 0–1. vid = p sitter vid elden eller är på väg dit
-function fireWish(s: State, p: Person, vc: number, f: Fire, vid: boolean): Wish {
-  const light = isLight(s.now), cold = coldOf(temperature(s)), sd = s.seder.v;
+// det som är detsamma för alla (dagsljuset, kylan, sederna, har byn haft eld), räknat en gång per steg (steg 12.1.104)
+const eldLage = (s: State) => ({ light: isLight(s.now), cold: coldOf(temperature(s)), aldrig: !eldarOf(s).some(e => e.lightings) });
+function fireWish(s: State, p: Person, vc: number, f: Fire, vid: boolean, l = eldLage(s)): Wish {
+  const { light, cold } = l, sd = s.seder.v;
   const opts: Wish[] = [
     { v: clamp((1 - p.warm) * ELD.onskaFryser + cold * ELD.onskaKyla, 0, 1), why: p.warm < 0.5 ? 'Fryser och vill ha mer värme' : `Det är kallt och ${han(p)} vill hålla värmen` },
     { v: clamp(vc * (p.pot.empati / ELD.onskaEmpati) * (ELD.onskaGemBas + ELD.onskaGem * sd.gemenskap), 0, 1), why: 'Andra i byn fryser' },
   ];
   if (vid) opts.push({ v: (light ? ELD.trivsDag : ELD.trivsNatt) * clamp(ELD.trivsMood - moodOf(p, s.now), ELD.trivsMin, 1), why: light ? 'Vill ha en trivsam eld' : 'Vill ha en trivsam eld att samlas kring i mörkret' });
-  if (!eldarOf(s).some(e => e.lightings)) opts.push({ v: ELD.forstaEld * (ELD.forstaBas + p.pot.nyfikenhet / ELD.forstaNyfiken), why: 'Byn har aldrig haft eld' });
+  if (l.aldrig) opts.push({ v: ELD.forstaEld * (ELD.forstaBas + p.pot.nyfikenhet / ELD.forstaNyfiken), why: 'Byn har aldrig haft eld' });
   const b = opts.reduce((a, o) => (o.v > a.v ? o : a));
   return { v: b.v * hearthOf(f).maxFuel, why: b.why };
 }
@@ -268,7 +290,7 @@ function lightFire(s: State, p: Person, f: Fire, brand?: string) {
   fireLog(s, { k: 'tänd', id: p.id, n: f.tries }, f);
   if (brand) log(s, `${p.name} tände ${eldOrd(s, f)} med en brand från ${brand}.`, 'world', [p.id]); // steg 10.6.12
   else log(s, `${p.name} lyckades tända ${eldOrd(s, f)}${onCoal ? ' på den gamla kolhögen' : ''}${f.tries > 1 ? ` efter ${tal(f.tries, true)} försök` : ''}.`, 'world', [p.id]);
-  think(p, 'Tände elden', ELD.tandGlad, s.now, ELD.tandGladDygn * DAY);
+  tanke(p, 'tandeElden', s.now, { v: ELD.tandGlad, tid: ELD.tandGladDygn * DAY });
   if (f !== s.fire) count(s, 'brasaTand'); // en lägereld till (brasor.ts)
   if (f === s.fire && f.lightings === 1) { p.fame.push('Tände byns första eld'); allaBarn(s, 'uppfinning', 'tände sin första eld'); kronikaBer(s, 'k_forstaEld', p.id, personFalt(p)); }
   f.tries = 0;
@@ -360,8 +382,8 @@ export function takeCoal(s: State, p: Person, verb: string, f = s.fire) {
   log(s, `${p.name} ${verb} ${antal(n, 'kol')} ur den gamla elden och lade ${n === 1 ? 'den' : 'dem'} i förrådet.`, 'world', [p.id]);
 }
 export function addFuel(s: State, p: Person, n: number, f = s.fire) {
-  const h = hearthOf(f);
-  if (!f.lit && !emberOn(s, f) || eldIVatten(s, f)) { giveBack(s, n); return; } // elden hann slockna eller står under vattnet: bränslet går tillbaka
+  const h = hearthOf(f), tog = p.task?.tog;
+  if (!f.lit && !emberOn(s, f) || eldIVatten(s, f)) { giveBack(s, n, tog); return; } // elden hann slockna eller står under vattnet: bränslet går tillbaka
   if (!f.lit) {
     f.lit = true; f.emberUntil = undefined;
     fireLog(s, { k: 'glöd', id: p.id }, f);
@@ -370,7 +392,7 @@ export function addFuel(s: State, p: Person, n: number, f = s.fire) {
   const put = Math.min(n, h.maxFuel - f.fuel);
   const vat = p.task?.blotVed ?? 0;
   if (put > 0) f.blot = (f.fuel * (f.blot ?? 0) + put * vat) / (f.fuel + put); // så mycket av det som brinner som är blött (steg 7.3.4)
-  f.fuel += put; giveBack(s, n - put);
+  f.fuel += put; giveBack(s, n - put, tog);
   f.fills[p.id] = (f.fills[p.id] ?? 0) + 1;
   fireLog(s, { k: 'fyll', id: p.id, n: put }, f);
 }
@@ -441,12 +463,12 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   const alla = eldarOf(s);
   for (const e of alla) brinner(s, e, dtSec);
   // vilja: varje invånare som är vaken vill ha olika mycket ved på de eldar hen använder (steg 6.3.1)
-  const vc = byFryser(ppl);
+  const vc = byFryser(ppl), l = eldLage(s);
   for (const f of alla) { f.want = 0; f.wantBy = undefined; f.wantWhy = undefined; f.brukare = 0; }
   for (const p of ppl) {
     if (!alive(p) || p.task?.act === 'sova' || p.task?.act === 'gomma' || ligger(p, s.now) || halsa(p) < KROPP.svag || ageOf(p, s.now) < ALDER.hjalper) continue; // den som sover, gömmer sig eller ligger sjuk vill inget
     for (const f of eldarFor(s, p)) {
-      const w = fireWish(s, p, vc, f, sitterVid(s, p, f));
+      const w = fireWish(s, p, vc, f, sitterVid(s, p, f), l);
       f.brukare = (f.brukare ?? 0) + 1;
       if (w.v > (f.want ?? 0)) { f.want = w.v; f.wantBy = p.id; f.wantWhy = w.why; }
     }
@@ -564,7 +586,7 @@ function tandTa(s: State, p: Person, got: Record<string, number>, k: Tand, v: nu
   while (t >= 1 - 1e-9 && tandPaRutan(s, k, x, y) > 0) { tandPlocka(s, k, x, y); t -= 1; n++; }
   t = Math.min(t, 1 - 1e-6); // på en tom ruta väntar arbetet, högst en sak
   if (t > 1e-9) d[nyck] = t; else delete d[nyck];
-  if (!Object.keys(d).length) delete p.delar;
+  if (!Object.keys(d).length) p.delar = undefined;
   if (n) got[k] = n;
 }
 // så många dygn bränslet i förrådet räcker
@@ -586,3 +608,4 @@ export const VED: Behov = {
   anvand: (s, p, fran) => { if (fran && ageOf(p, s.now) >= ALDER.hjalper && p.task?.act !== 'sova') fetchFuel(s, p, 'Fryser och tar någon annans ved till elden', fran); return 0; },
 };
 import { TORV } from './myr';
+import { tanke } from './tankar';

@@ -7,11 +7,12 @@ import { hash } from './karta';
 import { vaderNu } from './vader';
 import { tornadoNu } from './tornado';
 import { bynsMitt, utanforByn } from './omrade';
-import { count, forstaGang, living, log, think } from './folk';
+import { count, forstaGang, living, log } from './folk';
 import { knows, tankePa } from './teknik';
 import { faltOf, faltRutor } from './odling';
 import { freeTools } from './agande';
 import { wearUsed } from './redskap';
+import { tanke } from './tankar';
 
 // ---------- skogen som byn sköter (steg 6.5.2) ----------
 // Med tekniken Skogsvård kan man gräva upp en planta och sätta den på en annan jordruta. Tekniken kommer man på när man fäller
@@ -125,7 +126,7 @@ export function plantaSatt(s: State, p: Person, t: Task) {
   const i = Math.floor(t.ty) * W + Math.floor(t.tx);
   if (satt(s, i, t)) {
     count(s, 'plantorFlyttade');
-    think(p, 'Satte en planta', SKOGSVARD.glad, s.now, SKOGSVARD.glatTim * HOUR);
+    tanke(p, 'sattePlanta', s.now, { v: SKOGSVARD.glad, tid: SKOGSVARD.glatTim * HOUR });
     if (forstaGang(s, 'plantaForsta')) log(s, `${p.name} grävde upp en planta och satte den närmare byn, där skogen ska växa tillbaka.`, 'world', [p.id]);
   } else slappPlanta(s, t, t.tx, t.ty);
   p.task = undefined;

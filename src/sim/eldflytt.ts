@@ -1,5 +1,6 @@
+import { ingetIElden } from './lager';
 import { bynsMitt } from './omrade';
-import { ALDER, KROPP, count, isSick, living, log, think } from './folk';
+import { ALDER, KROPP, count, isSick, living, log } from './folk';
 import { halsa } from './halsa';
 import { eldPlats } from './karta';
 import { ELD } from './eld';
@@ -9,6 +10,7 @@ import { bitsOf, gridOf, housesOf, roomAt } from './byggnad';
 import { kronika } from './historik';
 import { HOUR, Person, State, W, inMap } from './typer';
 import { balans } from './balans';
+import { tanke } from './tankar';
 
 // ---------- elden flyttas (steg 2.10.4) ----------
 // Elden står där byn grundades. Den flyttas i två fall (Björn efter v115): när ett hus behöver platsen där elden står
@@ -20,7 +22,7 @@ export const ELDFLYTT = balans('eldflytt', {
   vuxit: 8, // ... och husens och lagrets mitt ligger mer än så här många rutor från elden
   sok: 6, // den nya platsen söks så här många rutor runt målet
   marg: 2, // ingen vägg så här nära den nya elden (rutor), så att man kan gå runt den
-  tim: 2, // så här många timmar tar det att släcka elden och bära stenarna, när man kommit fram ...
+  min: 15, // så här många minuter tar det att släcka elden och bära stenarna, när man kommit fram, som att lägga en ny ring (RT.brasaMin) ...
   gang: 4, // ... och så här många timmar får det ta att gå dit
   husStraff: 6, // ett hus som skulle stå där elden står väljs bara om ingen annan plats är så här mycket bättre (bygg.ts)
   kostnad: 1, // att flytta elden kostar så här många gånger ringens stenar (värdet, steg 10.2.8), när ett skadat hus byggs upp där elden står
@@ -57,28 +59,9 @@ export function nyEldplats(s: State, mx: number, my: number, ut?: { x: number; y
   return best;
 }
 
-// arbetet med flytten sparas: de stenar som redan burits ligger kvar, och den som tar vid gör det som återstår. Arbetet räknas
-// per tid, från när den som arbetar kom fram till nu, eller till nästa timme om hen gått därifrån
-function raknaFlytt(s: State) {
-  const m = s.fire.flytt;
-  if (!m || m.fran === undefined) return;
-  const p = living(s).find(q => q.id === m.vem), kvar = p?.task?.act === 'flyttaeld' && p.task.phase === 'do';
-  m.gjort = Math.min(ELDFLYTT.tim * HOUR, (m.gjort ?? 0) + s.now - m.fran);
-  if (kvar) m.fran = s.now; else { m.fran = undefined; m.vem = undefined; }
-}
-// p har kommit fram: hur länge det tar att släcka elden och bära de stenar som är kvar
-export function eldFlyttKvar(s: State, p: Person) {
-  const m = s.fire.flytt;
-  if (!m) return ELDFLYTT.tim * HOUR;
-  raknaFlytt(s);
-  m.vem = p.id; m.fran = s.now;
-  return Math.max(0, ELDFLYTT.tim * HOUR - (m.gjort ?? 0));
-}
-
 // en gång i timmen: ska elden flyttas, och vem gör det?
 export function stepEldFlytt(s: State) {
   const f = s.fire;
-  raknaFlytt(s);
   if (f.flytt && !eldKanSta(s, f.flytt.x, f.flytt.y)) delete f.flytt; // platsen har tagits: en ny väljs nedan
   if (!f.flytt) {
     // ett hus som ska stå där elden står väntar (bygg.ts bygger inget inpå elden): elden behöver en ny plats bredvid huset
@@ -116,10 +99,11 @@ export function flyttaElden(s: State, p: Person) {
   delete f.flytt;
   for (const t of stationerOf(s)) if (stationDef(t.k)?.eld && t.y === gammal.y && t.x === gammal.x - 1) { t.x = mal.x - 1; t.y = mal.y; } // grillen står med elden i mitten (siteEld i stationer.ts)
   s.byggV = (s.byggV ?? 0) + 1; // husen, stationerna och vägarna räknas om
+  ingetIElden(s); // det som låg på den nya eldplatsen flyttas (steg 12.1.153)
   count(s, 'eldflytt');
   log(s, `${p.name} släckte elden och bar stenarna i ringen till en ny eldplats ${mal.varfor === 'plats' ? 'där ett hus ska byggas' : 'mitt i byn'}.`, 'world', [p.id]);
   if (s.stat!.eldflytt === 1) kronika(s, `${p.name} flyttade byns eld ${mal.varfor === 'plats' ? 'för att ge plats åt ett hus' : 'till byns mitt'}.`, 'bygge');
-  think(p, 'Flyttade elden', ELDFLYTT.tanke, s.now, ELDFLYTT.tankeTim * HOUR);
+  tanke(p, 'flyttadeElden', s.now, { v: ELDFLYTT.tanke, tid: ELDFLYTT.tankeTim * HOUR });
 }
 
 // vad det kostar att flytta elden (steg 10.2.8): ringens stenar gånger ELDFLYTT.kostnad, i samma värde som ett bygges material

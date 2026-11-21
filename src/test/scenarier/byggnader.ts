@@ -2,6 +2,7 @@
 import { isDeepStrictEqual } from 'node:util';
 import { MIN, Person, Act, createState, addTool, FOREST, HOUR_S, toolsOf, BYN, step, living, sees, ageIndex, cloneState, ageStart, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, dropLoad, T, isStored, zonesOf, allows, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, stat, bynsMitt, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, treeOn, ownsAmount, addTo, setAmount, isFood, grundvarde, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, MATERIAL, usable, dropSpot, ALDER, KROPP, samlingRum, varmareInne, haulJob, fetchFuel, chooseTask, minOf } from '../../sim';
 import * as SIM from '../../sim';
+import { antal } from '../../sim/ord';
 import { findPath } from '../../sim/vag';
 import { KANIN } from '../../sim/redskap';
 import { START, STEG_TIM } from '../kor';
@@ -10,7 +11,7 @@ import { iSangen } from '../../ui/stalle';
 import { skapad } from '../../ui/utseende';
 import { KARNA } from '../../portrattkarna';
 import { setByn, ui } from '../../ui/lage';
-import { familjen, iRing, medLagar, setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, medHus, STOCKHOLM, SCENARIER, utanWebblasare, utanStartKlader } from './hjalp';
+import { testBy, familjen, iRing, medLagar, setItems, setFood, kor, klockan, tandEld, byggare, byggKlart, nyInvanare, medBank, medHus, STOCKHOLM, SCENARIER, utanWebblasare, utanStartKlader } from './hjalp';
 
 SCENARIER.byggnader = {
   text: 'Varje sorts byggnad är en rad i ett register med behov och vikt. Byn bygger för det mest akuta behovet, faror först: den som saknar tak över huvudet får en sovsal',
@@ -214,12 +215,16 @@ SCENARIER.agandet = {
     for (let i = 0; i < 3; i++) stepStationer(s);
     const famBaddar = baddar().filter(t => fam.some(q => q.id === t.ag)), hemma = famBaddar.every(iH);
     const famFore = agare.filter(x => fam.some(q => q.id === x)).length;
-    const bar = s.log.filter(r => /bar sin halmbädd/.test(r.text)).length, lamnade = s.log.filter(r => /lämnade sin halmbädd/.test(r.text)).length;
+    const bar = s.stat?.baddBuren ?? 0, lamnade = s.stat?.baddLamnad ?? 0; // (byns statistik, aldrig loggen)
     // familjens egen bädd i huset och byns slöjdbänk, som också står där
-    const fri = () => rum.tiles.find(i => rum.tiles.includes(i + 1) && [i, i + 1].every(j => !SIM.stationAt(s, j % W, Math.floor(j / W))));
+    const ingang = (j: number) => SIM.GRANNAR4.some(([dx, dy]) => SIM.bitAt(s, j % W + dx, Math.floor(j / W) + dy)?.k === 'oppning'); // rutan innanför öppningen hålls fri (steg 12.1.36)
+    const fri = () => rum.tiles.find(i => rum.tiles.includes(i + 1) && [i, i + 1].every(j => !SIM.stationAt(s, j % W, Math.floor(j / W)) && !ingang(j)));
     const stall = (k: string, ag?: number) => { const i = fri() ?? i0, t: SIM.Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: i % W, y: Math.floor(i / W), kvar: 0, inne: 1, ag }; s.stationer!.push(t); SIM.touch(s); return t; };
     // den egna bädden åt någon i familjen som inte redan har en (nu när familjens bäddar får plats i huset, steg 9.2.36)
-    const utan = fam.find(q => !SIM.baddOf(s, q)) ?? a, egenB = stall('halmbadd', utan.id), bank = stall('flatarbank');
+    const utan = fam.find(q => !SIM.baddOf(s, q)) ?? a, egenB = stall('halmbadd', utan.id);
+    // fler bäddar ryms i huset nu, så en av familjens andra bäddar flyttas ut för att ge slöjdbänken en ruta
+    if (fri() === undefined) { const ut = stationerOf(s).find(t => iH(t) && t.k === 'halmbadd' && t !== egenB); if (ut) { s.stationer = s.stationer!.filter(t => t !== ut); SIM.touch(s); } }
+    const bank = stall('flatarbank');
     const iHus = iH(egenB);
     const iHuset = iHus && iH(bank);
     // huset byter ägare (som när det köps eller ärvs av någon utanför familjen): familjens bäddar flyttas ut eller tas isär
@@ -869,6 +874,7 @@ function ringUte(s: SIM.State) {
 
 SCENARIER.skogsrojning = {
   text: 'Steg 3.6.9: en lagerplats och ett fält kan ligga i skogen. Träden där står kvar tills någon med yxa fäller dem, före andra träd, och de blir trä; inget läggs på en ruta där ett träd står och ingen ruta röjs under ett träd',
+  lang: true,
   kor: () => {
     const s = createState(9, START);
     tandEld(s); klockan(s, 9);
@@ -896,14 +902,18 @@ SCENARIER.skogsrojning = {
     const forst = treeSpot(s, new Set(), p), forstOk = !!forst && SIM.skaRojas(s).includes(tileOf(forst.x, forst.y));
     // byn har mat, så att den med yxa inte måste jaga för egen räkning (det prövas inte här)
     put(s, 'bar', 150);
-    kor(s, 48);
+    // bristen följer det som är kvar (steg 12.1.174): de flesta träden fälls först, de sista när de väger mer än annat
+    kor(s, 12);
+    const kvar12 = [...lagerRutor, ...faltRutor].filter(i => g.trees[i] >= FOREST).length;
+    kor(s, 60);
     const kvar = [...lagerRutor, ...faltRutor].filter(i => g.trees[i] >= FOREST).length;
     const tra = SIM.stocks(s).length + amountOf(s, 'ved');
     return [
       [`inget läggs i lagret där träden står (${underTrad ? 'lades under ett träd' : 'bredvid'})`, !underTrad],
       ['ägaren röjer inte fältet under träden', vantar && orord],
       [`den med yxa fäller först ett träd i lagret eller på fältet`, forstOk],
-      [`efter 48 timmar (två dygn, två år i spelet) är träden fällda (${kvar} av 8 kvar) och har blivit trä (${Math.round(tra)} trä och stammar)`, kvar <= 2 && tra > 0],
+      [`efter 12 timmar är de flesta träden fällda (${kvar12} av 8 kvar)`, kvar12 <= 4],
+      [`efter 72 timmar (tre dygn, tre år i spelet) är träden fällda (${kvar} av 8 kvar) och har blivit trä (${Math.round(tra)} trä och stammar)`, kvar <= 1 && tra > 0],
     ];
   },
 };
@@ -1067,7 +1077,7 @@ SCENARIER.fangelse = {
     p.thoughts = [{ text: 'Vill ut', v: -1, until: s.now + 30 * SIM.DAY }];
     const t0 = s.now; let sonder = -1;
     kor(s, 2, v => { if (sonder < 0 && !SIM.fangelseDorr(v, h)!.dorr) sonder = v.now; });
-    const min = (sonder - t0) / SIM.MIN, fri = !p.fange, larm = s.people.some(q => q.larm?.vad === 'rymning');
+    const min = (sonder - t0) / SIM.MIN, fri = !p.fange, larm = s.people.some(q => q.larm?.rymning !== undefined);
     // byn hänger en ny trädörr: den som kan tekniken och har materialet
     q.tek = { ...(q.tek ?? {}), tradorr: 1 }; SIM.setAmount(s, 'plankor', 10); SIM.setAmount(s, 'rep', 5);
     let ny = false; kor(s, 24, v => { if (SIM.fangelseDorr(v, h)?.dorr === 'tradorr') ny = true; }); // ett helt dygn: dörrar hängs på dagen
@@ -1246,6 +1256,42 @@ SCENARIER.sovplats = {
   },
 };
 
+SCENARIER.rumplus = {
+  text: 'Rummens plus (steg 12.1.143): Varmt och ljust, Fint pyntat och Eget rum i registret RUM_PLUS, som läser rummens taggar ur RUMSTYPER; eget rum vilar man bättre i, och pluset syns under rummets taggar',
+  kor: () => {
+    const { RUM_PLUS, RUMSTYPER } = SIM, rad = (id: string) => RUM_PLUS.find(p => p.id === id)!, T = (...k: string[]) => new Set(k);
+    const ljust = rad('ljust'), pynt = rad('pynt'), eget = rad('eget');
+    // en ny grundtagg i registret (som Sjukstugan) delar rummet av sig själv, utan att pluset ändras
+    const reg = RUMSTYPER as Record<string, SIM.RumsTyp>;
+    reg.provtagg = { namn: 'Prov', ikon: 'bord', slag: 'grund', om: '', krav: () => false };
+    const nyDelar = !eget.krav(T('sovrum', 'provtagg'), false);
+    delete reg.provtagg;
+    // i en riktig by: plusen räknas och vilan följer dem
+    const s = SIM.cloneState(testBy(25)), rum = SIM.gridOf(s).rooms.filter(r => r.tiles.length);
+    // simuleringen räknar plusen vid timmens början och sparar dem i byn; att fråga ändrar inget (steg 12.1.210)
+    SIM.rumPlusTimme(s);
+    const sparat = JSON.stringify(s.rumPlus ?? null);
+    let vilaRatt = rum.length > 0, sagsEget = 0;
+    for (const r of rum) {
+      const pl = SIM.rumPlus(s, r), mi = SIM.rumMinus(s, r);
+      let v = 1; for (const m of mi) if (m.vila) v *= 1 - m.vila; for (const m of pl) if (m.vila) v *= 1 + m.vila;
+      if (Math.abs(SIM.rumVila(s, r) - v) > 1e-12) vilaRatt = false;
+      if (pl.includes(eget)) sagsEget++;
+    }
+    const fragaAndrarInte = JSON.stringify(s.rumPlus ?? null) === sparat && !!s.rumPlus;
+    const iTakter = SIM.TAKTER.some(t => t.namn === 'rummens plus' && t.sek === 3600);
+    return [
+      [`registret har tre plus (${RUM_PLUS.map(p => p.namn).join(', ')})`, RUM_PLUS.length >= 3 && !!ljust && !!pynt && !!eget],
+      ['varmt och ljust: ett varmt rum med ljus när det är mörkt ute, inte utan ljus', ljust.krav(T('varmt', 'matsal'), true) && !ljust.krav(T('varmt'), false) && !ljust.krav(T('matsal'), true)],
+      ['fint pyntat: ett prytt rum där man sover eller äter, inte en prydd verkstad', pynt.krav(T('prytt', 'sovrum'), false) && pynt.krav(T('prytt', 'matsal'), false) && !pynt.krav(T('prytt', 'verkstad'), false)],
+      ['eget rum: ett sovrum utan annan funktion; ett sovrum med kök, verkstad eller sovsal är inget eget rum', eget.krav(T('sovrum', 'varmt', 'prytt'), false) && !eget.krav(T('sovrum', 'kok', 'hydda'), false) && !eget.krav(T('sovrum', 'verkstad'), false) && !eget.krav(T('sovsal'), false)],
+      ['en ny grundtagg i RUMSTYPER räknas som en annan funktion utan att pluset ändras', nyDelar],
+      ['eget rum vilar man bättre i, varmt och pyntat ger en tanke', (eget.vila ?? 0) > 0 && (ljust.tanke ?? 0) > 0 && (pynt.tanke ?? 0) > 0],
+      [`i testbyn följer vilan i rummen både minus och plus (${rum.length} rum, ${sagsEget} eget rum)`, vilaRatt],
+      ['plusen räknas vid timmens början av en rad i TAKTER och sparas i byn; frågan (husfliken, vilan) ändrar inget', iTakter && fragaAndrarInte],
+    ];
+  },
+};
 SCENARIER.rumstyper = {
   text: 'Steg 7.2.1: rummen räknas fram och funktionen sitter på rummet, inte på hela huset. Registret RUMSTYPER ger rummet en tagg för varje krav det uppfyller, och taggar som passar dåligt ihop ger ett minus',
   kor: () => {
@@ -1723,7 +1769,7 @@ SCENARIER.arvsskatt = {
     die(s, a, 'drap');
     const tog = s.stat?.arvsskattVarde ?? 0, arv = ownsAmount(s, c, 'silver') - c0, femtedel = (tog + arv) / 5;
     const iTax = s.log.findIndex(e => e.text.startsWith('Byn tog saker värda') && e.text.includes(a.name)), iArv = s.log.findIndex(e => e.text.includes('ärvde') && e.text.includes(a.name));
-    const kron = (s.hist?.kronika ?? []).some(k => k[1] === `Byn tog saker värda ${Math.round(tog)} i arvsskatt efter ${a.name}.` && k[2] === 'arv');
+    const kron = (s.hist?.kronika ?? []).some(k => k[1] === `Byn tog saker värda ${antal(tog / SIM.grundvarde('silver'), 'silver')} i arvsskatt efter ${a.name}.` && k[2] === 'arv');
     // ett dödsbo som bara är ett hus ger inget
     byggare(s); planBuild(s); byggKlart(s);
     const h = housesOf(s)[0]; h.ag = b.id; touch(s);

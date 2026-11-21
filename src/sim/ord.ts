@@ -52,6 +52,7 @@ export const lista = (l: string[], max = 4) => l.length <= max ? och(l) : `${l[0
 // [artikel, ental, flertal] med gemen: där namnet i SAKER inte går att räkna (harkött, hö) står ett mått framför
 type Ord = readonly [art: 'en' | 'ett', ental: string, flertal: string];
 const SAKORD: Record<string, Ord> = {
+  bikupa: ['en', 'bikupa', 'bikupor'], // byns ägda stationer som ärvs och räknas ihop (arv.ts, steg 12.1.199)
   bar: ['ett', 'bär', 'bär'], rotter: ['en', 'rot', 'rötter'], kott: ['en', 'bit harkött', 'bitar harkött'], fisk: ['en', 'bit fiskkött', 'bitar fiskkött'],
   svamp: ['en', 'svamp', 'svampar'], ved: ['ett', 'vedträ', 'vedträn'], grenar: ['en', 'gren', 'grenar'], torrgras: ['en', 'famn hö', 'famnar hö'],
   kol: ['en', 'bit kol', 'bitar kol'], flinta: ['en', 'flinta', 'flintor'], yxa: ['en', 'flintyxa', 'flintyxor'], fiskespjut: ['ett', 'träspjut', 'träspjut'],
@@ -72,6 +73,7 @@ const SAKORD: Record<string, Ord> = {
   grillfisk: ['en', 'grillad fisk', 'grillade fiskar'], grillkott: ['en', 'bit grillat kött', 'bitar grillat kött'], torrkott: ['en', 'bit torkat kött', 'bitar torkat kött'],
   torrfisk: ['en', 'torkad fisk', 'torkade fiskar'], talgljus: ['ett', 'talgljus', 'talgljus'], talt: ['ett', 'tält', 'tält'], packsadel: ['en', 'packsadel', 'packsadlar'], ridsadel: ['en', 'ridsadel', 'ridsadlar'], vagn: ['en', 'vagn', 'vagnar'], vaxljus: ['ett', 'vaxljus', 'vaxljus'], fackla: ['en', 'fackla', 'facklor'], slanda: ['en', 'slända', 'sländor'], kalke: ['en', 'kälke', 'kälkar'], slade: ['en', 'släde', 'slädar'], levoxe: ['en', 'oxe', 'oxar'], levhast: ['en', 'häst', 'hästar'], kulting: ['en', 'kulting', 'kultingar'], slaktgris: ['en', 'slaktad gris', 'slaktade grisar'], bur: ['en', 'bur', 'burar'], bagborr: ['en', 'bågborr', 'bågborrar'], hus: ['ett', 'hus', 'hus'], vattensack: ['en', 'vattensäck', 'vattensäckar'],
   rovfron: ['ett', 'rovfrö', 'rovfrön'], rovor: ['en', 'rova', 'rovor'], arter: ['en', 'ärta', 'ärter'], artfron: ['ett', 'ärtfrö', 'ärtfrön'],
+  rokelse: ['en', 'bit rökelse', 'bitar rökelse'], // steg 12.1.48
   silver: ['en', 'bit silver', 'bitar silver'], salt: ['en', 'näve salt', 'nävar salt'], virke: ['ett', 'stycke virke', 'stycken virke'], naver: ['en', 'bit näver', 'bitar näver'],
   vargdel: ['ett', 'vargstycke', 'vargstycken'], radjurdel: ['ett', 'rådjursstycke', 'rådjursstycken'], vildsvindel: ['ett', 'vildsvinsstycke', 'vildsvinsstycken'], vildsvin: ['ett', 'fällt vildsvin', 'fällda vildsvin'], svinkott: ['en', 'bit fläsk', 'bitar fläsk'], svinskinn: ['ett', 'svinskinn', 'svinskinn'], bjorndel: ['ett', 'björnstycke', 'björnstycken'],
   appel: ['ett', 'äpple', 'äpplen'], pilar: ['en', 'pil', 'pilar'], vaxtrest: ['en', 'växtrest', 'växtrester'], bonor: ['en', 'böna', 'bönor'], kalfron: ['ett', 'kålfrö', 'kålfrön'], jordgubbar: ['en', 'jordgubbe', 'jordgubbar'], notter: ['en', 'hasselnöt', 'hasselnötter'], lok: ['en', 'lök', 'lökar'], kal: ['ett', 'kålhuvud', 'kålhuvuden'], // steg 12.1.118: namnen i SAKER som står i plural eller inte går att räkna
@@ -79,11 +81,14 @@ const SAKORD: Record<string, Ord> = {
   krok: ['en', 'krok', 'krokar'], krycka: ['en', 'krycka', 'kryckor'], remsa: ['en', 'remsa', 'remsor'], nal: ['en', 'bennål', 'bennålar'], naverask: ['en', 'näverask', 'näveraskar'], lerkruka_liten: ['en', 'liten lerkruka', 'små lerkrukor'], lerkruka_mellan: ['en', 'mellanstor lerkruka', 'mellanstora lerkrukor'], lerkruka_stor: ['en', 'stor lerkruka', 'stora lerkrukor'],
   skara: ['en', 'skära', 'skäror'], slunga: ['en', 'slunga', 'slungor'], bage: ['en', 'pilbåge', 'pilbågar'], skold: ['en', 'sköld', 'sköldar'], isborr: ['en', 'isborr', 'isborrar'], lie: ['en', 'lie', 'liar'], jarnyxa: ['en', 'järnyxa', 'järnyxor'], jarnkniv: ['en', 'järnkniv', 'järnknivar'], bok: ['en', 'bok', 'böcker'],
 };
+const RATT_ADJ: Record<string, string> = { Rått: 'rå', Enkel: 'enkel', Lagad: 'lagad', Fin: 'fin', Fest: 'festlig' }; // måltidens nivå (MALTIDSNIVA i ratter.ts) som ett ord
 // orden för en sak: ur SAKORD, annars sakens namn i SAKER (samma i ental och flertal)
 export function sakOrd(k: string): Ord {
   const o = SAKORD[k];
   if (o) return o;
-  const d = SAKER[k], n = (d?.namn ?? k).split(' · ')[0].toLowerCase(); // rätterna: "Rotgröt · Lagad" blir "rotgröt"
+  const d = SAKER[k], [namn, niva] = (d?.namn ?? k).split(' · '), n = namn.toLowerCase();
+  // rätterna (steg 12.1.48): "Rotgröt · Fin" blir "en portion fin rotgröt" och "sju portioner fin rotgröt", med måltidens nivå som ett ord
+  if (niva) { const r = `${RATT_ADJ[niva] ?? niva.toLowerCase()} ${n}`; return ['en', `portion ${r}`, `portioner ${r}`]; }
   return [d?.ett ? 'ett' : 'en', n, n];
 }
 // en eller ett framför saken
@@ -143,6 +148,7 @@ export function bestamd(namn: string, ett?: boolean): [string, string] {
 export const GORA: Record<string, string> = {
   rustning: 'sy läderrustningar', skold: 'göra sköldar', bagborr: 'göra bågborrar', slade: 'göra kälkar och slädar', vagn: 'göra vagnar', bage: 'göra pilbågar', slunga: 'göra slungor', horn: 'göra horn', lag: 'stifta lagar', lon: 'betala lön', stenhuggarplats: 'hugga sten', klyvplats: 'klyva plankor', harden: 'lägga härdar', ortkok: 'koka örter', snickarbank: 'snickra', pergament: 'göra pergament', bok: 'binda böcker', skrivpulpet: 'skriva vid en pulpet', naverask: 'vika näveraskar', protes: 'tälja proteser', orte: 'koka örtte', lakesalva: 'koka läkesalva', leksak: 'tälja leksaker', snara: 'sätta snaror', grop: 'gräva fångstgropar', garvning: 'garva skinn', lin: 'odla lin', slanda: 'spinna lin', vavstol: 'väva lintyg', fangstbank: 'göra fällor', mjarde: 'fläta mjärdar', stockvag: 'lägga stockvägar', byggsten: 'bryta byggsten', brygga: 'bygga bryggor',
   sprit: 'bränna sprit', mjod: 'brygga mjöd', kokgrop: 'baka i kokgropar', // steg 10.7.25–10.7.28
+  drejskiva: 'dreja krukor', oljelampa: 'forma oljelampor', sang: 'snickra sängar', stol: 'snickra stolar', laggkar: 'laga tunnor och kar', ost: 'ysta ost', brunn: 'gräva brunnar', utedass: 'bygga utedass', sjukstuga: 'inreda sjukstugor', fyrfat: 'göra fyrfat', // steg 12.1.192
   fagelskramma: 'sätta upp fågelskrämmor', staket: 'sätta staket', kompost: 'gödsla fälten', bakugn: 'baka bröd', kvarnsten: 'mala mjöl', stekhall: 'steka på stekhällen', bryggkar: 'göra vin', ol: 'brygga öl', sadesodling: 'så korn', nat: 'knyta nät', rokeri: 'röka kött och fisk', // steg 9.6.8–9.6.16
   korg: 'fläta korgar', yxa: 'göra flintyxor', fiskespjut: 'tälja träspjut', rep: 'tvinna rep', flintspjut: 'göra flintspjut', metspo: 'göra metspön',
   kniv: 'slå flintknivar', timmervagg: 'bygga timmerhus', slaktbank: 'bygga en slaktbänk', flatarbank: 'bygga en slöjdbänk', halmbadd: 'göra halmbäddar',
@@ -151,7 +157,7 @@ export const GORA: Record<string, string> = {
   slagtra: 'tälja slagträn', scen: 'bygga en scen', trumma: 'göra trummor', benflojt: 'skära benflöjter', lyra: 'göra lyror', kruka: 'bygga upp lerkrukor',
   matta: 'väva mattor', benspade: 'göra benspadar', latrin: 'gräva en latrin', grill: 'bygga en grillställning',
   tork: 'bygga en torkställning', bikupa: 'fläta bikupor', bur: 'bygga burar', odling: 'odla', ledarskap: 'leda byn', fackla: 'göra facklor', skogsvard: 'flytta plantor dit skogen behövs',
-  kolmila: 'kola ved i en mila', blasterugn: 'blåsa järn ur malm', smedja: 'smida järn', vapensmide: 'smida svärd och brynjor', // steg 12.2.1–12.2.9
+  kolmila: 'kola ved i en mila', blasterugn: 'blåsa järn ur malm', smedja: 'smida järn', vapensmide: 'smida svärd och brynjor', las: 'smida lås', // steg 12.2.1–12.2.9 och 12.5.6
 };
 // teknikens namn med gemen till dess id; teknik.ts fyller i det när TEKNIK läses (för det som bara sparat namnet, som p.fame)
 export const TEKNAMN: Record<string, string> = {};

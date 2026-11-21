@@ -10,7 +10,7 @@
 // bufferten är materialet ett behov under Försörjning, och över taket plockar ingen av det (eld.ts, val.ts, projekt.ts).
 // Målen räknas en gång i timmen med arbetarna (arbetsTimme i val.ts) och sparas i s.arbBehov, så att alla lägen räknar likadant.
 import { hoBrist } from './vattenho';
-import { r3 } from './slump';
+import { clamp, r3 } from './slump';
 import { stenTillPlan } from './byggsten';
 import { tamAlder, tamArt, tamdjurOf } from './tamdjur';
 import { SKRIFT } from './skriftTal';
@@ -36,8 +36,9 @@ import { fahusHus } from './slatter';
 import { latrinBrist } from './smuts';
 import { torkBrist } from './matlagning';
 import { DAY, GREN, State, WEEK } from './typer';
-import { TillverkDef } from './tillverka';
+import { TILLVERKA, TillverkDef } from './tillverka';
 import { protesVill } from './protes';
+import { knows } from './teknik';
 
 export const FORRAD = balans('forrad', {
   forsiktig: 0.25, // en försiktig by (seden Förutseende eller påbudet) vill ha så mycket större förråd
@@ -217,12 +218,16 @@ export function hotNu(s: State) {
 }
 // vapnen och rustningen växer med de vuxna och hoten (steg 10.2.75): bas i fred och upp till bas + hot vid fullt hot, andelar av de vuxna
 const vapenVill = (s: State, bas: number, hot: number) => Math.ceil(vuxna(s, ALDER.vuxen) * (bas + hot * hotNu(s)) - 1e-9);
+// tygets plagg görs när någon kan väva eller tyget finns, ullens när det finns ull i något led eller får som ger den (steg 12.1.20)
+// (att någon kan tekniken frågas som i resten av tekniksystemet, knows, steg 12.1.205)
+const tygPlagg = (s: State) => amountOf(s, 'lintyg') + amountOf(s, 'ylle') > 0 || living(s).some(p => knows(p, 'vavstol'));
+const ullPlagg = (s: State) => amountOf(s, 'ylle') > 0 || living(s).some(p => knows(p, 'vavstol')) && (amountOf(s, 'ulltrad') + amountOf(s, 'ull') > 0 || tamdjurOf(s).some(d => !!tamArt(d.art).ull));
 export const REDSKAPMAL: Record<string, (s: State) => number> = {
   spjut: spjutVill,
   metspo: spjutVill, // ett metspö per spjut
   nat: s => Math.ceil(spjutVill(s) / 3), // ett nät på tre fiskare (steg 9.6.16)
   korg: s => perVuxna(s, VILLTAL.korgPerVuxna),
-  nal: s => living(s).some(p => p.skill.lakekonst >= 2 || !!p.tatV?.length) ? 1 : 0, // en bennål när någon kan sy ett sår (steg 9.5.15) eller vill ha ett märke (tatuering.ts, steg 10.7.5)
+  nal: s => living(s).some(p => p.skill.lakekonst >= 2 || !!p.tatV?.length) || living(s).some(p => knows(p, 'smedja')) && harStation(s, 'flatarbank') ? 1 : 0, // en bennål när någon kan sy ett sår (steg 9.5.15) eller vill ha ett märke (tatuering.ts, steg 10.7.5), och en järnnål när någon kan smida och byn syr vid slöjdbänken (steg 12.5.3)
   krycka: s => protesVill(s, 'krycka'), traben: s => protesVill(s, 'traben'), krok: s => protesVill(s, 'krok'), ogonlapp: s => protesVill(s, 'ogonlapp'), // proteserna (steg 9.5.11, protes.ts)
   naverask: s => ortkokKan(s) ? villHaAv(s, 'salva') + villHaAv(s, 'benlim') : 0, // näveraskarna (steg 9.4.14): salvan och limmet som byn vill ha förvaras i dem
   lerkruka: s => Math.round(living(s).reduce((n, p) => n + (villPynt(s, p, 'kruka') ? pyntLust(s, p) : 0), 0)) + // lusten efter en kruka till avtar (steg 10.2.43)
@@ -236,6 +241,10 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   snoskor: s => Math.ceil(living(s).length / VILLTAL.snoskorPer), // några par till dem som går ut i snön
   halsband: s => Math.ceil(living(s).length / VILLTAL.halsbandPer), // det är få som bär smycken
   eldstal: s => living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // ett eldstål när någon kan smida (steg 12.2.12)
+  ullsax: s => tamdjurOf(s).some(d => !!tamArt(d.art).ull) && living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // en ullsax när byn har får och någon kan smida (steg 12.5.2)
+  jarnhacka: s => stenTillPlan(s) > 0 && living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // en järnhacka när byn planerat något av sten och någon kan smida (steg 12.5.4)
+  jarngryta: s => living(s).some(p => !!p.tek?.smedja && !!p.tek?.kruka) ? 1 : 0, // en järngryta när någon kan smida och laga mat i kruka (steg 12.5.5)
+  sag: s => tommaPlatser(s, 'sag'), // en såg vid varje klyvplats som saknar en (steg 12.5.1)
   isborr: s => (s.is?.cm ?? 0) > 0 && living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // en isborr när isen ligger (steg 12.2.11)
   spanne: s => Math.ceil(living(s).length / VILLTAL.halsbandPer), // spännet av järn som halsbandet (steg 12.2.10)
   // ledarens mantel (steg 8.3.14): byn gör en åt den som suttit en tidsålder med mer än hälften av legitimiteten
@@ -243,9 +252,11 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   prastdrakt: s => (s.tron ?? []).filter(t => t.prast !== undefined && t.bud?.some(b => b.id === 'drakt') && (t.sk?.prast ?? 100) >= 34).length, tecken: s => s.tron?.some(t => t.slut === undefined && t.bud?.some(b => b.id === 'tecken')) ? Math.ceil(living(s).filter(p => p.tro !== undefined).length / 3) : 0, // system 8.5
   mask: s => (s.tron ?? []).filter(t => t.prast !== undefined && t.bud?.some(b => b.id === 'drakt') && (t.sk?.prast ?? 100) < 34).length,
   mantel: s => s.styre?.sedan !== undefined && s.now - s.styre.sedan >= WEEK && legitimitet(s).v > 0.5 ? 1 : 0,
-  tunika: s => amountOf(s, 'lintyg') + amountOf(s, 'ylle') > 0 ? living(s).length : 0, skjorta: s => amountOf(s, 'lintyg') + amountOf(s, 'ylle') > 0 ? living(s).length : 0, // ylle sedan steg 9.8.14
+  // tygets plagg (ylle sedan steg 9.8.14): en var när någon kan väva, också innan tyget finns, så att plagget väntar på tyget och
+  // det ärver värdet bakåt till vävningen, spinningen och linet som sås (steg 12.1.20, grodorNu i odling.ts)
+  tunika: s => tygPlagg(s) ? living(s).length : 0, skjorta: s => tygPlagg(s) ? living(s).length : 0,
   hatt: s => living(s).length, // en svalkande hatt var (steg 12.1.34)
-  kappa: s => amountOf(s, 'ylle') > 0 ? living(s).length : 0, sjal: s => amountOf(s, 'ylle') > 0 ? living(s).length : 0, // ullens plagg (steg 9.8.15)
+  kappa: s => ullPlagg(s) ? living(s).length : 0, sjal: s => ullPlagg(s) ? living(s).length : 0, // ullens plagg (steg 9.8.15), när ullen finns eller fåren ger den (steg 12.1.20)
   balte: s => living(s).length, // ett per person (steg 2.3.3)
   axelrem: spjutVill, // en per spjut (steg 7.1.2)
   ryggsack: s => perVuxna(s, VILLTAL.korgPerVuxna), // lika många som korgarna, till dem som samlar (steg 7.1.3)
@@ -259,6 +270,10 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   slade: s => tamdjurOf(s).some(d => tamArt(d.art).styrka) ? 1 : 0, // en släde när byn har ett dragdjur att spänna för (steg 10.10.3)
   fackla: () => 1, // en, den som går ut i mörkret (steg 6.3.6, ljus.ts)
   talgljus: s => ljusPlatser(s).length, // ett till varje bord och hylla inne där folk är vakna i mörker (steg 6.3.8, ljus.ts)
+  sate: s => finareKrok.sate(s), // pallar och stolar till de platser vid borden hemma som familjen har råd att göra finare (steg 12.4.4, mobler.ts)
+  tunna: s => stationerOf(s).filter(t => t.k === 'bryggkar').length, // en tunna till varje bryggkar, där satsen mognar (steg 12.4.6, tunna.ts)
+  penna: s => stationerOf(s).filter(t => t.k === 'skrivpulpet').length, // en fjäderpenna per skrivpulpet (steg 12.4.14, skrift.ts)
+  oljelampa: s => ljusPlatser(s).length, // oljelampan till samma platser (steg 12.4.2): den blir kvar och fylls på
   slanda: () => 1, // en, dem som spinner, och en i vävstolen (steg 7.7.8)
   vattensack: () => 1, // en, den som inte kan gå (steg 2.10.1)
   boll: s => sportFor(s, 'boll'), slagtra: s => sportFor(s, 'slagtra'), mal: s => sportFor(s, 'mal'), // en av varje när byn har vuxna nog till sporten (sport.ts, steg 4.3.1.2)
@@ -278,6 +293,7 @@ export const tillverkVill = (s: State, d: TillverkDef) => arMaterial(d.ger) ? vi
 const TILLVERKVILL: Record<string, (s: State) => number> = {
   ridsadel: s => tamdjurOf(s).filter(d => tamArt(d.art).rids && tamAlder(s, d) >= tamArt(d.art).vuxen).length, // en ridsadel per vuxen häst (steg 11.11.4)
   packsadel: s => behovVill(s.sadelBehov, s.now), // packsadlarna: så många djur som byns största sällskap ville lasta det senaste året (steg 11.11.3)
+  ost: s => amountOf(s, 'ost') + Math.floor(ostKrok.surnar(s) / (TILLVERKA.ysta.vatska?.n ?? 1)) /* mjölken till en ost, ur receptet (steg 12.1.255) */, // osten (steg 12.4.7): mjölken som annars skulle surna
   talt: taltVill, // tälten: så många som byns största sällskap med en natt på vägen behövde det senaste året (steg 11.11.1)
 };
 // tälten byn vill ha: det största behovet bland resorna med en natt som packats det senaste året (ett dygn)
@@ -297,16 +313,34 @@ function langhusBrist(s: State, k: StationSlag) {
   const vill = Math.ceil(sovplatser(s, r) / STATION.bankPer);
   return vill > 0 ? Math.max(0, (vill - har) / vill) : 0;
 }
+// arbetet som väntar vid stationen k (steg 12.1.150), i minuter: projekt.ts fyller i kroken (bristen i projekten för det som görs
+// där gånger receptets minuter), eftersom projekten läser den här filen
+export const koKrok = { vid: (_s: State, _k: StationSlag) => 0 };
+// utan en färdig station vill byn ha en; annars är bristen hur mycket mer som väntar än stationerna hinner (hinner minuter var)
+function koBrist(s: State, k: StationSlag, hinner: number) {
+  const har = stationerOf(s).filter(t => t.k === k && isKlar(t)).length;
+  if (!har) return 1;
+  return clamp(koKrok.vid(s, k) / (har * hinner) - 1, 0, 1);
+}
 export function stationBrist(s: State, k: StationSlag) {
   const d: StationDef = STATIONER[k];
   if (!d.brasa && stationerOf(s).some(t => t.k === k && !isKlar(t))) return 1;
   if (d.tro) return Math.max(0, ...(s.tron ?? []).map(tr => trosMobelBrist(s, tr, k))); // trons möbler i trons hus (steg 10.3.19)
+  if (d.varmer) return finareKrok.fyrfat(s); // fyrfatet i ett rum utan eld (steg 12.4.11, mobler.ts)
+  if (d.sjuk) return finareKrok.sjuk(s); // sjukbäddarna (steg 12.4.10, mobler.ts)
+  if (d.finare) return finareKrok.finare(s, k); // utedasset i stället för latrinen (steg 12.4.9, mobler.ts)
+  if (d.vagga) return finareKrok.vagga(s); // en vagga i varje rum där ett spädbarn sover (steg 12.4.5, mobler.ts)
+  if (d.ersatter) return finareKrok.brist(s, k); // sängen i stället för halmbädden (steg 12.4.3, mobler.ts)
   if (d.hard) return harBrist(s); // härden: ett hus där folk sover utan en härd (steg 7.5.3)
   if (d.langhus) return langhusBrist(s, k); // högsätet och bänkarna i långhuset (steg 10.2.68)
   if (d.utkant?.drag) return kupBrist(s, k); // bikupan (steg 10.10.16)
   if (d.hage) return hoBrist(s); // vattenhon i hagen som inte når vattnet (steg 10.10.30)
-  if (d.perVuxna) return stationerOf(s).filter(t => t.k === k && isKlar(t)).length < Math.max(1, Math.ceil(vuxna(s, ALDER.vuxen) / d.perVuxna)) ? 1 : 0; // slöjdbänken: en per tolv vuxna (steg 12.1.20)
+  if (d.hinner) return koBrist(s, k, d.hinner); // slöjdbänken: arbetet som väntar vid den (steg 12.1.150)
   if (d.fahus) { const n = fahusHus(s).length; return n ? fahusUtanKrubba(s).length / n : 0; } // en krubba i varje fähus (steg 10.2.88)
   return d.pynt ? pyntBrist(s, k) : d.brasa ? brasaBrist(s) : d.sover ? (living(s).length ? utanBadd(s) / living(s).length : 0) : d.platser ? bordBrist(s, k)
     : d.forvar ? forvarBrist(s, k) : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1;
 }
+// sängen i stället för halmbädden (steg 12.4.3): bristen sätts i mobler.ts, som läses efter den här filen
+export const finareKrok = { brist: (_s: State, _k: string) => 0, sate: (_s: State) => 0, vagga: (_s: State) => 0, finare: (_s: State, _k: string) => 0, sjuk: (_s: State) => 0, fyrfat: (_s: State) => 0, toa: (s: State) => latrinBrist(s) };
+// mjölken som annars skulle surna (surnarSnart i vatskor.ts, steg 12.4.7), satt i steg.ts eftersom vatskor.ts läses före den här filen
+export const ostKrok = { surnar: (_s: State) => 0 };

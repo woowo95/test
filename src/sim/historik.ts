@@ -10,6 +10,8 @@ import { formogenheter, rikedomDelar } from './varde';
 import { SAK_LIST, isTool } from './saker';
 import { tingOf } from './agande';
 import { samhallen } from './bin';
+import { tamdjurOf } from './tamdjur';
+import { isSick } from './sjukdom';
 
 // ---------- byns historik ----------
 // Några nyckeltal sparas en gång i timmen (en timme är ca 15 dagar i spelet). Efter en vecka (en tidsålder) slås
@@ -37,6 +39,16 @@ export const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; va
   { id: 'grillat', namn: 'Grillat sedan byns början', hur: 'sist', varde: s => Math.round((s.stat?.grillat as number) ?? 0) },
   { id: 'brant', namn: 'Bränt sedan byns början', hur: 'sist', varde: s => Math.round((s.stat?.brant as number) ?? 0) },
   { id: 'bisamhallen', namn: 'Bisamhällen', hur: 'sist', varde: s => samhallen(s).length }, // steg 10.10.17
+  // fler grafer i Byns tal (steg 12.1.138): hur många det finns just då, och det som räknas sedan byns början i byns statistik
+  { id: 'silver', namn: 'Silver i byn', hur: 'snitt', varde: s => amountOf(s, 'silver') },
+  { id: 'tamdjur', namn: 'Tamdjur', hur: 'snitt', varde: s => tamdjurOf(s).length },
+  { id: 'sjuka', namn: 'Sjuka', hur: 'snitt', varde: s => living(s).filter(p => isSick(p, s.now)).length },
+  { id: 'troende', namn: 'Troende', hur: 'snitt', varde: s => living(s).filter(p => p.tro !== undefined).length },
+  { id: 'fangar', namn: 'Fångar', hur: 'snitt', varde: s => living(s).filter(p => p.fange).length },
+  { id: 'skord', namn: 'Skördat sedan byns början', hur: 'sist', varde: s => Math.round((s.stat?.skord as number) ?? 0) },
+  { id: 'strider', namn: 'Strider sedan byns början', hur: 'sist', varde: s => (s.stat?.strider as number) ?? 0 },
+  { id: 'resor', namn: 'Resor sedan byns början', hur: 'sist', varde: s => (s.stat?.['resa hemma'] as number) ?? 0 },
+  { id: 'bocker', namn: 'Böcker sedan byns början', hur: 'sist', varde: s => (s.stat?.bocker as number) ?? 0 },
 ];
 
 const ny = (): Historik => ({ tal: HISTORIK_TAL.map(t => t.id), tim: [], dygn: [], kronika: [] });
@@ -51,13 +63,13 @@ const histOf = (s: State) => (s.hist ??= ny());
 // som inte står här visas bara när ingen kategori är vald
 export interface KronikaKat { id: string; namn: string; ikon: string; tecken: string; slag: string[] }
 export const KRONIKA_KAT: KronikaKat[] = [
-  { id: 'liv', namn: 'Liv', ikon: 'kk_liv', tecken: '❤️', slag: ['k_fodd', 'k_dog', 'k_dogSpad', 'k_gift', 'k_atergrundad', 'arv', 'flytt', 'utflytt', 'forlat'] }, // utflytt: de som flyttade till en by i världen (steg 11.3.5)
-  { id: 'styre', namn: 'Styre', ikon: 'kk_styre', tecken: '👑', slag: ['ledare', 'k_ledare', 'k_forstaLedare', 'k_utvisad', 'bynamn'] },
-  { id: 'strid', namn: 'Strid', ikon: 'kk_strid', tecken: '⚔️', slag: ['rovare', 'k_vargAnfall', 'k_vargSprang', 'k_vargjakt', 'k_forstaVarg', 'k_bjornAnfall', 'k_bjornSprang', 'k_bjornjakt', 'k_bjornjaktMiss', 'k_forstaBjorn', 'k_skadad'] },
-  { id: 'tro', namn: 'Tro', ikon: 'kk_tro', tecken: '☀️', slag: ['tro'] },
+  { id: 'liv', namn: 'Liv', ikon: 'kk_liv', tecken: '❤️', slag: ['k_fodd', 'k_dog', 'k_dogSpad', 'k_gift', 'k_atergrundad', 'k_djur', 'arv', 'flytt', 'utflytt', 'forlat'] }, // utflytt: de som flyttade till en by i världen (steg 11.3.5)
+  { id: 'styre', namn: 'Styre', ikon: 'kk_styre', tecken: '👑', slag: ['ledare', 'k_ledare', 'k_forstaLedare', 'k_utvisad', 'k_ratt', 'bynamn'] },
+  { id: 'strid', namn: 'Strid', ikon: 'kk_strid', tecken: '⚔️', slag: ['rovare', 'k_rovare', 'k_vargAnfall', 'k_vargSprang', 'k_vargjakt', 'k_forstaVarg', 'k_bjornAnfall', 'k_bjornSprang', 'k_bjornjakt', 'k_bjornjaktMiss', 'k_forstaBjorn', 'k_skadad'] },
+  { id: 'tro', namn: 'Tro', ikon: 'kk_tro', tecken: '☀️', slag: ['tro', 'k_tro'] },
   { id: 'bygge', namn: 'Bygge och uppfinningar', ikon: 'kk_bygge', tecken: '🏠', slag: ['bygge', 'k_husKlar', 'k_uppfann', 'k_forstaEld', 'episk', 'forlust', 'mat'] }, // mat: byns egen rätt (special.ts, steg 10.7.29)
-  { id: 'motgang', namn: 'Motgångar', ikon: 'kk_motgang', tecken: '⚡', slag: ['motgang', 'sjukdom'] },
-  { id: 'grannar', namn: 'Handel och grannar', ikon: 'kk_grannar', tecken: '🤝', slag: ['handel', 'byte', 'gava', 'utbrytning', 'nyhet', 'sandebud', 'uppdrag', 'grannar'] }, // grannar: hemkomsten från en turné (resa.ts) // sandebud: beskeden åt båda hållen (steg 11.6.23); nyhet: nyheter från världen (ort.ts, steg 11.4.13)
+  { id: 'motgang', namn: 'Motgångar', ikon: 'kk_motgang', tecken: '⚡', slag: ['motgang', 'sjukdom', 'k_brand', 'k_tornado', 'k_flod', 'k_epidemi'] },
+  { id: 'grannar', namn: 'Handel och grannar', ikon: 'kk_grannar', tecken: '🤝', slag: ['handel', 'k_handel', 'k_resa', 'byte', 'gava', 'utbrytning', 'nyhet', 'sandebud', 'uppdrag', 'grannar'] }, // grannar: hemkomsten från en turné (resa.ts) // sandebud: beskeden åt båda hållen (steg 11.6.23); nyhet: nyheter från världen (ort.ts, steg 11.4.13)
   { id: 'skrift', namn: 'Skrifter', ikon: 'kk_skrift', tecken: '📜', slag: ['runsten', 'skrift'] }, // stenarna, bladen och böckerna (steg 10.6.8)
   { id: 'fritid', namn: 'Fritid', ikon: 'kk_fritid', tecken: '🎲', slag: ['fritid', 'hedersnamn', 'oknamn', 'slaktnamn', 'k_skadadLek'] },
 ];

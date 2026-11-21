@@ -1,18 +1,19 @@
+import { notis } from './notiser';
 import { stubbeOn } from './stubbar';
 import { tabortBuske } from './buskar';
 import { OMRADE_DELAR, bynsMitt, iByn, omrade, utanforByn } from './omrade';
-import { ALDER, ageOf, alive, count, familjOf, forstaGang, gjort, living, log, ovning, stat, vuxnaOf } from './folk';
+import { ALDER, ageOf, alive, count, familjOf, forstaGang, gjort, living, log, ovning, stat, vuxnaOf, byId, isParent } from './folk';
 import { FYND, richness, takeFrom } from './fynd';
 import { kunnighet } from './ekonomi';
 import { SNABBARE } from './handlingar';
 import { DAY, H, HOUR, HOUR_S, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
-import { clamp } from './slump';
+import { chansTid, clamp } from './slump';
 import { getMap, hash } from './karta';
 import { groundOf } from './mark';
 import { FOREST, VAG } from './vag';
 import { knows, tankePa } from './teknik';
-import { getable, takeMaterial } from './behov';
+import { bynsDel, getable, takeMaterial } from './behov';
 import { utsadeKrok } from './ratter';
 import { freeTools, nTools, wearTool } from './agande';
 import { SAKER } from './saker';
@@ -21,6 +22,7 @@ import { ledig, stationerOf, storlekAv } from './stationer';
 import { amountOf, gain, iHelaForradet } from './lager';
 import { temperature, vaxtFaktor } from './vader';
 import { TORKA } from './torka';
+import { TILLVERKA } from './tillverka';
 import { iVattnetNu } from './sjo';
 import { ISTID, iIstiden, isLight, kalender } from './tid';
 import { tecken } from './religion';
@@ -49,6 +51,7 @@ import { BIN, pollinerad } from './bin';
 // Under torkan vissnar grödan om ägaren inte vattnar den med vattensäcken (steg 3.8.2, torst.ts). Bördighet och fukt kommer i steg 8.3.1, kompost och fler grödor i 8.3.2.
 export const ODLING = balans('odling', {
   villPer: 6, // byn vill ha så mycket av en gröda per invånare; mindre gör grödan mer värd att så (grodorNu)
+  projektVikt: 1, // en gröda vars skörd projekten saknar (också längre fram i kedjan: rått lin, lin, tråd, lintyg) är värd 1 + så här mycket gånger den bristen att så (steg 12.1.20)
   froTakt: 6, // frön per arbetstimme på en mycket rik plats (gånger kunnigheten och SNABBARE; 3 före balansen av fas 2, steg 2.12.2)
   froUttag: 0.1, // varje frö tar så här mycket ur platsen
   froLeta: 0.3, // den som samlar går till de vilda grödorna för att plocka frön med VAL.fronChans, om någon ruta har så här mycket (steg 2.10.11)
@@ -212,11 +215,44 @@ function dygnTillIstid(s: State) {
 // grödorna som kan sås nu, den bästa först: de som hinner mogna före istiden med marginal efter frosttåligheten
 // Vilken gröda som sås avgörs av en poäng över alla rader i GRODOR (steg 9.6.11): skörden per ruta gånger grundvärdet och hur
 // mycket byn saknar av den, för de grödor som hinner mogna före istiden (med större marginal för den som tål mindre frost) och som någon kan odla
+// grödans poäng: skörden per ruta gånger grundvärdet, hur mycket byn saknar av den och det projekten saknar av det som görs av den
+export const grodaPoang = (s: State, g: GrodaSlag, folk = Math.max(1, living(s).length)) => GRODOR[g].perRuta * grundvarde(GRODOR[g].sak) * clamp(1 - amountOf(s, GRODOR[g].sak) / (folk * ODLING.villPer), 0.1, 1) * (1 + ODLING.projektVikt * projektenSaknar(s, GRODOR[g].sak));
 export function grodorNu(s: State): GrodaSlag[] {
   const d = dygnTillIstid(s), folk = Math.max(1, living(s).length);
   const kan = (Object.keys(GRODOR) as GrodaSlag[]).filter(g => ((GRODOR[g] as GrodaDef).plats ?? 'falt') === 'falt' && ((GRODOR[g] as GrodaDef).flerarig && d > 0 || d >= GRODOR[g].dygn + Math.max(ODLING.margMin, ODLING.margBas + ODLING.margFrost * (GRODOR[g].frost - ODLING.margRef))) && /* en flerårig gröda vilar över istiden (steg 9.7.9) */ (!(GRODOR[g] as GrodaDef).tek || living(s).some(p => knows(p, (GRODOR[g] as GrodaDef).tek!))));
-  const poang = (g: GrodaSlag) => GRODOR[g].perRuta * grundvarde(GRODOR[g].sak) * clamp(1 - amountOf(s, GRODOR[g].sak) / (folk * ODLING.villPer), 0.1, 1);
-  return kan.map(g => ({ g, p: poang(g) })).sort((a, b) => b.p - a.p || a.g.localeCompare(b.g)).map(x => x.g);
+  return kan.map(g => ({ g, p: grodaPoang(s, g, folk) })).sort((a, b) => b.p - a.p || a.g.localeCompare(b.g)).map(x => x.g);
+}
+// materialet till kläderna (steg 12.1.20): det projekten saknar (s.projektSaknar, en gång i timmen i projekt.ts) ger värde åt
+// grödan som materialet görs av, som virket till ett hus ger värde åt fällningen. Bristen följer kedjan av recept framåt (det
+// rått lin görs till, det det görs till, högst GJORS_DJUP steg) och räknas bakåt med receptens tal (3 tråd per tyg, 2 lin per
+// tråd); byns del av varje led dras av, som virket till ett hus (steg 12.1.206). Svaret är den största bristen bland det som
+// ännu saknas
+const GJORS_DJUP = 3;
+let gjorsAv: Map<string, { x: string; per: number }[]> | undefined;
+// det som görs av materialet k: saker vars recept tar k, och det som tillverkas av k (TILLVERKA), med hur mycket k en sak tar
+function gorsAv(k: string) {
+  if (!gjorsAv) {
+    gjorsAv = new Map();
+    const lagg = (m: string, x: string, per: number) => { const l = gjorsAv!.get(m) ?? []; if (!l.some(e => e.x === x)) l.push({ x, per }); gjorsAv!.set(m, l); };
+    for (const x in SAKER) { const sk = SAKER[x]!.skaffa; for (const m in sk?.av ?? {}) lagg(m, x, sk!.av![m] / (sk!.ger ?? 1)); }
+    for (const d of Object.values(TILLVERKA)) for (const m in d.av) lagg(m, d.ger, d.av[m] / (d.n || 1));
+  }
+  return gjorsAv.get(k) ?? [];
+}
+export const projektenSaknar = (s: State, k: string) => saknasLed(s, k, 0).b;
+// hur mycket av k som saknas (n), det projekten själva behöver och det som behövs till det som saknas längre fram i kedjan,
+// med byns del av k avdragen, och den största bristen (b) bland det som saknas
+function saknasLed(s: State, k: string, djup: number): { n: number; b: number } {
+  const L = s.projektSaknar;
+  if (!L) return { n: 0, b: 0 };
+  const e = L[k];
+  let beh = e?.beh ?? 0, b = (e?.n ?? 0) > 0 ? e!.b : 0;
+  if (djup < GJORS_DJUP) for (const { x, per } of gorsAv(k)) {
+    const f = saknasLed(s, x, djup + 1);
+    if (f.n > 0) { beh += f.n * per; b = Math.max(b, f.b); }
+  }
+  const n = beh > 0 ? Math.max(0, beh - bynsDel(s, k)) : 0;
+  return { n, b: n > 0 ? b : 0 };
 }
 // kornet (steg 9.6.11): när byn fått sitt första korn av handlarna kommer de som kan odla på sädesodlingen
 export function kornUpptackt(s: State) {
@@ -346,24 +382,26 @@ function familjensFalt(s: State, p: Person) {
   const fri = faltOf(s).find(f => !agareLever(s, f));
   return fri ? [fri] : [];
 }
-// grödan som sås på en ruta: den med högst poäng (grodorNu, steg 9.6.11) som p har frön till
-const grodaRuta = (s: State, p: Person, i?: number) => grodorNu(s).find(g => froRutor(s, p, g) >= 1 && (i === undefined || (GRODOR[g] as GrodaDef).bord === undefined || bordighet(s, i) >= (GRODOR[g] as GrodaDef).bord!)); // en krävande gröda bara på bördig jord (steg 9.7.8)
+// grödan som sås på en ruta: den med högst poäng (grodorNu, steg 9.6.11) som p har frön till. gr = grodorNu(s), som den som frågar
+// för många rutor räknar en gång (steg 12.1.104)
+const grodaRuta = (s: State, p: Person, i?: number, gr = grodorNu(s)) => gr.find(g => froRutor(s, p, g) >= 1 && (i === undefined || (GRODOR[g] as GrodaDef).bord === undefined || bordighet(s, i) >= (GRODOR[g] as GrodaDef).bord!)); // en krävande gröda bara på bördig jord (steg 9.7.8)
 // poängen för arbetet på ruta k: den mogna först (den övermogna mer bråttom), sedan röjning, sådd och grävning
-function rutPoang(s: State, p: Person, f: Falt, k: number) {
+function rutPoang(s: State, p: Person, f: Falt, k: number, gr: () => GrodaSlag[]) {
   const r = rutorAv(f)[k];
   if (r.st === 'mogen') return ODLING.pMogen * (2 - skordAndel(s, f, k));
   if (r.st === 'roja') return iVagen(s, faltRuta(f, k)) ? 0 : ODLING.pRoja;
   if (r.st === 'bereda') return ODLING.pBereda;
-  if (r.st === 'sa') return grodaRuta(s, p, faltRuta(f, k)) ? ODLING.pSa : 0; // en gröda som trivs på just den rutan (steg 9.9.3)
+  if (r.st === 'sa') return grodaRuta(s, p, faltRuta(f, k), gr()) ? ODLING.pSa : 0; // en gröda som trivs på just den rutan (steg 9.9.3)
   return 0;
 }
 // den ruta på fälten fs som ger mest poäng, minus vägen dit (ingen slump: samma i spelet och ikappräkningen)
 function bastaRuta(s: State, p: Person, fs: Falt[], st?: FaltSteg) {
-  let best: { f: Falt; k: number } | undefined, bp = 0;
+  let best: { f: Falt; k: number } | undefined, bp = 0, lista: GrodaSlag[] | undefined;
+  const gr = () => (lista ??= grodorNu(s));
   for (const f of fs) for (let k = 0; k < f.n; k++) {
     const r = rutorAv(f)[k];
     if (st && r.st !== st) continue;
-    const v = rutPoang(s, p, f, k);
+    const v = rutPoang(s, p, f, k, gr);
     if (v <= 0) continue;
     const c = rutaMitt(f, k), poang = v - ODLING.pAvst * Math.hypot(c.x - p.x, c.y - p.y);
     if (!best || poang > bp) { best = { f, k }; bp = poang; }
@@ -413,10 +451,11 @@ function kvarTid(s: State, p: Person, f: Falt, st: FaltSteg) {
 // nästa ruta i steget st på fältet, närmast ruta k (den som arbetar står kvar och tar rutorna i ordning)
 function nastaI(s: State, p: Person, f: Falt, st: FaltSteg, k: number) {
   const r = rutorAv(f);
+  let lista: GrodaSlag[] | undefined;
   for (let d = 0; d < f.n; d++) for (const j of [k + d, k - d]) {
     if (j < 0 || j >= f.n || r[j].st !== st) continue;
     if (st === 'roja' && iVagen(s, faltRuta(f, j))) continue;
-    if (st === 'sa' && !grodaRuta(s, p, faltRuta(f, j))) continue; // ingen gröda trivs på den här rutan: nästa
+    if (st === 'sa' && !grodaRuta(s, p, faltRuta(f, j), (lista ??= grodorNu(s)))) continue; // ingen gröda trivs på den här rutan: nästa
     return j;
   }
   return -1;
@@ -508,8 +547,9 @@ function rutaKlar(s: State, p: Person, f: Falt, k: number) {
     const y = d.perRuta * a * b * sk * po;
     if (forstaGang(s, 'skord_tecken')) tecken(s, p, 'skord'); else if (gavDubbelt(s, f, y)) tecken(s, p, 'dubbelt');
     f.gav = [(f.gav?.[0] ?? 0) + y, (f.gav?.[1] ?? 0) + 1];
+    { const g = a * b * sk * po; if (g >= TANKELAGE.godSkord) skordTanke(s, f, p, 'godSkord'); else if (g <= TANKELAGE.daligSkord) skordTanke(s, f, p, 'missvaxt'); } // (steg 12.1.131)
     if (a > 0) { gain(s, p, d.sak, d.perRuta * a * b * sk * po); gain(s, p, d.fro, froTillbaka(s, f, k, d, r.m) * a); count(s, 'skord', d.perRuta * a * b * sk * po); if (po > 1) count(s, 'pollinerat'); forstaSkorden(s, p, f, d.sak, r.m); } // den första skörden offras (steg 10.3.23)
-    if (forstaGang(s, 'skordForst')) { log(s, `${p.name} skördade byns första ${d.namn.toLowerCase()}.`, 'world', [p.id]); p.fame.push(`Skördade byns första ${d.namn.toLowerCase()}`); }
+    if (forstaGang(s, 'skordForst')) { log(s, `${p.name} skördade byns första ${d.namn.toLowerCase()}.`, 'world', [p.id]); notis(s, 'skord', `${p.name} skördade byns första ${d.namn.toLowerCase()} på fältet.`, [p.id], rutaXY(f, k)); /* (steg 12.1.137) */ p.fame.push(`Skördade byns första ${d.namn.toLowerCase()}`); }
     gain(s, p, 'vaxtrest', 1); // växtresterna (steg 9.7.5)
     f.r![k] = (d as GrodaDef).flerarig ? { st: 'vaxer', g: r.g, v: (d as GrodaDef).ater ?? ODLING.flerAter, fu: r.fu } : { st: 'bereda' }; // en flerårig gröda växer igen (steg 9.7.9), annars grävs jorden upp
   }
@@ -558,11 +598,17 @@ function forlorad(s: State, f: Falt, orsak: keyof typeof FORLUST, rutor?: Set<nu
   const d = GRODOR[r[ks[0]].g!], agare = s.people.find(q => q.id === f.agare);
   log(s, `${FORLUST[orsak].ord} tog ${d.namn.toLowerCase()}na på ${agare ? agare.name + 's' : 'ett'} fält.`, 'world', agare ? [agare.id] : undefined);
   count(s, FORLUST[orsak].stat);
+  skordTanke(s, f, agare, 'missvaxt'); // (steg 12.1.131)
   for (const k of ks) r[k] = { st: 'sa' };
   f.rord = s.now; // gräset börjar ta fältet först nu, när det står utan gröda (inte från sådden)
   sammanfatta(f);
 }
 
+// odlaren och familjen som lever av fältet får tanken om skörden (steg 12.1.131)
+function skordTanke(s: State, f: Falt, odlare: Person | undefined, t: 'godSkord' | 'missvaxt') {
+  const ag = byId(s, f.agare), fam = living(s).filter(q => q === odlare || !!ag && (q === ag || q.id === ag.partner || isParent(ag, q)));
+  for (const q of fam) tanke(q, t, s.now);
+}
 // grödan på fältet brann i en eldsvåda (brand.ts, steg 3.8.5)
 export function faltBrann(s: State, f: Falt) { forlorad(s, f, 'eld'); }
 // tornadon (steg 6.4.11) förstör grödan på rutorna den går över
@@ -572,9 +618,11 @@ export function faltTornado(s: State, rutor: Set<number>) {
 
 // varje timme (steg.ts): grödorna växer ruta för ruta när det är varmt nog och dör i frost eller ruttnar, och ett fält där inget
 // växer och som ingen sköter blir gräs igen. Inget träd växer på rutorna som röjts
-export function stepOdling(s: State) {
+// dt: sekunderna sedan sist (steg 12.1.107: tillväxten, fukten och chanserna räknas per tid)
+export function stepOdling(s: State, dt = 3600) {
+  const tim = dt / 3600;
   kornUpptackt(s);
-  jordTimme(s); // bördigheten och fukten (steg 9.7.2)
+  jordTimme(s, tim); // bördigheten och fukten (steg 9.7.2)
   if (!s.falt?.length) return;
   const temp = temperature(s), istid = iIstiden(kalender(s).ai), g = groundOf(s);
   for (const f of [...s.falt]) {
@@ -586,8 +634,8 @@ export function stepOdling(s: State) {
       for (let k = 0; k < f.n; k++) if ((r[k].st === 'vaxer' || r[k].st === 'mogen') && !(GRODOR[r[k].g!] as GrodaDef).flerarig && (istid || temp < GRODOR[r[k].g!].frost)) frost.add(faltRuta(f, k)); // den fleråriga vilar i stället (steg 9.7.9)
       if (frost.size) forlorad(s, f, 'frost', frost);
       if (s.flod) { const fl = new Set(faltRutor(f).filter(i => iVattnetNu(s, i))); if (fl.size) forlorad(s, f, 'flod', fl); } // steg 3.8.3 (flod.ts)
-      skadedjur(s, f); // fåglarna och hararna (steg 9.7.11)
-      vaxtsjukdom(s, f); // växtsjukdomen (steg 9.7.12)
+      skadedjur(s, f, dt); // fåglarna och hararna (steg 9.7.11)
+      vaxtsjukdom(s, f, dt); // växtsjukdomen (steg 9.7.12)
       const rutt = new Set<number>();
       for (let k = 0; k < f.n; k++) if (r[k].st === 'mogen' && skordAndel(s, f, k) <= 0) rutt.add(faltRuta(f, k));
       if (rutt.size) forlorad(s, f, 'rota', rutt);
@@ -595,7 +643,7 @@ export function stepOdling(s: State) {
       const torr = new Set<number>();
       for (let k = 0; k < f.n; k++) if (r[k].st === 'vaxer' && (r[k].fu ?? 1) <= 0) torr.add(faltRuta(f, k));
       if (torr.size) forlorad(s, f, 'torka', torr);
-      if (temp > ODLING.vaxGrad && !istid) for (const x of r) if (x.st === 'vaxer' && x.sj === undefined) { /* en sjuk planta växer inte (steg 9.7.12) */ x.v = Math.min(1, (x.v ?? 0) + vaxtFaktor(s) * fuktFaktor(x.fu, GRODOR[x.g!].fukt) * kravFaktor(s, f, r.indexOf(x), x.g!, temp) / (GRODOR[x.g!].dygn * 24)); if (x.v >= 1) { x.st = 'mogen'; x.m = s.now; x.v = undefined; } } // fortare i blöt mark (steg 2.11.1)
+      if (temp > ODLING.vaxGrad && !istid) for (const x of r) if (x.st === 'vaxer' && x.sj === undefined) { /* en sjuk planta växer inte (steg 9.7.12) */ x.v = Math.min(1, (x.v ?? 0) + vaxtFaktor(s) * fuktFaktor(x.fu, GRODOR[x.g!].fukt) * kravFaktor(s, f, r.indexOf(x), x.g!, temp) * tim / (GRODOR[x.g!].dygn * 24)); if (x.v >= 1) { x.st = 'mogen'; x.m = s.now; x.v = undefined; } } // fortare i blöt mark (steg 2.11.1)
       sammanfatta(f);
       continue;
     }
@@ -725,18 +773,18 @@ export const bordSkord = (s: State, i: number) => JORD.minSkord + (1 - JORD.minS
 export const fuktAv = (f: Falt, k: number) => rutorAv(f)[k]?.fu ?? 0.5;
 // närheten till vatten (0–1): 1 vid stranden
 const vattenNara = (s: State, i: number) => JORD.torrMark + (1 - JORD.torrMark) * clamp(1 - djupOf(s.seed).land[i] / JORD.naraRutor, 0, 1); // fukten jorden dras mot
-function jordTimme(s: State) {
+function jordTimme(s: State, tim: number) {
   const temp = temperature(s), regn = vaderNu(s).nb > 0, torka = !!s.sjoTorr?.pa, odlat = new Set<number>();
   for (const f of faltOf(s)) {
     const r = rutorAv(f);
     for (let k = 0; k < f.n; k++) {
       const i = faltRuta(f, k), x = r[k], fu = x.fu ?? vattenNara(s, i) * 0.5 + 0.25;
       // under torkan regnar det inte och sjöarna sjunker: fukten sjunker så att en blöt ruta är torr på TORKA.fuktTim timmar
-      x.fu = torka ? clamp(fu - 1 / TORKA.fuktTim, 0, 1) : clamp(fu + (regn ? JORD.regn : 0) - JORD.torka * Math.max(0.2, 1 + (temp - 15) / 10) + JORD.nara * (vattenNara(s, i) - fu), 0, 1);
+      x.fu = torka ? clamp(fu - tim / TORKA.fuktTim, 0, 1) : clamp(fu + ((regn ? JORD.regn : 0) - JORD.torka * Math.max(0.2, 1 + (temp - 15) / 10) + JORD.nara * (vattenNara(s, i) - fu)) * tim, 0, 1);
       if (x.st === 'vaxer' || x.st === 'mogen') odlat.add(i);
     }
   }
-  for (const k in s.bord ?? {}) { const i = Number(k); if (odlat.has(i)) continue; const v = s.bord![i] + JORD.ater / 24; if (v >= 1) delete s.bord![i]; else s.bord![i] = v; }
+  for (const k in s.bord ?? {}) { const i = Number(k); if (odlat.has(i)) continue; const v = s.bord![i] + JORD.ater * tim / 24; if (v >= 1) delete s.bord![i]; else s.bord![i] = v; }
 }
 // skörden tar av bördigheten på rutan
 function utarma(s: State, i: number) { (s.bord ??= {})[i] = Math.max(0, bordighet(s, i) - JORD.skord); }
@@ -815,13 +863,13 @@ export const SKADEDJUR = balans('skadedjur', {
   min: 10, // minuter för att sätta upp en fågelskrämma, av grenar och hö
 });
 export const harSkramma = (s: State, f: Falt) => (s.skramma ?? []).includes(f.id);
-function skadedjur(s: State, f: Falt) {
+function skadedjur(s: State, f: Falt, dt: number) {
   const r = rutorAv(f), h = Math.floor(s.now / HOUR), fagel = new Set<number>(), hare = new Set<number>(), stangt = faltInhagnat(s, f), skramma = harSkramma(s, f);
   for (let k = 0; k < f.n; k++) {
     if (r[k].st !== 'vaxer' || (GRODOR[r[k].g!] as GrodaDef).flerarig) continue;
     const i = faltRuta(f, k), u = hash(s.seed ^ 0x3a17, i, h), fro = (r[k].v ?? 0) < SKADEDJUR.fro;
-    if (fro && !skramma && u < SKADEDJUR.fagel) fagel.add(i);
-    else if (!fro && !stangt && u < SKADEDJUR.hare * (0.3 + Math.min(1.2, richness(s, 'jakt', i % W, Math.floor(i / W))))) hare.add(i);
+    if (fro && !skramma && u < chansTid(SKADEDJUR.fagel, 3600, dt)) fagel.add(i);
+    else if (!fro && !stangt && u < chansTid(SKADEDJUR.hare * (0.3 + Math.min(1.2, richness(s, 'jakt', i % W, Math.floor(i / W)))), 3600, dt)) hare.add(i);
   }
   if (fagel.size) forlorad(s, f, 'faglar', fagel);
   if (hare.size) forlorad(s, f, 'harar', hare);
@@ -850,7 +898,7 @@ export const VAXTSJUK = balans('vaxtsjuk', {
   samma: 1.5, // ... gånger 1 + samma × andelen av fältets grödor som är samma gröda
   dygn: 1.5, // så många dygn tills en sjuk planta dör
 });
-function vaxtsjukdom(s: State, f: Falt) {
+function vaxtsjukdom(s: State, f: Falt, dt: number) {
   const r = rutorAv(f), h = Math.floor(s.now / HOUR), vx = r.filter(x => x.st === 'vaxer' || x.st === 'mogen'), dod = new Set<number>();
   if (!vx.length) return;
   for (let k = 0; k < f.n; k++) {
@@ -860,9 +908,11 @@ function vaxtsjukdom(s: State, f: Falt) {
     const grannar = [k - 1, k + 1, k - f.w, k + f.w].filter(j => j >= 0 && j < f.n && r[j].sj !== undefined).length;
     const samma = vx.filter(y => y.g === x.g).length / vx.length;
     const risk = VAXTSJUK.risk * Math.max(0, 1 + VAXTSJUK.fukt * ((x.fu ?? 0.5) - 0.5)) * (1 + VAXTSJUK.granne * grannar) * (1 + VAXTSJUK.samma * samma);
-    if (hash(s.seed ^ 0x5b1c, faltRuta(f, k), h) < risk) { x.sj = s.now; count(s, 'vaxtsjuk'); if (forstaGang(s, 'vaxtsjuk')) log(s, `En sjukdom har kommit på grödan på ett fält. De sjuka plantorna vissnar.`, 'world'); }
+    if (hash(s.seed ^ 0x5b1c, faltRuta(f, k), h) < chansTid(risk, 3600, dt)) { x.sj = s.now; count(s, 'vaxtsjuk'); if (forstaGang(s, 'vaxtsjuk')) log(s, `En sjukdom har kommit på grödan på ett fält. De sjuka plantorna vissnar.`, 'world'); }
   }
   if (dod.size) forlorad(s, f, 'sjukdom', dod);
 }
 utsadeKrok.av = utsade;
 import { paMyr } from './myr'; // inget fält på myren (steg 12.1.1)
+import { TANKELAGE } from './tankelage';
+import { tanke } from './tankar';

@@ -17,7 +17,7 @@ export const STATIONSELD = balans('stationseld', {
 // burn = ved i timmen, max = så många ved som ryms, varme/radie = hur mycket och hur långt den värmer (0 = inte alls),
 // tim = så många timmar elden behöver brinna för arbetet act (utöver arbetet självt), kravs = arbetet går inte utan elden
 // med = elden finns bara när stationen har det tillbehöret (brännpannan på bryggkaret), acts = bara de arbetena behöver elden
-export interface EldStation { burn: number; max: number; varme: number; radie: number; tim?: (s: State, t: Station) => number; kravs: boolean; med?: string; acts?: string[]; bransle?: string } // bransle = det elden brinner på, annars ved (ässjan i smedjan brinner på kol, steg 12.2.4); burn och max räknas i det
+export interface EldStation { burn: number; max: number; varme: number; radie: number; tim?: (s: State, t: Station) => number; kravs: boolean; med?: string; acts?: string[]; bransle?: string; gnistor?: number } // gnistor = elden gnistrar så här stor del som lägerelden (fyrfatet, steg 12.4.11; ingen = inte alls) // bransle = det elden brinner på, annars ved (ässjan i smedjan brinner på kol, steg 12.2.4); burn och max räknas i det
 export const ELDSTATIONER: Record<string, EldStation> = {
   ortkok: { burn: 1, max: 3, varme: 0.35, radie: 2.5, kravs: true }, // en ved räcker en timme: flera kokningar i rad delar på den
   bakugn: { burn: 1.5, max: 3, varme: 0, radie: 0, tim: () => bakKrok.passivTim(), kravs: true }, // degen gräddas medan elden brinner

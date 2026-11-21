@@ -9,7 +9,7 @@ import { Act, HOUR, Person, State, Task } from './typer';
 import { getable, takeMaterial } from './behov';
 import { count } from './folk';
 import { halvOf } from './agande';
-import { amountOf, capacity, dropLoad, iHelaForradet, iRackhall, load, mayTake, helaAv, narmasteMed, ownsAmount, use, blotUttaget, vedIBordan, forstaMat } from './lager';
+import { amountOf, capacity, dropLoad, iHelaForradet, iRackhall, load, mayTake, helaAv, narmasteMed, ownsAmount, use, type Uttag, vedIBordan, forstaMat } from './lager';
 import { vardHamtas } from './halsa';
 import { fartVid, halvbyggd, nastaAv, stationDef, tillbehorDef } from './stationer';
 import { PROJEKT } from './projekt';
@@ -66,7 +66,7 @@ HAMTAS.tvinna = { av: (s, p, tk) => { const n = Math.min((tk.until - s.now) / HO
 
 // matlagningen (matlagning.ts): råvarorna till rätten, stekhällen, degen, kokgropen, grillen och torkställningen
 const satt = (av: [string, number][]) => { const ut: Record<string, number> = {}; for (const [k, n] of av) ut[k] = (ut[k] ?? 0) + n; return ut; };
-HAMTAS.koka_mat = { av: (s, p) => { const r = kokRecept(s, p); return r && satt([[r.huvud, RATT.huvud], [r.andra, RATT.andra], ...(r.smak ? [[r.smak, RATT.smak] as [string, number]] : [])]); } };
+HAMTAS.koka_mat = { av: (s, p) => { const r = kokRecept(s, p); return r && satt([[r.huvud, RATT.huvud * r.satser], [r.andra, RATT.andra * r.satser], ...(r.smak ? [[r.smak, RATT.smak * r.satser] as [string, number]] : [])]); } }; // järngrytan tar dubbel sats (steg 12.5.5)
 HAMTAS.steka = { av: (s, p) => { const r = stekRecept(s, p); return r && satt([[r.huvud, STEK.huvud], ['talg', STEK.talg], ...(r.smak ? [[r.smak, RATT.smak] as [string, number]] : [])]); } };
 HAMTAS.baka = { av: () => ({ mjol: BAK.mjol }) };
 HAMTAS.gropa = { av: (s, p) => { const r = festRecept(s, p); return r && satt(r.av); } };
@@ -158,11 +158,11 @@ export function hamtat(s: State, p: Person, tk: Task) {
       // bara hela saker bärs, för varje ägare: en ägares del av en sak (påbörjad) blir kvar som påbörjad
       // det som är en annan ägares (kyrkans mat vid högtiden) tas av hens, resten som vanligt
       const fk = agareAv(fran, k, tk), nf = fk === undefined ? 0 : typeof fran === 'object' ? Math.min(v, Math.ceil(fran[k]![1] - (tk.ag?.[k]?.[fk] ?? 0) - 1e-9)) : v;
-      const had = tk.items?.[k] ?? 0, b0 = blotUttaget();
-      const a = nf > 0 ? use(s, p, k, nf, true, fk) : {}, b = v - sumOf(a) > 1e-9 && (typeof fran === 'object' || fk === undefined) ? takeMaterial(s, p, k, v - sumOf(a), byns) : {};
+      const had = tk.items?.[k] ?? 0, ut: Uttag = { blot: 0 };
+      const a = nf > 0 ? use(s, p, k, nf, true, fk, ut) : {}, b = v - sumOf(a) > 1e-9 && (typeof fran === 'object' || fk === undefined) ? takeMaterial(s, p, k, v - sumOf(a), byns, undefined, ut) : {};
       const d = helaAv(s, k, { ...a, ...Object.fromEntries(Object.entries(b).map(([o, x]) => [o, x + (a[+o] ?? 0)])) }), g = sumOf(d);
       if (g <= 1e-9) continue;
-      if (k === 'ved') vedIBordan(tk, had, g, blotUttaget() - b0); // den blöta veden är blöt i bördan också (steg 12.1.55)
+      if (k === 'ved') vedIBordan(tk, had, g, ut.blot); // den blöta veden är blöt i bördan också (steg 12.1.55)
       (tk.items ??= {})[k] = (tk.items[k] ?? 0) + g; addDel((tk.ag ??= {})[k] ??= {}, d); fick += g;
     }
   });

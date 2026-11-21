@@ -4,7 +4,7 @@ import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
 import { STUBBILDER } from '../stubbilder';
 import { ritaHus } from './husbild';
-import { smutsGrad, smutsIkon } from './slitbild';
+import { morkIkon, smutsGrad, smutsIkon } from './slitbild';
 import { outPilesAt, piles, s, sakVar, ui, uppgiftVid } from './lage';
 import { Ikoner, TS, figurLayer, mattLayer, overG, pileLayer, rokLayer, structG } from './scen';
 import { eldBild, gnistBild, rokBild } from './animation';
@@ -269,7 +269,7 @@ export function drawStructures(t: number) {
         // örtkökets delar (Björns val, steg 11.14.1): härden ur version 1, torkstället och bänken ur version 2. Den stående delen
         // (en ruta bred) ses från öster, den liggande (vriden) från söder
         const ik = q.del?.ikon, b = ik && (KARTBILDER[ik] ? ik : KARTBILDER[ik + (q.w < q.h ? '_oster' : '_soder')] ? ik + (q.w < q.h ? '_oster' : '_soder') : undefined);
-        if (b) { const kb = KARTBILDER[b]!, x = q.x * TS + ((q.w * TS - kb.w) >> 1), y = (q.y + q.h) * TS - kb.h - (ik === 'ortkok_hard' ? (q.h * TS - kb.h) >> 1 : 0); pileIcons.add('kb_' + b, x, y, 1); if (st.delar[q.i]?.kvar) overG.beginFill(0x24201d, 0.45).drawRect(q.x * TS, q.y * TS, q.w * TS, q.h * TS).endFill(); continue; }
+        if (b) { const kb = KARTBILDER[b]!, x = q.x * TS + ((q.w * TS - kb.w) >> 1), y = (q.y + q.h) * TS - kb.h - (ik === 'ortkok_hard' ? (q.h * TS - kb.h) >> 1 : 0); pileIcons.add(st.delar[q.i]?.kvar ? morkIkon('kb_' + b) : 'kb_' + b, x, y, 1); /* den obyggda delen mörkare i paletten (steg 12.1.223) */ continue; }
         overG.beginFill(0x3f2415).drawRect(q.x * TS, q.y * TS, q.w * TS, q.h * TS).endFill().beginFill(!st.delar[q.i]?.kvar ? 0x7d5b40 : 0x5e3c24).drawRect(q.x * TS + 1, q.y * TS + 1, q.w * TS - 2, q.h * TS - 2).endFill();
       }
       if (!isKlar(st)) framsteg(st.x * TS + storlekAv(st).w * TS / 2, st.y * TS + 3, stationKlar(st));
@@ -289,7 +289,7 @@ export function drawStructures(t: number) {
     if ((st.q ?? 0) >= MASTERVERK) glans(st.x * TS + w - 3, st.y * TS + 3, t, st.id, st.q === PERFEKT);
     // stubbarna (Björn valde den korta stocken efter v89) är en ruta stora: framför bänken och runt bordet
     if (d?.sitt) pileIcons.add(SITT, st.x * TS + w / 2 - TS / 2, (st.y + bh) * TS, TS / iconCanvas(SITT).width);
-    for (const q of bordPlatser(st)) pileIcons.add(SITT, q.x * TS, q.y * TS, TS / iconCanvas(SITT).width);
+    bordPlatser(st).forEach((q, i) => { const k = st.sate?.[i] && hasIcon('kb_' + st.sate[i]) ? 'kb_' + st.sate[i] : SITT; pileIcons.add(k, q.x * TS, q.y * TS, TS / iconCanvas(k).width); }); // pallen och stolen i stubbens ställe (steg 12.4.4)
     for (const k of st.med ?? []) { const b = 'kb_' + tillbehorDef(k)?.ikon + v; if (kb && hasIcon(b)) pileIcons.add(b, x0, y0, 1); else pileIcons.add(tillbehorDef(k)?.ikon + '_karta' + v, x0, y0, 2); } // tillbehören i den (skinnfällen i bädden), i bildstilen lagd ovanpå bädden
     if (st.tork?.length) hangande(st, x0, y0);
     const yta = (v ? YTA[st.k]?.v : YTA[st.k]) ?? { x: 2, y: 2 };
@@ -304,6 +304,8 @@ export function drawStructures(t: number) {
     const vagg = u.vx !== undefined, k = (vagg ? 'kb_uppsatt_vagg' : 'uppsatt_mark') + (u.tand ? '_tand' : ''), c = iconCanvas(k); // på väggen sitter den i en hållare (steg 9.2.11)
     pileIcons.add(k, u.x * TS + ((TS - c.width) >> 1) + (u.vx ?? 0) * 5, u.y * TS + TS - 2 - c.height + (u.vy ?? 0) * 5, 1);
   }
+  const hf = s.handlare?.fackla; // handlarens fackla vid lägret (steg 12.1.152), som en uppsatt
+  if (hf) { const c = iconCanvas('uppsatt_mark_tand'); pileIcons.add('uppsatt_mark_tand', hf.x * TS + ((TS - c.width) >> 1), hf.y * TS + TS - 2 - c.height, 1); }
   // talgljusen på borden och hyllorna (steg 6.3.8, ljus.ts): mitt på möbeln, två utseenden efter möbeln, det tända med lågan
   for (const l of s.ljus ?? []) {
     const st = stationById(s, l.st);
@@ -434,7 +436,7 @@ function igenvuxen(g: { x: number; y: number }) {
 // bildstenen (steg 10.7.1): samma sten med målade bilder i stället för runbandet, en figur med spjut och ett djur
 function runstenBild(x: number, y: number, bild = false) {
   const X = x * TS, Y = y * TS, gr = structG, u = TS / 16;
-  gr.beginFill(0x24201d, 0.35).drawEllipse(X + TS / 2, Y + TS - 2 * u, 5 * u, 1.5 * u).endFill();
+  gr.beginFill(0x21290d).drawEllipse(X + TS / 2, Y + TS - 2 * u, 5 * u, 1.5 * u).endFill(); // skuggan i paletten: gräset ett steg mörkare (MORKARE[1]), inte genomskinlig (steg 12.1.168)
   gr.beginFill(0x8a9c9e).drawPolygon([X + 5 * u, Y + TS - 2 * u, X + 4.5 * u, Y + 6 * u, X + 6 * u, Y + 2 * u, X + 10 * u, Y + 1.5 * u, X + 11.5 * u, Y + 5 * u, X + 11 * u, Y + TS - 2 * u]).endFill();
   gr.beginFill(0x61767a).drawRect(X + 10 * u, Y + 4 * u, 1.5 * u, TS - 6 * u).endFill();
   if (bild) {

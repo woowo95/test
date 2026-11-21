@@ -2,6 +2,8 @@ import type * as PIXI from 'pixi.js';
 import { type Kampe } from '../sim';
 import { s, vidNyBy } from './lage';
 import { nollstallSlag, streckNu, taEmotSlag } from './stridbild';
+import { fargTal, narmast } from '../palett';
+const TRAFF = fargTal(narmast('#a14808')), MISS = fargTal(narmast('#dad0bb')); // slagens streck, i palettens toner
 vidNyBy.push(nollstallSlag);
 
 // Striderna på kartan i bilden (steg 10.1.5): slagen som sker ritas som streck mellan den som slår och den som träffas
@@ -13,7 +15,9 @@ export function ritaSlagen(gr: PIXI.Graphics, nu: number, TS: number) {
   taEmotSlag(nu);
   for (const { h, kvar } of streckNu(nu)) {
     const traff = h.utfall === 'traff' || h.utfall === 'vada';
-    gr.lineStyle(traff ? 2 : 1, traff ? 0xa14808 : 0xdad0bb, Math.max(0.2, kvar)).moveTo(h.fx * TS, h.fy * TS - 4).lineTo(h.mx * TS, h.my * TS - 4).lineStyle(0);
+    // strecket tonar bort i steg (smalare, sedan kortare) i stället för med genomskinlighet
+    const del = kvar > 1 / 3 ? 1 : 0.5;
+    gr.lineStyle(traff && kvar > 2 / 3 ? 2 : 1, traff ? TRAFF : MISS, 1).moveTo(h.fx * TS, h.fy * TS - 4).lineTo((h.fx + (h.mx - h.fx) * del) * TS, (h.fy + (h.my - h.fy) * del) * TS - 4).lineStyle(0);
   }
 }
 

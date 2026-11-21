@@ -124,7 +124,7 @@ export const AGES_BORJAR = ['Istiden har börjat. Sjön fryser och maten blir kn
 
 export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar brinner fort
 
-export interface Thought { text: string; v: number; until: number }
+export interface Thought { text: string; v: number; until: number; k?: string } // k: raden i TANKAR (steg 12.1.234)
 // Det en person håller på med (p.task, sparas med personen). Fälten utan frågetecken finns alltid
 export interface Task {
   paus?: true; // vilan är en paus när inget annat lockar, inte trötthet (steg 11.1.72)
@@ -132,6 +132,7 @@ export interface Task {
   arbTid?: number; // ett arbete som räknas från framkomsten (framme i ACTS): så lång tid tar det när man är framme (steg 9.2.130)
   mortBete?: 0 | 1; // fiske: en mört används som bete (steg 7.4.4)
   blotVed?: number; // så stor del av veden som bärs som är blöt (steg 7.3.4)
+  tog?: Record<string, { n: number; ag: Record<string, number> }>; // bränslet som bärs till elden per sort och vems det var (steg 12.1.215, eld.ts)
   act: Act; // handlingen (handlingar.ts)
   brand?: 'hamta' | 'bar'; kalla?: number; // tända: på väg efter en brand till elden kalla (-1 = lägerelden), eller bär den till eldstaden (steg 10.6.12)
   phase: 'go' | 'do' | 'back'; // på väg dit, arbetar där, på väg hem med det som bärs
@@ -213,7 +214,7 @@ export interface Person {
   blodNotis?: 1; // notisen om att hen snart förblöder är skickad (steg 9.5.14, halsa.ts) // örtteet hjälper motståndet till dess, med teets kvalitet (steg 9.5.8, vatskor.ts)
   bedrift?: import('./rykten').Bevis; // den senaste stora bedriften (steg 10.6.1): stoltheten ger lust att resa en runsten
   sorg?: { namn: string; vem?: number; ord: string; v: number; dygn: number; t0: number; s2?: 1; s3?: 1 }[]; // sorgen i stadier efter en död (steg 9.2.33, liv.ts)
-  tat?: { m: import('./tatuering').TatMotiv; p: import('./tatuering').TatPlats; stil: import('./tatuering').TatStil; t: number; av: number }[]; tatV?: { m: import('./tatuering').TatMotiv; t: number }[]; // tatueringarna och händelserna hen vill märka (steg 10.7.5)
+  tat?: { m: import('./tatuering').TatMotiv; p: import('./tatuering').TatPlats; stil: import('./tatuering').TatStil; t: number; av?: number }[]; tatV?: { m: import('./tatuering').TatMotiv; t: number }[]; // tatueringarna och händelserna hen vill märka (steg 10.7.5)
   framProv?: number; // när hen senast prövade om hen ville uppträda (steg 10.7.9)
   gravBesok?: number; paminnd?: Record<number, number>; // när hen senast stod vid en grav, och när hen påmindes om en död (steg 10.4.8)
   pratArbete?: number; // samtalen hen haft medan hen arbetat (steg 8.1.12)
@@ -263,7 +264,7 @@ export interface Person {
   fange?: { hus: number; t: number; varfor: string; till?: number; av?: number }; // sitter i fängelset (steg 11.12.1, fangelse.ts): huset, sedan när, varför, när hen släpps och vem som dömde (steg 11.12.4)
   paus?: number; // timmarna av vilan som var pauser när inget annat lockade, bleknar som vanorna (steg 11.1.72; resten av vilan är trötthet)
   sjuk?: import('./sjukdom').Sjuk; immun?: Record<string, 1>; // sjukdomen hen har och de hen är immun mot (steg 9.5.1, sjukdom.ts)
-  sickWhy?: string; poisonUntil?: number; stulet?: { av: number; k: string; n: number; l?: boolean }[]; pregnantSince?: number; pregnantBy?: number; lastBirth?: number; guardDay?: number; // pregnantBy: barnets far; guardDay: dygnet hen valdes till nattens vakt
+  sickWhy?: string; poisonUntil?: number; forgiftadT?: number; stulet?: { av: number; k: string; n: number; l?: boolean }[]; pregnantSince?: number; pregnantBy?: number; lastBirth?: number; guardDay?: number; // pregnantBy: barnets far; guardDay: dygnet hen valdes till nattens vakt; forgiftadT: när raden om en förgiftning senast skrevs (steg 12.1.107)
   fiske?: { f: number; n: number; k: number }; // fiske med händerna: försök, napp och fångade fiskar
   gjort?: { h: number; n: Record<string, number>; t: Record<string, number[]> }; // det hen gjort, totalt (n) och per timme det senaste dygnet (t), h = timmen då något räknades sist (gjort i folk.ts, steg 3.10.6)
   tek?: Record<string, number>; // teknik: hur nära personen är att komma på något, 1 = kan det
@@ -273,8 +274,11 @@ export interface Person {
   halvminne?: string[]; // tekniker hen var lärling i när mästaren dog: det hen hunnit lära sig finns kvar i tek (steg 4.2.3.4)
   kunskap?: Record<string, { v: number; t: number }>; // det personen kan (alltid rätt), 0–1, och när det senast användes
   lardomar?: Lardom[]; // det personen tror om platser (kan vara fel, överdrivet eller inaktuellt)
+  ortBorta?: Record<number, number>; // platserna personen vet är borta, med tiden för uppgiften: äldre uppgifter om dem lärs inte (steg 12.1.245, ort.ts)
   raddAkt?: Record<string, number>; // rädslan för en handling efter en olycka, per rad i RADD_AKT (steg 8.4.10)
   thoughts: Thought[];
+  drom?: { k: import('./drommar').DromId; namn?: string };
+  vardadAv?: { id: number; t: number }; // den som vårdade hen senast och när (steg 12.1.134, halsa.ts) // drömmen som blir en tanke när hen vaknar (steg 12.1.132, drommar.ts)
   x: number; y: number; task?: Task;
   fame: string[];
   hand?: import('./personlogg').PersonRad[]; // personens händelser, de senaste (steg 9.2.107, personlogg.ts)
@@ -300,7 +304,7 @@ export interface Person {
   angr?: Anger[]; // skulden efter ett utbrott som gick ut över någon (steg 10.8.1, humor.ts)
   lekt?: number; // när ett barn senast lekte (färre utbrott efteråt, steg 3.2.4)
   morkT?: number; // när hen senast var vaken i mörkret (lite sämre humör en stund, steg 6.3.4, ljus.ts)
-  larm?: import('./rykten').Larm; // det senaste larmet man hört (steg 3.7.11, rykten.ts)
+  larm?: Partial<Record<string, import('./rykten').Larm>>; // larmen man hört, det senaste av varje sort (steg 3.7.11 och 12.1.211, rykten.ts)
   intryck?: import('./rykten').Intryck[]; // det personen tycker att andra är, och varför (steg 3.3, rykten.ts)
   smak?: Record<string, number>; // tycke och smak: 'a:' + arbete, 'm:' + mat eller 'v:' + vapen (steg 3.7.10), -1 till 1 (steg 3.3.5, rykten.ts)
   reservAlltid?: true; // blev ifattsprungen utan reservvapen: tar alltid med ett i strid (steg 3.7.7, strid.ts)
@@ -310,7 +314,7 @@ export interface Person {
 // en upplevelse i barndomen eller vuxenlivet: slaget (UPPLEVELSER i uppvaxt.ts), åldern (år), vad den gjorde med egenskaperna och vem
 // eller vad den gällde
 // v = från vuxenlivet och t = när (steg 4.1.1.2), n = hur mycket den flyttade andligheten (steg 4.1.1.3), b = hur många steg den bleknat (steg 4.1.1.4)
-export interface Upplevelse { k: import('./uppvaxt').UpplevelseTyp; a: number; e: Partial<Record<Stat, number>>; om?: string; v?: 1; t?: number; n?: number; b?: number }
+export interface Upplevelse { rus?: number; /* plus eller minus på lusten till rus (steg 12.1.175, rusLust i rus.ts) */ k: import('./uppvaxt').UpplevelseTyp; a: number; e: Partial<Record<Stat, number>>; om?: string; v?: 1; t?: number; n?: number; b?: number }
 
 // En lärdom om en plats: k = vad, a = område (8×8 rutor), v = hur mycket (eller hur rädd), c = hur säker (0–1),
 // t = när platsen sågs (den som hör det får samma tid; återväxten räknas därifrån), src = vem den hördes av (saknas = egen upplevelse), led = hur många led från den som var där, om = vad som hände.
@@ -450,6 +454,7 @@ export interface State {
   kartStrider?: import('./kartstrid').KartStrid[]; kartStridNr?: number; // striderna som pågår på kartan (steg 10.1.4, kartstrid.ts)
   stegRest?: number; // (äldre sparning: det som var kvar av ett delat slag; tas bort)
   skuld?: number; // sekunder som ska räknas men inte räcker till ett helt slag (step i steg.ts, steg 10.2.14)
+  rumPlus?: Record<string, string[]>; // rummens plus per rum (nyckeln är rummets minsta ruta), räknade vid timmens början (rum.ts, steg 12.1.210)
   takter?: Record<string, number>; // när varje rad i TAKTER räknades sist (steg 10.2.14, steg.ts)
   bjornUndan?: { fran: number; till: number; x0: number; y0: number; x1: number; y1: number }; // björnen går bort efter en strid (steg 9.2.30)
   stationFlytt?: { id: number; x: number; y: number; rot?: 1; vinst: number }; // den station ute som är mest värd att flytta närmare dem som använder den (steg 9.4.8, stationer.ts)
@@ -459,6 +464,7 @@ export interface State {
   testTorr?: 1; // testläget: marken är torkad helt (steg 9.2.24, brand.ts); bara i kopian av byn
   nedslag?: { x: number; y: number; t: number }[]; // blixtens senaste nedslag (steg 9.2.21, brand.ts): gränssnittet ritar blixten där
   retade?: import('./bin').Retat[]; // de uppretade bina (steg 10.10.27, bin.ts)
+  forlustFore?: Partial<Record<import('./tankelage').Olycka, { t: number; v: Record<number, number> }>>; // förmögenheten när en olycka började (steg 12.1.131, tankelage.ts)
   brand?: import('./brand').Brand; // eldsvådan som brinner (steg 3.8.5, brand.ts): rutorna som brinner och det den gjort
   aska?: [number, number][]; // rutorna som brann nyss och när (steg 3.8.5, brand.ts): marken är svart en tid
   sjoTorr?: { niva: number; tomma: number[]; v: number; t: number; pa?: true; regn?: number }; // torkan (steg 3.8.2, torka.ts): så många rutor vid kanten som är torr sjöbotten, sjöarna som torkat ut, ändringsräknaren, när det senast ändrades, om torkan pågår och regnet sedan vattnet steg senast
@@ -535,7 +541,7 @@ export interface Fire {
   brukare?: number; // hur många som hör till elden just nu (stepFire): de mest använda sköts först när veden tryter
   ash?: number; ashUntil?: number; // kolhög efter en utbrunnen eld
   at?: { x: number; y: number }; // var elden står om den flyttats (steg 2.10.4); annars där kartan lade den (getMap(seed).fire)
-  flytt?: { x: number; y: number; varfor: 'plats' | 'vuxit'; gjort?: number; vem?: number; fran?: number }; // elden ska flyttas hit (eldflytt.ts); gjort = arbetet som redan gjorts, vem och fran = den som arbetar nu och sedan när| 'vuxit' }; // elden ska flyttas hit (eldflytt.ts)
+  flytt?: { x: number; y: number; varfor: 'plats' | 'vuxit' }; // elden ska flyttas hit (eldflytt.ts); den som avbryts börjar om
   // en lägereld till (steg 4.5.6.8, s.eldar): numret (task.ref för den som eldar, tänder eller hämtar kol vid den), de som har
   // sin sovplats närmast den (räknas varje timme i brasor.ts), när den slocknade och när ringen lades
   id?: number; folk?: number[]; ut?: number; klar?: number;

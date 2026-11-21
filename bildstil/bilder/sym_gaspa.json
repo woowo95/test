@@ -1,0 +1,32 @@
+{
+ "id": "sym_gaspa",
+ "ritad": 1,
+ "av": "programmeringschatten (platshållare, steg 12.1.192)",
+ "om": "Ett runt ansikte som gäspar med halvslutna ögon och öppen mun.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  ".....kkkkkk.....",
+  "...kkbbbbbbkk...",
+  "..kbbbbbbbbbbk..",
+  ".kbbbbbbbbbbbbk.",
+  ".kbkkkbbbbkkkbk.",
+  "kbbbbbbbbbbbbbbk",
+  "kbbbbbbbbbbbbbbk",
+  "kbbbbbkkkkbbbbbk",
+  "kbbbbkRRRRkbbbbk",
+  ".kbbbkRrrRkbbbk.",
+  ".kbbbbkkkkbbbbk.",
+  "..kbbbbbbbbbbk..",
+  "...kkbbbbbbkk...",
+  ".....kkkkkk.....",
+  "................"
+ ],
+ "pal": {
+  "R": "#742a01",
+  "b": "#bdb39b",
+  "k": "#24201d",
+  "r": "#a14808"
+ }
+}

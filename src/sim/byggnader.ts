@@ -3,7 +3,7 @@ import { fangelseAkut } from './fangelse';
 import { husNytt } from './byggnad';
 import { ALDER, KROPP, ageOf, alive, byId, count, familjOf, living, log } from './folk';
 import { planKlar, planRutor, troshusBestamd, troshusGolv, vuxnaTroende } from './troshus';
-import { Hus, MATERIAL, Rum, bitById, gridOf, housesOf, husById, roofed, shelterOf, touch } from './byggnad';
+import { Hus, MATERIAL, Rum, bitById, gridOf, housesOf, husById, roofed, roomAt, shelterOf, touch } from './byggnad';
 import { heatAt, vedPerDygn } from './eld';
 import { BLOTVED } from './blotved';
 import { eldPlats } from './karta';
@@ -249,6 +249,9 @@ export function mostUrgent(s: State) {
 // Materialet tas av familjens eget först, sedan efter behovsstegen (bygg.ts: takeForHouse). Familjen sover där.
 export { familjOf } from './folk'; // familjen står i folk.ts, så att odlingen också kan läsa den (steg 2.10.13)
 export const husNamn = (namn: string) => /[sxz]$/i.test(namn) ? `${namn} hus` : `${namn}s hus`;
+// husets namn mitt i en mening (steg 12.1.199): en familjs hus heter efter en person (Ingos hus) och behåller den stora
+// bokstaven, annars skrivs det med liten (hyddan, sovsalen, familjens hus)
+export const husIText = (h: { namn: string; fn?: string }) => h.fn === 'familjehus' && / hus$/.test(h.namn) && !h.namn.startsWith('Familjens') ? h.namn : h.namn.toLowerCase();
 // vad familjen äger, i grundvärde: det i förrådet och redskapen
 function formogenhet(s: State, folk: Person[]) {
   const ids = new Set(folk.map(q => q.id));
@@ -322,12 +325,25 @@ function boende(s: State): Boende {
   // första huset (bedTile är undefined). Bara de minsta barnen sover hos sin mor eller far
   const lever = new Set(ppl.map(q => q.id)), agd = new Map<number, number>(), plats = new Map<number, number>();
   for (const t of stationerOf(s)) if (t.ag !== undefined && lever.has(t.ag) && isKlar(t) && stationDef(t.k)?.sover) agd.set(t.y * W + t.x, t.ag);
+  // sjukbäddarna (steg 12.4.10): den som är sjuk eller skadad lägger sig hellre i en ledig sjukbädd, i vilket hus den än står
+  const sjukbaddar = stationerOf(s).filter(t => isKlar(t) && stationDef(t.k)?.sjuk).map(t => t.y * W + t.x);
+  // de med störst behov av att läka får bäddarna först (steg 12.1.235: sjukBehov i mobler.ts), och en liten skada ligger hemma
+  const sjuka = sjukbaddar.length ? ppl.filter(q => sjukKrok.vill(s, q)).map(q => ({ q, b: sjukKrok.behov(s, q) })).sort((a, c) => c.b - a.b || a.q.id - c.q.id) : [];
+  for (const [n, { q }] of sjuka.entries()) { if (n >= sjukbaddar.length) break; plats.set(q.id, sjukbaddar[n]); }
+  const vaggor = stationerOf(s).filter(t => isKlar(t) && stationDef(t.k)?.vagga).map(t => ({ i: t.y * W + t.x, r: roomAt(s, t.x, t.y) })), iVagga = new Set<number>(); // vaggorna (steg 12.4.5)
   const fordela = (tiles: number[], folk: Person[]) => {
     const ids = new Set(folk.map(q => q.id)), fria = tiles.filter(i => !agd.has(i)), rest: Person[] = [], utan: Person[] = [];
     for (const i of tiles) { const o = agd.get(i); if (o !== undefined && ids.has(o) && !plats.has(o)) plats.set(o, i); }
     for (const q of folk) if (!plats.has(q.id)) (ageOf(q, s.now) < ALDER.smabarn ? utan : rest).push(q);
     rest.forEach((q, n) => { if (n < fria.length) plats.set(q.id, fria[n]); });
-    for (const q of utan) { const f = [q.mother, q.father].map(id => id === undefined ? undefined : plats.get(id)).find(i => i !== undefined); if (f !== undefined) plats.set(q.id, f); }
+    for (const q of utan) {
+      const f = [q.mother, q.father].map(id => id === undefined ? undefined : plats.get(id)).find(i => i !== undefined);
+      if (f === undefined) continue;
+      // i en ledig vagga i rummet där föräldern sover, annars hos föräldern (steg 12.4.5)
+      const r = roomAt(s, f % W, Math.floor(f / W)), v = r && vaggor.find(x => x.r === r && !iVagga.has(x.i));
+      if (v) iVagga.add(v.i);
+      plats.set(q.id, v ? v.i : f);
+    }
     return folk.filter(q => !plats.has(q.id) && ageOf(q, s.now) >= ALDER.smabarn);
   };
   const overblivna: Person[] = [];
@@ -377,8 +393,12 @@ export function sovKvar(s: State, r: Rum) {
   return golv - b.ovriga.length * HUS.sovPer;
 }
 // så många som sover under tak men inte i en halmbädd
+// rutan i är en bädd: en sovplats (halmbädden, sängen), vaggan för spädbarnet eller sjukbädden för den sjuke (steg 12.1.256)
+export const baddRuta = (s: State, i: number) => { const st = stationRutor(s); return st.sov.has(i) || st.bara.has(i); };
+// p sover i en bädd (steg 12.1.256): rutan p sover på är en bädd av något slag
+export const soverIBadd = (s: State, p: Person) => { const i = bedTile(s, p); return i !== undefined && baddRuta(s, i); };
 export function utanBadd(s: State) {
-  const b = boende(s), st = stationRutor(s).sov;
+  const b = boende(s), st = { has: (i: number) => baddRuta(s, i) };
   if (!b.gemensamt.length) { let n = Math.max(0, b.ovriga.length - b.gemensamt.length); for (const e of new Set(b.egna.values())) n += Math.max(0, e.folk.length - e.tiles.filter(i => st.has(i)).length); return n; } // (de som sover ute utan bädd)
   let n = Math.min(b.ovriga.length, b.gemensamt.length) - Math.min(b.ovriga.length, b.gemensamt.filter(i => st.has(i)).length);
   for (const [h, e] of new Map([...b.egna.values()].map(e => [e.tiles, e]))) n += Math.min(e.folk.length, h.length) - Math.min(e.folk.length, h.filter(i => st.has(i)).length);
@@ -539,3 +559,5 @@ export function husKlar(s: State, h: Hus) {
   enPerRuta(s);
   log(s, `${stor(iMening(h.namn))} är färdigt. Där ruttnar och slits maten mindre.`, 'world');
 }
+// den som vill ligga i en sjukbädd (steg 12.4.10), satt i mobler.ts (som läses efter den här filen)
+export const sjukKrok = { vill: (_s: State, _p: Person) => false, behov: (_s: State, _p: Person) => 0 };

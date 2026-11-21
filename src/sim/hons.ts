@@ -32,18 +32,20 @@ export function honsDor(s: State, n: number, orsak: string) {
   log(s, `${n === h.n + n ? (n === 1 ? 'Byns enda höna' : `Alla ${tal(n)} hönor`) : stor(antal(n, 'levhons'))}${n === h.n + n ? '' : ' i byns flock'} dog ${orsak}.`, 'world', h.agare !== undefined ? [h.agare] : []);
 }
 
-export function stepHons(s: State) {
+// dt: sekunderna sedan sist (steg 12.1.107)
+export function stepHons(s: State, dt = 3600) {
   kopta(s);
   const h = honsOf(s);
   if (!h) return;
   // flocken strövar runt i byn
   const m = bynsMitt(s), v = rnd(s, 'tamdjur') * Math.PI * 2;
-  let x = h.x + Math.cos(v) * HONS.steg, y = h.y + Math.sin(v) * HONS.steg;
+  const st = HONS.steg * Math.min(1, dt / 3600); // högst ett steg i timmen
+  let x = h.x + Math.cos(v) * st, y = h.y + Math.sin(v) * st;
   const dx = x - m.x, dy = y - m.y, d = Math.hypot(dx, dy);
   if (d > HONS.r) { x = m.x + dx / d * HONS.r; y = m.y + dy / d * HONS.r; }
   if (inMap(Math.floor(x), Math.floor(y)) && !blocked(s, x, y)) { h.x = x; h.y = y; } // inte ut i vattnet eller in i en vägg (steg 9.9.3)
   if (iIstiden(kalender(s).ai)) return;
-  h.agg += h.n * HONS.agg;
+  h.agg += h.n * HONS.agg * dt / 3600;
   const n = Math.floor(h.agg + 1e-9);
   if (n < 1) return;
   h.agg -= n;

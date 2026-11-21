@@ -62,9 +62,11 @@ export function soporKlar(s: State, p: Person) {
   if (kvar < bar0) { count(s, 'soporBurna', bar0 - kvar); if (forstaGang(s, 'sophog')) log(s, `${p.name} bar resterna från slakten och skörden till en sophög i utkanten av byn.`, 'world', [p.id]); }
 }
 // en gång i timmen (steg.ts): resterna på sophögen ruttnar bort
-export function stepSophog(s: State) {
+// dt: sekunderna sedan sist (steg 12.1.107)
+export function stepSophog(s: State, dt = 3600) {
   if (!s.sophog?.n) return;
-  s.sophog.n = Math.max(0, s.sophog.n - s.sophog.n * HOUR / (REST.rutt * DAY) - REST.ruttMin);
+  const tim = dt / 3600;
+  s.sophog.n = Math.max(0, s.sophog.n - (s.sophog.n * HOUR / (REST.rutt * DAY) + REST.ruttMin) * tim);
 }
 
 // ---------- komposten (steg 9.7.6) ----------
@@ -73,7 +75,7 @@ export const komposten = (s: State) => stationerOf(s).find(t => t.k === 'kompost
 export function latrinAttTomma(s: State) {
   if (!komposten(s)) return undefined;
   let best: Station | undefined;
-  for (const l of stationerOf(s)) if (stationDef(l.k)?.gor.includes('toa') && isKlar(l) && (l.fyllt ?? 0) >= STATION.latrinNy && (!best || (l.fyllt ?? 0) > (best.fyllt ?? 0))) best = l;
+  for (const l of stationerOf(s)) if (stationDef(l.k)?.gor.includes('toa') && isKlar(l) && (l.fyllt ?? 0) >= (stationDef(l.k)?.dass ? STATION.latrinNy : 1 - 1e-9) && (!best || (l.fyllt ?? 0) > (best.fyllt ?? 0))) best = l; // en grävd latrin töms först när den är full, eftersom den inte går att använda igen (steg 12.4.9)
   return best;
 }
 // den som tömmer latrinen är klar (KLAR i steg.ts): gropen är tom igen och innehållet ligger i komposten
@@ -82,11 +84,13 @@ export function latrinTomKlar(s: State, p: Person) {
   if (!ko || !l || !isKlar(l) || !(l.fyllt ?? 0)) return;
   const n = Math.max(1, Math.round(REST.latrin * Math.min(1, l.fyllt ?? 0)));
   l.fyllt = 0; ko.kompost = { rest: (ko.kompost?.rest ?? 0) + n, mogna: ko.kompost?.mogna ?? 0 };
+  if (!stationDef(l.k)?.dass) fyllIgen(s, l, false); // en grävd latrin som tömts går inte att använda igen; utedasset står kvar (steg 12.4.9)
   count(s, 'latrinTomd');
   if (forstaGang(s, 'latrinTomd')) log(s, `${p.name} tömde latrinen i komposten, så att ingen ny grop behöver grävas.`, 'world', [p.id]);
 }
 // en gång i timmen: den som odlar kan märka att det växer bättre där resterna legat (tekniken Gödsel) och komposten mognar
-export function stepKompost(s: State) {
+// dt: sekunderna sedan sist (steg 12.1.107)
+export function stepKompost(s: State, dt = 3600) {
   const h = s.sophog;
   if (h && h.n >= REST.upptack && hash(s.seed ^ 0x7c0, Math.floor(s.now / HOUR), 7) < REST.upptackTim) upptack(s, TEK.kompost, p => knows(p, 'odling'), 'godsel', p => `${p.name} märker att det växer bättre där resterna på sophögen har legat.`);
   const ko = komposten(s);
@@ -94,7 +98,7 @@ export function stepKompost(s: State) {
   if (h?.n) { ko.kompost = { rest: (ko.kompost?.rest ?? 0) + Math.floor(h.n), mogna: ko.kompost?.mogna ?? 0 }; h.n = 0; } // sophögen blir komposten
   const c = ko.kompost;
   if (!c || c.rest < REST.kompostRest) return;
-  c.mogna += (temperature(s) > REST.varm ? 1 : REST.kylaTakt) / (REST.kompostDygn * 24);
+  c.mogna += (temperature(s) > REST.varm ? 1 : REST.kylaTakt) * dt / 3600 / (REST.kompostDygn * 24);
   if (c.mogna < 1) return;
   c.mogna = 0; c.rest -= REST.kompostRest;
   put(s, 'kompost', 1); count(s, 'kompostKlar');
@@ -105,3 +109,4 @@ import { TEK, knows, upptack } from './teknik';
 import { hash } from './karta';
 import { temperature } from './vader';
 import { put } from './lager';
+import { fyllIgen } from './smuts';

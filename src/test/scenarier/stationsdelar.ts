@@ -39,7 +39,11 @@ SCENARIER.stationsdelar = {
       const golv = gridOf(s).rooms.flatMap(r => r.tiles).find(i => !SIM.stationAt(s, i % W, Math.floor(i / W)) && !SIM.sittAt(s, i % W, Math.floor(i / W)));
       const inne = golv !== undefined && SIM.flyttaDel(s, t, 1, golv % W, Math.floor(golv / W));
       const delad = inne && !SIM.helStation(s, t) && SIM.stationFor(s, 'tvinna') === undefined;
+      // delarna utan egen tid delar stationens tid (steg 12.1.230): smedjan tar sina 20 minuter, inte en minut per del
+      const sm = REG.smedja, smMin = [0, 1].map(i => SIM.delMin(sm, i)), ok = REG.ortkok;
+      const tid230 = smMin.every(m => m === sm.min / 2) && SIM.stationMin(sm) === sm.min && SIM.stationMin(ok) === ok.delar!.reduce((a, q) => a + (q.min ?? 0), 0);
       return [
+        [`delarna utan egen tid delar stationens tid: smedjans ässja och städ ${smMin.join(' + ')} min av ${sm.min} (steg 12.1.230)`, tid230],
         [`stationen byggs med delarna i en rad och varje del tar sina rutor (${rad})`, iRad],
         ['man arbetar framför delen med arbete (bänken)', vidBank],
         [`en del flyttas för sig och tar sina nya rutor (rutan runt delarna ${bbox.w} × ${bbox.h})`, flytt && gammal && ny && bbox.w === 6 && bbox.h === 5],
@@ -168,8 +172,38 @@ SCENARIER.brannolja = {
   },
 };
 
+SCENARIER.slojdbankar = {
+  text: 'Slöjdbänkarna (steg 12.1.150): behovet räknas ur arbetet som väntar vid bänken (det antal som saknas av det som görs där gånger receptets minuter, steg 12.1.212) i stället för en per tolv vuxna; en bänk till byggs när mer väntar än bänkarna hinner',
+  kor: () => {
+    const s = createState(1, START);
+    medHus(s);
+    const bank = (n: number) => { s.stationer = (s.stationer ?? []).filter(t => t.k !== 'flatarbank'); for (let i = 0; i < n; i++) (s.stationer ??= []).push({ id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'flatarbank', x: 1 + 3 * i, y: 1, kvar: 0 } as Station); s.byggV = (s.byggV ?? 0) + 1; };
+    // det som väntar i byn: bristen i projekten gånger minuterna, för det som görs vid bänken
+    bank(1);
+    // (steg 12.1.212) omgångarna som saknas gånger minuterna, och recepten hittas genom projektets handling (repet tvinnas)
+    const gor = SIM.STATIONER.flatarbank.gor as readonly string[];
+    let vantat = 0; const nan: string[] = [], med1: string[] = [];
+    for (const g of SIM.PROJEKT_LIST) { const ko = SIM.PROJEKT[g].ko; if (!ko || !gor.includes(ko.act)) continue; med1.push(ko.act); const b = SIM.bristNu(s, g); if (Number.isNaN(b)) nan.push(g); if (b > 0) vantat += ko.saknas(s) * ko.min; }
+    const vid = SIM.koKrok.vid(s, 'flatarbank');
+    const utanKo = gor.filter(a => !med1.includes(a));
+    const rep = SIM.PROJEKT.rep.ko!, repSaknas = Math.ceil(SIM.villHaAv(s, 'rep') - SIM.amountOf(s, 'rep') - 1e-9);
+    const hinner = SIM.STATIONER.flatarbank.hinner!;
+    // med ett bestämt arbete som väntar
+    const med = (min: number, n: number) => { const f = SIM.koKrok.vid; SIM.koKrok.vid = () => min; try { bank(n); return SIM.stationBrist(s, 'flatarbank'); } finally { SIM.koKrok.vid = f; } };
+    return [
+      [`arbetet som väntar vid bänken räknas ur projekten (${vid.toFixed(1)} minuter, väntat ${vantat.toFixed(1)}${nan.length ? `; brist som inte går att räkna hoppas över: ${nan.join(', ')}` : ''})`, Math.abs(vid - vantat) < 1e-9 && Number.isFinite(vid)],
+      [`allt som görs vid bänken finns i kön genom projektens handling${utanKo.length ? ` (saknas: ${utanKo.join(', ')})` : ''}`, utanKo.length === 0],
+      [`repet räknas i antal: ${repSaknas} rep saknas gånger ${rep.min} minuter`, rep.act === 'tvinna' && rep.saknas(s) === Math.max(0, repSaknas) && repSaknas > 1],
+      ['utan slöjdbänk vill byn ha en, också när inget väntar', med(0, 0) === 1],
+      ['en bänk räcker när mindre väntar än den hinner', med(hinner * 0.8, 1) === 0],
+      [`mer än en bänk hinner: byn vill ha en till (${med(hinner * 1.5, 1)})`, med(hinner * 1.5, 1) > 0],
+      ['med två bänkar är det nog', med(hinner * 1.5, 2) === 0],
+      ['antalet vuxna avgör inte längre', !('perVuxna' in SIM.STATIONER.flatarbank)],
+    ];
+  },
+};
 SCENARIER.kladmaterial = {
-  text: 'Steg 12.1.20: materialet till kläderna. Ett plagg som väntar på läder, lintyg eller ylle ärver genom projektet som gör materialet (garvningen, vävningen), och skinnet det i sin tur väntar på hämtas genom jakten (KALLA i projekt.ts). Byn vill ha en slöjdbänk per tolv vuxna',
+  text: 'Steg 12.1.20: materialet till kläderna. Ett plagg som väntar på läder, lintyg eller ylle ärver genom projektet som gör materialet (garvningen, vävningen), och skinnet det i sin tur väntar på hämtas genom jakten (KALLA i projekt.ts). Tygets plagg vill byn ha när någon kan väva, också innan tyget finns, och det projekten saknar gör linet mer värt att så (grodaPoang i odling.ts)',
   kor: () => {
     const s = createState(1, START);
     medHus(s);
@@ -179,19 +213,40 @@ SCENARIER.kladmaterial = {
     (s.stationer ??= []).push({ id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'garvning', x: 1, y: 5, kvar: 0, delar: SIM.delarIRad('garvning', 1, 5) } as Station); s.byggV = (s.byggV ?? 0) + 1;
     const jakt = SIM.hamtas('skinn')?.act === 'jakt' && SIM.hamtas('radjursskinn')?.act === 'jakt';
     const viaGarvning = SIM.fattas(s, p, 'garva', f), lader = SIM.arv(s, p, 'lader', f);
-    // slöjdbänken: ingen ger brist; en räcker till tolv vuxna; fler vuxna vill ha en till
-    const bank = (n: number) => { s.stationer = (s.stationer ?? []).filter(t => t.k !== 'flatarbank'); for (let i = 0; i < n; i++) (s.stationer ??= []).push({ id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'flatarbank', x: 1 + 3 * i, y: 1, kvar: 0 } as Station); };
-    const vuxna = () => SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen).length;
-    bank(0); const ingen = SIM.stationBrist(s, 'flatarbank');
-    bank(1); const en = SIM.stationBrist(s, 'flatarbank'), v0 = vuxna();
-    for (let i = 0; vuxna() <= 12; i++) s.people.push({ ...p, id: 90000 + i, tek: { ...p.tek } });
-    const fler = SIM.stationBrist(s, 'flatarbank'), v1 = vuxna();
-    bank(2); const tva = SIM.stationBrist(s, 'flatarbank');
+    // jakten efter skinn räknar hur många som fattas (steg 12.1.220): tre skinn fattas, en jägare är ute: en till går; tre ute: ingen
+    const andra = s.people.filter(q => q !== p && SIM.alive(q)).slice(0, 3);
+    s.projektSaknar = { skinn: { beh: 3, n: 3, b: 0.8 } };
+    andra[0].task = { act: 'jakt', phase: 'go', tx: 0, ty: 0, until: s.now + 1e6, carry: 0, why: '', hamtar: 'skinn' } as unknown as SIM.Task;
+    const enUte = SIM.arv(s, p, 'skinn', f)?.sak;
+    for (const q of andra) q.task = { act: 'jakt', phase: 'go', tx: 0, ty: 0, until: s.now + 1e6, carry: 0, why: '', hamtar: 'skinn' } as unknown as SIM.Task;
+    const treUte = SIM.arv(s, p, 'skinn', f)?.sak;
+    for (const q of andra) q.task = undefined; s.projektSaknar = undefined;
+    // hur många slöjdbänkar byn vill ha prövas i scenariot slojdbankar (steg 12.1.150)
+    // linet: utan tyg och utan vävare vill byn inga tunikor; med en vävare vill den en var, och bristen följer kedjan bakåt
+    const tunikor = () => SIM.REDSKAPMAL.tunika(s);
+    const utanVavare = tunikor();
+    for (const q of SIM.living(s)) (q.tek ??= {}).vavstol = 0.5; // halvvägs lärd: ingen kan väva än (steg 12.1.205)
+    const halvLard = tunikor();
+    for (const q of SIM.living(s)) for (const id of ['vavstol', 'slanda', 'lin', 'odling']) (q.tek ??= {})[id] = 1;
+    const medVavare = tunikor();
+    SIM.setAmount(s, 'lintyg', 0); SIM.setAmount(s, 'trad', 0); SIM.setAmount(s, 'lin', 0); SIM.setAmount(s, 'ratlin', 0);
+    s.projektSaknar = { lintyg: { beh: 3, n: 3, b: 0.8 } };
+    const lin = SIM.projektenSaknar(s, 'ratlin'), med = SIM.grodaPoang(s, 'lin');
+    s.projektSaknar = undefined;
+    const utan = SIM.grodaPoang(s, 'lin'), korn = SIM.projektenSaknar(s, 'ratlin');
+    // tråden i förrådet räcker till tyget: då saknas inget rått lin (steg 12.1.206); en tråd för lite och linet behövs igen
+    s.projektSaknar = { lintyg: { beh: 3, n: 3, b: 0.8 } };
+    SIM.setAmount(s, 'trad', 9); const medTrad = SIM.projektenSaknar(s, 'ratlin');
+    SIM.setAmount(s, 'trad', 8); const nastanTrad = SIM.projektenSaknar(s, 'ratlin');
+    s.projektSaknar = undefined; SIM.setAmount(s, 'trad', 0);
     return [
       ['skinnen hämtas genom jakten', jakt],
+      [`tre skinn fattas: med en jägare ute går en till (${enUte}), med tre ute ingen (${treUte})`, enUte === 'skinn' && treUte === undefined && andra.length === 3],
       [`garvningen väntar på skinn (${viaGarvning}), och lädret ärver genom garvningen till jakten efter skinn (${lader?.sak})`, viaGarvning === 'skinn' && lader?.sak === 'skinn'],
-      [`utan slöjdbänk vill byn ha en (${ingen}); en räcker till ${v0} vuxna (${en})`, ingen === 1 && (v0 > 12 || en === 0)],
-      [`${v1} vuxna vill ha en till (${fler}), och med två är det nog (${tva})`, fler === 1 && tva === 0],
+      [`utan tyg och vävare vill byn inga tunikor (${utanVavare}), inte heller när vävningen är halvvägs lärd (${halvLard}), med en vävare en var (${medVavare})`, utanVavare === 0 && halvLard === 0 && medVavare === SIM.living(s).length],
+      [`lintyget projekten saknar ger det råa linet värde genom kedjan (${lin}, utan brist ${korn})`, lin === 0.8 && korn === 0],
+      [`med tråd nog till tyget i förrådet saknas inget rått lin (${medTrad}), med en tråd för lite saknas det igen (${nastanTrad})`, medTrad === 0 && nastanTrad === 0.8],
+      [`linet är mer värt att så när projekten saknar tyg (${med.toFixed(2)} mot ${utan.toFixed(2)})`, med > utan * 1.5],
     ];
   },
 };

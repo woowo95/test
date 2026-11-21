@@ -5,13 +5,14 @@ import { PLATS } from './plats';
 import { byId, count, forstaGang, gjort, isParent, living, log, stat } from './folk';
 import { delade, larFalt, loggBer } from './berattelser';
 import { teach } from './teknik';
-import { FANGST, FYND, Kind, type Lager, lagren, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsFor, synsOf, toppOf, vaxerAt } from './fynd';
+import { FANGST, FYND, type FyndId, Kind, type Lager, lagren, prospect, regrowOf, richness, shoreOf, standAt, stoneDist, synsFor, synsOf, toppOf, vaxerAt } from './fynd';
 import { getMap } from './karta';
 import { groundOf, tileOf } from './mark';
 import { KUNSKAPER, kn, learnK } from './kunskap';
 import { clamp, clampI, pickViktat, rnd } from './slump';
 import { ageIndex, lightLevel } from './tid';
-import { DAY, H, HOUR, Lardom, Person, Rel, State, T, W, egen, tvaDelar, visning } from './typer';
+import { DAY, H, HOUR, HOUR_S, Lardom, Person, Rel, State, T, W, egen, tvaDelar, visning } from './typer';
+import { IS, isTunnhet, islagt } from './is';
 import { FOREST } from './vag';
 import { balans } from './balans';
 import type { SamtalDef } from './samtal';
@@ -28,6 +29,7 @@ import { ORT, berattaOrt, describeOrt, ortBleknar } from './ort';
 // Lärdomar: hur många man minns, hur mycket man tror på dem, hur de sprids och hur fort de glöms. Värdet (v) mäts i det en
 // rik plats ger (toppOf i fynd.ts) och säkerheten (c) går från 0 till 1. Hur nära ett område ligger lägret står i PLATS
 export const MINNE = balans('minne', {
+  prisNyhet: 2, // ett pris som är en nyhet väger så här mycket i samtalet (ett gammalt 1)
   max: 20, // så många lärdomar minns man högst; det minst säkra trängs undan
   faraVikt: 2, // en rädsla, och minnet av högvattnet (steg 3.8.7), räknas så här många gånger så säker när det trängs undan ...
   vattenVikt: 2, // ... och vattnet, rent eller smutsigt (steg 9.9.5 och 10.2.42): man vet sällan mer än ett par ställen att dricka
@@ -46,7 +48,8 @@ export const MINNE = balans('minne', {
   siktOppet: 10, // ... och så här många annars, gånger siktMork + siktLjus * ljuset (kortare i mörker)
   siktMork: 0.4,
   siktLjus: 0.6,
-  valBrus: 0.15, // slumpen när man väljer plats, mot platsens värde
+  valBrus: 0.15, // slumpen när man väljer plats, mot platsens värde (för samlaren mot den bästa turen)
+  radslaTur: 0.5, // samlarens rädsla för en plats kostar så här stor del av den bästa turen per rädsla (steg 12.1.203)
   sokR: 5, // väl framme letar man efter den bästa rutan inom så här många rutor ...
   sokPris: 0.01, // ... och varje ruta bort från den valda platsen kostar så här mycket
   flintaSaker: 0.25, // man går till ett område efter flinta när lärdomen är säkrare än så här
@@ -134,7 +137,7 @@ const LDEF = {
   fara: { vad: '', namn: 'farliga platser', ikon: 'l_fara', tecken: '⚠️', kat: 'tro', vikt: () => MINNE.faraVikt, dela: () => MINNE.delaFara, glom: () => MINNE.glomFara, max: () => MINNE.vMaxFara, over: () => [MINNE.overFara, MINNE.overFaraSpann], utanVarde: true },
   vatten: { vad: 'vatten', namn: 'rent och smutsigt vatten', ikon: 'a_vatten', tecken: '💧', vikt: () => MINNE.vattenVikt, dela: () => 1, max: () => 1 },
   flod: { vad: 'högvattnet', namn: 'högvattnet', ikon: 'm_oversvamning', tecken: '🌊', vikt: () => MINNE.faraVikt, dela: () => 1, glom: () => MINNE.glomFlod, ordagrant: true, utanVarde: true }, // hur högt en översvämning nådde (steg 3.8.7, flod.ts): v = rutor upp på land
-  pris: { vad: 'priser', namn: 'priser hos grannklanerna', ikon: 'silver', tecken: '💰', tak: () => MINNE.prisMax, dela: (s, l) => nyhet(s, l) ? 2 : 1, glom: () => MINNE.prisGlom, max: () => Infinity, ordagrant: true, utanVarde: true }, // vad en grannklan betalar (steg 10.5.15): a = klanens id, sl = slaget, v = påslaget på grundvärdet
+  pris: { vad: 'priser', namn: 'priser hos grannklanerna', ikon: 'silver', tecken: '💰', tak: () => MINNE.prisMax, dela: (s, l) => nyhet(s, l) ? MINNE.prisNyhet : 1, glom: () => MINNE.prisGlom, max: () => Infinity, ordagrant: true, utanVarde: true }, // vad en grannklan betalar (steg 10.5.15): a = klanens id, sl = slaget, v = påslaget på grundvärdet
   ort: { vad: 'platser i världen', namn: 'platser i världen', ikon: 'karta', tecken: '📍', tak: () => ORT.max, dela: (s, l) => ORT.dela * (nyhet(s, l) ? ORT.nyVikt : 1), utanVarde: true }, // en plats i världen (steg 11.4.1, ort.ts): a = platsens nummer, v = nivån (ORTNIVA)
   uppdrag: { vad: 'uppdrag', namn: 'uppdrag', ikon: 'karta', tecken: '📜', tak: () => 0, dela: () => 0, utanVarde: true }, // uppdrag.ts sätter tak, dela och glom ur sina balanstal // ett utlyst uppdrag (steg 11.8.3, uppdrag.ts): a = uppdragets nummer, t = när det utlystes
 } satisfies Record<string, LardomDef>;
@@ -257,10 +260,10 @@ export function hoped(s: State, l: Lardom) {
 // syns: vad rutan ser ut att kunna ge, pot: samma för hela området
 const believed = (s: State, l: Lardom | undefined, syns: number, u: number, pot = syns) => l ? Math.min(MINNE.vMax, hoped(s, l)) * l.c * Math.min(MINNE.synsMax, syns / Math.max(MINNE.synsMin, pot)) + syns * u * (1 - l.c) : syns * u;
 // sight, u (trustUnknown) och syns (synsOf för k) räknas en gång när samma person frågas om många rutor
-function perceive(s: State, p: Person, k: Kind, x: number, y: number, sight: number, u: number, syns: (i: number) => number) {
+function perceive(s: State, p: Person, k: Kind, x: number, y: number, sight: number, u: number, syns: (i: number) => number, utanRadsla = false) {
   const a = areaOf(x, y);
   const v = sees(s, p, x, y, sight) ? richness(s, k, x + 0.5, y + 0.5) : believed(s, findL(p, k, a), standAt(s, k, x, y, syns), u, areaValue(s, k, a, 'syns'));
-  return v - fear(s, p, a);
+  return utanRadsla ? v : v - fear(s, p, a);
 }
 // rädsla för ett område: den modige bryr sig mindre
 function fear(s: State, p: Person, a: number) {
@@ -329,27 +332,66 @@ function fjarran(s: State) {
   }
   return c;
 }
-// den plats personen väljer: det hen tror ger mest och inte är för långt bort. Väl framme ser hen sig omkring
-// och går till den bästa rutan i närheten.
-export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: number; d: number }[]) {
-  let best: { x: number; y: number; d: number } | undefined, bs = -1e9;
+// samlarens tur (steg 12.1.187): vad turen till en plats ger per timme, med gången dit och hem inräknad. Det hen tror finns på
+// platsen (v) räknas i saker per ruta som när nästa mål väljs (nastaMal i steg.ts). Hen plockar det som finns inom synvidden
+// (RUNDA.syn), högst en full börda; varje sak tar RUNDA.plock sekunder och vägen till nästa, som är längre ju glesare sakerna
+// ligger. Gången dit från där hen står och hem till byn går med hens fart. Några buskar nära byn kan då löna sig mot ett rikare
+// ställe långt bort, utan någon egen regel för dem
+export function turPerTimme(v: number, dit: number, hem: number, t: Tur) {
+  const R = turKrok.runda!, tat = Math.max(0, v) * (FYND.bar.saker ?? 1) / Math.max(1e-9, toppOf('samla')); // saker per ruta
+  if (!(tat > 0)) return 0;
+  const n = Math.min(t.borda, tat * Math.PI * R.syn * R.syn), sak = R.plock + 1 / Math.sqrt(tat) / t.fart;
+  return n / ((dit + hem) / t.fart + n * sak) * HOUR_S;
+}
+// turen till ett fynd som ligger samlat på en enda ruta (steg 12.1.263): de n saker som finns där (högst en full börda) tas i
+// rutans takt (tim saker i timmen), med gången dit och hem. Ett vildbo med en kaka lönar sig så när bären är slut eller långt bort
+export function turRuta(n: number, dit: number, hem: number, t: Tur, tim: number) {
+  const m = Math.min(t.borda, n);
+  if (!(m > 0) || !(tim > 0)) return 0;
+  return m / ((dit + hem) / t.fart + m / tim * HOUR_S) * HOUR_S;
+}
+// rundans tal (RUNDA i steg.ts, som sätter kroken: filen läses efter minne.ts)
+export const turKrok: { runda?: { plock: number; syn: number } } = {};
+// det som är detsamma för alla platser personen väger (turFor i val.ts): bördan i saker och farten
+export interface Tur { borda: number; fart: number }
+// den plats personen väljer: det hen tror ger mest och inte är för långt bort; för samlaren det turen ger per timme med gången
+// (turPerTimme). Väl framme ser hen sig omkring och går till den bästa rutan i närheten.
+export function pickSpot(s: State, p: Person, k: Kind, cands: { x: number; y: number; d: number; ruta?: FyndId }[], tur?: Tur) {
+  let best: { x: number; y: number; d: number; ruta?: FyndId } | undefined, bs = -1e9;
   const sight = sightOf(s, p), u = trustUnknown(s, p), syns = (i: number) => synsOf(s, k, i);
-  for (const c of cands) {
-    const sc = perceive(s, p, k, c.x, c.y, sight, u, syns) - (c.d + (k === 'samla' ? smutsAvdrag(s, c.x, c.y) : 0)) * PLATS.avstandPris + rnd(s, 'val', p) * MINNE.valBrus;
+  if (tur) {
+    // samlaren (steg 12.1.203): turen räknas på det hen tror finns, utan rädslan; rädslan dras sedan ifrån som en kostnad och
+    // slumpen läggs till, båda mätta mot den bästa turen bland platserna, så en fruktad plats utan fynd får sämre poäng än en tom
+    // ett fynd på en enda ruta (vildboet, steg 12.1.263) väger efter vad rutan ger per timme: boet syns, så hen vet vad som finns där
+    const tpt = cands.map(c => { const dit = Math.hypot(c.x + 0.5 - p.x, c.y + 0.5 - p.y), hem = c.d + smutsAvdrag(s, c.x, c.y), f = c.ruta && FYND[c.ruta];
+      return f ? turRuta(richness(s, c.ruta!, c.x + 0.5, c.y + 0.5) / f.topp * (f.saker ?? 1), dit, hem, tur, f.ruta!()) : turPerTimme(perceive(s, p, k, c.x, c.y, sight, u, syns, true), dit, hem, tur); });
+    const ref = Math.max(1e-9, ...tpt);
+    cands.forEach((c, i) => {
+      const sc = tpt[i] - fear(s, p, areaOf(c.x, c.y)) * MINNE.radslaTur * ref + (rnd(s, 'val', p) - 0.5) * MINNE.valBrus * ref;
+      if (sc > bs) { bs = sc; best = c; }
+    });
+  } else {
+    // ute på isen väger fiskaren risken att gå igenom den (steg 12.1.209): mer ju tunnare den är
+    const vt = vattenNu(s), isRisk = k === 'fiske' && islagt(s) ? IS.tunnRadsla * isTunnhet(s) : 0;
+    for (const c of cands) {
+    const sc = perceive(s, p, k, c.x, c.y, sight, u, syns) - c.d * PLATS.avstandPris + rnd(s, 'val', p) * MINNE.valBrus - (isRisk && vt[c.y * W + c.x] === T.Vatten ? isRisk : 0);
     if (sc > bs) { bs = sc; best = c; }
+    }
   }
-  if (!best || sees(s, p, best.x, best.y, sight)) return best;
+  if (!best || best.ruta || sees(s, p, best.x, best.y, sight)) return best; // till fyndet på rutan går hen raka vägen
   // väl framme letar hen upp den bästa platsen i området, med samma krav som platserna hen valde bland (spotFor i val.ts):
   // inte i ett hus, och för samlandet räknas toa-smutsen som en längre väg (steg 10.11.14). Närmare lägret går bra: där
   // växer inget
   const x0 = Math.max(0, best.x - MINNE.sokR), y0 = Math.max(0, best.y - MINNE.sokR);
   const tiles = vattenNu(s), shore = strandNu(s); // vattnet som det är nu (torkan, steg 3.8.2)
+  const paIsen = k === 'fiske' && islagt(s), isRisk = paIsen ? IS.tunnRadsla * isTunnhet(s) : 0; // ute på isen (steg 12.1.209)
   const smuts = (x: number, y: number) => k === 'samla' ? smutsAvdrag(s, x, y) : 0; // toa-smutsen som en längre väg (steg 10.11.14)
-  let r = best, rs = richness(s, k, best.x + 0.5, best.y + 0.5) - smuts(best.x, best.y) * MINNE.sokPris;
+  let r = best, rs = richness(s, k, best.x + 0.5, best.y + 0.5) - smuts(best.x, best.y) * MINNE.sokPris - (paIsen && tiles[best.y * W + best.x] === T.Vatten ? isRisk : 0);
   for (let y = y0; y < Math.min(H, best.y + MINNE.sokR + 1); y++) for (let x = x0; x < Math.min(W, best.x + MINNE.sokR + 1); x++) {
     const i = y * W + x; // bara land, och för fiske bara stranden
-    if (tiles[i] === T.Vatten || (k === 'fiske' && !shore[i]) || bitAt(s, x, y)) continue;
-    const v = richness(s, k, x + 0.5, y + 0.5) - (Math.hypot(x - best.x, y - best.y) + smuts(x, y)) * MINNE.sokPris;
+    const is = paIsen && tiles[i] === T.Vatten;
+    if (tiles[i] === T.Vatten && !is || (k === 'fiske' && !shore[i] && !is) || bitAt(s, x, y)) continue;
+    const v = richness(s, k, x + 0.5, y + 0.5) - (Math.hypot(x - best.x, y - best.y) + smuts(x, y)) * MINNE.sokPris - (is ? isRisk : 0);
     if (v > rs) { rs = v; r = { x, y, d: utanforByn(s, x, y) }; }
   }
   return r;
@@ -453,7 +495,7 @@ export function tell(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
 export function forget(s: State, hours: number) {
   const now = s.now;
   for (const p of s.people) {
-    if (p.died !== undefined || p.left !== undefined) { delete p.lardomar; continue; }
+    if (p.died !== undefined || p.left !== undefined) { p.lardomar = undefined; continue; }
     const m = stat(p, 'minne', now);
     if (p.lardomar) {
       const tau = 24 * (MINNE.glomBas + m / MINNE.glomMinne); // 3–13 dygn
@@ -463,7 +505,7 @@ export function forget(s: State, hours: number) {
         if (l.c >= MINNE.glomGrans) return true;
         count(s, 'glomt'); return false;
       });
-      if (!p.lardomar.length) delete p.lardomar;
+      if (!p.lardomar.length) p.lardomar = undefined;
     }
     if (p.kunskap) for (const k in p.kunskap) {
       const e = p.kunskap[k];

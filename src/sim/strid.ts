@@ -39,7 +39,7 @@ export type { DjurStrid } from './kampar';
 import { KLAD_SLAG, SAKER, sakNamn } from './saker';
 import { kladSkyddStrid, kladTung } from './klader';
 import { clamp, rnd } from './slump';
-import { byId, count, getRel, log, ovning, relKey, stat, think } from './folk';
+import { byId, count, getRel, log, ovning, relKey, stat } from './folk';
 import { minnsRel } from './relationer';
 import { ledareOf } from './styre';
 import { blodtorst } from './humor';
@@ -577,13 +577,15 @@ function markSlag(st: Strid, n0: number, vant: number) {
 }
 // ett anfall som händelse: när, hur länge, vem som anföll (fran) och vem det gällde (mot), vapnet, om det kastades och hur det gick
 export interface SlagHandelse { t: number; l: number; fran: number; mot: number; v?: Vapen; kast?: 1; utfall: Handelse; rad: number }
-export function slagen(st: Strid): SlagHandelse[] {
+// fran: raderna före den hoppas över (bilden tar bara det nya efter varje stridssteg, steg 12.1.104)
+export function slagen(st: Strid, fran = 0): SlagHandelse[] {
   const ut: SlagHandelse[] = [];
-  st.logg.forEach((r, rad) => {
-    if (!r.sl) return;
+  for (let rad = Math.max(0, fran); rad < st.logg.length; rad++) {
+    const r = st.logg[rad];
+    if (!r.sl) continue;
     const forsvar = r.h === 'parera' || r.h === 'duck';
     ut.push({ t: r.t, l: r.l ?? 0, fran: (forsvar ? r.b : r.a)!, mot: (forsvar ? r.a : r.b)!, v: forsvar ? undefined : r.v, kast: r.kast, utfall: r.h, rad });
-  });
+  }
   return ut;
 }
 export const chansMot = (a: Kampe, b: Kampe, skick: number) => clamp((STRID.traffBas + (skick - b.st.skicklighet) * STRID.traffPer - (b.st.smidighet - 10) * STRID.smidUndan) * (1 - STRID.trott * (1 - a.ork)), STRID.traffMin, STRID.traffMax) * (b.lage === 'nere' || b.lage === 'flykt' || b.ligger || b.bocker ? STRID.utsatt : 1); // den som ligger, böjer sig ner eller vänt ryggen är lätt att träffa
@@ -1079,16 +1081,21 @@ export const SLAGSMAL = balans('slagsmal', {
   lekOp: 2, // ... och stiger så här mycket efter en lek
   vann: 0.15, forlora: 0.2, tankeTim: 8, // tanken efter att ha vunnit eller förlorat, och hur många timmar den varar
   minst: 20, // den som slåss står kvar minst så här många sekunder (striden tar tid också när den är kort)
+  storlek: 4, // (steg 12.1.47) chansen att ett gräl blir ett slagsmål gånger den mindres storlek mot den störres upphöjt till detta (storleken: åldern mot vuxen)
+  smaBarn: 7, // ... och ett barn yngre än så här slåss inte på kartan utan gråter
+  grat: 0.2, gratTim: 2, // tanken hos barnet som grät efter grälet, och hur många timmar den varar
 });
 // svårt skadad efter striden (krönikan, steg 3.7.16): föll av smärtan, eller en skada som är svår i personrutan (HALSA.avbryt)
 export function svartSkadad(k: Kampe) { return k.lage === 'nere' || k.skador.some(w => w.g >= HALSA.avbryt); }
 // efter en strid med rövare eller djur, för var och en i byn som var med: det kastade slits, den svårt skadade skrivs upp (svara),
 // närstriden övas och hen minns hur det gick (tanke, vann)
-export function efterKampen(s: State, p: Person, st: Strid, k: Kampe, svara: string[] | undefined, tanke: string, vann: boolean) {
+// tankarna efter en kamp (rader i TANKAR, tankar.ts): styrkan är SLAGSMAL.vann eller -SLAGSMAL.forlora
+export type KampTanke = 'falldeBjorn' | 'bjornUndan' | 'anfollsBjorn' | 'klaradeVargar' | 'anfollsVargar' | 'drevBortRovare' | 'slogsRovare' | 'falldeVildsvin' | 'anfollsVildsvin';
+export function efterKampen(s: State, p: Person, st: Strid, k: Kampe, svara: string[] | undefined, t: KampTanke, vann: boolean) {
   slitKastat(s, p, st, k);
   if (svara && svartSkadad(k)) svara.push(p.name);
   ovning(p, 'narstrid', SLAGSMAL.ovning);
-  think(p, tanke, vann ? SLAGSMAL.vann : -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
+  tanke(p, t, s.now, { v: vann ? SLAGSMAL.vann : -SLAGSMAL.forlora, tid: SLAGSMAL.tankeTim * HOUR });
 }
 
 // blåsten, dimman och halkan (lera och snö, steg 3.7.8) i en strid i byn just nu
@@ -1128,14 +1135,15 @@ export function efterStrid(s: State, st: Strid, k: Kampe, p: Person, mot: Person
   if (k.vada) { // vådaträffen: skytten minns det, och de som såg det tycker hen är en klåpare
     const offer = st.kampar.find(o => o.sida === k.sida && o !== k && st.logg.some(r => r.h === 'vada' && r.a === k.id && r.b === o.id));
     const q = offer && person(offer);
-    if (q) { think(p, `Träffade ${q.name} av misstag`, -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR); handelse(s, p, 'vadaskott', q); }
+    if (q) { tanke(p, 'vadaskott', s.now, { namn: q.name, v: -SLAGSMAL.forlora, tid: SLAGSMAL.tankeTim * HOUR }); handelse(s, p, 'vadaskott', q); }
   }
   if (!lek && (k.lage === 'flykt' || k.lage === 'borta' || st.logg.some(r => r.h === 'avstar' && r.a === k.id)) && mot[0]) handelse(s, p, 'backade', mot[0]); // steg 3.7.9
   for (const q of mot) { const r = getRel(s, p, q); r.op = Math.max(-100, Math.min(100, r.op + (lek ? SLAGSMAL.lekOp : -SLAGSMAL.op / 2))); } // båda hållen: op/2 var
   for (const q of mot) if (p.id < q.id) minnsRel(s, p, q, lek ? 'lek' : 'slag'); // det relationen minns, en gång per par (steg 3.9.6)
   if (!lek) for (const q of vanner) if (p.id < q.id) minnsRel(s, p, q, 'sida');
-  if (!lek && vinnare !== -1) think(p, k.sida === vinnare ? `Vann slagsmålet mot ${mot[0].name}` : `Förlorade slagsmålet mot ${mot[0].name}`, k.sida === vinnare ? SLAGSMAL.vann : -SLAGSMAL.forlora, s.now, SLAGSMAL.tankeTim * HOUR);
+  if (!lek && vinnare !== -1) tanke(p, k.sida === vinnare ? 'vannSlagsmal' : 'forloradeSlagsmal', s.now, { namn: mot[0].name, v: k.sida === vinnare ? SLAGSMAL.vann : -SLAGSMAL.forlora, tid: SLAGSMAL.tankeTim * HOUR });
 }
 
 import { rusSmid, rusTraff } from './rus';
 import { kvOf } from './kvalitet';
+import { tanke } from './tankar';

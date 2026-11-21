@@ -10,8 +10,9 @@ import { Act, HOUR, Person } from './typer';
 import { FOOD, SAKER } from './saker';
 import { clamp } from './slump';
 import { balans } from './balans';
-import { think } from './folk';
+
 import { delade } from './berattelser';
+import { tanke } from './tankar';
 
 export const NARINGBAL = balans('naring', {
   brist: 0.2, // under detta värde har man brist; bristen växer till full när värdet är slut
@@ -108,7 +109,7 @@ export function matOrdning(p: Person) {
 }
 // tankarna för den som har brist ("Längtar efter kött"), och att man glömmer vad andra längtat efter (needsStep i steg.ts)
 export function bristSteg(p: Person, now: number) {
-  for (const k of NARINGAR) if (bristGrad(p, k) > 0) think(p, `Längtar efter ${DEF[k].langtar}`, -NARINGBAL.tanke, now, HOUR);
+  for (const k of NARINGAR) if (bristGrad(p, k) > 0) tanke(p, 'langtar', now, { vad: DEF[k].langtar, v: -NARINGBAL.tanke });
   if (p.langtan) for (const k of NARINGAR) if ((p.langtan[k] ?? 0) <= now) delete p.langtan[k];
   if (p.langtan && !Object.keys(p.langtan).length) p.langtan = undefined;
 }

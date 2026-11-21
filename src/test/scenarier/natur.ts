@@ -6,7 +6,7 @@ import { FOREST, isSoil } from '../../sim/vag';
 import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import { sjo as sjoFlik } from '../../ui/flikar/sjo';
 import { setByn, ui } from '../../ui/lage';
-import { jaktFran, stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare, testBy, vidStack, bearbetaVid, harHamtat } from './hjalp';
+import { slakteri, jaktFran, stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare, testBy, vidStack, bearbetaVid, harHamtat } from './hjalp';
 
 // en vargflock med n vargar som stryker omkring vid (x, y) med hungern hunger, med nästa nummer i byn och det som står i mer
 const nyFlock = (s: State, n: number, x: number, y: number, hunger: number, mer: Partial<SIM.Vargflock> = {}) => {
@@ -67,7 +67,7 @@ SCENARIER.djur = {
     setMat(s, {}); setMat(s, { vilt: 3 * KANIN }); setAmount(s, 'ben', 0); setAmount(s, 'skinn', 0); setAmount(s, 'rep', 0);
     const kan = canProcess(s, p, DJUR.kanin);
     bearbetaVid(s, p, DJUR.kanin, 1);
-    const slakt = amountOf(s, 'kott') === 3 * SIM.kottAv(p, SLAKT.kott) && amountOf(s, 'vilt') < 1e-9 && Math.abs(amountOf(s, 'ben') - 3) < 1e-9 && Math.abs(amountOf(s, 'skinn') - 3) < 1e-9; // köttet i hela saker (steg 2.10.7)
+    const slakt = amountOf(s, 'kott') === 3 * SIM.kottAv(p, SLAKT.kott) && amountOf(s, 'vilt') < 1e-9 && Math.abs(amountOf(s, 'ben') - 3 * SLAKT.ben) < 1e-9 && Math.abs(amountOf(s, 'skinn') - 3) < 1e-9; // köttet i hela saker (steg 2.10.7)
     // senorna blir ibland ett rep, men bara för den som kan tekniken Rep
     const repAv = (kan: boolean) => { let r = 0; for (let i = 0; i < 200; i++) { setMat(s, { vilt: KANIN }); setAmount(s, 'rep', 0); p.tek = { ...p.tek, rep: kan ? 1 : 0 }; bearbetaVid(s, p, DJUR.kanin, 1); r += amountOf(s, 'rep'); } return r; };
     const medRep = repAv(true), utanRep = repAv(false);
@@ -85,7 +85,7 @@ SCENARIER.djur = {
       [`jakt utan redskap fångar hela kaniner (${kaniner} på ett dygn)`, kaniner >= 1 && hela],
       [`kaninen bärs hem hel, en i taget (${hem} gång, ${annat} med annat)`, hem >= 1 && annat === 0],
       ['utan kniv slaktas inget; kniven görs av en flinta och en gren och en flinta sparas till elden', utan && kniv && kan],
-      ['en slaktad kanin ger mer kött än den uppätna, och ett ben och ett skinn', slakt && SLAKT.kott > KANIN],
+      [`en slaktad kanin ger mer kött än den uppätna, ${SLAKT.ben} ben och ett skinn`, slakt && SLAKT.kott > KANIN],
       [`det ett djur ger har ett recept av djuret i saker.ts, som ungefär stämmer med DJUR (${recept})`, receptOk],
       [`senorna blir ibland ett rep för den som kan Rep (${medRep} rep av 200 kaniner), aldrig annars (${utanRep})`, medRep >= 200 * DJUR.kanin.rep * 0.5 && medRep <= 200 * DJUR.kanin.rep * 1.5 && utanRep === 0],
     ];
@@ -641,6 +641,45 @@ SCENARIER.slaktbank = {
   },
 };
 
+SCENARIER.slaktfram = {
+  text: 'Steg 12.1.158: den som bär viltet till slaktbänken och lägger ner det där lägger det bredvid sig, inte på rutan där man står och arbetar, så att bänken inte blir stängd och viltet slaktas. Benet kommer ur viltet som skinnet: ett projekt som saknar ben när oslaktat vilt ligger i förrådet och byn saknar bänken ger bänken värde (KALLA)',
+  kor: () => {
+    const s = createState(1, START); klockan(s);
+    const p = living(s).find(r => ageOf(r, s.now) >= 18)!;
+    slakteri(s, p); setMat(s, {});
+    const bank = SIM.stationerOf(s).find(t => t.k === 'slaktbank')!, vid = SIM.vidStation(bank);
+    p.x = vid.x; p.y = vid.y;
+    // hen har hämtat viltet och kallas bort (laggVid och dropLoad gör samma sak): bördan läggs ner där hen står
+    const tk = { act: 'slakta', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, why: 'prov', tool: 'kniv', items: { vilt: 2 * KANIN }, hamtad: 1 } as unknown as SIM.Task;
+    p.task = tk; SIM.dropLoad(s, tk, p.x, p.y); p.task = undefined;
+    const fram = SIM.framfor(bank), paFram = (s.stackar ?? []).filter(a => fram.some(q => q.x === a.x && q.y === a.y)).length;
+    const nara = (s.stackar ?? []).filter(a => a.k === 'vilt' && SIM.iRackvidd(p, a)).reduce((n, a) => n + a.n, 0);
+    // ett redskap i bördan läggs också bredvid (steg 12.1.242)
+    const yxa = SIM.newTing(s, 'yxa', 1, p.id); yxa.lass = p.id; yxa.hos = undefined; yxa.x = yxa.y = undefined;
+    const tk2 = { act: 'bara', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, why: 'prov', ting: [yxa.id] } as unknown as SIM.Task;
+    p.task = tk2; SIM.dropLoad(s, tk2, p.x, p.y); p.task = undefined;
+    const yxaFram = fram.some(q => q.x === yxa.x && q.y === yxa.y), yxaNara = yxa.x !== undefined && Math.hypot(yxa.x + 0.5 - p.x, yxa.y! + 0.5 - p.y) < 6;
+    const oppen = SIM.framFri(s, bank) && SIM.stationFor(s, 'slakta') === bank;
+    // och då slaktas viltet med det som ligger till hands: en timme vid bänken ger ben
+    bearbetaVid(s, p, DJUR.kanin, 1);
+    const ben = amountOf(s, 'ben');
+    // utan bänk: ett projekt som saknar ben ärver till slaktbänken medan viltet ligger oslaktat
+    const u = createState(1, START); klockan(u);
+    const q = living(u).find(r => ageOf(r, u.now) >= 18)!;
+    for (const r of u.people) r.tek = { ...r.tek, kniv: 1, slaktbank: 1 };
+    setMat(u, { vilt: 2 * KANIN, bar: 100 }); setAmount(u, 'virke', 6);
+    const a = SIM.arv(u, q, 'ben', { kyla: false, gras: 0 });
+    return [
+      [`det som läggs ner framför bänken hamnar bredvid (${paFram} stackar på rutorna framför)`, paFram === 0],
+      [`viltet ligger inom räckhåll för den som står vid bänken (${nara} av ${2 * KANIN})`, nara >= 2 * KANIN],
+      [`redskapet i bördan läggs på närmaste fria ruta, inte framför bänken (${yxa.x}, ${yxa.y})`, !yxaFram && yxaNara],
+      ['bänken är fri (inget står på rutorna framför den)', oppen],
+      [`viltet slaktas och ger ben (${ben})`, ben >= 1],
+      [`benet ärver till slaktbänken när viltet ligger oslaktat (${a?.u?.act ?? a?.sak ?? 'inget'} ${a?.u?.tool ?? ''})`, a?.u?.act === 'station' && a.u.tool === 'slaktbank'],
+    ];
+  },
+};
+
 SCENARIER.flatarbank = {
   lang: true,
   text: 'Slöjdbänken (steg 2.2.4) byggs av virke och grenar av den som kommit på den (steg 2.2.11). Vid den tvinnas rep fortare än för hand vid elden, de enkla redskapen görs där lite fortare (Björn, efter v90), och korgen flätas bara där. Handarbetet är alltid något bestämt som tar material och ger en sak',
@@ -713,7 +752,7 @@ SCENARIER.stationsteknik = {
   kor: () => {
     const { STATIONER, STATION_LIST, TEK, kanBygga, thinkWhileWorking, knows } = SIM;
     // en storlek av en annan station (de större borden, steg 2.2.15) har den stationens teknik
-    const register = STATION_LIST.every(k => { if ((STATIONER[k] as SIM.StationDef).brasa || (STATIONER[k] as SIM.StationDef).tro || (STATIONER[k] as SIM.StationDef).vrak) return !STATIONER[k].tek.length; const tk = STATIONER[k].tek[0]; if ((STATIONER[k] as SIM.StationDef).smak) return STATIONER[k].tek.length === 1 && tk === (STATIONER[k] as SIM.StationDef).smak && !!TEK[tk]; /* mattorna: en teknik för alla storlekar (steg 10.7.6) */ if ((STATIONER[k] as SIM.StationDef).hage) return STATIONER[k].tek.length === 1 && tk === 'staket'; /* vattenhon: hagens teknik (steg 10.10.30) */ return STATIONER[k].tek.length === 1 && !!TEK[tk] && (tk === k || (STATIONER as Record<string, SIM.StationDef>)[tk]?.tek[0] === tk); });
+    const register = STATION_LIST.every(k => { if ((STATIONER[k] as SIM.StationDef).brasa || (STATIONER[k] as SIM.StationDef).tro || (STATIONER[k] as SIM.StationDef).vrak) return !STATIONER[k].tek.length; const tk = STATIONER[k].tek[0]; if ((STATIONER[k] as SIM.StationDef).smak) return STATIONER[k].tek.length === 1 && tk === (STATIONER[k] as SIM.StationDef).smak && !!TEK[tk]; /* mattorna: en teknik för alla storlekar (steg 10.7.6) */ if ((STATIONER[k] as SIM.StationDef).hage) return STATIONER[k].tek.length === 1 && tk === 'staket'; /* vattenhon: hagens teknik (steg 10.10.30) */ return STATIONER[k].tek.length === 1 && !!TEK[tk] && (tk === k || (STATIONER as Record<string, SIM.StationDef>)[tk]?.tek[0] === tk || (SIM.RUMSTYPER as Record<string, { ikon: string }>)[tk]?.ikon === k); }); /* eller rummet som stationen gör (sjukbädden och Sjukstugan, steg 12.1.227) */
     const ordning = TEK.slaktbank.krav.includes('kniv') && TEK.flatarbank.krav.includes('rep') && TEK.korg.krav.includes('flatarbank');
     // den som kan kniven men inte slaktbänken bygger ingen; när hen kommit på den kan hen
     const s = createState(1, START); klockan(s); tandEld(s); medHus(s);
@@ -735,7 +774,7 @@ SCENARIER.stationsteknik = {
     for (let i = 0; i < 400; i++) thinkWhileWorking(k, kq, 'samla', 600);
     const ingenKorg = (kq.tek.korg ?? 0) === 0;
     return [
-      ['varje station är en teknik med samma namn, och tekniken är det som krävs för att bygga den (brasan, trons möbler och grundarnas vagn kräver ingen, vattenhon hagens)', register],
+      ['varje station är en teknik med samma namn, och tekniken är det som krävs för att bygga den (brasan, trons möbler och grundarnas vagn kräver ingen, vattenhon hagens, sjukbädden sitt rums: Sjukstuga)', register],
       ['slaktbänken kommer efter kniven, slöjdbänken efter repet och korgen efter slöjdbänken', ordning],
       ['den som kan kniven och repet men inte stationerna bygger ingen; med teknikerna kan hen', utan && med],
       ['den som jagar med kniv och tvinnar rep kommer på slaktbänken och slöjdbänken', kommer],
@@ -892,6 +931,7 @@ SCENARIER.skinnfall = {
     const vaken = SIM.tillbehorVarme(q, p, roomAt(q, p.x, p.y));
     const tek = TEK.skinnfall;
     return [
+      [`skinnfällen passar halmbädden och sängen men inte bryggkaret, och brännpannan bryggkaret (tillbehorPassar, som stationens ruta frågar; steg 12.1.261)`, SIM.tillbehorPassar('skinnfall', 'halmbadd') && SIM.tillbehorPassar('skinnfall', 'sang') && !SIM.tillbehorPassar('skinnfall', 'bryggkar') && SIM.tillbehorPassar('brannpanna', 'bryggkar')],
       [`byn vill ha en skinnfäll när bädden saknar en (brist ${brist0.toFixed(2)}, ${brist1.toFixed(2)} efter)`, brist0 === 1 && brist1 < brist0],
       [`skinnfällen görs av ${RT.fallSkinn} skinn och läggs i bädden på ${h} timmar`, !!b.med?.includes('skinnfall') && tog],
       [`byns statistik räknar varje fäll en gång (${s.stat?.tillbehor_skinnfall ?? 0} för ${fallar})`, s.stat?.tillbehor_skinnfall === fallar],
@@ -1087,7 +1127,8 @@ SCENARIER.latriner = {
     kor(s, 5 * 24, v => { const n = SIM.latriner(v).length; if (n > mest) mest = n; });
     const folk = living(s).length, efter = antal(), igen = s.stat?.['latriner igenvuxna'] ?? 0, tak = Math.max(3, Math.ceil(folk / 5));
     return [
-      [`${folk} invånare: ${fore} latriner före, ${efter} efter 5 år, högst ${mest} (högst ${tak}, en per fem invånare), ${igen} växte igen`, mest <= tak && efter >= 1],
+      // en grävd latrin som tömts i komposten går inte att använda igen (steg 12.4.9): utan en spade gräver byn ingen ny
+      [`${folk} invånare: ${fore} latriner före, ${efter} efter 5 år, högst ${mest} (högst ${tak}, en per fem invånare), ${igen} växte igen, ${s.stat?.latrinTomd ?? 0} tömda`, mest <= tak && (efter >= 1 || (s.stat?.latrinTomd ?? 0) > 0 && !SIM.nTools(s, 'benspade'))],
     ];
   },
 };
@@ -1305,8 +1346,10 @@ SCENARIER.tork = {
     // byn behåller det rått som den äter innan det ruttnar
     setMat(s, { fisk: Math.floor(spara() * 0.9) });
     const sparar = !kanTorka(s, p);
-    // det torkade håller så länge något får hålla i lagret och äts sist
-    const haller = SAKER.torrfisk!.haller === LAGER.maxDygn && SAKER.torrkott!.haller === LAGER.maxDygn && FOOD.slice(-2).sort().join() === 'torrfisk,torrkott';
+    // det torkade håller så länge något får hålla i lagret, ingen mat håller längre, och det som äts sist är det som håller
+    // längst (steg 12.1.193: osten sade 40 dygn mot lagrets tak)
+    const langst = Math.max(...FOOD.map(k => SAKER[k]!.haller ?? 0));
+    const haller = SAKER.torrfisk!.haller === LAGER.maxDygn && SAKER.torrkott!.haller === LAGER.maxDygn && langst <= LAGER.maxDygn && FOOD.slice(-2).every(k => SAKER[k]!.haller === langst);
     // under istiden fryser maten och ruttnar nästan inte
     const frost = ruttTemp(-5) === LAGER.frost && ruttTemp(-5) < ruttTemp(20) / 10;
     const tek = SIM.TEKNIK.find(x => x.id === 'tork'), tekOk = !!tek && tek.krav.includes('rep');
@@ -1963,7 +2006,7 @@ SCENARIER.varg = {
     const harVakt = living(nv).some(q => q.task?.act === 'vakt');
     flock(nv, 4, 12, 0.3); kor(nv, 1);
     const vakt = nv.stat?.vargVackt ?? 0, sedd = nv.stat?.vargSedd ?? 0;
-    const vaken = living(nv).filter(q => q.larm?.vad === 'varg' && q.task && q.task.act !== 'sova').length;
+    const vaken = living(nv).filter(q => q.larm?.varg !== undefined && q.task && q.task.act !== 'sova').length;
     // en hungrig flock anfaller den som är ensam långt från byn
     const an = by(12), e = SIM.eldPlats(an), tl = SIM.getMap(an.seed).tiles, ensam = living(an).find(q => ageOf(q, an.now) >= 18)!;
     const land = (a: number, r: number) => { const x = Math.round(e.x + Math.cos(a) * r), y = Math.round(e.y + Math.sin(a) * r); return SIM.inMap(x, y) && tl[y * W + x] !== SIM.T.Vatten ? { x: x + 0.5, y: y + 0.5 } : undefined; };
@@ -2133,14 +2176,14 @@ SCENARIER.vargskydd = {
         Object.assign(f, { x: fast.x, y: fast.y, mx: fast.x, my: fast.y, gor: 'stryker' }); // flocken står kvar nära byn
         if (!SIM.vargarNara(v)) return;
         nara++;
-        for (const q of living(v)) if (q.larm?.vad === 'varg' && ageOf(q, v.now) >= SIM.ALDER.vaktFran) { if (q.task?.act === 'samtal') prat++; }
+        for (const q of living(v)) if (q.larm?.varg !== undefined && ageOf(q, v.now) >= SIM.ALDER.vaktFran) { if (q.task?.act === 'samtal') prat++; }
       });
-      haller = living(s).filter(q => q.larm?.vad === 'varg' && ['gomma', 'forsvar', 'hjalpaRovare'].includes(q.task?.act ?? '')).length;
+      haller = living(s).filter(q => q.larm?.varg !== undefined && ['gomma', 'forsvar', 'hjalpaRovare'].includes(q.task?.act ?? '')).length;
       const roller = living(s).map(q => q.task ? SIM.taskName(q.task) : '').filter(n => /vargarna|bakom/.test(n));
       s.vargar = undefined; // flocken drar vidare
       const e = SIM.eldPlats(s);
       for (const q of living(s)) {
-        if (q.larm?.vad !== 'varg') continue;
+        if (q.larm?.varg === undefined) continue;
         const a = ageOf(q, s.now), svag = a < SIM.ALDER.vaktFran || a >= SIM.ALDER.gammal;
         const at = q.task?.phase === 'go' ? { x: q.task.tx, y: q.task.ty } : q;
         if (svag) { svaga++; if (q.task?.act === 'gomma' || q.task?.act === 'sova' && SIM.roomAt(s, Math.floor(q.x), Math.floor(q.y))) { gom++; if (SIM.roomAt(s, Math.floor(at.x), Math.floor(at.y))) iHus++; else if (Math.hypot(at.x - e.x - 0.5, at.y - e.y - 0.5) < 5) vidEld++; } }
@@ -2624,7 +2667,7 @@ SCENARIER.mjarde = {
 SCENARIER.ortvatten = {
   text: 'Steg 7.6.6: benlim och tvål kokas med vatten ur vattensäcken. Någon fyller säcken vid vattnet när örtköket behöver det, och när det är kokt är säcken tom men finns kvar',
   kor: () => {
-    const s = createState(5, START), { TILLVERKA, PROJEKT, newTing, fylldSack, vattenVal, KLAR_FOR } = SIM;
+    const s = createState(5, START), { TILLVERKA, PROJEKT, newTing, vattenVal, KLAR_FOR } = SIM;
     klockan(s);
     const p = living(s)[0];
     p.x = 30; p.y = 30; p.tek = { ...p.tek, ortkok: 1 } as typeof p.tek;
@@ -2638,13 +2681,19 @@ SCENARIER.ortvatten = {
     const med = PROJEKT.koka_lim.kan(s, p, { kyla: false, gras: 0 }), ingaFler = !vattenVal(s, p);
     const ben0 = SIM.amountOf(s, 'ben');
     KLAR_FOR.koka_lim!(s, p, { act: 'koka_lim' } as SIM.Task, 0);
+    // en tunna regnvatten töms inte för ett recept: det tar en fast mängd (steg 12.1.251)
+    SIM.put(s, 'ben', 4, { [p.id]: 4 }); newTing(s, 'naverask', 1, p.id);
+    const tunna = newTing(s, 'tunna', 1, p.id); tunna.inne = { v: 'vatten', n: 5 };
+    KLAR_FOR.koka_lim!(s, p, { act: 'koka_lim' } as SIM.Task, 0);
+    const kvarTunna = tunna.inne?.n ?? 0;
     return [
+      [`en tunna med 5 vatten har ${kvarTunna} kvar efter ett recept (${SIM.RECEPTVATTEN} tas), och limmet blev gjort (${SIM.vatskaAv(s, 'benlim')})`, kvarTunna === 5 - SIM.RECEPTVATTEN && SIM.vatskaAv(s, 'benlim') === 2],
       ['raderna säger att benlim och tvål tar vatten', !!TILLVERKA.koka_lim.vatten && !!TILLVERKA.koka_tval.vatten],
       ['utan fylld säck kokas inget', !utan],
       [`när örtköket behöver vatten går någon och fyller säcken (${val?.why})`, !!val && val.ref === 0],
       ['med en fylld säck går det att koka, och ingen fyller en till', med && ingaFler],
-      [`limmet blev gjort av benen (${ben0} → ${SIM.amountOf(s, 'ben')}) och ligger i näveraskan`, SIM.vatskaAv(s, 'benlim') === 1],
-      ['säcken är tom men finns kvar', !fylldSack(s) && SIM.tingOf(s).includes(sack)],
+      [`limmet blev gjort av benen (${ben0} → 0) och ligger i näveraskan`, ben0 === 4],
+      ['säcken är tom men finns kvar', !sack.inne && SIM.tingOf(s).includes(sack)],
     ];
   },
 };

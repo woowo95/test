@@ -9,16 +9,17 @@ import { ageOf, byId, childrenOf, relKey } from './folk';
 import { gastLiv, type LivRad, type Slakting } from './gastliv';
 import { gravarOf, gravPlats } from './grav';
 import { hash3 } from './slump';
+import { balans } from './balans';
 import { DAY, Person, State } from './typer';
 import type { VarldRad } from './radtal';
 import { varldHandelseText, VARLDSHANDELSER, type VarldHandelse } from './varldkronika';
 
 // livet före besöket: släktingarna som inte finns i byn (de döda föräldrarna) och händelserna, äldst först
 export interface ForrLiv { familj: Slakting[]; liv: LivRad[] }
-export const VACKTLIV = {
+export const VACKTLIV = balans('vacktliv', {
   minns: 6, // från den åldern står byns händelser i livet (år)
   gift: 18, // tidigast då gifte man sig (år)
-};
+});
 const tal = (b: State, id: number, n: number) => hash3(b.seed, id, n, 0x2c1b3c6d, 13);
 const ar = (p: Person, t: number) => Math.max(0, Math.floor((t - p.born) / DAY));
 

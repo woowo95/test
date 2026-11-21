@@ -10,7 +10,7 @@ import { DAY } from './typer';
 import { Varlden, varldMark as varldMarkFor } from './varlden';
 import { PERIODRADER, periodSlut } from './varldslag';
 import { VarldMark } from './varldmark';
-import { billigasteVag, packaVag, vagMellan, vagRutor } from './vagval';
+import { billigasteVag, glomVagar, packaVag, vagMellan, vagRutor } from './vagval';
 import { byPlats } from './landmarken';
 import { State } from './typer';
 import { ageIndex, iIstiden } from './tid';
@@ -97,4 +97,5 @@ export function frysMark(s: State, vl: Varlden, v: VarldMark, t: number) {
 }
 PERIODRADER.push({ namn: 'frusen mark', period: 'timme', fn: (s, vl, n) => { const v = varldMarkFor(s); if (v) frysMark(s, vl, v, periodSlut(vl, 'timme', n)); } });
 // marken behövs för vägarna; världslagen ger bara världen, så den packas upp här (en gång per värld, varlden.ts)
+PERIODRADER.push({ namn: 'glömda vägar', period: 'dygn', fn: (_s, vl, n) => glomVagar(vl, periodSlut(vl, 'dygn', n)) }); // steg 12.1.11
 PERIODRADER.push({ namn: 'lederna', period: 'dygn', fn: (s, vl, n) => { const v = varldMarkFor(s); if (v) raknaLeder(vl, v, periodSlut(vl, 'dygn', n)); } });

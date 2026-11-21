@@ -3,7 +3,7 @@ import { bestamd, gen, spelTid, stor } from '../../sim/ord';
 import { fritidLista } from './fram';
 import { PYNT } from '../../sim/pynt';
 import { kvOf } from '../../sim/kvalitet';
-import { BIN, drag, dragDelar, DRAG_LIST, DRAGKALLOR, delarAv, flyttaDel, helStation, flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel, ROK, ljusSort } from '../../sim';
+import { BIN, drag, dragDelar, DRAG_LIST, DRAGKALLOR, delarAv, flyttaDel, helStation, flyttaStation, sakBerattelse, ACTS, DJURARTER, STATION, bordPlatser, pilesOf, living, TEKNIK, TILLBEHOR_LIST, byId, isKlar, sakNamn, actIkon, verbOf, stationById, stationDef, stationKlar, tillbehorDef, tillbehorPassar, tingOf, timeLabel, FLACKAR, condOf, smutsVid, blodVid, storlekAv, TORK, torrDel, ROK, ljusSort } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { frystAttr, sakAttr } from './sak';
 import { iBruk } from '../ibruk';
@@ -86,7 +86,7 @@ export const station: Flik = {
       }).join('');
     }).join('');
     // tillbehören som hör till den (TILLBEHOR i stationer.ts): det som ligger i den, och det som saknas
-    const tb = TILLBEHOR_LIST.filter(k => tillbehorDef(k)!.till === st.k).map(k => {
+    const tb = TILLBEHOR_LIST.filter(k => tillbehorPassar(k, st.k)).map(k => {
       const td = tillbehorDef(k)!, har = !!st.med?.includes(k);
       return `<dt ${tip(td.namn + (td.varme ? `: den som sover här kyls ${Math.round(td.varme * 100)} % mindre` : ''))}>${iconImg(td.ikon)}</dt><dd${har ? '' : ' class="muted"'}>${esc(td.namn)}${har ? '' : ', saknas'}</dd>`;
     }).join('');

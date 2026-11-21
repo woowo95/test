@@ -1,0 +1,33 @@
+{
+ "id": "sym_kompass",
+ "ritad": 1,
+ "av": "programmeringschatten (platshållare, steg 12.1.192)",
+ "om": "En vandringsstav med en packning knuten i toppen.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  ".........kkkk...",
+  "........kooook..",
+  ".......kooroook.",
+  ".......kororrok.",
+  "........kkrrkk..",
+  ".........kjjk...",
+  "........kjJk....",
+  ".......kjJk.....",
+  "......kjJk......",
+  ".....kjJk.......",
+  "....kjJk........",
+  "...kjJk.........",
+  "..kjJk..........",
+  "..kkk...........",
+  "................"
+ ],
+ "pal": {
+  "J": "#7d5b40",
+  "j": "#5e3c24",
+  "k": "#24201d",
+  "o": "#bd753e",
+  "r": "#a14808"
+ }
+}

@@ -6,7 +6,7 @@ import { husNytt } from './byggnad';
 import { faltAt } from './odling';
 import { angAt } from './slatter';
 import { bynsMitt, omrade, tillHoljet } from './omrade';
-import { ALDER, ageOf, byId, count, familjOf, forstaGang, getRel, living, log, stat } from './folk';
+import { ALDER, EGENSKAP, ageOf, byId, count, familjOf, forstaGang, getRel, living, log, stat } from './folk';
 import { type Bit, Hus, MATERIAL, bitAt, bitsOf, gridOf, housesOf, husById, touch, vagBort } from './byggnad';
 import { stenFrakt, stenFraktKostnad } from './byggsten';
 import { eldPlats, getMap } from './karta';
@@ -19,7 +19,7 @@ import { LAGER, matUtanPlats, utanPlatsNu, amountOf, changed, flyttaLager, inZon
 import { tingOf } from './agande';
 import { BAR, findPath } from './vag';
 import { paMyr } from './myr';
-import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husNamn, harArbete, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
+import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husIText, husNamn, harArbete, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
 import { kronika } from './historik';
 import { clamp } from './slump';
 import { ledareOf } from './styre';
@@ -74,7 +74,6 @@ export const PLAN = balans('byggplan', {
   prisRel: 0.3, // en vän betalar mindre ...
   prisSkill: 0.3, // ... och den som är bättre på handel
   rivDygn: 2, // ett tomt eget hus som ingen velat köpa på så här många dygn (år i spelet) rivs (steg 10.11.15)
-  potMitt: 50, // en egenskap på det här värdet drar inte åt något håll
   tatSed: 0.7, tatLedare: 0.3, // hur mycket seden Sammanhållning och ledarens empati gör att husen står tätt
   glestFran: -0.5, // under det här (byplanens täthet) står husen en ruta glesare
   raderFran: 0.5, // över det här (seden Förnyelse och ledarens nyfikenhet) byggs husen i rader längs stråken
@@ -87,6 +86,7 @@ export const PLAN = balans('byggplan', {
   langSed: 0.3, // ... och så här mycket större när seden Sammanhållning är som starkast
   rivStation: 3, // varje station, möbel eller eld ute där ett hus ska stå kostar så här mycket i platsens poäng; den rivs först (steg 10.2.77)
   rikExtra: 2, // den rika bygger så här många rutor större ...
+  rikKvartil: 0.75, // den rika familjen jämförs med förmögenheten på den här platsen i byns ordning (0,75 = den övre kvartilen)
   rikGang: 1.5, // ... och är rik när familjen äger så här många gånger den övre kvartilen i byn
 });
 
@@ -213,7 +213,7 @@ export function onskadPlats(s: State, b: ByggBehov) {
   const n = living(s).length, lang = b.fn === 'sovsal' && b.a.ag === undefined && n ? 1 + PLAN.langRik * Math.min(1, Math.max(0, rikedom(s) / n / PLAN.langRikPer - 1)) + PLAN.langSed * Math.max(0, s.seder?.v?.gemenskap ?? 0) : 1;
   return Math.min(sover(b) ? sovPersoner(BYGG.maxInne) : BYGG.maxInne, Math.max(1, Math.round(b.a.plats * f * lang) + rik));
 }
-const rikOf = (s: State, ag: number) => { if (!byId(s, ag)) return false; const f = formogenheter(s).egen, v = f.get(ag) ?? 0, alla = [...f.values()].sort((x, y) => x - y); return alla.length > 1 && v >= alla[Math.floor(alla.length * 0.75)] * PLAN.rikGang; };
+const rikOf = (s: State, ag: number) => { if (!byId(s, ag)) return false; const f = formogenheter(s).egen, v = f.get(ag) ?? 0, alla = [...f.values()].sort((x, y) => x - y); return alla.length > 1 && v >= alla[Math.floor(alla.length * PLAN.rikKvartil)] * PLAN.rikGang; };
 
 // väggens material (steg 10.10.7): timmer eller sten, efter värdet mot kostnaden per tid väggen håller. Hur långt fram byn ser
 // beror på seden Förutseende (Dagens behov ser bara kostnaden nu); stenen är mer värd ju fler av byns väggar som brunnit, och
@@ -379,8 +379,8 @@ const egetRum: AtgardDef = {
     return [];
   },
 };
-// hemmen blir finare (steg 10.2.69): hur mycket familjen har över (det den äger mot PLAN.hemRef, 0 till 2) och hur många rum huset har
-const hemOverskott = (s: State, ag: number) => {
+// hemmen blir finare (steg 10.2.69): hur mycket familjen har över (det den äger mot byns median per person och PLAN.hemRik, 0 till 2) och hur många rum huset har
+export const hemOverskott = (s: State, ag: number) => {
   const f = formogenheter(s).egen, fam = familjOf(s, ag), alla = [...f.values()].sort((x, y) => x - y), med = alla.length ? alla[Math.floor(alla.length / 2)]! : 0;
   const hus = housesOf(s).reduce((n, h) => n + (h.ag !== undefined && fam.some(q => q.id === h.ag) ? husVarde(s, h) : 0), 0); // huset de har räknas inte som överskott
   const per = (fam.reduce((n, q) => n + (f.get(q.id) ?? 0), 0) - hus) / Math.max(1, fam.length);
@@ -911,7 +911,7 @@ function utfor(s: State, f: Forslag, u: ByggBehov, byggare: Person[], ppl: Perso
   if (f.at === 'egetRum') {
     for (const a of f.ritning) bytMaterial(bitAt(s, a.x, a.y)!, a.m);
     touch(s); count(s, 'forbRum');
-    log(s, `${by.name} vill dela upp ${f.hus!.namn.toLowerCase()}, så att familjen får ett eget rum.`, 'world', [by.id]);
+    log(s, `${by.name} vill dela upp ${husIText(f.hus!)}, så att familjen får ett eget rum.`, 'world', [by.id]);
     return;
   }
   bygg(s, f, u, by);
@@ -967,7 +967,7 @@ export function byggUt(s: State, f: Forslag, by: Person, forb: boolean) {
     if (b && b.k === 'vagg') bytMaterial(b, 'oppning', false);
   }
   touch(s); count(s, 'planerat_ut');
-  const nr = f.ritning.filter(a => MATERIAL[a.m].k === 'golv').length;
+  const nr = f.ritning.filter(a => MATERIAL[a.m].k === 'golv').length + f.oppnas.length; // den gamla väggen blir golv också (steg 12.1.50)
   log(s, `${by.name} planerar att bygga ut ${husIMening(h.namn)}${nr ? ` med ${nr === 1 ? 'en ruta' : `${tal(nr)} rutor`}` : ''}.`, 'world', [by.id]);
 }
 // ---------- byns planering (steg 7.2.11–7.2.12) ----------
@@ -979,8 +979,9 @@ export interface Byplan { form: 'ring' | 'rader'; tat: number; golv: 'tra' | 'jo
 const kanTragolv = (s: State) => living(s).some(p => knows(p, MATERIAL.tra.tek!));
 // golvet i ett nytt hus: det byplanen säger, och jord när ingen kan göra trägolv
 const golvNu = (s: State) => (s.byplan?.golv ?? 'tra') === 'tra' && kanTragolv(s) ? 'tra' : 'jord';
+// ledarens egenskap drar åt sitt håll från skalans mitt (EGENSKAP.mitt), −1 till 1 (steg 12.1.110)
 export function byplanNu(s: State): Byplan {
-  const led = ledareOf(s), v = s.seder?.v ?? ({} as Record<string, number>), egen = (k: 'empati' | 'nyfikenhet') => led ? (led.pot[k] - PLAN.potMitt) / PLAN.potMitt : 0;
+  const led = ledareOf(s), v = s.seder?.v ?? ({} as Record<string, number>), egen = (k: 'empati' | 'nyfikenhet') => led ? (led.pot[k] - EGENSKAP.mitt) / EGENSKAP.mitt : 0;
   const tat = clamp((v.gemenskap ?? 0) * PLAN.tatSed + egen('empati') * PLAN.tatLedare, -1, 1);
   const form = (v.nyfikenhet ?? 0) + egen('nyfikenhet') > PLAN.raderFran ? 'rader' as const : 'ring' as const;
   const golv = (v.forsiktighet ?? 0) < PLAN.jordFran ? 'jord' as const : 'tra' as const;

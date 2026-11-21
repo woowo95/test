@@ -1,0 +1,71 @@
+{
+ "id": "oljelampa",
+ "w": 10,
+ "h": 7,
+ "rader": [
+  "..EEEE....",
+  ".EHLKJE...",
+  "EHKKJJFEE.",
+  "EGJJIIFGom",
+  "EGFFGFFEE.",
+  ".EFGFFE...",
+  "..EEEE...."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "I": "#694902",
+  "J": "#906f0f",
+  "K": "#b2921b",
+  "L": "#d8b25f",
+  "m": "#372f25",
+  "o": "#7e7362",
+  "t": "#a14808",
+  "u": "#bd753e"
+ },
+ "versioner": [
+  {
+   "ide": "Rund, låg skål med nypt pip åt höger: skålens öppning är en ellips ovanifrån, omkring 7 punkter bred och 4 hög, och på högra sidan är kanten nypt till en spetsig pip på 2–3 punkter där en kort vek i ben0/kol2 sticker ut. Leran ritas i jord1–jord3 med jord0 som kontur, ljusast på den vänstra bakre kanten, och framkanten syns som ett smalt band på 2 punkter i jord1 under öppningen. Oljan fyller ellipsen i senap1–senap2 med senap0 mot den skuggade kanten och en enda glanspunkt i senap3 uppe till vänster; skålen är spegelsymmetrisk kring sin mitt, bara pipen bryter formen.",
+   "rader": [
+    "..EEEE....",
+    ".EHLKJE...",
+    "EHKKJJFEE.",
+    "EGJJIIFGom",
+    "EGFFGFFEE.",
+    ".EFGFFE...",
+    "..EEEE...."
+   ],
+   "om": "Oljelampan av bränd lera, 10×7 punkter. Den låga runda skålen är spegelsymmetrisk med kontur i jord0. Kanten är ljusast uppe till vänster i jord3/jord2 och mörknar till jord1 åt höger. Oljan fyller öppningen: senap2/senap1 med en glanspunkt i senap3 uppe till vänster, och senap0 mot den skuggade kanten nere till höger. Framkanten är ett band på 2 punkter i jord1 med lite korn. På höger sida är kanten nypt till en pip på 2–3 punkter, och en kort vek i ben0 med sotad spets i kol2 sticker ut ur den. Granskningen: Rättat: skålen var nästan fyrkantig, med raka sidor i fem rader, och såg ut som en låda från sidan. Nu har den rundade hörn upptill och nertill, så att öppningen läses som en ellips snett ovanifrån. Formen är spegelsymmetrisk kring mitten mellan kolumn 3 och 4, och bara pipen åt höger bryter den. Den bakre kanten har nu en ljus lerkant i jord3 till vänster, som ljuset kräver. Oljan i senap1–senap2 ligger innanför kanten, med en glanspunkt i senap3 uppe till vänster och senap0 mot den skuggade kanten nere till höger. Framkanten är ett band på 2 punkter i jord1 med lite korn av jord2, och konturen är jord0. Pipen är nypt ur kanten med kontur ovan och under, och veken i ben0/kol2 sticker ut i spetsen. Storleken 10 × 7 är oförändrad och passar mot kolonisten (14 × 20). Senapen och den ljusa leran gör att lampan syns på gräset."
+  },
+  {
+   "ide": "Droppformad lampa som en liten båt, lagd snett från nedre vänstra till övre högra hörnet: den breda rundade bakdelen ligger nere till vänster och smalnar av till en lång pip uppe till höger, där veken slutar i en liten låga på 2 punkter i rost2 och senap3. Kanten är en tunn ring av jord2 och jord3 med jord0 runt om, och oljan syns som en droppformad yta i senap1–senap2 inuti, mörkare mot pipens hals. Undersidan syns bara som ett band på 2 punkter i jord1 längs den nedre högra kanten, så att lampan ser ut att stå platt på marken.",
+   "rader": [
+    "........Lt",
+    "...EEEEEHE",
+    ".EEHHHGIGE",
+    "EHKLKJIGE.",
+    "EGKJJIGFE.",
+    ".EGGGFFE..",
+    "..EEEEE..."
+   ],
+   "om": "Oljelampan är en droppformad skål som en liten båt, 10×7 punkter. Den breda rundade bakdelen ligger nere till vänster och smalnar av mot pipen uppe till höger, där en låga på 2 punkter (senap3 och rost2) sitter på pipens spets. Kanten är jord3 upptill och till vänster och jord2 mot höger, med jord0 som kontur. Oljan är senap2 och senap1 med en enda glanspunkt i senap3 och mörknar till senap0 mot pipens hals. Undersidan syns som ett band i jord1 längs den nedre högra kanten. Granskningen: Lampan följer reglerna. Den är 10 × 7 punkter, så den är liten men läsbar bredvid kolonisten (14 × 20). Den ses snett uppifrån med oljeytan ovanifrån. Konturen är jord0 och inte svart. Ljuset kommer från övre vänstra hörnet: ljusast är jord3 och senap3 uppe till vänster, och mörkast är jord1 längs den nedre högra kanten. Oljan i senap är mättad och syns tydligt mot gräset. Glansen är en enda punkt i senap3. Lågan är 2 punkter i senap3 och rost2 vid pipens spets. Jag rättade en sak: den översta konturraden var helt rak, så den bakre kanten såg platt och vågrät ut. Jag flyttade konturen ett steg inåt uppe till vänster (rad 1 börjar en punkt senare och rad 2 får en extra konturpunkt). Då lutar droppformen tydligare från den rundade bakdelen nere till vänster mot pipen uppe till höger, som idén beskriver. Resten är oförändrat."
+  },
+  {
+   "ide": "Rund lampa på en kort fot med en liten ögla bak: skålen är en ellips sedd snett ovanifrån, omkring 6 punkter bred, som står på en smalare fotring vars synliga framsida är 2 punkter hög i jord1 och jord0, så att silhuetten blir högre och liknar en liten bägare. Till vänster sitter ett litet handtag som en böjd ögla av leran, och till höger en kort rak pip med en mörk vek i kol2 vars ände lyser i en enda punkt rost3. Leran är jord2–jord3 med korn punkt för punkt och jord0 som kontur, och oljan i öppningen är senap1–senap2 med en glanspunkt i senap3 uppe till vänster.",
+   "rader": [
+    "...EEEE...",
+    "EEEHHGHEE.",
+    "E.EHLKGmmu",
+    "EEEGKJGEEE",
+    "..EHGGFE..",
+    "...EFFE...",
+    "...EEEE..."
+   ],
+   "om": "Oljelampan av bränd lera, 10×7 punkter. Skålen är en ellips sedd snett ovanifrån, 6 punkter bred: kanten är jord3 och jord2 med jord0 som kontur. Oljan är senap1–senap2 med en glanspunkt i senap3 uppe till vänster. Lampan står på en smalare fot i jord1 och jord0, 2 punkter hög. Till vänster sitter en liten ögla med ett hål i mitten. Till höger går en kort pip med veken i kol2, och vekens ände lyser i en enda punkt rost3. Granskningen: Inget behövde rättas. Lampan är 10 × 7 punkter och fyller sin ruta. Den blir liten men rimlig bredvid kolonisten på 14 × 20 punkter. Skålen ses snett ovanifrån: kanten i jord3–jord2 ligger överst och oljan i senap1–senap2 syns i öppningen, med en glanspunkt i senap3 uppe till vänster. Skålens framsida och den 2 punkter höga fotringen i jord1 och jord0 ger en bägarform. Kroppen är spegelsymmetrisk kring mitten. Bara handtaget till vänster och pipen till höger bryter symmetrin, och de hör till idén. Ljuset faller från vänster med jord3 där och jord1 till höger. Konturen är jord0, aldrig svart. Veken är kol2 och har en enda punkt rost3 längst ut. Lampan är ljusare än gräset och har kontur, så den syns på marken."
+  }
+ ]
+}

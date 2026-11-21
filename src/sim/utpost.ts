@@ -22,6 +22,7 @@ import { Varlden, varldMark } from './varlden';
 import { MARK_IDS, MarkId, VarldMark } from './varldmark';
 import { narmasteMal } from './vagval';
 import { DAY, State } from './typer';
+import { taBortPlats as glomsPlats } from './ort';
 
 export const UTPOST = balans('utpost', {
   folk: 3, // så många går till en utpost
@@ -170,9 +171,9 @@ export function grundaHandelslager(s: State, vl: Varlden, n: number) {
 
 // ---- gemensamt: raden överges ----
 function taBortPlats(vl: Varlden, p: VarldPlats) { vl.platser = (vl.platser ?? []).filter(q => q !== p); }
-// folket och det raden har går hem till byn den kom ur (eller till en by intill om den är borta), platsen försvinner och raden
-// finns kvar för krönikan
-export function overge(_s: State, vl: Varlden, u: VarldRad, t: number) {
+// folket och det raden har går hem till byn den kom ur (eller till en by intill om den är borta), platsen försvinner (byn minns
+// den tills någon sett att den är borta, steg 12.1.146) och raden finns kvar för krönikan
+export function overge(s: State, vl: Varlden, u: VarldRad, t: number) {
   const p = byPlats(vl, u.nr), hem = radNr(vl, u.fran);
   let mal = hem && lever(vl, hem) ? hem : undefined, dygn = p?.grannar?.find(g => varldPlatsNr(vl, g.nr)?.by === mal?.nr)?.dygn;
   if (!mal) { const g = p?.grannar?.find(x => { const m = radNr(vl, varldPlatsNr(vl, x.nr)?.by); return !!m && lever(vl, m); }); mal = g ? radNr(vl, varldPlatsNr(vl, g.nr)!.by) : undefined; dygn = g?.dygn; }
@@ -183,8 +184,15 @@ export function overge(_s: State, vl: Varlden, u: VarldRad, t: number) {
   }
   u.t = t; u.tal = tomTal(); delete u.varor; delete u.ledare;
   u.tek = []; // utan folk kan ingen något
-  if (p) taBortPlats(vl, p);
+  if (p) glomsPlats(s, vl, p);
   varldHandelse(vl, 'upplost', t, { by: u.nr });
+}
+// raden tas bort ur världen (steg 12.1.146): krönikan behåller namnet, och byarnas relationer, lägen och släktband med den glöms
+export function glomRad(vl: Varlden, r: VarldRad) {
+  vl.rader = (vl.rader ?? []).filter(q => q !== r);
+  for (const h of vl.kronika ?? []) { if (h.by === r.nr) h.byNamn = r.namn; if (h.mot === r.nr) h.motNamn = r.namn; }
+  const med = (k: string) => k.split(/[>-]/).map(Number).includes(r.nr);
+  for (const m of [vl.rel, vl.lage, vl.ovanligt, vl.slakt]) if (m) for (const k of Object.keys(m)) if (med(k)) delete m[k];
 }
 // de som går hem kommer fram med det de bär
 KOHANDELSER.hemTill = (_s, vl, p) => {
@@ -193,10 +201,12 @@ KOHANDELSER.hemTill = (_s, vl, p) => {
   m.tal.folk += d.n; m.tal.silver += d.silver ?? 0;
   for (const g of VARUGRUPP_IDS) if (d['v_' + g]) radLaggTill(m, g, d['v_' + g]);
 };
-// handelslägret bryts upp vid sin tid
+// handelslägret bryts upp vid sin tid, och dess rad och plats tas bort ur världen (steg 12.1.146)
 KOHANDELSER.handelslagerSlut = (s, vl, p) => {
   const h = radNr(vl, p.sak!);
-  if (h && h.sort === 'handelslager' && h.tal.folk > 0) overge(s, vl, h, p.t);
+  if (!h || h.sort !== 'handelslager') return;
+  if (h.tal.folk > 0) overge(s, vl, h, p.t);
+  glomRad(vl, h);
 };
 
 // varje dygn: utposter och handelsläger grundas; varje timme: utposterna bryter

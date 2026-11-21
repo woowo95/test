@@ -1,7 +1,7 @@
 import { honom } from './ord';
 import { personHand, personNara } from './personlogg';
 import { upplev } from './uppvaxt';
-import { ALDER, REL, ageOf, count, getRel, isParent, living, log, relKey, think } from './folk';
+import { ALDER, REL, ageOf, count, getRel, isParent, living, log, relKey } from './folk';
 import { DAY, HOUR, Person, Rel, SKILLS, Skill, State } from './typer';
 import { balans } from './balans';
 import { ACTS } from './handlingar';
@@ -9,6 +9,7 @@ import { notis } from './notiser';
 import { kronikaBer, loggBer } from './berattelser';
 import { FEST, nyRitual } from './kultlatt';
 import { dampning } from './rykten';
+import { tanke } from './tankar';
 
 // ---------- balanstal (regel 8) ----------
 // Relationstyperna (steg 3.1.1, "Relationstyper" i designdokumentet). Relationen (op) går från -100 till 100; vän, nära vän,
@@ -145,7 +146,7 @@ export function stepRelationer(s: State) {
       personNara(s, p, `${p.name} och ${q.name} har gift sig.`, [q.id], 'gott'); personNara(s, q, `${p.name} och ${q.name} har gift sig.`, [p.id], 'gott'); // steg 9.2.107
       kronikaBer(s, 'k_gift', p.id, { a: p.name, b: q.name }); // till berättelsen om tiden borta (steg 5.4.4)
       nyRitual(s, 'brollop', { om: [p.id, q.id], namn: `Bröllopet mellan ${p.name} och ${q.name}`, fran: s.now + FEST.brollopFore * HOUR }); // steg 8.5.13; utlyst i förväg (steg 10.7.28)
-      think(p, `Gifte sig med ${q.name}`, 0.15, s.now, DAY); think(q, `Gifte sig med ${p.name}`, 0.15, s.now, DAY);
+      tanke(p, 'gifte', s.now, { namn: q.name }); tanke(q, 'gifte', s.now, { namn: p.name });
     }
   }
   // rivaler: samma yrke (inte dagdrivare) och inte vänner, eller romans med samma person. De slutar när de blir vänner

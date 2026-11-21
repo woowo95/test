@@ -3,6 +3,7 @@
 // TAS_UPP, efter prioritet (steg 8.4.5). En lag läser spelet med `lagGaller`; ett brott i `doma` (styre.ts) får straffet i lagen.
 import { HOUR, Person, State } from './typer';
 import { byId } from './folk';
+import { notis } from './notiser';
 import { balans } from './balans';
 import { clamp } from './slump';
 import { ALDER, ageOf, count, living, log, relKey } from './folk';
@@ -17,6 +18,9 @@ import { FOOD } from './saker';
 import type { SkriftLag } from './skrift';
 
 export const LAG = balans('lag', {
+  skog: 8, // förbudet att fälla nära byn: inom så många rutor från byns område
+  fullt: 0.5, // ett nytt lagförslag väger så här mycket när byn har så många lagar den klarar
+  naraTak: 0.3, bortVikt: 0.4, // förslaget att ta bort en lag: ogillandet gånger bortVikt, plus naraTak när byn nästan har så många den klarar
   tak: 6, // så många lagar klarar byn utan skrift (steg 8.4.3) ...
   takMinister: 1, // ... och så många fler per minister
   takVisas: 12, // fliken Styre visar högst så många, och taket blir aldrig högre (steg 10.6.10)
@@ -34,7 +38,7 @@ export const LAG = balans('lag', {
   straffHard: 0.4, // ledaren vill ha ett steg hårdare eller mildare straff i en lag för varje så här mycket hårdheten skiljer sig från lagom (steg 11.12.3)
   rikEmot: 0.4, rikAndel: 1.5, // den som äger mer än rikAndel gånger sin del av byns mat röstar så här mycket emot att förrådet delas lika
 });
-export const LAG_SKOG = 8; // förbudet att fälla nära byn: inom så många rutor från byns område
+export const LAG_SKOG = LAG.skog;
 
 const STEGEN = [0, 1, 4, 5, 2, 7, 8, 9, 3, 6]; // ordningen från mildast till hårdast (Fängelse 9 före Utvisning, steg 11.12.3)
 // ett straff som kräver något finns bara när kravet är uppfyllt (Straff som kräver något): Fängelse kräver ett fängelse med ledig plats
@@ -157,7 +161,7 @@ export const TAS_UPP: { id: string; lista(s: State, p: Person): LagForslag[] }[]
   }) },
   { id: 'nylag', lista: (s, p) => knows(p, 'lag') ? Object.keys(LAGAR).flatMap(id => {
     if (lagGaller(s, id) || LAGAR[id].kan?.(s) === false || (LAGAR[id].tek && !knows(p, LAGAR[id].tek!)) || LAGAR[id].rost(s, p).v <= 0) return [];
-    const full = lagarNu(s).length >= lagTak(s) ? 0.5 : 1;
+    const full = lagarNu(s).length >= lagTak(s) ? LAG.fullt : 1;
     return [{ fr: { f: 'nylag', d: { id }, fram: p.id }, prio: LAGAR[id].prio(s) * full, varfor: LAGAR[id].om ? `${p.name} vill ha en lag efter ${LAGAR[id].om}` : `${p.name} tycker att byn behöver en lag` }];
   }) : [] },
   // ett tal i en lag som gäller (steg 10.5.4): den som får lägga fram föreslår platsen i stegen närmast sitt eget
@@ -172,8 +176,8 @@ export const TAS_UPP: { id: string; lista(s: State, p: Person): LagForslag[] }[]
     return ny !== l.straff ? [{ fr: { f: 'lagstraff', d: { id: l.id, ny }, fram: p.id }, prio: clamp(d / 3, 0, 1), varfor: `${p.name} vill ha ett ${STEGEN.indexOf(ny) > STEGEN.indexOf(l.straff) ? 'hårdare' : 'mildare'} straff i lagen ${LAGAR[l.id].namn.toLowerCase()}` }] : [];
   }) },
   { id: 'bortlag', lista: (s, p) => lagarNu(s).flatMap(l => {
-    const v = LAGAR[l.id].rost(s, p).v, nara = lagarNu(s).length >= lagTak(s) - 1 ? 0.3 : 0;
-    return v < 0 ? [{ fr: { f: 'bortlag', d: { id: l.id }, fram: p.id }, prio: -v * 0.4 + nara, varfor: `${p.name} tycker illa om lagen` }] : [];
+    const v = LAGAR[l.id].rost(s, p).v, nara = lagarNu(s).length >= lagTak(s) - 1 ? LAG.naraTak : 0;
+    return v < 0 ? [{ fr: { f: 'bortlag', d: { id: l.id }, fram: p.id }, prio: -v * LAG.bortVikt + nara, varfor: `${p.name} tycker illa om lagen` }] : [];
   }) },
 ];
 const nyckel = (fr: Fraga) => fr.f + ':' + JSON.stringify(fr.d);
@@ -204,13 +208,13 @@ FRAGOR.nylag = {
     (st.lagar ??= []).push({ id, t: s.now, straff: startStraff(s, id), av: fram?.id ?? -1, om: def.om ?? '' });
     count(s, 'lag_ny');
     const t = `Byn stiftade en lag: ${def.namn.toLowerCase()}.`;
-    log(s, t, 'world', fram ? [fram.id] : []); kronika(s, t, 'ledare');
+    log(s, t, 'world', fram ? [fram.id] : []); kronika(s, t, 'ledare'); notis(s, 'lag', t, fram ? [fram.id] : []); // (steg 12.1.137)
   },
 };
 FRAGOR.bortlag = {
   namn: (_s, d) => `Ta bort lagen: ${LAGAR[d.id as string].namn}`, om: (_s, d) => LAGAR[d.id as string].text, krets: 'byn',
   rost: (s, p, d) => { const r = LAGAR[d.id as string].rost(s, p); return { v: -r.v, why: r.v < 0 ? r.why : 'Vill behålla lagen' }; },
-  gor: (s, d) => { const st = styreAv(s); st.lagar = st.lagar?.filter(l => l.id !== d.id); count(s, 'lag_bort'); if (d.id === 'skatt') { for (const p of s.people) delete p.skatteskuld; budgetBortKrok.f?.(s); } /* skulden stryks (steg 10.5.5), och budgeten försvinner (steg 10.5.7) */ log(s, `Byn tog bort lagen: ${LAGAR[d.id as string].namn.toLowerCase()}.`, 'world'); },
+  gor: (s, d) => { const st = styreAv(s); st.lagar = st.lagar?.filter(l => l.id !== d.id); count(s, 'lag_bort'); if (d.id === 'skatt') { for (const p of s.people) p.skatteskuld = undefined; budgetBortKrok.f?.(s); } /* skulden stryks (steg 10.5.5), och budgeten försvinner (steg 10.5.7) */ log(s, `Byn tog bort lagen: ${LAGAR[d.id as string].namn.toLowerCase()}.`, 'world'); },
 };
 // ett tal i en lag (steg 10.5.4): var och en röstar efter om det nya ligger närmare det hen vill än det gamla
 FRAGOR.lagtal = {

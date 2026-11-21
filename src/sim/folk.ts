@@ -4,7 +4,7 @@ import { freeNear } from './byggnad';
 import { Strom, clamp, gauss, pick, rnd } from './slump';
 import { Act, DAY, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State, Task } from './typer';
 import { balans } from './balans';
-import { nyAndlighet } from './religion';
+import { fodTro, nyAndlighet } from './religion';
 import { RYKTE, ryktbarhet } from './rykten';
 import { hourOf } from './tid';
 import { horText, lista, och, tal } from './ord';
@@ -29,7 +29,6 @@ export const KROPP = balans('kropp', {
   // för varm (steg 2.3.4): 1 är idealet och värmen kan gå upp till maxVarm. Över idealet värmer bara solen, kläderna när det
   // inte är kallt och att sitta tätt vid elden (hetta i varmeDelar, steg.ts); elden och det milda vädret fyller bara upp till idealet
   maxVarm: 2,
-  varmGrader: 30, svalnatGrader: 27, // riktigt varmt (steg 12.1.19): först från så här många grader är man för varm och tar av plagg, och de tas på igen under svalnatGrader
   forVarm: 1.3, // över detta är man för varm: en tanke (sämre humör), lockas till bad och tar av sig de varma kläderna ...
   extremVarm: 1.7, // ... men först över detta blir man tröttare och lägger tid på att svalka sig i skuggan (steg 2.10.20)
   svalnar: 0.15, // över idealet svalnar kroppen så här mycket per timme, aldrig under idealet
@@ -324,6 +323,39 @@ export function egenskaperUr(r: () => number): Record<Stat, number> {
 }
 export const namnUr = (sex: 'm' | 'k', r: () => number) => { const p = <X>(l: X[]) => l[Math.floor(r() * l.length)]; return stor(foga(p(N1), r() < 0.7 ? p(N2) : '', p(sex === 'k' ? NK : NM))); };
 
+// Personen i en fast form (prestanda, nr 781): alla nycklar i Person-typen, också de valfria, i en fast ordning. Varje person
+// skapas genom nyPerson, så att alla har samma dolda klass i V8 och läsningarna av personfälten inte blir megamorfa. Ett
+// valfritt fält tas bort med p.f = undefined, aldrig med delete (som gör om personen till en ordbok). Ett nytt fält i
+// Person-typen får en rad här; vakten i testerna (formVakt) larmar annars
+export const MALL: Record<keyof Person, undefined> = {
+  te: undefined, larmRoll: undefined, foder: undefined, krycka: undefined, forbandMed: undefined, ropT: undefined, rus: undefined,
+  kvallT: undefined, supit: undefined, fylla: undefined, bak: undefined, protMinne: undefined, hn: undefined, hnBlodat: undefined,
+  gift: undefined, blodNotis: undefined, bedrift: undefined, sorg: undefined, tat: undefined, tatV: undefined, framProv: undefined,
+  gravBesok: undefined, paminnd: undefined, pratArbete: undefined, id: undefined, name: undefined, sex: undefined, uppkallad: undefined,
+  fastRoll: undefined, forr: undefined, ledde: undefined, gavSig: undefined, framme: undefined, gast: undefined, smitta: undefined,
+  born: undefined, died: undefined, cause: undefined, left: undefined, ute: undefined, dodVag: undefined, fran: undefined,
+  grundare: undefined, mother: undefined, father: undefined, partner: undefined, rngs: undefined, pot: undefined, skill: undefined,
+  delar: undefined, hunger: undefined, rest: undefined, social: undefined, health: undefined, blot: undefined, warm: undefined,
+  toa: undefined, torst: undefined, brinner: undefined, blod: undefined, skador: undefined, saknas: undefined, protes: undefined,
+  men: undefined, arr: undefined, sinnen: undefined, svimmat: undefined, omt: undefined, tiggde: undefined, lonTim: undefined,
+  lonFick: undefined, lonObetald: undefined, bonD: undefined, bonNodD: undefined, bonVan: undefined, tack: undefined, tvivel: undefined,
+  profet: undefined, sedDod: undefined, sedSkand: undefined, fasta: undefined, skuld: undefined, drag: undefined, missnoje: undefined,
+  skatteskuld: undefined, straffad: undefined, utanRost: undefined, utanVard: undefined, tjanst: undefined, brottsling: undefined,
+  naring: undefined, byteNej: undefined, langtan: undefined, habit: undefined, fange: undefined, paus: undefined, sjuk: undefined,
+  immun: undefined, sickWhy: undefined, poisonUntil: undefined, forgiftadT: undefined, stulet: undefined, pregnantSince: undefined, pregnantBy: undefined,
+  lastBirth: undefined, guardDay: undefined, fiske: undefined, gjort: undefined, tek: undefined, byten: undefined, hopp: undefined,
+  lar: undefined, halvminne: undefined, kunskap: undefined, lardomar: undefined, ortBorta: undefined, raddAkt: undefined, thoughts: undefined, drom: undefined, vardadAv: undefined, x: undefined,
+  y: undefined, task: undefined, fame: undefined, hand: undefined, sportVinst: undefined, kallad: undefined, hue: undefined, tag: undefined,
+  bast: undefined, arke: undefined, rivaler: undefined, rivalom: undefined, mentor: undefined, mentorSk: undefined, upp: undefined,
+  anlag: undefined, andlig: undefined, tro: undefined, troStyrka: undefined, svartSjuk: undefined, prat: undefined, binamn: undefined,
+  varsel: undefined, forv: undefined, utb: undefined, ubr: undefined, angr: undefined, lekt: undefined, morkT: undefined, larm: undefined,
+  intryck: undefined, smak: undefined, reservAlltid: undefined, liv: undefined, skam: undefined,
+};
+export const nyPerson = (p: Person): Person => ({ ...MALL, ...p }) as unknown as Person;
+// de levande som inte har mallens form: nycklarna i en annan ordning än mallen eller nycklar utanför den (vakten i testerna)
+const MALLNYCKLAR = Object.keys(MALL).join();
+export const utanForm = (folk: Person[]) => folk.filter(p => Object.keys(p).join() !== MALLNYCKLAR);
+
 export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Person, father?: Person): Person {
   const pot = {} as Record<Stat, number>;
   const balanserad = !mother || !father ? rnd(s, 'folk') < EGENSKAP.balanserad : false;
@@ -342,16 +374,17 @@ export function newPerson(s: State, sex: 'm' | 'k', born: number, mother?: Perso
   const skill = {} as Record<Skill, number>;
   for (const k of SKILLS) skill[k] = 0;
   const f = eldPlats(s);
-  const p: Person = {
+  const p = nyPerson({
     id: s.nextId++, name: '', sex, born, mother: mother?.id, father: father?.id,
     pot, skill, hunger: 0.8, rest: 0.9, social: 0.7, health: 1, warm: 1, toa: 0.6 + rnd(s, 'folk') * 0.4, torst: 1, blod: 1, habit: {}, thoughts: [],
     x: f.x + (rnd(s, 'folk') - 0.5) * 3, y: f.y + (rnd(s, 'folk') - 0.5) * 3, fame: [],
     hue: Math.floor(rnd(s, 'folk') * 360),
-  };
+  });
   const uk = mother || father ? uppkalla(s, sex, [mother, father]) : undefined;
   if (uk) { p.name = uk.namn; p.uppkallad = uk.q.id; count(s, 'uppkallade'); }
   else p.name = makeName(s, sex, 'folk', [mother, father]);
   p.andlig = nyAndlighet(s, p, mother, father); // ur personens egen följd (steg 4.1.1.1)
+  fodTro(s, p, mother, father); // barnet växer upp i föräldrarnas tro (steg 12.1.22)
   const at = freeNear(s, p.x, p.y); p.x = at.x; p.y = at.y; // inte i en husvägg
   return p;
 }
@@ -477,10 +510,10 @@ export function gjortDygn(s: State, p: Person, k: string) {
 }
 // räknar k och ger true första gången det händer i byn (för raderna om 'byns första …' i loggen)
 export const forstaGang = (s: State, k: string) => { count(s, k); return s.stat![k] === 1; };
-export function think(p: Person, text: string, v: number, now: number, dur: number) {
+export function think(p: Person, text: string, v: number, now: number, dur: number, k?: string) {
   horText('tanke', text);
   p.thoughts = p.thoughts.filter(t => t.text !== text);
-  p.thoughts.push({ text, v, until: now + dur });
+  p.thoughts.push(k === undefined ? { text, v, until: now + dur } : { text, v, until: now + dur, k });
 }
 
 // den som ska sova ligger först när hen är framme vid bädden eller platsen; på vägen dit går hen upprätt (steg 9.2.89)

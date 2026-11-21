@@ -56,7 +56,7 @@ export const MATERIAL: Record<string, Material> = {
 // Raderna står i ordning från den sämsta till den bästa: en bättre dörr ersätter en sämre, aldrig tvärtom (utanDorr i bygg.ts).
 // stanger = dörren stängs när någon gömmer sig i huset, och djur kommer aldrig igenom den (steg 3.7.21, varg.ts); en skinndörr
 // håller bara värmen inne och stoppar ingen
-export interface DorrDef { namn: string; ikon: string; tek: string[]; av: Record<string, number>; min: number; tat: number; gor: string; forsta: string; stanger?: true }
+export interface DorrDef { namn: string; ikon: string; tek: string[]; av: Record<string, number>; min: number; tat: number; gor: string; forsta: string; stanger?: true; last?: true } // last = låst: bommad också när huset är tomt (steg 12.5.6)
 export const DORRAR = {
   skinndorr: {
     namn: 'Skinndörr', ikon: 'skinndorr', tek: ['skinndorr'], av: RECEPT.skinndorr.av, min: RECEPT.skinndorr.min, tat: BYGGNAD.skinndorrTat,
@@ -67,6 +67,12 @@ export const DORRAR = {
     namn: 'Trädörr', ikon: 'tradorr', tek: ['tradorr'], av: RECEPT.tradorr.av, min: RECEPT.tradorr.min, tat: BYGGNAD.tradorrTat, stanger: true,
     gor: 'Hänger en dörr av trä i dörröppningen.',
     forsta: '{namn} hängde byns första trädörr. Den håller värmen inne och kan stängas mot vargarna.',
+  },
+  // den låsta dörren (steg 12.5.6, Järnet: Den låsta dörren): lika tät som trädörren, och bommad också när huset är tomt
+  lasdorr: {
+    namn: 'Låst dörr', ikon: 'lasdorr', tek: ['las'], av: RECEPT.lasdorr.av, min: RECEPT.lasdorr.min, tat: BYGGNAD.tradorrTat, stanger: true, last: true,
+    gor: 'Hänger en dörr av trä med ett lås av järn i dörröppningen.',
+    forsta: '{namn} hängde byns första låsta dörr. Den är stängd också när ingen är hemma.',
   },
 } satisfies Record<string, DorrDef>;
 export type DorrSlag = keyof typeof DORRAR;

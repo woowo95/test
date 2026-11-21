@@ -6,7 +6,7 @@ import { Person, createState, step, living, serializeParts, serialize, isLight, 
 import * as SIM from '../../sim';
 import { hasIcon, PAL } from '../../ikoner';
 import { FARGER, MORKARE, PALETT, iPaletten, kornPa, rasterSteg } from '../../palett';
-import { BEAT, START } from '../kor';
+import { BEAT, START, halTidVid } from '../kor';
 import { KARNA } from '../../portrattkarna';
 import { KARTBILDER, SYMNAMN } from '../../kartbilder';
 import { symDelar, symUtan } from '../../ui/symboler';
@@ -50,7 +50,7 @@ function kodIRutorna() {
 // Styre-fliken får plats (steg 12.1.26): varje rad i ledarlistan har lika många delar som listan har kolumner, så att ingen del
 // hamnar på en egen rad utanför rutan, ingen text i den klipps, och rutorna står i en kolumn på en smal skärm
 function styretFarPlats() {
-  const s = SIM.cloneState(testBy(1)); utanWebblasare(); setByn(s);
+  const s = SIM.cloneState(testBy(1, b => !!SIM.ledareOf(b))); utanWebblasare(); setByn(s); // en testby med en ledare: listan finns bara då
   const css = readFileSync(new URL('../../template.html', import.meta.url), 'utf8');
   const kol = /\.rels\.ledarlista \{ grid-template-columns: ([^;]+);/.exec(css)?.[1].trim().split(/\s+(?![^(]*\))/).length ?? 0;
   const smal = /@media \(max-width: \d+px\) \{ \.rutor \{ grid-template-columns: minmax\(0, 1fr\); \}/.test(css);
@@ -328,8 +328,7 @@ SCENARIER.tatuering = {
     const utanNal = SIM.tatVal(s, g);
     SIM.addTool(s, 'nal', g); SIM.setAmount(s, 'kol', 3);
     q.x = g.x + 0.5; q.y = g.y;
-    let d: ReturnType<typeof SIM.tatVal>, forsok = 0;
-    for (; forsok < 400 && !d; forsok++) { d = SIM.tatVal(s, g); s.now += SIM.MIN; }
+    const d = SIM.tatVal(s, g); // valet väger lusten gånger hantverket (raden tatuera i FORBATTRA), utan tärningskast
     const fore = skapad(s, q), B0 = KARNA.portratt(fore);
     SIM.tatKlar(s, g, d?.q.id);
     const efter = skapad(s, q), B1 = KARNA.portratt(efter);
@@ -345,7 +344,7 @@ SCENARIER.tatuering = {
       [`lusten följer seden: striden märks i en by som drar åt Krig, jakten inte i en som drar åt Värna (${vill})`, vill === 'strid' && ingenJakt],
       [`den som dödat någon vill ha märket när upplevelsen fastnat (${markt} av ${fastnat})`, fastnat > 0 && markt === fastnat],
       ['utan bennål tatuerar ingen', !utanNal],
-      [`den som har bennålen väljer att tatuera (${d?.q.name ?? 'ingen'} efter ${forsok} försök), i 4 minuter`, d?.q === q && d.m === 'strid' && d.dur === 4 * SIM.MIN],
+      [`den som har bennålen väljer att tatuera (${d?.q.name ?? 'ingen'}, poängen ${d ? d.sc.toFixed(2) : '–'}), i 4 minuter`, d?.q === q && d.m === 'strid' && d.dur === 4 * SIM.MIN],
       [`märket i pannan i byns stil (${del}), och inget kol går åt (${SIM.amountOf(s, 'kol')} kvar, fynd 502)`, del === `tat-${stil}-panna` && !efter.del.tatKind && SIM.amountOf(s, 'kol') === 3 && !q.tatV],
       [`det syns i porträttet (${skilda} punkter), bara i paletten`, skilda > 0 && utanfor === 0],
       [`och står i berättelsen (${rad?.[2] ?? ''})`, !!rad],
@@ -461,10 +460,49 @@ SCENARIER.arbetstid = {
     const nu = 0, MIN = 60_000;
     const kniv30 = SIM.forLangtArbete({ act: 'kniv', until: nu + 30 * MIN }, nu), kniv3 = SIM.forLangtArbete({ act: 'kniv', until: nu + 3 * MIN }, nu);
     const vila = SIM.forLangtArbete({ act: 'vila', until: nu + 300 * MIN }, nu);
+    // vattnet genom isen (steg 12.1.159): hålet hör inte till arbetet, och vakten drar av den tid hålet tog när arbetet
+    // började, också när yxan sedan tagits av någon annan i samma slag
+    const s = createState(1, START), p = living(s).find(q => ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    s.is = { vatten: 0, cm: 20 } as typeof s.is; SIM.setStock(s, { sten: 0 });
+    const yxa = SIM.addTool(s, 'yxa', p), hal = SIM.halMin(s, p, p.x, p.y);
+    const vt = { act: 'vatten', phase: 'do', until: s.now, tool: 'vattensack' } as SIM.Task; SIM.startWork(s, p, vt);
+    s.ting = tingOf(s).filter(t => t !== yxa);
+    const efter = SIM.halMin(s, p, p.x, p.y), vattenLarm = SIM.forLangtArbete(vt, s.now, halTidVid(s, p, vt)), utanMinne = SIM.forLangtArbete(vt, s.now, efter);
     return [
+      [`vatten genom 20 cm is med yxan: hålet ${hal.toFixed(1)} min, arbetet ${((vt.until - s.now) / MIN).toFixed(2)} min, och utan yxan svarar halMin ${efter} efteråt`, hal > 0 && efter < hal && Math.abs((vt.until - s.now) / MIN - hal - SIM.TORST.fyllSek / 60) < 1e-6],
+      [`vakten larmar inte när yxan tagits under slaget (${vattenLarm ?? 'inget larm'}), som den gjorde med halMin efteråt (${utanMinne ?? 'inget larm'})`, !vattenLarm && !!utanMinne],
       [`kniven har slaget ${SIM.tidSlagAv('kniv')}, och vakten larmar när den får 30 minuter (${kniv30 ?? 'inget larm'})`, SIM.tidSlagAv('kniv') !== 'stund' && !!kniv30],
       ['men inte när den tar 3 minuter', !kniv3],
       [`att vila är en stund (${SIM.tidSlagAv('vila')}) och får ta hur lång tid som helst`, SIM.tidSlagAv('vila') === 'stund' && !vila],
+    ];
+  },
+};
+
+SCENARIER.bjornrovare = {
+  text: 'Steg 12.1.162 och 12.1.258: npm run strid räknar björnens strider mot rövare för sig (Björnen mot rövarna) och inte som anfall mot byn, också när alla rövare dog; striden bär själv vad den gällde',
+  kor: () => {
+    // doda = alla rövare dör i striden och tas ur s.people före slutet (steg 12.1.258): striden bär själv vad den gällde
+    const strid = (rovare: boolean, doda = false) => {
+      const s = createState(1, START);
+      if (rovare) SIM.rovarnaKommer(s, 4, true);
+      const folk = rovare ? (s.rovare ? SIM.rovarna(s, s.rovare) : []) : living(s).filter(p => ageOf(p, s.now) >= SIM.ALDER.vuxen).slice(0, 2);
+      SIM.bjornStrid(s, 999, folk, false, 'skada');
+      const g = SIM.kartStrider(s)[SIM.kartStrider(s).length - 1];
+      if (doda && g) { // alla rövare dör och tas ur s.people; striden går till slut och rapporten säger vad den gällde
+        const ids = new Set(folk.map(p => p.id));
+        for (const p of folk) p.died = s.now;
+        s.people = s.people.filter(p => !ids.has(p.id));
+        for (let i = 0; i < 200 && SIM.kartStrider(s).includes(g); i++) step(s, 5);
+        const rp = s.stridRapporter?.[s.stridRapporter.length - 1];
+        return { n: folk.length, orsak: SIM.kartStrider(s).includes(g) ? 'striden tog inte slut' : rp?.orsak ?? 'ingen rapport' };
+      }
+      return { n: folk.length, orsak: g ? g.orsak : 'ingen strid' };
+    };
+    const r = strid(true), d = strid(true, true), b = strid(false);
+    return [
+      [`björnen mot ${r.n} rövare räknas som ${r.orsak}`, r.n > 0 && r.orsak === SIM.BJORN_MOT_ROVARNA],
+      [`björnen mot ${d.n} rövare som alla dog räknas som ${d.orsak}`, d.n > 0 && d.orsak === SIM.BJORN_MOT_ROVARNA],
+      [`björnen mot ${b.n} bybor räknas som ${b.orsak}`, b.n > 0 && b.orsak === 'Anfölls av en björn'],
     ];
   },
 };

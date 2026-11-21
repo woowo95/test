@@ -544,7 +544,7 @@ SCENARIER.kista = {
     const s = createState(6, START); klockan(s); tandEld(s); medHus(s);
     for (const r of s.people) r.tek = { ...r.tek, hylla: 1 };
     setMat(s, { bar: 300 }); setAmount(s, 'ved', 40); setAmount(s, 'virke', 10); setAmount(s, 'plankor', 10);
-    const p = living(s)[0], q = living(s)[1];
+    const p = living(s)[0], q0 = living(s)[1];
     // en yxa och en kniv till, så att två av p:s egna ligger oanvända också när p hugger eller slaktar med den ena
     const egna = [newTing(s, 'yxa', 1, p.id), newTing(s, 'kniv', 1, p.id), newTing(s, 'yxa', 1, p.id), newTing(s, 'kniv', 1, p.id)], byns = newTing(s, 'spjut', 1, BYN);
     placeTools(s);
@@ -562,7 +562,9 @@ SCENARIER.kista = {
     const lediga = egna.filter(t => t.agare === p.id && t.hos === undefined && t.bar === undefined && t.lass === undefined); // det p bytt bort eller gett bort är inte p:s längre
     const iLagret = pilesOf(s).some(a => k && a.x === k.x && a.y === k.y);
     const iKistanNu = lediga.filter(iKistan).length, egetOk = lediga.length > 0 && lediga.every(iKistan) && !iKistan(byns) && !iLagret;
-    // q lånar yxan: när q är klar ligger den i kistan igen
+    // q lånar yxan: när q är klar ligger den i kistan igen. Den som lånar har ingen egen yxa (p kan ha bytt bort en till någon,
+    // och den tar man hellre)
+    const q = living(s).find(r => r !== p && !SIM.tingOf(s).some(t => SIM.iSlag(t.k, 'yxa') && t.agare === r.id)) ?? q0;
     const yxa = egna[0]; yxa.vid = k?.id; yxa.x = k?.x; yxa.y = k?.y; yxa.hos = undefined;
     const tog = take(s, q, 'yxa') === yxa;
     q.task = undefined; tidyTools(s); placeTools(s);

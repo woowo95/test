@@ -12,13 +12,15 @@ import { Hus, housesOf, husById, roomAt } from './byggnad';
 import { bedTile, fnId } from './byggnader';
 import { bynsMitt } from './omrade';
 import { DAY, HOUR, LogEntry, MIN, Person, W, Rel, SKILLS, SKILL_NAMES, STATS, Skill, Stat, State, Upplevelse } from './typer';
-import { upplev, upplevelseText } from './uppvaxt';
+import { type UpplevelseTyp, upplev, upplevelseText } from './uppvaxt';
 import { isLight, kalender } from './tid';
 import { temperature, vaderNu } from './vader';
 import { hash3 } from './slump';
 import { TEXTLYSS, type TextLyssnare, bestamd, ganger, gen, goraNamn, han, hans, honom, och, slaktOrd, talOrd } from './ord';
 export { bestamd } from './ord';
-import { isSick } from './sjukdom';
+import { isSick, SJUKDOMAR } from './sjukdom';
+import { harTanke } from './tankar';
+import { tamArt } from './tamdjur';
 
 // Berättelserna (steg 3.9, "Berättelser" i designdokumentet): texterna om människorna, händelserna och sakerna. Varje
 // text är en mall i registret BERATTELSER med många varianter; varianten väljs ur byns frö, personen och tiden (hash),
@@ -81,6 +83,7 @@ export const BERATT = balans('beratt', {
   // relationerna utförligt (steg 3.9.6)
   kemi: 0.4, // personkemin (−1 till 1) nämns från så här långt från noll
   relIntryck: 2, // så här många av intrycken visas
+  stortByte: 40, // ett byte där båda sidor tillsammans är värda så här mycket (grundvärde, ett silver = 1) står i krönikan (steg 12.1.135)
 });
 
 // ---------- registren ----------
@@ -116,12 +119,30 @@ const BDEF: Record<IntryckTyp, BinamnDef> = {
   pahittig: { namn: [['den kloke', 'den kloka'], ['Finurlig', 'Finurlig'], ['den listige', 'den listiga'], ['Hittaren', 'Hittaren']] }, // steg 10.4.9
   skvaller: { namn: [['Skvallret', 'Skvallerbyttan'], ['Pratmakaren', 'Pratmakerskan'], ['Sladdertacka', 'Sladdertacka'], ['den lösmynte', 'den lösmynta']] }, // steg 10.8.6
   aventyrare: { namn: [['Äventyraren', 'Äventyrerskan'], ['Vägfararen', 'Vägfarerskan'], ['den bereste', 'den beresta'], ['Vidfamnaren', 'Vidfamnerskan']] }, // steg 11.8.17
+  // binamnen för intrycken från de nya systemen (steg 12.1.134)
+  forsvarare: { namn: [['Försvararen', 'Försvarerskan'], ['Sköldmuren', 'Sköldmön'], ['den trofaste', 'den trofasta'], ['Grindvakten', 'Grindvakten']] },
+  botare: { namn: [['Botaren', 'Boterskan'], ['Läkehand', 'Läkehand'], ['den milde', 'den milda'], ['Örtkunnig', 'Örtkunnig']] },
+  daligLakare: { namn: [['Kvacksalvaren', 'Kvacksalverskan'], ['Dödshand', 'Dödshand'], ['den klumpige', 'den klumpiga'], ['Gravgrävaren', 'Gravgräverskan']] },
+  scenBra: { namn: [['Skalden', 'Skaldmön'], ['Guldtunga', 'Guldtunga'], ['den älskade', 'den älskade'], ['Lyssnarsamlaren', 'Lyssnarsamlerskan']] },
+  scenDalig: { namn: [['Gäspet', 'Gäspet'], ['den tråkige', 'den tråkiga'], ['Sömnsången', 'Sömnsången'], ['Gnällaren', 'Gnällerskan']] },
+  skrivkunnig: { namn: [['Skrivaren', 'Skriverskan'], ['Runkarlen', 'Runkvinnan'], ['den lärde', 'den lärda'], ['Fjäderpennan', 'Fjäderpennan']] },
+  from: { namn: [['den fromme', 'den fromma'], ['Bönemannen', 'Bönekvinnan'], ['den helige', 'den heliga'], ['Offraren', 'Offrerskan']] },
+  gudlos: { namn: [['den gudlöse', 'den gudlösa'], ['Hädaren', 'Häderskan'], ['den otrogne', 'den otrogna'], ['Gudsföraktaren', 'Gudsförakterskan']] },
+  suput: { namn: [['Suputen', 'Suputen'], ['Ölstruten', 'Ölstruten'], ['den törstige', 'den törstiga'], ['Hornet', 'Hornet']] },
+  lurendrejare: { namn: [['Lurendrejaren', 'Lurendrejerskan'], ['Rävtungan', 'Rävtungan'], ['den listige', 'den listiga'], ['Fiffaren', 'Fifferskan']] },
+  hederlig: { namn: [['den hederlige', 'den hederliga'], ['Rakvågen', 'Rakvågen'], ['den ärlige', 'den ärliga'], ['Rätthand', 'Rätthand']] },
+  vittberest: { namn: [['den vittbereste', 'den vittberesta'], ['Vandraren', 'Vandrerskan'], ['Långfararen', 'Långfarerskan'], ['Vägmätaren', 'Vägmäterskan']] },
+  brandslackare: { namn: [['Brandsläckaren', 'Brandsläckerskan'], ['Vattenbäraren', 'Vattenbärerskan'], ['den orädde', 'den orädda'], ['Eldtämjaren', 'Eldtämjerskan']] },
+  djurvan: { namn: [['Herden', 'Herdinnan'], ['Djurvännen', 'Djurvännen'], ['den milde', 'den milda'], ['Fårfadern', 'Fårmodern']] },
+  fangelsekund: { namn: [['Fängelsekunden', 'Fängelsekunden'], ['Bojan', 'Bojan'], ['den inlåste', 'den inlåsta'], ['Gallret', 'Gallret']] },
   forutseende: { namn: [['den framsynte', 'den framsynta'], ['Förrådsvakt', 'Förrådsvakt'], ['den vise', 'den visa'], ['Vinterhövding', 'Vinterhövding']] },
 };
 export const BINAMN: Record<IntryckTyp, BinamnDef> = BDEF;
 
 // mallarna: id → varianterna (minst åtta). {namn} = förnamnet, {binamn} = namnet byn gav, {helt} = båda, {skal} = varför
 // (det som hänt), {tillstand} = det byn tycker att hen är när ingen har ett bevis (tillst, steg 6.7.6)
+// mallarna från de nya systemen (steg 12.1.135): krönikans varianter (iBy) och personens (iPerson, beskrivningen och eftermälet)
+const iBy = (f: Fyllning) => f.person !== true, iPerson = (f: Fyllning) => f.person === true;
 const MDEF = {
   hedersnamn: [
     { t: 'Byn har börjat kalla {namn} för {binamn}, för {hen} {skal}.', om: f => !f.tillst },
@@ -1432,6 +1453,89 @@ const MDEF = {
     '{namn} och {med} skrattade åt något barnen gjort.',
     '{namn} oroade sig för barnen, och {med} lyssnade.',
   ],
+  // samtalen om ämnena från de nya systemen (steg 12.1.136): {om} = vad det gällde, när det finns något
+  p_djur: [
+    '{namn} och {med} pratade om djuren.',
+    '{namn} berättade för {med} hur djuren mår.',
+    { t: '{namn} och {med} pratade om {om}.', om: f => !!f.om },
+    { t: '{namn} berättade för {med} om {om}.', om: f => !!f.om },
+    '{namn} och {med} undrade om djuren har bete nog.',
+    '{namn} klagade för {med} på ett djur som inte lyder.',
+    '{namn} och {med} pratade om djuren som dött och de som fötts.',
+    '{namn} och {med} pratade om vem som ska sköta djuren.',
+    { t: '{namn} och {med} undrade om djuren klarar istiden.', om: f => f.kallt === true },
+  ],
+  p_sjukdom: [
+    '{namn} och {med} pratade om sjukdomen.',
+    { t: '{namn} och {med} pratade om {om}.', om: f => !!f.om },
+    { t: '{namn} var orolig för {om}, och {med} lyssnade.', om: f => !!f.om },
+    '{namn} berättade för {med} hur det känns att vara sjuk.',
+    '{namn} och {med} undrade vem som blir sjuk härnäst.',
+    '{namn} och {med} pratade om vad som hjälper mot sjukdomen.',
+    '{namn} frågade {med} om örter som läker.',
+    '{namn} och {med} pratade om de som blivit friska igen.',
+    '{namn} och {med} höll sig lite ifrån varandra och pratade om smittan.',
+  ],
+  p_strid: [
+    '{namn} och {med} pratade om striden.',
+    '{namn} berättade för {med} hur striden gick till.',
+    '{namn} och {med} pratade om vem som slogs bäst.',
+    '{namn} visade {med} hur {hen} höll spjutet.',
+    '{namn} och {med} undrade om fienden kommer tillbaka.',
+    '{namn} och {med} pratade om de som skadades.',
+    '{namn} berättade för {med} om rädslan i striden.',
+    '{namn} och {med} pratade om hur byn ska försvara sig nästa gång.',
+  ],
+  p_tro: [
+    '{namn} och {med} pratade om tron.',
+    '{namn} berättade för {med} om gudarna.',
+    '{namn} och {med} pratade om ritualen.',
+    '{namn} och {med} undrade vad gudarna vill.',
+    '{namn} berättade för {med} vad {hen} bad om.',
+    '{namn} och {med} pratade om de heliga kvädena.',
+    '{namn} och {med} pratade om tecknen.',
+    '{namn} och {med} pratade om vad som händer efter döden.',
+  ],
+  p_skord: [
+    '{namn} och {med} pratade om skörden.',
+    '{namn} berättade för {med} hur fältet gav i år.',
+    '{namn} och {med} pratade om vädret och grödan.',
+    '{namn} och {med} undrade om förrådet räcker till istiden.',
+    '{namn} klagade för {med} på en dålig skörd.',
+    '{namn} och {med} pratade om vad de ska så nästa år.',
+    '{namn} och {med} pratade om jorden på fältet.',
+    '{namn} och {med} räknade på hur mycket fältet gett.',
+  ],
+  p_fest: [
+    '{namn} och {med} pratade om festen.',
+    '{namn} berättade för {med} om dansen.',
+    '{namn} och {med} pratade om sångerna vid elden.',
+    '{namn} och {med} skrattade åt något som hände på festen.',
+    '{namn} och {med} pratade om maten på gästabudet.',
+    '{namn} och {med} pratade om vem som dansade med vem.',
+    '{namn} och {med} pratade om matchen.',
+    '{namn} och {med} längtade redan till nästa fest.',
+  ],
+  p_lagar: [
+    '{namn} och {med} pratade om lagarna.',
+    '{namn} och {med} pratade om vad tinget bestämde.',
+    '{namn} klagade för {med} på en lag.',
+    '{namn} och {med} pratade om hur byn röstade.',
+    '{namn} och {med} pratade om domen på tinget.',
+    '{namn} och {med} undrade om lagen är rättvis.',
+    '{namn} berättade för {med} hur det var att stå inför tinget.',
+    '{namn} och {med} pratade om vem som borde leda byn.',
+  ],
+  p_resor: [
+    '{namn} och {med} pratade om resor.',
+    '{namn} berättade för {med} om vägen och platserna där borta.',
+    { t: '{namn} och {med} undrade när {om} kommer hem.', om: f => !!f.om },
+    { t: '{namn} väntar på {om} och pratade om det med {med}.', om: f => !!f.om },
+    '{namn} och {med} pratade om byarna där borta.',
+    '{namn} berättade för {med} om det {hen} sett på resan.',
+    '{namn} och {med} pratade om att ge sig av en dag.',
+    '{namn} och {med} pratade om vad som hänt medan någon var borta.',
+  ],
   p_vardag: [
     '{namn} och {med} småpratade.',
     '{namn} och {med} pratade om lite av varje.',
@@ -2079,7 +2183,7 @@ const MDEF = {
   l_svartSjuk: [
     '{namn} blev svårt sjuk.',
     'En svår sjukdom har drabbat {namn}.',
-    '{namn} ligger med feber och orkar inte resa sig.',
+    { t: '{namn} ligger med feber och orkar inte resa sig.', om: f => f.feber === true },
     '{namn} är mycket sjuk, och de andra oroar sig.',
     { t: 'Kylan tog {namn}, som blev svårt sjuk.', om: f => !!f.kallt },
     '{namn} har blivit svårt sjuk.',
@@ -2142,6 +2246,156 @@ const MDEF = {
     { t: 'Det gav {honom} mod.', om: f => f.orolig === true },
     { t: '{Hen} tänker gärna tillbaka på det.', om: f => f.glad === true || f.nere === true },
     { t: '', om: f => !f.orolig && !f.modig && !f.nere && !f.glad && !f.talfor },
+  ],
+  // ---- mallarna från de nya systemen (steg 12.1.135): krönikan skriver dem när händelsen sker (iBy), och beskrivningen och
+  // eftermälet av en person som var med om den (person, varMed nedan). Fälten står vid varje mall
+  // rövaranfallet (rovare.ts, när rövarna tagit det de ville ha): {fran} = varifrån, {vad} = vad de tog, {tyst} = ingen såg dem
+  k_rovare: [
+    { t: 'Rövare {fran} kom till byn och {vad}.', om: iBy },
+    { t: 'Det var {arstid} när rövare {fran} kom. De {vad}.', om: iBy },
+    { t: 'Rövarna {fran} gick inte tomhänta därifrån: de {vad}.', om: iBy },
+    { t: 'Byn kommer ihåg dagen då rövare {fran} {vad}.', om: iBy },
+    { t: 'Rövare {fran} {vad}, och byn fick börja om med det som var kvar.', om: iBy },
+    { t: 'Ett gäng rövare {fran} {vad} innan de försvann.', om: iBy },
+    { t: 'Rövarna {fran} kom, tog vad de ville och gick. De {vad}.', om: iBy },
+    { t: 'Det blev en mager tid efter att rövare {fran} {vad}.', om: iBy },
+    { t: 'Ingen såg rövarna {fran} komma. De {vad}.', om: f => iBy(f) && f.tyst === true },
+    { t: 'Mitt i natten kom rövare {fran} och {vad}.', om: f => iBy(f) && f.natt === true },
+    { t: '{namn} var med när rövarna kom till byn.', om: iPerson },
+    { t: '{Hen} minns rövarna som kom till byn.', om: iPerson },
+    { t: 'När rövarna kom var {namn} där.', om: iPerson },
+  ],
+  // branden (brand.ts, när elden slocknat): {mark} = hur mycket mark, {vaggar} = ' och två väggar' eller tomt, {blixt} och {nara}
+  k_brand: [
+    { t: 'En eldsvåda brände {mark}{vaggar}.', om: iBy },
+    { t: 'Det var {arstid} när elden for fram och brände {mark}{vaggar}.', om: iBy },
+    { t: 'Elden tog {mark}{vaggar} innan den slocknade.', om: iBy },
+    { t: 'Byn minns branden som brände {mark}{vaggar}.', om: iBy },
+    { t: 'Röken syntes långt när elden brände {mark}{vaggar}.', om: iBy },
+    { t: 'En brand gick över {mark}{vaggar}, och askan låg kvar länge.', om: iBy },
+    { t: 'Det brann: {mark}{vaggar} blev svart.', om: iBy },
+    { t: 'Elden kom och gick och lämnade {mark}{vaggar} i aska.', om: iBy },
+    { t: 'Blixten slog ner och tände en brand som tog {mark}{vaggar}.', om: f => iBy(f) && f.blixt === true },
+    { t: 'Elden kom ända in till byn och brände {mark}{vaggar}.', om: f => iBy(f) && f.nara === true },
+    { t: '{namn} var med när elden brann.', om: iPerson },
+    { t: '{Hen} minns den stora branden.', om: iPerson },
+    { t: '{namn} såg elden komma.', om: iPerson },
+  ],
+  // tornadon (motgang.ts, när den dragit förbi): {doda} = ' Två dog.' eller tomt
+  k_tornado: [
+    { t: 'En tornado drog fram över byn.{doda}', om: iBy },
+    { t: 'Det var {arstid} när tornadon kom.{doda}', om: iBy },
+    { t: 'Vinden vred sig till en tornado som drog förbi byn.{doda}', om: iBy },
+    { t: 'Byn kommer ihåg tornadon.{doda}', om: iBy },
+    { t: 'Himlen blev svart och en tornado gick över landet.{doda}', om: iBy },
+    { t: 'Tornadon slet upp träd och tak och drog vidare.{doda}', om: iBy },
+    { t: 'Efter tornadon fick byn plocka upp det som blåst bort.{doda}', om: iBy },
+    { t: 'En virvel av vind gick fram och var borta lika fort.{doda}', om: iBy },
+    { t: 'Ingen dog när tornadon kom, men byn glömde den inte.', om: f => iBy(f) && !f.doda },
+    { t: '{namn} var med när tornadon kom.', om: iPerson },
+    { t: '{Hen} minns tornadon.', om: iPerson },
+    { t: '{namn} såg vinden vrida sig till en tornado.', om: iPerson },
+  ],
+  // översvämningen (motgang.ts, när vattnet dragit sig tillbaka): {doda}
+  k_flod: [
+    { t: 'Sjön svämmade över, och vattnet stod högt länge.{doda}', om: iBy },
+    { t: 'Det var {arstid} när vattnet steg över stranden.{doda}', om: iBy },
+    { t: 'Högvattnet kom upp på land och drog sig sakta tillbaka.{doda}', om: iBy },
+    { t: 'Byn minns översvämningen.{doda}', om: iBy },
+    { t: 'Vattnet tog stranden och lämnade lera efter sig.{doda}', om: iBy },
+    { t: 'En översvämning gick upp på land, och byn bar undan det den kunde.{doda}', om: iBy },
+    { t: 'Sjön steg och sjönk igen.{doda}', om: iBy },
+    { t: 'Efter regnen kom vattnet upp på land.{doda}', om: iBy },
+    { t: 'Det regnade länge innan sjön svämmade över.{doda}', om: f => iBy(f) && f.regn === true },
+    { t: '{namn} var med när sjön svämmade över.', om: iPerson },
+    { t: '{Hen} minns översvämningen.', om: iPerson },
+    { t: '{namn} såg vattnet stiga.', om: iPerson },
+  ],
+  // epidemin (sjukdom.ts, när ingen längre är sjuk i den): {sjukdom}, {antal} = hur många som blev sjuka, {doda}
+  k_epidemi: [
+    { t: '{Sjukdom} gick genom byn. {Antal} blev sjuka.{doda}', om: iBy },
+    { t: 'Det var {arstid} när {sjukdom} spred sig i byn, och {antal} blev sjuka.{doda}', om: iBy },
+    { t: 'Smittan tog slut till sist. {Antal} hade haft {sjukdom}.{doda}', om: iBy },
+    { t: 'Byn minns tiden med {sjukdom}, då {antal} blev sjuka.{doda}', om: iBy },
+    { t: '{Sjukdom} gick från den ena till den andra tills {antal} hade haft den.{doda}', om: iBy },
+    { t: 'Ett tag var nästan alla rädda för {sjukdom}. {Antal} blev sjuka.{doda}', om: iBy },
+    { t: '{Sjukdom} kom till byn och gick över. {Antal} låg sjuka.{doda}', om: iBy },
+    { t: 'Det blev tyst i byn medan {sjukdom} gick runt. {Antal} blev sjuka.{doda}', om: iBy },
+    { t: 'Alla klarade sig när {sjukdom} gick genom byn, fast {antal} blev sjuka.', om: f => iBy(f) && !f.doda },
+    { t: '{namn} var med när smittan gick genom byn.', om: iPerson },
+    { t: '{Hen} minns tiden när så många var sjuka.', om: iPerson },
+    { t: '{namn} såg smittan gå från den ena till den andra.', om: iPerson },
+  ],
+  // tron (religion.ts, när en tro grundas, och bygg.ts, när trons hus står klart): {grundare}, {tecken}, {hus} = husets namn och {huset}
+  k_tro: [
+    { t: '{grundare} tolkade {tecken} som ett tecken, och en ny tro började.', om: f => iBy(f) && !f.huset },
+    { t: 'Det var {arstid} när {grundare} såg ett tecken i {tecken}. Så började en ny tro.', om: f => iBy(f) && !f.huset },
+    { t: 'En ny tro föddes när {grundare} förstod vad {tecken} betydde.', om: f => iBy(f) && !f.huset },
+    { t: 'Byn minns när {grundare} började tro, efter {tecken}.', om: f => iBy(f) && !f.huset },
+    { t: '{grundare} berättade för de andra om {tecken}, och några började tro.', om: f => iBy(f) && !f.huset },
+    { t: '{Hus} stod klart, och de som tror har en plats att samlas på.', om: f => iBy(f) && f.huset === true },
+    { t: 'De troende byggde färdigt {hus}.', om: f => iBy(f) && f.huset === true },
+    { t: 'Det var {arstid} när {hus} stod klart.', om: f => iBy(f) && f.huset === true },
+    { t: 'Tron fick sitt hus: {hus} stod klart.', om: f => iBy(f) && f.huset === true },
+    { t: '{namn} grundade en tro.', om: iPerson },
+    { t: 'Det var {namn} som först såg tecknet och började tro.', om: iPerson },
+    { t: '{Hen} grundade den tro som byn talar om.', om: iPerson },
+  ],
+  // resan (resa.ts, när sällskapet kommer hem): {folk} = vilka, {de} = de eller hen, {resa} = färden ('en handelsresa'), {mal}, {borta}
+  k_resa: [
+    { t: '{folk} kom hem från {resa} till {mal}.', om: iBy },
+    { t: 'Det var {arstid} när {folk} kom hem från {resa} till {mal}, efter {borta}.', om: iBy },
+    { t: 'Efter {borta} på vägen kom {folk} hem från {resa} till {mal}.', om: iBy },
+    { t: 'Byn tog emot {folk}, som kom hem från {resa} till {mal}.', om: iBy },
+    { t: '{folk} var borta i {borta} på {resa} till {mal}.', om: iBy },
+    { t: 'Byn hade väntat länge på {folk}. {De} kom hem från {resa} till {mal}.', om: iBy },
+    { t: '{folk} kom hem från {resa} till {mal} och hade mycket att berätta.', om: iBy },
+    { t: 'Vägen till {mal} var lång, men {folk} kom hem från {resa}.', om: iBy },
+    { t: 'I snön kom {folk} hem från {resa} till {mal}.', om: f => iBy(f) && f.sno === true },
+    { t: '{namn} har varit ute på resa.', om: iPerson },
+    { t: '{Hen} har sett andra platser än byn.', om: iPerson },
+    { t: '{namn} har gått långt bort från byn och kommit hem igen.', om: iPerson },
+  ],
+  // handeln (behov.ts, vid ett stort byte): {a} och {b}, {fick} = det a fick, {gav} = det a gav
+  k_handel: [
+    { t: '{a} bytte till sig {fick} av {b} för {gav}.', om: iBy },
+    { t: 'Det var {arstid} när {a} gjorde ett stort byte med {b}: {fick} för {gav}.', om: iBy },
+    { t: '{a} och {b} gjorde upp om ett byte: {gav} mot {fick}.', om: iBy },
+    { t: 'Byn talade länge om bytet då {a} fick {fick} av {b}.', om: iBy },
+    { t: '{a} gav {gav} och fick {fick} av {b}.', om: iBy },
+    { t: 'Ett stort byte: {a} lämnade {gav} och tog {fick} från {b}.', om: iBy },
+    { t: '{a} handlade med {b} och kom hem med {fick}.', om: iBy },
+    { t: '{b} fick {gav} av {a}, och {a} fick {fick}.', om: iBy },
+  ],
+  // djuren (tamdjur.ts, när byn får sitt första tamdjur och när ett djur dör): {djur} = 'en ko', {hur} = 'av hunger', {agare}, {forsta}
+  k_djur: [
+    { t: 'Byn fick sitt första tamdjur: {djur}.', om: f => iBy(f) && f.forsta === true },
+    { t: 'Det var {arstid} när {djur} blev byns första tamdjur.', om: f => iBy(f) && f.forsta === true },
+    { t: 'Det första djuret som stannade i byn var {djur}.', om: f => iBy(f) && f.forsta === true },
+    { t: 'Med {djur} började byn hålla djur.', om: f => iBy(f) && f.forsta === true },
+    { t: '{agare} miste {djur}, som dog {hur}.', om: f => iBy(f) && !f.forsta && !!f.agare },
+    { t: 'Byn miste {djur}, som dog {hur}.', om: f => iBy(f) && !f.forsta && !f.agare },
+    { t: 'Det var {arstid} när {djur} dog {hur}.', om: f => iBy(f) && !f.forsta },
+    { t: '{Djur} dog {hur}, och byn hade ett djur mindre.', om: f => iBy(f) && !f.forsta },
+    { t: 'Byn sörjde inte länge, men {djur} som dog {hur} var saknad.', om: f => iBy(f) && !f.forsta },
+    { t: '{namn} växte upp med djur.', om: iPerson },
+    { t: '{Hen} är van vid djuren sedan barndomen.', om: iPerson },
+    { t: 'Det fanns alltid djur omkring {namn} när {hen} var liten.', om: iPerson },
+  ],
+  // rättegången (styre.ts, när tinget dömt): {namn} = den som dömdes, {ledare}, {brott}, {straff} = 'utvisade', {fri}
+  k_ratt: [
+    { t: 'Tinget dömde {namn} för att {hen} {brott}: {ledare} {straff} {honom}.', om: f => iBy(f) && !f.fri },
+    { t: 'Det var {arstid} när {namn} stod inför tinget för att {hen} {brott}. {Ledare} {straff} {honom}.', om: f => iBy(f) && !f.fri },
+    { t: '{ledare} {straff} {namn}, som {brott}.', om: f => iBy(f) && !f.fri },
+    { t: 'Byn samlades på tinget, och {ledare} {straff} {namn} för att {hen} {brott}.', om: f => iBy(f) && !f.fri },
+    { t: '{namn} {brott}, och {ledare} {straff} {honom} inför byn.', om: f => iBy(f) && !f.fri },
+    { t: 'Tinget friade {namn}.', om: f => iBy(f) && f.fri === true },
+    { t: 'Det var {arstid} när tinget friade {namn}.', om: f => iBy(f) && f.fri === true },
+    { t: 'Byn röstade, och {namn} gick fri från tinget.', om: f => iBy(f) && f.fri === true },
+    { t: '{namn} stod inför tinget men gick fri.', om: f => iBy(f) && f.fri === true },
+    { t: '{namn} har stått inför tinget.', om: iPerson },
+    { t: '{Hen} vet hur det är att dömas inför byn.', om: iPerson },
+    { t: '{namn} har sett tinget döma nära sig.', om: iPerson },
   ],
 } satisfies Record<string, Variant[]>;
 export type MallId = keyof typeof MDEF;
@@ -2448,6 +2702,7 @@ export const BESK_DELAR: BeskDel[] = [
     b.f.dod = q.name; b.f.vem = vem;
     return mening(b, sorj ? 'besk_sorjer' : 'besk_saknar', 16);
   } },
+  { id: 'varMed', vikt: b => varMed(b.s, b.p) ? 0.4 : 0, text: b => personMall(b, varMed(b.s, b.p)!, 44) }, // det hen var med om, med händelsens mall (steg 12.1.135)
   { id: 'overlevt', vikt: b => overlevt(b.p).length ? 0.45 + 0.05 * overlevt(b.p).length : 0, text: b => { b.f.vad = och(overlevt(b.p)); return mening(b, 'besk_overlevt', 26); } },
   { id: 'radd', vikt: b => (b.p.liv?.bett ?? 0) > 0 && b.p.pot.mod < BERATT.raddMod ? 0.55 : 0, text: b => { b.f.stark = b.p.pot.styrka >= BERATT.starkRadd; return mening(b, 'besk_raddVarg', 27); } },
   { id: 'arv', vikt: b => arvet(b.s, b.p) ? 0.45 : 0, text: b => {
@@ -2515,6 +2770,15 @@ function langtar(s: State, p: Person) {
 }
 // det hen överlevt: svält, köld, sjukdom, en svår skada och motgångarna (i tal när det hänt flera gånger)
 const OVERLEVT: [string, string, string][] = [['svalt', 'svält', 'svält'], ['frys', 'svår köld', 'svår köld'], ['sjuk', 'en svår sjukdom', 'svåra sjukdomar'], ['skadad', 'en svår skada', 'svåra skador'], ['mg:hardVinter', 'en hård vinter', 'hårda vintrar'], ['mg:torka', 'en torka', 'torkor'], ['mg:oversvamning', 'en översvämning', 'översvämningar'], ['mg:tornado', 'en tornado', 'tornador'], ['mg:brand', 'en eldsvåda', 'eldsvådor']];
+// det p var med om som har en mall från de nya systemen (steg 12.1.135): den senaste upplevelsen, eller tron hen grundade
+const VAR_MED: Partial<Record<UpplevelseTyp, MallId>> = { brand: 'k_brand', tornado: 'k_tornado', oversvamning: 'k_flod', epidemi: 'k_epidemi', rovareBort: 'k_rovare', rovarePlundring: 'k_rovare', ranad: 'k_rovare', resaBarn: 'k_resa', flyttade: 'k_resa', foralderDomd: 'k_ratt', fangelse: 'k_ratt', djur: 'k_djur' };
+function varMed(s: State, p: Person): MallId | undefined {
+  if ((s.tron ?? []).some(t => t.grundare === p.id)) return 'k_tro';
+  const u = [...p.upp ?? []].reverse().find(x => VAR_MED[x.k]);
+  return u && VAR_MED[u.k];
+}
+// en mening ur händelsens mall om personen (personens varianter)
+function personMall(b: Besk, m: MallId, i: number) { b.f.person = true; const t = mening(b, m, i); delete b.f.person; return t; }
 function overlevt(p: Person) {
   if (!alive(p)) return [];
   const l = p.liv ?? {};
@@ -2601,6 +2865,7 @@ function eftermale(s: State, p: Person) {
   if (f.binamn || f.yrke || f.rykte) ut.push(mening(b, 'e_rykte', 42));
   if (uppfann(p).length) { f.vad = och(uppfann(p).slice(-3)); ut.push(mening(b, 'besk_uppfann', 14)); }
   else if (bedrifter(p).length) { f.vad = ihop(bedrifter(p).slice(-2).map(liten)); ut.push(mening(b, 'besk_bedrift', 15)); }
+  { const m = varMed(s, p); if (m) ut.push(personMall(b, m, 44)); } // det hen var med om (steg 12.1.135)
   ut.push(mening(b, 'e_minns', 43));
   TEXTLYSS.f?.('beskrivning', -1, ut.join(' '), f);
   return ut.join(' ');
@@ -2810,6 +3075,15 @@ const ADEF = {
   arbete: { prio: 10, namn: 'Arbetet' },
   barn: { prio: 10, namn: 'Barnen', ikon: 's_barn' },
   vardag: { prio: 0, namn: 'Lite av varje' },
+  // ämnena från de nya systemen (steg 12.1.136; symbolerna är platshållare): det farliga och det nya före vardagen
+  strid: { prio: 24, namn: 'En strid', ikon: 'rovare' },
+  sjukdom: { prio: 22, namn: 'Sjukdom', ikon: 'i_botare' },
+  resor: { prio: 18, namn: 'Resor', ikon: 'karta' },
+  lagar: { prio: 16, namn: 'Lagar och tinget', ikon: 'i_rattvis' },
+  tro: { prio: 15, namn: 'Tron', ikon: 'i_from' },
+  djur: { prio: 12, namn: 'Djuren', ikon: 'i_djurvan' },
+  skord: { prio: 12, namn: 'Skörden', ikon: 's_mat' },
+  fest: { prio: 12, namn: 'Festen', ikon: 'i_scenBra' },
 } satisfies Record<string, AmneDef>;
 export type AmneId = keyof typeof ADEF;
 export const AMNEN: Record<AmneId, AmneDef> = ADEF;
@@ -2821,6 +3095,18 @@ export function samtalBorjar() { delat = undefined; }
 export function delade(k: AmneId, i?: string, o?: string) { if (!delat || AMNEN[k].prio > AMNEN[delat.k].prio) delat = { k, i, o }; }
 const VADER_PRAT: Record<string, string> = { regn: 'regnet', sno: 'snön', blast: 'blåsten', aska: 'åskan', dimma: 'dimman' };
 // ämnet för samtalet mellan a och b av slaget kind, sparat hos båda
+// ämnena från de nya systemen (steg 12.1.136): har p nyss varit med om saken? Svarar med vad det gällde ('' = inget särskilt)
+const nara = (s: State, p: Person) => s.people.filter(q => alive(q) && q !== p && (q.id === p.partner || isParent(p, q) || isParent(q, p)));
+const NYSS: [AmneId, (s: State, p: Person) => string | undefined][] = [
+  ['djur', (s, p) => { const d = (s.tamdjur ?? []).find(x => x.agare === p.id); return harTanke(p, ['mittDjurDog', 'fickUnge'], s.now) ? '' : d ? tamArt(d.art).ord[2] : undefined; }],
+  ['sjukdom', (s, p) => { const q = [p, ...nara(s, p)].find(x => x.sjuk); return q?.sjuk ? SJUKDOMAR[q.sjuk.k].namn.toLowerCase() : harTanke(p, ['friskIgen'], s.now) ? '' : undefined; }],
+  ['strid', (s, p) => harTanke(p, ['vannSlagsmal', 'forloradeSlagsmal', 'drevBortRovare', 'slogsRovare', 'hotadRovare', 'klaradeVargar', 'anfollsVargar', 'anfollsBjorn', 'sagBjornSlass', 'falldeVildsvin', 'anfollsVildsvin'], s.now) ? '' : undefined],
+  ['tro', (s, p) => harTanke(p, ['badBon', 'hordeKvade', 'hordeSorgkvade', 'lasteHeliga', 'gavTron', 'tackade', 'halsadeElden', 'badForFodd'], s.now) ? '' : undefined],
+  ['skord', (s, p) => harTanke(p, ['godSkord', 'missvaxt'], s.now) ? '' : undefined],
+  ['fest', (s, p) => harTanke(p, ['gastabud', 'dansade', 'lyssnade', 'sagMatch', 'uppträdde'], s.now) ? '' : undefined],
+  ['lagar', (s, p) => harTanke(p, ['orattvisLag', 'straffad', 'frikandes'], s.now) ? '' : undefined],
+  ['resor', (s, p) => { const q = nara(s, p).find(x => x.ute !== undefined); return q ? q.name : harTanke(p, ['komHem', 'sagStort'], s.now) ? '' : undefined; }],
+];
 export function samtalAmne(s: State, a: Person, b: Person, kind: string) {
   let x: { k: AmneId; i?: string; o?: string } | undefined = kind === 'gräl' ? { k: 'gral' } : delat ?? (kind === 'flirt' ? { k: 'karlek' } : kind === 'tröst' ? { k: 'trost' } : undefined);
   if (!x) {
@@ -2834,6 +3120,7 @@ export function samtalAmne(s: State, a: Person, b: Person, kind: string) {
     if (a.hunger < KROPP.hungrig + BERATT.hungrigOver) val.push({ k: 'mat' });
     if (a.tag && a.tag !== 'Dagdrivare') { const tg = TAGS.find(g => g.tag === a.tag), sl = tg?.acts.map(k => ACTS[k].slag).find(k => k); val.push({ k: 'arbete', i: sl && slagIkon(sl), o: a.tag.toLowerCase() }); }
     if (s.people.some(c => alive(c) && (c.mother === a.id || c.father === a.id) && ageOf(c, s.now) < ALDER.vuxen)) val.push({ k: 'barn' });
+    for (const [k, nyss] of NYSS) { const o = nyss(s, a) ?? nyss(s, b); if (o !== undefined) val.push({ k, ...(o ? { o } : {}) }); } // det någon av dem nyss varit med om (steg 12.1.136)
     x = val[Math.floor(hash(s.seed, a.id * 997 + b.id, Math.round(s.now / MIN)) * val.length)];
   }
   const i = x.i ?? AMNEN[x.k].ikon;

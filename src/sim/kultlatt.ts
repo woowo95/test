@@ -48,7 +48,12 @@ export function gravgava(s: State, p: Person) {
   if (kr) kr.med = [...med].map(t => t.k);
 }
 // byta tro (steg 8.5.12): i samtal, när tron svikit en. Var och en har en tro i taget
-export const bytaChans = (p: Person, oppen: number) => ((p.tvivel ?? 0) * 0.5 + 0.02) * (1 - (p.troStyrka ?? 0) / 150) * (1 - oppen / 200);
+export const BYTA = balans('bytatro', {
+  tvivel: 0.5, bas: 0.02, // chansen att byta tro: tvivlet gånger tvivel, plus bas ...
+  styrka: 150, // ... mindre ju starkare tron är (helt borta vid så här stark) ...
+  oppen: 200, // ... och ju öppnare den egna tron är för andra (helt borta vid så här öppen)
+});
+export const bytaChans = (p: Person, oppen: number) => ((p.tvivel ?? 0) * BYTA.tvivel + BYTA.bas) * (1 - (p.troStyrka ?? 0) / BYTA.styrka) * (1 - oppen / BYTA.oppen);
 
 // ---------- det heliga djuret (steg 10.3.15) ----------
 // budet Ett heligt djur har värdet "art:storlek": arten och storleken (2–4) som räknades när budet föreslogs

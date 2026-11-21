@@ -40,7 +40,7 @@ export const BYTE = balans('byte', {
   bakom: 1,
 });
 
-export interface Vara { k: string; n: number; t?: Ting; q?: number; hus?: number; varde?: number; skrift?: Skrift } // skrift = kartan på handlarens blad (steg 11.7.5) // hus = huset som byts (k = 'hus', en symbol på filten, steg 7.2.12), varde = vad det är värt i bytet
+export interface Vara { k: string; n: number; t?: Ting; nr?: number; q?: number; hus?: number; varde?: number; skrift?: Skrift } // nr = redskapets ordningstal i gruppen när byn bjuder ut flera (1 = det första som lämnar byn, steg 12.1.201) // skrift = kartan på handlarens blad (steg 11.7.5) // hus = huset som byts (k = 'hus', en symbol på filten, steg 7.2.12), varde = vad det är värt i bytet
 // // q = kvaliteten på handlarens redskap, som inte är ett ting i byn än
 // en part i ett byte. id = personens id, BYN för byn och ett negativt tal för handlaren. p = personen (bybon eller ingen)
 export interface Part {
@@ -49,6 +49,7 @@ export interface Part {
   p?: Person;
   x: number; y: number;
   varde(k: string): number; // hur mycket parten behöver en till av slaget k, gånger grundvärdet (behovAv i behov.ts)
+  kvar?(k: string, i: number): number; // vad den i:te av slaget k som parten ger bort är värd, gånger grundvärdet: ju färre kvar, desto mer, och den sista mest (byn, steg 12.1.188); saknas = varde(k) för varje
   kanner?(nr: number): number | undefined; // det parten vet om platsen nr i världen, som en karta värderas efter (steg 11.7.5)
   over(utom: readonly string[]): Vara[]; // det parten kan byta bort, utom slagen i utom
   lamna?(w: Vara): Vara; // saken lämnar parten (handlarens packning, byns förråd): ger det som lämnade
@@ -64,6 +65,15 @@ export const kartOf = (v: Vara) => v.skrift?.platser ? v.skrift : v.t?.skrift?.p
 export function vardeAv(w: Vara, P: Part, kop: boolean) {
   const k = kartOf(w);
   return k ? kartVarde(k, kop ? P.kanner : undefined) * (w.t?.c ?? 1) : vardeOf(w) * P.varde(w.k);
+}
+// vad de n första av w (n = alla om inget anges) är värda för P när P ger bort dem: en efter en med det som blir kvar (P.kvar,
+// steg 12.1.188), annars n gånger värdet av en
+export function gerVarde(w: Vara, P: Part, n = w.n) {
+  if (!P.kvar || kartOf(w) || w.hus !== undefined || w.varde !== undefined) return n * vardeAv(w, P, false);
+  if (w.t) return n > 0 ? vardeOf(w) * P.kvar(w.k, w.nr ?? 1) : 0; // det n:te redskapet i gruppen värderas efter det som blir kvar när det och de före är borta
+  let v = 0;
+  for (let i = 1; i <= n; i++) v += P.kvar(w.k, i);
+  return v * vardeOf(w);
 }
 // varorna i en mening (ordlagret, steg 6.7.1): "ett träspjut", "tre rötter och en flintkniv"
 export const varorText = (v: Vara[]) => och(v.map(x => antal(x.t ? 1 : x.n, x.k)));
@@ -178,7 +188,7 @@ function bytetGlomt(s: State, b: ByteMinne) {
 export function glomByten(s: State, p: Person) {
   const b = p.byten;
   if (!b) return;
-  delete p.byten;
+  p.byten = undefined;
   for (const x of b) bytetGlomt(s, x);
 }
 // bytet en rad i loggen handlar om: hela bytet på raden eller det någon minns med numret (filt.ts, gränssnittet)

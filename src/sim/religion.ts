@@ -1,5 +1,6 @@
 import { stor as storOrd, tal } from './ord';
-import { clamp, gauss, pick, rnd } from './slump';
+import { notis } from './notiser';
+import { chansTid, clamp, gauss, pick, rnd } from './slump';
 import { SKRIFT } from './skriftTal';
 import { troshusKlart } from './troshus';
 import { DAY, HOUR, Person, Rel, State } from './typer';
@@ -14,6 +15,7 @@ import { isSick } from './sjukdom';
 import { kyrkansForrad } from './kyrka';
 import { releaseOwner } from './lager';
 import { kyrkaId } from './egendom';
+import { kronikaBer } from './berattelser';
 
 // Religionen (fas 4.1, "Religion" i designdokumentet). Andligheten (steg 4.1.1.1) är en egenskap hos varje person, 0–100:
 // hur viktigt det heliga är för hen, inte vad hen tror på. Den ärvs delvis och flyttas av upplevelserna (uppvaxt.ts, steg
@@ -21,6 +23,7 @@ import { kyrkaId } from './egendom';
 
 // ---------- balanstal (regel 8) ----------
 export const ANDE = balans('andlighet', {
+  dromDygn: 7, dromOp: 50, // den som sover ensam drömmer om en död hen stått nära (bättre relation än dromOp) som dött de senaste dromDygn dygnen
   arv: 0.6, // så stor del av ett barns andlighet kommer från föräldrarnas snitt; resten är en egen dragning
   arvSlump: 8, // så mycket (gånger gauss) det ärvda ändras
   // upplevelserna som flyttar andligheten (steg 4.1.1.3, "Andlighetens riktning" i designdokumentet)
@@ -78,6 +81,16 @@ export function nyAndlighet(s: State, p: Person, mother?: Person, father?: Perso
   if (!mother || !father) return Math.round(egen);
   const snitt = (andlighet(s, mother) + andlighet(s, father)) / 2;
   return Math.round(clamp(ANDE.arv * snitt + (1 - ANDE.arv) * egen + gauss(s, 'tro', p) * ANDE.arvSlump, 0, 100));
+}
+// ett barn växer upp i föräldrarnas tro (steg 12.1.22, Religion: Tron får fäste): det föds in i den tro föräldrarna som lever
+// har, och har den som vuxen om inte något hen varit med om (tvivlet, en annan tro, en syn) får hen att lämna den. Tror
+// föräldrarna olika växer barnet upp i den ena, oftare den vars tro är starkast. Drar ur barnets egen följd 'tro'
+export function fodTro(s: State, p: Person, mother?: Person, father?: Person) {
+  const f = [mother, father].filter((q): q is Person => !!q && alive(q) && troOf(s, q.tro) !== undefined);
+  if (!f.length) return;
+  const vikt = (q: Person) => Math.max(1, q.troStyrka ?? 0);
+  const q = f.length === 2 && f[0].tro !== f[1].tro && rnd(s, 'tro', p) * (vikt(f[0]) + vikt(f[1])) >= vikt(f[0]) ? f[1] : f[0];
+  p.tro = q.tro; p.troStyrka = TRO.styrkaNy;
 }
 // andligheten: den man föddes med (alla har en: en äldre sparfil får den i migrate, varld.ts) plus det upplevelserna flyttat
 // (u.n, steg 4.1.1.3), inom 0–100
@@ -320,6 +333,8 @@ export function grunda(s: State, p: Person, k: TeckenTyp, om?: string) {
   p.tro = tr.id; p.troStyrka = TRO.styrka;
   count(s, 'tro_ny');
   log(s, `${p.name} tolkade ${teckenText(k, om)} som ett tecken. ${tolkning(tr)}`, 'rel', [p.id]);
+  kronikaBer(s, 'k_tro', tr.id, { grundare: p.name, tecken: teckenText(k, om) }); // (steg 12.1.135)
+  notis(s, 'tro', `${p.name} tolkade ${teckenText(k, om)} som ett tecken, och en ny tro började i byn. ${tolkning(tr)}`, [p.id]); // (steg 12.1.137)
 }
 
 // ---------- namnet och berättelsen (steg 4.1.2.3) ----------
@@ -415,12 +430,12 @@ export function gudHandelse(s: State, omr: GudOmr, h: string) {
   for (const tr of s.tron ?? []) if (tr.namn && tr.slut === undefined && tr.gudar?.length) gudFor(s, tr, omr, h);
 }
 // varje timme: en tro på Människa-sidan kan göra en död bybo till förfader, och en gud som inget bekräftat på länge glöms
-function gudSteg(s: State, tr: Tro) {
+function gudSteg(s: State, tr: Tro, h = 1) {
   const gudar = gudarOf(tr);
   if (!gudar.length) return;
   if (tr.natur > GUD.forfader && tr.manga <= GUD.en) {
     const p = gudPerson(s, tr);
-    if (p && rnd(s, 'tro', p) < GUD.forfaderChans) {
+    if (p && rnd(s, 'tro', p) < chansTid(GUD.forfaderChans, 1, h)) {
       const fp = s.people.find(q => !alive(q) && forfaderOmr(s, tr, q));
       if (fp) {
         const g = forfader(s, tr, fp, forfaderOmr(s, tr, fp)!);
@@ -461,14 +476,14 @@ export function predika(s: State, a: Person, b: Person, r: Rel, kind: string, ga
 
 // ---------- varje timme (steg.ts) ----------
 // drömmarna, barnet som blev friskt, tron som fick sitt namn och tron som dog med sin sista troende
-export function stepReligion(s: State) {
+export function stepReligion(s: State, h = 1) { // h: timmarna sedan sist (TAKTER)
   for (const p of living(s)) {
-    if (p.task?.act === 'sova' && rnd(s, 'tro', p) < TRO.drom) {
-      const d = p.partner === undefined ? s.people.find(q => !alive(q) && q.died !== undefined && s.now - q.died < 7 * DAY && (s.rels[relKey(p.id, q.id)]?.op ?? 0) > 50) : undefined;
+    if (p.task?.act === 'sova' && rnd(s, 'tro', p) < chansTid(TRO.drom, 1, h)) {
+      const d = p.partner === undefined ? s.people.find(q => !alive(q) && q.died !== undefined && s.now - q.died < ANDE.dromDygn * DAY && (s.rels[relKey(p.id, q.id)]?.op ?? 0) > ANDE.dromOp) : undefined;
       if (d) tecken(s, p, 'dodDrom', d.name); else tecken(s, p, 'drom');
     }
     if (p.svartSjuk && !isSick(p, s.now)) {
-      delete p.svartSjuk;
+      p.svartSjuk = undefined;
       if (formas(s, p)) for (const q of living(s)) if (isParent(q, p)) tecken(s, q, 'barnFrisk', p.name);
     }
   }
@@ -477,7 +492,7 @@ export function stepReligion(s: State) {
     const folk = troende(s, tr);
     if (!folk.length) { tr.slut = s.now; releaseOwner(s, kyrkaId(tr.id)); count(s, 'tro_slut'); continue; } // kyrkans del blir byns (steg 10.3.17)
     if (!tr.namn && folk.length >= TRO.namn) namnge(s, tr, folk);
-    gudSteg(s, tr);
+    gudSteg(s, tr, h);
   }
   // skalorna som låses upp när det de styr dyker upp
   for (const k of SKALA_IDS) if (SDEF[k].oppnas && !s.troSkalor?.includes(k) && SDEF[k].oppnas!(s)) {

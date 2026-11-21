@@ -14,7 +14,7 @@ import { FOREST } from './vag';
 import { BJORK, GRAN } from './trad';
 import { RYKTE } from './rykten';
 import { GUDAR, gudarOf, troende } from './religion';
-import { drar } from './seder';
+import { drarSed } from './seder';
 import { ISTID, kalender } from './tid';
 import { LAG, TAS_UPP } from './lagar';
 import { FRAGOR, Fraga, rostaOm } from './rost';
@@ -32,6 +32,7 @@ export const NYBYGGET = 'Nybygget';
 export const bynsNamn = (s: State) => s.bynamn?.namn ?? NYBYGGET;
 
 export const BYNT = balans('bynamn', {
+  fragaPrio: 2, // frågan om bynamnet i tinget: prioriteten är så här mycket gånger hur mycket bättre förslagsställaren tycker om namnet (troskeln i LAG.troskel)
   sjo: 10, // sjön: fullt sant vid stranden, inget så här många rutor bort
   skog: 12, skogFull: 0.5, // granen och björken: skog av arten inom så här många rutor från elden, fullt vid den här andelen
   minne: 0.15, // vargen, björnen, branden och vintern: fullt när så stor del av de vuxna bär minnet
@@ -41,7 +42,8 @@ export const BYNT = balans('bynamn', {
   heligt: 0.4, heligtAndlig: 0.6, // tron: heligt + heligtAndlig × andligheten / 100
   annan: 0, annanRel: 0.6, // en annans namn: annan + annanRel × relationen / 100 (högst 1, lägst 0)
   avsatt: 0.5, // en avsatt eller störtad ledares namn stämmer så här mycket (steg 10.9.4)
-  vana: 0.3, vanaDygn: 20, // vanan: den som levt vanaDygn dygn med namnet drar av vana från hur gärna hen byter (steg 10.9.4)
+  vana: 0.5, vanaDygn: 10, // vanan: den som levt vanaDygn dygn med namnet drar av vana från hur gärna hen byter (steg 10.9.4, 12.1.155)
+  nejDygn: 10, // ett namn som röstats ned tas inte upp igen på så här många dygn (år i spelet, steg 12.1.155)
 });
 
 export type BynamnSlag = 'nybygget' | 'natur' | 'minne' | 'person' | 'tro';
@@ -171,7 +173,7 @@ export function tilltal(s: State, p: Person, k: { rad: string; om?: number }) {
     case 'minne': return BYNT.natur + (barMinnet(p, d.minne!) ? BYNT.minneEget : 0);
     case 'tro': return BYNT.heligt + BYNT.heligtAndlig * (p.andlig ?? 0) / 100;
     case 'person': {
-      if (k.om === p.id) return Math.max(0, BYNT.eget + BYNT.egetEnvalde * Math.max(-1, Math.min(1, drar(s, p).rang)));
+      if (k.om === p.id) return Math.max(0, BYNT.eget + BYNT.egetEnvalde * Math.max(-1, Math.min(1, drarSed(s, p, 'rang'))));
       const q = byId(s, k.om);
       return q ? Math.max(0, Math.min(1, BYNT.annan + BYNT.annanRel * getRel(s, p, q).op / 100)) : 0;
     }
@@ -192,10 +194,7 @@ export function bastaNamn(s: State, p: Person) {
 // som en skylt under Påbud. Den som får lägga fram påbud föreslår det namn hen själv tycker bäst om, när hen tycker klart bättre
 // om det än om det byn heter. Utan ledare föreslår den vuxna med mest karisma, och namnet är det enda som tas upp utan ledare.
 // Var och en röstar efter hur mycket bättre hen tycker om det nya namnet än det byn heter. Ett nej gör att samma namn inte tas
-// upp igen på LAG.nedrostat dygn
-export const BYNAMN_FRAGA = {
-  prio: 2, // prioriteten: så här mycket gånger hur mycket bättre förslagsställaren tycker om namnet (troskeln i LAG.troskel)
-};
+// upp igen på BYNT.nejDygn dygn
 export const nuvarande = (s: State): { rad: string; om?: number } => s.bynamn ?? { rad: 'nybygget' };
 // hur mycket bättre p tycker om namnet k än det byn heter
 export const battre = (s: State, p: Person, k: { rad: string; om?: number }) => gilla(s, p, k) - gilla(s, p, nuvarande(s)) - namnVana(s, p);
@@ -207,7 +206,7 @@ export function namnForslag(s: State, p: Person) {
   if (!slagitSigNer(s) && !s.bynamn) return undefined;
   const b = bastaNamn(s, p);
   if (!b || b.namn === bynsNamn(s) || (s.bynamnNej?.[b.namn] ?? 0) > s.now) return undefined;
-  const prio = BYNAMN_FRAGA.prio * battre(s, p, b);
+  const prio = BYNT.fragaPrio * battre(s, p, b);
   return prio > 0 ? { b, prio } : undefined;
 }
 const harHaftLedare = (s: State) => s.people.some(p => p.ledde);
@@ -221,7 +220,7 @@ export function bynamnRegister() {
       return { v, why: v > 0 ? `Tycker att ${d.namn} stämmer bättre` : `Tycker att ${bynsNamn(s)} stämmer bättre` };
     },
     gor: (s, d) => dop(s, { namn: d.namn as string, rad: d.rad as string, om: d.om as number | undefined }),
-    nej: (s, d) => { (s.bynamnNej ??= {})[d.namn as string] = s.now + LAG.nedrostat * DAY; count(s, 'bynamn_nej'); },
+    nej: (s, d) => { (s.bynamnNej ??= {})[d.namn as string] = s.now + BYNT.nejDygn * DAY; count(s, 'bynamn_nej'); },
     missnoje: s => harHaftLedare(s), utanStyre: true,
   };
 }

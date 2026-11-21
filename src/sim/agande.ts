@@ -21,7 +21,7 @@ import { BYN, lends } from './egendom';
 interface Halv { gor: string; av: Record<string, number>; kvar: number; ag: number }
 // vid = stationen tinget hör till och ligger vid när ingen använder det (kniven vid slaktbänken, stationer.ts), bar = den
 // som har plagget på sig (utrustning.ts, steg 2.3.2)
-export interface Ting { djur?: number; vaxt?: { g: string; v: number }; kok?: { r: string; n: number; kvar: number; ag: Record<string, number>; h?: number; q?: number; vatska?: 1 }; pa?: number; inne?: { v: import('./vatskor').VatskaId; n: number; q?: number; t?: number }; ler?: number; id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv; vid?: number; bar?: number; av?: number; gjord?: number; kopt?: number; q?: number; ber?: import('./berattelser').SakMinne; tand?: number; tandT?: number; krok?: number; fylld?: 1; helig?: number; skrift?: import('./skrift').Skrift; delar?: import('./skrift').Skrift[] } // delar = bokens delar (steg 10.6.6) // skrift = det som står på ett skrivet blad (steg 10.6.5, skrift.ts) // kok = rätten som står på elden i krukan, hur många portioner, den passiva tiden kvar och vems den blir (steg 9.6.3, matlagning.ts) // pa = protesen sitter på personen med det id:t (steg 9.5.11, protes.ts); inne = vätskan i behållaren och hur mycket (steg 9.4.14, vatskor.ts; fylld är det gamla: en fylld vattensäck) // helig = tinget är heligt i tron med det id:t och står på altaret (steg 10.3.20, kyrka.ts) // ler = lerkrukan torkar (0–1) och bränns sedan; utan ler är den färdig (steg 9.4.11, kruka.ts); av, gjord: vem som gjorde det och när (steg 2.3.5), kopt: när det köptes av en handlare (steg 5.3.5.3), q = kvaliteten (kvalitet.ts), ber = berättelsen om ett mästerverk eller en usel sak (steg 3.9.4), tand = den som bär facklan tänd och tandT = när den senast räknades (ljus.ts, steg 6.3.6), krok = den i vars bälte redskapet hänger medan hen arbetar med ett annat (steg 7.1.1)
+export interface Ting { regn?: number; /* regnet mot nästa hela vatten i en tunna ute (tunna.ts, steg 12.4.6) */ djur?: number; vaxt?: { g: string; v: number }; kok?: { r: string; n: number; kvar: number; ag: Record<string, number>; h?: number; q?: number; vatska?: 1 }; pa?: number; inne?: { v: import('./vatskor').VatskaId; n: number; q?: number; t?: number }; ler?: number; id: number; k: string; c: number; agare: number; hos?: number; lass?: number; x?: number; y?: number; halv?: Halv; vid?: number; bar?: number; av?: number; gjord?: number; kopt?: number; q?: number; ber?: import('./berattelser').SakMinne; tand?: number; tandT?: number; krok?: number; fylld?: 1; helig?: number; skrift?: import('./skrift').Skrift; delar?: import('./skrift').Skrift[] } // delar = bokens delar (steg 10.6.6) // skrift = det som står på ett skrivet blad (steg 10.6.5, skrift.ts) // kok = rätten som står på elden i krukan, hur många portioner, den passiva tiden kvar och vems den blir (steg 9.6.3, matlagning.ts) // pa = protesen sitter på personen med det id:t (steg 9.5.11, protes.ts); inne = vätskan i behållaren och hur mycket (steg 9.4.14, vatskor.ts; fylld är det gamla: en fylld vattensäck) // helig = tinget är heligt i tron med det id:t och står på altaret (steg 10.3.20, kyrka.ts) // ler = lerkrukan torkar (0–1) och bränns sedan; utan ler är den färdig (steg 9.4.11, kruka.ts); av, gjord: vem som gjorde det och när (steg 2.3.5), kopt: när det köptes av en handlare (steg 5.3.5.3), q = kvaliteten (kvalitet.ts), ber = berättelsen om ett mästerverk eller en usel sak (steg 3.9.4), tand = den som bär facklan tänd och tandT = när den senast räknades (ljus.ts, steg 6.3.6), krok = den i vars bälte redskapet hänger medan hen arbetar med ett annat (steg 7.1.1)
 // ingen har tinget: inte i handen, inte i en börda och inte buret (steg 12.1.90)
 export const ingenHar = (t: Ting) => t.hos === undefined && t.lass === undefined && t.bar === undefined;
 export const tingOf = (s: State) => (s.ting ??= []);
@@ -34,6 +34,17 @@ export const halvKlar = (h: Halv) => Math.min(1, Math.max(0, 1 - h.kvar / ((SAKE
 export const toolsOf = (s: State, k: string) => tingOf(s).filter(t => iSlag(t.k, k)); // en grupp (yxa, kniv, skara): alla i gruppen (steg 12.2.5)
 // en vattensäck som står fylld (steg 7.6.6): örtköket tar vattnet ur den, och säcken töms men finns kvar
 export const fylldSack = (s: State) => tingOf(s).find(t => t.inne?.v === 'vatten' && t.inne.n > 0); // en behållare med vatten i (steg 9.4.14)
+// vattnet ett recept tar (steg 12.1.251): en fast mängd, så mycket som en vattensäck rymmer, ur byns behållare (inte kyrkans); det
+// som blir över står kvar i behållaren, så en tunna regnvatten räcker till många recept
+export const RECEPTVATTEN = 1;
+const vattenKar = (s: State) => tingOf(s).filter(t => t.inne?.v === 'vatten' && t.inne.n > 0 && !(t.agare !== undefined && t.agare < 0));
+export const harReceptVatten = (s: State) => vattenKar(s).reduce((a, t) => a + t.inne!.n, 0) >= RECEPTVATTEN;
+export function taReceptVatten(s: State) {
+  if (!harReceptVatten(s)) return false;
+  let kvar = RECEPTVATTEN;
+  for (const t of vattenKar(s)) { const d = Math.min(kvar, t.inne!.n); t.inne!.n -= d; kvar -= d; if (t.inne!.n <= 0) t.inne = undefined; if (kvar <= 0) break; }
+  return true;
+}
 export const nTools = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (iSlag(t.k, k) ? 1 : 0), 0);
 // det redskap av slagen ks som p har påbörjat (paborjat.ts)
 export const halvOf = (s: State, p: Person, ks: readonly string[]) => tingOf(s).find(t => t.halv?.ag === p.id && ks.includes(t.halv.gor));
@@ -108,14 +119,14 @@ export function wearTool(s: State, p: Person, k: string, v: number) {
 // den dog eller fick annat att göra) hamnar i förrådet
 export function tidyTools(s: State) {
   for (const t of tingOf(s)) {
-    if (t.agare !== BYN) { const o = byId(s, t.agare); if (!o || !alive(o)) t.agare = BYN; }
+    if (t.agare > BYN) { const o = byId(s, t.agare); if (!o || !alive(o)) t.agare = BYN; } // en död persons ting blir byns; kyrkan (ett id under noll, kyrkaId) är ingen person (steg 12.1.240)
     if (t.bar !== undefined) { const q = byId(s, t.bar); if (!q || !alive(q)) t.bar = undefined; } // den döde har inte plagget på sig
     if (t.krok !== undefined) { const q = byId(s, t.krok); if (!q || !alive(q) || t.hos !== undefined || !kanHanga(s, q, t)) t.krok = undefined; } // bältet har slitits ut, eller tinget har bytt ägare
     if (t.lass !== undefined) { const q = byId(s, t.lass); if (!q || !alive(q) || !q.task?.ting?.includes(t.id)) t.lass = undefined; }
     if (t.hos === undefined) continue;
     const q = byId(s, t.hos);
     if (!q || !alive(q)) t.hos = undefined;
-    else if (usesTool(q.task) !== t.k && t.agare !== q.id && !(q.task && ACTS[q.task.act].vapen)) t.hos = undefined; // vakten har byns vapen i handen hela natten (vakt.ts), och den som väntar på vargarna (varg.ts)
+    else if (usesTool(q.task) !== t.k && t.agare !== q.id && !(q.task && ACTS[q.task.act].vapen) && !(s.ritual?.offer?.ting === t.id && s.ritual.barare === q.id)) t.hos = undefined; // och den som bär offret till myren (steg 12.1.240) // vakten har byns vapen i handen hela natten (vakt.ts), och den som väntar på vargarna (varg.ts)
   }
 }
 // vad p äger

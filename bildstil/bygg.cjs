@@ -26,6 +26,7 @@ ${skript('svar')}
 <script>${fs.readFileSync(d + '/fas11.js', 'utf8')}</script>
 <script>${fs.readFileSync(d + '/fas11-pergament.js', 'utf8')}</script>
 <script>${fs.readFileSync(d + '/fas12.js', 'utf8')}</script>
+<script>${fs.readFileSync(d + '/fas12-symboler.js', 'utf8')}</script>
 <script>const PORTRATT = ${fs.readFileSync(d + '/portratt.json', 'utf8')};</script>
 <script>const DELAR = ${jsonMapp('delar', 'id')};</script>
 <script>const BILDER = ${fs.readFileSync(d + '/bilder.json', 'utf8')};</script>

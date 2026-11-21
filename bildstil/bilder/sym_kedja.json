@@ -1,0 +1,31 @@
+{
+ "id": "sym_kedja",
+ "ritad": 1,
+ "av": "programmeringschatten (platshållare, steg 12.1.192)",
+ "om": "Tre länkar i en rad snett över rutan.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "..........kkkk..",
+  ".........kSSssk.",
+  ".........kSkksk.",
+  ".......kkkSkksk.",
+  "......kSSksssk..",
+  "......kSkkkkk...",
+  "....kkkSkksk....",
+  "...kSSksssk.....",
+  "...kSkkkkk......",
+  ".kkkSkksk.......",
+  "kSSksssk........",
+  "kSkkkk..........",
+  "kSkksk..........",
+  ".kssk...........",
+  "..kk............"
+ ],
+ "pal": {
+  "S": "#8a9c9e",
+  "k": "#24201d",
+  "s": "#61767a"
+ }
+}

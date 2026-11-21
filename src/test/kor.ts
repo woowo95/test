@@ -3,14 +3,17 @@
 import '../sim'; // först: hela simuleringen i samma ordning som spelet, så att registren finns när systemen sätter sina rader
 import { trangtVidStation as SIM_TRANGT } from '../sim/stationer';
 import { forLangtArbete } from '../sim/tider';
-import { halMin } from '../sim/is';
+import { MALL, utanForm } from '../sim/folk';
+import { halMin, halVakt, islagt } from '../sim/is';
 import { kyrkaId } from '../sim/egendom';
 import { budgetAgare } from '../sim/budget';
-import { husFel, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, sparStorlek, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL, uttagVakt, svavar } from '../sim';
+import { husFel, createState, step, living, DAY, groundOf, isSoil, markslag, Markslag, ageIndex, moodOf, serialize, serializeParts, sparStorlek, vattenNu, fuelStock, ACT_NAMES, T, State, inMap, isWall, tileOf, foodOf, amountOf, sumOf, okandaBalans, alive, isCarrying, BYN, isStored, housesOf, bitsOf, Person, HOUR, W, KROPP, forvarAt, isTool, faltOf, faltRutor, faltAt, stationById, gridOf, getMap, djurOf, vargarOf, MATERIAL, uttagVakt, svavar, eldRutor } from '../sim';
 import { NYCKELTAL, Nyckeltal, tal } from './nyckeltal';
 import { lyssnaPaTexter } from '../sim/berattelser';
 import { gastLever } from '../sim/gast';
 import { radVakt } from '../sim/rad';
+import { LAGERKOLL, lagerVakt } from '../sim/lager';
+import { kronikaKat } from '../sim/historik';
 import { gangLangsam, gangVakt } from '../sim/gang';
 import { kollaText, konI, titta } from './textkoll';
 export const BEAT = 300; // fem minuter i spelet per anrop av step i testerna; simuleringen tar så många slag (KLOCKA.slag) som ryms
@@ -27,6 +30,11 @@ export interface Ack { hunger: number; humor: number; humorN: number; lit: numbe
 export interface Resultat { seed: number; n: Nyckeltal; vakter: string[]; s: State; ack: Ack }
 
 // fran: kör vidare en by som redan finns (t.ex. en inläst sparfil, scenariot sparning) i stället för en ny by med seed
+// hålet i isen hör inte till arbetet att hämta vatten (steg 12.1.37): vakten drar av den tid hålet tog när arbetet började,
+// inte vad halMin svarar senare i slaget (steg 12.1.159)
+const halVid = new WeakMap<object, number>();
+halVakt.lyss = (t, min) => { halVid.set(t, min); };
+export const halTidVid = (s: State, p: Person, t: object) => halVid.get(t) ?? halMin(s, p, (t as { tx?: number }).tx ?? p.x, (t as { ty?: number }).ty ?? p.y);
 export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => void, fran?: State): Resultat {
   const okanda = okandaBalans();
   if (okanda.length) throw new Error(`BALANS: inget balanstal heter ${okanda.join(', ')} (se npm run talen)`);
@@ -40,6 +48,8 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   gangVakt.lyss = (s, p, rutor, mork) => { const t = gangLangsam(s, p, rutor, mork); if (t) larm('långsam gång', () => t); };
   // inget svävar (steg 11.1.77): den som tar något ur en stack står vid den
   uttagVakt.lyss = (_s, p, k, _n, x, y) => { if (p && svavar(p, x, y)) larm('svävar', () => `${p.name} (${p.task?.act ?? 'ingen uppgift'}) tog ${k} ${Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y).toFixed(0)} rutor bort`); };
+  const lagerkoll0 = { pa: LAGERKOLL.pa, n: LAGERKOLL.n }; // ställs tillbaka sist, så att ett scenario som kör en by inte lämnar vakten på
+  LAGERKOLL.pa = true; LAGERKOLL.fel.length = 0; // förrådets minne per slag och rutnätet jämförs med nyräknade (steg 12.1.186)
   const sedda = new WeakSet<object>(); // arbetena som vakten för arbetstiderna redan sett (steg 9.2.63)
   let hunger = 0, humor = 0, humorN = 0, lit = 0, steg = 0, vintermat = Infinity, vinterved = Infinity, forraAlder = ageIndex(s);
   const ok01 = (v: number) => Number.isFinite(v) && v >= -1e-6 && v <= 1 + 1e-6;
@@ -56,9 +66,12 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     varjeSteg?.(s);
     steg++; if (s.fire.lit) lit++;
     if (steg % 288 === 0) { const hf = husFel(s); if (hf) larm('hus', () => hf); } // en gång om dagen (steg 7.2.4)
+    // personerna i en fast form (prestanda, nr 781): alla har MALL:s nycklar i dess ordning, så att ett nytt valfritt fält utanför
+    // MALL eller ett kvarglömt delete på en person syns (folk.ts)
+    if (steg % 288 === 0) { const uf = utanForm(living(s)); if (uf.length) larm('personens form', () => `${uf[0].name}: ${Object.keys(uf[0]).filter(k => !(k in MALL)).join(', ') || 'nycklarna i en annan ordning'}`); }
     if (steg % 12 === 0) { const tv = SIM_TRANGT(s); if (tv) larm('två vid en station', () => tv); } // en gång i timmen (steg 9.2.52)
     // arbetstiderna (steg 9.2.63): ett arbete som börjar tar inte längre tid än sitt slag
-    for (const p of s.people) { const t = p.task; if (!t || t.phase !== 'do' || sedda.has(t)) continue; sedda.add(t); const f = forLangtArbete(t, s.now, t.act === 'vatten' ? halMin(s, p) : 0); if (f) larm('arbetstid', () => `${p.name}: ${f}`); }
+    for (const p of s.people) { const t = p.task; if (!t || t.phase !== 'do' || sedda.has(t)) continue; sedda.add(t); const f = forLangtArbete(t, s.now, t.act === 'vatten' ? halTidVid(s, p, t) : 0); if (f) larm('arbetstid', () => `${p.name}: ${f}`); }
     if (!(foodOf(s) >= 0) || !(amountOf(s, 'ved') >= 0)) larm('förråd', () => `mat ${foodOf(s)}, ved ${amountOf(s, 'ved')}`);
     for (const t of s.ting ?? []) if (!(t.c > 0 && t.c <= 1 + 1e-9) || [t.hos, t.lass, t.x].filter(v => v !== undefined).length > 1) larm('redskap', () => JSON.stringify(t));
     // saker i hela tal (steg 2.10.7): stackarna, det gömda och ägarnas delar, och det påbörjade under 1
@@ -74,7 +87,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
       if (p.task && (p.task.act !== 'elda' && decimal(p.task.carry ?? 0) || Object.values(p.task.items ?? {}).some(decimal))) larm('börda med decimaler', () => `${p.name} (${p.task!.act}) bär ${p.task!.carry} och ${JSON.stringify(p.task!.items ?? {})}`);
       if (!ok01(p.warm / KROPP.maxVarm)) larm('behov warm', () => `${p.name} warm = ${p.warm}`); // värmen går till maxVarm (steg 2.3.4)
       if (!Number.isFinite(p.x) || !Number.isFinite(p.y) || !inMap(p.x, p.y)) larm('position', () => `${p.name} på ${p.x},${p.y}`);
-      else if (tiles()[tileOf(p.x, p.y)] === T.Vatten) larm('i vattnet', () => `${p.name} står i vattnet (${p.task?.act})`);
+      else if (tiles()[tileOf(p.x, p.y)] === T.Vatten && !(islagt(s) && getMap(s.seed).tiles[tileOf(p.x, p.y)] === T.Vatten)) larm('i vattnet', () => `${p.name} står i vattnet (${p.task?.act})`); // på sjöns is går man (steg 12.1.209)
       else if (isWall(s, p.x, p.y)) larm('i en vägg', () => `${p.name} står i en vägg (${p.task?.act})`);
       // den som bär material till ett bygge bär inte mer än det som togs ur förrådet
       if (p.task?.act === 'bygga' && p.task.items) for (const k in p.task.items) if (p.task.items[k] > sumOf(p.task.ag?.[k]) + 1e-6) larm('bygge utan material', () => `${p.name} bär ${p.task!.items![k]} ${k} till bygget men tog ${sumOf(p.task!.ag?.[k])}`);
@@ -115,6 +128,7 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
     sparAndel: Math.round(Math.max(...sparStorlek(s).map(d => d.kb / d.grans)) * 100), // den del som ligger närmast sin gräns (steg 11.2.2)
   };
   const vakter = [...fel].map(([typ, f]) => `${typ} (${f.n} ggr), första: ${f.forsta}`);
+  Object.assign(LAGERKOLL, lagerkoll0); LAGERKOLL.fel.length = 0;
   return { seed, n, vakter, s, ack: { hunger, humor, humorN, lit, steg, vintermat, vinterved } };
 }
 
@@ -123,6 +137,14 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
 const decimal = (v: number) => Math.abs(v - Math.round(v)) > 1e-6;
 type Larm = (typ: string, text: () => string) => void;
 const fin = (v: number | undefined) => v === undefined || Number.isFinite(v);
+const kronikaSedd = new WeakMap<State, number>(); // så många rader i krönikan som vakten prövat
+// krönikans kategorier (steg 12.1.137): varje rad i krönikan har ett slag med en kategori i KRONIKA_KAT, så att ingen rad
+// hamnar utanför filtren. Raderna läggs i tidsordning, så de sista några prövas igen varje gång (scenariot kronikakat2 prövar den)
+export function kronikaVakt(s: State, larm: (typ: string, text: () => string) => void) {
+  const kr = s.hist?.kronika ?? [], fr = Math.max(0, (kronikaSedd.get(s) ?? 0) - 20);
+  for (let i = fr; i < kr.length; i++) if (!kronikaKat(kr[i][2])) larm('krönikerad utan kategori', () => `${kr[i][2] ?? 'inget slag'}: ${kr[i][1]}`);
+  kronikaSedd.set(s, kr.length);
+}
 function vakta(s: State, larm: Larm, timme: boolean) {
   const lever = new Set<number>(), finns = new Map<number, Person>();
   for (const p of s.people) { finns.set(p.id, p); if (alive(p)) lever.add(p.id); }
@@ -141,18 +163,23 @@ function vakta(s: State, larm: Larm, timme: boolean) {
   if (!Number.isFinite(f.fuel) || f.fuel < 0) larm('eldens bränsle', () => `fuel ${f.fuel}`);
   if (s.delning && !Number.isFinite(s.delning.andel)) larm('delning', () => JSON.stringify(s.delning));
   if (!timme) return;
+  // krönikans kategorier (steg 12.1.137): varje rad i krönikan har ett slag med en kategori i KRONIKA_KAT, så att ingen rad
+  // hamnar utanför filtren. Raderna läggs i tidsordning, så de sista några prövas igen varje timme
+  kronikaVakt(s, larm);
   // en gång i timmen: ägare, redskap, stackar och hus
+  for (const f of lagerVakt(s)) larm('förrådets minne', () => f); // stackarna per slag, rutnätet och summorna (steg 12.1.186)
   const ids = new Set<number>();
   for (const t of s.ting ?? []) {
     if (ids.has(t.id)) larm('ting-id två gånger', () => `${t.k} ${t.id}`); ids.add(t.id);
     if (t.agare !== BYN && !lever.has(t.agare)) larm('redskap utan ägare', () => `${t.k} ${t.id} ägs av ${t.agare}`);
     for (const [vad, id] of [['hos', t.hos], ['lass', t.lass]] as const) if (id !== undefined && !lever.has(id)) larm(`redskap ${vad} ingen`, () => `${t.k} ${t.id} ${vad} ${id}`);
   }
-  const tiles = vattenNu(s), upptagen = new Map<number, string[]>();
+  const tiles = vattenNu(s), upptagen = new Map<number, string[]>(), eld = eldRutor(s);
   const plats = (k: string, x: number, y: number) => {
     // under en översvämning ligger tunga saker kvar på rutorna som vattnet nått (flod.ts), men aldrig i sjön
     if (tiles[y * W + x] === T.Vatten && (!s.flod || getMap(s.seed).tiles[y * W + x] === T.Vatten)) larm('sak i vattnet', () => `${k} på ${x},${y}`);
     else if (isWall(s, x + 0.5, y + 0.5)) larm('sak i en vägg', () => `${k} på ${x},${y}`);
+    if (eld.has(y * W + x)) larm('sak i elden', () => `${k} på ${x},${y}`); // inget ligger i en eld, brasa eller härd (steg 12.1.153)
     if (!isStored(s, x, y)) return;
     // i ett redskapsställ står flera redskap, så många som det rymmer (steg 2.3.6)
     const forr = upptagen.get(y * W + x) ?? [], f = forvarAt(s, x, y);

@@ -1,4 +1,5 @@
 import { gen } from './ord';
+import { TIMMINNEN, binIn, binUt } from './timminne';
 import { kartaBorta } from './ort';
 import { han, mark, tal } from './ord';
 import { tabortBuske } from './buskar';
@@ -12,9 +13,8 @@ import { hearthOf, heatAt } from './eld';
 import { rasar } from './bygg';
 import { Bit, MATERIAL, bitAt, bitsOf, blocked, dorrDef, touch, vagBort } from './byggnad';
 import { Station, stationAt, stationDef, stationerOf, taBort } from './stationer';
-import { ALDER, ageOf, alive, count, livet, living, log } from './folk';
+import { ALDER, ageOf, alive, count, livet, living, log, byId } from './folk';
 import { Kroppsdel, kanGa, skada } from './halsa';
-import { kronika } from './historik';
 import { naVattnet } from './is';
 import { eldPlats, vaderstreck } from './karta';
 import { bynsAvstand, bynsMitt } from './omrade';
@@ -27,7 +27,7 @@ import { faltAt, faltBrann, faltIndex, faltOf, faltRutor, grodaPa, harStaket } f
 import { tamDor, tamdjurOf } from './tamdjur';
 import { honsDor, honsOf } from './hons';
 import { wearUsed } from './redskap';
-import { larma, larmNu } from './rykten';
+import { larma, larmNu, handelse } from './rykten';
 import { SAKER } from './saker';
 import { isLight, kalender } from './tid';
 import { TORST, drickPlats } from './torst';
@@ -63,6 +63,11 @@ const DELSTEG = 5;
 
 // Balanstal (regel 8)
 export const BRAND = balans('brand', {
+  // lösa tal som flyttats hit (steg 12.1.107)
+  teckenR: 14, // så nära branden som stannade man ser tecknet (steg 8.5.18)
+  vattenMin: 0.2, // minuter att springa i vattnet när man brinner
+  avMin: 0.3, // minuter att slita av sig plagget som brinner
+  hjalpNara: 1.5, // så nära (rutor) man släcker den som brinner med händerna
   djurDor: 1, // ett tamdjur eller en höna på en ruta som brinner dör med den här takten (per timme, räknat per tid; steg 10.10.10)
   gnista: 0.0002, // (0,001 före steg 9.9.4: det brann i nästan varje by) // chansen per steg (5 minuter) att en gnista från en brinnande eld når marken, gånger eldstadens spread ...
   gnistaR: 2, // ... så här många rutor bort (slumpas)
@@ -131,7 +136,7 @@ export type BrandRuta = [number, number, number, number];
 // branden som pågår: när och var den började (kalla = gnistor eller blixten), rutorna som brinner och de som brunnit klart,
 // hur många rutor som tagit eld, och vad den gjort
 // brann = det av trä som brunnit upp (golv, dörrar, stationer, möbler och redskap), namnet och hur många (steg 6.4.3)
-export interface Brand { brann_p?: number[]; t: number; x: number; y: number; kalla: 'gnista' | 'blixt'; r: BrandRuta[]; ut: number[]; n: number; trad: number; vagg: number; saker: number; skadade: number; slackt: number; hot?: 1; sagd?: 1; brann?: Record<string, number> }
+export interface Brand { husFolk?: number[]; slackare?: number[]; /* de som bodde i husen som brann och de som släckte (steg 12.1.131) */ brann_p?: number[]; t: number; x: number; y: number; kalla: 'gnista' | 'blixt'; r: BrandRuta[]; ut: number[]; n: number; trad: number; vagg: number; saker: number; skadade: number; slackt: number; hot?: 1; sagd?: 1; brann?: Record<string, number> }
 
 // ett tal mellan 0 och 1 ur byns frö, tiden (i steg), en ruta eller person och ett salt (hash3 i slump.ts, drar inget ur
 // slumpföljderna)
@@ -249,7 +254,7 @@ export function tand(s: State, i: number, kalla: Brand['kalla'], u: number, bran
   const fu = bransle(i);
   if (!fu || u >= fu[0]) return;
   let b = s.brand;
-  if (!b) { b = s.brand = { t: s.now, x: i % W, y: Math.floor(i / W), kalla, r: [], ut: [], n: 0, trad: 0, vagg: 0, saker: 0, skadade: 0, slackt: 0 }; count(s, 'brand'); count(s, 'brand ' + kalla); }
+  if (!b) { b = s.brand = { t: s.now, x: i % W, y: Math.floor(i / W), kalla, r: [], ut: [], n: 0, trad: 0, vagg: 0, saker: 0, skadade: 0, slackt: 0 }; count(s, 'brand'); count(s, 'brand ' + kalla); forlustFore(s, 'brand'); }
   const k = kartaOf(b);
   if (k[i]) return;
   k[i] = 1; b.r.push([i, 0, fu[1], 0]); b.n++; count(s, 'brand ruta');
@@ -369,15 +374,20 @@ export function brandSteg(s: State, dtSec: number) {
   if (b.r.length) return;
   // branden är slut
   const delar = [`brände ${mark(b.ut.length)}`, b.trad && `${tal(b.trad, true)} träd`, b.vagg && `rev ${b.vagg === 1 ? 'en vägg' : `${tal(b.vagg)} väggar`}`, b.saker && `${b.saker === 1 ? 'en sak' : `${tal(b.saker)} saker`}`, b.brann && `och det här brann upp: ${brannText(b)}`].filter(Boolean);
+  count(s, 'brandSlocknat');
   log(s, `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${tal(b.skadade)} brändes` : ''}.`, 'world');
   if (b.hot || b.ut.length >= BRAND.stor) {
     notis(s, 'motgang', `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${tal(b.skadade)} brändes` : ''}.`);
-    kronika(s, `En eldsvåda ${b.kalla === 'blixt' ? 'efter ett blixtnedslag ' : ''}brände ${mark(b.ut.length)}${b.vagg ? ` och ${b.vagg === 1 ? 'en vägg' : `${tal(b.vagg)} väggar`}` : ''}${b.hot ? ' nära byn' : ''}.`, 'motgang');
+    kronikaBer(s, 'k_brand', b.t, { mark: mark(b.ut.length), vaggar: b.vagg ? ` och ${b.vagg === 1 ? 'en vägg' : `${tal(b.vagg)} väggar`}` : '', blixt: b.kalla === 'blixt', nara: !!b.hot }); // mallen (steg 12.1.135)
     allaBarn(s, 'brand');
     for (const p of living(s)) if (p.born < b.t) livet(s, p, 'mg:brand'); // de som klarade den (steg 3.9.8)
   }
-  for (const p of living(s)) if (Math.hypot(p.x - b.x, p.y - b.y) < 14) tecken(s, p, 'brandStopp'); // branden som stannade (steg 8.5.18)
+  for (const p of living(s)) if (Math.hypot(p.x - b.x, p.y - b.y) < BRAND.teckenR) tecken(s, p, 'brandStopp'); // branden som stannade (steg 8.5.18)
+  // tankarna (steg 12.1.131): de som bodde i ett hus som brann, de som var med och släckte, och den som mist det mesta
+  for (const id of b.husFolk ?? []) { const q = byId(s, id); if (q && alive(q)) tanke(q, 'husetBrann', s.now); }
+  if (b.slackt) for (const id of b.slackare ?? []) { const q = byId(s, id); if (q && alive(q)) { tanke(q, 'slackteElden', s.now); handelse(s, q, 'slackte'); } }
   delete s.brand;
+  forlustEfter(s, 'brand');
 }
 
 // gnistor från elden och brasorna, och blixten när den slår ner (en gång i timmen)
@@ -391,11 +401,15 @@ function gnistor(s: State, dtSec: number, dry: number) {
   };
   if (s.fire.lit) { const e = eldPlats(s); fran(e.x, e.y, hearthOf(s.fire).spread, 0); }
   for (const f of brasorOf(s)) if (f.lit) fran(f.at!.x, f.at!.y, hearthOf(f).spread, f.id! + 1); // de andra lägereldarna gnistrar som den första (steg 4.5.6.8)
+  for (const t of s.stationer ?? []) { const d = t.eld?.lit ? eldDef(t) : undefined; if (d?.gnistor) { const at = eldPlatsAv(t); fran(Math.floor(at.x), Math.floor(at.y), HEARTHS[0].spread * d.gnistor, 60000 + t.id); } } // fyrfatet gnistrar lite (steg 12.4.11)
   for (const b of s.branningar ?? []) { const t = b.slut > s.now ? stationerOf(s).find(q => q.id === b.st) : undefined; if (t) fran(t.x + 1, t.y + 1, HEARTHS[0].spread, 50000 + t.id); } // kolmilan och blästerugnen gnistrar som en lägereld medan de brinner (steg 12.2.1 och 12.2.3)
-  if (Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR) && blixtNu(s) && ur(s, 0, 3856) < BRAND.blixt) {
-    const e = bynsMitt(s), R = BRAND.blixtR, nx = e.x + Math.round((ur(s, 0, 3857) * 2 - 1) * R), ny = e.y + Math.round((ur(s, 0, 3858) * 2 - 1) * R);
-    if (inMap(nx, ny)) { count(s, 'blixt nara'); nedslag(s, nx, ny); tand(s, ny * W + nx, 'blixt', ur(s, 0, 3859) / dry); }
-  }
+}
+// blixten nära byn (raden blixten i TAKTER, en gång i timmen, steg 12.1.107): slår den ner i torr mark kan den tända
+export function blixtTimme(s: State) {
+  const dry = torrhet(s);
+  if (dry <= 0 || !blixtNu(s) || ur(s, 0, 3856) >= BRAND.blixt) return;
+  const e = bynsMitt(s), R = BRAND.blixtR, nx = e.x + Math.round((ur(s, 0, 3857) * 2 - 1) * R), ny = e.y + Math.round((ur(s, 0, 3858) * 2 - 1) * R);
+  if (inMap(nx, ny)) { count(s, 'blixt nara'); nedslag(s, nx, ny); tand(s, ny * W + nx, 'blixt', ur(s, 0, 3859) / dry); }
 }
 
 // rutorna som brunnit klart eller släckts: det som brann där blir aska efter hur stor del som hann brinna
@@ -431,6 +445,7 @@ function slocknar(s: State, b: Brand) {
     const v = bitAt(s, x, y), br = bitBrinner(v), upp = a >= BRAND.trad;
     if (v && br && v.k === 'vagg') {
       v.c -= a * BRAND.vaggSkick; rev = true;
+      if (v.hus !== undefined) for (const q of husFolk(s).get(v.hus) ?? []) if (!(b.husFolk ??= []).includes(q.id)) b.husFolk.push(q.id); // de som bor där (steg 12.1.131)
       if (v.c <= 0) { const h = rasar(s, v); b.vagg++; count(s, 'brand vagg'); drabbadHus(s, h, 'eldsvådan som förstörde huset'); }
     } else if (v && br && upp) {
       if (v.k === 'golv') { brann(b, MATERIAL[v.m].namn); if (MATERIAL[v.m].vag) vagBort(s, v); else v.m = 'jord'; }
@@ -481,10 +496,9 @@ function hotar(s: State, b: Brand) {
   const ut = bynsAvstand(s);
   return b.r.some(r => ut.at(r[0]) <= BRAND.hot || vardeNara(s, r[0]) >= BRAND.hotVarde);
 }
-// rutan i är värd att släcka: nära byn, eller nära något som är värt mycket
-const hotad = (s: State, ut: ReturnType<typeof bynsAvstand>, i: number) => ut.at(i) <= BRAND.hot || vardeNara(s, i) >= BRAND.hotVarde;
 // värdet på kartan (grundvärdet av husens bitar, högarna, stationerna och fälten), räknat en gång i timmen
 const vardeKarta = new WeakMap<State, { h: number; v: Float32Array }>();
+TIMMINNEN.vardeKarta = { ut: s => { const c = vardeKarta.get(s); return c && { h: c.h, v: binUt(c.v) }; }, in: (s, v) => { const o = v as { h: number; v: string }; vardeKarta.set(s, { h: o.h, v: binIn(o.v, Float32Array) }); } }; // (steg 12.1.248)
 function vardeNara(s: State, i: number) {
   const h = Math.floor(s.now / HOUR);
   let c = vardeKarta.get(s);
@@ -515,16 +529,16 @@ function narmast(b: Brand, x: number, y: number, utom?: (i: number) => boolean) 
 // de som är vakna och ser elden ropar (som vid vargen och tornadon)
 function ser(s: State, b: Brand) {
   const sikt = BRAND.sikt * (isLight(s.now) ? 1 : BRAND.siktNatt);
-  const ser = living(s).filter(p => p.task?.act !== 'sova' && p.task?.act !== 'badd' && larmNu(s, p)?.vad !== 'brand' && narmast(b, p.x, p.y).d <= sikt);
+  const ser = living(s).filter(p => p.task?.act !== 'sova' && p.task?.act !== 'badd' && !larmNu(s, p, 'brand') && narmast(b, p.x, p.y).d <= sikt);
   if (!ser.length) return;
-  if (!living(s).some(p => larmNu(s, p)?.vad === 'brand')) count(s, 'brand sedd');
+  if (!living(s).some(p => !!larmNu(s, p, 'brand'))) count(s, 'brand sedd');
   larma(s, 'brand', 1, ser);
   for (const p of ser) tecken(s, p, b.kalla === 'blixt' ? 'blixt' : 'brand'); // det oförklarliga (steg 4.1.2.1)
 }
 // den som vet om elden avbryter det hen gör när hen ska släcka eller gå undan (inte den som slåss, vårdar eller bärs)
 function soker(s: State, b: Brand, hot: boolean) {
   for (const p of living(s)) {
-    if (!p.task || !larmAvbryter(p.task.act, 'brand') || larmNu(s, p)?.vad !== 'brand' || !brandMal(s, b, p, hot)) continue;
+    if (!p.task || !larmAvbryter(p.task.act, 'brand') || !larmNu(s, p, 'brand') || !brandMal(s, b, p, hot)) continue;
     avbryt(s, p); count(s, 'brand avbryter');
   }
 }
@@ -549,7 +563,7 @@ function eldSmittar(s: State, b: Brand, dtSec: number) {
 export function antand(s: State, p: Person, var_: string) {
   if (p.brinner !== undefined || !alive(p)) return;
   p.brinner = s.now;
-  count(s, 'brinner');
+  count(s, 'brinner'); count(s, 'brinner: ' + var_); // och orsaken, för testerna (aldrig ur loggen)
   const b = s.brand; // en rad per person och brand, hur många gånger hen än tar eld (steg 10.2.17)
   if (!b?.brann_p?.includes(p.id)) { if (b) (b.brann_p ??= []).push(p.id); log(s, `${p.name} brinner (${var_.replace(/\bhen\b/, han(p))})!`, 'world', [p.id]); }
   avbryt(s, p);
@@ -559,7 +573,7 @@ export function antand(s: State, p: Person, var_: string) {
 const hjalpare = (s: State, q: Person, p: Person) => q.brinner === undefined && kanGa(q) && ageOf(q, s.now) >= ALDER.vuxen && Math.hypot(q.x - p.x, q.y - p.y) <= BRAND.hjalpR;
 export const slacktP = (s: State, p: Person, hur: string) => {
   if (p.brinner === undefined) return;
-  delete p.brinner;
+  p.brinner = undefined;
   count(s, 'brinner slackt'); count(s, `brinner slackt ${hur}`);
 }
 // varje slag (steg.ts, efter brandSteg): den som brinner bränns, plaggen kan brinna upp, och regnet släcker
@@ -567,14 +581,14 @@ export function brinnerSteg(s: State, dtSec: number) {
   const v = vaderNu(s), DELAR: Kroppsdel[] = ['armV', 'armH', 'benV', 'benH', 'bal', 'handV', 'handH', 'huvud'];
   for (const p of living(s)) {
     if (p.brinner === undefined) continue;
-    if (!alive(p)) { delete p.brinner; continue; }
+    if (!alive(p)) { p.brinner = undefined; continue; }
     if (v.nb > 0 && ur(s, p.id, 3869) < chans(BRAND.regnSlacker * v.nb, dtSec)) { slacktP(s, p, 'regnet'); continue; }
     if (ur(s, p.id, 3871) < chans(BRAND.brinnSkada, dtSec)) {
       const d = DELAR[Math.floor(ur(s, p.id, 3872) * DELAR.length)], g = BRAND.brinnGrad[0] + ur(s, p.id, 3873) * (BRAND.brinnGrad[1] - BRAND.brinnGrad[0]);
       count(s, 'brinner skadad');
       if (s.brand?.brann_p?.includes(p.id)) { s.brand.skadade++; count(s, 'brand skadad'); } // i branden (steg 12.1.80)
       const dod = skada(s, p, d, 'brannskada', g, 'brand', 'när hen brann');
-      if (dod) { die(s, p, dod); delete p.brinner; continue; }
+      if (dod) { die(s, p, dod); p.brinner = undefined; continue; }
       if (s.brand?.brann_p?.includes(p.id)) upplev(s, p, 'drabbad', 'eldsvådan'); // steg 4.1.1.2
     }
     const pl = paSig(s, p).filter(t => !SAKER[t.k]?.brinnerInte);
@@ -604,10 +618,10 @@ function utEld(s: State, p: Person) {
 export function slackaSigVal(s: State, p: Person) {
   if (p.brinner === undefined) return;
   const vatten = naVattnet(s, p) ? drickPlats(s, p) : undefined;
-  if (vatten && Math.hypot(vatten.x - p.x, vatten.y - p.y) <= BRAND.vattenR) return { act: 'slackaSig' as const, why: 'Brinner och springer i vattnet', skal: 'vatten' as const, spot: vatten, dur: 0.2 * MIN };
+  if (vatten && Math.hypot(vatten.x - p.x, vatten.y - p.y) <= BRAND.vattenR) return { act: 'slackaSig' as const, why: 'Brinner och springer i vattnet', skal: 'vatten' as const, spot: vatten, dur: BRAND.vattenMin * MIN };
   const spot = utEld(s, p); // ur elden först, så att hen inte rullar i det som brinner och tar eld igen (steg 10.2.17)
   const pl = paSig(s, p).find(t => !SAKER[t.k]?.brinnerInte);
-  if (pl) return { act: 'slackaSig' as const, why: `Brinner och sliter av sig ${SAKER[pl.k]?.namn ?? pl.k}`, spot, dur: 0.3 * MIN, ref: pl.id };
+  if (pl) return { act: 'slackaSig' as const, why: `Brinner och sliter av sig ${SAKER[pl.k]?.namn ?? pl.k}`, spot, dur: BRAND.avMin * MIN, ref: pl.id };
   return { act: 'slackaSig' as const, why: 'Brinner och rullar på marken', spot, dur: BRAND.rullMin * MIN };
 }
 // de som står nära den som brinner springer dit och släcker (Fara i val.ts, före att släcka branden i byn)
@@ -632,7 +646,7 @@ export function slackaSigKlar(s: State, p: Person, t: Task) {
 }
 export function hjalpaKlar(s: State, p: Person, t: Task) {
   const q = living(s).find(o => o.id === t.ref);
-  if (q && q.brinner !== undefined && Math.hypot(q.x - p.x, q.y - p.y) <= 1.5) slacktP(s, q, 'hjälp');
+  if (q && q.brinner !== undefined && Math.hypot(q.x - p.x, q.y - p.y) <= BRAND.hjalpNara) slacktP(s, q, 'hjälp');
 }
 
 // vad p gör åt branden: släcker (de vuxna när elden är nära byn), eller går undan (den som är nära elden)
@@ -646,8 +660,8 @@ function slackare(s: State, utom: Person) {
 // vad det är värt för p att släcka den brinnande rutan i (steg 10.11.3): värdet av det som står nära (och byn), delat med hur
 // många som redan släcker där; en kantruta väger mer än en inre, och en nära mer än en långt bort. 0 om inget hotas där
 function slackVarde(s: State, b: Brand, i: number, p: { x: number; y: number }, ut: ReturnType<typeof bynsAvstand>, m: Map<number, number>) {
-  const v = vardeNara(s, i) + (ut.at(i) <= BRAND.hot ? BRAND.byVarde : 0);
-  if (!(v > 0) || !hotad(s, ut, i)) return 0;
+  const vn = vardeNara(s, i), nara = ut.at(i) <= BRAND.hot, v = vn + (nara ? BRAND.byVarde : 0);
+  if (!(v > 0) || !(nara || vn >= BRAND.hotVarde)) return 0; // hotad, med summan som redan är räknad (steg 12.1.104)
   const d = Math.hypot(i % W + 0.5 - p.x, Math.floor(i / W) + 0.5 - p.y);
   return v * (inreOf(b)[i] ? BRAND.inreVikt : 1) / (1 + (m.get(i) ?? 0)) / (1 + d / BRAND.slackGang);
 }
@@ -714,19 +728,19 @@ function fotfaste(s: State, b: Brand, i: number, p: { x: number; y: number }) {
 // det p väljer när hen vet om branden (val.ts, efter vargen och tornadon)
 export function brandVal(s: State, p: Person): BrandMal | undefined {
   const b = s.brand;
-  if (!b || larmNu(s, p)?.vad !== 'brand') return;
+  if (!b || !larmNu(s, p, 'brand')) return;
   return brandMal(s, b, p, !!b.hot && hotar(s, b));
 }
 
 // ---------- att släcka (steg.ts) ----------
 // hur lätt den brinnande rutan i släcks (det svåraste som brinner där; 1 om inget finns kvar)
-const latt = (s: State, i: number) => bransleAv(s)(i)?.[2] ?? 1;
+const latt = (bransle: ReturnType<typeof bransleAv>, i: number) => bransle(i)?.[2] ?? 1;
 // medan man släcker med händerna: den närmaste brinnande rutan inom räckhåll släcks lite i taget, och man kan bränna sig
 export function slackaSteg(s: State, p: Person, t: Task, dtSec: number) {
   const b = s.brand;
   if (t.tool) return; // vattensäcken fylls
   if (!b) { t.until = s.now; return; }
-  const k = kartaOf(b);
+  const k = kartaOf(b), bransle = bransleAv(s); // högarna slås upp en gång (steg 12.1.104): släckningen ändrar inga högar i slingan
   // tiden räcker till flera rutor (steg 9.9.4): när en ruta är släckt går resten av tiden till nästa inom räckhåll. Förut gick
   // resten förlorad, så att ingen släckte mer än en ruta per slag hur fort hen än arbetade
   let kvar = dtSec;
@@ -747,8 +761,9 @@ export function slackaSteg(s: State, p: Person, t: Task, dtSec: number) {
       }
     }
     t.ref = r[0];
-    const takt = BRAND.hand * latt(s, r[0]) / HOUR_S, tid = Math.min(kvar, (1 - r[3]) / Math.max(1e-9, takt));
+    const takt = BRAND.hand * latt(bransle, r[0]) / HOUR_S, tid = Math.min(kvar, (1 - r[3]) / Math.max(1e-9, takt));
     r[3] += takt * tid; kvar -= tid;
+    if (!(b.slackare ??= []).includes(p.id)) b.slackare.push(p.id); // (steg 12.1.131)
     if (k[r[0]] === 1 && ur(s, p.id, 3864 + varv * 17) < chans(BRAND.brannHand, tid)) {
       const DELAR: Kroppsdel[] = ['handV', 'handH', 'armV', 'armH'];
       const d = DELAR[Math.floor(ur(s, p.id, 3865) * DELAR.length)], g = BRAND.brannHandGrad[0] + ur(s, p.id, 3866) * (BRAND.brannHandGrad[1] - BRAND.brannHandGrad[0]);
@@ -775,7 +790,7 @@ export function slackaFram(s: State, p: Person, _t: Task) {
     const nara = b.r.map(r => ({ r, d: Math.hypot(r[0] % W + 0.5 - p.x, Math.floor(r[0] / W) + 0.5 - p.y) })).filter(q => q.d <= BRAND.sackR).sort((a, c) => a.d - c.d || a.r[0] - c.r[0]);
     const sl = bransleAv(s);
     for (const q of nara.slice(0, BRAND.sackRutor)) q.r[3] = Math.min(1, q.r[3] + (sl(q.r[0])?.[2] ?? 1));
-    if (nara.length) { count(s, 'brand sack'); wearUsed(s, p, 1); }
+    if (nara.length) { count(s, 'brand sack'); wearUsed(s, p, 1); if (!(b.slackare ??= []).includes(p.id)) b.slackare.push(p.id); }
     slocknar(s, b);
   }
   p.task = undefined;
@@ -796,3 +811,8 @@ SLAGHINDER.push(s => s.brand ? KLOCKA.slag : undefined);
 // branden och en bybo som kan nå varandra under ett slag, plus synhållet: byn går i korta steg (steg 10.2.18)
 FAROR.push(s => { const b = s.brand; return !!b?.r.length && living(s).some(q => kanNa(narmast(b, q.x, q.y).d, 0, GANG.fart)); });
 import { grundvarde } from './varde';
+import { eldDef, eldPlatsAv } from './stationseld';
+import { forlustFore, forlustEfter } from './tankelage';
+import { tanke } from './tankar';
+import { husFolk } from './byggnader';
+import { kronikaBer } from './berattelser';

@@ -148,6 +148,7 @@ export function dragSok(s: State, ruta: DragRuta = { x0: 0, y0: 0, x1: W - 1, y1
 // draget på (x, y): summan delad med BIN.dragFullt, högst 1
 // vildboet syns på ruta i (steg 10.10.15): på sommaren och hösten, där vildbinas lager är rikt och ett vuxet träd står
 vildboKrok.syns = () => BIN.boSyns; // honungen finns bara i ett bo (fynd.ts)
+vildboKrok.tim = () => BIN.vildTim; // och tas i takt vid boet (samlarens tur, steg 12.1.263)
 export const vildboSyns = (s: State, i: number) => { const ai = kalender(s).ai; return (ai === SOMMAR || ai === HOST) && groundOf(s).trees[i] >= FOREST && fyndAt(s, 'honung', i) >= BIN.boSyns; };
 export const drag = (s: State, x: number, y: number) => Math.min(1, Object.values(dragDelar(s, x, y)).reduce((a, b) => a + b, 0) / BIN.dragFullt);
 

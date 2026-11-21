@@ -1,0 +1,35 @@
+{
+ "id": "sym_ljus",
+ "ritad": 1,
+ "av": "programmeringschatten (platshållare, steg 12.1.192)",
+ "om": "Ett talgljus med en låga och en droppe som runnit ner.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  ".......kk.......",
+  "......kyyk......",
+  "......kyyk......",
+  ".....kyooyk.....",
+  ".....kyrryk.....",
+  "......kyyk......",
+  ".......kk.......",
+  ".....kkkkkk.....",
+  ".....kwwwwk.....",
+  ".....kwwwbkk....",
+  ".....kwwwbwk....",
+  ".....kwwwbkk....",
+  ".....kwwwbk.....",
+  ".....kwwwbk.....",
+  "...kkkkkkkkkk...",
+  "...kJJJJJJJJk..."
+ ],
+ "pal": {
+  "J": "#7d5b40",
+  "b": "#bdb39b",
+  "k": "#24201d",
+  "o": "#bd753e",
+  "r": "#a14808",
+  "w": "#dad0bb",
+  "y": "#d8b25f"
+ }
+}

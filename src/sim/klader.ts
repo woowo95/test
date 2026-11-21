@@ -30,6 +30,13 @@ export const KLADER = balans('klader', {
   skyddTak: 0.9, // ett plagg tar som mest så här stor del av en skada (kodgenomgången 3.10.25: talet stod löst)
   // vikterna i valet av material (valMaterial, steg 10.2.38): punkterna vägs ihop, och de första väger mest
   vKyla: 8, vHot: 5, vSaknas: 3, vGottOm: 2, vDyrt: 1.5, vFin: 1, vVarde: 0.5,
+  // klädseln (steg 12.1.149): vad man har på sig väljs med en poäng per plagg. Värmen gånger hur kallt det är (positivt under
+  // valIdeal grader, negativt över, per valSpann grader), skyddet i striden, finheten (anseendet), och att inte lämna en del
+  // naken. Ett plagg tas på när poängen är över valByte och av när den är under −valByte, så att det inte byts fram och tillbaka
+  valIdeal: 20, valSpann: 10, valVarme: 1, valSkydd: 0.05, valFin: 0.02, valNaken: 1, valByte: 0.01,
+  // det plagget bär åt en (steg 12.1.191): per krok i bältet och plats på axelremmen, per vikt i ryggsäcken; plaggen som hör
+  // till en roll (masken och prästens dräkt åt prästen, trons tecken åt den troende) och smyckena som bärs för att synas
+  valBar: 0.1, valRygg: 0.005, valRoll: 0.1, valPynt: 0.05,
 });
 
 // platserna på kroppen där den som saknar plagg känner sig naken (stepNaken i steg.ts): skjortan och rocken klär överkroppen
@@ -48,7 +55,6 @@ interface PlaggDef {
   varme: number; dygn: number; vikt: number; tek: string; min: number; slag: MaterialSlag[]; smid?: number; // smid = så mycket smidighet plagget tar (steg 8.7.1)
   krok?: number; axel?: number; rygg?: number; tung?: true; snoTar?: number; // snoTar = så stor del av det snön bromsar som plagget tar bort (snöskorna, steg 7.7.3; snoFart i gang.ts)
   skydd?: { delar: Kroppsdel[]; tar: Partial<Record<Skadeslag, number>> };
-  latt?: true; // ett lätt plagg tas aldrig av för värmens skull (steg 12.1.19)
   station?: string; // stationen där plagget görs, när det inte görs vid slöjdbänken (hjälmen och brynjan smids i smedjan, steg 12.2.9)
   forsta: string; fame?: string; // loggen första gången ({namn} = den som gjorde det, {plagg} = plaggets namn i en mening) och det hen minns för
 }
@@ -58,13 +64,13 @@ const PLAGG_DEF = {
     forsta: '{namn} sydde byns första {plagg}. Den som har den på sig fryser mindre.', fame: 'Sydde byns första {plagg}' },
   skor: { namn: 'Skor', ord: 'ett par skor', verb: 'Syr', plats: 'fotter', mangd: RECEPT.skor.mangd, med: RECEPT.skor.av, varme: 0.1, dygn: 3, vikt: 3, tek: 'skinnklader', min: RECEPT.skor.min, slag: ['skinn'],
     skydd: { delar: ['fotV', 'fotH'], tar: { hugg: 0.2, stick: 0.2, slag: 0.1, bett: 0.3 } },
-    latt: true, forsta: '{namn} sydde byns första par {plagg}.' },
+    forsta: '{namn} sydde byns första par {plagg}.' },
   balte: { namn: 'Bälte', ord: 'ett bälte', verb: 'Flätar', plats: 'balte', mangd: RECEPT.balte.mangd, varme: 0, dygn: 10, vikt: 1, tek: 'balte', min: RECEPT.balte.min, slag: ['flatat'], krok: 2,
     forsta: '{namn} flätade byns första {plagg}. Redskapen hänger i det, och båda händerna är fria att bära med.' },
   axelrem: { namn: 'Axelrem', ord: 'en axelrem', verb: 'Syr', plats: 'axelrem', mangd: RECEPT.axelrem.mangd, med: RECEPT.axelrem.av, varme: 0, dygn: 10, vikt: 1, tek: 'axelrem', min: RECEPT.axelrem.min, slag: ['skinn'], axel: 1,
     forsta: '{namn} sydde byns första {plagg}. Spjutet hänger på axeln, och båda händerna är fria att bära med.' }, // steg 7.1.2
   byxor: { namn: 'Byxor', ord: 'ett par byxor', verb: 'Syr', plats: 'ben', mangd: RECEPT.byxor.mangd, med: RECEPT.byxor.av, varme: 0.15, dygn: 4, vikt: 5, tek: 'skinnklader', min: RECEPT.byxor.min, slag: ['skinn', 'lader'],
-    skydd: { delar: ['benV', 'benH'], tar: { hugg: 0.2, stick: 0.15, slag: 0.15, bett: 0.25 } }, latt: true, forsta: '{namn} sydde byns första par {plagg}.' }, // steg 7.7.1
+    skydd: { delar: ['benV', 'benH'], tar: { hugg: 0.2, stick: 0.15, slag: 0.15, bett: 0.25 } }, forsta: '{namn} sydde byns första par {plagg}.' }, // steg 7.7.1
   mossa: { namn: 'Mössa', ord: 'en mössa', verb: 'Syr', plats: 'huvud', mangd: RECEPT.mossa.mangd, varme: 0.1, dygn: 4, vikt: 1, tek: 'skinnklader', min: RECEPT.mossa.min, slag: ['skinn', 'lader'],
     skydd: { delar: ['huvud'], tar: { hugg: 0.15, stick: 0.1, slag: 0.15, bett: 0.2 } }, forsta: '{namn} sydde byns första {plagg}.' }, // steg 7.7.2
   snoskor: { namn: 'Snöskor', ord: 'ett par snöskor', verb: 'Syr', plats: 'fotter', mangd: RECEPT.snoskor.mangd, med: RECEPT.snoskor.av, varme: 0.1, dygn: 3, vikt: 3, tek: 'skinnklader', min: RECEPT.snoskor.min, slag: ['skinn'], snoTar: 0.8,
@@ -84,9 +90,9 @@ const PLAGG_DEF = {
   halsband: { namn: 'Halsband', ord: 'ett halsband', verb: 'Trär', plats: 'smycke', mangd: RECEPT.halsband.mangd, med: RECEPT.halsband.av, varme: 0, dygn: 20, vikt: 0.2, tek: 'skinnklader', min: RECEPT.halsband.min, slag: ['smycke'],
     forsta: '{namn} trädde byns första {plagg}. Den som bär det får anseende.' }, // steg 7.7.5
   tunika: { namn: 'Tunika', ord: 'en tunika', verb: 'Syr', plats: 'yttre', mangd: RECEPT.tunika.mangd, varme: 0.1, dygn: 5, vikt: 2, tek: 'vavstol', min: RECEPT.tunika.min, slag: ['tyg', 'ull'],
-    skydd: { delar: ['bal'], tar: { hugg: 0.05, stick: 0.05, slag: 0.05, bett: 0.05 } }, latt: true, forsta: '{namn} sydde byns första {plagg}.' }, // steg 7.7.10
+    skydd: { delar: ['bal'], tar: { hugg: 0.05, stick: 0.05, slag: 0.05, bett: 0.05 } }, forsta: '{namn} sydde byns första {plagg}.' }, // steg 7.7.10
   skjorta: { namn: 'Skjorta', ord: 'en skjorta', verb: 'Syr', plats: 'inre', mangd: RECEPT.skjorta.mangd, varme: 0.05, dygn: 5, vikt: 1, tek: 'vavstol', min: RECEPT.skjorta.min, slag: ['tyg', 'ull'],
-    skydd: { delar: ['bal'], tar: { hugg: 0.03, stick: 0.03, slag: 0.03, bett: 0.03 } }, latt: true, forsta: '{namn} sydde byns första {plagg}.' },
+    skydd: { delar: ['bal'], tar: { hugg: 0.03, stick: 0.03, slag: 0.03, bett: 0.03 } }, forsta: '{namn} sydde byns första {plagg}.' },
   // ullens plagg (steg 9.8.15): kappan, den varmaste klädnaden över kroppen, och sjalen över axlarna
   kappa: { namn: 'Kappa', ord: 'en kappa', verb: 'Syr', plats: 'yttre', mangd: RECEPT.kappa.mangd, varme: 0.3, dygn: 6, vikt: 3, tek: 'vavstol', min: RECEPT.kappa.min, slag: ['ull'],
     skydd: { delar: ['bal', 'armV', 'armH'], tar: { hugg: 0.08, stick: 0.05, slag: 0.1, bett: 0.1 } }, forsta: '{namn} sydde byns första {plagg}. Den är varm som en päls men lättare.' },

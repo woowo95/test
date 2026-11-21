@@ -40,3 +40,14 @@ export function smutsIkon(k: string, g: number) {
   PAL[id] = ny;
   return id;
 }
+// bilden k ett par steg mörkare i varje färgs ramp (steg 12.1.223): den halvbyggda stationsdelen, så att varje punkt är en
+// färg ur paletten (en halvgenomskinlig ruta över bilden blandar färgerna). Gjord en gång
+export function morkIkon(k: string, steg = 2) {
+  if (!hasIcon(k)) return k;
+  const id = `${k}_mork${steg}`;
+  if (PIX[id]) return id;
+  const pal = PAL[k] ?? {}, ny: Record<string, string> = {};
+  for (const ch in pal) { const i = INDEX.get(pal[ch]!.toLowerCase()); ny[ch] = i === undefined ? pal[ch]! : FARGER[i - (i & 3) + Math.max(0, (i & 3) - steg)]!; } // mörkare i rampen, aldrig ljusare
+  PIX[id] = PIX[k]!; PAL[id] = ny;
+  return id;
+}

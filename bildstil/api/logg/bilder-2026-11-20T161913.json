@@ -1,0 +1,21 @@
+{
+ "kommando": "tre",
+ "args": [
+  "pall=nya versioner, olika i form",
+  "tunna=nya versioner, olika i form",
+  "ost=nya versioner, olika i form",
+  "fyrfat=nya versioner, olika i form"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 1.4,
+  "hog": 3
+ },
+ "dollar": 0.802,
+ "rapport": [
+  "pall: 3 versioner till valdelen (kortet bild_pall)",
+  "tunna: 3 versioner till valdelen (kortet bild_tunna)",
+  "ost: 3 versioner till valdelen (kortet bild_ost)",
+  "fyrfat: 3 versioner till valdelen (kortet bild_fyrfat)"
+ ]
+}

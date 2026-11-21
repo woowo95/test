@@ -2,9 +2,10 @@ import { build } from 'esbuild';
 import { copyFileSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'fs';
 import { dirname } from 'path';
 
-const r = await build({ entryPoints: ['src/main.ts'], bundle: true, minify: true, format: 'iife', target: 'es2020', write: false, legalComments: 'none' });
-const js = r.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
-const html = readFileSync('src/template.html', 'utf8').replace('/*BUNDLE*/', () => js);
+const bygg = async (f) => (await build({ entryPoints: [f], bundle: true, minify: true, format: 'iife', target: 'es2020', write: false, legalComments: 'none' })).outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
+// arbetaren som räknar ikapp (steg 12.1.178, src/arbetare.ts) byggs för sig och ligger i sidan som text (#arbetarKod), som spelet startar som en Web Worker
+const js = await bygg('src/main.ts'), arbetare = await bygg('src/arbetare.ts');
+const html = readFileSync('src/template.html', 'utf8').replace('/*BUNDLE*/', () => js).replace('/*ARBETARE*/', () => arbetare);
 writeFileSync('samhallssimulatorn.html', html);
 
 // till publiceringen: källkoden som .txt under publicera/kalla, och fillistan som ges till artefakten (publicera/filer.json)

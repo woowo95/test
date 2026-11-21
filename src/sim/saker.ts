@@ -19,6 +19,7 @@ export interface SakDef {
   mat?: number; // mat: i vilken ordning den äts, lägst först (det som förstörs fortast)
   naring?: Partial<Record<import('./naring').Naring, number>>; // mat: hur mycket den har av varje näring, jämfört med de andra (naring.ts); en portion höjer ändå mättnaden lika mycket
   ra?: true; // rått kött eller rå fisk: den som äter det blir lite sur och kan bli matförgiftad (matlagning.ts, steg 2.8.1)
+  levande?: true; // ett levande djur som köps, säljs och stjäls som en sak och blir ett djur i byn
   haller?: number; // mat och sådant som ruttnar som mat: hur många dygn (år i spelet) den håller i lagret i rumstemperatur och utan tak (LAGER i lager.ts)
   slits?: number; // det som försvinner av skicket per timme
   blir?: { k: string; per: number }; // det den faller sönder till när skicket är slut, och hur många av den per styck
@@ -58,7 +59,7 @@ interface Skaffa { ger?: number; act?: string; tid?: number; av?: Record<string,
 const DEF = {
   bar: { namn: 'Bär', ett: true, skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 4, naring: { energi: 0.8, vitamin: 2, mineral: 0.3, protein: 0.1, fett: 0.1 }, haller: 3 },
   rotter: { namn: 'Rötter', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 5, naring: { energi: 1.4, mineral: 0.6, vitamin: 0.8, protein: 0.3, fett: 0.1 }, haller: 6 },
-  kott: { namn: 'Harkött', ett: true, skaffa: RECEPT.kott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 }, // slaktat vilt (en kanin, 2 fällt vilt i hela saker sedan steg 2.10.7, ger 3 kött, ett ben och ett skinn; värdet är golvet för nivån, varde.ts); köttet håller ett par dygn, fisken ett (steg 2.2.9). Köttet är eget för varje art (steg 3.7.14): nyckeln kott är kaninens, så att sparade byar behåller det
+  kott: { namn: 'Harkött', ett: true, skaffa: RECEPT.kott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 }, // slaktat vilt (en kanin, 2 fällt vilt i hela saker sedan steg 2.10.7, ger 3 kött, två ben och ett skinn; värdet är golvet för nivån, varde.ts); köttet håller ett par dygn, fisken ett (steg 2.2.9). Köttet är eget för varje art (steg 3.7.14): nyckeln kott är kaninens, så att sparade byar behåller det
   fisk: { namn: 'Fiskkött', ett: true, skaffa: RECEPT.fisk, stack: 25, ruta: 75, mapp: 'Mat', mat: 1, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.3 }, ra: true, haller: 1 },
   svamp: { namn: 'Svamp', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3, naring: { protein: 0.6, mineral: 0.8, vitamin: 1, energi: 0.5, fett: 0.1 }, haller: 2 },
   ved: { namn: 'Ved', skaffa: { act: 'hugga', tek: 'yxa' }, stack: 20, mapp: 'Bränsle', slits: 0.0004, blir: { k: 'grenar', per: 2 } },
@@ -289,12 +290,12 @@ const DEF = {
   bonor: { namn: 'Bönor', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6.6, naring: { protein: 1.8, energi: 1.3, mineral: 0.7, vitamin: 0.4, fett: 0.2 }, haller: 20 },
   kalfron: { namn: 'Kålfrön', skaffa: { tid: 0.25, tek: 'odling' }, stack: 50, vikt: 0.05, mapp: 'Material', haller: 20 },
   jordgubbar: { namn: 'Jordgubbar', skaffa: { tid: 0.3, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3.5, naring: { vitamin: 1.4, energi: 0.9, mineral: 0.4, fett: 0.1 }, haller: 2 }, // steg 9.7.9: mättar lite men gör folk glada
-  jordgubbsplanta: { namn: 'Jordgubbsplanta', ett: true, varde: 1, stack: 25, vikt: 0.1, mapp: 'Material', haller: 20 },
+  jordgubbsplanta: { namn: 'Jordgubbsplanta', varde: 1, stack: 25, vikt: 0.1, mapp: 'Material', haller: 20 },
   appel: { namn: 'Äpplen', skaffa: { tid: 0.3, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3.8, naring: { vitamin: 1.6, energi: 0.9, mineral: 0.3 }, haller: 8 }, // steg 9.7.13
   ull: { namn: 'Ull', varde: 3, stack: 20, vikt: 0.2, mapp: 'Material' }, // klipps av fåren (steg 9.8.5, boskap.ts)
-  levfar: { namn: 'Levande får', ett: true, varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levget: { namn: 'Levande get', varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levko: { namn: 'Levande ko', varde: 60, stack: 1, vikt: 0, mapp: 'Material' }, // kon (steg 10.10.1)
-  levoxe: { namn: 'Levande oxe', varde: 50, stack: 1, vikt: 0, mapp: 'Material' }, levhast: { namn: 'Levande häst', varde: 80, stack: 1, vikt: 0, mapp: 'Material' }, kulting: { namn: 'Kulting', varde: 10, stack: 1, vikt: 0, mapp: 'Material' }, slaktgris: { vikt: 15, namn: 'Slaktad gris', varde: 25, stack: 1, mapp: 'Material', haller: 3 }, // grisen (steg 10.10.13) // dragdjuren (steg 10.10.3)
-  levhons: { namn: 'Höna', varde: 4, stack: 20, vikt: 0, mapp: 'Material' }, // köps av handlaren och blir ett djur (steg 9.8.5)
+  levfar: { namn: 'Levande får', levande: true, ett: true, varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levget: { namn: 'Levande get', levande: true, varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levko: { namn: 'Levande ko', levande: true, varde: 60, stack: 1, vikt: 0, mapp: 'Material' }, // kon (steg 10.10.1)
+  levoxe: { namn: 'Levande oxe', levande: true, varde: 50, stack: 1, vikt: 0, mapp: 'Material' }, levhast: { namn: 'Levande häst', levande: true, varde: 80, stack: 1, vikt: 0, mapp: 'Material' }, kulting: { namn: 'Kulting', levande: true, varde: 10, stack: 1, vikt: 0, mapp: 'Material' }, slaktgris: { vikt: 15, namn: 'Slaktad gris', varde: 25, stack: 1, mapp: 'Material', haller: 3 }, // grisen (steg 10.10.13) // dragdjuren (steg 10.10.3)
+  levhons: { namn: 'Höna', levande: true, varde: 4, stack: 20, vikt: 0, mapp: 'Material' }, // köps av handlaren och blir ett djur (steg 9.8.5)
   appelplanta: { namn: 'Äppelplanta', varde: 2, stack: 10, vikt: 0.5, mapp: 'Material', haller: 20 },
   bivax: { namn: 'Bivax', ett: true, varde: 2, stack: 30, vikt: 0.2, mapp: 'Material' }, // de tomma vaxkakorna som skärs bort när bikupan skattas (steg 10.10.20): blir vaxljus
   honung: { namn: 'Honungskaka', skaffa: { act: 'samla' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 6, naring: { energi: 2.2, vitamin: 0.2, mineral: 0.2 } }, // steg 10.7.25: vaxkakan med honungen i, från vildbin i skogen; ruttnar inte
@@ -318,11 +319,33 @@ const DEF = {
   jarnspjut: { namn: 'Järnspjut', hanger: 'axel', ett: true, grupp: 'spjut', rang: 1, skaffa: RECEPT.jarnspjut, vikt: 5, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'jarnspjutTrasiga', text: '{namn}s järnspjut gick sönder.' } },
   jarnskold: { namn: 'Järnsköld', bildyta: true, hanger: 'balte', grupp: 'skold', rang: 1, skaffa: RECEPT.jarnskold, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, gors: { text: 'Gör en rundsköld med järnbuckla och läderkant.', stat: 'jarnskoldarGjorda', forsta: '{namn} gjorde byns första järnsköld, med en buckla av järn mitt på.' } },
   isborr: { namn: 'Isborr', hanger: 'balte', skaffa: RECEPT.isborr, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true }, // steg 12.2.11: borrar genom den tjockaste isen, smids i smedjan
+  sag: { namn: 'Såg', hanger: 'balte', grupp: 'sag', skaffa: RECEPT.sag, vikt: 1.5, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true }, // steg 12.5.1: handsågen ligger vid klyvplatsen, smids i smedjan
+  ullsax: { namn: 'Ullsax', hanger: 'balte', grupp: 'ullsax', skaffa: RECEPT.ullsax, vikt: 0.5, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true }, // steg 12.5.2: klipper fåren, smids i smedjan
+  jarnnal: { namn: 'Järnnål', grupp: 'nal', rang: 1, skaffa: RECEPT.jarnnal, vikt: 0.05, stack: 1, mapp: 'Redskap', slits: 0.000125, redskap: true, trasig: { stat: 'jarnnalarTrasiga', text: '{namn}s järnnål gick av.' } }, // steg 12.5.3: en bättre bennål som håller fyra gånger så länge, smids i smedjan
+  jarnhacka: { namn: 'Järnhacka', hanger: 'axel', grupp: 'jarnhacka', skaffa: RECEPT.jarnhacka, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true, trasig: { stat: 'jarnhackorTrasiga', text: '{namn}s järnhacka gick sönder.' } }, // steg 12.5.4: bryter byggsten, smids i smedjan
+  jarngryta: { namn: 'Järngryta', skaffa: RECEPT.jarngryta, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.00004, redskap: true, trasig: { stat: 'jarngrytorTrasiga', text: '{namn}s järngryta rostade sönder.' } }, // steg 12.5.5: tar dubbel sats och spricker inte, smids i smedjan
+  las: { namn: 'Lås', skaffa: RECEPT.las, vikt: 0.5, stack: 10, mapp: 'Material', brinnerInte: true }, // steg 12.5.6: smids i smedjan och går in i den låsta dörren
   eldstal: { namn: 'Eldstål', ett: true, hanger: 'balte', skaffa: RECEPT.eldstal, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.00005, redskap: true }, // steg 12.2.12: tänddonet som slås mot flinta, smids i smedjan
   svard: { namn: 'Svärd', ett: true, hanger: 'balte', skaffa: RECEPT.svard, vikt: 3, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true }, // steg 12.2.9: byns första rena vapen, smids i smedjan
   jarnyxa: { namn: 'Järnyxa', hanger: 'balte', grupp: 'yxa', rang: 1, skaffa: RECEPT.jarnyxa, vikt: 6, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true, trasig: { stat: 'jarnyxorTrasiga', text: '{namn}s järnyxa gick sönder.' } },
   jarnkniv: { namn: 'Järnkniv', hanger: 'balte', grupp: 'kniv', rang: 1, skaffa: RECEPT.jarnkniv, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.00007, redskap: true, trasig: { stat: 'jarnknivarTrasiga', text: '{namn}s järnkniv gick sönder.' } },
   lie: { namn: 'Lie', hanger: 'axel', grupp: 'skara', rang: 1, skaffa: RECEPT.lie, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.00007, redskap: true, trasig: { stat: 'liarTrasiga', text: '{namn}s lie gick sönder.' } },
+  // oljelampan (steg 12.4.2, ljus.ts): en liten lampa av lera, som torkar och bränns som krukan, och en behållare för brännoljan (vatskor.ts)
+  oljelampa: { namn: 'Oljelampa', skaffa: RECEPT.oljelampa, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'lamporTrasiga', text: '{namn}s oljelampa sprack.' },
+    gors: { text: 'Formar en liten oljelampa av lera.', stat: 'lamporGjorda', forsta: '{namn} formade byns första oljelampa av lera. Den ska torka och brännas i elden, och sedan brinner den på brännolja.' } },
+  // osten (steg 12.4.7): mjölken ystad i en kruka vid elden; håller så länge något får hålla i lagret och mättar som torkat kött
+  ost: { namn: 'Ost', skaffa: RECEPT.ost, stack: 25, ruta: 75, mapp: 'Mat', mat: 8, naring: { protein: 2, fett: 2, energi: 0.6, mineral: 0.6, vitamin: 0.2 }, haller: 20 }, // håller så länge något får hålla i lagret (LAGER.maxDygn, steg 12.1.193)
+  // fjäderpennan (steg 12.4.14, skrift.ts): ligger vid skrivpulpeten, och det som skrivs med den blir oftare bra; håller 20 blad
+  penna: { namn: 'Fjäderpenna', skaffa: RECEPT.penna, vikt: 0.05, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'pennorTrasiga', text: '{namn}s fjäderpenna var utsliten.' },
+    gors: { text: 'Skär en penna av en fjäder med {verktyg}.', stat: 'pennorGjorda', forsta: '{namn} skar byns första fjäderpenna. Med den skrivs bladen jämnare.' } },
+  // tunnan (steg 12.4.6, tunna.ts): ett laggat kärl som rymmer 20 delar, där vinet och mjödet mognar längre
+  tunna: { namn: 'Tunna', skaffa: RECEPT.tunna, vikt: 6, stack: 1, mapp: 'Redskap', slits: 0.00005, redskap: true, trasig: { stat: 'tunnorTrasiga', text: '{namn}s tunna sprack.' },
+    gors: { text: 'Laggar en tunna av plankor och binder den med rep.', stat: 'tunnorGjorda', forsta: '{namn} laggade byns första tunna. I den mognar vinet längre än i krukan.' } },
+  // pallen och stolen (steg 12.4.4, mobler.ts): sittplatserna vid bordet, i gruppen sate; stolen är den bättre
+  stol: { namn: 'Stol', grupp: 'sate', rang: 1, skaffa: RECEPT.stol, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true,
+    gors: { text: 'Fogar en stol med ryggstöd och en dyna av skinn och ull.', stat: 'stolarGjorda', forsta: '{namn} fogade byns första stol. Den är skönare att sitta på än pallen.' } },
+  pall: { namn: 'Pall', grupp: 'sate', skaffa: RECEPT.pall, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true,
+    gors: { text: 'Fogar en pall av en planka.', stat: 'pallarGjorda', forsta: '{namn} fogade byns första pall. Den är bättre att sitta på än stubben.' } },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;
@@ -352,7 +375,7 @@ export const gruppOf = (k: string) => SAKER[k]?.grupp ?? k;
 // redskapens grupper (steg 12.2.5, Järnet: Järnsakerna): yxorna, knivarna och skärorna. Den som frågar efter gruppens namn
 // (yxa, kniv, skara) får vilken sak som helst i gruppen (sakerna med grupp eller id lika med namnet), den bästa först
 // (GORS i redskap.ts). Spjuten är en grupp sedan förut och frågas efter med sina slag (SPJUT i redskap.ts)
-export const REDSKAPSGRUPPER: readonly string[] = ['yxa', 'kniv', 'skara', 'skold']; // skölden: träskölden och järnskölden (steg 12.2.8)
+export const REDSKAPSGRUPPER: readonly string[] = ['yxa', 'kniv', 'skara', 'skold', 'nal']; // skölden: träskölden och järnskölden (steg 12.2.8); nålen: bennålen och järnnålen (steg 12.5.3)
 export const iSlag = (tk: string, k: string) => tk === k || REDSKAPSGRUPPER.includes(k) && gruppOf(tk) === k;
 export const KLAD_SLAG = SAK_LIST.filter(k => SAKER[k]!.klad); // klädesplaggen (steg 2.3.2)
 // mappar i listan över allt byn äger; maten med det som håller längst först. summa = antalen läggs ihop på mappens rad

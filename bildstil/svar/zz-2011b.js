@@ -13,4 +13,7 @@
   // de små barnens porträtt (10.2.54): Björn vill ha helt nya delar för nästan nyfödda barn, som han går igenom i granskningen.
   // Kortet tas bort tills delarna är ritade; de kommer som egna kort i granskningen
   const i = VAL.findIndex(s => s.id === 'f10_smabarn'); if (i >= 0) VAL.splice(i, 1);
+  // köttet: Björn ville ha ett eget kort per sorts kött (f10_kott_radjur, _far, _get, _fagel, _bjorn i forslag/), så det
+  // gemensamma kortet tas bort
+  const j = VAL.findIndex(s => s.id === 'f10_kott'); if (j >= 0) VAL.splice(j, 1);
 })();

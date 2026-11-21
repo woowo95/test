@@ -10,7 +10,8 @@ import { KLOCKA, SLAGHINDER } from './klocka';
 import type { Person, State, Stat, Skill } from './typer';
 import { STATS, SKILLS } from './typer';
 import { hash3 } from './slump';
-import { EGENSKAP, count } from './folk';
+import { klanTatKrok } from './tatkrok';
+import { EGENSKAP, count, nyPerson } from './folk';
 import { SAKER } from './saker';
 import type { KlanPerson } from './klaner';
 const klanById = (s: State, id: number | undefined) => id === undefined ? undefined : s.varld?.rader?.find(r => r.syn?.id === id)?.syn; // som i klaner.ts, utan att importera den (cirkeln gastliv–klaner)
@@ -32,7 +33,7 @@ export type GastSort = keyof typeof GASTSORTER;
 // drakt är det som bara syns (rövarnas luva, duk och mörka skinnrock, steg 10.1.8); vapnet och kläderna är ting hen bär (s.gastTing).
 // bar, spar, pk och anhorig gäller rövarna (steg 9.2.112, rovare.ts): bytet hen bär, vägen för bilden
 // (tid och plats efter varandra), rutorna kvar på vägen och rutan hen hittat vägen till och vems anhörig hen är när flocken hämnas
-export interface GastRad { fil?: number; /* rövarens fil bredvid de andra i gänget (steg 10.2.25) */ sort: GastSort; ut?: { x: number; y: number }; /* där rövaren lämnar kartan: vald en gång när hen ger sig av */ klan?: number; hem?: string; drakt?: { bonad?: 'luva' | 'duk'; rovarskinn?: true }; gor?: string; gorTill?: number; vx?: number; vy?: number; taTid?: number; nojd?: boolean; flytt?: boolean; varStrid?: boolean; /* rövarens val (steg 10.1.9, rovare.ts): det hen gör, till när, dit hen går på rastplatsen, tiden vid förrådet, om hen flyr och om hen varit i striden */ bar?: Record<string, number>; spar?: number[]; path?: number[]; pk?: number; ingen?: number; ingenT?: number; /* målet som inte gick att nå, och när (gaMot i rovare.ts) */ anhorig?: string; mat?: number; vatten?: number; /* klunkarna i vattensäcken (steg 10.2.35, gastvardag.ts) */ sover?: 1; blir?: number; fas?: 'kommer' | 'pratar' | 'gar'; till?: number; tek?: string; ja?: boolean; hemRad?: number; tagen?: number; /* när fången togs till fängelset (steg 11.12.6) */ dodat?: number; /* bybor gästen dödat i strid */ utan?: string[]; losen?: { t: number; bud?: number; till: number }; losenFor?: number; vald?: 1; /* raderna som inte gick, budet med lösen och sändebudet som bär lösen för fången (steg 11.12.7, fangeval.ts) */ besked?: import('./byhandling').BeskedTon; gava?: import('./handel').HVara[]; hjalp?: 1; hjalpTim?: number; /* besökaren hjälper byn och timmarna hen arbetat (steg 11.13.23, vackthjalp.ts) */ } // blir, fas, till, tek, ja: främlingen; hemRad: byn i världen hen flyttade ifrån (steg 11.3.5) (steg 9.2.115, framling i liv.ts)
+export interface GastRad { fil?: number; /* rövarens fil bredvid de andra i gänget (steg 10.2.25) */ sort: GastSort; ut?: { x: number; y: number }; /* där rövaren lämnar kartan: vald en gång när hen ger sig av */ klan?: number; hem?: string; drakt?: { bonad?: 'luva' | 'duk'; rovarskinn?: true }; gor?: string; gorTill?: number; brus?: Record<string, number>; /* rövarens slumptal i valet, dragna en gång per val (steg 12.1.108) */ sag?: number; /* den hen såg när slumptalen drogs */ vx?: number; vy?: number; taTid?: number; nojd?: boolean; flytt?: boolean; varStrid?: boolean; /* rövarens val (steg 10.1.9, rovare.ts): det hen gör, till när, dit hen går på rastplatsen, tiden vid förrådet, om hen flyr och om hen varit i striden */ bar?: Record<string, number>; spar?: number[]; path?: number[]; pk?: number; ingen?: number; ingenT?: number; /* målet som inte gick att nå, och när (gaMot i rovare.ts) */ anhorig?: string; mat?: number; vatten?: number; /* klunkarna i vattensäcken (steg 10.2.35, gastvardag.ts) */ sover?: 1; blir?: number; fas?: 'kommer' | 'pratar' | 'gar'; till?: number; tek?: string; ja?: boolean; hemRad?: number; tagen?: number; /* när fången togs till fängelset (steg 11.12.6) */ dodat?: number; /* bybor gästen dödat i strid */ utan?: string[]; losen?: { t: number; bud?: number; till: number }; losenFor?: number; vald?: 1; /* raderna som inte gick, budet med lösen och sändebudet som bär lösen för fången (steg 11.12.7, fangeval.ts) */ besked?: import('./byhandling').BeskedTon; gava?: import('./handel').HVara[]; hjalp?: 1; hjalpTim?: number; /* besökaren hjälper byn och timmarna hen arbetat (steg 11.13.23, vackthjalp.ts) */ } // blir, fas, till, tek, ja: främlingen; hemRad: byn i världen hen flyttade ifrån (steg 11.3.5) (steg 9.2.115, framling i liv.ts)
 
 // ---------- gästernas utrustning (steg 10.1.8, "Striden på kartan: Gästernas utrustning" i designdokumentet) ----------
 // Varje sort gäst har en rad som säger hur ofta hen har varje vapen, plagg och ärr (vikter: det som står med högre tal är
@@ -51,8 +52,8 @@ export const GASTUTRUSTNING: Record<GastSort, GastUtrustning> = {
   },
   handlare: {
     vapen: [['kniv', 2], [null, 3]], reserv: [[null, 1]],
-    plagg: { rock: [['rock_kaninskinn', 3], ['rock_vargskinn', 1], ['kappa_ylle', 1], [null, 1]], byxor: [['byxor_kaninskinn', 2], ['byxor_lader', 2], [null, 1]], skor: [['skor_kaninskinn', 4], [null, 1]], mossa: [['mossa_kaninskinn', 1], [null, 3]], balte: [['balte_rep', 3], [null, 1]] },
-    arr: 0.08,
+    plagg: { rock: [['rock_kaninskinn', 3], ['rock_vargskinn', 1], ['kappa_ylle', 1], [null, 1]], byxor: [['byxor_kaninskinn', 2], ['byxor_lader', 2], [null, 1]], skor: [['skor_kaninskinn', 4], [null, 1]], mossa: [['mossa_kaninskinn', 1], [null, 3]], balte: [['balte_rep', 3], [null, 1]], fackla: [['fackla', 1]] },
+    arr: 0.08, // facklan sätts upp vid lägret när det är mörkt (steg 12.1.152, handel.ts)
   },
   sandebud: { // budet går lätt klätt, med en kniv ibland (steg 11.6.23)
     vapen: [['kniv', 1], [null, 3]], reserv: [[null, 1]],
@@ -84,6 +85,7 @@ function utrusta(s: State, p: Person, r: () => number) {
   const reserv = valj(u.reserv, r()); if (reserv && reserv !== vapen) ny(reserv, undefined);
   for (const v of Object.values(u.plagg)) { const k = valj(v, r()); if (k) ny(k, SAKER[k]?.klad ? 'bar' : undefined); } // plaggen på sig, det andra (facklan) löst
   for (let i = 0; i < 2; i++) if (r() < u.arr) (p.arr ??= []).push({ d: ARRDELAR[Math.floor(r() * ARRDELAR.length)], n: Math.floor(r() * 10) + 1 });
+  if (p.gast!.klan !== undefined) klanTatKrok.klan(s, p, p.gast!.klan, r); // klanens märken (steg 12.1.165)
   if (u.drakt) { const b = r(); p.gast!.drakt = { ...(b < u.drakt.luva ? { bonad: 'luva' as const } : b < u.drakt.luva + u.drakt.duk ? { bonad: 'duk' as const } : {}), ...(r() < u.drakt.rovarskinn ? { rovarskinn: true as const } : {}) }; }
 }
 // vapnet gästen har i handen (slaget), om något
@@ -135,11 +137,11 @@ export function nyGast(s: State, o: { id: number; namn: string; sex: 'm' | 'k'; 
   Object.assign(pot, o.pot); // egenskaper som sorten bestämmer (rövarnas styrka och mod, rovare.ts)
   const skill = {} as Record<Skill, number>;
   for (const k of SKILLS) skill[k] = o.skill?.[k] ?? 0;
-  const p: Person = {
+  const p = nyPerson({
     id: o.id, name: o.namn, sex: o.sex, born: o.fodd, gast: o.rad,
     pot, skill, hunger: 0.8, rest: 0.9, social: 0.7, health: 1, warm: 1, toa: 0.8, torst: 1, blod: 1, habit: {}, thoughts: [],
     x: o.x, y: o.y, fame: [], hue: Math.floor(r() * 360),
-  };
+  });
   if (o.rad.klan !== undefined) p.fran = o.rad.klan;
   utrusta(s, p, r); // vapnen, kläderna och ärren (GASTUTRUSTNING, steg 10.1.8)
   return p;
@@ -177,7 +179,7 @@ export function gastTillbaka(s: State, p: Person) {
   if (fran !== undefined) p.fran = fran;
   // livet hemma, förenklat
   Object.assign(p, { health: 1, blod: 1, hunger: Math.max(p.hunger, 0.8), rest: 0.9, warm: 1, torst: 1, toa: 0.8 });
-  for (const f of ['blot', 'sjuk', 'skador', 'svimmat', 'brinner', 'sickWhy', 'poisonUntil', 'sorg'] as const) delete p[f];
+  for (const f of ['blot', 'sjuk', 'skador', 'svimmat', 'brinner', 'sickWhy', 'poisonUntil', 'sorg'] as const) p[f] = undefined;
   p.thoughts = p.thoughts.filter(t => t.until > s.now);
   delete kp.kropp; delete kp.borta;
   count(s, 'gast igen');

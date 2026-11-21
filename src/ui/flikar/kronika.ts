@@ -82,7 +82,8 @@ export const kronika: Flik = {
       const a = ar(r.t);
       if (a !== forra) { html += `${forra === undefined ? '' : '</ol>'}<h4 class="kar">År ${a}</h4><ol class="logg kron">`; forra = a; }
       const k = kalender(s, r.t), cls = [r.kind ? `k-${r.kind}` : '', r.viktig && !val.viktigt ? 'viktig' : ''].filter(Boolean).join(' ');
-      html += `<li${cls ? ` class="${cls}"` : ''}><span class="when">${r.kind ? `${AGES[k.ai].toLowerCase()}, kl. ${klocka(r.t)}` : AGES[k.ai]}</span>${linkify({ t: r.t, text: r.text, kind: r.kind ?? 'world', ids: r.ids ?? iText(r.text, s.people), byte: r.byte, bnr: r.bnr, fram: r.fram, match: r.match })}</li>`;
+      // texten i ett eget element (steg 12.1.51), så att namnen står i meningen och inte i en egen kolumn i rutnätet
+      html += `<li${cls ? ` class="${cls}"` : ''}><span class="when">${r.kind ? `${AGES[k.ai].toLowerCase()}, kl. ${klocka(r.t)}` : AGES[k.ai]}</span><span class="txt">${linkify({ t: r.t, text: r.text, kind: r.kind ?? 'world', ids: r.ids ?? iText(r.text, s.people), byte: r.byte, bnr: r.bnr, fram: r.fram, match: r.match })}</span></li>`;
     }
     return rad + symbolRad(aren) + (html ? html + '</ol>' : '<p class="muted">Inget har hänt här än.</p>');
   },

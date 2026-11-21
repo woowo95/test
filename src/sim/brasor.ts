@@ -1,10 +1,10 @@
-import { freeNear, isWall } from './byggnad';
-import { DAY, Fire, State, W } from './typer';
+import { blocked, freeNear, isWall } from './byggnad';
+import { DAY, Fire, State, W, inMap } from './typer';
 import { balans } from './balans';
 import { eldPlats } from './karta';
 import { count, living, log } from './folk';
 import { coldOf, temperature } from './vader';
-import { changed, enPerRuta, paMarken } from './lager';
+import { changed, eldRutor, enPerRuta, ingetIElden, paMarken } from './lager';
 import { bedTile } from './byggnader';
 import { newFire, woodDays } from './eld';
 import { Station } from './stationer';
@@ -61,6 +61,7 @@ export function nyEld(s: State, t: Station) {
   Object.assign(f, { id: t.id, at: { x: t.x, y: t.y }, ring: true, klar: s.now, folk: [] });
   (s.eldar ??= []).push(f);
   s.byggV = (s.byggV ?? 0) + 1; // rutan är en eldplats: vägarna och platserna räknas om
+  ingetIElden(s); // det som låg där flyttas (steg 12.1.153)
 }
 
 // ---------- varje timme ----------
@@ -93,13 +94,22 @@ export function stepBrasor(s: State) {
   // en lägereld som ingen sover nära tas isär: genast om byn vill ha en annanstans, annars när den stått släckt i tomDygn
   for (const f of tomma) if (vill || s.now - (f.ut ?? f.klar ?? s.now) >= BRASA.tomDygn * DAY) taIsar(s, f);
 }
+// var stenarna läggs när en lägereld tas isär (steg 12.1.194): där den stod, men aldrig i en annan eld (eldRutor, en härd bredvid
+// tar två gånger två rutor) eller en vägg; då närmast bredvid, ring för ring
+function stenPlats(s: State, at: { x: number; y: number }) {
+  const eld = eldRutor(s), ok = (x: number, y: number) => inMap(x, y) && !eld.has(y * W + x) && !isWall(s, x + 0.5, y + 0.5) && !blocked(s, x, y);
+  const x0 = Math.floor(at.x), y0 = Math.floor(at.y);
+  if (ok(x0, y0)) return { x: x0, y: y0 };
+  for (let r = 1; r < 6; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (Math.max(Math.abs(dx), Math.abs(dy)) === r && ok(x0 + dx, y0 + dy)) return { x: x0 + dx, y: y0 + dy };
+  return freeNear(s, x0, y0, true);
+}
 // lägerelden tas isär och stenarna läggs i en hög där den stod (en stack, som bärs in i lagret, haulJob i lager.ts). Kolet i
 // den gamla elden blir kvar i högen med stenarna
-function taIsar(s: State, f: Fire) {
+export function taIsar(s: State, f: Fire) {
   s.eldar = (s.eldar ?? []).filter(q => q !== f);
   if (!s.eldar.length) s.eldar = undefined;
   s.byggV = (s.byggV ?? 0) + 1; // rutan är ledig igen: vägarna och platserna räknas om
-  const st = (s.stackar ??= []), { x, y } = isWall(s, f.at!.x + 0.5, f.at!.y + 0.5) ? freeNear(s, f.at!.x, f.at!.y, true) : f.at!; // har en vägg byggts där läggs högen bredvid
+  const { x, y } = stenPlats(s, f.at!), st = (s.stackar ??= []);
   let g = st.find(q => q.x === x && q.y === y && q.k === 'sten');
   if (!g) st.push(g = { x, y, k: 'sten', n: 0, c: 1 });
   g.n += RT.brasaSten; changed(s); enPerRuta(s);

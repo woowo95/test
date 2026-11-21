@@ -11,9 +11,9 @@ import { vattenNu } from './sjo';
 import { balans } from './balans';
 import { chance, clamp } from './slump';
 import { ACTS } from './handlingar';
-import { KROPP, ageOf, count, log, think } from './folk';
+import { KROPP, ageOf, count, log } from './folk';
 import { ata, naringSjunker } from './naring';
-import { TORST, torstSteg } from './torst';
+import { TORST, gastSackKrok, torstSteg } from './torst';
 import { halsaLage } from './steg';
 import { forkylning, insjukna, sjukSteg } from './sjukdom';
 import { ageIndex } from './tid';
@@ -21,6 +21,7 @@ import { nyKvarleva } from './kvarlevor';
 import { notis } from './notiser';
 import { handlarenDog } from './handel';
 import { gasterNu, type GastSort } from './gast';
+import { tanke } from './tankar';
 
 export const GASTVARD = balans('gastvard', {
   matsack: 6, // portionerna i packningen när gästen kommer
@@ -35,6 +36,8 @@ export const GASTVARD = balans('gastvard', {
   vakenTim: 18, // timmar vaken från full till tom vila
   klad: 0.85, // så mycket av kylan gästens reskläder tar (gästen är klädd för vägen)
 });
+
+gastSackKrok.fyll = q => { if (q.gast) q.gast.vatten = GASTVARD.sack; }; // vattnet som byborna bär till gästen (torst.ts, steg 12.1.228)
 
 // får p göra handlingen? Gästernas handlingar kräver sorten, och byborna gör dem aldrig
 export function kanGora(p: Person, act: Act) {
@@ -109,7 +112,7 @@ export function gastVardag(s: State, dtSec: number, varme: (p: Person) => number
     if (g.sover && (p.rest >= GASTVARD.vaken || !kanSova(s, p))) { g.sover = undefined; if (p.rest >= GASTVARD.vaken) count(s, 'gast sov'); }
     else if (!g.sover && p.rest < GASTVARD.sovUnder && kanSova(s, p)) g.sover = 1;
     p.rest = clamp(p.rest + h * (g.sover ? 1 / GASTVARD.somnTim : -1 / GASTVARD.vakenTim), 0, 1);
-    if (p.warm < KROPP.fryser) think(p, 'Fryser', -0.12, now, HOUR);
+    if (p.warm < KROPP.fryser) tanke(p, 'fryser', now);
     // hälsan, som en bybos (healthStep i steg.ts), utan ålderdom och olyckor
     const hl = halsaLage(p, now);
     if (hl === 'svalt') p.health -= dtSec / (KROPP.svaltTim * HOUR_S);

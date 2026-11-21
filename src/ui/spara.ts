@@ -1,8 +1,9 @@
-import { storStridNu, nastaSteg, Borta, MIN, State, joinParts, living, serializeParts, spar, step, stridBild, DAY } from '../sim';
+import { storStridNu, nastaSteg, Borta, MIN, State, joinParts, living, serializeParts, spar, step, stridBild, franOverlamning, overlamna } from '../sim';
+import { FranArbetaren, Overlamning, TillArbetaren } from './ikappkarna';
 import { lasBy, sparaBy, tolkaText, webbBas } from './lagring';
 import { $, esc } from './hjalp';
-import { bortaHtml, ikappHtml, spolaText } from './borta';
-import { gaHem, huvud, s, ui } from './lage';
+import { bortaHtml, forloppText, ikappHtml, spolaText } from './borta';
+import { gaHem, huvud, pekarIn, s, setByn, ui } from './lage';
 import { drawTerrain } from './terrang';
 import { drawPlants } from './vaxter';
 import { sparaAnnan } from './byar';
@@ -150,6 +151,7 @@ try { ui.spola = localStorage.getItem(SPOLA_NYCKEL) === '1'; } catch { /* utan w
 // sparas därför bara när den syns. Byn sparas efter hand (IKAPP_LOKAL_MS och IKAPP_MOLN_MS), så att en omladdning
 // fortsätter där räknandet var och inte börjar om; sammanställningen (s.borta) sparas med byn och gäller hela tiden
 const BIT_MS = 100, BIT_SPOLA_MS = 30; // datorns tid per bit, och när kartan visas medan den räknas
+const RITA_MIN_MS = 120, RITA_GANGER = 4; // snabbspolningens bilder: högst åtta i sekunden, och väntan minst fyra gånger ritningens tid (steg 12.1.179)
 const IKAPP_LOKAL_MS = 15000, IKAPP_MOLN_MS = MIN; // hur ofta byn sparas i webbläsaren och i molnet under räknandet
 // nästa bit efter att webbläsaren fått svara (förloppet, knapparna): ett meddelande till sig själv, som inte väntar de minst
 // 4 ms en setTimeout gör och inte stryps till en gång i sekunden när fliken är gömd
@@ -157,6 +159,22 @@ const kanal = typeof MessageChannel === 'function' ? new MessageChannel() : unde
 let vantande: (() => void) | undefined;
 if (kanal) kanal.port1.onmessage = () => { const f = vantande; vantande = undefined; f?.(); };
 const nasta = (f: () => void) => { if (kanal) { vantande = f; kanal.port2.postMessage(0); } else setTimeout(f, 0); };
+// Arbetaren (steg 12.1.178, src/arbetare.ts): ikappräkningen som visar rutan räknas i en Web Worker, så att sidan svarar
+// under tiden. Koden ligger i sidan (#arbetarKod, build.mjs) och startas ur en Blob; går det inte (ingen Worker, sidan byggd
+// utan den, eller arbetaren svarar med fel innan den räknat något) räknas byn i sidan som förut
+function startaArbetare(): Worker | undefined {
+  try {
+    const kod = document.getElementById('arbetarKod')?.textContent;
+    if (!kod || kod.includes('/*ARBETARE*/') || typeof Worker !== 'function' || typeof Blob !== 'function') return undefined;
+    return new Worker(URL.createObjectURL(new Blob([kod], { type: 'text/javascript' })));
+  } catch { return undefined; }
+}
+// byn som arbetaren räknat fram tar över, och det spelaren pekade på står kvar (som bytBy i main.ts)
+function bytTill(delar: Overlamning) {
+  const u = ui as Record<string, unknown>, kvar = Object.fromEntries(Object.keys(pekarIn()).map(k => [k, u[k]])); // allt som pekar in i byn (steg 12.1.249)
+  setByn(franOverlamning(delar));
+  Object.assign(ui, kvar);
+}
 export async function catchUp(target: number) {
   gaHem(); // ikappräkningen visar huvudbyn (steg 11.13.11)
   const span = target - s.now;
@@ -166,11 +184,13 @@ export async function catchUp(target: number) {
   const from = s.now;
   if (showOverlay) s.borta ??= { fran: from, fodda: s.stat?.fodda ?? 0, doda: s.stat?.doda ?? 0, folk: living(s).length };
   const ov = $('overlay');
-  let senastRitad = 0;
+  let senastRitad = 0, ritTid = 0; // när kartan senast ritades i snabbspolningen och hur lång tid det tog (datorns tid)
   const rita = ikapp.rita, spolar = () => showOverlay && ui.spola && !!rita;
+  const arbetare = showOverlay ? startaArbetare() : undefined;
   const visaSpola = () => {
     ov.classList.toggle('spolar', spolar());
     const k = document.getElementById('ovSpola'); if (k) { k.innerHTML = spolaText(ui.spola); k.setAttribute('aria-pressed', String(ui.spola)); }
+    arbetare?.postMessage({ typ: 'bild', bild: spolar() } satisfies TillArbetaren); // arbetaren skickar bilder oftare när de syns
   };
   if (showOverlay) {
     ov.hidden = false; $('ovBody').innerHTML = ikappHtml(ui.spola, !!rita);
@@ -180,28 +200,53 @@ export async function catchUp(target: number) {
   }
   app.ticker.stop();
   let sparatLokal = performance.now(), sparatMoln = performance.now();
-  await new Promise<void>((resolve, reject) => {
+  const sparaUnderTiden = () => {
+    const nu = performance.now();
+    if (nu - sparatLokal > IKAPP_LOKAL_MS) { sparatLokal = nu; saveLocal(); }
+    if (nu - sparatMoln > IKAPP_MOLN_MS) { sparatMoln = nu; void saveDb(); }
+  };
+  // förloppet och kartan som den ser ut vid byns tid nu
+  const visaForlopp = (nu: number, syns: boolean) => {
+    if (!showOverlay) return;
+    const f = Math.min(1, (nu - from) / span);
+    const bar = document.getElementById('progBar'); if (bar) bar.style.width = (f * 100).toFixed(1) + '%';
+    const pt = document.getElementById('progTxt'); if (pt) pt.textContent = forloppText(span, nu - from);
+    // kartan som den ser ut nu: byn spolas fram medan den räknas (steg 12.1.179). Nästa bild ritas när det gått minst
+    // RITA_GANGER gånger så lång tid som den förra tog att rita, och aldrig oftare än var RITA_MIN_MS: då tar ritningen
+    // högst ungefär en femtedel av tiden, också på en långsam dator
+    const tn = performance.now();
+    if (syns && tn - senastRitad > Math.max(RITA_MIN_MS, RITA_GANGER * ritTid)) {
+      rita!(); app.render(); senastRitad = performance.now(); ritTid = senastRitad - tn;
+    }
+  };
+  // i sidan, slag för slag i bitar (utan arbetare, och när ikappräkningen är kort)
+  const iSidan = () => new Promise<void>((resolve, reject) => {
     const chunk = () => {
       const t0 = performance.now(), syns = spolar();
       spar.pa = syns; stridBild.pa = syns;
       try { while (s.now < target && performance.now() - t0 < (syns ? BIT_SPOLA_MS : BIT_MS) && !storStridNu(s)) step(s, nastaSteg(s)); } catch (e) { reject(e); return; }
-      const nu = performance.now();
-      if (nu - sparatLokal > IKAPP_LOKAL_MS) { sparatLokal = nu; saveLocal(); }
-      if (nu - sparatMoln > IKAPP_MOLN_MS) { sparatMoln = nu; void saveDb(); }
+      sparaUnderTiden();
       if (storStridNu(s)) { resolve(); return; } // en stor strid stannar ikappräkningen och visas i levande läge (steg 8.8.9); klockan hinner ikapp efteråt
-      if (showOverlay) {
-        const f = Math.min(1, (s.now - from) / span);
-        const bar = document.getElementById('progBar'); if (bar) bar.style.width = (f * 100).toFixed(1) + '%';
-        // förloppet i år (steg 11.1.64): År 3 av 5 · 60 %, och bara procenten när det är mindre än ett år
-        const arN = Math.ceil(span / DAY), arK = Math.min(arN, Math.floor((s.now - from) / DAY) + 1);
-        const pt = document.getElementById('progTxt'); if (pt) pt.textContent = `${arN >= 2 ? `År ${arK} av ${arN} · ` : ''}${Math.round(f * 100)} %`;
-        // kartan som den ser ut nu: byn spolas fram medan den räknas (högst åtta bilder i sekunden, så att räknandet går fort)
-        if (syns && performance.now() - senastRitad > 120) { rita!(); app.render(); senastRitad = performance.now(); }
-      }
+      visaForlopp(s.now, syns);
       if (s.now < target) nasta(chunk); else resolve();
     };
     chunk();
-  }).finally(() => { spar.pa = true; stridBild.pa = true; app.ticker.start(); }).catch(e => {
+  }).finally(() => { spar.pa = true; stridBild.pa = true; });
+  // i arbetaren: sidan byter till arbetarens by vid varje ögonblicksbild och när den är klar. Svarar den med fel innan den
+  // räknat något blir svaret false, och byn räknas i sidan i stället
+  const iArbetaren = (w: Worker) => new Promise<boolean>((resolve, reject) => {
+    let raknat = false;
+    w.onmessage = (e: MessageEvent<FranArbetaren>) => {
+      const m = e.data;
+      if (m.typ === 'forlopp') { raknat = true; visaForlopp(m.nu, false); }
+      else if (m.typ === 'by') { raknat = true; bytTill(m.delar); sparaUnderTiden(); visaForlopp(s.now, spolar()); }
+      else if (m.typ === 'klar') { bytTill(m.delar); resolve(true); }
+      else if (raknat) reject(new Error(m.text)); else { console.error('Arbetaren kunde inte räkna; byn räknas i sidan', m.text); resolve(false); }
+    };
+    w.onerror = e => { e.preventDefault(); if (raknat) reject(new Error(e.message)); else { console.error('Arbetaren kunde inte starta; byn räknas i sidan', e.message); resolve(false); } };
+    w.postMessage({ typ: 'start', delar: overlamna(s), mal: target, bild: spolar() } satisfies TillArbetaren);
+  }).finally(() => w.terminate());
+  await (async () => { if (!arbetare || !(await iArbetaren(arbetare))) await iSidan(); })().finally(() => { app.ticker.start(); }).catch(e => {
     // ett fel i simuleringen: spelet står still (det skulle bara hända igen), men spelaren får veta det
     ov.classList.remove('spolar'); ov.hidden = false; $('ovBody').innerHTML = `<p class="ovLead">Något gick fel när byn räknades ikapp.</p><p class="muted">${esc(String(e))}</p>`;
     throw e;

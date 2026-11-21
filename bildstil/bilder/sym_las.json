@@ -1,0 +1,32 @@
+{
+ "id": "sym_las",
+ "ritad": 1,
+ "av": "programmeringschatten (platshållare, steg 12.1.192)",
+ "om": "Ett hänglås av järn med böjd bygel och nyckelhål.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  ".....kkkkkk.....",
+  "....kSSsssdk....",
+  "...kSk....kdk...",
+  "...kSk....kdk...",
+  "...kSk....kdk...",
+  "..kkkkkkkkkkkk..",
+  "..kSSSSSSSSsdk..",
+  "..kSSSSkkSssdk..",
+  "..kSSSSkkSssdk..",
+  "..kSSSSSkSssdk..",
+  "..kSSSSkkkssdk..",
+  "..kssssssssddk..",
+  "..kddddddddddk..",
+  "..kkkkkkkkkkkk..",
+  "................"
+ ],
+ "pal": {
+  "S": "#8a9c9e",
+  "d": "#3e5156",
+  "k": "#24201d",
+  "s": "#61767a"
+ }
+}

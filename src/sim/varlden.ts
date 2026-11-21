@@ -17,6 +17,7 @@ export interface Varlden {
   fro: number; // världens frö
   mark: { gen: number; delfro: number; w: number; h: number; mark: string; flod: string; ned: string }; // marken packad (base64)
   platser?: import('./landmarken').VarldPlats[]; nastaPlats?: number; // platserna i världen (steg 11.2.8, landmarken.ts)
+  minnesplatser?: import('./landmarken').VarldPlats[]; // platser som tagits bort ur världen men som byn ännu tror finns (steg 12.1.146, ort.ts)
   rader?: import('./radtal').VarldRad[]; nastaRad?: number; huvud?: number; // byarnas rader och huvudbyns nummer (steg 11.2.9, radtal.ts)
   borjan?: number; perioder?: Record<import('./varldslag').PeriodId, number>; // världens början och perioderna som räknats (steg 11.2.17, varldslag.ts)
   ko?: import('./varldslag').KoPost[]; nastaKo?: number; // det som händer vid en känd tid, sorterat på tiden

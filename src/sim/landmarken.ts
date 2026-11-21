@@ -9,6 +9,7 @@ import { hash3 } from './slump';
 import { FLOD_NEDRE, FLOD_OVRE, Fardsatt, MARK_IDS, MarkDef, MarkId, VARLD, VARLDMARK, VarldMark } from './varldmark';
 import { Varlden } from './varlden';
 import { NAMNSLAG, varldNamn } from './varldnamn';
+import { laggIKo } from './varldslag';
 
 export interface LandmarkDef {
   namn: string;
@@ -68,6 +69,8 @@ function reg(l: VarldPlats[]) {
   return c;
 }
 export const varldPlatsNr = (vl: Varlden, nr: number) => vl.platser ? reg(vl.platser).nr.get(nr) : undefined;
+// platsen som den finns i världen, eller som byn minns den sedan den tagits bort (minnesplatserna, steg 12.1.146, ort.ts)
+export const kandPlats = (vl: Varlden, nr: number) => varldPlatsNr(vl, nr) ?? vl.minnesplatser?.find(p => p.nr === nr);
 export function byPlats(vl: Varlden, rad: number): VarldPlats | undefined {
   const l = vl.platser;
   if (!l) return undefined;
@@ -107,6 +110,7 @@ export function laggPlats(vl: Varlden, v: VarldMark, k: LandmarkId, x: number, y
   const nr = vl.nastaPlats = (vl.nastaPlats ?? 0) + 1;
   const p: VarldPlats = { nr, k, x, y, namn: o.namn ?? varldNamn(vl, NAMNSLAG[k], nr), fro: Math.floor(hash3(vl.fro, nr, 0x504c) * 2 ** 31), fran: nu, ...(o.till !== undefined ? { till: o.till } : {}), ...(o.by !== undefined ? { by: o.by } : {}) };
   varldPlatser(vl).push(p);
+  if (o.till !== undefined) laggIKo(vl, o.till, 'platsUpphor', { sak: nr }); // en plats med sluttid tas bort vid den tiden (steg 12.1.164, ort.ts)
   return p;
 }
 // de tillfälliga platser som upphört tas bort

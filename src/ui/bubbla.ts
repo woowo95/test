@@ -11,9 +11,13 @@ interface El { closest(sel: string): El | null; getAttribute(n: string): string 
 export const OPPNAR = 'button, a, input, select, textarea, [data-id], [data-hjalp], [data-pdel], [data-sak], [data-fram], [data-resa], [role="button"], .klick';
 // det som fälls ut vid ett tryck (steg 11.1.1): ingen bubbla ens med fingret, för trycket visar redan det som står under raden
 export const FALLER = '[data-hjalp], [aria-expanded], [data-pfall], summary';
+// runstenen vars förklaring bara syns medan fingret hålls kvar (steg 12.1.224): runstenen som öppnar en flik har namnet under sig, och
+// en bubbla som står kvar efter trycket täcker stenen under. Den visas när fingret sätts ner och går bort när det lyfts
+const halls = (el: El) => !!el.closest('.runsten') && !el.closest('[aria-disabled="true"]');
 export function forklaringAv(el: El, aven_knappar = false): { text: string; vid: El } | undefined {
   // en blek runsten öppnar inget: ett tryck visar vad som krävs (steg 11.1.8)
   if (el.closest('#map canvas') || el.closest(FALLER) || (!aven_knappar && el.closest(OPPNAR) && !el.closest('[aria-disabled="true"]'))) return undefined;
+  if (aven_knappar && halls(el)) return undefined; // trycket på runstenen: bubblan hölls bara medan fingret låg kvar
   const t = el.closest('[title]'), text = t?.getAttribute('title')?.trim();
   if (t && text) return { text, vid: t };
   const svg = el.closest('svg'), st = svg?.querySelector?.(':scope > title')?.textContent?.trim();
@@ -23,8 +27,17 @@ export function forklaringAv(el: El, aven_knappar = false): { text: string; vid:
 const TIPS_SEK = 4;
 // trycktes det senast med fingret? Med musen syns förklaringen för en knapp redan när musen hålls över den
 let finger = false, slut: number | undefined;
-if (typeof document !== 'undefined' && typeof document.addEventListener === 'function')
-  document.addEventListener('pointerdown', e => { finger = e.pointerType === 'touch'; }, true);
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+  document.addEventListener('pointerdown', e => { finger = e.pointerType === 'touch'; if (finger) hallVid(e.target); }, true);
+  for (const typ of ['pointerup', 'pointercancel']) document.addEventListener(typ, () => { if (hallen) { hallen = false; stangBubbla(); } }, true);
+}
+// fingret på en runsten (halls): namnet i bubblan medan fingret ligger kvar
+let hallen = false;
+function hallVid(m: EventTarget | null) {
+  const el = m as HTMLElement | null, h = el?.closest?.('.runsten') as HTMLElement | null, text = h?.getAttribute('title')?.trim();
+  if (!el || !h || !text || !halls(el)) return;
+  stangBubbla(); visa(text, h); hallen = true;
+}
 let bubbla: HTMLDivElement | undefined, vid: string | undefined; // vid = texten som står, så att samma sak stänger också när panelen ritats om
 export const bubblaText = () => (bubbla && !bubbla.hidden ? bubbla.textContent : undefined);
 // stäng bubblan; true om den var öppen
@@ -39,13 +52,16 @@ export function stangBubbla() {
 export function bubblaKlick(el: HTMLElement) {
   const forra = vid, var_oppen = stangBubbla(), f = forklaringAv(el, finger);
   if (!f || (var_oppen && f.text === forra)) return var_oppen;
+  visa(f.text, f.vid as HTMLElement);
+  if (finger) slut = window.setTimeout(stangBubbla, TIPS_SEK * 1000);
+  return true;
+}
+function visa(text: string, at: HTMLElement) {
   bubbla ??= Object.assign(document.body.appendChild(document.createElement('div')), { className: 'bubbla', role: 'tooltip' });
-  bubbla.textContent = f.text; bubbla.hidden = false; vid = f.text;
+  bubbla.textContent = text; bubbla.hidden = false; vid = text;
   // vid det man tryckte på: under det, eller över om det inte får plats, och alltid inom skärmen
-  const r = (f.vid as HTMLElement).getBoundingClientRect(), b = bubbla.getBoundingClientRect(), m = 6;
+  const r = at.getBoundingClientRect(), b = bubbla.getBoundingClientRect(), m = 6;
   const x = Math.max(m, Math.min(innerWidth - b.width - m, r.left + r.width / 2 - b.width / 2));
   const y = r.bottom + m + b.height <= innerHeight ? r.bottom + m : Math.max(m, r.top - m - b.height);
   bubbla.style.left = `${x}px`; bubbla.style.top = `${y}px`;
-  if (finger) slut = window.setTimeout(stangBubbla, TIPS_SEK * 1000);
-  return true;
 }

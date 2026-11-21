@@ -5,7 +5,7 @@
 // varje bild i världen ska ritas i hel skala med skarpa punkter. Felkoden är 1 om något larmar.
 //   npm run utseende -- [mapp] [by]   (mappen utseende/ och by 3 om inget anges). Mobilen tas bara på dagen (den ritar nio
 //   gånger fler punkter och är det som tar tid; färgerna och skalan är desamma som på datorn), och spelet går SPELA_MS innan
-//   bilden tas: 13 bilder. ALLA=1 tar mobilen i alla fall (24 bilder, över en timme i en stor by). LAGE=ljust eller
+//   bilden tas: 18 bilder, och var och en en gång till med teknikträdet öppet (-stationer sist i namnet). ALLA=1 tar mobilen i alla fall (32 bilder, över en timme i en stor by). LAGE=ljust eller
 //   LAGE=morkt tar bara det ena läget, FALL=dag,natt bara de fallen. Sökhjälp: LAGER=1 visar vilket lager punkterna utanför
 //   paletten kommer från, och DEBUG=1 var på skärmen de ligger
 import { createRequire } from 'node:module';
@@ -14,6 +14,7 @@ import { resolve } from 'node:path';
 import { State, ageIndex, bynsMitt, createState, hourOf, rovarnaKommer, serializeParts, stallUpp, step } from '../sim';
 import { FARGER, MORKARE } from '../palett';
 import { BEAT, START } from './kor';
+import { TACK_MATA, TACK_MAX } from './tackvakt';
 
 process.env.TZ = 'Europe/Stockholm'; // klockslagen i byn och i webbläsaren är svensk tid
 const MAPP = resolve(process.argv[2] ?? 'utseende'), BY = Number(process.argv[3] ?? 3);
@@ -51,10 +52,23 @@ const req = createRequire(import.meta.url);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { chromium } = req('playwright') as any;
 const palett = [...new Set([...FARGER, ...MORKARE.flat()])].map(h => parseInt(h.slice(1), 16));
+// ljusets övergång (steg 12.1.170): färgen blandas steglöst mellan två steg av mörker av samma palettfärg, och de färgerna
+// räknas inte som fel. Paren är varje färg och samma färg ett steg mörkare
+const hex = (h: string) => parseInt(h.slice(1), 16);
+const steglos = FARGER.flatMap((_, i) => MORKARE.slice(0, -1).map((m, k) => [hex(m[i]), hex(MORKARE[k + 1][i])]));
 // mätningen i sidan, som text (tsx lägger annars till hjälpfunktioner som sidan inte har): bilderna i världen som inte
 // ritas i hel skala med skarpa punkter, och punkterna på skärmen med en färg utanför paletten (namnskyltarna döljs medan)
-const MATA = `pal => {
-  const by = window.__byn, app = by.app, world = by.world, P = new Set(pal), skalor = {}, text = [];
+const MATA = `(pal, par) => {
+  const by = window.__byn, app = by.app, world = by.world, P = new Set(pal), skalor = {}, text = [], blandad = new Map();
+  // en färg mellan två steg av samma palettfärg (ljusets steglösa övergång, steg 12.1.170)
+  const mellan = c => { let v = blandad.get(c); if (v !== undefined) return v; v = false;
+    const r = c >> 16, g = (c >> 8) & 255, b = c & 255;
+    for (const [x, y] of par) { const xr = x >> 16, xg = (x >> 8) & 255, xb = x & 255, dr = (y >> 16) - xr, dg = ((y >> 8) & 255) - xg, db = (y & 255) - xb, n = dr * dr + dg * dg + db * db;
+      if (!n) continue; const t = ((r - xr) * dr + (g - xg) * dg + (b - xb) * db) / n;
+      if (t < -0.01 || t > 1.01) continue;
+      if (Math.abs(xr + t * dr - r) <= 2 && Math.abs(xg + t * dg - g) <= 2 && Math.abs(xb + t * db - b) <= 2) { v = true; break; } }
+    blandad.set(c, v); return v; };
+  let iOvergang = 0;
   const ga = c => {
     for (const ch of c.children || []) {
       if (!ch.visible) continue;
@@ -77,26 +91,27 @@ const MATA = `pal => {
     if (px[i + 3] < 255) continue;
     ritade++;
     const c = (px[i] << 16) | (px[i + 1] << 8) | px[i + 2];
+    if (!P.has(c) && mellan(c)) { iOvergang++; continue; }
     if (!P.has(c)) { utanfor++; const k = '#' + c.toString(16).padStart(6, '0'); ex[k] = (ex[k] || 0) + 1; const q = i / 4, x = q % W, y = Math.floor(q / W), r = Math.floor(x / 40) + ',' + Math.floor(y / 40); rutor[r] = (rutor[r] || 0) + 1; }
   }
   const topp = Object.entries(ex).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => k + ' ' + n);
   // LAGER=1: vilket lager punkterna kommer från (hur många som försvinner när lagret döljs)
   const lager = [];
   if (window.__lager) {
-    const rakna = () => { const q = app.renderer.extract.pixels(app.stage, app.screen); let n = 0; for (let i = 0; i < q.length; i += 4) if (q[i + 3] === 255 && !P.has((q[i] << 16) | (q[i + 1] << 8) | q[i + 2])) n++; return n; };
+    const rakna = () => { const q = app.renderer.extract.pixels(app.stage, app.screen); let n = 0; for (let i = 0; i < q.length; i += 4) { const c = (q[i] << 16) | (q[i + 1] << 8) | q[i + 2]; if (q[i + 3] === 255 && !P.has(c) && !mellan(c)) n++; } return n; };
     const alla = [...app.stage.children.map((c, i) => ['scen ' + i, c]), ...world.children.map((c, i) => ['värld ' + i, c]), ...(world.children[0].children || []).map((c, i) => ['mörk ' + i, c])];
     text.forEach(t => { t.visible = false; });
     for (const [namn, c] of alla) { if (!c.visible) continue; c.visible = false; const n = rakna(); c.visible = true; if (n < utanfor) lager.push(namn + ' (' + (c.constructor && c.constructor.name) + ') ' + (utanfor - n)); }
     text.forEach(t => { t.visible = true; });
   }
   const var_ = Object.entries(rutor).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, n]) => k.split(',').map(v => v * 40 / app.renderer.resolution).join(',') + ' ' + n);
-  return { varld: world.scale.x * app.renderer.resolution, lager, var: var_, skalor, utanfor, ritade, topp, klocka: (document.getElementById('calTime') || {}).textContent, nu: new Date().toString(), by: new Date(by.s.now).toString() };
+  return { iOvergang, varld: world.scale.x * app.renderer.resolution, lager, var: var_, skalor, utanfor, ritade, topp, klocka: (document.getElementById('calTime') || {}).textContent, nu: new Date().toString(), by: new Date(by.s.now).toString() };
 }`;
 
 async function main() {
   mkdirSync(MAPP, { recursive: true });
-  const s = createState(BY, START), larm: string[] = [];
-  const b = await chromium.launch();
+  const s = createState(BY, START), larm: string[] = [], tack: string[] = [];
+  const b = await chromium.launch(process.env.CLAUDE_CODE_REMOTE ? { executablePath: '/opt/pw-browsers/chromium' } : {}); // i molnet: webbläsaren som finns där
   for (const f of FALL.filter(f => !process.env.FALL || process.env.FALL.split(',').includes(f.namn))) {
     if (!tills(s, f.ai, f.h)) { larm.push(`${f.namn}: byn kom aldrig dit`); continue; }
     if ('rovare' in f) { rovarnaKommer(s, 4, true); const c = bynsMitt(s); if (s.rovare) stallUpp(s, s.rovare, c.x + 8, c.y + 2); }
@@ -114,14 +129,18 @@ async function main() {
       pg.on('pageerror', (e: Error) => fel.push(e.message));
       if (process.env.LAGER) await ctx.addInitScript('window.__lager = true');
       await pg.goto(SIDA);
-      if ('zoom' in f) await pg.evaluate(`(() => { const by = window.__byn, f = by.s.fire; by.cam.zoom = ${f.zoom}; by.layout(); })()`);
+      // byn läses in efter att sidan laddats (boot i main.ts): vänta tills den finns innan något i den läses (steg 12.1.160)
+      for (let i = 0; i < 600 && !(await pg.evaluate('!!(window.__byn && window.__byn.s)')); i++) { await pg.clock.runFor(100); await pg.waitForTimeout(50); }
+      if (!(await pg.evaluate('!!(window.__byn && window.__byn.s)'))) { larm.push(`${f.namn} ${sk.namn} ${lg.namn}: byn laddades aldrig`); await ctx.close(); continue; }
+      if ('zoom' in f) await pg.evaluate(`(() => { const by = window.__byn; by.cam.zoom = ${f.zoom}; by.layout(); })()`);
       await pg.clock.runFor(SPELA_MS);
       await pg.waitForTimeout(1500);
       await pg.screenshot({ path: `${MAPP}/${f.namn}-${sk.namn}${lg.fil}.png`, timeout: 120000 }); // mobilens bild är stor
-      const r = await pg.evaluate(`(${MATA})(${JSON.stringify(palett)})`) as { varld: number; skalor: Record<string, number>; utanfor: number; ritade: number; topp: string[]; var: string[]; lager: string[]; klocka: string; nu: string; by: string };
+      const tackUtan = await pg.evaluate(TACK_MATA) as string[];
+      const r = await pg.evaluate(`(${MATA})(${JSON.stringify(palett)}, ${JSON.stringify(steglos)})`) as { iOvergang: number; varld: number; skalor: Record<string, number>; utanfor: number; ritade: number; topp: string[]; var: string[]; lager: string[]; klocka: string; nu: string; by: string };
       if (process.env.DEBUG) console.log(new Date(t).toString(), '|', r.nu, '|', r.by, '|', r.klocka, '\n   var (x,y i skärmpunkter):', r.var.join('; '));
       const andel = r.ritade ? r.utanfor / r.ritade : 1;
-      const rad = `${f.namn.padEnd(14)} ${sk.namn.padEnd(6)} ${lg.namn.padEnd(5)} ${(andel * 100).toFixed(2).padStart(6)} % utanför paletten (${r.utanfor} av ${r.ritade} punkter)${r.topp.length ? ': ' + r.topp.join(', ') : ''}`;
+      const rad = `${f.namn.padEnd(14)} ${sk.namn.padEnd(6)} ${lg.namn.padEnd(5)} ${(andel * 100).toFixed(2).padStart(6)} % utanför paletten (${r.utanfor} av ${r.ritade} punkter; ${r.iOvergang} i ljusets steglösa övergång)${r.topp.length ? ': ' + r.topp.join(', ') : ''}`;
       console.log(rad);
       const nya = Object.keys(r.skalor);
       if (nya.length) console.log('   skala som inte är hel:', nya.map(k => `${k} ×${r.skalor[k]}`).join(', '));
@@ -132,11 +151,21 @@ async function main() {
       if ('zoom' in f) console.log(`   kartans skala: ${r.varld.toFixed(3)} punkter på skärmen per punkt i världen`);
       if (r.utanfor) larm.push(`${f.namn} ${sk.namn} ${lg.namn}: ${r.utanfor} punkter utanför paletten`);
       if (nya.length) larm.push(`${f.namn} ${sk.namn} ${lg.namn}: bilder i en skala som inte är hel`);
+      // samma bild med teknikträdet öppet, där stationerna och möblerna visas förminskade (steg 12.1.72 och 12.1.160): bara en
+      // bild att titta på, panelen är text och mäts inte
+      await pg.evaluate(`window.__byn.visa('teknik')`);
+      await pg.clock.runFor(500);
+      await pg.waitForTimeout(500);
+      await pg.screenshot({ path: `${MAPP}/${f.namn}-${sk.namn}${lg.fil}-stationer.png`, timeout: 120000 });
+      // knappar som täcker annat (steg 12.1.51), med panelen stängd och öppen: listas sist och gör inte felkoden röd (FORM_FEL=1 gör det)
+      for (const [nar, rader] of [['utan panel', tackUtan], ['med panelen öppen', await pg.evaluate(TACK_MATA) as string[]]] as const)
+        for (const x of rader.slice(0, TACK_MAX)) tack.push(`${f.namn} ${sk.namn} ${lg.namn} ${nar}: ${x}`);
       if (fel.length) larm.push(`${f.namn} ${sk.namn} ${lg.namn}: fel på sidan`);
       await ctx.close();
     }
   }
   await b.close();
+  if (tack.length) { console.log(`\nKNAPPAR SOM TÄCKER ANNAT (steg 12.1.51):\n  ${tack.join('\n  ')}`); if (process.env.FORM_FEL) larm.push(`${tack.length} knappar täcker annat`); }
   console.log(larm.length ? `\nLARM:\n  ${larm.join('\n  ')}` : '\nAllt i paletten och i hel skala.');
   console.log(`Bilderna: ${MAPP}`);
   process.exit(larm.length ? 1 : 0);

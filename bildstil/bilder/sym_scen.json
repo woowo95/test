@@ -1,0 +1,31 @@
+{
+ "id": "sym_scen",
+ "ritad": 1,
+ "av": "programmeringschatten (platshållare, steg 12.1.192)",
+ "om": "En leende mask av näver med ögonhål och ett band.",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "................",
+  "...kkkkkkkkkk...",
+  "..kwwwwwwwwwwk..",
+  ".kwwwwwwwwwwwwk.",
+  "kkwkkwwwwwkkwwkk",
+  "r.wkkwwwwwkkww.r",
+  "..wwwwwwwwwwww..",
+  "..wwwwwwwwwwww..",
+  "..wkwwwwwwwwkw..",
+  "..wwkwwwwwwkww..",
+  "...wwkkkkkkww...",
+  "...kwwwwwwwwk...",
+  "....kwwwwwwk....",
+  ".....kkkkkk.....",
+  "................",
+  "................"
+ ],
+ "pal": {
+  "k": "#24201d",
+  "r": "#a14808",
+  "w": "#dad0bb"
+ }
+}

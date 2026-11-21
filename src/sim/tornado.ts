@@ -9,7 +9,7 @@ import { drabbadHus, upplev } from './uppvaxt';
 import { kanGa, skada, Kroppsdel } from './halsa';
 import { bynsMitt } from './omrade';
 import { streckAv } from './ord';
-import { avbryt, minska, nagotPa, stacksOf, tidy } from './lager';
+import { avbryt, eldRutor, minska, nagotPa, stacksOf, tidy } from './lager';
 import { die } from './liv';
 import { groundOf } from './mark';
 import { motgangNu, motgangTal } from './motgang';
@@ -45,6 +45,11 @@ import { tecken } from './religion';
 
 // Balanstal (regel 8)
 export const TORNADO = balans('tornado', {
+  // lösa tal som flyttats hit (steg 12.1.107)
+  landBak: 0.3, // det som flyger landar mellan så här mycket bakåt och resten framåt längs banan (gånger sträckan)
+  krossar: 0.5, // den som skadas: chansen att det är en krosskada ...
+  blamarke: 0.5, // ... annars chansen att det är ett blåmärke, och annars ett benbrott
+  undanMin: 10, // minuter som man minst går undan för tornadon
   borjar: [0.5, 5.5], // tornadon kommer så här många dygn (år i spelet) in i tidsåldern (slumpas mellan, hela timmar) ...
   min: [20, 60], // ... och är på kartan så här många minuter (spelets tid, slumpas mellan, hela minuter) om den inte går ut ur kartan först (steg 6.4.8)
   fart: 5, // den går en ruta på så här många sekunder (spelets tid)
@@ -130,9 +135,20 @@ export function tornadoBana(s: State, start: number, storlek = tornadoStorlek(s,
 }
 const banLangd = (b: number[]) => { let L = 0; for (let k = 2; k < b.length; k += 2) L += Math.hypot(b[k] - b[k - 2], b[k + 1] - b[k - 1]); return L; };
 // när tornadon i tidsåldern som börjar vid start kommer, och när den har gått sin bana (hela sekunder)
+// Svaret beror bara på byns frö och tidsålderns start, så det sparas per by (steg 12.1.104): motgangNu frågar varje slag
+const tider = new WeakMap<State, Map<string, { fran: number; till: number }>>();
 export function tornadoTid(s: State, start: number) {
-  const fran = start + Math.round((TORNADO.borjar[0] + tal(s, start, 3821) * (TORNADO.borjar[1] - TORNADO.borjar[0])) * 24) * HOUR;
-  return { fran, till: fran + Math.round(banLangd(tornadoBana(s, start)) * TORNADO.fart) * SEC };
+  let m = tider.get(s);
+  if (!m) tider.set(s, (m = new Map()));
+  const nyckel = s.seed + ':' + start;
+  let r = m.get(nyckel);
+  if (!r) {
+    const fran = start + Math.round((TORNADO.borjar[0] + tal(s, start, 3821) * (TORNADO.borjar[1] - TORNADO.borjar[0])) * 24) * HOUR;
+    r = { fran, till: fran + Math.round(banLangd(tornadoBana(s, start)) * TORNADO.fart) * SEC };
+    if (m.size > 8) m.clear();
+    m.set(nyckel, r);
+  }
+  return { fran: r.fran, till: r.till };
 }
 // drar en tornado fram vid tiden t? (vädret, vader.ts)
 export const tornadoNu = (s: State, t = s.now) => motgangNu(s, t)?.id === 'tornado' || !!s.tornado?.test && t >= s.tornado.fran && t < s.tornado.till;
@@ -410,14 +426,14 @@ function lyft(s: State, t: Tornado, nara: Set<number>, utkant: Set<number>) {
   if (flytt) tidy(s);
 }
 // var något som flyger från (x, y) landar: åt sidan om banan, på samma sida, långt nära och kortare i utkanten, och en bit
-// framåt. En ruta som inte är blockerad, utan station och utan något annat på
+// framåt. En ruta som inte är blockerad, utan station och utan något annat på, och en sak landar inte i en eld (steg 12.1.153)
 function landar(s: State, t: Tornado, x: number, y: number, a: number, zon: number, L: number, folk = false) {
   const np = narmastPa(t, x, y), dx = np.ux, dy = np.uy, bp = tornadoPos(t, np.f / L), f = zon === 1 ? TORNADO.flygNara : TORNADO.flygUtkant;
   const sid = ((x - bp.x) * -dy + (y - bp.y) * dx) >= 0 ? 1 : -1;
   for (let k = 0; k < 6; k++) {
-    const d = f[0] + ur(s, t, a, 3828 + k) * (f[1] - f[0]), fram = (ur(s, t, a, 3834 + k) - 0.3) * d;
+    const d = f[0] + ur(s, t, a, 3828 + k) * (f[1] - f[0]), fram = (ur(s, t, a, 3834 + k) - TORNADO.landBak) * d;
     const nx = Math.floor(x - dy * d * sid + dx * fram), ny = Math.floor(y + dx * d * sid + dy * fram);
-    if (!inMap(nx, ny) || blocked(s, nx, ny) || stationAt(s, nx, ny) || !folk && nagotPa(s, nx, ny) || vattenNu(s)[ny * W + nx] === T.Vatten) continue;
+    if (!inMap(nx, ny) || blocked(s, nx, ny) || stationAt(s, nx, ny) || !folk && (nagotPa(s, nx, ny) || eldRutor(s).has(ny * W + nx)) || vattenNu(s)[ny * W + nx] === T.Vatten) continue;
     return { x: nx, y: ny };
   }
   return undefined;
@@ -430,7 +446,7 @@ function flyger(s: State, t: Tornado, pp: Person, zon: number) {
   if (zon === 1 && ur(s, t, pp.id, 3853) < TORNADO.dodNara) { t.doda = (t.doda ?? 0) + 1; count(s, 'tornado dod'); die(s, pp, 'tornado'); return; }
   if (ur(s, t, pp.id, 3840) >= (zon === 1 ? 1 : TORNADO.skadas)) return;
   const delar: Kroppsdel[] = ['huvud', 'bal', 'armV', 'armH', 'benV', 'benH'];
-  const d = delar[Math.floor(ur(s, t, pp.id, 3841) * delar.length)], k = ur(s, t, pp.id, 3842) < 0.5 ? 'krossar' : ur(s, t, pp.id, 3843) < 0.5 ? 'blamarke' : 'benbrott';
+  const d = delar[Math.floor(ur(s, t, pp.id, 3841) * delar.length)], k = ur(s, t, pp.id, 3842) < TORNADO.krossar ? 'krossar' : ur(s, t, pp.id, 3843) < TORNADO.blamarke ? 'blamarke' : 'benbrott';
   const g = zon === 1 ? TORNADO.skadaNara : TORNADO.skadaGrad, grad = g[0] + ur(s, t, pp.id, 3844) * (g[1] - g[0]);
   t.skadade++; count(s, 'tornado skadad');
   const dod = skada(s, pp, d, k, grad, 'tornado', 'i tornadon');
@@ -475,15 +491,15 @@ function karnan(s: State, t: Tornado, rutor: number[]) {
 // de som är vakna och ser tornadon ropar (som vid vargen)
 function ser(s: State, t: Tornado) {
   const pos = tornadoPos(t, t.u), sikt = TORNADO.sikt * (isLight(s.now) ? 1 : TORNADO.siktNatt);
-  const ser = living(s).filter(p => p.task?.act !== 'sova' && p.task?.act !== 'badd' && larmNu(s, p)?.vad !== 'tornado' && Math.hypot(p.x - pos.x, p.y - pos.y) <= sikt);
+  const ser = living(s).filter(p => p.task?.act !== 'sova' && p.task?.act !== 'badd' && !larmNu(s, p, 'tornado') && Math.hypot(p.x - pos.x, p.y - pos.y) <= sikt);
   if (!ser.length) return;
-  if (!living(s).some(p => larmNu(s, p)?.vad === 'tornado')) count(s, 'tornado sedd');
+  if (!living(s).some(p => !!larmNu(s, p, 'tornado'))) count(s, 'tornado sedd');
   larma(s, 'tornado', 1, ser);
 }
 // den som vet om tornadon och är nära banan som är kvar avbryter det hen gör och går undan (inte den som slåss, vårdar eller bärs)
 function soker(s: State, t: Tornado) {
   for (const p of living(s)) {
-    if (!p.task || !larmAvbryter(p.task.act, 'tornado') || larmNu(s, p)?.vad !== 'tornado' || !fara(s, t, p)) continue;
+    if (!p.task || !larmAvbryter(p.task.act, 'tornado') || !larmNu(s, p, 'tornado') || !fara(s, t, p)) continue;
     avbryt(s, p); count(s, 'tornado undan');
   }
 }
@@ -495,13 +511,13 @@ function fara(s: State, t: Tornado, p: Person) {
   const bp = tornadoPos(t, fram / L), sid = -(p.x - bp.x) * uy + (p.y - bp.y) * ux;
   const tecken = sid > 0 || sid === 0 && ur(s, t, p.id, 3845) < 0.5 ? 1 : -1, d = (TORNADO.fara + R + TORNADO.undan) * tecken;
   const x = Math.min(W - 1.5, Math.max(1.5, bp.x - uy * d)), y = Math.min(H - 1.5, Math.max(1.5, bp.y + ux * d));
-  const dur = Math.max(10 * MIN, (fram + TORNADO.fara + R - nu) / L * (t.till - t.fran));
+  const dur = Math.max(TORNADO.undanMin * MIN, (fram + TORNADO.fara + R - nu) / L * (t.till - t.fran));
   return { spot: { x, y }, dur };
 }
 // tornadon kommer och p vet om det och är nära dess väg: hen går undan (val.ts, som vid vargen)
 export function tornadoSkydd(s: State, p: Person): { act: 'undan'; why: string; spot: { x: number; y: number }; dur: number } | undefined {
   const t = s.tornado;
-  if (!t || !kanGa(p) || larmNu(s, p)?.vad !== 'tornado') return;
+  if (!t || !kanGa(p) || !larmNu(s, p, 'tornado')) return;
   const f = fara(s, t, p);
   return f && { act: 'undan', why: 'En tornado kommer, går undan från dess väg', spot: f.spot, dur: f.dur };
 }

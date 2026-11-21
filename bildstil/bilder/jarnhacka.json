@@ -1,0 +1,95 @@
+{
+ "id": "jarnhacka",
+ "w": 13,
+ "h": 14,
+ "rader": [
+  "..Q..........",
+  ".QSRQ........",
+  "..QSRQ.......",
+  "...QSRQ..EE..",
+  "....QSSQEHE..",
+  ".....QSRQGE..",
+  "......QSTRQ..",
+  ".....EHQSRQ..",
+  "....EHGEQSRQ.",
+  "...EHFE..QSRQ",
+  "..EHGE...QRQ.",
+  ".EHGE.....Q..",
+  "EHGE.........",
+  "EFE.........."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e"
+ },
+ "versioner": [
+  {
+   "ide": "Klassisk dubbelspetsad hacka: skaftet av ljust trä (jord1–jord3 med jord0-kontur, kornet längs fibrerna) löper snett från nedre vänstra hörnet upp mot övre högra, och vid översta änden sitter huvudet på tvären, vinkelrätt mot skaftet, alltså från övre vänster mot nedre höger, cirka 9 punkter långt. Huvudet är ett smalt band av järn i skiffer1–skiffer3 med skiffer0-kontur som smalnar av till en spets åt båda hållen och är lätt böjt bakåt likt en båge, med ljusast ton på ovansidan uppe till vänster och en enda glanspunkt i skiffer3 nära öglan. Skaftet sticker ut en till två punkter ovanför huvudet där det går igenom öglan, så att det syns att huvudet är kilat på stocken.",
+   "rader": [
+    "..Q..........",
+    ".QSRQ........",
+    "..QSRQ.......",
+    "...QSRQ..EE..",
+    "....QSSQEHE..",
+    ".....QSRQGE..",
+    "......QSTRQ..",
+    ".....EHQSRQ..",
+    "....EHGEQSRQ.",
+    "...EHFE..QSRQ",
+    "..EHGE...QRQ.",
+    ".EHGE.....Q..",
+    "EHGE.........",
+    "EFE.........."
+   ],
+   "om": "Järnhacka, 13×14 punkter. Skaftet är av trä i jord1–jord3 med kontur i jord0 och växlar ton längs fibrerna. Det går snett från nedre vänstra hörnet upp mot övre högra och sticker ut två punkter ovanför huvudet där det går genom öglan. Huvudet ligger på tvären, från övre vänster mot nedre höger. Det är ett smalt järnband i skiffer2 på ovansidan och skiffer1 på undersidan, med kontur i skiffer0, och smalnar av till en spets i båda ändar. Den nedre spetsen böjer ner mot skaftet, så att huvudet blir lätt bågformat. Vid öglan buktar huvudet ut runt skaftet, och där sitter en enda glanspunkt i skiffer3. Granskningen: Ritningen håller reglerna och följer idén. Storleken är 13 × 14, rimlig mot kolonisten (14 × 20). Hackan ligger snett på marken som en sak, inte i en platt sidovy. Skaftet av ljust trä (jord1–jord3 med jord0-kontur) går från nedre vänster upp mot övre höger. Huvudet av järn (skiffer1–skiffer3 med skiffer0-kontur) ligger på tvären och smalnar av mot båda spetsarna, så det är ungefärligt symmetriskt kring öglan. Ljuset sitter uppe till vänster. Glanspunkten i skiffer3 sitter vid öglan. Skaftets stump sticker upp två punkter ovanför huvudet. Konturerna gör att hackan syns på gräset. Enda rättelsen: i rad 2 var en inre punkt i den övre spetsen skiffer0 och bröt bandet. Den är nu skiffer1, så spetsen får samma ordning (kontur, ljus, mellanton, kontur) som resten av huvudet. Båsböjningen i idén är inte tillagd; huvudet är fortfarande rakt."
+  },
+  {
+   "ide": "Hacka med en spets och ett brett blad, som en kombinerad bryt- och grävhacka: skaftet ligger diagonalt från nedre vänster mot övre höger, och huvudet sitter på tvären vid toppen, med en lång, smal och spetsig arm som pekar nedåt åt höger mot stenen och en kort, bred och rak egg som pekar uppåt åt vänster. Järnet i skiffer0–skiffer2 med en tjockare ögla mitt på där skaftet går in, framhävd av en ring i skiffer1, och skaftet i jord1–jord2 som blir något tjockare nedtill vid handtaget. Silhuetten blir osymmetrisk med tydlig tyngd i spetsen så att den läses som stenbrytning och inte som grävning.",
+   "rader": [
+    "..QQ.........",
+    ".QTSQ........",
+    "QSSSRQ.......",
+    "QSSRSSQQQ....",
+    ".QSSSSRRRQ...",
+    "...QQSRGRSQ..",
+    ".....EGRRSQ..",
+    "....EGEQQSRQ.",
+    "...EFE...QSRQ",
+    "..EGE.....QRQ",
+    ".EFE........Q",
+    "EGFE.........",
+    "EGFE.........",
+    "EEE.........."
+   ],
+   "om": "Järnhacka 13×14: skaftet i jord1–jord2 med jord0-kontur går snett från nedre vänstra hörnet upp mot högra och blir tjockare nedtill vid handtaget. Huvudet sitter på tvären vid toppen. Den korta, breda och raka eggen pekar uppåt åt vänster och har en enda glanspunkt i skiffer3 mot ljuset. Den långa, smala spetsen pekar nedåt åt höger mot stenen, så att tyngden ligger i spetsen. Öglan mitt på är tjockare och har en ring i skiffer1 runt skaftets ände, som syns i jord2. Järnet är i skiffer0–skiffer2 och är ljusast uppe till vänster. Granskningen: Hackan följer idén och bryter inte mot stilen. Storleken (13 × 14) passar mot kolonisten, skaftet går diagonalt och huvudet sitter på tvären med en bred, rak egg uppåt till vänster och en lång spets nedåt till höger. Ljuset kommer uppifrån vänster, med en enda glanspunkt i skiffer3. Hackan syns på gräset. Jag rättade tre luckor i konturen: 1) Ringens övre kant i skiffer1 (rad 4, kolumn 8) saknade skiffer0 ovanför; jag lade dit en Q-punkt så att öglan sluter och buktar något uppåt. 2) Ringens nedre kant (rad 6, kolumn 7) saknade kontur under; jag lade dit en Q-punkt mellan skaftet och spetsen. 3) Skaftets nedre ände var öppen med jord1 i kanten; den sista raden blev helt jord0 så att handtaget sluts. Resten är oförändrat."
+  },
+  {
+   "ide": "",
+   "rader": [
+    "..QQQQ.......",
+    ".QTTTSQQ.....",
+    "QSSRSRTTQ....",
+    ".QQQQQRSTQ...",
+    "......QSSRQ..",
+    "......EQSSRQ.",
+    ".....EHGQSRQ.",
+    "....EHGE.QSRQ",
+    "...EHGE..QSRQ",
+    "..EHFE...QSSQ",
+    ".EHGE....QSRQ",
+    "EHGE.....QRQ.",
+    "EFE.......Q..",
+    "EE..........."
+   ],
+   "om": "Järnhackan ligger snett från nedre vänstra till övre högra hörnet, som yxan och spjuten. Skaftet är trä i jord0, jord1, jord2 och jord3 (kontur E, ljusare H och G inåt) och går upp till huvudets mitt. Huvudet är grått järn i skiffer med konturen Q. Det är en båge som är spegelsymmetrisk kring skaftets linje: buktande bort från handen, med spetsarna böjda tillbaka mot skaftet, en spets till vänster och en nere till höger. Ljuset kommer uppifrån vänster: den vänstra armens översida och mitten är ljusast i T, och den högra armen går i S och R. Bilden är 13 punkter bred och 14 hög. Granskningen: Ljuset på hackans nedåtböjda spets gick fel väg: den var mörk (R) på vänster sida och ljus (S) på höger. Jag vände tonerna i raderna 4–8 och 10 till S till vänster och R till höger, så att ljuset kommer uppifrån vänster som på huvudets ovansida. Resten håller reglerna och är oförändrat. Bilden är 13 × 14 punkter och passar mot kolonisten. Hackan ligger snett med järnhuvudet på tvären över skaftets ände. Järnet har skifferkontur och träet jordkontur, så båda syns mot gräset. Kornet är jämnt, utan ensamma fläckar."
+  }
+ ]
+}

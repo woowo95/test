@@ -9,7 +9,7 @@ import { nyKalender } from '../../sim';
 import { BEAT, START, STEG_TIM } from '../kor';
 import { eld as eldFlik } from '../../ui/flikar/eld';
 import { setByn, ui } from '../../ui/lage';
-import { hittaBy, medTal, jaktFran, setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, utanWebblasare, nyInvanare, klockan, medHus, slakteri, bearbetaVid } from './hjalp';
+import { testBy, hittaBy, medTal, jaktFran, setMat, slutStrider, Koll, kor, tandEld, logg, skogsandel, uttag, STOCKHOLM, SCENARIER, utanWebblasare, nyInvanare, klockan, medHus, slakteri, bearbetaVid } from './hjalp';
 
 SCENARIER.glanta = {
   lang: true,
@@ -227,7 +227,7 @@ SCENARIER.morker = {
     const vidElden = SIM.morkFart(s, p), ljus = SIM.ljusAt(s, p.x, p.y);
     p.x = e.x + 0.5 + 20;
     const langtBort = SIM.morkFart(s, p);
-    SIM.morkHumor(s, p);
+    SIM.morkHumor(s, p, 1);
     const delar: { namn: string; v: number }[] = []; SIM.moodOf(p, s.now, delar);
     const mork = delar.some(d => d.namn === 'Mörkt');
     klockan(s, 12);
@@ -235,7 +235,7 @@ SCENARIER.morker = {
     klockan(s, 23);
     const q = living(s).find(x => x !== p)!;
     q.x = p.x; q.y = p.y; q.morkT = undefined; q.task = { act: 'sova' } as SIM.Task;
-    SIM.morkHumor(s, q);
+    SIM.morkHumor(s, q, 1);
     Object.assign(s.fire, { lit: false, fuel: 0 });
     p.x = e.x + 0.5; p.y = e.y + 1.5;
     const slocknad = SIM.morkFart(s, p);
@@ -327,7 +327,7 @@ SCENARIER.uppsatt = {
     klockan(s, 23);
     const x = e.x + 12, y = e.y + 3;
     p.x = x + 0.5; p.y = y + 0.5; p.task = { act: 'samla', tx: x + 0.5, ty: y + 0.5 } as SIM.Task;
-    for (let h = 0; h < 4; h++) SIM.morkHumor(s, p);
+    for (let h = 0; h < 4; h++) SIM.morkHumor(s, p, 1);
     const stalle = SIM.morkStalle(s);
     s.ting = (s.ting ?? []).filter(t => t.k !== 'fackla');
     const utan = SIM.PROJEKT.uppsatt.kan(s, p, { kyla: false, gras: 0 });
@@ -364,8 +364,10 @@ SCENARIER.uppsatt = {
 
 // steg 9.2.11: utan platser där folk varit vakna i mörker vill byn ändå ha ljus över hela byn, långt från elden, och en fackla
 // inne sitter på väggen och lyser upp rummet
+// En nygrundad by ligger hela inom eldens ljus (steg 12.1.156), så det prövas i en testby som vuxit, utan mörka platser och facklor
 function helaByn(): [string, boolean][] {
-  const s = createState(1, START), e = SIM.eldXY(s, s.fire), m = SIM.morkStalle(s);
+  const s = testBy(10); s.morkPlats = undefined; s.uppsatta = [];
+  const e = SIM.eldXY(s, s.fire), m = SIM.morkStalle(s);
   const iByn = !!m && SIM.iByn(s, m.x, m.y), langt = !!m && Math.hypot(m.x - e.x, m.y - e.y) > SIM.FACKLA.r * 1.5;
   const hus = medHus(s), bit = hus && SIM.bitsOf(s).find(b => b.hus === hus.id && SIM.roomAt(s, b.x, b.y) && [[0, -1], [-1, 0], [1, 0], [0, 1]].some(([dx, dy]) => SIM.isWall(s, b.x + dx, b.y + dy)));
   let inne = false, rum = false;
@@ -399,7 +401,7 @@ SCENARIER.talgljus = {
     const sover = (r: SIM.Person) => { r.x = inne!.x + 40; r.task = { act: 'sova', tx: r.x, ty: inne!.y } as SIM.Task; };
     for (const r of living(s)) if (r !== p) sover(r);
     p.x = inne!.x + 0.5; p.y = inne!.y + 0.5; p.task = { act: 'samla', tx: p.x, ty: p.y } as SIM.Task;
-    for (let h = 0; h < 4; h++) SIM.morkHumor(s, p);
+    for (let h = 0; h < 4; h++) SIM.morkHumor(s, p, 1);
     const plats = SIM.ljusPlatser(s).some(st => st.id === bord.id);
     s.ting = (s.ting ?? []).filter(t => t.k !== 'talgljus');
     const utan = SIM.PROJEKT.ljus.kan(s, p, { kyla: false, gras: 0 });
@@ -849,7 +851,8 @@ SCENARIER.torka = {
     SIM.addTool(s, 'vattensack', vuxna[0]);
     // torkan: fyra och ett halvt dygn (år i spelet)
     kor(s, (m.start + 4.5 * DAY - s.now) / HOUR);
-    const utanVatten = living(s).filter(p => !SIM.drickPlats(s, p)).length, torstDoda = s.people.filter(p => /törst/.test(p.cause ?? '')).length;
+    const utanVatten = living(s).filter(p => !SIM.drickPlats(s, p)).length, torstDoda = s.people.filter(p => !p.gast && /törst/.test(p.cause ?? '')).length; // byborna; gästerna får vatten av byborna och räknas sist (steg 12.1.228)
+    const gastTorst = () => s.people.filter(p => p.gast && /törst/.test(p.cause ?? '')).length;
     const lera = SIM.torrRutor(s), tomma = s.sjoTorr?.tomma ?? [], vatten1 = SIM.vattenNu(s).filter(t => t === T.Vatten).length;
     const tjarnTorr = tomma.length > 0 && tomma.every(n => SIM.sjoarna(s.seed).rutor[n].every(i => SIM.vattenNu(s)[i] === T.Lera));
     const torrMark = (s.vader?.fukt ?? 1);
@@ -890,6 +893,7 @@ SCENARIER.torka = {
       [`ingen står i vattnet (${iVattnet})`, iVattnet === 0],
       [`fisket från stranden tar ur vattnet som finns kvar (${iVatten.toFixed(3)}) och inget ur den torra sjöbotten (${iTorr.toFixed(3)})`, iVatten > 0 && iTorr === 0],
       [`alla hittar vatten att dricka (${utanVatten} utan) och ingen dör av törst (${torstDoda})`, utanVatten === 0 && torstDoda === 0],
+      [`ingen gäst dör av törst, under eller efter torkan (${gastTorst()}; byborna bar vatten ${s.stat?.['bar vatten'] ?? 0} gånger)`, gastTorst() === 0],
       [`ägaren med säck vattnar sitt fält (${vattnat} säckar, grödan ${kvar ? 'står kvar' : 'vissnade'}), grödan på det andra vissnar (${vissnat})`, vattnat > 0 && kvar && vissnat >= 1],
       [`vattnet kommer tillbaka efter torkan (${efter ? `tillbaka ${tillbaka} timmar efter torkan` : 'redan när torkan slutade'}, ${vatten2} rutor vatten)`, !s.sjoTorr && vatten2 === vatten0],
       [`torkan kom (${s.stat?.motgang_torka ?? 0})`, (s.stat?.motgang_torka ?? 0) === 1],
@@ -1461,13 +1465,13 @@ SCENARIER.tornadogast = {
     }
     if (!ph) return [['en plats för handlaren i utkanten', false]];
     h.fas = 'vantar'; h.kvall = s.now + 10 * HOUR; SIM.hp(s, h).x = h.mx = ph.x; SIM.hp(s, h).y = h.my = ph.y;
-    const varor0 = h.varor.reduce((n, w) => n + w.n, 0), namn = SIM.hp(s, h).name, hem = SIM.hp(s, h).gast!.hem!;
+    const varor0 = h.varor.reduce((n, w) => n + w.n, 0), namn = SIM.hp(s, h).name;
     let hFlog = -1;
     for (let k = 0; k < 900 && s.tornado; k++) {
       step(s, 5);
       if (hFlog < 0 && (h.fas as string) === 'gar') hFlog = Math.hypot(h.fran.x - ph.x, h.fran.y - ph.y);
     }
-    const st = s.stat ?? {}, varor1 = h.varor.reduce((n, w) => n + w.n, 0), dog = s.log.some(l => l.text.includes(`${namn} från ${hem} dog`));
+    const st = s.stat ?? {}, varor1 = h.varor.reduce((n, w) => n + w.n, 0), dog = (st.handlareDogTornado ?? 0) > 0;
     return [
       [`rövarflocken mitt i tornadons väg är borta och rövare dog (${s.rovare === f ? `${f.folk.length} kvar` : 'borta'}; ${st.rovarDoda ?? 0} döda; som byborna överlever en del, efter kroppen)`, s.rovare !== f && (st.rovarDoda ?? 0) >= 1],
       [`handlaren ${namn} flög ${hFlog.toFixed(1)} rutor och gick hem (${h.fas}${dog ? ', dog' : ''}; varorna ${varor0} → ${varor1})`, (h.fas as string) === 'gar' && !dog && hFlog >= 1 && varor1 <= varor0 && varor1 > 0],
@@ -1817,7 +1821,7 @@ SCENARIER.brand = {
       const ensam = cloneState(by); ensam.people = ensam.people.filter(p => p.id === vuxen.id); ensam.handlare = undefined;
       kor(ensam, 2, torka);
       const ensamSack = ensam.stat?.['brand sack'] ?? 0;
-      const t0 = by.now;
+      const slocknat0 = by.stat?.brandSlocknat ?? 0;
       let iVagg = 0, iVattnet = 0, sack = 0, hand = 0, risC = 1, tim = 0;
       const sedda = new Set<number>();
       // elden nära byn är släckt: inget brinner längre inom BRAND.hot rutor från byns eld (den som nått en dunge längre bort får brinna)
@@ -1831,7 +1835,7 @@ SCENARIER.brand = {
           if (p.task?.act === 'slacka' && !sedda.has(p.id * 2 + (p.task.tool ? 1 : 0))) { sedda.add(p.id * 2 + (p.task.tool ? 1 : 0)); if (p.task.tool) sack++; else hand++; }
         }
       }
-      const st = by.stat ?? {}, slocknat = by.log.some(l => l.t >= t0 && l.text.startsWith('Elden har slocknat'));
+      const st = by.stat ?? {}, slocknat = (st.brandSlocknat ?? 0) > slocknat0;
       // det svarta försvinner efter några dygn
       const svart0 = (by.aska ?? []).length, sv = cloneState(by);
       sv.now += (SIM.BRAND.svart * DAY) + HOUR; SIM.askaSteg(sv);
@@ -1879,7 +1883,7 @@ SCENARIER.brandsmitta = {
       y.now += 5 * SIM.SEC; SIM.brandSteg(y, 5);
       for (const p of fy) { if (p.brinner === undefined && SIM.inMap(Math.floor(p.x), Math.floor(p.y))) { hett = Math.max(hett, SIM.brandHetta(y, p.x, p.y)); } p.x = cx + 1.5; }
     }
-    bredvid = (y.log ?? []).filter(l => / brinner \(bredvid elden\)/.test(l.text)).length;
+    bredvid = y.stat?.['brinner: bredvid elden'] ?? 0;
     // 3: vägen från väster till öster om raden går runt elden, aldrig genom en ruta som brinner
     const z = cloneState(s); z.now += SIM.SEC; SIM.brandSteg(z, 1); // kartan över elden för vägsökningen
     const v = SIM.findPath(groundOf(z), cx - 3 + 0.5, cy + 0.5, cx + 3 + 0.5, cy + 0.5), genom = !!v && v.some(i => SIM.brinner(z, i));

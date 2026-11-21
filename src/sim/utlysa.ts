@@ -32,6 +32,7 @@ import { DAY, Person, State } from './typer';
 export const UTLYSA = balans('utlysa', {
   andel: 0.5, // den som blivit rånad lägger undan så stor del av det förlorades värde ...
   styre: 0.5, // ... och styret så stor del av byns förlust (i silver)
+  styreVill: 0.5, // styrets vilja att lägga silver på ett uppdrag
   bud: 0.3, // det är värt så stor del av belöningen att en grannby får veta om uppdraget (budbäraren)
 });
 
@@ -115,7 +116,7 @@ BUDGET.uppdrag = {
     if (kvar.length) vl.nod = kvar; else delete vl.nod; // det som inte kunde utlysas väntar (steg 12.1.60), tills det är för gammalt (nodNu)
     return gav;
   },
-  vill: () => 0.5,
+  vill: () => UTLYSA.styreVill,
 };
 if (!BUDGET_LIST.includes('uppdrag')) BUDGET_LIST.push('uppdrag');
 

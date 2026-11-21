@@ -16,6 +16,7 @@ import { KLOCKA, SLAGHINDER, nasTid } from './klocka';
 import { GANG } from './gang';
 import { blocked, freeNear } from './byggnad';
 import { ALDER, ageOf, alive, byId, count, gjort, living, log, relKey, stat, paKartan } from './folk';
+import { tanke } from './tankar';
 import { KROPPSDELAR, forlora, kanGa, skada } from './halsa';
 import { blodas } from './blod';
 import { blodtorst } from './humor';
@@ -79,8 +80,7 @@ export const stridBild = { pa: false, slag: [] as SlagBild[] };
 export const bildKrok: { spara?: (s: State, p: Person, t?: number) => void } = {};
 function tillBilden(g: KartStrid, n0: number) {
   const st = g.st;
-  for (const h of slagen(st)) {
-    if (h.rad < n0) continue;
+  for (const h of slagen(st, n0)) {
     const a = st.kampar.find(k => k.id === h.fran), b = st.kampar.find(k => k.id === h.mot);
     if (!a || !b) continue;
     if (stridBild.slag.length > 400) stridBild.slag.shift(); // ingen tar emot dem (ikappräkningen): de äldsta faller bort
@@ -360,8 +360,14 @@ export function serStriden(s: State) {
 // ett gräl (samtal.ts) kan bli ett slagsmål, oftare hos den blodtörstiga. Det börjar där de står och stegas sedan med byn
 export function gralBlirSlagsmal(s: State, a: Person, b: Person) {
   if (ageOf(a, s.now) < ALDER.smabarn || ageOf(b, s.now) < ALDER.smabarn || a.task?.act === 'strid' || b.task?.act === 'strid' || !alive(a) || !alive(b)) return;
-  if (rnd(s, 'strid', a) >= SLAGSMAL.gral * (1 + SLAGSMAL.gralTorst * blodtorst(s, a))) return;
+  // åldern och storleken (steg 12.1.47): den större slåss ogärna med den mindre, och en vuxen mycket ogärna med ett barn
+  const vaxt = (q: Person) => clamp(ageOf(q, s.now) / ALDER.vuxen, 0, 1), va = vaxt(a), vb = vaxt(b);
+  const storlek = (Math.min(va, vb) / Math.max(va, vb, 1e-9)) ** SLAGSMAL.storlek;
+  if (rnd(s, 'strid', a) >= SLAGSMAL.gral * (1 + SLAGSMAL.gralTorst * blodtorst(s, a)) * storlek) return;
   if (budHindrar(s, a, 'ingenStrid')) { count(s, 'bud_ingenStrid'); return; } // den heliga dagen (steg 10.3.22)
+  // ett litet barn slåss inte på kartan: det gråter i stället
+  const liten = [a, b].find(q => ageOf(q, s.now) < SLAGSMAL.smaBarn);
+  if (liten) { tanke(liten, 'gratGral', s.now, { v: -SLAGSMAL.grat, tid: SLAGSMAL.gratTim * HOUR }); count(s, 'gralGrat'); return; }
   kartStridBorja(s, 'slagsmal', [[a], [b]], 'efter ett gräl');
   handelse(s, a, 'sla', b); // den som började slagsmålet slog först
 }

@@ -6,17 +6,21 @@ import { gen, honom } from './ord';
 // ärvs som redskapen (arv.ts); byns rikedom räknar djuren (varde.ts). Djurskötsel är en färdighet som växer när man matar,
 // mjölkar, klipper och vallar, så att någon blir byns herde. Allt stegas en gång i timmen (stepTamdjur, steg.ts), likadant i
 // båda lägena, med byns följd 'tamdjur'.
+import { notis } from './notiser';
 import { balans } from './balans';
 import { farorNu } from './kult';
 import { KOTTSLAG, isFood } from './saker';
-import { ALDER, ageOf, byId, count, enTillDar, forstaGang, gjort, log, ovning } from './folk';
+import { ALDER, ageOf, byId, count, enTillDar, forstaGang, gjort, log, ovning, alive } from './folk';
 import { getable, takeMaterial } from './behov';
-import { hash3, rnd } from './slump';
+import { chansPer, hash3, rnd } from './slump';
 import { put } from './lager';
 import { stat } from './folk';
 import { DAY, Person, State, inMap } from './typer';
 import { blocked } from './byggnad';
 import { INDIVID } from './djur';
+import { tanke } from './tankar';
+import { handelse } from './rykten';
+import { kronikaBer } from './berattelser';
 
 // en art av tamdjur. ord = en/ett, ett djur, flera, det bestämda; foder = det man matar djuret med, det bästa först (hela saker); bete = djuret betar i hagen (steg 9.8.4),
 // och betet det helst äter; liv = hur många dygn (år i spelet) det lever, vuxen = när det är fullvuxet, varde = vad det är värt i
@@ -26,18 +30,18 @@ import { INDIVID } from './djur';
 // dricker = så många hela vatten djuret dricker var TAM.torstTim timme (steg 10.10.31); tal, mod och tam = artens tålighet, mod (0–1) och tamhet, som individen får sina egna kring (tamEg, steg 10.10.29);
 // pals = så stor del av binas stick som når igenom pälsen (steg 10.10.27);
 // ute = går lös i byn utan hage och fähus, så att vargen och rövarna kan ta det; fangas = det levande bytet ur en fälla som blir ett ungt djur av arten (grisen, steg 10.10.13)
-export interface TamArt { namn: string; ord: [string, string, string, string]; foder: readonly string[]; bete?: 'gras' | 'buskar'; liv: number; vuxen: number; varde: number; ikon: string; ater: number; mjolk?: number; ull?: number; unge?: string; lev?: string; styrka?: number; snabb?: number; ute?: true; fangas?: string; pals?: number; dricker?: number; tal?: number; mod?: number; tam?: number; rids?: true } // rids: kan bära en ryttare med ridsadel (steg 11.11.4)
+export interface TamArt { namn: string; ord: [string, string, string, string]; foder: readonly string[]; bete?: 'gras' | 'buskar'; liv: number; vuxen: number; varde: number; ikon: string; ater: number; mjolk?: number; ull?: number; unge?: string; lev?: string; styrka?: number; snabb?: number; ute?: true; fangas?: string; pals?: number; dricker?: number; tal?: number; mod?: number; tam?: number; rids?: true; spark?: number } // spark: hur mycket risken för en spark gäller den som sköter djuret (OLYCKOR, steg 12.1.141) // rids: kan bära en ryttare med ridsadel (steg 11.11.4)
 export const TAMDJUR = {
   hund: { namn: 'Hund', ord: ['en', 'hund', 'hundar', 'hunden'], foder: ['slaktrens', ...KOTTSLAG, 'gaddkott', 'braxkott'], liv: 12, vuxen: 1, varde: 30, ikon: 'varg', ater: 1, pals: 0.2, dricker: 1, tal: 1, mod: 0.8, tam: 1 },
-  far: { namn: 'Får', ord: ['ett', 'får', 'får', 'fåret'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 10, vuxen: 1, varde: 25, ikon: 'radjur', ater: 1, pals: 0.15, dricker: 1, tal: 1, mod: 0.3, tam: 1, ull: 2, unge: 'ett lamm', lev: 'levfar' },
-  get: { namn: 'Get', ord: ['en', 'get', 'getter', 'geten'], foder: ['lovkarve', 'torrgras'], bete: 'buskar', liv: 12, vuxen: 1, varde: 25, ikon: 'radjur', ater: 1, pals: 0.4, dricker: 1, tal: 1.2, mod: 0.5, tam: 0.8, mjolk: 2, unge: 'en killing', lev: 'levget' },
+  far: { namn: 'Får', ord: ['ett', 'får', 'får', 'fåret'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 10, vuxen: 1, varde: 25, ikon: 'radjur', ater: 1, pals: 0.15, dricker: 1, tal: 1, mod: 0.3, tam: 1, ull: 2, unge: 'ett lamm', lev: 'levfar', spark: 0.2 },
+  get: { namn: 'Get', ord: ['en', 'get', 'getter', 'geten'], foder: ['lovkarve', 'torrgras'], bete: 'buskar', liv: 12, vuxen: 1, varde: 25, ikon: 'radjur', ater: 1, pals: 0.4, dricker: 1, tal: 1.2, mod: 0.5, tam: 0.8, mjolk: 2, unge: 'en killing', lev: 'levget', spark: 0.3 },
   // kon (steg 10.10.1): äter som två får, ger mest mjölk och mest slakt, och lever längst
-  ko: { namn: 'Ko', ord: ['en', 'ko', 'kor', 'kon'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 15, vuxen: 2, varde: 60, ikon: 'radjur', ater: 2, pals: 0.8, dricker: 2, tal: 1, mod: 0.5, tam: 1, mjolk: 4, unge: 'en kalv', lev: 'levko' },
+  ko: { namn: 'Ko', ord: ['en', 'ko', 'kor', 'kon'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 15, vuxen: 2, varde: 60, ikon: 'radjur', ater: 2, pals: 0.8, dricker: 2, tal: 1, mod: 0.5, tam: 1, mjolk: 4, unge: 'en kalv', lev: 'levko', spark: 1 },
   // dragdjuren (steg 10.10.3): oxen är billigare, starkare och långsammare och får inga ungar; hästen är dyrare och snabbare, får föl och slaktas inte
-  oxe: { namn: 'Oxe', ord: ['en', 'oxe', 'oxar', 'oxen'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 15, vuxen: 2, varde: 50, ikon: 'radjur', ater: 2, pals: 0.8, dricker: 2, tal: 1.2, mod: 0.7, tam: 0.9, lev: 'levoxe', styrka: 4, snabb: 0.7 },
+  oxe: { namn: 'Oxe', ord: ['en', 'oxe', 'oxar', 'oxen'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 15, vuxen: 2, varde: 50, ikon: 'radjur', ater: 2, pals: 0.8, dricker: 2, tal: 1.2, mod: 0.7, tam: 0.9, lev: 'levoxe', styrka: 4, snabb: 0.7, spark: 1.2 },
   // grisen (steg 10.10.13): kultingen fångas i buren och går lös i byn; ägaren ger den rester från slakten och skörden, och rötter när de inte räcker. Inga ungar
-  gris: { namn: 'Gris', ord: ['en', 'gris', 'grisar', 'grisen'], foder: ['slaktrens', 'vaxtrest', 'rotter'], liv: 10, vuxen: 1, varde: 30, ikon: 'vildsvin', ater: 1, pals: 0.8, dricker: 1, tal: 1, mod: 0.6, tam: 0.7, ute: true, fangas: 'kulting' },
-  hast: { namn: 'Häst', ord: ['en', 'häst', 'hästar', 'hästen'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 20, vuxen: 3, varde: 80, ikon: 'radjur', ater: 2, pals: 0.8, dricker: 2, tal: 0.9, mod: 0.4, tam: 0.8, unge: 'ett föl', lev: 'levhast', styrka: 3, snabb: 1, rids: true },
+  gris: { namn: 'Gris', ord: ['en', 'gris', 'grisar', 'grisen'], foder: ['slaktrens', 'vaxtrest', 'rotter'], liv: 10, vuxen: 1, varde: 30, ikon: 'vildsvin', ater: 1, pals: 0.8, dricker: 1, tal: 1, mod: 0.6, tam: 0.7, ute: true, fangas: 'kulting', spark: 0.5 },
+  hast: { namn: 'Häst', ord: ['en', 'häst', 'hästar', 'hästen'], foder: ['torrgras', 'lovkarve'], bete: 'gras', liv: 20, vuxen: 3, varde: 80, ikon: 'radjur', ater: 2, pals: 0.8, dricker: 2, tal: 0.9, mod: 0.4, tam: 0.8, unge: 'ett föl', lev: 'levhast', styrka: 3, snabb: 1, rids: true, spark: 1.2 },
 } as const satisfies Record<string, TamArt>;
 export type TamArtId = keyof typeof TAMDJUR;
 export const TAM_LIST = Object.keys(TAMDJUR) as TamArtId[];
@@ -79,29 +83,41 @@ export function nyttTamdjur(s: State, art: TamArtId, x: number, y: number, agare
   s.nextTam = id - TAM_ID0 + 1;
   const d: Tamdjur = { id, art, born, hunger: 0, x, y, agare, hona: hash3(s.seed, id, 0x7a6d) < 0.5 };
   l.push(d); count(s, `tam_${art}`);
+  if (forstaGang(s, 'forstaTamdjur')) { // byns första tamdjur: krönikan (steg 12.1.135) och notisen (steg 12.1.137)
+    const a = tamArt(art), q = agare !== undefined ? byId(s, agare) : undefined;
+    kronikaBer(s, 'k_djur', id, { forsta: true, djur: `${a.ord[0]} ${a.ord[1]}` });
+    notis(s, 'tamdjur', `Byn fick sitt första tamdjur: ${q ? `${q.name}s ${a.ord[1]}` : a.ord.slice(0, 2).join(' ')}.`, q ? [q.id] : [], { x, y });
+  }
   return d;
 }
 // djuret dör (av hunger, ålder eller ett rovdjur) och tas bort ur byn
+// hur ett tamdjur dog, skrivet efter "dog": orsaken som byns statistik räknar (tamDog_svalt …) och orden i texten
+const DOG_HUR: Record<string, string> = { svalt: 'av hunger', alder: 'av ålder', 'frös ihjäl': 'av kölden' };
 export function tamDor(s: State, d: Tamdjur, orsak: string) {
   d.dog = s.now; s.tamdjur = (s.tamdjur ?? []).filter(q => q !== d);
   count(s, `tamDog_${orsak}`);
   const a = tamArt(d.art), q = d.agare !== undefined ? byId(s, d.agare) : undefined;
   if (orsak === 'rymde') return; // den som rymde har redan sin rad i loggen (hundRymmer)
-  log(s, `${q ? `${gen(q.name)} ` : 'Byns '}${a.ord[1]} dog ${orsak === 'svalt' ? 'av hunger' : orsak === 'alder' ? 'av ålder' : orsak}.`, 'world', q ? [q.id] : []);
+  const hur = DOG_HUR[orsak] ?? orsak; // det som följer på "dog" (steg 12.1.199)
+  kronikaBer(s, 'k_djur', d.id, { djur: `${a.ord[0]} ${a.ord[1]}`, hur, agare: q?.name }); // byn miste ett djur (steg 12.1.135)
+  const sk = q && alive(q) ? q : byId(s, mestMatat(s, d)?.[0]); // ägaren, eller den som matat djuret mest (steg 12.1.131)
+  if (sk && alive(sk)) tanke(sk, 'mittDjurDog', s.now);
+  log(s, `${q ? `${gen(q.name)} ` : 'Byns '}${a.ord[1]} dog ${hur}.`, 'world', q ? [q.id] : []);
 }
 // vad djuret äter av det som finns, det bästa först (undefined: inget att ge det)
 // det djuret äter som också är mat åt människorna (hundens kött) ges inte när byn svälter, efter samma mått som valet av aktivitet (steg 10.2.1)
 export const foderFor = (s: State, p: Person, d: Tamdjur) => { const svalt = farorNu(s).svalt; return tamArt(d.art).foder.find(k => getable(s, p, k) >= 1 && !(svalt && isFood(k))); };
 
-// en timme för djuren: hungern växer, det svultna och det gamla dör
-export function stepTamdjur(s: State) {
+// en timme för djuren: hungern växer, det svultna och det gamla dör. dt: sekunderna sedan sist (steg 12.1.107)
+export function stepTamdjur(s: State, dt = 3600) {
+  const tim = dt / 3600;
   for (const d of tamdjurOf(s)) {
-    d.hunger = Math.min(1, d.hunger + TAM.hungerTim * tamArt(d.art).ater);
-    d.svalt = d.hunger >= 1 ? (d.svalt ?? 0) + 1 : 0;
+    d.hunger = Math.min(1, d.hunger + TAM.hungerTim * tamArt(d.art).ater * tim);
+    d.svalt = d.hunger >= 1 ? (d.svalt ?? 0) + tim : 0;
     if (d.svalt >= TAM.svaltTim * tamEg(d).talighet) { tamDor(s, d, 'svalt'); continue; } // det tåliga djuret tål svälten längre (steg 10.10.29)
     const a = tamArt(d.art), alder = tamAlder(s, d);
-    if (alder > a.liv * 0.8 && rnd(s, 'tamdjur') < 1 / (a.liv * 0.4 * 24)) { tamDor(s, d, 'alder'); continue; }
-    if (d.art === 'hund') stepHund(s, d);
+    if (alder > a.liv * 0.8 && chansPer(s, 1 / (a.liv * 0.4 * 24), 3600, dt, 'tamdjur')) { tamDor(s, d, 'alder'); continue; }
+    if (d.art === 'hund') stepHund(s, d, tim);
   }
 }
 
@@ -127,7 +143,7 @@ export function mataKlar(s: State, p: Person, ref?: number) {
   d.hunger = 0; // en sak foder gör djuret mätt
   (d.matad ??= {})[p.id] = (d.matad[p.id] ?? 0) + 1;
   if (d.art === 'hund' && d.agare === p.id) d.lojal = Math.min(1, (d.lojal ?? HUND.start) + HUND.mata);
-  ovning(p, 'skotsel', TAM.ovning); gjort(s, p, 'matat');
+  ovning(p, 'skotsel', TAM.ovning); gjort(s, p, 'matat'); handelse(s, p, 'skotteDjur', undefined, tamArt(d.art).ord[3]); // (steg 12.1.134)
   if (forstaGang(s, 'matatDjur')) log(s, `${p.name} matade byns ${tamArt(d.art).ord[1]} för första gången.`, 'world', [p.id]);
 }
 // vad byns djur är värda (byns rikedom, varde.ts) och vad en persons djur är värda (förmögenheten)
@@ -185,7 +201,7 @@ const hundRymmer = (s: State, d: Tamdjur, varfor: string) => {
 // den som matat hunden mest och lever (inte ägaren)
 const mestMatat = (s: State, d: Tamdjur, utom?: number) => Object.entries(d.matad ?? {}).map(([id, n]) => [Number(id), n] as const)
   .filter(([id, n]) => id !== utom && n > 0 && byId(s, id)?.died === undefined).sort((a, b) => b[1] - a[1] || a[0] - b[0])[0];
-export function stepHund(s: State, d: Tamdjur) {
+export function stepHund(s: State, d: Tamdjur, tim = 1) {
   const p = d.agare !== undefined ? byId(s, d.agare) : undefined;
   if (!p || p.died !== undefined) {
     const ny = mestMatat(s, d, d.agare);
@@ -197,8 +213,8 @@ export function stepHund(s: State, d: Tamdjur) {
   }
   let l = d.lojal ?? HUND.start;
   const dist = Math.hypot(d.x - p.x, d.y - p.y);
-  l += dist <= HUND.naraR ? HUND.nara : -HUND.lamnad;
-  if (d.hunger >= 0.7) l -= HUND.hungrig;
+  l += (dist <= HUND.naraR ? HUND.nara : -HUND.lamnad) * tim;
+  if (d.hunger >= 0.7) l -= HUND.hungrig * tim;
   d.lojal = l = Math.max(0, Math.min(1, l));
   if (l < HUND.grans) {
     const ny = mestMatat(s, d, p.id), egen = d.matad?.[p.id] ?? 0;
@@ -214,7 +230,7 @@ export function stepHund(s: State, d: Tamdjur) {
     const v = rnd(s, 'tamdjur') * Math.PI * 2, r = rnd(s, 'tamdjur') * HUND.folj;
     const hx = p.x + Math.cos(v) * r, hy = p.y + Math.sin(v) * r;
     if (inMap(Math.floor(hx), Math.floor(hy)) && !blocked(s, hx, hy)) { d.x = hx; d.y = hy; } else { d.x = p.x; d.y = p.y; } // inte i vattnet eller en vägg: då står den hos ägaren
-    count(s, 'hundFoljer');
+    count(s, 'hundFoljer'); tanke(p, 'hundFoljer', s.now); // (steg 12.1.131)
   }
 }
 

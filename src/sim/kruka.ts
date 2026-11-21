@@ -1,4 +1,5 @@
 import { han, hans } from './ord';
+import { TIMMINNEN } from './timminne';
 import { nagonEld } from './eld';
 // Lerkrukan (steg 9.4.11, Arbetsstationer och möbler: Leran och lerkrukan, Tre storlekar): ett ting med kvalitet, skick och
 // ägare, inte en möbel, i tre storlekar som är rader i registret KRUKOR. Den byggs upp för hand av lera med sand i (1, 2 eller 4
@@ -32,8 +33,9 @@ export const KRUKA = balans('kruka', {
 // krukan är formad: den är rå och ska torka
 export function krukaFormad(t: Ting) { t.ler = 0; }
 // en gång i timmen: de råa krukorna torkar, och de torra bränns i elden när den brinner
-export function stepKrukor(s: State) {
-  const torka = Math.max(0.1, 1 + KRUKA.varm * (temperature(s) - 10)) * (vaderNu(s).nb > 0 ? KRUKA.regn : 1) / KRUKA.torkTim;
+// dt: sekunderna sedan sist (steg 12.1.107)
+export function stepKrukor(s: State, dt = 3600) {
+  const torka = Math.max(0.1, 1 + KRUKA.varm * (temperature(s) - 10)) * (vaderNu(s).nb > 0 ? KRUKA.regn : 1) / KRUKA.torkTim * dt / 3600;
   for (const t of [...tingOf(s)]) {
     if (t.ler === undefined) continue;
     if (t.ler < 1) { t.ler = Math.min(1, t.ler + torka); continue; }
@@ -141,6 +143,7 @@ const krukVal = (s: State, p: Person, finns: (g: GrodaSlag) => boolean) => {
 };
 // hur många blommor byn vill ha: en per ledig kruka vars ägare hellre vill ha en blomma än en ört. Räknas en gång i timmen
 const villCache = new WeakMap<State, { h: number; n: number }>();
+TIMMINNEN.blomVill = { ut: s => villCache.get(s), in: (s, v) => { villCache.set(s, v as { h: number; n: number }); } }; // (steg 12.1.248)
 export function blommaVill(s: State) {
   const h = Math.floor(s.now / HOUR), c = villCache.get(s);
   if (c && c.h === h) return c.n;

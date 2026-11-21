@@ -1,9 +1,10 @@
 import { handlarDjur, hasselVaxer, karavanLagret, richness } from '../sim';
 import { rovarFlockar } from '../sim/rovare';
 import { BJORNJAKT, DAY, Djur, FLYGTID, H, sakerPaMarken, HOUR, SEC, VARG, W, ageIndex, bjornarOf, brinnande, djurOf, faglarOf, flockdjurOf, groundOf, living, plockOf, tornadoAndel, tornadoPos, vargarOf, TAMDJUR, TAM_ID0, honsOf, iIstiden, vildboSyns, samhallen } from '../sim';
-import { farg, fargTal } from '../palett';
+import { farg, fargTal, narmast } from '../palett';
 import { s, ui, vidNyBy } from './lage';
-import { Ikoner, TS, app, djurFx, djurMarkLayer, figurLayer, plantG, rokBakLayer, world } from './scen';
+import * as PIXI from 'pixi.js';
+import { Ikoner, TS, app, djurFx, djurMarkLayer, figurLayer, plantLayer, rokBakLayer, world } from './scen';
 import { brandBild, brandRok, tornadoBild, tornadoFot } from './animation';
 import { djuretNu } from './stridkarta';
 import { jagade, samlaJakt } from './jakt';
@@ -15,16 +16,18 @@ import { sinHash } from './pixel';
 
 // sakerna på rutan (steg 9.2.53, Björns val i steg 9.9.1: i rad), i 16 punkter per ruta och bara i palettens färger. Det som ritas är
 // det som går att plocka (sakerPaMarken): spelets egna bilder av bären, svampen, rötterna och grenarna i sin naturliga storlek, en, två
-// eller tre i en sned rad över rutan från uppe till vänster till nere till höger. En ruta utan saker ritas inte
+// eller tre i en sned rad över rutan från uppe till vänster till nere till höger. En ruta utan saker ritas inte.
+// Allt ritas punkt för punkt med en målare (Mala: en punkt i världens pixlar och en färg), som lägger punkterna i en sparad bit (steg 12.1.180)
+type Mala = (x: number, y: number, c: number) => void;
 const BILD_FARG: Record<string, number> = { y: 0xdad0bb, x: 0xbdb39b, v: 0x7e7362, C: 0x21310e, D: 0x324726, E: 0x505e3e }; // röllekans färger
 const KBILD_AV: Record<string, string> = { bar: 'bar', kantarell: 'svamp', spindling: 'svamp', rotter: 'rotter', grenar: 'grenar' };
 const RAD_T = [[0.5], [0.15, 0.85], [0, 0.5, 1]];
-function ritaRad(k: string, n: number, x: number, y: number) {
+function ritaRad(k: string, n: number, x: number, y: number, m: Mala) {
   const b = KARTBILDER[KBILD_AV[k] ?? k];
   if (!b) return;
   const a = [1, 2], c = [15 - b.w, 14 - b.h];
   RAD_T[n - 1].map(t => [Math.round(a[0] + (c[0] - a[0]) * t), Math.round(a[1] + (c[1] - a[1]) * t)]).sort((p, q) => p[1] - q[1]).forEach(([dx, dy]) => {
-    b.rader.forEach((r, ry) => { for (let rx = 0; rx < r.length; rx++) { const h = b.pal[r[rx]]; if (r[rx] !== '.' && h) plantG.beginFill(parseInt(h.slice(1), 16)).drawRect(x + dx + rx, y + dy + ry, 1, 1).endFill(); } });
+    b.rader.forEach((r, ry) => { for (let rx = 0; rx < r.length; rx++) { const h = b.pal[r[rx]]; if (r[rx] !== '.' && h) m(x + dx + rx, y + dy + ry, parseInt(h.slice(1), 16)); } });
   });
 }
 // den vilda röllekan (steg 9.7.15): Björns val i bildstilen, f7_rolleka version 1 och 2, i två varianter efter rutan
@@ -35,12 +38,11 @@ const ROLLEKA_VILD = [
 // Björns val (steg 11.14.1): hålet i stammen och bina ur bildstilens vildbo, utan stammen i bilden (trädet har sin egen)
 const VILDBO_HAL = (() => { const b = KARTBILDER.vildbo; if (!b) return undefined; return { w: b.w, h: b.h, pal: b.pal, rader: b.rader.map(r => [...r].map((c, x) => c === 'g' || c === 'p' || c === 'H' || (c === 'o' && (x < 5 || x > 14)) ? c : '.').join('')) }; })();
 let bon: number[] = []; // rutorna med ett bo som syns, för bina som surrar runt stammen (drawAnimals)
-const ritaBild = (rad: string[], x: number, y: number) => rad.forEach((r, dy) => { for (let dx = 0; dx < r.length; dx++) { const c = BILD_FARG[r[dx]]; if (c !== undefined) plantG.beginFill(c).drawRect(x + dx, y + dy, 1, 1).endFill(); } });
-const ritaKb = (b: { rader: string[]; pal: Record<string, string> }, x: number, y: number) => b.rader.forEach((r, dy) => { for (let dx = 0; dx < r.length; dx++) { const h = b.pal[r[dx]]; if (r[dx] !== '.' && h) plantG.beginFill(parseInt(h.slice(1), 16)).drawRect(x + dx, y + dy, 1, 1).endFill(); } });
+const ritaBild = (rad: string[], x: number, y: number, m: Mala) => rad.forEach((r, dy) => { for (let dx = 0; dx < r.length; dx++) { const c = BILD_FARG[r[dx]]; if (c !== undefined) m(x + dx, y + dy, c); } });
+const ritaKb = (b: { rader: string[]; pal: Record<string, string> }, x: number, y: number, m: Mala) => b.rader.forEach((r, dy) => { for (let dx = 0; dx < r.length; dx++) { const h = b.pal[r[dx]]; if (r[dx] !== '.' && h) m(x + dx, y + dy, parseInt(h.slice(1), 16)); } });
 // det som växer just nu, diskret i vanliga vyn: små bärbuskar och svampar där det finns något att hämta.
 // Var det kan växa syns inte. Ritas om varje timme och när någon tagit något. Kaninerna ritas varje
 // bildruta vid tiden som visas (ui.nu), som folket, eftersom de skuttar omkring (djur.ts).
-let ritad = '', ritadNar = -Infinity;
 // en fast plats i rutan för varje sak, så att buskarna inte hoppar runt när kartan ritas om
 const plats = sinHash;
 // rutorna som syns och en halv skärm runt om, avrundat till hela block om 8 rutor (steg 9.1.3): det utanför ritas inte
@@ -52,30 +54,101 @@ function synligaRutor() {
   const x1 = Math.min(W - 1, Math.ceil((b.x / TS + mx) / B) * B), y1 = Math.min(H - 1, Math.ceil((b.y / TS + my) / B) * B);
   return { x0, y0, x1, y1 };
 }
+// det som ritas på en ruta, i ordning: [sak, antal] för det som ligger i rad, 'bo' för vildboet, 'rl' för röllekan och 'h' för
+// hasseln. Listan är också rutans del av bitens signatur
+type RutOp = readonly [string, number] | 'bo' | 'rl' | 'h';
+function rutaOps(rx: number, ry: number): RutOp[] {
+  const i = ry * W + rx, ut: RutOp[] = [];
+  for (const q of sakerPaMarken(s, 'samla', rx, ry)) {
+    const n = Math.min(3, q.n);
+    if (n <= 0) continue;
+    if (q.k === 'honung') { if (vildboSyns(s, i)) ut.push('bo'); continue; } // honungen syns som boet på trädet, inte som kakor på marken
+    if (q.k === 'bar') continue; // bären syns på bärbuskarna (steg 6.5.4, terrang.ts), och under träd växer inga (steg 10.10.8)
+    ut.push([q.k, n]);
+  }
+  if (ageIndex(s) !== 0 && richness(s, 'rolleka', rx, ry) > 0.25) ut.push('rl'); // röllekan växer vild (steg 9.7.15)
+  if (rx % 2 === 0 && ry % 2 === 0 && hasselVaxer(s, i) > 0.3) ut.push('h'); // den vilda hasseln (steg 9.7.14) på varannan ruta där den växer (Björns val, steg 10.11.1)
+  const gr = Math.min(3, sakerPaMarken(s, 'grenar', rx, ry)[0]?.n ?? 0);
+  if (gr > 0) ut.push(['grenar', gr]);
+  return ut;
+}
+function ritaRuta(rx: number, ry: number, ops: readonly RutOp[], m: Mala) {
+  const i = ry * W + rx, x = rx * TS, y = ry * TS;
+  for (const o of ops) {
+    if (o === 'bo') { if (VILDBO_HAL) ritaKb(VILDBO_HAL, x + 1, y - 8, m); }
+    else if (o === 'rl') ritaBild(ROLLEKA_VILD[plats(i, 50) < 0.5 ? 0 : 1], Math.round(x + 1 + plats(i, 51) * 3), Math.round(y + 2 + plats(i, 52) * 5), m);
+    else if (o === 'h') { const b = KARTBILDER.hassel; if (b) ritaKb(b, x + 8 - (b.w >> 1), y + TS - b.h + 2, m); }
+    else ritaRad(o[0], o[1], x, y, m);
+  }
+}
+// Växterna i sparade bitar (steg 12.1.180): kartan delas i bitar om BIT × BIT rutor, och varje bit är en färdig bild som ritas om
+// bara när något i den ändrats (högst en gång i sekunden, OMRITA_MS). Hasseln och vildboet sticker ut i grannrutan, så en bit ritas
+// med rutorna närmast runt om, i samma ordning som förut (rad för rad) och klippt till bitens yta; bitarna överlappar inte och bilden
+// blir punkt för punkt densamma som när allt ritades på en gång. Bitar utanför det som syns göms, och de som ligger längre bort än
+// en hel synlig yta tas bort
+const BIT = SYNS_BLOCK, BIT_PX = BIT * TS, BW = 1 << 12; // BW: bitarnas nummer cy * BW + cx (inte ur W, som sätts när kartan skapas)
+interface Bit { sp?: PIXI.Sprite; cv?: HTMLCanvasElement; nyckel: string; sig: string; bon: number[] }
+const bitar = new Map<number, Bit>();
+// när byn byts töms bitarna och det ritningen minns (steg 12.1.200), så att nästa ritning gör om allt för den nya byn
+function tomBitar() { for (const b of bitar.values()) b.sp?.destroy({ texture: true, baseTexture: true }); bitar.clear(); ritadG = ''; ritadV = ''; ritadNar = -Infinity; bon = []; }
+vidNyBy.push(tomBitar);
+let ritadG = '', ritadV = '', ritadNar = -Infinity;
+const hex = (c: number) => '#' + c.toString(16).padStart(6, '0');
+// räknar om biten (cx, cy) om den inte är räknad för läget nyckel, och ritar om den om innehållet ändrats
+function bitKoll(cx: number, cy: number, nyckel: string, force: boolean) {
+  const id = cy * BW + cx;
+  let b = bitar.get(id);
+  if (!b) { b = { nyckel: '', sig: '\0', bon: [] }; bitar.set(id, b); }
+  if (b.nyckel !== nyckel || force) {
+    b.nyckel = nyckel;
+    const tx0 = cx * BIT, ty0 = cy * BIT, rx0 = Math.max(0, tx0 - 1), ry0 = Math.max(0, ty0 - 1), rx1 = Math.min(W - 1, tx0 + BIT), ry1 = Math.min(H - 1, ty0 + BIT);
+    const rutor: [number, number, RutOp[]][] = [], sig: string[] = [], bo: number[] = [];
+    for (let ry = ry0; ry <= ry1; ry++) for (let rx = rx0; rx <= rx1; rx++) {
+      const ops = rutaOps(rx, ry);
+      if (!ops.length) continue;
+      rutor.push([rx, ry, ops]); sig.push(`${rx},${ry}:${ops.map(o => typeof o === 'string' ? o : o.join('')).join(';')}`);
+      if (rx >= tx0 && rx < tx0 + BIT && ry >= ty0 && ry < ty0 + BIT && ops.includes('bo')) bo.push(ry * W + rx);
+    }
+    const ny = sig.join('|');
+    if (ny !== b.sig) {
+      b.sig = ny; b.bon = bo;
+      if (rutor.length) {
+        if (!b.cv) { b.cv = document.createElement('canvas'); b.cv.width = b.cv.height = BIT_PX; }
+        const g = b.cv.getContext('2d')!, ox = tx0 * TS, oy = ty0 * TS;
+        g.clearRect(0, 0, BIT_PX, BIT_PX);
+        let fs = -1;
+        const m: Mala = (x, y, c) => { x -= ox; y -= oy; if (x < 0 || y < 0 || x >= BIT_PX || y >= BIT_PX) return; if (c !== fs) { fs = c; g.fillStyle = hex(c); } g.fillRect(x, y, 1, 1); };
+        for (const [rx, ry, ops] of rutor) ritaRuta(rx, ry, ops, m);
+        if (!b.sp) { b.sp = new PIXI.Sprite(PIXI.Texture.from(b.cv)); b.sp.position.set(ox, oy); plantLayer.addChild(b.sp); }
+        else b.sp.texture.baseTexture.update();
+      } else if (b.sp) { b.sp.destroy({ texture: true, baseTexture: true }); b.sp = undefined; b.cv = undefined; }
+    }
+  }
+  if (b.sp) b.sp.visible = true;
+  return b;
+}
 export function drawPlants(force = false) {
   const v = synligaRutor();
-  const key = `${s.seed},${Math.floor(s.now / HOUR)},${ageIndex(s)},${plockOf(s)},${Object.keys(s.plockat ?? {}).length},${v.x0},${v.y0},${v.x1},${v.y1}`;
+  const nyckel = `${s.seed},${Math.floor(s.now / HOUR)},${ageIndex(s)},${plockOf(s)},${Object.keys(s.plockat ?? {}).length}`, vy = `${v.x0},${v.y0},${v.x1},${v.y1}`;
   const nu = performance.now();
-  if (!force && (key === ritad || nu - ritadNar < OMRITA_MS)) return; // högst en gång i sekunden, som marken
-  ritad = key; ritadNar = nu;
-  plantG.clear(); bon = [];
-  for (let ry = v.y0; ry <= v.y1; ry++) for (let rx = v.x0; rx <= v.x1; rx++) {
-    const i = ry * W + rx, x = rx * TS, y = ry * TS;
-    for (const q of sakerPaMarken(s, 'samla', rx, ry)) {
-      const n = Math.min(3, q.n);
-      if (n <= 0) continue;
-      if (q.k === 'honung') { if (vildboSyns(s, i)) { bon.push(i); if (VILDBO_HAL) ritaKb(VILDBO_HAL, x + 1, y - 8); } continue; } // honungen syns som boet på trädet, inte som kakor på marken
-      if (q.k === 'bar') continue; // bären syns på bärbuskarna (steg 6.5.4, terrang.ts), och under träd växer inga (steg 10.10.8)
-      ritaRad(q.k, n, x, y);
-    }
-    if (ageIndex(s) !== 0 && richness(s, 'rolleka', rx, ry) > 0.25) ritaBild(ROLLEKA_VILD[plats(i, 50) < 0.5 ? 0 : 1], Math.round(x + 1 + plats(i, 51) * 3), Math.round(y + 2 + plats(i, 52) * 5)); // röllekan växer vild (steg 9.7.15)
-    if (rx % 2 === 0 && ry % 2 === 0 && hasselVaxer(s, i) > 0.3) { const b = KARTBILDER.hassel; if (b) ritaKb(b, x + 8 - (b.w >> 1), y + TS - b.h + 2); } // den vilda hasseln (steg 9.7.14) som en buske på varannan ruta där den växer (Björns val, steg 10.11.1)
-    const gr = Math.min(3, sakerPaMarken(s, 'grenar', rx, ry)[0]?.n ?? 0);
-    if (gr > 0) ritaRad('grenar', gr, x, y);
+  if (!force && ((nyckel === ritadG && vy === ritadV) || nu - ritadNar < OMRITA_MS)) return; // högst en gång i sekunden, som marken
+  ritadG = nyckel; ritadV = vy; ritadNar = nu;
+  const cx0 = Math.floor(v.x0 / BIT), cy0 = Math.floor(v.y0 / BIT), cx1 = Math.floor(v.x1 / BIT), cy1 = Math.floor(v.y1 / BIT);
+  const ex = cx1 - cx0 + 1, ey = cy1 - cy0 + 1; // bitar längre bort än en hel synlig yta tas bort
+  for (const [id, b] of bitar) {
+    const cx = id % BW, cy = Math.floor(id / BW);
+    if (cx >= cx0 && cx <= cx1 && cy >= cy0 && cy <= cy1) continue;
+    if (cx < cx0 - ex || cx > cx1 + ex || cy < cy0 - ey || cy > cy1 + ey) { b.sp?.destroy({ texture: true, baseTexture: true }); bitar.delete(id); }
+    else if (b.sp) b.sp.visible = false;
+  }
+  bon = [];
+  for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
+    const b = bitKoll(cx, cy, nyckel, force);
+    for (const i of b.bon) { const rx = i % W, ry = Math.floor(i / W); if (rx >= v.x0 && rx <= v.x1 && ry >= v.y0 && ry <= v.y1) bon.push(i); }
   }
 }
 
-const djurIkoner = new Ikoner(figurLayer, true), larmIkoner = new Ikoner(djurMarkLayer), brandRokIkoner = new Ikoner(rokBakLayer);
+const djurIkoner = new Ikoner(figurLayer, true, true), larmIkoner = new Ikoner(djurMarkLayer), brandRokIkoner = new Ikoner(rokBakLayer);
 // Kaninerna flyr synligt (Björn efter v159): i simuleringen hoppar en kanin undan på en gång när någon kommer nära. Här
 // springer den dit, och den som flyr har ett utropstecken och damm efter sig. Den hoppar undan från där folket syns
 // (posOf). Varje kanin som syns minns var den ritades senast
@@ -110,11 +183,9 @@ function ritaDjur(art: Djur['art'], id: number, x: number, y: number, sedd: Set<
 }
 const lador = new Map<number, { w: number; h: number; fot: number }>();
 // de tama djurens bilder (Björns val, steg 11.14.1): hunden (valpen tills den är vuxen), fåret och geten i tre utseenden efter id:t;
-// de andra har en platshållare (TAMDJUR.ikon)
-const TAMBILD: Record<string, string> = { hund: 'hund', far: 'far', get: 'get' };
-function tamBild(d: { id: number; art: string; born: number }): ((h: DjurHall) => string | undefined) | undefined {
-  const a = TAMBILD[d.art];
-  if (!a) return undefined;
+// de andra har en platshållare (TAMDJUR.ikon): ett djur utan egen bild (hasIcon) ritas med den
+function tamBild(d: { id: number; art: string; born: number }): (h: DjurHall) => string | undefined {
+  const a = d.art;
   const ung = a === 'hund' && (ui.nu - d.born) / DAY < TAMDJUR.hund.vuxen, art = ung ? 'valp' : a, v = 1 + Math.abs(d.id) % 3;
   return h => { const k = `kb_tam_${art}_${v}_${h}`; return hasIcon(k) ? k : undefined; };
 }
@@ -204,10 +275,10 @@ export function drawAnimals() {
   }
   for (const k of jagas.kast) { // spjutet eller stenen i luften, i en låg båge
     const x = (k.fran.x + (k.till.x - k.fran.x) * k.k) * TS, y = (k.fran.y + (k.till.y - k.fran.y) * k.k) * TS - Math.sin(k.k * Math.PI) * 6;
-    if (k.sten) djurFx.beginFill(0x8a8f94).drawCircle(x, y, 1.2).endFill();
+    if (k.sten) djurFx.beginFill(STEN_FX).drawRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2).endFill(); // en punkt i palettens ton
     else {
       const vx = k.till.x - k.fran.x, vy = k.till.y - k.fran.y, v = Math.hypot(vx, vy) || 1;
-      djurFx.lineStyle(1, 0x8a6a40, 1).moveTo(x - vx / v * 4, y - vy / v * 4).lineTo(x, y).lineStyle(0);
+      djurFx.lineStyle(1, SPJUT_FX, 1).moveTo(x - vx / v * 4, y - vy / v * 4).lineTo(x, y).lineStyle(0);
     }
   }
   // det markerade djuret (steg 3.10.4): en vit kant runt symbolen, som allt annat som är markerat
@@ -229,8 +300,8 @@ function ritaTornadoSpar() {
   const g = groundOf(s);
   for (const i of s.tornadoStig ?? []) {
     if (g.cover[i] >= 0.3) continue;
-    const x = (i % W) * TS, y = Math.floor(i / W) * TS, a = 0.6 * (1 - g.cover[i] / 0.3);
-    djurFx.beginFill(FARA, a).drawRect(x + 2, y + 4, 10, 1).drawRect(x + 5, y + 9, 9, 1).drawRect(x + 1, y + 13, 7, 1).endFill();
+    const x = (i % W) * TS, y = Math.floor(i / W) * TS, n = g.cover[i] < 0.1 ? 3 : g.cover[i] < 0.2 ? 2 : 1; // fårorna försvinner i steg när gräset växer tillbaka
+    djurFx.beginFill(FARA).drawRect(x + 2, y + 4, 10, 1); if (n >= 2) djurFx.drawRect(x + 5, y + 9, 9, 1); if (n >= 3) djurFx.drawRect(x + 1, y + 13, 7, 1); djurFx.endFill();
   }
   for (const f of s.tornado?.flyg ?? []) {
     const k = (ui.nu - f.t) / FLYGTID;
@@ -253,7 +324,9 @@ function hotMarken() {
 }
 // utropstecknet över kaninen som ser någon och flyr
 const larm = (x: number, y: number) => larmIkoner.add('kanin_larm', x * TS - 3, y * TS - 15, 1);
-// dammet efter en kanin som springer
+// kastens och dammets färger: palettens närmaste toner (bildstilen: bara palettens färger, inga halvgenomskinliga)
+const STEN_FX = fargTal(narmast('#8a8f94')), SPJUT_FX = fargTal(narmast('#8a6a40')), DAMM_FX = fargTal(narmast('#d8c8a0'));
+// dammet efter en kanin som springer: punkter som blir mindre i steg bakåt, i stället för genomskinliga cirklar
 function damm(x: number, y: number, vx: number, vy: number) {
-  for (let k = 1; k <= 3; k++) djurFx.beginFill(0xd8c8a0, 0.5 - k * 0.12).drawCircle((x - vx * k * 0.35) * TS, (y - vy * k * 0.35) * TS + 1, 1.6 - k * 0.3).endFill();
+  for (let k = 1; k <= 3; k++) { const n = k === 1 ? 2 : 1; djurFx.beginFill(DAMM_FX).drawRect(Math.round((x - vx * k * 0.35) * TS), Math.round((y - vy * k * 0.35) * TS + 1), n, n).endFill(); }
 }

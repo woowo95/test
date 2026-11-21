@@ -15,17 +15,13 @@ export const VARLDSHANDELSER = {
   nyLedare: { namn: 'Ny ledare', stor: false, text: '{by} fick en ny ledare' },
   krig: { namn: 'Krig', stor: true, text: '{by} och {mot} gick i krig' },
   fred: { namn: 'Fred', stor: true, text: '{by} och {mot} slöt fred' },
-  forbund: { namn: 'Förbund', stor: true, text: '{by} och {mot} slöt förbund' },
   svalt: { namn: 'Svält', stor: false, text: 'Det blev svält i {by}' },
-  farsot: { namn: 'Farsot', stor: false, text: 'En farsot gick genom {by}' },
   lager: { namn: 'Rövarläger', stor: false, text: 'Hungriga ur {by} slog läger som rövare: {mot}' },
   upplost: { namn: 'Upplöst', stor: false, text: '{by} övergavs' },
   utpost: { namn: 'Utpost', stor: false, text: '{by} satte upp utposten {mot} vid {plats}' },
   handelslager: { namn: 'Handelsläger', stor: false, text: '{by} slog upp handelslägret {mot}' },
   rad: { namn: 'Räd', stor: false, text: '{by} gjorde en räd mot {mot}' },
-  karavan: { namn: 'Plundrad karavan', stor: false, text: 'En karavan plundrades vid {plats}' },
   platsbygge: { namn: 'Bygge på leden', stor: false, text: '{by} byggde {plats}' },
-  uppdrag: { namn: 'Uppdrag', stor: false, text: '{by} sände ut ett uppdrag till {plats}' },
 } as const satisfies Record<string, VarldHandelseDef>;
 export type VarldHandelseId = keyof typeof VARLDSHANDELSER;
 
@@ -34,7 +30,7 @@ export const VARLDKRONIKA = balans('varldkronika', {
 });
 
 // en rad i världens krönika: by och mot är radernas nummer, plats platsens
-export interface VarldHandelse { nr: number; t: number; k: VarldHandelseId; by?: number; mot?: number; plats?: number }
+export interface VarldHandelse { nr: number; t: number; k: VarldHandelseId; by?: number; mot?: number; plats?: number; byNamn?: string; motNamn?: string } // namnen sparas när raden tas bort ur världen (steg 12.1.146)
 
 export function varldHandelse(vl: Varlden, k: VarldHandelseId, t: number, o: { by?: number; mot?: number; plats?: number } = {}): VarldHandelse {
   const kr = vl.kronika ??= [], h: VarldHandelse = { nr: vl.nastaHandelse = (vl.nastaHandelse ?? 0) + 1, t, k, ...o };
@@ -53,6 +49,6 @@ export function varldHandelse(vl: Varlden, k: VarldHandelseId, t: number, o: { b
 export function varldHandelseText(vl: Varlden, h: VarldHandelse): string {
   const rad = (nr?: number) => vl.rader?.find(r => r.nr === nr)?.namn || vl.platser?.find(p => p.by === nr)?.namn || 'en by';
   const plats = (nr?: number) => vl.platser?.find(p => p.nr === nr)?.namn ?? 'en plats';
-  const t = VARLDSHANDELSER[h.k].text.replace('{by}', rad(h.by)).replace('{mot}', rad(h.mot)).replace('{plats}', plats(h.plats));
+  const t = VARLDSHANDELSER[h.k].text.replace('{by}', h.byNamn ?? rad(h.by)).replace('{mot}', h.motNamn ?? rad(h.mot)).replace('{plats}', plats(h.plats));
   return t[0].toUpperCase() + t.slice(1);
 }

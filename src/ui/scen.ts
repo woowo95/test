@@ -15,7 +15,7 @@ export const app = new PIXI.Application({ background: 0x1d2420, antialias: false
 export const view = app.view as HTMLCanvasElement;
 export const world = new PIXI.Container();
 export const terrainG = new PIXI.Graphics();
-export const plantG = new PIXI.Graphics(); // bärbuskar och svampar som finns just nu
+export const plantLayer = new PIXI.Container(); // bärbuskar och svampar som finns just nu, i sparade bitar (ui/vaxter.ts, steg 12.1.180)
 export const flackG = new PIXI.Graphics(); // fläckarna på marken, som blodet vid slaktbänken (smuts.ts)
 export const djurFx = new PIXI.Graphics(); // det kastade i luften och dammet efter kaniner som flyr (jakt.ts, vaxter.ts)
 export const djurMarkLayer = new PIXI.Container(); // utropstecknet över kaninen som ser någon och flyr
@@ -40,7 +40,7 @@ export const labels = new PIXI.Container();
 // och värmekartan ovanpå syns som på dagen. Den som lägger till ett lager bredvid ett av dem lägger det i samma behållare
 // (lagerEfter)
 export const mork = new PIXI.Container();
-mork.addChild(terrainG, plantG, flackG, husLayer, mattLayer, structG, pileLayer, overG, djurFx, rokBakLayer, figurLayer, peopleG, rokLayer);
+mork.addChild(terrainG, plantLayer, flackG, husLayer, mattLayer, structG, pileLayer, overG, djurFx, rokBakLayer, figurLayer, peopleG, rokLayer);
 world.addChild(mork, filterG, bubbleG, symbolLayer, djurMarkLayer, labels);
 // lägg ett lager direkt ovanför ett annat, i samma behållare
 export const lagerEfter = (nytt: PIXI.DisplayObject, fore: PIXI.DisplayObject) => fore.parent!.addChildAt(nytt, fore.parent!.getChildIndex(fore) + 1);
@@ -51,8 +51,9 @@ export class Ikoner {
   private n = 0;
   private bilder: PIXI.Sprite[] = []; // egna bilder, så att lagret kan dela med annat (figurLayer)
   // skugga: bilderna kastar en skugga på marken (steg 5.1.8, ui/skugga.ts): den ritade halvgenomskinliga skuggan tas ur bilden
-  // och läggs i skuggbilden, där marken blir ett steg mörkare i paletten
-  constructor(readonly layer: PIXI.Container, readonly skugga = false) {}
+  // och läggs i skuggbilden, där marken blir ett steg mörkare i paletten. rorlig: bilderna flyttar sig ofta (djuren, rövarbytet),
+  // och deras skuggor ligger i skuggbildens lilla rörliga del, så att den fasta delen inte ritas om när de går (steg 12.1.182)
+  constructor(readonly layer: PIXI.Container, readonly skugga = false, readonly rorlig = false) {}
   start() { this.n = 0; }
   // x, y = bildens övre vänstra hörn. Ingen bild vrids: det som står vridet har en egen bild (steg 3.10.7)
   add(k: string, x: number, y: number, sc: number, tint = 0xffffff) {
@@ -60,7 +61,7 @@ export class Ikoner {
     let sp = this.bilder[this.n++];
     if (!sp) { sp = new PIXI.Sprite(); this.bilder.push(sp); this.layer.addChild(sp); }
     sp.texture = ikonUtanSkugga(k); sp.scale.set(sc); // den halvgenomskinliga skuggan i bilden ritas aldrig som den är (steg 5.5.1): i ett lager med skugga blir den skuggbild, annars tas den bort
-    (sp as PIXI.Sprite & { skuggIkon?: string }).skuggIkon = this.skugga ? k : undefined; sp.tint = tint; sp.visible = true;
+    const ss = sp as PIXI.Sprite & { skuggIkon?: string; skuggRor?: boolean }; ss.skuggIkon = this.skugga ? k : undefined; ss.skuggRor = this.rorlig; sp.tint = tint; sp.visible = true;
     sp.position.set(x, y); sp.zIndex = y + iconCanvas(k).height * sc; // bildens nederkant, i ett lager som sorteras
   }
   end() { for (let i = this.n; i < this.bilder.length; i++) this.bilder[i].visible = false; }

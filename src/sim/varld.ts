@@ -14,7 +14,7 @@ import { enOrd, stor } from './ord';
 import { kladNyckel } from './klader';
 import { KARTA, behoverStorreKarta, storreKarta } from './kartflytt';
 import { VAR, nyKalender } from './tid';
-import { ageOf, getRel, log, newPerson, startSkills, think } from './folk';
+import { ageOf, getRel, log, newPerson, nyPerson, startSkills } from './folk';
 import { newSeder, sederTarget } from './seder';
 import { rnd } from './slump';
 import { DAY, MIN, Person, State, simulera, useMap } from './typer';
@@ -23,6 +23,8 @@ import { hogtidForm, hogtidVarde, hogtider } from './kult';
 import { newFire } from './eld';
 import { laggGruvor } from './gruva';
 import { varldMark } from './varlden';
+import { tanke, tankeNyckel } from './tankar';
+import { ACTS } from './handlingar';
 
 // ---------- skapa värld ----------
 // storlek: kartans storlek, för testerna av äldre byar (en ny by får KARTA.bredd × KARTA.hojd, kartflytt.ts)
@@ -150,7 +152,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     const o = s as unknown as Record<string, unknown>;
     delete o.strider; delete o.djurStrider;
     for (const f of rovarFlockar(s)) if (f) delete (f as unknown as Record<string, unknown>).strid;
-    for (const p of s.people) { delete p.framme; if (p.task?.act === 'strid' && !s.kartStrider?.length) p.task.until = Math.min(p.task.until, s.now); }
+    for (const p of s.people) { p.framme = undefined; if (p.task?.act === 'strid' && !s.kartStrider?.length) p.task.until = Math.min(p.task.until, s.now); }
   }],
   [37, 'v527: timret är virke (steg 10.2.70): väggarna står kvar, och det som burits till en timmervägg räknas om från ved till virke (5 ved är 1 virke)', s => {
     for (const b of s.byggen ?? []) if (b.m === 'timmer') { b.mat = Math.min(MATERIAL.timmer!.n, Math.round(b.mat / 5)); if (b.lm !== undefined) b.lm = Math.round(b.lm / 5); }
@@ -283,19 +285,36 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     if (st.pabud) { const pb = st.pabud as Record<string, number>; delete pb.lagskrift; delete pb.fangelse; }
     if (st.fragor) st.fragor = st.fragor.filter(f => f.f !== 'pabud');
   }],
+  [62, 'rensningarna som förr gjordes vid varje inläsning görs en gång (steg 12.1.163): tabun (steg 10.2.41), väggbrädet (steg 10.2.47), den gamla sjukklockan (steg 12.1.91) och hötuvorna (steg 10.10.9)', s => {
+    { const g = s as State & { tabun?: unknown; tabuAkt?: unknown }; delete g.tabun; delete g.tabuAkt; }
+    if (s.stationer?.some(t => (t.k as string) === 'vaggbrade')) s.stationer = s.stationer.filter(t => (t.k as string) !== 'vaggbrade');
+    for (const p of s.people) { if (p.tek?.vaggbrade !== undefined) delete p.tek.vaggbrade; delete (p as { sickUntil?: number }).sickUntil; }
+    if (s.plockat) for (const k in s.plockat) if (k.startsWith('ho:')) delete s.plockat[k];
+  }],
+  [63, 'en person minns ett larm per sort (steg 12.1.211): det senaste larmet blir larmet av sin sort', s => {
+    const om = (p: { larm?: unknown }) => { const l = p.larm as { vad?: unknown } | undefined; if (l && typeof l.vad === 'string') p.larm = { [l.vad]: l }; };
+    for (const p of s.people) om(p);
+    for (const r of s.varld?.rader ?? []) for (const k of r.syn?.personer ?? []) if (k.kropp) om(k.kropp as { larm?: unknown });
+  }],
+  [64, 'en uppgift vars handling inte längre finns (flyttLager, steg 12.1.78) töms hos alla, också gästerna (steg 12.1.231); de väckta byarna uppgraderas var för sig när de läses', s => {
+    for (const p of s.people) if (p.task && !(p.task.act in ACTS)) p.task = undefined;
+  }],
+  [65, 'varje tanke bär nyckeln till sin rad i TANKAR (steg 12.1.234): en sparad tanke utan nyckel får raden vars mönster passar bäst, och en tanke utan rad tas bort', s => {
+    for (const p of s.people) p.thoughts = p.thoughts.flatMap(t => { if (t.k !== undefined) return [t]; const k = tankeNyckel(t); return k ? [{ ...t, k }] : []; });
+  }],
+  [66, 'en by som har eller har haft tamdjur har fått sitt första (steg 12.1.254): räknaren forstaTamdjur sätts, så att notisen om det första inte kommer', s => {
+    const haft = (s.tamdjur?.length ?? 0) > 0 || Object.keys(s.stat ?? {}).some(k => k.startsWith('tam_') && (s.stat![k] ?? 0) > 0);
+    if (haft && !s.stat?.forstaTamdjur) (s.stat ??= {}).forstaTamdjur = 1;
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }
 function uppgradera(s: State) {
   if ((s.v ?? 1) < ALDSTA_SPARNING) throw new ForGammalBy(s.v ?? 1);
-  { const g = s as State & { tabun?: unknown; tabuAkt?: unknown }; delete g.tabun; delete g.tabuAkt; } // tabun togs bort (steg 10.2.41)
-  if (s.stationer?.some(t => (t.k as string) === 'vaggbrade')) s.stationer = s.stationer.filter(t => (t.k as string) !== 'vaggbrade'); // väggbrädet togs bort (steg 10.2.47)
-  for (const p of s.people) if (p.tek?.vaggbrade !== undefined) delete p.tek.vaggbrade;
-  for (const p of s.people) delete (p as { sickUntil?: number }).sickUntil; // den gamla sjukklockan (före steg 9.5.1) togs bort (steg 12.1.91)
-  if (s.plockat) for (const k in s.plockat) if (k.startsWith('ho:')) delete s.plockat[k]; // hötuvorna finns inte: höet är gräset (steg 10.10.9)
   useMap(s);
   if (behoverStorreKarta(s)) storreKarta(s); // först av allt, innan något räknats på den gamla kartan (steg 2.10.9, kartflytt.ts)
   for (const [n, , gor] of UPPGRADERINGAR) if ((s.v ?? 1) < n) { gor(s); s.v = n; }
+  s.people = s.people.map(nyPerson); // alla i mallens form (prestanda, nr 781, folk.ts MALL)
   return s;
 }
 export function pair(s: State, a: Person, b: Person, silent = false) {
@@ -304,7 +323,7 @@ export function pair(s: State, a: Person, b: Person, silent = false) {
   r.par = s.now; r.gift = silent ? s.now : undefined; // de som kommer som par (de första och de som vandrar in) är redan gifta (steg 3.1.1)
   if (!silent) {
     log(s, `${a.name} och ${b.name} blev ett par.`, 'rel', [a.id, b.id]);
-    think(a, `Blev tillsammans med ${b.name}`, 0.15, s.now, DAY);
-    think(b, `Blev tillsammans med ${a.name}`, 0.15, s.now, DAY);
+    tanke(a, 'tillsammans', s.now, { namn: b.name });
+    tanke(b, 'tillsammans', s.now, { namn: a.name });
   }
 }

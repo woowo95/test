@@ -8,7 +8,7 @@ import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
 import { medTal, testBy, stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank, utanWebblasare, styreTimme } from './hjalp';
-import { garIBilden, stalle, SITTA, vidArbetet } from '../../ui/stalle';
+import { type BildSteg, bildSteg, garNu, simPlats, stalle, sittande, vidArbetet, vidStationen } from '../../ui/stalle';
 import { styre as styreFlikF } from '../../ui/flikar/styre';
 import { setByn, ui as uiLage } from '../../ui/lage';
 import { hjalpKlick } from '../../ui/hjalp';
@@ -1529,6 +1529,56 @@ SCENARIER.vapentycke = {
   },
 };
 
+SCENARIER.larm2 = {
+  text: 'Fler larm (steg 12.1.142): den som ser en björn nära byn ropar, och den som ser vattnet stiga mot husen ropar; ropen går vidare som de andra larmen',
+  kor: () => {
+    const { T } = SIM;
+    // björnen: en person ställs bredvid den, med och utan att björnen räknas som nära byn
+    const b0 = createState(6, START), mor = (t: number) => SIM.bjornarOf(b0, t).find(d => d.art === 'bjorn');
+    let tNara: number | undefined, tLangt: number | undefined;
+    for (let t = b0.now; t < b0.now + 90 * DAY && (tNara === undefined || tLangt === undefined); t += 20 * 60_000) {
+      const m = mor(t); if (!m) continue;
+      const u = SIM.utanforByn(b0, m.x, m.y);
+      if (u <= SIM.BJORNMOTE.larmNara - 1) tNara ??= t; else if (u > SIM.BJORNMOTE.larmNara + 5) tLangt ??= t;
+    }
+    const bjorn = (t: number | undefined) => {
+      if (t === undefined) return { p: 'ingen tid', q: 'ingen tid' };
+      const k = SIM.cloneState(b0); k.now = t;
+      const m = SIM.bjornarOf(k, t).find(d => d.art === 'bjorn')!, [p, q] = living(k);
+      for (const x of living(k)) { x.x = 2; x.y = 2; x.larm = undefined; x.task = undefined; }
+      p!.x = m.x + 1; p!.y = m.y; q!.x = m.x + 6; q!.y = m.y;
+      SIM.bjornSteg(k);
+      return { p: p!.larm?.bjorn?.vad, q: q!.larm?.bjorn?.vad };
+    };
+    const bNara = bjorn(tNara), bLangt = bjorn(tLangt);
+    // översvämningen: vattnet stiger till en ruta två steg från ett hus, eller långt från husen
+    const harHus = (b: SIM.State) => { for (let i = 0; i < SIM.W * SIM.W; i++) if (SIM.roofed(b, i % SIM.W, Math.floor(i / SIM.W))) return true; return false; };
+    const s = testBy(3, harHus), fore = SIM.vattenNu(s), folk = living(s);
+    let hus = -1;
+    for (let i = 0; i < fore.length && hus < 0; i++) if (SIM.roofed(s, i % SIM.W, Math.floor(i / SIM.W))) hus = i;
+    const flod = (i: number) => {
+      const k = SIM.cloneState(s), efter = Uint8Array.from(fore), x = i % SIM.W, y = Math.floor(i / SIM.W);
+      efter[i] = T.Vatten;
+      const lev = living(k);
+      for (const q of lev) { q.x = 2; q.y = 2; q.larm = undefined; q.task = undefined; q.ute = undefined; }
+      lev[0]!.x = x + 0.5; lev[0]!.y = y + 3.5; lev[1]!.x = x + 10.5; lev[1]!.y = y + 0.5;
+      SIM.flodRop(k, fore, 1, efter);
+      return { ser: lev[0]!.larm?.flod?.vad, hor: lev[1]!.larm?.flod?.vad, n: (k.stat?.['flod larm'] as number | undefined) ?? 0 };
+    };
+    const utanHus = (i: number) => { const x = i % SIM.W, y = Math.floor(i / SIM.W); for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) if (SIM.roofed(s, x + dx, y + dy)) return false; return x > 12 && y > 12 && x < SIM.W - 12 && y < SIM.W - 12; };
+    let langt = -1;
+    for (let i = 0; i < fore.length && langt < 0; i++) if (fore[i] !== T.Vatten && utanHus(i)) langt = i;
+    const fNara = hus >= 0 ? flod(hus + 2) : undefined, fLangt = langt >= 0 ? flod(langt) : undefined;
+    return [
+      [`björnen nära byn: den som ser den ropar (${bNara.p ?? 'inget'}) och den bredvid hör (${bNara.q ?? 'inget'})`, bNara.p === 'bjorn' && bNara.q === 'bjorn'],
+      [`björnen långt från byn: inget larm (${bLangt.p ?? 'inget'})`, bLangt.p === undefined],
+      ['larmen har ord', !!SIM.LARM_VAD.bjorn && !!SIM.LARM_VAD.flod],
+      [`testbyn har ett hus (${folk.length} invånare)`, hus >= 0],
+      [`vattnet stiger nära ett hus: den som ser det ropar (${fNara?.ser ?? 'inget'}) och den som är tio rutor bort hör (${fNara?.hor ?? 'inget'})`, fNara?.ser === 'flod' && fNara.hor === 'flod' && fNara.n === 1],
+      [`vattnet stiger långt från husen: inget larm (${fLangt?.ser ?? 'inget'})`, fLangt?.ser === undefined && fLangt?.n === 0],
+    ];
+  },
+};
 SCENARIER.larm = {
   text: 'Varningar, larm och dimma (steg 3.7.11): ropet från ett slagsmål hörs runt 15 rutor, längre på natten, och sprids vidare genom byn med storleken lite förvrängd; den som har ett utbrott kan ropa falskt larm; dimman ligger på morgonen och mest på hösten, gör att man ser kortare och träffar sämre på avstånd',
   kor: () => {
@@ -1537,7 +1587,7 @@ SCENARIER.larm = {
     folk.forEach((q, i) => { q.x = 10 + i * 5; q.y = 10; q.task = undefined; q.larm = undefined; });
     while (!SIM.isLight(t.now)) t.now += HOUR;
     const dag = SIM.larma(t, 'slagsmål', 2, [p]);
-    const leden = Math.max(0, ...dag.map(q => q.larm!.led));
+    const leden = Math.max(0, ...dag.map(q => q.larm!['slagsmål']!.led));
     // långt bort: en ensam på 20 rutor hör inte på dagen, men på natten
     folk.forEach((q, i) => { q.x = 10 + i * 40; q.larm = undefined; }); const r = folk[1]; r.x = p.x + 20;
     const dagLangt = SIM.larma(t, 'slagsmål', 2, [p]).includes(r);
@@ -1548,16 +1598,16 @@ SCENARIER.larm = {
     let forvrangt = false;
     for (let i = 0; i < 20 && !forvrangt; i++) {
       folk.forEach((q, j) => { q.x = 10 + j * 5; q.larm = undefined; });
-      forvrangt = SIM.larma(t, 'fara', 4, [p]).some(q => q.larm!.storlek !== 4);
+      forvrangt = SIM.larma(t, 'fara', 4, [p]).some(q => q.larm!.fara!.storlek !== 4);
     }
     // ett slagsmål i byn: de som slåss ropar
     folk.forEach((q, j) => { q.x = 10 + j * 3; q.larm = undefined; q.task = undefined; });
     const fore = t.stat?.larm ?? 0;
     stridIByn(t, 'slagsmal', [[folk[0]], [folk[1]]], 'för att pröva');
-    const slagsmal = (t.stat?.larm ?? 0) > fore && folk.slice(2).some(q => q.larm?.vad === 'slagsmål');
+    const slagsmal = (t.stat?.larm ?? 0) > fore && folk.slice(2).some(q => q.larm?.['slagsmål'] !== undefined);
     // falskt larm ur ett utbrott
     let falskt = false;
-    for (let i = 0; i < 200 && !falskt; i++) { folk.forEach(q => { q.larm = undefined; }); SIM.utbrottBorjar(t, p, 'krossa'); falskt = folk.some(q => q.larm?.falskt); }
+    for (let i = 0; i < 200 && !falskt; i++) { folk.forEach(q => { q.larm = undefined; }); SIM.utbrottBorjar(t, p, 'krossa'); falskt = folk.some(q => q.larm?.fara?.falskt); }
     // dimman: ett år i sex byar
     const morgon = [0, 0], hostVar = [0, 0];
     for (const seed of [1, 2, 3, 4, 5, 6]) {
@@ -1587,8 +1637,8 @@ SCENARIER.larm = {
     const jagare = bf[3]; jagare.x = eld.x; jagare.y = y0 + (y0 < 60 ? 1 : -1) * (SIM.ROVARE.horhall + 8);
     const gang = rovarGang(b, 3, { x: bf[0].x + sida * (SIM.ROVARE.folkSer - 4), y: y0 });
     let varnar = false, jagareFick = false;
-    korTills(b, () => bf.slice(0, 3).every(q => q.larm?.varnat), 300, () => { if (bf.some(q => q.task?.act === 'varna')) varnar = true; if (jagare.larm) jagareFick = true; });
-    const led = bf.slice(0, 3).map(q => q.larm?.led ?? -1), vst = b.stat ?? {};
+    korTills(b, () => bf.slice(0, 3).every(q => q.larm?.rovare?.varnat), 300, () => { if (bf.some(q => q.task?.act === 'varna')) varnar = true; if (jagare.larm) jagareFick = true; });
+    const led = bf.slice(0, 3).map(q => q.larm?.rovare?.led ?? -1), vst = b.stat ?? {};
     const sag = led[0] === 0 && gang.sedd !== undefined, ledvis = led[1] >= 1 && led[2] > led[1];
     return [
       [`den som ser rövarna får larmet själv (led ${led[0]}) och väljer att varna (handlingen ${SIM.ACTS.varna?.namn ?? 'saknas'}: ${varnar})`, sag && varnar && !!SIM.ACTS.varna],
@@ -2786,25 +2836,45 @@ SCENARIER.anfallet = {
 };
 
 SCENARIER.stalle = {
-  text: 'Steg 10.2.55 och 12.1.13: figuren sitter bara på en sittplats och går bara när simuleringen flyttar den. En by går tolv timmar med spåren påslagna som i spelet, och varje person prövas flera gånger i varje slag med bildens egen indata (garIBilden och stalle i ui/stalle.ts): ingen ritas sitta utan en sittplats, ingen går när spåret står still (utom leken, som går mellan sina punkter), den som samtalar utan sittplats står, och den som arbetar med en ruta står intill den',
+  text: 'Steg 10.2.55, 12.1.13, 12.1.129 och 12.1.154: figuren sitter bara på en sittplats och går bara när platsen i simuleringen ändrats sedan förra bilden. En by går tolv timmar med spåren påslagna som i spelet, och varje person prövas flera gånger i varje slag med bildens egen indata (garIBilden och stalle i ui/stalle.ts): ingen ritas sitta utan en sittplats, ingen går när spåret står still (utom leken, som går mellan sina punkter), den som samtalar utan sittplats står, och den som arbetar med en ruta står intill den och vid en station är vänd mot den',
   kor: () => {
     const s = createState(7, START); klockan(s, 8); medHus(s); SIM.setAmount(s, 'yxa', 2); tidyTools(s); // yxorna: någon fäller och hugger (steg 10.2.78)
-    let sittUtan = 0, garStilla = 0, sitter = 0, gar = 0, star = 0, forst = '', arbeten = 0, felArbete = 0;
+    let sittUtan = 0, garStilla = 0, sitter = 0, gar = 0, star = 0, forst = '', arbeten = 0, felArbete = 0, vidSt = 0, felSt = 0, garUtan = 0, sammaBild = 0, sammaGar = 0;
+    const forraPlats = new Map<number, { x: number; y: number }>(), forraBild = new Map<number, BildSteg>(), egenForra = new Map<number, { x: number; y: number }>();
+    let motRikt = 0;
+    // vänd mot bänken (steg 12.1.154): stationen ligger åt det håll figuren är vänd, sett från där hen står
+    const motSt = (t: SIM.Station, x: number, y: number, rikt: string) => {
+      const q = SIM.arbetsDel(t), cx = q.x + q.w / 2, cy = q.y + q.h / 2;
+      return { bak: cy < y, fram: cy > y, sida: cx > x, vast: cx < x }[rikt] && (rikt === 'bak' || rikt === 'fram' ? Math.abs(cy - y) >= Math.abs(cx - x) : Math.abs(cx - x) > Math.abs(cy - y));
+    };
+    const provSt: SIM.Station[] = [];
+    { const b = createState(7, START); medHus(b); for (const k of ['slaktbank', 'klyvplats', 'stenhuggarplats', 'smedja', 'vavstol']) { const t = medBank(b, k); if (t) provSt.push(t); }
+      for (const t of provSt) { const d = SIM.stationDef(t.k)!, at = SIM.vidStation(t);
+        for (const [dx, dy] of [[0, 0], [0.6, 0], [-0.6, 0], [0, 0.4]]) { const v = vidStationen(b, d.gor[0], at.x + dx, at.y + dy); vidSt++; if (!v || v.st !== t || !motSt(t, at.x + dx, at.y + dy, v.rikt)) { felSt++; forst ||= `vid ${t.k} vänd ${v?.rikt ?? 'ingenstans'}`; } } } }
     const per = new Map<string, { n: number; ga: number }>(); // per handling i ACTS: prov där hen gör den på platsen, och hur många av dem hen går
     SIM.spar.pa = true;
     try {
       for (let k = 0; k < STEG_TIM * 12; k++) {
         const t0 = s.now;
         step(s, 300);
+        { const t = t0 + (s.now - t0) * 0.5, m = new Map<number, { x: number; y: number }>(); for (const p of living(s)) { garNu(s, p, t, m); sammaBild++; if (garNu(s, p, t, m)) sammaGar++; } }
         for (const p of living(s)) for (let j = 0; j < 4; j++) {
           const t = t0 + (s.now - t0) * (j + 0.5) / 4, tk = SIM.sparUppgift(p, t, s.now), sp = SIM.sparPlats(p, t), x = sp?.x ?? p.x, y = sp?.y ?? p.y;
-          const rorde = garIBilden(s, p, t), flyttas = !!sp && !sp.still;
+          // gånganimationen (steg 12.1.129): benen bara när platsen i simuleringen ändrats sedan förra bilden
+          // bildens steg per bildruta (steg 12.1.257): samma bildSteg som bilden, med figuren på sin plats i simuleringen. Om platsen
+          // flyttats sedan förra bilden räknar scenariot själv, med sina egna förra platser
+          const nu = simPlats(s, p, t), fore = egenForra.get(p.id), flyttas = !!sp && !sp.still;
+          egenForra.set(p.id, nu);
+          const bs = bildSteg(forraBild, p.id, nu.x, nu.y, garNu(s, p, t, forraPlats)), rorde = bs.rorde;
+          if (rorde && (!fore || nu.x === fore.x && nu.y === fore.y)) { garUtan++; forst ||= `${p.name} går utan att ha flyttat sig (${tk?.act} ${tk?.phase})`; }
+          // den som går är aldrig vänd bort från hållet hen går åt
+          if (rorde && fore) { const dx = nu.x - fore.x, dy = nu.y - fore.y, langs = { sida: dx, vast: -dx, fram: dy, bak: -dy }[bs.rikt]; if (Math.abs(dx) + Math.abs(dy) > 0.01 && langs < 0) { motRikt++; forst ||= `${p.name} går baklänges (${bs.rikt}, ${dx.toFixed(2)}, ${dy.toFixed(2)})`; } }
           const ligger = tk?.act === 'sova' && tk.phase === 'do' || !SIM.kanGa(p), gor = tk?.phase === 'do' ? tk.act : undefined;
           const l = stalle(s, { ligger, gor, x, y, vidBank: false, rorde });
           if (gor) { const r = per.get(gor) ?? { n: 0, ga: 0 }; r.n++; if (l === 'ga') r.ga++; per.set(gor, r); }
           if (l === 'sitta') { sitter++; if (!SIM.sittAt(s, x, y)) { sittUtan++; forst ||= `${p.name} sitter utan sittplats (${tk?.act})`; } }
           if (l === 'ga') { gar++; if (!flyttas && (ACTS as Record<string, { slag?: string }>)[gor ?? '']?.slag !== 'leka') { garStilla++; forst ||= `${p.name} går när spåret står still (${tk?.act} ${tk?.phase})`; } }
-          if (l === 'sta' && gor && SITTA.has(gor)) star++;
+          if (l === 'sta' && gor && sittande(gor)) star++;
           // stå vid arbetet (steg 10.2.78): den som arbetar med en ruta ritas på en ruta intill och vänd mot den
           const va = gor ? vidArbetet(s, gor, x, y) : undefined;
           if (va) {
@@ -2812,6 +2882,8 @@ SCENARIER.stalle = {
             const rx = Math.floor(x), ry = Math.floor(y), vx = Math.floor(va.x), vy = Math.floor(va.y), mot = { bak: ry < vy, fram: ry > vy, sida: rx > vx, vast: rx < vx }[va.rikt];
             if (rx === vx && ry === vy || Math.abs(rx - vx) + Math.abs(ry - vy) !== 1 || !mot) { felArbete++; forst ||= `${p.name} ${gor} på sin egen ruta eller med ryggen mot arbetet`; }
           }
+          const vs = gor && !va && l !== 'ga' && l !== 'ligga' ? vidStationen(s, gor, x, y) : undefined;
+          if (vs) { vidSt++; if (!motSt(vs.st, x, y, vs.rikt)) { felSt++; forst ||= `${p.name} ${gor} vid ${vs.st.k} med ryggen mot den`; } }
         }
       }
     } finally { SIM.spar.pa = false; SIM.spar.v = new WeakMap(); SIM.spar.u = new WeakMap(); }
@@ -2825,6 +2897,10 @@ SCENARIER.stalle = {
       [`bildens indata prövad för ${sedda.length} handlingar i ACTS`, sedda.length >= 10],
       [`den som samtalar utan sittplats står (${star} gånger)`, star > 0],
       [`den som arbetar med en ruta står intill och är vänd mot den (${arbeten} gånger, ${felArbete} fel; steg 10.2.78)`, arbeten > 0 && felArbete === 0],
+      [`ingen ritas med gånganimationen utan att platsen i simuleringen ändrats sedan förra bilden (${garUtan} gånger; steg 12.1.129)`, garUtan === 0],
+      [`den som går i bilden är aldrig vänd bort från hållet hen går åt (${motRikt} gånger; bildSteg, steg 12.1.257)`, motRikt === 0],
+      [`samma bild två gånger vid samma tid: ingen går i den andra (${sammaGar} av ${sammaBild})`, sammaBild > 0 && sammaGar === 0],
+      [`den som arbetar vid en station är vänd mot den (${vidSt} gånger vid ${provSt.map(t => t.k).join(', ')} och i byn, ${felSt} fel; steg 12.1.154)`, provSt.length >= 4 && vidSt > 0 && felSt === 0],
     ];
   },
 };
@@ -2946,7 +3022,7 @@ SCENARIER.vaktser = {
     for (let i = 0; i < 20 && f.sedd === undefined; i++) step(s, 1);
     return [
       [`vakten står ${d.toFixed(0)} rutor från gänget på rastplatsen, på andra sidan byn (folk ser ${SIM.ROVARE.folkSer})`, !!rast && d > SIM.ROVARE.lur],
-      [`vakten ser gänget och vet om det (${f.sedd !== undefined ? 'ja' : 'nej'})`, f.sedd !== undefined && vakt.larm?.vad === 'rovare'],
+      [`vakten ser gänget och vet om det (${f.sedd !== undefined ? 'ja' : 'nej'})`, f.sedd !== undefined && vakt.larm?.rovare !== undefined],
     ];
   },
 };
@@ -3045,7 +3121,7 @@ SCENARIER.ryktesarv = {
     t.seder.v.fortjanst = 0;
     // delarna som inte är viktigast skiftar från dygn till dygn: inom tio dygn står det med
     let besk = '';
-    for (let d = 0; d < 10 && !besk.includes(`till ${far.name}, som byn kallar`); d++) { besk = SIM.beskrivning(t, son); t.now += SIM.DAY; }
+    for (let d = 0; d < 10 && !besk.includes(`${far.name}, som byn anser vara`); d++) { besk = SIM.beskrivning(t, son); t.now += SIM.DAY; }
     SIM.die(t, far, 'alderdom'); const dod = SIM.arvAnseende(t, son.id).a;
     return [
       [`en fjärdedel av tjuvryktet (${mitt.toFixed(2)}, väntat ${(tjuv / 4).toFixed(2)}); ryktet rik har ingen händelse bakom sig och räknas inte`, Math.abs(mitt - tjuv / 4) < 1e-9],
@@ -3053,7 +3129,7 @@ SCENARIER.ryktesarv = {
       [`hälften vid full Härkomst (${hark.toFixed(2)}), inget vid full Förtjänst (${fort.toFixed(2)})`, Math.abs(hark - tjuv / 2) < 1e-9 && fort === 0],
       [`bara ett led: barnbarnet ärver inget (${bb})`, bb === 0],
       [`också när föräldern är död (${dod.toFixed(2)})`, Math.abs(dod - mitt) < 1e-9],
-      [`beskrivningen: "${besk}"`, besk.includes(`son till ${far.name}, som byn kallar en tjuv`)],
+      [`beskrivningen: "${besk}"`, besk.includes(`${far.name}, som byn anser vara en tjuv`) && /\bson\b/.test(besk)],
     ];
   },
 };

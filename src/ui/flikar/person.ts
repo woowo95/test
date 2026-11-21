@@ -1,6 +1,6 @@
 import { styck } from '../../sim/ord';
 import { gen } from '../../sim/ord';
-import { areaCenter, larmRollNu, LARMHOT, ROLLNAMN, blodSteg, BLODSTEG, tidKvar, VARD, vardNasta, hp, sjukText, personRader, PERSONLOGG, gastLever } from '../../sim';
+import { areaCenter, larmRollNu, LARMHOT, ROLLNAMN, blodSteg, BLODSTEG, tidKvar, VARD, vardNasta, hp, sjukText, personRader, PERSONLOGG, gastLever, varmeText } from '../../sim';
 import { kvOf, paSigVikt, klanById, FORMAGOR, gangDelar, HALSA, Kroppsdel, KROPPSDELAR, NARING, NARINGAR, NARINGBAL, bristGrad, bristerNu, frysFaktor, naringNu, sjunker, skorbjugg, vilaTim, TORST, blodning, delSkada, halsa, skadeLista, skadeText, smarta, torstDelar } from '../../sim';
 import { vana, pratText, relationText, beskrivning, binamnInfo, INTRYCK, Intryck, IntryckTyp, anseendeText, arvAnseende, intryckOm, LARDOMAR, LKind, anseendeSym, dodSymbol, intryckText, samlatIntryck, SKILL_STAT, gjortDygn, ACTS, ALDER, Act, DAY, Lardom, HUMOR, SKILL_GOR, STAT_GOR, Skill, Stat, coldOf, halsaLage, hearthOf, living, roomAt, temperature, varmeDelar, varmeRaknas, viloSlag, viloTak, takEffekt, SLAG, SLAG_TECKEN, Person, KUNSKAPER, SKILLS, SKILL_NAMES, STATS, STAT_NAMES, SEDER, SED_LIST, sedOppen, TEKNIK, BYN, formogenhetDelar, Ting, halvKlar, ageOf, alive, byId, childrenOf, drar, heldBy, ownedBy, PLATSER, PLATS_LIST, Plats, handOrkar, handPlatser, capacity, kvNamn, handerFor, load, utrustning, bordaIHander, type IHanden, viktOf, SAKER, ownedStock, sakNamn, slagIkon, tingNamn, STACK, describe, duty, habitShare, habitTotal, KROPP, kortTal, moodOf, REL, relKey, relTyper, stat, timeLabel, vidBordet, upplevelseText, uppEffekt, vuxenUpp, Upplevelse, yrkeNamn, andlighet, troOf, tolkning, teckenText, troNamn, pratarMed, gastRelationer, actIkon, utbIkon, AMNEN, type ByteMinne, type GastRel, type Slakting, stacksOf, grundvarde, tingVarde, housesOf, husVarde } from '../../sim';
 import { gorText } from '../jakt';
@@ -13,7 +13,7 @@ import { gravidDel, gravidKvar } from '../../sim/steg';
 import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, durTxt, esc, fallUt, hjalpKnapp, kvKnapp, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD, opOrd, tioSkala, varorSym } from '../hjalp';
 import { s, ui, uppgiftVid } from '../lage';
 import { tekInfo } from './teknik';
-import { pliktDelar, VANA_AR } from '../../sim';
+import { pliktDelar, VANA_AR, ylleYtter } from '../../sim';
 import { fritidLista } from './fram';
 import { gastById, gastRad, type Gast } from '../gaster';
 import type { Flik } from '../panel';
@@ -186,7 +186,8 @@ function presHtml(p: Person) {
     .map(k => { const sed = SEDER[k], namn = d[k] > 0 ? sed.pos : sed.neg; return `<span class="tro" title="${esc(`${namn}. ${sed.effect}`)}">${vagSvg(Math.min(5, Math.max(1, Math.round(Math.abs(d[k]) * 5))), d[k] < 0 ? -1 : 1, 1)}${esc(namn)}</span>`; });
   const mening = beskrivning(s, p).split(/(?<=[.!?])\s+/), bid = `besk-${p.id}`, merOppen = hjalpOppen(bid);
   const besk = `<p class="besk">${esc(mening.slice(0, 2).join(' '))}${mening.length > 2 ? `${merOppen ? ' ' + esc(mening.slice(2).join(' ')) : ''} <span class="lank falla" ${fallUt(bid)}>${merOppen ? 'mindre' : 'mer'}</span>` : ''}</p>`;
-  const fam = (rel: string, qs: (Person | undefined)[]) => { const f = qs.filter((q): q is Person => !!q); return f.length ? f.map(q => `<button type="button" class="famp" data-id="${q.id}" title="${esc(`${rel}: ${q.name}`)}">${portrattImg(skapad(s, q), 'liten')}<span>${esc(q.name)}</span><small class="muted">${esc(rel)}</small></button>`).join('') : ''; };
+  // den som dött eller flyttat står som det (steg 12.1.51), blekt
+  const fam = (rel: string, qs: (Person | undefined)[]) => { const f = qs.filter((q): q is Person => !!q); return f.length ? f.map(q => { const r = q.died !== undefined ? `${rel}, död` : q.left !== undefined ? `${rel}, flyttat` : rel; return `<button type="button" class="famp${r === rel ? '' : ' borta'}" data-id="${q.id}" title="${esc(`${r}: ${q.name}`)}">${portrattImg(skapad(s, q), 'liten')}<span>${esc(q.name)}</span><small class="muted">${esc(r)}</small></button>`; }).join('') : ''; };
   const famHtml = fam('förälder', [byId(s, p.mother), byId(s, p.father)]) + fam('partner', [byId(s, p.partner)]) + fam('barn', kids);
   const t = lever ? uppgiftVid(p) : undefined, h = halsaKort(p);
   return `${besk}<dl class="kv fam"><dt>Ålder</dt><dd>${Math.floor(a)} år · ${p.sex === 'k' ? 'kvinna' : 'man'} · född ${timeLabel(s, p.born)}${p.fran !== undefined ? ` · från ${esc(klanById(s, p.fran)?.namn ?? 'en grannklan')}` : ''}</dd>
@@ -274,7 +275,7 @@ function behovHtml(p: Person) {
   // bara det som räknas vid personens värme (varmeRaknas i steg.ts): under idealet elden, kylan och milt väder, vid och över
   // det hettan, det som kyler mer än elden värmer och att kroppen svalnar (steg 2.3.4)
   const r = varmeRaknas(p.warm, v);
-  const kylan = `Kylan, ${Math.round(temp)} grader${v.shelter > 0 ? `, huset skyddar ${Math.round(v.shelter * 100)} %` : ''}${v.fall > 0 ? `, skinnfällen ${Math.round(v.fall * 100)} %` : ''}${v.klad > 0 ? `, kläderna ${Math.round(v.klad * 100)} %` : ''}${frysFaktor(p) > 1 ? `, brist på fett: ${Math.round((frysFaktor(p) - 1) * 100)} % mer` : ''}${v.vaderGrader > 0.5 ? `, ${v.blot > 0.1 ? 'blöt' : 'blåsten'}: känns ${Math.round(v.vaderGrader)} grader kallare` : ''}`;
+  const kylan = `Kylan, ${Math.round(temp)} grader${v.shelter > 0 ? `, huset skyddar ${Math.round(v.shelter * 100)} %` : ''}${v.fall > 0 ? `, skinnfällen ${Math.round(v.fall * 100)} %` : ''}${v.klad > 0 ? `, kläderna ${Math.round(v.klad * 100)} %` : ''}${frysFaktor(p) > 1 ? `, brist på fett: ${Math.round((frysFaktor(p) - 1) * 100)} % mer` : ''}${v.vaderGrader > 0.5 ? `, ${v.blot > 0.1 ? 'blöt' : 'blåsten'}: känns ${Math.round(v.vaderGrader)} grader kallare${v.blot > 0.1 && ylleYtter(s, p) ? ' (yllet håller värmen, hälften så mycket)' : ''}` : ''}`;
   const varme: Orsak[] = r.under ? [
     ...v.eld > 0 ? [{ namn: 'Elden värmer', v: v.eld }] : [],
     ...v.kyla > 0 ? [{ namn: kylan, v: -v.kyla }] : [],
@@ -524,7 +525,7 @@ function gearHtml(p: Person) {
     const pl = PLATSER[k], x = u[k], cls = stor ? ' stor' : '';
     if (x.ting) {
       const h = handerFor(s, p, x.ting.k);
-      const title = `${pl.namn}: ${sakNamn(x.ting.k).toLowerCase()}${x.ting.q !== undefined ? `, ${kvNamn(x.ting).toLowerCase()}` : ''}, ${whose(x.ting)}, ${Math.round(x.ting.c * 100)} %, väger ${kg(viktOf(x.ting.k))}${SAKER[x.ting.k]?.klad?.varme ? `, värmer ${Math.round(SAKER[x.ting.k]!.klad!.varme * 100)} %` : ''}${pl.hand && h === 2 ? ', tar båda händerna' : ''}${k === 'krok' || k === 'krok2' ? x.ting.hos === p.id ? ', hänger i bältet medan hen bär' : ', hänger i bältet tills hen behöver det' : ''}${x.borda ? `; ${bordaTxt}` : ''}`;
+      const title = `${pl.namn}: ${sakNamn(x.ting.k).toLowerCase()}${x.ting.q !== undefined ? `, ${kvNamn(x.ting).toLowerCase()}` : ''}, ${whose(x.ting)}, ${Math.round(x.ting.c * 100)} %, väger ${kg(viktOf(x.ting.k))}${SAKER[x.ting.k]?.klad?.varme ? `, ${varmeText(SAKER[x.ting.k]!.klad!.varme).toLowerCase()}` : ''}${pl.hand && h === 2 ? ', tar båda händerna' : ''}${k === 'krok' || k === 'krok2' ? x.ting.hos === p.id ? ', hänger i bältet medan hen bär' : ', hänger i bältet tills hen behöver det' : ''}${x.borda ? `; ${bordaTxt}` : ''}`;
       const i = ting(x.ting, title, (k === 'vanster' && x.ting === u.hoger.ting ? 'kan hand pa' : 'kan hand') + cls, stor ? 36 : 16);
       const ik = (k === 'hoger' || k === 'vanster') && ih[k]?.k; // det som ligger i just den handen (steg 6.1.2)
       return x.borda && ik ? i.replace(/<\/span>$/, `<span class="antal">${iconImg(ik, 10)}</span>${antal(k)}</span>`) : i;

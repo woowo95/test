@@ -1,0 +1,84 @@
+{
+ "id": "ullsax",
+ "w": 8,
+ "h": 11,
+ "rader": [
+  "......QQ",
+  ".....QTQ",
+  "....QTSQ",
+  "...QTqRQ",
+  "..QTSRQ.",
+  "..QSRQ..",
+  ".QSQRQ..",
+  "QSQ.QRQ.",
+  "QSQ.QRQ.",
+  "QSRRRQ..",
+  ".QQQQ..."
+ ],
+ "ritad": 1,
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "Q": "#233035",
+  "R": "#3e5156",
+  "S": "#61767a",
+  "T": "#8a9c9e",
+  "q": "#bdb39b"
+ },
+ "versioner": [
+  {
+   "ide": "Stängd sax som ligger snett från nedre vänstra till övre högra hörnet: nere till vänster en rund, öppen U-böj av fjädern, ungefär 4 punkter bred med ett genomskinligt hål i mitten, och därifrån två smala skänklar som löper tätt ihop och vidgas till två breda skär. Skären ligger helt mot varandra och bildar en enda spetsig kil som slutar i en udd i övre högra hörnet. Järnet ritas i skiffer1 och skiffer2 med kontur i skiffer0, och de två halvorna speglar varandra kring den sneda mittlinjen. Skärens övre vänstra kant har en ljus egglinje i skiffer3 med en enda glanspunkt.",
+   "rader": [
+    "......QQ",
+    ".....QTQ",
+    "....QTSQ",
+    "...QTqRQ",
+    "..QTSRQ.",
+    "..QSRQ..",
+    ".QSQRQ..",
+    "QSQ.QRQ.",
+    "QSQ.QRQ.",
+    "QSRRRQ..",
+    ".QQQQ..."
+   ],
+   "om": "Stängd ullsax snett från nedre vänstra till övre högra hörnet, 8×11 punkter. Kontur i skiffer0. De två skären ligger mot varandra och bildar en kil med udden i övre högra hörnet. Den ljusa egglinjen i skiffer3 går längs skärets övre vänstra kant, med en enda dämpad glanspunkt i ben2. Skiffer2 och skiffer1 delar halvorna längs den sneda mittlinjen. Skänklarna delar sig nere till vänster i en rund U-böj av fjädern med ett litet genomskinligt hål. Ljuset kommer uppifrån vänster och den mörkare sidan ligger nere till höger. Granskningen: Inget behövde rättas, punkterna är oförändrade. Storleken är 8 × 11 och fyller rutan; bredvid kolonisten (14 × 20) är det en rimlig handsax. Saxen ligger platt på marken och ses ovanifrån, som en sak på marken ska. Den följer idén: den runda U-böjen med ett genomskinligt hål nere till vänster, två skänklar som delar sig och sedan möts, och skären som en spetsig kil med udden uppe till höger. Halvorna speglar varandra kring den sneda mittlinjen, och bara ljuset skiljer dem: egglinjen i skiffer3 ligger uppe till vänster och skiffer1 nere till höger och i böjens botten. Järnet har två till tre toner och en sluten kontur i skiffer0, så att det syns mot det olivgröna gräset. Glansen är en enda punkt i ben2, som inte är ren vit och därför följer reglerna."
+  },
+  {
+   "ide": "Öppen sax som ligger snett med fjäderböjen nere till vänster: de två skären glider isär och bildar ett smalt V, så att man ser två separata udd-spetsar uppe till höger med genomskinliga punkter mellan dem. Böjen är en tät, droppformad ögla och skänklarna går som två tunna band ut från den innan de breddas till trekantiga blad. Bladen ritas i skiffer2 med skiffer1-korn och kontur i skiffer0, och V:et är symmetriskt kring diagonalen. Bara det övre bladets ljusa sida och egg får skiffer3, så att det tydligt syns att saxen klipper genom att klämmas.",
+   "rader": [
+    "...QQ...",
+    "..QTQ...",
+    "..QTSQ..",
+    ".QTSRQ.Q",
+    ".QTSQ.QQ",
+    ".QSQ.QSQ",
+    ".QSQQSRQ",
+    ".QSQRQ..",
+    "QS.SQ...",
+    "QS.RQ...",
+    ".QQQ...."
+   ],
+   "om": "Ullsaxen ligger öppen och snett, med den droppformade fjäderböjen nere till vänster och ett hål i öglan. Skänklarna går som två smala band uppåt och breddas till två trekantiga blad. Bladen glider isär till ett smalt V med genomskinliga punkter mellan spetsarna uppe till höger. Det övre bladet har skiffer3 på sin ljusa sida och egg. Det högra bladet har skiffer2 med skiffer1-korn, och konturen är skiffer0 runt om. Bilden är 8 punkter bred och 11 hög. Granskningen: Oförändrad. Saxen är 8 × 11 punkter och fyller sin ruta. Den håller rätt storlek mot kolonisten (14 × 20), och som sak på marken ses den uppifrån utan att någon vinkel behöver rättas. Fjäderböjen sitter nere till vänster som en tät droppformad ögla med ett genomskinligt hål. Från den går två smala skänklar ut, och de breddas till två blad som slutar i separata uddar uppe till höger. Mellan uddarna går en diagonal rad genomskinliga punkter, så att det smala V:et syns. Bladen är skiffer2 med skiffer1 som korn och har kontur i skiffer0. Bara det övre bladets ljusa vänstra sida och egg har skiffer3, vilket stämmer med ljuset uppe till vänster och med idén. Den ljusa skiffern mot den mörka konturen syns tydligt mot oliv- och barrgräset. Det nedre bladet är något smalare än det övre, men det följer diagonalen och läses som ett andra skär. En ändring som gör det bredare skulle ta bort konturen mot bildkanten eller stänga V:et, så jag lät det vara."
+  },
+  {
+   "ide": "Stängd sax med en platt, nästan fyrkantig fjäderbåge nere till vänster, där järnet viks i en bred rak böj i stället för en rund ögla. Skänklarna närmast böjen är lindade med ett handtag av läderremsa i jord1 och jord2 med kontur i jord0, några punkter långt. Därefter tar två korta, breda skär med raka ryggar vid. De möts i en trubbig, något rundad udd uppe till höger, så att silhuetten blir kraftig och kantig i stället för spetsig. Järnet är skiffer1 och skiffer2 med kontur i skiffer0, och en glanspunkt i skiffer3 sitter på bladet uppe till vänster.",
+   "rader": [
+    ".....QQ.",
+    "....QTSQ",
+    "...QSSRQ",
+    "...QSQRQ",
+    "..QSQRQ.",
+    "..EGEFE.",
+    ".EHFGE..",
+    ".EGEFE..",
+    "QSQ.QRQ.",
+    "QSSSRRQ.",
+    "QQQQQQQ."
+   ],
+   "om": "Stängd ullsax som ligger snett från nedre vänstra till övre högra hörnet, 8 punkter bred och 11 hög. Nere till vänster sitter fjäderbågen. Den är platt och nästan fyrkantig, en bred rak böj av järn som slutar i en rak underkant av skiffer0. Ovanför bågen ligger de två skänklarna (skiffer2 och skiffer1) åtskilda av en kontur, och närmast bågen är de lindade med läderremsa i jord1 och jord2 med kontur i jord0, tre rader lång. Sedan tar de två korta, breda skären vid, med raka ryggar och skarven i skiffer0 mellan dem. De möts i en trubbig, rundad udd uppe till höger. Ljuset kommer uppifrån vänster: det vänstra skäret är skiffer2, det högra skiffer1, och glanspunkten i skiffer3 sitter på bladet uppe till vänster. Granskningen: Storleken (8 × 11), vinkeln, ljuset uppifrån vänster, glanspunkten i skiffer3 på bladet och läderlindningen i jord stämmer med reglerna och idén. Saxen syns på gräset tack vare konturen i skiffer0. Felet satt i fjädern: de tre nedersta raderna var ett fyllt järnblock och lästes inte som en böjd fjäder. Jag ritade om dem till en platt, nästan fyrkantig båge. De två skänklarna går ner var för sig med en genomskinlig punkt emellan och möts i en bred, rak böj längst ner. Böjen är ljus (skiffer2) till vänster och mörkare (skiffer1) till höger, med kontur i skiffer0. Resten av saxen är oförändrad."
+  }
+ ]
+}

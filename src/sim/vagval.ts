@@ -7,8 +7,14 @@ import { Fardsatt, VarldMark } from './varldmark';
 import { Varlden } from './varlden';
 import { rutKostnad } from './landmarken';
 import { LEDER, LED_IDS, ledFart } from './leder';
+import { balans } from './balans';
+import { DAY } from './typer';
 
-export interface VarldVag { fran: number; till: number; fs: Fardsatt; steg: string; kostnad: number; t: number } // steg: vagRutor packar upp
+export const VAGVAL = balans('vagval', {
+  glomDygn: 10, // en sparad väg som ingen gått på så länge glöms (steg 12.1.11; tio dygn, tio år i spelet), och räknas igen när någon går den
+});
+// steg: vagRutor packar upp; b: när vägen senast gicks (saknas den: t, när den räknades)
+export interface VarldVag { fran: number; till: number; fs: Fardsatt; steg: string; kostnad: number; t: number; b?: number }
 
 // kostnaden för varje ruta med ett färdsätt, räknad en gång per värld, färdsätt och platsernas antal
 const cache = new WeakMap<Varlden, Map<string, Float32Array>>();
@@ -75,7 +81,8 @@ export function billigasteVag(vl: Varlden, v: VarldMark, a: number, b: number, f
   if (a === b) return { rutor: [a], kostnad: 0 };
   if (!isFinite(k[b])) return undefined;
   const bx = b % w, by = Math.floor(b / w);
-  const est = (i: number) => { const dx = Math.abs(i % w - bx), dy = Math.abs(Math.floor(i / w) - by); return (Math.max(dx, dy) + (S2 - 1) * Math.min(dx, dy)) / maxFart(); }; // ingen ruta kostar under 1 delat med den snabbaste leden
+  const mf = maxFart(); // en gång per sökning (steg 12.1.104)
+  const est = (i: number) => { const dx = Math.abs(i % w - bx), dy = Math.abs(Math.floor(i / w) - by); return (Math.max(dx, dy) + (S2 - 1) * Math.min(dx, dy)) / mf; }; // ingen ruta kostar under 1 delat med den snabbaste leden
   const { g, fran } = sok(k, w, v.h, a, est, i => i === b);
   return isFinite(g[b]) ? { rutor: spara(fran, b), kostnad: g[b] } : undefined;
 }
@@ -113,10 +120,18 @@ export function sparadVag(vl: Varlden, fs: Fardsatt, a: number, b: number): Varl
 // vägen mellan två rutor med ett färdsätt: den sparade, annars räknas den och sparas i världen
 export function vagMellan(vl: Varlden, v: VarldMark, a: number, b: number, fs: Fardsatt, nu: number): VarldVag | undefined {
   const sparad = sparadVag(vl, fs, a, b);
-  if (sparad) return sparad;
+  if (sparad) { if (nu > (sparad.b ?? sparad.t)) sparad.b = nu; return sparad; }
   const r = billigasteVag(vl, v, a, b, fs);
   if (!r) return undefined;
   const vag: VarldVag = { fran: a, till: b, fs, steg: packaVag(r.rutor, v.w), kostnad: Math.round(r.kostnad * 1000) / 1000, t: nu };
   (vl.vagar ??= []).push(vag);
   return vag;
+}
+
+// vägarna som ingen gått på sedan VAGVAL.glomDygn glöms (steg 12.1.11): världen minns bara de vägar som används. En glömd väg
+// räknas med fågelvägen i valet av resa tills någon går den igen. Listan byts mot en ny, så att uppslagningen per par byggs om
+export function glomVagar(vl: Varlden, t: number) {
+  const l = vl.vagar, grans = t - VAGVAL.glomDygn * DAY;
+  if (!l?.some(x => (x.b ?? x.t) < grans)) return;
+  vl.vagar = l.filter(x => (x.b ?? x.t) >= grans);
 }

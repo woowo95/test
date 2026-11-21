@@ -1,8 +1,9 @@
 import { tal } from './ord';
+import { TIMMINNEN, binIn, binUt } from './timminne';
 import { Avst, bynsAvstand, bynsMitt } from './omrade';
 import { upplev } from './uppvaxt';
 import { PLATS, rektAvstand } from './plats';
-import { count, forstaGang, franMitt, gjort, stat, log, think } from './folk';
+import { count, forstaGang, franMitt, gjort, stat, log } from './folk';
 import { getMap, hash, perKarta, vnoise } from './karta';
 import { Markslag, groundOf, markslag, startGround, tileOf } from './mark';
 import { clamp, clampI, pickNarmaste, rnd } from './slump';
@@ -21,7 +22,8 @@ import { tecken } from './religion';
 import { insjukna } from './sjukdom';
 import { NARA } from './nara';
 // hur rikt vildbinas lager måste vara för att ett bo ska finnas där (BIN.boSyns, satt av bin.ts så att filerna inte importerar varandra)
-export const vildboKrok = { syns: () => 0.6 };
+// och hur många kakor i timmen den som står vid boet tar (BIN.vildTim, steg 12.1.263)
+export const vildboKrok = { syns: () => 0.6, tim: () => 6 };
 
 // ---------- balanstal (regel 8) ----------
 // Fångst och insamling: var viltet håller sig borta, hur fort platserna tömmas och växer tillbaka, fiske, flinta och svamp.
@@ -108,6 +110,7 @@ interface FyndDef {
   uttag?: Uttag;
   saker?: number; // så många hela saker har en full ruta (steg 9.2.53, sakerPaRutan i steg.ts): rikedomen delad med topp gånger det, nedåt
   vatten?: number; // lagret finns i vattnet; man står på stranden och når så många rutor ut
+  ruta?: () => number; // fyndet ligger samlat på en enda ruta (vildboet): så många saker i timmen tas där (samlarens tur, steg 12.1.263)
   regn?: true; // platsen fylls bara på när det regnar, mer ju mer det regnar, och vattnet i en översvämning lämnar det där det står (leran, steg 9.4.10)
 }
 const SVAMP_SEASON = [0, 0.15, 0.8, 1.5];
@@ -250,6 +253,7 @@ const DEF = {
     // honungen finns bara i ett bo: där lagret är så rikt att boet syns (BIN.boSyns), annars ingen alls (steg 10.10.15)
     bas: (s, i, m) => { const v = land(s, i) && groundOf(s).trees[i] >= FOREST ? m * orortOf(s)[i] : 0; return v >= vildboKrok.syns() ? v : 0; },
     uttag: { full: 1, reach: 1, regrow: [0, 0, 1 / 400, 1 / 400] },
+    ruta: () => vildboKrok.tim(),
   },
   // torven (steg 12.1.3, torv.ts): på hela myren, och den tar aldrig slut
   torv: {
@@ -280,6 +284,8 @@ barKrok.saUt = (s, g) => {
 };
 export type FyndId = keyof typeof DEF;
 export const FYND: Record<FyndId, FyndDef> = DEF;
+// fynden som ligger samlade på en enda ruta (vildboet): samlaren väger dem efter vad rutan ger per timme (steg 12.1.263)
+export const RUTFYND = (Object.keys(FYND) as FyndId[]).filter(j => FYND[j].ruta);
 export const FYND_IDS = Object.keys(FYND) as FyndId[];
 export const UTTAG_IDS = FYND_IDS.filter(k => FYND[k].uttag);
 // en handling kan ta ur flera lager: den som samlar tar både bär och rötter. Tabellen byggs en gång,
@@ -457,6 +463,11 @@ export function packFynd(s: State) {
   if (noll) ut.push('\0', String.fromCharCode(noll));
   s.fynd = '~' + btoa(ut.join(''));
 }
+// uttagen oavrundade i överlämningen till arbetaren (steg 12.1.248, timminne.ts)
+TIMMINNEN.uttag = {
+  ut: s => { const d = takenOf(s), o: Record<string, string> = {}; for (const k of UTTAG_IDS) o[k] = binUt(d[k]!); return o; },
+  in: (s, v) => { const d = takenOf(s); for (const [k, t] of Object.entries(v as Record<string, string>)) d[k as keyof typeof d]?.set(binIn(t, Float32Array)); },
+};
 // det som tagits ur platserna som en byte per ruta och slag, ur sparfilen (tom text om inget sparats eller det inte går att läsa)
 export function fyndBin(s: State) {
   if (!s.fynd) return '';
@@ -526,7 +537,7 @@ export function standAt(s: State, k: Lager, x: number, y: number, fn: (i: number
   const cx = clampI(x, W), cy = clampI(y, H), i = cy * W + cx, r = FYND[lagren(k)[0]].vatten;
   if (!r) return fn(i);
   const tiles = vattenNu(s);
-  if (tiles[i] === T.Vatten) return 0;
+  if (tiles[i] === T.Vatten && !((s.is?.cm ?? 0) > 0)) return 0; // ute på isen fiskar man genom hålet där man står (steg 12.1.209)
   let sum = 0, n = 0;
   for (const { dx, dy, w } of karna(r).v) {
     const j = iVattnet(tiles, cx, cy, dx, dy, w);
@@ -712,10 +723,10 @@ export function eatPoison(s: State, p: Person) {
   insjukna(s, p, 'svampforgiftning'); // steg 9.5.1: förgiftningen är en sjukdom som kan döda (motgiftet kommer i 9.5.14)
   p.poisonUntil = s.now + (FANGST.giftSjukMin + rnd(s, 'halsa', p) * FANGST.giftSjukSpann) * HOUR; p.sickWhy = 'Förgiftad av svamp';
   p.health = clamp(p.health - FANGST.giftHalsa, 0, 1);
-  think(p, 'Blev förgiftad av en svamp', FANGST.giftTanke, s.now, FANGST.giftTankeDygn * DAY);
+  tanke(p, 'svampGift', s.now, { v: FANGST.giftTanke, tid: FANGST.giftTankeDygn * DAY });
   upplev(s, p, 'svamp'); smakGift(p); // avsmak för svamp (steg 3.3.5)
   const before = kn(p, 'svamp'), v = learnK(p, 'svamp', FANGST.giftLar, s.now);
-  log(s, `${p.name} blev förgiftad av svamp ur förrådet.`, 'world', [p.id]);
+  log(s, `${p.name} blev förgiftad av svamp ur förrådet.`, 'world', [p.id]); p.forgiftadT = s.now; // (matlagning.ts)
   if ((s.stat!.forgiftad ?? 0) <= 1) {
     log(s, 'Byn misstänker att en av svamparna är giftig.', 'world');
   }
@@ -748,3 +759,4 @@ export function handFish(s: State, p: Person, x: number, y: number, ageF: number
   return 1;
 }
 import { myrMalm, paMyr } from './myr';
+import { tanke } from './tankar';

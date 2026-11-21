@@ -8,6 +8,7 @@ import { living } from './folk';
 import { type Kroppsdel, PA_DELEN } from './halsa';
 import { count } from './folk';
 import { Person, State } from './typer';
+import { tanke } from './tankar';
 
 // fel: hur mycket en förlorad del med protesen fattas (delFel i halsa.ts, steg 9.5.11): träbenet och kryckan ger tillbaka ungefär hälften
 // av gången, kroken en del av greppet, och ögonlappen är bara utseende
@@ -52,7 +53,7 @@ export function protesPa(s: State, q: Person) {
   t.agare = q.id;
   const d = utan(q, k)[0];
   p_protes(q, d, k);
-  count(s, 'protesPa');
+  count(s, 'protesPa'); tanke(q, 'fickProtes', s.now); // (steg 12.1.131)
 }
 function p_protes(q: Person, d: Kroppsdel, k: string) {
   q.protes ??= {};
@@ -61,8 +62,8 @@ function p_protes(q: Person, d: Kroppsdel, k: string) {
 // en gång i timmen: kryckan tas av när benet läkt, och den som tappat sin protes (den gick sönder) har ingen längre
 export function protesTimme(s: State) {
   for (const p of living(s)) {
-    if (p.krycka && !brutetBen(p) && !Object.values(p.protes ?? {}).includes('krycka')) { const t = tingOf(s).find(q => q.k === 'krycka' && q.pa === p.id); if (t) { t.pa = undefined; t.bar = undefined; } delete p.krycka; }
+    if (p.krycka && !brutetBen(p) && !Object.values(p.protes ?? {}).includes('krycka')) { const t = tingOf(s).find(q => q.k === 'krycka' && q.pa === p.id); if (t) { t.pa = undefined; t.bar = undefined; } p.krycka = undefined; }
     for (const d of Object.keys(p.protes ?? {}) as Kroppsdel[]) if (!tingOf(s).some(t => t.pa === p.id && t.k === p.protes![d])) delete p.protes![d];
-    if (p.protes && !Object.keys(p.protes).length) delete p.protes;
+    if (p.protes && !Object.keys(p.protes).length) p.protes = undefined;
   }
 }

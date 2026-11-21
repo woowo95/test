@@ -2,7 +2,7 @@
 // (t.sats): satsen ligger i karet medan den jäser och syns där med sin färg. Arbetet är kort (BRYGG.prepMin och tappMin) och
 // väntan lång; ingen arbetar medan det jäser. Under BRYGG.kall grader stannar jäsningen, utom i ett kar inne i ett hus. När
 // satsen är klar silas den och hälls upp i stora lerkrukor, och karet är tomt igen. Vinet och ölet är rader i VATSKOR
-// (vatskor.ts) och står i krukorna, där vinet blir bättre med tiden (vinKvalitet). Registret BRYGD har en rad per dryck.
+// (vatskor.ts) och står i krukorna, där vinet blir bättre med tiden (MOGNAD i tunna.ts). Registret BRYGD har en rad per dryck.
 import { balans } from './balans';
 import { isFood } from './saker';
 import { foodDays } from './ekonomi';
@@ -12,9 +12,9 @@ import { Station, isKlar, stationerOf } from './stationer';
 import { DAY, HOUR, MIN, Person, State } from './typer';
 import { temperature } from './vader';
 import { getable, takeMaterial } from './behov';
+import { harReceptVatten, taReceptVatten } from './agande';
 import { VATSKOR, fyllVatska, karRymmer, ledigFor, taVatska, vatskaAv, VatskaId } from './vatskor';
 import { knows } from './teknik';
-import { Ting, fylldSack } from './agande';
 import { olTillKyrkan } from './kyrka';
 import { kyrkaId } from './egendom';
 
@@ -25,8 +25,6 @@ export const BRYGG = balans('brygg', {
   maltKorn: 4, // så mycket korn blöts och torkas till lika mycket malt (steg 9.6.13), på TORK.maltDygn dygn
   maltMin: 2, // och så många minuters arbete
   surForsta: 0.3, // den första satsen öl i ett kar blir sur med den här chansen
-  vinBra: 5, // vinet i krukan är bättre (kvalitet 3) efter så här många dygn ...
-  vinBast: 15, // ... och bäst (kvalitet 4) efter så här många
   olVin: 2, // byn kommer på ölet när den har korn och gjort vin så här många gånger
   brannMin: 2, // så många minuter tar det att hälla en kruka vin eller en sats öl i brännpannan (steg 10.7.26)
   brannKok: 30, // så många minuter kokar pannan medan dess eld brinner
@@ -44,8 +42,6 @@ export const BRYGD: Record<string, BrygdDef> = {
 };
 export type BrygdId = VatskaId;
 export const BRYGD_LIST = Object.keys(BRYGD) as BrygdId[];
-// vinet blir bättre med tiden i krukan: det går att dricka direkt, är bättre efter 5 dygn och bäst efter 15 (kvaliteten 2–4)
-export const vinKvalitet = (s: State, t: Ting) => t.inne?.t === undefined ? 2 : s.now - t.inne.t >= BRYGG.vinBast * DAY ? 4 : s.now - t.inne.t >= BRYGG.vinBra * DAY ? 3 : 2;
 
 export const karen = (s: State) => stationerOf(s).filter(t => t.k === 'bryggkar' && isKlar(t));
 // det p kan göra vid karen: hälla upp en klar sats (när en ledig stor kruka finns) eller lägga en ny sats i ett tomt kar
@@ -62,7 +58,7 @@ export function bryggVal(s: State, p: Person): { act: 'brygga' | 'tappa' | 'malt
     if (kar.sats) continue;
     for (const v of vilka) {
       const d = BRYGD[v];
-      if (d.vatten && !fylldSack(s)) continue;
+      if (d.vatten && !harReceptVatten(s)) continue;
       // det som också är mat (bären) har sitt värde som mat i förrådsmålen (steg 10.2.1): det bryggs bara av när maten räcker
       // över bufferten, så att vinet ärver bristen på mat
       if (Object.entries(d.av).every(([k, n]) => getable(s, p, k) >= n && !(isFood(k) && foodDays(s) < buffert(s, 'mat')))) return { act: 'brygga', kar, v };
@@ -144,10 +140,10 @@ export function bryggKlar(s: State, p: Person, ref?: number) {
   const b = bryggVal(s, p); // (materialet kan ha tagits medan man arbetade: då kan valet vara ett annat arbete eller ett annat kar)
   if (b?.act !== 'brygga' || b.kar !== kar) return;
   const v = b.v;
-  const d = BRYGD[v], sack = d.vatten ? fylldSack(s) : undefined;
-  if (d.vatten && !sack) return;
+  const d = BRYGD[v];
+  if (d.vatten && !harReceptVatten(s)) return;
   for (const [k, n] of Object.entries(d.av)) takeMaterial(s, p, k, n);
-  if (sack) sack.inne = undefined;
+  if (d.vatten) taReceptVatten(s); // vattnet ur behållaren (steg 12.1.251)
   const forsta = !(kar.brygt ?? 0); // karet behåller jästen; den första satsen tar dubbelt så lång tid (steg 9.6.13)
   const malt = !!d.av.malt; // det som bryggs av malt (ölet och svagdrickan)
   kar.sats = { v, n: d.ger, jas: 0, dygn: d.dygn * (malt && forsta ? 2 : 1), ...(malt && forsta && rnd(s, 'mat', p) < BRYGG.surForsta ? { sur: 1 as const } : {}) };
@@ -157,13 +153,14 @@ export function bryggKlar(s: State, p: Person, ref?: number) {
   if (forstaGang(s, 'brygd_' + v)) log(s, `${p.name} lade byns första sats ${d.namn.toLowerCase()} i bryggkaret.`, 'world', [p.id]);
 }
 // en gång i timmen (steg.ts): satserna jäser när det är varmt nog eller karet står inne, och blir klara
-export function stepBrygg(s: State) {
+// dt: sekunderna sedan sist (steg 12.1.107)
+export function stepBrygg(s: State, dt = 3600) {
   olUpptackt(s); mjodUpptackt(s);
   const varmt = temperature(s) >= BRYGG.kall;
   for (const kar of karen(s)) {
     const sats = kar.sats;
     if (!sats || sats.klar || !(varmt || kar.inne)) continue;
-    sats.jas += HOUR;
+    sats.jas += dt * HOUR / 3600;
     if (sats.jas >= sats.dygn * DAY) { if (sats.sur) { kar.sats = undefined; count(s, 'surSats'); continue; } sats.klar = 1; count(s, 'jast_' + sats.v); } // en sur sats hälls ut
   }
 }

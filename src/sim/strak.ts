@@ -30,6 +30,7 @@ export interface Straken {
   key: string;
   ruta: Uint8Array; // 0 = inget stråk, 1 = stråk, 2 = rutan framför en dörr (index y * W + x)
   vagar: Vag[];
+  sok?: Sok; // sökdatat stråken räknades med, som omvag prövar husplatserna med
   x0: number; y0: number; x1: number; y1: number; // sökrutan
 }
 
@@ -112,7 +113,7 @@ export function straken(s: State): Straken {
     for (const [mal, rutor] of vagarFran(d, dorr)) { vagar.push({ dorr, mal, len: rutor.length, rutor }); for (const i of rutor) ruta[i] ||= 1; }
   }
   for (const v of vagar) ruta[v.dorr] = 2;
-  const r: Straken = { key, ruta, vagar, x0: d.x0, y0: d.y0, x1: d.x1, y1: d.y1 };
+  const r: Straken = { key, ruta, vagar, x0: d.x0, y0: d.y0, x1: d.x1, y1: d.y1, sok: d };
   cache.set(s, r);
   return r;
 }
@@ -136,7 +137,7 @@ export function omvag(s: State, x: number, y: number, w: number, h: number) {
   const st = straken(s), inne = (i: number) => { const ix = i % W, iy = (i / W) | 0; return ix >= x && ix < x + w && iy >= y && iy < y + h; };
   const traffade = st.vagar.filter(v => v.rutor.some(inne));
   if (traffade.some(v => inne(v.dorr))) return false;
-  const d = sokData(s), nya = new Map<number, Map<Mal, number[]>>();
+  const d = st.sok ?? sokData(s), nya = new Map<number, Map<Mal, number[]>>(); // sökdatat sparat med stråken, samma nyckel (steg 12.1.104)
   for (const v of traffade) {
     let n = nya.get(v.dorr);
     if (!n) nya.set(v.dorr, n = vagarFran(d, v.dorr, { x, y, w, h }));

@@ -1,6 +1,6 @@
 import { LAG, efterlevs, lagGaller } from './lagar';
 import { personHand } from './personlogg';
-import { think } from './folk';
+
 import { HOUR } from './typer';
 import { ALDER, ageOf, living, log } from './folk';
 import { clamp } from './slump';
@@ -19,6 +19,10 @@ import { byId } from './folk';
 // Sederna (arbete, gemenskap, barn, nyfikenhet, försiktighet, rang, från -1 till 1) rör sig långsamt mot det invånarna drar åt:
 // var och en efter sin personlighet och de upplevelser hen minns (steg 4.5.4.9). Åldrarna för rösten i sederna och för yrkestaggarna står i ALDER (folk.ts)
 export const SED = balans('seder', {
+  fortInt: 0.5, fortBarn: 0.15, fortBarnlos: 0.05, // Förtjänst: intelligensen drar åt Förtjänst, barn åt Härkomst och barnlöshet åt Förtjänst
+  krigAggr: 0.7, krigMod: 0.3, krigEmp: 0.5, // Krig: aggressionen och modet drar åt Krig, empatin åt Fred
+  naturFlit: 0.5, naturEmp: 0.5, // Bruka: fliten drar åt Bruka, empatin åt Värna
+  pratDra: 0.5, pratEmp: 0.5, // Pratsamhet: nyfikenheten och karisman drar åt Pratsamhet, empatin åt Förtegenhet
   varnaFran: -0.2, varnaTanke: 0.05, // den som drar mer åt Värna än så här blir ledsen, så här mycket per steg
   mitt: 10, // en vanlig människas egenskap (egenskaper går från 1 till 20) ...
   spann: 6, // ... och så mycket över eller under är ett helt steg åt ena hållet
@@ -67,14 +71,14 @@ const DEF = {
   nyfikenhet: { pos: 'Förnyelse', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.', dra: q => dev((q.nyfikenhet + q.intelligens) / 2) },
   forsiktighet: { pos: 'Förutseende', neg: 'Dagens behov', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.', dra: q => -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt },
   // den första vågskålen (steg 3.5.1): låst (står på 0) tills byn fått sin första ledare (sedOppen i styre.ts)
-  fortjanst: { pos: 'Härkomst', neg: 'Förtjänst', effect: 'Den duglige eller släkten: Härkomst flyttar vikt till släkternas äldste och ger arv när ledaren byts.', dra: (q, barn) => -dev(q.intelligens) * 0.5 + (barn ? 0.15 : -0.05) },
+  fortjanst: { pos: 'Härkomst', neg: 'Förtjänst', effect: 'Den duglige eller släkten: Härkomst flyttar vikt till släkternas äldste och ger arv när ledaren byts.', dra: (q, barn) => -dev(q.intelligens) * SED.fortInt + (barn ? SED.fortBarn : -SED.fortBarnlos) },
   fejd: { pos: 'Fejd', neg: 'Förlikning', effect: 'Om konflikter löses med ord eller med styrka: Fejd flyttar vikt till krigarna, och ledaren kan störtas i strid.', dra: q => dev(q.aggression) - dev(q.empati) },
-  krig: { pos: 'Krig', neg: 'Fred', effect: 'Om byn går i strid eller söker fred: Krig gör fler villiga att slåss.', dra: q => dev(q.aggression) * 0.7 + dev(q.mod) * 0.3 - dev(q.empati) * 0.5 }, // steg 8.4.11
-  natur: { pos: 'Bruka', neg: 'Värna', effect: 'Om naturen är till för att brukas: fällda träd och dödade djur ger sämre humör för dem som drar åt Värna.', dra: q => dev(q.flit) * 0.5 - dev(q.empati) * 0.5 }, // steg 8.4.13
+  krig: { pos: 'Krig', neg: 'Fred', effect: 'Om byn går i strid eller söker fred: Krig gör fler villiga att slåss.', dra: q => dev(q.aggression) * SED.krigAggr + dev(q.mod) * SED.krigMod - dev(q.empati) * SED.krigEmp }, // steg 8.4.11
+  natur: { pos: 'Bruka', neg: 'Värna', effect: 'Om naturen är till för att brukas: fällda träd och dödade djur ger sämre humör för dem som drar åt Värna.', dra: q => dev(q.flit) * SED.naturFlit - dev(q.empati) * SED.naturEmp }, // steg 8.4.13
   andlig: { pos: 'Andlig', neg: 'Världslig', effect: 'Om makten kommer från folket eller från gudarna: Andlig flyttar vikt till prästerna, och kyrkan välsignar eller fördömer ledaren.', dra: () => 0 }, // steg 8.6.1: andligheten läggs till i drar() och sedLaggning
   rang: { pos: 'Envälde', neg: 'Folkstyre', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt ledaren straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
   // steg 10.8.6: låst tills byn berättat RYKTE.pratOppna dåliga rykten (rykten.ts). Den nyfikna och karismatiska drar åt Pratsamhet, den empatiska åt Förtegenhet
-  prat: { pos: 'Pratsamhet', neg: 'Förtegenhet', effect: 'Hur fritt man talar om andra: i en pratsam by berättas rykten oftare och skvallret väger mindre, i en förtegen by tvärtom.', dra: q => (dev(q.nyfikenhet) + dev(q.karisma)) * 0.5 - dev(q.empati) * 0.5 },
+  prat: { pos: 'Pratsamhet', neg: 'Förtegenhet', effect: 'Hur fritt man talar om andra: i en pratsam by berättas rykten oftare och skvallret väger mindre, i en förtegen by tvärtom.', dra: q => (dev(q.nyfikenhet) + dev(q.karisma)) * SED.pratDra - dev(q.empati) * SED.pratEmp },
 } satisfies Record<string, SedDef>;
 export type Sed = keyof typeof DEF;
 export const SEDER: Record<Sed, SedDef> = DEF;
@@ -102,7 +106,7 @@ function foraldrar(s: State) {
   return ids;
 }
 // hur p lutar mot Sammanhållning (-1 till 1): budgeten, lönen och skatten läser den
-export const lutning = (s: State, p: Person) => clamp(drar(s, p).gemenskap ?? 0, -1, 1);
+export const lutning = (s: State, p: Person) => clamp(drarSed(s, p, 'gemenskap'), -1, 1);
 // x avrundat till närmaste fjärdedel, mellan 0 och 1
 export const fjardedel = (x: number) => clamp(Math.round(x * 4) / 4, 0, 1);
 export function drar(s: State, p: Person) {
@@ -115,6 +119,13 @@ export function drar(s: State, p: Person) {
   }
   for (const m of minnen(s, p).values()) for (const k in m.d) d[k as Sed] += m.d[k as Sed]!;
   return d;
+}
+// en enda seds dragning, samma tal som drar(s, p)[k] med samma tillägg i samma ordning (steg 12.1.104): för den som bara läser en sed
+export function drarSed(s: State, p: Person, k: Sed) {
+  let v = k === 'andlig' ? (andlighet(s, p) - 50) / 50 : SEDER[k].dra(p.pot, foraldrar(s).has(p.id));
+  for (const u of p.upp ?? []) { const e = upplevelseSed(u.k)?.[k]; if (e !== undefined) v += e * SED.uppSteg; }
+  for (const m of minnen(s, p).values()) { const x = m.d[k]; if (x !== undefined) v += x; }
+  return v;
 }
 // minnena av de döda som drar personens hållning (steg 10.4.9): per död, INTRYCK:s sedkolumn gånger minnets styrka (styrka
 // gånger säkerhet) gånger minneSteg. Tillsammans drar de högst minneMax per sed; blir det mer krymper alla lika mycket
@@ -205,14 +216,15 @@ export function pliktDelar(s: State, p: Person) {
 }
 export const VANA_AR = SED.vanaDygn; // vanorna bleknar på så här många dygn (år i spelet), tårtan i personens Tiden (steg 11.1.46)
 // Värna – Bruka (steg 8.4.13): fällda träd och dödade djur ger sämre humör för dem som drar åt Värna, mer ju starkare de tycker
-export function naturTanke(s: State, text: string) {
+export function naturTanke(s: State, t: 'tradFalldes') {
   if (!s.styre?.oppna?.includes('natur')) return;
-  for (const p of living(s)) { const d = drar(s, p).natur; if (d < SED.varnaFran) think(p, text, SED.varnaTanke * d, s.now, 2 * HOUR); }
+  for (const p of living(s)) { const d = drarSed(s, p, 'natur'); if (d < SED.varnaFran) tanke(p, t, s.now, { v: SED.varnaTanke * d }); }
 }
 // tid räknas mot yrkestaggar och bleknar, så att de senaste åren väger mest
 export const HABIT_FADE = SED.vanaDygn * DAY;
 // vanornas timmar (vanor.ts): listan bredvid vanobjektet, och funktionerna som läser och skriver den
 import { habitShare, habitTotal } from './vanor';
+import { tanke } from './tankar';
 export { addHabit, habitShare, habitTotal, skrivVanor, vana, vanaSumma } from './vanor';
 // yrkestaggarna, i den ordning de prövas, med den minsta andel av tiden som ger taggen. Vilka handlingar som räknas till ett
 // yrke står i handlingens rad (yrke i handlingar.ts). Ett nytt yrke blir en rad här och ett yrke på handlingarna
@@ -221,6 +233,8 @@ const YRKEN: Record<string, number> = {
   // de snävare yrkena (steg 7.5.5–7.5.8) går före de breda: den som mest slaktar är slaktare och inte jägare
   Slaktare: 0.1, Korgmakare: 0.06, Snickare: 0.1, Spjutmakare: 0.05, Skinnsömmare: 0.08, Garvare: 0.06, Stenhuggare: 0.08, Odlare: 0.15, Kock: 0.1, Vattenbärare: 0.06, Läkekunnig: 0.05,
   Lärare: 0.04, Vargjägare: 0.03, Kämpe: 0.03, Handlare: 0.05,
+  // yrkena från de nya systemen (steg 12.1.139): snäva, så att den som mest brygger är bryggare och inte kock
+  Skald: 0.05, Skrivare: 0.04, Bryggare: 0.06, Vävare: 0.08, Krukmakare: 0.04, // trons präst heter efter ämbetet, inte efter timmarna (yrkeNamn i styre.ts, steg 12.1.213)
   Herde: 0.08, Biodlare: 0.02, // den som mest vallar, mjölkar, klipper och matar djuren, och den som sköter bina (steg 12.1.32; handlingarnas yrke i handlingar.ts)
   Kolare: 0.04, // den som kolar och ser till milan (steg 12.2.2)
   Smed: 0.04, // den som blåser järn och smider (steg 12.2.3 och 12.2.4)
@@ -229,7 +243,9 @@ const YRKEN: Record<string, number> = {
 // de snävare yrkenas handlingar (steg 7.5.5–7.5.8). En rad med ett yrke vars handling inte finns ännu räknas inte
 const YRKE_AV: Partial<Record<string, string[]>> = {
   Slaktare: ['slakta', 'rensa'], Korgmakare: ['korg', 'nat'], Snickare: ['station', 'tillbehor', 'klyva_plank', 'gor_leksak', 'slagtra', 'mal', 'trumma', 'metspo', 'slanda', 'gor_pilar', 'skold', 'bage', 'lyra', 'krycka', 'traben', 'krok', 'bagborr', 'kalke', 'slade'], /* och träsakerna vid snickarbänken (steg 9.4.5) */ Spjutmakare: ['spjut'], Skinnsömmare: ['rock', 'skor', 'byxor', 'mossa', 'snoskor'], Garvare: ['garva'],
-  Stenhuggare: ['hugga_sten'], Odlare: ['odla'], Kock: ['grilla', 'steka', 'koka_mat', 'gropa', 'koka_buljong', 'baka', 'torka', 'roka', 'brygga', 'tappa', 'malta', 'branna'], Vattenbärare: ['vatten'], Läkekunnig: ['varda'], Lärare: ['lara'], Vargjägare: ['vargjakt'], Kämpe: ['strid', 'forsvar', 'forsvarRovare'], Handlare: ['handla'],
+  Stenhuggare: ['hugga_sten'], Odlare: ['odla'], Kock: ['grilla', 'steka', 'koka_mat', 'gropa', 'koka_buljong', 'baka', 'torka', 'roka'], Vattenbärare: ['vatten'], Läkekunnig: ['varda'], Lärare: ['lara'], Vargjägare: ['vargjakt'], Kämpe: ['strid', 'forsvar', 'forsvarRovare'], Handlare: ['handla'],
+  Skald: ['upptrada'], Skrivare: ['skriva', 'runsten', 'bok', 'gora_pergament', 'riva_black'], Bryggare: ['brygga', 'malta', 'tappa', 'branna'], // steg 12.1.139
+  Vävare: ['spinna', 'vava', 'spinna_ull', 'vava_ull'], Krukmakare: ['lerkruka', 'lera'],
 };
 export const TAGS = Object.entries(YRKEN).map(([tag, min]) => ({ tag, min, acts: ACT_LIST.filter(a => ACTS[a].yrke === tag || YRKE_AV[tag]?.includes(a)) }));
 // taggen går till den som gör något klart mer än andra i byn; den som redan har en tagg behåller den lättare

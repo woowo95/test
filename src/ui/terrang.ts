@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
-import { sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, emberOn, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR, type Ljuspunkt, living, byId, rovarPlats } from '../sim';
+import { eldSkuggor } from './eldskugga';
+import { MORKER, eldRackvidd, sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR, type Ljuspunkt, living, byId, rovarPlats } from '../sim';
 import { s, ui } from './lage';
 import { posOf } from './manniskor';
 import { gaster } from './gaster';
@@ -115,32 +116,36 @@ function kantHash(x: number, y: number) {
 // mörkret och eldens sken
 // (steg 5.1.1.4, 5.1.7.2): paletten ett steg mörkare i skymningen och tre mitt i natten, med raster, och ljuset runt varje eld (ui/natt.ts)
 // Molnen och regnet gör skymningen och natten mörkare på samma sätt, en del av ett steg (vaderMork i ui/vaderbild.ts, steg 5.5.1); på dagen inte (steg 10.2.20)
-// eldens ljus når så många rutor när den brinner för fullt (steg 6.8.15); glöden och en svag eld lyser mindre, i samma förhållande
-const ELD_LJUS = 14, FOLK_LJUS = 1.5; // ... och ljuset kring en människa så många rutor (steg 9.2.69)
-const FACKEL_STORRE = 1.25, FACKEL_FLADDER = 0.04; // de andra ljusens sken är så här mycket större än deras ljus i simuleringen, och alla sken fladdrar så här mycket (steg 10.2.99)
-// skimret (steg 11.1.68): lugnare än förut (halva utslaget, hälften så fort), och samma för elden och facklan. Facklans sken ritas
-// lika stort som lägereldens; bara bilden, inte hur långt ljuset når i spelet (LJUSKALLOR i sim/ljus.ts)
-const skimmer = (t: number, x: number, y: number) => 1 + FACKEL_FLADDER * Math.sin(t / 180 + x * 7 + y * 3) * Math.sin(t / 75 + x);
-const FACKLOR = new Set(['fackla', 'uppsatt']);
+// skenet och arbetsljuset är samma cirkel (steg 12.1.169): skenet ritas med ljusets räckvidd i simuleringen (eldRackvidd och
+// LJUSKALLOR i sim/ljus.ts), tonar ut mot kanten (natt.ts) och fortsätter svagt MORKER.skenUt av räckvidden utanför den (steg
+// 12.1.172), där ljuset inte räcker att arbeta i. Det man ser upplyst är det folk kan arbeta i
+const FOLK_LJUS = 1.5; // ljuset kring en människa så många rutor (steg 9.2.69)
+const FACKEL_FLADDER = 0.04; // alla sken fladdrar så här mycket (steg 10.2.99)
+// skimret (steg 11.1.68): lugnt, med litet utslag och långsam takt, och samma för elden och facklan. Det krymper bara skenet, så
+// att det aldrig når utanför räckvidden
+const skimmer = (t: number, x: number, y: number) => 1 - FACKEL_FLADDER * (1 + Math.sin(t / 180 + x * 7 + y * 3) * Math.sin(t / 75 + x)) / 2;
 export function drawNight(t: number) {
   // på dagen är kartan ljus överallt (steg 10.2.20): vädret gör bara skymningen och natten mörkare. Förut gjorde en mulen himmel
   // (0,5 steg, avrundat till ett helt) hela kartan till skymning mitt på dagen
-  const klocka = DJUPNATT * (1 - lightLevel(t)), m = klocka > 0 ? klocka + vaderMork(t) : 0, eldar: { x: number; y: number; r: number; k: number }[] = [], facklor: { x: number; y: number }[] = [];
+  const klocka = DJUPNATT * (1 - lightLevel(t)), m = klocka > 0 ? klocka + vaderMork(t) : 0, eldar: { x: number; y: number; r: number; k: number }[] = [], facklor: { x: number; y: number }[] = [], lagereldar: { x: number; y: number }[] = [];
   if (m > 0) for (const e of eldarOf(s)) { // varje lägereld lyser (steg 4.5.6.8)
-    const I = fireHeat(s, e);
-    if (!(I > 0 || emberOn(s, e))) continue;
-    const f = eldXY(s, e), k = I > 0 ? 0.45 + 0.55 * I : 0.12;
-    eldar.push({ x: f.x * TS + TS / 2, y: f.y * TS + TS / 2, r: TS * ELD_LJUS * k * (I > 0 ? skimmer(t, f.x, f.y) : 1), k: -(I > 0 ? 1 : 0.5) }); // negativ: eldens form (natt.ts)
+    const I = fireHeat(s, e), r = eldRackvidd(s, e); // samma räckvidd som arbetsljuset (LJUSKALLOR.eld)
+    if (!r) continue;
+    const f = eldXY(s, e); lagereldar.push({ x: f.x + 0.5, y: f.y + 0.5 });
+    eldar.push({ x: f.x * TS + TS / 2, y: f.y * TS + TS / 2, r: TS * r * (1 + MORKER.skenUt) * (I > 0 ? skimmer(t, f.x, f.y) : 1), k: -1 }); // negativ: skenets kurva (natt.ts), samma för alla ljuskällor (steg 12.1.176)
   }
-  // facklorna och de andra ljuskällorna (steg 6.3.6–6.3.8, LJUSKALLOR i sim/ljus.ts); elden har sitt sken ovan
+  // facklorna och de andra ljuskällorna (steg 6.3.6–6.3.8, LJUSKALLOR i sim/ljus.ts); elden har sitt sken ovan. Varje rad i
+  // registret, också de som kommer senare, tonar ut med samma kurva efter sin räckvidd, utan egen kant eller eget raster (steg 12.1.176)
   // (en fackla som någon bär lyser där bäraren syns i bilden, steg 10.2.19)
   // (steg 10.2.99: facklan lyser som en liten eld, större än människans cirkel, i eldens form och fladdrande)
-  if (m > 0) for (const [n, k] of Object.entries(LJUSKALLOR)) if (n !== 'eld') for (const l of k.kallor(s) as Ljuspunkt[]) { const q = l.bar !== undefined ? synsVid(l.bar) ?? l : l, fl = skimmer(t, q.x, q.y); facklor.push(q); eldar.push({ x: q.x * TS, y: q.y * TS, r: TS * (FACKLOR.has(n) ? ELD_LJUS : l.r * FACKEL_STORRE) * fl, k: -0.85 }); }
+  if (m > 0) for (const [n, k] of Object.entries(LJUSKALLOR)) if (n !== 'eld') for (const l of k.kallor(s) as Ljuspunkt[]) { const q = l.bar !== undefined ? synsVid(l.bar) ?? l : l, fl = skimmer(t, q.x, q.y); facklor.push(q); eldar.push({ x: q.x * TS, y: q.y * TS, r: TS * l.r * (1 + MORKER.skenUt) * fl, k: -1 }); }
   // ljuset kring människorna (steg 9.2.69): bara i bilden; den som bär en fackla har facklans ljus
   // (där var och en syns i bilden, inte där hen står i slutet av slaget, steg 10.2.19)
   // alla människor på kartan, byborna och gästerna (rövarna, handlaren, främlingen; steg 10.2.99)
   const folk = m > 0 ? [...living(s).map(posOf), ...gaster(t)].filter(p => !facklor.some(e => Math.hypot(e.x - p.x, e.y - p.y) < 1)).map(p => ({ x: p.x * TS, y: p.y * TS - TS * 0.4, r: TS * FOLK_LJUS })) : [];
-  stallNatt(mork, world, Math.min(DJUPNATT, m), eldar, folk);
+  // eldens skuggor (steg 12.3.2, ui/eldskugga.ts): lägereldarna, som står först bland eldarna, kastar skuggor bakom väggar och stammar
+  const skuggor = m > 0 && lagereldar.length ? eldSkuggor(s, lagereldar) : undefined;
+  stallNatt(mork, world, Math.min(DJUPNATT, m), eldar, folk, skuggor);
 }
 // skuggorna på marken och golven (steg 5.1.8, ui/skugga.ts): träden, folket, djuren, stationerna, sakerna och väggarna.
 // Efter att allt annat ställts på plats i bildrutan

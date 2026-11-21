@@ -3,7 +3,7 @@ import { brandKnapp, testSvara } from './ui/interaktion';
 import { testBortaIByn } from './ui/testborta';
 import { $ } from './ui/hjalp';
 import { iconImg, tecknet } from './ikoner';
-import { s, setByn, ui, nyBild, vidNyBy, huvud, hem, gaHem } from './ui/lage';
+import { s, setByn, ui, pekarIn, nyBild, vidNyBy, huvud, hem, gaHem } from './ui/lage';
 import { visatNamn } from './ui/vacktvy'; // en väckt by visas i hela spelet (steg 11.13.11)
 import { TS, app, cam, layout, view, world } from './ui/scen';
 import { drawNight, drawSkuggor, drawTerrain } from './ui/terrang';
@@ -70,13 +70,29 @@ function dropTest() { if (ui.testMode) { ($('testToggle') as HTMLInputElement).c
 // en ny by med slumpat frö, sparad direkt
 // klockan för den valda byn: den egna går i klockans tid, en annan by så långt efter som den låg stilla (steg 9.2.16)
 const klockan = () => Date.now() - ui.forskjut;
-function nyBy() {
+// medan världens förhistoria räknas (steg 12.1.147; ungefär 45 s datortid för 400 år i spelet) står kortet över kartan med en
+// text om det. Räkningen håller sidan, så texten sätts och ritas först, och kortet tas bort när den är klar
+const FORHIST_TEXT = 'Världens historia räknas fram: byarna, deras krig och deras tro i 400 år före din by. Det tar ungefär en minut.';
+async function medForhistoria<T>(f: () => T): Promise<T> {
+  const el = $('loading'), p = el.querySelector('p'), forr = p?.textContent ?? '';
+  if (p) p.textContent = FORHIST_TEXT;
+  el.hidden = false;
+  await Promise.race([new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))), new Promise(r => setTimeout(r, 250))]); // ritad, också i en dold flik
+  try { return f(); } finally { el.hidden = true; if (p) p.textContent = forr; }
+}
+async function nyBy() {
   // den sparade byn är från en för gammal version (steg 12.1.71): spelet säger det innan en ny by grundas
   if (lasFel.forGammal) { const t = lasFel.forGammal; lasFel.forGammal = ''; try { window.alert(`${t} En ny by grundas.`); } catch { /* utan dialog */ } }
-  ui.annanBy = undefined; ui.forskjut = 0; // en ny by ersätter den egna byn
-  setByn(createState(Math.floor(Math.random() * 2 ** 31), Date.now()));
-  cam.x = -1; layout();
-  drawTerrain(true, false); drawPlants(true); saveLocal(); saveDb(); // kartan ritas efter hand, det som syns först
+  // sidan är upptagen under hela bytet (steg 12.1.232): medan förhistorien räknas går inget slag, så att byn som visas inte
+  // räknas ikapp med den nya klockan och sparas som den egna. Klockan byts först när den nya byn finns
+  ui.busy = true;
+  try {
+    const ny = await medForhistoria(() => createState(Math.floor(Math.random() * 2 ** 31), Date.now()));
+    ui.annanBy = undefined; ui.forskjut = 0; // en ny by ersätter den egna byn
+    setByn(ny);
+    cam.x = -1; layout();
+    drawTerrain(true, false); drawPlants(true); saveLocal(); saveDb(); // kartan ritas efter hand, det som syns först
+  } finally { ui.busy = false; }
 }
 // en inläst by, räknad ikapp till nu. Kartan ritas först när byn är ikapp (catchUp), och då efter hand i bildrutorna,
 // det som syns först: en stor by tar annars flera sekunder att rita, och en minut i en mobil
@@ -95,9 +111,9 @@ function nyareIMolnet(by: State) {
 }
 // testläget byter till en kopia av byn och tillbaka: det som är valt i panelen är kvar (finns det inte visar fliken det)
 function bytBy(n: State) {
-  const { husId, stationId, hogAt, sak, faltId, faltRuta } = ui;
+  const u = ui as Record<string, unknown>, kvar = Object.fromEntries(Object.keys(pekarIn()).map(k => [k, u[k]])); // allt som pekar in i byn (steg 12.1.249)
   setByn(n);
-  Object.assign(ui, { husId, stationId, hogAt, sak, faltId, faltRuta });
+  Object.assign(ui, kvar);
 }
 $('testToggle').addEventListener('change', async e => {
   const on = (e.target as HTMLInputElement).checked;
@@ -139,7 +155,7 @@ for (const b of document.querySelectorAll<HTMLButtonElement>('#speeds button')) 
     if (b.dataset.blixt) { ui.blixtTest = !ui.blixtTest; ui.brandTest = false; brandKnapp(); testSvara(ui.blixtTest ? 'Tryck på kartan där blixten ska slå ner' : ''); return; }
     if (b.dataset.torka) { testSvara(torkaTest(s).text); nyttSlag(s); return; } // (steg 9.2.24)
     if (b.dataset.vack) { testSvara(vackTestNarmast(s).text); return; } // den väckta byn (steg 11.13.8)
-    if (b.dataset.nyvarld) { testSvara(nyVarld(s).text); renderPanel(true); return; } // en ny värld runt samma by (steg 12.3.1, nyvarld.ts)
+    if (b.dataset.nyvarld) { void medForhistoria(() => nyVarld(s)).then(r => { testSvara(r.text); renderPanel(true); }); return; } // en ny värld runt samma by (steg 12.3.1, nyvarld.ts)
     // striden på kartan (steg 10.1.5). Spelet räknar ett slag före bilden, så striden syns när bilden kommit dit
     if (b.dataset.slagsmal) { const r = testSlagsmal(s); nyttSlag(s); const sek = Math.round((s.now - ui.nu) / SEC); testSvara(r.ok && sek > 2 ? `${r.text} om ${sek} sekunder` : r.text); renderPanel(true); return; }
     const r = b.dataset.flock ? skickaRovare(s, ROVARFLOCK[b.dataset.flock as keyof typeof ROVARFLOCK]) : b.dataset.tornado ? skickaTornado(s) : skickaHandlare(s);
@@ -182,7 +198,7 @@ $('temaKnapp').addEventListener('click', () => {
 function renderByar() { $('byar').innerHTML = byarHtml(); }
 byte.fore = () => { saveLocal(); saveDb(); dropTest(); ui.selected = undefined; ui.tab = undefined; };
 byte.ladda = async by => { await laddaIn(by); renderClock(); renderPanel(true); renderByar(); };
-byte.egen = async () => { const by = await loadSaves(nyareIMolnet); if (by) await byte.ladda!(by); else { nyBy(); renderByar(); } };
+byte.egen = async () => { const by = await loadSaves(nyareIMolnet); if (by) await byte.ladda!(by); else { await nyBy(); renderByar(); } };
 $('byar').addEventListener('click', async e => {
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
   if (!b) return;
@@ -195,12 +211,12 @@ $('byar').addEventListener('click', async e => {
 });
 $('newVillage').addEventListener('click', () => { $('confirmNew').hidden = false; });
 $('cancelNew').addEventListener('click', () => { $('confirmNew').hidden = true; });
-$('okNew').addEventListener('click', () => {
+$('okNew').addEventListener('click', async () => {
   if (ui.busy) return; // inte medan byn räknas ikapp (som bytet av by)
   $('confirmNew').hidden = true;
   dropTest(); nyByVald();
   ui.selected = undefined; ui.tab = undefined;
-  nyBy(); renderPanel(true); renderByar();
+  await nyBy(); renderPanel(true); renderByar();
 });
 
 // ---------- huvudloop ----------
@@ -276,7 +292,7 @@ async function boot() {
     const loaded = await loadSaves(nyareIMolnet);
     $('loading').hidden = true; // byn är hittad: förloppet för ikappräkningen syns direkt
     if (loaded) await laddaIn(loaded);
-    else nyBy();
+    else await nyBy();
   }
   await testbyIAdressen(); // #testby=frö:dygn: en by ur testerna läggs till och väljs (steg 9.2.16)
   renderClock(); renderPanel(true);
@@ -285,4 +301,6 @@ async function boot() {
 boot();
 // byn och kartan tillgängliga för felsökning i konsolen
 (window as any).__byn = { get s() { return s; }, ui, selectPerson, visa, DAY, HOUR, getMap, coverOf, groundOf, get world() { return world; }, get app() { return app; }, cam, layout }; // cam och layout: utseende-testets inzoomning (steg 10.2.56)
+// sidans språk är svenska, så att orden avstavas rätt och inte bryts mitt i (steg 12.1.226); artefakten ger sidan dess <html>
+document.documentElement.lang = 'sv';
 import { nyVarld, nyVarldHinder } from './sim';

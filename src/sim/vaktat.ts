@@ -32,10 +32,11 @@ export const VAKTAT = balans('vaktat', {
   smyg: 0.5, // chansen att smyga in för ett sällskap med lagom smidighet (10) mot en vakt ...
   smygVikt: 0.3, // ... så mycket mer per 10 smidighet över det ...
   smygHalv: 4, // ... och chansen halveras för varje så många vakter
+  smygMin: 0.02, smygMax: 0.95, // chansen mot en vakt hålls mellan de här
   pris: 1.5, // rövarna säljer tillbaka sakerna för så många gånger värdet
 });
 
-export const behalls = (k: string) => k !== 'silver' && !isFood(k) && !k.startsWith('lev') && !!SAKER[k] && grundvarde(k) >= VAKTAT.minVarde;
+export const behalls = (k: string) => k !== 'silver' && !isFood(k) && !!SAKER[k] && !SAKER[k]!.levande && grundvarde(k) >= VAKTAT.minVarde;
 radTarKrok.behall = (r, k, n) => {
   if (r.sort !== 'rovarlager' || !behalls(k)) return false;
   (r.stulet ??= {})[k] = (r.stulet[k] ?? 0) + Math.floor(n);
@@ -76,7 +77,7 @@ export function vaktValen(s: State, sl: Sallskap, L: VarldRad): { kost: Record<V
   const v = stulVarde(L), vakter = Math.max(1, Math.round(L.tal.folk * VAKTAT.vakter));
   const folk = resenarer(s, sl).filter(p => kanGa(p));
   const smid = folk.length ? folk.reduce((a, p) => a + stat(p, 'smidighet', s.now), 0) / folk.length : 0;
-  const smyg = folk.length ? clamp(VAKTAT.smyg + VAKTAT.smygVikt * (smid - 10) / 10, 0.02, 0.95) * 0.5 ** ((vakter - 1) / VAKTAT.smygHalv) : 0;
+  const smyg = folk.length ? clamp(VAKTAT.smyg + VAKTAT.smygVikt * (smid - 10) / 10, VAKTAT.smygMin, VAKTAT.smygMax) * 0.5 ** ((vakter - 1) / VAKTAT.smygHalv) : 0;
   const pris = Math.ceil(v * VAKTAT.pris), slass = vagValen(s, sl, vakter * anfallUtr(L), 0).slass;
   return { kost: { smyga: (1 - smyg) * slass, kopa: packVarde(sl) >= pris ? pris - v : Infinity, slass, ga: v }, vakter, smyg, pris };
 }

@@ -1,12 +1,12 @@
 import { amountOf } from './lager';
 import { personHand, satHumor } from './personlogg';
-import { ALDER, ageOf, count, franMitt, getRel, isParent, livet, living, log, relKey, stat, think } from './folk';
+import { ALDER, ageOf, count, franMitt, getRel, isParent, livet, living, log, relKey, stat } from './folk';
 import { Kroppsdel, SkadaTyp, halsa, skada } from './halsa';
 import { die, leave } from './liv';
 import { skiljas } from './samtal';
 import { upplev } from './uppvaxt';
 import { blodas } from './blod';
-import { clamp, gauss, rnd } from './slump';
+import { chansPer, clamp, gauss, rnd } from './slump';
 import { isLight } from './tid';
 import { Ting, tingOf } from './agande';
 import { Act } from './handlingar';
@@ -183,7 +183,7 @@ function slar(s: State, p: Person, q: Person, k: Utbrott, v: Vald) {
     const dod = skada(s, q, d, t, v.g[0] + rnd(s, 'humor', p) * (v.g[1] - v.g[0]), 'drap', `när ${p.name} slog hen`);
     if (dod) { count(s, 'drap'); die(s, q, dod); return; }
   }
-  think(q, `${p.name} slog mig`, -v.tanke, s.now, v.dygn * DAY);
+  tanke(q, 'slogMig', s.now, { namn: p.name, v: -v.tanke, tid: v.dygn * DAY });
   if (isParent(p, q) && ageOf(q, s.now) < ALDER.vuxen) {
     count(s, 'utb_barn'); livet(s, p, 'slogBarn');
     upplev(s, q, q.upp?.some(u => u.k === 'slagen') ? 'slagenIgen' : 'slagen', p.name);
@@ -202,18 +202,18 @@ export function utbrottBorjar(s: State, p: Person, k: Utbrott, mal?: Person, tin
     log(s, rad.grad >= 4 ? `I vredesmod ${rad.text.split(' ')[0]} ${p.name}${rad.text.includes(' ') ? ' ' + rad.text.split(' ').slice(1).join(' ') : ''} ${mal.name}.` : `${p.name} mår dåligt och ${van ? 'bryter vänskapen med' : rad.text} ${mal.name}.`, 'rel', [p.id, mal.id]); // ett svårt dåd står för sig, utan "mår dåligt" (steg 12.1.121)
     if (van) { personHand(s, p, 'relation', `Bröt vänskapen med ${mal.name}.`, 'ont'); personHand(s, mal, 'relation', `${p.name} bröt vänskapen.`, 'ont'); } // steg 9.2.107
     if (k === 'elak') {
-      think(mal, `${p.name} var elak mot mig`, -HUMOR.elakHumor, s.now, HUMOR.elakTim * HOUR);
+      tanke(mal, 'elakMot', s.now, { namn: p.name, v: -HUMOR.elakHumor, tid: HUMOR.elakTim * HOUR });
       { const r = getRel(s, p, mal); r.op = clamp(r.op - HUMOR.elakOp, -100, 100); }
       handelse(s, p, 'elak', mal);
     } else if (k === 'skitsnack') {
       skitsnack(s, p, mal);
     } else if (k === 'puttas') {
-      think(mal, `${p.name} puttade mig`, -HUMOR.puttHumor, s.now, HUMOR.puttTim * HOUR);
+      tanke(mal, 'puttade', s.now, { namn: p.name, v: -HUMOR.puttHumor, tid: HUMOR.puttTim * HOUR });
       { const r = getRel(s, p, mal); r.op = clamp(r.op - HUMOR.puttOp, -100, 100); }
     } else if (k === 'slut') {
       const r = getRel(s, p, mal);
       if (!van) skiljas(s, p, mal, r);
-      else { r.op = clamp(r.op - HUMOR.brytOp, -100, 100); think(mal, `${p.name} bröt vänskapen`, -HUMOR.brytTanke, s.now, HUMOR.brytDygn * DAY); }
+      else { r.op = clamp(r.op - HUMOR.brytOp, -100, 100); tanke(mal, 'brotVanskap', s.now, { namn: p.name, v: -HUMOR.brytTanke, tid: HUMOR.brytDygn * DAY }); }
     } else if (rad.vald) slar(s, p, mal, k, rad.vald);
     if (rad.skuld) angra(s, p, mal, rad.skuld, van ? 'bröt vänskapen med' : rad.angrar ?? rad.text, op0); // efter det, så att skammen räknar dem som såg
   } else log(s, `${p.name} mår dåligt och ${rad.text}${ting ? (ting.agare === p.id ? (SAKER[ting.k]?.ett ? ' sitt eget ' : ' sin egen ') : ' byns ') + (SAKER[ting.k]?.namn ?? ting.k).toLowerCase() : ''}.`, 'rel', [p.id]);
@@ -229,7 +229,7 @@ export function utbrottKlar(s: State, p: Person, t: Task) {
     const x = tingOf(s).find(q => q.id === t.ref && q.hos === undefined && q.bar === undefined && q.lass === undefined);
     if (x) { s.ting = tingOf(s).filter(q => q !== x); count(s, 'utb_sonder_' + x.k); }
   }
-  think(p, 'Fick ur mig det', HUMOR.lattnad, s.now, HUMOR.lattnadTim * HOUR);
+  tanke(p, 'fickUr', s.now, { v: HUMOR.lattnad, tid: HUMOR.lattnadTim * HOUR });
 }
 
 // att flytta ut (steg 3.2.3) händer direkt, inte som en handling: bara den som inte har en partner i byn, och bara om minst
@@ -258,9 +258,10 @@ export function utbrottChans(s: State, p: Person, m = moodOf(p, s.now)) {
 }
 
 // en gång i timmen (stepHumor): utbrotten nyss klingar av, och den som mår mycket dåligt kan brista ut (barnen bara i sina slag). Graden beror på
-// hur dåligt hen mår, utbrotten nyss, empatin och slumpen; slaget slumpas bland dem med den graden
-export function utbrottRisk(s: State, p: Person, ljust: boolean) {
-  if (p.utb) { p.utb *= Math.exp(-HOUR / (HUMOR.utbDygn * DAY)); if (p.utb < 0.01) p.utb = undefined; }
+// hur dåligt hen mår, utbrotten nyss, empatin och slumpen; slaget slumpas bland dem med den graden. dt: sekunderna sedan sist,
+// och utbrottet är en chans per timme (steg 12.1.107)
+export function utbrottRisk(s: State, p: Person, ljust: boolean, dt = 3600) {
+  if (p.utb) { p.utb *= Math.exp(-(dt / 3600) * HOUR / (HUMOR.utbDygn * DAY)); if (p.utb < 0.01) p.utb = undefined; }
   const a = ageOf(p, s.now), barn = a < ALDER.vuxen;
   if (p.task?.act === 'leka' && p.task.phase === 'do') p.lekt = s.now; // barnen: leken (steg 3.2.4)
   if (p.ubr && s.now - p.ubr.t > HUMOR.vantar * HOUR) p.ubr = undefined; // det som väntat för länge blir inget, också på natten
@@ -268,7 +269,7 @@ export function utbrottRisk(s: State, p: Person, ljust: boolean) {
   const m = moodOf(p, s.now);
   if (m >= HUMOR.grans) return;
   const djup = (HUMOR.grans - m) / HUMOR.grans, utb = p.utb ?? 0;
-  if (rnd(s, 'humor', p) >= utbrottChans(s, p, m)) return;
+  if (!chansPer(s, utbrottChans(s, p, m), 3600, dt, 'humor', p)) return;
   const allv = djup + HUMOR.allvUtb * utb + HUMOR.allvEmp * (10 - stat(p, 'empati', s.now)) / 10 + HUMOR.allvSlump * gauss(s, 'humor', p) + HUMOR.allvAgg * franMitt(p, 'aggression', s.now);
   let grad = allv >= HUMOR.grad5 ? 5 : allv >= HUMOR.grad4 ? 4 : allv >= HUMOR.grad3 ? 3 : allv >= HUMOR.grad2 ? 2 : 1;
   if (barn) grad = Math.min(grad, 2);
@@ -311,13 +312,13 @@ const forvVan = (f: number) => clamp(-HUMOR.van * Math.log((f + HUMOR.forvC) / (
 
 // en gång i timmen (steg.ts): utbrotten (utbrottRisk) och var och ens rikedom (w) och förväntan (f). Ett barn räknar med föräldrarnas rikedom
 // (den rikaste av dem som lever), eftersom det lever på deras. Den som är ny börjar med förväntan lika med rikedomen
-export function stepHumor(s: State) {
+export function stepHumor(s: State, dt = 3600) {
   const folk = living(s);
   if (!folk.length) return;
   const { egen, byn } = formogenheter(s), del = byn / folk.length;
   const vuxen = (p: Person) => (egen.get(p.id) ?? 0) + del;
   const ids = new Set(folk.map(p => p.id));
-  const k = 1 - Math.exp(-HOUR / (HUMOR.forvDygn * DAY)), ljust = isLight(s.now);
+  const k = 1 - Math.exp(-(dt / 3600) * HOUR / (HUMOR.forvDygn * DAY)), ljust = isLight(s.now);
   for (const p of folk) {
     let w = vuxen(p);
     if (ageOf(p, s.now) < ALDER.vuxen) {
@@ -327,10 +328,11 @@ export function stepHumor(s: State) {
     if (!p.forv) p.forv = { f: w, w };
     else { p.forv.w = w; p.forv.f += (w - p.forv.f) * k; }
     angerTim(s, p);
-    utbrottRisk(s, p, ljust);
+    utbrottRisk(s, p, ljust, dt);
   }
 }
 
 satHumor(moodOf); // personens händelser minns humöret (steg 9.2.108)
 import { RUS, kanSupa, rusAv, supa } from './rus';
 import { angerText, angerTim, angra } from './skuld';
+import { tanke } from './tankar';

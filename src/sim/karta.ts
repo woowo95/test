@@ -1,4 +1,4 @@
-import { State, kartNamn, mapKey, markNu, receptNu } from './typer';
+import { State, type Fire, kartNamn, mapKey, markNu, receptNu } from './typer';
 import type { MarkId } from './varldmark';
 import { skapaKarta, type KartData, type KartReceptId } from './kartrecept';
 import { streckAv } from './ord';
@@ -42,5 +42,13 @@ type MapData = KartData;
 export const getMap = perKarta((seed): MapData => skapaKarta(seed, (receptNu() ?? 'by') as KartReceptId, markNu() as MarkId | undefined)); // en väckt by får sin världsrutas mark (steg 11.13.2), en plats sin lilla karta (steg 11.13.25)
 // var elden står nu: där kartan lade den, eller dit byn flyttat den (steg 2.10.4, eldflytt.ts)
 export const eldPlats = (s: State) => s.fire.at ?? getMap(s.seed).fire;
+// rutorna en eld står på (steg 12.1.207): en lägereld på en ruta, en härd (hearth 'hard') på två gånger två. at = var den står
+// (den första elden står där eldPlats säger)
+export function eldensRutor(f: Fire, at = f.at): { x: number; y: number }[] {
+  if (!at) return [];
+  const m = f.hearth === 'hard' ? 2 : 1, x0 = Math.floor(at.x), y0 = Math.floor(at.y), ut: { x: number; y: number }[] = [];
+  for (let j = 0; j < m; j++) for (let i = 0; i < m; i++) ut.push({ x: x0 + i, y: y0 + j });
+  return ut;
+}
 // åt vilket håll (x, y) ligger sett från elden: norr, nordost … (testlägets rader, steg 4.5.6.4)
 export const vaderstreck = (s: State, x: number, y: number) => { const e = eldPlats(s); return streckAv(Math.atan2(y - e.y - 0.5, x - e.x - 0.5)); };

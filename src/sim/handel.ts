@@ -1,4 +1,4 @@
-import { bestamd, han, honom, stor } from './ord';
+import { bestamd, han, heltOrd, honom, stor } from './ord';
 import { gastensPlatser, horOmGast, kannerOrt, kartaBorta, O_KANT, ORT, radBesoker } from './ort';
 import { SKRIFT } from './skriftTal';
 import { NORMAL } from './kvalitet';
@@ -7,22 +7,23 @@ import { sallskapTyngd, trampaFard } from './leder';
 import { bynsMitt, utanforByn } from './omrade';
 import { ByteForsok, ByteMinne, DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
-import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, makeName, stat, think, paKartan } from './folk';
+import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, makeName, stat, paKartan } from './folk';
 import { SAMTAL, TalkEvent, isSocial } from './samtal';
 import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
 import { bitAt, blocked, freeNear } from './byggnad';
 import { ledig } from './stationer';
 import { clamp, pick, rnd } from './slump';
-import { iIstiden, ageIndex, hourOf } from './tid';
+import { iIstiden, ageIndex, hourOf, lightLevel } from './tid';
+import { morkFartVid } from './ljus';
 import { grundvarde, VARDE } from './varde';
 import { SAKER, isTool, viktOf } from './saker';
 import { GORS, canMake } from './redskap';
 import { amountOf } from './lager';
 import { arMaterial, villHaAv } from './forradsmal';
 import { ARBETE } from './varde';
-import { DELA, forByn, villGrupp, behovAv, betalVaror, betalaAv, bynPart, genomfor, luraI, personPart } from './behov';
-import { BYTE, BYTESPRIS, FILT_MOT, Part, Vara, filtFri, filtMot, filtNara, loggaByte, nyttPar, satPersonFlytt, vardeAv, vardeOf, vidByte, vidLura, varorText } from './byte';
+import { type Behov, DELA, bynKopAntal, kopValt, forByn, villGrupp, behovAv, betalVaror, betalaAv, bynPart, genomfor, luraI, personPart } from './behov';
+import { BYTE, BYTESPRIS, FILT_MOT, Part, Vara, filtFri, filtMot, filtNara, loggaByte, nyttPar, satPersonFlytt, vardeAv, vardeOf, gerVarde, vidByte, vidLura, varorText } from './byte';
 import type { Skrift } from './skrift';
 import { newTing, tingOf } from './agande';
 import { knows } from './teknik';
@@ -45,6 +46,7 @@ import { gastAv, gastGar, gastTillbaka, hp, nyGast, nyttGastId } from './gast';
 import { valkomnaHandlare } from './kyrka';
 import { FORDON, lassAv } from './fordon';
 import { tamArt, type TamArtId } from './tamdjur';
+import { tanke } from './tankar';
 
 // ---------- handlarna (steg 4.4.1) ----------
 // En handlare kommer när en by i världen skickat hen (byhandling.ts, steg 11.6.8): hen går över världskartan, väntar vid
@@ -212,6 +214,7 @@ export interface HVara { k: string; n: number; q?: number; skrift?: Skrift } // 
 export interface Handlare {
   id: number; // negativt, så att det aldrig är en bybos id (en part i ett byte, byte.ts); handlaren är personen med samma id i folket (steg 9.2.111, gast.ts): namnet, hemmet, klanen, kroppen, färdigheten Handel och var hen står
   mx: number; my: number; // vart hen går
+  fackla?: { x: number; y: number }; // rutan där facklan står uppsatt vid lägret när det är mörkt (steg 12.1.152)
   fran: { x: number; y: number; t: number }; framme: number; // varifrån och när hen började gå, och när hen är framme (bilden ritar hen på vägen)
   fas: 'kommer' | 'vantar' | 'handlar' | 'gar'; // vantar: framme, väntar på kvällen (steg 4.5.4.11)
   kvall?: number; // när hen lägger ut filten (vantar)
@@ -446,7 +449,7 @@ export function handlarTornado(s: State, h: Handlare, dod: boolean, del: number,
     const P = hp(s, h);
     gastGar(s, h.id); // hen och packningen är borta (steg 9.2.111)
     s.handlare = undefined;
-    log(s, `Handlaren ${P.name} från ${P.gast!.hem!} dog i tornadon.`, 'world');
+    count(s, 'handlareDogTornado'); log(s, `Handlaren ${P.name} från ${P.gast!.hem!} dog i tornadon.`, 'world');
     notis(s, 'gast', `Handlaren ${P.name} från ${P.gast!.hem!} dog i tornadon.`, [], { x: Math.floor(P.x), y: Math.floor(P.y) });
     return;
   }
@@ -537,16 +540,18 @@ function gaSteg(s: State, h: Handlare) {
 }
 
 // varje slag (steg.ts): handlaren kommer, handlar och går
-export function handelSteg(s: State, dtSec: number) {
-  const nyTimme = Math.floor(s.now / HOUR) !== Math.floor((s.now - dtSec * SEC) / HOUR);
-  // en handlare som en by skickat (steg 11.6.8) går in när ingen annan handlare är i byn, men inte under istiden
-  if (nyTimme && !s.handlare && s.handlarVantar?.length && (!iIstiden(ageIndex(s)) || s.infart?.klar)) {
-    const rad = s.handlarVantar.shift()!;
-    if (!s.handlarVantar.length) delete s.handlarVantar;
-    if (!kommer(s, false, rad)) handlarHem(s, rad); // byn finns inte längre bland grannarna: hen går hem
-  }
+// en handlare som en by skickat (steg 11.6.8) går in när ingen annan handlare är i byn, men inte under istiden (raden
+// handlaren som väntar i TAKTER, en gång i timmen, steg 12.1.107)
+export function handlarVantarTimme(s: State) {
+  if (s.handlare || !s.handlarVantar?.length || iIstiden(ageIndex(s)) && !s.infart?.klar) return;
+  const rad = s.handlarVantar.shift()!;
+  if (!s.handlarVantar.length) delete s.handlarVantar;
+  if (!kommer(s, false, rad)) handlarHem(s, rad); // byn finns inte längre bland grannarna: hen går hem
+}
+export function handelSteg(s: State, _dtSec: number) {
   const h = s.handlare;
   if (!h) return;
+  handlarFackla(s, h);
   if (h.fas === 'kommer') { if (gaSteg(s, h)) framme(s, h); }
   else if (h.fas === 'vantar') { if (s.now >= h.kvall!) lagUt(s, h); }
   else if (h.fas === 'handlar') { if (s.now >= h.gar) gar(s, h); else { glomAffar(s, h); visaFiltar(s, h); } }
@@ -583,14 +588,15 @@ export function visaFiltar(s: State, h: Handlare) {
 export function pratMedHandlare(s: State, dtSec: number, events?: TalkEvent[]) {
   const h = s.handlare;
   if (!h || (h.fas !== 'vantar' && h.fas !== 'handlar')) return;
+  const H = hp(s, h); // handlaren slås upp en gång
   for (const p of s.people) {
-    if (!paKartan(p) || ageOf(p, s.now) < ALDER.smabarn || Math.hypot(p.x - hp(s, h).x, p.y - hp(s, h).y) >= SAMTAL.radie) continue;
+    if (!paKartan(p) || ageOf(p, s.now) < ALDER.smabarn || Math.hypot(p.x - H.x, p.y - H.y) >= SAMTAL.radie) continue;
     if (!isSocial(p) || h.affar) continue; // den som handlar och handlaren pratar bara om affären (steg 4.5.7.5)
     if (rnd(s, 'handel', p) >= dtSec / HANDEL.pratSek) continue;
-    const out = (stat(p, 'empati', s.now) + hp(s, h).skill.handel) / SAMTAL.utEmpati - SAMTAL.utAvdrag + (rnd(s, 'handel', p) - 0.5) * SAMTAL.utBrus + (stat(p, 'karisma', s.now) - 8) / SAMTAL.charmDiv;
-    think(p, out > 0 ? `Småpratade med ${hp(s, h).name}` : `Småpratet med ${hp(s, h).name} gick trögt`, out > 0 ? HANDEL.pratTanke : -HANDEL.pratTanke, s.now, HANDEL.pratTim * HOUR);
+    const out = (stat(p, 'empati', s.now) + H.skill.handel) / SAMTAL.utEmpati - SAMTAL.utAvdrag + (rnd(s, 'handel', p) - 0.5) * SAMTAL.utBrus + (stat(p, 'karisma', s.now) - 8) / SAMTAL.charmDiv;
+    tanke(p, out > 0 ? 'smaprat' : 'smapratTrogt', s.now, { namn: H.name, v: out > 0 ? HANDEL.pratTanke : -HANDEL.pratTanke, tid: HANDEL.pratTim * HOUR });
     events?.push({ a: p.id, b: h.id, kind: 'småprat', good: out > 0, t: s.now });
-    if (out > 0) { prisIPrat(s, p, hp(s, h), h.varor.map(w => w.k)); horOmGast(s, p, hp(s, h), ORT.prat); } // när det går bra berättar handlaren vad något kostar hemma (steg 10.5.15) och var hen bor (steg 11.4.2)
+    if (out > 0) { prisIPrat(s, p, H, h.varor.map(w => w.k)); horOmGast(s, p, H, ORT.prat); } // när det går bra berättar handlaren vad något kostar hemma (steg 10.5.15) och var hen bor (steg 11.4.2)
     count(s, 'handlarPrat');
   }
 }
@@ -612,7 +618,7 @@ export function handlarVarde(s: State, h: Handlare, k: string, tro?: Person) {
   const kl = klanAv(s, h), pris = tro && kl ? trorPris(tro, kl.rad, k) : klanPris(s, kl, k); // klanens pris (steg 10.5.14), både för det hen säljer och det hen köper
   if (h.varor.some(w => w.k === k)) return (1 + HANDEL.vinst) * pris;
   if (ledigt(h) < viktOf(k)) return 0; // ryggsäcken är full
-  const gott = bynPart(s, hp(s, h).x, hp(s, h).y).varde(k) <= DELA.over; // byn har gott om det
+  const H = hp(s, h), gott = bynPart(s, H.x, H.y).varde(k) <= DELA.over; // byn har gott om det
   return (gott ? 1 - HANDEL.vinst : 1) * pris;
 }
 function taBort(h: Handlare, w: Vara) {
@@ -703,13 +709,16 @@ const vill = (s: State, h: Handlare, p: Person) => h.varor.map(w => ({ w, v: w.s
 // inte behöver själv, payable i behov.ts) som är värt minst ett helt silver för handlaren, så mycket som hen kan bära.
 // Samma för byn (det byn har gott om), när den handlar (steg 4.5.7.4)
 const salja = (s: State, h: Handlare, p: Person) => saljaAv(s, h, bybonPart(s, p), p);
-function saljaAv(s: State, h: Handlare, M: Part, tro: Person) {
+export function saljaAv(s: State, h: Handlare, M: Part, tro: Person) {
   const ut: Vara[] = [];
   let plats = ledigt(h);
   // det som ger mest silver per vikt först (steg 10.5.17)
   const per = (k: string) => grundvarde(k) * handlarVarde(s, h, k, tro) / Math.max(1e-9, viktOf(k));
   for (const w of M.over(['silver']).sort((a, b) => per(b.k) - per(a.k))) {
-    const v = handlarVarde(s, h, w.k, tro), n = Math.min(w.n, Math.floor(plats / viktOf(w.k) + 1e-9)); // det kunden tror handlaren ger (steg 10.5.16)
+    const v = handlarVarde(s, h, w.k, tro); // det kunden tror handlaren ger (steg 10.5.16)
+    let n = Math.min(w.n, Math.floor(plats / viktOf(w.k) + 1e-9));
+    // byn säljer inte det som är värt mer för den än handlaren ger: ju färre kvar, desto mer värd, och den sista mest (steg 12.1.188)
+    if (M.kvar) while (n >= 1 && grundvarde(w.k) * v < gerVarde(w, M, n) - gerVarde(w, M, n - 1)) n--;
     if (v <= 0 || n < 1 || n * grundvarde(w.k) * v < 1) continue; // det som är värt minst ett helt silver (steg 10.5.12)
     ut.push({ ...w, n }); plats -= n * viktOf(w.k);
   }
@@ -761,7 +770,7 @@ function budNu(s: State, h: Handlare, a: Affar, M: Part) {
   }
   while (a.kop.length) {
     const ger = vardFor(a.kop, H_), far = vardFor(a.kop, M, true);
-    const b = betalaAv(betalVaror(M, H_, a.kop.map(w => w.k)), H_, ger * a.f);
+    const b = betalaAv(betalVaror(M, H_, a.kop.map(w => w.k)), H_, ger * a.f, a.kop.reduce((x, w) => x + w.n * viktOf(w.k), 0)); // det köpta lämnar handlarens last (steg 12.1.148)
     if (b.betal.length && b.fick >= ger * a.f - 1e-9 && b.kost < far) { a.bud = b.betal; return true; }
     let i = 0;
     for (let j = 1; j < a.kop.length; j++) if (M.varde(a.kop[j].k) < M.varde(a.kop[i].k)) i = j;
@@ -771,10 +780,14 @@ function budNu(s: State, h: Handlare, a: Affar, M: Part) {
 }
 // kunden väljer: byn det den saknar, en bybo det hen har mest nytta av (högst HANDEL.egnaMax slag och HANDEL.egnaAvVarje av varje); annars säljer hen
 function valj(s: State, h: Handlare, a: Affar, M: Part, p: Person) {
-  // byn köper det den saknar och det projekten saknar (steg 10.5.17), det mest värda först, och av projektens material så många som saknas
+  // byn köper det den saknar och det projekten saknar (steg 10.5.17), det mest värda först, och av projektens material så många som saknas.
+  // Annars så många som byn tar emot innan det blir över (bynKopAntal, steg 12.1.48), samma gräns som när byn säljer
   const lista = s.projektSaknar;
+  // Det som redan valts i köpet dras från behovets brist innan nästa slag får sitt antal (valt, steg 12.1.217)
+  const valt = new Map<Behov, number>();
+  const byKop = (w: Vara) => { if (w.skrift) return w.n; const n = Math.min(w.n, Math.max(lista?.[w.k]?.n ?? 0, bynKopAntal(s, w.k, valt))); kopValt(valt, w.k, n); return n; };
   a.kop = a.andra ? [] : (a.byn ? h.varor.filter(w => (w.skrift?.platser ? kartNytta(w, M) >= HANDEL.nytta : M.varde(w.k) >= DELA.saknar) || (lista?.[w.k]?.n ?? 0) >= 1).sort((x, y) => M.varde(y.k) - M.varde(x.k)) : vill(s, h, p).slice(0, HANDEL.egnaMax))
-    .map(w => ({ k: w.k, n: isTool(w.k) ? 1 : a.byn ? Math.min(w.n, lista?.[w.k]?.n || w.n) : Math.min(w.n, HANDEL.egnaAvVarje), q: w.q, ...(w.skrift ? { skrift: w.skrift } : {}) }));
+    .map(w => ({ k: w.k, n: isTool(w.k) ? 1 : a.byn ? byKop(w) : Math.min(w.n, HANDEL.egnaAvVarje), q: w.q, ...(w.skrift ? { skrift: w.skrift } : {}) })).filter(w => w.n >= 1);
   if (a.kop.length && budNu(s, h, a, M)) return true;
   const sal = saljaAv(s, h, M, p);
   if (!sal.length) return false;
@@ -807,8 +820,25 @@ function nastaBud(s: State, h: Handlare, a: Affar, p: Person) {
   if (ut.length) a.fas = 'hamta';
   else { a.fas = 'bud'; a.dur = mellan(s, HANDEL.budSek) * SEC; }
 }
-// vart kunden ska nu (handlaVal), och vad hen gör under Gör just nu
+// handlarens fackla (steg 12.1.152): en rad i utrustningen (GASTUTRUSTNING i gast.ts), som hen sätter upp mellan filtarna när
+// det är mörkt och tar ner när det ljusnar eller hen går. Den lyser som en uppsatt fackla (raden handlare i LJUSKALLOR, ljus.ts)
+function handlarFackla(s: State, h: Handlare) {
+  const p = hp(s, h), har = (s.gastTing ?? []).some(x => x.k === 'fackla' && x.agare === p.id);
+  const uppe = har && (h.fas === 'vantar' || h.fas === 'handlar') && lightLevel(s.now) <= 0;
+  if (!uppe) { if (h.fackla) delete h.fackla; return; }
+  if (h.fackla) return;
+  const hf = s.filtar?.find(f => f.handlare === h.id) ?? { x: p.x, y: p.y };
+  h.fackla = { x: Math.floor(hf.x), y: Math.floor(hf.y + FILT_MOT / 2) };
+  count(s, 'handlarFackla');
+}
+// vart kunden ska nu (handlaVal), och vad hen gör under Gör just nu. I mörkret tar det längre tid, som allt annat arbete, och i det
+// svaga skenet mindre (morkFartVid i ljus.ts, steg 12.1.152 och 12.1.236)
 function affarSteg(s: State, h: Handlare, a: Affar) {
+  const st = affarStegLjust(s, h, a);
+  const f = morkFartVid(s, st.spot.x, st.spot.y); // mörkret och det svaga skenet som för arbetet (steg 12.1.236)
+  return f < 1 ? { ...st, dur: st.dur / f } : st;
+}
+function affarStegLjust(s: State, h: Handlare, a: Affar) {
   a.t = s.now;
   const spot = kundPlats(s, h), ref = h.id;
   switch (a.fas) {
@@ -869,7 +899,7 @@ function slut(s: State, h: Handlare, a: Affar, p: Person | undefined) {
   if (p) (h.handlat ??= []).push(p.id);
   count(s, 'egenHandel');
   if (bytt) { count(s, 'egnaByten'); if (a.salj) count(s, 'saltOver'); }
-  else { if (p) think(p, `Gick tomhänt från ${hp(s, h).name}`, HANDEL.tomTanke, s.now, HANDEL.tomTim * HOUR); count(s, 'tomhant'); }
+  else { if (p) tanke(p, 'tomhant', s.now, { namn: hp(s, h).name, v: HANDEL.tomTanke, tid: HANDEL.tomTim * HOUR }); count(s, 'tomhant'); }
   if (p && !bytt && a.forsok?.length) avbrutenAffar(s, h, a, p);
 }
 // hur mycket handlaren gillar bybon, −100 till 100 (redogörelsen, steg 5.4.6.1)
@@ -878,7 +908,7 @@ const relTal = (s: State, h: Handlare, p: Person) => Math.round(gillar(s, h, p) 
 // ett byte. Bara loggen och minnet; inget i simuleringen läser det
 function avbrutenAffar(s: State, h: Handlare, a: Affar, p: Person) {
   const minne: ByteMinne = { nr: (s.byteNr = (s.byteNr ?? 0) + 1), t: s.now, a: p.id, an: p.name, b: h.id, bn: hp(s, h).name, ag: [], bg: [], forsok: a.forsok, arg: a.arg, avbruten: true, rel: [a.rel0 ?? relTal(s, h, p), relTal(s, h, p)] };
-  loggaByte(s, log(s, `${p.name} och ${hp(s, h).name} blev inte överens efter ${a.forsok!.length === 1 ? 'ett bud' : `${a.forsok!.length} bud`}.`, 'rel', [p.id]), minne, [p]);
+  loggaByte(s, log(s, `${p.name} och ${hp(s, h).name} blev inte överens efter ${a.forsok!.length === 1 ? 'ett bud' : `${heltOrd(a.forsok!.length)} bud`}.`, 'rel', [p.id]), minne, [p]);
 }
 // den som inte kommit tillbaka till affären på länge (somnat, blivit sjuk) har gett upp den, och den som dött är borta
 function glomAffar(s: State, h: Handlare) {

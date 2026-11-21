@@ -60,6 +60,18 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
   isborr: { pix: ['................', '......kkkk......', '.......jj.......', '.......kk.......', '.......kS.......', '.......kS.......', '.......kS.......', '.......kS.......', '.......kS.......', '......kSSk......', '.......kS.......', '......kSSk......', '.......kS.......', '........k.......', '................', '................'], pal: { k: '#233035', S: '#8a9c9e', j: '#7d5b40' } },
   // eldstålet (steg 12.2.12): ett böjt stål med en gnista
   eldstal: { pix: ['................', '................', '................', '................', '.....kkkkkk.....', '....kSSSSSSk....', '...kSkkkkkkSk...', '...kSk....kSk...', '....k......k....', '................', '.........y......', '........yoy.....', '.........y......', '................', '................', '................'], pal: { k: '#233035', S: '#8a9c9e', y: '#d8b25f', o: '#a14808' } },
+  // sågen (steg 12.5.1): ett brett blad av järn med tänder på underkanten och ett handtag av trä
+  sag: { pix: ['................', '................', '................', '................', '..jjj...........', '.jJJjkkkkkkkkk..', '.jJ.jkSSSSSSSSk.', '.jJJjkSSSSSSSSk.', '..jjjkSSSSSSSk..', '.....kSkSkSkSk..', '......k.k.k.k...', '................', '................', '................', '................', '................'], pal: { k: '#233035', S: '#8a9c9e', j: '#5e3c24', J: '#7d5b40' } },
+  // ullsaxen (steg 12.5.2): två breda skär av järn som sitter ihop i en böjd fjäder
+  ullsax: { pix: ['................', '................', '................', '.....kkkkkk.....', '....kSk..kSk....', '....kSk..kSk....', '.....kSkkSk.....', '.....kSkkSk.....', '.....kSSSSk.....', '.....kSSSSk.....', '......kSSk......', '......kSSk......', '.......kk.......', '................', '................', '................'], pal: { k: '#233035', S: '#8a9c9e' } },
+  // järnnålen (steg 12.5.3): en tunn grå nål med ett öga, snett
+  jarnnal: { pix: ['................', '................', '................', '.............kk.', '............k.k.', '...........kSk..', '..........kSk...', '.........kSk....', '........kSk.....', '.......kSk......', '......kSk.......', '.....kSk........', '....kSk.........', '...kk...........', '................', '................'], pal: { k: '#233035', S: '#8a9c9e' } },
+  // järnhackan (steg 12.5.4): ett spetsigt huvud av järn på tvären över ett långt skaft av trä
+  jarnhacka: { pix: ['................', '................', '..kk........kk..', '..kSkk....kkSk..', '...kSSkkkkSSk...', '....kkSSSSkk....', '......kjjk......', '.......jj.......', '.......jj.......', '.......jj.......', '.......jj.......', '.......jj.......', '.......jj.......', '.......jj.......', '................', '................'], pal: { k: '#233035', S: '#8a9c9e', j: '#7d5b40' } },
+  // järngrytan (steg 12.5.5): en rund mörk gryta av järn med en bygel över, sedd snett uppifrån
+  jarngryta: { pix: ['................', '................', '.....kkkkkk.....', '....k......k....', '...k........k...', '...kkkkkkkkkk...', '..kSSSSSSSSSSk..', '..kSssssssssSk..', '..kkSSSSSSSSkk..', '..ksSsSsSsSssk..', '..kssssssssssk..', '...kssssssssk...', '....kkkkkkkk....', '....k......k....', '................', '................'], pal: { k: '#233035', S: '#61767a', s: '#3e5156' } },
+  // låset (steg 12.5.6): ett grått hänglås med en bygel och ett nyckelhål
+  las: { pix: ['................', '................', '................', '......kkkk......', '.....kSkkSk.....', '.....kk..kk.....', '.....kk..kk.....', '....kkkkkkkk....', '....kSSSSSSk....', '....kSSkkSSk....', '....kSSkkSSk....', '....kSSSkSSk....', '....kSSSSSSk....', '....kkkkkkkk....', '................', '................'], pal: { k: '#233035', S: '#8a9c9e' } },
   // halmhatten (steg 12.1.34), platshållare: en bred brätte av halm med ett mörkare band runt kullen
   hatt_halm: { pix: ['................', '................', '................', '................', '......dddd......', '.....dYYYYd.....', '.....dYyYYd.....', '.....deeeed.....', '..ddddYYYYdddd..', '.dYYYyYYYYyYYYd.', '..ddYYYyyYYYdd..', '....dddddddd....', '................', '................', '................', '................'],
     pal: { d: '#7d5b40', Y: '#bdb39b', y: '#a0947d', e: '#5e3c24' } },
@@ -67,5 +79,9 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
 export function laggTillJarn(PIX: Pix, PAL: Pal) {
   for (const [k, b] of Object.entries(BILDER)) { PIX[k] = b.pix; PAL[k] = b.pal; }
   PIX.vapensmide = PIX.svard; PAL.vapensmide = PAL.svard; // tekniken Vapensmide har svärdets bild
+  // den låsta dörren (steg 12.5.6), platshållare: trädörren med en grå låsplåt av järn där handtaget sitter
+  const plat = (r: string[], y0: number, x0: number) => r.map((rad, y) => y === y0 || y === y0 + 1 ? rad.slice(0, x0) + 'SS' + rad.slice(x0 + 2) : rad);
+  for (const v of ['', '_karta']) if (PIX['tradorr' + v]) { PIX['lasdorr' + v] = plat(PIX['tradorr' + v], 8, 13); PAL['lasdorr' + v] = { ...PAL['tradorr' + v], S: '#8a9c9e' }; }
+  if (PIX.tradorr_karta_v) { PIX.lasdorr_karta_v = PIX.tradorr_karta_v.map(r => r.replace(/k/g, 'S')); PAL.lasdorr_karta_v = { ...(PAL.tradorr_karta_v ?? PAL.tradorr), S: '#8a9c9e' }; }
   for (const k of ['kolmila', 'blasterugn', 'smedja']) { PIX[k + '_karta_v'] = PIX[k + '_karta']; PAL[k + '_karta_v'] = PAL[k + '_karta']; }
 }

@@ -484,7 +484,7 @@ SCENARIER.undsattning = {
     const s = createState(1, START), [a, b, hp] = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen && SIM.kanGa(p));
     const e = SIM.eldPlats(s), plats = (dx: number) => SIM.freeNear(s, e.x + 0.5 + dx, e.y + 3.5);
     const f = rovarGang(s, 1, plats(-4)), rov = SIM.rovarna(s, f)[0];
-    Object.assign(a, plats(-2)); Object.assign(b, plats(3)); Object.assign(hp, plats(9));
+    Object.assign(a, plats(-2)); Object.assign(b, plats(0)); Object.assign(hp, plats(9)); // den fallne ligger mellan STRID.raddaFri och STRID.hjalpAvst från rövaren, så att hen måste bäras undan
     const g = SIM.kartStridBorja(s, 'skada', [[a, b], [rov]], 'rövare vid byn', { typ: 'rovare', egen: true, flock: f.id });
     const kb = g.st.kampar.find(k => k.pid === b.id)!;
     kb.lage = 'nere'; kb.skador = [{ d: 'bal', k: 'sticksar', g: 0.8, ny: 1 }];
@@ -980,7 +980,7 @@ SCENARIER.sad = {
 SCENARIER.vin = {
   text: 'Steg 9.6.12: bryggkaret och vinet. Tekniken Vin kommer genom matlagningen; bär krossas med vatten i bryggkaret, en station som har satsen i sig medan den jäser (3 dygn, inte i kyla utomhus), och vinet hälls upp i stora lerkrukor, där det blir bättre med tiden och håller 40 dygn',
   kor: () => {
-    const { bryggVal, bryggKlar, stepBrygg, setAmount, addTool, vatskaAv, vinKvalitet, VATSKOR, TEK, STATIONER, BRYGD } = SIM;
+    const { bryggVal, bryggKlar, stepBrygg, setAmount, addTool, vatskaAv, mognadKv: vinKvalitet, VATSKOR, TEK, STATIONER, BRYGD } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     p.tek = { ...(p.tek ?? {}), bryggkar: 1, kruka: 1 };
     const kar = { id: 997, k: 'bryggkar', x: 3, y: 3, kvar: 0 } as SIM.Station; s.stationer = [...(s.stationer ?? []), kar];

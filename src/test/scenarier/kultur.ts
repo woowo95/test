@@ -307,7 +307,7 @@ export function kvall(seed = 3, timme = 20) {
 // p försöker uppträda tills hen gör det (eller det inte går): som om hen prövat många kvällar klockan 18 till nu
 export function upptrad(s: State, p: Person, ganger = 300) {
   for (let i = 0; i < ganger; i++) {
-    delete p.framProv;
+    p.framProv = undefined;
     const fr = SIM.framVal(s, p);
     if (fr?.act === 'upptrada') { p.task = { act: 'upptrada', phase: 'go', tx: fr.spot?.x ?? p.x, ty: fr.spot?.y ?? p.y, until: s.now + fr.dur, carry: 0, ref: fr.ref, tool: fr.tool, dark: true, why: fr.why }; return true; }
   }
@@ -1182,6 +1182,9 @@ SCENARIER.bubbla = {
     const rad: F = { tag: 'li', attr: { title: 'Tryck för alla röster', 'data-hjalp': 'x' }, cls: 'klick' }, iRad: F = { tag: 'span', attr: { title: 'Ja' }, upp: rad };
     const knapp: F = { tag: 'button', attr: { title: 'Visa', 'data-id': '3' } };
     const svg: F = { tag: 'svg', attr: {}, svgTitle: 'Vikt 4 av 5' }, svgDel: F = { tag: 'path', attr: {}, upp: svg };
+    // runstenarna (steg 12.1.224): den som öppnar en flik ger ingen bubbla efter trycket, den bleka visar vad som krävs
+    const sten: F = { tag: 'button', attr: { title: 'Styre', 'data-tab': 'styre' }, cls: 'runsten' }, stenBild: F = { tag: 'img', attr: {}, upp: sten };
+    const blek: F = { tag: 'button', attr: { title: 'Tro: kräver en tro', 'aria-disabled': 'true' }, cls: 'runsten' };
     // bubblan i ett låtsasdokument
     const g = globalThis as { document?: unknown; innerWidth?: number; innerHeight?: number };
     const [d0, w0, h0] = [g.document, g.innerWidth, g.innerHeight];
@@ -1208,6 +1211,7 @@ SCENARIER.bubbla = {
       ['ett tryck på något annat med förklaring visar dess text', annan],
       ['ett tryck på en knapp visar ingen bubbla', knappIngen],
       // steg 11.1.1: med fingret visar knappar sin förklaring, men en rad som fälls ut gör det inte
+      [`med fingret står ingen bubbla kvar efter trycket på en runsten som öppnar en flik (${forklaringAv(el(stenBild), true)?.text}), den bleka visar vad som krävs (${forklaringAv(el(blek), true)?.text})`, !forklaringAv(el(stenBild), true) && forklaringAv(el(blek), true)?.text === blek.attr.title],
       ['med fingret ger en rad som fälls ut ingen bubbla, men en knapp ger sin förklaring', !forklaringAv(el(iRad), true) && !forklaringAv(el(rad), true) && forklaringAv(el(knapp), true)?.text === 'Visa'],
     ];
   },
@@ -1648,18 +1652,23 @@ SCENARIER.skattetal = {
   },
 };
 SCENARIER.sederfas8 = {
-  text: 'Steg 8.4.11–8.4.15: sederna Krig och fred och Värna – Bruka låses upp när det de styr finns; Värna gör folk ledsna av fällda träd. Talen i Byggplanen följer sederna och ledaren',
+  text: 'Steg 8.4.11–8.4.15: sederna Krig och fred och Värna – Bruka låses upp när det de styr finns; Värna gör folk ledsna av fällda träd. Talen i Byggplanen följer sederna och ledaren, som drar åt sitt håll från egenskapens mitt (steg 12.1.110)',
   kor: () => {
     const { s, v, l } = medLedare();
     const l0 = SIM.sedOppen(s, 'natur');
     SIM.oppnaSed(s, 'natur');
     const varna = v.find(p => SIM.drar(s, p).natur < -0.2);
-    SIM.naturTanke(s, 'Ett träd fälldes');
+    SIM.naturTanke(s, 'tradFalldes');
     const ledsen = !!varna?.thoughts.some(t => t.text === 'Ett träd fälldes');
     s.seder.v.gemenskap = 1; const tat = SIM.byplanNu(s).tat; s.seder.v.gemenskap = -1; const gles = SIM.byplanNu(s).tat;
     s.seder.v.nyfikenhet = 1; l.pot.nyfikenhet = 18; const rader = SIM.byplanNu(s).form;
     s.seder.v.nyfikenhet = -1; l.pot.nyfikenhet = 2; const ring = SIM.byplanNu(s).form;
+    // ledaren drar åt sitt håll från skalans mitt (steg 12.1.110): över mitten åt ett håll, under åt det andra
+    s.seder.v.gemenskap = 0; l.pot.empati = 16; const tatOver = SIM.byplanNu(s).tat; l.pot.empati = 4; const tatUnder = SIM.byplanNu(s).tat;
+    s.seder.v.nyfikenhet = 0.2; l.pot.nyfikenhet = 16; const formOver = SIM.byplanNu(s).form; l.pot.nyfikenhet = 4; const formUnder = SIM.byplanNu(s).form;
     return [
+      [`ledarens empati över mitten drar tätt, under glest (${tatOver.toFixed(2)}, ${tatUnder.toFixed(2)})`, tatOver > 0 && tatUnder < 0],
+      [`ledarens nyfikenhet över mitten drar åt rader, under åt ring (${formOver}, ${formUnder})`, formOver === 'rader' && formUnder === 'ring'],
       ['Värna – Bruka är låst tills träd fälls', !l0],
       [`den som drar åt Värna blir ledsen av ett fällt träd (${varna?.name ?? 'ingen drar åt Värna'})`, !!varna && ledsen],
       [`husen tätt eller glest följer sederna (${tat.toFixed(2)}, ${gles.toFixed(2)})`, tat > gles],
@@ -2473,7 +2482,7 @@ SCENARIER.helgonminne = {
     const s = rikDag(3), v = vuxna(s);
     const [u, d1, d2] = v;
     blixtTro(s, u);
-    for (const d of [d1, d2]) { d.tro = 1; d.died = s.now - (SIM.KYRKA.helgonDygn + 1) * SIM.DAY; d.fame = []; delete d.intryck; }
+    for (const d of [d1, d2]) { d.tro = 1; d.died = s.now - (SIM.KYRKA.helgonDygn + 1) * SIM.DAY; d.fame = []; d.intryck = undefined; }
     for (const k of Object.keys(s.rels)) { const [a, b] = k.split('-').map(Number); if ([d1.id, d2.id].includes(a) || [d1.id, d2.id].includes(b)) delete s.rels[k]; }
     const levande = SIM.living(s);
     for (const p of levande) p.intryck = [d1, d2].map(d => ({ om: d.id, namn: d.name, k: 'generos' as SIM.IntryckTyp, v: 1, c: 1, t: s.now }));
@@ -2490,7 +2499,7 @@ SCENARIER.helgonminne = {
     // av två som båda är ryktbara blir den ryktbaraste helgon
     const s2 = rikDag(3), w = vuxna(s2), [u2, e1, e2] = w;
     s2.tron = [{ ...s.tron![0], grundare: u2.id, gnamn: u2.name, helgon: undefined }];
-    for (const d of [e1, e2]) { d.tro = 1; d.died = s2.now - (SIM.KYRKA.helgonDygn + 1) * SIM.DAY; d.fame = []; delete d.intryck; }
+    for (const d of [e1, e2]) { d.tro = 1; d.died = s2.now - (SIM.KYRKA.helgonDygn + 1) * SIM.DAY; d.fame = []; d.intryck = undefined; }
     for (const k of Object.keys(s2.rels)) { const [a, b] = k.split('-').map(Number); if ([e1.id, e2.id].includes(a) || [e1.id, e2.id].includes(b)) delete s2.rels[k]; }
     for (const p of SIM.living(s2)) p.intryck = [{ om: e1.id, namn: e1.name, k: 'generos' as SIM.IntryckTyp, v: 0.5, c: 1, t: s2.now }, { om: e2.id, namn: e2.name, k: 'generos' as SIM.IntryckTyp, v: 1, c: 1, t: s2.now }];
     SIM.helgonDygn(s2);
@@ -3738,7 +3747,7 @@ SCENARIER.dryckval = {
       ['saften släcker törsten och ger sin tanke, ur raden', slackt],
       [`på kvällen vinet före ölet (${kv}), med smak för öl ölet (${kvOl})`, kv === 'vin' && kvOl === 'ol'],
       ['varje dryck har en rad, och bara de med alkohol tas på kvällen', rader],
-      [`kvällsdrycken är en chans per tid (${(tio * 100).toFixed(0)} % med frågor var 10:e minut, ${(trettio * 100).toFixed(0)} % var 30:e)`, Math.abs(tio - trettio) < 0.1 && Math.abs(tio - (1 - (1 - SIM.RUS.kvall) ** 2)) < 0.1],
+      [`kvällsdrycken är en chans per tid (${(tio * 100).toFixed(0)} % med frågor var 10:e minut, ${(trettio * 100).toFixed(0)} % var 30:e)`, Math.abs(tio - trettio) < 0.1 && Math.abs(tio - (1 - (1 - SIM.RUS.kvall * SIM.rusLust(s, p)) ** 2)) < 0.1],
       ['ölet släcker lite törst och ger rus', ol],
     ];
   },
@@ -4088,12 +4097,12 @@ SCENARIER.dopet = {
     const m = createState(9, START); (m.hus ??= []).push({ klar: m.now } as never);
     const v = SIM.living(m).filter(p => SIM.ageOf(p, m.now) >= SIM.ALDER.vuxen), l = v[0];
     const rad = SIM.TAS_UPP.find(r => r.id === 'bynamn'), forslag = rad?.lista(m, l) ?? [];
-    // ett nej: namnet tas inte upp igen på tre dygn
+    // ett nej: namnet tas inte upp igen på BYNT.nejDygn dygn
     const n = createState(9, START); (n.hus ??= []).push({ klar: n.now } as never);
     SIM.FRAGOR.bynamn.nej!(n, { namn: forslag[0]?.fr.d.namn as string });
     const nv = SIM.living(n).filter(p => SIM.ageOf(p, n.now) >= SIM.ALDER.vuxen);
     const blockerad = nv.every(p => SIM.namnForslag(n, p)?.b.namn !== forslag[0]?.fr.d.namn);
-    n.now += 3 * SIM.DAY + 1;
+    n.now += SIM.BYNT.nejDygn * SIM.DAY + 1;
     const igen = nv.some(p => SIM.namnForslag(n, p)?.b.namn === forslag[0]?.fr.d.namn);
     return [
       [`innan byn slagit sig ner tas inget namn upp (${forNer})`, forNer === 'Nybygget'],
@@ -4101,12 +4110,12 @@ SCENARIER.dopet = {
       [`en rad i krönikan under Styre (${krona?.[1]}) och en notis (${not?.rader[0]})`, !!krona && /^Byn kallar sig nu /.test(krona[1]) && !!not && SIM.KRONIKA_KAT.find(k => k.id === 'styre')!.slag.includes('bynamn')],
       [`utan ledare skapas inget styre (${!!s.styre}) och ingen blir missnöjd (${miss})`, !s.styre && !miss],
       [`med ledare lägger ledaren fram ett namn (${forslag[0]?.varfor}, prioritet ${forslag[0]?.prio.toFixed(2)})`, forslag.length === 1 && forslag[0].prio >= SIM.LAG.troskel],
-      [`ett nej: namnet tas inte upp på tre dygn (${blockerad}), men sedan (${igen})`, blockerad && igen],
+      [`ett nej: namnet tas inte upp på ${SIM.BYNT.nejDygn} dygn (${blockerad}), men sedan (${igen})`, blockerad && igen],
     ] as [string, boolean][];
   },
 };
 SCENARIER.namnbyte = {
-  text: 'Namnet kan bytas (steg 10.9.4): ett nytt namn tas upp när den som föreslår tycker klart bättre om det än om det byn heter. Namnet stämmer inte längre när personen det heter efter är död och bortglömd, och en avsatt ledares namn stämmer hälften så bra. Vanan drar av upp till 0,3, fullt efter 20 dygn, och krönikan minns det gamla namnet',
+  text: 'Namnet kan bytas (steg 10.9.4): ett nytt namn tas upp när den som föreslår tycker klart bättre om det än om det byn heter. Namnet stämmer inte längre när personen det heter efter är död och bortglömd, och en avsatt ledares namn stämmer hälften så bra. Vanan drar av upp till BYNT.vana, fullt efter BYNT.vanaDygn dygn (steg 12.1.155), och krönikan minns det gamla namnet',
   kor: () => {
     const s = createState(9, START); (s.hus ??= []).push({ klar: s.now } as never);
     const v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), p = v[0], q = v[1];
@@ -4120,12 +4129,12 @@ SCENARIER.namnbyte = {
     if (forslag) SIM.rostaOm(s, { f: 'bynamn', d: { namn: forslag.b.namn, rad: forslag.b.rad, om: forslag.b.om }, fram: p.id });
     const krona = s.hist?.kronika.filter(k => k[2] === 'bynamn').map(k => k[1]) ?? [];
     q.died = undefined;
-    // vanan: ingen vid Nybygget, full efter 20 dygn
+    // vanan: ingen vid Nybygget, halv efter halva BYNT.vanaDygn, full efter
     const t = createState(9, START), tv = SIM.living(t).filter(o => SIM.ageOf(o, t.now) >= SIM.ALDER.vuxen)[0];
     const vana0 = SIM.namnVana(t, tv);
     t.bynamn = { namn: 'Granåsen', rad: 'gran', t: t.now };
-    t.now += 10 * SIM.DAY; const vana10 = SIM.namnVana(t, tv);
-    t.now += 20 * SIM.DAY; const vana30 = SIM.namnVana(t, tv);
+    t.now += SIM.BYNT.vanaDygn / 2 * SIM.DAY; const vana10 = SIM.namnVana(t, tv);
+    t.now += SIM.BYNT.vanaDygn * SIM.DAY; const vana30 = SIM.namnVana(t, tv);
     // en avsatt ledares namn stämmer hälften så bra
     const a = createState(9, START), av = SIM.living(a).filter(o => SIM.ageOf(o, a.now) >= SIM.ALDER.vuxen)[0];
     const fore = SIM.sant(a, { rad: 'person', om: av.id });
@@ -4135,7 +4144,7 @@ SCENARIER.namnbyte = {
       [`byn heter ${namn.namn}, som stämmer ${sant0} medan ${q.name} lever och ${sant1} när hen är död och bortglömd`, sant0 === 1 && sant1 === 0],
       [`ett nytt namn föreslås (${forslag?.b.namn}, prioritet ${forslag?.prio.toFixed(2)}) och byn byter (${SIM.bynsNamn(s)}, ${s.stat?.bynamn_byte ?? 0} byte)`, !!forslag && SIM.bynsNamn(s) === forslag.b.namn && s.stat?.bynamn_byte === 1],
       [`krönikan minns det gamla namnet: ${krona[krona.length - 1]}`, krona.length === 2 && krona[1].includes(`Den hette förr ${namn.namn}.`)],
-      [`vanan: ${vana0} vid Nybygget, ${vana10.toFixed(2)} efter 10 dygn och ${vana30.toFixed(2)} efter 30`, vana0 === 0 && Math.abs(vana10 - 0.15) < 1e-9 && vana30 === 0.3],
+      [`vanan: ${vana0} vid Nybygget, ${vana10.toFixed(2)} halvvägs och ${vana30.toFixed(2)} efter längre tid`, vana0 === 0 && Math.abs(vana10 - SIM.BYNT.vana / 2) < 1e-9 && vana30 === SIM.BYNT.vana],
       [`en avsatt ledares namn stämmer hälften så bra (${fore} → ${efter})`, fore === 1 && efter === 0.5],
     ] as [string, boolean][];
   },
@@ -4176,7 +4185,7 @@ SCENARIER.pabud = {
 };
 
 SCENARIER.yrken = {
-  text: 'Yrkena Herde och Biodlare (steg 12.1.32, YRKEN i seder.ts): den som mest vaktar och sköter djuren kallas herde, och den som sköter bina biodlare',
+  text: 'Yrkena Herde och Biodlare (steg 12.1.32, YRKEN i seder.ts): den som mest vaktar och sköter djuren kallas herde, och den som sköter bina biodlare; och yrkena skald, skrivare, bryggare, vävare och krukmakare (steg 12.1.139); trons präst heter efter ämbetet (steg 12.1.213)',
   kor: () => {
     const s = SIM.cloneState(testBy(3)), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18), [h, b, ...ovriga] = vuxna;
     for (const x of vuxna) { x.tag = undefined; x.kallad = undefined; x.habit = { samla: 6, ved: 4, vila: 2 }; }
@@ -4188,6 +4197,41 @@ SCENARIER.yrken = {
       [`${h!.name} som vallar, mjölkar och klipper kallas ${h!.tag ?? 'inget'}`, h!.tag === 'Herde'],
       [`${b!.name} som skattar bikuporna kallas ${b!.tag ?? 'inget'}`, b!.tag === 'Biodlare'],
       [`de andra blir inget av dem (${ovriga.map(x => x.tag ?? 'inget').join(', ')})`, !ovriga.some(x => x.tag === 'Herde' || x.tag === 'Biodlare')],
+      ...nyaYrken(),
     ];
   },
 };
+// steg 12.1.139: yrken från de nya systemen (Präst heter efter ämbetet sedan steg 12.1.213), och bryggningen räknas till bryggaren och inte kocken
+function nyaYrken(): [string, boolean][] {
+  const s = SIM.cloneState(testBy(3)), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
+  const fall: [string, Record<string, number>][] = [
+    ['Skald', { upptrada: 6, samla: 5 }], ['Skrivare', { skriva: 4, bok: 2, gora_pergament: 2, samla: 4 }],
+    ['Bryggare', { brygga: 4, malta: 3, tappa: 2, koka_mat: 1, samla: 3 }], ['Vävare', { spinna: 4, vava: 4, samla: 4 }], ['Krukmakare', { lerkruka: 5, lera: 2, samla: 5 }],
+  ];
+  // testbyn har få vuxna: två yrken i taget, och de andra gör vardagligt arbete
+  if (vuxna.length < 3) return [[`testbyn har för få vuxna (${vuxna.length})`, false]];
+  const fick: [string, string, string][] = [];
+  for (let j = 0; j < fall.length; j += 2) {
+    for (const x of vuxna) { x.tag = undefined; x.kallad = undefined; x.habit = { samla: 6, ved: 4, vila: 2 }; }
+    const del = fall.slice(j, j + 2);
+    del.forEach(([, h], i) => { vuxna[i]!.habit = { ...h }; });
+    SIM.updateTags(s);
+    del.forEach(([y], i) => fick.push([y, vuxna[i]!.name, vuxna[i]!.tag ?? 'inget']));
+  }
+  const kock = SIM.TAGS.find(t => t.tag === 'Kock'), bry = SIM.TAGS.find(t => t.tag === 'Bryggare');
+  // trons präst heter efter ämbetet (steg 12.1.213): den som ber mest blir ingen präst, och prästen kallas Völva, Gode eller Präst
+  for (const x of vuxna) { x.tag = undefined; x.kallad = undefined; x.habit = { samla: 6, ved: 4, vila: 2 }; }
+  vuxna[0]!.habit = { ritual: 5, be: 4, samla: 4 };
+  SIM.updateTags(s);
+  const berMest = vuxna[0]!.tag ?? 'inget';
+  const t = SIM.cloneState(testBy(25, b => !!b.tron?.length)), tr = t.tron?.[0], q = SIM.living(t).find(x => SIM.ageOf(x, t.now) >= 18 && t.styre?.ledare !== x.id);
+  let ambete = '', utan = '', vantat = '';
+  if (tr && q) { q.tro = tr.id; tr.prast = q.id; ambete = SIM.yrkeNamn(t, q) ?? ''; vantat = SIM.prastSort(tr, q.sex); tr.prast = undefined; utan = SIM.yrkeNamn(t, q) ?? 'inget'; }
+  return [
+    [`ingen kallas präst för att hen ber mest (${berMest}); Präst är inget av yrkena som räknas ur timmarna`, berMest !== 'Präst' && !SIM.TAGS.some(x => x.tag === 'Präst')],
+    [`trons präst heter efter ämbetet (${ambete || 'ingen tro i testbyn'}), och efter yrket när hen inte är präst (${utan})`, !!ambete && ambete === vantat && utan !== ambete],
+    [`yrkena finns och har handlingar (${fall.map(([y]) => `${y}: ${SIM.TAGS.find(t => t.tag === y)?.acts.join(', ') ?? 'saknas'}`).join('; ')})`, fall.every(([y]) => (SIM.TAGS.find(t => t.tag === y)?.acts.length ?? 0) > 0)],
+    ['bryggningen hör till bryggaren och inte kocken', !!bry && !!kock && ['brygga', 'malta', 'tappa', 'branna'].every(a => bry.acts.includes(a as SIM.Act) && !kock.acts.includes(a as SIM.Act))],
+    ...fick.map(([y, namn, tag]): [string, boolean] => [`${namn} kallas ${tag} (ska vara ${y})`, tag === y]),
+  ];
+}

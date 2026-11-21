@@ -7,13 +7,14 @@
 // tillbaka i packningen. Den som dog i byn är död på vägen (dorPaVagen), och byn får veta det när beskedet kommer hem
 import type { Person, State } from './typer';
 import { SEC, useMap } from './typer';
+import { balans } from './balans';
 import { BESOKET, gastAv, gastGar, nyttGastId } from './gast';
 import { GASTVARD } from './gastvardag';
 import { skrivVanor } from './vanor';
 import { kantMotBy } from './grannbyar';
 import { eldPlats } from './karta';
 import { gaMot } from './rovare';
-import { count } from './folk';
+import { count, nyPerson } from './folk';
 import { freeNear } from './byggnad';
 import { FOOD, SAKER } from './saker';
 import { DODSORSAKER, type Dodsorsak } from './liv';
@@ -23,9 +24,9 @@ import { hjalpBygge, hjalpSteg } from './vackthjalp';
 import { vackPlats } from './vacktplats';
 import { dorPaVagen, resenarer, Sallskap, sallskapNu, tappa, vackKrok } from './resa';
 
-export const VACKTGAST = {
+export const VACKTGAST = balans('vacktgast', {
   nara: 1.5, // så nära elden stannar besökaren (rutor)
-};
+});
 const vacktBy = (s: State, sl: Sallskap) => { const nr = s.varld?.platser?.find(p => p.nr === sl.mal && p.k === 'by')?.by; return nr === undefined ? s.vackta?.find(b => b.vacktPlats === sl.mal) : s.vackta?.find(b => b.vackt === nr && b.vackI === undefined); }; // en by, eller platsens lilla karta (steg 11.13.25)
 // sällskapet framme: resenärerna kliver in i den väckta byn, om byn dit är väckt och färdig
 export function besokIn(s: State, sl: Sallskap) {
@@ -45,9 +46,9 @@ export function besokIn(s: State, sl: Sallskap) {
   sl.gaster = [];
   sl.vacktMat = mat;
   for (const p of folk) {
-    const g = JSON.parse(JSON.stringify(p)) as Person;
-    for (const f of BESOKET) delete (g as unknown as Record<string, unknown>)[f];
-    delete g.ute; delete g.dodVag;
+    const g = nyPerson(JSON.parse(JSON.stringify(p)) as Person);
+    for (const f of BESOKET) (g as unknown as Record<string, unknown>)[f] = undefined;
+    g.ute = undefined; g.dodVag = undefined;
     g.id = nyttGastId(b); g.x = kant.x; g.y = kant.y;
     g.gast = { sort: 'besok', hemRad: vl.huvud, fas: 'kommer', mat: per, vatten: GASTVARD.sack, ...(sl.hjalp ? { hjalp: 1 as const } : {}) };
     b.people.push(g);

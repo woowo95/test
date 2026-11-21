@@ -1,5 +1,5 @@
 import { gen } from '../../sim/ord';
-import { runstenRubrik, tornadoAndel, tornadoPos, hageById, hageBete, djurIHagen, hageKant, harStaket, hageDygn, TAMDJUR, tamAlder, vaderstreck, kvOf, NORMAL, SKYDD, KROPPSDELAR, GravStil, GRAVAR, gravSkick, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf, egetNamn, specialText } from '../../sim';
+import { runstenRubrik, tornadoAndel, tornadoPos, hageById, hageBete, djurIHagen, hageKant, harStaket, hageDygn, TAMDJUR, tamAlder, vaderstreck, kvOf, NORMAL, SKYDD, KROPPSDELAR, GravStil, GRAVAR, gravSkick, HELIGA_PLATSER, gravAt, heligAt, troNamn, troOf, kvarById, KVARLEVOR, DAY, amountOf, busksort, fallTid, living, tileOf, isTool, FOREST, stamAv, MARK, STADIER, VAG, groundOf, stadium, tradAlder, tradArt, STUBBE_LIV, grundvarde, tingVarde, klenod, sakBerattelse, kladSkydd, varmeText, BYN, HOUR, W, kortTal, Pile, SAKER, Slitage, Ting, byId, condOf, halvKlar, sakNamn, slitageNu, stationById, stationDef, temperature, tingOf, toaAt, toaInfo, viktOf, egetNamn, specialText } from '../../sim';
 import { iconImg, tecknet } from '../../ikoner';
 import { condBar, durTxt, esc, fallUt, hjalpText, kvOrd, kvText, pLink } from '../hjalp';
 import { piles, s, ui } from '../lage';
@@ -225,7 +225,7 @@ export const sak: Flik = {
     const v1 = t ? tingVarde(t) : grundvarde(a.k) * c, varde = `<dt title="Ungefär i arbetstimmar: det det tar att skaffa eller göra den">Värde</dt><dd>${tecknet('sym_vag', '⚖', 12)} ${kortTal(v1)}${!t && p && p.n >= 2 ? `, ${kortTal(v1 * Math.round(p.n))} alla` : ''}</dd>`;
     // vad plagget skyddar mot, i tal (steg 9.2.14): kylan, och i striden hur stor del av skadan det tar per slag, på delarna det täcker
     const strid = SKYDD[a.k], PAR: Record<string, string> = { arm: 'armarna', ben: 'benen', fot: 'fötterna', hand: 'händerna' }, SLAGORD: Record<string, string> = { hugg: 'hugg', stick: 'stick', slag: 'slag', bett: 'bett' };
-    const klad = (SAKER[a.k]?.klad?.varme ? `<dt>Kylan</dt><dd>Värmer ${Math.round(kladSkydd(a.k, t) * 100)} %</dd>` : '')
+    const klad = (SAKER[a.k]?.klad?.varme ? `<dt>Kylan</dt><dd>${varmeText(kladSkydd(a.k, t))}</dd>` : '')
       + (strid ? `<dt>Slag och stick</dt><dd>Tar ${Object.entries(strid.tar).map(([k, v]) => `${Math.round(v! * 100)} % av ${SLAGORD[k] ?? k}`).join(', ')}, på ${[...new Set(strid.delar.map(d => PAR[d.replace(/[VH]$/, '')] ?? KROPPSDELAR[d].i))].join(' och ')}</dd>` : '');
     const kv = t && !t.halv && t.q !== undefined ? `<dt>Kvalitet</dt><dd>${kvOrd(t) || 'Normal'}${kvOf(t) === NORMAL ? '' : ` <span class="muted">${esc(kvText(t).replace(/^[^:]*: /, ''))}</span>`}</dd>` : ''; // (steg 2.2.2)
     const ber = t && !t.halv ? sakBerattelse(s, t, sakNamn(k)) : ''; // mästerverken och de usla sakerna (steg 3.9.4)

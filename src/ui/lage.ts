@@ -29,9 +29,12 @@ export function gaHem() {
 export function setByn(n: State) {
   hem = undefined;
   s = n; medVarld(n); /* byn får sin värld (steg 11.2.7) */ ui.nu = n.now; useMap(n); nyBild();
-  ui.hovered = undefined; ui.husId = -1; ui.stationId = -1; ui.flytta = -1; ui.flyttaDel = -1; ui.flyttFel = false; ui.hogAt = { x: 0, y: 0 }; ui.filtAt = { x: 0, y: 0 }; ui.byteNr = -1; ui.framNr = -1; ui.matchNr = -1; ui.resaNr = -1; ui.sak = ''; ui.faltId = -1; ui.faltRuta = -1; ui.djurId = -1; ui.djurHover = -1; ui.eld = undefined; ui.sjoNr = 0; ui.lagerNr = 0; // de pekade in i den förra byn
+  Object.assign(ui, pekarIn()); // de pekade in i den förra byn
   for (const f of vidNyBy) f();
 }
+// fälten i ui som pekar in i byn (steg 12.1.249), med värdet de har när inget är valt: en ny by nollställer dem (setByn), och
+// arbetarens bild av samma by under snabbspolningen behåller dem (bytTill i spara.ts). Ett nytt fält som pekar in i byn får en rad här
+export const pekarIn = () => ({ hovered: undefined as number | undefined, husId: -1, stationId: -1, flytta: -1, flyttaDel: -1, flyttFel: false, hogAt: { x: 0, y: 0 }, filtAt: { x: 0, y: 0 }, byteNr: -1, framNr: -1, matchNr: -1, resaNr: -1, sak: '', faltId: -1, faltRuta: -1, djurId: -1, djurHover: -1, eld: undefined as number | undefined, sjoNr: 0, lagerNr: 0 });
 export const ui = {
   tab: undefined as FlikId | undefined, // fliken i personens panel till vänster (personen, elden, saken …), steg 5.3.1.1
   hoger: undefined as FlikId | undefined, // kartan börjar fri (steg 5.3.7); Folket har ingen egen flik (steg 6.9.15)
