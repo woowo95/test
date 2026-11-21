@@ -5,7 +5,7 @@ import { balans } from './balans';
 import { spand } from './agande';
 import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning, annanGor } from './folk';
 import { getable, takeMaterial } from './behov';
-import { rnd } from './slump';
+import { chansPer, rnd } from './slump';
 import { H, Person, State, T, W, inMap } from './typer';
 import { groundOf } from './mark';
 import { BAR, FOREST } from './vag';
@@ -19,10 +19,11 @@ import { bynsMitt } from './omrade';
 import { TAM, Tamdjur, tamArt, tamdjurOf } from './tamdjur';
 
 // en timme för hagarna och betesdjuren (efter stepTamdjur): djuren betar, staketet slits
-export function stepHagar(s: State) {
-  for (const d of betesdjurOf(s)) stepBete(s, d);
-  for (const h of hagarOf(s)) slitStaket(s, hageKant(s, h), HAGE.slit * (1 + djurIHagen(s, h).length * HAGE.slitDjur));
-  for (const f of faltOf(s)) slitStaket(s, staketRutor(s, f), HAGE.slit); // fältets staket slits av vädret som hagens (steg 10.10.10)
+// dt: sekunderna sedan sist, och slitaget och rymningen är chanser per timme (steg 12.1.107)
+export function stepHagar(s: State, dt = 3600) {
+  for (const d of betesdjurOf(s)) stepBete(s, d, dt);
+  for (const h of hagarOf(s)) slitStaket(s, hageKant(s, h), HAGE.slit * (1 + djurIHagen(s, h).length * HAGE.slitDjur), dt);
+  for (const f of faltOf(s)) slitStaket(s, staketRutor(s, f), HAGE.slit, dt); // fältets staket slits av vädret som hagens (steg 10.10.10)
 }
 // En inhägnad av staketet (steg 9.7.10) på gräs nära byn, en kvadrat med staket runt om, så stor som djuren behöver (hageSida).
 // Hagen är ett projekt (raden hage i PROJEKT, projekt.ts, steg 10.2.36): någon märker ut den och sätter staketet.
@@ -152,8 +153,8 @@ export function hageKlar(s: State, p: Person, i?: number) {
 }
 // staketet slits av vädret (och djuren i hagen): ibland går en ruta av rutorna rs sönder, med chansen c i timmen (stepHagar
 // räknas en gång i timmen i registret TAKTER, så slitaget är detsamma med korta som med långa slag)
-function slitStaket(s: State, rs: number[], c: number) {
-  if (!rs.some(i => harStaket(s, i)) || rnd(s, 'tamdjur') >= c) return;
+function slitStaket(s: State, rs: number[], c: number, dt: number) {
+  if (!rs.some(i => harStaket(s, i)) || !chansPer(s, c, 3600, dt, 'tamdjur')) return;
   const k = rs.filter(i => harStaket(s, i));
   if (!k.length) return;
   const i = k[Math.floor(rnd(s, 'tamdjur') * k.length)];
@@ -171,12 +172,12 @@ function betesRuta(s: State, d: Tamdjur, rs: number[]) {
   return bi >= 0 ? { i: bi, slag: 'gras' as const } : undefined;
 }
 // en timme för ett betesdjur: rymmer genom ett hål, äter i hagen (eller där det strövar) och flyttar sig
-function stepBete(s: State, d: Tamdjur) {
+function stepBete(s: State, d: Tamdjur, dt: number) {
   if (d.fahus !== undefined) return; // i fähuset i istiden betar djuret inte utan äter hö (steg 9.8.9, slatter.ts)
   if (spand(s, d.id)) return; // dragdjuret drar släden (steg 10.10.3)
   let h = hageById(s, d.hage);
   if (h && !(d.x >= h.x && d.x < h.x + h.w && d.y >= h.y && d.y < h.y + h.h)) { d.x = h.x + h.w / 2; d.y = h.y + h.h / 2; } // efter turen går dragdjuret tillbaka in i sin hage
-  if (h && !hageHel(s, h) && rnd(s, 'tamdjur') < HAGE.rymma) {
+  if (h && !hageHel(s, h) && chansPer(s, HAGE.rymma, 3600, dt, 'tamdjur')) {
     const hal = hageKant(s, h).find(i => !harStaket(s, i))!, hx = hal % W, hy = Math.floor(hal / W);
     const ux = Math.sign(hx - (h.x + h.w / 2)), uy = Math.sign(hy - (h.y + h.h / 2));
     d.hage = undefined; d.x = hx + 0.5 + ux * 2; d.y = hy + 0.5 + uy * 2; h = undefined;

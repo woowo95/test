@@ -538,7 +538,7 @@ export interface Fire {
   brukare?: number; // hur många som hör till elden just nu (stepFire): de mest använda sköts först när veden tryter
   ash?: number; ashUntil?: number; // kolhög efter en utbrunnen eld
   at?: { x: number; y: number }; // var elden står om den flyttats (steg 2.10.4); annars där kartan lade den (getMap(seed).fire)
-  flytt?: { x: number; y: number; varfor: 'plats' | 'vuxit'; gjort?: number; vem?: number; fran?: number }; // elden ska flyttas hit (eldflytt.ts); gjort = arbetet som redan gjorts, vem och fran = den som arbetar nu och sedan när| 'vuxit' }; // elden ska flyttas hit (eldflytt.ts)
+  flytt?: { x: number; y: number; varfor: 'plats' | 'vuxit' }; // elden ska flyttas hit (eldflytt.ts); den som avbryts börjar om
   // en lägereld till (steg 4.5.6.8, s.eldar): numret (task.ref för den som eldar, tänder eller hämtar kol vid den), de som har
   // sin sovplats närmast den (räknas varje timme i brasor.ts), när den slocknade och när ringen lades
   id?: number; folk?: number[]; ut?: number; klar?: number;

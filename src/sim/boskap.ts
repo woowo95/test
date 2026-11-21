@@ -10,7 +10,7 @@ import { balans } from './balans';
 import { spand } from './agande';
 import { ALDER, ageOf, byId, count, forstaGang, gjort, log, ovning, annanGor, alive } from './folk';
 import { desperatMat, getable } from './behov';
-import { rnd } from './slump';
+import { chansPer } from './slump';
 import { amountOf, changed, gain, put, stacksOf, tidy } from './lager';
 import { kanGoras } from './stationer';
 import { DAY, Person, State } from './typer';
@@ -41,13 +41,15 @@ export const FANGADE: Record<string, TamArtId> = Object.fromEntries((Object.keys
 export const hona = arHona;
 const vuxen = (s: State, d: Tamdjur) => tamAlder(s, d) >= tamArt(d.art).vuxen;
 
-export function stepBoskap(s: State) {
+// dt: sekunderna sedan sist (steg 12.1.107)
+export function stepBoskap(s: State, dt = 3600) {
+  const tim = dt / 3600;
   kopta(s);
-  if (kalender(s).ai === VAR) foda(s);
+  if (kalender(s).ai === VAR) foda(s, dt);
   const istid = iIstiden(kalender(s).ai);
   for (const d of tamdjurOf(s)) {
-    if (tamArt(d.art).ull) d.ull = Math.min(1, (d.ull ?? 0) + BOSKAP.ullTim);
-    if (tamArt(d.art).mjolk && hona(d) && vuxen(s, d) && !istid && d.hunger < BOSKAP.hungrig && !d.torstTim) d.mjolk = Math.min(1, (d.mjolk ?? 0) + BOSKAP.mjolkTim);
+    if (tamArt(d.art).ull) d.ull = Math.min(1, (d.ull ?? 0) + BOSKAP.ullTim * tim);
+    if (tamArt(d.art).mjolk && hona(d) && vuxen(s, d) && !istid && d.hunger < BOSKAP.hungrig && !d.torstTim) d.mjolk = Math.min(1, (d.mjolk ?? 0) + BOSKAP.mjolkTim * tim);
   }
 }
 
@@ -75,14 +77,14 @@ function kopta(s: State) {
 }
 
 // på våren: en vuxen hona som inte är hungrig får ibland ett ungt, om det finns en vuxen hane av arten
-function foda(s: State) {
+function foda(s: State, dt: number) {
   const alla = tamdjurOf(s);
   for (const d of alla) {
     const a = tamArt(d.art);
     if (!a.bete || !a.unge || !hona(d) || !vuxen(s, d) || d.hunger >= BOSKAP.hungrig) continue; // oxen får inga ungar (steg 10.10.3)
     if (!alla.some(q => q.art === d.art && !hona(q) && vuxen(s, q))) continue;
     if (!rymsEnTill(s, d.art)) continue; // flocken växer bara så länge betet och höet räcker (steg 10.2.33)
-    if (rnd(s, 'tamdjur') >= BOSKAP.fodd) continue;
+    if (!chansPer(s, BOSKAP.fodd, 3600, dt, 'tamdjur')) continue;
     const u = nyttTamdjur(s, d.art, d.x, d.y, d.agare);
     u.hage = d.hage; count(s, `fodd_${d.art}`);
     const ag = d.agare !== undefined ? byId(s, d.agare) : undefined; if (ag && alive(ag)) tanke(ag, 'fickUnge', s.now, { unge: a.unge }); // (steg 12.1.131)

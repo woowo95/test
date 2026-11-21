@@ -153,13 +153,14 @@ export function bryggKlar(s: State, p: Person, ref?: number) {
   if (forstaGang(s, 'brygd_' + v)) log(s, `${p.name} lade byns första sats ${d.namn.toLowerCase()} i bryggkaret.`, 'world', [p.id]);
 }
 // en gång i timmen (steg.ts): satserna jäser när det är varmt nog eller karet står inne, och blir klara
-export function stepBrygg(s: State) {
+// dt: sekunderna sedan sist (steg 12.1.107)
+export function stepBrygg(s: State, dt = 3600) {
   olUpptackt(s); mjodUpptackt(s);
   const varmt = temperature(s) >= BRYGG.kall;
   for (const kar of karen(s)) {
     const sats = kar.sats;
     if (!sats || sats.klar || !(varmt || kar.inne)) continue;
-    sats.jas += HOUR;
+    sats.jas += dt * HOUR / 3600;
     if (sats.jas >= sats.dygn * DAY) { if (sats.sur) { kar.sats = undefined; count(s, 'surSats'); continue; } sats.klar = 1; count(s, 'jast_' + sats.v); } // en sur sats hälls ut
   }
 }

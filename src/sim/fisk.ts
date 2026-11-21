@@ -3,7 +3,7 @@ import { forstaGang, count, living, log } from './folk';
 import { richness } from './fynd';
 import { put } from './lager';
 import { ageIndex } from './tid';
-import { rnd } from './slump';
+import { chansPer, rnd } from './slump';
 import { H, Person, State, T, W, inMap } from './typer';
 import { gridOf } from './byggnad';
 import { getMap } from './karta';
@@ -59,7 +59,8 @@ export interface Mjarde { id: number; k?: string; x: number; y: number; ag: numb
 export const mjardarOf = (s: State) => (s.mjardar ??= []);
 export const fallorAv = (s: State, k: string) => mjardarOf(s).filter(m => (m.k ?? 'mjarde') === k);
 export const kanVittja = (s: State) => mjardarOf(s).filter(m => m.n > 0);
-export function stepMjardar(s: State) {
+// dt: sekunderna sedan sist, och fångsten är en chans per timme (steg 12.1.107)
+export function stepMjardar(s: State, dt = 3600) {
   if (!s.mjardar?.length) return;
   for (const m of [...s.mjardar]) {
     const d = FALLOR[m.k ?? 'mjarde'];
@@ -67,7 +68,7 @@ export function stepMjardar(s: State) {
     const p = living(s).find(q => q.id === m.ag) ?? living(s)[0];
     if (!p) return;
     const rik = Math.min(MJARDE.rikMax, richness(s, d.lager as 'fiske', m.x, m.y));
-    if (rnd(s, 'arbete', p) >= d.fangst * rik) continue;
+    if (!chansPer(s, d.fangst * rik, 3600, dt, 'arbete', p)) continue;
     const k = d.ger(s, p);
     m.fisk[k] = (m.fisk[k] ?? 0) + 1; m.n++;
     if (forstaGang(s, 'fallaFangst_' + (m.k ?? 'mjarde'))) log(s, `Byns första ${d.namn.toLowerCase()} fångade något.`, 'world');

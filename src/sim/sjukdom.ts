@@ -16,7 +16,7 @@ import type { Dodsorsak } from './liv';
 import { balans } from './balans';
 import { ARSTID, iIstiden } from './tid';
 import { ageOf, ALDER, KROPP, count } from './folk';
-import { clamp, rnd } from './slump';
+import { chansPer, clamp, rnd } from './slump';
 import { naringNu, mattnad } from './naring';
 import { living } from './folk';
 import { roomAt } from './byggnad';
@@ -163,8 +163,9 @@ const stadiumNu = (j: Sjuk) => { const st = SJUKDOMAR[j.k].stadier; let i = 0; s
 
 // smittan varje timme (steg 9.5.3, steg.ts): de som står bredvid en sjuk som smittar, är i samma rum eller sitter vid samma eld
 // prövas med radens smitta; den som är immun eller redan sjuk smittas inte. Också den som ännu inte har tecken smittar
-// (inkubationen), så att sjukdomen hinner spridas innan någon märker det. Djuren smittas inte
-export function smittaTimme(s: State) {
+// (inkubationen), så att sjukdomen hinner spridas innan någon märker det. Djuren smittas inte. dt: sekunderna sedan sist, och
+// smittan är en chans per timme (steg 12.1.107)
+export function smittaTimme(s: State, dt = 3600) {
   const e = s.epidemi; // utbrottet som krönikan skrev om är över när ingen längre är sjuk i det (steg 12.1.135)
   if (e?.skriven && !living(s).some(q => q.sjuk?.k === e.k)) {
     const doda = e.ids.filter(id => s.people.some(q => q.id === id && q.died !== undefined)).length;
@@ -180,16 +181,16 @@ export function smittaTimme(s: State) {
       if (q === p || q.sjuk || q.immun?.[k]) continue;
       const nara = Math.hypot(q.x - p.x, q.y - p.y) < SJUK.nara, rum = !!rp && roomAt(s, q.x, q.y) === rp, eld = ep >= 0 && vidEld(q) === ep;
       const v = (nara ? 1 : rum ? SJUK.rum : eld ? SJUK.eld : 0) * (kn(q, 'smitta') >= 0.5 ? SJUK.vet : 1); // den som kan Smittan håller sig undan (9.5.5)
-      if (v > 0 && rnd(s, 'halsa', q) < d.smitta * v && insjukna(s, q, k)) { q.sjuk!.av = p.id; count(s, 'smittad_' + k); }
+      if (v > 0 && chansPer(s, d.smitta * v, 3600, dt, 'halsa', q) && insjukna(s, q, k)) { q.sjuk!.av = p.id; count(s, 'smittad_' + k); }
     }
   }
 }
 // smittan utifrån (steg 9.5.5): handlaren som bär en sjukdom smittar dem som står bredvid hen, så länge hen är i byn
-export function smittaUtifranTimme(s: State) {
+export function smittaUtifranTimme(s: State, dt = 3600) {
   const h = s.handlare, P = h && hp(s, h), k = P?.smitta;
   if (!h || !P || !k || h.fas === 'kommer') return;
   const d = SJUKDOMAR[k];
-  for (const q of living(s)) if (!q.sjuk && !q.immun?.[k] && Math.hypot(q.x - P.x, q.y - P.y) < SJUK.nara * 2 && rnd(s, 'halsa', q) < d.smitta && insjukna(s, q, k, 'av handlaren')) count(s, 'smittadUtifran_' + k);
+  for (const q of living(s)) if (!q.sjuk && !q.immun?.[k] && Math.hypot(q.x - P.x, q.y - P.y) < SJUK.nara * 2 && chansPer(s, d.smitta, 3600, dt, 'halsa', q) && insjukna(s, q, k, 'av handlaren')) count(s, 'smittadUtifran_' + k);
 }
 // en handlare eller främling som kommer bär ibland mässlingen eller kopporna (steg 9.5.5): mässlingen vanligare. Ingen ser det
 export function barSmitta(s: State): SjukId | undefined {

@@ -12,7 +12,7 @@ import { farorNu } from './kult';
 import { KOTTSLAG, isFood } from './saker';
 import { ALDER, ageOf, byId, count, enTillDar, forstaGang, gjort, log, ovning, alive } from './folk';
 import { getable, takeMaterial } from './behov';
-import { hash3, rnd } from './slump';
+import { chansPer, hash3, rnd } from './slump';
 import { put } from './lager';
 import { stat } from './folk';
 import { DAY, Person, State, inMap } from './typer';
@@ -105,15 +105,16 @@ export function tamDor(s: State, d: Tamdjur, orsak: string) {
 // det djuret äter som också är mat åt människorna (hundens kött) ges inte när byn svälter, efter samma mått som valet av aktivitet (steg 10.2.1)
 export const foderFor = (s: State, p: Person, d: Tamdjur) => { const svalt = farorNu(s).svalt; return tamArt(d.art).foder.find(k => getable(s, p, k) >= 1 && !(svalt && isFood(k))); };
 
-// en timme för djuren: hungern växer, det svultna och det gamla dör
-export function stepTamdjur(s: State) {
+// en timme för djuren: hungern växer, det svultna och det gamla dör. dt: sekunderna sedan sist (steg 12.1.107)
+export function stepTamdjur(s: State, dt = 3600) {
+  const tim = dt / 3600;
   for (const d of tamdjurOf(s)) {
-    d.hunger = Math.min(1, d.hunger + TAM.hungerTim * tamArt(d.art).ater);
-    d.svalt = d.hunger >= 1 ? (d.svalt ?? 0) + 1 : 0;
+    d.hunger = Math.min(1, d.hunger + TAM.hungerTim * tamArt(d.art).ater * tim);
+    d.svalt = d.hunger >= 1 ? (d.svalt ?? 0) + tim : 0;
     if (d.svalt >= TAM.svaltTim * tamEg(d).talighet) { tamDor(s, d, 'svalt'); continue; } // det tåliga djuret tål svälten längre (steg 10.10.29)
     const a = tamArt(d.art), alder = tamAlder(s, d);
-    if (alder > a.liv * 0.8 && rnd(s, 'tamdjur') < 1 / (a.liv * 0.4 * 24)) { tamDor(s, d, 'alder'); continue; }
-    if (d.art === 'hund') stepHund(s, d);
+    if (alder > a.liv * 0.8 && chansPer(s, 1 / (a.liv * 0.4 * 24), 3600, dt, 'tamdjur')) { tamDor(s, d, 'alder'); continue; }
+    if (d.art === 'hund') stepHund(s, d, tim);
   }
 }
 
@@ -197,7 +198,7 @@ const hundRymmer = (s: State, d: Tamdjur, varfor: string) => {
 // den som matat hunden mest och lever (inte ägaren)
 const mestMatat = (s: State, d: Tamdjur, utom?: number) => Object.entries(d.matad ?? {}).map(([id, n]) => [Number(id), n] as const)
   .filter(([id, n]) => id !== utom && n > 0 && byId(s, id)?.died === undefined).sort((a, b) => b[1] - a[1] || a[0] - b[0])[0];
-export function stepHund(s: State, d: Tamdjur) {
+export function stepHund(s: State, d: Tamdjur, tim = 1) {
   const p = d.agare !== undefined ? byId(s, d.agare) : undefined;
   if (!p || p.died !== undefined) {
     const ny = mestMatat(s, d, d.agare);
@@ -209,8 +210,8 @@ export function stepHund(s: State, d: Tamdjur) {
   }
   let l = d.lojal ?? HUND.start;
   const dist = Math.hypot(d.x - p.x, d.y - p.y);
-  l += dist <= HUND.naraR ? HUND.nara : -HUND.lamnad;
-  if (d.hunger >= 0.7) l -= HUND.hungrig;
+  l += (dist <= HUND.naraR ? HUND.nara : -HUND.lamnad) * tim;
+  if (d.hunger >= 0.7) l -= HUND.hungrig * tim;
   d.lojal = l = Math.max(0, Math.min(1, l));
   if (l < HUND.grans) {
     const ny = mestMatat(s, d, p.id), egen = d.matad?.[p.id] ?? 0;

@@ -64,7 +64,7 @@ import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, liv
 import { BIN, binDod, binSteg, djurStickSteg, retadeSteg, skattaKlar } from './bin';
 import { SJUK, SJUKDOMAR, SJUK_DOD, forkylning, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme, svartSjukNu } from './sjukdom';
 import { eldPlats, getMap } from './karta';
-import { eldFlyttKvar, flyttaElden, stepEldFlytt } from './eldflytt';
+import { ELDFLYTT, flyttaElden, stepEldFlytt } from './eldflytt';
 import { giftSteg } from './giftermal';
 import { DODSORSAKER, barnMat, birth, birthWish, die, framlingSteg, regulate } from './liv';
 import { MARK, groundOf, growGround, markslag, packGround, tileOf } from './mark';
@@ -460,7 +460,7 @@ export const TAKTER: Takt[] = [
   { namn: 'stepReligion', sek: 3600, fn: s => { stepReligion(s); } },
   { namn: 'morkHumor', sek: 3600, fn: (s, dt) => { for (const p of living(s)) morkHumor(s, p, dt / HOUR_S); } },
   { namn: 'facklorTimme', sek: 3600, fn: (s, dt) => { facklorTimme(s, dt / HOUR_S); } },
-  { namn: 'stepHumor', sek: 3600, fn: s => { stepHumor(s); } },
+  { namn: 'stepHumor', sek: 3600, fn: (s, dt) => { stepHumor(s, dt); } },
   { namn: 'tankarTimme', sek: 3600, fn: s => { tankarTimme(s); } }, // tankarna ur läget: kläderna, hemmet, ljuset, stolen, hemlängtan (steg 12.1.131, tankelage.ts)
   { namn: 'drommar', sek: 3600, fn: (s, dt) => { drommar(s, dt); } }, // den som sover drömmer, den som vaknat har drömmen som tanke (steg 12.1.132, drommar.ts)
   { namn: 'stepDelning', sek: 3600, fn: s => { stepDelning(s); } },
@@ -517,7 +517,7 @@ export const TAKTER: Takt[] = [
   { namn: 'wearBuild', sek: 21600, fn: (s, dt, c) => { wearBuild(s, dt / HOUR_S, c.ai); } },
   { namn: 'stepByggnader', sek: 3600, fn: s => { stepByggnader(s); } },
   { namn: 'husKlaraTimme', sek: 3600, fn: s => { husKlaraTimme(s); } },
-  { namn: 'stepMjardar', sek: 3600, fn: s => { stepMjardar(s); } },
+  { namn: 'stepMjardar', sek: 3600, fn: (s, dt) => { stepMjardar(s, dt); } },
   { namn: 'stepNaken', sek: 3600, fn: s => { stepNaken(s); } },
   { namn: 'stepByggplan', sek: 3600, fn: s => { stepByggplan(s); } },
   { namn: 'planBuild', sek: PLAN.varTim * 3600, fn: s => { planBuild(s); } }, // byggplanen (steg 7.2.3)
@@ -527,30 +527,30 @@ export const TAKTER: Takt[] = [
   { namn: 'stepPaborjat', sek: 3600, fn: s => { stepPaborjat(s); } },
   { namn: 'stepStationer', sek: 3600, fn: s => { stepStationer(s); } },
   { namn: 'stepPynt', sek: 3600, fn: s => { stepPynt(s); } },
-  { namn: 'stepKrukor', sek: 3600, fn: s => { stepKrukor(s); } },
+  { namn: 'stepKrukor', sek: 3600, fn: (s, dt) => { stepKrukor(s, dt); } },
   { namn: 'protesTimme', sek: 3600, fn: s => { protesTimme(s); } },
   { namn: 'halsoNotiser', sek: 3600, fn: s => { halsoNotiser(s); } },
   { namn: 'stepKok', sek: 60, fn: (s, dt) => { stepKok(s, dt); } }, // krukorna och kokgropen räknar ner med tiden sedan sist (steg 12.1.63)
   { namn: 'vatskorTimme', sek: 3600, fn: s => { vatskorTimme(s); } },
-  { namn: 'stepBrygg', sek: 3600, fn: s => { stepBrygg(s); } },
+  { namn: 'stepBrygg', sek: 3600, fn: (s, dt) => { stepBrygg(s, dt); } },
   { namn: 'stepBak', sek: 3600, fn: s => { stepBak(s); } },
   { namn: 'stationseldarna', sek: 60, fn: (s, dt) => stepStationsEld(s, dt) }, // örtkökets, bakugnens och rökeriets eldar brinner (stationseld.ts, steg 10.2.85)
-  { namn: 'stepSophog', sek: 3600, fn: s => { stepSophog(s); } },
-  { namn: 'stepKompost', sek: 3600, fn: s => { stepKompost(s); } },
+  { namn: 'stepSophog', sek: 3600, fn: (s, dt) => { stepSophog(s, dt); } },
+  { namn: 'stepKompost', sek: 3600, fn: (s, dt) => { stepKompost(s, dt); } },
   { namn: 'stepOrtKrukor', sek: 3600, fn: (s, dt) => { stepOrtKrukor(s, dt); } },
   { namn: 'stadaByten', sek: 3600, fn: s => { stadaByten(s); } },
   { namn: 'stepBrasor', sek: 3600, fn: s => { stepBrasor(s); } },
   { namn: 'stepKlader', sek: 3600, fn: s => { stepKlader(s); } },
-  { namn: 'stepOdling', sek: 3600, fn: s => { stepOdling(s); } },
-  { namn: 'stepTamdjur', sek: 3600, fn: s => { stepTamdjur(s); } },
-  { namn: 'stepHagar', sek: 3600, fn: s => { stepHagar(s); } },
-  { namn: 'stepBoskap', sek: 3600, fn: s => { stepBoskap(s); } },
-  { namn: 'stepVinter', sek: 3600, fn: s => { stepVinter(s); } },
-  { namn: 'stepHons', sek: 3600, fn: s => { stepHons(s); } },
+  { namn: 'stepOdling', sek: 3600, fn: (s, dt) => { stepOdling(s, dt); } },
+  { namn: 'stepTamdjur', sek: 3600, fn: (s, dt) => { stepTamdjur(s, dt); } },
+  { namn: 'stepHagar', sek: 3600, fn: (s, dt) => { stepHagar(s, dt); } },
+  { namn: 'stepBoskap', sek: 3600, fn: (s, dt) => { stepBoskap(s, dt); } },
+  { namn: 'stepVinter', sek: 3600, fn: (s, dt) => { stepVinter(s, dt); } },
+  { namn: 'stepHons', sek: 3600, fn: (s, dt) => { stepHons(s, dt); } },
   { namn: 'askaSteg', sek: 3600, fn: s => { askaSteg(s); } },
   { namn: 'sorgTimme', sek: 3600, fn: s => { sorgTimme(s); } },
-  { namn: 'smittaTimme', sek: 3600, fn: s => { smittaTimme(s); } },
-  { namn: 'smittaUtifranTimme', sek: 3600, fn: s => { smittaUtifranTimme(s); } },
+  { namn: 'smittaTimme', sek: 3600, fn: (s, dt) => { smittaTimme(s, dt); } },
+  { namn: 'smittaUtifranTimme', sek: 3600, fn: (s, dt) => { smittaUtifranTimme(s, dt); } },
   { namn: 'compact', sek: 3600, fn: s => { compact(s); } },
   // kroppen: behoven, att äta, hälsan och graviditeten, för var och en
   { namn: 'behoven', sek: 30, fn: (s, dt, c) => {
@@ -627,13 +627,11 @@ export const TAKTER: Takt[] = [
   { namn: 'djurens törst', sek: 600, fn: (s, dt) => djurTorstSteg(s, dt) }, // tamdjuren dricker (djurtorst.ts, steg 10.10.31)
   { namn: 'djuren flyr', sek: 0, fn: (s, dt) => tamFaraSteg(s, dt) }, // tamdjuren flyr från bina, elden och vargarna efter sitt mod (djurflykt.ts, steg 10.10.29)
 ];
-// de som behöver räknas varje slag fast de står på sin plats: striden, elden och den som brinner, vården och samtalet
-const VARJE_SLAG = new Set<Act>(['strid', 'slacka', 'slackaSig', 'hjalpaBrinnande', 'flyEld', 'flyBin', 'varna', 'skilja', 'forsvar', 'forsvarRovare', 'varda', 'samtal', 'tanda']);
 // p står still vid sitt arbete och kan vänta med att räknas (steg 10.2.21): inget är klart i slaget, inget avbryter (nöden,
 // dag som blir natt), och hen har inte väntat KLOCKA.arbetsBit sekunder
 function vantar(p: Person, tk: Task, now: number, dt: number) {
   const d = ACTS[tk.act];
-  return tk.phase === 'do' && !d.tur && !d.runda && !VARJE_SLAG.has(tk.act) && tk.med === undefined && tk.until > now + 1e-6
+  return tk.phase === 'do' && !d.tur && !d.runda && !d.varjeSlag && tk.med === undefined && tk.until > now + 1e-6
     && (tk.vant ?? 0) + dt < KLOCKA.arbetsBit && p.toa >= KROPP.toaAvbryt && !(d.dygn && tk.dark !== !isLight(now));
 }
 // tiden (sekunder) sedan raden t räknades, om den ska räknas i slaget som slutar vid now, annars undefined. Sist räknad står i
@@ -893,9 +891,8 @@ function pathFor(s: State, g: ReturnType<typeof groundOf>, x0: number, y0: numbe
 // arbetaren står framför rutan hen arbetar på, aldrig i den (steg 9.2.47): stubben och graven grävs från en granne, huden
 // hängs från rutan utanför dörröppningen och byggrutan byggs från en granne. Målet blir den grannruta man kan stå på som ligger
 // närmast, och arbetet gäller fortfarande rutan (tx, ty)
-const FRAMFOR = new Set<string>(['stubbe', 'grava', 'dorr', 'bygga']);
 function malFor(s: State, p: Person, tk: Task): { x: number; y: number } {
-  if (!FRAMFOR.has(tk.act) || tk.phase !== 'go' || tk.site) return { x: tk.tx, y: tk.ty };
+  if (!ACTS[tk.act]?.framfor || tk.phase !== 'go' || tk.site) return { x: tk.tx, y: tk.ty };
   // bygget: grannrutan till själva byggrutan, inte till platsen intill den (siteOf), så att man står intill väggen (steg 9.2.90)
   const bb = tk.act === 'bygga' ? bitById(s, tk.ref) : undefined;
   const X = bb ? bb.x : Math.floor(tk.tx), Y = bb ? bb.y : Math.floor(tk.ty);
@@ -1069,7 +1066,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
   } else {
     if (hamtaForst(s, p, tk)) return; // materialet hämtas först (steg 11.1.74, hamtning.ts)
     tk.phase = 'do'; tk.hopp = undefined; tk.plock = undefined; if (tk.act === 'bara') { const fo = fordonI(s, tk); pickUp(s, p, tk, fo ? rymsI(fo) : ryms(s, p)); tk.until = now; }
-    if (tk.act === 'flyttaeld') tk.until = now + eldFlyttKvar(s, p); // vid elden: släcka den och bära de stenar som är kvar (eldflytt.ts)
+    if (tk.act === 'flyttaeld') tk.until = now + ELDFLYTT.min * MIN; // vid elden: släcka den och bära stenarna (eldflytt.ts); den som avbryts börjar om
     iRackhall(p.x, p.y, () => startWork(s, p, tk)); // ett redskap eller ett träd: arbetet räknas härifrån, och det påbörjade fortsätter (med det som ligger inom räckhåll, steg 11.1.74)
   }
 }

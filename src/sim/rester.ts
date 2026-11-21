@@ -62,9 +62,11 @@ export function soporKlar(s: State, p: Person) {
   if (kvar < bar0) { count(s, 'soporBurna', bar0 - kvar); if (forstaGang(s, 'sophog')) log(s, `${p.name} bar resterna från slakten och skörden till en sophög i utkanten av byn.`, 'world', [p.id]); }
 }
 // en gång i timmen (steg.ts): resterna på sophögen ruttnar bort
-export function stepSophog(s: State) {
+// dt: sekunderna sedan sist (steg 12.1.107)
+export function stepSophog(s: State, dt = 3600) {
   if (!s.sophog?.n) return;
-  s.sophog.n = Math.max(0, s.sophog.n - s.sophog.n * HOUR / (REST.rutt * DAY) - REST.ruttMin);
+  const tim = dt / 3600;
+  s.sophog.n = Math.max(0, s.sophog.n - (s.sophog.n * HOUR / (REST.rutt * DAY) + REST.ruttMin) * tim);
 }
 
 // ---------- komposten (steg 9.7.6) ----------
@@ -87,7 +89,8 @@ export function latrinTomKlar(s: State, p: Person) {
   if (forstaGang(s, 'latrinTomd')) log(s, `${p.name} tömde latrinen i komposten, så att ingen ny grop behöver grävas.`, 'world', [p.id]);
 }
 // en gång i timmen: den som odlar kan märka att det växer bättre där resterna legat (tekniken Gödsel) och komposten mognar
-export function stepKompost(s: State) {
+// dt: sekunderna sedan sist (steg 12.1.107)
+export function stepKompost(s: State, dt = 3600) {
   const h = s.sophog;
   if (h && h.n >= REST.upptack && hash(s.seed ^ 0x7c0, Math.floor(s.now / HOUR), 7) < REST.upptackTim) upptack(s, TEK.kompost, p => knows(p, 'odling'), 'godsel', p => `${p.name} märker att det växer bättre där resterna på sophögen har legat.`);
   const ko = komposten(s);
@@ -95,7 +98,7 @@ export function stepKompost(s: State) {
   if (h?.n) { ko.kompost = { rest: (ko.kompost?.rest ?? 0) + Math.floor(h.n), mogna: ko.kompost?.mogna ?? 0 }; h.n = 0; } // sophögen blir komposten
   const c = ko.kompost;
   if (!c || c.rest < REST.kompostRest) return;
-  c.mogna += (temperature(s) > REST.varm ? 1 : REST.kylaTakt) / (REST.kompostDygn * 24);
+  c.mogna += (temperature(s) > REST.varm ? 1 : REST.kylaTakt) * dt / 3600 / (REST.kompostDygn * 24);
   if (c.mogna < 1) return;
   c.mogna = 0; c.rest -= REST.kompostRest;
   put(s, 'kompost', 1); count(s, 'kompostKlar');

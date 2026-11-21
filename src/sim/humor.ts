@@ -6,7 +6,7 @@ import { die, leave } from './liv';
 import { skiljas } from './samtal';
 import { upplev } from './uppvaxt';
 import { blodas } from './blod';
-import { clamp, gauss, rnd } from './slump';
+import { chansPer, clamp, gauss, rnd } from './slump';
 import { isLight } from './tid';
 import { Ting, tingOf } from './agande';
 import { Act } from './handlingar';
@@ -258,9 +258,10 @@ export function utbrottChans(s: State, p: Person, m = moodOf(p, s.now)) {
 }
 
 // en gång i timmen (stepHumor): utbrotten nyss klingar av, och den som mår mycket dåligt kan brista ut (barnen bara i sina slag). Graden beror på
-// hur dåligt hen mår, utbrotten nyss, empatin och slumpen; slaget slumpas bland dem med den graden
-export function utbrottRisk(s: State, p: Person, ljust: boolean) {
-  if (p.utb) { p.utb *= Math.exp(-HOUR / (HUMOR.utbDygn * DAY)); if (p.utb < 0.01) p.utb = undefined; }
+// hur dåligt hen mår, utbrotten nyss, empatin och slumpen; slaget slumpas bland dem med den graden. dt: sekunderna sedan sist,
+// och utbrottet är en chans per timme (steg 12.1.107)
+export function utbrottRisk(s: State, p: Person, ljust: boolean, dt = 3600) {
+  if (p.utb) { p.utb *= Math.exp(-(dt / 3600) * HOUR / (HUMOR.utbDygn * DAY)); if (p.utb < 0.01) p.utb = undefined; }
   const a = ageOf(p, s.now), barn = a < ALDER.vuxen;
   if (p.task?.act === 'leka' && p.task.phase === 'do') p.lekt = s.now; // barnen: leken (steg 3.2.4)
   if (p.ubr && s.now - p.ubr.t > HUMOR.vantar * HOUR) p.ubr = undefined; // det som väntat för länge blir inget, också på natten
@@ -268,7 +269,7 @@ export function utbrottRisk(s: State, p: Person, ljust: boolean) {
   const m = moodOf(p, s.now);
   if (m >= HUMOR.grans) return;
   const djup = (HUMOR.grans - m) / HUMOR.grans, utb = p.utb ?? 0;
-  if (rnd(s, 'humor', p) >= utbrottChans(s, p, m)) return;
+  if (!chansPer(s, utbrottChans(s, p, m), 3600, dt, 'humor', p)) return;
   const allv = djup + HUMOR.allvUtb * utb + HUMOR.allvEmp * (10 - stat(p, 'empati', s.now)) / 10 + HUMOR.allvSlump * gauss(s, 'humor', p) + HUMOR.allvAgg * franMitt(p, 'aggression', s.now);
   let grad = allv >= HUMOR.grad5 ? 5 : allv >= HUMOR.grad4 ? 4 : allv >= HUMOR.grad3 ? 3 : allv >= HUMOR.grad2 ? 2 : 1;
   if (barn) grad = Math.min(grad, 2);
@@ -311,13 +312,13 @@ const forvVan = (f: number) => clamp(-HUMOR.van * Math.log((f + HUMOR.forvC) / (
 
 // en gång i timmen (steg.ts): utbrotten (utbrottRisk) och var och ens rikedom (w) och förväntan (f). Ett barn räknar med föräldrarnas rikedom
 // (den rikaste av dem som lever), eftersom det lever på deras. Den som är ny börjar med förväntan lika med rikedomen
-export function stepHumor(s: State) {
+export function stepHumor(s: State, dt = 3600) {
   const folk = living(s);
   if (!folk.length) return;
   const { egen, byn } = formogenheter(s), del = byn / folk.length;
   const vuxen = (p: Person) => (egen.get(p.id) ?? 0) + del;
   const ids = new Set(folk.map(p => p.id));
-  const k = 1 - Math.exp(-HOUR / (HUMOR.forvDygn * DAY)), ljust = isLight(s.now);
+  const k = 1 - Math.exp(-(dt / 3600) * HOUR / (HUMOR.forvDygn * DAY)), ljust = isLight(s.now);
   for (const p of folk) {
     let w = vuxen(p);
     if (ageOf(p, s.now) < ALDER.vuxen) {
@@ -327,7 +328,7 @@ export function stepHumor(s: State) {
     if (!p.forv) p.forv = { f: w, w };
     else { p.forv.w = w; p.forv.f += (w - p.forv.f) * k; }
     angerTim(s, p);
-    utbrottRisk(s, p, ljust);
+    utbrottRisk(s, p, ljust, dt);
   }
 }
 

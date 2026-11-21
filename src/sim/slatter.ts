@@ -145,7 +145,9 @@ function stallIn(s: State, d: Tamdjur, inne: Map<number, number>) {
 }
 
 // en timme: byn märker ut ängen; i istiden står djuren i fähuset (och ger gödsel), och de som inte får plats fryser
-export function stepVinter(s: State) {
+// dt: sekunderna sedan sist (steg 12.1.107)
+export function stepVinter(s: State, dt = 3600) {
+  const tim = dt / 3600;
   glomHamlade(s);
   const istid = iIstiden(kalender(s).ai), inne = new Map<number, number>();
   let godsel = 0;
@@ -153,11 +155,12 @@ export function stepVinter(s: State) {
     if (!istid) { d.fahus = undefined; d.kyla = 0; continue; }
     const h = stallIn(s, d, inne);
     d.fahus = h?.id;
-    if (h) { d.kyla = 0; godsel += VINTER.godsel; continue; }
-    d.kyla = (d.kyla ?? 0) + 1;
-    d.hunger = Math.min(1, d.hunger + VINTER.kylaHunger);
+    if (h) { d.kyla = 0; godsel += VINTER.godsel * tim; continue; }
+    const forst = !d.kyla;
+    d.kyla = (d.kyla ?? 0) + tim;
+    d.hunger = Math.min(1, d.hunger + VINTER.kylaHunger * tim);
     if (d.kyla >= VINTER.frysTim * tamEg(d).talighet) tamDor(s, d, 'frös ihjäl'); // det tåliga tål kylan längre (steg 10.10.29)
-    else if (d.kyla === 1) count(s, 'tamFryser');
+    else if (forst) count(s, 'tamFryser');
   }
   if (godsel > 0) {
     s.godsel = (s.godsel ?? 0) + godsel;

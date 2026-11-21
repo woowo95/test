@@ -32,8 +32,9 @@ export const KRUKA = balans('kruka', {
 // krukan är formad: den är rå och ska torka
 export function krukaFormad(t: Ting) { t.ler = 0; }
 // en gång i timmen: de råa krukorna torkar, och de torra bränns i elden när den brinner
-export function stepKrukor(s: State) {
-  const torka = Math.max(0.1, 1 + KRUKA.varm * (temperature(s) - 10)) * (vaderNu(s).nb > 0 ? KRUKA.regn : 1) / KRUKA.torkTim;
+// dt: sekunderna sedan sist (steg 12.1.107)
+export function stepKrukor(s: State, dt = 3600) {
+  const torka = Math.max(0.1, 1 + KRUKA.varm * (temperature(s) - 10)) * (vaderNu(s).nb > 0 ? KRUKA.regn : 1) / KRUKA.torkTim * dt / 3600;
   for (const t of [...tingOf(s)]) {
     if (t.ler === undefined) continue;
     if (t.ler < 1) { t.ler = Math.min(1, t.ler + torka); continue; }
