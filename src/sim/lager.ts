@@ -539,7 +539,7 @@ function occupancy(s: State, ts = tingOf(s)) {
   m.redskap = new Map();
   m.eld = eldRutor(s); // i elden läggs inget (steg 12.1.153)
   const g = lagerRutor(s);
-  for (const a of stacksOf(s)) if (lagradI(s, g, a.x, a.y)) m.set(key(a.x, a.y), a);
+  for (const a of stacksOf(s)) if (lagradI(s, g, a.x, a.y)) { const i = key(a.x, a.y); m.set(i, a); if (isTool(a.k)) m.redskap.set(i, (m.redskap.get(i) ?? 0) + a.n); } // redskapen i ett ställ tar var sin plats
   for (const t of ts) if (paRutan(t) && lagradI(s, g, t.x!, t.y!)) { const i = key(t.x!, t.y!); m.set(i, asStack(t)); m.redskap.set(i, (m.redskap.get(i) ?? 0) + 1); }
   return m;
 }
@@ -742,10 +742,17 @@ function place(s: State, k: string, n: number, c: number, ag?: Del, at?: { x: nu
     let a = occ.get(key(sp.x, sp.y));
     if (!a && !isStored(s, sp.x, sp.y)) { a = st.find(q => q.x === sp.x && q.y === sp.y && q.k === k); if (a) occ.set(key(sp.x, sp.y), a); }
     const max = helt(rymd(s, sp.x, sp.y, k));
-    const v = !a ? Math.min(n, max) : roomIn(s, occ, sp.x, sp.y, k) ? Math.max(0, Math.min(n, max - a.n)) : 0;
+    // i ett redskapsställ ligger varje redskap för sig, bredvid de andra (roomIn räknar platserna); annars fylls bara en
+    // riktig stack av samma slag på, aldrig ett redskap som ligger där (asStack) eller ett annat slag
+    const stall = !!forvarAt(s, sp.x, sp.y)?.redskap && isTool(k), eget = a && a.k === k && a.id === undefined && !stall ? a : undefined;
+    const v = !a ? Math.min(n, max) : !roomIn(s, occ, sp.x, sp.y, k) ? 0 : eget ? Math.max(0, Math.min(n, max - eget.n)) : Math.min(n, max);
     if (!v) break;
     const del = delAv(ag, v, tot); ag = minus(ag, del); tot -= v;
-    if (!a) { const ny: Stack = { k, n: 0, c, x: sp.x, y: sp.y }; st.push(ny); occ.set(key(sp.x, sp.y), ny); addToStack(s, ny, v, c, del); } else addToStack(s, a, v, c, del);
+    if (!eget) {
+      const ny: Stack = { k, n: 0, c, x: sp.x, y: sp.y }, i = key(sp.x, sp.y);
+      st.push(ny); occ.set(i, ny); if (stall) occ.redskap.set(i, (occ.redskap.get(i) ?? 0) + v);
+      addToStack(s, ny, v, c, del);
+    } else addToStack(s, eget, v, c, del);
     n -= v;
   }
   changed(s); // förrådets minne får veta om de nya högarna innan det frågas (steg 12.1.202)
