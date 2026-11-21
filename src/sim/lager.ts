@@ -1325,7 +1325,8 @@ function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: numb
     if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r || !inMap(x, y) || eld.has(key(x, y))) continue;
     if (r === 0 && sittAt(s, x, y)) continue; // där man står eller sitter vid en station eller ett bord läggs inget, inte heller det man burit dit (steg 12.1.158)
     if (r > 0 && (!usable(s, x, y) && !ledigtGolv(s, x, y) || stubbeOn(s, x, y) || isStored(s, x, y))) continue;
-    if (st.some(q => q.x === x && q.y === y && q.k !== k && q.n > 1e-6)) continue; // där något annat redan ligger, också på rutan själv
+    // där något annat redan ligger; på rutan själv bara i ett lager, där varje ruta har en sort (en hög på marken får vara blandad)
+    if ((r > 0 || isStored(s, x, y)) && st.some(q => q.x === x && q.y === y && q.k !== k && q.n > 1e-6)) continue;
     let g = st.find(q => q.x === x && q.y === y && q.k === k);
     const v = Math.min(n, Math.max(0, helt(rymd(s, x, y, k)) - (g?.n ?? 0)));
     if (v <= 0) continue;
