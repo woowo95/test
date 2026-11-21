@@ -651,16 +651,17 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'toaGenast', niva: 2, prova: ({ p, v }) => p.toa < KROPP.toaGenast && set(v, 'toa', 'Måste gå på toa genast') },
   { id: 'torstFarligt', niva: 2, prova: ({ s, p, v }) => tortarFarligt(p) && dricka(s, p, v) }, // också den som är sjuk eller svag dricker
   { id: 'vardaSig', niva: 2, prova: ({ s, p, v }) => varda(s, p, v, true) }, // sina egna sår: trycka på, lägga förband och rengöra (steg 2.5.2)
-  // elden är botemedlet mot kylan (steg 12.1.229): den som fryser och är den som ska (eldaVal och tandaVal, samma poäng som
-  // raderna elda och tanda på nivå 4) lägger ved på elden eller tänder den innan hen sätter sig vid den eller går in och lägger sig.
-  // Annars värmer sig alla vid en eld som ingen lägger ved på, tills den slocknar
-  { id: 'eldaFryser', niva: 2, prova: c => fryser(c) && eldaRad(c) },
-  { id: 'tandaFryser', niva: 2, prova: c => fryser(c) && tandaRad(c) },
   // den som fryser farligt söker sig till en eld som brinner, också den sjuka och svaga: att ligga kvar i kylan tär på hälsan
   // tills hen fryser ihjäl (steg 12.1.229)
   { id: 'fryserFarligt', niva: 2, prova: c => fryserFarligt(c) },
   { id: 'sjuk', niva: 2, prova: ({ s, p, v }) => ligger(p, s.now) && set(v, 'sova', 'Är sjuk') }, // med feber eller svårt sjuk lägger man sig (steg 9.5.1)
   { id: 'svag', niva: 2, prova: ({ p, v }) => halsa(p) < KROPP.svag && set(v, 'sova', 'Är för svag för att orka något') }, // också av blodförlust och smärta (halsa.ts)
+  // elden är botemedlet mot kylan (steg 12.1.229): den som fryser och är den som ska (eldaVal och tandaVal, samma poäng som
+  // raderna elda och tanda på nivå 4) lägger ved på elden eller tänder den innan hen sätter sig vid den eller går in och lägger sig;
+  // den som är sjuk eller svag lägger sig i stället (raderna ovan).
+  // Annars värmer sig alla vid en eld som ingen lägger ved på, tills den slocknar
+  { id: 'eldaFryser', niva: 2, prova: c => fryser(c) && eldaRad(c) },
+  { id: 'tandaFryser', niva: 2, prova: c => fryser(c) && tandaRad(c) },
   // elden går inte att tända för att tändmaterial saknas: den som fryser men orkar hämtar det i stället för att gå in.
   // Kylan är faran och elden det enda som hjälper mot den (några räcker; de andra går in och väntar)
   // Det som fattas hämtas: hö och kvistar, eller flintan och stenarna till ringen, som man letar efter (rövarna kan ha tagit flintan)
@@ -848,7 +849,7 @@ export const ARBETEN: readonly Arbete[] = [
     // hjälpen väljs med samma poäng som de vuxnas rader på nivån (steg 12.1.45): den går till det som fattas, och skälet är
     // radens eget. Barnet som hjälper arbetar i dag; fattas inget (ingen rad har poäng eller alla har sina arbetare) leker det
     const cb: Ctx = { ...c, d: { ...d, works: true } };
-    const w = vinnare(cb, POANGRADER[6].filter(r => (!r.nar || r.nar === 'dag') && vaderTillater(s, r.vader)));
+    const w = vinnare(cb, POANGRADER[6].filter(r => (!r.nar || r.nar === 'dag') && vaderTillater(s, r.vader) && !(r.minAlder !== undefined && a < r.minAlder)));
     if (!w?.prova(cb)) return set(v, 'leka', lekText(s));
     v.why = `Hjälper till. ${v.why}`;
     return true;
@@ -873,7 +874,7 @@ export const ARBETEN: readonly Arbete[] = [
       if (e !== s.fire) { v.ref = e.id; v.spot = vidEld(s, e, 0, 1.1); }
       return true;
     } },
-  { id: 'leta', niva: 6, nar: 'dag', poang: c => dag(c).works && flintaTillElden(c.s) ? VAL.letaVikt * letaBrist(c.s) : 0,
+  { id: 'leta', niva: 6, nar: 'dag', minAlder: ALDER.ansvar, poang: c => dag(c).works && flintaTillElden(c.s) ? VAL.letaVikt * letaBrist(c.s) : 0,
     full: c => radFull(c.s, c.p, 'leta'),
     prova: c => { arbeta(c, 'samla', `Byn behöver ${needStones(c.s) ? 'stenar' : 'flinta'}`, { leta: true }); return true; } },
   { id: 'mat', niva: 6, nar: 'dag', poang: c => { const d = dag(c); return d.works && d.fdBy < d.malBy ? d.wBy * d.rad.mat.sc : 0; },

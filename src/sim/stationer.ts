@@ -495,7 +495,7 @@ export const baraForvar = (k: string) => (BARA_FV ??= new Set(Object.values(STAT
 export const stationById = (s: State, id?: number) => id === undefined ? undefined : stationerOf(s).find(t => t.id === id);
 export const isKlar = (t: Station) => t.kvar <= 0;
 // ---------- delarna byggs var för sig (steg 12.1.17, "Stationer i flera delar") ----------
-// En del som inte är klar har arbetet kvar (kvar, sekunder) och mat när dess material är taget. Stationens kvar är summan, så
+// En del som inte är klar har arbetet kvar (kvar, millisekunder) och mat när dess material är taget. Stationens kvar är summan, så
 // stationen är klar när alla delar är det. Delarna byggs i tur och ordning; varje del tar sitt eget material när den börjar
 export const delSomByggs = (t: Station) => t.delar?.findIndex(q => (q.kvar ?? 0) > 0) ?? -1;
 const summaKvar = (t: Station) => { if (t.delar?.length && stationDef(t.k)?.delar) t.kvar = t.delar.reduce((n, q) => n + (q.kvar ?? 0), 0); };

@@ -4,7 +4,7 @@
 // grävs med spaden, som krävs och slits som i annat grävande: en tur på 6 minuter vid den rikaste malmrutan nära byn ger 4 malm,
 // två fulla händer, som läggs i en hög där och bärs in som annat. Byn har inget fast mål för malmen: projektet malm har ingen
 // egen brist, och behovet ärvs från det byn vill ha som kräver malm (arv i projekt.ts), som järnet
-import { amountOf, dropLoad } from './lager';
+import { dropLoad } from './lager';
 import { richness, richnessFor, takeFrom } from './fynd';
 import { eldPlats } from './karta';
 import { balans } from './balans';
@@ -66,4 +66,3 @@ laggTillProjekt({
     uppgift: (s, p) => { const at = malmPlats(s), sp = spadeFor(s, p); return at && sp && { act: 'malm', text: 'Gräver malm i myren.', min: MALM.min, tool: sp, spot: at }; },
   },
 });
-export const harMalm = (s: State) => amountOf(s, 'malm') > 0;

@@ -69,7 +69,6 @@ export const myrOf = perKarta(seed => {
 export const myrMalm = (s: State, i: number) => myrOf(s.seed)?.[i] === 1 && hash(s.seed + 81, i % W - OX, Math.floor(i / W) - OY) < MYR.malmAndel ? MYR.malmFull : 0;
 export const harMyr = (s: State) => !!myrOf(s.seed);
 export const paMyr = (s: State, i: number) => myrOf(s.seed)?.[i] === 1;
-export const myrRutor = (s: State) => { const a = myrOf(s.seed); let n = 0; if (a) for (let i = 0; i < a.length; i++) n += a[i]; return n; };
 // står myren under vatten nu: marken är blöt efter regnet (fukten räknas varje timme i vader.ts)
 export const myrUnderVatten = (s: State) => harMyr(s) && (s.vader?.fukt ?? 0) >= MYR.vattenFukt;
 // gångfarten på en myrruta (markFart i vag.ts): torr myr eller myr under vatten

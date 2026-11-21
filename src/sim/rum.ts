@@ -121,6 +121,7 @@ export function rumInfo(s: State, r: Rum): RumInfo {
     if (t.k === 'smedja') i.smedja = (i.smedja ?? 0) + 1; // steg 12.2.4
     if (d.sjuk) i.sjuk = (i.sjuk ?? 0) + 1; // sjukbädden (steg 12.4.10)
     if (d.fahus) i.krubba++;
+    if (d.varmer) i.eld++; // fyrfatet värmer rummet som en härd (taggen Varmt, steg 12.4.11)
     if (d.kok) i.kok++;
     if (d.gor.length && t.k !== 'scen' && t.k !== 'tork' && !d.kok) i.arbete++; // kökets stationer gör rummet till ett kök, inte en verkstad
   }

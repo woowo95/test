@@ -2,7 +2,7 @@
 // de närmaste rädda för handlingen. Rädslan berättas vidare bland vännerna och blir svagare med tiden, och den som är rädd nog
 // (efter modet) låter bli handlingen, utom i nöd (svält och kyla går före, val.ts). Raderna i RADD_AKT är handlingar som kan ta
 // livet av någon och som man klarar sig utan. Byns dygn räknas i raden rädslan i TAKTER (steg.ts), också i en by utan ledare.
-import { Act, Person, State } from './typer';
+import { Act, DAY, Person, SEC, State } from './typer';
 import { clamp, rnd } from './slump';
 import { ALDER, REL, ageOf, living, relKey, satAktRadd, stat } from './folk';
 import { balans } from './balans';
@@ -48,17 +48,20 @@ export function raddFor(s: State, p: Person, act: Act): string | undefined {
   }
   return undefined;
 }
-// en gång per dygn (raden rädslan i TAKTER): de vuxnas rädsla berättas för goda vänner och blir svagare med tiden (steg 10.2.41:
-// tabun, där en rädsla som många delade blev en regel för hela byn, är borta; var och ens rädslor finns kvar)
-export function raddDygn(s: State) {
-  const vuxna = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen);
-  for (const p of vuxna) {
+// raden rädslan i TAKTER (en gång per dygn), dt = sekunderna sedan sist: rädslan blir svagare med tiden för alla, barn som vuxna,
+// och de vuxna berättar sin för goda vänner (glom och sprid är per dygn) (steg 10.2.41: tabun, där en rädsla som många delade
+// blev en regel för hela byn, är borta; var och ens rädslor finns kvar)
+export function raddDygn(s: State, dt = DAY / SEC) {
+  const dygn = dt * SEC / DAY, glom = RADSLA.glom ** dygn, sprid = 1 - (1 - RADSLA.sprid) ** dygn;
+  const alla = living(s), vuxna = alla.filter(p => ageOf(p, s.now) >= ALDER.vuxen);
+  for (const p of alla) {
     if (!p.raddAkt) continue;
+    const vuxen = ageOf(p, s.now) >= ALDER.vuxen;
     for (const k in p.raddAkt) {
       const v = p.raddAkt[k];
-      p.raddAkt[k] = v * RADSLA.glom;
-      if (v < RADSLA.radd) continue;
-      for (const q of vuxna) if (q !== p && (s.rels[relKey(p.id, q.id)]?.op ?? 0) > REL.van && rnd(s, 'minne', p) < RADSLA.sprid) { const r = (q.raddAkt ??= {}); r[k] = Math.max(r[k] ?? 0, v * RADSLA.spridV); }
+      p.raddAkt[k] = v * glom;
+      if (!vuxen || v < RADSLA.radd) continue;
+      for (const q of vuxna) if (q !== p && (s.rels[relKey(p.id, q.id)]?.op ?? 0) > REL.van && rnd(s, 'minne', p) < sprid) { const r = (q.raddAkt ??= {}); r[k] = Math.max(r[k] ?? 0, v * RADSLA.spridV); }
     }
     for (const k in p.raddAkt) if (p.raddAkt[k] < 0.05 || !RADD_AKT[k]) delete p.raddAkt[k];
     if (!Object.keys(p.raddAkt).length) p.raddAkt = undefined;

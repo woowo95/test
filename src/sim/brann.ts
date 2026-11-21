@@ -65,8 +65,8 @@ export const BRANNINGAR: Record<string, BranningDef> = {
     tillsyn: [1, 2, 3], miss: { jarn: BRANN.ugnMiss }, tillsyn_text: 'Trampar bälgen vid blästerugnen.',
   },
 };
-// bränningen i en station: sorten, när den tändes, när den är klar, och vems det som lades in var
-export interface Branning { st: number; b: string; t0: number; slut: number; klar?: 1; ag?: Record<string, number>; sedd?: number; mi?: number; miss?: number } // sedd och mi: tillsynerna som gjorts och missats (bitar), miss: hur många som missats (steg 12.2.2)
+// bränningen i en station: sorten, när den tändes och när den är klar
+export interface Branning { st: number; b: string; t0: number; slut: number; klar?: 1; sedd?: number; mi?: number; miss?: number } // sedd och mi: tillsynerna som gjorts och missats (bitar), miss: hur många som missats (steg 12.2.2)
 export const branningarOf = (s: State) => s.branningar ?? [];
 export const branningI = (s: State, t: Station) => branningarOf(s).find(b => b.st === t.id);
 const defFor = (t: Station) => Object.entries(BRANNINGAR).find(([, d]) => d.station === t.k);
@@ -95,11 +95,10 @@ export function branningKlar(s: State, p: Person, tk: Task) {
   const t = stationerOf(s).find(x => x.id === tk.ref), e = t && defFor(t);
   if (!t || !e) return;
   const [id, d] = e, b = branningI(s, t);
-  if (!b) {
-    if (!harIn(s, p, d)) return;
-    const ag: Record<string, number> = {};
-    for (const [k, n] of Object.entries(d.in)) { const a = takeMaterial(s, p, k, n); for (const o in a) ag[o] = (ag[o] ?? 0) + a[o]; }
-    (s.branningar ??= []).push({ st: t.id, b: id, t0: s.now, slut: s.now + d.tim * HOUR, ag: Object.keys(ag).length ? ag : undefined });
+  if (!b) { // (den som kom för att tömma och fann stationen tömd laddar bara om hen kan det, som laddbar)
+    if (ageOf(p, s.now) < ALDER.vuxen || !knows(p, d.tek) || !harIn(s, p, d)) return;
+    for (const [k, n] of Object.entries(d.in)) takeMaterial(s, p, k, n);
+    (s.branningar ??= []).push({ st: t.id, b: id, t0: s.now, slut: s.now + d.tim * HOUR });
     count(s, 'branning_' + id);
     if (forstaGang(s, 'branningForsta_' + id)) log(s, `${p.name} tände byns första ${d.namn.toLowerCase()}.`, 'world', [p.id]);
     return;
@@ -138,7 +137,7 @@ export function tillsynTider(s: State, b: Branning) {
   return d.tillsyn.map((_, k) => { const t = tidFor(b, d, k); return { t, sedd: !!((b.sedd ?? 0) & (1 << k)), missad: !((b.sedd ?? 0) & (1 << k)) && s.now > t + BRANN.tillsynSen * HOUR }; });
 }
 // bränningen på stationen i text (rutan under musen i gränssnittet): när den är klar och tillsynens tider, ✓ gjord, ✗ missad
-const kl = (t: number) => { const h = hourOf(t), m = Math.round((h % 1) * 60); return `${Math.floor(h) + (m === 60 ? 1 : 0)}:${String(m % 60).padStart(2, '0')}`; };
+const kl = (t: number) => { const h = hourOf(t), m = Math.round((h % 1) * 60); return `${(Math.floor(h) + (m === 60 ? 1 : 0)) % 24}:${String(m % 60).padStart(2, '0')}`; };
 export function branningText(s: State, t: Station) {
   const b = branningI(s, t);
   if (!b) return undefined;

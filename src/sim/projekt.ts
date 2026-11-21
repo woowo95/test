@@ -498,7 +498,7 @@ export function bastaProjekt(s: State, p: Person, f: ProjektFara, egen = false) 
     // när kylan är en fara är projekten mindre värda: tiden går helst till värmen (steg 10.2.6, PROJEKT_TAL.kyla), utom det som
     // skyddar mot kylan (steg 10.2.71)
     const d = PROJEKT[k], v = (egen ? (d.egen ? personVarde(s, k, fam, 0, p) : 0) : personVarde(s, k, fam, om, p)) * (f.kyla && !d.motKyla ? PROJEKT_TAL.kyla : 1);
-    if (v <= 0 || best && v <= best.varde) continue;
+    if (v <= 0 || best && v * Math.max(1, SMIDE.brinner) <= best.varde) continue; // (ässjan kan höja värdet efteråt, smidaFaktor)
     // kan och uppgift frågar ofta om samma plats (stationerna): den söks en gång (medPlatsMinne)
     const u = medPlatsMinne(() => d.kan(s, p, f) ? d.uppgift(s, p) ?? null : undefined);
     if (u !== undefined) {
@@ -512,4 +512,4 @@ export function bastaProjekt(s: State, p: Person, f: ProjektFara, egen = false) 
   return best;
 }
 import { utsadeKrok } from './ratter';
-import { smidaFaktor } from './smedja';
+import { SMIDE, smidaFaktor } from './smedja';
