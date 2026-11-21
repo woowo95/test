@@ -34,6 +34,17 @@ export const halvKlar = (h: Halv) => Math.min(1, Math.max(0, 1 - h.kvar / ((SAKE
 export const toolsOf = (s: State, k: string) => tingOf(s).filter(t => iSlag(t.k, k)); // en grupp (yxa, kniv, skara): alla i gruppen (steg 12.2.5)
 // en vattensäck som står fylld (steg 7.6.6): örtköket tar vattnet ur den, och säcken töms men finns kvar
 export const fylldSack = (s: State) => tingOf(s).find(t => t.inne?.v === 'vatten' && t.inne.n > 0); // en behållare med vatten i (steg 9.4.14)
+// vattnet ett recept tar (steg 12.1.251): en fast mängd, så mycket som en vattensäck rymmer, ur byns behållare (inte kyrkans); det
+// som blir över står kvar i behållaren, så en tunna regnvatten räcker till många recept
+export const RECEPTVATTEN = 1;
+const vattenKar = (s: State) => tingOf(s).filter(t => t.inne?.v === 'vatten' && t.inne.n > 0 && !(t.agare !== undefined && t.agare < 0));
+export const harReceptVatten = (s: State) => vattenKar(s).reduce((a, t) => a + t.inne!.n, 0) >= RECEPTVATTEN;
+export function taReceptVatten(s: State) {
+  if (!harReceptVatten(s)) return false;
+  let kvar = RECEPTVATTEN;
+  for (const t of vattenKar(s)) { const d = Math.min(kvar, t.inne!.n); t.inne!.n -= d; kvar -= d; if (t.inne!.n <= 0) t.inne = undefined; if (kvar <= 0) break; }
+  return true;
+}
 export const nTools = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (iSlag(t.k, k) ? 1 : 0), 0);
 // det redskap av slagen ks som p har påbörjat (paborjat.ts)
 export const halvOf = (s: State, p: Person, ks: readonly string[]) => tingOf(s).find(t => t.halv?.ag === p.id && ks.includes(t.halv.gor));

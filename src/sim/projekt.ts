@@ -22,7 +22,7 @@ import { GRODOR, ODLING, STAKET, faltBrist, faltUppgift } from './odling';
 import { hageBrist, hageUppgift } from './hage';
 import { VINTER, angBrist, angUppgift } from './slatter';
 import { SKOG, fallTid, fellingTiles, klyvStam, stockOverHus, egenStock, fallVilja, rojSpot, rojBrist, stubbBrist, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
-import { fylldSack, freeTools, tingOf } from './agande';
+import { freeTools, harReceptVatten, tingOf } from './agande';
 import { ACTS, redskapTal } from './handlingar';
 import { tileOf } from './mark';
 import { Recept, bynsDel, getable, saknatAv } from './behov';
@@ -195,7 +195,7 @@ const tillverk = (k: string): ProjektDef => {
   const antal = (s: State) => ar_vatska(d.ger) ? vatskaAv(s, d.ger) + (d.sjud ? tingOf(s).reduce((n, t) => n + (t.kok?.r === d.ger ? t.kok.n : 0), 0) : 0) : amountOf(s, d.ger), kar = (s: State) => !ar_vatska(d.ger) || !!ledigFor(s, d.ger);
   // så många byn vill ha: det som följer förbrukningen (salvan, tjäran, limmet, tvålen; MATERIALMAL, steg 10.2.12) efter den, det andra efter raden
   const vill = (s: State) => tillverkVill(s, d);
-  const har = (s: State, p: Person) => knows(p, d.tek) && kanGoras(s, d.act, p) && (!d.eld || !!stationFor(s, d.act) || nagonEld(s)) && eldKan(s, p, stationFor(s, d.act, p)) /* örtkökets eld (steg 10.2.85) */ && (!d.vatten || !!fylldSack(s)) && (!d.vatska || vatskaAv(s, d.vatska.v as VatskaId) >= d.vatska.n && (!d.kruka || !!karSomBlirLedig(s, d.kruka, d.vatska.v, d.vatska.n))) /* mjölken och krukan till osten (steg 12.4.7) */ && (!d.verktyg || freeTools(s, p, d.verktyg) > 0 || verktygVid(s, d.act, d.verktyg));
+  const har = (s: State, p: Person) => knows(p, d.tek) && kanGoras(s, d.act, p) && (!d.eld || !!stationFor(s, d.act) || nagonEld(s)) && eldKan(s, p, stationFor(s, d.act, p)) /* örtkökets eld (steg 10.2.85) */ && (!d.vatten || harReceptVatten(s)) && (!d.vatska || vatskaAv(s, d.vatska.v as VatskaId) >= d.vatska.n && (!d.kruka || !!karSomBlirLedig(s, d.kruka, d.vatska.v, d.vatska.n))) /* mjölken och krukan till osten (steg 12.4.7) */ && (!d.verktyg || freeTools(s, p, d.verktyg) > 0 || verktygVid(s, d.act, d.verktyg));
   return {
     namn: SAKER[d.ger]?.namn ?? (ar_vatska(d.ger) ? VATSKOR[d.ger].namn : d.ger), vikt: PROJEKT_TAL.tillverka, // teet är bara en vätska (steg 9.5.8)
     brist: s => clamp(1 - antal(s) / vill(s), 0, 1),

@@ -12,9 +12,9 @@ import { Station, isKlar, stationerOf } from './stationer';
 import { DAY, HOUR, MIN, Person, State } from './typer';
 import { temperature } from './vader';
 import { getable, takeMaterial } from './behov';
+import { harReceptVatten, taReceptVatten } from './agande';
 import { VATSKOR, fyllVatska, karRymmer, ledigFor, taVatska, vatskaAv, VatskaId } from './vatskor';
 import { knows } from './teknik';
-import { fylldSack } from './agande';
 import { olTillKyrkan } from './kyrka';
 import { kyrkaId } from './egendom';
 
@@ -58,7 +58,7 @@ export function bryggVal(s: State, p: Person): { act: 'brygga' | 'tappa' | 'malt
     if (kar.sats) continue;
     for (const v of vilka) {
       const d = BRYGD[v];
-      if (d.vatten && !fylldSack(s)) continue;
+      if (d.vatten && !harReceptVatten(s)) continue;
       // det som också är mat (bären) har sitt värde som mat i förrådsmålen (steg 10.2.1): det bryggs bara av när maten räcker
       // över bufferten, så att vinet ärver bristen på mat
       if (Object.entries(d.av).every(([k, n]) => getable(s, p, k) >= n && !(isFood(k) && foodDays(s) < buffert(s, 'mat')))) return { act: 'brygga', kar, v };
@@ -140,10 +140,10 @@ export function bryggKlar(s: State, p: Person, ref?: number) {
   const b = bryggVal(s, p); // (materialet kan ha tagits medan man arbetade: då kan valet vara ett annat arbete eller ett annat kar)
   if (b?.act !== 'brygga' || b.kar !== kar) return;
   const v = b.v;
-  const d = BRYGD[v], sack = d.vatten ? fylldSack(s) : undefined;
-  if (d.vatten && !sack) return;
+  const d = BRYGD[v];
+  if (d.vatten && !harReceptVatten(s)) return;
   for (const [k, n] of Object.entries(d.av)) takeMaterial(s, p, k, n);
-  if (sack) sack.inne = undefined;
+  if (d.vatten) taReceptVatten(s); // vattnet ur behållaren (steg 12.1.251)
   const forsta = !(kar.brygt ?? 0); // karet behåller jästen; den första satsen tar dubbelt så lång tid (steg 9.6.13)
   const malt = !!d.av.malt; // det som bryggs av malt (ölet och svagdrickan)
   kar.sats = { v, n: d.ger, jas: 0, dygn: d.dygn * (malt && forsta ? 2 : 1), ...(malt && forsta && rnd(s, 'mat', p) < BRYGG.surForsta ? { sur: 1 as const } : {}) };

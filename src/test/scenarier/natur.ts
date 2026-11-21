@@ -2666,7 +2666,7 @@ SCENARIER.mjarde = {
 SCENARIER.ortvatten = {
   text: 'Steg 7.6.6: benlim och tvål kokas med vatten ur vattensäcken. Någon fyller säcken vid vattnet när örtköket behöver det, och när det är kokt är säcken tom men finns kvar',
   kor: () => {
-    const s = createState(5, START), { TILLVERKA, PROJEKT, newTing, fylldSack, vattenVal, KLAR_FOR } = SIM;
+    const s = createState(5, START), { TILLVERKA, PROJEKT, newTing, vattenVal, KLAR_FOR } = SIM;
     klockan(s);
     const p = living(s)[0];
     p.x = 30; p.y = 30; p.tek = { ...p.tek, ortkok: 1 } as typeof p.tek;
@@ -2680,13 +2680,19 @@ SCENARIER.ortvatten = {
     const med = PROJEKT.koka_lim.kan(s, p, { kyla: false, gras: 0 }), ingaFler = !vattenVal(s, p);
     const ben0 = SIM.amountOf(s, 'ben');
     KLAR_FOR.koka_lim!(s, p, { act: 'koka_lim' } as SIM.Task, 0);
+    // en tunna regnvatten töms inte för ett recept: det tar en fast mängd (steg 12.1.251)
+    SIM.put(s, 'ben', 4, { [p.id]: 4 }); newTing(s, 'naverask', 1, p.id);
+    const tunna = newTing(s, 'tunna', 1, p.id); tunna.inne = { v: 'vatten', n: 5 };
+    KLAR_FOR.koka_lim!(s, p, { act: 'koka_lim' } as SIM.Task, 0);
+    const kvarTunna = tunna.inne?.n ?? 0;
     return [
+      [`en tunna med 5 vatten har ${kvarTunna} kvar efter ett recept (${SIM.RECEPTVATTEN} tas), och limmet blev gjort (${SIM.vatskaAv(s, 'benlim')})`, kvarTunna === 5 - SIM.RECEPTVATTEN && SIM.vatskaAv(s, 'benlim') === 2],
       ['raderna säger att benlim och tvål tar vatten', !!TILLVERKA.koka_lim.vatten && !!TILLVERKA.koka_tval.vatten],
       ['utan fylld säck kokas inget', !utan],
       [`när örtköket behöver vatten går någon och fyller säcken (${val?.why})`, !!val && val.ref === 0],
       ['med en fylld säck går det att koka, och ingen fyller en till', med && ingaFler],
-      [`limmet blev gjort av benen (${ben0} → ${SIM.amountOf(s, 'ben')}) och ligger i näveraskan`, SIM.vatskaAv(s, 'benlim') === 1],
-      ['säcken är tom men finns kvar', !fylldSack(s) && SIM.tingOf(s).includes(sack)],
+      [`limmet blev gjort av benen (${ben0} → 0) och ligger i näveraskan`, ben0 === 4],
+      ['säcken är tom men finns kvar', !sack.inne && SIM.tingOf(s).includes(sack)],
     ];
   },
 };

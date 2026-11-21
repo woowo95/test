@@ -46,7 +46,7 @@ import { bildKrok, gralBlirSlagsmal, kartStridBorja, lekSteg, kartStridSteg, nas
 import { sportKlar, sportSteg } from './sport';
 import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
 import { tittaSteg } from './sport';
-import { fylldSack, redskapIHanden, tidyTools } from './agande';
+import { harReceptVatten, redskapIHanden, taReceptVatten, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './skog';
 import { needLadder, noticeTheft, stole, takeMaterial, getable, ataPortion } from './behov';
@@ -291,15 +291,14 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
   const av = tillverkAv(d, q => getable(s, p, q)); // svampen eller kålen (steg 10.7.24)
   if (!av) return;
   for (const [q, n] of Object.entries(av)) { if (getable(s, p, q) < n) return; }
-  const sack = d.vatten ? fylldSack(s) : undefined;
-  if (d.vatten && !sack) return; // vattnet är borta: inget blir gjort, och materialet ligger kvar
+  if (d.vatten && !harReceptVatten(s)) return; // vattnet är borta: inget blir gjort, och materialet ligger kvar
   if (d.eld && !stationFor(s, d.act) && !nagonEld(s)) return; /* vilken eld som helst (steg 12.1.55) */ // teet kokas vid en eld som brinner om byn inte har örtköket (steg 9.5.8)
   const vk = d.vatska as { v: VatskaId; n: number } | undefined;
   if (vk && vatskaAv(s, vk.v) < vk.n) return; // mjölken till osten (steg 12.4.7)
   const kar = ar_vatska(d.ger) ? ledigFor(s, d.ger) : d.kruka ? karSomBlirLedig(s, d.kruka, vk?.v, vk?.n) : undefined;
   if ((ar_vatska(d.ger) || d.kruka) && !kar) return; // ingen ledig behållare som passar (steg 9.4.14): inget blir gjort
   if (vk) taVatskaFran(s, vk.v, vk.n, kar); // ur krukan där det ska sjuda först, så att den blir ledig
-  if (sack) sack.inne = undefined; // säcken töms men finns kvar (steg 7.6.6)
+  if (d.vatten) taReceptVatten(s); // vattnet tas ur behållaren, som finns kvar (steg 7.6.6, 12.1.251)
   if (p.task?.tool && d.verktyg) wearUsed(s, p, 1);
   slitRedskapVid(s, d.act, d.n, p); // sågen vid klyvplatsen slits för varje planka (steg 12.5.1)
   const ag: Record<string, number> = {};

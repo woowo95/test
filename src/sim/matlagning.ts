@@ -392,12 +392,12 @@ export const BAK = balans('bak', {
 });
 bakKrok.passivTim = () => KATEGORIER.brod.passiv / 60; // ugnens eld ska brinna medan degen gräddas (stationseld.ts)
 export const bakugnen = (s: State) => stationerOf(s).find(t => t.k === 'bakugn' && isKlar(t) && !t.deg);
-export const kanBaka = (s: State, p: Person) => knows(p, 'bakugn') && !!bakugnen(s) && amountOf(s, 'brod') * (SAKER.brod?.mat ?? 1) < matPerDygn(s) * BAK.dygn && !!stationFor(s, 'baka', p) && getable(s, p, 'mjol') >= BAK.mjol && (getable(s, p, 'ved') >= BAK.ved || stationBrinner(bakugnen(s))) && !!fylldSack(s);
+export const kanBaka = (s: State, p: Person) => knows(p, 'bakugn') && !!bakugnen(s) && amountOf(s, 'brod') * (SAKER.brod?.mat ?? 1) < matPerDygn(s) * BAK.dygn && !!stationFor(s, 'baka', p) && getable(s, p, 'mjol') >= BAK.mjol && (getable(s, p, 'ved') >= BAK.ved || stationBrinner(bakugnen(s))) && harReceptVatten(s);
 export function bakaKlar(s: State, p: Person) {
-  const t = bakugnen(s), sack = fylldSack(s);
-  if (!t || !sack || getable(s, p, 'mjol') < BAK.mjol) return;
+  const t = bakugnen(s);
+  if (!t || !harReceptVatten(s) || getable(s, p, 'mjol') < BAK.mjol) return;
   const ag: Record<string, number> = {};
-  addDel(ag, takeMaterial(s, p, 'mjol', BAK.mjol), 1); sack.inne = undefined; // veden lades i ugnens eld när bagaren kom (stationseld.ts, steg 10.2.85)
+  addDel(ag, takeMaterial(s, p, 'mjol', BAK.mjol), 1); taReceptVatten(s); // vattnet ur behållaren (steg 12.1.251); veden lades i ugnens eld när bagaren kom (stationseld.ts, steg 10.2.85)
   const n = oBrant(s, p, BAK.brod);
   count(s, 'brant', BAK.brod - n);
   t.deg = { n, kvar: KATEGORIER.brod.passiv * MIN, ag };
@@ -412,7 +412,7 @@ export function stepBak(s: State) {
     t.deg = undefined;
   }
 }
-import { fylldSack } from './agande';
+import { harReceptVatten, taReceptVatten } from './agande';
 
 // ---------- festmåltiden i kokgropen (steg 10.7.28, Mat, matlagning och dryck: Festmåltiden) ----------
 // Kokgropen är en station ute med heta stenar. Inför en högtid med gille eller ett bröllop (festKrok.vantar, kult.ts) laddar en kock
