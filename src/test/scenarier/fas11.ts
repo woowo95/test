@@ -5972,3 +5972,26 @@ SCENARIER.resfel = {
     ];
   },
 };
+
+// steg 12.1.233: en vanlig resa står i krönikan med mallen k_resa när sällskapet kommer hem
+SCENARIER.resakronika = {
+  text: 'Steg 12.1.233: när ett sällskap kommer hem från en vanlig resa (utan uppdrag och turné) skriver hemkomsten en rad i krönikan med mallen k_resa (kronikaBer)',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
+    vl.bud = undefined;
+    const p = modigaste(s)[0]!, q = narmasteBy(vl, hem);
+    p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'uppdrag');
+    SIM.larOrt(s, p, q.nr, SIM.O_KANT, 1);
+    const plan = SIM.resaPlan(s, p, 99, 99);
+    const sl = plan && SIM.samlaResa(s, p, plan);
+    if (!sl) return [['en resa att komma hem från', false]];
+    sl.turne = undefined; sl.utfall = undefined;
+    const n0 = s.hist?.kronika?.length ?? 0;
+    SIM.redogorelse(s, sl, s.now + 2 * SIM.DAY);
+    const rad = (s.hist?.kronika ?? []).slice(n0).find(r => r[2] === 'k_resa');
+    return [
+      [`hemkomsten står i krönikan med mallen k_resa (${rad?.[1] ?? 'ingen rad'})`, !!rad && !rad[1].includes('{') && rad[1].includes(p.name)],
+      [`raden har en kategori i krönikan (${SIM.kronikaKat('k_resa') ?? 'ingen'})`, !!SIM.kronikaKat('k_resa')],
+    ];
+  },
+};

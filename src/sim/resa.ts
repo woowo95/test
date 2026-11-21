@@ -59,7 +59,8 @@ import { GRODOR, rutorAv } from './odling';
 import { TORKA } from './torka';
 import { BYREL, byHandelse, gavaRel } from './byrel';
 import { kronika } from './historik';
-import { antal, hans, honom, horText, och, spelTid, stor, tal } from './ord';
+import { antal, han, hans, honom, horText, och, spelTid, stor, tal } from './ord';
+import { kronikaBer } from './berattelser';
 import { tanke } from './tankar';
 import { upplev } from './uppvaxt';
 // "en sak", "tre saker"
@@ -1426,6 +1427,8 @@ export function redogorelse(s: State, sl: Sallskap, t: number) {
   log(s, text + upp, 'world', folk.map(p => p.id)).resa = sl.id; // minnet hos dem som var med (personens logg)
   notis(s, 'resa', text + upp, folk.map(p => p.id), undefined, { resa: sl.id });
   if (u) { kronika(s, `${text}${upp}`, 'uppdrag'); count(s, 'uppdrag berättat'); } // uppdragets redogörelse (steg 11.8.7)
+  // en vanlig resa (utan uppdrag och turné) står i krönikan med mallen k_resa (steg 12.1.233)
+  else if (sl.turne === undefined && led) kronikaBer(s, 'k_resa', sl.id, { folk: och(folk.map(p => p.name)), resa: RESMAL[sl.skal].resa, mal: malNamn(s, sl) || 'grannbyn', borta: spelTid(dygn * DAY), De: folk.length > 1 ? 'De' : stor(han(led)) });
   // ryktet och upplevelsen (steg 11.8.17): de som ser sällskapet komma hem med ett klarat uppdrag får intrycket äventyrare om var
   // och en som var med, och det sprids som andra rykten. Resan sitter en tid i humöret, glad eller besviken efter hur det gick
   if (sl.turne !== undefined) { // turnén (steg 11.8.18): den som uppträdde får en bedrift, och krönikan en rad
