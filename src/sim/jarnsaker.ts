@@ -80,10 +80,13 @@ laggTillProjekt(Object.fromEntries(Object.entries(JARNSAKER).map(([k, d]) => [k,
 }])));
 
 // ---------- järnskrotet (steg 12.2.7, Järnet: Järnskrotet) ----------
-// En järnsak som går sönder lämnar 1 järnskrot för varje järn i receptet (redskapSlitet i agande.ts), och 2 järnskrot smids om
+// En järnsak som går sönder lämnar 1 järnskrot för varje järn i receptet som går på en sak (skrotAv) (redskapSlitet i agande.ts), och 2 järnskrot smids om
 // till 1 järn i smedjan på 3 minuter. Omsmidet är ett sätt att få järn: projektet jarn (brann.ts) smider om när skrotet räcker,
 // och blåser annars
-skrotKrok.f = (s, k) => { const n = receptAv(k).jarn ?? 0; if (n > 0 && SAKER[k]?.redskap) { addTo(s, 'jarnskrot', n); count(s, 'jarnskrot', n); } };
+// Skrotet räknas per sak (steg 12.1.238): receptets järn delat med så många saker receptet ger, avrundat nedåt till hela
+// resurser, så att två järnnålar av ett järn inte lämnar två skrot
+export const skrotAv = (k: string) => Math.floor((receptAv(k).jarn ?? 0) / Math.max(1, SAKER[k]?.skaffa?.ger ?? 1));
+skrotKrok.f = (s, k) => { const n = skrotAv(k); if (n > 0 && SAKER[k]?.redskap) { addTo(s, 'jarnskrot', n); count(s, 'jarnskrot', n); } };
 export const kanSmidaOm = (s: State, p: Person) => ageOf(p, s.now) >= ALDER.vuxen && knows(p, 'smedja') && !!smedjan(s, p) && getable(s, p, 'jarnskrot') >= JARNSAK.omSkrot;
 export const omsmidUppgift = (s: State, p: Person) => { const t = smedjan(s, p); return t && { act: 'smida' as const, text: 'Smider om järnskrot till järn.', min: JARNSAK.omMin, tool: 'jarn', spot: vidStation(t), ref: t.id }; };
 function omsmidKlar(s: State, p: Person) {

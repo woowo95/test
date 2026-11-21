@@ -385,6 +385,10 @@ SCENARIER.jarnskrot = {
     // en flintyxa lämnar inget
     SIM.addTool(s, 'yxa', p); SIM.wearTool(s, p, 'yxa', 10);
     const skrot2 = SIM.amountOf(s, 'jarnskrot');
+    // en järnnål (två nålar av ett järn) lämnar inget skrot, och skrotet räknas per sak för alla recept (steg 12.1.238)
+    SIM.addTool(s, 'jarnnal', p); SIM.wearTool(s, p, 'jarnnal', 10);
+    const skrot3 = SIM.amountOf(s, 'jarnskrot'), nalGer = SIM.SAKER.jarnnal?.skaffa?.ger;
+    const fel = Object.keys(SIM.SAKER).filter(k => (SIM.SAKER[k]?.skaffa?.av?.jarn ?? 0) > 0 && SIM.skrotAv(k) * (SIM.SAKER[k]?.skaffa?.ger ?? 1) > (SIM.SAKER[k]?.skaffa?.av?.jarn ?? 0));
     // den som vill ha järn smider om skrotet
     const u = SIM.PROJEKT.jarn!.uppgift(s, p);
     const tk = { act: 'smida', phase: 'do', tx: t.x, ty: t.y, until: s.now, carry: 0, why: '', tool: 'jarn', ref: t.id } as SIM.Task;
@@ -393,6 +397,8 @@ SCENARIER.jarnskrot = {
     return [
       [`en sönderslipad järnyxa lämnar 2 järnskrot (${skrot})`, borta && skrot === 2],
       [`en flintyxa lämnar inget (${skrot2})`, skrot2 === 2],
+      [`en järnnål (${nalGer} av ett järn) lämnar inget skrot (${skrot3})`, nalGer === 2 && skrot3 === 2],
+      [`ingen sak lämnar mer skrot än järnet den gjordes av${fel.length ? ` (${fel.join(', ')})` : ''}`, fel.length === 0],
       [`den som vill ha järn smider om skrotet (${u?.text}, ${u?.min} minuter)`, u?.act === 'smida' && u.tool === 'jarn' && u.min === 3],
       [`2 järnskrot blir 1 järn (${jarn} järn, ${kvar} skrot kvar)`, jarn === 1 && kvar === 0],
     ];
