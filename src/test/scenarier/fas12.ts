@@ -236,13 +236,23 @@ SCENARIER.myroffer = {
     klockan(s, 10); SIM.kultTimme(s);
     const r = s.ritual;
     const med = r ? SIM.RITUALER.myrOffer.vem(s, r) : [];
-    for (const p of med) p.task = { act: 'ritual', phase: 'do', tx: r!.x, ty: r!.y, until: r!.slut, carry: 0, why: '' } as SIM.Task;
+    SIM.tidyTools(s); const barare = r?.barare !== undefined ? SIM.byId(s, r.barare) : undefined, iHanden = mest.hos === barare?.id && r?.offer?.ting === mest.id;
+    for (const p of med) { p.task = { act: 'ritual', phase: 'do', tx: r!.x, ty: r!.y, until: r!.slut, carry: 0, why: '' } as SIM.Task; p.x = r!.x; p.y = r!.y; } // vid myrkanten
     const tro0 = med[0]?.troStyrka ?? 0;
     s.now = r?.slut ?? s.now; SIM.ritualTimme(s);
     const tro1 = med[0]?.troStyrka ?? 0, faktor = Math.min(SIM.KULT.myrTak, 1 + (val?.v ?? 0) / SIM.KULT.myrVarde);
     const borta = !SIM.tingOf(s).includes(mest), kvar = SIM.tingOf(s).filter(t => t.agare === kid).length;
     // samma dygn hålls inget nytt offer; nästa dygn sänks nästa sak
     s.now += 2 * SIM.HOUR; SIM.kultTimme(s); const igen = !!s.ritual || !!s.ritualKo?.some(q => q.k === 'myrOffer');
+    // nästa dygn sänks nästa sak, men bäraren går inte till myren (steg 12.1.240): inget sänks, och kyrkan har kvar saken
+    s.ritual = undefined; s.ritualKo = []; s.now += SIM.DAY; klockan(s, 10); const kott0 = SIM.ownsId(s, kid, 'kott'); SIM.kultTimme(s);
+    const kottUnder = SIM.ownsId(s, kid, 'kott');
+    const r2 = s.ritual as SIM.Ritual | undefined, t2 = r2?.offer?.ting !== undefined ? SIM.tingOf(s).find(t => t.id === r2.offer!.ting) : undefined;
+    const ute = SIM.living(s).filter(p => p.id !== r2?.barare);
+    for (const p of ute) { p.task = { act: 'ritual', phase: 'do', tx: r2!.x, ty: r2!.y, until: r2!.slut, carry: 0, why: '' } as SIM.Task; p.x = r2!.x; p.y = r2!.y; }
+    const b2 = r2?.barare !== undefined ? SIM.byId(s, r2.barare) : undefined; if (b2) b2.task = undefined;
+    const sankt0 = s.stat?.myroffer ?? 0; if (r2) s.now = r2.slut; SIM.ritualTimme(s);
+    const kvarHos = (t2 ? SIM.tingOf(s).includes(t2) && t2.agare === kid && t2.hos === undefined : r2?.offer?.k === 'kott' && kottUnder === kott0 - 1 && SIM.ownsId(s, kid, 'kott') === kott0) && (s.stat?.myroffer ?? 0) === sankt0;
     // en kyrka som inte äger något: ritualen hålls inte
     s.ting = SIM.tingOf(s).filter(t => t.agare !== kid); SIM.ownMove(s, 'kott', 3, kid, SIM.BYN);
     s.ritual = undefined; s.now += SIM.DAY; const inte0 = s.stat?.ritual_inte_myrOffer ?? 0; SIM.kultTimme(s); SIM.ritualTimme(s);
@@ -255,6 +265,8 @@ SCENARIER.myroffer = {
       [`saken är borta för gott (${borta}, kyrkan har ${kvar} ting kvar) och offret räknas (${s.stat?.myroffer})`, borta && kvar === 1 && s.stat?.myroffer === 1],
       [`tron växer med sakens värde: ${tro0} → ${tro1}, gånger ${faktor.toFixed(2)}`, Math.abs(tro1 - tro0 - SIM.RITUALER.myrOffer.tro * faktor) < 1e-6 && faktor > 1],
       [`samma dygn hålls inget nytt offer (${igen})`, !igen],
+      [`en troende (${barare?.name}) bär offret i handen till myren (${iHanden})`, iHanden],
+      [`är bäraren inte vid myrkanten sänks inget, och kyrkan har kvar saken (${r2?.offer?.k}: ${kott0} → ${kottUnder} → ${SIM.ownsId(s, kid, 'kott')})`, kvarHos],
       [`äger kyrkan inget hålls inget offer (${inte})`, inte],
     ];
   },

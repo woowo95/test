@@ -108,14 +108,14 @@ export function wearTool(s: State, p: Person, k: string, v: number) {
 // den dog eller fick annat att göra) hamnar i förrådet
 export function tidyTools(s: State) {
   for (const t of tingOf(s)) {
-    if (t.agare !== BYN) { const o = byId(s, t.agare); if (!o || !alive(o)) t.agare = BYN; }
+    if (t.agare > BYN) { const o = byId(s, t.agare); if (!o || !alive(o)) t.agare = BYN; } // en död persons ting blir byns; kyrkan (ett id under noll, kyrkaId) är ingen person (steg 12.1.240)
     if (t.bar !== undefined) { const q = byId(s, t.bar); if (!q || !alive(q)) t.bar = undefined; } // den döde har inte plagget på sig
     if (t.krok !== undefined) { const q = byId(s, t.krok); if (!q || !alive(q) || t.hos !== undefined || !kanHanga(s, q, t)) t.krok = undefined; } // bältet har slitits ut, eller tinget har bytt ägare
     if (t.lass !== undefined) { const q = byId(s, t.lass); if (!q || !alive(q) || !q.task?.ting?.includes(t.id)) t.lass = undefined; }
     if (t.hos === undefined) continue;
     const q = byId(s, t.hos);
     if (!q || !alive(q)) t.hos = undefined;
-    else if (usesTool(q.task) !== t.k && t.agare !== q.id && !(q.task && ACTS[q.task.act].vapen)) t.hos = undefined; // vakten har byns vapen i handen hela natten (vakt.ts), och den som väntar på vargarna (varg.ts)
+    else if (usesTool(q.task) !== t.k && t.agare !== q.id && !(q.task && ACTS[q.task.act].vapen) && !(s.ritual?.offer?.ting === t.id && s.ritual.barare === q.id)) t.hos = undefined; // och den som bär offret till myren (steg 12.1.240) // vakten har byns vapen i handen hela natten (vakt.ts), och den som väntar på vargarna (varg.ts)
   }
 }
 // vad p äger
