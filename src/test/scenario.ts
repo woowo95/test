@@ -26,7 +26,12 @@ const b2n = (b: string) => b.slice(0, b.indexOf('\n'));
 
 // Utan namn körs alla scenarier samtidigt, vart och ett i en egen process. Med ett namn körs bara det, här.
 // Med --snabb körs bara de som inte är långa, och dessutom de som nämns efter: --snabb delning arv
-const karta = process.argv.includes('--karta'), arg = process.argv.slice(2).filter(a => a !== '--karta'), snabb = arg[0] === '--snabb', grupp = arg[0] === '--grupp';
+// Med --del n/m (steg 12.1.171) körs del n av m: scenarierna delas efter förra gångens tid (test/scenariotider.json, som är
+// committad), det längsta först till den del som har minst tid, så att delarna tar ungefär lika lång tid och tillsammans täcker
+// alla. På samma commit får varje chatt samma delning
+const delArg = process.argv.indexOf('--del'), del = delArg > 0 ? /^(\d+)\/(\d+)$/.exec(process.argv[delArg + 1] ?? '') : null;
+if (delArg > 0 && (!del || +del[1] < 1 || +del[1] > +del[2])) { console.log('--del skrivs n/m, t.ex. --del 2/4'); process.exit(1); }
+const karta = process.argv.includes('--karta'), arg = process.argv.slice(2).filter((a, i) => a !== '--karta' && i !== delArg - 2 && i !== delArg - 1), snabb = arg[0] === '--snabb', grupp = arg[0] === '--grupp';
 const val = !snabb && !grupp && arg.length === 1 ? arg[0] : undefined;
 // ett scenario här, i den här processen. Tiden är processorns tid för scenariot (ungefär tiden när det körs ensamt).
 // Väggklockan beror på hur mycket annat datorn gör samtidigt och kan vara flera gånger längre när alla körs på en gång
@@ -86,6 +91,16 @@ else {
   const okanda = arg.filter(n => n !== '--snabb' && !SCENARIER[n]);
   if (okanda.length) { console.log(`Okänt scenario: ${okanda.join(', ')}. Finns: ${Object.keys(SCENARIER).join(', ')}`); process.exit(1); }
   const namn = Object.keys(SCENARIER).filter(n => snabb ? !SCENARIER[n]!.lang || arg.includes(n) : !arg.length || arg.includes(n));
+  if (del) { // bara den egna delen
+    const [n, m] = [+del[1], +del[2]], sum = new Array<number>(m).fill(0), egen = new Set<string>();
+    const tidAv = (k: string) => forraTid[k] ?? (SCENARIER[k]!.lang ? 60 : 5);
+    for (const k of [...namn].sort((a, b) => tidAv(b) - tidAv(a) || (a < b ? -1 : 1))) {
+      const d = sum.indexOf(Math.min(...sum)); sum[d] += tidAv(k) + 1; // + 1: uppstarten
+      if (d === n - 1) egen.add(k);
+    }
+    namn.splice(0, namn.length, ...namn.filter(k => egen.has(k)));
+    console.log(`(del ${n} av ${m}: ${namn.length} scenarier, ungefär ${sum[n - 1]} s processortid)`);
+  }
   // de långa och de med egen miljö körs var för sig, de andra i grupper om GRUPP (steg 5.5.3: sparar uppstarten)
   const ensam = (n: string) => SCENARIER[n]!.lang || SCENARIER[n]!.env;
   const gissa = (n: string) => forraTid[n] ?? (SCENARIER[n]!.lang ? 60 : 5); // ett nytt scenario utan tid
@@ -123,7 +138,7 @@ else {
     process.stdout.write(u.out + (krasch ? `FEL  ${n}: kraschade\n${u.err.slice(-1500)}\n` : ''));
   }
   // tiderna sparas när alla scenarier körts (npm run scenario utan namn, och i det stora testet), avrundade
-  if (!arg.length) {
+  if (!arg.length && !del) {
     const nya: Record<string, number> = {};
     for (const n of namn) { const m = /^(?:OK|FEL) +\S+ \((\d+) s\)/m.exec(svar[n]?.out ?? ''); if (m) nya[n] = +m[1]; }
     writeFileSync(TIDER, JSON.stringify(Object.fromEntries(Object.entries({ ...forraTid, ...nya }).filter(([n]) => SCENARIER[n]).sort(([a], [b]) => a < b ? -1 : 1)), null, 1) + '\n');
