@@ -89,7 +89,8 @@ function ritaRuta(rx: number, ry: number, ops: readonly RutOp[], m: Mala) {
 const BIT = SYNS_BLOCK, BIT_PX = BIT * TS, BW = 1 << 12; // BW: bitarnas nummer cy * BW + cx (inte ur W, som sätts när kartan skapas)
 interface Bit { sp?: PIXI.Sprite; cv?: HTMLCanvasElement; nyckel: string; sig: string; bon: number[] }
 const bitar = new Map<number, Bit>();
-function tomBitar() { for (const b of bitar.values()) b.sp?.destroy({ texture: true, baseTexture: true }); bitar.clear(); }
+// när byn byts töms bitarna och det ritningen minns (steg 12.1.200), så att nästa ritning gör om allt för den nya byn
+function tomBitar() { for (const b of bitar.values()) b.sp?.destroy({ texture: true, baseTexture: true }); bitar.clear(); ritadG = ''; ritadV = ''; ritadNar = -Infinity; bon = []; }
 vidNyBy.push(tomBitar);
 let ritadG = '', ritadV = '', ritadNar = -Infinity;
 const hex = (c: number) => '#' + c.toString(16).padStart(6, '0');
