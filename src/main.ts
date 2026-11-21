@@ -295,4 +295,6 @@ async function boot() {
 boot();
 // byn och kartan tillgängliga för felsökning i konsolen
 (window as any).__byn = { get s() { return s; }, ui, selectPerson, visa, DAY, HOUR, getMap, coverOf, groundOf, get world() { return world; }, get app() { return app; }, cam, layout }; // cam och layout: utseende-testets inzoomning (steg 10.2.56)
+// sidans språk är svenska, så att orden avstavas rätt och inte bryts mitt i (steg 12.1.226); artefakten ger sidan dess <html>
+document.documentElement.lang = 'sv';
 import { nyVarld, nyVarldHinder } from './sim';
