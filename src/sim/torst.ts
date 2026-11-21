@@ -263,7 +263,7 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
   for (const q of gaster.length ? [...living(s), ...gaster] : living(s)) {
     const qa = ageOf(q, s.now);
     // den som sitter i fängelset (steg 11.12.2): p går när fångens törst gånger närheten är stor nog (fangelse.ts)
-    if (q.gast) { if (!torstig(q, 0) || !hemma(s, q)) continue; }
+    if (q.gast) { if (!torstig(q, 0)) continue; } // gästen får vattnet där hen stannar: filten ligger en bit utanför byn (filtPlats i handel.ts), och TORST.hamtaR säger hur långt
     else if (q.fange) { if (q === p || !hjalperFange(s, p, q, 1 - q.torst)) continue; }
     else if (q === p || kanGa(q) && qa >= ALDER.smabarn || !torstig(q, 0) || qa < TORST.ammaAr && ammas(s, q) || !hemma(s, q)) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);

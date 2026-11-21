@@ -990,9 +990,9 @@ SCENARIER.strak = {
     let paStrak = 0, husPa = 0, maxRutor = 0;
     const timmar = 120;
     const nyttPa: string[] = [];
-    let dygnSedan = new Set<number>(), tradFore = 0; // stråken två dygn före slutet och träden i dem: de har haft två dygn på sig att fällas (vakthållningen kan ta ett helt dygn)
+    let dygnSedan = new Set<number>(), tradFore = 0; // stråken tre dygn före slutet och träden i dem: de har haft tre dygn på sig att fällas (vakthållningen kan ta ett helt dygn, och i kylan och när rövarna skadat folk görs få projekt)
     for (let t = 0; t < timmar * STEG_TIM; t++) {
-      if (t === (timmar - 48) * STEG_TIM) { dygnSedan = new Set(SIM.straken(s).vagar.flatMap(q => q.rutor)); tradFore = [...dygnSedan].filter(i => groundOf(s).trees[i] >= SIM.FOREST).length; }
+      if (t === (timmar - 72) * STEG_TIM) { dygnSedan = new Set(SIM.straken(s).vagar.flatMap(q => q.rutor)); tradFore = [...dygnSedan].filter(i => groundOf(s).trees[i] >= SIM.FOREST).length; }
       const fore = SIM.straken(s).ruta.slice();
       const st0 = new Set(SIM.stationerOf(s)), f0 = new Set(s.falt ?? []), h0 = new Set(housesOf(s));
       kor(s, 1 / STEG_TIM);
@@ -1028,7 +1028,7 @@ SCENARIER.strak = {
       const z = (c.lagren ?? [])[0]; if (z) { z.rojs = true; z.hus = undefined; gc.trees[z.y * W + z.x] = 1; } // och ett på en lagerplats som röjs
       const val = SIM.rojSpot(c, p); return !!val && !!SIM.straken(c).ruta[val.i]; })();
     return [
-      [`träden i stråken fälls: ${tradFore - tradIStrak} av ${tradFore} i stråken som fanns två dygn före slutet (resten väntar på sin tur i röjningen)`, tradFore > 0 && tradIStrak < tradFore],
+      [`träden i stråken fälls: ${tradFore - tradIStrak} av ${tradFore} i stråken som fanns tre dygn före slutet (resten väntar på sin tur i röjningen)`, tradFore > 0 && tradIStrak < tradFore],
       ['röjningen tar ett träd i ett stråk före ett på en lagerplats', forst],
       [`efter 5 dygn (5 år i spelet) har husen dörrar med stråk (${hus.length} färdiga hus, ${dorrar.size} dörrar, som mest ${maxRutor} rutor stråk; ett hus som byggs har sin dörr och sitt stråk)`, dorrar.size > 0],
       [`från varje dörr går ett stråk till elden (${tillEld} av ${dorrar.size}) och till en lagerplats (${tillLager})`, tillEld === dorrar.size && tillLager === dorrar.size],
