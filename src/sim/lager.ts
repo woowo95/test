@@ -514,10 +514,15 @@ export function ingetIElden(s: State) {
   for (const t of lying(s)) if (eld.has(key(t.x!, t.y!))) { t.x = undefined; t.y = undefined; }
   if (!flytt.length) return;
   s.stackar = st.filter(a => !flytt.includes(a));
+  // högen bär med sig sitt tillstånd (steg 12.1.208): blöt ved är blöt, vätan och torkningen följer med till en ny hög, och det
+  // gömda hamnar i högen där den lades, på samma väg som en börda som läggs ner
   for (const a of flytt) {
-    if (isStored(s, a.x, a.y)) { place(s, a.k, a.n, a.c, a.ag); if (a.dold) hide(s, a.k, a.dold); continue; }
-    laggBredvid(s, s.stackar, eld, a.k, a.n, a.c, a.ag, a.x, a.y);
-    if (a.dold) hide(s, a.k, a.dold);
+    flyttas = a; laggsBlot = !!a.blot;
+    try {
+      if (isStored(s, a.x, a.y)) { place(s, a.k, a.n, a.c, a.ag); if (a.dold) hide(s, a.k, a.dold); continue; }
+      const g = laggBredvid(s, s.stackar, eld, a.k, a.n, a.c, a.ag, a.x, a.y);
+      if (a.dold) hide(s, a.k, a.dold, g);
+    } finally { flyttas = undefined; laggsBlot = false; }
   }
   changed(s);
 }
@@ -764,8 +769,11 @@ let vedBlot = 0;
 export const blotUttaget = () => vedBlot;
 // bördan t fick g ved till, varav b blöt: så stor del av veden hen bär som är blöt
 export function vedIBordan(t: Task, had: number, g: number, b: number) { if (g > 0) t.blotVed = Math.min(1, ((t.blotVed ?? 0) * had + b) / (had + g)); }
+// högen som flyttas (ingetIElden, steg 12.1.208): en ny hög får dess väta och torkning
+let flyttas: Stack | undefined;
 function addToStack(s: State, a: Stack, v: number, c: number, ag?: Del, f = 1) {
-  if (laggsBlot && a.k === 'ved' && v > 0) { a.blot = 1; a.tork = undefined; a.vat = undefined; }
+  if (flyttas && a.n <= 1e-12 && v > 0 && !flyttas.blot) { if (flyttas.vat !== undefined) a.vat = flyttas.vat; if (flyttas.tork !== undefined) a.tork = flyttas.tork; }
+  if (laggsBlot && a.k === 'ved' && v > 0) { a.blot = 1; a.tork = flyttas && a.n <= 1e-12 ? flyttas.tork : undefined; a.vat = undefined; }
   a.c = (a.c * a.n + c * v) / (a.n + v); a.n += v;
   if (ag) { a.ag = addDel(a.ag ?? {}, ag, f); cleanDel(s, a); }
 }
@@ -1268,7 +1276,8 @@ export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN
 // lägg n av slaget k ner kring rutan (tx, ty) utanför förrådet: en ruta rymmer så mycket av slaget som den rymmer (rymd), och
 // det som inte får plats läggs på rutorna närmast runt omkring, där inget annat ligger. Aldrig i en eld (eld, steg 12.1.153).
 // Ägarnas hela delar delas som i förrådet (delAv)
-function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: number, c: number, ag: Del | undefined, tx: number, ty: number) {
+function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: number, c: number, ag: Del | undefined, tx: number, ty: number): { x: number; y: number } | undefined {
+  let forst: { x: number; y: number } | undefined; // rutan där det första lades (det gömda i en flyttad hög läggs där, steg 12.1.208)
   for (let r = 0; r <= 4 && n > 1e-9; r++) for (let y = ty - r; y <= ty + r && n > 1e-9; y++) for (let x = tx - r; x <= tx + r && n > 1e-9; x++) {
     if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r || !inMap(x, y) || eld.has(key(x, y))) continue;
     if (r === 0 && sittAt(s, x, y)) continue; // där man står eller sitter vid en station eller ett bord läggs inget, inte heller det man burit dit (steg 12.1.158)
@@ -1278,11 +1287,12 @@ function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: numb
     if (v <= 0) continue;
     const del = delAv(ag, v, n); ag = minus(ag, del);
     if (!g) st.push(g = { x, y, k, n: 0, c });
-    addToStack(s, g, v, c, del); n -= v;
+    addToStack(s, g, v, c, del); n -= v; forst ??= { x, y };
   }
-  if (n <= 1e-9) return;
-  if (eld.has(key(tx, ty))) { place(s, k, n, c, ag); return; } // runt elden är fullt: i förrådet eller bredvid det
+  if (n <= 1e-9) return forst;
+  if (eld.has(key(tx, ty))) { place(s, k, n, c, ag); return forst; } // runt elden är fullt: i förrådet eller bredvid det
   let g = st.find(q => q.x === tx && q.y === ty && q.k === k); if (!g) st.push(g = { x: tx, y: ty, k, n: 0, c }); addToStack(s, g, n, c, ag); // runt omkring är fullt
+  return forst ?? { x: tx, y: ty };
 }
 // den som kallas bort lägger ner bördan där hen står; ligger den långt från lagret får någon bära in den senare. Står hen
 // framför en station lägger hen den bredvid, inom räckhåll: rutan där man arbetar ska vara fri (framFri, stationer.ts)

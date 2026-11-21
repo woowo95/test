@@ -1424,3 +1424,30 @@ SCENARIER.radslatur = {
     ];
   },
 };
+
+SCENARIER.hogflytt = {
+  text: 'En hög som flyttas ur elden behåller sitt tillstånd (steg 12.1.208): blöt ved är blöt, vätan följer med, och den giftiga svampen gömd i svamphögen hamnar i högen bredvid och inte i förrådet',
+  kor: () => {
+    const s = SIM.createState(9, START), m = SIM.bynsMitt(s), vat = SIM.vattenNu(s);
+    // tre rutor bredvid varandra utanför förrådet, på land
+    let hx = -1, hy = -1;
+    for (let r = 12; r < 40 && hx < 0; r++) for (let dx = -r; dx <= r && hx < 0; dx++) {
+      const x = Math.floor(m.x + dx), y = Math.floor(m.y + r);
+      if ([0, 1].every(ox => [0, 1].every(oy => SIM.inMap(x + ox, y + oy) && vat[(y + oy) * SIM.W + x + ox] !== SIM.T.Vatten && !SIM.isStored(s, x + ox, y + oy) && SIM.usable(s, x + ox, y + oy)))) { hx = x; hy = y; }
+    }
+    if (hx < 0) return [['en plats för härden hittades', false]];
+    const st = SIM.stacksOf(s);
+    st.push({ k: 'ved', n: 4, c: 1, x: hx, y: hy, blot: 1, tork: 0.4 } as never, { k: 'grenar', n: 3, c: 1, x: hx + 1, y: hy, vat: 0.5 } as never, { k: 'svamp', n: 5, c: 1, x: hx, y: hy + 1, dold: 2 } as never);
+    SIM.changed(s);
+    const hard = { ...SIM.newFire(), hearth: 'hard', at: { x: hx, y: hy } } as SIM.Fire; (s.eldar ??= []).push(hard);
+    SIM.ingetIElden(s);
+    const e = SIM.eldRutor(s), ute = SIM.stacksOf(s).filter(a => !e.has(a.y * SIM.W + a.x) && Math.hypot(a.x - hx, a.y - hy) < 6);
+    const ved = ute.filter(a => a.k === 'ved'), gren = ute.filter(a => a.k === 'grenar'), svamp = ute.filter(a => a.k === 'svamp');
+    const iForradet = SIM.stacksOf(s).filter(a => a.k === 'svamp' && SIM.isStored(s, a.x, a.y)).reduce((t, a) => t + (a.dold ?? 0), 0);
+    return [
+      [`veden flyttades och är blöt, med torkningen kvar (${ved.map(a => `${a.n} ${a.blot ? 'blöt' : 'torr'} ${a.tork ?? '-'}`).join(', ')})`, ved.reduce((t, a) => t + a.n, 0) === 4 && ved.every(a => a.blot && a.tork === 0.4)],
+      [`grenarna flyttades med vätan kvar (${gren.map(a => a.vat ?? '-').join(', ')})`, gren.reduce((t, a) => t + a.n, 0) === 3 && gren.every(a => a.vat === 0.5)],
+      [`den gömda svampen ligger i svamphögen bredvid (${svamp.reduce((t, a) => t + (a.dold ?? 0), 0)}), inte i förrådet (${iForradet})`, svamp.reduce((t, a) => t + (a.dold ?? 0), 0) === 2 && iForradet === 0],
+    ];
+  },
+};
