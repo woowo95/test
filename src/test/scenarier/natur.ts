@@ -931,6 +931,7 @@ SCENARIER.skinnfall = {
     const vaken = SIM.tillbehorVarme(q, p, roomAt(q, p.x, p.y));
     const tek = TEK.skinnfall;
     return [
+      [`skinnfällen passar halmbädden och sängen men inte bryggkaret, och brännpannan bryggkaret (tillbehorPassar, som stationens ruta frågar; steg 12.1.261)`, SIM.tillbehorPassar('skinnfall', 'halmbadd') && SIM.tillbehorPassar('skinnfall', 'sang') && !SIM.tillbehorPassar('skinnfall', 'bryggkar') && SIM.tillbehorPassar('brannpanna', 'bryggkar')],
       [`byn vill ha en skinnfäll när bädden saknar en (brist ${brist0.toFixed(2)}, ${brist1.toFixed(2)} efter)`, brist0 === 1 && brist1 < brist0],
       [`skinnfällen görs av ${RT.fallSkinn} skinn och läggs i bädden på ${h} timmar`, !!b.med?.includes('skinnfall') && tog],
       [`byns statistik räknar varje fäll en gång (${s.stat?.tillbehor_skinnfall ?? 0} för ${fallar})`, s.stat?.tillbehor_skinnfall === fallar],

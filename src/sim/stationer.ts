@@ -1509,7 +1509,10 @@ export const tillbehorDef = (k: string): TillbehorDef | undefined => (TILLBEHOR 
 // det ett tillbehör ligger i: en station eller möbel, eller en härd, som är en eld (till: 'hard', steg 10.2.87)
 type Hallare = Station | Fire;
 const arEld = (h: Hallare): h is Fire => 'hearth' in h;
-export const tillbehorStationer = (s: State, k: TillbehorSlag): Hallare[] => TILLBEHOR[k].till === 'hard' ? (s.eldar ?? []).filter(f => f.hearth === 'hard') : stationerOf(s).filter(t => isKlar(t) && ([] as string[]).concat(TILLBEHOR[k].till).includes(t.k)); // skinnfällen i halmbädden och sängen (steg 12.4.3)
+// om tillbehöret k passar stationen eller möbeln av sorten stk (steg 12.1.261): till är en sort eller en lista (skinnfällen i
+// halmbädden och sängen, steg 12.4.3). Byn, projektet och stationens ruta frågar samma funktion
+export const tillbehorPassar = (k: string, stk: string) => ([] as string[]).concat(tillbehorDef(k)?.till ?? []).includes(stk);
+export const tillbehorStationer = (s: State, k: TillbehorSlag): Hallare[] => TILLBEHOR[k].till === 'hard' ? (s.eldar ?? []).filter(f => f.hearth === 'hard') : stationerOf(s).filter(t => isKlar(t) && tillbehorPassar(k, t.k));
 export const utanTillbehor = (s: State, k: TillbehorSlag) => tillbehorStationer(s, k).filter(t => !t.med?.includes(k));
 // där man står vid den: framför stationen, eller vid härden
 const hallareVid = (s: State, h: Hallare) => arEld(h) ? vidEld(s, h, 0, 1.3) : vidStation(h);
