@@ -235,3 +235,8 @@
 
 - Fynden 370, 373, 374, 377, 389 och 390 ändrar inget i spelet. Fynden 379 och 391 (4ea4a174) och 369 räknar med tiden sedan sist från TAKTER: första gången efter grundandet eller när klockan flyttats är tiden kort, och en timme i registret är sällan exakt 3600 s, så byarna kan utvecklas lite annorlunda. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit.
 - Scenariot torka är rött på varld redan före 12.1.107 (en by med en som dör av törst och ett vattnat fält som vissnar).
+
+## 12.1.108 (lösa tal, register och regler per tid, ba41510e–)
+
+- Fynden 375, 376, 392, 393, 394 och 396 ändrar inget i spelet. Fynden 387, 388 och 395 räknar med tiden sedan sist från TAKTER (samma tal vid en timmes takt), 371 och 386 ändrar vad rövarlägret sparar och vargarna stjäl, 383 gör tatueringen till en rad i FORBATTRA, 367 drar rövarnas slumptal en gång per val och 399 låter medspelarna välja scenen som ett Tillfälle. Skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit; likheten är viktig för 367 och 399.
+- Scenarierna heligting (ingen tar det heliga plagget på sig) och rovare (ett tyst anfall plundrar förrådet osett) är röda på varld redan före 12.1.108 (5b77427f).
