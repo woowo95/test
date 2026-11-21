@@ -15,7 +15,7 @@ import { bitAt, blocked, freeNear } from './byggnad';
 import { ledig } from './stationer';
 import { clamp, pick, rnd } from './slump';
 import { iIstiden, ageIndex, hourOf, lightLevel } from './tid';
-import { iMorker, MORKER } from './ljus';
+import { morkFartVid } from './ljus';
 import { grundvarde, VARDE } from './varde';
 import { SAKER, isTool, viktOf } from './saker';
 import { GORS, canMake } from './redskap';
@@ -831,11 +831,12 @@ function handlarFackla(s: State, h: Handlare) {
   h.fackla = { x: Math.floor(hf.x), y: Math.floor(hf.y + FILT_MOT / 2) };
   count(s, 'handlarFackla');
 }
-// vart kunden ska nu (handlaVal), och vad hen gör under Gör just nu. I totalmörker tar det längre tid, som allt annat arbete
-// (MORKER.fart, steg 12.1.152)
+// vart kunden ska nu (handlaVal), och vad hen gör under Gör just nu. I mörkret tar det längre tid, som allt annat arbete, och i det
+// svaga skenet mindre (morkFartVid i ljus.ts, steg 12.1.152 och 12.1.236)
 function affarSteg(s: State, h: Handlare, a: Affar) {
   const st = affarStegLjust(s, h, a);
-  return iMorker(s, st.spot.x, st.spot.y) ? { ...st, dur: st.dur / MORKER.fart } : st;
+  const f = morkFartVid(s, st.spot.x, st.spot.y); // mörkret och det svaga skenet som för arbetet (steg 12.1.236)
+  return f < 1 ? { ...st, dur: st.dur / f } : st;
 }
 function affarStegLjust(s: State, h: Handlare, a: Affar) {
   a.t = s.now;

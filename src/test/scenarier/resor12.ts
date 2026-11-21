@@ -67,11 +67,22 @@ SCENARIER.handlarfackla = {
     const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && !q.gast)!;
     const dur = (morkt = false) => { h.affar = { vem: p.id, namn: p.name, byn: true, fas: 'fraga', kop: [], bud: [], hamta: [], framme: [], nej: 0, f: SIM.HANDEL.forstaBud, t: s.now }; const v = SIM.handlaVal(s, p); h.affar = undefined; return v && (!morkt || SIM.iMorker(s, v.spot.x, v.spot.y)) ? v.dur : 0; };
     const iLjus = dur();
+    // i det svaga skenet (steg 12.1.236): facklan står så långt bort att platsen är mörk men i skenet, och affären går som arbetet där
+    let iSken = 0;
+    if (f) {
+      h.affar = { vem: p.id, namn: p.name, byn: true, fas: 'fraga', kop: [], bud: [], hamta: [], framme: [], nej: 0, f: SIM.HANDEL.forstaBud, t: s.now };
+      const v = SIM.handlaVal(s, p); h.affar = undefined;
+      if (v) for (let dx = 0.5; dx < 20 && !iSken; dx += 0.25) {
+        h.fackla = { ...f, x: Math.floor(v.spot.x + dx), y: Math.floor(v.spot.y) };
+        if (SIM.iMorker(s, v.spot.x, v.spot.y) && SIM.iSkenet(s, v.spot.x, v.spot.y)) iSken = dur(true);
+      }
+    }
     delete h.fackla; const iMorker = dur(true);
     return [
       [`handlaren har en fackla i utrustningen (${t ? 'ja' : 'nej'})`, !!t],
       [`på dagen är den släckt, på natten uppsatt mellan filtarna och lyser där (ljuset ${ljus.toFixed(2)})`, dag && natt && ljus > 0],
       [`handeln tar längre tid i totalmörker (${(iLjus / 1000).toFixed(0)} s i ljuset, ${(iMorker / 1000).toFixed(0)} s i mörkret)`, iLjus > 0 && iMorker > iLjus],
+      [`i det svaga skenet går handeln som arbetet där (${(iSken / 1000).toFixed(0)} s, ${(iLjus / SIM.MORKER.skenFart / 1000).toFixed(0)} s väntat)`, iSken > iLjus && iSken < iMorker && Math.abs(iSken - iLjus / SIM.MORKER.skenFart) < 1000],
     ];
   },
 };

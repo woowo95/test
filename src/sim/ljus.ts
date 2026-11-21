@@ -103,7 +103,9 @@ export function iSkenet(s: State, x: number, y: number, utan?: number) {
   return false;
 }
 // gången och arbetet gånger detta: full takt i ljuset, MORKER.skenFart i det svaga skenet och MORKER.fart i totalmörker
-export const morkFart = (s: State, p: Person) => !iMorker(s, p.x, p.y) ? 1 : iSkenet(s, p.x, p.y) ? MORKER.skenFart : MORKER.fart;
+// mörkrets fart på en plats: 1 i ljuset, MORKER.skenFart i det svaga skenet och MORKER.fart i totalmörker (steg 12.1.236: gången, arbetet och affären frågar den)
+export const morkFartVid = (s: State, x: number, y: number) => !iMorker(s, x, y) ? 1 : iSkenet(s, x, y) ? MORKER.skenFart : MORKER.fart;
+export const morkFart = (s: State, p: Person) => morkFartVid(s, p.x, p.y);
 // en gång i timmen (steg.ts): den som är vaken i mörkret får lite sämre humör en stund
 // h: timmarna sedan sist (steg 12.1.107: räknas per tid, inte per anrop)
 export function morkHumor(s: State, p: Person, h: number) {
