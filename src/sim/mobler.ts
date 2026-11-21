@@ -165,10 +165,14 @@ export const iDass = (s: State, p: Person) => p.task?.act === 'toa' && p.task.ph
 // byggnader.ts) och läker STATION.sjukLak gånger fortare där (lakKrok i halsa.ts). Ett rum med en sjukbädd är en Sjukstuga
 // (RUMSTYPER i rum.ts), och där andra sover blir det en krock, så sjukbädden står helst i ett rum där ingen annan sover (siteInne).
 // Smittan räknas per rum (sjukdom.ts), så då smittas färre. Byn vill ha en sjukbädd, och fler när fler ligger sjuka än det finns bäddar
-export const villSjukbadd = (s: State, p: Person) => isSick(p, s.now) || (p.skador ?? []).some(w => w.k === 'benbrott' || ((SKADOR as Record<string, { blod: number }>)[w.k]?.blod ?? 0) > 0);
+// behovet av sjukbädden (steg 12.1.235): timmarna läkning som sjukbädden sparar mot den egna bädden (skadornas timmar kvar,
+// grad gånger lakTim, och sjukbädden läker STATION.sjukLak gånger fortare), och för den som är sjuk med tecken vad det är värt
+// att ligga för sig. Den som sparar mer än STATION.sjukVinst timmar vill ha en sjukbädd, och de med störst behov får dem först
+export const sjukBehov = (s: State, p: Person) => (p.skador ?? []).reduce((a, w) => a + w.g * ((SKADOR as Record<string, { lakTim: number }>)[w.k]?.lakTim ?? 0), 0) * (1 - 1 / STATION.sjukLak) + (isSick(p, s.now) ? STATION.sjukSmitta : 0);
+export const villSjukbadd = (s: State, p: Person) => sjukBehov(s, p) > STATION.sjukVinst;
 const sjukbaddar = (s: State) => stationerOf(s).filter(t => stationDef(t.k)?.sjuk);
 export const iSjukbadd = (s: State, p: Person) => { const t = stationRutor(s).at.get(tileOf(p.x, p.y)); return !!t && isKlar(t) && !!stationDef(t.k)?.sjuk; };
-sjukKrok.vill = villSjukbadd;
+sjukKrok.vill = villSjukbadd; sjukKrok.behov = sjukBehov;
 lakKrok.badd = (s, p) => iSjukbadd(s, p) ? STATION.sjukLak : 1;
 finareKrok.sjuk = s => { const n = sjukbaddar(s).length; return !n ? 1 : living(s).filter(q => villSjukbadd(s, q)).length > n ? 1 : 0; };
 

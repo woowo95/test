@@ -327,7 +327,9 @@ function boende(s: State): Boende {
   for (const t of stationerOf(s)) if (t.ag !== undefined && lever.has(t.ag) && isKlar(t) && stationDef(t.k)?.sover) agd.set(t.y * W + t.x, t.ag);
   // sjukbäddarna (steg 12.4.10): den som är sjuk eller skadad lägger sig hellre i en ledig sjukbädd, i vilket hus den än står
   const sjukbaddar = stationerOf(s).filter(t => isKlar(t) && stationDef(t.k)?.sjuk).map(t => t.y * W + t.x);
-  for (const q of sjukbaddar.length ? ppl : []) { if (!sjukKrok.vill(s, q)) continue; const i = sjukbaddar.find(j => ![...plats.values()].includes(j)); if (i === undefined) break; plats.set(q.id, i); }
+  // de med störst behov av att läka får bäddarna först (steg 12.1.235: sjukBehov i mobler.ts), och en liten skada ligger hemma
+  const sjuka = sjukbaddar.length ? ppl.filter(q => sjukKrok.vill(s, q)).map(q => ({ q, b: sjukKrok.behov(s, q) })).sort((a, c) => c.b - a.b || a.q.id - c.q.id) : [];
+  for (const [n, { q }] of sjuka.entries()) { if (n >= sjukbaddar.length) break; plats.set(q.id, sjukbaddar[n]); }
   const vaggor = stationerOf(s).filter(t => isKlar(t) && stationDef(t.k)?.vagga).map(t => ({ i: t.y * W + t.x, r: roomAt(s, t.x, t.y) })), iVagga = new Set<number>(); // vaggorna (steg 12.4.5)
   const fordela = (tiles: number[], folk: Person[]) => {
     const ids = new Set(folk.map(q => q.id)), fria = tiles.filter(i => !agd.has(i)), rest: Person[] = [], utan: Person[] = [];
@@ -554,4 +556,4 @@ export function husKlar(s: State, h: Hus) {
   log(s, `${stor(iMening(h.namn))} är färdigt. Där ruttnar och slits maten mindre.`, 'world');
 }
 // den som vill ligga i en sjukbädd (steg 12.4.10), satt i mobler.ts (som läses efter den här filen)
-export const sjukKrok = { vill: (_s: State, _p: Person) => false };
+export const sjukKrok = { vill: (_s: State, _p: Person) => false, behov: (_s: State, _p: Person) => 0 };

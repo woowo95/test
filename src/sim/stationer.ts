@@ -125,7 +125,8 @@ export const STATION = balans('station', {
   dassTill: 6, dassAvst: 3, dassSmuts: 0.5, // utedasset (steg 12.4.9) står högst och helst så här många rutor från byn, och smutsar vattnet så här mycket mot latrinen
   vaggaVila: 0.13, vaggaGlad: 0.09,
   fyrfatKol: 3, fyrfatTim: 8, fyrfatVarme: 0.5, fyrfatRadie: 2.5, fyrfatGnistor: 0.1, // fyrfatet (steg 12.4.11): rymmer så många kol, ett kol räcker så många timmar, värmen och hur långt, och gnistorna mot lägerelden
-  sjukLak: 1.2, sjukKrock: 2, // sjukbädden (steg 12.4.10): man läker så här mycket fortare i den, och den står helst inte där andra sover (så här många poäng sämre)
+  sjukLak: 1.2, sjukKrock: 2, sjukVinst: 3, sjukSmitta: 6, // sjukVinst: så många timmars läkning ska sjukbädden spara för att man lämnar sin egen bädd; sjukSmitta: vad det är värt (i timmar) att den sjuke ligger för sig (steg 12.1.235)
+  // sjukbädden (steg 12.4.10): man läker så här mycket fortare i den, och den står helst inte där andra sover (så här många poäng sämre)
  // vaggan (steg 12.4.5): spädbarnet som sover i den vilar så här mycket per timme och får tanken Sov gott i vaggan
  // ett par vars sängar står intill varandra får tanken Sov bredvid sin käresta så här mycket och så här många timmar
 });

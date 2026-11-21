@@ -334,6 +334,12 @@ SCENARIER.sjukstuga = {
     // p bryter benet
     (p.skador ??= []).push({ d: 'vanster_ben', k: 'benbrott', g: 0.5, b: 0 } as unknown as SIM.Skada); SIM.touch(s);
     const sjukLigger = SIM.sovPlats(s, p) === i, andra = SIM.sovPlats(s, q) !== i;
+    // en liten skada ligger hemma, och den med störst behov av att läka får bädden (steg 12.1.235)
+    (q.skador ??= []).push({ d: 'vanster_arm', k: 'skarsar', g: 0.2, b: 0 } as unknown as SIM.Skada); SIM.touch(s);
+    const litenHemma = SIM.sovPlats(s, q) !== i && SIM.sovPlats(s, p) === i, bLiten = SIM.sjukBehov(s, q);
+    q.skador!.push({ d: 'hoger_ben', k: 'benbrott', g: 1, b: 0 } as unknown as SIM.Skada); SIM.touch(s);
+    const storstForst = SIM.sovPlats(s, q) === i && SIM.sovPlats(s, p) !== i, bStor = SIM.sjukBehov(s, q), bP = SIM.sjukBehov(s, p);
+    q.skador = []; SIM.touch(s);
     p.x = t.x + 0.5; p.y = t.y + 0.5; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.HOUR, carry: 0, why: '' } as SIM.Task;
     const lak = SIM.lakKrok.badd(s, p);
     const r = SIM.roomAt(s, t.x, t.y), taggar = r ? [...SIM.rumTaggar(s, r)] : [];
@@ -343,6 +349,8 @@ SCENARIER.sjukstuga = {
       [`byn vill ha en sjukbädd (${utan})`, utan === 1],
       [`den friska sover inte där (${frisk}), den med ett benbrott lägger sig där (${sjukLigger}), och ingen annan (${andra})`, frisk && sjukLigger && andra],
       [`i sjukbädden läker man ${lak} gånger fortare`, lak === 1.2],
+      [`ett litet skärsår ligger hemma (behovet ${bLiten.toFixed(1)} timmar, gränsen ${SIM.STATION.sjukVinst})`, litenHemma && bLiten <= SIM.STATION.sjukVinst],
+      [`den med störst behov av att läka får bädden först (${bStor.toFixed(1)} mot ${bP.toFixed(1)} timmar)`, storstForst && bStor > bP],
       [`rummet är en Sjukstuga (${taggar.join(', ')}), och där andra sover är det en krock`, taggar.includes('sjukstuga') && krock],
     ];
   },
