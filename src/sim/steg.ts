@@ -22,7 +22,7 @@ import { angIVagen, angMark } from './slatter';
 import { tamFaraSteg } from './djurflykt';
 import { hoRegn } from './vattenho';
 import { djurTorstSteg } from './djurtorst';
-import { rumPlus, rumPlusTanke, rumVila } from './rum';
+import { rumPlus, rumPlusTanke, rumPlusTimme, rumVila } from './rum';
 import { PLAN, planBuild, stepByggplan } from './byggplan';
 import { FALLOR, FISKAR, MJARDE, mjardarOf, sattUt, sattVid, stepMjardar, valjFisk, vittja } from './fisk';
 import { TILLVERKA, TILLVERKA_LIST, tillverkAv } from './tillverka';
@@ -437,6 +437,7 @@ const rumAntal = (s: State, c: Slag) => {
 type Takt = { namn: string; sek: number; fas?: number; fn: (s: State, dt: number, c: Slag) => void };
 export const TAKTER: Takt[] = [
   { namn: 'kartan', sek: 0, fn: s => { gridOf(s); stationRutor(s); sakerPaGolvet(s); angMark(s); } }, // väggarna och rummen, hyllorna och sakerna på golvet (steg 2.3.6), så att vägsökningen vet var de står
+  { namn: 'rummens plus', sek: 3600, fn: s => rumPlusTimme(s) }, // det som passar bra ihop i rummen, räknat vid timmens början (rum.ts, steg 12.1.210)
   { namn: 'tidsåldern', sek: 60, fn: (s, _dt, c) => { if (c.ai !== s.lastAgeIdx) { s.lastAgeIdx = c.ai; log(s, AGES_BORJAR[c.ai], 'world'); } } },
   { namn: 'kaninerna', sek: 10, fn: (s, dt) => djurSteg(s, dt) }, // kaningrupperna väljer plats när deras tid börjar
   { namn: 'giftermålen', sek: 3600, fn: (s, dt) => giftSteg(s, dt) }, // med någon i en vänlig grannby (giftermal.ts, steg 11.3.6)

@@ -1268,6 +1268,9 @@ SCENARIER.rumplus = {
     delete reg.provtagg;
     // i en riktig by: plusen räknas och vilan följer dem
     const s = SIM.cloneState(testBy(25)), rum = SIM.gridOf(s).rooms.filter(r => r.tiles.length);
+    // simuleringen räknar plusen vid timmens början och sparar dem i byn; att fråga ändrar inget (steg 12.1.210)
+    SIM.rumPlusTimme(s);
+    const sparat = JSON.stringify(s.rumPlus ?? null);
     let vilaRatt = rum.length > 0, sagsEget = 0;
     for (const r of rum) {
       const pl = SIM.rumPlus(s, r), mi = SIM.rumMinus(s, r);
@@ -1275,6 +1278,8 @@ SCENARIER.rumplus = {
       if (Math.abs(SIM.rumVila(s, r) - v) > 1e-12) vilaRatt = false;
       if (pl.includes(eget)) sagsEget++;
     }
+    const fragaAndrarInte = JSON.stringify(s.rumPlus ?? null) === sparat && !!s.rumPlus;
+    const iTakter = SIM.TAKTER.some(t => t.namn === 'rummens plus' && t.sek === 3600);
     return [
       [`registret har tre plus (${RUM_PLUS.map(p => p.namn).join(', ')})`, RUM_PLUS.length >= 3 && !!ljust && !!pynt && !!eget],
       ['varmt och ljust: ett varmt rum med ljus när det är mörkt ute, inte utan ljus', ljust.krav(T('varmt', 'matsal'), true) && !ljust.krav(T('varmt'), false) && !ljust.krav(T('matsal'), true)],
@@ -1283,6 +1288,7 @@ SCENARIER.rumplus = {
       ['en ny grundtagg i RUMSTYPER räknas som en annan funktion utan att pluset ändras', nyDelar],
       ['eget rum vilar man bättre i, varmt och pyntat ger en tanke', (eget.vila ?? 0) > 0 && (ljust.tanke ?? 0) > 0 && (pynt.tanke ?? 0) > 0],
       [`i testbyn följer vilan i rummen både minus och plus (${rum.length} rum, ${sagsEget} eget rum)`, vilaRatt],
+      ['plusen räknas vid timmens början av en rad i TAKTER och sparas i byn; frågan (husfliken, vilan) ändrar inget', iTakter && fragaAndrarInte],
     ];
   },
 };

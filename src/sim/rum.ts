@@ -155,20 +155,25 @@ export function rumVisas(s: State, r: Rum): RumsTyp[] {
   for (const k of t) for (const d of TYPER[k].delar ?? []) bort.add(d);
   return [...t].filter(k => !bort.has(k)).map(k => TYPER[k]);
 }
-// det som passar bra ihop i rummet just nu (steg 12.1.143): räknas högst en gång i timmen per rum, som taggarna
-const plusCache = new WeakMap<State, { v: string; m: Map<string, RumPlus[]> }>();
+// det som passar bra ihop i rummet (steg 12.1.143). Simuleringen räknar plusen vid timmens början (raden rummens plus i TAKTER,
+// steg 12.1.210) och sparar dem i byn, så att svaret inte beror på vem som frågar först; husfliken och vilan läser bara svaret.
+// Ett rum som byggts sedan dess har inget plus förrän nästa timme
+const rumNyckel = (r: Rum) => r.tiles.length ? String(Math.min(...r.tiles)) : `t${r.id}`;
+export function rumPlusTimme(s: State) {
+  const m: Record<string, string[]> = {};
+  for (const r of gridOf(s).rooms) {
+    if (!r.tiles.length) continue;
+    const t = rumTaggar(s, r) as Set<string>;
+    let ljust = false;
+    if (!isLight(s.now) && t.has('varmt')) for (const i of r.tiles) if (ljusAt(s, i % W + 0.5, Math.floor(i / W) + 0.5) >= RUM.ljusMin) { ljust = true; break; }
+    const l = RUM_PLUS.filter(p => p.krav(t, ljust)).map(p => p.id);
+    if (l.length) m[rumNyckel(r)] = l;
+  }
+  s.rumPlus = m;
+}
 export function rumPlus(s: State, r: Rum): RumPlus[] {
-  const v = `${s.byggV ?? 0}:${Math.floor(s.now / HOUR)}:${stationerOf(s).length}`, key = r.tiles.length ? String(Math.min(...r.tiles)) : `t${r.id}`;
-  let c = plusCache.get(s);
-  if (!c || c.v !== v) { c = { v, m: new Map() }; plusCache.set(s, c); }
-  let l = c.m.get(key);
-  if (l) return l;
-  const t = rumTaggar(s, r) as Set<string>;
-  let ljust = false;
-  if (!isLight(s.now) && t.has('varmt')) for (const i of r.tiles) if (ljusAt(s, i % W + 0.5, Math.floor(i / W) + 0.5) >= RUM.ljusMin) { ljust = true; break; }
-  l = RUM_PLUS.filter(p => p.krav(t, ljust));
-  c.m.set(key, l);
-  return l;
+  const l = s.rumPlus?.[rumNyckel(r)];
+  return l ? RUM_PLUS.filter(p => l.includes(p.id)) : [];
 }
 // det som passar dåligt ihop i rummet
 export function rumMinus(s: State, r: Rum): RumMinus[] {
