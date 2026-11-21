@@ -117,6 +117,9 @@ export interface ProjektDef {
   kan(s: State, p: Person, f: ProjektFara): boolean;
   recept?(s: State, p: Person, f: ProjektFara): Recept | undefined; // receptet när bara materialet eller redskapet fattas (steg 6.2.19)
   uppgift(s: State, p: Person): Uppgift | undefined;
+  // det som görs vid en station (steg 12.1.212): handlingen som gör det, minuterna för en omgång och hur många omgångar som
+  // saknas; slöjdbänkens kö (koKrok.vid) räknar omgångarna gånger minuterna
+  ko?: { act: Act; min: number; saknas(s: State): number };
   paVag?(s: State, p?: Person): number; // den del av bristen (0 till 1) som de andra (inte p) som redan gör det fyller när de är klara (steg 12.1.53): räknas varje gång, inte en gång i timmen som bristen
 }
 
@@ -137,6 +140,7 @@ const redskap = (g: string): ProjektDef => {
       if (har >= tak) return 0;
       return PROJEKT_TAL.overBuffert * Math.min(1, (tak > v ? (tak - har) / (tak - v) : 0) + ersattAv(s, g) / v);
     },
+    ko: { act: g as Act, get min() { return (RECEPT as Record<string, { min?: number } | undefined>)[g]?.min ?? 0; }, saknas: s => Math.max(0, Math.ceil(villAv(s, g) - harAv(s, g) - 1e-9)) },
     egen: (s, fam) => villAv(s, g) > 0 && !tingOf(s).some(t => t.agare !== undefined && GORS[g].includes(t.k) && fam.some(q => q.id === t.agare)) ? 1 : 0, // ingen i familjen äger ett
     kostnad: () => grundvarde(k),
     kan: (s, p, f) => wantsTool(s, p, g, f.gras),
@@ -195,6 +199,7 @@ const tillverk = (k: string): ProjektDef => {
   return {
     namn: SAKER[d.ger]?.namn ?? (ar_vatska(d.ger) ? VATSKOR[d.ger].namn : d.ger), vikt: PROJEKT_TAL.tillverka, // teet är bara en vätska (steg 9.5.8)
     brist: s => clamp(1 - antal(s) / vill(s), 0, 1),
+    ko: { act: d.act, min: d.min, saknas: s => Math.max(0, Math.ceil((vill(s) - antal(s)) / d.n - 1e-9)) }, // omgångar om n
     kostnad: () => receptKostnad(d),
     kan: (s, p) => { const av = har(s, p) && kar(s) && antal(s) < vill(s) ? tillverkAv(d, q => getable(s, p, q) - utsadeKrok.av(s, q)) : undefined; return !!av && Object.entries(av).every(([q, n]) => getable(s, p, q) - utsadeKrok.av(s, q) >= n); }, // utsädet sparas (steg 9.6.22)
     recept: (s, p) => { const av = har(s, p) && antal(s) < vill(s) ? tillverkAv(d, q => getable(s, p, q)) : undefined; return av ? { av } : undefined; },
@@ -232,6 +237,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
     brist: s => clamp(1 - amountOf(s, 'rep') / villHaAv(s, 'rep'), 0, 1),
     kostnad: () => grundvarde('rep'),
     kan: (s, p) => wantsRope(s, p),
+    ko: { act: 'tvinna', min: SAKER.rep!.skaffa!.min!, saknas: s => Math.max(0, Math.ceil(villHaAv(s, 'rep') - amountOf(s, 'rep') - 1e-9)) },
     uppgift: () => ({ act: 'tvinna', text: 'Tvinnar rep av hö.' }),
   },
   // virket (steg 4.5.5.2): kluvet ur en fälld stam med yxa, när byn vill bygga en station, möbel eller dörr av virke
@@ -369,8 +375,15 @@ export const PROJEKT_LIST = Object.keys(PROJEKT);
 // arbetet som väntar vid stationen k (steg 12.1.150, koKrok i forradsmal.ts): för varje sak som görs där, bristen i projektet gånger
 // receptets minuter
 koKrok.vid = (s, k) => {
+  // arbetet som väntar vid stationerna av sorten k (steg 12.1.212): för varje projekt som görs där (handlingen i projektets ko)
+  // de omgångar som saknas gånger minuterna, så att tjugo rockar som fattas väger tjugo gånger mer än en
+  const gor = STATIONER[k].gor as readonly string[];
   let n = 0;
-  for (const g of STATIONER[k].gor) { const b = PROJEKT[g] ? bristNu(s, g) : 0; if (b > 0) n += b * ((RECEPT as Record<string, { min?: number } | undefined>)[g]?.min ?? 0); } // b > 0: också en brist som inte går att räkna (NaN) hoppas över
+  for (const g of PROJEKT_LIST) {
+    const ko = PROJEKT[g].ko;
+    if (!ko || !gor.includes(ko.act) || !(bristNu(s, g) > 0)) continue; // också en brist som inte går att räkna (NaN) hoppas över
+    n += ko.saknas(s) * ko.min;
+  }
   return n;
 };
 // det byns projekt saknar (steg 10.5.17), en gång i timmen (TAKTER): per material det projekten behöver (beh: receptets

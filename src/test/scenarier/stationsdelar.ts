@@ -169,22 +169,27 @@ SCENARIER.brannolja = {
 };
 
 SCENARIER.slojdbankar = {
-  text: 'Slöjdbänkarna (steg 12.1.150): behovet räknas ur arbetet som väntar vid bänken (bristen i projekten för det som görs där gånger receptets minuter) i stället för en per tolv vuxna; en bänk till byggs när mer väntar än bänkarna hinner',
+  text: 'Slöjdbänkarna (steg 12.1.150): behovet räknas ur arbetet som väntar vid bänken (det antal som saknas av det som görs där gånger receptets minuter, steg 12.1.212) i stället för en per tolv vuxna; en bänk till byggs när mer väntar än bänkarna hinner',
   kor: () => {
     const s = createState(1, START);
     medHus(s);
     const bank = (n: number) => { s.stationer = (s.stationer ?? []).filter(t => t.k !== 'flatarbank'); for (let i = 0; i < n; i++) (s.stationer ??= []).push({ id: (s.nextStation = (s.nextStation ?? 0) + 1), k: 'flatarbank', x: 1 + 3 * i, y: 1, kvar: 0 } as Station); s.byggV = (s.byggV ?? 0) + 1; };
     // det som väntar i byn: bristen i projekten gånger minuterna, för det som görs vid bänken
     bank(1);
-    const RE = SIM.RECEPT as Record<string, { min?: number } | undefined>;
-    let vantat = 0; const nan: string[] = [];
-    for (const g of SIM.STATIONER.flatarbank.gor) { const b = SIM.PROJEKT[g] ? SIM.bristNu(s, g) : 0; if (Number.isNaN(b)) nan.push(g); if (b > 0) vantat += b * (RE[g]?.min ?? 0); }
+    // (steg 12.1.212) omgångarna som saknas gånger minuterna, och recepten hittas genom projektets handling (repet tvinnas)
+    const gor = SIM.STATIONER.flatarbank.gor as readonly string[];
+    let vantat = 0; const nan: string[] = [], med1: string[] = [];
+    for (const g of SIM.PROJEKT_LIST) { const ko = SIM.PROJEKT[g].ko; if (!ko || !gor.includes(ko.act)) continue; med1.push(ko.act); const b = SIM.bristNu(s, g); if (Number.isNaN(b)) nan.push(g); if (b > 0) vantat += ko.saknas(s) * ko.min; }
     const vid = SIM.koKrok.vid(s, 'flatarbank');
+    const utanKo = gor.filter(a => !med1.includes(a));
+    const rep = SIM.PROJEKT.rep.ko!, repSaknas = Math.ceil(SIM.villHaAv(s, 'rep') - SIM.amountOf(s, 'rep') - 1e-9);
     const hinner = SIM.STATIONER.flatarbank.hinner!;
     // med ett bestämt arbete som väntar
     const med = (min: number, n: number) => { const f = SIM.koKrok.vid; SIM.koKrok.vid = () => min; try { bank(n); return SIM.stationBrist(s, 'flatarbank'); } finally { SIM.koKrok.vid = f; } };
     return [
       [`arbetet som väntar vid bänken räknas ur projekten (${vid.toFixed(1)} minuter, väntat ${vantat.toFixed(1)}${nan.length ? `; brist som inte går att räkna hoppas över: ${nan.join(', ')}` : ''})`, Math.abs(vid - vantat) < 1e-9 && Number.isFinite(vid)],
+      [`allt som görs vid bänken finns i kön genom projektens handling${utanKo.length ? ` (saknas: ${utanKo.join(', ')})` : ''}`, utanKo.length === 0],
+      [`repet räknas i antal: ${repSaknas} rep saknas gånger ${rep.min} minuter`, rep.act === 'tvinna' && rep.saknas(s) === Math.max(0, repSaknas) && repSaknas > 1],
       ['utan slöjdbänk vill byn ha en, också när inget väntar', med(0, 0) === 1],
       ['en bänk räcker när mindre väntar än den hinner', med(hinner * 0.8, 1) === 0],
       [`mer än en bänk hinner: byn vill ha en till (${med(hinner * 1.5, 1)})`, med(hinner * 1.5, 1) > 0],
