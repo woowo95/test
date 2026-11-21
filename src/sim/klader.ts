@@ -34,6 +34,9 @@ export const KLADER = balans('klader', {
   // valIdeal grader, negativt över, per valSpann grader), skyddet i striden, finheten (anseendet), och att inte lämna en del
   // naken. Ett plagg tas på när poängen är över valByte och av när den är under −valByte, så att det inte byts fram och tillbaka
   valIdeal: 20, valSpann: 10, valVarme: 1, valSkydd: 0.05, valFin: 0.02, valNaken: 1, valByte: 0.01,
+  // det plagget bär åt en (steg 12.1.191): per krok i bältet och plats på axelremmen, per vikt i ryggsäcken; plaggen som hör
+  // till en roll (masken och prästens dräkt åt prästen, trons tecken åt den troende) och smyckena som bärs för att synas
+  valBar: 0.1, valRygg: 0.005, valRoll: 0.1, valPynt: 0.05,
 });
 
 // platserna på kroppen där den som saknar plagg känner sig naken (stepNaken i steg.ts): skjortan och rocken klär överkroppen

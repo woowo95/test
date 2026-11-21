@@ -267,7 +267,10 @@ export function plaggPoang(s: State, p: Person, k: string, t: Ting | undefined, 
   const r = kladAv(k), pl = SAKER[k]?.klad?.plats, del = pl ? NAKEN_PLATS[pl] : undefined;
   const skydd = kladSkyddStrid(k), sk = skydd ? Object.values(skydd.tar).reduce((a, b) => a + (b ?? 0), 0) : 0;
   const naken = del !== undefined && !paSig(s, p).some(q => q !== t && NAKEN_PLATS[SAKER[q.k]!.klad!.plats] === del);
-  return KLADER.valVarme * kladSkydd(k, t) * (KLADER.valIdeal - temp) / KLADER.valSpann + KLADER.valSkydd * sk + KLADER.valFin * (r ? KLADMATERIAL[r.mat].finhet : 0) + (naken ? KLADER.valNaken : 0);
+  // det plagget bär åt en, och rollen eller synen det är till för (steg 12.1.191)
+  const kd = SAKER[k]?.klad, bar = KLADER.valBar * ((kd?.krok ?? 0) + (kd?.axel ?? 0)) + KLADER.valRygg * (kd?.rygg ?? 0);
+  const roll = r && (r.plagg === 'mask' || r.plagg === 'prastdrakt' || r.plagg === 'tecken') && kladFor(s, p, k) ? KLADER.valRoll : 0, pynt = pl === 'smycke' ? KLADER.valPynt : 0;
+  return KLADER.valVarme * kladSkydd(k, t) * (KLADER.valIdeal - temp) / KLADER.valSpann + KLADER.valSkydd * sk + KLADER.valFin * (r ? KLADMATERIAL[r.mat].finhet : 0) + (naken ? KLADER.valNaken : 0) + bar + roll + pynt;
 }
 export function stepKlader(s: State) {
   if (!tingOf(s).some(t => SAKER[t.k]?.klad)) return;
