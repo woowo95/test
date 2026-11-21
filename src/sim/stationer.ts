@@ -690,7 +690,7 @@ const lagerRuta = (s: State, x: number, y: number) => zonesOf(s).some(z => (!som
 const iLagret = (s: State, x: number, y: number) => somTomt && zonesOf(s).some(z => z.hus === undefined && inZone(z, x, y));
 function somUtanLager<T>(f: () => T): T { somTomt = true; try { return f(); } finally { somTomt = false; } }
 export function ledig(s: State, x: number, y: number, upp?: Set<number>) {
-  if (!usable(s, x, y) || underMinnet(s, y * W + x) || paStrak(s, x, y) || stationAt(s, x, y) || sittAt(s, x, y) || lagerRuta(s, x, y)) return false;
+  if (!usable(s, x, y) || underMinnet(s, y * W + x) || paStrak(s, x, y) || stationAt(s, x, y) || sittAt(s, x, y) || lagerRuta(s, x, y) || (s.eldar ?? []).some(f => f.at?.x === x && f.at?.y === y)) return false; // inte heller där en lägereld eller härd står
   if (iLagret(s, x, y)) return true; // det som ligger i lagret bärs bort med det
   if (upp) return !upp.has(y * W + x);
   return !((s.stackar ?? []).some(a => a.x === x && a.y === y) || tingOf(s).some(k => k.x === x && k.y === y) || (s.stockar ?? []).some(k => Math.floor(k.x) === x && Math.floor(k.y) === y) || (s.stubbar ?? []).some(k => k.x === x && k.y === y));
