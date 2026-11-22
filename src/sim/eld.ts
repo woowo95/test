@@ -29,7 +29,9 @@ import { kunnighet } from './ekonomi';
 import { clamp, rnd } from './slump';
 import { BLOTVED, torrVed } from './blotved';
 import { ARSTID, ageIndex, iIstiden, isLight } from './tid';
-import { SNABBARE } from './handlingar';
+import { ACTS, type Act, SNABBARE } from './handlingar';
+import { ELDARBETEN } from './eldarbeten';
+const ACT_NAMN = (a: Act) => ACTS[a].namn;
 import { DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State, T, Task, W, H } from './typer';
 import { balans } from './balans';
 import { vedPerEld, BRASA } from './brasor';
@@ -65,6 +67,7 @@ export const ELD = balans('eld', {
   tandVedMin: 1, // minst så mycket bränsle krävs för att tända
   tandVill: 0.1, tandKandidat: 0.05, // någon tänder när byns önskan är över Vill gånger eldstadens max; den som tänder har själv över Kandidat
   tandTim: 3, // den som ska tända har tre timmar på sig
+  arbeteMarg: 0.5, // arbetet vid elden lägger på ved först när bränslet är under så stor del av det arbetet behöver (ELDARBETEN)
   tandBas: 0.5, tandSkill: 20, tandInt: 40, // chansen att lyckas: tänddonets gånger (Bas + hantverket / Skill + intelligensen / Int) ...
   tandKol: 1.5, // ... gånger Kol på en gammal kolhög, gånger tidsåldern, och gånger 1 plus (misslyckade försök - 1) / ForsokLara
   forsokLara: 10, // efter så här många misslyckade försök sedan elden brann är chansen dubbelt så stor
@@ -475,6 +478,9 @@ export function stepFire(s: State, dtSec: number, ppl: Person[]) {
       f.brukare = (f.brukare ?? 0) + 1;
       if (w.v > (f.want ?? 0)) { f.want = w.v; f.wantBy = p.id; f.wantWhy = w.why; }
     }
+    // arbetet p gör vid elden, eller tänder den och lägger på ved för (ELDARBETEN): elden ska brinna arbetet ut
+    const ea = p.task && (p.task.eldFor ?? p.task.act), f = ea && ELDARBETEN[ea]?.eld(s, p);
+    if (ea && f) { const v = arbeteBransle(s, p, ea, f); if (v > (f.want ?? 0)) { f.want = v; f.wantBy = p.id; f.wantWhy = `Behöver elden: ${ACT_NAMN(ea).toLowerCase()}`; } }
   }
 }
 // de eldar byn sköter: alla, eller när bränslet tryter så många som veden räcker till i BRASA.slackDygn dygn var (steg 10.2.10),
@@ -519,6 +525,32 @@ export function tandaVal(s: State, p: Person): { spot: { x: number; y: number };
     return { spot: at, dur: ELD.tandTim * HOUR, ref: f.id, why: `Vill ha eld. ${w.why}`, ...(sa.kalla ? { brand: 'hamta' as const, kalla: sa.kalla.id ?? -1 } : sa.fackla ? { brand: 'bar' as const } : {}) };
   }
   return undefined;
+}
+// arbetet som behöver en eld som brinner tänder den och lägger på ved först (registret ELDARBETEN i eldarbeten.ts)
+// elden närmast p som brinner, annars den p hör till: där görs det som går vid vilken eld som helst
+export const narmasteEld = (s: State, p: Person) => eldarOf(s).filter(f => f.lit && !eldIVatten(s, f)).sort((a, b) => avstandTill(s, p, a) - avstandTill(s, p, b))[0] ?? hemEld(s, p);
+const avstandTill = (s: State, p: Person, f: Fire) => { const e = eldXY(s, f); return Math.hypot(p.x - e.x - 0.5, p.y - e.y - 0.5); };
+// bränslet elden f behöver för arbetet act, högst det eldstaden rymmer
+export const arbeteBransle = (s: State, p: Person, act: Act, f: Fire) => { const e = ELDARBETEN[act]; return e ? Math.min(hearthOf(f).maxFuel, brinnTakt(s, f) * e.tim(s, p)) : 0; };
+// det p gör först för arbetet act: tänder elden eller lägger på ved så att den brinner arbetet ut. Inget när elden redan brinner
+// nog, när någon annan redan tänder den eller lägger på, eller när p inte kan (ok säger då om arbetet ändå kan göras: elden brinner)
+export function eldForst(s: State, p: Person, act: Act): { ok: boolean; gor?: { act: 'tanda' | 'elda'; spot: { x: number; y: number }; dur: number; ref?: number; why: string; brand?: 'hamta' | 'bar'; kalla?: number } } {
+  const e = ELDARBETEN[act], f = e?.eld(s, p);
+  if (!e || !f) return { ok: true }; // ingen eld behövs (vid stationen har arbetet sin egen)
+  if (eldIVatten(s, f)) return { ok: false };
+  const ppl = living(s), andra = (a: Act) => ppl.some(q => q !== p && q.task?.act === a && (q.task.ref ?? s.fire.id) === f.id);
+  const vad = ACT_NAMN(act), why = (gor: string) => `${vad}, men först ${gor}`;
+  if (!f.lit && !emberOn(s, f)) {
+    if (andra('tanda') || ageOf(p, s.now) < ALDER.ansvar || !kanTanda(s, p, f)) return { ok: false };
+    const sa = tandSatt(s, p, f);
+    if (!sa) return { ok: false };
+    const at = sa.kalla ? vidEld(s, sa.kalla, (rnd(s, 'eld', p) - 0.5) * 1.2, 1.3) : tandPlats(s, f, p);
+    return { ok: true, gor: { act: 'tanda', spot: at, dur: ELD.tandTim * HOUR, ref: f.id, why: why('tänder hen elden'), ...(sa.kalla ? { brand: 'hamta' as const, kalla: sa.kalla.id ?? -1 } : sa.fackla ? { brand: 'bar' as const } : {}) } };
+  }
+  const behov = arbeteBransle(s, p, act, f);
+  if (f.fuel >= behov * ELD.arbeteMarg || andra('elda') || ageOf(p, s.now) < ALDER.hjalper || fuelStock(s) < ELD.hamtaMin || fuelFor(s, p) < ELD.hamtaMin) return { ok: f.lit };
+  const k = takeLimit(s, 'ved', p) >= 1 ? 'ved' : 'grenar';
+  return { ok: true, gor: { act: 'elda', spot: fetchSpot(s, k, p, () => takeLimit(s, k, p)), dur: ELD.hamtaTim * HOUR, ref: f.id, why: why('lägger hen ved på elden') } };
 }
 // samling hittar tändmaterial, sten och flinta när förrådet behöver det
 // fart: hö och grenar växer på platsen och hittas lika mycket fortare som det man samlar (steg 2.12.4); stenar och flinta letar man efter

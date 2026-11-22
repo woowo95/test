@@ -127,6 +127,7 @@ export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar
 export interface Thought { text: string; v: number; until: number; k?: string } // k: raden i TANKAR (steg 12.1.234)
 // Det en person håller på med (p.task, sparas med personen). Fälten utan frågetecken finns alltid
 export interface Task {
+  eldFor?: Act; // tanda och elda: arbetet vid elden som elden tänds eller får ved för (ELDARBETEN i eld.ts)
   paus?: true; // vilan är en paus när inget annat lockar, inte trötthet (steg 11.1.72)
   fr?: number; // odla: rutan på fältet man arbetar på (steg 9.7.1, odling.ts)
   arbTid?: number; // ett arbete som räknas från framkomsten (framme i ACTS): så lång tid tar det när man är framme (steg 9.2.130)

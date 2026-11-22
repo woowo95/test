@@ -220,7 +220,7 @@ SCENARIER.slump = {
     for (let i = 0; i < 12 * 24; i++) step(e, BEAT);
     const inspelning = serialize(d) === serialize(e);
     // nattens vakt väljs med ett slumptal per kandidat, inte i sorteringens jämförelser (då beror antalet slumptal på
-    // webbläsarens sorteringsalgoritm). Den som tänder elden väljer det själv i valet av aktivitet (raden tanda, steg 12.1.76),
+    // webbläsarens sorteringsalgoritm). Den som tänder elden väljer det själv i valet av aktivitet (sättet tanda i VARMA, steg 12.1.76),
     // med sin egen följd: byns följd för elden rörs inte
     const g = createState(5, START), vuxna = () => living(g).filter(q => ageOf(q, g.now) >= ALDER.vaktFran && ageOf(q, g.now) < ALDER.vaktTill);
     while (vuxna().length < 4) g.people.push({ ...structuredClone(vuxna()[0]), id: g.nextId++, task: undefined, rngs: undefined });
@@ -230,7 +230,7 @@ SCENARIER.slump = {
     const vd = drag(g, 'val', () => chooseTask(g, vuxna()[0]));
     Object.assign(g.fire, { lit: false, fuel: 0, emberUntil: undefined, ring: true });
     setItems(g, { torrgras: 10, grenar: 10, flinta: 2 }); setAmount(g, 'ved', 10);
-    for (const q of living(g)) q.task = undefined;
+    for (const q of living(g)) { q.task = undefined; q.warm = SIM.KROPP.kallt - 0.05; } // elden tänds som ett sätt att bli varm (VARMA, varme.ts): de fryser
     const ed = drag(g, 'eld', () => { stepFire(g, 1, living(g)); for (const q of living(g)) if (ageOf(q, g.now) >= ALDER.ansvar) chooseTask(g, q); });
     const tande = living(g).some(q => q.task?.act === 'tanda');
     // var en person går (promenad, strand, flinta, trädet som fälls) väljs med personens egen följd, inte byns

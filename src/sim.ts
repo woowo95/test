@@ -36,6 +36,7 @@ export * from './sim/kartminne';
 export * from './sim/notiser';
 export * from './sim/ekonomi';
 export * from './sim/eld';
+export * from './sim/eldarbeten';
 export * from './sim/ljus';
 export * from './sim/skogsvard';
 export * from './sim/buskar';

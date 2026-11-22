@@ -26,7 +26,7 @@ import { brandHetta, brandUndan, brandVal, hjalpaVal, slackaSigVal } from './bra
 import { foodDays, foodDaysAll } from './ekonomi';
 import { ACTS, WORK, redskapTal, usesTool } from './handlingar';
 import { flyttaEldVal } from './eldflytt';
-import { tandStalle, eldFor, eldXY, nagonGlod, eldarOf, emberOn, vidEld, needStones, needTinder, woodDays } from './eld';
+import { tandStalle, eldFor, eldForst, eldXY, nagonGlod, eldarOf, emberOn, vidEld, needStones, needTinder, woodDays } from './eld';
 import { ALDER, KROPP, REL, ageOf, count, enTill, enTillDar, familjOf, isSick, living, relKey, stat } from './folk';
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
@@ -459,7 +459,7 @@ type Faror = ReturnType<typeof dangers>;
 const BALTE_FORBAND = new Set<Act>(['jakt', 'vargjakt', 'bjornjakt', 'forsvar', 'forsvarRovare', 'strid']);
 // den som ska i strid eller på jakt tar en remsa i bältet (steg 9.5.16), när det ligger en där hen står (steg 11.1.77)
 export function balteForband(s: State, p: Person, act: Act) { if (BALTE_FORBAND.has(act) && !p.forbandMed) iRackhall(p.x, p.y, () => { if (getable(s, p, 'remsa') >= 1) { takeMaterial(s, p, 'remsa', 1); p.forbandMed = 1; } }); }
-export interface Val { skal?: Task['skal']; paus?: true; /* vilan är en paus när inget annat lockar, inte trötthet (steg 11.1.72) */ fordon?: number; dragdjur?: number; stanna?: boolean; act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true | 'sten' | 'flinta'; hot?: 'rovare' | 'varg'; tandmat?: true; falt?: true; ho?: true; gava?: true; hamtar?: string; lon?: string; brand?: Task['brand']; kalla?: number }
+export interface Val { eldFor?: Act; skal?: Task['skal']; paus?: true; /* vilan är en paus när inget annat lockar, inte trötthet (steg 11.1.72) */ fordon?: number; dragdjur?: number; stanna?: boolean; act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true | 'sten' | 'flinta'; hot?: 'rovare' | 'varg'; tandmat?: true; falt?: true; ho?: true; gava?: true; hamtar?: string; lon?: string; brand?: Task['brand']; kalla?: number }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; v.paus = undefined; v.skal = undefined; return true; };
 const paus = (v: Val, why: string) => { set(v, 'vila', why); v.paus = true; return true; }; // vilan när inget annat lockar (steg 11.1.72)
 
@@ -983,6 +983,9 @@ function valjTask(s: State, p: Person) {
   }
   // straffet skam (steg 3.5.3, styre.ts): inte det faran väljer (vargarna, tornadon, branden, vattnet) och inte det som skyddar (skamfri i ACTS)
   if (rad?.niva !== 1 && ACTS[v.act].social && !ACTS[v.act].skamfri && skams(p, s.now)) { v.act = 'skams'; v.why = 'Skäms och håller sig undan de andra'; v.spot = undefined; }
+  // arbetet som behöver elden tänder den eller lägger på ved först, så att den brinner arbetet ut (ELDARBETEN, eld.ts)
+  const ef = eldForst(s, p, v.act).gor;
+  if (ef) { const arb = v.act; for (const k in v) delete (v as unknown as Record<string, unknown>)[k]; Object.assign(v, ef, { eldFor: arb }); count(s, ef.act === 'tanda' ? 'tandForArbete' : 'eldaForArbete'); }
   if (v.act === 'toa') {
     v.dur = (VAL.toaMin + rnd(s, 'val', p) * VAL.toaSpann) * MIN;
     const l = latrinFor(s, p); // till latrinen om byn har en (steg 2.7.2, smuts.ts)
@@ -990,7 +993,7 @@ function valjTask(s: State, p: Person) {
   }
   if (v.tandmat && !v.spot) v.spot = tandStalle(s, p); // tändmaterialet hämtas där hö och kvistar finns, närmast (steg 12.1.39)
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
-  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, hot: v.hot, falt: v.falt, ho: v.ho, gava: v.gava, skal: v.skal, hamtar: v.hamtar, lon: v.lon, brand: v.brand, kalla: v.kalla, stanna: v.stanna, pass: v.pass !== undefined ? s.now + v.pass : undefined };
+  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, hot: v.hot, falt: v.falt, ho: v.ho, gava: v.gava, skal: v.skal, hamtar: v.hamtar, lon: v.lon, brand: v.brand, kalla: v.kalla, stanna: v.stanna, eldFor: v.eldFor, pass: v.pass !== undefined ? s.now + v.pass : undefined };
   balteForband(s, p, v.act);
   if (ACTS[v.act].plats === 'station') { const st = stationFor(s, v.act, p); if (st && Math.hypot(sp.x - vidStation(st).x, sp.y - vidStation(st).y) < 2) stationBrukad(s, st); } // hur mycket stationen används (steg 9.4.8)
   if (v.act === 'samtal' && !v.spot) samtalMed(s, p); // fram till den man vill prata med (steg 4.5.6.7)

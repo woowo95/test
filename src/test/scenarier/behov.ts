@@ -130,7 +130,7 @@ SCENARIER.aktivitet = {
   kor: () => {
     const s = createState(5, START);
     klockan(s); // mitt på dagen, så att ingen går hem för att det blir mörkt
-    setAmount(s, 'ved', 20); tandEld(s, 0.5); // tänd eld och ved i förrådet, så att någon matar elden
+    setAmount(s, 'ved', 20); tandEld(s, 0.5); // tänd eld och ved i förrådet, så att den som fryser matar elden
     const m = getMap(s.seed);
     let utanfor = 0, vatten = 0, tungt = 0, eldMax = 0, arbete = 0;
     let prov: Person[] = [];
@@ -138,6 +138,8 @@ SCENARIER.aktivitet = {
     const vatt = (x: number, y: number) => m.tiles[Math.floor(y) * W + Math.floor(x)] === T.Vatten;
     for (let i = 0; i < 10 * 3600 / BEAT; i++) {
       step(s, BEAT);
+      // en vuxen utanför provet fryser varje timme, så att elden matas som ett sätt att bli varm (VARMA, varme.ts)
+      if (i % Math.round(3600 / BEAT) === 0) { const q = living(s).find(p => ageOf(p, s.now) >= 16 && !prov.includes(p)); if (q) q.warm = Math.min(q.warm, KROPP.kallt - 0.05); }
       // en jägare, en som promenerar och en bärplockare, så att alla syns i provet. Den som avbryts (t.ex. för ett samtal) får uppgiften igen
       if (i === 12) prov = living(s).filter(p => ageOf(p, s.now) >= 16).slice(0, 3);
       if (i >= 12 && i < 12 * 7) {

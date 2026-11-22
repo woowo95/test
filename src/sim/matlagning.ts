@@ -1,4 +1,5 @@
-import { nagonEld } from './eld';
+import { ELDARBETEN } from './eldarbeten';
+import { eldForst, nagonEld, narmasteEld } from './eld';
 import { matAvstar } from './kultlatt';
 import { DAY, HOUR, MIN, SEC, Person, State, Task } from './typer';
 import { alive, byId, count, enTill, forstaGang, gjort, log, ovning, stat } from './folk';
@@ -66,7 +67,7 @@ export const ravaraPoang = (s: State, k: string, n = amountOf(s, k)) => n * grun
 // hand = vid grillen: det hen bär dit och det som ligger inom räckhåll (steg 11.1.74)
 export const grillVara = (s: State, p?: Person, hand = false) => { let b: Ratt | undefined, bv = 0; for (const r of RATTER) { if ((hand && p ? harTillHands(s, p, r.ra) : amountOf(s, r.ra)) < MATLAG.min || p && matAvstar(s, p, r.ra)) continue; const v = ravaraPoang(s, r.ra); if (!b || v > bv) { b = r; bv = v; } } return b; };
 // p kan grilla: byn har grillen, elden brinner, det finns något att grilla och ingen annan grillar
-export const kanGrilla = (s: State, p: Person) => kanGoras(s, 'grilla', p) && s.fire.lit && !!grillVara(s, p) && !!stationFor(s, 'grilla', p); // en grill rymmer sin arbetare (steg 10.2.5)
+export const kanGrilla = (s: State, p: Person) => kanGoras(s, 'grilla', p) && eldForst(s, p, 'grilla').ok && !!grillVara(s, p) && !!stationFor(s, 'grilla', p); // en grill rymmer sin arbetare (steg 10.2.5)
 // hur länge ett pass vid grillen varar
 export const grillTid = (s: State) => { const r = grillVara(s); return Math.min(MATLAG.maxTim * HOUR, (r ? amountOf(s, r.ra) / MATLAG.timme : 0) * HOUR + MATLAG.passExtra * MIN); };
 // så stor del av maten p bränner
@@ -316,7 +317,11 @@ export const kokarNu = (s: State) => tingOf(s).filter(t => t.kok);
 const rattMat = (s: State) => RATT_SAKER.reduce((n, k) => n + amountOf(s, k) * (SAKER[k]?.mat ?? 1), 0) + kokarNu(s).reduce((n, t) => n + (t.kok!.vatska ? 0 : t.kok!.n), 0);
 const ratterBehovs = (s: State) => rattMat(s) < matPerDygn(s) * KOK.dygn;
 // p kan laga mat: kan krukan, elden brinner, en ledig kruka, något att koka, byn har för få rätter och ingen annan lagar mat
-export const kanKoka = (s: State, p: Person) => knows(p, 'kruka') && nagonEld(s) && !!ledigKruka(s) && ratterBehovs(s) && enTill(s, 'koka_mat', p) && !!kokRecept(s, p);
+export const kanKoka = (s: State, p: Person) => knows(p, 'kruka') && eldForst(s, p, 'koka_mat').ok && !!ledigKruka(s) && ratterBehovs(s) && enTill(s, 'koka_mat', p) && !!kokRecept(s, p);
+// arbetena vid elden (ELDARBETEN i eld.ts): grillen står vid lägerelden, och krukan står i den närmaste elden som brinner tills
+// rätten kokat (den längsta tiden i krukan, soppan)
+ELDARBETEN.grilla = { eld: s => s.fire, tim: s => grillTid(s) / HOUR };
+ELDARBETEN.koka_mat = { eld: (s, p) => narmasteEld(s, p), tim: () => (KOK.prepMin + KATEGORIER.soppa.passiv) / 60 };
 // förberedelsen är klar (KLAR i steg.ts): råvarorna tas, och rätten ställs på elden i krukan
 export function kokaKlar(s: State, p: Person) {
   const r = kokRecept(s, p), t = ledigKruka(s);
@@ -368,7 +373,10 @@ export function stekRecept(s: State, p?: Person) {
   }
   return undefined;
 }
-export const kanSteka = (s: State, p: Person) => knows(p, 'stekhall') && !!stekhallen(s) && ratterBehovs(s) && !!stekRecept(s, p);
+// härden med stekhällen, också när den inte brinner: den tänds för steken (ELDARBETEN i eld.ts)
+const stekHard = (s: State) => s.eldar?.find(f => f.hearth === 'hard' && f.med?.includes('stekhall'));
+ELDARBETEN.steka = { eld: stekHard, tim: () => STEK.min / 60 };
+export const kanSteka = (s: State, p: Person) => knows(p, 'stekhall') && !!stekHard(s) && eldForst(s, p, 'steka').ok && ratterBehovs(s) && !!stekRecept(s, p);
 export function stekaKlar(s: State, p: Person) {
   const r = stekRecept(s, p);
   if (!r || !stekhallen(s)) return;

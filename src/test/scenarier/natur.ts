@@ -6,7 +6,7 @@ import { FOREST, isSoil } from '../../sim/vag';
 import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import { sjo as sjoFlik } from '../../ui/flikar/sjo';
 import { setByn, ui } from '../../ui/lage';
-import { slakteri, jaktFran, stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare, testBy, vidStack, bearbetaVid, harHamtat } from './hjalp';
+import { setItems, slakteri, jaktFran, stridIByn, setMat, slutStrider, kor, klockan, bastaJaktruta, SCENARIER, flyttLitenBy, tandEld, medBank, medHus, nyInvanare, utanWebblasare, testBy, vidStack, bearbetaVid, harHamtat } from './hjalp';
 
 // en vargflock med n vargar som stryker omkring vid (x, y) med hungern hunger, med nästa nummer i byn och det som står i mer
 const nyFlock = (s: State, n: number, x: number, y: number, hunger: number, mer: Partial<SIM.Vargflock> = {}) => {
@@ -1262,6 +1262,49 @@ SCENARIER.latrin = {
     ];
   },
 };
+SCENARIER.eldarbete = {
+  text: 'Elden är ett verktyg (fliken Bygga, odla och äta, Elden): arbetet som behöver en eld som brinner (registret ELDARBETEN: grillen, krukan, snön, teet och det som kokas vid elden, stekhällen) tänder den eller lägger på ved först, så att den brinner arbetet ut. Ingen sköter elden för dess egen skull, och den som inte kan tända den kan inte göra arbetet',
+  kor: () => {
+    const { eldForst, kanGrilla, arbeteBransle, stepFire, ELDARBETEN } = SIM;
+    const s = createState(1, START); klockan(s); tandEld(s);
+    setMat(s, { fisk: 20 }); medBank(s, 'grill');
+    const p = living(s).find(r => ageOf(r, s.now) >= 18)!;
+    for (const q of living(s)) Object.assign(q, { warm: 1, task: undefined });
+    vidStack(s, p, 'fisk');
+    // elden är släckt: kocken tänder den först
+    const slack = () => Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined, ring: true });
+    slack(); setItems(s, { torrgras: 20, grenar: 20, flinta: 2 }); SIM.setAmount(s, 'ved', 50);
+    const t = eldForst(s, p, 'grilla'), tander = t.ok && t.gor?.act === 'tanda' && t.gor.ref === s.fire.id && kanGrilla(s, p);
+    // elden brinner med lite bränsle: kocken lägger på ved först, så mycket som grillningen behöver
+    Object.assign(s.fire, { lit: true, fuel: 0.05 });
+    const e = eldForst(s, p, 'grilla'), lagger = e.ok && e.gor?.act === 'elda';
+    p.task = { act: 'elda', phase: 'go', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, why: 'prov', dark: false, eldFor: 'grilla', ref: s.fire.id };
+    stepFire(s, 1, living(s)); const vill = s.fire.want ?? 0, behov = arbeteBransle(s, p, 'grilla', s.fire);
+    p.task = undefined;
+    // elden brinner nog: arbetet görs direkt
+    s.fire.fuel = SIM.hearthOf(s.fire).maxFuel; const klar = eldForst(s, p, 'grilla'), direkt = klar.ok && !klar.gor;
+    // ingen kan tända den: ingen grillar
+    slack(); setItems(s, { torrgras: 0, grenar: 0, flinta: 0 }); SIM.setAmount(s, 'ved', 0);
+    const kanInte = !eldForst(s, p, 'grilla').ok && !kanGrilla(s, p);
+    // i byn: en sommardag utan någon som fryser blåser kocken liv i glöden och lägger på ved för grillen, och fisken grillas
+    // (glöden, så att provet inte beror på hur många försök flintan tar)
+    const b = createState(1, START); klockan(b, 8); medBank(b, 'grill'); setMat(b, { fisk: 40 });
+    Object.assign(b.fire, { lit: false, fuel: 0, emberUntil: b.now + SIM.ELD.glodTim * HOUR, ring: true }); setItems(b, { torrgras: 20, grenar: 20, flinta: 2 }); SIM.setAmount(b, 'ved', 50);
+    for (const q of living(b)) q.warm = 1;
+    kor(b, 12); const forArbete = ((b.stat?.eldaForArbete as number) ?? 0) + ((b.stat?.tandForArbete as number) ?? 0);
+    const grillat = amountOf(b, 'grillfisk') + ((b.stat?.grillat as number) ?? 0);
+    return [
+      [`registret har grillen, krukan, snön och stekhällen (${Object.keys(ELDARBETEN).length} arbeten)`, ['grilla', 'koka_mat', 'smalta', 'steka'].every(a => a in ELDARBETEN)],
+      ['den som ska grilla tänder den släckta elden först', tander],
+      ['den som ska grilla lägger ved på elden först när den snart brinner ut', lagger],
+      [`elden vill ha det bränsle grillningen behöver (${vill.toFixed(2)} av ${behov.toFixed(2)})`, behov > 0 && vill >= behov - 1e-9],
+      ['brinner elden nog görs arbetet direkt', direkt],
+      ['den som inte kan tända elden kan inte grilla', kanInte],
+      [`i byn får elden ved för arbetet en sommardag när ingen fryser, och fisken grillas (${forArbete} gånger tänt eller lagt på för arbetet, ${grillat} grillat)`, forArbete > 0 && grillat > 0],
+    ];
+  },
+};
+
 SCENARIER.grill = {
   lang: true,
   text: 'Grillställningen och matlagningen (steg 2.8.1): grillen sätts upp över elden av grenar och rep och används bara när elden brinner. Där grillas fiskkött, abborre och kött till grillad fisk och grillat kött, som håller längre och äts först. En ovan kock bränner en del, en skicklig ingenting, och färdigheten Matlagning växer vid grillen. Rått kött och rå fisk gör en lite sur och kan ge matförgiftning; rå växtmat gör inget',
@@ -1494,8 +1537,13 @@ SCENARIER.brasa = {
     setAmount(b, 'sten', RT.brasaSten);
     const bygga = !needStones(b) && PROJEKT.brasa.kan(b, vuxen, f) && PROJEKT.brasa.uppgift(b, vuxen)?.act === 'station';
     // i byn: ringen läggs och blir en lägereld, som tänds
-    let h = 0, e = brasorOf(b)[0];
-    while (!(e && e.lit) && h < 96) { kor(b, 1); b.fire.lit = true; b.fire.fuel = Math.max(b.fire.fuel, 3); setAmount(b, 'ved', Math.max(amountOf(b, 'ved'), 150)); setAmount(b, 'torrgras', Math.max(amountOf(b, 'torrgras'), 10)); h++; e = brasorOf(b)[0]; }
+    let h = 0, e = brasorOf(b)[0], istid = false;
+    while (!(e && e.lit) && h < 96) {
+      // när ringen är lagd blir det istid, och två vuxna fryser vid den nya lägerelden: den tänds som ett sätt att bli varm (VARMA, varme.ts),
+      // när den första elden inte brinner
+      if (e && !istid) { b.kal = SIM.nyKalender(b.now, SIM.ISTID); istid = true; }
+      if (e && !e.lit && !living(b).some(r => r.task?.act === 'tanda')) for (const q of living(b).filter(r => ageOf(r, b.now) >= 18).slice(0, 2)) { Object.assign(q, { x: e.at!.x + 0.5, y: e.at!.y + 2.5, warm: SIM.KROPP.kallt - 0.05, task: undefined }); }
+      kor(b, 1); if (!e) { b.fire.lit = true; b.fire.fuel = Math.max(b.fire.fuel, 3); } else b.fire.lit = false; /* tills ringen är lagd brinner den första elden; sedan är den nya närmast för dem som fryser */ setAmount(b, 'ved', Math.max(amountOf(b, 'ved'), 150)); setAmount(b, 'torrgras', Math.max(amountOf(b, 'torrgras'), 10)); h++; e = brasorOf(b).find(f => f.lit) ?? brasorOf(b)[0]; }
     const fire = getMap(b.seed).fire;
     const byggd = !!e && !stationerOf(b).some(t => t.k === 'brasa' && t.id === e!.id), tand = !!e?.lit && ((b.stat?.brasaTand as number) ?? 0) > 0;
     const flyttad = !!e && Math.hypot(e.at!.x - fire.x, e.at!.y - fire.y) >= STATION.brasaFran;

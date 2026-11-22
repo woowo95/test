@@ -718,7 +718,7 @@ SCENARIER.lekibyn = {
 };
 
 SCENARIER.ibyn = {
-  text: 'Steg 2.10.6: det som görs utan bänk (redskapen när byn saknar slöjdbänk, repet och annat handarbete) görs inne i byn, vid lagret eller under tak, och inte vid elden. När det är kallt sätter man sig vid elden som förut, för värmens skull',
+  text: 'Steg 2.10.6: det som görs utan bänk (redskapen när byn saknar slöjdbänk, repet och annat handarbete) görs inne i byn, vid lagret eller under tak, och inte vid elden. Handarbetet görs där det brukar göras också när det är kallt; den som fryser går till elden genom värmen (VARMA, varme.ts)',
   kor: () => {
     const plats = (tidsalder: number) => {
       const s = createState(3, START);
@@ -737,7 +737,7 @@ SCENARIER.ibyn = {
     const varmt = plats(SIM.SOMMAR), kallt = plats(SIM.ISTID);
     return [
       [`på sommaren görs handarbetet utan bänk inne i byns område, sällan vid elden (${varmt.iByn} av ${varmt.n} gånger i byn, ${varmt.vidElden} vid elden)`, !varmt.kallt && varmt.iByn === varmt.n && varmt.vidElden <= varmt.n * 0.3],
-      [`när det är kallt sitter man vid elden som förut (${kallt.vidElden} av ${kallt.n} gånger)`, kallt.kallt && kallt.vidElden === kallt.n],
+      [`när det är kallt görs handarbetet där det brukar göras (${kallt.iByn} av ${kallt.n} gånger i byn, ${kallt.vidElden} vid elden)`, kallt.kallt && kallt.iByn === kallt.n && kallt.vidElden <= varmt.vidElden + 3],
     ];
   },
 };
