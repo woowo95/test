@@ -196,13 +196,25 @@ export const brunnarna = (s: State) => stationerOf(s).filter(t => t.k === 'brunn
 export const vidBrunn = (s: State, x: number, y: number) => brunnarna(s).some(t => { const at = vidStation(t); return Math.hypot(at.x - x, at.y - y) < 0.5; });
 brunnKrok.vid = vidBrunn;
 // det som väljs när man är törstig (val.ts): handlingen, skälet, hur länge och var. undefined = inget vatten att nå
+// den närmaste rutan med snö på marken inom snoNara, där man kan stå (vid elden och husen har snön smält, steg 10.2.51)
+export function snoPlats(s: State, p: Person): { x: number; y: number } | undefined {
+  if (snoPaMarken(s) <= 0) return undefined;
+  const m = getMap(s.seed).tiles, px = Math.floor(p.x), py = Math.floor(p.y);
+  let best: { x: number; y: number } | undefined, bd = Infinity;
+  for (let dy = -TORST.snoNara; dy <= TORST.snoNara; dy++) for (let dx = -TORST.snoNara; dx <= TORST.snoNara; dx++) {
+    const x = px + dx, y = py + dy, d = Math.hypot(dx, dy);
+    if (d >= bd || d > TORST.snoNara || !inMap(x, y) || m[y * W + x] === T.Vatten || bitAt(s, x, y) || snoVid(s, x, y) <= 0) continue;
+    bd = d; best = dx === 0 && dy === 0 ? { x: p.x, y: p.y } : { x: x + 0.5, y: y + 0.5 };
+  }
+  return best;
+}
 export function drickVal(s: State, p: Person) {
   const d = DRICKA.find(x => x.nar(s, p))!;
   if (!kanGa(p) && hemma(s, p)) return undefined; // väntar på den som bär vatten dit (vattenVal)
   if (d.act === 'smalta') return { act: d.act as Act, why: d.why, min: d.min(), spot: undefined as { x: number; y: number } | undefined };
   if (d.act === 'dryck') return { act: d.act, why: d.why, min: d.min(), spot: { x: p.x, y: p.y } };
-  const h = halVal(s, p), sno = snoVid(s, p.x, p.y) > 0; // snön där man står; vid elden har den smält (steg 10.2.51)
-  const snon = () => ({ act: 'ata_sno' as Act, why: 'Är törstig och äter snö', min: TORST.snoAtMin, spot: { x: p.x, y: p.y } }); // steg 9.6.18
+  const h = halVal(s, p), sp = snoPlats(s, p), sno = !!sp; // den närmaste snön; vid elden har den smält (steg 10.2.51)
+  const snon = () => ({ act: 'ata_sno' as Act, why: 'Är törstig och äter snö', min: TORST.snoAtMin, spot: sp! }); // steg 9.6.18
   if (islagt(s) && !h && !brunnFinns(s)) return sno ? snon() : undefined; // isen är för tjock för det man har: snön, om den ligger
   const spot = drickPlats(s, p);
   if (!spot) return sno ? snon() : undefined;
@@ -256,7 +268,7 @@ const villFylla = (s: State, p: Person) => !fylldSack(s) && enTillDar(s, 'vatten
 export const vattenKarl = (s: State, p: Person) => freeTools(s, p, 'vattensack') >= 1 ? 'vattensack' : freeTools(s, p, 'lerkruka_mellan') >= 1 ? 'lerkruka_mellan' : undefined;
 // spädbarnet vars mor är nära dricker av henne och behöver inget vatten (smabarnDricker)
 const ammas = (s: State, q: Person) => { const m = q.mother !== undefined ? byId(s, q.mother) : undefined; return !!m && paKartan(m) && Math.hypot(m.x - q.x, m.y - q.y) <= TORST.ammaNara; };
-export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string; falt?: true; karl?: string } | undefined {
+export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string; falt?: true; karl?: string; sno?: true } | undefined {
   const karl = vattenKarl(s, p); // utan säck eller kruka bärs vattnet i händerna, bara åt en törstig (steg 10.2.35)
   if (ageOf(p, s.now) < ALDER.vuxen || !kanGa(p)) return undefined;
   let best: Person | undefined, bd = TORST.hamtaR;
@@ -281,7 +293,9 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
   if (best && vp < Math.max(vf, vk)) best = undefined;
   const f = !best && ft && vf > 0 && vf >= vk ? ft : undefined, kok = !best && !f && vk > 0;
   const spot = (best || f || kok) && naVattnet(s, p) && drickPlats(s, p); // genom isen bara med ett hål (is.ts)
-  if (!spot) return undefined;
+  // isen är för tjock för det byn har och ingen brunn finns: den törstige får snö i händerna, som den som själv äter snö
+  const sp = !spot && best && !naVattnet(s, p) ? snoPlats(s, p) : undefined;
+  if (!spot) return sp ? { spot: sp, ref: best!.id, why: `Tar snö i händerna åt ${best!.name}`, sno: true } : undefined;
   const i = karl === 'vattensack' ? 'säcken' : karl ? 'krukan' : 'händerna';
   if (kok) return { spot, ref: FYLL, why: `Fyller ${karl === 'vattensack' ? 'vattensäcken' : 'en lerkruka'} till örtköket`, karl };
   return best ? { spot, ref: best.id, why: `Hämtar vatten i ${i} åt ${best.name}`, karl } : { spot, ref: f!.id, why: 'Hämtar vatten till sitt fält', falt: true, karl };
@@ -302,8 +316,8 @@ export function vattenFylld(s: State, p: Person, t: Task) {
   const q = byId(s, t.ref);
   if (!q || !(alive(q) || gastLever(q))) return; // gästen får också vatten (steg 12.1.228) (i händerna, utan säck eller kruka, bärs vattnet ändå: steg 10.2.35)
   const x = Math.floor(t.tx), y = Math.floor(t.ty);
-  observe(s, p, 'vatten', x, y);
-  t.vatten = inMap(x, y) ? y * W + x : undefined;
+  if (!t.sno) observe(s, p, 'vatten', x, y);
+  t.vatten = !t.sno && inMap(x, y) ? y * W + x : undefined;
   t.phase = 'back'; t.tx = q.x; t.ty = q.y; t.why = `Bär vatten till ${q.name}`;
 }
 // framme hos den törstige (arrive i steg.ts): hen dricker, och säcken slits
@@ -320,6 +334,7 @@ export function vattenFram(s: State, p: Person, t: Task) {
   }
   const q = byId(s, t.ref);
   if (q && (paKartan(q) || gastLever(q)) && Math.hypot(q.x - p.x, q.y - p.y) <= 2) {
+    if (t.sno) { q.torst = Math.min(1, q.torst + TORST.snoSlacker); q.warm = Math.max(0, q.warm - TORST.snoKyla); count(s, 'bar sno'); tanke(q, 'gavVatten', s.now, { namn: p.name }); p.task = undefined; return; } // snön släcker och kyler som när man äter den själv
     q.torst = t.tool ? 1 : Math.min(1, q.torst + TORST.hander); // (forstaGang räknar 'bar vatten' varje gång)
     if (q.gast && t.tool) gastSackKrok.fyll(q); // gästen får också sin säck fylld, så att hen har vatten på vägen (steg 12.1.228)
     tanke(q, 'gavVatten', s.now, { namn: p.name }); count(s, t.tool ? 'bar vatten' : 'bar vatten i handerna');
@@ -330,5 +345,6 @@ export function vattenFram(s: State, p: Person, t: Task) {
   p.task = undefined;
 }
 import { snoVid } from './brand';
+import { snoPaMarken } from './vader';
 import { tanke } from './tankar';
 import { gasterNu, gastLever } from './gast';
