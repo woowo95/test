@@ -16,7 +16,7 @@ import { Ting, newTing, tingOf } from './agande';
 import { kvEffekt } from './kvalitet';
 import { bordVid, moblerKrok } from './stationer';
 import { BYN, Del, addDel, sumOf } from './egendom';
-import { amountOf, helt, iBordan, slagFinns, iRackhall, urBordan, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, type Uttag, use } from './lager';
+import { amountOf, helt, iBordan, slagFinns, iRackhall, iHelaForradet, urBordan, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, type Uttag, use } from './lager';
 import { eatPoison } from './fynd';
 import { ata } from './naring';
 import { ratt } from './matlagning';
@@ -216,10 +216,12 @@ export function needLadder(s: State, p: Person, dtSec: number) {
 }
 function behovSteg(s: State, p: Person, b: Behov, dtSec: number) {
   // det p har räknas om bara när ett byte eller en gåva gått igenom: annars är det detsamma (steg 12.1.184)
+  // Bytet och gåvan flyttar ägandet och ser hela förrådet, var p än står: den som har mat i förrådet ber ingen om den, och det
+  // den andra ger behöver inte ligga där p står. Bara det p tar och äter tas inom räckhåll (har)
   let har = hasFor(s, p, b);
-  const byns = har >= b.minst, fraga = !byns && chance(s, DELA.fragaTakt, dtSec, 'dela', p);
-  if ((fraga || (byns && b.genast)) && ownFor(s, p, b) < b.minst && tradeAround(s, p, b)) har = hasFor(s, p, b); // ett byte, före byns förråd
-  if (fraga && har < b.minst && askAround(s, p, b)) har = hasFor(s, p, b);
+  const byns = har >= b.minst, fraga = !byns && chance(s, DELA.fragaTakt, dtSec, 'dela', p) && iHelaForradet(() => hasFor(s, p, b)) < b.minst;
+  if ((fraga || (byns && b.genast)) && iHelaForradet(() => ownFor(s, p, b) < b.minst && tradeAround(s, p, b))) har = hasFor(s, p, b); // ett byte, före byns förråd
+  if (fraga && har < b.minst && iHelaForradet(() => askAround(s, p, b))) har = hasFor(s, p, b);
   if (har >= b.minst) { if (b.anvand(s, p) > 0) noticeTheft(s, p, b.id); return; }
   if (desperat(s, p, b) && ran(s, p, b, dtSec)) return 'ran';
   const v = victimOf(s, p, b);
