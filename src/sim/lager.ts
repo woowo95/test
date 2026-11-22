@@ -1082,7 +1082,8 @@ export const storeFull = (s: State) => vanliga(s) >= LAGER.forradFran && overflo
 // när förrådet växer över marken (eller ett förrådshus blir klart) kan det ligga flera saker på en ruta som nu hör till
 // förrådet (den som högg lade grenar och ved på samma ruta). Det första ligger kvar, resten läggs på andra platser i
 // förrådet och redskapen får en plats av placeTools i slutet av steget
-export function enPerRuta(s: State) {
+export function enPerRuta(s: State) { iHelaForradet(() => enPerRutaI(s)); } // sorteringen gäller hela förrådet, också när den som röjer en ruta arbetar inom sitt räckhåll
+function enPerRutaI(s: State) {
   const st = stacksOf(s), forst = new Set<number>(), flytt: Stack[] = [];
   for (const t of tingOf(s)) if (t.vid !== undefined && paRutan(t) && isStored(s, t.x!, t.y!)) forst.add(key(t.x!, t.y!)); // det som hör till en station (lyran och trumman vid scenen) står kvar
   for (const a of st) if (isStored(s, a.x, a.y)) { const i = key(a.x, a.y); if (forst.has(i)) flytt.push(a); else forst.add(i); }
@@ -1092,7 +1093,7 @@ export function enPerRuta(s: State) {
     if (forst.has(i)) { t.x = undefined; t.y = undefined; } else forst.add(i);
   }
   if (!flytt.length) return;
-  s.stackar = st.filter(a => !flytt.includes(a));
+  s.stackar = st.filter(a => !flytt.includes(a)); changed(s); // förrådets minne får veta att högarna flyttas innan de läggs
   for (const a of flytt) { place(s, a.k, a.n, a.c, a.ag); if (a.dold) hide(s, a.k, a.dold); }
   changed(s);
 }

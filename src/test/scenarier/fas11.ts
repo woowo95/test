@@ -1666,7 +1666,10 @@ SCENARIER.leder = {
     const t0 = s.now;
     for (let n = 0; n < 15; n++) SIM.trampa(vl, rutor, SIM.sallskapTyngd(1), t0 + n * SIM.HOUR); // femton vandrare
     SIM.raknaLeder(vl, v, t0 + 15 * SIM.HOUR);
-    const mitt = rutor[Math.floor(rutor.length / 2)]!, klass = SIM.ledKlass(vl, mitt);
+    // en ruta nära mitten av vägen där inget ritas ovanpå stigen (en plats, en flod eller markens tecken)
+    const platsRuta = new Set((vl.platser ?? []).map(p => p.y * v.w + p.x));
+    const fri = (i: number) => !platsRuta.has(i) && !v.flod[i] && !((SIM.VARLDMARK[SIM.MARK_IDS[v.mark[i]]] as SIM.MarkDef).tecken && VB.visarMarktecken(v, i % v.w, Math.floor(i / v.w)));
+    const mitten = Math.floor(rutor.length / 2), mitt = [...rutor.keys()].sort((x, y) => Math.abs(x - mitten) - Math.abs(y - mitten)).map(j => rutor[j]!).find(fri) ?? rutor[mitten]!, klass = SIM.ledKlass(vl, mitt);
     const bild = VB.ritaVarld(vl, v), mx = (mitt % v.w) * VB.VK + VB.VK / 2, my = Math.floor(mitt / v.w) * VB.VK + VB.VK / 2, pi = (my * bild.w + mx) * 4;
     const hex = '#' + [0, 1, 2].map(c => bild.data[pi + c]!.toString(16).padStart(2, '0')).join('');
     const k1 = vag.kostnad;
@@ -1808,7 +1811,7 @@ SCENARIER.vagbehov = {
     // en dag i gång
     const dagT = Math.floor(s0.now / SIM.DAY) * SIM.DAY + SIM.DAY + 8 * SIM.HOUR, gang = ny(dagT, {});
     gang.s.now = dagT + 10 * SIM.HOUR; SIM.resaBehov(gang.s, 10 * SIM.HOUR);
-    const fartUtvilad = SIM.orkFart(gang.sl); gang.sl.behov!.ork = 0.2; const fartTrott = SIM.orkFart(gang.sl);
+    gang.sl.behov!.ork = 1; const fartUtvilad = SIM.orkFart(gang.sl); gang.sl.behov!.ork = 0.2; const fartTrott = SIM.orkFart(gang.sl);
     // maten, vattnet och höet under två dygn på en torr ruta utan bete, med en häst
     const lang = ny(dagT, { fisk: 2, brod: 10, vattensack: 2, torrgras: 6 }, torr);
     lang.sl.djur.push(SIM.TAM_ID0 + 99999);

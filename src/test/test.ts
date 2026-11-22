@@ -172,7 +172,9 @@ function valjBitar(byar: { seed: number; delMs: number[]; delHash: string[] }[])
   const mal = byar.reduce((a, b) => a + b.delMs.reduce((x, y) => x + y, 0), 0) / JOBB, ut: Record<number, Omit<FacitBy, 'n'>> = {};
   for (const b of byar) {
     const bitar = Math.max(1, Math.ceil(b.delMs.reduce((x, y) => x + y, 0) / mal));
-    const g = basta(b.delMs, bitar), granser = [0, ...g.map(i => i * DEL), DAGAR];
+    // by 1 sparas alltid efter den första delen: scenarierna som läser en ung testby (testBy i hjalp.ts) får då samma by varje
+    // gång, i stället för en annan by när bitarnas gränser flyttas
+    const g = basta(b.delMs, bitar), granser = [...new Set([0, ...(b.seed === 1 && DAGAR > DEL ? [DEL] : []), ...g.map(i => i * DEL), DAGAR])].sort((x, y) => x - y);
     const bitMs = granser.slice(1).map((t, i) => b.delMs.slice(granser[i] / DEL, Math.ceil(t / DEL)).reduce((a, x) => a + x, 0));
     ut[b.seed] = { granser, bitMs, hash: granser.slice(1).map(t => b.delHash[Math.ceil(t / DEL) - 1]) };
   }
