@@ -167,6 +167,14 @@ for (const [ks, why] of [
   [['utedass'], 'utedasset (steg 12.4.9) är en teknik på nivå 5 efter latrinen och klyvplatsen; scenariot utedass prövar det'],
   [['sjukstuga'], 'sjukstugan (steg 12.4.10) är en teknik på nivå 5 efter halmbädden och örtteet; scenariot sjukstuga prövar den'],
   [['fyrfat'], 'fyrfatet (steg 12.4.11) är en teknik på nivå 4 efter lerkrukan, och elden i det tänds bara när det är kallt inne; scenariot fyrfat prövar det'],
+  [['maltid', 'sate', 'satta', 'pall'], 'måltiden vid bordet kräver ett bord, och pallen snickarbänken; testbyarna efter tändningen på 2 minuter (fasens Balans 12.6) är små och bygger inga bord på 50 dygn, eftersom bordet väger lätt mot latrinen, vattnet och kläderna, utan att någon gräns bryts; scenarierna bord, maltidsniva och stol prövar dem'],
+  [['klaPa'], 'ett varmare plagg tas på bara när någon fryser och har ett plagg över, och testbyarna i fasens Balans (12.6) har få plagg; scenarierna kladvarme och klader prövar det'],
+  [['bagborr', 'hylla', 'skinnklader'], 'bågborren, hyllan och skinnkläderna är tekniker på nivå 3–4 som de små testbyarna i fasens Balans (12.6) inte kommer på på 50 dygn, utan att någon gräns bryts; scenarierna bagborr, forvaring och klader prövar dem'],
+  [['skramma'], 'fågelskrämman sätts upp på ett sått fält när fåglarna äter av det, och få testbyar sår; scenariot skadedjur prövar den'],
+  [['ortPlocka'], 'örten plockas ur en lerkruka med örter, och krukorna är sällsynta; scenariot ortkruka prövar det'],
+  [['oljelampa'], 'oljelampan (steg 12.4.2) formas av lera när byn har brännolja; scenariot oljelampa prövar den'],
+  [['resa', 'silver'], 'en resa (system 11.5) börjar när en nyfiken och modig bybo med mat över hört rykten om en plats, och testbyarna i fasens Balans (12.6) har sällan mat över; silvret kommer från resorna och handeln; scenarierna samlaresa och silvergruva prövar dem'],
+  [['plundra'], 'rövarna plundrar bara en by de besegrat, och i testbyarna vinner de sällan på 50 dygn; scenariot plundring prövar det'],
   [['penna'], 'fjäderpennan (steg 12.4.14) skärs när någon ska skriva, och att skriva kräver pergamentet, nivå 6; scenariot skriva prövar den'],
 ] as [string[], string][]) for (const k of ks) SALLSYNT[k] ??= why;
 
