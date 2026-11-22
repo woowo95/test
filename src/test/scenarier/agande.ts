@@ -447,7 +447,7 @@ SCENARIER.arv = {
     ({ s, d, a, b, c, e } = ny()); setAmount(s, 'skinn', 0);
     s.now = new Date(s.now).setHours(23, 0, 0, 0); s.lastGuardDay = -5; Object.assign(s.fire, { lit: true, fuel: 5 });
     for (const q of living(s)) Object.assign(q, { hunger: 1, rest: 1, warm: 1, toa: 1, torst: 1, health: 1 });
-    d.pot.mod = 100; bordan(s, d, 'skinn', 4); a.task = undefined;
+    d.pot.mod = 100; bordan(s, d, 'skinn', 4); d.task!.act = 'vila'; a.task = undefined; // vakterna väljs bland de lediga: d vilar med bördan
     chooseTask(s, a);
     const vaktBar = d.guardDay !== undefined && !d.task && Math.abs(allt(s, 'skinn') - 4) < 1e-6;
     // barnets far är den hon blev gravid med, också om hon fått en ny partner sedan

@@ -432,7 +432,7 @@ SCENARIER.bygg = {
     const q = createState(8, START); // by 6 hinner inte bli klar och by 7 dör ut sedan kartan blev 120 × 120 (2.10.9); det balanseras i 2.12
     kan(q);
     let inne = 0, sov = 0, iTrad = 0, trad = -1; // räknas när huset är klart, så att det inte beror på hur fort det råkar bli klart
-    kor(q, 5 * 24, q => { // fyra vuxna i den nya kolonin: huset tar några dygn
+    kor(q, 7 * 24, q => { // fyra vuxna i den nya kolonin: huset tar några dygn (sju sedan nattvakten väljs bland de lediga)
       const bs = bitsOf(q);
       if (bs.length && trad < 0) trad = bs.filter(b => treeOn(q, b)).length;
       iTrad += bs.filter(b => b.k === 'vagg' && b.b > 0 && b.b < 1 && treeOn(q, b)).length; // en vägg som byggs där ett träd står
