@@ -112,7 +112,7 @@ export interface ProjektDef {
   namn: string; vikt: number;
   skal?: string; // skälet när namnet är en handling eller inte passar efter "Byn saknar" (steg 12.1.50): "Stubbar står där något ska byggas"
   motKyla?: true; // skyddar mot kylan (plaggen som värmer, steg 10.2.71): väger mer ju kallare det är, och kylan som fara stoppar det inte
-  brist(s: State): number; kostnad(): number;
+  brist(s: State): number; kostnad(s: State): number;
   egen?(s: State, fam: readonly Person[], p?: Person): number; // hur mycket p och familjen saknar det (0 till 1, steg 6.1.16)
   kan(s: State, p: Person, f: ProjektFara): boolean;
   recept?(s: State, p: Person, f: ProjektFara): Recept | undefined; // receptet när bara materialet eller redskapet fattas (steg 6.2.19)
@@ -415,7 +415,7 @@ export function laggTillProjekt(rader: Record<string, ProjektDef>) { for (const 
 // värdet av projektet just nu: vikten gånger bristen, delat med kostnaden
 // det som skyddar mot kylan väger mer ju kallare det är (steg 10.2.71, KLADER.kylaVikt)
 const kylFaktor = (s: State, d: ProjektDef) => d.motKyla ? 1 + KLADER.kylaVikt * coldOf(temperature(s)) : 1;
-export const projektVarde = (s: State, k: string) => { const d = PROJEKT[k]; return d.vikt * kylFaktor(s, d) * d.brist(s) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad()); };
+export const projektVarde = (s: State, k: string) => { const d = PROJEKT[k]; return d.vikt * kylFaktor(s, d) * d.brist(s) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad(s)); };
 // det projektet är värt för den som har familjen fam och omtanken om byn om: byns brist gånger omtanken och det egna (vad p och familjen saknar)
 // Byns brist kommer från timräkningen (arbetsTimme i val.ts, steg 6.2.21), så länge den finns
 // byns brist ur timmens räkning (val.ts), men räknas fram igen en gång när något byggts eller satts upp sedan dess (s.byggV), så
@@ -435,7 +435,7 @@ export function personVarde(s: State, k: string, fam: readonly Person[], om: num
   const d = PROJEKT[k], e = d.egen ? d.egen(s, fam, p) : 0;
   // det de andra redan är på väg att göra räknas med (steg 12.1.53)
   const b = om ? Math.max(0, bristNu(s, k) - (d.paVag?.(s, p) ?? 0)) : 0;
-  return d.vikt * kylFaktor(s, d) * (b * om + e) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad());
+  return d.vikt * kylFaktor(s, d) * (b * om + e) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad(s));
 }
 // den i familjen som sover under tak utan en bädd
 function utanEgenBadd(s: State, fam: readonly Person[]) {

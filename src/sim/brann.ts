@@ -12,7 +12,6 @@ import { antal, bestamd, och } from './ord';
 // (raden kolmila i ARBETEN, val.ts)
 import { balans } from './balans';
 import { ALDER, ageOf, count, forstaGang, log, annanGor } from './folk';
-import { rnd } from './slump';
 import { hourOf, isLight } from './tid';
 import { HOUR, Person, State, Task } from './typer';
 import { Station, isKlar, stationerOf, vidStation } from './stationer';
@@ -24,6 +23,7 @@ import { grundvarde } from './varde';
 import { laggTillProjekt } from './projekt';
 
 export const BRANN = balans('brann', {
+  minUtfall: 0.1, // kolet och järnet som projekt: det väntade utfallet delar kostnaden, men räknas aldrig under så här mycket
   kolVed: 20, // en kolmila tar så här mycket torr ved ...
   kolUt: 10, // ... och ger så här mycket kol
   kolTim: 4, // milan brinner så här många timmar efter klockan
@@ -78,7 +78,7 @@ const harIn = (s: State, p: Person, d: BranningDef) => Object.entries(d.in).ever
 export function laddbar(s: State, p: Person, b: string) {
   const d = BRANNINGAR[b];
   if (!d || ageOf(p, s.now) < ALDER.vuxen || !knows(p, d.tek) || !harIn(s, p, d)) return undefined;
-  return branningsStationer(s, b).find(t => !branningI(s, t));
+  return branningsStationer(s, b).find(t => !branningI(s, t) && !annanGor(s, p, d.act, t.id)); // (den som någon annan redan går till väljs inte)
 }
 // en station vars bränning är klar och ska tömmas
 export const attTomma = (s: State) => branningsStationer(s).find(t => { const b = branningI(s, t); return !!b && b.slut <= s.now; });
@@ -187,14 +187,14 @@ export function branningSteg(s: State) {
 }
 // en bränning av sorten b som brunnit klart och ska tömmas, för den vuxna p: att ta ut det som kommit ut är arbete för samma
 // projekt som att ladda, och har kolets eller järnets värde
-const klarI = (s: State, p: Person, b: string) => ageOf(p, s.now) >= ALDER.vuxen ? branningsStationer(s, b).find(t => { const x = branningI(s, t); return !!x && x.slut <= s.now; }) : undefined;
+const klarI = (s: State, p: Person, b: string) => ageOf(p, s.now) >= ALDER.vuxen ? branningsStationer(s, b).find(t => { const x = branningI(s, t); return !!x && x.slut <= s.now && !annanGor(s, p, BRANNINGAR[b].act, t.id); }) : undefined;
 // kolet som projekt: ingen egen brist, men den som vill ha något som kräver kol kolar, och vill då ha ved till milan (receptet)
 laggTillProjekt({
   kol: {
     namn: 'Kol', vikt: 1,
     brist: () => 0,
-    kostnad: () => grundvarde('kol') * BRANN.kolUt,
-    kan: (s, p) => !!klarI(s, p, 'kolmila') || !!laddbar(s, p, 'kolmila') && rnd(s, 'val', p) < vantatUtfall(BRANNINGAR.kolmila, s.now), // hellre när tillsynen faller på dagen (steg 12.2.2)
+    kostnad: s => grundvarde('kol') * BRANN.kolUt / Math.max(BRANN.minUtfall, vantatUtfall(BRANNINGAR.kolmila, s.now)), // hellre när tillsynen faller på dagen (steg 12.2.2): det väntade utfallet delar kostnaden
+    kan: (s, p) => !!klarI(s, p, 'kolmila') || !!laddbar(s, p, 'kolmila'),
     recept: (s, p) => klarI(s, p, 'kolmila') ? { av: {} } : knows(p, 'kolmila') && branningsStationer(s, 'kolmila').some(t => !branningI(s, t)) ? { av: { ...BRANNINGAR.kolmila.in } } : undefined,
     uppgift: (s, p) => { const t = klarI(s, p, 'kolmila') ?? laddbar(s, p, 'kolmila'); return t && branningUppgift(s, t); },
   },
@@ -204,8 +204,8 @@ laggTillProjekt({
   jarn: {
     namn: 'Järn', vikt: 1,
     brist: () => 0,
-    kostnad: () => grundvarde('jarn') * BRANN.ugnUt,
-    kan: (s, p) => !!klarI(s, p, 'blasterugn') || kanSmidaOm(s, p) || !!laddbar(s, p, 'blasterugn') && rnd(s, 'val', p) < vantatUtfall(BRANNINGAR.blasterugn, s.now), // järnskrotet smids om först (steg 12.2.7)
+    kostnad: s => grundvarde('jarn') * BRANN.ugnUt / Math.max(BRANN.minUtfall, vantatUtfall(BRANNINGAR.blasterugn, s.now)), // som kolet
+    kan: (s, p) => !!klarI(s, p, 'blasterugn') || kanSmidaOm(s, p) || !!laddbar(s, p, 'blasterugn'), // järnskrotet smids om först (steg 12.2.7)
     recept: (s, p) => klarI(s, p, 'blasterugn') ? { av: {} } : knows(p, 'blasterugn') && branningsStationer(s, 'blasterugn').some(t => !branningI(s, t)) ? { av: { ...BRANNINGAR.blasterugn.in } } : undefined,
     uppgift: (s, p) => { const k = klarI(s, p, 'blasterugn'); if (k) return branningUppgift(s, k); if (kanSmidaOm(s, p)) return omsmidUppgift(s, p); const t = laddbar(s, p, 'blasterugn'); return t && branningUppgift(s, t); },
   },

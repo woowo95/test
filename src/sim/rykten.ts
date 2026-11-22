@@ -796,14 +796,7 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
 // En person minns ett larm per sort (steg 12.1.211): ett rop om björnen skriver inte över det man vet om rövarna, och varje
 // system frågar efter sitt
 export function horLarm(p: Person, l: Larm) { (p.larm ??= {})[l.vad] = l; }
-export const larmOm = (p: Person, vad: string) => p.larm?.[vad];
 // minns p ett larm om vad nu?
 export const larmNu = (s: State, p: Person, vad: string) => { const l = p.larm?.[vad]; return l && s.now - l.t < LARM.tim * HOUR ? l : undefined; };
-// det senaste larmet p hört, av vilken sort som helst
-export function senasteLarm(p: Person): Larm | undefined {
-  let b: Larm | undefined;
-  for (const k in p.larm) { const l = p.larm[k]; if (l && (!b || l.t > b.t)) b = l; }
-  return b;
-}
 import { smakSak } from './ratter';
 import { tanke } from './tankar';

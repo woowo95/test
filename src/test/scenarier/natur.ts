@@ -958,7 +958,7 @@ SCENARIER.bord = {
     const s = createState(1, START); klockan(s); tandEld(s);
     for (const r of s.people) r.tek = { ...r.tek, bord: 1 };
     setMat(s, { bar: 300 }); setAmount(s, 'ved', 40); setAmount(s, 'virke', 10); setAmount(s, 'plankor', 10);
-    const n = living(s).length, STORLEK = ['bord', 'bord2', 'bord3'], varde = (k: string) => PROJEKT[k]!.vikt * PROJEKT[k]!.brist(s) / PROJEKT[k]!.kostnad();
+    const n = living(s).length, STORLEK = ['bord', 'bord2', 'bord3'], varde = (k: string) => PROJEKT[k]!.vikt * PROJEKT[k]!.brist(s) / PROJEKT[k]!.kostnad(s);
     const text00 = STORLEK.map(k => PROJEKT[k]!.brist(s).toFixed(2)).join(', '), vtext = STORLEK.map(k => varde(k).toFixed(3)).join(', ');
     const k0 = STORLEK.reduce((a, b) => varde(b) > varde(a) ? b : a), brist0 = PROJEKT[k0]!.brist(s), alla = STORLEK.every(k => Math.abs(PROJEKT[k]!.brist(s) - Math.min(1, Math.min(platserAv(k), n) / n)) < 1e-9);
     let h = 0;
