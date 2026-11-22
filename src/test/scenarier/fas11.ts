@@ -1942,9 +1942,12 @@ SCENARIER.samlaresa = {
   lang: true,
   text: 'Att samla till en resa (steg 11.5.10, resaPlan och raden samlaResa i val.ts): en nyfiken och modig bybo som hört rykten om en plats samlar till en resa dit, med en poäng som vägs mot byns andra arbeten; en försiktig får lägre poäng, och i en by i nöd reser ingen',
   kor: () => {
-    const s = SIM.cloneState(testBy(30)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
+    // (en testby där familjen till den som ska resa har mat, och utan vargar och rövare nära: den som har mat för kort tid själv
+    // arbetar för maten, steg 3.10.26, och vid ett hot försvarar man byn)
+    const lediga = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.ageOf(q, b.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, b.now) && q.task?.act !== 'vakt');
+    const s = SIM.cloneState(testBy(30, b => { const v = lediga(b); return v.length >= 2 && SIM.familjMatDygn(b, SIM.familjOf(b, v[0]!.id)) >= 5 && !b.vargar?.length && !b.rovare; })), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
     vl.bud = undefined; // inget bud väntar på att skickas (sändebudet, steg 11.6.23, reser annars också i nöd)
-    const vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.ageOf(q, s.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, s.now));
+    const vuxna = lediga(s);
     const a = vuxna[0]!, b = vuxna[1]!;
     // en plats längre bort som ingen känner till, och som a hör rykten om (inte en by: där kan byn också vilja handla, steg 11.6.11;
     // inte ett läger, som bryts upp)
@@ -1998,7 +2001,7 @@ SCENARIER.kallelse = {
     // har fyra, med kraften 3,2 mot kravet 4,5; steg 12.1.112)
     const kan = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.ageOf(q, b.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, b.now));
     const s0 = SIM.cloneState(testBy(30, b => kan(b).length >= 6)), vl0 = s0.varld!, hem = SIM.byPlats(vl0, vl0.huvud!)!;
-    const vuxna = kan(s0);
+    const vuxna = kan(s0).filter(q => q.task?.act !== 'vakt'); // (ledaren håller inte vakt i natt)
     // modet och nyfikenheten i anlagen också: uppväxten räknar om pot ur anlagen när någon får en upplevelse (raknaPot i
     // uppvaxt.ts), och då föll modet tillbaka medan sällskapet samlades (steg 12.1.112)
     const satt = (q: SIM.Person, k: 'mod' | 'nyfikenhet', v: number) => { if (q.anlag) q.anlag[k] += v - q.pot[k]; q.pot[k] = v; };
@@ -2202,7 +2205,7 @@ SCENARIER.vaghandelser = {
       [`den som kan samla hittar oftare mat (${fynd0.toFixed(3)} → ${fynd20.toFixed(3)})`, fynd20 > fynd0],
       [`tusen dygn i timmar: ${IDS.map(k => `${k} ${tim.n[k]} (väntat ${Math.round(tim.risk[k]!)})`).join(', ')}`, IDS.every(k => nara(k, tim) && tim.n[k]! > 0)],
       [`i tiominutersbitar lika många: ${IDS.map(k => `${k} ${tio.n[k]}`).join(', ')}`, lika && IDS.every(k => nara(k, tio))],
-      [`det tappade och det hittade är hela saker (${5000 - (tim.y.sl.pack.skinn ?? 0) + 5000 - (tim.y.sl.pack.rep ?? 0)} tappade, ${tim.y.sl.pack.bar ?? 0} bär)`, tim.heltal && (tim.y.sl.pack.bar ?? 0) > 0],
+      [`det tappade och det hittade är hela saker (${5000 - (tim.y.sl.pack.skinn ?? 0) + 5000 - (tim.y.sl.pack.rep ?? 0)} tappade, ${tim.n.mat} fynd av bär; rånen kan ta dem igen)`, tim.heltal && tim.n.mat! > 0],
       [`spelets klocka flyttar sällskapet längs vägen (${z.sl.pos ?? 0} rutor på ${((z.s.now - t0) / SIM.HOUR).toFixed(1)} timmar)`, (z.sl.pos ?? 0) >= 2 || z.sl.skede !== 'ute'],
     ];
   },

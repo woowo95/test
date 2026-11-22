@@ -4,13 +4,17 @@ import { SCENARIER, testBy, klockan, rikBy, tandEld } from './hjalp';
 import { BEAT } from '../kor';
 
 // en by i världen med grannar och ett stort överskott, som slår upp ett handelsläger
+// (den första byn där ett läger får plats: nära en by på en kust eller i en trång dal finns ibland ingen ledig ruta)
 function medLager() {
-  const s = SIM.cloneState(testBy(10)), vl = s.varld!;
-  const r = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && x.nr !== vl.huvud && SIM.byPlats(vl, x.nr)?.grannar?.length)!;
-  r.tal.folk = 40; r.tal.mat = 4000;
-  const rv = SIM.radVaror(r); rv.redskap = (rv.redskap ?? 0) + 400; r.tal.rikedom = SIM.radRikedomUr(r);
-  const h = SIM.nyttHandelslager(s, vl, r, s.now)!, p = SIM.byPlats(vl, h.nr)!;
-  return { s, vl, r, h, p };
+  const t = testBy(10), nr = t.varld!.rader!.filter(x => SIM.lever(t.varld!, x) && x.sort === 'by' && x.nr !== t.varld!.huvud && SIM.byPlats(t.varld!, x.nr)?.grannar?.length).map(x => x.nr);
+  for (const n of nr) {
+    const s = SIM.cloneState(t), vl = s.varld!, r = SIM.radNr(vl, n)!;
+    r.tal.folk = 40; r.tal.mat = 4000;
+    const rv = SIM.radVaror(r); rv.redskap = (rv.redskap ?? 0) + 400; r.tal.rikedom = SIM.radRikedomUr(r);
+    const h = SIM.nyttHandelslager(s, vl, r, s.now);
+    if (h) return { s, vl, r, h, p: SIM.byPlats(vl, h.nr)! };
+  }
+  throw new Error('inget handelsläger fick plats');
 }
 const slutFor = (vl: SIM.Varlden, nr: number) => (vl.ko ?? []).find(k => k.typ === 'handelslagerSlut' && k.sak === nr);
 
