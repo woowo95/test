@@ -68,7 +68,7 @@ export const PROJEKT_TAL = balans('projekt', {
   grill: 0.8, // ... grillställningen (steg 2.8.1)
   tork: 0.6, // ... torkställningen (steg 2.8.2)
   brasa: 1, // ... en brasa när fyra eller fler sover långt från elden (steg 2.9.1, brasor.ts)
-  latrin: 0.8, // ... latrinen när byn inte har en som inte är nästan full (steg 2.7.2)
+  latrin: 0.4, // ... latrinen när byn inte har en som inte är nästan full (steg 2.7.2; 0,8 före fasens Balans 12.6: den gick före det mesta)
   halmbadd: 1.5, // ... halmbäddarna när alla saknar en, under tak eller ute (steg 10.2.48: sängarna kommer fort)
   skinnfall: 0.5, // ... skinnfällarna när alla halmbäddar saknar en
   bord: 0.5, bord2: 0.5, bord3: 0.5, // ... borden när ingen har en plats vid ett bord (steg 2.2.15)
