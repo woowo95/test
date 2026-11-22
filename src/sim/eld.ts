@@ -401,7 +401,7 @@ export function addFuel(s: State, p: Person, n: number, f = s.fire) {
 // f = elden (den p hör till om ingen anges); en i taget vid varje eld
 export function fetchFuel(s: State, p: Person, why: string, fran?: Person, f = hemEld(s, p)) {
   if (living(s).some(q => q.task?.act === 'elda' && q.task.ref === f.id)) return;
-  const at = fetchSpot(s, takeLimit(s, 'ved', p, fran) >= 1 ? 'ved' : 'grenar');
+  const k = takeLimit(s, 'ved', p, fran) >= 1 ? 'ved' : 'grenar', at = fetchSpot(s, k, p, () => takeLimit(s, k, p, fran));
   avbryt(s, p); // bördan läggs ner där hen står, den försvinner inte
   p.task = { act: 'elda', phase: 'go', tx: at.x, ty: at.y, until: s.now + ELD.hamtaTim * HOUR, carry: 0, why, dark: !isLight(s.now) };
   if (fran) p.task.fran = fran.id;
@@ -498,7 +498,8 @@ export function eldaVal(s: State, p: Person): { spot: { x: number; y: number }; 
     if (sc > bs) { bs = sc; bast = { f, why: w.why }; }
   }
   if (!bast) return undefined;
-  return { spot: fetchSpot(s, takeLimit(s, 'ved', p) >= 1 ? 'ved' : 'grenar'), dur: ELD.hamtaTim * HOUR, ref: bast.f.id, why: bast.why };
+  const k = takeLimit(s, 'ved', p) >= 1 ? 'ved' : 'grenar';
+  return { spot: fetchSpot(s, k, p, () => takeLimit(s, k, p)), dur: ELD.hamtaTim * HOUR, ref: bast.f.id, why: bast.why };
 }
 // raden tanda (steg 12.1.76): en släckt eld som någon som hör till den vill ha tänds av en som kan, en i taget vid varje eld.
 // Med en brand går hen först till elden som brinner (steg 10.6.12), annars direkt till eldstaden

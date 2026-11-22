@@ -659,7 +659,15 @@ function besideSpot(s: State, k: string, occ: Occ) {
   for (const r of ringTiles(s, z0, LAGER.bredvid + 1, Math.max(W, H), (x, y) => inMap(x, y) && !upptagen.has(key(x, y)))) if (zoneAt(s, r.x, r.y) < 0 && !occ.eld.has(key(r.x, r.y)) && !stubbeOn(s, r.x, r.y) && nasIFloden(s, key(r.x, r.y)) && !(s.flodHot && isFood(k) && flodHotad(s, key(r.x, r.y)))) return r; // inte dit vattnet stiger (steg 3.8.7)
   return { x: zs[0].x, y: zs[0].y }; // hela kartan är full
 }
-export const fetchSpot = (s: State, k: string) => {
+// var p hämtar slaget k: den närmaste stacken där p får ta en hel sak, efter samma regel som tagandet (kan, räknad med stackarna
+// inom räckhåll från stacken, som när hen står där). Står hen redan vid en sådan stack tar hen därifrån. Utan p eller kan, eller
+// när ingen stack duger: den första stacken av slaget i lagret
+export const fetchSpot = (s: State, k: string, p?: { x: number; y: number }, kan?: () => number) => {
+  if (p && kan && !isTool(k)) {
+    if (iRackhall(p.x, p.y, kan) >= 1) return { x: p.x, y: p.y };
+    const d = narmasteMed(s, p, [k], undefined, (x, y) => iRackhall(x, y, kan) >= 1);
+    if (d) return d;
+  }
   if (isTool(k)) placeTools(s);
   const all = things(s).filter(q => !s.flod || !iVattnetNu(s, q.y * W + q.x) && nasIFloden(s, q.y * W + q.x)); // inte ute i en översvämning eller bakom den (flod.ts)
   const a = all.find(q => q.k === k && zoneAt(s, q.x, q.y) >= 0) ?? all.find(q => q.k === k && isStored(s, q.x, q.y));

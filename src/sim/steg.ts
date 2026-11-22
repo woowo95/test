@@ -1035,9 +1035,8 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
       // så mycket elden vill ha, som p orkar bära och kan få (steg 10.2.7), i hela vedträn
       // ur stackarna hen står vid (steg 11.1.75)
       const bransle = iRackhall(p.x, p.y, () => fuelFor(s, p, fran));
-      // stacken här är tom, eller ved som hen inte får ta: till nästa stack där hen får ta minst ett vedträ (annars går hen fram och
-      // tillbaka mellan två stackar som är någon annans)
-      const dit = bransle < 1 && e && !fran && fuelFor(s, p) >= 1 ? narmasteMed(s, p, ['ved', 'grenar', 'torv', 'blottorv'], undefined, (x, y) => iRackhall(x, y, () => fuelFor(s, p)) >= 1) : undefined;
+      // stacken här har tömts sedan hen valde den: till nästa stack där hen får ta, som när en hög väljs (fetchSpot)
+      const dit = bransle < 1 && e && fuelFor(s, p, fran) >= 1 ? narmasteMed(s, p, ['ved', 'grenar', 'torv', 'blottorv'], undefined, (x, y) => iRackhall(x, y, () => fuelFor(s, p, fran)) >= 1) : undefined;
       if (dit) { tk.tx = dit.x; tk.ty = dit.y; return; }
       const n = !e || e.fuel >= fireWant(s, e) ? 0 : Math.max(Math.min(1, bransle), Math.floor(Math.min(fireWant(s, e) - e.fuel, capacity(s, p) / viktOf('ved'), bransle)));
       if (n <= 0 || !e) p.task = undefined;
@@ -1058,7 +1057,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
       tk.kom ??= {}; const kom = tk.kom, ag = iRackhall(p.x, p.y, () => takeForHouse(s, p, b.hus, k, n + mer, kom, b)), mitt = (tk.ag ??= {})[k] ??= {};
       for (const id in ag) mitt[id] = (mitt[id] ?? 0) + ag[id];
       tk.items = { ...tk.items, [k]: har + sumOf(ag) };
-      const nasta = sumOf(ag) > 0 && har + sumOf(ag) < needOf(b) - 1e-9 ? narmasteMed(s, p, [k]) : undefined;
+      const nasta = sumOf(ag) > 0 && har + sumOf(ag) < needOf(b) - 1e-9 ? narmasteMed(s, p, [k], undefined, (x, y) => iRackhall(x, y, () => avail(s, k, p, b.hus, b)) >= 1) : undefined;
       if (nasta) { tk.tx = nasta.x; tk.ty = nasta.y; return; }
       tk.tx = tk.site.x; tk.ty = tk.site.y; tk.site = undefined;
     }
@@ -1657,7 +1656,7 @@ function buildStep(s: State, p: Person, tk: Task, dtSec: number) {
   tk.ref = j.bit.id; tk.tool = j.repair ? (j.bit.k === 'golv' ? 'lagaGolv' : 'laga') : j.bit.k === 'golv' ? 'golv' : 'vagg';
   tk.phase = 'go';
   const iHand = (j.item && tk.items?.[j.item]) || 0; // det byggaren redan bär räcker till biten (steg 10.2.21 C)
-  if (j.need > iHand + 1e-9) { const f = fetchSpot(s, j.item!); tk.tx = f.x; tk.ty = f.y; tk.site = site; } else { tk.tx = site.x; tk.ty = site.y; }
+  if (j.need > iHand + 1e-9) { const f = fetchSpot(s, j.item!, p, () => avail(s, j.item!, p, j.bit.hus, j.bit)); tk.tx = f.x; tk.ty = f.y; tk.site = site; } else { tk.tx = site.x; tk.ty = site.y; }
 }
 // materialet som de andra bitarna av samma material i samma hus behöver, som ingen annan bygger: det byggaren kan ta med sig
 function byggMer(s: State, b: Bit, k: string) {

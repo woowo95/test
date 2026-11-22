@@ -53,7 +53,7 @@ const kanLyfta = (s: State, p: Person, k: string) => !SAKER[k]?.lyft || ryms(s, 
 const iHandenAv = (s: State, p: Person, k: string) => { const r = ryms(s, p), w = viktOf(k); let n = 0; while (n < 20 && r({ [k]: (n + 1) * w })) n++; return n; };
 const stackPa = (s: State, x: number, y: number, k: string) => Math.floor((s.stackar ?? []).filter(q => q.x === Math.floor(x) && q.y === Math.floor(y) && q.k === k).reduce((a, q) => a + q.n, 0) + 1e-9);
 import { allows, amountOf, avbryt, carryKind, iHelaForradet, iRackhall, narmasteMed, fetchSpot, flodUndan, haulJob, isStored, timKvar, zoneAt, zonesOf } from './lager';
-import { BYGG, bedFor, buildJob, siteOf } from './bygg';
+import { BYGG, avail, bedFor, buildJob, siteOf } from './bygg';
 import { MJARDE, kanVittja } from './fisk';
 import { bitAt, bitsOf, blocked, freeNear, husById, roomAt } from './byggnad';
 import { bedTile, homeless, samlingRum, varmareInne } from './byggnader';
@@ -1271,7 +1271,7 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
   set(v, 'bygga', job.repair ? (b.k === 'golv' ? `Golvet i ${hus} är slitet och behöver lagas.` : `En vägg i ${hus} är sliten och behöver lagas.`) : `${b.k === 'golv' ? 'Lägger golv i' : 'Bygger på'} ${hus}. ${homeless(s) > 0 ? 'Alla har inte en sovplats under tak.' : ''}`.trim());
   v.tool = job.repair ? (b.k === 'golv' ? 'lagaGolv' : 'laga') : b.k === 'golv' ? 'golv' : 'vagg'; v.ref = b.id;
   v.dur = (VAL.byggMin + rnd(s, 'val', p) * VAL.byggSpann) * MIN * VAL.pass;
-  const site = siteOf(s, b); v.spot = job.need > 0 ? fetchSpot(s, job.item!) : site; if (job.need > 0) v.site = site;
+  const site = siteOf(s, b); v.spot = job.need > 0 ? fetchSpot(s, job.item!, p, () => avail(s, job.item!, p, b.hus, b)) : site; if (job.need > 0) v.site = site;
 }
 
 // Flinta och stenar till elden letas när byn saknar dem: raden leta väger mot maten, som väger mer ju hungrigare byn är (steg 2.12.3)
