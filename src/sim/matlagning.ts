@@ -6,7 +6,7 @@ import { clamp, rnd } from './slump';
 import { Del, addDel } from './egendom';
 import { amountOf, harTillHands, iHelaForradet, put, skickAv, use } from './lager';
 import { grundvarde } from './varde';
-import { Station, isKlar, kanGoras, stationFor, stationerOf } from './stationer';
+import { Station, isKlar, kanGoras, stationFor, stationerOf, upptagen } from './stationer';
 import { matPerDygn } from './ekonomi';
 import { ageIndex, kallTid } from './tid';
 import { KOTTSLAG, SAKER } from './saker';
@@ -426,7 +426,8 @@ export const GROP = balans('kokgrop', {
   fore: 1, // gropen laddas när en ritual med mat börjar inom så här många dygn (år i spelet)
 });
 export const kokgropar = (s: State) => stationerOf(s).filter(t => t.k === 'kokgrop' && isKlar(t));
-export const tomGrop = (s: State) => kokgropar(s).find(t => !t.grop);
+// en tom grop som ingen annan redan arbetar vid (en station rymmer sina arbetare, upptagen i stationer.ts)
+export const tomGrop = (s: State, p?: Person) => kokgropar(s).find(t => !t.grop && !(p && upptagen(s, t, p)));
 export interface FestRecept { id: string; av: [string, number][] }
 // festmåltiden som kan lagas av det p kan ta: huvudingrediensen med högst poäng, smaken och två råvaror ur nya grupper
 export function festRecept(s: State, p?: Person): FestRecept | undefined {
@@ -451,10 +452,10 @@ export function festRecept(s: State, p?: Person): FestRecept | undefined {
   return undefined;
 }
 // p kan ladda gropen: kan kokgropen, en tom grop, en ritual med mat väntar, ingen annan laddar den och det finns råvaror
-export const kanGropa = (s: State, p: Person) => knows(p, 'kokgrop') && !!tomGrop(s) && festKrok.vantar(s, GROP.fore * DAY) && !kokgropar(s).some(t => t.grop) && enTill(s, 'gropa', p) && !!festRecept(s, p);
+export const kanGropa = (s: State, p: Person) => knows(p, 'kokgrop') && !!tomGrop(s, p) && festKrok.vantar(s, GROP.fore * DAY) && !kokgropar(s).some(t => t.grop) && enTill(s, 'gropa', p) && !!festRecept(s, p);
 // förberedelsen är klar (KLAR i steg.ts): råvarorna tas och satsen läggs i gropen
 export function gropKlar(s: State, p: Person, ref?: number) {
-  const t = kokgropar(s).find(q => q.id === ref && !q.grop) ?? tomGrop(s), r = festRecept(s, p);
+  const t = kokgropar(s).find(q => q.id === ref && !q.grop) ?? tomGrop(s, p), r = festRecept(s, p);
   if (!t || !r) return;
   const ag: Record<string, number> = {};
   for (const [k, n] of r.av) addDel(ag, takeMaterial(s, p, k, n), 1);
