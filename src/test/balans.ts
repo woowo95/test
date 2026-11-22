@@ -13,7 +13,7 @@ matUnderTestet(); // datorns kärnor och minne under testet (steg 9.2.61)
 
 const [antal = 20, dagar = 90] = process.argv.slice(2).map(Number);
 const seeds = Array.from({ length: antal }, (_, i) => seedAv(i));
-type Ut = { seed: number; n: Nyckeltal; vakter: string[]; stat?: Record<string, number>; tek?: string[] };
+type Ut = { seed: number; n: Nyckeltal; vakter: string[]; stat?: Record<string, number>; tek?: string[]; tro?: { vuxna: number; troende: number; tron: number; dygn: number } };
 
 const t0 = Date.now();
 const fil = process.env.BALANS?.trim() ? undefined : byCacheFil(kodHash(), '', dagar), sparade = fil ? lasByCache<Ut>(fil) : {};
@@ -43,6 +43,10 @@ console.log('bara information:     median   lägst   högst');
 tabell(visas.filter(m => m.bra === 0));
 const utdoda = res.filter(r => r.n.atergrundad > 0).map(r => `${r.seed}: ${r.n.atergrundad} ggr`);
 console.log(`utdöda och återgrundade byar: ${utdoda.length}${utdoda.length ? ' (' + utdoda.join(', ') + ')' : ''}, under 6 invånare: ${res.filter(r => r.n.pop < 6).length}`);
+// tron (steg 12.6.6, Tron får fäste): byar med en levande tro, andelen vuxna med en tro där tron funnits i 20 dygn, och byar med flera
+const medTro = res.filter(r => r.tro), gamla = medTro.filter(r => r.tro!.dygn >= 20 && r.tro!.vuxna);
+const andelar = gamla.map(r => Math.round(100 * r.tro!.troende / r.tro!.vuxna)).sort((a, b) => a - b);
+if (medTro.length) console.log(`tron: en levande tro i ${medTro.filter(r => r.tro!.tron).length} av ${medTro.length} byar (av ${medTro.filter(r => r.tro!.vuxna >= 20).length} med minst 20 vuxna: ${medTro.filter(r => r.tro!.vuxna >= 20 && r.tro!.tron).length}), flera i ${medTro.filter(r => r.tro!.tron > 1).length}; vuxna med en tro där tron funnits i 20 dygn: ${andelar.length ? andelar.join(' ') + ' %' : 'ingen by'}`);
 const vakter = res.flatMap(r => r.vakter.map(v => `by ${r.seed}: ${v}`));
 // statistiken och teknikerna per by sparas i balans-stat.json (används för gräns 4: varje nytt system används i de flesta byarna)
 writeFileSync('balans-stat.json', JSON.stringify(res.map(r => ({ seed: r.seed, stat: r.stat, tek: r.tek }))));
