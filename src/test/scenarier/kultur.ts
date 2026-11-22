@@ -2754,6 +2754,9 @@ SCENARIER.buden = {
     // handlaren ska välkomnas
     klockan(s4, 10); const hs4 = SIM.skickaHandlare(s4), h4 = s4.handlare;
     const rel0 = h4 ? SIM.gastRel(s4, h4, f4)?.op ?? 0 : 0;
+    // handlaren går själv till maten och äter där (framme i handel.ts): hen ställs vid den närmaste högen mat
+    const hog4 = SIM.stacksOf(s4).find(a => SIM.isFood(a.k) && a.n >= 1);
+    if (h4 && hog4) { const P = SIM.hp(s4, h4); P.x = hog4.x + 0.5; P.y = hog4.y + 0.5; }
     if (h4) SIM.valkomnaHandlare(s4, h4);
     const valk = !!h4 && (SIM.gastRel(s4, h4, f4)?.op ?? 0) > rel0 && (s4.stat?.handlare_valkommen ?? 0) === 1;
     // den fallne fienden begravs, av den som följer budet

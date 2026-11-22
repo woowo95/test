@@ -17,7 +17,7 @@ import { clamp, pick, rnd } from './slump';
 import { iIstiden, ageIndex, hourOf, lightLevel } from './tid';
 import { morkFartVid } from './ljus';
 import { grundvarde, VARDE } from './varde';
-import { SAKER, isTool, viktOf } from './saker';
+import { SAKER, isFood, isTool, viktOf } from './saker';
 import { GORS, canMake } from './redskap';
 import { amountOf } from './lager';
 import { arMaterial, villHaAv } from './forradsmal';
@@ -43,7 +43,7 @@ import { handelsArg } from './handelsber';
 import { notis } from './notiser';
 import { barSmitta } from './sjukdom';
 import { gastAv, gastGar, gastTillbaka, hp, nyGast, nyttGastId } from './gast';
-import { valkomnaHandlare } from './kyrka';
+import { valkomnaHandlare, valkomnas } from './kyrka';
 import { FORDON, lassAv } from './fordon';
 import { tamArt, type TamArtId } from './tamdjur';
 import { tanke } from './tankar';
@@ -217,6 +217,7 @@ export interface Handlare {
   fackla?: { x: number; y: number }; // rutan där facklan står uppsatt vid lägret när det är mörkt (steg 12.1.152)
   fran: { x: number; y: number; t: number }; framme: number; // varifrån och när hen började gå, och när hen är framme (bilden ritar hen på vägen)
   fas: 'kommer' | 'vantar' | 'handlar' | 'gar'; // vantar: framme, väntar på kvällen (steg 4.5.4.11)
+  valkomst?: { x: number; y: number }; valkommen?: true; // välkomnandet (steg 10.3.23): maten hen går till först, och att hen fått den
   kvall?: number; // när hen lägger ut filten (vantar)
   kom: number; // när hen kom fram till filten
   gar: number; // när hen går hem igen
@@ -411,8 +412,15 @@ function nastaKl(t: number, kl: number) {
 const kvallNu = (t: number) => hourOf(t) >= HANDEL.kvall && hourOf(t) < HANDEL.sentKvall;
 // framme vid filtens plats: på kvällen breds filten ut, annars väntar hen på kvällen (steg 4.5.4.11)
 function framme(s: State, h: Handlare) {
-  valkomnaHandlare(s, h); // handlaren ska välkomnas (steg 10.3.23)
-  hp(s, h).x = h.mx; hp(s, h).y = h.my;
+  // handlaren ska välkomnas (steg 10.3.23): när byn följer budet går hen först till maten närmast och äter där, sedan till filten
+  const P = hp(s, h);
+  if (h.valkomst) { P.x = h.valkomst.x; P.y = h.valkomst.y; valkomnaHandlare(s, h); delete h.valkomst; gaTill(s, h); return; }
+  if (!h.valkommen && valkomnas(s)) {
+    h.valkommen = true;
+    const m = matHog(s, P.x, P.y);
+    if (m) { h.valkomst = m; gaTill(s, h); return; }
+  }
+  P.x = h.mx; P.y = h.my;
   if (kvallNu(s.now)) { lagUt(s, h); return; }
   h.fas = 'vantar'; h.kvall = nastaKl(s.now, HANDEL.kvall);
   log(s, `${hp(s, h).name} har kommit fram och väntar på kvällen, när byn har arbetat klart.`, 'world');
@@ -530,8 +538,23 @@ function foljetGar(s: State, h: Handlare) {
 // syns inte i byn). Bilden frågar samma sak med sin tid
 export function handlarPlats(s: State, h: Handlare, t: number) {
   if (h.fas === 'handlar' || h.fas === 'vantar') return { x: hp(s, h).x, y: hp(s, h).y };
-  const f = clamp((t - h.fran.t) / Math.max(1, h.framme - h.fran.t), 0, 1);
-  return { x: h.fran.x + (h.mx - h.fran.x) * f, y: h.fran.y + (h.my - h.fran.y) * f };
+  const f = clamp((t - h.fran.t) / Math.max(1, h.framme - h.fran.t), 0, 1), m = h.valkomst ?? { x: h.mx, y: h.my };
+  return { x: h.fran.x + (m.x - h.fran.x) * f, y: h.fran.y + (m.y - h.fran.y) * f };
+}
+// handlaren börjar gå där hen står, mot maten (välkomnandet) eller filten
+function gaTill(s: State, h: Handlare) {
+  const P = hp(s, h), m = h.valkomst ?? { x: h.mx, y: h.my };
+  h.fran = { x: P.x, y: P.y, t: s.now }; h.framme = s.now + Math.hypot(m.x - P.x, m.y - P.y) / handlarFart(h) * SEC;
+}
+// mitt på rutan med den närmaste stacken mat
+function matHog(s: State, x: number, y: number) {
+  let best: { x: number; y: number } | undefined, bd = Infinity;
+  for (const a of stacksOf(s)) {
+    if (!isFood(a.k) || a.n < 1) continue;
+    const d = Math.hypot(a.x + 0.5 - x, a.y + 0.5 - y);
+    if (d < bd) { bd = d; best = { x: a.x + 0.5, y: a.y + 0.5 }; }
+  }
+  return best;
 }
 function gaSteg(s: State, h: Handlare) {
   const p = handlarPlats(s, h, s.now);
