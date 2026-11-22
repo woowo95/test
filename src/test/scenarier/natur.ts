@@ -132,11 +132,11 @@ SCENARIER.abborre = {
   },
 };
 
-SCENARIER.sjo = { // by 4: by 3 fiskade knappt efter steg 2.3.11
+SCENARIER.sjo = { // by 8: by 3 fiskade knappt efter steg 2.3.11, och by 4 fiskade inte de första sex dygnen sedan gåvan ser hela förrådet (4a0be24f)
   lang: true,
   text: 'Varje sammanhängande vatten är en sjö. Fiskeförsök, napp, fångade fiskar och bad räknas per sjö när de händer (sjöfliken)',
   kor: () => {
-    const s = createState(4, START), sj = SIM.sjoarna(s.seed), tiles = getMap(s.seed).tiles;
+    const s = createState(8, START), sj = SIM.sjoarna(s.seed), tiles = getMap(s.seed).tiles;
     let vatten = true; for (let i = 0; i < W * H; i++) if ((tiles[i] === T.Vatten) !== (sj.id[i] >= 0)) vatten = false;
     const storst = sj.rutor.every((r, n) => n === 0 || r.length <= sj.rutor[n - 1].length);
     // den som sitter vid stranden ser ut över sjön eller tjärnen hen sitter vid (steg 9.2.131)
@@ -1127,7 +1127,7 @@ SCENARIER.latriner = {
   text: 'För många latriner (steg 11.1.71): den som behöver gå väljer latrin efter avståndet och om den är ledig, väntan räknas som brist bara när ingen annan latrin var ledig nära, och en latrin som inte använts på länge växer igen. En stor by under 5 dygn (5 år i spelet): antalet latriner håller sig vid det som kön kräver',
   kor: () => {
     // en stor testby; har den ingen latrin än (testbyarna kommer sällan på latrinen på 45 dygn) får den en, och de vuxna kan gräva fler
-    const s = testBy(30, b => living(b).length >= 15);
+    const s = testBy(15, b => living(b).length >= 15); // (efter 30 dygn har ingen testby 15 invånare, och då räknas en by fram i 30 dygn)
     if (!SIM.latriner(s).length) { medBank(s, 'latrin'); for (const p of living(s)) if (ageOf(p, s.now) >= 18) p.tek = { ...p.tek, latrin: 1 }; }
     const antal = () => SIM.latriner(s).length, fore = antal();
     let mest = fore;

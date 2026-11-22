@@ -237,8 +237,8 @@ SCENARIER.varldtillstand = {
     SIM.medVarld(med, SIM.FORHIST.ar > 0 ? SIM.forhistoria : undefined);
     const slumpEfter = JSON.stringify(med.rngs), fro = med.varld!.fro;
     // platserna som fanns när byn grundades, efter förhistorien (byar som grundats sedan har fran efter grundandet, och de
-    // tillfälliga platserna, som handelslägren, kan ha försvunnit sedan)
-    const fran0 = (x: SIM.State) => x.varld!.platser!.filter(p => !(p.fran! > x.founded) && !(SIM.LANDMARKEN[p.k] as { tillfallig?: true }).tillfallig).map(p => `${p.k}@${p.x},${p.y}`).sort();
+    // tillfälliga platserna, som handelslägren, kan ha försvunnit sedan; en by som gått under sedan är en ruin på samma plats)
+    const fran0 = (x: SIM.State) => x.varld!.platser!.filter(p => !(p.fran! > x.founded) && !(SIM.LANDMARKEN[p.k] as { tillfallig?: true }).tillfallig).map(p => `${p.k === 'ruin' && p.by !== undefined ? 'by' : p.k}@${p.x},${p.y}`).sort();
     const lika = JSON.stringify(har.varld!.mark) === JSON.stringify(med.varld!.mark) && JSON.stringify(fran0(har)) === JSON.stringify(fran0(med));
     kor(med, 6);
     // världen följer med i sparningen, som en egen del inom sin gräns
@@ -3143,19 +3143,23 @@ SCENARIER.utpost = {
     if (u2) { r2.tal.folk = 0; SIM.utpostTimme(s, vl, u2, n0 + 500); }
     const moderBorta = !!u2 && u2.tal.folk === 0 && (vl.ko ?? []).some(k => k.typ === 'hemTill' && k.data?.fran === u2.nr && k.sak !== r2.nr);
     // handelslägret
+    // handelslägret slås upp av en by där det får plats (nära en by på en kust eller i en trång dal finns ibland ingen ledig ruta)
+    const ryms = (nr: number) => { const k = SIM.cloneState(s), x = SIM.radNr(k.varld!, nr)!; x.tal.folk = 40; x.tal.mat = 4000; return !!SIM.nyttHandelslager(k, k.varld!, x, k.now); };
+    const rh = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && SIM.byPlats(vl, x.nr)?.grannar?.length && ryms(x.nr))!;
+    rh.tal.folk = 40; rh.tal.mat = 4000;
     // byn får ett överskott i redskap: så många till att det blir över också när det byn vill ha växer med rikedomen
-    for (let i = 0; i < 20 && SIM.radOverskott(r, 'redskap') < 200; i++) { const rv = SIM.radVaror(r); rv.redskap = (rv.redskap ?? 0) + 400; r.tal.rikedom = SIM.radRikedomUr(r); }
-    const ov = SIM.overskottVarde(r), red0 = SIM.radHar(r, 'redskap');
-    const h = SIM.nyttHandelslager(s, vl, r, s.now);
+    for (let i = 0; i < 20 && SIM.radOverskott(rh, 'redskap') < 200; i++) { const rv = SIM.radVaror(rh); rv.redskap = (rv.redskap ?? 0) + 400; rh.tal.rikedom = SIM.radRikedomUr(rh); }
+    const ov = SIM.overskottVarde(rh), red0 = SIM.radHar(rh, 'redskap');
+    const h = SIM.nyttHandelslager(s, vl, rh, s.now);
     const hp = h && SIM.byPlats(vl, h.nr);
-    const bar = h ? SIM.radHar(h, 'redskap') : 0, hemRed = SIM.radHar(r, 'redskap');
+    const bar = h ? SIM.radHar(h, 'redskap') : 0, hemRed = SIM.radHar(rh, 'redskap');
     const slut = (vl.ko ?? []).find(k => k.typ === 'handelslagerSlut' && k.sak === h?.nr);
     const tid = !!slut && !!hp && hp.till === slut.t && slut.t - s.now === SIM.HLAGER.dygn * 86400e3;
     if (slut) SIM.KOHANDELSER.handelslagerSlut(s, vl, slut);
     const hk = (vl.ko ?? []).find(k => k.typ === 'hemTill' && k.data?.fran === h?.nr);
     const bryts = !!h && h.tal.folk === 0 && !(vl.platser ?? []).includes(hp!) && !!hk && (hk.data?.v_redskap ?? 0) > 0;
     if (hk) SIM.KOHANDELSER.hemTill(s, vl, hk);
-    const tillbaka = SIM.radHar(r, 'redskap') - hemRed;
+    const tillbaka = SIM.radHar(rh, 'redskap') - hemRed;
     // en värld i 20 dygn (20 år i spelet)
     const w = varldEfter(10, 20);
     const kw = (k: string) => (w.varld!.kronika ?? []).filter(x => x.k === k).length;
@@ -4219,7 +4223,7 @@ SCENARIER.silvergruva = {
       const vag = (pb.dygn - (sl.nere ?? 0)) / 2;
       sl.pack = { brod: Math.ceil(pb.mat * (vag + (sl.nere ?? 0)) / pb.dygn) }; // maten för vägen dit är uppäten
       if (nere) sl.nere = nere; // länge nere: olyckorna, en på 125 timmar per person
-      sl.skede = 'framme'; sl.framme = s2.now; sl.behov = { matt: 1, vatska: 1, ork: 1, fulla: 0, foder: 0 };
+      sl.skede = 'framme'; sl.framme = s2.now; sl.behov = { matt: 0.5, vatska: 1, ork: 1, fulla: 0, foder: 0 }; // halvmätta efter vägen dit: de äter också när tiden nere är kort
       const silver: number[] = [], rum: boolean[] = [];
       const skador = () => sl.medl.reduce((x, id) => { const q = s2.people.find(y => y.id === id); return x + (q?.skador?.length ?? 0) + (q && !SIM.alive(q) ? 99 : 0); }, 0);
       let skadad = false;
@@ -5745,24 +5749,26 @@ SCENARIER.kyrkanutlyser = {
     r.tro = { namn: SIM.troNamn(tr), andel: 80, krig: 50 }; r.svalt = s.now - SIM.DAY;
     const p = SIM.troende(s, tr)[0]!;
     SIM.larOrt(s, p, q.nr, SIM.O_KANT, 1);
-    SIM.put(s, 'skinn', 10, { [SIM.kyrkaId(tr.id)]: 10 });
-    const vikt = SIM.KYRKUTGIFTER.uppdrag!.vikt(s, tr), forradFore = SIM.kyrkansAv(s, tr, 'skinn');
+    SIM.put(s, 'skinn', 10, { [SIM.kyrkaId(tr.id)]: 10 }); // (i ett fullt förråd läggs bara det som får plats)
+    // belöningen tas av det kyrkan har mest av
+    const sak = Object.keys(SIM.kyrkansForrad(s, tr)).sort().reduce((a, k) => SIM.kyrkansAv(s, tr, k) > SIM.kyrkansAv(s, tr, a) ? k : a, 'skinn');
+    const vikt = SIM.KYRKUTGIFTER.uppdrag!.vikt(s, tr), forradFore = SIM.kyrkansAv(s, tr, sak);
     SIM.KYRKUTGIFTER.uppdrag!.gor(s, tr);
     const u = SIM.uppdragen(vl).find(x => x.av.tro === tr!.id)!;
-    const forradEfter = SIM.kyrkansAv(s, tr, 'skinn'), talare = SIM.trosTalare(s, tr), belon = u?.belon.skinn;
+    const forradEfter = SIM.kyrkansAv(s, tr, sak), talare = SIM.trosTalare(s, tr), belon = u?.belon[sak];
     const vet = !!talare && !!talare.lardomar?.some(l => l.k === 'uppdrag' && l.a === u?.id);
     const igen = SIM.KYRKUTGIFTER.uppdrag!.vikt(s, tr);
     const av = u ? SIM.utlysarNamn(s, vl, u.av) : '';
     // tiden tar slut: belöningen går tillbaka
     if (u) SIM.avslutaUppdrag(s, vl, u, false);
-    const tillbaka = SIM.kyrkansAv(s, tr, 'skinn');
+    const tillbaka = SIM.kyrkansAv(s, tr, sak);
     // en by som svalt för länge sedan behöver ingen hjälp
     r.svalt = s.now - (SIM.KYRKUPPDRAG.nodDygn + 1) * SIM.DAY;
     const gammal = SIM.trosfrander(s, tr).length;
     return [
       [`utan en trosfrände i nöd utlyser kyrkan inget (${fore})`, fore === 0],
       [`med en trosfrände som svultit väger det (${vikt.toFixed(2)})`, vikt > 0],
-      [`kyrkan lade undan belöningen (${forradFore} → ${forradEfter} skinn) och utlyste ${u ? SIM.uppdragDef(u.k).namn.toLowerCase() : 'inget'} av ${av}`, !!u && u.k === 'hjalp' && forradEfter === forradFore - SIM.KYRKUPPDRAG.belon && belon === SIM.KYRKUPPDRAG.belon],
+      [`kyrkan lade undan belöningen (${forradFore} → ${forradEfter} ${sak}) och utlyste ${u ? SIM.uppdragDef(u.k).namn.toLowerCase() : 'inget'} av ${av}`, !!u && u.k === 'hjalp' && forradEfter === forradFore - SIM.KYRKUPPDRAG.belon && belon === SIM.KYRKUPPDRAG.belon],
       [`den som talar för tron vet om uppdraget (${talare?.name})`, vet],
       [`samma by utlyses inte två gånger (${igen})`, igen === 0],
       [`när tiden är ute går belöningen tillbaka till förrådet (${tillbaka})`, tillbaka === forradFore],
