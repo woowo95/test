@@ -92,7 +92,7 @@ export function eldReserv(s: State, k: string) {
   if (!eldar.length) return 0;
   if (k === 'ved') return Math.ceil(eldar.reduce((a, f) => a + hearthOf(f).burn, 0) * TROSKEL.eldTim);
   if (k === 'grenar') return Math.ceil(ELD.tandBransle / GREN) * eldar.length;
-  if (k === 'torrgras') return TROSKEL.tandBrist;
+  if (k === 'torrgras') return MATERIALMAL.torrgras.min(s) > 0 ? TROSKEL.tandBrist : 0; // med näver tänds elden utan hö (steg 6.3.3): samma regel som förrådsmålet
   return 0;
 }
 
