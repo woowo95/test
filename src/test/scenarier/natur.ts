@@ -1471,7 +1471,7 @@ SCENARIER.eldbrand = {
 };
 
 SCENARIER.bagborr = {
-  text: 'Steg 10.6.13: bågborren, ett bättre tänddon av 1 ved, 2 grenar och 1 rep, gjord bara vid snickarbänken av den som kan tekniken. Byn tänder med det bästa tänddon den har: borren ger eld på ungefär tre försök i stället för flintans sexton och tar 2 hö och 1 pinne per försök, håller 60 försök, och flintan gäller igen när borren gått sönder. Med en borr behövs ingen flinta',
+  text: 'Steg 10.6.13: bågborren, ett bättre tänddon av 1 ved, 2 grenar och 1 rep, gjord bara vid snickarbänken av den som kan tekniken. Byn tänder med det bästa tänddon den har: borren ger eld på ungefär tre försök i stället för flintans tretton och tar 2 hö och 1 pinne per försök, håller 60 försök, och flintan gäller igen när borren gått sönder. Med en borr behövs ingen flinta',
   kor: () => {
     const { igniterOf, tryLight, canLight, newTing, nTools, BYN, RECEPT, TEK, IGNITERS } = SIM;
     const s = createState(1, START); klockan(s, 10); tandEld(s, 6);
@@ -1510,7 +1510,7 @@ SCENARIER.bagborr = {
     const gjord = nTools(b, 'bagborr') >= 1 && (b.stat?.bagborrarGjorda ?? 0) >= 1;
     return [
       [`bågborren görs av 1 ved, 2 grenar och 1 rep bara vid snickarbänken, med tekniken på nivå 4 efter snickarbänken och repet`, regler],
-      [`borren ger eld på ungefär tre försök där flintan tar sexton (${forsok.map(x => x.toFixed(1)).join(' mot ')} utan lärandet och skickligheten, alltså ${(forsok[0] / forsok[1]).toFixed(1)} gånger färre)`, forsok[0] / forsok[1] > 4 && forsok[0] / forsok[1] < 7],
+      [`borren ger eld på ungefär tre försök där flintan tar tretton (${forsok.map(x => x.toFixed(1)).join(' mot ')} utan lärandet och skickligheten, alltså ${(forsok[0] / forsok[1]).toFixed(1)} gånger färre)`, forsok[0] / forsok[1] > 3.5 && forsok[0] / forsok[1] < 7],
       [`med flinta och borr tänder den som kan tekniken med borren (${flintaFore} utan borr, ${medBada} med), de andra med flintan (${annan}; ${ingenKan} när ingen kan den)`, flintaFore === 'flinta' && medBada === 'bagborr' && annan === 'flinta' && ingenKan === 'flinta'],
       [`ett försök tar 2 hö och 1 pinne, och ingen flinta (${ho} hö, ${grenar} grenar, ${flTagen === 0 ? 'flintan kvar' : 'flintan tagen'})`, ho === 2 && grenar === 1 && flTagen === 0],
       [`utan flinta men med borren kan byn tända, och ingen letar flinta till elden (${malFore} flinta utan borren, ${malMed} med)`, utanFlinta && malFore >= 1],

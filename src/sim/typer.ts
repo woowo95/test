@@ -520,9 +520,9 @@ export const HEARTHS: Hearth[] = [
 // chance = chans per försök, grass/sticks = tändmaterial per försök, minutes = tid per försök
 export interface Igniter { id: string; name: string; chance: number; grass: number; sticks: number; minutes: number; tek?: string; med?: string; slits?: number } // tek = tekniken den som tänder ska kunna (annars id), med = det som behövs bredvid (flintan som stålet slås mot), slits = så många försök redskapet håller (steg 12.2.12)
 export const IGNITERS: Igniter[] = [
-  { id: 'flinta', name: 'Flinta', chance: 0.025, grass: 3, sticks: 3, minutes: 15 },
-  { id: 'bagborr', name: 'Bågborr', chance: 0.13, grass: 2, sticks: 1, minutes: 10 }, // steg 10.6.13: ungefär tre försök där flintan tar sexton; håller ELD.borrForsok försök
-  { id: 'eldstal', name: 'Eldstål och flinta', chance: 0.45, grass: 1, sticks: 1, minutes: 5, tek: 'smedja', med: 'flinta', slits: 400 }, // steg 12.2.12: smids i smedjan
+  { id: 'flinta', name: 'Flinta', chance: 0.035, grass: 3, sticks: 3, minutes: 2 },
+  { id: 'bagborr', name: 'Bågborr', chance: 0.13, grass: 2, sticks: 1, minutes: 2 }, // steg 10.6.13: ungefär tre försök där flintan tar tretton; håller ELD.borrForsok försök
+  { id: 'eldstal', name: 'Eldstål och flinta', chance: 0.45, grass: 1, sticks: 1, minutes: 2, tek: 'smedja', med: 'flinta', slits: 400 }, // steg 12.2.12: smids i smedjan
 ];
 
 // nyckeltalen i tal-ordning: [tid, värde, värde, …] per timme och per dygn, och krönikans rader [tid, text]
