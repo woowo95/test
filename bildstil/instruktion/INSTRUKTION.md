@@ -1,10 +1,6 @@
 # Så ritas bilderna till Samhällssimulatorn
 
-Klistra in hela den här texten till den AI som ska rita, tillsammans med bilderna i samma mapp:
-- `0-paletten.png`: de 32 färgerna;
-- `1-byn.png`: byn som den ser ut i spelet;
-- `2-djur.png`: godkända djur;
-- `3-saker.png`: godkända saker och stationer.
+Ge hela det här dokumentet till den AI som ska rita. Bilderna i dokumentet är facit för stilen.
 
 Skriv sist vad som ska ritas, till exempel: "Rita en jordgubbsplanta som växer på en ruta av åkern, tre versioner."
 
@@ -16,7 +12,9 @@ Du ritar pixelkonst till ett spel, en by av nordbor under järnåldern.
 
 - Allt syns på en karta som ses snett uppifrån.
 - Stilen är smutsig och dämpad, med jordiga mid century-färger (avokadogrönt, senap och rost).
-- Bilderna du får (paletten, byn, djuren och sakerna) är facit för stilen. Det nya ska se ut att höra hemma bland dem.
+- Bilderna i dokumentet (paletten, byn, djuren och sakerna) är facit för stilen. Det nya ska se ut att höra hemma bland dem.
+
+![Byn som den ser ut i spelet, tre gånger större](1-byn.png)
 
 ## Svara så här
 
@@ -35,6 +33,8 @@ Svara med en bild per version som JSON, inget annat:
 ## Paletten: 32 färger, inga andra
 
 Varje material har fyra toner, från mörkast (0) till ljusast (3). Tecknet står först, sedan färgen.
+
+![Paletten: tecknet, tonen och färgkoden](0-paletten.png)
 
 | Material | 0 (mörkast) | 1 | 2 | 3 (ljusast) | Används till |
 |---|---|---|---|---|---|
@@ -71,6 +71,8 @@ Kartan är rutor på 16 × 16 punkter. Allt ritas i sin riktiga storlek mot ruta
 
 När något ritas om behåller det sin storlek, om inget annat sägs.
 
+![Godkända saker och stationer på gräset, sex gånger större: jordgubbar, lerkruka, korg, kniv, slaktbänk, bord och kista](3-saker.png)
+
 ## Grundreglerna
 
 1. **Snett uppifrån.** Allt ses lite uppifrån, som kartan, aldrig som en platt ritning rakt från sidan eller rakt ovanifrån. Undantaget är väggar, som ses helt uppifrån som ett band.
@@ -95,12 +97,14 @@ När något ritas om behåller det sin storlek, om inget annat sägs.
     - det som ligger på ytan ritas ovanifrån;
     - inget att sitta på framför.
 14. **Det som finns används.** Bygger en ny sak på något som redan finns (en järnyxa på flintyxan, en tam hund på vargen), ritas den från den befintliga bilden, och bara skillnaden ändras.
-15. **Inga nya behållare.** Ligger något i en kruka är det lerkrukan i `3-saker.png`, oförändrad; bara innehållet i öppningen är nytt.
+15. **Inga nya behållare.** Ligger något i en kruka är det lerkrukan på bilden med sakerna, oförändrad; bara innehållet i öppningen är nytt.
 16. **Tre versioner är tre idéer.** När flera versioner ska göras skrivs först tre idéer i ord, som skiljer sig i form eller byggsätt och inte bara i färg. Varje idé ritas sedan för sig. Idén skrivs i `ide`.
 
 ## Djur
 
-Djuren är det svåraste. Titta noga på `2-djur.png` innan du ritar; de djuren är godkända.
+Djuren är det svåraste. Titta noga på bilden nedan innan du ritar; de djuren är godkända.
+
+![Godkända djur på gräset, sex gånger större: ko, får, get, gris, hund från sidan och framifrån, höns och vildsvin](2-djur.png)
 
 - **Från sidan, lite uppifrån, stående på alla fyra benen.** Huvudet åt vänster eller höger; spelet speglar bilden när djuret vänder.
   - Ingen ställning som springer, sitter, ligger eller anfaller.
