@@ -26,7 +26,7 @@ import { brandHetta, brandUndan, brandVal, hjalpaVal, slackaSigVal } from './bra
 import { foodDays, foodDaysAll } from './ekonomi';
 import { ACTS, WORK, redskapTal, usesTool } from './handlingar';
 import { flyttaEldVal } from './eldflytt';
-import { eldaVal, tandaVal, tandStalle, eldFor, eldXY, nagonGlod, eldarOf, emberOn, vidEld, needStones, needTinder, woodDays } from './eld';
+import { tandStalle, eldFor, eldXY, nagonGlod, eldarOf, emberOn, vidEld, needStones, needTinder, woodDays } from './eld';
 import { ALDER, KROPP, REL, ageOf, count, enTill, enTillDar, familjOf, isSick, living, relKey, stat } from './folk';
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
@@ -301,8 +301,8 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
   // det som görs vid elden men fortare vid en station (lerkrukan på drejskivan, steg 12.4.1; sländan i vävstolen): vid stationen när byn har en
   if (plats === 'elden' && d.hantverk) { const st = stationFor(s, act, p); if (st && stationDef(st.k)?.fart?.[act]) { const at = vidStation(st); return { x: at.x + (rnd(s, 'val', p) - 0.5) * 0.6 * storlekAv(st).w, y: at.y }; } }
   const eb = plats === 'elden' ? eldFor(s, p) : undefined, f = eb ? eldXY(s, eb) : eldPlats(s); // vid elden: vid den brinnande lägereld man hör till, annars den närmaste som brinner (steg 6.3.1)
-  // det som görs utan bänk görs inne i byn och inte vid elden (steg 2.10.6); när det är kallt sätter man sig vid elden som förut, för värmens skull
-  const iByn = d.slag === 'hantverk' && (plats === 'elden' || plats === 'station' && !stationFor(s, act, p)) && coldOf(temperature(s)) === 0;
+  // det som görs utan bänk görs inne i byn och inte vid elden (steg 2.10.6), också när det är kallt: den som fryser går till elden genom värmen (varme.ts)
+  const iByn = d.slag === 'hantverk' && (plats === 'elden' || plats === 'station' && !stationFor(s, act, p));
   if (iByn && nederbord(s)) { const sal = samlingRum(s); if (sal) return punktIRuta(s, pick(s, friaRutor(s, sal.tiles), 'val', p), p); } // i regnet under tak (steg 2.11.1)
   if (iByn) return hantverkIByn(s, p);
   if (plats === 'skugga') return skuggaHar(s, p) ?? { x: p.x, y: p.y };
@@ -539,9 +539,6 @@ const varmeRad = (c: Ctx, why: string) => {
   };
   return varmeSatt(s, p).satt.some(x => x.gor(h));
 };
-// raderna elda och tanda (steg 12.1.76): ved på elden och att tända den, med eldens önskan, plikten och avståndet som poäng
-const eldaRad = ({ s, p, v }: Ctx) => { const d = eldaVal(s, p); if (!d) return false; v.spot = d.spot; v.dur = d.dur; v.ref = d.ref; return set(v, 'elda', d.why); };
-const tandaRad = ({ s, p, v }: Ctx) => { const d = tandaVal(s, p); if (!d) return false; v.spot = d.spot; v.dur = d.dur; v.ref = d.ref; v.brand = d.brand; v.kalla = d.kalla; return set(v, 'tanda', d.why); };
 export interface Arbete {
   id: string; niva: Niva;
   nar?: 'dag' | 'natt'; // utan nar: både dag och natt
@@ -712,10 +709,6 @@ export const ARBETEN: readonly Arbete[] = [
   // 4 Grundbehov (toa, värme, vatten, vila, mat). En lat person tillgodoser dem tidigare än en flitig
   { id: 'gammalSover', niva: 4, nar: 'natt', prova: ({ s, p, v, a }) => a > ALDER.sovGammal && rnd(s, 'val', p) < VAL.gammalSover && set(v, 'sova', 'Är gammal och sover på natten') },
   { id: 'toa', niva: 4, prova: ({ p, v, lazy }) => p.toa < KROPP.toaBehov + KROPP.latToa * lazy && set(v, 'toa', 'Behöver gå på toa') },
-  // elden före vilan, maten och värmen vid den (steg 12.1.229): den som hör till en eld som vill ha ved eller är släckt sköter den
-  // först. Förut valde elden själv någon som var vaken och avbröt hen (före steg 12.1.76)
-  { id: 'elda', niva: 4, prova: c => eldaRad(c) },
-  { id: 'tanda', niva: 4, prova: c => tandaRad(c) },
   { id: 'fryser', niva: 4, prova: c => fryser(c) && varmeRad(c, 'Fryser') }, // den som fryser värmer sig (varmeRad)
   { id: 'torstig', niva: 4, prova: ({ s, p, v, lazy }) => torstig(p, lazy) && dricka(s, p, v) },
   // örtteet (steg 9.5.8 och 10.2.34): den som är sjuk, fryser eller har ett infekterat sår och är hemma väljer att dricka te

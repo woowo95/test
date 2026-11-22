@@ -275,7 +275,7 @@ SCENARIER.funktion = {
     // brinner elden går den som ska värma sig till elden, om det inte är minst lika varmt i samlingshuset (lätt kyla:
     // huset förlorar lite värme, elden ger mer). Samtalet får vara inne då
     Object.assign(s.fire, { lit: true, fuel: 4 });
-    const sal = samlingRum(s)!, frys = living(s)[1], varmInne = varmeSatt(s, frys).satt[0]?.satt !== 'eld', samtalInne = varmareInne(s, sal, 0.02);
+    const sal = samlingRum(s)!, frys = living(s)[1], varmInne = ['samling', 'badd'].includes(varmeSatt(s, frys).satt[0]?.satt ?? ''), samtalInne = varmareInne(s, sal, 0.02);
     s.fire.lit = false; s.fire.fuel = 0;
     // sovplatserna räcker inte: samlingshuset blir en sovsal igen
     kom(); stepByggnader(s);

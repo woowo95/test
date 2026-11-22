@@ -68,6 +68,8 @@ const brannd = (s: State, id: number | undefined) => eldarOf(s).find(x => x.id =
 
 // sätten att bli varm. satt(l) ger sättets möjligheter just nu (inga när det inte går)
 export const VARMA: { id: string; satt: (l: VarmeLage) => (VarmeSatt | undefined)[] }[] = [
+  // stanna där man redan blir varmare (tätt intill elden eller i ett varmt hus)
+  { id: 'stanna', satt: l => l.har > 0 ? [{ satt: 'stanna', g: l.har, gor: h => { h.v.spot = { x: l.p.x, y: l.p.y }; return h.satt('varma', h.why); } }] : [] },
   // sätta sig vid en eld som brinner, så länge bränslet räcker (eller hela horisonten när någon lägger på ved)
   { id: 'eld', satt: l => eldarOf(l.s).filter(f => f.lit).map(f => {
     const I = eldStyrka(f.fuel, hearthOf(f)), v = l.vidEld(f, I), fylls = living(l.s).some(q => q.task?.act === 'elda' && (q.task.ref ?? l.s.fire.id) === f.id);
@@ -102,7 +104,7 @@ export const VARMA: { id: string; satt: (l: VarmeLage) => (VarmeSatt | undefined
 // horisonten för den som har värmen w: kort för den som är extremt kall, lång för den som just börjat frysa
 export const horisont = (w: number) => VARME.horisontKort + (VARME.horisontLang - VARME.horisontKort) * Math.max(0, Math.min(1, (w - KROPP.farligt) / (KROPP.kallt - KROPP.farligt)));
 
-// sätten att bli varm för p, bäst först, och värmen där hen är nu (har). Bara det som gör hen varmare än att stanna är med
+// sätten att bli varm för p, bäst först, och värmen där hen är nu (har). Bara det som gör hen minst lika varm som att stanna är med (den som redan sitter varmast sitter kvar)
 export function varmeSatt(s: State, p: Person): { har: number; H: number; satt: VarmeSatt[] } {
   const inRum = new Map<number, number>();
   for (const q of living(s)) { const r = roomAt(s, q.x, q.y); if (r) inRum.set(r.id, (inRum.get(r.id) ?? 0) + 1); }
@@ -120,6 +122,6 @@ export function varmeSatt(s: State, p: Person): { har: number; H: number; satt: 
   // en eld som tänds eller får ved efter t timmar: med bränslet då, och efter det fyller byn på den. fran: där man går till elden från
   const ny = (f: Fire, t: number, bransle: number, varar = H, fran: { x: number; y: number } = p) => { const v = vidEld(f, eldStyrka(bransle, hearthOf(f))); return snitt(t + tid(v.at.x, v.at.y, fran), v.r, varar); };
   const l: VarmeLage = { s, p, har, H, inRum, vuxen: ageOf(p, s.now) >= ALDER.vuxen, takt, tid, snitt, vidEld, ny };
-  const ut = VARMA.flatMap(r => r.satt(l)).filter((x): x is VarmeSatt => !!x && x.g > har);
+  const ut = VARMA.flatMap(r => r.satt(l)).filter((x): x is VarmeSatt => !!x && x.g >= har);
   return { har, H, satt: ut.sort((a, b) => b.g - a.g) };
 }

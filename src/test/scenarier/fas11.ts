@@ -4977,7 +4977,7 @@ SCENARIER.vacktspar = {
     const vSt = SIM.sparStorlek(s).filter(d => d.del.startsWith('vackt'));
     const fore = (s.vackta ?? []).map(hash), efter = (inl.vackta ?? []).map(hash);
     kor(inl, 3); kor(inl2, 3); // talen avrundas när de sparas, så den inlästa byn jämförs med en annan inläsning
-    const il = (inl.vackta ?? []).map(hash).join(), il2 = (inl2.vackta ?? []).map(hash).join(), tid = (b: SIM.State) => b.now + (b.skuld ?? 0) * 1000, klara = (inl.vackta ?? []).every(b => b.vackI === undefined && Math.abs(tid(b) - tid(inl)) < 1); // skulden är det som ännu inte räknats av slaget
+    const il = (inl.vackta ?? []).map(hash).join(), il2 = (inl2.vackta ?? []).map(hash).join(), tid = (b: SIM.State) => b.now + (b.skuld ?? 0) * 1000, klara = (inl.vackta ?? []).every(b => b.vackI === undefined && Math.abs(tid(b) - inl.now) < 1); // skulden är det som ännu inte räknats av slaget; de väckta räknas fram till huvudbyns tid efter varje slag i den
     return [
       ['två väckta byar, en mitt i väckningen (' + (s.vackta ?? []).map(b => b.vackI ?? 'klar').join(', ') + ')', s.vackta?.length === 2],
       ['de väckta byarna har egna delar (' + delar.filter(d => d.startsWith('vackt')).length + ')', delar.includes(`vackt${rader[0].nr}-byn`) && delar.includes(`vackt${rader[0].nr}-folket`) && delar.includes(`vackt${rader[1].nr}-byn`)],
@@ -4987,7 +4987,7 @@ SCENARIER.vacktspar = {
       ['de inlästa byarna är desamma', fore.length === 2 && fore.join() === efter.join()],
       ['de inlästa byarna delar huvudbyns värld', (inl.vackta ?? []).every(b => b.varld === inl.varld)],
       ['de inlästa byarna går vidare lika varje gång', il !== '' && il === il2],
-      ['de går med huvudbyn, och den halvt väckta blev färdig (' + (inl.vackta ?? []).map(b => (b.vackI ?? 'klar') + ' ' + Math.round((tid(inl) - tid(b)) / 1000) + ' s efter').join(', ') + ')', klara],
+      ['de går med huvudbyn, och den halvt väckta blev färdig (' + (inl.vackta ?? []).map(b => (b.vackI ?? 'klar') + ' ' + Math.round((inl.now - tid(b)) / 1000) + ' s efter').join(', ') + ')', klara],
     ];
   },
 };

@@ -461,7 +461,7 @@ const byFryser = (ppl: Person[]) => ppl.reduce((a, p) => a + clamp(ELD.byFryser 
 // de eldar p hör till: den p sitter vid eller är på väg till, och hemelden
 const eldarFor = (s: State, p: Person) => { const hem = hemEld(s, p); return eldarOf(s).filter(f => f === hem || sitterVid(s, p, f)); };
 // elden brinner, och den största önskan om ved på varje eld räknas (fliken Elden, tändningen i valet). Vem som lägger på ved
-// och tänder väljs i valet av aktivitet (eldaVal och tandaVal, raderna elda och tanda i ARBETEN, steg 12.1.76)
+// och tänder väljs i valet av aktivitet som sätt att bli varm (eldaVal och tandaVal, raderna elda och tanda i VARMA, varme.ts)
 export function stepFire(s: State, dtSec: number, ppl: Person[]) {
   const alla = eldarOf(s);
   for (const e of alla) brinner(s, e, dtSec);
@@ -486,7 +486,7 @@ function skots(s: State, f: Fire) {
   const ordning = [...alla].sort((a, b) => (b.brukare ?? 0) - (a.brukare ?? 0) || (a.id ?? -1) - (b.id ?? -1));
   return ordning.indexOf(f) < racker;
 }
-// raden elda i valet av aktivitet (steg 12.1.76): p lägger ved på en eld hen hör till när hens önskan är klart över det som
+// sättet elda i värmen (VARMA i varme.ts): p lägger ved på en eld hen hör till när hens önskan är klart över det som
 // ligger på. Poängen är önskan över bränslet gånger plikten, minus avståndet; en i taget vid varje eld
 export function eldaVal(s: State, p: Person): { spot: { x: number; y: number }; dur: number; ref?: number; why: string; mal: number } | undefined {
   if (ageOf(p, s.now) < ALDER.hjalper || fuelStock(s) < ELD.hamtaMin || fuelFor(s, p) < ELD.hamtaMin) return undefined; // bara den som har ved att ta (byns eller sin egen)
@@ -503,7 +503,7 @@ export function eldaVal(s: State, p: Person): { spot: { x: number; y: number }; 
   const k = takeLimit(s, 'ved', p) >= 1 ? 'ved' : 'grenar';
   return { spot: fetchSpot(s, k, p, () => takeLimit(s, k, p)), dur: ELD.hamtaTim * HOUR, ref: bast.f.id, why: bast.why, mal: bast.mal };
 }
-// raden tanda (steg 12.1.76): en släckt eld som någon som hör till den vill ha tänds av en som kan, en i taget vid varje eld.
+// sättet tanda i värmen (VARMA i varme.ts): en släckt eld som någon som hör till den vill ha tänds av en som kan, en i taget vid varje eld.
 // Med en brand går hen först till elden som brinner (steg 10.6.12), annars direkt till eldstaden
 export function tandaVal(s: State, p: Person): { spot: { x: number; y: number }; dur: number; ref?: number; why: string; brand?: 'hamta' | 'bar'; kalla?: number } | undefined {
   if (ageOf(p, s.now) < ALDER.ansvar) return undefined;
