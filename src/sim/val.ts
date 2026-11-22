@@ -551,6 +551,9 @@ export interface Arbete {
   // 0 = raden gäller inte nu. full: raden har sina arbetare, och poängen blir VAL.fullRad gånger så stor; har alla rader
   // som gäller sina arbetare går man till nästa nivå
   poang?: (c: Ctx) => number; full?: (c: Ctx) => boolean;
+  // ett pass (vaktpasset): den som har börjat göra handlingen pass håller på med den tills raden inte längre väljer den,
+  // och bara Fara och Nöd (nivå 1–2) går före (fliken Människan, Nattvakten)
+  pass?: Act;
 }
 // raderna på Förbättra med poäng (steg 10.2.3). Varje rad säger vad den skulle göra (kandidat: poängen och det som görs) eller
 // inget. Kandidaten räknas en gång per val (Ctx.fb), så att poängen och valet blir samma sak
@@ -742,7 +745,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'ata', niva: 4, prova: ({ s, p, v }) => ataVal(s, p, v) },
   { id: 'utbrott', niva: 4, nar: 'dag', prova: ({ s, p, v }) => utbrottVal(s, p, v) },
   // nattens vakt (byts varje natt kl. 7)
-  { id: 'vakt', niva: 6, nar: 'natt', prova: ({ s, p, v, a }) => vaktVal(s, p, v, a) },
+  { id: 'vakt', niva: 6, nar: 'natt', pass: 'vakt', prova: ({ s, p, v, a }) => vaktVal(s, p, v, a) },
   // barnen leker; de lite större hjälper till (raden arbete)
   { id: 'leka', niva: 9, nar: 'dag', prova: ({ s, v, a }) => a < ALDER.hjalper && set(v, 'leka', lekText(s)) },
   // ett framträdande vid scenen eller elden (steg 4.3.2 och 10.7.9, framtradande.ts): den som vill uppträda kallar
@@ -924,6 +927,7 @@ export const ARBETEN: readonly Arbete[] = [
 ];
 
 // raderna med poäng per nivå (steg 6.2.18)
+const PASS = new Set(ARBETEN.flatMap(r => r.pass ? [r.pass] : [])); // handlingarna som är pass
 const POANGRADER = Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => [n, ARBETEN.filter(r => r.niva === n && r.poang)])) as Record<Niva, Arbete[]>;
 // den rad som har högst poäng; en rad som har sina arbetare väger VAL.fullRad. Har alla rader som gäller sina arbetare finns
 // ingen vinnare, och man går till nästa nivå. Lika poäng: registrets ordning
@@ -949,19 +953,25 @@ function valjTask(s: State, p: Person) {
   const c: Ctx = { s, p, v, a, lazy, light }, nar = light ? 'dag' : 'natt';
   let rad: Arbete | undefined, kortat = false, vagd = 0;
   const galler = (r: Arbete) => !(r.nar && r.nar !== nar || !vaderTillater(s, r.vader)); // villkoren på raden (steg 6.1.12)
-  for (const r of ARBETEN) {
-    if (!galler(r)) continue;
-    if (r.niva > 4 && light && !kortat) { v.dur *= VAL.pass; kortat = true; }
-    if (r.poang) { // raderna med poäng på nivån vägs mot varandra en gång (steg 6.2.18)
-      if (vagd === r.niva) continue;
-      vagd = r.niva;
-      const w = vinnare(c, POANGRADER[r.niva].filter(galler));
-      if (w?.prova(c)) { rad = w; break; }
-      continue;
+  const forsok = (rader: readonly Arbete[]) => {
+    for (const r of rader) {
+      if (!galler(r)) continue;
+      if (r.niva > 4 && light && !kortat) { v.dur *= VAL.pass; kortat = true; }
+      if (r.poang) { // raderna med poäng på nivån vägs mot varandra en gång (steg 6.2.18)
+        if (vagd === r.niva) continue;
+        vagd = r.niva;
+        const w = vinnare(c, POANGRADER[r.niva].filter(galler));
+        if (w?.prova(c)) { rad = w; return true; }
+        continue;
+      }
+      if ((r.arbetar || r.forb) && !dag(c).works || r.forb && !forbNu(c) || r.minAlder !== undefined && a < r.minAlder) continue; // villkoren i den ordning raderna prövade dem
+      if (r.prova(c)) { rad = r; return true; }
     }
-    if ((r.arbetar || r.forb) && !dag(c).works || r.forb && !forbNu(c) || r.minAlder !== undefined && a < r.minAlder) continue; // villkoren i den ordning raderna prövade dem
-    if (r.prova(c)) { rad = r; break; }
-  }
+    return false;
+  };
+  // den som håller på med ett pass (vaktpasset) fortsätter med det, och bara Fara och Nöd går före; är passet slut väljs som vanligt
+  const pass = p.task && PASS.has(p.task.act) ? p.task.act : undefined;
+  if (!pass || !forsok(ARBETEN.filter(r => r.niva <= 2 || r.pass === pass))) forsok(pass ? ARBETEN.filter(r => r.niva > 2) : ARBETEN);
   // buden (steg 8.6.8): den troende låter bli det som är förbjudet och vilar på vilodagen. Svält och kyla går före, men kostar
   if (rad && rad.niva > 2) {
     const id = budForbjuder(s, p, v.act), tabu = id ? undefined : raddFor(s, p, v.act); // och låter bli det hen är rädd nog för (steg 8.4.10)
@@ -1523,12 +1533,14 @@ export function vaktHot(s: State) {
   return VAL.vaktBas + VAL.vaktVarg * varg + VAL.vaktRovare * (1 - efterAnfall(s)) + VAL.vaktVarsel * (living(s).some(q => q.varsel) ? 1 : 0) + VAL.vaktPabud * pabud(s, 'vakt') + FANG.nattVakt * fangar(s).length; // fångarna (steg 11.12.5)
 }
 // nattens vakter: de modigaste av de vuxna som orkar, med lite slump, byts varje natt
+// ledig: den som inte håller på med något, eller bara vilar eller sover (nattens vakter väljs bland dem; den som lyssnar på ett kväde eller arbetar är inte ledig)
+const ledig = (q: Person) => !q.task || q.task.paus || ACTS[q.task.act].slag === 'vila';
 function vaktVal(s: State, p: Person, v: Val, a: number) {
   const now = s.now;
   const guardDay = yearNo(s, now - VAL.vaktByte * HOUR); // vaktdygnet är kalenderns dygn, förskjutet så att det byts kl. 7
   if (guardDay !== s.lastGuardDay) {
     // välj nattens vakter bland de vuxna som orkar (den sjuka, svaga eller skadade sover), byts varje natt
-    const adults = living(s).filter(q => ageOf(q, now) >= ALDER.vaktFran && ageOf(q, now) < ALDER.vaktTill && !isSick(q, now) && halsa(q) >= KROPP.svag && kanGa(q) && !vilaHellre(q) && q.task?.act !== 'strid' && !skams(q, now)); // inte den som slåss (strid.ts) eller skäms
+    const adults = living(s).filter(q => ageOf(q, now) >= ALDER.vaktFran && ageOf(q, now) < ALDER.vaktTill && !isSick(q, now) && halsa(q) >= KROPP.svag && kanGa(q) && !vilaHellre(q) && q.task?.act !== 'strid' && !skams(q, now) && (q === p || ledig(q))); // inte den som slåss (strid.ts) eller skäms
     if (adults.length) {
       s.lastGuardDay = guardDay;
       // ett slumptal per vuxen i byns ordning, sedan de högsta (inte i sorteringens jämförelser: deras antal beror på webbläsaren)
