@@ -2,215 +2,214 @@
  "kort": "f9_jordgubbsplanta",
  "namn": "Jordgubbsplantan",
  "slag": null,
- "vad": "Steg 9.7.9: jordgubbsplantan är låg med tandade blad och röda bär, och sprider utlöpare. Här plantan på en ruta av fältet. Din kommentar förra gången: ”gör dem mer röda”",
+ "vad": "Steg 9.7.9: jordgubbsplantan är låg med tandade blad och röda bär, och sprider utlöpare. Här plantan på en ruta av fältet, större och med större och tydligare bär. Din kommentar förra gången: ”gör plantan större och jorgubbarna större och tydligare”",
  "av": "API:t (claude-opus-5-5), tre idéer",
- "kommentar": "Gör så dem ser röda ut dem är orangea just nu",
  "versioner": [
   {
    "bilder": [
     {
-     "namn": "jordgubbsplanta_1",
+     "namn": "f9_jordgubbsplanta_ung",
      "rader": [
-      "GFGGFGHFGGFGFGGF",
+      "GFGHGFGGFGHGFGGF",
+      "FGFGFFGFGFFGFGFF",
+      "EFEFEEFEEFEFEEFE",
+      "GHGFGGHGFGGHGFGG",
+      "FGFFGFGFFGFGFFGF",
+      "EFEEFEMFMEFEEFEE",
+      "GFGHGMPMOMHGFGGF",
+      "FGFGMPPOOXMGFGFF",
+      "EFEMPOMNMOXMEEFE",
+      "GHGFMOXNXXMHGFGG",
+      "FGFFGMMNMMFGFFGF",
+      "EFEEFEEFEEFEEFEE",
+      "GFGHGFGGFGHGFGGF",
+      "FGFGFFGFGFFGFGFF",
+      "FEFFEFFEFFEFFEFF",
+      "EEEEEEEEEEEEEEEE"
+     ]
+    },
+    {
+     "namn": "f9_jordgubbsplanta_blommar",
+     "rader": [
+      "GFGHGFGGFGHGFGGF",
+      "FGFGFFMMGMMGFGFF",
+      "EFEMEMPPMOOMEMFE",
+      "GHMPMPPOMPOOMOMG",
+      "FMPPOPOOMOOXOOXM",
+      "EMPOOOOMOOXOXXME",
+      "GFMOOXMNMXOXXMGF",
+      "FMPOMONONMOPOMFF",
+      "FMOOXOMNMXOOXXME",
+      "GMOXXMHNFMXXXMGG",
+      "FGFwGFGFFwFGFNGF",
+      "EFwKqEEFwKqEMPOE",
+      "GFGqGFGGFqHGOXMF",
+      "FGFGFFGFGFFGFMFF",
+      "FEFFEFFEFFEFFEFF",
+      "EEEEEEEEEEEEEEEE"
+     ]
+    },
+    {
+     "namn": "f9_jordgubbsplanta_mogen",
+     "rader": [
+      "GFGHGFGGFGHGFGGF",
+      "FGFGFFMMGMMGFGFF",
+      "EFEMEMPPMOOMEMFE",
+      "GHMPMPPOMPOOMOMG",
+      "FMPPOPOOMOOXOOXM",
+      "EMPOOOOMOOXOXXME",
+      "GFMOOXMNMXOXXMGF",
+      "FMPOMONONMOPOMFF",
+      "FMOOXOMNMXOOXXME",
+      "GMOXXMHNFMXXXMGG",
+      "FGNONFGFNONGFNGF",
+      "EFtsrEEFtsrEMPOE",
+      "GFsrrFGGsrrGOXMF",
+      "FGFrFFGFGrFGFMFF",
+      "FEFFEFFEFFEFFEFF",
+      "EEEEEEEEEEEEEEEE"
+     ]
+    }
+   ],
+   "anteckning": "Plantan står mitt på en ruta av den fårade åkern (16 × 16 punkter, ljusare fårkammar, mörkare fåror och en mörk framkant), och den ses snett ovanifrån. Jordgubbsplantan är en låg rosett av tandade blad i oliv. Bladen har kontur i oliv0 och den ljusaste tonen uppe till vänster. Efter kommentaren täcker rosetten nu nästan hela rutans bredd. Bären är större: varje bär är 5 punkter brett och 5 högt, med grönt foder upptill, rostrött kött, en ljus punkt uppe till vänster och en spets nedåt. Bären hänger på varsin sida framför bladen, där de syns först mot den mörka jorden. En utlöpare går ut åt höger mot kanten. Kortet visar tre stadier av samma planta: ung rosett, blommande och mogen med bär. Ingen behållare och ingen sittplats hör till bilden. Granskningen: Rättat i blommar och mogen. Bären var stora orange koner på 5 punkter, som liknade morötter. Nu är de små jordgubbar på 3 × 3 punkter: en grön foderkrona (NON) överst, rost1 och rost2 i bäret, rost0 som kontur nedåt och en enda punkt rost3 som glans uppe till vänster. Blommorna och bären är flyttade till kolumn 2–4 och 8–10 så att det finns plats för en utlöpare. Idén krävde utlöpare, och de saknades: nu går en tunn stjälk ut från plantans högra kant ner till en liten dotterplanta i rutans nedre högra hörn. De ensamma olivprickarna (NN) vid högerkanten på rad 10 är borttagna. Bladen på rad 7–8 gick ända ut till rutans vänsterkant och skulle ha vuxit ihop med grannrutan; de är dragna in en punkt. Den unga plantan och jorden är oförändrade.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f9_jordgubbsplanta_ung",
+     "rader": [
+      "GHGGHGGGHGGHGGGF",
+      "GGFGGGHGGFGGGHGF",
+      "FGGFGFGGFGGFGGFF",
+      "EFEEFMEEMEEFEEEE",
+      "GHGGMPMMPMGMHGGF",
+      "GGFMPPOMPOMOMFGF",
+      "FGMPOONMPONNMGFF",
+      "EEMPONMPPONNMEFE",
+      "HGGMONNMONNMGGHF",
+      "GGHGMMNMNMMGFGGF",
+      "FGFGGFGFGGFGGFFF",
+      "EFEEEFEEEFEEEFEE",
+      "GHGGHGGGHGHGGGGF",
+      "GGGFGGHGGFGGHGFF",
+      "FGFGFFGFGGFGFGFF",
+      "EEEFEEEEFEEEEFEE"
+     ]
+    },
+    {
+     "namn": "f9_jordgubbsplanta_blommande",
+     "rader": [
+      "GHGGHGMGHMGHGGGF",
+      "GGFMGMPMMPMGMHGF",
+      "FGMPMPPOMPOMOMFF",
+      "EMPPOPOONMPONNME",
+      "GMPOOOONMPPOONMF",
+      "GMPONOMNPPOONNMF",
+      "FMOONNMPPOONONMF",
+      "EMPONMPPOONNNNME",
+      "HMNOMNONNMNMNOMF",
+      "GGqGGFGqHGGGqGGN",
+      "FqLpGFqLpGFqLpFN",
+      "EFpEEFEpEFEEpFEN",
+      "GHGGHGGGHGHGGGGN",
+      "GGGFGGHGGFGGHMPM",
+      "FGFGFFGFGGFGMPOM",
+      "EEEFEEEEFEEEEMME"
+     ]
+    },
+    {
+     "namn": "f9_jordgubbsplanta_mogen",
+     "rader": [
+      "GHGGHGMGHMGHGGGF",
+      "GGFMGMPMMPMGMHGF",
+      "FGMPMPPOMPOMOMFF",
+      "EMPPOPOONMPONNME",
+      "GMPOOOONMPPOONMF",
+      "GMPONOMNPPOONNMF",
+      "FMOONNMPPOONONMF",
+      "EMPONMPPOONNNNME",
+      "HMNOMNONNMNMNOMF",
+      "GrtsrMMNOMMrtsrN",
+      "FrssrFrtsrFrssrN",
+      "ErsrrFrssrErsrrN",
+      "GHrrHGrsrrHGrrGN",
+      "GGGFGGHrrFGGHMPM",
+      "FGFGFFGFGGFGMPOM",
+      "EEEFEEEEFEEEEMME"
+     ]
+    }
+   ],
+   "anteckning": "Plantan står på en ruta av åkern (16 × 16, fårad jord i jordtoner med mörka fåror) och ses snett uppifrån som en låg rosett av tandade treflikiga blad, ljus oliv uppe till vänster och mörkare nere till höger, med kontur i oliv0. Enligt kommentaren är plantan nu större och täcker nästan hela rutans bredd. Bären är större (4 × 5 punkter) och tydligare: rost med grön foderkrans överst och en enda ljus glanspunkt. De hänger ut framför bladen mot jorden, där de syns mot det bruna. Jag har ritat tre stadier: ung rosett, blommande med ljusa blommor och mogen med tre röda bär. På de två senare går en utlöpare ner längs högerkanten till en liten dotterplanta i hörnet, så att man ser att plantan sprider sig. Ingen behållare och ingen skugga är ritad. Granskningen: Granskat mot reglerna: plantan står på en ruta fårad jord (16 × 16), ses snett uppifrån, har tandade blad i oliv med ljuset uppe till vänster och kontur i oliv0. Vita blommor och röda bär i rost (mättat där det ska synas) har bärform med glans uppe till vänster och rost0 som kontur. Utlöparen med en liten ny planta finns, och storleken stämmer mot kolonisten. Rättat: i den blommande och den mogna plantan gick bladmassan ända ut till rutans vänster- och högerkant i rad 5 och 7. På en åker där varje ruta har en planta skulle bladen då flyta ihop med grannrutornas till en enda häck. Jag drog in bladen en punkt, så att kanten är jord och konturen (oliv0) sitter innanför. Utlöparen mot högerkanten får stå kvar, eftersom den ska sprida sig mot nästa ruta. Den unga plantan är oförändrad.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "jordgubbsplanta_ung",
+     "rader": [
+      "GFGGFGGHGFGGFGGF",
       "FGFFGFFGFFGFFGFF",
-      "FFEFFFEFFFFEFFFE",
-      "EEEEEEMEEMEEEEEE",
-      "GFGGFMPMMPMGFGGF",
-      "FGFFMPPOPPOMFGHF",
-      "FFEMPOOMPOONMFEF",
-      "EEEMPOMOMONNMEEE",
-      "GFHGMONOMONMFGGF",
-      "FGFFGMMNNMMHFGFF",
-      "FEFFssFMNFssFFEF",
-      "EEEEsrEENEsrEEEE",
-      "GFGGFrGFGHFrFGGF",
-      "FGFFGHFGFFGFFGFF",
-      "FFEFFFEFFFFEFFEF",
-      "EEEEEEEEEEEEEEEE"
+      "EFEFFEFEFEFFEFEF",
+      "EEFEEEEFEEEFEEEE",
+      "GFGGMGMMMFMGFGGF",
+      "FGFMPMPOMPOMFGFF",
+      "EFMPOPONPOOOMFEF",
+      "EEMOONMOPNOOMEEE",
+      "GFGMONNMNOONMGGF",
+      "FGMOPONMNOONMGFF",
+      "EFEMMNMNMMNMEFEF",
+      "EEFEEMMFMMEFEEEE",
+      "GFGGFGGHGFGGFGGF",
+      "FGFFGFFGFFGFFGFF",
+      "EFEFFEFEFEFFEFEF",
+      "EEFEEEEFEEEFEEEE"
      ]
     },
     {
-     "namn": "jordgubbsplanta_2",
+     "namn": "jordgubbsplanta_blommar",
      "rader": [
-      "GFGGFGHFGGFGFGGF",
-      "FGFFGMFGMFGFFGFF",
-      "FFEFMPMMPMFMFFFE",
-      "EEEMPPOPPMMPMEEE",
-      "GFMPPOOMPOPPOMGF",
-      "FGMPOOMOPOOONMHF",
-      "FFMPOMNOMOONMFEF",
-      "EEEMONNOMNNMEEEE",
-      "GFssFMNNNMFssGGF",
-      "FGsrGssGNFFsrGFF",
-      "FEFrFsrFFNNNMPMF",
-      "EEEEEErEEEEEMOOM",
-      "GFGGFGGFGHFGFMMF",
-      "FGFFGHFGFFGFFGFF",
-      "FFEFFFEFFFFEFFEF",
-      "EEEEEEEEEEEEEEEE"
+      "GFMGMMMHMMMGMGGF",
+      "FMPMPOOMPOOMOMFF",
+      "EMPOOPONPOONOOMF",
+      "MPOOPONOOPONOOOM",
+      "MOPOONMOPONMOONM",
+      "FMOONOMNONMOONMF",
+      "MPOONMNNNMNOOONM",
+      "MOOOONMNMNOONNME",
+      "GMNONMMNMMNONMGF",
+      "FGqMGFMNMFNMqGFF",
+      "EqLqFEFqFENqLqEF",
+      "EEpEEEqLqENFpEEE",
+      "GFGGFGGpGFNGFGGF",
+      "FGFFGFFGFFGNMPMF",
+      "EFEFFEFEFEFMPOME",
+      "EEFEEEEFEEEFMMEE"
      ]
     },
     {
-     "namn": "jordgubbsplanta_3",
+     "namn": "jordgubbsplanta_mogen",
      "rader": [
-      "GFGGMGHMGGMGFGGF",
-      "FGFMPMMPMMPMFGFF",
-      "FFMPPOPPOMPPMFFE",
-      "EMPPOOMPOOPOOMEE",
-      "GMPOOMOPOMOONMGF",
-      "FGMOMNOMONMNMGHF",
-      "FssFMNONNONMFssF",
-      "EsrEMssNNssMEsrE",
-      "GFrGMsrNNsrMFGrF",
-      "FGFFssrGNFrHssFF",
-      "FEFFsrFNNFEFsrEF",
-      "ENNNErEEEEEEErNN",
-      "MPMGFGGFGHFGFMPM",
-      "MOMFGHFGFFGFFMOM",
-      "FMEFFFEFFFFEFFMF",
-      "EEEEEEEEEEEEEEEE"
+      "GFMGMMMHMMMGMGGF",
+      "FMPMPOOMPOOMOMFF",
+      "EMPOOPONPOONOOMF",
+      "MPOOPONOOPONOOOM",
+      "MOPOONMOPONMOONM",
+      "FMOONOMNONMOONMF",
+      "MPOONMNNNMNOOONM",
+      "MOOOONMNMNOONNME",
+      "GMNONMMNMMNONMGF",
+      "FtssrFMNMFNtssrF",
+      "EsusrEFNOENsusrF",
+      "ErsrrEtssrNrsrrE",
+      "GFrrFGsusrNFrrGF",
+      "FGFFGFrsrrGNMPMF",
+      "EFEFFEFrrEFMPOME",
+      "EEFEEEEFEEEFMMEE"
      ]
     }
    ],
-   "anteckning": "Plantan står på en ruta av åkern, 16 × 16 punkter med fårad jord i jord0–jord3, sedd snett ovanifrån som de andra plantorna. Den är låg: en rosett av tandade, tredelade blad i oliv med oliv0 som kontur. Ljuset kommer uppifrån vänster. Bären hänger ut från rosetten mot jorden. Jag har behållit de tre stegen från kortet: en ung planta, en mellanstor med en utlöpare och en småplanta, och en mogen med utlöpare åt båda hållen. Enligt kommentaren är bären nu tydligt röda: de är ritade i rost2 och rost1 med rost0 som skugga nertill och inget av det orange rost3. De är också fler och lite större, så att de är det man ser först på åkern. Granskningen: Granskat och lämnat oförändrat. Storleken stämmer: plantan står på en ruta av åkern (16 × 16) med fårad jord, låg och tydligt mindre än kolonisten. Vinkeln är snett uppifrån: bladrosetten syns ovanifrån och bären hänger fram mot betraktaren på jorden. Det finns ingen platt sidovy och ingen ritad markskugga. Ljuset faller från övre vänstra hörnet: oliv3 ligger uppe och till vänster på bladen, oliv1 och oliv0 nere och till höger. Bären har rost2 uppe till vänster, rost1 till höger och rost0 i spetsen. Konturen är materialets mörkaste ton, oliv0 runt bladen och rost0 i bärspetsen, och kol används inte. Bladkanten är hackig och läses som tandade blad. Bären är det mättade i bilden, eftersom de är maten och det som går att ta. Utlöparna (oliv1) med små dotterplantor syns i version 2 och 3, så idén följs. Plantan är ljusare och har kontur mot den mörka jorden, så den syns. Ingen behållare, sittplats eller bärning ingår, och spegelsymmetri krävs inte för en växt. Alla rader är 16 tecken och bara palettens tecken används.",
-   "ide": ""
-  },
-  {
-   "bilder": [
-    {
-     "namn": "jordgubbsplanta_version1",
-     "rader": [
-      "GHGGHGGGHGGHGGGF",
-      "GFGMPMGMPMGFGGFF",
-      "FFMPPOMPPOPMFFFE",
-      "EMPPOPOOPOONOMEE",
-      "GMPOPOOPONONNOMF",
-      "MPOPOONOONONNNMF",
-      "FMOONONONNONNMFE",
-      "EMNMNNMNMNNMNMOE",
-      "GONMGHGGHGGHGGNF",
-      "GtssrGFNONGFGGNF",
-      "FsusrGFtssrGMPPM",
-      "EErrEEEsusrEMONM",
-      "GHGGHGGGrrGHGMNF",
-      "GFGFGGFGGFGFGGFF",
-      "FFGFFGFFGFFGFFFE",
-      "EEEEEEEEEEEEEEEE"
-     ]
-    },
-    {
-     "namn": "jordgubbsplanta_version2",
-     "rader": [
-      "GHGGHGGGHGGHGGGF",
-      "GFMPMPMGGFGFGGFF",
-      "FMPPOPOMGFFGFFFE",
-      "EMPOPONMEMPMPMEE",
-      "GMOPONNMGMPOPOMF",
-      "GFMNONMGMPOONNMF",
-      "FFGMNMFFGMONNMFE",
-      "EEONMEEEEEMNMNOO",
-      "GHtssrGGGNONGGGF",
-      "GFsusrFGGtssrGFF",
-      "FFGrrGFFGsusrFFE",
-      "EEEEEEEEEErrEEEE",
-      "GHGGHGGGHGGHGGGF",
-      "GFGFGGFGGFGFGGFF",
-      "FFGFFGFFGFFGFFFE",
-      "EEEEEEEEEEEEEEEE"
-     ]
-    },
-    {
-     "namn": "jordgubbsplanta_version3",
-     "rader": [
-      "GHGGHGGGHGGHGGGF",
-      "GFGFGVPVGVPVGGFF",
-      "FFGVPXPVPXPXVFFE",
-      "EEVPXPXXPXXWXVEE",
-      "GVPXPXXPXWXWWXVF",
-      "GVXPXXWXXWXWWWVF",
-      "FqVXXWXWXWWWVVFE",
-      "quqVWVEVWVWNXNEE",
-      "GqGGNXNGHGGtssrF",
-      "GFGFtssrGFGsusrF",
-      "FFGFsusrGFFGrrFE",
-      "EEEEErrEEEEEEEEE",
-      "GHGGHGGGHGGHGGGF",
-      "GFGFGGFGGFGFGGFF",
-      "FFGFFGFFGFFGFFFE",
-      "EEEEEEEEEEEEEEEE"
-     ]
-    }
-   ],
-   "anteckning": "Plantan står mitt på en egen ruta av åkern: 16 × 16 punkter fårad jord med ljusa åsar och mörka fåror i jord, och en mörkare framkant längst ner. Bladen sitter samlade i en låg ruska i rutans övre del. Bären hänger under bladen ner mot jorden, och utlöparna kryper ut längs fåran. De tre bilderna är kortets tre versioner, med samma bladformer som förut: den runda olivruskan, de hjärtformade treblanden med utlöpare och den taggiga mörka barrgröna. Ändringen gäller bara bären, enligt Björns kommentar. De är nu röda i rost1 med rost0 i skuggan nere till höger. Rost2 finns kvar bara som en punkts glans uppe till vänster, så bären är röda och inte orange. Under varje bär sitter en spets och ovanför en liten grön foderkrans, så att bären syns mot den bruna jorden. Granskningen: Rättat: 1) Bären var rostfärgade trianglar som hängde rakt under bladen i rad och såg ut som morötter. De är nu runda, hjärtformade bär (4 punkter breda) med grön foderkrans, glans uppe till vänster (rost3), ett gult frö (senap3) och mörk spets nere till höger. De ligger bredvid bladrosetten på jorden, i olika höjd. 2) Bladen har tandad kant med en tagg i varje blad, ljusast uppe till vänster och oliv0 eller barr1 som kontur. 3) Utlöparen syns nu. I version 1 går en stängel ner till en liten dotterplanta. I version 2 sitter två rosetter ihop och en utlöpare går ut mot kanten, så att den fortsätter på grannrutan. 4) Version 3 hade blad i barr0–barr2, som var mörkare än jorden och inte syntes. Bladen är nu ljusare (barr3 och oliv3), och en vit-gul blomma visar att plantan blommar. 5) Fårorna är desamma i alla tre versionerna, med en mörk fåra var fjärde rad. Storleken (en ruta, låg planta) och vinkeln ovanifrån var redan rätt.",
-   "ide": ""
-  },
-  {
-   "bilder": [
-    {
-     "namn": "jordgubbsplanta_steg1",
-     "rader": [
-      "FGFFGFGFFGFFGFGF",
-      "GFGFFGFGFGFGFFGF",
-      "FFGFGFFGFFGFGFFG",
-      "EFEEFEEEFEEFEEEF",
-      "FGFFGFMFMMFFGFGF",
-      "GFGFFMPMPOMGFFGF",
-      "FFGFMPOPOPOMGFFG",
-      "EFEEFMOPNONMEEEF",
-      "FGFFMNOMNONMGFGF",
-      "GFGFFMNNMNMGFFGF",
-      "FFGFGFMGNMGFGFFG",
-      "EFEEFEEEFEEFEEEF",
-      "FGFFGFGFFGFFGFGF",
-      "GFGFFGFGFGFGFFGF",
-      "FFGFGFFGFFGFGFFG",
-      "EFEEFEEEFEEFEEEF"
-     ]
-    },
-    {
-     "namn": "jordgubbsplanta_steg2",
-     "rader": [
-      "FGFFGFGFFGFFGFGF",
-      "GFGFFGFGFGFGFFGF",
-      "FFGFGFFGFFGFGFFG",
-      "EFEEFMEMFMMFEEEF",
-      "FGFFMPMPMPOMGFGF",
-      "GFGMPOqOPOPOMFGF",
-      "FFGFMqKqNOPNMFFG",
-      "EFEMPOqONqONMEEF",
-      "FGFFMNOMqKqNMFGF",
-      "GFGMNNMNNqNMFFGF",
-      "FFGFMFMNMNMFGFFG",
-      "EFEEFEEEFEEFEEEF",
-      "FGFFGFGFFGFFGFGF",
-      "GFGFFGFGFGFGFFGF",
-      "FFGFGFFGFFGFGFFG",
-      "EFEEFEEEFEEFEEEF"
-     ]
-    },
-    {
-     "namn": "jordgubbsplanta_steg3",
-     "rader": [
-      "FGFFGFGFFGFFGFGF",
-      "GFGFFGFGFGFGFFGF",
-      "FFGFMFMMFMGMGFFG",
-      "EFEMPMPOMPMOMEEF",
-      "FGMPOPOPOPOPOMGF",
-      "GFGMPOPOMPONOMGF",
-      "FFMPOPNOMOPNNMFG",
-      "EFEMONOMNONONMEF",
-      "FGMNONMNONMNMFGF",
-      "GFGMNMNNMNNMMFGF",
-      "FFGsrMFtsMGMGNFG",
-      "EFErrEErrEEsrNEF",
-      "FGFFGFGFFGFrrNPO",
-      "GFGFFGFGFGFGFFOM",
-      "FFGFGFFGFFGFGFFG",
-      "EFEEFEEEFEEFEEEF"
-     ]
-    }
-   ],
-   "anteckning": "Plantan står på en ruta av åkern (16 × 16, fårad jord i jord-tonerna med mörkare fåror), sedd snett uppifrån: en låg rosett av tandade blad i oliv med kontur i oliv0 och ljuset uppe till vänster. Bären hänger under bladen ute på kanten, där man ser dem och kan plocka dem. Efter Björns kommentar är bären nu tydligt röda: rost1 som kropp, rost0 som kontur nedtill till höger och en enda glanspunkt i rost2 uppe till vänster, i stället för de orange tonerna. Resten är som förut: tre stadier, från en liten planta med två bär, via en större planta med en första utlöpare, till den mogna plantan med fler bär och en utlöpare med en ny liten bladrosett mot rutans kant. Granskningen: Rättat: 1) Bladen var släta klumpar; nu har kanten tandade hack och bladen är delade i tre småblad med en mörk mittnerv, ljusast uppe till vänster och mörkast nere till höger. 2) Den unga plantan i steg 1 hade mogna bär, vilket inte är logiskt. Nu är den liten och utan bär. Steg 2 blommar, med blomblad i ben2 (aldrig ren vit) och mitt i senap. Först steg 3 har mogna röda bär i rost, eftersom de mättade tonerna sparas till maten. Ett av bären har en glanspunkt. 3) Steg 3 hade ett lösryckt bär och en utlöpare utan fäste. Nu går utlöparen från plantans kant till en liten dotterplanta vid högra kanten, så att den kan fortsätta in på nästa ruta. 4) Jordens fåror i rad 14 i steg 3 var förskjutna. Nu har alla tre stegen samma fårade åkerruta (16 × 16), så rutorna passar ihop på åkern. Storlek, vinkel snett uppifrån och oliv-tonerna med kontur i oliv0 är behållna. Plantan är låg och syns tydligt mot den mörka jorden.",
+   "anteckning": "Plantan står på en åkerruta på 16 × 16 punkter. Rutan är fårad jord i jordtoner, med ljusa kammar och mörka fåror som byts med några rader emellan. Plantan ses snett ovanifrån som en låg rosett av tandade treflikiga blad. Bladen är oliv med kontur i oliv0 och ljusast uppe till vänster. Rosetten är större än förut och tar nästan hela rutans bredd och övre två tredjedelar. Framför och under bladen hänger bären ut över jorden, där de syns först. De är nu 4 × 5 punkter och hjärtformade, med grön foderkrona överst, ljus rost uppe till vänster, ett senapsfrö och kontur i rost0 nedtill. Det är de enda mättade färgerna i bilden. En utlöpare går ut till höger och slutar i en liten ny rosett i rutans nedre högra hörn. Jag har ritat tre stadier: ung rosett, blommande med vita blommor och mogen med bär. Granskningen: Granskat mot reglerna: storleken (en ruta på 16 × 16 med fårad jord), vinkeln snett uppifrån, ljuset uppifrån vänster och kontrasten mot jorden fungerar, och de mättade rosttonerna används bara på bären. Två saker är rättade. 1) Utlöparen i blommande och mogen planta hängde lös i nedre högra hörnet utan kontakt med moderplantan, och dotterplantan låg mot rutans kant, där den skulle klippas av mot grannrutan. Nu går utlöparen som en tunn oliv1-linje från plantans bas (kolumn 10, rad 9–12), snett ner till en liten dotterplanta (rad 13–15, kolumn 11–14) helt inne i rutan, med ljuset uppe till vänster och oliv0 som kontur. 2) I den mogna plantan saknades bladkonturen på rad 8 i kolumn 13 (ljus oliv2 mot jorden). Den är nu oliv0 som i den blommande. Den unga plantan, bladen, blommorna och bären är i övrigt oförändrade.",
    "ide": ""
   }
  ]

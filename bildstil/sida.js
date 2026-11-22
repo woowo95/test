@@ -574,7 +574,13 @@ const BESLUT = {
 };
 // räknas när valdelen ritas, så att korten från filerna efter denna (mark.js, djur.js, gui.js) också kommer med
 const VALT = [];
-function delaVal() { for (const s of VAL.filter(s => BESLUT[s.id])) { VALT.push(s); VAL.splice(VAL.indexOf(s), 1); } }
+// korten som byggts in i spelet (window.INBYGGT, svar/) tas bort här, när alla filer lagt till sina kort, så att ett kort som en
+// senare fil (fas11.js, fas12.js, forslag/) lägger till inte kommer tillbaka obesvarat
+function delaVal() {
+  const inbyggt = window.INBYGGT || new Set();
+  for (let i = VAL.length - 1; i >= 0; i--) if (inbyggt.has(VAL[i].id)) VAL.splice(i, 1);
+  for (const s of VAL.filter(s => BESLUT[s.id])) { VALT.push(s); VAL.splice(VAL.indexOf(s), 1); }
+}
 // en version ritas stor och i kartans storlek (två skärmpunkter per punkt, som i spelet)
 // en animation (steg 5.2.4.8): rutor är hur många bilder, takt millisekunder per bild och rita(B, P, ruta) ritar en av dem.
 // En klocka för hela sidan byter bild på alla kort som syns; kort som byggts om (inte längre på sidan) släpps
