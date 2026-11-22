@@ -1035,8 +1035,10 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
       // så mycket elden vill ha, som p orkar bära och kan få (steg 10.2.7), i hela vedträn
       // ur stackarna hen står vid (steg 11.1.75)
       const bransle = iRackhall(p.x, p.y, () => fuelFor(s, p, fran));
-      const dit = bransle < 1 && e && !fran && fuelFor(s, p) >= 1 ? narmasteMed(s, p, ['ved', 'grenar', 'torv', 'blottorv']) : undefined;
-      if (dit) { tk.tx = dit.x; tk.ty = dit.y; return; } // stacken här är tom: till nästa stack med ved eller grenar
+      // stacken här är tom, eller ved som hen inte får ta: till nästa stack där hen får ta minst ett vedträ (annars går hen fram och
+      // tillbaka mellan två stackar som är någon annans)
+      const dit = bransle < 1 && e && !fran && fuelFor(s, p) >= 1 ? narmasteMed(s, p, ['ved', 'grenar', 'torv', 'blottorv'], undefined, (x, y) => iRackhall(x, y, () => fuelFor(s, p)) >= 1) : undefined;
+      if (dit) { tk.tx = dit.x; tk.ty = dit.y; return; }
       const n = !e || e.fuel >= fireWant(s, e) ? 0 : Math.max(Math.min(1, bransle), Math.floor(Math.min(fireWant(s, e) - e.fuel, capacity(s, p) / viktOf('ved'), bransle)));
       if (n <= 0 || !e) p.task = undefined;
       else {

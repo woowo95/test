@@ -410,7 +410,7 @@ export interface State {
   byggen?: import('./byggnad').Bit[]; hus?: import('./byggnad').Hus[]; byggV?: number; nextBit?: number; byggSok?: number; byggBehov?: Record<string, number>; mjardar?: import('./fisk').Mjarde[]; torg?: { x: number; y: number; w: number; h: number }; infart?: { klar?: 1; stopp?: 1 }; bryggV?: number; byplan?: import('./byggplan').Byplan; // väggar, golv och öppningar, husen byn planerat, ändringsräknare
   kal?: { t0: number; a0: number; b0: number }; // kalendern: tidsåldern a0 började t0 och slutar måndagen b0 (dagens nummer), se tid.ts
   ruttet?: number; // mat som ruttnat bort på sistone (glöms med tiden, byggnader.ts)
-  latrinVant?: { m: number; t: number }; // minuterna byborna väntat på en latrin på sistone (m vid tiden t, klingar av, steg 10.2.79, smuts.ts)
+  latrinVant?: { m: number; t: number; n?: number }; // minuterna byborna väntat på en latrin på sistone (m vid tiden t, klingar av, steg 10.2.79, smuts.ts), och n latriner då
   skramma?: number[]; // fälten som har en fågelskrämma (steg 9.7.11, odling.ts)
   tamdjur?: import('./tamdjur').Tamdjur[]; nextTam?: number; // de tama djuren (fas 9.8, tamdjur.ts) och nästa lediga nummer
   hons?: import('./hons').Hons; // hönsflocken (steg 9.8.10, hons.ts)

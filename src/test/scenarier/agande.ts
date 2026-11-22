@@ -2412,6 +2412,7 @@ SCENARIER.rovarforsvar = {
 };
 
 SCENARIER.rovartest = {
+  lang: true,
   text: 'Steg 10.1.9–10.1.16: testknappen skickar ett gäng som går som ett vanligt gäng ur kartans kant till rastplatsen utanför byns område, och bara väntan där är kortare (en minut i stället för kvarten eller halvtimmen). Rastplatsen ligger utanför byns område också för en vanlig flock. En flock som kommit in i byns område ses av dem som har den inom synhåll och larmet sprids därifrån, och de som vågar går mot flocken så att striden börjar där de möts. Den som kommer nära en flock som rastar utanför byn ser den och får larmet. Prövas i en stor by (by 42 efter 50 dygn)',
   kor: () => {
     const { ROVARE, MIN, SEC, HOUR, utanforByn } = SIM;

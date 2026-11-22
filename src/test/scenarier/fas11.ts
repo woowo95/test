@@ -228,6 +228,7 @@ SCENARIER.floder = {
 const utanVarld = (b: SIM.State) => { const s = SIM.cloneState(b); delete s.varld; return s; };
 
 SCENARIER.varldtillstand = {
+  lang: true,
   env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,forhist.ar=400' }, // testbyarna har förhistorien som i spelet
   text: 'Världen bredvid byn (steg 11.2.7): varje by har en värld (steg 11.2.15), världens frö rör inte byns slump, samma frö ger samma värld, och världen sparas och laddas med byn',
   kor: async () => {
