@@ -304,6 +304,7 @@ function slutUt(s: State, h: Hus, p: Person) {
   }
   h.x = ut.x; h.y = ut.y; h.w = ut.w; h.h = ut.h; h.ut = undefined;
   if (fnOf(h).lager) for (const z of zonesOf(s)) if (z.hus === h.id) { z.x = h.x + 1; z.y = h.y + 1; z.w = h.w - 2; z.h = h.h - 2; changed(s); }
+  if (fnOf(h).lager) enPerRuta(s); // det som låg på marken där huset växte blir en sak per ruta i lagret
   count(s, 'utbyggt'); touch(s); husNytt(s, h, 'ut', 'Nyss utbyggt.');
   log(s, `${stor(iMening(h.namn))} är utbyggt.`, 'world', [p.id]);
 }

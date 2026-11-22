@@ -8,7 +8,7 @@ import { avbryt, flodUndan, stacksOf, tidy } from './lager';
 import { larmAvbryter } from './handlingar';
 import { forvarAt } from './stationer';
 import { isFood, viktOf } from './saker';
-import { iVattnetNu, vattenNu } from './sjo';
+import { iVattnetNu, narmasteLand, vattenNu } from './sjo';
 import { vattnetAndrat } from './torka';
 import { areaOf, bynsMinne } from './minne';
 import { eldPlats } from './karta';
@@ -109,6 +109,7 @@ function andras(s: State, niva: number, fore: number, minne: number) {
   if (niva > fore) {
     s.flodHot = Math.max(niva + FLOD.hotPlus, minne); // maten bärs undan härifrån (flodUndan i lager.ts)
     dranker(s, gammalt);
+    tillLand(s);
     flodRop(s, gammalt, niva);
     const f = eldPlats(s);
     if (s.fire.lit && iVattnetNu(s, f.y * W + f.x)) s.fire.fuel = 0; // elden i vattnet slocknar (stepFire i eld.ts)
@@ -161,6 +162,19 @@ export function flodRop(s: State, fore: Uint8Array, niva: number, efter: Uint8Ar
   count(s, 'flod larm');
 }
 // det som vattnet nådde: maten förstörs och lätta saker flyter bort ute; tunga saker och det i kistor och på hyllor ligger kvar
+// den som står där vattnet stiger kliver upp på närmaste torra ruta, och vägen söks om (som på isen när den går upp, is.ts)
+function tillLand(s: State) {
+  for (const p of living(s)) {
+    if (p.ute !== undefined) continue;
+    const i = Math.floor(p.y) * W + Math.floor(p.x);
+    if (!iVattnetNu(s, i)) continue;
+    const l = narmasteLand(s, Math.floor(p.x), Math.floor(p.y));
+    if (!l) continue;
+    p.x = l.x + 0.5; p.y = l.y + 0.5;
+    if (p.task) { p.task.path = undefined; p.task.pk = undefined; }
+    count(s, 'flod till land');
+  }
+}
 function dranker(s: State, fore: Uint8Array) {
   const efter = vattenNu(s);
   let mat = 0, bort = 0;

@@ -632,7 +632,8 @@ SCENARIER.lagerplatser = {
       [`en ny lagerplats görs när den första inte kan växa mer (${zs.length} lagerplatser)`, zs.length >= 2],
       [`maten får den första och material den nya (${zs.map(z => z.namn).join(', ')})`, zs[0].slag === 'mat' && zs[1]?.slag === 'material'],
       [`sakerna sorteras till rätt lagerplats (${fel} stackar ligger fel efter 144 timmar)`, fel <= 4],
-      ['stackarna innehåller allt i förrådet', summaOk && ps.every(p => p.n <= p.max + 1e-9)],
+      // (det som låg i en lagerplats som flyttats för ett bygge ligger kvar i sin hög tills det bärs in, och den får vara större än en hög utanför lagret)
+      ['stackarna innehåller allt i förrådet', summaOk && ps.every(p => p.zone < 0 || p.n <= p.max + 1e-9)],
     ];
   },
 };

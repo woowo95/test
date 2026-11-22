@@ -709,6 +709,7 @@ function narmaste(s: State, p: { x: number; y: number }, slag: string[], franAll
     const h = SAKER[k]?.i, fran = typeof franAlla === 'object' ? franAlla[k] : franAlla;
     for (const a of stored(s, h ?? k)) {
       if ((h ? a.dold ?? 0 : a.n) <= 1e-9 || iRackvidd(p, a) || fran !== undefined && !((a.ag?.[fran] ?? 0) > 1e-9)) continue;
+      if (s.flod && (iVattnetNu(s, key(a.x, a.y)) || !nasIFloden(s, key(a.x, a.y)))) continue; // inte ute i en översvämning eller bakom den, som fetchSpot
       const d = Math.hypot(a.x + 0.5 - p.x, a.y + 0.5 - p.y);
       if (d < bd && (!ok || ok(a.x + 0.5, a.y + 0.5))) { bd = d; bast = { x: a.x + 0.5, y: a.y + 0.5 }; }
     }
