@@ -1,0 +1,35 @@
+{
+ "kort": "f12_roll_ledare",
+ "namn": "Ledarens symbol vid namnet",
+ "slag": [
+  "symbol"
+ ],
+ "vad": "Steg 12.1.157: ledaren får en symbol till vänster om namnet på kartan. Här återanvänds styrets symbol: emblemet på Styre-stenen (kronan över hallen), i guld och i hel skala, 15 × 13 punkter. Ja eller nej? Din kommentar förra gången: ”försök hitta en befintlig symbol för ledarskap att återanvända”",
+ "av": "programmeringschatten, för hand",
+ "versioner": [
+  {
+   "ide": "Styre-stenens emblem i guld.",
+   "anteckning": "Styre-stenens emblem i guld.",
+   "bilder": [
+    {
+     "namn": "f12_roll_ledare_styre",
+     "rader": [
+      "kkkkkkkkkkkkkkk",
+      "kKkkKkkKkkKkkKk",
+      "kLKkLKkKkLJkLJk",
+      "kKKLKKLKLKKLKJk",
+      "kkLKKKKKKKKKJkk",
+      ".kLJJJJJJJJJJk.",
+      ".kKkkkkkkkkkKk.",
+      ".kKkLKKKKKKkKk.",
+      ".kKkKkkkkkKkKk.",
+      ".kKkKkkkkkKkKk.",
+      ".kLKJKKKKKJKJk.",
+      ".kKkkkkkkkkkKk.",
+      ".kkk.......kkk."
+     ]
+    }
+   ]
+  }
+ ]
+}

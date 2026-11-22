@@ -2,7 +2,7 @@
  "kort": "f11_sym_bud",
  "namn": "Trons bud",
  "slag": null,
- "vad": "Steg 11.1.22: en symbol per betydelse. I Tro delade den här saken symbol med något annat (skriftrullen, folket eller gnistorna), och nu får den en egen. Symbolen i 16 punkter på panelens botten. Ja eller nej? Du sa nej till alla tre förra gången, utan kommentar, så det här är nya idéer utan förlaga.",
+ "vad": "Trons bud: reglerna som en tro ger de troende, till exempel att inte äta något visst djur eller att offra vid fullmåne. De står i fliken Tro, och nu har de samma symbol som skriftrullen, folket eller gnistorna. Du väljer en egen symbol för buden: den syns vid varje bud i fliken. Steg 11.1.22.",
  "av": "API:t (claude-opus-5-5), tre idéer",
  "versioner": [
   {

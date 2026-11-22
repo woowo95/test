@@ -3,14 +3,14 @@
  "w": 10,
  "h": 8,
  "rader": [
-  "..rrr.rr..",
-  ".rTuurutr.",
-  "rTuussutsr",
-  "rutusttssr",
-  "rtuttttstr",
-  "rstsssssrr",
-  ".rssssssr.",
-  "..rrrrrr.."
+  ".rrr......",
+  "rTusr..rr.",
+  "rtssr.rutr",
+  ".rrr..rssr",
+  "..rrr..rr.",
+  ".rutsr....",
+  ".rsFsr....",
+  "..rrr....."
  ],
  "ritad": 2,
  "av": "API:t (claude-opus-5-5), tre idéer",
@@ -23,46 +23,19 @@
   "t": "#a14808",
   "u": "#bd753e"
  },
- "versioner": [
-  {
-   "ide": "En enda stor knölig klump, ungefär 10 punkter bred och 7 hög, med en ojämn rund silhuett av tre eller fyra sammanvuxna bulor som står ut i kanten, symmetrisk bara i stort eftersom malm är en oregelbunden klump. Den ses snett ovanifrån: ovansidan tar de övre två tredjedelarna i rost2 och rost3 med korn av rost1, och ett 2 punkter smalt band i rost1 och jord1 längst ner bildar den mörkare framsidan, allt med kontur i rost0. Porerna är korta streck av två punkter rost1 i ytan, aldrig ensamma prickar, och den våta glansen är en eller två punkter skiffer3 på den översta bulan uppe till vänster.",
-   "rader": [
-    "..rrr.rrr.",
-    ".ruTurtutr",
-    "ruussututr",
-    "rutuuttssr",
-    "rtsstttssr",
-    "rssFssFFsr",
-    "rFsFFsFFFr",
-    ".rrrrrrrr."
-   ],
-   "om": "Myrmalm som en enda stor knölig klump, 10×8 punkter. Silhuetten har två bulor upptill, skilda av en svacka i rost0, och kanten är rundad i hörnen. Ovansidan är rost3 och rost2 med korn av rost1 och tar de övre två tredjedelarna; den blir mörkare mot höger nederkant. Porerna är korta streck av två punkter rost1. Framsidan är ett smalt band på två rader av rost1 och jord1, och hela klumpen har kontur i rost0. Den våta glansen är en punkt skiffer3 på den vänstra, översta bulan. Granskningen: Ritningen följer idén och reglerna. Den är 10 × 8 punkter, en enda knölig klump och ingen hög, vilket stämmer med regeln om en sak i förrådet. Den ses snett ovanifrån: ovansidan i rost2 och rost3 tar raderna 1–4, och framsidan är ett band på två rader i rost1 och jord1. Konturen är rost0, porerna är streck av två punkter rost1 och glansen är en enda punkt skiffer3 på bulan uppe till vänster. Högersidan är mörkare, så ljuset kommer rätt. Den rostbruna klumpen syns tydligt på det olivgröna gräset och är lagom stor mot kolonisten. En sak rättades: på översta raden saknades konturen ovanför rost2-punkten i rad 1 (kolumn 6), så den högra bulan låg öppen mot det genomskinliga. Där står nu rost0, och raden blir ..rrr.rrr. med inskärningen mellan bulorna kvar i kolumn 5."
-  },
-  {
-   "ide": "En låg och bred hög av många små korn och kulor av malm, 10 punkter bred men bara 5–6 hög, formad som en flat spegelsymmetrisk kulle med en mjukt rundad ovankant och en rak underkant. Varje korn är 2–3 punkter i rost2 eller rost3 med en mörkare punkt i rost1 nere till höger, så att ytan blir knottrig, och mellan kornen ligger en tunn ton av jord1 som våt myrjord; konturen runt hela högen är rost0. Två korn i toppen till vänster får en punkt skiffer3 som vått blänk, och ett smalt band av rost1 och jord0 längst ner visar högens framkant.",
-   "rader": [
-    "..rrrrrr..",
-    ".rTuutttr.",
-    "rTutsuttsr",
-    "rtutsttssr",
-    "rssFssFsEr",
-    ".rrrrrrrr."
-   ],
-   "om": "Myrmalm som en låg, bred hög av små rostkorn: 10 punkter bred och 6 hög, med spegelsymmetrisk silhuett, rundad ovankant och rak underkant. Hela högen har kontur i rost0. Kornen är rost3 och rost2 med rost1 nere till höger, och mellan dem ligger jord1 som våt myrjord. Två korn uppe till vänster har ett vått blänk i skiffer3. Längst ner visar ett band av rost1 och jord0 högens framkant. Granskningen: Storleken (10 × 6), den spegelsymmetriska silhuetten och konturen i rost0 stämmer. Bredvid kolonisten (14 × 20) har den en rimlig storlek, den syns tydligt mot det olivgröna gräset och den ses snett uppifrån med ett mörkare band som framkant. Det här rättade jag: 1) En sak i förrådet ska ritas som en enda sak, aldrig som en hög, så jag gjorde om de många kornen till en enda knottrig, porös klump myrmalm. Högen ritas senare med stackbilderna. Det går emot kortets ord om en liten hög, och där har bildstilens regel fått gå före. 2) Ljuset kom inte från övre vänstra hörnet, eftersom rost3 låg utspritt och mörka jord1-prickar låg mitt i ytan. Nu ligger rost3 och rost2 uppe till vänster och övergår mot rost1 nere till höger. Porerna är punkter i rost1 i stället för mörka fläckar. 3) Det våta blänket är samlat till två sammanhängande punkter skiffer3 uppe till vänster i stället för två ensamma prickar. 4) Framkanten är ett band i rost1 med lite jord1 och en punkt jord0 i det högra hörnet, så att det mörkaste hamnar nere till höger."
-  },
-  {
-   "ide": "Tre lösa klumpar av malm som ligger utspridda på marken, olika stora, så att man ser att den grävts upp bit för bit.",
-   "rader": [
-    ".rrr......",
-    "rTusr..rr.",
-    "rtssr.rutr",
-    ".rrr..rssr",
-    "..rrr..rr.",
-    ".rutsr....",
-    ".rsFsr....",
-    "..rrr....."
-   ],
-   "om": "Ritad av programmeringschatten i stället för API:ts version 3, som blev för lik version 1."
-  }
- ]
+ "om": "Tre lösa klumpar av malm som ligger utspridda på marken, olika stora, så att man ser att den grävts upp bit för bit. Ritad av programmeringschatten i stället för API:ts version 3, som blev för lik version 1.",
+ "vald": 3,
+ "forra": {
+  "ritad": 2,
+  "rader": [
+   "..rrr.rr..",
+   ".rTuurutr.",
+   "rTuussutsr",
+   "rutusttssr",
+   "rtuttttstr",
+   "rstsssssrr",
+   ".rssssssr.",
+   "..rrrrrr.."
+  ]
+ }
 }

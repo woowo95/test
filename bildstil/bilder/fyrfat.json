@@ -1,22 +1,21 @@
 {
  "id": "fyrfat",
- "w": 16,
- "h": 14,
+ "w": 14,
+ "h": 13,
  "rader": [
-  "....EEEEEEEE....",
-  "..EEHHHHHHHGEE..",
-  ".EHHEEEEEEEEGGE.",
-  "EHHElmlmtlmlEGGE",
-  "EHElmtsmlmltmEGE",
-  "EHElmtuLutmllEGE",
-  "EGHEmlmlmsulEGFE",
-  ".EGGEEEEEEEEGFE.",
-  "..EGFFFGFFFFFE..",
-  "..EFFFFFFFGFFE..",
-  "..EEEEEEEEEEEE..",
-  "..EGE.EGFE.EFE..",
-  "..EGE.EGFE.EFE..",
-  "..EEE.EEEE.EEE.."
+  "...rrrrrrrr...",
+  ".rtuttttttssr.",
+  "rttlmmlmlmlssr",
+  "rtlmlumKmlmlsr",
+  "rtlmuKLKumlmsr",
+  "rtmlmuKumlmlsr",
+  "rtslmlumlmlssr",
+  ".rttuttttttsr.",
+  ".rssssssssssr.",
+  "..rrrrrrrrrr..",
+  "...sr....sr...",
+  "...sr....sr...",
+  "...rr....rr..."
  ],
  "ritad": 2,
  "av": "API:t (claude-opus-5-5), tre idéer",
@@ -38,66 +37,25 @@
   "q": "#bdb39b",
   "r": "#521100"
  },
- "versioner": [
-  {
-   "ide": "Ett runt, grunt fat sett snett ovanifrån som en bred oval, cirka 14 punkter bred och 8 hög, med en tjock kant av bränd lera i rost1 och rost2 (ljusast uppe till vänster) och kontur i rost0, spegelsymmetrisk kring mittlinjen. Inne i ovalen ligger glödande kol ovanifrån: klumpar i kol1 och kol2 med sprickor och punkter i rost3 och senap2, ljusast mitt i, högst en punkt senap3 som glöd. Under fatets framkant ett smalt band på 2 punkter i rost0, och av de tre fötterna syns bara två korta stumpar på 3 punkter fram till vänster och höger; den tredje står bak och döljs.",
-   "rader": [
-    "...rrrrrrrr...",
-    ".rtuttttttssr.",
-    "rttlmmlmlmlssr",
-    "rtlmlumKmlmlsr",
-    "rtlmuKLKumlmsr",
-    "rtmlmuKumlmlsr",
-    "rtslmlumlmlssr",
-    ".rttuttttttsr.",
-    ".rssssssssssr.",
-    "..rrrrrrrrrr..",
-    "...sr....sr...",
-    "...sr....sr...",
-    "...rr....rr..."
-   ],
-   "om": "Fyrfatet som en bred, spegelsymmetrisk oval på 14×8 punkter: en tjock lerkant i rost2 uppe till vänster och rost1 nere till höger, med en glanspunkt i rost3 och kontur i rost0. Inne i fatet ligger kol i kol1 och kol2 med glöd i rost3 och senap2, och en enda senap3 mitt i. Under fatet går en framkant på 2 punkter i rost0, och två korta fötter (3 punkter) står fram till vänster och höger. Den bakre foten är dold. Granskningen: Ritningen följer i stort reglerna och idén. Storleken är 14 × 13 punkter och ryms i rutan; bredvid kolonisten (14 × 20) är det en rimlig storlek för ett fat. Vinkeln är rätt: kolbädden ligger som en oval ovanifrån och tar cirka 60 % av höjden, och två fotstumpar på 3 punkter syns framtill, så den tredje foten döljs. Formen är spegelsymmetrisk, och rost med kontur i rost0 syns tydligt mot det oliva gräset. Glöden är en enda punkt senap3 mitt i kolet. Två rättelser: (1) Den främre kanten (rad 7) var nästan helt rost1 och flöt ihop med framkanten. Nu har den kantens ovansida ljus i rost2 med en punkt rost3 och går mot rost1 bara längst till höger, så ljuset kommer från vänster som på bakkanten. (2) Framkanten var två helt släta rader rost0 som smälte ihop med konturen. Nu är den ett band med en rad rost1 och en rad rost0, där rost0 också fungerar som undre kontur. Bandet är fortfarande 2 punkter och mörkare än kanten ovanför. Resten är oförändrat."
-  },
-  {
-   "ide": "Ett fyrkantigt fat med rundade hörn, ett lågt tråg på cirka 15 punkter brett och 7 högt ovanifrån, med raka och tjocka lerkanter i jord1 och jord2 med kontur i jord0, som lera bränd brun i stället för röd. Kolbädden fyller tråget i rader av kantiga kolbitar i kol1 och kol2, där glöden i rost2, rost3 och några punkter senap2 lyser fram i fogarna mellan bitarna, starkast i mitten. Framkanten är ett band på 3 punkter i jord0 och jord1, och under det står tre korta fötter synliga, en vid vardera hörnet och en i mitten, som stumpar på 4 punkter, symmetriskt placerade.",
-   "rader": [
-    "..EEEEEEEEEEE..",
-    ".EHGGHGGGGGGFE.",
-    "EGGmlmtumtlmFFE",
-    "EHGlmtuKutmlGFE",
-    "EGGmltuKutlmFFE",
-    "EGGlmlmtmlmlFFE",
-    "EGGGFGGFGGFGFFE",
-    "EGFFGFFFGFFFFFE",
-    "EFGFFFFFFFFFFFE",
-    ".EEEEEEEEEEEEE.",
-    ".EFE..EFE..EFE.",
-    ".EFE..EFE..EFE.",
-    ".EFE..EFE..EFE.",
-    ".EEE..EEE..EEE."
-   ],
-   "om": "Fyrfatet som ett lågt fyrkantigt tråg med rundade hörn, 15 punkter brett: ovansidan är 7 rader med tjocka lerkanter i jord1 och jord2 (ljusast uppe till vänster) och kontur i jord0. Kolbädden är kantiga bitar i kol1 och kol2 med glöd i rost2 och rost3 i fogarna och senap2 i mitten. Framkanten är ett band på 3 rader i jord0 och jord1, och under den står tre fötter (två vid hörnen och en i mitten), symmetriska stumpar på 4 rader. Granskningen: Storleken (15 × 14), vinkeln (fatet ovanifrån på halva höjden, framkant på 3 punkter, tre fötter som stumpar på 4 punkter) och kontrasten mot gräset håller. Jag rättade tre saker. De två ensamma jord0-prickarna i framkanten (rad 8) var mörka fläckar och är borta. Framkanten var slät jord1, så den fick korn med några jord2-punkter åt vänster, mot ljuset. Glöden i mitten var osymmetrisk (två senap2 bredvid varandra på rad 4) och är nu centrerad under den andra, så att den är starkast i mitten. Kanterna och fötterna var redan symmetriska och har inte ändrats."
-  },
-  {
-   "ide": "Ett djupare, skålformat fat på höga fötter: ovalen ovanifrån är mindre, cirka 12 punkter bred och 6 hög, med en vulst längs kanten i ben1 och ben2 som ljus bränd lera och kontur i ben0, så att fatet syns tydligt mot trägolvet. Kolen är hopade i en liten kulle som sticker upp över kanten, mörka kol0 och kol1 ytterst och glödande rost2, rost3 och senap2 i toppen, med en enda punkt senap3 som glans. Under den rundade buken i ben0, ett smalt band på 2 punkter, syns två tydliga fötter som utåtsvängda stumpar på 5–6 punkter, och mellan dem en kortare tredje fot längre bak, förkortad till 2 punkter.",
-   "rader": [
-    "....lLKl....",
-    "..oktuKtko..",
-    "oqpktuKskppo",
-    "oqklsttslkpo",
-    "opkklsrlkkpo",
-    "opqpqppqppoo",
-    ".oopppoppoo.",
-    ".EopooooooE.",
-    "..EpopoooE..",
-    "..pE.oE.pE..",
-    "..pE.EE.pE..",
-    ".pE......pE.",
-    ".pE......pE.",
-    "poE......poE"
-   ],
-   "om": "Ett djupt skålformat fyrfat sett snett ovanifrån, 12 punkter brett. Den ljusa vulsten (ben2 och ben1, kontur i ben0) ringar in en liten kulle av kol: kol0 och kol1 ytterst och rost2, rost3 och senap2 i toppen, med en punkt senap3 som glans. Kullen sticker upp över bakkanten. Under fatet sitter en rundad buk som ett smalt band på två rader i ben0 med jordkontur. Därunder står två utåtsvängda främre fötter på fem punkter och en förkortad tredje fot på två punkter längre bak, mellan dem."
-  }
- ],
- "kommentar": "nya versioner, olika i form"
+ "om": "Ett runt, grunt fat sett snett ovanifrån som en bred oval, cirka 14 punkter bred och 8 hög, med en tjock kant av bränd lera i rost1 och rost2 (ljusast uppe till vänster) och kontur i rost0, spegelsymmetrisk kring mittlinjen. Inne i ovalen ligger glödande kol ovanifrån: klumpar i kol1 och kol2 med sprickor och punkter i rost3 och senap2, ljusast mitt i, högst en punkt senap3 som glöd. Under fatets framkant ett smalt band på 2 punkter i rost0, och av de tre fötterna syns bara två korta stumpar på 3 punkter fram till vänster och höger; den tredje står bak och döljs. Fyrfatet som en bred, spegelsymmetrisk oval på 14×8 punkter: en tjock lerkant i rost2 uppe till vänster och rost1 nere till höger, med en glanspunkt i rost3 och kontur i rost0. Inne i fatet ligger kol i kol1 och kol2 med glöd i rost3 och senap2, och en enda senap3 mitt i. Under fatet går en framkant på 2 punkter i rost0, och två korta fötter (3 punkter) står fram till vänster och höger. Den bakre foten är dold. Granskningen: Ritningen följer i stort reglerna och idén. Storleken är 14 × 13 punkter och ryms i rutan; bredvid kolonisten (14 × 20) är det en rimlig storlek för ett fat. Vinkeln är rätt: kolbädden ligger som en oval ovanifrån och tar cirka 60 % av höjden, och två fotstumpar på 3 punkter syns framtill, så den tredje foten döljs. Formen är spegelsymmetrisk, och rost med kontur i rost0 syns tydligt mot det oliva gräset. Glöden är en enda punkt senap3 mitt i kolet. Två rättelser: (1) Den främre kanten (rad 7) var nästan helt rost1 och flöt ihop med framkanten. Nu har den kantens ovansida ljus i rost2 med en punkt rost3 och går mot rost1 bara längst till höger, så ljuset kommer från vänster som på bakkanten. (2) Framkanten var två helt släta rader rost0 som smälte ihop med konturen. Nu är den ett band med en rad rost1 och en rad rost0, där rost0 också fungerar som undre kontur. Bandet är fortfarande 2 punkter och mörkare än kanten ovanför. Resten är oförändrat.",
+ "vald": 1,
+ "forra": {
+  "ritad": 2,
+  "rader": [
+   "....EEEEEEEE....",
+   "..EEHHHHHHHGEE..",
+   ".EHHEEEEEEEEGGE.",
+   "EHHElmlmtlmlEGGE",
+   "EHElmtsmlmltmEGE",
+   "EHElmtuLutmllEGE",
+   "EGHEmlmlmsulEGFE",
+   ".EGGEEEEEEEEGFE.",
+   "..EGFFFGFFFFFE..",
+   "..EFFFFFFFGFFE..",
+   "..EEEEEEEEEEEE..",
+   "..EGE.EGFE.EFE..",
+   "..EGE.EGFE.EFE..",
+   "..EEE.EEEE.EEE.."
+  ]
+ }
 }

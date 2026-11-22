@@ -2,7 +2,7 @@
  "kort": "f9_spjala_stack",
  "namn": "Spjälan i förrådet",
  "slag": [],
- "vad": "Spjälan, som du valde (version 2), som den ligger i förrådet: en, några (tre i en triangel) och många (sex i en pyramid), som stackarna du valde. Byggs in i steg 10.11.1 tillsammans med saken. Du sa nej till alla tre förra gången, utan kommentar, så det här är nya idéer utan förlaga.",
+ "vad": "Spjälorna i förrådet. Spjälan (den du valde, version 2) är en kluven trästicka. När flera ligger i förrådet ritas de som en hög: en spjäla, några (tre) och många (sex), så som stackarna av andra saker du valt. Varje version är ett sätt att lägga dem i hög, och du väljer hur högen ska se ut. Byggs in i steg 10.11.1.",
  "av": "API:t (claude-opus-5-5), tre idéer",
  "versioner": [
   {

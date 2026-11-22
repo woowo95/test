@@ -1,16 +1,15 @@
 {
  "id": "jarnskrot",
  "w": 10,
- "h": 8,
+ "h": 7,
  "rader": [
-  "........QQ",
-  "......QQTQ",
-  ".....QTSRQ",
-  "...QQTStrQ",
-  "..QwSStsQ.",
-  ".QTSRtsrQ.",
-  "QRSRtsrQ..",
-  ".QQQQQ...."
+  "......Q.Q.",
+  ".....QTQSQ",
+  ".....QSRRQ",
+  "....QSSRQ.",
+  ".QQQtsSRQ.",
+  "QsRrtrRQ..",
+  ".QQQQQQ..."
  ],
  "ritad": 2,
  "av": "API:t (claude-opus-5-5), tre idéer",
@@ -24,48 +23,19 @@
   "t": "#a14808",
   "w": "#dad0bb"
  },
- "versioner": [
-  {
-   "ide": "Ett avbrutet yxhuvud som ligger platt och ses snett ovanifrån: en kilformad bit, omkring 10 punkter bred och 7 hög, med det mörka skafthålet (Q) i den smala bakre delen till vänster och eggen till höger, där en tandad brottkant visar att eggens nedre hörn saknas. Järnet ritas i skiffer1 och skiffer2 med skiffer3 som glans på en eller två punkter i övre vänstra hörnet, konturen är skiffer0, och rosten ligger som korn i rost1 och rost2 längs brottkanten och nederkanten. Ett smalt band på 2 punkter i skiffer1 och skiffer0 längs underkanten visar bladets tjocklek, så att biten ligger på marken och inte står upp.",
-   "rader": [
-    ".......QQ.",
-    "......QTSQ",
-    "QQQQQQSRSQ",
-    "QTSQQSSRtQ",
-    "QSRQQRSRsQ",
-    "QSRSRRtsQ.",
-    "QRRsRtQ...",
-    ".QQQQQ...."
-   ],
-   "om": "Ett avbrutet yxhuvud ligger platt och ses snett ovanifrån. Den smala bakre delen är till vänster, med det mörka skafthålet i skiffer0. Bladet vidgar sig uppåt mot eggen till höger, och dess nedre hörn är avbrutet i en trappad brottkant. Järnet är skiffer1 och skiffer2, med glans i skiffer3 på två punkter uppe till vänster. Konturen är skiffer0. Rosten ligger som korn i rost1 och rost2 längs brottkanten och nederkanten. Ett smalt band i skiffer1 och skiffer0 längs underkanten visar bladets tjocklek. Bilden är 10 punkter bred och 8 hög. Granskningen: Ritningen läste som en klumpig grå kloss och inte som ett avbrutet yxhuvud. Den smala bakre delen till vänster var lika hög som eggen, och eggen bredde inte ut sig. Formen är nu en kil: en smal nacke på 4 rader med det mörka skafthålet (2×2 i Q) till vänster, och ett blad som breder ut sig uppåt till höger. Eggens nedre hörn saknas, och brottkanten går i en tandad trappa nedåt vänster med rost i rost1 och rost2 längs brottet. Den har nu ett tydligt tjockleksband på 2 punkter (skiffer1 och skiffer0-kontur) längs underkanten, så att biten ligger platt på marken. Glansen är två punkter i skiffer3, högst upp till vänster på nacken och på bladet. Konturen är skiffer0 och ytan skiffer1 och skiffer2 i korn. Storleken är 10×8, inom ramen och rimlig bredvid kolonisten."
-  },
-  {
-   "ide": "En enda lång, böjd och avbruten knivklinga som ligger diagonalt från nedre vänstra till övre högra hörnet och är knäckt på mitten, så att den bildar ett trubbigt V eller en krok, omkring 10 punkter bred och 6 hög. Vänstra änden är tångens stump, en smal pinne i skiffer1 helt rostig i rost1 och rost0, och högra änden är en bredare bit av bladet med en sned och hackig brottkant i stället för spets. Eggsidan är ljusare (skiffer2 och en punkt skiffer3 där ljuset från övre vänstra hörnet tar), ryggen är skiffer1, konturen skiffer0, och rosten samlas som korn i böjen där metallen spruckit.",
-   "rader": [
-    "......Q.Q.",
-    ".....QTQSQ",
-    ".....QSRRQ",
-    "....QSSRQ.",
-    ".QQQtsSRQ.",
-    "QsRrtrRQ..",
-    ".QQQQQQ..."
-   ],
-   "om": "En avbruten knivklinga som ligger snett och är knäckt till en krok, 10 punkter bred och 7 hög. Till vänster ligger tångens stump som en smal pinne, rostig i rost1, rost0 och lite skiffer1. Den går vågrätt in mot böjen, där rosten samlas i korn av rost2, rost1 och rost0 där metallen spruckit. Därifrån stiger bladet brantare och bredare upp mot övre högra hörnet. Eggsidan uppe till vänster är skiffer2 med en enda punkt skiffer3 som glans, och ryggen nere till höger är skiffer1. Brottkanten upptill till höger är hackig och trappstegsformad i stället för en spets. Konturen är skiffer0 runt om. Granskningen: Ritningen följer i stort reglerna. Den är 10 × 7 punkter, rimligt liten bredvid kolonisten (14 × 20). Den har en skiffer0-kontur och ljust skiffer mot det gröna gräset, så den syns. Ljuset faller uppe till vänster (skiffer3 och skiffer2 på eggsidan, skiffer1 på ryggen), och rosten samlas som korn i böjen. Klingan behöver ingen symmetri. Rättat: brottkanten i högra änden var en jämn diagonal och inte hackig som idén säger. Jag har gjort den till två tänder med ett hack mellan dem. Hacket är en skiffer0-punkt som sitter ihop med konturen, så det blir ingen ensam prick. Resten (tången, böjen och rosten) är oförändrat."
-  },
-  {
-   "ide": "En tät, rund klump av två bitar som rostat fast i varandra och bärs som en sak: en bruten eggbit i skiffer2 och skiffer3 ligger snett ovanpå en hopböjd järnten i skiffer1, så att de bildar ett lågt X, omkring 9 punkter bred och 7 hög. Tenen är böjd i en mjuk båge med båda ändarna lite uppvikta, och eggbiten är en platt triangel med en blank kant i ljusare grått och en tandad brottkant i mörkare; där bitarna korsar varandra är det tätast med rost i rost1 och rost2. Konturen runt hela klumpen är skiffer0 så att silhuetten blir en enda sammanhållen form på marken, med ljuset uppe till vänster och skiffer0 och rost0 nere till höger.",
-   "rader": [
-    ".QQQ....QQ",
-    "QTTSQ..QSQ",
-    "QTSSSQ.QRQ",
-    "QQTSSSQRRQ",
-    "QRRSsttRQ.",
-    "QSRtrSRQ..",
-    ".QRRrQRRQ.",
-    "..QQQ.QQ.."
-   ],
-   "om": "Järnskrot, 10 punkter bred och 8 hög: två bitar som rostat fast i varandra och bildar ett lågt X. Den hopböjda järntenen i skiffer1 går i en mjuk båge längs botten, med båda ändarna uppvikta (vänster ände med en ljusare punkt i skiffer2, höger ände uppe till höger). Ovanpå ligger den brutna eggbiten, en platt triangel snett från övre vänstra hörnet ner mot mitten. Dess blanka kant är i skiffer3 uppe till vänster och brottkanten tandad i skiffer1 nere till höger. Där bitarna korsar varandra sitter rosten i rost1 och rost2, med rost0 nere till höger. Konturen runt hela klumpen är skiffer0, så att silhuetten blir en sammanhållen form. Granskningen: Storleken (10 × 8) är rätt mot kolonisten och fyller rutan. Vinkeln fungerar för en sak på marken. Klumpen syns på gräset tack vare konturen i skiffer0 och följer idén: en ljus eggbit uppe till vänster och en hopböjd ten i skiffer1 med rost där bitarna korsar varandra. Jag rättade tre saker. 1) Den ensamma skiffer0-pricken inne i tenen (rad 5, punkt 3) blev skiffer1, eftersom den bröt tenens båge och såg ut som ett hål. 2) Den ljusa skiffer2 nere till höger på rad 6 (punkt 7) blev skiffer1. 3) Samma ändring på rad 7 (punkt 7), så att ljuset tonar mot det mörka nere till höger i stället för att vara ljust där. Allt annat är oförändrat."
-  }
- ],
- "kommentar": "Björn sa nej till förra ritningen utan att skriva varför: rita en bättre."
+ "om": "En enda lång, böjd och avbruten knivklinga som ligger diagonalt från nedre vänstra till övre högra hörnet och är knäckt på mitten, så att den bildar ett trubbigt V eller en krok, omkring 10 punkter bred och 6 hög. Vänstra änden är tångens stump, en smal pinne i skiffer1 helt rostig i rost1 och rost0, och högra änden är en bredare bit av bladet med en sned och hackig brottkant i stället för spets. Eggsidan är ljusare (skiffer2 och en punkt skiffer3 där ljuset från övre vänstra hörnet tar), ryggen är skiffer1, konturen skiffer0, och rosten samlas som korn i böjen där metallen spruckit. En avbruten knivklinga som ligger snett och är knäckt till en krok, 10 punkter bred och 7 hög. Till vänster ligger tångens stump som en smal pinne, rostig i rost1, rost0 och lite skiffer1. Den går vågrätt in mot böjen, där rosten samlas i korn av rost2, rost1 och rost0 där metallen spruckit. Därifrån stiger bladet brantare och bredare upp mot övre högra hörnet. Eggsidan uppe till vänster är skiffer2 med en enda punkt skiffer3 som glans, och ryggen nere till höger är skiffer1. Brottkanten upptill till höger är hackig och trappstegsformad i stället för en spets. Konturen är skiffer0 runt om. Granskningen: Ritningen följer i stort reglerna. Den är 10 × 7 punkter, rimligt liten bredvid kolonisten (14 × 20). Den har en skiffer0-kontur och ljust skiffer mot det gröna gräset, så den syns. Ljuset faller uppe till vänster (skiffer3 och skiffer2 på eggsidan, skiffer1 på ryggen), och rosten samlas som korn i böjen. Klingan behöver ingen symmetri. Rättat: brottkanten i högra änden var en jämn diagonal och inte hackig som idén säger. Jag har gjort den till två tänder med ett hack mellan dem. Hacket är en skiffer0-punkt som sitter ihop med konturen, så det blir ingen ensam prick. Resten (tången, böjen och rosten) är oförändrat.",
+ "vald": 2,
+ "forra": {
+  "ritad": 2,
+  "rader": [
+   "........QQ",
+   "......QQTQ",
+   ".....QTSRQ",
+   "...QQTStrQ",
+   "..QwSStsQ.",
+   ".QTSRtsrQ.",
+   "QRSRtsrQ..",
+   ".QQQQQ...."
+  ]
+ }
 }

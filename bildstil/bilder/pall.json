@@ -3,20 +3,20 @@
  "w": 14,
  "h": 14,
  "rader": [
+  "..EEEEEEEEEE..",
+  ".EHHHGHHHHGHE.",
+  "EHHGHHHGHHHGGE",
+  "EHHHHGHHGHGHGE",
+  "EHGHHHGHHGHGGE",
+  "EHHGHGHHGGGHGE",
+  "EGHGGHGGGHGGGE",
+  "EGFGFFGFFFGFFE",
+  "EFGFFFFGFFFFFE",
+  "EFFFGFFFFFFFFE",
   ".EEEEEEEEEEEE.",
-  "EHHHHHHHHGHHGE",
-  "EHHGGGHHHHGHGE",
-  "EHHHHHHGGGHHGE",
-  "EHGGHHHHHHGGGE",
-  "EHHHHGGGHHHGFE",
-  "EGHHHHHHGGHGFE",
-  "EGGGGHGGGGGGFE",
-  "EGFFFGFFFFFFFE",
-  "EFFGFFFFFFFFFE",
-  ".EGEEEEEEEEFE.",
-  ".EGE......EFE.",
-  ".EGE......EFE.",
-  ".EEE......EEE."
+  "..EFE....EFE..",
+  "..EFEFFFFEFE..",
+  "..EFE....EFE.."
  ],
  "ritad": 2,
  "av": "API:t (claude-opus-5-5), tre idéer",
@@ -26,67 +26,25 @@
   "G": "#7d5b40",
   "H": "#987e62"
  },
- "versioner": [
-  {
-   "ide": "Bred enkel planka med raka ben i hörnen: sitsen är en enda tjock planka, 14 punkter bred och 8 punkter djup ovanifrån, i jord2 och jord3 med korn som löper vågrätt och kontur i jord0. Framkanten är ett band på 2 punkter i jord1, och under den syns bara de två främre benen som raka stumpar på 4 punkter i hörnen, i jord1 med jord0-kontur. Formen är spegelsymmetrisk, och bara ljuset uppe till vänster (jord3) skiljer sidorna åt.",
-   "rader": [
-    ".EEEEEEEEEEEE.",
-    "EHHHHHHHGHHHGE",
-    "EHHGGGGHHHGGGE",
-    "EHGGHHHGGGGGGE",
-    "EGGGGGHHHGGGGE",
-    "EHHHGGGGGHHGGE",
-    "EGGGGHHGGGGGFE",
-    "EGGHHGGGGGGFFE",
-    "EGFFFFFFFFFFFE",
-    "EFFFFFFFFFFFFE",
-    "EFEEEEEEEEEEFE",
-    "EFE........EFE",
-    "EFE........EFE",
-    "EEE........EEE"
-   ],
-   "om": "Pallen som en bred, enkel planka sedd snett ovanifrån. Sitsen är 14 punkter bred och 8 djup, i jord3 och jord2 med korn som löper vågrätt. Det ljusaste ligger uppe till vänster, och lite jord1 finns nere till höger. Framkanten är ett band på 2 punkter i jord1. Under det står de två främre benen som raka stumpar på 4 punkter i hörnen, i jord1 med kontur i jord0. Formen är spegelsymmetrisk, och ingen sittplats är ritad framför. Granskningen: Pallen följer reglerna och idén. Den är 14 × 14 punkter och sitsen ses ovanifrån. Den tar 8 av 14 rader, alltså mer än hälften av höjden, med vågrätt korn i jord2 och jord3. Framkanten är ett band på 2 rader i jord1, och bara de två främre benen syns, som raka stumpar på 4 punkter i hörnen. Konturen är jord0 och inget kol0 används. Formen är spegelsymmetrisk, och bara ljuset uppe till vänster (jord3) skiljer sidorna åt. Den bruna träet med mörk kontur syns tydligt på olivgräset. Jag rättade en sak: på rad 8 gav G och F om vartannat (GFGF) i nedre högra hörnet en ensam mörk prick. Jag ändrade det till GGFF, så att skuggan nere till höger blir en sammanhängande övergång i stället för en fläck. Allt annat är oförändrat. "
-  },
-  {
-   "ide": "Nordisk pall med genomgående ben: sitsen är nästan kvadratisk, 12 punkter bred och 9 djup, gjord av två plankor sida vid sida med en smal fog i jord0 mitt i, och kornet löper bakåt längs plankorna. I sitsens fyra hörn syns benens ändträ som runda tappar på 2 punkter i jord1 med en ljus prick i jord3. Under framkanten, ett band på 2 punkter, sticker de två främre benen ut snett utåt som avsmalnande stumpar på 5 punkter, symmetriskt åt var sitt håll.",
-   "rader": [
-    "..EEEEEEEEE..",
-    ".EHFHHEHGHFE.",
-    ".EFFHGEGGFFE.",
-    ".EHGHGEHGHGE.",
-    ".EHGHHEHGGGE.",
-    ".EHHHGEGGHGE.",
-    ".EHFHGEHGHFE.",
-    ".EFFGGEGGFFE.",
-    ".EGFFFEFFFFE.",
-    ".EEEEEEEEEEE.",
-    "..EGE...EFE..",
-    ".EGE.....EFE.",
-    ".EF.......FE.",
-    "EE.........EE"
-   ],
-   "om": "Pallen med genomgående ben, 13 × 14 punkter. Sitsen är 11 punkter bred och 8 djup och gjord av två lika breda plankor med en fog i jord0 mitt i. Kornet i jord2 och jord3 löper bakåt, och den vänstra plankan är något ljusare eftersom ljuset kommer uppifrån vänster. I sitsens fyra hörn syns benens ändträ som tappar på 2×2 punkter i jord1 med en ljus prick i jord3 uppe till vänster. Framkanten är ett band på 2 punkter i jord1 och jord0. Under den sticker de två främre benen ut snett utåt åt var sitt håll, symmetriskt, som avsmalnande stumpar på 4 punkter. Konturen är jord0 runt om. Jag avvek från idén i två mått för att hålla bilden inom 14 × 14: sitsen blev 11 punkter bred i stället för 12, så att fogen hamnar mitt i och plankorna blir lika breda, och benstumparna blev 4 punkter i stället för 5, så att höjden räcker. Det finns ingen pall eller stubbe under, och ingen skugga är ritad. Granskningen: Storlek (13 × 14), vinkel, symmetri och läsbarhet på gräset var redan riktiga. Sitsen syns ovanifrån och tar omkring tre fjärdedelar av höjden, framkanten är ett smalt band och bara de två främre benen syns som utåtställda stumpar. Jag rättade tre saker. Kornet var prickigt huller om buller; nu löper det i längsgående ränder längs plankorna, som idén säger. Den högra plankan fick lite mer jord2 än den vänstra, så att ljuset kommer från vänster. Fogen i jord0 går nu också ner genom framkantens band, så att de två plankorna läses tydligt. Hörntapparna (jord1 med en ljus prick i jord3) och benen behöll jag."
-  },
-  {
-   "ide": "Låg och tung pall med tvärslå: sitsen är en kort tjock kloss, 12 punkter bred och 7 djup, med rundade hörn ovanifrån i jord2 och jord3 och kontur i jord0. Framkanten är kraftig, ett band på 3 punkter i jord1, och under den står två korta raka ben på 3 punkter, indragna en bit från hörnen och förbundna med en vågrät slå på 1 punkt i jord1 strax ovanför marken. Silhuetten blir bred och låg som en liten bänkkloss, symmetrisk kring mitten.",
-   "rader": [
-    "..EEEEEEEEEE..",
-    ".EHHHGHHHHGHE.",
-    "EHHGHHHGHHHGGE",
-    "EHHHHGHHGHGHGE",
-    "EHGHHHGHHGHGGE",
-    "EHHGHGHHGGGHGE",
-    "EGHGGHGGGHGGGE",
-    "EGFGFFGFFFGFFE",
-    "EFGFFFFGFFFFFE",
-    "EFFFGFFFFFFFFE",
-    ".EEEEEEEEEEEE.",
-    "..EFE....EFE..",
-    "..EFEFFFFEFE..",
-    "..EFE....EFE.."
-   ],
-   "om": "Låg och tung pall: sitsen ovanifrån är 14 punkter bred med kontur (12 inuti) och 7 rader djup, med rundade hörn och korn i jord3 och jord2, ljusast uppe till vänster. Framkanten är ett kraftigt band på 3 rader i jord1, och under det står två raka ben på 3 rader, indragna från hörnen och spegelsymmetriska, förbundna med en vågrät slå i jord1 strax ovanför marken. Konturen är jord0, och ingen skugga på marken är ritad. Granskningen: Pallen följer reglerna. Den är 14 × 14 punkter och fyller rutan som kortet kräver. Sitsen ses snett ovanifrån: skivan i jord3 och jord2 tar halva höjden, och hörnen är rundade. Framkanten är 3 punkter i jord1. De två benstumparna är 3 punkter höga och förbundna med en slå på 1 punkt. Silhuetten är spegelsymmetrisk kring mitten, och konturen i jord0 får den att synas mot gräset. Ljuset faller från vänster: skivan är ljusast uppe till vänster och mörkare mot höger och fram. Jag rättade bara framkantens band. Det var helt slätt i jord1 och bröt mot regeln om korn, så jag lade in enstaka punkter i jord2, tätast till vänster mot ljuset. Den lösa jord2-punkten längst till vänster i bandets översta rad hör nu till kornet. Allt annat är oförändrat."
-  }
- ],
- "kommentar": "nya versioner, olika i form"
+ "om": "Låg och tung pall med tvärslå: sitsen är en kort tjock kloss, 12 punkter bred och 7 djup, med rundade hörn ovanifrån i jord2 och jord3 och kontur i jord0. Framkanten är kraftig, ett band på 3 punkter i jord1, och under den står två korta raka ben på 3 punkter, indragna en bit från hörnen och förbundna med en vågrät slå på 1 punkt i jord1 strax ovanför marken. Silhuetten blir bred och låg som en liten bänkkloss, symmetrisk kring mitten. Låg och tung pall: sitsen ovanifrån är 14 punkter bred med kontur (12 inuti) och 7 rader djup, med rundade hörn och korn i jord3 och jord2, ljusast uppe till vänster. Framkanten är ett kraftigt band på 3 rader i jord1, och under det står två raka ben på 3 rader, indragna från hörnen och spegelsymmetriska, förbundna med en vågrät slå i jord1 strax ovanför marken. Konturen är jord0, och ingen skugga på marken är ritad. Granskningen: Pallen följer reglerna. Den är 14 × 14 punkter och fyller rutan som kortet kräver. Sitsen ses snett ovanifrån: skivan i jord3 och jord2 tar halva höjden, och hörnen är rundade. Framkanten är 3 punkter i jord1. De två benstumparna är 3 punkter höga och förbundna med en slå på 1 punkt. Silhuetten är spegelsymmetrisk kring mitten, och konturen i jord0 får den att synas mot gräset. Ljuset faller från vänster: skivan är ljusast uppe till vänster och mörkare mot höger och fram. Jag rättade bara framkantens band. Det var helt slätt i jord1 och bröt mot regeln om korn, så jag lade in enstaka punkter i jord2, tätast till vänster mot ljuset. Den lösa jord2-punkten längst till vänster i bandets översta rad hör nu till kornet. Allt annat är oförändrat.",
+ "vald": 3,
+ "forra": {
+  "ritad": 2,
+  "rader": [
+   ".EEEEEEEEEEEE.",
+   "EHHHHHHHHGHHGE",
+   "EHHGGGHHHHGHGE",
+   "EHHHHHHGGGHHGE",
+   "EHGGHHHHHHGGGE",
+   "EHHHHGGGHHHGFE",
+   "EGHHHHHHGGHGFE",
+   "EGGGGHGGGGGGFE",
+   "EGFFFGFFFFFFFE",
+   "EFFGFFFFFFFFFE",
+   ".EGEEEEEEEEFE.",
+   ".EGE......EFE.",
+   ".EGE......EFE.",
+   ".EEE......EEE."
+  ]
+ }
 }

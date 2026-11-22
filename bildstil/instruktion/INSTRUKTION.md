@@ -96,9 +96,12 @@ När något ritas om behåller det sin storlek, om inget annat sägs.
     - bara de främre benen syns, som korta stumpar på 3–6 punkter;
     - det som ligger på ytan ritas ovanifrån;
     - inget att sitta på framför.
-14. **Det som finns används.** Bygger en ny sak på något som redan finns (en järnyxa på flintyxan, en tam hund på vargen), ritas den från den befintliga bilden, och bara skillnaden ändras.
+14. **Det som finns används.** Bygger en ny sak på något som redan finns (en järnyxa på flintyxan, en tam hund på vargen), ritas den från den befintliga bilden, och bara skillnaden ändras. En symbol som betyder samma sak som en som finns (tron, styret) är den symbolen.
 15. **Inga nya behållare.** Ligger något i en kruka är det lerkrukan på bilden med sakerna, oförändrad; bara innehållet i öppningen är nytt.
-16. **Tre versioner är tre idéer.** När flera versioner ska göras skrivs först tre idéer i ord, som skiljer sig i form eller byggsätt och inte bara i färg. Varje idé ritas sedan för sig. Idén skrivs i `ide`.
+16. **Ett föremål i taget.** Det som är ett eget föremål i spelet (kudden, kannan, verktyget) ritas inte in i en annan saks bild. Sängen har ingen kudde; spelet lägger dit den när den finns.
+17. **Järn är grått.** Järn ritas i skiffer (`Q` `R` `S` `T`) med kontur i `Q`, utan rost i kanten om saken inte ska vara rostig.
+18. **Terräng i landskapet.** Terräng (marken, myren, ängen, vattnet) ritas aldrig som en ruta med knivskarpa gränser som upprepas. Den växer fram i ett större landskap med mjuka och ojämna övergångar mot det som ligger bredvid.
+19. **Tre versioner är tre idéer.** När flera versioner ska göras skrivs först tre idéer i ord, som skiljer sig i form eller byggsätt och inte bara i färg. Varje idé ritas sedan för sig. Idén skrivs i `ide`.
 
 ## Djur
 

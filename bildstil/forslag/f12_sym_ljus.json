@@ -1,0 +1,33 @@
+{
+ "kort": "f12_sym_ljus",
+ "namn": "Symbolen from",
+ "slag": [
+  "symbol"
+ ],
+ "vad": "Steg 12.1.192: symbolen för ryktet from (den som ber och offrar mycket) i texterna. Som du bad om är det symbolen för tron: Tro-stenens emblem, solen, i guld. Ja eller nej? Din kommentar förra gången: ”använd symbolen för religon”",
+ "av": "programmeringschatten, för hand",
+ "versioner": [
+  {
+   "ide": "Tro-stenens emblem, solen, i guld.",
+   "anteckning": "Tro-stenens emblem, solen, i guld.",
+   "bilder": [
+    {
+     "namn": "f12_sym_ljus_tro",
+     "rader": [
+      ".....kkk.....",
+      ".kkk.kKk.kkk.",
+      ".kKkkkKkkkKk.",
+      ".kkKkLKKkKkk.",
+      "kkkkLKJKKkkkk",
+      "kKKKKJkLKKKKk",
+      "kkkkKKLKJkkkk",
+      ".kkKkKKJkKkk.",
+      ".kKkkkKkkkKk.",
+      ".kkk.kKk.kkk.",
+      ".....kkk....."
+     ]
+    }
+   ]
+  }
+ ]
+}
