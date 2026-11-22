@@ -1272,7 +1272,8 @@ export function kallelse(s: State, sl: Sallskap, r: ResPlan) {
   const vl = s.varld!, led = s.people.find(p => p.id === sl.ledare);
   if (!led) return;
   sl.krav = Math.round(RESA.kraftPerFara * r.fara * 100) / 100;
-  const kan = living(s).filter(q => q !== led && !q.gast && ageOf(q, s.now) >= ALDER.vuxen && kanGa(q) && !isSick(q, s.now) && !ute(q) && !sallskapFor(vl, q.id));
+  // (den som håller vakt i natt är upptagen tills morgonen, som vid larmet, rovare.ts)
+  const kan = living(s).filter(q => q !== led && !q.gast && ageOf(q, s.now) >= ALDER.vuxen && kanGa(q) && !isSick(q, s.now) && !ute(q) && !sallskapFor(vl, q.id) && q.task?.act !== 'vakt');
   const vilja = kan.map(q => ({ q, v: RESA.foljMod * (stat(q, 'mod', s.now) - 10) / 10 + RESA.foljTycke * getRel(s, q, led).op / 100 + RESA.foljNyfiken * (stat(q, 'nyfikenhet', s.now) - 10) / 10 + RESA.foljSlump * (rnd(s, 'resa', q) - 0.5) + (sl.uppdrag !== undefined ? kravPassar(s, led, sl.uppdrag, q) : 0) }))
     .sort((a, b) => b.v - a.v || a.q.id - b.q.id);
   for (const x of vilja) {
