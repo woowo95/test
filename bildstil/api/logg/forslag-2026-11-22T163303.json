@@ -1,0 +1,39 @@
+{
+ "kommando": "rita",
+ "args": [
+  "bild_hatt_halm=den sitter för högt på huvudet: sänk den så att den sitter nere på hjässan, med brättet strax ovanför ögonen",
+  "f10_kott_bjorn",
+  "f10_kott_fagel",
+  "f10_kott_get",
+  "f12_sym_gaspa",
+  "f9_jordgubbsplanta",
+  "f11_gravhog=nya versioner: gör en hög med ett kors på",
+  "f11_vagnsvrak!=Du tog vagnen från världskartan som förlaga. Förlagan ska vara vagnen så som den ser ut i byn: ett flak av plankor på två hjul med ekrar och två skaklar framåt, punkterna ['................','................','q...............','.qq.............','...qq...........','....qqkkkkkkkkkk','....kFFFFFFFFFFk','....kHHHHHHHHHHk','....kkkkkkkkkkkk','......kkk...kkk.','.....kHFHkkHFHk.','.....kFHFkkFHFk.','.....kHFHkkHFHk.','......kkk...kkk.']. Gör den vagnen trasig: ett hjul har lossnat och flaket lutar.",
+  "f12_fliknamn=version 1, men gör kedjorna lite tydligare och se till att de går hela vägen upp till flätan ovanför",
+  "f12_sym_las=version 2, men gör den mer symmetrisk",
+  "f12_sym_ol=version 1, men gör drycken mer gul, som öl",
+  "f12_sym_scen=gör tre nya versioner av version 2 (de två maskerna)",
+  "f12_sym_vilt=gör tre nya versioner av version 3 (bara hornen)"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 6.4,
+  "hog": 13.72
+ },
+ "dollar": 6.028,
+ "rapport": [
+  "bild_hatt_halm: 3 versioner",
+  "f10_kott_bjorn: 3 versioner",
+  "f10_kott_fagel: 3 versioner",
+  "f10_kott_get: 3 versioner",
+  "f12_sym_gaspa: 3 versioner",
+  "f9_jordgubbsplanta: 3 versioner",
+  "f11_gravhog: 3 versioner",
+  "f11_vagnsvrak: 3 versioner",
+  "f12_fliknamn: 3 versioner",
+  "f12_sym_las: 3 versioner; kontrollerna varnar fortfarande: version 3: olika",
+  "f12_sym_ol: 3 versioner; kontrollerna varnar fortfarande: version 3: olika",
+  "f12_sym_scen: 3 versioner",
+  "f12_sym_vilt: 3 versioner"
+ ]
+}

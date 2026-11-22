@@ -4,135 +4,147 @@
  "slag": [
   "station"
  ],
- "vad": "Steg 11.6.13: grundarna kom långt bortifrån, och deras vagn gick sönder där byn ligger. Den står i lagret på startplatsen med de första sakerna i och rymmer tre stackar. Ingen bygger en sådan. En ruta stor, snett ovanifrån som stationerna, på gräs. Varje version står till vänster och vagnen som redan finns i spelet (den du valde till världskartan) till höger. Din kommentar förra gången: ”visa hur den ser ut bredvid vagnen som redan finns i spelet”",
+ "vad": "Steg 11.6.13: grundarna kom långt bortifrån, och deras vagn gick sönder där byn ligger. Den står i lagret på startplatsen med de första sakerna i och rymmer tre stackar. Ingen bygger en sådan. En ruta stor, snett ovanifrån som stationerna, på gräs. Varje version står till vänster och vagnen som redan finns i spelet (den du valde till världskartan) till höger.",
  "av": "API:t (claude-opus-5-5), tre idéer",
- "kommentar": "det finns redan en vagn i spelet, den är förlagan. Gör den trasig",
+ "kommentar": "Du tog vagnen från världskartan som förlaga. Förlagan ska vara vagnen så som den ser ut i byn: ett flak av plankor på två hjul med ekrar och två skaklar framåt, punkterna ['................','................','q...............','.qq.............','...qq...........','....qqkkkkkkkkkk','....kFFFFFFFFFFk','....kHHHHHHHHHHk','....kkkkkkkkkkkk','......kkk...kkk.','.....kHFHkkHFHk.','.....kFHFkkFHFk.','.....kHFHkkHFHk.','......kkk...kkk.']. Gör den vagnen trasig: ett hjul har lossnat och flaket lutar.",
  "versioner": [
   {
    "bilder": [
     {
      "namn": "f11_vagnsvrak",
      "rader": [
-      "................",
-      "................",
-      ".EEEEEEEEEEEEEE.",
-      ".EHHHGHHHGHHGGE.",
-      ".EHFFFFFFFFFFGE.",
-      ".EHGFGGFGGFGFGE.",
-      ".EHFFFFFFFFFFGE.",
-      ".EHGGFGGFGGFGGE.",
-      ".EHFFFFFFFFFFFE.",
-      ".EGHHGHHGHHGGFE.",
-      ".EFGFFFGFFFGFFE.",
-      ".EEEEEEEEEEEEEE.",
-      "..EHE....EEEE...",
-      "..EGE...EHGGFE..",
-      "..EEE...EGEEFE..",
-      ".........EEEE..."
+      "q..q............",
+      ".q..q...........",
+      ".p..p...........",
+      ".EEEE...........",
+      ".EHHGEEEEE......",
+      ".EGHGHGHHGEEEE..",
+      ".EFFFGHGGHHGGE..",
+      ".EHGHFFFFFGGFE..",
+      ".EGGFHGHGGFFFE..",
+      ".EFFFGHGGFGHGE..",
+      ".EEEEFFFFFGGFE..",
+      ".EHFHEEEEFFFEE.",
+      ".EFHFE...EEEEEGE",
+      ".EHFHE...EHGFGFE",
+      "..EEE....EG.G.FE",
+      "..........EEEEE."
      ]
     },
     {
-     "namn": "vagnen i spelet",
+     "namn": "vagnen_i_spelet",
      "rader": [
-      "....kkk.kkk.....",
-      "...kwwpkwwpk....",
-      "...kpppkpppk....",
-      ".kkkkkkkkkkkkkkk",
-      ".kGHGGGGGHGGk...",
-      ".kkkkkkkkkkk....",
-      "....kFGFk.......",
-      "...kFGkGFk......",
-      "....kFGFk.......",
-      ".....kkk........"
+      "................",
+      "................",
+      "q...............",
+      ".qq.............",
+      "...qq...........",
+      "....qqkkkkkkkkkk",
+      "....kFFFFFFFFFFk",
+      "....kHHHHHHHHHHk",
+      "....kkkkkkkkkkkk",
+      "......kkk...kkk.",
+      ".....kHFHkkHFHk.",
+      ".....kFHFkkFHFk.",
+      ".....kHFHkkHFHk.",
+      "......kkk...kkk."
      ]
     }
    ],
-   "anteckning": "Förlagan är spelets vagn: lådan med ljus kant, skaklarna snett upp åt vänster och hjulen med kryssekrar. Jag har ritat den trasig men i samma storlek (en ruta, 16 × 16) och i samma vinkel snett ovanifrån som stationerna. Lådan ses ovanifrån: den ljusa bakkanten, golvet av plankor med en bräda som är bruten och visar ett mörkt hål, och den ljusa framkanten. Därunder ligger framsidan som ett smalt mörkt band. Det vänstra framhjulet står kvar som en kort stump med kryssekrar. Det högra hjulet har gått sönder: lådans högra hörn har sjunkit ner och vilar på marken, och hjulet ligger avbrutet på gräset framför. Skaklarna är avbrutna, så bara en kort splittrad stump sticker ut till vänster. Allt är trä i jordtoner med jord0 som kontur och ljuset från övre vänstra hörnet. Sakerna i lagret syns inte i bilden, eftersom spelet visar dem för sig. Granskningen: Rättat: den gamla versionen var en låda sedd nästan rakt från sidan och hade två ensamma prickar (H och G) till vänster om lådan. Nu ses flaket snett ovanifrån som stationerna. Flakets golv syns ovanifrån och tar ungefär tre fjärdedelar av höjden. Golvet är ritat som plankor i jord1 och jord2, och kanterna är ljusare i jord3, med ljuset uppe till vänster. Framkanten är ett mörkare band på två punkter. Under framkanten syns bara det främre vänstra hjulet, som en kort stump. Det högra hjulet har lossnat och ligger platt på marken, ritat ovanifrån som en ring med nav, så att det syns att vagnen är trasig. Konturen är jord0 runt allt, utan kol. Träet är ljusare än gräset så att vagnen syns, och den håller sig inom en ruta (16 × 16). Flaket är tomt, eftersom spelet visar sakerna som ligger i det.",
-   "ide": ""
+   "anteckning": "Förlagan är byns vagn: plankflaket ovanifrån, två ekerhjul och två skaklar åt övre vänster. Den är gjord trasig, och vinkeln är snett ovanifrån som stationerna. Flaket ses ovanifrån som två plankor (jord3 och jord2 med en fog i jord1) med kontur i jord0. Under ytan går ett mörkare framkantsband på 2–3 punkter (jord1, med jord0 längst ner). Det högra hjulet har lossnat, så flakets högra halva har sjunkit två punkter i två steg. Både bakkanten och framkanten blir därför sneda, och det högra framhörnet vilar på marken. Det vänstra hjulet står kvar under framkanten och syns bara som en kort stump med ekrar, eftersom resten döljs bakom bandet. Det lossnade hjulet ligger platt i gräset nere till höger, sett ovanifrån som en ring med nav och ekrar. Gräset syns mellan ekrarna, och ringens övre del ligger under flakets sänkta hörn. Skaklarna i ben sitter kvar i det vänstra, högre hörnet och pekar brantare uppåt vänster än i förlagan. Ingen skugga är ritad. Till höger står vagnen som den finns i byn, oförändrad, för jämförelse. Granskningen: Rättat: 1) Vinkeln: flaket var ritat nästan som en låda från sidan med en sned överkant. Nu är det ett plankflak ovanifrån med längsgående plankor i jord3, jord2 och jord1 och fogar i jord1, med kontur i jord0. Under ytan ligger ett smalt mörkt framkantsband i jord1. Flaket är förskjutet i tre steg så att högra sidan ligger två punkter lägre och framkanten blir en sned linje. Högra framhörnet vilar på marken. 2) Det vänstra ekerhjulet var bara en ruta. Nu är det förlagans ekerhjul (jord3 och jord1 i rutmönster) med jord0-kontur under vänstra framkanten. 3) Det lossnade hjulet var en otydlig figur. Nu är det en spegelsymmetrisk ring sedd ovanifrån, med fälg, kryssekrar och nav, där gräset syns mellan ekrarna. Ringen ligger nere till höger, delvis under flakets hörn. 4) Skaklarna (ben2 och ben1) svävade fritt. Nu går de brant upp åt vänster från flakets vänstra bakhörn. Ljuset faller från övre vänstra hörnet: ljusare plankor uppe till vänster och mörkare nere till höger. Vagnen i spelet är oförändrad.",
+   "ide": "Lutar åt höger, hjulet platt i gräset: samma plankflak som förlagan (jord1 och jord3 med mörk kontur), ritat ovanifrån över ungefär tre fjärdedelar av rutan med ett smalt mörkt framkantsband. Det vänstra ekerhjulet står kvar under framkanten precis som i förlagan, men det högra har lossnat, och därför sänks flakets högra sida två eller tre punkter så att högra framhörnet vilar på marken och framkanten blir en sned linje. Det lossnade hjulet ligger platt i gräset nere till höger, som en rund ring med ekrar sedd ovanifrån och delvis under flakets hörn, och de två skaklarna i ben pekar fortfarande upp åt vänster men står brantare eftersom vänster sida nu är högst."
   },
   {
    "bilder": [
     {
-     "namn": "f11_vagnsvrak",
+     "namn": "f11_vagnsvrak_tippad_bakat",
      "rader": [
+      ".q..q...........",
+      ".q..q...........",
+      "..q..q..........",
+      "..q..q..........",
+      "...p..p.....EEE.",
+      "...p..p....EHGFE",
+      "..EEEEEEEEEEHEFE",
+      "..EHHGHHGHEEHGFE",
+      "..EHGHGGHGEEGHFE",
+      "...EGHGFGGEEHGFE",
+      "EGEEGFGGFGEEHEFE",
+      "EFE.EFGFGFEEHGFE",
+      ".E..EFEFFFEEGEFE",
+      ".....EEEEEE.EEE.",
       "................",
-      "................",
-      "..EEEEEEE..EEE..",
-      "..EHHHHGHEEGGE..",
-      "..EHGGFGGFGGFE..",
-      "..EHGHGGHGGFFE..",
-      "..EGFFGFFFFGFE..",
-      "..EHGGHGGGHGFE..",
-      "..EGGHGGFGGFFE..",
-      "..EGFFGFFFGFFE..",
-      ".EEHGGGFGGFGFE..",
-      "EHEHHGHHGHGGFE..",
-      "EGEFFGFFFGFFEEF.",
-      "EFEFEFFEFFFEEEE.",
-      ".EEEEEEEEEEEEE..",
-      "......EHGE......"
+      "................"
      ]
     },
     {
-     "namn": "vagnen i spelet",
+     "namn": "forlaga_vagnen_i_byn",
      "rader": [
-      "....kkk.kkk.....",
-      "...kwwpkwwpk....",
-      "...kpppkpppk....",
-      ".kkkkkkkkkkkkkkk",
-      ".kGHGGGGGHGGk...",
-      ".kkkkkkkkkkk....",
-      "....kFGFk.......",
-      "...kFGkGFk......",
-      "....kFGFk.......",
-      ".....kkk........"
+      "................",
+      "................",
+      "q...............",
+      ".qq.............",
+      "...qq...........",
+      "....qqkkkkkkkkkk",
+      "....kFFFFFFFFFFk",
+      "....kHHHHHHHHHHk",
+      "....kkkkkkkkkkkk",
+      "......kkk...kkk.",
+      ".....kHFHkkHFHk.",
+      ".....kFHFkkFHFk.",
+      ".....kHFHkkHFHk.",
+      "......kkk...kkk."
      ]
     }
    ],
-   "anteckning": "Förlagan är spelets vagn: korgen ses snett ovanifrån med ljus kant runt det mörka golvet, ett mörkare framband och kryssekrade hjul under framkanten. Den här vagnen är trasig. Skaklarna har brustit: en stump sticker upp åt vänster från korgen, och den lösa biten ligger på marken nere till vänster. Det högra hjulet har rasat ihop till en halv ring, så korgens högra hörn vilar direkt på gräset. Där är frambandet sönder, och den mörka lagningen visar en planka som saknas. Det vänstra hjulet är helt; dess överkant döljs av korgen. Allt är trä i jordtoner med jord0 som kontur. Ljuset kommer uppifrån vänster, så korgens vänstra kant är ljusast. Korgen är tom, för sakerna i lagret visar spelet för sig. Bilden är en ruta stor, 16 × 16 punkter. Granskningen: Ritade om vagnen. Den förra syntes nästan från sidan: flaket var en låda med framsida, och hjulen var fyrkantiga klossar under den. Den hade också en lös stång i övre vänstra hörnet och en bit som låg skild från vagnen nere till vänster, och de tre översta raderna var tomma. Nu ses flaket ovanifrån som stationerna, med samma mått på 12 × 13 punkter. Ytan tar omkring tre fjärdedelar av höjden och har vågräta plankor i jord2 och jord3 med kornig ton. Den ljusa kanten sitter uppe till vänster och den mörkare jord1 till höger. Framkanten är ett mörkare band på 2–3 punkter, och konturen är jord0 runt om. Det som visar att vagnen är trasig sitter nu på vagnen: ett brutet stycke i bakkanten, vänster hjul kvar som en smal stående oval vid sidan, höger hjul borta så att bara axelstumpen sticker ut, och dragstången avbruten mitt fram. Flaket är tomt, så att sakerna i lagret syns i det, och den ljusa jorden med kontur syns på det olivgröna gräset. Vagnen har ingen sittplats.",
-   "ide": ""
+   "anteckning": "Vagnen är byns vagn (flak av plankor på två ekerhjul med två skaklar), byggd på samma toner och kontur som förlagan. Hjulet på ena sidan har lossnat. Därför vilar tyngden bakom den enda kvarvarande axeln, och vagnen har vippat bakåt. Bakkanten (nere till höger) ligger i gräset, och framkanten (uppe till vänster) står högst. Flaket ritas därför som ett trappsnett band från övre vänstra till nedre högra hörnet, med samma lager uppifrån och ned: kontur, plankor F, framband H, kontur. Skaklarna sitter i framkanten och pekar därför brant upp mot rutans övre vänstra hörn som två ljusa streck, ljusa överst och något mörkare nertill. Det kvarvarande hjulet sitter kvar under framkanten och syns bara som en kort ekerstump, eftersom flaket skymmer resten. Det lossnade hjulet står på högkant lutat mot flakets högra ände. Det ses från sidan och förkortas därför till en smal oval med samma ekermönster (H/F) som hjulen i förlagan. Toppen lutar in mot flaket och nederkanten står på marken bredvid bakkanten. Förlagan ligger bredvid oförändrad, till höger. Granskningen: Rättat i version 2: konturen var kol0 (k), som är svart; den är nu jord0 (E) runt allt trä. Förlagan har kvar sin kontur, eftersom den är spelets befintliga bild och lämnas orörd. Flaket var bara ett smalt snett streck. Det är nu ritat som en lutande yta snett ovanifrån, med ljust trä (jord3/jord2) uppe till vänster och ett mörkare band på 2 punkter längst ner. Det skjuter åt höger nedåt, så att bakkanten ligger i gräset och framkanten står högst. Skaklarna är två ljusa streck (ben2 som tonar till ben1) som går från framkanten upp mot det övre vänstra hörnet, som i idén. Det lossnade hjulet är nu en symmetrisk smal oval på 5 × 10 punkter med fälg, ekrar och nav, lutad mot flakets högra sida. Ljuset faller från vänster: ljus fälg till vänster, mörk till höger. Det kvarvarande hjulet är en kort ekerstump till vänster under flaket. Hela vraket ryms i en ruta, och silhuetten är hög och smal. Träet är ljusare än det olivgröna gräset och har kontur, så det syns på marken. Det finns inga ensamma mörka prickar och ingen glans.",
+   "ide": "Tippad bakåt, hjulet lutat mot flaket: båda skaklarna har lyft, eftersom tyngden har hamnat bakom den enda kvarvarande hjulaxeln när ena hjulet lossnade. Flaket lutar därför bakåt och åt sidan, så att bakkanten ligger i gräset, framkanten står högst och skaklarna sticker rakt upp mot rutans övre vänstra hörn som två ljusa streck. Det kvarvarande hjulet syns som en kort ekerstump under framkanten till vänster, och det lossnade hjulet står på högkant lutat mot flakets högra sida, förkortat till en smal oval med ekrar, så att silhuetten blir hög och smal i stället för låg."
   },
   {
    "bilder": [
     {
-     "namn": "f11_vagnsvrak",
+     "namn": "f11_vagnsvrak_sjunken",
      "rader": [
       "................",
       "................",
-      "................",
-      "..EEEEEEEEEEEE..",
-      "..EHHGHHGHHGGE..",
-      "..EHEEFEEEFEGE..",
-      "..EHFGFFGFEFGE..",
-      ".EEHGFGFFEFFGE..",
-      "HGEHFGFFEGFFGE..",
-      "EEEHGFGFFGFFGE..",
-      "..EGHGGHGGGGFE..",
-      "..EEEEFFFFEEEE..",
-      "..EHGGEEEEHGEE..",
-      "..EGEFE..EGE....",
-      "..EGFFE..EFFE.GE",
-      "...EEE....EE...."
+      "..........EEEE..",
+      "q........EH.G.E.",
+      ".qq.EEEE.EGFEFE.",
+      "...qEHHGEEEEFGE.",
+      "....EHGHHHGHEEEE",
+      "..opEHGHGHGGGFGE",
+      "....EGHGGHGGFGFE",
+      "....EGGHGGFGGFFE",
+      "....EFFGFFFFFFFE",
+      ".....EEEEEEEFEFE",
+      "....EHFHE...EEEE",
+      "....EFHFE....FE.",
+      "qq..EHFHE.......",
+      "..pp.EEE........"
      ]
     },
     {
-     "namn": "vagnen i spelet",
+     "namn": "vagn_i_spelet_forlaga",
      "rader": [
-      "....kkk.kkk.....",
-      "...kwwpkwwpk....",
-      "...kpppkpppk....",
-      ".kkkkkkkkkkkkkkk",
-      ".kGHGGGGGHGGk...",
-      ".kkkkkkkkkkk....",
-      "....kFGFk.......",
-      "...kFGkGFk......",
-      "....kFGFk.......",
-      ".....kkk........"
+      "................",
+      "................",
+      "q...............",
+      ".qq.............",
+      "...qq...........",
+      "....qqkkkkkkkkkk",
+      "....kFFFFFFFFFFk",
+      "....kHHHHHHHHHHk",
+      "....kkkkkkkkkkkk",
+      "......kkk...kkk.",
+      ".....kHFHkkHFHk.",
+      ".....kFHFkkFHFk.",
+      ".....kHFHkkHFHk.",
+      "......kkk...kkk."
      ]
     }
    ],
-   "anteckning": "Förlagan är spelets vagn: flaket snett ovanifrån med jord0-kontur, ljus kant uppe till vänster, ett smalt mörkare framband med kryssträ och korta stumpar till hjul, och skaklarna snett upp åt vänster. Vagnen är kvar i samma storlek, en ruta, och står på gräset. Trasig är den på tre sätt. Skaklarna har gått av: en splittrad stump sitter kvar i flakets hörn och den avbrutna biten ligger på marken ovanför. En planka i flaket har spruckit, så ett mörkt hål går snett genom botten. Det högra framhjulet har brustit: halva hjulkrysset saknas och en eker ligger lös bredvid. Det vänstra hjulet är helt, så att man ser vad som fattas. Flaket ritas tomt, eftersom sakerna i lagret visas av spelet. Det finns ingen sittplats och ingen skugga. Granskningen: Rättat: vagnskorgen var ritad rakt från sidan som en låda med en spricka i framsidan. Nu ses den snett ovanifrån som stationerna. Korgen ses ovanifrån med en ljus kant upptill till vänster, en mörkare skuggrad innanför bakväggen och ett tomt golv med en spricka, så att man ser att den rymmer saker. Framkanten är ett smalt mörkare band på två rader. Hjulen var oläsliga rutmönster i ben. De är nu två runda trähjul med kontur i jord0 och nav, och de står framför bandet. Vänster hjul är helt. Höger hjul är trasigt: en fjärdedel saknas och en flisa ligger bredvid, så att man ser att vagnen gått sönder. Den lösa stången i ben, som hängde snett utan fäste, är nu en avbruten dragstång i trä som sticker ut från korgens vänstra gavel. Bara trätoner (jord) används, med ljuset uppifrån vänster. Vagnen är ljusare än gräset och har kontur. Den är en ruta stor, 16 × 16 punkter.",
-   "ide": ""
+   "anteckning": "Förlagan är byns vagn (flak av plankor, två hjul med ekrar, skaklar uppåt vänster), sedd snett ovanifrån som stationerna. Flakets ovansida syns som plankytan i jord2 och jord3 och tar större delen av höjden. Under den löper en mörkare framkant på två punkter i jord1 och jord0, så att vagnen inte längre ser ut som en rak framifrånvy. Konturen är jord0. Det högra hjulet har lossnat, så den högra änden av flaket har sjunkit: flaket trappar ner åt höger, och höger nederkant och axeländen ligger i gräset. Den vänstra änden bärs av det kvarvarande hjulet, som står upprätt och helt under flakets vänstra sida. Den hela skakeln sticker ännu upp åt vänster från flakets kant. Den andra är avbruten: en kort stump med mörk brottända sitter kvar, och den yttre delen ligger lös i gräset framför. Det lossnade hjulet ligger platt bakom flaket uppe till höger. Bara den bakre halvbågen syns ovanför flakkanten, och två ekrar saknas, så att gräset syns i luckorna. Bilden är en ruta (16×16). Ingen sittplats och ingen skugga är ritad. Vagnen som redan finns i spelet står som förlaga till höger, oförändrad. Granskningen: Versionen följer idén: flaket lutar ner mot höger, det vänstra hjulet står under vänster sida, axeländen har grävt ner sig till höger, den avbrutna skakeln har en stump vid flaket och en lös yttre del i gräset nere till vänster, och det lossnade hjulet med ekrar som saknas ligger bakom flaket uppe till höger. Storleken (en ruta), vinkeln och konturen i jord0 stämmer. Rättat: ljuset på flakets ovansida gick åt fel håll. De nedre raderna var mörka (F) till vänster och ljusa (H) till höger. Nu ligger de ljusa tonerna uppe till vänster, och den sida som lutar ner åt höger mörknar mot nedre högra hörnet. Den ensamma mörka pricken (E) mitt på ytan i rad 9 är borttagen, och framkanten (rad 10–11) är nu ett jämnt mörkare band i F med kornighet, avslutat av konturen. Spelets vagn till höger är oförändrad.",
+   "ide": "Sjunkit ner på skaklarna: det högra hjulet är borta och axeländen har grävt ner sig, så att hela vagnen har tippat framåt och åt höger. Flaket ligger snett med det högra framhörnet och skaklarnas spetsar i gräset, vilket ger en låg, kilformad silhuett som stiger upp mot vänster bakhörn, där det vänstra hjulet syns helt och upprätt under flakets vänstra sida. Den ena skakeln är avbruten på mitten, så att yttre delen ligger lös i gräset framför vagnen, och det lossnade hjulet ligger platt bakom flaket uppe till höger med två ekrar saknade, så att bara en halvbåge och några ekrar syns bakom kanten."
   }
  ]
 }

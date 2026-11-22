@@ -28,7 +28,7 @@
   ".QRRRQRRRRQRRRQ.",
   "...QQQQQQQQQQ..."
  ],
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), tre idéer",
  "pal": {
   "E": "#3f2415",
@@ -45,7 +45,6 @@
   "q": "#bdb39b"
  },
  "om": "Rund brunn med två raka stolpar: stenkanten är en oval ring sedd snett ovanifrån, omkring 16 punkter bred och 11 hög längst ned i bilden, av huggna block i skiffer1–skiffer3 med fogar i skiffer0. Framkanten är ett band på 2–3 punkter i skiffer1, och i mitten ligger mörkt vatten i skiffer0 och kol0 med en enda glanspunkt i skiffer2. Från bakkanten reser sig två förkortade stolpar i jord1–jord3 till bildens topp med en vågrät stock emellan; på den är repet i ben1–ben2 lindat, och därifrån hänger det rakt ned i vattnet, medan en kort vev sticker ut åt höger. Bilden är spegelsymmetrisk utom veven och ljuset från övre vänster. Brunnen, 16 × 24 punkter. Stenkanten är en oval ring, 16 punkter bred och 11 hög (raderna 13–23). Den är byggd av huggna block i skiffer1–skiffer3 med fogar i skiffer0. Framkanten är ett band i skiffer1 och undersidan är skiffer0. Vattnet är kol0 med skiffer0 i kanterna och har en enda glanspunkt i skiffer2 uppe till vänster. Två stolpar i jord1–jord3 med kontur i jord0 står vid bakkanten och når bildens topp. Mellan dem går en vågrät stock där repet ligger lindat i ben1–ben2. Repet hänger rakt ned framför bakkanten och ned i vattnet. Veven sticker ut åt höger i jord och böjer nedåt. Allt utom veven är spegelsymmetriskt. Ljuset kommer från övre vänster. Granskningen: Storleken (16 × 24), vinkeln och vindspelet är bra och följer idén. Rättat: repet låg en punkt för långt åt höger i rad 14 och bröt symmetrin; nu hänger det rakt i kolumn 7–8 hela vägen ned i vattnet. Stenkanten saknade kontur uppe och till vänster (ljusa skiffer3-punkter direkt mot gräset); den har nu en sluten ytterkontur i skiffer0 runt hela ovalen, och bakkanten mellan stolparna är en konturrad med kantens ovansida under, så att ringen läses tydligt mot gräset. Insidans kant och vattnet är jämnade så att ovalen är spegelsymmetrisk (inre kant i kolumn 3/12 och 4/11), med glanspunkten i skiffer2 kvar uppe till vänster i vattnet. En för ljus skiffer3-punkt på högra (skuggade) sidan bytt mot skiffer2.",
- "vald": 1,
  "forra": {
   "ritad": 1,
   "rader": [
@@ -74,5 +73,97 @@
    ".QRRRQRRRRQRRRQ.",
    "...QQQQQQQQQQ..."
   ]
- }
+ },
+ "versioner": [
+  {
+   "ide": "",
+   "rader": [
+    ".EEE........EEE.",
+    ".HFE........GFE.",
+    ".GFEEEEEEEEEGFE.",
+    ".GFHGpqpqpqHGFGG",
+    ".GFGFqpqpqpFGFFF",
+    ".GFEEEEEqEEEGFEF",
+    ".GFE....p...GFEE",
+    ".HFE....q...HFE.",
+    ".GFE....p...GFE.",
+    ".GGE....q...GGE.",
+    ".GFE....p...GFE.",
+    ".GFEQQQQpQQQGFE.",
+    ".GFETSTTqTSTGFE.",
+    ".HFETSRQpQRSHFE.",
+    "QGFEQkkkqkkkGFEQ",
+    "QGFEkkkkpkkkGFEQ",
+    "QEEEkkkSkSkkEEEQ",
+    "QSTSQkkkkkkQSSRQ",
+    "QTSTSQQQQQQSTSRQ",
+    "QSTSTSSTSTSSTRRQ",
+    "QRSRRQRRSRQRRSRQ",
+    ".QRRQRRRQRRRQRQ.",
+    "..QRRRQRRRQRRQ..",
+    "....QQQQQQQQ...."
+   ],
+   "om": "Stenkanten är nu en rund ring sedd snett ovanifrån: krönet är ljust (skiffer2–3), vattnet mörkt i öppningen, och framkanten är ett mörkare band på tre rader (skiffer1 med fogar i skiffer0). Stolparna går nu ner till ringens sidor och slutar med en mörk fot på stenkrönet, med sten synlig under och runt foten, så att de står på kanten och inte bakom brunnen. Repet är en punkt brett, ljust ben, och går från valsen ner i vattnet med en liten krusning. Valsen med det lindade repet och veven till höger är kvar som förut. Granskningen: Oförändrad. Storleken är 16 × 24 och ryms i gränsen. Brunnen är något högre än kolonisten (20), vilket är rimligt för ett vindspel. Vinkeln är snett uppifrån: den bakre stenkanten (rad 11–13) och öppningen med vattnet syns ovanifrån, och den främre kanten är ett smalt rundat band. Stolparna och vindspelet står upp vid bakkanten, förkortade. Stenkanten är spegelsymmetrisk i formen och skiljer sig bara i ljus och korn, ljusast uppe till vänster och mörkast nere till höger. Veven till höger om axeln är logisk för ett vindspel och får bryta symmetrin. Konturerna är materialens mörkaste toner: jord0 runt virket och skiffer0 runt stenen. Repet går från axeln ner i vattnet med ringar (S) runt sig. Det mörka brunnsdjupet är det enda stället med kol0, och där är det verkligen svart. Stenen i ljus skiffer och virket i jordtoner skiljer sig tydligt från gräsets oliv och barr, så brunnen syns först. Inget bryter mot reglerna."
+  },
+  {
+   "ide": "",
+   "rader": [
+    ".EEE........EEE.",
+    ".HFE........GFE.",
+    ".GFEEEEEEEEEGFE.",
+    ".GFHGpqpqpqHGFGG",
+    ".GFGFqpqpqpFGFFF",
+    ".GFEEEEpEEEEGFEF",
+    ".GFE...p....GFEE",
+    ".HFE...p....HFE.",
+    ".GFE...q....GFE.",
+    ".GGE...p....GGE.",
+    ".GFE...p....GFE.",
+    ".HFE...q....HFE.",
+    ".GFEQQQpQQQQGFE.",
+    "QGFETSTpSTSSGFEQ",
+    "QGFESRQpQRRSGFEQ",
+    "TGFEkkkpkkkkGFEQ",
+    "SGFEkkkpkkRkGFEQ",
+    "TEEEkkkQkkkkEEEQ",
+    "QTSQkkkkkkkkQSRQ",
+    "QTSRQQkkkkQQSSRQ",
+    "QTSQTSSRQTSSQSRQ",
+    "QSRQRRSRQRRSRQRQ",
+    ".QRRRQRRRRQRRRQ.",
+    "...QQQQQQQQQQ..."
+   ],
+   "om": "Stolparna går nu ner över stenringen och slutar med en mörk fot (rad 17) mitt på stenkanten till vänster och höger, med stenen synlig runt och under foten, så att vindspelet står på brunnskanten i stället för bakom den. Stenringen är lite bredare än förut (rad 13–23), med vattnet i mitten. Repet är en punkt brett (kolumn 7) och går från valsen ner i det mörka vattnet, där det slutar i en liten krusning. Valsen med det lindade repet, veven och stenarnas toner är som förut."
+  },
+  {
+   "ide": "",
+   "rader": [
+    ".EEE........EEE.",
+    ".HFE........GFE.",
+    ".GFEEEEEEEEEGFE.",
+    ".GFHGpqpqpqHGFGG",
+    ".GFGFqpqpqpFGFFF",
+    ".GFEEEEqEEEEGFEF",
+    ".GFE...q....GFEE",
+    ".HFE...p....HFE.",
+    ".GFE...q....GFE.",
+    ".GGE...p....GGE.",
+    ".GFE...q....GFE.",
+    ".HFEQQQpQQQQHFE.",
+    ".GQTSTTqTSTTSQE.",
+    "QTTSTQQpQQQSTSSQ",
+    "QTSTQRRqRRRQSSRQ",
+    "QSTSQRQpQQRQSRSQ",
+    "QTSSQQRSQRQQSSRQ",
+    "QSTSTQQQQQQSSRSQ",
+    "QSTSSTSTSSTSSRRQ",
+    "QSSTSSTSSTSSRSRQ",
+    "QRRSRRQRRSRRQRRQ",
+    ".QRRQRRRRQRRRQQ.",
+    "..QQQQQQQQQQQQ.."
+   ],
+   "om": "Stolparna står nu på stenkanten: fötterna slutar mitt på ringens vänstra och högra sida (rad 16), med kantsten synlig innanför, under och bakom dem. Den bakre kanten ligger bakom stolparna. Vattnet är smalare för att ge plats åt stenen. Repet är en enda punkt hela vägen från vinden ner i vattnet. Vinden, veven och stenringens framsida är som förut. Granskningen: Vindspelet (stolparna, valsen med repet och veven till höger) är oförändrat. Stenkanten är omritad. Vattnet var kol0 (svart) och är nu mörkt skiffer (skiffer0 med krusningar i skiffer1 och skiffer2 där repet går ner). Kol0 ska bara användas där något verkligen är svart. Kanten ses nu snett ovanifrån som en spegelsymmetrisk oval ring. Öppningen och vattnet ligger i mitten och har en mörkare innervägg vid bakkanten. Framkanten är ett smalt band på 2 punkter i skiffer1 med fogar i skiffer0, i stället för den höga sidovyn som tidigare. Stolparna gick igenom stenkanten och stod framför den. Nu står de vid bakkanten, och ringen skymmer deras fötter. Repet hänger fritt ner i öppningen. Storleken är 16 × 23 punkter och fyller rutan bredvid kolonisten. Den ljusa stenen med kontur i skiffer0 syns tydligt mot gräset."
+  }
+ ],
+ "kommentar": "träställningen ser ut att stå bakom brunnen och inte på stenkonstruktionen som den ska: stolparna ska stå på stenkanten. Gör repet tunnare (en punkt)"
 }

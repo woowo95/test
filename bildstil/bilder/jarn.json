@@ -11,7 +11,7 @@
   "QRRRRRRRsQ",
   ".QQQQQQQQ."
  ],
- "ritad": 2,
+ "ritad": 3,
  "av": "API:t (claude-opus-5-5), tre idéer",
  "pal": {
   "Q": "#233035",
@@ -25,44 +25,44 @@
  },
  "versioner": [
   {
-   "ide": "En enkel avlång tacka som ligger vågrätt, sedd snett ovanifrån: ovansidan är en rak rektangel om ungefär 10 gånger 4 punkter i skiffer2 och skiffer3 med korn och en enda glanspunkt i skiffer3 uppe till vänster, och framkanten är ett smalt band på 2 punkter i skiffer1. Konturen är skiffer0 runt hela tackan, och två eller tre punkter rost1 och rost2 sitter samlade vid nedre högra hörnet som en liten rostfläck. Formen är spegelsymmetrisk; bara ljuset och rosten skiljer sidorna åt.",
-   "rader": [
-    ".QQQQQQQQ.",
-    "QTTSTSTSSQ",
-    "QTSTSTSSSQ",
-    "QSTSSTSSSQ",
-    "QSRRRRRRsQ",
-    "QRRRRRRstQ",
-    ".QQQQQQQQ."
-   ],
-   "om": "En enkel avlång järntacka som ligger vågrätt, 10 × 7 punkter, sedd snett ovanifrån. Ovansidan är tre rader i skiffer2 med korn av skiffer3, ljusast uppe till vänster. Framkanten är ett band på två punkter i skiffer1, och konturen runt hela tackan är skiffer0 med avrundade hörn. En liten rostfläck av tre punkter i rost1 och rost2 sitter vid nedre högra hörnet. Formen är spegelsymmetrisk; bara ljuset och rosten skiljer sidorna åt. Granskningen: Ritningen höll i stort: 10 × 7 punkter, alltså lagom liten mot kolonisten (14 × 20). Vinkeln är rätt snett ovanifrån, med ovansidan som rektangel och en framkant på 2 punkter. Formen är spegelsymmetrisk, konturen är skiffer0 och inte svart, och rosten sitter samlad i nedre högra hörnet. Tackan syns tydligt mot det olivgröna gräset. Två små rättelser: 1) Ljuset kom inte tydligt från övre vänstra hörnet, eftersom skiffer3 låg utspritt ända ut i högra kanten. Jag flyttade de ljusa punkterna åt vänster så att ovansidan mörknar mot höger, och skiffer3 finns kvar som korn uppe till vänster. 2) Framkanten var slät skiffer1. Den fick en punkt skiffer2 längst till vänster, så att bandet får korn och ljuset läses från vänster. Inga nya mörka fläckar lades till."
-  },
-  {
-   "ide": "En kort, tjock tacka med avfasade kortändar, som en låg trapets: ovansidan är smalare än foten, så att ovanytan i skiffer2 och skiffer3 är omkring 8 punkter bred och de sneda ändarna och framsidan om 2–3 punkter syns i skiffer1. Den är lägre och kompaktare än en rak tacka, med skiffer0 som kontur och en tunn rand av rost1 längs framkantens nedre del där järnet legat mot marken. Silhuetten är symmetrisk, och glansen är en punkt skiffer3 på ovansidans vänstra kant.",
+   "ide": "Liggande längs, klassisk trapetstacka: ett avlångt block 10 punkter brett och 6 högt. Den platta ovansidan ses ovanifrån som en rektangel på cirka 8×3 punkter i skiffer2 med korn av skiffer3 och ger en enda glanspunkt i skiffer3 uppe till vänster. Under den syns den sneda framsidan som ett band på 2 punkter i skiffer1, som blir bredare nedåt så att silhuetten blir en spegelsymmetrisk trapets; de korta sneda gavlarna är 1 punkt breda, den vänstra i skiffer2 och den högra i skiffer1, och hela konturen är skiffer0 utan någon rost eller röd ton.",
    "rader": [
     "..QQQQQQ..",
-    ".QTTSTSSQ.",
-    "QRTSTSSSRQ",
-    "QRSTSSSRRQ",
-    "QRRSRRRRRQ",
-    "QsRsssssrQ",
-    ".QQQQQQQQ."
+    ".QTSSSSSQ.",
+    ".QSSSTSSQ.",
+    "QSSTSSSSRQ",
+    "QSRRSRRRRQ",
+    "QSRRRRRSRQ",
+    "QQQQQQQQQQ"
    ],
-   "om": "En låg, kompakt tacka som en trapets: en smalare ovansida i skiffer2 med korn av skiffer3, och glansen sitter som en punkt skiffer3 på ovansidans vänstra kant. De sneda kortändarna syns i skiffer1 på båda sidor, så att foten blir bredare än ovansidan. Framsidan är ett band i skiffer1 med en tunn rand av rost1 längs nederkanten, där järnet legat mot marken. Konturen är skiffer0 och silhuetten är spegelsymmetrisk. Granskningen: Storleken (10 × 7), den symmetriska trapetsformen, vinkeln snett uppifrån, skiffer0-konturen och kontrasten mot gräset stämde och är kvar. Jag rättade tre saker. Ljuset: skiffer3 låg utspritt jämnt över hela ovanytan, så att den saknade ljusriktning och såg fläckig ut. Nu ligger skiffer3 som korn på den vänstra halvan, med glansen på ovansidans vänstra kant, och ytan går mot skiffer2 och en aning skiffer1 åt höger, så att ljuset kommer uppifrån vänster. Framsidan: den släta raden av skiffer1 fick ett korn av skiffer2 till vänster. Rostranden: den var hackig, med ensamma punkter av skiffer1 mitt i. Nu är den ett sammanhängande band av rost1 längs nederkanten, ljusare till vänster och med rost0 i det nedre högra hörnet."
+   "om": "Järntacka liggande längs, 10×7 punkter. Den platta ovansidan (tre rader) är skiffer2 med glest korn av skiffer3 och en glanspunkt uppe till vänster. Den vänstra gaveln är skiffer2 och den högra skiffer1. Den sneda framsidan är ett band på två rader i skiffer1 med några punkter skiffer2 till vänster och mörknar mot skiffer0 nere till höger. Hela konturen är skiffer0 och har avfasade hörn, så att silhuetten blir spegelsymmetrisk. Bilden har ingen rost och ingen röd ton. Granskningen: Ritningen var en rak rektangel och ingen trapets, och den var inte spegelsymmetrisk: rad 5 slutade med QQ på höger sida men inte på vänster. Silhuetten är nu en symmetrisk trapetstacka som blir bredare nedåt (6, 8, 8, 10, 10, 10 och 10 punkter). Ovansidan är en platt yta ovanifrån i skiffer2 med korn av skiffer3 och en tydlig glanspunkt uppe till vänster. Jag tog bort den skiffer1-kolumn som skar genom ovansidan till höger. Framsidan är ett band på 2 rader i skiffer1 med lite korn av skiffer2. Den vänstra gaveln är skiffer2 och den högra skiffer1. Konturen är skiffer0 runt om, utan rost. Tackan är 10 × 7 punkter och fyller rutan, och den grå tonen syns tydligt mot det olivgröna gräset."
   },
   {
-   "ide": "En rundad, kuddlik järnklump som är smidd platt men inte kantig: en oval sedd snett uppifrån, omkring 9 punkter bred och 6 hög, med ljusare ovansida i skiffer2 och skiffer3 och mörkare nedre bräm i skiffer1. Konturen är skiffer0, ytan har ett jämnt grått korn utan fläckar, och en liten samlad rostyta i rost1 och rost2 sitter längst ner till höger. Ovalen är spegelsymmetrisk; skillnaden mot tackorna är den mjuka, runda silhuetten utan hörn.",
+   "ide": "Liggande tvärs med gaveln mot betraktaren: en kortare och högre tacka, cirka 7 punkter bred och 7 hög. Ovansidan är en smal, lodrätt utdragen rektangel på cirka 5×4 punkter i skiffer2 och skiffer3, som ses ovanifrån och visar tackans längd bakåt. Framför den sitter gaveln som en spegelsymmetrisk trapets på 2–3 punkter i skiffer1, smalast upptill och bredast nedtill; de sneda långsidorna syns som 1 punkt breda ränder, ljusare till vänster och mörkare till höger, med kontur i skiffer0 runt allt.",
    "rader": [
-    "..QQQQQ..",
-    ".QTTTSSQ.",
-    "QTTSTSSSQ",
-    "QTSTSSSRQ",
-    "QSRRRRtsQ",
-    ".QRRRtsQ.",
-    "..QQQQQ.."
+    ".QQQQQQQ.",
+    "QSTTTSTRQ",
+    "QSTTSTSRQ",
+    "QSTSTSSRQ",
+    "QSRRRRRRQ",
+    "QRRRRRRRQ",
+    ".QQQQQQQ."
    ],
-   "om": "Järnet som en rundad, kuddlik klump sedd snett uppifrån, 9 punkter bred och 7 hög. Silhuetten är en spegelsymmetrisk oval utan hörn, så formen skiljer sig från de kantiga tackorna. Konturen är skiffer0. Ovansidan har ett jämnt korn i skiffer3 och skiffer2, ljusast uppe till vänster. Det nedre brämet är skiffer1. En liten samlad rostyta i rost2 och rost1 sitter längst ner till höger. Granskningen: Nästan allt följer reglerna och idén. Storleken är 9 × 7 punkter, rimlig bredvid kolonisten (14 × 20). Vinkeln är snett uppifrån: ovansidan i skiffer2 och skiffer3, bräm i skiffer1 och kontur i skiffer0, som syns tydligt mot gräset. Silhuetten är en rundad, spegelsymmetrisk oval utan hörn, och ljuset faller uppifrån vänster. Rosten sitter samlad nere till höger, med rost2 på den ljusare sidan. En rättelse: på rad 5 satt en ensam ljus skiffer2-punkt mitt i det mörka brämet. Den bröt regeln om ensamma prickar, så den blev skiffer1. För att brämet ändå ska ha korn och följa ljuset ligger i stället en skiffer2-punkt längst till vänster i brämet, på den belysta sidan, direkt under ovansidan."
+   "om": "Järntackan ligger tvärs med gaveln mot betraktaren, 9×7 punkter. Ovansidan är en platt rektangel på 5×3 punkter i skiffer3 och skiffer2, ljusast uppe till vänster, och den visar tackans längd bakåt. De sneda långsidorna syns som 1 punkt breda ränder: skiffer2 till vänster och skiffer1 till höger. Framför ovansidan sitter gaveln i skiffer1, två rader som blir bredare nedåt (5 punkter upptill, 7 nedtill), med skiffer0 i nedre högra hörnet. Hela tackan har kontur i skiffer0. Formen är spegelsymmetrisk och bara ljuset skiljer sidorna åt. Det finns ingen rost och inget rött någonstans. Granskningen: Storleken (9 × 7 punkter) håller sig inom 10 × 7 och står rimligt mot kolonisten på 14 × 20. Vinkeln snett uppifrån stämmer: ovansidan i skiffer2–3 ses ovanifrån och gaveln i skiffer1 sitter framför. Skifferkonturen och den grå tonen skiljer den tydligt från gräset. Jag rättade en sak: näst nedersta raden hade konturen indragen en punkt i högerkanten (QRRRRRRQQ), så att gavelns nederkant blev sned och silhuetten osymmetrisk. Den är nu QRRRRRRRQ. Då är formen spegelsymmetrisk, och gaveln bildar en trapets som är smalast upptill, där den vänstra ljusa sidoranden i skiffer2 tar en punkt, och bredast nedtill. Bara ljuset skiljer sidorna åt: ljusare rand till vänster, mörkare till höger. Inget annat behövde ändras."
+  },
+  {
+   "ide": "Låg och bred tacka sedd nästan rakt uppifrån, så att alla fyra sneda sidor syns som en ram: ytterformen är en rektangel på 10×6 punkter med avfasade hörn. Mitt i ligger den platta ovansidan som en inre rektangel på cirka 6×2 punkter i skiffer3 och skiffer2. Runt den går de sneda sidorna som ett 1–2 punkter brett band: den övre och den vänstra sidan i skiffer2, den högra och den nedre (framkanten, 2 punkter) i skiffer1, så att formen är spegelsymmetrisk och bara ljuset skiljer sidorna åt; konturen är skiffer0 och ingenting är rött.",
+   "rader": [
+    ".QQQQQQQQ.",
+    "QTSSSSSSRQ",
+    "QSTTSTTTRQ",
+    "QSTTTSTTRQ",
+    "QSRRRRRRRQ",
+    "QRRRRRRRRQ",
+    ".QQQQQQQQ."
+   ],
+   "om": "Järntacka i Björns idé: låg och bred, sedd nästan rakt uppifrån, 10×7 punkter. Ytterformen har avfasade hörn och kontur i skiffer0. Den platta ovansidan är 6×2 punkter i skiffer3 med korn av skiffer2. Runt den går de sneda sidorna: den övre och den vänstra i skiffer2, med ljusare skiffer3 uppe till vänster, och den högra i skiffer1. Framkanten är ett band på 2 punkter i skiffer1. Formen är spegelsymmetrisk och ingenting är rött eller rostigt. Granskningen: Storleken (10×7), den avfasade ytterformen, skifferkonturen och vinkeln nästan rakt uppifrån stämmer mot idén och mot kolonisten. Den grå tackan med mörk kontur syns bra mot det olivgröna gräset, och ingenting är rött. Tre rättelser: 1) Den övre sneda sidan (rad 1) var spräcklig av skiffer3, så den flöt ihop med ovansidan. Nu är den skiffer2 med en enda ljus punkt i det övre vänstra hörnet, och ramen runt ovansidan går att läsa. 2) I framkanten (rad 4) satt en ensam ljus prick av skiffer2 mitt i skiffer1. Den är borta, så framkanten är ett rent mörkt band på två punkter, bara med skiffer2 kvar längst till vänster där den vänstra sneda sidan möter den. 3) Kornet på ovansidan (6×2 punkter, skiffer3 och skiffer2) är jämnare fördelat, utan skiffer2-punkter staplade i samma kolumn. Formen är spegelsymmetrisk; bara ljuset skiljer sidorna åt."
   }
  ],
- "kommentar": "Nya versioner: gör en enklare tacka."
+ "kommentar": "nya versioner: varför är allt järn rött i kanten? ta bort det. Gör en tacka som ser ut som en vanlig tacka, så som de brukar vara formade i modern tid"
 }

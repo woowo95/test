@@ -2,11 +2,37 @@
  "kort": "f10_kott_fagel",
  "namn": "Fågelns kött",
  "slag": null,
- "vad": "Steg 10.3.14: köttet från fågeln, en sak på 16 × 16 punkter. Förut var alla fem sorterna ett kort; nu ett kort per sort, med samma tre idéer som förra gången: benbitar, hela former utan synliga ben och bitar som pekar åt olika håll. Välj den du vill ha för just fågeln. Din kommentar förra gången: ”gör en separerat ruta som jag väjer i för varje sorts kött”",
+ "vad": "Steg 10.3.14: köttet från fågeln, en sak på 16 × 16 punkter. Förut var alla fem sorterna ett kort; nu ett kort per sort, med samma tre idéer som förra gången: benbitar, hela former utan synliga ben och bitar som pekar åt olika håll. Välj den du vill ha för just fågeln.",
  "av": "API:t (claude-opus-5-5), tre idéer",
  "versioner": [
   {
-   "ide": "Med ben: en benbit sedd snett uppifrån.",
+   "bilder": [
+    {
+     "namn": "f10_kott_fagel_benbit",
+     "rader": [
+      "................",
+      "...........oo...",
+      "..........owwo..",
+      "..........owqqo.",
+      "..........oqqqo.",
+      ".........owooo..",
+      "...sssssoqo.....",
+      "..sqwqquuo......",
+      ".sqwqpqqus......",
+      ".sqqpqqpqs......",
+      ".sqpqqpqps......",
+      ".spqqpqpps......",
+      ".sqpqppqps......",
+      "..spqppps.......",
+      "...sssss........",
+      "................"
+     ]
+    }
+   ],
+   "anteckning": "Fågellåret ligger på marken som en enda sak i förrådet, sett snett uppifrån som kartan: lårets axel går från nere till vänster upp mot höger, och formen är spegelsymmetrisk längs den axeln. Den runda köttdroppen (9 × 9 punkter) ligger nere till vänster med skinn i ben2 och ben1 med korn, kontur i rost1 och två punkter glans i ben3 uppe till vänster. Där köttet är avskuret vid benet syns snittet som en sned rand i rost3 tvärs över axeln, och ur den sticker benet ut uppåt höger, ben3 och ben2 med kontur i ben0, ljusast på den övre vänstra sidan. Benet slutar i en liten tvådelad knöl med en skåra i mitten. Hela låret är 14 × 14 punkter och ritas utan behållare. Granskningen: Rättat: köttdroppen var sned, bredare upptill till höger än nere till vänster, och följde inte lårets axel. Den är nu ritad rund och spegelsymmetrisk kring diagonalen från nere till vänster upp till höger, 9 × 9 punkter. Det tjocka och oregelbundna benet är nu ett smalt ben, en punkt ben3/ben2 med kontur i ben0, som går längs samma axel. Knölen var rörig. Den är nu två rena lober (uppe till vänster och nere till höger) med ett hack i ben0 mitt på axeln, och den är också symmetrisk. Randen i rost3 ligger nu samlad där köttet möter benet. Glansen är två punkter ben3 uppe till vänster. Skinnet är ben2 och ben1 med korn och mörknar mot nedre högra hörnet. Inga mörka prickar. Hela saken är omkring 14 × 14 punkter och ryms i rutan. Rostkonturen och de ljusa tonerna gör att den syns på gräset. Inget bärs och det är ingen station, så resten av granskningen gav inget att ändra.",
+   "ide": "Benbit: ett fågellår (en klubba) som ligger snett över rutan, med den runda köttdroppen nere till vänster (ungefär 9 × 8 punkter) och ett smalt ben som sticker ut uppåt höger och slutar i en liten tvådelad knöl, totalt omkring 13 × 13 punkter. Köttet har skinn i ben2 och ben1 med korn och en rand rost3 där köttet är avskuret vid benet, och konturen är rost1. Benet är ben3 och ben2 med kontur i ben0, och glansen är en eller två punkter ben3 uppe till vänster på köttet. Formen är spegelsymmetrisk längs lårets egen axel, och bara ljuset skiljer sidorna åt."
+  },
+  {
    "bilder": [
     {
      "namn": "f10_kott_fagel",
@@ -14,74 +40,51 @@
       "................",
       "................",
       "................",
-      ".......oo.......",
-      "......owqo......",
-      ".......qo.......",
-      ".......qo.......",
-      "......FLHF......",
-      ".....FqLHF......",
-      ".....FLqHF......",
-      ".....FLHHF......",
-      ".....FHLHF......",
-      "......FFF.......",
-      "................",
+      ".....ssssss.....",
+      "...ssqqqpqpss...",
+      "..sqqqqqpqppps..",
+      ".squqwqqpqppuos.",
+      ".spuqqqqppqpuos.",
+      ".spquqpqpqpupos.",
+      ".sqqpuqqppuppos.",
+      ".sqqppuppuppoos.",
+      ".spposoooosooos.",
+      "..soossssssoos..",
+      "...ss......ss...",
       "................",
       "................"
      ]
     }
-   ]
+   ],
+   "anteckning": "Fågeln ligger som en hel plockad kropp på rygg med bröstet uppåt, sedd snett ovanifrån, och utan huvud, fötter eller synliga ben. Kroppen är en spegelsymmetrisk oval på 14 × 10 punkter med konturen i rost1. Mitt på bröstet går en svag ås, ljus till vänster (ben2) och skuggad till höger (ben1). De inåtvikta vingarna är valkar längs sidorna, skilda från bröstet av ett veck i rost3. De två lårknölarna ligger tryckta mot kroppen framtill, var och en avgränsad av rost3 i vecket. Framkanten är ett smalt band av ben0. Glansen är en enda punkt ben3 uppe till vänster på bröstet. Höger sida är mörkare (ben1 och ben0) eftersom ljuset kommer uppifrån vänster. Ingen behållare används; köttet är en enda sak i förrådet. Granskningen: Rättat: version 2 läste som en limpa, en rundad rektangel med raka rost3-ränder längs sidorna, och saknade idéns ås, lårknölar och vingvalkar. Omritad som en plockad fågelkropp snett ovanifrån, 14 × 11 punkter, med spegelsymmetrisk silhuett. Kroppen är smalare baktill där halsen satt och bredast över bröstet. Åsen går mitt på bröstet som en ljus kolumn (ben2) med en skuggsida (ben1) till höger. Vingarna är valkar längs sidorna, och rost3-vecket böjer sig inåt mot låren. De två runda lårknölarna ligger framtill, avskilda från kroppen med ett rostveck och en skåra i konturen, och buktar något framåt utan ben eller fötter. Framkanten är ett smalt band ben0, konturen rost1. Glansen är en enda punkt ben3 på bröstet uppe till vänster, och den högra sidan är mörkare. Storleken mot kolonisten (14 × 20) stämmer för en hel fågel.",
+   "ide": "Hel form utan synliga ben: en hel plockad fågelkropp sedd snett ovanifrån, en spegelsymmetrisk oval på omkring 14 × 10 punkter med bröstet uppåt och en svag ås mitt på bröstet. Två korta, runda lårknölar ligger tryckta mot kroppen framtill, och vingarna är små inåtvikta valkar längs sidorna; inga ben eller fötter sticker ut. Skinnet är ben2 och ben1 i korn med lite rost3 i vecken, framkanten ett smalt band ben0, konturen rost1, och glansen sitter på bröstet uppe till vänster."
   },
   {
-   "ide": "Hel form utan synliga ben, där siluetten bär skillnaden.",
    "bilder": [
     {
-     "namn": "kott_fagel",
-     "rader": [
-      "................",
-      "................",
-      "...oo......oo...",
-      "..owqo....oqpo..",
-      "...oqo....oqo...",
-      "..oqwqoooopqpo..",
-      ".oqwwqqqqqqqppo.",
-      ".owqqwqqqqqqLpo.",
-      ".oqwqqqqqqqLqpo.",
-      "..oqqqqqqqLqpo..",
-      "..oqqqqqqLqLpo..",
-      "...oqqqqLqppo...",
-      "....oqqLqppo....",
-      ".....oqpppo.....",
-      "......oooo......",
-      "................"
-     ]
-    }
-   ]
-  },
-  {
-   "ide": "En bit som pekar åt sitt eget håll, så att sorterna får olika siluetter.",
-   "bilder": [
-    {
-     "namn": "kott_fagel",
+     "namn": "f10_kott_fagel",
      "rader": [
       "................",
       "................",
       "................",
-      "........oo......",
-      "........wo......",
-      "........qo......",
-      ".......EHE......",
-      "......EqHGE.....",
-      "......EHHGE.....",
-      "......EqHGE.....",
-      ".....EHHGE......",
-      "....EHHGE.......",
-      "....EHFE........",
-      ".....EE.........",
+      "................",
+      "........sss.....",
+      "..ssss.sqqps....",
+      ".suuqqsqqpppss..",
+      "sutqpqopqpooqps.",
+      "stupqpssssspqpos",
+      "sttppos....sppos",
+      ".sssss......spos",
+      ".............sos",
+      "..............s.",
+      "................",
       "................",
       "................"
      ]
     }
-   ]
+   ],
+   "anteckning": "Fågelvingen ligger platt på marken eller i förrådet, sedd snett ovanifrån, och ritas som en enda sak utan behållare. Den är böjd i ett platt Z med tre leder: den tjocka roten till vänster, mittdelen som höjer sig något och den spetsiga vingspetsen som pekar ned åt höger. Lederna syns som insnörningar i konturen med ett veck i ben0. Roten är avskuren mot betraktaren, så snittet syns som en yta i rost3 och rost2 i vänsterkanten. Skinnet är ben2 och ben1 med korn: ljusast uppe till vänster och ben0 nere till höger. Konturen är rost1. Bilden blev 16 × 9 punkter, alltså bredare än de omkring 14 × 8 som idén angav, och vingen går ut till rutans båda kanter utan marginal. Ben syns inte; formen gör den skild från de andra sorternas klumpar. Granskningen: Granskad mot reglerna och inget behövde rättas, så versionen lämnas oförändrad. Storleken stämmer: vingen tar 16 × 9 punkter på rutan, nära idéns 14 × 8. Den är en enda sak, mindre än kolonisten och i samma skala som de godkända köttbitarna. Den ligger platt och ses ovanifrån, så vinkeln stämmer. Symmetri krävs inte, eftersom en vinge är en osymmetrisk form. Det platta Z:et med tre leder läses tydligt: den tjocka roten till vänster, mittleden lite högre upp och den spetsiga vingspetsen som pekar ned åt höger. Insnörningarna vid lederna och vecken i ben0 sitter där de ska. Den avskurna ytan på roten är i rost3 och rost2, med den ljusaste tonen uppe till vänster. Skinnet i ben2, ben1 och ben0 har korn utan fläckar och utan glans, och ljuset faller från övre vänstra hörnet med ben0 längs högerkanterna. Konturen i rost1 är sluten, och den ljusa benfärgen syns tydligt mot det oliva gräset. Silhuetten skiljer sig klart från de andra sorternas klumpar och klubbor. Saken bärs inte, så inget går genom ett huvud.",
+   "ide": "Bit som pekar åt sitt eget håll: en fågelvinge som ligger vågrätt och är böjd i ett platt Z, med tre leder (den tjocka vingroten till vänster, mittdelen och den spetsiga vingspetsen som pekar ned åt höger), omkring 14 × 8 punkter. Varje led är en rundad bit med en liten insnörning vid leden, och roten har en avskuren yta i rost3 och rost2 som visar köttet. Skinnet är ben2 och ben1 med korn och lite ben0 i vecken, konturen är rost1, och silhuetten skiljer sig tydligt från de andra sortsernas klumpar och klubbor."
   }
  ]
 }

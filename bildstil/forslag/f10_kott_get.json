@@ -2,86 +2,89 @@
  "kort": "f10_kott_get",
  "namn": "Getens kött",
  "slag": null,
- "vad": "Steg 10.3.14: köttet från geten, en sak på 16 × 16 punkter. Förut var alla fem sorterna ett kort; nu ett kort per sort, med samma tre idéer som förra gången: benbitar, hela former utan synliga ben och bitar som pekar åt olika håll. Välj den du vill ha för just geten. Din kommentar förra gången: ”gör en separerat ruta som jag väjer i för varje sorts kött”",
+ "vad": "Steg 10.3.14: köttet från geten, en sak på 16 × 16 punkter. Förut var alla fem sorterna ett kort; nu ett kort per sort, med samma tre idéer som förra gången: benbitar, hela former utan synliga ben och bitar som pekar åt olika håll. Välj den du vill ha för just geten.",
  "av": "API:t (claude-opus-5-5), tre idéer",
  "versioner": [
   {
-   "ide": "Med ben: en benbit sedd snett uppifrån.",
+   "bilder": [
+    {
+     "namn": "f10_kott_get",
+     "rader": [
+      ".............oo.",
+      "............owqo",
+      "...........oqqo.",
+      "..........oqoo..",
+      ".........oqo....",
+      "......rrpqor....",
+      ".....rpqutsr....",
+      "....rpqtuttsr...",
+      "...rpqutsttsr...",
+      "..rputtstssr....",
+      ".rqtttstsssr....",
+      ".rpttstsssr.....",
+      ".rtsstsssr......",
+      "..rssssr........",
+      "...rrrr.........",
+      "................"
+     ]
+    }
+   ],
+   "anteckning": "Getlåret är en sak i förrådet och ligger platt på marken, sett snett uppifrån. Det ligger på snedden: den tjocka, rundade änden av köttet är nere till vänster, och spetsen smalnar av uppåt höger. Där går skenbenet ut, fem punkter långt och tunt, och slutar i en liten rund knöl i övre högra hörnet. Benet syns bara där det sticker ut ur köttet; inne i spetsen ligger det kvar som en ljus punkt. Köttet har kontur i rost0 och kornad yta i rost1 och rost2, med några punkter rost3 uppe till vänster, där ljuset faller. Fettkanten i ben1 och ben2 är smal och går bara längs den övre vänstra sidan, så köttet ser magrare ut än fårets. Längs den nedre högra kanten ligger ett band av rost1 med rost0 under, som visar köttets tjocklek sett ovanifrån. Benet är ben2 med kontur i ben0 och en enda punkt ben3 som glans uppe till vänster på knölen. Granskningen: Storleken, vinkeln och silhuetten stämmer med idén. Getlåret ligger på snedden från nedre vänstra hörnet mot övre högra, och skenbenet sticker ut uppe till höger och slutar i en rund knöl med en punkt ben3 som glans. Det rostfärgade köttet med kontur syns bra mot gräset. Det enda jag rättade var köttets yta. Där bildade rost3 och rost2/rost1 diagonala ränder (utut, tststs) med åtta punkter rost3 över hela stycket. Det bröt mot regeln om korn i stället för mönster och mot idén om bara några punkter rost3 uppe till vänster. Nu finns rost3 bara på fyra punkter innanför fettkanten uppe till vänster. Resten är oregelbundet kornad i rost2 och rost1 och blir mörkare mot nedre högra kanten, så ljuset kommer uppifrån vänster. Konturen, fettkanten i ben1/ben2, tjockleksbandet i rost1/rost0 längs nederkanten och benet är oförändrade.",
+   "ide": "Benbit: ett smalt getlår som ligger på snedden från nedre vänstra hörnet mot övre högra, ett droppformat köttstycke på ungefär 10 × 7 punkter med ett tunt, långt skenben på 5 punkter som sticker ut uppe till höger och slutar i en liten rund knöl. Köttet är mörkare och magrare än fårets: kontur i rost0, ytan kornad i rost1 och rost2 med några punkter rost3 uppe till vänster, och bara en smal fettkant i ben1 och ben2 längs den övre vänstra sidan. Benet är ben2 med ben3 som glans på knölen och kontur i ben0, och ett smalt band på 2 punkter i rost0 och rost1 längs nederkanten visar tjockleken sett snett uppifrån."
+  },
+  {
    "bilder": [
     {
      "namn": "f10_kott_get",
      "rader": [
       "................",
-      "......o...o.....",
-      "......w...q.....",
-      "......q...q.....",
-      "......q...p.....",
-      "....ooqoooqo....",
-      "....oqpqqpqo....",
-      "....rutttstr....",
-      "....rttsttsr....",
-      "....rtstttsr....",
-      "....rttstssr....",
-      "....rtsttssr....",
-      "....rssssssr....",
+      "................",
+      "................",
+      "................",
+      "....rrrrrrrr....",
+      "...ruututstsr...",
+      "..rutppptstssr..",
+      "..rtutstststsr..",
+      "..rtstspppstsr..",
+      "..rssrsssssrsr..",
+      "...rrsrssrsrr...",
       "....rrrrrrrr....",
       "................",
+      "................",
+      "................",
       "................"
      ]
     }
-   ]
+   ],
+   "anteckning": "Getsteken ligger platt på marken eller i förrådet som en enda sak, utan behållare, och ses snett uppifrån som kartan. Formen är en spegelsymmetrisk oval, 12 × 8 punkter, vågrätt mitt i rutan. Ovansidan tar raderna 4–9, alltså ungefär tre fjärdedelar av höjden. Den är kornad i rost1 och rost2, med rost3 bara uppe till vänster där ljuset faller. Två korta senstråk i ben1 löper på längden, förskjutna mot varandra. Framkanten är ett band på två rader i rost0 och rost1, och hela formen har kontur i rost0. Inga ben syns, så biten läses som ett kompakt, magert filéstycke. Rosttonerna är mättade eftersom det är mat som går att ta, och biten blir ljusare än gräset. Granskningen: Granskad och oförändrad. Storleken stämmer: biten är 12 × 8 punkter mitt i rutan och ligger lagom liten bredvid kolonisten (14 × 20). Formen är spegelsymmetrisk. Ovansidan ses uppifrån och tar rad 4–8, ungefär fem åttondelar av höjden. Framkanten på rad 9–11 är ett smalt band i rost0 och rost1, så vinkeln är snett uppifrån och inte en sidovy. Ljuset faller rätt: rost3 bara uppe till vänster, och nere till höger är det mörkast. Konturen är rost0 runt hela formen, utan svart. Ytan är kornad i rost1 och rost2 med två korta senstråk i ben1 som löper på längden, och inga ben syns, som idén säger. Den mättade rosten och den mörka konturen gör att biten syns tydligt på olivgräset. Den bärs inte, så det finns inget att pröva mot huvud eller ansikte.",
+   "ide": "Hel form utan ben: en avlång, spegelsymmetrisk oval getstek på omkring 12 × 8 punkter som ligger vågrätt mitt i rutan, något tillplattad som ett magert filéstycke. Ovansidan ses uppifrån och tar ungefär tre fjärdedelar av höjden, kornad i rost1 och rost2 med rost3 bara i övre vänstra delen och två korta, ljusa senstråk i ben1 som löper på längden. Framkanten är ett band på 2–3 punkter i rost0 och rost1 med kontur i rost0 runt hela formen, så att den läses som en kompakt, mörk bit utan några synliga ben."
   },
   {
-   "ide": "Hel form utan synliga ben, där siluetten bär skillnaden.",
    "bilder": [
     {
-     "namn": "kott_get",
+     "namn": "f10_kott_get",
      "rader": [
       "................",
-      "...rrrr.........",
-      "..rqqqpr........",
-      ".rqutttsr.......",
-      ".rqttstsr.......",
-      "..rtstssr.......",
-      "...rtsssr.......",
-      "....rsssoo......",
-      ".....rrowqo.....",
-      "........owqo....",
-      ".........owqo...",
-      "..........owqo..",
-      "..........owqpo.",
-      "...........oppo.",
-      "............oo..",
+      ".....ooo........",
+      "....oqppooo.....",
+      "....rputsqqo....",
+      "....ruttspo.....",
+      "....rttsr.......",
+      "....rutsroo.....",
+      "....rtstsqqo....",
+      "....rttsspo.....",
+      "....rstsr.......",
+      "....rtstroo.....",
+      "....rstssqqo....",
+      "....rtssspo.....",
+      "....rrrrr.......",
+      ".....rrr........",
       "................"
      ]
     }
-   ]
-  },
-  {
-   "ide": "En bit som pekar åt sitt eget håll, så att sorterna får olika siluetter.",
-   "bilder": [
-    {
-     "namn": "kott_get",
-     "rader": [
-      "................",
-      "................",
-      "................",
-      "................",
-      "................",
-      "....rrrrrrrrrrr.",
-      ".oortsstsstsssr.",
-      ".owqpqqpqpqppor.",
-      ".oorststssssssr.",
-      ".oqppqpppppppor.",
-      ".oorsstsssssssr.",
-      "...rrrrrrrrrrrr.",
-      "................",
-      "................",
-      "................",
-      "................"
-     ]
-    }
-   ]
+   ],
+   "anteckning": "Ett lodrätt revbensstycke från geten som ligger på marken eller i förrådet, sett snett ovanifrån. Det är en enda sak utan behållare. Köttremsan är fem punkter bred och upptar kolumn 4–8. Överst sitter fettkanten i ben1 med en glanspunkt i ben2 uppe till vänster. Själva köttet är kornigt i rost1 och rost2, med ljuset (rost3) längs vänstra sidan och den mörkare tonen åt höger. Konturen är rost0. Tre revben går ut åt höger, jämnt fördelade, och sticker 2–3 punkter ut ur köttet. Ovansidan av varje ben är ljus (ben2) och undersidan mörkare (ben1), och konturen är ben0, så att ljuset från övre vänstra hörnet stämmer. Längs nederkanten ligger ett band i rost0 på två rader. Det är bitens tjocklek sedd snett uppifrån, och det enda av sidan som syns. Hela saken är 8 × 14 punkter, så den skiljer sig från de vågräta och sneda sorterna. Granskningen: Granskad, inget behövde rättas. Storleken stämmer: omkring 8 × 14 punkter i en ruta på 16, rimligt mot kolonisten (14 × 20) och de godkända sakerna. Vinkeln är rätt för en sak på marken: stycket ses ovanifrån med ett smalt band i rost0 längst ner som tjocklek. Konturen är materialets mörkaste ton, rost0 runt köttet och ben0 runt fettet och benen, utan svart. Ljuset kommer uppifrån vänster: rost3 och fettet i ben2 och ben1 ligger uppe till vänster, rost1 och rost0 nere till höger. De tre revbensändarna är jämnt fördelade, 2–3 punkter långa och ljusa överst, mörkare under. Toppen och botten är rundade på samma sätt. Köttet syns tydligt mot det olivgröna gräset. Idén följs: en lodrät bit som skiljer sig i form från de vågräta och sneda sorterna.",
+   "ide": "Bit som pekar åt sitt eget håll: ett smalt revbensstycke från geten som ligger lodrätt i rutan, omkring 7 punkter brett och 14 högt, så att det skiljer sig från de andra sorterna, som ligger vågrätt eller på snedden. Köttet bildar en lång remsa till vänster i rost1 och rost2 med en fettkant i ben1 överst, och åt höger sticker tre korta, jämnt fördelade revbensändar ut, 2–3 punkter långa i ben2 med kontur i ben0. Längs nederkanten syns ett smalt mörkare band i rost0 som tjocklek, och ljuset faller uppe till vänster på köttremsan."
   }
  ]
 }

@@ -23,7 +23,7 @@
   ".EGFE......................EFFE.",
   ".EEEE......................EEEE."
  ],
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), tre idéer",
  "pal": {
   "E": "#3f2415",
@@ -36,7 +36,6 @@
   "w": "#dad0bb"
  },
  "om": "Bred lådsäng med fårskinn: en djupare ram av breda plankor där sidbrädorna går upp över bolstret som en låg kant runt om, så att man ser in i sängen ovanifrån som i en grund låda, med ett framkantsband på 3 punkter i jord1 där plankfogarna syns som två lodräta streck och bara de två främre benen som stumpar på 3 punkter. Inuti ligger ett ljust ullbolster i ben2–ben3 och ovanpå det, snett över fotänden, ett lurvigt fårskinn i ben1–ben2 med tovig ojämn kant, och en tvärliggande kudde vid vänstra änden. Silhuetten är en ren, kantig rektangel, lägre och tyngre än de andra, och hela sängen ryms inom 32 × 18 punkter. Lådsäng 32 × 18 punkter: kantig ram av jord0–jord3 där sidbrädornas krön (jord3) och insidor (jord1 till vänster i skugga, jord2 till höger mot ljuset) syns runt om som en grund låda. Inuti en tvärliggande kudde i ben3/ben2 vid vänstra änden, ett ullbolster i ben3/ben2 och snett över fotänden ett fårskinn i ben1/ben2 med tovig kant i ben0. Framkantsbandet är tre rader jord1 med två lodräta fogar i jord0, därunder konturen och två främre ben som stumpar på 3 punkter. Ingen sittplats, ingen skugga på marken. Granskningen: Sängen följer reglerna och idén: lådan ses snett ovanifrån med ytan på två tredjedelar av höjden. Sidbrädorna går runt bolstret, och de inre väggarna är mörkare mot ljuset uppe till vänster. Framkanten är ett band på 3 punkter i jord1 med två lodräta fogar. Fårskinnet ligger snett över fotänden, kudden tvärs vid vänstra änden, och den ljusa ramen i jord3 syns på gräset. Formen är spegelsymmetrisk och storleken stämmer mot kolonisten. Jag rättade bara benen: de var stumpar på 2 punkter med konturen inräknad, kortare än de 3 punkter som idén och regeln (3–6) kräver. Varje ben fick en rad till, mörkare nertill och med det högra benet något mörkare än det vänstra. Bilden är nu 32 × 19 punkter, inom gränsen på 20.",
- "vald": 3,
  "forra": {
   "ritad": 1,
   "rader": [
@@ -61,5 +60,33 @@
    ".EGFE......................EFFE.",
    ".EEEE......................EEEE."
   ]
- }
+ },
+ "versioner": [
+  {
+   "ide": "",
+   "rader": [
+    "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+    "EHHGHHHHGHHHHHGHHHHGHHHHHGHHHHGE",
+    "EHFGGFGGGFGGGGFGGGFGGGGFGGGFGGGE",
+    "EHFoqwwqwwwqwwqwwqwwqwqwwqwqqGHE",
+    "EHFowqoooooqwwqwwqwqwwqwqwqqpGHE",
+    "EHFoqowwwqwoqwwqwqwwqwqqwqpqpGGE",
+    "EHFowowwqwqowqwqwwqwqqwqpqqpqGHE",
+    "EHFoqowqwqqoqwqwqqwqqpqqpqppqGHE",
+    "EHFoqqooooopqqpqqpqpqpqppqpqpGGE",
+    "EHFoqqqpppppqpqpqpqppqpppqpppGHE",
+    "EHFopppopppopooopopopoppopopoGHE",
+    "EHHHGHHHHGHHHHHGHHHGHHHHHGHHHHHE",
+    "EFGFFFFGFFFEFFGFFFFGFEFFFGFFFFFE",
+    "EFFFGFFFFGFEGFFFFGFFFEFGFFFFGFFE",
+    "EFFFFGFFFFFEFFFFGFFFFEFFGFFFFFFE",
+    "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+    ".EHFE......................EGFE.",
+    ".EGFE......................EFFE.",
+    ".EEEE......................EEEE."
+   ],
+   "om": "Kudden till vänster är borttagen enligt Björns kommentar. Ullbolstret går nu över hela ramen, med samma ljusa toner (w och q, ljusast uppe till vänster) och samma kontur i ben0. Ramen av plankor, bolstrets veck, framkanten och de korta benen är oförändrade, och storleken är densamma: 32 × 19 punkter. Granskningen: Storleken (32 × 19 mot kolonistens 14 × 20), vinkeln och ramen följer reglerna och är oförändrade. Bolstret ses ovanifrån, framkanten är ett band på 3 punkter, och bara de främre benen syns som stumpar på 3 punkter, spegelsymmetriskt placerade. Ramen har kontur i jord0 och syns på gräset. Jag rättade bolstret. Den diagonala linjen i ben0 och den mörka högra halvan fick det att se ut som en sprucken stenhäll, och kudden gick inte att läsa ut. Nu är bolstret ett jämnt ullkorn i ben3, ben2 och ben1, ljusast uppe till vänster och mörkare nere till höger, utan någon spricka. Vid huvudänden till vänster ligger en tydlig, rundad kudde (rad 4–8, kolumn 5–11) med kontur i ben0, ljus insida och en liten skugga under och till höger. Kuddens rundning (konturen saknas i hörnen) syns mindre tydligt i så liten storlek, så det är värt att titta på den i spelets storlek. Bädden läses nu som en säng och inte som en bänk."
+  }
+ ],
+ "kommentar": "ta bort kudden, eftersom den är ett eget föremål; behåll resten"
 }

@@ -16,7 +16,7 @@
   "EFE.......",
   "EE........"
  ],
- "ritad": 2,
+ "ritad": 3,
  "av": "API:t (claude-opus-5-5), tre idéer",
  "pal": {
   "E": "#3f2415",
@@ -32,56 +32,56 @@
   {
    "ide": "",
    "rader": [
-    ".......QQ.",
-    "..QQQ.QTTQ",
-    ".QTTSTSSTQ",
-    ".QTFSSSRTQ",
-    ".QSSRRRRSQ",
-    "..EHEQRRSQ",
-    "..EGE.QRSQ",
-    ".EHE...QQ.",
-    ".EGE......",
-    "EHE.......",
-    "EFE.......",
-    "EE........"
-   ],
-   "om": "Samma skaft och lutning som flintyxan, nere till vänster upp mot övre högra hörnet. Flinthuvudet är utbytt mot ett smitt järnhuvud i skiffergrått: ett skafthål där skaftets ände syns som en träpunkt (F), en liten nacke till vänster och ett blad som vidgar sig åt höger. Eggen är ljusare (T/S) och ljuset kommer uppifrån vänster. Surrningen är borttagen; skaftet går direkt in i skafthålet. Konturen är skiffer0 runt järnet och jord0 runt träet. Granskningen: Inget behövde rättas. Yxan är 10 × 12 punkter och fyller rutan, så den står rimligt mot kolonisten (14 × 20). Huvudet är smitt järn med skiffer0 som kontur, och den ljusa skiffertonen sitter uppe till vänster och längs eggen, den mörka nertill. Skaftet är trä med jord0 som kontur och går snett ner åt vänster. Skafthålet syns som skaftets ände (jord1) i huvudet, och ingen surrning är ritad. Nacken sitter till vänster om hålet, och bladet med skägg går ner till höger, så yxan ligger snett och läses snett uppifrån. En yxa är inte spegelsymmetrisk, så den regeln gäller inte här. Det grå järnet och det bruna skaftet med sina konturer är ljusare än det olivgröna gräset och syns tydligt på det. Inga ensamma mörka prickar, ingen ren vit glans och bara palettens färger."
-  },
-  {
-   "ide": "",
-   "rader": [
-    "...QQQ....",
-    "..QTTSQ.Q.",
-    "..QTGSRQTQ",
-    "..QSFSRSTQ",
-    "...EGEQSTQ",
+    "....QQQQQ.",
+    "...QTSRSTQ",
+    "...QSGRSTQ",
+    "...EHQRSTQ",
+    "...EGEQRTQ",
     "..EHE..QTQ",
-    "..EGE...QQ",
+    "..EGE...Q.",
     ".EHE......",
     ".EGE......",
     "EHE.......",
     "EFE.......",
     "EE........"
    ],
-   "om": "Byggd på flintyxans modell. Skaftet är detsamma och går snett från nedre vänstra till övre högra hörnet. Flinthuvudet är utbytt mot ett smitt järnhuvud i skiffertoner med skiffer0 som kontur. Huvudet har en kort nacke uppe till vänster och ett skafthål, där skaftets ände syns i trätoner (jord2 och jord1). Bladet är ett nordiskt skägg som hänger ner längs högra sidan, med ljus slipad egg i skiffer3. Ingen surrning: skaftet går rakt in i hålet. Granskningen: Oförändrad. Bilden är 10 × 12 punkter och ryms i rutan. Mot kolonisten (14 × 20) blir yxan ungefär två tredjedelar av hans höjd, vilket är rimligt för en handyxa. Den ligger snett på marken, så det finns ingen station att se ovanifrån, och en yxa behöver inte vara symmetrisk. Skaftet går diagonalt från nere till vänster upp genom skafthålet, där träet syns som G och F inne i huvudet. Någon surrning finns inte, som idén kräver. Huvudet är ritat i skiffer med konturen i skiffer0, skaftet i jord med konturen i jord0. Det ljusa ligger uppe till vänster (T) och det mörka in mot hålet och nedåt (R, Q). Skaftets korn växlar mellan H och G utan mörka fläckar. Det gråa järnet och det bruna träet med sina konturer syns tydligt mot det olivgröna gräset. Inga färger utanför paletten och ingen kol0 används."
+   "om": "Flintyxans bild är grunden, i samma storlek (10×12) och form, och skaftet är oförändrat från rad 3 och nedåt. Bara huvudet är bytt: flintklumpen är ersatt av ett smitt järnhuvud i skiffertoner med kontur i skiffer0. Huvudet har ett skafthål där skaftets ände syns som trä, en kort nacke och ett blad som vidgar sig åt höger till en rak egg. Eggen har en ljus slipad kant i skiffer3. Ljuset kommer uppifrån vänster och den mörka sidan är nere till höger. Ingen surrning. Granskningen: Inget rättat; punkterna är oförändrade. Storleken (10 × 12) fyller rutan och är rimlig mot kolonisten (14 × 20). Yxan ligger snett, med skaftet diagonalt nerifrån vänster upp genom skafthålet. Träet syns i hålet (G vid rad 2), och det finns ingen surrning, så idén följs. Skaftet har jordtoner (H, G, F) med jord0-kontur och järnet skiffertoner (T, S, R) med skiffer0-kontur. Ingen svart används. Ljuset kommer uppifrån vänster: det ljusaste järnet ligger uppe till vänster i huvudet. Den ljusa eggkanten är den slipade eggen och räknas som glans, inte som en ljuskälla. Det ljusgrå järnet och det ljusa träet med mörk kontur syns tydligt mot olivgräset. Silhuetten med skäggat blad är läsbar i liten storlek, och yxan är byggd på flintyxans modell med ett smitt järnhuvud."
   },
   {
    "ide": "",
    "rader": [
-    ".......QQ.",
-    "....QQ.QTQ",
-    "...QTSQTSQ",
-    "...QHGSSRQ",
-    "...EGQQSRQ",
-    "..EHE..QRQ",
-    "..EGE...QQ",
+    "....QQQ...",
+    "...QTHTQQQ",
+    "...QSGSTTQ",
+    "...QSSSSTQ",
+    "...EGQRSSQ",
+    "..EHE.QRRQ",
+    "..EGE..QQ.",
     ".EHE......",
     ".EGE......",
     "EHE.......",
     "EFE.......",
     "EE........"
    ],
-   "om": "Skaftet är samma som flintyxans: samma diagonal, samma trätoner och samma kontur. Flinthuvudet är utbytt mot ett smitt järnhuvud i skiffergrått med skiffer0 som kontur. Det har en kort nacke uppe till vänster och ett skafthål där skaftets ände syns i trä (H och G). Mellan hålet och bladet sitter en smal hals. Bladet vidgas till en egg längs högerkanten och har ett skägg som går ner till rad 6. Ljuset kommer uppifrån vänster: skiffer3 på nacken och bladets övre del, mörkare skiffer1 nere till höger. Ingen surrning. Granskningen: Oförändrad. Storleken är 10 × 12 och fyller rutan; bredvid kolonisten (14 × 20) blir yxan ungefär en halv människolängd, vilket är rimligt. Yxan ligger snett med skaftet från nedre vänstra hörnet upp mot huvudet. Skaftet har jord0 som kontur, jord3 och jord2 omväxlande som korn och mörknar till jord1 vid foten. Huvudet är grått järn (skiffer) med skiffer0 som kontur, en kort nacke till vänster och ett blad till höger som vidgar sig nedåt. Skaftets topp syns i skafthålet, och det finns ingen surrning. Ljuset faller uppifrån vänster med skiffer3 som glans uppe till vänster och skiffer1 nere till höger. Konturerna och det ljusa skaftet och järnet skiljer sig tydligt från gräset. Det finns inga ensamma mörka prickar och inga tecken utanför paletten."
+   "om": "Ritad från flintyxans bild i samma storlek (10×12) och form. Skaftet är oförändrat, liksom vinkeln från nedre vänstra till övre högra hörnet. Bara huvudet är bytt mot ett smitt järnhuvud i skiffergrått med skiffer0 som kontur. Huvudet har en ring runt skafthålet, där skaftets ände i trä (jord3/jord2) syns ovanifrån. Från ringen går en hals ut i ett blad som vidgar sig åt höger och nedåt. Ljuset kommer uppifrån vänster och eggen har en ljus kant. Ingen surrning. Granskningen: Ingen rättning behövs; punkterna är oförändrade. Storleken på 10 × 12 punkter är rimlig för en handyxa bredvid kolonisten (14 × 20) och samma som flintyxans modell. Yxan ligger snett, och ljuset faller uppe till vänster: T och H är ljusast upptill vid ögat och R mörkast nere till höger på bladet. Järnhuvudet är grått i skiffer (S/T/R) med skiffer0 som kontur och ett skafthål där skaftets topp syns genom ögat. Skaftet passerar inuti huvudet, och ingen surrning syns, som idén säger. Skaftet är trä i jord med jord0 som kontur och korn mellan H och G. Det grå järnet och den bruna konturen syns tydligt mot det olivgröna gräset, och silhuetten är lättläst i liten storlek. Inga otillåtna färger, inget svart och ingen ren vit glans."
+  },
+  {
+   "ide": "",
+   "rader": [
+    "....QQQ.QQ",
+    "...QTTSQTQ",
+    "...QSGSRTQ",
+    "...QSRRRSQ",
+    "...EGQQRSQ",
+    "..EHE..QQ.",
+    "..EGE.....",
+    ".EHE......",
+    ".EGE......",
+    "EHE.......",
+    "EFE.......",
+    "EE........"
+   ],
+   "om": "Flintyxans bild i samma storlek och form. Skaftet är oförändrat från rad 4 och ned. Bara huvudet är bytt: flintklumpen är ersatt av ett smitt järnhuvud i skiffertoner. Det har en rundad hylsa runt skafttoppen, där skafthålet syns med träets ände (G) i mitten, en smal hals och ett utsvängt blad med ljus egg till höger. Konturen är skiffer0, ljuset kommer uppifrån till vänster och det finns ingen surrning. Granskningen: Ingen rättning behövs; punkterna är oförändrade. Storleken stämmer: 10 × 12 punkter, och yxan är kortare än kolonisten (20 punkter), alltså ett handredskap. Vinkeln är rätt: yxan ligger snett på marken, med skaftänden synlig i skafthålet ovanifrån. Det finns ingen surrning, och huvudet är smitt järn i tonerna skiffer 0–3, med konturen skiffer0. Skaftet är trä i jord1–3 med konturen jord0, och kornet växlar mellan H och G längs skaftet. Ljuset faller uppifrån vänster: T uppe till vänster på huvudet och den mörkare tonen R nere mot skafthålet. Eggen är något ljusare, som slipat järn. Glansen är bara två T-punkter och ingen vit. Både järnet och träet har kontur och ljusa mellantoner, så yxan syns väl mot gräset i oliv och barr. Formen bygger på flintyxans modell: snett skaft från nedre vänstra hörnet till huvudet uppe till höger. Kol0 används inte."
   }
  ],
  "forra": {
@@ -101,5 +101,5 @@
    "EE........."
   ]
  },
- "kommentar": "Utgå från samma modell som flintyxan (den nuvarande ritningen): byt flinthuvudet mot ett smitt huvud av grått järn med skafthål, och ta bort surrningen."
+ "kommentar": "inte tillräckligt lika flintyxan: utgå från flintyxans bild (Flintyxa, bredvid) i samma storlek och form, och byt bara huvudet mot ett smitt järnhuvud med skafthål; ingen surrning"
 }

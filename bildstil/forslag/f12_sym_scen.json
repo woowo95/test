@@ -1,0 +1,93 @@
+{
+ "kort": "f12_sym_scen",
+ "namn": "Symbolen bra på scenen",
+ "slag": [
+  "symbol"
+ ],
+ "vad": "Steg 12.1.192: symbolen för 🎭 i texterna, en glad mask: ryktet bra på scenen, publiken tog väl emot framträdandet. I spelet är den nu version 1 (platshållare). Bilden visar symbolen två gånger på panelens beige, i den storlek den har i en textrad.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "gör tre nya versioner av version 2 (de två maskerna)",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f12_sym_scen",
+     "rader": [
+      "........EEEEE...",
+      ".......EGGGFGE..",
+      "......EGGFGGGFE.",
+      "......EGFGGFGFE.",
+      "...EEEEGllGllFE.",
+      "..EwwwqEGFGGFFE.",
+      ".EwwqwqqEGFGFFE.",
+      "EwqwqqwqpEFGFFE.",
+      "EqllqqllpEllFFE.",
+      "EwqqpqqppEFFFE..",
+      "EuqpqqppuEEEE...",
+      "EqtlllltpE......",
+      ".EqllllpE.......",
+      ".EqpllppE.......",
+      "..EqpppE........",
+      "...EEEE........."
+     ]
+    }
+   ],
+   "anteckning": "Symbolen ses rakt framifrån som två masker som lutar mot varandra, utan bakgrund. Den glada masken ligger främst nere till vänster. Den är 10 × 12 punkter, i ljust trä av ben3 och ben2 med korn av ben1 och kontur i jord0. Ljuset kommer uppifrån vänster och träet mörknar nedåt höger. Den bakre, lugna masken i jord2 och jord1 sticker fram uppe till höger. Där den främre ligger över den syns bara den främre maskens kontur, så den bakres vänstra mungipa och nedre vänstra kant är dolda. Det är logiskt, eftersom den ligger bakom. Båda maskerna är spegelsymmetriska var för sig. Ögonhålen är i kol1 eftersom de är hål rakt igenom. Den glada munnen är en stor halvmåne i kol1 med rost2 i mungiporna, och kinderna är prickar av rost3 som enda varma färg. De få, stora formerna gör att symbolen går att läsa i textradens storlek. Granskningen: Granskad, inget behövde rättas. Symbolen är 16 × 16 och nästan fyller rutan (15 × 16), med jord0-kontur runt båda maskerna och utan bakgrund. Den följer idén: den främre glada masken är 10 × 12 punkter nere till vänster, i ben3 och ben2 med korn av ben1. Den har mandelformade ögonhål i kol1, en stor uppåtböjd mun i kol1 med rost2 i mungiporna och kinder i rost3. Den bakre masken uppe till höger är i jord2 och jord1, delvis skymd, med lugn rak mun. Båda maskerna är spegelsymmetriska var för sig. Den främre har mitten mellan kolumn 4 och 5, och ögon, kinder, mungipor och kontur speglas exakt. Den bakre har mitten i kolumn 10: ögonen ligger på 8–9 och 11–12, och munnen på 9–11 skyms till vänster av den främre maskens kontur. Ljuset kommer uppifrån vänster, med ben3 och jord2 uppe till vänster och ben1 och jord1 nere till höger. Glans och starka toner finns bara i munnen och kinderna. Symbolen läses tydligt både på gräset och på panelens beige. Den bärs inte och har ingen vinkel mot kartan, eftersom den är en symbol framifrån.",
+   "ide": "Två överlappande ovala masker framifrån: den främre, glada, är störst (ungefär 10 × 12 punkter) och sitter nere till vänster, snidad i ljust trä i ben2 och ben3 med korn av ben1 och kontur i jord0. Den bakre masken sticker fram uppe till höger, delvis skymd, i mörkare jord1 och jord2 och med lugn rak mun. Båda maskerna är spegelsymmetriska var för sig och har mandelformade ögonhål i kol1, och den främre har en stor uppåtböjd halvmåne till mun med en rost2-ton i mungipan och kinder i rost3."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f12_sym_scen",
+     "rader": [
+      "................",
+      ".EEEEE....EEEEE.",
+      "EwqqqqE..ELLKKKE",
+      "EqqqqpE..ELKKKJE",
+      "EqlqlpE..EKlKlJE",
+      "ElqqqlE..ElKKKlE",
+      ".EqqqqpEEKKKKJE.",
+      ".ElqqplEElKKJlE.",
+      ".EqlllpEEKlllJE.",
+      "..EqqrtutsrJJE..",
+      "...EprsstsrJE...",
+      "....EErtsrEE....",
+      "......rtsr......",
+      ".....rs..sr.....",
+      ".....r....r.....",
+      "................"
+     ]
+    }
+   ],
+   "anteckning": "Symbolen ses rakt framifrån, utan bakgrund: två lika stora glada masker som lutar utåt som ett V, med ett hack mellan dem upptill. Spetsarna möts nertill, där en knuten läderrem håller ihop dem. Remmen är ett band över båda spetsarna i rost2 och rost3, med kontur i rost0 och en knut i mitten. Remmens två ändar hänger ner snett åt var sitt håll. Den vänstra masken är ben2 med ben3 i ljuset och den högra senap2 och senap3, båda med kontur i jord0. Ansiktena är spegelsymmetriska: sneda ögonspringor i kol1 som skrattar och en bred mun med uppdragna mungipor. Den enda glanspunkten i ben3 sitter uppe till vänster på den vänstra masken. Ljuset kommer från vänster, så maskerna mörknar mot nedre högra kanten (ben1 och senap1). Granskningen: Rättat: (1) Remmen nedtill var lika lång som maskerna och korsade sig som två pinnar, så symbolen lästes som en lägereld; nu är den ett band om maskernas nederdelar med en liten knut och två korta ändar. (2) Vänstra masken hade två glanspunkter i ben3 (rad 1 och 4); bara den uppe till vänster finns kvar. (3) Lutningen utåt som ett V gjordes jämn: maskerna står raka till och med ögonen och flyttas sedan ett steg inåt per avsnitt mot spetsen. Ögonen är sneda leende springor och munnen en uppåtböjd båge. Ansiktena är punkt för punkt spegelvända; bara tonerna skiljer sidorna åt. (4) Symbolen flyttades ner en rad så att den står mitt i rutan. Oförändrat: storleken, de två maskerna i ben och senap med kontur i jord0, remmen i rost och ingen bakgrund.",
+   "ide": "Två lika stora glada masker sida vid sida, lutade utåt som ett V så att de möts i en spets nertill, där en knuten läderrem i rost1 och rost2 binder ihop dem. Maskerna är rundade fyrkanter som små sköldformade träbrickor (cirka 7 × 11 punkter), den vänstra i ben2 och ben3 och den högra i senap2 och senap3, båda med kontur i jord0. Ansiktena är spegelsymmetriska: två sneda ögonspringor i kol1 som ler, en bred uppåtböjd mun och en enda glanspunkt i ben3 uppe till vänster på den vänstra masken."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f12_sym_scen",
+     "rader": [
+      "....EE..........",
+      "...EHHE....oo...",
+      "..EHHHGE..owwo..",
+      ".EHlHHlGEowwwqo.",
+      ".EHHHHGGowlwqlqo",
+      ".ElHHHGlowwqwqqo",
+      ".EHllllGotwqqqto",
+      ".EHHGHGGowllllqo",
+      "..EGHGGEowqwqqpo",
+      "...EEEE..oqqqpo.",
+      "....EFE...oooo..",
+      ".....EFE..EFE...",
+      "......EFEEFE....",
+      ".......EEFE.....",
+      ".......EFEE.....",
+      ".......E..E....."
+     ]
+    }
+   ],
+   "anteckning": "Symbolen ses rakt framifrån och har ingen bakgrund. Två droppformade masker, smala upptill och runda nertill, sitter på var sitt kort skaft. Skaften går snett ner från maskernas underkant och korsas i ett X längst ner, som om två aktörer håller upp maskerna mot varandra. Händerna ligger utanför bilden, så bara skaften syns. Den högra masken av ben (ben3 och ben2, kontur i ben0) står främst och ligger över trämaskens kant (jord3 och jord2, kontur i jord0). Därför går också dess skaft framför det andra i korset. Båda ansiktena är spegelsymmetriska: runda ögonhål och ett brett leende i kol1. Den främre maskens mungipor är i rost2, så att glädjen syns först. Ljuset kommer uppifrån vänster: den ljusa tonen ligger uppe till vänster och den mörka nere till höger på varje mask. Granskningen: Granskat mot reglerna. Formatet är rätt: 16 × 16 punkter, symbolen sedd framifrån och nästan fyllande rutan. Det enda som behövde rättas var skaftens ändar. I nedersta raden gick skaften i jord1 rakt ut mot bildkanten utan kontur, och regeln säger mörk kontur runt hela symbolen. Raden är därför ändrad till två ändpunkter i jord0 där skaften slutar, så att varje skaft får en sluten spets och X-et fortfarande läses. Resten är oförändrat, eftersom det följer idén och reglerna. Maskerna är spegelsymmetriska droppformer med ögon, mungipor och mun mitt för var sin mittlinje. Ljuset kommer från vänster uppe: H och w åt vänster, G och p åt höger. Den främre masken av ben ligger över den bruna och har mungiporna i rost2. Skaften korsas i ett X där den främre maskens skaft går över det bakre. Konturerna är materialens mörkaste toner, jord0 och ben0, och kol0 används inte.",
+   "ide": "Två avlånga masker av näver eller trä, var och en hållen på ett kort skaft, där skaften korsas i ett X nertill som om två aktörer håller upp dem mot varandra. Maskerna är höga droppformer, smalare upptill och rundare nertill (cirka 7 × 10 punkter), lutade lite inåt mot varandra så att de överlappar vid kanten; den ena är i ben2 och ben3, den andra i H och G, och skaften i jord1 med kontur i jord0. Båda har spegelsymmetriska glada ansikten med runda ögonhål i kol1 och en stor leende mun, och den främre masken får mungiporna i rost2 så att glädjen syns först."
+  }
+ ]
+}

@@ -1,0 +1,15 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f10_hast=utgå från version 2 och gör 5 versioner av den"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 0.72,
+  "hog": 1.54
+ },
+ "dollar": 1.515,
+ "rapport": [
+  "f10_hast: 5 versioner"
+ ]
+}

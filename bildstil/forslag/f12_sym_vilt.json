@@ -1,0 +1,120 @@
+{
+ "kort": "f12_sym_vilt",
+ "namn": "Symbolen vilt",
+ "slag": [
+  "symbol"
+ ],
+ "vad": "Steg 12.1.192: symbolen för 🦌 i texterna, vilt på vägen: ett rådjur som sällskapet kan jaga. I spelet är den nu version 1 (platshållare). Bilden visar symbolen två gånger på panelens beige, i den storlek den har i en textrad.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "gör tre nya versioner av version 3 (bara hornen)",
+ "versioner": [
+  {
+   "ide": "Förra version 3, oförändrad: bara hornen, ett par grenade rådjurshorn, symmetriska.",
+   "anteckning": "Den version 3 som Björn utgick från, så att den går att välja.",
+   "bilder": [
+    {
+     "namn": "f12_sym_vilt",
+     "rader": [
+      "................",
+      "..k...k..k...k..",
+      ".kGk.kGkkGk.kGk.",
+      ".kGkkGk..kGkkGk.",
+      "..kGGk....kGGk..",
+      "..kGk.k..k.kGk..",
+      "..kGkkGkkGkkGk..",
+      "...kGGk..kGGk...",
+      "...kGk....kGk...",
+      "....kGk..kGk....",
+      "....kGGkkGGk....",
+      ".....kHHHHk.....",
+      ".....kFFFFk.....",
+      "......kkkk......",
+      "................",
+      "................"
+     ]
+    }
+   ]
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f12_sym_vilt",
+     "rader": [
+      "....E......E....",
+      "..EEqE....EqEE..",
+      ".EqEqE....EqEqE.",
+      "..EHHE....EGGE..",
+      "...EHEE..EEGE...",
+      "...EHEqEEqEGE...",
+      "...EGEHEEGEFE...",
+      "...EHGE..EFGE...",
+      "...EHGE..EFGE...",
+      "...EpGE..EFoE...",
+      "....EpGEEFpE....",
+      "...EpHpEEoGpE...",
+      "...EppGEEFpoE...",
+      "....EHqHGpGE....",
+      "....EGHGFGFE....",
+      ".....EEEEEE....."
+     ]
+    }
+   ],
+   "anteckning": "Rådjurshornen ses rakt framifrån, som de sitter på pannan: en liten tvärgående pannbit av ben längst ner (rad 13–15, 6 punkter bred) bär två nästan lodräta stänger som bildar ett smalt, högt V upp till översta raden. Varje stång har rådjurets tre ändar: en framtagg mitt på som pekar inåt och uppåt, en bakåttagg nära toppen som pekar utåt, och själva spetsen. Formen är spegelsymmetrisk. Ljuset kommer från vänster, så vänster stång är jord3/jord2 och höger jord2/jord1. Längs nedre halvan och vid rosenkransen sitter knottror i ben1 (ben0 på skuggsidan). Spetsarna är ljusa i ben2. Hela konturen är jord0 och det finns ingen bakgrund, så att symbolen läses tydligt på panelens beige. Granskningen: Granskad, ingenting rättat. Det är en symbol (16 × 16), så storleken mot kolonisten och snett-uppifrån-vinkeln gäller inte; den ritas framifrån och nästan fyller rutan (kolumn 1–14, rad 0–15). Formen är exakt spegelsymmetrisk rad för rad. Den följer idén: ett smalt, högt V med en pannbit av ben i raderna 13–15 (6 punkter bred). Varje stång når översta raden och har bakåttaggen utåt nära toppen, framtaggen inåt-uppåt mitt på och själva spetsen i ben2. Stängerna är jord2/jord3 med knottriga ben1-punkter på nedre halvan, och vänster stång är ljusare (H/p/q) än höger (G/F/o), alltså ljus uppifrån vänster. Konturen i jord0 går runt hela och syns tydligt på både beige och gräs. Bara palettens tecken används, utan kol0 och utan mörka fläckar. Den bärs inte, så regeln om huvud och ansikte gäller inte.",
+   "ide": "Ett par rådjurshorn rakt framifrån som ett smalt, högt V, fästa i en liten tvärgående pannbit av ben längst ner (rader 13–15, cirka 6 punkter bred). Varje stång reser sig nästan lodrätt till översta raden och har de tre klassiska rådjursändarna: en framtagg som pekar inåt-uppåt mitt på, en bakåttagg nära toppen som pekar utåt och själva spetsen. Formen är spegelsymmetrisk; stängerna är jord2/jord3 med knottriga ben1-punkter längs nedre halvan, ljusare spetsar i ben2, hela konturen i jord0, och vänster stång är något ljusare än höger."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f12_sym_vilt_v4_lyra",
+     "rader": [
+      ".....E....E.....",
+      "....EqE..EpE....",
+      "...EqpE..EqpE...",
+      "..EHGE....EHGE..",
+      ".EwHE......EHGE.",
+      "EqHGE......EHGoE",
+      "EpHGE......EGGoE",
+      ".EHGE......EHGE.",
+      "EqHGE......EHGoE",
+      "EpGGE......EGGoE",
+      ".EEHGE....EHGEE.",
+      "...EHGE..EHGE...",
+      "...EpGHEEHGoE...",
+      "...EqHFEEGHoE...",
+      "...EFGFEEFGFE...",
+      "....EEEEEEEE...."
+     ]
+    }
+   ],
+   "anteckning": "Symbolen visar bara rådjurshornen, framifrån som de sitter på huvudet. De två pärlade rosetterna på 3×3 punkter möts nere i mitten, där pannan skulle vara. Stängerna stiger utåt, bär två korta, tjocka ändar som sticker ut åt var sin sida och böjer sedan inåt, så att de ljusa spetsarna nästan möts upptill. Silhuetten blir en bred lyra eller ett hjärta över hela rutan. Formen är spegelsymmetrisk; bara ljuset skiljer sidorna åt. Vänster stång och spetsar är ljusare, med glans på en punkt uppe till vänster, och höger rosett är mörkare nere till höger. Jord0 är konturen runt allt, och det finns ingen bakgrund. Det är samma bild båda gångerna på panelen, så jag ritar den en gång. Granskningen: Formen var symmetrisk och läsbar och följde idén. Två saker bröt mot ljuset och idén, och de är rättade. (1) Högra stångens ändar var ljusa (ben1) på ytterkanten åt höger, mot ljuset från övre vänstra hörnet. De är nu ben0, så att vänster sida är ljusast och höger mörkast; formen är oförändrad. (2) Rosetterna saknade de ljusa knottrorna, och bara vänster hade en ljus punkt. Nu har båda rosetterna två knottror på ytterkanten: ben1/ben2 till vänster och ben0 till höger, i samma lägen på båda sidor. Konturen i jord0 runt allt, glansen på en punkt uppe till vänster, storleken 16 × 16 och symmetrin är kvar. Symbolen syns tydligt på gräset bredvid kolonisten.",
+   "ide": "Hornen som en bred, låg lyra: två kraftiga stänger som går ut från var sin tjock, pärlad rosett (en rund klump på 3×3 punkter i jord1/jord2 med ljusa knottror) nere i mitten, böjer utåt och sedan inåt igen så att spetsarna nästan möts upptill och silhuetten blir som ett hjärta eller en krona över hela rutans bredd. Ändarna är korta och tjocka, två per stång, och sticker ut åt sidorna, vilket ger en bred, kompakt form som läses tydligt i textstorlek. Formen är symmetrisk med jord0-kontur runt allt, stängerna i jord2 och jord3, de ljusa spetsarna i ben1/ben2 och glans på en punkt uppe till vänster på vänster stång."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f12_sym_vilt",
+     "rader": [
+      "............E.E.",
+      "...........EqEqE",
+      ".......E...EpEpE",
+      "......EqE..EHGFE",
+      "......EHE.EHGEE.",
+      "......EHGEHFE...",
+      ".......EHGFE....",
+      ".......EHFE.....",
+      "......EHGFE.....",
+      ".....EHpFE......",
+      ".E..EpGFE.......",
+      "EqEEHGFE........",
+      "EGqHGFE.........",
+      ".EpGFE..........",
+      "..EpFE..........",
+      "...EE..........."
+     ]
+    }
+   ],
+   "anteckning": "Ett fällt rådjurshorn ligger snett över rutan, sett från sidan, och nästan fyller diagonalen. Rosetten sitter nere till vänster som en bred, knottrig krans i ben1 och ben2 tvärs över stångens ände. Bakom kransen syns en liten mörk brottyta i jord1, där hornet har fällts. Stången går upp mot övre högra hörnet. Den är grov och har ben1-knottror i nedre halvan. Mitt på stången går en kort framtagg uppåt, och strax under toppen delar sig stången i en gaffel. Silhuetten blir som en gren med tre fingrar, och alla tre spetsarna är ben2. Ljuset faller på stångens övre vänstra kant (jord3) och skuggan på den nedre högra (jord1). Hornet är ett föremål och ritas därför inte symmetriskt. Konturen är jord0 runt hela, och bilden har ingen bakgrund. Granskningen: Ritade om hornet efter idén. Den gamla versionen lästes som en kratta: tre lika taggar på rad upptill, en gren åt vänster nertill och en svans under, och ingen rosett. Nu ligger ett enda horn från nedre vänstra hörnet till övre högra och fyller diagonalen. Nertill sitter rosetten, en tandad krans tvärs över stammen med ljusa ben1- och ben2-tänder och trappstegskontur. Stången är tre punkter bred och knottrig med ben1 i nedre halvan och smalnar till två punkter uppåt. En kort framtagg går upp från stångens ovansida mitt på, och en gaffel strax under spetsen ger silhuetten tre fingrar. Spetsarna är ben2, och ljuset ligger i jord3 på övre vänstra kanten och skuggan i jord1 på nedre högra. Konturen är jord0 runt hela, och storleken är 16 × 16 utan bakgrund.",
+   "ide": " Ett enda fällt rådjurshorn liggande snett över rutan från nedre vänstra hörnet (rosetten) till övre högra hörnet (spetsen), så att det fyller diagonalen. Rosetten nertill är en bred, tandad krans, stången är grov och knottrig i nedre halvan och två taggar går ut från stångens ovansida: en kort framtagg mitt på och en gaffel strax under spetsen, så att silhuetten blir som en gren med tre fingrar. Hornet är ett föremål och inte symmetriskt; det tecknas i jord2 med ben1-knottror och ben2-spetsar, jord0-kontur runt hela, och ljuset faller på den övre-vänstra kanten av stången."
+  }
+ ]
+}

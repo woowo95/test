@@ -24,7 +24,7 @@
   "EGE........EFE",
   "EE..........EE"
  ],
- "ritad": 1,
+ "ritad": 2,
  "av": "API:t (claude-opus-5-5), tre idéer",
  "pal": {
   "E": "#3f2415",
@@ -37,7 +37,6 @@
   "w": "#dad0bb"
  },
  "om": "Rund trebent pall med en rund sits ovanifrån, cirka 12 punkter bred och 6 hög, där en rund fårskinnsdyna med lurvig, ojämn ullkant (ben1–ben3) ligger mitt på träet. Ryggstödet är en enda bred vågrät planka, 12 punkter bred och 3 hög, buren av två smala stolpar som står upp från bakkanten, så att man ser mellanrummet med golvet genom ryggen. Framkanten är en tunn båge i jord1, och bara de två främre benen syns som korta snedställda stumpar på 4–5 punkter; silhuetten är symmetrisk och konturen jord0. Trebent pall, 14×20. Ryggstödet är en enda vågrät planka (12×5 med kontur i jord0), ljusast uppe till vänster. Den bärs av två smala stolpar som står upp från sitsens bakkant, och golvet syns mellan dem. Sitsen är rund och sedd snett ovanifrån. Mitt på den ligger en rund fårskinnsdyna i ben1–ben3 med lurvig, ojämn kant i ben0. Framkanten är en båge i jord1. Bara de två främre benen syns, som snedställda stumpar på 5 punkter, och silhuetten är symmetrisk. Granskningen: Storleken (14 × 20), vinkeln, ryggplankan på två stolpar med marken synlig mellan dem, framkantens band i jord1, de två snedställda främre benstumparna och konturen i jord0 var redan rätt. Jag har rättat två saker. Sitsen var fyrkantig fast idén säger en rund pall. Nu är den rundad och spegelsymmetrisk: 10, 12, 14, 14, 14, 12, 12 och 10 punkter bred uppifrån och ned. Dynan var en rak fyrkant. Nu är den en rund fårskinnsdyna mitt på träet, med en lurvig och ojämn ullkant i ben1–ben3, ljusast uppe till vänster och skuggad med ben0 nere till höger. Ben3 finns bara på två punkter. Träet runt dynan är fortfarande ljust till vänster (jord3/jord2) och mörkt till höger (jord1), så stolen syns tydligt på gräset.",
- "vald": 2,
  "forra": {
   "ritad": 1,
   "rader": [
@@ -62,5 +61,34 @@
    "EGFE....EFFE",
    "EEEE....EEEE"
   ]
- }
+ },
+ "versioner": [
+  {
+   "ide": "",
+   "rader": [
+    ".EEEEEEEEEEEE.",
+    ".EHHGFHGFHGGE.",
+    ".EHGGFGHFGGFE.",
+    ".EGGGFGGFGFFE.",
+    ".EEEEEEEEEEEE.",
+    "..EGE....EFE..",
+    "..EGE....EFE..",
+    "..EGEEEEEEFE..",
+    ".EHGHpqqpGGFE.",
+    "EHGpqwqqpqoGFE",
+    "EHpqwqqpqppoFE",
+    "EGpqqpqppqoGFE",
+    ".EGGopppoGFFE.",
+    ".EFGGFGGFGFFE.",
+    "..EFFFFFFFFE..",
+    "..EGEEEEEEFE..",
+    "..EGE....EFE..",
+    "..EGE....EFE..",
+    "..EGE....EFE..",
+    "..EEE....EEE.."
+   ],
+   "om": "Benen är nu raka och lodräta. De två främre benen fortsätter rakt ner från framkanten under sitsen, i samma kolumner som ryggstödets stolpar (2–4 och 9–11), som korta stumpar på 4 punkter med en ljusare jord2-sida till vänster och jord1 till höger. Foten avslutas med jord0. Ryggstödet, plankorna, skinndynan och framkanten är oförändrade. Granskningen: Det mesta stämmer. Stolen är 14 × 20 punkter och fyller rutan. Den ses snett ovanifrån: dynan ligger ovanifrån på sitsen, framkanten är ett mörkare band på två rader och bara de främre benen syns, som stumpar på fem punkter. Ryggstödet står förkortat vid bakkanten på sina stolpar. Formen är spegelsymmetrisk, och bara ljuset skiljer sidorna åt: ljust uppe till vänster, mörkt nere till höger. Träet har konturen jord0 och är ljusare än gräset, så stolen syns på marken. Den beniga dynan är det ljusaste och läses först. Det enda som bröt mot idén var ryggstödet. Det var en slät panel, inte plankor. Jag lade in två fogar i jord1 på rad 1–3, i kolumn 5 och 8, symmetriskt kring mitten, så att ryggstödet läses som tre lodräta plankor. Allt annat är oförändrat."
+  }
+ ],
+ "kommentar": "rakare ben: benen ska vara raka och lodräta, inte snedställda"
 }

@@ -17,7 +17,7 @@
   "...sr....sr...",
   "...rr....rr..."
  ],
- "ritad": 2,
+ "ritad": 3,
  "av": "API:t (claude-opus-5-5), tre idéer",
  "pal": {
   "E": "#3f2415",
@@ -35,10 +35,10 @@
   "o": "#7e7362",
   "p": "#a0947d",
   "q": "#bdb39b",
-  "r": "#521100"
+  "r": "#521100",
+  "n": "#474138"
  },
  "om": "Ett runt, grunt fat sett snett ovanifrån som en bred oval, cirka 14 punkter bred och 8 hög, med en tjock kant av bränd lera i rost1 och rost2 (ljusast uppe till vänster) och kontur i rost0, spegelsymmetrisk kring mittlinjen. Inne i ovalen ligger glödande kol ovanifrån: klumpar i kol1 och kol2 med sprickor och punkter i rost3 och senap2, ljusast mitt i, högst en punkt senap3 som glöd. Under fatets framkant ett smalt band på 2 punkter i rost0, och av de tre fötterna syns bara två korta stumpar på 3 punkter fram till vänster och höger; den tredje står bak och döljs. Fyrfatet som en bred, spegelsymmetrisk oval på 14×8 punkter: en tjock lerkant i rost2 uppe till vänster och rost1 nere till höger, med en glanspunkt i rost3 och kontur i rost0. Inne i fatet ligger kol i kol1 och kol2 med glöd i rost3 och senap2, och en enda senap3 mitt i. Under fatet går en framkant på 2 punkter i rost0, och två korta fötter (3 punkter) står fram till vänster och höger. Den bakre foten är dold. Granskningen: Ritningen följer i stort reglerna och idén. Storleken är 14 × 13 punkter och ryms i rutan; bredvid kolonisten (14 × 20) är det en rimlig storlek för ett fat. Vinkeln är rätt: kolbädden ligger som en oval ovanifrån och tar cirka 60 % av höjden, och två fotstumpar på 3 punkter syns framtill, så den tredje foten döljs. Formen är spegelsymmetrisk, och rost med kontur i rost0 syns tydligt mot det oliva gräset. Glöden är en enda punkt senap3 mitt i kolet. Två rättelser: (1) Den främre kanten (rad 7) var nästan helt rost1 och flöt ihop med framkanten. Nu har den kantens ovansida ljus i rost2 med en punkt rost3 och går mot rost1 bara längst till höger, så ljuset kommer från vänster som på bakkanten. (2) Framkanten var två helt släta rader rost0 som smälte ihop med konturen. Nu är den ett band med en rad rost1 och en rad rost0, där rost0 också fungerar som undre kontur. Bandet är fortfarande 2 punkter och mörkare än kanten ovanför. Resten är oförändrat.",
- "vald": 1,
  "forra": {
   "ritad": 2,
   "rader": [
@@ -57,5 +57,62 @@
    "..EGE.EGFE.EFE..",
    "..EEE.EEEE.EEE.."
   ]
- }
+ },
+ "versioner": [
+  {
+   "ide": "",
+   "rader": [
+    "...rrrrrrrrrr...",
+    ".rtuuttttttsssr.",
+    "rtulmnmlmlmlmssr",
+    "rtnmlmknmlmklmsr",
+    "rtmnlkmlmnlmklsr",
+    "rtlmnmlklmlmlksr",
+    "rtmlmklmnlkmlmsr",
+    "rttlmlklmlmlmssr",
+    ".rtttttttttsssr.",
+    ".rssssssssssssr.",
+    "..rssssssssssr..",
+    "...rrrrrrrrrr..."
+   ],
+   "om": "Fötterna är borta, så det grunda fatet av bränd lera står direkt på golvet. Den låga framkanten är ett band i rost1 med rost0 som kontur. Kärlets kant är ljus uppe till vänster (rost3/rost2) och mörkare nere till höger (rost1). Fatet är fyllt med släckt träkol i kol0–kol3 med korn. Den gula glöden i mitten är borttagen, så det finns inga lågor och ingen eld i bilden: elden läggs på av spelet och animeras som lägerelden. Bilden är 16 punkter bred och 12 hög. Granskningen: Ytan ses ovanifrån med framkanten som ett smalt band, och lerans kontur är rost0, så vinkel, kontur och ljus följer reglerna. Storleken (16 × 12 mot kolonistens 14 × 20) och synligheten mot gräset är bra. Jag rättade två symmetrifel. 1) Rad 10 var förskjuten ett steg åt vänster (kolumn 2–12) och är nu centrerad (kolumn 2–13), så fatets underkant blir spegelsymmetrisk. 2) Kolbädden var sned: den slutade tidigare till höger på rad 6 och var smalare och förskjuten på rad 7. Nu är den en symmetrisk oval: kolumn 3–12 överst och nederst, 2–13 däremellan. Bara kanttonerna skiljer sidorna, ljusare t/u till vänster och mörkare s till höger."
+  },
+  {
+   "ide": "",
+   "rader": [
+    "....rrrrrrrr....",
+    "..rutututttssr..",
+    ".rulmlmnmlmlmsr.",
+    "rtlmnlmtlmlmlmsr",
+    "rumlmlstsmlnlmsr",
+    "rtlnmlmslmlmlksr",
+    "rtmlmlmlmtmlklsr",
+    "rttlmlmlmlklkssr",
+    "rttuttttttsssssr",
+    "rtsstssssstssssr",
+    ".rtssssstsssssr.",
+    "..rrrrrrrrrrrr.."
+   ],
+   "om": "Fötterna är borta och fatet står direkt på golvet. Det är bredare och grundare, 16 punkter brett och 12 högt, och ses snett ovanifrån: kolbädden är ovanifrån, och fatets framkant är ett mörkt band på tre rader. Lågorna och det gula glödskenet i mitten är borta. Kolet är kol och svart i tonerna k–n, med bara några små rostglöd (s/t) som visar att det brinner. Elden ritas av spelet ovanpå. Leran är bränd i rost, med kontur i rost0, ljuset uppe till vänster och mörkare toner nere till höger. Granskningen: Storleken (16 × 12) passar rutan och kolonisten. Vinkeln med kolbädden ovanifrån och en smal framkant är rätt. Formen är spegelsymmetrisk, och fatet syns tydligt på gräset tack vare rostkonturen. Idén följs: ett grunt lerfat utan fötter med kol och några glödande punkter, och inga lågor ritade. Två rättningar: 1) Rad 7 saknade kontur i kanterna, så silhuetten fick en midja strax ovanför framkanten. Nu går den ut till kanten (rttl…kssr) och fatets oval är sluten och jämn. 2) Framkanten (rad 9–10) var helt slät rost1. Den har nu korn i ljusare rost2, mest på vänster sida mot ljuset, utan mörka fläckar."
+  },
+  {
+   "ide": "",
+   "rader": [
+    "....rrrrrrrr....",
+    "..ruttttttttsr..",
+    ".rtnnmmlmmlmlsr.",
+    "rtnmnmmlnmlmmlsr",
+    "rtmnmllmmnmlllsr",
+    "rtnmlmnmllmlmlsr",
+    "rtmlmmllmlllmlsr",
+    "rtslmlmllllmlssr",
+    ".rtsttttttttssr.",
+    ".rssssssssssssr.",
+    "..rrssssssssrr..",
+    "....rrrrrrrr...."
+   ],
+   "om": "Fyrfatet är nu ett grunt, ovalt fat av bränd lera, 16 punkter brett och 12 högt. Det ses snett ovanifrån och står direkt på golvet. Fötterna är borttagna. Glöden och lågorna i mitten är också borttagna, så fatet är bara fyllt med kol i kol1–kol3 med korn. De ljusaste kolbitarna ligger uppe till vänster, och jag har inte använt kol0. Kanten har rostkontur. Ovankanten är ljusast uppe till vänster (rost3/rost2) och mörknar åt höger. Framkanten är ett smalt band i rost1. Elden lägger spelet ovanpå. Granskningen: Fyrfatet håller i stort. Det är 16 × 12 punkter och fyller rutan väl bredvid kolonisten (14 × 20). Fatet är spegelsymmetriskt, ses snett uppifrån med kolbädden ovanifrån (rad 1–7, mer än halva höjden), och framkanten är ett smalt band på 3 rader i mörkare rost. Det har inga fötter och står direkt på golvet. Konturen är rost0, ljuset kommer uppifrån vänster (t och en glanspunkt u på vänster kant, s åt höger), och den bärnfärgade rosten syns tydligt mot gräset. Inga lågor eller glöd är ritade, eftersom spelet lägger elden ovanpå. Det enda jag rättade var kolbädden: den var ett regelbundet schackrutigt mönster av m och l, alltså ett mönster och inte korn. Nu är den oregelbundna kolbitar med kol3 (n) som ljusare kanter uppe till vänster och mer kol1 (l) nere till höger, så att ytan har korn utan ensamma fläckar. Formen, kanten och storleken är oförändrade."
+  }
+ ],
+ "kommentar": "ta bort fötterna, fatet står direkt på golvet. Rita bara fatet med kolet, inga lågor: elden ritas av spelet ovanpå, animerad som lägerelden"
 }

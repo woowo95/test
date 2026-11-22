@@ -2,86 +2,89 @@
  "kort": "f10_kott_bjorn",
  "namn": "Björnens kött",
  "slag": null,
- "vad": "Steg 10.3.14: köttet från björnen, en sak på 16 × 16 punkter. Förut var alla fem sorterna ett kort; nu ett kort per sort, med samma tre idéer som förra gången: benbitar, hela former utan synliga ben och bitar som pekar åt olika håll. Välj den du vill ha för just björnen. Din kommentar förra gången: ”gör en separerat ruta som jag väjer i för varje sorts kött”",
+ "vad": "Steg 10.3.14: köttet från björnen, en sak på 16 × 16 punkter. Förut var alla fem sorterna ett kort; nu ett kort per sort, med samma tre idéer som förra gången: benbitar, hela former utan synliga ben och bitar som pekar åt olika håll. Välj den du vill ha för just björnen.",
  "av": "API:t (claude-opus-5-5), tre idéer",
  "versioner": [
   {
-   "ide": "Med ben: en benbit sedd snett uppifrån.",
    "bilder": [
     {
      "namn": "f10_kott_bjorn",
      "rader": [
       "................",
-      "..ooooooooooo...",
-      ".oqwqqpqqqpqqo..",
-      "oqqpqqqpqqpqppo.",
-      "oppqppqpppqpppo.",
-      "EGFsFFGFsFFFsFE.",
-      "EFsFGFFsFFsFFFE.",
-      "EsFFFsFFGFFsFrE.",
-      "EFFsFFsFFFsFFrE.",
-      "EFsFFsFFFsFFsrE.",
-      "EFsFFFFsFFsFrrE.",
-      "EsrrrsrrrrsrrrE.",
-      "ErrrrrrrrrrrrrE.",
-      ".EEEEEEEEEEEEE..",
-      "................",
+      ".oo.............",
+      "owqo............",
+      "owqpoo..rrrr....",
+      ".oppqqorqLLqqr..",
+      "..oopqprLuttLqr.",
+      "....oorutttsLKr.",
+      ".....rttttstsKJr",
+      ".....rttstttssJr",
+      ".....rtststtsssr",
+      "......rtststssEr",
+      "......rstststEEr",
+      ".......rstssEEr.",
+      "........rEEEEr..",
+      ".........rrrr...",
       "................"
      ]
     }
-   ]
+   ],
+   "anteckning": "Björnlåret ligger på marken som en sak i förrådet och syns snett ovanifrån. Det ligger diagonalt från övre vänstra till nedre högra hörnet. Det korta, grova lårbenet sticker ut uppe till vänster, där ljuset kommer ifrån, och slutar i en knölig ledkula i ben (w, q, p med o som kontur). Köttet är en päronformad klump i rost (t och s) med rost0 som kontur. Den smala änden sitter vid benet och den tunga änden nere till höger. Glansen i u ligger uppe till vänster. Det tjocka fettet (L, q) går som en ljus båge längs ovansidan och ner längs högra kanten, så att det syns ovanifrån mot det röda. Längs nedre högra kanten går ett smalt band av jord0 och rost0 som framkant. Mer syns inte av köttet när det ligger. Ingen behållare och ingen skugga, den lägger programmet till. Granskningen: Storleken (16 × 14 punkter) passar för ett kraftigt björnlår bredvid kolonisten. Vinkeln, silhuetten, benet med ledkulan och synligheten på gräset följer idén och behöll jag. Jag rättade två saker. Glansen i rost3 satt på tre punkter, och en av dem låg mitt i köttet. Jag tog bort två av dem, så att det nu finns en glans på två punkter uppe till vänster (r5 och r6). Fettet längs högerkanten var ljust (q och L) ända ner mot konturen, vilket bröt mot ljuset från övre vänstra hörnet. Där skuggade jag det med senap2 och senap1 (K, J), så att fettbågen är ljus överst och mörknar ner längs högra sidan.",
+   "ide": "Benbit: ett kraftigt björnlår som ligger snett från övre vänstra till nedre högra hörnet, omkring 14 × 11 punkter, med ett kort och grovt lårben som sticker ut 3–4 punkter i övre vänstra änden och slutar i en knölig ledkula i ben (w, q, p med o som kontur). Köttet är en tung, päronformad klump i rost (t och s, u som glans uppe till vänster) med rost0 (r) som kontur och ett smalt band av rost0 och jord0 längs nedre högra kanten som framkant. Ett tjockt fettlager i ben och senap (q, L) går som en båge längs ovansidan, eftersom björnen är fet, och syns ovanifrån som en ljus kant mot det mörkröda."
   },
   {
-   "ide": "Hel form utan synliga ben, där siluetten bär skillnaden.",
    "bilder": [
     {
-     "namn": "kott_bjorn",
+     "namn": "f10_kott_bjorn",
      "rader": [
       "................",
-      "....rrrrrrrr....",
-      "..rrtuqtttssrr..",
-      ".rtuqLttqqtsssr.",
-      ".rtqttsLqtsqssr.",
-      "rtuttqqtsstLsssr",
-      "rtqLtssqtssqqssr",
-      "rttsqtssLqsstssr",
-      "rttsLqssstLqsssr",
-      "rtrrsqssLsssrrsr",
-      "rtsprrrrrrrrsssr",
-      "rtsspsstssspsssr",
-      ".rtssssssssssrr.",
+      "................",
+      "................",
+      "...rrrrrrrrrr...",
+      "..rLwqLqLqqpqr..",
+      ".rLqLqqLqLqqpor.",
+      ".rutpqttpstptsr.",
+      ".rtutstpsttspsr.",
+      ".rttsptsstpstsr.",
+      ".rtsttsstsstssr.",
+      ".rsrsrrsrrsrrrr.",
       "..rrrrrrrrrrrr..",
+      "...rrrrrrrrrr...",
+      "................",
       "................",
       "................"
      ]
     }
-   ]
+   ],
+   "anteckning": "Steken ligger platt på marken och ses snett ovanifrån, som en sak i förrådet. Den är en hel, bred och låg björnstek på 14 × 10 punkter, utan synligt ben. Den övre ytan tar 7 av 10 rader. Fettkappan i L och q ligger längs bakkanten, den bakre tredjedelen, med en enda glanspunkt (w) uppe till vänster. Köttet nedanför är mörkt rödbrunt i t och s med korta fettådror i p. Framkanten är ett smalt band av rost0 (r) på tre rader, med lite s som korn. Konturen är r runt hela biten. Formen är en spegelsymmetrisk rundad rektangel, och bara ljuset (u till vänster, s och o till höger) skiljer sidorna åt. Ingen behållare och ingen skugga på marken. Granskningen: Granskad mot reglerna. Storleken (14 × 10 punkter på rutan 16 × 16) passar en stor stek från ett stort djur och är rimlig bredvid kolonisten. Vinkeln är snett ovanifrån: ovansidan tar rader 4–9, och framkanten är ett smalt band i rost0 på rad 10–11 med konturen under. Silhuetten är spegelsymmetrisk som en rundad rektangel. Ljuset ligger rätt: w som enda glanspunkt i fettkappan uppe till vänster och u på köttets vänstra sida, med det mörkare o och s åt höger. Konturen är rost0 och inget kol används. Steken syns tydligt mot gräset. Den följer idén: hel form utan ben, en fettkappa i q och L över den bakre tredjedelen och fettådror i p. En rättelse: rad 6 var nästan till hälften fett (p och q) och gjorde fettkappan otydlig, så den bakre tredjedelen inte längre läste som en kappa. Raden är nu kött i t och s med bara två korta fettådror i p och en kvarvarande q som övergång. Resten är oförändrat.",
+   "ide": "Hel form utan synligt ben: en bred och låg stek, som en tjock kudde på omkring 13 × 10 punkter, ritad snett ovanifrån så att den övre ytan tar tre fjärdedelar av höjden och framkanten är ett smalt band på 2–3 punkter i rost0 (r). Ovansidan är en mörk, nästan rödbrun yta i s och t med en tjock fettkappa i q och L som täcker den bakre tredjedelen och några korta fettådror (p) in i köttet. Formen är nästan spegelsymmetrisk som en rundad rektangel med något avrundade hörn, och bara ljuset (u uppe till vänster) och kornet skiljer sidorna åt, så att den läses som en hel styck kött från ett stort djur."
   },
   {
-   "ide": "En bit som pekar åt sitt eget håll, så att sorterna får olika siluetter.",
    "bilder": [
     {
-     "namn": "kott_bjorn",
+     "namn": "f10_kott_bjorn",
      "rader": [
-      "................",
-      "................",
-      "................",
-      "...ooooooo......",
-      "..ooqLqLqpoo....",
-      ".oqLpqLpqLppo...",
-      "oLprtuttsssrpo..",
-      "oLrtutstsssrpooo",
-      "oqrtstsssssrpqwo",
-      "oprststssssrppqo",
-      "oprsstsssssrpooo",
-      ".oqprrrrrrrppo..",
-      "..ooppqppppoo...",
-      "....oooooooo....",
-      "................",
+      "......rrr.......",
+      ".....rqssr......",
+      ".....rqtsr......",
+      "....rpqstsr.....",
+      "....rqptssr.....",
+      "....rpqtsssr....",
+      "...rqpstssrr....",
+      "...rpqtstssr....",
+      "...rqpstsssrr...",
+      "...rpqsttssrr...",
+      "...rpqLqqLqsr...",
+      "...rquututtLr...",
+      "...rLututtsLr...",
+      "...rrLqLLqLrr...",
+      "....rrrrrrrr....",
       "................"
      ]
     }
-   ]
+   ],
+   "anteckning": "Björnens bog ligger i förrådet som en enda sak, utan behållare. Den står upprätt på sin breda, raka snittyta. Den är smal och rundad upptill och bred nedtill, så den pekar uppåt, till skillnad från de andra sorternas liggande och sneda bitar. Biten är 10 punkter bred och 15 hög, med rost0 som kontur. Snittet nederst ses snett ovanifrån, som allt på kartan, och syns som ett ovalt fält i ljus rost (t, u) med en ring av vitgult fett (q, L) runt kanten. Längs vänstra sidan går en fettrand i p och q som fångar ljuset uppifrån vänster. Köttet är rost1 och rost2 i korn och mörknar mot rost0 på högra sidan, så den tunga silhuetten syns mot gräset. Inga ben syns, och ingen skugga är ritad. Granskningen: Granskad mot reglerna; inget behövde rättas, så versionen lämnas oförändrad.\n- Storlek: biten är omkring 10 × 15 punkter på en ruta. Den blir en hanterbar köttbit bredvid kolonisten (14 × 20) och ligger i samma storleksklass som de godkända sakerna.\n- Vinkel: biten ligger med den smala, rundade änden bortåt (uppåt på kartan). Snittytan vid framänden syns snett ovanifrån som ett ovalt fält, så det är ingen platt sidovy.\n- Snittytan: fältet är ljust rost (t, u) med en ring av fett (L, q) runt kanten.\n- Ljus: ljuset kommer uppifrån vänster. Fettranden i p och q ligger på vänster sida och högra sidan är mörkast i s och r.\n- Kontur och palett: konturen är rost0, materialets mörkaste ton, och inget kol används. Glansen är som ljusast ben2 och senap3, aldrig vitt.\n- Korn: tonerna växlar punkt för punkt utan mörka fläckar eller ensamma prickar.\n- Symmetri: köttbiten är ingen symmetrisk sak, men silhuetten är jämnt avvägd kring mitten.\n- På gräset: rost och fett lyser tydligt mot oliven, och den upprättstående kilformen skiljer sig från de andra sorternas liggande och sneda bitar, som idén kräver.\n- Bärande: saken bärs inte, så den regeln gäller inte här.",
+   "ide": "Bit som pekar åt sitt eget håll: en hög, kilformad bog som står lodrätt, omkring 10 punkter bred och 15 hög, smal och avrundad upptill och bred med en rak, skuren yta nedtill, så att den pekar uppåt till skillnad från de andra sorternas liggande och sneda bitar. Snittytan nederst ses ovanifrån som ett ovalt fält i ljusare rost (t och u) med en ring av vitgult fett (q, L) runt kanten, medan resten av biten är mörkare rost (s, r) med rost0 som kontur. Längs vänstra sidan går en ljus fettrand i p och q som fångar ljuset, och högra sidan är mörkast, så att den tunga, upprättstående silhuetten syns tydligt mot gräset."
   }
  ]
 }
