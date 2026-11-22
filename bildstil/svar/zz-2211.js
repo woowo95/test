@@ -6,3 +6,5 @@
     f10_stenvagg: B(1, 'Den tredje väggen på kortet, kallmuren med de ojämna stenarna och de rättade fogarna.'),
   });
 })();
+// Björn 2026-11-22: slåtterängen får ingen egen bild; ängen ritas med det höga gräset som redan finns (steg 13.7.4)
+(() => { delete BESLUT.f9_slatterang; window.INBYGGT = window.INBYGGT || new Set(); window.INBYGGT.add('f9_slatterang'); })();
