@@ -29,7 +29,7 @@ import { tanke } from './tankar';
 
 // ---------- balanstal (regel 8) ----------
 export const SMUTS = balans('smuts', {
-  latrinVantFull: 10, // så många minuters väntan på latrinen på sistone (byn tillsammans) gör bristen på latriner hel (steg 10.2.79) ...
+  latrinVantFull: 10, // så många minuters väntan per latrin på sistone (byn tillsammans) gör bristen på latriner hel (steg 10.2.79) ...
   latrinVantDygn: 1, // ... och väntan klingar av till hälften på så här många dygn
   latrinUpptagen: 8, // en latrin där någon redan är räknas som så här många rutor längre bort när man väljer latrin (steg 11.1.71), och en ledig latrin inom så här många rutor gör att väntan inte är brist
   latrinGlomDygn: 2, // en latrin som ingen använt på så här många dygn (år i spelet) växer igen och försvinner (steg 11.1.71)
@@ -263,7 +263,8 @@ export function latrinerVaxerIgen(s: State) {
 export function latrinVanta(s: State, min: number) { s.latrinVant = { m: latrinVantNu(s) + min, t: s.now }; count(s, 'latrinVantMin', min); }
 // bristen på latriner: ingen latrin som inte är (nästan) full, eller så mycket väntan på dem som finns (steg 10.2.79)
 // med en kompost töms utedasset och står kvar (steg 12.4.9), men en grävd latrin som tömts går inte att använda igen: byn vill ha en ny när den är nästan full
-export const latrinBrist = (s: State) => { const ko = harKompost(s), full = latriner(s).some(t => !isKlar(t) || latrinFyllt(t) < (ko && stationDef(t.k)?.dass ? 1 - 1e-9 : STATION.latrinNy)) ? 0 : 1; return Math.max(full, Math.min(1, latrinVantNu(s) / SMUTS.latrinVantFull)); };
+// väntan räknas per latrin, också de som byggs: den mäter trängseln vid de latriner som fanns, och en ny latrin delar på den
+export const latrinBrist = (s: State) => { const ko = harKompost(s), l = latriner(s), full = l.some(t => !isKlar(t) || latrinFyllt(t) < (ko && stationDef(t.k)?.dass ? 1 - 1e-9 : STATION.latrinNy)) ? 0 : 1; return Math.max(full, Math.min(1, latrinVantNu(s) / SMUTS.latrinVantFull / Math.max(1, l.length))); };
 // någon annan använder latrinen t just nu (står där och har börjat): latrinen används av en i taget (steg 10.2.79)
 export const latrinUpptagen = (s: State, t: Station, p: Person) => living(s).some(q => q !== p && q.task?.act === 'toa' && q.task.ref === t.id && q.task.phase === 'do' && q.task.prog !== undefined);
 const harKompost = (s: State) => stationerOf(s).some(t => t.k === 'kompost' && isKlar(t));

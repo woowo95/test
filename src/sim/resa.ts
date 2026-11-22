@@ -17,6 +17,8 @@ import { amountOf, capacity, dropLoad, iHelaForradet, laggIn, load } from './lag
 import { FOOD } from './saker';
 import { bynsMitt, utanforByn } from './omrade';
 import { blocked, freeNear } from './byggnad';
+import { groundOf } from './mark';
+import { findPath } from './vag';
 import { gaBort, ute } from './ute';
 import { Varlden, varldMark } from './varlden';
 import { byPlats, kandPlats, varldPlatserPa, varldPlatsNr, type VarldPlats } from './landmarken';
@@ -376,9 +378,17 @@ export function utgang(s: State, sl: Sallskap): Utgang | undefined {
   const c = bynsMitt(s), dx = mal.x - hem.x, dy = mal.y - hem.y;
   const [sx, sy] = Math.abs(dx) >= Math.abs(dy) ? [Math.sign(dx) || 1, 0] : [0, Math.sign(dy) || 1];
   const d = sx > 0 ? W - 1 - c.x : sx < 0 ? c.x : sy > 0 ? H - 1 - c.y : c.y;
-  let samla = { x: c.x + sx * d, y: c.y + sy * d };
-  for (let n = 0; n <= d; n++) { const x = c.x + sx * n, y = c.y + sy * n; if (utanforByn(s, x, y) >= 1 && !blocked(s, x, y)) { samla = { x, y }; break; } }
-  return { samla: freeNear(s, samla.x, samla.y), kant: freeNear(s, c.x + sx * d, c.y + sy * d) };
+  // samlingsplatsen är den första platsen utanför byn på linjen som går att gå till från byns mitt, inte en udde på andra
+  // sidan en sjö som ingen når. En sträcka land på linjen som inte går att nå prövas en gång
+  const g = groundOf(s);
+  let samla: { x: number; y: number } | undefined, onad = false;
+  for (let n = 0; n <= d && !samla; n++) {
+    const x = c.x + sx * n, y = c.y + sy * n;
+    if (blocked(s, x, y)) { onad = false; continue; }
+    if (onad || utanforByn(s, x, y) < 1) continue;
+    if (findPath(g, c.x, c.y, x, y)) samla = { x, y }; else onad = true;
+  }
+  return { samla: samla ?? freeNear(s, c.x + sx * d, c.y + sy * d), kant: freeNear(s, c.x + sx * d, c.y + sy * d) };
 }
 // maten och fodret till packningen: den mat det finns mest av först, i hela saker. Inget svävar (steg 11.1.74 och 12.1.8):
 // ledaren bestämmer vad som packas, och resenärerna hämtar det ur förrådet och bär det till samlingsplatsen (resaHamtas), där
@@ -387,12 +397,17 @@ function taIPackning(_s: State, sl: Sallskap, k: string, n: number, _led?: Perso
   n = Math.floor(n + 1e-9);
   if (n > 0) (sl.att ??= {})[k] = (sl.att[k] ?? 0) + n;
 }
-// det resenären p ska hämta till packningen: det som inte packats och som ingen annan i sällskapet redan bär, så mycket hen orkar
+// det resenären p ska hämta till packningen: det som inte packats och som ingen annan i sällskapet redan bär eller går efter, så mycket hen orkar
 export function resaHamtas(s: State, p: Person, tk: Task): Record<string, number> | undefined {
   const sl = s.varld?.sallskap?.find(x => x.id === tk.ref);
   if (sl?.skede !== 'packar' || !sl.att || !sl.medl.includes(p.id)) return undefined;
   const bars: Record<string, number> = {};
-  for (const id of sl.medl) { const q = s.people.find(x => x.id === id); if (q && q !== p && q.task?.act === 'resa' && q.task.ref === sl.id) for (const k in q.task.items ?? {}) bars[k] = (bars[k] ?? 0) + q.task.items![k]!; }
+  // det de andra bär, och det de är på väg till förrådet efter (annars hämtar två samma sista sak)
+  for (const id of sl.medl) {
+    const q = s.people.find(x => x.id === id), tq = q?.task;
+    if (!q || q === p || tq?.act !== 'resa' || tq.ref !== sl.id) continue;
+    for (const k of new Set([...Object.keys(tq.items ?? {}), ...Object.keys(tq.site ? tq.hamta ?? {} : {})])) bars[k] = (bars[k] ?? 0) + Math.max(tq.items?.[k] ?? 0, tq.site ? tq.hamta?.[k] ?? 0 : 0);
+  }
   let rum = capacity(s, p) - load(tk, s);
   const ut: Record<string, number> = {};
   for (const k in sl.att) {

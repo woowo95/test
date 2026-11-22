@@ -26,6 +26,7 @@ export interface VacktMinne {
   lager?: { x: number; y: number; w: number; h: number; namn?: string; slag?: 'mat' | 'material'; prio?: number }[]; // lagerplatserna ute (steg 11.13.22)
   falt?: { x: number; y: number; w: number; dir: number; n: number }[]; // fälten, utan ägare och gröda
   hagar?: { x: number; y: number; w: number; h: number }[];
+  eld?: { x: number; y: number }; // elden, om den flyttats från där kartan lade den
 }
 // minnesbilden ur byn: de färdiga husen, gravarna och de heliga platserna som inte vanhelgats
 export function minnesbild(b: State): VacktMinne {
@@ -41,6 +42,7 @@ export function minnesbild(b: State): VacktMinne {
     lager: (b.lagren ?? []).filter(z => z.hus === undefined).map(z => ({ x: z.x, y: z.y, w: z.w, h: z.h, ...(z.namn ? { namn: z.namn } : {}), ...(z.slag ? { slag: z.slag } : {}), ...(z.prio !== undefined ? { prio: z.prio } : {}) })),
     falt: faltOf(b).map(f => ({ x: f.x, y: f.y, w: f.w, dir: f.dir, n: f.n })),
     hagar: hagarOf(b).map(h => ({ x: h.x, y: h.y, w: h.w, h: h.h })),
+    ...(b.fire.at ? { eld: { ...b.fire.at } } : {}),
   };
 }
 // byn somnar: det byn ändrat läggs till raden, och minnesbilden sparas
@@ -65,6 +67,7 @@ export function somna(s: State, b: State) {
 // Ett hus där något redan står byggs inte
 export function byggMinne(b: State, m: VacktMinne | undefined, fardigt: (b: State, h: Hus) => void) {
   if (!m) return;
+  if (m.eld) b.fire.at = { ...m.eld }; // elden står där den stod förra gången, före husen som byggs runt den
   for (const q of m.hus) {
     if (housesOf(b).some(h => h.x < q.x + q.w && q.x < h.x + h.w && h.y < q.y + q.h && q.y < h.y + h.h)) continue;
     b.nextBit ??= 1;
