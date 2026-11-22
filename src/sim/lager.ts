@@ -14,7 +14,7 @@ import { ALDER, KROPP, alive, byId, count, isSick, living, stat, ageOf, log } fr
 import { matOrdning } from './naring';
 import { eldPlats, eldensRutor, getMap } from './karta';
 import { Act, DAY, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
-import { MATERIAL, bitAt, blocked, lagretsMitt, roofed } from './byggnad';
+import { MATERIAL, bitAt, blocked, isWall, lagretsMitt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
 import { temperature, vaderSlit } from './vader';
 import { BYN, Del, addDel, kyrkaId, sumOf, takeOrder } from './egendom';
@@ -1332,8 +1332,9 @@ function tingRuta(s: State, st: Stack[], eld: Set<number>, tx: number, ty: numbe
 function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: number, c: number, ag: Del | undefined, tx: number, ty: number, vid = false): { x: number; y: number } | undefined {
   let forst: { x: number; y: number } | undefined; // rutan där det första lades (det gömda i en flyttad hög läggs där, steg 12.1.208)
   let tingRutor: Set<number> | undefined; // en ruta i lagret rymmer en sak: en stack eller ett redskap (räknas när en lagerruta prövas)
+  const ingenPlats = (x: number, y: number) => eld.has(key(x, y)) || isWall(s, x + 0.5, y + 0.5); // i en eld och i en vägg ligger inget
   for (let r = 0; r <= 4 && n > 1e-9; r++) for (let y = ty - r; y <= ty + r && n > 1e-9; y++) for (let x = tx - r; x <= tx + r && n > 1e-9; x++) {
-    if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r || !inMap(x, y) || eld.has(key(x, y))) continue;
+    if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r || !inMap(x, y) || ingenPlats(x, y)) continue;
     if (r === 0 && sittAt(s, x, y)) continue; // där man står eller sitter vid en station eller ett bord läggs inget, inte heller det man burit dit (steg 12.1.158)
     if (r > 0 && (!usable(s, x, y) && !ledigtGolv(s, x, y) || stubbeOn(s, x, y) || !vid && isStored(s, x, y))) continue;
     // där något annat redan ligger; på rutan själv bara i ett lager, där varje ruta har en sort (en hög på marken får vara blandad)
@@ -1347,7 +1348,7 @@ function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: numb
     addToStack(s, g, v, c, del); n -= v; forst ??= { x, y };
   }
   if (n <= 1e-9) return forst;
-  if (eld.has(key(tx, ty))) { place(s, k, n, c, ag); return forst; } // runt elden är fullt: i förrådet eller bredvid det
+  if (ingenPlats(tx, ty)) { place(s, k, n, c, ag); return forst; } // runt elden eller väggen är fullt: i förrådet eller bredvid det
   // i ett lager rymmer rutan en sak: ligger något annat där läggs resten i förrådet
   if (isStored(s, tx, ty) && (st.some(q => q.x === tx && q.y === ty && q.k !== k && q.n > 1e-6) || (tingRutor ??= new Set(lying(s).map(t => key(t.x!, t.y!)))).has(key(tx, ty)) || forvarAt(s, tx, ty))) { place(s, k, n, c, ag); return forst; }
   let g = st.find(q => q.x === tx && q.y === ty && q.k === k); if (!g) st.push(g = { x: tx, y: ty, k, n: 0, c }); addToStack(s, g, n, c, ag); // runt omkring är fullt

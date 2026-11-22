@@ -312,6 +312,25 @@ export function stepKlader(s: State) {
   }
 }
 
+// de plagg som ligger fritt och som p får ta och som är varmare än det hen har på sig på samma plats (värmen, varme.ts): det
+// varmaste per plats, och det hen har på sig där (nu)
+export function varmarePlagg(s: State, p: Person): { t: Ting; nu?: Ting }[] {
+  const kyla = farorNu(s).kyla, pa = paSig(s, p), ut = new Map<string, { t: Ting; nu?: Ting }>();
+  for (const t of tingOf(s)) {
+    const pl = SAKER[t.k]?.klad?.plats;
+    if (!pl || t.x === undefined || t.bar !== undefined || t.hos !== undefined || t.lass !== undefined || t.halv || t.helig !== undefined || arMantel(t.k) || !kladFor(s, p, t.k) || heligtAvstar(s, p, kladArt(t.k), kyla) || !lends(s, t.agare, p)) continue;
+    const nu = pa.find(q => SAKER[q.k]!.klad!.plats === pl), b = ut.get(pl);
+    if (kladSkydd(t.k, t) > (nu ? kladSkydd(nu.k, nu) : 0) && (!b || kladSkydd(t.k, t) > kladSkydd(b.t.k, b.t))) ut.set(pl, { t, nu });
+  }
+  return [...ut.values()];
+}
+// p tar på sig plagget och tar av det hen hade på samma plats
+export function klaPaKlar(s: State, p: Person, tk: Task) {
+  const q = (s.ting ?? []).find(o => o.id === tk.ref), pl = q && SAKER[q.k]?.klad?.plats;
+  if (!q || !pl || q.bar !== undefined || q.hos !== undefined || q.lass !== undefined) return;
+  for (const t of paSig(s, p)) if (SAKER[t.k]!.klad!.plats === pl) t.bar = undefined;
+  q.bar = p.id; q.x = q.y = q.vid = undefined; count(s, 'klaPaVarmt');
+}
 // byta om inför strid (steg 8.7.8): när larmet går hämtar var och en sin rustning. Vid en överraskning hinner man inte
 export function rustaVal(s: State, p: Person) {
   const t0 = Math.max(-Infinity, ...Object.values(p.larm ?? {}).map(l => l?.t ?? -Infinity)); // det senaste larmet, av vilken sort som helst

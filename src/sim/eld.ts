@@ -218,6 +218,8 @@ export function eldFor(s: State, p: Person): Fire | undefined {
 export const nagonEld = (s: State) => eldarOf(s).some(f => f.lit);
 // någon eld brinner eller glöder
 export const nagonGlod = (s: State) => eldarOf(s).some(f => f.lit || emberOn(s, f));
+// ingen eld glöder och ingen går att tända för att tändmaterialet, tänddonet eller stenarna till ringen fattas
+export const tinderNeeded = (s: State) => !nagonGlod(s) && !canLight(s) && (needTinder(s) || !igniterOf(s) || needStones(s));
 // p:s egen önskan om ved på elden f; vc = hur mycket byn fryser 0–1. vid = p sitter vid elden eller är på väg dit
 // det som är detsamma för alla (dagsljuset, kylan, sederna, har byn haft eld), räknat en gång per steg (steg 12.1.104)
 const eldLage = (s: State) => ({ light: isLight(s.now), cold: coldOf(temperature(s)), aldrig: !eldarOf(s).some(e => e.lightings) });
@@ -486,20 +488,20 @@ function skots(s: State, f: Fire) {
 }
 // raden elda i valet av aktivitet (steg 12.1.76): p lägger ved på en eld hen hör till när hens önskan är klart över det som
 // ligger på. Poängen är önskan över bränslet gånger plikten, minus avståndet; en i taget vid varje eld
-export function eldaVal(s: State, p: Person): { spot: { x: number; y: number }; dur: number; ref?: number; why: string } | undefined {
+export function eldaVal(s: State, p: Person): { spot: { x: number; y: number }; dur: number; ref?: number; why: string; mal: number } | undefined {
   if (ageOf(p, s.now) < ALDER.hjalper || fuelStock(s) < ELD.hamtaMin || fuelFor(s, p) < ELD.hamtaMin) return undefined; // bara den som har ved att ta (byns eller sin egen)
   const ppl = living(s), vc = byFryser(ppl);
-  let bast: { f: Fire; why: string } | undefined, bs = 0;
+  let bast: { f: Fire; why: string; mal: number } | undefined, bs = 0;
   for (const f of eldarFor(s, p)) {
     if (!(f.lit || emberOn(s, f)) || eldIVatten(s, f) || !skots(s, f) || ppl.some(q => q.task?.act === 'elda' && q.task.ref === f.id)) continue;
     const w = fireWish(s, p, vc, f, sitterVid(s, p, f));
     if (w.v < f.fuel * ELD.fyllMarg + ELD.fyllPlus) continue;
     const e = eldXY(s, f), sc = (w.v - f.fuel) / hearthOf(f).maxFuel * (ELD.valjPlikt + duty(s, p)) - Math.hypot(p.x - e.x - 0.5, p.y - e.y - 0.5) / ELD.valjAvstand;
-    if (sc > bs) { bs = sc; bast = { f, why: w.why }; }
+    if (sc > bs) { bs = sc; bast = { f, why: w.why, mal: w.v }; }
   }
   if (!bast) return undefined;
   const k = takeLimit(s, 'ved', p) >= 1 ? 'ved' : 'grenar';
-  return { spot: fetchSpot(s, k, p, () => takeLimit(s, k, p)), dur: ELD.hamtaTim * HOUR, ref: bast.f.id, why: bast.why };
+  return { spot: fetchSpot(s, k, p, () => takeLimit(s, k, p)), dur: ELD.hamtaTim * HOUR, ref: bast.f.id, why: bast.why, mal: bast.mal };
 }
 // raden tanda (steg 12.1.76): en släckt eld som någon som hör till den vill ha tänds av en som kan, en i taget vid varje eld.
 // Med en brand går hen först till elden som brinner (steg 10.6.12), annars direkt till eldstaden

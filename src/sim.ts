@@ -48,6 +48,7 @@ export * from './sim/trotext';
 export * from './sim/fangelse';
 export * from './sim/fangeval';
 export * from './sim/val';
+export * from './sim/varme';
 export * from './sim/samtal';
 export * from './sim/humor';
 export * from './sim/skuld';

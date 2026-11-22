@@ -458,6 +458,55 @@ SCENARIER['vinter-slocknad'] = {
   },
 };
 
+SCENARIER.varmesatt = {
+  text: 'Värmen (varme.ts, registret VARMA): den som fryser tar det sätt att bli varm som ger mest värme de närmaste timmarna med vägen dit, efter hur elden, förrådet och kläderna är',
+  kor: () => {
+    const s = createState(16, START);
+    s.now = ageStart(s, 0) + 3 * HOUR; // i istiden, utan hus
+    const p = living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!, e = SIM.eldPlats(s);
+    p.warm = 0.3; p.task = undefined;
+    const forst = () => { let r: string | undefined; SIM.iHelaForradet(() => { r = SIM.varmeSatt(s, p).satt[0]?.satt; }); return r; }; // valet ser hela förrådet, som i chooseTask
+    // en stark eld några rutor bort: man sätter sig vid den
+    setAmount(s, 'ved', 40); Object.assign(s.fire, { lit: true, fuel: hearthOf(s.fire).maxFuel });
+    Object.assign(p, { x: e.x + 4.5, y: e.y + 0.5 });
+    const stark = forst();
+    // elden har nästan brunnit ut och ingen lägger på: man lägger ved på den
+    s.fire.fuel = 0.3;
+    const svag = forst();
+    // elden är släckt utan glöd: man tänder den
+    Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined, want: hearthOf(s.fire).maxFuel }); setAmount(s, 'torrgras', 80); setAmount(s, 'grenar', 80); setAmount(s, 'flinta', 3); setAmount(s, 'sten', 20);
+    const slackt = forst();
+    // ingen ved och inget att tända med: man hämtar det som fattas
+    setAmount(s, 'ved', 0); setAmount(s, 'grenar', 0);
+    const tomt = forst();
+    // ett barn som fryser kan inte hämta det som fattas till elden; en varm rock ligger två rutor bort: hen tar på sig den
+    const barn = living(s).find(q => q !== p);
+    if (barn) barn.born = s.now - 10 * DAY; // tio år
+    let plagg: string | undefined, paSig = false;
+    if (barn) {
+      Object.assign(barn, { x: p.x, y: p.y, warm: 0.3 }); barn.task = undefined;
+      const rock = SIM.addTool(s, 'rock_vargskinn', barn); Object.assign(rock, { x: Math.floor(barn.x) + 2, y: Math.floor(barn.y), bar: undefined, hos: undefined, lass: undefined });
+      SIM.iHelaForradet(() => { plagg = SIM.varmeSatt(s, barn).satt[0]?.satt; });
+      SIM.klaPaKlar(s, barn, { act: 'klaPa', ref: rock.id } as SIM.Task); paSig = rock.bar === barn.id;
+    }
+    // horisonten: kort för den som är extremt kall, lång för den som just börjat frysa
+    const kort = SIM.horisont(0.1), lang = SIM.horisont(SIM.KROPP.kallt - 0.01);
+    // valet: den som fryser farligt går till en eld som brinner
+    setAmount(s, 'ved', 40); Object.assign(s.fire, { lit: true, fuel: hearthOf(s.fire).maxFuel }); p.warm = 0.1;
+    SIM.chooseTask(s, p);
+    const akt = (p.task as SIM.Task | undefined)?.act;
+    return [
+      [`vid en stark eld sätter man sig (${stark})`, stark === 'eld'],
+      [`vid en eld som nästan brunnit ut lägger man på ved (${svag})`, svag === 'elda'],
+      [`en släckt eld tänds (${slackt})`, slackt === 'tanda'],
+      [`utan ved hämtar man det som fattas (${tomt})`, tomt === 'ved' || tomt === 'tandmat'],
+      [`den som fryser farligt värmer sig vid elden (${akt})`, akt === 'varma'],
+      [`ett barn utan eld tar på sig ett varmare plagg som ligger nära (${barn ? plagg : 'inget barn'})`, plagg === 'plagg' && paSig],
+      [`den extremt kalla räknar en kortare stund framåt (${kort} mot ${lang.toFixed(1)} timmar)`, kort < lang],
+    ];
+  },
+};
+
 SCENARIER.knapphet = {
   lang: true,
   text: 'Bär, rötter och vilt tar slut nära byn för en tid, så invånarna går längre bort; fiske med händerna ger få fiskar per försök',
