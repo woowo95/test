@@ -23,7 +23,7 @@ export const PAL: Record<string, Record<string, string>> = {
   // samtalens ämnen i 8 punkter (steg 9.2.10, platshållare): en symbol per ämne i den lilla pratbubblan
   ...Object.fromEntries(['amne_gral'].map(k => [k, AMNE_PAL])),
   // trons och gudarnas symboler: amuletter i guld på en mörk bricka (Björn valde stil 3 efter v245, steg 4.5.2)
-  ...Object.fromEntries(['tro_blixt', 'tro_brand', 'tro_vinter', 'tro_regn', 'tro_flod', 'tro_hare', 'tro_barn', 'tro_drom', 'gud_aska', 'gud_sjon', 'gud_skord', 'gud_doden', 'gud_jakt', 'gud_elden', 'gud_vintern', 'gud_solen', 'gud_atten', 'gud_kriget', 'gud_hantverk'].map(k => [k, { d: '#5e3c24', e: '#b2921b', f: '#d8b25f', o: '#24201d' }])),
+  ...Object.fromEntries(['tro_blixt', 'tro_brand', 'tro_vinter', 'tro_regn', 'tro_flod', 'tro_hare', 'tro_barn', 'tro_drom', 'tro_jarn', 'gud_aska', 'gud_sjon', 'gud_skord', 'gud_doden', 'gud_jakt', 'gud_elden', 'gud_vintern', 'gud_solen', 'gud_atten', 'gud_kriget', 'gud_hantverk'].map(k => [k, { d: '#5e3c24', e: '#b2921b', f: '#d8b25f', o: '#24201d' }])),
   kanin: { b: '#7e7362', B: '#a0947d', w: '#dad0bb', k: '#24201d', p: '#a0947d' },
   spindling: { c: '#a14808', C: '#bd753e', s: '#bdb39b', S: '#987e62' },
   // sportens föremål (steg 4.3.1.2, platshållare)
@@ -510,6 +510,24 @@ export const PIX: Record<string, string[]> = {
     '...ofodddddde...',
     '...ooeeddeee....',
     '.......ee.......',
+  ],
+  tro_jarn: [ // järnets tro (steg 13.1.9, platshållare): ett städ i guld på trons bricka, med en gnista över
+    '.......ee.......',
+    '....eeedddee....',
+    '...edddfdddde...',
+    '..eddddddddfde..',
+    '.edddddddddddde.',
+    '.edffffffffddde.',
+    'eddffffffffffdde',
+    'edddffffffffddde',
+    'eddddoffffodddde',
+    '.edddoffffoddde.',
+    '.eddoffffffodde.',
+    '..edffffffffde..',
+    '...eddddddddde..',
+    '....eeddddee....',
+    '.......ee.......',
+    '................',
   ],
   tro_brand: [ // amulett i guld (Björn valde stil 3 efter v245, steg 4.5.2)
     '.......ee.......',

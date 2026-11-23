@@ -271,7 +271,7 @@ export const TECKEN = {
   bjornVande: { text: "björnen som vände om", natur: 20, omr: 'jakt', sym: 'tro_hare', namn: ["Björnens tro", "Den skonades folk", "Ramens väg"],
     bakom: ["Skogens gamle", "Den som går på fyra och på två", "Björnmodern"], vill: ["att ingen säger björnens namn högt", "att man lämnar honung i skogen", "att man går tyst förbi idet"], svek: ["björnen kommer tillbaka och vänder inte", "ramen tar boskapen", "man möter den ensam i mörkret"] },
   // det glödande järnet ur blästerugnen (steg 13.1.9): tron får hantverkets gud, och anden kan bo i städet
-  jarn: { text: 'det glödande järnet som rann ur ugnen', natur: 35, omr: 'hantverk', sym: 'tro_brand', namn: ['Järnets tro', 'Smidets folk', 'Glödens väg'],
+  jarn: { text: 'det glödande järnet som rann ur ugnen', natur: 35, omr: 'hantverk', sym: 'tro_jarn', namn: ['Järnets tro', 'Smidets folk', 'Glödens väg'],
     bakom: ['Den som bor i ugnen', 'Smeden under jorden', 'Den som gör sten till järn'], vill: ['att det första järnet ur varje ugn ges tillbaka till myren', 'att ingen svär vid städet', 'att elden i ässjan släcks med vatten och aldrig med jord'], svek: ['järnet spricker', 'ugnen ger bara slagg', 'elden i smedjan tar huset'],
     i: ['städet', 'ässjans glöd', 'den röda myren'] },
 } satisfies Record<string, TeckenDef>;
