@@ -82,6 +82,9 @@ export const PAL: Record<string, Record<string, string>> = {
   stall_karta: { W: '#7d5b40', L: '#987e62', w: '#372f25', x: 'rgba(36,32,29,.30)' },
   // skinnfällen i halmbädden (steg 2.2.14; Björn valde kartbilden efter v89)
   skinnfall_karta: { z: '#474138', S: '#987e62', s: '#7d5b40', f: '#474138' },
+  ylletacke_karta: { z: '#474138', S: '#bdb39b', s: '#a0947d', f: '#7e7362' }, ylletacke_karta_v: { z: '#474138', S: '#bdb39b', s: '#a0947d', f: '#7e7362' }, // ylletäcket och kudden (steg 13.3.1), platshållare
+  kudde_karta: { z: '#7e7362', w: '#dad0bb', q: '#bdb39b' }, kudde_karta_v: { z: '#7e7362', w: '#dad0bb', q: '#bdb39b' },
+  ylletacke: { z: '#474138', S: '#bdb39b', s: '#a0947d', f: '#7e7362' }, kudde: { z: '#7e7362', w: '#dad0bb', q: '#bdb39b' },
   // skinndörren i dörröppningen (steg 2.2.16; Björn valde kartbilden efter v89)
   tradorr: { o: '#24201d', J: '#7d5b40', j: '#5e3c24', W: '#987e62', k: '#24201d' },
   tradorr_karta: { o: '#24201d', J: '#7d5b40', j: '#5e3c24', W: '#987e62', k: '#24201d' },
@@ -1014,6 +1017,14 @@ export const PIX: Record<string, string[]> = {
     '........',
     '........',
   ],
+  // ylletäcket (steg 13.3.1, platshållare): som fällen men tvärrandigt av vävt tyg, över bädden utom huvudänden
+  ylletacke_karta: ['................','.......zzzzzzzz.','......zSsSsSsSz.','......zffffffffz','......zSsSsSsSz','......zffffffffz','......zSsSsSsSz.','.......zzzzzzzz.','................','................'],
+  ylletacke_karta_v: ['........','........','........','........','........','........','.zzzzzz.','zSSSSSSz','zssssssz','zffffffz','zSSSSSSz','zssssssz','zffffffz','zSSSSSSz','zssssssz','.zzzzzz.','........','........'],
+  ylletacke: ['.zzzzzzzzzz.','zSsSsSsSsSsz','zffffffffffz','zSsSsSsSsSsz','zffffffffffz','zSsSsSsSsSsz','.zzzzzzzzzz.'],
+  // fjäderkudden (steg 13.3.1, platshållare): en ljus kudde i huvudänden, under huvudet på den som sover
+  kudde_karta: ['................','................','.zzzz...........','zwwwqz..........','zwwwqz..........','zwwqqz..........','.zzzz...........','................','................','................'],
+  kudde_karta_v: ['........','.zzzzzz.','zwwwwwqz','zwwwwqqz','.zzzzzz.','........','........','........','........','........','........','........','........','........','........','........','........','........'],
+  kudde: ['.zzzzzzzz.','zwwwwwwwqz','zwwwwwwqqz','zwwwwwqqqz','.zzzzzzzz.'],
   // trädörren: plankor med en Z-regel (Björn valde version 2 efter v193, steg 3.10.13)
   tradorr: PIX_TRADORR,
   // trädörren på kartan: samma Z-dörr i dörröppningen (Björn valde version 2 efter v193, steg 3.10.13)

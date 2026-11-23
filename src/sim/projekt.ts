@@ -71,6 +71,7 @@ export const PROJEKT_TAL = balans('projekt', {
   latrin: 0.4, // ... latrinen när byn inte har en som inte är nästan full (steg 2.7.2; 0,8 före fasens Balans 12.6: den gick före det mesta)
   halmbadd: 1.5, // ... halmbäddarna när alla saknar en, under tak eller ute (steg 10.2.48: sängarna kommer fort)
   skinnfall: 0.5, // ... skinnfällarna när alla halmbäddar saknar en
+  ylletacke: 0.5, kudde: 0.3, // ... ylletäckena och kuddarna när alla bäddar saknar en (steg 13.3.1)
   bord: 0.5, bord2: 0.5, bord3: 0.5, // ... borden när ingen har en plats vid ett bord (steg 2.2.15)
   hylla: 0.4, kista: 0.3, stall: 0.3, bokhylla: 0.3, // ... förvaringen när golvet i lagren är fullt av högar och redskap (steg 2.3.6)
   lerkruka: 0.3, naverask: 0.3, nal: 0.4, krycka: 0.6, traben: 0.6, krok: 0.5, ogonlapp: 0.2, matta: 0.2, // ... pyntet när alla vuxna som sover inne saknar ett (steg 4.3.4, pynt.ts)

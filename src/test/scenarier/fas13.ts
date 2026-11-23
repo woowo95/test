@@ -1,9 +1,9 @@
 // Scenarier för fas 13.
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, medBank, nyInvanare, testBy, utanWebblasare } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, medHus, nyInvanare, setMat, tandEld, testBy, utanWebblasare } from './hjalp';
 import { GRAFER, grafHtml } from '../../ui/graf';
 import { setByn } from '../../ui/lage';
-import { START } from '../kor';
+import { BEAT, START } from '../kor';
 import { sakOrd } from '../../sim/ord';
 
 // regeln för stationerna (steg 13.1.1): varje recept vid en station med kvalitet är "bara här" eller "fortare och bättre här"
@@ -418,6 +418,42 @@ SCENARIER.snoval = {
       [`i snön tar hen av skorna och på snöskorna (poäng ${pSno.toFixed(2)} mot ${pSkor.toFixed(2)})`, iSnon],
       ['när snön är borta tar hen skorna igen', utan],
       ['och byter inte tillbaka utan skäl', stilla],
+    ];
+  },
+};
+
+SCENARIER.kudde = {
+  text: 'Steg 13.3.1: ylletäcket och fjäderkudden, två tillbehör i halmbädden och sängen som görs av den som kan vävstolen. Täcket värmer mer än fällen, och bara det varmaste i bädden värmer; kudden värmer inte men den som sover på den vilar 1,1 gånger så fort',
+  kor: () => {
+    const { TILLBEHOR, PROJEKT, varmeDelar, roomAt } = SIM;
+    const s = SIM.createState(1, START); klockan(s); tandEld(s); medHus(s);
+    const b = medBank(s, 'halmbadd');
+    for (const r of s.people) r.tek = { ...r.tek, halmbadd: 1, vavstol: 1 };
+    setMat(s, { bar: 200 }); SIM.setAmount(s, 'ylle', 4); SIM.setAmount(s, 'fjadrar', 4); SIM.setAmount(s, 'lintyg', 2); SIM.setAmount(s, 'ved', 30);
+    const brist0 = PROJEKT.ylletacke!.brist(s), brist0k = PROJEKT.kudde!.brist(s);
+    let h = 0;
+    while (!(b.med?.includes('ylletacke') && b.med?.includes('kudde')) && h < 72) { kor(s, 1); h++; }
+    // den som sover i bädden med olika tillbehör: kylan och vilan under en timme
+    const sover = (med: string[]) => {
+      const q = SIM.cloneState(s), t = q.stationer!.find(r => r.id === b.id)!, p = SIM.living(q)[0]!;
+      t.med = med as typeof t.med;
+      p.x = t.x + 0.5; p.y = t.y + 0.5; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: q.now + SIM.HOUR, carry: 0 } as SIM.Task;
+      const kyla = varmeDelar(q, p, 1, new Map([[roomAt(q, p.x, p.y)!.id, 1]])).kyla;
+      p.rest = 0.1; const r0 = p.rest;
+      for (let i = 0; i < 3; i++) { p.task!.until = q.now + SIM.HOUR; SIM.step(q, BEAT); }
+      return { kyla, vila: p.rest - r0, tacker: SIM.tillbehorTacker(t) };
+    };
+    const utan = sover([]), fall = sover(['skinnfall']), tacke = sover(['ylletacke']), bada = sover(['skinnfall', 'ylletacke']), kudde = sover(['kudde']), allt = sover(['skinnfall', 'kudde']);
+    const nara = (a: number, x: number) => Math.abs(a - x) < 1e-9;
+    return [
+      [`byn vill ha täcke och kudde när bädden saknar dem (brist ${brist0.toFixed(2)} och ${brist0k.toFixed(2)})`, brist0 === 1 && brist0k === 1],
+      [`täcket och kudden görs och hamnar i bädden på ${h} timmar (${(b.med ?? []).join(', ')})`, !!b.med?.includes('ylletacke') && !!b.med?.includes('kudde')],
+      ['de görs av den som kan vävstolen', TILLBEHOR.ylletacke.tek.includes('vavstol') && TILLBEHOR.kudde.tek.includes('vavstol')],
+      [`täcket värmer mer än fällen (kyla ${tacke.kyla.toFixed(3)} mot ${fall.kyla.toFixed(3)}, utan ${utan.kyla.toFixed(3)})`, utan.kyla > 0 && nara(tacke.kyla, utan.kyla * (1 - TILLBEHOR.ylletacke.varme)) && tacke.kyla < fall.kyla],
+      ['bara det varmaste tillbehöret i bädden värmer', nara(bada.kyla, tacke.kyla)],
+      [`kudden värmer inte (kyla ${kudde.kyla.toFixed(3)})`, nara(kudde.kyla, utan.kyla) && nara(allt.kyla, fall.kyla)],
+      [`vilan på kudden är ${(kudde.vila / utan.vila).toFixed(3)} gånger den utan (${kudde.vila.toFixed(4)} mot ${utan.vila.toFixed(4)})`, utan.vila > 0 && Math.abs(kudde.vila / utan.vila - TILLBEHOR.kudde.vila) < 0.01],
+      ['en bädd med bara kudde ritas utan täcke, med fäll eller täcke med', !kudde.tacker && allt.tacker && tacke.tacker],
     ];
   },
 };

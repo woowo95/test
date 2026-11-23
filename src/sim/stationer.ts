@@ -91,6 +91,8 @@ export const STATION = balans('station', {
   samling: 1, // ... och så här många mindre i ett hus där ingen sover (samlingshuset), för det som inte är en bädd
   kokSamla: 1.5, // ... och så här många mindre för en av kökets stationer i ett rum som redan är ett kök (steg 10.2.92)
   fallVarme: 0.5, // den som sover under en skinnfäll kyls så här mycket mindre (av det som når in i huset)
+  tackeVarme: 0.7, // ... under ett ylletäcke (steg 13.3.1)
+  kuddeVila: 1.1, // den som sover på en fjäderkudde vilar så här många gånger så fort (steg 13.3.1)
   // förvaringen (steg 2.3.6): hyllan, kistan och redskapsstället
   hyllaRymmer: 3, // ... och rymmer så många högar av ett slag
   vagnRymmer: 3, // grundarnas trasiga vagn rymmer så många högar av ett slag (steg 11.6.13)
@@ -1482,7 +1484,7 @@ export function bordBrist(s: State, k: string) {
 // när arbetet är klart, så att inget går förlorat om det avbryts. Rivs huset försvinner tillbehöret med möbeln.
 // texten om byns första: namnet och pronomenen efter den som gjorde det (ordlagret, steg 6.7.2)
 const forstaText = (t: string, p: Person) => t.replace('{namn}', p.name).replace(/{hans}/g, hans(p)).replace(/{han}/g, han(p));
-export interface TillbehorDef { namn: string; ikon: string; till: string | string[]; tek: string[]; av: Record<string, number>; min: number; varme?: number; gor: string; forsta: string; kar?: string } // kar = en tom behållare av den sorten byggs in (brännpannans stora lerkruka)
+export interface TillbehorDef { namn: string; ikon: string; till: string | string[]; tek: string[]; av: Record<string, number>; min: number; varme?: number; vila?: number; gor: string; forsta: string; kar?: string } // kar = en tom behållare av den sorten byggs in (brännpannans stora lerkruka)
 export const TILLBEHOR = {
   stekhall: { // steg 9.6.21 (matlagning.ts): kött och fisk steks med talg på hällen, som ligger på härden inne (steg 10.2.87)
     namn: 'Stekhäll', ikon: 'stekhall', till: 'hard', tek: ['stekhall'], av: RECEPT.stekhall.av, min: RECEPT.stekhall.min,
@@ -1493,6 +1495,16 @@ export const TILLBEHOR = {
     namn: 'Skinnfäll', ikon: 'skinnfall', till: ['halmbadd', 'sang'], tek: ['skinnfall'], av: RECEPT.skinnfall.av, min: RECEPT.skinnfall.min, varme: STATION.fallVarme,
     gor: 'Lägger en skinnfäll i halmbädden.',
     forsta: '{namn} lade byns första skinnfäll i en halmbädd. Den som sover under den fryser mindre.',
+  },
+  ylletacke: { // steg 13.3.1: ett täcke av ylletyg, varmare än fällen; bara det varmaste tillbehöret i bädden värmer (tillbehorVarme)
+    namn: 'Ylletäcke', ikon: 'ylletacke', till: ['halmbadd', 'sang'], tek: ['vavstol'], av: RECEPT.ylletacke.av, min: RECEPT.ylletacke.min, varme: STATION.tackeVarme,
+    gor: 'Lägger ett ylletäcke i bädden.',
+    forsta: '{namn} lade byns första ylletäcke i en bädd. Det värmer mer än en fäll.',
+  },
+  kudde: { // steg 13.3.1: en kudde av fjädrar i lintyg; värmer inte, men den som sover på den vilar fortare (tillbehorVila)
+    namn: 'Fjäderkudde', ikon: 'kudde', till: ['halmbadd', 'sang'], tek: ['vavstol'], av: RECEPT.kudde.av, min: RECEPT.kudde.min, vila: STATION.kuddeVila,
+    gor: 'Lägger en fjäderkudde i bädden.',
+    forsta: '{namn} lade byns första fjäderkudde i en bädd. Den som sover på den vilar fortare.',
   },
   brannpanna: { // steg 10.7.26 (brygg.ts): en liten härd av sten under en stor lerkruka med lock och rör av lera, på bryggkaret
     namn: 'Brännpanna', ikon: 'brannpanna', till: 'bryggkar', tek: ['sprit'], av: RECEPT.brannpanna.av, min: RECEPT.brannpanna.min, kar: 'lerkruka_stor',
@@ -1559,6 +1571,17 @@ export function tillbehorVarme(s: State, p: Person, rum: unknown) {
   for (const k of t && isKlar(t) ? t.med ?? [] : []) v = Math.max(v, tillbehorDef(k)?.varme ?? 0);
   return v;
 }
+// så många gånger så fort p vilar av tillbehören i bädden hen sover i (kudden, steg 13.3.1; 1 = ingen skillnad)
+export function tillbehorVila(s: State, p: Person) {
+  const pd = p.task && ACTS[p.task.act];
+  if (!s.stationer?.length || !pd?.vila || pd.plats !== 'sang' || p.task!.phase !== 'do') return 1;
+  const t = stationRutor(s).at.get(tileOf(p.x, p.y));
+  let v = 1;
+  for (const k of t && isKlar(t) ? t.med ?? [] : []) v = Math.max(v, tillbehorDef(k)?.vila ?? 1);
+  return v;
+}
+// täcker något tillbehör den som sover i bädden (fällen och täcket, det som värmer)? Ritningen frågar (stalle.ts)
+export const tillbehorTacker = (t: Station) => (t.med ?? []).some(k => (tillbehorDef(k)?.varme ?? 0) > 0);
 
 // ---------- redskapsplatserna (knivplatsen, bensylen) ----------
 // redskapen av slaget k som hör till stationen
