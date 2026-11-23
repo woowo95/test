@@ -3884,6 +3884,9 @@ PIX.axelrem_lader = PIX.axelrem_kaninskinn; PAL.axelrem_lader = LADER_FARG(PAL.a
 PIX.ryggsack_lader = PIX.ryggsack_kaninskinn; PAL.ryggsack_lader = LADER_FARG(PAL.ryggsack_kaninskinn!);
 // bärselen (steg 13.2.3): platshållare med axelremmens form i materialets färger tills Björn valt en bild i bildstilen
 for (const m of ['kaninskinn', 'vitskinn', 'vargskinn', 'bjornskinn', 'farskinn', 'getskinn', 'svinskinn', 'radjursskinn', 'kohud', 'lader']) { PIX[`barsele_${m}`] = PIX.axelrem_kaninskinn; PAL[`barsele_${m}`] = PAL[`axelrem_${m}`] ?? PAL[`rock_${m}`] ?? PAL.axelrem_kaninskinn!; }
+// barnkläderna (steg 13.2.4): platshållare med rockens bild i materialets färger tills Björn valt en bild i bildstilen
+for (const m of ['kaninskinn', 'vitskinn', 'vargskinn', 'bjornskinn', 'farskinn', 'getskinn', 'svinskinn', 'radjursskinn', 'kohud', 'lader']) { PIX[`barnklader_${m}`] = PIX[`rock_${m}`] ?? PIX.rock_kaninskinn; PAL[`barnklader_${m}`] = PAL[`rock_${m}`] ?? PAL.rock_kaninskinn!; }
+PIX.barnklader = PIX.barnklader_kaninskinn; PAL.barnklader = PAL.barnklader_kaninskinn;
 PIX.barsele = PIX.barsele_kaninskinn; PAL.barsele = PAL.barsele_kaninskinn;
 PIX.skor_lader = PIX.skor_kaninskinn; PAL.skor_lader = { ...PAL.skor_kaninskinn, G: '#5e3c24', H: '#7d5b40', W: '#987e62' };
 PIX.stovlar_lader = PIX.skor_kaninskinn; PAL.stovlar_lader = { ...PAL.skor_kaninskinn, G: '#5e3c24', H: '#7d5b40', W: '#987e62' };

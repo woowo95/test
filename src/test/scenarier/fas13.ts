@@ -354,3 +354,42 @@ SCENARIER.barsele = {
   },
 };
 const korTillsEnkel = (s: SIM.State, klart: () => boolean, timmar: number) => { const t0 = s.now; while (!klart() && s.now - t0 < timmar * SIM.HOUR) SIM.step(s, SIM.BEAT); };
+
+SCENARIER.barnklader = {
+  text: 'Steg 13.2.4: barnkläderna sys av 2 skinn och 1 rep vid slöjdbänken på 5 minuter, täcker kroppen och benen, värmer som rocken och byxorna (0,4) och skyddar kroppen. Barnet under 10 år tar barnkläderna och inte rocken, och har sedan inga byxor; den som fyllt 10 tar av dem, och de går till ett yngre syskon. Byn räknar rock och byxor bara för dem som fyllt 10',
+  kor: () => {
+    const S = SIM.SAKER, bk = S.barnklader_kaninskinn;
+    const recept = !!bk && bk.skaffa?.av?.skinn === 2 && bk.skaffa?.av?.rep === 1 && bk.skaffa.min === 5;
+    const bank = (SIM.STATIONER as Record<string, SIM.StationDef>).flatarbank, vidBank = bank.gor.includes('barnklader') && bank.bara!.includes('barnklader');
+    const tacker = SIM.kladPlatser('barnklader_kaninskinn').join() === 'yttre,ben' && Math.abs(bk!.klad!.varme - 0.4) < 1e-9;
+    const skydd = ['bal', 'benV'].every(d => SIM.kladSkyddStrid('barnklader_kaninskinn')?.delar.includes(d as never));
+    const s = SIM.createState(1, START);
+    klockan(s, 10);
+    s.people = s.people.filter(x => SIM.ageOf(x, s.now) >= 10); // bara de två syskonen är barn
+    const mor = SIM.living(s).find(x => x.sex === 'k' && SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen)!;
+    const stor = nyInvanare(s, 'm', 9.9), liten = nyInvanare(s, 'k', 4); stor.mother = liten.mother = mor.id;
+    for (const t of SIM.tingOf(s)) if (t.bar === stor.id || t.bar === liten.id) t.bar = undefined;
+    for (const t of SIM.tingOf(s)) if (SIM.SAKER[t.k]?.klad && t.bar === undefined) t.bar = -99; // inga andra fria plagg
+    const fri = (k: string) => { const t = SIM.addTool(s, k, stor); t.bar = undefined; t.agare = stor.id; return t; };
+    const rock = fri('rock_kaninskinn'), byxor = fri('byxor_kaninskinn'), barn = fri('barnklader_kaninskinn');
+    SIM.stepKlader(s);
+    const valde = barn.bar === stor.id && rock.bar !== stor.id && byxor.bar !== stor.id;
+    const mal = SIM.REDSKAPMAL.rock!(s) === SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= 10).length && SIM.REDSKAPMAL.barnklader!(s) === 2;
+    stor.born -= 0.2 * SIM.DAY; // fyller 10
+    rock.bar = byxor.bar = -99;
+    SIM.stepKlader(s);
+    const gav = barn.bar !== stor.id && barn.agare === liten.id;
+    SIM.stepKlader(s);
+    const syskon = barn.bar === liten.id;
+    return [
+      ['barnkläderna sys av 2 skinn och 1 rep på 5 minuter', recept],
+      ['barnkläderna görs bara vid slöjdbänken', vidBank],
+      ['de täcker kroppen och benen och värmer 0,4', tacker],
+      ['de skyddar kroppen och benen', skydd],
+      [`barnet tar barnkläderna, inte rocken eller byxorna (barnkläderna ${barn.bar === stor.id ? 'på' : 'av'}, rocken ${rock.bar === stor.id ? 'på' : 'av'}, byxorna ${byxor.bar === stor.id ? 'på' : 'av'})`, valde],
+      ['byn räknar rock för dem som fyllt 10 och barnkläder för barnen', mal],
+      ['den som fyllt 10 tar av barnkläderna och ger dem till det yngre syskonet', gav],
+      ['syskonet tar på sig dem', syskon],
+    ];
+  },
+};

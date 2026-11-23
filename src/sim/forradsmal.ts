@@ -235,10 +235,10 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
     (nTools(s, 'vattensack') < 1 ? 1 : 0) + (ortkokKan(s) ? villHaAv(s, 'tjara') : 0), // och tjäran i stora krukor (steg 9.4.14) // lerkrukorna (steg 9.4.12): de som vill ha en kruka som pynt, och en att bära vatten i när byn saknar en vattensäck
   kniv: s => 1 + tommaPlatser(s, 'kniv'), // en att arbeta med, och en till för en tom knivplats vid slaktbänken
   bensyl: s => tommaPlatser(s, 'bensyl'), // en till slöjdbänken (steg 2.3.2)
-  rock: s => living(s).length, // en per person (steg 2.3.2), av vilket material som helst (klader.ts)
+  rock: s => living(s).filter(p => ageOf(p, s.now) >= ALDER.barnklad).length, barnklader: s => living(s).filter(p => ageOf(p, s.now) < ALDER.barnklad).length, // barnen har barnkläder (steg 13.2.4) // en per person (steg 2.3.2), av vilket material som helst (klader.ts)
   skor: s => living(s).length,
   // steg 7.7: det som gör livet bättre, när någon kan göra det och materialet finns
-  byxor: s => living(s).length, mossa: s => living(s).length,
+  byxor: s => living(s).filter(p => ageOf(p, s.now) >= ALDER.barnklad).length, mossa: s => living(s).length,
   snoskor: s => Math.ceil(living(s).length / VILLTAL.snoskorPer), // några par till dem som går ut i snön
   halsband: s => Math.ceil(living(s).length / VILLTAL.halsbandPer), // det är få som bär smycken
   eldstal: s => living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // ett eldstål när någon kan smida (steg 12.2.12)

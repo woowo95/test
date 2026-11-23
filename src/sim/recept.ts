@@ -88,6 +88,7 @@ const DEF = {
   talt: { var: 'sak', av: { skinn: 4, grenar: 4, rep: 2 }, min: 5, slag: 'stor', tek: 'talt' }, // tältet (steg 11.11.1): sys vid slöjdbänken
   grop: { var: 'sak', av: {}, min: 5, slag: 'stor', tek: 'grop', verktyg: { benspade: 'benspaden' } }, // grävs på plats i skogen och täcks med grenar som bryts där (steg 10.2.84)
   byxor: { var: 'plagg', mangd: 2, av: { rep: 1 }, min: 5 },
+  barnklader: { var: 'plagg', mangd: 2, av: { rep: 1 }, min: 5 }, // steg 13.2.4
   mossa: { var: 'plagg', mangd: 1, av: {}, min: 4 },
   snoskor: { var: 'plagg', mangd: 1, av: { grenar: 2, rep: 1 }, min: 5 },
   prastdrakt: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 }, tecken: { var: 'plagg', mangd: 1, av: { rep: 1 }, min: 3 }, mask: { var: 'plagg', mangd: 2, av: {}, min: 5 }, // system 8.5

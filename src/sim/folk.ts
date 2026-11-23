@@ -96,6 +96,7 @@ export const ALDER = balans('alder', {
   ansvar: 12, // från detta tänder man elden, hämtar kol och bär in saker i mörkret
   bygger: 12, // från detta hjälper man till att bygga (golv, lagning och att fälla träd); väggar byggs först som vuxen
   uppfinner: 12, // från detta kommer man på tekniker medan man arbetar
+  barnklad: 10, // under detta passar barnkläderna, och från detta de vuxnas rock och byxor (steg 13.2.4)
   vuxen: 14, // från detta arbetar man för byn; yngre hjälper bara till eller leker. Också de som bygger väggar, har yrke och har en röst i sederna
   vaktFran: 16, // från detta kan man hålla vakt ...
   vaktTill: 60, // ... och under detta

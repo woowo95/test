@@ -154,7 +154,7 @@ export const GORA: Record<string, string> = {
   korg: 'fläta korgar', yxa: 'göra flintyxor', fiskespjut: 'tälja träspjut', rep: 'tvinna rep', flintspjut: 'göra flintspjut', metspo: 'göra metspön',
   kniv: 'slå flintknivar', timmervagg: 'bygga timmerhus', slaktbank: 'bygga en slaktbänk', flatarbank: 'bygga en slöjdbänk', halmbadd: 'göra halmbäddar',
   bord: 'bygga bord', hylla: 'göra hyllor och kistor', skinnfall: 'sy skinnfällar', skinndorr: 'hänga dörrar av skinn', tradorr: 'göra trädörrar',
-  bensyl: 'slipa bensylar', skinnklader: 'sy kläder av skinn', vattensack: 'sy vattensäckar', balte: 'fläta bälten', axelrem: 'sy axelremmar', ryggsack: 'sy ryggsäckar', talt: 'sy tält', ridning: 'rida', mal: 'göra mål till bollspelen', boll: 'sy bollar',
+  bensyl: 'slipa bensylar', skinnklader: 'sy kläder av skinn', barnklader: 'sy barnkläder', barsele: 'sy bärselar', vattensack: 'sy vattensäckar', balte: 'fläta bälten', axelrem: 'sy axelremmar', ryggsack: 'sy ryggsäckar', talt: 'sy tält', ridning: 'rida', mal: 'göra mål till bollspelen', boll: 'sy bollar',
   slagtra: 'tälja slagträn', scen: 'bygga en scen', trumma: 'göra trummor', benflojt: 'skära benflöjter', lyra: 'göra lyror', kruka: 'bygga upp lerkrukor',
   matta: 'väva mattor', benspade: 'göra benspadar', latrin: 'gräva en latrin', grill: 'bygga en grillställning',
   tork: 'bygga en torkställning', bikupa: 'fläta bikupor', bur: 'bygga burar', odling: 'odla', ledarskap: 'leda byn', fackla: 'göra facklor', skogsvard: 'flytta plantor dit skogen behövs',
