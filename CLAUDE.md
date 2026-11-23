@@ -36,6 +36,7 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 - Inga datum, inget "Björn sa" eller "Björn efter vNNN" och inget "beslut" eller "förslag" i designdokumentet: det som står där gäller. Ändrar Björn något, skrivs texten om där den står, i avsnittet och i steget.
 - Ett obyggt steg som flyttas eller tas bort försvinner helt, utan en rad om att det flyttats eller strukits. Stegen efter numreras om, och hänvisningarna i dokumentet rättas.
 - Björn säger t.ex. "gör 2.5.1", "gör 2.5" eller "gör till och med 2.6.2". Bygg de steg som nämns och stanna efter det sista.
+- Brådskande: avdelningen Brådskande överst i Färdplanen står utanför sifferserien. Stegen där heter B.1, B.2 och så vidare och byggs före fasens steg när Björn ber om det ("gör brådskande", "gör B.3"). Ett byggt B-steg bockas av med versionen och behåller sitt nummer; nya brådskande steg får nästa lediga B-nummer.
 - Läs avsnitten som systemets "Läs:" pekar på innan du bygger. Står det "Björn avgör" i steget, fråga först.
 - Bocka av ett byggt steg och skriv versionen efter, t.ex. "(v36)". Byggda steg byter aldrig nummer.
 - Nya steg läggs alltid framför där vi är, i ett system som inte är byggt än, aldrig i ett system som redan är passerat. Säger Björn hur långt fram (t.ex. "tidigast efter 2.3.4"), läggs de där eller senare. Passar inget system, läggs stegen sist i det närmaste systemet efter den platsen, så att de obyggda systemen behåller sina nummer. Säg i svaret vilka nummer stegen fick.
