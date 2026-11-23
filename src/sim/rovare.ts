@@ -37,7 +37,7 @@ import type { TalkEvent } from './samtal';
 import { groundOf, tileOf } from './mark';
 import { findPath, markFart } from './vag';
 import { GANG } from './gang';
-import { kvarlevor } from './kvarlevor';
+import { Grav, kvarlevor } from './kvarlevor';
 import { RADER, hamndKlar, huggDorr, iFarten, klanMinns, overtygelse, radSeger, svarTrohet, tandaHus } from './rader';
 import { bjornarOf } from './djur';
 import { bjornStrid } from './bjorn';
@@ -87,6 +87,8 @@ export const ROVARE = balans('rovare', {
   slaMod: 0.5, slaHot: 0.6, // viljan att slå: per tio steg mod över 10, och minus detta per gång fler som står emot än de själva
   hotVapen: 2, // i hotet räknas var och en som 1 + detta gånger vapnets skada
   flyBlod: 2.5, flyHot: 0.8, flyDoda: 1.2, // viljan att fly: blodet hen förlorat, övermakten hen ser (mindre för den modiga) och delen av flocken som är borta
+  platsAvst: 10, // platserna att plundra väljs efter värdet delat med avståndet plus så här många rutor (steg 13.1.5) ...
+  platsMin: 3, // ... och en plats där det som ligger är värt mindre än så här är inte värd besväret
   taSek: 12, // så många sekunder tar det att ta en sak ur förrådet (steg 10.1.15): tiden följer hur mycket det finns att ta
   gavSig: 1, gavSigTim: 2, // den som flytt eller gett upp i striden har så här mycket mindre vilja att stå emot, och det avtar till noll på så här många timmar (steg 12.1.82)
   lyder: 0.5, lyderPlus: 0.15, iver: 0.2, // över den här Envälde-seden lyder man ledaren (så mycket mer vilja), och så mycket drar Fejd och Krig till striden eller från den (steg 8.7.9, 10.1.13)
@@ -115,7 +117,7 @@ export const rovarna = (s: State, f: { folk: number[] }): Person[] => f.folk.map
 const gr = (r: Person) => r.gast!;
 // x, y: mitten av gänget (steg 10.2.25), mx, my: målet. test: flocken kom från testläget och rastar kortare (steg 9.2.103).
 // anfall: flocken har setts i eller nära byn, och byn går mot den (steg 9.2.104). strider: hur många strider flocken varit i
-export interface Rovarflock { fard?: number; hemN?: number; hemBar?: Record<string, number>; /* världens färd som skickade flocken, hur många som kommit hem och vad de bar (steg 11.6.20) */ rast?: { x: number; y: number }; vantat?: boolean; anfaller?: boolean; klar?: boolean; radKlar?: boolean; antal?: number; strider?: number; tagit?: Record<string, number>; sx?: number; sy?: number; skal?: import('./rader').RadSkal; rad?: boolean; mal?: number; hugger?: { bit: number; till: number }; tant?: boolean; id: number; klan?: number; folk: number[]; x: number; y: number; mx: number; my: number; gor: 'kommer' | 'vantar' | 'slass' | 'flyr' | 'letar' | 'rotar'; /* det de flesta gör, för texterna (steg 10.2.30) */ letar?: number[]; letat?: boolean; till: number; sedd?: number; gissning?: number; test?: boolean; anfall?: boolean; bud?: { av: number; till: number; t: number } }
+export interface Rovarflock { fard?: number; hemN?: number; hemBar?: Record<string, number>; /* världens färd som skickade flocken, hur många som kommit hem och vad de bar (steg 11.6.20) */ rast?: { x: number; y: number }; vantat?: boolean; anfaller?: boolean; klar?: boolean; radKlar?: boolean; antal?: number; strider?: number; tagit?: Record<string, number>; gravTagit?: Record<string, number>; /* det som togs ur gravarna (steg 13.1.5) */ sx?: number; sy?: number; skal?: import('./rader').RadSkal; rad?: boolean; mal?: number; hugger?: { bit: number; till: number }; tant?: boolean; id: number; klan?: number; folk: number[]; x: number; y: number; mx: number; my: number; gor: 'kommer' | 'vantar' | 'slass' | 'flyr' | 'letar' | 'rotar'; /* det de flesta gör, för texterna (steg 10.2.30) */ letar?: number[]; letat?: boolean; till: number; sedd?: number; gissning?: number; test?: boolean; anfall?: boolean; bud?: { av: number; till: number; t: number } }
 
 const vaken = (p: Person) => p.task?.act !== 'sova';
 const mellan = (s: State, [a, b]: readonly number[]) => a + rnd(s, 'rovare') * (b - a);
@@ -480,10 +482,16 @@ const lastAv = (r: Person) => Object.entries(gr(r).bar ?? {}).reduce((a, [k, n])
 // handlarens last (steg 11.11.7): medan hen väntar eller handlar ligger lasten vid hen, och rövarna tar ur den som ur förrådet.
 // Djuren och vagnarna i lägret tas inte
 const handlarLast = (s: State) => { const h = s.handlare; if (!h || (h.fas !== 'vantar' && h.fas !== 'handlar') || !h.varor.some(w => w.n >= 1)) return undefined; const p = gastAv(s, h.id); return p && p.died === undefined ? { h, x: p.x, y: p.y } : undefined; };
+// Platserna att plundra (steg 13.1.5): lagerplatserna, handlarens last och gravarna med något i. Rövaren väljer efter värdet av
+// det som ligger där, delat med avståndet (plus ROVARE.platsAvst rutor), så att en rik plats lite längre bort går före en fattig nära
+const gravVarde = (g: Grav) => (g.saker ?? []).reduce((a, x) => a + grundvarde(x.k) * x.n, 0);
+export const gravVid = (s: State, r: { x: number; y: number }) => (s.gravar ?? []).find(g => g.saker?.some(a => a.n >= 1) && avst(r, { x: g.x + 0.5, y: g.y + 0.5 }) <= ROVARE.nara + 1);
 function taPlats(s: State, r: Person) {
-  let b: { x: number; y: number } | undefined, bd = Infinity;
-  const hl = handlarLast(s); if (hl) { bd = avst(r, hl); b = { x: hl.x, y: hl.y }; }
-  for (const z of zonesOf(s)) { if (!(s.stackar ?? []).some(a => a.x >= z.x && a.x < z.x + z.w && a.y >= z.y && a.y < z.y + z.h && a.n >= 1)) continue; const c = { x: z.x + z.w / 2, y: z.y + z.h / 2 }, d = avst(r, c); if (d < bd) { bd = d; b = c; } }
+  let b: { x: number; y: number } | undefined, bv = 0;
+  const prova = (c: { x: number; y: number }, v: number) => { const w = v / (avst(r, c) + ROVARE.platsAvst); if (v >= ROVARE.platsMin && w > bv) { bv = w; b = c; } };
+  const hl = handlarLast(s); if (hl) prova({ x: hl.x, y: hl.y }, hl.h.varor.reduce((a, w) => a + grundvarde(w.k) * w.n, 0));
+  for (const z of zonesOf(s)) { let v = 0; for (const a of s.stackar ?? []) if (a.n >= 1 && a.x >= z.x && a.x < z.x + z.w && a.y >= z.y && a.y < z.y + z.h) v += grundvarde(a.k) * a.n; prova({ x: z.x + z.w / 2, y: z.y + z.h / 2 }, v); }
+  for (const g of s.gravar ?? []) if (g.saker?.length) prova({ x: g.x + 0.5, y: g.y + 0.5 }, gravVarde(g));
   return b;
 }
 // dit rövaren går när flocken anfaller: hämnden letar hus för hus (f.letar), annars den närmaste lagerplatsen med något i, annars förrådet
@@ -614,12 +622,15 @@ function taEn(s: State, f: Rovarflock, r: Person) {
   const fritt = (k: string) => tingOf(s).find(q => q.k === k && q.bar === undefined && q.hos === undefined && q.lass === undefined);
   const hl = handlarLast(s), vidH = hl && avst(r, hl) <= ROVARE.nara + 1 ? hl.h : undefined; // handlarens last som annat byte (steg 11.11.7)
   const iLast = (q: string) => !!vidH?.varor.some(w => w.k === q && w.n >= 1);
-  const k = SAK_LIST.filter(q => vikt + viktOf(q) <= bar && (iLast(q) || (SAKER[q]!.redskap ? !!fritt(q) : amountOf(s, q) >= 1))).sort((a, b) => grundvarde(b) / Math.max(0.1, viktOf(b)) - grundvarde(a) / Math.max(0.1, viktOf(a)))[0];
+  // vid en grav tas bara det som ligger i den (steg 13.1.5)
+  const grav = vidH ? undefined : gravVid(s, r), iGrav = (q: string) => !!grav?.saker?.some(a => a.k === q && a.n >= 1);
+  const k = SAK_LIST.filter(q => vikt + viktOf(q) <= bar && (grav ? iGrav(q) : iLast(q) || (SAKER[q]!.redskap ? !!fritt(q) : amountOf(s, q) >= 1))).sort((a, b) => grundvarde(b) / Math.max(0.1, viktOf(b)) - grundvarde(a) / Math.max(0.1, viktOf(a)))[0];
   if (!k) return false;
-  if (iLast(k)) { const w = vidH!.varor.find(x => x.k === k && x.n >= 1)!; w.n -= 1; vidH!.varor = vidH!.varor.filter(x => x.n >= 1); count(s, 'rovatHandlare'); }
+  if (grav) { const a = grav.saker!.find(x => x.k === k && x.n >= 1)!; a.n -= 1; grav.saker = grav.saker!.filter(x => x.n >= 1); if (!grav.saker.length) grav.saker = undefined; (f.gravTagit ??= {})[k] = (f.gravTagit[k] ?? 0) + 1; count(s, 'rovarGrav'); }
+  else if (iLast(k)) { const w = vidH!.varor.find(x => x.k === k && x.n >= 1)!; w.n -= 1; vidH!.varor = vidH!.varor.filter(x => x.n >= 1); count(s, 'rovatHandlare'); }
   else if (SAKER[k]!.redskap) { const t = fritt(k)!; s.ting = s.ting!.filter(q => q !== t); kartaBorta(s, t); stulenKarta(s, r, t); } else addTo(s, k, -1);
   (gr(r).bar ??= {})[k] = (gr(r).bar![k] ?? 0) + 1;
-  (f.tagit ??= {})[k] = (f.tagit[k] ?? 0) + 1;
+  if (!grav) (f.tagit ??= {})[k] = (f.tagit[k] ?? 0) + 1;
   count(s, 'rovat');
   return true;
 }
@@ -629,10 +640,11 @@ export function taKlart(s: State, f: Rovarflock) {
   f.klar = true;
   const drev: string[] = []; // boskapen (steg 9.8.12): varje rövare driver bort ett får eller en get som står ute, det närmaste först
   for (const _r of rovarna(s, f)) { const d = tamUte(s).filter(q => avst(q, f) < ROVARE.boskapR).sort((a, b) => avst(a, f) - avst(b, f))[0]; if (!d) break; tamStulen(s, d); drev.push(`${tamArt(d.art).ord[0]} ${tamArt(d.art).ord[1]}`); }
-  const tagna = f.tagit ?? {}, tog = Object.values(tagna).reduce((a, b) => a + b, 0) + drev.length, tyst = f.sedd === undefined;
-  const tog_ = [...SAK_LIST.filter(k => tagna[k]).sort((a, b) => grundvarde(b) / Math.max(0.1, viktOf(b)) - grundvarde(a) / Math.max(0.1, viktOf(a))).map(k => antal(tagna[k], k))];
+  const tagna = f.tagit ?? {}, gravar = f.gravTagit ?? {}, tog = [...Object.values(tagna), ...Object.values(gravar)].reduce((a, b) => a + b, 0) + drev.length, tyst = f.sedd === undefined;
+  const lista = (m: Record<string, number>) => [...SAK_LIST.filter(k => m[k]).sort((a, b) => grundvarde(b) / Math.max(0.1, viktOf(b)) - grundvarde(a) / Math.max(0.1, viktOf(a))).map(k => antal(m[k], k))];
+  const tog_ = lista(tagna), grav_ = lista(gravar); // ur gravarna för sig (steg 13.1.5)
   count(s, 'rovarPlundring'); if (tyst) count(s, 'rovarTyst');
-  const vad = [...tog_.length ? [`tog ${och(tog_)} ur förrådet`] : [], ...drev.length ? [`drev bort ${och(drev)} som stod ute`] : []].join(' och '); // djuren stod ute, inte i förrådet (steg 12.1.119)
+  const vad = [...tog_.length ? [`tog ${och(tog_)} ur förrådet`] : [], ...grav_.length ? [`tog ${och(grav_)} ur gravarna`] : [], ...drev.length ? [`drev bort ${och(drev)} som stod ute`] : []].join(' och '); // djuren stod ute, inte i förrådet (steg 12.1.119)
   const text = tog ? `Rövare ${fran(s, f)} ${tyst ? 'smög in i byn osedda och ' : ''}${vad}.` : `Rövare ${fran(s, f)} kom till förrådet men hittade inget att ta.`;
   log(s, text, 'world'); if (tog) { notis(s, 'motgang', text); kronikaBer(s, 'k_rovare', Math.floor(s.now / HOUR), { fran: fran(s, f), vad, tyst }); allaBarn(s, 'rovarePlundring'); } // mallen (steg 12.1.135)
   tandaHus(s, f); // (steg 8.9.3)

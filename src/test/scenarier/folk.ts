@@ -2781,6 +2781,27 @@ SCENARIER.plundring = {
   },
 };
 
+SCENARIER.rovargrav = {
+  text: 'Steg 13.1.5: rövarna plundrar gravar. Graven är en plats bland de andra som rövarna väljer mellan efter värdet, som förrådet: de tar svärdet ur en rik grav och lämnar en fattig, och plundringen står i notisen och krönikan',
+  kor: () => {
+    const s = rovarBy();
+    s.stackar = []; s.ting = (s.ting ?? []).filter(t => t.bar !== undefined || t.hos !== undefined);
+    const p0 = living(s)[0], fx = Math.floor(p0.x), fy = Math.floor(p0.y);
+    const rik = { x: fx + 4, y: fy, t: s.now, vem: 9001, namn: 'Rik', stil: 'jord', saker: [{ k: 'svard', n: 1, c: 1, t: s.now }] } as SIM.Grav;
+    const fattig = { x: fx - 2, y: fy, t: s.now, vem: 9002, namn: 'Fattig', stil: 'jord', saker: [{ k: 'rolleka', n: 1, c: 1, t: s.now }] } as SIM.Grav;
+    s.gravar = [rik, fattig];
+    SIM.skickaRovare(s, 2);
+    const f = s.rovare!;
+    const sover = () => { for (const p of living(s)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0, why: 'prov' }; };
+    for (let i = 0; i < 1500 && s.rovare; i++) { sover(); step(s, 2); }
+    const notis = (s.notiser?.lista ?? []).some(n => /ur gravarna/.test(JSON.stringify(n))), krona = (s.hist?.kronika ?? []).some(x => x[2] === 'k_rovare' && JSON.stringify(x).includes('gravarna'));
+    return [
+      [`rövarna tog svärdet ur den rika graven (${JSON.stringify(f.gravTagit ?? {})}, värde ${SIM.grundvarde('svard')} mot ${SIM.grundvarde('rolleka')})`, (f.gravTagit?.svard ?? 0) === 1 && !rik.saker?.some(a => a.k === 'svard')],
+      ['och lämnade den fattiga', !!fattig.saker?.some(a => a.k === 'rolleka')],
+      ['plundringen står i notisen och krönikan', notis && krona],
+    ];
+  },
+};
 SCENARIER.rovardjur = {
   text: 'Rövare mot djur på kartan (steg 10.2.29): en björn på rövarnas väg ger en strid på kartan som rövarna reagerar på, var och en med sitt eget val (slåss eller fly), utan tärningskast vid sidan av kartan',
   kor: () => {
