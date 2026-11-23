@@ -83,13 +83,6 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
     '....kJkJdkJk....', '....kJkJJkJk....', '....kJkJJkJk....', '....kJkJJkJk....',
     '....kJkkkkJk....', '....kjjjjjjk....', '....kkkkkkkk....', '................'],
     pal: { ...TRA } },
-  // sjukstugans symbol (steg 12.4.10 och 13.1.14): en låg bädd av hö på en ram av grenar, med ett brunt skinn över och en ljus kudde
-  sjukbadd: { pix: [
-    '................', '................', '................', '................',
-    '.kkkkkkkkkkkkkk.', '.kwwkJJJJJJJJjk.', '.kwwkJjJJjJJJjk.', '.kwwkJJJJJjJJjk.',
-    '.kyykJJjJJJJJjk.', '.kyykjjjjjjjjjk.', '.kkkkkkkkkkkkkk.', '.kd..........dk.',
-    '................', '................', '................', '................'],
-    pal: { ...TRA, w: '#dad0bb', y: '#bdb39b' } },
   // fyrfatet (steg 12.4.11 och 13.7.6): ett grunt fat av bränd lera utan ben, med mörkt kol i; glöden och lågorna ritas rörliga
   // ovanpå när det brinner, som lägerelden (foremal.ts)
   fyrfat: { pix: [
@@ -113,7 +106,7 @@ const vrid = (r: string[]) => Array.from({ length: r[0].length }, (_, x) => r.ma
 export function laggTillMobler(PIX: Pix, PAL: Pal) {
   for (const [k, b] of Object.entries(BILDER)) { PIX[k] = b.pix; PAL[k] = b.pal; }
   PIX.laggkar = PIX.tunna; PAL.laggkar = PAL.tunna; // tekniken Laggkärl har tunnans bild
-  PIX.sjukstuga = PIX.sjukbadd; PAL.sjukstuga = PAL.sjukbadd; // och tekniken Sjukstuga rumstaggens
+  for (const k of ['sjukbadd', 'sjukstuga']) { PIX[k] = PIX.sang; PAL[k] = PAL.sang; } // sjukstugans tagg och teknik har sängens bild (steg 13.7.8)
   for (const k of ['pall', 'stol']) { PIX['kb_' + k] = PIX[k]; PAL['kb_' + k] = PAL[k]; } // på platsen vid bordet
   for (const v of ['', '_tand']) { PIX['kb_oljelampa2' + v] = PIX['kb_oljelampa1' + v]; PAL['kb_oljelampa2' + v] = PAL['kb_oljelampa1' + v]; } // lampan ser likadan ut på bordet och hyllan
   for (const k of KARTA) for (const e of ['_karta', '_karta_v']) { PIX[k + e] = PIX[k]; PAL[k + e] = PAL[k]; }
