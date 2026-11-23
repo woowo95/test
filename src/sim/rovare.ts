@@ -99,6 +99,7 @@ export const ROVARE = balans('rovare', {
   styrka: [8, 14], mod: [8, 15], uthallighet: [9, 14], smidighet: [8, 14], skicklighet: [6, 11], // rövarnas kroppar (lägst, högst)
   testVanta: 4, // testläget: gänget rastar så här många minuter innan anfallet, i stället för lurMin, så att man hinner se livet på rastplatsen (steg 10.1.16 och 10.2.31); inget annat skiljer
   larmTim: 2, // ... om hen inte redan fått larmet de senaste så här många timmarna
+  radFram: 2, radIsar: 1.3, // de som väntar på gänget står så här många rutor från målet mot gänget, i en rad med så här många rutor mellan sig (steg B.5)
   anfallUt: 2, // en flock som setts så här nära byns område (utanforByn) eller inne i det gör att byn går i anfallsläge (steg 9.2.104)
   lurUt: 15, // väntplatsen ligger minst så här många rutor utanför byns område (utanforByn), också för en vanlig flock (steg 9.2.103)
   // vem som strider, hjälper eller gömmer sig (steg 9.2.116, rovarVilja): mod / 20 + iver, minus skadad × det som fattas i hälsan,
@@ -702,18 +703,27 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
     if (!alive(q) || !vaken(q) || q.task?.act === 'strid' || !(forsvarar(q) || q.task?.act === 'vakt') || !vuxenKan(s, q)) continue;
     if (strid.st.kampar.some(k => k.lage === 'strid' && Math.hypot(k.x - q.x, k.y - q.y) < ROVARE.moter)) { taVapen(s, q); kartStridMed(s, strid, q, 0); }
   }
-  // den som står emot går mot de rövare hen vet om (steg 10.2.27): de hen ser (inom synhåll) går hen mot, och vet hen om dem genom
-  // larmet går hen dit de är på väg, också till en lagerplats i byns utkant. När de är nära varandra börjar striden, var de än är
-  for (const q of folk) {
-    if (!alive(q) || !vaken(q) || q.task?.act !== 'forsvarRovare' || !kanStaEmot(s, q)) continue;
-    const r = fo.filter(x => !gr(x).flytt).sort((a, b) => avst(a, q) - avst(b, q))[0]; // den som flyr jagas inte
-    if (!r) continue;
+  // de som står emot och vet om gänget (steg 10.2.27 och B.5): de går inte ut mot rövarna utan samlas där gänget är på väg (förrådet,
+  // en lagerplats i byns utkant eller elden, malFor), mellan gänget och målet, och väntar. Var och en har sin plats i raden bredvid
+  // de andra (ROVARE.radIsar), så att den som kommer senare ställer sig bredvid och ingen möter gänget ensam. Står gänget inne i
+  // byns område utan att anfalla går byn emot det (Anfallet nära byn). Striden börjar när en rövare kommer nära, var de än är
+  const rad = folk.filter(q => alive(q) && vaken(q) && q.task?.act === 'forsvarRovare' && kanStaEmot(s, q)).sort((a, b) => a.id - b.id);
+  const fria = fo.filter(x => !gr(x).flytt); // den som flyr jagas inte
+  rad.forEach((q, i) => {
+    const r = [...fria].sort((a, b) => avst(a, q) - avst(b, q))[0];
+    if (!r) return;
     const ser = avst(r, q) <= KLOCKA.faraSyn, vet = ser || (!!q.larm?.rovare && s.now - q.larm.rovare.t < ROVARE.larmTim * HOUR);
-    if (!vet) continue;
-    if (avst(r, q) < ROVARE.moter && !flockStrid(s, f)) { slaSteg({ s, f, r, folk, dt: dtSec, mal: r, fiende: q, hot: 1, last: 0, kvar: f.folk.length, brus: () => 0 }); continue; } // (striden väljer inget, så inga slumptal)
-    const tk = q.task!, m = ser ? r : (f.anfaller ? malFor(s, f, r) : r);
-    if (Math.hypot(tk.tx - m.x, tk.ty - m.y) > 1.5) { const at = freeNear(s, m.x, m.y); tk.tx = at.x; tk.ty = at.y; /* man går dit på land, aldrig ut i vattnet */ tk.phase = 'go'; tk.path = undefined; tk.pk = undefined; tk.why = ser ? 'Rövarna är här, går mot dem' : 'Går dit rövarna är på väg'; }
-  }
+    if (!vet) return;
+    if (avst(r, q) < ROVARE.moter && !flockStrid(s, f)) { slaSteg({ s, f, r, folk, dt: dtSec, mal: r, fiende: q, hot: 1, last: 0, kvar: f.folk.length, brus: () => 0 }); return; } // (striden väljer inget, så inga slumptal)
+    const tk = q.task!, mot = f.anfall && !f.anfaller;
+    let m: { x: number; y: number } = r;
+    if (!mot) { // platsen i raden: ROVARE.radFram rutor från målet mot gänget, och var och en ROVARE.radIsar rutor från den förra, åt sidan
+      const mal = malFor(s, f, r), d = Math.max(0.01, avst(f, mal)), ux = (f.x - mal.x) / d, uy = (f.y - mal.y) / d;
+      const sida = i === 0 ? 0 : (i % 2 ? 1 : -1) * Math.ceil(i / 2) * ROVARE.radIsar;
+      m = { x: mal.x + ux * Math.min(ROVARE.radFram, d) - uy * sida, y: mal.y + uy * Math.min(ROVARE.radFram, d) + ux * sida };
+    }
+    if (Math.hypot(tk.tx - m.x, tk.ty - m.y) > 1.5) { const at = freeNear(s, m.x, m.y); tk.tx = at.x; tk.ty = at.y; /* man går dit på land, aldrig ut i vattnet */ tk.phase = 'go'; tk.path = undefined; tk.pk = undefined; tk.why = mot ? 'Rövarna är i byn, går mot dem' : 'Ställer sig mellan rövarna och det de är ute efter'; }
+  });
   // hämnden som letat igenom alla hus utan att hitta den de söker ger sig av (letaSteg, steg 8.8.5)
   if (f.gor === 'letar' && f.anfaller && !f.klar && !f.letar?.length) letaSteg(s, f, folk);
   const lagen: Record<string, number> = {};
