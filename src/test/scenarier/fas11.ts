@@ -2843,6 +2843,7 @@ SCENARIER.handelsresa = {
   env: { BALANS: 'resa.turneGava=0' }, // turnén (steg 11.8.18) prövas i scenariot turne
   kor: () => {
     const s = SIM.cloneState(testBy(30)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
+    vl.bud = undefined; // inget bud väntar på att skickas (sändebudet vinner annars)
     const a = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.kanGa(q))[0]!;
     a.pot.nyfikenhet = 15; a.pot.mod = 15;
     const byar = vl.platser!.filter(q => q.k === 'by' && q.nr !== hem.nr && q.by !== undefined && (SIM.radNr(vl, q.by)?.tal.folk ?? 0) > 0)
