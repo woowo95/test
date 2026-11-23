@@ -5,7 +5,7 @@ import { Person, Act, Task, createState, ownedBy, tidyTools, addTool, toolsOf, h
 import * as SIM from '../../sim';
 import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import { lasBy } from '../delby';
-import { testBy, rovarGang, korTills, setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare, tandOchFlinta, utanStartKlader, bearbetaVid, vidForradet, vidStack } from './hjalp';
+import { testBy, rovarGang, korTills, medHus, setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare, tandOchFlinta, utanStartKlader, bearbetaVid, vidForradet, vidStack } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
 import { bortaBerattelse, bortaHtml, forloppText, ikappHtml, spolaText } from '../../ui/borta';
@@ -2657,8 +2657,10 @@ SCENARIER.rovarflykt = {
       const qf = rovarGang(q, 3, { x: qm.x + 10, y: qm.y }, { anfaller: true }); qf.sedd = q.now;
       for (const r of SIM.rovarna(q, qf)) r.blod = blod;
       korTills(q, () => !!SIM.flockStrid(q, qf) || SIM.rovarna(q, qf).every(r => r.gast?.flytt), 600);
-      const strid = !!SIM.flockStrid(q, qf), flyr = SIM.rovarna(q, qf).filter(r => r.gast?.flytt).length;
-      return { strid, flyr };
+      const t0 = q.now, strid = !!SIM.flockStrid(q, qf);
+      korTills(q, () => !SIM.flockStrid(q, qf), 600); // striden går tills den är slut (steg B.1: den räknas från när den började, så den ryms inte i slaget där den började)
+      const flyr = SIM.rovarna(q, qf).filter(r => r.gast?.flytt).length, sek = (q.now - t0) / 1000;
+      return { strid, flyr, sek };
     };
     const modiga = prov(1, 1), skadade = prov(0.45, 4);
     return [
@@ -2671,7 +2673,60 @@ SCENARIER.rovarflykt = {
       [`... och hur många i gänget som är kvar (${fly(1, 1, 10, 1).toFixed(2)} mot ${fly(1, 1, 10, 3).toFixed(2)})`, flocken],
       [`en frisk rövare med få emot väljer att slåss (${sla(1, 1.2).toFixed(2)} mot ${fly(1, 1.2).toFixed(2)})`, frisk],
       [`en skadad rövare med många emot vänder (${fly(0.3, 3.5, 8, 1).toFixed(2)} mot ${sla(0.3, 3.5, 8).toFixed(2)})`, slagen],
-      [`i spelet: friska rövare mot en försvarare slåss (strid ${modiga.strid ? 'ja' : 'nej'}, ${modiga.flyr} flyr), skadade mot fyra vänder innan de möts (strid ${skadade.strid ? 'ja' : 'nej'}, ${skadade.flyr} av 3 flyr)`, modiga.strid && modiga.flyr === 0 && !skadade.strid && skadade.flyr === 3],
+      [`i spelet: friska rövare mot en försvarare slåss (strid ${modiga.strid ? 'ja' : 'nej'}), skadade mot fyra vänder direkt (${skadade.flyr} av 3 flyr, efter ${skadade.sek.toFixed(0)} s)`, modiga.strid && skadade.flyr === 3 && skadade.sek <= 30],
+    ];
+  },
+};
+
+SCENARIER.rovarflyr = {
+  text: 'Steg B.2: rövarna som flyr och de som gömt sig. Försvararna jagar inte en rövare som flyr (den närmaste rövaren räknas bara bland dem som inte flyr), så efter en vunnen strid börjar ingen ny strid mot gänget som flyr. Den som gömt sig i ett hus dras inte in i striden och hotas inte av en rövare som går förbi',
+  kor: () => {
+    const { HOUR } = SIM;
+    const ny = (seed: number) => { const s = createState(seed, START); klockan(s); for (const c of SIM.klanerOf(s)) c.inst = -60; for (const p of living(s)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * HOUR, carry: 0 }; return s; };
+    const vuxna = (s: State) => living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vaktFran && SIM.ageOf(p, s.now) < SIM.ALDER.vaktTill);
+    const stall = (s: State, p: Person, x: number, y: number) => { Object.assign(p, SIM.freeNear(s, x, y)); p.pot.mod = 16; p.larm = { rovare: { t: s.now, vad: 'rovare', storlek: 2, led: 0, varnat: 1 } }; p.task = { act: 'forsvarRovare', phase: 'do', tx: p.x, ty: p.y, until: s.now + 4 * HOUR, carry: 0 }; };
+    // 1) fyra med spjut mot två svaga rövare: byn vinner, gänget flyr, och ingen ny strid börjar mot dem som flyr
+    let vann = 0, efterSeger = 0;
+    for (const seed of [6, 7, 8, 9]) {
+      const s = ny(seed), z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
+      const fyra = vuxna(s).slice(0, 4);
+      for (let i = 0; i < 4; i++) SIM.newTing(s, 'fiskespjut', 1, SIM.BYN);
+      fyra.forEach((p, i) => stall(s, p, m.x + (i % 2) * 0.8, m.y + Math.floor(i / 2) * 0.8));
+      const f = rovarGang(s, 2, { x: m.x + 6, y: m.y }, { anfaller: true }); f.sedd = s.now;
+      for (const r of SIM.rovarna(s, f)) { r.blod = 0.7; r.pot.mod = 4; }
+      korTills(s, () => !!SIM.flockStrid(s, f), 900);
+      const g = SIM.flockStrid(s, f);
+      if (!g) continue;
+      korTills(s, () => !!g.st.slut && !SIM.flockStrid(s, f), 1800);
+      if (g.st.slut?.vinnare !== 0) continue;
+      vann++;
+      const n0 = s.stat?.rovarStrid ?? 0;
+      korTills(s, () => !SIM.rovarna(s, f).length, 600);
+      efterSeger += (s.stat?.rovarStrid ?? 0) - n0;
+    }
+    // 2) den som gömt sig i huset när gänget går förbi utanför
+    let gomda = 0, drogs = 0, hotad = 0, kvar = 0;
+    for (const seed of [6, 7, 8]) {
+      const s = ny(seed); medHus(s);
+      for (const p of living(s)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * HOUR, carry: 0 };
+      const rum = SIM.gridOf(s).rooms[0]; if (!rum) continue;
+      const i = rum.tiles[0], q = vuxna(s)[0];
+      q.x = i % SIM.W + 0.5; q.y = Math.floor(i / SIM.W) + 0.5; q.pot.mod = 3;
+      q.larm = { rovare: { t: s.now, vad: 'rovare', storlek: 3, led: 0, varnat: 1 } };
+      q.task = { act: 'gomma', phase: 'do', tx: q.x, ty: q.y, until: s.now + 4 * HOUR, carry: 0 };
+      q.larmRoll = { hot: 'rovare', roll: 'gomd', v: s.larmV ?? 0, t: s.now }; // hen har valt att gömma sig
+      gomda++;
+      const f = rovarGang(s, 3, { x: q.x + 2, y: q.y + 2 }, { anfaller: true }); f.sedd = s.now;
+      const t0 = s.now; let drog = false;
+      korTills(s, () => s.now - t0 > 20 * 60 * 1000, 1500, () => { if (SIM.kartStrider(s).some(g => g.st.kampar.some(k => k.pid === q.id))) drog = true; });
+      if (drog) drogs++;
+      if (q.gavSig !== undefined) hotad++;
+      if (q.task?.act === 'gomma' && SIM.iHus(s, q)) kvar++;
+    }
+    return [
+      [`efter en vunnen strid börjar ingen ny strid mot gänget som flyr (${vann} vunna strider, ${efterSeger} nya strider efteråt)`, vann >= 2 && efterSeger === 0],
+      [`den som gömt sig i huset dras inte in i striden (${drogs} av ${gomda}) och hotas inte (${hotad})`, gomda >= 2 && drogs === 0 && hotad === 0],
+      [`och är kvar i sitt gömställe (${kvar} av ${gomda})`, kvar === gomda],
     ];
   },
 };

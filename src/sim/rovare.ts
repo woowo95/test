@@ -27,7 +27,7 @@ import { ledareOf } from './styre';
 import { DAY, HOUR, MIN, Person, SEC, State, T, Task, W, H, inMap } from './typer';
 import { vaderNu } from './vader';
 import { grundvarde } from './varde';
-import { gomSig, kanterna, setRovarVal, vargIStrid, vargStrid } from './varg';
+import { gomSig, iHus, kanterna, setRovarVal, vargIStrid, vargStrid } from './varg';
 import { taVapen } from './vakt';
 import { foddNar, gastNyckel } from './gastliv';
 import { gastAv, gastAvvapna, gastGar, gastTillbaka, gastTingOf, gasterNu, nyGast, nyttGastId } from './gast';
@@ -471,6 +471,8 @@ interface RCtx { ev?: TalkEvent[]; s: State; f: Rovarflock; r: Person; folk: Per
 const starEmot = (q: Person) => forsvarar(q) || q.task?.act === 'vakt' || q.task?.act === 'strid';
 // ... och kan det: frisk nog att slåss. Den som nyss fallit, flytt eller gett upp ser rövaren inte som någon i vägen så länge rädslan varar
 const gavSigNyss = (s: State, q: Person) => gavSigAvdrag(s, q) > 0;
+// den som gömt sig i ett hus syns inte för den som går förbi
+const gomdInne = (s: State, q: Person) => q.task?.act === 'gomma' && iHus(s, q);
 const kanStaEmot = (s: State, q: Person) => starEmot(q) && vuxenKan(s, q);
 // flockens strid på kartan, om den pågår
 export const flockStrid = (s: State, f: Rovarflock) => kartStrider(s).find(g => g.efter?.typ === 'rovare' && g.efter.flock === f.id);
@@ -517,7 +519,7 @@ export const ROVARHANDLINGAR: Record<RovarGor, { namn: string; ansikte?: 'arg' |
   motMalet: { namn: 'Går mot byn', ansikte: 'lugn', poang: c => c.f.anfaller && !gr(c.r).nojd && !c.f.klar && avst(c.r, c.mal) > ROVARE.nara ? 1 : -1, gor: c => { if (ga(c, c.mal) < 0) gr(c.r).flytt = true; } }, // ingen väg dit: hen ger upp
   // slår den som står i vägen: den som står emot inom ROVARE.moter. Modet drar till striden och övermakten från den
   // den som inte står emot men står i vägen slår bara den aggressiva, när inget annat lockar mer
-  sla: { namn: 'Slåss', ansikte: 'arg', poang: c => c.fiende ? 1.5 + ROVARE.slaMod * (stat(c.r, 'mod', c.s.now) - 10) / 10 - ROVARE.slaHot * Math.max(0, c.hot - 1) : c.ivagen ? ROVARE.slaIvagen * stat(c.r, 'aggression', c.s.now) / 10 + rnd(c.s, 'rovare') * ROVARE.valBrus : -1, gor: c => slaSteg(c) },
+  sla: { namn: 'Slåss', ansikte: 'arg', poang: c => c.fiende ? 1.5 + ROVARE.slaMod * (stat(c.r, 'mod', c.s.now) - 10) / 10 - ROVARE.slaHot * Math.max(0, c.hot - 1) : c.ivagen ? ROVARE.slaIvagen * stat(c.r, 'aggression', c.s.now) / 10 + c.brus('sla') * ROVARE.valBrus : -1, gor: c => slaSteg(c) },
   // mötet på vägen (steg 10.2.26): den som inte står emot men är nära kan hotas bort eller bli av med det hen bär, efter modet och
   // målet; annars går rövaren förbi mot byn. Slumpen (valBrus) gör att olika rövare väljer olika
   hota: { namn: 'Hotar', ansikte: 'arg', poang: c => c.ivagen && !c.fiende ? ROVARE.hotaPoang * stat(c.r, 'mod', c.s.now) / 10 + c.brus('hota') * ROVARE.valBrus : -1, gor: c => motet(c, false) },
@@ -704,7 +706,7 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
   // larmet går hen dit de är på väg, också till en lagerplats i byns utkant. När de är nära varandra börjar striden, var de än är
   for (const q of folk) {
     if (!alive(q) || !vaken(q) || q.task?.act !== 'forsvarRovare' || !kanStaEmot(s, q)) continue;
-    const r = [...fo].sort((a, b) => avst(a, q) - avst(b, q))[0];
+    const r = fo.filter(x => !gr(x).flytt).sort((a, b) => avst(a, q) - avst(b, q))[0]; // den som flyr jagas inte
     if (!r) continue;
     const ser = avst(r, q) <= KLOCKA.faraSyn, vet = ser || (!!q.larm?.rovare && s.now - q.larm.rovare.t < ROVARE.larmTim * HOUR);
     if (!vet) continue;
@@ -721,12 +723,12 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
     if (g.varStrid && !g.flytt) { const st = flockStrid(s, f); if (!st || st.fri?.includes(r.id)) { if (st?.fri?.includes(r.id)) g.flytt = true; g.varStrid = undefined; } } // den som flytt ur striden flyr
     const narmast1 = (l: Person[]) => l.sort((a, b) => avst(a, r) - avst(b, r))[0];
     const fiende = narmast1(folk.filter(q => alive(q) && vaken(q) && kanStaEmot(s, q) && avst(q, r) < ROVARE.moter));
-    const ivagen = fiende ? undefined : narmast1(folk.filter(q => alive(q) && vaken(q) && !starEmot(q) && !gavSigNyss(s, q) && kanGa(q) && ageOf(q, s.now) >= ALDER.vuxen && avst(q, r) < ROVARE.moter)); // den som rövaren ser på vägen (steg 10.2.26)
+    const ivagen = fiende ? undefined : narmast1(folk.filter(q => alive(q) && vaken(q) && !starEmot(q) && !gavSigNyss(s, q) && !gomdInne(s, q) && kanGa(q) && ageOf(q, s.now) >= ALDER.vuxen && avst(q, r) < ROVARE.moter)); // den som rövaren ser på vägen (steg 10.2.26)
     // slumptalen i valet dras en gång per val: när valets tid är slut eller rövaren ser någon ny (en fiende eller någon i vägen),
     // så att valet inte slumpas om varje slag och ett möte på vägen får sitt slumptal en gång
     const sag = fiende ? fiende.id : ivagen ? -1 - ivagen.id : undefined, nytt = s.now >= (g.gorTill ?? 0) || g.sag !== sag;
     if (nytt || !g.brus) { g.brus = {}; g.sag = sag; }
-    const brus = (k: string) => g.brus![k] ??= rnd(s, 'rovare');
+    const brus = (k: string) => g.brus![k] ??= rnd(s, 'rovare', r); // ur rövarens egen följd, som andra val
     const c: RCtx = { ev, s, f, r, folk, dt: dtSec, mal: malFor(s, f, r), fiende, ivagen, hot: hotMot(s, f, r, folk), last: lastAv(r), kvar: f.folk.length, brus };
     // valet: högst poäng, och det hen redan gör har ett litet försteg; en vila eller en promenad på rastplatsen varar en stund
     let bast: RovarGor = 'rasta', bp = -Infinity;
