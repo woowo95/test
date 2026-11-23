@@ -221,7 +221,7 @@ function budVal(s: State, p: Person, d: FramDef) {
   let r = rnd(s, 'fram', p) * sum, i = 0;
   while (i < w.length - 1 && r >= w[i]!) { r -= w[i]!; i++; }
   const k = BUD_LIST[i]!;
-  return { k, amne: BUDSKAP[k].amne(s, p, x), om: k === 'person' ? x.e!.om : k === 'tro' || k === 'hanaGud' ? undefined : x.l!.id, ik: k === 'person' ? x.e!.k : undefined, gud: k === 'hanaGud' ? x.gud!.id : undefined };
+  return { k, amne: BUDSKAP[k].amne(s, p, x), om: k === 'person' ? x.e!.om : k === 'tro' || k === 'hanaGud' ? undefined : x.l!.id, ...(k === 'person' ? { omNamn: x.e!.namn } : {}), ik: k === 'person' ? x.e!.k : undefined, gud: k === 'hanaGud' ? x.gud!.id : undefined };
 }
 // ---------- beställda framträdanden (steg 4.3.2.4) ----------
 // saken ledaren l kan betala med: hel, ledig (ingen har den i handen eller bär den, den står inte vid en station) och den
@@ -249,7 +249,7 @@ function bestallMinne(s: State, p: Person, b: Person, alt: number): Intryck | un
   const w = bv * FRAM.budPerson;
   return rnd(s, 'fram', b) * (w + alt) < w ? bast : undefined;
 }
-const personBud = (s: State, p: Person, e: Intryck) => ({ k: 'person' as Bud, amne: intryckAmne(s, p, e), om: e.om, ik: e.k as IntryckTyp | undefined });
+const personBud = (s: State, p: Person, e: Intryck) => ({ k: 'person' as Bud, amne: intryckAmne(s, p, e), om: e.om, omNamn: e.namn, ik: e.k as IntryckTyp | undefined });
 // ledaren beställer framträdandet av p (formen d bär ett budskap): ger saken, och budskapet blir en hyllning eller ett minne
 // om en annan person som ledaren har en stark åsikt om (steg 10.7.30)
 function bestall(s: State, p: Person, d: FramDef) {
@@ -346,7 +346,7 @@ export function framVal(s: State, p: Person): { act: 'upptrada'; why: string; du
   let lista = living(s).filter(q => q !== p && !q.gast && ageOf(q, s.now) >= ALDER.hjalper && rnd(s, 'fram', q) < FRAM.med * (1 + FRAM.medTycke * getRel(s, q, p).op / 100)).map(q => q.id);
   const grupp = gruppVal(s, d, lista, sc, i);
   if (grupp.length) lista = lista.filter(id => !grupp.some(g => g.id === id));
-  s.fram = { ...(d.id === 'forelasning' && lar ? { lar } : {}), k: d.id, p: p.id, start, borjar, lista, slut, publik: [], ...(grupp.length ? { grupp } : {}), text, da: fyll(d.da), amne, inst: i, scen: sc?.id, ...(bud ? { bud: bud.k, om: bud.om, ...(bud.om !== undefined && byId(s, bud.om) ? { omNamn: byId(s, bud.om)!.name } : {}), ik: bud.ik, ...('gud' in bud && bud.gud !== undefined ? { gud: bud.gud } : {}), ...('betalt' in bud ? { betalt: bud.betalt as string } : {}), ...('kyrka' in bud ? { kyrka: bud.kyrka as string } : {}), ...('best' in bud && bud.best !== undefined ? { best: bud.best as number } : {}) } : {}) };
+  s.fram = { ...(d.id === 'forelasning' && lar ? { lar } : {}), k: d.id, p: p.id, start, borjar, lista, slut, publik: [], ...(grupp.length ? { grupp } : {}), text, da: fyll(d.da), amne, inst: i, scen: sc?.id, ...(bud ? { bud: bud.k, om: bud.om, ...((n => n ? { omNamn: n } : {})(('omNamn' in bud ? bud.omNamn as string | undefined : undefined) ?? (bud.om !== undefined ? byId(s, bud.om)?.name : undefined))), ik: bud.ik, ...('gud' in bud && bud.gud !== undefined ? { gud: bud.gud } : {}), ...('betalt' in bud ? { betalt: bud.betalt as string } : {}), ...('kyrka' in bud ? { kyrka: bud.kyrka as string } : {}), ...('best' in bud && bud.best !== undefined ? { best: bud.best as number } : {}) } : {}) };
   // ett minne om en person: versionen räknas en gång, så att alla som lyssnar får samma (steg 10.4.11)
   const e = bud?.k === 'person' ? intryckOm(p, bud.om!, bud.ik) : undefined;
   if (e) s.fram.ver = scenVersion(s, p, e, d.vrid ?? 1, s.fram.best !== undefined ? byId(s, s.fram.best) : undefined); // beställarens åsikt läggs till (steg 10.7.30)

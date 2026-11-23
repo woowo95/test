@@ -4273,7 +4273,7 @@ SCENARIER.talt = {
     const gaende = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.kanGa(q));
     const s = SIM.cloneState(testBy(3, b => gaende(b).length >= 5)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!, vm = SIM.varldMark(s)!;
     // den närmaste grannen, så att maten för fem ryms i händerna bredvid tälten (en lång resa fyller händerna med mat först)
-    const dit = (nr: number) => { const q = SIM.byPlats(vl, nr)!; return SIM.vagDygn(s, hb.y * vm.w + hb.x, q.y * vm.w + q.x, 'fots')?.dygn ?? 99; };
+    const dit = (nr: number) => { const q = SIM.varldPlatsNr(vl, nr)!; return SIM.vagDygn(s, hb.y * vm.w + hb.x, q.y * vm.w + q.x, 'fots')?.dygn ?? 99; };
     const mal = [...hb.grannar!].sort((a, b) => dit(a.nr) - dit(b.nr))[0]!.nr;
     const vuxna = gaende(s).slice(0, 5);
     const sl = SIM.nyttSallskap(s, vuxna[0]!, mal, 'handel')!;
