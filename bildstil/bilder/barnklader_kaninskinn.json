@@ -1,0 +1,83 @@
+{
+ "id": "barnklader_kaninskinn",
+ "w": 12,
+ "h": 11,
+ "rader": [
+  "....wwww....",
+  "..EEqwwqEE..",
+  ".EppqoopqoE.",
+  "EpqEpqoopEoE",
+  "EwwEpqooqEwE",
+  ".EEEpqoooE..",
+  "...EpqoooE..",
+  "...EpqoooE..",
+  "..EpqoooooE.",
+  "..EwwwwwwwE.",
+  "..EEEEEEEEE."
+ ],
+ "ritad": 1,
+ "av": "Programmeringschatten (Claude), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "o": "#7e7362",
+  "p": "#a0947d",
+  "q": "#bdb39b",
+  "w": "#dad0bb",
+  "R": "#906f0f",
+  "Y": "#d8b25f"
+ },
+ "versioner": [
+  {
+   "ide": "En liten kort kolt i ett stycke, med korta ärmar, ljus pälskant runt halsen och nertill, och kjolen som når till halva benen",
+   "rader": [
+    "....wwww....",
+    "..EEqwwqEE..",
+    ".EppqoopqoE.",
+    "EpqEpqoopEoE",
+    "EwwEpqooqEwE",
+    ".EEEpqoooE..",
+    "...EpqoooE..",
+    "...EpqoooE..",
+    "..EpqoooooE.",
+    "..EwwwwwwwE.",
+    "..EEEEEEEEE."
+   ],
+   "om": "En liten kort kolt i ett stycke, med korta ärmar, ljus pälskant runt halsen och nertill, och kjolen som når till halva benen"
+  },
+  {
+   "ide": "En dräkt i ett stycke med långa ärmar och ben, som en liten overall utbredd på marken: armarna rakt ut och benen isär, ljus kant vid halsen, händerna och fötterna",
+   "rader": [
+    ".....wwww.....",
+    "....EqwwqE....",
+    "EEEEpqoopqEEEE",
+    "EwqpqooooopqwE",
+    "EEEEpqooooEEEE",
+    "....pqooooE...",
+    "....pqooooE...",
+    "...EpqEEooE...",
+    "..EpqE..EpqE..",
+    ".EpqE....EpqE.",
+    ".EwwE....EwwE.",
+    ".EEE......EEE."
+   ],
+   "om": "En dräkt i ett stycke med ben, som en liten overall: kroppen och två korta benrör, med ljus kant vid halsen och vid benslutet"
+  },
+  {
+   "ide": "En kolt med luva som pekar uppåt och ett bälte av rep i midjan, ärmlös, med pälskant nertill",
+   "rader": [
+    ".....EE.....",
+    "....EqoE....",
+    "...EqwwoE...",
+    "...EwEEwE...",
+    "..EpqwwqoE..",
+    "..EpqoooqE..",
+    "..EYRRRRRE..",
+    "..EpqoooqE..",
+    ".EpqoooooqE.",
+    ".EwwwwwwwwE.",
+    ".EEEEEEEEEE."
+   ],
+   "om": "En kolt med luva som pekar uppåt och ett bälte av rep i midjan, ärmlös, med pälskant nertill"
+  }
+ ]
+}

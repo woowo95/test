@@ -1,0 +1,81 @@
+{
+ "id": "barsele_lader",
+ "w": 12,
+ "h": 11,
+ "rader": [
+  "....EEEE....",
+  "...EHGGFE...",
+  "..EHE..EFE..",
+  ".EHE....EFE.",
+  ".EGE....EFE.",
+  "EYRE....EYRE",
+  "EHHHHHGGGGFE",
+  "EHGGGGGGGGFE",
+  "EHGGGGGGGFFE",
+  ".EHGGGGGGFE.",
+  "..EEEEEEEE.."
+ ],
+ "ritad": 1,
+ "av": "Programmeringschatten (Claude), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "R": "#906f0f",
+  "Y": "#d8b25f"
+ },
+ "versioner": [
+  {
+   "ide": "En djup påse av läder, rundad i botten, med en bred rem som går i en båge upp över axeln och en knut av rep där remmen fäster",
+   "rader": [
+    "....EEEE....",
+    "...EHGGFE...",
+    "..EHE..EFE..",
+    ".EHE....EFE.",
+    ".EGE....EFE.",
+    "EYRE....EYRE",
+    "EHHHHHGGGGFE",
+    "EHGGGGGGGGFE",
+    "EHGGGGGGGFFE",
+    ".EHGGGGGGFE.",
+    "..EEEEEEEE.."
+   ],
+   "om": "En djup påse av läder, rundad i botten, med en bred rem som går i en båge upp över axeln och en knut av rep där remmen fäster"
+  },
+  {
+   "ide": "En kort påse framtill med två remmar som korsas i ett X ovanför, så att den bärs över båda axlarna",
+   "rader": [
+    "EE........EE",
+    "EHE......EFE",
+    ".EHE....EFE.",
+    "..EHE..EFE..",
+    "...EHEEFE...",
+    "...EFEEHE...",
+    "..EYRRRRYE..",
+    ".EHHHGGGGFE.",
+    ".EHGGGGGGFE.",
+    ".EHGGGGGFFE.",
+    "..EEEEEEEE.."
+   ],
+   "om": "En kort påse framtill med två remmar som korsas i ett X ovanför, så att den bärs över båda axlarna"
+  },
+  {
+   "ide": "Selen utbredd platt på marken: en avlång bärpanel av läder sedd ovanifrån, med en rem i varje hörn och ett band av rep tvärs över",
+   "rader": [
+    "EE........EE",
+    "EHE......EFE",
+    ".EEEEEEEEEE.",
+    ".EHHHHGGGGE.",
+    ".EHGGGGGGFE.",
+    ".EYRRRRRRRE.",
+    ".EHGGGGGGFE.",
+    ".EHGGGGGGFE.",
+    ".EEEEEEEEEE.",
+    "EHE......EFE",
+    "EE........EE"
+   ],
+   "om": "Selen utbredd platt på marken: en avlång bärpanel av läder sedd ovanifrån, med en rem i varje hörn och ett band av rep tvärs över"
+  }
+ ]
+}

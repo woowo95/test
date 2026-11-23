@@ -1,0 +1,79 @@
+{
+ "id": "stovlar_lader",
+ "w": 12,
+ "h": 10,
+ "rader": [
+  "......EEEE..",
+  "......EDDE..",
+  "EEEE..EHGE..",
+  "EDDE..EYRE..",
+  "EHGE..EHGE..",
+  "EYRE..EHGFE.",
+  "EHGE..EHGGFE",
+  "EHGFE.EEEEEE",
+  "EHGGFE......",
+  "EEEEEE......"
+ ],
+ "ritad": 1,
+ "av": "Programmeringschatten (Claude), tre idéer",
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "R": "#906f0f",
+  "Y": "#d8b25f",
+  "D": "#24201d"
+ },
+ "versioner": [
+  {
+   "ide": "Två stövlar från sidan med tårna åt höger, den bakre lite högre, höga skaft med en rem av rep runt skaftet",
+   "rader": [
+    "......EEEE..",
+    "......EDDE..",
+    "EEEE..EHGE..",
+    "EDDE..EYRE..",
+    "EHGE..EHGE..",
+    "EYRE..EHGFE.",
+    "EHGE..EHGGFE",
+    "EHGFE.EEEEEE",
+    "EHGGFE......",
+    "EEEEEE......"
+   ],
+   "om": "Två stövlar från sidan med tårna åt höger, den bakre lite högre, höga skaft med en rem av rep runt skaftet"
+  },
+  {
+   "ide": "Ett par framifrån, sida vid sida, med nedvikt ljus skaftkant och remmen runt vristen",
+   "rader": [
+    ".EEEE..EEEE.",
+    "EHHHHEEHHHHE",
+    "EEEEEEEEEEEE",
+    ".EHGE..EHGE.",
+    ".EHGE..EHGE.",
+    ".EHGE..EHGE.",
+    ".EYRE..EYRE.",
+    ".EHGE..EHGE.",
+    "EHGGFEEHGGFE",
+    "EEEEEEEEEEEE"
+   ],
+   "om": "Ett par framifrån, sida vid sida, med nedvikt ljus skaftkant och remmen runt vristen"
+  },
+  {
+   "ide": "En stövel står och den andra ligger omkullvräkt bakom den, med sulan mot betraktaren",
+   "rader": [
+    "....EEEEEEE.",
+    "....EDHGGGFE",
+    "....EDHYRGFE",
+    "EEEEEEEEEEFE",
+    "EDDE.....EFE",
+    "EHGE.....EEE",
+    "EYRE........",
+    "EHGE........",
+    "EHGFE.......",
+    "EHGGFE......",
+    "EEEEEE......"
+   ],
+   "om": "En stövel står och den andra ligger omkullvräkt bakom den, med sulan mot betraktaren"
+  }
+ ]
+}
