@@ -411,7 +411,7 @@ function drawBuild() {
     if (klara.has(b.id)) continue;
     const x = b.x * TS, y = b.y * TS;
     if (b.k === 'golv' && b.b >= 1 && (b.m === 'stockvag' || b.m === 'brygga')) { // stockarna tvärs över vägen (steg 7.3.7, 7.3.9 och 7.3.12)
-      const ik = vagBild(b); pileIcons.add('kb_' + ik, x, y, 1);
+      const ik = vagBild(b); pileIcons.add((b.tj ?? 0) > s.now ? morkIkon('kb_' + ik, 1) : 'kb_' + ik, x, y, 1); // den tjärade är mörkare (steg 13.5.1)
       continue;
     }
     if (b.k === 'golv' && b.b >= 1 && b.m === 'stenvag' && hasIcon('kb_stenvag_0')) { pileIcons.add('kb_stenvag_' + ((b.x & 1) + (b.y & 1) * 2), x, y, 1); continue; } // stenvägen (steg 10.10.6; Björns val, steg 11.14.1): 2 × 2 rutor i ett mönster

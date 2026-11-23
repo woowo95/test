@@ -26,6 +26,7 @@ import { FLOD } from './flod';
 import { balans } from './balans';
 import { vidElden } from './eldflytt';
 import { notis } from './notiser';
+import { tjarFaktor } from './tjarlatt';
 
 // ---------- balanstal (regel 8) ----------
 // Planeringen (var ett nytt hus står) och arbetet (i vilken ordning och hur fort det byggs och lagas). Husens storlek och
@@ -332,7 +333,7 @@ export function wearBuild(s: State, hours: number, ai: number) {
   for (const b of bitsOf(s)) {
     const M = MATERIAL[b.m];
     if (b.b < 1 || !M.slit) continue;
-    b.c -= M.slit * hours * (iIstiden(ai) ? ARSTID.slitIstid : 1) * (b.k === 'vagg' ? vaderSlit(s) * (s.flod && iVattnetNu(s, b.y * W + b.x) ? FLOD.vaggSlit : 1) : 1); // väggarna slits mer i regnet och snön (steg 2.11.2) och i en översvämnings vatten (steg 3.8.7, flod.ts)
+    b.c -= M.slit * hours * tjarFaktor(s, b.tj) * (iIstiden(ai) ? ARSTID.slitIstid : 1) * (b.k === 'vagg' ? vaderSlit(s) * (s.flod && iVattnetNu(s, b.y * W + b.x) ? FLOD.vaggSlit : 1) : 1); // väggarna slits mer i regnet och snön (steg 2.11.2) och i en översvämnings vatten (steg 3.8.7, flod.ts)
     if (b.c > 0) continue;
     if (b.k === 'vagg') {
       const h = rasar(s, b);

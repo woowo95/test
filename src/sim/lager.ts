@@ -992,7 +992,7 @@ export const wearMult = (s: State, x: number, y: number) => {
 export type Slitage = { orsak: 'ruttnar' | 'vadret' | 'lagret' | 'tak' | 'kista' | 'pasig' | 'anvands' | 'handen' | 'bars' | 'inget'; per: number; gang?: number; enhet?: string; smuts?: true }; // smuts: ligger i blod eller toa-smuts (steg 3.6.10)
 export function slitageNu(s: State, a: { k: string; x?: number; y?: number }, t?: Ting): Slitage {
   const temp = temperature(s), kl = t?.bar !== undefined ? SAKER[a.k]?.klad : undefined;
-  const hq = kvHaller(t); // ett bättre ting håller längre (kvalitet.ts); en stack har ingen kvalitet
+  const hq = kvHaller(t) / (t ? tjarFaktor(s, t.tj) : 1); // ett bättre ting håller längre (kvalitet.ts), och det tjärade (steg 13.5.1); en stack har ingen kvalitet
   if (kl) return { orsak: 'pasig', per: 1 / (kl.dygn * 24) / hq };
   const bars = t && (t.hos !== undefined || t.lass !== undefined || t.krok !== undefined);
   if (bars) {
@@ -1058,7 +1058,7 @@ export function wearStore(s: State, dtSec: number) {
     const kl = t.bar !== undefined ? SAKER[t.k]?.klad : undefined;
     if (kl) { t.c -= Math.min(t.c, h / (kl.dygn * 24) / kvHaller(t)); if (t.c <= 1e-6) count(s, 'kladerSlitna'); continue; }
     const nere = t.hos === undefined && t.lass === undefined && t.krok === undefined; // på marken, vid en station eller i förrådet (utan plats än)
-    t.c -= Math.min(t.c, wearAt(t.k, nere && t.x !== undefined ? wearMult(s, t.x, t.y!) : 1, nere, temp) * h / kvHaller(t));
+    t.c -= Math.min(t.c, wearAt(t.k, nere && t.x !== undefined ? wearMult(s, t.x, t.y!) : 1, nere, temp) * h / kvHaller(t) * tjarFaktor(s, t.tj)); // det tjärade slits hälften så mycket (steg 13.5.1)
   }
   for (const t of tingOf(s)) if (t.c <= 1e-6 && !t.halv) redskapSlitet(s, t.k); // det utslitna räknas som förbrukat (steg 10.11.9)
   s.ting = tingOf(s).filter(t => t.c > 1e-6);
@@ -1523,3 +1523,4 @@ export function pickUp(s: State, p: Person, t: Task, ryms: (b: Record<string, nu
 import { clamp } from './slump';
 import { grundvarde } from './varde';
 import { angAt } from './slatter';
+import { tjarFaktor } from './tjarlatt';

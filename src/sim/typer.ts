@@ -423,6 +423,7 @@ export interface State {
   hamlade?: import('./slatter').Hamlat[]; // de hamlade björkarna (steg 9.8.16, slatter.ts)
   godsel?: number; // gödseln från fähuset som ännu inte blivit en hel rest i komposten (steg 9.8.9)
   hagar?: import('./hage').Hage[]; // hagarna (steg 9.8.4, tamdjur.ts)
+  tjarat?: Record<number, number>; // staketets rutor som tjärats, och till när (steg 13.5.1, tjara.ts)
   staket?: number[]; // rutorna med staket (steg 9.7.10, odling.ts)
   sophog?: { x: number; y: number; n: number }; // sophögen och resterna på den (steg 9.7.5, rester.ts)
   bord?: Record<number, number>; // bördigheten på de rutor där den inte är full (steg 9.7.2, odling.ts)

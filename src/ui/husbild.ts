@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { Bit, State, bitAt, housesOf } from '../sim';
-import { smutsGrad, smutsigFarg } from './slitbild';
+import { smutsGrad, smutsigFarg, tjaradFarg } from './slitbild';
 import { KARTBILDER } from '../kartbilder';
 import { TS, husLayer } from './scen';
 import { takYtor, vaggSkuggor } from './skugga';
@@ -46,7 +46,8 @@ function bild(s: State, b: Bit) {
   // golvet blir smutsigare ju längre huset stått färdigt (steg 5.1.7.3), och öppningen, där alla går, ett steg till
   const hus = b.hus !== undefined ? housesOf(s).find(h => h.id === b.hus) : undefined;
   const klar = hus?.varKlar ?? hus?.klar, sg = klar !== undefined ? smutsGrad(s.now, klar) : 0, extra = egen === 'P' ? 1 : 0;
-  const key = `${b.x},${b.y},${egen},${em},${n8},${m8.join('')},${sg}`;
+  const tj = egen === 'W' && (b.tj ?? 0) > s.now; // den tjärade väggen är mörkare (steg 13.5.1)
+  const key = `${b.x},${b.y},${egen},${em},${n8},${m8.join('')},${sg},${tj}`;
   let c = cache.get(key);
   if (c) return { key, c, m: formCache.get(key) ?? null };
   c = document.createElement('canvas'); c.width = 16; c.height = 16;
@@ -71,6 +72,7 @@ function bild(s: State, b: Bit) {
       }
     }
     if (col && golv && sg) col = smutsigFarg(col, gx, gy, sg, 0, extra);
+    if (col && !golv && tj) col = tjaradFarg(col);
     if (col) { g.fillStyle = col; g.fillRect(lx, ly, 1, 1); }
   }
   if (cache.size > 4000) { cache.clear(); formCache.clear(); for (const t of tex.values()) t.destroy(true); tex.clear(); for (const t of formTex.values()) t.destroy(true); formTex.clear(); }

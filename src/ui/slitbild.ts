@@ -23,6 +23,8 @@ export function smutsigFarg(hex: string, x: number, y: number, g: number, s = 0,
   if (i === undefined || hash(x >> 1, y, 931 + s) >= SLIT.korn * (g + extra)) return hex;
   return FARGER[tonSteg(i, -1)];
 }
+// det tjärade träet (steg 13.5.1) är ett steg mörkare i sin ramp så länge skyddet håller
+export function tjaradFarg(hex: string) { const i = INDEX.get(hex.toLowerCase()); return i === undefined ? hex : FARGER[tonSteg(i, -1)]; }
 // stationens bild med smuts av graden g, som en egen bild (PIX och PAL), gjord en gång
 const TECKEN = Array.from({ length: 32 }, (_, i) => String.fromCharCode(0xc0 + i)).join(''); // tecken som inga bilder använder
 export function smutsIkon(k: string, g: number) {

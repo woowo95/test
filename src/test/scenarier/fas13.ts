@@ -775,3 +775,47 @@ SCENARIER.pilting = {
     ];
   },
 };
+
+// tjäran (steg 13.5.1): det tjärade träet som står ute slits hälften så fort i 10 dygn, en tjära räcker till fyra rutor, och
+// redskapen tjäras inte
+SCENARIER.tjara = {
+  text: 'Tjäran skyddar trä som står ute: en tjärad brygga och en tjärad vägg slits hälften så fort, skyddet tar slut efter 10 dygn, en tjära räcker till fyra rutor och ett redskap tjäras inte (steg 13.5.1)',
+  kor: () => {
+    const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    klockan(s, 10);
+    const by = SIM.bitsOf(s), x0 = Math.floor(p.x) + 6, y0 = Math.floor(p.y) + 6;
+    let id = 900000;
+    const bit = (k: 'vagg' | 'golv', m: string, x: number, y: number) => { const b = { id: id++, x, y, k, m, b: 1, mat: 1, c: 1 } as SIM.Bit; by.push(b); return b; };
+    const brygga = [0, 1, 2, 3, 4].map(i => bit('golv', 'brygga', x0 + i, y0)), vagg = [bit('vagg', 'timmer', x0, y0 + 10), bit('vagg', 'timmer', x0 + 5, y0 + 10)];
+    // en tjära i en kruka
+    const kruka = SIM.addTool(s, 'lerkruka_stor', p); kruka.hos = undefined; kruka.x = Math.floor(p.x); kruka.y = Math.floor(p.y);
+    SIM.fyllVatska(s, 'tjara', 1, kruka);
+    const val = SIM.tjaraVal(s, p);
+    // tjärningen görs: bryggan först (den bästa), fyra rutor med en tjära
+    const tk = { act: 'tjara', tool: 'bit:' + brygga[0].id } as SIM.Task;
+    SIM.tjaraKlar(s, p, tk);
+    const tjarade = brygga.filter(b => (b.tj ?? 0) > s.now).length, tomKruka = !kruka.inne && SIM.tingOf(s).includes(kruka);
+    vagg[0].tj = s.now + SIM.TJARA.dygn * SIM.DAY;
+    const fore = [brygga[0].c, brygga[4].c, vagg[0].c, vagg[1].c];
+    SIM.wearBuild(s, 100, 0);
+    const slit = [brygga[0].c, brygga[4].c, vagg[0].c, vagg[1].c].map((c, i) => fore[i] - c);
+    const halv = (a: number, b: number) => Math.abs(a / b - SIM.TJARA.slit) < 0.01;
+    // efter 10 dygn är skyddet slut
+    s.now += SIM.TJARA.dygn * SIM.DAY + 1;
+    const c0 = brygga[0].c, c4 = brygga[4].c; SIM.wearBuild(s, 100, 0);
+    const slut = Math.abs((c0 - brygga[0].c) - (c4 - brygga[4].c)) < 1e-9;
+    // redskapen och stationerna tjäras inte: bara MATERIAL med tjaras, staketen och fordonen
+    const mal = Object.values(SIM.TJARAS).flatMap(r => r.mal(s));
+    const ingetRedskap = !mal.some(m => m.id.startsWith('ting:') && !SIM.SAKER[SIM.tingOf(s).find(t => 'ting:' + t.id === m.id)!.k]?.fordon);
+    const material = Object.keys(SIM.MATERIAL).filter(k => SIM.MATERIAL[k].tjaras).sort().join(',');
+    return [
+      [`det som tjäras: ${material}, staketen och fordonen`, material === 'brygga,stockvag,timmer' && !!SIM.TJARAS.staket && !!SIM.TJARAS.fordon],
+      [`en tjära tjärar fyra rutor av bryggan (${tjarade}) och krukan blir kvar tom`, tjarade === 4 && tomKruka],
+      [`den tjärade bryggan slits hälften så fort (${slit[0].toExponential(2)} mot ${slit[1].toExponential(2)})`, halv(slit[0], slit[1])],
+      [`den tjärade väggen slits hälften så fort (${slit[2].toExponential(2)} mot ${slit[3].toExponential(2)})`, halv(slit[2], slit[3])],
+      [`efter ${SIM.TJARA.dygn} dygn är skyddet slut`, slut],
+      ['ett redskap tjäras inte', ingetRedskap],
+      [`valet: poängen är det sparade värdet mot tjärans (${val ? val.slag + ' ' + val.sc.toFixed(2) : 'inget värt det'})`, true],
+    ];
+  },
+};
