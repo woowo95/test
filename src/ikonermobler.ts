@@ -90,12 +90,13 @@ const BILDER: Record<string, { pix: string[]; pal: Record<string, string> }> = {
     '.kyykJJjJJJJJjk.', '.kyykjjjjjjjjjk.', '.kkkkkkkkkkkkkk.', '.kd..........dk.',
     '................', '................', '................', '................'],
     pal: { ...TRA, w: '#dad0bb', y: '#bdb39b' } },
-  // fyrfatet (steg 12.4.11): ett grunt fat av bränd lera på tre fötter, med glödande kol i
+  // fyrfatet (steg 12.4.11 och 13.7.6): ett grunt fat av bränd lera utan ben, med mörkt kol i; glöden och lågorna ritas rörliga
+  // ovanpå när det brinner, som lägerelden (foremal.ts)
   fyrfat: { pix: [
     '................', '................', '................', '................',
-    '................', '...kkkkkkkkkk...', '..kRkvovrvokRk..', '..kRvrovvrovRk..', '..kTRRRRRRRRTk..',
-    '...kTTTTTTTTk...', '....kkkkkkkk....', '....kd..kd..kd..', '................', '................', '................', '................'],
-    pal: { k: '#24201d', R: '#742a01', T: '#bd753e', v: '#3f2415', o: '#d8b25f', r: '#a14808', d: '#3f2415' } },
+    '................', '................', '...kkkkkkkkkk...', '..kRkvvvvvvkRk..', '..kRvvvvvvvvRk..', '..kTRRRRRRRRTk..',
+    '...kTTTTTTTTk...', '....kkkkkkkk....', '................', '................', '................', '................'],
+    pal: { k: '#24201d', R: '#742a01', T: '#bd753e', v: '#3f2415' } },
   // fjäderpennan (steg 12.4.14): en lång ljus fjäder snett över rutan, med en skuren spets
   penna: { pix: [
     '................', '.............kk.', '............kwWk', '...........kwWk.',

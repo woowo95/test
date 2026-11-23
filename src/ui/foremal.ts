@@ -1,4 +1,4 @@
-import { FARGER, type FargId, HO, fallorAv, krukaBild, ljusSort, pollinerad, retadeOf, rutorAv, type Ting } from '../sim';
+import { stationBrinner, FARGER, type FargId, HO, fallorAv, krukaBild, ljusSort, pollinerad, retadeOf, rutorAv, type Ting } from '../sim';
 import { BESOK, gravSkick, VATSKOR, delarAv, HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt, stockLangd } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
@@ -303,6 +303,7 @@ export function drawStructures(t: number) {
     bordPlatser(st).forEach((q, i) => { const k = st.sate?.[i] && hasIcon('kb_' + st.sate[i]) ? 'kb_' + st.sate[i] : SITT; pileIcons.add(k, q.x * TS, q.y * TS, TS / iconCanvas(k).width); }); // pallen och stolen i stubbens ställe (steg 12.4.4)
     for (const k of st.med ?? []) { const b = 'kb_' + tillbehorDef(k)?.ikon + v; if (kb && hasIcon(b)) pileIcons.add(b, x0, y0, 1); else pileIcons.add(tillbehorDef(k)?.ikon + '_karta' + v, x0, y0, 2); } // tillbehören i den (skinnfällen i bädden), i bildstilen lagd ovanpå bädden
     if (st.tork?.length) hangande(st, x0, y0);
+    if (st.k === 'fyrfat' && stationBrinner(st)) { const cx = x0 + (iconCanvas(ik).width >> 1), cy = y0 + 8; pileIcons.add(eldBild('lite'), cx - ELD.x, cy - ELD.y, 1); rokIkoner.add(rokBild(undefined, st.x + st.y), cx - ANIMTAKT.rok.x, cy - ANIMTAKT.rok.y, 1); } // fyrfatets glöd och lågor, rörliga som lägerelden (steg 13.7.6)
     const yta = (v ? YTA[st.k]?.v : YTA[st.k]) ?? { x: 2, y: 2 };
     (iBruk(st, folk)?.saker ?? []).slice(0, 3).forEach((k, i) => sakVid(pileIcons, k, x0 + yta.x + (v ? 0 : i * 6), y0 + yta.y + (v ? i * 7 : 0))); // sida vid sida, i den stående under varandra
     const vid = yta.vid && tingVid.get(st.id);
