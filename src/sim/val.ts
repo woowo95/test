@@ -195,7 +195,9 @@ export const VAL = balans('val', {
   vittjaMin: 5, // så många minuter det tar att vittja en mjärde
   salMote: 0.7, // året runt är samlingssalen mötesplatsen med denna chans, när byn har en (steg 7.2.7)
   bordSamtal: 0.5, // den som samtalar eller berättar sätter sig vid ett bord med denna chans, när det inte är kallt
-  isar: 1.05, isarForsok: 24, // vid elden står man minst så här många rutor från de andra, så många försök (steg 3.6.8) ...
+  isar: 1.05, isarForsok: 24, // trängseln (steg 3.6.8 och B.9): den som väljer en plats fritt prövar så här många platser och räknar dem som står eller är på väg inom isar rutor ...
+  trangsel: 1, // ... och platsens poäng sjunker så här mycket för var och en av dem ...
+  ovanNara: 3, // ... och så här mycket om en ovän sitter nära (RELT.ovanAvstand), vid elden
   isarVidga: 0.12, // ... och ringen blir så här mycket bredare för varje försök efter det fjärde, när det är trångt
   nattPrat: 10, nattPratSpann: 15, // på natten samtalar man så här många minuter, plus upp till spann, och går sedan till en ny plats (steg 3.6.8)
   eldRadie: 1.3, eldRadieSpann: 0.9, // vid elden sätter man sig så här många rutor från den, plus upp till spann (handlingens radie går före)
@@ -235,32 +237,44 @@ function hantverkIByn(s: State, p: Person): { x: number; y: number } {
   if (sal && rnd(s, 'val', p) < VAL.bynTak) return punktIRuta(s, pick(s, friaRutor(s, sal.tiles), 'val', p), p);
   const o = omrade(s), cx = o.mitt.x + 0.5, cy = o.mitt.y + 0.5;
   if (forVarmISol(s, p)) { const sk = skuggaNara(s, p, cx, cy); if (sk) return sk; }
-  for (let k = 0; k < 24; k++) {
+  return glesPlats(s, p, () => {
     const x = o.x0 + rnd(s, 'val', p) * (o.x1 - o.x0 + 1), y = o.y0 + rnd(s, 'val', p) * (o.y1 - o.y0 + 1);
-    if (iByn(s, x, y) && !blocked(s, x, y) && !sittAt(s, x, y) && !stationAt(s, x, y)) return { x, y };
-  }
-  return freeNear(s, cx, cy);
+    return iByn(s, x, y) && !blocked(s, x, y) && !sittAt(s, x, y) && !stationAt(s, x, y) ? { x, y } : undefined;
+  }) ?? freeNear(s, cx, cy);
 }
 // var den bästa vännen och ovännerna ska sitta eller sitter vid elden f (steg 3.1.1)
 function sittPlatser(s: State, p: Person, f: { x: number; y: number }) {
-  let bast: { x: number; y: number } | undefined; const ovan: { x: number; y: number }[] = [], alla: { x: number; y: number }[] = [];
+  let bast: { x: number; y: number } | undefined; const ovan: { x: number; y: number }[] = [];
   for (const q of living(s)) {
     const t = q.task; if (q === p || !t || ACTS[t.act].plats !== 'elden' || Math.hypot(t.tx - f.x, t.ty - f.y) > VAL.eldRadie + VAL.eldRadieSpann + 1) continue;
-    alla.push({ x: t.tx, y: t.ty });
     if (p.bast === q.id) bast = { x: t.tx, y: t.ty };
     else if (p.arke === q.id || (s.rels[relKey(p.id, q.id)]?.op ?? 0) < REL.ovan) ovan.push({ x: t.tx, y: t.ty });
   }
-  return { bast, ovan, alla };
+  return { bast, ovan };
 }
 // en plats i rummet minst en ruta från de andra som är eller ska dit (steg 3.6.8), annars den sista som prövades
 // rummets rutor där man kan sitta utan att stå framför en station eller vid ett bord (där den som arbetar där står)
 const friaRutor = (s: State, tiles: number[]) => { const f = tiles.filter(i => { const x = i % W + 0.5, y = Math.floor(i / W) + 0.5; return !sittAt(s, x, y) && !stationAt(s, x, y); }); return f.length ? f : tiles; };
 function isarIRum(s: State, p: Person, rum: number[]) {
-  const tiles = friaRutor(s, rum), andra: { x: number; y: number }[] = [];
-  for (const q of living(s)) if (q !== p && q.task && q.task.phase !== 'back') andra.push({ x: q.task.tx, y: q.task.ty });
-  let at = punktIRuta(s, pick(s, tiles, 'val', p), p);
-  for (let k = 1; k < VAL.isarForsok && andra.some(o => Math.hypot(o.x - at.x, o.y - at.y) < VAL.isar); k++) at = punktIRuta(s, pick(s, tiles, 'val', p), p);
-  return at;
+  const tiles = friaRutor(s, rum);
+  return glesPlats(s, p, () => punktIRuta(s, pick(s, tiles, 'val', p), p))!;
+}
+// trängseln (steg B.9, "Ingen står tätt i onödan" i designdokumentet): en kropp tar plats. Den som väljer var hen ska stå, sitta eller
+// vänta prövar platser ur prova (upp till VAL.isarForsok, undefined är en plats som inte går) och tar den med högst poäng: poang (högst 0)
+// minus VAL.trangsel för var och en som står eller är på väg inom VAL.isar rutor. En plats utan någon nära och utan avdrag tas genast.
+// Alla som väljer en plats fritt frågar här (vid elden, i vilan, i väntan, i samlingssalen och med handarbetet i byn)
+export function glesPlats(s: State, p: Person, prova: (k: number) => { x: number; y: number } | undefined, poang?: (at: { x: number; y: number }) => number) {
+  const andra = living(s).filter(q => q !== p);
+  let bast: { x: number; y: number } | undefined, bp = -Infinity;
+  for (let k = 0; k < VAL.isarForsok; k++) {
+    const at = prova(k); if (!at) continue;
+    let n = 0;
+    for (const q of andra) if (Math.hypot(q.x - at.x, q.y - at.y) < VAL.isar || (q.task && q.task.phase !== 'back' && Math.hypot(q.task.tx - at.x, q.task.ty - at.y) < VAL.isar)) n++;
+    const v = (poang?.(at) ?? 0) - VAL.trangsel * n;
+    if (v > bp) { bp = v; bast = at; }
+    if (v >= 0) break;
+  }
+  return bast;
 }
 // var en handling görs, efter platsen i handlingar.ts
 // platsen för act; under en översvämning aldrig i vattnet: ett rum eller en säng kan stå under vatten (vaktlarmet i by 42
@@ -291,13 +305,11 @@ function ledigSittplats(s: State, p: Person) {
 // en plats i ringen runt elden f (eldens ruta): bredvid den bästa vännen om hen sitter vid samma eld, och inte nära en ovän (steg 3.1.1)
 function ringVid(s: State, p: Person, radie: number | undefined, f: { x: number; y: number }): { x: number; y: number } {
   const nara = sittPlatser(s, p, f), van = nara.bast && rnd(s, 'val', p) < RELT.bastSitt ? Math.atan2(nara.bast.y - f.y - 0.5, nara.bast.x - f.x - 0.5) : undefined;
-  for (let k = 0; ; k++) { // runt elden, men inte i en husvägg eller i en station (Björn efter v89: någon stod i slaktbänken)
+  return glesPlats(s, p, k => { // runt elden, men inte i en husvägg eller i en station (Björn efter v89: någon stod i slaktbänken)
     // bredvid vännen: minst en ruta bort längs ringen (vinkeln efter radien)
     const r = (radie ?? VAL.eldRadie + rnd(s, 'val', p) * VAL.eldRadieSpann) + VAL.isarVidga * Math.max(0, k - 4), ang = van !== undefined && k < 4 ? van + (k % 2 ? -1 : 1) * (VAL.isar + 0.3 * Math.floor(k / 2)) / r : rnd(s, 'val', p) * Math.PI * 2, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
-    const ovanNara = k < 8 && nara.ovan.some(o => Math.hypot(o.x - x, o.y - y) < RELT.ovanAvstand);
-    const tatt = k < VAL.isarForsok && nara.alla.some(o => Math.hypot(o.x - x, o.y - y) < VAL.isar); // minst en ruta mellan dem som samtalar (steg 3.6.8)
-    if (k >= VAL.isarForsok + 3 || !blocked(s, x, y) && !sittAt(s, x, y) && !stationAt(s, x, y) && !ovanNara && !tatt) return k >= VAL.isarForsok + 3 ? freeNear(s, f.x + 0.5, f.y + 1.5) : { x, y }; // inte på en stubbe vid bordet
-  }
+    return !blocked(s, x, y) && !sittAt(s, x, y) && !stationAt(s, x, y) ? { x, y } : undefined; // inte på en stubbe vid bordet
+  }, at => nara.ovan.some(o => Math.hypot(o.x - at.x, o.y - at.y) < RELT.ovanAvstand) ? -VAL.ovanNara : 0) ?? freeNear(s, f.x + 0.5, f.y + 1.5);
 }
 function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const m = getMap(s.seed), d = ACTS[act], plats = d.plats ?? 'skog';
@@ -338,11 +350,10 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
     if (bed && rum && (varmareInne(s, rum, c, f) || c === 0 || nederbord(s))) return bed; // när det inte är kallt räcker värmen överallt; i regnet under tak
     // vilan (steg 10.2.76): den som vilar sätter sig på en ledig stubbe, stol eller bänk nära, och lägger sig annars på marken
     if (act === 'vila') { const sitt = ledigSittplats(s, p); if (sitt) return sitt; }
-    for (let k = 0; k < 12; k++) {
-      const ang = (p.id * 2.399 + rnd(s, 'val', p) * 0.5) % (Math.PI * 2), r = VAL.sovRadie + rnd(s, 'val', p) * VAL.sovRadieSpann, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
-      if (inMap(x, y) && !blocked(s, x, y) && !stationAt(s, x, y)) return { x, y };
-    }
-    return freeNear(s, f.x + 0.5, f.y + 2);
+    return glesPlats(s, p, k => {
+      const ang = (p.id * 2.399 + rnd(s, 'val', p) * (0.5 + k * 0.25)) % (Math.PI * 2), r = VAL.sovRadie + rnd(s, 'val', p) * VAL.sovRadieSpann, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
+      return inMap(x, y) && !blocked(s, x, y) && !stationAt(s, x, y) ? { x, y } : undefined;
+    }) ?? freeNear(s, f.x + 0.5, f.y + 2);
   }
   if (plats === 'lek') return platsIByn(s, p, 'val'); // barnen leker var som helst i byn (omrade.ts); byn har ingen lekplats
   // ute på marken: vid stranden, på ängen och i skogen, eller avsides (toa)

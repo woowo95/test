@@ -2843,6 +2843,35 @@ SCENARIER.spridning = {
   },
 };
 
+SCENARIER.trangselby = {
+  text: 'Steg B.9: byborna sprider ut sig. Den som väljer var hen ska stå, sitta eller vänta fritt prövar några platser och tar den där färst står eller är på väg (VAL.trangsel per person inom VAL.isar rutor), och alla som väljer en plats fritt frågar samma ställe (glesPlats i val.ts). Tio bybor som värmer sig vid elden, vilar på marken eller håller vakt står inte på samma ruta',
+  kor: () => {
+    const { HOUR } = SIM;
+    const res: Record<string, { par: number; tatt: number; ruta: number; n: number }> = {};
+    for (const act of ['varma', 'vila', 'vakt'] as SIM.Act[]) {
+      const r = res[act] = { par: 0, tatt: 0, ruta: 0, n: 0 };
+      for (const seed of [1, 2, 3, 4, 5]) {
+        const s = createState(seed, START); klockan(s);
+        const folk = living(s);
+        while (folk.length < 10) { const q = SIM.cloneState(s).people[0]; q.id = 1000 + folk.length; s.people.push(q); folk.push(q); }
+        const at: { x: number; y: number }[] = [];
+        for (const p of folk.slice(0, 10)) {
+          p.task = undefined;
+          const u = SIM.spotFor(s, act, p);
+          p.task = { act, phase: 'go', tx: u.x, ty: u.y, until: s.now + HOUR, carry: 0 };
+          at.push(u); r.n++;
+        }
+        for (let i = 0; i < at.length; i++) for (let j = i + 1; j < at.length; j++) {
+          r.par++;
+          if (Math.hypot(at[i].x - at[j].x, at[i].y - at[j].y) < SIM.VAL.isar) r.tatt++;
+          if (Math.floor(at[i].x) === Math.floor(at[j].x) && Math.floor(at[i].y) === Math.floor(at[j].y)) r.ruta++;
+        }
+      }
+    }
+    return Object.entries(res).map(([act, r]) => [`${act}: tio bybor, ${r.tatt} av ${r.par} par närmare än ${SIM.VAL.isar} rutor; ${r.ruta} par i samma ruta`, r.tatt <= r.par * 0.02] as [string, boolean]);
+  },
+};
+
 SCENARIER.rovarstrid = {
   text: 'Striden med rövarna på kartan (steg 6.6.10, 10.1.14, rovare.ts, kartstrid.ts): striden börjar där sidorna möts, nära förrådet, och går i spelets tid, steg för steg. Den som kommer fram under striden ger sig in i den, rövarna står där striden har dem, och när den är slut skrivs rapporten i byn. Byn går i korta steg medan faran är nära, så att ett långt steg och många korta ger samma utfall.',
   kor: () => {
