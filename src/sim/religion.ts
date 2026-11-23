@@ -35,7 +35,7 @@ export const TRO = balans('tro', {
   takTro: 4, // högst så många trosriktningar samtidigt i byn (steg 8.5.11)
   spridBy: 0.5, // så mycket ett samtal kan få den som tvivlar att byta tro (steg 8.5.12)
   // den första tron (steg 4.1.2.1, "Den första tron" i designdokumentet)
-  grunda: 70, // så andlig måste den vara som tolkar ett tecken till en egen tro (chansen står i TECKENTAL)
+  grunda: 60, // så andlig måste den vara som tolkar ett tecken till en egen tro (chansen står i TECKENTAL)
   namn: 3, // när så här många tror får tron ett namn, en symbol och en berättelse (steg 4.1.2.3)
   styrka: 60, // så stark är tron hos den som grundar den (0–100)
   bekrafta: 10, // ett nytt tecken gör tron så här mycket starkare hos den som redan tror
@@ -43,8 +43,8 @@ export const TRO = balans('tro', {
   samma: 24, // den som var med om samma sak inom så här många timmar efter att någon tolkade den delar den tron
   skalaSlump: 15, // så mycket (gånger gauss) en ny tros skalor skiljer sig från tecknets
   // tron sprids i samtal (steg 4.1.2.2)
-  sprid: 0.0001, // chansen att lyssnaren börjar tro i ett vanligt samtal (man talar med varandra hundratals gånger på några dygn), gånger det som följer:
-  spridMin: 40, // den som har lägre andlighet än så här övertygas inte i samtal
+  sprid: 0.0003, // chansen att lyssnaren börjar tro i ett vanligt samtal (man talar med varandra hundratals gånger på några dygn), gånger det som följer:
+  spridMin: 20, // den som har lägre andlighet än så här övertygas inte i samtal
   spridKarisma: 10, // talarens karisma (1–20) delad med detta ...
   spridAnde: 50, // ... talarens andlighet delad med detta, och lyssnarens delad med detta i kvadrat (den världsliga övertygas nästan aldrig) ...
   spridRel: 100, // ... 1 plus relationen (−100 till 100) delad med detta ...
