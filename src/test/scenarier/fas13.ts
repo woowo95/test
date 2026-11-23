@@ -1,6 +1,8 @@
 // Scenarier för fas 13.
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, medBank, nyInvanare, testBy } from './hjalp';
+import { SCENARIER, klockan, medBank, nyInvanare, testBy, utanWebblasare } from './hjalp';
+import { GRAFER, grafHtml } from '../../ui/graf';
+import { setByn } from '../../ui/lage';
 import { START } from '../kor';
 
 // regeln för stationerna (steg 13.1.1): varje recept vid en station med kvalitet är "bara här" eller "fortare och bättre här"
@@ -190,4 +192,29 @@ SCENARIER.handlarjarn = {
     ];
   },
 };
+// järnet i statistiken (steg 13.1.13): järnet och kolet sedan byns början sparas i historiken, och grafen visar dem per år
+SCENARIER.jarnstatistik = {
+  text: 'Steg 13.1.13: Byns tal får grafen Järn och kol, med järnet som blåsts och kolet som kolats det senaste året (dygnet i verkligheten), ur byns statistik när en bränning töms',
+  kor: () => {
+    utanWebblasare();
+    const s = SIM.createState(5, START), st = (s.stat ??= {}) as Record<string, number>;
+    const t0 = s.now;
+    st.brant_jarn = 0; st.brant_kol = 0; SIM.historikSteg(s);
+    s.now = t0 + SIM.DAY / 2; st.brant_jarn = 3; st.brant_kol = 20; SIM.historikSteg(s);
+    s.now = t0 + SIM.DAY + 3600e3; st.brant_jarn = 5; st.brant_kol = 30; SIM.historikSteg(s);
+    const ar1 = SIM.historikPerAr(s, 'jarn').at(-1)?.[1], kol1 = SIM.historikPerAr(s, 'kol').at(-1)?.[1];
+    s.now = t0 + 2 * SIM.DAY + 2 * 3600e3; st.brant_jarn = 7; SIM.historikSteg(s);
+    const ar2 = SIM.historikPerAr(s, 'jarn').at(-1)?.[1];
+    const sedan = SIM.historikSerie(s, 'jarn').at(-1)?.[1];
+    setByn(s);
+    const ritas = !!GRAFER.jarn && grafHtml('jarn').includes(GRAFER.jarn.namn);
+    return [
+      [`järnet sedan byns början sparas i historiken (${sedan})`, sedan === 7],
+      [`järnet det senaste året är 5 efter drygt ett år (${ar1}) och kolet 30 (${kol1})`, ar1 === 5 && kol1 === 30],
+      [`ett år senare är det bara ökningen sedan dess som räknas: 7 − 5 = 2 (${ar2})`, ar2 === 2],
+      ['grafen Järn och kol finns i Byns tal och ritas', ritas],
+    ];
+  },
+};
+
 const mulberry = (frö: number) => () => { frö = (frö + 0x6D2B79F5) | 0; let t = Math.imul(frö ^ (frö >>> 15), 1 | frö); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };

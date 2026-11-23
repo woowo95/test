@@ -49,6 +49,9 @@ export const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; va
   { id: 'strider', namn: 'Strider sedan byns början', hur: 'sist', varde: s => (s.stat?.strider as number) ?? 0 },
   { id: 'resor', namn: 'Resor sedan byns början', hur: 'sist', varde: s => (s.stat?.['resa hemma'] as number) ?? 0 },
   { id: 'bocker', namn: 'Böcker sedan byns början', hur: 'sist', varde: s => (s.stat?.bocker as number) ?? 0 },
+  // järnet (steg 13.1.13): järnet som blåsts och kolet som kolats sedan byns början, ur byns statistik när en bränning töms
+  { id: 'jarn', namn: 'Järn sedan byns början', hur: 'sist', varde: s => (s.stat?.brant_jarn as number) ?? 0 },
+  { id: 'kol', namn: 'Kol sedan byns början', hur: 'sist', varde: s => (s.stat?.brant_kol as number) ?? 0 },
 ];
 
 const ny = (): Historik => ({ tal: HISTORIK_TAL.map(t => t.id), tim: [], dygn: [], kronika: [] });
@@ -157,6 +160,18 @@ export function historikSerie(s: State, id: string): [number, number][] {
   if (i < 1) return ut;
   for (const r of h.dygn) if (Number.isFinite(r[i])) ut.push([r[0] + DAY / 2, r[i]]);
   for (const r of h.tim) if (Number.isFinite(r[i])) ut.push([r[0], r[i]]);
+  return ut;
+}
+
+// ett tal som räknas upp, per år i spelet (steg 13.1.13): för varje punkt i serien hur mycket det ökat det senaste året
+// (dygnet i verkligheten), alltså värdet då minus värdet ett år tidigare (0 före byns början)
+export function historikPerAr(s: State, id: string): [number, number][] {
+  const p = historikSerie(s, id), ut: [number, number][] = [];
+  let j = -1;
+  for (const [t, v] of p) {
+    while (j + 1 < p.length && p[j + 1][0] <= t - DAY) j++;
+    ut.push([t, Math.max(0, v - (j < 0 ? 0 : p[j][1]))]);
+  }
   return ut;
 }
 

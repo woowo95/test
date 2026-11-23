@@ -2,7 +2,7 @@
 // flikar/tal.ts): invånarna, humöret, veden på elden, maten och veden i förrådet och byns rikedom (steg 6.9.13). Grafen visar Allt, 1 dygn,
 // 1 säsong eller 4 säsonger (steg 9.2.8), och ett tryck eller drag längs den visar värdena där. Bara utseende: spelet läser den aldrig.
 // En ny graf är en rad i GRAFER och `grafHtml('id')` där den ska stå; ett nytt tal är en rad i HISTORIK_TAL.
-import { AGES, DAY, HISTORIK_TAL, WEEK, historikSerie, kalender, living, rikSerie, sakNamn, type RikRad } from '../sim';
+import { AGES, DAY, HISTORIK_TAL, WEEK, historikPerAr, historikSerie, kalender, living, rikSerie, sakNamn, type RikRad } from '../sim';
 import { esc, fallUt, hjalpText } from './hjalp';
 import { tecknet } from '../ikoner';
 import { ritaOm, s, vidNyBy } from './lage';
@@ -29,6 +29,7 @@ export const GRAFER: Record<string, Graf> = { // i den ordning de står i Byns t
   strider: { namn: 'Strider', serier: [{ tal: 'strider', farg: 'rost' }], enhet: 'st', forkl: 'Hur många strider det varit i byn sedan dess början: mot rövare, vargar och björnar, holmgångar och slagsmål.' },
   resor: { namn: 'Resor', serier: [{ tal: 'resor', farg: 'skiffer' }], enhet: 'st', forkl: 'Hur många sällskap som rest ut i världen och kommit hem sedan byns början.' },
   bocker: { namn: 'Böcker', serier: [{ tal: 'bocker', farg: 'senap' }], enhet: 'st', forkl: 'Hur många böcker byn börjat skriva sedan dess början.' },
+  jarn: { namn: 'Järn och kol', serier: [{ namn: 'Järn per år', farg: 'rost', punkter: () => historikPerAr(s, 'jarn') }, { namn: 'Kol per år', farg: 'skiffer', punkter: () => historikPerAr(s, 'kol') }], enhet: 'st', forkl: 'Hur mycket järn som blåsts i blästerugnen och hur mycket kol som kolats i milan det senaste året.' }, // steg 13.1.13
   matlagning: { namn: 'Matlagningen', serier: [{ tal: 'grillat', farg: 'senap' }, { tal: 'brant', farg: 'rost' }], enhet: 'st', forkl: 'Hur mycket mat som grillas och hur mycket som bränns vid elden. En ovan kock bränner mer, och den som lagat mat länge bränner mindre.' }, // det som grillats och bränts (steg 9.2.62)
 };
 
