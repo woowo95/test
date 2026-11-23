@@ -201,7 +201,7 @@ const gudPerson = (s: State, tr: Tro) => s.people.find(q => q.id === tr.grundare
 // skalan Natur – Människa (0 = andar i djur, väder och platser, 100 = förfäder och helgon). bakom, vill och svek: tolkningen,
 // en av varje slumpas: vem eller vad som står bakom, vad den vill och vad som händer om man sviker den. sym: symbolen (ikoner.ts) och
 // namn: namnen tron kan få när den delas av TRO.namn (steg 4.1.2.3). omr: gudens område (steg 4.1.5)
-interface TeckenDef { text: string; natur: number; omr: GudOmr; sym: string; namn: string[]; bakom: string[]; vill: string[]; svek: string[] }
+interface TeckenDef { text: string; natur: number; omr: GudOmr; sym: string; namn: string[]; bakom: string[]; vill: string[]; svek: string[]; i?: string[] } // i = där anden som tecknet föder kan bo, i stället för områdets (steg 13.1.9)
 export const TECKEN = {
   blixt: { text: 'blixten som slog ner', natur: 15, omr: 'aska', sym: 'tro_blixt', namn: ['Åskans tro', 'Hammarens folk', 'Tordönets väg'],
     bakom: ['Den som bor i åskmolnen', 'Himlens hammare', 'Den stora fågeln vars vingar dånar'],
@@ -270,6 +270,10 @@ export const TECKEN = {
     bakom: ["Den som gav två i stället för ett", "Moderns moder", "De två i mörkret"], vill: ["att tvillingar aldrig skiljs åt", "att man delar allt i två lika delar", "att man tackar vid varje födsel"], svek: ["den ena tvillingen tas tillbaka", "det blir inga fler barn", "syskon blir ovänner"] },
   bjornVande: { text: "björnen som vände om", natur: 20, omr: 'jakt', sym: 'tro_hare', namn: ["Björnens tro", "Den skonades folk", "Ramens väg"],
     bakom: ["Skogens gamle", "Den som går på fyra och på två", "Björnmodern"], vill: ["att ingen säger björnens namn högt", "att man lämnar honung i skogen", "att man går tyst förbi idet"], svek: ["björnen kommer tillbaka och vänder inte", "ramen tar boskapen", "man möter den ensam i mörkret"] },
+  // det glödande järnet ur blästerugnen (steg 13.1.9): tron får hantverkets gud, och anden kan bo i städet
+  jarn: { text: 'det glödande järnet som rann ur ugnen', natur: 35, omr: 'hantverk', sym: 'tro_brand', namn: ['Järnets tro', 'Smidets folk', 'Glödens väg'],
+    bakom: ['Den som bor i ugnen', 'Smeden under jorden', 'Den som gör sten till järn'], vill: ['att det första järnet ur varje ugn ges tillbaka till myren', 'att ingen svär vid städet', 'att elden i ässjan släcks med vatten och aldrig med jord'], svek: ['järnet spricker', 'ugnen ger bara slagg', 'elden i smedjan tar huset'],
+    i: ['städet', 'ässjans glöd', 'den röda myren'] },
 } satisfies Record<string, TeckenDef>;
 export type TeckenTyp = keyof typeof TECKEN;
 const TDEF: Record<TeckenTyp, TeckenDef> = TECKEN;
@@ -279,7 +283,7 @@ export const TRONAMN: readonly string[] = Object.values(TECKEN).flatMap(d => (d 
 export const TECKENTAL = balans('tecken', {
   blixt: 0.3, brand: 0.3, vinterSlut: 0.3, torkaSlut: 0.3, flodSlut: 0.3, jakt: 0.3, barnFrisk: 0.3, drom: 0.3,
   tornado: 0.25, brandStopp: 0.2, overlevde: 0.2, barnAska: 0.2, ingenDog: 0.1, skord: 0.1, dubbelt: 0.15, fynd: 0.1, svampsyn: 0.25, dodDrom: 0.15, frosjo: 0.1, bonSvar: 0.2,
-  tvillingar: 0.2, bjornVande: 0.1, tolkning: 0, // tolkningen tolkas inte ur ett tecken: profeten grundar tron direkt (kult.ts)
+  tvillingar: 0.2, bjornVande: 0.1, jarn: 0.3, tolkning: 0, // tolkningen tolkas inte ur ett tecken: profeten grundar tron direkt (kult.ts)
 } satisfies Record<TeckenTyp, number>);
 export const teckenText = (k: TeckenTyp, om?: string) => TDEF[k].text.replace('{om}', om ?? '');
 
@@ -396,7 +400,7 @@ function nyGud(s: State, tr: Tro, omr: GudOmr, h: string, p: Person | undefined)
   let g: Gud;
   if (fp) g = forfader(s, tr, fp, omr);
   else if (tr.natur < GUD.ande) {
-    const i = pick(s, d.i, 'tro', p), namn = gudNamn(s, omr, p);
+    const t = TDEF[tr.k], i = pick(s, t?.i && t.omr === omr ? t.i : d.i, 'tro', p), namn = gudNamn(s, omr, p); // tecknet kan säga var anden bor (steg 13.1.9)
     g = { omr: [omr], namn, form: 'ande', i, t: s.now, ar, bekr: s.now, ber: gudBer('ande', h, ar, tro, namn, d.om, i) };
   } else {
     const namn = gudNamn(s, omr, p);

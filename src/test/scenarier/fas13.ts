@@ -1,6 +1,6 @@
 // Scenarier för fas 13.
 import * as SIM from '../../sim';
-import { SCENARIER, medBank } from './hjalp';
+import { SCENARIER, medBank, nyInvanare } from './hjalp';
 import { START } from '../kor';
 
 // regeln för stationerna (steg 13.1.1): varje recept vid en station med kvalitet är "bara här" eller "fortare och bättre här"
@@ -82,6 +82,42 @@ SCENARIER.kronikajarn = {
       [`byns första smedja står i krönikan (${smRader[0]?.[1] ?? 'inget'})`, smRader.length === 1],
       ['mallarna har tre eller fyra varianter var', [B.k_forstaJarn, B.k_forstaSmedja].every(v => v.length >= 3 && v.length <= 4)],
       ['händelserna hör till Bygge och uppfinningar', ['k_forstaJarn', 'k_forstaSmedja'].every(k => SIM.KRONIKA_KAT.find(c => c.id === 'bygge')?.slag.includes(k))],
+    ];
+  },
+};
+
+// järnet som tecken (steg 13.1.9)
+SCENARIER.jarntecken = {
+  text: 'Steg 13.1.9: den som tömmer blästerugnen och får ut järn är med om tecknet jarn (det glödande järnet som rann ur ugnen, 0,3 som de vanliga), och tron som blir av det har hantverkets gud, en ande som kan bo i städet (i i TECKEN)',
+  kor: () => {
+    let tecknet = 0, tron = 0, hantverk = 0, stadet = 0, iJarn = 0, ande = 0;
+    for (let f = 1; f <= 12; f++) {
+      const s = SIM.createState(f, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+      (p.tek ??= {}).blasterugn = 1; p.andlig = 100; p.tro = undefined;
+      const ugn = medBank(s, 'blasterugn'), d = SIM.BRANNINGAR.blasterugn;
+      for (let i = 0; i < 40 && p.tro === undefined; i++) {
+        SIM.setStock(s, { malm: d.in.malm, kol: d.in.kol });
+        const tk = () => ({ act: 'blasa', phase: 'do', tx: ugn.x, ty: ugn.y, until: s.now, carry: 0, why: '', ref: ugn.id } as SIM.Task);
+        SIM.branningKlar(s, p, tk());
+        const b = SIM.branningI(s, ugn)!; b.sedd = 99; s.now = b.slut + 25 * SIM.HOUR;
+        SIM.branningKlar(s, p, tk());
+      }
+      if ((s.stat?.tecken_jarn ?? 0) > 0) tecknet++;
+      const tr = SIM.troOf(s, p.tro);
+      if (!tr || tr.k !== 'jarn') continue;
+      tron++;
+      tr.natur = 10; // en tro på Natur-sidan: guden blir en ande som bor någonstans
+      for (let i = 0; i < SIM.TRO.namn; i++) { const q = nyInvanare(s, 'm', 30); q.tro = tr.id; }
+      SIM.stepReligion(s);
+      const g = tr.gudar?.[0];
+      if (g?.omr.includes('hantverk')) hantverk++;
+      if (g?.form === 'ande') { ande++; if (SIM.TECKEN.jarn.i.includes(g.i!)) iJarn++; if (g.i === 'städet') stadet++; }
+    }
+    return [
+      [`den som tömmer ugnen är med om tecknet (${tecknet} av 12)`, tecknet === 12],
+      [`det blir en tro av det (${tron} av 12)`, tron >= 6],
+      [`trons första gud råder över hantverket (${hantverk} av ${tron})`, tron > 0 && hantverk === tron],
+      [`anden bor där tecknet säger: städet, ässjans glöd eller den röda myren (${iJarn} av ${ande}, i städet ${stadet})`, ande > 0 && iJarn === ande],
     ];
   },
 };

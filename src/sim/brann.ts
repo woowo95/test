@@ -12,6 +12,7 @@ import { antal, bestamd, och } from './ord';
 // (raden kolmila i ARBETEN, val.ts)
 import { balans } from './balans';
 import { kronikaBer, personFalt } from './berattelser';
+import { tecken } from './religion';
 import { ALDER, ageOf, count, forstaGang, log, annanGor } from './folk';
 import { hourOf, isLight } from './tid';
 import { HOUR, Person, State, Task } from './typer';
@@ -113,6 +114,7 @@ export function branningKlar(s: State, p: Person, tk: Task) {
   dropLoad(s, tk, p.x, p.y);
   for (const [k, n] of Object.entries(ut)) count(s, 'brant_' + k, n);
   if (forstaGang(s, 'branningTomd_' + id)) log(s, `${p.name} ${d.tom} byns första ${d.namn.toLowerCase()} och tog ut ${och(Object.entries(ut).filter(([, n]) => n >= 1).map(([k, n]) => antal(n, k))) || 'ingenting'}.`, 'world', [p.id]);
+  if (id === 'blasterugn' && (ut.jarn ?? 0) >= 1) tecken(s, p, 'jarn'); // det glödande järnet är ett tecken (steg 13.1.9)
   if (id === 'blasterugn' && (ut.jarn ?? 0) >= 1 && forstaGang(s, 'forstaJarn')) kronikaBer(s, 'k_forstaJarn', p.id, personFalt(p)); // (steg 13.1.8)
 }
 // det som kommer ut med så många missade tillsyner (aldrig under noll)
