@@ -32,6 +32,7 @@
     "radregler": "tsx src/test/radregler.ts",
     "vacktmatt": "tsx src/test/vacktmatt.ts",
     "hus": "tsx src/test/hus.ts",
+    "trangsel": "tsx src/test/trangsel.ts",
     "strid": "tsx src/test/strid.ts",
     "talen": "tsx src/test/talen.ts",
     "recept": "tsx src/test/recept.ts",
