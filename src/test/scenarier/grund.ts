@@ -88,7 +88,9 @@ SCENARIER.yxa = {
     // ett träd som blåst omkull (vindfällen, steg 6.5.5) huggs bara upp när byn behöver ved, och får ligga när förrådet är fullt
     const sedan = new Map<number, number>(), vind = new Set<number>();
     let vf = s.stat?.vindfall ?? 0;
-    kor(s, 10 * 24, s => {
+    const sista = new Map<number, number>(); // när någon senast stod på en ruta där ett träd fällts: där trampas gräset (barnen leker på gläntan)
+    kor(s, 14 * 24, s => { // 14 dygn: gräset behöver nästan fem dygn orört för att växa upp
+      for (const p of living(s)) { const i = tileOf(p.x, p.y); if (fallda.has(i)) sista.set(i, s.now); } // senast någon stod på rutan
       ved = Math.max(ved, amountOf(s, 'ved')); for (const i of skaRojas(s)) rojs.add(i);
       const blaste = (s.stat?.vindfall ?? 0) > vf; vf = s.stat?.vindfall ?? 0;
       for (const k of s.stockar ?? []) { if (!sedan.has(k.id)) { sedan.set(k.id, s.now); if (blaste) vind.add(k.id); } if (!vind.has(k.id) && !fallda.has(tileOf(k.x, k.y))) fallda.set(tileOf(k.x, k.y), s.now); }
@@ -98,14 +100,18 @@ SCENARIER.yxa = {
     const g = groundOf(s);
     // på gångstråken trampas marken där träden stod till jord, så räkna bara utanför dem (byns område täcker sedan steg 6.2.1
     // också skogen där byn fäller, så området går inte att räkna bort)
-    // (gräset behöver några dygn att växa upp, så bara där trädet fälldes för minst tre dygn sedan, och inte där ett lager ligger nu)
-    const sk = straken(s).ruta, ute = [...fallda].filter(([i, t]) => !sk[i] && s.now - t >= 3 * DAY && SIM.zoneAt(s, i % SIM.W, Math.floor(i / SIM.W)) < 0).map(([i]) => i);
+    // (gräset behöver några dygn att växa upp, och inte där ett lager ligger nu)
+    // gräset växer upp ur bar jord på BAR / (grasAter · grasVaxt · stigAter) timmar med gräs runt om (mark.ts), i tidsåldern när
+    // trädet fälldes: förut 3 dygn, men på sommaren tar det nästan 5. Tiden räknas från fällningen eller från den senaste som
+    // stod där (den som högg upp stammen, barnen som leker på gläntan)
+    const M = SIM.MARK, vaxtTid = (t: number) => BAR / (M.grasAter * M.grasVaxt[ageIndex(s, t)]! * M.stigAter) * HOUR;
+    const sk = straken(s).ruta, ute = [...fallda].filter(([i, t]) => !sk[i] && s.now - Math.max(t, sista.get(i) ?? t) >= vaxtTid(t) && SIM.zoneAt(s, i % SIM.W, Math.floor(i / SIM.W)) < 0).map(([i]) => i);
     // gräs, inte bar jord: de som går förbi med trä trampar ner det högsta gräset (stigar, vag.ts)
     let gras = 0; for (const i of ute) if (g.trees[i] < FOREST && g.cover[i] >= BAR) gras++;
     return [
       ['träd har fällts', (s.fallda ?? 0) >= 3],
       ['ved har huggits', ved > 0],
-      [`gräs där träden stod utanför stråken, minst hälften (${gras} av ${ute.length})`, ute.length >= 3 && gras >= ute.length / 2],
+      [`gräs där träden stod utanför stråken och där ingen gått på så länge gräset behöver, minst hälften (${gras} av ${ute.length})`, ute.length >= 3 && gras >= ute.length / 2],
       [`stammarna huggs upp när byn behöver ved (ingen ligger mer än två dygn utanför lagret i skogen: ${liggande}${fullt ? ', men veden räcker över bufferten' : ''})`, liggande === 0 || fullt]];
   },
 };
