@@ -2,6 +2,7 @@ import { enOrd } from './ord';
 // Kroppen och graven (steg 8.5.1, 8.5.6 och 8.5.7): det som görs med en död. Det som blir kvar av en människa står i kvarlevor.ts.
 import { DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
+import { BYN } from './egendom';
 import { byId, count, isParent, living, log, relKey } from './folk';
 import { rnd } from './slump';
 import { getMap } from './karta';
@@ -13,11 +14,11 @@ import { freeTools, newTing, take } from './agande';
 import { GA_TID } from './paborjat';
 import { nyRitual } from './kultlatt';
 import { hourOf } from './tid';
-import { Grav, GravStil, GravVard, KVAR, Kvarleva, gravAt, kroppKrok, kvarById, nara, sagSkandad } from './kvarlevor';
+import { Grav, GravSak, GravStil, GravVard, KVAR, Kvarleva, gravAt, kroppKrok, kvarById, nara, sagSkandad } from './kvarlevor';
 import { BEGR_TAL, BUD, BudId, KYRKA, budBrutet, budIn, foljer, foljerStorlek, harBud, satSkand } from './kyrka';
 import { SkalaId, Tro, rymsBud, skalaV, troOf } from './religion';
-import { amountOf, harTillHands, put } from './lager';
-import { SAKER } from './saker';
+import { amountOf, harTillHands, laggPaRutan, put } from './lager';
+import { SAKER, isTool } from './saker';
 import { getable, takeMaterial } from './behov';
 import { RECEPT } from './recept';
 import { knows } from './teknik';
@@ -256,7 +257,7 @@ export function gravKlar(s: State, p: Person, t: Task) {
   }
   const stor = !ovardig && !!d && storDod(s, d, tr);
   if (stil === 'vatten') { (s.sankta ??= []).push({ vem: q.vem, namn: q.namn, x, y, t: s.now, sjo: sjoVid(s, x, y), ...(q.med ? { med: q.med } : {}) }); count(s, 'sankt'); }
-  else { gravarOf(s).push({ x, y, t: s.now, vem: q.vem, namn: q.namn, stil, ...(tr ? { tro: tr.id } : {}), ...(ovardig ? { ovardig: true as const } : {}), ...(q.med ? { med: q.med } : {}), ...(stor ? { stor: true as const } : {}) }); groundOf(s).cover[y * W + x] = 0; }
+  else { gravarOf(s).push({ x, y, t: s.now, vem: q.vem, namn: q.namn, stil, ...(tr ? { tro: tr.id } : {}), ...(ovardig ? { ovardig: true as const } : {}), ...(q.med ? { med: q.med } : {}), ...(stil === 'jord' && q.gods?.length ? { saker: q.gods } : {}), ...(stor ? { stor: true as const } : {}) }); groundOf(s).cover[y * W + x] = 0; }
   count(s, 'grav'); count(s, 'grav_' + stil);
   tanke(p, 'begravde', s.now, { namn: q.namn });
   if (tr && !ovardig) { count(s, 'begravd_troende'); }
@@ -551,7 +552,10 @@ export function gravbesokKlar(s: State, p: Person, t: Task) {
   tanke(p, 'stodVidGraven', s.now, { v: BESOK.trost });
   if (t.gava) {
     const k = minstaGava(s, p);
-    if (k) { takeMaterial(s, p, k, 1, true); if (g) g.gavor = (g.gavor ?? 0) + 1; else q!.gavor = (q!.gavor ?? 0) + 1; count(s, 'gravgava'); }
+    if (k) { // gåvan ligger kvar på graven, eller på stranden, som en vanlig sak (steg 13.1.3)
+      takeMaterial(s, p, k, 1, true); const m = g ?? q!;
+      m.gavor = (m.gavor ?? 0) + 1; laggIGraven(s, m.saker ??= [], k, 1); count(s, 'gravgava');
+    }
   }
   if (!g) return;
   // skötseln: rutan rensas, och en sliten grav lagas när materialet finns (en jordgrav kostar bara tiden)
@@ -562,9 +566,27 @@ export function gravbesokKlar(s: State, p: Person, t: Task) {
   }
 }
 // en gång per dygn (TAKTER): gravarna som vuxit igen helt tas bort, med sin text
+// Maten i och på gravarna ruttnar efter sina dygn (haller i SAKER), och sakerna i en grav som tas bort blir ägarlösa där de ligger
+// (steg 13.1.3): redskapen och plaggen som ting på rutan, det andra i en hög på rutan, och bärs in som allt annat utanför lagret
 export function gravDygn(s: State) {
+  for (const m of [...(s.gravar ?? []), ...(s.sankta ?? [])]) if (m.saker?.length) {
+    const fore = m.saker.length;
+    m.saker = m.saker.filter(a => { const h = SAKER[a.k]?.haller; return h === undefined || s.now - a.t < h * DAY; });
+    if (m.saker.length < fore) count(s, 'gravgods_ruttet', fore - m.saker.length);
+    if (!m.saker.length) m.saker = undefined;
+  }
   if (!s.gravar?.length) return;
-  const fore = s.gravar.length;
+  const fore = s.gravar.length, borta = s.gravar.filter(g => gravSkick(s, g) <= 0);
   s.gravar = s.gravar.filter(g => gravSkick(s, g) > 0);
+  for (const g of borta) for (const a of g.saker ?? []) {
+    if (isTool(a.k)) for (let i = 0; i < a.n; i++) { const t = newTing(s, a.k, a.c, BYN); t.x = g.x; t.y = g.y; if (a.q !== undefined) t.q = a.q; if (a.ber) t.ber = a.ber; }
+    else laggPaRutan(s, a.k, a.n, g.x, g.y);
+    count(s, 'gravgods_agarlost', a.n);
+  }
   if (s.gravar.length < fore) count(s, 'grav_borta', fore - s.gravar.length);
+}
+// en sak läggs i eller på graven: till en lika sak som redan ligger där, utom maten, som ruttnar från när den lades
+export function laggIGraven(s: State, saker: GravSak[], k: string, n: number, c = 1) {
+  const lik = SAKER[k]?.haller === undefined ? saker.find(a => a.k === k && a.q === undefined && a.c === c) : undefined;
+  if (lik) lik.n += n; else saker.push({ k, n, c, t: s.now });
 }

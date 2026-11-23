@@ -2068,6 +2068,38 @@ function begravHela(s: State, p: Person, d: Person) {
   gravKlarMed(s, p, tk); p.task = undefined;
   return { kr, tid, g: s.gravar?.find(g => g.vem === d.id), r: s.ritualKo[0] };
 }
+SCENARIER.gravgods = {
+  text: 'Steg 13.1.3: gravgodset är saker. Gravgåvan vid begravningen ligger i graven med sitt skick och sin kvalitet, gåvan vid besöket ligger på graven, maten där ruttnar, och när graven vuxit igen och tas bort blir sakerna ägarlösa på rutan',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    tr.bud = [{ id: 'gravgava', t: s.now }];
+    klockan(s, 10); setFood(s, 200);
+    const d = v.find(p => SIM.ageOf(p, s.now) >= 20)!, p = v.find(q => q !== d)!;
+    const yxa = SIM.newTing(s, 'yxa', 0.6, d.id); yxa.bar = d.id; yxa.q = 4;
+    const b = begravHela(s, p, d), g = b.g!;
+    const iGraven = g.saker?.find(a => a.k === 'yxa');
+    const yxaBorta = !(s.ting ?? []).includes(yxa) && !SIM.toolsOf(s, 'yxa').some(t => t.q === 4);
+    // gåvan vid besöket: en rölleka läggs på graven, och köttet ruttnar där
+    const fore = new Map(Object.keys(SIM.SAKER).map(k => [k, SIM.amountOf(s, k)]));
+    const t = { act: 'gravbesok', phase: 'do', ref: d.id, until: s.now, carry: 0, why: '', gava: true } as SIM.Task;
+    SIM.gravbesokKlar(s, p, t);
+    const gk = g.saker?.find(a => a.k !== 'yxa')?.k ?? '', rolleka = g.saker?.find(a => a.k === gk)?.n ?? 0, tagen = (fore.get(gk) ?? 0) - SIM.amountOf(s, gk);
+    SIM.laggIGraven(s, g.saker!, 'kott', 1);
+    const kh = SIM.SAKER.kott!.haller!;
+    s.now += (kh + 1) * SIM.DAY; g.lagad = s.now; SIM.gravDygn(s);
+    const ruttnat = !g.saker?.some(a => a.k === 'kott') && (!!SIM.SAKER[gk]?.haller || !!g.saker?.some(a => a.k === gk));
+    // graven växer igen och tas bort: sakerna ligger kvar på rutan och är byns
+    const ting0 = SIM.toolsOf(s, 'yxa').length, x = g.x, y = g.y;
+    g.t = s.now - 200 * SIM.DAY; g.lagad = undefined; SIM.gravDygn(s);
+    const ny = SIM.toolsOf(s, 'yxa').find(t => t.q === 4), hog = SIM.SAKER[gk]?.haller ? true : SIM.stacksOf(s).find(a => a.k === gk && Math.abs(a.x - x) <= 1 && Math.abs(a.y - y) <= 1);
+    return [
+      [`gravgåvan (yxan) ligger i graven med sitt skick och sin kvalitet (${iGraven ? `skick ${iGraven.c}, kvalitet ${iGraven.q}` : 'ingen'})`, !!iGraven && iGraven.c === 0.6 && iGraven.q === 4 && yxaBorta],
+      [`gåvan vid besöket ligger på graven (${rolleka} ${gk || 'ingen'}, ${tagen} tagen ur förrådet)`, rolleka === 1 && tagen === 1],
+      ['maten på graven ruttnar efter sina dygn, gåvan som håller ligger kvar', ruttnat],
+      [`när graven tas bort blir yxan byns och ligger på rutan (${ny ? `${ny.x},${ny.y}` : 'ingen'}), och gåvan i en hög där`, !s.gravar?.some(q => q.vem === d.id) && !!ny && ny.agare === SIM.BYN && ny.x === x && ny.y === y && SIM.toolsOf(s, 'yxa').length === ting0 + 1 && !!hog],
+    ];
+  },
+};
 SCENARIER.begravning = {
   text: 'Steg 10.4.5: begravningens former. Kroppens väg (jorden, bålet med fyra ved och två minuter till, vattnet där kroppen sänks) och samlingen (den enkla, den tysta med familjen, den vanliga med trosfränderna) blir trons seder när en troende dör och sparas på kroppen; en kropp väntar en stund innan någon bär den',
   kor: () => {
