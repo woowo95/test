@@ -67,7 +67,7 @@ export const KRONIKA_KAT: KronikaKat[] = [
   { id: 'styre', namn: 'Styre', ikon: 'kk_styre', tecken: '👑', slag: ['ledare', 'k_ledare', 'k_forstaLedare', 'k_utvisad', 'k_ratt', 'bynamn'] },
   { id: 'strid', namn: 'Strid', ikon: 'kk_strid', tecken: '⚔️', slag: ['rovare', 'k_rovare', 'k_vargAnfall', 'k_vargSprang', 'k_vargjakt', 'k_forstaVarg', 'k_bjornAnfall', 'k_bjornSprang', 'k_bjornjakt', 'k_bjornjaktMiss', 'k_forstaBjorn', 'k_skadad'] },
   { id: 'tro', namn: 'Tro', ikon: 'kk_tro', tecken: '☀️', slag: ['tro', 'k_tro'] },
-  { id: 'bygge', namn: 'Bygge och uppfinningar', ikon: 'kk_bygge', tecken: '🏠', slag: ['bygge', 'k_husKlar', 'k_uppfann', 'k_forstaEld', 'episk', 'forlust', 'mat'] }, // mat: byns egen rätt (special.ts, steg 10.7.29)
+  { id: 'bygge', namn: 'Bygge och uppfinningar', ikon: 'kk_bygge', tecken: '🏠', slag: ['bygge', 'k_husKlar', 'k_uppfann', 'k_forstaEld', 'k_forstaJarn', 'k_forstaSmedja', 'episk', 'forlust', 'mat'] }, // mat: byns egen rätt (special.ts, steg 10.7.29)
   { id: 'motgang', namn: 'Motgångar', ikon: 'kk_motgang', tecken: '⚡', slag: ['motgang', 'sjukdom', 'k_brand', 'k_tornado', 'k_flod', 'k_epidemi'] },
   { id: 'grannar', namn: 'Handel och grannar', ikon: 'kk_grannar', tecken: '🤝', slag: ['handel', 'k_handel', 'k_resa', 'byte', 'gava', 'utbrytning', 'nyhet', 'sandebud', 'uppdrag', 'grannar'] }, // grannar: hemkomsten från en turné (resa.ts) // sandebud: beskeden åt båda hållen (steg 11.6.23); nyhet: nyheter från världen (ort.ts, steg 11.4.13)
   { id: 'skrift', namn: 'Skrifter', ikon: 'kk_skrift', tecken: '📜', slag: ['runsten', 'skrift'] }, // stenarna, bladen och böckerna (steg 10.6.8)

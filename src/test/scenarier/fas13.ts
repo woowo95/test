@@ -1,6 +1,6 @@
 // Scenarier för fas 13.
 import * as SIM from '../../sim';
-import { SCENARIER } from './hjalp';
+import { SCENARIER, medBank } from './hjalp';
 import { START } from '../kor';
 
 // regeln för stationerna (steg 13.1.1): varje recept vid en station med kvalitet är "bara här" eller "fortare och bättre här"
@@ -50,6 +50,38 @@ SCENARIER.smedbarn = {
       [`barnet nära den som smider fick upplevelsen efter ${timmar} timmar (${u ? SIM.upplevelseText(u) : 'ingen'})`, !!u],
       [`den ger flit (${JSON.stringify(u?.e ?? {})})`, (u?.e.flit ?? 0) > 0],
       [`hantverket lärs ${(hv / sa).toFixed(2)} gånger så fort som samlandet`, Math.abs(hv / sa - SIM.UPPV.lar) < 1e-6],
+    ];
+  },
+};
+
+// krönikan om järnet (steg 13.1.8)
+SCENARIER.kronikajarn = {
+  text: 'Steg 13.1.8: det första järnet ur blästerugnen och byns första smedja blir händelser i krönikan (mallarna k_forstaJarn och k_forstaSmedja, fyra varianter var), bara första gången',
+  kor: () => {
+    const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    (p.tek ??= {}).blasterugn = 1;
+    const rader = (k: string) => (s.hist?.kronika ?? []).filter(r => r[2] === k);
+    const ugn = medBank(s, 'blasterugn'), d = SIM.BRANNINGAR.blasterugn;
+    const blas = () => {
+      SIM.setStock(s, { malm: d.in.malm * 2, kol: d.in.kol * 2 });
+      const tk = () => ({ act: 'blasa', phase: 'do', tx: ugn.x, ty: ugn.y, until: s.now, carry: 0, why: '', ref: ugn.id } as SIM.Task);
+      SIM.branningKlar(s, p, tk());
+      const b = SIM.branningI(s, ugn)!; b.sedd = 99; s.now = b.slut;
+      SIM.branningKlar(s, p, tk());
+    };
+    blas(); const efterEtt = rader('k_forstaJarn').length; blas(); const efterTva = rader('k_forstaJarn').length;
+    const sm = medBank(s, 'smedja'); sm.kvar = 0; delete sm.klar;
+    SIM.finishStation(s, p, { act: 'bygga', phase: 'do', tx: sm.x, ty: sm.y, until: s.now, carry: 0, why: '', ref: sm.id } as SIM.Task);
+    delete sm.klar; // en smedja till blir klar
+    SIM.finishStation(s, p, { act: 'bygga', phase: 'do', tx: sm.x, ty: sm.y, until: s.now, carry: 0, why: '', ref: sm.id } as SIM.Task);
+    const smRader = rader('k_forstaSmedja');
+    const B = SIM.BERATTELSER as Record<string, unknown[]>;
+    return [
+      [`det första järnet står i krönikan (${rader('k_forstaJarn')[0]?.[1] ?? 'inget'})`, efterEtt === 1],
+      ['nästa blåsning står inte där', efterTva === 1],
+      [`byns första smedja står i krönikan (${smRader[0]?.[1] ?? 'inget'})`, smRader.length === 1],
+      ['mallarna har tre eller fyra varianter var', [B.k_forstaJarn, B.k_forstaSmedja].every(v => v.length >= 3 && v.length <= 4)],
+      ['händelserna hör till Bygge och uppfinningar', ['k_forstaJarn', 'k_forstaSmedja'].every(k => SIM.KRONIKA_KAT.find(c => c.id === 'bygge')?.slag.includes(k))],
     ];
   },
 };

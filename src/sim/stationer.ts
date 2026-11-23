@@ -1,4 +1,5 @@
 import { bestamd, husIMening } from './ord';
+import { kronikaBer, personFalt } from './berattelser';
 import { gen } from './ord';
 import { bynsMitt, omrade, tillHoljet, utanforByn } from './omrade';
 import { siteHo } from './vattenho';
@@ -1381,6 +1382,7 @@ export function finishStation(s: State, p: Person, tk: Task) {
   if (d.mobel) nyKvalitet(s, p, t, 0, d.namn.toLowerCase()); // möblerna har kvalitet, stationerna inte (kvalitet.ts)
   if (d.verktyg && wearTool(s, p, d.verktyg, STATION.latrinSpade)) { const tr = SAKER[d.verktyg]?.trasig; if (tr) count(s, tr.stat); } // benspaden slits för varje grop
   if (forstaGang(s, 'station_' + t.k)) { log(s, forstaText(d.forsta, p), 'world', [p.id]); p.fame.push(`Byggde byns första ${forstaForm(d.namn)}`); }
+  if (t.k === 'smedja' && forstaGang(s, 'forstaSmedja')) kronikaBer(s, 'k_forstaSmedja', p.id, personFalt(p)); // (steg 13.1.8)
   ingetIElden(s); // en station med eld: det som låg där flyttas (steg 12.1.153)
   fyllPlatser(s);
 }

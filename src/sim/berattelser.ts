@@ -949,6 +949,19 @@ const MDEF = {
     { t: 'Mitt i natten tände {namn} byns första eld, och mörkret drog sig undan.', om: f => f.natt === true },
     { t: 'I kylan tände {namn} byns första eld, och ingen behövde frysa den natten.', om: f => f.kallt === true },
   ],
+  // det första järnet ur blästerugnen och byns första smedja (steg 13.1.8)
+  k_forstaJarn: [
+    '{namn} tömde blästerugnen, och ur slaggen kom byns första järn.',
+    'Det var {namn} som bröt upp ugnen. Där låg en klump järn, den första byn haft.',
+    'Rött och tungt låg det i askan: {namn} hade fått fram byns första järn.',
+    'Det var {arstid} när {namn} fick fram byns första järn ur blästerugnen.',
+  ],
+  k_forstaSmedja: [
+    '{namn} byggde byns första smedja, och snart hördes hammaren mot städet.',
+    'Nu hade byn en smedja. Det var {namn} som byggde den.',
+    'Vid ässjan och städet som {namn} satte upp skulle järnet smidas.',
+    'Det var {arstid} när {namn} byggde byns första smedja.',
+  ],
   k_uppfann: [
     '{namn} var den första i byn som kunde {lara}.',
     'Ingen hade gjort det förut: {namn} kom på hur man kan {lara}.',
