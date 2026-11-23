@@ -1,4 +1,6 @@
-import { antal, bestamd, och } from './ord';
+import { antal, bestamd, och, tal } from './ord';
+import { notis } from './notiser';
+const stor = (t: string) => t[0].toUpperCase() + t.slice(1);
 // Bränningarna (steg 12.2.1, Landskapet och järnet: Järnet: Kolmilan, Bränningarna). Kolmilan (och blästerugnen i 12.2.3) är en
 // station där något läggs in, brinner en känd tid efter klockan och tas ut. Varje sort är en rad i registret BRANNINGAR: vad
 // som läggs in, vad som kommer ut, hur länge det går och hur lång tid det tar att ladda och tända och att tömma. Inget räknas
@@ -113,6 +115,9 @@ export function branningKlar(s: State, p: Person, tk: Task) {
   for (const [k, n] of Object.entries(ut)) if (n > 0) tk.items[k] = (tk.items[k] ?? 0) + n;
   dropLoad(s, tk, p.x, p.y);
   for (const [k, n] of Object.entries(ut)) count(s, 'brant_' + k, n);
+  // notisen om det som gick förlorat när ingen såg till bränningen (steg 13.1.11)
+  const borta = Object.entries(d.ut).map(([k, n]) => [k, Math.floor(n - (ut[k] ?? 0))] as const).filter(([, n]) => n >= 1);
+  if (b.miss && borta.length) notis(s, 'branning', `${stor(bestamd(d.namn)[0])} gav ${och(Object.entries(ut).filter(([, n]) => n >= 1).map(([k, n]) => antal(Math.floor(n), k))) || 'ingenting'}. ${stor(och(borta.map(([k, n]) => antal(n, k))))} gick förlorat, eftersom ingen såg till ${bestamd(d.namn)[0]} ${b.miss === 1 ? 'en gång' : `${tal(b.miss)} gånger`} när det behövdes.`, [p.id], { x: t.x + 1, y: t.y + 1 });
   if (forstaGang(s, 'branningTomd_' + id)) log(s, `${p.name} ${d.tom} byns första ${d.namn.toLowerCase()} och tog ut ${och(Object.entries(ut).filter(([, n]) => n >= 1).map(([k, n]) => antal(n, k))) || 'ingenting'}.`, 'world', [p.id]);
   if (id === 'blasterugn' && (ut.jarn ?? 0) >= 1) tecken(s, p, 'jarn'); // det glödande järnet är ett tecken (steg 13.1.9)
   if (id === 'blasterugn' && (ut.jarn ?? 0) >= 1 && forstaGang(s, 'forstaJarn')) kronikaBer(s, 'k_forstaJarn', p.id, personFalt(p)); // (steg 13.1.8)

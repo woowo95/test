@@ -146,3 +146,26 @@ SCENARIER.assjegnista = {
     ];
   },
 };
+
+// notisen om en förlorad bränning (steg 13.1.11)
+SCENARIER.branningnotis = {
+  text: 'Steg 13.1.11: när en kolmila eller en blästerugn ger mindre för att ingen såg till den, får spelaren en notis (branning i NOTISER) med det som kom ut och det som gick förlorat; en bränning som sågs till ger ingen',
+  kor: () => {
+    const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    (p.tek ??= {}).kolmila = 1;
+    const t = medBank(s, 'kolmila'), d = SIM.BRANNINGAR.kolmila;
+    const branna = (miss: number) => {
+      SIM.setStock(s, { ved: d.in.ved });
+      const tk = () => ({ act: 'kola', phase: 'do', tx: t.x, ty: t.y, until: s.now, carry: 0, why: '', ref: t.id } as SIM.Task);
+      SIM.branningKlar(s, p, tk());
+      const b = SIM.branningI(s, t)!; b.sedd = 7; b.miss = miss; s.now = b.slut;
+      SIM.branningKlar(s, p, tk());
+      return (s.notiser?.lista ?? []).filter(n => n.id === 'branning');
+    };
+    const hel = branna(0).length, efter = branna(2), n = efter[efter.length - 1];
+    return [
+      ['en kolmila som sågs till ger ingen notis', hel === 0],
+      [`en kolmila där ingen såg till den två gånger ger en notis med det som gick förlorat (${n?.rader.join(' ') ?? 'ingen'})`, efter.length === 1 && n!.n === 1 && n!.rader[0].includes('gick förlorat') && n!.rader[0].includes('två gånger')],
+    ];
+  },
+};
