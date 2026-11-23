@@ -9,7 +9,7 @@ import { Act, HOUR, Person, State, Task } from './typer';
 import { getable, takeMaterial } from './behov';
 import { count } from './folk';
 import { halvOf } from './agande';
-import { amountOf, capacity, dropLoad, iHelaForradet, iRackhall, load, mayTake, helaAv, narmasteMed, ownsAmount, use, type Uttag, vedIBordan, forstaMat } from './lager';
+import { amountOf, capacity, dropLoad, iBordan, iHelaForradet, iRackhall, load, mayTake, helaAv, narmasteMed, ownsAmount, use, type Uttag, vedIBordan, forstaMat } from './lager';
 import { vardHamtas } from './halsa';
 import { fartVid, halvbyggd, nastaAv, stationDef, tillbehorDef } from './stationer';
 import { PROJEKT } from './projekt';
@@ -111,6 +111,8 @@ HAMTAS.ritual = { av: (s, p) => ritualMat(s, p)?.av, fran: (s, p) => ritualMat(s
 const INGEN_FARA = { kyla: false, gras: 0 };
 const hamtasFor = (act: Act): Hamtas | undefined => HAMTAS[act] ?? (PROJEKT[act]?.recept ? { av: (s, p) => PROJEKT[act]!.recept!(s, p, INGEN_FARA)?.av } : undefined);
 
+// en stack där p kan få något av slagen (getable), som när veden till elden hämtas: inte en stack med bara kyrkans
+const fanns = (s: State, p: Person, slag: string[]) => (x: number, y: number) => iRackhall(x, y, () => slag.some(k => getable(s, p, k) - iBordan(p, k) >= 1));
 // det av materialet som inte finns inom räckhåll från där p står, eller i det hen bär
 function saknas(s: State, p: Person, av: Record<string, number>) {
   const ut: Record<string, number> = {};
@@ -128,7 +130,7 @@ function hamtaForstNu(s: State, p: Person, tk: Task) {
   // fler vändor: det som bars hit läggs vid platsen, där det ligger inom räckhåll, och hen går efter resten. Hamnade det
   // inte inom räckhåll (rutan var full) börjar arbetet med det som finns
   if (tk.vanda) { const fore = sumOf(sak); laggVid(s, p, tk); sak = saknas(s, p, av); if (sumOf(sak) > fore + 1e-9) return false; }
-  const dit = Object.keys(sak).length ? narmasteMed(s, p, Object.keys(sak), agareAlla(hamtasFor(tk.act)?.fran?.(s, p, tk), Object.keys(sak), tk)) : undefined;
+  const dit = Object.keys(sak).length ? narmasteMed(s, p, Object.keys(sak), agareAlla(hamtasFor(tk.act)?.fran?.(s, p, tk), Object.keys(sak), tk), fanns(s, p, Object.keys(sak))) : undefined;
   if (!dit) return false; // det finns inom räckhåll, eller inte i någon stack (hos någon, i en kista): arbetet börjar som det är
   tk.site = { x: tk.tx, y: tk.ty }; tk.tx = dit.x; tk.ty = dit.y; tk.phase = 'go'; tk.hamta = sak;
   count(s, 'hamtar');
@@ -167,7 +169,7 @@ export function hamtat(s: State, p: Person, tk: Task) {
     }
   });
   const fattas = Object.keys(av).filter(k => av[k] - (tk.items?.[k] ?? 0) > 1e-9), ryms = (k: string) => load(tk, s) + viktOf(k) <= capacity(s, p) + 1e-9;
-  const kvar = fattas.filter(ryms), nasta = fick > 0 && kvar.length ? narmasteMed(s, p, kvar, agareAlla(fran, kvar, tk)) : undefined;
+  const kvar = fattas.filter(ryms), nasta = fick > 0 && kvar.length ? narmasteMed(s, p, kvar, agareAlla(fran, kvar, tk), fanns(s, p, kvar)) : undefined;
   if (nasta) { tk.tx = nasta.x; tk.ty = nasta.y; tk.hamtad = 1; return; } // det hen redan bär räknas på vägen till nästa stack
   const site = tk.site!;
   tk.tx = site.x; tk.ty = site.y; tk.site = undefined; tk.hamta = undefined; tk.phase = 'go';

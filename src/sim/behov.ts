@@ -16,7 +16,7 @@ import { Ting, newTing, tingOf } from './agande';
 import { kvEffekt } from './kvalitet';
 import { bordVid, moblerKrok } from './stationer';
 import { BYN, Del, addDel, sumOf } from './egendom';
-import { amountOf, helt, iBordan, slagFinns, iRackhall, iHelaForradet, urBordan, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, type Uttag, use } from './lager';
+import { amountOf, helt, iBordan, kyrkornas, slagFinns, iRackhall, iHelaForradet, urBordan, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, type Uttag, use } from './lager';
 import { eatPoison } from './fynd';
 import { ata } from './naring';
 import { ratt } from './matlagning';
@@ -412,7 +412,8 @@ export function noticeTheft(s: State, p: Person, key: string) {
 // tar aldrig av andras och gör då inte arbetet.
 const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= DELA.stjalAldrig;
 // så mycket av slaget k som p kan få till ett arbete
-export const getable = (s: State, p: Person, k: string) => (aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k)) + iBordan(p, k); // med det hen bär till arbetet (steg 11.1.74)
+// det kyrkan äger tar bara kyrkan (takeOrder i egendom.ts): det räknas inte, också för den som tar av andra i nöd
+export const getable = (s: State, p: Person, k: string) => (aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k) - kyrkornas(s, k)) + iBordan(p, k); // med det hen bär till arbetet (steg 11.1.74)
 // det p har till hands till sitt arbete av slaget k (steg 11.1.74): det hen bär dit och det som ligger inom räckhåll, utom det
 // som sparas (till elden)
 export const tillHands = (s: State, p: Person, k: string) => iBordan(p, k) + Math.max(0, iRackhall(p.x, p.y, () => getable(s, p, k) - iBordan(p, k)) - eldReserv(s, k));

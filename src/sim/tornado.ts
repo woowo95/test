@@ -8,7 +8,7 @@ import { alive, count, living, log } from './folk';
 import { drabbadHus, upplev } from './uppvaxt';
 import { kanGa, skada, Kroppsdel } from './halsa';
 import { bynsMitt } from './omrade';
-import { streckAv } from './ord';
+import { streckAv, tal as antal } from './ord';
 import { avbryt, eldRutor, minska, nagotPa, stacksOf, tidy } from './lager';
 import { die } from './liv';
 import { groundOf } from './mark';
@@ -231,7 +231,8 @@ export function tornadoSteg(s: State, gaster?: TornadoGaster) {
   if (u > t.u) { svep(s, t, t.u, u, gaster); t.u = u; }
   if (m?.id === 'tornado' || t.test && u < 1) { ser(s, t); soker(s, t); return; }
   // den har gått över kartan
-  const delar = [t.doda && `dödade ${t.doda} ${t.doda === 1 ? 'människa' : 'människor'}`, t.forstort && `förstörde ${t.forstort} saker`, t.trad && `fällde ${t.trad} träd`, t.vagg && `rev ${t.vagg} ${t.vagg === 1 ? 'vägg' : 'väggar'}`, t.lyft && `spred ${t.lyft} saker${t.sonder ? ` (${t.sonder} gick sönder)` : ''}`].filter(Boolean);
+  // antalen i ord (textkollen: ingen siffra före ett ord), som i krönikan
+  const delar = [t.doda && `dödade ${antal(t.doda)} ${t.doda === 1 ? 'människa' : 'människor'}`, t.forstort && `förstörde ${antal(t.forstort)} ${t.forstort === 1 ? 'sak' : 'saker'}`, t.trad && `fällde ${antal(t.trad, true)} träd`, t.vagg && `rev ${antal(t.vagg)} ${t.vagg === 1 ? 'vägg' : 'väggar'}`, t.lyft && `spred ${antal(t.lyft)} ${t.lyft === 1 ? 'sak' : 'saker'}${t.sonder ? ` (${antal(t.sonder)} gick sönder)` : ''}`].filter(Boolean);
   log(s, delar.length ? `Tornadon ${delar.join(', ')}.` : 'Tornadon gick fram där inget fanns att ta.', 'world');
   for (const p of living(s)) tecken(s, p, 'tornado'); // tornadon som gick förbi (steg 8.5.18)
   delete s.tornado;

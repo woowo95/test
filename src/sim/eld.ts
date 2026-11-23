@@ -258,18 +258,20 @@ export function canLight(s: State, p?: Person, f = s.fire) {
 export function tandHamtas(s: State, p: Person, tk: Task) {
   const f = eldById(s, tk.ref);
   if (!f || f.lit) return undefined;
+  // det p kan få, som när hen frågar om elden kan tändas (canLight): inte kyrkans grenar, som ingen annan får ta
+  const has = (k: string) => getable(s, p, k);
   // bränslet är ved, och grenar för det som veden inte räcker till (takeFuel)
-  const k = ELD.hamtaForsok, ved = Math.min(ELD.tandBransle, Math.floor(amountOf(s, 'ved') + 1e-9)), av: Record<string, number> = {};
+  const k = ELD.hamtaForsok, ved = Math.min(ELD.tandBransle, Math.floor(has('ved') + 1e-9)), av: Record<string, number> = {};
   if (ved > 0) av.ved = ved;
   const brGrenar = Math.ceil((ELD.tandBransle - ved) / GREN - 1e-9);
   // med en brand (steg 10.6.12): grenen som tänds vid elden som brinner, bränslet och ringens stenar till den nya elden
   if (tk.brand) { if (tk.brand !== 'hamta') return undefined; av.grenar = 1 + brGrenar; if (!f.ring) av.sten = ELD.ring; return av; }
   const ig = igniterOf(s, p);
   if (!ig) return undefined;
-  if (amountOf(s, 'naver') >= 1) av.naver = k;
-  else if (amountOf(s, 'torrgras') >= ig.grass) av.torrgras = ig.grass * k;
+  if (has('naver') >= 1) av.naver = k;
+  else if (has('torrgras') >= ig.grass) av.torrgras = ig.grass * k;
   else if (kanTalja(s) && ved >= 1) av.ved = ved + 1;
-  if (amountOf(s, 'grenar') >= ig.sticks) av.grenar = ig.sticks * k + brGrenar; else { av.kol = k; if (brGrenar) av.grenar = brGrenar; }
+  if (has('grenar') >= ig.sticks) av.grenar = ig.sticks * k + brGrenar; else { av.kol = k; if (brGrenar) av.grenar = brGrenar; }
   if (!SAKER[ig.id]?.redskap) av[ig.id] = 1;
   if (ig.med) av[ig.med] = 1; // flintan som eldstålet slås mot (steg 12.2.12): utan den går det inte att tända framme vid elden
   if (!f.ring) av.sten = ELD.ring;

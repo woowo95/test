@@ -260,7 +260,7 @@ const villageAmount = (s: State, k: string) => Math.max(0, amountOf(s, k) - owne
 export const mayTake = (s: State, p: Person, k: string) => ownsAmount(s, p, k) + villageAmount(s, k);
 // det av slaget k som får tas: den personens (fran, stöld), annars p:s eget och byns, annars allt
 // det av slaget k som någon tro äger (steg 10.3.17)
-const kyrkornas = (s: State, k: string) => { const d = agOf(s, k); let n = 0; if (d) for (const o in d) if (+o < BYN) n += d[o]; return n; };
+export const kyrkornas = (s: State, k: string) => { const d = agOf(s, k); let n = 0; if (d) for (const o in d) if (+o < BYN) n += d[o]; return n; };
 export const takeLimit = (s: State, k: string, p?: Person, fran?: Person) => fran ? ownsAmount(s, fran, k) : p ? mayTake(s, p, k) : amountOf(s, k) - kyrkornas(s, k);
 // allt p äger i förrådet, per slag (i den ordning slagen först har ägare bland stackarna, som förut)
 // hela förrådet också när frågan ställs inom räckhåll (iRackhall): agOf räknar då bara stackarna där, och ett slag som
