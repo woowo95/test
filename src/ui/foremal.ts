@@ -396,12 +396,13 @@ const stationBild = (ikon: string, v: string, id = 0) => {
   const alla = [k, k + '_2', k + '_3'].filter(arStation);
   return alla[id % alla.length];
 };
-// vägens och bryggans bild: längs den längsta raden av samma material; en brygga med en granne åt sidan är en bro
+// vägens och bryggans bild: längs den längsta raden av samma material; en brygga med en granne åt sidan är en bro. Stockvägen över
+// myren ritas som bryggan (steg 13.7.9), så att den inte behöver en egen bild
 function vagBild(b: { x: number; y: number; m: string }) {
   const lika = (x: number, y: number) => bitAt(s, x, y)?.m === b.m;
   const langd = (dx: number, dy: number) => { let n = 0; for (let i = 1; i <= 3; i++) { if (lika(b.x + dx * i, b.y + dy * i)) n++; else break; } return n; };
   const ostVast = langd(1, 0) + langd(-1, 0), nordSyd = langd(0, 1) + langd(0, -1), lodrat = nordSyd > ostVast;
-  if (b.m === 'stockvag') return lodrat ? 'stockvag_v' : 'stockvag';
+  if (b.m === 'stockvag') return lodrat ? 'brygga_v' : 'brygga';
   const bro = Math.min(ostVast, nordSyd) > 0;
   return (bro ? 'bro' : 'brygga') + (lodrat ? '_v' : '');
 }
