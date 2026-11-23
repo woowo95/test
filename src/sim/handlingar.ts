@@ -330,7 +330,7 @@ const DEF = {
   blasa: { namn: 'Blåser järn', yrke: 'Smed', slag: 'hantverk', tungt: true, plats: 'station', verb: 'blåser' }, // vid blästerugnen (brann.ts, steg 12.2.3)
   jarnhjalm: { namn: 'Smider en järnhjälm', slag: 'hantverk', hantverk: true, verb: 'smider', plats: 'station' }, ringbrynja: { namn: 'Smider en ringbrynja', slag: 'hantverk', hantverk: true, verb: 'smider', plats: 'station' }, // i smedjan (steg 12.2.9)
   spanne: { namn: 'Smider ett spänne', slag: 'hantverk', hantverk: true, verb: 'smider', plats: 'station' }, // i smedjan (steg 12.2.10)
-  smida: { namn: 'Smider', yrke: 'Smed', slag: 'hantverk', hantverk: true, plats: 'station', verb: 'smider' }, // vid städet i smedjan (smedja.ts, steg 12.2.4)
+  smida: { namn: 'Smider', yrke: 'Smed', slag: 'hantverk', hantverk: true, plats: 'station', verb: 'smider' }, smida_pilar: { namn: 'Smider pilar', slag: 'hantverk', hantverk: true, plats: 'station', verb: 'smider' }, // steg 13.4.2 // vid städet i smedjan (smedja.ts, steg 12.2.4)
   passa: { namn: 'Ser till bränningen', yrke: 'Kolare', slag: 'hantverk', plats: 'station', verb: 'ser till' }, // tillsynen vid en bränning (brann.ts, steg 12.2.2)
   bryta: { namn: 'Bryter sten vid berget', slag: 'bygga', tungt: true, framme: true, redskap: { jarnhacka: { haller: 150, fart: 3 } }, slits: { enhet: 'stenar', per: 'gang' } }, // en byggsten, som blir liggande där (byggsten.ts, steg 10.10.5); järnhackan bryter tre gånger så fort (steg 12.5.4)
   stubbe: { namn: 'Gräver bort en stubbe', vidRutan: true, slag: 'odla', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'stubbar', per: 'gang' }, tungt: true, framme: true, framfor: true }, // där något ska byggas (skog.ts, steg 6.5.7)

@@ -71,6 +71,7 @@ export const STRID = balans('strid', {
   bjornBett: 3, // björnen biter med käftarna vart så här många slag som träffar, och river med ramarna annars (steg 9.5.13)
   smitta: 0.1, // så mycket de andras mod sjunker när någon ger upp (steg 8.8.8)
   pilSonder: 0.25, // så stor del av pilarna går sönder
+  jarnPil: 1.25, // järnpilen skadar så här många gånger mer än flintpilen (steg 13.4.2)
   ringad: 0.1, // så mycket lättare det är att träffa den som redan slåss med en annan, per extra motståndare (steg 8.7.7)
   bakomTrad: 0.5, // en pil mot någon bakom ett träd träffar trädet så här ofta
   skoldSlag: 0.3, skoldPil: 0.6, // skölden blockerar 3 av 10 slag och 6 av 10 pilar och kast (steg 8.7.3)
@@ -186,7 +187,8 @@ export const STRID = balans('strid', {
 // slag = vad det gör med kroppen (SLAGEN), ord = verbet i loggen, skarpa = hur lätt det hugger av en del (olyckshugget, steg 9.5.22). Ett vapen är en sak i saker.ts (samma id), utom
 // händerna och djurens bett. kast = vapnet kan kastas (steg 3.7.7): räckvidden, skadan, hur många kast man har (skott) och om
 // det fastnar i såret; ett vapen som bara kastas när man har ett reservvapen (spjutet) har reserv. Pilbågen kommer i 9.4.1
-interface KastDef { ammo?: string; pil?: true; rack: number; skada: number; skott: number; fastnar?: true; reserv?: true; slag?: Slag } // slag: vad kastet gör med kroppen, om det är ett annat än vapnets (pilen sticker, steg 12.1.58)
+interface KastDef { ammo?: string; // ammunitionen; för pilarna är slagen raderna i PILSLAG (steg 13.4.2)
+  pil?: true; rack: number; skada: number; skott: number; fastnar?: true; reserv?: true; slag?: Slag } // slag: vad kastet gör med kroppen, om det är ett annat än vapnets (pilen sticker, steg 12.1.58)
 interface VapenDef { skarpa: number; namn: string; skada: number; takt: number; rack: number; slag: Slag; ord: string; tecken: string; kast?: KastDef; liten?: true }
 export const VAPEN = {
   hand: { skarpa: 0, namn: 'Knytnävarna', skada: 0.14, takt: 0.9, rack: 0.9, slag: 'slag', ord: 'slår', tecken: '👊' },
@@ -310,6 +312,7 @@ export interface Kampe {
   jagar?: number; // hämnden riktar sig mot just den personen (steg 8.8.5)
   skold?: boolean; // håller en sköld (steg 8.7.3)
   skoldJarn?: true; // ... och den är av järn (steg 12.2.8)
+  pil?: string; // pilarna hen skjuter, de bästa byn har (PILSLAG, steg 13.4.2)
   kv?: Record<string, number>; // vapnens kvalitet som gånger skadan (STRID.kvSkada): en fin kniv skadar mycket mer än en usel (steg 12.2.6)
   id: number; namn: string; sida: 0 | 1; pid?: number; djur?: string; // pid = personen i byn, djur = sorten i KAMPAR (kampar.ts); utan den en människa
   st: KampeStats; vapen: Vapen; klader: string[]; fart: number; // fart = gånger STRID.fart
@@ -644,6 +647,7 @@ export const TRAFFDEL_PROV: { del?: Kroppsdel } = {};
 export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, kast?: true) {
   skada0 *= a.kv?.[a.vapen] ?? 1; // vapnets kvalitet (steg 12.2.6)
   const kastad = kast ? VAP[a.vapen].kast : undefined;
+  if (kastad?.pil && a.pil) skada0 *= PILSLAG[a.pil]?.() ?? 1; // järnpilen skadar mer (steg 13.4.2)
   let x = slump(st);
   let d: Kroppsdel = 'bal';
   for (const del of DELAR) { x -= TRAFFDEL[del]!; if (x <= 0) { d = del; break; } }
@@ -982,6 +986,9 @@ export function korManga(u: Uppstallning, fro: number, n: number, v?: StridVarld
 // Närstrid (steg 3.7.2) och siktet Träffsäkerhet (steg 3.7.7); smidigheten och blodtörsten (steg 3.7.6). Reservvapnet
 // (steg 3.7.7): ett litet vapen i bältet, om hen har ett bälte på sig och orkar bära det; den som en gång blev ifattsprungen
 // utan reserv tar alltid med en
+// pilarnas slag (steg 13.4.2) och hur mycket mer de skadar: skytten skjuter de bästa pilarna byn har
+export const PILSLAG: Record<string, () => number> = { pilar: () => 1, jarnpilar: () => STRID.jarnPil };
+const bastaAmmo = (s: State, am: string) => am === 'pilar' ? Object.keys(PILSLAG).filter(k => amountOf(s, k) >= 1).sort((a, b) => PILSLAG[b]() - PILSLAG[a]())[0] : amountOf(s, am) >= 1 ? am : undefined;
 const TVA_HAND = new Set<string>(['flintspjut', 'fiskespjut', 'bage', 'jarnspjut']); // med båda händerna: ingen sköld
 // kläderna skyddar bara den som har dem på sig, också rustningen och hjälmen (steg 8.7.8)
 export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: number, y: number): Uppstallning['kampar'][number] {
@@ -990,7 +997,7 @@ export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: num
   const egen = (t: { hos?: number; lass?: number; bar?: number }) => (t.hos === undefined || t.hos === p.id) && (t.lass === undefined || t.lass === p.id) && (t.bar === undefined || t.bar === p.id);
   const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p).filter(egen), ...allaTing(s).filter(t => t.hos === p.id)].map(t => t.k))]; // också det en gäst bär (steg 10.1.8)
   const val = (v: Vapen) => VAP[v].skada * (1 + STRID.tyckeVal * smakAv(p, 'v:' + v)); // tycket drar i valet (steg 3.7.10)
-  const ammoOk = (v: Vapen) => { const am = VAP[v].kast?.ammo; return !am || !!p.gast || amountOf(s, am) >= 1; }; // en gäst har sina egna pilar // bågen utan pilar och slungan utan stenar tas inte (steg 8.7.6)
+  const ammoOk = (v: Vapen) => { const am = VAP[v].kast?.ammo; return !am || !!p.gast || !!bastaAmmo(s, am); }; // en gäst har sina egna pilar // bågen utan pilar och slungan utan stenar tas inte (steg 8.7.6)
   const vapen = MANNISKOVAPEN.filter(v => bar.includes(v) && ammoOk(v)).sort((a, b) => val(b) - val(a))[0] ?? 'hand';
   const res = (MANNISKOVAPEN.filter(v => v !== vapen && VAP[v].liten && bar.includes(v)) as Vapen[]).sort((a, b) => VAP[a].takt - VAP[b].takt)[0]; // den snabbaste (kniven)
   const reserv = res && (p.reservAlltid || (harBalte(s, p) && paSigVikt(s, p) + viktOf(res) <= capacity(s, p) * UTRUSTNING.kropp)) ? res : undefined;
@@ -999,7 +1006,7 @@ export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: num
   for (const t of [...ownedBy(s, p).filter(egen), ...allaTing(s).filter(t => t.hos === p.id)]) if (t.k === vapen || t.k === reserv) kv[t.k] = Math.max(kv[t.k] ?? 0, STRID.kvSkada[kvOf(t)]);
   for (const k in kv) if (kv[k] === 1) delete kv[k];
   return {
-    emp: stat(p, 'empati', s.now), id, namn: p.name, sida, pid: p.id, blod0: p.blod, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined /* rövarna har ingen ledare (steg 10.2.25) */, gast: p.gast ? 1 : undefined, kv: Object.keys(kv).length ? kv : undefined, skoldJarn: bar.includes('jarnskold') && !TVA_HAND.has(vapen) ? true : undefined, skold: (bar.includes('skold') || bar.includes('jarnskold')) && !TVA_HAND.has(vapen) ? true : undefined, klader: [...new Set(paSig(s, p).map(q => q.k))].filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / UTRUSTNING.kropp / Math.max(1, capacity(s, p)), 0, 1),
+    emp: stat(p, 'empati', s.now), id, namn: p.name, sida, pid: p.id, blod0: p.blod, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined /* rövarna har ingen ledare (steg 10.2.25) */, gast: p.gast ? 1 : undefined, kv: Object.keys(kv).length ? kv : undefined, pil: !p.gast && VAP[vapen].kast?.pil ? bastaAmmo(s, 'pilar') : undefined, skoldJarn: bar.includes('jarnskold') && !TVA_HAND.has(vapen) ? true : undefined, skold: (bar.includes('skold') || bar.includes('jarnskold')) && !TVA_HAND.has(vapen) ? true : undefined, klader: [...new Set(paSig(s, p).map(q => q.k))].filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / UTRUSTNING.kropp / Math.max(1, capacity(s, p)), 0, 1),
     st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now) - paSig(s, p).reduce((a, q) => a + (PLAGG[kladAv(q.k)?.plagg as keyof typeof PLAGG]?.smid ?? 0), 0) - rusSmid(p), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2 + STRID.tyckeSkick * smakAv(p, 'v:' + vapen) - rusTraff(p), sikte: (5 + (p.skill.traff ?? 0) / 2) * syn(p) * blodFaktor(p) - rusTraff(p), /* ruset (steg 9.6.14) */ torst: blodtorst(s, p) },
   };
 }
@@ -1058,7 +1065,7 @@ export function slitKastat(s: State, p: Person, st: Strid, k: Kampe) {
   let skott = 0;
   for (const r of st.logg) if (r.a === k.id && r.v && r.kast) { const am = VAP[r.v].kast!.ammo; if (am) { if (VAP[r.v].kast!.pil) skott++; continue; } kastat(s, p, r.v, VAP[r.v].kast!.rack / 2, p.x, p.y, () => rnd(s, 'strid')); }
   // en pil går sönder en gång av fyra, de andra plockas upp efteråt (steg 8.7.4)
-  const trasiga = Math.floor(skott * STRID.pilSonder); if (trasiga && amountOf(s, 'pilar') >= trasiga) use(s, p, 'pilar', trasiga);
+  const pil = k.pil ?? 'pilar', trasiga = Math.floor(skott * STRID.pilSonder); if (trasiga && amountOf(s, pil) >= trasiga) use(s, p, pil, trasiga); // av de pilar hen sköt (steg 13.4.2)
 }
 
 // ---------- striden i byn (steg 3.7.2) ----------

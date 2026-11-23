@@ -678,3 +678,31 @@ SCENARIER.djurhorn = {
     ];
   },
 };
+
+// järnpilen och fjädrarna (steg 13.4.2): varje sats om 4 pilar tar 1 fjäder, och järnpilarna smids vid smedjan och skadar mer
+SCENARIER.jarnpil = {
+  text: 'Varje sats om 4 pilar tar 1 fjäder; järnpilarna smids vid smedjan av ved, järn och en fjäder, skadar 1,25 gånger så mycket, och skytten skjuter dem före flintpilarna (steg 13.4.2)',
+  kor: () => {
+    const R = SIM.RECEPT, T = SIM.TILLVERKA, smedja = (SIM.STATIONER as Record<string, SIM.StationDef>).smedja;
+    const recept = R.pilar.av.fjadrar === 1 && R.pilar.av.flinta === 1 && T.gor_pilar.av.fjadrar === 1 && T.gor_pilar.n === 4
+      && R.jarnpilar.av.ved === 1 && R.jarnpilar.av.jarn === 1 && R.jarnpilar.av.fjadrar === 1 && T.smida_pilar.n === 4 && T.smida_pilar.min === 3 && T.smida_pilar.tek === 'bage';
+    const vidSmedjan = smedja.gor.includes('smida_pilar' as SIM.Act) && !!smedja.bara?.includes('smida_pilar' as SIM.Act);
+    const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    const utanSmedja = !SIM.kanGoras(s, 'smida_pilar' as SIM.Act);
+    s.ting = SIM.tingOf(s).filter(t => !SIM.MANNISKOVAPEN.includes(t.k as never)); SIM.addTool(s, 'bage', p);
+    SIM.gain(s, p, 'pilar', 8);
+    const flint = SIM.personKampe(s, p, 1, 0, 0, 0);
+    SIM.gain(s, p, 'jarnpilar', 8);
+    const jarn = SIM.personKampe(s, p, 1, 0, 0, 0);
+    const st = { logg: [1, 2, 3, 4].map(t => ({ t, h: 'traff', a: jarn.id, b: 2, v: 'bage', kast: 1 })) } as unknown as SIM.Strid;
+    SIM.slitKastat(s, p, st, jarn as unknown as SIM.Kampe);
+    const kvarJarn = SIM.amountOf(s, 'jarnpilar'), kvarFlint = SIM.amountOf(s, 'pilar');
+    return [
+      ['pilarna tar 1 fjäder per sats om 4, och järnpilarna 1 ved, 1 järn och 1 fjäder, 4 på 3 minuter med Pilbåge', recept],
+      ['järnpilarna smids vid smedjan och bara där', vidSmedjan && utanSmedja],
+      [`järnpilen skadar ${SIM.PILSLAG.jarnpilar()} gånger så mycket som flintpilen`, SIM.PILSLAG.jarnpilar() === 1.25 && SIM.PILSLAG.pilar() === 1],
+      [`skytten tar flintpilarna när det bara finns sådana (${flint.vapen}, ${flint.pil}) och järnpilarna före dem (${jarn.pil})`, flint.vapen === 'bage' && flint.pil === 'pilar' && jarn.pil === 'jarnpilar'],
+      [`de trasiga pilarna är av det slag som sköts (järnpilar ${kvarJarn}, flintpilar ${kvarFlint})`, kvarJarn === 7 && kvarFlint === 8],
+    ];
+  },
+};

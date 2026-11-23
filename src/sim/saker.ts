@@ -355,6 +355,7 @@ const DEF = {
   // dryckeshornet (steg 13.4.1, rus.ts): den som dricker öl, mjöd eller vin dricker ur sitt eget horn eller byns, och hornet slits för varje dryck
   dryckeshorn: { namn: 'Dryckeshorn', skaffa: RECEPT.dryckeshorn, vikt: 0.3, stack: 1, mapp: 'Redskap', redskap: true, trasig: { stat: 'dryckeshornTrasiga', text: '{namn}s dryckeshorn sprack.' },
     gors: { text: 'Skrapar ur ett djurhorn till ett dryckeshorn.', stat: 'dryckeshornGjorda', forsta: '{namn} gjorde byns första dryckeshorn av ett djurhorn.' } },
+  jarnpilar: { namn: 'Järnpilar', skaffa: RECEPT.jarnpilar, vikt: 0.1, stack: 20, mapp: 'Redskap' }, // steg 13.4.2: skadar mer än flintpilen, och skytten tar dem först (strid.ts)
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

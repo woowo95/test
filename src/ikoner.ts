@@ -3886,6 +3886,7 @@ PAL.hus = { a: '#24201d', b: '#7d5b40', c: '#987e62', d: '#5e3c24', e: '#2f261d'
 PIX.rustning = PIX.ledarskap; PAL.rustning = PAL.ledarskap; PIX.lag = PIX.ledarskap; PAL.lag = PAL.ledarskap; PIX.i_arrig = PIX.i_stark; PAL.i_arrig = PAL.i_stark; // platshållare
 PIX.lon = PIX.silver; PAL.lon = PAL.silver; PIX.i_tigger = PIX.i_fattig; PAL.i_tigger = PAL.i_fattig; // platshållare (steg 10.5.9 och 10.5.11): lönen som silvret, tiggaren som den fattige
 for (const k of ['slunga', 'horn', 'dryckeshorn']) { PIX[k] = PIX.benspade; PAL[k] = PAL.benspade; } // platshållare (system 8.7)
+PIX.jarnpilar = PIX.pilar; PAL.jarnpilar = PAL.pilar; // platshållare (steg 13.4.2)
 for (const pl of ['rustning', 'hjalm', 'prastdrakt', 'tecken', 'mask', 'mantel', 'byxor', 'mossa', 'snoskor', 'tunika', 'skjorta', 'kappa', 'sjal', 'halsband']) for (const m of ['kaninskinn', 'vargskinn', 'bjornskinn', 'farskinn', 'getskinn', 'radjursskinn', 'kohud', 'svinskinn', 'lader', 'lintyg', 'ylle', 'benband', 'tandband', 'fjaderband']) if (!KARTBILDER[`${pl}_${m}`]) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
 for (const pl of ['prastdrakt', 'mask', 'mantel', 'byxor', 'mossa', 'snoskor']) { PIX[`${pl}_vitskinn`] = PIX.rock_vitskinn; PAL[`${pl}_vitskinn`] = PAL.rock_vitskinn; } // de andra skinnplaggen av vitt harskinn i vitt (steg 10.7.22), platshållare
 for (const m of ['lader', 'lintyg', 'ylle']) for (const pl of ['rock', 'skor']) if (!PIX[`${pl}_${m}`]) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
