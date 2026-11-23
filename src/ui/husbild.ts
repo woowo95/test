@@ -4,6 +4,7 @@ import { smutsGrad, smutsigFarg } from './slitbild';
 import { KARTBILDER } from '../kartbilder';
 import { TS, husLayer } from './scen';
 import { takYtor, vaggSkuggor } from './skugga';
+import { ruinPunkter, vagg } from './timmerbild';
 
 // ---------- husets utseende: timmerväggen och golven som pixelbilder (steg 2.2.13, 16 punkter per ruta i steg 5.1.2.4) ----------
 // Varje ruta är 16 × 16 punkter (en världspixel per punkt). Bilderna är bildstilens godkända (5.2.4.4, kartbilder.ts): timmerväggen
@@ -13,7 +14,6 @@ import { takYtor, vaggSkuggor } from './skugga';
 // golvet går ut i dörröppningen. Bilden för en ruta beror på grannarna och görs en gång (en cache); risväggarna och det som inte
 // är påbörjat ritas som förut (foremal.ts).
 
-const VAGG = KARTBILDER.timmervagg!;
 const GOLV: Record<string, string> = { tra: 'golv_tra', ho: 'golv_jord', lera: 'golv_lera' }; // jordgolvet är en stig inne (steg 7.3.2): marken syns, inget golv ritas
 const mod = (a: number, n: number) => ((a % n) + n) % n;
 const golvPx = (m: string | undefined, gx: number, gy: number) => {
@@ -21,7 +21,6 @@ const golvPx = (m: string | undefined, gx: number, gy: number) => {
   const b = KARTBILDER[GOLV[m] ?? 'golv_jord']!;
   return b.pal[b.rader[mod(gy, b.h)]![mod(gx, b.w)]!] ?? '';
 };
-const mallPx = (x: number, y: number) => VAGG.pal[VAGG.rader[y]![x]!] ?? '';
 // vad som står på rutan, som en bokstav: W = vägg, G = golv, O = öppning, P = öppning med golv (golvet ligger bredvid), . = inget
 const N4 = [[-1, 0], [1, 0], [0, -1], [0, 1]];
 const N8 = [...N4, [-1, -1], [1, -1], [-1, 1], [1, 1]];
@@ -35,30 +34,6 @@ function golvM(s: State, q?: Bit): string | undefined {
   return m;
 }
 const slag = (s: State, b?: Bit) => !b ? '.' : b.k === 'vagg' ? 'W' : b.k === 'oppning' ? (golvM(s, b) ? 'P' : 'O') : 'G';
-// väggpunkten (lx, ly) på rutan gx0, gy0 ur mallen: n = grannarnas slag i ordningen vänster, höger, upp, ner. Tomt = ingen stock
-function vagg(n: string, lx: number, ly: number, gx: number, gy: number) {
-  const [l, r, u, d] = [...n].map(c => c === 'W'), o = [...n].map(c => c === 'O' || c === 'P');
-  let h = l || r, v = u || d;
-  if (!h && !v) h = o[0] || o[1] || !(o[2] || o[3]); // ensam vägg: stocken ligger längs öppningen
-  const inne = (a: number) => a >= 2 && a <= 13;
-  // hörnet: stockändarna (mallens hörn uppe till vänster) när väggen går åt två håll, också när en dörröppning ligger på ena
-  // sidan om hörnet (steg 3.6.7)
-  const horn = (h || o[0] || o[1]) && (v || o[2] || o[3]) && (h || v);
-  if (horn && inne(lx) && inne(ly)) return mallPx(lx, ly);
-  // mot en öppning slutar stocken rakt avsågad (Björn valde version 1 efter v245, steg 4.5.2): en mörk såglinje och den ljusa
-  // ändytan mot öppningen, som i mallens nedre vägg. Inte i ett hörn. Räknat som om öppningen ligger till höger: uu = längs
-  // väggen mot öppningen, vv = tvärs över väggen
-  const uv = horn ? null : o[1] ? [lx, ly] : o[0] ? [15 - lx, ly] : o[3] ? [ly, lx] : o[2] ? [15 - ly, lx] : null;
-  if (uv && inne(uv[1]!)) {
-    const [uu, vv] = uv as [number, number];
-    if (uu >= 14) return vv >= 3 && vv <= 12 ? mallPx(32, 51) : '';
-    if (uu === 13) return mallPx(34, 50);
-  }
-  // stocken: mallens övre vägg (vågrät) och vänstra vägg (lodrät), två rutor långa så att mönstret inte upprepas på varje ruta
-  if (h && inne(ly) && lx >= (l ? 0 : 2) && lx <= (r ? 15 : 13)) return mallPx(16 + mod(gx, 32), ly);
-  if (v && inne(lx) && ly >= (u ? 0 : 2) && ly <= (d ? 15 : 13)) return mallPx(lx, 16 + mod(gy, 32));
-  return '';
-}
 const cache = new Map<string, HTMLCanvasElement>(), formCache = new Map<string, HTMLCanvasElement | null>();
 const tex = new Map<string, PIXI.Texture>(), formTex = new Map<string, PIXI.Texture>();
 // bilden för rutan b: n8 = grannarnas slag runt om (vänster, höger, upp, ner, och hörnen uppe till vänster, uppe till höger,
@@ -111,6 +86,21 @@ function bildNu(s: State, b: Bit) {
   const r = bild(s, b); bitMinne.r.set(b.id, r);
   return r;
 }
+
+// den rasade muren på en liten karta (steg 13.1.2): punkterna räknas i timmerbild.ts
+const ruinCache = new Map<string, PIXI.Texture>();
+function ruinTextur(murar: Set<string>, x: number, y: number) {
+  const { key, px } = ruinPunkter(murar, x, y);
+  let t = ruinCache.get(key);
+  if (t) return t;
+  const c = document.createElement('canvas'); c.width = 16; c.height = 16;
+  const g = c.getContext('2d')!;
+  px.forEach((col, i) => { if (col) { g.fillStyle = col; g.fillRect(i % 16, i >> 4, 1, 1); } });
+  t = PIXI.Texture.from(c, { scaleMode: PIXI.SCALE_MODES.NEAREST });
+  if (ruinCache.size > 2000) { for (const v of ruinCache.values()) v.destroy(true); ruinCache.clear(); }
+  ruinCache.set(key, t);
+  return t;
+}
 // genomskinligheten: det som byggs syns svagt, och en sliten vägg bleknar (som förut)
 // ritar det som har en pixelbild och säger vilka rutor det var, så att foremal.ts hoppar över dem
 export function ritaHus(s: State, bits: Bit[]) {
@@ -132,6 +122,12 @@ export function ritaHus(s: State, bits: Bit[]) {
       former.push({ x: b.x * TS, y: b.y * TS, t: f });
       tak.push({ x: b.x * TS, y: b.y * TS, t, form: f }); // golvet bredvid stocken ligger under taket
     } else if (b.k !== 'vagg' && (b.k !== 'golv' || b.b >= 1)) tak.push({ x: b.x * TS, y: b.y * TS, t }); // golvet och dörröppningen
+  }
+  const murar = (s.rester ?? []).filter(q => q.k === 'mur'), murSet = new Set(murar.map(q => `${q.x},${q.y}`));
+  for (const q of murar) { // ruinens murar (steg 13.1.2) kastar skugga som väggarna
+    let sp = husLayer.children[n++] as PIXI.Sprite | undefined;
+    if (!sp) { sp = new PIXI.Sprite(); husLayer.addChild(sp); }
+    sp.texture = ruinTextur(murSet, q.x, q.y); sp.position.set(q.x * TS, q.y * TS); sp.scale.set(TS / 16); sp.alpha = 1; sp.visible = true;
   }
   for (let i = n; i < husLayer.children.length; i++) husLayer.children[i].visible = false;
   vaggSkuggor(former); takYtor(tak);

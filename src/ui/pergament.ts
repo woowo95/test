@@ -4,13 +4,14 @@
 // granar tätt i den täta skogen, tuvor och vattenstreck på myren och berg med skuggsida. Kusten ritas rund genom att landet
 // räknas ut punkt för punkt mellan rutornas mitt, med lite brus, så att rutorna inte syns. Allt tar sina färger ur paletten.
 // Hur varje marksort ritas är en rad i registret PERGAMENT. Platserna, lederna, lagren och huvudbyns ram ritas som på den
-// vanliga kartan (varldbild.ts) tills tecknen och utsmyckningen är valda i bildstilen (11.9.3 och 11.9.4).
+// vanliga kartan (varldbild.ts); platsernas bläcktecken och kartans utsmyckning står i pergamentpryd.ts (steg 13.1.2).
 import { BynsKarta, MARK_IDS, MarkId, O_KANT, VARLDMARK, Varlden, VarldMark, FLOD_NEDRE, LANDMARKEN, syns } from '../sim';
 import { hash3 } from '../sim/slump';
 import { farg } from '../palett';
 import { VK, VarldBild, ritaTecken, lager, huvudbynsPlats, RYKTFARG, BLEKFARG, RAMFARG, LEDFARG } from './varldbild';
 import { ledKlass } from '../sim';
 import { rgb255 } from './pixel';
+import { prydOver, prydUnder, ritaPlatstecken } from './pergamentpryd';
 
 // ett tecken: rader där o = bläck, a = fyllning, b = ljus sida, c = skuggsida (punkt = inget)
 type Glyf = string[];
@@ -143,7 +144,8 @@ export function ritaPergament(vl: Varlden, v: VarldMark, kn?: BynsKarta, marken?
     if (p.streck) for (let k = -3; k <= 3; k++) if (arLand[(cy + 2) * W + cx + k]) satt(cx + k + 2, cy + 2, C.ve); // myrens vattenstreck under tuvan
     gl.forEach((r, dy) => [...r].forEach((ch, dx) => { const f = p.farg![ch]; if (f) satt(x0 + dx, y0 + dy, rgb(farg(...f))); }));
   }
-  // lederna som streckade bläcklinjer, platserna, lagren och huvudbyns ram som på den vanliga kartan
+  prydUnder(v, satt); // det runda gradnätet, havsormen och skeppet (steg 13.1.2)
+  // lederna som streckade bläcklinjer, platserna med sina bläcktecken (steg 13.1.2), lagren och huvudbyns ram som på den vanliga kartan
   if (vl.leder) for (const k of Object.keys(vl.leder)) {
     const i = +k, ki = ledKlass(vl, i); if (ki === 'obanad') continue;
     const x = i % v.w, y = Math.floor(i / v.w);
@@ -153,7 +155,7 @@ export function ritaPergament(vl: Varlden, v: VarldMark, kn?: BynsKarta, marken?
       for (let t = 0; t <= n; t++) if (t % 4 < 2) satt(Math.round(ax + (bx - ax) * t / n), Math.round(ay + (by - ay) * t / n), rgb(LEDFARG.led));
     }
   }
-  for (const p of vl.platser ?? []) if (syns(kn, p)) ritaTecken(b, LANDMARKEN[p.k].tecken, p.x, p.y);
+  for (const p of vl.platser ?? []) if (syns(kn, p) && !ritaPlatstecken(satt, p.k, p.x, p.y)) ritaTecken(b, LANDMARKEN[p.k].tecken, p.x, p.y);
   if (kn) {
     const kand = new Set((vl.platser ?? []).filter(p => (kn.niva(p.nr) ?? -1) >= O_KANT).map(p => p.y * v.w + p.x)), rc = rgb(RYKTFARG), bc = rgb(BLEKFARG);
     for (let ry = 0; ry < v.h; ry++) for (let rx = 0; rx < v.w; rx++) {
@@ -165,5 +167,6 @@ export function ritaPergament(vl: Varlden, v: VarldMark, kn?: BynsKarta, marken?
   for (const nr of marken ?? []) { const p = vl.platser?.find(q => q.nr === nr); if (p) ritaTecken(b, 'uppdrag', p.x, p.y); }
   const hb = huvudbynsPlats(vl);
   if (hb) { const rc = rgb(RAMFARG); for (let i = 0; i < VK; i++) for (const [x, y] of [[i, 0], [i, VK - 1], [0, i], [VK - 1, i]]) satt(hb.x * VK + x, hb.y * VK + y, rc); }
+  prydOver(v, satt); // kompassrosen, stämpeln och runbandet runt kanten (steg 13.1.2)
   return b;
 }

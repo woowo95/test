@@ -459,24 +459,16 @@ function runstenBild(x: number, y: number, bild = false) {
   }
   gr.lineStyle(u, 0xa14808).moveTo(X + 6 * u, Y + TS - 3 * u).lineTo(X + 6 * u, Y + 4 * u).quadraticCurveTo(X + 8 * u, Y + 2.5 * u, X + 10 * u, Y + 4 * u).lineTo(X + 10 * u, Y + TS - 3 * u).lineStyle(0);
 }
-// resterna på den lilla kartan (steg 11.13.26): en platshållare i paletten, 16 punkter per ruta. Muren är tre rader huggna
-// stenar med en skugga under, lägre där den rasat; vagnen ligger på sidan med brädorna isär och ett hjul
+// resterna på den lilla kartan (steg 11.13.26): en platshållare i paletten, 16 punkter per ruta. Muren ritas i husbild.ts;
+// vagnen ligger på sidan med brädorna isär och ett hjul
 function restBild(q: { x: number; y: number; k: string }) {
+  if (q.k === 'mur') return; // muren ritas som spelets timmervägg med mossa (husbild.ts, steg 13.1.2)
   const X = q.x * TS, Y = q.y * TS, gr = structG, u = TS / 16;
   gr.beginFill(0x24201d, 0.3).drawRect(X, Y + 13 * u, TS, 2 * u).endFill();
   if (q.k === 'hog') { // en ruta av gravhögen: torv i en kupol, högst i mitten (steg 11.13.28, platshållare)
     const mitt = (q as { m?: number }).m ?? 0;
     gr.beginFill(0x4f6b3a).drawEllipse(X + TS / 2, Y + 11 * u, 8 * u, (mitt ? 7 : 4) * u).endFill();
     gr.beginFill(0x6b8a4a).drawEllipse(X + TS / 2, Y + 9 * u, 6 * u, (mitt ? 5 : 2.5) * u).endFill();
-    return;
-  }
-  if (q.k === 'mur') {
-    const lag = 1 + ((q.x * 7 + q.y * 3) % 3); // så många rader står kvar
-    for (let r = 0; r < lag; r++) for (let c = 0; c < 3; c++) {
-      const x = X + c * 5 * u + (r % 2 ? 2 * u : 0), y = Y + (12 - (r + 1) * 3.5) * u;
-      gr.beginFill(0x8a9c9e).drawRect(x, y, 4.5 * u, 3 * u).endFill();
-      gr.beginFill(0x61767a).drawRect(x, y + 2.2 * u, 4.5 * u, 0.8 * u).endFill();
-    }
     return;
   }
   gr.beginFill(0x3f2415).drawRect(X + 1 * u, Y + 8 * u, 9 * u, 2 * u).drawRect(X + 3 * u, Y + 5 * u, 8 * u, 1.5 * u).drawRect(X + 11 * u, Y + 9 * u, 4 * u, 1.5 * u).endFill();
