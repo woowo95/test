@@ -1,6 +1,6 @@
 // Scenarier för fas 13.
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, kor, medBank, medHus, nyInvanare, setMat, tandEld, testBy, utanWebblasare } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, medHus, medVatska, nyInvanare, setMat, tandEld, testBy, utanWebblasare } from './hjalp';
 import { GRAFER, grafHtml } from '../../ui/graf';
 import { setByn } from '../../ui/lage';
 import { BEAT, START } from '../kor';
@@ -640,6 +640,41 @@ SCENARIER.fargsmak = {
       [`den som rånas av någon i rött får avsmak för rött (${offerRott.toFixed(2)})`, offerRott < 0],
       [`när blått växer sjunker de andra lika mycket tillsammans (gult och svart ${sum.toFixed(2)}, var 0,80)`, Math.abs(sum - 0.4) < 1e-6],
       [`smaken bleknar inte av sig själv (${gult0.toFixed(3)} och ${gult1.toFixed(3)})`, Math.abs(gult0 - gult1) < 1e-9],
+    ];
+  },
+};
+
+// dryckeshornet (steg 13.4.1): signalhornet och dryckeshornet görs av ett djurhorn, och den som dricker tar sitt eget horn, sedan byns
+SCENARIER.djurhorn = {
+  text: 'Signalhornet och dryckeshornet görs av 1 djurhorn, dryckeshornet fortare och bättre vid slöjdbänken; den som dricker vin tar sitt eget horn före byns och får en liten glad tanke, större på festdagen, och hornet slits för varje dryck (steg 13.4.1)',
+  kor: () => {
+    const S = SIM.SAKER as Record<string, SIM.SakDef>, slojd = (SIM.STATIONER as Record<string, SIM.StationDef>).flatarbank;
+    const recept = S.horn.skaffa!.av?.djurhorn === 1 && !S.horn.skaffa!.av?.ben && S.dryckeshorn.skaffa!.av?.djurhorn === 1 && S.dryckeshorn.skaffa!.min === 3;
+    const bank = slojd.gor.includes('dryckeshorn' as SIM.Act) && !slojd.bara?.includes('dryckeshorn' as SIM.Act) && (slojd.fart?.['dryckeshorn' as SIM.Act] ?? 1) > 1;
+    const s = SIM.createState(1, START), vuxna = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen), p = vuxna[0]!;
+    medVatska(s, p, 'lerkruka_stor', 'vin', 200);
+    const glad = () => p.thoughts.filter(t => t.k === 'egetHorn').reduce((a, t) => a + t.v, 0);
+    const drick = () => { p.thoughts = []; p.rus = 0; SIM.drickAlkohol(s, p, 'vin'); return glad(); };
+    const utan = drick(); // inget horn: vinet dricks ändå, utan tanken
+    const byns = SIM.addTool(s, 'dryckeshorn', p); byns.agare = SIM.BYN; byns.hos = undefined;
+    const medByns = drick(), bynsSlits = byns.c < 1;
+    const eget = SIM.addTool(s, 'dryckeshorn', p); eget.hos = undefined;
+    const cByns = byns.c, medEget = drick(), egetForst = eget.c < 1 && byns.c === cByns;
+    s.fest = { tro: 1, namn: 'Festen', dag: Math.floor(s.now / SIM.DAY), x: p.x, y: p.y, at: 0, fram: [], vann: {} } as unknown as typeof s.fest;
+    const paFest = drick(); s.fest = undefined;
+    let n = 1; while (SIM.tingOf(s).includes(eget) && n < 1000) { if (SIM.amountOf(s, 'vin') < 2) medVatska(s, p, 'lerkruka_stor', 'vin', 200); drick(); n++; }
+    const haller = Math.round(1 / SIM.RUS.hornSlits);
+    for (const q of vuxna) q.supit = 1;
+    const vill = SIM.villAv(s, 'dryckeshorn'), villTal = Math.ceil(vuxna.length / SIM.VILLTAL.hornPerDrickare);
+    return [
+      ['signalhornet och dryckeshornet görs av 1 djurhorn (dryckeshornet på 3 minuter)', recept],
+      ['dryckeshornet går för hand men fortare och bättre vid slöjdbänken', bank],
+      [`utan horn dricks vinet utan tanken (${utan})`, utan === 0 && SIM.amountOf(s, 'vin') >= 0],
+      [`ur byns horn ingen glad tanke, men hornet slits (${medByns}, ${bynsSlits})`, medByns === 0 && bynsSlits],
+      [`det egna hornet tas före byns och ger en glad tanke (${medEget.toFixed(3)})`, egetForst && Math.abs(medEget - SIM.RUS.hornGlad) < 1e-9],
+      [`på festdagen är tanken större (${paFest.toFixed(3)})`, paFest > medEget * 2],
+      [`hornet går sönder efter ungefär ${haller} drycker (${n})`, !SIM.tingOf(s).includes(eget) && Math.abs(n - haller) <= haller * 0.25],
+      [`byn vill ha ett horn per ${SIM.VILLTAL.hornPerDrickare} som dricker (${vill} för ${vuxna.length})`, vill >= villTal && villTal > 0],
     ];
   },
 };

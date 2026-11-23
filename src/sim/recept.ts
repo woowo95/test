@@ -94,7 +94,7 @@ const DEF = {
   prastdrakt: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 }, tecken: { var: 'plagg', mangd: 1, av: { rep: 1 }, min: 3 }, mask: { var: 'plagg', mangd: 2, av: {}, min: 5 }, // system 8.5
   rokelse: { var: 'sak', av: { talg: 1 }, min: 5, slag: 'stor', tek: 'ortkok' }, brannolja: { var: 'sak', av: { talg: 1 }, min: 5, slag: 'stor', tek: 'ortkok' }, // steg 8.5.16
   rustning: { var: 'plagg', mangd: 4, av: { rep: 2 }, min: 5 }, hjalm: { var: 'plagg', mangd: 2, av: { rep: 1 }, min: 5 }, // steg 8.7.1–8.7.2
-  skold: { var: 'sak', av: { ved: 3, rep: 1 }, min: 3, slag: 'liten', tek: 'skold', bank: 'snickarbank', bara: true }, bage: { var: 'sak', av: { virke: 2, rep: 1 }, min: 3, slag: 'liten', tek: 'bage', bank: 'snickarbank', bara: true, kniv: true }, pilar: { var: 'sak', av: { ved: 1, flinta: 1 }, min: 3, slag: 'liten', tek: 'bage', bank: 'snickarbank' }, slunga: { var: 'sak', av: { lader: 1, rep: 1 }, min: 3, slag: 'liten', tek: 'slunga' }, horn: { var: 'sak', av: { ben: 2 }, min: 3, slag: 'liten', tek: 'horn' }, // steg 8.7.3, 8.7.6, 8.7.11
+  skold: { var: 'sak', av: { ved: 3, rep: 1 }, min: 3, slag: 'liten', tek: 'skold', bank: 'snickarbank', bara: true }, bage: { var: 'sak', av: { virke: 2, rep: 1 }, min: 3, slag: 'liten', tek: 'bage', bank: 'snickarbank', bara: true, kniv: true }, pilar: { var: 'sak', av: { ved: 1, flinta: 1 }, min: 3, slag: 'liten', tek: 'bage', bank: 'snickarbank' }, slunga: { var: 'sak', av: { lader: 1, rep: 1 }, min: 3, slag: 'liten', tek: 'slunga' }, horn: { var: 'sak', av: { djurhorn: 1 }, min: 3, slag: 'liten', tek: 'horn' }, // steg 8.7.3, 8.7.6, 8.7.11
   mantel: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 }, // steg 8.3.14
   halsband: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
   tunika: { var: 'plagg', mangd: 3, av: {}, min: 5 },
@@ -163,6 +163,7 @@ const DEF = {
   drejskiva: { var: 'station', av: { virke: 2, huggen_sten: 1 }, min: 15, slag: 'stor', tek: 'drejskiva' }, // drejskivan (steg 12.4.1): en skiva av trä på en axel, med en sten som svänghjul
   sang: { var: 'station', av: { plankor: 3, ull: 2 }, min: 18 }, // sängen (steg 12.4.3): en ram av plankor med ett bolster av ull
   pall: { var: 'sak', av: { plankor: 1 }, min: 5, slag: 'stor', tek: 'snickarbank', bank: 'snickarbank', bara: true }, // pallen (steg 12.4.4): en sittplats vid bordet, bättre än stubben
+  dryckeshorn: { var: 'sak', av: { djurhorn: 1 }, min: 3, slag: 'liten', tek: 'horn' }, // steg 13.4.1: fortare och bättre vid slöjdbänken (FORT_VID_SLOJD)
   stol: { var: 'sak', av: { plankor: 2, skinn: 1, ull: 1 }, min: 12, slag: 'station', tek: 'stol', bank: 'snickarbank', bara: true }, // stolen: en pall med ryggstöd och dyna av skinn och ull
   vagga: { var: 'station', av: { plankor: 2, ull: 1 }, min: 10 }, // vaggan (steg 12.4.5): en låg låda av plankor på medar, med en bädd av ull
   tunna: { var: 'sak', av: { plankor: 3, rep: 1 }, min: 5, slag: 'stor', tek: 'laggkar', bank: 'snickarbank', bara: true }, // tunnan (steg 12.4.6, tunna.ts): laggad av plankor och bunden med rep

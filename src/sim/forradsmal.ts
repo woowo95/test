@@ -82,6 +82,7 @@ export const VILLTAL = balans('vill', {
   spjutPerVuxna: 3, // byn vill ha ett spjut (och ett metspö) per så här många vuxna, minst ett; och dessutom de som slits ut (steg 10.11.9)
   snoskorPer: 4, halsbandPer: 3,
   korgPerVuxna: 3, // ... en korg
+  hornPerDrickare: 3, // ett dryckeshorn per så många som druckit på sistone (p.supit, steg 13.4.1)
   yxaPerVuxna: 4, yxaFran: 16, yxaBygge: 1, // ... en yxa, räknat på dem som är över Fran år, och Bygge till medan ett hus byggs (träden där det ska stå)
   repMin: 4, // byn vill ha minst så här många rep; fler efter förbrukningen (MATERIALMAL, steg 10.2.12)
 });
@@ -266,7 +267,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   axelrem: spjutVill, // en per spjut (steg 7.1.2)
   barsele: s => living(s).filter(c => c.mother !== undefined && ageOf(c, s.now) < TORST.ammaAr && living(s).some(m => m.id === c.mother)).length, // en per mor med ett spädbarn (steg 13.2.3)
   ryggsack: s => perVuxna(s, VILLTAL.korgPerVuxna), // lika många som korgarna, till dem som samlar (steg 7.1.3)
-  rustning: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), hjalm: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), skold: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), bage: s => vapenVill(s, VILLTAL.bageBas, VILLTAL.bageHot), slunga: s => vapenVill(s, VILLTAL.bageBas, VILLTAL.bageHot), horn: () => 1, // vapnen och rustningen efter de vuxna och hoten (steg 10.2.75); // vapnen och rustningen (system 8.7)
+  rustning: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), hjalm: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), skold: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), bage: s => vapenVill(s, VILLTAL.bageBas, VILLTAL.bageHot), slunga: s => vapenVill(s, VILLTAL.bageBas, VILLTAL.bageHot), horn: () => 1, dryckeshorn: s => Math.ceil(living(s).filter(p => (p.supit ?? 0) > 0).length / VILLTAL.hornPerDrickare), // vapnen och rustningen efter de vuxna och hoten (steg 10.2.75); // vapnen och rustningen (system 8.7)
   jarnhjalm: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), ringbrynja: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), svard: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), // vapensmidet (steg 12.2.9): som läderrustningen
   skara: s => (s.angar?.length ?? 0) > 0 ? 1 : 0, // en skära när byn har en slåtteräng (steg 9.8.9)
   benspade: () => 1, // en, latrinen och rötterna (steg 2.7.2)

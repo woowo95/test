@@ -110,7 +110,10 @@ export const skrotKrok = { f: (_s: State, _k: string) => {} };
 export function wearTool(s: State, p: Person, k: string, v: number) {
   const ts = toolsOf(s, k);
   const t = ts.find(x => x.hos === p.id) ?? ts.find(x => x.agare === p.id) ?? ts.sort((a, b) => a.c - b.c)[0];
-  if (!t) return false;
+  return t ? slitTing(s, t, v) : false;
+}
+// slitage på tinget t. true = det gick sönder
+export function slitTing(s: State, t: Ting, v: number) {
   t.c -= v / kvHaller(t); // ett bättre redskap håller längre (kvalitet.ts)
   if (t.c > 1e-9) return false;
   s.ting = tingOf(s).filter(x => x !== t);

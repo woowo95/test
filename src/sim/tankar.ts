@@ -68,6 +68,7 @@ export const TANKAR = {
   atRatt: rad({ text: 'Åt rått', nar: 'åt rått kött eller rå fisk (matlagning.ts)' }),
   matforgiftad: rad({ text: 'Blev matförgiftad av rått kött eller rå fisk', tid: 12 * HOUR, nar: 'förgiftad av rå mat (matlagning.ts)' }),
   drack: rad({ text: (a: { dryck: string }) => 'Drack ' + a.dryck, nar: 'kände ruset (rus.ts)' }),
+  egetHorn: rad({ text: 'Drack ur sitt eget horn', nar: 'drack öl, mjöd eller vin ur sitt eget dryckeshorn (redskap.ts, steg 13.4.1)' }),
   bakfull: rad({ text: 'Bakfull', nar: 'ruset gick över efter fyllan (rus.ts)' }),
   dryck: rad({ text: (a: { text: string }) => a.text, nar: 'drycken; texten i VATSKOR (vatskor.ts)' }),
   gastabud: rad({ text: 'Åt på gästabudet', tid: DAY / 4, nar: 'styrets gästabud (budget.ts)' }),

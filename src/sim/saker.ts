@@ -352,6 +352,9 @@ const DEF = {
     gors: { text: 'Fogar en stol med ryggstöd och en dyna av skinn och ull.', stat: 'stolarGjorda', forsta: '{namn} fogade byns första stol. Den är skönare att sitta på än pallen.' } },
   pall: { namn: 'Pall', grupp: 'sate', skaffa: RECEPT.pall, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true,
     gors: { text: 'Fogar en pall av en planka.', stat: 'pallarGjorda', forsta: '{namn} fogade byns första pall. Den är bättre att sitta på än stubben.' } },
+  // dryckeshornet (steg 13.4.1, rus.ts): den som dricker öl, mjöd eller vin dricker ur sitt eget horn eller byns, och hornet slits för varje dryck
+  dryckeshorn: { namn: 'Dryckeshorn', skaffa: RECEPT.dryckeshorn, vikt: 0.3, stack: 1, mapp: 'Redskap', redskap: true, trasig: { stat: 'dryckeshornTrasiga', text: '{namn}s dryckeshorn sprack.' },
+    gors: { text: 'Skrapar ur ett djurhorn till ett dryckeshorn.', stat: 'dryckeshornGjorda', forsta: '{namn} gjorde byns första dryckeshorn av ett djurhorn.' } },
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;

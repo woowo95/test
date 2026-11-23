@@ -10,7 +10,10 @@ import { amountOf, gain, harTillHands, iBordan, put, use } from './lager';
 import { getable, Recept, saknatAv, takeMaterial, takeRecipe, tillHands } from './behov';
 import { addDel } from './egendom';
 import { eldReserv, villAv, villHaAv } from './forradsmal';
-import { addTool, freeTools, halvOf, nTools, ownsFree, take, tingOf, wearTool } from './agande';
+import { addTool, freeTools, halvOf, ledigtTing, nTools, ownsFree, slitTing, take, tingOf, wearTool } from './agande';
+import { RUS, hornKrok } from './rus';
+import { tanke } from './tankar';
+import { festNu } from './kultlatt';
 import { KLADER, KLADMATERIAL, PLAGG, PLAGG_LIST, kladAv, materialTill, syddMedNal, valMaterial } from './klader';
 import { ageIndex, iIstiden, kallTid } from './tid';
 import { grundvarde } from './varde';
@@ -369,3 +372,13 @@ export function knivKv(s: State, p: Person, k: string) {
   const kniv = ['jarnkniv'].find(q => freeTools(s, p, q) > 0 || tingOf(s).some(t => t.k === q && t.hos === p.id));
   return kniv ? (redskapTal('slakta', kniv).kvalitet - 1) * REDSKAP.kvRedskap : 0;
 }
+// dryckeshornet (steg 13.4.1): den som dricker öl, mjöd eller vin tar ett ledigt horn, sitt eget först, sedan byns och sist ett lånat
+// (ledigtTing), och hornet slits för varje dryck. Ur sitt eget horn får hen en liten glad tanke, större på festdagen. Utan horn dricks det ändå
+hornKrok.f = (s, p) => {
+  const t = ledigtTing(s, p, 'dryckeshorn');
+  if (!t) return;
+  const eget = t.agare === p.id;
+  slitTing(s, t, RUS.hornSlits);
+  count(s, eget ? 'drackEgetHorn' : 'drackHorn');
+  if (eget) tanke(p, 'egetHorn', s.now, { v: RUS.hornGlad * (festNu(s) ? RUS.hornFest : 1), tid: RUS.hornTim * HOUR });
+};
