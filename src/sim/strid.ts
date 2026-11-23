@@ -85,7 +85,7 @@ export const STRID = balans('strid', {
   krypNara: 1, // den som kryper stannar så här många rutor från vännen hen kryper mot (steg 3.7.19) ...
   krypBlod: 0.5, // ... och lämnar så här mycket släpspår per ruta i byn
   kropp: 0.6, // man kommer inte närmare än så här (rutor) till en fiende som står: man går runt hen (steg 3.7.20)
-  van: 0.5, // ... och inte närmare än så här till en på samma sida, i striden och på flykten (steg 9.2.78)
+  van: 0.9, // ... och inte närmare än så här till en på samma sida, i striden och på flykten (steg 9.2.78)
   runtUt: 8, // på kartan söks vägen runt en vägg så här många rutor utanför de två (steg 10.1.4)
   flyBort: 6, // den som flyr mot en plats (Kampe.fly) har lämnat striden så här många rutor från närmaste fiende som står (steg 9.2.76)
   fart: 1.6, // rutor i sekunden för en frisk vuxen som springer i strid (gånger djurets fart)
@@ -120,7 +120,8 @@ export const STRID = balans('strid', {
   duck: 0.15, // chansen att ducka ett slag som inte parerades, för den med smidighet 10 och full ork ...
   duckSmid: 0.06, // ... gånger 1 + duckSmid × (smidigheten − 10)
   duckTung: 0.15, // ... och så här mycket mindre i ett tungt plagg (rocken, PLAGG i klader.ts: tungt att röra sig i)
-  ringa: 1.5, // ett mål vars uppmärksamhet är på någon annan (inringat) väljs som om det stod så här många rutor närmare
+  ringa: -1, // ett mål vars uppmärksamhet är på någon annan väljs som om det stod så här många rutor närmare (negativt: den som redan slåss med någon lockar mindre, steg B.6)
+  trangsel: 1.5, // ... och som om det stod så här många rutor längre bort för varje vän som redan går mot det, så att var och en helst väljer en som inte har många mot sig (steg B.6)
   backa: 0.25, // den som har så lite ork backar undan om en vän står kvar i striden ...
   backaTill: 0.6, // ... tills orken är tillbaka till så här mycket
   hjarna: 0.2, // ett slag mot huvudet av minst den här graden ger hjärnskakning ...
@@ -414,7 +415,8 @@ function valjMal(st: Strid, k: Kampe) {
   let bast: Kampe | undefined, bd = Infinity;
   for (const m of st.kampar) {
     if (m.sida === k.sida || !(iStrid(m) || (nere && (m.lage === 'nere' || m.lage === 'flykt') && st.t - (m.fallT ?? st.t) < sortAv(k).forfoljer))) continue; // djuren förföljer inte (KAMPAR)
-    const d = dist(k, m) + (m.lage === 'nere' ? 2 : 0) - (iStrid(m) && m.mal !== undefined && m.mal !== k.id ? STRID.ringa : 0); // den som står är farligare än den som ligger, och den som slåss med en annan är lättast (ringa in)
+    const vanner = st.kampar.reduce((a, o) => a + (o !== k && o.sida === k.sida && iStrid(o) && o.mal === m.id ? 1 : 0), 0);
+    const d = dist(k, m) + (m.lage === 'nere' ? 2 : 0) - (iStrid(m) && m.mal !== undefined && m.mal !== k.id ? STRID.ringa : 0) + STRID.trangsel * vanner; // den som står är farligare än den som ligger, den som slåss med en annan lockar mindre, och den som redan har många mot sig väljs helst inte (steg B.6)
     if (d < bd) { bd = d; bast = m; }
   }
   return bast;

@@ -2808,6 +2808,37 @@ SCENARIER.samlas = {
   },
 };
 
+SCENARIER.spridning = {
+  text: 'Steg B.6: spridningen i striden. Var och en väljer helst en motståndare som inte redan har många mot sig (STRID.trangsel), den som redan slåss med någon lockar inte mer (STRID.ringa) och vännerna står en bit isär (STRID.van). Fyra bybor mot fyra rövare går mot fyra olika rövare',
+  kor: () => {
+    const { HOUR } = SIM;
+    let prov = 0, fyra = 0, olika = 0, narmast = Infinity;
+    for (const seed of [6, 7, 8, 9, 10, 11]) {
+      const s = createState(seed, START); klockan(s);
+      for (const c of SIM.klanerOf(s)) c.inst = -60;
+      const mal = SIM.malet(s), by = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vaktFran && SIM.ageOf(p, s.now) < SIM.ALDER.vaktTill).slice(0, 4);
+      if (by.length < 4) continue;
+      for (const p of living(s)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * HOUR, carry: 0 };
+      const f = rovarGang(s, 4, { x: mal.x + 3, y: mal.y });
+      const rov = SIM.rovarna(s, f); if (rov.length < 4) continue;
+      // byborna i en klunga, rövarna på en rad framför dem: utan spridning går flera mot samma
+      by.forEach((p, i) => Object.assign(p, SIM.freeNear(s, mal.x - 1 + (i % 2) * 0.7, mal.y + Math.floor(i / 2) * 0.7)));
+      rov.forEach((r, i) => Object.assign(r, SIM.freeNear(s, mal.x + 3, mal.y - 3 + i * 2)));
+      for (const p of [...by, ...rov]) { p.pot.mod = 20; p.blod = 1; }
+      const g = SIM.kartStridBorja(s, 'skada', [by, rov], 'för att pröva');
+      for (let i = 0; i < 8; i++) step(s, SIM.nastaSteg(s)); // fyra sekunder: alla har valt, ingen har fallit än
+      const mal4 = new Set(g.st.kampar.filter(k => k.sida === 0 && k.lage === 'strid' && k.mal !== undefined).map(k => k.mal));
+      prov++; olika += mal4.size; if (mal4.size === 4) fyra++;
+      const vann = g.st.kampar.filter(k => k.sida === 0 && k.lage === 'strid');
+      for (const a of vann) for (const b of vann) if (a !== b) narmast = Math.min(narmast, Math.hypot(a.x - b.x, a.y - b.y));
+    }
+    return [
+      [`fyra bybor mot fyra rövare går mot fyra olika (${fyra} av ${prov} gånger, i snitt ${(olika / Math.max(1, prov)).toFixed(1)} olika)`, prov >= 4 && fyra >= prov - 1],
+      [`vännerna står isär (närmast ${narmast.toFixed(2)} rutor, STRID.van ${SIM.STRID.van})`, narmast >= SIM.STRID.van * 0.8],
+    ];
+  },
+};
+
 SCENARIER.rovarstrid = {
   text: 'Striden med rövarna på kartan (steg 6.6.10, 10.1.14, rovare.ts, kartstrid.ts): striden börjar där sidorna möts, nära förrådet, och går i spelets tid, steg för steg. Den som kommer fram under striden ger sig in i den, rövarna står där striden har dem, och när den är slut skrivs rapporten i byn. Byn går i korta steg medan faran är nära, så att ett långt steg och många korta ger samma utfall.',
   kor: () => {
