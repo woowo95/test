@@ -2,7 +2,7 @@ import { eldPlats } from './karta';
 import { hash3 } from './slump';
 import { freeNear } from './byggnad';
 import { Strom, clamp, gauss, pick, rnd } from './slump';
-import { Act, DAY, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State, Task } from './typer';
+import { Act, DAY, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State, Task, UPP_LAR } from './typer';
 import { balans } from './balans';
 import { fodTro, nyAndlighet } from './religion';
 import { RYKTE, ryktbarhet } from './rykten';
@@ -290,7 +290,8 @@ const OVNING = balans('ovning', {
   mjuk: 21, // ökningen avtar mot den här gränsen (vid färdigheten 10,5 ger övningen hälften så mycket som vid 0) ...
   tak: 20, // ... och färdigheten blir aldrig högre än så här
 });
-export function ovning(p: Person, k: Skill, vinst: number) { p.skill[k] = clamp(p.skill[k] + vinst * (1 - p.skill[k] / OVNING.mjuk), 0, OVNING.tak); }
+// en färdighet som en upplevelse gjort lättare lärs fortare (UPP_LAR i typer.ts, som uppvaxt.ts fyller ur UPPLEVELSER, steg 13.1.7)
+export function ovning(p: Person, k: Skill, vinst: number) { const lar = p.upp?.some(u => UPP_LAR.k[u.k] === k) ? UPP_LAR.fart : 1; p.skill[k] = clamp(p.skill[k] + vinst * lar * (1 - p.skill[k] / OVNING.mjuk), 0, OVNING.tak); }
 
 // Egenskaperna (steg 2.3.11): utpräglade personligheter. En egenskap slumpas med tyngd i ändarna, så att de flesta är
 // tydligt låga eller höga i något och en helt balanserad person är ovanlig. Ett barn får varje egenskap från en av

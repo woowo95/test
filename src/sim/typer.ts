@@ -78,6 +78,8 @@ export const STAT_GOR: Record<Stat, string[]> = {
 };
 export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'matlagning', 'narstrid', 'traff', 'skaldskap', 'handel', 'lakekonst', 'odling', 'skotsel'] as const; // skotsel: steg 9.8.1 (djuren, tamdjur.ts); // odling: steg 9.7.7 (fälten, odling.ts); // lakekonst: steg 9.5.7 (vården, halsa.ts); // handel: steg 4.4.1.4 (byten, behov.ts); skaldskap: steg 4.3.2.5 (framtradande.ts); matlagning: steg 2.8.1 (matlagning.ts); narstrid, traff: steg 3.7.2 (strid.ts). Eldkonsten togs bort i steg 3.10.8
 export type Skill = typeof SKILLS[number];
+// upplevelserna som gör en färdighet lättare att lära och hur mycket (steg 13.1.7): uppvaxt.ts fyller det ur UPPLEVELSER, ovning i folk.ts läser det
+export const UPP_LAR: { k: Record<string, Skill>; fart: number } = { k: {}, fart: 1 };
 export const SKILL_NAMES: Record<Skill, string> = {
   samla: 'Samling', jakt: 'Jakt', fiske: 'Fiske', ved: 'Trähuggning', hantverk: 'Hantverk', berattande: 'Berättande', matlagning: 'Matlagning', narstrid: 'Närstrid', traff: 'Träffsäkerhet', skaldskap: 'Skaldskap', handel: 'Handel', lakekonst: 'Läkekonst', odling: 'Odling', skotsel: 'Djurskötsel',
 };

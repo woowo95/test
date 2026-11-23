@@ -9,6 +9,9 @@ import { andeRiktning } from './religion';
 import { foodDays } from './ekonomi';
 import type { Sed } from './seder';
 import { svartSjukNu } from './sjukdom';
+import { STATIONER } from './stationer';
+import { UPP_LAR } from './typer';
+import type { Skill } from './typer';
 
 // Uppväxten (steg 3.1.2, "Uppväxt" i designdokumentet): det ett barn är med om blir en upplevelse som det minns hela livet,
 // och upplevelserna flyttar egenskaperna. Det man föds med är anlagen (p.anlag, ärvs av barnen); p.pot är anlagen plus det
@@ -40,6 +43,8 @@ export const UPPV = balans('uppvaxt', {
   manga: 5, // gjorde många usla eller fina saker: så många
   blekna: 15, // en upplevelse från vuxenlivet bleknar ett steg per så här många dygn (år i spelet), en tung hälften så fort (steg 4.1.1.4) ...
   bleknaAnde: 4, // ... och ett steg tar 1 från varje egenskap och så här mycket från andligheten; när inget är kvar är den glömd
+  smedjaNara: 5, // ett barn är nära när det smids inom så här många rutor (steg 13.1.7; chansen per timme står på raden smedjan)
+  lar: 1.25, // en färdighet som en upplevelse gör lättare (lar på raden) lärs så här många gånger fortare
   overflodDygn: 9, // levde i överflöd: maten i förrådet räcker fler dygn än så här (steg 4.5.4.9; chansen per timme står på raden)
 });
 
@@ -53,7 +58,7 @@ export const UPPV = balans('uppvaxt', {
 // hälften så fort i vuxenlivet
 // sed (steg 4.5.4.9): åt vilket håll upplevelsen drar personens hållning i sederna, 1 = lite, 2 = tydligt, 3 = mycket (negativt =
 // sedens andra sida); ett steg är SED.uppSteg (seder.ts). kort: namnet på upplevelsen utan {om} (fliken Seder)
-interface UpplevelseDef { rus?: number[]; /* utfallen på lusten till rus (steg 12.1.175) */ text: string; chans: number; e: Partial<Record<Stat, number>>[]; vem: 'barn' | 'vuxen' | 'bada'; tidig?: true; vuxenTal?: true; ande?: true; tung?: true; sed?: Partial<Record<Sed, number>>; kort?: string }
+interface UpplevelseDef { lar?: Skill; /* färdigheten som blir lättare att lära (UPPV.lar, steg 13.1.7) */ rus?: number[]; /* utfallen på lusten till rus (steg 12.1.175) */ text: string; chans: number; e: Partial<Record<Stat, number>>[]; vem: 'barn' | 'vuxen' | 'bada'; tidig?: true; vuxenTal?: true; ande?: true; tung?: true; sed?: Partial<Record<Sed, number>>; kort?: string }
 export const UPPLEVELSER = {
   skadad: { text: 'Skadades svårt: {om}', chans: 0.6, e: [{ mod: -2 }, { uthallighet: 2 }, { mod: -1, uthallighet: 1 }], vem: 'bada', sed: { forsiktighet: 1 }, ande: true },
   svalt: { text: 'Var nära att svälta ihjäl', chans: 0.3, e: [{ flit: 2 }, { flit: 1, empati: -1 }], vem: 'bada', sed: { forsiktighet: 2, arbete: 1 }, ande: true },
@@ -124,6 +129,7 @@ export const UPPLEVELSER = {
   foralderSop: { text: 'Såg {om} supa', kort: 'Såg en förälder supa', chans: 0.3, e: [{}], rus: [2, -2], vem: 'barn' }, // mer eller mindre lust till rus (steg 12.1.175), inga egenskaper
   fester: { text: 'Växte upp med fester, sport och framträdanden', chans: 0.02, e: [{ karisma: 2 }, { karisma: 1, empati: 1 }], vem: 'barn', sed: { prat: 1, gemenskap: 1 } }, // vid varje framträdande, match och gästabud
   lasaBarn: { text: 'Lärde sig läsa som barn', chans: 0.5, e: [{ intelligens: 1, minne: 1 }, { nyfikenhet: 2 }], vem: 'barn', sed: { nyfikenhet: 1 } },
+  smedjan: { text: 'Växte upp vid smedjan', chans: 0.004, e: [{ flit: 1 }, { flit: 1, uthallighet: 1 }], vem: 'barn', lar: 'hantverk', sed: { arbete: 1 } }, // en timme i taget nära den som smider (steg 13.1.7); smidet är hantverk
   faltet: { text: 'Hjälpte till på fältet', chans: 0.004, e: [{ flit: 2 }, { flit: 1, uthallighet: 1 }], vem: 'barn', sed: { arbete: 1 } }, // en timme i taget på fältet
 } satisfies Record<string, UpplevelseDef>;
 export type UpplevelseTyp = keyof typeof UPPLEVELSER;
@@ -252,6 +258,12 @@ const NARA_DODEN: [UpplevelseTyp, (p: Person, now: number) => boolean][] = [
   ['frys', p => p.warm < KROPP.frysdod && p.health < UPPV.naraHalsa],
   ['sjuk', (p, now) => svartSjukNu(p, now) || isSick(p, now) && p.health < UPPV.sjukHalsa],
 ];
+// någon smider i smedjan (det stationen gör) nära p (steg 13.1.7)
+let SMIDE: Set<string> | undefined;
+const smidesNara = (s: State, p: Person) => { const sm = (SMIDE ??= new Set<string>(STATIONER.smedja.gor)); return living(s).some(q => q !== p && q.task?.phase === 'do' && sm.has(q.task.act) && Math.hypot(q.x - p.x, q.y - p.y) <= UPPV.smedjaNara); };
+// en upplevelse med en färdighet (lar) gör den lättare att lära (ovning i folk.ts läser UPP_LAR)
+for (const [k, d] of Object.entries(DEF)) if (d.lar) UPP_LAR.k[k] = d.lar;
+UPP_LAR.fart = UPPV.lar;
 export function stepUppvaxt(s: State) {
   const overflod = foodDays(s) > UPPV.overflodDygn;
   for (const p of s.people) {
@@ -263,6 +275,7 @@ export function stepUppvaxt(s: State) {
     if (!formas(s, p)) continue;
     if (p.task?.act === 'leka' && p.task.phase === 'do') upplev(s, p, 'lek');
     if (p.task?.act === 'odla' && p.task.phase === 'do') upplev(s, p, 'faltet'); // (steg 12.1.133)
+    if (smidesNara(s, p)) upplev(s, p, 'smedjan'); // (steg 13.1.7)
     if ((s.tamdjur ?? []).some(d => d.agare !== undefined && (d.agare === p.mother || d.agare === p.father))) upplev(s, p, 'djur');
     if (p.hunger > UPPV.tryggMatt && p.warm > UPPV.tryggVarm && roomAt(s, p.x, p.y) && !p.upp?.some(u => u.k === 'svalt' || u.k === 'frys')) upplev(s, p, 'trygg');
   }
