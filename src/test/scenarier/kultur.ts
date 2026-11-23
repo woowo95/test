@@ -2519,6 +2519,25 @@ SCENARIER.dodessaker = {
   },
 };
 
+SCENARIER.gravsvard = {
+  text: 'Steg 13.1.6: järnsakerna blir gravgåvor. Svärdet, spännet och järnkniven har raden gravgava i sakregistret, och den kolumnen går först när gravgåvan väljs: en kämpe som dör begravs med sitt svärd, som ligger i graven som en vanlig sak, och arvingen får inget svärd',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    tr.bud = [{ id: 'gravgava', t: s.now }];
+    klockan(s, 10); setFood(s, 200);
+    const d = v.find(p => SIM.ageOf(p, s.now) >= 20)!, p = v.find(q => q !== d && SIM.ageOf(q, s.now) >= 16)!;
+    const svard = SIM.newTing(s, 'svard', 1, d.id); svard.krok = d.id;
+    const yxa = SIM.newTing(s, 'yxa', 1, d.id); yxa.bar = d.id; yxa.q = 5;
+    const g = begravHela(s, p, d).g!;
+    const kvar = (t: SIM.Ting) => (s.ting ?? []).includes(t);
+    const spanne = Object.keys(SIM.SAKER).filter(k => k.startsWith('spanne_'));
+    return [
+      [`svärdet, spännet (${spanne.join(', ')}) och järnkniven får följa den döda`, !!SIM.SAKER.svard?.gravgava && !!SIM.SAKER.jarnkniv?.gravgava && spanne.length > 0 && spanne.every(k => SIM.SAKER[k]?.gravgava)],
+      [`svärdet går före yxan av bästa kvalitet och ligger i graven (${(g.saker ?? []).map(a => a.k).join(', ')})`, !!g.saker?.some(a => a.k === 'svard') && !g.saker?.some(a => a.k === 'yxa')],
+      ['arvingen får inget svärd, men yxan ärvs', !kvar(svard) && !SIM.toolsOf(s, 'svard').length && kvar(yxa)],
+    ];
+  },
+};
 SCENARIER.orena = {
   text: 'Steg 10.3.6: fiendens saker är orena. Utan bud tas vapen och plagg hem med sin kvalitet, med budet tar den troende bara bytet och en som inte tror tar resten',
   kor: () => {

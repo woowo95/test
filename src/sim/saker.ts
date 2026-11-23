@@ -36,7 +36,7 @@ export interface SakDef {
   klad?: Klad; // ett klädesplagg (steg 2.3.2, utrustning.ts)
   mark?: true; // ligger kvar på marken där den hamnade: ingen bär, äger eller lagrar den (toa-högen, smuts.ts)
   varde?: number; // ett fast grundvärde, när saken inte skaffas i byn (silvret, steg 4.4.1.3)
-  gravgava?: true; // får läggas på en grav vid ett besök (steg 10.4.8), som maten (mat)
+  gravgava?: true; // får läggas på en grav vid ett besök (steg 10.4.8), som maten (mat), och följer helst den döda i graven (järnsakerna, steg 13.1.6)
   brinnerInte?: true; // brinner inte upp i en eldsvåda (brand.ts, steg 3.8.5); allt annat i förrådet gör det
 }
 // ett klädesplagg: platsen på kroppen (PLATSER i utrustning.ts), så stor del mindre kyla för den som har det på sig, och hur
@@ -326,9 +326,9 @@ const DEF = {
   jarngryta: { namn: 'Järngryta', skaffa: RECEPT.jarngryta, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.00004, redskap: true, trasig: { stat: 'jarngrytorTrasiga', text: '{namn}s järngryta rostade sönder.' } }, // steg 12.5.5: tar dubbel sats och spricker inte, smids i smedjan
   las: { namn: 'Lås', skaffa: RECEPT.las, vikt: 0.5, stack: 10, mapp: 'Material', brinnerInte: true }, // steg 12.5.6: smids i smedjan och går in i den låsta dörren
   eldstal: { namn: 'Eldstål', ett: true, hanger: 'balte', skaffa: RECEPT.eldstal, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.00005, redskap: true }, // steg 12.2.12: tänddonet som slås mot flinta, smids i smedjan
-  svard: { namn: 'Svärd', ett: true, hanger: 'balte', skaffa: RECEPT.svard, vikt: 3, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true }, // steg 12.2.9: byns första rena vapen, smids i smedjan
+  svard: { gravgava: true, namn: 'Svärd', ett: true, hanger: 'balte', skaffa: RECEPT.svard, vikt: 3, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true }, // steg 12.2.9: byns första rena vapen, smids i smedjan
   jarnyxa: { namn: 'Järnyxa', hanger: 'balte', grupp: 'yxa', rang: 1, skaffa: RECEPT.jarnyxa, vikt: 6, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true, trasig: { stat: 'jarnyxorTrasiga', text: '{namn}s järnyxa gick sönder.' } },
-  jarnkniv: { namn: 'Järnkniv', hanger: 'balte', grupp: 'kniv', rang: 1, skaffa: RECEPT.jarnkniv, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.00007, redskap: true, trasig: { stat: 'jarnknivarTrasiga', text: '{namn}s järnkniv gick sönder.' } },
+  jarnkniv: { gravgava: true, namn: 'Järnkniv', hanger: 'balte', grupp: 'kniv', rang: 1, skaffa: RECEPT.jarnkniv, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.00007, redskap: true, trasig: { stat: 'jarnknivarTrasiga', text: '{namn}s järnkniv gick sönder.' } },
   lie: { namn: 'Lie', hanger: 'axel', grupp: 'skara', rang: 1, skaffa: RECEPT.lie, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.00007, redskap: true, trasig: { stat: 'liarTrasiga', text: '{namn}s lie gick sönder.' } },
   // oljelampan (steg 12.4.2, ljus.ts): en liten lampa av lera, som torkar och bränns som krukan, och en behållare för brännoljan (vatskor.ts)
   oljelampa: { namn: 'Oljelampa', skaffa: RECEPT.oljelampa, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'lamporTrasiga', text: '{namn}s oljelampa sprack.' },
