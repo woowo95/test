@@ -706,3 +706,38 @@ SCENARIER.jarnpil = {
     ];
   },
 };
+
+// fångstgropen där rådjuren går (steg 13.4.3): platsen och fångsten följer rådjursgrupperna, inte viltkartan med hararna
+SCENARIER.gropplats = {
+  text: 'Fångstgropen grävs nära rådjurens väg och fångar där rådjuren går förbi, inte där det bara finns harar (steg 13.4.3)',
+  kor: () => {
+    const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    const gs = SIM.radjurGrupper(s), R = SIM.MJARDE.sattUtR + SIM.RADJUR.vagR + 2;
+    let langt: { x: number; y: number } | undefined;
+    for (let y = 2; y < SIM.H - 2 && !langt; y += 4) for (let x = 2; x < SIM.W - 2; x += 4) if (gs.every(g => Math.hypot(g.x - x, g.y - y) > R)) { langt = { x, y }; break; }
+    const utan = !!langt && !SIM.fallPlats(s, langt, 'grop');
+    const g0 = SIM.radjurGrupper(s)[0]!; p.x = g0.x + 12; p.y = g0.y; // den som gräver är en bit från en rådjursgrupp
+    const at = SIM.fallPlats(s, p, 'grop')!, vag0 = SIM.radjurNara(s, at.x, at.y);
+    // en ruta med harar men utan rådjur: den med mest vilt i viltkartan av dem som ligger långt från rådjurens väg
+    let hare: { x: number; y: number } | undefined, hv = 0;
+    for (let y = 2; y < SIM.H - 2; y++) for (let x = 2; x < SIM.W - 2; x++) {
+      if (SIM.iByn(s, x, y) || SIM.radjurGrupper(s).some(g => Math.hypot(g.x - x, g.y - y) < 60)) continue; // långt från rådjuren
+      const v = SIM.richness(s, 'jakt', x, y); if (v > hv) { hv = v; hare = { x, y }; }
+    }
+    s.mjardar = [];
+    const vid = SIM.sattVid(s, p, 'grop', at.x, at.y), harar = SIM.sattVid(s, p, 'grop', hare!.x, hare!.y);
+    let nara = 0; const fangst = new Map<SIM.Mjarde, number>();
+    for (let h = 0; h < 60; h++) { // samma stund prövad många timmar, medan rådjuren står kvar
+      nara += SIM.radjurNara(s, at.x, at.y); SIM.stepMjardar(s, 3600);
+      for (const m of s.mjardar) { fangst.set(m, (fangst.get(m) ?? 0) + m.n); m.fisk = {}; m.n = 0; } // vittjas varje timme
+    }
+    const fVid = fangst.get(vid) ?? 0, fHarar = fangst.get(harar) ?? 0;
+    return [
+      ['utan rådjur inom räckhåll grävs ingen grop', utan],
+      [`gropen grävs där rådjuren går (${vag0} rådjur nära, ${Math.round(Math.hypot(at.x - p.x, at.y - p.y))} rutor bort)`, vag0 > 0],
+      [`rådjur stod nära gropen ${nara} gånger (en gång per timme och rådjur)`, nara > 0],
+      [`det fångade rådjuret är borta ur flocken (${SIM.radjurNara(s, at.x, at.y)} kvar nära av ${vag0})`, fVid === 0 || (s.djurDoda?.length ?? 0) >= fVid],
+      [`gropen på rådjurens väg fångade ${fVid} rådjur, den bland hararna ${fHarar}`, fVid > 0 && fHarar === 0],
+    ];
+  },
+};

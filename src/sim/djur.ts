@@ -264,6 +264,7 @@ export const RADJUR = balans('radjur', {
   dod: 0.45, // ett rådjur dör av träffar av den här graden sammanlagt (kaninen: JAKT.dod)
   jaktR: 14, // en jägare med spjut går hellre mot ett rådjur än en kanin om det finns ett inom så här många rutor
   anfall: 0, // rådjuret vänder sig aldrig mot jägaren
+  vagR: 5, // rådjur inom så här många rutor från fångstgropen kan falla i den (steg 13.4.3)
 });
 export const VILDSVIN = balans('vildsvin', {
   grupper: 1, // en flock på kartan
@@ -386,6 +387,13 @@ export function flockOf(s: State, f: FlockArt, t = s.now, folk?: readonly { x: n
   return out;
 }
 export const radjurOf = (s: State, t = s.now, folk?: readonly { x: number; y: number }[], bara?: (x: number, y: number) => boolean) => flockOf(s, FLOCKARTER.radjur, t, folk, bara);
+// rådjurens väg (steg 13.4.3, fångstgropen): hur många rådjur i grupperna som håller till inom RADJUR.vagR rutor från
+// rutan nu (en funktion av rutan, med grupperna räknade en gång), och hur många rådjur som står där. fangaRadjur: det
+// närmaste rådjuret inom avståndet faller i gropen och är borta ur flocken
+export const radjurVagNu = (s: State) => { const gs = radjurGrupper(s); return (x: number, y: number) => gs.reduce((a, g) => a + (Math.hypot(g.x - x - 0.5, g.y - y - 0.5) <= RADJUR.vagR ? g.n : 0), 0); };
+const naraRadjur = (s: State, x: number, y: number) => radjurOf(s).filter(d => Math.hypot(d.x - x - 0.5, d.y - y - 0.5) <= RADJUR.vagR);
+export const radjurNara = (s: State, x: number, y: number) => naraRadjur(s, x, y).length;
+export function fangaRadjur(s: State, x: number, y: number) { const d = naraRadjur(s, x, y).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0]; if (d) dodaDjur(s, d.id); }
 // alla flockarters djur
 export const flockdjurOf = (s: State, t = s.now, folk?: readonly { x: number; y: number }[], bara?: (f: FlockArt, x: number, y: number) => boolean) =>
   FLOCK_LIST().flatMap(f => flockOf(s, f, t, folk, bara && ((x, y) => bara(f, x, y))));
