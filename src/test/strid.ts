@@ -9,7 +9,7 @@ const [antal = 16, dagar = 35] = process.argv.slice(2).map(Number);
 const seeds = Array.from({ length: antal }, (_, i) => seedAv(i));
 type Sida = { vapen?: string; n: number; folk: number; dod: number; ger: number; flykt: number; nere: number; skadade: number; skador: number; slag: number; traffar: number };
 type Rad = { dag: number; orsak: string; vinnare: number; sek: number; vuxna: number; kom: number; by: Sida; mot: Sida; h: Record<string, number> };
-type Ut = { seed: number; pop: number; rader: Rad[]; vakter: number; larm: string[] };
+type Ut = { seed: number; pop: number; rader: Rad[]; anfall?: { n: number; sedd: number; dag: number; dagSedd: number }; vakter: number; larm: string[] };
 const t0 = Date.now();
 const rs = await pool(seeds.map(seed => () => korJson<Ut>('strid-en.ts', [String(seed), String(dagar)], `by ${seed}`)));
 const alla = rs.flatMap(r => r.rader.map(x => ({ ...x, seed: r.seed })));
@@ -33,5 +33,7 @@ for (const o of orsaker) {
   const h: Record<string, number> = {}; for (const q of x) for (const k in q.h) h[k] = (h[k] ?? 0) + q.h[k];
   console.log(`  händelser per strid: ${Object.entries(h).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([k, n]) => `${k} ${(n / x.length).toFixed(1)}`).join(', ')}`);
 }
+const an = (k: 'n' | 'sedd' | 'dag' | 'dagSedd') => rs.reduce((a, r) => a + (r.anfall?.[k] ?? 0), 0);
+console.log(`\nRÖVARNAS ANFALL: ${an('n')} gånger gick ett gäng till anfall; byn hade sett det innan ${an('sedd')} gånger, på dagen ${an('dagSedd')} av ${an('dag')}`);
 const v = rs.reduce((a, r) => a + r.vakter, 0);
 console.log(v ? '\nVAKTER LARMAR:\n  ' + rs.flatMap(r => r.larm.map(l => `by ${r.seed}: ${l}`)).join('\n  ') : '\nVakter: inga fel.');

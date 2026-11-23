@@ -16,4 +16,5 @@ stridProv.slut = (s, m) => {
     rader.push({ dag: +((s.now - s.founded) / 86400000).toFixed(1), orsak, vinnare: st.slut?.vinnare ?? -1, sek: Math.round(st.slut?.t ?? st.t), vuxna, kom, by: per(0), mot: per(1), h });
 };
 const r = korBy(seed, dagar);
-console.log(JSON.stringify({ seed, pop: r.n.pop, rader, vakter: r.vakter.length, larm: r.vakter }));
+const st = r.s.stat ?? {}, anfall = { n: st.rovarGarTill ?? 0, sedd: st.rovarGarTillSedd ?? 0, dag: st.rovarGarTillDag ?? 0, dagSedd: st.rovarGarTillDagSedd ?? 0 }; // hur ofta gänget sågs innan det anföll
+console.log(JSON.stringify({ seed, pop: r.n.pop, rader, anfall, vakter: r.vakter.length, larm: r.vakter }));

@@ -63,9 +63,9 @@ import { kronikaBer } from './berattelser';
 export const ROVARE = balans('rovare', {
   vilaDygn: 6, // så många dygn efter en flock kommer ingen ny
   antal: [2, 5], // så många rövare (minst, högst)
-  lur: 22, // flocken stannar så här många rutor från förrådet och väntar (lurMin minuter) innan den går till anfall (steg 6.6.9) ...
+  lur: 30, // flocken stannar så här många rutor från förrådet och väntar (lurMin minuter) innan den går till anfall (steg 6.6.9) ...
   lurMin: [15, 30], // ... minst, högst
-  vaktSer: 50, folkSer: 12, nattSer: 0.5, dimmaSer: 0.5, // vakten ser rövare inom så här många rutor (steg 10.2.97: också gänget på rastplatsen på andra sidan byn), andra inom folkSer, gånger nattSer i mörkret
+  vaktSer: 70, folkSer: 25, nattSer: 0.5, dimmaSer: 0.5, // vakten ser rövare inom så här många rutor (steg 10.2.97: också gänget på rastplatsen på andra sidan byn), andra inom folkSer, gånger nattSer i mörkret
   gissFel: 0.5, // vaktens gissning av antalet: fel med upp till så här stor del, gånger avståndet / vaktSer (andra gissar som på längsta avståndet)
   bredvid: 2, // var och en går mot en egen punkt upp till så här många rutor från gängets mål (steg 10.2.25) ...
   filBredd: 1.1, // ... och går en egen fil så här många rutor från de andras
@@ -100,7 +100,7 @@ export const ROVARE = balans('rovare', {
   testVanta: 4, // testläget: gänget rastar så här många minuter innan anfallet, i stället för lurMin, så att man hinner se livet på rastplatsen (steg 10.1.16 och 10.2.31); inget annat skiljer
   larmTim: 2, // ... om hen inte redan fått larmet de senaste så här många timmarna
   anfallUt: 2, // en flock som setts så här nära byns område (utanforByn) eller inne i det gör att byn går i anfallsläge (steg 9.2.104)
-  lurUt: 3, // väntplatsen ligger minst så här många rutor utanför byns område (utanforByn), också för en vanlig flock (steg 9.2.103)
+  lurUt: 15, // väntplatsen ligger minst så här många rutor utanför byns område (utanforByn), också för en vanlig flock (steg 9.2.103)
   // vem som strider, hjälper eller gömmer sig (steg 9.2.116, rovarVilja): mod / 20 + iver, minus skadad × det som fattas i hälsan,
   // sjuk när hen är sjuk och gammal för de gamla, plus seden, familjen, plikten och ledaren (rovarVilja). Från kampeFran strider hen, från hjalpFran hjälper hen och står bakom en bit bakom kämparna, annars gömmer hen sig
   budMarg: 1.2, budMax: 2, // budbäraren (steg 9.2.117) går bara om vägen dit, gånger budMarg, hinns före anfallet, och ger upp efter budMax timmar
@@ -693,7 +693,7 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
   const fo = rovarna(s, f);
   if (!f.anfaller) {
     if (!f.vantat && fo.some(r => avst(r, f.rast!) <= ROVARE.rastR)) { f.vantat = true; f.till = s.now + (f.test ? ROVARE.testVanta : mellan(s, ROVARE.lurMin)) * MIN; }
-    if (f.vantat && s.now >= f.till) { f.anfaller = true; count(s, 'rovarGarTill'); }
+    if (f.vantat && s.now >= f.till) { f.anfaller = true; count(s, 'rovarGarTill'); if (isLight(s.now)) count(s, 'rovarGarTillDag'); if (f.sedd !== undefined) { count(s, 'rovarGarTillSedd'); if (isLight(s.now)) count(s, 'rovarGarTillDagSedd'); } } // hur ofta byn sett gänget innan det anfaller (npm run strid)
     if (f.vantat && f.sedd !== undefined) budSteg(s, f, folk);
   }
   // de som står emot och är nära en rövare som slåss ger sig in i striden (steg 10.1.14)
