@@ -79,7 +79,10 @@ export const STRID = balans('strid', {
   kvSkada: [0.6, 0.8, 1, 1.2, 1.4, 1.8], // vapnets skada gånger detta efter kvaliteten (usel, slarvig, normal, fin, mästerverk, perfekt)
   tick: 0.25, // sekunder i spelet per tidssteg i striden (samma i båda lägena)
   kortSteg: 0.5, // sekunder per steg för hela byn när faran är nära (steg 10.1.1 och 10.2.13, mätt med npm run kortsteg). Byns vanliga slag är KLOCKA.slag (klocka.ts)
-  glesare: 2, // tiden mellan slagen gånger detta, lika för alla som slåss, människor och djur (steg B.7): striden går i klockans takt, och den blir lång för att slagen kommer glesare. Slagens kraft är densamma, eftersom den avgör vilket sår det blir (benbrott, djupt stick, hjärnskakning, olyckshugget)
+  // striden tar tid (steg B.7): striden går i klockans takt, och den blir lång för att slagen kommer glesare och oftare missar eller pareras, lika
+  // för alla som slåss, människor och djur. Ett slag som träffar är lika hårt som förut, så att såren blir lika många och av samma slag
+  glesare: 3, // tiden mellan slagen gånger detta
+  traffDel: 0.12, // så stor del av försöken mot den som står och slåss blir ett riktigt slag eller en knuff, resten missar (den som ligger, böjer sig ner eller flyr väjer inte); orken per slag och chansen att en knuff fäller också. Kast och skott träffar som förut, mot den som ännu inte är i närstrid genast och in i en närstrid glesare (gånger glesare / traffDel), så att pilarna räcker
   maxTid: 1200, // en strid slutar senast efter så här många sekunder på klockan (oavgjort)
   efterTid: 20, // när ena sidan inte har någon kvar som slåss slutar striden senast så här många sekunder senare, också om någon ännu flyr eller ligger (den som inte kommer undan blir kvar på platsen)
   krypNara: 1, // den som kryper stannar så här många rutor från vännen hen kryper mot (steg 3.7.19) ...
@@ -100,9 +103,9 @@ export const STRID = balans('strid', {
   slump: 0.6, // skadan gånger ett tal mellan 1 − slump/2 och 1 + slump/2
   ingen: 0.03, // en träff som blir mindre än så här efter kläderna gör ingen skada
   orkSlag: 0.05, // ett slag tar så mycket ork (0–1), mindre för den uthållige ...
-  orkVila: 0.04, // ... och orken kommer tillbaka så här mycket per sekund av slagens takt, alltså delat med glesare i klockans sekunder, så att orken räcker lika många slag
+  orkVila: 0.04, // ... och orken kommer tillbaka så här mycket per sekund av slagens takt, gånger traffDel / glesare i klockans sekunder, så att orken räcker lika länge
   blodSlag: 0.25, // ett öppet sår tar så här mycket blod direkt (gånger skadans blod och grad) ...
-  blodSek: 0.002, // ... och sedan så här mycket per sekund av slagens takt (delat med glesare i klockans sekunder) medan det blöder, i striden utanför kartan; på kartan blöder kroppen som annars (halsa.ts)
+  blodSek: 0.002, // ... och sedan så här mycket per sekund av slagens takt (gånger traffDel / glesare i klockans sekunder) medan det blöder, i striden utanför kartan; på kartan blöder kroppen i hälsan (HALSA.stridBlod)
   nere: 0.9, // den som har så här ont faller och kan inte slåss längre
   modStart: 0.4, // stridsmodet när striden börjar: modStart + mod / 20 × modMod
   modMod: 0.6,
@@ -320,7 +323,7 @@ export interface Kampe {
   x: number; y: number; // rutor (med decimaler)
   skador: { d: Kroppsdel; k: SkadaTyp; g: number; ny: number; fast?: 1; av?: 1 }[]; // av = delen höggs av (olyckshugget, steg 9.5.22) // ny = öppet sår som blöder (1) eller levrat (0), fast = ett spjut sitter kvar
   blod: number; ork: number; modNu: number; lage: KampeLage;
-  vant: number; mal?: number; backar?: true; // sekunder till nästa slag, målet, och om hen backar undan för att hämta andan
+  vant: number; oppning?: number; kastVant?: number; mal?: number; backar?: true; // sekunder till nästa slag, sedan väntan på en öppning hos den som står och slåss (STRID.glesare) och för nästa kast in i en närstrid, målet, och om hen backar undan för att hämta andan
   slag: number; traffar: number; gjort: number; // för rapporten: slag, träffar och summan av skadornas grad
   reserv?: Vapen; skott?: number; // steg 3.7.7: reservvapnet i bältet och kasten som är kvar
   haller?: true; vantar?: true; ifatt?: true; vada?: number; // håller avståndet, väntar på fritt läge, blev ifattsprungen utan reserv, vådaträffar
@@ -371,7 +374,7 @@ export function nyStrid(u: Uppstallning, fro: number): Strid {
   if (u.karta) st.karta = true; // på kartans rutor (steg 10.1.4)
   if (!AVS[u.avsikt].vapen) for (const k of kampar) if (!sortAv(k).naturligt) { k.vapen = 'hand'; k.reserv = undefined; }
   for (const k of kampar) { const kv = VAP[k.vapen].kast; if (kv) k.skott = kv.skott; }
-  for (const k of kampar) k.vant = slump(st) * VAP[k.vapen].takt * STRID.glesare; // ingen slår exakt samtidigt
+  for (const k of kampar) k.vant = slump(st) * VAP[k.vapen].takt; // ingen slår exakt samtidigt (den första öppningen är när man möts)
   for (const k of kampar) if (k.ledare === 'fram' && sortAv(k).leder && !AVS[u.avsikt].lek) st.logg.push({ t: 0, h: 'leder', a: k.id });
   return st;
 }
@@ -510,7 +513,7 @@ function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number) {
 
 // blödningen under striden (steg 9.5.18): den empatiske går till en vän som ligger och blöder när tiden kvar är kortare än det som
 // är kvar av striden och ingen fiende står nära vännen, drar undan hen och trycker på såret, och går sedan tillbaka in i striden
-const blodSek = (k: Kampe) => k.skador.reduce((a, w) => a + (w.ny ? SKADOR[w.k].blod * w.g * STRID.blodSek / STRID.glesare * (w.fast ? STRID.fastBlod : 1) : 0), 0);
+const blodSek = (k: Kampe) => k.skador.reduce((a, w) => a + (w.ny ? SKADOR[w.k].blod * w.g * STRID.blodSek * stridTakt() * (w.fast ? STRID.fastBlod : 1) : 0), 0);
 function raddaSteg(st: Strid, k: Kampe, dt: number) {
   if (k.bar !== undefined) return barSteg(st, k, dt);
   if (!sortAv(k).raddar || !k.hjalp && (k.emp ?? 0) < STRID.raddaEmp) return false; // hjälparna går alltid till den som fallit (steg 9.5.20)
@@ -572,7 +575,9 @@ function falla(st: Strid, k: Kampe, h: 'nere' | 'dod' | 'ger' | 'flykt', rad: Ha
 export function skilj(st: Strid) { for (const k of st.kampar) if (iStrid(k)) { k.lage = 'ger'; k.mal = undefined; st.logg.push({ t: st.t, h: 'skild', a: k.id }); } }
 export const starKvar = (k: Kampe) => iStrid(k);
 
-const orkAv = (a: Kampe) => { a.slag++; a.ork = Math.max(0, a.ork - STRID.orkSlag * (1 - (a.st.uthallighet - 10) / 40)); };
+// stridens takt (steg B.7): så mycket av det som går per sekund (orken, blödningen) som hinner gå per sekund på klockan
+export const stridTakt = () => STRID.traffDel / STRID.glesare;
+const orkAv = (a: Kampe) => { a.slag++; a.ork = Math.max(0, a.ork - STRID.orkSlag * STRID.traffDel * (1 - (a.st.uthallighet - 10) / 40)); };
 // ---------- slaget som händelse (steg 10.1.3) ----------
 // hur ett anfall kan gå: raden som säger det är anfallets händelse. I parera och duck står försvararen först (a) och den som slog sedan (b)
 const UTFALL = new Set<Handelse>(['traff', 'tog', 'miss', 'parera', 'duck', 'vada', 'knuff', 'omkull']);
@@ -593,7 +598,13 @@ export function slagen(st: Strid, fran = 0): SlagHandelse[] {
   }
   return ut;
 }
-export const chansMot = (a: Kampe, b: Kampe, skick: number) => clamp((STRID.traffBas + (skick - b.st.skicklighet) * STRID.traffPer - (b.st.smidighet - 10) * STRID.smidUndan) * (1 - STRID.trott * (1 - a.ork)), STRID.traffMin, STRID.traffMax) * (b.lage === 'nere' || b.lage === 'flykt' || b.ligger || b.bocker ? STRID.utsatt : 1); // den som ligger, böjer sig ner eller vänt ryggen är lätt att träffa
+const utsatt = (b: Kampe) => b.lage === 'nere' || b.lage === 'flykt' || b.ligger || b.bocker;
+// öppningen (steg B.7): den som står och slåss med någon nära väjer och tar emot slagen, så man väntar på en öppning (Kampe.oppning);
+// den som ligger, böjer sig ner, flyr eller ännu inte är i närstrid ger en genast
+const oppen = (st: Strid, m: Kampe) => utsatt(m) || !st.kampar.some(o => o.sida !== m.sida && iStrid(o) && dist(o, m) <= STRID.nara);
+const klar = (st: Strid, k: Kampe, m: Kampe) => k.vant <= 0 && (!k.oppning || oppen(st, m));
+const klarKast = (st: Strid, k: Kampe, m: Kampe) => klar(st, k, m) && (!k.kastVant || oppen(st, m));
+export const chansMot = (a: Kampe, b: Kampe, skick: number) => clamp((STRID.traffBas + (skick - b.st.skicklighet) * STRID.traffPer - (b.st.smidighet - 10) * STRID.smidUndan) * (1 - STRID.trott * (1 - a.ork)), STRID.traffMin, STRID.traffMax) * (utsatt(b) ? STRID.utsatt : 1); // den som ligger, böjer sig ner eller vänt ryggen är lätt att träffa
 const duckar = (st: Strid, b: Kampe) => !b.ligger && !b.bocker && b.bar === undefined && slump(st) < STRID.duck * Math.max(0, 1 + STRID.duckSmid * (b.st.smidighet - 10)) * rorlighet(b) * b.ork * (b.klader.some(kladTung) ? 1 - STRID.duckTung : 1);
 function slaEtt(st: Strid, a: Kampe, b: Kampe) {
   const v = VAP[a.vapen];
@@ -753,7 +764,7 @@ function avstandSteg(st: Strid, k: Kampe, m: Kampe, d: number, dt: number): bool
   if (!kv || !k.skott || (kv.reserv && !k.reserv)) return false;
   if (kv.reserv) { // spjutet: kastas när målet är på avstånd, annars sticker man med det
     // den som väntar på fritt läge går ändå fram och sticker med spjutet, och kastar om läget blir fritt (det är avsiktligt)
-    if (d < STRID.kastMin || d > kv.rack || k.vant > 0) return false;
+    if (d < STRID.kastMin || d > kv.rack || !klarKast(st, k, m)) return false;
     return kastaMot(st, k, m);
   }
   let hot: Kampe | undefined, hd = Infinity;
@@ -766,7 +777,7 @@ function avstandSteg(st: Strid, k: Kampe, m: Kampe, d: number, dt: number): bool
   }
   if (hot && hd < STRID.hall && farten(k) > farten(hot)) backaFran(st, k, hot, hd, dt);
   else if (d > kv.rack * 0.85) ga(st, k, m.x, m.y, Math.min(d - kv.rack * 0.8, farten(k) * dt));
-  if (k.vant <= 0 && dist(k, m) <= kv.rack) kastaMot(st, k, m);
+  if (klarKast(st, k, m) && dist(k, m) <= kv.rack) kastaMot(st, k, m);
   return true;
 }
 function backaFran(st: Strid, k: Kampe, o: Kampe, d: number, dt: number) {
@@ -776,7 +787,7 @@ function backaFran(st: Strid, k: Kampe, o: Kampe, d: number, dt: number) {
 // kastet mot m, om läget är fritt: står målet i närstrid med en vän väntar den gode och lugne skytten eller byter mål,
 // och den ovane eller rädde chansar. Returnerar true om hen kastade
 function kastaMot(st: Strid, k: Kampe, m: Kampe, snabbt?: true): boolean {
-  if (k.vant > 0) return false;
+  if (!klarKast(st, k, m)) return false;
   const kv = VAP[k.vapen].kast!;
   let mal: Kampe | undefined = m;
   if (vanVid(st, k, m) && !snabbt && ((k.st.sikte ?? k.st.skicklighet) / 20) * 0.6 + k.modNu * 0.4 >= STRID.vanta) {
@@ -786,7 +797,11 @@ function kastaMot(st: Strid, k: Kampe, m: Kampe, snabbt?: true): boolean {
   k.vantar = undefined; k.mal = mal.id;
   const n0 = st.logg.length;
   kasta(st, k, mal);
-  if (k.vant <= 0) k.vant = VAP[k.vapen].takt * (1 - ((k.st.uthallighet - 10) / 20) * STRID.takt) * (0.85 + slump(st) * 0.3) * STRID.glesare + (VAP[k.vapen].kast ? 0.4 : 0); // att ta fram nästa sten
+  if (k.vant <= 0) { // att ta fram nästa sten, och sedan en öppning: kast och skott in i en närstrid kommer lika glest som slagen som träffar, så att pilarna räcker
+    k.vant = VAP[k.vapen].takt * (1 - ((k.st.uthallighet - 10) / 20) * STRID.takt) * (0.85 + slump(st) * 0.3) + (VAP[k.vapen].kast ? 0.4 : 0);
+    k.oppning = k.vant * (STRID.glesare - 1);
+    k.kastVant = k.vant * STRID.glesare / STRID.traffDel;
+  }
   markSlag(st, n0, k.vant);
   return true;
 }
@@ -801,7 +816,7 @@ export function stridSteg(st: Strid) {
     if (k.lage === 'borta' || k.lage === 'dod') continue;
     // blodet rinner ur öppna sår, också hos den som ligger
     const tryck = k.lage === 'nere' && k.blod >= HALSA.svim ? STRID.tryckSjalv : 1; // den fallne trycker liggande på såret (steg 9.5.18)
-    if (!varld?.halsaBlod?.(k)) for (const w of k.skador) if (w.ny) k.blod -= SKADOR[w.k].blod * w.g * STRID.blodSek / STRID.glesare * dt * (w.fast ? STRID.fastBlod : 1) * tryck;
+    if (!varld?.halsaBlod?.(k)) for (const w of k.skador) if (w.ny) k.blod -= SKADOR[w.k].blod * w.g * STRID.blodSek * stridTakt() * dt * (w.fast ? STRID.fastBlod : 1) * tryck;
     // den som står kvar drar ut ett spjut som fastnat: det blöder mer (steg 3.7.7)
     if (iStrid(k)) for (const w of k.skador) if (w.fast && slump(st) < STRID.draUt * dt) { w.fast = undefined; k.blod -= SKADOR[w.k].blod * w.g * STRID.blodSlag * STRID.draBlod; st.logg.push({ t: st.t, h: 'drar', a: k.id, d: w.d }); }
     if (k.blod < HALSA.blodDod) { falla(st, k, 'dod'); continue; }
@@ -825,8 +840,9 @@ export function stridSteg(st: Strid) {
     const ger = avs.modSlut === 'ge' || (avs.kuva && k.sida === 1); // den som möter den som kuvar ger upp (steg 11.12.6)
     if (!avs.lek && !slagits && sortAv(k).avstar && mod < STRID.avsta) { falla(st, k, ger ? 'ger' : 'flykt', 'avstar'); continue; } // drar sig undan utan strid
     if (mod <= 0) { falla(st, k, ger ? 'ger' : 'flykt'); continue; }
-    k.ork = Math.min(1, k.ork + STRID.orkVila / STRID.glesare * dt);
-    k.vant -= dt;
+    k.ork = Math.min(1, k.ork + STRID.orkVila * stridTakt() * dt);
+    if (k.vant > 0) k.vant -= dt; else if (k.oppning) k.oppning = Math.max(0, k.oppning - dt);
+    if (k.kastVant) k.kastVant = Math.max(0, k.kastVant - dt);
     // den som ligger reser sig, och den som böjt sig ner tar upp vapnet (steg 3.7.8)
     if (k.ligger) { k.ligger -= dt; if (k.ligger <= 0) { k.ligger = undefined; st.logg.push({ t: st.t, h: 'upp', a: k.id }); } continue; }
     if (k.bocker) { k.bocker -= dt; if (k.bocker <= 0) { k.bocker = undefined; plocka(st, k); } continue; }
@@ -857,11 +873,16 @@ export function stridSteg(st: Strid) {
       if (k.later !== m.id) { k.later = m.id; st.logg.push({ t: st.t, h: 'later', a: k.id, b: m.id }); }
       continue;
     }
-    if (dist(k, m) <= v.rack && k.vant <= 0) { // den som just kom fram slår samma ögonblick
+    if (dist(k, m) <= v.rack && klar(st, k, m)) { // den som just kom fram slår samma ögonblick
       const n0 = st.logg.length;
-      if (!m.ligger && slump(st) < (k.vapen === 'hand' ? STRID.knuffHand : STRID.knuff)) knuffa(st, k, m); // eller knuffar
+      // den som står och slåss väjer och tar emot de flesta försöken (traffDel), så att bara några blir ett riktigt slag eller en knuff;
+      // den som ligger eller flyr gör det inte
+      if (!utsatt(m) && slump(st) >= STRID.traffDel) { orkAv(k); st.logg.push({ t: st.t, h: 'miss', a: k.id, b: m.id, v: k.vapen }); }
+      else if (!m.ligger && slump(st) < (k.vapen === 'hand' ? STRID.knuffHand : STRID.knuff)) knuffa(st, k, m); // eller knuffar
       else slaEtt(st, k, m);
-      k.vant = v.takt * (1 - ((k.st.uthallighet - 10) / 20) * STRID.takt) * (0.85 + slump(st) * 0.3) * STRID.glesare;
+      // efter slaget väntar man på en öppning (glesare): den som står och slåss ger en sällan, den som ligger, böjer sig ner eller flyr genast
+      k.vant = v.takt * (1 - ((k.st.uthallighet - 10) / 20) * STRID.takt) * (0.85 + slump(st) * 0.3);
+      k.oppning = k.vant * (STRID.glesare - 1);
       markSlag(st, n0, k.vant);
     }
   }
@@ -884,7 +905,7 @@ export function laggTill(st: Strid, k: Uppstallning['kampar'][number]) {
   const n = kampeAv(k), kv = VAP[n.vapen].kast;
   if (!AVS[st.avsikt].vapen && !sortAv(n).naturligt) { n.vapen = 'hand'; n.reserv = undefined; }
   if (kv) n.skott = kv.skott;
-  n.vant = slump(st) * VAP[n.vapen].takt * STRID.glesare;
+  n.vant = slump(st) * VAP[n.vapen].takt;
   st.kampar.push(n); st.logg.push({ t: st.t, h: 'kommer', a: n.id });
 }
 

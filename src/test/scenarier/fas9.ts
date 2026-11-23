@@ -427,7 +427,8 @@ SCENARIER.stridvard = {
     const m = (id: number, sida: 0 | 1, x: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 14, smidighet: 10, skicklighet: 10 }, vapen: 'kniv' as SIM.Vapen, klader: [], fart: 1, x, y: 7 });
     const st = SIM.nyStrid({ avsikt: 'skada', w: 30, h: 14, kampar: [m(1, 0, 6), m(2, 0, 8), m(3, 1, 26)] }, 3);
     const [a, b] = st.kampar;
-    a.emp = 16; b.lage = 'nere'; b.skador = [{ d: 'bal', k: 'sticksar', g: 0.8, ny: 1 }]; b.blod = 0.6;
+    // vännen förblöder innan striden är slut (steg B.7: blödningen följer slagens takt, så hen har lite blod kvar)
+    a.emp = 16; b.lage = 'nere'; b.skador = [{ d: 'bal', k: 'sticksar', g: 0.8, ny: 1 }]; b.blod = SIM.HALSA.blodDod + 0.02;
     let raddad = false;
     for (let i = 0; i < 60 && !raddad; i++) { SIM.stridSteg(st); raddad = st.logg.some(r => r.h === 'raddar' && r.a === a.id && r.b === b.id); }
     const tryckt = b.skador.every(w => !w.ny);

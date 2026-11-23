@@ -59,7 +59,7 @@ import { fangeMal } from './rovare'; // fången bärs till fängelset (steg 11.1
 export const HALSA = balans('halsa', {
   botDygn: 3, // den som vårdats för högst så här många dygn sedan och blir frisk (eller dör) räknas till vårdaren (steg 12.1.134)
   blodTim: 0.6, // ett öppet sår av grad 1 (och blod 1 i SKADOR) tar så här mycket blod i timmen (1 = allt blod) ...
-  stridBlod: 6, // i en strid på kartan blöder såren så här många gånger fortare av ansträngningen (steg 12.1.58: som stridens egen blödning förut)
+  stridBlod: 0.5, // i en strid på kartan blöder såren gånger detta (steg 12.1.58 och B.7): ansträngningen gör det fortare, men striden tar längre tid sedan slagen blev glesare (STRID.glesare och traffDel), så att den som blöder i en strid förlorar lika mycket blod som innan
   levrar: 1.5, // ... och har levrat sig efter levrar × (0,5 + graden) timmar
   // blödningens tre storlekar (steg 9.5.14): ett litet sår (grad under smaSar) levrar sig fort, ett medelstort (under storSar)
   // långsamt (medelLevrar gånger längre), och ett stort inte alls; när tiden kvar till förblödning är under kortTim syns den

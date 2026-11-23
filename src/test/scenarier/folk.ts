@@ -1248,7 +1248,7 @@ SCENARIER.gangfart = {
 };
 
 SCENARIER.langsam = {
-  text: 'Striden i klockans takt (steg 3.7.18 och B.7): inget tempo, stegen i striden går i byns fart, och slagen kommer glesare (STRID.glesare, lika för alla som slåss), så att ett slagsmål med händerna tar ungefär 20 s (11 s före v164) men samma sida vinner lika ofta, också mot vargen (80 % och 79 % i 3.7.1). Orken och blödningen per sekund följer glesare, och en strid avbryts först efter STRID.maxTid på klockan',
+  text: 'Striden i klockans takt (steg 3.7.18 och B.7): inget tempo, stegen i striden går i byns fart, och slagen kommer glesare (STRID.glesare) och missar eller pareras oftare (STRID.traffDel), lika för alla som slåss, så att ett slagsmål med händerna tar några minuter men samma sida vinner ungefär lika ofta, också mot vargen. Slagen kommer ändå inte överdrivet glest: med händerna knappt tre sekunder emellan. Orken och blödningen per sekund följer slagens takt, och en strid avbryts först efter STRID.maxTid på klockan',
   kor: () => {
     const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, x: number, y: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen, klader: [] as string[], fart: 1, x, y });
     const vu = (vapen: SIM.Vapen): SIM.Uppstallning => ({ avsikt: 'doda', w: 16, h: 8, kampar: [m(1, 0, vapen, 3, 4), SIM.djurKampe('varg', 2, 1, 13, 4)] });
@@ -1265,8 +1265,8 @@ SCENARIER.langsam = {
       [`vargen tappar aldrig sina käftar och ingen tar upp dem: ${kaftar} av 60 strider (11 före kodgenomgången 3.10.25)`, kaftar === 0],
       [`en strid avbryts efter ${SIM.STRID.maxTid / 60} minuter på klockan (${SIM.STRID.maxTid / 10} timmar i spelet)`, SIM.STRID.maxTid === 1200],
       [`slagen med händerna kommer med ${med.toFixed(1)} s mellanrum (vapnets takt ${SIM.VAPEN.hand.takt} s gånger glesare ${SIM.STRID.glesare})`, med > SIM.VAPEN.hand.takt * SIM.STRID.glesare * 0.6 && med < SIM.VAPEN.hand.takt * SIM.STRID.glesare * 1.6],
-      [`ett slagsmål mellan två vuxna tar ${h.tid.toFixed(1)} s (11 s före v164), och sidorna vinner ${pc(h.vann[0], h)} % och ${pc(h.vann[1], h)} %`, h.tid > 18 && h.tid < 30 && Math.abs(h.vann[0] - h.vann[1]) < h.n * 0.2],
-      [`en med spjut mot en varg: människan vinner ${pc(sp.vann[0], sp)} % på ${sp.tid.toFixed(1)} s (7 s före v164)`, sp.vann[0] > sp.n * 0.7 && sp.vann[0] < sp.n * 0.9 && sp.tid > 11],
+      [`ett slagsmål mellan två vuxna tar ${h.tid.toFixed(0)} s, några minuter (11 s före v164, 24 s före B.7), och sidorna vinner ${pc(h.vann[0], h)} % och ${pc(h.vann[1], h)} %`, h.tid > 180 && h.tid < 360 && Math.abs(h.vann[0] - h.vann[1]) < h.n * 0.2],
+      [`en med spjut mot en varg: människan vinner ${pc(sp.vann[0], sp)} % på ${sp.tid.toFixed(0)} s (7 s före v164, 75 % före B.7)`, sp.vann[0] > sp.n * 0.6 && sp.vann[0] < sp.n * 0.9 && sp.tid > 60],
       [`en obeväpnad mot en varg: vargen vinner ${pc(ha.vann[1], ha)} %`, ha.vann[1] > ha.n * 0.7],
       ['loggens tider följer klockan (STRID.tick per steg)', st.logg.every(r => Math.abs(r.t / SIM.STRID.tick - Math.round(r.t / SIM.STRID.tick)) < 1e-6)],
     ];
