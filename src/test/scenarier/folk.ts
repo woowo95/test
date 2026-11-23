@@ -1833,6 +1833,61 @@ SCENARIER.stridkarta = {
   },
 };
 
+SCENARIER.kartstridfel = {
+  text: 'Steg B.1: kartstridens rättelser. Den som ligger nere i striden blir kvar på sin plats och går inte iväg mot vården förrän striden är slut eller hen svimmat, stridens steg är lika långa (STRID.tick ryms jämnt i det korta steget) och slagen får klockans tid, i det steg där de händer',
+  kor: () => {
+    let nereSteg = 0, glider = 0, annanUppgift = 0, slag = 0, felTid = 0, strider = 0;
+    for (let seed = 40; seed < 52; seed++) {
+      const s = createState(seed, START); klockan(s, 12);
+      const [a, c, b, d, ...ovriga] = living(s).filter(x => ageOf(x, s.now) >= SIM.ALDER.vuxen);
+      if (!d) continue;
+      for (const q of ovriga) { q.x = a.x + 40; q.y = a.y; q.task = undefined; }
+      c.x = a.x; c.y = a.y + 1; b.x = a.x + 1.2; b.y = a.y; d.x = b.x; d.y = b.y + 1;
+      for (const q of [a, b, c, d]) { q.pot.mod = 18; q.pot.aggression = 18; q.pot.empati = 2; q.task = undefined; }
+      SIM.stridBild.pa = true; SIM.stridBild.slag.length = 0;
+      const g = SIM.kartStridBorja(s, 'skada', [[a, c], [b, d]], 'för att pröva'); strider++;
+      for (let i = 0; i < 2000 && s.kartStrider?.length; i++) {
+        const dt = SIM.nastaSteg(s), fore = s.now;
+        if (i === 2) { a.blod = (SIM.HALSA.slass + SIM.HALSA.svim) / 2; a.task = undefined; } // a har blött mycket och faller ur striden, vaken, och såret har avbrutit det hen gjorde (som ett svårt sår gör), medan de andra slåss vidare
+        step(s, dt);
+        for (const h of SIM.stridBild.slag) { slag++; if (h.t > s.now + 1e-6 || h.t <= fore - 1e-6) felTid++; }
+        SIM.stridBild.slag.length = 0;
+        if (g.st.slut) break;
+        for (const k of g.st.kampar) {
+          const p = living(s).find(q => q.id === k.pid);
+          if (!p || k.lage !== 'nere' || p.svimmat) continue;
+          nereSteg++;
+          if (Math.abs(p.x - k.x) > 1e-9 || Math.abs(p.y - k.y) > 1e-9) glider++;
+          if (p.task?.act !== 'strid') annanUppgift++;
+        }
+      }
+      SIM.stridBild.pa = false;
+    }
+    // rövarna anfaller: striderna börjar inne i byns steg, och slagen får ändå klockans tid
+    let rSlag = 0, rFel = 0;
+    for (let seed = 60; seed < 64; seed++) {
+      const s = createState(seed, START); klockan(s, 12);
+      const z = SIM.zoneOf(s)!;
+      rovarGang(s, 4, { x: z.x + z.w / 2 + 6, y: z.y + z.h / 2 }, { anfaller: true });
+      SIM.stridBild.pa = true; SIM.stridBild.slag.length = 0;
+      for (const t0 = s.now; s.now - t0 < 4 * 3600 * 1000 && !(rSlag > 0 && !s.kartStrider?.length);) {
+        const fore = s.now; step(s, SIM.nastaSteg(s));
+        for (const h of SIM.stridBild.slag) { rSlag++; if (h.t > s.now + 1e-6 || h.t <= fore - 1e-6) rFel++; }
+        SIM.stridBild.slag.length = 0;
+      }
+      SIM.stridBild.pa = false;
+    }
+    const jamna = Math.abs(SIM.STRID.kortSteg / SIM.STRID.tick - Math.round(SIM.STRID.kortSteg / SIM.STRID.tick)) < 1e-9;
+    return [
+      [`den som ligger vaken står kvar där kämpen ligger (${nereSteg} steg liggande i ${strider} strider, ${glider} gånger på en annan plats)`, nereSteg > 20 && glider === 0],
+      [`den som ligger har striden som uppgift och går inte till vården mitt i striden (${annanUppgift} steg med annat)`, annanUppgift === 0],
+      [`stridens steg är jämna: ${SIM.STRID.kortSteg} s rymmer ${SIM.STRID.kortSteg / SIM.STRID.tick} steg om ${SIM.STRID.tick} s`, jamna],
+      [`slagen får klockans tid i steget där de händer (${slag} slag, ${felTid} med fel tid)`, slag > 50 && felTid === 0],
+      [`också när rövarna anfaller och striden börjar mitt i byns steg (${rSlag} slag, ${rFel} med fel tid)`, rSlag > 5 && rFel === 0],
+    ];
+  },
+};
+
 SCENARIER.slagbild = {
   env: { BALANS: 'sport.vikt=0' }, // ingen brottning i sporten under timmen utan strid (brottningen är en strid på kartan)
   text: 'Steg 10.1.5: bilden spelar stridens händelser. Varje slag i en strid på kartan tas emot av bilden en gång, i samma ögonblick som det sker, och syns då: den som slår gör rörelsen, i vapnets takt, och strecket går till den som träffas. Antalet ritade slag är antalet händelser, och inget ritas när ingen strid pågår',

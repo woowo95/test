@@ -213,7 +213,7 @@ export function kartStridSteg(s: State, dtSec: number) {
   for (const g of [...s.kartStrider]) {
     const st = g.st, v = varldAv(s, g), sport = sportAv(st.avsikt);
     hjalparnaMed(s, g);
-    g.rest += dtSec;
+    g.rest += Math.min(dtSec, (s.now - g.t0) / SEC); // en strid som började i det här slaget räknar bara tiden sedan den började: annars ligger dess klocka före byns och slagen ritas för sent
     while (g.rest >= STRID.tick - 1e-9 && !st.slut) {
       g.rest -= STRID.tick;
       // kämpen är personen: platsen och blodet är personens före stridssteget ...
@@ -240,9 +240,9 @@ export function kartStridSteg(s: State, dtSec: number) {
           if (g.efter?.typ === 'rovare' && !p.gast) { p.gavSig = s.now; p.larmRoll = undefined; }
           if (p.gast && k.lage === 'ger') gastKrok.ger?.(s, p, st.avsikt); // gästen som gett upp för den som kuvar (steg 11.12.6, rovare.ts) // flydde eller gav upp för rövarna: gömmer sig sedan (rovarSkydd i rovare.ts)
           if (p.task?.act === 'strid') p.task.until = s.now;
-        } else if (k.lage === 'strid' || k.lage === 'flykt') { // den som står eller flyr är kvar i striden, också när en skada avbrutit det hen gjorde
+        } else if (k.lage === 'strid' || k.lage === 'flykt' || (k.lage === 'nere' && !p.svimmat)) { // den som står, flyr eller ligger vaken är kvar i striden, också när en skada avbrutit det hen gjorde: den som ligger går inte iväg mot vården förrän striden är slut
           if (p.task?.act !== 'strid') { avbryt(s, p); stridsUppgift(s, p, g.orsak); } else { p.task.tx = p.x; p.task.ty = p.y; }
-        } else if (p.task?.act === 'strid') { p.task.tx = p.x; p.task.ty = p.y; } // den som ligger: kroppen och hälsan avgör vad hen gör sedan
+        } else if (p.task?.act === 'strid') { p.task.tx = p.x; p.task.ty = p.y; } // den som svimmat: kroppen och hälsan avgör vad hen gör sedan
       }
     }
     if (st.slut) kartStridSlut(s, g);
