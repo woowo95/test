@@ -181,6 +181,10 @@ for (const [ks, why] of [
   [['resa', 'silver'], 'en resa (system 11.5) börjar när en nyfiken och modig bybo med mat över hört rykten om en plats, och testbyarna i fasens Balans (12.6) har sällan mat över; silvret kommer från resorna och handeln; scenarierna samlaresa och silvergruva prövar dem'],
   [['plundra'], 'rövarna plundrar bara en by de besegrat, och i testbyarna vinner de sällan på 50 dygn; scenariot plundring prövar det'],
   [['penna'], 'fjäderpennan (steg 12.4.14) skärs när någon ska skriva, och att skriva kräver pergamentet, nivå 6; scenariot skriva prövar den'],
+  [['farga', 'fargning', 'mara', 'vejde', 'vejdefron', 'krapp'], 'färgningen (steg 13.3.2) är en teknik på nivå 5 efter örtköket och vävstolen, och vejden och krappen kommer från handlaren; scenariot farg prövar den'],
+  [['dryckeshorn'], 'dryckeshornet (steg 13.4.1) görs av djurhorn när byn har druckit öl, mjöd eller vin, och testbyarna brygger sällan; scenariot djurhorn prövar det'],
+  [['jarnpilar', 'smida_pilar'], 'järnpilarna (steg 13.4.2) smids vid smedjan av den som kan Pilbåge, en sen teknik; scenariot jarnpil prövar dem'],
+  [['tjara'], 'tjäran (steg 13.5.1) stryks på trä som står ute när skyddet sparar mer än tjäran kostar, och testbyarna har få väggar av timmer och få bryggor; scenariot tjara prövar det'],
 ] as [string[], string][]) for (const k of ks) SALLSYNT[k] ??= why;
 
 // aldrig: allt i registren används, i minst en av testbyarna

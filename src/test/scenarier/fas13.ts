@@ -819,3 +819,30 @@ SCENARIER.tjara = {
     ];
   },
 };
+
+// limmet i recepten (steg 13.5.2): skölden, bågen, pilarna och boken kräver 1 benlim ur en näverask eller en liten kruka
+SCENARIER.lim = {
+  text: 'Limmet i recepten: skölden, bågen, pilarna och boken kräver 1 benlim, utan lim görs ingen båge, och med lim går det åt och asken blir kvar tom (steg 13.5.2)',
+  kor: () => {
+    const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    (p.tek ??= {}).bage = 1;
+    SIM.put(s, 'virke', 4, { [p.id]: 4 }); SIM.put(s, 'rep', 2, { [p.id]: 2 });
+    const kniv = SIM.tingOf(s).some(t => t.k === 'kniv') || !!SIM.addTool(s, 'kniv', p);
+    const bagar = () => SIM.tingOf(s).filter(t => t.k === 'bage').length, b0 = bagar();
+    const utan = SIM.canMake(s, p, 'bage');
+    SIM.makeTool(s, p, 'bage'); const utanGjord = bagar() - b0;
+    const ask = SIM.addTool(s, 'naverask', p); ask.hos = undefined; ask.x = Math.floor(p.x); ask.y = Math.floor(p.y);
+    SIM.fyllVatska(s, 'benlim', 1, ask);
+    const med = SIM.canMake(s, p, 'bage');
+    SIM.makeTool(s, p, 'bage'); const medGjord = bagar() - b0;
+    const kvar = SIM.tingOf(s).includes(ask) && !ask.inne, lim = SIM.vatskaAv(s, 'benlim');
+    const kraver = ['skold', 'bage', 'pilar', 'bok', 'jarnpilar', 'jarnskold'].filter(k => (SIM.RECEPT as Record<string, { av?: Record<string, number> }>)[k].av?.benlim === 1);
+    const tek = ['skold', 'bage', 'bok'].filter(k => SIM.TEKNIK.find(t => t.id === k)?.krav.includes('ortkok'));
+    return [
+      [`recepten som kräver 1 benlim: ${kraver.join(', ')}`, kraver.length === 6],
+      [`teknikerna som kräver Örtkök: ${tek.join(', ')}`, tek.length === 3],
+      [`utan lim görs ingen båge (${utanGjord})`, kniv && !utan && utanGjord === 0],
+      [`med lim görs bågen (${medGjord}), limmet går åt (${lim} kvar) och asken blir kvar tom`, med && medGjord === 1 && lim === 0 && kvar],
+    ];
+  },
+};

@@ -7,7 +7,7 @@ import { FARG, FARGER, fargTool, fargVal } from './farg';
 import { han } from './ord';
 import { flintaKrok } from './forradsmal';
 import { flintaTillVerktyg } from './redskap';
-import { VATSKOR, vatskaKrok, villTe } from './vatskor';
+import { VATSKOR, type VatskaId, ar_vatska, taVatska, vatskaAv, vatskaKrok, villTe } from './vatskor';
 import { kvallsChans, kvallsDryck } from './rus';
 import { forbrukat } from './forradsmal';
 import { grundvarde } from './varde';
@@ -32,7 +32,7 @@ import { ALDER, KROPP, REL, ageOf, count, enTill, enTillDar, familjOf, isSick, l
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
 import { VARDRATT, halsa, hemma, kanGa, kroppLust, vardBehov, vardVal, vilaHellre, vilaSkal } from './halsa';
-import { MAT, bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial } from './behov';
+import { MAT, bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial, vatskaMaterial } from './behov';
 import { FANGST, type FyndId, Kind, RUTFYND, flintSpot, richnessFor } from './fynd';
 import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
@@ -456,6 +456,7 @@ export function dangers(s: State) {
 satFaror(dangers);
 // förrådsmålen för dryckerna (steg 10.2.12): krokarna sätts här, där alla filer redan är lästa
 vatskaKrok.tagen = (s, v, n) => forbrukat(s, v, n);
+vatskaMaterial.ar = ar_vatska; vatskaMaterial.har = (s, k) => vatskaAv(s, k as VatskaId); vatskaMaterial.ta = (s, k, n) => taVatska(s, k as VatskaId, n); // limmet i recepten (steg 13.5.2)
 flintaKrok.verktyg = flintaTillVerktyg; // flintan till redskapen i förrådsmålet (steg 10.2.12)
 type Faror = ReturnType<typeof dangers>;
 // det som väljs: handlingen, varför, hur länge, och var om det inte följer av handlingen

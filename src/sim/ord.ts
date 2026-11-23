@@ -152,7 +152,7 @@ export const GORA: Record<string, string> = {
   sprit: 'bränna sprit', mjod: 'brygga mjöd', kokgrop: 'baka i kokgropar', // steg 10.7.25–10.7.28
   drejskiva: 'dreja krukor', oljelampa: 'forma oljelampor', sang: 'snickra sängar', stol: 'snickra stolar', laggkar: 'laga tunnor och kar', ost: 'ysta ost', brunn: 'gräva brunnar', utedass: 'bygga utedass', sjukstuga: 'inreda sjukstugor', fyrfat: 'göra fyrfat', // steg 12.1.192
   fagelskramma: 'sätta upp fågelskrämmor', staket: 'sätta staket', kompost: 'gödsla fälten', bakugn: 'baka bröd', kvarnsten: 'mala mjöl', stekhall: 'steka på stekhällen', bryggkar: 'göra vin', ol: 'brygga öl', sadesodling: 'så korn', nat: 'knyta nät', rokeri: 'röka kött och fisk', // steg 9.6.8–9.6.16
-  korg: 'fläta korgar', yxa: 'göra flintyxor', fiskespjut: 'tälja träspjut', rep: 'tvinna rep', flintspjut: 'göra flintspjut', metspo: 'göra metspön',
+  korg: 'fläta korgar', fargning: 'färga kläder', yxa: 'göra flintyxor', fiskespjut: 'tälja träspjut', rep: 'tvinna rep', flintspjut: 'göra flintspjut', metspo: 'göra metspön',
   kniv: 'slå flintknivar', timmervagg: 'bygga timmerhus', slaktbank: 'bygga en slaktbänk', flatarbank: 'bygga en slöjdbänk', halmbadd: 'göra halmbäddar',
   bord: 'bygga bord', hylla: 'göra hyllor och kistor', skinnfall: 'sy skinnfällar', skinndorr: 'hänga dörrar av skinn', tradorr: 'göra trädörrar',
   bensyl: 'slipa bensylar', skinnklader: 'sy kläder av skinn', barnklader: 'sy barnkläder', barsele: 'sy bärselar', vattensack: 'sy vattensäckar', balte: 'fläta bälten', axelrem: 'sy axelremmar', ryggsack: 'sy ryggsäckar', talt: 'sy tält', ridning: 'rida', mal: 'göra mål till bollspelen', boll: 'sy bollar',

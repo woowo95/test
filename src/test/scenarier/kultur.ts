@@ -1970,7 +1970,7 @@ SCENARIER.bok = {
     for (const r of v) if (r.tek) delete r.tek.garvning;
     p.tek = { ...(p.tek ?? {}), bok: 1, garvning: 1, kniv: 1, skinnklader: 1 }; q.tek = { ...(q.tek ?? {}), kniv: 1, skinnklader: 1 };
     p.skill.berattande = 15;
-    setAmount(s, 'pergament', 8); setAmount(s, 'plankor', 2);
+    setAmount(s, 'pergament', 8); setAmount(s, 'plankor', 2); medVatska(s, p, 'naverask', 'benlim', 1); // limmet till ryggen (steg 13.5.2)
     SIM.makeTool(s, p, 'bok'); delete p.tek.bok; // bara garvningen kan hen ensam
     SIM.placeTools(s);
     const bok = tingOf(s).find(t => t.k === 'bok');

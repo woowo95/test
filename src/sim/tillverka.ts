@@ -5,7 +5,7 @@ import { GARVHUD, SALTKOTT, garvAct } from './handlingar';
 // ---------- tillverkningen vid stationerna (steg 7.5–7.7) ----------
 // Det som görs av material vid en station och läggs i förrådet, utan att vara ett redskap eller plagg: en rad per sak. Varje rad
 // blir ett projekt (projekt.ts) och en handling (handlingar.ts, station i stationer.ts). vill = så många byn vill ha i förrådet.
-// Salvan, tjäran, benlimmet och tvålen har ingen funktion än, så byn vill bara ha några. vatten = vattnet tas ur en fylld vattensäck,
+// Tjäran skyddar trä (13.5.1) och limmet går åt i recepten (13.5.2); byn vill ha det som förbrukningen säger. vatten = vattnet tas ur en fylld vattensäck,
 // som töms men finns kvar (steg 7.6.6, torst.ts). verktyg = redskapet man arbetar med (sländan, steg 7.7.8).
 // vatska = en vätska som går åt, ur byns behållare (mjölken till osten, steg 12.4.7); kruka = en ledig behållare av den sorten där det sjuder (osten)
 export interface TillverkDef { vatska?: { v: string; n: number }; kruka?: string; act: Act; ger: string; n: number; av: Record<string, number>; min: number; tek: string; vill: number; text: string; forsta: string; vatten?: true; verktyg?: string; eld?: true; eller?: { av: string[]; n: number }; sjud?: number } // eld = kokas vid en eld som brinner, om inte vid stationen; eller = en av de här också (den byn har mest av); sjud = minuter vätskan sjuder i krukan på elden utan någon som arbetar (kokningen, matlagning.ts)

@@ -225,12 +225,12 @@ SCENARIER.vakt = {
     // utses när en annan väljer, och slutar vila
     const q = SIM.cloneState(s); klockan(q, 22); q.lastGuardDay = -1;
     const vuxna = living(q).filter(p => ageOf(p, q.now) >= SIM.ALDER.vaktFran && ageOf(p, q.now) < SIM.ALDER.vaktTill);
-    for (const p of vuxna) { p.pot.mod = 1; Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, sjuk: undefined, skador: [] }); } // friska (sjukdomen i steg 9.5.1 står i p.sjuk)
+    for (const p of vuxna) { p.pot.mod = 1; p.guardDay = undefined; /* en vakt från en tidigare natt i den sparade byn kan ha samma vaktdygn */ Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1, sjuk: undefined, skador: [] }); } // friska (sjukdomen i steg 9.5.1 står i p.sjuk)
     const [h, g, p] = vuxna; h!.pot.mod = 30; g!.pot.mod = 20;
     barGrenar(q, h!); g!.task = { act: 'vila', phase: 'do', tx: g!.x, ty: g!.y, until: q.now + SIM.HOUR, carry: 0, paus: true } as SIM.Task; p!.task = undefined;
     const akt = (x: Person) => x.task?.act; // (en funktion, så att typkontrollen inte tror att uppgiften är tom)
     SIM.chooseTask(q, p!);
-    const pAkt = akt(p!), utsedd = g!.guardDay === q.lastGuardDay && q.lastGuardDay !== -1 && g!.task === undefined, upptagen = h!.guardDay !== q.lastGuardDay && akt(h!) === 'bara';
+    const pAkt = akt(p!), utsedd = g!.guardDay === q.lastGuardDay && q.lastGuardDay !== -1 && g!.task === undefined, upptagen = h!.guardDay !== q.lastGuardDay && akt(h!) !== 'vakt'; // hen utses inte (bördan kan hen ha lagt ner för att lyssna, om den som valde började uppträda)
     // utan ett tillfälle som pågår (ett kväde vid elden går före den som inte börjat vakta, nivå 3 Tillfälle): ingen annan håller på med något
     for (const x of living(q)) x.task = undefined;
     SIM.chooseTask(q, g!);
@@ -247,7 +247,7 @@ SCENARIER.vakt = {
       [`en lugn natt vaktar ${lugn.n} (hotet ${lugn.hot.toFixed(1)}), när vargar setts ${medVarg.n} (${medVarg.hot.toFixed(1)}) och strax efter ett rövaranfall ${efterRan.n} (${efterRan.hot.toFixed(1)})`, lugn.n === 1 && medVarg.n > lugn.n && efterRan.n > lugn.n],
       [`${natter.size} nätter under tre dygn (tre år i spelet) hade en vakt, och aldrig mer än en (${[...natter.values()].map(n => n.size).join(', ')}${sjuka.size ? `; ${[...sjuka.keys()].filter(d => !natter.has(d)).length} natt med en sjuk vakt` : ''})`, natter.size + [...sjuka.keys()].filter(d => !natter.has(d)).length >= 3 && [...natter.values()].every(n => n.size === 1)],
       [`vakterna var mellan ${Math.min(...aldrar).toFixed(0)} och ${Math.max(...aldrar).toFixed(0)} år`, aldrar.length > 0 && aldrar.every(a => a >= SIM.ALDER.vaktFran && a < SIM.ALDER.vaktTill)],
-      [`i natt (${isLight(q.now) ? 'ljust' : 'mörkt'}) utsågs ${g!.name}, som vilade, när ${p!.name} valde (${pAkt}), och slutade vila; ${h!.name}, som är modigare men bar grenar, utsågs inte`, !isLight(q.now) && utsedd && upptagen],
+      [`i natt (${isLight(q.now) ? 'ljust' : 'mörkt'}) utsågs ${g!.name}, som vilade, när ${p!.name} valde (${pAkt}), och slutade vila; ${h!.name}, som är modigare men bar grenar, utsågs inte${utsedd ? '' : ` (${g!.name}: vaktdag ${g!.guardDay} mot ${q.lastGuardDay}, ${akt(g!) ?? 'inget'})`}${upptagen ? '' : ` (${h!.name}: vaktdag ${h!.guardDay}, ${akt(h!) ?? 'inget'})`}`, !isLight(q.now) && utsedd && upptagen],
       [`${g!.name} väljer sedan att hålla vakt (${vaktar})`, vaktar === 'vakt'],
       [`vakten fortsätter passet trött (${trott}) men går när hen fryser farligt (${fryser})`, trott === 'vakt' && fryser !== 'vakt']
     ];

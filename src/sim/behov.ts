@@ -413,9 +413,12 @@ export function noticeTheft(s: State, p: Person, key: string) {
 // gravgodset (steg 13.1.4): det som tas ur gravarna, hela saker av slaget k, högst n; grav.ts sätter kroken
 export const gravGods = { ta: (_s: State, _p: Person, _k: string, _n: number) => 0 };
 export const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= DELA.stjalAldrig;
+// det som står i en behållare (limmet, tjäran, vätskorna: VATSKOR i vatskor.ts) tas ur behållaren när ett recept kräver det, och
+// behållaren blir kvar tom (steg 13.5.2). Behållarna är byns. Kroken sätts i val.ts
+export const vatskaMaterial = { ar: (_k: string) => false, har: (_s: State, _k: string) => 0, ta: (_s: State, _k: string, _n: number) => 0 };
 // så mycket av slaget k som p kan få till ett arbete
 // det kyrkan äger tar bara kyrkan (takeOrder i egendom.ts): det räknas inte, också för den som tar av andra i nöd
-export const getable = (s: State, p: Person, k: string) => (aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k) - kyrkornas(s, k)) + iBordan(p, k); // med det hen bär till arbetet (steg 11.1.74)
+export const getable = (s: State, p: Person, k: string) => vatskaMaterial.ar(k) ? vatskaMaterial.har(s, k) : (aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k) - kyrkornas(s, k)) + iBordan(p, k); // med det hen bär till arbetet (steg 11.1.74)
 // det p har till hands till sitt arbete av slaget k (steg 11.1.74): det hen bär dit och det som ligger inom räckhåll, utom det
 // som sparas (till elden)
 export const tillHands = (s: State, p: Person, k: string) => iBordan(p, k) + Math.max(0, iRackhall(p.x, p.y, () => getable(s, p, k) - iBordan(p, k)) - eldReserv(s, k));
@@ -436,6 +439,7 @@ export function takeMaterial(s: State, p: Person, k: string, n: number, common =
   const ag: Del = {};
   if (n <= 1e-12) return ag;
   const not = (hur: string, d: Del) => { if (kom) for (const o in d) if (d[o] > 1e-9) { const h = +o === BYN ? 'byn' : +o === p.id ? 'eget' : hur; const key = `${h}:${h === 'byn' ? BYN : o}:${k}`; kom[key] = (kom[key] ?? 0) + d[o]; } };
+  if (vatskaMaterial.ar(k)) { const d = vatskaMaterial.ta(s, k, n); if (d > 0) { ag[BYN] = d; not('byn', ag); } return ag; } // ur behållaren (steg 13.5.2)
   // det hen hämtat och bär till arbetet först (steg 11.1.74): det har redan tagits, som eget, byns, gåva eller stöld
   const bar = urBordan(s, p, k, n, common, ut);
   addDel(ag, bar); not('familj', bar); n -= sumOf(bar);
