@@ -1127,3 +1127,28 @@ SCENARIER.plog = {
     ];
   },
 };
+SCENARIER.fordongors = {
+  text: 'Fordonen görs av byn (steg 13.7.3): kälken, släden, vagnen och plogen har raden som säger hur de görs (gors), och en by med tekniken, snickarbänken, materialet och ett dragdjur gör en kälke, en släde och en vagn när förrådsmålen vill ha dem',
+  kor: () => {
+    const { GORS, wantsTool, setAmount, nyttTamdjur, DAY } = SIM;
+    const s = SIM.createState(1, START); klockan(s, 8); tandEld(s);
+    medBank(s, 'snickarbank');
+    for (const p of SIM.living(s)) Object.assign(p.tek ??= {}, { slade: 1, vagn: 1, snickarbank: 1 });
+    const m = SIM.bynsMitt(s);
+    nyttTamdjur(s, 'oxe', m.x, m.y, undefined, s.now - 4 * DAY);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= 18)!;
+    const grupper = ['kalke', 'slade', 'vagn', 'plog'].every(k => GORS[k]?.includes(k));
+    const fyll = (x: SIM.State) => { if (SIM.amountOf(x, 'virke') < 20) setAmount(x, 'virke', 40); if (SIM.amountOf(x, 'rep') < 15) setAmount(x, 'rep', 30); };
+    fyll(s);
+    const vill = ['kalke', 'slade', 'vagn'].map(g => wantsTool(s, p, g));
+    const har = (k: string) => SIM.tingOf(s).filter(t => t.k === k).length;
+    let tim = 0;
+    for (; tim < 48 && !(har('kalke') && har('slade') && har('vagn')); tim++) kor(s, 1, fyll);
+    return [
+      ['kälken, släden, vagnen och plogen görs i var sin grupp', grupper],
+      [`byn vill göra en kälke, en släde och en vagn (${vill.join('/')})`, vill.every(v => v)],
+      [`byn gjorde en kälke (${har('kalke')}), en släde (${har('slade')}) och en vagn (${har('vagn')}) på ${tim} timmar`, har('kalke') > 0 && har('slade') > 0 && har('vagn') > 0],
+      [`första gången står i statistiken (${s.stat?.kalkarGjorda ?? 0}/${s.stat?.sladarGjorda ?? 0}/${s.stat?.vagnarGjorda ?? 0})`, !!s.stat?.kalkarGjorda && !!s.stat?.sladarGjorda && !!s.stat?.vagnarGjorda],
+    ];
+  },
+};

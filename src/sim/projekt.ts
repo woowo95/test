@@ -63,7 +63,7 @@ const overHusUppgift = (s: State, p?: Person, virke = false): Uppgift | undefine
 export const PROJEKT_TAL = balans('projekt', {
   overBuffert: 0.3, // ett redskap, vapen eller plagg över det byn behöver väger så här mycket när det är långt till taket (steg 10.2.74)
   kyla: 0.3, // när kylan är en fara väger varje projekt så här mycket av sitt värde (steg 10.2.6): tiden går helst till värmen
-  kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, rock: 1, barnklader: 0.8, skor: 0.7, balte: 0.6, axelrem: 0.4, ryggsack: 0.5, barsele: 0.4, benspade: 0.6, vattensack: 0.5, slanda: 0.5, bagborr: 0.6, kalke: 0.6, slade: 0.6, vagn: 0.6, fackla: 0.4, talgljus: 0.3, boll: 0.3, slagtra: 0.3, mal: 0.3, trumma: 0.3, benflojt: 0.3, lyra: 0.3, bok: 0.3, // hur mycket varje redskap väger när byn saknar alla den vill ha
+  kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, rock: 1, barnklader: 0.8, skor: 0.7, balte: 0.6, axelrem: 0.4, ryggsack: 0.5, barsele: 0.4, benspade: 0.6, vattensack: 0.5, slanda: 0.5, bagborr: 0.6, kalke: 0.6, slade: 0.6, vagn: 0.6, plog: 0.6, fackla: 0.4, talgljus: 0.3, boll: 0.3, slagtra: 0.3, mal: 0.3, trumma: 0.3, benflojt: 0.3, lyra: 0.3, bok: 0.3, // hur mycket varje redskap väger när byn saknar alla den vill ha
   slaktbank: 1, flatarbank: 0.6, scen: 0.3, // ... varje station när byn saknar den
   grill: 0.8, // ... grillställningen (steg 2.8.1)
   tork: 0.6, // ... torkställningen (steg 2.8.2)
@@ -214,7 +214,7 @@ const tillverk = (k: string): ProjektDef => {
 export const PROJEKT: Record<string, ProjektDef> = {
   ...Object.fromEntries(TILLVERKA_LIST.map(k => [k, tillverk(k)])),
   ...Object.fromEntries(Object.keys(GORS).map(g => [g, redskap(g)])),
-  ...Object.fromEntries(STATION_LIST.map(k => [k, station(k)])),
+  ...Object.fromEntries(STATION_LIST.filter(k => !(STATIONER[k] as StationDef).vrak).map(k => [k, station(k)])), // ett vrak (grundarnas trasiga vagn) byggs inte, och dess namn är redskapets (vagnen, steg 13.7.3)
   ...Object.fromEntries(TILLBEHOR_LIST.map(k => [k, tillbehor(k)])),
   ...Object.fromEntries(DORR_LIST.map(k => [k, dorr(k)])),
   // fällorna (steg 7.4.2, 7.5.10 och 7.5.11): görs vid fångstbänken och sätts ut. Byn vill ha några för varje den som fångar
