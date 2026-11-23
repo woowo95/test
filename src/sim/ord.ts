@@ -89,6 +89,7 @@ export function sakOrd(k: string): Ord {
   const d = SAKER[k], [namn, niva] = (d?.namn ?? k).split(' · '), n = namn.toLowerCase();
   // rätterna (steg 12.1.48): "Rotgröt · Fin" blir "en portion fin rotgröt" och "sju portioner fin rotgröt", med måltidens nivå som ett ord
   if (niva) { const r = `${RATT_ADJ[niva] ?? niva.toLowerCase()} ${n}`; return ['en', `portion ${r}`, `portioner ${r}`]; }
+  if (d?.par) return ['ett', `par ${n}`, `par ${n}`]; // plaggen som är ett par (steg 13.2.2)
   return [d?.ett ? 'ett' : 'en', n, n];
 }
 // en eller ett framför saken
@@ -137,7 +138,7 @@ export function bestamd(namn: string, ett?: boolean): [string, string] {
   const av = namn.indexOf(' av ');
   if (av > 0) { const [b, h] = bestamd(namn.slice(0, av), ett); return [b + namn.slice(av).toLowerCase(), h]; }
   const n = namn.toLowerCase();
-  if (n.endsWith('skor')) return [n + 'na', 'de'];
+  if (/(skor|byxor|stövlar)$/.test(n)) return [n + 'na', 'de'];
   const o = n.split(' '), sub = o[o.length - 1], e = ett ?? arEtt(n);
   if (o.length > 1) return [`${e ? 'det' : 'den'} ${o.slice(0, -1).map(svag).join(' ')} ${bestOrd(sub, e)}`, e ? 'det' : 'den'];
   return [bestOrd(n, e), e ? 'det' : 'den'];

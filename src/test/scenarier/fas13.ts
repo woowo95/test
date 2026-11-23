@@ -4,6 +4,7 @@ import { SCENARIER, klockan, medBank, nyInvanare, testBy, utanWebblasare } from 
 import { GRAFER, grafHtml } from '../../ui/graf';
 import { setByn } from '../../ui/lage';
 import { START } from '../kor';
+import { sakOrd } from '../../sim/ord';
 
 // regeln för stationerna (steg 13.1.1): varje recept vid en station med kvalitet är "bara här" eller "fortare och bättre här"
 SCENARIER.stationsregel = {
@@ -272,6 +273,40 @@ SCENARIER.garvning = {
       [`varje hud garvas till sina hela läderbitar med 1 talg per läder${fel.length ? ` (fel: ${fel.join('; ')})` : ''}`, !fel.length],
       ['varje hud garvas bara vid garvningsställningen', vid],
       [`kohuden räcker till tre bitar i kläderna (en rock tar ${SIM.materialTill('rock', 'kohud')} kohud)`, ko],
+    ];
+  },
+};
+
+// stövlarna och lädret i skor och bälte (steg 13.2.2): stövlarna hör till skornas grupp, håller dubbelt så länge och skyddar
+// benen, lädret värmer mindre än skinnet, och klädseln tar det plagg som har högst poäng
+SCENARIER.stovlar = {
+  text: 'Steg 13.2.2: stövlarna sys av 2 läder och 1 rep vid slöjdbänken på 5 minuter, hör till skornas grupp, skyddar fötterna och benen och håller dubbelt så länge som skor av läder. Skor och bälte kan göras av läder, lädret värmer 0,7, och den som saknar skor tar på sig det plagg som har högst poäng (stövlarna före skorna, fast skorna står först)',
+  kor: () => {
+    const S = SIM.SAKER, st = S.stovlar_lader, sk = S.skor_lader;
+    const recept = !!st && st.grupp === 'skor' && st.skaffa?.av?.lader === 2 && st.skaffa?.av?.rep === 1 && Object.keys(st.skaffa.av).length === 2 && st.skaffa.min === 5;
+    const bank = (SIM.STATIONER as Record<string, SIM.StationDef>).flatarbank, vidBank = bank.gor.includes('skor') && bank.bara!.includes('skor');
+    const haller = !!sk && Math.abs(st!.klad!.dygn - 2 * sk.klad!.dygn) < 1e-9;
+    const ben = SIM.kladSkyddStrid('stovlar_lader')?.delar.includes('benV') && !SIM.kladSkyddStrid('skor_lader')?.delar.includes('benV');
+    const lader = SIM.KLADMATERIAL.lader.varme === 0.7 && !!S.balte_lader && S.balte_lader.skaffa?.av?.lader === 2 && S.balte_lader.gors!.text.startsWith('Syr');
+    const ord = sakOrd('stovlar_lader')[1] === 'par stövlar av läder';
+    // klädseln: skorna står först bland tingen, men stövlarna har högre poäng
+    const s = SIM.createState(5, START), p = SIM.living(s)[0]!;
+    klockan(s);
+    for (const t of SIM.tingOf(s)) if (t.bar === p.id) t.bar = undefined;
+    for (const t of SIM.tingOf(s)) if (SIM.SAKER[t.k]?.klad?.plats === 'fotter') t.bar = -99; // ingen annan fri fotbeklädnad
+    const fri = (k: string) => { const t = SIM.addTool(s, k, p); t.bar = undefined; return t; };
+    const skor = fri('skor_kaninskinn'), stovlar = fri('stovlar_lader');
+    const ps = SIM.plaggPoang(s, p, 'skor_kaninskinn', undefined), pv = SIM.plaggPoang(s, p, 'stovlar_lader', undefined);
+    SIM.stepKlader(s);
+    const valde = stovlar.bar === p.id && skor.bar !== p.id; // skorna tas av någon annan som också saknar
+    return [
+      ['stövlarna sys av 2 läder och 1 rep på 5 minuter i skornas grupp', recept],
+      ['skorna och stövlarna görs bara vid slöjdbänken', vidBank],
+      [`stövlarna håller dubbelt så länge som skorna av läder (${st?.klad?.dygn} mot ${sk?.klad?.dygn} dygn)`, haller],
+      ['stövlarna skyddar benen, skorna inte', !!ben],
+      ['lädret värmer 0,7 och bältet sys av 2 läder', lader],
+      [`orden: "ett ${sakOrd('stovlar_lader')[1]}"`, ord],
+      [`den som saknar skor tar stövlarna (poäng ${pv.toFixed(2)}) före skorna (${ps.toFixed(2)}; skorna ${skor.bar === p.id ? 'på' : 'av'}, stövlarna ${stovlar.bar === p.id ? 'på' : 'av'})`, valde],
     ];
   },
 };

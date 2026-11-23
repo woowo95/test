@@ -296,9 +296,18 @@ export function stepKlader(s: State) {
       if (av) { av.bar = undefined; count(s, SAKER[av.k]!.klad!.varme > 0 ? 'plaggAvVarme' : 'plaggAvKyla'); } }
     for (const t of paSig(s, p)) if (heligtAvstar(s, p, kladArt(t.k), kyla)) { t.bar = undefined; count(s, 'heligtPlaggAv'); } // plagget tas av och ligger kvar
     const har = new Set(paSig(s, p).map(t => SAKER[t.k]!.klad!.plats));
+    // de slag som finns fria och är värda att ta på, det med högst poäng först (steg 13.2.2): stövlarna före skorna, den
+    // varmare rocken före den kallare, i stället för i registrets ordning
+    const slag: { k: string; v: number }[] = [];
     for (const k of KLAD_SLAG) {
+      if (!avSlag.has(k) || har.has(SAKER[k]!.klad!.plats) || arMantel(k) || !kladFor(s, p, k) || heligtAvstar(s, p, kladArt(k), kyla)) continue;
+      const v = plaggPoang(s, p, k, undefined, temp);
+      if (v > KLADER.valByte) slag.push({ k, v }); // klädseln efter värmen (steg 12.1.149)
+    }
+    slag.sort((a, b) => b.v - a.v);
+    for (const { k } of slag) {
       const pl = SAKER[k]!.klad!.plats;
-      if (har.has(pl) || arMantel(k) || !kladFor(s, p, k) || heligtAvstar(s, p, kladArt(k), kyla) || plaggPoang(s, p, k, undefined, temp) <= KLADER.valByte) continue; // klädseln efter värmen (steg 12.1.149)
+      if (har.has(pl)) continue;
       let best: Ting | undefined;
       for (const t of avSlag.get(k) ?? []) {
         if (t.bar !== undefined || t.hos !== undefined || t.lass !== undefined || t.halv || t.helig !== undefined || !lends(s, t.agare, p)) continue; // det heliga tinget bärs inte (steg 10.3.20)

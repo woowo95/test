@@ -7,6 +7,7 @@ import { rattSaker } from './ratter';
 // frågar registret. En ny sak läggs till här (och får en ikon i ikoner.ts).
 export interface SakDef {
   namn: string;
+  par?: true; // ett par (skor, byxor, stövlar): "ett par skor av harskinn" (steg 13.2.2)
   ett?: true; // ett ett-ord (ett rep, ett bär); annars ett en-ord. För kontrollen av texterna (steg 4.5.1.2)
   stack?: number; // en full börda: vad en normalstark vuxen bär. Saknas = ingen egen stack
   vikt?: number; // hur mycket en styck tar av en hand (steg 6.1.8; en vanlig hand orkar 10, utrustning.ts). Saknas = VIKT_STACK delat med stacken

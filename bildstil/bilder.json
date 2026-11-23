@@ -555,6 +555,9 @@
     {"id": "sym_sandebud", "sort": "sym-panel", "namn": "Sändebudet", "w": 16, "h": 13, "vad": "en hoprullad näverrulle med en röd snodd (Björns val, steg 12.6.1)", "ritad": 1, "godkand": true},
     {"id": "sym_aventyrare", "sort": "sym-panel", "namn": "Äventyraren", "w": 16, "h": 14, "vad": "en stig upp mot ett snöberg (Björns val, steg 12.6.1)", "ritad": 1, "godkand": true},
     {"id": "sym_kk_tro", "sort": "sym-panel", "namn": "Krönikans tro", "w": 16, "h": 16, "vad": "runstenens sol i guld (Björns val, steg 12.6.1)", "ritad": 1, "godkand": true},
-    {"id": "sym_amne_mat", "sort": "sym-panel", "namn": "Ämnet maten", "w": 8, "h": 8, "vad": "en lerskål med mat och ånga (Björns val, steg 12.6.1)", "ritad": 1, "godkand": true}
+    {"id": "sym_amne_mat", "sort": "sym-panel", "namn": "Ämnet maten", "w": 8, "h": 8, "vad": "en lerskål med mat och ånga (Björns val, steg 12.6.1)", "ritad": 1, "godkand": true},
+    {"id": "stovlar_lader", "sort": "sak-klader", "namn": "Stövlar av läder", "w": 12, "h": 12, "vad": "ett par stövlar av garvat brunt läder utan päls, med skaft upp över vaden och en rem av rep runt skaftet, som de står bredvid varandra; de skyddar fötterna och benen (steg 13.2.2)", "slag": ["bars"]},
+    {"id": "barsele_lader", "sort": "sak-klader", "namn": "Bärsele", "w": 12, "h": 12, "vad": "en bärsele av läder med rep: en bred påse som bärs framför bröstet med en rem över axeln, där modern bär sitt spädbarn medan hon arbetar; på kolonisten syns barnets lilla huvud uppe i selen framför bröstet och remmen går över axeln, aldrig genom huvudet (steg 13.2.3)", "slag": ["bars"]},
+    {"id": "barnklader_kaninskinn", "sort": "sak-klader", "namn": "Barnkläder av harskinn", "w": 12, "h": 12, "vad": "barnets enda klädnad av två harskinn och rep: en liten kort kolt i ett stycke som täcker kroppen och halva benen, med ljus pälskant; den bärs av barn under 10 år i stället för rock och byxor (steg 13.2.4)", "slag": ["plagg", "bars"]}
   ]
 }

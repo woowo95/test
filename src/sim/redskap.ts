@@ -256,7 +256,8 @@ function materialVal(s: State, p: Person, g: string, ks: string[]) {
   const lage = ks.map(k => {
     const r = kladAv(k)!, M = KLADMATERIAL[r.mat], till = materialTill(r.plagg, r.mat);
     let behovs = 0;
-    for (const q of PLAGG_LIST) if (PLAGG[q].slag.includes(M.slag)) behovs += Math.max(0, villAv(s, q) - harAv(s, q) - (q === g ? 1 : 0)) * materialTill(q, r.mat);
+    for (const q of PLAGG_LIST) if (!PLAGG[q].grupp && PLAGG[q].slag.includes(M.slag)) // stövlarna räknas i skornas grupp (steg 13.2.2)
+      behovs += Math.max(0, villAv(s, q) - harAv(s, q) - (q === g ? 1 : 0)) * materialTill(q, r.mat);
     for (const d of DORR_LIST) { const n = (DORRAR[d].av as Record<string, number>)[M.sak]; if (n && folk.some(q => DORRAR[d].tek.every(t => knows(q, t)))) behovs += n * utanDorr(s, d).length; }
     return { k, varme: SAKER[k]!.klad!.varme, skydd: M.skydd, kvar: amountOf(s, M.sak) - till, behovs, till, finhet: M.finhet, varde: grundvarde(k) };
   });

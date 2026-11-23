@@ -3878,6 +3878,10 @@ for (const k of ['slunga', 'horn']) { PIX[k] = PIX.benspade; PAL[k] = PAL.benspa
 for (const pl of ['rustning', 'hjalm', 'prastdrakt', 'tecken', 'mask', 'mantel', 'byxor', 'mossa', 'snoskor', 'tunika', 'skjorta', 'kappa', 'sjal', 'halsband']) for (const m of ['kaninskinn', 'vargskinn', 'bjornskinn', 'farskinn', 'getskinn', 'radjursskinn', 'kohud', 'svinskinn', 'lader', 'lintyg', 'ylle', 'benband', 'tandband', 'fjaderband']) if (!KARTBILDER[`${pl}_${m}`]) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
 for (const pl of ['prastdrakt', 'mask', 'mantel', 'byxor', 'mossa', 'snoskor']) { PIX[`${pl}_vitskinn`] = PIX.rock_vitskinn; PAL[`${pl}_vitskinn`] = PAL.rock_vitskinn; } // de andra skinnplaggen av vitt harskinn i vitt (steg 10.7.22), platshållare
 for (const m of ['lader', 'lintyg', 'ylle']) for (const pl of ['rock', 'skor']) if (!PIX[`${pl}_${m}`]) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
+// stövlarna och bältet av läder (steg 13.2.2): platshållare i lädrets bruna tills Björn valt, stövlarna som skorna utan pälskant
+PIX.skor_lader = PIX.skor_kaninskinn; PAL.skor_lader = { ...PAL.skor_kaninskinn, G: '#5e3c24', H: '#7d5b40', W: '#987e62' };
+PIX.stovlar_lader = PIX.skor_kaninskinn; PAL.stovlar_lader = { ...PAL.skor_kaninskinn, G: '#5e3c24', H: '#7d5b40', W: '#987e62' };
+PIX.balte_lader = PIX.balte_rep; PAL.balte_lader = Object.fromEntries(Object.entries(PAL.balte_rep).map(([c, v], i) => [c, v === '#24201d' ? v : ['#3f2415', '#5e3c24', '#7d5b40', '#987e62'][i % 4]!]));
 for (const k of ['grillgadda', 'grillmort']) { PIX[k] = PIX.grillfisk; PAL[k] = PAL.grillfisk; }
 for (const k of ['torrgadda', 'torrmort']) { PIX[k] = PIX.torrfisk; PAL[k] = PAL.torrfisk; }
 for (const st of ['fangstbank', 'stenhuggarplats', 'klyvplats', 'ortkok', 'garvning', 'harden', 'vavstol']) for (const k of [st, st + '_karta', st + '_karta_v']) if (k !== st || !KARTBILDER[st]) { PIX[k] = PIX.korg; PAL[k] = PAL.korg; } // en station med kartbild har den som symbol (iRutan)

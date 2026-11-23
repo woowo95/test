@@ -225,6 +225,7 @@ const DEF = {
   // plaggen (klader.ts): mangd bitar av materialet, och det i av
   rock: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
   skor: { var: 'plagg', mangd: 1, av: { rep: 1 }, min: 5 },
+  stovlar: { var: 'plagg', mangd: 2, av: { rep: 1 }, min: 5 }, // stövlarna av läder (steg 13.2.2)
   balte: { var: 'plagg', mangd: 2, av: {}, min: 5 },
   axelrem: { var: 'plagg', mangd: 1, av: { rep: 1 }, min: 5 }, // steg 7.1.2
   ryggsack: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 }, // steg 7.1.3: tre skinn och remmar av rep, lika länge som de andra plaggen
