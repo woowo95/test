@@ -61,6 +61,8 @@ export function besokIn(s: State, sl: Sallskap) {
   if (sl.hjalp) { useMap(b); hjalpBygge(b); useMap(s); sl.hjalpTim = 0; } // bygget byn behöver hjälp med (steg 11.13.23)
   count(s, 'besok in', folk.length); count(b, 'besökare kom', folk.length);
 }
+// det som avgörs hemma medan sällskapet är borta (partnern kan ha dött eller flyttat där) tas inte från gästen
+const HEMMA = ['partner'] as const;
 // sällskapet vänder hem: var och en tar med sig det som ändrats tillbaka, och maten som är kvar går i packningen
 export function besokUt(s: State, sl: Sallskap, t: number) {
   const par = sl.gaster;
@@ -79,7 +81,7 @@ export function besokUt(s: State, sl: Sallskap, t: number) {
     else {
       skrivVanor();
       const kropp = JSON.parse(JSON.stringify(g)) as Record<string, unknown>;
-      for (const f of [...BESOKET, 'fran']) delete kropp[f];
+      for (const f of [...BESOKET, 'fran', ...HEMMA]) delete kropp[f];
       Object.assign(p, kropp);
     }
     if (b) { b.gastTing = b.gastTing?.filter(x => x.agare !== gid); if (!b.gastTing?.length) delete b.gastTing; if (g.died === undefined) gastGar(b, gid); }
