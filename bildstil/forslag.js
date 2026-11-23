@@ -54,7 +54,7 @@
     const sw = bilder.reduce((s, b) => s + bredd(b.rader) + 4, 0) + (H ? H.w + 8 : 0), hojd = Math.max(20, ...bilder.map(b => b.rader.length), H ? H.h : 0);
     const rikt = ['fram', 'sida', 'bak'].filter(r => v[r]);
     const w = 4 + sw + (bars ? rikt.length * FW + 2 + (v.portratt ? 64 : 0) : 0) + 4, h = bars ? 72 : hojd + 8;
-    return { text: v.ide || '', w, h, rita: B => {
+    return { text: v.ide || '', w, h, lager: !!v.lager, rita: B => { // lager: ett lager över något (täcket över bädden), där bilden i sammanhanget är större än saken själv
       const fot = h - 4; let x = 4;
       for (const b of bilder) { lagg(B, b.rader, x, fot - b.rader.length); x += bredd(b.rader) + 4; }
       if (H) { x += 4; H.rita(B, x, fot - H.h); x += H.w + 4; }
