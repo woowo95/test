@@ -1215,3 +1215,35 @@ SCENARIER.varma = {
     ];
   },
 };
+
+// raderna står på sin nivå (steg 13.8.2)
+SCENARIER.valordning = {
+  text: 'Steg 13.8.2: raderna står på sin nivå. Den som blöder trycker på såret före maten, den törstiga dricker före maten, vakten går inte före den som räddar, rustningen hör till Fara, latrinen till lagningen, och örtplockningen vinner inte över maten när byn har ont om mat',
+  kor: () => {
+    const s = SIM.createState(1, START); s.kal = SIM.nyKalender(s.now, 2); klockan(s, 11);
+    const vuxna = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen && SIM.ageOf(r, s.now) < 50), p = vuxna[0];
+    const fyll = () => Object.assign(p, { rest: 1, toa: 1, torst: 1, hunger: 1, social: 1, warm: 1, task: undefined, skador: [], blod: 1 });
+    // blöder och är mycket hungrig: trycker på såret
+    fyll(); p.hunger = 0.05; SIM.skada(s, p, 'bal', 'sticksar', 0.5, 'blod', 'i en strid'); SIM.chooseTask(s, p);
+    const blod = p.task?.why ?? '-';
+    // farligt törstig och mycket hungrig: dricker först
+    fyll(); p.hunger = 0.05; p.torst = SIM.TORST.farligt - 0.02; SIM.chooseTask(s, p);
+    const torst = p.task?.act ?? '-';
+    // ordningen i registret
+    const A = SIM.ARBETEN, i = (id: string) => A.findIndex(r => r.id === id), sist5 = Math.max(...A.map((r, j) => r.niva === 5 ? j : -1));
+    const vakt = i('vakt') > sist5 && A[i('vakt')].niva === 6;
+    const rusta = A[i('rusta')].niva === 1 && i('rusta') < i('skydd'), latrin = A[i('tomma_latrin')].niva === 7;
+    // den mogna örten i krukan väntar medan byn har ont om mat
+    p.tek = { ...(p.tek ?? {}), odling: 1 };
+    const kr = SIM.addTool(s, 'lerkruka_liten', p); kr.hos = undefined; kr.x = Math.floor(p.x); kr.y = Math.floor(p.y); kr.vaxt = { g: 'rolleka', v: 1 };
+    setFood(s, 0); fyll(); SIM.chooseTask(s, p);
+    const ort = p.task?.act ?? '-';
+    return [
+      [`den som blöder och är hungrig trycker på såret (${blod})`, blod.includes('Trycker')],
+      [`den farligt törstiga dricker före maten (${torst})`, torst !== 'ata' && torst !== 'maltid' && /dric|vatten|sno/i.test(torst)],
+      ['vakten står på nivå 6 efter Rädda', vakt],
+      ['rustningen hör till Försvara byn under Fara, och latrinen till lagningen under Tak', rusta && latrin],
+      [`örtplockningen går inte före maten när byn har ont om mat (${ort})`, ort !== 'ortPlocka'],
+    ];
+  },
+};
