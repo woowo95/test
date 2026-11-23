@@ -206,6 +206,7 @@ export const HANDLARVAROR: { k: string; n: [number, number]; vikt: number }[] = 
   { k: 'levhons', n: [3, 5], vikt: 1 }, // steg 9.8.5 och 9.8.10: får och getter som går med handlaren
   { k: 'kniv', n: [1, 1], vikt: 2 },
   { k: 'yxa', n: [1, 1], vikt: 1 },
+  { k: 'jarnyxa', n: [1, 1], vikt: 1 }, { k: 'jarnkniv', n: [1, 1], vikt: 1 }, { k: 'lie', n: [1, 1], vikt: 1 }, // järnsakerna (steg 13.1.12): från en by som kan smida, med priset ur sakens värde
   { k: 'benflojt', n: [1, 1], vikt: 1 },
   { k: 'honung', n: [2, 4], vikt: 1 }, { k: 'bivax', n: [1, 3], vikt: 1 }, // steg 10.10.26: honung till mjödet och vax till ljus åt en by utan bin
 ];

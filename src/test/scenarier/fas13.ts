@@ -1,6 +1,6 @@
 // Scenarier för fas 13.
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, medBank, nyInvanare } from './hjalp';
+import { SCENARIER, klockan, medBank, nyInvanare, testBy } from './hjalp';
 import { START } from '../kor';
 
 // regeln för stationerna (steg 13.1.1): varje recept vid en station med kvalitet är "bara här" eller "fortare och bättre här"
@@ -169,3 +169,25 @@ SCENARIER.branningnotis = {
     ];
   },
 };
+
+// handlarens järnsaker (steg 13.1.12)
+SCENARIER.handlarjarn = {
+  text: 'Steg 13.1.12: handlaren kan ha en järnyxa, en järnkniv eller en lie bland varorna (rader i HANDLARVAROR), från en by som kan smida, och priset kommer ur sakens värde, så att en by utan malm och smedja kan köpa redskapen färdiga',
+  kor: () => {
+    const JARN = ['jarnyxa', 'jarnkniv', 'lie'];
+    const s = SIM.cloneState(testBy(10)), r = s.varld!.rader!.find(x => x.nr !== s.varld!.huvud)!;
+    const last = (tek: string[], f: number) => { const q = { ...r, tek, tal: { ...r.tal, silver: 1000 } } as typeof r; return SIM.packaRad(q, mulberry(f), () => 10000).varor; };
+    let med = 0, utan = 0;
+    const kan = [...new Set([...r.tek, 'smedja', 'yxa', 'kniv'])], kanInte = r.tek.filter(t => t !== 'smedja');
+    for (let f = 1; f <= 60; f++) { med += last(kan, f).filter(w => JARN.includes(w.k)).length; utan += last(kanInte, f).filter(w => JARN.includes(w.k)).length; }
+    const rader = JARN.every(k => SIM.HANDLARVAROR.some(v => v.k === k));
+    const pris = JARN.map(k => `${k} ${SIM.grundvarde(k).toFixed(1)}`).join(', ');
+    return [
+      ['järnyxan, järnkniven och lien är rader bland handlarens varor', rader],
+      [`en by som kan smida skickar dem med sin handlare (${med} järnsaker på 60 färder)`, med > 0],
+      [`en by som inte kan smida skickar inga (${utan})`, utan === 0],
+      [`priset kommer ur sakens värde (${pris})`, JARN.every(k => SIM.grundvarde(k) > 0)],
+    ];
+  },
+};
+const mulberry = (frö: number) => () => { frö = (frö + 0x6D2B79F5) | 0; let t = Math.imul(frö ^ (frö >>> 15), 1 | frö); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
