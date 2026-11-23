@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { eldSkuggor } from './eldskugga';
-import { MORKER, eldRackvidd, sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR, type Ljuspunkt, living, byId, rovarPlats } from '../sim';
+import { HIGH, angarOf, angRutor, MORKER, eldRackvidd, sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR, type Ljuspunkt, living, byId, rovarPlats } from '../sim';
 import { s, ui } from './lage';
 import { posOf } from './manniskor';
 import { gaster } from './gaster';
@@ -51,9 +51,19 @@ function treeLevel(g: ReturnType<typeof groundOf>, i: number) {
 function coverSig() {
   const g = groundOf(s); let h = 0;
   for (let i = 0; i < g.cover.length; i++) h = (Math.imul(h, 31) + Math.floor((1 - g.cover[i]) * 16) * 16 + treeLevel(g, i)) | 0;
+  for (const a of angarOf(s)) for (const i of angRutor(a)) h = (Math.imul(h, 31) + (g.cover[i] >= HIGH ? 1 : 0)) | 0; // ängens höga gräs (steg 13.7.4)
   return h;
 }
 const jord = (t: number) => t === T.Gras || t === T.Skog;
+// slåtterängarnas rutor (1), och en nyckel som byts när en äng märks ut eller tas bort
+let angCache: { k: string; r: Uint8Array } | undefined;
+function angRutorAv() {
+  const k = angarOf(s).map(a => `${a.x},${a.y},${a.w},${a.h}`).join(';');
+  if (angCache?.k === k) return angCache;
+  const r = new Uint8Array(W * H);
+  for (const a of angarOf(s)) for (const i of angRutor(a)) r[i] = 1;
+  return angCache = { k, r };
+}
 // force: allt ställs om nu; alla: och ritas på en gång (annars det som syns först, och resten efter hand i bildrutorna)
 export function drawTerrain(force = false, alla = force) {
   const ai = ageIndex(s), now = performance.now();
@@ -75,7 +85,8 @@ export function drawTerrain(force = false, alla = force) {
     // marken som brann nyss: mörk, och ljusare ju längre sedan (BRAND.svart dygn)
     let svart: Map<number, number> | undefined;
     for (const [i, t] of s.aska ?? []) (svart ??= new Map()).set(i, Math.max(0, 0.75 * (1 - (s.now - t) / (BRAND.svart * DAY))));
-    stallMark({ W, H, tiles: g.tiles, cover: g.cover, trees: g.trees, vatten: T.Vatten, sand: T.Sand, sten: T.Sten, lera: T.Lera, jord }, mt, sno, is, `${s.seed}|${vat}`, svart);
+    const ang = angRutorAv(); // slåtterängen ritas tätt med högt gräs (steg 13.7.4)
+    stallMark({ W, H, tiles: g.tiles, cover: g.cover, trees: g.trees, vatten: T.Vatten, sand: T.Sand, sten: T.Sten, lera: T.Lera, jord, ang: ang.r, hog: HIGH }, mt, sno, is, `${s.seed}|${vat}|${ang.k}`, svart);
     ritaTrad(g, sno, alla ? Infinity : TRAD_MS, synR);
   } else fortsattTrad(TRAD_MS);
   ritaMark(6, alla, syn);

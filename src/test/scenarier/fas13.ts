@@ -5,6 +5,7 @@ import { GRAFER, grafHtml } from '../../ui/graf';
 import { setByn } from '../../ui/lage';
 import { BEAT, START } from '../kor';
 import { sakOrd } from '../../sim/ord';
+import { BIT, rakna, stallMark } from '../../ui/mark';
 
 // regeln för stationerna (steg 13.1.1): varje recept vid en station med kvalitet är "bara här" eller "fortare och bättre här"
 SCENARIER.stationsregel = {
@@ -1149,6 +1150,31 @@ SCENARIER.fordongors = {
       [`byn vill göra en kälke, en släde och en vagn (${vill.join('/')})`, vill.every(v => v)],
       [`byn gjorde en kälke (${har('kalke')}), en släde (${har('slade')}) och en vagn (${har('vagn')}) på ${tim} timmar`, har('kalke') > 0 && har('slade') > 0 && har('vagn') > 0],
       [`första gången står i statistiken (${s.stat?.kalkarGjorda ?? 0}/${s.stat?.sladarGjorda ?? 0}/${s.stat?.vagnarGjorda ?? 0})`, !!s.stat?.kalkarGjorda && !!s.stat?.sladarGjorda && !!s.stat?.vagnarGjorda],
+    ];
+  },
+};
+SCENARIER.angbild = {
+  text: 'Slåtterängen syns på kartan (steg 13.7.4): ängens rutor där gräset vuxit sig högt ritas tätt med det höga gräset som redan finns på marken, och en ruta som slagits ritas som vanligt gräs',
+  kor: () => {
+    utanWebblasare();
+    const W = 16, H = 16, n = W * H, BP = BIT * 16;
+    const tiles = new Uint8Array(n).fill(SIM.T.Gras), cover = new Float32Array(n).fill(1), trees = new Float32Array(n);
+    const hog = 2 * W + 2, slagen = 2 * W + 5;
+    cover[slagen] = 0.5;
+    const ang = new Uint8Array(n); ang[hog] = 1; ang[slagen] = 1;
+    const jord = (t: number) => t === SIM.T.Gras;
+    const bild = (medAng: boolean) => {
+      stallMark({ W, H, tiles, cover, trees, vatten: SIM.T.Vatten, sand: SIM.T.Sand, sten: SIM.T.Sten, lera: SIM.T.Lera, jord, ...(medAng ? { ang, hog: SIM.HIGH } : {}) }, { ny: 2, gammal: 2, frac: 1 }, 0, 0, medAng ? 'ang' : 'utan', undefined);
+      const px = new Int8Array(BP * BP); rakna(0, 0, px); return px;
+    };
+    const utan = bild(false), med = bild(true);
+    // punkterna i rutan i (utan en rad överst, där tuvorna från rutan ovanför sticker in) som skiljer sig
+    const skiljer = (i: number) => { let d = 0; const tx = (i % W) * 16, ty = Math.floor(i / W) * 16; for (let y = ty + 4; y < ty + 16; y++) for (let x = tx; x < tx + 16; x++) if (utan[y * BP + x] !== med[y * BP + x]) d++; return d; };
+    const dHog = skiljer(hog), dSlagen = skiljer(slagen), dUtanfor = skiljer(8 * W + 8);
+    return [
+      [`ängens ruta med högt gräs har fler tuvor (${dHog} punkter ändrade)`, dHog > 20],
+      [`den slagna rutan ritas som vanligt gräs (${dSlagen} punkter ändrade)`, dSlagen === 0],
+      [`gräset utanför ängen ändras inte (${dUtanfor})`, dUtanfor === 0],
     ];
   },
 };
