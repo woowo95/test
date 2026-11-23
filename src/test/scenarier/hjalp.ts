@@ -70,10 +70,13 @@ export type Koll = [string, boolean];
 // gammal, så att ett scenario som bara iakttar en by inte kör en egen. Behöver scenariot något som inte alla byar har (ett stråk
 // utanför byn) tar det den yngsta som har det (villkor), så att det inte beror på hur just den yngsta byn råkade bli. Finns
 // ingen sparad by (före första facit) körs by 1 dit
+const TESTBY_VUXNA = 3;
 export const testBy = (minDygn: number, villkor?: (s: State) => boolean): State => {
   const dir = fileURLToPath(new URL('../../../test/facit-byar/', import.meta.url));
   const filer = readdirSync(dir).map(f => /^(\d+)-(\d+)\.json\.gz$/.exec(f)).filter(m => m && +m[2] >= minDygn).sort((a, b) => +a![2] - +b![2] || +a![1] - +b![1]);
-  for (const f of filer) { const b = lasBy(dir + f![0]); if (!villkor || villkor(b)) return b; }
+  // scenarierna räknar med en by med folk i: en sparad by där bara ett par vuxna lever kvar hoppas över
+  const folk = (b: State) => SIM.living(b).filter(p => SIM.ageOf(p, b.now) >= SIM.ALDER.vuxen).length >= TESTBY_VUXNA;
+  for (const f of filer) { const b = lasBy(dir + f![0]); if (folk(b) && (!villkor || villkor(b))) return b; }
   return korBy(1, minDygn).s;
 };
 // testbyn efter minDygn med världen dygn fram i tiden: räknas en gång per process och delas av scenarierna (en kopia var)
