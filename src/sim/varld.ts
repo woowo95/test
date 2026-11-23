@@ -307,6 +307,10 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     if (haft && !s.stat?.forstaTamdjur) (s.stat ??= {}).forstaTamdjur = 1;
   }],
   [67, 'det som en äldre version lagt på en eldruta (en ny station på en släckt lägereld, nödplatsen bredvid lagret) flyttas ut ur elden (steg 12.1.229)', s => ingetIElden(s)],
+  [68, 'sjukbädden tas bort, och sjukstugan är ett rum (steg 13.1.14): en sjukbädd blir en halmbädd på samma plats', s => {
+    for (const t of s.stationer ?? []) if (t.k === 'sjukbadd') (t as { k: string }).k = 'halmbadd';
+    for (const p of s.people) if (p.task?.act === 'station' && p.task.tool === 'sjukbadd') p.task = undefined;
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

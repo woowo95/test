@@ -14,10 +14,10 @@ import { hemOverskott } from './byggplan';
 import { ALDER, ageOf, byId, count, familjOf, forstaGang, living, log } from './folk';
 import { tanke } from './tankar';
 import { addTool, ingenHar, tingOf } from './agande';
-import { type Rum, roomAt, husById } from './byggnad';
-import { sjukKrok, sovPlats } from './byggnader';
+import { type Rum, gridOf, roomAt, husById } from './byggnad';
+import { rumFnOf as rumFn, sjukKrok, sovKvar, sovPlats, utanBadd } from './byggnader';
 import { ELDSTATIONER, HARD_GNISTOR } from './stationseld';
-import { rumTaggar } from './rum';
+import { rumInfo, rumTaggar, sjukstugaKrav } from './rum';
 import { coldOf, temperature, vaderKrok } from './vader';
 import { KLADMATERIAL, PLAGG, kladAv } from './klader';
 import { paSig } from './utrustning';
@@ -161,21 +161,59 @@ finareKrok.finare = (s, k) => {
 // p sitter på toa i ett utedass
 export const iDass = (s: State, p: Person) => p.task?.act === 'toa' && p.task.phase === 'do' && !!stationDef(stationRutor(s).at.get(tileOf(p.x, p.y))?.k ?? '')?.dass;
 
-// ---------- sjukbädden och sjukstugan (steg 12.4.10) ----------
-// Den som är sjuk med tecken eller har ett öppet sår eller ett benbrott lägger sig hellre i en ledig sjukbädd (boende i
-// byggnader.ts) och läker STATION.sjukLak gånger fortare där (lakKrok i halsa.ts). Ett rum med en sjukbädd är en Sjukstuga
-// (RUMSTYPER i rum.ts), och där andra sover blir det en krock, så sjukbädden står helst i ett rum där ingen annan sover (siteInne).
-// Smittan räknas per rum (sjukdom.ts), så då smittas färre. Byn vill ha en sjukbädd, och fler när fler ligger sjuka än det finns bäddar
-// behovet av sjukbädden (steg 12.1.235): timmarna läkning som sjukbädden sparar mot den egna bädden (skadornas timmar kvar,
-// grad gånger lakTim, och sjukbädden läker STATION.sjukLak gånger fortare), och för den som är sjuk med tecken vad det är värt
-// att ligga för sig. Den som sparar mer än STATION.sjukVinst timmar vill ha en sjukbädd, och de med störst behov får dem först
+// ---------- sjukstugan (steg 12.4.10 och 13.1.14) ----------
+// Sjukstugan är ett rum (kombinationstaggen sjukstuga i RUMSTYPER, rum.ts): bäddar i ett varmt rum med en hylla eller kista, när byn
+// kan tekniken. Den som är sjuk med tecken eller har ett öppet sår eller ett benbrott går före de friska till bäddarna där (boende i
+// byggnader.ts) och läker STATION.sjukLak gånger fortare i dem (lakKrok i halsa.ts). En frisk kan sova där men vilar sämre (RUM_MINUS),
+// och eftersom smittan räknas per rum (sjukdom.ts) smittas hen lättare. Byn vill ha en sjukstuga när fler vill ligga i en än det finns
+// bäddar i byns sjukstugor, och byggplanen ställer det rummet kräver (en bädd, ett fyrfat om ingen härd värmer, en hylla) i ett rum där
+// ingen annan sover
+// behovet av sjukstugan (steg 12.1.235): timmarna läkning som sjukstugans bädd sparar mot den egna bädden (skadornas timmar kvar,
+// grad gånger lakTim, och sjukstugan läker STATION.sjukLak gånger fortare), och för den som är sjuk med tecken vad det är värt
+// att ligga för sig. Den som sparar mer än STATION.sjukVinst timmar vill ligga i sjukstugan, och de med störst behov får bäddarna först
 export const sjukBehov = (s: State, p: Person) => (p.skador ?? []).reduce((a, w) => a + w.g * ((SKADOR as Record<string, { lakTim: number }>)[w.k]?.lakTim ?? 0), 0) * (1 - 1 / STATION.sjukLak) + (isSick(p, s.now) ? STATION.sjukSmitta : 0);
 export const villSjukbadd = (s: State, p: Person) => sjukBehov(s, p) > STATION.sjukVinst;
-const sjukbaddar = (s: State) => stationerOf(s).filter(t => stationDef(t.k)?.sjuk);
-export const iSjukbadd = (s: State, p: Person) => { const t = stationRutor(s).at.get(tileOf(p.x, p.y)); return !!t && isKlar(t) && !!stationDef(t.k)?.sjuk; };
-sjukKrok.vill = villSjukbadd; sjukKrok.behov = sjukBehov;
+// rummen som är sjukstugor, och bäddarna i dem
+const arStuga = (s: State, r: Rum) => sjukstugaKrav(rumInfo(s, r, true));
+const stugor = (s: State) => gridOf(s).rooms.filter(r => r.tiles.length && arStuga(s, r));
+const baddarI = (s: State, r: Rum) => { const sov = stationRutor(s).sov; return r.tiles.filter(i => sov.has(i)); };
+export const sjukBaddar = (s: State) => stugor(s).flatMap(r => baddarI(s, r));
+export const iSjukbadd = (s: State, p: Person) => { const i = tileOf(p.x, p.y), r = roomAt(s, p.x, p.y); return !!r && stationRutor(s).sov.has(i) && arStuga(s, r); };
+sjukKrok.vill = villSjukbadd; sjukKrok.behov = sjukBehov; sjukKrok.stuga = arStuga;
 lakKrok.badd = (s, p) => iSjukbadd(s, p) ? STATION.sjukLak : 1;
-finareKrok.sjuk = s => { const n = sjukbaddar(s).length; return !n ? 1 : living(s).filter(q => villSjukbadd(s, q)).length > n ? 1 : 0; };
+// fler vill ligga i en sjukstuga än det finns bäddar där
+const stugaVill = (s: State) => living(s).some(q => knows(q, 'sjukstuga')) && living(s).filter(q => villSjukbadd(s, q)).length > sjukBaddar(s).length;
+// rummet som görs till en sjukstuga: en sjukstuga som finns och har plats för en bädd till, annars ett rum i byns hus där man sover
+// (inget familjehus) och ingen sover, eller som redan har ett fyrfat, en hylla eller en kista. Det som har mest av det rummet kräver först
+function sjukRum(s: State) {
+  if (!stugaVill(s)) return undefined;
+  let best: Rum | undefined, bs = -1;
+  for (const r of gridOf(s).rooms) {
+    const h = husById(s, r.hus);
+    if (!h?.klar || !r.tiles.length || h.tro !== undefined) continue;
+    if (arStuga(s, r)) { if (sovKvar(s, r) >= 2) return r; continue; } // en halmbädd tar två rutor
+    if (h.ag !== undefined || !rumFn(s, r).sover) continue;
+    const i = rumInfo(s, r), delar = (i.eld >= 1 ? 1 : 0) + ((i.skap ?? 0) >= 1 ? 1 : 0) + ((i.badd ?? 0) >= 1 ? 1 : 0);
+    if (i.folk > 0 && !(i.skap ?? 0) && !stationerOf(s).some(t => stationDef(t.k)?.varmer && roomAt(s, t.x, t.y) === r)) continue;
+    if (delar > bs) { bs = delar; best = r; }
+  }
+  return best;
+}
+// det sjukstugan saknar: en bädd till, värme eller en hylla
+const stugaSaknar = (s: State, r: Rum) => { const i = rumInfo(s, r, true); return { badd: arStuga(s, r) || !(i.badd ?? 0), varme: i.eld < 1, skap: !(i.skap ?? 0) }; };
+const paborjad = (s: State, k: string, r: Rum) => stationerOf(s).some(t => t.k === k && !isKlar(t) && roomAt(s, t.x, t.y) === r);
+finareKrok.sjuk = s => { const r = sjukRum(s); return r && stugaSaknar(s, r).badd && !paborjad(s, 'halmbadd', r) ? 1 : 0; };
+finareKrok.stugaSkap = (s, k) => { if (k !== 'hylla') return 0; const r = sjukRum(s); return r && stugaSaknar(s, r).skap && !paborjad(s, k, r) ? 1 : 0; };
+export const stugaVarme = (s: State) => { const r = sjukRum(s); return r && stugaSaknar(s, r).varme && !paborjad(s, 'fyrfat', r) ? r : undefined; };
+// var bädden och hyllan till sjukstugan står: i rummet, när det är den som behövs (en bädd bara när alla andra har en)
+moblerKrok.stugaSite = (s, k) => {
+  const r = sjukRum(s);
+  if (!r) return undefined;
+  const sak = stugaSaknar(s, r);
+  if (k === 'halmbadd' && sak.badd && !utanBadd(s)) return moblerKrok.inne(s, k, r);
+  if (k === 'hylla' && sak.skap) return moblerKrok.inne(s, k, r);
+  return undefined;
+};
 
 // ---------- fyrfatet (steg 12.4.11) ----------
 // Fyrfatet är ett fat av lera med glödande kol (raden fyrfat i STATIONER), som värmer ett litet rum utan härd. Elden är en rad i
@@ -190,7 +228,7 @@ export function fyrfatRum(s: State) {
   const har = new Set(fyrfaten(s).map(t => roomAt(s, t.x, t.y)));
   const sover = new Set<Rum>();
   for (const q of living(s)) { const i = sovPlats(s, q); const r = i !== undefined ? roomAt(s, i % W, Math.floor(i / W)) : undefined; if (r) sover.add(r); }
-  return [...sover].find(r => !har.has(r) && !rumTaggar(s, r).has('varmt' as never));
+  return [...sover].find(r => !har.has(r) && !rumTaggar(s, r).has('varmt' as never)) ?? stugaVarme(s); // och sjukstugan som ingen härd värmer (steg 13.1.14)
 }
 // fyrfatet som behöver kol: färdigt, slocknat eller nästan utbrunnet, när det är kallt och någon sover i rummet
 export function fyrfatKol(s: State) {

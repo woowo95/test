@@ -324,15 +324,17 @@ function boende(s: State): Boende {
   // första huset (bedTile är undefined). Bara de minsta barnen sover hos sin mor eller far
   const lever = new Set(ppl.map(q => q.id)), agd = new Map<number, number>(), plats = new Map<number, number>();
   for (const t of stationerOf(s)) if (t.ag !== undefined && lever.has(t.ag) && isKlar(t) && stationDef(t.k)?.sover) agd.set(t.y * W + t.x, t.ag);
-  // sjukbäddarna (steg 12.4.10): den som är sjuk eller skadad lägger sig hellre i en ledig sjukbädd, i vilket hus den än står
-  const sjukbaddar = stationerOf(s).filter(t => isKlar(t) && stationDef(t.k)?.sjuk).map(t => t.y * W + t.x);
-  // de med störst behov av att läka får bäddarna först (steg 12.1.235: sjukBehov i mobler.ts), och en liten skada ligger hemma
-  const sjuka = sjukbaddar.length ? ppl.filter(q => sjukKrok.vill(s, q)).map(q => ({ q, b: sjukKrok.behov(s, q) })).sort((a, c) => c.b - a.b || a.q.id - c.q.id) : [];
-  for (const [n, { q }] of sjuka.entries()) { if (n >= sjukbaddar.length) break; plats.set(q.id, sjukbaddar[n]); }
+  // sjukstugorna (steg 12.4.10 och 13.1.14): den som är sjuk eller skadad går före de friska till bäddarna i en sjukstuga, i vilket
+  // hus den än står, och de med störst behov av att läka först (steg 12.1.235: sjukBehov i mobler.ts); en liten skada ligger hemma
+  const sjuka = ppl.filter(q => sjukKrok.vill(s, q)).map(q => ({ q, b: sjukKrok.behov(s, q) })).sort((a, c) => c.b - a.b || a.q.id - c.q.id);
+  if (sjuka.length) {
+    const sov = stationRutor(s).sov, sjukbaddar = gridOf(s).rooms.filter(r => r.tiles.length && sjukKrok.stuga(s, r)).flatMap(r => r.tiles.filter(i => sov.has(i)));
+    for (const [n, { q }] of sjuka.entries()) { if (n >= sjukbaddar.length) break; plats.set(q.id, sjukbaddar[n]); }
+  }
   const vaggor = stationerOf(s).filter(t => isKlar(t) && stationDef(t.k)?.vagga).map(t => ({ i: t.y * W + t.x, r: roomAt(s, t.x, t.y) })), iVagga = new Set<number>(); // vaggorna (steg 12.4.5)
   const fordela = (tiles: number[], folk: Person[]) => {
-    const ids = new Set(folk.map(q => q.id)), fria = tiles.filter(i => !agd.has(i)), rest: Person[] = [], utan: Person[] = [];
-    for (const i of tiles) { const o = agd.get(i); if (o !== undefined && ids.has(o) && !plats.has(o)) plats.set(o, i); }
+    const tagna = new Set(plats.values()), ids = new Set(folk.map(q => q.id)), fria = tiles.filter(i => !agd.has(i) && !tagna.has(i)), rest: Person[] = [], utan: Person[] = []; // en bädd som en sjuk tagit (steg 13.1.14)
+    for (const i of tiles) { const o = agd.get(i); if (o !== undefined && ids.has(o) && !plats.has(o) && !tagna.has(i)) plats.set(o, i); }
     for (const q of folk) if (!plats.has(q.id)) (ageOf(q, s.now) < ALDER.smabarn ? utan : rest).push(q);
     rest.forEach((q, n) => { if (n < fria.length) plats.set(q.id, fria[n]); });
     for (const q of utan) {
@@ -555,4 +557,4 @@ export function husKlar(s: State, h: Hus) {
   log(s, `${stor(iMening(h.namn))} är färdigt. Där ruttnar och slits maten mindre.`, 'world');
 }
 // den som vill ligga i en sjukbädd (steg 12.4.10), satt i mobler.ts (som läses efter den här filen)
-export const sjukKrok = { vill: (_s: State, _p: Person) => false, behov: (_s: State, _p: Person) => 0 };
+export const sjukKrok = { vill: (_s: State, _p: Person) => false, behov: (_s: State, _p: Person) => 0, stuga: (_s: State, _r: Rum) => false };
