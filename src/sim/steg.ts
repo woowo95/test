@@ -126,7 +126,7 @@ import { lagRegister } from './lagar';
 import { raddDygn, raddRegister } from './radsla';
 import { LARM, handelse, larma } from './rykten';
 import { tal, horsel, barMed, binStick, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, vardKlar, vardMal } from './halsa';
-import { bordPlats, fullBorda, kladVarme, klaPaKlar, rustaKlar, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
+import { bordPlats, fullBorda, kladVarme, klaAvKlar, klaPaKlar, rustaKlar, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
 import { dragdjurBredvid, fartI, fordonI, rymsI } from './fordon';
 import { KLADER, NAKEN_PLATS, PLAGG, kladAv } from './klader';
 import { allaTing, type Ting } from './agande';
@@ -255,7 +255,7 @@ const KLAR: Partial<Record<Act, Krok>> = {
   strand: (s, p) => { p.rest = Math.min(1, p.rest + KROPP.strandVila); tanke(p, 'strand', s.now); },
   varda: vardKlar, // såren trycks på, förband läggs, infekterade sår rengörs, och den som inte kan gå bärs hem (halsa.ts)
   vatten: vattenFylld, // vattensäcken är fylld och bärs till den som inte kan gå (torst.ts)
-  avrusta: avrustaKlar, rusta: rustaKlar, klaPa: klaPaKlar,
+  avrusta: avrustaKlar, rusta: rustaKlar, klaPa: klaPaKlar, klaAv: klaAvKlar,
   be: (s, p, t) => bonKlar(s, p, t), begrava: kroppUpp, grava: gravKlar, gravvard: gravvardKlar, gravbesok: gravbesokKlar, runsten: runstenKlar, skriva: (s, p) => skrivKlar(s, p), lasa: lasKlar, // skriva och läsa (steg 10.6.5) // tron och graven (system 8.5)
   flyttaeld: (s, p) => flyttaElden(s, p), // elden står på en ny plats (eldflytt.ts)
   rymma: (s, p, t) => brytKlar(s, p, t.ref), // fångens dörr är sönder (fangelse.ts, steg 11.12.1)

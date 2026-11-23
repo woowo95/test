@@ -365,6 +365,12 @@ export function klaPaKlar(s: State, p: Person, tk: Task) {
   for (const t of paSig(s, p)) if (kladPlatser(t.k).some(x => kladPlatser(q.k).includes(x))) t.bar = undefined;
   q.bar = p.id; q.x = q.y = q.vid = undefined; count(s, 'klaPaVarmt');
 }
+// p tar av sig det varma plagget för att svalka sig (SVALKA i varme.ts, steg 13.8.1); det ligger kvar som när kläderna byts
+export function klaAvKlar(s: State, p: Person, tk: Task) {
+  const q = (s.ting ?? []).find(o => o.id === tk.ref);
+  if (!q || q.bar !== p.id) return;
+  q.bar = undefined; count(s, 'klaAvVarmt');
+}
 // byta om inför strid (steg 8.7.8): när larmet går hämtar var och en sin rustning. Vid en överraskning hinner man inte
 export function rustaVal(s: State, p: Person) {
   const t0 = Math.max(-Infinity, ...Object.values(p.larm ?? {}).map(l => l?.t ?? -Infinity)); // det senaste larmet, av vilken sort som helst

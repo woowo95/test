@@ -7,7 +7,7 @@ import { FARG, FARGER, fargTool, fargVal } from './farg';
 import { han } from './ord';
 import { flintaKrok } from './forradsmal';
 import { flintaTillVerktyg } from './redskap';
-import { VATSKOR, type VatskaId, ar_vatska, taVatska, vatskaAv, vatskaKrok, villTe } from './vatskor';
+import { VATSKOR, type VatskaId, ar_vatska, taVatska, vatskaAv, vatskaKrok, } from './vatskor';
 import { kvallsChans, kvallsDryck } from './rus';
 import { forbrukat } from './forradsmal';
 import { grundvarde } from './varde';
@@ -72,7 +72,7 @@ import { FOOD, SAKER, isFood, sakNamn, tingNamn, viktOf } from './saker';
 import { TILLVERKA } from './tillverka';
 import { materialBuffert, tandBuffert } from './forradsmal';
 import { balans } from './balans';
-import { VarmeGor, varmeSatt } from './varme';
+import { SvalkaGor, VarmeGor, svalkaKrok, svalkaSatt, varmeSatt } from './varme';
 import { islagt, naSjon } from './is';
 import { seleVal } from './barsele';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
@@ -461,8 +461,9 @@ function strandSpot(s: State, p: Person) {
 export function dangers(s: State) {
   const ppl = living(s), freezing = ppl.filter(q => q.warm < KROPP.kallt).length / (ppl.length || 1), ai = ageIndex(s);
   const cold = coldOf(temperature(s)) > 0 || freezing > VAL.fryserAndel;
-  // kylan är en fara efter hur många som fryser, också när elden glöder, och när det är kallt utan någon eld som glöder (steg 10.2.9)
-  return { kyla: freezing > VAL.fryserAndel || cold && !nagonGlod(s), svalt: foodDays(s) < VAL.svaltDygn, gras: kallTid(ai) || cold ? TROSKEL.torrgrasKyla : 0 };
+  // kylan är en fara efter hur många som fryser, också när elden glöder, och när det är kallt utan någon eld som glöder (steg 10.2.9);
+  // en släckt eld är ingen fara när ingen fryser (steg 13.8.1)
+  return { kyla: freezing > VAL.fryserAndel || cold && freezing > 0 && !nagonGlod(s), svalt: foodDays(s) < VAL.svaltDygn, gras: kallTid(ai) || cold ? TROSKEL.torrgrasKyla : 0 };
 }
 satFaror(dangers);
 // förrådsmålen för dryckerna (steg 10.2.12): krokarna sätts här, där alla filer redan är lästa
@@ -554,6 +555,19 @@ const varmeRad = (c: Ctx, why: string) => {
   };
   return varmeSatt(s, p).satt.some(x => x.gor(h));
 };
+// svalkan (varme.ts): den som är extremt varm tar det sätt att svalka sig (registret SVALKA) som gör hen minst varm de närmaste
+// timmarna, med vägen dit
+const svalkaRad = (c: Ctx, why: string) => {
+  const { s, p, v } = c;
+  const h: SvalkaGor = {
+    v, why, satt: (act, w) => set(v, act, w), iRum: rum => isarIRum(s, p, rum.tiles), vila: (VAL.svalkaMin + rnd(s, 'val', p) * VAL.svalkaSpann) * MIN,
+    bad: () => { const b = bathSpot(s); return b ? { spot: bryggSpot(s, p) ?? b, dur: (VAL.badPassMin + rnd(s, 'val', p) * VAL.badPassSpann) * MIN * VAL.pass } : undefined; },
+  };
+  return svalkaSatt(s, p).some(x => x.gor(h));
+};
+svalkaKrok.skugga = (s, p) => isLight(s.now) ? skuggaHar(s, p) : undefined;
+svalkaKrok.bad = (s, _p) => isLight(s.now) && vaderTillater(s, 'torrt') ? bathSpot(s) : undefined;
+svalkaKrok.badKyla = KROPP.badSvalka;
 export interface Arbete {
   id: string; niva: Niva;
   nar?: 'dag' | 'natt'; // utan nar: både dag och natt
@@ -677,6 +691,14 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'hungrig', niva: 2, prova: ({ s, p, v, a }) => (p.hunger < KROPP.hungrig * VARDRATT.snal || a < ALDER.smabarn || ligger(p, s.now) || halsa(p) < KROPP.svag) && kanGa(p) && ataVal(s, p, v) },
   // den som är extremt kall värmer sig (varmeRad, varme.ts), också det lilla barnet, den sjuka och den svaga
   { id: 'fryserFarligt', niva: 2, prova: c => c.p.warm < KROPP.farligt && varmeRad(c, 'Fryser farligt') },
+  // den som är extremt varm svalkar sig (svalkaRad, SVALKA i varme.ts): i skuggan, i ett hus, i vattnet eller genom att ta av
+  // sig ett varmt plagg, det som hjälper mest med vägen dit. Den som bara är för varm arbetar som vanligt (steg 2.10.20)
+  { id: 'svalka', niva: 2, prova: c => {
+    const { s, p, v } = c;
+    // extremt varm av branden: bort från den, inte in under träd som kan brinna (steg 9.2.135)
+    if (p.warm >= KROPP.extremVarm && brandHetta(s, p.x, p.y) > 0) { const bu = brandUndan(s, p); if (bu) { v.spot = bu.spot; v.dur = bu.dur; return set(v, bu.act, 'Är för varm av branden och går undan'); } }
+    return p.warm >= KROPP.extremVarm && svalkaRad(c, 'Är för varm');
+  } },
   { id: 'smabarn', niva: 2, prova: ({ v, a }) => a < ALDER.smabarn && set(v, 'sova', 'Är ett litet barn') },
   { id: 'toaGenast', niva: 2, prova: ({ p, v }) => p.toa < KROPP.toaGenast && set(v, 'toa', 'Måste gå på toa genast') },
   { id: 'torstFarligt', niva: 2, prova: ({ s, p, v }) => tortarFarligt(p) && dricka(s, p, v) }, // också den som är sjuk eller svag dricker
@@ -733,8 +755,6 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'toa', niva: 4, prova: ({ p, v, lazy }) => p.toa < KROPP.toaBehov + KROPP.latToa * lazy && set(v, 'toa', 'Behöver gå på toa') },
   { id: 'fryser', niva: 4, prova: c => fryser(c) && varmeRad(c, 'Fryser') }, // den som fryser värmer sig (varmeRad)
   { id: 'torstig', niva: 4, prova: ({ s, p, v, lazy }) => torstig(p, lazy) && dricka(s, p, v) },
-  // örtteet (steg 9.5.8 och 10.2.34): den som är sjuk, fryser eller har ett infekterat sår och är hemma väljer att dricka te
-  { id: 'te', niva: 4, prova: ({ s, p, v }) => { if (!villTe(s, p)) return false; v.spot = { x: p.x, y: p.y }; v.dur = 0; v.tool = 'te'; return set(v, 'dryck', 'Dricker örtte av rölleka'); } },
   // den som inte kan gå kravlar hem, och den som har mycket ont eller ett infekterat sår vilar (steg 2.5.2)
   // ... men bara korta sträckor: längre bort än GANG.kravlaMax rutor väntar hen där hen är på att bäras (steg 6.2.7)
   { id: 'kravla', niva: 4, prova: ({ s, p, v }) => {
@@ -743,16 +763,6 @@ export const ARBETEN: readonly Arbete[] = [
     set(v, 'vila', 'Kan inte gå och väntar på att bäras hem'); v.spot = { x: p.x, y: p.y }; return true;
   } },
   { id: 'vilaSkadad', niva: 4, prova: ({ s, p, v }) => vilaHellre(p) && set(v, 'vila', vilaSkal(p, s.now)) }, // sjuk eller skadad (steg 12.1.46)
-  // extremt varm i solen: man söker skugga under ett träd eller i ett hus, så som den som fryser söker sig till elden (steg 2.3.13).
-  // Den som bara är för varm arbetar som vanligt (steg 2.10.20)
-  { id: 'svalka', niva: 4, prova: ({ s, p, v }) => {
-    // extremt varm av branden: bort från den, inte in under träd som kan brinna (steg 9.2.135)
-    if (p.warm >= KROPP.extremVarm && brandHetta(s, p.x, p.y) > 0) { const bu = brandUndan(s, p); if (bu) { v.spot = bu.spot; v.dur = bu.dur; return set(v, bu.act, 'Är för varm av branden och går undan'); } }
-    if (!forVarmISol(s, p, KROPP.extremVarm)) return false;
-    const sk = skuggaHar(s, p);
-    if (!sk) return false;
-    v.spot = sk; v.dur = (VAL.svalkaMin + rnd(s, 'val', p) * VAL.svalkaSpann) * MIN; return set(v, 'svalka', 'Är för varm och söker skugga');
-  } },
   { id: 'trott', niva: 4, prova: ({ p, v, lazy, light }) => p.rest < (light ? KROPP.trottDag : KROPP.trottNatt) + KROPP.latVila * lazy && set(v, 'vila', 'Är trött') },
   // snart hungrig och det finns en ledig plats vid ett bord: man går dit och äter tillsammans med de andra (steg 2.2.15)
   { id: 'maltid', niva: 4, prova: ({ s, p, v }) => {

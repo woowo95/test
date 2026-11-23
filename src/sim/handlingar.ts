@@ -148,7 +148,7 @@ const DEF = {
   tanda: { namn: 'Försöker tända elden', yrke: 'Eldvaktare', slag: 'elda', varjeSlag: true },
   flyttaeld: { namn: 'Flyttar elden', yrke: 'Eldvaktare', slag: 'elda', tungt: true }, // steg 2.10.4: släcker elden och bär stenarna till en ny eldplats (eldflytt.ts)
   varma: { namn: 'Värmer sig vid elden', tecken: '♨️', vila: true, social: true, skamfri: true, plats: 'elden' },
-  svalka: { namn: 'Svalkar sig i skuggan', tecken: '🌳', vila: true, social: true, skamfri: true, dygn: true, stilla: true, plats: 'skugga' }, // steg 2.3.13
+  svalka: { namn: 'Svalkar sig', tecken: '🌳', vila: true, social: true, skamfri: true, dygn: true, stilla: true, plats: 'skugga' }, // steg 2.3.13
   toa: { namn: 'Går avsides', tecken: '{sym_toa}', ikon: 'a_toa', verb: 'har gått avsides', plats: 'avsides', nodFri: true },
   dricka: { namn: 'Dricker vid vattnet', tecken: '🥤' },
   dryck: { namn: 'Dricker', tecken: '🥤', stilla: true }, // mjölk, saft, kokt vatten, te, vin eller öl hemma (steg 10.2.34) // steg 2.4.1: platsen väljs i torst.ts
@@ -233,6 +233,7 @@ const DEF = {
   skold: { namn: 'Gör en sköld', slag: 'hantverk', hantverk: true, plats: 'station' }, bage: { namn: 'Gör en pilbåge', slag: 'hantverk', hantverk: true, plats: 'station' }, slunga: { namn: 'Gör en slunga', slag: 'hantverk', hantverk: true, plats: 'station' }, horn: { namn: 'Gör ett horn', slag: 'hantverk', hantverk: true, plats: 'station' }, dryckeshorn: { namn: 'Gör ett dryckeshorn', slag: 'hantverk', hantverk: true, plats: 'station' },
   gor_pilar: { namn: 'Gör pilar', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' },
   klaPa: { namn: 'Tar på sig ett varmare plagg', tecken: '🧥', ikon: 'a_be', framme: true, stilla: true }, // värmen (varme.ts)
+  klaAv: { namn: 'Tar av sig ett varmt plagg', tecken: '🧥', ikon: 'a_be', framme: true, stilla: true }, // svalkan (SVALKA i varme.ts, steg 13.8.1)
   avrusta: { namn: 'Tar av den fallne det hen bar', tecken: '✨', ikon: 'a_be', framme: true, stilla: true }, rusta: { namn: 'Hämtar sin rustning', tecken: '✨', ikon: 'a_be', framme: true, stilla: true }, // steg 8.7.5, 8.7.8
   mantel: { namn: 'Syr ledarens mantel', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // steg 8.3.14
   halsband: { namn: 'Trär ett halsband', slag: 'hantverk', hantverk: true, stilla: true, verb: 'trär', plats: 'station' },

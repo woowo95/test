@@ -404,7 +404,7 @@ SCENARIER.kladvarme = {
 
 SCENARIER.skugga = {
   lang: true,
-  text: 'Steg 2.3.13 och 2.10.20: den som är extremt varm i solen söker sig till skuggan under ett träd eller i ett hus och svalkar sig där, så som den som fryser söker sig till elden. Den som bara är för varm arbetar som vanligt. Står hen redan i skugga stannar hen där. I skuggan värmer solen inte, så kroppen svalnar. Den som vilar eller gör handarbete när hen är för varm gör det i skuggan nära elden',
+  text: 'Steg 2.3.13, 2.10.20 och 13.8.1: den som är extremt varm i solen söker sig till skuggan under ett träd, ett hus eller vattnet och svalkar sig där, det som kyler mest de närmaste timmarna, så som den som fryser söker sig till elden. Den som bara är för varm arbetar som vanligt. Står hen redan i skugga stannar hen där. I skuggan värmer solen inte, så kroppen svalnar. Den som vilar eller gör handarbete när hen är för varm gör det i skuggan nära elden',
   kor: () => {
     const s = createState(5, START);
     s.kal = nyKalender(s.now, 2); klockan(s, 14); // sommar, mitt på dagen
@@ -417,13 +417,13 @@ SCENARIER.skugga = {
     const arbetar = p.task!.act !== 'svalka';
     // extremt varm i solen: söker skugga
     satt(fri(false)); fyll(); p.warm = 1.9; chooseTask(s, p);
-    const t = p.task!, valde = t.act === 'svalka', iSkuggan = iSkugga(s, t.tx, t.ty), avst = Math.hypot(t.tx - p.x, t.ty - p.y);
+    const t = p.task!, valde = t.act === 'svalka' || t.act === 'bada', iSkuggan = t.act === 'bada' || iSkugga(s, t.tx, t.ty), avst = t.act === 'bada' ? 0 : Math.hypot(t.tx - p.x, t.ty - p.y), valtSatt = t.act;
     // framme i skuggan värmer solen inte, och kroppen svalnar
-    const w0 = p.warm; for (let i = 0; i < 40 && !(p.task?.act === 'svalka' && p.task.phase === 'do'); i++) step(s, 15); step(s, 60); // framme, och en minut där
-    const framme = p.task?.act === 'svalka' && iSkugga(s, p.x, p.y), sol = varmeDelar(s, p, 0, new Map(), temperature(s)).sol, svalnar = p.warm < w0;
+    const w0 = p.warm; for (let i = 0; i < 40 && !((p.task?.act === 'svalka' || p.task?.act === 'bada') && p.task.phase === 'do'); i++) step(s, 15); step(s, 60); // framme, och en minut där
+    const framme = valtSatt === 'bada' || p.task?.act === 'svalka' && iSkugga(s, p.x, p.y), sol = valtSatt === 'bada' ? 0 : varmeDelar(s, p, 0, new Map(), temperature(s)).sol, svalnar = p.warm < w0;
     // står redan i skugga: stannar där
     satt(fri(true)); fyll(); p.warm = 1.9; chooseTask(s, p);
-    const stannar = p.task!.act === 'svalka' && Math.hypot(p.task!.tx - p.x, p.task!.ty - p.y) < 1;
+    const stannar = p.task!.act === 'bada' || p.task!.act === 'svalka' && Math.hypot(p.task!.tx - p.x, p.task!.ty - p.y) < 1;
     // inte för varm: ingen svalka
     satt(fri(false)); fyll(); p.warm = 1; chooseTask(s, p);
     const inte = p.task!.act !== 'svalka';
@@ -443,10 +443,10 @@ SCENARIER.skugga = {
     }
     return [
       ['den som är för varm men inte extremt varm arbetar trots värmen', arbetar],
-      [`den som är extremt varm i solen (${Math.round(temp)} grader) söker skugga`, valde],
+      [`den som är extremt varm i solen (${Math.round(temp)} grader) söker skugga eller vatten (${valtSatt})`, valde],
       [`skuggan ligger nära (${avst.toFixed(1)} rutor) under ett träd eller i ett hus`, iSkuggan && avst <= 10.5],
-      ['i skuggan värmer solen inte, och kroppen svalnar', framme && sol === 0 && svalnar],
-      ['den som redan står i skugga stannar där', stannar],
+      ['i skuggan eller vattnet värmer solen inte, och kroppen svalnar', framme && sol === 0 && svalnar],
+      ['den som redan står i skugga stannar där, om hen inte går och badar', stannar],
       ['den som inte är för varm söker ingen skugga', inte],
       ['den som är för varm vilar och gör handarbete i skuggan nära elden', vilaSkugga],
       ['när solen inte värmer söker man ingen skugga', kvall],

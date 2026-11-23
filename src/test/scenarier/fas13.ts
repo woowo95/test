@@ -1,6 +1,6 @@
 // Scenarier för fas 13.
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, kor, medBank, medHus, medVatska, nyInvanare, setMat, tandEld, testBy, utanWebblasare, vidStack } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, medHus, medVatska, nyInvanare, setFood, setMat, tandEld, testBy, utanWebblasare, vidStack } from './hjalp';
 import { GRAFER, grafHtml } from '../../ui/graf';
 import { setByn } from '../../ui/lage';
 import { BEAT, START } from '../kor';
@@ -1175,6 +1175,43 @@ SCENARIER.angbild = {
       [`ängens ruta med högt gräs har fler tuvor (${dHog} punkter ändrade)`, dHog > 20],
       [`den slagna rutan ritas som vanligt gräs (${dSlagen} punkter ändrade)`, dSlagen === 0],
       [`gräset utanför ängen ändras inte (${dUtanfor})`, dUtanfor === 0],
+    ];
+  },
+};
+
+// värmen och svalkan efter dokumentet (steg 13.8.1): VARMA för den som fryser, SVALKA på nivå 2 för den som är extremt varm,
+// och en släckt eld är ingen fara när ingen fryser
+SCENARIER.varma = {
+  text: 'Steg 13.8.1: den extremt kalla sätter sig vid elden, den lite kalla tänder den eller hämtar ved, den som är för varm söker skugga, vatten eller tar av ett plagg, en slocknad eld är ingen fara i en varm by, och den som slöjdar i kylan stannar vid arbetet tills hen fryser',
+  kor: () => {
+    const VARMT = ['varma', 'tanda', 'elda', 'klaPa', 'dryck'];
+    const fyll = (p: SIM.Person) => { p.rest = 1; p.toa = 1; p.torst = 1; p.hunger = 1; p.social = 1; };
+    const by = (arstid: number, h: number) => { const s = SIM.createState(3, START); s.kal = SIM.nyKalender(s.now, arstid); klockan(s, h); SIM.setAmount(s, 'ved', 30); setFood(s, 60); return s; };
+    let kall = by(0, 11); if (SIM.temperature(kall) > 2) kall = by(3, 11);
+    const vuxen = (s: SIM.State) => SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && SIM.ageOf(q, s.now) < 50)!;
+    // extremt kall med en eld som brinner: sätter sig vid elden
+    tandEld(kall, 3); let p = vuxen(kall); fyll(p); p.warm = SIM.KROPP.farligt - 0.05; SIM.chooseTask(kall, p);
+    const extrem = p.task?.act ?? '-';
+    // lite kall och elden slocknad: tänder den eller hämtar det som fattas
+    Object.assign(kall.fire, { lit: false, fuel: 0 }); p = vuxen(kall); fyll(p); p.warm = SIM.KROPP.kallt - 0.01; SIM.chooseTask(kall, p);
+    const lite = p.task?.act ?? '-';
+    // inte frusen i kylan: arbetar vidare, fryser hen går hen till värmen
+    tandEld(kall, 3); p = vuxen(kall); fyll(p); p.warm = SIM.KROPP.kallt + SIM.KROPP.latVarme + 0.05; SIM.chooseTask(kall, p);
+    const arbetar = p.task?.act ?? '-';
+    p.task = undefined; p.warm = SIM.KROPP.kallt - 0.05; SIM.chooseTask(kall, p);
+    const fryser = (p.task as SIM.Task | undefined)?.act ?? '-';
+    // extremt varm i solen på sommaren
+    const varm = by(2, 14); p = vuxen(varm); fyll(p); p.warm = 1.9; SIM.chooseTask(varm, p);
+    const het = p.task?.act ?? '-';
+    // en slocknad eld i en varm by är ingen fara
+    Object.assign(varm.fire, { lit: false, fuel: 0 }); for (const q of SIM.living(varm)) q.warm = 1;
+    const fara = SIM.dangers(varm).kyla;
+    return [
+      [`den extremt kalla sätter sig vid elden som brinner (${extrem})`, extrem === 'varma'],
+      [`den lite kalla tänder den släckta elden eller hämtar det som fattas (${lite})`, ['tanda', 'samla', 'ved', 'elda'].includes(lite)],
+      [`den som inte fryser i kylan arbetar vidare (${arbetar}) och går till värmen när hen fryser (${fryser})`, !VARMT.includes(arbetar) && VARMT.includes(fryser)],
+      [`den som är extremt varm i solen svalkar sig i skuggan, i ett hus, i vattnet eller tar av ett plagg (${het})`, ['svalka', 'bada', 'klaAv'].includes(het)],
+      ['en slocknad eld är ingen fara när ingen fryser', !fara],
     ];
   },
 };

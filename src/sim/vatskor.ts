@@ -10,7 +10,8 @@ import { DAY, HOUR, MIN, Person, State } from './typer';
 import { balans } from './balans';
 import { KROPP, count, forstaGang, log } from './folk';
 import { isSick } from './sjukdom';
-import { HALSA, hemma, salvaKrok, vattenKrok } from './halsa';
+import { HALSA, hemma, salvaKrok, teKrok, vattenKrok } from './halsa';
+import { teVarme } from './varme';
 
 // örtteet (steg 9.5.8, Hälsosystemet i detalj: Teet och salvan): den som fryser eller är sjuk och är i byn dricker en del ur en
 // kruka med te. Det värmer, och den sjuke står emot bättre en stund (SJUK.lakeort i sjukdom.ts), mer ju bättre teet är, men
@@ -21,7 +22,12 @@ export const TE = balans('te', {
   verkan: [0.3, 0.4, 0.5, 0.6, 0.7, 0.9], // hur mycket av läkeörtens verkan teet har, per kvalitet (usel till ★)
 });
 // vill p ha örtte: sjuk, fryser eller har ett infekterat sår (steg 9.5.25), är hemma och har inte druckit nyss (steg 10.2.34: ett val, valet i val.ts)
-export const villTe = (s: State, p: Person) => (p.te?.till ?? 0) <= s.now && (isSick(p, s.now) || p.warm < KROPP.fryser || (p.skador ?? []).some(w => w.inf !== undefined)) && hemma(s, p) && !!medVatska(s, 'te');
+// teet är en rad i vårdregistret (VARD.te i halsa.ts) för den som är sjuk eller har ett infekterat sår, och ett av sätten att bli
+// varm (VARMA i varme.ts) för den som fryser (steg 13.8.1)
+const kanTe = (s: State, p: Person) => (p.te?.till ?? 0) <= s.now && hemma(s, p) && !!medVatska(s, 'te');
+teKrok.vill = (s, p) => kanTe(s, p) && (isSick(p, s.now) || (p.skador ?? []).some(w => w.inf !== undefined));
+teKrok.drick = (s, p) => drickTe(s, p);
+teVarme.kan = kanTe; teVarme.varm = TE.varm;
 export function drickTe(s: State, p: Person) {
   const k = medVatska(s, 'te');
   if (!k) return;
