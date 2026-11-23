@@ -23,7 +23,7 @@ import { knows } from './teknik';
 import { getable, takeMaterial } from './behov';
 import { torrVed } from './blotved';
 import { dropLoad } from './lager';
-import { grundvarde } from './varde';
+import { grundvarde, vardeUr } from './varde';
 import { laggTillProjekt } from './projekt';
 
 export const BRANN = balans('brann', {
@@ -69,6 +69,9 @@ export const BRANNINGAR: Record<string, BranningDef> = {
     tillsyn: [1, 2, 3], miss: { jarn: BRANN.ugnMiss }, tillsyn_text: 'Trampar bälgen vid blästerugnen.',
   },
 };
+// det som kommer ut har värdet av det som går in och arbetet vid stationen (laddningen, tömningen och tillsynerna), delat på
+// det som kommer ut (varde.ts)
+for (const d of Object.values(BRANNINGAR)) for (const [k, n] of Object.entries(d.ut)) vardeUr(k, { av: d.in, min: d.ladda + d.tomma + d.tillsyn.length * BRANN.tillsynMin, ger: n, tek: d.tek });
 // bränningen i en station: sorten, när den tändes och när den är klar
 export interface Branning { st: number; b: string; t0: number; slut: number; klar?: 1; sedd?: number; mi?: number; miss?: number } // sedd och mi: tillsynerna som gjorts och missats (bitar), miss: hur många som missats (steg 12.2.2)
 export const branningarOf = (s: State) => s.branningar ?? [];

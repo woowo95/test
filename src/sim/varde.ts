@@ -27,6 +27,12 @@ export const VARDE = balans('varde', {
   kartKand: 3, kartRykte: 1, // en karta är värd bladet plus så mycket för varje känd plats och varje rykte, gånger kvaliteten (steg 11.7.5)
 });
 
+// det som kommer ur en bränning (kolet ur milan, järnet ur blästerugnen; brann.ts) görs som en sak: värdet av det som går in
+// plus arbetet vid stationen, delat på det som kommer ut, och tekniken för bränningen ger nivån. Registreras av brann.ts
+interface Ur { av: Record<string, number>; min: number; ger: number; tek: string; tid?: undefined; act?: undefined; sallsynt?: undefined }
+const UR: Record<string, Ur> = {};
+export function vardeUr(k: string, u: Ur) { UR[k] = u; raVarde.clear(); varden.clear(); sakNiva.clear(); }
+
 // den tekniska nivån: en teknik utan krav är nivå 1, och varje teknik den bygger på lägger till en
 const tekNiva = new Map<string, number>();
 function nivaOfTek(id: string): number {
@@ -39,7 +45,7 @@ const sakNiva = new Map<string, number>();
 export function nivaOf(k: string): number {
   let n = sakNiva.get(k);
   if (n === undefined) {
-    const f = SAKER[k]?.skaffa;
+    const f = UR[k] ?? SAKER[k]?.skaffa;
     n = Math.max(f?.tek ? nivaOfTek(f.tek) : 0, ...Object.keys(f?.av ?? {}).map(nivaOf));
     sakNiva.set(k, n);
   }
@@ -59,7 +65,7 @@ const raVarde = new Map<string, number>();
 function rakna(k: string): number {
   let v = raVarde.get(k);
   if (v !== undefined) return v;
-  const f = SAKER[k]?.skaffa;
+  const f = UR[k] ?? SAKER[k]?.skaffa;
   if (SAKER[k]?.varde !== undefined) v = SAKER[k]!.varde!; // silvret
   else if (!f) v = 0;
   else {
