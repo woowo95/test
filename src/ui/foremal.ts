@@ -1,4 +1,4 @@
-import { HO, fallorAv, krukaBild, ljusSort, pollinerad, retadeOf, rutorAv, type Ting } from '../sim';
+import { FARGER, type FargId, HO, fallorAv, krukaBild, ljusSort, pollinerad, retadeOf, rutorAv, type Ting } from '../sim';
 import { BESOK, gravSkick, VATSKOR, delarAv, HELIGA_PLATSER, KVARLEVOR, clamp, living, handlarPlats, MASTERVERK, PERFEKT, GRODOR, faltById, faltKlar, faltOf, faltRuta, faltRutor, grodaPa, W, bordPlatser, sjoarna, stationById, MATERIAL, Pile, STUBBE_LIV, Station, bitAt, bitsOf, dorrDef, condOf, emberOn, eldById, eldXY, eldarOf, fireHeat, forvarAt, Fire, heatRadius, TORK, torrDel, isKlar, stationDef, stationKlar, stationerOf, storlekAv, tillbehorDef, tingOf, zonesOf, groundOf, snoPaMarken, ageIndex, tradArt, stockLangd } from '../sim';
 import { hasIcon, iconCanvas, kartbild, kartbildEnsam } from '../ikoner';
 import { KARTBILDER } from '../kartbilder';
@@ -271,7 +271,7 @@ export function drawStructures(t: number) {
   for (const st of stationerOf(s)) {
     // den som står vriden har en egen bild (_v, steg 3.10.7): ingenting ritas genom att bilden vrids
     const d = stationDef(st.k), v = vriden(st);
-    if (d?.golv) { mattIkoner.add(d.ikon + (st.rot ? '_karta_v' : ''), st.x * TS, st.y * TS, 1); if (!isKlar(st)) framsteg(st.x * TS + storlekAv(st).w * TS / 2, st.y * TS + 3, stationKlar(st)); continue; } // mattan ligger på golvet, under det som står på den (steg 10.7.6)
+    if (d?.golv) { mattIkoner.add(d.ikon + (st.rot ? '_karta_v' : '') + (st.farg && FARGER[st.farg as FargId] ? '_r' + FARGER[st.farg as FargId].ramp : ''), st.x * TS, st.y * TS, 1); if (!isKlar(st)) framsteg(st.x * TS + storlekAv(st).w * TS / 2, st.y * TS + 3, stationKlar(st)); continue; } // mattan ligger på golvet, under det som står på den (steg 10.7.6)
     if (d?.brasa) { pileIcons.add('kb_lagereld_ring', st.x * TS + TS / 2 - ELD.x, st.y * TS + TS / 2 - ELD.y, 1); framsteg(st.x * TS + TS / 2, st.y * TS - 6, stationKlar(st)); continue; } // ringen till en lägereld till medan den läggs
     if (st.delar?.length && d?.delar) { // en station i flera delar (steg 9.4.1): varje del där den står
       for (const q of delarAv(st)) {

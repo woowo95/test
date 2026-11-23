@@ -525,3 +525,49 @@ SCENARIER.fargning = {
     ];
   },
 };
+
+SCENARIER.fargmatta = {
+  text: 'Steg 13.3.3: mattorna färgas. Ägarens matta badas vid örtköket med samma växter, kruka och tid som ett plagg. Färgat pynt räknas för var och en efter hens smak för färgen: upp till ett kvalitetssteg finare eller sämre, för ägarens trivsel och för intrycket hos den som ser det, och under usel trivs ägaren inte. Mattan ger inget anseende',
+  kor: () => {
+    const { bedTile, stepPynt, intryckOm } = SIM;
+    const s = SIM.createState(6, START); klockan(s); tandEld(s); medHus(s); setMat(s, { kott: 200 });
+    const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && bedTile(s, q) !== undefined)!;
+    const v = SIM.living(s).find(q => q !== p)!;
+    const ort = medBank(s, 'ortkok');
+    p.tek = { ...p.tek, fargning: 1, ortkok: 1 };
+    const ruta = bedTile(s, p)!, x = ruta % SIM.W, y = Math.floor(ruta / SIM.W);
+    const m = { id: 9e5, k: 'matta_liten_lin', x, y, kvar: 0, ag: p.id, inne: 1, q: 2 } as SIM.Station;
+    s.stationer!.push(m);
+    s.ting = (s.ting ?? []).filter(t => !(t.agare === p.id && t.k.startsWith('lerkruka_'))); // bara mattan är pynt
+    const kruka = SIM.addTool(s, 'lerkruka_mellan', v); kruka.hos = undefined;
+    const sack = SIM.addTool(s, 'vattensack', p); sack.hos = undefined; sack.inne = { v: 'vatten', n: 3 } as typeof sack.inne;
+    for (const k of ['naver', 'malm', 'bar', 'rolleka', 'mara', 'krapp']) SIM.setAmount(s, k, 0);
+    SIM.setAmount(s, 'vejde', 2);
+    p.smak = { ...p.smak, 'f:blatt': 1 };
+    const val = SIM.fargVal(s, p);
+    const ans0 = SIM.ryktbarhet(s, p.id).a;
+    p.x = SIM.vidStation(ort).x; p.y = SIM.vidStation(ort).y;
+    SIM.fargaKlar(s, p, { act: 'farga', phase: 'do', tool: 'matta:blatt', ref: m.id } as SIM.Task);
+    const bla = m.farg, vejde = SIM.amountOf(s, 'vejde'), ans1 = SIM.ryktbarhet(s, p.id).a;
+    // i rummet: ägaren och den som ser mattan, med olika smak för färgen
+    const prova = (farg: string | undefined, q: number, agSmak: number, serSmak: number) => {
+      const k2 = SIM.cloneState(s), p2 = k2.people.find(r => r.id === p.id)!, v2 = k2.people.find(r => r.id === v.id)!, t2 = k2.stationer!.find(t => t.id === m.id)!;
+      t2.farg = farg; t2.q = q; p2.thoughts = []; v2.intryck = [];
+      p2.smak = { 'f:blatt': agSmak }; v2.smak = { 'f:blatt': serSmak };
+      for (const r of [p2, v2]) { r.x = x + 0.5; r.y = y + 0.5; r.task = undefined; }
+      stepPynt(k2);
+      const e = intryckOm(v2, p2.id, 'smakfull');
+      return { glad: p2.thoughts.find(t => t.text === SIM.PYNT_TANKE)?.v ?? 0, syn: e ? e.v * e.c : 0 };
+    };
+    const ofargad = prova(undefined, 2, 1, 1), gillar = prova('blatt', 2, 1, 0), ogillar = prova('blatt', 2, 0, -1), avsmakUsel = prova('blatt', 0, -1, 0), neutral = prova('blatt', 2, 0, 0);
+    return [
+      [`hen som tycker om blått vill bada sin matta blå (${val?.t.matta ? 'matta' : 'plagg'}, ${val?.blir})`, !!val?.t.matta && val.blir === 'blatt'],
+      [`mattan blir blå med ett bad och 2 vejde (${bla}, vejde kvar ${vejde})`, bla === 'blatt' && vejde === 0],
+      [`ägaren som tycker om färgen trivs mer än med en ofärgad matta (${gillar.glad.toFixed(3)} mot ${ofargad.glad.toFixed(3)})`, gillar.glad > ofargad.glad],
+      [`den som ogillar färgen får ett svagare intryck än den som inte bryr sig (${ogillar.syn.toFixed(4)} mot ${neutral.syn.toFixed(4)})`, ogillar.syn < neutral.syn && neutral.syn > 0],
+      [`en färg utan smak ändrar inget (${neutral.glad.toFixed(3)} mot ${ofargad.glad.toFixed(3)})`, Math.abs(neutral.glad - ofargad.glad) < 1e-9],
+      [`ägaren med avsmak för färgen och en usel matta trivs inte (${avsmakUsel.glad})`, avsmakUsel.glad === 0],
+      [`anseendet är detsamma (${ans0.toFixed(4)} och ${ans1.toFixed(4)})`, Math.abs(ans0 - ans1) < 1e-9],
+    ];
+  },
+};

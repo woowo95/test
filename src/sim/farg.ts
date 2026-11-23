@@ -16,7 +16,7 @@ import { ALDER, ageOf, count, forstaGang, gjort, living, log, ovning } from './f
 import { knows } from './teknik';
 import { prydKrok, smakAv } from './rykten';
 import { ledigKruka } from './matlagning';
-import { stationFor } from './stationer';
+import { isKlar, stationDef, stationFor, stationerOf, type Station } from './stationer';
 import { grundvarde, varuVarde, vardeKrok, ARBETE } from './varde';
 import { SAKER, sakNamn, namnKrok } from './saker';
 import { foodDaysAll } from './ekonomi';
@@ -79,45 +79,64 @@ export const badAv = (s: State, p: Person, bad: string) => DEF[bad]?.av?.find(a 
 // maten i växterna (bären är mat)
 const matI = (a: Record<string, number>) => Object.entries(a).reduce((m, [k, n]) => m + n * (SAKER[k]?.mat ?? 0), 0);
 
-// det bästa badet p kan ge ett av sina plagg nu: plagget, färgen i badet, färgen plagget får och poängen (raden farga i
-// FORBATTRA, val.ts). Bara den vuxna som kan Färgning, med ett örtkök, vatten och en ledig kruka
+// det som p kan bada: plaggen av lin och ylle hen har på sig och äger, och hens färdiga mattor (steg 13.3.3), med värdet utan färg
+type Badbart = { id: number; farg?: string; varde: number; matta?: Station; t?: Ting };
+const mattorAv = (s: State, p: Person) => stationerOf(s).filter(m => m.ag === p.id && m.k.startsWith('matta_') && isKlar(m));
+const mattVarde = (m: Station) => varuVarde(stationDef(m.k)?.av ?? {});
+function badbart(s: State, p: Person): Badbart[] {
+  const ut: Badbart[] = allaTing(s).filter(t => t.bar === p.id && t.agare === p.id && tarFarg(t.k)).map(t => ({ id: t.id, farg: t.farg, varde: grundvarde(t.k), t }));
+  for (const m of mattorAv(s, p)) ut.push({ id: m.id, farg: m.farg, varde: mattVarde(m), matta: m });
+  return ut;
+}
+
+// det bästa badet p kan ge ett av sina plagg eller sina mattor nu: det som badas, färgen i badet, färgen det får och poängen
+// (raden farga i FORBATTRA, val.ts). Bara den vuxna som kan Färgning, med ett örtkök, vatten och en ledig kruka. Mattan ger
+// inget anseende; den bärs till örtköket och badas hel, med samma växter som ett plagg
 export function fargVal(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || !knows(p, 'fargning') || !stationFor(s, 'farga', p) || !harReceptVatten(s) || !ledigKruka(s)) return undefined;
-  const plagg = allaTing(s).filter(t => t.bar === p.id && t.agare === p.id && tarFarg(t.k));
-  if (!plagg.length) return undefined;
+  const saker = badbart(s, p);
+  if (!saker.length) return undefined;
   const hunger = clamp(1 - foodDaysAll(s) / Math.max(1e-9, buffert(s, 'mat')), 0, 1);
-  let bast: { t: Ting; bad: FargId; blir: FargId; sc: number } | undefined;
+  let bast: { t: Badbart; bad: FargId; blir: FargId; sc: number } | undefined;
   for (const bad of BAD) {
     const a = badAv(s, p, bad);
     if (!a) continue;
     const kost = FARG.vMat * matI(a) * (FARG.matMatt + hunger);
-    for (const t of plagg) {
+    for (const t of saker) {
       const blir = efterBad(t.farg, bad) as FargId;
       if (blir === t.farg) continue;
-      const sc = FARG.vSmak * (fargSmak(p, blir) - fargSmak(p, t.farg)) + FARG.vAns * (fargAnseende(s, blir) - fargAnseende(s, t.farg))
-        + FARG.vVarde * (fargVarde(blir) - fargVarde(t.farg)) / Math.max(1e-9, grundvarde(t.k)) - kost;
+      const ans = t.matta ? 0 : FARG.vAns * (fargAnseende(s, blir) - fargAnseende(s, t.farg));
+      const sc = FARG.vSmak * (fargSmak(p, blir) - fargSmak(p, t.farg)) + ans + FARG.vVarde * (fargVarde(blir) - fargVarde(t.farg)) / Math.max(1e-9, t.varde) - kost;
       if (sc > (bast?.sc ?? 0)) bast = { t, bad, blir, sc };
     }
   }
   return bast;
 }
-// växterna som hämtas till badet (HAMTAS i hamtning.ts): task.tool = färgen i badet
-export const fargaHamtas = (s: State, p: Person, tk: Task) => tk.tool ? badAv(s, p, tk.tool) ?? DEF[tk.tool]?.av?.[0] : undefined;
-// när badet är klart: plagget (task.ref) får färgen, om hen har det på sig och allt finns
+// arbetets tool: färgen i badet, med matta: före när det är en matta som badas (ref är då stationen, inte ett plagg)
+export const fargTool = (bad: string, matta: boolean) => (matta ? 'matta:' : '') + bad;
+const lasTool = (tool?: string) => ({ matta: !!tool?.startsWith('matta:'), bad: tool?.replace(/^matta:/, '') });
+// växterna som hämtas till badet (HAMTAS i hamtning.ts)
+export const fargaHamtas = (s: State, p: Person, tk: Task) => { const { bad } = lasTool(tk.tool); return bad ? badAv(s, p, bad) ?? DEF[bad]?.av?.[0] : undefined; };
+// när badet är klart: plagget eller mattan (task.ref, en matta när tool börjar med matta:) får färgen, om hen har plagget på sig eller äger
+// mattan och allt finns
 export function fargaKlar(s: State, p: Person, tk: Task) {
-  const t = allaTing(s).find(q => q.id === tk.ref), bad = tk.tool;
-  if (!t || !bad || t.bar !== p.id || !tarFarg(t.k)) return;
+  const { bad, matta } = lasTool(tk.tool);
+  const m = matta ? stationerOf(s).find(q => q.id === tk.ref && q.ag === p.id && q.k.startsWith('matta_')) : undefined;
+  const t = matta ? undefined : allaTing(s).find(q => q.id === tk.ref && q.bar === p.id && tarFarg(q.k));
+  if ((!t && !m) || !bad) return;
   const a = badAv(s, p, bad);
   if (!a || !harReceptVatten(s) || !ledigKruka(s)) { count(s, 'fargMiste'); return; }
   for (const [k, n] of Object.entries(a)) takeMaterial(s, p, k, n);
   taReceptVatten(s); // vattnet ur säcken; krukan står kvar tom
-  const fore = t.farg, blir = efterBad(fore, bad);
-  t.farg = blir;
+  const fore = (t ?? m)!.farg, blir = efterBad(fore, bad);
+  if (t) t.farg = blir; else m!.farg = blir;
   ovning(p, 'hantverk', FARG.ovning); gjort(s, p, 'fargat'); count(s, 'fargat'); count(s, 'fargat_' + blir);
-  const namn = `${DEF[blir].adj.toLowerCase()} ${sakNamn(t.k).toLowerCase()}`;
-  personHand(s, p, 'fargade', fore ? `Badade sitt plagg igen och fick det ${DEF[blir].namn.toLowerCase()}: ${namn}.` : `Färgade sitt plagg vid örtköket: ${namn}.`);
-  if (forstaGang(s, 'forstaFarg')) log(s, `${p.name} badade ett plagg med växter vid örtköket och fick byns första färgade plagg: ${namn}.`, 'world', [p.id]);
-  if (DEF[blir].blandas && forstaGang(s, 'forstaBlandfarg')) log(s, `${p.name} badade ett ${DEF[fore!].namn.toLowerCase()} plagg i ${DEF[bad].namn.toLowerCase()} och fick det ${DEF[blir].namn.toLowerCase()}.`, 'world', [p.id]);
+  if (m) count(s, 'fargatMatta');
+  const sak = t ? sakNamn(t.k).toLowerCase() : (stationDef(m!.k)?.namn ?? 'matta').toLowerCase();
+  const namn = `${DEF[blir].adj.toLowerCase()} ${sak}`;
+  personHand(s, p, 'fargade', fore ? `Badade ${m ? 'sin matta' : 'sitt plagg'} igen och fick ${m ? 'den' : 'det'} ${DEF[blir].namn.toLowerCase()}: ${namn}.` : `Färgade ${m ? 'sin matta' : 'sitt plagg'} vid örtköket: ${namn}.`);
+  if (forstaGang(s, 'forstaFarg')) log(s, `${p.name} badade ${m ? 'en matta' : 'ett plagg'} med växter vid örtköket och fick byns första färgade ${m ? 'matta' : 'plagg'}: ${namn}.`, 'world', [p.id]);
+  if (DEF[blir].blandas && forstaGang(s, 'forstaBlandfarg')) log(s, `${p.name} badade ${m ? 'en' : 'ett'} ${(m ? DEF[fore!].adj : DEF[fore!].namn).toLowerCase()} ${m ? 'matta' : 'plagg'} i ${DEF[bad].namn.toLowerCase()} och fick ${m ? 'den' : 'det'} ${DEF[blir].namn.toLowerCase()}.`, 'world', [p.id]);
 }
 // färgerna p har på sig och tycker om: den största smaken (för tanken i steg.ts)
 export function barGillad(p: Person, pa: Ting[]) { let v = 0; for (const t of pa) if (t.farg) v = Math.max(v, fargSmak(p, t.farg)); return v; }

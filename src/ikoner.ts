@@ -6,7 +6,7 @@ import { KARTBILDER } from './kartbilder';
 import { STUBBILDER } from './stubbilder';
 import { ANIMBILDER } from './animbilder';
 import { DJURBILDER, type Hall } from './djurbilder';
-import { farg } from './palett';
+import { farg, PALETT } from './palett';
 
 // slagen av arbete ritas ljust i en färg (vattnet blått)
 const AKT = { w: '#dad0bb', a: '#8a9c9e' };
@@ -4112,6 +4112,12 @@ export const kartbildEnsam = (k: string) => !!KARTBILDER[k]?.ensam;
     const id = `matta_${k}_${tyg}`, rader = rita(w, h, rund);
     PIX[id] = rader; PAL[id] = MATTA_PAL[tyg];
     if (w !== h) { PIX[id + '_karta_v'] = Array.from({ length: w }, (_, x) => Array.from({ length: h }, (_, y) => rader[h - 1 - y][x]).join('')); PAL[id + '_karta_v'] = MATTA_PAL[tyg]; } // den långa vriden
+    // den färgade mattan (steg 13.3.3, platshållare): samma mönster i färgens ramp, _r<ramp> efter namnet
+    for (const r of PALETT) {
+      const pal = { o: r.toner[1], a: r.toner[2], b: r.toner[0], c: r.toner[0], f: r.toner[3] };
+      PIX[`${id}_r${r.id}`] = rader; PAL[`${id}_r${r.id}`] = pal;
+      if (w !== h) { PIX[`${id}_karta_v_r${r.id}`] = PIX[id + '_karta_v']; PAL[`${id}_karta_v_r${r.id}`] = pal; }
+    }
   }
   PIX.matta = PIX.matta_liten_lin; PAL.matta = MATTA_PAL.lin; // tekniken
 }
