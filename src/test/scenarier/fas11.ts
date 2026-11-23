@@ -1,6 +1,6 @@
 // Scenarier för fas 11: världen.
 import * as SIM from '../../sim';
-import { medVatska, nyInvanare, SCENARIER, varldEfter, klockan, kor, korTills, medHus, packatSomISpelet, rovarGang, setItems, testBy, utanWebblasare } from './hjalp';
+import { medVatska, nyInvanare, SCENARIER, varldEfter, klockan, kor, korTills, medHus, packatSomISpelet, rovarGang, setItems, testBy, friskaVuxna, utanWebblasare } from './hjalp';
 import { START } from '../kor';
 import { farg, iPaletten } from '../../palett';
 import { lasBy, minnesBas, sparaBy } from '../../ui/lagring';
