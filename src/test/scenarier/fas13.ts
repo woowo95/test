@@ -696,13 +696,13 @@ SCENARIER.jarnpil = {
     const jarn = SIM.personKampe(s, p, 1, 0, 0, 0);
     const st = { logg: [1, 2, 3, 4].map(t => ({ t, h: 'traff', a: jarn.id, b: 2, v: 'bage', kast: 1 })) } as unknown as SIM.Strid;
     SIM.slitKastat(s, p, st, jarn as unknown as SIM.Kampe);
-    const kvarJarn = SIM.amountOf(s, 'jarnpilar'), kvarFlint = SIM.amountOf(s, 'pilar');
+    const kvarJarn = SIM.amountOf(s, 'jarnpilar') + SIM.paMarken(s, 'jarnpilar'), kvarFlint = SIM.amountOf(s, 'pilar') + SIM.paMarken(s, 'pilar');
     return [
       ['pilarna tar 1 fjäder per sats om 4, och järnpilarna 1 ved, 1 järn och 1 fjäder, 4 på 3 minuter med Pilbåge', recept],
       ['järnpilarna smids vid smedjan och bara där', vidSmedjan && utanSmedja],
       [`järnpilen skadar ${SIM.PILSLAG.jarnpilar()} gånger så mycket som flintpilen`, SIM.PILSLAG.jarnpilar() === 1.25 && SIM.PILSLAG.pilar() === 1],
       [`skytten tar flintpilarna när det bara finns sådana (${flint.vapen}, ${flint.pil}) och järnpilarna före dem (${jarn.pil})`, flint.vapen === 'bage' && flint.pil === 'pilar' && jarn.pil === 'jarnpilar'],
-      [`de trasiga pilarna är av det slag som sköts (järnpilar ${kvarJarn}, flintpilar ${kvarFlint})`, kvarJarn === 7 && kvarFlint === 8],
+      [`de skjutna pilarna är av det slag som sköts (järnpilar ${kvarJarn}, flintpilar ${kvarFlint})`, kvarJarn <= 8 && kvarJarn >= 4 && kvarFlint === 8],
     ];
   },
 };
@@ -738,6 +738,40 @@ SCENARIER.gropplats = {
       [`rådjur stod nära gropen ${nara} gånger (en gång per timme och rådjur)`, nara > 0],
       [`det fångade rådjuret är borta ur flocken (${SIM.radjurNara(s, at.x, at.y)} kvar nära av ${vag0})`, fVid === 0 || (s.djurDoda?.length ?? 0) >= fVid],
       [`gropen på rådjurens väg fångade ${fVid} rådjur, den bland hararna ${fHarar}`, fVid > 0 && fHarar === 0],
+    ];
+  },
+};
+
+// pilarna landar (steg 13.4.5): de skjutna pilarna blir en hög på marken där skytten stod, en del går sönder och en del försvinner
+// där de landade (mer i snön), och högen bärs in som allt annat som ligger utanför lagret
+SCENARIER.pilting = {
+  text: 'De skjutna pilarna landar på marken: en av fyra går sönder, en del försvinner i snön, och resten bärs in som allt annat som ligger ute (steg 13.4.5)',
+  kor: () => {
+    const skjut = (sno: number, skott: number) => {
+      const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+      klockan(s, 9);
+      s.ting = SIM.tingOf(s).filter(t => !SIM.MANNISKOVAPEN.includes(t.k as never)); SIM.addTool(s, 'bage', p);
+      SIM.put(s, 'pilar', skott, { [p.id]: skott });
+      const f = SIM.eldXY(s, s.fire); // en bit från lagret, på öppen mark
+      for (let d = 8; d < 30; d++) { const x = Math.floor(f.x) + d, y = Math.floor(f.y); if (SIM.usable(s, x, y) && !SIM.isStored(s, x, y)) { p.x = x + 0.5; p.y = y + 0.5; break; } }
+      s.vader = { ...(s.vader ?? { fukt: 0.5 }), sno } as typeof s.vader;
+      const k = SIM.personKampe(s, p, 1, 0, 0, 0);
+      const st = { logg: Array.from({ length: skott }, (_, t) => ({ t, h: t % 2 ? 'miss' : 'traff', a: k.id, b: 2, v: 'bage', kast: 1 })) } as unknown as SIM.Strid;
+      SIM.slitKastat(s, p, st, k as unknown as SIM.Kampe);
+      const st0 = s.stat ?? {};
+      return { s, p, lager: SIM.amountOf(s, 'pilar'), ute: SIM.paMarken(s, 'pilar'), sonder: st0.pilSonder ?? 0, borta: st0.pilBorta ?? 0, agare: (s.stackar ?? []).some(a => a.k === 'pilar' && !SIM.isStored(s, a.x, a.y) && (a.ag?.[p.id] ?? 0) > 0) };
+    };
+    const a = skjut(0, 12), b = skjut(0, 400), c = skjut(1, 400);
+    const helt = a.lager + a.ute + a.sonder + a.borta === 12;
+    const nara = (a.s.stackar ?? []).filter(q => q.k === 'pilar' && !SIM.isStored(a.s, q.x, q.y)).every(q => Math.hypot(q.x + 0.5 - a.p.x, q.y + 0.5 - a.p.y) < 4);
+    // högen bärs in som annat som ligger ute
+    kor(a.s, 24);
+    return [
+      [`de 12 skjutna pilarna ligger på marken där skytten stod (${a.ute}), gick sönder (${a.sonder}) eller försvann (${a.borta}), och inget är kvar i lagret (${a.lager})`, helt && a.ute > 0 && a.lager === 0 && nara],
+      [`pilarna på marken är skyttens`, a.agare],
+      [`ungefär en av fyra går sönder (${b.sonder} av 400)`, b.sonder > 70 && b.sonder < 130],
+      [`i snön försvinner fler (${c.borta} av 400) än på bar mark (${b.borta})`, c.borta > b.borta],
+      [`högen bärs in i lagret (ute ${SIM.paMarken(a.s, 'pilar')}, i lagret ${SIM.amountOf(a.s, 'pilar')})`, SIM.paMarken(a.s, 'pilar') === 0 && SIM.amountOf(a.s, 'pilar') === a.ute],
     ];
   },
 };

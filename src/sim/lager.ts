@@ -1314,7 +1314,8 @@ export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN
 // det som läggs ner inne hamnar inne, inom räckhåll, och inte på andra sidan väggen
 const ledigtGolv = (s: State, x: number, y: number) => { const b = bitAt(s, x, y); return !!b && b.k === 'golv' && b.b >= 1 && !MATERIAL[b.m]?.vag && !stationAt(s, x, y) && !sittAt(s, x, y); };
 // n hela av slaget k läggs på marken på rutan (x, y) eller bredvid, byns (grenarna som blev kvar på stammen, steg 12.1.218)
-export function laggPaRutan(s: State, k: string, n: number, x: number, y: number) { n = Math.floor(n + 1e-9); if (n < 1) return; laggBredvid(s, stacksOf(s), eldRutor(s), k, n, 1, undefined, Math.floor(x), Math.floor(y)); changed(s); }
+// ag = ägarna till det som läggs (de skjutna pilarna, steg 13.4.5), jämkat till n
+export function laggPaRutan(s: State, k: string, n: number, x: number, y: number, ag?: Del) { n = Math.floor(n + 1e-9); if (n < 1) return; laggBredvid(s, stacksOf(s), eldRutor(s), k, n, 1, ag && shareOf(ag, n), Math.floor(x), Math.floor(y)); changed(s); }
 // lägg n av slaget k ner kring rutan (tx, ty) utanför förrådet: en ruta rymmer så mycket av slaget som den rymmer (rymd), och
 // det som inte får plats läggs på rutorna närmast runt omkring, där inget annat ligger. Aldrig i en eld (eld, steg 12.1.153).
 // Ägarnas hela delar delas som i förrådet (delAv)

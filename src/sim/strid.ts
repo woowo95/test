@@ -47,7 +47,7 @@ import { handelse, smaka, smakAv } from './rykten';
 import { GRANNAR4, HOUR, T } from './typer';
 import { UTRUSTNING, harBalte, paSig, paSigVikt } from './utrustning';
 import { PLAGG, kladAv } from './klader';
-import { amountOf, use } from './lager';
+import { amountOf, laggPaRutan, use } from './lager';
 import { capacity, enPerRuta } from './lager';
 import { snoPaMarken, vaderNu } from './vader';
 import { viktOf } from './saker';
@@ -70,7 +70,7 @@ export const STRID = balans('strid', {
   hugg: 0.12, skyddHugg: 0.5, huggMin: 0.5, // bara en träff av minst huggMin kan hugga av
   bjornBett: 3, // björnen biter med käftarna vart så här många slag som träffar, och river med ramarna annars (steg 9.5.13)
   smitta: 0.1, // så mycket de andras mod sjunker när någon ger upp (steg 8.8.8)
-  pilSonder: 0.25, // så stor del av pilarna går sönder
+  pilSonder: 0.25, // chansen att en skjuten pil går sönder; de andra landar på marken (steg 13.4.5)
   jarnPil: 1.25, // järnpilen skadar så här många gånger mer än flintpilen (steg 13.4.2)
   ringad: 0.1, // så mycket lättare det är att träffa den som redan slåss med en annan, per extra motståndare (steg 8.7.7)
   bakomTrad: 0.5, // en pil mot någon bakom ett träd träffar trädet så här ofta
@@ -1042,15 +1042,19 @@ export const KAST = balans('kast', {
   langt: 1, // ... och gånger 1 + langt × kastets längd mot räckvidden
 });
 
+// hur lätt det kastade försvinner där det landade (x, y) efter d rutor av räckvidden rack: i högt gräs, i snår och skog, i snön
+// och i vattnet, och längre kast längre bort (spjuten, steg 3.7.3, och pilarna, steg 13.4.5)
+function kastFaktor(s: State, x: number, y: number, d: number, rack: number) {
+  const i = tileOf(x, y), ms = markslag(groundOf(s), i);
+  return (ms === 'hog' ? KAST.hog : ms === 'skog' || ms === 'ung' || ms === 'buske' ? KAST.skog : 1) * (1 + KAST.sno * snoPaMarken(s))
+    * (getMap(s.seed).tiles[i] === T.Vatten ? KAST.vatten : 1) * (1 + KAST.langt * d / rack);
+}
 // det kastade vapnet v (från p, d rutor, landade vid x, y): slitaget och risken att det försvinner. r = slumpföljden.
 // Svarar 'borta' eller 'trasig' när tinget är borta
 export function kastat(s: State, p: Person, v: string, d: number, x: number, y: number, r: () => number): 'borta' | 'trasig' | undefined {
   const kv = VAP[v]?.kast;
   if (!kv || !toolsOf(s, v).length) return undefined; // stenarna är inga ting
-  const i = tileOf(x, y), ms = markslag(groundOf(s), i);
-  const f = (ms === 'hog' ? KAST.hog : ms === 'skog' || ms === 'ung' || ms === 'buske' ? KAST.skog : 1) * (1 + KAST.sno * snoPaMarken(s))
-    * (getMap(s.seed).tiles[i] === T.Vatten ? KAST.vatten : 1) * (1 + KAST.langt * d / kv.rack);
-  if (r() < KAST.borta * f) { wearTool(s, p, v, Infinity); count(s, 'kastBorta'); return 'borta'; }
+  if (r() < KAST.borta * kastFaktor(s, x, y, d, kv.rack)) { wearTool(s, p, v, Infinity); count(s, 'kastBorta'); return 'borta'; }
   if (wearTool(s, p, v, r() * KAST.slit)) return 'trasig';
   // det som kastas blir ett ting på marken där det landade (steg 8.7.4); det ligger som allt annat utanför lagret och bärs in
   const t = toolsOf(s, v).find(q => q.agare === p.id && q.bar === undefined) ?? toolsOf(s, v)[0];
@@ -1064,8 +1068,23 @@ export function slitKastat(s: State, p: Person, st: Strid, k: Kampe) {
   if (k.skold) { const t = toolsOf(s, 'skold').find(q => q.agare === p.id) ; if (t) wearTool(s, p, 'skold', st.logg.filter(r => r.a === k.id && r.h === 'parera').length * 0.05); } // skölden slits (steg 8.7.3)
   let skott = 0;
   for (const r of st.logg) if (r.a === k.id && r.v && r.kast) { const am = VAP[r.v].kast!.ammo; if (am) { if (VAP[r.v].kast!.pil) skott++; continue; } kastat(s, p, r.v, VAP[r.v].kast!.rack / 2, p.x, p.y, () => rnd(s, 'strid')); }
-  // en pil går sönder en gång av fyra, de andra plockas upp efteråt (steg 8.7.4)
-  const pil = k.pil ?? 'pilar', trasiga = Math.floor(skott * STRID.pilSonder); if (trasiga && amountOf(s, pil) >= trasiga) use(s, p, pil, trasiga); // av de pilar hen sköt (steg 13.4.2)
+  skjutnaPilar(s, p, k.pil ?? 'pilar', skott, VAP.bage.kast!.rack);
+}
+// pilarna landar (steg 13.4.5): de skott pilar av slaget pil (de bästa byn har, steg 13.4.2) som p sköt tas ur förrådet. Var och en
+// går sönder med chansen STRID.pilSonder, kan försvinna där den landade med samma chans som ett kastat spjut (kastFaktor), och
+// resten blir en hög på marken där hen sköt, med sina ägare, som bärs in som allt annat som ligger utanför lagret
+function skjutnaPilar(s: State, p: Person, pil: string, skott: number, rack: number) {
+  const n = Math.min(skott, Math.floor(amountOf(s, pil) + 1e-9));
+  if (n < 1) return;
+  let hela = 0;
+  for (let i = 0; i < n; i++) {
+    const d = rnd(s, 'strid') * rack; // hur långt bort pilen landade
+    if (rnd(s, 'strid') < STRID.pilSonder) count(s, 'pilSonder');
+    else if (rnd(s, 'strid') < KAST.borta * kastFaktor(s, p.x, p.y, d, rack)) count(s, 'pilBorta');
+    else hela++;
+  }
+  const ag = use(s, p, pil, n);
+  if (hela) { laggPaRutan(s, pil, hela, p.x, p.y, ag); count(s, 'pilLigger', hela); }
 }
 
 // ---------- striden i byn (steg 3.7.2) ----------
