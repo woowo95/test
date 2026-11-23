@@ -1758,7 +1758,7 @@ SCENARIER.insatser = {
 SCENARIER.packskede = {
   text: 'Packningsskedet i byn (steg 11.5.5, borjaPacka och resaSteg i resa.ts): maten tas ur förrådet i hela saker, varje resenär går till samlingsplatsen vid byns utkant, djuren lastas, och sällskapet går ut längs linjen mot rätt kant och lämnar kartan',
   kor: () => {
-    const s = SIM.cloneState(testBy(3));
+    const s = SIM.cloneState(testBy(3, friskaVuxna));
     klockan(s, 10); // på dagen: på natten sover eller vaktar resenärerna, och ett sällskap som inte kommer ihop inom en timme löses upp
     const vl = s.varld!, [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.kanGa(q));
     const hb = SIM.byPlats(vl, vl.huvud!)!, mal = hb.grannar![0]!.nr;
@@ -3806,7 +3806,7 @@ SCENARIER.uppdragkrav = {
   kor: () => {
     const ut: [string, boolean][] = [];
     for (const k of ['hjalp', 'leverans'] as const) {
-      const s = SIM.cloneState(testBy(3)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
+      const s = SIM.cloneState(testBy(3, friskaVuxna)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
       vl.bud = undefined; // inget bud väntar på att skickas (sändebudet vinner annars)
       const vuxna = modigaste(s);
       const p = vuxna[0]!;
@@ -4272,7 +4272,7 @@ SCENARIER.talt = {
   kor: () => {
     // fem vuxna som kan gå: den första testbyn som har så många (testbyn efter fem dygn har fyra, steg 12.1.112)
     const gaende = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.kanGa(q));
-    const s = SIM.cloneState(testBy(3, b => gaende(b).length >= 5)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!, vm = SIM.varldMark(s)!;
+    const s = SIM.cloneState(testBy(3, b => gaende(b).length >= 5 && friskaVuxna(b))), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!, vm = SIM.varldMark(s)!;
     // den närmaste grannen, så att maten för fem ryms i händerna bredvid tälten (en lång resa fyller händerna med mat först)
     const dit = (nr: number) => { const q = SIM.varldPlatsNr(vl, nr)!; return SIM.vagDygn(s, hb.y * vm.w + hb.x, q.y * vm.w + q.x, 'fots')?.dygn ?? 99; };
     const mal = [...hb.grannar!].sort((a, b) => dit(a.nr) - dit(b.nr))[0]!.nr;
@@ -4519,7 +4519,7 @@ SCENARIER.resvagn = {
 SCENARIER.handlardjur = {
   text: 'Handlarens packdjur (steg 11.11.5, utrVikt, handlarFart och handlarDjur i handel.ts): en handlare med packdjur leder hembyns häst eller oxe, rymmer ryggsäcken plus djurets lass med packsadel och går i djurets snabbhet; djuret står vid filten under handeln, följer med ut och finns inte bland byns djur',
   kor: () => {
-    const bas = testBy(3, x => !x.handlare && !x.people.some(p => p.gast && p.died === undefined)), vl0 = bas.varld!; // inga gäster är där redan
+    const bas = testBy(3, x => friskaVuxna(x) && !x.handlare && !x.people.some(p => p.gast && p.died === undefined)), vl0 = bas.varld!; // inga gäster är där redan
     const rad = SIM.klanerOf(bas).map(k => k.rad).find(nr => nr !== undefined && vl0.rader?.some(r => r.nr === nr))!;
     // en handlare med packdjur från byn rad, med djuret art, genom spelets egen väg in (handlarFram och handelSteg)
     const kom = (art?: SIM.TamArtId) => {
@@ -4554,7 +4554,7 @@ SCENARIER.handlardjur = {
 SCENARIER.karavan = {
   text: 'Karavanen (steg 11.11.6, KARAVAN, packaRad och karavanFolje i handel.ts): en handelsfärd med vagnar är en karavan; en by med stort överflöd och oxar skickar fler vagnar, fler folk och större last än en fattig, lasten dras ur byns rad, följet slår läger utanför byns område med ett tält per fyra, bara ledaren står vid filten, byns djur och ting är oförändrade och alla lämnar kartan tillsammans',
   kor: () => {
-    const bas = testBy(3, x => !x.handlare && !x.people.some(p => p.gast && p.died === undefined)), vl0 = bas.varld!; // inga gäster är där redan
+    const bas = testBy(3, x => friskaVuxna(x) && !x.handlare && !x.people.some(p => p.gast && p.died === undefined)), vl0 = bas.varld!; // inga gäster är där redan
     const rad = SIM.klanerOf(bas).map(k => k.rad).find(nr => nr !== undefined && vl0.rader?.some(r => r.nr === nr))!;
     const kom = (folk: number, over: number) => {
       const s = SIM.cloneState(bas), djur0 = JSON.stringify((s.tamdjur ?? []).map(d => d.id)), ting0 = JSON.stringify((s.ting ?? []).map(t => t.id));
