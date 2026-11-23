@@ -1,4 +1,5 @@
 import { ByteMinne, ByteVara, HOUR, LogEntry, MIN, SEC, Person, State } from './typer';
+import { fargKrok } from './fargkrok';
 import { SAKER, isTool } from './saker';
 import { antal, och } from './ord';
 import { Ting } from './agande';
@@ -231,6 +232,7 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
 // ett redskap till ett barn, eller till den som höll på att dö (fara)
 export function gavaKlar(s: State, g: Part, m: Part, varor: Vara[], fara: boolean) {
   overlamna(s, varor, g, m);
+  if (g.p && m.p) fargKrok.gava(s, g.p, m.p, varor.flatMap(w => w.t ? [w.t] : [])); // en färgad gåva (steg 13.3.5)
   const barn = !!m.p && ageOf(m.p, s.now) < ALDER.vuxen && varor.some(w => w.t || isTool(w.k));
   // raden ur mallen l_gava (steg 6.7.7); vardagens gåvor fyller inte loggen
   const f = { namn: g.namn, om: m.namn, varor: varorText(varor), fara, barn: !!m.p && ageOf(m.p, s.now) < ALDER.vuxen, honom2: m.p?.sex === 'k' ? 'henne' : 'honom' };

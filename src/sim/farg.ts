@@ -3,7 +3,7 @@
 // namnet, växterna ett bad tar (ett eller flera sätt) och rampen i paletten (palett.ts). Blandfärgerna har de två färger de
 // blandas av: ett bad i den ena färgen på ett plagg i den andra ger blandfärgen, i vilken ordning som helst, och ett bad i en
 // färg som inte blandas med plaggets byter färgen. Bara plagg av lin och ylle tar färg.
-// Den som kan Färgning och har på sig ett plagg av lin eller ylle badar det vid örtköket (handlingen farga): plagget, växterna,
+// Den som kan Färgning och äger ett plagg av lin eller ylle badar det vid örtköket (handlingen farga): plagget, växterna,
 // vattnet ur en fylld säck och en ledig lerkruka, som blir kvar tom. Valet är en rad i FORBATTRA (val.ts): poängen är smaken för
 // färgen, anseendet den ger och värdet den lägger på plagget, minus maten i växterna (bären) när byn är hungrig. Smaken för en
 // färg ligger i p.smak med 'f:' före (rykten.ts); var den kommer ifrån är steg 13.3.5.
@@ -14,13 +14,19 @@ import { KLADMATERIAL, kladAv } from './klader';
 import { getable, takeMaterial } from './behov';
 import { ALDER, ageOf, count, forstaGang, gjort, living, log, ovning } from './folk';
 import { knows } from './teknik';
-import { prydKrok, smakAv } from './rykten';
+import { RYKTE, ryktbarhet, smakAv } from './rykten';
+import { fargKrok } from './fargkrok';
 import { ledigKruka } from './matlagning';
 import { isKlar, stationDef, stationFor, stationerOf, type Station } from './stationer';
 import { grundvarde, varuVarde, vardeKrok, ARBETE } from './varde';
 import { SAKER, sakNamn, namnKrok } from './saker';
 import { foodDaysAll } from './ekonomi';
-import { buffert, fargvaxtKrok } from './forradsmal';
+import { buffert } from './forradsmal';
+import { getRel, isParent } from './folk';
+import { hash3 } from './slump';
+import { drarSed } from './seder';
+import { gudarOf, troOf, type GudOmr } from './religion';
+import { arPrast } from './kultlatt';
 import { clamp } from './slump';
 import { personHand } from './personlogg';
 
@@ -69,8 +75,8 @@ export const fargSmak = (p: Person, f: string | undefined) => f ? smakAv(p, 'f:'
 export function bynsSmak(s: State, f: string) { const l = living(s); return l.length ? l.reduce((a, p) => a + fargSmak(p, f), 0) / l.length : 0; }
 // anseendet ett plagg i färgen f ger den som bär det (rykten.ts)
 export const fargAnseende = (s: State, f: string | undefined) => f ? FARG.ans * (1 + bynsSmak(s, f)) : 0;
-prydKrok.farg = fargAnseende;
-Object.assign(fargvaxtKrok, FARGVAXTER);
+fargKrok.anseende = fargAnseende;
+Object.assign(fargKrok.vaxter, FARGVAXTER);
 // byns mode: färgen med högst smak i snitt
 export const bynsMode = (s: State) => FARG_LIST.reduce<{ f?: FargId; v: number }>((b, f) => { const v = bynsSmak(s, f); return v > b.v ? { f, v } : b; }, { v: 0 }).f;
 
@@ -79,12 +85,12 @@ export const badAv = (s: State, p: Person, bad: string) => DEF[bad]?.av?.find(a 
 // maten i växterna (bären är mat)
 const matI = (a: Record<string, number>) => Object.entries(a).reduce((m, [k, n]) => m + n * (SAKER[k]?.mat ?? 0), 0);
 
-// det som p kan bada: plaggen av lin och ylle hen har på sig och äger, och hens färdiga mattor (steg 13.3.3), med värdet utan färg
+// det som p kan bada: plaggen av lin och ylle hen äger (på sig eller i förrådet), och hens färdiga mattor (steg 13.3.3), med värdet utan färg
 type Badbart = { id: number; farg?: string; varde: number; matta?: Station; t?: Ting };
 const mattorAv = (s: State, p: Person) => stationerOf(s).filter(m => m.ag === p.id && m.k.startsWith('matta_') && isKlar(m));
 const mattVarde = (m: Station) => varuVarde(stationDef(m.k)?.av ?? {});
 function badbart(s: State, p: Person): Badbart[] {
-  const ut: Badbart[] = allaTing(s).filter(t => t.bar === p.id && t.agare === p.id && tarFarg(t.k)).map(t => ({ id: t.id, farg: t.farg, varde: grundvarde(t.k), t }));
+  const ut: Badbart[] = allaTing(s).filter(t => t.agare === p.id && (t.bar === undefined || t.bar === p.id) && tarFarg(t.k)).map(t => ({ id: t.id, farg: t.farg, varde: grundvarde(t.k), t }));
   for (const m of mattorAv(s, p)) ut.push({ id: m.id, farg: m.farg, varde: mattVarde(m), matta: m });
   return ut;
 }
@@ -117,12 +123,11 @@ export const fargTool = (bad: string, matta: boolean) => (matta ? 'matta:' : '')
 const lasTool = (tool?: string) => ({ matta: !!tool?.startsWith('matta:'), bad: tool?.replace(/^matta:/, '') });
 // växterna som hämtas till badet (HAMTAS i hamtning.ts)
 export const fargaHamtas = (s: State, p: Person, tk: Task) => { const { bad } = lasTool(tk.tool); return bad ? badAv(s, p, bad) ?? DEF[bad]?.av?.[0] : undefined; };
-// när badet är klart: plagget eller mattan (task.ref, en matta när tool börjar med matta:) får färgen, om hen har plagget på sig eller äger
-// mattan och allt finns
+// när badet är klart: plagget eller mattan (task.ref, en matta när tool börjar med matta:) får färgen, om hen äger det och allt finns
 export function fargaKlar(s: State, p: Person, tk: Task) {
   const { bad, matta } = lasTool(tk.tool);
   const m = matta ? stationerOf(s).find(q => q.id === tk.ref && q.ag === p.id && q.k.startsWith('matta_')) : undefined;
-  const t = matta ? undefined : allaTing(s).find(q => q.id === tk.ref && q.bar === p.id && tarFarg(q.k));
+  const t = matta ? undefined : allaTing(s).find(q => q.id === tk.ref && q.agare === p.id && (q.bar === undefined || q.bar === p.id) && tarFarg(q.k));
   if ((!t && !m) || !bad) return;
   const a = badAv(s, p, bad);
   if (!a || !harReceptVatten(s) || !ledigKruka(s)) { count(s, 'fargMiste'); return; }
@@ -141,3 +146,108 @@ export function fargaKlar(s: State, p: Person, tk: Task) {
 // färgerna p har på sig och tycker om: den största smaken (för tanken i steg.ts)
 export function barGillad(p: Person, pa: Ting[]) { let v = 0; for (const t of pa) if (t.farg) v = Math.max(v, fargSmak(p, t.farg)); return v; }
 export const fargMin = () => FARG.min * MIN;
+
+// ---------- var smaken för en färg kommer ifrån (steg 13.3.5, Färgade kläder och mode i fliken Människan) ----------
+// Smaken för en färg ligger i p.smak med 'f:' före och bleknar inte av sig själv. När smaken för en färg växer sjunker hens
+// andra färger lika mycket tillsammans (de hen tycker om, efter hur mycket), så att en ny favorit tränger undan den gamla.
+// Källorna är rader i FARGSMAK; födseln, minnena och samtalet anropas där det händer (fargkrok.ts), barndomen, förebilden,
+// tron och Förnyelsen en gång i timmen (stepFargsmak, raden färgsmaken i TAKTER).
+export const FSMAK = balans('fargsmak', {
+  fodd: 0.3, foddV: 0.4, // så stor del föds med en favoritfärg, och så stark är den
+  barn: 0.004, // per timme: barnet nära en förälder som bär färgen
+  forebild: 0.002, // per timme: den som är nära någon med högre anseende som bär färgen
+  trad: 1, // den som drar åt Tradition får så här mycket mer av förebilden (gånger hur mycket hen drar) när färgen är byns mode
+  ny: 1, nyFa: 0.25, // den som drar åt Förnyelse får så mycket mer av förebilden när färgen bärs av färre än nyFa av byn ...
+  nyManga: 0.5, nyTappa: 0.003, // ... och tappar per timme smaken för en färg som fler än nyManga av byn bär
+  samtal: 0.05, // i ett samtal får den andra så mycket av en favoritfärg, om de står varandra nära
+  gava: 0.15, gavaOp: 20, // en färgad gåva av någon man tycker om (relationen över gavaOp)
+  sorg: 0.2, // den som sörjer får tycke för den dödas färg
+  vald: 0.25, // avsmak för färgen den bar som anföll eller rånade en
+  tro: 0.003, prast: 3, // per timme: de troende mot trons färg gånger styrkan i tron (0 till 1), prästen så här många gånger mer
+});
+export interface FargSmakDef { namn: string; text: string }
+export const FARGSMAK = {
+  fodd: { namn: 'Födseln', text: 'några föds med en favoritfärg' },
+  barndom: { namn: 'Barndomen', text: 'barnet får tycke för den färg föräldrarna bär' },
+  forebild: { namn: 'Förebilden', text: 'den som är nära någon med högre anseende som bär färgen, och samtalen' },
+  minnen: { namn: 'Minnena', text: 'en färgad gåva, den dödas färg och avsmak för färgen hos den som anföll eller rånade' },
+  tro: { namn: 'Tron', text: 'de troende tycker om trons färg, prästerna mest' },
+  sed: { namn: 'Tradition mot Förnyelse', text: 'Tradition härmar modet, Förnyelse söker det få bär och tappar det alla bär' },
+} satisfies Record<string, FargSmakDef>;
+// våldet som ger avsmak för den våldsammes färg (handelserna i rykten.ts)
+const VALD = new Set(['ranVald', 'sla', 'misshandel']);
+// trons färg: guden tron föddes med, eller den äldsta som finns kvar (GUDAR i religion.ts, Trons färg i fliken Samhället)
+export const GUDFARG: Record<GudOmr, FargId> = { aska: 'blatt', sjon: 'blatt', skord: 'gult', doden: 'svart', jakt: 'gront', elden: 'rott', vintern: 'blatt', solen: 'gult', atten: 'brunt', kriget: 'rott', hantverk: 'brunt' };
+export function trosFarg(s: State, troId: number | undefined): FargId | undefined {
+  const tr = troOf(s, troId);
+  if (!tr?.gudar?.length) return undefined;
+  const g = tr.gudar[0].slut === undefined ? tr.gudar[0] : gudarOf(tr)[0];
+  return g ? GUDFARG[g.omr[0]] : undefined;
+}
+
+// smaken för färgen f växer (eller sjunker) med d; när den växer sjunker de andra färgerna hen tycker om lika mycket tillsammans
+export function fargSmaka(p: Person, f: string, d: number) {
+  const k = 'f:' + f, fore = smakAv(p, k), v = clamp(fore + d, -1, 1), okat = v - fore;
+  if (Math.abs(v) < 1e-3) { if (p.smak) delete p.smak[k]; } else (p.smak ??= {})[k] = v;
+  if (okat <= 0 || !p.smak) return;
+  const andra = FARG_LIST.filter(g => g !== f && (p.smak![`f:${g}`] ?? 0) > 0), sum = andra.reduce((a, g) => a + p.smak![`f:${g}`], 0);
+  if (sum <= 0) return;
+  const ta = Math.min(okat, sum);
+  for (const g of andra) { const kk = `f:${g}`, n = p.smak[kk] - ta * p.smak[kk] / sum; if (n < 1e-3) delete p.smak[kk]; else p.smak[kk] = n; }
+}
+// favoritfärgen: den hen tycker mest om, om den är en favorit (RYKTE.smakFavorit)
+export const favoritFarg = (p: Person) => FARG_LIST.reduce<{ f?: FargId; v: number }>((b, f) => { const v = smakAv(p, 'f:' + f); return v > b.v ? { f, v } : b; }, { v: RYKTE.smakFavorit - 1e-9 }).f;
+// färgerna p bär (plaggen hen har på sig)
+const barFarger = (s: State, p: Person) => { const ut = new Set<string>(); for (const t of allaTing(s)) if (t.bar === p.id && t.farg) ut.add(t.farg); return ut; };
+// den första färgen en person bär (för minnena)
+export const barFarg = (s: State, p: Person) => allaTing(s).find(t => t.bar === p.id && t.farg)?.farg;
+
+// födseln: räknad ur platsen i slumpen (hash), så att den inte tar något ur slumpen och inte ändrar något annat
+fargKrok.fodd = (s: State, p: Person) => {
+  if (hash3(s.seed, p.id, 131) >= FSMAK.fodd) return;
+  fargSmaka(p, FARG_LIST[Math.floor(hash3(s.seed, p.id, 132) * FARG_LIST.length)], FSMAK.foddV);
+};
+// samtalet: b får av a:s favoritfärg när de står varandra nära
+fargKrok.samtal = (a: Person, b: Person, op: number) => { if (op < 20) return; const f = favoritFarg(a); if (f) fargSmaka(b, f, FSMAK.samtal); };
+// minnena: våldet, den döda och gåvan
+fargKrok.handelse = (s: State, p: Person, h: string, offer: Person) => { if (!VALD.has(h)) return; const f = barFarg(s, p); if (f) fargSmaka(offer, f, -FSMAK.vald); };
+fargKrok.dodFarg = (s: State, p: Person) => barFarg(s, p);
+fargKrok.sorjer = (q: Person, f: string) => fargSmaka(q, f, FSMAK.sorg);
+fargKrok.gava = (s: State, g: Person, m: Person, ting: { farg?: string }[]) => {
+  const f = ting.find(t => t.farg)?.farg;
+  if (f && getRel(s, m, g).op > FSMAK.gavaOp) fargSmaka(m, f, FSMAK.gava);
+};
+
+// en gång i timmen (TAKTER i steg.ts): barndomen, förebilden, tron och Förnyelsen. h = timmarna sedan sist
+export function stepFargsmak(s: State, h = 1) {
+  const folk = living(s);
+  if (!folk.length) return;
+  const bar = new Map(folk.map(p => [p, barFarger(s, p)]));
+  if (![...bar.values()].some(b => b.size) && !s.tron?.length) return; // ingen bär någon färg och ingen tro: inget att räkna
+  const andel: Record<string, number> = {};
+  for (const b of bar.values()) for (const f of b) andel[f] = (andel[f] ?? 0) + 1 / folk.length;
+  const mode = bynsMode(s);
+  const ans = new Map<Person, number>();
+  const ansOf = (p: Person) => { let v = ans.get(p); if (v === undefined) { v = ryktbarhet(s, p.id).a; ans.set(p, v); } return v; };
+  for (const p of folk) {
+    const nara = folk.filter(q => q !== p && bar.get(q)!.size && Math.hypot(q.x - p.x, q.y - p.y) < RYKTE.syn);
+    if (ageOf(p, s.now) < ALDER.vuxen) {
+      // barndomen: färgerna föräldrarna nära bär
+      for (const q of nara) if (isParent(q, p)) for (const f of bar.get(q)!) fargSmaka(p, f, FSMAK.barn * h);
+    } else if (nara.length) {
+      // förebilden: den med högre anseende som bär färgen, och seden Tradition mot Förnyelse
+      const lean = clamp(drarSed(s, p, 'nyfikenhet'), -1, 1), mitt = ansOf(p);
+      const sett = new Set<string>();
+      for (const q of nara) if (ansOf(q) > mitt) for (const f of bar.get(q)!) sett.add(f);
+      for (const f of sett) {
+        const extra = (lean < 0 && f === mode ? FSMAK.trad * -lean : 0) + (lean > 0 && (andel[f] ?? 0) < FSMAK.nyFa ? FSMAK.ny * lean : 0);
+        fargSmaka(p, f, FSMAK.forebild * (1 + extra) * h);
+      }
+    }
+    // Förnyelsen tappar smaken för det de flesta bär
+    if (ageOf(p, s.now) >= ALDER.vuxen) { const lean = drarSed(s, p, 'nyfikenhet'); if (lean > 0) for (const f in andel) if (andel[f] > FSMAK.nyManga && smakAv(p, 'f:' + f) > 0) fargSmaka(p, f, -FSMAK.nyTappa * Math.min(1, lean) * h); }
+    // tron: mot trons färg, mer ju starkare hen tror, prästen mest
+    const tf = trosFarg(s, p.tro);
+    if (tf) fargSmaka(p, tf, FSMAK.tro * (p.troStyrka ?? 0) / 100 * (arPrast(s, p) ? FSMAK.prast : 1) * h);
+  }
+}

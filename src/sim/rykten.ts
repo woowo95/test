@@ -16,8 +16,7 @@ import { vanaSumma } from './vanor';
 import { ACTS, Act } from './handlingar';
 import { isLight } from './tid';
 import { vaderNu } from './vader';
-// anseendet för ett färgat plagg (steg 13.3.2): sätts av farg.ts, som annars blir en importring
-export const prydKrok = { farg: (_s: State, _f: string) => 0 };
+import { fargKrok } from './fargkrok';
 
 // Rykten (steg 3.3–3.4, "Rykten, anseende och minnet efter döden" i designdokumentet).
 // Det någon gör (en händelse: stöld, slag, gåva, mästerverk …) blir ett intryck hos den som ser det (våldsam, tjuv, generös,
@@ -325,6 +324,7 @@ export function vittnen(s: State, p: Person, offer?: Person) {
 // i relationen (utanOp), och en rival eller den med låg empati blir avundsjuk på en prestation. ganger = vikten gånger så mycket
 export function handelse(s: State, p: Person, h: HandelseTyp, offer?: Person, sak?: string, bara?: Person, ganger = 1) {
   const d = HANDELSER[h];
+  if (offer && !bara) fargKrok.handelse(s, p, h, offer); // offret minns färgen den våldsamme bar (steg 13.3.5)
   const b: Bevis = { h, t: s.now, ...(offer ? { mot: offer.id, motNamn: offer.name } : {}), ...(sak ? { sak } : {}), sett: true };
   count(s, 'rykte_' + h);
   // en egen bedrift (steg 10.6.1): den största av de senaste blir kvar, och stoltheten över den ger lust att resa en runsten (skrift.ts)
@@ -507,7 +507,7 @@ function prydnadAnseende(s: State, om: number) {
     const r = kladAv(t.k);
     if (r?.plagg === 'halsband') a += PRYD.smycke + PRYD.finhet * KLADMATERIAL[r.mat].finhet;
     else if (r?.plagg === 'mantel') a += PRYD.mantel;
-    if (t.farg) a += prydKrok.farg(s, t.farg); // ett färgat plagg, mer när byn tycker om färgen (steg 13.3.2)
+    if (t.farg) a += fargKrok.anseende(s, t.farg); // ett färgat plagg, mer när byn tycker om färgen (steg 13.3.2)
   }
   return a * living(s).length;
 }
@@ -653,6 +653,7 @@ export function smaka(p: Person, k: string, d: number) {
 // en ny människa: få har någon smak från början
 const STARTSMAK = ['a:samla', 'a:jakt', 'a:fiske', 'a:ved', 'm:abborre', 'm:bar', 'm:svamp', 'm:kott'];
 export function startSmak(s: State, p: Person) {
+  fargKrok.fodd(s, p); // en favoritfärg (FARGSMAK i farg.ts, steg 13.3.5): räknad ur platsen i slumpen, utan att ta ur den
   if (rnd(s, 'rykte', p) >= RYKTE.smakStart) return;
   const k = STARTSMAK[Math.floor(rnd(s, 'rykte', p) * STARTSMAK.length)];
   smaka(p, k, (rnd(s, 'rykte', p) < RYKTE.smakTycke ? 1 : -1) * RYKTE.smakStartV);
@@ -695,6 +696,7 @@ export function berattaSmak(a: Person, b: Person, op: number) {
   if (op < 20) return;
   const f = favoriter(a).sort((x, y) => Math.abs(y.v) - Math.abs(x.v))[0];
   if (f) smaka(b, 'm:' + f.k, Math.sign(f.v) * RYKTE.smakSprid);
+  fargKrok.samtal(a, b, op); // och om sin favoritfärg (steg 13.3.5)
 }
 // den som blev förgiftad av svamp får avsmak för svamp (fynd.ts)
 export const smakGift = (p: Person) => smaka(p, 'm:svamp', -RYKTE.smakGift);

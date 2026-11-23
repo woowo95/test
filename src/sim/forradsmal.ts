@@ -15,6 +15,7 @@ import { stenTillPlan } from './byggsten';
 import { tamAlder, tamArt, tamdjurOf } from './tamdjur';
 import { SKRIFT } from './skriftTal';
 import { trosMobelBrist } from './troshus';
+import { fargKrok } from './fargkrok';
 import { balans } from './balans';
 import { ELD, eldarOf, hearthOf, woodDays } from './eld';
 import { foodDaysAll } from './ekonomi';
@@ -123,9 +124,7 @@ interface Materialmal {
 }
 // virket som byggbitarna (väggarna av timmer) ännu saknar: det som inte burits dit till det som inte är byggt
 const virkeTillHus = (s: State) => Math.ceil(bitsOf(s).reduce((n, b) => n + (b.b < 1 && MATERIAL[b.m]?.item === 'virke' ? Math.max(0, MATERIAL[b.m]!.n - b.mat) : 0), 0) - 1e-9);
-// det mesta ett bad tar av en färgväxt (steg 13.3.2): sätts av farg.ts, som annars blir en importring
-export const fargvaxtKrok: Record<string, number> = {};
-const fargVill = (s: State, k: string) => living(s).some(p => knows(p, 'fargning')) ? fargvaxtKrok[k] ?? 0 : 0;
+const fargVill = (s: State, k: string) => living(s).some(p => knows(p, 'fargning')) ? fargKrok.vaxter[k] ?? 0 : 0;
 const tand = (s: State) => s.fire.lit ? TROSKEL.tandVill : TROSKEL.tandVillSlocknad; // tändmaterialet invånarna vill ha
 const harNaver = (s: State) => amountOf(s, 'naver') >= TROSKEL.tandBrist || nTools(s, 'kniv') + nTools(s, 'yxa') > 0 && amountOf(s, 'ved') >= 1;
 export const MATERIALMAL = {

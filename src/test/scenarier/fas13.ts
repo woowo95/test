@@ -571,3 +571,75 @@ SCENARIER.fargmatta = {
     ];
   },
 };
+
+SCENARIER.fargsmak = {
+  text: 'Steg 13.3.5: var smaken för en färg kommer ifrån (FARGSMAK): födseln, barndomen, förebilden och samtalet, minnena, tron och seden Tradition mot Förnyelse. Smaken bleknar inte av sig själv, och när en färg växer sjunker de andra',
+  kor: () => {
+    const s = SIM.createState(6, START); klockan(s); setMat(s, { kott: 200 });
+    const folk = SIM.living(s), vuxna = folk.filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
+    for (const q of folk) { q.smak = {}; q.tro = undefined; }
+    const ga = (q: SIM.Person, x: number, y: number) => { q.x = x + 0.5; q.y = y + 0.5; };
+    const pa = (q: SIM.Person, farg: string) => { const t = SIM.addTool(s, 'tunika_lintyg', q); t.bar = q.id; t.x = t.y = undefined; t.farg = farg; return t; };
+    const [pr, tr2, rovare, ny] = vuxna;
+    // tron: prästen i en tro med en åskgud får tycke för blått, mer än en vanlig troende
+    const tro = { id: 77, prast: pr.id, gudar: [{ omr: ['aska'], namn: 'Dunvald', form: 'gud', t: s.now, ar: 0, bekr: s.now, ber: '' }] } as unknown as SIM.Tro;
+    s.tron = [tro]; pr.tro = 77; tr2.tro = 77; pr.troStyrka = 100; tr2.troStyrka = 100;
+    for (let i = 0; i < 48; i++) SIM.stepFargsmak(s, 1);
+    const prBla = SIM.smakAv(pr, 'f:blatt'), trBla = SIM.smakAv(tr2, 'f:blatt'), trosFarg = SIM.trosFarg(s, 77);
+    // prästen badar sitt plagg blått
+    const ort = medBank(s, 'ortkok'); pr.tek = { ...pr.tek, fargning: 1, ortkok: 1 };
+    const tun = SIM.addTool(s, 'tunika_lintyg', pr); tun.bar = pr.id; tun.x = tun.y = undefined;
+    const kr = SIM.addTool(s, 'lerkruka_mellan', pr); kr.hos = undefined;
+    const sack = SIM.addTool(s, 'vattensack', pr); sack.hos = undefined; sack.inne = { v: 'vatten', n: 3 } as typeof sack.inne;
+    for (const k of ['naver', 'malm', 'bar', 'rolleka', 'mara', 'krapp']) SIM.setAmount(s, k, 0);
+    SIM.setAmount(s, 'vejde', 2); SIM.setAmount(s, 'rolleka', 2);
+    const val = SIM.fargVal(s, pr);
+    void ort;
+    s.tron = []; for (const q of folk) q.tro = undefined;
+    // barndomen: barnet nära en förälder som bär gult får tycke för gult
+    const barn = folk.find(q => SIM.ageOf(q, s.now) < SIM.ALDER.vuxen && folk.some(f => SIM.isParent(f, q)));
+    let barnGult = 0;
+    if (barn) {
+      const f = folk.find(q => SIM.isParent(q, barn))!; pa(f, 'gult');
+      for (const q of folk) ga(q, 80 + q.id * 15 % 60, 80);
+      ga(f, 50, 50); ga(barn, 51, 50);
+      for (let i = 0; i < 24; i++) SIM.stepFargsmak(s, 1);
+      barnGult = SIM.smakAv(barn, 'f:gult');
+      for (const t of SIM.tingOf(s)) if (t.bar === f.id && t.farg) t.bar = undefined;
+    }
+    // Förnyelsen: den som drar åt Förnyelse tappar smaken för en färg när de flesta bär den
+    ny.pot = { ...ny.pot, nyfikenhet: 100, intelligens: 100 };
+    ny.smak = { 'f:brunt': 0.6 };
+    const lean = SIM.drarSed(s, ny, 'nyfikenhet');
+    const bruna = folk.filter(q => q !== ny).map(q => pa(q, 'brunt'));
+    for (const q of folk) ga(q, 20 + (q.id * 7) % 40, 20 + (q.id * 3) % 10);
+    ga(ny, 5, 100); // långt bort från förebilderna
+    for (let i = 0; i < 24; i++) SIM.stepFargsmak(s, 1);
+    const nyBrunt = SIM.smakAv(ny, 'f:brunt');
+    for (const t of bruna) t.bar = undefined;
+    // minnena: den som rånas av någon i rött får avsmak för rött
+    const offer = vuxna.find(q => q !== rovare && q !== ny)!;
+    offer.smak = {};
+    pa(rovare, 'rott');
+    SIM.handelse(s, rovare, 'ranVald', offer, 'mat');
+    const offerRott = SIM.smakAv(offer, 'f:rott');
+    // när en färg växer sjunker de andra; och smaken bleknar inte av sig själv
+    const q = vuxna[vuxna.length - 1]; q.smak = { 'f:gult': 0.5, 'f:svart': 0.3 };
+    SIM.fargSmaka(q, 'blatt', 0.4);
+    const sum = SIM.smakAv(q, 'f:gult') + SIM.smakAv(q, 'f:svart'), gult0 = SIM.smakAv(q, 'f:gult');
+    for (const t of SIM.tingOf(s)) if (t.farg) t.bar = undefined;
+    for (const r of folk) ga(r, 10 + r.id * 3, 10);
+    for (let i = 0; i < 48; i++) SIM.stepFargsmak(s, 1);
+    const gult1 = SIM.smakAv(q, 'f:gult');
+    return [
+      [`trons färg för åskguden är blått (${trosFarg})`, trosFarg === 'blatt'],
+      [`prästen får tycke för blått, mer än en vanlig troende (${prBla.toFixed(3)} mot ${trBla.toFixed(3)})`, prBla > trBla && trBla > 0],
+      [`prästen vill bada sin tunika blå (${val?.blir})`, val?.blir === 'blatt'],
+      [`barnet nära en förälder i gult får tycke för gult (${barnGult.toFixed(3)})`, !barn || barnGult > 0],
+      [`den som drar åt Förnyelse (${lean.toFixed(2)}) tappar smaken för brunt när de flesta bär det (0,6 → ${nyBrunt.toFixed(3)})`, lean > 0 && nyBrunt < 0.6],
+      [`den som rånas av någon i rött får avsmak för rött (${offerRott.toFixed(2)})`, offerRott < 0],
+      [`när blått växer sjunker de andra lika mycket tillsammans (gult och svart ${sum.toFixed(2)}, var 0,80)`, Math.abs(sum - 0.4) < 1e-6],
+      [`smaken bleknar inte av sig själv (${gult0.toFixed(3)} och ${gult1.toFixed(3)})`, Math.abs(gult0 - gult1) < 1e-9],
+    ];
+  },
+};

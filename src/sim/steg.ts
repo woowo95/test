@@ -535,6 +535,7 @@ export const TAKTER: Takt[] = [
   { namn: 'stepPaborjat', sek: 3600, fn: s => { stepPaborjat(s); } },
   { namn: 'stepStationer', sek: 3600, fn: s => { stepStationer(s); } },
   { namn: 'stepPynt', sek: 3600, fn: (s, dt) => { stepPynt(s, dt / HOUR_S); } },
+  { namn: 'färgsmaken', sek: 3600, fn: (s, dt) => { stepFargsmak(s, dt / HOUR_S); } }, // var smaken för en färg kommer ifrån (farg.ts, steg 13.3.5)
   { namn: 'stepKrukor', sek: 3600, fn: (s, dt) => { stepKrukor(s, dt); } },
   { namn: 'protesTimme', sek: 3600, fn: s => { protesTimme(s); } },
   { namn: 'halsoNotiser', sek: 3600, fn: s => { halsoNotiser(s); } },
@@ -1827,7 +1828,7 @@ import { mataKlar, stepTamdjur } from './tamdjur';
 import { hageKlar, stepHagar, vallaKlar } from './hage';
 import { avlivaKlar, klippKlar, mjolkaKlar, stepBoskap } from './boskap';
 import { tatKlar } from './tatuering';
-import { barGillad, fargaKlar, FARG } from './farg';
+import { barGillad, fargaKlar, FARG, stepFargsmak } from './farg';
 import { angKlar, slaKlar, stepVinter, hamlaKlar } from './slatter';
 import { stepHons } from './hons';
 import { baddVila, bredvidKaresta, iDass, sittVila, sattaKlar } from './mobler';
