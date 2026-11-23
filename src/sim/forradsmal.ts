@@ -37,7 +37,7 @@ import { MATERIAL, bitsOf } from './byggnad';
 import { BYGGNADER, fahusUtanKrubba, fnId, langhusRum, sovplatser, utanBadd } from './byggnader';
 import { fahusHus } from './slatter';
 import { latrinBrist } from './smuts';
-import { torkBrist } from './matlagning';
+import { syraVill, torkBrist } from './matlagning';
 import { DAY, GREN, State, WEEK } from './typer';
 import { TILLVERKA, TillverkDef } from './tillverka';
 import { protesVill } from './protes';
@@ -302,6 +302,7 @@ const TILLVERKVILL: Record<string, (s: State) => number> = {
   ridsadel: s => tamdjurOf(s).filter(d => tamArt(d.art).rids && tamAlder(s, d) >= tamArt(d.art).vuxen).length, // en ridsadel per vuxen häst (steg 11.11.4)
   packsadel: s => behovVill(s.sadelBehov, s.now), // packsadlarna: så många djur som byns största sällskap ville lasta det senaste året (steg 11.11.3)
   ost: s => amountOf(s, 'ost') + Math.floor(ostKrok.surnar(s) / (TILLVERKA.ysta.vatska?.n ?? 1)) /* mjölken till en ost, ur receptet (steg 12.1.255) */, // osten (steg 12.4.7): mjölken som annars skulle surna
+  surkal: s => syraVill(s, 'surkal', TILLVERKA.syra_kal.n), surfisk: s => syraVill(s, 'surfisk', TILLVERKA.syra_fisk.n), // det som annars ruttnar syras (steg 13.6.2)
   talt: taltVill, // tälten: så många som byns största sällskap med en natt på vägen behövde det senaste året (steg 11.11.1)
 };
 // tälten byn vill ha: det största behovet bland resorna med en natt som packats det senaste året (ett dygn)

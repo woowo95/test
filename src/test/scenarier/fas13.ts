@@ -945,3 +945,63 @@ SCENARIER.torkat = {
     ];
   },
 };
+SCENARIER.syrat = {
+  text: 'Surkål och surfisk (steg 13.6.2): 6 kål eller 6 fisk och 1 salt packas i en stor lerkruka och syras 3 dygn utan eld till 6 surkål eller surfisk, som håller 20 dygn; under 5 grader stannar syrningen utom inne i ett hus, och byn syrar det som annars ruttnar',
+  kor: () => {
+    const { SYRA, TILLVERKA, SAKER, amountOf, setAmount } = SIM;
+    const dk = TILLVERKA.syra_kal, df = TILLVERKA.syra_fisk;
+    const s = SIM.createState(1, START); klockan(s, 12);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= 18)!;
+    (p.tek ??= {}).syrning = 1; (p.tek ??= {}).kruka = 1;
+    s.fire.lit = false;
+    const t = s.now;
+    // en tid när det är varmt och en när det är kallt
+    const hitta = (ok: (c: number) => boolean) => { for (let h = 0; h < 24 * 400; h++) { const u = t + h * SIM.HOUR; if (ok(SIM.temperature(s, u))) return u; } return t; };
+    const varm = hitta(c => c >= 10), kall = hitta(c => c <= 0);
+    const klar = (d: typeof dk) => { p.task = { act: d.act, phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as SIM.Task; SIM.KLAR_FOR[d.act]!(s, p, p.task, 0); };
+    // utan en stor lerkruka syras inget
+    setMat(s, {}); setAmount(s, 'kal', 6); setAmount(s, 'salt', 2);
+    klar(dk);
+    const utanKruka = amountOf(s, 'kal') === 6;
+    const kruka = SIM.addTool(s, 'lerkruka_stor', p); kruka.hos = undefined;
+    // utan salt syras inget
+    setAmount(s, 'salt', 0); klar(dk);
+    const utanSalt = amountOf(s, 'kal') === 6 && !kruka.kok;
+    setAmount(s, 'salt', 2);
+    // byn vill syra kål när den har mer än den hinner äta
+    setMat(s, { kal: 300 }); const villFore = SIM.syraVill(s, 'surkal', dk.n); setMat(s, {}); setAmount(s, 'kal', 6); setAmount(s, 'salt', 2);
+    s.now = varm; klar(dk);
+    const packad = kruka.kok?.r === 'surkal' && !!kruka.kok?.syr && amountOf(s, 'kal') === 0 && amountOf(s, 'salt') === 1;
+    const upptagen = !SIM.karSomBlirLedig(s, 'lerkruka_stor');
+    const iKruk = SIM.iKrukorna(s, 'surkal') === 6;
+    // syras utan eld: efter nästan tre dygn finns inget, efter tre dygn finns sex surkål och krukan är ledig
+    SIM.stepKok(s, (SYRA.dygn * 24 - 1) * 3600);
+    const inteAn = amountOf(s, 'surkal') === 0 && !!kruka.kok;
+    SIM.stepKok(s, 2 * 3600);
+    const surkal = amountOf(s, 'surkal') === 6 && !kruka.kok;
+    // fisken likadant
+    setAmount(s, 'fisk', 6); klar(df);
+    SIM.stepKok(s, (SYRA.dygn * 24 + 1) * 3600);
+    const surfisk = amountOf(s, 'surfisk') === 6 && !kruka.kok;
+    // kallt ute: syrningen stannar; inne i ett hus går den
+    setAmount(s, 'kal', 6); setAmount(s, 'salt', 1); s.now = kall; klar(dk);
+    const kvar0 = kruka.kok?.kvar ?? 0;
+    SIM.stepKok(s, 3600);
+    const stannar = kruka.kok?.kvar === kvar0;
+    medHus(s); s.now = kall;
+    const rum = SIM.gridOf(s).rooms.find(r => r.tiles.length);
+    let inne = false;
+    if (rum) { const c = rum.tiles[0]; kruka.x = c % SIM.W; kruka.y = Math.floor(c / SIM.W); SIM.stepKok(s, 3600); inne = (kruka.kok?.kvar ?? kvar0) < kvar0; }
+    const k = SAKER.surkal!, f = SAKER.surfisk!;
+    return [
+      [`6 kål eller 6 fisk och 1 salt i en stor lerkruka, ${dk.min} minuters arbete`, dk.kruka === 'lerkruka_stor' && dk.av.kal === 6 && dk.av.salt === 1 && df.av.fisk === 6 && dk.n === 6 && df.n === 6 && dk.min === 3],
+      ['utan en stor lerkruka eller utan salt syras inget', utanKruka && utanSalt],
+      [`byn vill syra kålen den inte hinner äta (${villFore})`, villFore >= 6],
+      ['kålen packas i krukan utan eld, och krukan är upptagen medan den syras', packad && upptagen && iKruk],
+      [`efter ${SYRA.dygn} dygn ligger 6 surkål i förrådet och krukan är ledig`, inteAn && surkal],
+      ['fisken blir surfisk på samma sätt', surfisk],
+      [`under ${SYRA.kall} grader stannar syrningen ute (${stannar}, ${SIM.temperature(s).toFixed(0)} grader), men inne i ett hus går den (${inne})`, stannar && inne],
+      ['surkålen och surfisken håller 20 dygn', k.haller === 20 && f.haller === 20],
+    ];
+  },
+};

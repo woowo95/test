@@ -307,7 +307,7 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
   if (p.task?.tool && d.verktyg) wearUsed(s, p, 1); else slitRedskapVid(s, d.act, d.n, p);
   const ag: Record<string, number> = {};
   for (const [q, n] of Object.entries(av)) addDel(ag, takeMaterial(s, p, q, n), 1);
-  if (kar && d.sjud) { kar.kok = { r: d.ger, n: d.n, kvar: d.sjud * MIN, ag: Object.keys(ag).length ? ag : { [p.id]: 1 }, ...(ar_vatska(d.ger) ? { vatska: 1 as const } : {}), q: rullaKvalitet(s, p, kvVid(s, p, d.act)) }; count(s, 'sjuder_' + d.ger); } // osten blir en sak i förrådet när den sjudit (steg 12.4.7) // buljongen sjuder i krukan på elden (stepKok)
+  if (kar && (d.sjud || d.syr)) { kar.kok = { r: d.ger, n: d.n, kvar: d.syr ? SYRA.dygn * DAY : d.sjud! * MIN, ...(d.syr ? { syr: 1 as const } : {}), ag: Object.keys(ag).length ? ag : { [p.id]: 1 }, ...(ar_vatska(d.ger) ? { vatska: 1 as const } : {}), q: rullaKvalitet(s, p, kvVid(s, p, d.act)) }; count(s, 'sjuder_' + d.ger); } // osten blir en sak i förrådet när den sjudit (steg 12.4.7) // buljongen sjuder i krukan på elden (stepKok)
   else if (kar && ar_vatska(d.ger)) { fyllVatska(s, d.ger, d.n, kar)!.inne!.q = rullaKvalitet(s, p, kvVid(s, p, d.act)); } else put(s, d.ger, d.n, { [p.id]: d.n }); // tjäran, salvan, limmet och teet i sin behållare, med kvalitet (steg 9.5.8)
   if (forstaGang(s, 'gjort_' + d.ger)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }; }
@@ -1799,7 +1799,7 @@ function glomDod(s: State, p: Person) {
   if (Object.keys(p.habit).length) p.habit = {};
   if (p.thoughts.length) p.thoughts = [];
 }
-import { bakaKlar, gropKlar, kokaKlar, stekaKlar, stepBak, stepKok } from './matlagning';
+import { SYRA, bakaKlar, gropKlar, kokaKlar, stekaKlar, stepBak, stepKok } from './matlagning';
 import { stepStationsEld } from './stationseld';
 import { vatskorTimme } from './vatskor';
 import { brannKlar, bryggKlar, maltaKlar, stepBrygg } from './brygg';

@@ -236,6 +236,9 @@ const DEF = {
   torrkott: { namn: 'Torkat kött', ett: true, skaffa: RECEPT.torrkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 8, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },
   torrfisk: { namn: 'Torkad fisk', skaffa: RECEPT.torrfisk, stack: 25, ruta: 75, mapp: 'Mat', mat: 7, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
   // den torkade svampen och de torkade äpplena (steg 13.6.1): mättar och ger näring som de färska, håller som det torkade köttet och äts efter det färska
+  // surkålen och surfisken (steg 13.6.2): syrade i en stor lerkruka, håller som det torkade; surkålen ger nästan kålens vitaminer
+  surkal: { namn: 'Surkål', skaffa: RECEPT.surkal, stack: 25, ruta: 75, mapp: 'Mat', mat: 7.1, naring: { vitamin: 1.6, mineral: 0.8, energi: 0.6, protein: 0.3, fett: 0.1 }, haller: 20 },
+  surfisk: { namn: 'Surfisk', skaffa: RECEPT.surfisk, stack: 25, ruta: 75, mapp: 'Mat', mat: 7.05, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
   torrsvamp: { namn: 'Torkad svamp', skaffa: RECEPT.torrsvamp, stack: 25, ruta: 75, mapp: 'Mat', mat: 7.2, naring: { protein: 0.6, mineral: 0.8, vitamin: 1, energi: 0.5, fett: 0.1 }, haller: 20 },
   torrappel: { namn: 'Torkade äpplen', skaffa: RECEPT.torrappel, stack: 25, ruta: 75, mapp: 'Mat', mat: 7.4, naring: { vitamin: 1.6, energi: 0.9, mineral: 0.3 }, haller: 20 },
   // vattensäcken (steg 2.10.1): ett skinn som sys ihop till en säck vid slöjdbänken med bensylen. Med den hämtar man vatten

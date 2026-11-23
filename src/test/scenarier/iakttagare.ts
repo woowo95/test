@@ -185,6 +185,7 @@ for (const [ks, why] of [
   [['dryckeshorn'], 'dryckeshornet (steg 13.4.1) görs av djurhorn när byn har druckit öl, mjöd eller vin, och testbyarna brygger sällan; scenariot djurhorn prövar det'],
   [['jarnpilar', 'smida_pilar'], 'järnpilarna (steg 13.4.2) smids vid smedjan av den som kan Pilbåge, en sen teknik; scenariot jarnpil prövar dem'],
   [['tjara'], 'tjäran (steg 13.5.1) stryks på trä som står ute när skyddet sparar mer än tjäran kostar, och testbyarna har få väggar av timmer och få bryggor; scenariot tjara prövar det'],
+  [['syra_kal', 'syra_fisk', 'syrning', 'surkal', 'surfisk', 'torrsvamp', 'torrappel', 'torrrolleka'], 'syrningen (steg 13.6.2) är en teknik på nivå 4 som kommer genom försök, och torkningen av svamp, äpplen och rölleka (13.6.1) bara när byn har överskott; scenarierna syrat och torkat prövar dem'],
 ] as [string[], string][]) for (const k of ks) SALLSYNT[k] ??= why;
 
 // aldrig: allt i registren används, i minst en av testbyarna
