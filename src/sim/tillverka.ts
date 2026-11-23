@@ -1,6 +1,6 @@
 import { RECEPT } from './recept';
 import { Act } from './typer';
-import { SALTKOTT } from './handlingar';
+import { GARVHUD, SALTKOTT, garvAct } from './handlingar';
 
 // ---------- tillverkningen vid stationerna (steg 7.5–7.7) ----------
 // Det som görs av material vid en station och läggs i förrådet, utan att vara ett redskap eller plagg: en rad per sak. Varje rad
@@ -30,7 +30,11 @@ export const TILLVERKA: Record<string, TillverkDef> = {
   koka_tjara: { act: 'koka_tjara', ger: 'tjara', n: 1, av: RECEPT.tjara.av!, min: RECEPT.tjara.min, tek: 'ortkok', vill: 2, text: 'Kokar tjära av ved.', forsta: '{namn} kokade byns första tjära.' },
   koka_lim: { act: 'koka_lim', ger: 'benlim', n: 1, av: RECEPT.benlim.av!, min: RECEPT.benlim.min, tek: 'ortkok', vill: 2, vatten: true, text: 'Kokar lim av ben och vatten.', forsta: '{namn} kokade byns första benlim.' },
   koka_tval: { act: 'koka_tval', ger: 'tval', n: 1, av: RECEPT.tval.av!, min: RECEPT.tval.min, tek: 'ortkok', vill: 2, vatten: true, text: 'Kokar tvål av kol, talg och vatten.', forsta: '{namn} kokade byns första tvål.' },
-  garva: { act: 'garva', ger: 'lader', n: 1, av: RECEPT.lader.av!, min: RECEPT.lader.min, tek: 'garvning', vill: 6, text: 'Skrapar ett skinn och mjukar upp det med talg.', forsta: '{namn} garvade byns första läder.' },
+  // varje hud garvas för sig till hela läderbitar efter sin storlek, med 1 talg per läder och samma tid per hud (steg 13.2.1)
+  ...Object.fromEntries((Object.keys(GARVHUD) as (keyof typeof GARVHUD)[]).map(h => [garvAct(h), {
+    act: garvAct(h) as Act, ger: 'lader', n: GARVHUD[h].lader, av: { [h]: 1, talg: RECEPT.lader.av!.talg * GARVHUD[h].lader }, min: RECEPT.lader.min, tek: 'garvning', vill: 6,
+    text: `Skrapar ${GARVHUD[h].namn} och mjukar upp huden med talg.`, forsta: '{namn} garvade byns första läder.',
+  }])),
   gora_pergament: { act: 'gora_pergament', ger: 'pergament', n: 4, av: RECEPT.pergament.av!, min: RECEPT.pergament.min, tek: 'pergament', vill: 4, text: 'Skrapar och spänner ett skinn till pergament.', forsta: '{namn} gjorde byns första pergament.' }, // steg 10.6.4
   riva_black: { act: 'riva_black', ger: 'black', n: 2, av: { kol: 1 }, min: 2, tek: 'pergament', vill: 2, vatten: true, text: 'Gnider sot av kol med vatten till bläck i en liten lerkruka.', forsta: '{namn} rev byns första bläck.' },
   spinna: { act: 'spinna', ger: 'trad', n: 1, av: RECEPT.trad.av!, min: RECEPT.trad.min, tek: 'slanda', verktyg: 'slanda', vill: 9, text: 'Spinner lin till tråd med sländan.', forsta: '{namn} spann byns första lintråd.' },

@@ -132,7 +132,7 @@ const KLADMATERIAL_DEF = {
   getskinn: { sak: 'getskinn', namn: 'getskinn', slag: 'skinn', bit: 1, varme: 1.1, hallbar: 1.2, vikt: 1.1, skydd: 1.1, finhet: 0 },
   svinskinn: { sak: 'svinskinn', namn: 'svinskinn', slag: 'skinn', bit: 1, varme: 0.9, hallbar: 1.4, vikt: 1.3, skydd: 1.3, finhet: 0 }, // vildsvinets borstiga skinn (steg 10.10.4): tåligt men inte så varmt
   radjursskinn: { sak: 'radjursskinn', namn: 'rådjursskinn', slag: 'skinn', bit: 1, varme: 1.2, hallbar: 1.2, vikt: 1.1, skydd: 1.1, finhet: 1 }, // rådjurets skinn: tunt och smidigt, lite varmare och tåligare än harens
-  kohud: { sak: 'kohud', namn: 'kohud', slag: 'skinn', bit: 1, varme: 1.2, hallbar: 1.6, vikt: 1.6, skydd: 1.4, finhet: 0 }, // kons hud (steg 10.10.1): tjock, tung och tålig
+  kohud: { sak: 'kohud', namn: 'kohud', slag: 'skinn', bit: 3, varme: 1.2, hallbar: 1.6, vikt: 1.6, skydd: 1.4, finhet: 0 }, // kons hud (steg 10.10.1): tjock, tung och tålig, och stor: den räcker till tre bitar som tre harskinn (steg 13.2.1)
   lader: { sak: 'lader', namn: 'läder', slag: 'lader', bit: 1, varme: 1.3, hallbar: 1.5, vikt: 1.2, skydd: 1.4, finhet: 1 }, // steg 7.7.6
   lintyg: { sak: 'lintyg', namn: 'lin', slag: 'tyg', bit: 1, varme: -1, hallbar: 1, vikt: 1, skydd: 1, finhet: 2 }, // steg 7.7.9; linet är svalt (steg 12.1.34): skjortan av lin kyler lite
   ylle: { sak: 'ylle', namn: 'ylle', slag: 'ull', bit: 1, varme: 2, hallbar: 1.2, vikt: 1.2, skydd: 1.1, finhet: 2 }, // steg 9.8.14: varmare än linet

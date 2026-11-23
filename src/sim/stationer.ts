@@ -22,7 +22,7 @@ import { balans } from './balans';
 import { Hus, Rum, bitAt, blocked, gridOf, housesOf, husById, roofed, roomAt, touch } from './byggnad';
 import { HUS, bedTile, husIText, fahusUtanKrubba, husFolk, krubbaKrok, fnOf, langhusRum, rumFnOf, samlingRum, sovHus, sovKvar, sovPlats } from './byggnader';
 import { coldOf, nederbord, temperature } from './vader';
-import { ACTS, redskapTal } from './handlingar';
+import { ACTS, GARVA_ACTS, redskapTal } from './handlingar';
 import { SAKER, isTool } from './saker';
 import { kvHaller, nyKvalitet } from './kvalitet';
 import { groundOf, tileOf } from './mark';
@@ -238,7 +238,7 @@ export const STATIONER = {
     bygger: 'Bygger en skrivpulpet av plankor.', forsta: '{namn} byggde byns första skrivpulpet. Där skrivs bladen fortare och bättre.',
   },
   garvning: {
-    namn: 'Garvningsställning', ikon: 'garvning', w: 2, h: 2, tek: ['garvning'], av: RECEPT.garvning.av, min: RECEPT.garvning.min, gor: ['garva', 'gora_pergament'], bara: ['garva', 'gora_pergament'],
+    namn: 'Garvningsställning', ikon: 'garvning', w: 2, h: 2, tek: ['garvning'], av: RECEPT.garvning.av, min: RECEPT.garvning.min, gor: [...GARVA_ACTS, 'gora_pergament'], bara: [...GARVA_ACTS, 'gora_pergament'],
     bygger: 'Sätter upp en garvningsställning.', forsta: '{namn} satte upp byns första garvningsställning. Där blir skinn till läder.',
   },
   vavstol: {

@@ -247,3 +247,31 @@ SCENARIER.vak = {
     ];
   },
 };
+
+// alla hudar garvas (steg 13.2.1): varje hud ger hela läderbitar efter sin storlek, med 1 talg per läder och samma tid per hud
+SCENARIER.garvning = {
+  text: 'Steg 13.2.1: kohud och får-, get-, svin-, rådjurs-, varg- och björnskinn garvas till läder vid garvningsställningen, i hela bitar efter hudens storlek (hare, får, get, svin och rådjur 1, varg och björn 2, kohuden 3), med 1 talg per läder och 5 minuter per hud, och kohuden räcker till tre bitar också i kläderna',
+  kor: () => {
+    const s = SIM.createState(5, START), p = SIM.living(s)[0]!;
+    klockan(s);
+    const vantat: Record<string, number> = { skinn: 1, farskinn: 1, getskinn: 1, svinskinn: 1, radjursskinn: 1, vargskinn: 2, bjornskinn: 2, kohud: 3 };
+    const fel: string[] = [];
+    for (const [hud, n] of Object.entries(vantat)) {
+      const act = SIM.garvAct(hud as keyof typeof SIM.GARVHUD), d = SIM.TILLVERKA[act];
+      if (!d || d.n !== n || d.av.talg !== n || d.av[hud] !== 1 || d.min !== 5) { fel.push(`${hud}: raden`); continue; }
+      SIM.put(s, hud, 1, { [p.id]: 1 }); SIM.put(s, 'talg', n, { [p.id]: n });
+      const l0 = SIM.amountOf(s, 'lader'), t0 = SIM.amountOf(s, 'talg'), h0 = SIM.amountOf(s, hud);
+      p.task = { act } as SIM.Task; SIM.KLAR_FOR[act]!(s, p, p.task, 0); p.task = undefined;
+      const fick = SIM.amountOf(s, 'lader') - l0, talg = t0 - SIM.amountOf(s, 'talg'), huden = h0 - SIM.amountOf(s, hud);
+      if (fick !== n || talg !== n || huden !== 1) fel.push(`${hud}: ${fick} läder, ${talg} talg, ${huden} hud`);
+    }
+    const st = (SIM.STATIONER as Record<string, SIM.StationDef>).garvning;
+    const vid = Object.keys(vantat).every(h => { const a = SIM.garvAct(h as keyof typeof SIM.GARVHUD); return st.gor.includes(a) && st.bara!.includes(a) && !!SIM.ACTS[a]; });
+    const ko = SIM.KLADMATERIAL.kohud.bit === 3 && SIM.materialTill('rock', 'kohud') === 1;
+    return [
+      [`varje hud garvas till sina hela läderbitar med 1 talg per läder${fel.length ? ` (fel: ${fel.join('; ')})` : ''}`, !fel.length],
+      ['varje hud garvas bara vid garvningsställningen', vid],
+      [`kohuden räcker till tre bitar i kläderna (en rock tar ${SIM.materialTill('rock', 'kohud')} kohud)`, ko],
+    ];
+  },
+};

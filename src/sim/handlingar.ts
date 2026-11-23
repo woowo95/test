@@ -103,6 +103,14 @@ export const larmAvbryter = (act: string, larm: Larmslag) => !(ACTS as Record<st
 // köttslagen som saltas och vad köttet heter i texterna (steg 9.6.19 och 10.3.14), i den ordning raderna står i ACTS och TILLVERKA
 // (tillverka.ts). Harens kött heter bara kött
 export const SALTKOTT = { kott: 'kött', vargkott: 'vargkött', radjurkott: 'rådjurskött', farkott: 'fårkött', getkott: 'getkött', kokott: 'nötkött', svinkott: 'fläsk', fagelkott: 'fågelkött', bjornkott: 'björnkött' } as const;
+// hudarna som garvas vid garvningsställningen (steg 13.2.1): vad huden heter i texterna och hur många hela läderbitar den ger, efter
+// storleken. Harens skinn garvas av raden garva, de andra av garva_<hud>, i den ordning raderna står i ACTS och TILLVERKA
+export const GARVHUD = { skinn: { namn: 'ett harskinn', lader: 1 }, vitskinn: { namn: 'ett vitt harskinn', lader: 1 }, farskinn: { namn: 'ett fårskinn', lader: 1 }, getskinn: { namn: 'ett getskinn', lader: 1 }, svinskinn: { namn: 'ett svinskinn', lader: 1 }, radjursskinn: { namn: 'ett rådjursskinn', lader: 1 }, vargskinn: { namn: 'ett vargskinn', lader: 2 }, bjornskinn: { namn: 'ett björnskinn', lader: 2 }, kohud: { namn: 'en kohud', lader: 3 } } as const;
+export const garvAct = (hud: keyof typeof GARVHUD) => (hud === 'skinn' ? 'garva' : `garva_${hud}`) as 'garva' | `garva_${Exclude<keyof typeof GARVHUD, 'skinn'>}`;
+export const GARVA_ACTS = (Object.keys(GARVHUD) as (keyof typeof GARVHUD)[]).map(garvAct);
+function garvas() {
+  return Object.fromEntries((Object.keys(GARVHUD) as (keyof typeof GARVHUD)[]).filter(h => h !== 'skinn').map(h => [garvAct(h), { namn: 'Garvar ' + GARVHUD[h].namn, slag: 'hantverk' as const, hantverk: true as const, verb: 'garvar', plats: 'station' as const }])) as Record<`garva_${Exclude<keyof typeof GARVHUD, 'skinn'>}`, ActDef>;
+}
 function saltas() {
   return Object.fromEntries(Object.entries(SALTKOTT).map(([k, namn]) => ['salta_' + k, { namn: 'Saltar in ' + namn, slag: 'hantverk' as const, hantverk: true as const, verb: 'saltar', plats: 'elden' as const }])) as Record<`salta_${keyof typeof SALTKOTT}`, ActDef>;
 }
@@ -199,7 +207,8 @@ const DEF = {
   koka_tval: { namn: 'Kokar tvål', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },
   gora_pergament: { namn: 'Gör pergament', slag: 'hantverk', hantverk: true, verb: 'skrapar', plats: 'station' }, // vid garvningsställningen (steg 10.6.4)
   riva_black: { namn: 'Gör bläck', slag: 'hantverk', hantverk: true, verb: 'gnider', plats: 'elden' }, // sot och vatten i en liten lerkruka
-  garva: { namn: 'Garvar ett skinn', slag: 'hantverk', hantverk: true, verb: 'garvar', plats: 'station' }, // vid garvningsställningen (steg 7.7.6)
+  garva: { namn: 'Garvar ett harskinn', slag: 'hantverk', hantverk: true, verb: 'garvar', plats: 'station' }, // vid garvningsställningen (steg 7.7.6)
+  ...garvas(), // varje hud garvas för sig (steg 13.2.1)
   spinna: { namn: 'Spinner lintråd', slag: 'hantverk', hantverk: true, verb: 'spinner', plats: 'elden', redskap: { slanda: { tar: 'Tar sländan.', haller: 60 } }, slits: { enhet: 'tråd', per: 'gang' } }, // med sländan, var som helst (steg 7.7.8)
   vava: { namn: 'Väver lintyg', slag: 'hantverk', hantverk: true, verb: 'väver', plats: 'station' }, // vid vävstolen (steg 7.7.9)
   spinna_ull: { namn: 'Spinner ulltråd', slag: 'hantverk', hantverk: true, verb: 'spinner', plats: 'elden', redskap: { slanda: { tar: 'Tar sländan.', haller: 60 } }, slits: { enhet: 'tråd', per: 'gang' } }, // ullen (steg 9.8.14)

@@ -7,7 +7,7 @@ import { clamp } from './slump';
 import { DAY, Person, Seder, State } from './typer';
 import { balans } from './balans';
 import { kortTal } from './format';
-import { ACTS, ACT_LIST } from './handlingar';
+import { ACTS, ACT_LIST, GARVA_ACTS } from './handlingar';
 import { sedOppen } from './styre';
 import { vikter } from './rost';
 import { andlighet } from './religion';
@@ -242,7 +242,7 @@ const YRKEN: Record<string, number> = {
 };
 // de snävare yrkenas handlingar (steg 7.5.5–7.5.8). En rad med ett yrke vars handling inte finns ännu räknas inte
 const YRKE_AV: Partial<Record<string, string[]>> = {
-  Slaktare: ['slakta', 'rensa'], Korgmakare: ['korg', 'nat'], Snickare: ['station', 'tillbehor', 'klyva_plank', 'gor_leksak', 'slagtra', 'mal', 'trumma', 'metspo', 'slanda', 'gor_pilar', 'skold', 'bage', 'lyra', 'krycka', 'traben', 'krok', 'bagborr', 'kalke', 'slade'], /* och träsakerna vid snickarbänken (steg 9.4.5) */ Spjutmakare: ['spjut'], Skinnsömmare: ['rock', 'skor', 'byxor', 'mossa', 'snoskor'], Garvare: ['garva'],
+  Slaktare: ['slakta', 'rensa'], Korgmakare: ['korg', 'nat'], Snickare: ['station', 'tillbehor', 'klyva_plank', 'gor_leksak', 'slagtra', 'mal', 'trumma', 'metspo', 'slanda', 'gor_pilar', 'skold', 'bage', 'lyra', 'krycka', 'traben', 'krok', 'bagborr', 'kalke', 'slade'], /* och träsakerna vid snickarbänken (steg 9.4.5) */ Spjutmakare: ['spjut'], Skinnsömmare: ['rock', 'skor', 'byxor', 'mossa', 'snoskor'], Garvare: GARVA_ACTS,
   Stenhuggare: ['hugga_sten'], Odlare: ['odla'], Kock: ['grilla', 'steka', 'koka_mat', 'gropa', 'koka_buljong', 'baka', 'torka', 'roka'], Vattenbärare: ['vatten'], Läkekunnig: ['varda'], Lärare: ['lara'], Vargjägare: ['vargjakt'], Kämpe: ['strid', 'forsvar', 'forsvarRovare'], Handlare: ['handla'],
   Skald: ['upptrada'], Skrivare: ['skriva', 'runsten', 'bok', 'gora_pergament', 'riva_black'], Bryggare: ['brygga', 'malta', 'tappa', 'branna'], // steg 12.1.139
   Vävare: ['spinna', 'vava', 'spinna_ull', 'vava_ull'], Krukmakare: ['lerkruka', 'lera'],
