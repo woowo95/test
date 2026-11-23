@@ -3136,10 +3136,15 @@ SCENARIER.utpost = {
     if (hemKo) SIM.KOHANDELSER.hemTill(s, vl, hemKo);
     const hemma = r.tal.folk === folk0;
     // moderbyn borta: utposten överges och folket går till en by intill
-    const r2 = vl.rader!.find(x => x !== r && SIM.lever(vl, x) && x.sort === 'by' && x.tal.folk >= 5 && SIM.byPlats(vl, x.nr))!;
-    const f2 = SIM.laggPlats(vl, v, 'fyndplats', SIM.byPlats(vl, r2.nr)!.x, SIM.byPlats(vl, r2.nr)!.y, s.now) ?? [...vl.platser!].find(p => p.k === 'fyndplats' && p !== f)!;
-    f2.inne = { flinta: 50 }; r2.tal.folk = 40;
-    const u2 = SIM.nyUtpost(s, vl, r2, f2, s.now);
+    // (en by där utposten får plats och har en levande granne: vid en kust eller i en trång dal finns ibland ingen ledig ruta)
+    const forsok = (k: SIM.State, nr: number) => { const kv = k.varld!, kv2 = SIM.varldMark(k)!, x = SIM.radNr(kv, nr)!, bp = SIM.byPlats(kv, nr)!;
+      let ff: SIM.VarldPlats | undefined; // en fyndplats nära byn, som den första
+      for (let d = 2; d <= 7 && !ff; d++) for (let dy = -d; dy <= d && !ff; dy++) for (let dx = -d; dx <= d && !ff; dx++) ff = SIM.laggPlats(kv, kv2, 'fyndplats', bp.x + dx, bp.y + dy, k.now);
+      if (!ff) return undefined; ff.inne = { flinta: 50 }; x.tal.folk = 40; return { ff, uu: SIM.nyUtpost(k, kv, x, ff, k.now) }; };
+    const okUt = (nr: number) => { const k = SIM.cloneState(s), t = forsok(k, nr), pu = t?.uu && SIM.byPlats(k.varld!, t.uu.nr);
+      return !!pu?.grannar?.some(g => { const m = SIM.radNr(k.varld!, SIM.varldPlatsNr(k.varld!, g.nr)?.by); return !!m && m.nr !== nr && SIM.lever(k.varld!, m); }); };
+    const r2 = vl.rader!.find(x => x !== r && SIM.lever(vl, x) && x.sort === 'by' && x.tal.folk >= 5 && SIM.byPlats(vl, x.nr) && okUt(x.nr))!;
+    const t2 = r2 ? forsok(s, r2.nr) : undefined, u2 = t2?.uu;
     if (u2) { r2.tal.folk = 0; SIM.utpostTimme(s, vl, u2, n0 + 500); }
     const moderBorta = !!u2 && u2.tal.folk === 0 && (vl.ko ?? []).some(k => k.typ === 'hemTill' && k.data?.fran === u2.nr && k.sak !== r2.nr);
     // handelslägret

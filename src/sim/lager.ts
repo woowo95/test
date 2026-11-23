@@ -1434,6 +1434,17 @@ export function haulJob(s: State, near?: number, baraMat = false) {
 interface Bara { x: number; y: number; k: string; d: number; sc: number; why: string; min?: number } // min: det flyttas till en lagerplats med högre prioritet än så (−Infinity: vilken som helst)
 // sorterad: samma lista i poängens ordning (stabilt, så att lika poäng står i listans ordning), om ingen poäng är NaN
 const barCache = new WeakMap<State, { key: string; l: Bara[]; sorterad?: Bara[] }>();
+// bärlistan i överlämningen (steg 12.1.248, timminne.ts): den räknades när den först frågades i timmen, och arbetaren som börjar
+// mitt i timmen ska bära efter samma lista som sidan. Poängen kan vara oändlig, som JSON inte rymmer: den skrivs som text
+const talUt = (v: number) => Number.isFinite(v) ? v : String(v), talIn = (v: number | string) => typeof v === 'string' ? Number(v) : v;
+TIMMINNEN.barLista = {
+  ut: s => { const c = barCache.get(s); return c && { key: c.key, s: !!c.sorterad, l: c.l.map(a => ({ ...a, sc: talUt(a.sc), d: talUt(a.d), ...(a.min !== undefined ? { min: talUt(a.min) } : {}) })) }; },
+  in: (s, v) => {
+    const o = v as { key: string; s: boolean; l: (Omit<Bara, 'sc' | 'd' | 'min'> & { sc: number | string; d: number | string; min?: number | string })[] };
+    const l: Bara[] = o.l.map(({ min, ...a }) => ({ ...a, sc: talIn(a.sc), d: talIn(a.d), ...(min !== undefined ? { min: talIn(min) } : {}) }));
+    barCache.set(s, { key: o.key, l, ...(o.s ? { sorterad: [...l].sort((a, b) => a.sc - b.sc) } : {}) });
+  },
+};
 function barLista(s: State) {
   const key = `${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${zonesOf(s).length}`, c = barCache.get(s);
   if (c && c.key === key) return c;

@@ -166,7 +166,7 @@ SCENARIER.mallar = {
     const s = SIM.cloneState(testBy(20)), rader = () => s.hist?.kronika ?? [];
     const slump = JSON.stringify(s.rngs ?? {});
     // djuret dör, smittan tar slut
-    const n0 = rader().length, p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    const n0 = rader().length, p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && !(s.tron ?? []).some(t => t.grundare === q.id))!; // den som grundat en tro får tron i eftermälet
     const d = SIM.nyttTamdjur(s, 'far', p.x, p.y, p.id); SIM.tamDor(s, d, 'alder');
     for (const q of SIM.living(s)) delete q.sjuk;
     s.epidemi = { k: 'magsjuka', ids: [p.id, -1, -2], skriven: 1 }; SIM.smittaTimme(s);
