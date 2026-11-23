@@ -22,7 +22,7 @@ export const VARUGRUPPER = {
   skinn: { andel: 0.25, namn: 'Skinn och ull', ikon: '🧥', mapp: ['Kläder'], saker: ['remsa', 'skinn', 'farskinn', 'getskinn', 'svinskinn', 'kohud', 'vitskinn', 'vargskinn', 'radjursskinn', 'bjornskinn', 'lader', 'pergament', 'ull', 'ulltrad', 'ylle', 'fjadrar', 'lin', 'ratlin', 'lintyg'] },
   virke: { andel: 0.15, namn: 'Virke och rep', ikon: '🌲', saker: ['rep', 'trad', 'virke', 'plankor', 'tjara', 'benlim', 'mossa', 'las'] },
   redskap: { andel: 0.25, namn: 'Redskap och vapen', ikon: '🪓', mapp: ['Redskap'], saker: ['ben', 'djurhorn'] },
-  dryck: { andel: 0.07, namn: 'Dryck och salt', ikon: '🧂', saker: ['salt', 'malt', 'rolleka', 'salva', 'tval', 'rokelse', 'mara', 'vejde', 'vejdefron', 'krapp'] },
+  dryck: { andel: 0.07, namn: 'Dryck och salt', ikon: '🧂', saker: ['salt', 'malt', 'rolleka', 'torrrolleka', 'salva', 'tval', 'rokelse', 'mara', 'vejde', 'vejdefron', 'krapp'] },
   prydnad: { andel: 0.1, namn: 'Prydnad', ikon: '✨', borjar: ['tecken_', 'halsband_', 'mask_'], saker: ['vargtand', 'blomma', 'leksak', 'trumma', 'benflojt', 'lyra', 'boll', 'bok'] },
 } as const satisfies Record<string, VarugruppDef>;
 export type VarugruppId = keyof typeof VARUGRUPPER;

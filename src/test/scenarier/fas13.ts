@@ -1,6 +1,6 @@
 // Scenarier för fas 13.
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, kor, medBank, medHus, medVatska, nyInvanare, setMat, tandEld, testBy, utanWebblasare } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, medHus, medVatska, nyInvanare, setMat, tandEld, testBy, utanWebblasare, vidStack } from './hjalp';
 import { GRAFER, grafHtml } from '../../ui/graf';
 import { setByn } from '../../ui/lage';
 import { BEAT, START } from '../kor';
@@ -883,6 +883,65 @@ SCENARIER.tvalsmitta = {
       [`efter en timme bredvid den sjuka vill hen tvätta sig (${val})`, behov && val.includes('tvål')],
       [`tvätten tar 1 tvål (${tagen}) och skyddar ett dygn, och hen tvättar sig inte igen medan skyddet håller`, tagen === 1 && skydd && !igen],
       [`smittad på två timmar bredvid: ${(utan * 100).toFixed(0)} % otvättad, ${(med * 100).toFixed(0)} % tvättad, ${(bada * 100).toFixed(0)} % när båda tvättat sig`, med < utan * 0.75 && bada < med * 0.8],
+    ];
+  },
+};
+
+// torkställningen tar svamp, äpplen och rölleka (steg 13.6.1)
+SCENARIER.torkat = {
+  text: 'Torkställningen tar också svamp, äpplen och rölleka (steg 13.6.1): svampen och äpplena torkar på fem dygn och håller sedan 20, röllekan torkar på två och används torkad som färsk, och färsk rölleka ruttnar på sex dygn',
+  kor: () => {
+    const { TORK, torka, SAKER, amountOf, setAmount, getable, takeMaterial } = SIM;
+    const s = SIM.createState(1, START); klockan(s); tandEld(s);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= 18)!;
+    const t = medBank(s, 'tork');
+    const hang = () => (t.tork ?? []).reduce((a, q) => a + q.n, 0);
+    // röllekan äts inte: allt av den hängs upp, också när ingen mat finns över
+    setMat(s, {}); setAmount(s, 'rolleka', 3); vidStack(s, p, 'rolleka');
+    const kanR = SIM.kanTorka(s, p);
+    torka(s, p, 1);
+    const uppR = hang() === 3 && amountOf(s, 'rolleka') === 0;
+    s.now += (TORK.ortDygn - 0.5) * SIM.DAY; SIM.touch(s); torka(s, p, 1);
+    const inteR = amountOf(s, 'torrrolleka') === 0;
+    s.now += SIM.DAY; SIM.touch(s); torka(s, p, 1);
+    const nerR = amountOf(s, 'torrrolleka') === 3 && hang() === 0;
+    // svampen: det byn inte hinner äta hängs upp och tas ner som torkad svamp efter fem dygn
+    setMat(s, { svamp: 200 }); vidStack(s, p, 'svamp');
+    torka(s, p, 1);
+    const uppS = hang() === TORK.rymd;
+    s.now += (TORK.dygn - 0.5) * SIM.DAY; SIM.touch(s); setMat(s, {}); torka(s, p, 1);
+    const inteS = amountOf(s, 'torrsvamp') === 0;
+    s.now += SIM.DAY; SIM.touch(s); torka(s, p, 1);
+    const nerS = amountOf(s, 'torrsvamp') === TORK.rymd;
+    // äpplena likadant
+    setMat(s, { appel: 200 }); vidStack(s, p, 'appel'); torka(s, p, 1);
+    s.now += (TORK.dygn + 0.5) * SIM.DAY; SIM.touch(s); setMat(s, {}); torka(s, p, 1);
+    const nerA = amountOf(s, 'torrappel') === TORK.rymd;
+    // hållbarheten och näringen
+    const haller = SAKER.torrsvamp!.haller === 20 && SAKER.torrappel!.haller === 20 && SAKER.torrrolleka!.haller === 20 && SAKER.rolleka!.haller === 6;
+    const naring = JSON.stringify(SAKER.torrsvamp!.naring) === JSON.stringify(SAKER.svamp!.naring) && JSON.stringify(SAKER.torrappel!.naring) === JSON.stringify(SAKER.appel!.naring);
+    // den torkade röllekan används som den färska, och den färska tas först
+    setAmount(s, 'rolleka', 1); setAmount(s, 'torrrolleka', 2);
+    const far = getable(s, p, 'rolleka') === 3;
+    takeMaterial(s, p, 'rolleka', 1);
+    const farskForst = amountOf(s, 'rolleka') === 0 && amountOf(s, 'torrrolleka') === 2;
+    takeMaterial(s, p, 'rolleka', 2);
+    const torrSen = amountOf(s, 'torrrolleka') === 0;
+    // örtteet, ölet och salvan tar torkad rölleka
+    setAmount(s, 'torrrolleka', 2); setAmount(s, 'talg', 1);
+    const salva = !SIM.saknatAv(s, p, SIM.RECEPT.salva.av);
+    // rätten med rölleka håller som de andra ingredienserna: örten räknas inte
+    const ratt = SIM.hallerMedel([['fisk', 2], ['rolleka', 1]]) === SIM.hallerMedel([['fisk', 2]]);
+    return [
+      ['röllekan hängs upp på torkställningen, all av den, fast ingen mat finns över', kanR && uppR],
+      [`röllekan är inte torr förrän efter ${TORK.ortDygn} dygn och tas sedan ner som torkad rölleka`, inteR && nerR],
+      [`svampen hängs upp (${hang()} kvar) och tas ner torkad efter ${TORK.dygn} dygn`, uppS && inteS && nerS],
+      ['äpplena tas ner torkade efter fem dygn', nerA],
+      ['det torkade håller 20 dygn, och färsk rölleka ruttnar på sex', haller],
+      ['torkad svamp och torkade äpplen ger samma näring som de färska', naring],
+      ['den torkade röllekan räknas som rölleka, och den färska tas först', far && farskForst && torrSen],
+      ['salvan går att göra av torkad rölleka', salva],
+      ['röllekan förkortar inte rättens hållbarhet', ratt],
     ];
   },
 };

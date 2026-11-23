@@ -3688,6 +3688,7 @@ PIX.sadesodling = PIX.artfron; PAL.sadesodling = PAL.artfron; // platshållare f
 // platshållare för nätet (steg 9.6.16) tills Björn valt i bildstilen
 
 for (const k of ['braxkott', 'sikkott']) { PIX[k] = PIX.gaddkott ?? PIX.fisk; PAL[k] = PAL.gaddkott ?? PAL.fisk; } // platshållare för braxens och sikens kött (steg 9.6.17) tills Björn valt i bildstilen
+for (const [k, f] of [['torrsvamp', 'svamp'], ['torrappel', 'appel'], ['torrrolleka', 'rolleka']]) { PIX[k] = PIX[f]; PAL[k] = PAL[f]; } // platshållare för det torkade (steg 13.6.1) tills Björn valt i bildstilen
 PIX.saltfisk = PIX.torrfisk; PAL.saltfisk = PAL.torrfisk; PIX.saltkott = PIX.torrkott; PAL.saltkott = PAL.torrkott; // platshållare för den saltade fisken och köttet (steg 9.6.19)
 PIX.vildlok = PIX.vildrova ?? PIX.rotter; PAL.vildlok = PAL.vildrova ?? PAL.rotter; // platshållare för löken (steg 9.6.20) tills Björn valt i bildstilen
 // platshållare för stekhällen (steg 9.6.21) tills Björn valt i bildstilen

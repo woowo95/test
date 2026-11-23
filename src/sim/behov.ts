@@ -5,7 +5,7 @@ import { hans, honom } from './ord';
 import { upplev } from './uppvaxt';
 import { loggBer, kronikaBer, BERATT } from './berattelser';
 import { State, Person, HOUR, DAY, MIN } from './typer';
-import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, gruppOf, isTool, viktOf } from './saker';
+import { ERSATT, FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, gruppOf, isTool, viktOf } from './saker';
 import { ACTS, actsOf, usesTool } from './handlingar';
 import { ledareOf } from './styre';
 import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, gjort, isKin, isParent, familjOf, livet, living, log, ovning, relKey, stat } from './folk';
@@ -418,7 +418,9 @@ export const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= 
 export const vatskaMaterial = { ar: (_k: string) => false, har: (_s: State, _k: string) => 0, ta: (_s: State, _k: string, _n: number) => 0 };
 // så mycket av slaget k som p kan få till ett arbete
 // det kyrkan äger tar bara kyrkan (takeOrder i egendom.ts): det räknas inte, också för den som tar av andra i nöd
-export const getable = (s: State, p: Person, k: string) => vatskaMaterial.ar(k) ? vatskaMaterial.har(s, k) : (aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k) - kyrkornas(s, k)) + iBordan(p, k); // med det hen bär till arbetet (steg 11.1.74)
+// Det som kan användas i stället (ERSATT i saker.ts, den torkade röllekan, steg 13.6.1) räknas med
+export const getable = (s: State, p: Person, k: string): number => ERSATT[k] ? ERSATT[k].reduce((n, q) => n + getable1(s, p, q), getable1(s, p, k)) : getable1(s, p, k);
+const getable1 = (s: State, p: Person, k: string) => vatskaMaterial.ar(k) ? vatskaMaterial.har(s, k) : (aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k) - kyrkornas(s, k)) + iBordan(p, k); // med det hen bär till arbetet (steg 11.1.74)
 // det p har till hands till sitt arbete av slaget k (steg 11.1.74): det hen bär dit och det som ligger inom räckhåll, utom det
 // som sparas (till elden)
 export const tillHands = (s: State, p: Person, k: string) => iBordan(p, k) + Math.max(0, iRackhall(p.x, p.y, () => getable(s, p, k) - iBordan(p, k)) - eldReserv(s, k));
@@ -435,7 +437,16 @@ export function takeRecipe(s: State, p: Person, k: string) {
 }
 // p tar n av slaget k till ett arbete; common = till byns eld eller hus (byns först). Ger vems det var. kom = var det
 // kom ifrån, nycklar som `kom` i bygg.ts skriver dem (eget, byn, familj, gava, stold)
-export function takeMaterial(s: State, p: Person, k: string, n: number, common = false, kom?: Record<string, number>, ut?: Uttag): Del { // ut: hur mycket av veden som var blöt (steg 12.1.241)
+// Finns det som kan användas i stället (ERSATT i saker.ts, steg 13.6.1) tas saken själv först (den färska röllekan, som ruttnar)
+// och sedan det andra
+export function takeMaterial(s: State, p: Person, k: string, n: number, common = false, kom?: Record<string, number>, ut?: Uttag): Del {
+  const alt = ERSATT[k];
+  if (!alt) return takeMaterial1(s, p, k, n, common, kom, ut);
+  const ag: Del = {}, alla = [k, ...alt];
+  for (let i = 0; i < alla.length && n > 1e-12; i++) { const m = i < alla.length - 1 ? Math.min(n, getable1(s, p, alla[i])) : n; if (m <= 1e-12) continue; const d = takeMaterial1(s, p, alla[i], m, common, kom, ut); addDel(ag, d); n -= Math.min(m, sumOf(d)); }
+  return ag;
+}
+function takeMaterial1(s: State, p: Person, k: string, n: number, common = false, kom?: Record<string, number>, ut?: Uttag): Del { // ut: hur mycket av veden som var blöt (steg 12.1.241)
   const ag: Del = {};
   if (n <= 1e-12) return ag;
   const not = (hur: string, d: Del) => { if (kom) for (const o in d) if (d[o] > 1e-9) { const h = +o === BYN ? 'byn' : +o === p.id ? 'eget' : hur; const key = `${h}:${h === 'byn' ? BYN : o}:${k}`; kom[key] = (kom[key] ?? 0) + d[o]; } };

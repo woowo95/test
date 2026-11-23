@@ -50,6 +50,7 @@ const ANVANDS: Record<string, string[]> = {
   vilt: ['Slaktas'], varg: ['Slaktas'], vargdel: ['Slaktas'], radjur: ['Slaktas'], fagel: ['Slaktas'], fjadrar: ['Pilar och prydnader'], radjurdel: ['Slaktas'], vildsvin: ['Slaktas'], vildsvindel: ['Slaktas'], svinkott: ['Mat'], svinskinn: ['Kläder'], radjursskinn: ['Handel'], bjorn: ['Slaktas'], bjorndel: ['Slaktas'], abborre: ['Rensas'],
   slaktfar: ['Slaktas'], slaktget: ['Slaktas'], djurhorn: ['Handel'], fiskrens: ['Agn och mat åt hunden'], skara: ['Slår ängen till hö'], // djuren (system 9.8)
   levfar: ['Blir byns får'], levget: ['Blir byns get'], levko: ['Blir byns ko'], slaktko: ['Slaktas'], kohud: ['Kläder'], levhons: ['Blir byns höns'],
+  torrrolleka: ['Som den färska röllekan, i örtteet, ölet, salvan och färgen'], // steg 13.6.1
   blomma: ['Sätts i en lerkruka'], blad: ['Läses av den som har något nytt att lära där'], bok: ['Skrivs i del för del och läses'], // steg 10.6.5–10.6.6
   malm: ['Blåses till järn i blästerugnen'], jarnskrot: ['Smids om till järn i smedjan'], jarnskold: ['I striden'], svard: ['I striden'], // steg 12.2.3–12.2.9
   jarnnal: ['Syr kläder tre gånger så fort som bensylen'], jarngryta: ['Kokar dubbelt så mycket mat som lerkrukan'], oljelampa: ['Lyser inomhus på brännolja'], penna: ['Skriver på pergament'], tunna: ['Rymmer vatten, öl och det som jäser'], stol: ['En sittplats vid bordet, med ryggstöd'], pall: ['En sittplats vid bordet'], // steg 12.1.192

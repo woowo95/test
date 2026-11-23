@@ -138,6 +138,7 @@ const DEF = {
   torrkott: { var: 'sak', av: { kott: 1 }, min: 4, slag: 'liten', tek: 'tork' },
   torrfisk: { var: 'sak', av: { fisk: 1 }, min: 4, slag: 'liten', tek: 'tork' },
   grillgadda: { var: 'sak', av: { gaddkott: 1 }, min: 4, slag: 'liten', tek: 'grill' }, grillmort: { var: 'sak', av: { mortkott: 1 }, min: 4, slag: 'liten', tek: 'grill' },
+  torrsvamp: { var: 'sak', av: { svamp: 1 }, min: 4, slag: 'liten', tek: 'tork' }, torrappel: { var: 'sak', av: { appel: 1 }, min: 4, slag: 'liten', tek: 'tork' }, torrrolleka: { var: 'sak', av: { rolleka: 1 }, min: 4, slag: 'liten', tek: 'tork' }, // steg 13.6.1
   torrgadda: { var: 'sak', av: { gaddkott: 1 }, min: 4, slag: 'liten', tek: 'tork' }, torrmort: { var: 'sak', av: { mortkott: 1 }, min: 4, slag: 'liten', tek: 'tork' },
   talgljus: { var: 'sak', av: { talg: 2, torrgras: 1 }, min: 3, slag: 'liten', tek: 'fackla' },
   vaxljus: { var: 'sak', av: { bivax: 1, torrgras: 1 }, min: 3, slag: 'liten', tek: 'fackla' }, // steg 10.10.24: ett ljus av bivax som brinner dubbelt så länge

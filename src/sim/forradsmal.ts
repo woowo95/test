@@ -19,11 +19,12 @@ import { fargKrok } from './fargkrok';
 import { balans } from './balans';
 import { ELD, eldarOf, hearthOf, woodDays } from './eld';
 import { foodDaysAll } from './ekonomi';
-import { isFood } from './saker';
+import { ERSATT, isFood } from './saker';
 import { ljusPlatser } from './ljus';
 import { allows, amountOf as iForradet, iHelaForradet, rymd, zonesOf } from './lager';
 // förrådsmålen gäller hela byns förråd, också när frågan ställs mitt i ett arbete där bara det inom räckhåll nås (steg 11.1.74)
-const amountOf = (s: State, k: string) => iHelaForradet(() => iForradet(s, k));
+// det som kan användas i stället (ERSATT, den torkade röllekan, steg 13.6.1) räknas med
+const amountOf = (s: State, k: string) => iHelaForradet(() => (ERSATT[k] ?? []).reduce((n, q) => n + iForradet(s, q), iForradet(s, k)));
 import { Pabud, legitimitet, pabud } from './styre';
 import { ALDER, ageOf, living } from './folk';
 import { TORST } from './torst';

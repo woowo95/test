@@ -38,6 +38,7 @@ export interface SakDef {
   mark?: true; // ligger kvar på marken där den hamnade: ingen bär, äger eller lagrar den (toa-högen, smuts.ts)
   varde?: number; // ett fast grundvärde, när saken inte skaffas i byn (silvret, steg 4.4.1.3)
   gravgava?: true; // får läggas på en grav vid ett besök (steg 10.4.8), som maten (mat), och följer helst den döda i graven (järnsakerna, steg 13.1.6)
+  som?: string; // går att använda i stället för den saken i recepten och arbetena (den torkade röllekan som rölleka, steg 13.6.1); ERSATT nedan
   brinnerInte?: true; // brinner inte upp i en eldsvåda (brand.ts, steg 3.8.5); allt annat i förrådet gör det
 }
 // ett klädesplagg: platsen på kroppen (PLATSER i utrustning.ts), så stor del mindre kyla för den som har det på sig, och hur
@@ -158,7 +159,8 @@ const DEF = {
   huggen_sten: { namn: 'Huggen sten', skaffa: RECEPT.huggen_sten, stack: 20, vikt: 4, mapp: 'Material' }, // steg 7.5.1
   plankor: { namn: 'Plankor', skaffa: RECEPT.plankor, stack: 20, vikt: 2, mapp: 'Material' },
   blomma: { namn: 'Blomma', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material' }, // ängsblommor till krukorna (steg 10.7.3): ger inget att skörda, bara pynt
-  rolleka: { namn: 'Rölleka', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material', gravgava: true }, // den första örten (steg 7.6.3): går inte att äta och håller länge
+  rolleka: { namn: 'Rölleka', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material', gravgava: true, haller: 6 }, // den första örten (steg 7.6.3): går inte att äta, och färsk ruttnar den på sex dygn (steg 13.6.1)
+  torrrolleka: { namn: 'Torkad rölleka', skaffa: RECEPT.torrrolleka, stack: 25, vikt: 0.1, mapp: 'Material', gravgava: true, haller: 20, som: 'rolleka' }, // torkad på ställningen (steg 13.6.1): håller länge och används som den färska
   salva: { namn: 'Salva', skaffa: RECEPT.salva, stack: 10, vikt: 0.2, mapp: 'Material' }, // steg 7.6.4–7.6.6: ingen funktion än
   tjara: { namn: 'Tjära', skaffa: RECEPT.tjara, stack: 10, vikt: 0.5, mapp: 'Material' },
   benlim: { namn: 'Benlim', ett: true, skaffa: RECEPT.benlim, stack: 10, vikt: 0.3, mapp: 'Material' },
@@ -233,6 +235,9 @@ const DEF = {
   // (LAGER.maxDygn) och äts sist
   torrkott: { namn: 'Torkat kött', ett: true, skaffa: RECEPT.torrkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 8, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },
   torrfisk: { namn: 'Torkad fisk', skaffa: RECEPT.torrfisk, stack: 25, ruta: 75, mapp: 'Mat', mat: 7, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
+  // den torkade svampen och de torkade äpplena (steg 13.6.1): mättar och ger näring som de färska, håller som det torkade köttet och äts efter det färska
+  torrsvamp: { namn: 'Torkad svamp', skaffa: RECEPT.torrsvamp, stack: 25, ruta: 75, mapp: 'Mat', mat: 7.2, naring: { protein: 0.6, mineral: 0.8, vitamin: 1, energi: 0.5, fett: 0.1 }, haller: 20 },
+  torrappel: { namn: 'Torkade äpplen', skaffa: RECEPT.torrappel, stack: 25, ruta: 75, mapp: 'Mat', mat: 7.4, naring: { vitamin: 1.6, energi: 0.9, mineral: 0.3 }, haller: 20 },
   // vattensäcken (steg 2.10.1): ett skinn som sys ihop till en säck vid slöjdbänken med bensylen. Med den hämtar man vatten
   // åt den som inte kan gå (torst.ts), och senare till fälten. Den tar en hand
   talgljus: { namn: 'Talgljus', ett: true, skaffa: RECEPT.talgljus, vikt: 0.3, stack: 10, mapp: 'Redskap', slits: 0.0003, redskap: true,
@@ -361,6 +366,9 @@ const DEF = {
 type Sak = keyof typeof DEF;
 export const SAKER: Record<string, SakDef | undefined> = DEF;
 export const SAK_LIST = Object.keys(DEF) as Sak[];
+// det som går att använda i stället för en sak (som i SAKER, steg 13.6.1): saken och de som ersätter den, den egna först
+export const ERSATT: Record<string, string[]> = {};
+for (const k of SAK_LIST) { const m = SAKER[k]!.som; if (m) (ERSATT[m] ??= []).push(k); }
 export const sak = (k: string) => SAKER[k];
 export const sakNamn = (k: string) => SAKER[k]?.namn ?? (k === 'hus' ? 'Hus' : k); // huset är ingen sak, men ligger som en symbol på filten vid ett husbyte (steg 7.2.12)
 // namnet på ett ting: ett påbörjat redskap (paborjat.ts) heter som det ska bli
