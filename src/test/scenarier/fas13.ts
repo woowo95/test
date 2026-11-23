@@ -58,7 +58,7 @@ SCENARIER.smedbarn = {
 
 // krönikan om järnet (steg 13.1.8)
 SCENARIER.kronikajarn = {
-  text: 'Steg 13.1.8: det första järnet ur blästerugnen och byns första smedja blir händelser i krönikan (mallarna k_forstaJarn och k_forstaSmedja, fyra varianter var), bara första gången',
+  text: 'Steg 13.1.8: det första järnet ur blästerugnen och byns första smedja blir händelser i krönikan (mallarna k_forstaJarn och k_forstaSmedja, åtta varianter var), bara första gången',
   kor: () => {
     const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
     (p.tek ??= {}).blasterugn = 1;
@@ -82,7 +82,7 @@ SCENARIER.kronikajarn = {
       [`det första järnet står i krönikan (${rader('k_forstaJarn')[0]?.[1] ?? 'inget'})`, efterEtt === 1],
       ['nästa blåsning står inte där', efterTva === 1],
       [`byns första smedja står i krönikan (${smRader[0]?.[1] ?? 'inget'})`, smRader.length === 1],
-      ['mallarna har tre eller fyra varianter var', [B.k_forstaJarn, B.k_forstaSmedja].every(v => v.length >= 3 && v.length <= 4)],
+      ['mallarna har minst åtta varianter var, som alla krönikans mallar', [B.k_forstaJarn, B.k_forstaSmedja].every(v => v.length >= 8)],
       ['händelserna hör till Bygge och uppfinningar', ['k_forstaJarn', 'k_forstaSmedja'].every(k => SIM.KRONIKA_KAT.find(c => c.id === 'bygge')?.slag.includes(k))],
     ];
   },

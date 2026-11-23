@@ -74,8 +74,9 @@ const TESTBY_VUXNA = 3;
 export const testBy = (minDygn: number, villkor?: (s: State) => boolean): State => {
   const dir = fileURLToPath(new URL('../../../test/facit-byar/', import.meta.url));
   const filer = readdirSync(dir).map(f => /^(\d+)-(\d+)\.json\.gz$/.exec(f)).filter(m => m && +m[2] >= minDygn).sort((a, b) => +a![2] - +b![2] || +a![1] - +b![1]);
-  // scenarierna räknar med en by med folk i: en sparad by där bara ett par vuxna lever kvar hoppas över
-  const folk = (b: State) => SIM.living(b).filter(p => SIM.ageOf(p, b.now) >= SIM.ALDER.vuxen).length >= TESTBY_VUXNA;
+  // scenarierna räknar med en by med folk i: en sparad by där bara ett par friska vuxna finns (de andra har dött eller ligger
+  // i en farsot när byn sparades) hoppas över
+  const folk = (b: State) => SIM.living(b).filter(p => SIM.ageOf(p, b.now) >= SIM.ALDER.vuxen && !SIM.isSick(p, b.now)).length >= TESTBY_VUXNA;
   for (const f of filer) { const b = lasBy(dir + f![0]); if (folk(b) && (!villkor || villkor(b))) return b; }
   return korBy(1, minDygn).s;
 };
