@@ -170,6 +170,8 @@ for (const [ks, why] of [
   [['maltid', 'sate', 'satta', 'pall'], 'måltiden vid bordet kräver ett bord, och pallen snickarbänken; testbyarna efter tändningen på 2 minuter (fasens Balans 12.6) är små och bygger inga bord på 50 dygn, eftersom bordet väger lätt mot latrinen, vattnet och kläderna, utan att någon gräns bryts; scenarierna bord, maltidsniva och stol prövar dem'],
   [['klaPa'], 'ett varmare plagg tas på bara när någon fryser och har ett plagg över, och testbyarna i fasens Balans (12.6) har få plagg; scenarierna kladvarme och klader prövar det'],
   [['bagborr', 'hylla', 'skinnklader'], 'bågborren, hyllan och skinnkläderna är tekniker på nivå 3–4 som de små testbyarna i fasens Balans (12.6) inte kommer på på 50 dygn, utan att någon gräns bryts; scenarierna bagborr, forvaring och klader prövar dem'],
+  [['staket'], 'staketet runt fältet sätts bara när djur äter av ett sått fält, och få testbyar sår; scenariot staket prövar det'],
+  [['varna'], 'man varnar de andra bara när rövare eller vargar är nära och någon inte hört larmet; scenarierna larm och larm2 prövar det'],
   [['skramma'], 'fågelskrämman sätts upp på ett sått fält när fåglarna äter av det, och få testbyar sår; scenariot skadedjur prövar den'],
   [['ortPlocka'], 'örten plockas ur en lerkruka med örter, och krukorna är sällsynta; scenariot ortkruka prövar det'],
   [['oljelampa'], 'oljelampan (steg 12.4.2) formas av lera när byn har brännolja; scenariot oljelampa prövar den'],
