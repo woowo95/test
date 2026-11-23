@@ -1,5 +1,5 @@
 import { PROTESER, protesFor, protesPa } from './protes'; // bara inne i funktioner: protes.ts läser den här filen
-import { gasterNu, gastLever } from './gast';
+import { gasterNu, gastLever, loggNamn } from './gast';
 import { han, honom, spelTid } from './ord';
 import { personHand } from './personlogg';
 import { utanforByn } from './omrade';
@@ -446,7 +446,7 @@ export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number,
   nar = narOm(nar, p); // "när hen slaktade" blir "när han slaktade", "när Ask slog hen" "när Ask slog henne" (ordlagret, steg 6.7.2)
   if (g >= UPPV.skadaGrad) upplev(s, p, 'skadad', `${SKADA[k].ett} ${nar}`); // ett barn minns det (steg 3.1.2)
   if (DEL[d].livsviktig && g >= HALSA.dodGrad) return dod;
-  if (g >= HALSA.logg) log(s, `${p.name} fick ${SKADA[k].ett} i ${DEL[d].i} ${nar}.`, 'world', [p.id]);
+  if (g >= HALSA.logg) log(s, `${loggNamn(p)} fick ${SKADA[k].ett} i ${DEL[d].i} ${nar}.`, 'world', [p.id]);
   if (g >= UPPV.skadaGrad) personHand(s, p, 'skada', `Fick ${SKADA[k].ett} i ${DEL[d].i} ${nar}.`); // personens händelser (steg 9.2.107)
   if (g >= HALSA.radd) { fearPlace(s, p, '', `${p.name} skadades svårt där`); raddAkt(s, p, p.task?.act); }
   if (g >= HALSA.avbryt) avbryt(s, p);

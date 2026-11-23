@@ -782,7 +782,7 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
   for (let led = 1; ropar.length; led++) {
     const nya: Person[] = [];
     for (const q of living(s)) {
-      if (vet.has(q) || horsel(q) < LARM.dov) continue; // den som knappt hör hör inte ropet (steg 8.2.2)
+      if (vet.has(q) || q.gast || horsel(q) < LARM.dov) continue; // den som knappt hör hör inte ropet (steg 8.2.2), och byns larm sprids bland byborna (steg B.3)
       const fran = ropar.find(r => Math.hypot(r.x - q.x, r.y - q.y) <= hor);
       if (!fran) continue;
       vet.add(q); hort.push(q);

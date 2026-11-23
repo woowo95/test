@@ -2731,6 +2731,35 @@ SCENARIER.rovarflyr = {
   },
 };
 
+SCENARIER.rovarrop = {
+  text: 'Steg B.3: rövarnas rop och namn. Rövarna ropar inte byns larm när de själva slåss, så ropet sprids bara bland byborna, och raden i loggen om en rövares sår säger Rövaren och namnet',
+  kor: () => {
+    const { HOUR } = SIM;
+    let rovHort = 0, byHort = 0, rader = 0, utanTitel = 0, strider = 0;
+    for (const seed of [6, 7, 8, 9]) {
+      const s = createState(seed, START); klockan(s);
+      for (const c of SIM.klanerOf(s)) c.inst = -60;
+      const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
+      const vuxna = living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vaktFran && SIM.ageOf(p, s.now) < SIM.ALDER.vaktTill);
+      for (let i = 0; i < 3; i++) SIM.newTing(s, 'fiskespjut', 1, SIM.BYN);
+      for (const p of vuxna.slice(0, 3)) { Object.assign(p, SIM.freeNear(s, m.x, m.y)); p.pot.mod = 16; p.larm = { rovare: { t: s.now, vad: 'rovare', storlek: 3, led: 0, varnat: 1 } }; p.task = { act: 'forsvarRovare', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0 }; }
+      const f = rovarGang(s, 3, { x: m.x + 6, y: m.y }, { anfaller: true }); f.sedd = s.now;
+      const rov = SIM.rovarna(s, f);
+      korTills(s, () => !!SIM.flockStrid(s, f), 900);
+      const g = SIM.flockStrid(s, f); if (!g) continue;
+      strider++;
+      korTills(s, () => !!g.st.slut, 1800);
+      rovHort += rov.filter(r => r.larm?.['slagsmål']).length;
+      byHort += living(s).filter(p => !p.gast && p.larm?.['slagsmål']).length;
+      for (const r of rov) for (const e of s.log) if (e.text.includes(`${r.name} fick `)) { rader++; if (!e.text.includes(`Rövaren ${r.name} fick `)) utanTitel++; }
+    }
+    return [
+      [`rövarna hör inte byns larm från sin egen strid (${rovHort} rövare i ${strider} strider), men byborna gör det (${byHort})`, strider >= 2 && rovHort === 0 && byHort > 0],
+      [`raden om en rövares sår säger Rövaren och namnet (${rader} rader, ${utanTitel} utan)`, rader > 0 && utanTitel === 0],
+    ];
+  },
+};
+
 SCENARIER.rovarstrid = {
   text: 'Striden med rövarna på kartan (steg 6.6.10, 10.1.14, rovare.ts, kartstrid.ts): striden börjar där sidorna möts, nära förrådet, och går i spelets tid, steg för steg. Den som kommer fram under striden ger sig in i den, rövarna står där striden har dem, och när den är slut skrivs rapporten i byn. Byn går i korta steg medan faran är nära, så att ett långt steg och många korta ger samma utfall.',
   kor: () => {

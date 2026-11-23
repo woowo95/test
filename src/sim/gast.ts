@@ -18,17 +18,19 @@ const klanById = (s: State, id: number | undefined) => id === undefined ? undefi
 
 // efter: det som händer när gästen pratat klart med ledaren (framlingSteg i liv.ts): byn avgör om främlingen får stanna
 // (beslut), och sändebudets besked verkar (besked, steg 11.6.23)
-export interface GastSortDef { namn: string; efter?: 'beslut' | 'besked' }
+export interface GastSortDef { namn: string; efter?: 'beslut' | 'besked'; titel?: string /* före namnet i loggen, så att det syns vem hen är (steg B.3) */ }
 export const GASTSORTER = {
-  handlare: { namn: 'Handlare' },
-  rovare: { namn: 'Rövare' },
-  framling: { namn: 'Främling', efter: 'beslut' },
-  sandebud: { namn: 'Sändebud', efter: 'besked' },
-  fange: { namn: 'Fånge' }, // en motståndare som gett upp eller låg kvar när byn kuvade (steg 11.12.6, fangeSteg i rovare.ts)
+  handlare: { namn: 'Handlare', titel: 'Handlaren' },
+  rovare: { namn: 'Rövare', titel: 'Rövaren' },
+  framling: { namn: 'Främling', efter: 'beslut', titel: 'Främlingen' },
+  sandebud: { namn: 'Sändebud', efter: 'besked', titel: 'Sändebudet' },
+  fange: { namn: 'Fånge', titel: 'Fången' }, // en motståndare som gett upp eller låg kvar när byn kuvade (steg 11.12.6, fangeSteg i rovare.ts)
   folje: { namn: 'Följe' }, // karavanens följe, som sitter i lägret utanför byn (steg 11.11.6, handel.ts)
   besok: { namn: 'Besökare' }, // huvudbyns resenärer i en väckt by, med hela sin person (steg 11.13.10, vacktgast.ts)
 } as const satisfies Record<string, GastSortDef>;
 export type GastSort = keyof typeof GASTSORTER;
+// namnet i loggen: gästen med sin sort före (Rövaren Ulf), byborna med bara namnet
+export const loggNamn = (p: { name: string; gast?: { sort: GastSort } }) => { const t = p.gast && (GASTSORTER[p.gast.sort] as GastSortDef).titel; return t ? `${t} ${p.name}` : p.name; };
 // mat är portionerna kvar i packningen och sover att gästen sover (steg 9.2.113, gastvardag.ts).
 // drakt är det som bara syns (rövarnas luva, duk och mörka skinnrock, steg 10.1.8); vapnet och kläderna är ting hen bär (s.gastTing).
 // bar, spar, pk och anhorig gäller rövarna (steg 9.2.112, rovare.ts): bytet hen bär, vägen för bilden

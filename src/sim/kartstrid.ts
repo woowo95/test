@@ -134,7 +134,7 @@ export function kartStridBorja(s: State, avsikt: Avsikt, sidor: [Person[], Perso
   (s.kartStrider ??= []).push(g);
   count(s, 'strid_' + avsikt); count(s, 'kartStrid');
   if (!sport) for (const p of [...sidor[0], ...sidor[1]]) { avbryt(s, p); stridsUppgift(s, p, orsak); } // brottaren är kvar i matchen (steg 9.2.92)
-  if (!lek && !djur.length) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
+  if (!lek && !djur.length) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova' && !p.gast)); // de som slåss ropar (steg 3.7.11): byns larm är bybornas, gästerna ropar det inte (steg B.3)
   return g;
 }
 
