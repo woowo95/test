@@ -36,7 +36,8 @@ export const KLADER = balans('klader', {
   valIdeal: 20, valSpann: 10, valVarme: 1, valSkydd: 0.05, valFin: 0.02, valNaken: 1, valByte: 0.01,
   // det plagget bär åt en (steg 12.1.191): per krok i bältet och plats på axelremmen, per vikt i ryggsäcken; plaggen som hör
   // till en roll (masken och prästens dräkt åt prästen, trons tecken åt den troende) och smyckena som bärs för att synas
-  valBar: 0.1, valRygg: 0.005, valSele: 0.3, valRoll: 0.1, valPynt: 0.05,
+  // valSno: snöskorna i snön, och klumpiga på bar mark (steg 13.2.5)
+  valBar: 0.1, valRygg: 0.005, valSele: 0.3, valSno: 0.3, valRoll: 0.1, valPynt: 0.05,
 });
 
 // platserna på kroppen där den som saknar plagg känner sig naken (stepNaken i steg.ts): skjortan och rocken klär överkroppen

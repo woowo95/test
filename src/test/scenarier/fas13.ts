@@ -393,3 +393,31 @@ SCENARIER.barnklader = {
     ];
   },
 };
+
+SCENARIER.snoval = {
+  text: 'Steg 13.2.5: snöskorna väljs i snön. Poängen för kläderna har en del för snön, och klädseln byter ett plagg mot ett med högre poäng på samma plats: med snö på marken tar den som har skor på sig snöskorna, och när snön är borta skorna igen',
+  kor: () => {
+    const s = SIM.createState(1, START), p = SIM.living(s)[0]!;
+    klockan(s, 10);
+    s.people = [p]; // ingen annan tar skorna som blir lediga
+    for (const t of SIM.tingOf(s)) if (SIM.SAKER[t.k]?.klad?.plats === 'fotter' && t.bar !== p.id) t.bar = -99; // inga andra fria på fötterna
+    for (const t of SIM.tingOf(s)) if (t.bar === p.id && SIM.SAKER[t.k]?.klad?.plats === 'fotter') t.bar = undefined;
+    const ny = (k: string) => { const t = SIM.addTool(s, k, p); t.bar = undefined; return t; };
+    const skor = ny('skor_kaninskinn'), sno = ny('snoskor_kaninskinn');
+    skor.bar = p.id;
+    s.vader = { ...(s.vader ?? {}), sno: 0.8 } as SIM.State['vader'];
+    SIM.stepKlader(s);
+    const iSnon = sno.bar === p.id && skor.bar !== p.id;
+    const pSno = SIM.plaggPoang(s, p, 'snoskor_kaninskinn', undefined), pSkor = SIM.plaggPoang(s, p, 'skor_kaninskinn', undefined);
+    s.vader = { ...s.vader!, sno: 0 };
+    SIM.stepKlader(s);
+    const utan = skor.bar === p.id && sno.bar !== p.id;
+    SIM.stepKlader(s);
+    const stilla = skor.bar === p.id; // inget byte fram och tillbaka
+    return [
+      [`i snön tar hen av skorna och på snöskorna (poäng ${pSno.toFixed(2)} mot ${pSkor.toFixed(2)})`, iSnon],
+      ['när snön är borta tar hen skorna igen', utan],
+      ['och byter inte tillbaka utan skäl', stilla],
+    ];
+  },
+};

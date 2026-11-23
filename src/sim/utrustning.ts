@@ -271,13 +271,15 @@ export const kladPlatser = (k: string) => { const d = SAKER[k]!.klad!; return d.
 const kladArt = (k: string) => { const m = kladAv(k)?.mat; return m ? SAK_ART[KLADMATERIAL[m].sak] : undefined; };
 // poängen för att ha plagget k på sig (steg 12.1.149, vikterna i KLADER): värmen gånger hur kallt det är, skyddet i striden,
 // finheten och att det klär en del som annars vore naken (NAKEN_PLATS). t = tinget om hen redan har det på sig
-export function plaggPoang(s: State, p: Person, k: string, t: Ting | undefined, temp = temperature(s)) {
+// utan = plaggen som tas av för det här (bytet i stepKlader, steg 13.2.5): de räknas inte när det frågas om man blir naken
+export function plaggPoang(s: State, p: Person, k: string, t: Ting | undefined, temp = temperature(s), utan: Ting[] = []) {
   const r = kladAv(k), pl = SAKER[k]?.klad?.plats, delar = pl ? kladPlatser(k).map(q => NAKEN_PLATS[q]).filter(d => d !== undefined) : [];
   const skydd = kladSkyddStrid(k), sk = skydd ? Object.values(skydd.tar).reduce((a, b) => a + (b ?? 0), 0) : 0;
-  const naken = delar.some(del => !paSig(s, p).some(q => q !== t && kladPlatser(q.k).some(x => NAKEN_PLATS[x] === del)));
+  const naken = delar.some(del => !paSig(s, p).some(q => q !== t && !utan.includes(q) && kladPlatser(q.k).some(x => NAKEN_PLATS[x] === del)));
   // det plagget bär åt en, och rollen eller synen det är till för (steg 12.1.191)
   const kd = SAKER[k]?.klad, bar = KLADER.valBar * ((kd?.krok ?? 0) + (kd?.axel ?? 0)) + KLADER.valRygg * (kd?.rygg ?? 0)
-    + (kd?.sele ? (spadbarnAv(s, p).length ? KLADER.valSele : -KLADER.valSele) : 0); // bärselen till modern med ett spädbarn (steg 13.2.3)
+    + (kd?.sele ? (spadbarnAv(s, p).length ? KLADER.valSele : -KLADER.valSele) : 0) // bärselen till modern med ett spädbarn (steg 13.2.3)
+    + (kd?.snoTar ? KLADER.valSno * kd.snoTar * (snoPaMarken(s) > 0 ? snoPaMarken(s) : -1) : 0); // snöskorna i snön, inte på bar mark (steg 13.2.5)
   const roll = r && (r.plagg === 'mask' || r.plagg === 'prastdrakt' || r.plagg === 'tecken') && kladFor(s, p, k) ? KLADER.valRoll : 0, pynt = pl === 'smycke' ? KLADER.valPynt : 0;
   return KLADER.valVarme * kladSkydd(k, t) * (KLADER.valIdeal - temp) / KLADER.valSpann + KLADER.valSkydd * sk + KLADER.valFin * (r ? KLADMATERIAL[r.mat].finhet : 0) + (naken ? KLADER.valNaken : 0) + bar + roll + pynt;
 }
@@ -310,28 +312,36 @@ export function stepKlader(s: State) {
     for (const t of paSig(s, p)) if (heligtAvstar(s, p, kladArt(t.k), kyla)) { t.bar = undefined; count(s, 'heligtPlaggAv'); } // plagget tas av och ligger kvar
     // det som inte passar tas av: barnet som fyllt 10 lämnar barnkläderna åt ett yngre syskon eller byn (steg 13.2.4)
     for (const t of paSig(s, p)) if (!kladFor(s, p, t.k)) { t.bar = undefined; if (t.agare === p.id) t.agare = vuxitUr(s, p, t.k); }
-    const har = new Set(paSig(s, p).flatMap(t => kladPlatser(t.k)));
+    // platserna och plagget som sitter där
+    const har = new Map<string, Ting>();
+    for (const t of paSig(s, p)) for (const q of kladPlatser(t.k)) har.set(q, t);
+    const under = (k: string) => [...new Set(kladPlatser(k).map(q => har.get(q)).filter((t): t is Ting => !!t))];
     // de slag som finns fria och är värda att ta på, det med högst poäng först (steg 13.2.2): stövlarna före skorna, den
-    // varmare rocken före den kallare, i stället för i registrets ordning
+    // varmare rocken före den kallare, i stället för i registrets ordning. Sitter något på platsen byts det bara mot ett
+    // plagg med högre poäng än det som sitter där (snöskorna i snön, skorna när snön är borta, steg 13.2.5)
     const slag: { k: string; v: number }[] = [];
     for (const k of KLAD_SLAG) {
-      if (!avSlag.has(k) || kladPlatser(k).some(q => har.has(q)) || arMantel(k) || !kladFor(s, p, k) || heligtAvstar(s, p, kladArt(k), kyla)) continue;
-      const v = plaggPoang(s, p, k, undefined, temp);
+      if (!avSlag.has(k) || arMantel(k) || !kladFor(s, p, k) || heligtAvstar(s, p, kladArt(k), kyla)) continue;
+      const nu = under(k);
+      if (nu.some(t => t.k === k || (arMantel(t.k) && p.id === ledare))) continue;
+      const v = plaggPoang(s, p, k, undefined, temp, nu) - nu.reduce((a, t) => a + plaggPoang(s, p, t.k, t, temp), 0);
       if (v > KLADER.valByte) slag.push({ k, v }); // klädseln efter värmen (steg 12.1.149)
     }
     slag.sort((a, b) => b.v - a.v);
+    const bytt = new Set<string>();
     for (const { k } of slag) {
       const pls = kladPlatser(k);
-      if (pls.some(q => har.has(q))) continue;
+      if (pls.some(q => bytt.has(q))) continue;
       let best: Ting | undefined;
       for (const t of avSlag.get(k) ?? []) {
         if (t.bar !== undefined || t.hos !== undefined || t.lass !== undefined || t.halv || t.helig !== undefined || !lends(s, t.agare, p)) continue; // det heliga tinget bärs inte (steg 10.3.20)
         if (!best || rang(p, t) < rang(p, best) || (rang(p, t) === rang(p, best) && t.c > best.c)) best = t;
       }
       if (!best) continue;
+      for (const t of under(k)) { t.bar = undefined; for (const q of kladPlatser(t.k)) har.delete(q); } // det som satt där tas av och ligger kvar
       best.bar = p.id; best.x = best.y = best.vid = undefined;
       heligtBrutet(s, p, kladArt(k)); // i kylan bär hen det heliga djurets skinn och bryter budet
-      for (const q of pls) har.add(q);
+      for (const q of pls) { har.set(q, best); bytt.add(q); }
     }
   }
 }
