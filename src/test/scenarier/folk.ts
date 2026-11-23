@@ -1115,7 +1115,7 @@ SCENARIER.kryper = {
   kor: () => {
     const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, x: number, y: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen, klader: [] as string[], fart: 1, x, y });
     let kropp = 0, flyttade = 0, reste = 0, slog = 0, forFort = 0, nara = 0;
-    const fart = SIM.STRID.fart * SIM.GANG.krypFart / SIM.STRID.tempo; // rutor per sekund på klockan
+    const fart = SIM.STRID.fart * SIM.GANG.krypFart; // rutor per sekund på klockan
     let sjalv = 0; // hur ofta det händer av sig självt, med yxor (bara information)
     for (let fro = 1; fro <= 200; fro++) sjalv += SIM.stridTillSlut(SIM.nyStrid({ avsikt: 'doda', w: 20, h: 14, kampar: [m(1, 0, 'yxa', 8, 6), m(2, 0, 'kniv', 7, 8), m(3, 1, 'yxa', 12, 7)] }, fro)).logg.filter(r => r.h === 'kryper').length;
     for (let fro = 1; fro <= 100; fro++) {
@@ -1132,7 +1132,7 @@ SCENARIER.kryper = {
         if (efter.some(o => o.a === k.id && (o.h === 'traff' || o.h === 'miss' || o.h === 'knuff'))) slog++;
         if ((k.kryper ?? 0) > fart * (st.t - r.t) + 0.05) forFort++;
         const van = st.kampar.find(o => o.sida === k.sida && o !== k && o.lage === 'strid');
-        if (van && Math.hypot(van.x - k.x, van.y - k.y) < SIM.STRID.krypNara - 0.01) nara++;
+        if (van && Math.hypot(van.x - k.x, van.y - k.y) < Math.min(SIM.STRID.krypNara, SIM.STRID.van) - 0.01) nara++; // vännen får själv gå så nära som STRID.van
       }
     }
     // i byn: farten, bilden och släpspåret
@@ -1248,7 +1248,7 @@ SCENARIER.gangfart = {
 };
 
 SCENARIER.langsam = {
-  text: 'Långsammare strider (steg 3.7.18): striden går dubbelt så långsamt som den räknas (STRID.tempo), så att en strid tar ungefär dubbelt så lång tid som förut (ett slagsmål med händerna 11 s före v164) men samma sida vinner lika ofta, också mot vargen (80 % och 79 % i 3.7.1)',
+  text: 'Striden i klockans takt (steg 3.7.18 och B.7): inget tempo, stegen i striden går i byns fart, och slagen kommer glesare (STRID.glesare, lika för alla som slåss), så att ett slagsmål med händerna tar ungefär 20 s (11 s före v164) men samma sida vinner lika ofta, också mot vargen (80 % och 79 % i 3.7.1). Orken och blödningen per sekund följer glesare, och en strid avbryts först efter STRID.maxTid på klockan',
   kor: () => {
     const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, x: number, y: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen, klader: [] as string[], fart: 1, x, y });
     const vu = (vapen: SIM.Vapen): SIM.Uppstallning => ({ avsikt: 'doda', w: 16, h: 8, kampar: [m(1, 0, vapen, 3, 4), SIM.djurKampe('varg', 2, 1, 13, 4)] });
@@ -1256,13 +1256,19 @@ SCENARIER.langsam = {
     const h = SIM.korManga(hand, 5, 200), sp = SIM.korManga(vu('flintspjut'), 5, 200), ha = SIM.korManga(vu('hand'), 5, 200);
     const pc = (n: number, r: SIM.ManyResultat) => Math.round(100 * n / r.n);
     const kaftar = Array.from({ length: 60 }, (_, i) => SIM.stridTillSlut(SIM.nyStrid(vu('flintspjut'), i)).logg).filter(l => l.some(r => (r.h === 'tappar' || r.h === 'plockar') && (r.a === 2 || r.v === 'vargbett'))).length;
+    // tiden mellan slagen följer glesare: medianen av väntan mellan två slag av samma kämpe, delat med vapnets takt
+    const st = SIM.stridTillSlut(SIM.nyStrid(hand, 3)), mellan: number[] = [];
+    for (const id of [1, 2]) { const t = st.logg.filter(r => r.a === id && r.sl).map(r => r.t); for (let i = 1; i < t.length; i++) mellan.push(t[i] - t[i - 1]); }
+    mellan.sort((a, b) => a - b);
+    const med = mellan[mellan.length >> 1] ?? 0;
     return [
       [`vargen tappar aldrig sina käftar och ingen tar upp dem: ${kaftar} av 60 strider (11 före kodgenomgången 3.10.25)`, kaftar === 0],
-      [`STRID.tempo är ${SIM.STRID.tempo} och tiden i striden är ${SIM.STRID.maxTid / SIM.STRID.tempo} s som förut`, SIM.STRID.tempo === 2 && SIM.STRID.maxTid / SIM.STRID.tempo === 240],
-      [`ett slagsmål mellan två vuxna tar ${h.tid.toFixed(1)} s (11 s före steget), och sidorna vinner ${pc(h.vann[0], h)} % och ${pc(h.vann[1], h)} %`, h.tid > 18 && h.tid < 26 && Math.abs(h.vann[0] - h.vann[1]) < h.n * 0.2],
-      [`en med spjut mot en varg: människan vinner ${pc(sp.vann[0], sp)} % på ${sp.tid.toFixed(1)} s (7 s före steget)`, sp.vann[0] > sp.n * 0.7 && sp.vann[0] < sp.n * 0.9 && sp.tid > 11],
+      [`en strid avbryts efter ${SIM.STRID.maxTid / 60} minuter på klockan (${SIM.STRID.maxTid / 10} timmar i spelet)`, SIM.STRID.maxTid === 1200],
+      [`slagen med händerna kommer med ${med.toFixed(1)} s mellanrum (vapnets takt ${SIM.VAPEN.hand.takt} s gånger glesare ${SIM.STRID.glesare})`, med > SIM.VAPEN.hand.takt * SIM.STRID.glesare * 0.6 && med < SIM.VAPEN.hand.takt * SIM.STRID.glesare * 1.6],
+      [`ett slagsmål mellan två vuxna tar ${h.tid.toFixed(1)} s (11 s före v164), och sidorna vinner ${pc(h.vann[0], h)} % och ${pc(h.vann[1], h)} %`, h.tid > 18 && h.tid < 30 && Math.abs(h.vann[0] - h.vann[1]) < h.n * 0.2],
+      [`en med spjut mot en varg: människan vinner ${pc(sp.vann[0], sp)} % på ${sp.tid.toFixed(1)} s (7 s före v164)`, sp.vann[0] > sp.n * 0.7 && sp.vann[0] < sp.n * 0.9 && sp.tid > 11],
       [`en obeväpnad mot en varg: vargen vinner ${pc(ha.vann[1], ha)} %`, ha.vann[1] > ha.n * 0.7],
-      ['loggens tider följer klockan (STRID.tick per steg)', SIM.stridTillSlut(SIM.nyStrid(hand, 3)).logg.every(r => Math.abs(r.t / SIM.STRID.tick - Math.round(r.t / SIM.STRID.tick)) < 1e-6)],
+      ['loggens tider följer klockan (STRID.tick per steg)', st.logg.every(r => Math.abs(r.t / SIM.STRID.tick - Math.round(r.t / SIM.STRID.tick)) < 1e-6)],
     ];
   },
 };

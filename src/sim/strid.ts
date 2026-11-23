@@ -79,8 +79,8 @@ export const STRID = balans('strid', {
   kvSkada: [0.6, 0.8, 1, 1.2, 1.4, 1.8], // vapnets skada gånger detta efter kvaliteten (usel, slarvig, normal, fin, mästerverk, perfekt)
   tick: 0.25, // sekunder i spelet per tidssteg i striden (samma i båda lägena)
   kortSteg: 0.5, // sekunder per steg för hela byn när faran är nära (steg 10.1.1 och 10.2.13, mätt med npm run kortsteg). Byns vanliga slag är KLOCKA.slag (klocka.ts)
-  tempo: 2, // striden går så här många gånger långsammare än den räknas: allt i den (slagen, stegen, blodet, orken) tar längre tid men slutar likadant (steg 3.7.18)
-  maxTid: 480, // en strid slutar senast efter så här många sekunder (oavgjort)
+  glesare: 2, // tiden mellan slagen gånger detta, lika för alla som slåss, människor och djur (steg B.7): striden går i klockans takt, och den blir lång för att slagen kommer glesare. Slagens kraft är densamma, eftersom den avgör vilket sår det blir (benbrott, djupt stick, hjärnskakning, olyckshugget)
+  maxTid: 1200, // en strid slutar senast efter så här många sekunder på klockan (oavgjort)
   efterTid: 20, // när ena sidan inte har någon kvar som slåss slutar striden senast så här många sekunder senare, också om någon ännu flyr eller ligger (den som inte kommer undan blir kvar på platsen)
   krypNara: 1, // den som kryper stannar så här många rutor från vännen hen kryper mot (steg 3.7.19) ...
   krypBlod: 0.5, // ... och lämnar så här mycket släpspår per ruta i byn
@@ -100,9 +100,9 @@ export const STRID = balans('strid', {
   slump: 0.6, // skadan gånger ett tal mellan 1 − slump/2 och 1 + slump/2
   ingen: 0.03, // en träff som blir mindre än så här efter kläderna gör ingen skada
   orkSlag: 0.05, // ett slag tar så mycket ork (0–1), mindre för den uthållige ...
-  orkVila: 0.04, // ... och orken kommer tillbaka så här mycket i sekunden mellan slagen
+  orkVila: 0.04, // ... och orken kommer tillbaka så här mycket per sekund av slagens takt, alltså delat med glesare i klockans sekunder, så att orken räcker lika många slag
   blodSlag: 0.25, // ett öppet sår tar så här mycket blod direkt (gånger skadans blod och grad) ...
-  blodSek: 0.002, // ... och sedan så här mycket i sekunden medan det blöder
+  blodSek: 0.002, // ... och sedan så här mycket per sekund av slagens takt (delat med glesare i klockans sekunder) medan det blöder, i striden utanför kartan; på kartan blöder kroppen som annars (halsa.ts)
   nere: 0.9, // den som har så här ont faller och kan inte slåss längre
   modStart: 0.4, // stridsmodet när striden börjar: modStart + mod / 20 × modMod
   modMod: 0.6,
@@ -371,7 +371,7 @@ export function nyStrid(u: Uppstallning, fro: number): Strid {
   if (u.karta) st.karta = true; // på kartans rutor (steg 10.1.4)
   if (!AVS[u.avsikt].vapen) for (const k of kampar) if (!sortAv(k).naturligt) { k.vapen = 'hand'; k.reserv = undefined; }
   for (const k of kampar) { const kv = VAP[k.vapen].kast; if (kv) k.skott = kv.skott; }
-  for (const k of kampar) k.vant = slump(st) * VAP[k.vapen].takt; // ingen slår exakt samtidigt
+  for (const k of kampar) k.vant = slump(st) * VAP[k.vapen].takt * STRID.glesare; // ingen slår exakt samtidigt
   for (const k of kampar) if (k.ledare === 'fram' && sortAv(k).leder && !AVS[u.avsikt].lek) st.logg.push({ t: 0, h: 'leder', a: k.id });
   return st;
 }
@@ -510,7 +510,7 @@ function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number) {
 
 // blödningen under striden (steg 9.5.18): den empatiske går till en vän som ligger och blöder när tiden kvar är kortare än det som
 // är kvar av striden och ingen fiende står nära vännen, drar undan hen och trycker på såret, och går sedan tillbaka in i striden
-const blodSek = (k: Kampe) => k.skador.reduce((a, w) => a + (w.ny ? SKADOR[w.k].blod * w.g * STRID.blodSek * (w.fast ? STRID.fastBlod : 1) : 0), 0);
+const blodSek = (k: Kampe) => k.skador.reduce((a, w) => a + (w.ny ? SKADOR[w.k].blod * w.g * STRID.blodSek / STRID.glesare * (w.fast ? STRID.fastBlod : 1) : 0), 0);
 function raddaSteg(st: Strid, k: Kampe, dt: number) {
   if (k.bar !== undefined) return barSteg(st, k, dt);
   if (!sortAv(k).raddar || !k.hjalp && (k.emp ?? 0) < STRID.raddaEmp) return false; // hjälparna går alltid till den som fallit (steg 9.5.20)
@@ -518,7 +518,7 @@ function raddaSteg(st: Strid, k: Kampe, dt: number) {
   if (v && (v.lage !== 'nere' || !blodSek(v))) { k.raddar = undefined; v = undefined; }
   if (!v) {
     const kvar = STRID.maxTid - st.t;
-    v = st.kampar.filter(o => o !== k && o.sida === k.sida && o.lage === 'nere' && blodSek(o) > 0 && (k.hjalp || (o.blod - HALSA.blodDod) / (blodSek(o) / STRID.tempo * STRID.tryckSjalv) < kvar) // hjälparen går till alla som fallit (steg 9.5.20)
+    v = st.kampar.filter(o => o !== k && o.sida === k.sida && o.lage === 'nere' && blodSek(o) > 0 && (k.hjalp || (o.blod - HALSA.blodDod) / (blodSek(o) * STRID.tryckSjalv) < kvar) // hjälparen går till alla som fallit (steg 9.5.20)
       && !st.kampar.some(f => f.sida !== k.sida && iStrid(f) && dist(f, o) < STRID.raddaFri)).sort((a, b) => dist(k, a) - dist(k, b))[0];
     if (!v) return false;
     k.raddar = v.id; k.mal = undefined;
@@ -576,9 +576,9 @@ const orkAv = (a: Kampe) => { a.slag++; a.ork = Math.max(0, a.ork - STRID.orkSla
 // ---------- slaget som händelse (steg 10.1.3) ----------
 // hur ett anfall kan gå: raden som säger det är anfallets händelse. I parera och duck står försvararen först (a) och den som slog sedan (b)
 const UTFALL = new Set<Handelse>(['traff', 'tog', 'miss', 'parera', 'duck', 'vada', 'knuff', 'omkull']);
-// anfallet som just gjordes (raderna från n0) märks som en händelse med längden vant (stridens sekunder, gånger tempot = klockans)
+// anfallet som just gjordes (raderna från n0) märks som en händelse med längden vant (sekunder på klockan)
 function markSlag(st: Strid, n0: number, vant: number) {
-  for (let i = n0; i < st.logg.length; i++) if (UTFALL.has(st.logg[i].h)) { st.logg[i].sl = 1; st.logg[i].l = Math.round(vant * STRID.tempo * 1000) / 1000; return; }
+  for (let i = n0; i < st.logg.length; i++) if (UTFALL.has(st.logg[i].h)) { st.logg[i].sl = 1; st.logg[i].l = Math.round(vant * 1000) / 1000; return; }
 }
 // ett anfall som händelse: när, hur länge, vem som anföll (fran) och vem det gällde (mot), vapnet, om det kastades och hur det gick
 export interface SlagHandelse { t: number; l: number; fran: number; mot: number; v?: Vapen; kast?: 1; utfall: Handelse; rad: number }
@@ -786,22 +786,22 @@ function kastaMot(st: Strid, k: Kampe, m: Kampe, snabbt?: true): boolean {
   k.vantar = undefined; k.mal = mal.id;
   const n0 = st.logg.length;
   kasta(st, k, mal);
-  if (k.vant <= 0) k.vant = VAP[k.vapen].takt * (1 - ((k.st.uthallighet - 10) / 20) * STRID.takt) * (0.85 + slump(st) * 0.3) + (VAP[k.vapen].kast ? 0.4 : 0); // att ta fram nästa sten
+  if (k.vant <= 0) k.vant = VAP[k.vapen].takt * (1 - ((k.st.uthallighet - 10) / 20) * STRID.takt) * (0.85 + slump(st) * 0.3) * STRID.glesare + (VAP[k.vapen].kast ? 0.4 : 0); // att ta fram nästa sten
   markSlag(st, n0, k.vant);
   return true;
 }
 
-// ett tidssteg (STRID.tick sekunder på klockan, STRID.tick / STRID.tempo sekunder i striden)
+// ett tidssteg (STRID.tick sekunder på klockan, samma i striden)
 export function stridSteg(st: Strid) {
   if (st.slut) return;
-  const dt = STRID.tick / STRID.tempo, avs = AVS[st.avsikt];
+  const dt = STRID.tick, avs = AVS[st.avsikt];
   st.t += STRID.tick;
   const hot = hotet(st), slagits = st.logg.some(r => r.h === 'traff' || r.h === 'miss' || r.h === 'tog' || r.h === 'knuff' || r.h === 'omkull');
   for (const k of st.kampar) {
     if (k.lage === 'borta' || k.lage === 'dod') continue;
     // blodet rinner ur öppna sår, också hos den som ligger
     const tryck = k.lage === 'nere' && k.blod >= HALSA.svim ? STRID.tryckSjalv : 1; // den fallne trycker liggande på såret (steg 9.5.18)
-    if (!varld?.halsaBlod?.(k)) for (const w of k.skador) if (w.ny) k.blod -= SKADOR[w.k].blod * w.g * STRID.blodSek * dt * (w.fast ? STRID.fastBlod : 1) * tryck;
+    if (!varld?.halsaBlod?.(k)) for (const w of k.skador) if (w.ny) k.blod -= SKADOR[w.k].blod * w.g * STRID.blodSek / STRID.glesare * dt * (w.fast ? STRID.fastBlod : 1) * tryck;
     // den som står kvar drar ut ett spjut som fastnat: det blöder mer (steg 3.7.7)
     if (iStrid(k)) for (const w of k.skador) if (w.fast && slump(st) < STRID.draUt * dt) { w.fast = undefined; k.blod -= SKADOR[w.k].blod * w.g * STRID.blodSlag * STRID.draBlod; st.logg.push({ t: st.t, h: 'drar', a: k.id, d: w.d }); }
     if (k.blod < HALSA.blodDod) { falla(st, k, 'dod'); continue; }
@@ -825,7 +825,7 @@ export function stridSteg(st: Strid) {
     const ger = avs.modSlut === 'ge' || (avs.kuva && k.sida === 1); // den som möter den som kuvar ger upp (steg 11.12.6)
     if (!avs.lek && !slagits && sortAv(k).avstar && mod < STRID.avsta) { falla(st, k, ger ? 'ger' : 'flykt', 'avstar'); continue; } // drar sig undan utan strid
     if (mod <= 0) { falla(st, k, ger ? 'ger' : 'flykt'); continue; }
-    k.ork = Math.min(1, k.ork + STRID.orkVila * dt);
+    k.ork = Math.min(1, k.ork + STRID.orkVila / STRID.glesare * dt);
     k.vant -= dt;
     // den som ligger reser sig, och den som böjt sig ner tar upp vapnet (steg 3.7.8)
     if (k.ligger) { k.ligger -= dt; if (k.ligger <= 0) { k.ligger = undefined; st.logg.push({ t: st.t, h: 'upp', a: k.id }); } continue; }
@@ -861,7 +861,7 @@ export function stridSteg(st: Strid) {
       const n0 = st.logg.length;
       if (!m.ligger && slump(st) < (k.vapen === 'hand' ? STRID.knuffHand : STRID.knuff)) knuffa(st, k, m); // eller knuffar
       else slaEtt(st, k, m);
-      k.vant = v.takt * (1 - ((k.st.uthallighet - 10) / 20) * STRID.takt) * (0.85 + slump(st) * 0.3);
+      k.vant = v.takt * (1 - ((k.st.uthallighet - 10) / 20) * STRID.takt) * (0.85 + slump(st) * 0.3) * STRID.glesare;
       markSlag(st, n0, k.vant);
     }
   }
@@ -884,7 +884,7 @@ export function laggTill(st: Strid, k: Uppstallning['kampar'][number]) {
   const n = kampeAv(k), kv = VAP[n.vapen].kast;
   if (!AVS[st.avsikt].vapen && !sortAv(n).naturligt) { n.vapen = 'hand'; n.reserv = undefined; }
   if (kv) n.skott = kv.skott;
-  n.vant = slump(st) * VAP[n.vapen].takt;
+  n.vant = slump(st) * VAP[n.vapen].takt * STRID.glesare;
   st.kampar.push(n); st.logg.push({ t: st.t, h: 'kommer', a: n.id });
 }
 

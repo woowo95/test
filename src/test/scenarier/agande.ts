@@ -2826,8 +2826,12 @@ SCENARIER.spridning = {
       rov.forEach((r, i) => Object.assign(r, SIM.freeNear(s, mal.x + 3, mal.y - 3 + i * 2)));
       for (const p of [...by, ...rov]) { p.pot.mod = 20; p.blod = 1; }
       const g = SIM.kartStridBorja(s, 'skada', [by, rov], 'för att pröva');
-      for (let i = 0; i < 8; i++) step(s, SIM.nastaSteg(s)); // fyra sekunder: alla har valt, ingen har fallit än
-      const mal4 = new Set(g.st.kampar.filter(k => k.sida === 0 && k.lage === 'strid' && k.mal !== undefined).map(k => k.mal));
+      let mal4 = new Set<number | undefined>(); // flest olika mål under de första sex sekunderna, innan någon fallit
+      for (let i = 0; i < 12 && !g.st.kampar.some(k => k.lage !== 'strid'); i++) {
+        step(s, SIM.nastaSteg(s));
+        const nu = new Set(g.st.kampar.filter(k => k.sida === 0 && k.lage === 'strid' && k.mal !== undefined).map(k => k.mal));
+        if (nu.size > mal4.size) mal4 = nu;
+      }
       prov++; olika += mal4.size; if (mal4.size === 4) fyra++;
       const vann = g.st.kampar.filter(k => k.sida === 0 && k.lage === 'strid');
       for (const a of vann) for (const b of vann) if (a !== b) narmast = Math.min(narmast, Math.hypot(a.x - b.x, a.y - b.y));
