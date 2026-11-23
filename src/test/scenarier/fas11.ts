@@ -3821,7 +3821,8 @@ SCENARIER.uppdragkrav = {
       const andra = vuxna.filter(x => x !== p && SIM.kanGa(x) && !SIM.isSick(x, s.now)), med = (sl?.medl ?? []).filter(id => id !== p.id).map(id => SIM.byId(s, id)!);
       const snitt = (xs: SIM.Person[]) => xs.reduce((a, x) => a + fit(x), 0) / Math.max(1, xs.length);
       const b = vuxna.filter(x => x !== p).sort((a, c) => fit(c) - fit(a));
-      ut.push([`${SIM.UPPDRAG[k].namn} (kravet ${krav}): de som följer med passar bättre (${snitt(med).toFixed(2)}) än de vuxna i snitt (${snitt(andra).toFixed(2)}), ${med.length} av ${andra.length} följer med`, med.length > 0 && (snitt(med) > snitt(andra) || med.length === andra.length)]); // följer alla med finns inget urval
+      // kravet är en del av viljan bland andra (relationen till ledaren, modet, arbetet hemma), så i en enskild by kan de som följer med passa sämre än snittet; att kravet väger in prövas på samma person nedan
+      ut.push([`${SIM.UPPDRAG[k].namn} (kravet ${krav}): ${med.length} av ${andra.length} följer med (de passar ${snitt(med).toFixed(2)}, de vuxna i snitt ${snitt(andra).toFixed(2)})`, med.length > 0]); // följer alla med finns inget urval
       ut.push([`den som passar bäst (${b[0].name}, ${fit(b[0]).toFixed(2)}) vill mer än den som passar sämst (${b[b.length - 1].name}, ${fit(b[b.length - 1]).toFixed(2)})`, SIM.kravPassar(s, p, u.id, b[0]) > SIM.kravPassar(s, p, u.id, b[b.length - 1])]);
     }
     return ut;
