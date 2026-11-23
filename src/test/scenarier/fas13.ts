@@ -846,3 +846,43 @@ SCENARIER.lim = {
     ];
   },
 };
+
+// tvålen mot smittan (steg 13.5.3): den som kan Smittan och varit hos en som smittar tvättar sig med 1 tvål (en rad i VARD), och
+// smittar och smittas sedan hälften så lätt i ett dygn
+SCENARIER.tvalsmitta = {
+  text: 'Tvålen mot smittan: den som kan Smittan och varit hos en sjuk som smittar tvättar sig med 1 tvål, och smittas och smittar hälften så lätt i ett dygn (steg 13.5.3)',
+  kor: () => {
+    const s = SIM.createState(5, START), [sjuk, p] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen) as [SIM.Person, SIM.Person];
+    for (const q of SIM.living(s)) if (q !== sjuk && q !== p) { q.x = sjuk.x + 30; q.y = sjuk.y + 30; }
+    p.x = sjuk.x + 0.5; p.y = sjuk.y;
+    SIM.insjukna(s, sjuk, 'massling');
+    SIM.learnK(p, 'smitta', 1, s.now);
+    SIM.put(s, 'tval', 2, { 0: 2 });
+    const fore = SIM.vardBehov(s, p, p)?.tvatt ?? false;
+    const t = SIM.cloneState(s); SIM.smittaTimme(t, 1); // smittan prövas: p var bredvid
+    const tp = SIM.living(t).find(q => q.id === p.id)!;
+    tp.sjuk = undefined;
+    const behov = SIM.vardBehov(t, tp, tp)?.tvatt ?? false, val = SIM.vardVal(t, tp, true)?.why ?? '';
+    const tval0 = SIM.amountOf(t, 'tval');
+    SIM.vardKlar(t, tp, { act: 'varda', phase: 'do', tx: tp.x, ty: tp.y, until: t.now, carry: 0, why: '', ref: tp.id } as SIM.Task);
+    const tagen = tval0 - SIM.amountOf(t, 'tval'), skydd = (tp.tval ?? 0) > t.now, igen = SIM.vardBehov(t, tp, tp)?.tvatt ?? false;
+    // hur ofta p smittas under en timme bredvid den sjuka, utan och med tvätten (samma frön)
+    const andel = (tvattad: boolean, sjukTvattad: boolean) => {
+      let n = 0; const N = 300;
+      for (let i = 0; i < N; i++) {
+        const u = SIM.cloneState(t); const up = SIM.living(u).find(q => q.id === p.id)!, us = SIM.living(u).find(q => q.id === sjuk.id)!;
+        up.rngs = { halsa: i * 7919 + 13 }; up.kunskap = undefined; // en egen slump per försök, och utan kunskapen (som håller hen undan) blir skillnaden lättare att mäta
+        up.sjuk = undefined; up.immun = undefined; up.tval = tvattad ? u.now + SIM.DAY : undefined; us.tval = sjukTvattad ? u.now + SIM.DAY : undefined;
+        SIM.smittaTimme(u, 7200); if (up.sjuk) n++;
+      }
+      return n / N;
+    };
+    const utan = andel(false, false), med = andel(true, false), bada = andel(true, true);
+    return [
+      [`ingen tvätt innan hen varit hos den sjuka (${fore})`, !fore],
+      [`efter en timme bredvid den sjuka vill hen tvätta sig (${val})`, behov && val.includes('tvål')],
+      [`tvätten tar 1 tvål (${tagen}) och skyddar ett dygn, och hen tvättar sig inte igen medan skyddet håller`, tagen === 1 && skydd && !igen],
+      [`smittad på två timmar bredvid: ${(utan * 100).toFixed(0)} % otvättad, ${(med * 100).toFixed(0)} % tvättad, ${(bada * 100).toFixed(0)} % när båda tvättat sig`, med < utan * 0.75 && bada < med * 0.8],
+    ];
+  },
+};

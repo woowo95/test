@@ -26,7 +26,7 @@ import { kn, learnK } from './kunskap';
 import { kronika } from './historik';
 import { tanke } from './tankar';
 import { allaBarn } from './uppvaxt';
-import { botad } from './halsa';
+import { HALSA, botad } from './halsa';
 import { kronikaBer } from './berattelser';
 
 export type SjukOrsak = 'vatten' | 'skamd' | 'ratt' | 'svamp' | 'kyla' | 'smitta';
@@ -180,7 +180,9 @@ export function smittaTimme(s: State, dt = 3600) {
     for (const q of living(s)) {
       if (q === p || q.sjuk || q.immun?.[k]) continue;
       const nara = Math.hypot(q.x - p.x, q.y - p.y) < SJUK.nara, rum = !!rp && roomAt(s, q.x, q.y) === rp, eld = ep >= 0 && vidEld(q) === ep;
-      const v = (nara ? 1 : rum ? SJUK.rum : eld ? SJUK.eld : 0) * (kn(q, 'smitta') >= 0.5 ? SJUK.vet : 1); // den som kan Smittan håller sig undan (9.5.5)
+      if (nara || rum || eld) q.smittNara = s.now; // den som kan Smittan tvättar sig sedan med tvål (VARD.tvatta i halsa.ts, steg 13.5.3)
+      const tval = ((q.tval ?? -Infinity) > s.now ? HALSA.tvalSmitta : 1) * ((p.tval ?? -Infinity) > s.now ? HALSA.tvalSmitta : 1); // den tvättade smittas och smittar hälften så lätt
+      const v = (nara ? 1 : rum ? SJUK.rum : eld ? SJUK.eld : 0) * (kn(q, 'smitta') >= 0.5 ? SJUK.vet : 1) * tval; // den som kan Smittan håller sig undan (9.5.5)
       if (v > 0 && chansPer(s, d.smitta * v, 3600, dt, 'halsa', q) && insjukna(s, q, k)) { q.sjuk!.av = p.id; count(s, 'smittad_' + k); }
     }
   }

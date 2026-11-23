@@ -283,6 +283,7 @@ export interface Person {
   raddAkt?: Record<string, number>; // rädslan för en handling efter en olycka, per rad i RADD_AKT (steg 8.4.10)
   thoughts: Thought[];
   drom?: { k: import('./drommar').DromId; namn?: string };
+  tval?: number; smittNara?: number; // tvålen mot smittan (steg 13.5.3, halsa.ts): tiden då tvätten slutar skydda, och senast hen var nära en som smittar
   vardadAv?: { id: number; t: number }; // den som vårdade hen senast och när (steg 12.1.134, halsa.ts) // drömmen som blir en tanke när hen vaknar (steg 12.1.132, drommar.ts)
   x: number; y: number; task?: Task;
   fame: string[];
