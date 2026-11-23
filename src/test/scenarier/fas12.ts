@@ -498,7 +498,7 @@ SCENARIER.isborr = {
     s.is = { vatten: 0, cm: 40 } as typeof s.is;
     SIM.addTool(s, 'isborr', p);
     let hal = 0;
-    while (SIM.nTools(s, 'isborr') > 0 && hal < 1000) { SIM.halGjort(s, p, p.x, p.y); hal++; }
+    while (SIM.nTools(s, 'isborr') > 0 && hal < 1000) { SIM.halGjort(s, p, p.x + hal * 2, p.y); hal++; } // varje hål på ett nytt ställe: där en vak redan är öppen behövs inget nytt (steg 13.1.15)
     return [
       [`isborren: ${JSON.stringify(R.av)} på ${R.min} minuter i smedjan`, R.av.jarn === 1 && R.av.grenar === 1 && R.min === 4 && R.tek === 'smedja' && !!SIM.JARNSAKER.isborr],
       [`genom 40 cm is får byn med borr upp hålet på 4 minuter (${med.h}, ${med.min} minuter)`, med.h === 'isborr' && Math.abs((med.min ?? 0) - 4) < 1e-9],

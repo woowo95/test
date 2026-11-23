@@ -218,3 +218,32 @@ SCENARIER.jarnstatistik = {
 };
 
 const mulberry = (frö: number) => () => { frö = (frö + 0x6D2B79F5) | 0; let t = Math.imul(frö ^ (frö >>> 15), 1 | frö); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+
+// vakarna (steg 13.1.15): ett hål i isen börjar om från 0 cm och fryser igen som resten av sjön
+SCENARIER.vak = {
+  text: 'Vakarna (steg 13.1.15, is.ts): ett hål som huggits upp är en vak där isen börjar om från 0 cm och växer igen som resten av sjön; den som har en yxa men ingen isborr når vattnet genom vaken när sjöns is är 40 cm, och vaken är borta när isen går upp',
+  kor: () => {
+    const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    SIM.addTool(s, 'yxa', p);
+    const plats = SIM.drickPlats(s, p)!; // stranden närmast, innan isen ligger
+    s.is = { vatten: 0, cm: 40 } as typeof s.is;
+    const utanVak = { val: SIM.halVal(s, p, plats.x, plats.y)?.id, na: SIM.naVattnet(s, p), spot: SIM.drickPlats(s, p) };
+    s.is!.cm = 20; SIM.halGjort(s, p, plats.x, plats.y); s.is!.cm = 40; // hålet höggs när isen var 20 cm
+    const vak = s.is!.vakar?.[0];
+    const medVak = { val: SIM.halVal(s, p, plats.x, plats.y)?.id, na: SIM.naVattnet(s, p), spot: SIM.drickPlats(s, p), min: SIM.halMin(s, p, plats.x, plats.y) };
+    // kylan: vaken växer fortare än den tjocka isen men blir aldrig tjockare än sjön
+    const fore = vak?.cm ?? -1, sjo0 = s.is!.cm;
+    s.now = Date.parse('2027-01-15T08:00:00+01:00'); // mitt i vintern
+    const kallt = SIM.temperature(s) < 0;
+    for (let i = 0; i < 6; i++) SIM.stepIs(s, 1);
+    const efter = s.is!.vakar?.[0]?.cm ?? -1, sjoVaxt = s.is!.cm - sjo0;
+    s.is!.cm = 0.01; s.is!.vatten = 0; s.now = Date.parse('2027-05-15T12:00:00+02:00'); SIM.stepIs(s, 24);
+    return [
+      [`utan vak och utan isborr når yxan inte genom 40 cm is (${utanVak.val ?? 'inget'}, vatten ${utanVak.na})`, !utanVak.val && !utanVak.na && !utanVak.spot],
+      [`hålet blir en vak med 0 cm is (${vak ? `${vak.cm} cm vid ${vak.x},${vak.y}` : 'ingen'})`, !!vak && vak.cm === 0],
+      [`genom den nyss huggna vaken når hen vattnet utan att hugga (${medVak.val ?? 'inget hål behövs'}, ${medVak.min} minuter, platsen ${medVak.spot ? `${medVak.spot.x},${medVak.spot.y}` : 'ingen'})`, !medVak.val && medVak.na && !!medVak.spot && Math.hypot(medVak.spot.x - plats.x, medVak.spot.y - plats.y) <= SIM.IS.vakNara && medVak.min === 0],
+      [`i kylan växer vaken från ${fore} till ${efter.toFixed(2)} cm, fortare än sjön (${sjoVaxt.toFixed(2)} cm), och blir inte tjockare än sjön`, kallt && efter > fore && efter - fore > sjoVaxt && efter <= s.is!.cm + 50],
+      [`när isen gått upp finns ingen vak kvar (${s.is!.cm} cm, ${s.is!.vakar?.length ?? 0} vakar)`, s.is!.cm === 0 && !s.is!.vakar],
+    ];
+  },
+};

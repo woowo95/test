@@ -1091,7 +1091,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     if (tk.mortBete === undefined) { const agn = mayTake(s, p, 'fiskrens') + iBordan(p, 'fiskrens') >= 1; tk.mortBete = agn || ownsAmount(s, p, 'mort') + bordanAv(p, p.id, 'mort') >= 1 ? 1 : 0; if (tk.mortBete) { use(s, p, agn ? 'fiskrens' : 'mort', 1); count(s, agn ? 'fiskrensBete' : 'mortBete'); } } // en mört per fisketur (steg 7.4.4), eller fiskrens som agn (steg 9.8.7)
     // ligger isen hugger man först upp ett hål (is.ts), och sedan pimplar man genom det. Går det inte slutar man
     if (tk.hal === undefined && islagt(s)) {
-      const h = halVal(s, p);
+      const h = halVal(s, p, tk.tx, tk.ty);
       if (!h) { tk.until = s.now; return; }
       tk.hal = halMin(s, p, tk.tx, tk.ty) * 60;
       halGjort(s, p, tk.tx, tk.ty); // isborren slits (steg 12.2.11)

@@ -18,7 +18,7 @@ import { bitAt, gridOf } from './byggnad';
 import { isKlar, stationRutor, stationerOf, vidStation } from './stationer';
 import { groundOf } from './mark';
 import { clamp, rnd } from './slump';
-import { brunnFinns, brunnKrok, halMin, halVal, islagt, naVattnet } from './is';
+import { brunnFinns, brunnKrok, genomIsenVid, halMin, halVal, islagt, naVattnet, vakNabar } from './is';
 import { Act, GRANNAR4, H, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
 import { hemma, kanGa, kroppLust } from './halsa';
@@ -166,13 +166,14 @@ export function drickPlats(s: State, p: Person) {
   const prova = (x: number, y: number, nara: boolean) => {
     const i = y * W + x;
     if (!inMap(x, y) || !sh[i] || !nb[i] && m[i] !== T.Vatten && bitAt(s, x, y)?.m !== 'brygga' || bitAt(s, x, y) && bitAt(s, x, y)!.m !== 'brygga' || (mitt.size && !mitt.has(id[i]))) return;
+    if (genomVak && !genomIsenVid(s, p, x + 0.5, y + 0.5)) return; // sjöns is är för tjock: bara där en vak går att hugga upp (steg 13.1.15)
     const a = areaOf(x, y);
     let t = tro.get(a);
     if (t === undefined) tro.set(a, t = tror(p, a));
     const v = Math.hypot(x - px, y - py) + (nara ? t * TORST.smutsPris : 0);
     if (v < bs) { bs = v; best = { x: x + 0.5, y: y + 0.5 }; }
   };
-  const isen = islagt(s) && !halVal(s, p); // under isen utan något att hugga hål med: bara brunnarna (steg 12.4.8)
+  const genomVak = islagt(s) && !halVal(s, p), isen = genomVak && !vakNabar(s, p); // under isen utan något att hugga hål med: bara vakarna (steg 13.1.15) och brunnarna (steg 12.4.8)
   if (!isen) {
     for (let y = py - TORST.sok; y <= py + TORST.sok; y++) for (let x = px - TORST.sok; x <= px + TORST.sok; x++) prova(x, y, true);
     if (!best) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) prova(x, y, false); // längre bort: bara den närmaste
@@ -215,12 +216,12 @@ export function drickVal(s: State, p: Person) {
   if (d.act === 'dryck') return { act: d.act, why: d.why, min: d.min(), spot: { x: p.x, y: p.y } };
   const h = halVal(s, p), sp = snoPlats(s, p), sno = !!sp; // den närmaste snön; vid elden har den smält (steg 10.2.51)
   const snon = () => ({ act: 'ata_sno' as Act, why: 'Är törstig och äter snö', min: TORST.snoAtMin, spot: sp! }); // steg 9.6.18
-  if (islagt(s) && !h && !brunnFinns(s)) return sno ? snon() : undefined; // isen är för tjock för det man har: snön, om den ligger
-  const spot = drickPlats(s, p);
+  if (islagt(s) && !h && !brunnFinns(s) && !vakNabar(s, p)) return sno ? snon() : undefined; // isen är för tjock för det man har: snön, om den ligger
+  const spot = drickPlats(s, p), hv = spot && islagt(s) ? halVal(s, p, spot.x, spot.y) : h; // vid en vak räknas vakens is (steg 13.1.15)
   if (!spot) return sno ? snon() : undefined;
   if (sno && Math.hypot(spot.x - p.x, spot.y - p.y) > TORST.snoNara) return snon(); // vattnet är långt bort
   const brunn = vidBrunn(s, spot.x, spot.y); // vid brunnen behövs inget hål i isen (steg 12.4.8)
-  return { act: d.act, why: brunn ? 'Är törstig och går och dricker vid brunnen' : h ? `Är törstig och hugger upp ett hål i isen med ${h.namn} för att dricka` : d.why, min: d.min(), spot };
+  return { act: d.act, why: brunn ? 'Är törstig och går och dricker vid brunnen' : hv ? `Är törstig och hugger upp ett hål i isen med ${hv.namn} för att dricka` : d.why, min: d.min(), spot };
 }
 // framme: man dricker. Vid vattnet lär man sig hur smutsigt det är där, och smutsigt vatten kan ge ont i magen
 export function drick(s: State, p: Person, t: Task) {
