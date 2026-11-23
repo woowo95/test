@@ -1,7 +1,7 @@
 import { FANG, fangelseDygn, fangelseLedigt, satHardStraff, satt } from './fangelse';
 import { honom, slaktOrd } from './ord';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, vuxnaOf } from './folk';
-import { efterlevs, lagForBrott, straffNu, tasUppKvall } from './lagar';
+import { LAGAR, efterlevs, lagForBrott, straffNu, straffSteg, tasUppKvall } from './lagar';
 import type { Lag } from './lagar';
 import { ROST, FRAGOR, rostaOm, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, rostKvall, seOverMinistrar, vikter } from './rost';
 import type { Fraga, Fraktion, Omrostning, Rost } from './rost';
@@ -485,7 +485,7 @@ export const STRAFF_REG = [
 satHardStraff(steg => STRAFF_REG.some(r => r.id === steg && 'hard' in r && r.hard));
 // straffet har en egen rad i krönikan och en egen notis när det verkställs (utvisningen och döden), i stället för domens (steg 12.1.253)
 export const straffEgenRad = (steg: number) => STRAFF_REG.some(r => r.id === steg && 'egenRad' in r && r.egenRad);
-const BROTT = new Set<HandelseTyp>(['budbrott', 'stold', 'stoldLindrig', 'sla', 'misshandel', 'drap', 'logn', 'overdrev', 'rymning']); // rymningen ur fängelset (steg 11.12.1)
+const BROTT = new Set<HandelseTyp>(['budbrott', 'stold', 'gravstold', 'stoldLindrig', 'sla', 'misshandel', 'drap', 'logn', 'overdrev', 'rymning']); // rymningen ur fängelset (steg 11.12.1)
 // straffets steg (0 till 3, eller Fängelse 9 när byn har ett med ledig plats) för vikten v gånger hårdheten
 function stegOf(v: number, h: HandelseTyp, rang: number, fang = false) {
   if (h === 'drap' && rang >= STR.utvisRang && v >= STR.utvis) return 3;
@@ -540,7 +540,7 @@ function doma(s: State, l: Person) {
       if (!rostaOm(s, { f: 'skuld', d: { om: id, namn: q.name }, fram: l.id })) { count(s, 'friad'); log(s, `Byn friade ${q.name} på tinget.`, 'rel', [q.id]); tanke(q, 'frikandes', s.now); kronikaBer(s, 'k_ratt', q.id, { ...personFalt(q), fri: true }); continue; }
     }
     // ett straff som kräver något (Fängelse, steg 11.12.3) döms bara när det finns; annars det närmaste mildare, och lagen behåller sitt
-    const fang = !!fangelseLedigt(s), vikt = HANDELSER[b.h].vikt, steg = lag ? straffNu(s, lag.straff) : stegOf(vikt * hard0 * (nara ? STR.nara : 1), b.h, rang, fang);
+    const fang = !!fangelseLedigt(s), vikt = HANDELSER[b.h].vikt, steg = lag ? straffSteg(s, straffNu(s, lag.straff), LAGAR[lag.id].hardare?.[b.h] ?? 0) : stegOf(vikt * hard0 * (nara ? STR.nara : 1), b.h, rang, fang);
     // det byn tycker är lagom: vikten gånger hårdheten som sederna godtar
     const lagom = lag ? steg : stegOf(vikt * clamp(1 + STR.rang * rang, STR.min, STR.max), b.h, rang, fang);
     const orattvist = lag ? !!b.falsk : steg > lagom || (nara && steg < lagom) || !!b.falsk;

@@ -410,7 +410,9 @@ export function noticeTheft(s: State, p: Person, key: string) {
 // gåva av den i närheten som helst ger. Räcker det inte tar man av andras: en lindrig stöld, som man inte behöver vara
 // nära döden för, men som ger sämre relation (DELA.stoldLindrig) när den bestulne märker det. Den med mycket hög empati
 // tar aldrig av andras och gör då inte arbetet.
-const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= DELA.stjalAldrig;
+// gravgodset (steg 13.1.4): det som tas ur gravarna, hela saker av slaget k, högst n; grav.ts sätter kroken
+export const gravGods = { ta: (_s: State, _p: Person, _k: string, _n: number) => 0 };
+export const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= DELA.stjalAldrig;
 // så mycket av slaget k som p kan få till ett arbete
 // det kyrkan äger tar bara kyrkan (takeOrder i egendom.ts): det räknas inte, också för den som tar av andra i nöd
 export const getable = (s: State, p: Person, k: string) => (aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k) - kyrkornas(s, k)) + iBordan(p, k); // med det hen bär till arbetet (steg 11.1.74)
@@ -462,8 +464,10 @@ export function takeMaterial(s: State, p: Person, k: string, n: number, common =
       count(s, 'gava_material', v);
     }
   }
-  // sist en lindrig stöld
+  // sist en lindrig stöld: av andras i förrådet, och det som fattas ur en grav (steg 13.1.4: hela saker, som läggs i förrådet som hens)
   if (rest > 1e-9 && !aldrigStjal(s, p)) {
+    const ur = rest > amountOf(s, k) - kyrkornas(s, k) + 1e-9 ? gravGods.ta(s, p, k, Math.ceil(rest - Math.max(0, amountOf(s, k) - kyrkornas(s, k)) - 1e-9)) : 0;
+    if (ur > 0) put(s, k, ur, { [p.id]: ur });
     const d = use(s, p, k, Math.min(rest, amountOf(s, k)), common, undefined, ut);
     for (const o in d) { const q = +o === BYN || +o === p.id ? undefined : byId(s, +o); if (q) stole(s, p, q, k, d[o], true); }
     addDel(ag, d); not('stold', d);

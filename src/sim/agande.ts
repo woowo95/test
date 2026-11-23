@@ -82,7 +82,10 @@ function usable(s: State, p: Person, t: Ting) {
 // i vilken ordning p tar: det hen har i handen, sitt eget, byns, och sist lånat. Inom det: bäst skick
 const rank = (p: Person, t: Ting) => harMed(p, t) ? 0 : t.agare === p.id ? 1 : t.agare === BYN ? 2 : t.hos === undefined ? 3 : 4;
 const freeOf = (s: State, p: Person, k: string) => toolsOf(s, k).filter(t => usable(s, p, t));
-export const freeTools = (s: State, p: Person, k: string) => freeOf(s, p, k).length;
+// gravgodset (steg 13.1.4): den som saknar ett redskap och tar av andras tar det ur en grav, med samma stöld som annars
+// (grav.ts sätter kroken; n = hur många hen kan ta, ta = tar det bästa och ger tinget)
+export const gravRedskap = { n: (_s: State, _p: Person, _k: string) => 0, ta: (_s: State, _p: Person, _k: string): Ting | undefined => undefined };
+export const freeTools = (s: State, p: Person, k: string) => freeOf(s, p, k).length || gravRedskap.n(s, p, k);
 // det lediga tinget av slaget k som p helst tar (sitt eget, byns, sist lånat), eller undefined (kälken, fordon.ts)
 export const ledigtTing = (s: State, p: Person, k: string) => freeOf(s, p, k).sort((a, b) => bast(a.k) - bast(b.k) || rank(p, a) - rank(p, b) || b.c - a.c)[0];
 // i en grupp (yxa, kniv, skara) tas den bästa saken först (rang i SAKER); utan grupp 0 (steg 12.2.5)
@@ -91,7 +94,7 @@ export const ownsFree = (s: State, p: Person, k: string) => freeOf(s, p, k).some
 // p tar ett redskap av slaget k i handen, ur bältet om det hänger där. Det hen hade i handen hängs i bältet om det får
 // plats där (steg 7.1.1), annars läggs det i förrådet
 export function take(s: State, p: Person, k: string): Ting | undefined {
-  const c = ledigtTing(s, p, k); // den bästa saken i gruppen först (steg 12.2.5)
+  const c = ledigtTing(s, p, k) ?? gravRedskap.ta(s, p, k); // den bästa saken i gruppen först (steg 12.2.5), och sist ur en grav (steg 13.1.4)
   if (!c) return;
   c.krok = undefined;
   for (const t of tingOf(s)) if (t.hos === p.id && t !== c) { t.hos = undefined; if (kanHanga(s, p, t)) t.krok = p.id; }

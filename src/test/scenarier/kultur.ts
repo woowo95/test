@@ -7,6 +7,7 @@ import * as O from '../../sim/ord';
 import { PIX } from '../../ikoner';
 import { titta } from '../textkoll';
 import { TEKNIK } from '../../sim/teknik';
+import { LAGAR, straffNu, straffSteg } from '../../sim/lagar';
 import { medVatska, SCENARIER, byggKlart, byggare, medTroshus, satKyrka, klockan, kor, korTills, medBank, medHus, nyInvanare, setFood, tandEld, tomtForrad, treVuxna, testBy, utanWebblasare, bearbetaVid, gravKlarMed, vidStack, hamtatSomISpelet, ritualMed, styreTimme, kyrkansTimme } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { station as stationFlik } from '../../ui/flikar/station';
@@ -2097,6 +2098,40 @@ SCENARIER.gravgods = {
       [`gåvan vid besöket ligger på graven (${rolleka} ${gk || 'ingen'}, ${tagen} tagen ur förrådet)`, rolleka === 1 && tagen === 1],
       ['maten på graven ruttnar efter sina dygn, gåvan som håller ligger kvar', ruttnat],
       [`när graven tas bort blir yxan byns och ligger på rutan (${ny ? `${ny.x},${ny.y}` : 'ingen'}), och gåvan i en hög där`, !s.gravar?.some(q => q.vem === d.id) && !!ny && ny.agare === SIM.BYN && ny.x === x && ny.y === y && SIM.toolsOf(s, 'yxa').length === ting0 + 1 && !!hog],
+    ];
+  },
+};
+SCENARIER.gravplundring = {
+  text: 'Steg 13.1.4: stöld ur en grav. Den som saknar ett redskap eller material och tar av andras tar det ur en grav, den som besöker graven märker det, relationen till tjuven blir dubbelt så mycket sämre som vid en stöld, intrycket tjuv dubbelt så starkt, och stöldförbudet dömer det ett steg hårdare',
+  kor: () => {
+    const { s, v, tr } = medTro(6, 3);
+    tr.bud = [{ id: 'gravgava', t: s.now }];
+    klockan(s, 10); setFood(s, 200);
+    const d = v.find(p => SIM.ageOf(p, s.now) >= 20)!, rest = v.filter(q => q !== d && SIM.ageOf(q, s.now) >= 16);
+    const [tjuv, besok] = rest;
+    const yxa = SIM.newTing(s, 'yxa', 0.8, d.id); yxa.bar = d.id; yxa.q = 3;
+    const g = begravHela(s, besok, d).g!;
+    SIM.laggIGraven(s, g.saker!, 'rolleka', 2);
+    // inga andra yxor i byn, och ingen rölleka i förrådet
+    for (const t of SIM.toolsOf(s, 'yxa').filter(t => t.q !== 3)) s.ting!.splice(s.ting!.indexOf(t), 1);
+    SIM.setAmount(s, 'rolleka', 0);
+    tjuv.pot.empati = 5; tjuv.task = undefined;
+    const fria = SIM.freeTools(s, tjuv, 'yxa'), tagen = SIM.take(s, tjuv, 'yxa');
+    const del = SIM.takeMaterial(s, tjuv, 'rolleka', 1);
+    const kvar = g.saker?.find(a => a.k === 'rolleka')?.n ?? 0;
+    const rel0 = SIM.getRel(s, besok, tjuv).op;
+    const t = { act: 'gravbesok', phase: 'do', ref: d.id, until: s.now, carry: 0, why: '' } as SIM.Task;
+    SIM.gravbesokKlar(s, besok, t);
+    const fall = rel0 - SIM.getRel(s, besok, tjuv).op;
+    const intr = besok.intryck?.find(e => e.om === tjuv.id && e.k === 'tjuv'), stark = SIM.HANDELSER.gravstold.vikt / SIM.HANDELSER.stold.vikt;
+    const st = straffNu(s, LAGAR.stoldforbud.straff), hard = straffSteg(s, st, LAGAR.stoldforbud.hardare?.gravstold ?? 0);
+    return [
+      [`den som saknar en yxa tar den ur graven (${fria} att ta, yxan ${tagen ? `med kvalitet ${tagen.q}, hens: ${tagen.agare === tjuv.id}` : 'ingen'})`, fria === 1 && !!tagen && tagen.q === 3 && tagen.agare === tjuv.id && !g.saker?.some(a => a.k === 'yxa')],
+      [`det som fattas till ett arbete tas ur graven, hela saker (${SIM.sumOf(del)} rölleka, ${kvar} kvar i graven)`, SIM.sumOf(del) === 1 && kvar === 1],
+      [`den som besöker graven märker båda stölderna: relationen blir ${fall} sämre (dubbelt mot en stöld, ${SIM.DELA.stoldOp}, för var och en)`, fall === 2 * 2 * SIM.DELA.stoldOp && !g.stulet],
+      [`intrycket tjuv är dubbelt så starkt som vid en stöld (${stark} gånger, intryck ${intr ? 'finns' : 'saknas'})`, stark === 2 && !!intr],
+      [`stöldförbudet dömer stölden ur graven ett steg hårdare (${st} → ${hard})`, hard !== st],
+      [`den som aldrig stjäl tar inget ur en grav`, (() => { tjuv.pot.empati = 100; g.saker = [{ k: 'yxa', n: 1, c: 1, t: s.now }]; return SIM.freeTools(s, besok, 'yxa') === 0 || besok.pot.empati >= SIM.DELA.stjalAldrig ? SIM.gravRedskap.n(s, tjuv, 'yxa') === 0 : true; })()],
     ];
   },
 };
