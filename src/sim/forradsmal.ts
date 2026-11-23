@@ -37,6 +37,7 @@ import { MATERIAL, bitsOf } from './byggnad';
 import { BYGGNADER, fahusUtanKrubba, fnId, langhusRum, sovplatser, utanBadd } from './byggnader';
 import { fahusHus } from './slatter';
 import { latrinBrist } from './smuts';
+import { faltOf } from './odling';
 import { syraVill, torkBrist } from './matlagning';
 import { DAY, GREN, State, WEEK } from './typer';
 import { TILLVERKA, TillverkDef } from './tillverka';
@@ -249,7 +250,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   halsband: s => Math.ceil(living(s).length / VILLTAL.halsbandPer), // det är få som bär smycken
   eldstal: s => living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // ett eldstål när någon kan smida (steg 12.2.12)
   ullsax: s => tamdjurOf(s).some(d => !!tamArt(d.art).ull) && living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // en ullsax när byn har får och någon kan smida (steg 12.5.2)
-  jarnhacka: s => stenTillPlan(s) > 0 && living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // en järnhacka när byn planerat något av sten och någon kan smida (steg 12.5.4)
+  jarnhacka: s => (stenTillPlan(s) > 0 || faltOf(s).length > 0) && living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // en järnhacka när byn planerat något av sten eller har ett fält och någon kan smida (steg 12.5.4, 13.7.1)
   jarngryta: s => living(s).some(p => !!p.tek?.smedja && !!p.tek?.kruka) ? 1 : 0, // en järngryta när någon kan smida och laga mat i kruka (steg 12.5.5)
   sag: s => tommaPlatser(s, 'sag'), // en såg vid varje klyvplats som saknar en (steg 12.5.1)
   isborr: s => (s.is?.cm ?? 0) > 0 && living(s).some(p => !!p.tek?.smedja) ? 1 : 0, // en isborr när isen ligger (steg 12.2.11)

@@ -1046,3 +1046,40 @@ SCENARIER.cider = {
     ];
   },
 };
+SCENARIER.jarnhacka = {
+  text: 'Järnhackan på fältet (steg 13.7.1): den som bereder fältet tar det lediga redskap som går fortast, och det redskapet slits: 4 minuter per ruta för hand, 1,5 med benspaden och 0,67 med järnhackan, som slits hälften så mycket som spaden; byn vill ha en järnhacka när den har ett fält',
+  kor: () => {
+    const { ODLING, beredRedskap, rutaKlar, addTool, tingOf, setAmount } = SIM;
+    const s = SIM.createState(1, START); klockan(s, 10);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= 18)!;
+    for (const t of tingOf(s).filter(t => t.k === 'benspade' || t.k === 'jarnhacka')) s.ting = s.ting!.filter(q => q !== t);
+    const min = () => ODLING.beredaMin / (beredRedskap(s, p)?.fart ?? 1);
+    const hand = min();
+    const spade = addTool(s, 'benspade', p); spade.hos = undefined;
+    const medSpade = min(), tarSpade = beredRedskap(s, p)?.k;
+    const hacka = addTool(s, 'jarnhacka', p); hacka.hos = undefined;
+    const medHacka = min(), tarHacka = beredRedskap(s, p)?.k;
+    // en ruta på fältet grävs upp: hackan slits, inte spaden, och hälften så mycket som spaden skulle
+    const f = { id: 1, x: 2, y: 2, w: 1, dir: 0, n: 1, agare: p.id, steg: 'bereda', klara: 0, kvar: 0, rord: s.now, r: [{ st: 'bereda' }] } as unknown as SIM.Falt;
+    setAmount(s, 'kompost', 0);
+    const h0 = hacka.c, s0 = spade.c;
+    rutaKlar(s, p, f, 0);
+    const hackaSlit = h0 - hacka.c, spadeOrord = spade.c === s0;
+    s.ting = s.ting!.filter(q => q !== hacka);
+    const f2 = { ...f, r: [{ st: 'bereda' }] } as unknown as SIM.Falt;
+    rutaKlar(s, p, f2, 0);
+    const spadeSlit = s0 - spade.c;
+    // byn vill ha en järnhacka när den har ett fält och någon kan smida
+    (p.tek ??= {}).smedja = 1;
+    const utan = SIM.REDSKAPMAL.jarnhacka(s);
+    s.falt = [f];
+    const med = SIM.REDSKAPMAL.jarnhacka(s);
+    const nara = (a: number, b: number) => Math.abs(a - b) < 0.01;
+    return [
+      [`för hand ${hand} minuter per ruta, med benspaden ${medSpade.toFixed(2)} och med järnhackan ${medHacka.toFixed(2)}`, nara(hand, 4) && nara(medSpade, 1.5) && nara(medHacka, 0.67)],
+      [`den som bereder tar det snabbaste lediga redskapet (${tarSpade}, sedan ${tarHacka})`, tarSpade === 'benspade' && tarHacka === 'jarnhacka'],
+      [`järnhackan slits (${hackaSlit.toFixed(4)}) och spaden inte, och hackan hälften så mycket som spaden (${spadeSlit.toFixed(4)})`, hackaSlit > 0 && spadeOrord && nara(hackaSlit * 2, spadeSlit)],
+      [`byn vill ha en järnhacka när den har ett fält (${utan} → ${med})`, med === 1],
+    ];
+  },
+};

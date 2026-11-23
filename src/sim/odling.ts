@@ -75,6 +75,8 @@ export const ODLING = balans('odling', {
   beredaMin: 4, // minuters arbete per ruta att gräva upp jorden för hand (8 före steg 3.10.23) ...
   beredaSpade: 4 / 1.5, // ... så här många gånger fortare med benspaden: 1,5 minuter (3,2 före steg 3.10.23) ...
   spadeSlit: 0.0125, // ... som slits så här mycket per ruta
+  beredaHacka: 6, // med järnhackan från smedjan så här många gånger fortare: 0,67 minuter per ruta (steg 13.7.1) ...
+  hackaSlit: 0.5, // ... och den slits så här stor del av spadens slitage per ruta
   saMin: 1, // minuters arbete per ruta att så (2 före steg 3.10.23)
   froPerRuta: 1, // frön som sås per ruta (2 före steg 3.10.23.3)
   skordaMin: 2, // minuters arbete per ruta att skörda (3 före steg 3.10.23)
@@ -440,8 +442,15 @@ export function faltBrist(s: State) {
   return grodorNu(s).some(g => amountOf(s, GRODOR[g].fro) >= ODLING.froPerRuta * ODLING.faltMin) && living(s).some(p => kanOdla(s, p) && !egetFalt(s, p) && !familjFalt(s, p)) ? 1 : 0;
 }
 
-// fart på fältet: att gräva upp jorden går fortare med benspaden
-const fart = (s: State, p: Person, st: FaltSteg) => (st === 'bereda' && freeTools(s, p, 'benspade') ? ODLING.beredaSpade : 1) * (1 + (p.skill.odling ?? 0) / ODLING.skillFart); // färdigheten Odling (steg 9.7.7)
+// redskapen som gräver upp jorden (steg 13.7.1): hur många gånger fortare än handen och slitaget per ruta. Den som bereder tar
+// det lediga redskap som går fortast, och det redskapet slits
+export const BEREDA_REDSKAP = () => [
+  { k: 'benspade', fart: ODLING.beredaSpade, slit: ODLING.spadeSlit },
+  { k: 'jarnhacka', fart: ODLING.beredaHacka, slit: ODLING.spadeSlit * ODLING.hackaSlit },
+];
+export const beredRedskap = (s: State, p: Person) => BEREDA_REDSKAP().filter(r => freeTools(s, p, r.k)).sort((a, b) => b.fart - a.fart)[0];
+// fart på fältet: att gräva upp jorden går fortare med det snabbaste lediga redskapet
+const fart = (s: State, p: Person, st: FaltSteg) => (st === 'bereda' ? beredRedskap(s, p)?.fart ?? 1 : 1) * (1 + (p.skill.odling ?? 0) / ODLING.skillFart); // färdigheten Odling (steg 9.7.7)
 // arbetet som är kvar på rutorna i steget st (ms), utan farten: på sådden bara så många rutor som det finns frön till
 function kvarTid(s: State, p: Person, f: Falt, st: FaltSteg) {
   let ms = 0, n = 0;
@@ -521,7 +530,7 @@ export function odlaHamtas(s: State, p: Person, tk: Task) {
   return g && n > 0 ? { [GRODOR[g].fro]: n } : undefined;
 }
 // ruta k är klar i sitt steg och går till nästa (steg 9.7.1)
-function rutaKlar(s: State, p: Person, f: Falt, k: number) {
+export function rutaKlar(s: State, p: Person, f: Falt, k: number) {
   gjort(s, p, 'odlat', 1);
   const r = rutorAv(f)[k], nu = Math.round(s.now); (f.skott ??= [])[k] = nu; if (r.st === 'bereda') (f.bered ??= [])[k] = nu;
   if (r.st === 'roja') {
@@ -529,7 +538,7 @@ function rutaKlar(s: State, p: Person, f: Falt, k: number) {
     r.st = 'bereda';
     if (forstaGang(s, 'faltForst')) { log(s, `${p.name} röjde byns första fält. Där ska frön sås.`, 'world', [p.id]); p.fame.push('Röjde byns första fält'); }
   } else if (r.st === 'bereda') {
-    if (freeTools(s, p, 'benspade') && wearTool(s, p, 'benspade', ODLING.spadeSlit)) { const tr = SAKER.benspade?.trasig; if (tr) count(s, tr.stat); }
+    const rd = beredRedskap(s, p); if (rd && wearTool(s, p, rd.k, rd.slit)) { const tr = SAKER[rd.k]?.trasig; if (tr) count(s, tr.stat); } // det snabbaste lediga redskapet slits (steg 13.7.1)
     const i = faltRuta(f, k); if (bordighet(s, i) < 1 - REST.godsla / 2 && getable(s, p, 'kompost') >= 1) { takeMaterial(s, p, 'kompost', 1); (s.bord ??= {})[i] = Math.min(1, bordighet(s, i) + REST.godsla); if (s.bord[i] >= 1) delete s.bord[i]; count(s, 'godslat'); } // den färdiga komposten (steg 9.7.6)
     r.st = 'sa';
   } else if (r.st === 'sa') {
