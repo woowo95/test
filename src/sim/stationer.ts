@@ -166,6 +166,8 @@ const SNICKAR = traVid('snickarbank');
 // det som formas av lera på drejskivan (steg 12.4.1): lerkrukorna (handlingen lerkruka, kruka.ts) och oljelampan (steg 12.4.2)
 const DREJ: Act[] = ['lerkruka', 'oljelampa'];
 // plaggen som görs vid stationen st (PlaggDef.station i klader.ts: hjälmen och brynjan i smedjan, steg 12.2.9)
+// det som går att göra för hand men fortare och bättre vid slöjdbänken (steg 13.1.1, Regeln för stationerna)
+const FORT_VID_SLOJD: Act[] = ['slunga', 'horn', 'tecken', 'mask'];
 const plaggVid = (st: string) => (Object.keys(PLAGG) as Act[]).filter(k => (PLAGG as Record<string, { station?: string }>)[k].station === st);
 // ---------- den vävda mattan (steg 10.7.6, Pynt och smycken: Den vävda mattan) ----------
 // Mattan är ett pynt som ligger på golvet i rummet där ägaren sover, av lintyg eller ylle. Storlekarna är rader i MATTOR; varje
@@ -197,7 +199,7 @@ export const STATIONER = {
     forsta: '{namn} byggde byns första slaktbänk av virke. Där slaktas viltet och rensas fisken, och en kniv ligger kvar vid bänken.',
   },
   flatarbank: { // slöjdbänken: id:t är kvar från när den hette flätarbänken, så att sparade byar fungerar
-    kv: STATION.kvLite, get hinner() { return STATION.bankHinner; }, namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: RECEPT.flatarbank.av, min: RECEPT.flatarbank.min, gor: ['tvinna', 'korg', 'rock', 'skor', 'byxor', 'mossa', 'snoskor', 'rustning', 'hjalm', 'slunga', 'horn', 'prastdrakt', 'tecken', 'mask', 'mantel', 'halsband', 'tunika', 'skjorta', 'hatt', 'kappa', 'sjal', 'axelrem', 'ryggsack', 'benspade', 'vattensack', 'nat', 'sy_talt', 'sy_packsadel', 'sy_ridsadel', ...ENKLA], fart: { tvinna: STATION.repFart, ...Object.fromEntries(ENKLA.map(a => [a, STATION.redskapFart])) }, bara: ['korg', 'rock', 'skor', 'byxor', 'mossa', 'snoskor', 'halsband', 'tunika', 'skjorta', 'hatt', 'kappa', 'sjal', 'axelrem', 'ryggsack', 'benspade', 'vattensack', 'nat', 'sy_talt', 'sy_packsadel', 'sy_ridsadel'], vid: { bensyl: 1 }, kraver: { rock: 'bensyl', skor: 'bensyl', ryggsack: 'bensyl', vattensack: 'bensyl' }, inne: true, sitt: true,
+    kv: STATION.kvLite, get hinner() { return STATION.bankHinner; }, namn: 'Slöjdbänk', ikon: 'flatarbank', w: 2, h: 1, tek: ['flatarbank'], av: RECEPT.flatarbank.av, min: RECEPT.flatarbank.min, gor: ['tvinna', 'korg', 'rock', 'skor', 'byxor', 'mossa', 'snoskor', 'rustning', 'hjalm', 'slunga', 'horn', 'prastdrakt', 'tecken', 'mask', 'mantel', 'halsband', 'tunika', 'skjorta', 'hatt', 'kappa', 'sjal', 'axelrem', 'ryggsack', 'benspade', 'vattensack', 'nat', 'sy_talt', 'sy_packsadel', 'sy_ridsadel', ...ENKLA], fart: { tvinna: STATION.repFart, ...Object.fromEntries([...ENKLA, ...FORT_VID_SLOJD].map(a => [a, STATION.redskapFart])) }, bara: ['korg', 'rock', 'skor', 'byxor', 'mossa', 'snoskor', 'rustning', 'hjalm', 'prastdrakt', 'mantel', 'halsband', 'tunika', 'skjorta', 'hatt', 'kappa', 'sjal', 'axelrem', 'ryggsack', 'benspade', 'vattensack', 'nat', 'sy_talt', 'sy_packsadel', 'sy_ridsadel'], vid: { bensyl: 1 }, kraver: { rock: 'bensyl', skor: 'bensyl', ryggsack: 'bensyl', vattensack: 'bensyl' }, inne: true, sitt: true,
     bygger: 'Bygger en slöjdbänk av virke och grenar.',
     forsta: '{namn} byggde byns första slöjdbänk. Där tvinnas rep fortare än för hand och flätas korgar.', // och sys kläder med bensylen (steg 2.3.2)
   },
