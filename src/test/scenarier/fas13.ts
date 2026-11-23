@@ -1005,3 +1005,44 @@ SCENARIER.syrat = {
     ];
   },
 };
+SCENARIER.cider = {
+  text: 'Cider och äppelsaft (steg 13.6.3): 10 äpplen krossas utan vatten i bryggkaret och jäser 2 dygn till 5 cider i en stor lerkruka eller tunna, som håller 6 dygn och inte mognar; under matbufferten bryggs ingen cider, och saften krossas av bär eller äpplen, det byn har mest av',
+  kor: () => {
+    const { bryggVal, bryggKlar, stepBrygg, setAmount, amountOf, addTool, vatskaAv, VATSKOR, BRYGD, TILLVERKA, KLAR_FOR, MOGNAD } = SIM;
+    const s = SIM.createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    p.tek = { ...(p.tek ?? {}), bryggkar: 1, kruka: 1 };
+    const kar = { id: 997, k: 'bryggkar', x: 3, y: 3, kvar: 0 } as SIM.Station; s.stationer = [...(s.stationer ?? []), kar];
+    setMat(s, {}); setAmount(s, 'appel', 12);
+    // under matbufferten: äpplena är mat, och ingen cider bryggs
+    const svalt = SIM.foodDays(s) < SIM.buffert(s, 'mat'), svBrygg = bryggVal(s, p);
+    setAmount(s, 'torrkott', 400);
+    const vald = bryggVal(s, p);
+    // en tid då det är minst 10 grader i två dygn och en timme
+    const t0 = s.now; let varm = t0;
+    for (let d = 0; d < 400 * 24; d += 6) { const u = t0 + d * SIM.HOUR; let ok = true; for (let h = 0; h <= 50 && ok; h++) ok = SIM.temperature(s, u + h * SIM.HOUR) >= 10; if (ok) { varm = u; break; } }
+    s.now = varm;
+    bryggKlar(s, p, kar.id);
+    const isats = kar.sats?.v === 'cider' && amountOf(s, 'appel') === 2 && kar.sats.n === 5;
+    const tid = (h: number) => { for (let i = 0; i < h; i++) { s.now += SIM.HOUR; stepBrygg(s); } };
+    tid(BRYGD.cider.dygn * 24 - 2); const inteAn = !kar.sats?.klar;
+    tid(3); const jast = !!kar.sats?.klar;
+    const kr = addTool(s, 'lerkruka_stor', p); kr.hos = undefined;
+    bryggKlar(s, p, kar.id);
+    const cider = vatskaAv(s, 'cider'), tomt = !kar.sats, iKruka = kr.inne?.v === 'cider';
+    // saften: av äpplen när byn har fler äpplen än bär, i en mellanstor kruka
+    setAmount(s, 'appel', 12); setAmount(s, 'bar', 3);
+    const mk = addTool(s, 'lerkruka_mellan', p); mk.hos = undefined;
+    KLAR_FOR[TILLVERKA.krossa_saft.act]!(s, p, p.task!, 0);
+    const saft = vatskaAv(s, 'saft') === 5 && amountOf(s, 'appel') === 2 && amountOf(s, 'bar') === 3 && mk.inne?.v === 'saft';
+    const hela = [cider, vatskaAv(s, 'saft'), amountOf(s, 'appel')].every(Number.isInteger);
+    return [
+      [`10 äpplen utan vatten, ${BRYGD.cider.dygn} dygn, 5 cider`, BRYGD.cider.av.appel === 10 && !BRYGD.cider.vatten && BRYGD.cider.dygn === 2 && BRYGD.cider.ger === 5],
+      [`under matbufferten bryggs ingen cider (${svalt ? 'under' : 'över'}, ${svBrygg?.act ?? 'inget'}); med mat över bryggs den (${vald?.v})`, svalt && !svBrygg && vald?.act === 'brygga' && vald.v === 'cider'],
+      ['äpplena läggs i karet', isats],
+      [`satsen jäser i ${BRYGD.cider.dygn} dygn vid 10 grader och ger 5 cider i den stora krukan`, inteAn && jast && cider === 5 && tomt && iKruka],
+      [`cidern håller ${VATSKOR.cider.haller} dygn, står i stora krukor eller tunnan och mognar inte`, VATSKOR.cider.haller === 6 && VATSKOR.cider.i.includes('tunna') && !MOGNAD.cider],
+      ['saften krossas av 10 äpplen när byn har fler äpplen än bär, i en mellanstor kruka', saft],
+      ['allt i hela saker', hela],
+    ];
+  },
+};
