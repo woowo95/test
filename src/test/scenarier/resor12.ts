@@ -127,12 +127,17 @@ SCENARIER.gomslut = {
     SIM.KOHANDELSER.platsUpphor!(s, vl, post!);
     const borta = !SIM.varldPlatsNr(vl, g.nr), minne = (vl.minnesplatser ?? []).some(q => q.nr === g.nr);
     // ett handelsläger med sluttid: platsens egen post tar inte bort lägret, det gör lägrets regel
-    const rad = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && x.nr !== vl.huvud && SIM.byPlats(vl, x.nr)?.grannar?.length)!;
-    rad.tal.folk = 40; rad.tal.mat = 4000; const rv = SIM.radVaror(rad); rv.redskap = (rv.redskap ?? 0) + 400; rad.tal.rikedom = SIM.radRikedomUr(rad);
-    const h = SIM.nyttHandelslager(s, vl, rad, s.now)!, hp = SIM.byPlats(vl, h.nr)!;
+    // en rik by med en ledig ruta för lägret nära sig (en by inträngd mellan vatten och berg får inget läger)
+    let h: SIM.VarldRad | undefined;
+    for (const rad of vl.rader!.filter(x => SIM.lever(vl, x) && x.sort === 'by' && x.nr !== vl.huvud && SIM.byPlats(vl, x.nr)?.grannar?.length)) {
+      rad.tal.folk = 40; rad.tal.mat = 4000; const rv = SIM.radVaror(rad); rv.redskap = (rv.redskap ?? 0) + 400; rad.tal.rikedom = SIM.radRikedomUr(rad);
+      h = SIM.nyttHandelslager(s, vl, rad, s.now);
+      if (h) break;
+    }
+    const hp = SIM.byPlats(vl, h!.nr)!;
     const hpost = (vl.ko ?? []).find(k => k.typ === 'platsUpphor' && k.sak === hp.nr);
     if (hpost) SIM.KOHANDELSER.platsUpphor!(s, vl, hpost);
-    const lagerKvar = !!SIM.varldPlatsNr(vl, hp.nr) && h.tal.folk > 0;
+    const lagerKvar = !!SIM.varldPlatsNr(vl, hp.nr) && h!.tal.folk > 0;
     return [
       [`gömman har en post i världens kö vid sin sluttid (${post ? ((post.t - s.now) / SIM.DAY).toFixed(0) + ' dygn' : 'ingen'})`, !!post && post.t === g.till && g.till === s.now + SIM.RESA.gommaDygn * SIM.DAY],
       [`vid tiden är gömman borta ur världen, och de som gömde den minns den som en minnesplats`, borta && minne],

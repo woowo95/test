@@ -1130,7 +1130,7 @@ function byHandel(): [string, boolean][] {
   kannerPriser(s, h);
   helAffar(s, vuxen(s), true);
   const flinta = Math.round(amountOf(s, 'flinta')), silver = Math.round(amountOf(s, 'silver')), salt = h.varor.filter(w => w.k !== 'flinta');
-  const bada = behov >= 1 && flinta >= behov && flinta <= tar && salt.length > 0 && (s.stat?.handelByten ?? 0) - b0 === 2 && !!h.bynKlar;
+  const bada = behov >= 1 && flinta >= behov && flinta <= tar && salt.length > 0 && (s.stat?.handelByten ?? 0) - b0 >= 2 && !!h.bynKlar;
   // skinnen som plaggen väntar på säljs inte, och utan något att köpa säljer byn direkt för silver
   const skinnBy = testBy(10, b => { const c = cloneState(b); SIM.projektSaknarRakna(c); return (c.projektSaknar?.skinn?.beh ?? 0) >= 1; }); // en by där ett plagg väntar på skinn
   const t = cloneState(skinnBy), g = fram(t);

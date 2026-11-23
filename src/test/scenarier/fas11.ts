@@ -2039,8 +2039,9 @@ SCENARIER.kallelse = {
 SCENARIER.sallskapfast = {
   text: 'Sällskapet som inte kommer iväg (steg 12.1.8, samlasSteg, utanDeSomInteKom och inteIvag i resa.ts): kommer ledaren aldrig till samlingsplatsen tar den som är där över efter samma tid som ledaren väntar; den som aldrig kommer fram medan sällskapet packar är inte med, och sällskapet går; kommer ingen alls ställs resan in och packningen går tillbaka',
   kor: () => {
-    const s0 = SIM.cloneState(testBy(30)), vl0 = s0.varld!, hem = SIM.byPlats(vl0, vl0.huvud!)!;
-    const vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 18 && SIM.ageOf(q, s0.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, s0.now));
+    const resbara = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.ageOf(q, b.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, b.now));
+    const s0 = SIM.cloneState(testBy(30, b => resbara(b).length >= 2)), vl0 = s0.varld!, hem = SIM.byPlats(vl0, vl0.huvud!)!;
+    const vuxna = resbara(s0);
     for (const f of SIM.FOOD) if (SIM.amountOf(s0, f) > 0) SIM.setAmount(s0, f, Math.max(SIM.amountOf(s0, f), 60));
     const vm = SIM.varldMark(s0)!, mal = vl0.platser!.filter(q => q.nr !== hem.nr && q.k !== 'by' && !(SIM.LANDMARKEN[q.k] as { tillfallig?: true }).tillfallig).sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y)).find(q => SIM.vagDygn(s0, hem.y * vm.w + hem.x, q.y * vm.w + q.x))!;
     // ett mål som står kvar (ett handelsläger bryts upp, och då ställs resan in av det)
@@ -4270,7 +4271,10 @@ SCENARIER.talt = {
   kor: () => {
     // fem vuxna som kan gå: den första testbyn som har så många (testbyn efter fem dygn har fyra, steg 12.1.112)
     const gaende = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.kanGa(q));
-    const s = SIM.cloneState(testBy(3, b => gaende(b).length >= 5)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!, mal = hb.grannar![0]!.nr;
+    const s = SIM.cloneState(testBy(3, b => gaende(b).length >= 5)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!, vm = SIM.varldMark(s)!;
+    // den närmaste grannen, så att maten för fem ryms i händerna bredvid tälten (en lång resa fyller händerna med mat först)
+    const dit = (nr: number) => { const q = SIM.byPlats(vl, nr)!; return SIM.vagDygn(s, hb.y * vm.w + hb.x, q.y * vm.w + q.x, 'fots')?.dygn ?? 99; };
+    const mal = [...hb.grannar!].sort((a, b) => dit(a.nr) - dit(b.nr))[0]!.nr;
     const vuxna = gaende(s).slice(0, 5);
     const sl = SIM.nyttSallskap(s, vuxna[0]!, mal, 'handel')!;
     for (const q of vuxna.slice(1)) SIM.foljMed(vl, sl, q);
