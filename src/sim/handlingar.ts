@@ -258,6 +258,7 @@ const DEF = {
   skara_remsor: { namn: 'Skär remsor', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'elden' }, skara_lin: { namn: 'Skär remsor av lin', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'elden' }, nal: { namn: 'Slipar en bennål', slag: 'hantverk', hantverk: true, verb: 'slipar', plats: 'station' }, // förbanden (steg 9.5.15)
   kalke: { namn: 'Gör en kälke', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 10.10.2
   vagn: { namn: 'Gör en vagn', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 11.11.2
+  plog: { namn: 'Gör en plog', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 13.7.2
   slade: { namn: 'Gör en släde', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 10.10.3
   bagborr: { namn: 'Gör en bågborr', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 10.6.13
   krycka: { namn: 'Täljer en krycka', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' }, traben: { namn: 'Täljer ett träben', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' }, krok: { namn: 'Gör en krok', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, ogonlapp: { namn: 'Skär en ögonlapp', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'station' }, // proteserna (steg 9.5.11)

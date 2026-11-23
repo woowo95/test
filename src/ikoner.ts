@@ -3703,6 +3703,7 @@ PIX.sprit = PIX.lerkruka_liten ?? PIX.kruka; PAL.sprit = PAL.lerkruka_liten ?? P
 PIX.brannpanna = PIX.ortkok ?? PIX.sten; PAL.brannpanna = PAL.ortkok ?? PAL.sten; // platshållare för brännpannan (steg 10.7.26) tills Björn valt i bildstilen
 // platshållare för resterna (steg 9.7.5) tills Björn valt i bildstilen
 PIX.vagnsvrak_karta = PIX.vagnsvrak; PAL.vagnsvrak_karta = PAL.vagnsvrak; // platshållare för vagnen på kartan (steg 11.6.13)
+PIX.plog = PIX.slade; PAL.plog = PAL.slade; // platshållare för plogen (steg 13.7.2)
 PIX.vattenho_karta = PIX.vattenho; PAL.vattenho_karta = PAL.vattenho; // platshållare för vattenhon på kartan (steg 10.10.30)
 PIX.kompost = PIX.latrin ?? PIX.ved; PAL.kompost = PAL.latrin ?? PAL.ved; // platshållare för komposten (steg 9.7.6) tills Björn valt i bildstilen
 PIX.kalfron = PIX.artfron; PAL.kalfron = PAL.artfron; // platshållare för kålen och bönorna (steg 9.7.8) tills Björn valt i bildstilen
@@ -4019,6 +4020,7 @@ PIX.far = PIX.radjur; PAL.far = PAL.radjur; PIX.get = PIX.radjur; PAL.get = PAL.
   // kälken är ritad med fören uppåt (den dras norrut), släden med skaklarna åt höger (österut)
   const ka = KARTBILDER.kalke, sl = KARTBILDER.slade;
   if (ka) { lagg('kb_kalke_bak', ka.rader, ka.pal); lagg('kb_kalke_fram', vand(ka.rader), ka.pal); lagg('kb_kalke_sida', medsols(ka.rader), ka.pal); lagg('kb_kalke_vast', motsols(ka.rader), ka.pal); }
+  if (sl) for (const [r, rad] of [['sida', sl.rader], ['vast', spegla(sl.rader)], ['bak', motsols(sl.rader)], ['fram', medsols(sl.rader)]] as const) lagg('kb_plog_' + r, rad, sl.pal); // platshållare för plogen (steg 13.7.2): släden
   if (sl) { lagg('kb_slade_sida', sl.rader, sl.pal); lagg('kb_slade_vast', spegla(sl.rader), sl.pal); lagg('kb_slade_bak', motsols(sl.rader), sl.pal); lagg('kb_slade_fram', medsols(sl.rader), sl.pal); }
   // stenvägen är 2 × 2 rutor: varje ruta tar den fjärdedel som hör till dess plats, så att mönstret går ihop
   const sv = KARTBILDER.stenvag;

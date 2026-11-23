@@ -15,7 +15,9 @@ import { FOREST, VAG } from './vag';
 import { knows, tankePa } from './teknik';
 import { bynsDel, getable, takeMaterial } from './behov';
 import { utsadeKrok } from './ratter';
-import { freeTools, nTools, wearTool } from './agande';
+import { freeTools, ledigtTing, nTools, slitTing, tingOf, wearTool } from './agande';
+import { FORDON, FORDON_TAL, fordonI, lediga } from './fordon';
+import { tamEg } from './tamdjur';
 import { SAKER } from './saker';
 import { PLATS } from './plats';
 import { ledig, stationerOf, storlekAv } from './stationer';
@@ -448,7 +450,21 @@ export const BEREDA_REDSKAP = () => [
   { k: 'benspade', fart: ODLING.beredaSpade, slit: ODLING.spadeSlit },
   { k: 'jarnhacka', fart: ODLING.beredaHacka, slit: ODLING.spadeSlit * ODLING.hackaSlit },
 ];
-export const beredRedskap = (s: State, p: Person) => BEREDA_REDSKAP().filter(r => freeTools(s, p, r.k)).sort((a, b) => b.fart - a.fart)[0];
+// Plogen (steg 13.7.2) är ett fordon som ett dragdjur drar (FORDON.plog, fordon.ts): farten är djurets styrka gånger falt. Den
+// spänns för när arbetet väljs (val.ts) och följer med i bördan; den som redan har den förspänd plöjer med den
+export interface BeredRedskap { k: string; fart: number; slit: number; ting?: number; djur?: number }
+function plogar(s: State, p: Person): BeredRedskap | undefined {
+  const b = fordonI(s, p.task);
+  if (b?.f.falt) return b.d ? { k: b.g.k, fart: b.f.falt * tamEg(b.d).styrka, slit: FORDON_TAL.plogSlit, ting: b.g.id, djur: b.d.id } : undefined;
+  let bast: BeredRedskap | undefined;
+  for (const f of Object.values(FORDON)) {
+    if (!f.falt) continue;
+    const g = ledigtTing(s, p, f.sak);
+    if (g) for (const d of lediga(s, p)) { const fart = f.falt * tamEg(d).styrka; if (fart > (bast?.fart ?? 0)) bast = { k: f.sak, fart, slit: FORDON_TAL.plogSlit, ting: g.id, djur: d.id }; }
+  }
+  return bast;
+}
+export const beredRedskap = (s: State, p: Person): BeredRedskap | undefined => [...BEREDA_REDSKAP().filter(r => freeTools(s, p, r.k)), plogar(s, p)].filter(r => !!r).sort((a, b) => b!.fart - a!.fart)[0];
 // fart på fältet: att gräva upp jorden går fortare med det snabbaste lediga redskapet
 const fart = (s: State, p: Person, st: FaltSteg) => (st === 'bereda' ? beredRedskap(s, p)?.fart ?? 1 : 1) * (1 + (p.skill.odling ?? 0) / ODLING.skillFart); // färdigheten Odling (steg 9.7.7)
 // arbetet som är kvar på rutorna i steget st (ms), utan farten: på sådden bara så många rutor som det finns frön till
@@ -538,7 +554,9 @@ export function rutaKlar(s: State, p: Person, f: Falt, k: number) {
     r.st = 'bereda';
     if (forstaGang(s, 'faltForst')) { log(s, `${p.name} röjde byns första fält. Där ska frön sås.`, 'world', [p.id]); p.fame.push('Röjde byns första fält'); }
   } else if (r.st === 'bereda') {
-    const rd = beredRedskap(s, p); if (rd && wearTool(s, p, rd.k, rd.slit)) { const tr = SAKER[rd.k]?.trasig; if (tr) count(s, tr.stat); } // det snabbaste lediga redskapet slits (steg 13.7.1)
+    const rd = beredRedskap(s, p), pt = rd?.ting !== undefined ? tingOf(s).find(q => q.id === rd.ting) : undefined; // det snabbaste lediga redskapet slits (steg 13.7.1), plogen i bördan (13.7.2)
+    if (rd && (pt ? slitTing(s, pt, rd.slit) : wearTool(s, p, rd.k, rd.slit))) { const tr = SAKER[rd.k]?.trasig; if (tr) count(s, tr.stat); }
+    if (rd?.djur !== undefined) count(s, 'plojt');
     const i = faltRuta(f, k); if (bordighet(s, i) < 1 - REST.godsla / 2 && getable(s, p, 'kompost') >= 1) { takeMaterial(s, p, 'kompost', 1); (s.bord ??= {})[i] = Math.min(1, bordighet(s, i) + REST.godsla); if (s.bord[i] >= 1) delete s.bord[i]; count(s, 'godslat'); } // den färdiga komposten (steg 9.7.6)
     r.st = 'sa';
   } else if (r.st === 'sa') {

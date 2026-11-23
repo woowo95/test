@@ -44,7 +44,7 @@ import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, hand
 import { PROJEKT, PROJEKT_TAL, Uppgift, arv, bastaProjekt, bristAlla, hamtas, projektNu } from './projekt';
 import { omtanke } from './omtanke';
 import { lonNu } from './lon';
-import { faltNu, vildFronPlats } from './odling';
+import { beredRedskap, faltNu, vildFronPlats } from './odling';
 import { type Tur, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
 import { bordPlats, rustaVal, ryggsack, ryms } from './utrustning';
@@ -1012,6 +1012,7 @@ function valjTask(s: State, p: Person) {
   // den som hämtar något tungt (virket som klyvs) tar händerna eller kälken efter vad turen ger per tid (steg 10.10.2, fordon.ts)
   const ger = ACTS[v.act].ger;
   if (v.fordon === undefined && ger && SAKER[ger]?.lyft) { const fo = valjFordon(s, p, ger, sp.x, sp.y, iHandenAv(s, p, ger)); v.fordon = fo?.g.id; v.dragdjur = fo?.d?.id; }
+  if (v.fordon === undefined && v.act === 'odla' && v.tool === 'bereda') { const r = beredRedskap(s, p); if (r?.djur !== undefined) { v.fordon = r.ting; v.dragdjur = r.djur; } } // plogen och djuret, när de går fortast (steg 13.7.2)
   if (v.fordon !== undefined) taFordon(s, p, p.task, v.fordon, v.dragdjur); // kälken följer med i bördan
   seleVal(s, p); // barnet i bärselen följer med till arbetet (steg 13.2.3, barsele.ts)
   facklaVal(s, p); // facklan tänds för den som går ut i mörkret, och släcks när den inte behövs (ljus.ts)

@@ -1083,3 +1083,47 @@ SCENARIER.jarnhacka = {
     ];
   },
 };
+SCENARIER.plog = {
+  text: 'Plogen (steg 13.7.2): den som bereder fältet spänner det starkaste lediga dragdjuret för plogen när det går fortare än spaden, rutans tid följer djurets styrka, utan djur tas spaden, plogen väger inget i bördan så komposten kan bäras, plogen läggs i förrådet och djuret blir fritt efteråt, och djuret sliter sig vid en varg',
+  kor: () => {
+    const { ODLING, FORDON, beredRedskap, rutaKlar, addTool, tingOf, setAmount, newTing, nyttTamdjur, tamEg, taFordon, storeLoad, tamFaraSteg, spand, load, BYN, DAY } = SIM;
+    const s = SIM.createState(1, START); klockan(s, 10);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= 18)!;
+    s.tamdjur = [];
+    for (const t of tingOf(s).filter(t => t.k === 'benspade' || t.k === 'jarnhacka' || t.k === 'plog')) s.ting = s.ting!.filter(q => q !== t);
+    const spade = addTool(s, 'benspade', p); spade.hos = undefined;
+    const plog = newTing(s, 'plog', 1, BYN); plog.x = Math.floor(p.x); plog.y = Math.floor(p.y);
+    const utanDjur = beredRedskap(s, p)?.k;
+    const oxe = nyttTamdjur(s, 'oxe', p.x, p.y, undefined, s.now - 4 * DAY), hast = nyttTamdjur(s, 'hast', p.x, p.y, undefined, s.now - 4 * DAY);
+    const r = beredRedskap(s, p), starkast = tamEg(oxe).styrka >= tamEg(hast).styrka ? oxe : hast;
+    const min = (d: SIM.Tamdjur) => ODLING.beredaMin / (FORDON.plog.falt! * tamEg(d).styrka), spMin = ODLING.beredaMin / SIM.BEREDA_REDSKAP().find(q => q.k === 'benspade')!.fart;
+    // arbetet börjar: plogen och djuret tas med (som i val.ts)
+    const task = { act: 'odla', tool: 'bereda', phase: 'go', tx: p.x, ty: p.y, until: s.now + 3600_000, carry: 0 } as SIM.Task;
+    p.task = task; taFordon(s, p, task, r!.ting!, r!.djur);
+    const bordan = load(task, s), spandNu = spand(s, r!.djur!);
+    const f = { id: 1, x: 2, y: 2, w: 1, dir: 0, n: 1, agare: p.id, steg: 'bereda', klara: 0, kvar: 0, rord: s.now, r: [{ st: 'bereda' }] } as unknown as SIM.Falt;
+    setAmount(s, 'kompost', 0);
+    const c0 = plog.c, s0 = spade.c;
+    rutaKlar(s, p, f, 0);
+    const plogSlit = c0 - plog.c, spadeOrord = spade.c === s0, plojt = s.stat?.plojt ?? 0;
+    // hemma igen: plogen i förrådet och djuret fritt
+    storeLoad(s, task, p.x, p.y); p.task = undefined;
+    const iForradet = plog.lass === undefined && plog.x !== undefined, fritt = !spand(s, r!.djur!);
+    // vargen: djuret sliter sig från plogen
+    const t2 = { ...task, ting: undefined } as SIM.Task; p.task = t2;
+    const d = SIM.tamdjurOf(s).find(q => q.id === r!.djur)!;
+    taFordon(s, p, t2, plog.id, d.id);
+    s.vargar = [{ x: d.x + 0.5, y: d.y, vargar: [{}] }] as unknown as typeof s.vargar;
+    tamFaraSteg(s, 1);
+    const slitSig = plog.djur === undefined && (s.stat?.djurSlitSig ?? 0) > 0;
+    return [
+      [`utan dragdjur tas spaden (${utanDjur})`, utanDjur === 'benspade'],
+      [`med en oxe och en häst spänns det starkaste för plogen (${r?.k}, ${r?.djur === oxe.id ? 'oxen' : r?.djur === hast.id ? 'hästen' : 'inget'})`, r?.k === 'plog' && r.djur === starkast.id],
+      [`rutans tid följer djurets styrka: oxen ${min(oxe).toFixed(2)} och hästen ${min(hast).toFixed(2)} minuter, mot spadens ${spMin.toFixed(2)}`, min(oxe) < spMin && min(hast) < spMin && (min(oxe) < min(hast)) === (tamEg(oxe).styrka > tamEg(hast).styrka)],
+      [`plogen väger inget i bördan (${bordan}), och djuret är förspänt (${spandNu})`, bordan === 0 && spandNu],
+      [`plogen slits (${plogSlit.toFixed(4)}) och spaden inte, och rutan räknas som plöjd (${plojt})`, plogSlit > 0 && spadeOrord && plojt === 1],
+      [`efter arbetet ligger plogen i förrådet (${iForradet}) och djuret är fritt (${fritt})`, iForradet && fritt],
+      ['djuret blir rädt för vargen och sliter sig från plogen', slitSig],
+    ];
+  },
+};

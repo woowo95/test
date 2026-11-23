@@ -185,7 +185,7 @@ export const ryms = (s: State, p: Person) => { const pl = handPlatser(s, p); ret
 // är bördan full: ryms inte en sak till av det arbetet ger (steg 6.1.8)?
 export function fullBorda(s: State, p: Person, t: Task) {
   const b = bordSlag(t), k = carryKind(t.act), fo = fordonI(s, t);
-  if (fo) return !rymsI(fo)({ ...b, [k]: (b[k] ?? 0) + viktOf(k) }); // kälken (steg 10.10.2)
+  if (fo && !fo.f.falt) return !rymsI(fo)({ ...b, [k]: (b[k] ?? 0) + viktOf(k) }); // kälken (steg 10.10.2)
   return !fordela(handPlatser(s, p), { ...b, [k]: (b[k] ?? 0) + viktOf(k) });
 }
 // hur mycket p kan bära i de fria händerna, i vikt (för texterna och testerna)

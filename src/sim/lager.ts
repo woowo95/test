@@ -637,7 +637,7 @@ export function backSpot(s: State, t: Task) {
   return dropSpot(s, k);
 }
 // bär p något hem när arbetet är klart: bördan, eller redskapet som den som bär in saker tog upp (steg 12.1.49)
-export const barHem = (t: Task) => isCarrying(t) || t.act === 'bara' && !!t.ting?.length;
+export const barHem = (t: Task) => isCarrying(t) || !!t.ting?.length && t.act !== 'resa'; // det som följde med i bördan (kälken, plogen) ställs tillbaka (steg 13.7.2)
 // en ruta i ringen runt lagerplatserna där slaget k får plats (inte bredvid förrådshuset: där står väggarna)
 function ringSpot(s: State, k: string, occ: Occ) {
   const zs = zonesOf(s).filter(z => z.hus === undefined), base = zs.filter(z => allows(z, k));
@@ -1257,7 +1257,7 @@ export function load(t: Task, s: State) {
   let l = 0;
   const b = bordSlag(t);
   for (const k in b) l += b[k];
-  for (const id of t.ting ?? []) l += viktOf(tingOf(s).find(g => g.id === id)?.k ?? '');
+  for (const id of t.ting ?? []) { const g = tingOf(s).find(q => q.id === id); if (g?.djur === undefined) l += viktOf(g?.k ?? ''); } // det ett djur drar bär ingen (steg 13.7.2)
   return l;
 }
 // redskapen i bördan: de läggs på rutan at om den är ledig i förrådet, annars på bästa lediga plats

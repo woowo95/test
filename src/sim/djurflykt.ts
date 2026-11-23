@@ -13,6 +13,8 @@ import { count, living, log } from './folk';
 import { tamArt, tamEg, tamdjurOf, Tamdjur } from './tamdjur';
 import { BIN } from './bin';
 import { State, W, inMap } from './typer';
+import { SAKER } from './saker';
+import { bestamd } from './ord';
 
 export const TAMFLYKT = balans('tamflykt', {
   r: 4, // ett djur med modet 0,5 flyr när det är så här många gånger farans storlek från den
@@ -44,7 +46,7 @@ export function tamFaraSteg(s: State, dt: number) {
       const p = living(s).find(q => q.id === g.lass);
       if (p) avbryt(s, p);
       g.djur = undefined; count(s, 'djurSlitSig');
-      log(s, `${tamArt(d.art).ord[3][0].toUpperCase()}${tamArt(d.art).ord[3].slice(1)} blev rädd och slet sig från släden.`, 'world');
+      log(s, `${tamArt(d.art).ord[3][0].toUpperCase()}${tamArt(d.art).ord[3].slice(1)} blev rädd och slet sig från ${bestamd(SAKER[g.k]?.namn ?? 'släde')[0].toLowerCase()}.`, 'world');
     }
     const dx = d.x - n.f.x, dy = d.y - n.f.y, v = n.l > 0.1 ? [dx / n.l, dy / n.l] : [Math.cos(d.id), Math.sin(d.id)];
     const st = Math.min(TAMFLYKT.r * (1.5 - e.mod) * n.f.r - n.l, TAMFLYKT.fart * e.snabbhet * dt);
