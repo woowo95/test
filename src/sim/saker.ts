@@ -172,6 +172,11 @@ const DEF = {
   ratlin: { namn: 'Rått lin', ett: true, skaffa: { tid: 0.25, tek: 'lin' }, stack: 25, vikt: 0.3, mapp: 'Material' }, // rötas på torkställningen innan det kan spinnas
   lin: { namn: 'Lin', ett: true, skaffa: RECEPT.lin, stack: 25, vikt: 0.3, mapp: 'Material' }, // steg 7.7.7
   linfron: { namn: 'Linfrön', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, vikt: 0.05, mapp: 'Material' },
+  // färgväxterna (steg 13.3.2, farg.ts): måran grävs upp på ängen när man samlar, vejden odlas och krappen köps av handlaren
+  mara: { namn: 'Måra', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material' },
+  vejde: { namn: 'Vejde', skaffa: { tid: 0.25, tek: 'fargning' }, stack: 25, vikt: 0.2, mapp: 'Material' },
+  vejdefron: { namn: 'Vejdefrön', skaffa: { tid: 0.25, tek: 'fargning' }, stack: 25, vikt: 0.05, mapp: 'Material' },
+  krapp: { namn: 'Krapp', skaffa: { tid: 0.5, sallsynt: true }, stack: 25, vikt: 0.1, mapp: 'Material' }, // roten kommer från söder, med handlarna
   trad: { namn: 'Lintråd', skaffa: RECEPT.trad, stack: 25, vikt: 0.1, mapp: 'Material' }, // steg 7.7.8
   lintyg: { namn: 'Lintyg', ett: true, skaffa: RECEPT.lintyg, stack: 10, vikt: 0.5, mapp: 'Material' }, // steg 7.7.9
   vargtand: { namn: 'Vargtand', skaffa: { tid: 0.1 }, stack: 25, vikt: 0.05, mapp: 'Material' }, // steg 7.7.5
@@ -355,7 +360,9 @@ export const SAK_LIST = Object.keys(DEF) as Sak[];
 export const sak = (k: string) => SAKER[k];
 export const sakNamn = (k: string) => SAKER[k]?.namn ?? (k === 'hus' ? 'Hus' : k); // huset är ingen sak, men ligger som en symbol på filten vid ett husbyte (steg 7.2.12)
 // namnet på ett ting: ett påbörjat redskap (paborjat.ts) heter som det ska bli
-export const tingNamn = (t: { k: string; halv?: { gor: string } }) => t.halv ? `${sakNamn(t.halv.gor)} (inte klar)` : sakNamn(t.k);
+// färgen i namnet (farg.ts, steg 13.3.2): "Blå tunika av lin". Satt av farg.ts, så att filerna inte importerar varandra
+export const namnKrok = { farg: (_t: { k: string; farg?: string }): string | undefined => undefined };
+export const tingNamn = (t: { k: string; halv?: { gor: string }; farg?: string }) => t.halv ? `${sakNamn(t.halv.gor)} (inte klar)` : (t.farg && namnKrok.farg(t)) || sakNamn(t.k);
 
 // vikten (steg 6.1.8): ett påhittat tal för hur mycket en sak tar av en hand, inte kg. En sak väger VIKT_STACK delat med
 // stacken (en vanlig hand bär 5 grenar, 2 ved, 2 bär och 1 sten), eller det som står i registret (redskapen, viltet, virket)

@@ -182,13 +182,13 @@ SCENARIER.symboler = {
 // steg 5.1.1.3: varje färg i spelets pixelbilder (PAL i ikoner.ts) är en av paletten 32 (palett.ts); en halvgenomskinlig färg
 // (rgba) räknas efter sin färg utan genomskinligheten
 SCENARIER.palett = {
-  text: 'Alla pixelbilder har bara färger ur paletten (32 färger i åtta ramper), och natten är paletten ett, två och mitt i natten tre steg mörkare',
+  text: 'Alla pixelbilder har bara färger ur paletten (40 färger i tio ramper), och natten är paletten ett, två och mitt i natten tre steg mörkare',
   kor: () => {
     const utanfor: string[] = [];
     const rgb = (f: string) => { const m = f.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); return m ? '#' + m.slice(1, 4).map(v => (+v).toString(16).padStart(2, '0')).join('') : f; };
     for (const [k, p] of Object.entries(PAL)) for (const [c, f] of Object.entries(p)) if (!iPaletten(rgb(f))) utanfor.push(`${k}.${c}=${f}`);
     const svart = (MORKARE[3] ?? []).filter(h => h === FARGER[0]).length;
-    const morkt = MORKARE.every(m => m.length === 32 && m.every(iPaletten));
+    const morkt = MORKARE.every(m => m.length === 40 && m.every(iPaletten));
     // kornet på en slät yta: inga 5 × 5 punkter med samma färg kvar (utom längs kanten), och varje korn ett steg i samma ramp
     const N = 64, yta = new Int8Array(N * N).fill(18); kornPa(yta, N, N, 0, 0);
     let slata = 0, fel = 0; const platser = (N - 8) * (N - 8);
@@ -198,10 +198,10 @@ SCENARIER.palett = {
     const raster = [0, 0.5, 1, 1.5, 2, 2.5, 3].every(m => [0, 1, 2, 3].every(x => iPaletten(rasterSteg(FARGER[13], m, x, x * 3))));
     return [
       [utanfor.length ? `${utanfor.length} färger utanför paletten: ${utanfor.slice(0, 12).join(', ')}` : `alla ${Object.keys(PAL).length} bilder har bara färger ur paletten`, !utanfor.length],
-      ['paletten har 32 färger i åtta ramper', FARGER.length === 32 && PALETT.length === 8],
+      ['paletten har 40 färger i tio ramper', FARGER.length === 40 && PALETT.length === 10],
       ['skymningen och natten har bara färger ur paletten, också i rastret', morkt && raster],
       ['natten är mörkare än dagen', MORKARE[2].every((h, i) => h !== FARGER[i] || i < 2)],
-      [`mitt i natten (steg 5.1.7.2, något ljusare sedan steg 9.2.12) är det mesta kolsvart och inget ljusare än natten (${svart} av 32 färger blir den mörkaste)`, MORKARE.length === 4 && svart >= 20 && svart < 28 && MORKARE[3].every((h, i) => h === MORKARE[2][i] || PALETT_L(h) <= PALETT_L(MORKARE[2][i]))],
+      [`mitt i natten (steg 5.1.7.2, något ljusare sedan steg 9.2.12) är det mesta kolsvart och inget ljusare än natten (${svart} av 40 färger blir den mörkaste)`, MORKARE.length === 4 && svart >= 25 && svart < 35 && MORKARE[3].every((h, i) => h === MORKARE[2][i] || PALETT_L(h) <= PALETT_L(MORKARE[2][i]))],
       [`kornet (steg 5.1.7.1): en slät yta på 64 × 64 punkter har nästan inga släta fält på 5 × 5 punkter kvar (${slata} av ${platser}, högst 5 %), och kornet är ett steg i samma ramp (${fel} fel)`, slata <= platser * 0.05 && fel === 0],
     ];
   },

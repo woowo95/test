@@ -3905,6 +3905,18 @@ PIX.balte_lader = PIX.balte_rep; PAL.balte_lader = Object.fromEntries(Object.ent
 for (const k of ['grillgadda', 'grillmort']) { PIX[k] = PIX.grillfisk; PAL[k] = PAL.grillfisk; }
 for (const k of ['torrgadda', 'torrmort']) { PIX[k] = PIX.torrfisk; PAL[k] = PAL.torrfisk; }
 for (const st of ['fangstbank', 'stenhuggarplats', 'klyvplats', 'ortkok', 'garvning', 'harden', 'vavstol']) for (const k of [st, st + '_karta', st + '_karta_v']) if (k !== st || !KARTBILDER[st]) { PIX[k] = PIX.korg; PAL[k] = PAL.korg; } // en station med kartbild har den som symbol (iRutan)
+// färgväxterna (steg 13.3.2, platshållare): måran som rötter med blad, vejden som ett knippe blad, fröna och krapproten
+PAL.mara = { z: '#372f25', g: '#647025', r: '#a14808', R: '#742a01' };
+PIX.mara = ['....gg......', '...gggg.....', '....gg..gg..', '.....g.ggg..', '.....zzg....', '....zrrz....', '...zrRrRz...', '..zrR.rRrz..', '..zR..r.Rz..', '...z..R..z..', '......z.....'];
+PAL.vejde = { z: '#21290d', g: '#647025', G: '#898b4c', b: '#2e4a71' };
+PIX.vejde = ['.....gG.....', '...gGgGg....', '..gGgbgGg...', '..GgbgbgG...', '...gGbGg....', '....gbg.....', '....zbz.....', '....zgz.....', '....zgz.....', '.....z......'];
+PAL.vejdefron = { z: '#372f25', s: '#7d5b40', S: '#987e62' };
+PIX.vejdefron = ['............', '...zz..zz...', '..zSsz.zSz..', '...zz.zSsz..', '.zz....zz...', 'zSsz.zz.....', '.zz.zSsz....', '.....zz.....'];
+// tekniken Färgning (steg 13.3.2, platshållare): ett tygstycke i en kruka med blått färgbad
+PAL.fargning = { z: '#372f25', b: '#2e4a71', B: '#4d6b98', y: '#d8b25f', k: '#742a01', K: '#a14808' };
+PIX.fargning = ['....yyy.....', '...yybyy....', '...ybBby....', '....bBb.....', '.zzzbbbzzz..', 'zKBBBBBBBKz.', 'zkKbBbBbKkz.', '.zkkKKKkkz..', '..zkkkkkz...', '...zzzzz....'];
+PAL.krapp = { z: '#3f2415', r: '#a14808', R: '#742a01', l: '#bd753e' };
+PIX.krapp = ['............', '..zz........', '.zlrz.......', '..zrRz......', '...zrRzz....', '....zRrlz...', '.....zzrRz..', '.......zrz..', '........z...'];
 for (const k of ['rokelse', 'brannolja', 'vittja', 'snara', 'bur', 'grop', 'leksak', 'salva', 'lin', 'ratlin']) { PIX[k] = PIX.korg; PAL[k] = PAL.korg; }
 // den målade skölden (steg 10.7.1, platshållare): skölden med en målad figur mitt på
 { const b = PIX.skold, mx = 8, my = 8; PIX.skold_malad = b.map((rad, y) => [...rad].map((c, x) => c !== '.' && Math.abs(x - mx + 0.5) <= 1.5 && Math.abs(y - my + 0.5) <= 2.5 && ((x + y) % 2 === 0 || y === my - 2) ? 'Ä' : c).join('')); PAL.skold_malad = { ...PAL.skold, 'Ä': '#a14808' }; }

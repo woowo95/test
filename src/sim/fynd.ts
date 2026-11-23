@@ -225,6 +225,13 @@ const DEF = {
     bas: (s, i, m) => land(s, i) && (markslag(groundOf(s), i) === 'hog' || markslag(groundOf(s), i) === 'kort') ? m * orortOf(s)[i] : 0,
     uttag: { full: 1, reach: 0, regrow: [0, 1 / 200, 1 / 120, 1 / 300] },
   },
+  // måran (steg 13.3.2, farg.ts): växer på ängarna, och rötterna grävs upp när man samlar där och byn vill ha dem till färgbadet
+  mara: {
+    namn: 'Måra', grupp: 'vaxter', ikon: 'mara', farg: 0xa14808, topp: 1, arstid: [0, 0.8, 1.2, 0.6], torka: 0.6,
+    monster: { salt: 121, skala: 3, period: 56, troskel: 0.7 },
+    bas: (s, i, m) => land(s, i) && markslag(groundOf(s), i) === 'hog' ? m * orortOf(s)[i] : 0,
+    uttag: { full: 1, reach: 0, regrow: [0, 1 / 200, 1 / 120, 1 / 300] },
+  },
   // ängsblommorna (steg 10.7.3): växer på gräsmark på våren och sommaren och växer igen fort; plockas när man samlar där och byn
   // vill ha blommor till krukorna
   blomma: {

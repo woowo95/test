@@ -108,6 +108,7 @@ export const GRODOR = {
   hassel: { namn: 'Hassel', sak: 'notter', fro: 'notter', dygn: 15, perRuta: 3, fron: 0, frost: -40, fukt: 0.45, flerarig: true, ater: 0.85 }, // steg 9.7.14: nötterna plockas en gång om året
   rolleka: { namn: 'Rölleka', sak: 'rolleka', fro: 'rolleka', dygn: 3, perRuta: 2, fron: 0, frost: -30, fukt: 0.5, flerarig: true, plats: 'kruka' }, // steg 9.7.16: örterna i krukor vid husen, inte på fälten
   blomma: { namn: 'Blomma', sak: 'blomma', fro: 'blomma', dygn: 3, perRuta: 1, fron: 0, frost: -30, fukt: 0.5, flerarig: true, plats: 'kruka', blom: 3 }, // steg 10.7.3: blomman i krukan är pynt och ger inget att skörda
+  vejde: { namn: 'Vejde', sak: 'vejde', fro: 'vejdefron', dygn: 3, perRuta: 2, fron: 1, frost: -8, fukt: 0.5, tek: 'fargning' }, // färgväxten för blått (steg 13.3.2): fröna köps av handlaren
   korn: { namn: 'Korn', sak: 'korn', fro: 'korn', dygn: 4, perRuta: 3, fron: 1, frost: -4, fukt: 0.45, tek: 'sadesodling' }, // säden från handlarna (steg 9.6.11): kornet är sitt eget utsäde // håller länge; dygn 3, perRuta 4 och fron 6 före steg 3.10.23; frost -1 före steg 2.12.2
 } satisfies Record<string, GrodaDef>;
 export type GrodaSlag = keyof typeof GRODOR;

@@ -484,3 +484,44 @@ SCENARIER.tygtrad = {
     ];
   },
 };
+
+SCENARIER.fargning = {
+  text: 'Steg 13.3.2: färgningen. Den som kan Färgning badar ett plagg av lin eller ylle vid örtköket med växterna, vattnet ur en fylld säck och en ledig lerkruka; plagget får färgen ("Blå tunika av lin"), och ett blått plagg som badas i gult blir grönt',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s); tandEld(s);
+    const ort = medBank(s, 'ortkok'), p = SIM.living(s)[0]!;
+    for (const q of SIM.living(s)) q.tek = { ...q.tek, fargning: 0 };
+    p.tek = { ...p.tek, fargning: 1, ortkok: 1, vavstol: 1, kruka: 1 };
+    setMat(s, { kott: 200 });
+    for (const k of ['naver', 'malm', 'bar', 'rolleka', 'mara', 'krapp', 'vejde']) SIM.setAmount(s, k, 0);
+    const tun = SIM.addTool(s, 'tunika_lintyg', p); tun.bar = p.id; tun.x = tun.y = undefined;
+    const kruka = SIM.addTool(s, 'lerkruka_mellan', p); kruka.hos = undefined;
+    const sack = SIM.addTool(s, 'vattensack', p); sack.hos = undefined;
+    const fyll = () => { sack.inne = { v: 'vatten', n: 3 } as typeof sack.inne; };
+    fyll();
+    const utanVaxter = SIM.fargVal(s, p);
+    SIM.setAmount(s, 'vejde', 2);
+    const val = SIM.fargVal(s, p);
+    // badet vid örtköket
+    const bada = (bad: string) => {
+      p.x = SIM.vidStation(ort).x; p.y = SIM.vidStation(ort).y;
+      SIM.fargaKlar(s, p, { act: 'farga', phase: 'do', tool: bad, ref: tun.id } as SIM.Task);
+    };
+    bada('blatt');
+    const bla = tun.farg, namn = SIM.tingNamn(tun), vejdeKvar = SIM.amountOf(s, 'vejde'), sackKvar = sack.inne?.n ?? 0, krukaKvar = !!SIM.ledigKruka(s);
+    fyll(); SIM.setAmount(s, 'rolleka', 2);
+    bada('gult');
+    const gron = tun.farg;
+    const lin = SIM.tarFarg('tunika_lintyg'), skinn = SIM.tarFarg('rock_kaninskinn');
+    const varde = SIM.tingVarde(tun), ofargad = SIM.tingVarde({ ...tun, farg: undefined });
+    return [
+      ['utan växter badas inget', !utanVaxter],
+      [`med vejde vill hen bada sin tunika blå (${val?.bad} → ${val?.blir})`, val?.bad === 'blatt' && val.blir === 'blatt' && val.t.id === tun.id],
+      [`tunikan blir blå och heter "${namn}"`, bla === 'blatt' && namn === 'Blå tunika av lin'],
+      [`badet tar 2 vejde och vattnet ur säcken, krukan står kvar tom (vejde ${vejdeKvar}, vatten ${sackKvar}, kruka ${krukaKvar})`, vejdeKvar === 0 && sackKvar === 3 - SIM.RECEPTVATTEN && krukaKvar],
+      [`den blå tunikan badad i gult blir grön (${gron})`, gron === 'gront'],
+      ['lin tar färg, skinn gör det inte', lin && !skinn],
+      [`det färgade plagget är värt mer (${varde.toFixed(2)} mot ${ofargad.toFixed(2)})`, varde > ofargad],
+    ];
+  },
+};

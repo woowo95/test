@@ -129,7 +129,7 @@ import { tal, horsel, barMed, binStick, burenSteg, halsa, halsaSteg, lakerFullt,
 import { bordPlats, fullBorda, kladVarme, klaPaKlar, rustaKlar, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
 import { dragdjurBredvid, fartI, fordonI, rymsI } from './fordon';
 import { KLADER, NAKEN_PLATS, PLAGG, kladAv } from './klader';
-import { allaTing } from './agande';
+import { allaTing, type Ting } from './agande';
 import { och } from './ord';
 import { stepPynt } from './pynt';
 import { glomByten, stadaByten } from './byte';
@@ -327,6 +327,7 @@ KLAR.ang = (s, p) => angKlar(s, p); // slåtterängen märks ut (steg 10.2.36)
 KLAR.valla = (s, p, t) => vallaKlar(s, p, t.ref);
 KLAR.klippa = (s, p, t) => { klippKlar(s, p, t.ref); wearUsed(s, p, 1); }; // ullsaxen slits för varje får (steg 12.5.2)
 KLAR.tatuera = (s, p, t) => tatKlar(s, p, t.ref);
+KLAR.farga = fargaKlar; // färgbadet (farg.ts, steg 13.3.2)
 KLAR.mjolka = (s, p, t) => mjolkaKlar(s, p, t.ref);
 KLAR.skatta = (s, p, t) => skattaKlar(s, p, t.ref); // bikupan (bin.ts, steg 10.10.20)
 KLAR.ortPlocka = (s, p, t) => ortPlockaKlar(s, p, t.ref); // örtkrukan (kruka.ts, steg 10.10.11)
@@ -1162,8 +1163,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     const fart = ACTS[tk.act].fart ?? 1, got = forageItems(s, p, pa, fart) ?? {}, dt = pa * fart; // det som växer på platsen hittar man lika mycket fortare (steg 2.12.4); stenarna och flintan plockas som saker på rundan
     if (tk.tandmat) { for (const k of ['torrgras', 'grenar']) if (got[k]) bar(k, got[k]); return true; } // den som hämtar tändmaterial tar bara det (steg 12.1.39)
     for (const k in got) bar(k, got[k]); // tändmaterialet först, så att mossan inte tar händerna från den som hämtar det
-    { const r = vildNara(s, 'rolleka', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * RUNDA.rolleka; takeFrom(s, 'rolleka', r.x, r.y, g); bar('rolleka', g); count(s, 'samlat_rolleka', g); } } // den första örten (steg 7.6.3) växer vild på kartan (steg 9.7.15)
-    if (blommaVill(s) > amountOf(s, 'blomma')) { const r = vildNara(s, 'blomma', tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * RUNDA.rolleka; takeFrom(s, 'blomma', r.x, r.y, g); bar('blomma', g); } } // ängsblommorna, när byn vill ha blommor till krukorna (steg 10.7.3)
+    for (const v of VILDA_ORTER) if (!v.vill || v.vill(s)) { const r = vildNara(s, v.k, tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * RUNDA.rolleka; takeFrom(s, v.k, r.x, r.y, g); bar(v.k, g); if (v.stat) count(s, v.stat, g); } }
     const vild = froFynd(s, p, tk, dt); // frön och lite mat från de vilda grödorna (steg 2.10.2, 3.10.23.8)
     for (const k in vild) bar(k, vild[k]);
     if (ageIndex(s) === VAR) bar('agg', FAGEL.agg * dt / HOUR_S); // fåglarnas ägg, som man ibland hittar på våren (steg 6.6.3)
@@ -1209,13 +1209,15 @@ function arbetsTakt(s: State, p: Person, tk: Task) {
 const NAKEN_DELAR: Record<string, string> = { fotter: 'fötterna', ben: 'benen', kropp: 'överkroppen' };
 const kroppsdel = (plats: string) => NAKEN_PLATS[plats] ?? plats; // skjortan och rocken klär överkroppen
 function stepNaken(s: State) {
-  const pa = new Map<number, Set<string>>();
-  for (const t of allaTing(s)) { const r = t.bar !== undefined ? kladAv(t.k) : undefined; if (r) (pa.get(t.bar!) ?? pa.set(t.bar!, new Set()).get(t.bar!)!).add(kroppsdel(PLAGG[r.plagg].plats)); }
+  const pa = new Map<number, Set<string>>(), farg = new Map<number, Ting[]>();
+  for (const t of allaTing(s)) { const r = t.bar !== undefined ? kladAv(t.k) : undefined; if (r) (pa.get(t.bar!) ?? pa.set(t.bar!, new Set()).get(t.bar!)!).add(kroppsdel(PLAGG[r.plagg].plats)); if (r && t.farg) (farg.get(t.bar!) ?? farg.set(t.bar!, []).get(t.bar!)!).push(t); }
   for (const p of living(s)) {
     if (ageOf(p, s.now) < ALDER.bygger) continue;
     const har = pa.get(p.id), saknas = Object.keys(NAKEN_DELAR).filter(d => !har?.has(d));
     if (saknas.length === Object.keys(NAKEN_DELAR).length && !har?.size) tanke(p, 'naken', s.now, { v: KLADER.naken });
     else if (saknas.length) tanke(p, 'nakenDel', s.now, { delar: och(saknas.map(d => NAKEN_DELAR[d]!)), v: KLADER.nakenDel * saknas.length });
+    const gillar = farg.has(p.id) ? barGillad(p, farg.get(p.id)!) : 0; // en färg hen tycker om (steg 13.3.2)
+    if (gillar > 0) tanke(p, 'barFarg', s.now, { v: FARG.tanke * gillar });
   }
 }
 export const RUNDA = balans('runda', {
@@ -1806,7 +1808,15 @@ import { skrammaKlar, staketKlar } from './odling';
 // vägen. Bara på våren och sommaren, när de växer, så att de andra tidsåldrarna inte frågar kartan i onödan
 const ROLLEKA_GRANNAR = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]] as const;
 const VAXTAR = [1, 2]; // vår och sommar
-function vildNara(s: State, k: 'rolleka' | 'blomma', x: number, y: number, ar = VAXTAR) {
+// de vilda växterna som plockas på samlarrundan när man går förbi dem (vildNara): röllekan alltid (steg 7.6.3 och 9.7.15),
+// ängsblommorna när byn vill ha blommor till krukorna (steg 10.7.3) och måran när byn vill ha den till färgbadet (steg 13.3.2)
+const VILDA_ORTER: { k: VildOrt; vill?: (s: State) => boolean; stat?: string }[] = [
+  { k: 'rolleka', stat: 'samlat_rolleka' },
+  { k: 'blomma', vill: s => blommaVill(s) > amountOf(s, 'blomma') },
+  { k: 'mara', vill: s => underBuffert(s, 'mara') },
+];
+type VildOrt = 'rolleka' | 'blomma' | 'mara';
+function vildNara(s: State, k: VildOrt, x: number, y: number, ar = VAXTAR) {
   if (!ar.includes(ageIndex(s))) return undefined;
   let best: { x: number; y: number; v: number } | undefined;
   for (const [dx, dy] of ROLLEKA_GRANNAR) { const v = richness(s, k, x + dx, y + dy); if (v > (best?.v ?? 0)) best = { x: x + dx, y: y + dy, v }; }
@@ -1817,6 +1827,7 @@ import { mataKlar, stepTamdjur } from './tamdjur';
 import { hageKlar, stepHagar, vallaKlar } from './hage';
 import { avlivaKlar, klippKlar, mjolkaKlar, stepBoskap } from './boskap';
 import { tatKlar } from './tatuering';
+import { barGillad, fargaKlar, FARG } from './farg';
 import { angKlar, slaKlar, stepVinter, hamlaKlar } from './slatter';
 import { stepHons } from './hons';
 import { baddVila, bredvidKaresta, iDass, sittVila, sattaKlar } from './mobler';

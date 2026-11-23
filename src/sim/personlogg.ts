@@ -34,6 +34,7 @@ export const PERSONLOGG = {
   relation: { namn: 'Vänner och ovänner', ikon: '🤝', notiser: ['par'], ton: blandat },
   match: { namn: 'Matcher', ikon: '🏅', notiser: ['match'] },
   markt: { namn: 'Märken i huden', ikon: '🩸', ton: 'gott' }, // tatueringarna (steg 10.7.5)
+  fargade: { namn: 'Färgade kläder', ikon: '👕', ton: 'gott' }, // färgningen (steg 13.3.2, farg.ts)
   nara: { namn: 'De närmaste', ikon: '👥', notiser: ['fodd', 'dod', 'gravid'], ton: blandat },
 } satisfies Record<string, PersonloggSlag>;
 export type PersonloggId = keyof typeof PERSONLOGG;

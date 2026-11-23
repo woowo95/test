@@ -3,7 +3,7 @@
 // födseln: ett barn ärver dem från mamman och pappan (barnAv), och de första i byn, nykomlingarna och personerna i byar
 // som sparats före porträtten får dem slumpade ur byns frö och personens nummer. Allt räknas ur numret och föräldrarna,
 // så att samma person alltid ser likadan ut och simuleringen inte märker något. Bara utseende.
-import { gastTingOf, gastVapen, infStadium, blodSteg, ALDER, BERATT, BESK_ANSIKTE, KLADMATERIAL, KROPP, ageOf, blodning, byId, hash, isSick, kladAv, load, moodOf, utbrottNu, utrustning, tatDel } from '../sim';
+import { FARGER, type FargId, gastTingOf, gastVapen, infStadium, blodSteg, ALDER, BERATT, BESK_ANSIKTE, KLADMATERIAL, KROPP, ageOf, blodning, byId, hash, isSick, kladAv, load, moodOf, utbrottNu, utrustning, tatDel } from '../sim';
 import type { Person, State } from '../sim';
 import { KARNA } from '../portrattkarna';
 import { stridAnsikte } from './stridansikte';
@@ -13,7 +13,7 @@ import { s as visad, uppgiftVid } from './lage';
 export interface Skapad {
   kon: 'kvinna' | 'man'; alder: 'barn' | 'ung' | 'vuxen' | 'gammal'; del: Record<string, string | null>; hud: number; har: number; ogon: number;
   humor: string; skonhet: number; forband: string[]; ogonlapp: boolean; sjuk: boolean; kyla: boolean; blod: boolean;
-  klader: { rock: string | null; skor: boolean; balte: boolean; axelrem?: boolean; ryggsack?: boolean; krokar?: number; byxor?: string; skjorta?: boolean }; lagen: Record<string, string>; lager: string[] | null; rynkor: number | null;
+  klader: { rock: string | null; skor: boolean; balte: boolean; axelrem?: boolean; ryggsack?: boolean; krokar?: number; byxor?: string; skjorta?: string }; lagen: Record<string, string>; lager: string[] | null; rynkor: number | null;
   anlag?: { skagg: string | null; frisyr: string | null };
 }
 // åldern i skaparen: barn tills man är vuxen i byn, ung till 30, vuxen till 55 och sedan gammal (registret aldrar)
@@ -106,12 +106,14 @@ const HALSSMYCKE: Partial<Record<string, string>> = { benband: 'smycke-2', tandb
 // och kappan syns som en rock tills Björn valt (steg 8.3.14); byxorna och skjortan syns på kartfiguren (steg 9.2.58)
 type Klader = NonNullable<Skapad['klader']>;
 type Mat = keyof typeof KLADMATERIAL;
-const PLAGG_FALT: Record<string, (k: Klader, mat: Mat) => void> = {
-  rock: (k, m) => { k.rock = KLADMATERIAL[m].namn; }, mantel: (k, m) => { k.rock = KLADMATERIAL[m].namn; }, kappa: (k, m) => { k.rock = KLADMATERIAL[m].namn; },
-  skor: k => { k.skor = true; }, stovlar: k => { k.skor = true; }, byxor: (k, m) => { k.byxor = KLADMATERIAL[m].namn; }, skjorta: k => { k.skjorta = true; },
-  balte: k => { k.balte = true; }, axelrem: k => { k.axelrem = true; }, barsele: () => {}, barnklader: (k, m) => { k.rock = KLADMATERIAL[m].namn; k.byxor = KLADMATERIAL[m].namn; }, ryggsack: k => { k.ryggsack = true; },
+// m = materialet i ritningen: materialets namn, eller färgens ramp (farg-<ramp>) när plagget är färgat (steg 13.3.2). Tunikan
+// ritas med rockens bild tills den fått en egen
+const PLAGG_FALT: Record<string, (k: Klader, m: string) => void> = {
+  rock: (k, m) => { k.rock = m; }, mantel: (k, m) => { k.rock = m; }, kappa: (k, m) => { k.rock = m; }, tunika: (k, m) => { k.rock = m; },
+  skor: k => { k.skor = true; }, stovlar: k => { k.skor = true; }, byxor: (k, m) => { k.byxor = m; }, skjorta: (k, m) => { k.skjorta = m; },
+  balte: k => { k.balte = true; }, axelrem: k => { k.axelrem = true; }, barsele: () => {}, barnklader: (k, m) => { k.rock = m; k.byxor = m; }, ryggsack: k => { k.ryggsack = true; },
 };
-const klada = (k: Klader, a: { plagg: string; mat: Mat }) => PLAGG_FALT[a.plagg]?.(k, a.mat);
+const klada = (k: Klader, a: { plagg: string; mat: Mat }, farg?: string) => PLAGG_FALT[a.plagg]?.(k, farg && FARGER[farg as FargId] ? `farg-${FARGER[farg as FargId].ramp}` : KLADMATERIAL[a.mat].namn);
 function utrustad(s: State, p: Person, u: Skapad) {
   const t = s === visad ? uppgiftVid(p) : p.task, r = utrustning(s, p, !!t && load(t, s) > 0); // vid tiden som visas, som kartan (steg 6.1.1); en by som inte visas (texterna i testerna): nu
   u.klader = { rock: null, skor: false, balte: false, axelrem: false, ryggsack: false, krokar: 0 };
@@ -121,7 +123,7 @@ function utrustad(s: State, p: Person, u: Skapad) {
     const a = pl.ting && kladAv(pl.ting.k);
     if (!a) continue;
     if ((a.plagg === 'halsband' || a.plagg === 'tecken') && HALSSMYCKE[a.mat]) u.del.smycke = HALSSMYCKE[a.mat]!;
-    klada(u.klader, a);
+    klada(u.klader, a, pl.ting!.farg);
   }
   const h = r.hoger.ting ?? r.axel.ting ?? (r.krok.ting?.hos === p.id ? r.krok.ting : undefined); // det i handen, också när det hänger i bältet medan hen bär
   u.del.redskap = (h && REDSKAP.get(h.k)) ?? null;
@@ -163,7 +165,7 @@ function buren(s: State, r: Person, d: Skapad): Skapad {
   for (const t of gastTingOf(s, r)) {
     if (t.bar !== r.id) continue;
     const a = kladAv(t.k); if (!a) continue;
-    if (a.plagg !== 'axelrem' && a.plagg !== 'ryggsack') klada(klader, a); // gästerna har ingen axelrem eller ryggsäck på figuren
+    if (a.plagg !== 'axelrem' && a.plagg !== 'ryggsack') klada(klader, a, t.farg); // gästerna har ingen axelrem eller ryggsäck på figuren
   }
   if (dr?.rovarskinn) klader.rock = 'rovarskinn';
   const arr = r.arr?.find(a => a.d === 'huvud');

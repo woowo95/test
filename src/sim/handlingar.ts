@@ -201,6 +201,7 @@ const DEF = {
   ...saltas(), // varje köttslag saltas för sig (steg 10.3.14)
   krossa_saft: { namn: 'Gör saft', slag: 'hantverk', hantverk: true, verb: 'krossar bär', plats: 'elden' }, // bär till saft i en lerkruka (steg 9.6.9)
   koka_buljong: { namn: 'Kokar buljong', slag: 'hantverk', hantverk: true, verb: 'kokar buljong', plats: 'elden' }, // ben och svamp eller kål sjuder i en lerkruka (steg 10.7.24)
+  farga: { namn: 'Färgar', slag: 'hantverk', hantverk: true, verb: 'färgar', plats: 'station', stilla: true }, // ett plagg i ett färgbad vid örtköket (farg.ts, steg 13.3.2)
   koka_te: { namn: 'Kokar örtte', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, // vid örtköket, annars vid elden (steg 9.5.8)
   koka_salva: { namn: 'Kokar salva', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, // vid örtköket (steg 7.6)
   koka_tjara: { namn: 'Kokar tjära', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },

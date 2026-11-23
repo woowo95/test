@@ -3,7 +3,7 @@
 // Ersätter figurerna ur Porträttstilar (5.1.3.3). Bara palettens färger; konturen är kolets mörkaste ton, och benets
 // ljusaste för den man valt. Bilderna sparas efter hur personen ser ut, så att de bara ritas om när något ändrats.
 import * as PIXI from 'pixi.js';
-import { FARGER } from '../palett';
+import { FARGER, farg } from '../palett';
 import { KARNA } from '../portrattkarna';
 import type { Skapad } from './utseende';
 
@@ -25,9 +25,10 @@ function canvasAv(B: Bild) {
   return c;
 }
 // den valda: konturen (kolets mörkaste ton mot det tomma) blir benets ljusaste
+const BEN_LJUS = FARGER.indexOf(farg('ben', 3));
 function ljusKontur(B: Bild) {
   const px = B.px.slice(), tom = (x: number, y: number) => x < 0 || y < 0 || x >= B.w || y >= B.h || B.px[y * B.w + x] < 0;
-  for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) if (B.px[y * B.w + x] === 0 && (tom(x - 1, y) || tom(x + 1, y) || tom(x, y - 1) || tom(x, y + 1))) px[y * B.w + x] = FARGER.length - 1;
+  for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) if (B.px[y * B.w + x] === 0 && (tom(x - 1, y) || tom(x + 1, y) || tom(x, y - 1) || tom(x, y + 1))) px[y * B.w + x] = BEN_LJUS;
   return { ...B, px };
 }
 const MAX = 3000; // så många bilder sparas; sedan börjar det om (personerna åldras och byter läge)

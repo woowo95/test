@@ -35,6 +35,7 @@ import { ortSattaVal } from './kruka';
 import { BRYGD, BRYGG, bryggVal } from './brygg';
 import { SKRIFT } from './skriftTal';
 import { resaHamtas } from './resa';
+import { fargaHamtas } from './farg';
 
 export interface Hamtas { av: (s: State, p: Person, tk: Task) => Record<string, number> | undefined; byns?: boolean; fran?: (s: State, p: Person, tk: Task) => Fran } // fran = den som äger det (en tro, steg 10.3.19), för alla slag eller per slag
 // vems det som hämtas är: en ägare för allt, eller per slag en ägare och hur många av dem som är hens (resten tas som vanligt)
@@ -49,6 +50,7 @@ for (const act of Object.keys(GORS) as Act[]) HAMTAS[act] = { av: (s, p, tk) => 
 // det är trons möbel
 HAMTAS.station = { av: (s, p, tk) => { const k = tk.tool ?? '', h = stationDef(k) ? halvbyggd(s, k, p) : undefined, av = stationDef(k) ? nastaAv(k, h) : {}; return Object.keys(av).length ? av : undefined; }, /* en station i delar: nästa del (steg 12.1.17) */ fran: (s, p, tk) => { const tro = stationDef(tk.tool ?? '')?.tro ? troOf(s, p.tro) : undefined; return tro ? kyrkaId(tro.id) : undefined; } };
 HAMTAS.tillbehor = { av: (_s, _p, tk) => tillbehorDef(tk.tool ?? '')?.av };
+HAMTAS.farga = { av: fargaHamtas }; // växterna till färgbadet (farg.ts, steg 13.3.2)
 // dörren som hängs i en öppning (bygg.ts, steg 2.2.16 och 3.7.21): dörrens material
 HAMTAS.dorr = { av: (_s, _p, tk) => DORRAR[tk.tool as DorrSlag]?.av };
 // att slakta och rensa (redskap.ts bearbeta): den första arten som finns, så mycket som hinns

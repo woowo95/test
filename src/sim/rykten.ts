@@ -16,6 +16,8 @@ import { vanaSumma } from './vanor';
 import { ACTS, Act } from './handlingar';
 import { isLight } from './tid';
 import { vaderNu } from './vader';
+// anseendet för ett färgat plagg (steg 13.3.2): sätts av farg.ts, som annars blir en importring
+export const prydKrok = { farg: (_s: State, _f: string) => 0 };
 
 // Rykten (steg 3.3–3.4, "Rykten, anseende och minnet efter döden" i designdokumentet).
 // Det någon gör (en händelse: stöld, slag, gåva, mästerverk …) blir ett intryck hos den som ser det (våldsam, tjuv, generös,
@@ -505,6 +507,7 @@ function prydnadAnseende(s: State, om: number) {
     const r = kladAv(t.k);
     if (r?.plagg === 'halsband') a += PRYD.smycke + PRYD.finhet * KLADMATERIAL[r.mat].finhet;
     else if (r?.plagg === 'mantel') a += PRYD.mantel;
+    if (t.farg) a += prydKrok.farg(s, t.farg); // ett färgat plagg, mer när byn tycker om färgen (steg 13.3.2)
   }
   return a * living(s).length;
 }

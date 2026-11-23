@@ -34,6 +34,7 @@ export const TANKAR = {
   harOnt: rad({ text: 'Har ont', tid: HOUR, nar: 'smärta över HALSA.ontGrans (halsa.ts)' }),
   forloradeDel: rad({ text: (a: { del: string }) => `Förlorade ${a.del}`, v: -0.3, tid: 3 * DAY, nar: 'miste en kroppsdel (halsa.ts)' }),
   naken: rad({ text: 'Är naken', tid: 2 * HOUR, nar: 'har inga kläder alls (steg.ts)' }),
+  barFarg: rad({ text: 'Har på sig en färg hen tycker om', tid: 2 * HOUR, nar: 'har på sig ett plagg i en färg hen tycker om (farg.ts, steg 13.3.2)' }),
   nakenDel: rad({ text: (a: { delar: string }) => `Har inget på ${a.delar}`, tid: 2 * HOUR, nar: 'saknar plagg på en del av kroppen (steg.ts)' }),
   svampGift: rad({ text: 'Blev förgiftad av en svamp', nar: 'åt en giftig svamp (fynd.ts)' }),
   // ---- vilan och fritiden

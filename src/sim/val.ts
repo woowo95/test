@@ -3,6 +3,7 @@ import { taVapen } from './vakt';
 import { heligtAvstar } from './kultlatt';
 import { hoVal } from './djurtorst';
 import { TATU, TATUERINGAR, tatVal } from './tatuering';
+import { FARG, FARGER, fargVal } from './farg';
 import { han } from './ord';
 import { flintaKrok } from './forradsmal';
 import { flintaTillVerktyg } from './redskap';
@@ -66,7 +67,7 @@ import { clamp, pick, pickNarmaste, r3, rnd } from './slump';
 import { samtalMed } from './samtal';
 import { ARSTID, ageIndex, isLight, kallTid, yearNo } from './tid';
 import { Act, Fire, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
-import { FOOD, SAKER, isFood, sakNamn, viktOf } from './saker';
+import { FOOD, SAKER, isFood, sakNamn, tingNamn, viktOf } from './saker';
 import { TILLVERKA } from './tillverka';
 import { materialBuffert, tandBuffert } from './forradsmal';
 import { balans } from './balans';
@@ -152,7 +153,7 @@ export const VAL = balans('val', {
   forbLust: 15, // maten och veden över bufferten: behovet gånger lusten (Försörjningens poäng, median ungefär 23 för maten och 7 för veden) delat med detta
   forbStam: 8, // ... och veden så här många gånger mer när en fälld stam ligger kvar och personen har en ledig yxa
   forbFritid: 0.04, // ... och fritiden, som vinner när förråden är nära eller över taket (det mjuka taket, steg 10.2.4)
-  forbForsok: 0.6, forbTek: 0.5, forbHandel: 0.4, forbUnderhall: 0.45, forbLara: 0.35, forbFylla: 0.2, forbTatu: 0.3,
+  forbForsok: 0.6, forbTek: 0.5, forbHandel: 0.4, forbUnderhall: 0.45, forbLara: 0.35, forbFylla: 0.2, forbTatu: 0.3, forbFarg: 0.3, // forbFarg: färgbadet (steg 13.3.2)
   // handarbetet på fritiden (craft, steg 10.2.3): viltet och fisken som ruttnar, torka, grilla, gå i lära, pröva sig fram (gånger
   // nyfikenheten och sedvanan) och pyssla med ett eget projekt
   hantSlakt: 1, hantRensa: 0.9, hantTorka: 0.6, hantGrilla: 0.5, hantLara: 0.4, hantForsok: 0.5, hantProjekt: 0.3,
@@ -593,6 +594,8 @@ export const FORBATTRA: readonly ForbRad[] = [
   } },
   // tatueringen (steg 10.7.5): lusten hos den som vill ha märket gånger hantverket hos den som gör det (tatVal)
   { id: 'tatuera', kand: c => { const d = tatVal(c.s, c.p); if (!d) return undefined; return { sc: VAL.forbTatu * d.sc * brus(c), gor: () => { projektVal(c.v, { act: 'tatuera', text: `Gör ett märke i huden på ${d.q.name} med bennålen.`, min: TATU.min, tool: 'nal', spot: { x: d.q.x, y: d.q.y }, ref: d.q.id }, `${d.q.name} vill minnas att ${han(d.q)} ${TATUERINGAR[d.m].text}`); } }; } },
+  // färgbadet (steg 13.3.2, farg.ts): smaken, anseendet och värdet färgen ger plagget, minus maten i växterna (fargVal)
+  { id: 'farga', kand: c => { const d = fargVal(c.s, c.p); if (!d) return undefined; return { sc: VAL.forbFarg * d.sc * brus(c), gor: () => { projektVal(c.v, { act: 'farga', text: `Badar ${tingNamn(d.t).toLowerCase()} i ${FARGER[d.bad].namn.toLowerCase()} färg vid örtköket.`, min: FARG.min, tool: d.bad, ref: d.t.id }, 'Byn har det den behöver'); } }; } },
   { id: 'lara', kand: c => { const lv = laraVal(c.s, c.p); if (!lv) return undefined; return { sc: VAL.forbLara * brus(c), gor: () => { set(c.v, 'lara', `Byn har det den behöver. Går i lära hos ${lv.m.name}.`); c.v.spot = lv.spot; c.v.dur = lv.min * MIN; } }; } },
   // förråden mot taket: behovet över bufferten (dag: wBy och wWood sjunker mot taket) gånger lusten för det bästa arbetet
   { id: 'fyllaMat', fylla: true, kand: (c, d) => {

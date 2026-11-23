@@ -196,6 +196,7 @@ export const HANDLARVAROR: { k: string; n: [number, number]; vikt: number }[] = 
   { k: 'ben', n: [2, 4], vikt: 1 },
   { k: 'rovfron', n: [2, 5], vikt: 1 },
   { k: 'linfron', n: [2, 4], vikt: 1 }, // steg 7.7.7
+  { k: 'vejdefron', n: [2, 4], vikt: 1 }, { k: 'krapp', n: [1, 3], vikt: 1 }, // färgväxterna (steg 13.3.2)
   { k: 'korn', n: [3, 6], vikt: 1 },
   { k: 'salt', n: [2, 5], vikt: 1 },
   { k: 'kalfron', n: [2, 5], vikt: 1 }, { k: 'bonor', n: [2, 5], vikt: 1 }, // steg 9.7.8

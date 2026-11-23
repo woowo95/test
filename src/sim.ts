@@ -166,6 +166,7 @@ export * from './sim/personlogg';
 export * from './sim/lera';
 export * from './sim/kruka';
 export * from './sim/tatuering';
+export * from './sim/farg';
 export * from './sim/vatskor';
 export * from './sim/protes';
 export * from './sim/roller';
