@@ -1,6 +1,6 @@
 // Scenarier för fas 13.
 import * as SIM from '../../sim';
-import { SCENARIER, medBank, nyInvanare } from './hjalp';
+import { SCENARIER, klockan, medBank, nyInvanare } from './hjalp';
 import { START } from '../kor';
 
 // regeln för stationerna (steg 13.1.1): varje recept vid en station med kvalitet är "bara här" eller "fortare och bättre här"
@@ -118,6 +118,31 @@ SCENARIER.jarntecken = {
       [`det blir en tro av det (${tron} av 12)`, tron >= 6],
       [`trons första gud råder över hantverket (${hantverk} av ${tron})`, tron > 0 && hantverk === tron],
       [`anden bor där tecknet säger: städet, ässjans glöd eller den röda myren (${iJarn} av ${ande}, i städet ${stadet})`, ande > 0 && iJarn === ande],
+    ];
+  },
+};
+
+// gnistor från ässjan och fyrfatet (steg 13.1.10)
+SCENARIER.assjegnista = {
+  text: 'Steg 13.1.10: ässjan och fyrfatet kastar gnistor som härden medan de brinner (gnistor i ELDSTATIONER, HARD_GNISTOR), så att en smedja kan tända något runt sig',
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,forhist.ar=0,brand.gnista=0.05' }, // fler gnistor, så att det syns på kort tid
+  kor: () => {
+    const hard = SIM.HEARTHS.find(h => h.id === 'hard')!.spread / SIM.HEARTHS[0].spread;
+    const D = SIM.ELDSTATIONER;
+    const s = SIM.createState(1, START);
+    klockan(s, 13);
+    const t = medBank(s, 'smedja'), e = SIM.eldPlatsAv(t);
+    s.fire.lit = false;
+    let brand: SIM.Brand | undefined;
+    for (let i = 0; i < 3000 && !brand; i++) { t.eld = { ...(t.eld ?? {}), lit: 1, ved: D.smedja.max }; s.now += 300000; SIM.torkaTest(s); SIM.brandSteg(s, 300); brand = s.brand?.kalla === 'gnista' ? s.brand : undefined; }
+    // släckt ässja: ingen gnista
+    const u = SIM.createState(1, START); klockan(u, 13); u.fire.lit = false; medBank(u, 'smedja');
+    for (let i = 0; i < 3000 && !u.brand; i++) { u.now += 300000; SIM.torkaTest(u); SIM.brandSteg(u, 300); }
+    const nara = !!brand && Math.hypot(brand.x - e.x, brand.y - e.y) <= SIM.BRAND.gnistaR + SIM.BRAND.gnistVind + 3;
+    return [
+      [`ässjan och fyrfatet gnistrar som härden (${D.smedja.gnistor} och ${D.fyrfat.gnistor}, härden ${hard})`, D.smedja.gnistor === hard && D.fyrfat.gnistor === hard],
+      [`en brinnande ässja tänder till sist något intill (${brand ? `vid ${brand.x}, ${brand.y}` : 'ingen'})`, nara],
+      ['en släckt ässja tänder inget', u.brand?.kalla !== 'gnista'],
     ];
   },
 };

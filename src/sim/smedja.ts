@@ -8,7 +8,7 @@
 // byn har haft järn räknas i haftSteg i teknik.ts (steg 12.1.4)
 import { balans } from './balans';
 import { State } from './typer';
-import { ELDSTATIONER, stationBrinner } from './stationseld';
+import { ELDSTATIONER, HARD_GNISTOR, stationBrinner } from './stationseld';
 import { STATIONER, isKlar, stationerOf } from './stationer';
 
 export const SMIDE = balans('smide', {
@@ -17,7 +17,7 @@ export const SMIDE = balans('smide', {
   brinner: 1.5, // en ässja som redan brinner gör det så här mycket mer värt att smida
   varme: 0.35, radie: 2.5, // ässjan värmer den som står nära, som örtkökets eld
 });
-ELDSTATIONER.smedja = { burn: SMIDE.kolTim, max: SMIDE.kolMax, varme: SMIDE.varme, radie: SMIDE.radie, kravs: true, bransle: 'kol' };
+ELDSTATIONER.smedja = { burn: SMIDE.kolTim, max: SMIDE.kolMax, varme: SMIDE.varme, radie: SMIDE.radie, kravs: true, bransle: 'kol', gnistor: HARD_GNISTOR }; // ässjan gnistrar som härden (steg 13.1.10)
 // arbetena som görs vid smedjan
 const smide = () => (STATIONER as Record<string, { gor: readonly string[] }>).smedja?.gor ?? [];
 // värdet av att göra act gånger detta: mer när det smids och ässjan redan brinner

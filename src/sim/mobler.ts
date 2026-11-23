@@ -16,7 +16,7 @@ import { tanke } from './tankar';
 import { addTool, ingenHar, tingOf } from './agande';
 import { type Rum, roomAt, husById } from './byggnad';
 import { sjukKrok, sovPlats } from './byggnader';
-import { ELDSTATIONER } from './stationseld';
+import { ELDSTATIONER, HARD_GNISTOR } from './stationseld';
 import { rumTaggar } from './rum';
 import { coldOf, temperature, vaderKrok } from './vader';
 import { KLADMATERIAL, PLAGG, kladAv } from './klader';
@@ -183,7 +183,7 @@ finareKrok.sjuk = s => { const n = sjukbaddar(s).length; return !n ? 1 : living(
 // fyllning räcker ett dygn. Det gnistrar en tiondel så mycket som lägerelden (brand.ts). Byn ställer ett fyrfat i ett rum med
 // sovplatser där ingen härd värmer (fyrfatRum), och när det är kallt och fyrfatet är slocknat lägger någon kol i det (fyrfatKol;
 // eldaForst i stationseld.ts fyller det när hen kommit fram)
-ELDSTATIONER.fyrfat = { burn: 1 / STATION.fyrfatTim, max: STATION.fyrfatKol, varme: STATION.fyrfatVarme, radie: STATION.fyrfatRadie, tim: () => STATION.fyrfatKol * STATION.fyrfatTim, kravs: false, bransle: 'kol', gnistor: STATION.fyrfatGnistor };
+ELDSTATIONER.fyrfat = { burn: 1 / STATION.fyrfatTim, max: STATION.fyrfatKol, varme: STATION.fyrfatVarme, radie: STATION.fyrfatRadie, tim: () => STATION.fyrfatKol * STATION.fyrfatTim, kravs: false, bransle: 'kol', gnistor: HARD_GNISTOR };
 const fyrfaten = (s: State) => stationerOf(s).filter(t => stationDef(t.k)?.varmer);
 // rummen med sovplatser och någon som sover där, utan en härd (taggen Varmt) och utan ett fyrfat
 export function fyrfatRum(s: State) {

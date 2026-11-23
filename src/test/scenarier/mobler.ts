@@ -405,7 +405,7 @@ SCENARIER.fyrfat = {
     SIM.stepStationsEld(s, 8 * 3600); const efter8 = t.eld?.ved ?? 0;
     return [
       [`fyrfatet står inne, av ${JSON.stringify(d.av)} på ${d.min} minuter, tekniken ${tek?.namn} (kräver ${tek?.krav}), och går inte att laga mat på`, !!d.inne && d.av.lera === 3 && d.min === 10 && !!tek && tek.krav.join() === 'kruka' && d.gor.join() === 'fyrfat'],
-      [`elden brinner på kol, rymmer ${e.max} och ett räcker ${1 / e.burn} timmar, och gnistrar ${e.gnistor} så mycket som lägerelden`, e.bransle === 'kol' && e.max === 3 && Math.abs(1 / e.burn - 8) < 1e-9 && e.gnistor === 0.1 && e.radie === 2.5],
+      [`elden brinner på kol, rymmer ${e.max} och ett räcker ${1 / e.burn} timmar, och gnistrar ${e.gnistor} så mycket som lägerelden, som härden`, e.bransle === 'kol' && e.max === 3 && Math.abs(1 / e.burn - 8) < 1e-9 && e.gnistor === SIM.HARD_GNISTOR && e.radie === 2.5],
       [`byn vill ha ett fyrfat i rummet där folk sover utan härd (${brist}), och det ställs där (${iRummet}, ${!efter})`, brist === 1 && iRummet && !efter],
       [`när det är kallt (${kallt}) behöver fyrfatet kol (${behov}), och den som kommer fram lägger i ${iFatet} (${kvar} kvar)`, (!kallt || behov) && iFatet === 3 && brinner && kvar === 2],
       [`det värmer nära (${varmt.toFixed(2)}) men inte längre bort (${varmtLangt.toFixed(2)}), och ett kol räcker 8 timmar (${iFatet} → ${efter8})`, varmt > 0 && varmtLangt === 0 && Math.abs(efter8 - 2) < 1e-9],
