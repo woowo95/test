@@ -35,6 +35,7 @@ export interface MarkIn {
   W: number; H: number; tiles: Uint8Array; cover: Float32Array; trees: Float32Array;
   vatten: number; sand: number; sten: number; lera: number; jord: (t: number) => boolean;
   ang?: Uint8Array; hog?: number; // slåtterängens rutor (1) och gränsen för högt gräs (steg 13.7.4)
+  myr?: Uint8Array; myrVatten?: boolean; // myrens rutor och om den står under vatten efter regn (steg 13.7.5)
 }
 // tid: 0 istid, 1 vår, 2 sommar, 3 höst, för punkten som räknas nu (steg 5.1.13: under det första dygnet av en ny
 // tidsålder har en del av marken ny tid och resten den förra, fläck för fläck, frac = hur mycket som bytt); sno = hur mycket
@@ -100,6 +101,16 @@ function sdAv(x: number, y: number) {
   return sd;
 }
 
+// ---------- myren (steg 13.7.5) ----------
+// mörk mossa med fläckar av barrgrönt, tuvor och gölar av vatten i en mjuk våg över hela myren, inte en ruta som upprepas.
+// Efter regn står myren under vatten och gölarna blir större
+function myrPunkt(x: number, y: number, r: number) {
+  const gol = vn(x, y, 11, 731) * 0.7 + vn(x, y, 4, 732) * 0.3, grans = IN.myrVatten ? 0.5 : 0.6;
+  if (gol > grans) return gol > grans + 0.05 && hash(x >> 1, y, 733) < 0.25 ? SKIFFER + 2 : SKIFFER + 1;
+  if (gol > grans - 0.03) return BARR + 1; // den blöta kanten runt gölen
+  if (flack(x, y, 5, 734, 0.62)) return r < 0.3 ? SENAP + 1 : r < 0.7 ? OLIV + 3 : OLIV + 2; // tuvorna med blekt gräs
+  return flack(x, y, 14, 735, 0.62) ? (r < 0.15 ? JORD + 1 : OLIV) : r < 0.1 ? JORD + 2 : OLIV + 1; // mossan och torven
+}
 // ---------- en punkt ----------
 // sorten av punkten, så att tuvorna och vassen bara hamnar på gräs och i strandkanten
 const GRAS = 1, VASS = 2, KANT = 3, ANNAT = 0;
@@ -129,7 +140,8 @@ function punkt(x: number, y: number): number {
     return gl ? SKIFFER + Math.min(3, dj + 1) : dj === 0 ? (r < 0.3 ? BARR : SKIFFER) : SKIFFER + dj;
   }
   let c: number;
-  if (t === IN.sten) { // stenig mark: grå sten med ljusa ovansidor och bruna springor, så att den inte liknar vattnet
+  if (IN.myr?.[ji] && !vinter && t !== IN.sten && sd <= -0.6) c = myrPunkt(x, y, r); // myren (steg 13.7.5): rutan läses åt sidan som marken, så att gränsen blir mjuk och ojämn
+  else if (t === IN.sten) { // stenig mark: grå sten med ljusa ovansidor och bruna springor, så att den inte liknar vattnet
     const topp = flack(x, y, 6, 521, 0.6);
     c = vagstreck(x, y, 520, 0.03) || (!topp && flack(x, y - 1, 6, 521, 0.6)) ? JORD + 1 : topp ? BEN + 1 : r < 0.06 ? KOL + 3 : BEN;
     if (vinter && !flack(x, y, 6, 521, 0.66)) c = r < 0.1 ? BEN + 1 : BEN + 2;

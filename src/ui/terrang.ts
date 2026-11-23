@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { eldSkuggor } from './eldskugga';
-import { HIGH, angarOf, angRutor, MORKER, eldRackvidd, sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR, type Ljuspunkt, living, byId, rovarPlats } from '../sim';
+import { HIGH, angarOf, angRutor, myrOf, MORKER, eldRackvidd, sakerPaMarken, BJORK, BRAND, busksort, DAY, H, HOUR, STADIER, T, VAG, W, tradArt, valjArt, ageIndex, stadium, fireHeat, eldXY, eldarOf, groundOf, isCm, kalender, lightLevel, snoPaMarken, vaderNu, LJUSKALLOR, type Ljuspunkt, living, byId, rovarPlats } from '../sim';
 import { s, ui } from './lage';
 import { posOf } from './manniskor';
 import { gaster } from './gaster';
@@ -86,7 +86,7 @@ export function drawTerrain(force = false, alla = force) {
     let svart: Map<number, number> | undefined;
     for (const [i, t] of s.aska ?? []) (svart ??= new Map()).set(i, Math.max(0, 0.75 * (1 - (s.now - t) / (BRAND.svart * DAY))));
     const ang = angRutorAv(); // slåtterängen ritas tätt med högt gräs (steg 13.7.4)
-    stallMark({ W, H, tiles: g.tiles, cover: g.cover, trees: g.trees, vatten: T.Vatten, sand: T.Sand, sten: T.Sten, lera: T.Lera, jord, ang: ang.r, hog: HIGH }, mt, sno, is, `${s.seed}|${vat}|${ang.k}`, svart);
+    stallMark({ W, H, tiles: g.tiles, cover: g.cover, trees: g.trees, vatten: T.Vatten, sand: T.Sand, sten: T.Sten, lera: T.Lera, jord, ang: ang.r, hog: HIGH, myr: myrOf(s.seed), myrVatten: !!g.myrVatten }, mt, sno, is, `${s.seed}|${vat}|${ang.k}|${!!g.myrVatten}`, svart);
     ritaTrad(g, sno, alla ? Infinity : TRAD_MS, synR);
   } else fortsattTrad(TRAD_MS);
   ritaMark(6, alla, syn);
