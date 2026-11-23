@@ -11,14 +11,14 @@ import { getable, Recept, saknatAv, takeMaterial, takeRecipe, tillHands } from '
 import { addDel } from './egendom';
 import { eldReserv, villAv, villHaAv } from './forradsmal';
 import { addTool, freeTools, halvOf, nTools, ownsFree, take, tingOf, wearTool } from './agande';
-import { KLADER, KLADMATERIAL, PLAGG, PLAGG_LIST, kladAv, materialTill, valMaterial } from './klader';
+import { KLADER, KLADMATERIAL, PLAGG, PLAGG_LIST, kladAv, materialTill, syddMedNal, valMaterial } from './klader';
 import { ageIndex, iIstiden, kallTid } from './tid';
 import { grundvarde } from './varde';
 import { anseendeSym } from './rykten';
 import { DORRAR, DORR_LIST } from './byggnad';
 import { utanDorr } from './bygg';
 import { balans } from './balans';
-import { fartVid, kvVid, kanGoras, nyttVid, saknasVid, slitVid, stationFor } from './stationer';
+import { fartVid, kvVid, kanGoras, nyttVid, redskapVid, saknasVid, slitRedskap, slitVid, stationFor } from './stationer';
 import { smutsa } from './smuts';
 import { krukaAv, krukaFormad } from './kruka';
 import { LJUSGRUPP, LJUSSORTER } from './ljus';
@@ -230,7 +230,14 @@ const ordFor = (s: State, k: string) => { const v = SAKER[k]!.skaffa!.verktyg ??
 const hasRecipe = (s: State, p: Person, k: string) => (!SAKER[k]!.skaffa!.verktyg || !!verktygFor(s, k))
   && Object.entries(av(k)).every(([m, n]) => getable(s, p, m) >= n + (iBordan(p, m) >= n ? 0 : eldReserv(s, m)) - 1e-9); // 1e-9: avrundningen i förrådet; det hen hämtat till arbetet sparas inte (steg 11.1.74)
 // p kan tekniken och kan få tag i det som behövs
-export const canMake = (s: State, p: Person, k: string) => { const tek = SAKER[k]!.skaffa!.tek; return (!tek || knows(p, tek)) && hasRecipe(s, p, k); };
+export const canMake = (s: State, p: Person, k: string) => { const tek = SAKER[k]!.skaffa!.tek; return (!tek || knows(p, tek)) && hasRecipe(s, p, k) && (!syddMedNal(k) || !!nalTill(s, p, k)); };
+// nålen ett plagg av tyg sys med (steg 13.3.4): bennålen på slöjdbänken, som bensylen för skinnkläderna, eller järnnålen,
+// som duger lika bra (den som har en ledig järnnål syr med den, och fortare: nalFart). 'jarnnal' när det är järnnålen
+function nalTill(s: State, p: Person, k: string) {
+  if (harJarnnal(s, p)) return 'jarnnal';
+  const t = stationFor(s, gruppOf(k) as Act, p);
+  return t ? redskapVid(s, t, 'nal').sort((a, b) => a.c - b.c)[0] : undefined;
+}
 // det slag i gruppen g som p gör: det hen redan har påbörjat, annars det bästa hen kan göra (ett plagg: det material hen
 // väljer, materialVal), annars det enklaste
 export const kindFor = (s: State, p: Person, g: string) => {
@@ -322,6 +329,7 @@ export function toolDone(s: State, p: Person, k: string) {
   nyKvalitet(s, p, t, (p.task ? kvVid(s, p, p.task.act) : 0) + knivKv(s, p, k) + nalKv(s, p, k), sakNamn(k).toLowerCase()); // hur bra det blev (kvalitet.ts), och bättre med järnkniven (steg 12.2.6)
   nyttVid(s, t); gjort(s, p, 'gjort');
   slitVid(s, gruppOf(k) as Act, REDSKAP.bensylSlits); // det som kräver bänkens redskap (plaggen och vattensäcken), efter arbetet och inte saken
+  if (syddMedNal(k)) { const n = nalTill(s, p, k); if (n && n !== 'jarnnal') slitRedskap(s, n, REDSKAP.bensylSlits); } // bänkens bennål slits av tyget (steg 13.3.4); järnnålen slits i slitNal
   // verktyget kan ha gått sönder under arbetet: då nämns det inte ("täljde byns första träspjut med .", steg 12.1.229)
   const g = SAKER[k]!.gors!, v = ordFor(s, k), text = (t: string) => t.replace('{namn}', p.name).replace(v ? '{verktyg}' : / med \{verktyg\}/, v);
   if (forstaGang(s, g.stat)) {

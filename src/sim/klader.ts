@@ -136,7 +136,7 @@ export const PLAGG_LIST = Object.keys(PLAGG_DEF) as Plagg[];
 // varme/hallbar/vikt/skydd = gånger kaninskinnets (värmen under noll: ett svalt material, som kyler lika mycket som kaninskinnet
 // värmer, steg 12.1.34), finhet = hur fint det är (den ansedda tar det finaste, punkt 6). Värdet
 // är sakens (varde.ts)
-interface MaterialDef { sak: string; namn: string; slag: MaterialSlag; bit: number; varme: number; hallbar: number; vikt: number; skydd: number; finhet: number; dolj?: number } // dolj = hur väl materialet döljer bäraren i snön (steg 10.7.22; doljISno i utrustning.ts)
+interface MaterialDef { sak: string; namn: string; slag: MaterialSlag; bit: number; varme: number; hallbar: number; vikt: number; skydd: number; finhet: number; dolj?: number; trad?: string } // trad = tråden ett plagg av tyget sys med (steg 13.3.4): en tråd per plagg, och det sys med en nål på slöjdbänken // dolj = hur väl materialet döljer bäraren i snön (steg 10.7.22; doljISno i utrustning.ts)
 const KLADMATERIAL_DEF = {
   kaninskinn: { sak: 'skinn', namn: 'harskinn', slag: 'skinn', bit: 1, varme: 1, hallbar: 1, vikt: 1, skydd: 1, finhet: 0 },
   vitskinn: { sak: 'vitskinn', namn: 'vitt harskinn', slag: 'skinn', bit: 1, varme: 1.2, hallbar: 1, vikt: 1, skydd: 1, finhet: 0, dolj: 1 }, // harens vinterpäls (steg 10.7.22): lite varmare och vit
@@ -148,8 +148,8 @@ const KLADMATERIAL_DEF = {
   radjursskinn: { sak: 'radjursskinn', namn: 'rådjursskinn', slag: 'skinn', bit: 1, varme: 1.2, hallbar: 1.2, vikt: 1.1, skydd: 1.1, finhet: 1 }, // rådjurets skinn: tunt och smidigt, lite varmare och tåligare än harens
   kohud: { sak: 'kohud', namn: 'kohud', slag: 'skinn', bit: 3, varme: 1.2, hallbar: 1.6, vikt: 1.6, skydd: 1.4, finhet: 0 }, // kons hud (steg 10.10.1): tjock, tung och tålig, och stor: den räcker till tre bitar som tre harskinn (steg 13.2.1)
   lader: { sak: 'lader', namn: 'läder', slag: 'lader', bit: 1, varme: 0.7, hallbar: 1.5, vikt: 1.2, skydd: 1.4, finhet: 1 }, // steg 7.7.6; utan pälsen värmer det mindre än skinnet (steg 13.2.2)
-  lintyg: { sak: 'lintyg', namn: 'lin', slag: 'tyg', bit: 1, varme: -1, hallbar: 1, vikt: 1, skydd: 1, finhet: 2 }, // steg 7.7.9; linet är svalt (steg 12.1.34): skjortan av lin kyler lite
-  ylle: { sak: 'ylle', namn: 'ylle', slag: 'ull', bit: 1, varme: 2, hallbar: 1.2, vikt: 1.2, skydd: 1.1, finhet: 2 }, // steg 9.8.14: varmare än linet
+  lintyg: { sak: 'lintyg', namn: 'lin', slag: 'tyg', bit: 1, varme: -1, hallbar: 1, vikt: 1, skydd: 1, finhet: 2, trad: 'trad' }, // steg 7.7.9; linet är svalt (steg 12.1.34): skjortan av lin kyler lite
+  ylle: { sak: 'ylle', namn: 'ylle', slag: 'ull', bit: 1, varme: 2, hallbar: 1.2, vikt: 1.2, skydd: 1.1, finhet: 2, trad: 'ulltrad' }, // steg 9.8.14: varmare än linet
   benband: { sak: 'ben', namn: 'ben', slag: 'smycke', bit: 1, varme: 0, hallbar: 1, vikt: 1, skydd: 0, finhet: 0 }, // halsbandet (steg 7.7.5)
   tandband: { sak: 'vargtand', namn: 'vargtänder', slag: 'smycke', bit: 1, varme: 0, hallbar: 1, vikt: 1, skydd: 0, finhet: 2 },
   fjaderband: { sak: 'fjadrar', namn: 'fjädrar', slag: 'smycke', bit: 3, varme: 0, hallbar: 1, vikt: 1, skydd: 0, finhet: 1 }, // steg 10.7.7: en fågels fjädrar räcker till ett halsband
@@ -172,6 +172,7 @@ export const materialTill = (pl: Plagg, m: KladMaterial) => Math.ceil(PLAGG[pl].
 export const receptAv = (pl: Plagg, m: KladMaterial): Record<string, number> => {
   const r: Record<string, number> = { ...(PLAGG[pl].med ?? {}) }, sak = KLADMATERIAL[m].sak;
   r[sak] = (r[sak] ?? 0) + materialTill(pl, m);
+  const tr = KLADMATERIAL[m].trad; if (tr) r[tr] = (r[tr] ?? 0) + 1; // tråden till tyget (steg 13.3.4)
   return r;
 };
 // verbet hör till materialet (Plagg och material): skinn, läder, tyg och ull sys, rep och halm flätas, metall smids och smycken träs
@@ -186,6 +187,8 @@ export function kladSkyddStrid(k: string) {
 }
 // saken i förrådet som plagget k görs av (rocken av vargskinn: vargskinnet)
 export const materialSak = (k: string) => { const r = kladAv(k); return r && KLADMATERIAL[r.mat].sak; };
+// sys plagget k med tråd och nål (tyget, steg 13.3.4)?
+export const syddMedNal = (k: string) => { const r = kladAv(k); return !!r && !!KLADMATERIAL[r.mat].trad; };
 // värmer plagget av något av sina material (steg 12.1.34): bara de plaggen skyddar mot kylan i projekten
 export const plaggVarmer = (pl: string) => KLADER_AV.some(r => r.plagg === pl && PLAGG[r.plagg].varme * KLADMATERIAL[r.mat].varme > 0);
 export const kladTung = (k: string) => { const r = kladAv(k); return !!r && !!(PLAGG[r.plagg] as PlaggDef).tung; };

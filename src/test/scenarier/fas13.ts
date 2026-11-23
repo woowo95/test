@@ -457,3 +457,30 @@ SCENARIER.kudde = {
     ];
   },
 };
+
+SCENARIER.tygtrad = {
+  text: 'Steg 13.3.4: tråden i sömnaden. Varje plagg av lin eller ylle tar 1 tråd av samma slag som tyget, och en bennål måste ligga på slöjdbänken när det sys, som bensylen för skinnkläderna; järnnålen duger som bennålen',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s);
+    const bank = medBank(s, 'flatarbank'), p = SIM.living(s)[0]!;
+    p.tek = { ...p.tek, vavstol: 1, skinnklader: 1, flatarbank: 1 };
+    for (const t of SIM.tingOf(s)) if (t.k === 'nal' || t.k === 'jarnnal') t.k = 'ben';
+    SIM.setAmount(s, 'lintyg', 6); SIM.setAmount(s, 'trad', 3); SIM.setAmount(s, 'ylle', 6); SIM.setAmount(s, 'ulltrad', 3); SIM.setAmount(s, 'rep', 3);
+    p.x = SIM.vidStation(bank).x; p.y = SIM.vidStation(bank).y;
+    const tun = SIM.SAKER.tunika_lintyg!.skaffa!.av!, man = SIM.SAKER.mantel_ylle!.skaffa!.av!, rock = SIM.SAKER.rock_kaninskinn!.skaffa!.av!;
+    const utan = SIM.canMake(s, p, 'tunika_lintyg');
+    const nal = SIM.addTool(s, 'nal', p); nal.bar = undefined; nal.hos = undefined; SIM.nyttVid(s, nal);
+    const vidBank = nal.vid === bank.id, med = SIM.canMake(s, p, 'tunika_lintyg');
+    nal.vid = undefined; nal.k = 'ben';
+    const jn = SIM.addTool(s, 'jarnnal', p); jn.hos = undefined;
+    const jarn = SIM.canMake(s, p, 'tunika_lintyg');
+    return [
+      [`en tunika av lin tar 1 lintråd utöver tyget (${JSON.stringify(tun)})`, tun.trad === 1 && tun.lintyg === 3],
+      [`en mantel av ylle tar 1 ulltråd (${JSON.stringify(man)})`, man.ulltrad === 1],
+      ['skinnkläderna tar ingen tråd', !rock.trad && !rock.ulltrad],
+      ['utan nål på bänken sys inget av tyg', !utan],
+      ['en ny bennål läggs på slöjdbänken, och med den sys tunikan', vidBank && med],
+      ['järnnålen duger som bennålen', jarn],
+    ];
+  },
+};
