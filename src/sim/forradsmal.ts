@@ -25,6 +25,7 @@ import { allows, amountOf as iForradet, iHelaForradet, rymd, zonesOf } from './l
 const amountOf = (s: State, k: string) => iHelaForradet(() => iForradet(s, k));
 import { Pabud, legitimitet, pabud } from './styre';
 import { ALDER, ageOf, living } from './folk';
+import { TORST } from './torst';
 import { harMyr } from './myr';
 import { sportFor } from './sport';
 import { STATION, STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, kupBrist, harStation, isKlar, pyntBrist, pyntLust, stationerOf, tommaPlatser, villPynt } from './stationer';
@@ -259,6 +260,7 @@ export const REDSKAPMAL: Record<string, (s: State) => number> = {
   kappa: s => ullPlagg(s) ? living(s).length : 0, sjal: s => ullPlagg(s) ? living(s).length : 0, // ullens plagg (steg 9.8.15), när ullen finns eller fåren ger den (steg 12.1.20)
   balte: s => living(s).length, // ett per person (steg 2.3.3)
   axelrem: spjutVill, // en per spjut (steg 7.1.2)
+  barsele: s => living(s).filter(c => c.mother !== undefined && ageOf(c, s.now) < TORST.ammaAr && living(s).some(m => m.id === c.mother)).length, // en per mor med ett spädbarn (steg 13.2.3)
   ryggsack: s => perVuxna(s, VILLTAL.korgPerVuxna), // lika många som korgarna, till dem som samlar (steg 7.1.3)
   rustning: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), hjalm: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), skold: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), bage: s => vapenVill(s, VILLTAL.bageBas, VILLTAL.bageHot), slunga: s => vapenVill(s, VILLTAL.bageBas, VILLTAL.bageHot), horn: () => 1, // vapnen och rustningen efter de vuxna och hoten (steg 10.2.75); // vapnen och rustningen (system 8.7)
   jarnhjalm: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), ringbrynja: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), svard: s => vapenVill(s, VILLTAL.rustBas, VILLTAL.rustHot), // vapensmidet (steg 12.2.9): som läderrustningen

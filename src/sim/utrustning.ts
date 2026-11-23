@@ -23,6 +23,7 @@ import { kvEffekt, kvHaller } from './kvalitet';
 import { ACTS } from './handlingar';
 import { BYN, lends } from './egendom';
 import { count, living } from './folk';
+import { spadbarnAv } from './barsele';
 import { snoPaMarken, temperature } from './vader';
 import { bordSlag, carryKind, handOrkar } from './lager';
 import { balans } from './balans';
@@ -55,6 +56,7 @@ const DEF = {
   smycke: { namn: 'Smycke', ikon: '➰' }, // steg 7.7.5
   rygg: { namn: 'Ryggen', ikon: '🎒' }, // steg 7.1.3: ryggsäcken, och bördan i den
   axlar: { namn: 'Axlarna', ikon: '🧥' }, // steg 9.8.15: sjalen
+  brost: { namn: 'Bröstet', ikon: '🫂' }, // steg 13.2.3: bärselen
 } satisfies Record<string, PlatsDef>;
 export type Plats = keyof typeof DEF;
 export const PLATSER: Record<Plats, PlatsDef> = DEF;
@@ -172,7 +174,7 @@ export function ryggKorg(s: State, p: Person, tk?: Task) {
 }
 // ryggsäcken slits som korgen, för det som samlas i den (y), och läggs bort när den är utsliten
 export function slitRygg(s: State, t: Ting, y: number, haller: number) {
-  t.c -= y / haller / kvHaller(t);
+  t.c -= y / haller / kvHaller(t) / (KLADMATERIAL[kladAv(t.k)?.mat ?? 'kaninskinn']?.hallbar ?? 1); // lädret håller längre (steg 13.2.3)
   if (t.c > 1e-9) return;
   s.ting = tingOf(s).filter(x => x !== t);
   redskapSlitet(s, t.k); // det utslitna räknas som förbrukat (steg 10.11.9)
@@ -270,7 +272,8 @@ export function plaggPoang(s: State, p: Person, k: string, t: Ting | undefined, 
   const skydd = kladSkyddStrid(k), sk = skydd ? Object.values(skydd.tar).reduce((a, b) => a + (b ?? 0), 0) : 0;
   const naken = del !== undefined && !paSig(s, p).some(q => q !== t && NAKEN_PLATS[SAKER[q.k]!.klad!.plats] === del);
   // det plagget bär åt en, och rollen eller synen det är till för (steg 12.1.191)
-  const kd = SAKER[k]?.klad, bar = KLADER.valBar * ((kd?.krok ?? 0) + (kd?.axel ?? 0)) + KLADER.valRygg * (kd?.rygg ?? 0);
+  const kd = SAKER[k]?.klad, bar = KLADER.valBar * ((kd?.krok ?? 0) + (kd?.axel ?? 0)) + KLADER.valRygg * (kd?.rygg ?? 0)
+    + (kd?.sele ? (spadbarnAv(s, p).length ? KLADER.valSele : -KLADER.valSele) : 0); // bärselen till modern med ett spädbarn (steg 13.2.3)
   const roll = r && (r.plagg === 'mask' || r.plagg === 'prastdrakt' || r.plagg === 'tecken') && kladFor(s, p, k) ? KLADER.valRoll : 0, pynt = pl === 'smycke' ? KLADER.valPynt : 0;
   return KLADER.valVarme * kladSkydd(k, t) * (KLADER.valIdeal - temp) / KLADER.valSpann + KLADER.valSkydd * sk + KLADER.valFin * (r ? KLADMATERIAL[r.mat].finhet : 0) + (naken ? KLADER.valNaken : 0) + bar + roll + pynt;
 }

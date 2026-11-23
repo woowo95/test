@@ -72,6 +72,7 @@ import { materialBuffert, tandBuffert } from './forradsmal';
 import { balans } from './balans';
 import { VarmeGor, varmeSatt } from './varme';
 import { islagt, naSjon } from './is';
+import { seleVal } from './barsele';
 import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
 import { latrinFor } from './smuts';
 import { stationBrukad, bordenOf, ledigPlats, sittAt, stationAt, stationDef, stationFor, stationRutor, storlekAv, vidStation } from './stationer';
@@ -1005,6 +1006,7 @@ function valjTask(s: State, p: Person) {
   const ger = ACTS[v.act].ger;
   if (v.fordon === undefined && ger && SAKER[ger]?.lyft) { const fo = valjFordon(s, p, ger, sp.x, sp.y, iHandenAv(s, p, ger)); v.fordon = fo?.g.id; v.dragdjur = fo?.d?.id; }
   if (v.fordon !== undefined) taFordon(s, p, p.task, v.fordon, v.dragdjur); // kälken följer med i bördan
+  seleVal(s, p); // barnet i bärselen följer med till arbetet (steg 13.2.3, barsele.ts)
   facklaVal(s, p); // facklan tänds för den som går ut i mörkret, och släcks när den inte behövs (ljus.ts)
 }
 

@@ -310,3 +310,47 @@ SCENARIER.stovlar = {
     ];
   },
 };
+
+SCENARIER.barsele = {
+  text: 'Steg 13.2.3: bärselen sys av 1 skinn eller 1 läder och 1 rep vid slöjdbänken på 5 minuter. Modern till ett barn under ett år vill ha den på sig (andra inte), lägger barnet i den när hon väljer ett arbete, och barnet följer henne där hon går, så att hon kan amma det; när hon lägger sig lägger hon ner barnet. Axelremmen och ryggsäcken kan sys av läder, och ryggsäcken av läder slits långsammare',
+  kor: () => {
+    const S = SIM.SAKER, bl = S.barsele_lader, bk = S.barsele_kaninskinn;
+    const recept = !!bl && bl.skaffa?.av?.lader === 1 && bl.skaffa?.av?.rep === 1 && bl.skaffa.min === 5 && bk?.skaffa?.av?.skinn === 1;
+    const bank = (SIM.STATIONER as Record<string, SIM.StationDef>).flatarbank, vidBank = bank.gor.includes('barsele') && bank.bara!.includes('barsele');
+    const lader = !!S.axelrem_lader && !!S.ryggsack_lader && S.ryggsack_lader.klad!.dygn > S.ryggsack_kaninskinn!.klad!.dygn;
+    const s = SIM.createState(1, START);
+    klockan(s, 10);
+    const vuxna = SIM.living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen);
+    const mor = vuxna.find(x => x.sex === 'k')!, annan = vuxna.find(x => x !== mor)!;
+    const barn = nyInvanare(s, 'm', 0.3); barn.mother = mor.id; barn.x = mor.x; barn.y = mor.y;
+    const pm = SIM.plaggPoang(s, mor, 'barsele_kaninskinn', undefined), pa = SIM.plaggPoang(s, annan, 'barsele_kaninskinn', undefined);
+    const vill = SIM.REDSKAPMAL.barsele!(s) === 1;
+    // slitaget: ryggsäcken av läder slits långsammare för samma börda
+    const r1 = SIM.addTool(s, 'ryggsack_kaninskinn', annan), r2 = SIM.addTool(s, 'ryggsack_lader', annan);
+    r1.c = r2.c = 1; SIM.slitRygg(s, r1, 1, 100); SIM.slitRygg(s, r2, 1, 100);
+    const slits = 1 - r2.c < 1 - r1.c;
+    s.ting = SIM.tingOf(s).filter(t => t !== r1 && t !== r2);
+    // på sig, och ett arbete
+    const sele = SIM.addTool(s, 'barsele_kaninskinn', mor); sele.bar = mor.id; sele.hos = sele.x = sele.y = sele.vid = undefined;
+    let i = 0, iSelen = 0, foljer = true, langst = 0; const x0 = mor.x, y0 = mor.y;
+    korTillsEnkel(s, () => {
+      i++;
+      if (barn.task?.act === 'iselen') { iSelen++; if (Math.hypot(barn.x - mor.x, barn.y - mor.y) > 0.01) foljer = false; langst = Math.max(langst, Math.hypot(barn.x - x0, barn.y - y0)); }
+      return iSelen > 30 && i > 200;
+    }, 6);
+    mor.task = { act: 'sova', phase: 'do', tx: mor.x, ty: mor.y, until: s.now + SIM.HOUR, carry: 0, why: '' } as SIM.Task;
+    SIM.seleVal(s, mor);
+    const ner = barn.task?.act !== 'iselen';
+    return [
+      ['bärselen sys av 1 skinn eller 1 läder och 1 rep på 5 minuter', recept],
+      ['bärselen görs bara vid slöjdbänken', vidBank],
+      [`modern vill ha selen på sig (poäng ${pm.toFixed(2)}), den utan spädbarn inte (${pa.toFixed(2)})`, pm > 0 && pa < 0],
+      ['byn vill ha en bärsele per mor med ett spädbarn', vill],
+      ['axelremmen och ryggsäcken kan sys av läder, och ryggsäcken av läder håller längre och slits långsammare', lader && slits],
+      [`modern lägger barnet i selen när hon arbetar (${iSelen} slag av ${i})`, iSelen > 0],
+      [`barnet följer modern där hon går, inom räckhåll för amningen (som längst ${langst.toFixed(1)} rutor från där de började)`, foljer],
+      ['när modern lägger sig lägger hon ner barnet', ner],
+    ];
+  },
+};
+const korTillsEnkel = (s: SIM.State, klart: () => boolean, timmar: number) => { const t0 = s.now; while (!klart() && s.now - t0 < timmar * SIM.HOUR) SIM.step(s, SIM.BEAT); };

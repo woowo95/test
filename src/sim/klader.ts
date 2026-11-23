@@ -36,7 +36,7 @@ export const KLADER = balans('klader', {
   valIdeal: 20, valSpann: 10, valVarme: 1, valSkydd: 0.05, valFin: 0.02, valNaken: 1, valByte: 0.01,
   // det plagget bär åt en (steg 12.1.191): per krok i bältet och plats på axelremmen, per vikt i ryggsäcken; plaggen som hör
   // till en roll (masken och prästens dräkt åt prästen, trons tecken åt den troende) och smyckena som bärs för att synas
-  valBar: 0.1, valRygg: 0.005, valRoll: 0.1, valPynt: 0.05,
+  valBar: 0.1, valRygg: 0.005, valSele: 0.3, valRoll: 0.1, valPynt: 0.05,
 });
 
 // platserna på kroppen där den som saknar plagg känner sig naken (stepNaken i steg.ts): skjortan och rocken klär överkroppen
@@ -55,7 +55,7 @@ interface PlaggDef {
   mangd: number; med?: Record<string, number>;
   varme: number; dygn: number; vikt: number; tek: string; min: number; slag: MaterialSlag[]; smid?: number; // smid = så mycket smidighet plagget tar (steg 8.7.1)
   gravgava?: true; // får följa den döda i graven och läggas på den vid ett besök (SakDef, steg 13.1.6)
-  krok?: number; axel?: number; rygg?: number; tung?: true; snoTar?: number; // snoTar = så stor del av det snön bromsar som plagget tar bort (snöskorna, steg 7.7.3; snoFart i gang.ts)
+  krok?: number; axel?: number; rygg?: number; sele?: true; tung?: true; snoTar?: number; // snoTar = så stor del av det snön bromsar som plagget tar bort (snöskorna, steg 7.7.3; snoFart i gang.ts)
   skydd?: { delar: Kroppsdel[]; tar: Partial<Record<Skadeslag, number>> };
   station?: string; // stationen där plagget görs, när det inte görs vid slöjdbänken (hjälmen och brynjan smids i smedjan, steg 12.2.9)
   forsta: string; fame?: string; // loggen första gången ({namn} = den som gjorde det, {plagg} = plaggets namn i en mening) och det hen minns för
@@ -74,7 +74,7 @@ const PLAGG_DEF = {
     forsta: '{namn} sydde byns första par {plagg}. De håller länge och skyddar benen.' },
   balte: { namn: 'Bälte', ord: 'ett bälte', plats: 'balte', mangd: RECEPT.balte.mangd, varme: 0, dygn: 10, vikt: 1, tek: 'balte', min: RECEPT.balte.min, slag: ['flatat', 'lader'], krok: 2,
     forsta: '{namn} gjorde byns första {plagg}. Redskapen hänger i det, och båda händerna är fria att bära med.' },
-  axelrem: { namn: 'Axelrem', ord: 'en axelrem', plats: 'axelrem', mangd: RECEPT.axelrem.mangd, med: RECEPT.axelrem.av, varme: 0, dygn: 10, vikt: 1, tek: 'axelrem', min: RECEPT.axelrem.min, slag: ['skinn'], axel: 1,
+  axelrem: { namn: 'Axelrem', ord: 'en axelrem', plats: 'axelrem', mangd: RECEPT.axelrem.mangd, med: RECEPT.axelrem.av, varme: 0, dygn: 10, vikt: 1, tek: 'axelrem', min: RECEPT.axelrem.min, slag: ['skinn', 'lader'], axel: 1,
     forsta: '{namn} sydde byns första {plagg}. Spjutet hänger på axeln, och båda händerna är fria att bära med.' }, // steg 7.1.2
   byxor: { namn: 'Byxor', ord: 'ett par byxor', plats: 'ben', mangd: RECEPT.byxor.mangd, med: RECEPT.byxor.av, varme: 0.15, dygn: 4, vikt: 5, tek: 'skinnklader', min: RECEPT.byxor.min, slag: ['skinn', 'lader'],
     skydd: { delar: ['benV', 'benH'], tar: { hugg: 0.2, stick: 0.15, slag: 0.15, bett: 0.25 } }, forsta: '{namn} sydde byns första par {plagg}.' }, // steg 7.7.1
@@ -117,8 +117,11 @@ const PLAGG_DEF = {
   // materialets, som för halmen är under noll)
   hatt: { namn: 'Hatt', ord: 'en hatt', plats: 'huvud', mangd: RECEPT.hatt.mangd, varme: 0.15, dygn: 3, vikt: 0.5, tek: 'korg', min: RECEPT.hatt.min, slag: ['halm'],
     forsta: '{namn} flätade byns första {plagg}. Den skuggar huvudet i värmen.' },
-  ryggsack: { namn: 'Ryggsäck', ord: 'en ryggsäck', plats: 'rygg', mangd: RECEPT.ryggsack.mangd, med: RECEPT.ryggsack.av, varme: 0, dygn: 10, vikt: 2, tek: 'ryggsack', min: RECEPT.ryggsack.min, slag: ['skinn'], rygg: 20,
+  ryggsack: { namn: 'Ryggsäck', ord: 'en ryggsäck', plats: 'rygg', mangd: RECEPT.ryggsack.mangd, med: RECEPT.ryggsack.av, varme: 0, dygn: 10, vikt: 2, tek: 'ryggsack', min: RECEPT.ryggsack.min, slag: ['skinn', 'lader'], rygg: 20,
     forsta: '{namn} sydde byns första {plagg}. Den som samlar plockar rakt ner i den och bär dubbelt så mycket.' }, // steg 7.1.3
+  // bärselen (steg 13.2.3): modern bär sitt spädbarn i den till arbetet och kan amma det där (barsele.ts)
+  barsele: { namn: 'Bärsele', ord: 'en bärsele', plats: 'brost', mangd: RECEPT.barsele.mangd, med: RECEPT.barsele.av, varme: 0, dygn: 10, vikt: 1, tek: 'skinnklader', min: RECEPT.barsele.min, slag: ['skinn', 'lader'], sele: true,
+    forsta: '{namn} sydde byns första {plagg}. Nu kan modern ha sitt lilla barn med sig till arbetet.' },
 } satisfies Record<string, PlaggDef>;
 export type Plagg = keyof typeof PLAGG_DEF;
 export const PLAGG: Record<Plagg, PlaggDef> = PLAGG_DEF;
@@ -190,7 +193,7 @@ export function kladSaker() {
     const P: PlaggDef = PLAGG[pl], M = KLADMATERIAL[m], namn = kladNamn(pl, m), iMening = `${P.namn.toLowerCase()} av ${M.namn}`;
     r[k] = {
       namn, skaffa: { av: receptAv(pl, m), min: P.min, slag: 'stor', tek: P.tek }, vikt: +(P.vikt * M.vikt).toFixed(3), stack: 1, mapp: 'Kläder', slits: 0.0003, redskap: true, grupp: P.grupp ?? pl, ...(P.ord.startsWith('ett par ') ? { par: true as const } : {}), ...(P.gravgava ? { gravgava: true as const } : {}), ...(P.ord === `ett ${P.namn.toLowerCase()}` ? { ett: true as const } : {}),
-      klad: { plats: P.plats, varme: +(P.varme * M.varme).toFixed(4), dygn: P.dygn * M.hallbar, ...(P.krok ? { krok: P.krok } : {}), ...(P.axel ? { axel: P.axel } : {}), ...(P.rygg ? { rygg: P.rygg } : {}), ...(P.snoTar ? { snoTar: P.snoTar } : {}), ...((M as MaterialDef).dolj ? { dolj: (M as MaterialDef).dolj } : {}) },
+      klad: { plats: P.plats, varme: +(P.varme * M.varme).toFixed(4), dygn: P.dygn * M.hallbar, ...(P.krok ? { krok: P.krok } : {}), ...(P.axel ? { axel: P.axel } : {}), ...(P.rygg ? { rygg: P.rygg } : {}), ...(P.sele ? { sele: true as const } : {}), ...(P.snoTar ? { snoTar: P.snoTar } : {}), ...((M as MaterialDef).dolj ? { dolj: (M as MaterialDef).dolj } : {}) },
       gors: { text: `${SLAG_VERB[M.slag]} ${P.ord} av ${M.namn}.`, stat: k, forsta: P.forsta.replace('{plagg}', iMening), ...(P.fame ? { fame: P.fame.replace('{plagg}', iMening) } : {}) },
     };
   }

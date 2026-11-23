@@ -114,6 +114,7 @@ import { stepBrasor } from './brasor';
 import { iVattnetNu, sjoRakna, vattenNu } from './sjo';
 import { FANG, brytKlar, fangEldBrinner, fangelseKrok, matFram, matTagen, stoppaFram, stoppaVal } from './fangelse';
 import { akel, latrinLedigNara, latrinUpptagen, latrinVanta, latrinerVaxerIgen, regnetTvattar, smutsigtPlock, smutsMatTimme, toaBesok, toaNara } from './smuts';
+import { iselenSteg, seleMed } from './barsele';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
 import { lasKlar, runstenBorja, runstenKlar, runstenTimme, skrivKlar } from './skrift';
@@ -271,6 +272,7 @@ fangelseKrok.taMat = (s, p, ved) => { const k = ved ? (amountOf(s, 'ved') >= 1 ?
 fangelseKrok.ata = (s, q, k) => ataPortion(s, q, k);
 fangelseKrok.upplev = (s, p, om, ggr) => upplev(s, p, 'fangelse', om, ggr); // tiden inne (steg 11.12.4)
 for (const a of UTBROTT_ACTS) KLAR[a] = utbrottKlar; // efter ett utbrott (humor.ts, steg 3.2.2)
+MEDAN.iselen = iselenSteg; // barnet i bärselen (steg 13.2.3)
 MEDAN.buren = burenSteg; // den som bärs hem väntar så länge någon bär hen
 // att dricka (torst.ts): en gång när man kommit fram, och törsten hålls släckt så länge man dricker
 for (const act of DRICKA_ACTS) MEDAN[act] = (s, p, t) => { if (t.prog === undefined) { t.prog = 0; drick(s, p, t); } else p.torst = 1; };
@@ -588,6 +590,7 @@ export const TAKTER: Takt[] = [
       if (spar.pa) { const b = c.now - tid * SEC; spar.v.set(p, [b, p.x, p.y]); spar.u.set(p, [[b, kopia(p.task)]]); }
       const k = kostStart(), akt = p.task?.act ?? 'välja';
       taskStep(s, p, ageOf(p, c.now), c.now, tid, learn, c.social);
+      if (p.task?.sele !== undefined) seleMed(s, p, p.task); // barnet i bärselen följer med (steg 13.2.3)
       kost('aktivitet: ' + akt, k);
       s.now = c.now;
     }

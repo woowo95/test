@@ -130,6 +130,7 @@ export interface Thought { text: string; v: number; until: number; k?: string } 
 // Det en person håller på med (p.task, sparas med personen). Fälten utan frågetecken finns alltid
 export interface Task {
   eldFor?: Act; // tanda och elda: arbetet vid elden som elden tänds eller får ved för (ELDARBETEN i eld.ts)
+  sele?: number; // barnet som modern bär i bärselen (steg 13.2.3, barsele.ts)
   paus?: true; // vilan är en paus när inget annat lockar, inte trötthet (steg 11.1.72)
   fr?: number; // odla: rutan på fältet man arbetar på (steg 9.7.1, odling.ts)
   arbTid?: number; // ett arbete som räknas från framkomsten (framme i ACTS): så lång tid tar det när man är framme (steg 9.2.130)

@@ -3879,6 +3879,12 @@ for (const pl of ['rustning', 'hjalm', 'prastdrakt', 'tecken', 'mask', 'mantel',
 for (const pl of ['prastdrakt', 'mask', 'mantel', 'byxor', 'mossa', 'snoskor']) { PIX[`${pl}_vitskinn`] = PIX.rock_vitskinn; PAL[`${pl}_vitskinn`] = PAL.rock_vitskinn; } // de andra skinnplaggen av vitt harskinn i vitt (steg 10.7.22), platshållare
 for (const m of ['lader', 'lintyg', 'ylle']) for (const pl of ['rock', 'skor']) if (!PIX[`${pl}_${m}`]) { PIX[`${pl}_${m}`] = PIX.rock_kaninskinn; PAL[`${pl}_${m}`] = PAL.rock_kaninskinn; }
 // stövlarna och bältet av läder (steg 13.2.2): platshållare i lädrets bruna tills Björn valt, stövlarna som skorna utan pälskant
+const LADER_FARG = (pal: Record<string, string>) => Object.fromEntries(Object.entries(pal).map(([c, v], i) => [c, v === '#24201d' ? v : ['#3f2415', '#5e3c24', '#7d5b40', '#987e62'][i % 4]!]));
+PIX.axelrem_lader = PIX.axelrem_kaninskinn; PAL.axelrem_lader = LADER_FARG(PAL.axelrem_kaninskinn!);
+PIX.ryggsack_lader = PIX.ryggsack_kaninskinn; PAL.ryggsack_lader = LADER_FARG(PAL.ryggsack_kaninskinn!);
+// bärselen (steg 13.2.3): platshållare med axelremmens form i materialets färger tills Björn valt en bild i bildstilen
+for (const m of ['kaninskinn', 'vitskinn', 'vargskinn', 'bjornskinn', 'farskinn', 'getskinn', 'svinskinn', 'radjursskinn', 'kohud', 'lader']) { PIX[`barsele_${m}`] = PIX.axelrem_kaninskinn; PAL[`barsele_${m}`] = PAL[`axelrem_${m}`] ?? PAL[`rock_${m}`] ?? PAL.axelrem_kaninskinn!; }
+PIX.barsele = PIX.barsele_kaninskinn; PAL.barsele = PAL.barsele_kaninskinn;
 PIX.skor_lader = PIX.skor_kaninskinn; PAL.skor_lader = { ...PAL.skor_kaninskinn, G: '#5e3c24', H: '#7d5b40', W: '#987e62' };
 PIX.stovlar_lader = PIX.skor_kaninskinn; PAL.stovlar_lader = { ...PAL.skor_kaninskinn, G: '#5e3c24', H: '#7d5b40', W: '#987e62' };
 PIX.balte_lader = PIX.balte_rep; PAL.balte_lader = Object.fromEntries(Object.entries(PAL.balte_rep).map(([c, v], i) => [c, v === '#24201d' ? v : ['#3f2415', '#5e3c24', '#7d5b40', '#987e62'][i % 4]!]));

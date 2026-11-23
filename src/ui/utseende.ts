@@ -109,7 +109,7 @@ type Mat = keyof typeof KLADMATERIAL;
 const PLAGG_FALT: Record<string, (k: Klader, mat: Mat) => void> = {
   rock: (k, m) => { k.rock = KLADMATERIAL[m].namn; }, mantel: (k, m) => { k.rock = KLADMATERIAL[m].namn; }, kappa: (k, m) => { k.rock = KLADMATERIAL[m].namn; },
   skor: k => { k.skor = true; }, stovlar: k => { k.skor = true; }, byxor: (k, m) => { k.byxor = KLADMATERIAL[m].namn; }, skjorta: k => { k.skjorta = true; },
-  balte: k => { k.balte = true; }, axelrem: k => { k.axelrem = true; }, ryggsack: k => { k.ryggsack = true; },
+  balte: k => { k.balte = true; }, axelrem: k => { k.axelrem = true; }, barsele: () => {}, ryggsack: k => { k.ryggsack = true; },
 };
 const klada = (k: Klader, a: { plagg: string; mat: Mat }) => PLAGG_FALT[a.plagg]?.(k, a.mat);
 function utrustad(s: State, p: Person, u: Skapad) {
