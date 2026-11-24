@@ -22,7 +22,7 @@ import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './b
 import { GRODOR, ODLING, STAKET, faltBrist, faltUppgift } from './odling';
 import { hageBrist, hageUppgift } from './hage';
 import { VINTER, angBrist, angUppgift } from './slatter';
-import { SKOG, fallTid, fellingTiles, klyvStam, stockOverHus, egenStock, fallVilja, rojSpot, rojBrist, stubbBrist, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
+import { SKOG, fallTid, fellingTiles, klyvStam, stockOverHus, egenStock, fallVilja, rojSpot, rojBrist, slyBrist, slySpot, stubbBrist, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
 import { freeTools, harReceptVatten, tingOf } from './agande';
 import { ACTS, redskapTal } from './handlingar';
 import { tileOf } from './mark';
@@ -289,10 +289,16 @@ export const PROJEKT: Record<string, ProjektDef> = {
   // träden på en lagerplats eller ett fält i skogen fälls först (steg 3.6.9, skog.ts), med en yxa; de blir trä
   rojning: {
     namn: 'Röjning', vikt: PROJEKT_TAL.rojning, skal: 'Träd står där byn vill ha en lagerplats eller ett fält',
-    brist: s => rojBrist(s), // hur stor del som är kvar att röja (steg 12.1.174)
+    brist: s => Math.max(rojBrist(s), slyBrist(s)), // hur stor del som är kvar att röja (steg 12.1.174), också slyet i stråken (steg 13.8.16)
     kostnad: () => SKOG.fallTim * ARBETE,
-    kan: (s, p) => freeTools(s, p, 'yxa') > 0 && !!rojSpot(s, p),
-    uppgift: (s, p) => { const o = overHusUppgift(s, p); if (o) return o; const t = rojSpot(s, p); return t && { act: 'falla', text: 'Fäller ett träd där byn ska ha lager, fält eller ett stråk.', min: fallTid(s, t.i) / 60000, tool: 'yxa', spot: { x: t.x, y: t.y } }; },
+    kan: (s, p) => freeTools(s, p, 'yxa') > 0 && !!rojSpot(s, p) || ageOf(p, s.now) >= ALDER.hjalper && !!slySpot(s, p),
+    uppgift: (s, p) => {
+      const o = freeTools(s, p, 'yxa') > 0 ? overHusUppgift(s, p) : undefined; if (o) return o;
+      const t = freeTools(s, p, 'yxa') > 0 ? rojSpot(s, p) : undefined;
+      if (t) return { act: 'falla', text: 'Fäller ett träd där byn ska ha lager, fält eller ett stråk.', min: fallTid(s, t.i) / 60000, tool: 'yxa', spot: { x: t.x, y: t.y } };
+      const b = slySpot(s, p); // slyet i ett stråk röjs med händerna, på lika lång tid som en fältruta (steg 13.8.16)
+      return b && { act: 'rojaSly', text: 'Röjer sly som växer i ett gångstråk.', min: ODLING.rojaMin, spot: { x: b.x, y: b.y } };
+    },
   },
   // stubbarna där något ska stå grävs bort först (steg 6.5.7, skog.ts)
   stubbe: {

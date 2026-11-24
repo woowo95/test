@@ -49,7 +49,7 @@ import { lyssnaSteg, upptradaKlar, upptradaSteg } from './framtradande';
 import { tittaSteg } from './sport';
 import { harReceptVatten, redskapIHanden, taReceptVatten, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
-import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './skog';
+import { SKOG, chopStock, fellTree, rotStumps, stocks, slyRojt, stubbeGravd } from './skog';
 import { needLadder, noticeTheft, stole, takeMaterial, getable, ataPortion } from './behov';
 import { iHelaForradet, laggPaRutan, stacksOf, isStored, capacity, mayTake, avbryt, backSpot, barHem, bordSlag, carryKind, fetchSpot, helaIBordan, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf, harTillHands, iRackhall, iBordan, bordanAv, narmasteMed, uttagVakt } from './lager';
 import { FOOD, SAKER, isFood, viktOf } from './saker';
@@ -244,6 +244,7 @@ const MEDAN: Partial<Record<Act, Krok>> = {
 };
 // det som händer när en handling är klar
 const KLAR: Partial<Record<Act, Krok>> = {
+  rojaSly: (s, _p, t) => slyRojt(s, t.tx, t.ty), // steg 13.8.16
   falla: (s, p, t) => { // trädet faller och blir en stam, som huggs till ved
     if (!t.tool) return; // utan yxa står trädet kvar halvfällt, och nästa fällare gör resten
     fallTanke(s, p, tileOf(t.tx, t.ty)); // långt från byn tänker man på skogsvården (skogsvard.ts, steg 6.5.2)

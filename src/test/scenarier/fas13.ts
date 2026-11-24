@@ -1642,3 +1642,24 @@ SCENARIER.lagerpabud = {
     ];
   },
 };
+
+SCENARIER.strakbuske = {
+  text: 'Steg 13.8.16: buskar och plantor i gångstråken röjs. En buske, en planta eller ett ungträd som står i ett stråk tas bort av projektet Röjning som träden där, först framför dörrarna, på lika lång tid som en fältruta och utan yxa',
+  kor: () => {
+    const s = SIM.createState(3, START); klockan(s, 8); tandEld(s); setMat(s, { bar: 300 });
+    SIM.planBuild(s); medHus(s);
+    const st = SIM.straken(s), g = SIM.groundOf(s), rutor = [...new Set(st.vagar.flatMap(v => v.rutor))].filter(i => st.ruta[i] === 1 && g.trees[i] < SIM.FOREST);
+    const bi = rutor[Math.floor(rutor.length / 2)], pi = rutor.at(-1);
+    if (bi !== undefined) { g.buske![bi] = SIM.BUSKE; g.cover[bi] = 1; }
+    if (pi !== undefined && pi !== bi) g.trees[pi] = 0.1;
+    const fore = { buske: bi !== undefined && SIM.arSly(g, bi), planta: pi !== undefined && SIM.arSly(g, pi) };
+    const brist = SIM.slyBrist(s);
+    let tim = 0, yxa = false;
+    for (; tim < 5 * 24 && (SIM.arSly(g, bi!) || SIM.arSly(g, pi!)); tim++) kor(s, 1, v => { for (const p of SIM.living(v)) if (p.task?.act === 'rojaSly' && p.task.tool) yxa = true; });
+    return [
+      [`en buske och en planta står i stråken (${fore.buske}, ${fore.planta}), och projektet Röjning har en brist (${brist.toFixed(2)})`, fore.buske && fore.planta && brist > 0],
+      [`busken och plantan är borta efter ${tim} timmar (högst 5 dygn, 5 år i spelet)`, !SIM.arSly(g, bi!) && !SIM.arSly(g, pi!)],
+      [`slyet röjdes ${s.stat?.slyRojt ?? 0} gånger (det andra kan trampas ner av dem som går där), utan yxa (${!yxa})`, (s.stat?.slyRojt ?? 0) >= 1 && !yxa],
+    ];
+  },
+};
