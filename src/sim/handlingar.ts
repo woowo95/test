@@ -171,7 +171,7 @@ const DEF = {
   grava: { namn: 'Gräver en grav', slag: 'bygga', tungt: true, framme: true, stilla: true, redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'gravar', per: 'gang' }, framfor: true },
   foder: { namn: 'Föder barn', nara: true, tecken: '🧒', ikon: 'foder', stilla: true, nodFri: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 9.5.29
   forlossa: { namn: 'Hjälper till vid en förlossning', nara: true, tecken: '🩹', stilla: true }, // steg 9.5.29
-  barmat: { namn: 'Bär mat till fången', tecken: '🍽️', under: { go: 'hämtar mat', back: 'bär mat' }, framme: true }, // steg 11.12.2 (fangelse.ts)
+  barmat: { namn: 'Bär mat till någon', tecken: '🍽️', under: { go: 'hämtar mat', back: 'bär mat' }, framme: true }, // steg 11.12.2 (fangelse.ts)
   fangen: { namn: 'Sitter i fängelset', nara: true, tecken: '🚪', ikon: 'fangelse', stilla: true, dygn: true, social: true }, // pratar genom dörren (steg 11.12.4)
   fangvakt: { namn: 'Vaktar fängelset', yrke: 'Väktare', tecken: '👁️', ikon: 'fangelse', stilla: true, vapen: true, dygn: true }, // steg 11.12.5 (fangelse.ts)
   stoppa: { namn: 'Går för att stoppa fången', tecken: '🚪', ikon: 'fangelse', framme: true }, // steg 11.12.5: larmet rymning

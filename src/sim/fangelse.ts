@@ -2,10 +2,11 @@ import { husIMening } from './ord';
 import { DAY, HOUR, MIN, Person, State, W } from './typer';
 import { balans } from './balans';
 import { clamp } from './slump';
-import { REL, byId, count, isKin, log, relKey, stat } from './folk';
+import { REL, byId, count, isKin, log, relKey, stat, living } from './folk';
 import { bitsOf, dorrDef, gridOf, housesOf, husById, type Hus } from './byggnad';
 import { moodOf } from './humor';
 import { tanke } from './tankar';
+import { hemma, kanGa, utanVard } from './halsa';
 import { handelse } from './rykten';
 
 // ---------- fängelset (steg 11.12.1, Fångar och fängelset i designdokumentet) ----------
@@ -219,21 +220,22 @@ export function fangNarhet(s: State, p: Person, q: Person) {
 }
 // p går när fångens nöd (hunger eller törst, 0–1) gånger närheten är stor nog
 export const hjalperFange = (s: State, p: Person, q: Person, nod: number) => nod * fangNarhet(s, p, q) >= FANG.hjalp;
-// maten till fången (ARBETEN i val.ts): den hungrigaste fången som p går till och som ingen annan bär mat till, och det
+// maten till fången och till den som inte kan gå (Vård: den som ligger får mat och vatten buret till sig, med samma vikt som fången;
+// vattnet är vattenVal i torst.ts) (ARBETEN i val.ts): den hungrigaste som p går till och som ingen annan bär mat till, och det
 // närmaste i förrådet där det finns mat
 // Ved till en liten eld (steg 11.12.4) är en rad i samma arbete: fångens köld gånger närheten gånger FANG.eld, så det händer sällan
 export function matTillFange(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string; ved?: true } | undefined {
-  if (p.fange) return undefined;
+  if (p.fange || !kanGa(p)) return undefined;
   let best: Person | undefined, bn = 0, ved = false;
-  for (const q of fangar(s)) {
+  for (const q of [...fangar(s), ...living(s).filter(o => !o.fange && !kanGa(o) && hemma(s, o) && !utanVard(s, o))]) {
     if (q === p || s.people.some(o => o !== p && o.task?.act === 'barmat' && o.task.ref === q.id)) continue;
-    const nod = 1 - q.hunger, kold = fangEldBrinner(s, q.fange!.hus) ? 0 : (1 - q.warm) * FANG.eld;
+    const nod = 1 - q.hunger, kold = !q.fange || fangEldBrinner(s, q.fange.hus) ? 0 : (1 - q.warm) * FANG.eld;
     if (nod > bn && hjalperFange(s, p, q, nod)) { best = q; bn = nod; ved = false; }
     if (kold > bn && hjalperFange(s, p, q, kold)) { best = q; bn = kold; ved = true; }
   }
   if (!best) return undefined;
   const spot = fangelseKrok.matStack(s, p, ved); // det närmaste i förrådet där det ligger mat eller ved (sätts av steg.ts)
-  return spot ? { spot, ref: best.id, why: ved ? `Hämtar ved åt ${best.name}, som fryser i fängelset` : `Hämtar mat åt ${best.name}, som sitter i fängelset`, ...(ved ? { ved: true as const } : {}) } : undefined;
+  return spot ? { spot, ref: best.id, why: ved ? `Hämtar ved åt ${best.name}, som fryser i fängelset` : `Hämtar mat åt ${best.name}, som ${best.fange ? 'sitter i fängelset' : best.svimmat ? 'är medvetslös' : 'inte kan gå'}`, ...(ved ? { ved: true as const } : {}) } : undefined;
 }
 // maten eller veden är tagen (KLAR i steg.ts): en hel portion av det som finns, eller en ved, och den bärs till fången
 export function matTagen(s: State, p: Person, t: import('./typer').Task) {
@@ -245,7 +247,7 @@ export function matTagen(s: State, p: Person, t: import('./typer').Task) {
 export function matFram(s: State, p: Person, t: import('./typer').Task) {
   const q = byId(s, t.ref);
   if (q?.fange && t.tool === 'ved' && Math.hypot(q.x - p.x, q.y - p.y) <= 2) { (s.fangEld ??= {})[q.fange.hus] = s.now + FANG.eldTim * HOUR; tanke(q, 'tandeEldAt', s.now, { namn: p.name }); count(s, 'eld at fangen'); }
-  else if (q && t.tool && Math.hypot(q.x - p.x, q.y - p.y) <= 2) { fangelseKrok.ata(s, q, t.tool); tanke(q, 'barMatTill', s.now, { namn: p.name }); count(s, 'bar mat till fangen'); }
+  else if (q && t.tool && Math.hypot(q.x - p.x, q.y - p.y) <= 2) { fangelseKrok.ata(s, q, t.tool); tanke(q, 'barMatTill', s.now, { namn: p.name }); count(s, q.fange ? 'bar mat till fangen' : 'bar mat till sjuk'); }
   p.task = undefined;
 }
 // den som sitter inne och de som vill ut (gränssnittet och scenarierna)

@@ -157,7 +157,7 @@ export const TANKAR = {
   angav: rad({ text: 'Angav en sammansvärjning', v: 0.02, tid: DAY, nar: 'angav en sammansvärjning (rost.ts)' }),
   inlast: rad({ text: 'Sitter inlåst', nar: 'sitter i fängelset, värre för varje dygn (fangelse.ts)' }),
   tandeEldAt: rad({ text: (a: { namn: string }) => `${a.namn} tände en eld åt mig`, v: 0.1, tid: 12 * HOUR, nar: 'någon tände en eld åt fången (fangelse.ts)' }),
-  barMatTill: rad({ text: (a: { namn: string }) => `${a.namn} bar mat till mig`, v: 0.1, tid: 12 * HOUR, nar: 'någon bar mat till fången (fangelse.ts)' }),
+  barMatTill: rad({ text: (a: { namn: string }) => `${a.namn} bar mat till mig`, v: 0.1, tid: 12 * HOUR, nar: 'någon bar mat till fången eller den som inte kan gå (fangelse.ts)' }),
   // ---- fester, sport och framträdanden
   ingenLyssnade: rad({ text: 'Ingen kom och lyssnade', nar: 'ingen publik (framtradande.ts)' }),
   dansade: rad({ text: (a: { till: string }) => `Dansade till ${a.till}`, nar: 'dansade till ett framträdande (framtradande.ts)' }),

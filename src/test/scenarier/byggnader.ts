@@ -1132,11 +1132,16 @@ SCENARIER.fangemat = {
       ha = a.hunger; hb = b.hunger; mat = v.stat?.['bar mat till fangen'] ?? mat;
     });
     const fore = forstA >= 0 && (forstB < 0 || forstA < forstB);
+    // den som inte kan gå (Vård): den medvetslöse får mat buren till sig med samma vikt, den som kan gå inte
+    const o = createState(11, START); setFood(o, 30); const [sjuk, frisk] = living(o).filter(q => SIM.ageOf(q, o.now) >= SIM.ALDER.vuxen) as [SIM.Person, SIM.Person];
+    sjuk.hunger = 0.1; sjuk.partner = frisk.id; const friskNej = SIM.matTillFange(o, frisk)?.ref !== sjuk.id;
+    sjuk.svimmat = true; const sjukJa = SIM.matTillFange(o, frisk)?.ref === sjuk.id;
     return [
       ['en släkting går med mat när nöden är 0,4, en främling inte', morGar && framlingGarInte],
       ['när nöden är stor (0,9) går också en främling', framlingGar],
       ['vattnet: släktingen bär vatten vid törsten 0,4, främlingen inte', vMor && vFramling],
       [`när nöden är liten går ingen, och fångarna blir hungrigare (mättnaden ${a0} → ${a.hunger.toFixed(3)})`, hungrigare],
+      ['den medvetslöse får mat buren till sig, den som kan gå inte', friskNej && sjukJa],
       [`vid samma nöd får sonen mat före främlingen (mat buren ${mat} gånger)`, fore],
     ];
   },
