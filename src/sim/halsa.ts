@@ -59,10 +59,11 @@ import { fangeMal } from './rovare'; // fången bärs till fängelset (steg 11.1
 export const HALSA = balans('halsa', {
   botDygn: 3, // den som vårdats för högst så här många dygn sedan och blir frisk (eller dör) räknas till vårdaren (steg 12.1.134)
   blodTim: 0.6, // ett öppet sår av grad 1 (och blod 1 i SKADOR) tar så här mycket blod i timmen (1 = allt blod) ...
-  stridBlod: 0.5, // i en strid på kartan blöder såren gånger detta (steg 12.1.58 och B.7): ansträngningen gör det fortare, men striden tar längre tid sedan slagen blev glesare (STRID.glesare och traffDel), så att den som blöder i en strid förlorar lika mycket blod som innan
+  stridBlod: 0.5, // i en strid på kartan blöder såren gånger detta (steg 12.1.58 och B.7): ansträngningen gör det fortare, men striden tar längre tid sedan slagen blev lättare (STRID.latt), så att den som blöder i en strid förlorar ungefär lika mycket blod som innan
   levrar: 1.5, // ... och har levrat sig efter levrar × (0,5 + graden) timmar
   // blödningens tre storlekar (steg 9.5.14): ett litet sår (grad under smaSar) levrar sig fort, ett medelstort (under storSar)
   // långsamt (medelLevrar gånger längre), och ett stort inte alls; när tiden kvar till förblödning är under kortTim syns den
+  skrama: 0.2, // en skada under den här graden, där det redan finns ett likadant sår utan förband, gör det såret värre i stället för att bli ett nytt (steg B.10)
   smaSar: 0.3, storSar: 0.6, medelLevrar: 3, kortTim: 1, blodsTim: 24, // blodsTim: den som förblöder inom så många timmar blöder så att det syns i notiserna (steg 9.5.31)
   blodDod: 0.4, // under så här mycket blod förblöder man
   // blodförlusten i steg (steg 9.5.17): över blek inget; under blek blek och yr (arbetet och träffen gånger blekFaktor); under
@@ -434,7 +435,11 @@ const narOm = (nar: string, p: Person) => nar.replace(/(slog|straffade|sparkade)
 export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number, dod: Dodsorsak, nar: string, iStrid = false): Dodsorsak | undefined {
   d = finDel(s, p, d);
   if (p.saknas?.includes(d)) d = (DEL[d].under as Kroppsdel | undefined) ?? 'bal'; // delen finns inte längre
-  (p.skador ??= []).push({ d, k, g, b: SKADA[k].blod > 0 ? 1 : 0, g0: g, ...(k === 'benbrott' ? { t0: s.now } : {}) });
+  // en skråma där det redan finns ett likadant öppet sår gör det såret värre, och det blöder igen (steg B.10)
+  p.skador ??= [];
+  const gammalt = g < HALSA.skrama && k !== 'benbrott' && k !== 'bistick' ? p.skador.find(w => w.d === d && w.k === k && !w.f && w.inf === undefined && !w.fast && w.av === undefined) : undefined;
+  if (gammalt) { gammalt.g = Math.min(1, gammalt.g + g); gammalt.g0 = Math.max(gammalt.g0 ?? 0, gammalt.g); if (SKADA[k].blod > 0) gammalt.b = 1; }
+  else p.skador.push({ d, k, g, b: SKADA[k].blod > 0 ? 1 : 0, g0: g, ...(k === 'benbrott' ? { t0: s.now } : {}) });
   // ett öppet benbrott är ett stort sår dessutom (steg 9.5.27)
   if (k === 'benbrott' && !HALSA_PROV.grov && rnd(s, 'halsa', p) < HALSA.oppetBrott) { p.skador[p.skador.length - 1].oppet = 1; p.skador.push({ d, k: 'skarsar', g: Math.max(HALSA.storSar, g), b: 1, g0: g }); }
   uppdateraSinnen(p);

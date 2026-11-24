@@ -43,6 +43,7 @@ export const fritid = (s: State, q: Person) => { q.pot.styrka = q.pot.smidighet 
 const vuxna = (s: State) => SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
 
 SCENARIER.sport = {
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,strid.maxTid=120' }, // kampen kortas, så att det prövas vad brottarna gör efter den (annars kan den vara längre än matchen)
   text: 'Sporten (steg 4.3.1.1 och 10.7.12): när byn har ett överskott spelar de vuxna brottning och dragkamp. Den som vill spela ropar, och de inom hörhåll som vill avbryter det de gör och kommer, men faror går före. Platsen är öppen mark som räcker för sporten. Det tränar närstrid och gör dem glada',
   kor: () => {
     const s = rikDag(3, { rep: 4 }), vill = vuxna(s).filter(q => SIM.sportVikt(s, q, 1) > 0).length;
@@ -3040,7 +3041,7 @@ function brottning(): [string, boolean][] {
     [`utan vapen (${vapen} med vapen)`, vapen === 0],
     [`ingen dör i brottningen (${doda})`, doda === 0],
     [`en skada är ovanlig (${skadade} av 16 brottare skadades)`, skadade <= 4],
-    [`brottarna är kvar i matchen efter en kamp (${kvar} av ${matt} medan matchen pågår)`, matt >= 4 && kvar >= matt * 0.75 && sedda > 0], // en kamp tar omkring 5 minuter (steg B.7), och en match 10 till 20: i några byar slutar matchen före den första kampen
+    [`brottarna är kvar i matchen efter en kamp (${kvar} av ${matt} medan matchen pågår)`, matt >= 4 && kvar >= matt * 0.75 && sedda > 0], // i några byar slutar matchen före den första kampen
     [`ingen av de två som brottas börjar ett samtal under kampen (${pratIKampen} samtal på ${kampTid} steg med kamp)`, pratIKampen === 0 && kampTid > 0],
     [`de andra i ringen pratar (${pratRingen} samtal)`, pratRingen > 0],
   ];

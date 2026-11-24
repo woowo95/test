@@ -1249,7 +1249,7 @@ SCENARIER.gangfart = {
 };
 
 SCENARIER.langsam = {
-  text: 'Striden i klockans takt (steg 3.7.18 och B.7): inget tempo, stegen i striden går i byns fart, och slagen kommer glesare (STRID.glesare) och missar eller pareras oftare (STRID.traffDel), lika för alla som slåss, så att ett slagsmål med händerna tar några minuter men samma sida vinner ungefär lika ofta, också mot vargen. Slagen kommer ändå inte överdrivet glest: med händerna knappt tre sekunder emellan. Orken och blödningen per sekund följer slagens takt, och en strid avbryts först efter STRID.maxTid på klockan',
+  text: 'Striden i klockans takt (steg 3.7.18, B.7 och B.10): inget tempo, stegen i striden går i byns fart, slagen kommer glesare (STRID.glesare), knappt hälften träffar och de flesta träffarna är lätta (STRID.latt), lika för alla som slåss, så att ett slagsmål med händerna tar några minuter men samma sida vinner ungefär lika ofta, också mot vargen. Slagen kommer ändå inte överdrivet glest: med händerna knappt tre sekunder emellan. Orken och blödningen per sekund följer slagens takt, och en strid avbryts först efter STRID.maxTid på klockan',
   kor: () => {
     const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, x: number, y: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10 }, vapen, klader: [] as string[], fart: 1, x, y });
     const vu = (vapen: SIM.Vapen): SIM.Uppstallning => ({ avsikt: 'doda', w: 16, h: 8, kampar: [m(1, 0, vapen, 3, 4), SIM.djurKampe('varg', 2, 1, 13, 4)] });
@@ -1266,9 +1266,9 @@ SCENARIER.langsam = {
       [`vargen tappar aldrig sina käftar och ingen tar upp dem: ${kaftar} av 60 strider (11 före kodgenomgången 3.10.25)`, kaftar === 0],
       [`en strid avbryts efter ${SIM.STRID.maxTid / 60} minuter på klockan (${SIM.STRID.maxTid / 10} timmar i spelet)`, SIM.STRID.maxTid === 1200],
       [`slagen med händerna kommer med ${med.toFixed(1)} s mellanrum (vapnets takt ${SIM.VAPEN.hand.takt} s gånger glesare ${SIM.STRID.glesare})`, med > SIM.VAPEN.hand.takt * SIM.STRID.glesare * 0.6 && med < SIM.VAPEN.hand.takt * SIM.STRID.glesare * 1.6],
-      [`ett slagsmål mellan två vuxna tar ${h.tid.toFixed(0)} s, några minuter (11 s före v164, 24 s före B.7), och sidorna vinner ${pc(h.vann[0], h)} % och ${pc(h.vann[1], h)} %`, h.tid > 180 && h.tid < 360 && Math.abs(h.vann[0] - h.vann[1]) < h.n * 0.2],
-      [`en med spjut mot en varg: människan vinner ${pc(sp.vann[0], sp)} % på ${sp.tid.toFixed(0)} s (7 s före v164, 75 % före B.7)`, sp.vann[0] > sp.n * 0.6 && sp.vann[0] < sp.n * 0.9 && sp.tid > 60],
-      [`en obeväpnad mot en varg: vargen vinner ${pc(ha.vann[1], ha)} %`, ha.vann[1] > ha.n * 0.65], // vargens bett 0,24 sedan B.7: vargen vinner ungefär två av tre
+      [`ett slagsmål mellan två vuxna tar ${h.tid.toFixed(0)} s, några minuter (11 s före v164, 219 s före B.10), och sidorna vinner ${pc(h.vann[0], h)} % och ${pc(h.vann[1], h)} %`, h.tid > 180 && h.tid < 600 && Math.abs(h.vann[0] - h.vann[1]) < h.n * 0.2],
+      [`en med spjut mot en varg: människan vinner ${pc(sp.vann[0], sp)} % på ${sp.tid.toFixed(0)} s (7 s före v164, 83 % på 78 s före B.10)`, sp.vann[0] > sp.n * 0.6 && sp.vann[0] < sp.n * 0.9 && sp.tid > 60],
+      [`en obeväpnad mot en varg: vargen vinner ${pc(ha.vann[1], ha)} %`, ha.vann[1] > ha.n * 0.65], 
       ['loggens tider följer klockan (STRID.tick per steg)', st.logg.every(r => Math.abs(r.t / SIM.STRID.tick - Math.round(r.t / SIM.STRID.tick)) < 1e-6)],
     ];
   },
@@ -1775,12 +1775,13 @@ SCENARIER.stridkarta = {
     const g = SIM.kartStridBorja(s, 'slagsmal', [[a], [b]], 'för att pröva');
     const borjar = s.kartStrider?.length === 1 && [a, b].every(q => q.task?.act === 'strid') && [a, b].every((q, i) => q.x === start[i].x && q.y === start[i].y);
     const kort = SIM.nastaSteg(s) === SIM.STRID.kortSteg;
+    const tungt = (w: { g: number }[]) => w.reduce((x, w) => x + w.g, 0);
     let sarUnder = 0, efterslap = 0, hopp = 0, iVagg = 0, sek = 0, forra = [a, b].map(q => ({ x: q.x, y: q.y }));
     while (s.kartStrider?.length && sek < 900) {
       step(s, 1); sek++;
       [a, b].forEach((q, i) => {
         const k = g.st.kampar[i], nya = (q.skador?.length ?? 0) - sar0[i];
-        if (nya < k.skador.length) efterslap++; // ett sår i striden som inte sitter på personen
+        if (tungt(q.skador ?? []) < tungt(k.skador) - 0.12) efterslap++; // såren i striden som inte sitter på personen (en skråma kan hinna läka medan striden pågår)
         if (!g.st.slut && nya > 0) sarUnder = Math.max(sarUnder, nya);
         const d = Math.hypot(q.x - forra[i].x, q.y - forra[i].y); if (d > 4) hopp++;
         if (SIM.isWall(s, q.x, q.y)) iVagg++;

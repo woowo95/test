@@ -2625,7 +2625,7 @@ SCENARIER.rovarflykt = {
     // mötet: en försvarare står vid förrådet, tolv rutor från gänget som kommer; en till står långt bakom och kommer fram under striden
     const s = ny(), z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
     const [a, b] = vuxna(s);
-    stall(s, a, m.x, m.y); stall(s, b, m.x - 16, m.y);
+    stall(s, a, m.x, m.y); stall(s, b, m.x - 16, m.y); a.pot.mod = 20; // modig, så att striden varar tills den andra hinner fram
     for (let i = 0; i < 3; i++) SIM.newTing(s, 'fiskespjut', 1, SIM.BYN);
     const f = rovarGang(s, 3, { x: m.x + 12, y: m.y }, { anfaller: true }); f.sedd = s.now;
     const a0 = { x: a.x, y: a.y };
@@ -2894,7 +2894,7 @@ SCENARIER.rovarstrid = {
     let mitt = false, nara = true, slag = false, kom = false;
     korTills(s, () => !g || !!g.st.slut, 900, () => {
       if (!g!.st.slut) mitt = true;
-      for (const r of SIM.rovarna(s, f)) { const k = g!.st.kampar.find(q => q.pid === r.id); if (k && !g!.fri?.includes(r.id) && !['flykt', 'ger', 'borta', 'dod'].includes(k.lage) && Math.hypot(r.x - m.x, r.y - m.y) > SIM.ROVARE.moter + 4) nara = false; } // (den som flyr springer mot kanten)
+      for (const r of SIM.rovarna(s, f)) { const k = g!.st.kampar.find(q => q.pid === r.id); if (k && !g!.fri?.includes(r.id) && !['flykt', 'ger', 'borta', 'dod'].includes(k.lage) && (r.x !== k.x || r.y !== k.y || (g!.st.t < 60 && Math.hypot(r.x - m.x, r.y - m.y) > SIM.ROVARE.moter + 4))) nara = false; } // (den som flyr springer mot kanten, och den som backar undan drar striden med sig efter en stund)
       if (g!.st.kampar.some(k => k.pid === c.id)) kom = true;
       if (g!.st.logg.some(r => (r.h === 'traff' || r.h === 'miss' || r.h === 'tog') && r.a !== undefined && r.b !== undefined && g!.st.kampar.find(k => k.id === r.a)!.sida !== g!.st.kampar.find(k => k.id === r.b)!.sida)) slag = true;
     });
@@ -2908,7 +2908,7 @@ SCENARIER.rovarstrid = {
     const lika = !!gl.st.slut && !!gk.st.slut && utfall(gl) === utfall(gk);
     return [
       ['rövarna och försvararna börjar slåss där de möts, och de står kvar i striden', borjar],
-      ['striden går steg för steg i spelets tid, och rövarna står där striden har dem, nära förrådet', mitt && nara],
+      ['striden går steg för steg i spelets tid, och rövarna står där striden har dem, som börjar nära förrådet', mitt && nara],
       ['någon slår någon på den andra sidan', slag],
       ['den som kommer fram under striden ger sig in i den', kom],
       ['striden tar slut och rapporten sparas i byn', slut],
