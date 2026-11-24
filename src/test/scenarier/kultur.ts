@@ -4257,7 +4257,7 @@ SCENARIER.pabud = {
     const matSyns = /Förråden/.test(med) && /Mat: <b>/.test(med) && !/Torkat: <b>/.test(med) && !/Ved: <b>/.test(med);
     const ingenSkillnad = !/kortsort">påbud/.test(tom);
     return [
-      [`Förråden är ett påbud med fyra tal (${forrad?.tal.join(', ') ?? 'saknas'}), och Skriv ner lagarna och Fängelse finns inte`, forrad?.tal.length === 4 && borta],
+      [`Förråden är ett påbud med de fyra talen och ett per material (steg 13.8.15; ${forrad?.tal.join(', ') ?? 'saknas'}), och Skriv ner lagarna och Fängelse finns inte`, !!forrad && ['matlager', 'vedlager', 'torkat', 'vinter'].every(k => (forrad.tal as string[]).includes(k)) && (forrad.tal as string[]).every(k => ['matlager', 'vedlager', 'torkat', 'vinter'].includes(k) || k.startsWith('lager_')) && borta],
       [`ledaren lägger fram förråden som ett förslag med alla fyra talen (${ff ? JSON.stringify(ff.fr.d) : 'inget förslag'})`, fyra],
       [`hållningen till utfärder har tre lägen (${[...lagen].sort().join(', ')})`, lagen.size === 3 && [...lagen].every(x => x === -1 || x === 0 || x === 1)],
       [`omröstningen sparar båda talen den ändrar (${JSON.stringify(o.andr)})`, tva],
