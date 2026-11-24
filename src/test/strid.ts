@@ -2,13 +2,14 @@
 // Striderna i många byar, per slag (det striden gällde): hur många strider, hur många på varje sida, hur stor del av byns vuxna som
 // var med, hur länge de varade, vem som vann, döda, skadade, gav upp och flydde, och hur ofta ett slag träffar
 import './utc';
+import { arenan } from './strid-arena';
 import { korJson, pool, seedAv, sek } from './pool';
 import { median } from './nyckeltal';
 
 const [antal = 16, dagar = 35] = process.argv.slice(2).map(Number);
 const seeds = Array.from({ length: antal }, (_, i) => seedAv(i));
 type Sida = { vapen?: string; n: number; folk: number; dod: number; ger: number; flykt: number; nere: number; skadade: number; skador: number; slag: number; traffar: number };
-type Rad = { dag: number; orsak: string; vinnare: number; sek: number; vuxna: number; kom: number; by: Sida; mot: Sida; h: Record<string, number> };
+type Rad = { dag: number; orsak: string; vinnare: number; sek: number; vuxna: number; kom: number; by: Sida; mot: Sida; h: Record<string, number>; sort: string; forsok: Record<string, number>; slut: [string[], string[]]; efter: number };
 type Ut = { seed: number; pop: number; rader: Rad[]; anfall?: { n: number; sedd: number; dag: number; dagSedd: number }; vakter: number; larm: string[] };
 const t0 = Date.now();
 const rs = await pool(seeds.map(seed => () => korJson<Ut>('strid-en.ts', [String(seed), String(dagar)], `by ${seed}`)));
@@ -33,7 +34,25 @@ for (const o of orsaker) {
   const h: Record<string, number> = {}; for (const q of x) for (const k in q.h) h[k] = (h[k] ?? 0) + q.h[k];
   console.log(`  händelser per strid: ${Object.entries(h).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([k, n]) => `${k} ${(n / x.length).toFixed(1)}`).join(', ')}`);
 }
+// ---------- per sorts strid (steg B.10): hur länge, hur försöken gick och hur de slutade ----------
+const SORTER = ['rövare', 'vargar', 'björnen', 'vildsvinet', 'slagsmål', 'brottning', 'lek', 'annan strid mellan bybor'];
+const SLUT = ['flydde', 'drog sig undan', 'gav upp', 'för skadad', 'dog direkt', 'förblödde', 'skildes åt', 'står'];
+console.log('\nPER SORTS STRID (de som förlorade eller lämnade striden; står = slogs till slutet)');
+for (const o of SORTER) {
+  const x = alla.filter(q => q.sort === o); if (!x.length) { console.log(`  ${o}: ingen`); continue; }
+  const t = x.map(q => q.sek).sort((a, b) => a - b), f: Record<string, number> = {};
+  for (const q of x) for (const k in q.forsok) f[k] = (f[k] ?? 0) + q.forsok[k];
+  const n = sum(Object.values(f)) || 1, pr = (k: string) => `${(100 * (f[k] ?? 0) / n).toFixed(0)} %`;
+  const avg = x.filter(q => q.vinnare >= 0), per = (sd: 0 | 1) => { const a: Record<string, number> = {}; for (const q of x) for (const k of q.slut[sd]) a[k] = (a[k] ?? 0) + 1; return SLUT.filter(k => a[k]).map(k => `${k} ${a[k]}`).join(', '); };
+  const forl: Record<string, number> = {}; for (const q of avg) { const ss = q.slut[1 - q.vinnare].filter(k => k !== 'står'); const a: Record<string, number> = {}; for (const k of ss) a[k] = (a[k] ?? 0) + 1; const b = Object.keys(a).sort((u, v) => a[v] - a[u])[0]; if (b) forl[b] = (forl[b] ?? 0) + 1; }
+  console.log(`  ${o.toUpperCase()}: ${x.length} strider, längd median ${m(t)} s (en fjärdedel under ${t[Math.floor(t.length / 4)]}, en fjärdedel över ${t[Math.floor(t.length * 3 / 4)]}, längst ${t[t.length - 1]}); byns sida vann ${avg.filter(q => q.vinnare === 0).length} av ${x.length}, oavgjort ${x.length - avg.length}`);
+  console.log(`    försöken: träffar ${((100 * ((f.traff ?? 0) + (f.tog ?? 0))) / n).toFixed(0)} %, missar ${pr('miss')}, pareras ${pr('parera')}, duckas ${pr('duck')}, knuffar ${((100 * ((f.knuff ?? 0) + (f.omkull ?? 0))) / n).toFixed(0)} %`);
+  console.log(`    striderna slutade mest med att förlorarna: ${Object.entries(forl).sort((a, b) => b[1] - a[1]).map(([k, c]) => `${k} ${(100 * c / Math.max(1, avg.length)).toFixed(0)} %`).join(', ')}`);
+  console.log(`    byns sida: ${per(0)}; motståndarna: ${per(1)}; förblödde inom ett dygn efteråt ${sum(x.map(q => q.efter))}`);
+}
 const an = (k: 'n' | 'sedd' | 'dag' | 'dagSedd') => rs.reduce((a, r) => a + (r.anfall?.[k] ?? 0), 0);
 console.log(`\nRÖVARNAS ANFALL: ${an('n')} gånger gick ett gäng till anfall; byn hade sett det innan ${an('sedd')} gånger, på dagen ${an('dagSedd')} av ${an('dag')}`);
 const v = rs.reduce((a, r) => a + r.vakter, 0);
 console.log(v ? '\nVAKTER LARMAR:\n  ' + rs.flatMap(r => r.larm.map(l => `by ${r.seed}: ${l}`)).join('\n  ') : '\nVakter: inga fel.');
+console.log('\nARENAN: samma strider 300 gånger var, jämnstarka vuxna; slutet för den ena sidan | den andra');
+arenan(300);
