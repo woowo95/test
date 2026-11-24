@@ -75,9 +75,9 @@ export const FRAM_SKILL: Skill = 'skaldskap'; // steg 4.3.2.5; övas också av b
 export const FRAM = balans('framtradande', {
   scenBra: 0.75, scenDalig: 0.3, // framträdandets kvalitet från vilken publiken minns det som bra, och till vilken som dåligt (steg 12.1.134)
   fran: 18, till: 23, // ett framträdande börjar på kvällen mellan dessa timmar, när det är mörkt
-  // kallelsen (steg 10.7.9): lusten att uppträda är ett tal per timme, viljaTim gånger kvaliteten (färdigheten och karisman),
-  // gånger tiden sedan personen senast prövade, räknat tidigast från klockan fran samma kväll
-  viljaTim: 0.1,
+  // kallelsen (steg 10.7.9 och 13.8.8): lusten att uppträda är vikten för raden framtradande i kvällens dragning i FRITID,
+  // vilja gånger kvaliteten (färdigheten och karisman)
+  vilja: 0.05,
   vanta: 15, // minuter: den som kallat väntar så här länge vid scenen eller elden innan framträdandet börjar
   med: 0.8, medTycke: 0.5, // vid kallelsen vill var och en lyssna med chansen med × (1 + medTycke × tycket om den som uppträder / 100)
   // gruppen (steg 10.7.11): bland de vuxna som vill lyssna vill var och en stå på scenen med chansen gruppVilja gånger sin egen
@@ -327,12 +327,15 @@ const SOVER = new Set<string>(['sova', 'vila', 'badd']); // på kvällen och nat
 const kanKomma = (q: Person) => alive(q) && kanGa(q) && !(q.task && (SOVER.has(q.task.act) || ACTS[q.task.act]?.fortsatter?.length));
 // på kvällen (fritiden i val.ts, steg 10.7.9): p vill uppträda och kallar. Hen väljer form, instrument och budskap, går till
 // scenen eller elden och väntar FRAM.vanta minuter. De som vill lyssna avbryter det de gör och går dit (lyssnaVal)
-export function framVal(s: State, p: Person): { act: 'upptrada'; why: string; dur: number; ref: number; tool: string; spot?: { x: number; y: number } } | undefined {
+// lusten att uppträda nu (steg 13.8.8): vikten för raden framtradande i kvällens dragning i FRITID (val.ts). En vuxen som inte
+// är sjuk, på kvällen mellan FRAM.fran och FRAM.till, en gång per kväll i byn; på festdagen oftare (steg 10.7.19)
+export function framVikt(s: State, p: Person) {
   const h = hourOf(s.now);
-  if (s.fram && s.now < s.fram.slut || ageOf(p, s.now) < ALDER.vuxen || h < FRAM.fran || h >= FRAM.till || s.framKvall === kvall(s.now) || isSick(p, s.now)) return undefined;
-  const fran = Math.max(p.framProv ?? -Infinity, s.now - (h - FRAM.fran) * HOUR);
-  p.framProv = s.now;
-  if (rnd(s, 'fram', p) >= FRAM.viljaTim * framKval(s, p) * (festNu(s) ? FEST.lust : 1) * (s.now - fran) / HOUR) return undefined; // på festdagen oftare (steg 10.7.19)
+  if (s.fram && s.now < s.fram.slut || ageOf(p, s.now) < ALDER.vuxen || h < FRAM.fran || h >= FRAM.till || s.framKvall === kvall(s.now) || isSick(p, s.now)) return 0;
+  return FRAM.vilja * framKval(s, p) * (festNu(s) ? FEST.lust : 1);
+}
+export function framVal(s: State, p: Person): { act: 'upptrada'; why: string; dur: number; ref: number; tool: string; spot?: { x: number; y: number } } | undefined {
+  if (!framVikt(s, p)) return undefined;
   const sc = scenen(s), inst = sc ? instrumentVid(s, sc) : [];
   const lar = p.skill[FRAM_SKILL] >= (FRAM_AV.forelasning!.min ?? 0) ? forelasAmne(s, p) : undefined, former = kan(p, inst, lar);
   if (!former.length) return undefined;

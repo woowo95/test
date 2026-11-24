@@ -308,7 +308,6 @@ export function kvall(seed = 3, timme = 20) {
 // p försöker uppträda tills hen gör det (eller det inte går): som om hen prövat många kvällar klockan 18 till nu
 export function upptrad(s: State, p: Person, ganger = 300) {
   for (let i = 0; i < ganger; i++) {
-    p.framProv = undefined;
     const fr = SIM.framVal(s, p);
     if (fr?.act === 'upptrada') { p.task = { act: 'upptrada', phase: 'go', tx: fr.spot?.x ?? p.x, ty: fr.spot?.y ?? p.y, until: s.now + fr.dur, carry: 0, ref: fr.ref, tool: fr.tool, dark: true, why: fr.why }; return true; }
   }
@@ -3820,13 +3819,8 @@ SCENARIER.dryckval = {
     p.smak['m:ol'] = 1; const kvOl = SIM.kvallsDryck(s, p, true);
     // registret: alla drycker har en rad, och bara de med alkohol tas på kvällen
     const rader = SIM.DRYCKER.every(k => !!SIM.dryckAv(k)?.stat) && SIM.DRYCKER.filter(k => SIM.dryckAv(k)!.kvall !== undefined).every(k => (SIM.dryckAv(k)!.alkohol ?? 0) > 0);
-    // chansen per tid: lika många drycker per natt med frågor var 10:e och var 30:e minut
-    const perNatt = (min: number) => {
-      let n = 0;
-      for (let natt = 0; natt < 400; natt++) { s.now += SIM.DAY; klockan(s, 19); for (let t = 0; t < 2 * 60; t += min) { s.now += min * SIM.MIN; if (SIM.kvallsChans(s, p)) { n++; break; } } }
-      return n / 400;
-    };
-    const tio = perNatt(10), trettio = perNatt(30);
+    // drycken är en rad i kvällens dragning i FRITID (steg 13.8.8), med vikten RUS.kvall gånger lusten
+    const rad = SIM.FRITID.find(f => f.id === 'dryck'), vikt = SIM.kvallsVikt(s, p);
     // ölet släcker lite törst och ger rus
     p.torst = 0.2; p.rus = 0; SIM.drickHemma(s, p, 'ol');
     const ol = p.torst > 0.2 && (p.rus ?? 0) > 0;
@@ -3836,7 +3830,7 @@ SCENARIER.dryckval = {
       ['saften släcker törsten och ger sin tanke, ur raden', slackt],
       [`på kvällen vinet före ölet (${kv}), med smak för öl ölet (${kvOl})`, kv === 'vin' && kvOl === 'ol'],
       ['varje dryck har en rad, och bara de med alkohol tas på kvällen', rader],
-      [`kvällsdrycken är en chans per tid (${(tio * 100).toFixed(0)} % med frågor var 10:e minut, ${(trettio * 100).toFixed(0)} % var 30:e)`, Math.abs(tio - trettio) < 0.1 && Math.abs(tio - (1 - (1 - SIM.RUS.kvall * SIM.rusLust(s, p)) ** 2)) < 0.1],
+      [`kvällsdrycken är en rad i fritidens dragning på kvällen (${rad?.nar}, vikten ${vikt.toFixed(2)})`, rad?.nar === 'natt' && Math.abs(vikt - SIM.RUS.kvall * SIM.rusLust(s, p)) < 1e-9 && vikt > 0],
       ['ölet släcker lite törst och ger rus', ol],
     ];
   },

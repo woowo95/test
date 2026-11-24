@@ -10,7 +10,7 @@ import { ELDSTATIONER } from './stationseld';
 import { isKlar, stationerOf } from './stationer';
 import { flintaTillVerktyg } from './redskap';
 import { VATSKOR, type VatskaId, ar_vatska, taVatska, vatskaAv, vatskaKrok, } from './vatskor';
-import { kvallsChans, kvallsDryck } from './rus';
+import { kvallsDryck, kvallsVikt } from './rus';
 import { forbrukat } from './forradsmal';
 import { grundvarde } from './varde';
 import { narStridVal } from './kartstrid';
@@ -84,7 +84,7 @@ import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlag
 import { TEK, TEKTAL, forsokChans, forsokVal, knows, laraVal, tekArbete } from './teknik';
 import { sportListaVal, sportVal, sportVikt, tittaVal, tittaVikt } from './sport';
 import { handlaVal } from './handel';
-import { framVal, lyssnaVal } from './framtradande';
+import { framVal, framVikt, lyssnaVal } from './framtradande';
 import { utbrottBorjar, utbrottNu } from './humor';
 import { smakDrag } from './rykten';
 import { PAB, pabud, skams } from './styre';
@@ -789,12 +789,6 @@ export const ARBETEN: readonly Arbete[] = [
   // nattens vakt (byts varje natt kl. 7)
   // barnen leker; de lite större hjälper till (raden arbete)
   { id: 'leka', niva: 9, nar: 'dag', prova: ({ s, v, a }) => a < ALDER.hjalper && set(v, 'leka', lekText(s)) },
-  // ett framträdande vid scenen eller elden (steg 4.3.2 och 10.7.9, framtradande.ts): den som vill uppträda kallar
-  { id: 'framtradande', niva: 9, nar: 'natt', prova: ({ s, p, v }) => {
-    const fr = skams(p, s.now) ? undefined : framVal(s, p);
-    if (!fr) return false;
-    set(v, fr.act, fr.why); v.spot = fr.spot ?? spotFor(s, 'beratta', p); v.dur = fr.dur; v.ref = fr.ref; v.tool = fr.tool; return true;
-  } },
   // 5 Rädda: det som blir dåligt först räddas först (radda nedan, steg 6.1.15). Att bära in är en förbättring: inte när byn fryser (talet dras ändå, så att personens följd är som förut). När byn
   // svälter bärs bara maten in, så att den inte blir liggande ute (steg 2.12.3)
   { id: 'avrusta', niva: 5, nar: 'dag', prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen || !kanGa(p)) return false; const g = avrustaVal(s, p); if (!g) return false; v.spot = g.spot; v.ref = g.ref; v.dur = g.min * MIN; return set(v, 'avrusta', g.why); } }, // steg 8.7.5
@@ -964,8 +958,6 @@ export const ARBETEN: readonly Arbete[] = [
   // 9 Fritid: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden
   { id: 'fritid', niva: 9, nar: 'dag', prova: c => { leisure(c.s, c.p, c.v, c.a, false, dag(c).u, c.lazy); return true; } },
   // på natten håller man sig vid elden och berättar, gör handarbete, umgås eller sover
-  // en dryck med alkohol på kvällen (steg 9.6.14, 10.2.34 och 10.7.23): ett val på fritiden, med chansen RUS.kvall per timme när byn har en
-  { id: 'kvallsdryck', niva: 9, nar: 'natt', prova: ({ s, p, v }) => { const d = kvallsDryck(s, p, hemma(s, p)); if (!d || !kvallsChans(s, p)) return false; v.spot = { x: p.x, y: p.y }; v.dur = 0; v.tool = d; return set(v, 'dryck', `Dricker ${VATSKOR[d].namn.toLowerCase()} vid elden`); } },
   { id: 'kvall', niva: 9, nar: 'natt', prova: ({ s, p, v, a }) => { leisure(s, p, v, a, true); return true; } },
 ];
 
@@ -1417,7 +1409,7 @@ export interface FritidC {
   why: string; // skälet till handarbetet
   at: { x: number; y: number }; // där hen skulle skriva
   fara: ReturnType<typeof dangers>;
-  fb?: ReturnType<typeof besokVal>; gb?: ReturnType<typeof gravbesokVal>; sk?: ReturnType<typeof skrivVal>; la?: ReturnType<typeof lasVal>;
+  dr?: ReturnType<typeof kvallsDryck>; fb?: ReturnType<typeof besokVal>; gb?: ReturnType<typeof gravbesokVal>; sk?: ReturnType<typeof skrivVal>; la?: ReturnType<typeof lasVal>;
 }
 export interface FritidRad {
   id: string;
@@ -1543,6 +1535,14 @@ export const FRITID: readonly FritidRad[] = [
   { id: 'sport', nar: 'dag', kraver: 'ett överskott, sportens redskap och andra som vill spela', ger: 'humör och sällskap', drar: 'styrkan och smidigheten', akt: ['sport'],
     vikt: c => sportVikt(c.s, c.p, c.calm), // sporten när byn har ett överskott (steg 4.3.1, sport.ts)
     gor: c => { const sp = sportVal(c.s, c.p); if (!sp) return false; const v = c.v; set(v, 'sport', sp.why); v.spot = sp.spot; v.dur = sp.dur; v.ref = sp.ref; v.tool = sp.tool; return true; } },
+  // en dryck med alkohol på kvällen (steg 9.6.14, 10.7.23 och 13.8.8): den vuxne som är hemma när byn har en, efter lusten till rus
+  { id: 'dryck', nar: 'natt', kraver: 'en dryck med alkohol och att vara hemma', ger: 'rus och humör', drar: 'lusten till rus: humöret, vanan och sederna', akt: ['dryck'],
+    vikt: c => (c.dr = kvallsDryck(c.s, c.p, hemma(c.s, c.p))) ? kvallsVikt(c.s, c.p) : 0,
+    gor: c => { const d = c.dr!, v = c.v; v.spot = { x: c.p.x, y: c.p.y }; v.dur = 0; v.tool = d; return set(v, 'dryck', `Dricker ${VATSKOR[d].namn.toLowerCase()} vid elden`); } },
+  // ett framträdande vid scenen eller elden (steg 4.3.2, 10.7.9 och 13.8.8, framtradande.ts): den som vill uppträda kallar
+  { id: 'framtradande', nar: 'natt', kraver: 'en kväll utan framträdande, och att inte skämmas', ger: 'humör åt publiken och färdighet', drar: 'skaldskapet och karisman', akt: ['upptrada'],
+    vikt: c => skams(c.p, c.s.now) ? 0 : framVikt(c.s, c.p),
+    gor: c => { const fr = framVal(c.s, c.p); if (!fr) return false; const v = c.v; set(v, fr.act, fr.why); v.spot = fr.spot ?? spotFor(c.s, 'beratta', c.p); v.dur = fr.dur; v.ref = fr.ref; v.tool = fr.tool; return true; } },
   { id: 'titta', nar: 'dag', kraver: 'en match som pågår', ger: 'humör', drar: 'lugnet', akt: ['titta'],
     vikt: c => tittaVikt(c.s, c.p, c.calm), // att titta på matchen (steg 10.7.16)
     gor: c => { const ti = tittaVal(c.s, c.p); if (!ti) return false; const v = c.v; set(v, 'titta', ti.why); v.spot = ti.spot; v.dur = ti.dur; v.ref = ti.ref; v.tool = ti.tool; return true; } },

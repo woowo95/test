@@ -246,8 +246,8 @@ SCENARIER.ruslust = {
     glad.thoughts = Array.from({ length: 5 }, (_, i) => ({ text: 'Glad ' + i, v: 0.3, until: Infinity })); glad.supit = 0;
     for (const p of [ledsen, glad]) { p.upp = (p.upp ?? []).filter(u => !u.rus); }
     const t0 = new Date(s.now).setHours(21, 0, 0, 0);
-    const kvallar = (p: SIM.Person) => { let n = 0; for (let i = 0; i < 400; i++) { s.now = t0 + i * SIM.DAY; p.kvallT = s.now - SIM.HOUR; if (SIM.kvallsChans(s, p)) n++; } return n; };
-    const nL = kvallar(ledsen), nG = kvallar(glad);
+    s.now = t0;
+    const nL = SIM.kvallsVikt(s, ledsen), nG = SIM.kvallsVikt(s, glad); // vikten för drycken i kvällens dragning (steg 13.8.8)
     // uppväxten: plus eller minus på lusten, inga egenskaper
     const ung = (b: SIM.State) => SIM.living(b).find(c => SIM.ageOf(c, b.now) >= SIM.UPPV.fran && SIM.ageOf(c, b.now) < SIM.UPPV.alder);
     const sb = SIM.cloneState(testBy(20, b => !!ung(b))), barn = ung(sb);
@@ -255,7 +255,7 @@ SCENARIER.ruslust = {
     if (barn) { barn.upp = []; medTal(SIM.UPPLEVELSER, 'chans', 1, () => SIM.upplev(sb, barn, 'foralderSop', 'Ulv')); u = barn.upp.find(x => x.k === 'foralderSop'); }
     const fore = SIM.rusLust(s, glad); glad.upp = [...glad.upp ?? [], { k: 'foralderSop', a: 8, e: {}, rus: 2 }]; const efter = SIM.rusLust(s, glad);
     return [
-      [`en ledsen med vana dricker oftare än en glad utan (${nL} mot ${nG} kvällar av 400)`, nL > nG * 1.5],
+      [`en ledsen med vana dricker oftare än en glad utan (vikten ${nL.toFixed(2)} mot ${nG.toFixed(2)})`, nL > nG * 1.5],
       [`lusten: ledsen ${SIM.rusLust(s, ledsen).toFixed(2)}, glad ${fore.toFixed(2)}`, SIM.rusLust(s, ledsen) > 1 && fore < 1],
       [`Såg en förälder supa ändrar lusten (${u?.rus ?? '–'}) och inga egenskaper`, !!u && Math.abs(u.rus ?? 0) === 2 && Object.keys(u.e).length === 0],
       ['plus på lusten ur uppväxten gör lusten större', efter > fore],

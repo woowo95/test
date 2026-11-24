@@ -1394,3 +1394,30 @@ SCENARIER.forbvillkor = {
     ];
   },
 };
+
+SCENARIER.fritidrader = {
+  text: 'Steg 13.8.8: fritiden har alla sina rader. Kvällsdrycken och framträdandet är rader i FRITID och dras med de andra i kvällens dragning, i stället för egna rader med egen chans före fritiden, så att framträdandet inte går före Rädda',
+  kor: () => {
+    const ids = SIM.ARBETEN.map(r => r.id), fr = (id: string) => SIM.FRITID.find(f => f.id === id);
+    const egna = ['kvallsdryck', 'framtradande'].filter(id => ids.includes(id));
+    // kvällen vid elden med öl i byn: de vuxna väljer många gånger från samma läge
+    const s0 = SIM.createState(3, START); klockan(s0, 20); tandEld(s0); setFood(s0, 400); SIM.setAmount(s0, 'ved', 300);
+    const vuxna0 = SIM.living(s0).filter(p => SIM.ageOf(p, s0.now) >= SIM.ALDER.vuxen);
+    medVatska(s0, vuxna0[0]!, 'lerkruka_stor', 'ol', 10);
+    const e = SIM.eldPlats(s0);
+    for (const p of vuxna0) { p.x = e.x + 1.5; p.y = e.y + 0.5; p.rest = 1; }
+    const n: Record<string, number> = {};
+    let alla = 0;
+    for (let i = 0; i < 60; i++) {
+      const s = SIM.cloneState(s0); s.seed = (s.seed ?? 0) + i;
+      for (const p of SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)) { p.task = undefined; SIM.chooseTask(s, p); alla++; const a = (p.task as SIM.Task | undefined)?.act ?? '-'; n[a] = (n[a] ?? 0) + 1; }
+    }
+    const kvall = ids.indexOf('kvall'), sistaRadda = Math.max(...SIM.ARBETEN.map((r, i) => r.niva === 5 ? i : -1));
+    return [
+      [`ingen egen rad för drycken eller framträdandet i ARBETEN (${egna.join(', ') || 'inga'})`, egna.length === 0],
+      [`drycken och framträdandet är kvällsrader i FRITID (${fr('dryck')?.nar}, ${fr('framtradande')?.nar})`, fr('dryck')?.nar === 'natt' && fr('framtradande')?.nar === 'natt'],
+      [`framträdandet väljs bara i kvällens rad, efter Rädda (raden kväll på plats ${kvall}, Rädda slutar på ${sistaRadda})`, kvall > sistaRadda],
+      [`på kvällen dras drycken (${n.dryck ?? 0}) och framträdandet (${n.upptrada ?? 0}) bland de andra (${alla} val: ${Object.entries(n).map(([k, v]) => `${k} ${v}`).join(', ')})`, (n.dryck ?? 0) > 0 && (n.upptrada ?? 0) > 0 && (n.dryck ?? 0) < alla / 2],
+    ];
+  },
+};

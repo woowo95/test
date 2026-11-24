@@ -213,7 +213,7 @@ export interface Person {
   foder?: { f: string; till: number; hjalp?: number }; // förlossningen pågår: förloppet, när barnet föds och hjälparen (steg 9.5.29, forlossning.ts)
   krycka?: 1; // hen har en krycka till sitt brutna ben (steg 9.5.28, protes.ts)
   forbandMed?: number; ropT?: number; // remsorna i bältet och när hen senast ropade på hjälp (steg 9.5.16, halsa.ts)
-  rus?: number; kvallT?: number; supit?: number; fylla?: 1; bak?: number; // fylla = var full i kväll, bak = timmar bakfylla kvar (steg 9.6.15) // berusningen nu och det man supit på sistone (steg 9.6.14, rus.ts) // kvallT = när hen sist frågade sig om en kvällsdryck (steg 10.7.23)
+  rus?: number; supit?: number; fylla?: 1; bak?: number; // fylla = var full i kväll, bak = timmar bakfylla kvar (steg 9.6.15) // berusningen nu och det man supit på sistone (steg 9.6.14, rus.ts)
   protMinne?: string[]; // proteinet i de senaste måltiderna (steg 9.6.5, behov.ts)
   hn?: Record<string, number>; hnBlodat?: 1; // hälsans tecken förra timmen och att hen blött (steg 9.5.31, halsonotiser.ts)
   gift?: number; // bigiftet just nu, räknat mot kroppens storlek (steg 10.10.22, halsa.ts gift)
@@ -221,7 +221,6 @@ export interface Person {
   bedrift?: import('./rykten').Bevis; // den senaste stora bedriften (steg 10.6.1): stoltheten ger lust att resa en runsten
   sorg?: { namn: string; vem?: number; ord: string; v: number; dygn: number; t0: number; s2?: 1; s3?: 1 }[]; // sorgen i stadier efter en död (steg 9.2.33, liv.ts)
   tat?: { m: import('./tatuering').TatMotiv; p: import('./tatuering').TatPlats; stil: import('./tatuering').TatStil; t: number; av?: number }[]; tatV?: { m: import('./tatuering').TatMotiv; t: number }[]; // tatueringarna och händelserna hen vill märka (steg 10.7.5)
-  framProv?: number; // när hen senast prövade om hen ville uppträda (steg 10.7.9)
   gravBesok?: number; paminnd?: Record<number, number>; // när hen senast stod vid en grav, och när hen påmindes om en död (steg 10.4.8)
   pratArbete?: number; // samtalen hen haft medan hen arbetat (steg 8.1.12)
   id: number; name: string; sex: 'm' | 'k';
