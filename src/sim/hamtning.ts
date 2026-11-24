@@ -16,8 +16,8 @@ import { PROJEKT } from './projekt';
 import { DORRAR, type DorrSlag } from './byggnad';
 import { troOf } from './religion';
 import { addDel, kyrkaId, sumOf } from './egendom';
-import { SAKER, viktOf } from './saker';
-import { DJURARTER, GORS, REP_TIMME, borjaTool, djurKvar, forstRuttnar } from './redskap';
+import { SAKER, isTool, viktOf } from './saker';
+import { DJURARTER, GORS, REP_TIMME, borjaTool, djurKvar, forstRuttnar, verktygFor } from './redskap';
 import { REST, RESTER, resterOver } from './rester';
 import { farorNu, heligtAvstar } from './kultlatt';
 import { villHaAv } from './forradsmal';
@@ -44,8 +44,13 @@ export type Fran = number | Record<string, [number, number]> | undefined;
 const agareAv = (fran: Fran, k: string, tk: Task) => typeof fran !== 'object' ? fran : fran[k] && (tk.ag?.[k]?.[fran[k]![0]] ?? 0) < fran[k]![1] - 1e-9 ? fran[k]![0] : undefined;
 const agareAlla = (fran: Fran, slag: string[], tk: Task) => typeof fran !== 'object' ? fran : Object.fromEntries(slag.flatMap(k => { const a = agareAv(fran, k, tk); return a === undefined ? [] : [[k, a]]; }));
 export const HAMTAS: Partial<Record<Act, Hamtas>> = {};
-// ett hantverk (GORS): materialet efter receptet, när hen inte redan påbörjat det (det påbörjade har materialet i sig)
-for (const act of Object.keys(GORS) as Act[]) HAMTAS[act] = { av: (s, p, tk) => { if (halvOf(s, p, GORS[act]!)) return undefined; const k = borjaTool(s, p, act, tk.tool); return k ? SAKER[k]?.skaffa?.av : undefined; } };
+// ett hantverk (GORS): materialet efter receptet, när hen inte redan påbörjat det (det påbörjade har materialet i sig), och
+// verktyget när det är ett material (stenen bensylen slipas mot): det följer med till platsen och bärs hem igen
+for (const act of Object.keys(GORS) as Act[]) HAMTAS[act] = { av: (s, p, tk) => {
+  if (halvOf(s, p, GORS[act]!)) return undefined;
+  const k = borjaTool(s, p, act, tk.tool), av = k ? SAKER[k]?.skaffa?.av : undefined, v = k ? verktygFor(s, k) : undefined;
+  return av && v && !isTool(v) ? { ...av, [v]: (av[v] ?? 0) + 1 } : av;
+} };
 // en station eller ett tillbehör till en möbel: receptet när den inte redan är påbörjad (stationer.ts), av det tron äger när
 // det är trons möbel
 HAMTAS.station = { av: (s, p, tk) => { const k = tk.tool ?? '', h = stationDef(k) ? halvbyggd(s, k, p) : undefined, av = stationDef(k) ? nastaAv(k, h) : {}; return Object.keys(av).length ? av : undefined; }, /* en station i delar: nästa del (steg 12.1.17) */ fran: (s, p, tk) => { const tro = stationDef(tk.tool ?? '')?.tro ? troOf(s, p.tro) : undefined; return tro ? kyrkaId(tro.id) : undefined; } };
