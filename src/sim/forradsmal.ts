@@ -21,13 +21,13 @@ import { fargKrok } from './fargkrok';
 import { balans } from './balans';
 import { ELD, eldarOf, hearthOf, woodDays } from './eld';
 import { foodDaysAll } from './ekonomi';
-import { ERSATT, isFood } from './saker';
+import { ERSATT, SAKER, isFood } from './saker';
 import { ljusPlatser } from './ljus';
 import { allows, amountOf as iForradet, iHelaForradet, rymd, zonesOf } from './lager';
 // förrådsmålen gäller hela byns förråd, också när frågan ställs mitt i ett arbete där bara det inom räckhåll nås (steg 11.1.74)
 // det som kan användas i stället (ERSATT, den torkade röllekan, steg 13.6.1) räknas med
 const amountOf = (s: State, k: string) => iHelaForradet(() => (ERSATT[k] ?? []).reduce((n, q) => n + iForradet(s, q), iForradet(s, k)));
-import { Pabud, legitimitet, pabud } from './styre';
+import { Pabud, lagerAsikt, legitimitet, nyttPabud, pabud } from './styre';
 import { ALDER, ageOf, living } from './folk';
 import { TORST } from './torst';
 import { harMyr } from './myr';
@@ -47,6 +47,7 @@ import { knows } from './teknik';
 
 export const FORRAD = balans('forrad', {
   halvbyggd: 0.4, // en halvbyggd station väger så här mycket av det som är kvar upp till full brist mer än en ny (steg 13.8.12)
+  lager: 1, // påbudet Förråden för ett material (steg 13.8.15): vid talet 1 vill byn ha så här många fulla stackar av det i lager
   forsiktig: 0.25, // en försiktig by (seden Förutseende eller påbudet) vill ha så mycket större förråd
   behovTomt: 3.2, behovMax: 3.5, // vikten av ett tomt förråd under Försörjning, och den högsta vikten
   // mat: förrådets dygn dämpar vikten ner till Min när förrådet räcker så länge byn vill (bufferten) ...
@@ -192,8 +193,12 @@ export function materialTimme(s: State): Record<string, { b: number; t: number }
 // Ett material utan buffert (steg 13.8.4) vill byn ha så mycket av som projekten och byggena saknar (s.projektSaknar, en gång i timmen)
 export function materialBuffert(s: State, k: Materialslag, m = s.arbBehov?.mal?.[k]) {
   const r: Materialmal = MATERIALMAL[k];
-  return Math.max(r.min(s), r.buffert ? m?.b ?? 0 : s.projektSaknar?.[k]?.beh ?? 0);
+  return Math.max(r.min(s), r.buffert ? m?.b ?? 0 : s.projektSaknar?.[k]?.beh ?? 0, lagerAv(k, pabud(s, `lager_${k}`)));
 }
+// påbudet Förråden för materialet k (steg 13.8.15): över noll ett lager som växer med talet, hela saker; under noll inget
+export const lagerAv = (k: string, v: number) => v > 0 ? Math.ceil(v * FORRAD.lager * (SAKER[k]?.stack ?? 1) - 1e-9) : 0;
+// talen i påbudet Förråden, ett per material (styre.ts), läggs till när alla filer är lästa (lagerPabud i val.ts)
+export const lagerPabud = () => { for (const k of Object.keys(MATERIALMAL)) nyttPabud(`lager_${k}`, { grupp: 'forrad', namn: SAKER[k]?.namn ?? k, text: `Hur stort lager byn har av ${(SAKER[k]?.namn ?? k).toLowerCase()}`, sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) }); };
 export function materialTak(s: State, k: Materialslag) { return takOch(s, k).tak; }
 // taket och bufferten för slaget k: bufferten, och högst FORRAD.materialMatt gånger den eller det platsen rymmer
 function takOch(s: State, k: Materialslag) {

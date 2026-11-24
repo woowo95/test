@@ -11,7 +11,7 @@ import { isKlar, stationerOf } from './stationer';
 import { flintaTillVerktyg } from './redskap';
 import { VATSKOR, type VatskaId, ar_vatska, taVatska, vatskaAv, vatskaKrok, } from './vatskor';
 import { kvallsDryck, kvallsVikt } from './rus';
-import { forbrukat } from './forradsmal';
+import { forbrukat, lagerPabud } from './forradsmal';
 import { grundvarde } from './varde';
 import { narStridVal } from './kartstrid';
 import { facklaVal, ljusAt } from './ljus';
@@ -485,6 +485,7 @@ satFaror(dangers);
 // förrådsmålen för dryckerna (steg 10.2.12): krokarna sätts här, där alla filer redan är lästa
 vatskaKrok.tagen = (s, v, n) => forbrukat(s, v, n);
 vatskaMaterial.ar = ar_vatska; vatskaMaterial.har = (s, k) => vatskaAv(s, k as VatskaId); vatskaMaterial.ta = (s, k, n) => taVatska(s, k as VatskaId, n); // limmet i recepten (steg 13.5.2)
+lagerPabud(); // påbudet Förråden får ett tal per material (steg 13.8.15)
 flintaKrok.verktyg = flintaTillVerktyg; // flintan till redskapen i förrådsmålet (steg 10.2.12)
 // kolet som eldarna med kol som bränsle (ässjan, fyrfaten) rymmer: det byn vill ha i förrådet av kol (steg 13.8.6)
 kolKrok.eldar = s => { let n = 0; for (const t of stationerOf(s)) { const e = ELDSTATIONER[t.k]; if (e?.bransle === 'kol' && isKlar(t)) n += e.max; } return Math.ceil(n); };

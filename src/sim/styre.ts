@@ -178,7 +178,7 @@ export const VAGSKALAR: { id: string; sed?: Sed; namn: string; steg?: string }[]
 // och ett kort i fliken. noll = talet står i sitt nollage och gör ingen skillnad (fliken visar det inte). Hur talet används står i
 // val.ts, forradsmal.ts och resa.ts
 // vem = påbudet pekar ut en person (tystnaden, steg 10.4.10): vem ledaren vill att det gäller; asikt får då personen som om
-interface PabudDef { namn: string; text: string; sed?: Sed; grupp?: string; asikt: (s: State, l: Person, om?: number) => number; vem?: (s: State, l: Person) => number | undefined }
+export interface PabudDef { namn: string; text: string; sed?: Sed; grupp?: string; asikt: (s: State, l: Person, om?: number) => number; vem?: (s: State, l: Person) => number | undefined }
 const PDEF = {
   matlager: { grupp: 'forrad', namn: 'Mat', text: 'Hur många dygn mat byn ska ha i förrådet innan den slappnar av', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
   vedlager: { grupp: 'forrad', namn: 'Ved', text: 'Hur många dygn ved byn ska ha i förrådet', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
@@ -198,8 +198,9 @@ const PDEF = {
   // vikt i valet av aktivitet och säger aldrig vart, hur många eller hur ofta
   utfarder: { namn: 'Utfärder', text: 'Styrets hållning till resor och uppdrag', asikt: (s, l) => hallning(((stat(l, 'nyfikenhet', s.now) + stat(l, 'mod', s.now)) / 2 - 10) / PAB.utfarDiv) },
 } satisfies Record<string, PabudDef>;
-export type Pabud = keyof typeof PDEF;
-export const PABUD: Record<Pabud, PabudDef> = PDEF;
+// lager_<material>: ett tal per material i förrådsmålen (steg 13.8.15), som forradsmal.ts lägger till i gruppen Förråden (nyttPabud)
+export type Pabud = keyof typeof PDEF | `lager_${string}`;
+export const PABUD = PDEF as Record<Pabud, PabudDef>;
 export const PABUD_LIST = Object.keys(PDEF) as Pabud[];
 // en åsikt från -1 till 1 som en av tre hållningar
 const hallning = (x: number) => x < -PAB.hallning ? -1 : x > PAB.hallning ? 1 : 0;
@@ -214,6 +215,13 @@ export const PABUD_FRAGOR: PabudFraga[] = [
   ...PABUD_LIST.filter(k => !(PABUD[k] as PabudDef).grupp).map(k => ({ id: k, namn: PABUD[k].namn, text: PABUD[k].text, tal: [k] })),
 ];
 export const pabudFraga = (id: string) => PABUD_FRAGOR.find(f => f.id === id);
+// ett påbud till (steg 13.8.15): ett tal som ett annat system lägger till, i sin grupp eller som en egen fråga
+export function nyttPabud(k: Pabud, d: PabudDef) {
+  if (PABUD[k]) return;
+  PABUD[k] = d; PABUD_LIST.push(k);
+  const f = d.grupp ? PABUD_FRAGOR.find(q => q.id === d.grupp) : undefined;
+  if (f) f.tal.push(k); else PABUD_FRAGOR.push({ id: k, namn: d.namn, text: d.text, tal: [k] });
+}
 // talet som gäller nu för påbudet k; ett påbud som pekar ut en annan person än den det gäller börjar från noll
 export const pabudFran = (s: State, k: Pabud, om?: number) => om === undefined || s.styre?.tystnad?.id === om ? s.styre?.pabud?.[k] ?? 0 : 0;
 // den som påbudet pekar ut (tystnaden): undefined när påbudet inte pekar ut någon, null när ledaren inte har någon att peka ut
@@ -237,7 +245,7 @@ export function tystFaktor(s: State, a: Person, om: number) {
   return 1 - Math.max(0, pabud(s, 'tystnad')) * PAB.tystMax * (1 - clamp(asiktOm(s, a, om) / 100, 0, 1));
 }
 // en försiktig ledare vill ha större lager, och en intelligent planerar inför istiden
-function lagerAsikt(s: State, l: Person) {
+export function lagerAsikt(s: State, l: Person) {
   return clamp(drarSed(s, l, 'forsiktighet') + (kallTid(ageIndex(s)) ? PAB.plan * (l.pot.intelligens - 10) / 6 : 0), -1, 1);
 }
 

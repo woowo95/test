@@ -1616,3 +1616,29 @@ SCENARIER.nattvakt = {
     ];
   },
 };
+
+SCENARIER.lagerpabud = {
+  text: 'Steg 13.8.15: påbudet Förråden får alla material. Påbudet har ett tal per material i förrådsmålen, blandat med seden Förutseende, och över noll har materialet en buffert som växer med talet. En by med påbudet om stenlager har sten hemma, en by utan har ingen, och en by med seden Förutseende lagrar mer än en utan',
+  lang: true,
+  kor: () => {
+    const { living, ageOf, ALDER, amountOf } = SIM;
+    const by = (stenlager: number | undefined, sed = 0) => {
+      const s = SIM.createState(3, START); klockan(s, 8); tandEld(s); setMat(s, { bar: 200 });
+      s.seder.v.forsiktighet = sed;
+      const l = living(s).find(p => ageOf(p, s.now) >= ALDER.vuxen)!;
+      if (stenlager !== undefined) { s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: [], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: { lager_sten: stenlager } as never } as never; s.seder.v.rang = 1; }
+      SIM.setAmount(s, 'sten', 0);
+      const buf = SIM.materialBuffert(s, 'sten');
+      kor(s, 24);
+      return { buf, sten: amountOf(s, 'sten') };
+    };
+    const med = by(1), utan = by(undefined), forsiktig = by(undefined, 0.6), vanlig = by(undefined, 0);
+    const ordet = SIM.PABUD_FRAGOR.find(f => f.id === 'forrad')?.tal.includes('lager_sten');
+    return [
+      [`påbudet Förråden har ett tal för stenen (${ordet})`, !!ordet],
+      [`med påbudet om stenlager vill byn ha ${med.buf} sten och har ${med.sten} hemma efter ett dygn`, med.buf > 0 && med.sten > 0],
+      [`utan påbudet vill byn inte ha något stenlager (${utan.buf}) och har ${utan.sten} hemma`, utan.buf === 0 && utan.sten < med.sten],
+      [`en by med seden Förutseende vill ha mer (${forsiktig.buf}) än en utan (${vanlig.buf})`, forsiktig.buf > vanlig.buf],
+    ];
+  },
+};
