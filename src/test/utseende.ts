@@ -122,6 +122,8 @@ async function formRunda(pg: any, skarm: string, lage: string, fil: string): Pro
     await pg.screenshot({ path: `${MAPP}/flikar/${flik}-${skarm}${fil}.png`, timeout: 120000 });
     ut.push(...(await pg.evaluate(`(${FORM_MATA})(${JSON.stringify({ pal: palett, form: FORM, flik: `${flik} (${skarm}, ${lage})`, mobil })})`) as FormLarm[]));
   };
+  // sidhuvudet och runstenarna (steg 13.10.17): en gång, innan någon flik öppnats
+  ut.push(...(await pg.evaluate(`(${FORM_MATA})(${JSON.stringify({ pal: palett, form: FORM, flik: `sidhuvudet (${skarm}, ${lage})`, mobil, topp: true })})`) as FormLarm[]));
   for (const id of flikar) { await pg.evaluate(`document.querySelector('.tabs button[data-tab="${id}"]').click()`); await mat(id); }
   // personens ruta: den första i porträttraden, med den högra panelen stängd
   const har = await pg.evaluate(`(() => { document.querySelector('[data-stang="h"]')?.click(); const b = document.querySelector('[data-id]'); if (!b) return false; b.click(); return true; })()`);

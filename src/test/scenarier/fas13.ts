@@ -7,6 +7,8 @@ import { BEAT, START } from '../kor';
 import { sakOrd } from '../../sim/ord';
 import { allaGillar, kvall, upptrad } from './kultur';
 import { BIT, rakna, stallMark } from '../../ui/mark';
+import { delRad } from '../../ui/hjalp';
+import { PIX } from '../../ikoner';
 
 // regeln för stationerna (steg 13.1.1): varje recept vid en station med kvalitet är "bara här" eller "fortare och bättre här"
 SCENARIER.stationsregel = {
@@ -2205,5 +2207,18 @@ SCENARIER.eldalder = {
     const t0 = s.now; SIM.addFuel(s, p, 3, f as never);
     const brinner = f.lit, litAt = f.litAt;
     return [['glöden väcks', !!brinner], [`tiden börjar om när glöden väcks (${((litAt ?? 0) - t0) / SIM.MIN} minuter)`, litAt === t0]];
+  },
+};
+
+SCENARIER.delrad = {
+  text: 'Steg 13.10.15: delraden med namn vet hur många knapparna är, hur många som står i varje rad när den bryts i två, och hur långt det längsta namnet är, så att ingen knapp blir smalare än sitt namn; graferna har en egen symbol och inte pilen för ökning',
+  kor: () => {
+    setByn(SIM.createState(3, START));
+    const d = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `d${i}`, tecken: '', namn: i ? 'Del' : 'Världskartan' }));
+    return [
+      ['sex delar bryts i tre och tre', /--n:6;--h:3;--l:12/.test(delRad('data-x', d(6), 'd0'))],
+      ['sju delar bryts i fyra och tre', /--n:7;--h:4;--l:12/.test(delRad('data-x', d(7), 'd0'))],
+      ['graferna har en egen symbol', (PIX.sym_graf?.length ?? 0) === 16],
+    ];
   },
 };

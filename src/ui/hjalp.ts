@@ -55,7 +55,7 @@ export const berattelseKnapp = (id: string, title: string) => `<button type="but
 // delraden överst i en flik (steg 11.1.25): symbolen med namnet under, som runstenarna, så att ingen rubrik behöver upprepa delens
 // namn. attr = attributet som väljer delen (data-sdel, data-odel …)
 export const delRad = (attr: string, delar: readonly { id: string; tecken: string; namn: string }[], vald: string) =>
-  `<div class="pdelar namngivna" role="tablist">${delar.map(d => `<button type="button" role="tab" ${attr}="${d.id}" aria-selected="${d.id === vald}" title="${esc(d.namn)}"><span class="deltecken">${d.tecken}</span><span class="delnamn">${esc(d.namn)}</span></button>`).join('')}</div>`;
+  `<div class="pdelar namngivna" style="--n:${delar.length};--h:${Math.ceil(delar.length / 2)};--l:${Math.max(...delar.map(d => d.namn.length))}" role="tablist">${delar.map(d => `<button type="button" role="tab" ${attr}="${d.id}" aria-selected="${d.id === vald}" title="${esc(d.namn)}"><span class="deltecken">${d.tecken}</span><span class="delnamn">${esc(d.namn)}</span></button>`).join('')}</div>`;
 // en länk till en kategori i Krönikan (steg 11.1.40): öppnar Krönikan med kategorin vald (panel.ts)
 export const kronikaLank = (kat: string, text: string, ar?: number) => `<button type="button" class="lank" data-visa="kronika" data-kkat-lank="${kat}"${ar !== undefined ? ` data-kar-lank="${ar}"` : ''}>${esc(text)}</button>`; // ar = krönikan öppnas på det året (steg 11.1.64)
 // hur länge det är kvar, i spelets ord (steg 11.1.40): "ungefär 2 år", "en tidsålder", "några timmar"

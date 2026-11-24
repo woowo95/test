@@ -49,7 +49,7 @@ interface Spar { task?: object; act?: string; x: number; y: number; byten: [numb
 const vuxen = (s: State, p: Person) => ageOf(p, s.now) >= ALDER.vuxen && !p.gast && !p.fange;
 const kort = (why: string) => why.replace(/\d+([,.]\d+)?/g, 'N').replace(/ för .* dygn$/, '');
 export const RIMLIGT: Vakt[] = [
-  { id: 'skal', namn: 'Skälet stämmer', ny: (r, p) => { const fore = { kropp: r.spar(p).kropp ?? p, by: r.byn }; for (const k of SKAL) if (k.m.test(p.task!.why ?? '') && !k.villkor(fore)) r.larm('skal', `skälet "${p.task!.why}" (${k.namn}) stämmer inte: ${r.lage(p)}`, p, k.namn); } },
+  { id: 'skal', namn: 'Skälet stämmer', ny: (r, p) => { const kropp = r.spar(p).kropp ?? p, fore = { kropp, by: r.byn }, nu = { kropp, by: bynNu(r.s) }; /* behovet kan också ha uppstått sedan förra provet (någon tog en sten) */ for (const k of SKAL) if (k.m.test(p.task!.why ?? '') && !k.villkor(fore) && !k.villkor(nu)) r.larm('skal', `skälet "${p.task!.why}" (${k.namn}) stämmer inte: ${r.lage(p)}`, p, k.namn); } },
   { id: 'handling', namn: 'Handlingen och skälet hör ihop', ny: (r, p) => { for (const k of SKAL) if (k.handling && k.m.test(p.task!.why ?? '') && !k.handling(p.task!.act)) r.larm('handling', `${ACTS[p.task!.act]?.namn ?? p.task!.act} med skälet "${p.task!.why}"`, p, `${k.namn}: ${p.task!.act}`); } },
   { id: 'samma', namn: 'Inte för många gör samma sak av samma skäl', timme: r => {
     const vuxna = living(r.s).filter(p => vuxen(r.s, p)), n: Record<string, Person[]> = {};

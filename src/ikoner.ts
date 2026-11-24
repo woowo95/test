@@ -4175,3 +4175,7 @@ laggTillMobler(PIX, PAL);
 // Björns val ur bildstilen i fas 12 (steg 12.6.1): ikonerfas12.ts
 import { laggTillFas12 } from './ikonerfas12';
 laggTillFas12(PIX, PAL, iRutan);
+
+// grafernas symbol (steg 13.10.15, platshållare tills Björn valt i bildstilen): en linje som stiger och faller mellan två axlar
+PIX.sym_graf = ['................', '.k..............', '.k...........kk.', '.k..........krrk', '.k.........krrk.', '.k..kk....krrk..', '.k.krrk..krrk...', '.k.krrrkkrrk....', '.kkrrkrrrrk.....', '.krrk.krrk......', '.krk...kk.......', '.kk.............', '.k..............', '.kkkkkkkkkkkkkk.', '................', '................'];
+PAL.sym_graf = { k: '#5e3c24', r: '#a14808' };

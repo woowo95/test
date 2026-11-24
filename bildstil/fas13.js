@@ -25,3 +25,64 @@
     } },
   ] });
 })();
+
+// fas 13: grafernas symbol (steg 13.10.15). Delen Graferna i stenen Byns tal lånade pilen för ökning. Visad som en knapp i panelen
+(() => {
+  const L = { k: 'ben1', r: 'rost1', R: 'rost2', j: 'jord1', J: 'jord2', d: 'kol0' };
+  VAL.push({ id: 'f13_graf', namn: 'Grafernas symbol', typ: 'tre', slag: ['symbol'], vad: 'Steg 13.10.15: delen Graferna i stenen Byns tal visade pilen som betyder ökning. Den får en egen symbol. Bilden visar den som en knapp i panelen.', versioner: [
+    symbolKnapp('En linje som stiger, faller och stiger igen, mellan två axlar.', [
+      '................',
+      '.k..............',
+      '.k...........kk.',
+      '.k..........krrk',
+      '.k.........krrk.',
+      '.k..kk....krrk..',
+      '.k.krrk..krrk...',
+      '.k.krrrkkrrk....',
+      '.kkrrkrrrrk.....',
+      '.krrk.krrk......',
+      '.krk...kk.......',
+      '.kk.............',
+      '.k..............',
+      '.kkkkkkkkkkkkkk.',
+      '................',
+      '................',
+    ], L),
+    symbolKnapp('Tre staplar på en linje, låg, högre och högst.', [
+      '................',
+      '............kkkk',
+      '............kRrk',
+      '............kRrk',
+      '.......kkkk.kRrk',
+      '.......kRrk.kRrk',
+      '.......kRrk.kRrk',
+      '..kkkk.kRrk.kRrk',
+      '..kRrk.kRrk.kRrk',
+      '..kRrk.kRrk.kRrk',
+      '..kRrk.kRrk.kRrk',
+      '.kkkkkkkkkkkkkkk',
+      '................',
+      '',
+      '',
+      '',
+    ], L),
+    symbolKnapp('En karvstock: en trästav med skåror av olika djup, som man räknade med förr.', [
+      '',
+      '',
+      '',
+      '.ddddddddddddddd',
+      'dJJJdJJdddJddddd',
+      'dJJJdJJJdJJJddJd',
+      'dJJJdJJJdJJJddJd',
+      'dJJJdJJJdJJJddJd',
+      'djjjjjjjjjjjddjd',
+      'djjjjjjjjjjjjjjd',
+      'djjjjjjjjjjjjjjd',
+      '.dddddddddddddd.',
+      '',
+      '',
+      '',
+      '',
+    ], { ...L, d: 'kol0' }),
+  ] });
+})();
