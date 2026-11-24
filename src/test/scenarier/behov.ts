@@ -156,7 +156,9 @@ SCENARIER.aktivitet = {
       for (const p of living(s)) {
         const t = p.task, v = spar.v.get(p) ?? [];
         for (let k = 0; k < v.length; k += 3) if (vatt(v[k + 1], v[k + 2])) vatten++;
-        if (t?.phase === 'back' && t.act !== 'bara' && !ryms(s, p)(bordSlag(t)) && Object.values(bordSlag(t)).reduce((a, b) => a + b, 0) > bordPlats(s, p) + 1e-6) tungt++; // aldrig mer än som ryms i de fria händerna (steg 6.1.8)
+        // en hel kanin är en sak, fast den räknas som två fällt vilt: den bärs hem hel också av den som är lite svag (steg 2.10.7)
+        const helKanin = t?.act === 'jakt' && !t.items && Math.abs(t.carry - SIM.KANIN) < 1e-9;
+        if (t?.phase === 'back' && t.act !== 'bara' && !helKanin && !ryms(s, p)(bordSlag(t)) && Object.values(bordSlag(t)).reduce((a, b) => a + b, 0) > bordPlats(s, p) + 1e-6) tungt++; // aldrig mer än som ryms i de fria händerna (steg 6.1.8)
         const r = t?.phase === 'do' && !ACTS[t.act].runda ? ACTS[t.act].vandra?.r : undefined; // hur långt från platsen man rör sig (handlingar.ts); rundan (steg 4.5.6.1) går från ruta till ruta
         if (t && r && Math.hypot(p.x - t.tx, p.y - t.ty) > r + 0.6) utanfor++;
         if (t?.phase === 'do' && isWork(t.act)) arbete += BEAT / 3600;

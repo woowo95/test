@@ -187,13 +187,18 @@ SCENARIER.fullaforrad = {
       const tek = fyll(true), en = living(tek).find(q => vuxen(q, tek))!;
       const oppen = SIM.TEKNIK.find(x => { const sp = { ...en.tek }; for (const q of tek.people) if (q.tek) delete q.tek[x.id]; const ok = !!SIM.tekArbete(tek, en, a => SIM.WORK.includes(a)); if (!ok) for (const q of tek.people) q.tek = { ...(q.tek ?? {}), [x.id]: sp[x.id] ?? 1 }; return ok; });
       let tekUpp = 0; { const sett = new WeakSet<object>(); kor(tek, 8, v => { for (const q of living(v)) if (vuxen(q, v) && q.task && !sett.has(q.task)) { sett.add(q.task); if (/Kanske kommer/.test(q.task.why ?? '') || q.task.act === 'forsok') tekUpp++; } }); }
+      // grenarna och höet mot taket (steg 13.8.4): samma mjuka kurva som maten och veden, så över taket väljs turen allt mer
+      // sällan men slutar inte tvärt. Poängen för raden fylla_grenar vid bufferten, taket och dubbla taket, medel av 200 dragningar av bruset
+      const tak = fyll(true), tq = living(tak).find(q => vuxen(q, tak))!;
+      const fyllPoang = (n: number) => { setItems(tak, { grenar: Math.ceil(n) }); let sum = 0; for (let i = 0; i < 200; i++) sum += SIM.forbattraKandidater(tak, tq).find(x => x.id === 'fylla_grenar')?.sc ?? 0; return sum / 200; };
+      const bG = SIM.materialBuffert(tak, 'grenar'), tG = Math.max(bG + 1, SIM.materialTak(tak, 'grenar')), kurva = [fyllPoang(bG), fyllPoang(tG), fyllPoang(2 * tG)];
       const pf = prov(full), ph = prov(halv);
       const fri = (v: State) => v.stat?.fullaForrad ?? 0;
       return [
         // det mjuka taket (steg 10.2.4): över taket fyller man sällan på, men det tar inte slut tvärt
         [`i den fulla byn fyller man sällan på maten eller veden (${pf.matVed} uppgifter av ${pf.alla}), i byn vid bufferten fylls förråden (${ph.mer})`, pf.matVed <= pf.alla * 0.15 && ph.mer > 0],
         [`en by med fulla förråd arbetar vidare mot nästa teknik (${oppen?.namn ?? 'ingen öppen teknik'}: ${tekUpp} uppgifter i arbetet där den kan komma)`, !!oppen && tekUpp > 0],
-        [`ingen samlar grenar eller hö till förrådet när det är över taket (${pf.overTak + ph.overTak} gånger)`, pf.overTak + ph.overTak <= 1],
+        [`grenarna fylls allt mer sällan över taket men inte aldrig (poängen ${kurva.map(x => x.toFixed(3)).join(' → ')} vid bufferten, taket och dubbla taket; ${pf.overTak + ph.overTak} turer över taket)`, kurva[0] > kurva[1] && kurva[1] > kurva[2] && kurva[2] > 0],
         // också byn vid bufferten når taken under dagen när den fyllt på, så antalen jämförs inte (steg 6.2.21)
         [`de vuxna i den fulla byn får fritid när inget finns kvar att göra (${fri(full)} gånger; ${fri(halv)} i byn vid bufferten när den fyllt på)`, fri(full) > 0],
       ];
