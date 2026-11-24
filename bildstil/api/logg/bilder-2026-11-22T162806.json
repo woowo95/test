@@ -1,0 +1,15 @@
+{
+ "kommando": "tre",
+ "args": [
+  "ost=nya versioner: gör en tydlig rund och en trekantig ost. Fyra alternativ av varje: idé 1–4 en rund hel ost (ett hjul), idé 5–8 en trekantig ostbit (en kil)"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 0.89,
+  "hog": 1.91
+ },
+ "dollar": 0.492,
+ "rapport": [
+  "ost: 8 versioner till valdelen (kortet bild_ost); kvar: olika: version 2 har nästan samma form som version 1 (93 % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.; olika: version 3 har nästan samma form som version 1 (91 % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.; olika: version 6 har nästan samma form som version 1 (94 % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.; olika: version 8 har nästan samma form som version 2 (92 % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger."
+ ]
+}

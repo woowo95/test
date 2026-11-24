@@ -1,0 +1,19 @@
+{
+ "kommando": "rita",
+ "args": [
+  "bild_jarnhjalm_jarn!=gör 5 olika förslag",
+  "bild_ringbrynja_jarn!=rita 5 olika versioner, och visa dem i porträttet",
+  "f10_kott_far!=gör 5 versioner av revbensspjäll"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 4.37,
+  "hog": 9.36
+ },
+ "dollar": 5.555,
+ "rapport": [
+  "bild_jarnhjalm_jarn: 5 versioner",
+  "bild_ringbrynja_jarn: 5 versioner",
+  "f10_kott_far: 5 versioner"
+ ]
+}

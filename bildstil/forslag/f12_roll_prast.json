@@ -1,0 +1,33 @@
+{
+ "kort": "f12_roll_prast",
+ "namn": "Prästens symbol vid namnet",
+ "slag": [
+  "symbol"
+ ],
+ "vad": "Steg 12.1.157: prästen får en symbol till vänster om namnet på kartan. Som du bad om är det samma symbol som den för tron i stort (emblemet på Tro-stenen, solen), i guld och i hel skala, 13 × 11 punkter. Ja eller nej? Din kommentar förra gången: ”samma symbol som den generella symbolen för religon”",
+ "av": "programmeringschatten, för hand",
+ "versioner": [
+  {
+   "ide": "Tro-stenens emblem, solen, i guld.",
+   "anteckning": "Tro-stenens emblem, solen, i guld.",
+   "bilder": [
+    {
+     "namn": "f12_roll_prast_tro",
+     "rader": [
+      ".....kkk.....",
+      ".kkk.kKk.kkk.",
+      ".kKkkkKkkkKk.",
+      ".kkKkLKKkKkk.",
+      "kkkkLKJKKkkkk",
+      "kKKKKJkLKKKKk",
+      "kkkkKKLKJkkkk",
+      ".kkKkKKJkKkk.",
+      ".kKkkkKkkkKk.",
+      ".kkk.kKk.kkk.",
+      ".....kkk....."
+     ]
+    }
+   ]
+  }
+ ]
+}

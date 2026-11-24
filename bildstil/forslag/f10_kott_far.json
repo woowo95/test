@@ -2,86 +2,144 @@
  "kort": "f10_kott_far",
  "namn": "Fårets kött",
  "slag": null,
- "vad": "Steg 10.3.14: köttet från fåret, en sak på 16 × 16 punkter. Förut var alla fem sorterna ett kort; nu ett kort per sort, med samma tre idéer som förra gången: benbitar, hela former utan synliga ben och bitar som pekar åt olika håll. Välj den du vill ha för just fåret. Din kommentar förra gången: ”gör en separerat ruta som jag väjer i för varje sorts kött”",
+ "vad": "Steg 10.3.14: köttet från fåret, en sak på 16 × 16 punkter. Förut var alla fem sorterna ett kort; nu ett kort per sort, med samma tre idéer som förra gången: benbitar, hela former utan synliga ben och bitar som pekar åt olika håll. Välj den du vill ha för just fåret.",
  "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "gör 5 versioner av revbensspjäll",
  "versioner": [
   {
-   "ide": "Med ben: en benbit sedd snett uppifrån.",
    "bilder": [
     {
      "namn": "f10_kott_far",
      "rader": [
       "................",
+      ".........oo.....",
+      "........opur....",
+      ".......oqtstr...",
+      "......oquutssr..",
+      ".....optsttsrqp.",
+      "....oquutssr.opo",
+      "...owtsttsrqp.o.",
+      "..opuutssr.opo..",
+      ".oqtsttsrqp.o...",
+      ".ouutssr.opo....",
+      "..rttsrqp.o.....",
+      "...rsr.opo......",
+      "....rqp.o.......",
+      ".....opo........",
+      "......o........."
+     ]
+    }
+   ],
+   "anteckning": "Fårets revbensspjäll ligger platt som en enda sak, snett över rutan från nedre vänstra till övre högra hörnet, och ses ovanifrån som kartan. Ryggsidan med den tunna talgranden (ben2 och ben1, kontur i ben0) vetter upp åt vänster mot ljuset. Den smala mörka framkanten (rost1 och rost0) ligger nere till höger, och de fem rena benspetsarna sticker ut 2–3 punkter förbi den som tänderna på en kam. De är ljusa ovanpå och har ben0 i spetsen och på undersidan. Revbenen anas som svaga åsar i rost3 och rost2 tvärs över köttet, alla åt samma håll och i linje med varsin benspets. Mellan dem ligger fåror i rost1. Ändarna är snittytor med rost0 som kontur. Ingen behållare och ingen skugga. Granskningen: Granskad och oförändrad. Storleken håller: spjället är ungefär 14 punkter långt och 7 brett, diagonalt i en ruta på 16 × 16, och står i rimlig proportion till kolonisten (14 × 20). Vinkeln stämmer: spjället ligger platt och ses ovanifrån, med en smal mörkare framkant i rost1 och rost0 nere till höger. Ljuset faller från övre vänstra hörnet. Talgranden i ben2 med kontur i ben0 och en enda glanspunkt i ben3 (inte ren vit) ligger på den ljusa ryggsidan uppe till vänster, och den mörkaste tonen ligger nere till höger. Konturerna är materialens mörkaste toner, rost0 runt köttet och ben0 runt ben och talg; kol används inte. Idén följs: fem korta, rena benspetsar, 2–3 punkter långa i ben2 och ben1 med ben0 som kontur, sticker ut åt samma håll längs den nedre långsidan som tänderna på en kam. Köttytan i rost1, rost2 och rost3 har korn och svaga parallella åsar som löper tvärs över spjället, i samma riktning som benen, utan ensamma mörka prickar. De mättade rosttonerna och de ljusa bentonerna syns tydligt mot det olivgröna gräset, och siluetten är läsbar i liten storlek. Det är en enda sak, som en sak i förrådet ska vara. Spjället är ingen symmetrisk form och bärs inte, så de reglerna gäller inte här.",
+   "ide": "Kam på snedden: ett avlångt, platt revbensspjäll som ligger diagonalt från nedre vänstra till övre högra hörnet, omkring 14 punkter långt och 7 brett, sett ovanifrån med en smal mörkare framkant (rost0 och rost1). Köttet är rost1 och rost2 med en tunn talgrand i ben2 längs ryggsidan, och längs den andra långsidan sticker fem korta, rena benspetsar ut 2–3 punkter i ben1 och ben2 med ben0 som kontur, som tänderna på en kam. Revbenen anas på köttytan som svaga parallella åsar i rost2 och rost3, alla åt samma håll."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_kott_far_solfjader",
+     "rader": [
       "................",
-      "...oo..oo..oo...",
-      "...wo..qo..qo...",
-      "...qo..qo..qo...",
-      "..oqoooqoooqoo..",
-      "..oqqqpqqqpqqo..",
-      "..oqpqqqpqqppo..",
-      "..rtstsstsstsr..",
-      "..rtssststsssr..",
-      "..rstssstssssr..",
-      "..rssssssssssr..",
+      "................",
+      "..p....p........",
+      "..q...q.........",
+      ".rqrrrqr...p....",
+      ".rqutqtsr.q.....",
+      ".rpttqutsq......",
+      ".rqtsptsqtr.....",
+      ".rptqtsqutsr.p..",
+      ".rrtptqttssqq...",
+      "...rspttsqptr...",
+      "....rstqpttsr...",
+      ".....rputtsqqqp.",
+      ".....rqpqpqsr...",
+      ".....rrrrrrrr...",
+      "................"
+     ]
+    }
+   ],
+   "anteckning": "Revbensspjället från fåret ligger platt på marken eller på hyllan i förrådet och ses snett ovanifrån, så hela solfjädern syns. Ryggsidan (den tjocka delen vid ryggraden) är en kort rundad båge nere till vänster, med en ljusare fettkant i rost3 på den sida som får ljus. Där sitter de fem revbenen ihop, och därifrån strålar de ut uppåt och åt höger, från lodrätt till vågrätt. Mellan benen ligger köttet i kilar av rost2 och rost1, ljusare uppe till vänster och mörkare nere till höger, och konturen runt köttet är rost0. Benen är ljusa strålar i ben2 och ben1 genom köttet och sticker ut 2 punkter rena ben utanför köttkanten. De nakna bentopparna har en skuggkant och en ändknopp i ben0 åt nedre högra hållet. Silhouetten blir en rund och tandad kvartscirkel, omkring 14 × 14 punkter. Det är en enda sak utan behållare och utan blod. Granskningen: Rättat: i versionen satt flera benbitar lösa ovanför köttet (rad 1–4) utan kontakt med spjället, och benen gick ut 3–4 punkter över kanten i stället för 2. Köttet var en rak kloss nere till vänster i stället för en böjd solfjäder, så idén och silhuetten syntes inte. Jag har ritat om den efter idén som en halvmåne. Ryggsidan är en kort inåtböjd båge nere till vänster, med ett mörkare band av rost1 innanför konturen. Fem revben i ben2/ben1 strålar ut från bågen (nästan lodrätt, 64°, 45°, 28° och nästan vågrätt). Mellan dem sitter kilar av rost2/rost1 med en och annan punkt rost3 uppe till vänster i varje kil, så att ljuset kommer från övre vänstra hörnet. Varje ben går hela vägen från ryggen ut och sticker ut exakt 2 rena benpunkter över köttets kant, så silhuetten blir rund och tandad. Konturen är rost0, och ingen kol eller vit används. Storleken är 14 × 13 punkter inom rutan och står i rimlig proportion mot kolonisten (14 × 20). Bilden är en enda sak, och rost mot oliv syns tydligt på gräset.",
+   "ide": "Solfjäder: spjället ligger böjt som en halvmåne, med den tjocka ryggsidan som en kort båge nere till vänster och fem revben som strålar ut uppåt höger och breder ut sig som en solfjäder, omkring 14 × 12 punkter. Mellan benen sitter köttet i kilar av rost1 och rost2, och benen syns hela tiden som ljusa strålar i ben1 och ben2 som går ut över köttets kant med 2 punkter rena ben. Silhuetten blir rund och tandad i stället för rak."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_kott_far_rack",
+     "rader": [
+      "................",
+      "....oo.oo.oo.oo.",
+      "....wo.qo.qo.qo.",
+      "....qo.qo.po.qo.",
+      "....qo.po.qo.po.",
+      "...qo.qo.qo.qo..",
+      "...po.qo.po.qo..",
+      "...qo.po.qo.po..",
+      "..rporqorporqo..",
+      ".rqqpqqpqpqppor.",
+      ".rututtuttuttsr.",
+      ".rtuttutttuttsr.",
+      ".rstssstssstssr.",
+      ".rsssssssssssrr.",
       "..rrrrrrrrrrrr..",
-      "................",
-      "................",
       "................"
      ]
     }
-   ]
+   ],
+   "anteckning": "Racket står på högkant på sin köttiga undersida, som det står på ett bord. Snett ovanifrån syns därför köttblockets ovansida: ett talglager i ben2/ben1 längst bak vid benen och rost2 med rost3-ådring framför. Framsidan är ett smalt band på två punkter i rost1, och konturen runt köttet är rost0. Fyra rena, avskrapade revben reser sig ur talgkanten vid bakkanten, 7–8 punkter höga och lika långt ifrån varandra. Ljuset kommer uppifrån vänster, så varje ben har den ljusa sidan (ben2, en punkt ben3 som glans på första spetsen) till vänster och ben0 som kontur till höger. Benen lutar bakåt med ett steg åt höger halvvägs upp, så att de inte ser platta ut. Bilden är en enda sak i förrådet, 16 × 16 punkter, och skuggan på marken ritas inte. Granskningen: Granskad, inget behövde rättas; versionen är oförändrad. Storlek: biten är omkring 14 × 14 punkter inom rutan och står rimligt bredvid kolonisten (14 × 20) som en köttbit man bär i handen. Vinkel: köttblocket ses snett ovanifrån. Ovansidan i rost2 och rost3 tar fyra rader med ett talglager i ben2 och ben1 överst, och framkanten är ett mörkare band på två rader i rost1. De fyra benen reser sig och lutar en punkt bakåt halvvägs, så inget ben ligger platt. Ljuset: det ljusa ligger uppe till vänster på block och ben och det mörka nere till höger (rost1 och ben0 på högersidorna). Glansen är en enda punkt i ben3 på första benets topp. Kontur: rost0 runt köttet och ben0 på benens toppar och högersidor, ingen kol. Formen är inte spegelsymmetrisk, vilket är rätt eftersom ett rack inte är det; hörnen är ändå rundade jämnt. Den syns på gräset: benen i ben2 och köttet i rost är tydligt ljusare och mättade mot oliv och barr, som maten ska vara. Den följer idén: ett tjockt rundat block nertill, ungefär 12–14 × 6 punkter, och fyra parallella benpinnar på 7–8 punkter upptill. Det är en enda sak utan behållare.",
+   "ide": "Stående rack: ett kort lammrack med fyra revben som står på högkant och lutar något bakåt, sett snett ovanifrån, så att köttbiten är ett tjockt rundat block nertill (omkring 12 × 6 punkter, rost2 överst med ett ben2-lager talg och en mörkare framsida i rost1) och fyra rena, avskrapade benpinnar reser sig uppåt 6–7 punkter i ben1 och ben2. Bilden blir hög och smal med fyra parallella spetsar upptill, och inga ben ligger platta."
   },
   {
-   "ide": "Hel form utan synliga ben, där siluetten bär skillnaden.",
    "bilder": [
     {
-     "namn": "kott_far",
-     "rader": [
-      "................",
-      "...oooooo.......",
-      "..owwwqqqo......",
-      ".owwqqqqqpo.....",
-      ".owqqsssqqpo....",
-      "owqsuttssqpo....",
-      "owqstuttssqpooo.",
-      "owqsttstssqpqwqo",
-      "owqsstsssqpppqpo",
-      ".oqqsssssqppooo.",
-      "..oqqqsssqppo...",
-      "...oqqqqpppo....",
-      ".....ooooooo....",
-      "................",
-      "................",
-      "................"
-     ]
-    }
-   ]
-  },
-  {
-   "ide": "En bit som pekar åt sitt eget håll, så att sorterna får olika siluetter.",
-   "bilder": [
-    {
-     "namn": "kott_far",
+     "namn": "f10_kott_far_kil",
      "rader": [
       "................",
       "................",
       "................",
-      ".....wo..wo.....",
-      "..worqorrqorwo..",
-      ".rqotqoutqotqor.",
-      "rpqotqoutqosqopr",
-      "rqqptqputqpsqppr",
-      "rqpqpqqpqpqppqor",
-      "rututttstststssr",
-      ".rtuttstssssssr.",
-      "..rrssssssssrr..",
-      "....rrrrrrrr....",
+      ".rrrrrrrrrrrrr..",
+      "rwqptptptptptpr.",
+      "rqqututututssr..",
+      "rqpututssssrr...",
+      "rqputssssrr.....",
+      "rppssssrr.......",
+      "rpossrr.........",
+      "roorr...........",
+      ".rr.............",
+      "................",
       "................",
       "................",
       "................"
      ]
     }
-   ]
+   ],
+   "anteckning": "Spjället ligger platt på marken som en sak i förrådet, sett snett ovanifrån. Ovansidan är den platta kilen: den breda änden med talglagret ligger till vänster, mot ljuset, och spetsen pekar åt höger. Den raka bakkanten är revbenens avskurna ändar, som syns som ben1-prickar i par: (3,5), (7,9) och (11,13). Benen ligger under köttet och syns bara som sex ljusa ränder tvärs över ovansidan i rost3 och ben1. Den sneda framkanten är ett smalt band på 2 punkter i rost1, eftersom det är sidan som syns snett uppifrån. Konturen runt allt är i rost0. Saken är 15 × 9 punkter, och programmet lägger till skuggan. Granskningen: Rättat: 1) Formen smalnade inte av till en spets utan slutade trubbigt, tre punkter hög, i högra änden. Nu sluttar underkanten jämnt en halv punkt per kolumn till en spets längst till höger, så att köttet blir en lång triangel på 15 × 9 punkter som idén säger. 2) Ovansidan och framkanten hade samma ton (rost1), så det fanns ingen yta ovanifrån med en mörkare framkant. Nu är ovansidan rost2 med sex revben i rost3 tvärs över, med ben1-ändar längs den raka bakkanten. Framkanten är ett band i rost1 på 2 punkter, som blir 1 punkt där kilen är smal mot spetsen. 3) Talgen i den breda änden går nu ner hela höjden, i ben3 och ben2 överst och ben1 under. Framkanten under talgen är i ben1 och ben0 i stället för kött, så att lagret läses som ett helt talglager. Det som inte ändrades: konturen i rost0, ljuset uppe till vänster (glanspunkt i ben3 i talgen), en enda sak, liten mot kolonisten och med kontur som syns på gräset.",
+   "ide": "Kil utan utstickande ben: ett helt sidspjäll som är brett i ena änden och smalnar av till en spets i den andra, liggande vågrätt som en lång triangel omkring 15 × 9 punkter. Benen sticker inte ut alls utan syns bara som sex ljusare ränder i rost3 och ben1 tvärs över ovansidan, och de avskurna benändarna syns som små ben1-prickar i par längs den raka bakkanten. Kontur i rost0, framkanten ett band på 2 punkter i rost1, och den breda änden har ett lager vit talg i ben2 och ben3."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f10_kott_far_stege",
+     "rader": [
+      "................",
+      "...rrrrrrrrrr...",
+      "oooruttttttsrooo",
+      "oqqqpppppppppppo",
+      "ooorttttttssrooo",
+      "..rutttttttssr..",
+      "ooorutttttssrooo",
+      "oqqqpppppppppppo",
+      "ooorttttttssrooo",
+      "..rtttttttsssr..",
+      "ooorutttttssrooo",
+      "oqqqpppppppppppo",
+      "ooorttttttssrooo",
+      "...rsssssssrr...",
+      "...rrrrrrrrrr...",
+      "................"
+     ]
+    }
+   ],
+   "anteckning": "Fårets revbensspjäll som en sak i förrådet, liggande plant på marken och sett snett ovanifrån. Biten ligger rakt med de tre revbenen tvärs, så att benen går igenom hela köttet och sticker ut två punkter åt vänster och två åt höger, som pinnarna i en kort stege. Benen är ritade i ben2 och ben1, med ben0 som kontur och som ändknopp. Ovansidan tar större delen av höjden. Köttet är ritat i rost1 och rost2 med lite rost3 där ljuset faller uppe till vänster, och det buktar ut en punkt mellan pinnarna. Framkanten nedtill är ett smalt band på två punkter i rost1 och rost0. Köttet har rost0 som kontur. Bilden är en enda bit utan behållare och utan skugga.",
+   "ide": "Stege: en kort, nästan kvadratisk bit med tre revben, omkring 11 × 10 punkter, som ligger rakt med benen tvärs, sedd ovanifrån. Benen går igenom hela biten och sticker ut 2 punkter på båda sidor, så att silhuetten blir som en kort stege med tre pinnar åt vänster och tre åt höger i ben1 och ben2 med ben0 som kontur. Mellan pinnarna buktar köttet ut lite i rost1 och rost2, och framkanten är ett smalt band av rost0 och rost1."
   }
  ]
 }

@@ -1,0 +1,17 @@
+{
+ "kommando": "rita",
+ "args": [
+  "f10_hast=nya versioner utan förlaga: alla ser förfärliga ut. En häst sedd från spelets vinkel, i samma storlek och stil som kon som är godkänd: lång rak rygg, djup bringa, smal midja, lång hals som går snett uppåt framåt, långt smalt huvud med mule och öron, man längs halsen och svans av tagel, långa smala ben med mörka hovar. Ska tydligt läsas som en häst och inte som en ko.",
+  "f9_jordgubbsplanta=gör plantan större och jordgubbarna större och tydligare"
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 0.88,
+  "hog": 1.89
+ },
+ "dollar": 1.431,
+ "rapport": [
+  "f10_hast: 3 versioner",
+  "f9_jordgubbsplanta: 3 versioner; kontrollerna varnar fortfarande: version 2: olika; version 3: olika; version 3: olika"
+ ]
+}

@@ -33,7 +33,7 @@ import { MODELL, PRIS, TOMT_NEJ, klient, batch, bildBlock, utanBilder, sidan } f
 
 const HAR = path.dirname(fileURLToPath(import.meta.url)), BILDSTIL = path.resolve(HAR, '..');
 const REGISTER = path.join(BILDSTIL, 'bilder.json'), FILER = path.join(BILDSTIL, 'bilder'), UT = path.join(HAR, 'ut');
-const INSATS = 'high', MAXTOKENS = 32000, VERSIONER = 3;
+const INSATS = 'high', MAXTOKENS = 32000, VERSIONER = +process.env.VERSIONER || 3; // VERSIONER=5: Björn bad om fem förslag (bildstil v263)
 const PT = JSON.parse(fs.readFileSync(path.join(BILDSTIL, 'portratt.json'), 'utf8')).tecken;
 
 let BR = JSON.parse(fs.readFileSync(REGISTER, 'utf8'));

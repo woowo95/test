@@ -1,0 +1,1987 @@
+{
+ "a_brand": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-04T13:43:53.965Z"
+ },
+ "a_effekter": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-04T07:42:39.596Z"
+ },
+ "a_rorelser": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-04T13:43:57.358Z"
+ },
+ "a_sikta": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T21:22:37.603Z"
+ },
+ "a_smyga": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-03T21:22:32.552Z"
+ },
+ "a_toa": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-02T21:19:57.021Z"
+ },
+ "a_tornado": {
+  "svar": "ja",
+  "kommentar": "detta får bli den lilla tornadon",
+  "nar": "2026-11-04T13:43:31.016Z"
+ },
+ "bild_blasterugn": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-20T14:19:39.619Z"
+ },
+ "bild_blottorv": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-20T14:19:55.236Z"
+ },
+ "bild_brunn": {
+  "svar": "1",
+  "kommentar": "träställningen ser ut att stå bakom brunnen och inte på stenkonstruktionen som den ska. Gör repet tunnare",
+  "nar": "2026-11-22T15:57:38.066Z"
+ },
+ "bild_drejskiva": {
+  "svar": "1",
+  "kommentar": "gör 5 versioner av version 1. ta bort lerklumpen i mitten",
+  "nar": "2026-11-22T15:58:16.978Z"
+ },
+ "bild_eldstal": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-20T14:19:59.269Z"
+ },
+ "bild_fyrfat": {
+  "svar": "1",
+  "kommentar": "ta bort fötterna på detta fatet. Elden ska vara liknande som den ser ut i lägerelden. och animerad",
+  "nar": "2026-11-22T15:58:52.757Z"
+ },
+ "bild_hatt_halm": {
+  "svar": "nej",
+  "kommentar": "den sitter för högt på huvudet.",
+  "nar": "2026-11-22T15:52:18.745Z"
+ },
+ "bild_isborr": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-20T14:20:20.813Z"
+ },
+ "bild_jarn": {
+  "svar": "nej",
+  "kommentar": "varför är allt järn rött i kanten? ta bort det. gör tacka som ser ut som en vanlig tacka. så som dem brukar vara formade i moden tid",
+  "nar": "2026-11-22T15:59:49.332Z"
+ },
+ "bild_jarngryta": {
+  "svar": "",
+  "kommentar": "min version",
+  "nar": "2026-11-22T16:02:07.928Z"
+ },
+ "bild_jarnhacka": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-22T16:02:08.008Z"
+ },
+ "bild_jarnhjalm_jarn": {
+  "svar": "nej",
+  "kommentar": "gör 5 olika förslag",
+  "nar": "2026-11-22T15:52:33.085Z"
+ },
+ "bild_jarnkniv": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-20T14:21:08.962Z"
+ },
+ "bild_jarnnal": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-22T16:02:11.608Z"
+ },
+ "bild_jarnskold": {
+  "svar": "",
+  "kommentar": "texten är väldigt förvirrande och jag förstår inte vilken symbol jag väljer mellan",
+  "nar": "2026-11-22T15:53:50.158Z"
+ },
+ "bild_jarnskrot": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-22T16:02:20.498Z"
+ },
+ "bild_jarnspjut": {
+  "svar": "",
+  "kommentar": "använd min version",
+  "nar": "2026-11-20T14:22:35.685Z"
+ },
+ "bild_jarnyxa": {
+  "svar": "nej",
+  "kommentar": "inte tillräckligt lika flintyxan",
+  "nar": "2026-11-22T16:02:58.711Z"
+ },
+ "bild_kolmila": {
+  "svar": "nej",
+  "kommentar": "gör den svart så man ser kolet",
+  "nar": "2026-11-22T16:03:10.442Z"
+ },
+ "bild_las": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-22T16:03:18.425Z"
+ },
+ "bild_lasdorr": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-22T16:03:25.787Z"
+ },
+ "bild_lie": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-20T14:23:14.978Z"
+ },
+ "bild_malm": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-22T16:03:32.722Z"
+ },
+ "bild_myr": {
+  "svar": "nej",
+  "kommentar": "när du genererar terräng ska du inte göra såhär.  gränserna är aldrig knivskarpa som du har ritat nu, Dom ska ritas i ett större landskap precis som marken och vattnet görs idag",
+  "nar": "2026-11-22T15:54:38.266Z"
+ },
+ "bild_oljelampa": {
+  "svar": "nej",
+  "kommentar": "",
+  "nar": "2026-11-22T16:03:43.022Z"
+ },
+ "bild_ost": {
+  "svar": "",
+  "kommentar": "gör en tydlig rund och och en trekantig ost. gör 4 alternativ av varje",
+  "nar": "2026-11-22T16:04:08.205Z"
+ },
+ "bild_pall": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-22T16:04:12.401Z"
+ },
+ "bild_penna": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-22T16:04:23.108Z"
+ },
+ "bild_ringbrynja_jarn": {
+  "svar": "",
+  "kommentar": "rita 5 olika versioner i portsättet",
+  "nar": "2026-11-22T15:54:55.783Z"
+ },
+ "bild_sag": {
+  "svar": "nej",
+  "kommentar": "gör 5 helt nya alternativ utan förlaga",
+  "nar": "2026-11-22T16:04:39.462Z"
+ },
+ "bild_sang": {
+  "svar": "3",
+  "kommentar": "ta bort kudden efter som att det är ett eget föremål",
+  "nar": "2026-11-22T16:05:05.050Z"
+ },
+ "bild_sjukbadd": {
+  "svar": "nej",
+  "kommentar": "exakt samma som vanliga sängen",
+  "nar": "2026-11-22T16:05:16.591Z"
+ },
+ "bild_smedja": {
+  "svar": "nej",
+  "kommentar": "rita bälgen på sidan av elden istället.",
+  "nar": "2026-11-22T16:06:31.600Z"
+ },
+ "bild_spanne_jarn": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-22T16:06:42.909Z"
+ },
+ "bild_stockvag_myr": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-22T15:55:15.103Z"
+ },
+ "bild_stol": {
+  "svar": "2",
+  "kommentar": "version 2 fast med rakare ben. Den ska också ritas från sidan och bakifrån",
+  "nar": "2026-11-22T16:07:16.706Z"
+ },
+ "bild_svard": {
+  "svar": "",
+  "kommentar": "använd min version",
+  "nar": "2026-11-22T16:08:45.608Z"
+ },
+ "bild_torv": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-22T16:08:45.704Z"
+ },
+ "bild_tunna": {
+  "svar": "nej",
+  "kommentar": "rita en enkel tunna som den ser ut idag.",
+  "nar": "2026-11-22T16:08:58.918Z"
+ },
+ "bild_ullsax": {
+  "svar": "nej",
+  "kommentar": "",
+  "nar": "2026-11-22T16:09:03.562Z"
+ },
+ "bild_utedass": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-22T16:09:10.908Z"
+ },
+ "bild_vagga": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-22T16:09:15.602Z"
+ },
+ "brand": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-02T21:19:19.206Z"
+ },
+ "djur_kanin": {
+  "svar": "2",
+  "kommentar": "Använd både 2 och 3 för att slumpa utseendet mer",
+  "nar": "2026-11-03T22:42:53.692Z"
+ },
+ "djur_varg": {
+  "svar": "nej",
+  "kommentar": "Jag gillar inte hur den ser ut. Gör ett helt nytt utseende utan förlaga",
+  "nar": "2026-11-03T22:43:17.412Z"
+ },
+ "dragkamp": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T21:21:46.771Z"
+ },
+ "f10_altare": {
+  "svar": "",
+  "kommentar": "Använd alla tre som variationer",
+  "nar": "2026-11-17T08:13:22.886Z"
+ },
+ "f10_bank": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:12:31.506Z"
+ },
+ "f10_biarg": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:17:35.479Z"
+ },
+ "f10_bikupa": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-20T08:20:51.798Z"
+ },
+ "f10_bistick": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:16:58.792Z"
+ },
+ "f10_bisymbol": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-17T08:17:26.106Z"
+ },
+ "f10_bivax": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-22T11:06:10.591Z"
+ },
+ "f10_bjorn_fram": {
+  "svar": "nej",
+  "kommentar": "Alla anfall blir från och med nu bara att bilden knuffar framåt utan någon ändring i hur det ritas",
+  "nar": "2026-11-17T08:18:59.715Z"
+ },
+ "f10_bur": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-22T11:04:53.171Z"
+ },
+ "f10_byggsten": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:15:36.314Z"
+ },
+ "f10_egenskaper": {
+  "svar": "nej",
+  "kommentar": "Samma symboler som för människorna där det finns. Rita bara dem som tillkommer",
+  "nar": "2026-11-17T08:17:58.559Z"
+ },
+ "f10_gris": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-20T14:08:38.597Z"
+ },
+ "f10_gudabild": {
+  "svar": "",
+  "kommentar": "alla varianter använder vi. Och jag vill ha fler varianter. Gör 5st till",
+  "nar": "2026-11-20T08:17:34.652Z"
+ },
+ "f10_gudabild_fler": {
+  "svar": "",
+  "kommentar": "ja alla",
+  "nar": "2026-11-20T14:18:02.980Z"
+ },
+ "f10_hast": {
+  "svar": "",
+  "kommentar": "utgå från version 2 och 3 och gör 5 versioner av varje som jag kan välja mellan. Gör även 5 helt nya versioner utan förlaga",
+  "nar": "2026-11-22T12:49:22.024Z"
+ },
+ "f10_heligt": {
+  "svar": "nej",
+  "kommentar": "Vi har redan en symbol för heligt använd den",
+  "nar": "2026-11-17T08:13:54.217Z"
+ },
+ "f10_hogsate": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:12:20.282Z"
+ },
+ "f10_kalke": {
+  "svar": "1",
+  "kommentar": "Måste finnas i två vinklar",
+  "nar": "2026-11-17T08:14:56.112Z"
+ },
+ "f10_ko": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-20T14:08:11.899Z"
+ },
+ "f10_kott": {
+  "svar": "",
+  "kommentar": "gör en separerat ruta som jag väjer i för varje sorts kött",
+  "nar": "2026-11-20T14:05:35.547Z"
+ },
+ "f10_kott_bjorn": {
+  "svar": "nej",
+  "kommentar": "",
+  "nar": "2026-11-22T15:55:54.636Z"
+ },
+ "f10_kott_fagel": {
+  "svar": "nej",
+  "kommentar": "",
+  "nar": "2026-11-22T15:55:44.719Z"
+ },
+ "f10_kott_far": {
+  "svar": "nej",
+  "kommentar": "gör5 versioner av revbenspjäll",
+  "nar": "2026-11-22T15:56:07.411Z"
+ },
+ "f10_kott_get": {
+  "svar": "nej",
+  "kommentar": "",
+  "nar": "2026-11-22T15:56:35.935Z"
+ },
+ "f10_kott_radjur": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-22T15:56:39.335Z"
+ },
+ "f10_krubba": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:12:38.387Z"
+ },
+ "f10_nal": {
+  "svar": "",
+  "kommentar": "min ritning",
+  "nar": "2026-11-20T08:16:24.972Z"
+ },
+ "f10_oxe": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-22T11:04:11.383Z"
+ },
+ "f10_skatta": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:16:53.455Z"
+ },
+ "f10_skinn": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:14:20.076Z"
+ },
+ "f10_slade": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:15:10.790Z"
+ },
+ "f10_smabarn": {
+  "svar": "nej",
+  "kommentar": "dom ska se ännu mindre ut och byggas av helt nya delar. som jag går igenom och godkänner i vår kortdel. dem ska nästan se nyfödda ut",
+  "nar": "2026-11-20T14:04:38.779Z"
+ },
+ "f10_snokruka": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-22T11:04:06.634Z"
+ },
+ "f10_stenvag": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:15:42.249Z"
+ },
+ "f10_stenvagg": {
+  "svar": "ja",
+  "kommentar": "jag gillar version 3 bäst med dem ojämna stenarna",
+  "nar": "2026-11-22T11:05:54.835Z"
+ },
+ "f10_tamhet": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-22T11:06:18.472Z"
+ },
+ "f10_vattenho": {
+  "svar": "2",
+  "kommentar": "Måste finnas i två riktningar",
+  "nar": "2026-11-17T08:18:28.660Z"
+ },
+ "f10_vaxljus": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-20T08:21:22.725Z"
+ },
+ "f10_vildbo": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:16:13.435Z"
+ },
+ "f10_vildsvin": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-20T14:07:56.553Z"
+ },
+ "f11_aventyrare": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-20T08:26:00.879Z"
+ },
+ "f11_gomma": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-22T11:07:05.108Z"
+ },
+ "f11_gomma_fler": {
+  "svar": "",
+  "kommentar": "min version",
+  "nar": "2026-11-20T14:18:46.850Z"
+ },
+ "f11_grav": {
+  "svar": "nej",
+  "kommentar": "använd min version",
+  "nar": "2026-11-20T14:14:44.152Z"
+ },
+ "f11_gravhog": {
+  "svar": "nej",
+  "kommentar": "gör en hög med ett kors på",
+  "nar": "2026-11-22T12:50:15.585Z"
+ },
+ "f11_kartblad": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-20T08:25:32.686Z"
+ },
+ "f11_kartknapp": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-20T08:24:14.726Z"
+ },
+ "f11_pergament": {
+  "svar": "ja",
+  "kommentar": "ja detta är rätt stil men kartan ska bestå av en stor landmassa i mitten och några små öar runtomkring",
+  "nar": "2026-11-20T14:15:33.297Z"
+ },
+ "f11_pil_sidor": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-22T12:50:44.774Z"
+ },
+ "f11_platstecken": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-20T14:15:38.787Z"
+ },
+ "f11_ruinmur": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-20T14:15:49.064Z"
+ },
+ "f11_sallskap": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-22T11:06:40.154Z"
+ },
+ "f11_sandebud": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-20T08:25:17.165Z"
+ },
+ "f11_sym_bud": {
+  "svar": "",
+  "kommentar": "jag förstår inte vad detta ska representera förklara i chatten vad jag väljer",
+  "nar": "2026-11-22T15:46:16.297Z"
+ },
+ "f11_sym_helgon": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-20T08:29:42.537Z"
+ },
+ "f11_sym_kvade": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-20T08:29:46.029Z"
+ },
+ "f11_sym_kyrkoforrad": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-20T08:29:35.791Z"
+ },
+ "f11_sym_troende": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-20T08:29:39.616Z"
+ },
+ "f11_sym_troshus": {
+  "svar": "4",
+  "kommentar": "Använd den högraste kyrkan i version 4",
+  "nar": "2026-11-22T15:46:53.171Z"
+ },
+ "f11_uppdragmarke": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-20T08:25:52.420Z"
+ },
+ "f11_utsmyckning": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-20T14:15:45.865Z"
+ },
+ "f11_vagn": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-20T08:24:07.822Z"
+ },
+ "f11_vagnrest": {
+  "svar": "nej",
+  "kommentar": "nu finns det två bildkort med trasig vagn",
+  "nar": "2026-11-22T12:50:32.603Z"
+ },
+ "f11_vagnsvrak": {
+  "svar": "nej",
+  "kommentar": "nu tog du vagnen från kartan som förlaga. Jag menade att du skulle ta vagnen så som den ser ut i byn som förlaga",
+  "nar": "2026-11-22T12:49:57.310Z"
+ },
+ "f12_fliknamn": {
+  "svar": "1",
+  "kommentar": "version 1 men gör kedjorna lite tydligare och se till att dom går hela vägen upp till flätan ovanför",
+  "nar": "2026-11-22T15:48:24.009Z"
+ },
+ "f12_jarngruva": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-20T14:17:18.888Z"
+ },
+ "f12_konstigt": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-22T11:06:30.149Z"
+ },
+ "f12_roll_ledare": {
+  "svar": "nej",
+  "kommentar": "försök hitta en befintlig symbol för ledarskap att återanvända",
+  "nar": "2026-11-22T15:47:40.029Z"
+ },
+ "f12_roll_prast": {
+  "svar": "nej",
+  "kommentar": "samma symbol som den generella symbolen för religon",
+  "nar": "2026-11-22T15:47:17.171Z"
+ },
+ "f12_sederband": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-20T14:17:13.772Z"
+ },
+ "f12_sym_familj": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-22T15:48:27.733Z"
+ },
+ "f12_sym_gaspa": {
+  "svar": "nej",
+  "kommentar": "",
+  "nar": "2026-11-22T15:49:57.872Z"
+ },
+ "f12_sym_hjul": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-22T15:48:37.963Z"
+ },
+ "f12_sym_kedja": {
+  "svar": "nej",
+  "kommentar": "använd symbolen för religon men överstruken",
+  "nar": "2026-11-22T15:50:32.432Z"
+ },
+ "f12_sym_kompass": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-22T15:51:19.362Z"
+ },
+ "f12_sym_las": {
+  "svar": "2",
+  "kommentar": "gör den mer symmetrisk",
+  "nar": "2026-11-22T15:51:35.735Z"
+ },
+ "f12_sym_ljus": {
+  "svar": "nej",
+  "kommentar": "använd symbolen för religon",
+  "nar": "2026-11-22T15:50:17.376Z"
+ },
+ "f12_sym_ol": {
+  "svar": "1",
+  "kommentar": "men gör drycken mer gul som öl",
+  "nar": "2026-11-22T15:50:49.562Z"
+ },
+ "f12_sym_ort": {
+  "svar": "nej",
+  "kommentar": "gör ett rött kors",
+  "nar": "2026-11-22T15:49:33.731Z"
+ },
+ "f12_sym_rav": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-22T15:50:57.634Z"
+ },
+ "f12_sym_scen": {
+  "svar": "2",
+  "kommentar": "gör tre nya versioner av version 2.",
+  "nar": "2026-11-22T15:49:48.437Z"
+ },
+ "f12_sym_vilt": {
+  "svar": "3",
+  "kommentar": "gör tre nya versioner av version 3. Behåll original",
+  "nar": "2026-11-22T15:49:02.913Z"
+ },
+ "f5_grodd": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-11T08:56:24.951Z"
+ },
+ "f5_pratbubbla": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-04T22:46:32.381Z"
+ },
+ "f5_smabarn": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-04T22:46:29.211Z"
+ },
+ "f5_smatecken": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-04T22:46:23.818Z"
+ },
+ "f6_agg": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-04T12:13:35.388Z"
+ },
+ "f6_band": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:05:33.081Z"
+ },
+ "f6_barbuske": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-04T13:34:05.431Z"
+ },
+ "f6_bjorn": {
+  "svar": "nej",
+  "kommentar": "modellen är perfekt men ändra färgerna lite. version 1 har bäst grundfärg men ansiktet har en konstig färg",
+  "nar": "2026-11-04T13:56:48.039Z"
+ },
+ "f6_bjorn_falld": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-04T21:50:28.917Z"
+ },
+ "f6_bjorn_hall": {
+  "svar": "ja",
+  "kommentar": "ta bort den öppna munnen versionen helt. Använd min version",
+  "nar": "2026-11-04T21:49:35.940Z"
+ },
+ "f6_bjornskinn": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-04T12:14:32.186Z"
+ },
+ "f6_bjornunge": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-04T15:29:25.875Z"
+ },
+ "f6_bjornunge_hall": {
+  "svar": "ja",
+  "kommentar": "min version",
+  "nar": "2026-11-04T21:50:28.824Z"
+ },
+ "f6_brinner": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-08T12:44:23.643Z"
+ },
+ "f6_buske": {
+  "svar": "",
+  "kommentar": "Använd alla tre som variationer",
+  "nar": "2026-11-04T12:12:05.451Z"
+ },
+ "f6_fackla": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-04T13:44:17.195Z"
+ },
+ "f6_fagel": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-04T13:35:09.815Z"
+ },
+ "f6_fagel_falld": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-04T13:35:18.250Z"
+ },
+ "f6_fagel_hall": {
+  "svar": "",
+  "kommentar": "nej til orren ja till dem andra två",
+  "nar": "2026-11-04T22:00:50.350Z"
+ },
+ "f6_fjadrar": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-04T13:35:36.033Z"
+ },
+ "f6_grans": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-04T12:00:39.231Z"
+ },
+ "f6_lagerton": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-07T19:20:30.360Z"
+ },
+ "f6_ljus": {
+  "svar": "",
+  "kommentar": "Använde både 1 och 2",
+  "nar": "2026-11-04T12:11:45.829Z"
+ },
+ "f6_nattfarg": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-07T19:21:30.201Z"
+ },
+ "f6_naver": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-04T12:10:00.649Z"
+ },
+ "f6_orre_hall": {
+  "svar": "nej",
+  "kommentar": "Vi använder bara orren från ett håll i spelet",
+  "nar": "2026-11-04T22:34:03.974Z"
+ },
+ "f6_radjur": {
+  "svar": "1",
+  "kommentar": "använd modellen på 1 och 2 men paletten från 3.  Rita sen om det fällda rådjuret efter dem valda modellerna",
+  "nar": "2026-11-04T13:56:02.403Z"
+ },
+ "f6_radjur_hall": {
+  "svar": "",
+  "kommentar": "min version",
+  "nar": "2026-11-04T22:33:31.761Z"
+ },
+ "f6_radjursskinn": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-04T12:12:56.485Z"
+ },
+ "f6_rovare": {
+  "svar": "",
+  "kommentar": "Lägg in alla kläderna och tagga med rövare. Dom går inte att crafta för kolonister men rövarna har chans att ha dem kläderna på sig",
+  "nar": "2026-11-04T22:47:44.059Z"
+ },
+ "f6_siffror": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-08T12:44:29.412Z"
+ },
+ "f6_styckdel": {
+  "svar": "",
+  "kommentar": "Både 1 och 2 som variationer",
+  "nar": "2026-11-04T12:12:38.501Z"
+ },
+ "f6_talg": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-04T12:10:21.189Z"
+ },
+ "f6_tornado_storlek": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-04T22:34:04.072Z"
+ },
+ "f6_uppsatt": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-04T13:33:42.810Z"
+ },
+ "f7_axelrem": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-08T12:47:25.868Z"
+ },
+ "f7_balte": {
+  "svar": "",
+  "kommentar": "visa bältet i ett sammanhang när det ligger i ett lager. Gör bältet mindre som symbol i lagret",
+  "nar": "2026-11-08T12:44:55.355Z"
+ },
+ "f7_barnklader": {
+  "svar": "nej",
+  "kommentar": "vi väntar med barnkläder",
+  "nar": "2026-11-08T12:48:44.559Z"
+ },
+ "f7_benlim": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-08T12:46:21.914Z"
+ },
+ "f7_brygga": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-04T20:02:24.512Z"
+ },
+ "f7_byxor": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-08T12:45:01.559Z"
+ },
+ "f7_fangstbank": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:19:17.680Z"
+ },
+ "f7_fangstgrop": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:19:22.197Z"
+ },
+ "f7_garvning": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-09T20:09:03.058Z"
+ },
+ "f7_halmdocka": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-08T12:47:37.354Z"
+ },
+ "f7_halsband": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-09T20:08:29.268Z"
+ },
+ "f7_harden": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-08T12:21:40.669Z"
+ },
+ "f7_hus": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-07T19:41:22.444Z"
+ },
+ "f7_klyvplats": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:02:01.556Z"
+ },
+ "f7_laderrustning": {
+  "svar": "",
+  "kommentar": "Använd min version utan något på armarna",
+  "nar": "2026-11-07T19:34:04.284Z"
+ },
+ "f7_lin": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-08T12:22:04.495Z"
+ },
+ "f7_linfron": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-07T19:40:20.525Z"
+ },
+ "f7_lintyg": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:11:29.794Z"
+ },
+ "f7_mossa": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T21:14:41.061Z"
+ },
+ "f7_ortkok": {
+  "svar": "",
+  "kommentar": "Använd lägerelden från version 1 och bordet och torken från version 2",
+  "nar": "2026-11-17T08:03:29.033Z"
+ },
+ "f7_rolleka": {
+  "svar": "",
+  "kommentar": "Använd 1 och 2 som variationer. Använd tvåans symbol",
+  "nar": "2026-11-07T19:27:47.178Z"
+ },
+ "f7_ryggsack": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-07T19:26:00.628Z"
+ },
+ "f7_salva": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-08T12:47:47.664Z"
+ },
+ "f7_skjorta": {
+  "svar": "",
+  "kommentar": "använd min version bland dem sparade bilderna",
+  "nar": "2026-11-08T12:46:15.341Z"
+ },
+ "f7_slanda": {
+  "svar": "",
+  "kommentar": "Använd min version",
+  "nar": "2026-11-07T19:35:38.793Z"
+ },
+ "f7_snara": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-08T12:21:57.783Z"
+ },
+ "f7_snoskor": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-08T12:48:35.421Z"
+ },
+ "f7_stenhuggarplats": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-08T12:50:44.192Z"
+ },
+ "f7_stockvag": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-04T19:45:40.313Z"
+ },
+ "f7_stolpe": {
+  "svar": "",
+  "kommentar": "ta bort detta helt",
+  "nar": "2026-11-09T21:14:31.179Z"
+ },
+ "f7_tjara": {
+  "svar": "2",
+  "kommentar": "spara version 3 till andra vätskor",
+  "nar": "2026-11-08T12:46:34.734Z"
+ },
+ "f7_trafigur": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-08T12:47:34.374Z"
+ },
+ "f7_tval": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-07T19:30:13.030Z"
+ },
+ "f8_bage": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:19:30.477Z"
+ },
+ "f8_grav": {
+  "svar": "",
+  "kommentar": "använd alla tre som variationer",
+  "nar": "2026-11-09T21:16:00.588Z"
+ },
+ "f8_hjalm": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T21:16:16.522Z"
+ },
+ "f8_horn": {
+  "svar": "",
+  "kommentar": "hornet ska inte synas på porträttet. Använd min version i övrigt",
+  "nar": "2026-11-08T12:44:05.227Z"
+ },
+ "f8_kropp": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-08T12:25:22.961Z"
+ },
+ "f8_kroppsdel": {
+  "svar": "",
+  "kommentar": "använd alla tre. version 2 för hand och arm, version 1 för ben och fot, version 3 för övrigt.",
+  "nar": "2026-11-08T12:24:30.377Z"
+ },
+ "f8_mantel": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:11:46.798Z"
+ },
+ "f8_pil": {
+  "svar": "3",
+  "kommentar": "pilbågen är ju gjort i en separat bild så den ingår inte i denna bilden men pilarna är godkända",
+  "nar": "2026-11-11T08:58:38.636Z"
+ },
+ "f8_rokelse": {
+  "svar": "",
+  "kommentar": "ta bort denna bilden helt",
+  "nar": "2026-11-09T21:16:11.622Z"
+ },
+ "f8_rustning": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:14:10.512Z"
+ },
+ "f8_skold": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T21:16:22.937Z"
+ },
+ "f8_slunga": {
+  "svar": "1",
+  "kommentar": "slungan ska inte synas på porträttet.\n\nanvänd version 1 i övrigt",
+  "nar": "2026-11-08T12:39:56.278Z"
+ },
+ "f8_tork": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-08T12:23:15.440Z"
+ },
+ "f8_trumma": {
+  "svar": "1",
+  "kommentar": "trumman ska inte synas i porträttet",
+  "nar": "2026-11-08T12:44:16.240Z"
+ },
+ "f8_zzz": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-07T19:41:25.064Z"
+ },
+ "f9_amne_arbete": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:18:06.465Z"
+ },
+ "f9_amne_barn": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T21:18:31.787Z"
+ },
+ "f9_amne_dod": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:17:44.976Z"
+ },
+ "f9_amne_fara": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:17:13.321Z"
+ },
+ "f9_amne_gral": {
+  "svar": "nej",
+  "kommentar": "förra är bättre",
+  "nar": "2026-11-09T21:17:53.801Z"
+ },
+ "f9_amne_karlek": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:17:39.123Z"
+ },
+ "f9_amne_kunskap": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T21:18:23.499Z"
+ },
+ "f9_amne_langtan": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:17:35.451Z"
+ },
+ "f9_amne_mat": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-20T08:22:00.011Z"
+ },
+ "f9_amne_plats": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:17:32.004Z"
+ },
+ "f9_amne_rykte": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:17:17.055Z"
+ },
+ "f9_amne_teknik": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T21:18:18.691Z"
+ },
+ "f9_amne_trost": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:17:42.677Z"
+ },
+ "f9_amne_vader_aska": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:17:54.423Z"
+ },
+ "f9_amne_vader_blast": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:17:52.780Z"
+ },
+ "f9_amne_vader_dimma": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:17:56.954Z"
+ },
+ "f9_amne_vader_klart": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:17:59.349Z"
+ },
+ "f9_amne_vader_regn": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:17:47.780Z"
+ },
+ "f9_amne_vader_sno": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:17:50.302Z"
+ },
+ "f9_amne_vardag": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:18:15.586Z"
+ },
+ "f9_amne_varsel": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T21:17:53.878Z"
+ },
+ "f9_appel": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-15T19:52:21.713Z"
+ },
+ "f9_appel_stack": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-17T08:22:00.514Z"
+ },
+ "f9_appeltrad": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:08:10.800Z"
+ },
+ "f9_bakugn": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:07:04.013Z"
+ },
+ "f9_balte_mindre": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T21:19:28.495Z"
+ },
+ "f9_bartuva": {
+  "svar": "nej",
+  "kommentar": "bär ska inte kunna växa i samma ruta som ett träd. Skriv det som en punkt i designdokumentet",
+  "nar": "2026-11-09T21:20:44.328Z"
+ },
+ "f9_bjorn_anfall": {
+  "svar": "1",
+  "kommentar": "från sidan ser det bra ut men inte framifrån",
+  "nar": "2026-11-09T21:19:20.408Z"
+ },
+ "f9_bonor": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:07:35.739Z"
+ },
+ "f9_braxen": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-11T09:05:14.101Z"
+ },
+ "f9_braxen_stack": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-17T08:21:48.613Z"
+ },
+ "f9_brod": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-15T19:50:50.503Z"
+ },
+ "f9_brod_stack": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-17T08:22:02.098Z"
+ },
+ "f9_bryggkar": {
+  "svar": "ja",
+  "kommentar": "det ska även synas när det är vätska i karet med olika fäger för vilken vätska det är",
+  "nar": "2026-11-20T08:12:17.446Z"
+ },
+ "f9_bryggkar_drycker": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-22T15:56:42.615Z"
+ },
+ "f9_djurhorn": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:11:57.126Z"
+ },
+ "f9_fagelskramma": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:19:35.429Z"
+ },
+ "f9_fahus": {
+  "svar": "nej",
+  "kommentar": "Fähuset byggs som andra hus gör ingen ny version",
+  "nar": "2026-11-17T08:10:47.946Z"
+ },
+ "f9_far": {
+  "svar": "",
+  "kommentar": "Använd alla som variationer",
+  "nar": "2026-11-17T08:09:29.400Z"
+ },
+ "f9_fiskrens": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-15T19:56:37.472Z"
+ },
+ "f9_foder": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:19:42.980Z"
+ },
+ "f9_forband": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:19:52.859Z"
+ },
+ "f9_get": {
+  "svar": "",
+  "kommentar": "Använd alla som variationer",
+  "nar": "2026-11-17T08:09:39.966Z"
+ },
+ "f9_hage": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-21T13:38:50.168Z"
+ },
+ "f9_hamladbjork": {
+  "svar": "nej",
+  "kommentar": "Inget eget utseende på hamnad björk",
+  "nar": "2026-11-17T08:11:01.037Z"
+ },
+ "f9_hassel": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:19:58.539Z"
+ },
+ "f9_ho": {
+  "svar": "nej",
+  "kommentar": "dom ska plocka det långa gräset som redan finns i spelet. och även vanligt gräs som redan finns på marken",
+  "nar": "2026-11-09T21:21:30.147Z"
+ },
+ "f9_hons": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:09:49.950Z"
+ },
+ "f9_hostack": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:10:22.473Z"
+ },
+ "f9_hotmarke": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-11T08:58:41.768Z"
+ },
+ "f9_hund": {
+  "svar": "1",
+  "kommentar": "Använd alla",
+  "nar": "2026-11-17T08:09:10.783Z"
+ },
+ "f9_jordgubbar": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-15T19:51:48.903Z"
+ },
+ "f9_jordgubbar_stack": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-17T08:22:03.876Z"
+ },
+ "f9_jordgubbsplanta": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-24T21:17:59.735Z"
+ },
+ "f9_kal": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-15T19:51:38.772Z"
+ },
+ "f9_kal_stack": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-17T08:22:06.217Z"
+ },
+ "f9_kappa": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:20:10.858Z"
+ },
+ "f9_kat_grot": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:20:16.586Z"
+ },
+ "f9_kat_gryta": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:20:21.188Z"
+ },
+ "f9_kat_soppa": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:20:27.417Z"
+ },
+ "f9_kk_bygge": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-09T21:22:37.852Z"
+ },
+ "f9_kk_fritid": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-09T21:22:52.132Z"
+ },
+ "f9_kk_grannar": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-09T21:22:42.731Z"
+ },
+ "f9_kk_liv": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-09T20:28:54.199Z"
+ },
+ "f9_kk_motgang": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-09T20:30:08.150Z"
+ },
+ "f9_kk_strid": {
+  "svar": "2",
+  "kommentar": "Använd första där vapnen är bakom skölden",
+  "nar": "2026-11-17T08:04:39.514Z"
+ },
+ "f9_kk_styre": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-09T20:28:59.248Z"
+ },
+ "f9_kk_tro": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-20T08:21:57.970Z"
+ },
+ "f9_kolstam": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-09T21:18:41.577Z"
+ },
+ "f9_kompost": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-17T08:08:53.859Z"
+ },
+ "f9_korn": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-11T09:06:03.716Z"
+ },
+ "f9_korn_stack": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-22T15:56:50.598Z"
+ },
+ "f9_kvarnsten": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:06:49.690Z"
+ },
+ "f9_lagermark": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-09T20:26:05.280Z"
+ },
+ "f9_lera": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-10T20:11:41.825Z"
+ },
+ "f9_lerkrukor": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-17T08:05:02.054Z"
+ },
+ "f9_lok": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-11T09:06:51.906Z"
+ },
+ "f9_lok_stack": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-20T14:19:24.488Z"
+ },
+ "f9_lovkarve": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-20T08:15:42.154Z"
+ },
+ "f9_malt": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:06:44.064Z"
+ },
+ "f9_mantel": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:20:36.809Z"
+ },
+ "f9_mjolk": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-20T08:15:46.708Z"
+ },
+ "f9_nat": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-11T09:05:08.685Z"
+ },
+ "f9_nat_stack": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-17T08:21:46.896Z"
+ },
+ "f9_naverask": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-11T08:59:33.697Z"
+ },
+ "f9_naverask_stack": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-17T08:21:34.630Z"
+ },
+ "f9_nedslag": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-09T20:18:34.725Z"
+ },
+ "f9_notter": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-20T08:13:31.635Z"
+ },
+ "f9_ol": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-20T08:12:29.554Z"
+ },
+ "f9_orte": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-20T08:11:40.478Z"
+ },
+ "f9_ortkok_delar": {
+  "svar": "nej",
+  "kommentar": "detta är en dublettt det finns redan örtkök ovan",
+  "nar": "2026-11-10T20:12:51.126Z"
+ },
+ "f9_ortkruka": {
+  "svar": "ja",
+  "kommentar": "ska odla i den mellanstora krukan också",
+  "nar": "2026-11-20T08:14:46.145Z"
+ },
+ "f9_ortkruka_mellan": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-20T14:19:27.720Z"
+ },
+ "f9_proteser": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:20:51.503Z"
+ },
+ "f9_r_fram": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-09T20:31:01.876Z"
+ },
+ "f9_r_ja": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-09T20:30:52.055Z"
+ },
+ "f9_r_nej": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-09T20:30:50.349Z"
+ },
+ "f9_rokeri": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-17T08:06:37.196Z"
+ },
+ "f9_rutsaker": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-09T21:20:59.012Z"
+ },
+ "f9_salt": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-21T13:38:25.363Z"
+ },
+ "f9_sik": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-11T09:05:18.210Z"
+ },
+ "f9_sik_stack": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-17T08:21:49.962Z"
+ },
+ "f9_sjal": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:21:08.574Z"
+ },
+ "f9_skara": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:11:08.848Z"
+ },
+ "f9_skjorta_ylle": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:21:15.137Z"
+ },
+ "f9_slaktrens": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:21:22.358Z"
+ },
+ "f9_slatterang": {
+  "svar": "nej",
+  "kommentar": "",
+  "nar": "2026-11-24T21:18:05.845Z"
+ },
+ "f9_snickarbank": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:05:08.295Z"
+ },
+ "f9_snostank": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-09T21:17:26.900Z"
+ },
+ "f9_sophog": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:08:41.541Z"
+ },
+ "f9_spjala": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-11T09:04:15.652Z"
+ },
+ "f9_spjala_stack": {
+  "svar": "nej",
+  "kommentar": "jag förstår inte vad det är jag väljer",
+  "nar": "2026-11-22T15:57:00.883Z"
+ },
+ "f9_stackar": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-09T20:26:36.122Z"
+ },
+ "f9_staket": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:07:31.117Z"
+ },
+ "f9_stekhall": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-17T08:07:25.708Z"
+ },
+ "f9_tal": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-09T20:28:10.979Z"
+ },
+ "f9_tunika_ylle": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:21:29.721Z"
+ },
+ "f9_ull": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:11:16.090Z"
+ },
+ "f9_ulltrad": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:11:19.652Z"
+ },
+ "f9_uppsatt_vagg": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-09T20:18:29.781Z"
+ },
+ "f9_valp": {
+  "svar": "",
+  "kommentar": "Använd alla",
+  "nar": "2026-11-17T08:09:16.091Z"
+ },
+ "f9_varg_anfall": {
+  "svar": "nej",
+  "kommentar": "Den ska inte sticka ut tungan när den attackerar",
+  "nar": "2026-11-17T08:03:53.508Z"
+ },
+ "f9_vatskor": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-17T08:05:17.363Z"
+ },
+ "f9_vaxtrest": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-17T08:08:37.109Z"
+ },
+ "f9_vedhog": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-17T08:04:03.303Z"
+ },
+ "f9_vin": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-20T08:12:24.483Z"
+ },
+ "f9_ylle": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-17T08:11:49.489Z"
+ },
+ "g_arter": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-02T21:20:35.582Z"
+ },
+ "g_band": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T22:42:00.609Z"
+ },
+ "g_horn": {
+  "svar": "1",
+  "kommentar": "spara dem andra verisonerna om jag ångrar mig",
+  "nar": "2026-11-03T22:41:44.516Z"
+ },
+ "g_runsten": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T22:42:10.417Z"
+ },
+ "g_vag": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T22:41:51.886Z"
+ },
+ "grill": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-03T21:22:05.203Z"
+ },
+ "handslag": {
+  "svar": "nej",
+  "kommentar": "gör tre nya",
+  "nar": "2026-11-02T21:22:28.259Z"
+ },
+ "i_fattig": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-02T21:20:04.785Z"
+ },
+ "i_rik": {
+  "svar": "4",
+  "kommentar": "",
+  "nar": "2026-11-02T21:20:16.596Z"
+ },
+ "i_valbargad": {
+  "svar": "nej",
+  "kommentar": "gör tre nya. Baserad på symbolen för någon som är rik",
+  "nar": "2026-11-02T21:22:49.947Z"
+ },
+ "kista": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-10-27T12:54:32.441Z"
+ },
+ "kruka": {
+  "svar": "",
+  "kommentar": "Spara alla 4 bilder. Men vi använder version 1 till detta sammanhanget men dom andra är bra att behålla till annat.",
+  "nar": "2026-11-01T18:48:28.835Z"
+ },
+ "lagereld": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-10-27T12:55:47.378Z"
+ },
+ "m_bjork": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T21:40:02.895Z"
+ },
+ "m_bjork_host": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T22:18:34.267Z"
+ },
+ "m_bjork_var": {
+  "svar": "nej",
+  "kommentar": "Den ser lite för platt ut",
+  "nar": "2026-11-03T22:18:34.187Z"
+ },
+ "m_bjork_vinter": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T22:18:40.209Z"
+ },
+ "m_bjorkvar": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-03T22:01:50.556Z"
+ },
+ "m_brand": {
+  "svar": "1",
+  "kommentar": "version 3 direkt efter skogsbrand. Sen version 1 när glöden slocknat",
+  "nar": "2026-11-03T22:02:22.683Z"
+ },
+ "m_falld": {
+  "svar": "2",
+  "kommentar": "",
+  "nar": "2026-11-03T22:02:46.216Z"
+ },
+ "m_gran": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T21:40:19.077Z"
+ },
+ "m_gran_host": {
+  "svar": "nej",
+  "kommentar": "Använd samma modell som på sommaren",
+  "nar": "2026-11-03T22:18:01.675Z"
+ },
+ "m_gran_var": {
+  "svar": "nej",
+  "kommentar": "Använd samma modell som på sommaren",
+  "nar": "2026-11-03T22:17:40.917Z"
+ },
+ "m_gran_vinter": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T22:18:06.198Z"
+ },
+ "m_granvar": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-03T22:01:40.297Z"
+ },
+ "m_gras": {
+  "svar": "1",
+  "kommentar": "Okej kör på version 1 rakt av. Det blir vår referens för hur marken ska ritas ungefär",
+  "nar": "2026-11-03T22:00:35.213Z"
+ },
+ "m_skogskant": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T22:09:18.422Z"
+ },
+ "m_sno": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T22:09:12.468Z"
+ },
+ "m_stig": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T22:09:09.410Z"
+ },
+ "m_stubbe": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-03T22:02:32.585Z"
+ },
+ "m_torka": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-02T21:19:39.628Z"
+ },
+ "m_vatten": {
+  "svar": "1",
+  "kommentar": "",
+  "nar": "2026-11-03T21:24:23.095Z"
+ },
+ "portratt": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-10-27T15:48:04.581Z"
+ },
+ "pratbubbla": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-02T21:18:25.201Z"
+ },
+ "q_grannar": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T22:59:56.363Z"
+ },
+ "q_person": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T22:59:58.011Z"
+ },
+ "q_tro": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T23:00:04.232Z"
+ },
+ "scen_v": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T22:16:18.660Z"
+ },
+ "silver": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-02T21:19:05.993Z"
+ },
+ "slaktbank": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-10-27T16:42:46.532Z"
+ },
+ "slojdbank": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-10-27T15:47:55.121Z"
+ },
+ "sport_bollspel": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T21:21:42.140Z"
+ },
+ "sport_brottning": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T21:21:32.796Z"
+ },
+ "sport_kast": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T21:21:36.091Z"
+ },
+ "sport_snoboll": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T21:21:39.480Z"
+ },
+ "symboler": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-10-27T12:56:54.871Z"
+ },
+ "tornado": {
+  "svar": "3",
+  "kommentar": "",
+  "nar": "2026-11-02T21:19:29.187Z"
+ },
+ "v_framsteg": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T22:41:09.247Z"
+ },
+ "v_ring": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T22:41:04.808Z"
+ },
+ "v_tart": {
+  "svar": "ja",
+  "kommentar": "",
+  "nar": "2026-11-03T22:40:58.847Z"
+ },
+ "ved": {
+  "svar": "nej",
+  "kommentar": "ingen ser bra ut",
+  "nar": "2026-11-02T21:18:43.785Z"
+ },
+ "virke": {
+  "svar": "nej",
+  "kommentar": "Ingen ser bra ut.",
+  "nar": "2026-11-02T21:18:54.466Z"
+ }
+}

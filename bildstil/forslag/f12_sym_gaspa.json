@@ -1,0 +1,92 @@
+{
+ "kort": "f12_sym_gaspa",
+ "namn": "Symbolen dålig på scenen",
+ "slag": [
+  "symbol"
+ ],
+ "vad": "Steg 12.1.192: symbolen för 🥱 i texterna, ett gäspande ansikte: ryktet dålig på scenen, publiken tog illa emot framträdandet. I spelet är den nu version 1 (platshållare). Bilden visar symbolen två gånger på panelens beige, i den storlek den har i en textrad.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "sym_gaspa_v1",
+     "rader": [
+      ".....oooooo.....",
+      "...ooqqqqppoo...",
+      "..oqqwqqqpqppo..",
+      ".oqqqqqpqpqpppo.",
+      ".oqEqqEpqEppEpo.",
+      "oqqqEEqpqpEEpppo",
+      "oqqpqqpqpqpppppo",
+      "oqpqpqrrrrpppppo",
+      "oqqpqrrrrrrppppo",
+      "oqpqprrrrrrpppoo",
+      "opqpprrssrrppooo",
+      ".oppprssssrppoo.",
+      ".opqpprrrrpppoo.",
+      "..opqppppppooo..",
+      "...ooppppoooo...",
+      ".....oooooo....."
+     ]
+    }
+   ],
+   "anteckning": "Symbolen ses rakt framifrån, som ett ansikte vänt mot läsaren i textraden, så den står upprätt och nästan fyller rutan. Den är en cirkel på 15 punkter med mittkolumnen 7 som spegelaxel. Ögonen är spegelvända. Det stora ovala gapet sitter mitt på axeln och är 5 punkter brett och 6 högt. Det är fyllt med rost0, med en liten rost1-tunga i botten. Det är det enda mättade i bilden, eftersom gapet är det man ska se. Kontur, ögon och gap är spegelsymmetriska. Sidorna skiljer sig bara i ljuset: ben2 och en glanspunkt i ben3 uppe till vänster på pannan, ben1 i mitten och ben0 som skugga nere till höger på kinden. Ögonen är slutna, nedåtböjda bågar i jord0 högt upp. Bakgrunden är genomskinlig, och spelet visar symbolen på panelens beige. Granskningen: Rättat: version 1 var inte spegelsymmetrisk. Cirkeln låg förskjuten åt vänster med en tom kolumn till höger. Ögonen satt på olika avstånd från mitten, och gapet var 5 punkter brett och snett placerat. Ansiktet är nu omritat som en centrerad, symmetrisk cirkel på 16 × 16 punkter som fyller rutan, med kontur i ben0. Ögonen är två lika slutna bågar i jord0 högt upp, en på var sida om mittaxeln. Gapet är ett centrerat lodrätt ovalt gap, 6 punkter brett och 6 högt, i rost0, och tungan i rost1 ligger nere i gapet med rost0 runt om. Ljuset ligger uppe till vänster, med ben2 och en enda glanspunkt i ben3 på pannan. Skuggan i ben0 ligger nere till höger. Ytan är kornig i ben1 och ben2 utan ensamma mörka prickar. Ljuset och kornet är det enda som skiljer sidorna åt.",
+   "ide": "Runt ansikte rakt framifrån som fyller rutan, nästan en cirkel på 15 punkter, i ben1 och ben2 med kornig ton och ben0 som kontur. Formen är spegelsymmetrisk: två slutna ögon som korta nedåtböjda bågar i jord0 högt upp, och nertill ett stort lodrätt ovalt gap, omkring 5 punkter brett och 6 högt, fyllt med rost0 och en liten tunga i rost1 i botten. Ljuset ligger på den övre vänstra delen av pannan och skuggan i ben0 nere till höger på kinden, så bara ljuset skiljer sidorna åt."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f12_sym_gaspa_v_profil",
+     "rader": [
+      "......o.........",
+      ".....o.o........",
+      "..o...o.........",
+      ".o.o....EEEEE...",
+      "..o...ooGGFFFE..",
+      ".....oqqpGFFFFE.",
+      "....oqwqqpFFFFE.",
+      "..oqqqEqppFFFFFE",
+      "...oqqqEppFFFFFE",
+      "..oooooqppFFFFE.",
+      ".orrrrrroppFFFE.",
+      ".orrrroqpppFFE..",
+      "ooqqqqqpppppo...",
+      "oqpqpppppppo....",
+      ".oooppppppoo....",
+      "....ooooooo....."
+     ]
+    }
+   ],
+   "anteckning": "Symbolen är ett huvud i profil, vänt åt vänster och lutat bakåt mitt i gäspningen, inom 16 × 16 punkter. Silhuetten är en snedställd droppe: bakhuvudet är runt uppe till höger och hakan sticker längst ut nere till vänster. Huvudet är i ben2 och ben1, ljusast uppe till vänster vid pannan med en punkt ben3 som glans. Det blir mörkare mot nacke och haka nere till höger, och konturen är ben0. Håret är en kappa i jord1 över bakhuvudet med kant i jord0 och lite jord2 där ljuset faller. Eftersom huvudet lutar bakåt pekar näsan upp åt vänster. Under den öppnar sig munnen som en stor kil i rost0, bred framåt och spetsig in mot kinden, mellan överläppens raka linje och den nedåtgående underkäken. Ögat är ett kort snett streck i jord0, halvstängt och sömnigt. Ovanför pannan stiger två små öppna ringar i ben0 som trött andedräkt: de visar att det är en gäspning och inte ett skrik. Det är ingen bakgrund, bara figuren. Symbolen ritas en gång; spelet visar den två gånger på panelen. Granskningen: Versionen följer idén: ett huvud i profil vänt åt vänster och lutat bakåt, med hakan längst ut nere till vänster. Huvudet är i ben1 och ben2 med kontur i ben0, håret är en kappa i jord1 med kontur i jord0, ögat är ett snett streck och munnen en kil i rost0. Två öppna ringar i ben0 stiger ovanför pannan. Symbolen är 16 × 16 punkter, nästan fyller rutan och har mörk kontur runt hela. Ljuset kommer uppifrån vänster och glansen är en enda punkt i ben3. Jag rättade en sak: i rad 13 låg en lös mörk prick i ben0 (kolumn 10) inne i käken, med en instängd punkt i ben1 bakom. Konturen där går nu som en jämn diagonal ned mot halsen (kolumn 11 i rad 13). Resten är oförändrat.",
+   "ide": "Ett huvud i profil, vänt åt vänster och lutat bakåt mitt i gäspningen, så att silhuetten blir en snedställd droppe med hakan längst ut nere till vänster. Huvudet är i ben1 och ben2 med ben0 som kontur, håret är en mörk kappa i jord1 över bakhuvudet, ögat är ett kort snett streck och munnen en stor kil som öppnar sig framåt, fylld med rost0. Ovanför pannan stiger två eller tre små öppna ringar i ben0 som trött andedräkt och visar att det är en gäspning och inte ett skrik."
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f12_sym_gaspa_v2",
+     "rader": [
+      "....EEEEEEE.....",
+      "...EHGGGGGFE....",
+      "..EGHGGFGGGFE...",
+      "..EGGFGGGFGFE...",
+      "..EHGGGHGGGFE...",
+      "..EFFFFHFFFFE...",
+      "..EGllFHFllFE...",
+      "..EGGFGHFGFFE...",
+      "..EHGGGHFGGFE...",
+      "..EGGGFFFGGFE...",
+      "..EGFGlllGFFE...",
+      "..EHGFlllFGFE...",
+      "..EGGFlllFGFE...",
+      "...EGFlllFFE....",
+      "....EGFlFFE.....",
+      ".....EEEEE......"
+     ]
+    }
+   ],
+   "anteckning": "Masken ses rakt framifrån som en sak för sig, utan band eller snören, så hela den spegelsymmetriska formen syns: 11 × 16 punkter, kolumn 2–12 med mittlinjen i kolumn 7. Konturen är jord0 runt hela masken. Ytan är jord2 med kornig ådring i jord1, och jord3 ligger på den ljusa vänstersidan och längs näsryggen. Ljuset kommer uppifrån till vänster, så högerkanten är mörkare i jord1. Den enda glanspunkten i jord3 sitter uppe till vänster på pannan. De tunga ögonlocken är ett band i jord1 som hänger över två smala springor i kol1. Den raka näsryggen slutar i en skuggad näsbas. Under den öppnar sig gäspet som ett lodrätt avlångt hål i kol1, som smalnar och når nästan ner till hakan. Där finns inga tänder eller tunga, bara få och stora former som går att läsa i textradens storlek. Granskningen: Granskad och oförändrad. Storleken är rätt: en symbol på 16 × 16 punkter där masken är 11 × 16 och nästan fyller rutan, som idén säger. Vinkeln är rakt framifrån, som en symbol ska ritas. Formen är spegelsymmetrisk kring mittkolumnen: konturen, ögonlocksbandet, de två ögonspringorna i kol1 och det lodräta gapet ligger lika på båda sidor, och bara kornet skiljer sidorna åt. Konturen i jord0 går runt hela masken. Ljuset kommer uppifrån vänster: jord3 sitter på vänsterkanten, pannan och näsryggen, och högerkanten är jord1. Pannans ljuspunkter håller sig inom regeln om högst en eller två punkter glans. Gapet når ner till raden ovanför hakan, och masken har inga band eller snören. Masken är ljusare än gräset och har mörk kontur, så den syns tydligt på både gräset och panelen. Inget bryter mot reglerna.",
+   "ide": "En hög, avlång teatermask av trä rakt framifrån, smalare än den är hög (omkring 11 × 16 punkter), i jord2 och jord3 med kornig ådring och jord0 som kontur. Masken är spegelsymmetrisk: tunga hängande ögonlock över två smala ögonspringor, en rak näsrygg och nedtill ett långt utdraget gap som ett lodrätt avlångt hål i kol1 som når nästan ner till hakan. Glansen är en enda punkt i jord3 uppe till vänster på pannan, och masken har inga band eller snören eftersom den bara ses som en sak för sig."
+  }
+ ]
+}

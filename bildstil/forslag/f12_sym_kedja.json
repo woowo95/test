@@ -1,0 +1,33 @@
+{
+ "kort": "f12_sym_kedja",
+ "namn": "Symbolen gudlös",
+ "slag": [
+  "symbol"
+ ],
+ "vad": "Steg 12.1.192: symbolen för ryktet gudlös (den som vanhelgat det heliga eller stötts ut ur tron) i texterna. Som du bad om är det symbolen för tron, Tro-stenens sol, överstruken med ett snett streck i rost. Ja eller nej? Din kommentar förra gången: ”använd symbolen för religon men överstruken”",
+ "av": "programmeringschatten, för hand",
+ "versioner": [
+  {
+   "ide": "Tro-stenens sol med ett snett streck i rost över.",
+   "anteckning": "Tro-stenens sol med ett snett streck i rost över.",
+   "bilder": [
+    {
+     "namn": "f12_sym_kedja_struken",
+     "rader": [
+      "tr...kkk.....",
+      "rtrk.kKk.kkk.",
+      ".rtrrkKkkkKk.",
+      ".krttrKKkKkk.",
+      "kkkrrtrKKkkkk",
+      "kKKKKrtrKKKKk",
+      "kkkkKKrtrkkkk",
+      ".kkKkKKrtrrk.",
+      ".kKkkkKkrttr.",
+      ".kkk.kKk.rrtr",
+      ".....kkk...rt"
+     ]
+    }
+   ]
+  }
+ ]
+}

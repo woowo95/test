@@ -1,0 +1,39 @@
+{
+ "kommando": "tre",
+ "args": [
+  "brunn=träställningen ser ut att stå bakom brunnen och inte på stenkonstruktionen som den ska: stolparna ska stå på stenkanten. Gör repet tunnare (en punkt)",
+  "fyrfat=ta bort fötterna, fatet står direkt på golvet. Rita bara fatet med kolet, inga lågor: elden ritas av spelet ovanpå, animerad som lägerelden",
+  "sang=ta bort kudden, eftersom den är ett eget föremål; behåll resten",
+  "stol=rakare ben: benen ska vara raka och lodräta, inte snedställda",
+  "stol_sida=nya versioner: samma stol som Stolen (bredvid), med raka ben, sedd från sidan",
+  "stol_bak=nya versioner: samma stol som Stolen (bredvid), med raka ben, sedd bakifrån",
+  "kolmila=gör den svart så man ser kolet",
+  "smedja=rita bälgen på sidan av elden istället",
+  "jarnyxa=inte tillräckligt lika flintyxan: utgå från flintyxans bild (Flintyxa, bredvid) i samma storlek och form, och byt bara huvudet mot ett smitt järnhuvud med skafthål; ingen surrning",
+  "tunna=nya versioner: rita en enkel tunna som en vanlig trätunna ser ut i dag",
+  "jarn=nya versioner: varför är allt järn rött i kanten? ta bort det. Gör en tacka som ser ut som en vanlig tacka, så som de brukar vara formade i modern tid",
+  "oljelampa=",
+  "ullsax="
+ ],
+ "modell": "claude-opus-5-5",
+ "uppskattat": {
+  "lag": 4.54,
+  "hog": 9.74
+ },
+ "dollar": 3.653,
+ "rapport": [
+  "brunn: 3 versioner till valdelen (kortet bild_brunn)",
+  "fyrfat: 3 versioner till valdelen (kortet bild_fyrfat)",
+  "sang: 3 versioner till valdelen (kortet bild_sang)",
+  "stol: 3 versioner till valdelen (kortet bild_stol)",
+  "stol_sida: 3 versioner till valdelen (kortet bild_stol_sida)",
+  "stol_bak: 3 versioner till valdelen (kortet bild_stol_bak)",
+  "kolmila: inte ritad (perspektiv: Inte snett ovanifrån: ingen mörkare framkant under ytan, som en vy rakt framifrån.)",
+  "smedja: 3 versioner till valdelen (kortet bild_smedja)",
+  "jarnyxa: 3 versioner till valdelen (kortet bild_jarnyxa)",
+  "tunna: 3 versioner till valdelen (kortet bild_tunna); kvar: olika: version 3 har nästan samma form som version 1 (95 % lika): versionerna ska vara olika idéer i form eller byggsätt, inte andra färger.",
+  "jarn: 3 versioner till valdelen (kortet bild_jarn)",
+  "oljelampa: 3 versioner till valdelen (kortet bild_oljelampa)",
+  "ullsax: 3 versioner till valdelen (kortet bild_ullsax)"
+ ]
+}

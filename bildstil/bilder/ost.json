@@ -12,7 +12,7 @@
   "IJJJIKLKII",
   ".IIIIIIII."
  ],
- "ritad": 2,
+ "ritad": 3,
  "av": "API:t (claude-opus-5-5), tre idéer",
  "pal": {
   "G": "#7d5b40",
@@ -24,47 +24,116 @@
  },
  "versioner": [
   {
-   "ide": "Låg platt ostkaka sedd snett ovanifrån: en bred oval topp (ungefär 10 punkter bred, 5 hög) i senap3 och senap2 med korn, och under den ett smalt sidoband på 2 punkter i senap1, med kontur i senap0 runt hela. En kil på ungefär en åttondel är skuren ur framkanten till höger, så att ett V-format hack syns i ovalen; snittytorna är ljus ostmassa i senap2 och L, och den inre väggen i hacket är skuggad i senap1. Formen är spegelsymmetrisk utom kilen, och ljuset ligger uppe till vänster på toppen med en glanspunkt i senap3.",
+   "ide": "Ett lågt platt hjul som ligger på bordet: toppen är en oval ovanifrån, 10 punkter bred och 5 hög, i senap3 och senap2 med korn, och under den en framkant på 2 punkter i senap1 som följer ovalens nedre båge. Konturen runt hela är senap0 och formen är spegelsymmetrisk; bara ljuset skiljer sidorna, ljusast uppe till vänster på toppen och mörkast nere till höger på kanten, med en enda glanspunkt i ben3 uppe till vänster.",
    "rader": [
     "..IIIIII..",
-    ".ILLKLKKI.",
-    "ILLKLKIKKI",
-    "IKLKKIJLKI",
-    "IKKKIJJLKI",
-    "IJJJIJJLJI",
-    "IJJJIJKKJI",
-    ".IIIIIIII."
+    ".ILwLLKKI.",
+    "ILLLKLKKKI",
+    "IKLKLILLKI",
+    "IJKKLILKKI",
+    "IKJJJIIIII",
+    ".IJJJI....",
+    "..III....."
    ],
-   "om": "Låg, rund ostkaka sedd snett ovanifrån, 10 × 8 punkter. Toppen är en bred oval i senap3 och senap2 med korn, och glansen ligger uppe till vänster. Under den går ett sidoband på 2 punkter i senap1, och konturen runt hela är senap0. En kil är skuren ur framkanten till höger, så att ett V-format hack syns från mitten och ut. Hackets vänstra snittvägg är skuggad i senap1, och den högra snittytan är ljus ostmassa i senap3 och senap2. Formen är spegelsymmetrisk utom kilen. Granskningen: Storleken (10 × 8) står i rätt proportion till kolonisten, vinkeln är snett ovanifrån och konturen i senap0 är spegelsymmetrisk. Osten syns tydligt mot gräset. Jag rättade tre saker. Den ensamma mörka pricken i sidobandet (rad 6) är borta, så bandet är nu jämnt i senap1. Den lösa senap0-punkten mitt på toppen (rad 3) är borta, så toppen är ljus senap3/senap2 med korn och glansen ligger uppe till vänster. Kilen är nu ett rent V: spetsen sitter vid mitten av toppen och vidgar sig ner mot framkanten till höger, med den skuggade inre väggen i senap1 till vänster och den ljusa snittytan i senap3/senap2 till höger, ända ner genom sidobandet."
+   "om": "Ett lågt, platt osthjul, 10 punkter brett och 8 högt. Toppen är en oval på 10 × 5 punkter (raderna 0–4) i senap3 och senap2 med korn. Den är ljusast uppe till vänster, med en enda glanspunkt i ben3 där, och går mot senap2 åt höger. Under toppen följer framkanten ovalens nedre båge i senap1: den är 2 punkter hög i mitten och syns redan från rad 4 vid sidorna. Längst till vänster har kanten en punkt senap2 som ljus och längst ner till höger en punkt mer senap0 som skugga. Konturen runt hela osten är senap0, och silhuetten är spegelsymmetrisk. Granskningen: Kortet beskriver en rund ost med en skuren kil, men ritningen visade ett helt hjul utan kil och kunde läsas som en guldklimp. Jag har skurit ut en kil i det främre högra hörnet. Där syns nu snittytan som vetter framåt, i senap3 och senap2 och ljusast uppe till vänster, med kontur i senap0 runt öppningen och längs snittkanten. Den främre kanten finns bara kvar på vänster sida. Snittet bryter spegelsymmetrin med avsikt, eftersom kortet kräver kilen; hjulets ytterform är fortfarande symmetrisk. Det här stämmer fortfarande: storleken 10 × 8 inom gränsen och rimlig mot kolonisten, vinkeln snett uppifrån med toppen som oval och ett framband på 2 punkter, ljuset uppe till vänster med en glanspunkt i ben3, konturen i senap0 och den ljusa gula färgen som syns tydligt mot det olivgröna gräset."
   },
   {
-   "ide": "Hög, rund ost som en kort cylinder: en mindre oval topp (8 punkter bred, 3–4 hög) i senap3 och senap2 och en hög sida på 3–4 punkter i senap1 och senap2, så att osten ser tjock ut, med konturen i senap0. Ett kvarts tårtstycke är skuret ur framkanten till vänster, så att hacket öppnar sig mot betraktaren och visar två lodräta snittytor i ljus senap2 och L, den högra i skuggad senap1. Sidan har lite mörkare korn längs botten mot höger, och toppen är ljusast uppe till vänster.",
+   "ide": "Ett högt tjockt hjul som en trumma: toppens oval är smalare på höjden, 9 punkter bred och 4 hög i senap3 och senap2, och sidan är ett högre band på 3–4 punkter i senap1 och senap2. Sidan buktar lite utåt på mitten så att silhuetten blir tunnlik, med kontur i senap0 runt allt; toppen och sidan skiljs av en tydlig ljus kant i senap3 längs ovalens framkant.",
+   "rader": [
+    "..IIIII..",
+    ".ILLLLKI.",
+    "ILLKLKIII",
+    "ILLLLILKI",
+    "IKJKJILKI",
+    "IJKJJIKJI",
+    ".IJJJIJI.",
+    "..IIIII.."
+   ],
+   "om": "Idé: ett högt, tjockt osthjul som en trumma, 9 punkter brett och 8 högt.\nToppens oval är 4 rader hög och ljus i senap3 och senap2, med det ljusaste uppe till vänster.\nOvalens framkant är ett tydligt ljust band i senap3, som skiljer toppen från sidan.\nSidan är 3 rader i senap2 och senap1, ljusare till vänster och mörkare till höger.\nSilhuetten är tunnlik: smal upptill, full bredd på mitten och smalare nedtill igen.\nKonturen i senap0 går runt allt.\nAvvikelse: inom 10 punkters bredd går det inte att få en spegelsymmetrisk utbuktning som är bredare än den 9 punkter breda ovalen. Därför syns buktningen i stället genom att botten drar in. Granskningen: Rättat: den skurna kilen saknades. Nu är en kil skuren ur framkanten till höger. Snittytan syns som en ljus yta i senap3 och senap2 som mörknar mot senap1 nedåt. Den skiljs från osten av en lodrät konturlinje i senap0, och ovalens kant i det högra bakre hörnet sänks över snittet. Sidorna var helt raka, så ostens nedre del smalnar nu av (raderna 6–7 är 7 och 5 punkter breda) för en lätt tunnform; den vänstra delen, som inte är skuren, är fortfarande spegelsymmetrisk mot den ursprungliga silhuetten. Ovalen är 9 punkter bred och 4 hög (rad 0–3), och framkanten ljus i senap3. Sidan är ett band på 3 punkter i senap1 och senap2. Konturen i senap0 går runt allt. Ljuset kommer uppifrån till vänster. Storleken är 9 × 8 och passar mot kolonisten. Den ljusa senapen syns tydligt mot det oliva gräset."
+  },
+  {
+   "ide": "En kupig ost utan skarp kant: hela osten är en mjukt rundad kupol, 10 punkter bred och 7 hög, där toppen och sidan flyter ihop i en jämn övergång från senap3 uppe till vänster via senap2 till senap1 nere till höger. Kontur i senap0, spegelsymmetrisk form med platt botten, och en eller två glanspunkter i ben3 högt upp till vänster visar den runda formen.",
+   "rader": [
+    "...IIII...",
+    ".IILLKKII.",
+    ".ILwLLKJI.",
+    "ILwLKLKJJI",
+    "ILLKKKJKJI",
+    "IKKJKJJJJI",
+    "IIIIIIIIII"
+   ],
+   "om": "Idé: en kupig ost utan skarp kant, 10 punkter bred och 7 hög. Formen är en spegelsymmetrisk kupol med smal topp, rundade axlar och platt botten. Konturen är senap0. Ytan går mjukt från senap3 uppe till vänster via senap2 till senap1 nere till höger, med lite korn. Två glanspunkter i ben3 högt upp till vänster visar den runda formen. Det finns ingen kant mellan topp och sida, så kupolen skiljer sig från ostar med platt topp. Granskningen: Oförändrad, inget behövde rättas. Storleken är 10 × 7 punkter, inom ramen på 10 × 8, och osten ligger i rimlig storlek mot kolonisten (14 × 20). Den ses som en kupol ovanifrån, med platt botten och spegelsymmetrisk kontur. Konturen är senap0, materialets mörkaste ton. Ljuset går från senap3 uppe till vänster via senap2 till senap1 nere till höger, med korn och utan mörka fläckar. De två glanspunkterna i ben3 sitter högt upp till vänster, och ingen av dem är ren vit. Den mättade senapsgula tonen med mörk kontur syns tydligt mot det olivgröna gräset. Bilden följer idén om en kupig ost utan skarp kant och har därför ingen skuren kil, trots att kortets text nämner en."
+  },
+  {
+   "ide": "Ett platt hjul som ovanifrån är en oval i senap2 och senap3 med framkant på 2 punkter i senap1, men där en liten kil är bortskuren framtill till höger så att ett V-format hack syns i silhuetten. I hacket syns de två skurna ytorna i den ljusare ostmassan (senap3 med enstaka ben3), tydligt ljusare än den gula skorpan; konturen i senap0 följer hacket så att hjulet fortfarande läses som runt.",
    "rader": [
     "..IIIIII..",
-    ".ILLLLKKI.",
-    "IIIIIJLLKI",
-    "ILLKLJKLKI",
-    "ILKLKJJKJI",
-    "IKLKKJKJJI",
-    "IIIIIJJJJI",
-    ".....IIII."
+    ".IKLLKLKI.",
+    "IKLKLKKKJI",
+    "IKKLKILKJI",
+    "IKKKLI.wKI",
+    "IJJLLI..LI",
+    ".IJJLI..JI",
+    "..IIII..I."
    ],
-   "om": "Ost som en hög, kort cylinder med konturen i senap0. Toppen är en oval som är ljusast uppe till vänster (senap3) och övergår i senap2. Den höga sidan till höger är i senap1 och senap2, med mörkare korn längs botten mot höger. Ett kvarts tårtstycke är skuret ur framkanten till vänster, så att hacket öppnar sig mot betraktaren. Den vänstra snittytan är ljus i senap3 och senap2, och den högra är en skuggad lodrät rand i senap1. Granskningen: Ritningen höll sig inom 10 × 8, vinkeln snett uppifrån fungerade och osten syntes tydligt på gräset, så bara hacket rättades. Snittytan mot betraktaren (kolumn 1–4) står vid kilens bakkant, i höjd med ostens mitt. Därför slutar den nu en rad högre, med en senap0-kontur i rad 6. Under den är det främre vänstra hörnet tomt (genomskinligt), eftersom den biten är bortskuren. Den skuggade högra snittytan (senap1 i kolumn 5) och sidan når fortfarande ner till bottenkonturen i rad 7. Tidigare gick den ljusa snittytan ända ner till framkanten, så att osten läste som ett helt block; nu syns det skurna hacket som öppnar sig mot betraktaren tydligt. Utöver det behöll jag: toppen ljusast uppe till vänster, senap0 som kontur och mörkare korn längs sidan nere till höger. Formen är symmetrisk utom själva snittet."
+   "om": "Ett platt osthjul, 10 punkter brett och 8 högt, sett snett ovanifrån. Ovansidan är en oval i senap2 och senap3, ljusast uppe till vänster. Framkanten är ett band på 2 punkter i senap1, och hela konturen är senap0. Framtill till höger är en kil bortskuren, så att ett V-format hack öppnar sig mot betraktaren. Spetsen sitter mitt i hjulet och hacket når ut till kanten nere till höger. Den vänstra snittytan är ljus ostmassa i senap3 med ben3 överst och syns som en ljus sned rand. På andra sidan om hacket står en smal skuren kant i senap3 och senap1. Konturen följer hacket, så hjulet läses fortfarande som runt med en kil borta. Granskningen: Storleken (10 × 8), vinkeln (ovanifrån med en framkant på 2 punkter i senap1) och ljuset uppifrån vänster var redan rätt. Tre saker är rättade. 1) Konturen följer nu hacket: hacket fick en spets i senap0 mitt på hjulet och en lodrät konturkant (senap0) mellan den vänstra skurna ytan och hålet. Förut låg de ljusa punkterna direkt mot det genomskinliga, så att silhuetten flöt ut. 2) Hacket är flyttat lite mot mitten, så att den högra biten av hjulet blir bredare än en ren kontur. Hjulet läses då fortfarande som runt, med en kil bortskuren framtill till höger. 3) Ost och skorpa skiljs åt: skorpan ovanpå är nu mest senap2, med senap3 bara uppe till vänster och senap1 längs högerkanten. Bara de skurna ytorna är senap3, så de syns tydligt ljusare. Ben3 är minskat från tre punkter till en (den belysta högra skurna ytan), så att glansen håller sig inom gränsen. Konturen i senap0 och den ljusgula osten syns bra mot det oliva gräset."
   },
   {
-   "ide": "Låg rund ost med kilen utskuren och liggande bredvid: själva osten är en oval topp i senap2 och senap3 med ett tunt sidoband i senap1 och ett tydligt V-hack mot höger. Den utskurna kilen ligger på marken framför hacket, nedtill till höger, som en liten trekant (3–4 punkter) med spetsen inåt, ljus snittyta i L och kant i senap1. Kontur i senap0 runt både ost och kil, så att de läses som en sak med en bit loss.",
+   "ide": "En låg trekantig ostbit som ligger platt: toppen ses ovanifrån som en tårtbit med spetsen åt vänster fram och den rundade skorpbågen åt höger bak, i ljus ostmassa senap3 och senap2 med korn. Längs framsidan går ett smalt band på 2 punkter av den skurna sidan i senap2, och skorpbågen är en rand på en punkt i senap1; kontur i senap0 runt hela biten.",
    "rader": [
-    ".IIIIII...",
-    "ILLKLLKI..",
-    "ILKLKI....",
-    "IKLKKKKI..",
-    "IJJJJJJI..",
-    ".IIIIII.II",
-    "......ILLI",
-    ".......IJI"
+    ".......II.",
+    ".....IIJJI",
+    "...IILLKJI",
+    ".IILLKLLJI",
+    "IKLLLKLKJI",
+    "IKKKKKKKJI",
+    ".IKJKKJKJI",
+    "..IIIIIII."
    ],
-   "om": "Låg rund ost med ovalen ovanifrån i senap3 och senap2, ljusast uppe till vänster. Ett V-hack skär in från höger, med spetsen i mitten och snittytan i senap1. Sidobandet nedtill är i senap1 och konturen i senap0. Den utskurna kilen ligger nere till höger framför hacket, som en liten trekant med spetsen inåt: snittytan i senap3, kanten i senap1 och samma kontur i senap0. Granskningen: Rättat: V-hacket var bara en punkt djupt och såg ut som en lös prick (en ensam J i hacket). Nu går hacket tre punkter in från högerkanten på rad 2, med spetsen mot mitten och konturen i senap0 runt. Den ensamma J-punkten är borta. Topen är fortfarande ljusast uppe till vänster (L/K) och har ett sidoband i senap1. Kilen ligger nedtill till höger med spetsen inåt, snittyta i L, kant i J och kontur i I. Storleken, 10 × 8 punkter, passar bredvid kolonisten. Osten ses snett uppifrån och syns tydligt mot gräset."
+   "om": "Idé: en låg trekantig ostbit som ligger platt, 10×8 punkter. Toppen ses ovanifrån som en tårtbit med spetsen åt vänster fram. Ostmassan är senap3 med korn av senap2 och ljusast uppe till vänster. Skorpbågen åt höger bak är en rand på en punkt i senap1 längs den rundade kanten. Framsidan är den skurna sidan, ett band på 2 punkter i senap2 med lite senap1 i den undre raden. Konturen i senap0 går runt hela biten. Granskningen: Oförändrad; ingen regel bryts. Storleken fyller rutan 10 × 8 och är rimlig bredvid kolonisten (14 × 20). Vinkeln är snett uppifrån: toppen syns som en tårtbit med spetsen åt vänster fram, och framkanten är ett band på 2 punkter (rad 5–6) i senap2 med korn av senap1. Ljuset stämmer: senap3 ligger uppe till vänster på toppen och senap1 på skorpranden åt höger bak. Konturen i senap0 går runt hela biten och är inte svart. Den ljusa gula osten syns tydligt mot det oliva gräset. Kornet i ostmassan ger inga ensamma mörka prickar. Den följer idén: en enda kil, ingen behållare."
+  },
+  {
+   "ide": "En hög kil som står med spetsen mot betraktaren: ovanifrån syns en smal trekant som breddas bakåt, och framför den två skurna sidoytor som möts i en lodrät egg mitt i bilden, den vänstra i senap3 och den högra i senap2. Bakom och ovanför ligger skorpan som en böjd rand i senap1, så att biten blir en spetsig pil uppåt; kontur i senap0 och en glanspunkt i ben3 på vänstra ytan.",
+   "rader": [
+    "..IIIIII..",
+    ".IJKJJJJI.",
+    "IJLLLLKKJI",
+    "ILJLLLKJKI",
+    ".IwLJJKKI.",
+    "..ILLKKI..",
+    "...ILKI...",
+    "....II...."
+   ],
+   "om": "En hög kil med spetsen mot betraktaren. Överst ligger skorpan som en böjd rand i senap1. Under den syns kilens översida ovanifrån som en trekant som smalnar mot en spets mitt i bilden. Där tar den lodräta eggen vid. Den vänstra skurna ytan är senap3 med en glanspunkt i ben3, den högra är senap2. Konturen är senap0. Silhuetten smalnar nedåt till en spets, så den skiljer sig tydligt från de runda ostarna. Granskningen: Ritade om formen efter idén, i samma storlek (10 × 8, fyller rutan). Den gamla bilden var en rundad klump med spridda toner och visade varken kilen, de två skurna sidorna eller eggen. Nu är siluetten en spegelsymmetrisk spetsig pil: bred upptill och med spetsen nedåt mot betraktaren. Skorpan ligger som en böjd rand i senap1 överst, med en ljusare punkt i senap2 till vänster för ljuset. Därunder syns ovansidan ovanifrån som en trekant i senap3 och senap2 som smalnar framåt och avgränsas av kanter i senap1. Framsidan består av två skurna ytor som möts i en lodrät egg mitt i bilden, den vänstra i senap3 och den högra i senap2. Glanspunkten i ben3 sitter på den vänstra ytan. Konturen är senap0 runt om och kol0 används inte. Den ljusa gula osten syns tydligt mot gräset."
+  },
+  {
+   "ide": "En tjock kil som ligger med spetsen åt höger: toppen är en avlång trekant ovanifrån i senap3 och senap2, och framför den syns hela den skurna framsidan som ett trekantigt fält på 3 punkter högt till vänster som smalnar mot spetsen, i senap2 och senap1. Den rundade skorpan sitter på vänster ände som en lodrät bågrand i senap1 och senap0, så silhuetten blir en kraftig kil som pekar åt höger.",
+   "rader": [
+    ".III......",
+    "IJLLIII...",
+    "IJLLKLLII.",
+    "IJLKLKLKKI",
+    "IJKJKJJJI.",
+    "IIJKJJII..",
+    "IIJJII....",
+    ".IIII....."
+   ],
+   "om": "En tjock ostkil, 10×7 punkter, som pekar åt höger. Toppen är en avlång trekant sedd ovanifrån i senap3 och senap2; bakkanten sjunker mot spetsen. Under den syns den skurna framsidan i senap2 och senap1. Den är tre punkter hög till vänster och smalnar mot spetsen. Skorpan sitter på vänster ände som en lodrät, rundad rand, senap1 upptill och senap0 nedtill. Konturen är senap0. Ljuset kommer uppifrån vänster, och framsidan blir mörkare mot spetsen och nedåt. Granskningen: Ritade om formen efter idén. Den gamla bilden var en rundad klump som inte läste som en kil, och den skurna framsidan syntes inte. Nu är det en kil med spetsen åt höger på 10 × 8 punkter, som håller sig inom gränsen. Toppen ses ovanifrån som en avlång trekant i senap3 och senap2. Under den ligger den skurna framsidan, 3 punkter hög till vänster och smalnande mot spetsen, i senap2 och senap1. Skorpan är en lodrät bågrand till vänster i senap1 och senap0. Konturen är senap0, alltså materialets mörkaste ton. Ljuset faller uppe till vänster, med ljusast topp och mörkast framsida nere till höger. Tonerna växlar punkt för punkt som korn, utan ensamma mörka prickar. Den ljusa gula osten syns tydligt mot det olivgröna gräset."
+  },
+  {
+   "ide": "En bred kvartsbit med rät vinkel: biten har två raka skurna sidor som möts i ett hörn framtill till vänster och en rundad skorpbåge bak till höger, så toppen ovanifrån liknar en kvarts cirkel i senap3 och senap2. Framkanten är ett band på 2–3 punkter i senap2 och senap1 som går rakt och sedan följer skorpans båge, och skorpan har en rand i senap1; kontur i senap0 runt allt.",
+   "rader": [
+    "IIII......",
+    "ILLLJII...",
+    "ILLKLKJI..",
+    "ILKLLKJJI.",
+    "ILLKLKKJJI",
+    "IKKJKKKJJI",
+    "IJKJJKJJJI",
+    "IIIIIIIII."
+   ],
+   "om": "Idé: en bred kvartsbit ost med rät vinkel. De två raka skurna sidorna möts i hörnet framtill till vänster: den ena går bakåt längs vänsterkanten, den andra längs framkanten. Skorpbågen går från övre vänstra hörnet ner till höger. Toppen ses ovanifrån som en kvarts cirkel i senap3 och senap2 med korn, ljusast uppe till vänster. Skorpan har en rand i senap1 längs bågen. Framkanten är ett band på 2 punkter i senap2 och senap1, mörkare åt höger. Det går rakt och viker upp längs bågen vid högra änden. Kontur i senap0 runt allt; hörnet nere till vänster är rätvinkligt och skorpsidan nere till höger är rundad. 10 punkter bred och 8 hög. Granskningen: Ritningen höll i stort sett reglerna. Storleken är 10 × 8 punkter, vilket passar som en liten sak bredvid kolonisten (14 × 20). Senapstonerna med kontur i senap0 syns tydligt mot det olivgröna gräset. Ljuset faller uppifrån vänster, och ytan är ljusast där. Kvartsbiten är ingen symmetrisk sak, så symmetriregeln gäller inte här. Två små rättelser: (1) Bakkanten började med ett platt krön på fem punkter (IIIII). Jag kortade det till fyra, så att toppen rundas in i skorpbågen och ovanifrån liknar en kvarts cirkel med det räta hörnet framtill till vänster. (2) Enligt idén ska framkantens band följa skorpans båge, men det gick bara rakt längs nederkanten. Jag lade till senap1 i två punkters bredd längs högerbågen i rad 3–5, så att bandet går rakt framtill och sedan upp längs bågen. Skorpranden i senap1 och resten av punkterna är oförändrade."
   }
  ],
- "kommentar": "nya versioner, olika i form"
+ "kommentar": "nya versioner: gör en tydlig rund och en trekantig ost. Fyra alternativ av varje: idé 1–4 en rund hel ost (ett hjul), idé 5–8 en trekantig ostbit (en kil)"
 }

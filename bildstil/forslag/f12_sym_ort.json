@@ -1,0 +1,34 @@
+{
+ "kort": "f12_sym_ort",
+ "namn": "Symbolen botare",
+ "slag": [
+  "symbol"
+ ],
+ "vad": "Steg 12.1.192: symbolen för ryktet botare (den som botat en sjuk eller skadad) i texterna, ett kors. Paletten har ingen klarröd färg, så korset är i rost, den rödaste tonen som finns. Ja eller nej? Din kommentar förra gången: ”gör ett rött kors”",
+ "av": "programmeringschatten, för hand",
+ "versioner": [
+  {
+   "ide": "Ett kors i rost, ljusast uppe till vänster.",
+   "anteckning": "Ett kors i rost, ljusast uppe till vänster.",
+   "bilder": [
+    {
+     "namn": "f12_sym_ort_kors",
+     "rader": [
+      "....rrrr....",
+      "....rutr....",
+      "....ruts....",
+      "....ruts....",
+      "rrrrruttrrrr",
+      "ruuuuuttttsr",
+      "rutttttttssr",
+      "rrrrrttsrrrr",
+      "....rtts....",
+      "....rtts....",
+      "....rsss....",
+      "....rrrr...."
+     ]
+    }
+   ]
+  }
+ ]
+}

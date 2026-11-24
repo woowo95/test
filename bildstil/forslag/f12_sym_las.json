@@ -1,0 +1,114 @@
+{
+ "kort": "f12_sym_las",
+ "namn": "Symbolen fängelsekund",
+ "slag": [
+  "symbol"
+ ],
+ "vad": "Steg 12.1.192: symbolen för 🔒 i texterna, ett lås av järn: ryktet fängelsekund, den som suttit i fängelse. I spelet är den nu version 1 (platshållare). Bilden visar symbolen två gånger på panelens beige, i den storlek den har i en textrad.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "version 2, men gör den mer symmetrisk",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "f12_sym_las_v2_hanglas",
+     "rader": [
+      "....QQQQQQQQ....",
+      "...QTTSSSSSRQ...",
+      "...QTSQQQQSRQ...",
+      "...QTSQ..QSRQ...",
+      "...QTSQ..QSRQ...",
+      "...QTSQ..QSRQ...",
+      ".QQQQQQQQQQQQQQ.",
+      ".QTTSTSTSSSSSRQ.",
+      ".QTSTSSSSSSSRRQ.",
+      ".QTSSSSkkSSSRRQ.",
+      ".QSSSSkkkkSRSRQ.",
+      ".QSSRSSkkSSRSRQ.",
+      ".QSSSRSkkSRSRRQ.",
+      ".QSRSSRSSRSRRRQ.",
+      ".QRSRRRSRRSRRRQ.",
+      ".QQQQQQQQQQQQQQ."
+     ]
+    }
+   ],
+   "anteckning": "Version 2, det galler-fönstret, gjord helt spegelsymmetrisk. Symbolen ses rakt framifrån som ett fängelsefönster: en träram (jord, ljusast uppe till vänster, mörkast nere till höger) med jord0 som kontur och avrundade hörn. I öppningen står fyra järnstänger (skiffer, ljusast överst och mörkast nederst) med lika breda mörka mellanrum. Formen är 15 punkter bred, så att stänger och mellanrum ligger jämnt kring mitten. Bara ljuset skiljer sidorna åt: en smal skugga under överramen och innanför vänsterramen. Inga nya detaljer är tillagda, bara få och stora former som läses i textradens storlek. Granskningen: Version 1 visade ett galler i en träram, alltså ett fängelsefönster, inte ett lås av järn som idén säger. Den var också osymmetrisk: ramen låg förskjuten åt vänster med en tom kolumn till höger. Gallret använde dessutom kol0 som färg på järnet, fast kol0 bara ska användas där något verkligen är svart. Jag har ritat om symbolen som ett hänglås av järn i skifferns toner. Det har en bygel överst, med två ben och ett genomskinligt hål emellan, och en bred låskropp under. Konturen är skiffer0 runt hela låset, och ljuset faller uppifrån vänster (skiffer3 till skiffer1) med korn. Bara nyckelhålet är kol0, eftersom det är ett verkligt svart hål. Formen är spegelsymmetrisk kring mitten och fyller nästan hela rutan på 16 × 16 punkter, utan bakgrund.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f12_sym_las_v2_symmetrisk",
+     "rader": [
+      ".....QQQQQQ.....",
+      "....QTTSSSRQ....",
+      "...QTSQQQQSRQ...",
+      "...QTSQ..QSRQ...",
+      "...QTSQ..QSRQ...",
+      "...QTSQ..QSRQ...",
+      ".QQQQQQQQQQQQQQ.",
+      ".QTTSTSSSSSSRRQ.",
+      ".QTSTSSSSSSSSRQ.",
+      ".QTSSSSkkSSSSRQ.",
+      ".QTSSSkkkkSSRRQ.",
+      ".QSSSSSkkSSSRRQ.",
+      ".QSSSSSkkSSRRRQ.",
+      ".QSSSSSSSSRSRRQ.",
+      ".QRRRRRRRRRRRRQ.",
+      "..QQQQQQQQQQQQ.."
+     ]
+    },
+    {
+     "namn": "f12_sym_las_v2_symmetrisk_kopia",
+     "rader": [
+      ".....QQQQQQ.....",
+      "....QTTSSSRQ....",
+      "...QTSQQQQSRQ...",
+      "...QTSQ..QSRQ...",
+      "...QTSQ..QSRQ...",
+      "...QTSQ..QSRQ...",
+      ".QQQQQQQQQQQQQQ.",
+      ".QTTSTSSSSSSRRQ.",
+      ".QTSTSSSSSSSSRQ.",
+      ".QTSSSSkkSSSSRQ.",
+      ".QTSSSkkkkSSRRQ.",
+      ".QSSSSSkkSSSRRQ.",
+      ".QSSSSSkkSSRRRQ.",
+      ".QSSSSSSSSRSRRQ.",
+      ".QRRRRRRRRRRRRQ.",
+      "..QQQQQQQQQQQQ.."
+     ]
+    }
+   ],
+   "anteckning": "Version 2 behålls som grund: ett fönster med galler i en träram, sett rakt framifrån som en symbol. För att göra den symmetrisk är ramen lika tjock på alla sidor och har lika rundade hörn. De fyra järnstängerna står med lika stora mellanrum (stång, glipa, stång) och speglar sig kring mitten. Bara ljuset skiljer sidorna åt: ramen är ljus jord uppe till vänster och mörkare nere till höger, och stängerna är ljusast upptill. Konturen är jord0 runt hela, och cellen innanför är kol, eftersom den verkligen är mörk. Symbolen är 15 punkter bred, så att mitten hamnar på en hel punkt och spegelbilden blir exakt. Den visas två gånger som på kortet. Granskningen: Rättat: version 2 visade ett fönster med galler i en träram (jordtoner, ram och spjälor), inte ett lås. Kortet och idén kräver ett lås av järn för ryktet fängelsekund. Formen var dessutom inte symmetrisk: den var 15 punkter bred, med en tom kolumn till höger. Jag har ritat om symbolen som ett hänglås av järn i 16 × 16 punkter, framifrån, så att det nästan fyller rutan. Låset har en bygel överst och en kropp under, och formen är spegelsymmetrisk kring mitten. Konturen är skiffer0, järnets mörkaste ton, runt hela låset. Järnet har tre toner, skiffer1–3, med det ljusa uppe till vänster och det mörka nere till höger. Nyckelhålet i mitten är kol0 eftersom det är ett verkligt hål. Formerna är få och stora så att symbolen läses i textstorlek. Båda kopiorna är lika, som kortet visar symbolen två gånger.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "f12_sym_las_v3_hanglas",
+     "rader": [
+      "....QQQQQQQQ....",
+      "...QTTSSSSSRQ...",
+      "..QTSQQQQQQSRQ..",
+      "..QTSQ....QSRQ..",
+      "..QTSQ....QSRQ..",
+      "..QSSQ....QRRQ..",
+      ".QQQQQQQQQQQQQQ.",
+      ".QTTSSSSSSSSSRQ.",
+      ".QTSSSSSSSSSSRQ.",
+      ".QTSSSSkkSSSSRQ.",
+      ".QSSTSSkkSSRSRQ.",
+      ".QSSSSRkkRSSRRQ.",
+      ".QSRSSSSSSSRSRQ.",
+      ".QSSSSSRSSSRRRQ.",
+      ".QRRRRRRRRRRRRQ.",
+      "..QQQQQQQQQQQQ.."
+     ]
+    }
+   ],
+   "anteckning": "Byggd på version 2, ett gallerfönster: en träram (jord, ljus uppe till vänster och mörk nere till höger) med järngaller av skiffer framför den mörka öppningen. Formen är nu helt spegelsymmetrisk. Ramen är lika tjock på båda sidor (2 punkter), och tre lika breda stänger står med lika stora mellanrum, så att mittstången står exakt i mitten. Hörnen är avrundade lika på alla fyra sidor. Bara ljuset skiljer sidorna åt: varje stång har en ljusare vänsterkant och en mörkare högerkant, och glansen är en enda punkt uppe till vänster. Stängerna går in i ramen och är mörkare där överkanten och underkanten skuggar dem. Symbolen ritas framifrån, eftersom den ska läsas i en textrad. Den fyller 16 × 14 punkter, har kontur runt hela och ingen bakgrund. Granskningen: Version 2 följde inte idén. Kortet ber om ett järnlås (🔒) för ryktet fängelsekund, men bilden visade ett gallerfönster i träram. Jag ritade om symbolen som ett hänglås av järn och behöll storleken 16 × 16. Bygeln är en båge överst och låskroppen fyller den nedre delen av rutan. Bygeln och kroppen har en spegelsymmetrisk form. Hela låset har konturen skiffer0, alltså järnets mörkaste ton och inte svart. Järnet har två till tre toner (skiffer1–3) med korn. Det ljusaste ligger uppe till vänster och det mörkaste nere till höger, och framkanten är ett mörkare band i skiffer1. Nyckelhålet i mitten är kol0, eftersom det är det enda som verkligen är svart. Formerna är få och stora, ritade framifrån, och bilden har ingen bakgrund. Den grå järntonen med mörk kontur syns både på panelens beige och på gräset.",
+   "ide": ""
+  }
+ ]
+}

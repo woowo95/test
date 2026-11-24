@@ -7,17 +7,17 @@
   "...........QwTQ",
   "..........QSTRQ",
   ".........QSTRQ.",
-  "....Q...QSTRQ..",
-  "...QTQ.QSTRQ...",
-  "...QSQQSTRQ....",
-  "....QSQTRQ.....",
-  ".....QSQQ......",
-  "....EGQSQQ.....",
-  "...EpE.QSRQ....",
-  "..EFE...QQ.....",
-  "QEpE...........",
-  "QSRQ...........",
-  ".QQ............"
+  "........QSTRQ..",
+  ".......QSTRQ...",
+  "......QSTRQ....",
+  ".QQ..QSTRQ.....",
+  ".QTQQSTRQ......",
+  "..QSSTRQ.......",
+  "...QSRQ........",
+  "..EGQRQ........",
+  ".EFE.QTQ.......",
+  "QTE...QQ.......",
+  ".Q............."
  ],
  "ritad": 2,
  "av": "API:t (claude-opus-5-5), tre idéer",
@@ -37,91 +37,26 @@
   "q": "#bdb39b",
   "w": "#dad0bb"
  },
- "om": "Ett långt rakt svärd med parallella eggar som löper ända till en kort trubbig spets i övre högra hörnet, och en tydlig korsform där parerstången är ett lätt bågböjt band på 6 punkter som böjer sig mot klingan, i skiffer2 med skiffer0-kontur. Fästet är längre, 4 punkter, så att det tydligt syns var handen håller, lindat med läder i jord1 och jord2 med en tunn rem i ben1 i spiral, och knappen är en platt skiva tvärs om fästet i skiffer1 och skiffer2 som speglar parerstången i liten skala. Klingan har en ljus mittlinje i skiffer3 och mörk underkant i skiffer1, och en enda glanspunkt nära spetsen. Svärdet ligger snett från nedre vänstra till övre högra hörnet. Klingan har parallella eggar med skiffer0-kontur, en mittlinje i skiffer3, en övre kant i skiffer2 och en mörk underkant i skiffer1. Den slutar i en kort trubbig spets med en enda glanspunkt i ben3 nära spetsen. Parerstången är 6 punkter i skiffer3, skiffer2 och skiffer1 (ljusast uppe till vänster) med skiffer0-kontur; ändarna böjer sig mot klingan och formen är spegelsymmetrisk kring klingans mittlinje. Fästet är 4 punkter läder i jord1 och jord2 med jord0-kontur, och en rem i ben1 går i spiral. Knappen är en liten platt skiva tvärs om fästet i skiffer2 och skiffer1 med skiffer0-kontur. Bilden är 15×15. Granskningen: x",
+ "om": "Björns egen ritning (2026-11-22).",
  "forra": {
-  "ritad": 1,
+  "ritad": 2,
   "rader": [
-   ".............QQ",
-   "............QTQ",
-   "...........QTSQ",
-   "..........QTSRQ",
-   ".........QTSRQ.",
-   ".....Q..QTSRQ..",
-   "....QTQQTSRQ...",
-   ".....QSTSRQ....",
-   "......QSRQ.....",
-   "....EGFQRQ.....",
-   "...EFGE.QRQ....",
-   "..EGFE...Q.....",
-   ".oqpo..........",
-   "oqpo...........",
-   ".oo............"
+   "............QQQ",
+   "...........QwTQ",
+   "..........QSTRQ",
+   ".........QSTRQ.",
+   "....Q...QSTRQ..",
+   "...QTQ.QSTRQ...",
+   "...QSQQSTRQ....",
+   "....QSQTRQ.....",
+   ".....QSQQ......",
+   "....EGQSQQ.....",
+   "...EpE.QSRQ....",
+   "..EFE...QQ.....",
+   "QEpE...........",
+   "QSRQ...........",
+   ".QQ............"
   ]
  },
- "versioner": [
-  {
-   "ide": "",
-   "rader": [
-    "............QQQ",
-    "...........QwTQ",
-    "..........QSTRQ",
-    ".........QSTRQ.",
-    "........QSTRQ..",
-    ".......QSTRQ...",
-    "......QSTRQ....",
-    ".QQ..QSTRQ.....",
-    ".QTQQSTRQ......",
-    "..QSSTRQ.......",
-    "...QSRQ........",
-    "..EGQRQ........",
-    ".EFE.Q.........",
-    "QTSQ...........",
-    ".QQ............"
-   ],
-   "om": "Klingan är förlängd en rad och går nu från övre högra hörnet ner till rad 9. Parerstången sitter längre ner till vänster, tvärs över klingans rot. Läderfästet är kortat till två punkter (G och F med jord0-kontur) och slutar direkt i knappen nere i vänstra hörnet. Kontur, ljus (glans w överst) och toner är desamma som förut. Granskningen: Oförändrad; den följer reglerna. Storleken är 15 × 15 och fyller rutan. Bredvid kolonisten (14 × 20) ser den ut som ett enhandssvärd. Svärdet ligger snett över rutan, sett uppifrån som på marken. Klingan är tveeggad i skiffertoner: ljusare ås i mitten (T), skuggsidan nere till höger (R) och skiffer0 som kontur. Den enda glanspunkten sitter i spetsen och är inte ren vit. Parerstången går vinkelrätt mot klingan och är lika lång på båda sidor, som den ska. Fästet är lindat med läder i jordtoner med jord0 som kontur, och knappen är av järn. Den mörka konturen och den ljusa klingan gör att svärdet syns tydligt på gräset, på slöjdbänken och i handen."
-  },
-  {
-   "ide": "",
-   "rader": [
-    "............QQQ",
-    "...........QwTQ",
-    "..........QSTRQ",
-    ".........QSTRQ.",
-    "........QSTRQ..",
-    ".......QSTRQ...",
-    "......QSTRQ....",
-    "..Q..QSTRQ.....",
-    ".QTQQSTRQ......",
-    "..QSSTRQ.......",
-    "...QSSQ........",
-    "..EGQSRQ.......",
-    "QEFE.QSRQ......",
-    "QSRQ..QQ.......",
-    ".QQ............"
-   ],
-   "om": "Klingan är förlängd och går nu från övre högra hörnet ner till rad 9. Parerstången har flyttats ner mot nedre vänstra hörnet och korsar klingan vid rad 10. Fästet är lindat med läder och är nu bara två steg långt i stället för fyra; knappen sitter längst ner till vänster. Konturen i skiffer0, ljuset från övre vänstra hörnet och glansen på spetsen är kvar som förut. Granskningen: Ritningen håller i stort sett. Storleken (15 × 15) fyller rutan som kortet begär. Svärdet ligger snett över rutan. Klingan är rak och tveeggad, med skifferkontur och ljus kant uppe till vänster. Parerstången går vinkelrätt mot klingan, från (8,2) till (12,6), och knappen sitter längst ner till vänster, så formen följer idén och syns på gräset tack vare den mörka konturen. Rättat: fästets lindning hade en punkt i ben1 (p), vilket är fel material för läder. Den är bytt till jord1 (F), så att lindningen är jord2 överst och jord1 under, med jord0 som kontur. Glansen i spetsen (en punkt ben3) är kvar, eftersom den håller sig till en punkt och inte är ren vit."
-  },
-  {
-   "ide": "",
-   "rader": [
-    ".............QQ",
-    "...........QTSQ",
-    "..........QTSRQ",
-    ".........QwSRQ.",
-    ".....Q..QTTRQ..",
-    "....QTQQTSRQ...",
-    ".....QTQSRQ....",
-    "......QSQQ.....",
-    ".....EGQSQ.....",
-    "....EFE.QRQ....",
-    "...EGE...Q.....",
-    ".QQQE..........",
-    "QTSQ...........",
-    "QSRQ...........",
-    ".QQ............"
-   ],
-   "om": "Parerstången är flyttad två diagonala steg ned mot fästet, så klingan blir två steg längre och når nu ned till rad 9. Det läderlindade fästet är kortat från fyra till två punkter (jord med en ljus benpunkt). Knappen ligger kvar i nedre vänstra hörnet. Konturen, skiffertonerna på klingan, glansen vid spetsen och den snedställda vinkeln är oförändrade. Granskningen: Ritade om fästet, som inte följde idén. Parerstången gick snett ihop med klingan och fästet. Nu är den en kort, rak tvärslå vinkelrätt mot klingan, i skiffer med ljuset uppe till vänster. Fästet var bara två punkter läder med en ben-prick (p). Nu är det ett tydligt grepp lindat i läder, med jord0 som kontur och jord1/jord2 omväxlande för lindningen. Under greppet sitter en rund knapp av järn (4×4), ljus uppe till vänster och mörk nere till höger. På klingan lade jag den ljusaste tonen på den övre vänstra eggen och den mörkaste på den nedre högra, med lite korn och en enda glanspunkt (ben3). Spetsen är smalare. Storleken är oförändrad (15×15), och den mörka skifferkonturen och de ljusa tonerna gör att svärdet syns på gräset."
-  }
- ],
- "kommentar": "Gör eggen längre och handtaget kortare."
+ "vald": "Björns ritning"
 }

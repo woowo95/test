@@ -33,72 +33,27 @@
   "T": "#8a9c9e",
   "k": "#24201d"
  },
- "versioner": [
-  {
-   "ide": "En rak fyrkantig dörr som fyller hela rutan, 16 bred och 16 hög, sedd framifrån och lite uppifrån som trädörren i spelet. Den har fem lodräta plankor i jord1–jord3 med jord0 som kontur och fogar, och en Z-regel: två vågräta reglar upptill och nedtill och en snedslå mellan dem från nedre vänstra till övre högra hörnet, i en ljusare ton med ljuset uppe till vänster. Till höger på mitten, där handtaget skulle sitta, finns en fyrkantig låsplåt på ungefär 4×5 punkter i skiffer1–skiffer3 med skiffer0 som kontur, ett nyckelhål på 1×2 punkter i kol0 och en enda glanspunkt i skiffer3 i plåtens övre vänstra hörn.",
-   "rader": [
-    "EEEEEEEEEEEEEEEE",
-    "EGFEHGEGFEGFEGFE",
-    "EHHHHHGHHHHGHHGE",
-    "EGGGFGGGGFGGGGFE",
-    "EGFEGFEFGEGFHGGE",
-    "EGFEFGEGFEHGGGFE",
-    "EFGEGFEGFHGGEGFE",
-    "EGFEGFEHGGQQQQQE",
-    "EGFEGFHGGEQTSSQE",
-    "EFGEHGGGFEQSkRQE",
-    "EGFHGGEFGEQSkRQE",
-    "EHGGGFEGFEQQQQQE",
-    "EHHGHHHHGHHHHHGE",
-    "EGGFGGGGGFGGGGFE",
-    "EFGEGFEGFEFGEGFE",
-    "EEEEEEEEEEEEEEEE"
-   ],
-   "om": "Den låsta dörren, 16×16, sedd framifrån som trädörren. Fem plankor (2 punkter breda) i jord1–jord2 med fogar och kontur i jord0. Z-regeln: två vågräta reglar (rad 2–3 och 12–13) och en snedslå från nedre vänstra till övre högra hörnet, med jord3 som ljus kant uppe till vänster och jord2 i kroppen. Låsplåten på 5×5 punkter sitter till höger på mitten, där handtaget skulle sitta: skiffer0 som kontur, skiffer2 med skiffer1 nere till höger, en enda glanspunkt i skiffer3 i plåtens övre vänstra hörn och ett nyckelhål på 1×2 punkter i kol0."
-  },
-  {
-   "ide": "En smalare dörr på ungefär 12 punkter, hängd i en karm av två runda stolpar och ett överstycke av stock. Karmen ramar in dörren i full höjd, så att silhuetten blir en portal med ett mörkare djupband av jord0 innanför karmen på dörrens högra sida, som visar att dörren sitter indragen i väggen. Dörrbladet har tre breda plankor med Z-regeln i en ljusare träton. Låset är en lodrät avlång järnplåt på 2×6 punkter längs dörrens högra kant i skiffertoner, med nyckelhålet i kol0 mitt på plåten.",
-   "rader": [
-    ".EEEEEEEEEEEEEE.",
-    "EHHGHHHGHHGHHGGE",
-    "EGFGGFGGGFGGFGFE",
-    "EHFEEEEEEEEEEGFE",
-    "EHFEHGFGHFGGEGFE",
-    "EGFEHHHHHHHGEHFE",
-    "EHFEGGFHGFHHEGFE",
-    "EGFEHGFGGHTSEHFE",
-    "EHFEGGFGHHSREGFE",
-    "EGFEHGFHHFkREHFE",
-    "EHFEGGHHGFkREGFE",
-    "EGFEGHHGGFSREHFE",
-    "EHFEHHFGGFSQEGFE",
-    "EGFEHHHHHHHGEHFE",
-    "EHFEGGFGGFGFEGFE",
-    "EEEEEEEEEEEEEEEE"
-   ],
-   "om": "16×16. Karm av två runda stolpar (jord0-kontur, ljus sida åt vänster) och ett överstycke av stock överst, med en skuggrad av jord0 under det. Dörrbladet har tre plankor i jord1/jord2 med Z-regeln i jord3: överregel, diagonal från övre högra till nedre vänstra hörnet och underregel. Ett lodrätt djupband av jord0 mellan dörren och högra stolpen visar att dörren sitter indragen. Låset är en järnplåt på 2×6 punkter längs högra kanten, i skiffer3 och skiffer2 på den ljusa sidan och skiffer1 på den mörka, med ett nyckelhål på två punkter i kol0. Granskningen: Ritade om dörren efter idén. Den gamla ritningen var en fyrkantig ram runt hela rutan utan runda stolpar och utan djupband, och Z-regelns diagonal var bara enstaka ljusa prickar som inte läses. Nu är karmen en portal: ett överstycke av stock överst (rad 0–2, ljust uppe till vänster) och två runda stolpar på 3 punkter. Varje stolpe har en ljus sida mot vänster, en skuggsida och en kontur i jord0. Dörrbladet är 9 punkter brett med kontur. Ett lodrätt djupband i jord0 löper i full höjd innanför karmen på dörrens högra sida och visar att dörren sitter indragen. Bladet har tre plankor åtskilda av fogar i jord1. Z-regeln är tydlig i ljus jord3: en överslå, en underslå och en diagonal på 2 punkter från nedre vänstra till övre högra hörnet. Låset är en lodrät plåt på 2×6 punkter längs högra kanten. Ljussidan är skiffer3/2 och skuggsidan skiffer1/0, och nyckelhålet i kol0 sitter mitt på plåten. Allt ryms i 16×16, och silhuetten med kontur och ljus träton syns på gräset."
-  },
-  {
-   "ide": "",
-   "rader": [
-    "EEEEEEEEEEEEEEEE",
-    "EGGHFGHGFGGHFGGE",
-    "EHHHHGHHHHHGHHGE",
-    "EFFFFFFFFFFFFFFE",
-    "EGHGFHGGFGHGHHHE",
-    "EHGGFGGHFGHHHFHE",
-    "EGGHFGHGFHHHFGGE",
-    "EGHGFHGHHHQQQQQE",
-    "EHGGFGHHHFQTSSQE",
-    "EGGGHHHFFGQSkSQE",
-    "EGGHHHFGFHQSkRQE",
-    "EHHHFGGHFGQQQQQE",
-    "EHHHHHGHHHHHGHGE",
-    "EFFFFFFFFFFFFFFE",
-    "EHGGFGGHFHGGFGHE",
-    "EEEEEEEEEEEEEEEE"
-   ],
-   "om": "Den låsta dörren, 16×16: fyra lodräta plankor i jord (H/G med F i fogarna) inom en kontur av jord0. Z-regeln är två tvärslåar upptill och nedtill (ljus överkant G, mörk underkant F) med en sned strävare från nedre vänstra hörnet upp mot övre högra (G med F under). Där handtaget sitter finns en låsplåt av grått järn (skiffer0 som kontur, skiffer3 i glansen uppe till vänster, skiffer1 nere till höger) med ett svart nyckelhål (kol0) i mitten. Ljuset kommer uppifrån vänster. Granskningen: -"
-  }
- ]
+ "om": "En rak fyrkantig dörr som fyller hela rutan, 16 bred och 16 hög, sedd framifrån och lite uppifrån som trädörren i spelet. Den har fem lodräta plankor i jord1–jord3 med jord0 som kontur och fogar, och en Z-regel: två vågräta reglar upptill och nedtill och en snedslå mellan dem från nedre vänstra till övre högra hörnet, i en ljusare ton med ljuset uppe till vänster. Till höger på mitten, där handtaget skulle sitta, finns en fyrkantig låsplåt på ungefär 4×5 punkter i skiffer1–skiffer3 med skiffer0 som kontur, ett nyckelhål på 1×2 punkter i kol0 och en enda glanspunkt i skiffer3 i plåtens övre vänstra hörn. Den låsta dörren, 16×16, sedd framifrån som trädörren. Fem plankor (2 punkter breda) i jord1–jord2 med fogar och kontur i jord0. Z-regeln: två vågräta reglar (rad 2–3 och 12–13) och en snedslå från nedre vänstra till övre högra hörnet, med jord3 som ljus kant uppe till vänster och jord2 i kroppen. Låsplåten på 5×5 punkter sitter till höger på mitten, där handtaget skulle sitta: skiffer0 som kontur, skiffer2 med skiffer1 nere till höger, en enda glanspunkt i skiffer3 i plåtens övre vänstra hörn och ett nyckelhål på 1×2 punkter i kol0.",
+ "vald": 1,
+ "forra": {
+  "ritad": 1,
+  "rader": [
+   "EEEEEEEEEEEEEEEE",
+   "EGFEHGEGFEGFEGFE",
+   "EHHHHHGHHHHGHHGE",
+   "EGGGFGGGGFGGGGFE",
+   "EGFEGFEFGEGFHGGE",
+   "EGFEFGEGFEHGGGFE",
+   "EFGEGFEGFHGGEGFE",
+   "EGFEGFEHGGQQQQQE",
+   "EGFEGFHGGEQTSSQE",
+   "EFGEHGGGFEQSkRQE",
+   "EGFHGGEFGEQSkRQE",
+   "EHGGGFEGFEQQQQQE",
+   "EHHGHHHHGHHHHHGE",
+   "EGGFGGGGGFGGGGFE",
+   "EFGEGFEGFEFGEGFE",
+   "EEEEEEEEEEEEEEEE"
+  ]
+ }
 }

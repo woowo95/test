@@ -1,0 +1,93 @@
+{
+ "kort": "f12_sym_ol",
+ "namn": "Symbolen suput",
+ "slag": [
+  "symbol"
+ ],
+ "vad": "Steg 12.1.192: symbolen för 🍺 i texterna, en ölstop: ryktet suput, den som ofta är full. I spelet är den nu version 1 (platshållare). Bilden visar symbolen två gånger på panelens beige, i den storlek den har i en textrad.",
+ "av": "API:t (claude-opus-5-5), tre idéer",
+ "kommentar": "version 1, men gör drycken mer gul, som öl",
+ "versioner": [
+  {
+   "bilder": [
+    {
+     "namn": "symbol_suput_olstop_16",
+     "rader": [
+      "..EEEEEEEE......",
+      ".EwwwqwwqqE.....",
+      "EwwqwwwqqqpE....",
+      "EpqqwqqpqpoE....",
+      ".EpLqpKLppEEEE..",
+      ".ELLpKKLKJEHGFE.",
+      ".EHGGGGGFFEE.GE.",
+      ".ELKKJKKJIEE.GE.",
+      ".ELKJKKJJIEE.FE.",
+      ".EKLKJKJJIEE.FE.",
+      ".ELKKJKJIIEGFFE.",
+      ".EKKJKJJJIEEEE..",
+      ".EHGGGGFFFE.....",
+      ".ELKJKJJIIE.....",
+      ".EKJJKJIIIE.....",
+      "..EEEEEEEE......"
+     ]
+    }
+   ],
+   "anteckning": "Version 1 behålls: samma stop från sidan med skumkrona, tunnband och hank åt höger, och samma storlek. Det som ändras är drycken. Ölen syns genom stopen i senapstoner, ljusast till vänster (L) och mörkast till höger (I), så att den läser som gul öl och inte som mörkt trä. Tunnbanden och hanken är trä i jordtoner, och konturen i jord0 går runt hela. Skummet ligger som en kupad krona i bentoner, lite bredare än stopen. Ett par droppar rinner ner i ölen strax under kanten. Granskningen: Granskad mot reglerna, oförändrad. Storleken är rätt: 16 × 16 punkter, och stopet fyller rutan nästan helt utan bakgrund. Vinkeln fungerar för en symbol: framifrån med örat åt sidan, och stopet läses tydligt. Konturen i jord0 går hela vägen runt, även runt örat med dess genomskinliga hål, och syns både på beige och på gräs. Formen är spegelsymmetrisk: skummet hänger över en punkt på båda sidor och hörnen nedtill är rundade lika. Ljuset faller från övre vänstra hörnet. Skummet går från ben3 till ben1/ben0, ölet från senap3 till senap0 och banden från jord3 till jord1. Glansen är inte ren vit. Den mättade senapsfärgen sparas till ölet, och skummet som rinner över kanten gör att stopet läses som fullt och överfyllt, vilket passar ryktet suput. Det är få och stora former, och bilden är läsbar i textradens storlek.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "symbol_suput_olstop",
+     "rader": [
+      "...EEEEEEE......",
+      "..EwwwqwwqE.....",
+      ".EwwqwqqqpqE....",
+      ".EqwqqpqqppE....",
+      ".ELLKLKLKKJE....",
+      ".EHKGHGGHGFEEEE.",
+      ".EHKHGGHGFFEGGFE",
+      ".EEKEEEEEEEEEEFE",
+      ".EHJGHGGHGFE.EFE",
+      ".EHGGHGGFGFE.EFE",
+      ".EHGHGGHGFFE.EFE",
+      ".EEEEEEEEEEEEEFE",
+      ".EHGGHGGFGFEGFFE",
+      ".EGHGGFGGFFEEEE.",
+      ".EGGFGGFGFFE....",
+      "..EEEEEEEEE....."
+     ]
+    }
+   ],
+   "anteckning": "Version 1 är kvar: träbägaren med två mörka band, örat till höger och skumhättan, framifrån och från sidan så att den nästan fyller 16 × 16 punkter, med jord0 som kontur runt hela. Logiken: bägaren står upp med örat bort från ljuset. Från sidan syns ölen inte inne i bägaren, så den syns där den logiskt kan synas. Under skummet ligger ett guldgult band av öl i senap, eftersom bägaren är fylld till brädden. Ölen rinner också i en gul droppe nedför den ljusa vänstra sidan, över det översta bandet. Skummet har ljusa bentoner, så att ölen läser som gul öl och inte som brun dryck. Senap används bara på ölen, eftersom det är den man ska se. Ljuset kommer uppifrån vänster: träet är ljusare till vänster och mörkare till höger. Granskningen: Granskad och oförändrad. Symbolen är 16 × 16 punkter och ritad från sidan, som en symbol ska vara. Den fyller rutan: kolumnerna 1–15 och alla rader. Utanför den finns ingen bakgrund. Konturen är jord0 runt trästopet och inte kol0. Stopets kropp och skumkupan är spegelsymmetriska kring mitten, kolumn 6. Bara handtaget till höger och droppen bryter symmetrin, och det är rimligt för en stop. Ljuset kommer uppifrån vänster: skummet är ljusast till vänster (w/q) och mörkare till höger (p), och träet går från jord3 till vänster till jord1 till höger. Två mörka band av jord0 läses som tunnband. Skummet i ben-ramp och ölkanten och droppen i senap är de enda starka tonerna, så de bär det man ska se: att stopen är full och rinner över, alltså suput. Formerna är få och stora, och silhuetten är tydlig i textradens storlek. Den syns också på panelens beige tack vare den mörka konturen. Den bärs inte och är ingen station, så frågorna om vinkel och om var den sitter på en människa gäller inte.",
+   "ide": ""
+  },
+  {
+   "bilder": [
+    {
+     "namn": "ölstop",
+     "rader": [
+      "....EEEEE.......",
+      "..EEwwwqqEE.....",
+      ".EwwqwqqqpqE....",
+      ".EqLLLKLKKpE....",
+      ".EHLKLKKKJGE....",
+      ".EGHLHGGGFFE....",
+      ".EHGKGGFGGFEEEE.",
+      ".EonnnmnmmmEHGFE",
+      ".EHGFGGFGFFEEEFE",
+      ".EGHFGGFGGFE.EFE",
+      ".EHGFGHFGFFE.EFE",
+      ".EHGFGGFGGFEEEFE",
+      ".EonnmnmmmlEGFFE",
+      ".EGGFFGFFFFEEEE.",
+      ".EFFFFFFFFFE....",
+      "..EEEEEEEEE....."
+     ]
+    }
+   ],
+   "anteckning": "Ölstopen är version 1: en träsejdel av stavar med två järnband, sedd framifrån med handtaget åt höger. Vi ser den lite ovanifrån, så öppningen syns. Skumkronan står högst vid bakkanten. Framför den syns ölens yta i öppningen, gyllene i senapstoner. En droppe öl rinner över framkanten, så att drycken läses som gul öl och inte bara som skum. Konturen är jord0 runt hela stopen. Ljuset kommer uppifrån till vänster, och hålet i handtaget är genomskinligt. Granskningen: Granskad mot reglerna; inget behövde rättas, så versionen lämnas oförändrad. Storleken stämmer: 16 × 16 punkter med en kontur i jord0 runt hela, ingen bakgrund och stopen fyller rutan. Vinkeln är framifrån och lite från sidan, som en symbol ska vara. Formen är symmetrisk: krukan går från punkt 1 till 11 och skumkronan ligger mitt över den. Bara handtaget sticker ut åt höger, som det ska. Ljuset faller från vänster: kanten är ljus i jord3 och ben0 på vänster sida och mörk i jord1 nere till höger. Träet har korn i tre toner. Järnbanden är i kol2–kol3, och kol0 används inte. Skummet i ben2–ben3 och ölet i senap är de enda mättade tonerna, vilket är rätt för något man ska se (maten). Symbolen läses tydligt som en ölstop för ryktet suput. Den bärs inte, så det finns inget att rätta om placering vid kroppen.",
+   "ide": ""
+  }
+ ]
+}

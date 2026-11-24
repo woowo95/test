@@ -575,7 +575,13 @@ const BESLUT = {
 };
 // räknas när valdelen ritas, så att korten från filerna efter denna (mark.js, djur.js, gui.js) också kommer med
 const VALT = [];
-function delaVal() { for (const s of VAL.filter(s => BESLUT[s.id])) { VALT.push(s); VAL.splice(VAL.indexOf(s), 1); } }
+// korten som byggts in i spelet (window.INBYGGT, svar/) tas bort här, när alla filer lagt till sina kort, så att ett kort som en
+// senare fil (fas11.js, fas12.js, forslag/) lägger till inte kommer tillbaka obesvarat
+function delaVal() {
+  const inbyggt = window.INBYGGT || new Set();
+  for (let i = VAL.length - 1; i >= 0; i--) if (inbyggt.has(VAL[i].id)) VAL.splice(i, 1);
+  for (const s of VAL.filter(s => BESLUT[s.id])) { VALT.push(s); VAL.splice(VAL.indexOf(s), 1); }
+}
 // en version ritas stor och i kartans storlek (två skärmpunkter per punkt, som i spelet)
 // en animation (steg 5.2.4.8): rutor är hur många bilder, takt millisekunder per bild och rita(B, P, ruta) ritar en av dem.
 // En klocka för hela sidan byter bild på alla kort som syns; kort som byggts om (inte längre på sidan) släpps
@@ -647,13 +653,22 @@ window.VAL_RITNINGAR = ritningar => {
   }
 };
 const SVAR = {}; // det som finns sparat i databasen, per sak
+// Björns senaste svar på kortet, med hans egna ord (svar/forra.json, skrivs av api/forra.mjs innan hans dokument i 'val' tas
+// bort): visas på kortet vem eller vad som än ritat om det, och kortets egen rad om förra kommentaren visas då inte två gånger
+const forraText = s => FORRA[s.id] ? String(s.vad || '').replace(/\s*Din kommentar förra gången.*$/s, '') : s.vad;
+const forraRad = s => {
+  const f = FORRA[s.id]; if (!f) return '';
+  const esc = x => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const val = f.svar === 'ja' ? 'Du sa ja' : f.svar === 'nej' ? 'Du sa nej' : f.svar ? 'Du valde version ' + esc(f.svar) : '';
+  return `<p class="forra">${f.kommentar ? 'Din kommentar förra gången' + (val ? ' (' + val.toLowerCase().replace('du ', '') + ')' : '') + ': ”' + esc(f.kommentar) + '”' : val + ' förra gången, utan kommentar.'}</p>`;
+};
 let DB = null;
 function byggVal(P) {
   const lista = $('#vallista'); lista.textContent = '';
   if (!VAL.length) { lista.innerHTML = '<p class="not">Inget att välja just nu.</p>'; return; }
   for (const s of VAL) {
     const kort = document.createElement('article'); kort.className = 'valkort' + (s.stor ? ' stor' : ''); kort.id = 'val-' + s.id;
-    kort.innerHTML = `<header><span class="typ">${s.typ === 'tre' ? 'Ny sak · välj en av ' + (['', 'en', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju', 'åtta'][s.versioner.length] || s.versioner.length) : 'Görs om · ja eller nej'}</span><h3>${s.namn}</h3><p class="not">${s.vad}</p></header><div class="alternativ"></div><div class="svar" role="group" aria-label="Ditt val för ${s.namn}"></div><label>Kommentar: vad ska ändras?<textarea rows="3" placeholder="Till exempel: nej, gör locket mörkare och låset större"></textarea></label><div class="sparat" aria-live="polite"></div>`;
+    kort.innerHTML = `<header><span class="typ">${s.typ === 'tre' ? 'Ny sak · välj en av ' + (['', 'en', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju', 'åtta'][s.versioner.length] || s.versioner.length) : 'Görs om · ja eller nej'}</span><h3>${s.namn}</h3><p class="not">${forraText(s)}</p>${forraRad(s)}</header><div class="alternativ"></div><div class="svar" role="group" aria-label="Ditt val för ${s.namn}"></div><label>Kommentar: vad ska ändras?<textarea rows="3" placeholder="Till exempel: nej, gör locket mörkare och låset större"></textarea></label><div class="sparat" aria-live="polite"></div>`;
     const alt = kort.querySelector('.alternativ');
     if (s.idag) {
       const f = document.createElement('figure'); f.className = 'alt idag';
