@@ -587,6 +587,7 @@ export interface Arbete {
   id: string; niva: Niva;
   nar?: 'dag' | 'natt'; // utan nar: både dag och natt
   vader?: Vaderkrav; // torrt: inte i regn eller snöfall; lugnt: inte i blåst eller åska
+  vila?: true; // vinner raden görs inget på nivån, och valet går vidare till nästa (fritidHellre)
   arbetar?: true; // bara den som arbetar i dag (dag(c).works)
   forb?: true; // Förbättra (steg 10.11.20): den som arbetar i dag, och dämpas när kylan eller hungern är en fara (forbNu)
   minAlder?: number; // bara den som är så här gammal
@@ -970,9 +971,9 @@ export const ARBETEN: readonly Arbete[] = [
   // 8 Förbättra med poäng (steg 10.2.3): att pröva sig fram, arbetet där en teknik kan komma, varor till handlaren, underhållet,
   // att gå i lära och att fylla förråden mot taket är rader som vägs mot varandra. Ingen står först och tar allt: varje rad har
   // sitt värde (VAL.forb…) med personens brus, och förråden sitt behov över bufferten, som sjunker mot taket
-  ...FORBATTRA.map(f => ({ id: f.id, niva: 8 as const, nar: 'dag' as const, 
+  ...FORBATTRA.map(f => ({ id: f.id, niva: 8 as const, nar: 'dag' as const, vila: f.vila,
     poang: (c: Ctx) => { if (!dag(c).works || !forbNu(c)) return 0; const k = forbKandidat(c, f); return k ? k.sc : 0; },
-    prova: (c: Ctx) => { const k = forbKandidat(c, f); if (!k || f.vila) return false; count(c.s, f.fylla ? 'fylla' : 'forbattra'); k.gor(); return true; } })),
+    prova: (c: Ctx) => { const k = forbKandidat(c, f); if (!k) return false; count(c.s, f.fylla ? 'fylla' : 'forbattra'); k.gor(); return true; } })),
   // allt på Förbättra är gjort och förråden har nått sina tak: tiden blir fritid (steg 6.2.15)
   { id: 'fullaForrad', niva: 8, nar: 'dag', prova: c => { const d = dag(c), fr = faror(c); if (d.works && !fr.kyla && !fr.svalt) count(c.s, 'fullaForrad'); return false; } },
   // 9 Fritid: vila, hantverk, umgänge, promenad, bad eller att sitta vid stranden
@@ -1022,7 +1023,7 @@ function valjTask(s: State, p: Person) {
       if (r.poang) { // raderna med poäng på nivån vägs mot varandra en gång (steg 6.2.18)
         if (vagd === r.niva) continue;
         vagd = r.niva;
-        for (const w of vinnare(c, POANGRADER[r.niva].filter(galler))) if (w.prova(c)) { rad = w; return true; }
+        for (const w of vinnare(c, POANGRADER[r.niva].filter(galler))) { if (w.vila) break; if (w.prova(c)) { rad = w; return true; } } // vinner fritiden görs inget sämre på nivån
         continue;
       }
       if ((r.arbetar || r.forb) && !dag(c).works || r.forb && !forbNu(c)) continue; // villkoren i den ordning raderna prövade dem

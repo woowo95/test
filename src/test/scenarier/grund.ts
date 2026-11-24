@@ -2095,7 +2095,11 @@ SCENARIER.skogsvard = {
     for (const q of vuxna) q.tek = { ...(q.tek ?? {}), skogsvard: 1 };
     setMat(s, { bar: 300, torkat: 100 });
     for (let i = W + 1; i < W * W - W - 1; i++) if (g.trees[i] >= 1 && SIM.utanforByn(s, i % W, Math.floor(i / W)) >= 2 * SIM.SKOGSVARD.langt && SIM.trangsel(g, i) >= 7 && iRutan(i) && (i % 3 === 0)) g.trees[i] = 0.3;
-    kor(s, 48);
+    // när byn växer mot skogen (ett fält, ett hus) fälls skogen närmast igen, så att de närmaste träden står långt bort under hela provet
+    for (let t = 0; t < 48; t += 2) {
+      for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) if (g.trees[y * W + x] >= 1 && SIM.utanforByn(s, x, y) < SIM.SKOGSVARD.langt + 2) { g.trees[y * W + x] = 0; g.cover[y * W + x] = 1; }
+      kor(s, 2);
+    }
     const flyttade = s.stat?.plantorFlyttade ?? 0;
     return [
       [`ett träd nära byn ger ingen tanke på skogsvård (${fore})`, fore === 0],
