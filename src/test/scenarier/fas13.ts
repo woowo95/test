@@ -1932,3 +1932,27 @@ SCENARIER.sammabyte = {
     ];
   },
 };
+
+SCENARIER.skicklighetsvakt = {
+  text: 'Steg 13.9.10: vakten för skickligheten larmar när en handling som gör något saknar sin färdighet för fart och kvalitet, och när en sak som går åt i ett recept saknar sin rad i BRUK, som vakten för arbetstiderna',
+  kor: () => {
+    const nu = SIM.utanFardighet(), bruk = SIM.utanBruk();
+    const ACTS = SIM.ACTS as Record<string, SIM.ActDef>;
+    // en ny handling som gör en sak utan teknik och utan eget kunnande, och en med en färdighet som inte finns
+    const utan = SIM.utanFardighet({ ...ACTS, provhantverk: { namn: 'Prövar', slag: 'hantverk', hantverk: true } as SIM.ActDef }, { ...SIM.GORS, provhantverk: ['provsak'] });
+    const fel = SIM.utanFardighet({ ...ACTS, provhantverk: { namn: 'Prövar', slag: 'hantverk', hantverk: true, kunna: 0.5, fardighet: 'trolldom' } as unknown as SIM.ActDef }, SIM.GORS);
+    const med = SIM.utanFardighet({ ...ACTS, provhantverk: { namn: 'Prövar', slag: 'hantverk', hantverk: true, kunna: 0.5, fardighet: 'smide' } as SIM.ActDef }, SIM.GORS);
+    // en sak som går åt i ett recept men hamnar i det övriga
+    const ovrig = Object.keys(SIM.SAKER).find(k => SIM.brukAv(k) === SIM.BRUK_OVRIGT)!;
+    const brukLarm = SIM.utanBruk(k => k === ovrig);
+    return [
+      [`alla handlingar som gör något har sin färdighet och nivå (${nu.length ? nu.join('; ') : 'inget larm'})`, nu.length === 0],
+      [`alla saker som går åt i ett recept har sin rad i BRUK (${bruk.length ? bruk.join('; ') : 'inget larm'})`, bruk.length === 0],
+      [`vakten larmar för en handling utan nivå (${utan.join('; ') || 'inget larm'})`, utan.some(f => f.startsWith('provhantverk'))],
+      [`och för en färdighet som inte finns (${fel.join('; ') || 'inget larm'})`, fel.some(f => f.startsWith('provhantverk'))],
+      [`men inte när handlingen har både färdighet och kunnande`, !med.some(f => f.startsWith('provhantverk'))],
+      [`och för en sak i receptet som ingen rad tar (${brukLarm.join('; ') || 'inget larm'})`, brukLarm.length === 1],
+      [`skinnet, som går åt i recepten, är ett material i bruket (${SIM.brukAv('skinn').id})`, SIM.brukAv('skinn').id === 'material'],
+    ];
+  },
+};

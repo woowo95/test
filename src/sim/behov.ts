@@ -596,6 +596,7 @@ export const BRUK_REDSKAP: BrukRad = {
 export const brukKrok = {
   kladFor: (_s: State, _p: Person, _k: string) => true, kladPlatser: (_k: string): string[] => [], plaggVill: (_s: State, _p: Person, _k: string) => false,
   recept: (_s: State, _p: Person): Record<string, number>[] => [],
+  ravara: (_k: string) => false, // saken går åt i något recept (RECEPT och TILLVERKA, val.ts)
 };
 const kladFor = (s: State, p: Person, k: string) => brukKrok.kladFor(s, p, k), kladPlatser = (k: string) => brukKrok.kladPlatser(k);
 const agerPa = (s: State, p: Person, k: string, utom?: Ting) => tingOf(s).some(t => t !== utom && t.agare === p.id && SAKER[t.k]?.klad && kladPlatser(t.k).some(q => kladPlatser(k).includes(q)));
@@ -606,19 +607,23 @@ export const BRUK_PLAGG: BrukRad = {
   over: (s, g, k) => tingOf(s).find(t => t.agare === g.id && t.k === k && t.bar !== g.id && t.hos === undefined && t.halv === undefined && t.helig === undefined && t.lass === undefined && (!kladFor(s, g, k) || agerPa(s, g, k, t))),
   kandidater: s => { const k = new Set<string>(); for (const t of tingOf(s)) if (SAKER[t.k]?.klad && t.agare !== undefined && t.agare !== BYN) k.add(t.k); return k; }, // plagg som någon i byn äger
 };
-// materialet efter det ens arbete saknar: recepten i projekten vars arbete p gör (habitShare över DELA.yrke)
+// materialet efter det ens arbete saknar: recepten i projekten vars arbete p gör (habitShare över DELA.yrke). Materialet är
+// förrådsmålens material och allt annat som går åt i ett recept (skinnet, linet, järnet; vakten för skickligheten, steg 13.9.10)
 const egnaRecept = (s: State, p: Person) => brukKrok.recept(s, p);
 export const BRUK_MATERIAL: BrukRad = {
-  id: 'material', namn: 'material', ar: k => arMaterial(k),
+  id: 'material', namn: 'material', ar: k => arMaterial(k) || brukKrok.ravara(k),
   saknar: (s, p, k) => { let n = 0; for (const av of egnaRecept(s, p)) if (av[k]) n = Math.max(n, Math.ceil(av[k] - mayTake(s, p, k) - 1e-9)); return n; }, // det hen får ta, utan att stjäla
   behall: (s, p, k) => { let n = 0; for (const av of egnaRecept(s, p)) n = Math.max(n, av[k] ?? 0); return n; },
-  kandidater: (s, p) => { const k = new Set<string>(); for (const av of egnaRecept(s, p)) for (const m in av) if (arMaterial(m) && mayTake(s, p, m) < av[m] - 1e-9) k.add(m); return k; },
+  kandidater: (s, p) => { const k = new Set<string>(); for (const av of egnaRecept(s, p)) for (const m in av) if ((arMaterial(m) || brukAv(m) === BRUK_MATERIAL) && mayTake(s, p, m) < av[m] - 1e-9) k.add(m); return k; },
 };
 // det övriga: ingen saknar det, och ingen behöver behålla det
-const BRUK_OVRIGT: BrukRad = { id: 'ovrigt', namn: 'saker', ar: () => true, saknar: () => 0, behall: () => 0, kandidater: () => [] };
+export const BRUK_OVRIGT: BrukRad = { id: 'ovrigt', namn: 'saker', ar: () => true, saknar: () => 0, behall: () => 0, kandidater: () => [] };
 export const BRUK: BrukRad[] = [behovRad(() => MAT), behovRad(() => VED), BRUK_REDSKAP, BRUK_PLAGG, BRUK_MATERIAL, BRUK_OVRIGT];
 const brukMinne = new Map<string, BrukRad>();
 export const brukAv = (k: string) => { let r = brukMinne.get(k); if (!r) brukMinne.set(k, r = BRUK.find(q => q.ar(k))!); return r; };
+// vakten för skickligheten (steg 13.9.10): varje sak har sin rad i BRUK, och det som går åt i ett recept är ett material, ett
+// redskap, ett plagg, mat eller ved, aldrig det övriga som ingen saknar. Larmar i npm test och npm run balans (kor.ts)
+export const utanBruk = (ravara = brukKrok.ravara) => Object.keys(SAKER).filter(k => !brukAv(k) || ravara(k) && brukAv(k) === BRUK_OVRIGT).map(k => `${k}: går åt i ett recept men har ingen rad i BRUK`);
 // det p saknar, räknat en gång i timmen (raden bruket i TAKTER); den som inte räknats den här timmen räknas när hen frågas
 export function brukTimme(s: State) { for (const p of living(s)) if (!p.gast) brukRakna(s, p); }
 function brukRakna(s: State, p: Person) {

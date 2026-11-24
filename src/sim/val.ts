@@ -488,7 +488,9 @@ Object.assign(brukKrok, {
     for (const k of PROJEKT_LIST) { const a = PROJEKT[k].arbete, av = a && ((RECEPT as Record<string, { av?: Record<string, number> }>)[a.k ?? k]?.av ?? TILLVERKA[k]?.av); if (av && habitShare(p, [a.act], tot) > DELA.yrke) ut.push(av); }
     return ut;
   },
+  ravara: (k: string) => (ravaror ??= new Set([...Object.values(RECEPT as Record<string, { av?: Record<string, number> }>), ...Object.values(TILLVERKA), ...Object.values(SAKER).map(d => d!.skaffa ?? {})].flatMap(r => Object.keys((r as { av?: Record<string, number> }).av ?? {})))).has(k),
 });
+let ravaror: Set<string> | undefined; // det som går åt i något recept, räknat när det frågas första gången
 // kolet som eldarna med kol som bränsle (ässjan, fyrfaten) rymmer: det byn vill ha i förrådet av kol (steg 13.8.6)
 kolKrok.eldar = s => { let n = 0; for (const t of stationerOf(s)) { const e = ELDSTATIONER[t.k]; if (e?.bransle === 'kol' && isKlar(t)) n += e.max; } return Math.ceil(n); };
 type Faror = ReturnType<typeof dangers>;

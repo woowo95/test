@@ -9,7 +9,9 @@ import { SAKER } from './saker';
 import { TEK } from './teknik';
 import { TILLVERKA } from './tillverka';
 import { STATIONER, type StationDef } from './stationer';
-import type { Act, Person, Skill, State } from './typer';
+import { SKILLS, type Act, type Person, type Skill, type State } from './typer';
+import type { ActDef } from './handlingar';
+import { GORS } from './redskap';
 
 export { KUNTAL } from './kvalitet'; // talen ligger i kvalitet.ts, som läses tidigt
 import { KUNTAL } from './kvalitet';
@@ -24,6 +26,23 @@ const tekAv = (act: Act, k?: string) => (k ? tekFor(k) : undefined) ?? (tvAct ??
   ...Object.entries(STATIONER as Record<string, StationDef>).flatMap(([sk, d]) => (d.gor ?? []).map(a => [a, tekFor(sk)] as const)),
   ...Object.values(TILLVERKA).map(d => [d.act, d.tek] as const),
 ])).get(act);
+// ---------- vakten för skickligheten (steg 13.9.10) ----------
+// En handling som gör något (en sak i GORS, ett hantverk) har sin färdighet för fart och kvalitet: en färdighet i SKILLS och en
+// nivå att följa: sakens teknik, stationens, receptets eller handlingens eget kunnande (kunna i ACTS). Vakten i npm test och npm run balans (kor.ts) larmar
+// för de handlingar som saknar den, som vakten för arbetstiderna (tider.ts)
+// stationen, tillbehöret och dörren görs efter sitt recept (var i RECEPT), och nivån följer det som görs
+const receptVar = new Set<string>(Object.values(RECEPT as Record<string, { var: string }>).map(r => r.var));
+export function utanFardighet(acts: Record<string, ActDef> = ACTS, gors: Record<string, string[]> = GORS): string[] {
+  const ut: string[] = [];
+  for (const a in acts) {
+    const d = acts[a], ks = gors[a] ?? [];
+    if (!ks.length && !d.hantverk) continue; // gör inget
+    const sk = d.fardighet ?? d.arbete ?? 'hantverk';
+    if (!(SKILLS as readonly string[]).includes(sk)) ut.push(`${a}: färdigheten ${sk} finns inte`);
+    else if (d.kunna === undefined && !tekAv(a as Act) && !ks.some(k => tekFor(k)) && !receptVar.has(a)) ut.push(`${a}: ingen nivå för skickligheten (teknik, station eller kunna)`);
+  }
+  return ut;
+}
 // hur mycket skickligheten betyder när act gör k: handlingens eget kunnande, annars nivåns rad i KUNNA
 export const kunnaVikt = (act: Act, k?: string) => ACTS[act]?.kunna ?? KUNNA[TEK[tekAv(act, k) ?? '']?.niva ?? 1] ?? 1;
 // färdigheten handlingen act övar och arbetar med
