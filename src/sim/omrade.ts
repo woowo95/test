@@ -118,6 +118,14 @@ export function utanforByn(s: State, x: number, y: number) {
   if (inMap(Math.floor(x), Math.floor(y)) && o.inne[Math.floor(y) * W + Math.floor(x)]) return 0;
   return Math.max(0, tillHolje(x, y, o.holje) - OMRADE.kant);
 }
+// rutorna i byns område och högst ut rutor utanför det, för vägen runt byn (findPath, steg B.16)
+const runtMinne = new WeakMap<object, Map<number, Uint8Array>>();
+export function runtByn(s: State, ut: number) {
+  const o = omrade(s); let m = runtMinne.get(o); if (!m) runtMinne.set(o, m = new Map());
+  let g = m.get(ut);
+  if (!g) { m.set(ut, g = new Uint8Array(W * H)); for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (utanforByn(s, x, y) <= ut) g[y * W + x] = 1; }
+  return g;
+}
 // avståndet från punkten till det byn omsluter, utan kanten runt (0 innanför höljet): för det som ska stå en bit från
 // det som redan står (ett nytt hus, en station ute), så att byn växer utåt i en ring
 export const tillHoljet = (s: State, x: number, y: number) => tillHolje(x, y, omrade(s).holje);

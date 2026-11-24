@@ -151,6 +151,7 @@ export interface Task {
   phase: 'go' | 'do' | 'back'; // på väg dit, arbetar där, på väg hem med det som bärs
   tx: number; ty: number; // platsen man går till och arbetar på
   until: number; // tiden då uppgiften är slut (ms)
+  vantar?: boolean; // den som står emot rövarna väntar in de andra (true) eller möter gänget (false) (steg B.17, rovare.ts)
   carry: number; // det som bärs, i enheten som handlingens `ger` anger
   items?: Record<string, number>; // saker som bärs bredvid bördan, per slag (rötter, svamp, grenar, materialet till ett bygge)
   cond?: Record<string, number>; // skicket på det som bärs, per slag (lager.ts)

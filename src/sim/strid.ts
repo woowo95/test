@@ -63,6 +63,8 @@ export const STRID = balans('strid', {
   // raddaEmp i empati går till en vän som ligger och blöder när tiden kvar är kortare än det som är kvar av striden och ingen fiende
   // är närmare vännen än raddaFri
   tryckSjalv: 0.5, raddaEmp: 10, raddaFri: 3,
+  hjalpBakom: 3, hjalpNara: 2, // hjälparen står så här långt bakom vännen som slåss, och den som slåss går bara på en hjälpare som är så här nära (steg B.14): annars jagas ingen som inte slåss
+  backaAvst: 6, // den som backar undan stannar så här långt från fienden (steg B.14)
   hjalpAvst: 4, draUndan: 1.5, // hjälparna (steg 9.5.20) håller sig så här långt från fienderna, och drar den fallne så här långt bort
   barFart: 0.5, // den som bär en fallen går så här mycket långsammare, som med en tung börda (steg 12.1.87)
   // olyckshugget (steg 9.5.22): vid varje träff är risken skärpan × graden² × hugg, mindre med skydd på delen (skyddHugg); en arm,
@@ -421,7 +423,7 @@ function valjMal(st: Strid, k: Kampe) {
   }
   let bast: Kampe | undefined, bd = Infinity;
   for (const m of st.kampar) {
-    if (m.sida === k.sida || !(iStrid(m) || (nere && (m.lage === 'nere' || m.lage === 'flykt') && st.t - (m.fallT ?? st.t) < sortAv(k).forfoljer))) continue; // djuren förföljer inte (KAMPAR)
+    if (m.sida === k.sida || (m.hjalp && dist(k, m) > STRID.hjalpNara) || !(iStrid(m) || (nere && (m.lage === 'nere' || m.lage === 'flykt') && st.t - (m.fallT ?? st.t) < sortAv(k).forfoljer))) continue; // djuren förföljer inte (KAMPAR)
     const vanner = st.kampar.reduce((a, o) => a + (o !== k && o.sida === k.sida && iStrid(o) && o.mal === m.id ? 1 : 0), 0);
     const d = dist(k, m) + (m.lage === 'nere' ? 2 : 0) - (iStrid(m) && m.mal !== undefined && m.mal !== k.id ? STRID.ringa : 0) + STRID.trangsel * vanner; // den som står är farligare än den som ligger, den som slåss med en annan lockar mindre, och den som redan har många mot sig väljs helst inte (steg B.6)
     if (d < bd) { bd = d; bast = m; }
@@ -858,10 +860,13 @@ export function stridSteg(st: Strid) {
     if (k.bocker) { k.bocker -= dt; if (k.bocker <= 0) { k.bocker = undefined; plocka(st, k); } continue; }
     if (hamtaSteg(st, k, dt)) continue;
     if (raddaSteg(st, k, dt)) continue; // en blödande vän går före (steg 9.5.18)
-    if (k.hjalp) { // hjälparen slåss inte: hen väntar på avstånd från fienderna (steg 9.5.20)
-      const f = st.kampar.filter(o => o.sida !== k.sida && iStrid(o)).sort((a, b) => dist(a, k) - dist(b, k))[0];
-      if (f && dist(f, k) < STRID.hjalpAvst) { const d = Math.max(0.01, dist(f, k)); ga(st, k, clamp(k.x + (k.x - f.x) / d * 2, 0.3, st.w - 0.3), clamp(k.y + (k.y - f.y) / d * 2, 0.3, st.h - 0.3), farten(k) * dt); }
-      else if (f && dist(f, k) > STRID.hjalpAvst + 2) ga(st, k, f.x, f.y, Math.min(dist(f, k) - STRID.hjalpAvst - 1, farten(k) * dt)); // går mot striden och väntar på avstånd (steg 12.1.87)
+    if (k.hjalp) { // hjälparen slåss inte: hen står bakom vännerna, sett från fienden (steg 9.5.20 och B.14), och går undan från den som kommer nära
+      const narm = (c: Kampe, l: Kampe[]) => l.sort((a, b) => dist(a, c) - dist(b, c))[0] as Kampe | undefined;
+      const fi = () => st.kampar.filter(o => o.sida !== k.sida && iStrid(o) && !o.hjalp), f = narm(k, fi()), v = narm(k, st.kampar.filter(o => o.sida === k.sida && iStrid(o) && !o.hjalp && !o.backar));
+      if (!f) continue;
+      const e = v ? narm(v, fi())! : f, c = v ?? k, d = Math.max(0.01, dist(c, e)), bak = v ? STRID.hjalpBakom : 2;
+      const x = clamp(c.x + (c.x - e.x) / d * bak, 0.3, st.w - 0.3), y = clamp(c.y + (c.y - e.y) / d * bak, 0.3, st.h - 0.3), l = Math.hypot(x - k.x, y - k.y);
+      if (v ? l > 1 : dist(f, k) < STRID.hjalpAvst) ga(st, k, x, y, Math.min(l, farten(k) * dt));
       continue;
     }
     const m = valjMal(st, k);
@@ -871,7 +876,13 @@ export function stridSteg(st: Strid) {
     // den som är utmattad backar undan och hämtar andan medan en vän håller striden igång (steg 3.7.2)
     if (k.backar && k.ork >= STRID.backaTill && mod >= STRID.backaModTill) k.backar = undefined;
     else if (!k.backar && (k.ork < STRID.backa || (!avs.lek && mod < STRID.backaMod)) && st.kampar.some(o => o.sida === k.sida && o !== k && iStrid(o) && !o.backar)) { k.backar = true; st.logg.push({ t: st.t, h: 'backar', a: k.id }); }
-    if (k.backar) { const l = d || 1, f = farten(k) * dt * 0.6; ga(st, k, k.x - (m.x - k.x) / l * 3, k.y - (m.y - k.y) / l * 3, f); continue; }
+    if (k.backar) { // bakom den närmaste vännen som slåss, annars undan tills hen är långt nog bort (steg B.14)
+      const v = st.kampar.filter(o => o !== k && o.sida === k.sida && iStrid(o) && !o.backar && !o.hjalp).sort((a, b) => dist(a, k) - dist(b, k))[0] as Kampe | undefined;
+      const f = farten(k) * dt * 0.6, l = v ? Math.max(0.01, dist(v, m)) : d || 1;
+      if (v) { const x = v.x + (v.x - m.x) / l * STRID.hjalpBakom, y = v.y + (v.y - m.y) / l * STRID.hjalpBakom, q = Math.hypot(x - k.x, y - k.y); if (q > 0.5) ga(st, k, x, y, Math.min(q, f)); }
+      else if (d < STRID.backaAvst) ga(st, k, k.x - (m.x - k.x) / l * 3, k.y - (m.y - k.y) / l * 3, f);
+      continue;
+    }
     if (avstandSteg(st, k, m, d, dt)) continue;
     if (k.ledare === 'bak' && !avs.lek && d > v.rack && st.kampar.some(o => o.sida === k.sida && o !== k && iStrid(o) && !o.backar)) continue; // ledaren står bakom och leder medan vännerna slåss (steg 3.7.12)
     if (d > v.rack) {

@@ -42,6 +42,7 @@ import { notis } from './notiser';
 import { lamnaFallt, styckaFallt } from './styckning';
 import { tecken } from './religion';
 import { LARMHOT, rollVid, viljaKrok } from './roller';
+import { glesPlats } from './trangsel';
 
 // ---------- vargen och vakten (steg 3.7.1) ----------
 // Under istiden kommer vargar in på kartan från kanten, oftast i flock och ibland en ensam. En flock stryker omkring en tid
@@ -292,6 +293,8 @@ export function husPlats(s: State, p: Person) {
   return bast === undefined ? undefined : punktIRuta(s, bast, p);
 }
 export const skyddVidElden = (s: State) => { const e = eldPlats(s); return freeNear(s, e.x + 0.5, e.y + 1.5); };
+// de som gömmer sig vid elden sprider ut sig (steg B.15): platsen närmast den vanliga där ingen står (trängseln, glesPlats i trangsel.ts)
+const gomdVidElden = (s: State, p: Person) => { const e = eldPlats(s); return glesPlats(s, p, k => { const v = k * 2.399, r = 0.9 * Math.sqrt(k); return freeNear(s, e.x + 0.5 + Math.cos(v) * r, e.y + 1.5 + Math.sin(v) * r); })!; };
 // vad p gör när vargar är nära (val.ts), eller undefined
 type Skydd = { act: Act; why: string; spot?: { x: number; y: number }; dur: number; hot?: 'rovare' | 'varg' };
 // valet när rövare är nära (rovarSkydd i rovare.ts, som sätter det här när modulen laddas, så att varg.ts inte behöver importera rovare.ts)
@@ -320,7 +323,7 @@ export function gomSig(s: State, p: Person, vad: string, hot: 'rovare' | 'varg',
   // i huset om det är varmare där än vid elden, som sovplatsen (val.ts, plats sang): ett kallt hus skyddar inte mot kylan
   const plats = husPlats(s, p), c = coldOf(temperature(s)), rum = plats && roomAt(s, plats.x, plats.y);
   const hus = plats && (!rum || c === 0 || varmareInne(s, rum, c)) ? plats : undefined;
-  return { act: 'gomma', why: `${vad} är nära, ${hus ? 'gömmer sig i huset' : 'håller sig vid elden nära de vuxna'}`, hot, spot: hus ?? skyddVidElden(s), dur };
+  return { act: 'gomma', why: `${vad} är nära, ${hus ? 'gömmer sig i huset' : 'håller sig vid elden nära de vuxna'}`, hot, spot: hus ?? gomdVidElden(s, p), dur };
 }
 // den som hör ropet avbryter det hen gör och söker skydd (inte den som slåss, vårdar, bärs eller håller vakt)
 export function soker(s: State, folk: Person[]) {

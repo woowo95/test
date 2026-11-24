@@ -2179,12 +2179,13 @@ SCENARIER.barnrop = {
     if (barn) barn.born = s.now - 10 * SIM.DAY; // ett barn på tio år
     if (!barn || !vuxen) return [['ett barn och en vuxen i byn', false]];
     // flocken har setts långt bort; alla utom den vuxna, som står en bit från barnets väg, och barnet är bortflyttade ur hörhåll
-    const f = rovarGang(s, 2, { x: m.x + 40, y: m.y + 40 }, { anfaller: true }); f.sedd = s.now; f.gissning = 2; // gänget går mot byn, så ingen springer som bud (steg 9.2.117), men det är långt borta
+    const f = rovarGang(s, 2, { x: m.x + 24, y: m.y + 18 }, { anfaller: true }); f.anfallT = s.now; f.sedd = s.now; f.gissning = 2; // gänget går mot byn, så ingen springer som bud (steg 9.2.117), och är så nära att man gömmer sig (steg B.13)
     for (const p of folk) { p.larm = { rovare: { t: s.now, vad: 'rovare', storlek: 2, led: 0, varnat: 1 } }; p.task = undefined; } // alla vet och har redan varnat: de väljer sin roll (steg 10.1.12)
     vuxen.larm = undefined;
     // barnet väljer själv att gömma sig och springer mot sitt gömställe; den vuxna står nära gömstället, utom hörhåll från barnets start
     const hor = SIM.LARM.hor * (SIM.isLight(s.now) ? 1 : SIM.LARM.natt), spot = SIM.husPlats(s, barn) ?? SIM.skyddVidElden(s);
     const start = SIM.freeNear(s, spot.x - hor - 10, spot.y);
+    for (const r of SIM.rovarna(s, f)) Object.assign(r, SIM.freeNear(s, start.x - 18, start.y)); f.x = start.x - 18; f.y = start.y; // gänget är så nära barnet att det gömmer sig (steg B.13)
     Object.assign(barn, { x: start.x, y: start.y }); barn.task = undefined as Person['task'];
     for (const p of folk) if (p !== barn && p !== vuxen) Object.assign(p, SIM.freeNear(s, start.x, start.y)); // de andra står där barnet började, utom hörhåll från den vuxna
     SIM.chooseTask(s, barn); // barnet väljer gömstället; den vuxna står nära det, vid barnets väg dit
@@ -2424,7 +2425,7 @@ SCENARIER.rovartest = {
     const forlopp = (x: State, f: SIM.Rovarflock) => {
       const t0 = x.now, kant = f.x < 1 || f.y < 1 || f.x > SIM.W - 1 || f.y > SIM.H - 1;
       let rastUt = -1, vantMin = -1, anfall = -1;
-      korTills(x, () => !x.rovare || !!f.anfaller, 7200, () => { if (f.vantat && vantMin < 0) { rastUt = f.rast ? ut(x, f.rast) : -1; vantMin = (f.till - x.now) / MIN; } });
+      korTills(x, () => !x.rovare || !!f.anfaller, 7200, () => { if (x.rovareFler?.length) { x.rovareFler = undefined; x.rovare = f; } /* bara scenariots gäng, inte det som världen skickar */ if (f.vantat && vantMin < 0) { rastUt = f.rast ? ut(x, f.rast) : -1; vantMin = (f.till - x.now) / MIN; } });
       if (f.anfaller) anfall = (x.now - t0) / SEC;
       return { kant, rastUt, vantMin, anfall };
     };
@@ -2635,7 +2636,7 @@ SCENARIER.rovarflykt = {
     const bybo = g.st.kampar.filter(k => k.sida === 0), rov = g.st.kampar.filter(k => k.sida === 1);
     const narmast = Math.min(...bybo.flatMap(x => rov.map(y => Math.hypot(x.x - y.x, x.y - y.y))));
     const motet = !!g && narmast < ROVARE.moter + 1 && forstridMot > ROVARE.moter + 1;
-    const vantade = Math.hypot(a.x - a0.x, a.y - a0.y) <= SIM.ROVARE.radFram + 2; // den som stod emot väntade vid förrådet och gick inte ut mot dem (steg B.5)
+    const vantade = a.x - a0.x <= SIM.ROVARE.radFram + 2 && Math.hypot(a.x - a0.x, a.y - a0.y) <= SIM.ROVARE.samlAvst; // den som stod emot gick inte ut mot dem: väntade vid förrådet, eller bakom det på den andra (steg B.5 och B.17)
     // den som kommer till ger sig in i samma strid
     let kom = false;
     korTills(s, () => !!g.st.slut || kom, 300, () => { if (g.st.kampar.some(k => k.pid === b.id)) kom = true; });
@@ -2665,7 +2666,7 @@ SCENARIER.rovarflykt = {
     const modiga = prov(1, 1), skadade = prov(0.45, 4);
     return [
       [`striden börjar där sidorna möts: närmast ${narmast.toFixed(1)} rutor mellan en bybo och en rövare, och gänget var ${forstridMot.toFixed(1)} rutor bort när det började`, motet],
-      [`den som stod emot väntade vid förrådet och gick inte ut mot dem (${Math.hypot(a.x - a0.x, a.y - a0.y).toFixed(1)} rutor från förrådet, steg B.5)`, vantade],
+      [`den som stod emot gick inte ut mot dem utan väntade (${Math.hypot(a.x - a0.x, a.y - a0.y).toFixed(1)} rutor från förrådet, steg B.5)`, vantade],
       [`${b.name}, som stod långt bakom, ger sig in i striden när hen kommer fram`, kom && medStat],
       [`att fly väger blodet som är förlorat (${fly(0.4, 1).toFixed(2)} mot ${fly(1, 1).toFixed(2)})`, blodet],
       [`... övermakten (${fly(1, 3).toFixed(2)} mot ${fly(1, 1).toFixed(2)})`, hotet],
@@ -2717,16 +2718,16 @@ SCENARIER.rovarflyr = {
       q.larmRoll = { hot: 'rovare', roll: 'gomd', v: s.larmV ?? 0, t: s.now }; // hen har valt att gömma sig
       gomda++;
       const f = rovarGang(s, 3, { x: q.x + 2, y: q.y + 2 }, { anfaller: true }); f.sedd = s.now;
-      const t0 = s.now; let drog = false;
-      korTills(s, () => s.now - t0 > 20 * 60 * 1000, 1500, () => { if (SIM.kartStrider(s).some(g => g.st.kampar.some(k => k.pid === q.id))) drog = true; });
+      const t0 = s.now; let drog = false, lamnade = false;
+      korTills(s, () => s.now - t0 > 20 * 60 * 1000, 1500, () => { if (SIM.kartStrider(s).some(g => g.st.kampar.some(k => k.pid === q.id))) drog = true; if (s.rovare && f.folk.length && f.gor !== 'flyr' && !(q.task?.act === 'gomma' && SIM.iHus(s, q))) lamnade = true; });
       if (drog) drogs++;
       if (q.gavSig !== undefined) hotad++;
-      if (q.task?.act === 'gomma' && SIM.iHus(s, q)) kvar++;
+      if (!lamnade) kvar++;
     }
     return [
       [`efter en vunnen strid börjar ingen ny strid mot gänget som flyr (${vann} vunna strider, ${efterSeger} nya strider efteråt)`, vann >= 2 && efterSeger === 0],
       [`den som gömt sig i huset dras inte in i striden (${drogs} av ${gomda}) och hotas inte (${hotad})`, gomda >= 2 && drogs === 0 && hotad === 0],
-      [`och är kvar i sitt gömställe (${kvar} av ${gomda})`, kvar === gomda],
+      [`och är kvar i sitt gömställe så länge gänget är i byn (${kvar} av ${gomda})`, kvar === gomda],
     ];
   },
 };
@@ -2863,12 +2864,12 @@ SCENARIER.trangselby = {
         }
         for (let i = 0; i < at.length; i++) for (let j = i + 1; j < at.length; j++) {
           r.par++;
-          if (Math.hypot(at[i].x - at[j].x, at[i].y - at[j].y) < SIM.VAL.isar) r.tatt++;
+          if (Math.hypot(at[i].x - at[j].x, at[i].y - at[j].y) < SIM.TRANGSEL.isar) r.tatt++;
           if (Math.floor(at[i].x) === Math.floor(at[j].x) && Math.floor(at[i].y) === Math.floor(at[j].y)) r.ruta++;
         }
       }
     }
-    return Object.entries(res).map(([act, r]) => [`${act}: tio bybor, ${r.tatt} av ${r.par} par närmare än ${SIM.VAL.isar} rutor; ${r.ruta} par i samma ruta`, r.tatt <= r.par * 0.02] as [string, boolean]);
+    return Object.entries(res).map(([act, r]) => [`${act}: tio bybor, ${r.tatt} av ${r.par} par närmare än ${SIM.TRANGSEL.isar} rutor; ${r.ruta} par i samma ruta`, r.tatt <= r.par * 0.02] as [string, boolean]);
   },
 };
 

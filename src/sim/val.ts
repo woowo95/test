@@ -22,6 +22,7 @@ import { iVattnetNu, sjoNamn, sjoVid, strandNu, vattenNu } from './sjo';
 import { freeTools, take } from './agande';
 import { PLATS } from './plats';
 import { vargSkydd, vargjaktVal } from './varg';
+import { hotKrok } from './roller';
 import { bjornjaktVal } from './bjorn';
 import { RESA, resaPlan, resaVal, samlaResa } from './resa';
 import { tornadoSkydd } from './tornado';
@@ -76,6 +77,8 @@ import { RECEPT } from './recept';
 import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
 import { materialBuffert, tandBuffert } from './forradsmal';
 import { balans } from './balans';
+import { TRANGSEL, glesPlats } from './trangsel';
+export { TRANGSEL, glesPlats } from './trangsel';
 import { SvalkaGor, VarmeGor, svalkaKrok, svalkaSatt, varmeSatt } from './varme';
 import { islagt, naSjon } from './is';
 import { seleVal } from './barsele';
@@ -213,8 +216,6 @@ export const VAL = balans('val', {
   vittjaMin: 5, // så många minuter det tar att vittja en mjärde
   salMote: 0.7, // året runt är samlingssalen mötesplatsen med denna chans, när byn har en (steg 7.2.7)
   bordSamtal: 0.5, // den som samtalar eller berättar sätter sig vid ett bord med denna chans, när det inte är kallt
-  isar: 1.05, isarForsok: 24, // trängseln (steg 3.6.8 och B.9): den som väljer en plats fritt prövar så här många platser och räknar dem som står eller är på väg inom isar rutor ...
-  trangsel: 1, // ... och platsens poäng sjunker så här mycket för var och en av dem ...
   ovanNara: 3, // ... och så här mycket om en ovän sitter nära (RELT.ovanAvstand), vid elden
   isarVidga: 0.12, // ... och ringen blir så här mycket bredare för varje försök efter det fjärde, när det är trångt
   nattPrat: 10, nattPratSpann: 15, // på natten samtalar man så här många minuter, plus upp till spann, och går sedan till en ny plats (steg 3.6.8)
@@ -276,23 +277,6 @@ function isarIRum(s: State, p: Person, rum: number[]) {
   const tiles = friaRutor(s, rum);
   return glesPlats(s, p, () => punktIRuta(s, pick(s, tiles, 'val', p), p))!;
 }
-// trängseln (steg B.9, "Ingen står tätt i onödan" i designdokumentet): en kropp tar plats. Den som väljer var hen ska stå, sitta eller
-// vänta prövar platser ur prova (upp till VAL.isarForsok, undefined är en plats som inte går) och tar den med högst poäng: poang (högst 0)
-// minus VAL.trangsel för var och en som står eller är på väg inom VAL.isar rutor. En plats utan någon nära och utan avdrag tas genast.
-// Alla som väljer en plats fritt frågar här (vid elden, i vilan, i väntan, i samlingssalen och med handarbetet i byn)
-export function glesPlats(s: State, p: Person, prova: (k: number) => { x: number; y: number } | undefined, poang?: (at: { x: number; y: number }) => number) {
-  const andra = living(s).filter(q => q !== p);
-  let bast: { x: number; y: number } | undefined, bp = -Infinity;
-  for (let k = 0; k < VAL.isarForsok; k++) {
-    const at = prova(k); if (!at) continue;
-    let n = 0;
-    for (const q of andra) if (Math.hypot(q.x - at.x, q.y - at.y) < VAL.isar || (q.task && q.task.phase !== 'back' && Math.hypot(q.task.tx - at.x, q.task.ty - at.y) < VAL.isar)) n++;
-    const v = (poang?.(at) ?? 0) - VAL.trangsel * n;
-    if (v > bp) { bp = v; bast = at; }
-    if (v >= 0) break;
-  }
-  return bast;
-}
 // var en handling görs, efter platsen i handlingar.ts
 // platsen för act; under en översvämning aldrig i vattnet: ett rum eller en säng kan stå under vatten (vaktlarmet i by 42
 // efter v271: en som lyssnade på musik i regnet satt i samlingshuset, där golvet stod under vatten), så då den närmaste torra rutan
@@ -312,7 +296,7 @@ function ringVid(s: State, p: Person, radie: number | undefined, f: { x: number;
   const nara = sittPlatser(s, p, f), van = nara.bast && rnd(s, 'val', p) < RELT.bastSitt ? Math.atan2(nara.bast.y - f.y - 0.5, nara.bast.x - f.x - 0.5) : undefined;
   return glesPlats(s, p, k => { // runt elden, men inte i en husvägg eller i en station (Björn efter v89: någon stod i slaktbänken)
     // bredvid vännen: minst en ruta bort längs ringen (vinkeln efter radien)
-    const r = (radie ?? VAL.eldRadie + rnd(s, 'val', p) * VAL.eldRadieSpann) + VAL.isarVidga * Math.max(0, k - 4), ang = van !== undefined && k < 4 ? van + (k % 2 ? -1 : 1) * (VAL.isar + 0.3 * Math.floor(k / 2)) / r : rnd(s, 'val', p) * Math.PI * 2, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
+    const r = (radie ?? VAL.eldRadie + rnd(s, 'val', p) * VAL.eldRadieSpann) + VAL.isarVidga * Math.max(0, k - 4), ang = van !== undefined && k < 4 ? van + (k % 2 ? -1 : 1) * (TRANGSEL.isar + 0.3 * Math.floor(k / 2)) / r : rnd(s, 'val', p) * Math.PI * 2, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
     return !blocked(s, x, y) && !sittAt(s, x, y) && !stationAt(s, x, y) ? { x, y } : undefined; // inte på en stubbe vid bordet
   }, at => nara.ovan.some(o => Math.hypot(o.x - at.x, o.y - at.y) < RELT.ovanAvstand) ? -VAL.ovanNara : 0) ?? freeNear(s, f.x + 0.5, f.y + 1.5);
 }
@@ -762,6 +746,8 @@ export const ARBETEN: readonly Arbete[] = [
     set(v, 'vargjakt', j.why); v.spot = j.spot; v.dur = j.dur; return true;
   } },
   // ... och den som ska följa med på björnjakten (bjorn.ts, steg 6.6.6)
+  // medan ett gäng man vet om ligger stilla håller några ögonen på det också på dagen, så många som nattens vakter blir (steg B.13)
+  { id: 'vaktGang', niva: 3, nar: 'dag', pass: 'vakt', poang: ({ s, p }) => hotKrok.vaktas(s, p) && living(s).filter(q => q !== p && q.task?.act === 'vakt').length < Math.max(1, Math.round(vaktHot(s))) ? VAL.tillJakt : 0, prova: ({ v }) => set(v, 'vakt', 'Håller ögonen på rövarna') },
   { id: 'bjornjakt', niva: 3, poang: () => VAL.tillJakt, prova: ({ s, p, v }) => {
     const j = bjornjaktVal(s, p);
     if (!j) return false;
@@ -1070,7 +1056,9 @@ function valjTask(s: State, p: Person) {
   if (mal) v.spot = tandStalle(s, p, mal); // turen går dit målet finns, närmast (steg 12.1.39)
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
   p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, fron: v.fron, hot: v.hot, falt: v.falt, sno: v.sno, ho: v.ho, gava: v.gava, skal: v.skal, hamtar: v.hamtar, lon: v.lon, brand: v.brand, kalla: v.kalla, stanna: v.stanna, eldFor: v.eldFor, pass: v.pass !== undefined ? s.now + v.pass : undefined };
-  balteForband(s, p, v.act);
+  // det som ligger för nära ett gäng man vet om går man inte till (steg B.13, hotKrok i roller.ts): man stannar nära byn. Nöden och faran går före
+  if ((rad?.niva ?? 9) > 2 && hotKrok.plats(s, p, sp.x, sp.y)) { const at = platsIByn(s, p, 'val'); p.task = { act: 'vila', phase: 'go', tx: at.x, ty: at.y, until: s.now + VAL.vilaMin * MIN, carry: 0, why: 'Rövare är nära, stannar i byn', paus: true, dark: !light }; }
+  balteForband(s, p, p.task.act);
   if (ACTS[v.act].plats === 'station') { const st = stationFor(s, v.act, p); if (st && Math.hypot(sp.x - vidStation(st).x, sp.y - vidStation(st).y) < 2) stationBrukad(s, st); } // hur mycket stationen används (steg 9.4.8)
   if (v.act === 'samtal' && !v.spot) samtalMed(s, p); // fram till den man vill prata med (steg 4.5.6.7)
   const k = usesTool(p.task);
