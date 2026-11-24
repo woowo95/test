@@ -29,7 +29,7 @@ import { brandHetta, brandUndan, brandVal, hjalpaVal, slackaSigVal } from './bra
 import { foodDays, foodDaysAll } from './ekonomi';
 import { ACTS, WORK, redskapTal, usesTool } from './handlingar';
 import { flyttaEldVal } from './eldflytt';
-import { tandStalle, eldFor, eldForst, eldXY, nagonGlod, eldarOf, emberOn, vidEld, needStones, woodDays } from './eld';
+import { arTand, tandStalle, turMal, eldFor, eldForst, eldXY, nagonGlod, eldarOf, emberOn, vidEld, type LetaSak, letaMest, stenTill, woodDays } from './eld';
 import { ALDER, KROPP, REL, ageOf, count, enTill, enTillDar, familjOf, isSick, living, relKey, stat } from './folk';
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
@@ -40,7 +40,7 @@ import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from '.
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
-import { FORRAD, FORRADSMAL, TROSKEL, buffert, lyxtak, materialTimme, underBuffert, materialTak, eldReserv, villHaAv } from './forradsmal';
+import { FORRAD, FORRADSMAL, TROSKEL, buffert, lyxtak, materialTimme, materialTak, eldReserv, villHaAv } from './forradsmal';
 import { tjaraUppgift, tjaraVal } from './tjara';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, forstRuttnar, freeOfKinds, handelTask, toolGroups, underhallGrupp } from './redskap';
 import { PROJEKT, PROJEKT_LIST, PROJEKT_TAL, Uppgift, arv, bastaProjekt, bristAlla, hamtas, projektNu } from './projekt';
@@ -544,7 +544,7 @@ export function arbetsTimme(s: State) {
 }
 // raderna som har arbetare (steg 6.1.13). Maten är flera arbeten (samla, jaga, fiska, fältet) som delar på samma arbetare
 type ArbRad = 'mat' | 'ved' | 'bygga' | 'tand' | 'leta' | 'kol' | 'fron';
-const radOf = (t: Task): ArbRad | undefined => t.tandmat ? 'tand' : t.fron ? 'fron' : t.sok ? 'leta' : t.act === 'bygga' ? 'bygga' : t.act === 'kol' ? 'kol' : ACTS[t.act]?.behov;
+const radOf = (t: Task): ArbRad | undefined => t.tandmat ? 'tand' : t.act === 'samla' && arTand(t.hamtar) ? undefined /* hö och grenar till ett bygge, ett projekt eller förrådet */ : t.fron ? 'fron' : t.sok ? 'leta' : t.act === 'bygga' ? 'bygga' : t.act === 'kol' ? 'kol' : ACTS[t.act]?.behov;
 // räkneverket: hur många andra som gör raden just nu
 function arbetarNu(s: State, p: Person, rad: ArbRad) {
   let n = 0;
@@ -582,7 +582,7 @@ const varmeRad = (c: Ctx, why: string) => {
   const { s, p, v } = c;
   const h: VarmeGor = {
     v, why, satt: (act, w) => set(v, act, w), vidEld: f => ringVid(s, p, ACTS.varma.radie, eldXY(s, f)), iRum: rum => isarIRum(s, p, rum.tiles),
-    mjuk: rad => mjuk(s, p, rad), arbeta: (act, w, leta) => { arbeta(c, act, w, leta ? { leta: true } : {}); return true; },
+    mjuk: rad => mjuk(s, p, rad), arbeta: (act, w, leta) => { arbeta(c, act, w, { leta }); return true; },
   };
   return varmeSatt(s, p).satt.some(x => x.gor(h));
 };
@@ -685,6 +685,7 @@ export const FORBATTRA: readonly ForbRad[] = [
     // samma kurva som maten och veden (steg 13.8.4): fullt upp till bufferten, sedan ner mot vedens MinMatt vid taket och vidare mot noll
     const har = amountOf(s, k) + pavag, b = materialBuffert(s, k), V = FORRADSMAL.ved;
     const kvar = har <= b ? 1 : mjuktTak(har, b, Math.max(b + 1, materialTak(s, k)), 1, V.minMatt / V.min);
+    if (!tandStalle(s, p, [k])) return undefined; // inget att hämta i närheten
     return { sc: VAL.forbFylla * kvar * brus(c), gor: () => arbeta(c, 'samla', `Mer ${k === 'grenar' ? 'grenar' : 'hö'} till förrådet`, { hamtar: k }) };
   } })),
 ];
@@ -698,6 +699,10 @@ function forbKandidat(c: Ctx, f: ForbRad) {
   if (!(f.id in m)) m[f.id] = f.kand(c, dag(c));
   return m[f.id];
 }
+// törsten som nöd: från TORST.farligt för alla. Den som ligger sjuk, är svag eller är ett litet barn sover annars förbi sitt
+// grundbehov (nivå 4), så för dem börjar den redan där man blir törstig, som hungern, och lusten växer med törsten (steg 13.10.13)
+const torstNod = ({ s, p, a, lazy }: Ctx) => tortarFarligt(p) ? VAL.nodTorst * nodUnder(p.torst, TORST.farligt)
+  : torstig(p, lazy) && (a < ALDER.smabarn || ligger(p, s.now) || halsa(p) < KROPP.svag) ? VAL.nodTorst * (TORST.torstig + TORST.lat * lazy - p.torst) / (TORST.torstig + TORST.lat * lazy - TORST.farligt) : 0;
 const nodUnder = (x: number, grans: number) => 1 + clamp(1 - x / grans, 0, 1); // 1 vid gränsen, 2 vid noll (steg 13.8.9)
 export const ARBETEN: readonly Arbete[] = [
   // 1 Fara: vargar är nära (steg 3.7.15), en tornado kommer (steg 3.8.4), det brinner (steg 3.8.5) eller vattnet stiger (steg 3.8.7)
@@ -741,8 +746,8 @@ export const ARBETEN: readonly Arbete[] = [
     return p.warm >= KROPP.extremVarm && svalkaRad(c, 'Är för varm');
   } },
   { id: 'vardaSig', niva: 2, poang: () => VAL.nodSar, prova: ({ s, p, v }) => varda(s, p, v, true) }, // sina egna sår: trycka på, lägga förband och rengöra (steg 2.5.2)
-  { id: 'toaGenast', niva: 2, poang: ({ p }) => p.toa < KROPP.toaGenast ? VAL.nodToa * nodUnder(p.toa, KROPP.toaGenast) : 0, prova: ({ p, v }) => p.toa < KROPP.toaGenast && set(v, 'toa', 'Måste gå på toa genast') },
-  { id: 'torstFarligt', niva: 2, poang: ({ p }) => tortarFarligt(p) ? VAL.nodTorst * nodUnder(p.torst, TORST.farligt) : 0, prova: ({ s, p, v }) => tortarFarligt(p) && dricka(s, p, v) }, // också den som är sjuk eller svag dricker
+  { id: 'toaGenast', niva: 2, minAlder: ALDER.smabarn, poang: ({ p }) => p.toa < KROPP.toaGenast ? VAL.nodToa * nodUnder(p.toa, KROPP.toaGenast) : 0, prova: ({ p, v }) => p.toa < KROPP.toaGenast && set(v, 'toa', 'Måste gå på toa genast') },
+  { id: 'torstFarligt', niva: 2, poang: c => torstNod(c), prova: c => torstNod(c) > 0 && kanGa(c.p) && dricka(c.s, c.p, c.v) },
   { id: 'hungrig', niva: 2, poang: ({ p }) => VAL.nodSvalt * nodUnder(p.hunger, KROPP.hungrig * VARDRATT.snal), prova: ({ s, p, v, a }) => (p.hunger < KROPP.hungrig * VARDRATT.snal || a < ALDER.smabarn || ligger(p, s.now) || halsa(p) < KROPP.svag) && kanGa(p) && ataVal(s, p, v) },
   { id: 'smabarn', niva: 2, poang: ({ a }) => a < ALDER.smabarn ? VAL.nodVila : 0, prova: ({ v, a }) => a < ALDER.smabarn && set(v, 'sova', 'Är ett litet barn') },
   { id: 'sjuk', niva: 2, poang: ({ s, p }) => ligger(p, s.now) ? VAL.nodVila : 0, prova: ({ s, p, v }) => ligger(p, s.now) && set(v, 'sova', 'Är sjuk') }, // med feber eller svårt sjuk lägger man sig (steg 9.5.1)
@@ -793,7 +798,7 @@ export const ARBETEN: readonly Arbete[] = [
   // tillsynen vid en kolmila (steg 12.2.2, brann.ts): ett Tillfälle när tiden för tillsynen är inne
   { id: 'passa', niva: 3, poang: ({ s, p }) => { const b = passaVal(s, p); return b ? VAL.tillPassa * passaVikt(s, b.b, b.n) : 0; }, prova: ({ s, p, v }) => { const b = passaVal(s, p); if (!b) return false; projektVal(v, passaUppgift(b), 'Det är dags att se till kolmilan'); return true; } },
   // 4 Grundbehov (toa, värme, vatten, vila, mat), vägda med poäng (steg 13.8.10). En lat person tillgodoser dem tidigare än en flitig
-  { id: 'toa', niva: 4, poang: ({ p, lazy }) => grund(VAL.grundToa, p.toa, KROPP.toaBehov + KROPP.latToa * lazy), prova: ({ p, v, lazy }) => p.toa < KROPP.toaBehov + KROPP.latToa * lazy && set(v, 'toa', 'Behöver gå på toa') },
+  { id: 'toa', niva: 4, minAlder: ALDER.smabarn, poang: ({ p, lazy }) => grund(VAL.grundToa, p.toa, KROPP.toaBehov + KROPP.latToa * lazy), prova: ({ p, v, lazy }) => p.toa < KROPP.toaBehov + KROPP.latToa * lazy && set(v, 'toa', 'Behöver gå på toa') },
   { id: 'fryser', niva: 4, poang: ({ p, lazy }) => grund(VAL.grundKyla, p.warm, KROPP.kallt + KROPP.latVarme * lazy), prova: c => fryser(c) && varmeRad(c, 'Fryser') }, // den som fryser värmer sig (varmeRad)
   { id: 'torstig', niva: 4, poang: ({ p, lazy }) => grund(VAL.grundTorst, p.torst, TORST.torstig + TORST.lat * lazy), prova: ({ s, p, v, lazy }) => torstig(p, lazy) && dricka(s, p, v) },
   // den som inte kan gå kravlar hem, och den som har mycket ont eller ett infekterat sår vilar (steg 2.5.2)
@@ -853,7 +858,7 @@ export const ARBETEN: readonly Arbete[] = [
   } },
   { id: 'rensa', niva: 5, nar: 'dag', prova: ({ s, p, v, a }) => a >= ALDER.rensar && !!rensaArt(s, p) && radda(s, p, lagrat(s, k => RENSAS.some(q => q.sak === k))) && (processTask(s, v, rensaArt(s, p)!, 'Det finns fisk att rensa innan den blir dålig'), true) },
   { id: 'torka', niva: 5, nar: 'dag', vader: 'torrt', prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanTorka(s, p) && radda(s, p, lagrat(s, k => TORKAS.some(r => r.ra === k)), torkAndel(pabud(s, 'torkat'))) && (torkVal(s, v, 'Det finns kött och fisk att torka'), true) },
-  { id: 'roka', niva: 5, nar: 'dag', prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanTorka(s, p, 'rokeri') && radda(s, p, lagrat(s, k => ROKAS.some(r => r.ra === k))) && (set(v, 'roka', 'Det finns kött och fisk att röka'), v.dur = torkTid(s, 'rokeri'), true) }, // rökeriet, också i regn (steg 9.6.8)
+  { id: 'roka', niva: 5, nar: 'dag', prova: ({ s, p, v, a }) => a >= ALDER.grillar && kanTorka(s, p, 'rokeri') && radda(s, p, lagrat(s, k => ROKAS.some(r => r.ra === k))) && satsVal(v, 'roka', 'Det finns kött och fisk att röka', torkTid(s, 'rokeri')) }, // rökeriet, också i regn (steg 9.6.8)
   { id: 'valla', niva: 5, nar: 'dag', prova: ({ s, p, v }) => { const d = vallaVal(s, p); if (!d) return false; projektVal(v, { act: 'valla', text: d.hage !== undefined ? 'Flyttar djuren till en hage med mer bete.' : `Leder ${tamArt(d.art).ord[3]} in i hagen med ett rep.`, min: HAGE.vallaMin / tamEg(d).tamhet, spot: { x: d.x, y: d.y }, ref: d.id }, d.hage !== undefined ? 'Djuren har betat ner hagen' : 'Ett djur går utanför hagen'); return true; } }, // steg 9.8.4, 9.8.6
   { id: 'avliva', niva: 5, nar: 'dag', prova: ({ s, p, v }) => { const d = avlivaVal(s, p); if (!d) return false; projektVal(v, { act: 'avliva', text: `Avlivar ${tamArt(d.art).ord[3]} och bär ${tamArt(d.art).ord[0] === 'ett' ? 'det' : 'den'} till slaktbänken.`, min: SLAKTDJUR.min, tool: 'kniv', spot: { x: d.x, y: d.y }, ref: d.id }, { gammal: 'Djuret är gammalt', svalt: 'Byn behöver mat', host: 'Höet räcker inte över istiden', stold: 'Hungern driver till stöld' }[slaktOrsak(s, d, p)!] ?? 'Flocken är för stor'); return true; } }, // steg 9.8.7
   // slåttern räddar gräset som annars går förlorat när istiden kommer (steg 10.11.21): på Rädda med chansen raddaTim delat med
@@ -896,7 +901,7 @@ export const ARBETEN: readonly Arbete[] = [
     // hjälpen väljs med samma poäng som de vuxnas rader på nivån (steg 12.1.45): den går till det som fattas, och skälet är
     // radens eget. Barnet som hjälper arbetar i dag; fattas inget (ingen rad har poäng eller alla har sina arbetare) leker det
     const cb: Ctx = { ...c, d: { ...d, works: true } };
-    const w = vinnare(cb, POANGRADER[6].filter(r => (!r.nar || r.nar === 'dag') && vaderTillater(s, r.vader) && !(r.minAlder !== undefined && a < r.minAlder))).find(r => r.prova(cb));
+    const w = vinnare(cb, POANGRADER[6].filter(r => radGaller(s, r, a, 'dag'))).find(r => r.prova(cb));
     if (!w) return set(v, 'leka', lekText(s));
     v.why = `Hjälper till. ${v.why}`;
     return true;
@@ -934,9 +939,9 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'fron', niva: 6, nar: 'dag', poang: c => { const b = dag(c).works ? froBrist(c.s) : 0; return b > 0 && vildFronPlats(c.s) ? VAL.fronVikt * b : 0; },
     prova: c => { const vf = vildFronPlats(c.s); if (!vf) return false; arbeta(c, 'samla', 'Byn vill ha frön att så'); c.v.spot = vf; c.v.fron = true; c.v.why = `${c.v.why.replace(/\.$/, '')}. Plockar vilda frön.`; return true; },
     full: c => radFull(c.s, c.p, 'fron') },
-  { id: 'leta', niva: 6, nar: 'dag', minAlder: ALDER.ansvar, poang: c => dag(c).works && flintaTillElden(c.s) ? VAL.letaVikt * letaBrist(c.s) : 0,
+  { id: 'leta', niva: 6, nar: 'dag', minAlder: ALDER.ansvar, poang: c => dag(c).works ? VAL.letaVikt * (letaMest(c.s)?.brist ?? 0) : 0,
     full: c => radFull(c.s, c.p, 'leta'),
-    prova: c => { arbeta(c, 'samla', `Byn behöver ${needStones(c.s) ? 'stenar' : 'flinta'}`, { leta: true }); return true; } },
+    prova: c => { const l = letaMest(c.s); if (!l) return false; arbeta(c, 'samla', `Byn behöver ${l.k === 'sten' ? 'stenar' : 'flinta'}`, { leta: l.k }); return true; } },
   { id: 'mat', niva: 6, nar: 'dag', poang: c => { const d = dag(c); return d.works && d.fdBy < d.malBy ? d.wBy * d.rad.mat.sc : 0; },
     full: c => radFull(c.s, c.p, 'mat') && !faror(c).svalt,
     prova: c => { const d = dag(c); forByn(c); arbeta(c, d.rad.mat.act, `Byn behöver mat, förrådet räcker ${dygn(d.fd)}`); return true; } }, // raden har poäng bara när maten är under målet
@@ -992,6 +997,8 @@ export const ARBETEN: readonly Arbete[] = [
 
 // raderna med poäng per nivå (steg 6.2.18)
 const PASS = new Set(ARBETEN.flatMap(r => r.pass ? [r.pass] : [])); // handlingarna som är pass
+// villkoren på raden, på ett ställe: tiden på dygnet, vädret och minsta åldern (steg 13.10.8)
+const radGaller = (s: State, r: Arbete, a: number, nar: 'dag' | 'natt') => (!r.nar || r.nar === nar) && vaderTillater(s, r.vader) && !(r.minAlder !== undefined && a < r.minAlder);
 const POANGRADER = Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => [n, ARBETEN.filter(r => r.niva === n && r.poang)])) as Record<Niva, Arbete[]>;
 // den rad som har högst poäng; en rad som har sina arbetare väger VAL.fullRad. Har alla rader som gäller sina arbetare finns
 // ingen vinnare, och man går till nästa nivå. Lika poäng: registrets ordning
@@ -1021,7 +1028,7 @@ function valjTask(s: State, p: Person) {
   const v: Val = { act: 'vila', why: '', dur: (VAL.vilaMin + rnd(s, 'val', p) * VAL.vilaSpann) * MIN, paus: true }; // 20–60 min; en paus tills något annat väljs
   const c: Ctx = { s, p, v, a, lazy, light }, nar = light ? 'dag' : 'natt';
   let rad: Arbete | undefined, kortat = false, vagd = 0;
-  const galler = (r: Arbete) => !(r.nar && r.nar !== nar || !vaderTillater(s, r.vader)); // villkoren på raden (steg 6.1.12)
+  const galler = (r: Arbete) => radGaller(s, r, a, nar); // villkoren på raden (steg 6.1.12)
   const forsok = (rader: readonly Arbete[]) => {
     for (const r of rader) {
       if (!galler(r)) continue;
@@ -1032,7 +1039,7 @@ function valjTask(s: State, p: Person) {
         for (const w of vinnare(c, POANGRADER[r.niva].filter(galler))) if (w.prova(c)) { rad = w; return true; }
         continue;
       }
-      if ((r.arbetar || r.forb) && !dag(c).works || r.forb && !forbNu(c) || r.minAlder !== undefined && a < r.minAlder) continue; // villkoren i den ordning raderna prövade dem
+      if ((r.arbetar || r.forb) && !dag(c).works || r.forb && !forbNu(c)) continue; // villkoren i den ordning raderna prövade dem
       if (r.prova(c)) { rad = r; return true; }
     }
     return false;
@@ -1059,7 +1066,8 @@ function valjTask(s: State, p: Person) {
     const l = latrinFor(s, p); // till latrinen om byn har en (steg 2.7.2, smuts.ts)
     if (l) { v.spot = { x: l.x + 0.5, y: l.y + 0.5 }; v.ref = l.id; v.why += '. Går till latrinen'; }
   }
-  if (v.tandmat && !v.spot) v.spot = tandStalle(s, p); // tändmaterialet hämtas där hö och kvistar finns, närmast (steg 12.1.39)
+  const mal = !v.spot && turMal(v as unknown as Task);
+  if (mal) v.spot = tandStalle(s, p, mal); // turen går dit målet finns, närmast (steg 12.1.39)
   const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
   p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, fron: v.fron, hot: v.hot, falt: v.falt, sno: v.sno, ho: v.ho, gava: v.gava, skal: v.skal, hamtar: v.hamtar, lon: v.lon, brand: v.brand, kalla: v.kalla, stanna: v.stanna, eldFor: v.eldFor, pass: v.pass !== undefined ? s.now + v.pass : undefined };
   balteForband(s, p, v.act);
@@ -1148,13 +1156,13 @@ function dag(c: Ctx): Dag {
 // ett arbete under Försörjning, Tak eller Förbättra: skälet, passet, redskapen (withTools) och det som hämtas
 // arbete för byns förråd: betalas ur förrådets del när lönelagen gäller, och det som bärs hem blir byns (steg 10.5.9, lon.ts)
 const forByn = (c: Ctx) => { if (lonNu(c.s)) c.v.lon = 'forradet'; };
-function arbeta(c: Ctx, act: Act, what: string, o: { tandmat?: boolean; hamtar?: string; leta?: boolean; matLeta?: boolean; job?: Job } = {}) {
-  const { s, p, v, lazy } = c, tot = dag(c).tot;
+function arbeta(c: Ctx, act0: Act, what: string, o: { tandmat?: boolean; hamtar?: string; leta?: LetaSak; job?: Job } = {}) {
+  const { s, p, v, lazy } = c, tot = dag(c).tot, act = arTand(o.hamtar) ? 'samla' : act0; // hö och grenar plockas från marken (turens mål, steg 13.10.7)
   set(v, act, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [act], tot) > 0.25 ? '. Brukar göra det.' : p.skill[act as Skill] > 10 ? '. Skicklig på det.' : '.'));
   v.dur = (VAL.arbeteMin + rnd(s, 'val', p) * VAL.arbeteSpann) * MIN * VAL.pass;
   if (o.tandmat) v.tandmat = true;
   if ((v.act === 'samla' || v.act === 'jakt') && !o.leta) v.hamtar = o.hamtar; // det jägaren hämtar (skinnet) syns för de andra (arv i projekt.ts)
-  withTools(s, p, v, act, what, faror(c), !!o.leta, !!o.matLeta);
+  withTools(s, p, v, act, what, faror(c), o.leta);
   if (v.act === 'fiske' && islagt(s)) v.why = `${v.why} Hugger upp ett hål i isen och pimplar.`;
   if (o.job && v.act === 'falla') { v.ref = o.job.bit.hus; v.why = `${v.why} Stocken ska bli en vägg.`; } // trädet fälls för bygget
 }
@@ -1166,9 +1174,10 @@ function bygg(c: Ctx, job = dag(c).job!) {
   const it = job.item;
   // timret är virke (steg 10.2.70): det klyvs ur en fälld stam, eller ett träd fälls först (virkets uppgift i projekt.ts)
   if (it === 'virke') {
-    const yxa = freeTools(c.s, c.p, 'yxa') > 0, u = yxa ? PROJEKT.virke!.uppgift(c.s, c.p) : undefined;
-    if (u) { projektVal(c.v, u, 'Bygget behöver virke'); return true; }
-    if (yxa) { arbeta(c, 'ved', 'Bygget behöver virke', { hamtar: it }); return true; } // ingen stam att klyva: ett träd fälls först (axeTask)
+    // går inget virke att få (ingen stam och inget träd) väntar bygget, också för den som saknar yxa (steg 13.10.6)
+    const u = PROJEKT.virke!.uppgift(c.s, c.p);
+    if (!u) return false;
+    if (freeTools(c.s, c.p, 'yxa') > 0) { projektVal(c.v, u, 'Bygget behöver virke'); return true; }
     // utan en ledig yxa görs en yxa (som i withTools), annars väntar bygget, som det som görs vid en station (steg 12.1.56)
     const f = faror(c), uy = nuForst(c.s, c.p, f) ? projektNu(c.s, c.p, 'yxa', f) : undefined;
     if (uy) { projektVal(c.v, uy, 'Bygget behöver virke och en yxa att klyva det med'); return true; }
@@ -1194,7 +1203,8 @@ function bygg(c: Ctx, job = dag(c).job!) {
     projektVal(c.v, u, `Bygget behöver ${sakNamn(it).toLowerCase()}`);
     return true;
   }
-  arbeta(c, it === 'torrgras' ? 'samla' : 'ved', `Bygget behöver ${it === 'torrgras' ? 'hö' : it === 'ved' ? 'ved' : it === 'virke' ? 'virke' : 'grenar'}`, { hamtar: it, job: it === 'ved' ? job : undefined });
+  if (arTand(it) && !tandStalle(c.s, c.p, [it])) return false; // inget att hämta: bygget väntar
+  arbeta(c, 'ved', `Bygget behöver ${it === 'torrgras' ? 'hö' : it === 'ved' ? 'ved' : 'grenar'}`, { hamtar: it, job: it === 'ved' ? job : undefined });
   return true;
 }
 // projektet (Förbättra, steg 6.1.17): det mest värda projekt byn eller p saknar (projekt.ts). Fattas ett material som går att
@@ -1207,9 +1217,10 @@ function projektArbete(c: Ctx) {
   if (!hamta) return false;
   if (hamta.leta) {
     if (radFull(s, p, 'leta')) return false; // så många som raden leta ger plats åt, efter projektets värde (steg 13.8.6)
-    arbeta(c, 'samla', `Byn behöver flinta till ${PROJEKT[pr!.k].namn.toLowerCase()}`, { leta: true, matLeta: true });
+    arbeta(c, 'samla', `Byn behöver flinta till ${PROJEKT[pr!.k].namn.toLowerCase()}`, { leta: 'flinta' });
     return true;
   }
+  if (arTand(pr!.sak) && !tandStalle(s, p, [pr!.sak])) return false;
   arbeta(c, hamta.act, `${PROJEKT[pr!.k].namn} behöver ${sakNamn(pr!.sak!).toLowerCase()}`, { hamtar: pr!.sak });
   return true;
 }
@@ -1259,6 +1270,8 @@ const lagrat = (s: State, k: (k: string) => boolean) => (a: { k: string; x: numb
 // det mjuka taket (steg 10.2.4): från bufferten (b) sjunker behovet från min till minMatt vid taket (tak), och därefter vidare
 // som (tak / x)², aldrig tvärt till noll. Fritiden (VAL.forbFritid på Förbättra) väger mot det
 const mjuktTak = (x: number, b: number, tak: number, min: number, minMatt: number) => x <= tak ? min - (min - minMatt) * (x - b) / Math.max(1e-9, tak - b) : minMatt * (tak / x) ** 2;
+// byns egna mattal: maten byn äger i dygn, och bufferten byn vill ha av den, så stor del av hela bufferten som byn delar (mer: ett varsel)
+export const matTal = (s: State, fd: number, mer = 0) => ({ fdBy: fd * bynsMatAndel(s), malBy: buffert(s, 'mat', mer) * (s.delning?.andel ?? 1) });
 function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: number, fara: Faror) {
   // en försiktig by vill ha större förråd, och ledarens påbud drar åt sitt håll (steg 3.5.2, styre.ts)
   // den som anar en hård vinter vill ha ännu större förråd, mer i en förutseende by (steg 3.8.1, motgang.ts)
@@ -1269,7 +1282,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
   const onskat = buffert(s, 'mat', mer);
   // bufferten per jag (steg 6.2.20, "Förråden"): byn har sin buffert för den mat byn äger, så stor del av hela bufferten som
   // byn delar (delning.ts), och familjen sin för det den äger, resten. Byns väger gånger omtanken om byn, som projekten (projekt.ts, steg 10.5.2)
-  const delas = s.delning?.andel ?? 1, fdBy = fd * bynsMatAndel(s), malBy = onskat * delas;
+  const delas = s.delning?.andel ?? 1, { fdBy, malBy } = matTal(s, fd, mer);
   const om = omtanke(s, p), wBy = (malBy <= 0 ? M.minMatt : fdBy < malBy ? clamp(FORRAD.behovTomt - fdBy / malBy * (FORRAD.behovTomt - M.min), M.min, FORRAD.behovMax)
     : mjuktTak(fdBy, malBy, malBy * M.matt, M.min, M.minMatt)) * om;
   // spärren för den egna maten (steg 13.9.6): raden för egen mat är full när familjen har sin gräns, egenFull gånger
@@ -1351,16 +1364,12 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
 // flintan under sin buffert i FORRADSMAL (minst TROSKEL.flintaMinsta), stenarna under sin eller till eldringen (steg 6.2.14)
 // den utbrunna lägereld där kolet kan hämtas (den första först, steg 4.5.6.8), för den som är gammal nog
 const kolEld = (c: Ctx) => c.a >= ALDER.ansvar ? eldarOf(c.s).find(e => (e.ash ?? 0) >= 1 && !e.lit && !emberOn(c.s, e) && (e.want ?? 0) < TROSKEL.kolEld) : undefined;
-// hur mycket byn saknar av flintan och stenarna till elden (0 till 1): stenar till ringen saknas helt, annars bristen mot bufferten
-const letaBrist = (s: State) => needStones(s) ? 1 : Math.max(...(['flinta', 'sten'] as const).map(k => { const b = materialBuffert(s, k); return b > 0 ? clamp(1 - amountOf(s, k) / b, 0, 1) : 0; }));
-const flintaTillElden = (s: State) => underBuffert(s, 'flinta') || needStones(s) || underBuffert(s, 'sten');
 // arbetet med redskap: flinta letas vid stenarna, yxan fäller träd, korgen och spjutet görs först om de saknas.
-// fara: farorna från day(), leta: letar vid stenarna hela passet, matLeta: ett projekt saknar flinta (steg 6.1.17)
-function withTools(s: State, p: Person, v: Val, best: Act, what: string, fara: Faror, leta = false, matLeta = false) {
-  const stones = needStones(s);
-  if (best === 'samla' && (leta || matLeta)) { // byn saknar flinta eller stenar till eldringen (raden leta) eller ett projekt saknar flinta. Stenarna ligger långt bort, så där letar man ett helt pass. Det vanliga samlandet går inte dit (steg 12.1.39)
+// fara: farorna från day(), leta: letar det vid stenarna hela passet (raden leta, värmen eller ett projekt som saknar flinta, steg 6.1.17)
+function withTools(s: State, p: Person, v: Val, best: Act, what: string, fara: Faror, leta?: LetaSak) {
+  if (best === 'samla' && leta) { // byn saknar flinta eller stenar till eldringen (raden leta) eller ett projekt saknar flinta. Stenarna ligger långt bort, så där letar man ett helt pass. Det vanliga samlandet går inte dit (steg 12.1.39)
     const fa = flintArea(p), fl = (fa !== undefined && flintSpot(s, p, (x, y) => areaOf(x, y) === fa)) || flintSpot(s, p);
-    if (fl) { v.spot = fl; v.dur /= VAL.pass; v.sok = stones ? 'sten' : 'flinta'; v.why = `${v.why} Letar efter ${stones ? 'stenar till en eldring' : 'flinta'} vid stenarna${fa !== undefined ? ` där ${han(p)} vet att det finns flinta` : ''}.`; }
+    if (fl) { v.spot = fl; v.dur /= VAL.pass; v.sok = leta; v.why = `${v.why} Letar efter ${leta === 'sten' ? `stenar${stenTill(s)}` : 'flinta'} vid stenarna${fa !== undefined ? ` där ${han(p)} vet att det finns flinta` : ''}.`; }
   }
   const ax = best === 'ved' ? axeTask(s, p) : undefined; // med yxa fälls träd och huggs ved
   const tv = best === 'ved' ? torvHellre(s, p, !!ax) : undefined; // torven, när en tur ger mer bränsle per minut (steg 12.1.3, torv.ts)
@@ -1405,13 +1414,16 @@ const slaktbart = (s: State, p: Person, svalt = dangers(s).svalt) => forstRuttna
 const RENSAS = [DJUR.abborre, DJUR.gadda, DJUR.mort, DJUR.braxen, DJUR.sik];
 const rensaArt = (s: State, p: Person) => RENSAS.find(a => canProcess(s, p, a));
 function processTask(s: State, v: Val, art: Djurart, why: string) {
-  set(v, art.act, why); if (art.kniv) v.tool = 'kniv';
-  v.dur = Math.min(art.maxTim * HOUR, (djurKvar(s, art) / art.timme) * HOUR + VAL.extraMin * MIN);
+  if (art.kniv) v.tool = 'kniv';
+  satsVal(v, art.act, why, Math.min(art.maxTim * HOUR, (djurKvar(s, art) / art.timme) * HOUR + VAL.extraMin * MIN));
 }
+// ett pass med en sats mat (slakten, rensningen, grillen, torkningen och rökningen): så länge satsen tar, räknat från att man
+// kommit fram till stationen (framme i ACTS, startWork i paborjat.ts; steg 13.10.12)
+function satsVal(v: Val, act: Act, why: string, tid: number) { v.dur = tid; return set(v, act, why); }
 // grilla det råa på grillställningen över elden (matlagning.ts), så länge det tar
-function grillVal(s: State, v: Val, why: string) { set(v, 'grilla', why); v.dur = grillTid(s); }
+function grillVal(s: State, v: Val, why: string) { satsVal(v, 'grilla', why, grillTid(s)); }
 // hänga upp kött och fisk på torkställningen och ta ner det som torkat (matlagning.ts), så länge det tar
-function torkVal(s: State, v: Val, why: string) { set(v, 'torka', why); v.dur = torkTid(s); }
+function torkVal(s: State, v: Val, why: string) { satsVal(v, 'torka', why, torkTid(s)); }
 // ett pass med redskap delas inte upp (steg 2.3.8): när ett är klart och passet inte är slut gör man ett till i samma grupp,
 // om byn vill ha fler och ingen fara går före. Annars väljer man något annat (steg.ts)
 export function nastaRedskap(s: State, p: Person, tk: Task) {

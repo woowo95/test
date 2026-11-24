@@ -60,7 +60,7 @@ import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
 import { FYND, fyndAt, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, richness, richnessDelar, richnessFor, type Lager, takeFrom } from './fynd';
 import { halMin, halVal, isKost, isNiva, islagt, stepIs, halGjort } from './is';
 import { blotSteg, coldOf, forVarm, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
-import { ELD, VED, type Tand, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, needStones, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tinderShort, tryLight, nagonEld, plockatKvar, woodDays } from './eld';
+import { ELD, VED, type Tand, turMal, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, letaFattas, letarNu, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tryLight, nagonEld, plockatKvar, woodDays } from './eld';
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat } from './folk';
 import { BIN, binDod, binSteg, djurStickSteg, retadeSteg, skattaKlar } from './bin';
@@ -1171,8 +1171,8 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     // på rundan hittar man det andra (hö, kvistar, ägg, frön) under hela tiden ute, också gången sedan förra plocket (tk.letat)
     const pa = dtSec + (tk.letat ?? 0);
     tk.letat = undefined;
-    const fart = ACTS[tk.act].fart ?? 1, got = forageItems(s, p, pa, fart) ?? {}, dt = pa * fart; // det som växer på platsen hittar man lika mycket fortare (steg 2.12.4); stenarna och flintan plockas som saker på rundan
-    if (tk.tandmat) { for (const k of ['torrgras', 'grenar']) if (got[k]) bar(k, got[k]); return true; } // den som hämtar tändmaterial tar bara det (steg 12.1.39)
+    const mal = turMal(tk), fart = ACTS[tk.act].fart ?? 1, got = forageItems(s, p, pa, fart) ?? {}, dt = pa * fart; // det som växer på platsen hittar man lika mycket fortare (steg 2.12.4); stenarna och flintan plockas som saker på rundan
+    if (mal) { for (const k of mal) if (got[k]) bar(k, got[k]); return true; } // den som gått ut efter hö, kvistar eller grenar tar bara det (steg 12.1.39, 13.10.7)
     for (const k in got) bar(k, got[k]); // tändmaterialet först, så att mossan inte tar händerna från den som hämtar det
     for (const v of VILDA_ORTER) if (!v.vill || v.vill(s)) { const r = vildNara(s, v.k, tk.tx, tk.ty); if (r) { const g = r.v * dt / HOUR_S * RUNDA.rolleka; takeFrom(s, v.k, r.x, r.y, g); bar(v.k, g); if (v.stat) count(s, v.stat, g); } }
     const vild = froFynd(s, p, tk, dt); // frön och lite mat från de vilda grödorna (steg 2.10.2, 3.10.23.8)
@@ -1275,10 +1275,10 @@ export function sakerPaRutan(s: State, tk: Task, x: number, y: number): { k: str
   const res = ACTS[tk.act].resurs, i = y * W + x;
   // stenarna ligger flera på rutan vid stenarna; flintan är sällsynt, en på var hundrade ruta där (RUNDA.flintTat), och bara så
   // länge byn behöver flinta (som förut i forageItems, eld.ts)
-  if (tk.tandmat) return []; // den som hämtar tändmaterial plockar inte bär och rötter (steg 12.1.39): hö och kvistar tas efter tiden ute
+  if (turMal(tk)) return []; // den som hämtar tändmaterial, hö eller grenar plockar inte bär och rötter (steg 12.1.39): hö och kvistar tas efter tiden ute
   if (tk.sok) {
-    const v = rutVarde(s, tk)(x, y), sten = needStones(s);
-    const n = sten ? Math.floor(v * RUNDA.stenSaker + 1e-9) : hash3(s.seed, i, 991) < v * RUNDA.flintTat && flintaBehovs(s, tk) ? 1 : 0; // rutans tal först: det är billigt, och de flesta rutor har ingen flinta
+    const v = rutVarde(s, tk)(x, y), sten = letarNu(s, tk) === 'sten';
+    const n = sten ? Math.floor(v * RUNDA.stenSaker + 1e-9) : hash3(s.seed, i, 991) < v * RUNDA.flintTat && letaFattas(s, 'flinta') > 0 ? 1 : 0; // rutans tal först: det är billigt, och de flesta rutor har ingen flinta
     return [{ k: sten ? 'sten' : 'flinta', n: Math.max(0, n - plockatPa(s, plockKey(tk, i))) }];
   }
   // bär och rötter, och svampen som växer där (kantarellen och den giftiga spindlingen)
@@ -1298,7 +1298,7 @@ const lagrenPa = (res: Lager) => LAGREN_PA[res] ??= [...lagren(res), ...(res ===
 // och det som gäller hela kartan hämtas en gång, och inga listor byggs. Samma antal som sakerPa
 function sakerLasare(s: State, tk: Task): (x: number, y: number) => number {
   const res = ACTS[tk.act].resurs;
-  if (tk.tandmat) return () => 0; // (sakerPaRutan)
+  if (turMal(tk)) return () => 0; // (sakerPaRutan)
   if (tk.sok) return (x, y) => sakerPa(s, tk, x, y); // stenarna och flintan räknas som vanligt
   if (!res) { // grenarna: samma tal som sakerPaRutan, utan att bygga en lista per ruta
     const solid = gridOf(s).solid, tr = groundOf(s).trees;
@@ -1317,7 +1317,6 @@ function sakerLasare(s: State, tk: Task): (x: number, y: number) => number {
     return sum;
   };
 }
-const flintaBehovs = (s: State, tk: Task) => underBuffert(s, 'flinta', tk.items?.flinta ?? 0); // efter förbrukningen (steg 10.2.12)
 // sakerna på marken utan en samlare (för bilden, ui/vaxter.ts och terrang.ts): det som samlas (bär, rötter och svamp) eller grenarna
 const SAMLAR: Record<'samla' | 'grenar', Task> = { samla: { act: 'samla', phase: 'do', tx: 0, ty: 0, until: 0, carry: 0, why: '' }, grenar: { act: 'ved', phase: 'do', tx: 0, ty: 0, until: 0, carry: 0, why: '' } };
 export const sakerPaMarken = (s: State, slag: 'samla' | 'grenar', x: number, y: number) => sakerPaRutan(s, SAMLAR[slag], x, y);
@@ -1367,7 +1366,7 @@ function drag(s: State, p: Person, tk: Task) {
 function rutVarde(s: State, tk: Task): (x: number, y: number) => number {
   const res = ACTS[tk.act].resurs;
   if (tk.sok) {
-    if (needStones(s)) { const sd = stoneDist(s.seed); return (x, y) => { const v = sd[y * W + x]; return v <= ELD.stenNara ? 1 : v <= ELD.stenMedel ? ELD.stenMedelDel / ELD.stenNaraDel : ELD.stenAnnars / ELD.stenNaraDel; }; }
+    if (letarNu(s, tk) === 'sten') { const sd = stoneDist(s.seed); return (x, y) => { const v = sd[y * W + x]; return v <= ELD.stenNara ? 1 : v <= ELD.stenMedel ? ELD.stenMedelDel / ELD.stenNaraDel : ELD.stenAnnars / ELD.stenNaraDel; }; }
     return (x, y) => { const f = flintFactor(s, x + 0.5, y + 0.5); return f > ELD.flintaStenar ? 1 : f > ELD.flintaSand ? RUNDA.sand : 0; };
   }
   if (res) return (x, y) => richness(s, res, x + 0.5, y + 0.5);
@@ -1392,7 +1391,7 @@ function rundaSteg(s: State, p: Person, tk: Task, left: number, a: number, learn
 }
 // samlarens tid (steg 12.1.38): byns statistik räknar sekunderna på rundan som gång, plock och stå still utan att plocka, per
 // arbete (tändmaterialet för sig): runda_gang_samla, runda_plock_ved, runda_still_tand …
-const rundaArbete = (tk: Task) => tk.tandmat ? 'tand' : tk.sok ? 'leta' : tk.act;
+const rundaArbete = (tk: Task) => turMal(tk) ? 'tand' : tk.sok ? 'leta' : tk.act;
 function rundaRuta(s: State, p: Person, tk: Task, left: number, a: number, learn: number) {
   const used = rundaRutaIn(s, p, tk, left, a, learn), slag = rundaTid;
   rundaTid = 'still';
@@ -1423,7 +1422,7 @@ function rundaRutaIn(s: State, p: Person, tk: Task, left: number, a: number, lea
     return used;
   }
   const x = Math.floor(tk.tx), y = Math.floor(tk.ty), full = fullBorda(s, p, tk);
-  if (tk.sok && !tk.tandmat && !needStones(s) && !flintaBehovs(s, tk)) { tk.until = s.now; return 1e-3; } // byn har nog
+  if (tk.sok) { const k = letarNu(s, tk); if (!k) { tk.until = s.now; return 1e-3; } tk.sok = k; } // byn har nog
   // vildboet (steg 10.10.15): intill ett bo tas honungen i takt, BIN.vildTim kakor i timmen, tills det inte finns någon kaka kvar där
   if (!full && (sakerPaRutan(s, tk, x, y).find(q => q.k === 'honung')?.n ?? 0) > 0) {
     tk.plock = undefined; rundaTid = 'plock';
@@ -1443,14 +1442,14 @@ function rundaRutaIn(s: State, p: Person, tk: Task, left: number, a: number, lea
     workStep(s, p, tk, used, a, learn, { n: slag ? 1 : 0, slag: slag ?? '' });
     return used;
   }
-  // den som hämtar tändmaterial plockar det som finns på rutan och i närheten och hittar hö och kvistar på vägen (forageItems i
-  // eld.ts, efter tiden ute). Ser hen inget annat att plocka går hen vidare från ruta till ruta med det som fattas, som andra
+  // den som hämtar tändmaterial, hö eller grenar (turens mål) hittar det på rutorna hen går över (forageItems i eld.ts, efter
+  // tiden ute), tills händerna är fulla eller passet är slut (steg 13.10.7). Ser hen inget annat att plocka går hen vidare från ruta till ruta med det som fattas, som andra
   // samlare, och inte tillbaka till rutorna hen nyss gått (steg 12.1.38; förut letade hen på marken där hen stod)
-  if (tk.tandmat) {
-    // det räcker till elden, eller händerna är fulla: hem med det (steg 12.1.39)
-    if (!tinderShort(s, tk) || full) { if (full) count(s, 'turer'); tk.until = s.now; return 1e-3; }
+  const mal = turMal(tk);
+  if (mal) {
+    if (full) { count(s, 'turer'); tk.until = s.now; return 1e-3; }
     tk.sett = [...(tk.sett ?? []), y * W + x].slice(-RUNDA.sett);
-    const n = narmastTand(s, tk, x, y, RUNDA.syn);
+    const n = narmastTand(s, tk, mal, x, y, RUNDA.syn);
     if (n) { tk.tx = n.x + 0.5; tk.ty = n.y + 0.5; tk.hopp = true; } else tk.until = s.now;
     return 1e-3;
   }
@@ -1512,13 +1511,13 @@ function strackaFran(s: State, p: Person, tk: Task, x0: number, y0: number, r: n
   }
   return ut;
 }
-// tändmaterialet som fattas (hö eller kvistar) finns på rutan (steg 9.3.4, tandPaRutan i eld.ts)
-const tandFattas = (s: State, tk: Task) => (['torrgras', 'grenar'] as Tand[]).filter(k => underBuffert(s, k, tk.items?.[k] ?? 0));
-// den närmaste rutan inom r med allt tändmaterial som fattas (hö och kvistar), och annars med något av det. Inte de rutor hen nyss
+// det av turens mål som fattas i förrådet, annars allt av det (tandPaRutan i eld.ts)
+const tandFattas = (s: State, tk: Task, mal: readonly Tand[]) => { const f = mal.filter(k => underBuffert(s, k, tk.items?.[k] ?? 0)); return f.length ? f : mal; };
+// den närmaste rutan inom r med allt av turens mål som fattas (hö och kvistar), och annars med något av det. Inte de rutor hen nyss
 // gått (tk.sett), och varje ruta längre från byns mitt kostar RUNDA.tandHem rutor till: tändmaterialet behövs vid elden, och
 // hö och kvistar finns överallt, så rundan går runt på platsen och drar hemåt i stället för rakt bort (steg 12.1.38)
-function narmastTand(s: State, tk: Task, x0: number, y0: number, r: number) {
-  const slag = tandFattas(s, tk), m = bynsMitt(s), hem = (x: number, y: number) => RUNDA.tandHem * Math.hypot(x + 0.5 - m.x, y + 0.5 - m.y);
+function narmastTand(s: State, tk: Task, mal: readonly Tand[], x0: number, y0: number, r: number) {
+  const slag = tandFattas(s, tk, mal), m = bynsMitt(s), hem = (x: number, y: number) => RUNDA.tandHem * Math.hypot(x + 0.5 - m.x, y + 0.5 - m.y);
   let bast: { x: number; y: number } | undefined, bd = Infinity;
   for (const alla of [true, false]) {
     for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {

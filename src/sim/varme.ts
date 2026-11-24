@@ -10,7 +10,7 @@ import { balans } from './balans';
 import { ALDER, KROPP, ageOf, living } from './folk';
 import { kroppFart, snoFart } from './gang';
 import { kanGa } from './halsa';
-import { ELD, brinnTakt, eldStyrka, eldXY, eldaVal, eldarOf, fuelStock, hearthOf, needStones, radieAv, tandaVal, tinderNeeded, tinderShort } from './eld';
+import { ELD, brinnTakt, eldStyrka, eldXY, eldaVal, eldarOf, fuelStock, hearthOf, radieAv, ringenSaknas, tandaVal, tinderNeeded, tinderShort } from './eld';
 import { Rum, roomAt } from './byggnad';
 import { bedTile, samlingRum } from './byggnader';
 import { kladSkydd, paSig, varmarePlagg } from './utrustning';
@@ -44,7 +44,7 @@ export interface VarmeGor {
   vidEld: (f: Fire) => { x: number; y: number }; // platsen i ringen runt elden
   iRum: (rum: Rum) => { x: number; y: number }; // en plats i rummet, isär från de andra
   mjuk: (rad: 'tand' | 'leta' | 'ved') => boolean; // raden har sina arbetare
-  arbeta: (act: Act, why: string, leta?: boolean) => boolean; // ett arbete som hämtar något
+  arbeta: (act: Act, why: string, leta?: 'sten' | 'flinta') => boolean; // ett arbete som hämtar något
 }
 // ett sätt: id = raden i VARMA, g = värmen i snitt över horisonten, gor = gör det (false: det gick inte, nästa sätt prövas)
 export interface VarmeSatt { satt: string; g: number; gor: (h: VarmeGor) => boolean }
@@ -99,7 +99,7 @@ export const VARMA: { id: string; satt: (l: VarmeLage) => (VarmeSatt | undefined
   // hämta det som fattas till tändningen (en vuxen)
   { id: 'tandmat', satt: l => !l.vuxen || !tinderNeeded(l.s) ? [] : [{ satt: 'tandmat', g: l.ny(l.s.fire, VARME.tandmat + VARME.tanda, ELD.tandBransle), gor: h => {
     if (tinderShort(l.s)) { if (!h.mjuk('tand')) return false; h.v.tandmat = true; return h.satt('samla', `${h.why}, men utan tändmaterial blir det ingen eld`); }
-    return h.mjuk('leta') && h.arbeta('samla', `${h.why}, men utan ${needStones(l.s) ? 'stenar till ringen' : 'flinta'} blir det ingen eld`, true);
+    return h.mjuk('leta') && h.arbeta('samla', `${h.why}, men utan ${ringenSaknas(l.s) ? 'stenar till ringen' : 'flinta'} blir det ingen eld`, ringenSaknas(l.s) ? 'sten' : 'flinta');
   } }] },
   // dricka örtte hemma: värmen det ger på en gång, utslagen över horisonten
   { id: 'te', satt: l => teVarme.kan(l.s, l.p) ? [{ satt: 'te', g: l.har + teVarme.varm / l.H, gor: h => { h.v.spot = { x: l.p.x, y: l.p.y }; h.v.dur = 0; h.v.tool = 'te'; return h.satt('dryck', `${h.why} och dricker örtte`); } }] : [] },

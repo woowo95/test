@@ -4,8 +4,8 @@ import { han } from './ord';
 import { tal } from './ord';
 import { allaBarn } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
-import { addTo, amountOf, type Uttag, avbryt, fetchSpot, iBordan, takeLimit, use, paMarken, put } from './lager';
-import { Materialslag, forbrukat, overOchUnder, tandBuffert, underBuffert } from './forradsmal';
+import { addTo, amountOf, type Uttag, avbryt, fetchSpot, iBordan, takeLimit, use, put } from './lager';
+import { forbrukat, materialBuffert, overOchUnder, tandBuffert } from './forradsmal';
 import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
@@ -34,7 +34,7 @@ import { ELDARBETEN } from './eldarbeten';
 const ACT_NAMN = (a: Act) => ACTS[a].namn;
 import { DAY, Fire, FireLog, GREN, HEARTHS, HOUR, HOUR_S, IGNITERS, Person, SEC, State, T, Task, W, H } from './typer';
 import { balans } from './balans';
-import { vedPerEld, BRASA } from './brasor';
+import { vedPerEld, BRASA, brasaStenMal, stenOver } from './brasor';
 import { iVattnetNu } from './sjo';
 
 // ---------- balanstal (regel 8) ----------
@@ -222,7 +222,7 @@ export const nagonEld = (s: State) => eldarOf(s).some(f => f.lit);
 // någon eld brinner eller glöder
 export const nagonGlod = (s: State) => eldarOf(s).some(f => f.lit || emberOn(s, f));
 // ingen eld glöder och ingen går att tända för att tändmaterialet, tänddonet eller stenarna till ringen fattas
-export const tinderNeeded = (s: State) => !nagonGlod(s) && !canLight(s) && (needTinder(s) || !igniterOf(s) || needStones(s));
+export const tinderNeeded = (s: State) => !nagonGlod(s) && !canLight(s) && (needTinder(s) || !igniterOf(s) || ringenSaknas(s));
 // p:s egen önskan om ved på elden f; vc = hur mycket byn fryser 0–1. vid = p sitter vid elden eller är på väg dit
 // det som är detsamma för alla (dagsljuset, kylan, sederna, har byn haft eld), räknat en gång per steg (steg 12.1.104)
 const eldLage = (s: State) => ({ light: isLight(s.now), cold: coldOf(temperature(s)), aldrig: !eldarOf(s).some(e => e.lightings) });
@@ -243,8 +243,26 @@ export const tinderShort = (s: State, tk?: Task) => (['torrgras', 'grenar'] as c
 // den första elden läggs i en ring av stenar; ringen ligger kvar när elden slocknat. Stenar behövs också till en lägereld till (brasor.ts).
 // Båda är förrådsmålet för stenen (steg 10.11.4). Stenarna som någon bär hem räknas, så att ingen samlar fler än ringen behöver
 // och de som ligger på marken utanför lagret (burna till eldplatsen i flera vändor, eller från en lägereld som tagits isär)
-const stenarHem = (s: State) => living(s).reduce((n, q) => n + (q.task?.items?.sten ?? 0), 0) + paMarken(s, 'sten');
-export const needStones = (s: State) => underBuffert(s, 'sten', stenarHem(s));
+// Det som hämtats ur förrådet till ett arbete är inte på väg hem (steg 13.10.10), utom till tändningen, där stenarna blir ringen
+const pavag = (s: State, k: LetaSak) => living(s).reduce((n, q) => { const t = q.task, v = t?.items?.[k]; return v && (!(t.hamta || t.hamtad || t.site) || t.act === 'tanda') ? n + v : n; }, 0);
+const harEllerPavag = (s: State, k: LetaSak) => amountOf(s, k) + pavag(s, k) + (k === 'sten' ? stenOver(s) : 0);
+export type LetaSak = 'sten' | 'flinta';
+// vad byn saknar av stenarna och flintan, det man letar efter vid stenarna (steg 13.10.10): ett enda svar, som styr poängen,
+// skälet och vad man letar efter. Antalet under förrådsmålet
+export const letaFattas = (s: State, k: LetaSak) => Math.max(0, materialBuffert(s, k) - harEllerPavag(s, k));
+export const needStones = (s: State) => letaFattas(s, 'sten') > 0;
+// den första eldens ring saknas och byn har inte stenarna till den: då går den inte att tända (hur världen är, inte förrådsmålet)
+export const ringenSaknas = (s: State) => !s.fire.ring && harEllerPavag(s, 'sten') < ELD.ring;
+const letaDel = (s: State, k: LetaSak) => { const n = letaFattas(s, k); return n <= 0 ? 0 : k === 'sten' && ringenSaknas(s) ? 1 : clamp(n / materialBuffert(s, k), 0, 1); };
+// det byn saknar mest av de två, och hur stor del av målet som fattas (0 till 1); utan stenar till ringen saknas de helt
+export function letaMest(s: State): { k: LetaSak; brist: number } | undefined {
+  const st = letaDel(s, 'sten'), fl = letaDel(s, 'flinta');
+  return st <= 0 && fl <= 0 ? undefined : st >= fl ? { k: 'sten', brist: st } : { k: 'flinta', brist: fl };
+}
+// det den som letar letar efter nu: det hen gick ut efter så länge det fattas, annars det andra om det fattas
+export const letarNu = (s: State, t: Task): LetaSak | undefined => t.sok && t.sok !== true && letaFattas(s, t.sok) > 0 ? t.sok : letaMest(s)?.k;
+// vad stenarna ska till
+export const stenTill = (s: State) => ringenSaknas(s) ? ' till en eldring' : brasaStenMal(s) > 0 ? ' till en lägereld' : '';
 // kan elden tändas (av p: med det p kan få, behov.ts)? Bränslet räknas efter att grenarna till tändningen tagits (tryLight)
 export function canLight(s: State, p?: Person, f = s.fire) {
   const ig = igniterOf(s, p), has = (k: string) => p ? getable(s, p, k) : amountOf(s, k);
@@ -393,7 +411,7 @@ export function addFuel(s: State, p: Person, n: number, f = s.fire) {
   const h = hearthOf(f), tog = p.task?.tog;
   if (!f.lit && !emberOn(s, f) || eldIVatten(s, f)) { giveBack(s, n, tog); return; } // elden hann slockna eller står under vattnet: bränslet går tillbaka
   if (!f.lit) {
-    f.lit = true; f.emberUntil = undefined;
+    f.lit = true; f.emberUntil = undefined; f.litAt = s.now; // så länge har den brunnit sedan den senast tog sig (steg 13.10.14)
     fireLog(s, { k: 'glöd', id: p.id }, f);
     log(s, `${p.name} blåste liv i glöden och ${eldOrd(s, f, 'elden').replace('en lägereld', 'lägerelden')} brinner igen.`, 'world', [p.id]);
   }
@@ -562,23 +580,28 @@ export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Recor
   const got: Record<string, number> = {};
   // under bufferten plockas materialet i förbifarten, och den som gått ut för att hämta det plockar en hel börda (FORRADSMAL, steg 6.2.14):
   // över taket blir turerna allt mer sällsynta i valet (fylla_ på Förbättra), men de slutar inte tvärt (steg 13.8.4)
-  const plocka = (k: Materialslag) => p.task?.hamtar === k || overOchUnder(s, k, p.task?.items?.[k] ?? 0).under;
+  const mal = p.task && turMal(p.task), plocka = (k: Tand) => mal ? mal.includes(k) : p.task?.hamtar === k || overOchUnder(s, k, p.task?.items?.[k] ?? 0).under;
   // tändmaterialet är hela saker på rutan (steg 9.3.4): arbetet mot nästa sak ligger hos personen, och en hel sak tas från rutan
   // där hen är när arbetet räcker. Finns inget kvar där blir det inget, och arbetet väntar (högst en sak)
   if (plocka('torrgras')) tandTa(s, p, got, 'torrgras', ELD.hoTakt * ARSTID.hoPerTid[ai] * sk * vaxer);
   if (plocka('grenar')) tandTa(s, p, got, 'grenar', ELD.grenarTakt * (iIstiden(ai) ? ARSTID.grenarIstid : 1) * sk * vaxer * (p.task ? grenFaktor(groundOf(s), tileOf(p.task.tx, p.task.ty)) : 1)); // fler vid buskarna (steg 6.5.3)
   return Object.keys(got).length ? got : undefined;
 }
-// den närmaste rutan från p med både hö och kvistar (steg 12.1.39): dit går den som hämtar tändmaterial först. Hö och kvistar
-// finns nästan överallt, så det är oftast ett par rutor bort
-export function tandStalle(s: State, p: Person, r = 12): { x: number; y: number } | undefined {
+// turens mål (steg 13.10.7): det den som samlar gick ut efter och plockar tills händerna är fulla eller passet är slut. Hö och
+// kvistar åt den som hämtar tändmaterial, annars höet eller grenarna uppgiften hämtar till ett bygge, ett projekt eller förrådet
+export const arTand = (k?: string): k is Tand => k === 'torrgras' || k === 'grenar';
+export const turMal = (t: Task): Tand[] | undefined => t.tandmat ? TANDMAL : t.act === 'samla' && arTand(t.hamtar) ? [t.hamtar] : undefined;
+const TANDMAL: Tand[] = ['torrgras', 'grenar'];
+// den närmaste rutan från p med allt turen är till för (steg 12.1.39): dit går den som hämtar tändmaterial, hö eller grenar först.
+// Hö och kvistar finns nästan överallt, så det är oftast ett par rutor bort
+export function tandStalle(s: State, p: Person, slag: readonly Tand[] = TANDMAL, r = 12): { x: number; y: number } | undefined {
   const x0 = Math.floor(p.x), y0 = Math.floor(p.y);
   let bast: { x: number; y: number } | undefined, bd = Infinity;
   for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
     const d = Math.hypot(dx, dy);
     if (d > r + 0.01 || d >= bd) continue;
     const x = x0 + dx, y = y0 + dy;
-    if (tandPaRutan(s, 'torrgras', x, y) <= 0 || tandPaRutan(s, 'grenar', x, y) <= 0) continue; // (tandPaRutan: inget i vattnet eller under en vägg)
+    if (slag.some(k => tandPaRutan(s, k, x, y) <= 0)) continue; // (tandPaRutan: inget i vattnet eller under en vägg)
     bast = { x: x + 0.5, y: y + 0.5 }; bd = d;
   }
   return bast;

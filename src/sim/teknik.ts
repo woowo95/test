@@ -303,11 +303,15 @@ export function haftSteg(s: State) {
   for (const k of HAFT ??= [...new Set(TEKNIK.flatMap(t => t.haft ?? []))]) if (!harHaft(s, k) && amountOf(s, k) > 0) count(s, k + 'Haft');
 }
 
-// den som kommer på eller lär sig något
-export function learn(s: State, p: Person, t: Tek, from?: Person) {
-  p.tek![t.id] = 1;
+// att kunna en teknik (steg 13.10.9): det som är lika för den som kommer på den, lär sig den eller förstår den av något som hänt
+function kunna(p: Person, t: Tek) {
+  (p.tek ??= {})[t.id] = 1;
   if (p.lar?.tek === t.id) p.lar = undefined; // lärlingen har lärt sig klart och kan själv bli mästare
   if (p.halvminne) { p.halvminne = p.halvminne.filter(k => k !== t.id); if (!p.halvminne.length) p.halvminne = undefined; }
+}
+// den som kommer på eller lär sig något
+export function learn(s: State, p: Person, t: Tek, from?: Person) {
+  kunna(p, t);
   if (from) { personHand(s, p, 'lart', `Lärde sig ${gora(t)} av ${from.name}.`); loggBer(s, 'l_lart', p.id * 997 + from.id, { ...larFalt(s, p), av: from.name, lara: goraUtan(t) }, 'skill', [p.id, from.id], { slag: 'lar', k: p.id, n: p.name, d: `${from.name}|${gora(t)}` }); return; }
   const first = !s.people.some(q => q !== p && knows(q, t.id)) && !(s.stat?.['tek_' + t.id]);
   count(s, 'tek_' + t.id);
@@ -321,12 +325,13 @@ export function learn(s: State, p: Person, t: Tek, from?: Person) {
   handelse(s, p, 'pahittig', undefined, `hur man kan ${goraUtan(t)}`); // de som ser det minns hen som påhittig (steg 10.4.9)
   if (first) { p.fame.push(`Uppfann ${t.namn.toLowerCase()}`); allaBarn(s, 'uppfinning', `lärde sig ${gora(t)}`); upplev(s, p, 'egenTeknik', `hur man kan ${goraUtan(t)}`); gudHandelse(s, 'hantverk', `konsten ${gora(t)}, som ${p.name} kom på`); }
 }
-// en teknik som byn kommer på av sig själv när något har hänt (kornet, ölet, mjödet och komposten): så länge ingen kan den lär sig
-// alla som kan (kan) den, och första gången skrivs en rad. Villkoret för när det händer står hos den som anropar
+// en teknik som byn kommer på av sig själv när något har hänt (kornet, ölet, mjödet och komposten): så länge ingen kan den förstår
+// alla som kan (kan) den, och första gången skrivs en rad för byn. Ingen har kommit på den själv, så ingen blir påhittig eller
+// känd för den (steg 13.10.9). Villkoret för när det händer står hos den som anropar
 export function upptack(s: State, t: Tek, kan: (p: Person) => boolean, forsta: string, text: (p: Person) => string) {
   if (living(s).some(p => knows(p, t.id))) return;
   const nya = living(s).filter(kan);
-  for (const p of nya) learn(s, p, t);
+  for (const p of nya) { kunna(p, t); count(s, 'tek_' + t.id); personHand(s, p, 'lart', `Förstod hur man kan ${goraUtan(t)}.`); }
   if (nya.length && forstaGang(s, forsta)) log(s, text(nya[0]), 'world', [nya[0].id]);
 }
 

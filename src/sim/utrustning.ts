@@ -15,6 +15,7 @@
 // Axelremmen (steg 7.1.2) är ett plagg av skinn över axeln: när man bär hem hänger redskapet som hör till axeln i den (platsen
 // Axeln), så det tar inga händer, precis som bältets redskap. Var redskapet hänger säger hangerVid.
 // En ny plats blir en rad i PLATSER.
+import { turMal } from './eld';
 import { rovarFlockar } from './rovare';
 import { HOUR, Person, State, Task } from './typer';
 import { KLAD_SLAG, SAKER, viktOf } from './saker';
@@ -184,9 +185,10 @@ export function slitRygg(s: State, t: Ting, y: number, haller: number) {
 export const ryms = (s: State, p: Person) => { const pl = handPlatser(s, p); return (b: Record<string, number>) => !!fordela(pl, b); };
 // är bördan full: ryms inte en sak till av det arbetet ger (steg 6.1.8)?
 export function fullBorda(s: State, p: Person, t: Task) {
-  const b = bordSlag(t), k = carryKind(t.act), fo = fordonI(s, t);
-  if (fo && !fo.f.falt) return !rymsI(fo)({ ...b, [k]: (b[k] ?? 0) + viktOf(k) }); // kälken (steg 10.10.2)
-  return !fordela(handPlatser(s, p), { ...b, [k]: (b[k] ?? 0) + viktOf(k) });
+  // en till av turens mål (hö, grenar, steg 13.10.7), annars en till av det arbetet ger
+  const b = bordSlag(t), till = turMal(t) ?? [carryKind(t.act)], fo = fordonI(s, t);
+  if (fo && !fo.f.falt) return !till.some(k => rymsI(fo)({ ...b, [k]: (b[k] ?? 0) + viktOf(k) })); // kälken (steg 10.10.2)
+  return !till.some(k => fordela(handPlatser(s, p), { ...b, [k]: (b[k] ?? 0) + viktOf(k) }));
 }
 // hur mycket p kan bära i de fria händerna, i vikt (för texterna och testerna)
 export const bordPlats = (s: State, p: Person) => handPlatser(s, p).reduce((a, x) => a + x.kap, 0);
