@@ -7,6 +7,7 @@ import { setByn } from '../../ui/lage';
 import { setItems, setMat, setFood, kor, klockan, tandEld, bastaJaktruta, SCENARIER, medBank, medHus, testBy, utanWebblasare, vidStack } from './hjalp';
 
 SCENARIER.stenring = {
+  lang: true,
   text: 'Den första elden läggs i en ring av stenar som samlas in, och tänds med flinta. Ringen ligger kvar när elden slocknat',
   kor: () => {
     const s = createState(1, START);
