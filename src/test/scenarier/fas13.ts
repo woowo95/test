@@ -1697,3 +1697,27 @@ SCENARIER.sittvila = {
     ];
   },
 };
+
+SCENARIER.sedarv = {
+  text: 'Steg 13.9.2: kulturen förstärker sig själv. Det en person drar sederna åt har en tredje del, byns sed. I en by med seden Krig drar ett barn med en fredlig personlighet mer åt Krig efter uppväxten än samma barn i en fredlig by, och barnen tar mer av byns sed än de vuxna',
+  kor: () => {
+    const s = SIM.createState(4, START); klockan(s, 12);
+    const fred = { aggression: 4, mod: 6, empati: 16 };
+    const barn = nyInvanare(s, 'k', 4), vuxen = nyInvanare(s, 'm', 30);
+    Object.assign(barn.pot, fred); Object.assign(vuxen.pot, fred);
+    const fore = SIM.drarSed(s, barn, 'krig');
+    // tio dygn (tio år i spelet) i en by med seden Krig: seden hålls kvar, och var och en tar av den varje timme
+    const lev = (krig: number) => { for (let h = 0; h < 240; h++) { s.seder.v.krig = krig; s.now += SIM.HOUR; SIM.stepSeder(s); } };
+    lev(0.8);
+    const krigBarn = SIM.drarSed(s, barn, 'krig'), krigVuxen = SIM.drarSed(s, vuxen, 'krig'), arvBarn = barn.sedArv?.krig ?? 0, arvVuxen = vuxen.sedArv?.krig ?? 0;
+    // samma barn i en fredlig by
+    barn.sedArv = {}; lev(-0.8);
+    const fredBarn = SIM.drarSed(s, barn, 'krig');
+    return [
+      [`barnet drar åt Krig efter tio dygn i en krigisk by (${krigBarn.toFixed(2)}, ${fore.toFixed(2)} innan)`, krigBarn > fore],
+      [`samma barn i en fredlig by drar mindre åt Krig (${fredBarn.toFixed(2)})`, fredBarn < krigBarn],
+      [`barnet har tagit mer av byns sed (${arvBarn.toFixed(2)}) än den vuxna (${arvVuxen.toFixed(2)})`, arvBarn > arvVuxen * 2 && arvVuxen > 0],
+      [`ändå drar det fredliga barnet åt Fred: personligheten väger mest (${krigBarn.toFixed(2)}), och den vuxna lite mer åt Fred (${krigVuxen.toFixed(2)})`, krigBarn < 0 && krigVuxen < krigBarn],
+    ];
+  },
+};

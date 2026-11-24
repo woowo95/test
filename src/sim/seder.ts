@@ -40,7 +40,10 @@ export const SED = balans('seder', {
   minneSteg: 0.1, minneMax: 0.5, // minnet av en död drar så här mycket per steg i INTRYCK:s sedkolumn gånger minnets styrka, och alla minnen tillsammans högst minneMax per sed (steg 10.4.9)
   uppSteg: 0.1, // en upplevelse drar personens hållning så här mycket per steg i sedkolumnen (UPPLEVELSER i uppvaxt.ts, steg 4.5.4.9)
   snittVikt: 1.8, // målet för en sed är byns snitt gånger så här mycket, från -1 till 1
-  rorDygn: 2, // sederna rör sig mot målet med en tidskonstant på så här många dygn
+  rorDygn: 6, // sederna rör sig mot målet med en tidskonstant på så här många dygn: byns minne, så att seden inte bara speglar vilka som bor där just nu
+  // byns sed i var och en (steg 13.9.2): det man tagit av byns sed drar med så här stor vikt, och tas med en tidskonstant
+  // på arvBarn dygn under uppväxten (yngre än ALDER.vuxen) och arvVuxen dygn som vuxen
+  arvVikt: 0.35, arvBarn: 3, arvVuxen: 40,
   // pliktkänslan (0 till 1): bas + (flit - mitt) * pliktFlit + (empati - mitt) * pliktEmpati + arbetsseden * pliktSed
   pliktBas: 0.6,
   pliktFlit: 0.035,
@@ -109,6 +112,8 @@ function foraldrar(s: State) {
 export const lutning = (s: State, p: Person) => clamp(drarSed(s, p, 'gemenskap'), -1, 1);
 // x avrundat till närmaste fjärdedel, mellan 0 och 1
 export const fjardedel = (x: number) => clamp(Math.round(x * 4) / 4, 0, 1);
+// byns sed som personen tagit till sig (steg 13.9.2): den tredje delen av det personen drar, bredvid personligheten och upplevelserna
+const arv = (p: Person, k: Sed) => (p.sedArv?.[k] ?? 0) * SED.arvVikt;
 export function drar(s: State, p: Person) {
   const barn = foraldrar(s).has(p.id), d = nollor();
   for (const k of SED_LIST) d[k] = SEDER[k].dra(p.pot, barn);
@@ -118,6 +123,7 @@ export function drar(s: State, p: Person) {
     if (e) for (const k in e) d[k as Sed] += e[k as Sed]! * SED.uppSteg;
   }
   for (const m of minnen(s, p).values()) for (const k in m.d) d[k as Sed] += m.d[k as Sed]!;
+  for (const k of SED_LIST) d[k] += arv(p, k);
   return d;
 }
 // en enda seds dragning, samma tal som drar(s, p)[k] med samma tillägg i samma ordning (steg 12.1.104): för den som bara läser en sed
@@ -125,7 +131,7 @@ export function drarSed(s: State, p: Person, k: Sed) {
   let v = k === 'andlig' ? (andlighet(s, p) - 50) / 50 : SEDER[k].dra(p.pot, foraldrar(s).has(p.id));
   for (const u of p.upp ?? []) { const e = upplevelseSed(u.k)?.[k]; if (e !== undefined) v += e * SED.uppSteg; }
   for (const m of minnen(s, p).values()) { const x = m.d[k]; if (x !== undefined) v += x; }
-  return v;
+  return v + arv(p, k);
 }
 // minnena av de döda som drar personens hållning (steg 10.4.9): per död, INTRYCK:s sedkolumn gånger minnets styrka (styrka
 // gånger säkerhet) gånger minneSteg. Tillsammans drar de högst minneMax per sed; blir det mer krymper alla lika mycket
@@ -181,6 +187,7 @@ export function sedLaggning(s: State): Record<Sed, number> {
     if (!andel) continue;
     for (const k of SED_LIST) t[k] += SEDER[k].dra(p.pot, barn.has(p.id)) * andel;
     t.andlig += (andlighet(s, p) - 50) / 50 * andel;
+    for (const k of SED_LIST) t[k] += arv(p, k) * andel; // det man tagit av byns sed hör till läggningen
   }
   for (const k of SED_LIST) t[k] = sedOppen(s, k) ? t[k] * SED.snittVikt : 0;
   return t;
@@ -199,6 +206,12 @@ export function stepSeder(s: State) {
   if (dt <= 0) return;
   const t = sederTarget(s), f = 1 - Math.exp(-dt / (SED.rorDygn * DAY));
   for (const k of SED_LIST) sd.v[k] = (sd.v[k] ?? 0) + (t[k] - (sd.v[k] ?? 0)) * f;
+  // var och en tar av byns sed: barnen mycket under uppväxten, de vuxna lite (steg 13.9.2)
+  const fb = 1 - Math.exp(-dt / (SED.arvBarn * DAY)), fv = 1 - Math.exp(-dt / (SED.arvVuxen * DAY));
+  for (const p of living(s)) {
+    const g = ageOf(p, s.now) < ALDER.vuxen ? fb : fv, a = p.sedArv ??= {};
+    for (const k of SED_LIST) { const v = a[k] ?? 0, m = sd.v[k] ?? 0; if (v !== m) a[k] = v + (m - v) * g; }
+  }
 }
 
 // ---------- vilja ----------
