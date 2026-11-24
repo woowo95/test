@@ -1124,18 +1124,23 @@ SCENARIER.utkant = {
 
 SCENARIER.latriner = {
   lang: true,
-  text: 'För många latriner (steg 11.1.71): den som behöver gå väljer latrin efter avståndet och om den är ledig, väntan räknas som brist bara när ingen annan latrin var ledig nära, och en latrin som inte använts på länge växer igen. En stor by under 5 dygn (5 år i spelet): antalet latriner håller sig vid det som kön kräver',
+  text: 'Latrinerna efter antalet (steg 13.8.17): byn vill ha en latrin per åtta invånare, avrundat uppåt, i stället för att väntan i kön räknas. Den som kommer till en upptagen latrin väntar eller går till en annan, och en latrin som inte använts på länge växer igen. En by med 18 invånare under 5 dygn (5 år i spelet) har 3 latriner',
   kor: () => {
-    // en stor testby; har den ingen latrin än (testbyarna kommer sällan på latrinen på 45 dygn) får den en, och de vuxna kan gräva fler
-    const s = testBy(15, b => living(b).length >= 15); // (efter 30 dygn har ingen testby 15 invånare, och då räknas en by fram i 30 dygn)
-    if (!SIM.latriner(s).length) { medBank(s, 'latrin'); for (const p of living(s)) if (ageOf(p, s.now) >= 18) p.tek = { ...p.tek, latrin: 1 }; }
-    const antal = () => SIM.latriner(s).length, fore = antal();
-    let mest = fore;
-    kor(s, 5 * 24, v => { const n = SIM.latriner(v).length; if (n > mest) mest = n; });
-    const folk = living(s).length, efter = antal(), igen = s.stat?.['latriner igenvuxna'] ?? 0, tak = Math.max(3, Math.ceil(folk / 5));
+    const s = testBy(15, b => living(b).length >= 15);
+    while (living(s).length < 18) nyInvanare(s, living(s).length % 2 ? 'm' : 'k', 25);
+    if (!SIM.latriner(s).length) medBank(s, 'latrin');
+    for (const p of living(s)) if (ageOf(p, s.now) >= 18) p.tek = { ...p.tek, latrin: 1, benspade: 1 };
+    if (SIM.nTools(s, 'benspade') < 2) setAmount(s, 'benspade', 2);
+    // bristen efter antalet: 18 invånare vill ha tre, så en saknar två tredjedelar och tre ingen
+    const brist = (n: number) => { const k = cloneState(s); k.stationer = (k.stationer ?? []).filter(t => t.k !== 'latrin' && t.k !== 'utedass'); for (let i = 0; i < n; i++) { const t = medBank(k, 'latrin'); t.fyllt = 0; } return SIM.latrinBrist(k); };
+    const b1 = brist(1), b3 = brist(3);
+    let mest = 0, nadde = false;
+    const anv = (v: SIM.State) => SIM.latriner(v).filter(t => SIM.isKlar(t) && (t.fyllt ?? 0) < SIM.STATION.latrinNy).length;
+    kor(s, 5 * 24, v => { const n = SIM.latriner(v).length; if (n > mest) mest = n; if (anv(v) >= 3) nadde = true; });
+    const folk = living(s).length;
     return [
-      // en grävd latrin som tömts i komposten går inte att använda igen (steg 12.4.9): utan en spade gräver byn ingen ny
-      [`${folk} invånare: ${fore} latriner före, ${efter} efter 5 år, högst ${mest} (högst ${tak}, en per fem invånare), ${igen} växte igen, ${s.stat?.latrinTomd ?? 0} tömda`, mest <= tak && (efter >= 1 || (s.stat?.latrinTomd ?? 0) > 0 && !SIM.nTools(s, 'benspade'))],
+      [`18 invånare vill ha tre latriner: med en saknas ${b1.toFixed(2)}, med tre ${b3.toFixed(2)}`, Math.abs(b1 - 2 / 3) < 1e-9 && b3 === 0],
+      [`${folk} invånare: byn hade tre latriner att använda under 5 år (${nadde}), högst ${mest} (${s.stat?.['latriner igenvuxna'] ?? 0} växte igen, ${s.stat?.latrinTomd ?? 0} tömda)`, nadde && mest <= Math.ceil(folk / 8) + 2],
     ];
   },
 };
@@ -1183,13 +1188,13 @@ SCENARIER.latrin = {
     Object.assign(lp, { x: lat.x + 0.5, y: lat.y + 1.5 }); lp.thoughts = [];
     toaBesok(l, lp, lat.id);
     const ifred = !flackarOf(l).length && (lat.fyllt ?? 0) > 0 && lp.thoughts.some(t => t.text === 'Fick vara ifred') && l.stat?.latrinbesok === 1;
-    // en i taget (steg 10.2.79): står någon redan på latrinen väntar den andra, och väntan går in i bristen på latriner
+    // en i taget (steg 10.2.79): står någon redan på latrinen väntar den andra; väntan räknas inte (steg 13.8.17)
     const lk = cloneState(l), [l1, l2] = living(lk).filter(r => ageOf(r, lk.now) >= 18 && r.id !== lp.id) as [SIM.Person, SIM.Person];
     for (const r of [l1, l2]) Object.assign(r, { x: lat.x + 0.5, y: lat.y + 0.5, toa: 0.2, task: { act: 'toa', phase: 'do', tx: lat.x + 0.5, ty: lat.y + 0.5, until: lk.now + 10 * SIM.MIN, carry: 0, why: '', ref: lat.id } });
     const brist0 = latrinBrist(lk), slut0 = l2.task!.until;
     step(lk, 60);
     const vantar = l1.task?.prog !== undefined && l2.task?.prog === undefined && (l2.task?.until ?? 0) > slut0, brist1 = latrinBrist(lk);
-    const enITaget = vantar && SIM.latrinVantNu(lk) > 0 && brist1 > brist0;
+    const enITaget = vantar && brist1 === brist0; // väntan räknas inte som brist (steg 13.8.17)
     lat.fyllt = STATION.latrinNy; const brist = latrinBrist(l) === 1;
     lat.fyllt = 1 - 0.5 / STATION.latrinRymmer; toaBesok(l, lp, lat.id);
     const igen = !stationerOf(l).some(t => t.id === lat.id) && l.stat?.['latriner fyllda'] === 1 && groundOf(l).cover[lat.y * W + lat.x] === 0 && latrinFor(l, lp) === undefined;
@@ -1238,7 +1243,7 @@ SCENARIER.latrin = {
     let smutsigAt = 0, smutsigKvar = 0;
     { const m = createState(1, START); setMat(m, { bar: 18 }); smutsigtPlock(m, 'bar', 5, 1); smutsigAt = smutsigtAtit(m, { bar: 2 }); smutsigKvar = m.smutsMat?.bar ?? 0; }
     return [
-      [`latrinen används av en i taget: den andra väntar, och väntan går in i bristen på latriner (${brist0.toFixed(2)} → ${brist1.toFixed(2)})`, enITaget],
+      [`latrinen används av en i taget: den andra väntar, och väntan blir ingen brist (${brist0.toFixed(2)} → ${brist1.toFixed(2)}, steg 13.8.17)`, enITaget],
       [`den som samlar väljer aldrig en plats i ett hus (${spotFel} av ${spotVal}), och toa-smutsen gör platsen sämre: färre smutsiga platser väljs (${spotSmuts}) än det fanns att börja från (${spotFran})`, spotVal > 50 && spotFel === 0 && spotSmuts < spotFran],
       [`maten som plockats vid toa-smuts kan ge magsjuka: den som äter av den äter så stor del smutsigt (${smutsigAt.toFixed(2)}), och det smutsiga i förrådet minskar (${smutsigKvar.toFixed(2)})`, smutsigAt > 0.2 && smutsigAt < 0.3 && smutsigKvar > 0 && smutsigKvar < 5],
       [`toabesöket utanför en latrin lämnar en fläck där man står`, flack],

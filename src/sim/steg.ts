@@ -113,7 +113,7 @@ import { grilla, torka } from './matlagning';
 import { stepBrasor } from './brasor';
 import { iVattnetNu, sjoRakna, vattenNu } from './sjo';
 import { FANG, brytKlar, fangEldBrinner, fangelseKrok, matFram, matTagen, stoppaFram, stoppaVal } from './fangelse';
-import { akel, latrinLedigNara, latrinUpptagen, latrinVanta, latrinerVaxerIgen, regnetTvattar, smutsigtPlock, smutsMatTimme, toaBesok, toaNara } from './smuts';
+import { akel, latrinUpptagen, latrinerVaxerIgen, regnetTvattar, smutsigtPlock, smutsMatTimme, toaBesok, toaNara } from './smuts';
 import { iselenSteg, seleMed } from './barsele';
 import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
@@ -223,9 +223,9 @@ type Krok = (s: State, p: Person, t: Task, dtSec: number) => void;
 // det som händer medan man gör något (efter att ha kommit fram). Arbete för byn sköts av workStep
 const MEDAN: Partial<Record<Act, Krok>> = {
   // i latrinen, annars blir det en fläck (smuts.ts). Latrinen används av en i taget (steg 10.2.79): står någon annan där väntar
-  // man bredvid, tiden räknas och arbetet blir längre, och väntan går in i bristen på latriner
+  // man bredvid och arbetet blir längre
   toa: (s, p, t, dt) => {
-    if (t.prog === undefined) { const l = stationById(s, t.ref); if (l && latrinUpptagen(s, l, p)) { t.until += dt * SEC; if (!latrinLedigNara(s, p, l)) latrinVanta(s, dt / 60); return; } } // väntan är brist bara när ingen annan latrin är ledig nära (steg 11.1.71)
+    if (t.prog === undefined) { const l = stationById(s, t.ref); if (l && latrinUpptagen(s, l, p)) { t.until += dt * SEC; return; } } // väntan räknas inte (steg 13.8.17): byn vill ha latriner efter antalet
     p.toa = 1; if (t.prog === undefined) { t.prog = 0; toaBesok(s, p, t.ref); }
   },
   kol: (s, p, t) => { const e = eldById(s, t.ref); if (e) takeCoal(s, p, 'hämtade', e); },
