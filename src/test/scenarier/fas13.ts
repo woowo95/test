@@ -1721,3 +1721,43 @@ SCENARIER.sedarv = {
     ];
   },
 };
+
+SCENARIER.foljder = {
+  text: 'Steg 13.9.3: följderna drar tillbaka. Varje sed har i sin rad i SEDER de upplevelser som drar den tillbaka. Den som fryser ihjäl medan byn har ved drar de andra åt Sammanhållning, en död i strid mot rövarna åt Fred, ett redskap hos handlaren som byn inte kan göra åt Förnyelse och maten som ruttnar i förrådet åt Dagens behov',
+  kor: () => {
+    const { living, SEDER, SED_LIST, UPPLEVELSER, upplevelseSed } = SIM;
+    // registret: varje följd drar sin sed åt andra hållet än det extrema
+    const rader = SED_LIST.flatMap(k => (SEDER[k].foljder ?? []).map(f => ({ k, f, v: upplevelseSed(f as SIM.UpplevelseTyp)?.[k] ?? 0 })));
+    const ny = (s: SIM.State) => { while (living(s).length < 10) nyInvanare(s, living(s).length % 2 ? 'm' : 'k', 25); };
+    const upp = (s: SIM.State, k: string) => living(s).filter(p => p.upp?.some(u => u.k === k)).length;
+    // kylan: med och utan ved i byn
+    const kyla = (ved: boolean) => {
+      const s = SIM.createState(5, START); ny(s);
+      if (!ved) for (const a of SIM.stacksOf(s)) if (a.k === 'ved') a.n = 0;
+      if (ved && SIM.amountOf(s, 'ved') < 1) SIM.put(s, 'ved', 5);
+      SIM.die(s, living(s)[0]!, 'kyla');
+      return upp(s, 'frosIhjal');
+    };
+    const medVed = kyla(true), utanVed = kyla(false);
+    // striden mot rövarna
+    const s2 = SIM.createState(6, START); ny(s2); SIM.die(s2, living(s2)[0]!, 'rovare');
+    const stupade = upp(s2, 'stupade');
+    // handlaren med ett redskap ingen i byn kan göra
+    const s3 = SIM.createState(7, START); ny(s3);
+    const okand = Object.keys(SIM.SAKER).find(k => { const t = SIM.SAKER[k]!.skaffa?.tek; return SIM.SAKER[k]!.redskap && t && !living(s3).some(p => SIM.knows(p, t)); })!;
+    SIM.grannRedskap(s3, [{ k: okand, n: 1 }, { k: 'yxa', n: 1 }]);
+    const grann = upp(s3, 'grannRedskap');
+    // maten som ruttnar i förrådet
+    const s4 = SIM.createState(8, START); ny(s4);
+    // tio gånger ruttnar köttet i förrådet: var gång har var och en en liten chans att minnas det
+    for (let i = 0; i < 10; i++) { SIM.put(s4, 'kott', 3); for (const a of SIM.stacksOf(s4)) if (a.k === 'kott' && SIM.isStored(s4, a.x, a.y)) a.c = 1e-9; SIM.wearStore(s4, 3600); }
+    const rutt = upp(s4, 'ruttnade');
+    return [
+      [`fem seder har följder, och varje följd drar sin sed (${rader.map(r => `${r.k}: ${r.f} ${r.v > 0 ? '+' : ''}${r.v}`).join(', ')})`, rader.length >= 5 && rader.every(r => r.v !== 0 && (UPPLEVELSER as Record<string, unknown>)[r.f] !== undefined)],
+      [`den som frös ihjäl medan byn hade ved lämnade spår hos ${medVed} av de levande, och utan ved hos ${utanVed}`, medVed > 0 && utanVed === 0],
+      [`den som dog i striden mot rövarna lämnade spår hos ${stupade}`, stupade > 0],
+      [`${grann} såg ${okand} hos handlaren, som ingen i byn kan göra`, grann > 0],
+      [`${rutt} såg maten ruttna i förrådet`, rutt > 0],
+    ];
+  },
+};

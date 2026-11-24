@@ -66,17 +66,18 @@ export const SED = balans('seder', {
 const dev = (v: number) => (v - SED.mitt) / SED.spann;
 // En sed per rad: namnen åt båda hållen och vad den gör (fliken Seder), och åt vilket håll en person drar seden efter
 // sin personlighet (q = egenskaperna, barn = personen är förälder). Alla börjar på 0. Ordningen sparas, så nya seder läggs sist
-interface SedDef { pos: string; neg: string; effect: string; dra: (q: Person['pot'], barn: boolean) => number }
+// foljder (steg 13.9.3): upplevelserna (nycklar i UPPLEVELSER i uppvaxt.ts) som en by längt ut åt ett håll får av det den gör, och som drar seden tillbaka
+interface SedDef { pos: string; neg: string; effect: string; dra: (q: Person['pot'], barn: boolean) => number; foljder?: string[] }
 const DEF = {
   arbete: { pos: 'Plikt', neg: 'Vila', effect: 'Pliktkänsla: hur mycket man arbetar för byn och hur mycket man vilar.', dra: q => dev(q.flit) },
-  gemenskap: { pos: 'Sammanhållning', neg: 'Självförsörjning', effect: 'Hur mycket man bryr sig om att andra fryser och hjälper dem med elden, och hur stor del av det man skaffar som går till byn.', dra: q => dev(q.empati) },
+  gemenskap: { foljder: ['frosIhjal'], pos: 'Sammanhållning', neg: 'Självförsörjning', effect: 'Hur mycket man bryr sig om att andra fryser och hjälper dem med elden, och hur stor del av det man skaffar som går till byn.', dra: q => dev(q.empati) },
   barn: { pos: 'Många barn', neg: 'Få barn', effect: 'Hur gärna par skaffar barn, och om barnen får leka eller måste hjälpa till.', dra: (q, barn) => dev(q.empati) * SED.barnEmpati + (barn ? SED.barnForalder : 0) },
-  nyfikenhet: { pos: 'Förnyelse', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.', dra: q => dev((q.nyfikenhet + q.intelligens) / 2) },
-  forsiktighet: { pos: 'Förutseende', neg: 'Dagens behov', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.', dra: q => -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt },
+  nyfikenhet: { foljder: ['grannRedskap'], pos: 'Förnyelse', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.', dra: q => dev((q.nyfikenhet + q.intelligens) / 2) },
+  forsiktighet: { foljder: ['ruttnade', 'svalt'], pos: 'Förutseende', neg: 'Dagens behov', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.', dra: q => -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt },
   // den första vågskålen (steg 3.5.1): låst (står på 0) tills byn fått sin första ledare (sedOppen i styre.ts)
   fortjanst: { pos: 'Härkomst', neg: 'Förtjänst', effect: 'Den duglige eller släkten: Härkomst flyttar vikt till släkternas äldste och ger arv när ledaren byts.', dra: (q, barn) => -dev(q.intelligens) * SED.fortInt + (barn ? SED.fortBarn : -SED.fortBarnlos) },
   fejd: { pos: 'Fejd', neg: 'Förlikning', effect: 'Om konflikter löses med ord eller med styrka: Fejd flyttar vikt till krigarna, och ledaren kan störtas i strid.', dra: q => dev(q.aggression) - dev(q.empati) },
-  krig: { pos: 'Krig', neg: 'Fred', effect: 'Om byn går i strid eller söker fred: Krig gör fler villiga att slåss.', dra: q => dev(q.aggression) * SED.krigAggr + dev(q.mod) * SED.krigMod - dev(q.empati) * SED.krigEmp }, // steg 8.4.11
+  krig: { foljder: ['stupade'], pos: 'Krig', neg: 'Fred', effect: 'Om byn går i strid eller söker fred: Krig gör fler villiga att slåss.', dra: q => dev(q.aggression) * SED.krigAggr + dev(q.mod) * SED.krigMod - dev(q.empati) * SED.krigEmp }, // steg 8.4.11
   natur: { pos: 'Bruka', neg: 'Värna', effect: 'Om naturen är till för att brukas: fällda träd och dödade djur ger sämre humör för dem som drar åt Värna.', dra: q => dev(q.flit) * SED.naturFlit - dev(q.empati) * SED.naturEmp }, // steg 8.4.13
   andlig: { pos: 'Andlig', neg: 'Världslig', effect: 'Om makten kommer från folket eller från gudarna: Andlig flyttar vikt till prästerna, och kyrkan välsignar eller fördömer ledaren.', dra: () => 0 }, // steg 8.6.1: andligheten läggs till i drar() och sedLaggning
   rang: { pos: 'Envälde', neg: 'Folkstyre', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt ledaren straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },

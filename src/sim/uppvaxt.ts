@@ -1,3 +1,4 @@
+import { foljdKrok } from './foljdkrok';
 import { gen } from './ord';
 import { liten, talOrd } from './ord';
 import { KROPP, ageOf, alive, count, isParent, isSick, livet, living, log, paKartan } from './folk';
@@ -130,6 +131,11 @@ export const UPPLEVELSER = {
   fester: { text: 'Växte upp med fester, sport och framträdanden', chans: 0.02, e: [{ karisma: 2 }, { karisma: 1, empati: 1 }], vem: 'barn', sed: { prat: 1, gemenskap: 1 } }, // vid varje framträdande, match och gästabud
   lasaBarn: { text: 'Lärde sig läsa som barn', chans: 0.5, e: [{ intelligens: 1, minne: 1 }, { nyfikenhet: 2 }], vem: 'barn', sed: { nyfikenhet: 1 } },
   smedjan: { text: 'Växte upp vid smedjan', chans: 0.004, e: [{ flit: 1 }, { flit: 1, uthallighet: 1 }], vem: 'barn', lar: 'hantverk', sed: { arbete: 1 } }, // en timme i taget nära den som smider (steg 13.1.7); smidet är hantverk
+  // följderna som drar en sed tillbaka (steg 13.9.3, foljder i SEDER): de kommer av det byn gör
+  frosIhjal: { text: 'Såg {om} frysa ihjäl medan andra hade ved', kort: 'Såg någon frysa ihjäl medan andra hade ved', chans: 0.5, e: [{ empati: 1 }, { empati: 1, flit: 1 }], vem: 'bada', vuxenTal: true, sed: { gemenskap: 2 } },
+  stupade: { text: 'Miste {om} i en strid', kort: 'Miste någon i en strid', chans: 0.5, e: [{ aggression: -1 }, { mod: -1 }, { empati: 1 }], vem: 'bada', vuxenTal: true, ande: true, sed: { krig: -2 } },
+  grannRedskap: { text: 'Såg {om} hos handlaren, ett redskap byn inte kan göra', kort: 'Såg ett redskap byn inte kan göra', chans: 0.3, e: [{ nyfikenhet: 1 }, { intelligens: 1 }], vem: 'bada', vuxenTal: true, sed: { nyfikenhet: 2 } },
+  ruttnade: { text: 'Såg maten ruttna i förrådet', chans: 0.1, e: [{ flit: -1 }, { nyfikenhet: 1 }], vem: 'bada', vuxenTal: true, sed: { forsiktighet: -2 } },
   faltet: { text: 'Hjälpte till på fältet', chans: 0.004, e: [{ flit: 2 }, { flit: 1, uthallighet: 1 }], vem: 'barn', sed: { arbete: 1 } }, // en timme i taget på fältet
 } satisfies Record<string, UpplevelseDef>;
 export type UpplevelseTyp = keyof typeof UPPLEVELSER;
@@ -200,6 +206,7 @@ export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string, ggr =
 }
 // alla i byn var med om k (barnen och, sedan steg 4.1.1.2, de vuxna)
 export function allaBarn(s: State, k: UpplevelseTyp, om?: string) { for (const q of living(s)) upplev(s, q, k, om); }
+foljdKrok.ruttnade = s => allaBarn(s, 'ruttnade'); // maten som ruttnar i förrådet (steg 13.9.3, lager.ts)
 // barnen till a och b var med om k
 export function barnTill(s: State, a: Person, b: Person | undefined, k: UpplevelseTyp, om?: string) {
   for (const q of living(s)) if (isParent(a, q) || (b && isParent(b, q))) upplev(s, q, k, om);

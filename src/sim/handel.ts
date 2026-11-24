@@ -26,6 +26,7 @@ import { type Behov, DELA, bynKopAntal, kopValt, forByn, villGrupp, behovAv, bet
 import { BYTE, BYTESPRIS, FILT_MOT, Part, Vara, filtFri, filtMot, filtNara, loggaByte, nyttPar, satPersonFlytt, vardeAv, vardeOf, gerVarde, vidByte, vidLura, varorText } from './byte';
 import type { Skrift } from './skrift';
 import { newTing, tingOf } from './agande';
+import { allaBarn } from './uppvaxt';
 import { knows } from './teknik';
 import { dropLoad, dropSpot, put, stacksOf, use } from './lager';
 import { sumOf } from './egendom';
@@ -431,10 +432,16 @@ function framme(s: State, h: Handlare) {
 function lagUt(s: State, h: Handlare) {
   h.fas = 'handlar'; h.kom = s.now; h.gar = nastaKl(s.now, HANDEL.morgon); h.kvall = undefined;
   (s.filtar ??= []).push({ x: hp(s, h).x, y: hp(s, h).y + BYTE.bakom, slut: h.gar, varor: [], handlare: h.id, vem: h.id, par: nyttPar(s) }); // varorna ligger kvar i packningen (steg 4.5.7.4)
+  grannRedskap(s, h.varor);
   log(s, `${hp(s, h).name} har brett ut en filt nära elden och väntar på kunder.`, 'world'); notis(s, 'gast', `${hp(s, h).name} från ${hp(s, h).gast!.hem!} har brett ut en filt nära elden och väntar på kunder.`, [], { x: Math.floor(hp(s, h).x), y: Math.floor(hp(s, h).y) });
   if (forstaGang(s, 'handlareFramme')) kronika(s, `Den första handlaren kom till byn: ${hp(s, h).name} från ${hp(s, h).gast!.hem!}, med ${bestamd(HANDLAR_UTR[h.utr].namn)[0]} ${bestamd(HANDLAR_UTR[h.utr].namn)[1] === 'det' ? 'fullt' : 'full'} av varor.`, 'handel');
 }
 
+// ett redskap byn inte kan göra drar åt Förnyelse (steg 13.9.3): var och en ser varje sådant redskap på filten
+export function grannRedskap(s: State, varor: HVara[]) {
+  const folk = living(s).filter(p => !p.gast);
+  for (const k of new Set(varor.map(v => v.k))) { const tek = SAKER[k]?.skaffa?.tek; if (SAKER[k]?.redskap && tek && !folk.some(p => knows(p, tek))) allaBarn(s, 'grannRedskap', (SAKER[k]!.namn ?? k).toLowerCase()); }
+}
 // handlaren går: filten plockas ihop och hen går tillbaka mot kanten
 function gar(s: State, h: Handlare, tyst = false) {
   packaIhop(s, h);

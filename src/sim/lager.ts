@@ -1,3 +1,4 @@
+import { foljdKrok } from './foljdkrok';
 import { iMening, stor } from './ord';
 import { TIMMINNEN, binIn, binUt } from './timminne';
 import { stubbeOn } from './stubbar';
@@ -1048,7 +1049,7 @@ export function wearStore(s: State, dtSec: number) {
       if (a.ag) { const ks = Object.keys(a.ag), d = heltFordelat([a.n - sumOf(a.ag), ...ks.map(o => a.ag![o])], m); ks.forEach((o, i) => { a.ag![o] = d[i + 1]; }); }
       a.n = m; a.k = into.k; a.c = LAGER.blirSkick; cleanDel(s, a);
     } else {
-      if (isFood(a.k) && a.n > 1e-9) { count(s, 'ruttnat', a.n); s.ruttet = (s.ruttet ?? 0) + a.n; } // förrådshuset (byggnader.ts)
+      if (isFood(a.k) && a.n > 1e-9) { count(s, 'ruttnat', a.n); s.ruttet = (s.ruttet ?? 0) + a.n; if (isStored(s, a.x, a.y)) foljdKrok.ruttnade(s); } // förrådshuset (byggnader.ts); maten som ruttnar i förrådet drar åt Dagens behov (steg 13.9.3)
       a.n = 0;
     }
   }

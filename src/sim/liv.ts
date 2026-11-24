@@ -2,7 +2,7 @@ import { gen, heltOrd } from './ord';
 import { antal, honom, och, tal, talOrd } from './ord';
 import { gastensPlatser, horOmGast, raknaBynVet } from './ort';
 import { personNara } from './personlogg';
-import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
+import { upplev, uppvaxtDod, uppvaxtFodd, type UpplevelseTyp } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
 import { kronika } from './historik';
 import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, isParent, living, log, makeName, paKartan, newPerson, raddAkt, relKey, startSkills, uppkalladLogg } from './folk';
@@ -16,7 +16,7 @@ import { vattenNu } from './sjo';
 import { tileOf } from './mark';
 import { foodDays } from './ekonomi';
 import { ageIndex, foreIstiden, kallTid, kalender } from './tid';
-import { avbryt, put, releaseOwner } from './lager';
+import { amountOf, avbryt, put, releaseOwner } from './lager';
 import { inherit, packUp } from './arv';
 import { balans } from './balans';
 import { RELT } from './relationer';
@@ -99,10 +99,11 @@ const MEDHAVT: Record<string, number> = { rotter: LIV.medhavd };
 // text = det som står efter namnet ("dog av svält"), i loggen, krönikan och byns räknare ('dog av svält', som testerna läser).
 // sorg = familjen och vännerna sörjer på ett sätt som gör dem mer förutseende (upplevelsen sorjde, steg 4.5.4.9). En olycka i ett farligt arbete (OLYCKOR i halsa.ts) pekar hit
 // gud = gudens område som döden hör till (steg 4.1.5); de andra dödsfallen hör till Döden
-interface DodDef { text: string; sorg?: true; gud?: GudOmr }
+// foljd (steg 13.9.3): upplevelsen de levande får av dödsfallet, när foljdNar gäller (en följd som drar en sed tillbaka, foljder i SEDER)
+interface DodDef { text: string; sorg?: true; gud?: GudOmr; foljd?: UpplevelseTyp; foljdNar?: (s: State) => boolean }
 const DOD = {
   svalt: { text: 'av svält', gud: 'skord', sorg: true },
-  kyla: { text: 'av kyla', gud: 'vintern', sorg: true },
+  kyla: { text: 'av kyla', gud: 'vintern', sorg: true, foljd: 'frosIhjal', foljdNar: s => amountOf(s, 'ved') >= 1 }, // medan andra hade ved
   jakt: { text: 'under en jakt', gud: 'jakt' },
   torst: { text: 'av törst' }, // steg 2.4.1
   blod: { text: 'av blodförlust' }, // steg 2.5.1
@@ -122,7 +123,7 @@ const DOD = {
   tornado: { text: 'i en tornado', gud: 'aska' }, // steg 3.8.4 (tornado.ts)
   brand: { text: 'i en eldsvåda', gud: 'elden' },
   bistick: { text: 'av bistick' }, // steg 10.10.22 (halsa.ts binStick) // steg 3.8.5 (brand.ts)
-  rovare: { text: 'av rövare', gud: 'kriget', sorg: true }, // steg 4.4.5 (rovare.ts)
+  rovare: { text: 'av rövare', gud: 'kriget', sorg: true, foljd: 'stupade' }, // steg 4.4.5 (rovare.ts)
   avrattad: { text: 'för sitt brott', gud: 'kriget' }, // dödsstraffet (steg 8.4.8)
   drap: { text: 'av våld', gud: 'kriget' },
   forsvunnen: { text: 'på en resa och kom aldrig hem', sorg: true }, // steg 11.5.18 (resa.ts)
@@ -168,6 +169,8 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   gudHandelse(s, DODSORSAKER[orsak].gud ?? 'doden', `döden som tog ${p.name}`); // tron söker en gud för det (steg 4.1.5)
   if (a >= ALDER.hogAlder) p.fame.push(`Blev ${a} år gammal`);
   uppvaxtDod(s, p); // barnen som miste hen eller såg det (steg 3.1.2)
+  const fd: DodDef = DODSORSAKER[orsak];
+  if (fd.foljd && !p.gast && (fd.foljdNar?.(s) ?? true)) for (const q of living(s)) if (q !== p && !q.gast) upplev(s, q, fd.foljd, p.name); // följden för byn (steg 13.9.3)
   rykteDod(s, p); // byn minns hen (steg 3.4.1)
   kunskapDod(s, p); // lärlingen och det som ingen annan kan (steg 4.2.3.4)
   for (const q of s.people) if (q.partner === p.id && alive(q) && !paKartan(q)) q.partner = undefined; // den som är på resa släpper också sin partner (sorgen när beskedet når hen, steg 11.5.18)
