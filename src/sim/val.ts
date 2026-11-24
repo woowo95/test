@@ -252,7 +252,7 @@ const skuggaHar = (s: State, p: Person) => iSkugga(s, p.x, p.y) ? { x: p.x, y: p
 // Den som är för varm i solen söker skugga nära platsen (steg 2.3.13).
 function hantverkIByn(s: State, p: Person): { x: number; y: number } {
   const sal = samlingRum(s);
-  if (sal && rnd(s, 'val', p) < VAL.bynTak) return punktIRuta(s, pick(s, friaRutor(s, sal.tiles), 'val', p), p);
+  if (sal && rnd(s, 'val', p) < VAL.bynTak) return isarIRum(s, p, sal.tiles);
   const o = omrade(s), cx = o.mitt.x + 0.5, cy = o.mitt.y + 0.5;
   if (forVarmISol(s, p)) { const sk = skuggaNara(s, p, cx, cy); if (sk) return sk; }
   return glesPlats(s, p, () => {
@@ -307,7 +307,7 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const eb = plats === 'elden' ? eldFor(s, p) : undefined, f = eb ? eldXY(s, eb) : eldPlats(s); // vid elden: vid den brinnande lägereld man hör till, annars den närmaste som brinner (steg 6.3.1)
   // det som görs utan bänk görs inne i byn och inte vid elden (steg 2.10.6), också när det är kallt: den som fryser går till elden genom värmen (varme.ts)
   const iByn = d.slag === 'hantverk' && (plats === 'elden' || plats === 'station' && !stationFor(s, act, p));
-  if (iByn && nederbord(s)) { const sal = samlingRum(s); if (sal) return punktIRuta(s, pick(s, friaRutor(s, sal.tiles), 'val', p), p); } // i regnet under tak (steg 2.11.1)
+  if (iByn && nederbord(s)) { const sal = samlingRum(s); if (sal) return isarIRum(s, p, sal.tiles); } // i regnet under tak (steg 2.11.1)
   if (iByn) return hantverkIByn(s, p);
   if (plats === 'skugga') return skuggaHar(s, p) ?? { x: p.x, y: p.y };
   // den som är för varm i solen vilar och gör handarbete i skuggan nära elden i stället (steg 2.3.13)

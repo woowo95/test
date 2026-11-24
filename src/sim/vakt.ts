@@ -1,6 +1,7 @@
 // Vakten patrullerar (steg 3.7.4, beslut Björn efter v158): nattens vakt går runt byn hela tiden och stannar bara kort vid
 // elden ibland för att värma sig, lägga på ved eller för ett kort samtal. Vakten tar sitt eget bästa vapen eller ett som
 // byn äger, aldrig någon annans, och har det i handen hela natten (striden räknar med det, strid.ts: personKampe)
+import { glesPlats } from './trangsel';
 import { tingOf } from './agande';
 import { balans } from './balans';
 import { freeNear } from './byggnad';
@@ -57,7 +58,7 @@ export function vaktSteg(s: State, p: Person, tk: Task) {
   if (s.now < tk.stopp) return;
   tk.stopp = undefined;
   if (!tk.vidEld && (p.warm < VAKT.fryser || ++tk.varv! % VAKT.eldVar === 0)) {
-    const e = eldPlats(s), v = rnd(s, 'vakt', p) * Math.PI * 2, at = freeNear(s, e.x + 0.5 + Math.cos(v) * ACTS.vakt.radie!, e.y + 0.5 + Math.sin(v) * ACTS.vakt.radie!); // som första platsen (spotFor)
+    const e = eldPlats(s), at = glesPlats(s, p, () => { const v = rnd(s, 'vakt', p) * Math.PI * 2; return freeNear(s, e.x + 0.5 + Math.cos(v) * ACTS.vakt.radie!, e.y + 0.5 + Math.sin(v) * ACTS.vakt.radie!); })!; // som första platsen (spotFor), men inte bland dem som vilar där (trängseln, steg B.21)
     tk.vidEld = true; tk.tx = at.x; tk.ty = at.y;
   } else {
     tk.vidEld = false; tk.runda = (tk.runda + 1) % VAKT.punkter; tk.varv ??= 0;

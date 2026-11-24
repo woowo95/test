@@ -30,6 +30,7 @@ import { put } from './lager';
 import { tileOf } from './mark';
 import { ACTS } from './handlingar';
 import { HOUR, Person, State } from './typer';
+import { TRANGSEL, sittTrangsel } from './trangsel';
 import { SATEN, STATION, type Station, bordPlatser, bordenOf, moblerKrok, isKlar, sateNiva, stationDef, stationRutor, stationerOf, storlekAv, sittAt, taBort } from './stationer';
 
 // de enklare möblerna som möbeln k kan ersätta: färdiga, med en ägare vars familj har något över, p:s familj först, sedan det
@@ -97,7 +98,13 @@ export const sittGlad = (s: State, p: Person) => 1 + STATION.sittGlad * nivaHar(
 export function vilPlats(s: State, p: Person, ref: { x: number; y: number }, badd?: { x: number; y: number }) {
   const r = stationRutor(s), upptagna = new Set(living(s).filter(q => q !== p && q.task && q.task.phase !== 'back').map(q => tileOf(q.task!.tx, q.task!.ty)));
   let best: { x: number; y: number } | undefined, bp = 0;
-  const prova = (at: { x: number; y: number }, v: number) => { const pt = v - STATION.vilaGang * Math.hypot(at.x - ref.x, at.y - ref.y); if (pt > bp) { bp = pt; best = at; } };
+  // trängseln (steg B.21) räknas i det en stubbe ger i vila: hellre en plats för sig själv eller vid en väns bord, men hellre intill någon än på marken
+  const andra = living(s).filter(q => q !== p);
+  const prova = (at: { x: number; y: number }, v: number) => {
+    const pt = v - STATION.vilaGang * Math.hypot(at.x - ref.x, at.y - ref.y); if (pt + STATION.sittVila * TRANGSEL.sitt * TRANGSEL.van <= bp) return;
+    const b = sateVid(s, at.x, at.y)?.t, pk = pt - STATION.sittVila * sittTrangsel(s, p, andra, at, b ? bordPlatser(b) : []);
+    if (pk > bp) { bp = pk; best = at; }
+  };
   if (badd) prova(badd, stationDef(r.at.get(tileOf(badd.x, badd.y))?.k ?? '')?.vila?.tim ?? KROPP.restBadd);
   const n = Math.ceil(STATION.sittVila * (1 + Math.max(0, ...Object.values(SATEN))) / STATION.vilaGang); // längre bort ger ingen sittplats poäng
   for (const i of r.sitt) {

@@ -6,7 +6,7 @@ import { ALDER, ageOf, count, andraGor, forstaGang, livet, living, log } from '.
 import { kronikaBer, personFalt } from './berattelser';
 import { bitAt, vagBort, Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRang, bitsOf, blocked, freeNear, gridOf, isWall, housesOf, husById, touch } from './byggnad';
 import { vaderSlit } from './vader';
-import { groundOf, nyttVatten, punktIRuta } from './mark';
+import { groundOf, nyttVatten } from './mark';
 import { kunnighet } from './ekonomi';
 import { eldReserv } from './forradsmal';
 import { ARSTID, iIstiden } from './tid';
@@ -55,7 +55,7 @@ export const BYGG = balans('bygg', {
 export function bedFor(s: State, p: Person) {
   const i = bedTile(s, p);
   if (i === undefined) return undefined;
-  return punktIRuta(s, i, p);
+  return { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 }; // mitt på sin ruta, så att ingen ligger över den i rutan intill (steg B.21)
 }
 
 // ---------- arbete ----------

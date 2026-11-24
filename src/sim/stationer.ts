@@ -1,3 +1,4 @@
+import { sittTrangsel } from './trangsel';
 import { bestamd, husIMening } from './ord';
 import { kronikaBer, personFalt } from './berattelser';
 import { gen } from './ord';
@@ -1418,14 +1419,16 @@ export function ledigPlats(s: State, p: Person) {
   if (!borden.length) return undefined;
   // när det är kallt eller regnar äter och pratar man under tak om det går (Matsal, steg 7.2.8)
   const inneHellre = nederbord(s) || coldOf(temperature(s)) > 0;
-  const tagen = new Set<number>();
-  for (const q of living(s)) if (q !== p && q.task && VID_BORDET.has(q.task.act)) tagen.add(Math.floor(q.task.ty) * W + Math.floor(q.task.tx));
+  const tagen = new Set<number>(), andra = living(s).filter(q => q !== p);
+  for (const q of andra) if (q.task && VID_BORDET.has(q.task.act)) tagen.add(Math.floor(q.task.ty) * W + Math.floor(q.task.tx));
   let best: { x: number; y: number } | undefined, bd = Infinity;
   const hemma = sovHus(s, p);
   for (const t of borden) {
     const hus = husAv(s, t), borta = hus?.ag !== undefined && hus.id !== hemma ? STATION.bordHemma : 0;
-    for (const [i, q] of bordPlatser(t).entries()) {
-    const d = Math.hypot(q.x + 0.5 - p.x, q.y + 0.5 - p.y) + borta + (inneHellre && !roofed(s, q.x, q.y) ? STATION.bordUte : 0) - STATION.sittVal * sateNiva(t, i); // den bästa lediga platsen (steg 12.4.4)
+    const platser = bordPlatser(t);
+    for (const [i, q] of platser.entries()) {
+    const d = Math.hypot(q.x + 0.5 - p.x, q.y + 0.5 - p.y) + borta + (inneHellre && !roofed(s, q.x, q.y) ? STATION.bordUte : 0) - STATION.sittVal * sateNiva(t, i)
+      + STATION.sittVila / STATION.vilaGang * sittTrangsel(s, p, andra, { x: q.x + 0.5, y: q.y + 0.5 }, platser); // trängseln och vännen vid bordet (steg B.21), i rutor att gå; den bästa lediga platsen (steg 12.4.4)
     if (d < bd && !tagen.has(q.y * W + q.x) && !blocked(s, q.x + 0.5, q.y + 0.5)) { bd = d; best = { x: q.x + 0.5, y: q.y + 0.5 }; } // inte en plats där något står i vägen (då flyttade freeNear i val.ts en bit från bordet)
   }
   }
