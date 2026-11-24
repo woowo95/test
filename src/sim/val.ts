@@ -198,7 +198,7 @@ export const VAL = balans('val', {
   // natten
   vaktByte: 7, // nattens vakt byts klockan 7 (timmar)
   vaktSlump: 8, // vakten är den modigaste med så här mycket slump (i mod)
-  vaktBas: 1, vaktVarg: 1, vaktRovare: 2, vaktVarsel: 0.6, vaktPabud: 0.4, // antalet vakter (steg 10.1.20): grunden, och det som läggs till när vargar setts, strax efter ett rövaranfall, vid ett varsel och efter påbudet (−1 till 1)
+  vaktPer: 10, vaktVarg: 1, vaktRovare: 2, vaktVarsel: 0.6, vaktPabud: 0.4, // antalet vakter (steg 10.1.20, 13.8.14): en per vaktPer som sover, och det som läggs till när vargar setts, strax efter ett rövaranfall, vid ett varsel och efter påbudet (−1 till 1)
   berattaAlder: 50, berattaBonus: 6, berattaDiv: 40, // berättande: (färdigheten + Bonus över Alder) / Div
   nattHantDiv: 70, // handarbete: (hantverk + flit) / Div
   nattNar: 2, nattLangt: 8, nattBara: 0.5, nattBaraTim: 2, // de modiga går upp till Nar + Langt rutor för att bära in, med vikten Bara, i så många timmar
@@ -1608,11 +1608,12 @@ function leisure(s: State, p: Person, v: Val, a: number, natt: boolean, u = 0, l
   paus(v, natt ? 'Mörkt, vilar vid elden' : 'Tar en paus');
 }
 
-// hotet byn känner i natt (steg 10.1.20): grunden, vargar som någon sett, rövare som nyss varit här (klingar av som deras vila),
-// ett varsel om en motgång, och påbudet om nattvakten. Så många håller vakt (avrundat), aldrig fler än hälften av de vuxna som orkar
+// nattens vakter (steg 10.1.20, 13.8.14): en per VAL.vaktPer som sover (alla som lever), och fler efter hotet byn känner i natt:
+// vargar som någon sett, rövare som nyss varit här (klingar av som deras vila), ett varsel om en motgång och påbudet om nattvakten.
+// Så många håller vakt (avrundat), minst en och aldrig fler än hälften av de vuxna som orkar
 export function vaktHot(s: State) {
   const varg = (s.vargar ?? []).some(f => f.sedd !== undefined && f.vargar.length > 0) ? 1 : 0;
-  return VAL.vaktBas + VAL.vaktVarg * varg + VAL.vaktRovare * (1 - efterAnfall(s)) + VAL.vaktVarsel * (living(s).some(q => q.varsel) ? 1 : 0) + VAL.vaktPabud * pabud(s, 'vakt') + FANG.nattVakt * fangar(s).length; // fångarna (steg 11.12.5)
+  return living(s).length / VAL.vaktPer + VAL.vaktVarg * varg + VAL.vaktRovare * (1 - efterAnfall(s)) + VAL.vaktVarsel * (living(s).some(q => q.varsel) ? 1 : 0) + VAL.vaktPabud * pabud(s, 'vakt') + FANG.nattVakt * fangar(s).length; // fångarna (steg 11.12.5)
 }
 // nattens vakter: de modigaste av de vuxna som orkar, med lite slump, byts varje natt
 // ledig: den som inte håller på med något, eller bara vilar eller sover (nattens vakter väljs bland dem; den som lyssnar på ett kväde eller arbetar är inte ledig)
@@ -1626,7 +1627,7 @@ function vaktVal(s: State, p: Person, v: Val, a: number) {
     if (adults.length) {
       s.lastGuardDay = guardDay;
       // ett slumptal per vuxen i byns ordning, sedan de högsta (inte i sorteringens jämförelser: deras antal beror på webbläsaren)
-      const n = clamp(Math.round(vaktHot(s)), 0, Math.max(1, Math.ceil(adults.length / 2)));
+      const n = clamp(Math.round(vaktHot(s)), 1, Math.max(1, Math.ceil(adults.length / 2)));
       const nyckel = adults.map(q => ({ q, k: q.pot.mod + rnd(s, 'val') * VAL.vaktSlump }));
       for (let i = 0; i < n; i++) {
         let g: typeof nyckel[number] | undefined;

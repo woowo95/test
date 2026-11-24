@@ -1593,3 +1593,26 @@ SCENARIER.ruttnarforst = {
     ];
   },
 };
+
+SCENARIER.nattvakt = {
+  text: 'Steg 13.8.14: nattvakterna växer med byn. Antalet vakter på natten är en per tio som sover, minst en, och fler när hotet är större',
+  kor: () => {
+    const { living, ageOf } = SIM;
+    const antal = (folk: number, hot?: (h: SIM.State) => void) => {
+      const h = SIM.createState(4, START); klockan(h, 22);
+      while (living(h).length < folk) nyInvanare(h, living(h).length % 2 ? 'm' : 'k', 30);
+      while (living(h).length > folk) h.people.splice(h.people.indexOf(living(h).at(-1)!), 1);
+      h.lastGuardDay = -1; h.vargar = undefined; h.rovarVila = undefined;
+      for (const x of living(h)) { x.guardDay = undefined; x.varsel = undefined; Object.assign(x, { health: 1, sjuk: undefined, skador: [], hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9 }); x.task = undefined; }
+      hot?.(h);
+      const y = living(h).find(x => ageOf(x, h.now) >= 18)!; SIM.chooseTask(h, y);
+      return living(h).filter(x => x.guardDay === h.lastGuardDay).length;
+    };
+    const tretti = antal(30), fem = antal(5), rovare = antal(30, h => { h.rovarVila = h.now; });
+    return [
+      [`en by med trettio som sover har tre vakter en lugn natt (${tretti})`, tretti === 3],
+      [`en by med fem har en (${fem})`, fem === 1],
+      [`när rövare nyss varit här vaktar fler (${rovare})`, rovare > tretti],
+    ];
+  },
+};
