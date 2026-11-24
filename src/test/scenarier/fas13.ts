@@ -1328,3 +1328,31 @@ SCENARIER.tandbehov = {
     ];
   },
 };
+
+// steg 13.8.6: alla trösklar i förrådsmålen
+SCENARIER.trosklar = {
+  text: 'Steg 13.8.6: alla trösklar i förrådsmålen. Vedens buffert är 1,5 gånger större inför och under istiden, höets reserv till elden växer i kylan, kolet hämtas bara när något behöver det, och de vilda fröna plockas efter vad fälten saknar',
+  kor: () => {
+    const s = SIM.createState(1, START); s.now = SIM.ageStart(s, 2) + 30 * SIM.HOUR; klockan(s, 13); // mitt på sommaren
+    const sommar = SIM.buffert(s, 'ved'), hoSommar = SIM.tandBuffert(s, 'torrgras');
+    const k = SIM.createState(1, START); k.now = SIM.ageStart(k, 0) + 30 * SIM.HOUR; klockan(k, 10);
+    const vinter = SIM.buffert(k, 'ved'), hoVinter = SIM.tandBuffert(k, 'torrgras');
+    // kolet: ingen buffert förrän ett projekt eller en eld med kol behöver det
+    s.forbruk = { kol: 20 };
+    const kolUtan = SIM.materialBuffert(s, 'kol', { b: 20, t: 99 });
+    s.projektSaknar = { kol: { beh: 3, n: 3, b: 1 } };
+    const kolMed = SIM.materialBuffert(s, 'kol', { b: 20, t: 99 });
+    // fröna: brist när utsädet fattas, ingen när byn har nog
+    const utsade = SIM.FROSORTER.reduce((n, f) => n + SIM.utsade(s, f), 0);
+    for (const f of SIM.FROSORTER) SIM.setAmount(s, f, 0);
+    const froUtan = SIM.froBrist(s);
+    for (const f of SIM.FROSORTER) SIM.setAmount(s, f, SIM.utsade(s, f));
+    const froMed = SIM.froBrist(s);
+    return [
+      [`vedens buffert inför istiden ${vinter.toFixed(2)} dygn mot ${sommar.toFixed(2)} på sommaren (år i spelet)`, Math.abs(vinter / sommar - SIM.FORRAD.kyla) < 1e-9],
+      [`höets reserv till elden i kylan ${hoVinter} mot ${hoSommar}`, hoSommar === 0 || hoVinter > hoSommar],
+      [`kolet har ingen buffert av förbrukningen (${kolUtan}), bara det som behövs (${kolMed})`, kolUtan === 0 && kolMed === 3],
+      [`fröna fattas utan utsäde (${froUtan.toFixed(2)}, utsädet ${utsade}) och inte när byn har det (${froMed})`, (utsade === 0 || froUtan === 1) && froMed === 0],
+    ];
+  },
+};

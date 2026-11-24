@@ -10,6 +10,8 @@
 // bufferten är materialet ett behov under Försörjning, och över taket plockar ingen av det (eld.ts, val.ts, projekt.ts).
 // Målen räknas en gång i timmen med arbetarna (arbetsTimme i val.ts) och sparas i s.arbBehov, så att alla lägen räknar likadant.
 import { hoBrist } from './vattenho';
+import { ageIndex, kallTid } from './tid';
+import { coldOf, temperature } from './vader';
 import { clamp, r3 } from './slump';
 import { stenTillPlan } from './byggsten';
 import { tamAlder, tamArt, tamdjurOf } from './tamdjur';
@@ -55,6 +57,7 @@ export const FORRAD = balans('forrad', {
   forbrukDygn: 3, // förbrukningen av ett material räknas över ungefär så här många dygn (ett glidande medel, steg 6.2.14)
   materialDygn: 2, // bufferten av ett material räcker så här många dygn med den förbrukningen ...
   materialMatt: 3, // ... och taket är så här många gånger bufferten
+  kyla: 1.5, // inför och under istiden är vedens buffert så här många gånger större, och höets när det är kallt: en reserv till elden (steg 13.8.6)
 });
 
 // Trösklarna (steg 6.2.16): alla minsta tal för vad byn sparar eller vill ha, och gränserna för när byn prövar sig fram och
@@ -62,7 +65,6 @@ export const FORRAD = balans('forrad', {
 export const TROSKEL = balans('troskel', {
   // eldens del av materialets buffert (steg 10.2.7, eldReserv): så här många timmar av det eldarna bränner, och tändningen
   eldTim: 6, // ... så att ett recept eller bygge inte tar det elden behöver den närmaste tiden
-  torrgrasKyla: 12, // hö som sparas till elden inför och under istiden och när det är kallt: en korg flätas först av det som är över (val.ts, redskap.ts)
   // tändmaterial (eld.ts)
   tandBrist: 12, // byn behöver samla tändmaterial när hö eller grenar är färre än så och elden är släckt
   tandVill: 12, // så mycket hö och grenar samlas det till när elden brinner
@@ -117,7 +119,9 @@ export type Resurs = keyof typeof FORRADSMAL;
 export const onskatDygn = (k: Resurs, v: number, extra = 0) => { const r = FORRADSMAL[k]; return r.dygn * (1 + FORRAD.forsiktig * v + extra); }; // talet på raden är bufferten i dygn (steg 13.8.4)
 
 // bufferten och lyxtaket i dygn (räknade ur påbudet). extra: p:s aning om en hård vinter
-export const buffert = (s: State, k: Resurs, extra = 0) => onskatDygn(k, pabud(s, FORRADSMAL[k].pabud), extra);
+// inför och under istiden är vedens buffert större (steg 13.8.6): veden som väger mer i kylan står i förrådsmålet, inte i vikten
+export const kallt = (s: State) => kallTid(ageIndex(s));
+export const buffert = (s: State, k: Resurs, extra = 0) => onskatDygn(k, pabud(s, FORRADSMAL[k].pabud), extra) * (k === 'ved' && kallt(s) ? FORRAD.kyla : 1);
 export const lyxtak = (s: State, k: Resurs, extra = 0) => FORRADSMAL[k].matt * buffert(s, k, extra);
 
 // ---------- materialen (steg 6.2.14) ----------
@@ -133,7 +137,7 @@ const tand = (s: State) => s.fire.lit ? TROSKEL.tandVill : TROSKEL.tandVillSlock
 const harNaver = (s: State) => amountOf(s, 'naver') >= TROSKEL.tandBrist || nTools(s, 'kniv') + nTools(s, 'yxa') > 0 && amountOf(s, 'ved') >= 1;
 export const MATERIALMAL = {
   grenar: { min: tand, buffert: true },
-  torrgras: { min: s => harNaver(s) ? 0 : tand(s), buffert: true }, // hö till elden och åt djuren // med näver, eller ett blad och ved att tälja den ur, behövs inget hö till tändningen (steg 6.3.3)
+  torrgras: { min: s => harNaver(s) ? 0 : tand(s) * (kallt(s) || coldOf(temperature(s)) > 0 ? FORRAD.kyla : 1), buffert: true }, // hö till elden och åt djuren; kylan höjer reserven till elden (steg 13.8.6) // med näver, eller ett blad och ved att tälja den ur, behövs inget hö till tändningen (steg 6.3.3)
   sten: { min: s => (s.fire.ring ? 0 : ELD.ring) + brasaStenMal(s) }, // de stenar eldringarna byn planerar saknar (steg 10.11.4)
   flinta: { min: s => (nTools(s, 'bagborr') > 0 ? 0 : TROSKEL.flintaMinsta) + flintaKrok.verktyg(s) }, // med en bågborr behövs ingen flinta till elden (steg 10.6.13), // och flintan till de redskap byn vill ha och saknar (steg 10.2.12)
   virke: { min: s => virkeTillHus(s) }, // det husen i Byggplanen behöver, också de som inte är påbörjade (steg 10.2.70)
@@ -143,6 +147,8 @@ export const MATERIALMAL = {
   lera: { min: s => Math.max(0, REDSKAPMAL.lerkruka(s) - krukorIByn(s)) * 2 }, // steg 9.4.10: målet följer hur mycket lera byn gör av med, och leran till de krukor byn vill ha och saknar (två per kruka): annars grävdes ingen lera förrän en kruka gjorts, och ingen kruka gjordes utan lera
   // steg 10.2.12: det som görs och tas av förrådet följer också förbrukningen; minst en (en att börja med, innan något använts)
   rep: { min: () => 0 }, // repet görs när ett projekt behöver det (steg 13.8.4)
+  // kolet (steg 13.8.6): ingen buffert, så mycket som projekten saknar och det ässjan och fyrfaten bränner (kolKrok, satt i smedja.ts och mobler.ts)
+  kol: { min: s => kolKrok.eldar(s) },
   mossa: { min: s => harMyr(s) ? living(s).length : 0 }, // förbanden: en mossa per invånare där den går att få (steg 12.1.6)
   // det som görs för att förbrukas (salvan, tjäran, limmet, tvålen och dryckerna) har en buffert efter förbrukningen, och en att börja med
   salva: { min: () => 1, buffert: true }, tjara: { min: () => 1, buffert: true }, benlim: { min: () => 1, buffert: true }, tval: { min: () => 1, buffert: true },
@@ -225,6 +231,8 @@ const perVuxna = (s: State, per: number, fran: number = ALDER.vuxen) => Math.max
 const spjutVill = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? perVuxna(s, VILLTAL.spjutPerVuxna) : 0;
 // flintan till redskapen byn vill ha och saknar (redskap.ts, satt där så att filerna inte importerar varandra)
 export const flintaKrok = { verktyg: (_s: State) => 0 };
+// kolet som eldarna som bränner kol vill ha (ässjan, fyrfaten), satt där de finns (steg 13.8.6)
+export const kolKrok = { eldar: (_s: State) => 0 };
 const krukorIByn = (s: State) => tingOf(s).filter(t => t.k.startsWith('lerkruka_')).length;
 const ortkokKan = (s: State) => living(s).some(p => (p.tek?.ortkok ?? 0) >= 1); // någon kan koka i örtköket (steg 9.4.14)
 // hoten byn mött (steg 10.2.75): strider de senaste VILLTAL.hotDygn dygnen, och rövare, vargar eller björnen nära nu (0 till 1)

@@ -56,7 +56,7 @@ export const ODLING = balans('odling', {
   projektVikt: 1, // en gröda vars skörd projekten saknar (också längre fram i kedjan: rått lin, lin, tråd, lintyg) är värd 1 + så här mycket gånger den bristen att så (steg 12.1.20)
   froTakt: 6, // frön per arbetstimme på en mycket rik plats (gånger kunnigheten och SNABBARE; 3 före balansen av fas 2, steg 2.12.2)
   froUttag: 0.1, // varje frö tar så här mycket ur platsen
-  froLeta: 0.3, // den som samlar går till de vilda grödorna för att plocka frön med VAL.fronChans, om någon ruta har så här mycket (steg 2.10.11)
+  froLeta: 0.3, // man går till de vilda grödorna för att plocka frön (raden fron i val.ts), om någon ruta har så här mycket (steg 2.10.11)
   vildMat: 0.25, // mat per plockat frö (VILDA mat, steg 3.10.23.8), bara när fröna tas med: mindre per timme än bären
   // fälten (steg 2.10.3, 2.10.13, 3.10.23)
   rutorPerMun: 5, // (äldre) rutor per person; sedan steg 9.7.1 räknas fältets storlek ur förrådsmålen (faltBehov)
@@ -692,7 +692,7 @@ export const VILDA = {
 } satisfies Record<string, { groda: GrodaSlag; mat: string; mat_?: true }>;
 const VILDA_IDS = Object.keys(VILDA) as (keyof typeof VILDA)[];
 // fröna grödorna sås med
-const FROSORTER = [...new Set(Object.values(GRODOR).map(g => g.fro))];
+export const FROSORTER = [...new Set(Object.values(GRODOR).map(g => g.fro))];
 
 // hur många familjer byn plockar vilda frön åt (steg 3.10.23.3): de som kan odla och saknar fält. Innan någon i byn kan odla
 // räknas alla familjer med en vuxen, så att plockandet ger tankar på odling. En gång i timmen (regel 4)
@@ -720,10 +720,12 @@ export function utsade(s: State, k: string) {
   return Math.ceil((rutor + fronFamiljer(s) * ODLING.faltMin / FROSORTER.length) * ODLING.froPerRuta);
 }
 // har byn nog frön till utsädet, med dem som bärs (bar)
-function fronNog(s: State, bar?: Partial<Record<string, number>>) {
+function fronNog(s: State, bar?: Partial<Record<string, number>>) { return froBrist(s, bar) <= 0; }
+// hur mycket av utsädet som fattas, 0 till 1 (steg 13.8.6): fröna har ingen buffert utan följer vad fälten och familjernas fält saknar
+export function froBrist(s: State, bar?: Partial<Record<string, number>>) {
   let har = 0, vill = 0;
   for (const k of FROSORTER) { har += amountOf(s, k) + (bar?.[k] ?? 0); vill += utsade(s, k); }
-  return har >= vill;
+  return vill > 0 ? Math.max(0, 1 - har / vill) : 0;
 }
 
 // var man plockar vilda frön med flit (val.ts, steg 2.10.11): den rikaste rutan med vilda grödor inom en halv dags gång,
