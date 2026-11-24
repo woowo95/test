@@ -264,7 +264,7 @@ const arMantel = (k: string) => kladAv(k)?.plagg === 'mantel';
 // plagg som bara vissa bär: prästens dräkt och masken åt prästen, trons tecken åt de troende (system 8.5)
 // vem plagget passar: prästens dräkt prästen, tecknet den som tror, och barnkläderna barnen och de vuxnas rock och byxor de
 // som vuxit ur dem (steg 13.2.4)
-const kladFor = (s: State, p: Person, k: string) => { const pl = kladAv(k)?.plagg; return pl === 'prastdrakt' || pl === 'mask' ? arPrast(s, p) : pl === 'tecken' ? p.tro !== undefined : pl === 'barnklader' ? ageOf(p, s.now) < ALDER.barnklad : pl === 'rock' || pl === 'byxor' ? ageOf(p, s.now) >= ALDER.barnklad : true; };
+export const kladFor = (s: State, p: Person, k: string) => { const pl = kladAv(k)?.plagg; return pl === 'prastdrakt' || pl === 'mask' ? arPrast(s, p) : pl === 'tecken' ? p.tro !== undefined : pl === 'barnklader' ? ageOf(p, s.now) < ALDER.barnklad : pl === 'rock' || pl === 'byxor' ? ageOf(p, s.now) >= ALDER.barnklad : true; };
 // platserna på kroppen som plagget täcker (barnkläderna både kroppen och benen, steg 13.2.4)
 export const kladPlatser = (k: string) => { const d = SAKER[k]!.klad!; return d.ocksa ? [d.plats, ...d.ocksa] : [d.plats]; };
 // plagget av det heliga djurets skinn (steg 10.3.15): den som följer budet bär det inte, utom när kylan är en fara

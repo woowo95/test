@@ -34,7 +34,7 @@ import { ALDER, KROPP, REL, ageOf, count, enTill, enTillDar, familjOf, isSick, l
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
 import { VARDRATT, halsa, hemma, kanGa, kroppLust, vardBehov, vardVal, vilaHellre, vilaSkal } from './halsa';
-import { MAT, bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial, vatskaMaterial } from './behov';
+import { DELA, MAT, brukKrok, bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial, vatskaMaterial } from './behov';
 import { FANGST, type FyndId, Kind, RUTFYND, flintSpot, richnessFor } from './fynd';
 import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
@@ -43,13 +43,14 @@ import { varselSamla } from './motgang';
 import { FORRAD, FORRADSMAL, TROSKEL, buffert, lyxtak, materialTimme, underBuffert, materialTak, eldReserv, villHaAv } from './forradsmal';
 import { tjaraUppgift, tjaraVal } from './tjara';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, forstRuttnar, freeOfKinds, handelTask, toolGroups, underhallGrupp } from './redskap';
-import { PROJEKT, PROJEKT_TAL, Uppgift, arv, bastaProjekt, bristAlla, hamtas, projektNu } from './projekt';
+import { PROJEKT, PROJEKT_LIST, PROJEKT_TAL, Uppgift, arv, bastaProjekt, bristAlla, hamtas, projektNu } from './projekt';
 import { omtanke } from './omtanke';
 import { lonNu } from './lon';
 import { beredRedskap, faltNu, froBrist, vildFronPlats } from './odling';
 import { type Tur, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
-import { bordPlats, rustaVal, ryggsack, ryms } from './utrustning';
+import { bordPlats, kladFor, kladPlatser, plaggPoang, rustaVal, ryggsack, ryms } from './utrustning';
+import { KLADER } from './klader';
 import { taFordon, valjFordon } from './fordon';
 // p orkar bära en av saken k (virket lyfts med båda händerna, steg 10.2.89)
 const kanLyfta = (s: State, p: Person, k: string) => !SAKER[k]?.lyft || ryms(s, p)({ [k]: viktOf(k) });
@@ -71,6 +72,7 @@ import { samtalMed } from './samtal';
 import { ageIndex, isLight, yearNo } from './tid';
 import { Act, Fire, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
 import { FOOD, SAKER, isFood, sakNamn, tingNamn, viktOf } from './saker';
+import { RECEPT } from './recept';
 import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
 import { materialBuffert, tandBuffert } from './forradsmal';
 import { balans } from './balans';
@@ -478,6 +480,15 @@ vatskaKrok.tagen = (s, v, n) => forbrukat(s, v, n);
 vatskaMaterial.ar = ar_vatska; vatskaMaterial.har = (s, k) => vatskaAv(s, k as VatskaId); vatskaMaterial.ta = (s, k, n) => taVatska(s, k as VatskaId, n); // limmet i recepten (steg 13.5.2)
 lagerPabud(); // påbudet Förråden får ett tal per material (steg 13.8.15)
 flintaKrok.verktyg = flintaTillVerktyg; // flintan till redskapen i förrådsmålet (steg 10.2.12)
+// bruket (steg 13.9.9, behov.ts): plaggen man skulle ta på sig, och recepten i projekten vars arbete man gör (habitShare över DELA.yrke)
+Object.assign(brukKrok, {
+  kladFor, kladPlatser, plaggVill: (s: State, p: Person, k: string) => plaggPoang(s, p, k, undefined) > KLADER.valByte,
+  recept: (_s: State, p: Person) => {
+    const tot = habitTotal(p), ut: Record<string, number>[] = [];
+    for (const k of PROJEKT_LIST) { const a = PROJEKT[k].arbete, av = a && ((RECEPT as Record<string, { av?: Record<string, number> }>)[a.k ?? k]?.av ?? TILLVERKA[k]?.av); if (av && habitShare(p, [a.act], tot) > DELA.yrke) ut.push(av); }
+    return ut;
+  },
+});
 // kolet som eldarna med kol som bränsle (ässjan, fyrfaten) rymmer: det byn vill ha i förrådet av kol (steg 13.8.6)
 kolKrok.eldar = s => { let n = 0; for (const t of stationerOf(s)) { const e = ELDSTATIONER[t.k]; if (e?.bransle === 'kol' && isKlar(t)) n += e.max; } return Math.ceil(n); };
 type Faror = ReturnType<typeof dangers>;

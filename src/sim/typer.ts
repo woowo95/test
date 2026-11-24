@@ -272,6 +272,7 @@ export interface Person {
   skatteskuld?: number; // skatten som inte kunde betalas, i grundvärde (steg 10.5.5, skatt.ts)
   straffad?: boolean; utanRost?: boolean; utanVard?: number; tjanst?: number; brottsling?: boolean; // straffen (steg 8.4.8): straffad, förlorad röst, utan vård till (steg 9.5.30), samhällstjänsten till, avrättad
   naring?: Record<import('./naring').Naring, number>; // näringsvärdena 0–1; mättnaden (hunger) är en sammanfattning av dem (steg 2.6.1, naring.ts)
+  bruk?: { t: number; k: [number, string][] }; // det personen saknar (raden i BRUK och saken), räknat timmen t (steg 13.9.9, behov.ts)
   byteNej?: Record<number, number>; // den som sagt nej till ett byte, och till när man inte frågar hen igen (steg 10.2.102)
   langtan?: Partial<Record<import('./naring').Naring, number>>; // vad andra berättat att de längtar efter, och till när man minns det (steg 2.6.2)
   habit: Record<string, number>; // timmar per aktivitet, bleknar med tiden (ger yrkestaggar)

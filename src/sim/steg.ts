@@ -50,7 +50,7 @@ import { tittaSteg } from './sport';
 import { harReceptVatten, redskapIHanden, taReceptVatten, tidyTools } from './agande';
 import { kvEffekt } from './kvalitet';
 import { SKOG, chopStock, fellTree, rotStumps, stocks, slyRojt, stubbeGravd } from './skog';
-import { needLadder, noticeTheft, stole, takeMaterial, getable, ataPortion } from './behov';
+import { needLadder, noticeTheft, stole, takeMaterial, getable, ataPortion, brukTimme } from './behov';
 import { iHelaForradet, laggPaRutan, stacksOf, isStored, capacity, mayTake, avbryt, backSpot, barHem, bordSlag, carryKind, fetchSpot, helaIBordan, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf, harTillHands, iRackhall, iBordan, bordanAv, narmasteMed, uttagVakt } from './lager';
 import { FOOD, SAKER, isFood, viktOf } from './saker';
 import { DJURARTER, REDSKAP, bearbeta, forstRuttnar, twineRope, wearUsed } from './redskap';
@@ -472,6 +472,7 @@ export const TAKTER: Takt[] = [
   { namn: 'morkHumor', sek: 3600, fn: (s, dt) => { for (const p of living(s)) morkHumor(s, p, dt / HOUR_S); } },
   { namn: 'facklorTimme', sek: 3600, fn: (s, dt) => { facklorTimme(s, dt / HOUR_S); } },
   { namn: 'stepHumor', sek: 3600, fn: (s, dt) => { stepHumor(s, dt); } },
+  { namn: 'bruket', sek: 3600, fn: s => { brukTimme(s); } }, // det var och en saknar, som samtalens byten slår upp (behov.ts, steg 13.9.9)
   { namn: 'tankarTimme', sek: 3600, fn: s => { tankarTimme(s); } }, // tankarna ur läget: kläderna, hemmet, ljuset, stolen, hemlängtan (steg 12.1.131, tankelage.ts)
   { namn: 'drommar', sek: 3600, fn: (s, dt) => { drommar(s, dt); } }, // den som sover drömmer, den som vaknat har drömmen som tanke (steg 12.1.132, drommar.ts)
   { namn: 'stepDelning', sek: 3600, fn: s => { stepDelning(s); } },

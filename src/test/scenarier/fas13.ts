@@ -1898,3 +1898,37 @@ SCENARIER.kunnande = {
     ];
   },
 };
+
+SCENARIER.sammabyte = {
+  text: 'Steg 13.9.9: alla saker byts efter samma regler (registret BRUK i behov.ts). Den som saknar en rock köper den av den som sytt den, den som saknar lera till sitt arbete köper den av en granne, en kruka byts som en yxa, och handlaren värderar alla saker på samma sätt.',
+  kor: () => {
+    const { BRUK, brukAv, behovAv, askForGift, payable, personPart, newTing, tingOf, KLAD_SLAG, ownsAmount, gain, addHabit, getRel } = SIM;
+    const s = SIM.createState(17, START); klockan(s, 10); tandEld(s);
+    const vanner = (a: SIM.Person, b: SIM.Person) => { getRel(s, a, b).op = 30; getRel(s, b, a).op = 30; };
+    // sömmerskan har sytt två rockar, och grannen fryser utan någon
+    const som = nyInvanare(s, 'k', 35), kopare = nyInvanare(s, 'm', 30);
+    const rock = KLAD_SLAG.find(k => k.startsWith('rock_'))!;
+    newTing(s, rock, 1, som.id); newTing(s, rock, 1, som.id);
+    gain(s, kopare, 'silver', 30); vanner(som, kopare);
+    for (let i = 0; i < 20 && !tingOf(s).some(t => t.k === rock && t.agare === kopare.id); i++) { kopare.bruk = undefined; askForGift(s, kopare, som); }
+    const fickRock = tingOf(s).some(t => t.k === rock && t.agare === kopare.id), somKvar = tingOf(s).filter(t => t.k === rock && t.agare === som.id).length;
+    // krukmakaren gör krukor, och grannen har lera över
+    const kruk = nyInvanare(s, 'k', 30), granne = nyInvanare(s, 'm', 30);
+    addHabit(kruk, 'lerkruka', 30, 3); SIM.setAmount(s, 'lera', 0); s.delning = { andel: 0 }; gain(s, granne, 'lera', 12); gain(s, kruk, 'silver', 30); vanner(kruk, granne); // byn delar inget: grannen äger all sin lera
+    const leraSaknas = brukAv('lera').saknar(s, kruk, 'lera'), leraFore = ownsAmount(s, kruk, 'lera');
+    for (let i = 0; i < 20 && ownsAmount(s, kruk, 'lera') <= leraFore; i++) { kruk.bruk = undefined; askForGift(s, kruk, granne); }
+    const leraKopt = ownsAmount(s, kruk, 'lera') - leraFore;
+    // krukan och yxan följer samma rad
+    const kruka = Object.keys(SIM.SAKER).find(k => k.startsWith('lerkruka_'))!;
+    const sammaRad = brukAv(kruka) === brukAv('yxa');
+    // handlaren ser samma värde och får rocken över bjuden som allt annat
+    const sp = payable(s, som, []).some(v => v.k === rock), pv = personPart(s, kopare).varde(rock) === behovAv(s, kopare, rock);
+    return [
+      [`registret har en rad per bruk (${BRUK.map(r => r.id).join(', ')})`, BRUK.length >= 6],
+      [`den som saknar en rock fick den av sömmerskan (${fickRock ? 'ja' : 'nej'}, hon har ${somKvar} kvar)`, fickRock && somKvar === 1],
+      [`krukmakaren saknar lera till sitt arbete (${leraSaknas}) och köpte ${leraKopt} av grannen`, leraSaknas > 0 && leraKopt >= 1],
+      [`krukan och yxan byts efter samma rad (${brukAv(kruka).id})`, sammaRad],
+      [`handlaren värderar som bybon själv (${pv ? 'ja' : 'nej'}), och rocken hon har över kan hon byta bort (${sp ? 'ja' : 'nej'})`, pv && sp],
+    ];
+  },
+};
