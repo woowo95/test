@@ -1571,3 +1571,25 @@ SCENARIER.egetmaterial = {
     ];
   },
 };
+
+SCENARIER.ruttnarforst = {
+  text: 'Steg 13.8.13: det som ruttnar går först. Av djuren i förrådet slaktas det som ruttnar först, som när man äter, i stället för det som står först i listan över djur. I kylan bärs det som ruttnar in som vanligt, och det andra som ligger ute bärs in mer sällan',
+  kor: () => {
+    const { DJUR, forstRuttnar, baraFara } = SIM;
+    const s = SIM.createState(1, START); klockan(s);
+    SIM.setAmount(s, 'vilt', 2); SIM.setAmount(s, 'fagel', 2);
+    const skick = (k: string, c: number) => { for (const a of s.stackar ?? []) if (a.k === k) a.c = c; };
+    const arter = [DJUR.kanin, DJUR.fagel];
+    skick('vilt', 1); skick('fagel', 0.2);
+    const forst1 = forstRuttnar(s, arter)?.art;
+    skick('vilt', 0.2); skick('fagel', 1);
+    const forst2 = forstRuttnar(s, arter)?.art;
+    const kallt = { kyla: true, svalt: false }, varmt = { kyla: false, svalt: false };
+    return [
+      [`kaninen står först i listan, men fågeln som ruttnar först slaktas först (${forst1})`, forst1 === 'fagel'],
+      [`när kaninen ruttnar först slaktas den först (${forst2})`, forst2 === 'kanin'],
+      [`i kylan bärs fisken in som vanligt (${baraFara(kallt, 'fisk')}) och veden mer sällan (${baraFara(kallt, 'ved')})`, !baraFara(kallt, 'fisk') && baraFara(kallt, 'ved')],
+      [`utan fara bärs båda in som vanligt`, !baraFara(varmt, 'fisk') && !baraFara(varmt, 'ved')],
+    ];
+  },
+};

@@ -53,7 +53,7 @@ import { SKOG, chopStock, fellTree, rotStumps, stocks, stubbeGravd } from './sko
 import { needLadder, noticeTheft, stole, takeMaterial, getable, ataPortion } from './behov';
 import { iHelaForradet, laggPaRutan, stacksOf, isStored, capacity, mayTake, avbryt, backSpot, barHem, bordSlag, carryKind, fetchSpot, helaIBordan, isCarrying, load, pickUp, placeTools, sakerPaGolvet, storeLoad, tidyStore, wearStore, ownsAmount, use, put, amountOf, harTillHands, iRackhall, iBordan, bordanAv, narmasteMed, uttagVakt } from './lager';
 import { FOOD, SAKER, isFood, viktOf } from './saker';
-import { DJURARTER, REDSKAP, bearbeta, twineRope, wearUsed } from './redskap';
+import { DJURARTER, REDSKAP, bearbeta, forstRuttnar, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { arbetaBredvid, forsokKlar, forsokSteg, haftSteg, stepLarlingar, thinkWhileWorking } from './teknik';
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
@@ -314,7 +314,7 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
 MEDAN.vittja = (s, p, t) => { const m = mjardarOf(s).find(q => q.id === t.ref); if (m) vittja(s, p, m); t.until = s.now; };
 // det heliga djuret slaktas inte, utom i svält (steg 10.3.15): finns bara det kvar är arbetet slut
 for (const art of DJURARTER) MEDAN[art.act] ??= (s, p, _t, dtSec) => {
-  const svalt = farorNu(s).svalt, a = DJURARTER.find(q => q.act === art.act && harTillHands(s, p, q.sak) > 1e-9 && !heligtAvstar(s, p, q.art, svalt)); // det hen har till hands (steg 11.1.74)
+  const svalt = farorNu(s).svalt, a = forstRuttnar(s, DJURARTER.filter(q => q.act === art.act && harTillHands(s, p, q.sak) > 1e-9 && !heligtAvstar(s, p, q.art, svalt))); // det hen har till hands (steg 11.1.74)
   if (!a) { if (p.task) p.task.until = s.now; return; }
   bearbeta(s, p, a, dtSec / HOUR_S);
 };

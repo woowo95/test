@@ -6,7 +6,7 @@ import { Act, HOUR, State, Person } from './typer';
 import { ACTS, ACT_LIST, laggRedskap, redskapTal, toolRow } from './handlingar';
 import { SAKER, SAK_LIST, gruppOf, iSlag, isTool, sakNamn } from './saker';
 import { NORMAL, kvOf, nyKvalitet } from './kvalitet';
-import { amountOf, gain, harTillHands, iBordan, put, use } from './lager';
+import { amountOf, gain, harTillHands, iBordan, put, timKvar, use } from './lager';
 import { getable, Recept, saknatAv, takeMaterial, takeRecipe, tillHands } from './behov';
 import { addDel } from './egendom';
 import { eldReserv, villAv, villHaAv } from './forradsmal';
@@ -121,7 +121,7 @@ export function twineRope(s: State, p: Person, hours: number, vill: number = vil
 // timme, maxTim = arbetet varar högst så här många timmar, act = arbetet där det görs (vid slaktbänken), kniv = det kräver en kniv (och att man kan tekniken), minDel = det görs när
 // det finns minst 1 / minDel djur, stat = räknas (i djur), forsta = loggen första gången. En ny art blir en rad här (fler
 // fiskar: steg 7.4.3). kott = köttet, som blir mer med jaktfärdigheten (kottAv). Flera arter kan ha samma arbete (kaninen och
-// vargen slaktas): arbetet tar den första arten i registret som finns i förrådet. Allt är hela saker (steg 3.6.13). Kött, ben och skinn har inget recept i saker.ts och är värda
+// vargen slaktas): arbetet tar den art som ruttnar först i förrådet (forstRuttnar, steg 13.8.13). Allt är hela saker (steg 3.6.13). Kött, ben och skinn har inget recept i saker.ts och är värda
 // golvet för sin nivå (varde.ts); där receptet finns (skaffa.av, som fisken av en abborre) kontrollerar scenariot "djur" att
 // det stämmer med raden här.
 export interface Djurart { sak: string; kott?: string; mat: number; slakt: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string; del?: string; skinn?: Record<string, number>; art?: string; vinter?: Record<string, string> } // del = styckdelen när djuret är för tungt att bära och skinn = det som dras av när det styckas (styckning.ts, steg 6.6.1); strid = hur djuret slåss (strid.ts, steg 3.7.5)
@@ -158,6 +158,14 @@ export const DJUR = {
   vargdel: slaktas({ art: 'varg', sak: 'vargdel', kott: 'vargkott', mat: 1, slakt: { vargkott: 6, ben: 2, talg: 1 }, rep: 0.3, timme: 4, stat: 'slaktatVargdel', forsta: '{namn} slaktade byns första vargstycke. Det gav mycket kött och ben.' }),
 } satisfies Record<string, Djurart>;
 export const DJURARTER: readonly Djurart[] = Object.values(DJUR);
+// av arterna som kan slaktas eller rensas tas den som ruttnar först i förrådet, som när man äter (steg 13.8.13): den vars första
+// stack är förstörd soonest, med det som sliter på den just nu (timKvar i lager.ts)
+export function forstRuttnar(s: State, arter: Djurart[]): Djurart | undefined {
+  if (arter.length < 2) return arter[0];
+  let bast: Djurart | undefined, bt = Infinity;
+  for (const a of arter) { const t = timKvar(s, q => q.k === a.sak); if (!bast || t < bt) { bast = a; bt = t; } }
+  return bast;
+}
 // det råa köttet och skinnet som bara arten ger (steg 10.3.15): kultlatt.ts frågar om det är heligt
 for (const d of DJURARTER as Djurart[]) if (d.art) for (const k of [...Object.keys(d.slakt), ...Object.values(d.vinter ?? {})]) if (k === d.kott || k in (d.skinn ?? {}) || /skinn$/.test(k)) SAK_ART[k] = d.art;
 export const KANIN = DJUR.kanin.mat; // så mycket mat en kanin är, uppäten som den är: två fällt vilt (saker.ts)

@@ -17,7 +17,7 @@ import { DORRAR, type DorrSlag } from './byggnad';
 import { troOf } from './religion';
 import { addDel, kyrkaId, sumOf } from './egendom';
 import { SAKER, viktOf } from './saker';
-import { DJURARTER, GORS, REP_TIMME, borjaTool, djurKvar } from './redskap';
+import { DJURARTER, GORS, REP_TIMME, borjaTool, djurKvar, forstRuttnar } from './redskap';
 import { REST, RESTER, resterOver } from './rester';
 import { farorNu, heligtAvstar } from './kultlatt';
 import { villHaAv } from './forradsmal';
@@ -53,9 +53,9 @@ HAMTAS.tillbehor = { av: (_s, _p, tk) => tillbehorDef(tk.tool ?? '')?.av };
 HAMTAS.farga = { av: fargaHamtas }; // växterna till färgbadet (farg.ts, steg 13.3.2)
 // dörren som hängs i en öppning (bygg.ts, steg 2.2.16 och 3.7.21): dörrens material
 HAMTAS.dorr = { av: (_s, _p, tk) => DORRAR[tk.tool as DorrSlag]?.av };
-// att slakta och rensa (redskap.ts bearbeta): den första arten som finns, så mycket som hinns
+// att slakta och rensa (redskap.ts bearbeta): arten som ruttnar först, så mycket som hinns
 const djurHamtas: Hamtas = { av: (s, p, tk) => {
-  const svalt = farorNu(s).svalt, a = DJURARTER.find(q => q.act === tk.act && djurKvar(s, q) > 0 && !heligtAvstar(s, p, q.art, svalt));
+  const svalt = farorNu(s).svalt, a = forstRuttnar(s, DJURARTER.filter(q => q.act === tk.act && djurKvar(s, q) > 0 && !heligtAvstar(s, p, q.art, svalt))); // det som ruttnar först (steg 13.8.13)
   // hela djur: det som hinns, avrundat uppåt till ett helt djur (en del av ett djur går inte att slakta)
   const n = a ? Math.ceil(Math.min((tk.until - s.now) / HOUR * a.timme * redskapTal(a.act, tk.tool).fart, djurKvar(s, a)) - 1e-9) * a.mat : 0; // järnkniven (steg 12.2.6)
   return n > 0 ? { [a!.sak]: n } : undefined;

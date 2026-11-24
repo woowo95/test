@@ -42,7 +42,7 @@ const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' 
 import { varselSamla } from './motgang';
 import { FORRAD, FORRADSMAL, TROSKEL, buffert, lyxtak, materialTimme, underBuffert, materialTak, eldReserv, villHaAv } from './forradsmal';
 import { tjaraUppgift, tjaraVal } from './tjara';
-import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, freeOfKinds, handelTask, toolGroups, underhallGrupp } from './redskap';
+import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, forstRuttnar, freeOfKinds, handelTask, toolGroups, underhallGrupp } from './redskap';
 import { PROJEKT, PROJEKT_TAL, Uppgift, arv, bastaProjekt, bristAlla, hamtas, projektNu } from './projekt';
 import { omtanke } from './omtanke';
 import { lonNu } from './lon';
@@ -828,7 +828,7 @@ export const ARBETEN: readonly Arbete[] = [
     // turen ger mer per tid så (steg 10.10.2, fordon.ts), och det ingen orkar bära bara på den
     const iHand = iHandenAv(s, p, gt.k), fo = valjFordon(s, p, gt.k, gt.x, gt.y, iHand, stackPa(s, gt.x, gt.y, gt.k));
     if (!iHand && !fo) return false;
-    const fara = f.kyla || (f.svalt && !isFood(gt.k));
+    const fara = baraFara(f, gt.k);
     if (!radda(s, p, a => !isStored(s, a.x, a.y), fara ? VAL.baraKyla : 1, (vardeUte(s) + vardeIFel(s, gt)) / VAL.baraVarde)) return false;
     set(v, 'bara', gt.why); v.spot = gt; v.dur = VAL.baraTim * HOUR; v.fordon = fo?.g.id; v.dragdjur = fo?.d?.id; return true;
   } },
@@ -1154,6 +1154,8 @@ function arbeta(c: Ctx, act: Act, what: string, o: { tandmat?: boolean; hamtar?:
   if (o.job && v.act === 'falla') { v.ref = o.job.bit.hus; v.why = `${v.why} Stocken ska bli en vägg.`; } // trädet fälls för bygget
 }
 // bygget (Tak): saknas material hämtas det först
+// i kylan bärs det som ruttnar in som vanligt och det andra mer sällan (steg 13.8.13); vid svält det som inte är mat mer sällan
+export const baraFara = (f: { kyla: boolean; svalt: boolean }, k: string) => (f.kyla && SAKER[k]?.haller === undefined) || (f.svalt && !isFood(k));
 function bygg(c: Ctx, job = dag(c).job!) {
   if (!job.missing) { building(c.s, c.p, c.v, job); return true; }
   const it = job.item;
@@ -1392,7 +1394,7 @@ export function toolGain(s: State, p: Person, act: Act, fara: Faror) {
 }
 // slakta det fällda viltet eller rensa fisken vid slaktbänken (DJUR i redskap.ts), så länge det tar, med kniven om det behövs
 // det första djuret som p kan slakta (kaninen, vargen; steg 3.7.14)
-const slaktbart = (s: State, p: Person, svalt = dangers(s).svalt) => DJURARTER.find(art => art.act === 'slakta' && canProcess(s, p, art) && !heligtAvstar(s, p, art.art, svalt)); // det heliga djuret slaktas inte, utom i svält (steg 10.3.15)
+const slaktbart = (s: State, p: Person, svalt = dangers(s).svalt) => forstRuttnar(s, DJURARTER.filter(art => art.act === 'slakta' && canProcess(s, p, art) && !heligtAvstar(s, p, art.art, svalt))); // det som ruttnar först (steg 13.8.13) // det heliga djuret slaktas inte, utom i svält (steg 10.3.15)
 const RENSAS = [DJUR.abborre, DJUR.gadda, DJUR.mort, DJUR.braxen, DJUR.sik];
 const rensaArt = (s: State, p: Person) => RENSAS.find(a => canProcess(s, p, a));
 function processTask(s: State, v: Val, art: Djurart, why: string) {
