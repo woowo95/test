@@ -266,7 +266,8 @@ export interface Person {
   svimmat?: boolean; // ligger medvetslös (steg 8.2.6)
   omt?: number; // omtanken om byn, räknad en gång i timmen (projekt.ts, steg 10.5.2)
   tiggde?: number; // senast hen fick mat av någon utanför familjen (steg 10.5.11, behov.ts): intrycket tiggare
-  lonTim?: Record<string, number>; lonFick?: number; lonObetald?: number; // lönen (steg 10.5.9, lon.ts): timmarna för byn i år per budgetdel, den del av lönen man fått de senaste åren, och den del man inte fick i fjol
+  anst?: { av: number; arb: string; mal?: number; w: number }; verk?: Record<string, number>; // årets anställning (vem man arbetar åt, arbetet, lönen per timme mot en arbetstimmes värde) och det man hinner på ett år i varje arbete (steg 14.1.4, dagsarbete.ts)
+  lonFick?: number; lonObetald?: number; // den del av lönen man fått de senaste åren, och den del man inte fick i fjol
   bonD?: number; bonNodD?: number; bonVan?: { t: number; o: string; vem?: number; x?: number; y?: number }; tack?: string; tvivel?: number; profet?: boolean; sedDod?: number[]; sedSkand?: number[]; fasta?: number; skuld?: number; // bönen och tron (system 8.5)
   drag?: { namn: string; v: number; t: number }; // anfallarnas tro som en dragning efter att ha svurit trohet (steg 8.8.6)
   missnoje?: number; // missnöjet med styret, 0–1 (steg 8.3.10, rost.ts)
@@ -395,6 +396,7 @@ export interface State {
   seder: Seder;
   tron?: import('./religion').Tro[]; // trosriktningarna i byn (steg 4.1.2, religion.ts)
   troSkalor?: import('./religion').SkalaId[]; // skalorna som låsts upp efter de två första (steg 4.1.4, religion.ts)
+  anst?: import('./dagsarbete').Anst[]; // årets anställningar (steg 14.1.4, dagsarbete.ts)
   budget?: import('./budget').Budget; // styrets budget (steg 10.5.7, budget.ts)
   delning?: import('./delning').Delning; // byns rikedom och hur mycket av det nya som ges till byn (delning.ts)
   mark?: string; // markens grästäcke per ruta (stigar), packat

@@ -815,6 +815,7 @@ export function vardRatt(s: State, p: Person, q: Person) {
   if (g < 0) x *= slakt(p, q) ? 1 + -g * (VARDRATT.slakt - 1) : 1 - -g * (1 - VARDRATT.frammande);
   if (r > 0 && l && (q === l || slakt(l, q))) x *= 1 + r * (VARDRATT.ledare - 1);
   if (b > 0 && ageOf(q, s.now) < ALDER.vuxen) x *= 1 + b * (VARDRATT.barn - 1);
+  if (p.anst?.arb === 'vard' && p.anst.mal === q.id) x *= 1 + p.anst.w; // den man är anställd att vårda (steg 14.1.4)
   return Math.max(0.1, x);
 }
 // på väg till den skadade, som kanske har flyttat sig (walk i steg.ts)

@@ -499,7 +499,7 @@ export function stepLarlingar(s: State) {
     if (ageOf(m, s.now) < ALDER.uppfinner || ppl.some(q => q.lar?.av === m.id)) continue;
     const tek = TEKNIK.filter(t => t.niva >= 4 && knows(m, t.id)).sort((a, b) => antal(a.id) - antal(b.id));
     for (const t of tek) {
-      const sk = tekSkill(t), poang = (q: Person) => q.skill[sk] + (q.tek?.[t.id] ?? 0) * 10;
+      const sk = tekSkill(t), poang = (q: Person) => q.skill[sk] + (q.tek?.[t.id] ?? 0) * 10 + (m.anst?.arb === 'undervisning' && m.anst.mal === q.id ? 100 : 0); // den som betalar för undervisningen går före (steg 14.1.4)
       const c = ppl.filter(q => q !== m && !q.lar && ageOf(q, s.now) >= ALDER.uppfinner && canThink(q, t)).sort((a, b) => poang(b) - poang(a) || a.id - b.id)[0];
       if (!c) continue;
       c.lar = { av: m.id, tek: t.id }; count(s, 'larling');

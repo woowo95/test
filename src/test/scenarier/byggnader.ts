@@ -1963,50 +1963,116 @@ SCENARIER.matbudget = {
 };
 
 SCENARIER.lon = {
-  text: 'Steg 10.5.9: med lönelagen ger arbete för byn lön per timme ur budgetdelen arbetet hör till: vakten ur delen för vakterna och den som bär till förrådet ur förrådets del, silver först och sedan mat över bufferten. Det som inte kan betalas stryks, och den som inte fick sin lön blir missnöjd och bryr sig mindre om byns arbete. Före lagen ger inget arbete lön',
+  text: 'Steg 10.5.9 och 14.1.4: med lönelagen anställer byn en gång per dygn (ett år i spelet) för vakten och arbetet för förrådet, efter det personen hinner och högst det lagen säger per timme. Lönen betalas ur budgetdelen, silver först och sedan mat över bufferten; det som inte kan betalas stryks och ger missnöje och mindre omtanke om byns arbete. Den som inte arbetat får ingen lön',
   kor: () => {
     const s = createState(6, START); utanStartKlader(s);
     klockan(s);
     medLagar(s, [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: living(s)[0].id, om: '' }]);
-    const [vakt, barare] = living(s).filter(q => ageOf(q, s.now) >= 20 && ageOf(q, s.now) < 60);
-    const arbeta = () => {
+    const [vakt, barare, lat] = living(s).filter(q => ageOf(q, s.now) >= 20 && ageOf(q, s.now) < 60);
+    const maten = (n: number) => { for (const k of SIM.FOOD) setAmount(s, k, 0); if (n) put(s, 'bar', n); };
+    const silver = (p: typeof vakt) => SIM.ownsAmount(s, p, 'silver');
+    const arbeta = (tim: number) => {
       vakt.task = { act: 'vakt', phase: 'do', tx: vakt.x, ty: vakt.y, until: s.now + DAY, carry: 0 };
       barare.task = { act: 'samla', phase: 'go', tx: barare.x, ty: barare.y, until: s.now + DAY, carry: 0, lon: 'forradet' };
-      SIM.lonRakna(s, 10 * 3600); // tio timmar
+      lat.task = { act: 'vila', phase: 'do', tx: lat.x, ty: lat.y, until: s.now + DAY, carry: 0 };
+      SIM.lonRakna(s, tim * 3600);
     };
-    const silver = (p: typeof vakt) => SIM.ownsAmount(s, p, 'silver');
-    const maten = (n: number) => { for (const k of SIM.FOOD) setAmount(s, k, 0); if (n) put(s, 'bar', n); };
-    // före lagen: ingen lön
-    arbeta();
-    const fore = !vakt.lonTim && !barare.lonTim && SIM.lonDel(s, vakt.task) === undefined;
-    // lagen gäller: tio timmar à ½ silver ger 5 silver var, ur var sin del
-    s.styre!.lagar!.push({ id: 'lon', t: s.now, straff: 0, av: vakt.id, om: '' } as never);
+    const gorUpp = () => { // samma tre anställda varje år, så att betalningen prövas för sig
+      s.anst = [['vakt', vakt], ['forradet', barare], ['forradet', lat]].map(([arb, p]) => ({ av: BYN, arb: arb as string, p: (p as typeof vakt).id, lon: 5, tim: 0, verk: 0, del: arb === 'vakt' ? 'vakter' : 'forradet', t: s.now }));
+      for (const a of s.anst) SIM.byId(s, a.p)!.anst = { av: BYN, arb: a.arb, w: 0.5 };
+    };
+    // före lagen anställer byn ingen
     s.budget = { delar: [{ id: 'vakter', vikt: 1 }, { id: 'forradet', vikt: 1 }] };
-    setAmount(s, 'silver', 0); put(s, 'silver', 20); maten(0);
-    arbeta();
-    const v0 = silver(vakt), b0 = silver(barare);
+    setAmount(s, 'silver', 0); put(s, 'silver', 60); maten(200);
+    SIM.anstallDygn(s);
+    const fore = (s.anst ?? []).filter(a => a.av === BYN).length;
+    s.styre!.lagar!.push({ id: 'lon', t: s.now, straff: 0, av: vakt.id, om: '' } as never);
+    // lönesamtalet: den som hinner mycket får högst lön, och ingen mer än lagens tal gånger det hen hinner
+    s.people.forEach(p => { p.verk = { forradet: 4 }; });
+    barare.verk = { forradet: 20 };
+    SIM.anstallDygn(s);
+    const byns = s.anst!.filter(a => a.av === BYN), minLon = s.anst!.find(a => a.p === barare.id), w = SIM.lagTal(s, 'lon', 'tim');
+    const hogst = byns.every(a => a.lon <= w * Math.max(SIM.DAGS.tim, SIM.byId(s, a.p)!.verk![a.arb] ?? 0) + 1e-9);
+    const mest = !!minLon && byns.every(a => a.p === barare.id || a.lon <= minLon.lon);
+    const summa = (d: string) => byns.filter(a => a.del === d).reduce((n, a) => n + a.lon, 0);
+    const tak = summa('forradet') <= 30 + 200 * SIM.grundvarde('bar') + 1 && byns.length > 0;
+    // utan budget anställer byn ingen
+    setAmount(s, 'silver', 0); maten(0); SIM.anstallDygn(s);
+    const utan = s.anst!.filter(a => a.av === BYN).length;
+    // lönen: tio timmar, 5 silver var; den som inte arbetat får inget
+    put(s, 'silver', 20); gorUpp(); arbeta(10);
+    const v0 = silver(vakt), b0 = silver(barare), l0 = silver(lat);
     SIM.budgetDygn(s); SIM.lonDygn(s);
-    const betalt = [silver(vakt) - v0, silver(barare) - b0];
+    const betalt = [silver(vakt) - v0, silver(barare) - b0, silver(lat) - l0], minns = barare.verk!.forradet;
     // utan silver betalas lönen med mat över bufferten
-    setAmount(s, 'silver', 0); maten(2000);
-    arbeta();
+    setAmount(s, 'silver', 0); maten(2000); gorUpp(); arbeta(10);
     const bar0 = SIM.ownsAmount(s, barare, 'bar');
     SIM.budgetDygn(s); SIM.lonDygn(s);
     const medMat = SIM.ownsAmount(s, barare, 'bar') - bar0;
     // en tom del: lönen stryks, missnöjet stiger och omtanken om byns arbete sjunker
-    SIM.omtankeTimme(s); SIM.lonOmtanke(s);
+    gorUpp(); SIM.omtankeTimme(s); SIM.lonOmtanke(s);
     const omt0 = barare.omt!;
-    maten(0); setAmount(s, 'silver', 0);
-    arbeta();
+    maten(0); setAmount(s, 'silver', 0); gorUpp(); arbeta(10);
     SIM.budgetDygn(s); SIM.lonDygn(s);
-    barare.missnoje = 0;
-    SIM.lonRakna(s, 3600);
+    barare.missnoje = 0; SIM.lonRakna(s, 3600); gorUpp();
     SIM.omtankeTimme(s); SIM.lonOmtanke(s);
     return [
-      ['före lönelagen ger inget arbete lön', fore],
-      [`vakten och den som bär till förrådet får 5 silver var för tio timmar (${betalt.join(' och ')})`, betalt[0] === 5 && betalt[1] === 5],
+      [`före lönelagen anställer byn ingen (${fore})`, fore === 0],
+      [`byn anställer (${byns.length}) och bjuder högst lagens tal gånger det var och en hinner, och den som hinner mest får mest (${minLon?.lon})`, byns.length > 0 && hogst && mest],
+      [`lönerna ryms i budgetdelen (${summa('forradet')} silver)`, tak],
+      [`utan silver och mat anställer byn ingen (${utan})`, utan === 0],
+      [`vakten och den som bär får sina 5 silver, och den som inte arbetat inget (${betalt.join(', ')})`, betalt[0] === 5 && betalt[1] === 5 && betalt[2] === 0],
+      [`det hen hann blir ihågkommet (${minns.toFixed(1)})`, minns < 20 && minns > 4],
       [`utan silver betalas lönen med mat (${Math.round(medMat)} bär)`, medMat >= 1],
       [`en tom del ger missnöje (${(barare.missnoje ?? 0).toFixed(3)}) och mindre omtanke om byns arbete (${omt0.toFixed(2)} → ${barare.omt!.toFixed(2)})`, (barare.missnoje ?? 0) > 0 && barare.omt! < omt0],
+    ];
+  },
+};
+
+SCENARIER.tjanster = {
+  text: 'Steg 14.1.4: betalda tjänster är samma anställning: den skadade betalar den som vårdar, lärlingen mästaren, den som bygger sitt hus en bygghjälpare, och för barnet betalar föräldern. Arbetaren begär det hen får på annat håll, och vill ha mer ju mindre egen mat hen har; utan silver anställer ingen',
+  kor: () => {
+    const s = SIM.cloneState(testBy(25));
+    klockan(s);
+    const ppl = living(s).filter(q => ageOf(q, s.now) >= 20 && ageOf(q, s.now) < 55), [sarad, larare, elev] = ppl;
+    setAmount(s, 'silver', 0);
+    for (const q of living(s)) { q.skador = []; q.sjuk = undefined; q.lar = undefined; }
+    const tom = (SIM.anstallDygn(s), s.anst!.length);
+    put(s, 'silver', 20, { [sarad.id]: 20 });
+    sarad.skador = [{ d: 'armV', k: 'skarsar', g: 0.5, b: 1 }];
+    const tarVard = living(s).some(g => g !== sarad && SIM.vardBehov(s, sarad, g));
+    SIM.anstallDygn(s);
+    const vard = s.anst!.find(a => a.arb === 'vard' && a.mal === sarad.id);
+    let fick = 0, ratt = 0;
+    if (vard) {
+      const g = SIM.byId(s, vard.p)!; ratt = SIM.vardRatt(s, g, sarad);
+      g.task = { act: 'varda', phase: 'do', tx: g.x, ty: g.y, until: s.now + DAY, carry: 0, ref: sarad.id };
+      SIM.lonRakna(s, 3600); const g0 = SIM.ownsAmount(s, g, 'silver'); sarad.skador = [];
+      SIM.lonDygn(s); fick = SIM.ownsAmount(s, g, 'silver') - g0;
+    }
+    // undervisningen: läraren kan en svår teknik som eleven inte kan; eleven är ett barn, och föräldern betalar
+    const t = SIM.TEKNIK.find(q => q.niva >= 4 && SIM.canThink(elev, q) && !SIM.knows(elev, q.id)) ?? SIM.TEKNIK.find(q => q.niva >= 4)!, sk = SIM.tekSkill(t);
+    setAmount(s, 'silver', 0);
+    const barn = living(s).find(q => q !== sarad && q !== larare && q !== elev && !q.partner)!;
+    barn.born = s.now - 12.5 * DAY; barn.mother = elev.id; barn.father = undefined; barn.lar = { av: larare.id, tek: t.id };
+    put(s, 'silver', 10, { [elev.id]: 10 }); larare.tek = { ...larare.tek, [t.id]: 1 }; larare.skill[sk] = 60;
+    SIM.anstallDygn(s);
+    const lara = s.anst!.find(a => a.arb === 'undervisning' && a.mal === barn.id);
+    // bygghjälpen: ett hus som byggs
+    const hus = (s.hus ?? [])[0], egare = ppl[3]; barn.lar = undefined;
+    setAmount(s, 'silver', 0); put(s, 'silver', 30, { [egare.id]: 30 });
+    if (hus) { hus.ag = egare.id; hus.tro = undefined; for (const b of SIM.bitsOf(s)) if (b.hus === hus.id && b.k === 'vagg') b.b = 0; }
+    SIM.anstallDygn(s);
+    const hjalp = s.anst!.find(a => a.arb === 'bygghjalp' && a.av === egare.id), hp = hjalp && SIM.byId(s, hjalp.p)!;
+    const omH = hp ? SIM.omtankeOm(s, hp, egare.id) : 0; if (hp) hp.anst = undefined; const omU = hp ? SIM.omtankeOm(s, hp, egare.id) : 0;
+    // det man begär
+    const matt = ppl[4], e0 = SIM.egetVarde(s, matt); for (const k of SIM.FOOD) setAmount(s, k, 0); const e1 = SIM.egetVarde(s, matt);
+    return [
+      [`utan silver anställer ingen person (${tom})`, tom === 0],
+      [`den skadade anställer den som vårdar (${vard?.lon} silver, vårdrätt ${ratt.toFixed(1)}), och lönen betalas (${fick})`, tarVard && !!vard && fick === vard.lon && ratt > 1],
+      [`föräldern betalar mästaren för barnet (${lara?.lon} silver)`, !!lara && lara.av === elev.id && lara.p === larare.id],
+      [`den som bygger anställer en bygghjälpare (${hjalp?.lon} silver), som hellre bygger hos hen (${omU.toFixed(2)} → ${omH.toFixed(2)})`, !!hjalp && omH > omU],
+      [`den som inte har egen mat begär mer (${e0.toFixed(2)} → ${e1.toFixed(2)})`, e1 > e0 || e0 >= SIM.DAGS.eget * 3 - 1e-9],
     ];
   },
 };
@@ -2033,7 +2099,7 @@ SCENARIER.forsorjning = {
     medLagar(s, [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: g.id, om: '' }, { id: 'lon', t: s.now, straff: 0, av: g.id, om: '' }]);
     s.budget = { delar: [{ id: 'forradet', vikt: 1 }] };
     setAmount(s, 'silver', 0); put(s, 'silver', 20);
-    c.lonTim = { forradet: 10 };
+    s.anst = [{ av: BYN, arb: 'forradet', p: c.id, lon: 5, tim: 10, verk: 10, del: 'forradet', t: s.now }];
     const g0 = SIM.ownsAmount(s, g, 'silver');
     SIM.budgetDygn(s); SIM.lonDygn(s);
     const tillForalder = SIM.ownsAmount(s, g, 'silver') - g0, tillBarn = SIM.ownsAmount(s, c, 'silver');

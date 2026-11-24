@@ -340,7 +340,7 @@ export const MALL: Record<keyof Person, undefined> = {
   grundare: undefined, mother: undefined, father: undefined, partner: undefined, rngs: undefined, pot: undefined, skill: undefined,
   delar: undefined, hunger: undefined, rest: undefined, social: undefined, health: undefined, blot: undefined, warm: undefined,
   toa: undefined, torst: undefined, brinner: undefined, blod: undefined, skador: undefined, saknas: undefined, protes: undefined,
-  men: undefined, arr: undefined, sinnen: undefined, svimmat: undefined, omt: undefined, tiggde: undefined, lonTim: undefined,
+  men: undefined, arr: undefined, sinnen: undefined, svimmat: undefined, omt: undefined, tiggde: undefined, anst: undefined, verk: undefined,
   lonFick: undefined, lonObetald: undefined, bonD: undefined, bonNodD: undefined, bonVan: undefined, tack: undefined, tvivel: undefined,
   profet: undefined, sedDod: undefined, sedSkand: undefined, fasta: undefined, skuld: undefined, drag: undefined, missnoje: undefined,
   skatteskuld: undefined, straffad: undefined, utanRost: undefined, utanVard: undefined, tjanst: undefined, brottsling: undefined,

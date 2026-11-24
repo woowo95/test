@@ -26,6 +26,8 @@ export const omtanke = (s: State, p: Person) => p.omt ?? omtankeBer(s, p);
 // omtanken om en bestämd person: hen själv och familjen 1, andra efter relationen till just hen; ingen person: omtanken om byn
 export function omtankeOm(s: State, p: Person, id: number | undefined) {
   if (id === undefined) return omtanke(s, p);
+  const lon = p.anst?.av === id ? p.anst.w * (p.lonFick ?? 1) : 0; // den man är anställd hos (steg 14.1.4)
+  if (id < 0) return omtanke(s, p) + lon; // kyrkan
   if (id === p.id || familjOf(s, p.id).some(q => q.id === id)) return 1;
-  return omtankeMed(s, p, s.rels[relKey(p.id, id)]?.op ?? 0);
+  return omtankeMed(s, p, s.rels[relKey(p.id, id)]?.op ?? 0) + lon;
 }

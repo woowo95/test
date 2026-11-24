@@ -47,7 +47,7 @@ import { tjaraUppgift, tjaraVal } from './tjara';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, forstRuttnar, freeOfKinds, handelTask, toolGroups, underhallGrupp } from './redskap';
 import { PROJEKT, PROJEKT_LIST, PROJEKT_TAL, Uppgift, arv, bastaProjekt, bristAlla, hamtas, projektNu } from './projekt';
 import { omtanke } from './omtanke';
-import { lonNu } from './lon';
+import { anstByn, vaktAntalKrok } from './dagsarbete';
 import { beredRedskap, faltNu, froBrist, vildFronPlats } from './odling';
 import { type Tur, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
@@ -203,6 +203,7 @@ export const VAL = balans('val', {
   strandMin: 30, strandSpann: 60, // en stund vid stranden
   // natten
   vaktByte: 7, // nattens vakt byts klockan 7 (timmar)
+  vaktLon: 8, // den som byn anställt som vakt går före, så här mycket mod
   vaktSlump: 8, // vakten är den modigaste med så här mycket slump (i mod)
   vaktPer: 10, vaktVarg: 1, vaktRovare: 2, vaktVarsel: 0.6, vaktPabud: 0.4, // antalet vakter (steg 10.1.20, 13.8.14): en per vaktPer som sover, och det som läggs till när vargar setts, strax efter ett rövaranfall, vid ett varsel och efter påbudet (−1 till 1)
   berattaAlder: 50, berattaBonus: 6, berattaDiv: 40, // berättande: (färdigheten + Bonus över Alder) / Div
@@ -1148,7 +1149,8 @@ function dag(c: Ctx): Dag {
 }
 // ett arbete under Försörjning, Tak eller Förbättra: skälet, passet, redskapen (withTools) och det som hämtas
 // arbete för byns förråd: betalas ur förrådets del när lönelagen gäller, och det som bärs hem blir byns (steg 10.5.9, lon.ts)
-const forByn = (c: Ctx) => { if (lonNu(c.s)) c.v.lon = 'forradet'; };
+const forByn = (c: Ctx) => { if (anstByn(c.p, 'forradet')) c.v.lon = 'forradet'; };
+vaktAntalKrok.f = s => vaktHot(s);
 function arbeta(c: Ctx, act0: Act, what: string, o: { tandmat?: boolean; hamtar?: string; leta?: LetaSak; job?: Job } = {}) {
   const { s, p, v, lazy } = c, tot = dag(c).tot, act = arTand(o.hamtar) ? 'samla' : act0; // hö och grenar plockas från marken (turens mål, steg 13.10.7)
   set(v, act, what + (lazy < 0.2 ? '. Plikttrogen.' : habitShare(p, [act], tot) > 0.25 ? '. Brukar göra det.' : p.skill[act as Skill] > 10 ? '. Skicklig på det.' : '.'));
@@ -1205,7 +1207,7 @@ function bygg(c: Ctx, job = dag(c).job!) {
 function projektArbete(c: Ctx) {
   const { s, p, v } = c, pr = bastaProjekt(s, p, faror(c));
   if (!(pr && faror(c).kyla && PROJEKT[pr.k].motKyla) && !forbNu(c)) return false; // kylan stoppar inte plaggen som värmer (steg 10.2.71)
-  if (pr?.u) { projektVal(v, pr.u, PROJEKT[pr.k].skal ?? `Byn saknar ${PROJEKT[pr.k].namn.toLowerCase()}`); if (lonNu(s)) v.lon = 'byggen'; return true; }
+  if (pr?.u) { projektVal(v, pr.u, PROJEKT[pr.k].skal ?? `Byn saknar ${PROJEKT[pr.k].namn.toLowerCase()}`); if (anstByn(p, 'byggen')) v.lon = 'byggen'; return true; }
   const hamta = pr?.sak ? hamtas(pr.sak) : undefined;
   if (!hamta) return false;
   if (hamta.leta) {
@@ -1640,7 +1642,7 @@ function vaktVal(s: State, p: Person, v: Val, a: number) {
       s.lastGuardDay = guardDay;
       // ett slumptal per vuxen i byns ordning, sedan de högsta (inte i sorteringens jämförelser: deras antal beror på webbläsaren)
       const n = clamp(Math.round(vaktHot(s)), 1, Math.max(1, Math.ceil(adults.length / 2)));
-      const nyckel = adults.map(q => ({ q, k: q.pot.mod + rnd(s, 'val') * VAL.vaktSlump }));
+      const nyckel = adults.map(q => ({ q, k: q.pot.mod + (anstByn(q, 'vakt') ? VAL.vaktLon : 0) + rnd(s, 'val') * VAL.vaktSlump }));
       for (let i = 0; i < n; i++) {
         let g: typeof nyckel[number] | undefined;
         for (const x of nyckel) if (x.q.guardDay !== guardDay && (!g || x.k > g.k)) g = x;

@@ -138,7 +138,7 @@ export function buildJob(s: State, p: Person, forb = false): Job | undefined {
     // trons hus (steg 10.3.19): bara de troende bygger, och en bit vars material kyrkan inte äger väntar (det hämtas inte)
     if (tro !== undefined && (p.tro !== tro || need > 0 && avail(s, M.item!, p, b.hus, b) < need)) continue;
     // omtanken (steg 10.5.2): man bygger hellre på det egna och en väns hus än på en oväns; byns hus efter omtanken om byn
-    const om = omtankeOm(s, p, b.hus !== undefined ? husById(s, b.hus)?.ag : undefined);
+    const om = omtankeOm(s, p, tro !== undefined ? kyrkaId(tro) : b.hus !== undefined ? husById(s, b.hus)?.ag : undefined);
     if (om <= 0) continue;
     const sc = ((repair ? 0 : b.k === 'golv' ? (M.item ? BYGG.prioTra : BYGG.prioJord) : BYGG.prioVagg) + Math.hypot(b.x - p.x, b.y - p.y)) / om;
     if (sc < bs) { bs = sc; best = { bit: b, repair, item: M.item, need, missing: need > 0 && avail(s, M.item!, p, b.hus, b) < need }; }
