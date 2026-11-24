@@ -354,6 +354,8 @@ export const MALL: Record<keyof Person, undefined> = {
   intryck: undefined, sedArv: undefined, smak: undefined, reservAlltid: undefined, liv: undefined, skam: undefined,
 };
 export const nyPerson = (p: Person): Person => ({ ...MALL, ...p }) as unknown as Person;
+// en sparad person i mallens form: bara mallens fält, så att ett fält som tagits bort ur Person inte följer med från en äldre sparning
+export const iMallen = (p: Person): Person => { const q = { ...MALL } as Record<string, unknown>; for (const k in MALL) q[k] = (p as unknown as Record<string, unknown>)[k]; return q as unknown as Person; };
 // de levande som inte har mallens form: nycklarna i en annan ordning än mallen eller nycklar utanför den (vakten i testerna)
 const MALLNYCKLAR = Object.keys(MALL).join();
 export const utanForm = (folk: Person[]) => folk.filter(p => Object.keys(p).join() !== MALLNYCKLAR);

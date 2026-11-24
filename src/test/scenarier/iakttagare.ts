@@ -171,6 +171,8 @@ for (const [ks, why] of [
   [['sjukstuga'], 'sjukstugan (steg 12.4.10) är en teknik på nivå 5 efter halmbädden och örtteet; scenariot sjukstuga prövar den'],
   [['fyrfat'], 'fyrfatet (steg 12.4.11) är en teknik på nivå 4 efter lerkrukan, och elden i det tänds bara när det är kallt inne; scenariot fyrfat prövar det'],
   [['maltid', 'sate', 'satta', 'pall'], 'måltiden vid bordet kräver ett bord, och pallen snickarbänken; testbyarna efter tändningen på 2 minuter (fasens Balans 12.6) är små och bygger inga bord på 50 dygn, eftersom bordet väger lätt mot latrinen, vattnet och kläderna, utan att någon gräns bryts; scenarierna bord, maltidsniva och stol prövar dem'],
+  [['klaAv'], 'ett varmt plagg tas av bara när någon har för varmt i det (svalkan, steg 13.8.1), och testbyarna har få plagg; scenariot svalaplagg prövar det'],
+  [['plog'], 'plogen (steg 13.7.2) görs bara när byn har ett dragdjur och ett fält, och dragdjuren kommer med handlaren; scenariot plog prövar den'],
   [['klaPa'], 'ett varmare plagg tas på bara när någon fryser och har ett plagg över, och testbyarna i fasens Balans (12.6) har få plagg; scenarierna kladvarme och klader prövar det'],
   [['bagborr', 'hylla', 'skinnklader'], 'bågborren, hyllan och skinnkläderna är tekniker på nivå 3–4 som de små testbyarna i fasens Balans (12.6) inte kommer på på 50 dygn, utan att någon gräns bryts; scenarierna bagborr, forvaring och klader prövar dem'],
   [['staket'], 'staketet runt fältet sätts bara när djur äter av ett sått fält, och få testbyar sår; scenariot staket prövar det'],

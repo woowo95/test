@@ -14,7 +14,7 @@ import { enOrd, stor } from './ord';
 import { kladNyckel } from './klader';
 import { KARTA, behoverStorreKarta, storreKarta } from './kartflytt';
 import { VAR, nyKalender } from './tid';
-import { ageOf, getRel, log, newPerson, nyPerson, startSkills } from './folk';
+import { ageOf, getRel, iMallen, log, newPerson, startSkills } from './folk';
 import { newSeder, sederTarget } from './seder';
 import { rnd } from './slump';
 import { DAY, MIN, Person, State, simulera, useMap } from './typer';
@@ -319,7 +319,7 @@ function uppgradera(s: State) {
   useMap(s);
   if (behoverStorreKarta(s)) storreKarta(s); // först av allt, innan något räknats på den gamla kartan (steg 2.10.9, kartflytt.ts)
   for (const [n, , gor] of UPPGRADERINGAR) if ((s.v ?? 1) < n) { gor(s); s.v = n; }
-  s.people = s.people.map(nyPerson); // alla i mallens form (prestanda, nr 781, folk.ts MALL)
+  s.people = s.people.map(iMallen); // alla i mallens form (prestanda, nr 781, folk.ts MALL)
   return s;
 }
 export function pair(s: State, a: Person, b: Person, silent = false) {
