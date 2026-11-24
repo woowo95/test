@@ -6,7 +6,7 @@ import { pick, rnd } from './slump';
 import { DAY, Person, STATS, Stat, State, Upplevelse } from './typer';
 import { roomAt } from './byggnad';
 import { balans } from './balans';
-import { andeRiktning } from './religion';
+import { andeRiktning, troUpplev } from './religion';
 import { foodDays } from './ekonomi';
 import type { Sed } from './seder';
 import { svartSjukNu } from './sjukdom';
@@ -201,6 +201,7 @@ export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string, ggr =
   p.upp = lista;
   raknaPot(p);
   count(s, 'upp_' + k); if (vuxen) count(s, 'upp_vuxen');
+  troUpplev(s, p, k); // trons skalor rör sig efter det de troende varit med om (steg 13.9.5)
   if (vuxen) tatKrok.upplev(s, p, k); // händelsen kan märkas i huden (steg 10.7.5, tatuering.ts sätter kroken)
   log(s, `${p.name}, ${talOrd(u.a)} år, ${liten(upplevelseText(u))}.`, 'rel', [p.id]);
 }

@@ -1789,3 +1789,30 @@ SCENARIER.avvikare = {
     ];
   },
 };
+
+SCENARIER.skalrorelse = {
+  text: 'Steg 13.9.5: tron rör sig. Varje skala säger i sin rad i SKALOR vilka upplevelser som flyttar den och åt vilket håll, och när en troende är med om en av dem flyttas skalan: svält trots offren drar tron åt Försakelse, överflöd åt Fest, en seger över rövarna åt Krigisk och en bön i nöd som får svar åt Nuet',
+  kor: () => {
+    const { SKALOR, SKALA_IDS, UPPLEVELSER, skalaV, troOf, troUpplev, living } = SIM;
+    const s = SIM.createState(10, START); klockan(s, 12);
+    const p = living(s)[0]!; SIM.grunda(s, p, 'blixt');
+    const tr = troOf(s, p.tro!)!;
+    tr.sk = { prast: 50, livet: 50, forlat: 50, fest: 50, krig: 50, oppen: 50, sprid: 50 }; tr.natur = 50; tr.manga = 50;
+    const fel = SKALA_IDS.flatMap(k => Object.keys(SKALOR[k].flyttas).filter(u => !(u in UPPLEVELSER)).map(u => `${k}: ${u}`));
+    const v = (k: SIM.SkalaId) => skalaV(tr, k)!;
+    troUpplev(s, p, 'svalt'); troUpplev(s, p, 'svalt');
+    const fest = v('fest');
+    troUpplev(s, p, 'overflod');
+    const fest2 = v('fest');
+    troUpplev(s, p, 'rovareBort'); const krig = v('krig');
+    const livet0 = v('livet'); troUpplev(s, p, 'bonHjalpte'); const livet = v('livet');
+    // den som inte tror flyttar inget
+    const q = nyInvanare(s, 'k', 30); q.tro = undefined; const fore = JSON.stringify(tr.sk); troUpplev(s, q, 'svalt');
+    return [
+      [`alla skalor har upplevelser som flyttar dem, och alla finns i UPPLEVELSER (${fel.join(', ') || 'inga fel'})`, !fel.length && SKALA_IDS.every(k => Object.keys(SKALOR[k].flyttas).length > 0)],
+      [`svälten drar tron åt Försakelse (50 → ${fest}), överflödet tillbaka åt Fest (${fest2})`, fest > 50 && fest2 < fest],
+      [`segern över rövarna drar åt Krigisk (${krig}) och bönen som fick svar åt Nuet (${livet0} → ${livet})`, krig > 50 && livet < livet0],
+      ['den som inte tror flyttar inget', JSON.stringify(tr.sk) === fore],
+    ];
+  },
+};

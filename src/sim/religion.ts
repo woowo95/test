@@ -32,6 +32,7 @@ export const ANDE = balans('andlighet', {
   barn: 16, // ... och hos ett barn
 });
 export const TRO = balans('tro', {
+  skalaSteg: 1, // en upplevelse hos en troende flyttar trons skala så här många steg (av 100) åt det håll raden i SKALOR säger (steg 13.9.5)
   takTro: 4, // högst så många trosriktningar samtidigt i byn (steg 8.5.11)
   spridBy: 0.5, // så mycket ett samtal kan få den som tvivlar att byta tro (steg 8.5.12)
   // den första tron (steg 4.1.2.1, "Den första tron" i designdokumentet)
@@ -138,17 +139,19 @@ export const troEtikett = (s: State, tr: Tro) => ETIKETTER.find(e => e.har(s, tr
 // de nio skalorna ("Nio skalor" i designdokumentet), 0–100 från den ena sidan till den andra. En tro börjar med de två första
 // synliga; de andra låses upp för hela byn när det de styr dyker upp (oppnas). Då får varje tro ett värde på skalan. steg = där
 // villkoret kommer, när det inte finns än
-interface SkalaDef { namn: [string, string]; text: [string, string]; oppnas?: (s: State) => boolean; steg?: string }
+// flyttas (steg 13.9.5): upplevelserna (nycklar i UPPLEVELSER, uppvaxt.ts) som flyttar skalan när en troende är med om dem, och åt
+// vilket håll: negativt mot den första sidan (namn[0]), positivt mot den andra, gånger TRO.skalaSteg
+interface SkalaDef { namn: [string, string]; text: [string, string]; oppnas?: (s: State) => boolean; steg?: string; flyttas: Record<string, number> }
 export const SKALOR = {
-  natur: { namn: ['Natur', 'Människa'], text: ['Andar i djur, träd, väder och platser', 'Förfäder, hjältar och helgon'] },
-  manga: { namn: ['Många', 'En'], text: ['Många andar eller gudar', 'En enda gud'] },
-  prast: { namn: ['Var och en', 'Präster'], text: ['Var och en möter det heliga själv', 'Präster förmedlar, regler och ordning'], oppnas: s => !!s.tron?.some(t => t.prast !== undefined) },
-  livet: { namn: ['Nuet', 'Livet efter'], text: ['Hjälp nu: jaktlycka, hälsa, väder', 'Ett liv efter döden, lön eller straff där'], oppnas: s => (s.stat?.begravd_troende ?? 0) > 0 || (s.stat?.ritual_forsta_begravning ?? 0) > 0, /* första gången en troende begravs, vilken form det än blir (steg 10.4.5) */ steg: '10.1 (den första begravningsritualen)' },
-  forlat: { namn: ['Förlåtande', 'Straffande'], text: ['Bikt, bot och förlåtelse', 'Vrede, stränga bud, syndabockar'], oppnas: s => !!s.tron?.some(t => t.slut === undefined && rymsBud(s, t, 1)) },
-  fest: { namn: ['Fest', 'Försakelse'], text: ['Fest, dans och rus', 'Fasta, askes, avstå'], oppnas: s => !!s.tron?.some(t => t.slut === undefined && rymsBud(s, t, 1)) },
-  krig: { namn: ['Fridsam', 'Krigisk'], text: ['Inget våld, inga blodsoffer', 'Offer och heligt krig'], oppnas: s => !!s.tron?.some(t => t.prast !== undefined) || (s.stat?.drap ?? 0) > 0 },
-  oppen: { namn: ['Öppen', 'Sluten'], text: ['Välkomnar andra trosriktningar', 'Omvänder eller fördriver andra'], oppnas: s => (s.tron ?? []).filter(t => t.slut === undefined).length >= 2 },
-  sprid: { namn: ['Sprider sig', 'Ärvs'], text: ['Försöker vinna nya följare', 'Ärvs bara inom släkten eller hålls hemlig'], oppnas: s => !!s.tron?.some(t => t.slut === undefined && rymsBud(s, t, 1)) },
+  natur: { flyttas: { gammal: 1, sorjde: 1, vargbett: -1, tecken: -1 }, namn: ['Natur', 'Människa'], text: ['Andar i djur, träd, väder och platser', 'Förfäder, hjältar och helgon'] },
+  manga: { flyttas: { bonHjalpte: 1, tecken: -1, bonInte: -1 }, namn: ['Många', 'En'], text: ['Många andar eller gudar', 'En enda gud'] },
+  prast: { flyttas: { bonHjalpte: -1, bonInte: 1, epidemi: 1 }, namn: ['Var och en', 'Präster'], text: ['Var och en möter det heliga själv', 'Präster förmedlar, regler och ordning'], oppnas: s => !!s.tron?.some(t => t.prast !== undefined) },
+  livet: { flyttas: { bonHjalpte: -2, svalt: 1, barnDod: 2, sorjde: 1, stupade: 1 }, namn: ['Nuet', 'Livet efter'], text: ['Hjälp nu: jaktlycka, hälsa, väder', 'Ett liv efter döden, lön eller straff där'], oppnas: s => (s.stat?.begravd_troende ?? 0) > 0 || (s.stat?.ritual_forsta_begravning ?? 0) > 0, /* första gången en troende begravs, vilken form det än blir (steg 10.4.5) */ steg: '10.1 (den första begravningsritualen)' },
+  forlat: { flyttas: { raddad: -1, ranad: 1, bestulen: 1, fangelse: 1 }, namn: ['Förlåtande', 'Straffande'], text: ['Bikt, bot och förlåtelse', 'Vrede, stränga bud, syndabockar'], oppnas: s => !!s.tron?.some(t => t.slut === undefined && rymsBud(s, t, 1)) },
+  fest: { flyttas: { svalt: 2, frys: 1, overflod: -2, fester: -1 }, namn: ['Fest', 'Försakelse'], text: ['Fest, dans och rus', 'Fasta, askes, avstå'], oppnas: s => !!s.tron?.some(t => t.slut === undefined && rymsBud(s, t, 1)) },
+  krig: { flyttas: { rovareBort: 2, fallde: 1, rovarePlundring: 1, stupade: -1 }, namn: ['Fridsam', 'Krigisk'], text: ['Inget våld, inga blodsoffer', 'Offer och heligt krig'], oppnas: s => !!s.tron?.some(t => t.prast !== undefined) || (s.stat?.drap ?? 0) > 0 },
+  oppen: { flyttas: { flyttade: -1, bestulen: 1, ranad: 1 }, namn: ['Öppen', 'Sluten'], text: ['Välkomnar andra trosriktningar', 'Omvänder eller fördriver andra'], oppnas: s => (s.tron ?? []).filter(t => t.slut === undefined).length >= 2 },
+  sprid: { flyttas: { resaBarn: -1, flyttade: -1, foraldralos: 1 }, namn: ['Sprider sig', 'Ärvs'], text: ['Försöker vinna nya följare', 'Ärvs bara inom släkten eller hålls hemlig'], oppnas: s => !!s.tron?.some(t => t.slut === undefined && rymsBud(s, t, 1)) },
 } satisfies Record<string, SkalaDef>;
 export type SkalaId = keyof typeof SKALOR;
 const SDEF: Record<SkalaId, SkalaDef> = SKALOR;
@@ -156,6 +159,18 @@ export const SKALA_IDS = Object.keys(SKALOR) as SkalaId[];
 // skalans värde för tron (natur och manga har alla; de andra när de låsts upp)
 export const skalaV = (tr: Tro, k: SkalaId) => k === 'natur' ? tr.natur : k === 'manga' ? tr.manga : tr.sk?.[k];
 export const skalaSyns = (s: State, k: SkalaId) => !SDEF[k].oppnas || !!s.troSkalor?.includes(k);
+// en troende var med om upplevelsen k (steg 13.9.5): trons skalor som raden i SKALOR säger flyttas, de som är upplåsta
+export function troUpplev(s: State, p: Person, k: string) {
+  const tr = p.tro !== undefined ? troOf(s, p.tro) : undefined;
+  if (!tr || tr.slut !== undefined) return;
+  for (const id of SKALA_IDS) {
+    const d = SDEF[id].flyttas[k]; if (!d) continue;
+    const v = skalaV(tr, id); if (v === undefined) continue;
+    const ny = clamp(v + d * TRO.skalaSteg, 0, 100);
+    if (id === 'natur' || id === 'manga') tr[id] = ny; else tr.sk![id] = ny;
+    count(s, 'skalaFlytt');
+  }
+}
 // skalan låses upp: varje tro får ett värde. Drar ur följden 'tro' hos grundaren eller den första som tror
 export function satSkala(s: State, tr: Tro, k: SkalaId) {
   const p = s.people.find(q => q.id === tr.grundare && alive(q)) ?? troende(s, tr)[0] ?? s.people.find(q => q.id === tr.grundare);
