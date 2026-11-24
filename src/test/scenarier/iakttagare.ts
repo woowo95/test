@@ -240,7 +240,8 @@ const teknik: Iakttagare<TeknikM> = {
   },
   slut: (s, m) => { m.levande = living(s).length; for (const id of ['rep', 'yxa']) m.kan[id] = living(s).filter(p => knows(p, id)).length; },
   // en teknik som någon redan kunde i en tidigare bit räknas från den biten
-  ihop: (a, b) => ({ forst: { ...b.forst, ...a.forst }, innan: union(a.innan, b.innan), kan: b.kan, levande: b.levande }),
+  // (också om den som kunde den sedan dött eller flyttat, så att ingen kan den i den senare biten)
+  ihop: (a, b) => ({ forst: { ...b.forst, ...a.forst }, innan: union(a.innan, Object.fromEntries(Object.keys(b.innan).filter(k => a.forst[k] === undefined).map(k => [k, 1 as const]))), kan: b.kan, levande: b.levande }),
   kolla: byar => {
     const d = (m: TeknikM, k: string) => m.forst[k] === undefined ? 'aldrig' : `dygn ${m.forst[k].toFixed(1)}`;
     return [
