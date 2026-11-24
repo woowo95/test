@@ -269,14 +269,15 @@ const villFylla = (s: State, p: Person) => !fylldSack(s) && enTillDar(s, 'vatten
 export const vattenKarl = (s: State, p: Person) => freeTools(s, p, 'vattensack') >= 1 ? 'vattensack' : freeTools(s, p, 'lerkruka_mellan') >= 1 ? 'lerkruka_mellan' : undefined;
 // spädbarnet vars mor är nära dricker av henne och behöver inget vatten (smabarnDricker)
 const ammas = (s: State, q: Person) => { const m = q.mother !== undefined ? byId(s, q.mother) : undefined; return !!m && paKartan(m) && Math.hypot(m.x - q.x, m.y - q.y) <= TORST.ammaNara; };
-export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string; falt?: true; karl?: string; sno?: true } | undefined {
+// slag: 'torst' är vattnet åt den som inte kan gå (Nöd, nivå 2), 'odla' fältet och örtköket (Försörjning, steg 13.8.3); sc är poängen
+export function vattenVal(s: State, p: Person, slag: 'torst' | 'odla' = 'torst'): { spot: { x: number; y: number }; ref: number; why: string; falt?: true; karl?: string; sno?: true; sc: number } | undefined {
   const karl = vattenKarl(s, p); // utan säck eller kruka bärs vattnet i händerna, bara åt en törstig (steg 10.2.35)
   if (ageOf(p, s.now) < ALDER.vuxen || !kanGa(p)) return undefined;
   let best: Person | undefined, bd = TORST.hamtaR;
   // gästen som stannar i byn (handlaren vid filten, besökaren) går inte själv till vattnet; när säcken är tom är hen törstig som en
   // bybo som inte kan gå, och byborna bär vatten åt hen (steg 12.1.228). Rövarna och fångarna får inget
   const gaster = gasterNu(s).filter(q => q.gast!.sort !== 'rovare' && q.gast!.sort !== 'fange' && (q.gast!.vatten ?? 1) < 1);
-  for (const q of gaster.length ? [...living(s), ...gaster] : living(s)) {
+  if (slag === 'torst') for (const q of gaster.length ? [...living(s), ...gaster] : living(s)) {
     const qa = ageOf(q, s.now);
     // den som sitter i fängelset (steg 11.12.2): p går när fångens törst gånger närheten är stor nog (fangelse.ts)
     if (q.gast) { if (!torstig(q, 0)) continue; } // gästen får vattnet där hen stannar: filten ligger en bit utanför byn (filtPlats i handel.ts), och TORST.hamtaR säger hur långt
@@ -289,17 +290,17 @@ export function vattenVal(s: State, p: Person): { spot: { x: number; y: number }
   // vem eller vad som får vattnet väljs med poäng (steg 10.2.37): den törstige efter hur törstig hen är, fältet efter hur torrt
   // det är och örtköket med ett fast tal; utan säck eller kruka bärs vattnet bara åt en törstig
   // fältet och örtköket brådskar inte: den som är skadad eller sjuk vill dem mindre, och den som hellre vilar inte alls (steg 12.1.46)
-  const ft = karl ? torrtFalt(s, p) : undefined, kk = !!karl && villFylla(s, p), kl = kroppLust(p, s.now);
+  const odla = slag === 'odla', ft = odla && karl ? torrtFalt(s, p) : undefined, kk = odla && !!karl && villFylla(s, p), kl = kroppLust(p, s.now);
   const vp = best ? TORST.hamtaTorst * (1 - best.torst) : 0, vf = ft ? TORST.hamtaFalt * faltTorrt(s, p, ft) * kl : 0, vk = kk ? TORST.hamtaKok * kl : 0;
   if (best && vp < Math.max(vf, vk)) best = undefined;
   const f = !best && ft && vf > 0 && vf >= vk ? ft : undefined, kok = !best && !f && vk > 0;
   const spot = (best || f || kok) && naVattnet(s, p) && drickPlats(s, p); // genom isen bara med ett hål (is.ts)
   // isen är för tjock för det byn har och ingen brunn finns: den törstige får snö i händerna, som den som själv äter snö
   const sp = !spot && best && !naVattnet(s, p) ? snoPlats(s, p) : undefined;
-  if (!spot) return sp ? { spot: sp, ref: best!.id, why: `Tar snö i händerna åt ${best!.name}`, sno: true } : undefined;
+  if (!spot) return sp ? { spot: sp, ref: best!.id, why: `Tar snö i händerna åt ${best!.name}`, sno: true, sc: vp } : undefined;
   const i = karl === 'vattensack' ? 'säcken' : karl ? 'krukan' : 'händerna';
-  if (kok) return { spot, ref: FYLL, why: `Fyller ${karl === 'vattensack' ? 'vattensäcken' : 'en lerkruka'} till örtköket`, karl };
-  return best ? { spot, ref: best.id, why: `Hämtar vatten i ${i} åt ${best.name}`, karl } : { spot, ref: f!.id, why: 'Hämtar vatten till sitt fält', falt: true, karl };
+  if (kok) return { spot, ref: FYLL, why: `Fyller ${karl === 'vattensack' ? 'vattensäcken' : 'en lerkruka'} till örtköket`, karl, sc: vk };
+  return best ? { spot, ref: best.id, why: `Hämtar vatten i ${i} åt ${best.name}`, karl, sc: vp } : { spot, ref: f!.id, why: 'Hämtar vatten till sitt fält', falt: true, karl, sc: vf };
 }
 // säcken är fylld (KLAR i steg.ts): bär den till den törstige, eller låt den stå fylld till örtköket (FYLL). Utan säck i handen blir det inget
 // vattenhon (steg 10.10.31): kärlet fylls och bärs dit, och vattnet hälls i (satt i djurtorst.ts, som läses efter den här filen)

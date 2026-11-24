@@ -1357,7 +1357,7 @@ SCENARIER.vattning = {
     const f = nyttFalt(s, p, 3, 0, 4, 8, 'vaxer', Array.from({ length: 8 }, (_, k) => ({ st: 'vaxer' as const, g: 'rovor' as const, v: 0.2, fu: k < 6 ? 0.1 : 0.9 })));
     s.falt = [f]; sammanfatta(f);
     const kr = addTool(s, 'lerkruka_mellan', p); kr.hos = undefined;
-    const v = vattenVal(s, p);
+    const v = vattenVal(s, p, 'odla');
     const tk = { act: 'vatten', phase: 'back', falt: true, ref: f.id, tool: 'lerkruka_mellan', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as unknown as SIM.Task;
     p.task = tk; vattenFram(s, p, tk);
     const vattnade = f.r!.filter(r => r.fu === vattnaTill(p, 'rovor')).length;

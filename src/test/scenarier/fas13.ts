@@ -1247,3 +1247,32 @@ SCENARIER.valordning = {
     ];
   },
 };
+
+// Rädda är bara det som annars går förlorat (steg 13.8.3)
+SCENARIER.raddarader = {
+  text: 'Steg 13.8.3: Rädda är bara det som annars går förlorat. Av fältarbetet ligger bara skörden av det mogna på Rädda, att så, rensa och vattna hör till Försörjning, mjärden töms på Rädda först när den snart är full, och vatten till fältet och örtköket är ingen nöd',
+  kor: () => {
+    const s = SIM.createState(1, START); s.kal = SIM.nyKalender(s.now, 2); klockan(s, 10);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!; p.tek = { ...(p.tek ?? {}), odling: 1 };
+    const falt = (st: 'vaxer', v: number, fu: number): SIM.Falt => ({ id: 1, x: Math.floor(p.x) + 3, y: Math.floor(p.y), w: 4, dir: 1, n: 8, agare: p.id, steg: 'vaxer', klara: 0, kvar: 0, rord: s.now, r: Array.from({ length: 8 }, () => ({ st, g: 'rovor' as const, v, fu })) } as SIM.Falt);
+    // ett torrt fält som växer: arbetet finns, men inte på Rädda, och vattnet till det är ingen nöd
+    let f = falt('vaxer', 0.2, 0.1); s.falt = [f]; SIM.sammanfatta(f);
+    const kr = SIM.addTool(s, 'lerkruka_mellan', p); kr.hos = undefined;
+    const vaxRadda = !!SIM.faltNu(s, p, true), vaxFors = !!SIM.faltNu(s, p, false) || !!SIM.vattenVal(s, p, 'odla');
+    const nod = SIM.vattenVal(s, p), odla = SIM.vattenVal(s, p, 'odla');
+    // ett moget fält: skörden ligger på Rädda
+    f = falt('vaxer', 1, 0.9); f.r = f.r!.map(() => ({ st: 'mogen', g: 'rovor', m: 0 }) as never); s.falt = [f]; SIM.sammanfatta(f);
+    const mogen = SIM.faltNu(s, p, true)?.tool;
+    // mjärden med en fisk väntar, med fem töms den
+    const m = SIM.sattUtMjarde(s, p)!; m.n = 1; m.fisk = { mort: 1 };
+    const en = SIM.timTillFull(s, m);
+    m.n = SIM.MJARDE.max - 1; m.fisk = { mort: m.n };
+    const full = SIM.timTillFull(s, m);
+    return [
+      [`att vattna eller arbeta på ett fält som växer ligger inte på Rädda (${vaxRadda ? 'Rädda' : 'Försörjning'}), men under Försörjning (${vaxFors ? 'ja' : 'nej'})`, !vaxRadda && vaxFors],
+      [`vatten till fältet är ingen nöd (${nod?.why ?? 'inget'}), men Försörjning (${odla?.why ?? 'inget'})`, !nod && !!odla?.falt],
+      [`skörden av det mogna ligger på Rädda (${mogen ?? 'inget'})`, mogen === 'mogen'],
+      [`mjärden med en fisk blir inte full på länge (${Math.round(en)} timmar), den nästan fulla snart (${Math.round(full)} timmar)`, en > SIM.VAL.vittjaTim && full < SIM.VAL.vittjaTim],
+    ];
+  },
+};

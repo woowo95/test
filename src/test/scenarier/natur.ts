@@ -2731,9 +2731,9 @@ SCENARIER.ortvatten = {
     const utan = PROJEKT.koka_lim.kan(s, p, { kyla: false, gras: 0 });
     const sack = newTing(s, 'vattensack', 1, p.id);
     newTing(s, 'naverask', 1, p.id); // limmet förvaras i en näverask (steg 9.4.14)
-    const val = vattenVal(s, p);
+    const val = vattenVal(s, p, 'odla');
     sack.inne = { v: 'vatten', n: 1 }; // vattnet i säcken (steg 9.4.14)
-    const med = PROJEKT.koka_lim.kan(s, p, { kyla: false, gras: 0 }), ingaFler = !vattenVal(s, p);
+    const med = PROJEKT.koka_lim.kan(s, p, { kyla: false, gras: 0 }), ingaFler = !vattenVal(s, p, 'odla');
     const ben0 = SIM.amountOf(s, 'ben');
     KLAR_FOR.koka_lim!(s, p, { act: 'koka_lim' } as SIM.Task, 0);
     // en tunna regnvatten töms inte för ett recept: det tar en fast mängd (steg 12.1.251)

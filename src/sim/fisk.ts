@@ -29,7 +29,6 @@ export const MJARDE = balans('mjarde', {
   burFangst: 0.005, // buren (steg 10.10.13): chansen per timme att en kulting går in, gånger hur mycket vilt det finns där
   sattUtR: 40, // så långt bort letar man högst efter en plats för fällan
   skogUt: 8, // snaror och gropar sätts minst så här många rutor från den som gjort dem, utanför byn
-  vittjaMin: 2, // så många fiskar i mjärden innan någon går dit
   fangst: 0.04, // chansen per timme att en fisk simmar in i en mjärde, gånger hur rikt vattnet är
   max: 6, // så många fiskar ryms i en mjärde
   andel: 0.1, // byn vill ha så många mjärdar att de ger så här stor del av maten den äter (steg 10.2.12)
@@ -75,6 +74,11 @@ export function stepMjardar(s: State, dt = 3600) {
     if (forstaGang(s, 'fallaFangst_' + (m.k ?? 'mjarde'))) log(s, `Byns första ${d.namn.toLowerCase()} fångade något.`, 'world');
     if (d.slits) { m.c = (m.c ?? 1) - d.slits; if (m.c <= 0) s.mjardar = s.mjardar.filter(q => q !== m); }
   }
+}
+// timmarna tills fällan är full med den fångst platsen ger nu, som stepMjardar räknar (steg 13.8.3)
+export function timTillFull(s: State, m: Mjarde) {
+  const d = FALLOR[m.k ?? 'mjarde'], rik = d.rik ? d.rik(s, m.x, m.y) : Math.min(MJARDE.rikMax, richness(s, d.lager as 'fiske', m.x, m.y));
+  return m.n >= MJARDE.max ? 0 : (MJARDE.max - m.n) / Math.max(1e-6, d.fangst * rik);
 }
 // sätter ut en fälla nära den som gjort den: en mjärde på stranden, en snara en bit bort där marken är fri
 export function sattUt(s: State, p: Person, k: string) {
