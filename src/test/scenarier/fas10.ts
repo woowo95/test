@@ -119,9 +119,11 @@ SCENARIER.dragdjur = {
     let tim = 0;
     const kvar = () => (b.s.stackar ?? []).some(q => q.k === 'virke' && q.x === pl.x && q.y === pl.y);
     for (; tim < 10 && kvar(); tim++) kor(b.s, 1, x => { x.vader = { ...(x.vader ?? { fukt: 0.5 }), sno: 1 } as typeof x.vader; });
-    kor(b.s, 2);
+    // efter turen: byn kan köra fler turer med det som ligger kvar, så det prövas timme för timme om oxen står i hagen mellan turerna
+    const iHagenNu = () => !spand(b.s, bo.id) && !!b.h && bo.hage === b.h.id && bo.x >= b.h.x && bo.x < b.h.x + b.h.w && bo.y >= b.h.y && bo.y < b.h.y + b.h.h;
+    let hemma = false;
+    for (let i = 0; i < 6 && !hemma; i++) { kor(b.s, 1); hemma = iHagenNu(); }
     const sagsSpand = b.s.stat?.dragdjurTur ?? 0, turer = b.s.stat?.fordonTur_slade ?? 0, perTur = turer ? (b.s.stat?.fordonSaker ?? 0) / Math.max(1, b.s.stat?.fordonTur ?? 0) : 0;
-    const hemma = !spand(b.s, bo.id) && !!b.h && bo.hage === b.h.id && bo.x >= b.h.x && bo.x < b.h.x + b.h.w && bo.y >= b.h.y && bo.y < b.h.y + b.h.h;
     return [
       [`handlarens oxe blir byns och leds in i hagen (${oxe ? 'oxe' : 'ingen'}, ${iHagen ? 'i hagen' : 'utanför'}), och äter som två får (${betesTal(s)} med hästen)`, !!oxe && iHagen && betesTal(s) === 4],
       [`en by utan dragdjur gör ingen släde (vill ha ${utanDjur}), med en oxe en (${medDjur})`, utanDjur === 0 && medDjur === 1],

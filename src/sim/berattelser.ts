@@ -2443,11 +2443,11 @@ const MDEF = {
     { t: 'byns hus och {ting}, och {fig} som står kvar', om: f => f.motiv === 'byn' },
   ],
   // det som ibland ristas till (steg 13.9.16): ett motiv utan något med händelsen att göra
-  b_extra: [', och över dem flyger två korpar', ', och runt bilden slingrar sig en orm', ', och i hörnet står en hjort', ', och över alltihop lyser solen', ', och vid kanten växer ett stort träd', ', och under dem springer en varg', ', och runt kanten går en flätad slinga'],
+  b_extra: [', och över dem flyger två korpar', ', och runt bilden slingrar sig en orm', ', och i hörnet står en hjort', ', och över alltihop lyser solen', ', och vid kanten växer ett stort träd', ', och under dem springer en varg', ', och runt kanten går en flätad slinga', ', och längst ner seglar ett skepp'],
   // ristarens gud på en sten om en strid eller en resa (steg 13.9.16): {gud} = 'guden Dunvald', {omr} = 'åskan och himlen', {i} = var anden bor
-  b_gud: [', och över dem står {gud}, som råder över {omr}', ', och bakom dem vakar {gud}', ', och {gud} håller sin hand över dem'],
+  b_gud: [', och över dem står {gud}, som råder över {omr}', ', och bakom dem vakar {gud}', ', och {gud} håller sin hand över dem', ', och ovanför ser {gud} ner på dem', ', och i molnen syns {gud}', ', och vid deras sida går {gud}', ', och {gud} rider före dem', ', och högst upp på stenen står {gud}'],
   // det bilderna berättar: {vad} = händelsen ('Ivar dödade en björn'), {nar} = 'en vinter', {ristare}
-  b_berattar: ['Den berättar hur {vad}.', 'Bilderna berättar hur {vad}.', 'Den berättar hur {vad}, {nar}.', 'Så minns byn hur {vad}.', '{Ristare} ristade den för att minnas hur {vad}.'],
+  b_berattar: ['Den berättar hur {vad}.', 'Bilderna berättar hur {vad}.', 'Den berättar hur {vad}, {nar}.', 'Så minns byn hur {vad}.', '{Ristare} ristade den för att minnas hur {vad}.', 'Stenen ska minna om hur {vad}.', 'Den som kan läsa bilderna ser hur {vad}.', 'Så ristades minnet av hur {vad}, {nar}.'],
   k_ratt: [
     { t: 'Tinget dömde {namn} för att {hen} {brott}: {ledare} {straff} {honom}.', om: f => iBy(f) && !f.fri },
     { t: 'Det var {arstid} när {namn} stod inför tinget för att {hen} {brott}. {Ledare} {straff} {honom}.', om: f => iBy(f) && !f.fri },

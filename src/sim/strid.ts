@@ -210,7 +210,7 @@ export const VAPEN = {
   benspade: { skarpa: 0.15, namn: 'Benspaden', skada: 0.28, takt: 1.4, rack: 1.3, slag: 'slag', ord: 'slår', tecken: '{sym_benspade}' },
   sten: { skarpa: 0, namn: 'Stenen', skada: 0.25, takt: 1.1, rack: 0.9, slag: 'slag', ord: 'slår', tecken: '🪨', kast: { rack: 8, skada: 0.22, skott: 3 } }, // tre stenar att kasta, sedan slår man med den sista
   bett: { skarpa: 0.2, namn: 'Tänderna', skada: 0.1, takt: 0.8, rack: 0.7, slag: 'bett', ord: 'biter', tecken: '🦷' },
-  vargbett: { skarpa: 0.4, namn: 'Vargens käftar', skada: 0.28, takt: 1.4, rack: 0.9, slag: 'bett', ord: 'biter', tecken: '🐺' }, // vargen biter hårt (steg 3.7.1)
+  vargbett: { skarpa: 0.4, namn: 'Vargens käftar', skada: 0.24, takt: 1.4, rack: 0.9, slag: 'bett', ord: 'biter', tecken: '🐺' }, // vargen biter hårt (steg 3.7.1); 0,24 sedan slagen kom tätare (B.7): tre med spjut vinner oftast mot fyra vargar
   betar: { skarpa: 0.5, namn: 'Vildsvinets betar', skada: 0.3, takt: 1.3, rack: 0.9, slag: 'stick', ord: 'river upp', tecken: '🦷' }, // vildsvinet (steg 10.10.4)
   bjornram: { skarpa: 0.5, namn: 'Björnens ramar', skada: 0.4, takt: 1.6, rack: 1.1, slag: 'riv', ord: 'river', tecken: '🐾' }, // björnen river med klorna och slår hårt (steg 6.6.5), och biter ibland med käftarna (STRID.bjornBett, steg 9.5.13)
 } satisfies Record<string, VapenDef>;

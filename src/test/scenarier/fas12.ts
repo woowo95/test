@@ -924,7 +924,7 @@ SCENARIER.jarnnal = {
     SIM.slitNal(s, q, 'rock'); const slits = c0 - (nal?.c ?? 0);
     const halv = SIM.newTing(s, 'paborjat', 1, q.id); halv.halv = { gor: 'rock_kaninskinn', av: {}, kvar: 10 * SIM.MIN, ag: q.id };
     const sk = { act: 'rock', phase: 'do', tx: q.x, ty: q.y, until: s.now + SIM.HOUR, carry: 0, why: '', ref: halv.id } as SIM.Task;
-    SIM.workHalf(s, q, sk, 60); const fartNu = SIM.fartVid(s, q, 'rock') * SIM.nalFart(s, q, 'rock'), slutNal = sk.until - s.now, vantat = halv.halv.kvar / fartNu;
+    SIM.workHalf(s, q, sk, 60); const fartNu = SIM.fartVid(s, q, 'rock') * SIM.nalFart(s, q, 'rock') * SIM.kunnaFart(s, q, 'rock', 'rock_kaninskinn'), slutNal = sk.until - s.now, vantat = halv.halv.kvar / fartNu;
     s.ting = SIM.tingOf(s).filter(t => t !== halv);
     // ett sår sys med järnnålen som med bennålen
     const sy = SIM.VARD.sy, w = { d: 'armV', k: 'skarsar', g: 0.8, b: 0.5 } as SIM.Skada; q.skador = [w];
@@ -938,7 +938,7 @@ SCENARIER.jarnnal = {
       [`och den blir oftare bra (+${kv.toFixed(2)}, utan ${kv0})`, kv > 0 && kv0 === 0],
       [`sömnaden har en rad för nålen (håller ${rad?.haller} plagg), och den som syr tar nålen i handen (${!!nal})`, rad?.haller === SIM.REDSKAP.nalPlagg && !!nal],
       [`nålen slits per plagg (${slits.toFixed(4)}, en fyrtiondel efter kvaliteten)`, Math.abs(slits - 1 / SIM.REDSKAP.nalPlagg / SIM.kvHaller(nal)) < 1e-9],
-      [`sluttiden räknas ur farten just nu (${(slutNal / SIM.MIN).toFixed(2)} min kvar, väntat ${(vantat / SIM.MIN).toFixed(2)})`, Math.abs(slutNal - vantat) < 1 && fartNu >= 3],
+      [`sluttiden räknas ur farten just nu (${(slutNal / SIM.MIN).toFixed(2)} min kvar, väntat ${(vantat / SIM.MIN).toFixed(2)})`, Math.abs(slutNal - vantat) < 1 && fartNu >= 3 * SIM.KUNTAL.fartMin],
       [`järnnålen ligger i bennålens grupp och syr ett sår som den (${syr})`, SIM.gruppOf('jarnnal') === 'nal' && (S.jarnnal!.rang ?? 0) > (S.nal!.rang ?? 0) && syr],
       [`den håller fyra gånger så länge som bennålen (slits ${S.jarnnal!.slits} mot ${S.nal!.slits})`, Math.abs(S.nal!.slits! / S.jarnnal!.slits! - 4) < 1e-9],
     ];

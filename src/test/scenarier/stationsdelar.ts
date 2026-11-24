@@ -95,7 +95,8 @@ function delbyggen(): [string, boolean][] {
   const summa = dl.reduce((n, q) => n + (q.min ?? 0), 0) === SIM.RECEPT.ortkok.min && dl.reduce((n, q) => n + (q.av?.sten ?? 0), 0) === SIM.RECEPT.ortkok.av!.sten && dl.reduce((n, q) => n + (q.av?.virke ?? 0), 0) === SIM.RECEPT.ortkok.av!.virke;
   const s = createState(1, START);
   medHus(s);
-  const p = s.people[0], tk = (): SIM.Task => ({ act: 'station', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', tool: 'ortkok' });
+  const p = s.people[0]; p.skill[SIM.kunnaSkill('station')] = SIM.KUNTAL.mitt; // den vanliga skickligheten: farten 1 (steg 13.9.8)
+  const tk = (): SIM.Task => ({ act: 'station', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', tool: 'ortkok' });
   for (const k of ['sten', 'virke']) SIM.setAmount(s, k, 0);
   SIM.setAmount(s, 'sten', 4);
   // ett påbörjat örtkök där ingen del har tagit sitt material än (platsen väljs i byggplanen, här står det på en fri plats ute)

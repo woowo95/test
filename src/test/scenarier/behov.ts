@@ -190,8 +190,9 @@ SCENARIER.fritid = {
     kor(s, 4 * 24, s => {
       for (const p of living(s)) {
         const t = p.task;
-        // den som vilar för en skada (raden vilaSkadad) räknas inte: det är tröttheten som prövas, och skadorna kommer av striderna
-        if (ageOf(p, s.now) >= 16 && !vilaHellre(p)) { const l = isLight(s.now), v = t?.act === 'vila' ? 1 : 0; if (l) { vila.dag += v; vila.dagN++; } else { vila.natt += v; vila.nattN++; } }
+        // den som vilar för en skada (raden vilaSkadad) räknas inte: det är tröttheten som prövas, och skadorna kommer av striderna.
+        // På dagen är en paus när inget annat lockar ingen trötthet (steg 11.1.72); i mörkret räknas all vila vid elden
+        if (ageOf(p, s.now) >= 16 && !vilaHellre(p)) { const l = isLight(s.now), v = t?.act === 'vila' && (!l || !t.paus) ? 1 : 0; if (l) { vila.dag += v; vila.dagN++; } else { vila.natt += v; vila.nattN++; } }
         if (t?.phase !== 'do') continue;
         const c = bynsMitt(s), ny = !sett.has(t); sett.add(t); // varje promenad, bad och stund vid stranden räknas en gång
         if (t.act === 'promenad') { if (ny) prom++; gang.set(p.id, Math.max(gang.get(p.id) ?? 0, Math.hypot(t.tx - c.x - 0.5, t.ty - c.y - 0.5))); }

@@ -308,7 +308,7 @@ SCENARIER.paborjat = {
     klockan(s);
     setItems(s, { flinta: 4, grenar: 6 });
     const [p, q] = living(s).filter(r => ageOf(r, s.now) >= 18);
-    for (const r of living(s)) r.tek = { ...r.tek, yxa: 1 };
+    for (const r of living(s)) { r.tek = { ...r.tek, yxa: 1 }; r.skill[SIM.kunnaSkill('yxa')] = SIM.KUNTAL.mitt; } // den vanliga skickligheten: tiden som i receptet (steg 13.9.8)
     const uppgift = (r: Person, act: Act): Task => (r.task = { act, phase: 'do', tx: r.x, ty: r.y, until: s.now, carry: 0 });
     // p börjar på en yxa: materialet tas, och arbetet räknas från att hen kom fram
     const t1 = uppgift(p, 'yxa'); startWork(s, p, t1);
@@ -432,12 +432,17 @@ SCENARIER.bygg = {
     const q = createState(8, START); // by 6 hinner inte bli klar och by 7 dör ut sedan kartan blev 120 × 120 (2.10.9); det balanseras i 2.12
     kan(q);
     let inne = 0, sov = 0, iTrad = 0, trad = -1; // räknas när huset är klart, så att det inte beror på hur fort det råkar bli klart
-    kor(q, 7 * 24, q => { // fyra vuxna i den nya kolonin: huset tar några dygn (sju sedan nattvakten väljs bland de lediga)
-      const bs = bitsOf(q);
-      if (bs.length && trad < 0) trad = bs.filter(b => treeOn(q, b)).length;
-      iTrad += bs.filter(b => b.k === 'vagg' && b.b > 0 && b.b < 1 && treeOn(q, b)).length; // en vägg som byggs där ett träd står
-      if (housesOf(q)[0]?.klar) for (const p of living(q)) if (p.task?.act === 'sova' && p.task.phase === 'do') { sov++; if (roomAt(q, p.x, p.y)) inne++; }
-    });
+    // fyra vuxna i den nya kolonin: huset tar några dygn (sju sedan nattvakten väljs bland de lediga; fler sedan varje bygge hämtar
+    // sitt eget virke i 13.8.12, när familjehusen byggs samtidigt). Byn körs tills huset är klart och ett dygn till, högst tio dygn
+    for (let d = 0, klarD = -1; d < 10 && (klarD < 0 || d - klarD < 1); d++) {
+      kor(q, 24, q => {
+        const bs = bitsOf(q);
+        if (bs.length && trad < 0) trad = bs.filter(b => treeOn(q, b)).length;
+        iTrad += bs.filter(b => b.k === 'vagg' && b.b > 0 && b.b < 1 && treeOn(q, b)).length; // en vägg som byggs där ett träd står
+        if (housesOf(q)[0]?.klar) for (const p of living(q)) if (p.task?.act === 'sova' && p.task.phase === 'do') { sov++; if (roomAt(q, p.x, p.y)) inne++; }
+      });
+      if (klarD < 0 && housesOf(q)[0]?.klar) klarD = d;
+    }
     const fq = getMap(q.seed).fire, hq = housesOf(q)[0];
     const avst = hq ? rektAvstand(fq.x, fq.y, hq.x, hq.y, hq.w, hq.h) : 0;
     // ett planerat långhus räknas i statistiken (planerat_langhus; samhalle-192)
@@ -2027,7 +2032,7 @@ SCENARIER.forradsoverflod = {
     const p = living(s).find(q => ageOf(q, s.now) >= 20)!;
     const fam = SIM.familjOf(s, p.id);
     for (const k of SIM.FOOD) setAmount(s, k, 0);
-    const famBuf = SIM.buffert(s, 'mat') * fam.reduce((a, q) => a + SIM.kroppensMat(q, s.now), 0);
+    const famBuf = fam.reduce((a, q) => a + SIM.egenGrans(s, q), 0); // familjens gräns för den egna maten (steg 13.9.6)
     put(s, 'bar', Math.max(1, Math.floor(famBuf) - 2), { [p.id]: Math.max(1, Math.floor(famBuf) - 2) });
     const haller = SIM.payable(s, p, []).filter(w => SIM.FOOD.includes(w.k)).length === 0;
     put(s, 'bar', 20, { [p.id]: 20 });

@@ -566,9 +566,10 @@ SCENARIER.kista = {
     // och den tar man hellre)
     const q = living(s).find(r => r !== p && !SIM.tingOf(s).some(t => SIM.iSlag(t.k, 'yxa') && t.agare === r.id)) ?? q0;
     const yxa = egna[0]; yxa.vid = k?.id; yxa.x = k?.x; yxa.y = k?.y; yxa.hos = undefined;
-    const tog = take(s, q, 'yxa') === yxa;
+    const iKistan0 = new Set(SIM.tingOf(s).filter(t => t.agare === p.id && iKistan(t)).map(t => t.id)); // p kan ha två yxor i kistan: q tar någon av dem
+    const tagen = take(s, q, 'yxa'), tog = !!tagen && iKistan0.has(tagen.id);
     q.task = undefined; tidyTools(s); placeTools(s);
-    const tillbaka = iKistan(yxa);
+    const tillbaka = !!tagen && iKistan(tagen);
     // något som inte är p:s tas ur kistan
     if (k) { byns.vid = k.id; byns.x = k.x; byns.y = k.y; }
     stepStationer(s); placeTools(s);

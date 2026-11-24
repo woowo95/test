@@ -699,7 +699,7 @@ export const egenGrans = (s: State, p: Person) => (FORRADSMAL.mat.egenFull ?? 1)
 const behalls = (s: State, p: Person, b: Behov) => b.id === 'mat' ? Math.max(b.kvar(s, p), egenGrans(s, p)) : b.kvar(s, p);
 export function behovAv(s: State, p: Person, k: string) {
   const r = brukAv(k);
-  if (r.ting) return r.saknar(s, p, k) > 0 ? DELA.saknar : r.behall(s, p, k) > 0 ? 1 : DELA.over;
+  if (r.ting) return r.saknar(s, p, k) > 0 ? DELA.saknar : !r.over?.(s, p, k) && r.behall(s, p, k) > 0 ? 1 : DELA.over; // ett ting hen har över är värt som det över
   const b = r.behov?.();
   if (!b) {
     if (k === 'silver' && p.skatteskuld) return DELA.over * skuldFaktor(s, p); // skatteskulden gör silvret mer värt (steg 10.5.5)

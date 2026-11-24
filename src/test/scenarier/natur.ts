@@ -718,7 +718,7 @@ SCENARIER.flatarbank = {
       medBank(w, 'flatarbank');
       const p0 = vidBanken ? vidStation(w.stationer!.find(t => t.k !== 'vagn')!) : getMap(w.seed).fire;
       q.x = p0.x; q.y = p0.y + (vidBanken ? 0 : 1);
-      harHamtat(w, q, 'tvinna', { torrgras: 10 }); twineRope(w, q, 0.1); // sex minuter: ett och ett halvt rep för hand sedan steg 2.3.8
+      harHamtat(w, q, 'tvinna', { torrgras: 10 }); twineRope(w, q, 0.1, 10); // byn vill ha rep (10); sex minuter: ett och ett halvt rep för hand sedan steg 2.3.8
       return amountOf(w, 'rep') + (q.delar?.rep ?? 0); // och arbetet mot nästa hela rep (steg 2.10.7)
     };
     const hand = rep(false), vidB = rep(true);

@@ -160,7 +160,7 @@ for (const [ks, why] of [
   [['kolmila', 'kola', 'passa', 'blasterugn', 'blasa', 'malm', 'jarn', 'jarnskrot', 'smedja', 'smida'], 'järnet (system 12.2) börjar med kolmilan, en teknik på nivå 4 efter örtköket, och blästerugnen och smedjan på nivå 5, och malmen hämtas i bergen eller myren; scenarierna kolmila, blaster, jarngruva, jarnskrot och smedja prövar det'],
   [['jarnspjut', 'jarnskold', 'jarnhjalm', 'jarnhjalm_jarn', 'ringbrynja', 'ringbrynja_jarn', 'svard', 'vapensmide'], 'järnvapnen och rustningen (steg 12.2.7–12.2.9) smids i smedjan med vapensmidet, nivå 6; scenarierna vapensmide och jarnvapen prövar dem'],
   [['isborr', 'sag', 'ullsax', 'jarnnal', 'jarnhacka', 'jarngryta', 'eldstal', 'jarnyxa', 'jarnkniv', 'lie', 'spanne', 'spanne_jarn', 'las'], 'redskapen av järn (steg 12.2.10–12.2.17) smids i smedjan, nivå 5–6, och kräver järnet; scenarierna jarnredskap, jarnsmycke, isborr, sag, ullsax, jarnnal, hacka, gryta och las prövar dem'],
-  [['torv'], 'torven (system 12.2) grävs med benspaden i myren, och både benspaden och en myr nära byn är sällsynta; scenariot torv prövar den'],
+  [['torv', 'blottorv'], 'torven (system 12.2) grävs med benspaden i myren, och både benspaden och en myr nära byn är sällsynta; scenariot torv prövar den'],
   [['drejskiva'], 'drejskivan (steg 12.4.1) är en teknik på nivå 4 efter lerkrukan och stenhuggarplatsen; scenariot drejskiva prövar den'],
   [['fyll_lampa'], 'oljelampan (steg 12.4.2) kräver brännolja och en lampa; scenarierna brannolja och oljelampa prövar den'],
   [['stol', 'sang'], 'stolen och sängen (steg 12.4.3–12.4.4) görs vid snickarbänken, nivå 4; scenarierna stol och sang prövar dem'],
