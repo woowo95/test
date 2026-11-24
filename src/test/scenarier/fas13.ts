@@ -1671,10 +1671,11 @@ SCENARIER.strakbuske = {
     const bi = rutor[Math.floor(rutor.length / 2)], pi = rutor.at(-1);
     if (bi !== undefined) { g.buske![bi] = SIM.BUSKE; g.cover[bi] = 1; }
     if (pi !== undefined && pi !== bi) g.trees[pi] = 0.1;
+    for (const i of rutor) if (i !== bi && i !== pi) { g.buske![i] = SIM.BUSKE; g.cover[i] = 1; } // alla de andra rutorna i stråken också, så att inte allt hinner trampas ner
     const fore = { buske: bi !== undefined && SIM.arSly(g, bi), planta: pi !== undefined && SIM.arSly(g, pi) };
     const brist = SIM.slyBrist(s);
     let tim = 0, yxa = false;
-    for (; tim < 5 * 24 && (SIM.arSly(g, bi!) || SIM.arSly(g, pi!)); tim++) kor(s, 1, v => { for (const p of SIM.living(v)) if (p.task?.act === 'rojaSly' && p.task.tool) yxa = true; });
+    for (; tim < 5 * 24 && (SIM.arSly(g, bi!) || SIM.arSly(g, pi!) || !(s.stat?.slyRojt)); tim++) kor(s, 1, v => { for (const p of SIM.living(v)) if (p.task?.act === 'rojaSly' && p.task.tool) yxa = true; });
     return [
       [`en buske och en planta står i stråken (${fore.buske}, ${fore.planta}), och projektet Röjning har en brist (${brist.toFixed(2)})`, fore.buske && fore.planta && brist > 0],
       [`busken och plantan är borta efter ${tim} timmar (högst 5 dygn, 5 år i spelet)`, !SIM.arSly(g, bi!) && !SIM.arSly(g, pi!)],

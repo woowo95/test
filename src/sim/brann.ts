@@ -22,7 +22,7 @@ import { Station, isKlar, stationerOf, vidStation } from './stationer';
 import { knows } from './teknik';
 import { getable, takeMaterial } from './behov';
 import { torrVed } from './blotved';
-import { dropLoad } from './lager';
+import { dropLoad, iBordan } from './lager';
 import { grundvarde, vardeUr } from './varde';
 import { laggTillProjekt } from './projekt';
 
@@ -80,7 +80,7 @@ const defFor = (t: Station) => Object.entries(BRANNINGAR).find(([, d]) => d.stat
 // stationerna för bränningarna, byggda
 export const branningsStationer = (s: State, b?: string) => stationerOf(s).filter(t => isKlar(t) && defFor(t) && (!b || defFor(t)![0] === b));
 // har byn det som läggs in (och torrt, när det ska vara torrt)?
-const harIn = (s: State, p: Person, d: BranningDef) => Object.entries(d.in).every(([k, n]) => getable(s, p, k) >= n && (d.torr !== k || torrVed(s) >= n));
+const harIn = (s: State, p: Person, d: BranningDef) => Object.entries(d.in).every(([k, n]) => getable(s, p, k) >= n && (d.torr !== k || torrVed(s) + iBordan(p, k) >= n)); // veden hen bär hit ligger inte i någon hög och blir inte blöt
 // en tom station av sorten b som p kan ladda: p kan tekniken och byn har det som läggs in
 export function laddbar(s: State, p: Person, b: string) {
   const d = BRANNINGAR[b];
