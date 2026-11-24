@@ -591,7 +591,7 @@ function svimmaSteg(s: State, p: Person) {
   if (!p.svimmat) {
     if (medvetande(p) >= HALSA.svimma && blodSteg(p) < 4) return; // under HALSA.svim svimmar man av blodförlusten (steg 9.5.17)
     p.svimmat = true; avbryt(s, p); p.task = undefined; count(s, 'svimmat');
-    log(s, `${p.name} svimmade.`, 'world', [p.id]);
+    log(s, `${loggNamn(p)} svimmade.`, 'world', [p.id]);
   } else if (medvetande(p) >= HALSA.vakna && blodSteg(p) < 4) { p.svimmat = undefined; if (p.task?.act === 'medvetslos') p.task = undefined; }
 }
 

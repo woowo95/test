@@ -11,6 +11,7 @@
 //     eller fortsätta med sitt. Valet är en poäng ur empatin, modet, banden till dem som slåss och blodtörsten (narStridVal).
 // Steg 10.1.4 flyttar slagsmålet efter ett gräl hit; leken, brottningen, rånen och ledarstriden kommer i 10.1.7 och rövarna
 // och djuren i stegen efter.
+import { loggNamn } from './gast';
 import { balans } from './balans';
 import { KLOCKA, SLAGHINDER, nasTid } from './klocka';
 import { GANG } from './gang';
@@ -29,7 +30,7 @@ import { die } from './liv';
 import { lista, och } from './ord';
 import { handelse, larma } from './rykten';
 import { clamp, rnd } from './slump';
-import { AVSIKTER, Avsikt, Kampe, SLAGSMAL, STRID, laggTill, Strid, StridVarld, Uppstallning, efterStrid, foljet, iVarlden, nyStrid, personKampe, skilj, slagen, slitKastat, starKvar, stridRad, stridSteg, vadretIStriden } from './strid';
+import { AVSIKTER, Avsikt, Kampe, SLAGSMAL, STRID, laggTill, Strid, StridVarld, Uppstallning, efterStrid, foljet, iVarlden, nyStrid, personKampe, skilj, slagen, harSlagits, slitKastat, starKvar, stridRad, stridSteg, vadretIStriden } from './strid';
 import { ledareOf } from './styre';
 import { larmRollNu } from './roller';
 import { Act, H, HOUR, Person, SEC, State, W } from './typer';
@@ -287,7 +288,7 @@ function kartStridSlut(s: State, g: KartStrid) {
   stridProv.slut?.(s, g);
   const st = g.st, lek = lekAv(st.avsikt), vinnare = st.slut!.vinnare;
   const sidor = ([0, 1] as const).map(sd => st.kampar.filter(k => k.sida === sd).map(k => personAv(s, k)).filter((p): p is Person => !!p)) as [Person[], Person[]];
-  const namn = (sd: 0 | 1) => lista(sidor[sd].map(p => p.name));
+  const namn = (sd: 0 | 1) => lista(sidor[sd].map(loggNamn));
   const ids = [...sidor[0], ...sidor[1]].map(p => p.id);
   const skiljare = g.skild !== undefined ? byId(s, g.skild) : undefined;
   if (g.efter?.egen) { // den som började striden tar själv hand om följderna (rövarna)
@@ -311,7 +312,7 @@ function kartStridSlut(s: State, g: KartStrid) {
   }
   if (g.efter) EFTER[g.efter.typ]?.(s, g.efter, vinnare, g); // det den som började striden väntade på (steg 10.1.7)
   // vinnaren blir ett rykte i byn (steg 3.3.1): de som såg det minns det
-  if (!lek && vinnare !== -1) for (const p of sidor[vinnare]) if (p.health > 0 && alive(p) && sidor[1 - vinnare][0]) handelse(s, p, 'vannSlagsmal', sidor[1 - vinnare][0]);
+  if (!lek && vinnare !== -1 && harSlagits(st)) for (const p of sidor[vinnare]) if (p.health > 0 && alive(p) && sidor[1 - vinnare][0]) handelse(s, p, 'vannSlagsmal', sidor[1 - vinnare][0]);
   // rapporten sparas (steg 8.8.10); själva striden går inte att räkna om, för den skedde i världen
   avslutad(s, g, vinnare);
 }

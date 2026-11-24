@@ -19,7 +19,7 @@ import { LARM, handelse, horLarm } from './rykten';
 import { SAKER, SAK_LIST } from './saker';
 import { vattenNu } from './sjo';
 import { avst, clamp, hash3, rnd } from './slump';
-import { STRID, VAPEN, personKampe, efterKampen, type Kampe } from './strid';
+import { STRID, VAPEN, personKampe, efterKampen, harSlagits, type Kampe } from './strid';
 import { isLight, lightLevel } from './tid';
 import { larmAvbryter } from './handlingar';
 import { lagGaller } from './lagar';
@@ -940,8 +940,7 @@ EFTER.rovare = (s, e, vinnare, strid) => {
   const dodaBybor = bybor.filter(b => b.k.lage === 'dod').map(b => b.k.namn);
   const text = `${namn} slogs med ${tal(n)} rövare ${f ? fran(s, f) : ''} ${f?.anfall ? 'i byn' : 'vid byn'}. ${doda ? `${stor(tal(doda))} rövare dog. ` : ''}${dodaBybor.length ? `${lista(dodaBybor)} dog. ` : ''}${vinnare === 1 ? `${n > 1 ? 'Rövarna' : 'Rövaren'} vann.` : vinnare === 0 ? `${n > 1 ? 'Rövarna' : 'Rövaren'} flydde.` : 'Ingen vann.'}${svara.length ? ` ${lista(svara)} skadades svårt.` : ''}`.replace(/ +/g, ' ');
   const ids = bybor.map(b => b.k.pid!).filter(x => x !== undefined), plats = forst ? { x: Math.floor(forst.x), y: Math.floor(forst.y) } : undefined;
-  log(s, text, 'world', ids); notis(s, 'strid', text, ids, plats);
-  kronika(s, text, 'rovare');
+  if (harSlagits(st)) { log(s, text, 'world', ids); notis(s, 'strid', text, ids, plats); kronika(s, text, 'rovare'); } // (utan ett slag är det ingen strid att skriva om, steg B.18)
   if (f && vinnare === 0) for (const r of rovarna(s, f)) gr(r).flytt = true; // den slagna flocken flyr
   if (vinnare === 0 && s.styre && ledareOf(s)) s.styre.vunna = (s.styre.vunna ?? 0) + 1; // byn slog tillbaka rövarna: en vunnen strid i ledarens framgång (steg 8.3.9, fynd 456)
   if (vinnare === 0) allaBarn(s, 'rovareBort'); // barnen som såg det (steg 12.1.133)

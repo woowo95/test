@@ -2443,3 +2443,39 @@ SCENARIER.samlad = {
     ];
   },
 };
+
+SCENARIER.stridlogg = {
+  text: 'Steg B.18: en strid där ingen slagit ett slag skrivs inte som en strid i loggen och krönikan, och rövarna har sin titel (Rövaren och namnet) i alla rader om dem',
+  kor: () => {
+    let rader = 0, utan = 0, namnfel = 0, tomma = 0, skrivna = 0, slagna = 0; const fel: string[] = [];
+    for (const seed of [6, 7, 8, 9, 10, 11]) {
+      const s = SIM.createState(seed, START); klockan(s, 11); for (const c of SIM.klanerOf(s)) c.inst = -60;
+      const z = SIM.zoneOf(s)!, f = rovarGang(s, 4, { x: Math.min(SIM.W - 3, z.x + z.w + 14), y: z.y + z.h / 2 }, { anfaller: true }); f.sedd = s.now; f.anfallT = s.now;
+      for (const p of SIM.living(s)) { p.pot.mod = 16; p.larm = { rovare: { t: s.now, vad: 'rovare', storlek: 4, led: 0, varnat: 1 } }; p.task = undefined; }
+      for (let i = 0; i < 4; i++) SIM.newTing(s, 'fiskespjut', 1, SIM.BYN);
+      const namn = SIM.rovarna(s, f).map(r => r.name), sedda = new Set<object>(s.log);
+      korTills(s, () => !s.rovare && !SIM.kartStrider(s).length, 1800, () => {
+        for (const r of s.log) if (!sedda.has(r)) { sedda.add(r); for (const n of namn) if (new RegExp(`(^|[^A-Za-zÅÄÖåäö])${n}s?([^A-Za-zåäö]|$)`).test(r.text)) { rader++; if (!r.text.includes(`Rövaren ${n}`) && !r.text.includes(`Fången ${n}`)) { utan++; if (fel.length < 5) fel.push(r.text); } } }
+      });
+      slagna += s.log.filter(r => /slogs med .* rövare/.test(r.text)).length;
+    }
+    // en strid där rövarna flyr innan någon slagit
+    {
+      const s = SIM.createState(6, START); klockan(s, 11);
+      const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
+      const p = SIM.living(s).find(q => SIM.vuxenKan(s, q))!, f = rovarGang(s, 2, { x: m.x + 4, y: m.y }, { anfaller: true }); f.sedd = s.now;
+      Object.assign(p, SIM.freeNear(s, m.x, m.y));
+      const g = SIM.kartStridBorja(s, 'skada', [[p], SIM.rovarna(s, f)], 'rövare vid byn', { typ: 'rovare', egen: true, flock: f.id });
+      for (const k of g.st.kampar) if (k.sida === 1) k.lage = 'borta';
+      const n0 = s.log.length, k0 = (s.hist?.kronika.length ?? 0); namnfel = g.st.kampar.filter(k => k.sida === 1 && !k.namn.startsWith('Rövaren ')).length;
+      korTills(s, () => !SIM.kartStrider(s).includes(g), 600);
+      tomma++; if (!g.st.logg.some(r => r.sl) && (s.log.slice(n0).some(r => /slogs/.test(r.text)) || (s.hist?.kronika.length ?? 0) > k0)) skrivna++;
+      if (g.st.logg.some(r => r.sl)) tomma = 0;
+    }
+    return [
+      [`rövarna har sin titel i alla rader (${rader} rader, ${utan} utan: ${fel.join(' | ')})`, rader >= 1 && utan === 0 && namnfel === 0],
+      [`en strid utan slag skrivs inte (${skrivna} av ${tomma} skrevs)`, tomma === 1 && skrivna === 0],
+      [`en strid med slag skrivs (${slagna})`, slagna > 0],
+    ];
+  },
+};

@@ -1,4 +1,5 @@
 // Striden (fas 3, system 3.7). Grunden byggdes med testarenan (steg 3.7.5): en strid är två sidor av kämpar (Kampe) på en
+import { loggNamn } from './gast';
 import { och, skada as skadaOrd, stor, tal } from './ord';
 import { kronikaBer, loggBer, personFalt } from './berattelser';
 // liten plats, med en avsikt (AVSIKTER) som avgör när den slutar. Den räknas i fasta tidssteg om STRID.tick sekunder
@@ -597,6 +598,8 @@ function markSlag(st: Strid, n0: number, vant: number) {
 // ett anfall som händelse: när, hur länge, vem som anföll (fran) och vem det gällde (mot), vapnet, om det kastades och hur det gick
 export interface SlagHandelse { t: number; l: number; fran: number; mot: number; v?: Vapen; kast?: 1; utfall: Handelse; rad: number }
 // fran: raderna före den hoppas över (bilden tar bara det nya efter varje stridssteg, steg 12.1.104)
+// har någon slagit ett slag? En strid utan slag skrivs inte som en strid i byns logg och krönika (steg B.18, "Larmet" i fliken Människan)
+export const harSlagits = (st: Strid) => st.logg.some(r => r.sl);
 export function slagen(st: Strid, fran = 0): SlagHandelse[] {
   const ut: SlagHandelse[] = [];
   for (let rad = Math.max(0, fran); rad < st.logg.length; rad++) {
@@ -1049,7 +1052,7 @@ export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: num
   for (const t of [...ownedBy(s, p).filter(egen), ...allaTing(s).filter(t => t.hos === p.id)]) if (t.k === vapen || t.k === reserv) kv[t.k] = Math.max(kv[t.k] ?? 0, STRID.kvSkada[kvOf(t)]);
   for (const k in kv) if (kv[k] === 1) delete kv[k];
   return {
-    emp: stat(p, 'empati', s.now), id, namn: p.name, sida, pid: p.id, blod0: p.blod, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined /* rövarna har ingen ledare (steg 10.2.25) */, gast: p.gast ? 1 : undefined, kv: Object.keys(kv).length ? kv : undefined, pil: !p.gast && VAP[vapen].kast?.pil ? bastaAmmo(s, 'pilar') : undefined, skoldJarn: bar.includes('jarnskold') && !TVA_HAND.has(vapen) ? true : undefined, skold: (bar.includes('skold') || bar.includes('jarnskold')) && !TVA_HAND.has(vapen) ? true : undefined, klader: [...new Set(paSig(s, p).map(q => q.k))].filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / UTRUSTNING.kropp / Math.max(1, capacity(s, p)), 0, 1),
+    emp: stat(p, 'empati', s.now), id, namn: loggNamn(p), sida, pid: p.id, blod0: p.blod, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined /* rövarna har ingen ledare (steg 10.2.25) */, gast: p.gast ? 1 : undefined, kv: Object.keys(kv).length ? kv : undefined, pil: !p.gast && VAP[vapen].kast?.pil ? bastaAmmo(s, 'pilar') : undefined, skoldJarn: bar.includes('jarnskold') && !TVA_HAND.has(vapen) ? true : undefined, skold: (bar.includes('skold') || bar.includes('jarnskold')) && !TVA_HAND.has(vapen) ? true : undefined, klader: [...new Set(paSig(s, p).map(q => q.k))].filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / UTRUSTNING.kropp / Math.max(1, capacity(s, p)), 0, 1),
     st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now) - paSig(s, p).reduce((a, q) => a + (PLAGG[kladAv(q.k)?.plagg as keyof typeof PLAGG]?.smid ?? 0), 0) - rusSmid(p), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2 + STRID.tyckeSkick * smakAv(p, 'v:' + vapen) - rusTraff(p), sikte: (5 + (p.skill.traff ?? 0) / 2) * syn(p) * blodFaktor(p) - rusTraff(p), /* ruset (steg 9.6.14) */ torst: blodtorst(s, p) },
   };
 }
@@ -1182,6 +1185,7 @@ export function vadretIStriden(s: State): Pick<Uppstallning, 'vind' | 'dimma' | 
 // (s.log); när någon vann eller ingen vann skrivs raden ur mallen l_slagsmal (steg 6.7.7)
 export function stridRad(s: State, st: Strid, namn: (sd: 0 | 1) => string, orsak: string, ids: number[]) {
   const v = st.slut!.vinnare;
+  if (v === -1 && !harSlagits(st)) return;
   // fler än två: alla namnen i en lista ("Sia, Ymgerd och Svae"), inte "Sia och Ymgerd och Svae"
   const alla = [namn(0), namn(1)].flatMap(x => x.split(/, | och /)), forsta = alla.length > 2 ? alla.slice(0, -1).join(', ') : namn(0), sista = alla.length > 2 ? alla[alla.length - 1] : namn(1);
   const slogs = `${forsta} och ${sista} slogs (${orsak}).`;
@@ -1200,7 +1204,7 @@ export function efterStrid(s: State, st: Strid, k: Kampe, p: Person, mot: Person
   ovaNarstrid(p, st, k, lek ? SLAGSMAL.ovningLek : SLAGSMAL.ovning);
   // tycket för vapnet (steg 3.7.10): den som vann eller övade med det gillar det, en svår förlust ger ogillande
   const svar = k.lage === 'nere' || k.skador.reduce((a, w) => a + w.g, 0) >= STRID.tyckeSvar;
-  if (svartSkadad(k)) { notis(s, 'strid', `${p.name} skadades svårt i ${lek ? 'en lek' : 'ett slagsmål'} med ${och(mot.map(q => q.name))}.`, [p.id, ...mot.map(q => q.id)], { x: Math.floor(p.x), y: Math.floor(p.y) }); kronikaBer(s, lek ? 'k_skadadLek' : 'k_skadad', p.id, { ...personFalt(p), mot: och(mot.map(q => q.name)), flera: mot.length > 1 }); } // steg 3.7.16: döden skriver die
+  if (svartSkadad(k)) { notis(s, 'strid', `${p.name} skadades svårt i ${lek ? 'en lek' : 'ett slagsmål'} med ${och(mot.map(loggNamn))}.`, [p.id, ...mot.map(q => q.id)], { x: Math.floor(p.x), y: Math.floor(p.y) }); kronikaBer(s, lek ? 'k_skadadLek' : 'k_skadad', p.id, { ...personFalt(p), mot: och(mot.map(q => q.name)), flera: mot.length > 1 }); } // steg 3.7.16: döden skriver die
   if (lek) smaka(p, 'v:' + k.vapen, STRID.tyckeLek);
   else if (vinnare === k.sida) smaka(p, 'v:' + k.vapen, STRID.tyckeVann);
   else if (vinnare !== -1 && svar) smaka(p, 'v:' + k.vapen, -STRID.tyckeForlust);

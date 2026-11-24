@@ -1,3 +1,4 @@
+import { loggNamn } from './gast';
 import { gen, heltOrd } from './ord';
 import { doljISno } from './utrustning';
 import { heligtAvstar } from './kultlatt';
@@ -27,7 +28,7 @@ import { KOTTSLAG, SAKER } from './saker';
 import { DJUR, type Djurart } from './redskap';
 import { vattenNu } from './sjo';
 import { avst, clamp, rnd, chansPer } from './slump';
-import { SLAGSMAL, VAPEN, Avsikt, djurKampe, personKampe, efterKampen } from './strid';
+import { SLAGSMAL, VAPEN, Avsikt, djurKampe, personKampe, efterKampen, harSlagits } from './strid';
 import { DjurMed, KartStrid, kartStridBorja, kartStrider } from './kartstrid';
 import { EFTER, Efter, FAROR, STRIDSLAG } from './efterstrid';
 import { kvarById } from './kvarlevor';
@@ -658,8 +659,8 @@ function vargSlut(s: State, efter: Efter, vinnare: 0 | 1 | -1, g: KartStrid) {
     if (spar) { count(s, 'vargSpar'); log(s, `Jägarna följde blodspåret och fällde den skadade vargen.`, 'world', folk.map(p => p.id)); }
     if (k.lage === 'dod' || spar) {
       dodaDjur(s, id);
-      const forsta = forstaGang(s, 'vargDodad'); // räknar också
       const r = [...st.logg].reverse().find(x => x.h === 'traff' && x.b === k.id), fk = r && st.kampar.find(q => q.id === r.a), fallde = fk?.pid !== undefined ? byId(s, fk.pid) : undefined;
+      const forsta = !fallde?.gast && forstaGang(s, 'vargDodad'); // räknar också; rövarens byte är inte byns (steg B.18)
       if (fallde) { handelse(s, fallde, 'vargdodare'); livet(s, fallde, 'vargar'); upplev(s, fallde, 'fallde'); if (r?.v) sakVarg(s, redskapIHanden(s, fallde, r.v), fallde); // vapnet minns vargen (steg 3.9.4)
          if (forsta) { log(s, `${fallde.name} dödade byns första varg.`, 'world', [fallde.id]); kronikaBer(s, 'k_forstaVarg', fallde.id, personFalt(fallde)); } }
       doda.push(fallde ?? folk[0] ?? alla[0]);
@@ -684,10 +685,10 @@ function vargSlut(s: State, efter: Efter, vinnare: 0 | 1 | -1, g: KartStrid) {
   });
   if (doda.length > bar.size) { count(s, 'vargKvar', doda.length - bar.size); lamnaFallt(s, 'varg', doda.length - bar.size, folk[0].x, folk[0].y); } // fler fällda än det fanns bärare: de ligger kvar (steg 6.6.1)
   blodas(s, folk[0].x, folk[0].y, 'jakt', 1);
-  const namn = lista(folk.map(p => p.name));
-  const rov = folk.some(p => p.gast?.sort === 'rovare'), vargarna = n > 1 ? 'Vargarna' : 'Vargen'; // rövarnas strid mot vargarna skrivs som rövarnas (steg 12.1.119)
-  const stText = `${rov ? `Rövarna ${namn}` : namn} slogs med ${n > 1 ? `${tal(n)} vargar` : 'en varg'} ${orsak}. ${doda.length ? `${stor(tal(doda.length))} ${doda.length === 1 ? 'varg dog' : 'vargar dog'}. ` : ''}${vinnare === 0 ? `${vargarna} förlorade.` : vinnare === 1 ? `${vargarna} vann.` : 'Ingen vann.'}`;
-  log(s, stText, 'world', folk.map(p => p.id)); notis(s, 'strid', stText, folk.map(p => p.id), { x: Math.floor(folk[0].x), y: Math.floor(folk[0].y) });
+  const namn = lista(folk.map(loggNamn));
+  const vargarna = n > 1 ? 'Vargarna' : 'Vargen';
+  const stText = `${namn} slogs med ${n > 1 ? `${tal(n)} vargar` : 'en varg'} ${orsak}. ${doda.length ? `${stor(tal(doda.length))} ${doda.length === 1 ? 'varg dog' : 'vargar dog'}. ` : ''}${vinnare === 0 ? `${vargarna} förlorade.` : vinnare === 1 ? `${vargarna} vann.` : 'Ingen vann.'}`;
+  if (harSlagits(st)) { log(s, stText, 'world', folk.map(p => p.id)); notis(s, 'strid', stText, folk.map(p => p.id), { x: Math.floor(folk[0].x), y: Math.floor(folk[0].y) }); } // (steg B.18)
   // krönikan (steg 3.7.16): varje vargjakt, och den som skadades svårt när vargarna anföll (döden skriver die)
   if (avsikt === 'doda') kronikaBer(s, 'k_vargjakt', folk[0].id, { folk: och(folk.map(p => p.name)), de: folk.length > 1 ? 'de' : han(folk[0]), vargar: n > 1 ? `${tal(n)} vargar` : 'en varg', fallde: tal(doda.length), svara: svaraText(folk, svara) });
   else if (svara.length) kronikaBer(s, 'k_vargAnfall', folk[0].id, { svara: och(svara) });

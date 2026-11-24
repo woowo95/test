@@ -1,3 +1,4 @@
+import { loggNamn } from './gast';
 import { heligtAvstar } from './kultlatt';
 // Björnen möter folk (steg 6.6.5). Björnen själv och ungarna går sin väg ur kartan och klockan (bjornarOf i djur.ts); här
 // avgörs vad som händer när någon kommer nära den. Den anfaller sällan: oftast blir man rädd och går därifrån. Men den som
@@ -22,7 +23,7 @@ import { avbryt, foodOf } from './lager';
 import { notis } from './notiser';
 import { handelse, larma, larmNu } from './rykten';
 import { clamp, rnd } from './slump';
-import { SLAGSMAL, VAPEN, Avsikt, personKampe, efterKampen } from './strid';
+import { SLAGSMAL, VAPEN, Avsikt, personKampe, efterKampen, harSlagits } from './strid';
 import { DjurMed, KartStrid, djurIKartStrid, kartStridBorja, kartStridMed } from './kartstrid';
 import { EFTER, Efter, FAROR, STRIDSLAG } from './efterstrid';
 import { lamnaFallt, styckaFallt } from './styckning';
@@ -205,8 +206,8 @@ function bjornSlut(s: State, efter: Efter, vinnare: 0 | 1 | -1, g: KartStrid) {
   const bk = st.kampar.find(k => k.djur === 'bjorn')!, falld = bk.lage === 'dod';
   if (falld) {
     dodaDjur(s, id); s.bjornFalld = yearNo(s, s.now); count(s, 'bjornDodadIStrid');
-    const forsta = forstaGang(s, 'bjornDodad');
     const r = [...st.logg].reverse().find(x => x.h === 'traff' && x.b === bk.id), fk = r && st.kampar.find(k => k.id === r.a), fallde = fk?.pid !== undefined ? byId(s, fk.pid) : undefined;
+    const forsta = !fallde?.gast && forstaGang(s, 'bjornDodad'); // räknar också; rövarens byte är inte byns (steg B.18)
     if (fallde) {
       handelse(s, fallde, 'bjorndodare'); livet(s, fallde, 'bjornar'); upplev(s, fallde, 'fallde');
       if (forsta) { log(s, `${fallde.name} dödade byns första björn.`, 'world', [fallde.id]); kronikaBer(s, 'k_forstaBjorn', fallde.id, personFalt(fallde)); }
@@ -231,12 +232,12 @@ function bjornSlut(s: State, efter: Efter, vinnare: 0 | 1 | -1, g: KartStrid) {
   });
   if (falld && !bar) { count(s, 'bjornKvar'); lamnaFallt(s, 'bjorn', 1, folk[0].x, folk[0].y); }
   blodas(s, folk[0].x, folk[0].y, 'jakt', 1);
-  const namn = och(folk.map(p => p.name)), svaraT = svaraText(folk, svara);
+  const namn = och(folk.map(loggNamn)), svaraT = svaraText(folk, svara);
   const text = jakt ? `${namn} gick på björnjakt. ${falld ? 'Björnen dog.' : 'Björnen kom undan.'}`
     : `En björn${medUngar ? ' med ungar' : ''} anföll ${namn}. ${falld ? 'Björnen dog.' : vinnare === 0 ? 'Björnen gav sig av.' : 'Björnen vann och gick sin väg.'}`;
-  log(s, text, 'world', folk.map(p => p.id)); notis(s, 'strid', text, folk.map(p => p.id), { x: Math.floor(folk[0].x), y: Math.floor(folk[0].y) });
+  if (jakt || harSlagits(st)) { log(s, text, 'world', folk.map(p => p.id)); notis(s, 'strid', text, folk.map(p => p.id), { x: Math.floor(folk[0].x), y: Math.floor(folk[0].y) }); } // (steg B.18)
   if (jakt) kronikaBer(s, falld ? 'k_bjornjakt' : 'k_bjornjaktMiss', folk[0].id, { folk: namn, svara: svaraT });
-  else kronikaBer(s, 'k_bjornAnfall', folk[0].id, { folk: namn, svara: svaraT });
+  else if (harSlagits(st)) kronikaBer(s, 'k_bjornAnfall', folk[0].id, { folk: namn, svara: svaraT });
   if (!falld) bjornGarUndan(s, folk[0].x, folk[0].y); // björnen som vunnit eller gett upp går bort från byn (steg 9.2.30)
 }
 EFTER.bjorn = (s, efter, vinnare, g) => bjornSlut(s, efter, vinnare, g as KartStrid);
