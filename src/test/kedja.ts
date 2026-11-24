@@ -8,6 +8,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { ALLVARLIGT } from './pool';
+import { foljBatteriet } from './batteri';
 
 const kommandon = process.argv.slice(2);
 if (!kommandon.length) { console.log('Skriv kommandona inom citattecken: npm run kedja -- "npm run -s koll" "npm run -s likhet"'); process.exit(1); }
@@ -37,6 +38,7 @@ const kor = (k: string, fil: string) => new Promise<number>(ok => {
 const roda = new Map<string, string[]>(), fel: { k: string; kod: number; fil: string }[] = [];
 const t0 = Date.now();
 let stannade = '';
+foljBatteriet(rad => console.log(`[${klocka()}] ${rad}`)); // pausar när batteriet är lågt (batteri.ts)
 for (const [i, k] of kommandon.entries()) {
   const a = Date.now(), fil = `${UT}${i + 1}.txt`;
   console.log(`[${klocka()}] ${i + 1}/${kommandon.length}: ${k}`);

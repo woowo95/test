@@ -23,6 +23,7 @@ export const FORMVAKTER: { id: string; namn: string }[] = [
   { id: 'palett', namn: 'Färger utanför paletten i panelerna' },
   { id: 'finger', namn: 'Knappar mindre än ett finger' },
   { id: 'tata', namn: 'Knappar tätare än gränsen' },
+  { id: 'overlapp', namn: 'Knappar eller namn som ligger över varandra' },
   { id: 'sidled', namn: 'Rullning i sidled' },
   { id: 'rullning', namn: 'En rullning inuti en rullning' },
   { id: 'kanter', namn: 'Kanter i samma rad eller kolumn som skiljer sig några punkter' },
@@ -34,8 +35,8 @@ export const FORMVAKTER: { id: string; namn: string }[] = [
 ];
 export interface FormLarm { vakt: string; flik: string; sak: string; matt: string }
 
-// mätningen i sidan: ({ pal, form, flik, mobil }) => FormLarm[]. Paletten som tal (0xRRGGBB). Bara det som syns i panelerna
-export const FORM_MATA = `({ pal, form, flik, mobil }) => {
+// mätningen i sidan: ({ pal, form, flik, mobil, topp }) => FormLarm[]; topp mäter sidhuvudet och runstenarna i stället för panelerna. Paletten som tal (0xRRGGBB). Bara det som syns i panelerna
+export const FORM_MATA = `({ pal, form, flik, mobil, topp }) => {
   const P = new Set(pal), ut = [], antal = {};
   const larm = (vakt, el, matt) => { antal[vakt] = (antal[vakt] || 0) + 1; if (antal[vakt] > form.max) return; ut.push({ vakt, flik, sak: namn(el), matt }); };
   const namn = el => { if (!el || !el.tagName) return ''; const t = (el.innerText || el.getAttribute('aria-label') || el.getAttribute('title') || '').replace(/\\s+/g, ' ').trim().slice(0, 40); return el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\\s+/)[0] : '') + (t ? ' "' + t + '"' : ''); };
@@ -44,13 +45,28 @@ export const FORM_MATA = `({ pal, form, flik, mobil }) => {
   const tal = c => (Math.round(c.r) << 16) | (Math.round(c.g) << 8) | Math.round(c.b);
   const lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
   const bakgrund = el => { for (let e = el; e; e = e.parentElement) { const c = rgb(getComputedStyle(e).backgroundColor); if (c && c.a > 0.5) return c; } return { r: 255, g: 255, b: 255, a: 1 }; };
-  const paneler = [...document.querySelectorAll('.panel:not([hidden]) .panelkropp')].filter(syns);
+  const paneler = [...document.querySelectorAll(topp ? 'header, nav.tabs' : '.panel:not([hidden]) .panelkropp')].filter(syns);
   const EMOJI = /\\p{Extended_Pictographic}/u;
   for (const pan of paneler) {
     const alla = [...pan.querySelectorAll('*')].filter(syns);
     if (!(pan.innerText || '').trim() && !pan.querySelector('img,svg,canvas')) larm('tom', pan, 'fliken är tom');
     if (pan.scrollWidth > pan.clientWidth + 1) larm('sidled', pan, 'rullar i sidled: ' + pan.scrollWidth + ' mot ' + pan.clientWidth + ' punkter');
     const pr = pan.getBoundingClientRect();
+    // det som syns av en knapp: rutan och det som står i den (namnet kan vara bredare än rutan)
+    const yta = b => {
+      let l = 1e9, r = -1e9, t = 1e9, bo = -1e9; const med = q => { if (q.width > 0 && q.height > 0) { l = Math.min(l, q.left); r = Math.max(r, q.right); t = Math.min(t, q.top); bo = Math.max(bo, q.bottom); } };
+      med(b.getBoundingClientRect());
+      // texten i knappen; inte märken som ligger i hörnet (absolute) och inte text som klipps av sin ruta (den larmar utanfor för)
+      const ga = e => { const c = getComputedStyle(e); if (e !== b && c.position === 'absolute' || c.overflowX === 'hidden') return; for (const n of e.childNodes) { if (n.nodeType === 1) ga(n); else if (n.nodeType === 3 && n.textContent.trim()) { const rg = document.createRange(); rg.selectNodeContents(n); for (const q of rg.getClientRects()) med(q); } } };
+      ga(b); return { l, r, t, b: bo };
+    };
+    const knappar = alla.filter(el => el.tagName === 'BUTTON' || el.getAttribute('role') === 'button' || topp && el.closest('header') && el.parentElement && el.parentElement.matches('header, .cal, .nycklar') && !el.matches('.cal, .nycklar')), ytor = knappar.map(yta);
+    for (let i = 0; i < knappar.length; i++) {
+      const A = ytor[i], bb = knappar[i].getBoundingClientRect();
+      if (topp && (A.r > pr.right + 1 || A.l < pr.left - 1 || pan.tagName === 'HEADER' && (A.b > pr.bottom + 1 || A.t < pr.top - 1))) larm('utanfor', knappar[i], 'sticker ut ur ' + pan.tagName.toLowerCase());
+      else if (A.r - bb.right > 1 || bb.left - A.l > 1) larm('overlapp', knappar[i], 'namnet är ' + Math.round(A.r - A.l) + ' punkter brett och knappen ' + Math.round(bb.width));
+      for (let j = i + 1; j < knappar.length; j++) { if (knappar[i].contains(knappar[j]) || knappar[j].contains(knappar[i])) continue; const B = ytor[j], w = Math.min(A.r, B.r) - Math.max(A.l, B.l), h = Math.min(A.b, B.b) - Math.max(A.t, B.t); if (w > 1 && h > 1) larm('overlapp', knappar[j], 'ligger ' + Math.round(w) + ' × ' + Math.round(h) + ' punkter över ' + namn(knappar[i])); }
+    }
     for (const el of alla) {
       const c = getComputedStyle(el), r = el.getBoundingClientRect(), egenText = [...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim());
       // text som sticker ut eller klipps
@@ -58,7 +74,7 @@ export const FORM_MATA = `({ pal, form, flik, mobil }) => {
       if (egenText && (c.overflow === 'hidden' || c.overflowX === 'hidden' || c.textOverflow === 'ellipsis') && el.scrollWidth > el.clientWidth + 1) larm('utanfor', el, 'klipps: ' + el.scrollWidth + ' mot ' + el.clientWidth + ' punkter');
       // en rubrik, knapp eller etikett på för många rader
       const lh = parseFloat(c.lineHeight) || parseFloat(c.fontSize) * 1.25;
-      if (/^(H[1-6]|BUTTON|LABEL)$/.test(el.tagName) || el.classList.contains('etik')) { const rg = document.createRange(); rg.selectNodeContents(el); const tops = new Set([...rg.getClientRects()].filter(q => q.width > 0 && q.height > 4).map(q => Math.round(q.top / (lh * 0.8)))); if (tops.size > form.rubrikRader && (el.innerText || '').trim()) larm('rader', el, tops.size + ' rader text'); }
+      if (/^(H[1-6]|BUTTON|LABEL)$/.test(el.tagName) && !el.matches('.runsten') || el.classList.contains('etik')) { const rg = document.createRange(); rg.selectNodeContents(el); const tops = new Set([...rg.getClientRects()].filter(q => q.width > 0 && q.height > 4).map(q => Math.round(q.top / (lh * 0.8)))); if (tops.size > form.rubrikRader && (el.innerText || '').trim()) larm('rader', el, tops.size + ' rader text'); }
       // ett ensamt ord på sista raden
       if (el.tagName === 'P' && egenText && r.height > lh * 1.5) {
         const rg = document.createRange(), tn = [...el.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim()).pop();
@@ -78,7 +94,7 @@ export const FORM_MATA = `({ pal, form, flik, mobil }) => {
         const px = parseFloat(c.fontSize);
         if (px < form.minPx) larm('liten', el, px + ' punkter');
         const f = rgb(c.color), b = bakgrund(el);
-        if (f) { const k = (Math.max(lum(f), lum(b)) + 0.05) / (Math.min(lum(f), lum(b)) + 0.05), stor = px >= 18 || (px >= 14 && +c.fontWeight >= 700); if (k < (stor ? form.kontrastStor : form.kontrast)) larm('kontrast', el, 'kontrasten ' + k.toFixed(2)); }
+        if (f && c.textShadow === 'none') { const k = (Math.max(lum(f), lum(b)) + 0.05) / (Math.min(lum(f), lum(b)) + 0.05), stor = px >= 18 || (px >= 14 && +c.fontWeight >= 700); if (k < (stor ? form.kontrastStor : form.kontrast)) larm('kontrast', el, 'kontrasten ' + k.toFixed(2)); }
       }
       // färger utanför paletten
       for (const [k, v] of [['färgen', c.color], ['bakgrunden', c.backgroundColor], ['kanten', c.borderTopStyle !== 'none' && parseFloat(c.borderTopWidth) > 0 ? c.borderTopColor : '']]) {

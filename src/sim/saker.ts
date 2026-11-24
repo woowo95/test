@@ -7,6 +7,7 @@ import { rattSaker } from './ratter';
 // frågar registret. En ny sak läggs till här (och får en ikon i ikoner.ts).
 export interface SakDef {
   namn: string;
+  par?: true; // ett par (skor, byxor, stövlar): "ett par skor av harskinn" (steg 13.2.2)
   ett?: true; // ett ett-ord (ett rep, ett bär); annars ett en-ord. För kontrollen av texterna (steg 4.5.1.2)
   stack?: number; // en full börda: vad en normalstark vuxen bär. Saknas = ingen egen stack
   vikt?: number; // hur mycket en styck tar av en hand (steg 6.1.8; en vanlig hand orkar 10, utrustning.ts). Saknas = VIKT_STACK delat med stacken
@@ -36,13 +37,14 @@ export interface SakDef {
   klad?: Klad; // ett klädesplagg (steg 2.3.2, utrustning.ts)
   mark?: true; // ligger kvar på marken där den hamnade: ingen bär, äger eller lagrar den (toa-högen, smuts.ts)
   varde?: number; // ett fast grundvärde, när saken inte skaffas i byn (silvret, steg 4.4.1.3)
-  gravgava?: true; // får läggas på en grav vid ett besök (steg 10.4.8), som maten (mat)
+  gravgava?: true; // får läggas på en grav vid ett besök (steg 10.4.8), som maten (mat), och följer helst den döda i graven (järnsakerna, steg 13.1.6)
+  som?: string; // går att använda i stället för den saken i recepten och arbetena (den torkade röllekan som rölleka, steg 13.6.1); ERSATT nedan
   brinnerInte?: true; // brinner inte upp i en eldsvåda (brand.ts, steg 3.8.5); allt annat i förrådet gör det
 }
 // ett klädesplagg: platsen på kroppen (PLATSER i utrustning.ts), så stor del mindre kyla för den som har det på sig, och hur
 // många dygn (år i spelet) det håller på kroppen
 // krok = så många redskap hänger i plagget (bältet, steg 2.3.3 och 7.1.1): de tar inga händer och väger inget för bördan
-interface Klad { plats: string; varme: number; dygn: number; krok?: number; axel?: number; rygg?: number; snoTar?: number; dolj?: number }
+interface Klad { plats: string; varme: number; dygn: number; krok?: number; axel?: number; rygg?: number; sele?: true; ocksa?: string[]; snoTar?: number; dolj?: number }
 // ett redskap som görs: text = vad den som gör det gör, stat = räknas varje gång ett blir klart, forsta = loggen första
 // gången, fame = det den som gjorde det blir ihågkommen för, igen = loggen de andra gångerna
 // {namn} = den som gjorde det, {verktyg} = verktyget (skaffa.verktyg)
@@ -80,9 +82,14 @@ const DEF = {
   // proteserna (steg 9.5.11, protes.ts): den som förlorat en del får en när byn har en ledig, och har den på sig
   krycka: { namn: 'Krycka', skaffa: RECEPT.krycka, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s krycka gick sönder.' }, gors: { text: 'Täljer en krycka.', stat: 'kryckorGjorda', forsta: '{namn} täljde byns första krycka. Med den kan den som förlorat ett ben gå igen.' } },
   traben: { namn: 'Träben', ett: true, skaffa: RECEPT.traben, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s träben gick sönder.' }, gors: { text: 'Täljer ett träben och binder fast remmar av rep.', stat: 'trabenGjorda', forsta: '{namn} täljde byns första träben.' } },
-  kalke: { fordon: true, namn: 'Kälke', skaffa: RECEPT.kalke, vikt: 8, hander: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'kalkarTrasiga', text: '{namn}s kälke gick sönder.' } }, // steg 10.10.2: dras med båda händerna (FORDON, fordon.ts)
-  slade: { fordon: true, namn: 'Släde', skaffa: RECEPT.slade, vikt: 20, hander: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'sladarTrasiga', text: '{namn}s släde gick sönder.' } }, // steg 10.10.3: dras av en oxe eller häst (FORDON, fordon.ts)
-  vagn: { fordon: true, namn: 'Vagn', skaffa: RECEPT.vagn, vikt: 30, hander: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'vagnarTrasiga', text: '{namn}s vagn gick sönder.' } }, // steg 11.11.2: dras av oxen eller hästen
+  kalke: { fordon: true, namn: 'Kälke', skaffa: RECEPT.kalke, vikt: 8, hander: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'kalkarTrasiga', text: '{namn}s kälke gick sönder.' },
+    gors: { text: 'Gör en kälke av virke och rep.', stat: 'kalkarGjorda', forsta: '{namn} gjorde byns första kälke. Nu går det tunga att dra hem.' } }, // steg 10.10.2: dras med båda händerna (FORDON, fordon.ts)
+  slade: { fordon: true, namn: 'Släde', skaffa: RECEPT.slade, vikt: 20, hander: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'sladarTrasiga', text: '{namn}s släde gick sönder.' },
+    gors: { text: 'Gör en släde av virke och rep.', stat: 'sladarGjorda', forsta: '{namn} gjorde byns första släde. Med ett dragdjur framför drar den stora lass.' } }, // steg 10.10.3: dras av en oxe eller häst (FORDON, fordon.ts)
+  plog: { fordon: true, namn: 'Plog', skaffa: RECEPT.plog, vikt: 15, hander: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'plogarTrasiga', text: '{namn}s plog gick sönder.' },
+    gors: { text: 'Gör en plog av virke och rep.', stat: 'plogarGjorda', forsta: '{namn} gjorde byns första plog. Med oxen eller hästen framför går jorden upp många gånger fortare.' } }, // steg 13.7.2: dras av oxen eller hästen på fältet (FORDON, fordon.ts; beredRedskap, odling.ts)
+  vagn: { fordon: true, namn: 'Vagn', skaffa: RECEPT.vagn, vikt: 30, hander: 2, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'vagnarTrasiga', text: '{namn}s vagn gick sönder.' },
+    gors: { text: 'Gör en vagn av virke och rep.', stat: 'vagnarGjorda', forsta: '{namn} gjorde byns första vagn. Den drar dubbelt så mycket som släden när marken är bar.' } }, // steg 11.11.2: dras av oxen eller hästen
   bagborr: { namn: 'Bågborr', skaffa: RECEPT.bagborr, vikt: 0.5, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'bagborrarTrasiga', text: '{namn}s bågborr gick sönder.' }, gors: { text: 'Gör en bågborr: en båge av gren och rep som snurrar en pinne mot en träskiva.', stat: 'bagborrarGjorda', forsta: '{namn} gjorde byns första bågborr.' } }, // steg 10.6.13: tänddonet, slits per försök (eld.ts)
   krok: { namn: 'Krok', skaffa: RECEPT.krok, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s krok gick sönder.' }, gors: { text: 'Gör en krok av trä som sätts på armen.', stat: 'krokarGjorda', forsta: '{namn} gjorde byns första krok åt den som förlorat en hand.' } },
   ogonlapp: { namn: 'Ögonlapp', skaffa: RECEPT.ogonlapp, vikt: 0.1, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'proteserTrasiga', text: '{namn}s ögonlapp gick sönder.' }, gors: { text: 'Skär en ögonlapp av skinn.', stat: 'ogonlapparGjorda', forsta: '{namn} skar byns första ögonlapp.' } },
@@ -157,7 +164,8 @@ const DEF = {
   huggen_sten: { namn: 'Huggen sten', skaffa: RECEPT.huggen_sten, stack: 20, vikt: 4, mapp: 'Material' }, // steg 7.5.1
   plankor: { namn: 'Plankor', skaffa: RECEPT.plankor, stack: 20, vikt: 2, mapp: 'Material' },
   blomma: { namn: 'Blomma', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material' }, // ängsblommor till krukorna (steg 10.7.3): ger inget att skörda, bara pynt
-  rolleka: { namn: 'Rölleka', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material', gravgava: true }, // den första örten (steg 7.6.3): går inte att äta och håller länge
+  rolleka: { namn: 'Rölleka', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material', gravgava: true, haller: 6 }, // den första örten (steg 7.6.3): går inte att äta, och färsk ruttnar den på sex dygn (steg 13.6.1)
+  torrrolleka: { namn: 'Torkad rölleka', skaffa: RECEPT.torrrolleka, stack: 25, vikt: 0.1, mapp: 'Material', gravgava: true, haller: 20, som: 'rolleka' }, // torkad på ställningen (steg 13.6.1): håller länge och används som den färska
   salva: { namn: 'Salva', skaffa: RECEPT.salva, stack: 10, vikt: 0.2, mapp: 'Material' }, // steg 7.6.4–7.6.6: ingen funktion än
   tjara: { namn: 'Tjära', skaffa: RECEPT.tjara, stack: 10, vikt: 0.5, mapp: 'Material' },
   benlim: { namn: 'Benlim', ett: true, skaffa: RECEPT.benlim, stack: 10, vikt: 0.3, mapp: 'Material' },
@@ -171,6 +179,11 @@ const DEF = {
   ratlin: { namn: 'Rått lin', ett: true, skaffa: { tid: 0.25, tek: 'lin' }, stack: 25, vikt: 0.3, mapp: 'Material' }, // rötas på torkställningen innan det kan spinnas
   lin: { namn: 'Lin', ett: true, skaffa: RECEPT.lin, stack: 25, vikt: 0.3, mapp: 'Material' }, // steg 7.7.7
   linfron: { namn: 'Linfrön', skaffa: { tid: 0.25, tek: 'odling' }, stack: 25, vikt: 0.05, mapp: 'Material' },
+  // färgväxterna (steg 13.3.2, farg.ts): måran grävs upp på ängen när man samlar, vejden odlas och krappen köps av handlaren
+  mara: { namn: 'Måra', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material' },
+  vejde: { namn: 'Vejde', skaffa: { tid: 0.25, tek: 'fargning' }, stack: 25, vikt: 0.2, mapp: 'Material' },
+  vejdefron: { namn: 'Vejdefrön', skaffa: { tid: 0.25, tek: 'fargning' }, stack: 25, vikt: 0.05, mapp: 'Material' },
+  krapp: { namn: 'Krapp', skaffa: { tid: 0.5, sallsynt: true }, stack: 25, vikt: 0.1, mapp: 'Material' }, // roten kommer från söder, med handlarna
   trad: { namn: 'Lintråd', skaffa: RECEPT.trad, stack: 25, vikt: 0.1, mapp: 'Material' }, // steg 7.7.8
   lintyg: { namn: 'Lintyg', ett: true, skaffa: RECEPT.lintyg, stack: 10, vikt: 0.5, mapp: 'Material' }, // steg 7.7.9
   vargtand: { namn: 'Vargtand', skaffa: { tid: 0.1 }, stack: 25, vikt: 0.05, mapp: 'Material' }, // steg 7.7.5
@@ -227,6 +240,12 @@ const DEF = {
   // (LAGER.maxDygn) och äts sist
   torrkott: { namn: 'Torkat kött', ett: true, skaffa: RECEPT.torrkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 8, naring: { protein: 2, fett: 1, energi: 0.8, mineral: 0.6, vitamin: 0.2 }, haller: 20 },
   torrfisk: { namn: 'Torkad fisk', skaffa: RECEPT.torrfisk, stack: 25, ruta: 75, mapp: 'Mat', mat: 7, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
+  // den torkade svampen och de torkade äpplena (steg 13.6.1): mättar och ger näring som de färska, håller som det torkade köttet och äts efter det färska
+  // surkålen och surfisken (steg 13.6.2): syrade i en stor lerkruka, håller som det torkade; surkålen ger nästan kålens vitaminer
+  surkal: { namn: 'Surkål', skaffa: RECEPT.surkal, stack: 25, ruta: 75, mapp: 'Mat', mat: 7.1, naring: { vitamin: 1.6, mineral: 0.8, energi: 0.6, protein: 0.3, fett: 0.1 }, haller: 20 },
+  surfisk: { namn: 'Surfisk', skaffa: RECEPT.surfisk, stack: 25, ruta: 75, mapp: 'Mat', mat: 7.05, naring: { protein: 2, fett: 0.8, mineral: 0.7, energi: 0.6, vitamin: 0.2 }, haller: 20 },
+  torrsvamp: { namn: 'Torkad svamp', skaffa: RECEPT.torrsvamp, stack: 25, ruta: 75, mapp: 'Mat', mat: 7.2, naring: { protein: 0.6, mineral: 0.8, vitamin: 1, energi: 0.5, fett: 0.1 }, haller: 20 },
+  torrappel: { namn: 'Torkade äpplen', skaffa: RECEPT.torrappel, stack: 25, ruta: 75, mapp: 'Mat', mat: 7.4, naring: { vitamin: 1.6, energi: 0.9, mineral: 0.3 }, haller: 20 },
   // vattensäcken (steg 2.10.1): ett skinn som sys ihop till en säck vid slöjdbänken med bensylen. Med den hämtar man vatten
   // åt den som inte kan gå (torst.ts), och senare till fälten. Den tar en hand
   talgljus: { namn: 'Talgljus', ett: true, skaffa: RECEPT.talgljus, vikt: 0.3, stack: 10, mapp: 'Redskap', slits: 0.0003, redskap: true,
@@ -326,9 +345,9 @@ const DEF = {
   jarngryta: { namn: 'Järngryta', skaffa: RECEPT.jarngryta, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.00004, redskap: true, trasig: { stat: 'jarngrytorTrasiga', text: '{namn}s järngryta rostade sönder.' } }, // steg 12.5.5: tar dubbel sats och spricker inte, smids i smedjan
   las: { namn: 'Lås', skaffa: RECEPT.las, vikt: 0.5, stack: 10, mapp: 'Material', brinnerInte: true }, // steg 12.5.6: smids i smedjan och går in i den låsta dörren
   eldstal: { namn: 'Eldstål', ett: true, hanger: 'balte', skaffa: RECEPT.eldstal, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.00005, redskap: true }, // steg 12.2.12: tänddonet som slås mot flinta, smids i smedjan
-  svard: { namn: 'Svärd', ett: true, hanger: 'balte', skaffa: RECEPT.svard, vikt: 3, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true }, // steg 12.2.9: byns första rena vapen, smids i smedjan
+  svard: { gravgava: true, namn: 'Svärd', ett: true, hanger: 'balte', skaffa: RECEPT.svard, vikt: 3, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true }, // steg 12.2.9: byns första rena vapen, smids i smedjan
   jarnyxa: { namn: 'Järnyxa', hanger: 'balte', grupp: 'yxa', rang: 1, skaffa: RECEPT.jarnyxa, vikt: 6, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true, trasig: { stat: 'jarnyxorTrasiga', text: '{namn}s järnyxa gick sönder.' } },
-  jarnkniv: { namn: 'Järnkniv', hanger: 'balte', grupp: 'kniv', rang: 1, skaffa: RECEPT.jarnkniv, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.00007, redskap: true, trasig: { stat: 'jarnknivarTrasiga', text: '{namn}s järnkniv gick sönder.' } },
+  jarnkniv: { gravgava: true, namn: 'Järnkniv', hanger: 'balte', grupp: 'kniv', rang: 1, skaffa: RECEPT.jarnkniv, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.00007, redskap: true, trasig: { stat: 'jarnknivarTrasiga', text: '{namn}s järnkniv gick sönder.' } },
   lie: { namn: 'Lie', hanger: 'axel', grupp: 'skara', rang: 1, skaffa: RECEPT.lie, vikt: 4, stack: 1, mapp: 'Redskap', slits: 0.00007, redskap: true, trasig: { stat: 'liarTrasiga', text: '{namn}s lie gick sönder.' } },
   // oljelampan (steg 12.4.2, ljus.ts): en liten lampa av lera, som torkar och bränns som krukan, och en behållare för brännoljan (vatskor.ts)
   oljelampa: { namn: 'Oljelampa', skaffa: RECEPT.oljelampa, vikt: 0.3, stack: 1, mapp: 'Redskap', slits: 0.0002, redskap: true, trasig: { stat: 'lamporTrasiga', text: '{namn}s oljelampa sprack.' },
@@ -346,15 +365,24 @@ const DEF = {
     gors: { text: 'Fogar en stol med ryggstöd och en dyna av skinn och ull.', stat: 'stolarGjorda', forsta: '{namn} fogade byns första stol. Den är skönare att sitta på än pallen.' } },
   pall: { namn: 'Pall', grupp: 'sate', skaffa: RECEPT.pall, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true,
     gors: { text: 'Fogar en pall av en planka.', stat: 'pallarGjorda', forsta: '{namn} fogade byns första pall. Den är bättre att sitta på än stubben.' } },
+  // dryckeshornet (steg 13.4.1, rus.ts): den som dricker öl, mjöd eller vin dricker ur sitt eget horn eller byns, och hornet slits för varje dryck
+  dryckeshorn: { namn: 'Dryckeshorn', ett: true, skaffa: RECEPT.dryckeshorn, vikt: 0.3, stack: 1, mapp: 'Redskap', redskap: true, trasig: { stat: 'dryckeshornTrasiga', text: '{namn}s dryckeshorn sprack.' },
+    gors: { text: 'Skrapar ur ett djurhorn till ett dryckeshorn.', stat: 'dryckeshornGjorda', forsta: '{namn} gjorde byns första dryckeshorn av ett djurhorn.' } },
+  jarnpilar: { namn: 'Järnpilar', skaffa: RECEPT.jarnpilar, vikt: 0.1, stack: 20, mapp: 'Redskap' }, // steg 13.4.2: skadar mer än flintpilen, och skytten tar dem först (strid.ts)
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;
 export const SAKER: Record<string, SakDef | undefined> = DEF;
 export const SAK_LIST = Object.keys(DEF) as Sak[];
+// det som går att använda i stället för en sak (som i SAKER, steg 13.6.1): saken och de som ersätter den, den egna först
+export const ERSATT: Record<string, string[]> = {};
+for (const k of SAK_LIST) { const m = SAKER[k]!.som; if (m) (ERSATT[m] ??= []).push(k); }
 export const sak = (k: string) => SAKER[k];
 export const sakNamn = (k: string) => SAKER[k]?.namn ?? (k === 'hus' ? 'Hus' : k); // huset är ingen sak, men ligger som en symbol på filten vid ett husbyte (steg 7.2.12)
 // namnet på ett ting: ett påbörjat redskap (paborjat.ts) heter som det ska bli
-export const tingNamn = (t: { k: string; halv?: { gor: string } }) => t.halv ? `${sakNamn(t.halv.gor)} (inte klar)` : sakNamn(t.k);
+// färgen i namnet (farg.ts, steg 13.3.2): "Blå tunika av lin". Satt av farg.ts, så att filerna inte importerar varandra
+export const namnKrok = { farg: (_t: { k: string; farg?: string }): string | undefined => undefined };
+export const tingNamn = (t: { k: string; halv?: { gor: string }; farg?: string }) => t.halv ? `${sakNamn(t.halv.gor)} (inte klar)` : (t.farg && namnKrok.farg(t)) || sakNamn(t.k);
 
 // vikten (steg 6.1.8): ett påhittat tal för hur mycket en sak tar av en hand, inte kg. En sak väger VIKT_STACK delat med
 // stacken (en vanlig hand bär 5 grenar, 2 ved, 2 bär och 1 sten), eller det som står i registret (redskapen, viltet, virket)

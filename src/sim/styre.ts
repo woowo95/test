@@ -1,7 +1,7 @@
 import { FANG, fangelseDygn, fangelseLedigt, satHardStraff, satt } from './fangelse';
 import { honom, slaktOrd } from './ord';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, vuxnaOf } from './folk';
-import { efterlevs, lagForBrott, straffNu, tasUppKvall } from './lagar';
+import { LAGAR, efterlevs, lagForBrott, straffNu, straffSteg, tasUppKvall } from './lagar';
 import type { Lag } from './lagar';
 import { ROST, FRAGOR, rostaOm, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, rostKvall, seOverMinistrar, vikter } from './rost';
 import type { Fraga, Fraktion, Omrostning, Rost } from './rost';
@@ -178,7 +178,7 @@ export const VAGSKALAR: { id: string; sed?: Sed; namn: string; steg?: string }[]
 // och ett kort i fliken. noll = talet står i sitt nollage och gör ingen skillnad (fliken visar det inte). Hur talet används står i
 // val.ts, forradsmal.ts och resa.ts
 // vem = påbudet pekar ut en person (tystnaden, steg 10.4.10): vem ledaren vill att det gäller; asikt får då personen som om
-interface PabudDef { namn: string; text: string; sed?: Sed; grupp?: string; asikt: (s: State, l: Person, om?: number) => number; vem?: (s: State, l: Person) => number | undefined }
+export interface PabudDef { namn: string; text: string; sed?: Sed; grupp?: string; asikt: (s: State, l: Person, om?: number) => number; vem?: (s: State, l: Person) => number | undefined }
 const PDEF = {
   matlager: { grupp: 'forrad', namn: 'Mat', text: 'Hur många dygn mat byn ska ha i förrådet innan den slappnar av', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
   vedlager: { grupp: 'forrad', namn: 'Ved', text: 'Hur många dygn ved byn ska ha i förrådet', sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) },
@@ -198,8 +198,9 @@ const PDEF = {
   // vikt i valet av aktivitet och säger aldrig vart, hur många eller hur ofta
   utfarder: { namn: 'Utfärder', text: 'Styrets hållning till resor och uppdrag', asikt: (s, l) => hallning(((stat(l, 'nyfikenhet', s.now) + stat(l, 'mod', s.now)) / 2 - 10) / PAB.utfarDiv) },
 } satisfies Record<string, PabudDef>;
-export type Pabud = keyof typeof PDEF;
-export const PABUD: Record<Pabud, PabudDef> = PDEF;
+// lager_<material>: ett tal per material i förrådsmålen (steg 13.8.15), som forradsmal.ts lägger till i gruppen Förråden (nyttPabud)
+export type Pabud = keyof typeof PDEF | `lager_${string}`;
+export const PABUD = PDEF as Record<Pabud, PabudDef>;
 export const PABUD_LIST = Object.keys(PDEF) as Pabud[];
 // en åsikt från -1 till 1 som en av tre hållningar
 const hallning = (x: number) => x < -PAB.hallning ? -1 : x > PAB.hallning ? 1 : 0;
@@ -214,6 +215,13 @@ export const PABUD_FRAGOR: PabudFraga[] = [
   ...PABUD_LIST.filter(k => !(PABUD[k] as PabudDef).grupp).map(k => ({ id: k, namn: PABUD[k].namn, text: PABUD[k].text, tal: [k] })),
 ];
 export const pabudFraga = (id: string) => PABUD_FRAGOR.find(f => f.id === id);
+// ett påbud till (steg 13.8.15): ett tal som ett annat system lägger till, i sin grupp eller som en egen fråga
+export function nyttPabud(k: Pabud, d: PabudDef) {
+  if (PABUD[k]) return;
+  PABUD[k] = d; PABUD_LIST.push(k);
+  const f = d.grupp ? PABUD_FRAGOR.find(q => q.id === d.grupp) : undefined;
+  if (f) f.tal.push(k); else PABUD_FRAGOR.push({ id: k, namn: d.namn, text: d.text, tal: [k] });
+}
 // talet som gäller nu för påbudet k; ett påbud som pekar ut en annan person än den det gäller börjar från noll
 export const pabudFran = (s: State, k: Pabud, om?: number) => om === undefined || s.styre?.tystnad?.id === om ? s.styre?.pabud?.[k] ?? 0 : 0;
 // den som påbudet pekar ut (tystnaden): undefined när påbudet inte pekar ut någon, null när ledaren inte har någon att peka ut
@@ -237,7 +245,7 @@ export function tystFaktor(s: State, a: Person, om: number) {
   return 1 - Math.max(0, pabud(s, 'tystnad')) * PAB.tystMax * (1 - clamp(asiktOm(s, a, om) / 100, 0, 1));
 }
 // en försiktig ledare vill ha större lager, och en intelligent planerar inför istiden
-function lagerAsikt(s: State, l: Person) {
+export function lagerAsikt(s: State, l: Person) {
   return clamp(drarSed(s, l, 'forsiktighet') + (kallTid(ageIndex(s)) ? PAB.plan * (l.pot.intelligens - 10) / 6 : 0), -1, 1);
 }
 
@@ -485,7 +493,7 @@ export const STRAFF_REG = [
 satHardStraff(steg => STRAFF_REG.some(r => r.id === steg && 'hard' in r && r.hard));
 // straffet har en egen rad i krönikan och en egen notis när det verkställs (utvisningen och döden), i stället för domens (steg 12.1.253)
 export const straffEgenRad = (steg: number) => STRAFF_REG.some(r => r.id === steg && 'egenRad' in r && r.egenRad);
-const BROTT = new Set<HandelseTyp>(['budbrott', 'stold', 'stoldLindrig', 'sla', 'misshandel', 'drap', 'logn', 'overdrev', 'rymning']); // rymningen ur fängelset (steg 11.12.1)
+const BROTT = new Set<HandelseTyp>(['budbrott', 'stold', 'gravstold', 'stoldLindrig', 'sla', 'misshandel', 'drap', 'logn', 'overdrev', 'rymning']); // rymningen ur fängelset (steg 11.12.1)
 // straffets steg (0 till 3, eller Fängelse 9 när byn har ett med ledig plats) för vikten v gånger hårdheten
 function stegOf(v: number, h: HandelseTyp, rang: number, fang = false) {
   if (h === 'drap' && rang >= STR.utvisRang && v >= STR.utvis) return 3;
@@ -540,7 +548,7 @@ function doma(s: State, l: Person) {
       if (!rostaOm(s, { f: 'skuld', d: { om: id, namn: q.name }, fram: l.id })) { count(s, 'friad'); log(s, `Byn friade ${q.name} på tinget.`, 'rel', [q.id]); tanke(q, 'frikandes', s.now); kronikaBer(s, 'k_ratt', q.id, { ...personFalt(q), fri: true }); continue; }
     }
     // ett straff som kräver något (Fängelse, steg 11.12.3) döms bara när det finns; annars det närmaste mildare, och lagen behåller sitt
-    const fang = !!fangelseLedigt(s), vikt = HANDELSER[b.h].vikt, steg = lag ? straffNu(s, lag.straff) : stegOf(vikt * hard0 * (nara ? STR.nara : 1), b.h, rang, fang);
+    const fang = !!fangelseLedigt(s), vikt = HANDELSER[b.h].vikt, steg = lag ? straffSteg(s, straffNu(s, lag.straff), LAGAR[lag.id].hardare?.[b.h] ?? 0) : stegOf(vikt * hard0 * (nara ? STR.nara : 1), b.h, rang, fang);
     // det byn tycker är lagom: vikten gånger hårdheten som sederna godtar
     const lagom = lag ? steg : stegOf(vikt * clamp(1 + STR.rang * rang, STR.min, STR.max), b.h, rang, fang);
     const orattvist = lag ? !!b.falsk : steg > lagom || (nara && steg < lagom) || !!b.falsk;

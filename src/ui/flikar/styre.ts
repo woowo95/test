@@ -1,4 +1,4 @@
-import { BUDGET, budgetAndel, budgetNu, sakNamn, type Omrostning, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagTakDelar, lagarNu, skrivenVar, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_FRAGOR, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
+import { BUDGET, budgetAndel, budgetNu, sakNamn, type Omrostning, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagTakDelar, lagarNu, skrivenVar, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_FRAGOR, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, lagerAv, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, delRad, esc, fallUt, flikLank, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -70,7 +70,7 @@ const tystVarde = (v: number) => v < 0.05 || !s.styre?.tystnad ? 'ingen' : `${s.
 // varje påbuds värde i ord, en rad per påbud (kodgenomgången 283: ett nytt påbud utan egen rad syns som typfel)
 const lager = (k: 'ved' | 'mat') => (v: number) => `${k} för ${num(onskatDygn(k, v))} år`; // förrådsmålen i år (steg 11.1.65)
 const tre = (v: number, ord: [string, string, string]) => v < -0.33 ? ord[0] : v > 0.33 ? ord[2] : ord[1];
-const VARDE: Record<Pabud, (v: number) => string> = {
+const VARDE: Partial<Record<Pabud, (v: number) => string>> = {
   matlager: lager('mat'),
   vedlager: lager('ved'),
   torkat: v => `${Math.round(torkAndel(v) * 100)} %`,
@@ -81,7 +81,9 @@ const VARDE: Record<Pabud, (v: number) => string> = {
   tystnad: tystVarde,
   utfarder: v => v < -0.5 ? 'håll er hemma' : v > 0.5 ? 'utfärder är viktiga' : 'ingen hållning', // tre lägen (steg 12.1.27)
 };
-const varde = (k: Pabud, v: number) => VARDE[k](v);
+// ett materials lager (steg 13.8.15): så många i lager, eller inget
+const materialVarde = (k: Pabud, v: number) => { const n = lagerAv(k.slice(6), v); return n ? `${n} i lager` : 'inget lager'; };
+const varde = (k: Pabud, v: number) => (VARDE[k] ?? (x => materialVarde(k, x)))(v);
 // lagar och påbud ser likadana ut (steg 11.1.29): kort i en och samma lista, med namnet, vad det säger med sitt tal och ett litet
 // ord om det är en lag eller ett påbud. Ett tryck fäller ut resten: straffet och vem som lade fram lagen, och vad ledaren vill mot
 // vad byn själv vill för påbudet

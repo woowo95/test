@@ -74,7 +74,7 @@ const DEF = {
   benlim: { var: 'sak', av: { ben: 2 }, min: 5, slag: 'stor', tek: 'ortkok' },
   tval: { var: 'sak', av: { kol: 1, talg: 1 }, min: 5, slag: 'stor', tek: 'ortkok' },
   lader: { var: 'sak', av: { skinn: 1, talg: 1 }, min: 5, slag: 'stor', tek: 'garvning' },
-  bok: { var: 'sak', av: { pergament: 8, plankor: 2 }, min: 5, slag: 'stor', tek: 'bok', bank: 'snickarbank', bara: true }, // steg 10.6.6: 8 blad mellan 2 plankor
+  bok: { var: 'sak', av: { pergament: 8, plankor: 2, benlim: 1 }, min: 5, slag: 'stor', tek: 'bok', bank: 'snickarbank', bara: true }, // steg 10.6.6: 8 blad mellan 2 plankor
   pergament: { var: 'sak', av: { skinn: 1 }, min: 5, slag: 'stor', tek: 'pergament' }, // steg 10.6.4: ett skinn blir 4 blad vid garvningsställningen
   lin: { var: 'sak', av: { ratlin: 1 }, min: 4, slag: 'liten', tek: 'tork' },
   trad: { var: 'sak', av: { lin: 2 }, min: 3, slag: 'liten', tek: 'slanda' },
@@ -88,12 +88,13 @@ const DEF = {
   talt: { var: 'sak', av: { skinn: 4, grenar: 4, rep: 2 }, min: 5, slag: 'stor', tek: 'talt' }, // tältet (steg 11.11.1): sys vid slöjdbänken
   grop: { var: 'sak', av: {}, min: 5, slag: 'stor', tek: 'grop', verktyg: { benspade: 'benspaden' } }, // grävs på plats i skogen och täcks med grenar som bryts där (steg 10.2.84)
   byxor: { var: 'plagg', mangd: 2, av: { rep: 1 }, min: 5 },
+  barnklader: { var: 'plagg', mangd: 2, av: { rep: 1 }, min: 5 }, // steg 13.2.4
   mossa: { var: 'plagg', mangd: 1, av: {}, min: 4 },
   snoskor: { var: 'plagg', mangd: 1, av: { grenar: 2, rep: 1 }, min: 5 },
   prastdrakt: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 }, tecken: { var: 'plagg', mangd: 1, av: { rep: 1 }, min: 3 }, mask: { var: 'plagg', mangd: 2, av: {}, min: 5 }, // system 8.5
   rokelse: { var: 'sak', av: { talg: 1 }, min: 5, slag: 'stor', tek: 'ortkok' }, brannolja: { var: 'sak', av: { talg: 1 }, min: 5, slag: 'stor', tek: 'ortkok' }, // steg 8.5.16
   rustning: { var: 'plagg', mangd: 4, av: { rep: 2 }, min: 5 }, hjalm: { var: 'plagg', mangd: 2, av: { rep: 1 }, min: 5 }, // steg 8.7.1–8.7.2
-  skold: { var: 'sak', av: { ved: 3, rep: 1 }, min: 3, slag: 'liten', tek: 'skold', bank: 'snickarbank', bara: true }, bage: { var: 'sak', av: { virke: 2, rep: 1 }, min: 3, slag: 'liten', tek: 'bage', bank: 'snickarbank', bara: true, kniv: true }, pilar: { var: 'sak', av: { ved: 1, flinta: 1 }, min: 3, slag: 'liten', tek: 'bage', bank: 'snickarbank' }, slunga: { var: 'sak', av: { lader: 1, rep: 1 }, min: 3, slag: 'liten', tek: 'slunga' }, horn: { var: 'sak', av: { ben: 2 }, min: 3, slag: 'liten', tek: 'horn' }, // steg 8.7.3, 8.7.6, 8.7.11
+  skold: { var: 'sak', av: { ved: 3, rep: 1, benlim: 1 }, min: 3, slag: 'liten', tek: 'skold', bank: 'snickarbank', bara: true }, bage: { var: 'sak', av: { virke: 2, rep: 1, benlim: 1 }, min: 3, slag: 'liten', tek: 'bage', bank: 'snickarbank', bara: true, kniv: true }, pilar: { var: 'sak', av: { ved: 1, flinta: 1, fjadrar: 1, benlim: 1 }, min: 3, slag: 'liten', tek: 'bage', bank: 'snickarbank' }, slunga: { var: 'sak', av: { lader: 1, rep: 1 }, min: 3, slag: 'liten', tek: 'slunga' }, horn: { var: 'sak', av: { djurhorn: 1 }, min: 3, slag: 'liten', tek: 'horn' }, // steg 8.7.3, 8.7.6, 8.7.11
   mantel: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 }, // steg 8.3.14
   halsband: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
   tunika: { var: 'plagg', mangd: 3, av: {}, min: 5 },
@@ -137,6 +138,8 @@ const DEF = {
   torrkott: { var: 'sak', av: { kott: 1 }, min: 4, slag: 'liten', tek: 'tork' },
   torrfisk: { var: 'sak', av: { fisk: 1 }, min: 4, slag: 'liten', tek: 'tork' },
   grillgadda: { var: 'sak', av: { gaddkott: 1 }, min: 4, slag: 'liten', tek: 'grill' }, grillmort: { var: 'sak', av: { mortkott: 1 }, min: 4, slag: 'liten', tek: 'grill' },
+  surkal: { var: 'sak', av: { kal: 6, salt: 1 }, ger: 6, min: 3, slag: 'liten', tek: 'syrning' }, surfisk: { var: 'sak', av: { fisk: 6, salt: 1 }, ger: 6, min: 3, slag: 'liten', tek: 'syrning' }, // syrningen i en stor lerkruka (steg 13.6.2, TILLVERKA)
+  torrsvamp: { var: 'sak', av: { svamp: 1 }, min: 4, slag: 'liten', tek: 'tork' }, torrappel: { var: 'sak', av: { appel: 1 }, min: 4, slag: 'liten', tek: 'tork' }, torrrolleka: { var: 'sak', av: { rolleka: 1 }, min: 4, slag: 'liten', tek: 'tork' }, // steg 13.6.1
   torrgadda: { var: 'sak', av: { gaddkott: 1 }, min: 4, slag: 'liten', tek: 'tork' }, torrmort: { var: 'sak', av: { mortkott: 1 }, min: 4, slag: 'liten', tek: 'tork' },
   talgljus: { var: 'sak', av: { talg: 2, torrgras: 1 }, min: 3, slag: 'liten', tek: 'fackla' },
   vaxljus: { var: 'sak', av: { bivax: 1, torrgras: 1 }, min: 3, slag: 'liten', tek: 'fackla' }, // steg 10.10.24: ett ljus av bivax som brinner dubbelt så länge
@@ -162,13 +165,14 @@ const DEF = {
   drejskiva: { var: 'station', av: { virke: 2, huggen_sten: 1 }, min: 15, slag: 'stor', tek: 'drejskiva' }, // drejskivan (steg 12.4.1): en skiva av trä på en axel, med en sten som svänghjul
   sang: { var: 'station', av: { plankor: 3, ull: 2 }, min: 18 }, // sängen (steg 12.4.3): en ram av plankor med ett bolster av ull
   pall: { var: 'sak', av: { plankor: 1 }, min: 5, slag: 'stor', tek: 'snickarbank', bank: 'snickarbank', bara: true }, // pallen (steg 12.4.4): en sittplats vid bordet, bättre än stubben
+  dryckeshorn: { var: 'sak', av: { djurhorn: 1 }, min: 3, slag: 'liten', tek: 'horn' }, // steg 13.4.1: fortare och bättre vid slöjdbänken (FORT_VID_SLOJD)
+  jarnpilar: { var: 'sak', av: { ved: 1, jarn: 1, fjadrar: 1, benlim: 1 }, ger: 4, min: 3, slag: 'liten', tek: 'bage' }, // steg 13.4.2: 4 pilar smids vid smedjan och bara där (smida_pilar i stationer.ts), med Pilbåge och Smedja
   stol: { var: 'sak', av: { plankor: 2, skinn: 1, ull: 1 }, min: 12, slag: 'station', tek: 'stol', bank: 'snickarbank', bara: true }, // stolen: en pall med ryggstöd och dyna av skinn och ull
   vagga: { var: 'station', av: { plankor: 2, ull: 1 }, min: 10 }, // vaggan (steg 12.4.5): en låg låda av plankor på medar, med en bädd av ull
   tunna: { var: 'sak', av: { plankor: 3, rep: 1 }, min: 5, slag: 'stor', tek: 'laggkar', bank: 'snickarbank', bara: true }, // tunnan (steg 12.4.6, tunna.ts): laggad av plankor och bunden med rep
   ost: { var: 'sak', min: 4, slag: 'liten', tek: 'ost' }, // osten (steg 12.4.7): 4 mjölk i en mellanstor lerkruka vid elden (TILLVERKA.ysta), materialet är mjölken
   brunn: { var: 'station', av: { huggen_sten: 6, virke: 1, rep: 1 }, min: 20, verktyg: { benspade: 'benspaden' } }, // brunnen (steg 12.4.8, torst.ts): grävs med spaden och sätts med huggen sten, med ett vindspel av virke och rep
   utedass: { var: 'station', av: { plankor: 4 }, min: 15, verktyg: { benspade: 'benspaden' } }, // utedasset (steg 12.4.9): en grop med väggar och tak av plankor
-  sjukbadd: { var: 'station', av: { torrgras: 4, grenar: 2, skinn: 1 }, min: 12 }, // sjukbädden (steg 12.4.10): en halmbädd med ett skinn över
   fyrfat: { var: 'station', av: { lera: 3 }, min: 10 }, // fyrfatet (steg 12.4.11): ett fat av lera med glödande kol
   penna: { var: 'sak', av: { fjadrar: 1 }, min: 2, slag: 'liten', tek: 'pergament', verktyg: { kniv: 'kniven' } }, // fjäderpennan (steg 12.4.14): skärs av en fjäder med kniven, för hand
   oljelampa: { var: 'sak', av: { lera: 1 }, min: 3, slag: 'liten', tek: 'oljelampa', bank: 'drejskiva' }, // oljelampan (steg 12.4.2): formas av lera som krukan, torkar och bränns
@@ -188,7 +192,7 @@ const DEF = {
   sag: { var: 'sak', av: { jarn: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'smedja' }, // handsågen (steg 12.5.1): ligger vid klyvplatsen
   svard: { var: 'sak', av: { jarn: 3, lader: 1 }, min: 5, slag: 'stor', tek: 'vapensmide' }, // byns första rena vapen (steg 12.2.9)
   jarnspjut: { var: 'sak', av: { jarn: 1, grenar: 1, rep: 1 }, min: 4, slag: 'liten', tek: 'smedja' }, // smids (steg 12.2.8)
-  jarnskold: { var: 'sak', av: { ved: 3, lader: 1, jarn: 1 }, min: 4, slag: 'liten', tek: 'skold', bank: 'snickarbank', bara: true }, // mest trä: vid snickarbänken, med järnet bland materialen (steg 12.2.8)
+  jarnskold: { var: 'sak', av: { ved: 3, lader: 1, jarn: 1, benlim: 1 }, min: 4, slag: 'liten', tek: 'skold', bank: 'snickarbank', bara: true }, // mest trä: vid snickarbänken, med järnet bland materialen (steg 12.2.8)
   bikupa: { var: 'station', av: { torrgras: 4, grenar: 2 }, min: 10, tek: 'bikupa' }, // bikupan (steg 10.10.16): en halmkupa flätad av hö på grenar
   kompost: { var: 'station', av: { virke: 1 }, min: 10, tek: 'kompost' }, // komposten (steg 9.7.6): en enkel inhägnad av lite trä
   grill: { var: 'station', av: { grenar: RT.grillGrenar, rep: RT.grillRep }, min: RT.grillMin },
@@ -205,7 +209,8 @@ const DEF = {
   krycka: { var: 'sak', av: { virke: 1 }, min: 4, slag: 'liten', tek: 'protes', bank: 'snickarbank', bara: true, kniv: true }, traben: { var: 'sak', av: { virke: 1, rep: 1 }, min: 4, slag: 'liten', tek: 'protes', bank: 'snickarbank', bara: true, kniv: true },
   kalke: { var: 'sak', av: { virke: 2, rep: 2 }, min: 5, slag: 'stor', tek: 'slade', bank: 'snickarbank', bara: true }, // steg 10.10.2: två medar och ett flak
   slade: { var: 'sak', av: { virke: 4, rep: 4 }, min: 5, slag: 'stor', tek: 'slade', bank: 'snickarbank', bara: true }, // steg 10.10.3: större, med skaklar för ett dragdjur
-  vagn: { var: 'sak', av: { virke: 6, rep: 4 }, min: 5, slag: 'stor', tek: 'vagn', bank: 'snickarbank', bara: true }, // steg 11.11.2: ett flak på två hjul, med skaklar
+  vagn: { var: 'sak', av: { virke: 6, rep: 4 }, min: 5, slag: 'stor', tek: 'vagn', bank: 'snickarbank', bara: true },
+  plog: { var: 'sak', av: { virke: 2, rep: 1 }, min: 5, slag: 'stor', tek: 'plog', bank: 'snickarbank', bara: true }, // steg 13.7.2: en årder av virke som ett dragdjur drar över fältet // steg 11.11.2: ett flak på två hjul, med skaklar
   bagborr: { var: 'sak', av: { ved: 1, grenar: 2, rep: 1 }, min: 3, slag: 'liten', tek: 'bagborr', bank: 'snickarbank', bara: true }, // steg 10.6.13: en båge av gren och rep, en pinne och en skiva
   krok: { var: 'sak', av: { virke: 1 }, min: 3, slag: 'liten', tek: 'protes', bank: 'snickarbank', bara: true }, ogonlapp: { var: 'sak', av: { skinn: 1 }, min: 3, slag: 'liten' },
   // förbanden (steg 9.5.15): remsor av skinn eller lin (två av varje), och nålen av ben som såret sys med
@@ -220,14 +225,18 @@ const DEF = {
   brannpanna: { var: 'tillbehor', av: { sten: 4, lera: 2 }, min: 15, tek: 'sprit' }, // brännpannan (steg 10.7.26): härden och röret; den stora lerkrukan tas också (TILLBEHOR.brannpanna.kar)
   stekhall: { var: 'tillbehor', av: { huggen_sten: 1 }, min: 10, tek: 'stekhall' }, // stekhällen (steg 9.6.21): en flat huggen sten över elden vid grillen (steg 10.2.66)
   skinnfall: { var: 'tillbehor', av: { skinn: RT.fallSkinn }, min: RT.fallMin },
+  ylletacke: { var: 'tillbehor', av: { ylle: 2 }, min: 15, tek: 'vavstol' }, // ylletäcket och fjäderkudden (steg 13.3.1): görs av den som kan vävstolen
+  kudde: { var: 'tillbehor', av: { fjadrar: 2, lintyg: 1 }, min: 10, tek: 'vavstol' },
   skinndorr: { var: 'dorr', av: { skinn: RT.skinndorrSkinn }, min: RT.skinndorrMin },
   tradorr: { var: 'dorr', av: { plankor: RT.tradorrVirke, rep: RT.tradorrRep }, min: RT.tradorrMin },
   lasdorr: { var: 'dorr', av: { plankor: 2, las: 1 }, min: 20 }, // en trädörr med ett lås av järn (steg 12.5.6)
   // plaggen (klader.ts): mangd bitar av materialet, och det i av
   rock: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
   skor: { var: 'plagg', mangd: 1, av: { rep: 1 }, min: 5 },
+  stovlar: { var: 'plagg', mangd: 2, av: { rep: 1 }, min: 5 }, // stövlarna av läder (steg 13.2.2)
   balte: { var: 'plagg', mangd: 2, av: {}, min: 5 },
   axelrem: { var: 'plagg', mangd: 1, av: { rep: 1 }, min: 5 }, // steg 7.1.2
+  barsele: { var: 'plagg', mangd: 1, av: { rep: 1 }, min: 5 }, // steg 13.2.3
   ryggsack: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 }, // steg 7.1.3: tre skinn och remmar av rep, lika länge som de andra plaggen
 } satisfies Record<string, ReceptRad>;
 export const RECEPT: { [K in keyof typeof DEF]: typeof DEF[K] & ReceptRad } = DEF;

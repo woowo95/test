@@ -76,10 +76,14 @@ export const STAT_GOR: Record<Stat, string[]> = {
   smidighet: ['Att inte råka ut för olyckor i arbetet', 'Att fånga harar', 'Att fisken sitter kvar när den nappat', 'Hur fort man tar sig fram i skog och snår', 'Hur fint det blir som man tillverkar', 'Hur snabb man är och hur bra man duckar i en strid'],
   aggression: ['Att slå i stället för att gråta när man mår dåligt', 'Att gräla', 'Hur hårt man straffar som ledare', 'Blodtörsten: att vilja döda, med låg empati och dåligt humör', 'Att inte ge sig i en strid'],
 };
-export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'matlagning', 'narstrid', 'traff', 'skaldskap', 'handel', 'lakekonst', 'odling', 'skotsel'] as const; // skotsel: steg 9.8.1 (djuren, tamdjur.ts); // odling: steg 9.7.7 (fälten, odling.ts); // lakekonst: steg 9.5.7 (vården, halsa.ts); // handel: steg 4.4.1.4 (byten, behov.ts); skaldskap: steg 4.3.2.5 (framtradande.ts); matlagning: steg 2.8.1 (matlagning.ts); narstrid, traff: steg 3.7.2 (strid.ts). Eldkonsten togs bort i steg 3.10.8
+export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'matlagning', 'narstrid', 'traff', 'skaldskap', 'handel', 'lakekonst', 'odling', 'skotsel', 'smide', 'krukmakeri', 'vavning', 'somnad'] as const; // skotsel: steg 9.8.1 (djuren, tamdjur.ts); // odling: steg 9.7.7 (fälten, odling.ts); // lakekonst: steg 9.5.7 (vården, halsa.ts); // handel: steg 4.4.1.4 (byten, behov.ts); skaldskap: steg 4.3.2.5 (framtradande.ts); matlagning: steg 2.8.1 (matlagning.ts); narstrid, traff: steg 3.7.2 (strid.ts). Eldkonsten togs bort i steg 3.10.8
 export type Skill = typeof SKILLS[number];
+// hantverkets egna färdigheter (steg 13.9.7): de börjar på det värde personen har i hantverket, utan egna dragningar ur slumpen
+export const HANT_SKILLS = ['smide', 'krukmakeri', 'vavning', 'somnad'] as const satisfies readonly Skill[];
+// upplevelserna som gör en färdighet lättare att lära och hur mycket (steg 13.1.7): uppvaxt.ts fyller det ur UPPLEVELSER, ovning i folk.ts läser det
+export const UPP_LAR: { k: Record<string, Skill>; fart: number } = { k: {}, fart: 1 };
 export const SKILL_NAMES: Record<Skill, string> = {
-  samla: 'Samling', jakt: 'Jakt', fiske: 'Fiske', ved: 'Trähuggning', hantverk: 'Hantverk', berattande: 'Berättande', matlagning: 'Matlagning', narstrid: 'Närstrid', traff: 'Träffsäkerhet', skaldskap: 'Skaldskap', handel: 'Handel', lakekonst: 'Läkekonst', odling: 'Odling', skotsel: 'Djurskötsel',
+  samla: 'Samling', jakt: 'Jakt', fiske: 'Fiske', ved: 'Trähuggning', hantverk: 'Hantverk', berattande: 'Berättande', matlagning: 'Matlagning', narstrid: 'Närstrid', traff: 'Träffsäkerhet', skaldskap: 'Skaldskap', handel: 'Handel', lakekonst: 'Läkekonst', odling: 'Odling', skotsel: 'Djurskötsel', smide: 'Smide', krukmakeri: 'Krukmakeri', vavning: 'Vävning', somnad: 'Sömnad'
 };
 // vad varje färdighet påverkar utöver arbetena som övar den (ACTS arbete), och hur den växer
 export const SKILL_GOR: Record<Skill, string[]> = {
@@ -97,6 +101,12 @@ export const SKILL_GOR: Record<Skill, string[]> = {
   odling: ['Hur fort man arbetar på fältet', 'Hur stor skörden blir', 'Växer av arbetet på fältet'], // steg 9.7.7
   skotsel: ['Hur väl man sköter byns djur', 'Växer när man matar, mjölkar, klipper och vallar'], // steg 9.8.1
   handel: ['Hur stor del av vinsten i ett byte man får', 'Att lura en ovan, och att märka när man själv blir lurad', 'Att väljas att handla för byn', 'Växer av varje byte'],
+  // hantverkets egna färdigheter (steg 13.9.7): varje handling i ACTS säger vilken den övar (fardighet), och kvaliteten,
+  // teknikerna, lärlingen, mästaren och olyckorna läser den. De börjar på hantverkets värde
+  smide: ['Hur bra det smidda blir', 'Växer vid kolmilan, blästerugnen och i smedjan'],
+  krukmakeri: ['Hur bra krukorna och lamporna blir', 'Växer när man bygger upp lerkärl'],
+  vavning: ['Hur bra tråden och tyget blir', 'Växer när man spinner och väver'],
+  somnad: ['Hur bra lädret, plaggen och det sydda blir', 'Växer när man garvar och syr'],
 };
 
 // det personrutan visar när man trycker på en färdighet (steg 3.10.6): nycklarna i p.gjort (gjort i folk.ts), det senaste
@@ -116,6 +126,7 @@ export const SKILL_STAT: Record<Skill, { k: string; namn: string; av?: string }[
   odling: [{ k: 'odlat', namn: 'Rutor skötta' }],
   skotsel: [{ k: 'matat', namn: 'Matade djur' }, { k: 'vallat', namn: 'Vallade djur' }, { k: 'klippt', namn: 'Klippta får' }, { k: 'mjolkat', namn: 'Mjölkade getter' }, { k: 'skattat', namn: 'Skattade bikupor' }, { k: 'avlivat', namn: 'Avlivade djur' }, { k: 'slagit', namn: 'Slagna ängsrutor' }, { k: 'hamlat', namn: 'Hamlade björkar' }],
   handel: [{ k: 'bytt', namn: 'Byten' }, { k: 'lurade', namn: 'Lurade någon', av: 'bytt' }, { k: 'lurad', namn: 'Märkte att någon lurade', av: 'bytt' }],
+  smide: [], krukmakeri: [], vavning: [], somnad: [], // steg 13.9.7: det gjorda räknas under hantverket
 };
 
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];
@@ -127,6 +138,8 @@ export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar
 export interface Thought { text: string; v: number; until: number; k?: string } // k: raden i TANKAR (steg 12.1.234)
 // Det en person håller på med (p.task, sparas med personen). Fälten utan frågetecken finns alltid
 export interface Task {
+  eldFor?: Act; // tanda och elda: arbetet vid elden som elden tänds eller får ved för (ELDARBETEN i eld.ts)
+  sele?: number; // barnet som modern bär i bärselen (steg 13.2.3, barsele.ts)
   paus?: true; // vilan är en paus när inget annat lockar, inte trötthet (steg 11.1.72)
   fr?: number; // odla: rutan på fältet man arbetar på (steg 9.7.1, odling.ts)
   arbTid?: number; // ett arbete som räknas från framkomsten (framme i ACTS): så lång tid tar det när man är framme (steg 9.2.130)
@@ -138,6 +151,7 @@ export interface Task {
   phase: 'go' | 'do' | 'back'; // på väg dit, arbetar där, på väg hem med det som bärs
   tx: number; ty: number; // platsen man går till och arbetar på
   until: number; // tiden då uppgiften är slut (ms)
+  vantar?: boolean; // den som står emot rövarna väntar in de andra (true) eller möter gänget (false) (steg B.17, rovare.ts)
   carry: number; // det som bärs, i enheten som handlingens `ger` anger
   items?: Record<string, number>; // saker som bärs bredvid bördan, per slag (rötter, svamp, grenar, materialet till ett bygge)
   cond?: Record<string, number>; // skicket på det som bärs, per slag (lager.ts)
@@ -177,6 +191,7 @@ export interface Task {
   hal?: number; // fiske: sekunder kvar att hugga på hålet i isen (steg 2.11.3, is.ts); 0 = hålet är upphugget
   fran?: number; // den man tar ved av till elden (stöld, behov.ts)
   kom?: Record<string, number>; // var materialet till bygget kom ifrån (bygg.ts)
+  fron?: true; // plockar vilda frön (raden fron i valet, steg 13.8.7): räknas för sig, inte bland matens arbetare
   sok?: true | 'sten' | 'flinta'; // letar flinta eller stenar vid stenarna: blir platsen tom fortsätter man ändå i stället för att gå hem (steg.ts, workStep)
   pass?: number; // när ett pass med redskap som görs är slut (ms): blir ett klart före det görs ett till om byn vill ha fler (steg 2.3.8)
   hamtar?: string; // materialet uppgiften hämtar till ett projekt eller bygge (steg 6.1.17): samlandet ger det, också när förrådet har tändmaterial nog
@@ -188,6 +203,7 @@ export interface Task {
   gava?: true; // gravbesöket: en gåva läggs på graven (steg 12.1.61, gravGava i grav.ts)
   ho?: true; // vattnet bärs till vattenhon ref (steg 10.10.31, djurtorst.ts)
   falt?: true; // vattensäcken bärs till fältet ref i stället för till en människa (torka.ts, steg 3.8.2)
+  sno?: true; // vattnet är snö som bärs i händerna: isen är för tjock för det byn har och snö ligger (torst.ts, steg 12.6.8)
   vatten?: number; // vattensäcken: rutan där den fylldes, vars smuts följer med vattnet (torst.ts, steg 2.10.1)
 }
 
@@ -207,7 +223,7 @@ export interface Person {
   foder?: { f: string; till: number; hjalp?: number }; // förlossningen pågår: förloppet, när barnet föds och hjälparen (steg 9.5.29, forlossning.ts)
   krycka?: 1; // hen har en krycka till sitt brutna ben (steg 9.5.28, protes.ts)
   forbandMed?: number; ropT?: number; // remsorna i bältet och när hen senast ropade på hjälp (steg 9.5.16, halsa.ts)
-  rus?: number; kvallT?: number; supit?: number; fylla?: 1; bak?: number; // fylla = var full i kväll, bak = timmar bakfylla kvar (steg 9.6.15) // berusningen nu och det man supit på sistone (steg 9.6.14, rus.ts) // kvallT = när hen sist frågade sig om en kvällsdryck (steg 10.7.23)
+  rus?: number; supit?: number; fylla?: 1; bak?: number; // fylla = var full i kväll, bak = timmar bakfylla kvar (steg 9.6.15) // berusningen nu och det man supit på sistone (steg 9.6.14, rus.ts)
   protMinne?: string[]; // proteinet i de senaste måltiderna (steg 9.6.5, behov.ts)
   hn?: Record<string, number>; hnBlodat?: 1; // hälsans tecken förra timmen och att hen blött (steg 9.5.31, halsonotiser.ts)
   gift?: number; // bigiftet just nu, räknat mot kroppens storlek (steg 10.10.22, halsa.ts gift)
@@ -215,7 +231,6 @@ export interface Person {
   bedrift?: import('./rykten').Bevis; // den senaste stora bedriften (steg 10.6.1): stoltheten ger lust att resa en runsten
   sorg?: { namn: string; vem?: number; ord: string; v: number; dygn: number; t0: number; s2?: 1; s3?: 1 }[]; // sorgen i stadier efter en död (steg 9.2.33, liv.ts)
   tat?: { m: import('./tatuering').TatMotiv; p: import('./tatuering').TatPlats; stil: import('./tatuering').TatStil; t: number; av?: number }[]; tatV?: { m: import('./tatuering').TatMotiv; t: number }[]; // tatueringarna och händelserna hen vill märka (steg 10.7.5)
-  framProv?: number; // när hen senast prövade om hen ville uppträda (steg 10.7.9)
   gravBesok?: number; paminnd?: Record<number, number>; // när hen senast stod vid en grav, och när hen påmindes om en död (steg 10.4.8)
   pratArbete?: number; // samtalen hen haft medan hen arbetat (steg 8.1.12)
   id: number; name: string; sex: 'm' | 'k';
@@ -258,6 +273,7 @@ export interface Person {
   skatteskuld?: number; // skatten som inte kunde betalas, i grundvärde (steg 10.5.5, skatt.ts)
   straffad?: boolean; utanRost?: boolean; utanVard?: number; tjanst?: number; brottsling?: boolean; // straffen (steg 8.4.8): straffad, förlorad röst, utan vård till (steg 9.5.30), samhällstjänsten till, avrättad
   naring?: Record<import('./naring').Naring, number>; // näringsvärdena 0–1; mättnaden (hunger) är en sammanfattning av dem (steg 2.6.1, naring.ts)
+  bruk?: { t: number; k: [number, string][] }; // det personen saknar (raden i BRUK och saken), räknat timmen t (steg 13.9.9, behov.ts)
   byteNej?: Record<number, number>; // den som sagt nej till ett byte, och till när man inte frågar hen igen (steg 10.2.102)
   langtan?: Partial<Record<import('./naring').Naring, number>>; // vad andra berättat att de längtar efter, och till när man minns det (steg 2.6.2)
   habit: Record<string, number>; // timmar per aktivitet, bleknar med tiden (ger yrkestaggar)
@@ -278,6 +294,7 @@ export interface Person {
   raddAkt?: Record<string, number>; // rädslan för en handling efter en olycka, per rad i RADD_AKT (steg 8.4.10)
   thoughts: Thought[];
   drom?: { k: import('./drommar').DromId; namn?: string };
+  tval?: number; smittNara?: number; // tvålen mot smittan (steg 13.5.3, halsa.ts): tiden då tvätten slutar skydda, och senast hen var nära en som smittar
   vardadAv?: { id: number; t: number }; // den som vårdade hen senast och när (steg 12.1.134, halsa.ts) // drömmen som blir en tanke när hen vaknar (steg 12.1.132, drommar.ts)
   x: number; y: number; task?: Task;
   fame: string[];
@@ -305,6 +322,8 @@ export interface Person {
   lekt?: number; // när ett barn senast lekte (färre utbrott efteråt, steg 3.2.4)
   morkT?: number; // när hen senast var vaken i mörkret (lite sämre humör en stund, steg 6.3.4, ljus.ts)
   larm?: Partial<Record<string, import('./rykten').Larm>>; // larmen man hört, det senaste av varje sort (steg 3.7.11 och 12.1.211, rykten.ts)
+  sedTal?: { v: Partial<Record<keyof Seder['v'], number>>; t: number }; // det avvikarna fått personen att dra sederna åt, och när det sist ändrades (steg 13.9.4, seder.ts)
+  sedArv?: Partial<Record<keyof Seder['v'], number>>; // byns sed som personen tagit till sig, mest under uppväxten (steg 13.9.2, seder.ts)
   intryck?: import('./rykten').Intryck[]; // det personen tycker att andra är, och varför (steg 3.3, rykten.ts)
   smak?: Record<string, number>; // tycke och smak: 'a:' + arbete, 'm:' + mat eller 'v:' + vapen (steg 3.7.10), -1 till 1 (steg 3.3.5, rykten.ts)
   reservAlltid?: true; // blev ifattsprungen utan reservvapen: tar alltid med ett i strid (steg 3.7.7, strid.ts)
@@ -368,7 +387,7 @@ export interface State {
   people: Person[]; rels: Record<string, Rel>; nextId: number;
   log: LogEntry[];
   lastAgeIdx: number; lastGuardDay?: number; // lastGuardDay: kalenderns dygn då nattens vakt senast valdes (val.ts)
-  arbBehov?: { mat: number; ved: number; arb: Record<'mat' | 'ved' | 'bygga' | 'tand' | 'leta' | 'kol', number>; mal?: Record<string, { b: number; t: number }>; brist?: Record<string, number>; bv?: number }; // byns behov för arbetsordningen och arbetarna för varje rad, räknat en gång i timmen (dygn mat och ved, val.ts steg 6.1.12–6.1.13; materialens buffert och lagrets plats, forradsmal.ts steg 6.2.14)
+  arbBehov?: { mat: number; ved: number; arb: Record<'mat' | 'ved' | 'bygga' | 'tand' | 'leta' | 'kol' | 'fron', number>; mal?: Record<string, { b: number; t: number }>; brist?: Record<string, number>; bv?: number }; // byns behov för arbetsordningen och arbetarna för varje rad, räknat en gång i timmen (dygn mat och ved, val.ts steg 6.1.12–6.1.13; materialens buffert och lagrets plats, forradsmal.ts steg 6.2.14)
   taltBehov?: [number, number][]; sadelBehov?: [number, number][]; // tälten resorna med en natt på vägen behövde när de packades: tiden och antalet (steg 11.11.1, taltVill i forradsmal.ts)
   forbruk?: Record<string, number>; // materialen som tagits ur förrådet, ett glidande medel över FORRAD.forbrukDygn (forradsmal.ts, steg 6.2.14)
   fire: Fire;
@@ -410,7 +429,6 @@ export interface State {
   byggen?: import('./byggnad').Bit[]; hus?: import('./byggnad').Hus[]; byggV?: number; nextBit?: number; byggSok?: number; byggBehov?: Record<string, number>; mjardar?: import('./fisk').Mjarde[]; torg?: { x: number; y: number; w: number; h: number }; infart?: { klar?: 1; stopp?: 1 }; bryggV?: number; byplan?: import('./byggplan').Byplan; // väggar, golv och öppningar, husen byn planerat, ändringsräknare
   kal?: { t0: number; a0: number; b0: number }; // kalendern: tidsåldern a0 började t0 och slutar måndagen b0 (dagens nummer), se tid.ts
   ruttet?: number; // mat som ruttnat bort på sistone (glöms med tiden, byggnader.ts)
-  latrinVant?: { m: number; t: number }; // minuterna byborna väntat på en latrin på sistone (m vid tiden t, klingar av, steg 10.2.79, smuts.ts)
   skramma?: number[]; // fälten som har en fågelskrämma (steg 9.7.11, odling.ts)
   tamdjur?: import('./tamdjur').Tamdjur[]; nextTam?: number; // de tama djuren (fas 9.8, tamdjur.ts) och nästa lediga nummer
   hons?: import('./hons').Hons; // hönsflocken (steg 9.8.10, hons.ts)
@@ -418,6 +436,7 @@ export interface State {
   hamlade?: import('./slatter').Hamlat[]; // de hamlade björkarna (steg 9.8.16, slatter.ts)
   godsel?: number; // gödseln från fähuset som ännu inte blivit en hel rest i komposten (steg 9.8.9)
   hagar?: import('./hage').Hage[]; // hagarna (steg 9.8.4, tamdjur.ts)
+  tjarat?: Record<number, number>; // staketets rutor som tjärats, och till när (steg 13.5.1, tjara.ts)
   staket?: number[]; // rutorna med staket (steg 9.7.10, odling.ts)
   sophog?: { x: number; y: number; n: number }; // sophögen och resterna på den (steg 9.7.5, rester.ts)
   bord?: Record<number, number>; // bördigheten på de rutor där den inte är full (steg 9.7.2, odling.ts)
@@ -439,7 +458,7 @@ export interface State {
   smutsMat?: Record<string, number>; // så mycket av förrådets mat (saken → mängd, vägd efter smutsen) som plockats där det var toa-smuts (steg 10.11.14)
   blod?: import('./blod').Blodflack[]; // blodet på marken (bara utseende, blod.ts)
   hygien?: number; // hur mycket byn vet om att toa-smutsen gör vattnet sjukt (0–1, smuts.ts, steg 2.7.2)
-  sankta?: { vem: number; namn: string; x: number; y: number; t: number; sjo: number; med?: string[]; gavor?: number }[]; // de döda som sänkts i sjön (steg 10.4.5), och gåvorna vid stranden (steg 10.4.8)
+  sankta?: { vem: number; namn: string; x: number; y: number; t: number; sjo: number; med?: string[]; gavor?: number; saker?: import('./kvarlevor').GravSak[] }[]; // de döda som sänkts i sjön (steg 10.4.5), och gåvorna vid stranden (steg 10.4.8)
   styre?: import('./styre').Styre; // ledaren, påbuden, straffen och vågskålarna (steg 3.5, styre.ts)
   djurHalsa?: import('./djur').DjurHalsa[]; djurDoda?: { id: number; t: number }[]; // skadade och dödade djur (steg 3.7.13, djur.ts)
   bjornMott?: { ar: number; ids: number[] }; // de som mött björnen i år (steg 6.6.5, bjorn.ts): var och en en gång per år
@@ -498,7 +517,7 @@ export interface Borta { fran: number; fodda: number; doda: number; folk?: numbe
 // en vargflock (steg 3.7.1, varg.ts): vargarnas id (den första leder flocken), var den är och vart den går (mx, my), när den
 // drar vidare, hungern (0–1), vad den gör, personen den anfaller, när den senast sågs och av vem (sag, steg 3.10.20) och jägarna efter den.
 // dorr = öppningen (rutan) där den väntar utanför en stängd dörr, och vantar = sedan när (steg 3.7.21)
-export interface Vargflock { sx?: number; sy?: number; id: number; vargar: number[]; x: number; y: number; mx: number; my: number; gar: number; hunger: number; gor: 'stryker' | 'smyger' | 'anfaller' | 'vantar' | 'flyr'; byte?: number; sedd?: number; sag?: number; jagare?: number[]; kallare?: number; kallTill?: number; jaktTill?: number; samlas?: number; dorr?: { x: number; y: number }; vantar?: number; trottnat?: true; valp?: true; tam?: number; vag?: { m: number; t: number[]; ingen?: true }; vagT?: number } // vag: rutorna runt det som står i vägen, mot målet m (ga i varg.ts). valp: en vargvalp går med flocken (steg 9.8.2, tamdjur.ts)
+export interface Vargflock { sx?: number; sy?: number; id: number; vargar: number[]; x: number; y: number; mx: number; my: number; gar: number; hunger: number; gor: 'stryker' | 'smyger' | 'anfaller' | 'vantar' | 'ater' | 'flyr'; kropp?: number; /* kvarlevan flocken äter av (steg B.11) */ byte?: number; sedd?: number; sag?: number; jagare?: number[]; kallare?: number; kallTill?: number; jaktTill?: number; samlas?: number; dorr?: { x: number; y: number }; vantar?: number; trottnat?: true; valp?: true; tam?: number; vag?: { m: number; t: number[]; ingen?: true }; vagT?: number } // vag: rutorna runt det som står i vägen, mot målet m (ga i varg.ts). valp: en vargvalp går med flocken (steg 9.8.2, tamdjur.ts)
 // ett fällt träd: ved och grenar som finns kvar att hugga ut
 export interface Stock { id: number; x: number; y: number; ved: number; grenar: number; mossa?: number; av?: number } // mossa = bara i äldre sparfiler (före steg 12.1.6), den som fällde (steg 9.2.87)
 
@@ -519,9 +538,9 @@ export const HEARTHS: Hearth[] = [
 // chance = chans per försök, grass/sticks = tändmaterial per försök, minutes = tid per försök
 export interface Igniter { id: string; name: string; chance: number; grass: number; sticks: number; minutes: number; tek?: string; med?: string; slits?: number } // tek = tekniken den som tänder ska kunna (annars id), med = det som behövs bredvid (flintan som stålet slås mot), slits = så många försök redskapet håller (steg 12.2.12)
 export const IGNITERS: Igniter[] = [
-  { id: 'flinta', name: 'Flinta', chance: 0.025, grass: 3, sticks: 3, minutes: 15 },
-  { id: 'bagborr', name: 'Bågborr', chance: 0.13, grass: 2, sticks: 1, minutes: 10 }, // steg 10.6.13: ungefär tre försök där flintan tar sexton; håller ELD.borrForsok försök
-  { id: 'eldstal', name: 'Eldstål och flinta', chance: 0.45, grass: 1, sticks: 1, minutes: 5, tek: 'smedja', med: 'flinta', slits: 400 }, // steg 12.2.12: smids i smedjan
+  { id: 'flinta', name: 'Flinta', chance: 0.035, grass: 3, sticks: 3, minutes: 2 },
+  { id: 'bagborr', name: 'Bågborr', chance: 0.13, grass: 2, sticks: 1, minutes: 2 }, // steg 10.6.13: ungefär tre försök där flintan tar tretton; håller ELD.borrForsok försök
+  { id: 'eldstal', name: 'Eldstål och flinta', chance: 0.45, grass: 1, sticks: 1, minutes: 2, tek: 'smedja', med: 'flinta', slits: 400 }, // steg 12.2.12: smids i smedjan
 ];
 
 // nyckeltalen i tal-ordning: [tid, värde, värde, …] per timme och per dygn, och krönikans rader [tid, text]

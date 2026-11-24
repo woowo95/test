@@ -8,7 +8,7 @@ import { balans } from './balans';
 import { alive } from './folk';
 import { moodOf } from './humor';
 import { rnd } from './slump';
-import { TankeId, tanke, tankeText } from './tankar';
+import { TankeId, harTanke, tanke } from './tankar';
 import { HOUR_S, Person, State } from './typer';
 
 export const DROM = balans('drommar', {
@@ -18,8 +18,7 @@ export const DROM = balans('drommar', {
 
 // det som räknas som fara: den som har någon av de här tankarna kvar kan få mardrömmar
 const FARA: TankeId[] = ['anfollsVargar', 'klaradeVargar', 'slogsRovare', 'drevBortRovare', 'hotadRovare', 'sagBjorn', 'sagBjornUngar', 'anfollsBjorn', 'sagBjornSlass', 'anfollsVildsvin', 'falldeVildsvin', 'husetBrann', 'svalter'];
-let faraText: Set<string> | undefined;
-const iFara = (p: Person, now: number) => { faraText ??= new Set(FARA.map(k => (tankeText as (k: TankeId) => string)(k))); return p.thoughts.some(t => t.until > now && faraText!.has(t.text)); };
+const iFara = (p: Person, now: number) => harTanke(p, FARA, now);
 // den döde som p sörjer, den senaste (sorgen i liv.ts)
 const sorjer = (p: Person) => p.sorg?.length ? [...p.sorg].sort((a, b) => b.t0 - a.t0)[0] : undefined;
 

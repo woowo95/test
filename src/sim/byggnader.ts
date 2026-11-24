@@ -47,7 +47,6 @@ export const HUS = balans('hus', {
   tomTim: 4, // ... men behöver byn ett förrådshus blir den det redan efter så här många timmar, före ett nytt hus (steg 2.12.5)
   rivTillbaka: 0.5, // så mycket av materialet kommer tillbaka när ett hus rivs
   varmeMarg: 0.02, // ett samlingshus räknas som varmare än elden även om det är så här mycket kallare ...
-  vagVarme: 0.01, // den som ska värma sig räknar så här mycket värme för varje ruta vägen till ett rum eller till elden är (steg 10.2.9)
   varmeY: 2.9, // ... mätt så här många rutor söder om elden
   // torkhuset och vedboden byggs efter det som går förlorat utan tak (steg 10.11.6): förlusten per dygn (grundvärde) under så här
   // många dygn mot vad ett sådant hus kostar (grundvärde) är hur akut det är (högst 1)
@@ -325,15 +324,17 @@ function boende(s: State): Boende {
   // första huset (bedTile är undefined). Bara de minsta barnen sover hos sin mor eller far
   const lever = new Set(ppl.map(q => q.id)), agd = new Map<number, number>(), plats = new Map<number, number>();
   for (const t of stationerOf(s)) if (t.ag !== undefined && lever.has(t.ag) && isKlar(t) && stationDef(t.k)?.sover) agd.set(t.y * W + t.x, t.ag);
-  // sjukbäddarna (steg 12.4.10): den som är sjuk eller skadad lägger sig hellre i en ledig sjukbädd, i vilket hus den än står
-  const sjukbaddar = stationerOf(s).filter(t => isKlar(t) && stationDef(t.k)?.sjuk).map(t => t.y * W + t.x);
-  // de med störst behov av att läka får bäddarna först (steg 12.1.235: sjukBehov i mobler.ts), och en liten skada ligger hemma
-  const sjuka = sjukbaddar.length ? ppl.filter(q => sjukKrok.vill(s, q)).map(q => ({ q, b: sjukKrok.behov(s, q) })).sort((a, c) => c.b - a.b || a.q.id - c.q.id) : [];
-  for (const [n, { q }] of sjuka.entries()) { if (n >= sjukbaddar.length) break; plats.set(q.id, sjukbaddar[n]); }
+  // sjukstugorna (steg 12.4.10 och 13.1.14): den som är sjuk eller skadad går före de friska till bäddarna i en sjukstuga, i vilket
+  // hus den än står, och de med störst behov av att läka först (steg 12.1.235: sjukBehov i mobler.ts); en liten skada ligger hemma
+  const sjuka = ppl.filter(q => sjukKrok.vill(s, q)).map(q => ({ q, b: sjukKrok.behov(s, q) })).sort((a, c) => c.b - a.b || a.q.id - c.q.id);
+  if (sjuka.length) {
+    const sov = stationRutor(s).sov, sjukbaddar = gridOf(s).rooms.filter(r => r.tiles.length && sjukKrok.stuga(s, r)).flatMap(r => r.tiles.filter(i => sov.has(i)));
+    for (const [n, { q }] of sjuka.entries()) { if (n >= sjukbaddar.length) break; plats.set(q.id, sjukbaddar[n]); }
+  }
   const vaggor = stationerOf(s).filter(t => isKlar(t) && stationDef(t.k)?.vagga).map(t => ({ i: t.y * W + t.x, r: roomAt(s, t.x, t.y) })), iVagga = new Set<number>(); // vaggorna (steg 12.4.5)
   const fordela = (tiles: number[], folk: Person[]) => {
-    const ids = new Set(folk.map(q => q.id)), fria = tiles.filter(i => !agd.has(i)), rest: Person[] = [], utan: Person[] = [];
-    for (const i of tiles) { const o = agd.get(i); if (o !== undefined && ids.has(o) && !plats.has(o)) plats.set(o, i); }
+    const tagna = new Set(plats.values()), ids = new Set(folk.map(q => q.id)), fria = tiles.filter(i => !agd.has(i) && !tagna.has(i)), rest: Person[] = [], utan: Person[] = []; // en bädd som en sjuk tagit (steg 13.1.14)
+    for (const i of tiles) { const o = agd.get(i); if (o !== undefined && ids.has(o) && !plats.has(o) && !tagna.has(i)) plats.set(o, i); }
     for (const q of folk) if (!plats.has(q.id)) (ageOf(q, s.now) < ALDER.smabarn ? utan : rest).push(q);
     rest.forEach((q, n) => { if (n < fria.length) plats.set(q.id, fria[n]); });
     for (const q of utan) {
@@ -517,14 +518,10 @@ function funktionsbyte(s: State) {
   }
 }
 // är det varmare inne i rummet än vid elden? c = kylan (coldOf): hur kallt det är ute
-// Den som ska värma sig (varmer) väger värmen inne mot värmen vid elden, med vägen dit (HUS.vagVarme per ruta, steg 10.2.9): en
-// släckt eld värmer inte, vad som än finns att tända den med. f är elden man annars skulle sitta vid (den som brinner, val.ts)
-export function varmareInne(s: State, rum: Rum, c: number, varmer = false, p?: { x: number; y: number }, f = eldPlats(s)) {
+// En släckt eld värmer inte, vad som än finns att tända den med. f är elden man annars skulle sitta vid (den som brinner, val.ts).
+// Den som fryser väger alla sätt att bli varm i varme.ts
+export function varmareInne(s: State, rum: Rum, c: number, f = eldPlats(s)) {
   const inne = -c * (1 - shelterOf(s, rum, Math.min(living(s).length, rum.tiles.length))), ute = heatAt(s, f.x + 0.5, f.y + HUS.varmeY) * KROPP.eldVarme - c;
-  if (varmer) {
-    const t = rum.tiles[0], dIn = p && t !== undefined ? Math.hypot(p.x - (t % W + 0.5), p.y - (Math.floor(t / W) + 0.5)) : 0, dUt = p ? Math.hypot(p.x - f.x - 0.5, p.y - f.y - 0.5) : 0;
-    return inne - HUS.vagVarme * dIn >= ute - HUS.vagVarme * dUt;
-  }
   return inne >= Math.min(0, ute) - HUS.varmeMarg;
 }
 // fähusens rum som saknar en krubba (steg 10.2.88): där ställs nästa krubba
@@ -560,4 +557,4 @@ export function husKlar(s: State, h: Hus) {
   log(s, `${stor(iMening(h.namn))} är färdigt. Där ruttnar och slits maten mindre.`, 'world');
 }
 // den som vill ligga i en sjukbädd (steg 12.4.10), satt i mobler.ts (som läses efter den här filen)
-export const sjukKrok = { vill: (_s: State, _p: Person) => false, behov: (_s: State, _p: Person) => 0 };
+export const sjukKrok = { vill: (_s: State, _p: Person) => false, behov: (_s: State, _p: Person) => 0, stuga: (_s: State, _r: Rum) => false };

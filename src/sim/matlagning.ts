@@ -1,4 +1,5 @@
-import { nagonEld } from './eld';
+import { ELDARBETEN } from './eldarbeten';
+import { eldForst, nagonEld, narmasteEld } from './eld';
 import { matAvstar } from './kultlatt';
 import { DAY, HOUR, MIN, SEC, Person, State, Task } from './typer';
 import { alive, byId, count, enTill, forstaGang, gjort, log, ovning, stat } from './folk';
@@ -6,7 +7,7 @@ import { clamp, rnd } from './slump';
 import { Del, addDel } from './egendom';
 import { amountOf, harTillHands, iHelaForradet, put, skickAv, use } from './lager';
 import { grundvarde } from './varde';
-import { Station, isKlar, kanGoras, stationFor, stationerOf } from './stationer';
+import { Station, isKlar, kanGoras, stationFor, stationerOf, upptagen } from './stationer';
 import { matPerDygn } from './ekonomi';
 import { ageIndex, kallTid } from './tid';
 import { KOTTSLAG, SAKER } from './saker';
@@ -15,6 +16,8 @@ import { balans } from './balans';
 import { SJUK, insjukna } from './sjukdom';
 import { INGREDIENSER, KATEGORIER, Kategori, Maltidsniva, RATT, RATT_HUVUD, RATT_HUVUD_LIST, RATT_SAKER, RattHuvud, grupperAv, hallerSteg, nivaAvGrupper, rattId, utsadeKrok } from './ratter';
 import { tingOf } from './agande';
+import { temperature } from './vader';
+import { roofed } from './byggnad';
 import { getable, takeMaterial } from './behov';
 import { stationBrinner, rokVed } from './stationseld';
 import { bakKrok, rokKrok } from './stationseldkrok';
@@ -54,7 +57,9 @@ const RAVAROR: readonly { ra: string; grill?: string; tork?: string; rok?: strin
   { ra: 'gaddkott', grill: 'grillgadda', tork: 'torrgadda', rok: 'rokfisk' }, { ra: 'gadda', grill: 'grillgadda' }, // grillad fisk behåller artens näring (steg 7.4.3)
   { ra: 'mortkott', grill: 'grillmort', tork: 'torrmort', rok: 'rokfisk' },
   { ra: 'braxkott', grill: 'grillfisk', tork: 'torrfisk', rok: 'rokfisk' }, { ra: 'sikkott', grill: 'grillfisk', tork: 'torrfisk', rok: 'rokfisk' }, // steg 9.6.17
+  { ra: 'svamp', tork: 'torrsvamp' }, // svampen, äpplena och röllekan torkas också (steg 13.6.1)
   { ra: 'ratlin', tork: 'lin' }, // linet rötas som köttet på torkställningen (steg 7.7.7)
+  { ra: 'rolleka', tork: 'torrrolleka' }, { ra: 'appel', tork: 'torrappel' },
   ...KOTTSLAG.map(k => ({ ra: k, grill: 'grillkott', tork: 'torrkott', rok: 'rokkott' })), // köttet är eget per art men blir samma lagade kött (steg 3.7.14, 10.3.14)
 ];
 const rattLista = (k: 'grill' | 'tork' | 'rok'): readonly Ratt[] => RAVAROR.flatMap(r => r[k] ? [{ ra: r.ra, blir: r[k]! }] : []);
@@ -66,7 +71,7 @@ export const ravaraPoang = (s: State, k: string, n = amountOf(s, k)) => n * grun
 // hand = vid grillen: det hen bär dit och det som ligger inom räckhåll (steg 11.1.74)
 export const grillVara = (s: State, p?: Person, hand = false) => { let b: Ratt | undefined, bv = 0; for (const r of RATTER) { if ((hand && p ? harTillHands(s, p, r.ra) : amountOf(s, r.ra)) < MATLAG.min || p && matAvstar(s, p, r.ra)) continue; const v = ravaraPoang(s, r.ra); if (!b || v > bv) { b = r; bv = v; } } return b; };
 // p kan grilla: byn har grillen, elden brinner, det finns något att grilla och ingen annan grillar
-export const kanGrilla = (s: State, p: Person) => kanGoras(s, 'grilla', p) && s.fire.lit && !!grillVara(s, p) && !!stationFor(s, 'grilla', p); // en grill rymmer sin arbetare (steg 10.2.5)
+export const kanGrilla = (s: State, p: Person) => kanGoras(s, 'grilla', p) && eldForst(s, p, 'grilla').ok && !!grillVara(s, p) && !!stationFor(s, 'grilla', p); // en grill rymmer sin arbetare (steg 10.2.5)
 // hur länge ett pass vid grillen varar
 export const grillTid = (s: State) => { const r = grillVara(s); return Math.min(MATLAG.maxTim * HOUR, (r ? amountOf(s, r.ra) / MATLAG.timme : 0) * HOUR + MATLAG.passExtra * MIN); };
 // så stor del av maten p bränner
@@ -144,6 +149,7 @@ export function ratt(s: State, p: Person, per: Record<string, number>, full: num
 export const TORK = balans('torkning', {
   dygn: 5, // så många dygn tar det att torka kött och fisk på ställningen
   maltDygn: 3, // och så många dygn gror det blötta kornet och torkar till malt (steg 9.6.13, brygg.ts)
+  ortDygn: 2, // och så många dygn torkar röllekan (steg 13.6.1)
   rymd: 4, // så mycket ryms på en ställning (fyra köttbitar, steg 2.10.22)
   timme: 12, // så mycket som hängs upp eller tas ner i timmen
   maxTim: 1, // ett pass vid ställningen är högst så här många timmar
@@ -162,7 +168,9 @@ export const ROK = balans('rokeri', {
 export const ROKAS = rattLista('rok');
 export type TorkSlag = 'tork' | 'rokeri';
 const TORK_RAD = { tork: () => TORKAS, rokeri: () => ROKAS };
-const torkDygn = (k: TorkSlag) => k === 'rokeri' ? ROK.dygn : TORK.dygn;
+// så många dygn det som hänger (råvaran r) torkar: det som torkar fortare än köttet har en egen rad här (TORK)
+const TORK_TID: Record<string, 'maltDygn' | 'ortDygn'> = { maltkorn: 'maltDygn', rolleka: 'ortDygn' };
+const torkDygn = (k: TorkSlag, r?: string) => k === 'rokeri' ? ROK.dygn : TORK[r && TORK_TID[r] || 'dygn'];
 rokKrok.dygn = () => ROK.dygn;
 // det som hänger i rökeriet röks bara medan elden brinner (steg 10.2.85): tiden räknas i q.rok, i torkställningen från q.t
 const tidAv = (s: State, q: Hang, k: TorkSlag) => k === 'rokeri' ? q.rok ?? 0 : s.now - q.t;
@@ -173,13 +181,19 @@ export const torken = (s: State): Station | undefined => torkarna(s)[0];
 const hangOf = (t: Station) => t.tork ?? (t.tork = []);
 const hangtSumma = (t?: Station) => { let n = 0; for (const q of t?.tork ?? []) n += q.n; return n; };
 // hur stor del av torkningen som är gjord (0–1): gränssnittet färgar maten efter det
-export const torrDel = (s: State, q: Hang, k: TorkSlag = 'tork') => clamp(tidAv(s, q, k) / ((q.k === 'maltkorn' ? TORK.maltDygn : torkDygn(k)) * DAY), 0, 1);
-const klar = (s: State, q: Hang, k: TorkSlag = 'tork') => tidAv(s, q, k) >= (q.k === 'maltkorn' ? TORK.maltDygn : torkDygn(k)) * DAY; // maltet gror och torkar (steg 9.6.13)
-// så mycket rått (i saker) som finns över det byn äter innan det ruttnar (steg 10.2.11): det äts under så många dygn som det som
-// ruttnar först håller. Inför och under istiden behålls inget rått förrän byn har sin torkade mat för vintern (torkVinter)
-function ratOver(s: State, k: TorkSlag = 'tork') {
+export const torrDel = (s: State, q: Hang, k: TorkSlag = 'tork') => clamp(tidAv(s, q, k) / (torkDygn(k, q.k) * DAY), 0, 1);
+const klar = (s: State, q: Hang, k: TorkSlag = 'tork') => tidAv(s, q, k) >= torkDygn(k, q.k) * DAY; // maltet gror och torkar (steg 9.6.13)
+// så mycket rå mat (i saker) som finns över det byn äter innan det ruttnar (steg 10.2.11): det äts under så många dygn som det som
+// ruttnar först håller. Inför och under istiden behålls inget rått förrän byn har sin torkade mat för vintern (torkVinter).
+// Det som inte äts (röllekan, linet) behålls inte: allt av det är över (ejMat, steg 13.6.1)
+const ejMat = (ra: string) => SAKER[ra]?.mat === undefined;
+// så mycket av råvaran ra som får hängas upp, när overMat av maten är över
+const overAv = (s: State, ra: string, overMat: number) => ejMat(ra) ? amountOf(s, ra) : overMat;
+const ratOver = (s: State, k: TorkSlag = 'tork') => ratOverAv(s, TORK_RAD[k]().map(r => r.ra));
+// samma överskott för vilka råvaror som helst (syrningen av kål och fisk, steg 13.6.2)
+export function ratOverAv(s: State, ravaror: readonly string[]) {
   let n = 0, mat = 0, haller = Infinity;
-  for (const r of TORK_RAD[k]()) { const a = amountOf(s, r.ra); if (a < 1) continue; n += a; mat += a * (SAKER[r.ra]?.mat ?? 1); haller = Math.min(haller, SAKER[r.ra]?.haller ?? 1); }
+  for (const ra of ravaror) { const r = { ra }, a = amountOf(s, r.ra); if (a < 1 || ejMat(r.ra)) continue; n += a; mat += a * (SAKER[r.ra]?.mat ?? 1); haller = Math.min(haller, SAKER[r.ra]?.haller ?? 1); }
   if (!n) return 0;
   const spara = torkVinter(s) ? 0 : matPerDygn(s) * (haller === Infinity ? 1 : haller);
   return Math.max(0, Math.floor((mat - spara) / (mat / n)));
@@ -190,14 +204,14 @@ export function torkHamtas(s: State, tk: Task, k: TorkSlag = 'tork') {
   if (!ts.length) return undefined;
   let kan = (tk.until - s.now) / HOUR * TORK.timme, plats = ts.reduce((n, t) => n + TORK.rymd - hangtSumma(t), 0), over = ratOver(s, k);
   const av: Record<string, number> = {};
-  for (const r of TORK_RAD[k]()) { const n = Math.floor(Math.min(kan, plats, over, amountOf(s, r.ra)) + 1e-9); if (n < 1) continue; av[r.ra] = n; kan -= n; plats -= n; over -= n; }
+  for (const r of TORK_RAD[k]()) { const n = Math.floor(Math.min(kan, plats, overAv(s, r.ra, over), amountOf(s, r.ra)) + 1e-9); if (n < 1) continue; av[r.ra] = n; kan -= n; plats -= n; if (!ejMat(r.ra)) over -= n; }
   return Object.keys(av).length ? av : undefined;
 }
 // byn vill ha mer torkad mat inför vintern: inför och under istiden, och den torkade och rökta maten räcker kortare än TORK.vinterDygn
 function torkVinter(s: State) {
   if (!kallTid(ageIndex(s))) return false;
-  let torr = 0;
-  for (const r of [...TORKAS, ...ROKAS]) if (SAKER[r.blir]?.mat) torr += amountOf(s, r.blir) * SAKER[r.blir]!.mat!;
+  let torr = 0; // det torkade, rökta och syrade (steg 13.6.2): den mat som håller så länge något får hålla i lagret
+  for (const r of [...TORKAS, ...ROKAS, ...SYRAS]) if (SAKER[r.blir]?.mat) torr += amountOf(s, r.blir) * SAKER[r.blir]!.mat!;
   return torr < matPerDygn(s) * TORK.vinterDygn;
 }
 // arbetet som väntar vid ställningarna: det som är klart att ta ner, och det råa som ska upp och får plats. fri = platsen
@@ -208,7 +222,9 @@ function torkArbete(s: State, k: TorkSlag = 'tork') {
   let ner = 0, fri = 0;
   for (const t of ts) { fri += TORK.rymd - hangtSumma(t); for (const q of t.tork ?? []) if (klar(s, q, k)) ner += q.n; }
   fri += ner;
-  const over = ratOver(s, k), upp = over >= TORK.min ? Math.min(over, fri) : 0;
+  let over = ratOver(s, k);
+  for (const r of TORK_RAD[k]()) if (ejMat(r.ra)) over += Math.floor(amountOf(s, r.ra) + 1e-9);
+  const upp = over >= TORK.min ? Math.min(over, fri) : 0;
   return { ner, upp: Math.max(0, upp), fri, over };
 }
 // en torkställning till (projekt.ts): 1 när byn saknar en, annars hur mycket av det råa som finns över som inte får plats på
@@ -244,19 +260,19 @@ export function torka(s: State, p: Person, hours: number, k: TorkSlag = 'tork') 
     put(s, q.k === 'maltkorn' ? 'malt' : RAD.find(r => r.ra === q.k)!.blir, n, ag);
     q.n -= n; kan -= n; count(s, k === 'rokeri' ? 'rokt' : 'torkat', n);
     if (q.n <= 1e-6) h.splice(i, 1);
-    if (k === 'tork' && forstaGang(s, 'torkForsta')) log(s, q.k === 'maltkorn' ? `${p.name} tog ner byns första torkade malt från torkställningen.` : q.k === 'ratlin' ? `${p.name} tog ner byns första rötade lin från torkställningen.` : `${p.name} tog ner byns första torkade ${SAKER[q.k]?.namn.endsWith('ött') ? 'kött' : 'fisk'} från torkställningen. Den håller länge i lagret.`, 'world', [p.id]);
+    if (k === 'tork' && forstaGang(s, 'torkForsta')) log(s, q.k === 'maltkorn' ? `${p.name} tog ner byns första torkade malt från torkställningen.` : q.k === 'ratlin' ? `${p.name} tog ner byns första rötade lin från torkställningen.` : `${p.name} tog ner byns första torkade ${RATTER.some(r => r.ra === q.k) ? SAKER[q.k]?.namn.endsWith('ött') ? 'kött' : 'fisk' : SAKER[q.k]?.namn.toLowerCase()} från torkställningen. Det håller länge i lagret.`, 'world', [p.id]);
   }
   for (const t of ts) {
     const h = hangOf(t);
     let plats = TORK.rymd - hangtSumma(t);
     for (const r of RAD) {
-      if (kan <= 1e-9 || plats <= 1e-9 || over < 1e-6) break;
-      const n = Math.min(kan, plats, over, harTillHands(s, p, r.ra));
+      if (kan <= 1e-9 || plats <= 1e-9) break;
+      const n = Math.min(kan, plats, overAv(s, r.ra, over), harTillHands(s, p, r.ra));
       if (n <= 1e-6) continue;
       const vems = use(s, p, r.ra, n), sist = h[h.length - 1];
       if (sist && sist.k === r.ra && s.now - sist.t < HOUR) { sist.n += n; sist.ag = addDel(sist.ag ?? {}, vems); }
       else h.push({ k: r.ra, n, t: s.now, ag: addDel({}, vems) });
-      kan -= n; plats -= n; over -= n; count(s, 'upphangt', n);
+      kan -= n; plats -= n; if (!ejMat(r.ra)) over -= n; count(s, 'upphangt', n);
     }
   }
   if (kan >= hours * TORK.timme - 1e-9 && p.task) p.task.until = s.now; // inget att göra
@@ -304,7 +320,7 @@ function kokReceptAv(s: State, p: Person | undefined, m: number): KokRecept | un
 }
 // medelvärdet av ingrediensernas hållbarhet, efter mängden, avrundat till ett steg i HALLER_STEG (dygn). Det som inte ruttnar
 // (salt, talg, örter) räknas inte; ruttnar inget, håller rätten RATT.haller
-export const hallerMedel = (ing: [string, number][]) => { let h = 0, n = 0; for (const [k, m] of ing) { const d = SAKER[k]?.haller; if (d === undefined) continue; h += d * m; n += m; } return hallerSteg(n ? h / n : RATT.haller); };
+export const hallerMedel = (ing: [string, number][]) => { let h = 0, n = 0; for (const [k, m] of ing) { const d = SAKER[k]?.haller; if (d === undefined || SAKER[k]?.mat === undefined) continue; /* röllekan ruttnar men är ingen mat (steg 13.6.1) */ h += d * m; n += m; } return hallerSteg(n ? h / n : RATT.haller); };
 // kokkärlen, det som tar mest först (steg 12.5.5): järngrytan tar dubbel sats och spricker inte, den mellanstora lerkrukan en
 export const KOKKARL: Record<string, { satser: number }> = { jarngryta: { satser: 2 }, lerkruka_mellan: { satser: 1 } };
 const KOKKARL_LIST = Object.keys(KOKKARL);
@@ -312,11 +328,28 @@ const KOKKARL_LIST = Object.keys(KOKKARL);
 export const ledigKruka = (s: State) => { for (const k of KOKKARL_LIST) { const t = tingOf(s).find(t => t.k === k && t.ler === undefined && !t.inne && !t.kok && !t.vaxt && t.hos === undefined && t.c > 0); if (t) return t; } return undefined; };
 // krukorna som står på elden
 export const kokarNu = (s: State) => tingOf(s).filter(t => t.kok);
+// så mycket av k som syras eller sjuder i krukorna just nu
+export const iKrukorna = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (t.kok?.r === k ? t.kok.n : 0), 0);
+// ---------- syrningen (steg 13.6.2) ----------
+// Kål eller fisk packas med salt i en stor lerkruka (TILLVERKA.syra_kal och syra_fisk) och syras i sin egen saft i SYRA.dygn dygn,
+// utan eld. Krukan är upptagen så länge (t.kok med syr). Det som syras är det byn inte hinner äta innan det ruttnar, samma
+// överskott som torkningen (ratOverAv); surkålen och surfisken räknas i vinterförrådet (torkVinter)
+export const SYRA = balans('syrning', {
+  dygn: 3, // så många dygn syras kålen och fisken
+  kall: 5, // under så många grader stannar syrningen, utom inne i ett hus
+});
+export const SYRAS: readonly Ratt[] = [{ ra: 'kal', blir: 'surkal' }, { ra: 'fisk', blir: 'surfisk' }];
+// så många byn vill ha av det syrade blir (forradsmal.ts): det som finns och syras, och en hel kruka till för varje kruka av råvaran som finns över
+export const syraVill = (s: State, blir: string, n: number) => { const r = SYRAS.find(q => q.blir === blir)!; return amountOf(s, blir) + iKrukorna(s, blir) + Math.floor(ratOverAv(s, [r.ra]) / n) * n; };
 // rätterna i förrådet och i krukorna, i mat (steg 10.2.11): mot det byn äter
-const rattMat = (s: State) => RATT_SAKER.reduce((n, k) => n + amountOf(s, k) * (SAKER[k]?.mat ?? 1), 0) + kokarNu(s).reduce((n, t) => n + (t.kok!.vatska ? 0 : t.kok!.n), 0);
+const rattMat = (s: State) => RATT_SAKER.reduce((n, k) => n + amountOf(s, k) * (SAKER[k]?.mat ?? 1), 0) + kokarNu(s).reduce((n, t) => n + (t.kok!.vatska || t.kok!.syr ? 0 : t.kok!.n), 0);
 const ratterBehovs = (s: State) => rattMat(s) < matPerDygn(s) * KOK.dygn;
 // p kan laga mat: kan krukan, elden brinner, en ledig kruka, något att koka, byn har för få rätter och ingen annan lagar mat
-export const kanKoka = (s: State, p: Person) => knows(p, 'kruka') && nagonEld(s) && !!ledigKruka(s) && ratterBehovs(s) && enTill(s, 'koka_mat', p) && !!kokRecept(s, p);
+export const kanKoka = (s: State, p: Person) => knows(p, 'kruka') && eldForst(s, p, 'koka_mat').ok && !!ledigKruka(s) && ratterBehovs(s) && enTill(s, 'koka_mat', p) && !!kokRecept(s, p);
+// arbetena vid elden (ELDARBETEN i eld.ts): grillen står vid lägerelden, och krukan står i den närmaste elden som brinner tills
+// rätten kokat (den längsta tiden i krukan, soppan)
+ELDARBETEN.grilla = { eld: s => s.fire, tim: s => grillTid(s) / HOUR };
+ELDARBETEN.koka_mat = { eld: (s, p) => narmasteEld(s, p), tim: () => (KOK.prepMin + KATEGORIER.soppa.passiv) / 60 };
 // förberedelsen är klar (KLAR i steg.ts): råvarorna tas, och rätten ställs på elden i krukan
 export function kokaKlar(s: State, p: Person) {
   const r = kokRecept(s, p), t = ledigKruka(s);
@@ -333,11 +366,14 @@ export function kokaKlar(s: State, p: Person) {
   if (forstaGang(s, 'kokForsta')) log(s, `${p.name} lagade byns första ${SAKER[r.id]!.namn.split(' · ')[0].toLowerCase()} i ${t.k === 'jarngryta' ? 'en järngryta' : 'en lerkruka'} över elden.`, 'world', [p.id]);
 }
 // krukorna på elden kokar medan elden brinner (TAKTER i steg.ts, med tiden sedan sist dt i sekunder), och den färdiga rätten läggs i förrådet
+// Det som syras (steg 13.6.2) står utan eld och syras när det är varmt nog (SYRA.kall) eller krukan står inne i ett hus
 export function stepKok(s: State, dt: number) {
   stepGrop(s, dt); // kokgropen (steg 10.7.28)
+  const varmt = temperature(s) >= SYRA.kall;
   for (const t of kokarNu(s)) {
-    if (nagonEld(s)) t.kok!.kvar -= dt * SEC;
+    if (t.kok!.syr ? varmt || t.x !== undefined && roofed(s, Math.floor(t.x), Math.floor(t.y!)) : nagonEld(s)) t.kok!.kvar -= dt * SEC;
     if (t.kok!.kvar > 0) continue;
+    if (t.kok!.syr) { put(s, t.kok!.r, t.kok!.n, delaEfter(s, t.kok!.ag, t.kok!.n)); count(s, 'syrat_' + t.kok!.r, t.kok!.n); t.kok = undefined; continue; }
     if (t.kok!.vatska) { t.inne = { v: t.kok!.r as import('./vatskor').VatskaId, n: t.kok!.n, q: t.kok!.q, t: s.now }; count(s, 'kokt_' + t.kok!.r, t.kok!.n); t.kok = undefined; continue; } // buljongen står kvar i krukan (steg 10.7.24)
     const ag = delaEfter(s, t.kok!.ag, t.kok!.n);
     if (t.kok!.n > 0) { handI(s, t.kok!.r, t.kok!.h ?? 0, t.kok!.n, amountOf(s, t.kok!.r)); put(s, t.kok!.r, t.kok!.n, ag); }
@@ -368,7 +404,10 @@ export function stekRecept(s: State, p?: Person) {
   }
   return undefined;
 }
-export const kanSteka = (s: State, p: Person) => knows(p, 'stekhall') && !!stekhallen(s) && ratterBehovs(s) && !!stekRecept(s, p);
+// härden med stekhällen, också när den inte brinner: den tänds för steken (ELDARBETEN i eld.ts)
+const stekHard = (s: State) => s.eldar?.find(f => f.hearth === 'hard' && f.med?.includes('stekhall'));
+ELDARBETEN.steka = { eld: stekHard, tim: () => STEK.min / 60 };
+export const kanSteka = (s: State, p: Person) => knows(p, 'stekhall') && !!stekHard(s) && eldForst(s, p, 'steka').ok && ratterBehovs(s) && !!stekRecept(s, p);
 export function stekaKlar(s: State, p: Person) {
   const r = stekRecept(s, p);
   if (!r || !stekhallen(s)) return;
@@ -426,7 +465,8 @@ export const GROP = balans('kokgrop', {
   fore: 1, // gropen laddas när en ritual med mat börjar inom så här många dygn (år i spelet)
 });
 export const kokgropar = (s: State) => stationerOf(s).filter(t => t.k === 'kokgrop' && isKlar(t));
-export const tomGrop = (s: State) => kokgropar(s).find(t => !t.grop);
+// en tom grop som ingen annan redan arbetar vid (en station rymmer sina arbetare, upptagen i stationer.ts)
+export const tomGrop = (s: State, p?: Person) => kokgropar(s).find(t => !t.grop && !(p && upptagen(s, t, p)));
 export interface FestRecept { id: string; av: [string, number][] }
 // festmåltiden som kan lagas av det p kan ta: huvudingrediensen med högst poäng, smaken och två råvaror ur nya grupper
 export function festRecept(s: State, p?: Person): FestRecept | undefined {
@@ -451,10 +491,10 @@ export function festRecept(s: State, p?: Person): FestRecept | undefined {
   return undefined;
 }
 // p kan ladda gropen: kan kokgropen, en tom grop, en ritual med mat väntar, ingen annan laddar den och det finns råvaror
-export const kanGropa = (s: State, p: Person) => knows(p, 'kokgrop') && !!tomGrop(s) && festKrok.vantar(s, GROP.fore * DAY) && !kokgropar(s).some(t => t.grop) && enTill(s, 'gropa', p) && !!festRecept(s, p);
+export const kanGropa = (s: State, p: Person) => knows(p, 'kokgrop') && !!tomGrop(s, p) && festKrok.vantar(s, GROP.fore * DAY) && !kokgropar(s).some(t => t.grop) && enTill(s, 'gropa', p) && !!festRecept(s, p);
 // förberedelsen är klar (KLAR i steg.ts): råvarorna tas och satsen läggs i gropen
 export function gropKlar(s: State, p: Person, ref?: number) {
-  const t = kokgropar(s).find(q => q.id === ref && !q.grop) ?? tomGrop(s), r = festRecept(s, p);
+  const t = kokgropar(s).find(q => q.id === ref && !q.grop) ?? tomGrop(s, p), r = festRecept(s, p);
   if (!t || !r) return;
   const ag: Record<string, number> = {};
   for (const [k, n] of r.av) addDel(ag, takeMaterial(s, p, k, n), 1);

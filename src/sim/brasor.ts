@@ -53,7 +53,10 @@ export const vedPerEld = (s: State, extra: number) => woodDays(s) / (brasorOf(s)
 // stenarna som lägereldarna byn planerar saknar (steg 10.11.4): ringen till en lägereld till, när byn vill ha en och ingen är
 // påbörjad, utan de stenar som redan ligger på marken på väg in. Det blir förrådsmålet för stenen (forradsmal.ts), och stenarna
 // samlas som annat material
-export const brasaStenMal = (s: State) => brasaBrist(s) > 0 && !(s.stationer ?? []).some(t => t.k === 'brasa' && t.kvar > 0) ? Math.max(0, RT.brasaSten - paMarken(s, 'sten')) : 0;
+const brasaRing = (s: State) => brasaBrist(s) > 0 && !(s.stationer ?? []).some(t => t.k === 'brasa' && t.kvar > 0) ? RT.brasaSten : 0;
+export const brasaStenMal = (s: State) => Math.max(0, brasaRing(s) - paMarken(s, 'sten'));
+// stenarna på marken som lägereldens ring inte redan räknat bort (steg 13.10.10)
+export const stenOver = (s: State) => Math.max(0, paMarken(s, 'sten') - brasaRing(s));
 // ringen är lagd (finishStation i stationer.ts): den påbörjade stationen blir en lägereld på samma ruta, med samma nummer
 export function nyEld(s: State, t: Station) {
   s.stationer = (s.stationer ?? []).filter(q => q !== t);

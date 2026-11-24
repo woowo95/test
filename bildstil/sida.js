@@ -52,7 +52,8 @@ function gorPalett(def) {
       cols.push({ hex, rgb, lab: rgb2lab(rgb) });
     }
   });
-  const near = lab => { let bi = 0, bd = 1e9; cols.forEach((c, i) => { const d = (c.lab[0] - lab[0]) ** 2 * 1.3 + (c.lab[1] - lab[1]) ** 2 + (c.lab[2] - lab[2]) ** 2; if (d < bd) { bd = d; bi = i; } }); return bi; };
+  const nBas = cols.length; // färger som läggs till senare (kläderna i blått och lila, fas13.js) är inga mål för närmaste färgen
+  const near = lab => { let bi = 0, bd = 1e9; cols.forEach((c, i) => { if (i >= nBas) return; const d = (c.lab[0] - lab[0]) ** 2 * 1.3 + (c.lab[1] - lab[1]) ** 2 + (c.lab[2] - lab[2]) ** 2; if (d < bd) { bd = d; bi = i; } }); return bi; };
   const omr = f => cols.map(c => near(f(c.lab)));
   const P = { ...def, cols, near, cache: new Map() };
   P.i = (ramp, ton) => RI[ramp] * 4 + ton;

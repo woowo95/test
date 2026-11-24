@@ -4,9 +4,9 @@
 // mycket under lång tid (p.supit, ett minne som bleknar) får sämre hälsa. Man dricker på kvällen vid elden när byn har vin eller öl.
 import { balans } from './balans';
 import { ALDER, ageOf, count, forstaGang, log, living, isParent } from './folk';
-import { chansPer, clamp } from './slump';
+import { clamp } from './slump';
 import { HOUR, HOUR_S, Person, State } from './typer';
-import { hourOf, isLight } from './tid';
+import { isLight } from './tid';
 import { budBrutet, budHindrar } from './kyrka';
 import { tanke } from './tankar';
 import { upplev } from './uppvaxt';
@@ -21,13 +21,15 @@ export const alkoholKrok = {
   kvall: (_s: State, _p: Person): VatskaId | undefined => undefined,
 };
 
+// dryckeshornet (steg 13.4.1): kroken sätts av redskap.ts, så att den här filen inte laddar ägandet
+export const hornKrok = { f: (_s: State, _p: Person) => {} };
 export const RUS = balans('rus', {
   sjunker: 0.15, // så mycket av ruset går över i timmen
   kanns: 0.1, // en dryck med mindre alkohol än så här ger ingen glädje av ruset (svagdrickan, steg 10.7.24)
   fart: 0.35, // gången och händigheten sjunker så här mycket per hel rus (1 = mycket full) ...
   smid: 6, traff: 4, // ... smidigheten och träffsäkerheten i striden så här många poäng per hel rus
   golv: 0.4, // aldrig under så här stor del av förmågan
-  kvall: 0.3, // chansen per timme att den vuxne som är hemma på kvällen tar en dryck när byn har (steg 10.7.23: per tid, kvallsChans), gånger lusten ...
+  kvall: 0.1, // vikten för en dryck i kvällens dragning i FRITID (steg 13.8.8, kvallsVikt) för den vuxne som är hemma när byn har en, gånger lusten ...
   // lusten till rus (steg 12.1.175, rusLust): 1 + humör + vana − plikt + uppväxt, mellan lustMin och lustMax
   lustHumor: 0.6, // den som mår dåligt (humöret 0) dricker så här mycket hellre, den som mår bra (1) så här mycket mindre
   lustVana: 0.8, vanaFull: 3, // vanan: det man supit (p.supit, glöms med supit i timmen), full vid vanaFull, ger så här mycket mer lust
@@ -47,6 +49,9 @@ export const RUS = balans('rus', {
   bakTim: 8, bak: -0.08, bakFaktor: 0.85, // ... i så många timmar: tanken, och förmågorna gånger bakFaktor
   supa: 3, // så många drycker dricker den som super (utbrottet supa)
   serR: 8, // barnen inom så här många rutor ser föräldern supa (steg 12.1.133)
+  // dryckeshornet (steg 13.4.1): det slits så här mycket för varje dryck (ett horn håller så här många drycker: 1 / hornSlits) ...
+  hornSlits: 1 / 150,
+  hornGlad: 0.015, hornTim: 3, hornFest: 3, // ... och den som dricker ur sitt eget horn får en liten glad tanke, festdagen så här många gånger större
 });
 export const rusAv = (p: Person) => p.rus ?? 0;
 // förmågan gånger detta (gången och händigheten)
@@ -63,6 +68,7 @@ export function drickAlkohol(s: State, p: Person, v: VatskaId, tagen = false) { 
   p.rus = clamp(rusAv(p) + a, 0, 2); p.supit = (p.supit ?? 0) + a;
   if (a >= RUS.kanns) tanke(p, 'drack', s.now, { dryck: namn, v: RUS.glad * (1 + TUNNA.mognGlad * Math.max(0, kv - 2)), tid: RUS.gladTim * HOUR }); // svagdrickan känns inte (steg 10.7.24)
   count(s, 'drack_' + v);
+  hornKrok.f(s, p); // ur sitt eget horn eller byns (steg 13.4.1)
   if (forstaGang(s, 'alkohol')) log(s, `${p.name} drack byns första ${namn} vid elden.`, 'world', [p.id]);
   return true;
 }
@@ -86,12 +92,8 @@ export function kvallsDryck(s: State, p: Person, hemma: boolean): VatskaId | und
   if (!hemma || isLight(s.now) || ageOf(p, s.now) < ALDER.vuxen || rusAv(p) >= RUS.mest || budHindrar(s, p, 'ingetRus')) return undefined; // budet inget rus (steg 10.3.22)
   return alkoholKrok.kvall(s, p);
 }
-// tar p en dryck nu (steg 10.7.23): chansen RUS.kvall per timme av kvällen sedan hen sist frågade sig (mörkret kommer klockan 19)
-export function kvallsChans(s: State, p: Person) {
-  const dt = Math.min(s.now - (p.kvallT ?? -Infinity), ((hourOf(s.now) - 19 + 24) % 24) * HOUR);
-  p.kvallT = s.now;
-  return dt > 0 && chansPer(s, RUS.kvall * rusLust(s, p), HOUR_S, dt / 1000, 'val', p);
-}
+// lusten att ta en dryck i kväll (steg 13.8.8): vikten för raden dryck i fritidens dragning (FRITID i val.ts), RUS.kvall gånger lusten
+export const kvallsVikt = (s: State, p: Person) => RUS.kvall * rusLust(s, p);
 // lusten till rus (steg 12.1.175): en faktor på chansen att ta en dryck på kvällen, ur humöret, vanan, byns seder och uppväxten
 export function rusLust(s: State, p: Person) {
   const humor = (0.5 - moodOf(p, s.now)) * 2, vana = Math.min(1, (p.supit ?? 0) / RUS.vanaFull), sed = s.seder?.v.arbete ?? 0;

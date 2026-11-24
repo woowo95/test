@@ -17,6 +17,7 @@ import { getMap } from './karta';
 import { blocked } from './byggnad';
 import { bynsMitt } from './omrade';
 import { TAM, Tamdjur, tamArt, tamdjurOf } from './tamdjur';
+import { tjarFaktor } from './tjarlatt';
 
 // en timme för hagarna och betesdjuren (efter stepTamdjur): djuren betar, staketet slits
 // dt: sekunderna sedan sist, och slitaget och rymningen är chanser per timme (steg 12.1.107)
@@ -153,11 +154,15 @@ export function hageKlar(s: State, p: Person, i?: number) {
 }
 // staketet slits av vädret (och djuren i hagen): ibland går en ruta av rutorna rs sönder, med chansen c i timmen (stepHagar
 // räknas en gång i timmen i registret TAKTER, så slitaget är detsamma med korta som med långa slag)
+// Den tjärade rutan slits hälften så mycket (steg 13.5.1): chansen gånger rutornas medel, och rutan väljs efter sin del
 function slitStaket(s: State, rs: number[], c: number, dt: number) {
-  if (!rs.some(i => harStaket(s, i)) || !chansPer(s, c, 3600, dt, 'tamdjur')) return;
   const k = rs.filter(i => harStaket(s, i));
   if (!k.length) return;
-  const i = k[Math.floor(rnd(s, 'tamdjur') * k.length)];
+  const f = k.map(i => tjarFaktor(s, s.tjarat?.[i])), sum = f.reduce((a, b) => a + b, 0);
+  if (!chansPer(s, c * sum / k.length, 3600, dt, 'tamdjur')) return;
+  let r = rnd(s, 'tamdjur') * sum, j = 0;
+  while (j < k.length - 1 && (r -= f[j]) >= 0) j++;
+  const i = k[j];
   s.staket = (s.staket ?? []).filter(j => j !== i); count(s, 'staketSonder');
 }
 // rutan djuret helst äter på av rutorna rs (geten buskar och ungträd först), eller undefined

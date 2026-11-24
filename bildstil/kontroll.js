@@ -219,6 +219,7 @@
       for (const Q of R.portratt) { const pl = hitta(R.B, Q); if (pl) R.hittade.push([Q, pl, 'portratt']); }
       if (R.hittade.length) ritade[ritade.length - 1] = utanFigurer(R); // versionerna jämförs på det som bärs, inte på kolonisten
       const { scen, lista } = saker(R);
+      if (v.lager && lista.length) ritade[ritade.length - 1] = lista.slice().sort((a, b) => a.px.reduce((m, x) => m + (x >= 0), 0) - b.px.reduce((m, x) => m + (x >= 0), 0))[0]; // ett lager över bädden jämförs för sig
       if (k.has('symmetri')) for (const S of lista) { const r = symmetri(S); if (r) ut.push({ kontroll: 'symmetri', version: n + 1, ...r }); }
       if (k.has('perspektiv')) { const stor = lista.slice().sort((a, b) => b.w * b.h - a.w * a.h)[0]; const r = stor && !scen && perspektiv(stor); if (r) ut.push({ kontroll: 'perspektiv', version: n + 1, ...r }); }
       if (k.has('huvudet')) for (const [F, pl, sort] of R.hittade) {
@@ -282,7 +283,8 @@
     for (const { F } of R.figurer) { const pl = hitta(R.B, F); if (pl) R.hittade.push([F, pl]); }
     for (const Q of R.portratt) { const pl = hitta(R.B, Q); if (pl) R.hittade.push([Q, pl]); }
     const { scen, lista } = saker(R); if (scen || !lista.length) return null;
-    return lista.slice().sort((a, b) => b.px.reduce((n, x) => n + (x >= 0), 0) - a.px.reduce((n, x) => n + (x >= 0), 0))[0];
+    const ord = lista.slice().sort((a, b) => b.px.reduce((n, x) => n + (x >= 0), 0) - a.px.reduce((n, x) => n + (x >= 0), 0));
+    return v.lager ? ord[ord.length - 1] : ord[0]; // ett lager (täcket över bädden) jämförs för sig, inte i bädden som är lika i alla versioner
   }
   // sammanhanget för ett kort: en bild per version av den största saken, eller null när versionen är en hel scen
   function sammanhang(s, P = P0()) {

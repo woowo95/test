@@ -1,24 +1,28 @@
 import { gen } from './ord';
 import { KROPP, count, enTill, forstaGang, gjort, living, log } from './folk';
-import { knows } from './teknik';
+import { hantSkill, knows } from './teknik';
+import { kunnaVikt } from './kunna';
 import { clamp, rnd } from './slump';
 import { Act, HOUR, State, Person } from './typer';
 import { ACTS, ACT_LIST, laggRedskap, redskapTal, toolRow } from './handlingar';
 import { SAKER, SAK_LIST, gruppOf, iSlag, isTool, sakNamn } from './saker';
 import { NORMAL, kvOf, nyKvalitet } from './kvalitet';
-import { amountOf, gain, harTillHands, iBordan, put, use } from './lager';
+import { amountOf, gain, harTillHands, iBordan, put, timKvar, use } from './lager';
 import { getable, Recept, saknatAv, takeMaterial, takeRecipe, tillHands } from './behov';
 import { addDel } from './egendom';
 import { eldReserv, villAv, villHaAv } from './forradsmal';
-import { addTool, freeTools, halvOf, nTools, ownsFree, take, tingOf, wearTool } from './agande';
-import { KLADER, KLADMATERIAL, PLAGG, PLAGG_LIST, kladAv, materialTill, valMaterial } from './klader';
+import { addTool, freeTools, halvOf, ledigtTing, nTools, ownsFree, slitTing, take, tingOf, wearTool } from './agande';
+import { RUS, hornKrok } from './rus';
+import { tanke } from './tankar';
+import { festNu } from './kultlatt';
+import { KLADER, KLADMATERIAL, PLAGG, PLAGG_LIST, kladAv, materialTill, syddMedNal, valMaterial } from './klader';
 import { ageIndex, iIstiden, kallTid } from './tid';
 import { grundvarde } from './varde';
 import { anseendeSym } from './rykten';
 import { DORRAR, DORR_LIST } from './byggnad';
 import { utanDorr } from './bygg';
 import { balans } from './balans';
-import { fartVid, kvVid, kanGoras, nyttVid, saknasVid, slitVid, stationFor } from './stationer';
+import { fartVid, kvVid, kanGoras, nyttVid, redskapVid, saknasVid, slitRedskap, slitVid, stationFor } from './stationer';
 import { smutsa } from './smuts';
 import { krukaAv, krukaFormad } from './kruka';
 import { LJUSGRUPP, LJUSSORTER } from './ljus';
@@ -118,7 +122,7 @@ export function twineRope(s: State, p: Person, hours: number, vill: number = vil
 // timme, maxTim = arbetet varar högst så här många timmar, act = arbetet där det görs (vid slaktbänken), kniv = det kräver en kniv (och att man kan tekniken), minDel = det görs när
 // det finns minst 1 / minDel djur, stat = räknas (i djur), forsta = loggen första gången. En ny art blir en rad här (fler
 // fiskar: steg 7.4.3). kott = köttet, som blir mer med jaktfärdigheten (kottAv). Flera arter kan ha samma arbete (kaninen och
-// vargen slaktas): arbetet tar den första arten i registret som finns i förrådet. Allt är hela saker (steg 3.6.13). Kött, ben och skinn har inget recept i saker.ts och är värda
+// vargen slaktas): arbetet tar den art som ruttnar först i förrådet (forstRuttnar, steg 13.8.13). Allt är hela saker (steg 3.6.13). Kött, ben och skinn har inget recept i saker.ts och är värda
 // golvet för sin nivå (varde.ts); där receptet finns (skaffa.av, som fisken av en abborre) kontrollerar scenariot "djur" att
 // det stämmer med raden här.
 export interface Djurart { sak: string; kott?: string; mat: number; slakt: Record<string, number>; rep: number; timme: number; maxTim: number; act: Act; kniv?: true; minDel: number; stat: string; forsta: string; del?: string; skinn?: Record<string, number>; art?: string; vinter?: Record<string, string> } // del = styckdelen när djuret är för tungt att bära och skinn = det som dras av när det styckas (styckning.ts, steg 6.6.1); strid = hur djuret slåss (strid.ts, steg 3.7.5)
@@ -155,6 +159,14 @@ export const DJUR = {
   vargdel: slaktas({ art: 'varg', sak: 'vargdel', kott: 'vargkott', mat: 1, slakt: { vargkott: 6, ben: 2, talg: 1 }, rep: 0.3, timme: 4, stat: 'slaktatVargdel', forsta: '{namn} slaktade byns första vargstycke. Det gav mycket kött och ben.' }),
 } satisfies Record<string, Djurart>;
 export const DJURARTER: readonly Djurart[] = Object.values(DJUR);
+// av arterna som kan slaktas eller rensas tas den som ruttnar först i förrådet, som när man äter (steg 13.8.13): den vars första
+// stack är förstörd soonest, med det som sliter på den just nu (timKvar i lager.ts)
+export function forstRuttnar(s: State, arter: Djurart[]): Djurart | undefined {
+  if (arter.length < 2) return arter[0];
+  let bast: Djurart | undefined, bt = Infinity;
+  for (const a of arter) { const t = timKvar(s, q => q.k === a.sak); if (!bast || t < bt) { bast = a; bt = t; } }
+  return bast;
+}
 // det råa köttet och skinnet som bara arten ger (steg 10.3.15): kultlatt.ts frågar om det är heligt
 for (const d of DJURARTER as Djurart[]) if (d.art) for (const k of [...Object.keys(d.slakt), ...Object.values(d.vinter ?? {})]) if (k === d.kott || k in (d.skinn ?? {}) || /skinn$/.test(k)) SAK_ART[k] = d.art;
 export const KANIN = DJUR.kanin.mat; // så mycket mat en kanin är, uppäten som den är: två fällt vilt (saker.ts)
@@ -222,7 +234,7 @@ export function ersattAv(s: State, g: string) {
   return tingOf(s).reduce((n, t) => n + (ks.includes(t.k) && (grundvarde(t.k) < bast - 1e-9 || kvOf(t) < NORMAL) ? 1 : 0), 0);
 }
 // verktyget som används till k (det första som finns i byn), eller undefined. En sliten yxa är fortfarande en yxa
-const verktygFor = (s: State, k: string) => Object.keys(SAKER[k]!.skaffa!.verktyg ?? {}).find(m => isTool(m) ? nTools(s, m) >= 1 : amountOf(s, m) >= 1);
+export const verktygFor = (s: State, k: string) => Object.keys(SAKER[k]!.skaffa!.verktyg ?? {}).find(m => isTool(m) ? nTools(s, m) >= 1 : amountOf(s, m) >= 1);
 // verktygets ord; har verktyget slitits ut eller gått åt i arbetet står det första (det vanliga) verktyget, aldrig en lucka
 const ordFor = (s: State, k: string) => { const v = SAKER[k]!.skaffa!.verktyg ?? {}, m = verktygFor(s, k) ?? Object.keys(v)[0]; return m ? v[m] : ''; };
 // p kan få tag i det som behövs till k: verktyget och materialet, och en flinta över att tända eld med.
@@ -230,7 +242,14 @@ const ordFor = (s: State, k: string) => { const v = SAKER[k]!.skaffa!.verktyg ??
 const hasRecipe = (s: State, p: Person, k: string) => (!SAKER[k]!.skaffa!.verktyg || !!verktygFor(s, k))
   && Object.entries(av(k)).every(([m, n]) => getable(s, p, m) >= n + (iBordan(p, m) >= n ? 0 : eldReserv(s, m)) - 1e-9); // 1e-9: avrundningen i förrådet; det hen hämtat till arbetet sparas inte (steg 11.1.74)
 // p kan tekniken och kan få tag i det som behövs
-export const canMake = (s: State, p: Person, k: string) => { const tek = SAKER[k]!.skaffa!.tek; return (!tek || knows(p, tek)) && hasRecipe(s, p, k); };
+export const canMake = (s: State, p: Person, k: string) => { const tek = SAKER[k]!.skaffa!.tek; return (!tek || knows(p, tek)) && hasRecipe(s, p, k) && (!syddMedNal(k) || !!nalTill(s, p, k)); };
+// nålen ett plagg av tyg sys med (steg 13.3.4): bennålen på slöjdbänken, som bensylen för skinnkläderna, eller järnnålen,
+// som duger lika bra (den som har en ledig järnnål syr med den, och fortare: nalFart). 'jarnnal' när det är järnnålen
+function nalTill(s: State, p: Person, k: string) {
+  if (harJarnnal(s, p)) return 'jarnnal';
+  const t = stationFor(s, gruppOf(k) as Act, p);
+  return t ? redskapVid(s, t, 'nal').sort((a, b) => a.c - b.c)[0] : undefined;
+}
 // det slag i gruppen g som p gör: det hen redan har påbörjat, annars det bästa hen kan göra (ett plagg: det material hen
 // väljer, materialVal), annars det enklaste
 export const kindFor = (s: State, p: Person, g: string) => {
@@ -256,7 +275,8 @@ function materialVal(s: State, p: Person, g: string, ks: string[]) {
   const lage = ks.map(k => {
     const r = kladAv(k)!, M = KLADMATERIAL[r.mat], till = materialTill(r.plagg, r.mat);
     let behovs = 0;
-    for (const q of PLAGG_LIST) if (PLAGG[q].slag.includes(M.slag)) behovs += Math.max(0, villAv(s, q) - harAv(s, q) - (q === g ? 1 : 0)) * materialTill(q, r.mat);
+    for (const q of PLAGG_LIST) if (!PLAGG[q].grupp && PLAGG[q].slag.includes(M.slag)) // stövlarna räknas i skornas grupp (steg 13.2.2)
+      behovs += Math.max(0, villAv(s, q) - harAv(s, q) - (q === g ? 1 : 0)) * materialTill(q, r.mat);
     for (const d of DORR_LIST) { const n = (DORRAR[d].av as Record<string, number>)[M.sak]; if (n && folk.some(q => DORRAR[d].tek.every(t => knows(q, t)))) behovs += n * utanDorr(s, d).length; }
     return { k, varme: SAKER[k]!.klad!.varme, skydd: M.skydd, kvar: amountOf(s, M.sak) - till, behovs, till, finhet: M.finhet, varde: grundvarde(k) };
   });
@@ -318,9 +338,10 @@ export function makeTask(s: State, p: Person, g: string) {
 export function toolDone(s: State, p: Person, k: string) {
   const t = addTool(s, k, p); t.av = p.id; t.gjord = s.now; // vem som gjorde det och när (inforutan, steg 2.3.5)
   if (krukaAv(k) || SAKER[k]?.skaffa?.av?.lera) krukaFormad(t); // det som formas av lera ska torka och brännas (steg 9.4.11, kruka.ts): lerkrukan och oljelampan (steg 12.4.2)
-  nyKvalitet(s, p, t, (p.task ? kvVid(s, p, p.task.act) : 0) + knivKv(s, p, k) + nalKv(s, p, k), sakNamn(k).toLowerCase()); // hur bra det blev (kvalitet.ts), och bättre med järnkniven (steg 12.2.6)
+  nyKvalitet(s, p, t, (p.task ? kvVid(s, p, p.task.act) : 0) + knivKv(s, p, k) + nalKv(s, p, k), sakNamn(k).toLowerCase(), p.task ? hantSkill(p, p.task) : undefined, p.task ? kunnaVikt(p.task.act, k) : 1); // med handlingens färdighet (steg 13.9.7), som betyder mer ju högre sakens nivå (steg 13.9.8) // hur bra det blev (kvalitet.ts), och bättre med järnkniven (steg 12.2.6)
   nyttVid(s, t); gjort(s, p, 'gjort');
   slitVid(s, gruppOf(k) as Act, REDSKAP.bensylSlits); // det som kräver bänkens redskap (plaggen och vattensäcken), efter arbetet och inte saken
+  if (syddMedNal(k)) { const n = nalTill(s, p, k); if (n && n !== 'jarnnal') slitRedskap(s, n, REDSKAP.bensylSlits); } // bänkens bennål slits av tyget (steg 13.3.4); järnnålen slits i slitNal
   // verktyget kan ha gått sönder under arbetet: då nämns det inte ("täljde byns första träspjut med .", steg 12.1.229)
   const g = SAKER[k]!.gors!, v = ordFor(s, k), text = (t: string) => t.replace('{namn}', p.name).replace(v ? '{verktyg}' : / med \{verktyg\}/, v);
   if (forstaGang(s, g.stat)) {
@@ -360,3 +381,13 @@ export function knivKv(s: State, p: Person, k: string) {
   const kniv = ['jarnkniv'].find(q => freeTools(s, p, q) > 0 || tingOf(s).some(t => t.k === q && t.hos === p.id));
   return kniv ? (redskapTal('slakta', kniv).kvalitet - 1) * REDSKAP.kvRedskap : 0;
 }
+// dryckeshornet (steg 13.4.1): den som dricker öl, mjöd eller vin tar ett ledigt horn, sitt eget först, sedan byns och sist ett lånat
+// (ledigtTing), och hornet slits för varje dryck. Ur sitt eget horn får hen en liten glad tanke, större på festdagen. Utan horn dricks det ändå
+hornKrok.f = (s, p) => {
+  const t = ledigtTing(s, p, 'dryckeshorn');
+  if (!t) return;
+  const eget = t.agare === p.id;
+  slitTing(s, t, RUS.hornSlits);
+  count(s, eget ? 'drackEgetHorn' : 'drackHorn');
+  if (eget) tanke(p, 'egetHorn', s.now, { v: RUS.hornGlad * (festNu(s) ? RUS.hornFest : 1), tid: RUS.hornTim * HOUR });
+};

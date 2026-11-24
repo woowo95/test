@@ -5,7 +5,8 @@
 // det som händer vid en känd tid (ett sällskap kommer fram, ett läger bryts upp) ligger i kön (vl.ko), sorterad på tiden, och
 // räknas vid den tiden av sin rad i KOHANDELSER. Allt räknas mot klockan och aldrig per slag, så det levande läget och
 // ikappräkningen ger exakt samma värld. Slumpen utanför byn är en hash av världens frö, sakens nummer, periodens nummer och
-// ärendet (varldSlump); inga slumpföljder sparas i världen, och byns slump rörs aldrig.
+// ärendet (varldSlump); inga slumpföljder sparas i världen, och byns slump rörs aldrig. Medan något räknas står byns klocka på
+// dess tid (varldTill).
 import { hash3 } from './slump';
 import { SEC, State } from './typer';
 import { Varlden } from './varlden';
@@ -63,10 +64,15 @@ export function varldTill(s: State, till: number) {
     if (ko && ko.t <= t) { nasta = 'ko'; t = ko.t; }
     for (const k of PERIOD_IDS) { const ts = periodSlut(vl, k, klar[k]); if (ts <= till && (nasta === undefined || ts < t)) { nasta = k; t = ts; } }
     if (!nasta) return;
-    if (nasta === 'ko') { vl.ko!.shift(); KOHANDELSER[ko!.typ]?.(s, vl, ko!); for (const f of EFTERSTEG) f(s, vl); continue; }
-    const n = klar[nasta]++;
-    for (const r of PERIODRADER) if (r.period === nasta) r.fn(s, vl, n);
-    for (const f of EFTERSTEG) f(s, vl);
+    // det som räknas vid tiden t räknas med klockan på t, så att det som frågar klockan (årstiden, vedens buffert i kylan) ser
+    // samma tid i det levande läget och i ikappräkningen, där klockan redan står vid slutet
+    const nu = s.now; s.now = t;
+    try {
+      if (nasta === 'ko') { vl.ko!.shift(); KOHANDELSER[ko!.typ]?.(s, vl, ko!); for (const f of EFTERSTEG) f(s, vl); continue; }
+      const n = klar[nasta]++;
+      for (const r of PERIODRADER) if (r.period === nasta) r.fn(s, vl, n);
+      for (const f of EFTERSTEG) f(s, vl);
+    } finally { s.now = nu; }
   }
 }
 

@@ -401,7 +401,7 @@ function gnistor(s: State, dtSec: number, dry: number) {
   };
   if (s.fire.lit) { const e = eldPlats(s); fran(e.x, e.y, hearthOf(s.fire).spread, 0); }
   for (const f of brasorOf(s)) if (f.lit) fran(f.at!.x, f.at!.y, hearthOf(f).spread, f.id! + 1); // de andra lägereldarna gnistrar som den första (steg 4.5.6.8)
-  for (const t of s.stationer ?? []) { const d = t.eld?.lit ? eldDef(t) : undefined; if (d?.gnistor) { const at = eldPlatsAv(t); fran(Math.floor(at.x), Math.floor(at.y), HEARTHS[0].spread * d.gnistor, 60000 + t.id); } } // fyrfatet gnistrar lite (steg 12.4.11)
+  for (const t of s.stationer ?? []) { const d = t.eld?.lit ? eldDef(t) : undefined; if (d?.gnistor) { const at = eldPlatsAv(t); fran(Math.floor(at.x), Math.floor(at.y), HEARTHS[0].spread * d.gnistor, 60000 + t.id); } } // fyrfatet och ässjan gnistrar som härden (steg 12.4.11 och 13.1.10)
   for (const b of s.branningar ?? []) { const t = b.slut > s.now ? stationerOf(s).find(q => q.id === b.st) : undefined; if (t) fran(t.x + 1, t.y + 1, HEARTHS[0].spread, 50000 + t.id); } // kolmilan och blästerugnen gnistrar som en lägereld medan de brinner (steg 12.2.1 och 12.2.3)
 }
 // blixten nära byn (raden blixten i TAKTER, en gång i timmen, steg 12.1.107): slår den ner i torr mark kan den tända

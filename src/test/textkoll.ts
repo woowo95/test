@@ -31,7 +31,7 @@ export interface Kontroll { id: string; namn: string; hitta: (t: string, f: Fyll
 export const KONTROLLER: Kontroll[] = [
   { id: 'lucka', namn: 'En tom lucka', hitta: t => /undefined|NaN|null|\{|\}/.exec(t)?.[0] ?? (/ {2}|^ | $| [,.:;!?]/.test(t) ? 'mellanslag' : /[,.:;]{2}/.test(t.replace(/\.\.\./g, '')) ? 'dubbla tecken' : undefined) },
   { id: 'versal', namn: 'Stor bokstav mitt i ett ord, eller liten i början av en mening', hitta: (t, _f, _k, start) => /\p{Ll}\p{Lu}/u.exec(t)?.[0] ?? /[.!?] \p{Ll}/u.exec(t)?.[0] ?? (start ? /^\p{Ll}/u.exec(t)?.[0] : undefined) },
-  { id: 'dubbelord', namn: 'Samma ord två gånger i rad', hitta: t => /(^|[^\p{L}])(\p{L}+)[ ,]+\2(?=[^\p{L}]|$)(?! den (?:yngre|äldre))/iu.exec(t)?.[2] }, // (två med samma namn i en uppräkning, "Frörhild, Frörhild den yngre", är inget dubbelord)
+  { id: 'dubbelord', namn: 'Samma ord två gånger i rad', hitta: t => [...t.matchAll(/(^|[^\p{L}])(\p{L}+)(?=([ ,]+)(\p{L}+)(?=[^\p{L}]|$)(?! den (?:yngre|äldre)))/giu)].find(m => m[2].toLowerCase() === m[4].toLowerCase() && !(m[2] !== m[4] && m.index! + m[1].length > 0))?.[2] }, // (två med samma namn i en uppräkning, "Frörhild, Frörhild den yngre", är inget dubbelord, och inte heller ett namn mitt i meningen före ett ord som låter likadant: "nu kan Vika vika")
   { id: 'pronomen', namn: 'Fel pronomen (han eller hon)', hitta: (_, f, kon) => {
     const k = typeof f.namn === 'string' ? kon(f.namn) : undefined;
     if (!k) return undefined;

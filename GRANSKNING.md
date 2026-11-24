@@ -19,7 +19,7 @@ Målen i ordning, och tiden läggs i samma ordning:
 3. **Enkelhet:** onödig komplexitet, dubblering och död kod. Mindre är mer, så länge reglerna i `ARKITEKTUR.md` håller.
 4. **Läsbarhet:** tydliga namn, rimlig struktur, kommentarer bara där koden inte förklarar sig själv.
 5. **Prestanda** där det spelar verklig roll: snabbläget och testerna.
-6. **Gaffatejp och onödiga hårda regler:** listas för Björn, ändras inte.
+6. **Gaffatejp och onödiga hårda regler:** det som går emot designdokumentet byggs om efter dokumentet; resten listas för Björn.
 
 ## Arbetsgång
 
@@ -60,6 +60,7 @@ Björn skriver "ultracode" i prompten för kodgenomgången (inte för vanliga st
 Inget test ser de flesta av dem, så de gås igenom för hand, med fasens nya saker först.
 
 - **Arbetstiderna.** Varje tid för ett arbete, i koden och i designdokumentet, följer "Arbetstider (riktlinje)" i fliken Människan: en liten sak 2–4 minuter, en stor sak högst 5, en station eller möbel 10–20, en tur att samla 3–10 (längre med korg eller väska). Mät med `npm run takt` och gå igenom varje arbete i registret, också de som byggts i fasen. Mallen gäller när det finns gott om det som samlas; när det är ont om det får turen ta längre tid, men aldrig mer än turens längsta tid (6.1.5), så jämför med en by som har gott om det. Vakten för arbetstiderna (9.2.63) larmar i det stora testet. Gå också igenom tiderna i nästa fas steg och avsnitt i designdokumentet, som ingen vakt ser, och räkna om dem efter riktlinjen.
+- **Skickligheten och bruket.** Allt nytt i fasen har sin färdighet för fart och kvalitet och byts efter samma regler som allt annat (Arbetsdelningen i fliken Människan). Varje handling som gör något har en färdighet i SKILLS och en nivå att följa (sakens teknik, stationens, receptets eller `kunna` i ACTS), och dess tid och kvalitet räknas med `kunnaFart` och `kunnaVikt`; varje sak har sin rad i BRUK, och det som går åt i ett recept hamnar aldrig i det övriga. Vakten för skickligheten (13.9.10, `utanFardighet` och `utanBruk`) larmar i det stora testet för det som saknas i registren; gå själv igenom att de nya handlingarna faktiskt räknar sin tid och kvalitet med skickligheten, vilket ingen vakt ser.
 - **Arbetsordningen.** Varje aktivitet väljs och görs inom arbetsordningen och projekten (6.1), så att inget arbete startas vid sidan av den.
 - **Markeringen.** Allt nytt som syns på kartan i fasen (saker, möbler, stationer, byggnader, väggar, dörrar, djur, växter, mark och annat) går att markera, får den vita konturen när det markeras eller musen är över det, och visar en informationsruta om sig. Det markerade syns alltid: det som ritas framför det får tona bort, men aldrig det markerade självt. Gå igenom registren och pröva i spelet.
 - **Hela resurser.** Inget recept, bygge, byte, pris eller utfall ger eller tar en del av en resurs. Leta efter decimaler i registren och efter `*` och `/` på antal saker som inte avrundas till hela saker. Slitage och arbetet mot nästa sak får ha decimaler.
@@ -101,12 +102,14 @@ Spelet sätter grundreglerna, och det byarna gör ska växa fram ur systemen och
   - Den går förbi poängen: en tidig `return` eller `continue` i valet av aktivitet, ett `filter` som tar bort kandidater innan de får poäng, en vikt som sätts till 0 eller `-Infinity`, eller "alltid" och "aldrig" för en enda sak, ett enda arbete eller en enda person.
   - Den är en fast gräns, ordning eller ett antal för vad människorna gör: "högst N", "först X, sedan Y", "en i taget", "efter dygn 3", eller ett `Math.min` som tak på hur mycket någon gör.
   - Den ger något gratis eller tar bort en fara för att byn ska klara sig: mat som dyker upp, en motgång som hoppar över en svag by.
+  - Den är ett särfall av något som redan finns: en egen rad för en handling som redan har en rad (`elda` och `eldaFryser`), en rad som flyttats före en annan för att rätta ett resultat, ett undantag från ett undantag, eller en regel som bara en handling har fast alla borde ha den (som valet av hög i lagret).
   - Kommentaren förklarar den med ett resultat: "annars …", "så att inte …", "för att byn ska …".
   - Orden "bara", "alltid", "aldrig", "först … sedan", "högst" och "en i taget" är en varningsflagga, i koden, i kommentarerna och i designdokumentets text om systemet.
 - **Gränsfallen.** Ett undantag inne i en av arbetsordningens nivåer för en enda sak eller situation är gaffatejp, fast nivåerna själva är grundregler. En regel som ser ut att handla om världen men bara finns för att ett resultat blev fel är också gaffatejp.
 - **Provet:** tänk bort regeln. Skulle byarna göra rätt om systemen och balanstalen var rätt byggda? Då är den gaffatejp, och fyndet säger vad i systemen som brister. Blir världen orimlig utan den (någon bär tio stockar, vattnet brinner) är den en grundregel. `git log` på raden visar ofta varför den kom till.
 - **Systemen som kan ta över:** valet av aktivitet (ARBETEN och poängen), förrådsmålen, projekten, värmekartorna (FYND), sakerna (SAKER), ägandet, delningen, värdet, kvaliteten, humöret, rykten, seder, tekniker och balanstalen. För varje fynd: vilket av dem, hur (en rad i ett register, en faktor i en poäng eller ett balanstal), och vad i systemet som brister. Gaffatejpen döljer ofta ett verkligt fel, t.ex. en vikt som är fel eller ett behov som saknas.
-- **Ändra dem inte i granskningen**, inte ens när det är enkelt. De skrivs i rapporten (del 4) och väntar på Björns svar.
+- **Jämför med dokumentet.** Den bästa sökningen är att läsa vad designdokumentet säger om beteendet och jämföra med koden. Valet av aktivitet gås igenom rad för rad i varje kodgenomgång: vad säger dokumentet om raden, och när och varför kom den till (`git log -L` på raden; en rad som kom till i en commit som rättade ett rött scenario, ett vaktlarm eller ett dödsfall granskas extra noga).
+- **Går regeln emot designdokumentet** är den ett fel i bygget: systemet byggs om efter dokumentet, i granskningen eller som ett eget steg om det är stort, och det står i rapporten. **Annars ändras den inte i granskningen**, inte ens när det är enkelt: den skrivs i rapporten (del 4) och väntar på Björns svar.
 
 ### Allmänt
 
@@ -119,7 +122,7 @@ Spelet sätter grundreglerna, och det byarna gör ska växa fram ur systemen och
 
 - **Ombyggnad som inte ska ändra spelet** (död kod, register, cacher, prestanda, uppdelning): `npm run samma` måste säga att byarna utvecklas exakt som förut. Gör den inte det har ändringen ändrat spelet, och då är det inte en ren ombyggnad.
 - **Verkliga fel som ändrar spelet:** rätta dem ett i taget, kör `npm run snabbkoll -- [berörda scenarier]` och committa varje rättelse för sig.
-- **Gaffatejp och onödiga hårda regler** rättas inte i granskningen: de går till rapportens del 4, och bara det Björn godkänner blir steg.
+- **Gaffatejp och onödiga hårda regler:** det som går emot designdokumentet byggs om efter dokumentet (ovan); resten går till rapportens del 4, och bara det Björn godkänner blir steg.
 - **Större ändringar** (nya system, ändrad balans, designfrågor): bygg dem inte. Skriv in dem som steg i Färdplanen under rätt system, med förklaringen i rätt avsnitt, och fråga Björn om de kräver ett beslut.
 - Lägg till ett scenario eller en vakt för varje verkligt fel som rättas, så att det inte kommer tillbaka.
 - Uppdatera `ARKITEKTUR.md` och "Läget just nu" när något ändrats som de beskriver.

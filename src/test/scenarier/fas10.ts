@@ -119,9 +119,11 @@ SCENARIER.dragdjur = {
     let tim = 0;
     const kvar = () => (b.s.stackar ?? []).some(q => q.k === 'virke' && q.x === pl.x && q.y === pl.y);
     for (; tim < 10 && kvar(); tim++) kor(b.s, 1, x => { x.vader = { ...(x.vader ?? { fukt: 0.5 }), sno: 1 } as typeof x.vader; });
-    kor(b.s, 2);
+    // efter turen: byn kan köra fler turer med det som ligger kvar, så det prövas timme för timme om oxen står i hagen mellan turerna
+    const iHagenNu = () => !spand(b.s, bo.id) && !!b.h && bo.hage === b.h.id && bo.x >= b.h.x && bo.x < b.h.x + b.h.w && bo.y >= b.h.y && bo.y < b.h.y + b.h.h;
+    let hemma = false;
+    for (let i = 0; i < 6 && !hemma; i++) { kor(b.s, 1); hemma = iHagenNu(); }
     const sagsSpand = b.s.stat?.dragdjurTur ?? 0, turer = b.s.stat?.fordonTur_slade ?? 0, perTur = turer ? (b.s.stat?.fordonSaker ?? 0) / Math.max(1, b.s.stat?.fordonTur ?? 0) : 0;
-    const hemma = !spand(b.s, bo.id) && !!b.h && bo.hage === b.h.id && bo.x >= b.h.x && bo.x < b.h.x + b.h.w && bo.y >= b.h.y && bo.y < b.h.y + b.h.h;
     return [
       [`handlarens oxe blir byns och leds in i hagen (${oxe ? 'oxe' : 'ingen'}, ${iHagen ? 'i hagen' : 'utanför'}), och äter som två får (${betesTal(s)} med hästen)`, !!oxe && iHagen && betesTal(s) === 4],
       [`en by utan dragdjur gör ingen släde (vill ha ${utanDjur}), med en oxe en (${medDjur})`, utanDjur === 0 && medDjur === 1],
@@ -160,7 +162,7 @@ SCENARIER.vildsvin = {
       if (tk.items?.vildsvin || tk.items?.vildsvindel) { ut.fallt++; if (tk.items?.vildsvindel) ut.del++; }
       if (anf) {
         ut.anfall++;
-        for (let n = 0; n < 2000 && s.kartStrider?.length; n++) SIM.kartStridSteg(s, 1);
+        for (let n = 0; n < 2000 && s.kartStrider?.length; n++) { s.now += 1000; SIM.kartStridSteg(s, 1); } // striden räknar tiden sedan den började (steg B.1)
         if (!s.kartStrider?.length) ut.strid++;
         if (p.task?.items?.vildsvindel) ut.stridFallt++;
       }
@@ -199,13 +201,16 @@ SCENARIER.byggsten = {
   // och det andra före, så stenen får en hög vikt här (om stenen bryts i byarna avgörs i fasens Balans)
   env: { BALANS: 'projekt.byggsten=100' },
   kor: () => {
-    const { STENBEHOV, FORDON, lassAv, fordonTar, living, ageOf, ALDER, amountOf, bergPlats, stenFrakt, TEK } = SIM;
+    const { FORDON, lassAv, fordonTar, living, ageOf, ALDER, amountOf, bergPlats, stenFrakt, TEK } = SIM;
     const tek = TEK.byggsten;
     const by = (medKalke: boolean) => {
       const s = createState(3, START); klockan(s, 8);
       for (const p of living(s)) if (ageOf(p, s.now) >= ALDER.vuxen) p.tek = { ...p.tek, byggsten: 1 };
       const m = SIM.bynsMitt(s);
       if (medKalke) { fordon(s, 'kalke', m); }
+      // Byggplanen har planerat två rutor stenlagd väg: bygget hämtar stenen själv (steg 13.8.12)
+      for (const dx of [4, 5]) { const f = SIM.freeNear(s, Math.floor(m.x) + dx, Math.floor(m.y) + 3); SIM.bitsOf(s).push({ id: s.nextBit!++, x: f.x, y: f.y, k: 'golv', m: 'stenvag', b: 0, mat: 0, c: 0, forb: 1 }); }
+      SIM.touch(s);
       const frakt = stenFrakt(s);
       let tim = 0;
       for (; tim < 48 && !(medKalke ? amountOf(s, 'byggsten') >= 1 : (s.stat?.byggstenBruten ?? 0) >= 1); tim++) kor(s, 1, x => { x.vader = { ...(x.vader ?? { fukt: 0.5 }), sno: 0 } as typeof x.vader; });
@@ -216,9 +221,8 @@ SCENARIER.byggsten = {
       const hemma = amountOf(s, 'byggsten') - vid.filter(q => SIM.isStored(s, q.x, q.y)).reduce((a, q) => a + q.n, 0);
       return { tim, frakt, bruten: s.stat?.byggstenBruten ?? 0, hemma, liggande, turer: s.stat?.fordonTur_kalke ?? 0 };
     };
-    STENBEHOV.scenario = () => 2;
-    let med, utan, inget;
-    try { med = by(true); utan = by(false); } finally { delete STENBEHOV.scenario; }
+    const med = by(true), utan = by(false);
+    let inget;
     { const s = createState(3, START); inget = SIM.materialBuffert(s, 'byggsten'); }
     const sv = createState(3, START), ber = bergPlats(sv);
     const hast = fordonTar(lassAv(FORDON.slade, { art: 'hast' } as SIM.Tamdjur), 'byggsten'), oxe = fordonTar(lassAv(FORDON.slade, { art: 'oxe' } as SIM.Tamdjur), 'byggsten'), kalke = fordonTar(lassAv(FORDON.kalke), 'byggsten');

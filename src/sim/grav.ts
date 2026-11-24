@@ -1,24 +1,25 @@
-import { enOrd } from './ord';
+import { enOrd, heltOrd } from './ord';
 // Kroppen och graven (steg 8.5.1, 8.5.6 och 8.5.7): det som görs med en död. Det som blir kvar av en människa står i kvarlevor.ts.
 import { DAY, H, HOUR, MIN, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
-import { byId, count, isParent, living, log, relKey } from './folk';
+import { BYN } from './egendom';
+import { byId, count, getRel, isParent, living, log, relKey } from './folk';
 import { rnd } from './slump';
 import { getMap } from './karta';
 import { sjoVid } from './sjo';
 import { groundOf, isForest } from './mark';
 import { ledig } from './stationer';
 import { omrade, utanforByn } from './omrade';
-import { freeTools, newTing, take } from './agande';
+import { Ting, freeTools, gravRedskap, newTing, take } from './agande';
 import { GA_TID } from './paborjat';
 import { nyRitual } from './kultlatt';
 import { hourOf } from './tid';
-import { Grav, GravStil, GravVard, KVAR, Kvarleva, gravAt, kroppKrok, kvarById, nara, sagSkandad } from './kvarlevor';
+import { Grav, GravSak, GravStil, GravVard, KVAR, Kvarleva, gravAt, kroppKrok, kvarById, nara, sagSkandad } from './kvarlevor';
 import { BEGR_TAL, BUD, BudId, KYRKA, budBrutet, budIn, foljer, foljerStorlek, harBud, satSkand } from './kyrka';
 import { SkalaId, Tro, rymsBud, skalaV, troOf } from './religion';
-import { amountOf, harTillHands, put } from './lager';
-import { SAKER } from './saker';
-import { getable, takeMaterial } from './behov';
+import { amountOf, harTillHands, laggPaRutan, put } from './lager';
+import { SAKER, isTool, iSlag } from './saker';
+import { DELA, aldrigStjal, getable, gravGods, takeMaterial } from './behov';
 import { RECEPT } from './recept';
 import { knows } from './teknik';
 import { Bevis, HANDELSER, RYKTE, bevisText, intryckStyrka, paminn, ryktbarhet, handelse } from './rykten';
@@ -256,7 +257,7 @@ export function gravKlar(s: State, p: Person, t: Task) {
   }
   const stor = !ovardig && !!d && storDod(s, d, tr);
   if (stil === 'vatten') { (s.sankta ??= []).push({ vem: q.vem, namn: q.namn, x, y, t: s.now, sjo: sjoVid(s, x, y), ...(q.med ? { med: q.med } : {}) }); count(s, 'sankt'); }
-  else { gravarOf(s).push({ x, y, t: s.now, vem: q.vem, namn: q.namn, stil, ...(tr ? { tro: tr.id } : {}), ...(ovardig ? { ovardig: true as const } : {}), ...(q.med ? { med: q.med } : {}), ...(stor ? { stor: true as const } : {}) }); groundOf(s).cover[y * W + x] = 0; }
+  else { gravarOf(s).push({ x, y, t: s.now, vem: q.vem, namn: q.namn, stil, ...(tr ? { tro: tr.id } : {}), ...(ovardig ? { ovardig: true as const } : {}), ...(q.med ? { med: q.med } : {}), ...(stil === 'jord' && q.gods?.length ? { saker: q.gods } : {}), ...(stor ? { stor: true as const } : {}) }); groundOf(s).cover[y * W + x] = 0; }
   count(s, 'grav'); count(s, 'grav_' + stil);
   tanke(p, 'begravde', s.now, { namn: q.namn });
   if (tr && !ovardig) { count(s, 'begravd_troende'); }
@@ -490,6 +491,7 @@ export const BESOK = balans('gravbesok', {
   gava: 0.3, // chansen att lägga en gåva, gånger bandet
   trost: 0.02, // humöret av tanken "Stod vid graven"
   laga: 0.5, // graven lagas när skicket är under så här
+  stoldGanger: 2, // en stöld ur en grav gör relationen till den som märker den så här många gånger sämre än en stöld (steg 13.1.4)
 });
 const livstid = (g: Grav) => (g.vard ? GRAVAR[g.vard].dygn : GRAV.jordgravDygn) * DAY;
 // skicket från 1 till 0, räknat ur tiden sedan graven gjordes eller lagades
@@ -551,9 +553,13 @@ export function gravbesokKlar(s: State, p: Person, t: Task) {
   tanke(p, 'stodVidGraven', s.now, { v: BESOK.trost });
   if (t.gava) {
     const k = minstaGava(s, p);
-    if (k) { takeMaterial(s, p, k, 1, true); if (g) g.gavor = (g.gavor ?? 0) + 1; else q!.gavor = (q!.gavor ?? 0) + 1; count(s, 'gravgava'); }
+    if (k) { // gåvan ligger kvar på graven, eller på stranden, som en vanlig sak (steg 13.1.3)
+      takeMaterial(s, p, k, 1, true); const m = g ?? q!;
+      m.gavor = (m.gavor ?? 0) + 1; laggIGraven(s, m.saker ??= [], k, 1); count(s, 'gravgava');
+    }
   }
   if (!g) return;
+  if (g.stulet) markGravstold(s, p, g);
   // skötseln: rutan rensas, och en sliten grav lagas när materialet finns (en jordgrav kostar bara tiden)
   groundOf(s).cover[g.y * W + g.x] = 0;
   if (t.tool === 'laga' && gravSkick(s, g) < BESOK.laga && Object.entries(lagaMat(g)).every(([k, n]) => getable(s, p, k) >= n)) {
@@ -562,9 +568,77 @@ export function gravbesokKlar(s: State, p: Person, t: Task) {
   }
 }
 // en gång per dygn (TAKTER): gravarna som vuxit igen helt tas bort, med sin text
+// Maten i och på gravarna ruttnar efter sina dygn (haller i SAKER), och sakerna i en grav som tas bort blir ägarlösa där de ligger
+// (steg 13.1.3): redskapen och plaggen som ting på rutan, det andra i en hög på rutan, och bärs in som allt annat utanför lagret
 export function gravDygn(s: State) {
+  for (const m of [...(s.gravar ?? []), ...(s.sankta ?? [])]) if (m.saker?.length) {
+    const fore = m.saker.length;
+    m.saker = m.saker.filter(a => { const h = SAKER[a.k]?.haller; return h === undefined || s.now - a.t < h * DAY; });
+    if (m.saker.length < fore) count(s, 'gravgods_ruttet', fore - m.saker.length);
+    if (!m.saker.length) m.saker = undefined;
+  }
   if (!s.gravar?.length) return;
-  const fore = s.gravar.length;
+  const fore = s.gravar.length, borta = s.gravar.filter(g => gravSkick(s, g) <= 0);
   s.gravar = s.gravar.filter(g => gravSkick(s, g) > 0);
+  for (const g of borta) for (const a of g.saker ?? []) {
+    if (isTool(a.k)) for (let i = 0; i < a.n; i++) { const t = newTing(s, a.k, a.c, BYN); t.x = g.x; t.y = g.y; if (a.q !== undefined) t.q = a.q; if (a.ber) t.ber = a.ber; }
+    else laggPaRutan(s, a.k, a.n, g.x, g.y);
+    count(s, 'gravgods_agarlost', a.n);
+  }
   if (s.gravar.length < fore) count(s, 'grav_borta', fore - s.gravar.length);
+}
+// en sak läggs i eller på graven: till en lika sak som redan ligger där, utom maten, som ruttnar från när den lades
+export function laggIGraven(s: State, saker: GravSak[], k: string, n: number, c = 1) {
+  const lik = SAKER[k]?.haller === undefined ? saker.find(a => a.k === k && a.q === undefined && a.c === c) : undefined;
+  if (lik) lik.n += n; else saker.push({ k, n, c, t: s.now });
+}
+
+// ---------- stölden ur en grav (steg 13.1.4) ----------
+// Gravgodset tas med samma stöld som det andra äger: den som saknar material till ett arbete och tar av andras tar det som
+// fattas ur en grav (behov.ts), och den som saknar ett redskap tar det ur en grav (agande.ts). Det som stulits står på graven
+// tills någon som besöker den märker det; då blir relationen till tjuven sämre än vid en stöld och tjuven får rykte om sig
+const stulen = (g: Grav, p: Person, k: string, n: number) => { const f = (g.stulet ??= []).find(x => x.av === p.id && x.k === k); if (f) f.n += n; else g.stulet.push({ av: p.id, k, n }); };
+const stada = (g: Grav) => { g.saker = g.saker?.filter(a => a.n > 0); if (!g.saker?.length) g.saker = undefined; };
+gravGods.ta = (s, p, k, n) => {
+  let tagit = 0;
+  for (const g of s.gravar ?? []) {
+    for (const a of g.saker ?? []) if (a.k === k && tagit < n) { const m = Math.min(a.n, n - tagit); a.n -= m; tagit += m; stulen(g, p, k, m); }
+    stada(g);
+    if (tagit >= n) break;
+  }
+  if (tagit) count(s, 'gravstold', tagit);
+  return tagit;
+};
+// redskapen i gravarna som p kan ta av slaget (gruppen) k: inget för den som aldrig stjäl
+gravRedskap.n = (s, p, k) => {
+  if (!s.gravar?.length || aldrigStjal(s, p)) return 0;
+  let n = 0;
+  for (const g of s.gravar) for (const a of g.saker ?? []) if (iSlag(a.k, k)) n += a.n;
+  return n;
+};
+gravRedskap.ta = (s, p, k): Ting | undefined => {
+  if (!gravRedskap.n(s, p, k)) return;
+  let bast: { g: Grav; a: GravSak } | undefined;
+  for (const g of s.gravar ?? []) for (const a of g.saker ?? []) if (a.n > 0 && iSlag(a.k, k) && (!bast || (SAKER[a.k]?.rang ?? 0) > (SAKER[bast.a.k]?.rang ?? 0) || a.c > bast.a.c)) bast = { g, a };
+  if (!bast) return;
+  const { g, a } = bast;
+  a.n--; stada(g); stulen(g, p, a.k, 1); count(s, 'gravstold');
+  const t = newTing(s, a.k, a.c, p.id);
+  if (a.q !== undefined) t.q = a.q;
+  if (a.ber) t.ber = a.ber;
+  return t;
+};
+// p besöker graven och märker det som stulits: relationen till tjuven blir BESOK.stoldGanger gånger sämre än vid en stöld,
+// och p vet vem det var och kan berätta det (som den bestulne, behov.ts)
+function markGravstold(s: State, p: Person, g: Grav) {
+  for (const { av, k, n } of g.stulet ?? []) {
+    const t = byId(s, av);
+    if (!t || t === p) continue;
+    const r = getRel(s, p, t); r.op = Math.max(-100, r.op - DELA.stoldOp * BESOK.stoldGanger);
+    const sak = `${n > 1 ? `${heltOrd(n)} ` : ''}${(SAKER[k]?.namn ?? k).toLowerCase()} ur graven efter ${g.namn}`;
+    handelse(s, t, 'gravstold', p, sak, p);
+    log(s, `${p.name} märkte att ${t.name} hade stulit ${sak}.`, 'rel', [p.id, t.id]);
+    count(s, 'gravstold_markt');
+  }
+  g.stulet = undefined;
 }

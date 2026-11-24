@@ -166,8 +166,8 @@ SCENARIER.lera = {
     const tagen = SIM.richness(s, 'lera', at.x, at.y);
     SIM.growFynd(s, 12, 2, 1, 0); const torrt = SIM.richness(s, 'lera', at.x, at.y);
     SIM.growFynd(s, 12, 2, 1, 1); const regn = SIM.richness(s, 'lera', at.x, at.y);
-    // förrådsmålen: byn har gjort av med lera, så den vill ha mer, och en vuxen gräver den
-    s.forbruk = { lera: 10 }; SIM.arbetsTimme(s);
+    // förrådsmålen: ett projekt (krukan) saknar lera, så byn vill ha den, och en vuxen gräver den (leran har ingen egen buffert, steg 13.8.12)
+    SIM.arbetsTimme(s); s.projektSaknar = { lera: { beh: 2, n: 2, b: 1 } };
     const buf = SIM.materialBuffert(s, "lera"), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
     const u = SIM.projektNu(s, p, 'lera', { kyla: false, gras: 0 });
     const gravt = (spade: boolean) => { const q = SIM.cloneState(s), qp = SIM.living(q).find(r => r.id === p.id)!; const t: SIM.Task = { act: 'lera', phase: 'do', tx: at.x, ty: at.y, until: q.now, carry: 0, why: '', arbTid: 10 * 60000, tool: spade ? 'benspade' : undefined }; qp.x = at.x; qp.y = at.y; SIM.leraGravd(q, qp, t); return SIM.stacksOf(q).filter(a => a.k === 'lera').reduce((n, a) => n + a.n, 0); };
@@ -175,7 +175,7 @@ SCENARIER.lera = {
     return [
       [`leran är rikast i stranden närmast vattnet (${strand.toFixed(2)}), mindre i sanden (${sand.toFixed(2)}) och jorden (${jord.toFixed(2)}), inte i skogen (${skog.toFixed(2)})`, strand > sand && sand > jord && skog === 0],
       [`en tömd plats fylls på bara när det regnar (${fore.toFixed(2)} → ${tagen.toFixed(2)}, utan regn ${torrt.toFixed(2)}, med regn ${regn.toFixed(2)})`, tagen < fore && Math.abs(torrt - tagen) < 1e-6 && regn > torrt],
-      [`förrådsmålen vill ha lera när byn gjort av med den (${buf.toFixed(1)}), och en vuxen gräver den (${u?.act ?? 'inget'})`, buf > 0 && u?.act === 'lera'],
+      [`förrådsmålen vill ha lera när ett projekt saknar den (${buf.toFixed(1)}), och en vuxen gräver den (${u?.act ?? 'inget'})`, buf > 0 && u?.act === 'lera'],
       [`med benspaden blir det mer (${hand} med händerna, ${spade} med spaden), och leran läggs i en hög där den grävdes`, hand > 0 && spade > hand],
       ...lerkrukan(),
     ];
@@ -427,7 +427,8 @@ SCENARIER.stridvard = {
     const m = (id: number, sida: 0 | 1, x: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 14, smidighet: 10, skicklighet: 10 }, vapen: 'kniv' as SIM.Vapen, klader: [], fart: 1, x, y: 7 });
     const st = SIM.nyStrid({ avsikt: 'skada', w: 30, h: 14, kampar: [m(1, 0, 6), m(2, 0, 8), m(3, 1, 26)] }, 3);
     const [a, b] = st.kampar;
-    a.emp = 16; b.lage = 'nere'; b.skador = [{ d: 'bal', k: 'sticksar', g: 0.8, ny: 1 }]; b.blod = 0.6;
+    // vännen förblöder innan striden är slut (steg B.7: blödningen följer slagens takt, så hen har lite blod kvar)
+    a.emp = 16; b.lage = 'nere'; b.skador = [{ d: 'bal', k: 'sticksar', g: 0.8, ny: 1 }]; b.blod = SIM.HALSA.blodDod + 0.02;
     let raddad = false;
     for (let i = 0; i < 60 && !raddad; i++) { SIM.stridSteg(st); raddad = st.logg.some(r => r.h === 'raddar' && r.a === a.id && r.b === b.id); }
     const tryckt = b.skador.every(w => !w.ny);
@@ -478,7 +479,7 @@ SCENARIER.undsattning = {
     const [, fallen, h, fiende] = st.kampar;
     fallen.lage = 'nere'; fallen.skador = [{ d: 'bal', k: 'sticksar', g: 0.8, ny: 1 }]; fallen.blod = 0.7;
     let narmast = Infinity, raddad = false;
-    for (let i = 0; i < 400 && !st.slut; i++) { SIM.stridSteg(st); if (fiende.lage === 'strid') narmast = Math.min(narmast, Math.hypot(h.x - fiende.x, h.y - fiende.y)); if (st.logg.some(r => r.h === 'raddar' && r.a === h.id)) raddad = true; }
+    for (let i = 0; i < SIM.STRID.maxTid / SIM.STRID.tick && !st.slut; i++) { SIM.stridSteg(st); if (fiende.lage === 'strid') narmast = Math.min(narmast, Math.hypot(h.x - fiende.x, h.y - fiende.y)); if (st.logg.some(r => r.h === 'raddar' && r.a === h.id)) raddad = true; }
     const slogs = st.logg.some(r => (r.h === 'traff' || r.h === 'miss') && r.a === h.id), lyfte = st.logg.some(r => r.h === 'lyfter' && r.a === h.id);
     // på kartan (steg 12.1.87): en rövare slåss med en bybo, en annan bybo ligger och blöder, och en tredje är hjälpare vid larmet
     const s = createState(1, START), [a, b, hp] = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen && SIM.kanGa(p));
@@ -1356,7 +1357,7 @@ SCENARIER.vattning = {
     const f = nyttFalt(s, p, 3, 0, 4, 8, 'vaxer', Array.from({ length: 8 }, (_, k) => ({ st: 'vaxer' as const, g: 'rovor' as const, v: 0.2, fu: k < 6 ? 0.1 : 0.9 })));
     s.falt = [f]; sammanfatta(f);
     const kr = addTool(s, 'lerkruka_mellan', p); kr.hos = undefined;
-    const v = vattenVal(s, p);
+    const v = vattenVal(s, p, 'odla');
     const tk = { act: 'vatten', phase: 'back', falt: true, ref: f.id, tool: 'lerkruka_mellan', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as unknown as SIM.Task;
     p.task = tk; vattenFram(s, p, tk);
     const vattnade = f.r!.filter(r => r.fu === vattnaTill(p, 'rovor')).length;
@@ -1564,10 +1565,12 @@ SCENARIER.trad = {
     let plats: { x: number; y: number } | undefined;
     s.kal = SIM.nyKalender(s.now, 3);
     for (let i = 0; i < SIM.W * SIM.H && !plats; i += 2) if (richness(s, 'hassel', i % SIM.W, Math.floor(i / SIM.W)) > 0.2) plats = { x: i % SIM.W, y: Math.floor(i / SIM.W) };
+    const appel = amountOf(s, 'appel'), notter0 = amountOf(s, 'notter');
+    setMat(s, {}); // nötterna är mat och plockas när maten i förrådet inte räcker (steg 13.8.6)
     const notter = plats ? froFynd(s, p, { act: 'samla', tx: plats.x, ty: plats.y } as unknown as SIM.Task, 3600).notter ?? 0 : 0;
     return [
       [`träden bär först efter många år (äppelträdet ${GRODOR.appeltrad.dygn} dygn, hasseln ${GRODOR.hassel.dygn}, rovorna ${GRODOR.rovor.dygn})`, GRODOR.appeltrad.dygn >= 15 && GRODOR.hassel.dygn >= 10],
-      [`efter skörden (${amountOf(s, 'appel')} äpplen, ${amountOf(s, 'notter')} nötter) bär de snart igen (${igen ? 'ja' : 'nej'})`, amountOf(s, 'appel') > 0 && amountOf(s, 'notter') > 0 && igen],
+      [`efter skörden (${appel} äpplen, ${notter0} nötter) bär de snart igen (${igen ? 'ja' : 'nej'})`, appel > 0 && notter0 > 0 && igen],
       [`hasseln växer vilt (${FYND.hassel.namn}${plats ? ` vid ${plats.x},${plats.y}` : ''}) och ger nötter på hösten (${notter.toFixed(2)}), som kan sättas (${VILDA.hassel.groda})`, notter > 0],
       [`nötterna håller länge (${SAKER.notter!.haller} dygn)`, SAKER.notter!.haller! >= 20],
     ];

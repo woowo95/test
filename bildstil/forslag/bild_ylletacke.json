@@ -1,0 +1,255 @@
+{
+ "kort": "bild_ylletacke",
+ "namn": "Ylletäcket",
+ "slag": [],
+ "vad": "ylletäcket i halmbädden på bredden: ett täcke av ofärgat ylletyg som täcker bädden utom vid huvudet, varmare än skinnfällen; ett lager över bädden (steg 13.3.1)",
+ "av": "Programmeringschatten (Claude), tre idéer",
+ "versioner": [
+  {
+   "ide": "Randigt i längden med en uppvikt ljus kant vid huvudet, och det hänger ned över bäddens framkant",
+   "lager": true,
+   "bilder": [
+    {
+     "namn": "ylletacke",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "..........wwpwwwwwwwwwwwwwwwwwww",
+      "..........qqpqqqqqqqqqqqqqqqqqqq",
+      "..........wwpppppppppppppppppppp",
+      "..........qqpooooooooooooooooooo",
+      "..........wwpqqqqqqqqqqqqqqqqqqq",
+      "..........qqpqqqqqqqqqqqqqqqqqqq",
+      "..........wwpppppppppppppppppppp",
+      "..........qqpooooooooooooooooooo",
+      "..........wwpqqqqqqqqqqqqqqqqqqq",
+      "..........qqpqqqqqqqqqqqqqqqqqqq",
+      "..........wwpppppppppppppppppppp",
+      "..........qqpooooooooooooooooooo",
+      "..........wwpqqqqqqqqqqqqqqqqqqq",
+      "..........ppoppoppoppoppoppoppop",
+      "..........ppoppoppoppoppoppoppop",
+      "..........oooooooooooooooooooooo",
+      "................................"
+     ]
+    },
+    {
+     "namn": "i halmbädden",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "FFEFFFFEFFwwpwwwwwwwwwwwwwwwwwww",
+      "FLKJJJKKKLqqpqqqqqqqqqqqqqqqqqqq",
+      "EKLLLLJJJLwwpppppppppppppppppppp",
+      "FKLKKKJLLLqqpooooooooooooooooooo",
+      "FLJLKLLJKLwwpqqqqqqqqqqqqqqqqqqq",
+      "FLKLJKLJLJqqpqqqqqqqqqqqqqqqqqqq",
+      "FLLKLKJKLJwwpppppppppppppppppppp",
+      "EJLKKLKLLKqqpooooooooooooooooooo",
+      "FJLKLLKJKKwwpqqqqqqqqqqqqqqqqqqq",
+      "FJLLKKLLKKqqpqqqqqqqqqqqqqqqqqqq",
+      "FLLLLLLLJKwwpppppppppppppppppppp",
+      "FLJLLLLJKKqqpooooooooooooooooooo",
+      "EKJLKKLLJLwwpqqqqqqqqqqqqqqqqqqq",
+      "FFFFEFFFFEppoppoppoppoppoppoppop",
+      "FFFFFFFFFFppoppoppoppoppoppoppop",
+      "EFEEEFEEEFoooooooooooooooooooooo",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE."
+     ]
+    },
+    {
+     "namn": "med kudden",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "FFEFFFFEFFwwpwwwwwwwwwwwwwwwwwww",
+      "FLKJJJKKKLqqpqqqqqqqqqqqqqqqqqqq",
+      "EKppppppppwwpppppppppppppppppppp",
+      "Fpwwwwwwwqqqpooooooooooooooooooo",
+      "Fpwwwwwwwqwwpqqqqqqqqqqqqqqqqqqq",
+      "Fpwwwwwwqqqqpqqqqqqqqqqqqqqqqqqq",
+      "Fpqqqqqqqqwwpppppppppppppppppppp",
+      "Epwwwwwwwqqqpooooooooooooooooooo",
+      "Fpwwwwwwqqwwpqqqqqqqqqqqqqqqqqqq",
+      "Fpwqqqqqqqqqpqqqqqqqqqqqqqqqqqqq",
+      "FLppppppppwwpppppppppppppppppppp",
+      "FLJLLLLJKKqqpooooooooooooooooooo",
+      "EKJLKKLLJLwwpqqqqqqqqqqqqqqqqqqq",
+      "FFFFEFFFFEppoppoppoppoppoppoppop",
+      "FFFFFFFFFFppoppoppoppoppoppoppop",
+      "EFEEEFEEEFoooooooooooooooooooooo",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE."
+     ]
+    }
+   ],
+   "anteckning": "Randigt i längden med en uppvikt ljus kant vid huvudet, och det hänger ned över bäddens framkant"
+  },
+  {
+   "ide": "Rutigt, vävt i två garner, med fransar i fotänden",
+   "lager": true,
+   "bilder": [
+    {
+     "namn": "ylletacke",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "..........wwwwwwwwwwwwwwwwwwwwqw",
+      "..........qqqpppqqqpppqqqpppqq..",
+      "..........qqqpppqqqpppqqqpppqqqw",
+      "..........oppoqqoppoqqoppoqqop..",
+      "..........pppqqqpppqqqpppqqqppqw",
+      "..........pppqqqpppqqqpppqqqpp..",
+      "..........oqqoppoqqoppoqqoppoqqw",
+      "..........qqqpppqqqpppqqqpppqq..",
+      "..........qqqpppqqqpppqqqpppqqqw",
+      "..........oppoqqoppoqqoppoqqop..",
+      "..........pppqqqpppqqqpppqqqppqw",
+      "..........pppqqqpppqqqpppqqqpp..",
+      "..........oqqoppoqqoppoqqoppoqqw",
+      "..........oooooooooooooooooooo..",
+      "................................",
+      "................................",
+      "................................"
+     ]
+    },
+    {
+     "namn": "i halmbädden",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "FFEFFFFEFFwwwwwwwwwwwwwwwwwwwwqw",
+      "FLKJJJKKKLqqqpppqqqpppqqqpppqqKE",
+      "EKLLLLJJJLqqqpppqqqpppqqqpppqqqw",
+      "FKLKKKJLLLoppoqqoppoqqoppoqqopJF",
+      "FLJLKLLJKLpppqqqpppqqqpppqqqppqw",
+      "FLKLJKLJLJpppqqqpppqqqpppqqqppLF",
+      "FLLKLKJKLJoqqoppoqqoppoqqoppoqqw",
+      "EJLKKLKLLKqqqpppqqqpppqqqpppqqLF",
+      "FJLKLLKJKKqqqpppqqqpppqqqpppqqqw",
+      "FJLLKKLLKKoppoqqoppoqqoppoqqopKF",
+      "FLLLLLLLJKpppqqqpppqqqpppqqqppqw",
+      "FLJLLLLJKKpppqqqpppqqqpppqqqppLE",
+      "EKJLKKLLJLoqqoppoqqoppoqqoppoqqw",
+      "FFFFEFFFFEooooooooooooooooooooFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "EFEEEFEEEFEEEFEEEFEEEFEEEFEEEFEE",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE."
+     ]
+    },
+    {
+     "namn": "med kudden",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "FFEFFFFEFFwwwwwwwwwwwwwwwwwwwwqw",
+      "FLKJJJKKKLqqqpppqqqpppqqqpppqqKE",
+      "EKppppppppqqqpppqqqpppqqqpppqqqw",
+      "FpwwwwwwwqoppoqqoppoqqoppoqqopJF",
+      "Fpwwwwwwwqpppqqqpppqqqpppqqqppqw",
+      "FpwwwwwwqqpppqqqpppqqqpppqqqppLF",
+      "Fpqqqqqqqqoqqoppoqqoppoqqoppoqqw",
+      "EpwwwwwwwqqqqpppqqqpppqqqpppqqLF",
+      "Fpwwwwwwqqqqqpppqqqpppqqqpppqqqw",
+      "FpwqqqqqqqoppoqqoppoqqoppoqqopKF",
+      "FLpppppppppppqqqpppqqqpppqqqppqw",
+      "FLJLLLLJKKpppqqqpppqqqpppqqqppLE",
+      "EKJLKKLLJLoqqoppoqqoppoqqoppoqqw",
+      "FFFFEFFFFEooooooooooooooooooooFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "EFEEEFEEEFEEEFEEEFEEEFEEEFEEEFEE",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE."
+     ]
+    }
+   ],
+   "anteckning": "Rutigt, vävt i två garner, med fransar i fotänden"
+  },
+  {
+   "ide": "Tjockt och veckat med en mörk fåll runt om, och det hänger ned över hela bäddens framsida",
+   "lager": true,
+   "bilder": [
+    {
+     "namn": "ylletacke",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "........oooooooooooooooooooooooo",
+      "........oqpwqqqqpwqqqqpwqqqqpwqo",
+      "........oqpwqqqqpwqqqqpwqqqqpwqo",
+      "........opwqqqqpwqqqqpwqqqqpwqqo",
+      "........opwqqqqpwqqqqpwqqqqpwqqo",
+      "........owqqqqpwqqqqpwqqqqpwqqqo",
+      "........owqqqqpwqqqqpwqqqqpwqqqo",
+      "........oqqqqpwqqqqpwqqqqpwqqqqo",
+      "........oqqqqpwqqqqpwqqqqpwqqqqo",
+      "........oqqqpwqqqqpwqqqqpwqqqqpo",
+      "........oqqqpwqqqqpwqqqqpwqqqqpo",
+      "........oqqpwqqqqpwqqqqpwqqqqpwo",
+      "........oqqpwqqqqpwqqqqpwqqqqpwo",
+      "........opqqppqqppqqppqqppqqppqo",
+      "........opqqppqqppqqppqqppqqppqo",
+      "........opqqppqqppqqppqqppqqppqo",
+      "........oooooooooooooooooooooooo"
+     ]
+    },
+    {
+     "namn": "i halmbädden",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "FFEFFFFEoooooooooooooooooooooooo",
+      "FLKJJJKKoqpwqqqqpwqqqqpwqqqqpwqo",
+      "EKLLLLJJoqpwqqqqpwqqqqpwqqqqpwqo",
+      "FKLKKKJLopwqqqqpwqqqqpwqqqqpwqqo",
+      "FLJLKLLJopwqqqqpwqqqqpwqqqqpwqqo",
+      "FLKLJKLJowqqqqpwqqqqpwqqqqpwqqqo",
+      "FLLKLKJKowqqqqpwqqqqpwqqqqpwqqqo",
+      "EJLKKLKLoqqqqpwqqqqpwqqqqpwqqqqo",
+      "FJLKLLKJoqqqqpwqqqqpwqqqqpwqqqqo",
+      "FJLLKKLLoqqqpwqqqqpwqqqqpwqqqqpo",
+      "FLLLLLLLoqqqpwqqqqpwqqqqpwqqqqpo",
+      "FLJLLLLJoqqpwqqqqpwqqqqpwqqqqpwo",
+      "EKJLKKLLoqqpwqqqqpwqqqqpwqqqqpwo",
+      "FFFFEFFFopqqppqqppqqppqqppqqppqo",
+      "FFFFFFFFopqqppqqppqqppqqppqqppqo",
+      "EFEEEFEEopqqppqqppqqppqqppqqppqo",
+      ".EEEEEEEoooooooooooooooooooooooo"
+     ]
+    },
+    {
+     "namn": "med kudden",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "FFEFFFFEoooooooooooooooooooooooo",
+      "FLKJJJKKoqpwqqqqpwqqqqpwqqqqpwqo",
+      "EKppppppoqpwqqqqpwqqqqpwqqqqpwqo",
+      "Fpwwwwwwopwqqqqpwqqqqpwqqqqpwqqo",
+      "Fpwwwwwwopwqqqqpwqqqqpwqqqqpwqqo",
+      "Fpwwwwwwowqqqqpwqqqqpwqqqqpwqqqo",
+      "Fpqqqqqqowqqqqpwqqqqpwqqqqpwqqqo",
+      "Epwwwwwwoqqqqpwqqqqpwqqqqpwqqqqo",
+      "Fpwwwwwwoqqqqpwqqqqpwqqqqpwqqqqo",
+      "Fpwqqqqqoqqqpwqqqqpwqqqqpwqqqqpo",
+      "FLppppppoqqqpwqqqqpwqqqqpwqqqqpo",
+      "FLJLLLLJoqqpwqqqqpwqqqqpwqqqqpwo",
+      "EKJLKKLLoqqpwqqqqpwqqqqpwqqqqpwo",
+      "FFFFEFFFopqqppqqppqqppqqppqqppqo",
+      "FFFFFFFFopqqppqqppqqppqqppqqppqo",
+      "EFEEEFEEopqqppqqppqqppqqppqqppqo",
+      ".EEEEEEEoooooooooooooooooooooooo"
+     ]
+    }
+   ],
+   "anteckning": "Tjockt och veckat med en mörk fåll runt om, och det hänger ned över hela bäddens framsida"
+  }
+ ]
+}

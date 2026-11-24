@@ -6,7 +6,7 @@
 // by, person och tid. Vakterna rättar inget i spelet: det som larmar rättas i systemen. Iakttagaren (Rimlig) följer en by medan
 // den körs; npm run rimligt (rimligtkor.ts) kör den i några byar. Ett fynd från rapporten eller granskaren som går att mäta
 // blir en ny rad här. Vakterna ligger inte i npm test, koll eller snabbkoll förrän byarna går igenom utan larm
-import { ACTS, DAY, HOUR, KROPP, TORST, blodning, brasaStenMal, MATERIAL_LIST, Person, State, ageOf, ALDER, amountOf, balans, buffert, foodOf, living, materialTak, needStones, needTinder, sakNamn, underBuffert } from '../sim';
+import { ACTS, DAY, HOUR, KROPP, TORST, blodning, MATERIAL_LIST, Person, State, ageOf, ALDER, amountOf, balans, buffert, foodOf, living, materialTak, letaFattas, matTal, needTinder, sakNamn } from '../sim';
 
 export const RIM = balans('rimligt', {
   marg: 1.25, // ett skäl om byns behov stämmer så länge förrådet är under bufferten gånger detta (behoven räknas en gång i timmen)
@@ -20,19 +20,26 @@ export const RIM = balans('rimligt', {
 
 export interface Larm { vakt: string; by: number; t: number; vem?: string; text: string; grupp?: string } // grupp: vad larmet gäller, så att utskriften kan räkna dem
 // ett skäl som nämner ett behov: när skälet gäller (villkor), och vilka handlingar som hör till det
-// Kroppens läge (fore) är det som gällde vid förra provet, före valet: den som börjat dricka har redan druckit lite när provet görs
+// Läget före slaget (fore) är det som gällde när valet gjordes, vid förra provet: den som börjat dricka har redan druckit lite, och
+// den som gått ut efter flinta är redan på väg (letaFattas), när provet görs (steg 13.10.11). Byns tal är de valet räknar med
 interface Kropp { hunger: number; torst: number; warm: number }
-interface SkalRad { m: RegExp; namn: string; villkor(s: State, p: Kropp): boolean; handling?(act: string): boolean }
-const mat = (s: State) => (s.arbBehov?.mat ?? 0) < buffert(s, 'mat') * RIM.marg, ved = (s: State) => (s.arbBehov?.ved ?? 0) < buffert(s, 'ved') * RIM.marg;
+interface Fore { kropp: Kropp; by: Byn }
+// byns behov: andelen av bufferten byn har (maten räknas som valet gör, byns egen mat mot byns del av bufferten), och det som fattas
+interface Byn { mat: number; ved: number; tand: boolean; sten: number; flinta: number }
+export const bynNu = (s: State): Byn => {
+  const { fdBy, malBy } = matTal(s, s.arbBehov?.mat ?? 0), v = buffert(s, 'ved');
+  return { mat: malBy > 0 ? fdBy / malBy : Infinity, ved: v > 0 ? (s.arbBehov?.ved ?? 0) / v : Infinity, tand: needTinder(s), sten: letaFattas(s, 'sten'), flinta: letaFattas(s, 'flinta') };
+};
+interface SkalRad { m: RegExp; namn: string; villkor(f: Fore): boolean; handling?(act: string): boolean }
 export const SKAL: SkalRad[] = [
-  { m: /^(Hjälper till\. )?Byn behöver mat/, namn: 'byn behöver mat', villkor: mat, handling: a => ACTS[a as keyof typeof ACTS]?.behov === 'mat' },
-  { m: /^(Hjälper till\. )?Byn behöver ved/, namn: 'byn behöver ved', villkor: ved, handling: a => ACTS[a as keyof typeof ACTS]?.behov === 'ved' || a === 'falla' || a === 'hugga' }, // en fälld stam blir ved
-  { m: /tändmaterial/, namn: 'byn behöver tändmaterial', villkor: s => needTinder(s), handling: a => a === 'samla' },
-  { m: /^Byn behöver stenar/, namn: 'byn behöver stenar', villkor: s => needStones(s) || brasaStenMal(s) > 0, handling: a => a === 'samla' }, // stenarna till elden eller till en ny eldring
-  { m: /^Byn behöver flinta/, namn: 'byn behöver flinta', villkor: s => underBuffert(s, 'flinta', 0) || underBuffert(s, 'flinta', -1), handling: a => a === 'samla' },
-  { m: /^Är hungrig/, namn: 'är hungrig', villkor: (_s, p) => p.hunger < (KROPP.hungrig + RIM.lat) * RIM.kropp },
-  { m: /^Är törstig/, namn: 'är törstig', villkor: (_s, p) => p.torst < (TORST.torstig + RIM.lat) * RIM.kropp },
-  { m: /^Fryser/, namn: 'fryser', villkor: (_s, p) => p.warm < (KROPP.kallt + RIM.lat) * RIM.kropp },
+  { m: /^(Hjälper till\. )?Byn behöver mat/, namn: 'byn behöver mat', villkor: f => f.by.mat < RIM.marg, handling: a => ACTS[a as keyof typeof ACTS]?.behov === 'mat' },
+  { m: /^(Hjälper till\. )?Byn behöver ved/, namn: 'byn behöver ved', villkor: f => f.by.ved < RIM.marg, handling: a => ACTS[a as keyof typeof ACTS]?.behov === 'ved' || a === 'falla' || a === 'hugga' }, // en fälld stam blir ved
+  { m: /tändmaterial/, namn: 'byn behöver tändmaterial', villkor: f => f.by.tand, handling: a => a === 'samla' },
+  { m: /^Byn behöver stenar/, namn: 'byn behöver stenar', villkor: f => f.by.sten > 0, handling: a => a === 'samla' },
+  { m: /^Byn behöver flinta(?! till)/, namn: 'byn behöver flinta', villkor: f => f.by.flinta > 0, handling: a => a === 'samla' }, // flintan till ett projekt är projektets behov
+  { m: /^Är hungrig/, namn: 'är hungrig', villkor: f => f.kropp.hunger < (KROPP.hungrig + RIM.lat) * RIM.kropp },
+  { m: /^Är törstig/, namn: 'är törstig', villkor: f => f.kropp.torst < (TORST.torstig + RIM.lat) * RIM.kropp },
+  { m: /^Fryser/, namn: 'fryser', villkor: f => f.kropp.warm < (KROPP.kallt + RIM.lat) * RIM.kropp },
 ];
 
 // en vakt: namnet, och vad den prövar. ny: när någon börjat en ny uppgift; prov: varje prov (dt sekunder sedan förra); timme: en
@@ -42,7 +49,7 @@ interface Spar { task?: object; act?: string; x: number; y: number; byten: [numb
 const vuxen = (s: State, p: Person) => ageOf(p, s.now) >= ALDER.vuxen && !p.gast && !p.fange;
 const kort = (why: string) => why.replace(/\d+([,.]\d+)?/g, 'N').replace(/ för .* dygn$/, '');
 export const RIMLIGT: Vakt[] = [
-  { id: 'skal', namn: 'Skälet stämmer', ny: (r, p) => { const sp = r.spar(p), fore = sp.kropp ?? p; for (const k of SKAL) if (k.m.test(p.task!.why ?? '') && !k.villkor(r.s, fore)) r.larm('skal', `skälet "${p.task!.why}" (${k.namn}) stämmer inte: ${r.lage(p)}`, p, k.namn); } },
+  { id: 'skal', namn: 'Skälet stämmer', ny: (r, p) => { const kropp = r.spar(p).kropp ?? p, fore = { kropp, by: r.byn }, nu = { kropp, by: bynNu(r.s) }; /* behovet kan också ha uppstått sedan förra provet (någon tog en sten) */ for (const k of SKAL) if (k.m.test(p.task!.why ?? '') && !k.villkor(fore) && !k.villkor(nu)) r.larm('skal', `skälet "${p.task!.why}" (${k.namn}) stämmer inte: ${r.lage(p)}`, p, k.namn); } },
   { id: 'handling', namn: 'Handlingen och skälet hör ihop', ny: (r, p) => { for (const k of SKAL) if (k.handling && k.m.test(p.task!.why ?? '') && !k.handling(p.task!.act)) r.larm('handling', `${ACTS[p.task!.act]?.namn ?? p.task!.act} med skälet "${p.task!.why}"`, p, `${k.namn}: ${p.task!.act}`); } },
   { id: 'samma', namn: 'Inte för många gör samma sak av samma skäl', timme: r => {
     const vuxna = living(r.s).filter(p => vuxen(r.s, p)), n: Record<string, Person[]> = {};
@@ -98,7 +105,8 @@ export class Rimlig {
   private sist = new Map<string, number>();
   private timme = -1;
   private dag = -1;
-  constructor(public s: State, public by: number) {}
+  byn: Byn; // byns behov före slaget
+  constructor(public s: State, public by: number) { this.byn = bynNu(s); }
   spar(p: Person): Spar { let x = this.sp.get(p.id); if (!x) this.sp.set(p.id, x = { x: p.x, y: p.y, byten: [], arb: 0, still: 0, nod: {} }); return x; }
   larm(vakt: string, text: string, p?: Person, grupp?: string) { this.larmen.push({ vakt, by: this.by, t: this.s.now, ...(p ? { vem: p.name } : {}), text, ...(grupp ? { grupp } : {}) }); }
   // första gången nyckeln larmar på så här lång tid
@@ -114,6 +122,7 @@ export class Rimlig {
     }
     for (const v of RIMLIGT) v.prov?.(this, dt);
     for (const p of living(s)) { const sp = this.spar(p); sp.x = p.x; sp.y = p.y; sp.kropp = { hunger: p.hunger, torst: p.torst, warm: p.warm }; }
+    this.byn = bynNu(s);
     const h = Math.floor(s.now / HOUR), d = Math.floor(s.now / DAY);
     if (h !== this.timme) { this.timme = h; for (const v of RIMLIGT) v.timme?.(this); }
     if (d !== this.dag) { if (this.dag >= 0) for (const v of RIMLIGT) v.dygn?.(this); this.dag = d; }

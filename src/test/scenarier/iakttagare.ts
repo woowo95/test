@@ -29,6 +29,7 @@ export const SALLSYNT: Record<string, string> = {
   snickarbank: 'snickarbänken (steg 9.4.4) kräver klyvplatsen, sällan på 35 dygn; scenariot snickarbank prövar den',
   halsband_fjaderband: 'fjädrarna kommer bara från fåglarna, som få byar fångar, och halsbanden är få; scenariot fjaderband prövar det',
   fangeVantar: 'rövaren som ger upp i en strid väntar på hur striden slutar (steg 11.12.6), och rövarna ger sällan upp på 50 dygn; scenarierna fangar och fangeval prövar det',
+  gravvard: 'graven får en vård (en sten, en bräda eller en stolpe, steg 10.4.2) när byn har en död att minnas och arbete över, och de små testbyarna efter fas 12 har sällan det; scenariot gravvard prövar det',
   tatuera: 'märket görs åt den som varit med om något stort och med en bennål, som inte alla byar har; scenariot tatuering prövar det',
   matta: 'vävs vid vävstolen, som är sen och sällsynt; scenariot pynt prövar mattan', blomma: 'plockas bara till en lerkruka med blommor (steg 10.7.3), och krukorna är sällsynta; scenariot blommor prövar den',
   vedbod: 'kräver mycket ved ute, hinner inte alltid komma på 35 dygn; scenariot skjul prövar den',
@@ -114,6 +115,8 @@ for (const [ks, why] of [
   [['barmat', 'fangen', 'fangvakt', 'stoppa', 'besokFange', 'rymma'], 'fängelset (system 11.12) kräver en ledare, påbudet Fängelse, ett hus som är fängelse och någon som dömts till det, sällan på 50 dygn; scenarierna fangelse, fangemat, fangeliv, fangvakt och fangelsestraff prövar det'],
   [['skor', 'rock_kaninskinn', 'skor_kaninskinn'], 'som rock; scenariot plagg prövar det; i fasens Balans (6.10.4) var det sällsynt utan att bryta någon gräns'],
   [['axelrem', 'ryggsack', 'axelrem_kaninskinn', 'axelrem_vargskinn', 'axelrem_bjornskinn', 'ryggsack_kaninskinn', 'ryggsack_vargskinn', 'ryggsack_bjornskinn'], 'sen teknik i fas 7 (steg 7.1.2–7.1.3, nivå 5), hinner inte alltid komma på 35 dygn; scenarierna axelrem och ryggsack prövar den'],
+  [['garva_vitskinn', 'garva_farskinn', 'garva_getskinn', 'garva_svinskinn', 'garva_radjursskinn', 'garva_vargskinn', 'garva_bjornskinn', 'garva_kohud', 'skor_lader', 'stovlar_lader', 'balte_lader', 'axelrem_lader', 'ryggsack_lader', 'barnklader_lader', 'barsele_lader'], 'garvningen (steg 13.2.1) är en sen teknik i fas 7, och de andra hudarna än kaninens kräver jakten på större djur eller boskap; läderplaggen kräver lädret; scenarierna garvning och stovlar prövar dem'],
+  [['barnklader', 'barsele', 'iselen', ...SIM.KLAD_SLAG.filter(k => /^(barnklader|barsele)_/.test(k))], 'barnkläderna och bärselen (steg 13.2.3–13.2.4) sys vid slöjdbänken med bensylen, som rocken, och bärselen bara när en mor har ett spädbarn; scenarierna barnklader och barsele prövar dem'],
   [['badd', 'slut', 'sla'], 'de allvarliga utbrotten kommer bara när humöret är mycket lågt; scenariot vald prövar det'],
 ] as [string[], string][]) for (const k of ks) SALLSYNT[k] = why;
 // fas 8 (system 8.2, 8.3, 8.5 och 8.6): det som kräver en ledare, en präst eller en tro på en viss nivå hinner sällan komma på 35 dygn
@@ -157,7 +160,7 @@ for (const [ks, why] of [
   [['kolmila', 'kola', 'passa', 'blasterugn', 'blasa', 'malm', 'jarn', 'jarnskrot', 'smedja', 'smida'], 'järnet (system 12.2) börjar med kolmilan, en teknik på nivå 4 efter örtköket, och blästerugnen och smedjan på nivå 5, och malmen hämtas i bergen eller myren; scenarierna kolmila, blaster, jarngruva, jarnskrot och smedja prövar det'],
   [['jarnspjut', 'jarnskold', 'jarnhjalm', 'jarnhjalm_jarn', 'ringbrynja', 'ringbrynja_jarn', 'svard', 'vapensmide'], 'järnvapnen och rustningen (steg 12.2.7–12.2.9) smids i smedjan med vapensmidet, nivå 6; scenarierna vapensmide och jarnvapen prövar dem'],
   [['isborr', 'sag', 'ullsax', 'jarnnal', 'jarnhacka', 'jarngryta', 'eldstal', 'jarnyxa', 'jarnkniv', 'lie', 'spanne', 'spanne_jarn', 'las'], 'redskapen av järn (steg 12.2.10–12.2.17) smids i smedjan, nivå 5–6, och kräver järnet; scenarierna jarnredskap, jarnsmycke, isborr, sag, ullsax, jarnnal, hacka, gryta och las prövar dem'],
-  [['torv'], 'torven (system 12.2) grävs med benspaden i myren, och både benspaden och en myr nära byn är sällsynta; scenariot torv prövar den'],
+  [['torv', 'blottorv'], 'torven (system 12.2) grävs med benspaden i myren, och både benspaden och en myr nära byn är sällsynta; scenariot torv prövar den'],
   [['drejskiva'], 'drejskivan (steg 12.4.1) är en teknik på nivå 4 efter lerkrukan och stenhuggarplatsen; scenariot drejskiva prövar den'],
   [['fyll_lampa'], 'oljelampan (steg 12.4.2) kräver brännolja och en lampa; scenarierna brannolja och oljelampa prövar den'],
   [['stol', 'sang'], 'stolen och sängen (steg 12.4.3–12.4.4) görs vid snickarbänken, nivå 4; scenarierna stol och sang prövar dem'],
@@ -167,7 +170,24 @@ for (const [ks, why] of [
   [['utedass'], 'utedasset (steg 12.4.9) är en teknik på nivå 5 efter latrinen och klyvplatsen; scenariot utedass prövar det'],
   [['sjukstuga'], 'sjukstugan (steg 12.4.10) är en teknik på nivå 5 efter halmbädden och örtteet; scenariot sjukstuga prövar den'],
   [['fyrfat'], 'fyrfatet (steg 12.4.11) är en teknik på nivå 4 efter lerkrukan, och elden i det tänds bara när det är kallt inne; scenariot fyrfat prövar det'],
+  [['maltid', 'sate', 'satta', 'pall'], 'måltiden vid bordet kräver ett bord, och pallen snickarbänken; testbyarna efter tändningen på 2 minuter (fasens Balans 12.6) är små och bygger inga bord på 50 dygn, eftersom bordet väger lätt mot latrinen, vattnet och kläderna, utan att någon gräns bryts; scenarierna bord, maltidsniva och stol prövar dem'],
+  [['klaAv'], 'ett varmt plagg tas av bara när någon har för varmt i det (svalkan, steg 13.8.1), och testbyarna har få plagg; scenariot svalaplagg prövar det'],
+  [['plog'], 'plogen (steg 13.7.2) görs bara när byn har ett dragdjur och ett fält, och dragdjuren kommer med handlaren; scenariot plog prövar den'],
+  [['klaPa'], 'ett varmare plagg tas på bara när någon fryser och har ett plagg över, och testbyarna i fasens Balans (12.6) har få plagg; scenarierna kladvarme och klader prövar det'],
+  [['bagborr', 'hylla', 'skinnklader'], 'bågborren, hyllan och skinnkläderna är tekniker på nivå 3–4 som de små testbyarna i fasens Balans (12.6) inte kommer på på 50 dygn, utan att någon gräns bryts; scenarierna bagborr, forvaring och klader prövar dem'],
+  [['staket'], 'staketet runt fältet sätts bara när djur äter av ett sått fält, och få testbyar sår; scenariot staket prövar det'],
+  [['varna'], 'man varnar de andra bara när rövare eller vargar är nära och någon inte hört larmet; scenarierna larm och larm2 prövar det'],
+  [['skramma'], 'fågelskrämman sätts upp på ett sått fält när fåglarna äter av det, och få testbyar sår; scenariot skadedjur prövar den'],
+  [['ortPlocka'], 'örten plockas ur en lerkruka med örter, och krukorna är sällsynta; scenariot ortkruka prövar det'],
+  [['oljelampa'], 'oljelampan (steg 12.4.2) formas av lera när byn har brännolja; scenariot oljelampa prövar den'],
+  [['resa', 'silver'], 'en resa (system 11.5) börjar när en nyfiken och modig bybo med mat över hört rykten om en plats, och testbyarna i fasens Balans (12.6) har sällan mat över; silvret kommer från resorna och handeln; scenarierna samlaresa och silvergruva prövar dem'],
+  [['plundra'], 'rövarna plundrar bara en by de besegrat, och i testbyarna vinner de sällan på 50 dygn; scenariot plundring prövar det'],
   [['penna'], 'fjäderpennan (steg 12.4.14) skärs när någon ska skriva, och att skriva kräver pergamentet, nivå 6; scenariot skriva prövar den'],
+  [['farga', 'fargning', 'mara', 'vejde', 'vejdefron', 'krapp'], 'färgningen (steg 13.3.2) är en teknik på nivå 5 efter örtköket och vävstolen, och vejden och krappen kommer från handlaren; scenariot farg prövar den'],
+  [['dryckeshorn'], 'dryckeshornet (steg 13.4.1) görs av djurhorn när byn har druckit öl, mjöd eller vin, och testbyarna brygger sällan; scenariot djurhorn prövar det'],
+  [['jarnpilar', 'smida_pilar'], 'järnpilarna (steg 13.4.2) smids vid smedjan av den som kan Pilbåge, en sen teknik; scenariot jarnpil prövar dem'],
+  [['tjara'], 'tjäran (steg 13.5.1) stryks på trä som står ute när skyddet sparar mer än tjäran kostar, och testbyarna har få väggar av timmer och få bryggor; scenariot tjara prövar det'],
+  [['syra_kal', 'syra_fisk', 'syrning', 'surkal', 'surfisk', 'torrsvamp', 'torrappel', 'torrrolleka'], 'syrningen (steg 13.6.2) är en teknik på nivå 4 som kommer genom försök, och torkningen av svamp, äpplen och rölleka (13.6.1) bara när byn har överskott; scenarierna syrat och torkat prövar dem'],
 ] as [string[], string][]) for (const k of ks) SALLSYNT[k] ??= why;
 
 // aldrig: allt i registren används, i minst en av testbyarna
@@ -220,7 +240,8 @@ const teknik: Iakttagare<TeknikM> = {
   },
   slut: (s, m) => { m.levande = living(s).length; for (const id of ['rep', 'yxa']) m.kan[id] = living(s).filter(p => knows(p, id)).length; },
   // en teknik som någon redan kunde i en tidigare bit räknas från den biten
-  ihop: (a, b) => ({ forst: { ...b.forst, ...a.forst }, innan: union(a.innan, b.innan), kan: b.kan, levande: b.levande }),
+  // (också om den som kunde den sedan dött eller flyttat, så att ingen kan den i den senare biten)
+  ihop: (a, b) => ({ forst: { ...b.forst, ...a.forst }, innan: union(a.innan, Object.fromEntries(Object.keys(b.innan).filter(k => a.forst[k] === undefined).map(k => [k, 1 as const]))), kan: b.kan, levande: b.levande }),
   kolla: byar => {
     const d = (m: TeknikM, k: string) => m.forst[k] === undefined ? 'aldrig' : `dygn ${m.forst[k].toFixed(1)}`;
     return [

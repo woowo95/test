@@ -330,10 +330,6 @@
 // varldkarta.json, där varje punkt är färgens nummer i paletten.
 (() => {
   const RAMPER = ['kol', 'jord', 'senap', 'rost', 'oliv', 'barr', 'skiffer', 'ben'], K = VARLDKARTA;
-  VAL.push({ id: 'f11_pergament', namn: 'Världskartan på pergament', typ: 'janej', slag: [], vad: 'Steg 11.9.2: världskartan ritas som en gammal karta på pergament: landet ljust, kusten ett bläckstreck med ett eko ute i havet, havet blått med vågstreck, floderna som slingrande linjer, lövträd i skogen, granar tätt i den täta skogen, tuvor och vattenstreck på myren och berg med en skuggsida. Rutorna syns inte längre, kusten och kanterna mellan marksorterna är rundade. Överst som kartan ser ut i spelet nu, nederst förslaget, samma utsnitt av en värld ur spelet. Platsernas tecken, namnen, kompassrosen och ramen kommer i nästa steg. Ja eller nej?', versioner: [{ text: 'Överst den nuvarande världskartan, nederst samma utsnitt på pergament.', w: K.w, h: K.h * 2 + 4, rita: B => {
-    const rad = (rader, y0) => rader.forEach((r, y) => { for (let x = 0; x < r.length; x++) { const n = parseInt(r[x], 32); B.satt(x, y0 + y, B.P.i(RAMPER[n >> 2], n & 3)); } });
-    rad(K.nu, 0); rad(K.ny, K.h + 4);
-  } }] });
 })();
 
 // Steg 11.9.3: platsernas tecken på pergamentkartan (en per sort i LANDMARKEN), tre idéer: bläckbilder från sidan,
@@ -396,11 +392,6 @@
     for (let y = 0; y < 64; y++) for (let x = 0; x < 104; x++) { const g = ((x * 374761393 + y * 668265263) >>> 0) % 97; B.satt(x, y, g < 3 ? P.i('ben', 1) : P.i('ben', 2)); }
     SORTER.forEach((k, i) => mitt(B, rad(k), 4 + (i % 5) * 20, 4 + Math.floor(i / 5) * 20));
   } });
-  VAL.push({ id: 'f11_platstecken', namn: 'Platsernas tecken på pergamentkartan', typ: 'tre', slag: [], vad: 'Steg 11.9.3: varje sort av plats i världen får ett eget tecken på pergamentkartan. Alla femton på ett stycke pergament, från vänster och nedåt: by, handelsläger, rövarläger, utpost, ruin, helig plats, gravhög, runsten, fyndplats, karavanrest, gömma, bro, spång, röjd passage och rastplats. Namnen står under tecknen på kartan.', versioner: [
-    VERSION('Bläckbilder från sidan: ett hus, ett tält med vimpel, korsade spjut över en eld, ett vakttorn, en rasad mur, en rest sten, en hög, en runsten, ett rött kryss, ett vagnshjul, ett knyte, en bro, en spång, en yxa i en stubbe och en lägereld, i bläck med lite rött.', k => BLACK[k]),
-    VERSION('Kartsymboler som på gamla kartor: ringar, trianglar, streck och prickar i bläck, med rött för rövarna, fynden och elden.', k => SYMBOL[k]),
-    VERSION('Små sköldar i sortens färg med ett ljust märke: röd för byn, gul för handeln och fynden, mörk för rövarna, brun för det som byggs, grön för de heliga platserna och gravarna.', skold),
-  ] });
 })();
 
 // Steg 11.9.4: kartans utsmyckning: ramen, kompassrosen och bilderna i havet, tre idéer, ritade på samma utsnitt av
@@ -500,11 +491,6 @@
     for (let x = SX - 2; x < SX + 30; x += 2) B.satt(x, SY + 12, P.i('skiffer', 2));
   }
   const VERSION = (text, f) => ({ text, w: W, h: H, rita: B => { bas(B); f(B); } });
-  VAL.push({ id: 'f11_utsmyckning', namn: 'Pergamentkartans ram, kompassros och havets bilder', typ: 'tre', slag: [], vad: 'Steg 11.9.4: pergamentkartan får en ram runt kanten, en kompassros och bilder ute i havet, som på gamla kartor. Samma utsnitt av en värld ur spelet i alla tre; rosen står i havet uppe till vänster och bilden i havet uppe till höger. I spelet står rosen och bilderna där det finns öppet hav.', versioner: [
-    VERSION('Ett runband runt kanten med runor mellan två bläcklinjer och röda knutar i hörnen, en åttauddig ros med röd nordspets och en havsorm.', v1),
-    VERSION('En enkel dubbel bläcklinje med små rutor i hörnen, en ros som en ring med kors och en röd pil mot norr, och ett långskepp med randigt segel.', v2),
-    VERSION('Ett band av brunt flätverk runt kanten, solkorset i guld som kompass med en röd spets mot norr, och en val som blåser.', v3),
-  ] });
 })();
 
 // fas 11: ruinens murar och karavanens vagnrest på den lilla kartan (steg 11.13.26). När ett sällskap kommer till en ruin står
@@ -520,51 +506,6 @@
     const kant = []; for (let x = 0; x < 5; x++) kant.push([x, 0]); for (let y = 1; y < 4; y++) kant.push([4, y]); for (let x = 3; x >= 0; x--) kant.push([x, 3]); for (let y = 2; y >= 1; y--) kant.push([0, y]);
     kant.forEach(([x, y], i) => { if (!LUCKA.includes(i)) ritaSprite(B, rader, L, 8 + x * 16, 4 + y * 16); });
   } });
-  VAL.push({ id: 'f11_ruinmur', namn: 'Ruinens rasade mur', typ: 'tre', slag: [], vad: 'Steg 11.13.26: på den lilla kartan för en ruin står byns hus kvar som murar, med luckor där de rasat. Det som finns kvar av byns saker ligger inne i husen. En ruta per murbit, snett ovanifrån som kartan, på gräs; här ett helt hus på 5 × 4 rutor med fyra luckor', versioner: [
-    HUS('En torrmur av gråsten: kantiga stenar staplade i två lager med fogar, ovansidan ljus och framsidan mörkare, och en sten som fallit ner framför.', [
-      '', '', '', '',
-      '..kkkk.kkkkk....',
-      '.kSSSSkSSSSSk.kk',
-      'kSSsSSkSsSSSkkSk',
-      'kssssskssssskSsk',
-      'kkkkkkkkkkkkkkkk',
-      'kdsdkdsddkdsdkdk',
-      'kddkdddkddddkddk',
-      'kkkkkkkkkkkkkkkk',
-      'kdddkdsddkddsddk',
-      'kkkkkkkkkkkkkkkk',
-      '.^^^^^^^^^^kkk^.',
-      '..........kSsk..',
-    ]),
-    HUS('Murkna timmerstockar som legat i knut: tre stockar på varandra, den mittersta avbruten, med mossa på den översta och i springorna.', [
-      '', '', '', '',
-      '.gGgg...........',
-      'kkkkkkkkkkkkkkk.',
-      'kJJlJJJJJlJJJJJk',
-      'kjjjjjjjjjjjjjjk',
-      'kkkkkkkkkkkkkkk.',
-      '.kJJJJlJJJJk....',
-      '.kjjjjjjjjjk.gG.',
-      'kkkkkkkkkkkkkkkk',
-      'kJJJJJJJlJJJJJJk',
-      'kjjjjjjjjjjjjjjk',
-      'kkkkkkkkkkkkkkkk',
-      '.^^^^^^^^^^^^^^.',
-    ]),
-    HUS('En låg vall av jord och torv där väggen stått, övervuxen med gräs, med en och annan sten som sticker upp ur jorden.', [
-      '', '', '', '', '', '',
-      '....kkkkkkk.....',
-      '..kkGGgGGGGkk...',
-      '.kGGgGGGGgGGGk..',
-      'kGgGGGkkGGGgGGk.',
-      'kgggggkSkggggggk',
-      'kJJjJJkskJJJjJJk',
-      'kjJJjJJkJjJJJjjk',
-      '.kkkkkkkkkkkkkk.',
-      '..^^^^^^^^^^^^..',
-      '',
-    ]),
-  ] });
   // gravhögen (steg 11.13.28): 3 × 2 rutor vid mitten av den lilla kartan, gåvorna ligger inne i den. Raderna räknas ur formen,
   // som är symmetrisk kring mitten
   const HOG = (text, rader) => ({ text, w: 64, h: 48, rita: (B) => { gras(B, 64, 48); ritaSprite(B, rader, L, 8, 8); } });

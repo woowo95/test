@@ -9,15 +9,15 @@ import { Act, HOUR, Person, State, Task } from './typer';
 import { getable, takeMaterial } from './behov';
 import { count } from './folk';
 import { halvOf } from './agande';
-import { amountOf, capacity, dropLoad, iHelaForradet, iRackhall, load, mayTake, helaAv, narmasteMed, ownsAmount, use, type Uttag, vedIBordan, forstaMat } from './lager';
+import { amountOf, capacity, dropLoad, iBordan, iHelaForradet, iRackhall, load, mayTake, helaAv, narmasteMed, ownsAmount, use, type Uttag, vedIBordan, forstaMat } from './lager';
 import { vardHamtas } from './halsa';
 import { fartVid, halvbyggd, nastaAv, stationDef, tillbehorDef } from './stationer';
 import { PROJEKT } from './projekt';
 import { DORRAR, type DorrSlag } from './byggnad';
 import { troOf } from './religion';
 import { addDel, kyrkaId, sumOf } from './egendom';
-import { SAKER, viktOf } from './saker';
-import { DJURARTER, GORS, REP_TIMME, borjaTool, djurKvar } from './redskap';
+import { SAKER, isTool, viktOf } from './saker';
+import { DJURARTER, GORS, REP_TIMME, borjaTool, djurKvar, forstRuttnar, verktygFor } from './redskap';
 import { REST, RESTER, resterOver } from './rester';
 import { farorNu, heligtAvstar } from './kultlatt';
 import { villHaAv } from './forradsmal';
@@ -35,6 +35,7 @@ import { ortSattaVal } from './kruka';
 import { BRYGD, BRYGG, bryggVal } from './brygg';
 import { SKRIFT } from './skriftTal';
 import { resaHamtas } from './resa';
+import { fargaHamtas } from './farg';
 
 export interface Hamtas { av: (s: State, p: Person, tk: Task) => Record<string, number> | undefined; byns?: boolean; fran?: (s: State, p: Person, tk: Task) => Fran } // fran = den som äger det (en tro, steg 10.3.19), för alla slag eller per slag
 // vems det som hämtas är: en ägare för allt, eller per slag en ägare och hur många av dem som är hens (resten tas som vanligt)
@@ -43,17 +44,23 @@ export type Fran = number | Record<string, [number, number]> | undefined;
 const agareAv = (fran: Fran, k: string, tk: Task) => typeof fran !== 'object' ? fran : fran[k] && (tk.ag?.[k]?.[fran[k]![0]] ?? 0) < fran[k]![1] - 1e-9 ? fran[k]![0] : undefined;
 const agareAlla = (fran: Fran, slag: string[], tk: Task) => typeof fran !== 'object' ? fran : Object.fromEntries(slag.flatMap(k => { const a = agareAv(fran, k, tk); return a === undefined ? [] : [[k, a]]; }));
 export const HAMTAS: Partial<Record<Act, Hamtas>> = {};
-// ett hantverk (GORS): materialet efter receptet, när hen inte redan påbörjat det (det påbörjade har materialet i sig)
-for (const act of Object.keys(GORS) as Act[]) HAMTAS[act] = { av: (s, p, tk) => { if (halvOf(s, p, GORS[act]!)) return undefined; const k = borjaTool(s, p, act, tk.tool); return k ? SAKER[k]?.skaffa?.av : undefined; } };
+// ett hantverk (GORS): materialet efter receptet, när hen inte redan påbörjat det (det påbörjade har materialet i sig), och
+// verktyget när det är ett material (stenen bensylen slipas mot): det följer med till platsen och bärs hem igen
+for (const act of Object.keys(GORS) as Act[]) HAMTAS[act] = { av: (s, p, tk) => {
+  if (halvOf(s, p, GORS[act]!)) return undefined;
+  const k = borjaTool(s, p, act, tk.tool), av = k ? SAKER[k]?.skaffa?.av : undefined, v = k ? verktygFor(s, k) : undefined;
+  return av && v && !isTool(v) ? { ...av, [v]: (av[v] ?? 0) + 1 } : av;
+} };
 // en station eller ett tillbehör till en möbel: receptet när den inte redan är påbörjad (stationer.ts), av det tron äger när
 // det är trons möbel
 HAMTAS.station = { av: (s, p, tk) => { const k = tk.tool ?? '', h = stationDef(k) ? halvbyggd(s, k, p) : undefined, av = stationDef(k) ? nastaAv(k, h) : {}; return Object.keys(av).length ? av : undefined; }, /* en station i delar: nästa del (steg 12.1.17) */ fran: (s, p, tk) => { const tro = stationDef(tk.tool ?? '')?.tro ? troOf(s, p.tro) : undefined; return tro ? kyrkaId(tro.id) : undefined; } };
 HAMTAS.tillbehor = { av: (_s, _p, tk) => tillbehorDef(tk.tool ?? '')?.av };
+HAMTAS.farga = { av: fargaHamtas }; // växterna till färgbadet (farg.ts, steg 13.3.2)
 // dörren som hängs i en öppning (bygg.ts, steg 2.2.16 och 3.7.21): dörrens material
 HAMTAS.dorr = { av: (_s, _p, tk) => DORRAR[tk.tool as DorrSlag]?.av };
-// att slakta och rensa (redskap.ts bearbeta): den första arten som finns, så mycket som hinns
+// att slakta och rensa (redskap.ts bearbeta): arten som ruttnar först, så mycket som hinns
 const djurHamtas: Hamtas = { av: (s, p, tk) => {
-  const svalt = farorNu(s).svalt, a = DJURARTER.find(q => q.act === tk.act && djurKvar(s, q) > 0 && !heligtAvstar(s, p, q.art, svalt));
+  const svalt = farorNu(s).svalt, a = forstRuttnar(s, DJURARTER.filter(q => q.act === tk.act && djurKvar(s, q) > 0 && !heligtAvstar(s, p, q.art, svalt))); // det som ruttnar först (steg 13.8.13)
   // hela djur: det som hinns, avrundat uppåt till ett helt djur (en del av ett djur går inte att slakta)
   const n = a ? Math.ceil(Math.min((tk.until - s.now) / HOUR * a.timme * redskapTal(a.act, tk.tool).fart, djurKvar(s, a)) - 1e-9) * a.mat : 0; // järnkniven (steg 12.2.6)
   return n > 0 ? { [a!.sak]: n } : undefined;
@@ -111,6 +118,8 @@ HAMTAS.ritual = { av: (s, p) => ritualMat(s, p)?.av, fran: (s, p) => ritualMat(s
 const INGEN_FARA = { kyla: false, gras: 0 };
 const hamtasFor = (act: Act): Hamtas | undefined => HAMTAS[act] ?? (PROJEKT[act]?.recept ? { av: (s, p) => PROJEKT[act]!.recept!(s, p, INGEN_FARA)?.av } : undefined);
 
+// en stack där p kan få något av slagen (getable), som när veden till elden hämtas: inte en stack med bara kyrkans
+const fanns = (s: State, p: Person, slag: string[]) => (x: number, y: number) => iRackhall(x, y, () => slag.some(k => getable(s, p, k) - iBordan(p, k) >= 1));
 // det av materialet som inte finns inom räckhåll från där p står, eller i det hen bär
 function saknas(s: State, p: Person, av: Record<string, number>) {
   const ut: Record<string, number> = {};
@@ -128,7 +137,7 @@ function hamtaForstNu(s: State, p: Person, tk: Task) {
   // fler vändor: det som bars hit läggs vid platsen, där det ligger inom räckhåll, och hen går efter resten. Hamnade det
   // inte inom räckhåll (rutan var full) börjar arbetet med det som finns
   if (tk.vanda) { const fore = sumOf(sak); laggVid(s, p, tk); sak = saknas(s, p, av); if (sumOf(sak) > fore + 1e-9) return false; }
-  const dit = Object.keys(sak).length ? narmasteMed(s, p, Object.keys(sak), agareAlla(hamtasFor(tk.act)?.fran?.(s, p, tk), Object.keys(sak), tk)) : undefined;
+  const dit = Object.keys(sak).length ? narmasteMed(s, p, Object.keys(sak), agareAlla(hamtasFor(tk.act)?.fran?.(s, p, tk), Object.keys(sak), tk), fanns(s, p, Object.keys(sak))) : undefined;
   if (!dit) return false; // det finns inom räckhåll, eller inte i någon stack (hos någon, i en kista): arbetet börjar som det är
   tk.site = { x: tk.tx, y: tk.ty }; tk.tx = dit.x; tk.ty = dit.y; tk.phase = 'go'; tk.hamta = sak;
   count(s, 'hamtar');
@@ -167,7 +176,7 @@ export function hamtat(s: State, p: Person, tk: Task) {
     }
   });
   const fattas = Object.keys(av).filter(k => av[k] - (tk.items?.[k] ?? 0) > 1e-9), ryms = (k: string) => load(tk, s) + viktOf(k) <= capacity(s, p) + 1e-9;
-  const kvar = fattas.filter(ryms), nasta = fick > 0 && kvar.length ? narmasteMed(s, p, kvar, agareAlla(fran, kvar, tk)) : undefined;
+  const kvar = fattas.filter(ryms), nasta = fick > 0 && kvar.length ? narmasteMed(s, p, kvar, agareAlla(fran, kvar, tk), fanns(s, p, kvar)) : undefined;
   if (nasta) { tk.tx = nasta.x; tk.ty = nasta.y; tk.hamtad = 1; return; } // det hen redan bär räknas på vägen till nästa stack
   const site = tk.site!;
   tk.tx = site.x; tk.ty = site.y; tk.site = undefined; tk.hamta = undefined; tk.phase = 'go';

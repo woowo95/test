@@ -1,4 +1,6 @@
-import { antal, bestamd, och } from './ord';
+import { antal, bestamd, och, tal } from './ord';
+import { notis } from './notiser';
+const stor = (t: string) => t[0].toUpperCase() + t.slice(1);
 // Bränningarna (steg 12.2.1, Landskapet och järnet: Järnet: Kolmilan, Bränningarna). Kolmilan (och blästerugnen i 12.2.3) är en
 // station där något läggs in, brinner en känd tid efter klockan och tas ut. Varje sort är en rad i registret BRANNINGAR: vad
 // som läggs in, vad som kommer ut, hur länge det går och hur lång tid det tar att ladda och tända och att tömma. Inget räknas
@@ -11,8 +13,9 @@ import { antal, bestamd, och } from './ord';
 // då ved till milan, eftersom projektets recept är bränningens (BRANNINGAR). En mila som brunnit klart töms av den som har tid
 // (raden kolmila i ARBETEN, val.ts)
 import { balans } from './balans';
+import { kronikaBer, personFalt } from './berattelser';
+import { tecken } from './religion';
 import { ALDER, ageOf, count, forstaGang, log, annanGor } from './folk';
-import { rnd } from './slump';
 import { hourOf, isLight } from './tid';
 import { HOUR, Person, State, Task } from './typer';
 import { Station, isKlar, stationerOf, vidStation } from './stationer';
@@ -20,10 +23,11 @@ import { knows } from './teknik';
 import { getable, takeMaterial } from './behov';
 import { torrVed } from './blotved';
 import { dropLoad } from './lager';
-import { grundvarde } from './varde';
+import { grundvarde, vardeUr } from './varde';
 import { laggTillProjekt } from './projekt';
 
 export const BRANN = balans('brann', {
+  minUtfall: 0.1, // kolet och järnet som projekt: det väntade utfallet delar kostnaden, men räknas aldrig under så här mycket
   kolVed: 20, // en kolmila tar så här mycket torr ved ...
   kolUt: 10, // ... och ger så här mycket kol
   kolTim: 4, // milan brinner så här många timmar efter klockan
@@ -65,6 +69,9 @@ export const BRANNINGAR: Record<string, BranningDef> = {
     tillsyn: [1, 2, 3], miss: { jarn: BRANN.ugnMiss }, tillsyn_text: 'Trampar bälgen vid blästerugnen.',
   },
 };
+// det som kommer ut har värdet av det som går in och arbetet vid stationen (laddningen, tömningen och tillsynerna), delat på
+// det som kommer ut (varde.ts)
+for (const d of Object.values(BRANNINGAR)) for (const [k, n] of Object.entries(d.ut)) vardeUr(k, { av: d.in, min: d.ladda + d.tomma + d.tillsyn.length * BRANN.tillsynMin, ger: n, tek: d.tek });
 // bränningen i en station: sorten, när den tändes och när den är klar
 export interface Branning { st: number; b: string; t0: number; slut: number; klar?: 1; sedd?: number; mi?: number; miss?: number } // sedd och mi: tillsynerna som gjorts och missats (bitar), miss: hur många som missats (steg 12.2.2)
 export const branningarOf = (s: State) => s.branningar ?? [];
@@ -78,7 +85,7 @@ const harIn = (s: State, p: Person, d: BranningDef) => Object.entries(d.in).ever
 export function laddbar(s: State, p: Person, b: string) {
   const d = BRANNINGAR[b];
   if (!d || ageOf(p, s.now) < ALDER.vuxen || !knows(p, d.tek) || !harIn(s, p, d)) return undefined;
-  return branningsStationer(s, b).find(t => !branningI(s, t));
+  return branningsStationer(s, b).find(t => !branningI(s, t) && !annanGor(s, p, d.act, t.id)); // (den som någon annan redan går till väljs inte)
 }
 // en station vars bränning är klar och ska tömmas
 export const attTomma = (s: State) => branningsStationer(s).find(t => { const b = branningI(s, t); return !!b && b.slut <= s.now; });
@@ -111,7 +118,12 @@ export function branningKlar(s: State, p: Person, tk: Task) {
   for (const [k, n] of Object.entries(ut)) if (n > 0) tk.items[k] = (tk.items[k] ?? 0) + n;
   dropLoad(s, tk, p.x, p.y);
   for (const [k, n] of Object.entries(ut)) count(s, 'brant_' + k, n);
+  // notisen om det som gick förlorat när ingen såg till bränningen (steg 13.1.11)
+  const borta = Object.entries(d.ut).map(([k, n]) => [k, Math.floor(n - (ut[k] ?? 0))] as const).filter(([, n]) => n >= 1);
+  if (b.miss && borta.length) notis(s, 'branning', `${stor(bestamd(d.namn)[0])} gav ${och(Object.entries(ut).filter(([, n]) => n >= 1).map(([k, n]) => antal(Math.floor(n), k))) || 'ingenting'}. ${stor(och(borta.map(([k, n]) => antal(n, k))))} gick förlorat, eftersom ingen såg till ${bestamd(d.namn)[0]} ${b.miss === 1 ? 'en gång' : `${tal(b.miss)} gånger`} när det behövdes.`, [p.id], { x: t.x + 1, y: t.y + 1 });
   if (forstaGang(s, 'branningTomd_' + id)) log(s, `${p.name} ${d.tom} byns första ${d.namn.toLowerCase()} och tog ut ${och(Object.entries(ut).filter(([, n]) => n >= 1).map(([k, n]) => antal(n, k))) || 'ingenting'}.`, 'world', [p.id]);
+  if (id === 'blasterugn' && (ut.jarn ?? 0) >= 1) tecken(s, p, 'jarn'); // det glödande järnet är ett tecken (steg 13.1.9)
+  if (id === 'blasterugn' && (ut.jarn ?? 0) >= 1 && forstaGang(s, 'forstaJarn')) kronikaBer(s, 'k_forstaJarn', p.id, personFalt(p)); // (steg 13.1.8)
 }
 // det som kommer ut med så många missade tillsyner (aldrig under noll)
 export const utfall = (d: BranningDef, miss: number) => Object.fromEntries(Object.entries(d.ut).map(([k, n]) => [k, Math.max(0, n - miss * (d.miss[k] ?? 0))]));
@@ -155,6 +167,12 @@ export function passaVal(s: State, p: Person) {
   }
   return undefined;
 }
+// det som står på spel vid tillsynen n (steg 13.8.10): det som går förlorat om den missas (miss), och mer ju närmare den
+// sista stunden (dubbelt när tiden nästan är ute). Raden passa i ARBETEN väger med det
+export function passaVikt(s: State, b: Branning, n: { fran: number; till: number }) {
+  const miss = Object.values(BRANNINGAR[b.b].miss).reduce((x, y) => x + y, 0);
+  return miss * (1 + Math.min(1, Math.max(0, (s.now - n.fran) / (n.till - n.fran))));
+}
 export const passaUppgift = (v: NonNullable<ReturnType<typeof passaVal>>) => ({ act: 'passa' as const, text: v.d.tillsyn_text, min: BRANN.tillsynMin, spot: vidStation(v.t), ref: v.t.id });
 // tillsynen är gjord (KLAR i steg.ts): den räknas, om den inte hann bli missad medan den gjordes
 export function passaKlar(s: State, p: Person, tk: Task) {
@@ -187,14 +205,14 @@ export function branningSteg(s: State) {
 }
 // en bränning av sorten b som brunnit klart och ska tömmas, för den vuxna p: att ta ut det som kommit ut är arbete för samma
 // projekt som att ladda, och har kolets eller järnets värde
-const klarI = (s: State, p: Person, b: string) => ageOf(p, s.now) >= ALDER.vuxen ? branningsStationer(s, b).find(t => { const x = branningI(s, t); return !!x && x.slut <= s.now; }) : undefined;
+const klarI = (s: State, p: Person, b: string) => ageOf(p, s.now) >= ALDER.vuxen ? branningsStationer(s, b).find(t => { const x = branningI(s, t); return !!x && x.slut <= s.now && !annanGor(s, p, BRANNINGAR[b].act, t.id); }) : undefined;
 // kolet som projekt: ingen egen brist, men den som vill ha något som kräver kol kolar, och vill då ha ved till milan (receptet)
 laggTillProjekt({
   kol: {
     namn: 'Kol', vikt: 1,
     brist: () => 0,
-    kostnad: () => grundvarde('kol') * BRANN.kolUt,
-    kan: (s, p) => !!klarI(s, p, 'kolmila') || !!laddbar(s, p, 'kolmila') && rnd(s, 'val', p) < vantatUtfall(BRANNINGAR.kolmila, s.now), // hellre när tillsynen faller på dagen (steg 12.2.2)
+    kostnad: s => grundvarde('kol') * BRANN.kolUt / Math.max(BRANN.minUtfall, vantatUtfall(BRANNINGAR.kolmila, s.now)), // hellre när tillsynen faller på dagen (steg 12.2.2): det väntade utfallet delar kostnaden
+    kan: (s, p) => !!klarI(s, p, 'kolmila') || !!laddbar(s, p, 'kolmila'),
     recept: (s, p) => klarI(s, p, 'kolmila') ? { av: {} } : knows(p, 'kolmila') && branningsStationer(s, 'kolmila').some(t => !branningI(s, t)) ? { av: { ...BRANNINGAR.kolmila.in } } : undefined,
     uppgift: (s, p) => { const t = klarI(s, p, 'kolmila') ?? laddbar(s, p, 'kolmila'); return t && branningUppgift(s, t); },
   },
@@ -204,8 +222,8 @@ laggTillProjekt({
   jarn: {
     namn: 'Järn', vikt: 1,
     brist: () => 0,
-    kostnad: () => grundvarde('jarn') * BRANN.ugnUt,
-    kan: (s, p) => !!klarI(s, p, 'blasterugn') || kanSmidaOm(s, p) || !!laddbar(s, p, 'blasterugn') && rnd(s, 'val', p) < vantatUtfall(BRANNINGAR.blasterugn, s.now), // järnskrotet smids om först (steg 12.2.7)
+    kostnad: s => grundvarde('jarn') * BRANN.ugnUt / Math.max(BRANN.minUtfall, vantatUtfall(BRANNINGAR.blasterugn, s.now)), // som kolet
+    kan: (s, p) => !!klarI(s, p, 'blasterugn') || kanSmidaOm(s, p) || !!laddbar(s, p, 'blasterugn'), // järnskrotet smids om först (steg 12.2.7)
     recept: (s, p) => klarI(s, p, 'blasterugn') ? { av: {} } : knows(p, 'blasterugn') && branningsStationer(s, 'blasterugn').some(t => !branningI(s, t)) ? { av: { ...BRANNINGAR.blasterugn.in } } : undefined,
     uppgift: (s, p) => { const k = klarI(s, p, 'blasterugn'); if (k) return branningUppgift(s, k); if (kanSmidaOm(s, p)) return omsmidUppgift(s, p); const t = laddbar(s, p, 'blasterugn'); return t && branningUppgift(s, t); },
   },

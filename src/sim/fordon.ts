@@ -23,7 +23,7 @@ import { Tamdjur, tamArt, tamEg, tamdjurOf } from './tamdjur';
 export type Underlag = 'vag' | 'stig' | 'terrang' | 'sno' | 'is';
 // en rad: vem som drar, lasset (för den som drar själv) eller lasset per steg av dragdjurets styrka, farten på varje underlag som del
 // av gångfarten, om den tar det som körs i byn (det tunga, lyft i SAKER) och färdsättet på världskartan (Fardsatt i varldmark.ts)
-export interface FordonRad { sak: string; drar: 'manniska' | 'djur'; lass: number; lassPerStyrka: number; fart: Record<Underlag, number>; tar: boolean; fardsatt?: Fardsatt; namn: string; hjul?: true } // hjul: ett hjul kan gå sönder på resan (steg 12.1.144)
+export interface FordonRad { falt?: number; /* plogen: hur många gånger fortare än handen jorden bereds för varje steg av djurets styrka (steg 13.7.2) */ sak: string; drar: 'manniska' | 'djur'; lass: number; lassPerStyrka: number; fart: Record<Underlag, number>; tar: boolean; fardsatt?: Fardsatt; namn: string; hjul?: true } // hjul: ett hjul kan gå sönder på resan (steg 12.1.144)
 export const FORDON_TAL = balans('fordon', {
   kalkeLass: 60, // så mycket vikt kälken rymmer: 3 virke
   kalkeBar: 0.4, // kälkens och slädens fart på barmark, som del av gångfarten (på snö och is: 1)
@@ -32,6 +32,8 @@ export const FORDON_TAL = balans('fordon', {
   vagnTerrang: 0.5, // vagnens fart i terrängen (på väg och stig: 1)
   vagnSno: 0.1, // vagnens fart i full snö
   ridFart: 1.5, // ridsadelns fart på alla underlag, gånger hästens snabbhet (steg 11.11.4)
+  plogPerStyrka: 4, // plogen bereder fältet så här många gånger fortare än handen för varje steg av djurets styrka: oxen (4) 0,25 minuter per ruta, hästen (3) 0,33 (steg 13.7.2)
+  plogSlit: 0.003, // plogens slitage per ruta
   packPerStyrka: 20, // packsadelns lass per steg av djurets styrka: hästen (3) 60, oxen (4) 80 (steg 11.11.3)
 });
 const medar = { vag: FORDON_TAL.kalkeBar, stig: FORDON_TAL.kalkeBar, terrang: FORDON_TAL.kalkeBar, sno: 1, is: 1 };
@@ -40,6 +42,7 @@ export const FORDON: Record<string, FordonRad> = {
   slade: { sak: 'slade', namn: 'Släde', drar: 'djur', lass: 0, lassPerStyrka: FORDON_TAL.lassPerStyrka, fart: medar, tar: true },
   packsadel: { sak: 'packsadel', namn: 'Packsadel', drar: 'djur', lass: 0, lassPerStyrka: FORDON_TAL.packPerStyrka, fart: { vag: 1, stig: 1, terrang: 1, sno: 1, is: 1 }, tar: false, fardsatt: 'packdjur' }, // på resorna, aldrig i byn (steg 11.11.3)
   ridsadel: { sak: 'ridsadel', namn: 'Ridsadel', drar: 'djur', lass: 0, lassPerStyrka: 0, fart: { vag: FORDON_TAL.ridFart, stig: FORDON_TAL.ridFart, terrang: FORDON_TAL.ridFart, sno: FORDON_TAL.ridFart, is: FORDON_TAL.ridFart }, tar: false, fardsatt: 'packdjur' }, // ryttaren på resorna, aldrig i byn (steg 11.11.4)
+  plog: { sak: 'plog', namn: 'Plog', drar: 'djur', lass: 0, lassPerStyrka: 0, fart: { vag: 1, stig: 1, terrang: 1, sno: 1, is: 1 }, tar: false, falt: FORDON_TAL.plogPerStyrka }, // på fältet, aldrig med en last (steg 13.7.2)
   vagn: { sak: 'vagn', namn: 'Vagn', drar: 'djur', lass: 0, lassPerStyrka: FORDON_TAL.vagnLassPerStyrka, fart: { vag: 1, stig: 1, terrang: FORDON_TAL.vagnTerrang, sno: FORDON_TAL.vagnSno, is: FORDON_TAL.vagnTerrang }, tar: true, fardsatt: 'vagn', hjul: true }, // byns egen vagn (steg 11.11.2)
 };
 export const fordonRad = (k: string): FordonRad | undefined => FORDON[k]; // nyckeln är saken

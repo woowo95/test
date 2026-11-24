@@ -11,6 +11,7 @@
 //     eller fortsätta med sitt. Valet är en poäng ur empatin, modet, banden till dem som slåss och blodtörsten (narStridVal).
 // Steg 10.1.4 flyttar slagsmålet efter ett gräl hit; leken, brottningen, rånen och ledarstriden kommer i 10.1.7 och rövarna
 // och djuren i stegen efter.
+import { loggNamn } from './gast';
 import { balans } from './balans';
 import { KLOCKA, SLAGHINDER, nasTid } from './klocka';
 import { GANG } from './gang';
@@ -29,7 +30,7 @@ import { die } from './liv';
 import { lista, och } from './ord';
 import { handelse, larma } from './rykten';
 import { clamp, rnd } from './slump';
-import { AVSIKTER, Avsikt, Kampe, SLAGSMAL, STRID, laggTill, Strid, StridVarld, Uppstallning, efterStrid, foljet, iVarlden, nyStrid, personKampe, skilj, slagen, slitKastat, starKvar, stridRad, stridSteg, vadretIStriden } from './strid';
+import { AVSIKTER, Avsikt, Kampe, SLAGSMAL, STRID, laggTill, Strid, StridVarld, Uppstallning, efterStrid, foljet, iVarlden, nyStrid, personKampe, skilj, slagen, harSlagits, slitKastat, starKvar, stridRad, stridSteg, vadretIStriden } from './strid';
 import { ledareOf } from './styre';
 import { larmRollNu } from './roller';
 import { Act, H, HOUR, Person, SEC, State, W } from './typer';
@@ -55,7 +56,7 @@ export const KARTSTRID = balans('kartstrid', {
 // en strid som pågår på kartan. val = vad de som sett striden valt (personens id: skilja, undan eller kvar), fri = de som lämnat den
 export interface KartStrid {
   id: number; st: Strid; orsak: string; t0: number; rest: number; // rest = sekunder som inte räckt till ett helt stridssteg än
-  val?: Record<number, 'skilja' | 'undan' | 'kvar'>; fri?: number[]; skild?: number; // skild = den som gick emellan
+  svimmade?: number[]; /* de som svimmat i striden (steg B.12) */ val?: Record<number, 'skilja' | 'undan' | 'kvar'>; fri?: number[]; skild?: number; // skild = den som gick emellan
   efter?: Efter; // det som ska ske när striden är slut (registret EFTER i efterstrid.ts, steg 10.1.7)
   djur?: { k: number; art: string; id: number }[]; // djuren i striden (steg 10.1.17): kämpens id, arten och djurets id
 }
@@ -134,7 +135,7 @@ export function kartStridBorja(s: State, avsikt: Avsikt, sidor: [Person[], Perso
   (s.kartStrider ??= []).push(g);
   count(s, 'strid_' + avsikt); count(s, 'kartStrid');
   if (!sport) for (const p of [...sidor[0], ...sidor[1]]) { avbryt(s, p); stridsUppgift(s, p, orsak); } // brottaren är kvar i matchen (steg 9.2.92)
-  if (!lek && !djur.length) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova')); // de som slåss ropar (steg 3.7.11)
+  if (!lek && !djur.length) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova' && !p.gast)); // de som slåss ropar (steg 3.7.11): byns larm är bybornas, gästerna ropar det inte (steg B.3)
   return g;
 }
 
@@ -213,7 +214,7 @@ export function kartStridSteg(s: State, dtSec: number) {
   for (const g of [...s.kartStrider]) {
     const st = g.st, v = varldAv(s, g), sport = sportAv(st.avsikt);
     hjalparnaMed(s, g);
-    g.rest += dtSec;
+    g.rest += Math.min(dtSec, (s.now - g.t0) / SEC); // en strid som började i det här slaget räknar bara tiden sedan den började: annars ligger dess klocka före byns och slagen ritas för sent
     while (g.rest >= STRID.tick - 1e-9 && !st.slut) {
       g.rest -= STRID.tick;
       // kämpen är personen: platsen och blodet är personens före stridssteget ...
@@ -240,9 +241,12 @@ export function kartStridSteg(s: State, dtSec: number) {
           if (g.efter?.typ === 'rovare' && !p.gast) { p.gavSig = s.now; p.larmRoll = undefined; }
           if (p.gast && k.lage === 'ger') gastKrok.ger?.(s, p, st.avsikt); // gästen som gett upp för den som kuvar (steg 11.12.6, rovare.ts) // flydde eller gav upp för rövarna: gömmer sig sedan (rovarSkydd i rovare.ts)
           if (p.task?.act === 'strid') p.task.until = s.now;
-        } else if (k.lage === 'strid' || k.lage === 'flykt') { // den som står eller flyr är kvar i striden, också när en skada avbrutit det hen gjorde
+        } else if (k.lage === 'nere' && (p.svimmat || g.svimmade?.includes(p.id) || p.task?.act === 'buren')) { // den som svimmat ligger kvar utanför striden också när hen vaknar, och den som bärs till vården bärs vidare (steg B.12)
+          if (p.svimmat) { if (!g.svimmade?.includes(p.id)) (g.svimmade ??= []).push(p.id); if (p.task?.act === 'strid') { p.task.tx = p.x; p.task.ty = p.y; } } // kroppen och hälsan avgör vad hen gör
+          else if (p.task?.act !== 'buren' && p.task?.act !== 'vila') { avbryt(s, p); p.task = { act: 'vila', phase: 'do', tx: p.x, ty: p.y, until: s.now + (STRID.maxTid + 60) * SEC, carry: 0, why: 'Ligger kvar, har svimmat i striden' }; }
+        } else if (k.lage === 'strid' || k.lage === 'flykt' || k.lage === 'nere') { // den som står, flyr eller ligger vaken är kvar i striden, också när en skada avbrutit det hen gjorde: den som ligger går inte iväg mot vården förrän striden är slut
           if (p.task?.act !== 'strid') { avbryt(s, p); stridsUppgift(s, p, g.orsak); } else { p.task.tx = p.x; p.task.ty = p.y; }
-        } else if (p.task?.act === 'strid') { p.task.tx = p.x; p.task.ty = p.y; } // den som ligger: kroppen och hälsan avgör vad hen gör sedan
+        } else if (p.task?.act === 'strid') { p.task.tx = p.x; p.task.ty = p.y; } // den som svimmat: kroppen och hälsan avgör vad hen gör sedan
       }
     }
     if (st.slut) kartStridSlut(s, g);
@@ -284,11 +288,11 @@ function kartStridSlut(s: State, g: KartStrid) {
   stridProv.slut?.(s, g);
   const st = g.st, lek = lekAv(st.avsikt), vinnare = st.slut!.vinnare;
   const sidor = ([0, 1] as const).map(sd => st.kampar.filter(k => k.sida === sd).map(k => personAv(s, k)).filter((p): p is Person => !!p)) as [Person[], Person[]];
-  const namn = (sd: 0 | 1) => lista(sidor[sd].map(p => p.name));
+  const namn = (sd: 0 | 1) => lista(sidor[sd].map(loggNamn));
   const ids = [...sidor[0], ...sidor[1]].map(p => p.id);
   const skiljare = g.skild !== undefined ? byId(s, g.skild) : undefined;
   if (g.efter?.egen) { // den som började striden tar själv hand om följderna (rövarna)
-    for (const k of st.kampar) { const p = personAv(s, k); if (p && p.died === undefined && p.task?.act === 'strid') p.task.until = s.now; }
+    for (const k of st.kampar) { const p = personAv(s, k); if (p && p.died === undefined && (p.task?.act === 'strid' || p.task?.act === 'vila' && g.svimmade?.includes(p.id))) p.task.until = s.now; }
     avslutad(s, g, vinnare);
     EFTER[g.efter.typ]?.(s, g.efter, vinnare, g);
     return;
@@ -304,11 +308,11 @@ function kartStridSlut(s: State, g: KartStrid) {
     slitKastat(s, p, st, k);
     if (k.kryper) blodas(s, p.x, p.y, 'kryp', k.kryper * STRID.krypBlod); // släpspåret efter den som kröp undan (steg 3.7.19)
     efterStrid(s, st, k, p, mot, sidor[k.sida], o => personAv(s, o), lek, vinnare);
-    if (p.task?.act === 'strid') p.task.until = s.now; // striden är slut: hen väljer på nytt
+    if (p.task?.act === 'strid' || p.task?.act === 'vila' && g.svimmade?.includes(p.id)) p.task.until = s.now; // striden är slut: hen väljer på nytt
   }
   if (g.efter) EFTER[g.efter.typ]?.(s, g.efter, vinnare, g); // det den som började striden väntade på (steg 10.1.7)
   // vinnaren blir ett rykte i byn (steg 3.3.1): de som såg det minns det
-  if (!lek && vinnare !== -1) for (const p of sidor[vinnare]) if (p.health > 0 && alive(p) && sidor[1 - vinnare][0]) handelse(s, p, 'vannSlagsmal', sidor[1 - vinnare][0]);
+  if (!lek && vinnare !== -1 && harSlagits(st)) for (const p of sidor[vinnare]) if (p.health > 0 && alive(p) && sidor[1 - vinnare][0]) handelse(s, p, 'vannSlagsmal', sidor[1 - vinnare][0]);
   // rapporten sparas (steg 8.8.10); själva striden går inte att räkna om, för den skedde i världen
   avslutad(s, g, vinnare);
 }

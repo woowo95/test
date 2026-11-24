@@ -45,7 +45,7 @@ export function gravgava(s: State, p: Person) {
   s.ting = s.ting!.filter(t => !med.has(t));
   s.stat = s.stat ?? {}; s.stat.gravgava = (s.stat.gravgava ?? 0) + med.size;
   const kr = s.kvarlevor?.filter(k => k.k === 'kropp' && k.vem === p.id).pop();
-  if (kr) kr.med = [...med].map(t => t.k);
+  if (kr) { kr.med = [...med].map(t => t.k); kr.gods = [...med].map(t => ({ k: t.k, n: 1, c: t.c, ...(t.q !== undefined ? { q: t.q } : {}), ...(t.ber ? { ber: t.ber } : {}), t: s.now })); } // sakerna själva (steg 13.1.3)
 }
 // byta tro (steg 8.5.12): i samtal, när tron svikit en. Var och en har en tro i taget
 export const BYTA = balans('bytatro', {

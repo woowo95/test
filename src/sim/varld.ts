@@ -14,10 +14,10 @@ import { enOrd, stor } from './ord';
 import { kladNyckel } from './klader';
 import { KARTA, behoverStorreKarta, storreKarta } from './kartflytt';
 import { VAR, nyKalender } from './tid';
-import { ageOf, getRel, log, newPerson, nyPerson, startSkills } from './folk';
+import { ageOf, getRel, iMallen, log, newPerson, startSkills } from './folk';
 import { newSeder, sederTarget } from './seder';
 import { rnd } from './slump';
-import { DAY, MIN, Person, State, simulera, useMap } from './typer';
+import { DAY, HANT_SKILLS, MIN, Person, State, simulera, useMap } from './typer';
 import { startSmak } from './rykten';
 import { hogtidForm, hogtidVarde, hogtider } from './kult';
 import { newFire } from './eld';
@@ -307,6 +307,11 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     if (haft && !s.stat?.forstaTamdjur) (s.stat ??= {}).forstaTamdjur = 1;
   }],
   [67, 'det som en äldre version lagt på en eldruta (en ny station på en släckt lägereld, nödplatsen bredvid lagret) flyttas ut ur elden (steg 12.1.229)', s => ingetIElden(s)],
+  [68, 'sjukbädden tas bort, och sjukstugan är ett rum (steg 13.1.14): en sjukbädd blir en halmbädd på samma plats', s => {
+    for (const t of s.stationer ?? []) if (t.k === 'sjukbadd') (t as { k: string }).k = 'halmbadd';
+    for (const p of s.people) if (p.task?.act === 'station' && p.task.tool === 'sjukbadd') p.task = undefined;
+  }],
+  [69, 'hantverkets egna färdigheter (steg 13.9.7): smide, krukmakeri, vävning och sömnad börjar på det värde personen har i hantverket', s => { for (const p of s.people) for (const k of HANT_SKILLS) p.skill[k] ??= p.skill.hantverk ?? 0; }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }
@@ -315,7 +320,7 @@ function uppgradera(s: State) {
   useMap(s);
   if (behoverStorreKarta(s)) storreKarta(s); // först av allt, innan något räknats på den gamla kartan (steg 2.10.9, kartflytt.ts)
   for (const [n, , gor] of UPPGRADERINGAR) if ((s.v ?? 1) < n) { gor(s); s.v = n; }
-  s.people = s.people.map(nyPerson); // alla i mallens form (prestanda, nr 781, folk.ts MALL)
+  s.people = s.people.map(iMallen); // alla i mallens form (prestanda, nr 781, folk.ts MALL)
   return s;
 }
 export function pair(s: State, a: Person, b: Person, silent = false) {

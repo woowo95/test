@@ -949,6 +949,27 @@ const MDEF = {
     { t: 'Mitt i natten tände {namn} byns första eld, och mörkret drog sig undan.', om: f => f.natt === true },
     { t: 'I kylan tände {namn} byns första eld, och ingen behövde frysa den natten.', om: f => f.kallt === true },
   ],
+  // det första järnet ur blästerugnen och byns första smedja (steg 13.1.8)
+  k_forstaJarn: [
+    '{namn} tömde blästerugnen, och ur slaggen kom byns första järn.',
+    'Det var {namn} som bröt upp ugnen. Där låg en klump järn, den första byn haft.',
+    'Rött och tungt låg det i askan: {namn} hade fått fram byns första järn.',
+    'Det var {arstid} när {namn} fick fram byns första järn ur blästerugnen.',
+    'Byn samlades kring ugnen när {namn} bröt den. Där låg det första järnet.',
+    '{namn} knackade bort slaggen och höll upp byns första järn.',
+    'Efter en natt vid bälgen fick {namn} fram järn, det första byn sett.',
+    'Malmen och kolet blev järn under {namn}s händer, för första gången i byn.',
+  ],
+  k_forstaSmedja: [
+    '{namn} byggde byns första smedja, och snart hördes hammaren mot städet.',
+    'Nu hade byn en smedja. Det var {namn} som byggde den.',
+    'Vid ässjan och städet som {namn} satte upp skulle järnet smidas.',
+    'Det var {arstid} när {namn} byggde byns första smedja.',
+    '{namn} murade ässjan och ställde städet bredvid. Byn hade fått en smedja.',
+    'Byns första smedja stod klar, och det var {namn} som byggt den.',
+    'Hammarslagen ekade första gången i byn när {namn}s smedja stod klar.',
+    '{namn} gav byn en smedja, där järnet nu kunde få form.',
+  ],
   k_uppfann: [
     '{namn} var den första i byn som kunde {lara}.',
     'Ingen hade gjort det förut: {namn} kom på hur man kan {lara}.',
@@ -2394,6 +2415,39 @@ const MDEF = {
     { t: 'Det fanns alltid djur omkring {namn} när {hen} var liten.', om: iPerson },
   ],
   // rättegången (styre.ts, när tinget dömt): {namn} = den som dömdes, {ledare}, {brott}, {straff} = 'utvisade', {fri}
+  // bildstenens bild (steg 13.9.16, bildsten.ts): vad bilderna föreställer, efter motivet i BILDMOTIV. {fig} = den som avbildas
+  // ('en man', 'en kvinna', 'folket i byn'), {ting} = det som hände i bild ('en stor björn', 'lågor över taken'), {motiv} = radens id
+  b_bild: [
+    { t: '{fig} med spjut framför {ting}', om: f => f.motiv === 'strid' },
+    { t: '{fig} som lyfter yxan mot {ting}', om: f => f.motiv === 'strid' },
+    { t: '{fig} och {ting} mitt i striden', om: f => f.motiv === 'strid' },
+    { t: '{fig} med skölden höjd mot {ting}', om: f => f.motiv === 'strid' },
+    { t: '{ting} som faller, och bakom står {fig} med vapnet i handen', om: f => f.motiv === 'strid' },
+    { t: '{fig} på knä med händerna lyfta mot himlen', om: f => f.motiv === 'helig' && !f.gud },
+    { t: '{fig} som ber, och ett ljus som faller ner över {ting}', om: f => f.motiv === 'helig' && !f.gud },
+    { t: '{fig} framför {ting}, med blicken mot himlen', om: f => f.motiv === 'helig' && !f.gud },
+    { t: '{ting} över de troende', om: f => f.motiv === 'helig' && f.gud === true },
+    { t: '{ting} som stiger ner bland folket', om: f => f.motiv === 'helig' && f.gud === true },
+    { t: '{ting}, och runt omkring står folk med händerna lyfta', om: f => f.motiv === 'helig' && f.gud === true },
+    { t: '{fig} inför en stor publik', om: f => f.motiv === 'tavling' },
+    { t: '{fig} med {ting} i händerna, och folk som jublar', om: f => f.motiv === 'tavling' },
+    { t: '{fig} som står främst bland de andra, med {ting}', om: f => f.motiv === 'tavling' },
+    { t: '{fig} på en lång väg mellan berg och skog', om: f => f.motiv === 'resa' },
+    { t: '{fig} med packning på ryggen, på väg hem från {ting}', om: f => f.motiv === 'resa' },
+    { t: '{fig} och ett sällskap som vandrar mot {ting}', om: f => f.motiv === 'resa' },
+    { t: '{fig} som visar {ting} för byn', om: f => f.motiv === 'uppfinning' },
+    { t: '{fig} böjd över {ting}', om: f => f.motiv === 'uppfinning' },
+    { t: '{fig} med {ting} i händerna och folk runt omkring', om: f => f.motiv === 'uppfinning' },
+    { t: '{fig} framför {ting}', om: f => f.motiv === 'byn' },
+    { t: '{ting}, och mitt i det {fig}', om: f => f.motiv === 'byn' },
+    { t: 'byns hus och {ting}, och {fig} som står kvar', om: f => f.motiv === 'byn' },
+  ],
+  // det som ibland ristas till (steg 13.9.16): ett motiv utan något med händelsen att göra
+  b_extra: [', och över dem flyger två korpar', ', och runt bilden slingrar sig en orm', ', och i hörnet står en hjort', ', och över alltihop lyser solen', ', och vid kanten växer ett stort träd', ', och under dem springer en varg', ', och runt kanten går en flätad slinga', ', och längst ner seglar ett skepp'],
+  // ristarens gud på en sten om en strid eller en resa (steg 13.9.16): {gud} = 'guden Dunvald', {omr} = 'åskan och himlen', {i} = var anden bor
+  b_gud: [', och över dem står {gud}, som råder över {omr}', ', och bakom dem vakar {gud}', ', och {gud} håller sin hand över dem', ', och ovanför ser {gud} ner på dem', ', och i molnen syns {gud}', ', och vid deras sida går {gud}', ', och {gud} rider före dem', ', och högst upp på stenen står {gud}'],
+  // det bilderna berättar: {vad} = händelsen ('Ivar dödade en björn'), {nar} = 'en vinter', {ristare}
+  b_berattar: ['Den berättar hur {vad}.', 'Bilderna berättar hur {vad}.', 'Den berättar hur {vad}, {nar}.', 'Så minns byn hur {vad}.', '{Ristare} ristade den för att minnas hur {vad}.', 'Stenen ska minna om hur {vad}.', 'Den som kan läsa bilderna ser hur {vad}.', 'Så ristades minnet av hur {vad}, {nar}.'],
   k_ratt: [
     { t: 'Tinget dömde {namn} för att {hen} {brott}: {ledare} {straff} {honom}.', om: f => iBy(f) && !f.fri },
     { t: 'Det var {arstid} när {namn} stod inför tinget för att {hen} {brott}. {Ledare} {straff} {honom}.', om: f => iBy(f) && !f.fri },

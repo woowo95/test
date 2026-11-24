@@ -24,7 +24,7 @@ import { harMyr } from './myr';
 import { farorNu, KULT, RITUALER, type RitualId, farBliPrast, heligaFor, helga, helig, heligaKandidater, hogtidAv, hogtidNamn, hogtidNu, prastOf, prastRang } from './kult';
 import { FRAGOR, Fraga, FragaData, oppnaSed, rostaOm } from './rost';
 import { LAGAR, LagForslag, lagGaller } from './lagar';
-import { amountOf, ownMove, ownedStock, ownsAmount, ownsId, put, takeLimit, use } from './lager';
+import { amountOf, iRackhall, ownMove, ownedStock, ownsAmount, ownsId, put, takeLimit, use } from './lager';
 import { BYN, kyrkaId } from './egendom';
 import { eldPlats } from './karta';
 import { heligVarde, heligtDjurAv, heligtDjurVarde, satHeligtDjur, satMatBud } from './kultlatt';
@@ -746,12 +746,15 @@ export function forstaSkorden(s: State, p: Person, f: { offrat?: number }, k: st
   p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KYRKA.kravTro);
   tanke(p, 'forstaSkord', s.now, { v: KYRKA.kravHumor });
 }
-// handlaren välkomnas när hen kommer fram (handel.ts), en gång per besök: en hel mat ur byns förråd, och de som följer budet får en bättre relation
+// handlaren välkomnas när hen kommer fram (handel.ts), en gång per besök: en hel mat ur byns förråd, och de som följer budet får
+// en bättre relation. Handlaren går själv till maten och äter där (handel.ts), så maten tas inom räckhåll där hen står
+export const valkomnas = (s: State) => living(s).some(f => harBud(s, f, 'valkomna'));
 export function valkomnaHandlare(s: State, h: Handlare) {
   const folj = living(s).filter(f => harBud(s, f, 'valkomna'));
   if (!folj.length) return;
   for (const f of folj) { const r = gastRel(s, h, f); if (r) r.op = Math.min(100, r.op + KYRKA.framlingRel); }
-  if (MAT.anvand(s, hp(s, h)) > 0) count(s, 'handlare_valkommen');
+  const P = hp(s, h);
+  if (iRackhall(P.x, P.y, () => MAT.anvand(s, P)) > 0) count(s, 'handlare_valkommen');
 }
 import { specialHuvud } from './special';
 import { dagNr } from './tid';

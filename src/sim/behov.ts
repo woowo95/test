@@ -5,7 +5,7 @@ import { hans, honom } from './ord';
 import { upplev } from './uppvaxt';
 import { loggBer, kronikaBer, BERATT } from './berattelser';
 import { State, Person, HOUR, DAY, MIN } from './typer';
-import { FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, gruppOf, isTool, viktOf } from './saker';
+import { ERSATT, FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, gruppOf, isTool, viktOf } from './saker';
 import { ACTS, actsOf, usesTool } from './handlingar';
 import { ledareOf } from './styre';
 import { ALDER, KROPP, REL, ageOf, alive, byId, count, getRel, gjort, isKin, isParent, familjOf, livet, living, log, ovning, relKey, stat } from './folk';
@@ -16,14 +16,14 @@ import { Ting, newTing, tingOf } from './agande';
 import { kvEffekt } from './kvalitet';
 import { bordVid, moblerKrok } from './stationer';
 import { BYN, Del, addDel, sumOf } from './egendom';
-import { amountOf, helt, iBordan, slagFinns, iRackhall, urBordan, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, type Uttag, use } from './lager';
+import { amountOf, helt, iBordan, kyrkornas, slagFinns, iRackhall, iHelaForradet, urBordan, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, type Uttag, use } from './lager';
 import { eatPoison } from './fynd';
 import { ata } from './naring';
 import { ratt } from './matlagning';
 import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
 import { kroppensMat, matPerDygn } from './ekonomi';
-import { REDSKAPMAL, arMaterial, buffert, eldReserv, villHaAv } from './forradsmal';
+import { FORRADSMAL, REDSKAPMAL, arMaterial, buffert, eldReserv, villHaAv } from './forradsmal';
 import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
 import { dampning, handelse, smakMat, RYKTE } from './rykten';
@@ -59,6 +59,7 @@ export interface Behov {
 // Balanstalen (regel 8) för att fråga, stjäla, ge och byta
 export const DELA = balans('dela', {
   stjalAldrig: 17, // empati från vilken man aldrig stjäl
+  yrke: 0.1, // det arbete man gör så här stor del av sin tid är ens eget: dess material saknar man och behåller (bruket, steg 13.9.9)
   stoldOp: 15, // så mycket sämre blir relationen när stölden upptäcks
   ranAgg: 13, // rån (steg 3.7.17): den som är desperat nog att stjäla och har minst så här mycket aggression tar hellre med våld ...
   ranTakt: 1 / 3600, // ... så ofta (per sekund) hen försöker ...
@@ -161,10 +162,8 @@ export const MAT: Behov = {
   id: 'mat', namn: 'mat', slag: FOOD, minst: 0.3, mangd: portionOf,
   // det man själv äter på ett dygn, efter kroppen (kroppensMat i ekonomi.ts)
   kvar: (s, p) => kroppensMat(p, s.now),
-  // vid bordet äter man lite tidigare än annars: det är därför man satt sig där
   // i en hård by med knapp mat äter den som inte kan arbeta först när hen är hungrigare (steg 9.5.30)
-  behover: (s, p) => p.hunger < KROPP.hungrig && (p.hunger < KROPP.hungrig * VARDRATT.snal || !mindreMat(s, p, () => foodDays(s)))
-    || vidBordet(p) && p.hunger < KROPP.hungrig + KROPP.bordHunger && !mindreMat(s, p, () => foodDays(s)), genast: true,
+  behover: (s, p) => p.hunger < KROPP.hungrig && (p.hunger < KROPP.hungrig * VARDRATT.snal || !mindreMat(s, p, () => foodDays(s))), genast: true, // bordet gör inte att man äter tidigare (steg 13.8.10)
   fara: (_s, p) => p.hunger <= 0 ? 1 - p.health : 0, // man svälter när hungern är slut, och hälsan sjunker
   anvand: eat,
 };
@@ -216,10 +215,12 @@ export function needLadder(s: State, p: Person, dtSec: number) {
 }
 function behovSteg(s: State, p: Person, b: Behov, dtSec: number) {
   // det p har räknas om bara när ett byte eller en gåva gått igenom: annars är det detsamma (steg 12.1.184)
+  // Bytet och gåvan flyttar ägandet och ser hela förrådet, var p än står: den som har mat i förrådet ber ingen om den, och det
+  // den andra ger behöver inte ligga där p står. Bara det p tar och äter tas inom räckhåll (har)
   let har = hasFor(s, p, b);
-  const byns = har >= b.minst, fraga = !byns && chance(s, DELA.fragaTakt, dtSec, 'dela', p);
-  if ((fraga || (byns && b.genast)) && ownFor(s, p, b) < b.minst && tradeAround(s, p, b)) har = hasFor(s, p, b); // ett byte, före byns förråd
-  if (fraga && har < b.minst && askAround(s, p, b)) har = hasFor(s, p, b);
+  const byns = har >= b.minst, fraga = !byns && chance(s, DELA.fragaTakt, dtSec, 'dela', p) && iHelaForradet(() => hasFor(s, p, b)) < b.minst;
+  if ((fraga || (byns && b.genast)) && iHelaForradet(() => ownFor(s, p, b) < b.minst && tradeAround(s, p, b))) har = hasFor(s, p, b); // ett byte, före byns förråd
+  if (fraga && har < b.minst && iHelaForradet(() => askAround(s, p, b))) har = hasFor(s, p, b);
   if (har >= b.minst) { if (b.anvand(s, p) > 0) noticeTheft(s, p, b.id); return; }
   if (desperat(s, p, b) && ran(s, p, b, dtSec)) return 'ran';
   const v = victimOf(s, p, b);
@@ -351,15 +352,14 @@ function bynByte(s: State, a: Person, b: Person) {
 // a och b talar. Saknar någon av dem något som den andra har över? Då byter de, eller så ger den andra det. Ger true om
 // något bytte ägare
 export function askForGift(s: State, a: Person, b: Person) {
-  for (const n of BEHOV()) for (const [m, g] of [[a, b], [b, a]]) if (lacksFor(s, m, n) && ((!osams(s, g, m) && tradeFor(s, m, g, n)) || gift(s, m, g, n))) return true;
-  return !!askForTool(s, a, b) || eveningTrade(s, a, b) || bynByte(s, a, b);
+  return !!brukByte(s, a, b, BRUK) || eveningTrade(s, a, b) || bynByte(s, a, b);
 }
 // a och b talar, och ingen av dem saknar något just nu (steg 1.4.3). Har den ena mindre mat eller ved än hen vill ha kvar
 // (b.kvar) och den andra mer, byter de när båda tjänar på det: vinsten delas (delad i byte). Samtalen hålls mest vid
 // elden på kvällar och nätter (val.ts), så det är då de flesta sådana byten blir av
 function eveningTrade(s: State, a: Person, b: Person) {
   for (const n of BEHOV()) for (const [m, g] of [[a, b], [b, a]]) {
-    const rest = Math.min(n.kvar(s, m) - ownFor(s, m, n), ownFor(s, g, n) - n.kvar(s, g));
+    const rest = Math.min(behalls(s, m, n) - ownFor(s, m, n), ownFor(s, g, n) - n.kvar(s, g)); // maten upp till den egna gränsen (steg 13.9.6)
     if (rest < n.minst) continue;
     if (byte(s, m, g, delAv(s, g, n, rest), { behov: behovAv(s, m, n.slag[0]), minst: n.minst, fara: 0, typ: n.id, utom: n.slag, delad: true })) return true;
   }
@@ -408,9 +408,17 @@ export function noticeTheft(s: State, p: Person, key: string) {
 // gåva av den i närheten som helst ger. Räcker det inte tar man av andras: en lindrig stöld, som man inte behöver vara
 // nära döden för, men som ger sämre relation (DELA.stoldLindrig) när den bestulne märker det. Den med mycket hög empati
 // tar aldrig av andras och gör då inte arbetet.
-const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= DELA.stjalAldrig;
+// gravgodset (steg 13.1.4): det som tas ur gravarna, hela saker av slaget k, högst n; grav.ts sätter kroken
+export const gravGods = { ta: (_s: State, _p: Person, _k: string, _n: number) => 0 };
+export const aldrigStjal = (s: State, p: Person) => stat(p, 'empati', s.now) >= DELA.stjalAldrig;
+// det som står i en behållare (limmet, tjäran, vätskorna: VATSKOR i vatskor.ts) tas ur behållaren när ett recept kräver det, och
+// behållaren blir kvar tom (steg 13.5.2). Behållarna är byns. Kroken sätts i val.ts
+export const vatskaMaterial = { ar: (_k: string) => false, har: (_s: State, _k: string) => 0, ta: (_s: State, _k: string, _n: number) => 0 };
 // så mycket av slaget k som p kan få till ett arbete
-export const getable = (s: State, p: Person, k: string) => (aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k)) + iBordan(p, k); // med det hen bär till arbetet (steg 11.1.74)
+// det kyrkan äger tar bara kyrkan (takeOrder i egendom.ts): det räknas inte, också för den som tar av andra i nöd
+// Det som kan användas i stället (ERSATT i saker.ts, den torkade röllekan, steg 13.6.1) räknas med
+export const getable = (s: State, p: Person, k: string): number => ERSATT[k] ? ERSATT[k].reduce((n, q) => n + getable1(s, p, q), getable1(s, p, k)) : getable1(s, p, k);
+const getable1 = (s: State, p: Person, k: string) => vatskaMaterial.ar(k) ? vatskaMaterial.har(s, k) : (aldrigStjal(s, p) ? mayTake(s, p, k) : amountOf(s, k) - kyrkornas(s, k)) + iBordan(p, k); // med det hen bär till arbetet (steg 11.1.74)
 // det p har till hands till sitt arbete av slaget k (steg 11.1.74): det hen bär dit och det som ligger inom räckhåll, utom det
 // som sparas (till elden)
 export const tillHands = (s: State, p: Person, k: string) => iBordan(p, k) + Math.max(0, iRackhall(p.x, p.y, () => getable(s, p, k) - iBordan(p, k)) - eldReserv(s, k));
@@ -427,10 +435,22 @@ export function takeRecipe(s: State, p: Person, k: string) {
 }
 // p tar n av slaget k till ett arbete; common = till byns eld eller hus (byns först). Ger vems det var. kom = var det
 // kom ifrån, nycklar som `kom` i bygg.ts skriver dem (eget, byn, familj, gava, stold)
-export function takeMaterial(s: State, p: Person, k: string, n: number, common = false, kom?: Record<string, number>, ut?: Uttag): Del { // ut: hur mycket av veden som var blöt (steg 12.1.241)
+// Finns det som kan användas i stället (ERSATT i saker.ts, steg 13.6.1) tas saken själv först (den färska röllekan, som ruttnar)
+// och sedan det andra
+export function takeMaterial(s: State, p: Person, k: string, n: number, common = false, kom?: Record<string, number>, ut?: Uttag): Del {
+  const alt = ERSATT[k];
+  if (!alt) return takeMaterial1(s, p, k, n, common, kom, ut);
+  const ag: Del = {}, alla = [k, ...alt];
+  for (let i = 0; i < alla.length && n > 1e-12; i++) { const m = Math.min(n, getable1(s, p, alla[i])); if (m <= 1e-12) continue; const d = takeMaterial1(s, p, alla[i], m, common, kom, ut); addDel(ag, d); n -= Math.min(m, sumOf(d)); }
+  // det som ändå fattas tas som slaget k: där finns också det som tas ur en grav (steg 13.1.4)
+  if (n > 1e-12) addDel(ag, takeMaterial1(s, p, k, n, common, kom, ut));
+  return ag;
+}
+function takeMaterial1(s: State, p: Person, k: string, n: number, common = false, kom?: Record<string, number>, ut?: Uttag): Del { // ut: hur mycket av veden som var blöt (steg 12.1.241)
   const ag: Del = {};
   if (n <= 1e-12) return ag;
   const not = (hur: string, d: Del) => { if (kom) for (const o in d) if (d[o] > 1e-9) { const h = +o === BYN ? 'byn' : +o === p.id ? 'eget' : hur; const key = `${h}:${h === 'byn' ? BYN : o}:${k}`; kom[key] = (kom[key] ?? 0) + d[o]; } };
+  if (vatskaMaterial.ar(k)) { const d = vatskaMaterial.ta(s, k, n); if (d > 0) { ag[BYN] = d; not('byn', ag); } return ag; } // ur behållaren (steg 13.5.2)
   // det hen hämtat och bär till arbetet först (steg 11.1.74): det har redan tagits, som eget, byns, gåva eller stöld
   const bar = urBordan(s, p, k, n, common, ut);
   addDel(ag, bar); not('familj', bar); n -= sumOf(bar);
@@ -447,20 +467,22 @@ export function takeMaterial(s: State, p: Person, k: string, n: number, common =
   // hur stor bit som tas i ett slag, steg 10.2.15)
   const bed = Math.max(1, rest);
   if (rest > 1e-9) {
-    const ask = living(s).filter(g => g !== p && ownsAmount(s, g, k) > 1e-9 && narvarande(g, p))
+    const ask = living(s).filter(g => g !== p && materialOver(s, g, k) > 1e-9 && narvarande(g, p)) // det g har över (bruket, steg 13.9.9)
       .sort((a, b) => willing(s, b, p, ownsAmount(s, b, k) / bed) - willing(s, a, p, ownsAmount(s, a, k) / bed) || a.id - b.id);
     for (const g of ask) {
       if (rest <= 1e-9) break;
       if (rnd(s, 'dela', g) >= willing(s, g, p, ownsAmount(s, g, k) / bed)) continue;
-      const v = ownMove(s, k, Math.min(rest, ownsAmount(s, g, k)), g.id, p.id);
+      const v = ownMove(s, k, Math.min(rest, materialOver(s, g, k)), g.id, p.id);
       const d = use(s, p, k, v, common, undefined, ut); addDel(ag, d); rest -= v;
       if (kom) { const key = `gava:${g.id}:${k}`; kom[key] = (kom[key] ?? 0) + v; }
       const r = getRel(s, p, g); r.op = clamp(r.op + 1, -100, 100); minnsGava(s, g, p); // en gåva som de andra (steg 3.9.6)
       count(s, 'gava_material', v);
     }
   }
-  // sist en lindrig stöld
+  // sist en lindrig stöld: av andras i förrådet, och det som fattas ur en grav (steg 13.1.4: hela saker, som läggs i förrådet som hens)
   if (rest > 1e-9 && !aldrigStjal(s, p)) {
+    const ur = rest > amountOf(s, k) - kyrkornas(s, k) + 1e-9 ? gravGods.ta(s, p, k, Math.ceil(rest - Math.max(0, amountOf(s, k) - kyrkornas(s, k)) - 1e-9)) : 0;
+    if (ur > 0) put(s, k, ur, { [p.id]: ur });
     const d = use(s, p, k, Math.min(rest, amountOf(s, k)), common, undefined, ut);
     for (const o in d) { const q = +o === BYN || +o === p.id ? undefined : byId(s, +o); if (q) stole(s, p, q, k, d[o], true); }
     addDel(ag, d); not('stold', d);
@@ -471,10 +493,10 @@ export function takeMaterial(s: State, p: Person, k: string, n: number, common =
 // p byter till sig n av slaget k (material till ett eget arbete) av dem i närheten
 function tradeMaterial(s: State, p: Person, k: string, n: number) {
   let rest = n;
-  for (const g of kretsen(s, p, g => ownsAmount(s, g, k) > 1e-9, g => willing(s, g, p, ownsAmount(s, g, k) / rest), true)) {
+  for (const g of kretsen(s, p, g => materialOver(s, g, k) > 1e-9, g => willing(s, g, p, ownsAmount(s, g, k) / rest), true)) {
     // rest räknas i styck av k: mät det som kom (byte ger behovets enheter, för grenar 0,4 per gren)
     const fore = ownsAmount(s, p, k);
-    byte(s, p, g, [{ k, n: Math.min(rest, ownsAmount(s, g, k)) }], { behov: DELA.saknar, minst: 1e-6, fara: 0, typ: 'material', utom: [k] });
+    byte(s, p, g, [{ k, n: Math.min(rest, materialOver(s, g, k)) }], { behov: DELA.saknar, minst: 1e-6, fara: 0, typ: 'material', utom: [k] });
     rest -= ownsAmount(s, p, k) - fore;
     if (rest <= 1e-9) break;
   }
@@ -531,32 +553,131 @@ function give(t: Ting, g: Person, m: Person) {
   if (t.hos === g.id) t.hos = undefined;
   t.krok = undefined; // ett redskap som hängde i bältet (steg 7.1.1) läggs i förrådet
 }
-// a talar med b. Saknar någon av dem ett redskap som den andra har över? Returnerar vad som hände
-export function askForTool(s: State, a: Person, b: Person): 'gåva' | 'byte' | undefined {
-  for (const [m, g] of [[a, b], [b, a]]) {
-    const totM = habitTotal(m);
-    let totG: number | undefined; // räknas först när m saknar något
-    // slagen m äger räknas i ett svep över byns ting (needsTool går igenom tingen en gång per slag); inget byter ägare förrän
-    // en gåva eller ett byte blir av, och då är frågan klar
-    const ager = new Set<string>();
-    for (const t of tingOf(s)) if (t.agare === m.id) ager.add(t.k);
-    for (const k of REDSKAP_SLAG) {
-      if (ager.has(k) || !(habitShare(m, actsOf(k), totM) > 0.1 || kravs(k) && !tingOf(s).some(t => t.k === k))) continue; // needsTool, med det ägda redan räknat
-      const t = spare(s, g, k, totG ??= habitTotal(g));
-      if (!t) continue;
-      if (!osams(s, g, m) && byte(s, m, g, [{ k, n: 1, t }], { behov: DELA.saknar, minst: 1, fara: 0, typ: 'redskap', utom: [k] })) return 'byte';
-      if (rnd(s, 'dela', g) >= willing(s, g, m, ownedKind(s, g, k))) continue;
-      give(t, g, m);
-      const namn = `${SAKER[k]?.ett ? 'ett' : 'en'} ${(SAKER[k]?.namn ?? k).toLowerCase()}`, r = getRel(s, a, b); // rätt genus (ett träspjut)
-      r.op = clamp(r.op + 4, -100, 100);
-      tanke(m, 'fickGava', s.now, { sak: namn, namn: g.name });
-      tanke(g, 'gavGava', s.now, { sak: namn, namn: m.name }); minnsGava(s, g, m);
-      count(s, 'gavor');
-      gavaKlar(s, personPart(s, g), personPart(s, m), [{ k, n: 1, t }], false);
-      handelse(s, g, 'gava', m, namn);
-      return 'gåva';
+// a talar med b. Saknar någon av dem ett redskap som den andra har över? Returnerar vad som hände (samma väg som allt annat, brukByte)
+export const askForTool = (s: State, a: Person, b: Person) => brukByte(s, a, b, [BRUK_REDSKAP], true);
+
+// ---------- bruket (steg 13.9.9, Arbetsdelningen: Alla saker byts efter samma regler) ----------
+// Alla saker byts efter samma regler: hur mycket en person saknar, vill behålla och har över av en sak räknas på ett ställe,
+// ur sakens bruk. Varje bruk är en rad i registret BRUK, och en sak hör till den första raden som tar den (ar). Samtalens byten
+// och gåvor (brukByte), handlaren och byns köp (behovAv och payable i personPart) och skulden använder samma rader. Det en
+// person saknar räknas en gång i timmen (brukTimme, raden bruket i TAKTER); samtalen slår bara upp det och prövar det igen
+export interface BrukRad {
+  id: string; namn: string;
+  ar: (k: string) => boolean; // sakerna raden gäller
+  behov?: () => Behov; // mat och ved: mängden räknas i behovets enheter över alla dess slag, och nyckeln är behovets id
+  ting?: true; // sakerna är ting som byts ett i taget (redskapen och plaggen)
+  saknar: (s: State, p: Person, k: string) => number; // så många av k som p saknar (0: inget)
+  behall: (s: State, p: Person, k: string) => number; // så många av k som p vill ha kvar innan hen ger eller byter bort något
+  over?: (s: State, g: Person, k: string) => Ting | undefined; // tinget g har över (ting)
+  kandidater: (s: State, p: Person) => Iterable<string>; // det p kan sakna, för timmens räkning
+}
+const behovRad = (b: () => Behov): BrukRad => ({
+  get id() { return b().id; }, get namn() { return b().namn; }, behov: b,
+  ar: k => b().slag.includes(k) || k === b().id,
+  saknar: (s, p) => lacksFor(s, p, b()) ? b().mangd(p, s.now) : 0,
+  behall: (s, p) => behalls(s, p, b()),
+  kandidater: () => [b().id],
+});
+// redskapen efter arbetet (needsTool och spare)
+export const BRUK_REDSKAP: BrukRad = {
+  id: 'redskap', namn: 'redskap', ar: k => isTool(k), ting: true,
+  saknar: (s, p, k) => needsTool(s, p, k) ? 1 : 0,
+  behall: (s, p, k) => { const n = ownedKind(s, p, k); return spare(s, p, k) ? n - 1 : n; },
+  over: (s, g, k) => spare(s, g, k),
+  kandidater: (s, p) => {
+    const tot = habitTotal(p), ager = new Set<string>();
+    for (const t of tingOf(s)) if (t.agare === p.id) ager.add(t.k);
+    return REDSKAP_SLAG.filter(k => !ager.has(k) && (habitShare(p, actsOf(k), tot) > 0.1 || kravs(k) && !tingOf(s).some(t => t.k === k))); // needsTool, med det ägda räknat en gång
+  },
+};
+// plaggen efter det man bär: p saknar ett plagg som passar hen och som hen skulle ta på sig (plaggPoang) när hen inte äger
+// något på samma platser; g har över ett plagg hen inte har på sig, när hen äger ett annat på samma platser eller det inte passar hen
+// plaggen och projekten läses efter den här filen: krokarna sätts i val.ts
+export const brukKrok = {
+  kladFor: (_s: State, _p: Person, _k: string) => true, kladPlatser: (_k: string): string[] => [], plaggVill: (_s: State, _p: Person, _k: string) => false,
+  recept: (_s: State, _p: Person): Record<string, number>[] => [],
+  ravara: (_k: string) => false, // saken går åt i något recept (RECEPT och TILLVERKA, val.ts)
+};
+const kladFor = (s: State, p: Person, k: string) => brukKrok.kladFor(s, p, k), kladPlatser = (k: string) => brukKrok.kladPlatser(k);
+const agerPa = (s: State, p: Person, k: string, utom?: Ting) => tingOf(s).some(t => t !== utom && t.agare === p.id && SAKER[t.k]?.klad && kladPlatser(t.k).some(q => kladPlatser(k).includes(q)));
+export const BRUK_PLAGG: BrukRad = {
+  id: 'plagg', namn: 'plagg', ar: k => !!SAKER[k]?.klad, ting: true,
+  saknar: (s, p, k) => kladFor(s, p, k) && !agerPa(s, p, k) && brukKrok.plaggVill(s, p, k) ? 1 : 0,
+  behall: (s, p, k) => tingOf(s).filter(t => t.agare === p.id && t.k === k).length - (BRUK_PLAGG.over!(s, p, k) ? 1 : 0),
+  over: (s, g, k) => tingOf(s).find(t => t.agare === g.id && t.k === k && t.bar !== g.id && t.hos === undefined && t.halv === undefined && t.helig === undefined && t.lass === undefined && (!kladFor(s, g, k) || agerPa(s, g, k, t))),
+  kandidater: s => { const k = new Set<string>(); for (const t of tingOf(s)) if (SAKER[t.k]?.klad && t.agare !== undefined && t.agare !== BYN) k.add(t.k); return k; }, // plagg som någon i byn äger
+};
+// materialet efter det ens arbete saknar: recepten i projekten vars arbete p gör (habitShare över DELA.yrke). Materialet är
+// förrådsmålens material och allt annat som går åt i ett recept (skinnet, linet, järnet; vakten för skickligheten, steg 13.9.10)
+const egnaRecept = (s: State, p: Person) => brukKrok.recept(s, p);
+export const BRUK_MATERIAL: BrukRad = {
+  id: 'material', namn: 'material', ar: k => arMaterial(k) || brukKrok.ravara(k),
+  saknar: (s, p, k) => { let n = 0; for (const av of egnaRecept(s, p)) if (av[k]) n = Math.max(n, Math.ceil(av[k] - mayTake(s, p, k) - 1e-9)); return n; }, // det hen får ta, utan att stjäla
+  behall: (s, p, k) => { let n = 0; for (const av of egnaRecept(s, p)) n = Math.max(n, av[k] ?? 0); return n; },
+  kandidater: (s, p) => { const k = new Set<string>(); for (const av of egnaRecept(s, p)) for (const m in av) if ((arMaterial(m) || brukAv(m) === BRUK_MATERIAL) && mayTake(s, p, m) < av[m] - 1e-9) k.add(m); return k; },
+};
+// det övriga: ingen saknar det, och ingen behöver behålla det
+export const BRUK_OVRIGT: BrukRad = { id: 'ovrigt', namn: 'saker', ar: () => true, saknar: () => 0, behall: () => 0, kandidater: () => [] };
+export const BRUK: BrukRad[] = [behovRad(() => MAT), behovRad(() => VED), BRUK_REDSKAP, BRUK_PLAGG, BRUK_MATERIAL, BRUK_OVRIGT];
+const brukMinne = new Map<string, BrukRad>();
+export const brukAv = (k: string) => { let r = brukMinne.get(k); if (!r) brukMinne.set(k, r = BRUK.find(q => q.ar(k))!); return r; };
+// vakten för skickligheten (steg 13.9.10): varje sak har sin rad i BRUK, och det som går åt i ett recept är ett material, ett
+// redskap, ett plagg, mat eller ved, aldrig det övriga som ingen saknar. Larmar i npm test och npm run balans (kor.ts)
+export const utanBruk = (ravara = brukKrok.ravara) => Object.keys(SAKER).filter(k => !brukAv(k) || ravara(k) && brukAv(k) === BRUK_OVRIGT).map(k => `${k}: går åt i ett recept men har ingen rad i BRUK`);
+// det p saknar, räknat en gång i timmen (raden bruket i TAKTER); den som inte räknats den här timmen räknas när hen frågas
+export function brukTimme(s: State) { for (const p of living(s)) if (!p.gast) brukRakna(s, p); }
+function brukRakna(s: State, p: Person) {
+  const ut: [number, string][] = [];
+  BRUK.forEach((r, i) => { for (const k of r.kandidater(s, p)) if (r.saknar(s, p, k) > 0) ut.push([i, k]); });
+  p.bruk = { t: Math.floor(s.now / HOUR), k: ut };
+  return ut;
+}
+const saknarLista = (s: State, p: Person) => p.bruk && p.bruk.t >= Math.floor(s.now / HOUR) - 1 ? p.bruk.k : brukRakna(s, p);
+// a och b talar. Saknar någon av dem något (raderna i rader) som den andra har över? Då byter de, eller så ger den andra det.
+// Raderna prövas i registrets ordning, och för var och en den ena och sedan den andra. nu = det saknade räknas nu (askForTool)
+function brukByte(s: State, a: Person, b: Person, rader: readonly BrukRad[], nu = false): 'gåva' | 'byte' | undefined {
+  for (const r of rader) {
+    const ri = BRUK.indexOf(r);
+    for (const [m, g] of [[a, b], [b, a]]) {
+      const keys = nu ? [...r.kandidater(s, m)] : saknarLista(s, m).filter(e => e[0] === ri).map(e => e[1]);
+      for (const k of keys) {
+        if (r.saknar(s, m, k) <= 0) continue; // det kan ha ändrats sedan timmen började
+        const res = r.behov ? ((!osams(s, g, m) && tradeFor(s, m, g, r.behov())) ? 'byte' : gift(s, m, g, r.behov()) ? 'gåva' : undefined)
+          : r.ting ? tingFran(s, m, g, r, k) : mangdFran(s, m, g, r, k);
+        if (res) return res;
+      }
     }
   }
+}
+// m byter till sig eller får tinget av slaget k som g har över
+function tingFran(s: State, m: Person, g: Person, r: BrukRad, k: string): 'gåva' | 'byte' | undefined {
+  const t = r.over!(s, g, k);
+  if (!t) return;
+  if (!osams(s, g, m) && byte(s, m, g, [{ k, n: 1, t }], { behov: DELA.saknar, minst: 1, fara: 0, typ: r.id, utom: [k] })) return 'byte';
+  if (rnd(s, 'dela', g) >= willing(s, g, m, ownedKind(s, g, k))) return;
+  give(t, g, m);
+  const namn = `${SAKER[k]?.ett ? 'ett' : 'en'} ${(SAKER[k]?.namn ?? k).toLowerCase()}`, rel = getRel(s, m, g); // rätt genus (ett träspjut)
+  rel.op = clamp(rel.op + 4, -100, 100);
+  tanke(m, 'fickGava', s.now, { sak: namn, namn: g.name });
+  tanke(g, 'gavGava', s.now, { sak: namn, namn: m.name }); minnsGava(s, g, m);
+  count(s, 'gavor');
+  gavaKlar(s, personPart(s, g), personPart(s, m), [{ k, n: 1, t }], false);
+  handelse(s, g, 'gava', m, namn);
+  return 'gåva';
+}
+// det g har över av materialet k: det g äger utöver det hens eget arbete behöver
+export const materialOver = (s: State, g: Person, k: string) => Math.max(0, ownsAmount(s, g, k) - brukAv(k).behall(s, g, k));
+// m byter till sig eller får så mycket av materialet k som m saknar och g har över, i hela saker
+function mangdFran(s: State, m: Person, g: Person, r: BrukRad, k: string): 'gåva' | 'byte' | undefined {
+  const n = Math.min(r.saknar(s, m, k), helt(materialOver(s, g, k)));
+  if (n < 1) return;
+  if (!osams(s, g, m) && byte(s, m, g, [{ k, n }], { behov: DELA.saknar, minst: 1, fara: 0, typ: r.id, utom: [k] })) return 'byte';
+  if (rnd(s, 'dela', g) >= willing(s, g, m, ownsAmount(s, g, k) / n)) return;
+  const v = ownMove(s, k, n, g.id, m.id);
+  const rel = getRel(s, m, g); rel.op = clamp(rel.op + 1, -100, 100); minnsGava(s, g, m);
+  gavaKlar(s, personPart(s, g), personPart(s, m), [{ k, n: v }], false);
+  count(s, 'gava_material', v);
+  return 'gåva';
 }
 
 // ---------- byten ----------
@@ -571,33 +692,44 @@ const enheter = (v: Vara[]) => v.reduce((x, { k, n }) => x + n * (behovMed(k)?.p
 // hur mycket p behöver en till av slaget k, gånger grundvärdet: DELA.saknar för det p saknar för ett behov eller i sitt
 // arbete, 1 för det p behöver behålla (mat och ved upp till b.kvar, redskapet hen arbetar med) och DELA.over för resten.
 // Material som p saknar till ett arbete räknas där det tas (tradeMaterial)
+// den egna matens gräns för p (steg 13.9.6): egenFull gånger så stor del av bufferten i FORRADSMAL som byn inte delar, gånger det
+// p äter på ett dygn. Köpen av mat fyller upp till den, och den som säljer behåller lika mycket för familjen (overEget)
+export const egenGrans = (s: State, p: Person) => (FORRADSMAL.mat.egenFull ?? 1) * buffert(s, 'mat') * (1 - (s.delning?.andel ?? 1)) * kroppensMat(p, s.now);
+// det p vill ha kvar av behovet b innan hen ger bort eller vill köpa mer: ett dygn, och för maten upp till den egna gränsen
+const behalls = (s: State, p: Person, b: Behov) => b.id === 'mat' ? Math.max(b.kvar(s, p), egenGrans(s, p)) : b.kvar(s, p);
 export function behovAv(s: State, p: Person, k: string) {
-  if (isTool(k)) return needsTool(s, p, k) ? DELA.saknar : ownedKind(s, p, k) > 0 && !spare(s, p, k) ? 1 : DELA.over;
-  const b = behovMed(k);
-  if (!b) return k === 'silver' && p.skatteskuld ? DELA.over * skuldFaktor(s, p) : DELA.over; // skatteskulden gör silvret mer värt (steg 10.5.5)
+  const r = brukAv(k);
+  if (r.ting) return r.saknar(s, p, k) > 0 ? DELA.saknar : !r.over?.(s, p, k) && r.behall(s, p, k) > 0 ? 1 : DELA.over; // ett ting hen har över är värt som det över
+  const b = r.behov?.();
+  if (!b) {
+    if (k === 'silver' && p.skatteskuld) return DELA.over * skuldFaktor(s, p); // skatteskulden gör silvret mer värt (steg 10.5.5)
+    return r.saknar(s, p, k) > 0 ? DELA.saknar : ownsAmount(s, p, k) < r.behall(s, p, k) + 1 - 1e-9 && r.behall(s, p, k) > 0 ? 1 : DELA.over;
+  }
   const own = ownFor(s, p, b);
   if (b.behover(s, p) && own < b.minst) return DELA.saknar * (1 + b.fara(s, p));
-  return own <= b.kvar(s, p) ? 1 : DELA.over;
+  return own <= behalls(s, p, b) ? 1 : DELA.over;
 }
-// det p har över av behovet b: det hen själv behöver (b.kvar), och för maten det familjen behöver till sin buffert (steg 10.5.12):
-// så stor del av bufferten i FORRADSMAL som byn inte delar, gånger det familjen äter på ett dygn, mot det familjen äger
+// det p har över av behovet b: det hen själv behöver (b.kvar), och för maten det familjen behöver upp till sin gräns (steg 10.5.12,
+// 13.9.6: egenGrans för var och en i familjen), mot det familjen äger
 function overEget(s: State, p: Person, b: Behov) {
   const egen = ownFor(s, p, b) - b.kvar(s, p);
   if (b.id !== 'mat') return egen;
   const fam = familjOf(s, p.id), fp = fam.length ? fam : [p];
-  const har = fp.reduce((a, q) => a + ownFor(s, q, b), 0), buf = buffert(s, 'mat') * (1 - (s.delning?.andel ?? 1)) * fp.reduce((a, q) => a + kroppensMat(q, s.now), 0);
+  const har = fp.reduce((a, q) => a + ownFor(s, q, b), 0), buf = fp.reduce((a, q) => a + egenGrans(s, q), 0);
   return Math.min(egen, har - buf);
 }
 // det p kan byta bort: mat och ved utöver det hen och familjen behöver (overEget), material och redskap hen har över. Inte slagen i utom
 export function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
   // den som inte äger något redskap har inget att avvara (spare), och de flesta som betalar äger inget
-  const ut: Vara[] = [], over = new Map<Behov, number>(), harRedskap = tingOf(s).some(t => t.agare === p.id);
+  const ut: Vara[] = [], over = new Map<Behov, number>(), harTing = tingOf(s).some(t => t.agare === p.id);
   for (const k of SAK_LIST) {
     if (utom.includes(k) || !grundvarde(k)) continue;
-    if (isTool(k)) { const t = harRedskap ? spare(s, p, k) : undefined; if (t) ut.push({ k, n: 1, t }); continue; }
-    const own = ownsAmount(s, p, k), b = behovMed(k);
+    const r = brukAv(k);
+    if (r.ting) { const t = harTing ? r.over!(s, p, k) : undefined; if (t) ut.push({ k, n: 1, t }); continue; }
+    const own = ownsAmount(s, p, k), b = r.behov?.();
     if (own <= 1e-9) continue;
-    if (!b) { ut.push({ k, n: own }); continue; }
+    if (!b) { const n = r.behall(s, p, k) > 0 ? helt(own - r.behall(s, p, k)) : own; if (n > 1e-9) ut.push({ k, n }); continue; } // materialet utöver det ens arbete behöver
+
     const kvar = over.get(b) ?? overEget(s, p, b), n = Math.min(own, helt(kvar / perOf(b, k))); // hela saker (steg 2.10.7)
     if (n > 1e-9) { ut.push({ k, n }); over.set(b, kvar - n * perOf(b, k)); }
   }
@@ -680,7 +812,7 @@ function bynOver(s: State, utom: readonly string[]): Vara[] {
       continue;
     }
     if (amountOf(s, k) < 1 - 2e-6) continue; // inte en hel sak i förrådet: byns del blir ingen hel sak (bynsDel), och då behöver ingen räknas
-    let n = bynsDel(s, k) - (s.projektSaknar?.[k]?.beh ?? 0); // det projekten behöver säljs inte (steg 10.5.17)
+    let n = bynsDel(s, k) - (s.projektSaknar?.[k]?.beh ?? 0) - (s.projektSaknar?.[k]?.bud ?? 0); // det projekten och byggena behöver säljs inte (steg 10.5.17)
     if (n < 1) continue;
     const b = behovMed(k);
     if (b) {

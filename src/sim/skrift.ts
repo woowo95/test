@@ -31,6 +31,7 @@ import { O_BESOKT, O_KANT, O_RYKTE, kannerOrt, larOrt, ortensRad, platsText, rad
 import { byPlats, varldPlatsNr } from './landmarken';
 import { tanke } from './tankar';
 import { upplev } from './uppvaxt';
+import { BILDMOTIV, bildHandelser, bildText, bildstenarOm, stenMotiv, type BildMotivId } from './bildsten';
 
 // ---------- skriften (system 10.6) ----------
 // Skriften i tre stadier: runstenen, pergamentet och boken. Registret SKRIFTER har en rad per slag av innehåll, med de stadier
@@ -57,7 +58,7 @@ export const SKRIFTER: Record<SkriftSlag, { namn: string; stadier: SkriftStadium
 };
 export { SKRIFT } from './skriftTal';
 export interface SkriftLag { id: string; straff: number; tal?: Record<string, number> }
-export interface Runsten { lag?: SkriftLag; id: number; x: number; y: number; t: number; slag: SkriftSlag; av: { id: number; namn: string }; om: { id: number; namn: string }; bev?: Bevis[]; text: string; runor: string; tro?: number; bild?: 1 } // tro = den heliga stenens tro (om = tron); bild = en bildsten (steg 10.7.1)
+export interface Runsten { lag?: SkriftLag; id: number; x: number; y: number; t: number; slag: SkriftSlag; av: { id: number; namn: string }; om: { id: number; namn: string }; bev?: Bevis[]; text: string; runor: string; tro?: number; bild?: 1; motiv?: BildMotivId; ht?: number } // motiv och ht = bildstenens sorts händelse och när den hände (steg 13.9.15) // tro = den heliga stenens tro (om = tron); bild = en bildsten (steg 10.7.1)
 export const runstenarOf = (s: State): Runsten[] => (s.runstenar ??= []);
 export const runstenAt = (s: State, x: number, y: number) => s.runstenar?.find(r => r.x === x && r.y === y);
 
@@ -73,7 +74,7 @@ export function runor(text: string) {
 // p:s starkaste lust att resa en sten: sorgen efter en nära anhörig (sorgen i stadier, liv.ts; borta när den döda redan har en sten
 // eller en gravtext) eller stoltheten efter en egen stor bedrift (p.bedrift, rykten.ts), som avtar till noll på stolthetDygn, och
 // halveras för varje sten p redan rest; eller, för prästen och lärjungen, trons heliga kväden
-interface Lust { w: number; slag: SkriftSlag; om: { id: number; namn: string }; bev?: Bevis[]; lag?: SkriftLag }
+interface Lust { w: number; slag: SkriftSlag; om: { id: number; namn: string }; bev?: Bevis[]; lag?: SkriftLag; motiv?: BildMotivId; ht?: number; vad?: string; k?: string; ting?: string }
 const harSten = (s: State, slag: SkriftSlag, om: number, t?: number) => !!s.runstenar?.some(r => r.slag === slag && r.om.id === om && (t === undefined || r.bev?.[0]?.t === t));
 // sorgen och bedriften, som stenen och bladet båda skriver om (fynd 197). Sorgen: de döda p sörjer, med lusten gånger hur känd
 // den döda är: den byn minns väljs oftare, på stenen och på bladet (kandVikt, steg 10.6.14 och 12.1.166). Bedriften: p:s egen stora bedrift (p.bedrift, rykten.ts), som avtar till noll på stolthetDygn, om den inte redan finns
@@ -98,8 +99,11 @@ export function runstenLust(s: State, p: Person): Lust | undefined {
     if (harSten(s, 'minne', d.id) || s.gravar?.some(q => q.vem === d.id && q.text)) continue;
     if (!best || w > best.w) best = { w, slag: 'minne', om: { id: d.id, namn: d.name } };
   }
-  const bd = bedriften(s, p, b => harSten(s, 'handelse', p.id, b.t));
-  if (bd && (!best || bd.w > best.w)) best = { w: bd.w, slag: 'handelse', om: { id: p.id, namn: p.name }, bev: bd.bev };
+  // en stor händelse personen varit med om eller minns (BILDMOTIV i bildsten.ts, steg 13.9.15), mindre för varje bildsten byn har om samma sort
+  for (const h of bildHandelser(s, p, (om, t, m) => !!s.runstenar?.some(r => r.slag === 'handelse' && r.om.id === om && (r.ht ?? r.bev?.[0]?.t) === t && stenMotiv(r) === m))) {
+    const w = h.w * SKRIFT.motivAvtar ** bildstenarOm(s, h.motiv);
+    if (!best || w > best.w) best = { w, slag: 'handelse', om: h.om, ...(h.bev ? { bev: [h.bev] } : {}), motiv: h.motiv, ht: h.t, vad: h.vad, k: h.k, ...(h.ting ? { ting: h.ting } : {}) };
+  }
   if (best) best.w *= SKRIFT.avtar ** (s.runstenar ?? []).filter(r => r.av.id === p.id && r.slag !== 'helig').length;
   // trons heliga kväden: prästen eller lärjungen som kan dem utantill (steg 10.6.2), mindre för varje helig sten tron har
   const tr = troOf(s, p.tro);
@@ -167,7 +171,7 @@ const platsFor = (s: State, l: Lust) => { const tr = l.slag === 'helig' ? troOf(
 function uppgift(s: State, p: Person) {
   const l = runstenLust(s, p), at = l && platsFor(s, l);
   if (!l || !at) return undefined;
-  return { act: 'runsten' as const, text: l.slag === 'minne' ? `Reser en runsten efter ${l.om.namn}.` : l.lag ? `Ristar lagen ${l.om.namn.toLowerCase()} på en sten.` : l.slag === 'helig' ? 'Ristar de heliga kvädena på en sten.' : 'Reser en runsten om sin bedrift.', min: SKRIFT.min, tool: l.slag, spot: { x: at.x + 0.5, y: at.y + 0.5 }, ref: l.om.id };
+  return { act: 'runsten' as const, text: l.slag === 'minne' ? `Reser en runsten efter ${l.om.namn}.` : l.lag ? `Ristar lagen ${l.om.namn.toLowerCase()} på en sten.` : l.slag === 'helig' ? 'Ristar de heliga kvädena på en sten.' : l.om.id === p.id ? 'Reser en bildsten.' : `Reser en bildsten om ${l.om.namn}.`, min: SKRIFT.min, tool: l.slag, spot: { x: at.x + 0.5, y: at.y + 0.5 }, ref: l.om.id };
 }
 const radStenar = { huggen_sten: SKRIFT.stenar };
 laggTillProjekt({
@@ -193,7 +197,7 @@ export function runstenKlar(s: State, p: Person, t: Task) {
   const l = runstenLust(s, p), x = Math.floor(t.tx), y = Math.floor(t.ty);
   if (!l || l.slag !== t.tool || l.om.id !== t.ref || runstenAt(s, x, y) || getable(s, p, 'huggen_sten') < SKRIFT.stenar) return;
   takeMaterial(s, p, 'huggen_sten', SKRIFT.stenar, true, t.kom ??= {});
-  let text: string, bev = l.bev;
+  let text = '', bev = l.bev;
   if (l.slag === 'minne') {
     const d = byId(s, l.om.id), r = s.rels[relKey(p.id, l.om.id)];
     const par = !!d && (d.partner === p.id || r?.par !== undefined);
@@ -207,17 +211,16 @@ export function runstenKlar(s: State, p: Person, t: Task) {
     text = troOf(s, l.om.id)?.kvade?.text ?? ''; // kvädet som det löd när det ristades
   } else if (l.lag) {
     text = `${l.om.namn}: ${lagText(l.lag)}`;
-  } else {
-    // en händelse berättas i bilder i stället för runor: bildstenen (steg 10.7.1)
-    text = `${p.name} reste stenen, och bilderna på den visar hur ${bevisText(bev![0], p.name).trim().replace(/\.$/, '')}.`;
   }
   const bild = l.slag === 'handelse';
   const id = (s.runstenar?.reduce((m, r) => Math.max(m, r.id), 0) ?? 0) + 1;
-  runstenarOf(s).push({ id, x, y, t: s.now, slag: l.slag, av: { id: p.id, namn: p.name }, om: l.om, ...(bev?.length ? { bev } : {}), ...(l.slag === 'helig' ? { tro: l.om.id } : {}), ...(l.lag ? { lag: l.lag } : {}), ...(bild ? { bild: 1 as const } : {}), text, runor: bild ? '' : runor(text) });
+  // en händelse berättas i bilder i stället för runor: bildstenen (steg 10.7.1), och texten säger vad bilderna visar (steg 13.9.16)
+  if (bild) text = bildText(s, p, { motiv: l.motiv ?? stenMotiv({ bev }) ?? 'strid', k: l.k ?? bev?.[0]?.h ?? '', t: l.ht ?? bev?.[0]?.t ?? s.now, om: l.om, vad: l.vad ?? bevisText(bev![0], l.om.namn).trim().replace(/\.$/, ''), ...(l.ting ? { ting: l.ting } : {}), ...(bev?.[0] ? { bev: bev[0] } : {}) }, id);
+  runstenarOf(s).push({ id, x, y, t: s.now, slag: l.slag, av: { id: p.id, namn: p.name }, om: l.om, ...(bev?.length ? { bev } : {}), ...(l.slag === 'helig' ? { tro: l.om.id } : {}), ...(l.lag ? { lag: l.lag } : {}), ...(bild ? { bild: 1 as const, ...(l.motiv ? { motiv: l.motiv } : {}), ...(l.ht !== undefined ? { ht: l.ht } : {}) } : {}), text, runor: bild ? '' : runor(text) });
   s.byggV = (s.byggV ?? 0) + 1;
-  count(s, 'runsten'); count(s, 'runsten_' + l.slag); if (bild) count(s, 'bildsten');
+  count(s, 'runsten'); count(s, 'runsten_' + l.slag); if (bild) { count(s, 'bildsten'); if (l.motiv) count(s, 'bildsten_' + l.motiv); }
   handelse(s, p, 'skrev', undefined, 'en runsten'); if (l.slag === 'minne') tanke(p, 'resteMinnessten', s.now, { namn: l.om.namn }); else tanke(p, l.slag === 'helig' ? 'ristadeHeliga' : l.lag ? 'ristadeLag' : 'resteBedrift', s.now);
-  const rad = l.slag === 'minne' ? `${p.name} reste en runsten efter ${l.om.namn}.` : l.lag ? `${p.name} ristade lagen ${l.om.namn.toLowerCase()} på en sten.` : l.slag === 'helig' ? `${p.name} ristade de heliga kvädena (${l.om.namn.toLowerCase()}) på en sten.` : `${p.name} reste en bildsten om sin bedrift.`;
+  const rad = l.slag === 'minne' ? `${p.name} reste en runsten efter ${l.om.namn}.` : l.lag ? `${p.name} ristade lagen ${l.om.namn.toLowerCase()} på en sten.` : l.slag === 'helig' ? `${p.name} ristade de heliga kvädena (${l.om.namn.toLowerCase()}) på en sten.` : l.om.id === p.id ? `${p.name} reste en bildsten om ${l.motiv && l.motiv !== 'strid' ? BILDMOTIV[l.motiv].namn.toLowerCase() : 'sin bedrift'}.` : `${p.name} reste en bildsten om ${l.om.namn}.`;
   log(s, rad, 'rel', [p.id]); notis(s, 'runsten', rad, [p.id], { x, y }); kronika(s, rad, 'runsten');
 }
 

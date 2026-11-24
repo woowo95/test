@@ -70,10 +70,15 @@ export type Koll = [string, boolean];
 // gammal, så att ett scenario som bara iakttar en by inte kör en egen. Behöver scenariot något som inte alla byar har (ett stråk
 // utanför byn) tar det den yngsta som har det (villkor), så att det inte beror på hur just den yngsta byn råkade bli. Finns
 // ingen sparad by (före första facit) körs by 1 dit
+const TESTBY_VUXNA = 3;
+// en by där minst tre vuxna är friska: testbyarna kan ha sparats mitt i en farsot, och en resa räknar med friska resenärer
+export const friskaVuxna = (b: State) => SIM.living(b).filter(p => SIM.ageOf(p, b.now) >= SIM.ALDER.vuxen && !SIM.isSick(p, b.now)).length >= TESTBY_VUXNA;
 export const testBy = (minDygn: number, villkor?: (s: State) => boolean): State => {
   const dir = fileURLToPath(new URL('../../../test/facit-byar/', import.meta.url));
   const filer = readdirSync(dir).map(f => /^(\d+)-(\d+)\.json\.gz$/.exec(f)).filter(m => m && +m[2] >= minDygn).sort((a, b) => +a![2] - +b![2] || +a![1] - +b![1]);
-  for (const f of filer) { const b = lasBy(dir + f![0]); if (!villkor || villkor(b)) return b; }
+  // scenarierna räknar med en by med folk i: en sparad by där bara ett par vuxna lever kvar hoppas över
+  const folk = (b: State) => SIM.living(b).filter(p => SIM.ageOf(p, b.now) >= SIM.ALDER.vuxen).length >= TESTBY_VUXNA;
+  for (const f of filer) { const b = lasBy(dir + f![0]); if (folk(b) && (!villkor || villkor(b))) return b; }
   return korBy(1, minDygn).s;
 };
 // testbyn efter minDygn med världen dygn fram i tiden: räknas en gång per process och delas av scenarierna (en kopia var)
@@ -352,7 +357,7 @@ function fritGolv(s: State, k: string): { x: number; y: number; inne: 1 } | unde
 // korta steg tills den är över. Svarar striden, som den gamla stridIByn gjorde
 export function stridIByn(s: SIM.State, avsikt: SIM.Avsikt, sidor: [SIM.Person[], SIM.Person[]], orsak: string, efter?: SIM.Efter): SIM.Strid {
   const g = SIM.kartStridBorja(s, avsikt, sidor, orsak, efter);
-  for (let i = 0; i < 1500 && !g.st.slut; i++) SIM.step(s, SIM.nastaSteg(s));
+  for (const tSlut = s.now + (SIM.STRID.maxTid + 60) * SIM.SEC; !g.st.slut && s.now < tSlut;) SIM.step(s, SIM.nastaSteg(s)); // striden tar sin tid (steg B.7)
   return g.st;
 }
 

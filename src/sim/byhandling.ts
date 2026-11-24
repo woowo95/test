@@ -84,7 +84,7 @@ export const BYHANDLINGAR = {
   // till huvudbyn går med sändebudet (11.6.23)
   gava: {
     namn: 'Gåva',
-    poang: c => { const a = gavaAffar(c); return a ? Math.max(0, BYHANDLING.gavaMal - c.rel) / 100 * (1 - fejdMot(c)) * (0.5 + ledDrag(c, 'empati')) * radsla(c) * (1 - c.krig / 2) * Math.min(2, gavaRel(a.n * enhet(a.g)) / BYHANDLING.gavaFull) - BYHANDLING.gavaKostnad : -1; },
+    poang: c => { const a = gavaAffar(c); return a ? vanVilja(c, BYHANDLING.gavaMal) * (0.5 + ledDrag(c, 'empati')) * radsla(c) * (1 - c.krig / 2) * Math.min(2, gavaRel(a.n * enhet(a.g)) / BYHANDLING.gavaFull) - BYHANDLING.gavaKostnad : -1; },
     gor: c => { const a = gavaAffar(c); if (a) skickaFard(c, a, true); },
   },
   // sändebudet (steg 11.6.23): byn skickar ett bud med ett vänligt besked till en granne den vill stå väl med (mer av en ledare
@@ -251,9 +251,12 @@ export interface RadFard { uppdrag?: number; /* uppdraget färden går mot (steg
 // fejden (steg 12.1.114): ju längre ner byn ser på grannen under beskedRel, desto mindre vill den vara vänlig (gåvan och det
 // vänliga beskedet) och desto mer vill den vara ovänlig; vid beskedRel + beskedFull är det vänliga inget val alls
 const fejdMot = (c: ByCtx) => clamp((-c.rel - BYHANDLING.beskedRel) / BYHANDLING.beskedFull, 0, 1);
+// viljan att vara vänlig (gåvan och det vänliga beskedet): den växer ju längre relationen är under målet, men bara ner till
+// fejdens gräns (−beskedRel); därunder växer den inte mer, och fejden tar den ner till noll (steg 12.6.8)
+const vanVilja = (c: ByCtx, mal: number) => clamp(mal - c.rel, 0, mal + BYHANDLING.beskedRel) / 100 * (1 - fejdMot(c));
 export function beskedTon(c: ByCtx): { ton: BeskedTon; p: number } {
   const fejd = fejdMot(c);
-  const van = Math.max(0, BYHANDLING.beskedMal - c.rel) / 100 * (1 - fejd) * (0.5 + ledDrag(c, 'karisma')) * radsla(c) * (1 - c.krig / 2) - BYHANDLING.beskedKostnad;
+  const van = vanVilja(c, BYHANDLING.beskedMal) * (0.5 + ledDrag(c, 'karisma')) * radsla(c) * (1 - c.krig / 2) - BYHANDLING.beskedKostnad;
   const ovan = fejd * (0.5 + ledDrag(c, 'aggression')) * (0.5 + c.krig) / radsla(c) - BYHANDLING.beskedKostnad;
   return ovan > van ? { ton: 'ovanligt', p: ovan } : { ton: 'besked', p: van };
 }

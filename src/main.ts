@@ -19,7 +19,7 @@ import { drawHandel } from './ui/handel';
 import { renderPanel, selectPerson, visa } from './ui/panel';
 import { renderRaden } from './ui/raden';
 import { renderPorts, startFollow, stopFollow } from './ui/portratt';
-import { gaster, rovarGastId } from './ui/gaster';
+import { gaster } from './ui/gaster';
 import { catchUp, ikapp, loadSaves, nyByVald, saveDb, saveLocal } from './ui/spara';
 import { lasFel } from './ui/lagring';
 import { aktivBy, byarHtml, byte, bytTill, laggTillBy, laggTillTestby, taBort, testbyIAdressen } from './ui/byar';
@@ -162,7 +162,7 @@ for (const b of document.querySelectorAll<HTMLButtonElement>('#speeds button')) 
     const r = b.dataset.flock ? skickaRovare(s, ROVARFLOCK[b.dataset.flock as keyof typeof ROVARFLOCK]) : b.dataset.tornado ? skickaTornado(s) : skickaHandlare(s);
     testSvara(r.text); nyttSlag(s); // knappen verkar i nästa slag (steg 10.2.18)
     // kameran visar var flocken dök upp (steg 4.5.7.10) och följer den första rövaren in (steg 6.6.12)
-    if (r.ok && b.dataset.flock && s.rovare) { stopFollow(); cam.x = s.rovare.x * TS; cam.y = s.rovare.y * TS; layout(); startFollow(rovarGastId(s.rovare.id, 0), rovarna(s, s.rovare)[0]?.name); }
+    if (r.ok && b.dataset.flock && s.rovare) { stopFollow(); cam.x = s.rovare.x * TS; cam.y = s.rovare.y * TS; layout(); startFollow(rovarna(s, s.rovare)[0]?.id, rovarna(s, s.rovare)[0]?.name); }
     b.classList.remove('tryckt'); void b.offsetWidth; b.classList.add('tryckt');
     testKnappar(); renderPanel(true);
   });
@@ -294,6 +294,9 @@ async function boot() {
   $('map').appendChild(view);
   layout();
   new ResizeObserver(layout).observe($('map'));
+  // sidhuvudet bryts efter innehållet (steg 13.10.16), och kartan och panelerna börjar under det
+  const huvud = document.querySelector('header')!;
+  new ResizeObserver(() => document.body.style.setProperty('--topp', `${huvud.offsetHeight}px`)).observe(huvud);
   const annan = aktivBy();
   if (annan) { $('loading').hidden = true; await bytTill(annan); }
   if (!ui.annanBy) {

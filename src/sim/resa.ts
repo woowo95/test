@@ -70,6 +70,7 @@ import { upplev } from './uppvaxt';
 const saker = (n: number) => n === 1 ? 'en sak' : `${tal(n)} saker`;
 
 export const RESA = balans('resa', {
+  minDygn: 0.1, // en resa tar minst så här många dygn, också till en plats på byns egen ruta i världen
   samlaSek: 3600, // så länge (sekunder i verkligheten) ledaren får samla sällskapet innan resan ställs in (en timme, ett kvarts dygn i spelet)
   // packningen (steg 11.5.3)
   matPerDygn: 1.6, // portioner per resenär och dygn (en vuxens måltid är en portion)
@@ -1204,7 +1205,7 @@ function resMal(s: State, p: Person, vl: Varlden, hem: VarldPlats): ResMal[] {
     }
     if (!skal && niva === O_RYKTE && (RESMAL.se.mal as readonly string[]).includes(q.k)) { skal = 'se'; varde = RESA.seVarde * ny / 10; }
     if (!skal) continue;
-    const dygn = 2 * dygnDit(s, hem, q) + (nere ?? RESMAL[skal].stannar);
+    const dygn = Math.max(RESA.minDygn, 2 * dygnDit(s, hem, q) + (nere ?? RESMAL[skal].stannar));
     const fara = 1 - Math.exp(-RESA.faraDygn * dygn), forsiktig = clamp((20 - mod) / 10, 0, 2);
     const lust = (ny + mod) / 20, dygnR = Math.round(dygn * 100) / 100;
     const bas = RESA.vikt * utfar * (varde - hemmaForlust(s, p, dygn)) / dygn * lust * Math.max(0, 1 - fara * forsiktig);
@@ -1272,7 +1273,8 @@ export function kallelse(s: State, sl: Sallskap, r: ResPlan) {
   const vl = s.varld!, led = s.people.find(p => p.id === sl.ledare);
   if (!led) return;
   sl.krav = Math.round(RESA.kraftPerFara * r.fara * 100) / 100;
-  const kan = living(s).filter(q => q !== led && !q.gast && ageOf(q, s.now) >= ALDER.vuxen && kanGa(q) && !isSick(q, s.now) && !ute(q) && !sallskapFor(vl, q.id));
+  // (den som håller vakt i natt är upptagen tills morgonen, som vid larmet, rovare.ts)
+  const kan = living(s).filter(q => q !== led && !q.gast && ageOf(q, s.now) >= ALDER.vuxen && kanGa(q) && !isSick(q, s.now) && !ute(q) && !sallskapFor(vl, q.id) && q.task?.act !== 'vakt');
   const vilja = kan.map(q => ({ q, v: RESA.foljMod * (stat(q, 'mod', s.now) - 10) / 10 + RESA.foljTycke * getRel(s, q, led).op / 100 + RESA.foljNyfiken * (stat(q, 'nyfikenhet', s.now) - 10) / 10 + RESA.foljSlump * (rnd(s, 'resa', q) - 0.5) + (sl.uppdrag !== undefined ? kravPassar(s, led, sl.uppdrag, q) : 0) }))
     .sort((a, b) => b.v - a.v || a.q.id - b.q.id);
   for (const x of vilja) {

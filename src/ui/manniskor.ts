@@ -19,7 +19,7 @@ import { sinHash as hash } from './pixel';
 import { ejLig } from './hjalp';
 import { s, sakVar, ui, uppgiftVid, vidNyBy } from './lage';
 import { Ikoner, TS, bubbleG, figurLayer, labels, symbolLayer, peopleG, world } from './scen';
-import { SKYLT, figurRam, rollAv, synligaSkyltar, type Skylt } from './namnskyltar';
+import { SKYLT, figurRam, rollAv, skyltOver, skyltUnder, synligaSkyltar, type Skylt } from './namnskyltar';
 import { type Arm, type Ben, type Rikt, figurHand, figurTex } from './folkbild';
 import { ARBETEN, STRIDBILD, arbetsBild, ritaArbete } from './arbetsbild';
 import { rovarSkapad, handlarSkapad, skapad } from './utseende';
@@ -361,7 +361,7 @@ function ritaRovarna(skugga: PIXI.Graphics) {
     if (strid && ab && hand) ritaArbete(peopleG, strid, ab.b, sp.position.x + hand[0], sp.position.y + hand[1], rikt === 'vast' ? -1 : 1, 1);
     sp.zIndex = y + 5 * 0.9;
     if (!ligger) fotSkugga(skugga, x - 4, Math.round(sp.zIndex) - 1, 4, 2, skuggLangd());
-    sp.visible = true; sedd.add(g.id);
+    sp.visible = true; sedd.add(g.id); figurFot.set(g.id, { x, y: Math.round(sp.zIndex) });
     // rövaren som pratar med en annan i gänget (steg 10.2.24): bubblan som byns
     const bb = r && !sk ? bubbles.find(q => q.id === r.id && q.until >= performance.now()) : undefined;
     if (bb) pratRuta(x, sp.position.y - SYMBOL_LUFT, Math.sin(performance.now() / 500 + r!.id) * 0.6, bb.kind, 'neutral', bb.i);
@@ -545,7 +545,8 @@ export function drawPeople(t: number) {
     { const n = ejLig(p.name); if (tx.text !== n) tx.text = n; }
     // namnet ovanför figuren, det hen bär på huvudet och symbolen över huvudet (steg 9.2.27), så att det inte täcker figuren
     // eller den som står bredvid
-    const q = posOf(p), topp = huvud.get(p.id) ?? q.y * TS - 13; tx.position.set(q.x * TS, topp - SYMBOL_LUFT - 6); tx.visible = true;
+    const q = posOf(p), topp = huvud.get(p.id) ?? q.y * TS - 13; // symbolen över huvudet är 10 punkter hög kring topp - SYMBOL_LUFT
+    tx.position.set(q.x * TS, skyltOver(markOf(p) ? topp - SYMBOL_LUFT - 5 : topp)); tx.visible = true; // lika långt från figuren som namnet under (steg 13.10.5)
     stora.add(p.id); upptaget.push({ x: q.x * TS - tx.width / 2, y: tx.position.y - tx.height, w: tx.width, h: tx.height });
     const roll = rollAv(s, p); // rollens symbol till vänster om namnet (steg 12.1.157)
     if (roll && hasIcon(roll.ikon)) rollIkoner.add(roll.ikon, Math.round(q.x * TS - tx.width / 2 - SKYLT.ikon - 1), Math.round(tx.position.y - tx.height / 2 - SKYLT.ikon / 2), 1);
@@ -553,15 +554,15 @@ export function drawPeople(t: number) {
   for (; n < nameTags.length; n++) nameTags[n].visible = false;
   // namnen vid alla andra (steg 12.1.157, ui/namnskyltar.ts): i liten text under fötterna, med rollens symbol till vänster, och
   // gömda när kartan är utzoomad eller när de skulle täcka varandra
-  const skyltar: Skylt[] = [];
-  for (const p of ppl) {
+  const skyltar: Skylt[] = [], slass = new Set((s.kartStrider ?? []).flatMap(g => g.st.kampar.flatMap(k => k.pid !== undefined && !g.fri?.includes(k.pid) ? [k.pid] : []))); // namnen på dem som slåss syns alltid, flyttade om de skulle täcka varandra (steg B.19)
+  for (const p of [...ppl, ...s.people.filter(q => q.gast && slass.has(q.id))]) { // gästerna har namn på kartan när de slåss
     const f = figurFot.get(p.id);
-    if (!f || !sedd.has(p.id) || stora.has(p.id) || !paKartan(p)) continue;
+    if (!f || !sedd.has(p.id) || stora.has(p.id) || (!p.gast && !paKartan(p))) continue;
     let tx = smaNamn.get(p.id);
     if (!tx) { tx = new PIXI.Text('', smaStyle); tx.scale.set(0.5); tx.anchor.set(0.5, 1); labels.addChild(tx); smaNamn.set(p.id, tx); }
     { const n = ejLig(p.name); if (tx.text !== n) tx.text = n; }
     const roll = rollAv(s, p);
-    skyltar.push({ id: p.id, x: f.x, y: f.y + 1 + SKYLT.hojd, w: tx.width, ikon: roll && hasIcon(roll.ikon) ? roll.ikon : undefined, forst: roll ? 1 : 0 });
+    skyltar.push({ id: p.id, x: f.x, y: skyltUnder(f.y), w: tx.width, ikon: roll && hasIcon(roll.ikon) ? roll.ikon : undefined, forst: slass.has(p.id) ? 2 : roll ? 1 : 0, ...(slass.has(p.id) ? { flytt: SKYLT.flytt } : {}) });
   }
   const syns = synligaSkyltar(skyltar, world.scale.x, upptaget);
   for (const k of skyltar) {

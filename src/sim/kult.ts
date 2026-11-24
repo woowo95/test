@@ -25,7 +25,7 @@ import { kyrkaId } from './egendom';
 import { ata } from './naring';
 import { budIn, foljer, gravolKan, gravolSlut, hogtidKrav, hogtidMat, hogtidOlKvade, kyrkansAv, sorgkvade } from './kyrka';
 import { kvarById, nara } from './kvarlevor';
-import { FOOD } from './saker';
+import { FOOD, SAKER } from './saker';
 import { takeMaterial } from './behov';
 import { PLAGG, kladAv } from './klader';
 import { FEST, farorNu, heligtDjurAv, matAvstar, nyRitual, satEgendomVarde, satGravVarde, vanhelgaPlats } from './kultlatt';
@@ -34,7 +34,8 @@ import { grundvarde, tingVarde, varuVarde } from './varde';
 import { och, sakOrd, tal } from './ord';
 import { type Ting, tingOf } from './agande';
 import { notis } from './notiser';
-satGravVarde(t => tingVarde(t)); // gravgåvan är den finaste saken (steg 10.3.5)
+satGravVarde(t => (SAKER[t.k]?.gravgava ? GRAVGAVA_FORST : 0) + tingVarde(t)); // gravgåvan är den finaste saken (steg 10.3.5), och det som får följa en död (gravgava i SAKER: järnsakerna, steg 13.1.6) går före
+const GRAVGAVA_FORST = 1e6;
 satEgendomVarde(o => varuVarde(o) / grundvarde('ved')); // kyrkans egendom i trons tyngd (steg 10.3.8)
 import { isSick } from './sjukdom';
 import { prastMinns, handelse } from './rykten';

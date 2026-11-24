@@ -11,7 +11,8 @@ function by(seed: number) {
   const s = createState(seed, START);
   s.now = new Date(s.now).setHours(10, 0, 0, 0); Object.assign(s.fire, { lit: true, fuel: 3, ring: true });
   for (const q of s.people) q.tek = { ...q.tek, kniv: 1, korg: 1, rep: 1, yxa: 1, fiskespjut: 1 };
-  setItems(s, { flinta: 6, torrgras: 30, grenar: 30 }); setAmount(s, 'ved', 300);
+  setItems(s, { flinta: 30, torrgras: 30, grenar: 30, sten: 30 }); setAmount(s, 'ved', 300);
+  for (const k of SIM.FROSORTER) setAmount(s, k, 50); // stenarna, flintan och fröna i förrådet (steg 13.8.6): annars tar raderna leta och fron platsen före projekten
   return s;
 }
 const vuxna = (s: State) => living(s).filter(q => ageOf(q, s.now) >= ALDER.vuxen);
@@ -23,8 +24,8 @@ function valjer(s: State, n: number) {
     const p = vuxna(s)[i % vuxna(s).length];
     Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
     chooseTask(s, p); if (p.task && acts.has(p.task.act) && p.task.why?.startsWith('Byn saknar')) proj++;
-    p.task = undefined;
   }
+  for (const q of vuxna(s)) q.task = undefined; // valen står kvar under varven, så att raderna får sina arbetare (steg 13.8.6)
   return proj;
 }
 
@@ -186,13 +187,18 @@ SCENARIER.fullaforrad = {
       const tek = fyll(true), en = living(tek).find(q => vuxen(q, tek))!;
       const oppen = SIM.TEKNIK.find(x => { const sp = { ...en.tek }; for (const q of tek.people) if (q.tek) delete q.tek[x.id]; const ok = !!SIM.tekArbete(tek, en, a => SIM.WORK.includes(a)); if (!ok) for (const q of tek.people) q.tek = { ...(q.tek ?? {}), [x.id]: sp[x.id] ?? 1 }; return ok; });
       let tekUpp = 0; { const sett = new WeakSet<object>(); kor(tek, 8, v => { for (const q of living(v)) if (vuxen(q, v) && q.task && !sett.has(q.task)) { sett.add(q.task); if (/Kanske kommer/.test(q.task.why ?? '') || q.task.act === 'forsok') tekUpp++; } }); }
+      // grenarna och höet mot taket (steg 13.8.4): samma mjuka kurva som maten och veden, så över taket väljs turen allt mer
+      // sällan men slutar inte tvärt. Poängen för raden fylla_grenar vid bufferten, taket och dubbla taket, medel av 200 dragningar av bruset
+      const tak = fyll(true), tq = living(tak).find(q => vuxen(q, tak))!;
+      const fyllPoang = (n: number) => { setItems(tak, { grenar: Math.ceil(n) }); let sum = 0; for (let i = 0; i < 200; i++) sum += SIM.forbattraKandidater(tak, tq).find(x => x.id === 'fylla_grenar')?.sc ?? 0; return sum / 200; };
+      const bG = SIM.materialBuffert(tak, 'grenar'), tG = Math.max(bG + 1, SIM.materialTak(tak, 'grenar')), kurva = [fyllPoang(bG), fyllPoang(tG), fyllPoang(2 * tG)];
       const pf = prov(full), ph = prov(halv);
       const fri = (v: State) => v.stat?.fullaForrad ?? 0;
       return [
         // det mjuka taket (steg 10.2.4): över taket fyller man sällan på, men det tar inte slut tvärt
         [`i den fulla byn fyller man sällan på maten eller veden (${pf.matVed} uppgifter av ${pf.alla}), i byn vid bufferten fylls förråden (${ph.mer})`, pf.matVed <= pf.alla * 0.15 && ph.mer > 0],
         [`en by med fulla förråd arbetar vidare mot nästa teknik (${oppen?.namn ?? 'ingen öppen teknik'}: ${tekUpp} uppgifter i arbetet där den kan komma)`, !!oppen && tekUpp > 0],
-        [`ingen samlar grenar eller hö till förrådet när det är över taket (${pf.overTak + ph.overTak} gånger)`, pf.overTak + ph.overTak <= 1],
+        [`grenarna fylls allt mer sällan över taket men inte aldrig (poängen ${kurva.map(x => x.toFixed(3)).join(' → ')} vid bufferten, taket och dubbla taket; ${pf.overTak + ph.overTak} turer över taket)`, kurva[0] > kurva[1] && kurva[1] > kurva[2] && kurva[2] > 0],
         // också byn vid bufferten når taken under dagen när den fyllt på, så antalen jämförs inte (steg 6.2.21)
         [`de vuxna i den fulla byn får fritid när inget finns kvar att göra (${fri(full)} gånger; ${fri(halv)} i byn vid bufferten när den fyllt på)`, fri(full) > 0],
       ];
@@ -231,7 +237,7 @@ SCENARIER.omtanke = {
     if (h1 && h2) { h1.ag = bo.id; h2.ag = bv.id; SIM.getRel(b, bp, bv).op = 80; SIM.getRel(b, bp, bo).op = -80; }
     const jobb = SIM.buildJob(b, bp), paVan = !!jobb && jobb.bit.hus === h2?.id;
     // byns ved: samma by med Sammanhållning och med Självförsörjning, ett dygn
-    const ved = (g: number) => { const v = SIM.cloneState(s); for (const q of SIM.living(v)) for (const r of SIM.living(v)) if (q !== r) { const x = v.rels[SIM.relKey(q.id, r.id)]; if (x) x.op = 0; } setAmount(v, 'ved', 2); let n = 0; kor(v, 24, w => { w.seder.v.gemenskap = g; for (const q of SIM.living(w)) if (q.task?.act === 'ved' && q.task.why?.startsWith('Byn behöver ved')) n++; }); return n / STEG_TIM; }; // bara veden för byn: ett försök att komma på något hugger också ved
+    const ved = (g: number) => { const v = SIM.cloneState(s); for (const q of SIM.living(v)) for (const r of SIM.living(v)) if (q !== r) { const x = v.rels[SIM.relKey(q.id, r.id)]; if (x) x.op = 0; } setAmount(v, 'ved', 2); let n = 0; kor(v, 24, w => { w.seder.v.gemenskap = g; setAmount(w, 'ved', 2); for (const q of SIM.living(w)) if (q.task?.act === 'ved' && q.task.why?.startsWith('Byn behöver ved')) n++; }); return n / STEG_TIM; }; // bara veden för byn, och bristen står kvar hela dygnet: ett försök att komma på något hugger också ved och fyller annars förrådet
     const vedSam = ved(1), vedSjalv = ved(-1);
     return [
       [`en vanlig person med neutrala relationer i en by utan sed har omtanken 1 (${vanlig.toFixed(2)})`, Math.abs(vanlig - 1) < 1e-9],

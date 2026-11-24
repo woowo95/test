@@ -49,6 +49,9 @@ export const HISTORIK_TAL: { id: string; namn: string; hur: 'snitt' | 'sist'; va
   { id: 'strider', namn: 'Strider sedan byns början', hur: 'sist', varde: s => (s.stat?.strider as number) ?? 0 },
   { id: 'resor', namn: 'Resor sedan byns början', hur: 'sist', varde: s => (s.stat?.['resa hemma'] as number) ?? 0 },
   { id: 'bocker', namn: 'Böcker sedan byns början', hur: 'sist', varde: s => (s.stat?.bocker as number) ?? 0 },
+  // järnet (steg 13.1.13): järnet som blåsts och kolet som kolats sedan byns början, ur byns statistik när en bränning töms
+  { id: 'jarn', namn: 'Järn sedan byns början', hur: 'sist', varde: s => (s.stat?.brant_jarn as number) ?? 0 },
+  { id: 'kol', namn: 'Kol sedan byns början', hur: 'sist', varde: s => (s.stat?.brant_kol as number) ?? 0 },
 ];
 
 const ny = (): Historik => ({ tal: HISTORIK_TAL.map(t => t.id), tim: [], dygn: [], kronika: [] });
@@ -67,7 +70,7 @@ export const KRONIKA_KAT: KronikaKat[] = [
   { id: 'styre', namn: 'Styre', ikon: 'kk_styre', tecken: '👑', slag: ['ledare', 'k_ledare', 'k_forstaLedare', 'k_utvisad', 'k_ratt', 'bynamn'] },
   { id: 'strid', namn: 'Strid', ikon: 'kk_strid', tecken: '⚔️', slag: ['rovare', 'k_rovare', 'k_vargAnfall', 'k_vargSprang', 'k_vargjakt', 'k_forstaVarg', 'k_bjornAnfall', 'k_bjornSprang', 'k_bjornjakt', 'k_bjornjaktMiss', 'k_forstaBjorn', 'k_skadad'] },
   { id: 'tro', namn: 'Tro', ikon: 'kk_tro', tecken: '☀️', slag: ['tro', 'k_tro'] },
-  { id: 'bygge', namn: 'Bygge och uppfinningar', ikon: 'kk_bygge', tecken: '🏠', slag: ['bygge', 'k_husKlar', 'k_uppfann', 'k_forstaEld', 'episk', 'forlust', 'mat'] }, // mat: byns egen rätt (special.ts, steg 10.7.29)
+  { id: 'bygge', namn: 'Bygge och uppfinningar', ikon: 'kk_bygge', tecken: '🏠', slag: ['bygge', 'k_husKlar', 'k_uppfann', 'k_forstaEld', 'k_forstaJarn', 'k_forstaSmedja', 'episk', 'forlust', 'mat'] }, // mat: byns egen rätt (special.ts, steg 10.7.29)
   { id: 'motgang', namn: 'Motgångar', ikon: 'kk_motgang', tecken: '⚡', slag: ['motgang', 'sjukdom', 'k_brand', 'k_tornado', 'k_flod', 'k_epidemi'] },
   { id: 'grannar', namn: 'Handel och grannar', ikon: 'kk_grannar', tecken: '🤝', slag: ['handel', 'k_handel', 'k_resa', 'byte', 'gava', 'utbrytning', 'nyhet', 'sandebud', 'uppdrag', 'grannar'] }, // grannar: hemkomsten från en turné (resa.ts) // sandebud: beskeden åt båda hållen (steg 11.6.23); nyhet: nyheter från världen (ort.ts, steg 11.4.13)
   { id: 'skrift', namn: 'Skrifter', ikon: 'kk_skrift', tecken: '📜', slag: ['runsten', 'skrift'] }, // stenarna, bladen och böckerna (steg 10.6.8)
@@ -157,6 +160,18 @@ export function historikSerie(s: State, id: string): [number, number][] {
   if (i < 1) return ut;
   for (const r of h.dygn) if (Number.isFinite(r[i])) ut.push([r[0] + DAY / 2, r[i]]);
   for (const r of h.tim) if (Number.isFinite(r[i])) ut.push([r[0], r[i]]);
+  return ut;
+}
+
+// ett tal som räknas upp, per år i spelet (steg 13.1.13): för varje punkt i serien hur mycket det ökat det senaste året
+// (dygnet i verkligheten), alltså värdet då minus värdet ett år tidigare (0 före byns början)
+export function historikPerAr(s: State, id: string): [number, number][] {
+  const p = historikSerie(s, id), ut: [number, number][] = [];
+  let j = -1;
+  for (const [t, v] of p) {
+    while (j + 1 < p.length && p[j + 1][0] <= t - DAY) j++;
+    ut.push([t, Math.max(0, v - (j < 0 ? 0 : p[j][1]))]);
+  }
   return ut;
 }
 

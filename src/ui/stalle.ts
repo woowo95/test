@@ -1,7 +1,7 @@
 // hur figuren står i bilden (steg 10.2.55): sitter, går eller står. Ingen ritning här, så att testet (scenariot stalle) kan
 // gå igenom en by med samma regler som bilden. Sittanimationen visas bara på en sittplats (en stubbe eller stol vid ett bord,
 // stationRutor i stationer.ts) eller på stolen vid en bänk, och gåanimationen bara när figuren flyttat sig sedan förra bilden
-import { ACTS, STATION, arbetsDel, blocked, forflyttar, isKlar, kroppFart, lekGang, sittAt, sparPlats, sparUppgift, stationAt, stationDef, stationerOf, storlekAv, vidStation, type Person, type State, type Station } from '../sim';
+import { ACTS, STATION, arbetsDel, blocked, forflyttar, isKlar, kroppFart, lekGang, sittAt, sparPlats, sparUppgift, stationAt, stationDef, stationerOf, storlekAv, tillbehorTacker, vidStation, type Person, type State, type Station } from '../sim';
 
 // handlingarna man gör sittande när det finns en plats att sitta på (fältet sitta i ACTS); annars står man
 export const sittande = (gor: string) => !!(ACTS as Record<string, { sitta?: true }>)[gor]?.sitta;
@@ -114,5 +114,5 @@ export function iSangen(s: State, x: number, y: number, sover: boolean): { sang:
   const b = sover ? stationAt(s, x, y) : undefined;
   if (!b || !isKlar(b) || !stationDef(b.k)?.sover) return undefined;
   const { w, h } = storlekAv(b);
-  return { sang: b, rikt: 'fram', tacke: !!b.med?.length, staende: h > w };
+  return { sang: b, rikt: 'fram', tacke: tillbehorTacker(b), staende: h > w };
 }

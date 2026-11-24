@@ -2,12 +2,12 @@ import { LAG, efterlevs, lagGaller } from './lagar';
 import { personHand } from './personlogg';
 
 import { HOUR } from './typer';
-import { ALDER, ageOf, living, log } from './folk';
+import { ALDER, ageOf, count, living, log } from './folk';
 import { clamp } from './slump';
 import { DAY, Person, Seder, State } from './typer';
 import { balans } from './balans';
 import { kortTal } from './format';
-import { ACTS, ACT_LIST } from './handlingar';
+import { ACTS, ACT_LIST, GARVA_ACTS } from './handlingar';
 import { sedOppen } from './styre';
 import { vikter } from './rost';
 import { andlighet } from './religion';
@@ -40,7 +40,14 @@ export const SED = balans('seder', {
   minneSteg: 0.1, minneMax: 0.5, // minnet av en död drar så här mycket per steg i INTRYCK:s sedkolumn gånger minnets styrka, och alla minnen tillsammans högst minneMax per sed (steg 10.4.9)
   uppSteg: 0.1, // en upplevelse drar personens hållning så här mycket per steg i sedkolumnen (UPPLEVELSER i uppvaxt.ts, steg 4.5.4.9)
   snittVikt: 1.8, // målet för en sed är byns snitt gånger så här mycket, från -1 till 1
-  rorDygn: 2, // sederna rör sig mot målet med en tidskonstant på så här många dygn
+  rorDygn: 6, // sederna rör sig mot målet med en tidskonstant på så här många dygn: byns minne, så att seden inte bara speglar vilka som bor där just nu
+  // byns sed i var och en (steg 13.9.2): det man tagit av byns sed drar med så här stor vikt, och tas med en tidskonstant
+  // på arvBarn dygn under uppväxten (yngre än ALDER.vuxen) och arvVuxen dygn som vuxen
+  arvVikt: 0.35, arvBarn: 3, arvVuxen: 40,
+  // avvikaren (steg 13.9.4): den som drar en sed minst avvikFran åt ett håll och har minst avvikKarisma i karisma talar för den
+  // i samtalen; den som tycker om hen (minst avvikGillar) drar avvikSteg mer åt samma håll, högst avvikMax, och det bleknar
+  // med en tidskonstant på avvikDygn dygn, som ett rykte
+  avvikFran: 1, avvikKarisma: 14, avvikGillar: 20, avvikSteg: 0.04, avvikMax: 0.5, avvikDygn: 6,
   // pliktkänslan (0 till 1): bas + (flit - mitt) * pliktFlit + (empati - mitt) * pliktEmpati + arbetsseden * pliktSed
   pliktBas: 0.6,
   pliktFlit: 0.035,
@@ -63,17 +70,18 @@ export const SED = balans('seder', {
 const dev = (v: number) => (v - SED.mitt) / SED.spann;
 // En sed per rad: namnen åt båda hållen och vad den gör (fliken Seder), och åt vilket håll en person drar seden efter
 // sin personlighet (q = egenskaperna, barn = personen är förälder). Alla börjar på 0. Ordningen sparas, så nya seder läggs sist
-interface SedDef { pos: string; neg: string; effect: string; dra: (q: Person['pot'], barn: boolean) => number }
+// foljder (steg 13.9.3): upplevelserna (nycklar i UPPLEVELSER i uppvaxt.ts) som en by längt ut åt ett håll får av det den gör, och som drar seden tillbaka
+interface SedDef { pos: string; neg: string; effect: string; dra: (q: Person['pot'], barn: boolean) => number; foljder?: string[] }
 const DEF = {
   arbete: { pos: 'Plikt', neg: 'Vila', effect: 'Pliktkänsla: hur mycket man arbetar för byn och hur mycket man vilar.', dra: q => dev(q.flit) },
-  gemenskap: { pos: 'Sammanhållning', neg: 'Självförsörjning', effect: 'Hur mycket man bryr sig om att andra fryser och hjälper dem med elden, och hur stor del av det man skaffar som går till byn.', dra: q => dev(q.empati) },
+  gemenskap: { foljder: ['frosIhjal'], pos: 'Sammanhållning', neg: 'Självförsörjning', effect: 'Hur mycket man bryr sig om att andra fryser och hjälper dem med elden, och hur stor del av det man skaffar som går till byn.', dra: q => dev(q.empati) },
   barn: { pos: 'Många barn', neg: 'Få barn', effect: 'Hur gärna par skaffar barn, och om barnen får leka eller måste hjälpa till.', dra: (q, barn) => dev(q.empati) * SED.barnEmpati + (barn ? SED.barnForalder : 0) },
-  nyfikenhet: { pos: 'Förnyelse', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.', dra: q => dev((q.nyfikenhet + q.intelligens) / 2) },
-  forsiktighet: { pos: 'Förutseende', neg: 'Dagens behov', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.', dra: q => -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt },
+  nyfikenhet: { foljder: ['grannRedskap'], pos: 'Förnyelse', neg: 'Tradition', effect: 'Hur snabbt invånarna lär sig nya färdigheter.', dra: q => dev((q.nyfikenhet + q.intelligens) / 2) },
+  forsiktighet: { foljder: ['ruttnade', 'svalt'], pos: 'Förutseende', neg: 'Dagens behov', effect: 'Hur stora förråd byn vill ha innan man slappnar av, och om elden hålls vid liv.', dra: q => -dev(q.mod) * SED.forsMod + dev(q.intelligens) * SED.forsInt },
   // den första vågskålen (steg 3.5.1): låst (står på 0) tills byn fått sin första ledare (sedOppen i styre.ts)
   fortjanst: { pos: 'Härkomst', neg: 'Förtjänst', effect: 'Den duglige eller släkten: Härkomst flyttar vikt till släkternas äldste och ger arv när ledaren byts.', dra: (q, barn) => -dev(q.intelligens) * SED.fortInt + (barn ? SED.fortBarn : -SED.fortBarnlos) },
   fejd: { pos: 'Fejd', neg: 'Förlikning', effect: 'Om konflikter löses med ord eller med styrka: Fejd flyttar vikt till krigarna, och ledaren kan störtas i strid.', dra: q => dev(q.aggression) - dev(q.empati) },
-  krig: { pos: 'Krig', neg: 'Fred', effect: 'Om byn går i strid eller söker fred: Krig gör fler villiga att slåss.', dra: q => dev(q.aggression) * SED.krigAggr + dev(q.mod) * SED.krigMod - dev(q.empati) * SED.krigEmp }, // steg 8.4.11
+  krig: { foljder: ['stupade'], pos: 'Krig', neg: 'Fred', effect: 'Om byn går i strid eller söker fred: Krig gör fler villiga att slåss.', dra: q => dev(q.aggression) * SED.krigAggr + dev(q.mod) * SED.krigMod - dev(q.empati) * SED.krigEmp }, // steg 8.4.11
   natur: { pos: 'Bruka', neg: 'Värna', effect: 'Om naturen är till för att brukas: fällda träd och dödade djur ger sämre humör för dem som drar åt Värna.', dra: q => dev(q.flit) * SED.naturFlit - dev(q.empati) * SED.naturEmp }, // steg 8.4.13
   andlig: { pos: 'Andlig', neg: 'Världslig', effect: 'Om makten kommer från folket eller från gudarna: Andlig flyttar vikt till prästerna, och kyrkan välsignar eller fördömer ledaren.', dra: () => 0 }, // steg 8.6.1: andligheten läggs till i drar() och sedLaggning
   rang: { pos: 'Envälde', neg: 'Folkstyre', effect: 'Hur mycket ledaren bestämmer: ledarens vikt i sederna och påbuden, och hur hårt ledaren straffar.', dra: q => (dev(q.mod) - dev(q.empati)) * SED.rangDra },
@@ -109,6 +117,24 @@ function foraldrar(s: State) {
 export const lutning = (s: State, p: Person) => clamp(drarSed(s, p, 'gemenskap'), -1, 1);
 // x avrundat till närmaste fjärdedel, mellan 0 och 1
 export const fjardedel = (x: number) => clamp(Math.round(x * 4) / 4, 0, 1);
+// byns sed som personen tagit till sig (steg 13.9.2): den tredje delen av det personen drar, bredvid personligheten och upplevelserna
+const arv = (p: Person, k: Sed) => (p.sedArv?.[k] ?? 0) * SED.arvVikt;
+// det en avvikare fått personen att dra åt (steg 13.9.4), bleknat sedan det sist ändrades
+const talat = (s: State, p: Person, k: Sed) => { const t = p.sedTal; const v = t?.v[k]; return v ? v * Math.exp(-(s.now - t!.t) / (SED.avvikDygn * DAY)) : 0; };
+// i ett samtal talar a för den sed hen drar längst åt, om hen drar långt och har karisma, och b som tycker om a drar lite åt
+// samma håll en tid (steg 13.9.4). Så kan en enda människa vända en by
+export function talaForSed(s: State, a: Person, b: Person, op: number) {
+  if (op < SED.avvikGillar || a.pot.karisma < SED.avvikKarisma) return;
+  const d = drar(s, a);
+  let k: Sed | undefined;
+  for (const x of SED_LIST) if (sedOppen(s, x) && Math.abs(d[x]) >= SED.avvikFran && (!k || Math.abs(d[x]) > Math.abs(d[k]))) k = x;
+  if (!k) return;
+  const t = b.sedTal ??= { v: {}, t: s.now }, f = Math.exp(-(s.now - t.t) / (SED.avvikDygn * DAY));
+  for (const x in t.v) t.v[x as Sed]! *= f;
+  t.t = s.now;
+  t.v[k] = clamp((t.v[k] ?? 0) + Math.sign(d[k]) * SED.avvikSteg, -SED.avvikMax, SED.avvikMax);
+  count(s, 'sedTalad');
+}
 export function drar(s: State, p: Person) {
   const barn = foraldrar(s).has(p.id), d = nollor();
   for (const k of SED_LIST) d[k] = SEDER[k].dra(p.pot, barn);
@@ -118,6 +144,7 @@ export function drar(s: State, p: Person) {
     if (e) for (const k in e) d[k as Sed] += e[k as Sed]! * SED.uppSteg;
   }
   for (const m of minnen(s, p).values()) for (const k in m.d) d[k as Sed] += m.d[k as Sed]!;
+  for (const k of SED_LIST) d[k] += arv(p, k) + talat(s, p, k);
   return d;
 }
 // en enda seds dragning, samma tal som drar(s, p)[k] med samma tillägg i samma ordning (steg 12.1.104): för den som bara läser en sed
@@ -125,7 +152,7 @@ export function drarSed(s: State, p: Person, k: Sed) {
   let v = k === 'andlig' ? (andlighet(s, p) - 50) / 50 : SEDER[k].dra(p.pot, foraldrar(s).has(p.id));
   for (const u of p.upp ?? []) { const e = upplevelseSed(u.k)?.[k]; if (e !== undefined) v += e * SED.uppSteg; }
   for (const m of minnen(s, p).values()) { const x = m.d[k]; if (x !== undefined) v += x; }
-  return v;
+  return v + arv(p, k) + talat(s, p, k);
 }
 // minnena av de döda som drar personens hållning (steg 10.4.9): per död, INTRYCK:s sedkolumn gånger minnets styrka (styrka
 // gånger säkerhet) gånger minneSteg. Tillsammans drar de högst minneMax per sed; blir det mer krymper alla lika mycket
@@ -181,6 +208,7 @@ export function sedLaggning(s: State): Record<Sed, number> {
     if (!andel) continue;
     for (const k of SED_LIST) t[k] += SEDER[k].dra(p.pot, barn.has(p.id)) * andel;
     t.andlig += (andlighet(s, p) - 50) / 50 * andel;
+    for (const k of SED_LIST) t[k] += (arv(p, k) + talat(s, p, k)) * andel; // det man tagit av byns sed och av avvikarna hör till läggningen
   }
   for (const k of SED_LIST) t[k] = sedOppen(s, k) ? t[k] * SED.snittVikt : 0;
   return t;
@@ -199,6 +227,12 @@ export function stepSeder(s: State) {
   if (dt <= 0) return;
   const t = sederTarget(s), f = 1 - Math.exp(-dt / (SED.rorDygn * DAY));
   for (const k of SED_LIST) sd.v[k] = (sd.v[k] ?? 0) + (t[k] - (sd.v[k] ?? 0)) * f;
+  // var och en tar av byns sed: barnen mycket under uppväxten, de vuxna lite (steg 13.9.2)
+  const fb = 1 - Math.exp(-dt / (SED.arvBarn * DAY)), fv = 1 - Math.exp(-dt / (SED.arvVuxen * DAY));
+  for (const p of living(s)) {
+    const g = ageOf(p, s.now) < ALDER.vuxen ? fb : fv, a = p.sedArv ??= {};
+    for (const k of SED_LIST) { const v = a[k] ?? 0, m = sd.v[k] ?? 0; if (v !== m) a[k] = v + (m - v) * g; }
+  }
 }
 
 // ---------- vilja ----------
@@ -242,7 +276,7 @@ const YRKEN: Record<string, number> = {
 };
 // de snävare yrkenas handlingar (steg 7.5.5–7.5.8). En rad med ett yrke vars handling inte finns ännu räknas inte
 const YRKE_AV: Partial<Record<string, string[]>> = {
-  Slaktare: ['slakta', 'rensa'], Korgmakare: ['korg', 'nat'], Snickare: ['station', 'tillbehor', 'klyva_plank', 'gor_leksak', 'slagtra', 'mal', 'trumma', 'metspo', 'slanda', 'gor_pilar', 'skold', 'bage', 'lyra', 'krycka', 'traben', 'krok', 'bagborr', 'kalke', 'slade'], /* och träsakerna vid snickarbänken (steg 9.4.5) */ Spjutmakare: ['spjut'], Skinnsömmare: ['rock', 'skor', 'byxor', 'mossa', 'snoskor'], Garvare: ['garva'],
+  Slaktare: ['slakta', 'rensa'], Korgmakare: ['korg', 'nat'], Snickare: ['station', 'tillbehor', 'klyva_plank', 'gor_leksak', 'slagtra', 'mal', 'trumma', 'metspo', 'slanda', 'gor_pilar', 'skold', 'bage', 'lyra', 'krycka', 'traben', 'krok', 'bagborr', 'kalke', 'slade', 'vagn', 'plog'], /* och träsakerna vid snickarbänken (steg 9.4.5) */ Spjutmakare: ['spjut'], Skinnsömmare: ['barsele', 'barnklader', 'rock', 'skor', 'byxor', 'mossa', 'snoskor'], Garvare: GARVA_ACTS,
   Stenhuggare: ['hugga_sten'], Odlare: ['odla'], Kock: ['grilla', 'steka', 'koka_mat', 'gropa', 'koka_buljong', 'baka', 'torka', 'roka'], Vattenbärare: ['vatten'], Läkekunnig: ['varda'], Lärare: ['lara'], Vargjägare: ['vargjakt'], Kämpe: ['strid', 'forsvar', 'forsvarRovare'], Handlare: ['handla'],
   Skald: ['upptrada'], Skrivare: ['skriva', 'runsten', 'bok', 'gora_pergament', 'riva_black'], Bryggare: ['brygga', 'malta', 'tappa', 'branna'], // steg 12.1.139
   Vävare: ['spinna', 'vava', 'spinna_ull', 'vava_ull'], Krukmakare: ['lerkruka', 'lera'],

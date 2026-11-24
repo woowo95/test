@@ -348,36 +348,48 @@ SCENARIER.utedass = {
 };
 
 SCENARIER.sjukstuga = {
-  text: 'Sjukbädden och sjukstugan (steg 12.4.10, mobler.ts): en bädd inne (4 hö, 2 grenar och 1 skinn, 12 minuter, tekniken Sjukstuga) där den som är sjuk eller skadad hellre lägger sig och läker lite fortare; ett rum med en sjukbädd är en Sjukstuga, och en sjukbädd där andra sover är en krock i rummens taggar',
+  text: 'Sjukstugan (steg 12.4.10 och 13.1.14, mobler.ts): ett rum med en bädd, värme (en härd eller ett fyrfat) och en hylla eller kista är en Sjukstuga när byn kan tekniken. Den som är sjuk eller skadad går före de friska till bäddarna där och läker 1,2 gånger så fort, en frisk som sover där vilar sämre, och byn vill ha fler bäddar när fler vill ligga där än det finns bäddar',
   kor: () => {
-    const d = SIM.stationDef('sjukbadd')!, tek = SIM.TEKNIK.find(t => t.id === 'sjukstuga');
+    const tek = SIM.TEKNIK.find(t => t.id === 'sjukstuga');
     const s = SIM.createState(1, START), [p, q] = SIM.living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen);
     klockan(s, 22);
-    const utan = SIM.stationBrist(s, 'sjukbadd');
     const hus = medHus(s); if (!hus) return [['ett hus', false]];
-    const t = medBank(s, 'sjukbadd'), i = t.y * SIM.W + t.x;
-    const frisk = SIM.sovPlats(s, p) !== i;
-    // p bryter benet
+    p.tek = { ...p.tek, sjukstuga: 1 }; SIM.touch(s);
+    const t = medBank(s, 'halmbadd'), i = t.y * SIM.W + t.x, r = () => SIM.roomAt(s, t.x, t.y)!;
+    const baraBadd = !SIM.rumTaggar(s, r()).has('sjukstuga');
+    const harVarme = SIM.rumTaggar(s, r()).has('varmt');
+    // fyrfatet och hyllan i bäddens rum
+    const iRum = (k: string) => { const at = SIM.moblerKrok.inne(s, k, r()); if (!at) return false; (s.stationer ??= []).push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: at.x, y: at.y, kvar: 0, inne: 1, ...(at.rot ? { rot: 1 } : {}) } as SIM.Station); SIM.touch(s); s.byggV = (s.byggV ?? 0) + 1; return true; };
+    if (!harVarme && !iRum('fyrfat')) return [['fyrfatet i bäddens rum', false]];
+    if (!iRum('hylla')) return [['hyllan i bäddens rum', false]];
+    const taggar = [...SIM.rumTaggar(s, r())], visas = SIM.rumVisas(s, r()).map(x => x.namn);
+    const utanTek = (() => { const k = p.tek!.sjukstuga; delete p.tek!.sjukstuga; SIM.touch(s); s.byggV = (s.byggV ?? 0) + 1; const v = !SIM.rumTaggar(s, r()).has('sjukstuga'); p.tek!.sjukstuga = k; s.byggV++; return v; })();
+    const friskSover = SIM.living(s).some(x => SIM.sovPlats(s, x) === i);
+    // p bryter benet och går före de friska
     (p.skador ??= []).push({ d: 'vanster_ben', k: 'benbrott', g: 0.5, b: 0 } as unknown as SIM.Skada); SIM.touch(s);
-    const sjukLigger = SIM.sovPlats(s, p) === i, andra = SIM.sovPlats(s, q) !== i;
-    // en liten skada ligger hemma, och den med störst behov av att läka får bädden (steg 12.1.235)
+    const sjukLigger = SIM.sovPlats(s, p) === i, andra = SIM.living(s).every(x => x === p || SIM.sovPlats(s, x) !== i);
+    // en liten skada ligger hemma
     (q.skador ??= []).push({ d: 'vanster_arm', k: 'skarsar', g: 0.2, b: 0 } as unknown as SIM.Skada); SIM.touch(s);
     const litenHemma = SIM.sovPlats(s, q) !== i && SIM.sovPlats(s, p) === i, bLiten = SIM.sjukBehov(s, q);
+    // q bryter båda benen: den med störst behov får bädden, och byn vill ha en bädd till
     q.skador!.push({ d: 'hoger_ben', k: 'benbrott', g: 1, b: 0 } as unknown as SIM.Skada); SIM.touch(s);
     const storstForst = SIM.sovPlats(s, q) === i && SIM.sovPlats(s, p) !== i, bStor = SIM.sjukBehov(s, q), bP = SIM.sjukBehov(s, p);
+    const vill = SIM.stationBrist(s, 'halmbadd'), plats = SIM.stationSite(s, 'halmbadd'), iStugan = !!plats && SIM.roomAt(s, plats.x, plats.y) === r();
     q.skador = []; SIM.touch(s);
     p.x = t.x + 0.5; p.y = t.y + 0.5; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.HOUR, carry: 0, why: '' } as SIM.Task;
     const lak = SIM.lakKrok.badd(s, p);
-    const r = SIM.roomAt(s, t.x, t.y), taggar = r ? [...SIM.rumTaggar(s, r)] : [];
-    const krock = r ? SIM.rumMinus(s, r).some(m => m.namn === 'Sjuka där man sover') === (taggar.includes('sovrum') || taggar.includes('sovsal')) : false;
+    const vilaSjuk = SIM.rumVila(s, r(), p), vilaFrisk = SIM.rumVila(s, r(), q);
     return [
-      [`sjukbädden står inne, ${d.w} × ${d.h}, av ${JSON.stringify(d.av)} på ${d.min} minuter, tekniken ${tek?.namn} (kräver ${tek?.krav})`, !!d.inne && d.w === 2 && d.av.torrgras === 4 && d.av.grenar === 2 && d.av.skinn === 1 && d.min === 12 && !!tek && tek.krav.includes('halmbadd') && tek.krav.includes('orte') && !d.sover],
-      [`byn vill ha en sjukbädd (${utan})`, utan === 1],
-      [`den friska sover inte där (${frisk}), den med ett benbrott lägger sig där (${sjukLigger}), och ingen annan (${andra})`, frisk && sjukLigger && andra],
-      [`i sjukbädden läker man ${lak} gånger fortare`, lak === 1.2],
+      [`ingen station Sjukbädd, och tekniken ${tek?.namn} kräver ${tek?.krav}`, !SIM.stationDef('sjukbadd') && !!tek && tek.krav.includes('halmbadd') && tek.krav.includes('orte')],
+      [`ett rum med bara bäddar är ingen sjukstuga (${baraBadd})`, baraBadd],
+      [`med värme och en hylla är rummet en Sjukstuga (${taggar.join(', ')}; visas: ${visas.join(', ')}), och utan tekniken inte (${utanTek})`, taggar.includes('sjukstuga') && visas.includes('Sjukstuga') && !visas.includes('Sovrum') && utanTek],
+      [`en frisk sover i sjukstugans bädd när ingen är sjuk (${friskSover})`, friskSover],
+      [`den med ett benbrott lägger sig där (${sjukLigger}), och ingen annan (${andra})`, sjukLigger && andra],
       [`ett litet skärsår ligger hemma (behovet ${bLiten.toFixed(1)} timmar, gränsen ${SIM.STATION.sjukVinst})`, litenHemma && bLiten <= SIM.STATION.sjukVinst],
       [`den med störst behov av att läka får bädden först (${bStor.toFixed(1)} mot ${bP.toFixed(1)} timmar)`, storstForst && bStor > bP],
-      [`rummet är en Sjukstuga (${taggar.join(', ')}), och där andra sover är det en krock`, taggar.includes('sjukstuga') && krock],
+      [`två vill ligga i sjukstugan och där finns en bädd: byn vill ha en till (${vill}), i sjukstugan (${iStugan})`, vill === 1 && iStugan],
+      [`i sjukstugans bädd läker man ${lak} gånger fortare`, lak === 1.2],
+      [`den sjuka vilar som vanligt där (${vilaSjuk.toFixed(2)}), den friska sämre (${vilaFrisk.toFixed(2)})`, vilaFrisk < vilaSjuk],
     ];
   },
 };
@@ -405,7 +417,7 @@ SCENARIER.fyrfat = {
     SIM.stepStationsEld(s, 8 * 3600); const efter8 = t.eld?.ved ?? 0;
     return [
       [`fyrfatet står inne, av ${JSON.stringify(d.av)} på ${d.min} minuter, tekniken ${tek?.namn} (kräver ${tek?.krav}), och går inte att laga mat på`, !!d.inne && d.av.lera === 3 && d.min === 10 && !!tek && tek.krav.join() === 'kruka' && d.gor.join() === 'fyrfat'],
-      [`elden brinner på kol, rymmer ${e.max} och ett räcker ${1 / e.burn} timmar, och gnistrar ${e.gnistor} så mycket som lägerelden`, e.bransle === 'kol' && e.max === 3 && Math.abs(1 / e.burn - 8) < 1e-9 && e.gnistor === 0.1 && e.radie === 2.5],
+      [`elden brinner på kol, rymmer ${e.max} och ett räcker ${1 / e.burn} timmar, och gnistrar ${e.gnistor} så mycket som lägerelden, som härden`, e.bransle === 'kol' && e.max === 3 && Math.abs(1 / e.burn - 8) < 1e-9 && e.gnistor === SIM.HARD_GNISTOR && e.radie === 2.5],
       [`byn vill ha ett fyrfat i rummet där folk sover utan härd (${brist}), och det ställs där (${iRummet}, ${!efter})`, brist === 1 && iRummet && !efter],
       [`när det är kallt (${kallt}) behöver fyrfatet kol (${behov}), och den som kommer fram lägger i ${iFatet} (${kvar} kvar)`, (!kallt || behov) && iFatet === 3 && brinner && kvar === 2],
       [`det värmer nära (${varmt.toFixed(2)}) men inte längre bort (${varmtLangt.toFixed(2)}), och ett kol räcker 8 timmar (${iFatet} → ${efter8})`, varmt > 0 && varmtLangt === 0 && Math.abs(efter8 - 2) < 1e-9],

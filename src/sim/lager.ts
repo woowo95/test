@@ -1,3 +1,4 @@
+import { foljdKrok } from './foljdkrok';
 import { iMening, stor } from './ord';
 import { TIMMINNEN, binIn, binUt } from './timminne';
 import { stubbeOn } from './stubbar';
@@ -14,7 +15,7 @@ import { ALDER, KROPP, alive, byId, count, isSick, living, stat, ageOf, log } fr
 import { matOrdning } from './naring';
 import { eldPlats, eldensRutor, getMap } from './karta';
 import { Act, DAY, H, HOUR, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
-import { MATERIAL, bitAt, blocked, lagretsMitt, roofed } from './byggnad';
+import { MATERIAL, bitAt, blocked, isWall, lagretsMitt, roofed } from './byggnad';
 import { ACTS, toolRow, usesTool } from './handlingar';
 import { temperature, vaderSlit } from './vader';
 import { BYN, Del, addDel, kyrkaId, sumOf, takeOrder } from './egendom';
@@ -260,7 +261,7 @@ const villageAmount = (s: State, k: string) => Math.max(0, amountOf(s, k) - owne
 export const mayTake = (s: State, p: Person, k: string) => ownsAmount(s, p, k) + villageAmount(s, k);
 // det av slaget k som får tas: den personens (fran, stöld), annars p:s eget och byns, annars allt
 // det av slaget k som någon tro äger (steg 10.3.17)
-const kyrkornas = (s: State, k: string) => { const d = agOf(s, k); let n = 0; if (d) for (const o in d) if (+o < BYN) n += d[o]; return n; };
+export const kyrkornas = (s: State, k: string) => { const d = agOf(s, k); let n = 0; if (d) for (const o in d) if (+o < BYN) n += d[o]; return n; };
 export const takeLimit = (s: State, k: string, p?: Person, fran?: Person) => fran ? ownsAmount(s, fran, k) : p ? mayTake(s, p, k) : amountOf(s, k) - kyrkornas(s, k);
 // allt p äger i förrådet, per slag (i den ordning slagen först har ägare bland stackarna, som förut)
 // hela förrådet också när frågan ställs inom räckhåll (iRackhall): agOf räknar då bara stackarna där, och ett slag som
@@ -637,7 +638,7 @@ export function backSpot(s: State, t: Task) {
   return dropSpot(s, k);
 }
 // bär p något hem när arbetet är klart: bördan, eller redskapet som den som bär in saker tog upp (steg 12.1.49)
-export const barHem = (t: Task) => isCarrying(t) || t.act === 'bara' && !!t.ting?.length;
+export const barHem = (t: Task) => isCarrying(t) || !!t.ting?.length && t.act !== 'resa'; // det som följde med i bördan (kälken, plogen) ställs tillbaka (steg 13.7.2)
 // en ruta i ringen runt lagerplatserna där slaget k får plats (inte bredvid förrådshuset: där står väggarna)
 function ringSpot(s: State, k: string, occ: Occ) {
   const zs = zonesOf(s).filter(z => z.hus === undefined), base = zs.filter(z => allows(z, k));
@@ -659,7 +660,15 @@ function besideSpot(s: State, k: string, occ: Occ) {
   for (const r of ringTiles(s, z0, LAGER.bredvid + 1, Math.max(W, H), (x, y) => inMap(x, y) && !upptagen.has(key(x, y)))) if (zoneAt(s, r.x, r.y) < 0 && !occ.eld.has(key(r.x, r.y)) && !stubbeOn(s, r.x, r.y) && nasIFloden(s, key(r.x, r.y)) && !(s.flodHot && isFood(k) && flodHotad(s, key(r.x, r.y)))) return r; // inte dit vattnet stiger (steg 3.8.7)
   return { x: zs[0].x, y: zs[0].y }; // hela kartan är full
 }
-export const fetchSpot = (s: State, k: string) => {
+// var p hämtar slaget k: den närmaste stacken där p får ta en hel sak, efter samma regel som tagandet (kan, räknad med stackarna
+// inom räckhåll från stacken, som när hen står där). Står hen redan vid en sådan stack tar hen därifrån. Utan p eller kan, eller
+// när ingen stack duger: den första stacken av slaget i lagret
+export const fetchSpot = (s: State, k: string, p?: { x: number; y: number }, kan?: () => number) => {
+  if (p && kan && !isTool(k)) {
+    if (iRackhall(p.x, p.y, kan) >= 1) return { x: p.x, y: p.y };
+    const d = narmasteMed(s, p, [k], undefined, (x, y) => iRackhall(x, y, kan) >= 1);
+    if (d) return d;
+  }
   if (isTool(k)) placeTools(s);
   const all = things(s).filter(q => !s.flod || !iVattnetNu(s, q.y * W + q.x) && nasIFloden(s, q.y * W + q.x)); // inte ute i en översvämning eller bakom den (flod.ts)
   const a = all.find(q => q.k === k && zoneAt(s, q.x, q.y) >= 0) ?? all.find(q => q.k === k && isStored(s, q.x, q.y));
@@ -984,7 +993,7 @@ export const wearMult = (s: State, x: number, y: number) => {
 export type Slitage = { orsak: 'ruttnar' | 'vadret' | 'lagret' | 'tak' | 'kista' | 'pasig' | 'anvands' | 'handen' | 'bars' | 'inget'; per: number; gang?: number; enhet?: string; smuts?: true }; // smuts: ligger i blod eller toa-smuts (steg 3.6.10)
 export function slitageNu(s: State, a: { k: string; x?: number; y?: number }, t?: Ting): Slitage {
   const temp = temperature(s), kl = t?.bar !== undefined ? SAKER[a.k]?.klad : undefined;
-  const hq = kvHaller(t); // ett bättre ting håller längre (kvalitet.ts); en stack har ingen kvalitet
+  const hq = kvHaller(t) / (t ? tjarFaktor(s, t.tj) : 1); // ett bättre ting håller längre (kvalitet.ts), och det tjärade (steg 13.5.1); en stack har ingen kvalitet
   if (kl) return { orsak: 'pasig', per: 1 / (kl.dygn * 24) / hq };
   const bars = t && (t.hos !== undefined || t.lass !== undefined || t.krok !== undefined);
   if (bars) {
@@ -1040,7 +1049,7 @@ export function wearStore(s: State, dtSec: number) {
       if (a.ag) { const ks = Object.keys(a.ag), d = heltFordelat([a.n - sumOf(a.ag), ...ks.map(o => a.ag![o])], m); ks.forEach((o, i) => { a.ag![o] = d[i + 1]; }); }
       a.n = m; a.k = into.k; a.c = LAGER.blirSkick; cleanDel(s, a);
     } else {
-      if (isFood(a.k) && a.n > 1e-9) { count(s, 'ruttnat', a.n); s.ruttet = (s.ruttet ?? 0) + a.n; } // förrådshuset (byggnader.ts)
+      if (isFood(a.k) && a.n > 1e-9) { count(s, 'ruttnat', a.n); s.ruttet = (s.ruttet ?? 0) + a.n; if (isStored(s, a.x, a.y)) foljdKrok.ruttnade(s); } // förrådshuset (byggnader.ts); maten som ruttnar i förrådet drar åt Dagens behov (steg 13.9.3)
       a.n = 0;
     }
   }
@@ -1050,7 +1059,7 @@ export function wearStore(s: State, dtSec: number) {
     const kl = t.bar !== undefined ? SAKER[t.k]?.klad : undefined;
     if (kl) { t.c -= Math.min(t.c, h / (kl.dygn * 24) / kvHaller(t)); if (t.c <= 1e-6) count(s, 'kladerSlitna'); continue; }
     const nere = t.hos === undefined && t.lass === undefined && t.krok === undefined; // på marken, vid en station eller i förrådet (utan plats än)
-    t.c -= Math.min(t.c, wearAt(t.k, nere && t.x !== undefined ? wearMult(s, t.x, t.y!) : 1, nere, temp) * h / kvHaller(t));
+    t.c -= Math.min(t.c, wearAt(t.k, nere && t.x !== undefined ? wearMult(s, t.x, t.y!) : 1, nere, temp) * h / kvHaller(t) * tjarFaktor(s, t.tj)); // det tjärade slits hälften så mycket (steg 13.5.1)
   }
   for (const t of tingOf(s)) if (t.c <= 1e-6 && !t.halv) redskapSlitet(s, t.k); // det utslitna räknas som förbrukat (steg 10.11.9)
   s.ting = tingOf(s).filter(t => t.c > 1e-6);
@@ -1249,7 +1258,7 @@ export function load(t: Task, s: State) {
   let l = 0;
   const b = bordSlag(t);
   for (const k in b) l += b[k];
-  for (const id of t.ting ?? []) l += viktOf(tingOf(s).find(g => g.id === id)?.k ?? '');
+  for (const id of t.ting ?? []) { const g = tingOf(s).find(q => q.id === id); if (g?.djur === undefined) l += viktOf(g?.k ?? ''); } // det ett djur drar bär ingen (steg 13.7.2)
   return l;
 }
 // redskapen i bördan: de läggs på rutan at om den är ledig i förrådet, annars på bästa lediga plats
@@ -1306,7 +1315,8 @@ export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN
 // det som läggs ner inne hamnar inne, inom räckhåll, och inte på andra sidan väggen
 const ledigtGolv = (s: State, x: number, y: number) => { const b = bitAt(s, x, y); return !!b && b.k === 'golv' && b.b >= 1 && !MATERIAL[b.m]?.vag && !stationAt(s, x, y) && !sittAt(s, x, y); };
 // n hela av slaget k läggs på marken på rutan (x, y) eller bredvid, byns (grenarna som blev kvar på stammen, steg 12.1.218)
-export function laggPaRutan(s: State, k: string, n: number, x: number, y: number) { n = Math.floor(n + 1e-9); if (n < 1) return; laggBredvid(s, stacksOf(s), eldRutor(s), k, n, 1, undefined, Math.floor(x), Math.floor(y)); changed(s); }
+// ag = ägarna till det som läggs (de skjutna pilarna, steg 13.4.5), jämkat till n
+export function laggPaRutan(s: State, k: string, n: number, x: number, y: number, ag?: Del) { n = Math.floor(n + 1e-9); if (n < 1) return; laggBredvid(s, stacksOf(s), eldRutor(s), k, n, 1, ag && shareOf(ag, n), Math.floor(x), Math.floor(y)); changed(s); }
 // lägg n av slaget k ner kring rutan (tx, ty) utanför förrådet: en ruta rymmer så mycket av slaget som den rymmer (rymd), och
 // det som inte får plats läggs på rutorna närmast runt omkring, där inget annat ligger. Aldrig i en eld (eld, steg 12.1.153).
 // Ägarnas hela delar delas som i förrådet (delAv)
@@ -1324,8 +1334,9 @@ function tingRuta(s: State, st: Stack[], eld: Set<number>, tx: number, ty: numbe
 function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: number, c: number, ag: Del | undefined, tx: number, ty: number, vid = false): { x: number; y: number } | undefined {
   let forst: { x: number; y: number } | undefined; // rutan där det första lades (det gömda i en flyttad hög läggs där, steg 12.1.208)
   let tingRutor: Set<number> | undefined; // en ruta i lagret rymmer en sak: en stack eller ett redskap (räknas när en lagerruta prövas)
+  const ingenPlats = (x: number, y: number) => eld.has(key(x, y)) || isWall(s, x + 0.5, y + 0.5); // i en eld och i en vägg ligger inget
   for (let r = 0; r <= 4 && n > 1e-9; r++) for (let y = ty - r; y <= ty + r && n > 1e-9; y++) for (let x = tx - r; x <= tx + r && n > 1e-9; x++) {
-    if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r || !inMap(x, y) || eld.has(key(x, y))) continue;
+    if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r || !inMap(x, y) || ingenPlats(x, y)) continue;
     if (r === 0 && sittAt(s, x, y)) continue; // där man står eller sitter vid en station eller ett bord läggs inget, inte heller det man burit dit (steg 12.1.158)
     if (r > 0 && (!usable(s, x, y) && !ledigtGolv(s, x, y) || stubbeOn(s, x, y) || !vid && isStored(s, x, y))) continue;
     // där något annat redan ligger; på rutan själv bara i ett lager, där varje ruta har en sort (en hög på marken får vara blandad)
@@ -1339,7 +1350,7 @@ function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: numb
     addToStack(s, g, v, c, del); n -= v; forst ??= { x, y };
   }
   if (n <= 1e-9) return forst;
-  if (eld.has(key(tx, ty))) { place(s, k, n, c, ag); return forst; } // runt elden är fullt: i förrådet eller bredvid det
+  if (ingenPlats(tx, ty)) { place(s, k, n, c, ag); return forst; } // runt elden eller väggen är fullt: i förrådet eller bredvid det
   // i ett lager rymmer rutan en sak: ligger något annat där läggs resten i förrådet
   if (isStored(s, tx, ty) && (st.some(q => q.x === tx && q.y === ty && q.k !== k && q.n > 1e-6) || (tingRutor ??= new Set(lying(s).map(t => key(t.x!, t.y!)))).has(key(tx, ty)) || forvarAt(s, tx, ty))) { place(s, k, n, c, ag); return forst; }
   let g = st.find(q => q.x === tx && q.y === ty && q.k === k); if (!g) st.push(g = { x: tx, y: ty, k, n: 0, c }); addToStack(s, g, n, c, ag); // runt omkring är fullt
@@ -1425,6 +1436,17 @@ export function haulJob(s: State, near?: number, baraMat = false) {
 interface Bara { x: number; y: number; k: string; d: number; sc: number; why: string; min?: number } // min: det flyttas till en lagerplats med högre prioritet än så (−Infinity: vilken som helst)
 // sorterad: samma lista i poängens ordning (stabilt, så att lika poäng står i listans ordning), om ingen poäng är NaN
 const barCache = new WeakMap<State, { key: string; l: Bara[]; sorterad?: Bara[] }>();
+// bärlistan i överlämningen (steg 12.1.248, timminne.ts): den räknades när den först frågades i timmen, och arbetaren som börjar
+// mitt i timmen ska bära efter samma lista som sidan. Poängen kan vara oändlig, som JSON inte rymmer: den skrivs som text
+const talUt = (v: number) => Number.isFinite(v) ? v : String(v), talIn = (v: number | string) => typeof v === 'string' ? Number(v) : v;
+TIMMINNEN.barLista = {
+  ut: s => { const c = barCache.get(s); return c && { key: c.key, s: !!c.sorterad, l: c.l.map(a => ({ ...a, sc: talUt(a.sc), d: talUt(a.d), ...(a.min !== undefined ? { min: talUt(a.min) } : {}) })) }; },
+  in: (s, v) => {
+    const o = v as { key: string; s: boolean; l: (Omit<Bara, 'sc' | 'd' | 'min'> & { sc: number | string; d: number | string; min?: number | string })[] };
+    const l: Bara[] = o.l.map(({ min, ...a }) => ({ ...a, sc: talIn(a.sc), d: talIn(a.d), ...(min !== undefined ? { min: talIn(min) } : {}) }));
+    barCache.set(s, { key: o.key, l, ...(o.s ? { sorterad: [...l].sort((a, b) => a.sc - b.sc) } : {}) });
+  },
+};
 function barLista(s: State) {
   const key = `${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${zonesOf(s).length}`, c = barCache.get(s);
   if (c && c.key === key) return c;
@@ -1502,3 +1524,4 @@ export function pickUp(s: State, p: Person, t: Task, ryms: (b: Record<string, nu
 import { clamp } from './slump';
 import { grundvarde } from './varde';
 import { angAt } from './slatter';
+import { tjarFaktor } from './tjarlatt';

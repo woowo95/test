@@ -2,7 +2,7 @@ import { gen, heltOrd } from './ord';
 import { antal, honom, och, tal, talOrd } from './ord';
 import { gastensPlatser, horOmGast, raknaBynVet } from './ort';
 import { personNara } from './personlogg';
-import { upplev, uppvaxtDod, uppvaxtFodd } from './uppvaxt';
+import { upplev, uppvaxtDod, uppvaxtFodd, type UpplevelseTyp } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
 import { kronika } from './historik';
 import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, isParent, living, log, makeName, paKartan, newPerson, raddAkt, relKey, startSkills, uppkalladLogg } from './folk';
@@ -10,12 +10,13 @@ import { pair, stallVagn } from './varld';
 import { avgMood } from './humor';
 import { chance, clamp, hash3, pick, pickViktat, rnd } from './slump';
 import { klanTatKrok } from './tatkrok';
+import { fargKrok } from './fargkrok';
 import { Act, DAY, HOUR_S, MIN, Person, SEC, State, T, W } from './typer';
 import { vattenNu } from './sjo';
 import { tileOf } from './mark';
 import { foodDays } from './ekonomi';
 import { ageIndex, foreIstiden, kallTid, kalender } from './tid';
-import { avbryt, put, releaseOwner } from './lager';
+import { amountOf, avbryt, put, releaseOwner } from './lager';
 import { inherit, packUp } from './arv';
 import { balans } from './balans';
 import { RELT } from './relationer';
@@ -98,10 +99,11 @@ const MEDHAVT: Record<string, number> = { rotter: LIV.medhavd };
 // text = det som står efter namnet ("dog av svält"), i loggen, krönikan och byns räknare ('dog av svält', som testerna läser).
 // sorg = familjen och vännerna sörjer på ett sätt som gör dem mer förutseende (upplevelsen sorjde, steg 4.5.4.9). En olycka i ett farligt arbete (OLYCKOR i halsa.ts) pekar hit
 // gud = gudens område som döden hör till (steg 4.1.5); de andra dödsfallen hör till Döden
-interface DodDef { text: string; sorg?: true; gud?: GudOmr }
+// foljd (steg 13.9.3): upplevelsen de levande får av dödsfallet, när foljdNar gäller (en följd som drar en sed tillbaka, foljder i SEDER)
+interface DodDef { text: string; sorg?: true; gud?: GudOmr; foljd?: UpplevelseTyp; foljdNar?: (s: State) => boolean }
 const DOD = {
   svalt: { text: 'av svält', gud: 'skord', sorg: true },
-  kyla: { text: 'av kyla', gud: 'vintern', sorg: true },
+  kyla: { text: 'av kyla', gud: 'vintern', sorg: true, foljd: 'frosIhjal', foljdNar: s => amountOf(s, 'ved') >= 1 }, // medan andra hade ved
   jakt: { text: 'under en jakt', gud: 'jakt' },
   torst: { text: 'av törst' }, // steg 2.4.1
   blod: { text: 'av blodförlust' }, // steg 2.5.1
@@ -121,7 +123,7 @@ const DOD = {
   tornado: { text: 'i en tornado', gud: 'aska' }, // steg 3.8.4 (tornado.ts)
   brand: { text: 'i en eldsvåda', gud: 'elden' },
   bistick: { text: 'av bistick' }, // steg 10.10.22 (halsa.ts binStick) // steg 3.8.5 (brand.ts)
-  rovare: { text: 'av rövare', gud: 'kriget', sorg: true }, // steg 4.4.5 (rovare.ts)
+  rovare: { text: 'av rövare', gud: 'kriget', sorg: true, foljd: 'stupade' }, // steg 4.4.5 (rovare.ts)
   avrattad: { text: 'för sitt brott', gud: 'kriget' }, // dödsstraffet (steg 8.4.8)
   drap: { text: 'av våld', gud: 'kriget' },
   forsvunnen: { text: 'på en resa och kom aldrig hem', sorg: true }, // steg 11.5.18 (resa.ts)
@@ -161,11 +163,14 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   if (p.ute === undefined) nyKvarleva(s, 'kropp', p, p.name); // kroppen ligger kvar där hen dog (steg 8.5.1); den som dör på resan ligger inte på byns karta
   gravgava(s, p); // gravgåvan läggs undan innan arvet (steg 8.5.6)
   skuldKrok.f?.(s, p);
+  const dodFarg = fargKrok.dodFarg(s, p); // färgen hen bar, innan kläderna ärvs (steg 13.3.5)
   inherit(s, p); // arvingarna får det hen ägde (arv.ts); efter dödsraden, så att orsaken står före verkan (steg 6.7.5)
   releaseOwner(s, p.id); // det som blev kvar blir byns
   gudHandelse(s, DODSORSAKER[orsak].gud ?? 'doden', `döden som tog ${p.name}`); // tron söker en gud för det (steg 4.1.5)
   if (a >= ALDER.hogAlder) p.fame.push(`Blev ${a} år gammal`);
   uppvaxtDod(s, p); // barnen som miste hen eller såg det (steg 3.1.2)
+  const fd: DodDef = DODSORSAKER[orsak];
+  if (fd.foljd && !p.gast && (fd.foljdNar?.(s) ?? true)) for (const q of living(s)) if (q !== p && !q.gast) upplev(s, q, fd.foljd, p.name); // följden för byn (steg 13.9.3)
   rykteDod(s, p); // byn minns hen (steg 3.4.1)
   kunskapDod(s, p); // lärlingen och det som ingen annan kan (steg 4.2.3.4)
   for (const q of s.people) if (q.partner === p.id && alive(q) && !paKartan(q)) q.partner = undefined; // den som är på resa släpper också sin partner (sorgen när beskedet når hen, steg 11.5.18)
@@ -173,10 +178,10 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
     // den som var gift sörjer mer, den bästa vännen länge och en nära vän lite mer än en vän (steg 3.1.1)
     const r = s.rels[relKey(p.id, q.id)], varPartner = q.partner === p.id;
     // sorgen i stadier (steg 9.2.33): först förlusten med stor tyngd, sedan sorgen och sist saknaden, svag och länge (sorgTimme)
-    if (varPartner) { q.partner = undefined; const f = r?.gift !== undefined ? RELT.giftSorj : 1; sorj(s, q, p, 'sin partner', LIV.sorjPartner * f, LIV.sorjPartnerDygn * f); }
-    else if (isParent(q, p)) sorj(s, q, p, 'sitt barn', LIV.sorjNara, LIV.sorjNaraDygn);
-    else if (isParent(p, q)) sorj(s, q, p, p.sex === 'k' ? 'sin mor' : 'sin far', LIV.sorjNara, LIV.sorjNaraDygn);
-    else if (q.bast === p.id) sorj(s, q, p, 'sin vän', RELT.bastSorj, RELT.bastSorjDygn);
+    if (varPartner) { q.partner = undefined; const f = r?.gift !== undefined ? RELT.giftSorj : 1; sorj(s, q, p, 'sin partner', LIV.sorjPartner * f, LIV.sorjPartnerDygn * f, dodFarg); }
+    else if (isParent(q, p)) sorj(s, q, p, 'sitt barn', LIV.sorjNara, LIV.sorjNaraDygn, dodFarg);
+    else if (isParent(p, q)) sorj(s, q, p, p.sex === 'k' ? 'sin mor' : 'sin far', LIV.sorjNara, LIV.sorjNaraDygn, dodFarg);
+    else if (q.bast === p.id) sorj(s, q, p, 'sin vän', RELT.bastSorj, RELT.bastSorjDygn, dodFarg);
     else if (r && r.op > REL.saknar) { const f = r.op > REL.naraVan ? RELT.naraSorj : 1; tanke(q, 'saknarDod', s.now, { namn: p.name, v: LIV.saknar * f, tid: LIV.saknarDygn * f * DAY }); }
     // familjen och vännerna sörjer en död som kom av svält, kyla, vargar eller rövare (steg 4.5.4.9)
     if (sorg && (varPartner || isParent(p, q) || isParent(q, p) || q.bast === p.id || (r && r.op > REL.saknar) || (q.mother !== undefined && q.mother === p.mother) || (q.father !== undefined && q.father === p.father))) upplev(s, q, 'sorjde', `${p.name}, som dog ${cause}`);
@@ -473,8 +478,9 @@ function emigrate(s: State, skal: FlyttSkal) {
 }
 
 // sorgen i stadier (steg 9.2.33): q förlorade p. Först förlusten, och sorgTimme byter till sorgen och saknaden
-function sorj(s: State, q: Person, p: Person, ord: string, v: number, dygn: number) {
+function sorj(s: State, q: Person, p: Person, ord: string, v: number, dygn: number, dodFarg?: string) {
   tanke(q, 'forlorade', s.now, { ord, namn: p.name, v: v * LIV.forlust, tid: LIV.forlustDygn * DAY });
+  if (dodFarg) fargKrok.sorjer(q, dodFarg); // tycke för den färg den döda bar (steg 13.3.5)
   (q.sorg ??= []).push({ namn: p.name, vem: p.id, ord, v, dygn, t0: s.now });
 }
 // en gång i timmen (steg.ts): den som sörjer går från förlusten till sorgen och sedan till saknaden

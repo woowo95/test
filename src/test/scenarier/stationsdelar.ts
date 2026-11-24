@@ -95,7 +95,8 @@ function delbyggen(): [string, boolean][] {
   const summa = dl.reduce((n, q) => n + (q.min ?? 0), 0) === SIM.RECEPT.ortkok.min && dl.reduce((n, q) => n + (q.av?.sten ?? 0), 0) === SIM.RECEPT.ortkok.av!.sten && dl.reduce((n, q) => n + (q.av?.virke ?? 0), 0) === SIM.RECEPT.ortkok.av!.virke;
   const s = createState(1, START);
   medHus(s);
-  const p = s.people[0], tk = (): SIM.Task => ({ act: 'station', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', tool: 'ortkok' });
+  const p = s.people[0]; p.skill[SIM.kunnaSkill('station')] = SIM.KUNTAL.mitt; // den vanliga skickligheten: farten 1 (steg 13.9.8)
+  const tk = (): SIM.Task => ({ act: 'station', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', tool: 'ortkok' });
   for (const k of ['sten', 'virke']) SIM.setAmount(s, k, 0);
   SIM.setAmount(s, 'sten', 4);
   // ett påbörjat örtkök där ingen del har tagit sitt material än (platsen väljs i byggplanen, här står det på en fri plats ute)
@@ -186,6 +187,7 @@ SCENARIER.slojdbankar = {
     for (const g of SIM.PROJEKT_LIST) { const ko = SIM.PROJEKT[g].ko; if (!ko || !gor.includes(ko.act)) continue; med1.push(ko.act); const b = SIM.bristNu(s, g); if (Number.isNaN(b)) nan.push(g); if (b > 0) vantat += ko.saknas(s) * ko.min; }
     const vid = SIM.koKrok.vid(s, 'flatarbank');
     const utanKo = gor.filter(a => !med1.includes(a));
+    s.projektSaknar = { ...s.projektSaknar, rep: { beh: 3, n: 3, b: 1 } }; // repet görs när ett projekt behöver det (steg 13.8.4): här tre
     const rep = SIM.PROJEKT.rep.ko!, repSaknas = Math.ceil(SIM.villHaAv(s, 'rep') - SIM.amountOf(s, 'rep') - 1e-9);
     const hinner = SIM.STATIONER.flatarbank.hinner!;
     // med ett bestämt arbete som väntar

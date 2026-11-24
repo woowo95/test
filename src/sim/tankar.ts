@@ -34,6 +34,7 @@ export const TANKAR = {
   harOnt: rad({ text: 'Har ont', tid: HOUR, nar: 'smärta över HALSA.ontGrans (halsa.ts)' }),
   forloradeDel: rad({ text: (a: { del: string }) => `Förlorade ${a.del}`, v: -0.3, tid: 3 * DAY, nar: 'miste en kroppsdel (halsa.ts)' }),
   naken: rad({ text: 'Är naken', tid: 2 * HOUR, nar: 'har inga kläder alls (steg.ts)' }),
+  barFarg: rad({ text: 'Har på sig en färg hen tycker om', tid: 2 * HOUR, nar: 'har på sig ett plagg i en färg hen tycker om (farg.ts, steg 13.3.2)' }),
   nakenDel: rad({ text: (a: { delar: string }) => `Har inget på ${a.delar}`, tid: 2 * HOUR, nar: 'saknar plagg på en del av kroppen (steg.ts)' }),
   svampGift: rad({ text: 'Blev förgiftad av en svamp', nar: 'åt en giftig svamp (fynd.ts)' }),
   // ---- vilan och fritiden
@@ -67,6 +68,7 @@ export const TANKAR = {
   atRatt: rad({ text: 'Åt rått', nar: 'åt rått kött eller rå fisk (matlagning.ts)' }),
   matforgiftad: rad({ text: 'Blev matförgiftad av rått kött eller rå fisk', tid: 12 * HOUR, nar: 'förgiftad av rå mat (matlagning.ts)' }),
   drack: rad({ text: (a: { dryck: string }) => 'Drack ' + a.dryck, nar: 'kände ruset (rus.ts)' }),
+  egetHorn: rad({ text: 'Drack ur sitt eget horn', nar: 'drack öl, mjöd eller vin ur sitt eget dryckeshorn (redskap.ts, steg 13.4.1)' }),
   bakfull: rad({ text: 'Bakfull', nar: 'ruset gick över efter fyllan (rus.ts)' }),
   dryck: rad({ text: (a: { text: string }) => a.text, nar: 'drycken; texten i VATSKOR (vatskor.ts)' }),
   gastabud: rad({ text: 'Åt på gästabudet', tid: DAY / 4, nar: 'styrets gästabud (budget.ts)' }),

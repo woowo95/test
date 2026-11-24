@@ -9,6 +9,7 @@ import { gridOf } from './byggnad';
 import { getMap } from './karta';
 import { iByn } from './omrade';
 import { strandNu } from './sjo';
+import { fangaRadjur, radjurNara, radjurVagNu } from './djur';
 
 // ---------- fiskarterna (steg 7.4.3) ----------
 // Varje art är en rad: hur gärna den nappar under varje årstid (Istid, Vårtid, Sommartid, Hösttid) och hur mycket den sliter på
@@ -24,11 +25,10 @@ export const FISKAR: Record<string, FiskDef> = {
 const FISK_LIST = Object.keys(FISKAR);
 export const MJARDE = balans('mjarde', {
   snaraFangst: 0.03, snaraFagel: 0.3, snaraSlit: 0.25, // snaran: chansen per timme, hur ofta det blir en fågel, och hur mycket den slits per fångst (steg 7.5.10)
-  gropFangst: 0.01, // fångstgropen (steg 7.5.11)
+  gropFangst: 0.05, // fångstgropen (steg 7.5.11): chansen per timme för varje rådjur som går inom RADJUR.vagR rutor (steg 13.4.3)
   burFangst: 0.005, // buren (steg 10.10.13): chansen per timme att en kulting går in, gånger hur mycket vilt det finns där
   sattUtR: 40, // så långt bort letar man högst efter en plats för fällan
   skogUt: 8, // snaror och gropar sätts minst så här många rutor från den som gjort dem, utanför byn
-  vittjaMin: 2, // så många fiskar i mjärden innan någon går dit
   fangst: 0.04, // chansen per timme att en fisk simmar in i en mjärde, gånger hur rikt vattnet är
   max: 6, // så många fiskar ryms i en mjärde
   andel: 0.1, // byn vill ha så många mjärdar att de ger så här stor del av maten den äter (steg 10.2.12)
@@ -48,12 +48,12 @@ export function valjFisk(s: State, p: Person, iMjarde = false, nat = false) {
 // ---------- fällorna (steg 7.4.2, 7.5.10 och 7.5.11) ----------
 // En fälla görs vid fångstbänken och sätts ut, och fångstgropen grävs där den ska ligga (steg 10.2.84). Den fångar medan ingen är där och vittjas av den som går förbi (arbetet vittja). Varje
 // sort är en rad: var den sätts (vid vattnet eller i skogen), vad den fångar och chansen per timme gånger hur rikt det är där
-export interface FallaDef { namn: string; plats: 'strand' | 'skog'; lager: string; fangst: number; ger: (s: State, p: Person) => string; slits: number; gravs?: true } // gravs: grävs där den ska ligga, med benspaden (fångstgropen, steg 10.2.84)
+export interface FallaDef { namn: string; plats: 'strand' | 'skog'; lager: string; fangst: number; ger: (s: State, p: Person) => string; slits: number; gravs?: true; rik?: (s: State, x: number, y: number) => number; vag?: (s: State) => (x: number, y: number) => number; fangad?: (s: State, x: number, y: number) => void } // rik = det som kan fångas nära nu (annars lagret i värmekartan), vag = var djuren går nu, för platsen, och fangad = djuret som fångades är borta (steg 13.4.3) // gravs: grävs där den ska ligga, med benspaden (fångstgropen, steg 10.2.84)
 export const FALLOR: Record<string, FallaDef> = {
   mjarde: { namn: 'Mjärde', plats: 'strand', lager: 'fiske', fangst: MJARDE.fangst, ger: (s, p) => valjFisk(s, p, true), slits: 0 },
   snara: { namn: 'Snara', plats: 'skog', lager: 'jakt', fangst: MJARDE.snaraFangst, ger: (s, p) => rnd(s, 'arbete', p) < MJARDE.snaraFagel ? 'fagel' : 'vilt', slits: MJARDE.snaraSlit },
   bur: { namn: 'Bur', plats: 'skog', lager: 'jakt', fangst: MJARDE.burFangst, ger: () => 'kulting', slits: MJARDE.snaraSlit }, // kultingen bärs hem levande och blir byns gris (steg 10.10.13)
-  grop: { namn: 'Fångstgrop', plats: 'skog', lager: 'jakt', fangst: MJARDE.gropFangst, ger: () => 'radjur', slits: 0, gravs: true },
+  grop: { namn: 'Fångstgrop', plats: 'skog', lager: 'jakt', fangst: MJARDE.gropFangst, ger: () => 'radjur', slits: 0, gravs: true, rik: radjurNara, vag: radjurVagNu, fangad: fangaRadjur }, // där rådjuren går (steg 13.4.3)
 };
 export interface Mjarde { id: number; k?: string; x: number; y: number; ag: number; fisk: Record<string, number>; n: number; c?: number }
 export const mjardarOf = (s: State) => (s.mjardar ??= []);
@@ -67,13 +67,18 @@ export function stepMjardar(s: State, dt = 3600) {
     if (m.n >= MJARDE.max) continue;
     const p = living(s).find(q => q.id === m.ag) ?? living(s)[0];
     if (!p) return;
-    const rik = Math.min(MJARDE.rikMax, richness(s, d.lager as 'fiske', m.x, m.y));
+    const rik = d.rik ? d.rik(s, m.x, m.y) : Math.min(MJARDE.rikMax, richness(s, d.lager as 'fiske', m.x, m.y));
     if (!chansPer(s, d.fangst * rik, 3600, dt, 'arbete', p)) continue;
     const k = d.ger(s, p);
-    m.fisk[k] = (m.fisk[k] ?? 0) + 1; m.n++;
+    m.fisk[k] = (m.fisk[k] ?? 0) + 1; m.n++; d.fangad?.(s, m.x, m.y);
     if (forstaGang(s, 'fallaFangst_' + (m.k ?? 'mjarde'))) log(s, `Byns första ${d.namn.toLowerCase()} fångade något.`, 'world');
     if (d.slits) { m.c = (m.c ?? 1) - d.slits; if (m.c <= 0) s.mjardar = s.mjardar.filter(q => q !== m); }
   }
+}
+// timmarna tills fällan är full med den fångst platsen ger nu, som stepMjardar räknar (steg 13.8.3)
+export function timTillFull(s: State, m: Mjarde) {
+  const d = FALLOR[m.k ?? 'mjarde'], rik = d.rik ? d.rik(s, m.x, m.y) : Math.min(MJARDE.rikMax, richness(s, d.lager as 'fiske', m.x, m.y));
+  return m.n >= MJARDE.max ? 0 : (MJARDE.max - m.n) / Math.max(1e-6, d.fangst * rik);
 }
 // sätter ut en fälla nära den som gjort den: en mjärde på stranden, en snara en bit bort där marken är fri
 export function sattUt(s: State, p: Person, k: string) {
@@ -90,6 +95,7 @@ export function fallPlats(s: State, p: { x: number; y: number }, k: string): { x
   const d = FALLOR[k], sh = strandNu(s), m0 = getMap(s.seed).tiles, skog = d.plats === 'skog';
   const satt = (x: number, y: number) => ({ x, y });
   let forsta: { x: number; y: number } | undefined;
+  const vag = d.vag?.(s);
   for (let r = skog ? MJARDE.skogUt : 1; r < MJARDE.sattUtR; r++) {
     // i skogen den ruta på avståndet där det finns mest vilt: på en ruta utan vilt skulle fällan aldrig fånga något
     let bast: { x: number; y: number } | undefined, br = 0;
@@ -100,12 +106,12 @@ export function fallPlats(s: State, p: { x: number; y: number }, k: string): { x
       if (!skog) return satt(x, y);
       if (m0[i] === T.Vatten || m0[i] === T.Sten || iByn(s, x, y)) continue;
       forsta ??= { x, y };
-      const v = richness(s, d.lager as 'fiske', x, y);
+      const v = vag ? vag(x, y) : richness(s, d.lager as 'fiske', x, y);
       if (v > br) { br = v; bast = { x, y }; }
     }
     if (bast) return satt(bast.x, bast.y);
   }
-  return forsta && satt(forsta.x, forsta.y);
+  return !vag && forsta ? satt(forsta.x, forsta.y) : undefined; // gropen grävs inte förrän rådjuren går inom räckhåll (steg 13.4.3)
 }
 export const sattUtMjarde = (s: State, p: Person) => sattUt(s, p, 'mjarde');
 // den som vittjar tar det som finns i fällan

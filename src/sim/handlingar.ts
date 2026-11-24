@@ -35,7 +35,7 @@ export const actIkon = (a: Act) => { const sl = ACTS[a].slag; return ACTS[a].iko
 // tecknet för ett slag som inte har en pixelbild (personrutans tårtdiagram); handlingar utan slag har sitt eget (tecken)
 export const SLAG_TECKEN: Partial<Record<Slag, string>> = { vila: '💤', prata: '💬' };
 
-interface ActDef {
+export interface ActDef {
   namn: string; // det som står att personen gör
   verktyg?: Record<string, string>; // namnet när ett visst slag av bygge eller hantverk görs (task.tool)
   redskap?: Record<string, RedskapDef>; // redskapen som används i arbetet (sakerna i saker.ts), det bästa först
@@ -66,19 +66,21 @@ interface ActDef {
   hand?: { napp: number; hall: number }; // fiske utan redskap: samma tal som napp och hall i redskapets rad
   hemVarje?: true; // varje fångst bärs hem på en gång (fisket)
   runda?: { r: number; leta: string; plock: string }; // rundan (steg 4.5.6.1, samlandet steg 9.2.53–9.2.57): man går från ruta till ruta inom r rutor och plockar där det finns något, en hel sak i taget. leta och plock är undertexterna (underText)
-  // samlandet efter något annat än det vanliga (steg 12.1.39): tändmaterialet (task.tandmat) och flintan eller stenarna (task.sok)
+  // samlandet efter något annat än det vanliga (steg 12.1.39): tändmaterialet (task.tandmat), höet och grenarna (task.hamtar, turMal i eld.ts) och flintan eller stenarna (task.sok)
   // är egna handlingar med eget namn och egen undertext
-  mal?: Record<'tand' | 'flinta' | 'sten', { namn: string; leta: string; plock: string }>;
+  mal?: Record<'tand' | 'torrgras' | 'grenar' | 'flinta' | 'sten', { namn: string; leta: string; plock: string }>;
   tur?: { r: number; se: number }; // promenaden (steg 6.2.8, turSteg i steg.ts): man går i vanlig fart mellan punkter på land inom r rutor från platsen man valt, och vid en del av dem (se, 0–1) ser man sig omkring
   vandra?: { r: number; h0: number; h1: number; v: number }; // rörelse på platsen (bara det som visas, och lite slitage): radie, stilla h0–h1 sekunder, fart
   tungt?: true; // tröttar mer än att bara vara vaken
   vila?: true; // man återhämtar sig
+  nara?: true; // görs nära någon annan (samtalet, vården, lärlingen, kön, slagsmålet, sömnen i sängarna): trängseln räknas inte (npm run trangsel, steg B.21)
   hantverk?: true; // övar hantverk
+  kunna?: number; // hur mycket skickligheten betyder för farten och kvaliteten, där sakens nivå ger fel eller saknas (KUNNA i kunna.ts, steg 13.9.8; 0,05 som nivå 1, vakten för skickligheten 13.9.10)
+  fardighet?: Skill; // hantverkets färdighet som arbetet övar (steg 13.9.7: smide, krukmakeri, vävning, sömnad); saknas = hantverk
   ovar?: Skill; // en färdighet till som övas (grilla övar matlagning, matlagning.ts); personrutan visar den som övad just nu
   social?: true; // man samtalar med dem som är nära
   tyst?: true; // men pratar inte under den (steg 9.2.100 och 10.2.16): ritualen, arbetet vid en station, att varna och skilja och försvaret; sömnen, jakten och bönen är inte sociala alls; sporten säger det för varje sport (SportDef.tyst)
   skamfri?: true; // skammen (straffet skam, styre.ts) byter inte ut den: måltiden och det som skyddar (värmen, skuggan, vakten, försvaret)
-  varmer?: true; // görs för att bli varm: ett rum väljs bara om det är minst lika varmt som vid elden (varmareInne)
   dygn?: true; // avbryts när dag blir natt eller natt blir dag
   stilla?: true; // står still på platsen (ingen småjustering i bilden)
   vapen?: true; // har sitt vapen i handen hela tiden (vakt.ts: taVapen; agande.ts: tidyTools)
@@ -104,29 +106,37 @@ export const larmAvbryter = (act: string, larm: Larmslag) => !(ACTS as Record<st
 // köttslagen som saltas och vad köttet heter i texterna (steg 9.6.19 och 10.3.14), i den ordning raderna står i ACTS och TILLVERKA
 // (tillverka.ts). Harens kött heter bara kött
 export const SALTKOTT = { kott: 'kött', vargkott: 'vargkött', radjurkott: 'rådjurskött', farkott: 'fårkött', getkott: 'getkött', kokott: 'nötkött', svinkott: 'fläsk', fagelkott: 'fågelkött', bjornkott: 'björnkött' } as const;
+// hudarna som garvas vid garvningsställningen (steg 13.2.1): vad huden heter i texterna och hur många hela läderbitar den ger, efter
+// storleken. Harens skinn garvas av raden garva, de andra av garva_<hud>, i den ordning raderna står i ACTS och TILLVERKA
+export const GARVHUD = { skinn: { namn: 'ett harskinn', lader: 1 }, vitskinn: { namn: 'ett vitt harskinn', lader: 1 }, farskinn: { namn: 'ett fårskinn', lader: 1 }, getskinn: { namn: 'ett getskinn', lader: 1 }, svinskinn: { namn: 'ett svinskinn', lader: 1 }, radjursskinn: { namn: 'ett rådjursskinn', lader: 1 }, vargskinn: { namn: 'ett vargskinn', lader: 2 }, bjornskinn: { namn: 'ett björnskinn', lader: 2 }, kohud: { namn: 'en kohud', lader: 3 } } as const;
+export const garvAct = (hud: keyof typeof GARVHUD) => (hud === 'skinn' ? 'garva' : `garva_${hud}`) as 'garva' | `garva_${Exclude<keyof typeof GARVHUD, 'skinn'>}`;
+export const GARVA_ACTS = (Object.keys(GARVHUD) as (keyof typeof GARVHUD)[]).map(garvAct);
+function garvas() {
+  return Object.fromEntries((Object.keys(GARVHUD) as (keyof typeof GARVHUD)[]).filter(h => h !== 'skinn').map(h => [garvAct(h), { namn: 'Garvar ' + GARVHUD[h].namn, slag: 'hantverk' as const, hantverk: true as const, fardighet: 'somnad' as const, verb: 'garvar', plats: 'station' as const }])) as Record<`garva_${Exclude<keyof typeof GARVHUD, 'skinn'>}`, ActDef>;
+}
 function saltas() {
   return Object.fromEntries(Object.entries(SALTKOTT).map(([k, namn]) => ['salta_' + k, { namn: 'Saltar in ' + namn, slag: 'hantverk' as const, hantverk: true as const, verb: 'saltar', plats: 'elden' as const }])) as Record<`salta_${keyof typeof SALTKOTT}`, ActDef>;
 }
 const DEF = {
-  samla: { syn: true, namn: 'Samlar bär och rötter', yrke: 'Samlare', slag: 'samla', redskap: { korg: { namn: 'Samlar bär och rötter med korg', tar: 'Tar en korg.', ger: 1.9, haller: 32 }, benspade: { namn: 'Gräver rötter med spaden', tar: 'Tar benspaden.', rotter: 2, haller: 40 } }, slits: { enhet: 'bär och rötter', per: 'ger' }, arbete: 'samla', behov: 'mat', tand: true, bas: 0.4, sasong: [0.4, 1.0, 1.25, 1.4], egenskap: 'uthallighet', ger: 'bar', resurs: 'samla', fart: 100, runda: { r: 3, leta: 'letar efter bär', plock: 'plockar bär' }, mal: { tand: { namn: 'Samlar tändmaterial', leta: 'letar efter hö och kvistar', plock: 'plockar hö och kvistar' }, flinta: { namn: 'Letar efter flinta', leta: 'letar efter flinta', plock: 'letar bland stenarna' }, sten: { namn: 'Letar efter stenar', leta: 'letar efter stenar', plock: 'letar bland stenarna' } }, tungt: true, dygn: true, plats: 'ang' },
+  samla: { syn: true, namn: 'Samlar bär och rötter', yrke: 'Samlare', slag: 'samla', redskap: { korg: { namn: 'Samlar bär och rötter med korg', tar: 'Tar en korg.', ger: 1.9, haller: 32 }, benspade: { namn: 'Gräver rötter med spaden', tar: 'Tar benspaden.', rotter: 2, haller: 40 } }, slits: { enhet: 'bär och rötter', per: 'ger' }, arbete: 'samla', behov: 'mat', tand: true, bas: 0.4, sasong: [0.4, 1.0, 1.25, 1.4], egenskap: 'uthallighet', ger: 'bar', resurs: 'samla', fart: 100, runda: { r: 3, leta: 'letar efter bär', plock: 'plockar bär' }, mal: { tand: { namn: 'Samlar tändmaterial', leta: 'letar efter hö och kvistar', plock: 'plockar hö och kvistar' }, torrgras: { namn: 'Samlar hö', leta: 'letar efter hö', plock: 'plockar hö' }, grenar: { namn: 'Samlar grenar', leta: 'letar efter grenar', plock: 'plockar grenar' }, flinta: { namn: 'Letar efter flinta', leta: 'letar efter flinta', plock: 'letar bland stenarna' }, sten: { namn: 'Letar efter stenar', leta: 'letar efter stenar', plock: 'letar bland stenarna' } }, tungt: true, dygn: true, plats: 'ang' },
   jakt: { syn: true, namn: 'Jagar', yrke: 'Jägare', redskap: { jarnspjut: { namn: 'Jagar med spjut', tar: 'Tar ett järnspjut.', ger: 2.5, haller: 80 }, flintspjut: { namn: 'Jagar med spjut', tar: 'Tar ett flintspjut.', ger: 2.5, haller: 20 }, fiskespjut: { namn: 'Jagar med spjut', tar: 'Tar ett träspjut.', ger: 2.5, haller: 5 } }, slits: { enhet: 'harar', per: 'gang' }, slag: 'jaga', arbete: 'jakt', behov: 'mat', bas: 0.35, sasong: [0.7, 0.9, 1.0, 1.15], egenskap: 'mod', ger: 'vilt', resurs: 'jakt', vandra: { r: 3, h0: 3, h1: 10, v: 0.7 }, tungt: true, dygn: true, plats: 'ang' },
   fiske: { syn: true, namn: 'Fiskar med händerna', yrke: 'Fiskare', slag: 'fiska', hand: { napp: 0.06, hall: 0.15 }, redskap: { nat: { namn: 'Fiskar med nät', tar: 'Tar nätet.', ger: 6, don: 'nat', napp: 0.3, hall: 0.85, haller: 400 }, metspo: { namn: 'Metar', tar: 'Tar ett metspö och gräver fram mask.', ger: 4.3, don: 'metspo', bete: true, napp: 0.17, hall: 0.65, haller: 200 }, jarnspjut: { namn: 'Fiskar med spjut', tar: 'Tar ett järnspjut.', ger: 4.3, don: 'spjut', napp: 0.13, hall: 0.5, haller: 960 }, flintspjut: { namn: 'Fiskar med spjut', tar: 'Tar ett flintspjut.', ger: 4.3, don: 'spjut', napp: 0.13, hall: 0.5, haller: 240 }, fiskespjut: { namn: 'Fiskar med spjut', tar: 'Tar ett träspjut.', ger: 4.3, don: 'spjut', napp: 0.13, hall: 0.5, haller: 60 } }, slits: { enhet: 'fiskeförsök', per: 'gang' }, arbete: 'fiske', behov: 'mat', vid: 'vatten', bas: 0.4, sasong: [0.45, 1.0, 1.1, 1.0], egenskap: 'uthallighet', ger: 'abborre', takt: 0, resurs: 'fiske', hemVarje: true, tungt: true, dygn: true, plats: 'strand' },
   ved: { namn: 'Samlar grenar', yrke: 'Trähuggare', slag: 'tra', arbete: 'ved', behov: 'ved', bas: 1.3, sasong: [0.9, 1, 1, 1], egenskap: 'styrka', ger: 'grenar', takt: 60, vandra: { r: 2, h0: 3, h1: 10, v: 0.6 }, runda: { r: 3, leta: 'letar efter grenar', plock: 'plockar grenar' }, tungt: true, dygn: true, plats: 'skog' },
-  leka: { namn: 'Leker', slag: 'leka', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
+  leka: { namn: 'Leker', nara: true, slag: 'leka', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
   // sporten (steg 4.3.1, sport.ts): på en plats i byn under fritiden; task.tool är sporten och task.ref matchens start
   // verktyg: namnen per sport står i SPORTER (sport.ts)
-  sport: { namn: 'Spelar', verktyg: {} as Record<string, string>, slag: 'leka', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
+  sport: { namn: 'Spelar', nara: true, verktyg: {} as Record<string, string>, slag: 'leka', vandra: { r: 2, h0: 2, h1: 6, v: 1.3 }, social: true, dygn: true, plats: 'lek' },
   // publiken (steg 10.7.16, sport.ts): står i en ring runt matchen och hejar; task.tool är sporten och task.ref matchens start
   titta: { namn: 'Tittar på matchen', verktyg: {} as Record<string, string>, slag: 'prata', vila: true, social: true, dygn: true, stilla: true, plats: 'lek' },
   vila: { namn: 'Vilar', sitta: true, yrke: 'Dagdrivare', slag: 'vila', vila: true, dygn: true, plats: 'sang' },
-  samtal: { namn: 'Samtalar vid elden', sitta: true, slag: 'prata', vila: true, social: true, dygn: true, plats: 'elden', varjeSlag: true },
+  samtal: { namn: 'Samtalar vid elden', nara: true, sitta: true, slag: 'prata', vila: true, social: true, dygn: true, plats: 'elden', varjeSlag: true },
   ata: { namn: 'Äter vid förrådet', tecken: '🍽️', vila: true, dygn: true, stilla: true }, // den hungrige går till maten (steg 11.1.77)
-  maltid: { namn: 'Äter vid bordet', sitta: true, tecken: '🍽️', vila: true, social: true, skamfri: true, dygn: true, stilla: true, plats: 'bord' }, // steg 2.2.15
+  maltid: { namn: 'Äter vid bordet', nara: true, sitta: true, tecken: '🍽️', vila: true, social: true, skamfri: true, dygn: true, stilla: true, plats: 'bord' }, // steg 2.2.15
   // framträdandena (steg 4.3.2, framtradande.ts): på kvällen vid elden; task.tool är formen och task.ref när det började
-  upptrada: { namn: 'Uppträder', verktyg: { kvade: 'Kväder', tal: 'Håller tal', forelasning: 'Föreläser', teater: 'Spelar teater', sang: 'Sjunger', musik: 'Spelar musik' }, slag: 'prata', dygn: true, stilla: true, plats: 'elden' },
-  lyssna: { namn: 'Lyssnar', sitta: true, tecken: '👂', vila: true, dygn: true, stilla: true, plats: 'elden' },
-  beratta: { namn: 'Berättar vid elden', sitta: true, yrke: 'Berättare', slag: 'prata', social: true, dygn: true, plats: 'elden' },
-  hantverk: { namn: 'Gör handarbete', yrke: 'Hantverkare', slag: 'hantverk', verktyg: { rep: 'Tvinnar rep' }, vila: true, hantverk: true, social: true, dygn: true, stilla: true, plats: 'elden' },
+  upptrada: { namn: 'Uppträder', nara: true, verktyg: { kvade: 'Kväder', tal: 'Håller tal', forelasning: 'Föreläser', teater: 'Spelar teater', sang: 'Sjunger', musik: 'Spelar musik' }, slag: 'prata', dygn: true, stilla: true, plats: 'elden' },
+  lyssna: { namn: 'Lyssnar', nara: true, sitta: true, tecken: '👂', vila: true, dygn: true, stilla: true, plats: 'elden' },
+  beratta: { namn: 'Berättar vid elden', nara: true, sitta: true, yrke: 'Berättare', slag: 'prata', social: true, dygn: true, plats: 'elden' },
+  hantverk: { namn: 'Gör handarbete', yrke: 'Hantverkare', slag: 'hantverk', verktyg: { rep: 'Tvinnar rep' }, vila: true, hantverk: true, kunna: 0.05, social: true, dygn: true, stilla: true, plats: 'elden' },
   vakt: { namn: 'Håller vakt', ansikte: 'lugn', yrke: 'Väktare', tecken: '👁️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.6, fortsatter: ['varg'] as const },
   // när vargar är nära (steg 3.7.15, varg.ts): de svaga gömmer sig i huset, de modiga väntar med vapen vid elden
   // nöden avbryter inte den som gömmer sig eller väntar med vapen (nodFri): faran väljer ändå samma sak igen, och förut valde den som behövde gå på toa om sin uppgift i varje slag så länge vargarna var nära
@@ -136,19 +146,19 @@ const DEF = {
   budRovare: { namn: 'Hämtar folk', tecken: '🏃', social: true, skamfri: true, dygn: true, fortsatter: ['varg'] as const }, // budbäraren (steg 9.2.117)
   hjalpaRovare: { namn: 'Håller sig bakom kämparna', ansikte: 'arg', tecken: '🤲', social: true, skamfri: true, dygn: true, stilla: true, nodFri: true, fortsatter: ['varg'] as const }, // steg 9.2.116
   forsvarRovare: { namn: 'Väntar på rövarna med vapen', ansikte: 'arg', tecken: '🛡️', social: true, tyst: true, skamfri: true, dygn: true, stilla: true, vapen: true, nodFri: true, fortsatter: ['varg'] as const, varjeSlag: true },
-  sova: { namn: 'Sover', slag: 'vila', under: { go: 'går och lägger sig' }, vila: true, stilla: true, plats: 'sang' },
+  sova: { namn: 'Sover', nara: true, slag: 'vila', under: { go: 'går och lägger sig' }, vila: true, stilla: true, plats: 'sang' },
   elda: { namn: 'Lägger ved på elden', yrke: 'Eldvaktare', slag: 'elda', under: { go: 'hämtar ved', back: 'bär ved till elden' }, ger: 'ved' },
   tanda: { namn: 'Försöker tända elden', yrke: 'Eldvaktare', slag: 'elda', varjeSlag: true },
   flyttaeld: { namn: 'Flyttar elden', yrke: 'Eldvaktare', slag: 'elda', tungt: true }, // steg 2.10.4: släcker elden och bär stenarna till en ny eldplats (eldflytt.ts)
-  varma: { namn: 'Värmer sig vid elden', tecken: '♨️', vila: true, social: true, skamfri: true, varmer: true, plats: 'elden' },
-  svalka: { namn: 'Svalkar sig i skuggan', tecken: '🌳', vila: true, social: true, skamfri: true, dygn: true, stilla: true, plats: 'skugga' }, // steg 2.3.13
+  varma: { namn: 'Värmer sig vid elden', tecken: '♨️', vila: true, social: true, skamfri: true, plats: 'elden' },
+  svalka: { namn: 'Svalkar sig', tecken: '🌳', vila: true, social: true, skamfri: true, dygn: true, stilla: true, plats: 'skugga' }, // steg 2.3.13
   toa: { namn: 'Går avsides', tecken: '{sym_toa}', ikon: 'a_toa', verb: 'har gått avsides', plats: 'avsides', nodFri: true },
   dricka: { namn: 'Dricker vid vattnet', tecken: '🥤' },
   dryck: { namn: 'Dricker', tecken: '🥤', stilla: true }, // mjölk, saft, kokt vatten, te, vin eller öl hemma (steg 10.2.34) // steg 2.4.1: platsen väljs i torst.ts
   ata_sno: { namn: 'Äter snö', tecken: '🧊', stilla: true }, // den törstige när inget bättre finns nära (steg 9.6.18, torst.ts)
   smalta: { namn: 'Smälter snö vid elden och dricker', tecken: '🫗', plats: 'elden' }, // i istiden, när sjön är frusen
   // vården (steg 2.5.2, halsa.ts): platsen är den skadade, och den som inte kan gå bärs hem eller får vatten där hen ligger
-  varda: { namn: 'Vårdar', tecken: '🩹', under: { back: 'bär den skadade' }, stilla: true, framme: true, fortsatter: ['brand', 'tornado', 'varg'] as const, varjeSlag: true },
+  varda: { namn: 'Vårdar', nara: true, tecken: '🩹', under: { back: 'bär den skadade' }, stilla: true, framme: true, fortsatter: ['brand', 'tornado', 'varg'] as const, varjeSlag: true },
   // tron och graven (system 8.5, kult.ts och kvarlevor.ts)
   be: { namn: 'Ber', tecken: '✨', ikon: 'a_be', framme: true, stilla: true, skamfri: true },
   gravbesok: { namn: 'Står vid graven', tecken: '✨', ikon: 'a_be', framme: true, stilla: true, skamfri: true }, // besöket vid graven (steg 10.4.8)
@@ -159,16 +169,17 @@ const DEF = {
   runsten: { namn: 'Reser en runsten', slag: 'bygga', framme: true, stilla: true }, // steg 10.6.1 (skrift.ts)
   gravvard: { namn: 'Gör vården på en grav', slag: 'bygga', framme: true, stilla: true }, // steg 10.4.2
   grava: { namn: 'Gräver en grav', slag: 'bygga', tungt: true, framme: true, stilla: true, redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'gravar', per: 'gang' }, framfor: true },
-  foder: { namn: 'Föder barn', tecken: '🧒', ikon: 'foder', stilla: true, nodFri: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 9.5.29
-  forlossa: { namn: 'Hjälper till vid en förlossning', tecken: '🩹', stilla: true }, // steg 9.5.29
+  foder: { namn: 'Föder barn', nara: true, tecken: '🧒', ikon: 'foder', stilla: true, nodFri: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 9.5.29
+  forlossa: { namn: 'Hjälper till vid en förlossning', nara: true, tecken: '🩹', stilla: true }, // steg 9.5.29
   barmat: { namn: 'Bär mat till fången', tecken: '🍽️', under: { go: 'hämtar mat', back: 'bär mat' }, framme: true }, // steg 11.12.2 (fangelse.ts)
-  fangen: { namn: 'Sitter i fängelset', tecken: '🚪', ikon: 'fangelse', stilla: true, dygn: true, social: true }, // pratar genom dörren (steg 11.12.4)
+  fangen: { namn: 'Sitter i fängelset', nara: true, tecken: '🚪', ikon: 'fangelse', stilla: true, dygn: true, social: true }, // pratar genom dörren (steg 11.12.4)
   fangvakt: { namn: 'Vaktar fängelset', yrke: 'Väktare', tecken: '👁️', ikon: 'fangelse', stilla: true, vapen: true, dygn: true }, // steg 11.12.5 (fangelse.ts)
   stoppa: { namn: 'Går för att stoppa fången', tecken: '🚪', ikon: 'fangelse', framme: true }, // steg 11.12.5: larmet rymning
-  besokFange: { namn: 'Pratar med fången genom dörren', tecken: '🚪', ikon: 'fangelse', framme: true, stilla: true, social: true }, // steg 11.12.4 (fangelse.ts) // steg 11.12.1 (fangelse.ts)
+  besokFange: { namn: 'Pratar med fången genom dörren', nara: true, tecken: '🚪', ikon: 'fangelse', framme: true, stilla: true, social: true }, // steg 11.12.4 (fangelse.ts) // steg 11.12.1 (fangelse.ts)
   rymma: { namn: 'Slår sönder fängelsets dörr', tecken: '🚪', ikon: 'fangelse', framme: true }, // steg 11.12.1: trädörrens 20 minuter
-  medvetslos: { namn: 'Ligger medvetslös', tecken: '✨', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true },
-  buren: { namn: 'Bärs hem', tecken: '🫂', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true },
+  medvetslos: { namn: 'Ligger medvetslös', nara: true, tecken: '✨', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true },
+  iselen: { namn: 'Bärs i bärselen', nara: true, tecken: '🫂', stilla: true, vila: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true }, // spädbarnet hos modern (steg 13.2.3, barsele.ts)
+  buren: { namn: 'Bärs hem', nara: true, tecken: '🫂', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true },
   // vattensäcken (steg 2.10.1, torst.ts): fylls vid vattnet och bärs till den som inte kan gå. Den slits en gång per tur
   vatten: { namn: 'Hämtar vatten', tecken: '🫗', under: { go: 'fyller vattensäcken', back: 'bär vatten' }, redskap: { vattensack: { tar: 'Tar vattensäcken.', haller: 150, kravs: true }, lerkruka_mellan: { tar: 'Tar en lerkruka.', haller: 150 } }, slits: { enhet: 'turer med vatten', per: 'gang' }, framme: true }, // eller i en mellanstor lerkruka (steg 9.4.12)
   kol: { namn: 'Hämtar kol ur den slocknade elden', tecken: '⚫', plats: 'kol' },
@@ -181,7 +192,7 @@ const DEF = {
   nat: { namn: 'Knyter ett nät', slag: 'hantverk', hantverk: true, plats: 'station' }, // bara vid slöjdbänken (steg 9.6.16)
   metspo: { namn: 'Gör ett metspö', slag: 'hantverk', hantverk: true, plats: 'station' },
   kniv: { namn: 'Gör en flintkniv', slag: 'hantverk', hantverk: true, plats: 'station' },
-  slakta: { namn: 'Slaktar vilt med kniven', slag: 'hantverk', redskap: { jarnkniv: { haller: 1000, kravs: true, fart: 3, kvalitet: 1.5 }, kniv: { haller: 250, kravs: true } }, slits: { enhet: 'djur', per: 'gang' }, hantverk: true, social: true, tyst: true, stilla: true, verb: 'slaktar', plats: 'station' },
+  slakta: { namn: 'Slaktar vilt med kniven', slag: 'hantverk', redskap: { jarnkniv: { haller: 1000, kravs: true, fart: 3, kvalitet: 1.5 }, kniv: { haller: 250, kravs: true } }, slits: { enhet: 'djur', per: 'gang' }, hantverk: true, social: true, tyst: true, stilla: true, framme: true, verb: 'slaktar', plats: 'station' },
   promenad: { namn: 'Tar en promenad', tecken: '🚶', tur: { r: 10, se: 0.35 }, dygn: true },
   bada: { namn: 'Badar i sjön', tecken: '🏊', dygn: true },
   bara: { namn: 'Bär in saker till lagret', slag: 'bara' },
@@ -192,7 +203,10 @@ const DEF = {
   salta_fisk: { namn: 'Saltar in fisk', slag: 'hantverk', hantverk: true, verb: 'saltar', plats: 'elden' }, // steg 9.6.19
   ...saltas(), // varje köttslag saltas för sig (steg 10.3.14)
   krossa_saft: { namn: 'Gör saft', slag: 'hantverk', hantverk: true, verb: 'krossar bär', plats: 'elden' }, // bär till saft i en lerkruka (steg 9.6.9)
+  syra_kal: { namn: 'Syrar kål', slag: 'hantverk', hantverk: true, verb: 'syrar kål', plats: 'elden' }, syra_fisk: { namn: 'Syrar fisk', slag: 'hantverk', hantverk: true, verb: 'syrar fisk', plats: 'elden' }, // kål eller fisk med salt i en stor lerkruka (steg 13.6.2, TILLVERKA)
   koka_buljong: { namn: 'Kokar buljong', slag: 'hantverk', hantverk: true, verb: 'kokar buljong', plats: 'elden' }, // ben och svamp eller kål sjuder i en lerkruka (steg 10.7.24)
+  farga: { namn: 'Färgar', slag: 'hantverk', hantverk: true, verb: 'färgar', plats: 'station', stilla: true }, // ett plagg i ett färgbad vid örtköket (farg.ts, steg 13.3.2)
+  tjara: { namn: 'Tjärar', slag: 'hantverk', hantverk: true, kunna: 0.05, verb: 'tjärar', stilla: true }, // trä som står ute (tjara.ts, steg 13.5.1)
   koka_te: { namn: 'Kokar örtte', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, // vid örtköket, annars vid elden (steg 9.5.8)
   koka_salva: { namn: 'Kokar salva', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, // vid örtköket (steg 7.6)
   koka_tjara: { namn: 'Kokar tjära', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },
@@ -200,54 +214,60 @@ const DEF = {
   koka_tval: { namn: 'Kokar tvål', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' },
   gora_pergament: { namn: 'Gör pergament', slag: 'hantverk', hantverk: true, verb: 'skrapar', plats: 'station' }, // vid garvningsställningen (steg 10.6.4)
   riva_black: { namn: 'Gör bläck', slag: 'hantverk', hantverk: true, verb: 'gnider', plats: 'elden' }, // sot och vatten i en liten lerkruka
-  garva: { namn: 'Garvar ett skinn', slag: 'hantverk', hantverk: true, verb: 'garvar', plats: 'station' }, // vid garvningsställningen (steg 7.7.6)
-  spinna: { namn: 'Spinner lintråd', slag: 'hantverk', hantverk: true, verb: 'spinner', plats: 'elden', redskap: { slanda: { tar: 'Tar sländan.', haller: 60 } }, slits: { enhet: 'tråd', per: 'gang' } }, // med sländan, var som helst (steg 7.7.8)
-  vava: { namn: 'Väver lintyg', slag: 'hantverk', hantverk: true, verb: 'väver', plats: 'station' }, // vid vävstolen (steg 7.7.9)
-  spinna_ull: { namn: 'Spinner ulltråd', slag: 'hantverk', hantverk: true, verb: 'spinner', plats: 'elden', redskap: { slanda: { tar: 'Tar sländan.', haller: 60 } }, slits: { enhet: 'tråd', per: 'gang' } }, // ullen (steg 9.8.14)
-  vava_ull: { namn: 'Väver ylletyg', slag: 'hantverk', hantverk: true, verb: 'väver', plats: 'station' },
-  sy_ridsadel: { namn: 'Syr en ridsadel', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // vid slöjdbänken (steg 11.11.4)
-  sy_packsadel: { namn: 'Syr en packsadel', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // vid slöjdbänken (steg 11.11.3)
-  sy_talt: { namn: 'Syr ett tält', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // vid slöjdbänken (steg 11.11.1)
+  garva: { namn: 'Garvar ett harskinn', slag: 'hantverk', hantverk: true, fardighet: 'somnad', verb: 'garvar', plats: 'station' }, // vid garvningsställningen (steg 7.7.6)
+  ...garvas(), // varje hud garvas för sig (steg 13.2.1)
+  spinna: { namn: 'Spinner lintråd', slag: 'hantverk', hantverk: true, fardighet: 'vavning', verb: 'spinner', plats: 'elden', redskap: { slanda: { tar: 'Tar sländan.', haller: 60 } }, slits: { enhet: 'tråd', per: 'gang' } }, // med sländan, var som helst (steg 7.7.8)
+  vava: { namn: 'Väver lintyg', slag: 'hantverk', hantverk: true, fardighet: 'vavning', verb: 'väver', plats: 'station' }, // vid vävstolen (steg 7.7.9)
+  spinna_ull: { namn: 'Spinner ulltråd', slag: 'hantverk', hantverk: true, fardighet: 'vavning', verb: 'spinner', plats: 'elden', redskap: { slanda: { tar: 'Tar sländan.', haller: 60 } }, slits: { enhet: 'tråd', per: 'gang' } }, // ullen (steg 9.8.14)
+  vava_ull: { namn: 'Väver ylletyg', slag: 'hantverk', hantverk: true, fardighet: 'vavning', verb: 'väver', plats: 'station' },
+  sy_ridsadel: { namn: 'Syr en ridsadel', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' }, // vid slöjdbänken (steg 11.11.4)
+  sy_packsadel: { namn: 'Syr en packsadel', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' }, // vid slöjdbänken (steg 11.11.3)
+  sy_talt: { namn: 'Syr ett tält', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' }, // vid slöjdbänken (steg 11.11.1)
   gor_leksak: { namn: 'Täljer en leksak', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' }, // steg 7.5.4; vid snickarbänken om byn har en (steg 9.4.5), annars vid elden
   snara: { namn: 'Gör en snara', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // vid fångstbänken (steg 7.5.10)
   bur: { namn: 'Gör en bur', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // vid fångstbänken (steg 10.10.13)
   grop: { namn: 'Gräver en fångstgrop', slag: 'bygga', verb: 'gräver', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40, kravs: true } }, slits: { enhet: 'gropar', per: 'gang' }, tungt: true, framme: true, stilla: true }, // på plats i skogen, där viltet går (steg 7.5.11 och 10.2.84)
-  byxor: { namn: 'Syr byxor', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // steg 7.7
-  mossa: { namn: 'Syr en mössa', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
+  byxor: { namn: 'Syr byxor', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' }, // steg 7.7
+  mossa: { namn: 'Syr en mössa', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' },
   snoskor: { namn: 'Gör snöskor', slag: 'hantverk', hantverk: true, stilla: true, verb: 'gör', plats: 'station' },
-  prastdrakt: { namn: 'Syr prästens dräkt', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, tecken: { namn: 'Gör ett trons tecken', slag: 'hantverk', hantverk: true, stilla: true, verb: 'gör', plats: 'station' }, mask: { namn: 'Gör schamanens mask', slag: 'hantverk', hantverk: true, stilla: true, verb: 'gör', plats: 'station' },
+  prastdrakt: { namn: 'Syr prästens dräkt', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' }, tecken: { namn: 'Gör ett trons tecken', slag: 'hantverk', hantverk: true, stilla: true, verb: 'gör', plats: 'station' }, mask: { namn: 'Gör schamanens mask', slag: 'hantverk', hantverk: true, stilla: true, verb: 'gör', plats: 'station' },
   koka_rokelse: { namn: 'Kokar rökelse', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, koka_olja: { namn: 'Kokar brännolja', slag: 'hantverk', hantverk: true, verb: 'kokar', plats: 'station' }, // steg 8.5.16
-  rustning: { namn: 'Syr en läderrustning', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, hjalm: { namn: 'Syr en läderhjälm', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
-  skold: { namn: 'Gör en sköld', slag: 'hantverk', hantverk: true, plats: 'station' }, bage: { namn: 'Gör en pilbåge', slag: 'hantverk', hantverk: true, plats: 'station' }, slunga: { namn: 'Gör en slunga', slag: 'hantverk', hantverk: true, plats: 'station' }, horn: { namn: 'Gör ett horn', slag: 'hantverk', hantverk: true, plats: 'station' },
+  rustning: { namn: 'Syr en läderrustning', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' }, hjalm: { namn: 'Syr en läderhjälm', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
+  skold: { namn: 'Gör en sköld', slag: 'hantverk', hantverk: true, plats: 'station' }, bage: { namn: 'Gör en pilbåge', slag: 'hantverk', hantverk: true, plats: 'station' }, slunga: { namn: 'Gör en slunga', slag: 'hantverk', hantverk: true, plats: 'station' }, horn: { namn: 'Gör ett horn', slag: 'hantverk', hantverk: true, plats: 'station' }, dryckeshorn: { namn: 'Gör ett dryckeshorn', slag: 'hantverk', hantverk: true, plats: 'station' },
   gor_pilar: { namn: 'Gör pilar', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' },
+  klaPa: { namn: 'Tar på sig ett varmare plagg', tecken: '🧥', ikon: 'a_be', framme: true, stilla: true }, // värmen (varme.ts)
+  klaAv: { namn: 'Tar av sig ett varmt plagg', tecken: '🧥', ikon: 'a_be', framme: true, stilla: true }, // svalkan (SVALKA i varme.ts, steg 13.8.1)
   avrusta: { namn: 'Tar av den fallne det hen bar', tecken: '✨', ikon: 'a_be', framme: true, stilla: true }, rusta: { namn: 'Hämtar sin rustning', tecken: '✨', ikon: 'a_be', framme: true, stilla: true }, // steg 8.7.5, 8.7.8
-  mantel: { namn: 'Syr ledarens mantel', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // steg 8.3.14
+  mantel: { namn: 'Syr ledarens mantel', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' }, // steg 8.3.14
   halsband: { namn: 'Trär ett halsband', slag: 'hantverk', hantverk: true, stilla: true, verb: 'trär', plats: 'station' },
-  tunika: { namn: 'Syr en tunika', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
-  kappa: { namn: 'Syr en kappa', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, sjal: { namn: 'Syr en sjal', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // ullens plagg (steg 9.8.15)
-  skjorta: { namn: 'Syr en skjorta', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
+  tunika: { namn: 'Syr en tunika', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' },
+  kappa: { namn: 'Syr en kappa', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' }, sjal: { namn: 'Syr en sjal', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // ullens plagg (steg 9.8.15)
+  skjorta: { namn: 'Syr en skjorta', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' },
   hatt: { namn: 'Flätar en hatt', slag: 'hantverk', hantverk: true, stilla: true, verb: 'flätar', plats: 'station' }, // halmhatten (steg 12.1.34)
   mjarde: { namn: 'Flätar en mjärde', slag: 'hantverk', hantverk: true, verb: 'flätar', plats: 'station' }, // bara vid fångstbänken (stationer.ts, steg 7.4.2)
   vittja: { namn: 'Vittjar mjärden', slag: 'fiska', verb: 'vittjar', plats: 'skog' },
   korg: { namn: 'Flätar en korg av hö', slag: 'hantverk', hantverk: true, verb: 'flätar', plats: 'station' }, // bara vid slöjdbänken (stationer.ts)
   bensyl: { namn: 'Slipar en bensyl', slag: 'hantverk', hantverk: true, verb: 'slipar', plats: 'station' }, // steg 2.3.2
-  rock: { namn: 'Syr en rock', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // bara vid slöjdbänken med bensylen (stationer.ts). Plaggen heter som i PLAGG (klader.ts, steg 3.10.12)
-  skor: { namn: 'Syr skor', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' },
+  rock: { namn: 'Syr en rock', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' }, // bara vid slöjdbänken med bensylen (stationer.ts). Plaggen heter som i PLAGG (klader.ts, steg 3.10.12)
+  skor: { namn: 'Syr skor', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' },
   balte: { namn: 'Flätar ett bälte', slag: 'hantverk', hantverk: true, verb: 'flätar', plats: 'station' }, // steg 2.3.3
-  axelrem: { namn: 'Syr en axelrem', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // vid slöjdbänken (steg 7.1.2)
-  ryggsack: { namn: 'Syr en ryggsäck', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // vid slöjdbänken med bensylen (steg 7.1.3)
-  boll: { namn: 'Syr en boll', slag: 'hantverk', hantverk: true, verb: 'syr', plats: 'station' }, // sportens föremål (steg 4.3.1.2, sport.ts)
-  handla: { namn: 'Handlar med handlaren', slag: 'prata', stilla: true }, // byns handel vid handlarens filt (steg 4.4.1.3, handel.ts): task.ref är handlarens id. Inte social: den som handlar pratar bara med handlaren (steg 4.5.7.5)
-  koa: { namn: 'Står i kö till handlaren', slag: 'prata', social: true, stilla: true }, // kön till handlaren (steg 4.5.7.5, handel.ts): de som väntar får prata med varandra
+  barnklader: { namn: 'Syr barnkläder', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' }, // vid slöjdbänken (steg 13.2.4)
+  barsele: { namn: 'Syr en bärsele', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' }, // vid slöjdbänken (steg 13.2.3)
+  axelrem: { namn: 'Syr en axelrem', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' }, // vid slöjdbänken (steg 7.1.2)
+  ryggsack: { namn: 'Syr en ryggsäck', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' }, // vid slöjdbänken med bensylen (steg 7.1.3)
+  boll: { namn: 'Syr en boll', slag: 'hantverk', hantverk: true, fardighet: 'somnad', verb: 'syr', plats: 'station' }, // sportens föremål (steg 4.3.1.2, sport.ts)
+  handla: { namn: 'Handlar med handlaren', nara: true, slag: 'prata', stilla: true }, // byns handel vid handlarens filt (steg 4.4.1.3, handel.ts): task.ref är handlarens id. Inte social: den som handlar pratar bara med handlaren (steg 4.5.7.5)
+  koa: { namn: 'Står i kö till handlaren', nara: true, slag: 'prata', social: true, skamfri: true, stilla: true }, // den som skäms får handla (steg 13.8.10) // kön till handlaren (steg 4.5.7.5, handel.ts): de som väntar får prata med varandra
   slagtra: { namn: 'Täljer ett slagträ', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' },
   skara_remsor: { namn: 'Skär remsor', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'elden' }, skara_lin: { namn: 'Skär remsor av lin', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'elden' }, nal: { namn: 'Slipar en bennål', slag: 'hantverk', hantverk: true, verb: 'slipar', plats: 'station' }, // förbanden (steg 9.5.15)
   kalke: { namn: 'Gör en kälke', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 10.10.2
   vagn: { namn: 'Gör en vagn', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 11.11.2
+  plog: { namn: 'Gör en plog', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 13.7.2
   slade: { namn: 'Gör en släde', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 10.10.3
   bagborr: { namn: 'Gör en bågborr', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 10.6.13
   krycka: { namn: 'Täljer en krycka', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' }, traben: { namn: 'Täljer ett träben', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' }, krok: { namn: 'Gör en krok', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, ogonlapp: { namn: 'Skär en ögonlapp', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'station' }, // proteserna (steg 9.5.11)
   naverask: { namn: 'Viker en näverask', slag: 'hantverk', hantverk: true, verb: 'viker', plats: 'station' }, // vid slöjdbänken om byn har en, annars för hand (steg 9.4.13)
-  lerkruka: { namn: 'Bygger upp en lerkruka', slag: 'hantverk', hantverk: true, verb: 'formar', plats: 'elden' }, // steg 9.4.11, kruka.ts: på drejskivan om byn har en (steg 12.4.1, platsFor i val.ts), annars för hand vid elden
+  lerkruka: { namn: 'Bygger upp en lerkruka', slag: 'hantverk', hantverk: true, fardighet: 'krukmakeri', verb: 'formar', plats: 'elden' }, // steg 9.4.11, kruka.ts: på drejskivan om byn har en (steg 12.4.1, platsFor i val.ts), annars för hand vid elden
   slanda: { namn: 'Gör en slända', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 7.7.8
   fackla: { namn: 'Gör en fackla', slag: 'hantverk', hantverk: true, verb: 'binder', plats: 'station' }, // steg 6.3.6 (ljus.ts)
   trumma: { namn: 'Gör en trumma', slag: 'hantverk', hantverk: true, verb: 'spänner', plats: 'station' },
@@ -258,19 +278,19 @@ const DEF = {
   skara: { namn: 'Gör en skära', slag: 'hantverk', hantverk: true, plats: 'station' }, // till slåttern (steg 9.8.9)
   slatter: { namn: 'Slår ängen', slag: 'odla', verb: 'slår', yrke: 'Herde', tungt: true }, // slatter.ts (steg 9.8.9)
   benspade: { namn: 'Gör en benspade', slag: 'hantverk', hantverk: true, plats: 'station' }, // bara vid slöjdbänken (steg 2.7.2)
-  vattensack: { namn: 'Syr en vattensäck', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // bara vid slöjdbänken med bensylen (steg 2.10.1)
-  lara: { namn: 'Går i lära', slag: 'hantverk', hantverk: true, stilla: true, verb: 'går i lära', plats: 'elden' }, // lärlingen arbetar bredvid sin mästare (teknik.ts, steg 4.2.3.3); platsen sätts i valet
-  forsok: { namn: 'Prövar sig fram', yrke: 'Mästare', slag: 'hantverk', hantverk: true, stilla: true, verb: 'prövar', plats: 'elden' }, // vid försöksplatsen för en teknik på nivå 4–5 (teknik.ts, steg 4.2.1.1); stationen sätts i valet
+  vattensack: { namn: 'Syr en vattensäck', slag: 'hantverk', hantverk: true, fardighet: 'somnad', stilla: true, verb: 'syr', plats: 'station' }, // bara vid slöjdbänken med bensylen (steg 2.10.1)
+  lara: { namn: 'Går i lära', nara: true, slag: 'hantverk', hantverk: true, kunna: 0.05, stilla: true, verb: 'går i lära', plats: 'elden' }, // lärlingen arbetar bredvid sin mästare (teknik.ts, steg 4.2.3.3); platsen sätts i valet
+  forsok: { namn: 'Prövar sig fram', yrke: 'Mästare', slag: 'hantverk', hantverk: true, kunna: 0.05, stilla: true, verb: 'prövar', plats: 'elden' }, // vid försöksplatsen för en teknik på nivå 4–5 (teknik.ts, steg 4.2.1.1); stationen sätts i valet
   tvinna: { namn: 'Tvinnar rep', yrke: 'Hantverkare', slag: 'hantverk', vila: true, hantverk: true, social: true, tyst: true, dygn: true, stilla: true, verb: 'tvinnar', plats: 'station' }, // vid slöjdbänken, annars för hand inne i byn (vid elden när det är kallt, steg 2.10.6)
-  rensa: { namn: 'Rensar fisk', slag: 'hantverk', hantverk: true, social: true, tyst: true, stilla: true, verb: 'rensar', plats: 'station' },
+  rensa: { namn: 'Rensar fisk', slag: 'hantverk', hantverk: true, social: true, tyst: true, stilla: true, framme: true, verb: 'rensar', plats: 'station' },
   brygga: { namn: 'Lägger en sats i bryggkaret', slag: 'hantverk', hantverk: true, ovar: 'matlagning', verb: 'brygger', plats: 'station' }, // brygg.ts (steg 9.6.12)
   malta: { namn: 'Blöter korn till malt', slag: 'hantverk', hantverk: true, verb: 'blöter korn', plats: 'station' }, // kornet hängs på torkställningen (brygg.ts, steg 9.6.13)
   branna: { namn: 'Bränner sprit', slag: 'hantverk', hantverk: true, ovar: 'matlagning', verb: 'bränner', plats: 'station' }, // vin eller öl i brännpannan (brygg.ts, steg 10.7.26)
   tappa: { namn: 'Häller upp ur bryggkaret', slag: 'hantverk', hantverk: true, verb: 'häller upp', plats: 'station' },
-  roka: { namn: 'Röker kött och fisk', slag: 'hantverk', hantverk: true, ovar: 'matlagning', stilla: true, verb: 'röker', plats: 'station' }, // rökeriet (matlagning.ts, steg 9.6.8)
+  roka: { namn: 'Röker kött och fisk', slag: 'hantverk', hantverk: true, ovar: 'matlagning', stilla: true, framme: true, verb: 'röker', plats: 'station' }, // rökeriet (matlagning.ts, steg 9.6.8)
   baka: { namn: 'Bakar bröd', slag: 'hantverk', hantverk: true, ovar: 'matlagning', verb: 'bakar', plats: 'station' }, // vid bakugnen (matlagning.ts, steg 9.6.23)
   mala_korn: { namn: 'Mal korn till mjöl', slag: 'hantverk', hantverk: true, verb: 'mal', plats: 'station' }, // vid kvarnstenen (steg 9.6.22)
-  steka: { namn: 'Steker på stekhällen', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, tyst: true, stilla: true, verb: 'steker', plats: 'hard', med: 'stekhall' }, // stekhällen på härden (steg 10.2.87) (matlagning.ts, steg 9.6.21)
+  steka: { namn: 'Steker på stekhällen', slag: 'hantverk', hantverk: true, kunna: 0.05, ovar: 'matlagning', social: true, tyst: true, stilla: true, framme: true, verb: 'steker', plats: 'hard', med: 'stekhall' }, // stekhällen på härden (steg 10.2.87) (matlagning.ts, steg 9.6.21)
   skramma: { namn: 'Sätter upp en fågelskrämma', slag: 'odla', verb: 'sätter upp en fågelskrämma' }, // odling.ts (steg 9.7.11)
   avliva: { namn: 'Slaktar ett djur', slag: 'odla', verb: 'avlivar', tungt: true }, // boskap.ts (steg 9.8.7)
   ortPlocka: { namn: 'Plockar örten i krukan', slag: 'odla', verb: 'plockar örten' }, // kruka.ts (steg 10.10.11)
@@ -286,43 +306,44 @@ const DEF = {
   ang: { namn: 'Märker ut en slåtteräng', slag: 'odla', verb: 'märker ut en äng' }, // slatter.ts (steg 10.2.36)
   valla: { namn: 'Vallar djuren', slag: 'odla', verb: 'vallar', yrke: 'Herde' }, // tamdjur.ts (steg 9.8.4)
   staket: { namn: 'Sätter staket runt fältet', slag: 'odla', verb: 'sätter staket', tungt: true }, // odling.ts (steg 9.7.10)
+  rojaSly: { namn: 'Röjer sly i ett stråk', vidRutan: true, slag: 'tra', verb: 'röjer sly', stilla: true }, // en buske, planta eller ett ungträd i ett gångstråk, utan yxa (skog.ts, steg 13.8.16)
   sopor: { namn: 'Bär resterna till sophögen', slag: 'hantverk', verb: 'bär bort resterna' }, // rester.ts (steg 9.7.5)
   tomma_latrin: { namn: 'Tömmer latrinen i komposten', slag: 'hantverk', verb: 'tömmer latrinen', tungt: true }, // rester.ts (steg 9.7.6)
   gropa: { namn: 'Lagar festmåltid', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, verb: 'lagar festmåltid', plats: 'station' }, // laddar kokgropen inför en högtid eller ett bröllop (matlagning.ts, steg 10.7.28)
-  koka_mat: { namn: 'Lagar mat i krukan', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, stilla: true, verb: 'lagar mat', plats: 'elden' }, // en rätt i lerkrukan, som sedan står på elden (matlagning.ts, steg 9.6.3)
-  grilla: { namn: 'Grillar mat över elden', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, tyst: true, stilla: true, verb: 'grillar', plats: 'station' }, // bara på grillställningen när elden brinner (matlagning.ts, steg 2.8.1)
-  torka: { namn: 'Hänger upp mat på torkställningen', slag: 'hantverk', hantverk: true, stilla: true, verb: 'hänger upp', plats: 'station' }, // och tar ner det som torkat (matlagning.ts, steg 2.8.2)
-  bygga: { namn: 'Bygger', yrke: 'Byggare', slag: 'bygga', verktyg: { laga: 'Lagar en vägg', lagaGolv: 'Lagar golvet', golv: 'Lägger golv', vagg: 'Bygger en vägg' }, hantverk: true, tungt: true, stilla: true, framfor: true },
+  koka_mat: { namn: 'Lagar mat i krukan', slag: 'hantverk', hantverk: true, kunna: 0.05, ovar: 'matlagning', social: true, stilla: true, verb: 'lagar mat', plats: 'elden' }, // en rätt i lerkrukan, som sedan står på elden (matlagning.ts, steg 9.6.3)
+  grilla: { namn: 'Grillar mat över elden', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, tyst: true, stilla: true, framme: true, verb: 'grillar', plats: 'station' }, // bara på grillställningen när elden brinner (matlagning.ts, steg 2.8.1)
+  torka: { namn: 'Hänger upp mat på torkställningen', slag: 'hantverk', hantverk: true, stilla: true, framme: true, verb: 'hänger upp', plats: 'station' }, // och tar ner det som torkat (matlagning.ts, steg 2.8.2)
+  bygga: { namn: 'Bygger', yrke: 'Byggare', slag: 'bygga', verktyg: { laga: 'Lagar en vägg', lagaGolv: 'Lagar golvet', golv: 'Lägger golv', vagg: 'Bygger en vägg' }, hantverk: true, kunna: 0.05, tungt: true, stilla: true, framfor: true },
   station: { namn: 'Bygger en station', slag: 'bygga', verktyg: {}, hantverk: true, stilla: true, plats: 'station', framme: true }, // stationer.ts; task.tool = slaget. Namnen per slag fylls ur STATIONER när stationer.ts laddas (steg 12.1.65)
   // fälten (steg 2.10.3, odling.ts): steget på fältet är task.tool, och arbetet sparas i fältet om det avbryts
   odla: { namn: 'Odlar', slag: 'odla', verktyg: { roja: 'Röjer ett fält', bereda: 'Gräver upp jorden på fältet', sa: 'Sår', mogen: 'Skördar' }, tungt: true, stilla: true, framme: true },
   dorr: { namn: 'Hänger en dörr', slag: 'bygga', verktyg: { skinndorr: 'Hänger en hud i dörröppningen', tradorr: 'Hänger en dörr av trä i dörröppningen', lasdorr: 'Hänger en låst dörr i dörröppningen' }, hantverk: true, stilla: true, framme: true, framfor: true }, // i en öppning (DORRAR i byggnad.ts, steg 2.2.16); task.tool = sorten
   talgljus: { namn: 'Gör ett talgljus', verktyg: { vaxljus: 'Gör ett vaxljus' }, slag: 'hantverk', hantverk: true, verb: 'doppar', plats: 'station' },
-  ljus: { namn: 'Ställer fram ett ljus', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // på ett bord eller en hylla inne (ljus.ts, steg 6.3.8)
+  ljus: { namn: 'Ställer fram ett ljus', slag: 'bygga', hantverk: true, kunna: 0.05, stilla: true, framme: true }, // på ett bord eller en hylla inne (ljus.ts, steg 6.3.8)
   sate: { namn: 'Gör en sittplats', verktyg: { pall: 'Gör en pall', stol: 'Gör en stol' }, slag: 'hantverk', hantverk: true, verb: 'fogar', plats: 'station' }, // pallen och stolen vid snickarbänken (steg 12.4.4, mobler.ts)
-  satta: { namn: 'Ställer en sittplats vid bordet', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // pallen eller stolen i stället för stubben (steg 12.4.4, mobler.ts)
+  satta: { namn: 'Ställer en sittplats vid bordet', slag: 'bygga', hantverk: true, kunna: 0.05, stilla: true, framme: true }, // pallen eller stolen i stället för stubben (steg 12.4.4, mobler.ts)
   ysta: { namn: 'Ystar ost', slag: 'hantverk', hantverk: true, verb: 'ystar', plats: 'elden' }, // mjölk i en kruka vid elden (steg 12.4.7, TILLVERKA)
   fyrfat: { namn: 'Lägger kol i fyrfatet', slag: 'bygga', stilla: true, framme: true, plats: 'station', verb: 'lägger kol i fyrfatet' }, // fyrfatets glöd (steg 12.4.11, mobler.ts)
   penna: { namn: 'Skär en fjäderpenna', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'elden' }, // för hand (steg 12.4.14, skrift.ts)
   tunna: { namn: 'Laggar en tunna', slag: 'hantverk', hantverk: true, verb: 'laggar', plats: 'station' }, // vid snickarbänken (steg 12.4.6, tunna.ts)
-  oljelampa: { namn: 'Formar en oljelampa', slag: 'hantverk', hantverk: true, verb: 'formar', plats: 'elden' }, // på drejskivan om byn har en, annars för hand (steg 12.4.2, ljus.ts)
-  fyll_lampa: { namn: 'Fyller oljelampan', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // med brännolja, på bordet eller hyllan (steg 12.4.2, ljus.ts)
+  oljelampa: { namn: 'Formar en oljelampa', slag: 'hantverk', hantverk: true, fardighet: 'krukmakeri', verb: 'formar', plats: 'elden' }, // på drejskivan om byn har en, annars för hand (steg 12.4.2, ljus.ts)
+  fyll_lampa: { namn: 'Fyller oljelampan', slag: 'bygga', hantverk: true, kunna: 0.05, stilla: true, framme: true }, // med brännolja, på bordet eller hyllan (steg 12.4.2, ljus.ts)
   // skogsvården (steg 6.5.2, skogsvard.ts): en planta grävs upp och bärs dit byn vill ha skog
   plantera: { namn: 'Flyttar en planta', slag: 'odla', under: { go: 'går till plantan', do: 'gräver upp plantan', back: 'bär plantan' }, redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'plantor', per: 'gang' }, tungt: true, framme: true },
   lera: { namn: 'Gräver lera', slag: 'samla', arbete: 'samla', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'turer', per: 'gang' }, tungt: true, framme: true }, // vid stranden (lera.ts, steg 9.4.10)
   plockaMossa: { namn: 'Plockar mossa', slag: 'samla', arbete: 'samla', framme: true }, // i myren, för hand (mossa.ts, steg 12.1.6)
   malm: { namn: 'Gräver malm', slag: 'samla', arbete: 'samla', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40, kravs: true } }, slits: { enhet: 'turer', per: 'gang' }, tungt: true, framme: true }, // i myren (malm.ts, steg 12.1.2)
   torv: { namn: 'Gräver torv', slag: 'tra', arbete: 'ved', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40, kravs: true } }, slits: { enhet: 'turer', per: 'gang' }, tungt: true, framme: true }, // i myren, när byn behöver ved (torv.ts, steg 12.1.3)
-  kola: { namn: 'Kolar', yrke: 'Kolare', slag: 'hantverk', tungt: true, plats: 'station', verb: 'kolar' }, // vid kolmilan (brann.ts, steg 12.2.1)
-  blasa: { namn: 'Blåser järn', yrke: 'Smed', slag: 'hantverk', tungt: true, plats: 'station', verb: 'blåser' }, // vid blästerugnen (brann.ts, steg 12.2.3)
-  jarnhjalm: { namn: 'Smider en järnhjälm', slag: 'hantverk', hantverk: true, verb: 'smider', plats: 'station' }, ringbrynja: { namn: 'Smider en ringbrynja', slag: 'hantverk', hantverk: true, verb: 'smider', plats: 'station' }, // i smedjan (steg 12.2.9)
-  spanne: { namn: 'Smider ett spänne', slag: 'hantverk', hantverk: true, verb: 'smider', plats: 'station' }, // i smedjan (steg 12.2.10)
-  smida: { namn: 'Smider', yrke: 'Smed', slag: 'hantverk', hantverk: true, plats: 'station', verb: 'smider' }, // vid städet i smedjan (smedja.ts, steg 12.2.4)
-  passa: { namn: 'Ser till bränningen', yrke: 'Kolare', slag: 'hantverk', plats: 'station', verb: 'ser till' }, // tillsynen vid en bränning (brann.ts, steg 12.2.2)
+  kola: { namn: 'Kolar', yrke: 'Kolare', slag: 'hantverk', fardighet: 'smide', tungt: true, plats: 'station', verb: 'kolar' }, // vid kolmilan (brann.ts, steg 12.2.1)
+  blasa: { namn: 'Blåser järn', yrke: 'Smed', slag: 'hantverk', fardighet: 'smide', tungt: true, plats: 'station', verb: 'blåser' }, // vid blästerugnen (brann.ts, steg 12.2.3)
+  jarnhjalm: { namn: 'Smider en järnhjälm', slag: 'hantverk', hantverk: true, fardighet: 'smide', verb: 'smider', plats: 'station' }, ringbrynja: { namn: 'Smider en ringbrynja', slag: 'hantverk', hantverk: true, fardighet: 'smide', verb: 'smider', plats: 'station' }, // i smedjan (steg 12.2.9)
+  spanne: { namn: 'Smider ett spänne', slag: 'hantverk', hantverk: true, fardighet: 'smide', verb: 'smider', plats: 'station' }, // i smedjan (steg 12.2.10)
+  smida: { namn: 'Smider', yrke: 'Smed', slag: 'hantverk', hantverk: true, fardighet: 'smide', plats: 'station', verb: 'smider' }, smida_pilar: { namn: 'Smider pilar', slag: 'hantverk', hantverk: true, fardighet: 'smide', plats: 'station', verb: 'smider' }, // steg 13.4.2 // vid städet i smedjan (smedja.ts, steg 12.2.4)
+  passa: { namn: 'Ser till bränningen', yrke: 'Kolare', slag: 'hantverk', fardighet: 'smide', plats: 'station', verb: 'ser till' }, // tillsynen vid en bränning (brann.ts, steg 12.2.2)
   bryta: { namn: 'Bryter sten vid berget', slag: 'bygga', tungt: true, framme: true, redskap: { jarnhacka: { haller: 150, fart: 3 } }, slits: { enhet: 'stenar', per: 'gang' } }, // en byggsten, som blir liggande där (byggsten.ts, steg 10.10.5); järnhackan bryter tre gånger så fort (steg 12.5.4)
   stubbe: { namn: 'Gräver bort en stubbe', vidRutan: true, slag: 'odla', redskap: { benspade: { tar: 'Tar benspaden.', haller: 40 } }, slits: { enhet: 'stubbar', per: 'gang' }, tungt: true, framme: true, framfor: true }, // där något ska byggas (skog.ts, steg 6.5.7)
-  flyttStation: { namn: 'Flyttar en station', slag: 'bygga', hantverk: true, stilla: true, framme: true, tungt: true }, // närmare dem som använder den (stationer.ts, steg 9.4.8)
-  uppsatt: { namn: 'Sätter upp en fackla', slag: 'bygga', hantverk: true, stilla: true, framme: true }, // där folk ofta är vakna i mörker (ljus.ts, steg 6.3.7)
+  flyttStation: { namn: 'Flyttar en station', slag: 'bygga', hantverk: true, kunna: 0.05, stilla: true, framme: true, tungt: true }, // närmare dem som använder den (stationer.ts, steg 9.4.8)
+  uppsatt: { namn: 'Sätter upp en fackla', slag: 'bygga', hantverk: true, kunna: 0.05, stilla: true, framme: true }, // där folk ofta är vakna i mörker (ljus.ts, steg 6.3.7)
   tillbehor: { namn: 'Gör ett tillbehör', slag: 'hantverk', verktyg: {}, hantverk: true, stilla: true, framme: true }, // till en station eller möbel (TILLBEHOR i stationer.ts); task.tool = sorten
   // utbrotten (steg 3.2.2, humor.ts): den som mår mycket dåligt brister ut. Platsen väljs i val.ts (utbrottVal). Symbolen är gradens
   // (steg 3.10.13), och över huvudet utbrottets egen (task.tool, utbIkon i humor.ts)
@@ -345,11 +366,11 @@ const DEF = {
   fly: { namn: 'Flyr ut i skogen', ansikte: 'radd', tecken: '🏃', ikon: 'utb2', vandra: { r: 3, h0: 1, h1: 3, v: 1.1 }, dygn: true },
   badd: { namn: 'Ligger i bädden och orkar inte gå upp', tecken: '🛌', ikon: 'utb3', vila: true, dygn: true, stilla: true, plats: 'sang' }, // steg 3.2.3
   slut: { namn: 'Gör slut', tecken: '💔', ikon: 'utb3', dygn: true, stilla: true },
-  sla: { namn: 'Slår någon', ansikte: 'arg', tecken: '👊', ikon: 'utb3', verktyg: { misshandel: 'Misshandlar någon', drap: 'Slår ihjäl någon' }, dygn: true, stilla: true },
+  sla: { namn: 'Slår någon', nara: true, ansikte: 'arg', tecken: '👊', ikon: 'utb3', verktyg: { misshandel: 'Misshandlar någon', drap: 'Slår ihjäl någon' }, dygn: true, stilla: true },
   varna: { namn: 'Varnar', ansikte: 'lugn', tecken: '⚠', social: true, tyst: true, skamfri: true, stilla: true, nodFri: true, fortsatter: ['varg'] as const, varjeSlag: true }, // steg 10.1.12 (rovare.ts): varnar de andra för rövarna
-  skilja: { namn: 'Går emellan', tecken: '🤝', social: true, tyst: true, skamfri: true, dygn: true, nodFri: true, varjeSlag: true }, // steg 10.1.4 (kartstrid.ts): går emellan dem som slåss
+  skilja: { namn: 'Går emellan', nara: true, tecken: '🤝', social: true, tyst: true, skamfri: true, dygn: true, nodFri: true, varjeSlag: true }, // steg 10.1.4 (kartstrid.ts): går emellan dem som slåss
   undanStrid: { namn: 'Går undan från slagsmålet', tecken: '🚶', dygn: true }, // steg 10.1.4: går undan från en strid
-  strid: { namn: 'Slåss', ansikte: 'arg', tecken: '⚔️', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true, varjeSlag: true }, // steg 3.7.2 (strid.ts): står kvar i striden medan de andra behoven väntar
+  strid: { namn: 'Slåss', nara: true, ansikte: 'arg', tecken: '⚔️', stilla: true, fortsatter: ['brand', 'tornado', 'varg'] as const, nodFri: true, varjeSlag: true }, // steg 3.7.2 (strid.ts): står kvar i striden medan de andra behoven väntar
   resa: { namn: 'Reser', tecken: '🎒', skamfri: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 11.5.5 (resa.ts): packar och går till samlingsplatsen vid byns utkant, och ut ur kartan med sällskapet
   bjornjakt: { namn: 'Jagar björn', slag: 'jaga', ger: 'bjorn', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 6.6.6 (bjorn.ts): en stor grupp med spjut, och den fällda björnen styckas och bärs hem
   vargjakt: { namn: 'Jagar varg', slag: 'jaga', ger: 'varg', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 3.7.1 (varg.ts): ledaren samlar jägare, och den fällda vargen bärs hem
@@ -381,7 +402,7 @@ const tillKroppen = (why = '') => { const m = /^Bär (.+) till graven/.exec(why)
 // den som sitter vid stranden ser ut över sjön eller tjärnen hen sitter vid, eller isen (steg 9.2.131; skälet sätts i val.ts)
 const strandVy = (why = '') => /^Ser ut över /.test(why) ? `Sitter vid stranden och ${why.charAt(0).toLowerCase()}${why.slice(1)}` : undefined;
 // samlandet efter tändmaterial, flinta eller stenar (steg 12.1.39): målets rad i handlingens register (mal)
-const malAv = (t: Task) => t.tandmat ? ACTS[t.act].mal?.tand : t.sok ? ACTS[t.act].mal?.[t.sok === 'sten' ? 'sten' : 'flinta'] : undefined;
+const malAv = (t: Task) => t.tandmat ? ACTS[t.act].mal?.tand : t.hamtar === 'torrgras' || t.hamtar === 'grenar' ? ACTS[t.act].mal?.[t.hamtar] : t.sok ? ACTS[t.act].mal?.[t.sok === 'sten' ? 'sten' : 'flinta'] : undefined;
 export const taskName = (t: Task) => malAv(t)?.namn || (t.act === 'gomma' ? gomFor(t) : t.act === 'strand' ? strandVy(t.why) : t.act === 'begrava' && t.phase === 'go' ? tillKroppen(t.why) : undefined) || (t.act === 'forsok' && t.tool && forsokVad[t.tool] ? `Försöker komma på ${forsokVad[t.tool]}` : undefined) || (t.tool && (ACTS[t.act].redskap?.[t.tool]?.namn ?? ACTS[t.act].verktyg?.[t.tool])) || ACTS[t.act].namn;
 // undertexten (steg 3.10.3): det uppgiften är i just nu, kort, som i "Jagar: letar efter byte". Handlingens rad (under) först,
 // annars på väg dit, med material till bygget och hem med det som bärs. Jakten efter försöket (jakt.ts)

@@ -34,6 +34,8 @@ function gras(x: number, y: number) {
 export interface MarkIn {
   W: number; H: number; tiles: Uint8Array; cover: Float32Array; trees: Float32Array;
   vatten: number; sand: number; sten: number; lera: number; jord: (t: number) => boolean;
+  ang?: Uint8Array; hog?: number; // slåtterängens rutor (1) och gränsen för högt gräs (steg 13.7.4)
+  myr?: Uint8Array; myrVatten?: boolean; // myrens rutor och om den står under vatten efter regn (steg 13.7.5)
 }
 // tid: 0 istid, 1 vår, 2 sommar, 3 höst, för punkten som räknas nu (steg 5.1.13: under det första dygnet av en ny
 // tidsålder har en del av marken ny tid och resten den förra, fläck för fläck, frac = hur mycket som bytt); sno = hur mycket
@@ -80,6 +82,8 @@ function bil(F: Float32Array, x: number, y: number) {
   const a = F[y0 * W + x0], b = F[y0 * W + x1], c = F[y1 * W + x0], d = F[y1 * W + x1];
   return a + (b - a) * tx + (c - a) * ty + (a - b - c + d) * tx * ty;
 }
+// punkten (x, y) ligger på slåtterängen där gräset är högt (steg 13.7.4)
+const angHog = (x: number, y: number) => { if (!IN.ang) return false; const i = tileXY(x, y); return IN.ang[i] === 1 && IN.cover[i] >= (IN.hog ?? 1); };
 const tileXY = (x: number, y: number) => { const tx = Math.min(W - 1, Math.max(0, x >> 4)), ty = Math.min(H - 1, Math.max(0, y >> 4)); return ty * W + tx; };
 
 // den torra sjöbotten: bildstilens två rutor (Björn valde efter v245), vända åt olika håll per ruta
@@ -97,6 +101,16 @@ function sdAv(x: number, y: number) {
   return sd;
 }
 
+// ---------- myren (steg 13.7.5) ----------
+// mörk mossa med fläckar av barrgrönt, tuvor och gölar av vatten i en mjuk våg över hela myren, inte en ruta som upprepas.
+// Efter regn står myren under vatten och gölarna blir större
+function myrPunkt(x: number, y: number, r: number) {
+  const gol = vn(x, y, 11, 731) * 0.7 + vn(x, y, 4, 732) * 0.3, grans = IN.myrVatten ? 0.5 : 0.6;
+  if (gol > grans) return gol > grans + 0.05 && hash(x >> 1, y, 733) < 0.25 ? SKIFFER + 2 : SKIFFER + 1;
+  if (gol > grans - 0.03) return BARR + 1; // den blöta kanten runt gölen
+  if (flack(x, y, 5, 734, 0.62)) return r < 0.3 ? SENAP + 1 : r < 0.7 ? OLIV + 3 : OLIV + 2; // tuvorna med blekt gräs
+  return flack(x, y, 14, 735, 0.62) ? (r < 0.15 ? JORD + 1 : OLIV) : r < 0.1 ? JORD + 2 : OLIV + 1; // mossan och torven
+}
 // ---------- en punkt ----------
 // sorten av punkten, så att tuvorna och vassen bara hamnar på gräs och i strandkanten
 const GRAS = 1, VASS = 2, KANT = 3, ANNAT = 0;
@@ -126,7 +140,8 @@ function punkt(x: number, y: number): number {
     return gl ? SKIFFER + Math.min(3, dj + 1) : dj === 0 ? (r < 0.3 ? BARR : SKIFFER) : SKIFFER + dj;
   }
   let c: number;
-  if (t === IN.sten) { // stenig mark: grå sten med ljusa ovansidor och bruna springor, så att den inte liknar vattnet
+  if (IN.myr?.[ji] && !vinter && t !== IN.sten && sd <= -0.6) c = myrPunkt(x, y, r); // myren (steg 13.7.5): rutan läses åt sidan som marken, så att gränsen blir mjuk och ojämn
+  else if (t === IN.sten) { // stenig mark: grå sten med ljusa ovansidor och bruna springor, så att den inte liknar vattnet
     const topp = flack(x, y, 6, 521, 0.6);
     c = vagstreck(x, y, 520, 0.03) || (!topp && flack(x, y - 1, 6, 521, 0.6)) ? JORD + 1 : topp ? BEN + 1 : r < 0.06 ? KOL + 3 : BEN;
     if (vinter && !flack(x, y, 6, 521, 0.66)) c = r < 0.1 ? BEN + 1 : BEN + 2;
@@ -209,12 +224,19 @@ export function rakna(x0: number, y0: number, px: Int8Array) {
     if (x < x0 - 3 || x > x0 + BP + 2 || y < y0 || y > y0 + BP + 3) continue;
     if (sortAv(x, y) !== GRAS) continue;
     const r = hash(cx, cy, 313), klump = vn(x, y, 22, 314);
-    if (klump > 0.68 && r < 0.8) { // klungor av högt gräs
+    if (klump > 0.68 && r < 0.8 || angHog(x, y)) { // klungor av högt gräs, och överallt på ängen där gräset vuxit sig högt
       const top = hash(cx, cy, 315) < 0.12 ? SENAP : OLIV + 3;
       for (let k = 0; k < 3; k++) { const xx = x + k - 1, hh = 2 + ((k + cx) & 1); satt(xx, y, OLIV); for (let j = 1; j < hh; j++) satt(xx + (k - 1) * (j > 1 ? 1 : 0), y - j, j === hh - 1 ? top : OLIV + 1); }
     } else if (r < 0.32) { satt(x, y, OLIV); satt(x, y - 1, OLIV + 3); satt(x + 1, y - 1, OLIV); satt(x + 1, y - 2, OLIV + 3); } // en tuva
     else if (r < 0.345) { satt(x, y, OLIV); satt(x, y - 1, BEN + 3); } // en liten blomma
     else if (r > 0.994) { satt(x, y, JORD + 1); satt(x + 1, y, JORD); satt(x, y - 1, JORD + 3); satt(x + 1, y - 1, JORD + 2); morka(x + 1, y + 1); morka(x + 2, y); } // en liten sten
+  }
+  // slåtterängen (steg 13.7.4): där gräset vuxit sig högt står klungorna av högt gräs tätt, och en slagen ruta är vanligt gräs
+  for (let cy = Math.floor(y0 / 4) - 1; cy * 4 < y0 + BP + 4; cy++) for (let cx = Math.floor(x0 / 4) - 1; cx * 4 < x0 + BP + 3; cx++) {
+    const x = cx * 4 + Math.floor(hash(cx, cy, 316) * 4), y = cy * 4 + Math.floor(hash(cx, cy, 317) * 4);
+    if (x < x0 - 3 || x > x0 + BP + 2 || y < y0 || y > y0 + BP + 3 || !angHog(x, y) || sortAv(x, y) !== GRAS) continue;
+    const top = hash(cx, cy, 318) < 0.12 ? SENAP : OLIV + 3;
+    for (let k = 0; k < 3; k++) { const xx = x + k - 1, hh = 2 + ((k + cx) & 1); satt(xx, y, OLIV); for (let j = 1; j < hh; j++) satt(xx + (k - 1) * (j > 1 ? 1 : 0), y - j, j === hh - 1 ? top : OLIV + 1); }
   }
   // högt mörkt gräs i skogskanten (version 1)
   for (let cy = Math.floor(y0 / 8) - 1; cy * 8 < y0 + BP + 4; cy++) for (let cx = Math.floor(x0 / 8) - 1; cx * 8 < x0 + BP + 2; cx++) {
@@ -326,7 +348,7 @@ let nyckel = '';
 let sig = new Int32Array(0);
 const smutsiga = new Set<number>();
 // en rutas utseende i ett tal: sorten, hur nött, om det står träd och hur svart efter en brand
-const rutSig = (i: number, a: number) => IN.tiles[i] | Math.min(15, Math.floor((1 - IN.cover[i]) * 16)) << 4 | (IN.trees[i] >= 0.5 ? 1 : 0) << 8 | Math.min(15, Math.ceil(a * 15)) << 9;
+const rutSig = (i: number, a: number) => IN.tiles[i] | Math.min(15, Math.floor((1 - IN.cover[i]) * 16)) << 4 | (IN.trees[i] >= 0.5 ? 1 : 0) << 8 | Math.min(15, Math.ceil(a * 15)) << 9 | (IN.ang?.[i] && IN.cover[i] >= (IN.hog ?? 1) ? 1 : 0) << 13; // och ängens höga gräs (steg 13.7.4)
 // in: kartan nu; mt: tidsåldern och övergången; sno: snön (0–1); glob: det som ändrar hela marken (byn, vattnet); aska:
 // rutan -> hur svart (0–1)
 export function stallMark(inp: MarkIn, mt: MarkTid, sno: number, nyIs: number, glob: string, aska: Map<number, number> | undefined) {

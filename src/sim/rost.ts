@@ -44,6 +44,7 @@ export const VIKT = balans('vikt', {
   krigare: 8, // den som har minst så här i närstrid räknas som krigare
 });
 export const MISS = balans('missnoje', {
+  svaltUnder: 0.1, kylaUnder: 0.3, // missnöjet växer hos den som är hungrigare eller kallare än så här (MISS.svalt, MISS.kyla)
   stortUt: 0.4, // chansen att den störtade ledaren drivs ut ur byn
   hardFejd: 0.5, // hur hårt ledaren svarar fraktionen: 1 + Envälde + Fejd × detta
   utvisadMiss: 0.1, // så mycket missnöjet växer hos dem i fraktionen när ledaren driver ut den som ledde den
@@ -258,8 +259,8 @@ export function missnojeTimme(s: State, h = 1) { // h: timmarna sedan sist (TAKT
   for (const p of living(s)) {
     if (!vuxenRost(s, p)) continue;
     let m = (p.missnoje ?? 0) * f;
-    if (p.hunger < 0.1) m += MISS.svalt * h;
-    if (p.warm < 0.3) m += MISS.kyla * h;
+    if (p.hunger < MISS.svaltUnder) m += MISS.svalt * h;
+    if (p.warm < MISS.kylaUnder) m += MISS.kyla * h;
     const d = drar(s, p); let av = 0, n = 0;
     for (const k of SED_LIST) if (sv[k]) { av += Math.abs(clamp(d[k], -1, 1) - sv[k]); n++; }
     if (n && av / n > MISS.sederAvst) m += MISS.seder * h;

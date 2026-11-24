@@ -16,7 +16,10 @@
   const SMABARN_KARTA = { huvud: 9, bal: [15, 17], ben: [18, 18], bredd: [5, 8], armar: [4, 9] };
   const HUMOR = Object.fromEntries(PR.humor.map(h => [h.id, h]));
   const ALDER = Object.fromEntries(PR.aldrar.map(a => [a.id, a]));
-  const MATERIAL = Object.fromEntries(PR.material.map(m => [m.id, m]));
+  // färgade plagg (steg 13.3.2): varje färg i spelet är ett material, farg-<ramp>, med rampens fyra toner. Porträttens palett har
+  // inte blått och lila än, så de lånar skifferns och rostens toner tills bildstilens palett får dem
+  const FARGRAMP = { bla: 'skiffer', lila: 'rost' };
+  const MATERIAL = Object.fromEntries([...PR.material, ...[...RAMPER.map(r => r[0]), ...Object.keys(FARGRAMP)].map(r => ({ id: `farg-${r}`, namn: r, toner: [0, 1, 2, 3].map(i => (FARGRAMP[r] || r) + i) }))].map(m => [m.id, m]));
   const LAGEN = PR.lagen;
   const delarAv = sort => PR.delar.filter(d => d.sort === sort);
   // taggen kvinna, man eller båda (Porträttens byggsätt, beslut efter v281): en del passar en person när taggen är båda
@@ -405,7 +408,7 @@
     const h = K.huvud + sitt, b0 = K.bal[0] + sitt, b1 = K.bal[1] + sitt, l0 = K.ben[0], l1 = K.ben[1];
     const [x0, x1] = K.bredd, [aL, aR] = K.armar;
     // byxorna enfärgade i skinnets eller lädrets färg, och skjortan under rocken, rak nertill (Björns val f7_byxor och f7_skjorta, steg 9.2.58)
-    const rock = p.klader.rock, farg = z => (rock && (z === 'bal' || z === 'armar')) ? rock : (p.klader.skjorta && (z === 'bal' || z === 'armar')) ? 'lin' : (z === 'ben' && p.klader.byxor) ? p.klader.byxor : (z === 'fotter' && p.klader.skor ? 'harskinn' : 'hud');
+    const rock = p.klader.rock, farg = z => (rock && (z === 'bal' || z === 'armar')) ? rock : (p.klader.skjorta && (z === 'bal' || z === 'armar')) ? (typeof p.klader.skjorta === 'string' ? p.klader.skjorta : 'lin') : (z === 'ben' && p.klader.byxor) ? p.klader.byxor : (z === 'fotter' && p.klader.skor ? 'harskinn' : 'hud');
     const zon = (lista, z) => lista.forEach(([x, y, hand]) => satt(x, y, hand ? 'hud' : farg(z), hand ? 'hand' : z));
     let hand = null;
     // benen och fötterna

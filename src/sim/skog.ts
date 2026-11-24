@@ -15,6 +15,7 @@ import { SNABBARE } from './handlingar';
 import { balans } from './balans';
 import { faltOf, faltRuta } from './odling';
 import { stubbeOn, stubbRutor } from './stubbar';
+import { arBuske, tabortBuske } from './buskar';
 import { heligRuta } from './kultlatt';
 import { LAG_SKOG, lagGaller } from './lagar';
 import { naturTanke } from './seder';
@@ -92,6 +93,32 @@ export function rojSpot(s: State, p: Person) {
   const taken = fellingTiles(s, p), strak = straken(s).ruta; let best = -1, bd = Infinity;
   for (const i of skaRojas(s)) { const d = utanforByn(s, i % W, Math.floor(i / W)) - (strak[i] ? 1000 : 0); if (!taken.has(i) && d < bd) { bd = d; best = i; } }
   return best < 0 ? undefined : { x: (best % W) + 0.5, y: Math.floor(best / W) + 0.5, i: best };
+}
+// slyet i gångstråken (steg 13.8.16): en buske, en planta eller ett ungträd som står i ett stråk röjs av projektet Röjning som träden
+// där (9.2.35), utan yxa och på lika lång tid som en fältruta. Först framför dörrarna, sedan närmast byn
+export const arSly = (g: Ground, i: number) => (g.trees[i] > 0 && g.trees[i] < FOREST) || arBuske(g, i);
+export function slySpot(s: State, p: Person) {
+  const g = groundOf(s), st = straken(s), taken = new Set(living(s).filter(q => q !== p && q.task?.act === 'rojaSly').map(q => tileOf(q.task!.tx, q.task!.ty)));
+  let best = -1, bd = Infinity;
+  for (const v of st.vagar) for (const i of v.rutor) {
+    if (!arSly(g, i) || taken.has(i)) continue;
+    const d = utanforByn(s, i % W, Math.floor(i / W)) - (st.ruta[i] === 2 ? 1000 : 0);
+    if (d < bd) { bd = d; best = i; }
+  }
+  return best < 0 ? undefined : { x: (best % W) + 0.5, y: Math.floor(best / W) + 0.5, i: best };
+}
+// hur stor del av stråken som har sly (bristen i projektet rojning, som rojBrist)
+export function slyBrist(s: State) {
+  const g = groundOf(s), r = straken(s).ruta; let n = 0, sly = 0;
+  for (let i = 0; i < r.length; i++) if (r[i]) { n++; if (arSly(g, i)) sly++; }
+  return n ? sly / n : 0;
+}
+// slyet är röjt: plantan, ungträdet och busken är borta
+export function slyRojt(s: State, x: number, y: number) {
+  const g = groundOf(s), i = tileOf(x, y);
+  if (g.trees[i] < FOREST) g.trees[i] = 0;
+  tabortBuske(g, i);
+  count(s, 'slyRojt');
 }
 // rutorna där någon annan än utom håller på att fälla ett träd
 export const fellingTiles = (s: State, utom: Person) => new Set(living(s).filter(q => q !== utom && q.task?.act === 'falla').map(q => tileOf(q.task!.tx, q.task!.ty)));
@@ -233,10 +260,10 @@ export function rotStumps(s: State) {
 }
 // hugg ut ved och grenar ur en stam; ger det som blev, och tar bort stammen när den är slut. Grenarna dras bara när de tas med
 // (med, steg 12.1.218); de som är kvar när veden är slut (kvar) blir en hög grenar på rutan (steg.ts)
-export function chopStock(s: State, ref: number | undefined, amount: number, med = true) {
+export function chopStock(s: State, ref: number | undefined, amount: number, med = 1) { // med: den del av grenarna som följer med (steg 13.8.4)
   const k = stocks(s).find(q => q.id === ref);
   if (!k) return undefined;
-  const ved = Math.min(k.ved, amount), gr = med ? Math.min(k.grenar, ved * SKOG.stamGrenar / SKOG.stamVed) : 0;
+  const ved = Math.min(k.ved, amount), gr = med * Math.min(k.grenar, ved * SKOG.stamGrenar / SKOG.stamVed);
   k.ved -= ved; k.grenar -= gr;
   let kvar = 0;
   if (k.ved <= 1e-6) { kvar = k.grenar; k.grenar = 0; s.stockar = stocks(s).filter(q => q !== k); }

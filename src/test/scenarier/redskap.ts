@@ -7,6 +7,7 @@ import { setByn } from '../../ui/lage';
 import { setItems, setMat, setFood, kor, klockan, tandEld, bastaJaktruta, SCENARIER, medBank, medHus, testBy, utanWebblasare, vidStack } from './hjalp';
 
 SCENARIER.stenring = {
+  lang: true,
   text: 'Den första elden läggs i en ring av stenar som samlas in, och tänds med flinta. Ringen ligger kvar när elden slocknat',
   kor: () => {
     const s = createState(1, START);
@@ -151,7 +152,7 @@ SCENARIER.redskap = {
     tandEld(s);
     for (const q of s.people) q.tek = { fiskespjut: 1, rep: 1, flintspjut: 1, metspo: 1 };
     const p = living(s).find(q => ageOf(q, s.now) >= 18)!;
-    vidStack(s, p, 'torrgras'); twineRope(s, p, 2 / 15); // femton rep i timmen sedan steg 2.3.8: två på åtta minuter
+    vidStack(s, p, 'torrgras'); twineRope(s, p, 2 / 15, 2); // två rep som ett projekt vill ha (steg 13.8.4); femton rep i timmen sedan steg 2.3.8: två på åtta minuter
     const rep = amountOf(s, 'rep') === 2 && amountOf(s, 'torrgras') === 36;
     makeTool(s, p, 'spjut');
     for (const x of tingOf(s)) if (x.k === 'flintspjut') x.q = undefined; // ett normalt spjut (kvaliteten slumpas, steg 2.2.2)
@@ -566,9 +567,10 @@ SCENARIER.kista = {
     // och den tar man hellre)
     const q = living(s).find(r => r !== p && !SIM.tingOf(s).some(t => SIM.iSlag(t.k, 'yxa') && t.agare === r.id)) ?? q0;
     const yxa = egna[0]; yxa.vid = k?.id; yxa.x = k?.x; yxa.y = k?.y; yxa.hos = undefined;
-    const tog = take(s, q, 'yxa') === yxa;
+    const iKistan0 = new Set(SIM.tingOf(s).filter(t => t.agare === p.id && iKistan(t)).map(t => t.id)); // p kan ha två yxor i kistan: q tar någon av dem
+    const tagen = take(s, q, 'yxa'), tog = !!tagen && iKistan0.has(tagen.id);
     q.task = undefined; tidyTools(s); placeTools(s);
-    const tillbaka = iKistan(yxa);
+    const tillbaka = !!tagen && iKistan(tagen);
     // något som inte är p:s tas ur kistan
     if (k) { byns.vid = k.id; byns.x = k.x; byns.y = k.y; }
     stepStationer(s); placeTools(s);
@@ -679,7 +681,7 @@ SCENARIER.underhall = {
 };
 
 SCENARIER.forradsmal = {
-  text: 'Materialen i FORRADSMAL (steg 6.2.14): det som tas ur förrådet räknas som förbrukat (inte grenarna som bränsle), förbrukningen glöms långsamt, bufferten följer förbrukningen och det bygget och projekten väntar på, och under bufferten plockas materialet men aldrig över taket',
+  text: 'Materialen i FORRADSMAL (steg 6.2.14): det som tas ur förrådet räknas som förbrukat (inte grenarna som bränsle), förbrukningen glöms långsamt, bufferten följer förbrukningen och det bygget och projekten väntar på, under bufferten plockas materialet i förbifarten, och den som gått ut för att hämta det plockar också över taket (steg 13.8.4: turerna dit blir allt mer sällsynta i valet). Virket har ingen buffert av förbrukningen, bara det projekten väntar på',
   kor: () => {
     const s = createState(4, START), q = living(s).find(x => ageOf(x, s.now) >= ALDER.vuxen)!;
     setItems(s, { grenar: 200, torrgras: 5, sten: 0, flinta: 0, virke: 0 });
@@ -698,25 +700,28 @@ SCENARIER.forradsmal = {
     setItems(s, { grenar: 10 }); s.forbruk = { grenar: 60 }; SIM.arbetsTimme(s);
     q.task = { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: s.now + HOUR, carry: 0, why: '' }; // där hen står: tändmaterialet ligger på rutan (steg 9.3.4)
     const g1 = SIM.forageItems(s, q, 3600) ?? {};
-    // över taket plockar ingen, inte heller den som hämtar grenar
+    // över taket plockar ingen i förbifarten, men den som gått ut för att hämta grenar gör det (steg 13.8.4)
     setItems(s, { grenar: Math.ceil(tak) + 1 }); s.forbruk = { grenar: 60 }; SIM.arbetsTimme(s);
+    const g0 = SIM.forageItems(s, q, 3600) ?? {};
     q.task.hamtar = 'grenar';
     const g2 = SIM.forageItems(s, q, 3600) ?? {};
     // sten och flinta plockas aldrig i forageItems, bara som saker på rundan (steg 12.1.55)
     const sten = (g1.sten ?? 0) + (g2.sten ?? 0) + (g1.flinta ?? 0) + (g2.flinta ?? 0);
-    // virket: bufferten är förbrukningen och det projekten väntar på
+    // virket: ingen buffert av förbrukningen (steg 13.8.4), bara det projekten väntar på
     s.forbruk = { virke: 6 }; SIM.arbetsTimme(s);
+    const bVirke0 = SIM.materialBuffert(s, 'virke');
+    s.projektSaknar = { virke: { beh: 3, n: 3, b: 1 } };
     const bVirke = SIM.materialBuffert(s, 'virke'), brist = SIM.PROJEKT.virke.brist(s);
     return [
       [`20 grenar ur förrådet räknas som förbrukade (${tagna})`, tagna === 20],
       [`grenarna som bränsle räknas inte (${brand})`, brand === 20],
       [`förbrukningen glöms långsamt (${glomt})`, glomt < 20 && glomt > 19],
-      [`bufferten för grenar följer förbrukningen (${bGren}), för hö är den det tändmaterial byn vill ha (${bHo})`, bGren === 40 && bHo === (s.fire.lit ? SIM.TROSKEL.tandVill : SIM.TROSKEL.tandVillSlocknad)],
+      [`bufferten för grenar följer förbrukningen (${bGren}), för hö är den det tändmaterial byn vill ha, mer i kylan (${bHo}, steg 13.8.6)`, bGren === 40 && bHo === SIM.MATERIALMAL.torrgras.min(s) && bHo >= (s.fire.lit ? SIM.TROSKEL.tandVill : SIM.TROSKEL.tandVillSlocknad)],
       [`taket är högre än bufferten, högst så mycket lagret rymmer (${tak.toFixed(1)})`, tak > bGren && tak <= SIM.FORRAD.materialMatt * bGren],
       [`under bufferten plockas hö och grenar (${Object.keys(g1).join(', ')})`, (g1.torrgras ?? 0) > 0 && (g1.grenar ?? 0) > 0],
-      [`över taket plockas inga grenar, inte heller av den som hämtar dem (${g2.grenar ?? 0})`, !g2.grenar],
+      [`över taket plockas inga grenar i förbifarten (${g0.grenar ?? 0}), men av den som hämtar dem (${g2.grenar ?? 0})`, !g0.grenar && (g2.grenar ?? 0) > 0],
       [`ingen sten eller flinta i det som hittas på rutan (${sten})`, sten === 0],
-      [`bufferten för virke följer förbrukningen och det som väntar (${bVirke}), och virket fattas (${brist.toFixed(2)})`, bVirke >= 6 / SIM.FORRAD.forbrukDygn * SIM.FORRAD.materialDygn && brist === 1],
+      [`virket har ingen buffert av förbrukningen (${bVirke0}), bara det projekten väntar på (${bVirke}), och då fattas det (${brist.toFixed(2)})`, bVirke0 < 4 / SIM.FORRAD.forbrukDygn * SIM.FORRAD.materialDygn && bVirke === 3 && brist === 1],
     ];
   },
 };

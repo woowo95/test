@@ -32,9 +32,6 @@ const livFor = (s: State, klan: number | undefined, namn: string, sex: 'm' | 'k'
 };
 // handlarens pris i silver för en vara (det hen värderar den till, handlarVarde i handel.ts)
 export const handlarPris = (k: string, q?: number) => Math.max(1, Math.round(grundvarde(k) * handlarVarde(s, s.handlare!, k) * (q === undefined ? 1 : 0.6 + 0.2 * q)));
-// rövarnas id: under handlarnas (-1, -2 …), en plats per rövare i flocken
-const ROVAR_ID = -1e6;
-export const rovarGastId = (flock: number, i: number) => ROVAR_ID - flock * 100 - i;
 export const GASTER: ((s: State, t: number) => Gast[])[] = [
   // handlaren (steg 4.4.1.2)
   (s, t) => {
@@ -61,10 +58,10 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
     return rovarFlockar(s).flatMap(r => {
     if (!r) return [];
     const gor = r.gor === 'kommer' ? 'Går mot byn' : r.gor === 'vantar' ? 'Rastar' : r.gor === 'slass' ? 'Slåss' : r.gor === 'rotar' ? 'Tar ur förrådet' : r.gor === 'letar' ? 'Letar hus för hus' : 'Flyr', n = r.folk.length;
-    return rovarna(s, r).map((q, i) => {
+    return rovarna(s, r).map(q => {
       const sk = kartKampe(s, q); // i striden på kartan (steg 10.1.14): kämpens läge
       return {
-      id: rovarGastId(r.id, i), namn: q.name, sex: q.sex, sort: r.rad ? 'Anfallare' : 'Rövare',
+      id: q.id, namn: q.name, sex: q.sex, sort: r.rad ? 'Anfallare' : 'Rövare',
       ...rovarPlats(q, t), // var och en går för sig (steg 6.6.9)
       rovare: q, gor: sk ? (sk.k.lage === 'dod' ? 'Död' : sk.ligger ? 'Ligger nere' : sk.k.lage === 'flykt' ? 'Flyr' : 'Slåss vid förrådet') : (q.gast?.gor && ROVARHANDLINGAR[q.gast.gor as RovarGor]?.namn) || gor, // var och ens handling (steg 10.2.24)
       fran: klanById(s, r.klan)?.namn,

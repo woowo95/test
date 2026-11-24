@@ -10,7 +10,8 @@ import { DAY, HOUR, MIN, Person, State } from './typer';
 import { balans } from './balans';
 import { KROPP, count, forstaGang, log } from './folk';
 import { isSick } from './sjukdom';
-import { HALSA, hemma, salvaKrok, vattenKrok } from './halsa';
+import { HALSA, hemma, salvaKrok, teKrok, vattenKrok } from './halsa';
+import { teVarme } from './varme';
 
 // örtteet (steg 9.5.8, Hälsosystemet i detalj: Teet och salvan): den som fryser eller är sjuk och är i byn dricker en del ur en
 // kruka med te. Det värmer, och den sjuke står emot bättre en stund (SJUK.lakeort i sjukdom.ts), mer ju bättre teet är, men
@@ -21,7 +22,12 @@ export const TE = balans('te', {
   verkan: [0.3, 0.4, 0.5, 0.6, 0.7, 0.9], // hur mycket av läkeörtens verkan teet har, per kvalitet (usel till ★)
 });
 // vill p ha örtte: sjuk, fryser eller har ett infekterat sår (steg 9.5.25), är hemma och har inte druckit nyss (steg 10.2.34: ett val, valet i val.ts)
-export const villTe = (s: State, p: Person) => (p.te?.till ?? 0) <= s.now && (isSick(p, s.now) || p.warm < KROPP.fryser || (p.skador ?? []).some(w => w.inf !== undefined)) && hemma(s, p) && !!medVatska(s, 'te');
+// teet är en rad i vårdregistret (VARD.te i halsa.ts) för den som är sjuk eller har ett infekterat sår, och ett av sätten att bli
+// varm (VARMA i varme.ts) för den som fryser (steg 13.8.1)
+const kanTe = (s: State, p: Person) => (p.te?.till ?? 0) <= s.now && hemma(s, p) && !!medVatska(s, 'te');
+teKrok.vill = (s, p) => kanTe(s, p) && (isSick(p, s.now) || (p.skador ?? []).some(w => w.inf !== undefined));
+teKrok.drick = (s, p) => drickTe(s, p);
+teVarme.kan = kanTe; teVarme.varm = TE.varm;
 export function drickTe(s: State, p: Person) {
   const k = medVatska(s, 'te');
   if (!k) return;
@@ -72,12 +78,13 @@ export const VATSKOR = {
   kokt: { namn: 'Kokat vatten', farg: 0x8a9c9e, i: ['lerkruka_liten', 'lerkruka_mellan', 'lerkruka_stor'], dryck: { slacker: 1, ren: true, torst: DRYCK.koktVarde, stat: 'koktDrucket' }, sar: 'kokt' }, // kokat i en lerkruka (steg 9.5.25): rent, till såren och att dricka
   vin: { namn: 'Vin', farg: 0x521100, i: ['lerkruka_stor', 'tunna'], haller: 40, dryck: { slacker: DRYCK.vinSlacker, kvall: DRYCK.vinKvall, alkohol: 0.35, stat: 'drack_vin' } }, // vinet (steg 9.6.12, brygg.ts): i stora krukor, blir bättre med tiden
   ol: { namn: 'Öl', farg: 0x906f0f, i: ['lerkruka_stor', 'tunna'], haller: 6, dryck: { slacker: DRYCK.olSlacker, kvall: DRYCK.olKvall, alkohol: 0.25, stat: 'drack_ol' } }, // ölet (steg 9.6.13, brygg.ts): i stora krukor, håller sex dygn
-  saft: { namn: 'Saft', farg: 0x742a01, i: ['lerkruka_mellan'], haller: 2, dryck: { slacker: DRYCK.slacker, torst: DRYCK.saftVarde, tanke: ['Drack saft', DRYCK.saftGlad, DRYCK.saftTim], stat: 'saftDrucken', forsta: '{namn} drack byns första saft av krossade bär.' } }, // bär krossade i en mellanstor kruka (steg 9.6.9): den första drycken, håller två dygn
+  saft: { namn: 'Saft', farg: 0x742a01, i: ['lerkruka_mellan'], haller: 2, dryck: { slacker: DRYCK.slacker, torst: DRYCK.saftVarde, tanke: ['Drack saft', DRYCK.saftGlad, DRYCK.saftTim], stat: 'saftDrucken', forsta: '{namn} drack byns första saft.' } }, // bär krossade i en mellanstor kruka (steg 9.6.9): den första drycken, håller två dygn
   mjolk: { namn: 'Mjölk', farg: 0xbdb39b, i: ['lerkruka_liten', 'lerkruka_mellan'], haller: 1, dryck: { slacker: DRYCK.slacker, torst: DRYCK.mjolkVarde, mat: { protein: DRYCK.mjolkProtein, fett: DRYCK.mjolkFett }, stat: 'mjolkDrucken', forsta: '{namn} drack byns första getmjölk.' } }, // getmjölken (steg 9.8.8, boskap.ts): håller ett dygn
   black: { namn: 'Bläck', farg: 0x24201d, i: ['lerkruka_liten'] }, // sot av kol och vatten (steg 10.6.4): en liten kruka räcker till 2 blad
   te: { namn: 'Örtte', farg: 0x906f0f, i: ['lerkruka_liten'], dryck: { slacker: 0, varm: TE.varm, stat: 'teDrucket', forsta: '{namn} drack ett örtte av rölleka.' } }, // dricks av den som är sjuk eller fryser (villTe), inte mot törsten
   buljong: { namn: 'Buljong', farg: 0x7d5b40, i: ['lerkruka_mellan'], haller: 2, dryck: { slacker: DRYCK.buljongSlacker, ren: true, varm: TE.varm, torst: DRYCK.buljongVarde, stat: 'buljongDrucken', forsta: '{namn} drack byns första buljong.' } }, // ben och svamp eller kål som sjudit i krukan på elden (steg 10.7.24, tillverka.ts)
   svagdricka: { namn: 'Svagdricka', farg: 0xb2921b, i: ['lerkruka_stor', 'tunna'], haller: 4, dryck: { slacker: 1, ren: true, torst: DRYCK.svagVarde, alkohol: 0.05, stat: 'drack_svagdricka' } }, // bryggs av malt i karet (steg 10.7.24, brygg.ts): mot törsten på dagen
+  cider: { namn: 'Cider', farg: 0x898b4c, i: ['lerkruka_stor', 'tunna'], haller: 6, dryck: { slacker: DRYCK.olSlacker, kvall: DRYCK.olKvall, alkohol: 0.2, stat: 'drack_cider' } }, // äpplen som jäst i karet (steg 13.6.3, brygg.ts): håller sex dygn och mognar inte
   mjod: { namn: 'Mjöd', farg: 0xd8b25f, i: ['lerkruka_stor', 'tunna'], haller: 20, dryck: { slacker: DRYCK.vinSlacker, kvall: DRYCK.mjodKvall, alkohol: 0.3, stat: 'drack_mjod' } }, // honungen som jäst i karet (steg 10.7.25, brygg.ts)
   sprit: { namn: 'Sprit', farg: 0xdad0bb, i: ['lerkruka_liten'], dryck: { slacker: DRYCK.spritSlacker, kvall: DRYCK.spritKvall, alkohol: 0.7, stat: 'drack_sprit' }, sar: 'sprit' }, // bränd i brännpannan (steg 10.7.26, brygg.ts): håller hur länge som helst
   brannolja: { namn: 'Brännolja', farg: 0xd8b25f, i: ['oljelampa', 'lerkruka_liten'] }, // kokas i örtköket (steg 12.4.2, ljus.ts): står i oljelampan eller i en liten kruka

@@ -1,0 +1,255 @@
+{
+ "kort": "bild_kudde",
+ "namn": "Fjäderkudden",
+ "slag": [],
+ "vad": "fjäderkudden i halmbädden på bredden: en kudde av lintyg fylld med fjädrar i bäddens huvudände, under huvudet på den som sover; ett lager över bädden (steg 13.3.1)",
+ "av": "Programmeringschatten (Claude), tre idéer",
+ "versioner": [
+  {
+   "ide": "Fyrkantig kudde av lintyg med en söm mitt på",
+   "lager": true,
+   "bilder": [
+    {
+     "namn": "kudde",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      "..pppppppp......................",
+      ".pwwwwwwwqp.....................",
+      ".pwwwwwwwqp.....................",
+      ".pwwwwwwqqp.....................",
+      ".pqqqqqqqqp.....................",
+      ".pwwwwwwwqp.....................",
+      ".pwwwwwwqqp.....................",
+      ".pwqqqqqqqp.....................",
+      "..pppppppp......................",
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      "................................"
+     ]
+    },
+    {
+     "namn": "i halmbädden",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "FFEFFFFEFFFFEFFFFEFFFFEFFFFEFFFF",
+      "FLKJJJKKKLJJJJJKKKLLLKKJKLKLLKKE",
+      "EKppppppppKKJLLJJJKKLKLLKJKJLKJF",
+      "FpwwwwwwwqpKLKJKKKKJJKLKKKKLLLJF",
+      "FpwwwwwwwqpLKKJKKKLLKJKKLLKLLLLF",
+      "FpwwwwwwqqpLKKLLKLKKKKKKKLKLLKLF",
+      "FpqqqqqqqqpJLLKKLLLJJLKKLLLKKLJE",
+      "EpwwwwwwwqpLLKKLJLJJJLLKJKKKLLLF",
+      "FpwwwwwwqqpKJJLLKLLKJJKKKKJJJLLF",
+      "FpwqqqqqqqpJKLKLKLLJLLLLLKKKKJKF",
+      "FLppppppppJLJKJLKKLKKKLLJKJLJJKF",
+      "FLJLLLLJKKLKLJLKKLKLKKLKLJLLLLLE",
+      "EKJLKKLLJLKKLKKKJLKJKLKJLKJKLKKF",
+      "FFFFEFFFFEFFFFEFFFFEFFFFEFFFFEFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "EFEEEFEEEFEEEFEEEFEEEFEEEFEEEFEE",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE."
+     ]
+    },
+    {
+     "namn": "med täcket",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "FFEFFFFEFFwwpwwwwwwwwwwwwwwwwwww",
+      "FLKJJJKKKLqqpqqqqqqqqqqqqqqqqqqq",
+      "EKppppppppwwpppppppppppppppppppp",
+      "Fpwwwwwwwqqqpooooooooooooooooooo",
+      "Fpwwwwwwwqwwpqqqqqqqqqqqqqqqqqqq",
+      "Fpwwwwwwqqqqpqqqqqqqqqqqqqqqqqqq",
+      "Fpqqqqqqqqwwpppppppppppppppppppp",
+      "Epwwwwwwwqqqpooooooooooooooooooo",
+      "Fpwwwwwwqqwwpqqqqqqqqqqqqqqqqqqq",
+      "Fpwqqqqqqqqqpqqqqqqqqqqqqqqqqqqq",
+      "FLppppppppwwpppppppppppppppppppp",
+      "FLJLLLLJKKqqpooooooooooooooooooo",
+      "EKJLKKLLJLwwpqqqqqqqqqqqqqqqqqqq",
+      "FFFFEFFFFEppoppoppoppoppoppoppop",
+      "FFFFFFFFFFppoppoppoppoppoppoppop",
+      "EFEEEFEEEFoooooooooooooooooooooo",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE."
+     ]
+    }
+   ],
+   "anteckning": "Fyrkantig kudde av lintyg med en söm mitt på"
+  },
+  {
+   "ide": "En säck av randigt bolstervar, hopsnörd i ena änden med lintråd så att en tofs sticker ut",
+   "lager": true,
+   "bilder": [
+    {
+     "namn": "kudde",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      ".ppppppp........................",
+      "pwqwqwqwp.......................",
+      "pwqwqwqwqp......................",
+      "pwqwqwqwqpJ.....................",
+      "pwqwqwqwqJpp....................",
+      "pwqwqwqwqpJ.....................",
+      "pwqwqwqwqp......................",
+      "pwqwqwqwp.......................",
+      ".ppppppp........................",
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      "................................",
+      "................................"
+     ]
+    },
+    {
+     "namn": "i halmbädden",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "FFEFFFFEFFFFEFFFFEFFFFEFFFFEFFFF",
+      "FLKJJJKKKLJJJJJKKKLLLKKJKLKLLKKE",
+      "EpppppppJLKKJLLJJJKKLKLLKJKJLKJF",
+      "pwqwqwqwpLLKLKJKKKKJJKLKKKKLLLJF",
+      "pwqwqwqwqpKLKKJKKKLLKJKKLLKLLLLF",
+      "pwqwqwqwqpJLKKLLKLKKKKKKKLKLLKLF",
+      "pwqwqwqwqJppLLKKLLLJJLKKLLLKKLJE",
+      "pwqwqwqwqpJLLKKLJLJJJLLKJKKKLLLF",
+      "pwqwqwqwqpKKJJLLKLLKJJKKKKJJJLLF",
+      "pwqwqwqwpKKJKLKLKLLJLLLLLKKKKJKF",
+      "FpppppppJKJLJKJLKKLKKKLLJKJLJJKF",
+      "FLJLLLLJKKLKLJLKKLKLKKLKLJLLLLLE",
+      "EKJLKKLLJLKKLKKKJLKJKLKJLKJKLKKF",
+      "FFFFEFFFFEFFFFEFFFFEFFFFEFFFFEFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "EFEEEFEEEFEEEFEEEFEEEFEEEFEEEFEE",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE."
+     ]
+    },
+    {
+     "namn": "med täcket",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "FFEFFFFEFFwwpwwwwwwwwwwwwwwwwwww",
+      "FLKJJJKKKLqqpqqqqqqqqqqqqqqqqqqq",
+      "EpppppppJLwwpppppppppppppppppppp",
+      "pwqwqwqwpLqqpooooooooooooooooooo",
+      "pwqwqwqwqpwwpqqqqqqqqqqqqqqqqqqq",
+      "pwqwqwqwqpqqpqqqqqqqqqqqqqqqqqqq",
+      "pwqwqwqwqJwwpppppppppppppppppppp",
+      "pwqwqwqwqpqqpooooooooooooooooooo",
+      "pwqwqwqwqpwwpqqqqqqqqqqqqqqqqqqq",
+      "pwqwqwqwpKqqpqqqqqqqqqqqqqqqqqqq",
+      "FpppppppJKwwpppppppppppppppppppp",
+      "FLJLLLLJKKqqpooooooooooooooooooo",
+      "EKJLKKLLJLwwpqqqqqqqqqqqqqqqqqqq",
+      "FFFFEFFFFEppoppoppoppoppoppoppop",
+      "FFFFFFFFFFppoppoppoppoppoppoppop",
+      "EFEEEFEEEFoooooooooooooooooooooo",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE."
+     ]
+    }
+   ],
+   "anteckning": "En säck av randigt bolstervar, hopsnörd i ena änden med lintråd så att en tofs sticker ut"
+  },
+  {
+   "ide": "En lång rulle tvärs över bäddens huvudände, knuten i ändarna med lintråd",
+   "lager": true,
+   "bilder": [
+    {
+     "namn": "kudde",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      ".J......J.......................",
+      "..pJppJp........................",
+      "..pqwwqp........................",
+      "..pqwwqp........................",
+      "..pqwwqp........................",
+      "..pqwwqp........................",
+      "..pqwwqp........................",
+      "..pqwwqp........................",
+      "..pqwwqp........................",
+      "..pqwwqp........................",
+      "..pqwwqp........................",
+      "..pqwwqp........................",
+      "..pJppJp........................",
+      ".J......J.......................",
+      "................................",
+      "................................",
+      "................................"
+     ]
+    },
+    {
+     "namn": "i halmbädden",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "FJEFFFFEJFFFEFFFFEFFFFEFFFFEFFFF",
+      "FLpJppJpKLJJJJJKKKLLLKKJKLKLLKKE",
+      "EKpqwwqpJLKKJLLJJJKKLKLLKJKJLKJF",
+      "FKpqwwqpLLLKLKJKKKKJJKLKKKKLLLJF",
+      "FLpqwwqpKLKLKKJKKKLLKJKKLLKLLLLF",
+      "FLpqwwqpLJLLKKLLKLKKKKKKKLKLLKLF",
+      "FLpqwwqpLJJJLLKKLLLJJLKKLLLKKLJE",
+      "EJpqwwqpLKKLLKKLJLJJJLLKJKKKLLLF",
+      "FJpqwwqpKKKKJJLLKLLKJJKKKKJJJLLF",
+      "FJpqwwqpKKKJKLKLKLLJLLLLLKKKKJKF",
+      "FLpqwwqpJKJLJKJLKKLKKKLLJKJLJJKF",
+      "FLpqwwqpKKLKLJLKKLKLKKLKLJLLLLLE",
+      "EKpJppJpJLKKLKKKJLKJKLKJLKJKLKKF",
+      "FJFFEFFFJEFFFFEFFFFEFFFFEFFFFEFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "EFEEEFEEEFEEEFEEEFEEEFEEEFEEEFEE",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE."
+     ]
+    },
+    {
+     "namn": "med täcket",
+     "rader": [
+      "................................",
+      "................................",
+      "................................",
+      "FJEFFFFEJFwwpwwwwwwwwwwwwwwwwwww",
+      "FLpJppJpKLqqpqqqqqqqqqqqqqqqqqqq",
+      "EKpqwwqpJLwwpppppppppppppppppppp",
+      "FKpqwwqpLLqqpooooooooooooooooooo",
+      "FLpqwwqpKLwwpqqqqqqqqqqqqqqqqqqq",
+      "FLpqwwqpLJqqpqqqqqqqqqqqqqqqqqqq",
+      "FLpqwwqpLJwwpppppppppppppppppppp",
+      "EJpqwwqpLKqqpooooooooooooooooooo",
+      "FJpqwwqpKKwwpqqqqqqqqqqqqqqqqqqq",
+      "FJpqwwqpKKqqpqqqqqqqqqqqqqqqqqqq",
+      "FLpqwwqpJKwwpppppppppppppppppppp",
+      "FLpqwwqpKKqqpooooooooooooooooooo",
+      "EKpJppJpJLwwpqqqqqqqqqqqqqqqqqqq",
+      "FJFFEFFFJEppoppoppoppoppoppoppop",
+      "FFFFFFFFFFppoppoppoppoppoppoppop",
+      "EFEEEFEEEFoooooooooooooooooooooo",
+      ".EEEEEEEEEEEEEEEEEEEEEEEEEEEEEE."
+     ]
+    }
+   ],
+   "anteckning": "En lång rulle tvärs över bäddens huvudände, knuten i ändarna med lintråd"
+  }
+ ]
+}

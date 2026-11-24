@@ -11,7 +11,6 @@ export const kallTid = (ai: number) => foreIstiden(ai) || iIstiden(ai); // infö
 // Balanstalen (regel 8): hur tidsåldern påverkar byn. Faktorerna gäller i tiden som metoden i namnet säger, annars 1
 export const ARSTID = balans('arstid', {
   // vad byn väljer (val.ts)
-  vedKall: 1.3, // veden väger så mycket mer inför och under istiden
   // att skaffa och förvara
   hoPerTid: [0.25, 0.6, 1, 1.3], // hur mycket hö det finns att samla, per tidsålder (istid, vår, sommar, höst)
   grenarIstid: 0.6, // grenar går att samla så här mycket i istiden (eld.ts)

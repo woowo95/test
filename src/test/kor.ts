@@ -3,6 +3,8 @@
 import '../sim'; // först: hela simuleringen i samma ordning som spelet, så att registren finns när systemen sätter sina rader
 import { trangtVidStation as SIM_TRANGT } from '../sim/stationer';
 import { forLangtArbete } from '../sim/tider';
+import { utanFardighet } from '../sim/kunna';
+import { utanBruk } from '../sim/behov';
 import { MALL, utanForm } from '../sim/folk';
 import { halMin, halVakt, islagt } from '../sim/is';
 import { kyrkaId } from '../sim/egendom';
@@ -51,6 +53,8 @@ export function korBy(seed: number, dagar: number, varjeSteg?: (s: State) => voi
   const lagerkoll0 = { pa: LAGERKOLL.pa, n: LAGERKOLL.n }; // ställs tillbaka sist, så att ett scenario som kör en by inte lämnar vakten på
   LAGERKOLL.pa = true; LAGERKOLL.fel.length = 0; // förrådets minne per slag och rutnätet jämförs med nyräknade (steg 12.1.186)
   const sedda = new WeakSet<object>(); // arbetena som vakten för arbetstiderna redan sett (steg 9.2.63)
+  // skickligheten (steg 13.9.10): varje handling som gör något har sin färdighet för fart och kvalitet, och varje sak sin rad i BRUK
+  for (const f of [...utanFardighet(), ...utanBruk()]) larm('skicklighet', () => f);
   let hunger = 0, humor = 0, humorN = 0, lit = 0, steg = 0, vintermat = Infinity, vinterved = Infinity, forraAlder = ageIndex(s);
   const ok01 = (v: number) => Number.isFinite(v) && v >= -1e-6 && v <= 1 + 1e-6;
   const dag = () => ((s.now - START) / DAY).toFixed(1);

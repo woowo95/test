@@ -6,7 +6,7 @@ import { ALDER, ageOf, count, andraGor, forstaGang, livet, living, log } from '.
 import { kronikaBer, personFalt } from './berattelser';
 import { bitAt, vagBort, Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRang, bitsOf, blocked, freeNear, gridOf, isWall, housesOf, husById, touch } from './byggnad';
 import { vaderSlit } from './vader';
-import { groundOf, nyttVatten, punktIRuta } from './mark';
+import { groundOf, nyttVatten } from './mark';
 import { kunnighet } from './ekonomi';
 import { eldReserv } from './forradsmal';
 import { ARSTID, iIstiden } from './tid';
@@ -26,6 +26,7 @@ import { FLOD } from './flod';
 import { balans } from './balans';
 import { vidElden } from './eldflytt';
 import { notis } from './notiser';
+import { tjarFaktor } from './tjarlatt';
 
 // ---------- balanstal (regel 8) ----------
 // Planeringen (var ett nytt hus står) och arbetet (i vilken ordning och hur fort det byggs och lagas). Husens storlek och
@@ -54,7 +55,7 @@ export const BYGG = balans('bygg', {
 export function bedFor(s: State, p: Person) {
   const i = bedTile(s, p);
   if (i === undefined) return undefined;
-  return punktIRuta(s, i, p);
+  return { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 }; // mitt på sin ruta, så att ingen ligger över den i rutan intill (steg B.21)
 }
 
 // ---------- arbete ----------
@@ -332,7 +333,7 @@ export function wearBuild(s: State, hours: number, ai: number) {
   for (const b of bitsOf(s)) {
     const M = MATERIAL[b.m];
     if (b.b < 1 || !M.slit) continue;
-    b.c -= M.slit * hours * (iIstiden(ai) ? ARSTID.slitIstid : 1) * (b.k === 'vagg' ? vaderSlit(s) * (s.flod && iVattnetNu(s, b.y * W + b.x) ? FLOD.vaggSlit : 1) : 1); // väggarna slits mer i regnet och snön (steg 2.11.2) och i en översvämnings vatten (steg 3.8.7, flod.ts)
+    b.c -= M.slit * hours * tjarFaktor(s, b.tj) * (iIstiden(ai) ? ARSTID.slitIstid : 1) * (b.k === 'vagg' ? vaderSlit(s) * (s.flod && iVattnetNu(s, b.y * W + b.x) ? FLOD.vaggSlit : 1) : 1); // väggarna slits mer i regnet och snön (steg 2.11.2) och i en översvämnings vatten (steg 3.8.7, flod.ts)
     if (b.c > 0) continue;
     if (b.k === 'vagg') {
       const h = rasar(s, b);

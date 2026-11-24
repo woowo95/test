@@ -1,5 +1,5 @@
 // Paletten (steg 5.1.1, "Bildstil" under Gränssnitt i designdokumentet): palett B, Avokado och rost, som Björn valde efter v94.
-// 32 färger i åtta ramper med fyra toner, mörk till ljus. All ritning tar sina färger ur den: sakernas bilder (ikoner.ts),
+// 40 färger i tio ramper med fyra toner (de två sista för färgningen, steg 13.3.2), mörk till ljus. All ritning tar sina färger ur den: sakernas bilder (ikoner.ts),
 // stationerna, marken, blodet och panelen. Färgerna är räknade i bildstilen (bildstil/sida.js, gorPalett) och skrivna in
 // här, så att spelet inte behöver räkna dem. Ingen färg är fulltonssvart: den mörkaste är kolets första ton.
 // Skymningen och natten (steg 5.1.1.4): paletten ett och två steg mörkare (MORKARE), med ett rastermönster mellan stegen
@@ -16,9 +16,13 @@ export const PALETT: readonly Ramp[] = [
   { id: 'barr', vad: 'granar, mörk skog, djupt vatten', toner: ['#21290d', '#21310e', '#324726', '#505e3e'] },
   { id: 'skiffer', vad: 'sten, vatten, flinta, järn', toner: ['#233035', '#3e5156', '#61767a', '#8a9c9e'] },
   { id: 'ben', vad: 'ben, snö, ljus hud, glans', toner: ['#7e7362', '#a0947d', '#bdb39b', '#dad0bb'] },
+  // färgningens två ramper (steg 13.3.2, Färgade kläder och mode): lika dämpade och med samma steg från mörkt till ljust som de
+  // andra, så att ingen av de gamla färgerna byter sin mörkare färg i skymningen eller på natten
+  { id: 'bla', vad: 'blått tyg (vejde)', toner: ['#1c2e49', '#2e4a71', '#4d6b98', '#728db8'] },
+  { id: 'lila', vad: 'lila tyg (bär)', toner: ['#382540', '#593c64', '#7b5b89', '#9b7fab'] },
 ];
 
-// alla 32 färgerna, ramp för ramp
+// alla 40 färgerna, ramp för ramp
 export const FARGER: readonly string[] = PALETT.flatMap(r => r.toner);
 const ARPALETT = new Set(FARGER);
 export const iPaletten = (hex: string) => ARPALETT.has(hex.toLowerCase());

@@ -38,6 +38,7 @@ export const BRYGD: Record<string, BrygdDef> = {
   vin: { namn: 'Vin', tek: 'bryggkar', av: { bar: 10 }, vatten: true, dygn: 3, ger: 5, gor: 'Krossar bär med vatten i bryggkaret.' }, // 10 bär krossas med vatten och jäser i 3 dygn
   ol: { namn: 'Öl', tek: 'ol', av: { malt: 4, rolleka: 1 }, vatten: true, dygn: 2, ger: 8, gor: 'Lägger malt, vatten och rölleka i bryggkaret.' }, // maltet, vatten och rölleka (steg 9.6.13)
   svagdricka: { namn: 'Svagdricka', tek: 'ol', av: { malt: 2 }, vatten: true, dygn: 1, ger: 8, gor: 'Lägger lite malt och vatten i bryggkaret till svagdricka.' }, // lite malt och vatten (steg 10.7.24)
+  cider: { namn: 'Cider', tek: 'bryggkar', av: { appel: 10 }, vatten: false, dygn: 2, ger: 5, gor: 'Krossar äpplen i bryggkaret.' }, // äpplena jäser utan vatten (steg 13.6.3): den som kan vinet kan cidern
   mjod: { namn: 'Mjöd', tek: 'mjod', av: { honung: 3 }, vatten: true, dygn: 4, ger: 5, gor: 'Löser honungskakor i vatten i bryggkaret.' }, // honungen jäser till mjöd (steg 10.7.25)
 };
 export type BrygdId = VatskaId;

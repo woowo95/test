@@ -10,10 +10,10 @@ import type { Flik } from '../panel';
 // bredvid graferna (steg 9.2.126), med en symbol för Graferna och en för Kartan överst
 export const talVal: { vy: 'grafer' | 'kartan' } = { vy: 'grafer' };
 // delraden med namn under symbolerna (steg 11.1.38, som i Styre och Krönikan): Graferna och Byn över tid
-const DELAR = [{ id: 'grafer', tecken: '↗', namn: 'Graferna' }, { id: 'kartan', tecken: '🏘', namn: 'Byn över tid' }];
+const DELAR = [{ id: 'grafer', tecken: '📈', namn: 'Graferna' }, { id: 'kartan', tecken: '🏘', namn: 'Byn över tid' }];
 export const tal: Flik = {
   namn: 'Byns tal',
-  html: () => delRad('data-tvy', DELAR.map(d => ({ ...d, tecken: tecknet(d.id === 'grafer' ? 'sym_pil_upp' : 'sym_byn', d.tecken, 16) })), talVal.vy)
+  html: () => delRad('data-tvy', DELAR.map(d => ({ ...d, tecken: tecknet(d.id === 'grafer' ? 'sym_graf' : 'sym_byn', d.tecken, 16) })), talVal.vy)
     + (talVal.vy === 'kartan' ? kartminneHtml() : langdRad() + Object.keys(GRAFER).map((id, i) => grafHtml(id, i === 0)).join('')),
   klick(el) {
     const b = el.closest<HTMLElement>('[data-tvy]');

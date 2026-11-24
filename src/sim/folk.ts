@@ -2,7 +2,7 @@ import { eldPlats } from './karta';
 import { hash3 } from './slump';
 import { freeNear } from './byggnad';
 import { Strom, clamp, gauss, pick, rnd } from './slump';
-import { Act, DAY, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State, Task } from './typer';
+import { Act, DAY, HANT_SKILLS, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State, Task, UPP_LAR } from './typer';
 import { balans } from './balans';
 import { fodTro, nyAndlighet } from './religion';
 import { RYKTE, ryktbarhet } from './rykten';
@@ -41,7 +41,6 @@ export const KROPP = balans('kropp', {
   badSvalka: 0.4, // ett bad kyler den som är varmare än idealet så här mycket, ner till idealet
   // hunger
   hungrig: 0.45, // under detta är man hungrig och äter
-  bordHunger: 0.15, // vid ett bord äter man redan när mättnaden är så här mycket över hungrig (måltiden, steg 2.2.15) ...
   bordGlad: 0.06, bordGladTim: 6, // ... och blir så här mycket gladare av det, i så många timmar
   hungerTim: 22, // timmar från full mättnad till tom (16 före balansen av fas 2, steg 2.12.1)
   mattar: 0.55, // en hel portion av god mat höjer mättnaden så mycket (eat i behov.ts)
@@ -58,6 +57,7 @@ export const KROPP = balans('kropp', {
   restVila: 0.19, // vila per timme när man vilar (0,09 före steg 11.1.72: sömnen i en bädd tar nu ungefär en åttondel av dygnet)
   restArbete: -0.04, // ... när man arbetar hårt (-0,06 före steg 2.3.10)
   restVaken: -0.02, // ... annars (-0,03 före steg 2.3.10)
+  gammalTrott: 1, gammalSpann: 20, // vilan sjunker så här mycket fortare för den gamla: noll vid ALDER.trottGammal och hela efter gammalSpann år till (steg 13.8.11)
   restGolv: 0.063, // extra vila per timme när man sover inomhus på golv (höjda i samma förhållande som restVila, steg 11.1.72)
   restTak: 0.042, // ... på bar mark under tak
   restBadd: 0.105, // ... i en halmbädd (steg 2.2.5)
@@ -96,6 +96,7 @@ export const ALDER = balans('alder', {
   ansvar: 12, // från detta tänder man elden, hämtar kol och bär in saker i mörkret
   bygger: 12, // från detta hjälper man till att bygga (golv, lagning och att fälla träd); väggar byggs först som vuxen
   uppfinner: 12, // från detta kommer man på tekniker medan man arbetar
+  barnklad: 10, // under detta passar barnkläderna, och från detta de vuxnas rock och byxor (steg 13.2.4)
   vuxen: 14, // från detta arbetar man för byn; yngre hjälper bara till eller leker. Också de som bygger väggar, har yrke och har en röst i sederna
   vaktFran: 16, // från detta kan man hålla vakt ...
   vaktTill: 60, // ... och under detta
@@ -111,7 +112,7 @@ export const ALDER = balans('alder', {
   alderdom: 55, // över detta räknas döden som ålderdom, annars som olycka
   gammal: 60, // över detta orkar man mindre i arbetet (EKONOMI.gammalArbete)
   gangGammal: 65, // över detta går man långsammare
-  sovGammal: 68, // över detta sover man ofta på natten
+  trottGammal: 55, // över detta tröttnar man fortare (KROPP.gammalTrott, steg 13.8.11), och sover när man är trött som alla andra
   hogAlder: 70, // den som dör så här gammal eller äldre minns man för det (eftermälet)
   // åldrandet: egenskapen backar från Fran år, och tappar hela sin kraft på Spann år till, men aldrig under Golv
   potFodd: 0.06, // en nyfödd har så här stor del av sin potential
@@ -271,8 +272,9 @@ export const franMitt = (p: Person, k: Stat, now: number) => (stat(p, k, now) - 
 // färdigheterna en nykomling har efter sin ålder (en dragning ur 'folk' per färdighet, i SKILLS ordning). Matlagningen
 // (steg 2.8.1) börjar av samlingen, utan en egen dragning (steg 3.10.8: eldkonsten är ingen färdighet längre)
 export function startSkills(s: State, p: Person, age: number) {
-  for (const k of SKILLS) if (k !== 'matlagning' && k !== 'narstrid' && k !== 'traff' && k !== 'skaldskap' && k !== 'handel' && k !== 'lakekonst' && k !== 'odling' && k !== 'skotsel') p.skill[k] = clamp((age - ALDER.skickFran) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
+  for (const k of SKILLS) if (k !== 'matlagning' && k !== 'narstrid' && k !== 'traff' && k !== 'skaldskap' && k !== 'handel' && k !== 'lakekonst' && k !== 'odling' && k !== 'skotsel' && !(HANT_SKILLS as readonly Skill[]).includes(k)) p.skill[k] = clamp((age - ALDER.skickFran) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
   p.skill.matlagning = p.skill.samla;
+  for (const k of HANT_SKILLS) p.skill[k] = p.skill.hantverk; // hantverkets färdigheter börjar av hantverket (steg 13.9.7)
   p.skill.skaldskap = p.skill.berattande * SKALD_START; // skaldskapen (steg 4.3.2.5) börjar av berättandet, utan en egen dragning
   p.skill.handel = handelStart(p); // handeln (steg 4.4.1.4) börjar av berättandet och hantverket, utan en egen dragning
   stridSkills(s, p, age);
@@ -290,7 +292,8 @@ const OVNING = balans('ovning', {
   mjuk: 21, // ökningen avtar mot den här gränsen (vid färdigheten 10,5 ger övningen hälften så mycket som vid 0) ...
   tak: 20, // ... och färdigheten blir aldrig högre än så här
 });
-export function ovning(p: Person, k: Skill, vinst: number) { p.skill[k] = clamp(p.skill[k] + vinst * (1 - p.skill[k] / OVNING.mjuk), 0, OVNING.tak); }
+// en färdighet som en upplevelse gjort lättare lärs fortare (UPP_LAR i typer.ts, som uppvaxt.ts fyller ur UPPLEVELSER, steg 13.1.7)
+export function ovning(p: Person, k: Skill, vinst: number) { const lar = p.upp?.some(u => UPP_LAR.k[u.k] === k) ? UPP_LAR.fart : 1; p.skill[k] = clamp(p.skill[k] + vinst * lar * (1 - p.skill[k] / OVNING.mjuk), 0, OVNING.tak); }
 
 // Egenskaperna (steg 2.3.11): utpräglade personligheter. En egenskap slumpas med tyngd i ändarna, så att de flesta är
 // tydligt låga eller höga i något och en helt balanserad person är ovanlig. Ett barn får varje egenskap från en av
@@ -328,9 +331,9 @@ export const namnUr = (sex: 'm' | 'k', r: () => number) => { const p = <X>(l: X[
 // valfritt fält tas bort med p.f = undefined, aldrig med delete (som gör om personen till en ordbok). Ett nytt fält i
 // Person-typen får en rad här; vakten i testerna (formVakt) larmar annars
 export const MALL: Record<keyof Person, undefined> = {
-  te: undefined, larmRoll: undefined, foder: undefined, krycka: undefined, forbandMed: undefined, ropT: undefined, rus: undefined,
-  kvallT: undefined, supit: undefined, fylla: undefined, bak: undefined, protMinne: undefined, hn: undefined, hnBlodat: undefined,
-  gift: undefined, blodNotis: undefined, bedrift: undefined, sorg: undefined, tat: undefined, tatV: undefined, framProv: undefined,
+  te: undefined, tval: undefined, smittNara: undefined, larmRoll: undefined, foder: undefined, krycka: undefined, forbandMed: undefined, ropT: undefined, rus: undefined,
+  supit: undefined, fylla: undefined, bak: undefined, protMinne: undefined, hn: undefined, hnBlodat: undefined,
+  gift: undefined, blodNotis: undefined, bedrift: undefined, sorg: undefined, tat: undefined, tatV: undefined,
   gravBesok: undefined, paminnd: undefined, pratArbete: undefined, id: undefined, name: undefined, sex: undefined, uppkallad: undefined,
   fastRoll: undefined, forr: undefined, ledde: undefined, gavSig: undefined, framme: undefined, gast: undefined, smitta: undefined,
   born: undefined, died: undefined, cause: undefined, left: undefined, ute: undefined, dodVag: undefined, fran: undefined,
@@ -341,7 +344,7 @@ export const MALL: Record<keyof Person, undefined> = {
   lonFick: undefined, lonObetald: undefined, bonD: undefined, bonNodD: undefined, bonVan: undefined, tack: undefined, tvivel: undefined,
   profet: undefined, sedDod: undefined, sedSkand: undefined, fasta: undefined, skuld: undefined, drag: undefined, missnoje: undefined,
   skatteskuld: undefined, straffad: undefined, utanRost: undefined, utanVard: undefined, tjanst: undefined, brottsling: undefined,
-  naring: undefined, byteNej: undefined, langtan: undefined, habit: undefined, fange: undefined, paus: undefined, sjuk: undefined,
+  naring: undefined, byteNej: undefined, bruk: undefined, langtan: undefined, habit: undefined, fange: undefined, paus: undefined, sjuk: undefined,
   immun: undefined, sickWhy: undefined, poisonUntil: undefined, forgiftadT: undefined, stulet: undefined, pregnantSince: undefined, pregnantBy: undefined,
   lastBirth: undefined, guardDay: undefined, fiske: undefined, gjort: undefined, tek: undefined, byten: undefined, hopp: undefined,
   lar: undefined, halvminne: undefined, kunskap: undefined, lardomar: undefined, ortBorta: undefined, raddAkt: undefined, thoughts: undefined, drom: undefined, vardadAv: undefined, x: undefined,
@@ -349,9 +352,11 @@ export const MALL: Record<keyof Person, undefined> = {
   bast: undefined, arke: undefined, rivaler: undefined, rivalom: undefined, mentor: undefined, mentorSk: undefined, upp: undefined,
   anlag: undefined, andlig: undefined, tro: undefined, troStyrka: undefined, svartSjuk: undefined, prat: undefined, binamn: undefined,
   varsel: undefined, forv: undefined, utb: undefined, ubr: undefined, angr: undefined, lekt: undefined, morkT: undefined, larm: undefined,
-  intryck: undefined, smak: undefined, reservAlltid: undefined, liv: undefined, skam: undefined,
+  intryck: undefined, sedArv: undefined, sedTal: undefined, smak: undefined, reservAlltid: undefined, liv: undefined, skam: undefined,
 };
 export const nyPerson = (p: Person): Person => ({ ...MALL, ...p }) as unknown as Person;
+// en sparad person i mallens form: bara mallens fält, så att ett fält som tagits bort ur Person inte följer med från en äldre sparning
+export const iMallen = (p: Person): Person => { const q = { ...MALL } as Record<string, unknown>; for (const k in MALL) q[k] = (p as unknown as Record<string, unknown>)[k]; return q as unknown as Person; };
 // de levande som inte har mallens form: nycklarna i en annan ordning än mallen eller nycklar utanför den (vakten i testerna)
 const MALLNYCKLAR = Object.keys(MALL).join();
 export const utanForm = (folk: Person[]) => folk.filter(p => Object.keys(p).join() !== MALLNYCKLAR);

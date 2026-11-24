@@ -16,6 +16,7 @@ import { vanaSumma } from './vanor';
 import { ACTS, Act } from './handlingar';
 import { isLight } from './tid';
 import { vaderNu } from './vader';
+import { fargKrok } from './fargkrok';
 
 // Rykten (steg 3.3–3.4, "Rykten, anseende och minnet efter döden" i designdokumentet).
 // Det någon gör (en händelse: stöld, slag, gåva, mästerverk …) blir ett intryck hos den som ser det (våldsam, tjuv, generös,
@@ -200,6 +201,7 @@ const HDEF = {
   boskapsstold: { i: 'tjuv', vikt: 0.6, text: 'slaktade {sak} som {om} ägde' }, // steg 9.8.12
   ranVald: { i: 'valdsam', vikt: 0.3, text: 'gick på {om} för att ta {sak}' }, // rånet (steg 3.7.17)
   ran: { i: 'tjuv', vikt: 0.6, text: 'tog {sak} av {om} med våld' },
+  gravstold: { i: 'tjuv', vikt: 1, text: 'stal {sak}' }, // ur en grav: ett värre brott än en stöld, dubbelt så starkt (steg 13.1.4)
   gravran: { i: 'tjuv', vikt: 0.6, text: 'tog gravgåvorna ur högen vid {sak}' }, // steg 11.13.28
   ranForsok: { i: 'tjuv', vikt: 0.3, text: 'försökte ta {sak} av {om} med våld' },
   elak: { i: 'elak', vikt: 0.25, text: 'var elak mot {om}' },
@@ -322,6 +324,7 @@ export function vittnen(s: State, p: Person, offer?: Person) {
 // i relationen (utanOp), och en rival eller den med låg empati blir avundsjuk på en prestation. ganger = vikten gånger så mycket
 export function handelse(s: State, p: Person, h: HandelseTyp, offer?: Person, sak?: string, bara?: Person, ganger = 1) {
   const d = HANDELSER[h];
+  if (offer && !bara) fargKrok.handelse(s, p, h, offer); // offret minns färgen den våldsamme bar (steg 13.3.5)
   const b: Bevis = { h, t: s.now, ...(offer ? { mot: offer.id, motNamn: offer.name } : {}), ...(sak ? { sak } : {}), sett: true };
   count(s, 'rykte_' + h);
   // en egen bedrift (steg 10.6.1): den största av de senaste blir kvar, och stoltheten över den ger lust att resa en runsten (skrift.ts)
@@ -504,6 +507,7 @@ function prydnadAnseende(s: State, om: number) {
     const r = kladAv(t.k);
     if (r?.plagg === 'halsband') a += PRYD.smycke + PRYD.finhet * KLADMATERIAL[r.mat].finhet;
     else if (r?.plagg === 'mantel') a += PRYD.mantel;
+    if (t.farg) a += fargKrok.anseende(s, t.farg); // ett färgat plagg, mer när byn tycker om färgen (steg 13.3.2)
   }
   return a * living(s).length;
 }
@@ -649,6 +653,7 @@ export function smaka(p: Person, k: string, d: number) {
 // en ny människa: få har någon smak från början
 const STARTSMAK = ['a:samla', 'a:jakt', 'a:fiske', 'a:ved', 'm:abborre', 'm:bar', 'm:svamp', 'm:kott'];
 export function startSmak(s: State, p: Person) {
+  fargKrok.fodd(s, p); // en favoritfärg (FARGSMAK i farg.ts, steg 13.3.5): räknad ur platsen i slumpen, utan att ta ur den
   if (rnd(s, 'rykte', p) >= RYKTE.smakStart) return;
   const k = STARTSMAK[Math.floor(rnd(s, 'rykte', p) * STARTSMAK.length)];
   smaka(p, k, (rnd(s, 'rykte', p) < RYKTE.smakTycke ? 1 : -1) * RYKTE.smakStartV);
@@ -691,6 +696,7 @@ export function berattaSmak(a: Person, b: Person, op: number) {
   if (op < 20) return;
   const f = favoriter(a).sort((x, y) => Math.abs(y.v) - Math.abs(x.v))[0];
   if (f) smaka(b, 'm:' + f.k, Math.sign(f.v) * RYKTE.smakSprid);
+  fargKrok.samtal(a, b, op); // och om sin favoritfärg (steg 13.3.5)
 }
 // den som blev förgiftad av svamp får avsmak för svamp (fynd.ts)
 export const smakGift = (p: Person) => smaka(p, 'm:svamp', -RYKTE.smakGift);
@@ -776,7 +782,7 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
   for (let led = 1; ropar.length; led++) {
     const nya: Person[] = [];
     for (const q of living(s)) {
-      if (vet.has(q) || horsel(q) < LARM.dov) continue; // den som knappt hör hör inte ropet (steg 8.2.2)
+      if (vet.has(q) || q.gast || horsel(q) < LARM.dov) continue; // den som knappt hör hör inte ropet (steg 8.2.2), och byns larm sprids bland byborna (steg B.3)
       const fran = ropar.find(r => Math.hypot(r.x - q.x, r.y - q.y) <= hor);
       if (!fran) continue;
       vet.add(q); hort.push(q);
@@ -796,14 +802,7 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
 // En person minns ett larm per sort (steg 12.1.211): ett rop om björnen skriver inte över det man vet om rövarna, och varje
 // system frågar efter sitt
 export function horLarm(p: Person, l: Larm) { (p.larm ??= {})[l.vad] = l; }
-export const larmOm = (p: Person, vad: string) => p.larm?.[vad];
 // minns p ett larm om vad nu?
 export const larmNu = (s: State, p: Person, vad: string) => { const l = p.larm?.[vad]; return l && s.now - l.t < LARM.tim * HOUR ? l : undefined; };
-// det senaste larmet p hört, av vilken sort som helst
-export function senasteLarm(p: Person): Larm | undefined {
-  let b: Larm | undefined;
-  for (const k in p.larm) { const l = p.larm[k]; if (l && (!b || l.t > b.t)) b = l; }
-  return b;
-}
 import { smakSak } from './ratter';
 import { tanke } from './tankar';

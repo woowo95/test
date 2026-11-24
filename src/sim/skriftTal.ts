@@ -12,6 +12,10 @@ export const SKRIFT = balans('skrift', {
   bedriftMin: 0.5, // ... när bedriften väger minst så här (en björn, en varg, en uppfinning, ett perfekt mästerverk)
   stolthetDygn: 3, // ... och lusten avtar till noll på så här många dygn
   avtar: 0.5, // lusten halveras för varje sten personen redan rest
+  // bildstenarnas motiv (steg 13.9.15, bildsten.ts): lusten gånger motivAvtar för varje bildsten byn redan har om samma sorts
+  // händelse, gånger andras för en händelse om någon annan man minns (gånger säkerheten), och vikten för en upplevelse eller
+  // något heligt som inte är en händelse i ryktena
+  motivAvtar: 0.6, andras: 0.5, uppVikt: 0.6,
   las: 3, // rutor från stenen där den som går förbi läser den
   lasVikt: 1, // intrycket den som läser får är så här stor del av det ristaren hade
   helig: 0.6, // lusten att rista trons heliga kväden för prästen och lärjungen, halverad för varje helig sten tron redan har (steg 10.6.2)

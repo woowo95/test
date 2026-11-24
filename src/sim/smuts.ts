@@ -29,8 +29,7 @@ import { tanke } from './tankar';
 
 // ---------- balanstal (regel 8) ----------
 export const SMUTS = balans('smuts', {
-  latrinVantFull: 10, // så många minuters väntan per latrin på sistone (byn tillsammans) gör bristen på latriner hel (steg 10.2.79) ...
-  latrinVantDygn: 1, // ... och väntan klingar av till hälften på så här många dygn
+  latrinPer: 8, // byn vill ha en latrin per så här många invånare, avrundat uppåt (steg 13.8.17)
   latrinUpptagen: 8, // en latrin där någon redan är räknas som så här många rutor längre bort när man väljer latrin (steg 11.1.71), och en ledig latrin inom så här många rutor gör att väntan inte är brist
   latrinGlomDygn: 2, // en latrin som ingen använt på så här många dygn (år i spelet) växer igen och försvinner (steg 11.1.71)
   vattenNara: 3, // toa-smuts så här många rutor från vattnet gör vattnet smutsigare ...
@@ -247,10 +246,6 @@ export function latrinFor(s: State, p: Person) {
 export const latrinFyllt = (t: Station) => clamp(t.fyllt ?? 0, 0, 1);
 // byn vill ha en ny latrin: den saknar en som inte är nästan full (projekt.ts)
 // med en kompost (steg 9.7.6) töms den nästan fulla latrinen i stället, så byn vill ha en ny först när den är full
-// minuterna byborna väntat på latrinen på sistone, avklingade till nu (steg 10.2.79)
-export const latrinVantNu = (s: State) => { const v = s.latrinVant; return v ? v.m * Math.pow(0.5, (s.now - v.t) / (SMUTS.latrinVantDygn * DAY)) : 0; };
-// en annan latrin är ledig nära p (steg 11.1.71): då är väntan ingen brist på latriner
-export const latrinLedigNara = (s: State, p: Person, utom: Station) => latriner(s).some(t => t !== utom && isKlar(t) && (t.fyllt ?? 0) < 1 && Math.hypot(t.x + 0.5 - p.x, t.y + 0.5 - p.y) <= SMUTS.latrinUpptagen && !latrinUpptagen(s, t, p));
 // en latrin som ingen använt på SMUTS.latrinGlomDygn växer igen och försvinner (steg 11.1.71), som en full som fylls igen;
 // bara en grop gör det (vaxerIgen på raden), utedasset står kvar (steg 12.1.244).
 // Räknas glest (TAKTER i steg.ts); tiden räknas från senaste besöket, eller från att den blev klar
@@ -259,12 +254,14 @@ export function latrinerVaxerIgen(s: State) {
     fyllIgen(s, t, false); count(s, 'latriner igenvuxna');
   }
 }
-// väntan läggs till (den som står och väntar på en latrin där någon annan är, steg.ts)
-export function latrinVanta(s: State, min: number) { s.latrinVant = { m: latrinVantNu(s) + min, t: s.now }; count(s, 'latrinVantMin', min); }
-// bristen på latriner: ingen latrin som inte är (nästan) full, eller så mycket väntan på dem som finns (steg 10.2.79)
-// med en kompost töms utedasset och står kvar (steg 12.4.9), men en grävd latrin som tömts går inte att använda igen: byn vill ha en ny när den är nästan full
-// väntan räknas per latrin, också de som byggs: den mäter trängseln vid de latriner som fanns, och en ny latrin delar på den
-export const latrinBrist = (s: State) => { const ko = harKompost(s), l = latriner(s), full = l.some(t => !isKlar(t) || latrinFyllt(t) < (ko && stationDef(t.k)?.dass ? 1 - 1e-9 : STATION.latrinNy)) ? 0 : 1; return Math.max(full, Math.min(1, latrinVantNu(s) / SMUTS.latrinVantFull / Math.max(1, l.length))); };
+// bristen på latriner (steg 13.8.17): byn vill ha en per SMUTS.latrinPer invånare, avrundat uppåt, och bristen är den del som
+// saknas. En latrin räknas när den byggs eller går att använda: med en kompost töms utedasset och står kvar (steg 12.4.9), men en
+// grävd latrin som tömts går inte att använda igen, så den nästan fulla räknas inte
+export const latrinBrist = (s: State) => {
+  const ko = harKompost(s), vill = Math.max(1, Math.ceil(living(s).length / SMUTS.latrinPer));
+  const har = latriner(s).filter(t => !isKlar(t) || latrinFyllt(t) < (ko && stationDef(t.k)?.dass ? 1 - 1e-9 : STATION.latrinNy)).length;
+  return clamp((vill - har) / vill, 0, 1);
+};
 // någon annan använder latrinen t just nu (står där och har börjat): latrinen används av en i taget (steg 10.2.79)
 export const latrinUpptagen = (s: State, t: Station, p: Person) => living(s).some(q => q !== p && q.task?.act === 'toa' && q.task.ref === t.id && q.task.phase === 'do' && q.task.prog !== undefined);
 const harKompost = (s: State) => stationerOf(s).some(t => t.k === 'kompost' && isKlar(t));

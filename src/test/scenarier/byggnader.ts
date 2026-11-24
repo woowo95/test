@@ -1,6 +1,6 @@
 // Scenarier. Byggnader och lager: byggnader, förrådshus, familjehus, funktion, påbörjat, bostad, bygg, lager och lagerplatser.
 import { isDeepStrictEqual } from 'node:util';
-import { MIN, Person, Act, createState, addTool, FOREST, HOUR_S, toolsOf, BYN, step, living, sees, ageIndex, cloneState, ageStart, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, dropLoad, T, isStored, zonesOf, allows, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, stat, bynsMitt, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, treeOn, ownsAmount, addTo, setAmount, isFood, grundvarde, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, MATERIAL, usable, dropSpot, ALDER, KROPP, samlingRum, varmareInne, haulJob, fetchFuel, chooseTask, minOf } from '../../sim';
+import { MIN, Person, Act, createState, addTool, FOREST, HOUR_S, toolsOf, BYN, step, living, sees, ageIndex, cloneState, ageStart, sightOf, pilesOf, zoneOf, amountOf, STACK, capacity, load, dropLoad, T, isStored, zonesOf, allows, ageOf, groundOf, getMap, DAY, HOUR, W, State, tileOf, rektAvstand, stat, bynsMitt, die, heatAt, bitsOf, housesOf, gridOf, touch, roomAt, insulation, isWall, Bit, wearBuild, treeOn, ownsAmount, addTo, setAmount, isFood, grundvarde, tingOf, komOf, BYGGNADER, FN, mostUrgent, fnId, fnOf, planBuild, workOn, wearMult, LAGER, homeless, sovplatser, inZone, startWork, workHalf, finishHalf, stepPaborjat, halvOf, tingVarde, HALV_TID, fallTid, treeSpot, SEC, Task, familjOf, bedTile, takeForHouse, put, stepByggnader, husNamn, spotFor, roofed, MATERIAL, usable, dropSpot, ALDER, KROPP, samlingRum, varmareInne, varmeSatt, haulJob, fetchFuel, chooseTask, minOf } from '../../sim';
 import * as SIM from '../../sim';
 import { antal } from '../../sim/ord';
 import { findPath } from '../../sim/vag';
@@ -275,7 +275,7 @@ SCENARIER.funktion = {
     // brinner elden går den som ska värma sig till elden, om det inte är minst lika varmt i samlingshuset (lätt kyla:
     // huset förlorar lite värme, elden ger mer). Samtalet får vara inne då
     Object.assign(s.fire, { lit: true, fuel: 4 });
-    const sal = samlingRum(s)!, varmInne = varmareInne(s, sal, 0.02, true), samtalInne = varmareInne(s, sal, 0.02);
+    const sal = samlingRum(s)!, frys = living(s)[1], varmInne = ['samling', 'badd'].includes(varmeSatt(s, frys).satt[0]?.satt ?? ''), samtalInne = varmareInne(s, sal, 0.02);
     s.fire.lit = false; s.fire.fuel = 0;
     // sovplatserna räcker inte: samlingshuset blir en sovsal igen
     kom(); stepByggnader(s);
@@ -308,7 +308,7 @@ SCENARIER.paborjat = {
     klockan(s);
     setItems(s, { flinta: 4, grenar: 6 });
     const [p, q] = living(s).filter(r => ageOf(r, s.now) >= 18);
-    for (const r of living(s)) r.tek = { ...r.tek, yxa: 1 };
+    for (const r of living(s)) { r.tek = { ...r.tek, yxa: 1 }; r.skill[SIM.kunnaSkill('yxa')] = SIM.KUNTAL.mitt; } // den vanliga skickligheten: tiden som i receptet (steg 13.9.8)
     const uppgift = (r: Person, act: Act): Task => (r.task = { act, phase: 'do', tx: r.x, ty: r.y, until: s.now, carry: 0 });
     // p börjar på en yxa: materialet tas, och arbetet räknas från att hen kom fram
     const t1 = uppgift(p, 'yxa'); startWork(s, p, t1);
@@ -432,12 +432,17 @@ SCENARIER.bygg = {
     const q = createState(8, START); // by 6 hinner inte bli klar och by 7 dör ut sedan kartan blev 120 × 120 (2.10.9); det balanseras i 2.12
     kan(q);
     let inne = 0, sov = 0, iTrad = 0, trad = -1; // räknas när huset är klart, så att det inte beror på hur fort det råkar bli klart
-    kor(q, 5 * 24, q => { // fyra vuxna i den nya kolonin: huset tar några dygn
-      const bs = bitsOf(q);
-      if (bs.length && trad < 0) trad = bs.filter(b => treeOn(q, b)).length;
-      iTrad += bs.filter(b => b.k === 'vagg' && b.b > 0 && b.b < 1 && treeOn(q, b)).length; // en vägg som byggs där ett träd står
-      if (housesOf(q)[0]?.klar) for (const p of living(q)) if (p.task?.act === 'sova' && p.task.phase === 'do') { sov++; if (roomAt(q, p.x, p.y)) inne++; }
-    });
+    // fyra vuxna i den nya kolonin: huset tar några dygn (sju sedan nattvakten väljs bland de lediga; fler sedan varje bygge hämtar
+    // sitt eget virke i 13.8.12, när familjehusen byggs samtidigt). Byn körs tills huset är klart och ett dygn till, högst tio dygn
+    for (let d = 0, klarD = -1; d < 10 && (klarD < 0 || d - klarD < 1); d++) {
+      kor(q, 24, q => {
+        const bs = bitsOf(q);
+        if (bs.length && trad < 0) trad = bs.filter(b => treeOn(q, b)).length;
+        iTrad += bs.filter(b => b.k === 'vagg' && b.b > 0 && b.b < 1 && treeOn(q, b)).length; // en vägg som byggs där ett träd står
+        if (housesOf(q)[0]?.klar) for (const p of living(q)) if (p.task?.act === 'sova' && p.task.phase === 'do') { sov++; if (roomAt(q, p.x, p.y)) inne++; }
+      });
+      if (klarD < 0 && housesOf(q)[0]?.klar) klarD = d;
+    }
     const fq = getMap(q.seed).fire, hq = housesOf(q)[0];
     const avst = hq ? rektAvstand(fq.x, fq.y, hq.x, hq.y, hq.w, hq.h) : 0;
     // ett planerat långhus räknas i statistiken (planerat_langhus; samhalle-192)
@@ -718,7 +723,7 @@ SCENARIER.lekibyn = {
 };
 
 SCENARIER.ibyn = {
-  text: 'Steg 2.10.6: det som görs utan bänk (redskapen när byn saknar slöjdbänk, repet och annat handarbete) görs inne i byn, vid lagret eller under tak, och inte vid elden. När det är kallt sätter man sig vid elden som förut, för värmens skull',
+  text: 'Steg 2.10.6: det som görs utan bänk (redskapen när byn saknar slöjdbänk, repet och annat handarbete) görs inne i byn, vid lagret eller under tak, och inte vid elden. Handarbetet görs där det brukar göras också när det är kallt; den som fryser går till elden genom värmen (VARMA, varme.ts)',
   kor: () => {
     const plats = (tidsalder: number) => {
       const s = createState(3, START);
@@ -737,7 +742,7 @@ SCENARIER.ibyn = {
     const varmt = plats(SIM.SOMMAR), kallt = plats(SIM.ISTID);
     return [
       [`på sommaren görs handarbetet utan bänk inne i byns område, sällan vid elden (${varmt.iByn} av ${varmt.n} gånger i byn, ${varmt.vidElden} vid elden)`, !varmt.kallt && varmt.iByn === varmt.n && varmt.vidElden <= varmt.n * 0.3],
-      [`när det är kallt sitter man vid elden som förut (${kallt.vidElden} av ${kallt.n} gånger)`, kallt.kallt && kallt.vidElden === kallt.n],
+      [`när det är kallt görs handarbetet där det brukar göras (${kallt.iByn} av ${kallt.n} gånger i byn, ${kallt.vidElden} vid elden)`, kallt.kallt && kallt.iByn === kallt.n && kallt.vidElden <= varmt.vidElden + 3],
     ];
   },
 };
@@ -1199,7 +1204,8 @@ SCENARIER.fangvakt = {
     let vakt: Person | undefined, u0 = 0, u1 = 0, kvar = false;
     kor(a.s, 4, w => {
       if (!vakt && SIM.vakterVid(w, a.h.id).length) {
-        vakt = SIM.vakterVid(w, a.h.id)[0]!; u1 = SIM.utVilja(w, a.q); vakt.task!.act = 'vila'; u0 = SIM.utVilja(w, a.q); vakt.task!.act = 'fangvakt';
+        // en rad som har sin arbetare väger mindre men kan få en till (VAL.fullRad): alla vakter tas bort för jämförelsen
+        const alla = SIM.vakterVid(w, a.h.id); vakt = alla[0]!; u1 = SIM.utVilja(w, a.q); for (const x of alla) x.task!.act = 'vila'; u0 = SIM.utVilja(w, a.q); for (const x of alla) x.task!.act = 'fangvakt';
         // fången vill ut ändå (lågt humör och modig): med vakt blir det ett slagsmål och hen sitter kvar
         a.q.thoughts.push({ text: 'Förtvivlad', v: -3, until: w.now + DAY }); a.q.pot.mod = 20;
       }
@@ -1214,7 +1220,7 @@ SCENARIER.fangvakt = {
     const ute = !b.q.fange && (b.s.stat?.rymning ?? 0) >= 1;
     // i en by i nöd (ingen mat): ingen vaktar
     const c = by(0); let vaktNod = 0;
-    kor(c.s, 2, w => { if (w.people.some(x => x.task?.act === 'fangvakt')) vaktNod++; });
+    kor(c.s, 2, w => { if (w.people.some(x => x.task?.act === 'fangvakt')) vaktNod++; setFood(w, 0); }); // byn förblir utan mat
     return [
       [`poängen följer fångens aggression (${lag.toFixed(1)} för en lugn, ${hog.toFixed(1)} för en aggressiv)`, hog > lag && lag > 0],
       [`med mat i förrådet tar ${vakt?.name ?? 'ingen'} vakten, och fångens vilja att komma ut sjunker (${u0.toFixed(2)} → ${u1.toFixed(2)})`, !!vakt && u1 < u0],
@@ -2026,7 +2032,7 @@ SCENARIER.forradsoverflod = {
     const p = living(s).find(q => ageOf(q, s.now) >= 20)!;
     const fam = SIM.familjOf(s, p.id);
     for (const k of SIM.FOOD) setAmount(s, k, 0);
-    const famBuf = SIM.buffert(s, 'mat') * fam.reduce((a, q) => a + SIM.kroppensMat(q, s.now), 0);
+    const famBuf = fam.reduce((a, q) => a + SIM.egenGrans(s, q), 0); // familjens gräns för den egna maten (steg 13.9.6)
     put(s, 'bar', Math.max(1, Math.floor(famBuf) - 2), { [p.id]: Math.max(1, Math.floor(famBuf) - 2) });
     const haller = SIM.payable(s, p, []).filter(w => SIM.FOOD.includes(w.k)).length === 0;
     put(s, 'bar', 20, { [p.id]: 20 });

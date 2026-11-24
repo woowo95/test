@@ -1,4 +1,4 @@
-import { HUS, bedTile, sovplatser } from './byggnader';
+import { HUS, bedTile, sjukKrok, sovplatser } from './byggnader';
 import { Hus, Rum, gridOf } from './byggnad';
 import { balans } from './balans';
 import { brasorOf } from './brasor';
@@ -6,9 +6,10 @@ import { eldPlats } from './karta';
 import { SMUTS, flackNu, flackarOf } from './smuts';
 import { isKlar, stationDef, stationerOf, storlekAv } from './stationer';
 import { living } from './folk';
-import { HOUR, State, W } from './typer';
+import { HOUR, Person, State, W } from './typer';
 import { ljusAt } from './ljus';
 import { isLight } from './tid';
+import { knows } from './teknik';
 
 // ---------- rummen och deras taggar (steg 7.2.1) ----------
 // Ett rum är det som är inneslutet av väggar och dörrar (gridOf i byggnad.ts räknar fram det när en vägg ändras). Funktionen,
@@ -17,7 +18,7 @@ import { isLight } from './tid';
 // möblerna ändras taggarna. En kombinationstagg visas i stället för sina delar, men delarnas effekter gäller.
 // En ny rumstyp blir en rad. Hövdingens sal, hovet och smedjan kommer med det de kräver.
 export const RUM = balans('rum', {
-  vilaSjuk: 0.1, // den som sover i ett rum med en sjukbädd vilar så här mycket sämre (steg 12.4.10)
+  vilaSjuk: 0.1, // en frisk som sover i en sjukstuga vilar så här mycket sämre (steg 12.4.10 och 13.1.14)
   sovrumMax: 2, // ett rum med så här många sovplatser eller färre (och minst en) är ett sovrum; fler är en sovsal
   forradMin: 3, // så många hyllor, kistor, ställ eller lagerrutor innan rummet är ett förråd
   pryttMin: 3, // så många saker som pryder innan rummet är prytt
@@ -38,7 +39,7 @@ export const RUM = balans('rum', {
 // det som står i rummet, räknat en gång per rum
 export interface RumInfo {
   rutor: number; sov: number; folk: number; bord: number; eld: number; arbete: number; forvar: number; scen: number;
-  tork: number; pynt: number; smuts: number; slakt: number; krubba: number; kok: number; bara: Set<string>; smedja?: number; sjuk?: number;
+  tork: number; pynt: number; smuts: number; slakt: number; krubba: number; kok: number; bara: Set<string>; smedja?: number; skap?: number; badd?: number; sjukTek?: boolean;
 }
 export type RumSlag = 'grund' | 'egenskap' | 'kombination';
 export interface RumsTyp {
@@ -60,7 +61,6 @@ export const RUMSTYPER = {
   fahus: { namn: 'Fähus', ikon: 'krubba', slag: 'grund', om: 'Här står en krubba med hö, och här står djuren i istiden', krav: i => i.krubba >= 1 }, // steg 10.2.88
   torkhus: { namn: 'Torkhus', ikon: 'tork', slag: 'grund', om: 'En torkställning under tak', krav: i => i.tork >= 1 },
   smedja: { namn: 'Smedja', ikon: 'smedja', slag: 'grund', om: 'Här står en ässja och ett städ', krav: i => (i.smedja ?? 0) >= 1 }, // steg 12.2.4 (smedja.ts)
-  sjukstuga: { namn: 'Sjukstuga', ikon: 'sjukbadd', slag: 'grund', om: 'Här står en sjukbädd, där den sjuke vilar och läker', krav: i => (i.sjuk ?? 0) >= 1 }, // steg 12.4.10 (mobler.ts)
   varmt: { namn: 'Varmt', ikon: 'lagereld', slag: 'egenskap', om: 'Härden värmer rummet', krav: i => i.eld >= 1 },
   prytt: { namn: 'Prytt', ikon: 'kruka', slag: 'egenskap', om: 'Minst tre saker pryder rummet', krav: i => i.pynt >= RUM.pryttMin },
   trangt: { namn: 'Trångt', ikon: '👥', slag: 'egenskap', om: 'Fler sover här än ytan räcker till', krav: i => i.folk > i.sov },
@@ -69,6 +69,9 @@ export const RUMSTYPER = {
   langhus: { namn: 'Långhus', ikon: '🏠', slag: 'kombination', om: 'Sovsal, kök och matsal i ett', krav: (i, t) => t.has('sovsal') && t.has('kok') && t.has('matsal') && i.sov >= HUS.langhus, delar: ['sovsal', 'kok', 'matsal'] },
   storstuga: { namn: 'Storstuga', ikon: '🏠', slag: 'kombination', om: 'Kök och matsal, och ingen sover här', krav: (i, t) => t.has('kok') && t.has('matsal') && i.sov === 0, delar: ['kok', 'matsal'] },
   samlingssal: { namn: 'Samlingssal', ikon: '🪑', slag: 'kombination', om: 'Bord i ett varmt rum med många sittplatser, och ingen sover här', krav: (i, t) => t.has('matsal') && t.has('varmt') && i.bord * RUM.bordPlatser >= RUM.salPlatser && i.sov === 0, delar: ['matsal', 'varmt'] },
+  // sjukstugan (steg 13.1.14, mobler.ts): bäddar i ett varmt rum med en hylla eller kista för salvan, förbanden och teet, när byn
+  // kan tekniken. Kravet frågar bara det som står i rummet (inte vem som sover där), så att valet av sovplats kan fråga det
+  sjukstuga: { namn: 'Sjukstuga', ikon: 'sjukbadd', slag: 'kombination', om: 'Bäddar i ett varmt rum med en hylla eller kista för salvan och förbanden. Här vilar de sjuka och skadade och läker fortare', krav: i => sjukstugaKrav(i), delar: ['sovrum', 'sovsal', 'varmt'] },
   gillesal: { namn: 'Gillesal', ikon: 'scen', slag: 'kombination', om: 'En samlingssal med en scen', krav: (_i, t) => t.has('samlingssal') && t.has('scensal'), delar: ['samlingssal', 'scensal'] },
 } satisfies Record<string, RumsTyp>;
 export type RumTagg = keyof typeof RUMSTYPER;
@@ -76,7 +79,8 @@ const TYPER = RUMSTYPER as Record<string, RumsTyp>;
 export const RUMSTYP_LIST = Object.keys(RUMSTYPER) as RumTagg[];
 
 // taggar som passar dåligt ihop ger ett minus i stället för att vara förbjudna. a och b = taggarna, vila = så mycket sämre man vilar
-export interface RumMinus { namn: string; a: RumTagg[]; b: RumTagg[]; vila?: number }
+export interface RumMinus { namn: string; a: RumTagg[]; b: RumTagg[]; vila?: number; vem?: (s: State, p: Person) => boolean } // vem: bara den som vilan gäller (annars alla)
+export const sjukstugaKrav = (i: RumInfo) => (i.badd ?? 0) >= 1 && i.eld >= 1 && (i.skap ?? 0) >= 1 && !!i.sjukTek;
 export const RUM_MINUS: RumMinus[] = [
   { namn: 'Rök där man sover', a: ['kok'], b: ['sovrum', 'sovsal'], vila: RUM.vilaKok },
   { namn: 'Oljud och spån där man sover', a: ['verkstad'], b: ['sovrum', 'sovsal'], vila: RUM.vilaVerkstad },
@@ -84,7 +88,7 @@ export const RUM_MINUS: RumMinus[] = [
   { namn: 'Blod och smuts vid maten', a: ['slakteri'], b: ['kok', 'matsal'] },
   { namn: 'Råttor vid sovplatserna', a: ['forrad'], b: ['sovrum', 'sovsal'] },
   { namn: 'Trångt och smutsigt', a: ['trangt'], b: ['smutsigt'] },
-  { namn: 'Sjuka där man sover', a: ['sjukstuga'], b: ['sovrum', 'sovsal'], vila: RUM.vilaSjuk }, // steg 12.4.10: sjukbädden står helst i ett eget rum
+  { namn: 'Frisk bland de sjuka', a: ['sjukstuga'], b: ['sjukstuga'], vila: RUM.vilaSjuk, vem: (s, p) => !sjukKrok.vill(s, p) }, // steg 13.1.14: bara den friska vilar sämre i sjukstugan
 ];
 
 // taggar som passar bra ihop ger ett plus (steg 12.1.143), på samma sätt som RUM_MINUS. krav frågar taggarna (t) och om det är ljust
@@ -101,9 +105,10 @@ export const RUM_PLUS: RumPlus[] = [
 const PLUS_TANKE: Record<string, string> = { ljust: 'Varmt och ljust inne', pynt: 'Fint pyntat omkring sig', eget: 'Har ett eget rum' };
 export const rumPlusTanke = (id: string) => PLUS_TANKE[id] ?? id;
 
-export function rumInfo(s: State, r: Rum): RumInfo {
-  const rutor = new Set(r.tiles), i: RumInfo = { rutor: r.tiles.length, sov: sovplatser(s, r), folk: 0, bord: 0, eld: 0, arbete: 0, forvar: 0, scen: 0, tork: 0, pynt: 0, smuts: 0, slakt: 0, krubba: 0, kok: 0, bara: new Set() };
-  for (const p of living(s)) { const t = bedTile(s, p); if (t !== undefined && rutor.has(t)) i.folk++; }
+// utanFolk: utan att räkna vem som sover där (valet av sovplats frågar om rummet är en sjukstuga, steg 13.1.14)
+export function rumInfo(s: State, r: Rum, utanFolk = false): RumInfo {
+  const rutor = new Set(r.tiles), i: RumInfo = { rutor: r.tiles.length, sov: sovplatser(s, r), folk: 0, bord: 0, eld: 0, arbete: 0, forvar: 0, scen: 0, tork: 0, pynt: 0, smuts: 0, slakt: 0, krubba: 0, kok: 0, bara: new Set(), sjukTek: living(s).some(q => knows(q, 'sjukstuga')) };
+  if (!utanFolk) for (const p of living(s)) { const t = bedTile(s, p); if (t !== undefined && rutor.has(t)) i.folk++; }
   for (const t of stationerOf(s)) {
     if (!isKlar(t)) continue;
     const { w, h } = storlekAv(t);
@@ -119,7 +124,8 @@ export function rumInfo(s: State, r: Rum): RumInfo {
     if (t.k === 'tork') i.tork++;
     if (t.k === 'slaktbank') i.slakt++;
     if (t.k === 'smedja') i.smedja = (i.smedja ?? 0) + 1; // steg 12.2.4
-    if (d.sjuk) i.sjuk = (i.sjuk ?? 0) + 1; // sjukbädden (steg 12.4.10)
+    if (d.sover) i.badd = (i.badd ?? 0) + 1; // halmbädden och sängen
+    if (t.k === 'hylla' || t.k === 'kista') i.skap = (i.skap ?? 0) + 1; // för salvan och förbanden i sjukstugan (steg 13.1.14)
     if (d.fahus) i.krubba++;
     if (d.varmer) i.eld++; // fyrfatet värmer rummet som en härd (taggen Varmt, steg 12.4.11)
     if (d.kok) i.kok++;
@@ -182,10 +188,10 @@ export function rumMinus(s: State, r: Rum): RumMinus[] {
   return RUM_MINUS.filter(m => m.a.some(k => t.has(k)) && m.b.some(k => t.has(k)));
 }
 // så stor del av vilan man får i rummet (1 = allt): det som passar dåligt ihop med att sova, och det som passar bra ihop
-export function rumVila(s: State, r: Rum | undefined) {
+export function rumVila(s: State, r: Rum | undefined, p?: Person) {
   if (!r) return 1;
   let v = 1;
-  for (const m of rumMinus(s, r)) if (m.vila) v *= 1 - m.vila;
+  for (const m of rumMinus(s, r)) if (m.vila && (!m.vem || p && m.vem(s, p))) v *= 1 - m.vila;
   for (const m of rumPlus(s, r)) if (m.vila) v *= 1 + m.vila; // det som passar bra ihop (steg 12.1.143)
   return v;
 }

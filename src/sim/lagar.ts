@@ -49,7 +49,7 @@ export function straffNu(s: State, k: number) {
   return 0;
 }
 // d steg hårdare (eller mildare) än k i STEGEN, förbi de straff som inte går nu
-function straffSteg(s: State, k: number, d: number) {
+export function straffSteg(s: State, k: number, d: number) {
   let i = STEGEN.indexOf(k);
   for (let n = Math.abs(d); n > 0;) { const j = i + Math.sign(d); if (j < 0 || j >= STEGEN.length) break; i = j; if (straffKan(s, STEGEN[i])) n--; }
   while (!straffKan(s, STEGEN[i]) && i > 0) i--;
@@ -58,7 +58,7 @@ function straffSteg(s: State, k: number, d: number) {
 
 // lagarna: en rad per lag. prio = hur väl det som hänt väcker den (0–1). rost = åsikten och intresset, −1 till 1. brott = händelserna som bryter
 // mot den. kan = systemet den kräver finns
-export interface LagDef { namn: string; sym: string; text: string; straff: number; brott?: HandelseTyp[]; prio(s: State): number; rost(s: State, p: Person): { v: number; why: string }; kan?(s: State): boolean; tek?: string; om?: string; tal?: Record<string, LagTalDef> }
+export interface LagDef { namn: string; sym: string; text: string; straff: number; brott?: HandelseTyp[]; hardare?: Partial<Record<HandelseTyp, number>>; prio(s: State): number; rost(s: State, p: Person): { v: number; why: string }; kan?(s: State): boolean; tek?: string; om?: string; tal?: Record<string, LagTalDef> }
 // ett tal i en lag (steg 10.5.4): stegen av tillåtna värden, värdet från början och det var och en vill ha. 0 i stegen kan betyda
 // ingen, och ingen är då värt `ingen` (0 för en undre gräns, Infinity för en övre)
 export interface LagTalDef { namn: string; ord: string; sym: string; // ord = ordet före talet i gränssnittet ("skatt 10 %", "från 12 år", steg 11.1.26)
@@ -84,7 +84,7 @@ function rikPaMatHela(s: State, p: Person) {
   return m > 0 && m * n > alla * LAG.rikAndel;
 }
 export const LAGAR: Record<string, LagDef> = {
-  stoldforbud: { namn: 'Förbud mot stöld', sym: '🖐️', text: 'Den som stjäl straffas', straff: 4, brott: ['stold', 'stoldLindrig'], om: 'stölderna', prio: s => clamp(antal(s, 'rykte_stold') / 4, 0, 1), rost: (_s, p) => ({ v: 0.3 + dev(p.pot.empati) * 0.5, why: 'Vill inte bli bestulen' }) },
+  stoldforbud: { namn: 'Förbud mot stöld', sym: '🖐️', text: 'Den som stjäl straffas', straff: 4, brott: ['stold', 'stoldLindrig', 'gravstold'], hardare: { gravstold: 1 }, om: 'stölderna', prio: s => clamp(antal(s, 'rykte_stold') / 4, 0, 1), rost: (_s, p) => ({ v: 0.3 + dev(p.pot.empati) * 0.5, why: 'Vill inte bli bestulen' }) },
   boskapsforbud: { namn: 'Förbud mot boskapsstöld', sym: '🐾', text: 'Den som tar någon annans djur straffas', straff: 4, brott: ['boskapsstold'], om: 'boskapsstölderna', kan: s => (s.tamdjur ?? []).some(d => d.art !== 'hund'), prio: s => clamp((antal(s, 'rykte_boskapsstold') + antal(s, 'boskapStulen')) / 3, 0, 1), rost: (s, p) => ({ v: (s.tamdjur ?? []).some(d => d.agare === p.id) ? 0.8 : 0.2 + dev(p.pot.empati) * 0.4, why: (s.tamdjur ?? []).some(d => d.agare === p.id) ? 'Äger djur själv' : 'Vill inte bli bestulen' }) }, // steg 9.8.12
   slagsmalforbud: { namn: 'Förbud mot slagsmål', sym: '🥊', text: 'Den som slår någon straffas', straff: 1, brott: ['sla', 'misshandel'], om: 'slagsmålen', prio: s => clamp(antal(s, 'rykte_sla') / 8, 0, 1), rost: (_s, p) => ({ v: dev(p.pot.empati) - dev(p.pot.aggression), why: dev(p.pot.aggression) > 0 ? 'Vill kunna göra upp själv' : 'Vill ha lugn i byn' }) },
   drapforbud: { namn: 'Förbud mot dråp', sym: '⚔️', text: 'Den som dödar någon straffas hårt', straff: 3, brott: ['drap'], om: 'ett dråp', prio: s => clamp(antal(s, 'rykte_drap') / 1, 0, 1), rost: (_s, p) => ({ v: 0.4 + dev(p.pot.empati) * 0.5 - dev(p.pot.aggression) * 0.3, why: 'Vill inte bli dräpt' }) },
@@ -115,6 +115,7 @@ export const skrivenLag = (s: State, l: Lag) => skrivenVar(s, l).length > 0;
 // taket (steg 8.4.3): minnet, ministrarna och de skrivna lagarna (steg 10.6.10), aldrig över takVisas
 export const lagTakDelar = (s: State) => ({ minne: LAG.tak, ministrar: LAG.takMinister * Object.keys(s.styre?.ministrar ?? {}).length, skrivna: LAG.takSkrift * lagarNu(s).filter(l => skrivenLag(s, l)).length });
 export const lagTak = (s: State) => { const d = lagTakDelar(s); return Math.min(LAG.takVisas, d.minne + d.ministrar + d.skrivna); };
+// hardare = brotten som döms så många steg hårdare än lagens straff (stölden ur en grav, steg 13.1.4)
 export const lagForBrott = (s: State, h: HandelseTyp) => lagarNu(s).find(l => (LAGAR[l.id].brott ?? []).includes(h));
 // den som inte får rösta (steg 8.4.6)
 export function utanRost(s: State, p: Person) {

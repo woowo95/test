@@ -26,7 +26,7 @@ export const korMedNu = (timmar: number, sek: number): Kor =>
 // åt samma håll i de flesta byar där det händer (minst BY_MIN gånger). Två slaglängder ger två förlopp: redan efter några
 // minuter slutar ett samtal vid olika tid, och sedan väljer någon ett annat arbete. Då kan en enda person i en by ge en
 // stor skillnad i summan (veden i by 1 efter v513). Det som räknas per anrop blir vanligare i varje by där det händer
-const BY_MIN = 5, BY_KVOT = 1.5;
+const BY_MIN = 5, BY_KVOT = 1.5, BY_ANTAL = 3; // det som räknas per anrop händer i minst tre byar
 export function skillnader(ka: Kor, kb: Kor, min = 30, faktor = 2): Skillnad[] {
   const a = ka.sum, b = kb.sum, kvot = (x: number, y: number) => Math.max(x, y) / Math.max(1, Math.min(x, y)), ut: Skillnad[] = [];
   for (const namn of new Set([...Object.keys(a), ...Object.keys(b)])) {
@@ -34,7 +34,7 @@ export function skillnader(ka: Kor, kb: Kor, min = 30, faktor = 2): Skillnad[] {
     if (Math.max(d.a, d.b) < min || kvot(d.a, d.b) <= faktor) continue;
     const byar = ka.byar.map((x, i) => ({ a: x[namn] ?? 0, b: kb.byar[i]?.[namn] ?? 0 })).filter(x => Math.max(x.a, x.b) >= BY_MIN);
     const samma = byar.filter(x => (x.b > x.a) === (d.b > d.a) && kvot(x.a, x.b) > BY_KVOT).length;
-    if (!byar.length || samma * 2 > byar.length) ut.push(d);
+    if (!byar.length || byar.length >= BY_ANTAL && samma * 2 > byar.length) ut.push(d); // en eller två byar kan vara en enda person som valt ett annat arbete (leran i 13.9)
   }
   return ut.sort((p, q) => kvot(q.a, q.b) - kvot(p.a, p.b));
 }
