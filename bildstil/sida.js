@@ -652,13 +652,22 @@ window.VAL_RITNINGAR = ritningar => {
   }
 };
 const SVAR = {}; // det som finns sparat i databasen, per sak
+// Björns senaste svar på kortet, med hans egna ord (svar/forra.json, skrivs av api/forra.mjs innan hans dokument i 'val' tas
+// bort): visas på kortet vem eller vad som än ritat om det, och kortets egen rad om förra kommentaren visas då inte två gånger
+const forraText = s => FORRA[s.id] ? String(s.vad || '').replace(/\s*Din kommentar förra gången.*$/s, '') : s.vad;
+const forraRad = s => {
+  const f = FORRA[s.id]; if (!f) return '';
+  const esc = x => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const val = f.svar === 'ja' ? 'Du sa ja' : f.svar === 'nej' ? 'Du sa nej' : f.svar ? 'Du valde version ' + esc(f.svar) : '';
+  return `<p class="forra">${f.kommentar ? 'Din kommentar förra gången' + (val ? ' (' + val.toLowerCase().replace('du ', '') + ')' : '') + ': ”' + esc(f.kommentar) + '”' : val + ' förra gången, utan kommentar.'}</p>`;
+};
 let DB = null;
 function byggVal(P) {
   const lista = $('#vallista'); lista.textContent = '';
   if (!VAL.length) { lista.innerHTML = '<p class="not">Inget att välja just nu.</p>'; return; }
   for (const s of VAL) {
     const kort = document.createElement('article'); kort.className = 'valkort' + (s.stor ? ' stor' : ''); kort.id = 'val-' + s.id;
-    kort.innerHTML = `<header><span class="typ">${s.typ === 'tre' ? 'Ny sak · välj en av ' + (['', 'en', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju', 'åtta'][s.versioner.length] || s.versioner.length) : 'Görs om · ja eller nej'}</span><h3>${s.namn}</h3><p class="not">${s.vad}</p></header><div class="alternativ"></div><div class="svar" role="group" aria-label="Ditt val för ${s.namn}"></div><label>Kommentar: vad ska ändras?<textarea rows="3" placeholder="Till exempel: nej, gör locket mörkare och låset större"></textarea></label><div class="sparat" aria-live="polite"></div>`;
+    kort.innerHTML = `<header><span class="typ">${s.typ === 'tre' ? 'Ny sak · välj en av ' + (['', 'en', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju', 'åtta'][s.versioner.length] || s.versioner.length) : 'Görs om · ja eller nej'}</span><h3>${s.namn}</h3><p class="not">${forraText(s)}</p>${forraRad(s)}</header><div class="alternativ"></div><div class="svar" role="group" aria-label="Ditt val för ${s.namn}"></div><label>Kommentar: vad ska ändras?<textarea rows="3" placeholder="Till exempel: nej, gör locket mörkare och låset större"></textarea></label><div class="sparat" aria-live="polite"></div>`;
     const alt = kort.querySelector('.alternativ');
     if (s.idag) {
       const f = document.createElement('figure'); f.className = 'alt idag';

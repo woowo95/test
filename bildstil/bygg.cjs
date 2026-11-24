@@ -10,6 +10,7 @@ const html = `<title>Samhällssimulatorns bildstil</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Pixelify+Sans:wght@400;600&display=swap">
 <style>${fs.readFileSync(d + '/stil.css', 'utf8')}</style>
 ${fs.readFileSync(d + '/kropp.html', 'utf8').replace('<section aria-labelledby="h-beslut">', granssnitt + '<section aria-labelledby="h-beslut">')}
+<script>const FORRA = ${fs.readFileSync(d + '/svar/forra.json', 'utf8')};</script>
 <script>const IKONER = ${fs.readFileSync(d + '/ikoner.json', 'utf8')};</script>
 <script>${fs.readFileSync(d + '/sida.js', 'utf8')}</script>
 <script>${fs.readFileSync(d + '/mark.js', 'utf8')}</script>

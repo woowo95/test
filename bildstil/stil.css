@@ -308,3 +308,4 @@ details.mer p { color: var(--dim); max-width: 62ch; margin: 4px 0 0; }
 .valkort .kontroll ul { margin: 6px 0 0; padding-left: 18px; color: var(--dim); font-size: 14px; }
 .alt .bilder canvas.i-spelet { background: transparent; }
 .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.valkort .forra { color: var(--mustard); margin-top: .4em; }
