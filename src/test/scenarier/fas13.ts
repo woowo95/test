@@ -652,6 +652,19 @@ SCENARIER.fargsmak = {
   },
 };
 
+// materialet till en teknik (steg 2.12.5): stationens eget recept, och ett av materialen när saken görs av olika
+SCENARIER.teknikmaterial = {
+  text: 'Materialet som måste finnas för att man ska komma på en teknik: vävstolen kräver det den byggs av och inte tyg, och bältet rep eller läder',
+  kor: () => {
+    const m = (id: string) => JSON.stringify(SIM.materialOf(SIM.TEK[id])), s = SIM.createState(7, START); SIM.setAmount(s, 'rep', 10);
+    return [
+      [`ingen teknik för en station kräver annat än stationens recept (${m('vavstol')})`, SIM.TEKNIK.every(t => { const st = (SIM.STATIONER as Record<string, SIM.StationDef>)[t.id]; return !st || (SIM.SAKER as Record<string, unknown>)[t.id] !== undefined || SIM.materialOf(t).flat().every(k => k in st.av || k === st.verktyg); })],
+      [`bältet kräver rep eller läder (${m('balte')})`, SIM.materialOf(SIM.TEK.balte).length === 1 && ['lader', 'rep'].every(k => SIM.materialOf(SIM.TEK.balte)[0].includes(k))],
+      ['byn som bara har rep kan komma på bältet', SIM.hasMaterial(s, SIM.TEK.balte)],
+    ];
+  },
+};
+
 // dryckeshornet (steg 13.4.1): signalhornet och dryckeshornet görs av ett djurhorn, och den som dricker tar sitt eget horn, sedan byns
 SCENARIER.djurhorn = {
   text: 'Signalhornet och dryckeshornet görs av 1 djurhorn, dryckeshornet fortare och bättre vid slöjdbänken; den som dricker vin tar sitt eget horn före byns och får en liten glad tanke, större på festdagen, och hornet slits för varje dryck (steg 13.4.1)',

@@ -366,7 +366,7 @@ const DEF = {
   pall: { namn: 'Pall', grupp: 'sate', skaffa: RECEPT.pall, vikt: 2, stack: 1, mapp: 'Redskap', slits: 0.0001, redskap: true,
     gors: { text: 'Fogar en pall av en planka.', stat: 'pallarGjorda', forsta: '{namn} fogade byns första pall. Den är bättre att sitta på än stubben.' } },
   // dryckeshornet (steg 13.4.1, rus.ts): den som dricker öl, mjöd eller vin dricker ur sitt eget horn eller byns, och hornet slits för varje dryck
-  dryckeshorn: { namn: 'Dryckeshorn', skaffa: RECEPT.dryckeshorn, vikt: 0.3, stack: 1, mapp: 'Redskap', redskap: true, trasig: { stat: 'dryckeshornTrasiga', text: '{namn}s dryckeshorn sprack.' },
+  dryckeshorn: { namn: 'Dryckeshorn', ett: true, skaffa: RECEPT.dryckeshorn, vikt: 0.3, stack: 1, mapp: 'Redskap', redskap: true, trasig: { stat: 'dryckeshornTrasiga', text: '{namn}s dryckeshorn sprack.' },
     gors: { text: 'Skrapar ur ett djurhorn till ett dryckeshorn.', stat: 'dryckeshornGjorda', forsta: '{namn} gjorde byns första dryckeshorn av ett djurhorn.' } },
   jarnpilar: { namn: 'Järnpilar', skaffa: RECEPT.jarnpilar, vikt: 0.1, stack: 20, mapp: 'Redskap' }, // steg 13.4.2: skadar mer än flintpilen, och skytten tar dem först (strid.ts)
 } satisfies Record<string, SakDef>;

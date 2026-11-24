@@ -6,7 +6,7 @@ import { kronika } from './historik';
 import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, paKartan } from './folk';
 import { rnd } from './slump';
 import { amountOf, harTillHands, use } from './lager';
-import { SAKER, isTool } from './saker';
+import { SAKER, isTool, type SakDef } from './saker';
 import { STATIONER, TILLBEHOR, framFri, isKlar, stationerOf, vidStation } from './stationer';
 import { DORRAR, MATERIAL } from './byggnad';
 import { tingOf } from './agande';
@@ -281,16 +281,27 @@ export const harSak = (s: State, k: string) => isTool(k) ? tingOf(s).some(q => q
 // det som måste finnas i byn för att man ska komma på tekniken: en av sakerna i varje grupp. Det räknas ur receptet
 // (steg 2.12.5): det som har samma id som tekniken (en sak, station, ett tillbehör eller en dörr), annars det första
 // redskapet eller väggmaterialet som tekniken ger. Varje sak i receptet är en grupp, och verktygen (ett av dem räcker) en
+// Görs redskapet av olika material (bältet av rep eller läder), räcker ett av dem
+// de redskap som är olika varianter av det första redskapet tekniken ger (bältet av rep och av läder)
+const varianter = (id: string) => (l => l.filter(d => d === l[0] || (!!d.grupp && d.grupp === l[0].grupp)))(Object.values(SAKER).filter((d): d is SakDef => !!d?.redskap && d.skaffa?.tek === id));
 export const recept = (id: string): { av: Record<string, number>; verktyg: string[] } | undefined => {
-  const sak = SAKER[id]?.skaffa ?? Object.values(SAKER).find(d => d?.redskap && d.skaffa?.tek === id)?.skaffa;
-  if (sak?.av) return { av: sak.av, verktyg: Object.keys(sak.verktyg ?? {}) };
+  const ur = (sak?: SakDef['skaffa']) => sak?.av ? { av: sak.av, verktyg: Object.keys(sak.verktyg ?? {}) } : undefined;
+  const egen = ur(SAKER[id]?.skaffa);
+  if (egen) return egen;
   const st = (STATIONER as Record<string, { av: Record<string, number>; verktyg?: string }>)[id] ?? (TILLBEHOR as Record<string, { av: Record<string, number> }>)[id] ?? (DORRAR as Record<string, { av: Record<string, number> }>)[id];
   if (st) return { av: st.av, verktyg: 'verktyg' in st && st.verktyg ? [st.verktyg] : [] };
+  const forst = ur(varianter(id)[0]?.skaffa);
+  if (forst) return forst;
   const m = Object.values(MATERIAL).find(d => d.tek === id && d.item);
   return m?.item ? { av: { [m.item]: m.n }, verktyg: [] } : undefined;
 };
 const MAT: Record<string, string[][]> = {};
-export const materialOf = (t: Tek) => MAT[t.id] ??= (r => r ? [...Object.keys(r.av).map(k => [k]), ...(r.verktyg.length ? [r.verktyg] : [])] : [])(recept(t.id));
+export const materialOf = (t: Tek) => MAT[t.id] ??= (r => {
+  if (!r) return [];
+  const alla = r.av === varianter(t.id)[0]?.skaffa?.av ? varianter(t.id).map(d => Object.keys(d.skaffa?.av ?? {})) : [Object.keys(r.av)];
+  const gemensamt = alla[0].filter(k => alla.every(l => l.includes(k))), eller = [...new Set(alla.flat())].filter(k => !gemensamt.includes(k));
+  return [...gemensamt.map(k => [k]), ...(eller.length ? [eller] : []), ...(r.verktyg.length ? [r.verktyg] : [])];
+})(recept(t.id));
 export const hasMaterial = (s: State, t: Tek) => materialOf(t).every(g => g.some(k => harSak(s, k)));
 export const canThink = (p: Person, t: Tek) => !knows(p, t.id) && t.krav.every(k => knows(p, k));
 // teknikträdet växer med de nya resurserna (steg 12.1.4, Teknologi och kunskap): en teknik med haft är stängd tills byn har
