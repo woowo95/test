@@ -2746,6 +2746,8 @@ SCENARIER.rovarrop = {
       for (const p of vuxna.slice(0, 3)) { Object.assign(p, SIM.freeNear(s, m.x, m.y)); p.pot.mod = 16; p.larm = { rovare: { t: s.now, vad: 'rovare', storlek: 3, led: 0, varnat: 1 } }; p.task = { act: 'forsvarRovare', phase: 'do', tx: p.x, ty: p.y, until: s.now + HOUR, carry: 0 }; }
       const f = rovarGang(s, 3, { x: m.x + 6, y: m.y }, { anfaller: true }); f.sedd = s.now;
       const rov = SIM.rovarna(s, f);
+      for (const p of vuxna) p.pot.styrka = p.pot.uthallighet = 20;
+      for (const q of rov) { q.pot.styrka = q.pot.uthallighet = q.pot.smidighet = 3; q.pot.mod = 20; } // rövarna blir svårt skadade, så att det skrivs rader om dem
       korTills(s, () => !!SIM.flockStrid(s, f), 900);
       const g = SIM.flockStrid(s, f); if (!g) continue;
       strider++;

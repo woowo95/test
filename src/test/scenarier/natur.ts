@@ -2312,7 +2312,7 @@ SCENARIER.tradorr = {
         const nu = stangt(q, roomAt(q, inneX, inneY)!); // (vargen får gå in när dörren öppnats)
         if (nu) stangd = true;
         if (nu && roomAt(q, f.x, f.y) === roomAt(q, inneX, inneY)) inne++; // (i dörröppningen, när den modiga går ut, är vargen inte inne)
-        if (f.gor === 'vantar') { vantade++; if (p.task?.act === 'gomma') gomde++; if (ensam && ute) { /* (står kvar ensam ute tills flocken anfaller) */ const dx = f.x - p.x, dy = f.y - p.y, d = Math.hypot(dx, dy) || 1; ute.x = Math.min(W - 1, Math.max(1, f.x + dx / d * 9)); ute.y = Math.min(H - 1, Math.max(1, f.y + dy / d * 9)); /* bort från huset, så att den som gömmer sig inte räknas som sällskap */ ute.task = { act: 'vila', phase: 'do', tx: ute.x, ty: ute.y, until: q.now + 5 * HOUR, carry: 0, why: 'ensam ute' }; } }
+        if (f.gor === 'vantar') { vantade++; if (p.task?.act === 'gomma') gomde++; if (ensam && ute) { /* (trött och stilla ensam ute tills flocken anfaller) */ ute.rest = 0.3; const dx = f.x - p.x, dy = f.y - p.y, d = Math.hypot(dx, dy) || 1; ute.x = Math.min(W - 1, Math.max(1, f.x + dx / d * 9)); ute.y = Math.min(H - 1, Math.max(1, f.y + dy / d * 9)); /* bort från huset, så att den som gömmer sig inte räknas som sällskap */ ute.task = { act: 'vila', phase: 'do', tx: ute.x, ty: ute.y, until: q.now + 5 * HOUR, carry: 0, why: 'ensam ute' }; } }
       });
       slutStrider(q); const strider = (q.stridRapporter ?? []).filter(x => x.t >= t0 && !fore.has(x)).map(x => x.orsak); // (bara provets strider, inte byns förra) // striderna på kartan (steg 10.1.17) står i rapporterna
       return { inne, vantade, gomde, seen, strider, dorrStrid: (q.stat?.vargDorrStrid ?? 0) - dorr0, st: q.stat ?? {}, stangd, byte: q.vargar?.[0]?.byte, ute: ute.id };
