@@ -77,7 +77,7 @@ import { balans } from './balans';
 import { SvalkaGor, VarmeGor, svalkaKrok, svalkaSatt, varmeSatt } from './varme';
 import { islagt, naSjon } from './is';
 import { seleVal } from './barsele';
-import { drickVal, torstig, tortarFarligt, vattenVal } from './torst';
+import { TORST, drickVal, torstig, tortarFarligt, vattenVal } from './torst';
 import { latrinFor } from './smuts';
 import { stationBrukad, bordenOf, ledigPlats, sittAt, stationAt, stationDef, stationFor, stationRutor, storlekAv, vidStation } from './stationer';
 import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
@@ -127,6 +127,10 @@ export const VAL = balans('val', {
   baraVarde: 40, // det som ligger ute bärs in med chansen värdet (grundvärdet gånger antalet) delat med så här mycket ...
   baraKyla: 0.3, // ... gånger detta när kylan är en fara, och när byn svälter och det som ligger närmast inte är mat
   byggKyla: 0.3, // bygget väger så här mycket när kylan eller hungern är en fara (steg 10.2.6)
+  // nöden (steg 13.8.9): raderna på nivå 2 vägs efter hur nära döden de för. Raden för något som dödar har sin vikt gånger
+  // (1 + hur långt under gränsen man är, 0 till 1), så att en svag törst inte går före en svår hunger; det som dödar fortast väger mest
+  nodStrid: 3, nodKyla: 1.5, nodVarme: 1.2, nodSar: 1.3, nodTorst: 1.2, nodToa: 1.1, nodSvalt: 1, nodVarmeSpann: 0.3,
+  nodVila: 0.6, nodVarda: 0.5, nodVatten: 0.45, nodBarmat: 0.4, // det som inte dödar en själv: sova som sjuk, svag eller litet barn, vårda andra, vatten åt den som inte kan gå, mat till fången
   projFara: 0.05, // ett projekt, en rad på Förbättra och att pröva sig fram tas med den här chansen när kylan eller hungern är en fara (steg 10.11.20)
   extraMin: 5, // slakt och rensning varar 5 minuter över vad det tar (och högst maxTim i DJUR, redskap.ts)
   letaVikt: 1.5, // flintan och stenarna till elden: poängen när förrådet är tomt, bland maten och veden (steg 10.11.13)
@@ -672,10 +676,15 @@ function forbKandidat(c: Ctx, f: ForbRad) {
   if (!(f.id in m)) m[f.id] = f.kand(c, dag(c));
   return m[f.id];
 }
+const nodUnder = (x: number, grans: number) => 1 + clamp(1 - x / grans, 0, 1); // 1 vid gränsen, 2 vid noll (steg 13.8.9)
 export const ARBETEN: readonly Arbete[] = [
   // 1 Fara: vargar är nära (steg 3.7.15), en tornado kommer (steg 3.8.4), det brinner (steg 3.8.5) eller vattnet stiger (steg 3.8.7)
   // den som brinner släcker sig själv först, och de som står nära hjälper hen före allt annat (steg 6.4.16)
   { id: 'brinner', niva: 1, prova: ({ s, p, v }) => { const m = slackaSigVal(s, p); if (!m) return false; set(v, m.act, m.why); v.skal = m.skal; v.spot = m.spot; v.dur = m.dur; v.ref = m.ref; return true; } },
+  // sedan den som blir anfallen (steg 13.8.9): striden tar hand om den som slåss, och från ett uppretat bo flyr den som kan gå (steg 10.10.27, bin.ts)
+  { id: 'binFly', niva: 1, prova: ({ s, p, v }) => { const b = retatNara(s, p.x, p.y); if (!b || !kanGa(p)) return false; set(v, 'flyBin', 'Bina sticker, springer undan'); v.spot = flyFranBin(s, p, b); v.dur = MIN; return true; } },
+  // sedan den som blöder: hen trycker på sitt sår före alla andra faror, eftersom ett sår som blöder dödar fort (steg 13.8.9; Själv eller andra)
+  { id: 'blodar', niva: 1, prova: ({ s, p, v }) => !p.svimmat && !!vardBehov(s, p, p)?.blod && varda(s, p, v, true) },
   // larmet rymning (steg 11.12.5, fangelse.ts): den som hört det och är modig nog går till fängelsets dörr
   { id: 'hjalpBrinnande', niva: 1, prova: ({ s, p, v }) => { const m = hjalpaVal(s, p); if (!m) return false; set(v, m.act, m.why); v.spot = m.spot; v.dur = m.dur; v.ref = m.ref; return true; } },
   // den som blöder trycker på sitt sår också när faran pågår, och hjälparna bakom kämparna vårdar den som blöder (steg 9.9.4):
@@ -684,12 +693,9 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'rusta', niva: 1, prova: ({ s, p, v }) => { const r = rustaVal(s, p); if (!r) return false; v.spot = r.spot; v.ref = r.ref; v.dur = 2 * MIN; return set(v, 'rusta', r.why); } }, // byta om inför strid (steg 8.7.8): hör till Försvara byn under Fara (steg 13.8.2)
   { id: 'skydd', niva: 1, prova: ({ s, p, v }) => {
     const sk = vargSkydd(s, p) ?? tornadoSkydd(s, p); if (!sk) return false;
-    if (!p.svimmat && vardBehov(s, p, p)?.blod && varda(s, p, v, true)) return true;
     if (sk.act === 'hjalpaRovare') { const d = vardVal(s, p, false), q = d && living(s).find(x => x.id === d.ref); if (q && vardBehov(s, q, p)?.blod && varda(s, p, v, false)) return true; }
     set(v, sk.act, sk.why); v.spot = sk.spot; v.dur = sk.dur; v.hot = 'hot' in sk ? sk.hot : undefined; return true;
   } },
-  // den som kan gå flyr från ett uppretat bo (steg 10.10.27, bin.ts)
-  { id: 'binFly', niva: 1, prova: ({ s, p, v }) => { const b = retatNara(s, p.x, p.y); if (!b || !kanGa(p)) return false; set(v, 'flyBin', 'Bina sticker, springer undan'); v.spot = flyFranBin(s, p, b); v.dur = MIN; return true; } },
   { id: 'brand', niva: 1, prova: ({ s, p, v }) => { const br = brandVal(s, p); if (!br) return false; set(v, br.act, br.why); v.spot = br.spot; v.dur = br.dur; v.tool = br.tool; v.ref = br.ref; return true; } },
   // de vuxna som orkar bär undan maten från lagerplatserna vattnet kan nå, också på natten (flod.ts)
   { id: 'flod', niva: 1, prova: ({ s, p, v, a }) => {
@@ -699,29 +705,29 @@ export const ARBETEN: readonly Arbete[] = [
   } },
   // 2 Nöd och vård (sjuk, svag, fryser farligt, måste på toa genast)
   // den som ser ett slagsmål går emellan eller går undan (steg 10.1.4, narStridVal i kartstrid.ts)
-  { id: 'slagsmal', niva: 2, prova: ({ s, p, v }) => { const d = narStridVal(s, p); if (!d) return false; set(v, d.act, d.why); v.spot = d.spot; v.dur = d.dur; v.ref = d.ref; return true; } },
+  { id: 'slagsmal', niva: 2, poang: ({ s, p }) => narStridVal(s, p) ? VAL.nodStrid : 0, prova: ({ s, p, v }) => { const d = narStridVal(s, p); if (!d) return false; set(v, d.act, d.why); v.spot = d.spot; v.dur = d.dur; v.ref = d.ref; return true; } },
   // den som är mycket hungrig (under det man äter av även när maten ska räcka, VARDRATT.snal) går till maten före vilan, och
   // det lilla barnet och den som ligger sjuk eller svag går dit så fort hen är hungrig och kan gå (steg 11.1.77)
   // den som är extremt kall värmer sig (varmeRad, varme.ts), också det lilla barnet, den sjuka och den svaga
-  { id: 'fryserFarligt', niva: 2, prova: c => c.p.warm < KROPP.farligt && varmeRad(c, 'Fryser farligt') },
+  { id: 'fryserFarligt', niva: 2, poang: ({ p }) => p.warm < KROPP.farligt ? VAL.nodKyla * nodUnder(p.warm, KROPP.farligt) : 0, prova: c => c.p.warm < KROPP.farligt && varmeRad(c, 'Fryser farligt') },
   // den som är extremt varm svalkar sig (svalkaRad, SVALKA i varme.ts): i skuggan, i ett hus, i vattnet eller genom att ta av
   // sig ett varmt plagg, det som hjälper mest med vägen dit. Den som bara är för varm arbetar som vanligt (steg 2.10.20)
-  { id: 'svalka', niva: 2, prova: c => {
+  { id: 'svalka', niva: 2, poang: ({ p }) => p.warm >= KROPP.extremVarm ? VAL.nodVarme * (1 + clamp((p.warm - KROPP.extremVarm) / VAL.nodVarmeSpann, 0, 1)) : 0, prova: c => {
     const { s, p, v } = c;
     // extremt varm av branden: bort från den, inte in under träd som kan brinna (steg 9.2.135)
     if (p.warm >= KROPP.extremVarm && brandHetta(s, p.x, p.y) > 0) { const bu = brandUndan(s, p); if (bu) { v.spot = bu.spot; v.dur = bu.dur; return set(v, bu.act, 'Är för varm av branden och går undan'); } }
     return p.warm >= KROPP.extremVarm && svalkaRad(c, 'Är för varm');
   } },
-  { id: 'vardaSig', niva: 2, prova: ({ s, p, v }) => varda(s, p, v, true) }, // sina egna sår: trycka på, lägga förband och rengöra (steg 2.5.2)
-  { id: 'toaGenast', niva: 2, prova: ({ p, v }) => p.toa < KROPP.toaGenast && set(v, 'toa', 'Måste gå på toa genast') },
-  { id: 'torstFarligt', niva: 2, prova: ({ s, p, v }) => tortarFarligt(p) && dricka(s, p, v) }, // också den som är sjuk eller svag dricker
-  { id: 'hungrig', niva: 2, prova: ({ s, p, v, a }) => (p.hunger < KROPP.hungrig * VARDRATT.snal || a < ALDER.smabarn || ligger(p, s.now) || halsa(p) < KROPP.svag) && kanGa(p) && ataVal(s, p, v) },
-  { id: 'smabarn', niva: 2, prova: ({ v, a }) => a < ALDER.smabarn && set(v, 'sova', 'Är ett litet barn') },
-  { id: 'sjuk', niva: 2, prova: ({ s, p, v }) => ligger(p, s.now) && set(v, 'sova', 'Är sjuk') }, // med feber eller svårt sjuk lägger man sig (steg 9.5.1)
-  { id: 'svag', niva: 2, prova: ({ p, v }) => halsa(p) < KROPP.svag && set(v, 'sova', 'Är för svag för att orka något') }, // också av blodförlust och smärta (halsa.ts)
-  { id: 'varda', niva: 2, prova: ({ s, p, v }) => varda(s, p, v, false) }, // en skadad är en fara: vården går före förbättringarna (steg 2.5.2)
-  { id: 'vatten', niva: 2, prova: ({ s, p, v }) => hamtaVatten(s, p, v) }, // vatten i säcken åt den som inte kan gå (steg 2.10.1)
-  { id: 'barmat', niva: 2, prova: ({ s, p, v }) => { const d = matTillFange(s, p); if (!d) return false; v.spot = d.spot; v.ref = d.ref; v.dur = MIN; if (d.ved) v.tool = 'ved'; return set(v, 'barmat', d.why); } }, // mat till fången (steg 11.12.2, fangelse.ts)
+  { id: 'vardaSig', niva: 2, poang: () => VAL.nodSar, prova: ({ s, p, v }) => varda(s, p, v, true) }, // sina egna sår: trycka på, lägga förband och rengöra (steg 2.5.2)
+  { id: 'toaGenast', niva: 2, poang: ({ p }) => p.toa < KROPP.toaGenast ? VAL.nodToa * nodUnder(p.toa, KROPP.toaGenast) : 0, prova: ({ p, v }) => p.toa < KROPP.toaGenast && set(v, 'toa', 'Måste gå på toa genast') },
+  { id: 'torstFarligt', niva: 2, poang: ({ p }) => tortarFarligt(p) ? VAL.nodTorst * nodUnder(p.torst, TORST.farligt) : 0, prova: ({ s, p, v }) => tortarFarligt(p) && dricka(s, p, v) }, // också den som är sjuk eller svag dricker
+  { id: 'hungrig', niva: 2, poang: ({ p }) => VAL.nodSvalt * nodUnder(p.hunger, KROPP.hungrig * VARDRATT.snal), prova: ({ s, p, v, a }) => (p.hunger < KROPP.hungrig * VARDRATT.snal || a < ALDER.smabarn || ligger(p, s.now) || halsa(p) < KROPP.svag) && kanGa(p) && ataVal(s, p, v) },
+  { id: 'smabarn', niva: 2, poang: ({ a }) => a < ALDER.smabarn ? VAL.nodVila : 0, prova: ({ v, a }) => a < ALDER.smabarn && set(v, 'sova', 'Är ett litet barn') },
+  { id: 'sjuk', niva: 2, poang: ({ s, p }) => ligger(p, s.now) ? VAL.nodVila : 0, prova: ({ s, p, v }) => ligger(p, s.now) && set(v, 'sova', 'Är sjuk') }, // med feber eller svårt sjuk lägger man sig (steg 9.5.1)
+  { id: 'svag', niva: 2, poang: ({ p }) => halsa(p) < KROPP.svag ? VAL.nodVila : 0, prova: ({ p, v }) => halsa(p) < KROPP.svag && set(v, 'sova', 'Är för svag för att orka något') }, // också av blodförlust och smärta (halsa.ts)
+  { id: 'varda', niva: 2, poang: () => VAL.nodVarda, prova: ({ s, p, v }) => varda(s, p, v, false) }, // en skadad är en fara: vården går före förbättringarna (steg 2.5.2)
+  { id: 'vatten', niva: 2, poang: () => VAL.nodVatten, prova: ({ s, p, v }) => hamtaVatten(s, p, v) }, // vatten i säcken åt den som inte kan gå (steg 2.10.1)
+  { id: 'barmat', niva: 2, poang: () => VAL.nodBarmat, prova: ({ s, p, v }) => { const d = matTillFange(s, p); if (!d) return false; v.spot = d.spot; v.ref = d.ref; v.dur = MIN; if (d.ved) v.tool = 'ved'; return set(v, 'barmat', d.why); } }, // mat till fången (steg 11.12.2, fangelse.ts)
   // 3 Tillfälle (steg 6.1.14): det som går förlorat om ingen tar det nu. Den som ska följa med på vargjakten (varg.ts) går
   { id: 'vargjakt', niva: 3, prova: ({ s, p, v }) => {
     const j = vargjaktVal(s, p);
@@ -867,8 +873,8 @@ export const ARBETEN: readonly Arbete[] = [
     // hjälpen väljs med samma poäng som de vuxnas rader på nivån (steg 12.1.45): den går till det som fattas, och skälet är
     // radens eget. Barnet som hjälper arbetar i dag; fattas inget (ingen rad har poäng eller alla har sina arbetare) leker det
     const cb: Ctx = { ...c, d: { ...d, works: true } };
-    const w = vinnare(cb, POANGRADER[6].filter(r => (!r.nar || r.nar === 'dag') && vaderTillater(s, r.vader) && !(r.minAlder !== undefined && a < r.minAlder)));
-    if (!w?.prova(cb)) return set(v, 'leka', lekText(s));
+    const w = vinnare(cb, POANGRADER[6].filter(r => (!r.nar || r.nar === 'dag') && vaderTillater(s, r.vader) && !(r.minAlder !== undefined && a < r.minAlder))).find(r => r.prova(cb));
+    if (!w) return set(v, 'leka', lekText(s));
     v.why = `Hjälper till. ${v.why}`;
     return true;
   } },
@@ -966,17 +972,18 @@ const PASS = new Set(ARBETEN.flatMap(r => r.pass ? [r.pass] : [])); // handlinga
 const POANGRADER = Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => [n, ARBETEN.filter(r => r.niva === n && r.poang)])) as Record<Niva, Arbete[]>;
 // den rad som har högst poäng; en rad som har sina arbetare väger VAL.fullRad. Har alla rader som gäller sina arbetare finns
 // ingen vinnare, och man går till nästa nivå. Lika poäng: registrets ordning
-function vinnare(c: Ctx, rader: Arbete[]) {
-  let bast: Arbete | undefined, bs = 0, ledig = false;
+// raderna med poäng, bäst först (steg 13.8.9): blir den bästa inte av (det den kräver saknas) prövas nästa
+function vinnare(c: Ctx, rader: Arbete[]): Arbete[] {
+  const ut: { r: Arbete; x: number }[] = [];
+  let ledig = false;
   for (const r of rader) {
     const sc = r.poang!(c);
     if (!(sc > 0)) continue;
     const full = r.full?.(c) ?? false;
     if (!full) ledig = true;
-    const x = full ? sc * VAL.fullRad : sc;
-    if (x > bs) { bs = x; bast = r; }
+    ut.push({ r, x: full ? sc * VAL.fullRad : sc });
   }
-  return ledig ? bast : undefined;
+  return ledig ? ut.sort((a, b) => b.x - a.x).map(u => u.r) : [];
 }
 
 // mjärden blir full inom VAL.vittjaTim timmar med den fångst vattnet ger (steg 13.8.3)
@@ -999,8 +1006,7 @@ function valjTask(s: State, p: Person) {
       if (r.poang) { // raderna med poäng på nivån vägs mot varandra en gång (steg 6.2.18)
         if (vagd === r.niva) continue;
         vagd = r.niva;
-        const w = vinnare(c, POANGRADER[r.niva].filter(galler));
-        if (w?.prova(c)) { rad = w; return true; }
+        for (const w of vinnare(c, POANGRADER[r.niva].filter(galler))) if (w.prova(c)) { rad = w; return true; }
         continue;
       }
       if ((r.arbetar || r.forb) && !dag(c).works || r.forb && !forbNu(c) || r.minAlder !== undefined && a < r.minAlder) continue; // villkoren i den ordning raderna prövade dem

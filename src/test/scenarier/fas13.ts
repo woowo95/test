@@ -1226,8 +1226,8 @@ SCENARIER.valordning = {
     // blöder och är mycket hungrig: trycker på såret
     fyll(); p.hunger = 0.05; SIM.skada(s, p, 'bal', 'sticksar', 0.5, 'blod', 'i en strid'); SIM.chooseTask(s, p);
     const blod = p.task?.why ?? '-';
-    // farligt törstig och mycket hungrig: dricker först
-    fyll(); p.hunger = 0.05; p.torst = SIM.TORST.farligt - 0.02; SIM.chooseTask(s, p);
+    // mycket törstig och mycket hungrig: dricker först, för törsten dödar fortare (nöden i poäng, steg 13.8.9)
+    fyll(); p.hunger = 0.05; p.torst = 0.01; SIM.chooseTask(s, p);
     const torst = p.task?.act ?? '-';
     // ordningen i registret
     const A = SIM.ARBETEN, i = (id: string) => A.findIndex(r => r.id === id), sist5 = Math.max(...A.map((r, j) => r.niva === 5 ? j : -1));
@@ -1418,6 +1418,40 @@ SCENARIER.fritidrader = {
       [`drycken och framträdandet är kvällsrader i FRITID (${fr('dryck')?.nar}, ${fr('framtradande')?.nar})`, fr('dryck')?.nar === 'natt' && fr('framtradande')?.nar === 'natt'],
       [`framträdandet väljs bara i kvällens rad, efter Rädda (raden kväll på plats ${kvall}, Rädda slutar på ${sistaRadda})`, kvall > sistaRadda],
       [`på kvällen dras drycken (${n.dryck ?? 0}) och framträdandet (${n.upptrada ?? 0}) bland de andra (${alla} val: ${Object.entries(n).map(([k, v]) => `${k} ${v}`).join(', ')})`, (n.dryck ?? 0) > 0 && (n.upptrada ?? 0) > 0 && (n.dryck ?? 0) < alla / 2],
+    ];
+  },
+};
+
+SCENARIER.nodpoang = {
+  text: 'Steg 13.8.9: nöden i poäng och såret först. Inom nivå 2 vägs raderna efter hur nära döden de för, så att en svag törst inte går före en svår hunger. Den som blir anfallen tar hand om det först (från bina flyr man), och att trycka på sitt blödande sår kommer närmast efter, före alla andra faror',
+  kor: () => {
+    const s = SIM.createState(1, START); s.kal = SIM.nyKalender(s.now, 2); klockan(s, 11); setFood(s, 400);
+    const p = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen && SIM.ageOf(r, s.now) < 50)[0]!;
+    const fyll = () => Object.assign(p, { rest: 1, toa: 1, torst: 1, hunger: 1, social: 1, warm: 1, task: undefined, skador: [], blod: 1 });
+    const sar = () => SIM.skada(s, p, 'bal', 'sticksar', 0.5, 'blod', 'i en strid');
+    const val = () => { SIM.chooseTask(s, p); return `${p.task?.act ?? '-'}: ${p.task?.why ?? ''}`; };
+    // svårt hungrig och lite törstig: äter först; mycket törstig och lite hungrig: dricker först
+    fyll(); p.hunger = 0.03; p.torst = SIM.TORST.farligt - 0.01; const hunger = val();
+    fyll(); p.hunger = SIM.KROPP.hungrig * SIM.VARDRATT.snal - 0.01; p.torst = 0.01; const torst = val();
+    // bina: den som blöder och står vid ett uppretat bo flyr bina först
+    fyll(); sar(); (s.retade ??= []).push({ x: Math.floor(p.x) + 1, y: Math.floor(p.y), slut: s.now + 10 * SIM.MIN, st: 1 }); const bin = val();
+    s.retade = undefined;
+    // vargarna kommer: den som blöder trycker på såret i stället för att söka skydd
+    const vargar = (n: number) => { const id = s.vargNr = (s.vargNr ?? 0) + 1; (s.vargar ??= []).push({ id, vargar: Array.from({ length: n }, (_, j) => 10_000_000 + id * 8 + j), x: p.x + 3, y: p.y, mx: p.x + 3, my: p.y, gar: s.now + 48 * SIM.HOUR, hunger: 0.9, gor: 'anfaller', sedd: s.now } as SIM.Vargflock); };
+    vargar(3); SIM.larma(s, 'varg', 3, [p]);
+    fyll(); const utan = val();
+    fyll(); sar(); const varg = val();
+    s.vargar = undefined;
+    const A = SIM.ARBETEN, i = (id: string) => A.findIndex(r => r.id === id);
+    return [
+      [`utan sår gör man det vargarna kräver när de kommer (${utan})`, /forsvar|gomma|hjalpaRovare|skydd|gom/.test(utan.split(':')[0]!)],
+      [`den som blöder trycker på såret när vargarna kommer (${varg})`, /Trycker/.test(varg)],
+      [`ordningen i Fara: brinner, bina, såret och sedan skyddet (${['brinner', 'binFly', 'blodar', 'skydd'].map(i).join(', ')})`, i('brinner') < i('binFly') && i('binFly') < i('blodar') && i('blodar') < i('skydd') && A[i('blodar')]!.niva === 1],
+      [`striden tar den som blir biten: anfallet är en strid som valet inte avbryter (${SIM.ACTS.strid ? 'strid' : '-'})`, !!SIM.ACTS.strid],
+      [`den svårt hungriga äter före den lite törstiga (${hunger})`, /ata|maltid/.test(hunger.split(':')[0]!)],
+      [`den mycket törstiga dricker före den lite hungriga (${torst})`, !/ata|maltid/.test(torst.split(':')[0]!) && /dric|vatten|sno/i.test(torst)],
+      [`den som blir stucken flyr bina före såret (${bin})`, bin.startsWith('flyBin')],
+      ['raderna på nivå 2 har poäng', A.filter(r => r.niva === 2).every(r => !!r.poang)],
     ];
   },
 };
