@@ -11,10 +11,10 @@
 // varandra får tanken Sov bredvid sin käresta (bredvidKaresta)
 import { HUS } from './byggnader';
 import { hemOverskott } from './byggplan';
-import { ALDER, ageOf, byId, count, familjOf, forstaGang, living, log } from './folk';
+import { ALDER, KROPP, ageOf, byId, count, familjOf, forstaGang, living, log } from './folk';
 import { tanke } from './tankar';
 import { addTool, ingenHar, tingOf } from './agande';
-import { type Rum, gridOf, roomAt, husById } from './byggnad';
+import { type Rum, blocked, gridOf, roomAt, husById } from './byggnad';
 import { rumFnOf as rumFn, sjukKrok, sovKvar, sovPlats, utanBadd } from './byggnader';
 import { ELDSTATIONER, HARD_GNISTOR } from './stationseld';
 import { rumInfo, rumTaggar, sjukstugaKrav } from './rum';
@@ -28,8 +28,9 @@ import { knows } from './teknik';
 import { Task, W } from './typer';
 import { put } from './lager';
 import { tileOf } from './mark';
+import { ACTS } from './handlingar';
 import { HOUR, Person, State } from './typer';
-import { SATEN, STATION, type Station, bordPlatser, bordenOf, moblerKrok, isKlar, sateNiva, stationDef, stationRutor, stationerOf, storlekAv, taBort } from './stationer';
+import { SATEN, STATION, type Station, bordPlatser, bordenOf, moblerKrok, isKlar, sateNiva, stationDef, stationRutor, stationerOf, storlekAv, sittAt, taBort } from './stationer';
 
 // de enklare möblerna som möbeln k kan ersätta: färdiga, med en ägare vars familj har något över, p:s familj först, sedan det
 // största överskottet
@@ -72,7 +73,6 @@ import { finareKrok } from './forradsmal';
 finareKrok.brist = finareBrist;
 
 // ---------- pallen och stolen (steg 12.4.4) ----------
-const SITTER = new Set(['maltid', 'samtal', 'beratta', 'vila']);
 // bordet och platsens nummer på rutan (x, y)
 export function sateVid(s: State, x: number, y: number) {
   const i = Math.floor(y) * W + Math.floor(x);
@@ -80,11 +80,33 @@ export function sateVid(s: State, x: number, y: number) {
   for (const t of bordenOf(s)) { const j = bordPlatser(t).findIndex(q => q.y * W + q.x === i); if (j >= 0) return { t, i: j }; }
   return undefined;
 }
-const nivaHar = (s: State, p: Person) => { if (!p.task || p.task.phase !== 'do' || !SITTER.has(p.task.act)) return 0; const v = sateVid(s, p.x, p.y); return v ? sateNiva(v.t, v.i) : 0; };
-// så mycket mer vila per timme den som sitter på en pall eller stol får
-export const sittVila = (s: State, p: Person) => s.stationer?.length ? STATION.sittVila * nivaHar(s, p) : 0;
+// den som gör något sittande (fältet sitta i ACTS) och är på en sittplats
+const sitter = (s: State, p: Person) => !!p.task && p.task.phase === 'do' && !!ACTS[p.task.act].sitta && sittAt(s, p.x, p.y);
+const nivaPa = (s: State, x: number, y: number) => { const v = sateVid(s, x, y); return v ? sateNiva(v.t, v.i) : 0; };
+const nivaHar = (s: State, p: Person) => sitter(s, p) ? nivaPa(s, p.x, p.y) : 0;
+// så mycket mer vila per timme sittplatsen på (x, y) ger: stubben och bänkens stol en nivå, pallen och stolen vid bordet fler (steg 13.8.18)
+const platsVila = (s: State, x: number, y: number) => STATION.sittVila * (1 + nivaPa(s, x, y));
+// så mycket mer vila per timme den som sitter får
+export const sittVila = (s: State, p: Person) => s.stationer?.length && sitter(s, p) ? platsVila(s, p.x, p.y) : 0;
 // tanken av måltiden vid bordet gånger detta
 export const sittGlad = (s: State, p: Person) => 1 + STATION.sittGlad * nivaHar(s, p);
+// vilan söker en plats (steg 13.8.18): den som vilar, pratar eller lyssnar sätter sig på en ledig sittplats (stubben, pallen och stolen
+// vid borden, stolen vid bänkarna) och den som vilar lägger sig också i sin bädd (badd, när den står under tak). Varje plats får poängen
+// vilan den ger mer per timme (sittVila, sängen baddVila och halmbädden KROPP.restBadd) minus STATION.vilaGang för varje ruta från ref,
+// där man annars skulle vara; den bästa över noll tas. Ledig är en plats som ingen annan är på väg till eller är på
+export function vilPlats(s: State, p: Person, ref: { x: number; y: number }, badd?: { x: number; y: number }) {
+  const r = stationRutor(s), upptagna = new Set(living(s).filter(q => q !== p && q.task && q.task.phase !== 'back').map(q => tileOf(q.task!.tx, q.task!.ty)));
+  let best: { x: number; y: number } | undefined, bp = 0;
+  const prova = (at: { x: number; y: number }, v: number) => { const pt = v - STATION.vilaGang * Math.hypot(at.x - ref.x, at.y - ref.y); if (pt > bp) { bp = pt; best = at; } };
+  if (badd) prova(badd, stationDef(r.at.get(tileOf(badd.x, badd.y))?.k ?? '')?.vila?.tim ?? KROPP.restBadd);
+  const n = Math.ceil(STATION.sittVila * (1 + Math.max(0, ...Object.values(SATEN))) / STATION.vilaGang); // längre bort ger ingen sittplats poäng
+  for (const i of r.sitt) {
+    const x = i % W + 0.5, y = Math.floor(i / W) + 0.5;
+    if (Math.abs(x - ref.x) > n || Math.abs(y - ref.y) > n || upptagna.has(i) || blocked(s, x, y)) continue;
+    prova({ x, y }, platsVila(s, x, y));
+  }
+  return best as { x: number; y: number } | undefined;
+}
 // den bästa nivån byn kan göra: stolen när någon kan tekniken Stol, pallen när någon kan snickarbänken
 const bastNiva = (s: State) => living(s).some(q => knows(q, 'stol')) ? SATEN.stol : living(s).some(q => knows(q, 'snickarbank')) ? SATEN.pall : 0;
 // platserna vid borden i familjernas hus där familjen har något över, med en sämre sittplats än den bästa byn kan göra
@@ -124,7 +146,7 @@ export function sattaKlar(s: State, p: Person, tk: Task) {
   if (forstaGang(s, 'sateForsta_' + f.k)) log(s, `${p.name} ställde ${f.k === 'stol' ? 'en stol' : 'en pall'} vid bordet, där det förut stod en ${gammal === 'pall' ? 'pall' : 'stubbe'}.`, 'world', [p.id]);
 }
 finareKrok.sate = sateMal;
-moblerKrok.sittGlad = sittGlad; moblerKrok.sattaPlats = sattaPlats;
+moblerKrok.vilPlats = vilPlats; moblerKrok.sittGlad = sittGlad; moblerKrok.sattaPlats = sattaPlats;
 
 // ---------- vaggan (steg 12.4.5) ----------
 // Spädbarnet (under ALDER.smabarn) sover i en ledig vagga i rummet där föräldern sover, i stället för hos föräldern (boende i

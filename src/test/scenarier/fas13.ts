@@ -1663,3 +1663,37 @@ SCENARIER.strakbuske = {
     ];
   },
 };
+
+SCENARIER.sittvila = {
+  text: 'Steg 13.8.18: vilan söker en plats att sitta eller ligga på. Den som vilar eller samtalar vid elden sätter sig på en ledig stubbe vid ett bord nära i stället för att stanna där hen står, och när alla platser är tagna står (eller ligger) de som blir över. Den som sitter vilar mer än den som står',
+  kor: () => {
+    const { living, spotFor, sittAt, eldPlats, bordPlatser } = SIM;
+    const s = SIM.createState(4, START); klockan(s, 14);
+    const f = eldPlats(s);
+    const bord = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bord', x: f.x + 2, y: f.y + 1, kvar: 0 } as SIM.Station;
+    (s.stationer ??= []).push(bord); SIM.touch(s);
+    const platser = bordPlatser(bord).filter(q => !SIM.blocked(s, q.x + 0.5, q.y + 0.5)).length;
+    const folk = living(s);
+    while (folk.length < platser + 3) { nyInvanare(s, folk.length % 2 ? 'm' : 'k', 30); folk.splice(0, folk.length, ...living(s)); }
+    for (const p of folk) { p.task = undefined; p.x = f.x + 0.5; p.y = f.y + 2.5; }
+    // var och en väljer i tur och ordning och går dit: de första sätter sig, de som blir över ligger eller står
+    const valj = (act: SIM.Act, p: SIM.Person) => { const at = spotFor(s, act, p); p.task = { act, phase: 'go', tx: at.x, ty: at.y, until: s.now + SIM.HOUR, carry: 0, why: '' } as SIM.Task; return sittAt(s, at.x, at.y); };
+    const vila = folk.slice(0, platser + 2).map(p => valj('vila', p));
+    const satt = vila.filter(Boolean).length;
+    const sistaStar = !vila.slice(platser).some(Boolean);
+    // samtalet: med alla platser lediga sätter sig den som samtalar
+    for (const p of folk) p.task = undefined;
+    const samtal = valj('samtal', folk[0]!);
+    // vilan på platsen: den som sitter vilar mer än den som står
+    const p = folk[0]!, q = folk[1]!, sp = bordPlatser(bord).find(r => !SIM.blocked(s, r.x + 0.5, r.y + 0.5))!;
+    p.task = { act: 'vila', phase: 'do', tx: sp.x + 0.5, ty: sp.y + 0.5, until: s.now + SIM.HOUR, carry: 0, why: '' } as SIM.Task; p.x = sp.x + 0.5; p.y = sp.y + 0.5;
+    q.task = { act: 'vila', phase: 'do', tx: f.x + 0.5, ty: f.y + 4.5, until: s.now + SIM.HOUR, carry: 0, why: '' } as SIM.Task; q.x = f.x + 0.5; q.y = f.y + 4.5;
+    const sv = SIM.sittVila(s, p), qv = SIM.sittVila(s, q);
+    return [
+      [`bordet har ${platser} platser, och alla tas av de som vilar (${satt})`, platser > 0 && satt === platser],
+      [`de två som blir över sitter inte (${vila.slice(platser).map(v => v ? 'sitter' : 'ligger').join(', ')})`, sistaStar],
+      [`den som samtalar vid elden sätter sig på en ledig stubbe (${samtal})`, samtal],
+      [`den som sitter på stubben vilar mer (${sv.toFixed(3)} per timme) än den som ligger på marken (${qv.toFixed(3)})`, sv > qv],
+    ];
+  },
+};

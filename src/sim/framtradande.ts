@@ -23,7 +23,7 @@ import type { Tro } from './religion';
 import { clamp, rnd } from './slump';
 import { hourOf } from './tid';
 import { coldOf, nederbord, temperature } from './vader';
-import { Station, isKlar, redskapVid, stationById, stationerOf, storlekAv, vidStation } from './stationer';
+import { Station, isKlar, moblerKrok, redskapVid, sittAt, stationById, stationerOf, storlekAv, vidStation } from './stationer';
 import { kvHaller } from './kvalitet';
 import { SAKER } from './saker';
 import { balans } from './balans';
@@ -390,7 +390,9 @@ const paScenen = (s: State, p: Person, f: Fram) => [p, ...(f.grupp ?? []).map(g 
 const namnPa = (s: State, p: Person, f: Fram) => och(paScenen(s, p, f).map(q => q.name));
 // var publiken sitter: står scenen i en sal sprids de på rummets rutor, står den ute sitter de framför den (aldrig bakom en
 // vägg), och utan scen där man berättar (plats, spotFor i val.ts)
-function publikPlats(s: State, f: Fram, q: Person, plats: (q: Person) => { x: number; y: number }) {
+// den som lyssnar sätter sig på en ledig plats nära sin plats i publiken (vilPlats i mobler.ts, steg 13.8.18)
+const publikPlats = (s: State, f: Fram, q: Person, plats: (q: Person) => { x: number; y: number }) => { const u = publikRuta(s, f, q, plats); return sittAt(s, u.x, u.y) ? u : moblerKrok.vilPlats(s, q, u) ?? u; };
+function publikRuta(s: State, f: Fram, q: Person, plats: (q: Person) => { x: number; y: number }) {
   const sc = f.scen !== undefined ? stationById(s, f.scen) : undefined;
   if (!sc) { const u = plats(q); return blocked(s, u.x, u.y) ? freeNear(s, Math.floor(u.x), Math.floor(u.y)) : u; }
   const { w, h } = storlekAv(sc), rum = roomAt(s, sc.x + w / 2, sc.y + h / 2), fram = vidStation(sc);

@@ -79,7 +79,7 @@ import { islagt, naSjon } from './is';
 import { seleVal } from './barsele';
 import { TORST, drickVal, torstig, tortarFarligt, vattenVal } from './torst';
 import { latrinFor } from './smuts';
-import { stationBrukad, bordenOf, ledigPlats, sittAt, stationAt, stationDef, stationFor, stationRutor, storlekAv, vidStation } from './stationer';
+import { stationBrukad, bordenOf, ledigPlats, moblerKrok, sittAt, stationAt, stationDef, stationFor, storlekAv, vidStation } from './stationer';
 import { RATTER, TORKAS, grillTid, kanGrilla, kanTorka, torkTid } from './matlagning';
 import { TEK, TEKTAL, forsokChans, forsokVal, knows, laraVal, tekArbete } from './teknik';
 import { sportListaVal, sportVal, sportVikt, tittaVal, tittaVikt } from './sport';
@@ -217,7 +217,6 @@ export const VAL = balans('val', {
   isarVidga: 0.12, // ... och ringen blir så här mycket bredare för varje försök efter det fjärde, när det är trångt
   nattPrat: 10, nattPratSpann: 15, // på natten samtalar man så här många minuter, plus upp till spann, och går sedan till en ny plats (steg 3.6.8)
   eldRadie: 1.3, eldRadieSpann: 0.9, // vid elden sätter man sig så här många rutor från den, plus upp till spann (handlingens radie går före)
-  vilaNara: 6, // den som vilar sätter sig på en ledig sittplats högst så här många rutor bort (steg 10.2.76)
   sovRadie: 1.8, sovRadieSpann: 1.2, // ... och den som sover ute lägger sig så här långt bort
   // skuggan (steg 2.3.13)
   skuggaRadie: 10, // så många rutor bort letar den som är för varm efter skugga
@@ -306,18 +305,6 @@ function bryggSpot(s: State, p: Person) {
   const b = pick(s, br, 'val', p);
   return { x: b.x + 0.5, y: b.y + 0.5 };
 }
-// den närmaste lediga sittplatsen (en stubbe vid ett bord, en stol eller en bänk, stationRutor) inom VAL.vilaNara rutor från p:
-// ingen annan är på väg dit eller sitter där (steg 10.2.76)
-function ledigSittplats(s: State, p: Person) {
-  const upptagna = new Set(living(s).filter(q => q !== p && q.task && q.task.phase !== 'back').map(q => Math.floor(q.task!.ty) * W + Math.floor(q.task!.tx)));
-  let best: { x: number; y: number } | undefined, bd: number = VAL.vilaNara;
-  for (const i of stationRutor(s).sitt) {
-    if (upptagna.has(i)) continue;
-    const x = i % W + 0.5, y = Math.floor(i / W) + 0.5, d = Math.hypot(x - p.x, y - p.y);
-    if (d < bd && !blocked(s, x, y)) { bd = d; best = { x, y }; }
-  }
-  return best;
-}
 // en plats i ringen runt elden f (eldens ruta): bredvid den bästa vännen om hen sitter vid samma eld, och inte nära en ovän (steg 3.1.1)
 function ringVid(s: State, p: Person, radie: number | undefined, f: { x: number; y: number }): { x: number; y: number } {
   const nara = sittPlatser(s, p, f), van = nara.bast && rnd(s, 'val', p) < RELT.bastSitt ? Math.atan2(nara.bast.y - f.y - 0.5, nara.bast.x - f.x - 0.5) : undefined;
@@ -354,18 +341,22 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
     // när det är kallt samtalar och berättar man i samlingshuset, om det är varmare där än vid elden (byggnader.ts)
     const sal = d.social ? samlingRum(s) : undefined, c = sal ? coldOf(temperature(s)) : 0;
     // ... när det regnar (steg 2.11.1), och året runt är samlingssalen byns mötesplats (steg 7.2.7)
-    if (sal && (c > 0 && varmareInne(s, sal, c, f) || nederbord(s) || c === 0 && rnd(s, 'val', p) < VAL.salMote)) return isarIRum(s, p, sal.tiles);
+    // den som gör det sittande sätter sig på en ledig plats nära där hen annars skulle stå (vilPlats i mobler.ts, steg 13.8.18)
+    const sitt = (u: { x: number; y: number }) => d.sitta && !sittAt(s, u.x, u.y) ? moblerKrok.vilPlats(s, p, u) ?? u : u;
+    if (sal && (c > 0 && varmareInne(s, sal, c, f) || nederbord(s) || c === 0 && rnd(s, 'val', p) < VAL.salMote)) return sitt(isarIRum(s, p, sal.tiles));
     // annars sätter man sig ofta vid ett bord för att samtala och berätta, när det inte är kallt
     if (d.slag === 'prata' && bordenOf(s).length && coldOf(temperature(s)) === 0 && rnd(s, 'val', p) < VAL.bordSamtal) { const at = ledigPlats(s, p); if (at) return at; }
-    return ringVid(s, p, d.radie, f);
+    return sitt(ringVid(s, p, d.radie, f));
   }
   if (plats === 'kol') return { x: f.x + 0.5 + (rnd(s, 'val', p) - 0.5) * 0.6, y: f.y + 1.1 };
   if (plats === 'sang') { // i huset om det finns plats under tak, annars på marken en bit från elden
     // i huset om det är varmare där än vid elden
     const bed = bedFor(s, p), c = coldOf(temperature(s)), rum = bed && roomAt(s, bed.x, bed.y);
-    if (bed && rum && (varmareInne(s, rum, c, f) || c === 0 || nederbord(s))) return bed; // när det inte är kallt räcker värmen överallt; i regnet under tak
-    // vilan (steg 10.2.76): den som vilar sätter sig på en ledig stubbe, stol eller bänk nära, och lägger sig annars på marken
-    if (act === 'vila') { const sitt = ledigSittplats(s, p); if (sitt) return sitt; }
+    const badd = bed && rum && (varmareInne(s, rum, c, f) || c === 0 || nederbord(s)) ? bed : undefined; // när det inte är kallt räcker värmen överallt; i regnet under tak
+    // vilan (steg 10.2.76 och 13.8.18): den som vilar lägger sig i bädden eller sätter sig på en ledig stubbe, stol eller bänk, efter
+    // vilan platsen ger mot vägen dit (vilPlats i mobler.ts), och lägger sig annars på marken
+    if (act === 'vila') { const at = moblerKrok.vilPlats(s, p, p, badd); if (at) return at; }
+    else if (badd) return badd;
     return glesPlats(s, p, k => {
       const ang = (p.id * 2.399 + rnd(s, 'val', p) * (0.5 + k * 0.25)) % (Math.PI * 2), r = VAL.sovRadie + rnd(s, 'val', p) * VAL.sovRadieSpann, x = f.x + 0.5 + Math.cos(ang) * r, y = f.y + 0.5 + Math.sin(ang) * r;
       return inMap(x, y) && !blocked(s, x, y) && !stationAt(s, x, y) ? { x, y } : undefined;

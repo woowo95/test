@@ -122,8 +122,10 @@ export const STATION = balans('station', {
   drejFart: 2, // så många gånger fortare lerkrukorna formas på drejskivan (steg 12.4.1)
   sangVila: 0.13, sangGlad: 0.11, // sängen (steg 12.4.3): vilan per timme (halmbädden KROPP.restBadd) och tanken Sov gott i sängen, gånger kvaliteten
   // sittplatserna vid bordet (steg 12.4.4): stubben, pallen och stolen (nivån i SATEN). Per nivå: så mycket mer vila per timme för den som
-  // sitter, så mycket bättre tanken av måltiden vid bordet, och så många rutor närmare en bättre plats känns när man väljer var man sätter sig
+  // sitter, så mycket bättre tanken av måltiden vid bordet, och så många rutor närmare en bättre plats känns när man väljer var man sätter sig.
+  // Stubben och stolen vid en bänk ger en nivå vila mer än att stå eller ligga på marken (steg 13.8.18)
   sittVila: 0.02, sittGlad: 0.25, sittVal: 2,
+  vilaGang: 0.005, // vilan söker en plats (steg 13.8.18): så mycket vila per timme som varje ruta att gå dit kostar i valet av plats
   bredvidGlad: 0.03, bredvidTim: 8,
   dassTill: 6, dassAvst: 3, dassSmuts: 0.5, // utedasset (steg 12.4.9) står högst och helst så här många rutor från byn, och smutsar vattnet så här mycket mot latrinen
   vaggaVila: 0.13, vaggaGlad: 0.09,
@@ -1932,6 +1934,7 @@ import { PLAGG } from './klader';
 // möblerna i hemmet (system 12.4), satta i mobler.ts (som läses efter den här filen): platsen och bytet för en möbel som ersätter en
 // enklare (Hemmen blir finare, steg 12.4.3), tanken av måltiden på platsen och platsen dit en ledig pall eller stol ställs (steg 12.4.4)
 export const moblerKrok = {
+  vilPlats: (_s: State, _p: Person, _ref: { x: number; y: number }, _badd?: { x: number; y: number }) => undefined as { x: number; y: number } | undefined, // vilan söker en plats (mobler.ts, steg 13.8.18)
   site: (_s: State, _k: string, _p?: Person) => undefined as { x: number; y: number; rot?: 1; inne?: 1 } | undefined, ersatt: (_s: State, _g: Station, _n: Station) => undefined as void,
   vaggaRum: (_s: State) => undefined as Rum | undefined, fyrfatRum: (_s: State) => undefined as Rum | undefined,
   stugaSite: (_s: State, _k: string) => undefined as ReturnType<typeof siteInne>, inne: (s: State, k: string, r: Rum) => siteInne(s, k, r),
