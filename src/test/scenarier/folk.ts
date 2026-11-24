@@ -1268,7 +1268,7 @@ SCENARIER.langsam = {
       [`slagen med händerna kommer med ${med.toFixed(1)} s mellanrum (vapnets takt ${SIM.VAPEN.hand.takt} s gånger glesare ${SIM.STRID.glesare})`, med > SIM.VAPEN.hand.takt * SIM.STRID.glesare * 0.6 && med < SIM.VAPEN.hand.takt * SIM.STRID.glesare * 1.6],
       [`ett slagsmål mellan två vuxna tar ${h.tid.toFixed(0)} s, några minuter (11 s före v164, 24 s före B.7), och sidorna vinner ${pc(h.vann[0], h)} % och ${pc(h.vann[1], h)} %`, h.tid > 180 && h.tid < 360 && Math.abs(h.vann[0] - h.vann[1]) < h.n * 0.2],
       [`en med spjut mot en varg: människan vinner ${pc(sp.vann[0], sp)} % på ${sp.tid.toFixed(0)} s (7 s före v164, 75 % före B.7)`, sp.vann[0] > sp.n * 0.6 && sp.vann[0] < sp.n * 0.9 && sp.tid > 60],
-      [`en obeväpnad mot en varg: vargen vinner ${pc(ha.vann[1], ha)} %`, ha.vann[1] > ha.n * 0.7],
+      [`en obeväpnad mot en varg: vargen vinner ${pc(ha.vann[1], ha)} %`, ha.vann[1] > ha.n * 0.65], // vargens bett 0,24 sedan B.7: vargen vinner ungefär två av tre
       ['loggens tider följer klockan (STRID.tick per steg)', st.logg.every(r => Math.abs(r.t / SIM.STRID.tick - Math.round(r.t / SIM.STRID.tick)) < 1e-6)],
     ];
   },

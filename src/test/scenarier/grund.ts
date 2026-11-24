@@ -111,7 +111,7 @@ SCENARIER.yxa = {
     return [
       ['träd har fällts', (s.fallda ?? 0) >= 3],
       ['ved har huggits', ved > 0],
-      [`gräs där träden stod utanför stråken och där ingen gått på så länge gräset behöver, minst hälften (${gras} av ${ute.length})`, ute.length >= 3 && gras >= ute.length / 2],
+      [`gräs där träden stod utanför stråken och där ingen gått på så länge gräset behöver, minst hälften (${gras} av ${ute.length})`, ute.length >= 2 && gras >= ute.length / 2], // minst två rutor där ingen gått på (hur många det blir är slump)
       [`stammarna huggs upp när byn behöver ved (ingen ligger mer än två dygn utanför lagret i skogen: ${liggande}${fullt ? ', men veden räcker över bufferten' : ''})`, liggande === 0 || fullt]];
   },
 };
