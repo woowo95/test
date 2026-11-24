@@ -336,7 +336,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .kortsort { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 0 3px; margin-left: 4px; }
 .kortmer { display: block; margin-top: 3px; }
 /* det som fälls ut vid ett tryck (steg 11.1.2): ▸ eller ▾ först på raden, efter aria-expanded, likadant i alla flikar och rutor */
-.falla::before { content: '▸'; display: inline-block; width: 1em; flex: none; color: var(--muted); font-size: 0.8em; font-weight: normal; }
+.falla::before { content: '▸'; display: inline; width: 1em; box-sizing: border-box; padding-right: 0.4em; flex: none; color: var(--muted); font-size: 0.8em; font-weight: normal; } /* inline: raden bryts aldrig mellan pilen och ordet (steg 13.10.4); i flex och grid blir den en ruta med bredden */
 .falla[aria-expanded="true"]::before { content: '▾'; }
 .sbar.hall { display: inline-block; width: 64px; vertical-align: middle; margin-right: 6px; } .sbar.hall > span { background: var(--g-oliv); } .sbar.hall.neg > span { background: var(--g-rost); } /* klanens hållning (steg 11.1.39) */
 .anshuvud { cursor: help; margin-bottom: 8px; }
