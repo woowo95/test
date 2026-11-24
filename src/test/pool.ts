@@ -75,20 +75,23 @@ export function korProcess(cmd: string, args: string[], env: Record<string, stri
     const c = spawn(cmd, tsx ? ['--import', 'tsx', '--import', PULS, ...args.slice(2)] : args, { env: { ...process.env, MATARE_BARN: '1', ...env, PULS_DIR: dir }, detached: process.platform !== 'win32' });
     if (c.pid) igang.add(c.pid);
     if (prio && c.pid) try { setPriority(c.pid, prio); } catch { /* går det inte körs jobbet med vanlig prioritet */ }
-    const sluta = (code: number) => { if (!klar) { klar = true; clearTimeout(tid); clearInterval(puls); if (c.pid) igang.delete(c.pid); rmSync(dir, { recursive: true, force: true }); ok({ code, out, err }); } };
+    const sluta = (code: number) => { if (!klar) { klar = true; clearInterval(puls); if (c.pid) igang.delete(c.pid); rmSync(dir, { recursive: true, force: true }); ok({ code, out, err }); } };
     const stoppa = (varfor: string) => {
       if (stoppad || !c.pid) return;
       stoppad = true; err += `\n(${varfor})`;
       signal(c.pid, 'SIGTERM');
       setTimeout(() => signal(c.pid!, 'SIGKILL'), 5000).unref(); // hela gruppen
     };
-    const tid = setTimeout(() => stoppa(`stoppad efter ${Math.round(grans / 60_000)} min, datorns tid`), grans);
-    const start = Date.now();
-    const hangt = hangtMs();
+    const hangt = hangtMs(), varje = Math.min(30_000, hangt / 4);
+    // bara vaken tid räknas: har datorn sovit eller testet varit pausat (batteri.ts) är det ett långt hopp, som räknas som ett varv
+    let vaken = 0, sist = Date.now(), slag: number | undefined, slagVid = 0;
     const puls = setInterval(() => {
+      vaken += Math.min(Date.now() - sist, 2 * varje); sist = Date.now();
       const t = senastePuls(dir);
-      if (t !== undefined && Date.now() - Math.max(t, start) > hangt) stoppa(`stoppad: den hängde sig, inget slag i spelet på ${Math.round(hangt / 60_000)} min (datorns tid)`);
-    }, Math.min(30_000, hangt / 4));
+      if (t !== slag) { slag = t; slagVid = vaken; }
+      if (t !== undefined && vaken - slagVid > hangt) stoppa(`stoppad: den hängde sig, inget slag i spelet på ${Math.round(hangt / 60_000)} min (datorns tid)`);
+      else if (vaken > grans) stoppa(`stoppad efter ${Math.round(grans / 60_000)} min, datorns tid`);
+    }, Math.min(varje, grans / 4));
     puls.unref();
     // som text, så att å, ä och ö inte delas mellan två bitar av utskriften
     c.stdout.setEncoding('utf8'); c.stderr.setEncoding('utf8');
