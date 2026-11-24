@@ -52,6 +52,7 @@ export const FORRAD = balans('forrad', {
   behovTomt: 3.2, behovMax: 3.5, // vikten av ett tomt förråd under Försörjning, och den högsta vikten
   // mat: förrådets dygn dämpar vikten ner till Min när förrådet räcker så länge byn vill (bufferten) ...
   matDygn: 4, matMin: 0.4, // bufferten för maten i dygn: där behovet nått ner till Min (steg 13.8.4)
+  matEgenFull: 0.5, // spärren för den egna maten (steg 13.9.6): raden för egen mat är full vid så stor del av familjens buffert
   matMatt: 2, matMinMatt: 0.04, // ... och sedan vidare ner till MinMatt vid taket, Matt gånger bufferten: då upphör matarbetet nästan (steg 3.10.9)
   vedDygn: 3, vedMin: 0.15, // ... och för ved (steg 13.8.4)
   vedMatt: 2, vedMinMatt: 0.01, // över taket (Matt gånger bufferten) sjunker behovet vidare mot noll, aldrig tvärt (steg 10.2.4, 13.8.4)
@@ -109,9 +110,10 @@ export interface Forradsmal {
   matt: number; // lyxtaket: så här många gånger bufferten
   minMatt: number; // vid taket väger behovet så här lite
   pabud: Pabud; // ledarens påbud om förrådet (styre.ts)
+  egenFull?: number; // spärren för den egna maten (steg 13.9.6): så stor del av familjens buffert är gränsen
 }
 export const FORRADSMAL = {
-  mat: { dygn: FORRAD.matDygn, min: FORRAD.matMin, matt: FORRAD.matMatt, minMatt: FORRAD.matMinMatt, pabud: 'matlager' },
+  mat: { dygn: FORRAD.matDygn, min: FORRAD.matMin, matt: FORRAD.matMatt, minMatt: FORRAD.matMinMatt, pabud: 'matlager', egenFull: FORRAD.matEgenFull },
   ved: { dygn: FORRAD.vedDygn, min: FORRAD.vedMin, matt: FORRAD.vedMatt, minMatt: FORRAD.vedMinMatt, pabud: 'vedlager' },
 } as const satisfies Record<string, Forradsmal>;
 export type Resurs = keyof typeof FORRADSMAL;

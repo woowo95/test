@@ -1816,3 +1816,29 @@ SCENARIER.skalrorelse = {
     ];
   },
 };
+
+SCENARIER.sparren = {
+  text: 'Steg 13.9.6: spärren för den egna maten. Raden för egen mat är full när familjen har sin gräns (egenFull i FORRADSMAL, halva familjens buffert), så den som har mer än så går vidare till annat arbete. Den som har silver köper mat upp till gränsen av den som har mer, och den som säljer behåller lika mycket för sin egen familj. Den fattiga utan silver samlar själv.',
+  kor: () => {
+    const { MAT, FORRADSMAL, egenGrans, gain, ownsAmount, chooseTask, askForGift, payable } = SIM;
+    const s = SIM.createState(5, START); klockan(s, 10); tandEld(s); setFood(s, 300); SIM.setAmount(s, 'ved', 80); s.delning = { andel: 0 };
+    const halv = nyInvanare(s, 'm', 30), fattig = nyInvanare(s, 'k', 30), kopare = nyInvanare(s, 'm', 30), odlare = nyInvanare(s, 'k', 30);
+    const grans = egenGrans(s, halv), dygn = MAT.kvar(s, halv), full = grans / (FORRADSMAL.mat.egenFull ?? 1);
+    const egenMat = (q: SIM.Person) => { let n = 0; for (let i = 0; i < 30; i++) { q.task = undefined; chooseTask(s, q); if ((q.task as SIM.Task | undefined)?.why?.startsWith('Behöver egen mat')) n++; } return n; };
+    // en familj med mer än gränsen men mindre än hela bufferten
+    gain(s, halv, 'bar', Math.ceil((grans + full) / 2));
+    const halvSamlar = egenMat(halv), fattigSamlar = egenMat(fattig);
+    // köparen har silver och nästan ingen mat, odlaren mycket mat
+    gain(s, kopare, 'silver', 40); gain(s, kopare, 'bar', 1); gain(s, odlare, 'bar', Math.ceil(grans) + 6);
+    const odlarFore = ownsAmount(s, odlare, 'bar'), saljbart = payable(s, odlare, ['silver']).find(v => v.k === 'bar')?.n ?? 0;
+    for (let i = 0; i < 10; i++) askForGift(s, kopare, odlare);
+    const kopt = ownsAmount(s, kopare, 'bar'), odlarKvar = ownsAmount(s, odlare, 'bar');
+    return [
+      [`gränsen är halva familjens buffert (${grans.toFixed(1)} av ${full.toFixed(1)}, ett dygn är ${dygn.toFixed(1)})`, Math.abs(grans * 2 - full) < 1e-9 && grans > dygn],
+      [`den med mat över gränsen (${ownsAmount(s, halv, 'bar')}) arbetar inte för egen mat (${halvSamlar} av 30)`, halvSamlar === 0],
+      [`den fattiga utan mat och silver samlar själv (${fattigSamlar} av 30)`, fattigSamlar >= 5],
+      [`köparen med silver köper mer än ett dygn, upp till gränsen (${kopt} mat, gränsen ${grans.toFixed(1)})`, kopt > dygn + 1 && kopt <= Math.ceil(grans) + 1],
+      [`odlaren sålde (${odlarFore} → ${odlarKvar}) men behåller sin gräns (${saljbart} gick att sälja)`, odlarKvar < odlarFore && odlarKvar >= Math.floor(grans)],
+    ];
+  },
+};

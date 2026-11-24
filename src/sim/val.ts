@@ -1259,11 +1259,13 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
   const delas = s.delning?.andel ?? 1, fdBy = fd * bynsMatAndel(s), malBy = onskat * delas;
   const om = omtanke(s, p), wBy = (malBy <= 0 ? M.minMatt : fdBy < malBy ? clamp(FORRAD.behovTomt - fdBy / malBy * (FORRAD.behovTomt - M.min), M.min, FORRAD.behovMax)
     : mjuktTak(fdBy, malBy, malBy * M.matt, M.min, M.minMatt)) * om;
-  const famDygn = familjMatDygn(s, familjOf(s, p.id)), malFam = onskat * (1 - delas);
+  // spärren för den egna maten (steg 13.9.6): raden för egen mat är full när familjen har sin gräns, egenFull gånger
+  // familjens buffert, och personen själv har lika stor del av bufferten. Över gränsen går hen vidare till bygget och projekten
+  const famDygn = familjMatDygn(s, familjOf(s, p.id)), malFam = onskat * (1 - delas) * M.egenFull;
   const wFam = famDygn < malFam ? clamp(FORRAD.behovTomt - famDygn / malFam * (FORRAD.behovTomt - M.min), M.min, FORRAD.behovMax) : 0;
-  // den som själv har mat (sin egen, byns och familjens) för kortare tid än bufferten i FORRADSMAL arbetar för maten, hur fullt
-  // byns förråd än är (steg 3.10.26, 13.8.6: bufferten i stället för en fast gräns)
-  const egen = egnaMatDygn(s, p), wNod = egen < onskat ? FORRAD.behovTomt - egen / onskat * (FORRAD.behovTomt - M.min) : 0;
+  // den som själv har mat (sin egen, byns och familjens) för kortare tid än gränsen arbetar för maten, hur fullt
+  // byns förråd än är (steg 3.10.26, 13.8.6, 13.9.6)
+  const nod = onskat * M.egenFull, egen = egnaMatDygn(s, p), wNod = egen < nod ? FORRAD.behovTomt - egen / nod * (FORRAD.behovTomt - M.min) : 0;
   const wEgen = Math.max(wNod, wFam);
   const wFood = Math.max(wBy, wEgen);
   // veden över bufferten sjunker mjukt mot taket och vidare (steg 10.2.4), utan undantag för den som saknar yxa eller grenar vid taket

@@ -23,7 +23,7 @@ import { ratt } from './matlagning';
 import { habitShare, habitTotal } from './seder';
 import { grundvarde } from './varde';
 import { kroppensMat, matPerDygn } from './ekonomi';
-import { REDSKAPMAL, arMaterial, buffert, eldReserv, villHaAv } from './forradsmal';
+import { FORRADSMAL, REDSKAPMAL, arMaterial, buffert, eldReserv, villHaAv } from './forradsmal';
 import { balans } from './balans';
 import { RELT, arBast, arRivaler, minnsGava } from './relationer';
 import { dampning, handelse, smakMat, RYKTE } from './rykten';
@@ -359,7 +359,7 @@ export function askForGift(s: State, a: Person, b: Person) {
 // elden på kvällar och nätter (val.ts), så det är då de flesta sådana byten blir av
 function eveningTrade(s: State, a: Person, b: Person) {
   for (const n of BEHOV()) for (const [m, g] of [[a, b], [b, a]]) {
-    const rest = Math.min(n.kvar(s, m) - ownFor(s, m, n), ownFor(s, g, n) - n.kvar(s, g));
+    const rest = Math.min(behalls(s, m, n) - ownFor(s, m, n), ownFor(s, g, n) - n.kvar(s, g)); // maten upp till den egna gränsen (steg 13.9.6)
     if (rest < n.minst) continue;
     if (byte(s, m, g, delAv(s, g, n, rest), { behov: behovAv(s, m, n.slag[0]), minst: n.minst, fara: 0, typ: n.id, utom: n.slag, delad: true })) return true;
   }
@@ -591,21 +591,26 @@ const enheter = (v: Vara[]) => v.reduce((x, { k, n }) => x + n * (behovMed(k)?.p
 // hur mycket p behöver en till av slaget k, gånger grundvärdet: DELA.saknar för det p saknar för ett behov eller i sitt
 // arbete, 1 för det p behöver behålla (mat och ved upp till b.kvar, redskapet hen arbetar med) och DELA.over för resten.
 // Material som p saknar till ett arbete räknas där det tas (tradeMaterial)
+// den egna matens gräns för p (steg 13.9.6): egenFull gånger så stor del av bufferten i FORRADSMAL som byn inte delar, gånger det
+// p äter på ett dygn. Köpen av mat fyller upp till den, och den som säljer behåller lika mycket för familjen (overEget)
+export const egenGrans = (s: State, p: Person) => (FORRADSMAL.mat.egenFull ?? 1) * buffert(s, 'mat') * (1 - (s.delning?.andel ?? 1)) * kroppensMat(p, s.now);
+// det p vill ha kvar av behovet b innan hen ger bort eller vill köpa mer: ett dygn, och för maten upp till den egna gränsen
+const behalls = (s: State, p: Person, b: Behov) => b.id === 'mat' ? Math.max(b.kvar(s, p), egenGrans(s, p)) : b.kvar(s, p);
 export function behovAv(s: State, p: Person, k: string) {
   if (isTool(k)) return needsTool(s, p, k) ? DELA.saknar : ownedKind(s, p, k) > 0 && !spare(s, p, k) ? 1 : DELA.over;
   const b = behovMed(k);
   if (!b) return k === 'silver' && p.skatteskuld ? DELA.over * skuldFaktor(s, p) : DELA.over; // skatteskulden gör silvret mer värt (steg 10.5.5)
   const own = ownFor(s, p, b);
   if (b.behover(s, p) && own < b.minst) return DELA.saknar * (1 + b.fara(s, p));
-  return own <= b.kvar(s, p) ? 1 : DELA.over;
+  return own <= behalls(s, p, b) ? 1 : DELA.over;
 }
-// det p har över av behovet b: det hen själv behöver (b.kvar), och för maten det familjen behöver till sin buffert (steg 10.5.12):
-// så stor del av bufferten i FORRADSMAL som byn inte delar, gånger det familjen äter på ett dygn, mot det familjen äger
+// det p har över av behovet b: det hen själv behöver (b.kvar), och för maten det familjen behöver upp till sin gräns (steg 10.5.12,
+// 13.9.6: egenGrans för var och en i familjen), mot det familjen äger
 function overEget(s: State, p: Person, b: Behov) {
   const egen = ownFor(s, p, b) - b.kvar(s, p);
   if (b.id !== 'mat') return egen;
   const fam = familjOf(s, p.id), fp = fam.length ? fam : [p];
-  const har = fp.reduce((a, q) => a + ownFor(s, q, b), 0), buf = buffert(s, 'mat') * (1 - (s.delning?.andel ?? 1)) * fp.reduce((a, q) => a + kroppensMat(q, s.now), 0);
+  const har = fp.reduce((a, q) => a + ownFor(s, q, b), 0), buf = fp.reduce((a, q) => a + egenGrans(s, q), 0);
   return Math.min(egen, har - buf);
 }
 // det p kan byta bort: mat och ved utöver det hen och familjen behöver (overEget), material och redskap hen har över. Inte slagen i utom

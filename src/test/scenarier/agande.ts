@@ -238,7 +238,7 @@ SCENARIER.byte = {
       && ownsAmount(s, a, 'ved') >= 3 - 1e-9 && ownsAmount(s, b, 'ved') > 1 + 1e-9 && s.stat?.kvallsbyten === 1;
     // har båda det de vill ha kvar byter de inte, och inte heller med en ovän
     ({ s, a, b } = ny());
-    gain(s, a, 'bar', Math.ceil(SIM.MAT.kvar(s, a))); gain(s, a, 'ved', 6); gain(s, b, 'bar', 6); gain(s, b, 'ved', 3);
+    gain(s, a, 'bar', Math.ceil(Math.max(SIM.MAT.kvar(s, a), SIM.egenGrans(s, a)))); gain(s, a, 'ved', 6); gain(s, b, 'bar', 6); gain(s, b, 'ved', 3); // maten upp till den egna gränsen (steg 13.9.6)
     askForGift(s, a, b); const nog = !s.stat?.byten && nara(ownsAmount(s, a, 'ved'), 6);
     ({ s, a, b } = ny());
     gain(s, a, 'bar', 0.5); gain(s, a, 'ved', 6); gain(s, b, 'bar', 6); gain(s, b, 'ved', 1); getRel(s, b, a).op = -40;
