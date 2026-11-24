@@ -190,7 +190,7 @@ export const STRID = balans('strid', {
   flock: 0.2, // och för en flock så här mycket till när en av dem flyr, faller eller dör (steg 3.7.1)
   ledFaller: 0.35, // stridsmodet sjunker så här mycket för hela sidan när ledaren faller eller dör (utöver modVan)
   skyddVan: 60, // ledarens närmaste vänner (partner, bästa vän och den som tycker om ledaren minst så här mycket) skyddar hen ...
-  skyddVakt: 5, // ... de går mot den som anfaller ledaren inom så här många rutor från ledaren ...
+  skyddVakt: 5, skyddMal: 2.5, // ... den som anfaller ledaren inom så här många rutor från ledaren väljs som om den stod skyddMal rutor närmare ...
   skydd: 0.4, // ... och kliver emellan och tar slaget med den här chansen, när de står så här nära ledaren:
   skyddNara: 1.6,
 });
@@ -419,16 +419,11 @@ function valjMal(st: Strid, k: Kampe) {
   if (k.jagar !== undefined) { const m = st.kampar.find(o => o.pid === k.jagar && iStrid(o)); if (m) return m; }
   const nere = AVS[st.avsikt].nere;
   const led = k.skyddar !== undefined ? st.kampar.find(o => o.id === k.skyddar && iStrid(o)) : undefined;
-  if (led) { // vännen går mot den som anfaller ledaren (steg 3.7.12)
-    let hot: Kampe | undefined, hd: number = STRID.skyddVakt;
-    for (const m of st.kampar) if (m.sida !== k.sida && iStrid(m) && m.mal === led.id && dist(m, led) <= hd) { hd = dist(m, led); hot = m; }
-    if (hot) return hot;
-  }
   let bast: Kampe | undefined, bd = Infinity;
   for (const m of st.kampar) {
     if (m.sida === k.sida || (m.hjalp && dist(k, m) > STRID.hjalpNara) || !(iStrid(m) || (nere && (m.lage === 'nere' || m.lage === 'flykt') && st.t - (m.fallT ?? st.t) < sortAv(k).forfoljer))) continue; // djuren förföljer inte (KAMPAR)
     const vanner = st.kampar.reduce((a, o) => a + (o !== k && o.sida === k.sida && iStrid(o) && o.mal === m.id ? 1 : 0), 0);
-    const d = dist(k, m) + (m.lage === 'nere' ? 2 : 0) - (iStrid(m) && m.mal !== undefined && m.mal !== k.id ? STRID.ringa : 0) + STRID.trangsel * vanner - (k.mal === m.id ? STRID.malKvar : 0); // den som står är farligare än den som ligger, den som slåss med en annan lockar mindre, och den som redan har många mot sig väljs helst inte (steg B.6)
+    const d = dist(k, m) + (m.lage === 'nere' ? 2 : 0) - (iStrid(m) && m.mal !== undefined && m.mal !== k.id ? STRID.ringa : 0) + STRID.trangsel * vanner - (k.mal === m.id ? STRID.malKvar : 0) - (led && m.mal === led.id && dist(m, led) <= STRID.skyddVakt ? STRID.skyddMal : 0); // vännen går hellre mot den som anfaller ledaren (steg 3.7.12); // den som står är farligare än den som ligger, den som slåss med en annan lockar mindre, och den som redan har många mot sig väljs helst inte (steg B.6)
     if (d < bd) { bd = d; bast = m; }
   }
   return bast;
