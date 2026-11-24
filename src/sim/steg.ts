@@ -686,7 +686,9 @@ function slag(s: State, dtSec: number, events?: TalkEvent[]) {
 // behoven: hunger, törst, vila, värme, umgänge och toa. Elden värmer i ett område, och inne i ett hus kyls man långsammare
 // (sämre ju fler öppningar). Delarna nedan räknas här och visas i personrutan, så att den visar det som faktiskt händer
 // vilan per timme före tak och eld (talets namn i KROPP): den som har brist på energi tröttnar fortare (steg 2.6.2)
-export const vilaTim = (p: Person, vs = viloSlag(p)) => KROPP[vs] * (KROPP[vs] < 0 ? trottFaktor(p) : 1);
+// den gamla tröttnar fortare (steg 13.8.11): vilan sjunker gånger detta, efter åldern a
+export const aldersTrott = (a: number) => 1 + KROPP.gammalTrott * clamp((a - ALDER.trottGammal) / KROPP.gammalSpann, 0, 1);
+export const vilaTim = (p: Person, vs = viloSlag(p), a = 0) => KROPP[vs] * (KROPP[vs] < 0 ? trottFaktor(p) * aldersTrott(a) : 1);
 export function viloSlag(p: Person): 'restVila' | 'restArbete' | 'restVaken' {
   const pd = p.task && ACTS[p.task.act];
   return pd && pd.vila ? 'restVila' : pd && pd.tungt && p.task!.phase === 'do' ? 'restArbete' : 'restVaken';
@@ -741,7 +743,7 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   // mättnaden är en sammanfattning av näringen (steg 2.6.1); den som är för varm och arbetar tungt tappar salt (steg 2.6.2)
   naringSjunker(p, dtSec / HOUR_S * (a < ALDER.matBarn ? KROPP.hungerBarn : 1), KROPP.hungerTim, vs === 'restArbete' && p.warm > KROPP.forVarm);
   bristSteg(p, now);
-  const vt = vilaTim(p, vs), kudde = tillbehorVila(s, p); // den som sover på en kudde vilar fortare (steg 13.3.1)
+  const vt = vilaTim(p, vs, a), kudde = tillbehorVila(s, p); // den som sover på en kudde vilar fortare (steg 13.3.1)
   p.rest = clamp(p.rest + dtSec / HOUR_S * vt * (vt > 0 ? kudde : 1), 0, 1);
   { // regnet blöter den som är ute; man torkar inne och vid elden (steg 2.11.1)
     const ute = !roofed(s, p.x, p.y) && !iDass(s, p); // inne i ett hus håller man sig torr, och i utedasset (steg 12.4.9)

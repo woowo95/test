@@ -1497,3 +1497,37 @@ SCENARIER.tillfallepoang = {
     ];
   },
 };
+
+SCENARIER.somnen = {
+  text: 'Steg 13.8.11: sömnen och vilan efter tröttheten. De gamla tröttnar fortare och sover när de är trötta, som alla andra, i stället för att sova på natten av en slump också när de är utvilade. Lusten att vila på dagen växer lite i taget ju tröttare man blir men är mindre än på kvällen, och en frisk vuxen orkar en arbetsdag med bara korta pauser',
+  kor: () => {
+    const tk = (q: SIM.Person) => q.task as SIM.Task | undefined;
+    const egen = SIM.ARBETEN.some(r => r.id === 'gammalSover');
+    // den gamla: utvilad på natten sover hen inte, trött gör hen det; och vilan sjunker fortare än hos en ung
+    const s = SIM.createState(1, START); klockan(s, 23); setFood(s, 400); tandEld(s);
+    const g = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)[0]!;
+    g.born = s.now - 75 * SIM.DAY; // (ett dygn är ett år i spelet)
+    const fyll = () => Object.assign(g, { rest: 1, toa: 1, torst: 1, hunger: 1, social: 1, warm: 1, task: undefined });
+    const val = () => { g.task = undefined; SIM.chooseTask(s, g); return `${tk(g)?.act ?? '-'}: ${tk(g)?.why ?? ''}`; };
+    let utvilad = 0; for (let i = 0; i < 20; i++) { fyll(); s.seed = (s.seed ?? 0) + 1; const x = val(); if (x.startsWith('sova') || /gammal|trött/i.test(x)) utvilad++; } // (en paus vid elden i mörkret tar alla vuxna)
+    fyll(); g.rest = 0.08; const trott = val();
+    const gammal = SIM.aldersTrott(75), ung = SIM.aldersTrott(30);
+    // lusten att vila på dagen: växer med tröttheten, och är mindre än på kvällen
+    const vila = SIM.FRITID.find(f => f.id === 'vila')!;
+    const vikt = (rest: number, natt: boolean) => vila.vikt({ s, p: Object.assign(g, { rest }), v: { act: 'vila', why: '', dur: 0 }, a: 30, natt, lazy: 0, at: { x: g.x, y: g.y } } as unknown as Parameters<typeof vila.vikt>[0]);
+    const dag = [0.9, 0.6, 0.4, 0.2].map(r => vikt(r, false)), kvall = vikt(0.4, true);
+    // en arbetsdag i byn: de friska vuxna vilar bara korta stunder, och ingen blir så trött att hen måste vila
+    const b = SIM.createState(1, START); klockan(b, 7); setFood(b, 400); tandEld(b);
+    const vuxna = SIM.living(b).filter(r => SIM.ageOf(r, b.now) >= SIM.ALDER.vuxen && SIM.ageOf(r, b.now) < 50 && !SIM.isSick(r, b.now));
+    for (const q of vuxna) q.rest = 1;
+    let prov = 0, vilar = 0, maste = 0;
+    kor(b, 10, () => { for (const q of vuxna) { if (!SIM.alive(q)) continue; prov++; const t = tk(q); if (t?.act === 'vila' || t?.act === 'sova') vilar++; if (t?.why === 'Är trött') maste++; } });
+    return [
+      ['ingen egen rad för de gamla som sover av en slump', !egen],
+      [`den gamla tröttnar fortare (${gammal.toFixed(2)} gånger mot ${ung.toFixed(2)})`, gammal > 1.5 && ung === 1],
+      [`utvilad på natten sover den gamla inte (${utvilad} av 20), trött gör hen det (${trott})`, utvilad === 0 && /vila|sova/.test(trott.split(':')[0])],
+      [`lusten att vila på dagen växer med tröttheten (${dag.map(x => x.toFixed(2)).join(', ')}) och är mindre än på kvällen (${dag[2].toFixed(2)} mot ${kvall.toFixed(2)})`, dag[0] === 0 && dag[1] > 0 && dag[2] > dag[1] && dag[3] > dag[2] && kvall > dag[2]],
+      [`en arbetsdag (kl. 7–17): de friska vuxna vilar ${Math.round(vilar / prov * 100)} % av tiden, och tvingas vila av tröttheten ${maste} gånger`, prov > 0 && vilar / prov < 0.3 && maste === 0],
+    ];
+  },
+};

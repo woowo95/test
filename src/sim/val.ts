@@ -118,7 +118,6 @@ export const VAL = balans('val', {
   fryserAndel: 0.25, // kylan är en fara när fler än så här stor andel fryser (kallt)
   // matens dygn räknas sedan steg 2.12.4 av vad byn äter (foodDays): ungefär 0,45 av de gamla dygnen, och talen i dygn skalades lika mycket
   svaltDygn: 0.25, // hungern är en fara när maten räcker mindre än så här många dygn
-  gammalSover: 0.6, // chansen att den som är över sovGammal sover på natten
   // dagen: byns behov mot egen lust
   baraTim: 3, // hur länge man bär in det som ligger ute (timmar)
   // Rädda (steg 6.1.15): chansen att bära in, slakta, rensa, torka och grilla är raddaTim delat med timmarna tills det första
@@ -137,7 +136,7 @@ export const VAL = balans('val', {
   tillJakt: 2, tillResa: 1.8, tillBon: 1.5, tillRitual: 1.2, tillHandla: 1, tillSport: 0.8, tillLyssna: 0.7, tillPassa: 0.5,
   // Grundbehov (nivå 4, steg 13.8.10): vikten gånger hur långt under gränsen man är (nodUnder). Gränsen är högre för den lata
   // (latToa, latVarme, TORST.lat, latVila), så den lata tar grundbehoven tidigare och väljer dem före de andra
-  grundKyla: 1.4, grundTorst: 1.3, grundKravla: 1.2, grundToa: 1.1, grundMat: 1, grundSkadad: 0.9, grundVila: 0.8, grundSova: 0.6, grundUtbrott: 0.5,
+  grundKyla: 1.4, grundTorst: 1.3, grundKravla: 1.2, grundToa: 1.1, grundMat: 1, grundSkadad: 0.9, grundVila: 0.8, grundUtbrott: 0.5,
   // bordet (steg 13.8.10): den hungriga väljer en ledig plats vid ett bord före maten där den ligger om platsen är närmare än
   // bordNara rutor; ju närmare, desto mer (upp till bordLust mer). Bordet gör inte att man äter tidigare
   bordLust: 0.3, bordNara: 25,
@@ -180,7 +179,8 @@ export const VAL = balans('val', {
   prospektMin: 0.05, prospektMax: 1.3, // hur mycket platserna ger just nu räknas mellan dessa
   // fritid (leisure): vikter (ju större desto oftare), u = hur akut byn behöver arbete
   vilaVikt: 2, vilaLat: 0.6, // vila: per saknad vila, plus för den lata ...
-  vilaDag: 0.3, // ... men på dagen bara när vilan är under detta (steg 2.3.10): annars vilar man ut när det är mörkt
+  vilaDag: 0.7, // ... och på dagen växer lusten lite i taget när vilan är under detta (steg 13.8.11): vikten är VilaVikt gånger (1 − vilan / VilaDag),
+  // mindre än på kvällen (nattVilaVikt), så att den trötta vilar en stund på dagen innan hen är utmattad
   nattVila: 0.6, nattVilaVikt: 6, // på natten vill den vars vila är under Vila vila ut: vikten är VilaVikt gånger (1 − vilan / Vila) (steg 2.3.10, 12.1.189)
   hantSkill: 10, hantFlit: 20, // handarbete: färdigheten delad med Skill plus flit-anlaget delat med Flit
   hantLugn: 0.25, hantLugnVikt: 1.5, hantAkutVikt: 0.6, // ... gånger Lugn när u är under Lugn (byn har det gott ställt), annars Akut
@@ -788,7 +788,6 @@ export const ARBETEN: readonly Arbete[] = [
   // tillsynen vid en kolmila (steg 12.2.2, brann.ts): ett Tillfälle när tiden för tillsynen är inne
   { id: 'passa', niva: 3, poang: ({ s, p }) => { const b = passaVal(s, p); return b ? VAL.tillPassa * passaVikt(s, b.b, b.n) : 0; }, prova: ({ s, p, v }) => { const b = passaVal(s, p); if (!b) return false; projektVal(v, passaUppgift(b), 'Det är dags att se till kolmilan'); return true; } },
   // 4 Grundbehov (toa, värme, vatten, vila, mat), vägda med poäng (steg 13.8.10). En lat person tillgodoser dem tidigare än en flitig
-  { id: 'gammalSover', niva: 4, nar: 'natt', poang: ({ a }) => a > ALDER.sovGammal ? VAL.grundSova : 0, prova: ({ s, p, v, a }) => a > ALDER.sovGammal && rnd(s, 'val', p) < VAL.gammalSover && set(v, 'sova', 'Är gammal och sover på natten') },
   { id: 'toa', niva: 4, poang: ({ p, lazy }) => grund(VAL.grundToa, p.toa, KROPP.toaBehov + KROPP.latToa * lazy), prova: ({ p, v, lazy }) => p.toa < KROPP.toaBehov + KROPP.latToa * lazy && set(v, 'toa', 'Behöver gå på toa') },
   { id: 'fryser', niva: 4, poang: ({ p, lazy }) => grund(VAL.grundKyla, p.warm, KROPP.kallt + KROPP.latVarme * lazy), prova: c => fryser(c) && varmeRad(c, 'Fryser') }, // den som fryser värmer sig (varmeRad)
   { id: 'torstig', niva: 4, poang: ({ p, lazy }) => grund(VAL.grundTorst, p.torst, TORST.torstig + TORST.lat * lazy), prova: ({ s, p, v, lazy }) => torstig(p, lazy) && dricka(s, p, v) },
@@ -1490,7 +1489,7 @@ export const FRITID: readonly FritidRad[] = [
   { id: 'vila', kraver: 'inget', ger: 'vila', drar: 'tröttheten och latheten', akt: ['vila'],
     // på kvällen vill den trötta vila ut (steg 2.3.10); den skadade och sjuka vilar hellre (steg 12.1.46)
     vikt: c => c.natt ? (vuxen(c) && c.p.rest < VAL.nattVila ? VAL.nattVilaVikt * (1 - c.p.rest / VAL.nattVila) : 0)
-      : (c.p.rest < VAL.vilaDag ? (1 - c.p.rest) * VAL.vilaVikt : 0) + c.lazy * VAL.vilaLat + (1 - kroppLust(c.p, c.s.now)) * VAL.vilaVikt,
+      : Math.max(0, 1 - c.p.rest / VAL.vilaDag) * VAL.vilaVikt + c.lazy * VAL.vilaLat + (1 - kroppLust(c.p, c.s.now)) * VAL.vilaVikt,
     gor: c => c.natt ? set(c.v, 'vila', 'Mörkt och trött efter dagen, vilar ut vid elden') : paus(c.v, c.lazy > 0.5 ? 'Har det bra och tar det lugnt' : 'Tar en paus') },
   { id: 'paus', nar: 'natt', kraver: 'inget', ger: 'vila', drar: 'inget annat lockar', akt: ['vila'],
     vikt: c => vuxen(c) ? VAL.nattPaus : 0,

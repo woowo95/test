@@ -57,6 +57,7 @@ export const KROPP = balans('kropp', {
   restVila: 0.19, // vila per timme när man vilar (0,09 före steg 11.1.72: sömnen i en bädd tar nu ungefär en åttondel av dygnet)
   restArbete: -0.04, // ... när man arbetar hårt (-0,06 före steg 2.3.10)
   restVaken: -0.02, // ... annars (-0,03 före steg 2.3.10)
+  gammalTrott: 1, gammalSpann: 20, // vilan sjunker så här mycket fortare för den gamla: noll vid ALDER.trottGammal och hela efter gammalSpann år till (steg 13.8.11)
   restGolv: 0.063, // extra vila per timme när man sover inomhus på golv (höjda i samma förhållande som restVila, steg 11.1.72)
   restTak: 0.042, // ... på bar mark under tak
   restBadd: 0.105, // ... i en halmbädd (steg 2.2.5)
@@ -111,7 +112,7 @@ export const ALDER = balans('alder', {
   alderdom: 55, // över detta räknas döden som ålderdom, annars som olycka
   gammal: 60, // över detta orkar man mindre i arbetet (EKONOMI.gammalArbete)
   gangGammal: 65, // över detta går man långsammare
-  sovGammal: 68, // över detta sover man ofta på natten
+  trottGammal: 55, // över detta tröttnar man fortare (KROPP.gammalTrott, steg 13.8.11), och sover när man är trött som alla andra
   hogAlder: 70, // den som dör så här gammal eller äldre minns man för det (eftermälet)
   // åldrandet: egenskapen backar från Fran år, och tappar hela sin kraft på Spann år till, men aldrig under Golv
   potFodd: 0.06, // en nyfödd har så här stor del av sin potential

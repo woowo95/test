@@ -288,8 +288,8 @@ function behovHtml(p: Person) {
     ...r.svalnar > 0 ? [{ namn: 'Svalnar', v: -r.svalnar }] : [],
   ];
   const tak = viloTak(s, p, v.rum);
-  const vs = viloSlag(p), trott = vilaTim(p, vs) - KROPP[vs];
-  const vila: Orsak[] = [{ namn: VILA[vs], v: KROPP[vs] }, ...trott ? [{ namn: 'Trött av brist på energi', v: trott }] : [], ...tak ? [{ namn: tak === 'restBadd' ? 'Sover i en halmbädd' : tak === 'restGolv' ? 'Sover på golvet i ett hus' : 'Sover under tak', v: KROPP[tak] * takEffekt(s, p, tak) }] : [],
+  const vs = viloSlag(p), trott = vilaTim(p, vs) - KROPP[vs], gammal = vilaTim(p, vs, ageOf(p, now)) - vilaTim(p, vs); // (steg 13.8.11)
+  const vila: Orsak[] = [{ namn: VILA[vs], v: KROPP[vs] }, ...trott ? [{ namn: 'Trött av brist på energi', v: trott }] : [], ...gammal ? [{ namn: 'Tröttnar fortare med åldern', v: gammal }] : [], ...tak ? [{ namn: tak === 'restBadd' ? 'Sover i en halmbädd' : tak === 'restGolv' ? 'Sover på golvet i ett hus' : 'Sover under tak', v: KROPP[tak] * takEffekt(s, p, tak) }] : [],
     ...v.heat > KROPP.eldNara ? [{ namn: 'Slappnar av vid elden', v: fh.comfort * v.heat }] : [],
     ...p.warm > KROPP.extremVarm ? [{ namn: 'Slut av hettan', v: -KROPP.varmTrott * (p.warm - 1) }] : []]; // samma delar som needsStep i steg.ts
   const hl = halsaLage(p, now);
