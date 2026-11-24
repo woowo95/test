@@ -2873,7 +2873,7 @@ SCENARIER.rovardjur = {
     const f = s.rovare!, ids = new Set(f.folk);
     step(s, 20);
     const r0 = SIM.rovarna(s, f)[0];
-    s.bjornUndan = { fran: s.now, till: s.now + 3 * HOUR, x0: r0.x! + 6, y0: r0.y!, x1: r0.x! + 6, y1: r0.y! };
+    s.bjornUndan = { fran: s.now - 2 * HOUR, till: s.now + HOUR, x0: r0.x! + 6, y0: r0.y!, x1: r0.x! + 6, y1: r0.y! };
     let strid = false, med = 0, lagen = new Set<string>();
     for (let i = 0; i < 300; i++) {
       step(s, 1);

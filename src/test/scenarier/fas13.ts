@@ -11,6 +11,8 @@ import { allaGillar, kvall, upptrad } from './kultur';
 import { BIT, rakna, stallMark } from '../../ui/mark';
 import { delRad } from '../../ui/hjalp';
 import { PIX } from '../../ikoner';
+import { gaster } from '../../ui/gaster';
+import { SKYLT, synligaSkyltar, type Skylt } from '../../ui/namnskyltar';
 
 // regeln för stationerna (steg 13.1.1): varje recept vid en station med kvalitet är "bara här" eller "fortare och bättre här"
 SCENARIER.stationsregel = {
@@ -2453,6 +2455,7 @@ SCENARIER.stridlogg = {
       const z = SIM.zoneOf(s)!, f = rovarGang(s, 4, { x: Math.min(SIM.W - 3, z.x + z.w + 14), y: z.y + z.h / 2 }, { anfaller: true }); f.sedd = s.now; f.anfallT = s.now;
       for (const p of SIM.living(s)) { p.pot.mod = 16; p.larm = { rovare: { t: s.now, vad: 'rovare', storlek: 4, led: 0, varnat: 1 } }; p.task = undefined; }
       for (let i = 0; i < 4; i++) SIM.newTing(s, 'fiskespjut', 1, SIM.BYN);
+      if (seed >= 9) { for (const p of SIM.living(s)) p.pot.styrka = p.pot.uthallighet = 20; for (const q of SIM.rovarna(s, f)) { q.pot.styrka = q.pot.uthallighet = q.pot.smidighet = 3; q.pot.mod = 20; } } // rövarna faller, så att det skrivs rader om dem
       const namn = SIM.rovarna(s, f).map(r => r.name), sedda = new Set<object>(s.log);
       korTills(s, () => !s.rovare && !SIM.kartStrider(s).length, 1800, () => {
         for (const r of s.log) if (!sedda.has(r)) { sedda.add(r); for (const n of namn) if (new RegExp(`(^|[^A-Za-zÅÄÖåäö])${n}s?([^A-Za-zåäö]|$)`).test(r.text)) { rader++; if (!r.text.includes(`Rövaren ${n}`) && !r.text.includes(`Fången ${n}`)) { utan++; if (fel.length < 5) fel.push(r.text); } } }
@@ -2476,6 +2479,67 @@ SCENARIER.stridlogg = {
       [`rövarna har sin titel i alla rader (${rader} rader, ${utan} utan: ${fel.join(' | ')})`, rader >= 1 && utan === 0 && namnfel === 0],
       [`en strid utan slag skrivs inte (${skrivna} av ${tomma} skrevs)`, tomma === 1 && skrivna === 0],
       [`en strid med slag skrivs (${slagna})`, slagna > 0],
+    ];
+  },
+};
+
+// platserna och rörelsen i och runt en strid (stegen B.19 och B.20), mätta varje stridssteg
+export function matStrid(n = 3, seeds = [6, 7, 8, 9]) {
+  const m = { sek: 0, par: 0, nara: 0, tatt: 0, tattMax: 0, langt: 0, stridande: 0, mal: 0, steg: 0, vand: 0, ute: 0, uteVand: 0, uteMal: 0 }, h: Record<string, number> = {};
+  for (const seed of seeds) {
+    const s = SIM.createState(seed, START); klockan(s, 11); for (const c of SIM.klanerOf(s)) c.inst = -60;
+    const z = SIM.zoneOf(s)!, f = rovarGang(s, n, { x: Math.min(SIM.W - 3, z.x + z.w + 14), y: z.y + z.h / 2 }, { anfaller: true }); f.sedd = s.now; f.anfallT = s.now;
+    for (const p of SIM.living(s)) { p.pot.mod = 16; p.larm = { rovare: { t: s.now, vad: 'rovare', storlek: n, led: 0, varnat: 1 } }; p.task = undefined; }
+    for (let i = 0; i < 4; i++) SIM.newTing(s, 'fiskespjut', 1, SIM.BYN);
+    const fore = new Map<number, { x: number; y: number; dx: number; dy: number; mal?: string }>();
+    korTills(s, () => !s.rovare && !SIM.kartStrider(s).length, 700, () => {
+      const iSt = new Map<number, SIM.Kampe>();
+      for (const g of SIM.kartStrider(s)) {
+        const k = g.st.kampar.filter(q => q.lage === 'strid' && !g.fri?.includes(q.pid ?? -1)); for (const q of k) if (q.pid !== undefined) iSt.set(q.pid, q);
+        m.sek++;
+        for (const a of k) { let nn = 0; for (const b of k) if (a !== b) { const d = Math.hypot(a.x - b.x, a.y - b.y); if (d <= 2) nn++; if (a.id < b.id) { m.par++; if (d < 0.75) m.nara++; } } m.tatt = Math.max(m.tatt, nn + 1); if (nn + 1 >= 7) m.tattMax++;
+          const o = g.st.kampar.find(q => q.id === a.mal); if (o && !a.hjalp && !a.backar && !a.ledare && !["fiskespjut","flintspjut","jarnspjut","bage","slunga","sten"].includes(a.vapen) && g.st.t > 15) { m.stridande++; if (Math.hypot(a.x - o.x, a.y - o.y) > 4) m.langt++; } }
+      }
+      for (const p of s.people.filter(q => q.died === undefined && (iSt.has(q.id) || q.gast))) {
+        const k = iSt.get(p.id), b = fore.get(p.id), mal = k ? 'k' + k.mal : `${p.task?.act}:${Math.round(p.task?.tx ?? 0)},${Math.round(p.task?.ty ?? 0)}`;
+        const dx = b ? p.x - b.x : 0, dy = b ? p.y - b.y : 0, l = Math.hypot(dx, dy);
+        if (b && l > 0.02) { const L = Math.hypot(b.dx, b.dy), om = L > 0.02 && (dx * b.dx + dy * b.dy) < -0.5 * l * L; if (k) { m.steg++; if (om) { m.vand++; const o = k.hjalp ? 'hjalp' : k.backar ? 'backar' : k.skott ? 'kast' : k.ledare ? 'ledare' : 'annan'; h[o] = (h[o] ?? 0) + 1; } } else { m.ute++; if (om) { m.uteVand++; const o = 'ute:' + p.gast?.sort + ':' + p.gast?.gor + (b.mal !== mal ? ':nyttmal' : ''); h[o] = (h[o] ?? 0) + 1; } } }
+        if (b && b.mal !== mal) { if (k) m.mal++; else m.uteMal++; }
+        fore.set(p.id, { x: p.x, y: p.y, dx: l > 0.02 ? dx : b?.dx ?? 0, dy: l > 0.02 ? dy : b?.dy ?? 0, mal });
+      }
+    });
+  }
+  return { ...m, h };
+}
+
+SCENARIER.stridplats = {
+  text: 'Steg B.19: kämparna står inte på varandra, den som slåss står vid sin motståndare, namnen på dem som slåss syns utan att täcka varandra, och rövaren i bilden är personen som slåss (med sitt vapen i handen)',
+  kor: () => {
+    const m = matStrid(5, [7, 8]);
+    // åtta namn på fyra rutor: alla syns, och inga två täcker varandra
+    const tat: Skylt[] = Array.from({ length: 8 }, (_, i) => ({ id: i + 1, x: 100 + (i % 4) * 14, y: 100 + (i >> 2) * 15, w: 34, forst: 2, flytt: SKYLT.flytt }));
+    const syns = synligaSkyltar(tat, 3), r = tat.filter(k => syns.has(k.id));
+    const tacker = r.flatMap((a, i) => r.slice(i + 1).filter(b => Math.abs(a.x - b.x) < 34 && Math.abs(a.y - b.y) < SKYLT.hojd)).length;
+    const s = SIM.createState(7, START); klockan(s, 11); setByn(s); utanWebblasare();
+    const z = SIM.zoneOf(s)!, f = rovarGang(s, 3, { x: z.x + z.w / 2 + 6, y: z.y + z.h / 2 }, { anfaller: true });
+    const ids = SIM.rovarna(s, f).map(q => q.id), iBild = gaster(s.now).map(g => g.id);
+    return [
+      [`kämparna står inte på varandra (${m.nara} av ${m.par} par närmare än 0,75 ruta)`, m.par > 100 && m.nara <= m.par * 0.002],
+      [`den som slåss står vid sin motståndare (${m.langt} av ${m.stridande} gånger längre bort än fyra rutor)`, m.stridande > 100 && m.langt === 0],
+      [`alla åtta namnen syns och inga täcker varandra (${syns.size}, ${tacker})`, syns.size === 8 && tacker === 0],
+      ['rövaren i bilden är personen i striden', ids.length === 3 && ids.every(id => iBild.includes(id))],
+    ];
+  },
+};
+
+SCENARIER.stridrorelse = {
+  text: 'Steg B.20: rövarna rycker inte bakåt när de går utanför striden, och den som slåss byter inte mål varje sekund och går inte av och an',
+  kor: () => {
+    const m = matStrid(5, [6, 9]);
+    return [
+      [`rövarna utanför striden vänder sällan (${m.uteVand} av ${m.ute} steg)`, m.ute > 200 && m.uteVand <= m.ute * 0.02],
+      [`den som slåss går inte av och an (${m.vand} av ${m.steg} steg)`, m.steg > 30 && m.vand <= m.steg * 0.1],
+      [`målet byts sällan (${m.mal} gånger på ${m.sek} steg i striden)`, m.sek > 100 && m.mal <= m.sek * 0.08],
     ];
   },
 };

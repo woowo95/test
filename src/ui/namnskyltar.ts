@@ -29,6 +29,10 @@ export const SKYLT = {
   minSkarm: 9, // namnen syns bara när texten blir minst så här många punkter hög på skärmen; annars är kartan för utzoomad
   luft: 1, // så många punkter i världen mellan två namn
   ikon: 8, // rollsymbolens storlek i världens punkter: symbolerna är 8 × 8 och ritas i hel skala
+  // platserna ett namn på den som slåss får stå på, i tur och ordning: åt sidan (-1 vänster, 1 höger om figuren, 0 mitt för) och
+  // hur långt från platsen under fötterna (världens punkter): under, över huvudet, bredvid figuren och sedan snett bredvid
+  flytt: [[0, 0], [0, -29], [-1, -8], [1, -8], [-1, -18], [1, -18], [-1, 2], [1, 2], [-1, -26], [1, -26], [0, 8], [0, -37]] as [number, number][],
+  figur: [5, 18], // en figur som slåss: halva bredden och höjden, som namnen helst inte täcker
   avstand: 2, // så många punkter i världen mellan figuren och namnet, lika under fötterna som ovanför huvudet (steg 13.10.5)
 };
 // var namnet står: nederkanten på namnet under figuren (fot = figurens nedersta punkt), och nederkanten på namnet ovanför den
@@ -37,18 +41,26 @@ export const skyltUnder = (fot: number) => fot + SKYLT.avstand + SKYLT.hojd;
 export const skyltOver = (topp: number) => topp - SKYLT.avstand;
 
 // en skylt att placera: mitten av nederkanten (x, y) i världens punkter, bredden på texten och om den har en symbol. forst = går
-// före de andra (den valda och den under musen har sin stora skylt; därefter rollerna)
-export type Skylt = { id: number; x: number; y: number; w: number; ikon?: string; forst?: number };
+// före de andra (den valda och den under musen har sin stora skylt; därefter rollerna). flytt = platserna namnet får stå på (SKYLT.flytt), för dem som slåss (steg B.19)
+export type Skylt = { id: number; x: number; y: number; w: number; ikon?: string; forst?: number; flytt?: [number, number][] };
 // vilka skyltar som syns: inga när texten blir för liten på skärmen (skala = världens punkter till skärmens), annars i tur och
 // ordning (forst, sedan id, så att samma namn står kvar från bild till bild) de som inte täcker en skylt som redan står
 export function synligaSkyltar(skyltar: Skylt[], skala: number, upptaget: { x: number; y: number; w: number; h: number }[] = []): Set<number> {
   const ut = new Set<number>();
   if (SKYLT.hojd * skala < SKYLT.minSkarm) return ut;
-  const tagna = [...upptaget], L = SKYLT.luft;
+  const tagna = [...upptaget], L = SKYLT.luft, [fb, fh] = SKYLT.figur;
+  // figurerna som slåss, där de står (innan namnen flyttas)
+  const figurer = skyltar.filter(k => k.flytt).map(k => ({ id: k.id, x: k.x - fb, y: k.y - SKYLT.hojd - SKYLT.avstand - fh, w: 2 * fb, h: fh }));
   for (const k of [...skyltar].sort((a, b) => (b.forst ?? 0) - (a.forst ?? 0) || a.id - b.id)) {
-    const w = k.w + (k.ikon ? SKYLT.ikon + 1 : 0), r = { x: k.x - w / 2, y: k.y - SKYLT.hojd, w, h: SKYLT.hojd };
-    if (tagna.some(o => r.x < o.x + o.w + L && o.x < r.x + r.w + L && r.y < o.y + o.h + L && o.y < r.y + r.h + L)) continue;
-    tagna.push(r); ut.add(k.id);
+    const w = k.w + (k.ikon ? SKYLT.ikon + 1 : 0), ram = ([sida, dy]: [number, number]) => ({ x: k.x + sida * (w / 2 + fb + 1) - w / 2, y: k.y + dy - SKYLT.hojd, w, h: SKYLT.hojd });
+    type Ram = ReturnType<typeof ram>;
+    const krock = (r: Ram, o: Ram) => r.x < o.x + o.w + L && o.x < r.x + r.w + L && r.y < o.y + o.h + L && o.y < r.y + r.h + L;
+    const fria = (k.flytt ?? [[0, 0] as [number, number]]).map(ram).filter(r => !tagna.some(o => krock(r, o)));
+    if (!fria.length) continue;
+    // den första lediga platsen som täcker minst av figurerna
+    const tackt = (r: Ram) => figurer.reduce((a, o) => a + Math.max(0, Math.min(r.x + r.w, o.x + o.w) - Math.max(r.x, o.x)) * Math.max(0, Math.min(r.y + r.h, o.y + o.h) - Math.max(r.y, o.y)), 0);
+    const r = k.flytt ? fria.reduce((a, b) => (tackt(b) < tackt(a) ? b : a)) : fria[0];
+    tagna.push(r); ut.add(k.id); k.x = r.x + w / 2; k.y = r.y + SKYLT.hojd;
   }
   return ut;
 }
