@@ -80,6 +80,7 @@ import { PLATS } from './plats';
 import { chance, clamp, hash3, r3, rnd } from './slump';
 import { VAR, ageIndex, hourOf, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
+import { kunnaVikt } from './kunna';
 import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, kartAv, Historik, simulera, T, inMap, GRANNAR4 } from './typer';
 import { FOREST, findPath, wear } from './vag';
 import { barKropp, gangVakt, kroppFart, rutFart, smidig, snoFart } from './gang';
@@ -309,7 +310,7 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
   const ag: Record<string, number> = {};
   for (const [q, n] of Object.entries(av)) addDel(ag, takeMaterial(s, p, q, n), 1);
   if (kar && (d.sjud || d.syr)) { kar.kok = { r: d.ger, n: d.n, kvar: d.syr ? SYRA.dygn * DAY : d.sjud! * MIN, ...(d.syr ? { syr: 1 as const } : {}), ag: Object.keys(ag).length ? ag : { [p.id]: 1 }, ...(ar_vatska(d.ger) ? { vatska: 1 as const } : {}), q: rullaKvalitet(s, p, kvVid(s, p, d.act)) }; count(s, 'sjuder_' + d.ger); } // osten blir en sak i förrådet när den sjudit (steg 12.4.7) // buljongen sjuder i krukan på elden (stepKok)
-  else if (kar && ar_vatska(d.ger)) { fyllVatska(s, d.ger, d.n, kar)!.inne!.q = rullaKvalitet(s, p, kvVid(s, p, d.act), ACTS[d.act]?.fardighet); } else put(s, d.ger, d.n, { [p.id]: d.n }); // tjäran, salvan, limmet och teet i sin behållare, med kvalitet (steg 9.5.8)
+  else if (kar && ar_vatska(d.ger)) { fyllVatska(s, d.ger, d.n, kar)!.inne!.q = rullaKvalitet(s, p, kvVid(s, p, d.act), ACTS[d.act]?.fardighet, kunnaVikt(d.act, d.ger)); } else put(s, d.ger, d.n, { [p.id]: d.n }); // tjäran, salvan, limmet och teet i sin behållare, med kvalitet (steg 9.5.8)
   if (forstaGang(s, 'gjort_' + d.ger)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }; }
 MEDAN.vittja = (s, p, t) => { const m = mjardarOf(s).find(q => q.id === t.ref); if (m) vittja(s, p, m); t.until = s.now; };

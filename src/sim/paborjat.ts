@@ -10,6 +10,7 @@ import { isForest, tileOf } from './mark';
 import { GORS, borjaTool, minOf, nalFart, slitNal, taNal, toolDone } from './redskap';
 import { fallTid } from './skog';
 import { fartVid, startStation, tillbehorDef } from './stationer';
+import { kunnaFart } from './kunna';
 import { dorrDef } from './byggnad';
 import { DRICKA_ACTS, TORST, drickMin, startSmalta } from './torst';
 import { halGjort, halMin, halVakt } from './is';
@@ -51,11 +52,11 @@ function startWork0(s: State, p: Person, tk: Task) {
   if (tk.act === 'odla') { startOdla(s, p, tk); return; } // på fältet (odling.ts)
   if (tk.act === 'ljus') { tk.until = s.now + LJUS.min * MIN; return; } // ett talgljus på bordet (ljus.ts)
   if (tk.act === 'uppsatt') { tk.until = s.now + UPPSATT.min * MIN; return; } // en uppsatt fackla (ljus.ts)
-  if (tk.act === 'dorr') { tk.until = s.now + (dorrDef(tk.tool)?.min ?? 0) * MIN; return; } // en dörr i en öppning (bygg.ts)
+  if (tk.act === 'dorr') { tk.until = s.now + (dorrDef(tk.tool)?.min ?? 0) * MIN / kunnaFart(s, p, tk.act, tk.tool); return; } // en dörr i en öppning (bygg.ts)
   if (DRICKA_ACTS.has(tk.act)) { tk.until = s.now + drickMin(s, p, tk.act) * MIN; if (tk.act === 'dricka') halGjort(s, p, tk.tx, tk.ty); startSmalta(s, p, tk); return; } // att dricka (torst.ts); snön i en kruka vid elden (steg 10.2.50)
   if (tk.act === 'varda') { tk.until = s.now + HALSA.vardMin * MIN; return; } // vården (halsa.ts)
   if (tk.act === 'vatten') { const hm = halMin(s, p, tk.tx, tk.ty); tk.until = s.now + TORST.fyllSek * SEC + hm * MIN; halVakt.lyss?.(tk, hm); halGjort(s, p, tk.tx, tk.ty); return; } // kärlet fylls (torst.ts), med hålet i isen (is.ts)
-  if (tk.act === 'tillbehor') { tk.until = s.now + (tillbehorDef(tk.tool ?? '')?.min ?? 0) * MIN; return; } // ett tillbehör till en möbel (stationer.ts)
+  if (tk.act === 'tillbehor') { tk.until = s.now + (tillbehorDef(tk.tool ?? '')?.min ?? 0) * MIN / kunnaFart(s, p, tk.act, tk.tool); return; } // ett tillbehör till en möbel (stationer.ts)
   if (tk.act === 'falla') { const i = tileOf(tk.tx, tk.ty); tk.until = s.now + Math.max(0, fallTid(s, i) / redskapTal('falla', tk.tool).fart - (s.halvfallt?.[i] ?? 0)); return; } // järnyxan fäller fortare (steg 12.2.6)
   // framme: arbetet tar sin tid från framkomsten, inte det som blev över av tiden för vägen dit; den som redan stod där står inte
   // och väntar (steg 9.2.130)
@@ -70,14 +71,14 @@ function startWork0(s: State, p: Person, tk: Task) {
     t.halv = { gor: k, av: takeRecipe(s, p, k), kvar: minOf(k) * MIN, ag: p.id };
   } else count(s, 'fortsatt'); // byns statistik: arbete som avbröts och togs upp igen
   taNal(s, p, tk.act); // järnnålen tas i handen (steg 12.1.239)
-  tk.ref = t.id; tk.until = s.now + t.halv!.kvar / fartVid(s, p, tk.act) / nalFart(s, p, tk.act); // vid slöjdbänken lite fortare (stationer.ts), med järnnålen tre gånger så fort (steg 12.5.3)
+  tk.ref = t.id; tk.until = s.now + t.halv!.kvar / fartVid(s, p, tk.act) / nalFart(s, p, tk.act) / kunnaFart(s, p, tk.act, t.halv!.gor); // och skickligheten (steg 13.9.8) // vid slöjdbänken lite fortare (stationer.ts), med järnnålen tre gånger så fort (steg 12.5.3)
 }
 // medan man arbetar: arbetet går framåt och det påbörjade slits inte
 export function workHalf(s: State, p: Person, tk: Task, dtSec: number) {
   if (tk.act === 'falla') { const i = tileOf(tk.tx, tk.ty), h = (s.halvfallt ??= {}); h[i] = (h[i] ?? 0) + dtSec * SEC; return; }
   const t = halvById(s, tk.ref);
   if (!t) return;
-  const f = fartVid(s, p, tk.act) * nalFart(s, p, tk.act);
+  const f = fartVid(s, p, tk.act) * nalFart(s, p, tk.act) * kunnaFart(s, p, tk.act, t.halv!.gor); // skickligheten (steg 13.9.8)
   t.halv!.kvar = Math.max(0, t.halv!.kvar - dtSec * SEC * f); t.c = 1;
   tk.until = s.now + t.halv!.kvar / f; // sluttiden räknas ur farten just nu (steg 12.1.239)
 }

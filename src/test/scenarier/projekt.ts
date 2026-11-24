@@ -11,7 +11,8 @@ function by(seed: number) {
   const s = createState(seed, START);
   s.now = new Date(s.now).setHours(10, 0, 0, 0); Object.assign(s.fire, { lit: true, fuel: 3, ring: true });
   for (const q of s.people) q.tek = { ...q.tek, kniv: 1, korg: 1, rep: 1, yxa: 1, fiskespjut: 1 };
-  setItems(s, { flinta: 6, torrgras: 30, grenar: 30 }); setAmount(s, 'ved', 300);
+  setItems(s, { flinta: 30, torrgras: 30, grenar: 30, sten: 30 }); setAmount(s, 'ved', 300);
+  for (const k of SIM.FROSORTER) setAmount(s, k, 50); // stenarna, flintan och fröna i förrådet (steg 13.8.6): annars tar raderna leta och fron platsen före projekten
   return s;
 }
 const vuxna = (s: State) => living(s).filter(q => ageOf(q, s.now) >= ALDER.vuxen);
@@ -23,8 +24,8 @@ function valjer(s: State, n: number) {
     const p = vuxna(s)[i % vuxna(s).length];
     Object.assign(p, { toa: 1, torst: 1, warm: 1, rest: 1, health: 1, hunger: 1, social: 1, task: undefined });
     chooseTask(s, p); if (p.task && acts.has(p.task.act) && p.task.why?.startsWith('Byn saknar')) proj++;
-    p.task = undefined;
   }
+  for (const q of vuxna(s)) q.task = undefined; // valen står kvar under varven, så att raderna får sina arbetare (steg 13.8.6)
   return proj;
 }
 

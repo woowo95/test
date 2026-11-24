@@ -1874,3 +1874,27 @@ SCENARIER.hantverksfardighet = {
     ];
   },
 };
+
+SCENARIER.kunnande = {
+  text: 'Steg 13.9.8: skickligheten ger fart och kvalitet. Hur mycket skickligheten betyder följer sakens nivå (registret KUNNA): den skicklige smeden smider mycket fortare och bättre än nybörjaren, men vid korgen är skillnaden liten. Projekten räknas i den egna tiden, så den skicklige ser mer värde i det hen är bra på. Mängden i receptet ändras inte.',
+  kor: () => {
+    const { kunnaFart, kunnaVikt, rullaKvalitet, PROJEKT, PROJEKT_LIST, personVarde } = SIM;
+    const s = SIM.createState(13, START); klockan(s, 10); tandEld(s);
+    const smed = nyInvanare(s, 'm', 35), ny = nyInvanare(s, 'm', 35);
+    for (const k of SIM.HANT_SKILLS) { smed.skill[k] = 15; ny.skill[k] = 2; }
+    smed.skill.hantverk = 15; ny.skill.hantverk = 2;
+    const fs = kunnaFart(s, smed, 'smida'), fn = kunnaFart(s, ny, 'smida');
+    const ks = kunnaFart(s, smed, 'korg'), kn = kunnaFart(s, ny, 'korg');
+    const q = (p: SIM.Person) => { let n = 0; for (let i = 0; i < 200; i++) n += rullaKvalitet(s, p, 0, 'smide', kunnaVikt('smida')); return n / 200; };
+    const qs = q(smed), qn = q(ny);
+    // ett projekt där skickligheten betyder mycket: det skickliga ser mer värde per timme
+    const svar = PROJEKT_LIST.find(k => { const a = PROJEKT[k].arbete; return a && kunnaVikt(a.act, a.k) >= 0.5 && PROJEKT[k].kostnad(s) > a.min / 60 * SIM.ARBETE; });
+    const vs = svar ? personVarde(s, svar, [smed], 1, smed) : 0, vn = svar ? personVarde(s, svar, [ny], 1, ny) : 0;
+    return [
+      [`smeden smider fortare än nybörjaren (${fs.toFixed(2)} mot ${fn.toFixed(2)} gånger receptets fart)`, fs > 1.5 && fn < 0.85],
+      [`vid korgen är skillnaden liten (${ks.toFixed(2)} mot ${kn.toFixed(2)})`, ks - kn < 0.15],
+      [`smeden gör bättre saker (kvalitet ${qs.toFixed(2)} mot ${qn.toFixed(2)})`, qs > qn + 0.5],
+      [`projektet ${svar ?? '(inget)'} är mer värt för den skicklige (${vs.toExponential(2)} mot ${vn.toExponential(2)})`, !!svar && vs > vn],
+    ];
+  },
+};

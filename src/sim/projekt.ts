@@ -5,6 +5,7 @@ import { eldKan } from './stationseld';
 import { LERA, leraBrist, leraPlats } from './lera';
 import { BYGGSTEN, bergPlats } from './byggsten';
 import { Act, Person, State } from './typer';
+import { kunnaFart } from './kunna';
 import { familjOf } from './folk';
 import { omtanke } from './omtanke';
 import { clamp } from './slump';
@@ -15,7 +16,7 @@ import { KLADER, NAKEN_PLATS, PLAGG, PLAGG_LIST, plaggVarmer } from './klader';
 import { coldOf, temperature } from './vader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
-import { DJURARTER, GORS, ersattAv, freeOfKinds, harAv, makeTask, receptTill, takAv, wantsRope, wantsTool } from './redskap';
+import { DJURARTER, GORS, ersattAv, freeOfKinds, harAv, makeTask, minOf, receptTill, takAv, wantsRope, wantsTool } from './redskap';
 import { moblerKrok, STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, receptStation, receptTillbehor, stationSpot, medPlatsMinne, villKista, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './bygg';
@@ -121,6 +122,8 @@ export interface ProjektDef {
   // det som görs vid en station (steg 12.1.212): handlingen som gör det, minuterna för en omgång och hur många omgångar som
   // saknas; slöjdbänkens kö (koKrok.vid) räknar omgångarna gånger minuterna
   ko?: { act: Act; min: number; saknas(s: State): number };
+  // arbetet i projektet (steg 13.9.8): handlingen, saken och minuterna. Den skicklige ser mer värde per egen timme (personVarde)
+  arbete?: { act: Act; k?: string; min: number };
   paVag?(s: State, p?: Person): number; // den del av bristen (0 till 1) som de andra (inte p) som redan gör det fyller när de är klara (steg 12.1.53): räknas varje gång, inte en gång i timmen som bristen
 }
 
@@ -144,6 +147,7 @@ const redskap = (g: string): ProjektDef => {
     ko: { act: g as Act, get min() { return (RECEPT as Record<string, { min?: number } | undefined>)[g]?.min ?? 0; }, saknas: s => Math.max(0, Math.ceil(villAv(s, g) - harAv(s, g) - 1e-9)) },
     egen: (s, fam) => villAv(s, g) > 0 && !tingOf(s).some(t => t.agare !== undefined && GORS[g].includes(t.k) && fam.some(q => q.id === t.agare)) ? 1 : 0, // ingen i familjen äger ett
     kostnad: () => grundvarde(k),
+    arbete: { act: g as Act, k, min: minOf(k) },
     kan: (s, p, f) => wantsTool(s, p, g, f.gras),
     recept: (s, p) => receptTill(s, p, g),
     uppgift: (s, p) => { const m = makeTask(s, p, g); return { act: m.act, text: m.text, min: m.min, tool: m.tool }; },
@@ -160,6 +164,7 @@ const station = (k: StationSlag): ProjektDef => {
     egen: d.sover && !d.ersatter ? (s, fam) => utanEgenBadd(s, fam) : d.forvar?.privat ? (s, _fam, p) => p && villKista(s, p) ? 1 : 0 : undefined,
     brist: s => stationBrist(s, k), // bufferten står i forradsmal.ts (steg 6.2.17)
     kostnad: () => receptKostnad(d),
+    arbete: { act: 'station', k, min: d.min },
     kan: (s, p) => kanBygga(s, p, k),
     recept: (s, p) => receptStation(s, p, k),
     uppgift: (s, p) => { const sp = stationSpot(s, k, p); return sp ? { act: 'station', text: d.bygger, min: d.min, tool: k, spot: sp } : undefined; },
@@ -203,12 +208,13 @@ const tillverk = (k: string): ProjektDef => {
   return {
     namn: SAKER[d.ger]?.namn ?? (ar_vatska(d.ger) ? VATSKOR[d.ger].namn : d.ger), vikt: PROJEKT_TAL.tillverka, // teet är bara en vätska (steg 9.5.8)
     brist: s => clamp(1 - antal(s) / vill(s), 0, 1),
+    arbete: { act: d.act, min: d.min },
     ko: { act: d.act, min: d.min, saknas: s => Math.max(0, Math.ceil((vill(s) - antal(s)) / d.n - 1e-9)) }, // omgångar om n
     kostnad: () => receptKostnad(d),
     kan: (s, p) => { const av = har(s, p) && kar(s) && antal(s) < vill(s) ? tillverkAv(d, q => getable(s, p, q) - utsadeKrok.av(s, q)) : undefined; return !!av && Object.entries(av).every(([q, n]) => getable(s, p, q) - utsadeKrok.av(s, q) >= n); }, // utsädet sparas (steg 9.6.22)
     recept: (s, p) => { const av = har(s, p) && antal(s) < vill(s) ? tillverkAv(d, q => getable(s, p, q)) : undefined; return av ? { av } : undefined; },
     // i en station som går fortare (sländan i vävstolen, steg 7.7.9), med redskapet som ligger där
-    uppgift: s => { const t = stationFor(s, d.act); return { act: d.act, text: d.text, min: d.min / (t && stationDef(t.k)?.fart?.[d.act] || 1) / (redskapVidAct(s, d.act)?.fart ?? 1) /* sågen vid klyvplatsen (steg 12.5.1) */, tool: d.verktyg && !verktygVid(s, d.act, d.verktyg) ? d.verktyg : undefined }; },
+    uppgift: (s, p) => { const t = stationFor(s, d.act); return { act: d.act, text: d.text, min: d.min / (t && stationDef(t.k)?.fart?.[d.act] || 1) / (redskapVidAct(s, d.act)?.fart ?? 1) /* sågen vid klyvplatsen (steg 12.5.1) */ / kunnaFart(s, p, d.act, d.ger) /* skickligheten (steg 13.9.8) */, tool: d.verktyg && !verktygVid(s, d.act, d.verktyg) ? d.verktyg : undefined }; },
   };
 };
 export const PROJEKT: Record<string, ProjektDef> = {
@@ -444,7 +450,14 @@ export function personVarde(s: State, k: string, fam: readonly Person[], om: num
   const d = PROJEKT[k], e = d.egen ? d.egen(s, fam, p) : 0;
   // det de andra redan är på väg att göra räknas med (steg 12.1.53)
   const b = om ? Math.max(0, bristNu(s, k) - (d.paVag?.(s, p) ?? 0)) : 0;
-  return d.vikt * kylFaktor(s, d) * (b * om + e) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad(s));
+  return d.vikt * kylFaktor(s, d) * (b * om + e) / Math.max(PROJEKT_TAL.minKostnad, kostnadFor(s, d, p));
+}
+// kostnaden för p (steg 13.9.8): arbetet räknas i p:s egna timmar, så den skicklige ser mer värde per timme i det hen är bra på
+function kostnadFor(s: State, d: ProjektDef, p?: Person) {
+  const k = d.kostnad(s), a = d.arbete;
+  if (!p || !a) return k;
+  const f = kunnaFart(s, p, a.act, a.k);
+  return k - a.min / 60 * ARBETE * (1 - 1 / f);
 }
 // den i familjen som sover under tak utan en bädd
 function utanEgenBadd(s: State, fam: readonly Person[]) {

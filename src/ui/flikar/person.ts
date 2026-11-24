@@ -13,7 +13,7 @@ import { gravidDel, gravidKvar } from '../../sim/steg';
 import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, durTxt, esc, fallUt, hjalpKnapp, kvKnapp, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD, opOrd, tioSkala, varorSym } from '../hjalp';
 import { s, ui, uppgiftVid } from '../lage';
 import { tekInfo } from './teknik';
-import { hantSkill, pliktDelar, VANA_AR, ylleYtter } from '../../sim';
+import { HANT_SKILLS, KUNNA, fartAv, hantSkill, pliktDelar, VANA_AR, ylleYtter } from '../../sim';
 import { fritidLista } from './fram';
 import { gastById, gastRad, type Gast } from '../gaster';
 import type { Flik } from '../panel';
@@ -394,7 +394,9 @@ function egenHtml(p: Person) {
   const skillRad = (k: Skill) => {
     const v = p.skill[k], id = `f-${k}-${p.id}`, tr = trend(p, 'sk_' + k, v), dd = trendD(p, 'sk_' + k);
     const nu = ovarNu(p, k) ? `Övar just nu${dd ? `: ${dd > 0 ? '+' : ''}${visa(dd, 2)} i timmen` : ''}.` : dd ? `Har ändrats ${visa(dd, 2)} i timmen den senaste stunden.` : 'Ändras inte just nu. Den växer när hen övar.';
-    const rader = [...arbetar(ACTS[k as Act]?.arbete === k ? [k] : []), ...SKILL_GOR[k]];
+    // farten i hantverket (steg 13.9.8): vid de enkla sakerna och vid de svåra
+    const fart = k === 'hantverk' || (HANT_SKILLS as readonly Skill[]).includes(k) ? [`Fart: ${fartAv(KUNNA[2]!, v).toFixed(1).replace('.', ',')} gånger så fort som vanligt vid enkla saker, ${fartAv(KUNNA[5]!, v).toFixed(1).replace('.', ',')} vid svåra`] : [];
+    const rader = [...arbetar(ACTS[k as Act]?.arbete === k ? [k] : []), ...fart, ...SKILL_GOR[k]];
     return `<dt class="klick falla" ${fallUt(id)} title="${esc(rader.join(', '))}">${SKILL_NAMES[k]}</dt><dd class="klick" data-hjalp="${id}" title="${esc(rader.join(', '))}">${bar(v / 20, 'skill', tr)}<span>${visa(v)}</span></dd>${hjalpText(id, gorHtml(rader, nu, gjortHtml(p, k)))}`;
   };
   // andligheten (steg 4.1.1.1) syns från början, så att man ser den växa (steg 4.5.3.4)

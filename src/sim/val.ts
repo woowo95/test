@@ -919,7 +919,7 @@ export const ARBETEN: readonly Arbete[] = [
   // de vilda fröna (steg 2.10.11, 13.8.6): efter hur mycket utsäde fälten och familjernas fält saknar (froBrist i odling.ts),
   // vägt som flintan (VAL.fronVikt gånger bristen) och med platser efter bristen (steg 13.8.7). Där plockar man frön och kommer på odlingen
   { id: 'fron', niva: 6, nar: 'dag', poang: c => { const b = dag(c).works ? froBrist(c.s) : 0; return b > 0 && vildFronPlats(c.s) ? VAL.fronVikt * b : 0; },
-    prova: c => { const vf = vildFronPlats(c.s); if (!vf) return false; arbeta(c, 'samla', 'Byn vill ha frön att så'); c.v.spot = vf; c.v.fron = true; c.v.why = `${c.v.why}. Plockar vilda frön.`; return true; },
+    prova: c => { const vf = vildFronPlats(c.s); if (!vf) return false; arbeta(c, 'samla', 'Byn vill ha frön att så'); c.v.spot = vf; c.v.fron = true; c.v.why = `${c.v.why.replace(/\.$/, '')}. Plockar vilda frön.`; return true; },
     full: c => radFull(c.s, c.p, 'fron') },
   { id: 'leta', niva: 6, nar: 'dag', minAlder: ALDER.ansvar, poang: c => dag(c).works && flintaTillElden(c.s) ? VAL.letaVikt * letaBrist(c.s) : 0,
     full: c => radFull(c.s, c.p, 'leta'),

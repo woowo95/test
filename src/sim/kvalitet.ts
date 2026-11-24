@@ -10,6 +10,12 @@ import { SAKER } from './saker';
 import { STATIONER } from './stationer';
 import { notis } from './notiser';
 import { tanke } from './tankar';
+// skicklighetens tal (steg 13.9.8, kunna.ts): de ligger här så att kvaliteten inte behöver läsa kunna.ts
+export const KUNTAL = balans('kunna', {
+  mitt: 5, // den vanliga skickligheten: den som har så här mycket arbetar i receptets tid och gör normala saker
+  fartSteg: 10, // så här mycket mer skicklighet än mitt ger dubbelt så fort, när kunnandet är 1 ...
+  fartMin: 0.4, fartMax: 2.5, // ... och farten stannar mellan de här
+});
 // ett-ord (ett rep, ett bord) bland sakerna och möblerna
 const arEtt = (k: string) => !!(SAKER[k]?.ett ?? (STATIONER as Record<string, { ett?: true }>)[k]?.ett);
 
@@ -57,15 +63,16 @@ export const kvNamn = (t?: { q?: number }) => KVALITET[kvOf(t)].namn;
 // hur bra det blir som p gör nu: färdigheten, slumpen (kvalitetens egen följd) och stationen (dess tal kv i STATIONER, steg
 // 9.4.9: för hand och vid elden 0, en bättre station mer)
 // skill = färdigheten som gör det (skriften, steg 10.6.7: berättandet eller skaldskapet), annars hantverket
-export function rullaKvalitet(s: State, p: Person, station: number, skill: Skill = 'hantverk') {
-  const v = p.skill[skill] / KV.kunnig + gauss(s, 'kvalitet', p) * KV.brus + station + KV.smid * franMitt(p, 'smidighet', s.now);
+// vikt = hur mycket skickligheten betyder för saken (kunnaVikt i kunna.ts, steg 13.9.8): vid 0 gör alla som den vanliga
+export function rullaKvalitet(s: State, p: Person, station: number, skill: Skill = 'hantverk', vikt = 1) {
+  const v = (KUNTAL.mitt + vikt * ((p.skill[skill] ?? 0) - KUNTAL.mitt)) / KV.kunnig + gauss(s, 'kvalitet', p) * KV.brus + station + KV.smid * franMitt(p, 'smidighet', s.now);
   let q = 0;
   while (q < KV.grans.length && v >= KV.grans[q]) q++;
   return q;
 }
 // saken t blev klar och fick sin kvalitet: görarens humör, byns statistik, loggen för mästerverken och berättelsen
-export function nyKvalitet(s: State, p: Person, t: { id: number; k: string; q?: number; ber?: SakMinne }, station: number, namn: string, skill: Skill = 'hantverk') {
-  const q = t.q = rullaKvalitet(s, p, station, skill), k = KVALITET[q];
+export function nyKvalitet(s: State, p: Person, t: { id: number; k: string; q?: number; ber?: SakMinne }, station: number, namn: string, skill: Skill = 'hantverk', vikt = 1) {
+  const q = t.q = rullaKvalitet(s, p, station, skill, vikt), k = KVALITET[q];
   if (q >= MASTERVERK || q === 0 || (q >= FIN && SAKER[t.k]?.bildyta)) sakMinne(s, p, t); // det berättelsen om saken behöver (steg 3.9.4); en bildyta målas från fin (steg 10.7.1)
   count(s, 'kv_' + q);
   if (KV.glad[q]) tanke(p, 'kvalitet', s.now, { text: k.tanke, v: KV.glad[q], tid: KV.gladTim * HOUR });

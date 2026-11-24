@@ -25,6 +25,7 @@ import { coldOf, nederbord, temperature } from './vader';
 import { ACTS, GARVA_ACTS, redskapTal } from './handlingar';
 import { SAKER, isTool } from './saker';
 import { kvHaller, nyKvalitet } from './kvalitet';
+import { kunnaFart, kunnaVikt } from './kunna';
 import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
 import { brasaMal, nyEld } from './brasor';
@@ -1336,21 +1337,21 @@ export function startStation(s: State, p: Person, tk: Task) {
   if (!t) { tk.ref = undefined; tk.until = s.now; return; }
   if (!t.vem?.includes(p.id)) (t.vem ??= []).push(p.id);
   const i = delSomByggs(t);
-  tk.ref = t.id; tk.until = s.now + (i >= 0 ? t.delar![i].kvar! : t.kvar);
+  tk.ref = t.id; tk.until = s.now + (i >= 0 ? t.delar![i].kvar! : t.kvar) / kunnaFart(s, p, 'station', t.k); // skickligheten (steg 13.9.8)
 }
 // medan man bygger
-export function workStation(s: State, _p: Person, tk: Task, dtSec: number) {
+export function workStation(s: State, p: Person, tk: Task, dtSec: number) {
   const t = stationById(s, tk.ref);
   if (!t) return;
-  const i = delSomByggs(t), q = i >= 0 ? t.delar![i] : undefined;
+  const i = delSomByggs(t), q = i >= 0 ? t.delar![i] : undefined, f = kunnaFart(s, p, 'station', t.k); // skickligheten (steg 13.9.8)
   if (q) { // delen som byggs nu (steg 12.1.17); utan material blir det inget arbete
     if (!q.mat) { tk.until = s.now; return; }
-    q.kvar = Math.max(0, q.kvar! - dtSec * SEC); summaKvar(t);
-    tk.until = Math.min(tk.until, s.now + q.kvar);
+    q.kvar = Math.max(0, q.kvar! - dtSec * SEC * f); summaKvar(t);
+    tk.until = Math.min(tk.until, s.now + q.kvar / f);
     return;
   }
-  t.kvar = Math.max(0, t.kvar - dtSec * SEC);
-  tk.until = Math.min(tk.until, s.now + t.kvar); // bygger flera på den blir den klar fortare (steg 10.2.5), och då är arbetet slut
+  t.kvar = Math.max(0, t.kvar - dtSec * SEC * f);
+  tk.until = Math.min(tk.until, s.now + t.kvar / f); // bygger flera på den blir den klar fortare (steg 10.2.5), och då är arbetet slut
 }
 // klar: första gången står det i loggen
 export function finishStation(s: State, p: Person, tk: Task) {
@@ -1378,7 +1379,7 @@ export function finishStation(s: State, p: Person, tk: Task) {
     return;
   }
   if (d.sover) { touch(s); agaBadd(s, t); } // en ny sovplats: var man sover räknas om, och den som sover där äger bädden
-  if (d.mobel) nyKvalitet(s, p, t, 0, d.namn.toLowerCase()); // möblerna har kvalitet, stationerna inte (kvalitet.ts)
+  if (d.mobel) nyKvalitet(s, p, t, 0, d.namn.toLowerCase(), 'hantverk', kunnaVikt('station', t.k)); // efter nivån (steg 13.9.8); möblerna har kvalitet, stationerna inte (kvalitet.ts)
   if (d.verktyg && wearTool(s, p, d.verktyg, STATION.latrinSpade)) { const tr = SAKER[d.verktyg]?.trasig; if (tr) count(s, tr.stat); } // benspaden slits för varje grop
   if (forstaGang(s, 'station_' + t.k)) { log(s, forstaText(d.forsta, p), 'world', [p.id]); p.fame.push(`Byggde byns första ${forstaForm(d.namn)}`); }
   if (t.k === 'smedja' && forstaGang(s, 'forstaSmedja')) kronikaBer(s, 'k_forstaSmedja', p.id, personFalt(p)); // (steg 13.1.8)

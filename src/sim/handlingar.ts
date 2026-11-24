@@ -74,6 +74,7 @@ interface ActDef {
   tungt?: true; // tröttar mer än att bara vara vaken
   vila?: true; // man återhämtar sig
   hantverk?: true; // övar hantverk
+  kunna?: number; // hur mycket skickligheten betyder för farten och kvaliteten, där sakens nivå ger fel (KUNNA i kunna.ts, steg 13.9.8)
   fardighet?: Skill; // hantverkets färdighet som arbetet övar (steg 13.9.7: smide, krukmakeri, vävning, sömnad); saknas = hantverk
   ovar?: Skill; // en färdighet till som övas (grilla övar matlagning, matlagning.ts); personrutan visar den som övad just nu
   social?: true; // man samtalar med dem som är nära
