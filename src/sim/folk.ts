@@ -2,7 +2,7 @@ import { eldPlats } from './karta';
 import { hash3 } from './slump';
 import { freeNear } from './byggnad';
 import { Strom, clamp, gauss, pick, rnd } from './slump';
-import { Act, DAY, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State, Task, UPP_LAR } from './typer';
+import { Act, DAY, HANT_SKILLS, HOUR, LogEntry, Person, Rel, SKILLS, STATS, Skill, Stat, State, Task, UPP_LAR } from './typer';
 import { balans } from './balans';
 import { fodTro, nyAndlighet } from './religion';
 import { RYKTE, ryktbarhet } from './rykten';
@@ -272,8 +272,9 @@ export const franMitt = (p: Person, k: Stat, now: number) => (stat(p, k, now) - 
 // färdigheterna en nykomling har efter sin ålder (en dragning ur 'folk' per färdighet, i SKILLS ordning). Matlagningen
 // (steg 2.8.1) börjar av samlingen, utan en egen dragning (steg 3.10.8: eldkonsten är ingen färdighet längre)
 export function startSkills(s: State, p: Person, age: number) {
-  for (const k of SKILLS) if (k !== 'matlagning' && k !== 'narstrid' && k !== 'traff' && k !== 'skaldskap' && k !== 'handel' && k !== 'lakekonst' && k !== 'odling' && k !== 'skotsel') p.skill[k] = clamp((age - ALDER.skickFran) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
+  for (const k of SKILLS) if (k !== 'matlagning' && k !== 'narstrid' && k !== 'traff' && k !== 'skaldskap' && k !== 'handel' && k !== 'lakekonst' && k !== 'odling' && k !== 'skotsel' && !(HANT_SKILLS as readonly Skill[]).includes(k)) p.skill[k] = clamp((age - ALDER.skickFran) * 0.25 * (0.4 + rnd(s, 'folk')) * (p.pot.intelligens / 12), 0, 12);
   p.skill.matlagning = p.skill.samla;
+  for (const k of HANT_SKILLS) p.skill[k] = p.skill.hantverk; // hantverkets färdigheter börjar av hantverket (steg 13.9.7)
   p.skill.skaldskap = p.skill.berattande * SKALD_START; // skaldskapen (steg 4.3.2.5) börjar av berättandet, utan en egen dragning
   p.skill.handel = handelStart(p); // handeln (steg 4.4.1.4) börjar av berättandet och hantverket, utan en egen dragning
   stridSkills(s, p, age);

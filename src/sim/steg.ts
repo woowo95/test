@@ -55,7 +55,7 @@ import { iHelaForradet, laggPaRutan, stacksOf, isStored, capacity, mayTake, avbr
 import { FOOD, SAKER, isFood, viktOf } from './saker';
 import { DJURARTER, REDSKAP, bearbeta, forstRuttnar, twineRope, wearUsed } from './redskap';
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
-import { arbetaBredvid, forsokKlar, forsokSteg, haftSteg, stepLarlingar, thinkWhileWorking } from './teknik';
+import { arbetaBredvid, forsokKlar, forsokSteg, haftSteg, hantSkill, stepLarlingar, thinkWhileWorking } from './teknik';
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
 import { FYND, fyndAt, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, richness, richnessDelar, richnessFor, type Lager, takeFrom } from './fynd';
 import { halMin, halVal, isKost, isNiva, islagt, stepIs, halGjort } from './is';
@@ -309,7 +309,7 @@ for (const k of TILLVERKA_LIST) { const d = TILLVERKA[k]; KLAR[d.act] = (s, p) =
   const ag: Record<string, number> = {};
   for (const [q, n] of Object.entries(av)) addDel(ag, takeMaterial(s, p, q, n), 1);
   if (kar && (d.sjud || d.syr)) { kar.kok = { r: d.ger, n: d.n, kvar: d.syr ? SYRA.dygn * DAY : d.sjud! * MIN, ...(d.syr ? { syr: 1 as const } : {}), ag: Object.keys(ag).length ? ag : { [p.id]: 1 }, ...(ar_vatska(d.ger) ? { vatska: 1 as const } : {}), q: rullaKvalitet(s, p, kvVid(s, p, d.act)) }; count(s, 'sjuder_' + d.ger); } // osten blir en sak i förrådet när den sjudit (steg 12.4.7) // buljongen sjuder i krukan på elden (stepKok)
-  else if (kar && ar_vatska(d.ger)) { fyllVatska(s, d.ger, d.n, kar)!.inne!.q = rullaKvalitet(s, p, kvVid(s, p, d.act)); } else put(s, d.ger, d.n, { [p.id]: d.n }); // tjäran, salvan, limmet och teet i sin behållare, med kvalitet (steg 9.5.8)
+  else if (kar && ar_vatska(d.ger)) { fyllVatska(s, d.ger, d.n, kar)!.inne!.q = rullaKvalitet(s, p, kvVid(s, p, d.act), ACTS[d.act]?.fardighet); } else put(s, d.ger, d.n, { [p.id]: d.n }); // tjäran, salvan, limmet och teet i sin behållare, med kvalitet (steg 9.5.8)
   if (forstaGang(s, 'gjort_' + d.ger)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }; }
 MEDAN.vittja = (s, p, t) => { const m = mjardarOf(s).find(q => q.id === t.ref); if (m) vittja(s, p, m); t.until = s.now; };
@@ -875,7 +875,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
         if (d.arbete && p.task === tk && tk.phase === 'do') workStep(s, p, tk, used, a, learn);
       });
       // (bygget kan just ha skickat iväg personen efter mer material)
-      if (tk.phase === 'do' && d.hantverk) ovning(p, 'hantverk', used / HOUR_S * STEG.ovningHant * learn);
+      if (tk.phase === 'do' && (d.hantverk || d.fardighet)) ovning(p, hantSkill(p, tk), used / HOUR_S * STEG.ovningHant * learn); // handlingens färdighet (steg 13.9.7)
       if (d.vandra) wear(groundOf(s), tileOf(tk.tx, tk.ty), MARK.nott * STEG.markNot * STEG.vandraNot * d.vandra.v * used); // man rör sig på platsen
     }
     if (spar.pa && tk.phase !== 'go') sparaUppgift(p, t1 - (left - used) * SEC); // det som plockats syns när biten är klar (steg 6.1.1)

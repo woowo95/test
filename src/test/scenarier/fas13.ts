@@ -1842,3 +1842,35 @@ SCENARIER.sparren = {
     ];
   },
 };
+
+SCENARIER.hantverksfardighet = {
+  text: 'Steg 13.9.7: hantverket får egna färdigheter. Smide, krukmakeri, vävning och sömnad är färdigheter, och varje handling i ACTS säger vilken den övar: smeden övar smide och inte vävning, lärlingen övar mästarens färdighet, och de nya färdigheterna börjar på hantverkets värde, också i en sparad by.',
+  kor: () => {
+    const { ACTS, HANT_SKILLS, hantSkill, tekSkill, TEK, living } = SIM;
+    const s = SIM.createState(11, START); klockan(s, 10); tandEld(s);
+    const smed = nyInvanare(s, 'm', 30);
+    const start = HANT_SKILLS.every(k => smed.skill[k] === smed.skill.hantverk);
+    // smeden arbetar vid smedjan en stund
+    const fore = { ...smed.skill };
+    smed.task = { act: 'smida', phase: 'do', tx: smed.x, ty: smed.y, until: s.now + 2 * SIM.HOUR, carry: 0 } as SIM.Task;
+    for (let i = 0; i < 400 && smed.task?.act === 'smida'; i++) { smed.task.until = s.now + SIM.HOUR; SIM.step(s, BEAT); }
+    const smide = smed.skill.smide - fore.smide, vav = smed.skill.vavning - fore.vavning, hant = smed.skill.hantverk - fore.hantverk;
+    // lärlingen hos en sömmerska övar sömnad
+    const larl = nyInvanare(s, 'k', 20), mast = nyInvanare(s, 'k', 40);
+    larl.lar = { av: mast.id, tek: 'skinnklader' };
+    const larSk = hantSkill(larl, { act: 'lara' } as SIM.Task);
+    // en sparad by från före steget
+    const g = SIM.createState(12, START); g.v = 68;
+    for (const p of g.people) for (const k of HANT_SKILLS) delete (p.skill as Partial<Record<SIM.Skill, number>>)[k];
+    SIM.migrate(g);
+    const sparad = living(g).every(p => HANT_SKILLS.every(k => p.skill[k] === p.skill.hantverk));
+    const utan = ['spinna', 'vava', 'lerkruka', 'garva', 'skjorta', 'smida', 'kola'].filter(a => !ACTS[a as SIM.Act]?.fardighet);
+    return [
+      [`de nya färdigheterna börjar på hantverkets värde (${smed.skill.hantverk.toFixed(2)})`, start],
+      [`handlingarna säger sin färdighet (${utan.join(', ') || 'alla'})`, !utan.length && hantSkill(smed, { act: 'vava' } as SIM.Task) === 'vavning' && hantSkill(smed, { act: 'hantverk' } as SIM.Task) === 'hantverk'],
+      [`smeden övar smide (+${smide.toFixed(3)}) och inte vävning (+${vav.toFixed(3)}) eller hantverk (+${hant.toFixed(3)})`, smide > 0 && vav === 0 && hant === 0],
+      [`lärlingen hos sömmerskan övar ${larSk} (tekniken ${tekSkill(TEK.skinnklader!)})`, larSk === 'somnad'],
+      ['en sparad by får de nya färdigheterna av hantverket', sparad],
+    ];
+  },
+};

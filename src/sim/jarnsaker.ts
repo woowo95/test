@@ -63,7 +63,7 @@ export function smidaKlar(s: State, p: Person, tk: Task) {
   const q = kvVid(s, p, 'smida');
   for (let i = 0; i < (d.forrad ? 0 : SAKER[k]!.skaffa!.ger ?? 1); i++) { // 1 järn ger 2 järnnålar (steg 12.5.3)
     const t = addTool(s, k, p); t.av = p.id; t.gjord = s.now;
-    nyKvalitet(s, p, t, q, SAKER[k]!.namn.toLowerCase());
+    nyKvalitet(s, p, t, q, SAKER[k]!.namn.toLowerCase(), 'smide'); // det smidda med smidet (steg 13.9.7)
     nyttVid(s, t); // sågen läggs vid klyvplatsen om dess plats står tom, och blir byns (steg 12.5.1)
   }
   count(s, 'smitt_' + k);

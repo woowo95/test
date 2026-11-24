@@ -1,6 +1,6 @@
 import { gen } from './ord';
 import { KROPP, count, enTill, forstaGang, gjort, living, log } from './folk';
-import { knows } from './teknik';
+import { hantSkill, knows } from './teknik';
 import { clamp, rnd } from './slump';
 import { Act, HOUR, State, Person } from './typer';
 import { ACTS, ACT_LIST, laggRedskap, redskapTal, toolRow } from './handlingar';
@@ -337,7 +337,7 @@ export function makeTask(s: State, p: Person, g: string) {
 export function toolDone(s: State, p: Person, k: string) {
   const t = addTool(s, k, p); t.av = p.id; t.gjord = s.now; // vem som gjorde det och när (inforutan, steg 2.3.5)
   if (krukaAv(k) || SAKER[k]?.skaffa?.av?.lera) krukaFormad(t); // det som formas av lera ska torka och brännas (steg 9.4.11, kruka.ts): lerkrukan och oljelampan (steg 12.4.2)
-  nyKvalitet(s, p, t, (p.task ? kvVid(s, p, p.task.act) : 0) + knivKv(s, p, k) + nalKv(s, p, k), sakNamn(k).toLowerCase()); // hur bra det blev (kvalitet.ts), och bättre med järnkniven (steg 12.2.6)
+  nyKvalitet(s, p, t, (p.task ? kvVid(s, p, p.task.act) : 0) + knivKv(s, p, k) + nalKv(s, p, k), sakNamn(k).toLowerCase(), p.task ? hantSkill(p, p.task) : undefined); // med handlingens färdighet (steg 13.9.7) // hur bra det blev (kvalitet.ts), och bättre med järnkniven (steg 12.2.6)
   nyttVid(s, t); gjort(s, p, 'gjort');
   slitVid(s, gruppOf(k) as Act, REDSKAP.bensylSlits); // det som kräver bänkens redskap (plaggen och vattensäcken), efter arbetet och inte saken
   if (syddMedNal(k)) { const n = nalTill(s, p, k); if (n && n !== 'jarnnal') slitRedskap(s, n, REDSKAP.bensylSlits); } // bänkens bennål slits av tyget (steg 13.3.4); järnnålen slits i slitNal

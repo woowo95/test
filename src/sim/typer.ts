@@ -76,12 +76,14 @@ export const STAT_GOR: Record<Stat, string[]> = {
   smidighet: ['Att inte råka ut för olyckor i arbetet', 'Att fånga harar', 'Att fisken sitter kvar när den nappat', 'Hur fort man tar sig fram i skog och snår', 'Hur fint det blir som man tillverkar', 'Hur snabb man är och hur bra man duckar i en strid'],
   aggression: ['Att slå i stället för att gråta när man mår dåligt', 'Att gräla', 'Hur hårt man straffar som ledare', 'Blodtörsten: att vilja döda, med låg empati och dåligt humör', 'Att inte ge sig i en strid'],
 };
-export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'matlagning', 'narstrid', 'traff', 'skaldskap', 'handel', 'lakekonst', 'odling', 'skotsel'] as const; // skotsel: steg 9.8.1 (djuren, tamdjur.ts); // odling: steg 9.7.7 (fälten, odling.ts); // lakekonst: steg 9.5.7 (vården, halsa.ts); // handel: steg 4.4.1.4 (byten, behov.ts); skaldskap: steg 4.3.2.5 (framtradande.ts); matlagning: steg 2.8.1 (matlagning.ts); narstrid, traff: steg 3.7.2 (strid.ts). Eldkonsten togs bort i steg 3.10.8
+export const SKILLS = ['samla', 'jakt', 'fiske', 'ved', 'hantverk', 'berattande', 'matlagning', 'narstrid', 'traff', 'skaldskap', 'handel', 'lakekonst', 'odling', 'skotsel', 'smide', 'krukmakeri', 'vavning', 'somnad'] as const; // skotsel: steg 9.8.1 (djuren, tamdjur.ts); // odling: steg 9.7.7 (fälten, odling.ts); // lakekonst: steg 9.5.7 (vården, halsa.ts); // handel: steg 4.4.1.4 (byten, behov.ts); skaldskap: steg 4.3.2.5 (framtradande.ts); matlagning: steg 2.8.1 (matlagning.ts); narstrid, traff: steg 3.7.2 (strid.ts). Eldkonsten togs bort i steg 3.10.8
 export type Skill = typeof SKILLS[number];
+// hantverkets egna färdigheter (steg 13.9.7): de börjar på det värde personen har i hantverket, utan egna dragningar ur slumpen
+export const HANT_SKILLS = ['smide', 'krukmakeri', 'vavning', 'somnad'] as const satisfies readonly Skill[];
 // upplevelserna som gör en färdighet lättare att lära och hur mycket (steg 13.1.7): uppvaxt.ts fyller det ur UPPLEVELSER, ovning i folk.ts läser det
 export const UPP_LAR: { k: Record<string, Skill>; fart: number } = { k: {}, fart: 1 };
 export const SKILL_NAMES: Record<Skill, string> = {
-  samla: 'Samling', jakt: 'Jakt', fiske: 'Fiske', ved: 'Trähuggning', hantverk: 'Hantverk', berattande: 'Berättande', matlagning: 'Matlagning', narstrid: 'Närstrid', traff: 'Träffsäkerhet', skaldskap: 'Skaldskap', handel: 'Handel', lakekonst: 'Läkekonst', odling: 'Odling', skotsel: 'Djurskötsel',
+  samla: 'Samling', jakt: 'Jakt', fiske: 'Fiske', ved: 'Trähuggning', hantverk: 'Hantverk', berattande: 'Berättande', matlagning: 'Matlagning', narstrid: 'Närstrid', traff: 'Träffsäkerhet', skaldskap: 'Skaldskap', handel: 'Handel', lakekonst: 'Läkekonst', odling: 'Odling', skotsel: 'Djurskötsel', smide: 'Smide', krukmakeri: 'Krukmakeri', vavning: 'Vävning', somnad: 'Sömnad'
 };
 // vad varje färdighet påverkar utöver arbetena som övar den (ACTS arbete), och hur den växer
 export const SKILL_GOR: Record<Skill, string[]> = {
@@ -99,6 +101,12 @@ export const SKILL_GOR: Record<Skill, string[]> = {
   odling: ['Hur fort man arbetar på fältet', 'Hur stor skörden blir', 'Växer av arbetet på fältet'], // steg 9.7.7
   skotsel: ['Hur väl man sköter byns djur', 'Växer när man matar, mjölkar, klipper och vallar'], // steg 9.8.1
   handel: ['Hur stor del av vinsten i ett byte man får', 'Att lura en ovan, och att märka när man själv blir lurad', 'Att väljas att handla för byn', 'Växer av varje byte'],
+  // hantverkets egna färdigheter (steg 13.9.7): varje handling i ACTS säger vilken den övar (fardighet), och kvaliteten,
+  // teknikerna, lärlingen, mästaren och olyckorna läser den. De börjar på hantverkets värde
+  smide: ['Hur bra det smidda blir', 'Växer vid kolmilan, blästerugnen och i smedjan'],
+  krukmakeri: ['Hur bra krukorna och lamporna blir', 'Växer när man bygger upp lerkärl'],
+  vavning: ['Hur bra tråden och tyget blir', 'Växer när man spinner och väver'],
+  somnad: ['Hur bra lädret, plaggen och det sydda blir', 'Växer när man garvar och syr'],
 };
 
 // det personrutan visar när man trycker på en färdighet (steg 3.10.6): nycklarna i p.gjort (gjort i folk.ts), det senaste
@@ -118,6 +126,7 @@ export const SKILL_STAT: Record<Skill, { k: string; namn: string; av?: string }[
   odling: [{ k: 'odlat', namn: 'Rutor skötta' }],
   skotsel: [{ k: 'matat', namn: 'Matade djur' }, { k: 'vallat', namn: 'Vallade djur' }, { k: 'klippt', namn: 'Klippta får' }, { k: 'mjolkat', namn: 'Mjölkade getter' }, { k: 'skattat', namn: 'Skattade bikupor' }, { k: 'avlivat', namn: 'Avlivade djur' }, { k: 'slagit', namn: 'Slagna ängsrutor' }, { k: 'hamlat', namn: 'Hamlade björkar' }],
   handel: [{ k: 'bytt', namn: 'Byten' }, { k: 'lurade', namn: 'Lurade någon', av: 'bytt' }, { k: 'lurad', namn: 'Märkte att någon lurade', av: 'bytt' }],
+  smide: [], krukmakeri: [], vavning: [], somnad: [], // steg 13.9.7: det gjorda räknas under hantverket
 };
 
 export const AGES = ['Istid', 'Vårtid', 'Sommartid', 'Hösttid'];

@@ -17,7 +17,7 @@ import { VAR, nyKalender } from './tid';
 import { ageOf, getRel, iMallen, log, newPerson, startSkills } from './folk';
 import { newSeder, sederTarget } from './seder';
 import { rnd } from './slump';
-import { DAY, MIN, Person, State, simulera, useMap } from './typer';
+import { DAY, HANT_SKILLS, MIN, Person, State, simulera, useMap } from './typer';
 import { startSmak } from './rykten';
 import { hogtidForm, hogtidVarde, hogtider } from './kult';
 import { newFire } from './eld';
@@ -311,6 +311,7 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     for (const t of s.stationer ?? []) if (t.k === 'sjukbadd') (t as { k: string }).k = 'halmbadd';
     for (const p of s.people) if (p.task?.act === 'station' && p.task.tool === 'sjukbadd') p.task = undefined;
   }],
+  [69, 'hantverkets egna färdigheter (steg 13.9.7): smide, krukmakeri, vävning och sömnad börjar på det värde personen har i hantverket', s => { for (const p of s.people) for (const k of HANT_SKILLS) p.skill[k] ??= p.skill.hantverk ?? 0; }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

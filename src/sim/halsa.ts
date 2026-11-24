@@ -218,7 +218,7 @@ interface OlyckaDef { risk: number; typer: SkadaTyp[]; delar: Kroppsdel[]; min: 
 let skattaRisk: number | undefined; // ett prov kan sätta risken (BIN.stick annars)
 // djuret man sköter sparkar: hur mycket efter arten (spark i TAMDJUR, tamdjur.ts), djurskötseln sänker risken
 const SPARK: OlyckaDef = { risk: 0.01, typer: ['blamarke', 'krossar', 'benbrott'], delar: [...BEN, ...ARMAR, 'bal', 'huvud'], min: 0.05, max: 0.9, dod: 'olycka', nar: 'när ett djur sparkade hen', fardighet: 'skotsel', riskAv: (s, p) => { const d = tamdjurOf(s).find(q => q.id === p.task?.ref); return d ? tamArt(d.art).spark ?? 0 : 0; } };
-const SMEDJA: OlyckaDef = { risk: 0.01, typer: ['brannskada'], delar: [...HANDER, ...ARMAR], min: 0.05, max: 0.7, dod: 'olycka', nar: 'vid smedjan', fardighet: 'hantverk' };
+const SMEDJA: OlyckaDef = { risk: 0.01, typer: ['brannskada'], delar: [...HANDER, ...ARMAR], min: 0.05, max: 0.7, dod: 'olycka', nar: 'vid smedjan', fardighet: 'smide' }; // smidet (steg 13.9.7)
 // olyckorna som hör till läget och inte till handlingen (steg 12.1.141): lage ger hur mycket av risken som gäller just nu (0 = ingen)
 export const OLYCKOR_LAGE: Record<string, OlyckaDef> = {
   // den som kör eller åker en vagn eller släde och är på väg faller av; djurskötseln sänker risken
@@ -514,7 +514,7 @@ function olyckaSteg(s: State, p: Person, dtSec: number): Dodsorsak | undefined {
   const t = p.task, o = t && t.phase === 'do' ? OLYCKOR[t.act] : undefined;
   if (o?.bistick) { binStick(s, p, dtSec, o.riskAv ? o.riskAv(s, p) : 1, o); return undefined; } // bisticken (steg 10.10.22)
   if (o) {
-    const pd = ACTS[t!.act], dod = olycka(s, p, dtSec, o, o.fardighet ?? pd.arbete ?? (pd.hantverk ? 'hantverk' : undefined), o.riskAv ? o.riskAv(s, p) : 1);
+    const pd = ACTS[t!.act], dod = olycka(s, p, dtSec, o, o.fardighet ?? pd.arbete ?? pd.fardighet ?? (pd.hantverk ? 'hantverk' : undefined), o.riskAv ? o.riskAv(s, p) : 1);
     if (dod) return dod;
   }
   for (const k in OLYCKOR_LAGE) {

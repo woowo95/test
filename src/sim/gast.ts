@@ -8,7 +8,7 @@ import { KLOCKA, SLAGHINDER } from './klocka';
 // egenskaper och färdigheter räknas ur byns frö och gästens nyckel med hash3, aldrig ur spelets slumpföljder, så att byn
 // utvecklas likadant vare sig en gäst kommer eller inte. Ett nytt slag av gäst är en rad i GASTSORTER
 import type { Person, State, Stat, Skill } from './typer';
-import { STATS, SKILLS } from './typer';
+import { HANT_SKILLS, STATS, SKILLS } from './typer';
 import { hash3 } from './slump';
 import { klanTatKrok } from './tatkrok';
 import { EGENSKAP, count, nyPerson } from './folk';
@@ -138,7 +138,7 @@ export function nyGast(s: State, o: { id: number; namn: string; sex: 'm' | 'k'; 
   for (const k of STATS) { const u = r() * 2 - 1; pot[k] = Math.max(1, Math.min(20, Math.round((EGENSKAP.mitt + Math.sign(u) * Math.abs(u) ** EGENSKAP.utprag * EGENSKAP.vidd) * 10) / 10)); }
   Object.assign(pot, o.pot); // egenskaper som sorten bestämmer (rövarnas styrka och mod, rovare.ts)
   const skill = {} as Record<Skill, number>;
-  for (const k of SKILLS) skill[k] = o.skill?.[k] ?? 0;
+  for (const k of SKILLS) skill[k] = o.skill?.[k] ?? ((HANT_SKILLS as readonly Skill[]).includes(k) ? o.skill?.hantverk ?? 0 : 0); // hantverkets färdigheter av hantverket (steg 13.9.7)
   const p = nyPerson({
     id: o.id, name: o.namn, sex: o.sex, born: o.fodd, gast: o.rad,
     pot, skill, hunger: 0.8, rest: 0.9, social: 0.7, health: 1, warm: 1, toa: 0.8, torst: 1, blod: 1, habit: {}, thoughts: [],

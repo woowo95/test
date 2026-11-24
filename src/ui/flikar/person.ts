@@ -13,7 +13,7 @@ import { gravidDel, gravidKvar } from '../../sim/steg';
 import { LAG, byteKnapp, hallCirkel, kvOrd, clockTxt, ansStapel, ansTecken, fmtN, bar, cap, carryTxt, durTxt, esc, fallUt, hjalpKnapp, kvKnapp, hjalpOppen, hjalpText, moodWord, pLink, prickar, relWord, sickNow, tempBar, tempOrd, trend, trendD, opOrd, tioSkala, varorSym } from '../hjalp';
 import { s, ui, uppgiftVid } from '../lage';
 import { tekInfo } from './teknik';
-import { pliktDelar, VANA_AR, ylleYtter } from '../../sim';
+import { hantSkill, pliktDelar, VANA_AR, ylleYtter } from '../../sim';
 import { fritidLista } from './fram';
 import { gastById, gastRad, type Gast } from '../gaster';
 import type { Flik } from '../panel';
@@ -378,7 +378,7 @@ function gjortHtml(p: Person, k: Skill) {
 const arbetar = (sk: string[]) => sk.length ? [`Hur mycket hen får ut av arbetet: ${sk.map(k => SKILL_NAMES[k as Skill].toLowerCase()).join(', ')}`] : [];
 function ovarNu(p: Person, k: Skill) {
   const d = p.task && ACTS[p.task.act];
-  return !!d && p.task!.phase === 'do' && (d.arbete === k || d.ovar === k || (k === 'hantverk' && !!d.hantverk));
+  return !!d && p.task!.phase === 'do' && (d.arbete === k || d.ovar === k || ((d.hantverk || d.fardighet) && hantSkill(p, p.task!) === k)); // hantverkets färdighet (steg 13.9.7)
 }
 function egenHtml(p: Person) {
   const now = s.now;

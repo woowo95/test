@@ -11,7 +11,8 @@ export function experten(seed = 3, h = 6): { s: State; p: Person } {
   const s = createState(seed, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= 20)!;
   for (const q of SIM.living(s)) q.tek = {};
   p.tek = { rep: 1, kniv: 1, flatarbank: 1, bensyl: 1 };
-  p.skill.hantverk = h; p.pot.nyfikenhet = p.pot.intelligens = 12;
+  p.skill.hantverk = h; for (const k of SIM.HANT_SKILLS) p.skill[k] = h; // skicklig i hantverkets alla färdigheter (steg 13.9.7)
+  p.pot.nyfikenhet = p.pot.intelligens = 12;
   medBank(s, 'flatarbank');
   SIM.setAmount(s, 'skinn', 20); SIM.setAmount(s, 'rep', 10);
   return { s, p };
