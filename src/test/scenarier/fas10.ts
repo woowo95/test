@@ -160,7 +160,7 @@ SCENARIER.vildsvin = {
       if (tk.items?.vildsvin || tk.items?.vildsvindel) { ut.fallt++; if (tk.items?.vildsvindel) ut.del++; }
       if (anf) {
         ut.anfall++;
-        for (let n = 0; n < 2000 && s.kartStrider?.length; n++) SIM.kartStridSteg(s, 1);
+        for (let n = 0; n < 2000 && s.kartStrider?.length; n++) { s.now += 1000; SIM.kartStridSteg(s, 1); } // striden räknar tiden sedan den började (steg B.1)
         if (!s.kartStrider?.length) ut.strid++;
         if (p.task?.items?.vildsvindel) ut.stridFallt++;
       }

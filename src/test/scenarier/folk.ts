@@ -1966,7 +1966,7 @@ SCENARIER.slagsmal = {
     const t0 = barn.skill.traff;
     for (let i = 0; i < 400 && !l.kartStrider?.length; i++) SIM.lekSteg(l, barn, 600);
     const lekStrid = l.kartStrider?.[0];
-    for (let i = 0; i < 900 && l.kartStrider?.length; i++) step(l, SIM.nastaSteg(l));
+    for (const tSlut = l.now + (SIM.STRID.maxTid + 60) * SIM.SEC; l.kartStrider?.length && l.now < tSlut;) step(l, SIM.nastaSteg(l)); // leken tar sin tid (steg B.7)
     const lek = lekStrid?.st.avsikt === 'lek' && !!lekStrid.st.slut, kast = barn.skill.traff > t0, ingenDod = living(l).length === l.people.length;
     // de nya händelserna och skadorna i striden
     const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 14, skicklighet: 12 }, vapen, klader: [], fart: 1, x: sida ? 12 : 8, y: 7 });

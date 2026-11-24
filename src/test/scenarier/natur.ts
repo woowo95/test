@@ -2340,7 +2340,7 @@ SCENARIER.stridkronika = {
     for (let i = 0; i < 40; i++) {
       const n0 = krn(s).length, st = stridIByn(s, i % 2 ? 'skada' : 'slagsmal', [[p], [q]], 'för att pröva');
       const svart = st.kampar.some(k => SIM.svartSkadad(k) || k.lage === 'dod');
-      if (svart) svara++; else if (krn(s).length > n0) vanliga++;
+      if (svart) svara++; else if (krn(s).slice(n0).some(r => r.includes(p.name) || r.includes(q.name))) vanliga++; // striden tar några minuter (steg B.7), och byn hinner skriva annat under tiden
       for (const x of [p, q]) { x.skador = []; x.health = 1; x.blod = 1; x.task = undefined; x.died = undefined; }
     }
     const slagRader = krn(s).length - fore;

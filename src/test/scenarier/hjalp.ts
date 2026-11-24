@@ -357,7 +357,7 @@ function fritGolv(s: State, k: string): { x: number; y: number; inne: 1 } | unde
 // korta steg tills den är över. Svarar striden, som den gamla stridIByn gjorde
 export function stridIByn(s: SIM.State, avsikt: SIM.Avsikt, sidor: [SIM.Person[], SIM.Person[]], orsak: string, efter?: SIM.Efter): SIM.Strid {
   const g = SIM.kartStridBorja(s, avsikt, sidor, orsak, efter);
-  for (let i = 0; i < 1500 && !g.st.slut; i++) SIM.step(s, SIM.nastaSteg(s));
+  for (const tSlut = s.now + (SIM.STRID.maxTid + 60) * SIM.SEC; !g.st.slut && s.now < tSlut;) SIM.step(s, SIM.nastaSteg(s)); // striden tar sin tid (steg B.7)
   return g.st;
 }
 

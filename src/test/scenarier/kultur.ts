@@ -3039,7 +3039,7 @@ function brottning(): [string, boolean][] {
     [`utan vapen (${vapen} med vapen)`, vapen === 0],
     [`ingen dör i brottningen (${doda})`, doda === 0],
     [`en skada är ovanlig (${skadade} av 16 brottare skadades)`, skadade <= 4],
-    [`brottarna är kvar i matchen efter en kamp (${kvar} av ${matt} medan matchen pågår)`, matt >= 8 && kvar >= matt * 0.75 && sedda > 0],
+    [`brottarna är kvar i matchen efter en kamp (${kvar} av ${matt} medan matchen pågår)`, matt >= 4 && kvar >= matt * 0.75 && sedda > 0], // en kamp tar omkring 5 minuter (steg B.7), och en match 10 till 20: i några byar slutar matchen före den första kampen
     [`ingen av de två som brottas börjar ett samtal under kampen (${pratIKampen} samtal på ${kampTid} steg med kamp)`, pratIKampen === 0 && kampTid > 0],
     [`de andra i ringen pratar (${pratRingen} samtal)`, pratRingen > 0],
   ];

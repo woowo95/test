@@ -81,8 +81,8 @@ export const STRID = balans('strid', {
   kortSteg: 0.5, // sekunder per steg för hela byn när faran är nära (steg 10.1.1 och 10.2.13, mätt med npm run kortsteg). Byns vanliga slag är KLOCKA.slag (klocka.ts)
   // striden tar tid (steg B.7): striden går i klockans takt, och den blir lång för att slagen kommer glesare och oftare missar eller pareras, lika
   // för alla som slåss, människor och djur. Ett slag som träffar är lika hårt som förut, så att såren blir lika många och av samma slag
-  glesare: 3, // tiden mellan slagen gånger detta
-  traffDel: 0.12, // så stor del av försöken mot den som står och slåss blir ett riktigt slag eller en knuff, resten missar (den som ligger, böjer sig ner eller flyr väjer inte); orken per slag och chansen att en knuff fäller också. Kast och skott träffar som förut, mot den som ännu inte är i närstrid genast och in i en närstrid glesare (gånger glesare / traffDel), så att pilarna räcker
+  glesare: 2, // tiden mellan slagen gånger detta: med händerna knappt två sekunder (Björn: inte överdrivet långt mellan slagen)
+  traffDel: 0.08, // så stor del av försöken mot den som står och slåss blir ett riktigt slag eller en knuff, resten missar (den som ligger, böjer sig ner eller flyr väjer inte); orken per slag och chansen att en knuff fäller också. Kast och skott träffar som förut, mot den som ännu inte är i närstrid genast och in i en närstrid glesare (gånger glesare / traffDel), så att pilarna räcker
   maxTid: 1200, // en strid slutar senast efter så här många sekunder på klockan (oavgjort)
   efterTid: 20, // när ena sidan inte har någon kvar som slåss slutar striden senast så här många sekunder senare, också om någon ännu flyr eller ligger (den som inte kommer undan blir kvar på platsen)
   krypNara: 1, // den som kryper stannar så här många rutor från vännen hen kryper mot (steg 3.7.19) ...
@@ -113,7 +113,7 @@ export const STRID = balans('strid', {
   modFeg: 0.5, // ... gånger 1 + modFeg × (10 − modet) / 10, högst modFeg åt vardera hållet (steg 9.2.116)
   modVan: 0.2, // ... och så här mycket när en vän faller
   lek: 0.2, // i lek slutar striden vid första skada av den här graden
-  brottning: 0.3, // i brottningen (steg 9.2.92) är slagen så här starka mot i ett slagsmål, och ingen dör
+  brottning: 1, // i brottningen (steg 9.2.92) är slagen så här starka mot i ett slagsmål med händerna, men ingen dör och slag under STRID.lek blir inga sår: en kamp tar omkring 5 minuter, som striderna (steg B.7), och den som känner smärta ger sig
   utsatt: 1.5, // chansen att träffa den som ligger eller flyr, gånger detta
   takt: 0.3, // tiden mellan slagen gånger 1 − (uthållighet − 10) / 20 × detta
   // försvaret (steg 3.7.2): bara den som står och har den som slår som mål kan parera eller ducka

@@ -479,7 +479,7 @@ SCENARIER.undsattning = {
     const [, fallen, h, fiende] = st.kampar;
     fallen.lage = 'nere'; fallen.skador = [{ d: 'bal', k: 'sticksar', g: 0.8, ny: 1 }]; fallen.blod = 0.7;
     let narmast = Infinity, raddad = false;
-    for (let i = 0; i < 400 && !st.slut; i++) { SIM.stridSteg(st); if (fiende.lage === 'strid') narmast = Math.min(narmast, Math.hypot(h.x - fiende.x, h.y - fiende.y)); if (st.logg.some(r => r.h === 'raddar' && r.a === h.id)) raddad = true; }
+    for (let i = 0; i < SIM.STRID.maxTid / SIM.STRID.tick && !st.slut; i++) { SIM.stridSteg(st); if (fiende.lage === 'strid') narmast = Math.min(narmast, Math.hypot(h.x - fiende.x, h.y - fiende.y)); if (st.logg.some(r => r.h === 'raddar' && r.a === h.id)) raddad = true; }
     const slogs = st.logg.some(r => (r.h === 'traff' || r.h === 'miss') && r.a === h.id), lyfte = st.logg.some(r => r.h === 'lyfter' && r.a === h.id);
     // på kartan (steg 12.1.87): en rövare slåss med en bybo, en annan bybo ligger och blöder, och en tredje är hjälpare vid larmet
     const s = createState(1, START), [a, b, hp] = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen && SIM.kanGa(p));
