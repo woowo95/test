@@ -560,8 +560,9 @@ export function forageItems(s: State, p: Person, dtSec: number, fart = 1): Recor
   const ai = ageIndex(s), hrs = dtSec / HOUR_S * SNABBARE, vaxer = hrs * fart; // allt man skaffar går fortare sedan steg 1.5.13
   const sk = kunnighet(p.skill.samla);
   const got: Record<string, number> = {};
-  // under bufferten plockas materialet, och den som hämtar det plockar till taket men aldrig över (FORRADSMAL, steg 6.2.14)
-  const plocka = (k: Materialslag) => { const q = overOchUnder(s, k, p.task?.items?.[k] ?? 0); return !q.over && (q.under || p.task?.hamtar === k); };
+  // under bufferten plockas materialet i förbifarten, och den som gått ut för att hämta det plockar en hel börda (FORRADSMAL, steg 6.2.14):
+  // över taket blir turerna allt mer sällsynta i valet (fylla_ på Förbättra), men de slutar inte tvärt (steg 13.8.4)
+  const plocka = (k: Materialslag) => p.task?.hamtar === k || overOchUnder(s, k, p.task?.items?.[k] ?? 0).under;
   // tändmaterialet är hela saker på rutan (steg 9.3.4): arbetet mot nästa sak ligger hos personen, och en hel sak tas från rutan
   // där hen är när arbetet räcker. Finns inget kvar där blir det inget, och arbetet väntar (högst en sak)
   if (plocka('torrgras')) tandTa(s, p, got, 'torrgras', ELD.hoTakt * ARSTID.hoPerTid[ai] * sk * vaxer);

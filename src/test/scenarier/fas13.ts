@@ -1276,3 +1276,33 @@ SCENARIER.raddarader = {
     ];
   },
 };
+
+// steg 13.8.4: det mjuka taket utan undantag
+SCENARIER.mjukttak = {
+  text: 'Steg 13.8.4: det mjuka taket utan undantag. Bufferten för maten räcker 4 dygn och för veden 3, taket är dubbelt så stort, grenar och hö hämtas allt mer sällan över taket men inte aldrig, grenarna från en stam bärs hem allt mer sällan ju mer byn har, sten och lera har ingen buffert utan hämtas till ett projekt, och ingen rad skickar alla till maten vid svält',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 10); tandEld(s); setFood(s, 30); SIM.setAmount(s, 'ved', 300);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
+    const bm = SIM.onskatDygn('mat', 0), bv = SIM.onskatDygn('ved', 0), tm = SIM.lyxtak(s, 'mat') / SIM.buffert(s, 'mat'), tv = SIM.lyxtak(s, 'ved') / SIM.buffert(s, 'ved');
+    // grenarna över taket: poängen på Förbättra sjunker men blir aldrig noll
+    const tak = SIM.materialTak(s, 'grenar');
+    const fylla = (n: number) => { SIM.setAmount(s, 'grenar', n); return SIM.forbattraKandidater(s, p).find(k => k.id === 'fylla_grenar')?.sc ?? 0; };
+    const g = [0.5, 1, 2, 4].map(f => fylla(Math.ceil(tak * f)));
+    // grenarna från en stam
+    const t = { act: 'hugga', phase: 'do', tx: 0, ty: 0, until: s.now, carry: 0, why: '' } as unknown as SIM.Task;
+    const med = [1, 2, 4].map(f => { SIM.setAmount(s, 'grenar', Math.ceil(tak * f)); return SIM.grenarMed(s, t); });
+    // sten och lera: förbrukningen ger ingen buffert, grenarna och höet har en
+    const m = { b: 50, t: 999 };
+    const sten = SIM.materialBuffert(s, 'sten', m), lera = SIM.materialBuffert(s, 'lera', m), gren = SIM.materialBuffert(s, 'grenar', m);
+    s.projektSaknar = { sten: { beh: 7, n: 7, b: 1 } };
+    const stenProjekt = SIM.materialBuffert(s, 'sten', m);
+    const fara = SIM.ARBETEN.some(a => a.id === 'fara');
+    return [
+      [`utan påbud räcker bufferten för maten ${bm} dygn och för veden ${bv} (år i spelet), och taken är ${tm} och ${tv} gånger bufferten`, bm === 4 && bv === 3 && Math.abs(tm - 2) < 1e-9 && Math.abs(tv - 2) < 1e-9],
+      [`grenarna hämtas allt mer sällan över taket men inte aldrig (poäng vid halva, hela, dubbla och fyrdubbla taket: ${g.map(x => x.toFixed(3)).join(', ')})`, g[0] >= g[1] && g[1] > g[2] && g[2] > g[3] && g[3] > 0],
+      [`grenarna från en stam följer med allt mer sällan (vid taket, dubbla och fyrdubbla: ${med.map(x => x.toFixed(2)).join(', ')})`, med[0] === 1 && med[1] < 1 && med[2] < med[1] && med[2] > 0],
+      [`sten och lera har ingen buffert av förbrukningen (${sten}, ${lera}), grenarna har (${gren}), och stenen till ett projekt hämtas (${stenProjekt})`, sten < 50 && lera < 50 && gren === 50 && stenProjekt >= 7],
+      ['ingen rad skickar alla vuxna till maten och veden vid svält och kyla', !fara],
+    ];
+  },
+};

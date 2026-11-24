@@ -134,7 +134,7 @@ import { och } from './ord';
 import { stepPynt } from './pynt';
 import { glomByten, stadaByten } from './byte';
 import { stationById, stationFlyttTimme, stationFor, kvVid, slitRedskapVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, tillbehorVila, workStation, vidBordet } from './stationer';
-import { buffert, forbrukTimme, overTak, underBuffert, villHaAv, ostKrok } from './forradsmal';
+import { buffert, forbrukTimme, forradAv, materialTak, underBuffert, villHaAv, ostKrok } from './forradsmal';
 import { notis } from './notiser';
 import { stepKrukor } from './kruka';
 import { ar_vatska, fyllLampa, fyllVatska, karSomBlirLedig, ledigFor, taVatskaFran, teFaktor, vatskaAv, type VatskaId } from './vatskor';
@@ -827,9 +827,13 @@ function pregnancy(s: State, p: Person, a: number, pop: number, dtSec: number) {
   }
 }
 
-// grenarna från en stam som huggs eller klyvs följer med när byn behöver dem, till elden eller veden; annars lämnas de på marken
-// (steg 12.1.52: de växte förut långt över taket)
-export const grenarMed = (s: State, tk: Task) => !overTak(s, 'grenar', tk.items?.grenar ?? 0) || woodDays(s) < buffert(s, 'ved');
+// den del av grenarna från en stam som huggs eller klyvs som följer med hem (steg 12.1.52, 13.8.4): alla under taket eller när
+// veden är under bufferten, och över taket en allt mindre del, (taket / det byn har)², som det mjuka taket i valet; resten lämnas på marken
+export const grenarMed = (s: State, tk: Task) => {
+  if (woodDays(s) < buffert(s, 'ved')) return 1;
+  const har = forradAv(s, 'grenar') + (tk.items?.grenar ?? 0), tak = materialTak(s, 'grenar');
+  return har < tak ? 1 : (tak / Math.max(1e-9, har)) ** 2;
+};
 // Uppgiften under ett steg. Tiden i steget går åt till det som händer i tur och ordning: att avsluta och välja, att gå
 // (tiden följer vägen), att arbeta i bitar och att bära hem. Det räknas likadant i spelet och vid ikappräkning; spelet
 // visar bara samma rörelse (spar). Vanor och idéer växer medan man håller på

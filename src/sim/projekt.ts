@@ -238,7 +238,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
   })()])),
   rep: {
     namn: SAKER.rep!.namn, vikt: PROJEKT_TAL.rep,
-    brist: s => clamp(1 - amountOf(s, 'rep') / villHaAv(s, 'rep'), 0, 1),
+    brist: s => { const v = villHaAv(s, 'rep'); return v > 0 ? clamp(1 - amountOf(s, 'rep') / v, 0, 1) : 0; }, // det projekten saknar (steg 13.8.4)
     kostnad: () => grundvarde('rep'),
     kan: (s, p) => wantsRope(s, p),
     ko: { act: 'tvinna', min: SAKER.rep!.skaffa!.min!, saknas: s => Math.max(0, Math.ceil(villHaAv(s, 'rep') - amountOf(s, 'rep') - 1e-9)) },

@@ -48,10 +48,10 @@ export const FORRAD = balans('forrad', {
   forsiktig: 0.25, // en försiktig by (seden Förutseende eller påbudet) vill ha så mycket större förråd
   behovTomt: 3.2, behovMax: 3.5, // vikten av ett tomt förråd under Försörjning, och den högsta vikten
   // mat: förrådets dygn dämpar vikten ner till Min när förrådet räcker så länge byn vill (bufferten) ...
-  matDygn: 2.5, matMin: 0.4, // 1,1 före Balansen i fas 9 (steg 9.9.4): med en så liten buffert slog varje störning direkt till svält
+  matDygn: 4, matMin: 0.4, // bufferten för maten i dygn: där behovet nått ner till Min (steg 13.8.4)
   matMatt: 2, matMinMatt: 0.04, // ... och sedan vidare ner till MinMatt vid taket, Matt gånger bufferten: då upphör matarbetet nästan (steg 3.10.9)
-  vedDygn: 2, vedMin: 0.15, // ... och för ved
-  vedMatt: 12, vedMinMatt: 0.01, // över taket (Matt gånger bufferten) sjunker golvet mot MinMatt, som ligger där vid dubbla tiden (steg 6.1.5)
+  vedDygn: 3, vedMin: 0.15, // ... och för ved (steg 13.8.4)
+  vedMatt: 2, vedMinMatt: 0.01, // över taket (Matt gånger bufferten) sjunker behovet vidare mot noll, aldrig tvärt (steg 10.2.4, 13.8.4)
   forbrukDygn: 3, // förbrukningen av ett material räknas över ungefär så här många dygn (ett glidande medel, steg 6.2.14)
   materialDygn: 2, // bufferten av ett material räcker så här många dygn med den förbrukningen ...
   materialMatt: 3, // ... och taket är så här många gånger bufferten
@@ -86,7 +86,6 @@ export const VILLTAL = balans('vill', {
   korgPerVuxna: 3, // ... en korg
   hornPerDrickare: 3, // ett dryckeshorn per så många som druckit på sistone (p.supit, steg 13.4.1)
   yxaPerVuxna: 4, yxaFran: 16, yxaBygge: 1, // ... en yxa, räknat på dem som är över Fran år, och Bygge till medan ett hus byggs (träden där det ska stå)
-  repMin: 4, // byn vill ha minst så här många rep; fler efter förbrukningen (MATERIALMAL, steg 10.2.12)
 });
 // eldens del av materialets buffert (steg 10.2.7): det som lämnas kvar i förrådet till elden när något byggs, görs eller tvinnas
 // (bygg.ts, stationer.ts, redskap.ts), räknat ur vad eldarna förbrukar: veden de bränner under TROSKEL.eldTim timmar, och det en
@@ -115,7 +114,7 @@ export const FORRADSMAL = {
 export type Resurs = keyof typeof FORRADSMAL;
 
 // bufferten i dygn för förrådsseden eller påbudet v, och extra (den som anar en hård vinter, motgang.ts)
-export const onskatDygn = (k: Resurs, v: number, extra = 0) => { const r = FORRADSMAL[k]; return r.dygn * (1 + FORRAD.forsiktig * v + extra) * (FORRAD.behovTomt - r.min); };
+export const onskatDygn = (k: Resurs, v: number, extra = 0) => { const r = FORRADSMAL[k]; return r.dygn * (1 + FORRAD.forsiktig * v + extra); }; // talet på raden är bufferten i dygn (steg 13.8.4)
 
 // bufferten och lyxtaket i dygn (räknade ur påbudet). extra: p:s aning om en hård vinter
 export const buffert = (s: State, k: Resurs, extra = 0) => onskatDygn(k, pabud(s, FORRADSMAL[k].pabud), extra);
@@ -123,7 +122,9 @@ export const lyxtak = (s: State, k: Resurs, extra = 0) => FORRADSMAL[k].matt * b
 
 // ---------- materialen (steg 6.2.14) ----------
 interface Materialmal {
-  min: (s: State) => number; // byn vill alltid ha minst så här mycket (tändmaterialet till elden, flintan)
+  min: (s: State) => number; // byn vill alltid ha minst så här mycket (tändmaterialet till elden, flintan som tänder, det husen och eldringarna saknar)
+  buffert?: boolean; // materialet har en buffert efter förbrukningen (steg 13.8.4): bara det byn behöver för att överleva och det som förbrukas
+  // av sig självt; de andra hämtas när ett projekt eller bygge behöver dem (s.projektSaknar)
 }
 // virket som byggbitarna (väggarna av timmer) ännu saknar: det som inte burits dit till det som inte är byggt
 const virkeTillHus = (s: State) => Math.ceil(bitsOf(s).reduce((n, b) => n + (b.b < 1 && MATERIAL[b.m]?.item === 'virke' ? Math.max(0, MATERIAL[b.m]!.n - b.mat) : 0), 0) - 1e-9);
@@ -131,8 +132,8 @@ const fargVill = (s: State, k: string) => living(s).some(p => knows(p, 'fargning
 const tand = (s: State) => s.fire.lit ? TROSKEL.tandVill : TROSKEL.tandVillSlocknad; // tändmaterialet invånarna vill ha
 const harNaver = (s: State) => amountOf(s, 'naver') >= TROSKEL.tandBrist || nTools(s, 'kniv') + nTools(s, 'yxa') > 0 && amountOf(s, 'ved') >= 1;
 export const MATERIALMAL = {
-  grenar: { min: tand },
-  torrgras: { min: s => harNaver(s) ? 0 : tand(s) }, // med näver, eller ett blad och ved att tälja den ur, behövs inget hö till tändningen (steg 6.3.3)
+  grenar: { min: tand, buffert: true },
+  torrgras: { min: s => harNaver(s) ? 0 : tand(s), buffert: true }, // hö till elden och åt djuren // med näver, eller ett blad och ved att tälja den ur, behövs inget hö till tändningen (steg 6.3.3)
   sten: { min: s => (s.fire.ring ? 0 : ELD.ring) + brasaStenMal(s) }, // de stenar eldringarna byn planerar saknar (steg 10.11.4)
   flinta: { min: s => (nTools(s, 'bagborr') > 0 ? 0 : TROSKEL.flintaMinsta) + flintaKrok.verktyg(s) }, // med en bågborr behövs ingen flinta till elden (steg 10.6.13), // och flintan till de redskap byn vill ha och saknar (steg 10.2.12)
   virke: { min: s => virkeTillHus(s) }, // det husen i Byggplanen behöver, också de som inte är påbörjade (steg 10.2.70)
@@ -141,8 +142,11 @@ export const MATERIALMAL = {
   mara: { min: s => fargVill(s, 'mara') }, vejde: { min: s => fargVill(s, 'vejde') }, krapp: { min: s => fargVill(s, 'krapp') },
   lera: { min: s => Math.max(0, REDSKAPMAL.lerkruka(s) - krukorIByn(s)) * 2 }, // steg 9.4.10: målet följer hur mycket lera byn gör av med, och leran till de krukor byn vill ha och saknar (två per kruka): annars grävdes ingen lera förrän en kruka gjorts, och ingen kruka gjordes utan lera
   // steg 10.2.12: det som görs och tas av förrådet följer också förbrukningen; minst en (en att börja med, innan något använts)
-  rep: { min: () => VILLTAL.repMin }, /* repet går åt till redskapen innan någon förbrukning hunnit räknas: några att börja med */ mossa: { min: s => harMyr(s) ? living(s).length : 0 }, /* en mossa per invånare där den går att få (steg 12.1.6) */ salva: { min: () => 1 }, tjara: { min: () => 1 }, benlim: { min: () => 1 }, tval: { min: () => 1 },
-  vin: { min: () => 1 }, ol: { min: () => 1 }, svagdricka: { min: () => 1 }, cider: { min: () => 1 }, mjod: { min: () => 1 }, sprit: { min: () => 2 }, buljong: { min: () => 1 }, // dryckerna (brygg.ts): det som dricks räknas i taVatska
+  rep: { min: () => 0 }, // repet görs när ett projekt behöver det (steg 13.8.4)
+  mossa: { min: s => harMyr(s) ? living(s).length : 0 }, // förbanden: en mossa per invånare där den går att få (steg 12.1.6)
+  // det som görs för att förbrukas (salvan, tjäran, limmet, tvålen och dryckerna) har en buffert efter förbrukningen, och en att börja med
+  salva: { min: () => 1, buffert: true }, tjara: { min: () => 1, buffert: true }, benlim: { min: () => 1, buffert: true }, tval: { min: () => 1, buffert: true },
+  vin: { min: () => 1, buffert: true }, ol: { min: () => 1, buffert: true }, svagdricka: { min: () => 1, buffert: true }, cider: { min: () => 1, buffert: true }, mjod: { min: () => 1, buffert: true }, sprit: { min: () => 2, buffert: true }, buljong: { min: () => 1, buffert: true }, // dryckerna (brygg.ts): det som dricks räknas i taVatska
 } as const satisfies Record<string, Materialmal>;
 export type Materialslag = keyof typeof MATERIALMAL;
 export const MATERIAL_LIST = Object.keys(MATERIALMAL) as Materialslag[];
@@ -179,8 +183,10 @@ export function materialTimme(s: State): Record<string, { b: number; t: number }
   return ut;
 }
 // bufferten och taket för materialet k: det minsta talet räknas nu (elden kan ha tänts sedan timmens början)
+// Ett material utan buffert (steg 13.8.4) vill byn ha så mycket av som projekten och byggena saknar (s.projektSaknar, en gång i timmen)
 export function materialBuffert(s: State, k: Materialslag, m = s.arbBehov?.mal?.[k]) {
-  return Math.max(MATERIALMAL[k].min(s), m?.b ?? 0);
+  const r: Materialmal = MATERIALMAL[k];
+  return Math.max(r.min(s), r.buffert ? m?.b ?? 0 : s.projektSaknar?.[k]?.beh ?? 0);
 }
 export function materialTak(s: State, k: Materialslag) { return takOch(s, k).tak; }
 // taket och bufferten för slaget k: bufferten, och högst FORRAD.materialMatt gånger den eller det platsen rymmer
@@ -201,6 +207,8 @@ export function villHaMer(s: State, k: string) {
 export const villHaAv = (s: State, k: Materialslag) => Math.ceil(materialBuffert(s, k) - 1e-9);
 export const underBuffert = (s: State, k: Materialslag, extra = 0) => amountOf(s, k) + extra < materialBuffert(s, k);
 export const overTak = (s: State, k: Materialslag, extra = 0) => amountOf(s, k) + extra >= materialTak(s, k);
+// hur mycket av materialet k hela byns förråd har, räknat som målen räknar
+export const forradAv = (s: State, k: string) => amountOf(s, k);
 // båda svaren på en gång (overTak och underBuffert), med bufferten räknad en gång: för den som frågar båda i varje steg (forageItems i eld.ts)
 export function overOchUnder(s: State, k: Materialslag, extra = 0) {
   const { b, tak } = takOch(s, k), har = amountOf(s, k) + extra;

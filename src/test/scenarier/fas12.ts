@@ -1275,7 +1275,7 @@ SCENARIER.barretur = {
 
 // steg 12.1.52: grenarna växer inte över taket
 SCENARIER.grenartak = {
-  text: 'Grenarna över taket (steg 12.1.52): grenarna som inte behövs till tändningen eldas före veden, bränsle som inte fick plats på elden går tillbaka som ved och inte som grenar, och grenarna från en stam lämnas på marken när byn har grenar till taket och ved så det räcker',
+  text: 'Grenarna över taket (steg 12.1.52): grenarna som inte behövs till tändningen eldas före veden, bränsle som inte fick plats på elden går tillbaka som ved och inte som grenar, och grenarna från en stam lämnas allt mer på marken ju mer byn har över taket (steg 13.8.4)',
   kor: () => {
     const s = SIM.createState(1, START); klockan(s, 10); tandEld(s);
     const tak = SIM.materialTak(s, 'grenar'), buf = SIM.tandBuffert(s, 'grenar');
@@ -1290,21 +1290,21 @@ SCENARIER.grenartak = {
     const tillbaka = `${SIM.amountOf(s, 'ved') - 10} ved och ${SIM.amountOf(s, 'grenar')} grenar`;
     // stammen
     const t = { act: 'hugga', phase: 'do', tx: 0, ty: 0, until: s.now, carry: 0, why: '' } as unknown as SIM.Task;
-    SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'grenar', Math.ceil(tak * 2)); const lamnas = !SIM.grenarMed(s, t);
+    SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'grenar', Math.ceil(tak * 2)); const lamnas = SIM.grenarMed(s, t);
     SIM.setAmount(s, 'grenar', 0); const tas = SIM.grenarMed(s, t);
-    SIM.setAmount(s, 'ved', 0); SIM.setAmount(s, 'grenar', Math.ceil(tak * 2)); const vedBrist = SIM.grenarMed(s, t);
+    SIM.setAmount(s, 'ved', 0); SIM.setAmount(s, 'grenar', Math.ceil(tak * 2)); const vedDygn = SIM.woodDays(s), vedBrist = vedDygn < SIM.buffert(s, 'ved') ? SIM.grenarMed(s, t) : 1;
     // steg 12.1.218: grenarna som lämnas dras inte från stammen, och de som är kvar när veden är slut blir en hög på rutan
     const st = { id: 9901, x: SIM.eldPlats(s).x + 4.5, y: SIM.eldPlats(s).y + 4.5, ved: 6, grenar: 9 };
     (s.stockar ??= []).push(st as SIM.Stock);
-    const forst = SIM.chopStock(s, 9901, 3, false)!, grenKvar = st.grenar, mark0 = SIM.paMarken(s, 'grenar');
-    const sist = SIM.chopStock(s, 9901, 3, false)!; SIM.laggPaRutan(s, 'grenar', sist.kvar, sist.x, sist.y);
+    const forst = SIM.chopStock(s, 9901, 3, 0)!, grenKvar = st.grenar, mark0 = SIM.paMarken(s, 'grenar');
+    const sist = SIM.chopStock(s, 9901, 3, 0)!; SIM.laggPaRutan(s, 'grenar', sist.kvar, sist.x, sist.y);
     const hog = SIM.paMarken(s, 'grenar') - mark0;
     return [
       [`grenarna över bufferten eldas först (grenar ${g0} → ${g1}, ved ${v0} → ${v1}, fick ${fick.toFixed(1)})`, g1 < g0 && v1 === v0 && Math.abs(fick - 4) < 0.5],
       [`vid bufferten tas veden (grenar ${g2}, ved ${v2})`, g2 === Math.ceil(buf) && v2 < 200],
       [`grenarna som lämnas stannar på stammen (${forst.grenar} tagna, ${grenKvar} kvar) och blir en hög på rutan när veden är slut (${sist.kvar} kvar, ${hog} på marken)`, forst.grenar === 0 && grenKvar === 9 && sist.done && sist.kvar === 9 && hog === 9],
       [`det som inte fick plats går tillbaka som ${tillbaka}`, tillbaka === '2 ved och 1 grenar'],
-      [`grenarna från stammen: lämnas när de räcker (${lamnas}), tas när de fattas (${tas}) och när veden fattas (${vedBrist})`, lamnas && tas && vedBrist],
+      [`grenarna från stammen (steg 13.8.4): en mindre del följer med vid dubbla taket (${lamnas.toFixed(2)}), alla när de fattas (${tas}) och när veden fattas (${vedBrist}; grenarna räcker själva ${vedDygn.toFixed(1)} dygn)`, lamnas > 0 && lamnas < 0.5 && tas === 1 && vedBrist === 1],
     ];
   },
 };
