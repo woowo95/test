@@ -1,0 +1,39 @@
+{
+ "id": "jordgubbsruta",
+ "ritad": 1,
+ "av": "Claude, ur Björns val i bildstilen (steg 13.10.1)",
+ "w": 16,
+ "h": 16,
+ "rader": [
+  "GFGGFGGHGGFGGGFG",
+  "FGFFGFFGFFGFFGFF",
+  "EFEFMMEMMEMMEFFE",
+  "EEFMPPMPOMPOMEEE",
+  "GFMPPOMPOOMOWMFG",
+  "FGMPOWMPPOWMWMFF",
+  "EMPPOMOWMPOOMWME",
+  "EtPtOWMPPOWMtPtE",
+  "GuttWMPOOWMOuttG",
+  "FttsMWOWMWWMttsF",
+  "EFrFEtPtMtPtErFE",
+  "EEFEEuttEuttEEEE",
+  "GFGGFttsGttsGGFG",
+  "FGFFGFrFFGrFFGFF",
+  "EFEFFEFEFFEFEFFE",
+  "EEFEEEEEEFEEEEEE"
+ ],
+ "pal": {
+  "E": "#3f2415",
+  "F": "#5e3c24",
+  "G": "#7d5b40",
+  "H": "#987e62",
+  "M": "#353204",
+  "O": "#647025",
+  "P": "#898b4c",
+  "W": "#324726",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

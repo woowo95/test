@@ -1,0 +1,31 @@
+{
+ "id": "jordgubbsplanta",
+ "ritad": 1,
+ "av": "Claude, ur Björns val i bildstilen (steg 13.10.1)",
+ "w": 14,
+ "h": 12,
+ "rader": [
+  "...MM.MM.MM...",
+  "..MPPMPOMPOM..",
+  ".MPPOMPOOMOWM.",
+  ".MPOWMPPOWMWM.",
+  "MPPOMOWMPOOMWM",
+  "tPtOWMPPOWMtPt",
+  "uttWMPOOWMOutt",
+  "ttsMWOWMWWMtts",
+  ".r..tPtMtPt.r.",
+  "....utt.utt...",
+  "....tts.tts...",
+  ".....r...r...."
+ ],
+ "pal": {
+  "M": "#353204",
+  "O": "#647025",
+  "P": "#898b4c",
+  "W": "#324726",
+  "r": "#521100",
+  "s": "#742a01",
+  "t": "#a14808",
+  "u": "#bd753e"
+ }
+}

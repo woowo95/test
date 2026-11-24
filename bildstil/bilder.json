@@ -404,6 +404,8 @@
     {"id": "stenvag", "sort": "kar-mark", "namn": "Stenlagd väg", "w": 32, "h": 32, "vad": "stenvägen, 2 × 2 rutor som upprepas (Björns val, steg 11.14.1)", "ritad": 1, "godkand": true},
     {"id": "sophog", "sort": "kar-mark", "namn": "Sophögen", "w": 16, "h": 16, "vad": "sophögen i byns utkant (Björns val, steg 11.14.1)", "ritad": 1, "godkand": true},
     {"id": "appeltrad", "sort": "kar-mark", "namn": "Äppelträd", "w": 26, "h": 31, "vad": "äppelträdet på fältrutan (Björns val, steg 11.14.1)", "ritad": 1, "godkand": true},
+    {"id": "jordgubbsruta", "sort": "kar-mark", "namn": "Jordgubbsruta", "w": 16, "h": 16, "vad": "jordgubbsplantan med mogna bär på fältrutan (Björns val, steg 13.10.1)", "ritad": 1, "godkand": true},
+    {"id": "jordgubbsplanta", "sort": "sak-mat", "namn": "Jordgubbsplanta", "w": 14, "h": 12, "vad": "jordgubbsplantan som sak, samma teckning utan jorden (Björns val, steg 13.10.1)", "ritad": 1, "godkand": true},
     {"id": "vildbo", "sort": "kar-mark", "namn": "Vildbo", "w": 20, "h": 28, "vad": "vildboet i stammen (Björns val, steg 11.14.1)", "ritad": 1, "godkand": true},
     {"id": "biarg_moln", "sort": "kar-mark", "namn": "Bimolnet", "w": 36, "h": 26, "vad": "molnet av bin kring det uppretade boet (Björns val, steg 11.14.1)", "ritad": 1, "godkand": true},
     {"id": "ved_nagra", "sort": "sak-material", "namn": "Några vedträn", "w": 16, "h": 16, "vad": "några vedträn i en stapel (Björns val, steg 11.14.1)", "ritad": 1, "godkand": true},

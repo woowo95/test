@@ -153,7 +153,7 @@ function drawFalt() {
     for (let k = 0; k < f.n; k++) { // varje ruta efter sitt eget steg och sin gröda (steg 9.7.1)
       const r = R[k], lin = r.g === 'lin', liten = r.st === 'vaxer' && (r.v ?? 0) < 0.5; // linet har egna bilder för fältet (steg 7.7.8)
       const trad = r.g === 'appeltrad' && KARTBILDER.appeltrad && (r.st === 'mogen' || (r.st === 'vaxer' && !liten)); // äppelträdet (Björns val, steg 11.14.1) när det vuxit till
-      const bild = trad ? 'appeltrad' : r.st === 'mogen' && r.g ? (lin ? 'lin_mogen' : GRODOR[r.g].sak) : r.st === 'vaxer' ? (lin ? ((r.v ?? 0) < 0.5 ? 'lin_ung' : 'lin_bla') : 'grodd') : undefined;
+      const bild = trad ? 'appeltrad' : r.st === 'mogen' && r.g ? (lin ? 'lin_mogen' : r.g === 'jordgubbar' ? 'jordgubbsruta' : GRODOR[r.g].sak) : r.st === 'vaxer' ? (lin ? ((r.v ?? 0) < 0.5 ? 'lin_ung' : 'lin_bla') : 'grodd') : undefined;
       const i = faltRuta(f, k), X = (i % W) * TS, Y = Math.floor(i / W) * TS;
       const rojd = r.st !== 'roja', grav = r.st !== 'roja' && r.st !== 'bereda';
       if (!rojd) structG.lineStyle(1, 0x5e3c24).drawRect(X + 0.5, Y + 0.5, TS - 1, TS - 1).lineStyle(0);

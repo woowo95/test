@@ -3707,7 +3707,7 @@ PIX.plog = PIX.slade; PAL.plog = PAL.slade; // platshållare för plogen (steg 1
 PIX.vattenho_karta = PIX.vattenho; PAL.vattenho_karta = PAL.vattenho; // platshållare för vattenhon på kartan (steg 10.10.30)
 PIX.kompost = PIX.latrin ?? PIX.ved; PAL.kompost = PAL.latrin ?? PAL.ved; // platshållare för komposten (steg 9.7.6) tills Björn valt i bildstilen
 PIX.kalfron = PIX.artfron; PAL.kalfron = PAL.artfron; // platshållare för kålen och bönorna (steg 9.7.8) tills Björn valt i bildstilen
-PIX.jordgubbsplanta = PIX.bar; PAL.jordgubbsplanta = PAL.bar; // platshållare för jordgubbarna (steg 9.7.9) tills Björn valt i bildstilen
+PIX.jordgubbsplanta = PIX.bar; PAL.jordgubbsplanta = PAL.bar; // reserven; bilden är Björns val (steg 13.10.1, kartbilder.ts)
 PIX.staket = PIX.grenar; PAL.staket = PAL.grenar; // platshållare för staketets teknik (steg 9.7.10) tills Björn valt i bildstilen
 PIX.appelplanta = PIX.grenar; PAL.appelplanta = PAL.grenar; // platshållare för äppelträdet (steg 9.7.13), som får sin bild av LISTA i Björns val ur fas 9 och 10
 PIX.rokfisk = PIX.torrfisk; PAL.rokfisk = PAL.torrfisk; PIX.rokkott = PIX.torrkott; PAL.rokkott = PAL.torrkott; // platshållare för rökeriet och det rökta (steg 9.6.8) tills Björn valt i bildstilen
