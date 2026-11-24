@@ -246,6 +246,9 @@ export function gaMot(s: State, r: Person, mx: number, my: number, sek: number, 
     if (!sist && nx !== undefined) { // bredvid de andra i gänget (steg 10.2.25): var och en går en egen linje vid sidan av vägen, om marken där går att gå på
       const ux = (nx % W) + 0.5 - wx, uy = Math.floor(nx / W) + 0.5 - wy, ul = Math.hypot(ux, uy) || 1, o = sidaOm(r), sx = wx - uy / ul * o, sy = wy + ux / ul * o; // vägens riktning, inte rövarens
       if (inMap(sx, sy) && !iVatten(s, sx, sy) && !bitAt(s, sx, sy)) { wx = sx; wy = sy; }
+      // en punkt hen redan passerat, sett i vägens riktning, hoppas över om det är fritt till nästa: i vägens hörn ligger filens punkt
+      // bakom den som går i filen, och hen ska inte gå tillbaka till den (steg B.20)
+      if ((wx - r.x!) * ux + (wy - r.y!) * uy < 0 && fritt(s, r.x!, r.y!, wx + ux, wy + uy)) { gr(r).path!.shift(); continue; }
     }
     // ingen går genom en människa: man kliver åt sidan runt hen. Står rövaren redan där (vägen går tätt bakom den hen gått
     // runt), tränger hen sig förbi
@@ -259,6 +262,12 @@ export function gaMot(s: State, r: Person, mx: number, my: number, sek: number, 
     if (sist) { spara(s, r, t0 + tid * SEC); return 0; }
     gr(r).path!.shift(); spara(s, r, t0 + tid * SEC);
   }
+}
+// marken på den raka linjen går att gå på (inget vatten, inget hus)
+function fritt(s: State, x0: number, y0: number, x1: number, y1: number) {
+  const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 0.4);
+  for (let i = 1; i <= n; i++) { const x = x0 + (x1 - x0) * i / n, y = y0 + (y1 - y0) * i / n; if (!inMap(x, y) || iVatten(s, x, y) || bitAt(s, x, y)) return false; }
+  return true;
 }
 // en människa i byn som står på sträckan från rövaren r till (wx, wy) närmare än halva STRID.kropp: punkten bredvid hen, på
 // rövarens sida, dit r kliver först (gaMot). Den rövaren går mot (målet mx, my) går hen fram till, och förbi den som står
@@ -1049,9 +1058,10 @@ function djurMotRovare(s: State, f: Rovarflock) {
   const fo = rovarna(s, f).filter(r => !kartStrider(s).some(g => g.st.kampar.some(k => k.pid === r.id)));
   if (!fo.length) return;
   const nara = (d: { x: number; y: number }) => fo.some(r => avst(r, d) < KLOCKA.faraSyn);
-  for (const v of s.vargar ?? []) if (v.vargar.length && nara(v) && !vargIStrid(s, v)) { vargStrid(s, v, fo, 'skada', 'nära byn', true); count(s, 'djurMotRovare'); return; }
+  for (const v of s.vargar ?? []) if (v.vargar.length && v.gor !== 'ater' && v.gor !== 'flyr' && nara(v) && !vargIStrid(s, v)) { vargStrid(s, v, fo, 'skada', 'nära byn', true); count(s, 'djurMotRovare'); return; }
   const b = bjornarOf(s, s.now).find(d => d.art === 'bjorn');
-  if (b && nara(b) && !djurIKartStrid(s, 'bjorn')) { bjornStrid(s, b.id, fo, false, 'skada'); count(s, 'djurMotRovare'); }
+  const undan = s.bjornUndan && s.now >= s.bjornUndan.fran && s.now < s.bjornUndan.fran + (s.bjornUndan.till - s.bjornUndan.fran) / 3; // den som går bort efter en strid (steg 9.2.30), och flocken som äter eller flyr (steg B.11), anfaller ingen: annars började en ny strid varje sekund (steg B.20)
+  if (b && !undan && nara(b) && !djurIKartStrid(s, 'bjorn')) { bjornStrid(s, b.id, fo, false, 'skada'); count(s, 'djurMotRovare'); }
 }
 // slaget hålls kort medan ett gäng är på kartan (klocka.ts, steg 10.2.14)
 SLAGHINDER.push(s => rovarFlockar(s).some(f => f.folk.length > 0) ? KLOCKA.slag : undefined);
