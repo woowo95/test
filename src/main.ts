@@ -294,6 +294,9 @@ async function boot() {
   $('map').appendChild(view);
   layout();
   new ResizeObserver(layout).observe($('map'));
+  // sidhuvudet bryts efter innehållet (steg 13.10.16), och kartan och panelerna börjar under det
+  const huvud = document.querySelector('header')!;
+  new ResizeObserver(() => document.body.style.setProperty('--topp', `${huvud.offsetHeight}px`)).observe(huvud);
   const annan = aktivBy();
   if (annan) { $('loading').hidden = true; await bytTill(annan); }
   if (!ui.annanBy) {

@@ -1,4 +1,5 @@
 // Scenarier för fas 13.
+import { readFileSync } from 'node:fs';
 import * as SIM from '../../sim';
 import { SCENARIER, klockan, kor, medBank, medHus, medVatska, nyInvanare, setFood, setMat, tandEld, testBy, utanWebblasare, vidStack } from './hjalp';
 import { GRAFER, grafHtml } from '../../ui/graf';
@@ -2211,13 +2212,14 @@ SCENARIER.eldalder = {
 };
 
 SCENARIER.delrad = {
-  text: 'Steg 13.10.15: delraden med namn vet hur många knapparna är, hur många som står i varje rad när den bryts i två, och hur långt det längsta namnet är, så att ingen knapp blir smalare än sitt namn; graferna har en egen symbol och inte pilen för ökning',
+  text: 'Steg 13.10.15: delraden visar namnet bara under den valda delen; de andra har sin symbol och namnet i sin title; graferna har en egen symbol',
   kor: () => {
     setByn(SIM.createState(3, START));
-    const d = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `d${i}`, tecken: '', namn: i ? 'Del' : 'Världskartan' }));
+    const html = delRad('data-x', ['a', 'b', 'c'].map(id => ({ id, tecken: '*', namn: 'Del ' + id })), 'b'), css = readFileSync(new URL('../../template.html', import.meta.url), 'utf8');
     return [
-      ['sex delar bryts i tre och tre', /--n:6;--h:3;--l:12/.test(delRad('data-x', d(6), 'd0'))],
-      ['sju delar bryts i fyra och tre', /--n:7;--h:4;--l:12/.test(delRad('data-x', d(7), 'd0'))],
+      ['en del är vald', (html.match(/aria-selected="true"/g) ?? []).length === 1 && /data-x="b" aria-selected="true"/.test(html)],
+      ['varje knapp har sitt namn i title', ['a', 'b', 'c'].every(id => html.includes(`title="Del ${id}"`))],
+      ['namnet syns bara under den valda', /\.pdelar \.delnamn \{ display: none/.test(css) && /aria-selected="true"\] \.delnamn \{ display: block/.test(css)],
       ['graferna har en egen symbol', (PIX.sym_graf?.length ?? 0) === 16],
     ];
   },
