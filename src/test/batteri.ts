@@ -40,6 +40,7 @@ export function foljBatteriet(skriv: (rad: string) => void) {
   };
   setInterval(kolla, process.env.BATTERI_FIL ? 500 : KOLLA_MS).unref();
   kolla();
-  // en stannad process tar inte emot SIGTERM förrän den får fortsätta, så de släpps när kedjan avbryts
-  for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) process.on(sig, () => { signal('SIGTERM'); signal('SIGCONT'); process.exit(130); });
+  // en stannad process tar inte emot SIGTERM förrän den får fortsätta, så de släpps när kedjan avbryts (pool.ts avslutar vid
+  // SIGINT, SIGTERM och SIGHUP)
+  process.on('exit', () => { if (pausad) { signal('SIGTERM'); signal('SIGCONT'); } });
 }
