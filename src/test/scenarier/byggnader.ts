@@ -1304,10 +1304,10 @@ SCENARIER.sovplats = {
 };
 
 SCENARIER.rumplus = {
-  text: 'Rummens plus (steg 12.1.143): Varmt och ljust, Fint pyntat och Eget rum i registret RUM_PLUS, som läser rummens taggar ur RUMSTYPER; eget rum vilar man bättre i, och pluset syns under rummets taggar',
+  text: 'Rummens plus (steg 12.1.143): Varmt och ljust och Eget rum i registret RUM_PLUS, som läser rummens taggar ur RUMSTYPER; eget rum vilar man bättre i, och pluset syns under rummets taggar',
   kor: () => {
     const { RUM_PLUS, RUMSTYPER } = SIM, rad = (id: string) => RUM_PLUS.find(p => p.id === id)!, T = (...k: string[]) => new Set(k);
-    const ljust = rad('ljust'), pynt = rad('pynt'), eget = rad('eget');
+    const ljust = rad('ljust'), eget = rad('eget');
     // en ny grundtagg i registret (som Sjukstugan) delar rummet av sig själv, utan att pluset ändras
     const reg = RUMSTYPER as Record<string, SIM.RumsTyp>;
     reg.provtagg = { namn: 'Prov', ikon: 'bord', slag: 'grund', om: '', krav: () => false };
@@ -1328,12 +1328,11 @@ SCENARIER.rumplus = {
     const fragaAndrarInte = JSON.stringify(s.rumPlus ?? null) === sparat && !!s.rumPlus;
     const iTakter = SIM.TAKTER.some(t => t.namn === 'rummens plus' && t.sek === 3600);
     return [
-      [`registret har tre plus (${RUM_PLUS.map(p => p.namn).join(', ')})`, RUM_PLUS.length >= 3 && !!ljust && !!pynt && !!eget],
+      [`registret har två plus (${RUM_PLUS.map(p => p.namn).join(', ')}); pyntet räknas i finheten (14.1.1)`, RUM_PLUS.length >= 2 && !!ljust && !!eget && !RUM_PLUS.some(p => p.id === 'pynt')],
       ['varmt och ljust: ett varmt rum med ljus när det är mörkt ute, inte utan ljus', ljust.krav(T('varmt', 'matsal'), true) && !ljust.krav(T('varmt'), false) && !ljust.krav(T('matsal'), true)],
-      ['fint pyntat: ett prytt rum där man sover eller äter, inte en prydd verkstad', pynt.krav(T('prytt', 'sovrum'), false) && pynt.krav(T('prytt', 'matsal'), false) && !pynt.krav(T('prytt', 'verkstad'), false)],
       ['eget rum: ett sovrum utan annan funktion; ett sovrum med kök, verkstad eller sovsal är inget eget rum', eget.krav(T('sovrum', 'varmt', 'prytt'), false) && !eget.krav(T('sovrum', 'kok', 'hydda'), false) && !eget.krav(T('sovrum', 'verkstad'), false) && !eget.krav(T('sovsal'), false)],
       ['en ny grundtagg i RUMSTYPER räknas som en annan funktion utan att pluset ändras', nyDelar],
-      ['eget rum vilar man bättre i, varmt och pyntat ger en tanke', (eget.vila ?? 0) > 0 && (ljust.tanke ?? 0) > 0 && (pynt.tanke ?? 0) > 0],
+      ['eget rum vilar man bättre i, varmt och ljust ger en tanke', (eget.vila ?? 0) > 0 && (ljust.tanke ?? 0) > 0],
       [`i testbyn följer vilan i rummen både minus och plus (${rum.length} rum, ${sagsEget} eget rum)`, vilaRatt],
       ['plusen räknas vid timmens början av en rad i TAKTER och sparas i byn; frågan (husfliken, vilan) ändrar inget', iTakter && fragaAndrarInte],
     ];

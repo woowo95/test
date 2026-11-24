@@ -23,6 +23,7 @@ import './fas12';
 import './mobler';
 import './resor12';
 import './fas13';
+import './fas14';
 import './tankar';
 import './paneler';
 import './felsok'; // verktygen för att hitta felen (steg 12.1.40–12.1.44)

@@ -473,6 +473,7 @@ export interface State {
   kartStrider?: import('./kartstrid').KartStrid[]; kartStridNr?: number; // striderna som pågår på kartan (steg 10.1.4, kartstrid.ts)
   stegRest?: number; // (äldre sparning: det som var kvar av ett delat slag; tas bort)
   skuld?: number; // sekunder som ska räknas men inte räcker till ett helt slag (step i steg.ts, steg 10.2.14)
+  finhet?: Record<string, number>; // rummens finhet 0–1 per rum (nyckeln är rummets minsta ruta), räknad vid timmens början (rum.ts, steg 14.1.1)
   rumPlus?: Record<string, string[]>; // rummens plus per rum (nyckeln är rummets minsta ruta), räknade vid timmens början (rum.ts, steg 12.1.210)
   takter?: Record<string, number>; // när varje rad i TAKTER räknades sist (steg 10.2.14, steg.ts)
   bjornUndan?: { fran: number; till: number; x0: number; y0: number; x1: number; y1: number }; // björnen går bort efter en strid (steg 9.2.30)

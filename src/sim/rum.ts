@@ -1,10 +1,12 @@
 import { HUS, bedTile, sjukKrok, sovplatser } from './byggnader';
-import { Hus, Rum, gridOf } from './byggnad';
+import { Hus, MATERIAL, Rum, gridOf } from './byggnad';
 import { balans } from './balans';
 import { brasorOf } from './brasor';
 import { eldPlats } from './karta';
 import { SMUTS, flackNu, flackarOf } from './smuts';
-import { isKlar, stationDef, stationerOf, storlekAv } from './stationer';
+import { isKlar, krukaHemma, sovrum, stationDef, stationerOf, storlekAv } from './stationer';
+import { PERFEKT, kvOf } from './kvalitet';
+import { krukaPyntQ } from './kruka';
 import { living } from './folk';
 import { HOUR, Person, State, W } from './typer';
 import { ljusAt } from './ljus';
@@ -32,7 +34,6 @@ export const RUM = balans('rum', {
   // rummens plus (steg 12.1.143)
   ljusMin: 0.5, // ljuset inne som räknas som ljust när det är mörkt ute
   plusLjust: 0.04, // tanken för den som sover eller äter i ett varmt och ljust rum
-  plusPynt: 0.04, // tanken för den som sover eller äter i ett fint pyntat rum
   plusEget: 0.06, // så mycket bättre man vilar i ett eget rum
 });
 
@@ -93,16 +94,14 @@ export const RUM_MINUS: RumMinus[] = [
 
 // taggar som passar bra ihop ger ett plus (steg 12.1.143), på samma sätt som RUM_MINUS. krav frågar taggarna (t) och om det är ljust
 // inne när det är mörkt ute (ljust); vila = så mycket bättre man vilar där, tanke = den goda tanken hos den som sover eller äter där.
-// Villkoren läser RUMSTYPER (sova, ata och slag), inte en fast lista, så att en ny tagg räknas med av sig själv
+// Villkoren läser RUMSTYPER (slag), inte en fast lista, så att en ny tagg räknas med av sig själv. Pyntet räknas i rummets finhet (steg 14.1.1)
 export interface RumPlus { id: string; namn: string; ikon: string; om: string; krav: (t: Set<string>, ljust: boolean) => boolean; vila?: number; tanke?: number }
-const sover = (t: Set<string>) => [...t].some(k => TYPER[k]?.sova), ater = (t: Set<string>) => [...t].some(k => TYPER[k]?.ata);
 export const RUM_PLUS: RumPlus[] = [
   { id: 'ljust', namn: 'Varmt och ljust', ikon: 'lagereld', om: 'Ett varmt rum med ljus inne när det är mörkt ute', krav: (t, ljust) => t.has('varmt') && ljust, get tanke() { return RUM.plusLjust; } },
-  { id: 'pynt', namn: 'Fint pyntat', ikon: 'kruka', om: 'Ett prytt rum där man sover eller äter', krav: t => t.has('prytt') && (sover(t) || ater(t)), get tanke() { return RUM.plusPynt; } },
   // ett sovrum som inte delas med någon annan funktion: ingen annan grundtagg i RUMSTYPER
   { id: 'eget', namn: 'Eget rum', ikon: '🛏️', om: 'Ett sovrum som inte delas med någon annan funktion', krav: t => t.has('sovrum') && [...t].every(k => k === 'sovrum' || TYPER[k]?.slag !== 'grund'), get vila() { return RUM.plusEget; } },
 ];
-const PLUS_TANKE: Record<string, string> = { ljust: 'Varmt och ljust inne', pynt: 'Fint pyntat omkring sig', eget: 'Har ett eget rum' };
+const PLUS_TANKE: Record<string, string> = { ljust: 'Varmt och ljust inne', eget: 'Har ett eget rum' };
 export const rumPlusTanke = (id: string) => PLUS_TANKE[id] ?? id;
 
 // utanFolk: utan att räkna vem som sover där (valet av sovplats frågar om rummet är en sjukstuga, steg 13.1.14)
@@ -182,6 +181,64 @@ export function rumPlus(s: State, r: Rum): RumPlus[] {
   const l = s.rumPlus?.[rumNyckel(r)];
   return l ? RUM_PLUS.filter(p => l.includes(p.id)) : [];
 }
+// ---------- rummets finhet (steg 14.1.1, Byggsystemet: Rummens finhet) ----------
+// Varje rum har en finhet från 0 till 1, räknad ur det som finns i rummet. Delarna är rader i FINHET_DELAR, var och en 0–1, och
+// vikterna är balanstal; smutsen drar av. Räknas vid timmens början (raden rummens finhet i TAKTER) och sparas i byn, så att
+// svaret inte beror på vem som frågar först. Den används av priset på huset, tanken hos den som sover eller äter där och
+// företagens omdöme
+export const FINHET = balans('finhet', {
+  mobel: 0.25, vagg: 0.15, golv: 0.1, yta: 0.15, pynt: 0.15, ljus: 0.1, varme: 0.1, // hur mycket varje del väger
+  smuts: 0.4, // ett rum som är fullt av smuts förlorar så här mycket
+  ytaFull: 8, // rutor per person som sover i rummet: så mycket är gott om plats
+  pyntFull: 2, // så mycket pynt (ett normalt är 1, ett perfekt mästerverk 2,5) är fullt pyntat
+  smutsFull: 3, // så många tydliga fläckar är ett rum fullt av smuts
+  varde: 0.6, // ett rum så här fint är ett fint rum (symbolen i rutan)
+});
+export interface FinhetDel { id: string; namn: string; vikt: () => number; del: (d: FinhetRum) => number }
+interface FinhetRum { s: State; r: Rum; i: RumInfo; mobler: number[]; pynt: number; ljus: boolean }
+const medel = (l: number[]) => l.length ? l.reduce((a, b) => a + b, 0) / l.length : 0;
+const fint = (d: FinhetRum, rutor: number[], k: 'vagg' | 'golv') => { const g = gridOf(d.s); return medel(rutor.flatMap(i => { const b = g.at.get(i); return b?.k === k ? [MATERIAL[b.m]?.fin ?? 0] : []; })); };
+export const FINHET_DELAR: FinhetDel[] = [
+  { id: 'mobel', namn: 'Möblerna', vikt: () => FINHET.mobel, del: d => medel(d.mobler) },
+  { id: 'vagg', namn: 'Väggarna', vikt: () => FINHET.vagg, del: d => fint(d, d.r.walls, 'vagg') },
+  { id: 'golv', namn: 'Golvet', vikt: () => FINHET.golv, del: d => fint(d, d.r.tiles, 'golv') },
+  { id: 'yta', namn: 'Platsen', vikt: () => FINHET.yta, del: d => Math.min(1, d.r.tiles.length / Math.max(1, d.i.folk) / FINHET.ytaFull) },
+  { id: 'pynt', namn: 'Pyntet', vikt: () => FINHET.pynt, del: d => Math.min(1, d.pynt / FINHET.pyntFull) },
+  { id: 'ljus', namn: 'Ljuset', vikt: () => FINHET.ljus, del: d => d.ljus ? 1 : 0 },
+  { id: 'varme', namn: 'Värmen', vikt: () => FINHET.varme, del: d => d.i.eld >= 1 ? 1 : 0 },
+  { id: 'smuts', namn: 'Smutsen', vikt: () => -FINHET.smuts, del: d => Math.min(1, d.i.smuts / FINHET.smutsFull) },
+];
+// allt som räknas i finheten: delarna (0–1) och summan
+export function finhetDelar(s: State, r: Rum): { tal: number; delar: { id: string; namn: string; v: number; vikt: number }[] } {
+  const rutor = new Set(r.tiles), d: FinhetRum = { s, r, i: rumInfo(s, r), mobler: [], pynt: 0, ljus: false };
+  const pynta = (q: number) => { d.pynt += q / 2; };
+  for (const t of stationerOf(s)) {
+    if (!isKlar(t) || !rutor.has(t.y * W + t.x)) continue;
+    const def = stationDef(t.k);
+    if (!def) continue;
+    if (def.pynt) pynta(Math.min(PERFEKT, kvOf(t) + (def.pyntQ ?? 0)));
+    else if (def.mobel) d.mobler.push(kvOf(t) / PERFEKT);
+  }
+  for (const p of living(s)) { const k = krukaHemma(s, p), rum = k && sovrum(s, p); if (k && rum === r) pynta(krukaPyntQ(k)); }
+  // ett ljus som är tänt eller kan tändas, en uppsatt fackla eller en härd
+  d.ljus = d.i.eld >= 1 || (s.ljus ?? []).some(l => { const t = stationerOf(s).find(x => x.id === l.st); return !!t && rutor.has(t.y * W + t.x); }) || (s.uppsatta ?? []).some(u => rutor.has(u.y * W + u.x));
+  const delar = FINHET_DELAR.map(x => ({ id: x.id, namn: x.namn, v: x.del(d), vikt: x.vikt() }));
+  return { tal: Math.max(0, Math.min(1, delar.reduce((a, x) => a + x.v * x.vikt, 0))), delar };
+}
+export function finhetTimme(s: State) {
+  const m: Record<string, number> = {};
+  for (const r of gridOf(s).rooms) if (r.tiles.length) m[rumNyckel(r)] = finhetDelar(s, r).tal;
+  s.finhet = m;
+}
+// rummets finhet (0–1); ett rum som byggts sedan timmens början har ingen än
+export const finhetAv = (s: State, r: Rum): number | undefined => s.finhet?.[rumNyckel(r)];
+// husets finhet: medlet av rummens, efter deras yta
+export function husFinhet(s: State, hus: number): number | undefined {
+  let n = 0, v = 0;
+  for (const r of gridOf(s).rooms) if (r.hus === hus) { const f = finhetAv(s, r); if (f !== undefined) { n += r.tiles.length; v += f * r.tiles.length; } }
+  return n ? v / n : undefined;
+}
+
 // det som passar dåligt ihop i rummet
 export function rumMinus(s: State, r: Rum): RumMinus[] {
   const t = rumTaggar(s, r);
