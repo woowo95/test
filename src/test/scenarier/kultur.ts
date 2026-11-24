@@ -1826,7 +1826,8 @@ SCENARIER.runsten = {
     for (const p of a.v) (p.tek ??= {}).stenhuggarplats = 1;
     gift(s, w, d);
     SIM.handelse(s, d, 'bjorndodare', undefined, undefined, w, 2);
-    const utan = SIM.runstenLust(s, annan) === undefined && SIM.runstenLust(s, w) === undefined;
+    // den som inte såg något har ingen lust; den som såg björnen fällas vill resa en bildsten om den (steg 13.9.15)
+    const utan = SIM.runstenLust(s, annan) === undefined, sag = SIM.runstenLust(s, w);
     SIM.die(s, d, 'alderdom');
     const lust = SIM.runstenLust(s, w);
     const ingenBedrift = () => { for (const p of SIM.living(s)) p.bedrift = undefined; }; // det som kommer på något under tiden vill resa en sten om det
@@ -1851,7 +1852,7 @@ SCENARIER.runsten = {
     // en till som varken sörjer eller har en bedrift reser ingen
     const fore = s.runstenar?.length ?? 0; SIM.setAmount(s, 'huggen_sten', 6); korTills(s, () => false, 12 * 3600, ingenBedrift);
     return [
-      ['utan sorg eller bedrift finns ingen lust', utan],
+      [`utan sorg eller något att minnas finns ingen lust, och den som såg björnen fällas vill resa en bildsten om den (${sag?.motiv}, ${sag?.om.namn})`, utan && sag?.slag === 'handelse' && sag.om.id === d.id],
       [`den som sörjer sin partner vill resa en sten (${lust?.slag} ${Math.round((lust?.w ?? 0) * 100) / 100})`, lust?.slag === 'minne' && lust.om.id === d.id],
       [`stenen reses med 3 huggna stenar ("${r?.text}", ${r?.runor}, sten kvar ${sten})`, !!r && r.av.id === w.id && r.om.id === d.id && sten === 0 && r.text.includes('dödade en björn') && /[ᚠ-ᛪ]/.test(r.runor)],
       ['den som reste stenen ger en notis och en rad i krönikan', !!s.notiser?.lista.some(n => n.id === 'runsten') && !!s.hist?.kronika.some(k => k[2] === 'runsten')],
@@ -1859,7 +1860,7 @@ SCENARIER.runsten = {
       [`den döda glöms långsammare (säkerheten efter tre dygn ${Math.round(med * 100)} % med stenen, ${Math.round(utanSten * 100)} % utan)`, med > utanSten],
       ['inget annat kan stå på stenens ruta', kvar],
       ['elden tar inte stenen', !brann],
-      [`ingen sten reses utan sorg eller bedrift (${(s.runstenar?.length ?? 0) - fore} nya)`, (s.runstenar?.length ?? 0) === fore],
+      [`utan sorg reses bara bildstenar om det man minns eller varit med om (${s.runstenar?.slice(fore).map(q => q.text).join(' ') || 'inga nya'})`, (s.runstenar ?? []).slice(fore).every(q => q.bild === 1)],
     ];
   },
 };

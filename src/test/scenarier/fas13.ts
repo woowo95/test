@@ -1956,3 +1956,36 @@ SCENARIER.skicklighetsvakt = {
     ];
   },
 };
+
+SCENARIER.bildmotiv = {
+  text: 'Steg 13.9.15: bildstenar om fler händelser. Lusten att resa en bildsten kommer ur alla stora händelser personen varit med om eller minns (registret BILDMOTIV i bildsten.ts), och minskar för varje bildsten byn redan har om samma sorts händelse: i en by med många stenar om uppfinningar reser nästa ristare en sten om striden mot rövarna, och den som fått svar på en bön i nöd reser en sten om den',
+  kor: () => {
+    const s = SIM.createState(5, START); klockan(s, 10);
+    const ristare = nyInvanare(s, 'm', 35), kampe = nyInvanare(s, 'k', 30), bedjare = nyInvanare(s, 'k', 40);
+    for (const p of SIM.living(s)) { (p.tek ??= {}).stenhuggarplats = 1; p.bedrift = undefined; p.upp = (p.upp ?? []).filter(u => u.t === undefined); p.intryck = []; }
+    // ristaren kom själv på något, och minns att kämpen stod kvar och slogs när rövarna kom
+    ristare.bedrift = { h: 'pahittig', t: s.now, sak: 'krukan' };
+    ristare.intryck = [{ om: kampe.id, namn: kampe.name, k: 'forsvarare', v: 0.6, c: 1, t: s.now, bev: [{ h: 'forsvarade', t: s.now, sett: true }] }] as SIM.Person['intryck'];
+    const fore = SIM.runstenLust(s, ristare);
+    // byn har redan fyra bildstenar om uppfinningar
+    for (let i = 0; i < 4; i++) SIM.runstenarOf(s).push({ id: 100 + i, x: i, y: 0, t: s.now, slag: 'handelse', av: { id: 0, namn: 'Förr' }, om: { id: 0, namn: 'Förr' }, text: '', runor: '', bild: 1, motiv: 'uppfinning', ht: s.now - i });
+    const efter = SIM.runstenLust(s, ristare);
+    // den som fått svar på en bön i nöd
+    (bedjare.upp ??= []).push({ k: 'bonHjalpte', a: 40, e: {}, v: 1, t: s.now }); // upplevelsen fastnar (upplev slumpar det)
+    const bon = SIM.runstenLust(s, bedjare);
+    // stenen reses: bilderna visar bönen
+    SIM.setAmount(s, 'huggen_sten', 3);
+    const at = SIM.runstenPlats(s)!; bedjare.x = at.x + 0.5; bedjare.y = at.y + 0.5;
+    const n0 = s.runstenar!.length;
+    if (bon) SIM.runstenKlar(s, bedjare, { act: 'runsten', phase: 'do', until: s.now, tool: bon.slag, ref: bon.om.id, tx: at.x + 0.5, ty: at.y + 0.5 } as SIM.Task);
+    const sten = s.runstenar!.length > n0 ? s.runstenar![s.runstenar!.length - 1] : undefined;
+    return [
+      [`registret har en rad per sorts händelse (${Object.keys(SIM.BILDMOTIV).join(', ')}), och en strid väger mer än en uppfinning`, Object.keys(SIM.BILDMOTIV).length >= 6 && SIM.BILDMOTIV.strid.vikt > SIM.BILDMOTIV.uppfinning.vikt],
+      [`utan stenar vill ristaren resa en sten (${fore?.motiv}, ${fore?.om.namn})`, fore?.slag === 'handelse'],
+      [`med fyra stenar om uppfinningar blir det striden mot rövarna, om kämpen (${efter?.motiv}, ${efter?.om.namn}, ${efter?.vad})`, efter?.motiv === 'strid' && efter.om.id === kampe.id],
+      [`den som fått svar på en bön i nöd vill resa en sten om den (${bon?.motiv}, ${bon?.vad})`, bon?.slag === 'handelse' && bon.motiv === 'helig'],
+      [`och reser den: "${sten?.text}"`, !!sten && sten.bild === 1 && sten.motiv === 'helig' && /bön/i.test(sten.text)],
+      ['samma händelse blir inte två stenar', SIM.runstenLust(s, bedjare)?.motiv !== 'helig'],
+    ];
+  },
+};
