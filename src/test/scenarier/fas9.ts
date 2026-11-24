@@ -166,8 +166,8 @@ SCENARIER.lera = {
     const tagen = SIM.richness(s, 'lera', at.x, at.y);
     SIM.growFynd(s, 12, 2, 1, 0); const torrt = SIM.richness(s, 'lera', at.x, at.y);
     SIM.growFynd(s, 12, 2, 1, 1); const regn = SIM.richness(s, 'lera', at.x, at.y);
-    // förrådsmålen: byn har gjort av med lera, så den vill ha mer, och en vuxen gräver den
-    s.forbruk = { lera: 10 }; SIM.arbetsTimme(s);
+    // förrådsmålen: ett projekt (krukan) saknar lera, så byn vill ha den, och en vuxen gräver den (leran har ingen egen buffert, steg 13.8.12)
+    SIM.arbetsTimme(s); s.projektSaknar = { lera: { beh: 2, n: 2, b: 1 } };
     const buf = SIM.materialBuffert(s, "lera"), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
     const u = SIM.projektNu(s, p, 'lera', { kyla: false, gras: 0 });
     const gravt = (spade: boolean) => { const q = SIM.cloneState(s), qp = SIM.living(q).find(r => r.id === p.id)!; const t: SIM.Task = { act: 'lera', phase: 'do', tx: at.x, ty: at.y, until: q.now, carry: 0, why: '', arbTid: 10 * 60000, tool: spade ? 'benspade' : undefined }; qp.x = at.x; qp.y = at.y; SIM.leraGravd(q, qp, t); return SIM.stacksOf(q).filter(a => a.k === 'lera').reduce((n, a) => n + a.n, 0); };
@@ -175,7 +175,7 @@ SCENARIER.lera = {
     return [
       [`leran är rikast i stranden närmast vattnet (${strand.toFixed(2)}), mindre i sanden (${sand.toFixed(2)}) och jorden (${jord.toFixed(2)}), inte i skogen (${skog.toFixed(2)})`, strand > sand && sand > jord && skog === 0],
       [`en tömd plats fylls på bara när det regnar (${fore.toFixed(2)} → ${tagen.toFixed(2)}, utan regn ${torrt.toFixed(2)}, med regn ${regn.toFixed(2)})`, tagen < fore && Math.abs(torrt - tagen) < 1e-6 && regn > torrt],
-      [`förrådsmålen vill ha lera när byn gjort av med den (${buf.toFixed(1)}), och en vuxen gräver den (${u?.act ?? 'inget'})`, buf > 0 && u?.act === 'lera'],
+      [`förrådsmålen vill ha lera när ett projekt saknar den (${buf.toFixed(1)}), och en vuxen gräver den (${u?.act ?? 'inget'})`, buf > 0 && u?.act === 'lera'],
       [`med benspaden blir det mer (${hand} med händerna, ${spade} med spaden), och leran läggs i en hög där den grävdes`, hand > 0 && spade > hand],
       ...lerkrukan(),
     ];

@@ -393,11 +393,12 @@ koKrok.vid = (s, k) => {
 // det byns projekt saknar (steg 10.5.17), en gång i timmen (TAKTER): per material det projekten behöver (beh: receptets
 // material för varje projekt med brist, som någon vuxen kan göra nu, och det byggena i budgetens delar med procent över 0
 // saknar), det som saknas av det när det byn har dragits av (n) och den största bristen bland projekten som behöver det (b,
-// byggena 1). Byn säljer inte det projekten behöver (bynOver i behov.ts), och det som saknas är värt mer för byn hos handlaren
-export interface ProjektSaknar { beh: number; n: number; b: number }
+// byggena 1). Byn säljer inte det projekten behöver (bynOver i behov.ts), och det som saknas är värt mer för byn hos handlaren.
+// Byggenas del (bud) räknas för sig (steg 13.8.12): det husen saknar hämtas av bygget när det byggs och är ingen buffert i förrådet
+export interface ProjektSaknar { beh: number; n: number; b: number; bud?: number }
 export function projektSaknarRakna(s: State) {
   const m: Record<string, ProjektSaknar> = {};
-  const lagg = (k: string, n: number, b: number) => { if (k === 'silver' || n < 1 || !grundvarde(k)) return; const x = m[k] ??= { beh: 0, n: 0, b: 0 }; x.beh += n; x.b = Math.max(x.b, b); };
+  const lagg = (k: string, n: number, b: number, bud = false) => { if (k === 'silver' || n < 1 || !grundvarde(k)) return; const x = m[k] ??= { beh: 0, n: 0, b: 0 }; if (bud) x.bud = (x.bud ?? 0) + n; else x.beh += n; x.b = Math.max(x.b, b); };
   const vuxna = living(s).filter(p => !p.gast && ageOf(p, s.now) >= ALDER.vuxen), f = { kyla: false, gras: 0 };
   for (const k of PROJEKT_LIST) {
     const d = PROJEKT[k], b = d.recept ? d.brist(s) : 0;
@@ -407,9 +408,9 @@ export function projektSaknarRakna(s: State) {
   for (const del of budgetNu(s)) {
     const B = BUDGET[del.id];
     if (B.mat || budgetAndel(s, del.id) <= 0) continue;
-    for (const [q, n] of Object.entries(B.saknar(s))) lagg(q, Math.floor(n + 1e-9), 1);
+    for (const [q, n] of Object.entries(B.saknar(s))) lagg(q, Math.floor(n + 1e-9), 1, true);
   }
-  for (const k in m) m[k].n = Math.max(0, m[k].beh - bynsDel(s, k));
+  for (const k in m) m[k].n = Math.max(0, m[k].beh + (m[k].bud ?? 0) - bynsDel(s, k));
   s.projektSaknar = Object.keys(m).length ? m : undefined;
 }
 // rader som läggs till när allt är laddat (hovet och templet, kyrka.ts via steg.ts) kommer med i listan också

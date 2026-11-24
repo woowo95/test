@@ -33,9 +33,8 @@ import { TORST } from './torst';
 import { harMyr } from './myr';
 import { sportFor } from './sport';
 import { STATION, STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, kupBrist, harStation, isKlar, pyntBrist, pyntLust, stationerOf, tommaPlatser, villPynt } from './stationer';
-import { nTools, tingOf } from './agande';
+import { nTools } from './agande';
 import { brasaBrist, brasaStenMal } from './brasor';
-import { MATERIAL, bitsOf } from './byggnad';
 import { BYGGNADER, fahusUtanKrubba, fnId, langhusRum, sovplatser, utanBadd } from './byggnader';
 import { fahusHus } from './slatter';
 import { latrinBrist } from './smuts';
@@ -47,6 +46,7 @@ import { protesVill } from './protes';
 import { knows } from './teknik';
 
 export const FORRAD = balans('forrad', {
+  halvbyggd: 0.4, // en halvbyggd station väger så här mycket av det som är kvar upp till full brist mer än en ny (steg 13.8.12)
   forsiktig: 0.25, // en försiktig by (seden Förutseende eller påbudet) vill ha så mycket större förråd
   behovTomt: 3.2, behovMax: 3.5, // vikten av ett tomt förråd under Försörjning, och den högsta vikten
   // mat: förrådets dygn dämpar vikten ner till Min när förrådet räcker så länge byn vill (bufferten) ...
@@ -130,8 +130,6 @@ interface Materialmal {
   buffert?: boolean; // materialet har en buffert efter förbrukningen (steg 13.8.4): bara det byn behöver för att överleva och det som förbrukas
   // av sig självt; de andra hämtas när ett projekt eller bygge behöver dem (s.projektSaknar)
 }
-// virket som byggbitarna (väggarna av timmer) ännu saknar: det som inte burits dit till det som inte är byggt
-const virkeTillHus = (s: State) => Math.ceil(bitsOf(s).reduce((n, b) => n + (b.b < 1 && MATERIAL[b.m]?.item === 'virke' ? Math.max(0, MATERIAL[b.m]!.n - b.mat) : 0), 0) - 1e-9);
 const fargVill = (s: State, k: string) => living(s).some(p => knows(p, 'fargning')) ? fargKrok.vaxter[k] ?? 0 : 0;
 const tand = (s: State) => s.fire.lit ? TROSKEL.tandVill : TROSKEL.tandVillSlocknad; // tändmaterialet invånarna vill ha
 const harNaver = (s: State) => amountOf(s, 'naver') >= TROSKEL.tandBrist || nTools(s, 'kniv') + nTools(s, 'yxa') > 0 && amountOf(s, 'ved') >= 1;
@@ -140,11 +138,13 @@ export const MATERIALMAL = {
   torrgras: { min: s => harNaver(s) ? 0 : tand(s) * (kallt(s) || coldOf(temperature(s)) > 0 ? FORRAD.kyla : 1), buffert: true }, // hö till elden och åt djuren; kylan höjer reserven till elden (steg 13.8.6) // med näver, eller ett blad och ved att tälja den ur, behövs inget hö till tändningen (steg 6.3.3)
   sten: { min: s => (s.fire.ring ? 0 : ELD.ring) + brasaStenMal(s) }, // de stenar eldringarna byn planerar saknar (steg 10.11.4)
   flinta: { min: s => (nTools(s, 'bagborr') > 0 ? 0 : TROSKEL.flintaMinsta) + flintaKrok.verktyg(s) }, // med en bågborr behövs ingen flinta till elden (steg 10.6.13), // och flintan till de redskap byn vill ha och saknar (steg 10.2.12)
-  virke: { min: s => virkeTillHus(s) }, // det husen i Byggplanen behöver, också de som inte är påbörjade (steg 10.2.70)
-  byggsten: { min: s => stenTillPlan(s) }, // det Byggplanen planerat av sten (STENBEHOV i byggsten.ts, steg 10.10.5)
+  // virket, byggstenen och leran har ingen buffert (steg 13.8.12): det projekten saknar (projektSaknar), och det husen och det
+  // Byggplanen planerat av sten saknar hämtas av bygget när det byggs (bygg i val.ts)
+  virke: { min: () => 0 },
+  byggsten: { min: () => 0 },
   // färgväxterna (steg 13.3.2, farg.ts): så mycket som ett bad tar, när någon kan färga
   mara: { min: s => fargVill(s, 'mara') }, vejde: { min: s => fargVill(s, 'vejde') }, krapp: { min: s => fargVill(s, 'krapp') },
-  lera: { min: s => Math.max(0, REDSKAPMAL.lerkruka(s) - krukorIByn(s)) * 2 }, // steg 9.4.10: målet följer hur mycket lera byn gör av med, och leran till de krukor byn vill ha och saknar (två per kruka): annars grävdes ingen lera förrän en kruka gjorts, och ingen kruka gjordes utan lera
+  lera: { min: () => 0 }, // leran till krukorna är det krukans projekt saknar (projektSaknar, steg 13.8.12)
   // steg 10.2.12: det som görs och tas av förrådet följer också förbrukningen; minst en (en att börja med, innan något använts)
   rep: { min: () => 0 }, // repet görs när ett projekt behöver det (steg 13.8.4)
   // kolet (steg 13.8.6): ingen buffert, så mycket som projekten saknar och det ässjan och fyrfaten bränner (kolKrok, satt i smedja.ts och mobler.ts)
@@ -233,7 +233,6 @@ const spjutVill = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_
 export const flintaKrok = { verktyg: (_s: State) => 0 };
 // kolet som eldarna som bränner kol vill ha (ässjan, fyrfaten), satt där de finns (steg 13.8.6)
 export const kolKrok = { eldar: (_s: State) => 0 };
-const krukorIByn = (s: State) => tingOf(s).filter(t => t.k.startsWith('lerkruka_')).length;
 const ortkokKan = (s: State) => living(s).some(p => (p.tek?.ortkok ?? 0) >= 1); // någon kan koka i örtköket (steg 9.4.14)
 // hoten byn mött (steg 10.2.75): strider de senaste VILLTAL.hotDygn dygnen, och rövare, vargar eller björnen nära nu (0 till 1)
 export function hotNu(s: State) {
@@ -329,7 +328,8 @@ export function taltVill(s: State) { return behovVill(s.taltBehov, s.now); }
 // en station av sorten k: bufferten är en färdig. Halmbäddarna (det byn kan ha flera av, steg 2.2.5): en per den som sover
 // under tak; borden (steg 2.2.15) en plats per invånare; förvaringen, pyntet, brasorna, latrinen och torkställningen efter
 // sina egna mått. Bristen är hur stor del av bufferten som saknas (0 till 1), som projektets brist (projekt.ts)
-// En halvbyggd station (en kista, ett pynt) görs klar även när ingen längre vill ha en ny: bristen är då 1
+// En halvbyggd station (en kista, ett pynt) väger mer än en ny (steg 13.8.12): bristen är den vanliga plus FORRAD.halvbyggd av det
+// som är kvar upp till 1, så att den görs klar också när ingen längre vill ha en ny, men annat kan gå före
 const harBrist = (s: State) => { const n = (s.eldar ?? []).filter(f => f.hearth === 'hard').length, hus = (s.hus ?? []).filter(h => h.klar && !(BYGGNADER as Record<string, { omkring?: boolean }>)[fnId(h)]?.omkring).length; /* torkhuset och vedboden har ingen härd */ return n < hus ? 0.5 : 0; };
 // långhusets möbler (steg 10.2.68): ett högsäte i byn, och en bänk per STATION.bankPer sovplatser i långhuset
 function langhusBrist(s: State, k: StationSlag) {
@@ -350,8 +350,10 @@ function koBrist(s: State, k: StationSlag, hinner: number) {
   return clamp(koKrok.vid(s, k) / (har * hinner) - 1, 0, 1);
 }
 export function stationBrist(s: State, k: StationSlag) {
-  const d: StationDef = STATIONER[k];
-  if (!d.brasa && stationerOf(s).some(t => t.k === k && !isKlar(t))) return 1;
+  const d: StationDef = STATIONER[k], b = nyBrist(s, k, d);
+  return !d.brasa && stationerOf(s).some(t => t.k === k && !isKlar(t)) ? b + (1 - b) * FORRAD.halvbyggd : b;
+}
+function nyBrist(s: State, k: StationSlag, d: StationDef) {
   if (d.tro) return Math.max(0, ...(s.tron ?? []).map(tr => trosMobelBrist(s, tr, k))); // trons möbler i trons hus (steg 10.3.19)
   if (d.varmer) return finareKrok.fyrfat(s); // fyrfatet i ett rum utan eld (steg 12.4.11, mobler.ts)
   if (d.finare) return finareKrok.finare(s, k); // utedasset i stället för latrinen (steg 12.4.9, mobler.ts)

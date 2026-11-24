@@ -1531,3 +1531,43 @@ SCENARIER.somnen = {
     ];
   },
 };
+
+SCENARIER.egetmaterial = {
+  text: 'Steg 13.8.12: projektet hämtar sitt eget material. Lera, virke och byggsten har ingen buffert, och det husen i byggplanen saknar hämtas av bygget när det byggs i stället för att räknas in i bufferten. Bygget som behöver virke väntar när ingen yxa finns eller kan göras, och personen gör något annat; en halvbyggd station väger mer än en ny men får inte högsta brådska',
+  kor: () => {
+    const tk = (q: SIM.Person) => q.task as SIM.Task | undefined;
+    // ett planerat hus av timmer: virket det saknar är ingen buffert, men byn säljer det inte
+    const s = SIM.createState(1, START); klockan(s, 10); setFood(s, 400); tandEld(s); SIM.setAmount(s, 'ved', 200);
+    for (const p of SIM.living(s)) if (SIM.ageOf(p, s.now) >= 14) Object.assign((p.tek ??= {}), { yxa: 1, timmervagg: 1, klyvplats: 1 });
+    s.byggSok = undefined; SIM.planBuild(s);
+    const virkeBits = SIM.bitsOf(s).filter(b => b.b < 1 && SIM.MATERIAL[b.m]?.item === 'virke'), virkeHus = virkeBits.reduce((a, b) => a + Math.max(0, SIM.MATERIAL[b.m]!.n - b.mat), 0);
+    SIM.setAmount(s, 'virke', 0); SIM.projektSaknarRakna(s); SIM.arbetsTimme(s);
+    const buf = SIM.materialBuffert(s, 'virke'), proj = s.projektSaknar?.virke?.beh ?? 0;
+    // utan yxa och utan att kunna göra en: den som annars byggde gör något annat
+    const t = SIM.cloneState(s);
+    t.ting = SIM.tingOf(t).filter(x => !x.k.includes('yxa'));
+    for (const p of SIM.living(t)) if (p.tek) { delete p.tek.yxa; }
+    let bygger = 0, vantar = 0, n = 0;
+    for (const p of SIM.living(t).filter(q => SIM.ageOf(q, t.now) >= SIM.ALDER.vuxen)) {
+      Object.assign(p, { rest: 1, toa: 1, torst: 1, hunger: 1, warm: 1, task: undefined }); SIM.chooseTask(t, p); n++;
+      if (/Bygget/.test(tk(p)?.why ?? '')) bygger++;
+      if (tk(p)) vantar++;
+    }
+    // en halvbyggd kista: bristen är högre än för en ny, men inte full; när byn svälter blir den liggande
+    const k = SIM.createState(1, START); klockan(k, 10); tandEld(k); SIM.setAmount(k, 'ved', 200);
+    const ny = SIM.stationBrist(k, 'kista' as SIM.StationSlag), agare = SIM.living(k).filter(q => SIM.ageOf(q, k.now) >= SIM.ALDER.vuxen)[0]!;
+    const e0 = SIM.eldPlats(k), kista: SIM.Station = { id: (k.nextStation = (k.nextStation ?? 0) + 1), k: 'kista', x: Math.floor(e0.x) + 3, y: Math.floor(e0.y), kvar: 0, ag: agare.id };
+    (k.stationer ??= []).push(kista); SIM.touch(k);
+    kista.kvar = 60 * SIM.MIN; SIM.touch(k);
+    const halv = SIM.stationBrist(k, 'kista' as SIM.StationSlag);
+    setFood(k, 0);
+    let kistVal = 0, m = 0;
+    for (let i = 0; i < 10; i++) for (const p of SIM.living(k).filter(q => SIM.ageOf(q, k.now) >= SIM.ALDER.vuxen)) { k.seed = (k.seed ?? 0) + 1; Object.assign(p, { rest: 1, toa: 1, torst: 1, hunger: 0.6, warm: 1, task: undefined }); SIM.chooseTask(k, p); m++; if (tk(p)?.act === 'station' && tk(p)?.tool === 'kista') kistVal++; }
+    return [
+      [`virket till det planerade huset (${virkeHus} virke) räknas inte in i bufferten (${buf}), som bara är det projekten saknar (${proj})`, virkeHus > 0 && buf === proj && buf < virkeHus],
+      [`utan yxa väntar bygget: ingen av ${n} vuxna går till det (${bygger}), och alla gör något annat (${vantar})`, n > 0 && bygger === 0 && vantar === n],
+      [`en halvbyggd kista väger mer än en ny (${halv.toFixed(2)} mot ${ny.toFixed(2)}) men inte fullt`, halv > ny && halv < 1],
+      [`när byn svälter blir den halvbyggda kistan liggande (${kistVal} av ${m} val)`, m > 0 && kistVal === 0],
+    ];
+  },
+};

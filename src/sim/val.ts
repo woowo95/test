@@ -71,7 +71,7 @@ import { samtalMed } from './samtal';
 import { ageIndex, isLight, yearNo } from './tid';
 import { Act, Fire, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap } from './typer';
 import { FOOD, SAKER, isFood, sakNamn, tingNamn, viktOf } from './saker';
-import { TILLVERKA } from './tillverka';
+import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
 import { materialBuffert, tandBuffert } from './forradsmal';
 import { balans } from './balans';
 import { SvalkaGor, VarmeGor, svalkaKrok, svalkaSatt, varmeSatt } from './varme';
@@ -965,11 +965,11 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'slatterForb', niva: 8, nar: 'dag', forb: true, prova: slatterRad }, // slåttern när inget går förlorat än (steg 10.11.21)
   // 8 Förbättra: det Byggplanen föreslagit när inget behov är akut (steg 7.2.10)
   { id: 'forbHus', niva: 8, nar: 'dag', prova: c => {
-    const { s, p, v } = c, d = dag(c);
+    const { s, p } = c, d = dag(c);
     if (!d.works || !forbNu(c) || radFull(s, p, 'bygga')) return false;
     const j = buildJob(s, p, true);
-    if (!j?.bit.forb || j.missing) return false;
-    building(s, p, v, j); return true;
+    if (!j?.bit.forb) return false;
+    return bygg(c, j); // saknas materialet hämtar bygget det självt, som de andra byggena (steg 13.8.12)
   } },
   // 8 Förbättra med poäng (steg 10.2.3): att pröva sig fram, arbetet där en teknik kan komma, varor till handlaren, underhållet,
   // att gå i lära och att fylla förråden mot taket är rader som vägs mot varandra. Ingen står först och tar allt: varje rad har
@@ -1154,8 +1154,7 @@ function arbeta(c: Ctx, act: Act, what: string, o: { tandmat?: boolean; hamtar?:
   if (o.job && v.act === 'falla') { v.ref = o.job.bit.hus; v.why = `${v.why} Stocken ska bli en vägg.`; } // trädet fälls för bygget
 }
 // bygget (Tak): saknas material hämtas det först
-function bygg(c: Ctx) {
-  const job = dag(c).job!;
+function bygg(c: Ctx, job = dag(c).job!) {
   if (!job.missing) { building(c.s, c.p, c.v, job); return true; }
   const it = job.item;
   // timret är virke (steg 10.2.70): det klyvs ur en fälld stam, eller ett träd fälls först (virkets uppgift i projekt.ts)
@@ -1166,8 +1165,16 @@ function bygg(c: Ctx) {
     // utan en ledig yxa görs en yxa (som i withTools), annars väntar bygget, som det som görs vid en station (steg 12.1.56)
     const f = faror(c), uy = nuForst(c.s, c.p, f) ? projektNu(c.s, c.p, 'yxa', f) : undefined;
     if (uy) { projektVal(c.v, uy, 'Bygget behöver virke och en yxa att klyva det med'); return true; }
-    // ingen ledig yxa: p hugger ved till dess (fäller det som står där huset ska stå, axeTask), med rätt skäl
-    arbeta(c, 'ved', 'Bygget väntar på en ledig yxa till virket', { hamtar: it });
+    return false; // ingen yxa finns eller kan göras: bygget väntar, och p gör något annat som behövs (steg 13.8.12)
+  }
+  // ett material som är ett eget projekt (byggstenen, steg 13.8.12): bygget hämtar det själv, och saknas något till det går man
+  // ett steg till (arv). Det som redan ligger i högarna vid berget körs hem (raden bara) i stället för att fler bryts
+  if (it && PROJEKT[it] && !TILLVERKA_LIST.some(k => TILLVERKA[k].ger === it)) {
+    const hog = (c.s.stackar ?? []).filter(q => q.k === it).reduce((a, q) => a + q.n, 0);
+    if (hog >= job.need) return false;
+    const u = arv(c.s, c.p, it, faror(c))?.u;
+    if (!u) return false;
+    projektVal(c.v, u, `Bygget behöver ${sakNamn(it).toLowerCase()}`);
     return true;
   }
   // det som görs vid en station (plankorna till trägolvet, steg 10.2.90): det görs där, och går det inte nu väntar bygget

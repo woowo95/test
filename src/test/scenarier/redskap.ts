@@ -714,7 +714,7 @@ SCENARIER.forradsmal = {
       [`20 grenar ur förrådet räknas som förbrukade (${tagna})`, tagna === 20],
       [`grenarna som bränsle räknas inte (${brand})`, brand === 20],
       [`förbrukningen glöms långsamt (${glomt})`, glomt < 20 && glomt > 19],
-      [`bufferten för grenar följer förbrukningen (${bGren}), för hö är den det tändmaterial byn vill ha (${bHo})`, bGren === 40 && bHo === (s.fire.lit ? SIM.TROSKEL.tandVill : SIM.TROSKEL.tandVillSlocknad)],
+      [`bufferten för grenar följer förbrukningen (${bGren}), för hö är den det tändmaterial byn vill ha, mer i kylan (${bHo}, steg 13.8.6)`, bGren === 40 && bHo === SIM.MATERIALMAL.torrgras.min(s) && bHo >= (s.fire.lit ? SIM.TROSKEL.tandVill : SIM.TROSKEL.tandVillSlocknad)],
       [`taket är högre än bufferten, högst så mycket lagret rymmer (${tak.toFixed(1)})`, tak > bGren && tak <= SIM.FORRAD.materialMatt * bGren],
       [`under bufferten plockas hö och grenar (${Object.keys(g1).join(', ')})`, (g1.torrgras ?? 0) > 0 && (g1.grenar ?? 0) > 0],
       [`över taket plockas inga grenar i förbifarten (${g0.grenar ?? 0}), men av den som hämtar dem (${g2.grenar ?? 0})`, !g0.grenar && (g2.grenar ?? 0) > 0],
