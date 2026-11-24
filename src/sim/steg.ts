@@ -447,7 +447,7 @@ type Takt = { namn: string; sek: number; fas?: number; fn: (s: State, dt: number
 export const TAKTER: Takt[] = [
   { namn: 'kartan', sek: 0, fn: s => { gridOf(s); stationRutor(s); sakerPaGolvet(s); angMark(s); } }, // väggarna och rummen, hyllorna och sakerna på golvet (steg 2.3.6), så att vägsökningen vet var de står
   { namn: 'rummens plus', sek: 3600, fn: s => rumPlusTimme(s) }, // det som passar bra ihop i rummen, räknat vid timmens början (rum.ts, steg 12.1.210)
-  { namn: 'rummens finhet', sek: 3600, fas: 0.02, fn: s => finhetTimme(s) }, // steg 14.1.1
+  { namn: 'rummens finhet', sek: 3600, fas: 0.02, fn: s => { finhetTimme(s); forvantanTimme(s); } }, // steg 14.1.1 och 14.1.3
   { namn: 'tidsåldern', sek: 60, fn: (s, _dt, c) => { if (c.ai !== s.lastAgeIdx) { s.lastAgeIdx = c.ai; log(s, AGES_BORJAR[c.ai], 'world'); } } },
   { namn: 'kaninerna', sek: 10, fn: (s, dt) => djurSteg(s, dt) }, // kaningrupperna väljer plats när deras tid börjar
   { namn: 'giftermålen', sek: 3600, fn: (s, dt) => giftSteg(s, dt) }, // med någon i en vänlig grannby (giftermal.ts, steg 11.3.6)
@@ -766,6 +766,7 @@ function needsStep(s: State, p: Person, a: number, dtSec: number, coldRate: numb
   p.rest = clamp(p.rest + dtSec / HOUR_S * sittVila(s, p), 0, 1); // den som sitter på en pall eller stol vilar mer (steg 12.4.4)
   // rummens plus (steg 12.1.143): en god tanke hos den som sover eller äter i ett rum där taggarna passar bra ihop
   if (v.rum && (tak && p.task!.act === 'sova' || vidBordet(p))) for (const m of rumPlus(s, v.rum)) if (m.tanke) tanke(p, 'rumPlus', now, { text: rumPlusTanke(m.id), v: m.tanke });
+  if (v.rum && (tak && p.task!.act === 'sova' || vidBordet(p))) forvantanTanke(s, p, v.rum); // steg 14.1.3
   if (heat > KROPP.eldNara) { // välbehaget ur eldstaden för den eld som värmer mest (steg 10.2.109)
     const fh = varmasteHard(s, p.x, p.y);
     tanke(p, 'vamsAvElden', now, { v: fh.comfort });
@@ -1842,6 +1843,7 @@ import { tatKlar } from './tatuering';
 import { barGillad, fargaKlar, FARG, stepFargsmak } from './farg';
 import { tjaraKlar } from './tjara';
 import { stadaKlar } from './stada';
+import { forvantanTanke, forvantanTimme } from './forvantan';
 import { angKlar, slaKlar, stepVinter, hamlaKlar } from './slatter';
 import { stepHons } from './hons';
 import { baddVila, bredvidKaresta, iDass, sittVila, sattaKlar } from './mobler';

@@ -204,7 +204,7 @@ export const FINHET = balans('finhet', {
   ytaFull: 8, // rutor per person som sover i rummet: så mycket är gott om plats
   pyntFull: 2, // så mycket pynt (ett normalt är 1, ett perfekt mästerverk 2,5) är fullt pyntat
   smutsFull: 3, // så många tydliga fläckar är ett rum fullt av smuts
-  varde: 0.6, // ett rum så här fint är ett fint rum (symbolen i rutan)
+  vanlig: 0.3, // ett vanligt rum: husets pris räknas mot det (forvantan.ts)
 });
 export interface FinhetDel { id: string; namn: string; vikt: () => number; del: (d: FinhetRum) => number }
 interface FinhetRum { s: State; r: Rum; i: RumInfo; mobler: number[]; pynt: number; ljus: boolean }

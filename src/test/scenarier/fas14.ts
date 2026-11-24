@@ -63,3 +63,29 @@ SCENARIER.stada = {
     ];
   },
 };
+
+SCENARIER.forvantan = {
+  text: 'Steg 14.1.3: den rika, ledaren och den kända förväntar sig ett finare rum; under förväntan ger en dålig tanke och över en god, och finheten syns i husets pris',
+  kor: () => {
+    const s = SIM.cloneState(testBy(25)), rum = SIM.gridOf(s).rooms.filter(r => r.tiles.length && r.hus !== undefined && SIM.sovplatser(s, r) > 0), r = rum[0];
+    const p = SIM.living(s).find(q => !q.gast && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && s.styre?.ledare !== q.id)!;
+    const med = (w: number) => { p.forv = { f: w, w }; return SIM.forvantanAv(s, p); };
+    const fattig = med(20), rik = med(2000), van = med(150);
+    const l0 = s.styre?.ledare; if (s.styre) s.styre.ledare = p.id; const ledare = SIM.forvantanAv(s, p); if (s.styre) s.styre.ledare = l0;
+    SIM.finhetTimme(s); SIM.forvantanTimme(s);
+    const f = SIM.finhetAv(s, r)!, tankar = () => p.thoughts.filter(t => t.k === 'rumFint' || t.k === 'rumEnkelt');
+    p.thoughts = []; p.finForv = f + 0.3; SIM.forvantanTanke(s, p, r); const dalig = tankar()[0];
+    p.thoughts = []; p.finForv = Math.max(0, f - 0.3); SIM.forvantanTanke(s, p, r); const god = tankar()[0];
+    const h = SIM.husById(s, r.hus)!, pris = () => SIM.saljPris(s, h), satt = (v: number) => { for (const k in s.finhet) s.finhet![k] = v; };
+    satt(0.1); const billig = pris(); satt(0.9); const dyr = pris();
+    const barn = SIM.living(s).filter(q => SIM.ageOf(q, s.now) < SIM.ALDER.vuxen && !q.gast);
+    return [
+      [`den rika väntar sig mer än den fattiga (${fattig.toFixed(2)} < ${van.toFixed(2)} < ${rik.toFixed(2)})`, fattig < van && van < rik],
+      [`ledaren väntar sig mer (${van.toFixed(2)} → ${ledare.toFixed(2)})`, !s.styre || ledare > van],
+      [`ett rum under förväntan ger en dålig tanke (${dalig?.k})`, dalig?.k === 'rumEnkelt'],
+      [`ett rum över förväntan ger en god tanke (${god?.k}, rummets finhet ${f.toFixed(2)})`, god?.k === 'rumFint'],
+      [`ett finare hus kostar mer (${billig.toFixed(0)} → ${dyr.toFixed(0)})`, dyr > billig],
+      [`alla har en förväntan, också barnen (${barn.length} barn)`, SIM.living(s).every(q => q.finForv !== undefined)],
+    ];
+  },
+};

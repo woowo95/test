@@ -316,6 +316,7 @@ export interface Person {
   binamn?: import('./berattelser').Binamn; // öknamnet eller hedersnamnet byn gav (steg 3.9.1, berattelser.ts)
   varsel?: { k: import('./motgang').MotgangId; t: number; c: number; src?: number }; // en motgång som personen anar eller hört om: när den börjar och hur säker (steg 3.8.1, motgang.ts)
   forv?: { f: number; w: number }; // förväntan och rikedom (humor.ts, steg 3.2.1)
+  finForv?: number; // finheten hen förväntar sig av rummet (forvantan.ts, steg 14.1.3)
   // utbrotten (steg 3.2.2, humor.ts): hur många nyss (klingar av), och det som väntar på att brista ut (slaget och när)
   utb?: number; ubr?: { k: string; t: number };
   angr?: Anger[]; // skulden efter ett utbrott som gick ut över någon (steg 10.8.1, humor.ts)

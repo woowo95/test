@@ -1,3 +1,5 @@
+import { finhetPris } from './forvantan';
+import { husFinhet } from './rum';
 import { skuldFaktor } from './skatt';
 import { troOf } from './religion';
 import { helig } from './kult';
@@ -430,10 +432,10 @@ export function lage(s: State, h: { x: number; y: number; w: number; h: number }
 // säljarens lägsta pris: värdet (byn säljer billigt), och behöver säljaren huset också vad det kostar att bygga ett nytt lika stort.
 // Därför säljs ett hus där familjen bor nästan aldrig: köparen betalar aldrig mer än det kostar att bygga nytt (PLAN.kopMax)
 // En säljare med skatteskuld nöjer sig med mindre, efter hur mycket mer silvret är värt för hen (steg 10.5.5)
-export const saljPris = (s: State, h: Hus) => (husVarde(s, h) * (h.ag === undefined ? PLAN.bynSalj : PLAN.salj) + saljBehov(s, h) * husKostnadAv((h.w - 2) * (h.h - 2))) * lage(s, h) / saljSkuld(s, h);
+export const saljPris = (s: State, h: Hus) => (husVarde(s, h) * (h.ag === undefined ? PLAN.bynSalj : PLAN.salj) + saljBehov(s, h) * husKostnadAv((h.w - 2) * (h.h - 2))) * lage(s, h) * finhetPris(husFinhet(s, h.id)) / saljSkuld(s, h);
 const saljSkuld = (s: State, h: Hus) => { const q = h.ag !== undefined ? byId(s, h.ag) : undefined; return q?.skatteskuld ? skuldFaktor(s, q) : 1; };
-// vad köparen jämför med: ett nytt lika stort hus, på samma läge (köparen betalar också för läget)
-const nyttLika = (s: State, h: Hus) => husKostnadAv((h.w - 2) * (h.h - 2)) * lage(s, h);
+// vad köparen jämför med: ett nytt lika stort hus, på samma läge (köparen betalar också för läget och för finheten, steg 14.1.3)
+const nyttLika = (s: State, h: Hus) => husKostnadAv((h.w - 2) * (h.h - 2)) * lage(s, h) * finhetPris(husFinhet(s, h.id));
 // finns det ett hus till salu som familjen (ägaren ag) får plats i och har råd med? (familjer som inte har råd att bygga nytt, byggnader.ts)
 export function kanKopa(s: State, ag: number, folk: number): boolean {
   const fam = new Set(familjOf(s, ag).map(q => q.id));
