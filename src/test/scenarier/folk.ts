@@ -1857,7 +1857,7 @@ SCENARIER.kartstridfel = {
         const dt = SIM.nastaSteg(s), fore = s.now;
         if (i === 2) { a.blod = (SIM.HALSA.slass + SIM.HALSA.svim) / 2; a.task = undefined; } // a har blött mycket och faller ur striden, vaken, och såret har avbrutit det hen gjorde (som ett svårt sår gör), medan de andra slåss vidare
         step(s, dt);
-        for (const h of SIM.stridBild.slag) { slag++; if (h.t > s.now + 1e-6 || h.t <= fore - 1e-6) felTid++; }
+        for (const h of SIM.stridBild.slag) { if (!h.strid) continue; slag++; if (h.t > s.now + 1e-6 || h.t <= fore - 1e-6) felTid++; } // jaktens kast (strid 0) planeras och visas vid sin tid
         SIM.stridBild.slag.length = 0;
         if (g.st.slut) break;
         for (const k of g.st.kampar) {
@@ -1879,7 +1879,7 @@ SCENARIER.kartstridfel = {
       SIM.stridBild.pa = true; SIM.stridBild.slag.length = 0;
       for (const t0 = s.now; s.now - t0 < 4 * 3600 * 1000 && !(rSlag > 0 && !s.kartStrider?.length);) {
         const fore = s.now; step(s, SIM.nastaSteg(s));
-        for (const h of SIM.stridBild.slag) { rSlag++; if (h.t > s.now + 1e-6 || h.t <= fore - 1e-6) rFel++; }
+        for (const h of SIM.stridBild.slag) { if (!h.strid) continue; rSlag++; if (h.t > s.now + 1e-6 || h.t <= fore - 1e-6) rFel++; }
         SIM.stridBild.slag.length = 0;
       }
       SIM.stridBild.pa = false;

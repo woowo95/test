@@ -1565,10 +1565,12 @@ SCENARIER.trad = {
     let plats: { x: number; y: number } | undefined;
     s.kal = SIM.nyKalender(s.now, 3);
     for (let i = 0; i < SIM.W * SIM.H && !plats; i += 2) if (richness(s, 'hassel', i % SIM.W, Math.floor(i / SIM.W)) > 0.2) plats = { x: i % SIM.W, y: Math.floor(i / SIM.W) };
+    const appel = amountOf(s, 'appel'), notter0 = amountOf(s, 'notter');
+    setMat(s, {}); // nötterna är mat och plockas när maten i förrådet inte räcker (steg 13.8.6)
     const notter = plats ? froFynd(s, p, { act: 'samla', tx: plats.x, ty: plats.y } as unknown as SIM.Task, 3600).notter ?? 0 : 0;
     return [
       [`träden bär först efter många år (äppelträdet ${GRODOR.appeltrad.dygn} dygn, hasseln ${GRODOR.hassel.dygn}, rovorna ${GRODOR.rovor.dygn})`, GRODOR.appeltrad.dygn >= 15 && GRODOR.hassel.dygn >= 10],
-      [`efter skörden (${amountOf(s, 'appel')} äpplen, ${amountOf(s, 'notter')} nötter) bär de snart igen (${igen ? 'ja' : 'nej'})`, amountOf(s, 'appel') > 0 && amountOf(s, 'notter') > 0 && igen],
+      [`efter skörden (${appel} äpplen, ${notter0} nötter) bär de snart igen (${igen ? 'ja' : 'nej'})`, appel > 0 && notter0 > 0 && igen],
       [`hasseln växer vilt (${FYND.hassel.namn}${plats ? ` vid ${plats.x},${plats.y}` : ''}) och ger nötter på hösten (${notter.toFixed(2)}), som kan sättas (${VILDA.hassel.groda})`, notter > 0],
       [`nötterna håller länge (${SAKER.notter!.haller} dygn)`, SAKER.notter!.haller! >= 20],
     ];

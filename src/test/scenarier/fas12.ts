@@ -666,7 +666,8 @@ SCENARIER.svalaplagg = {
     const byter1 = mossa.bar === undefined; p.warm = 1.6; SIM.stepKlader(s);
     const hattPa = hatt.bar === p.id && mossa.bar === undefined;
     // kylan som fara: hatten av och mössan på
-    const kall = tid(t => { s.now = t; return SIM.farorNu(s).kyla; });
+    // kylan är en fara när det är kallt och folk fryser (steg 13.8.1): alla fryser här
+    const kall = tid(t => { s.now = t; for (const q of SIM.living(s)) q.warm = KROPP.kallt / 2; return SIM.coldOf(temperature(s, t)) > 0 && SIM.farorNu(s).kyla; });
     s.now = kall; p.warm = 0.5; SIM.stepKlader(s);
     const hattAv = hatt.bar === undefined;
     p.warm = 0.5; SIM.stepKlader(s);
@@ -1073,10 +1074,10 @@ SCENARIER.barnhjalp = {
     };
     const full = prov(3000), tom = prov(0);
     const vedFull = full.filter(r => r.includes('Hjälper till') && r.includes('ved')), vedTom = tom.filter(r => r.includes('Hjälper till. Byn behöver ved'));
-    const lekFull = full.filter(r => r.startsWith('leka|')).length, hjalpFull = full.filter(r => r.includes('Hjälper till'));
+    const lekFull = full.filter(r => r.startsWith('leka|')).length, hjalpFull = full.filter(r => r.includes('Hjälper till') && /mat|ved/.test(r)); // med maten och veden: fröna följer fältens behov (steg 13.8.6)
     return [
       [`veden räcker länge: inget barn hjälper till med veden (${vedFull.length} av ${full.length}${vedFull[0] ? `, t.ex. ${vedFull[0]}` : ''})`, vedFull.length === 0],
-      [`förråden räcker: barnet hjälper inte till (${hjalpFull.length} av ${full.length}${hjalpFull[0] ? `, t.ex. ${hjalpFull[0]}` : ''}) utan leker (${lekFull})`, hjalpFull.length === 0 && lekFull > full.length / 2],
+      [`förråden räcker: barnet hjälper inte till med maten eller veden (${hjalpFull.length} av ${full.length}${hjalpFull[0] ? `, t.ex. ${hjalpFull[0]}` : ''}) utan leker (${lekFull})`, hjalpFull.length === 0 && lekFull > full.length / 2],
       [`veden är slut: barnet hjälper till med veden och säger det (${vedTom.length} av ${tom.length})`, vedTom.length > 0],
     ];
   },
@@ -1316,7 +1317,8 @@ SCENARIER.virkeklyv = {
     const s = SIM.createState(1, START); klockan(s, 10);
     SIM.setAmount(s, 'virke', 0);
     const folk = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), p = folk[0], andra = folk.slice(1);
-    (s as { arbBehov?: unknown }).arbBehov = { mal: { virke: { b: andra.length, t: 20 } } }; // byn vill ha lika många virke som de andra vuxna, och ingen har börjat
+    // virket har ingen buffert (steg 13.8.12): byn vill ha det projekten saknar, här lika många virke som de andra vuxna, och ingen har börjat
+    s.projektSaknar = { virke: { beh: andra.length, n: andra.length, b: 1 } };
     const fam = SIM.familjOf(s, p.id), om = SIM.omtanke(s, p);
     const varde = () => SIM.personVarde(s, 'virke', fam, om, p);
     const klyver = (n: number) => andra.forEach((q, i) => { q.task = i < n ? { act: 'klyva', phase: 'do', tx: q.x, ty: q.y, until: s.now + 3600000, carry: 0, why: '' } as SIM.Task : undefined; });

@@ -1199,7 +1199,8 @@ SCENARIER.fangvakt = {
     let vakt: Person | undefined, u0 = 0, u1 = 0, kvar = false;
     kor(a.s, 4, w => {
       if (!vakt && SIM.vakterVid(w, a.h.id).length) {
-        vakt = SIM.vakterVid(w, a.h.id)[0]!; u1 = SIM.utVilja(w, a.q); vakt.task!.act = 'vila'; u0 = SIM.utVilja(w, a.q); vakt.task!.act = 'fangvakt';
+        // en rad som har sin arbetare väger mindre men kan få en till (VAL.fullRad): alla vakter tas bort för jämförelsen
+        const alla = SIM.vakterVid(w, a.h.id); vakt = alla[0]!; u1 = SIM.utVilja(w, a.q); for (const x of alla) x.task!.act = 'vila'; u0 = SIM.utVilja(w, a.q); for (const x of alla) x.task!.act = 'fangvakt';
         // fången vill ut ändå (lågt humör och modig): med vakt blir det ett slagsmål och hen sitter kvar
         a.q.thoughts.push({ text: 'Förtvivlad', v: -3, until: w.now + DAY }); a.q.pot.mod = 20;
       }
@@ -1214,7 +1215,7 @@ SCENARIER.fangvakt = {
     const ute = !b.q.fange && (b.s.stat?.rymning ?? 0) >= 1;
     // i en by i nöd (ingen mat): ingen vaktar
     const c = by(0); let vaktNod = 0;
-    kor(c.s, 2, w => { if (w.people.some(x => x.task?.act === 'fangvakt')) vaktNod++; });
+    kor(c.s, 2, w => { if (w.people.some(x => x.task?.act === 'fangvakt')) vaktNod++; setFood(w, 0); }); // byn förblir utan mat
     return [
       [`poängen följer fångens aggression (${lag.toFixed(1)} för en lugn, ${hog.toFixed(1)} för en aggressiv)`, hog > lag && lag > 0],
       [`med mat i förrådet tar ${vakt?.name ?? 'ingen'} vakten, och fångens vilja att komma ut sjunker (${u0.toFixed(2)} → ${u1.toFixed(2)})`, !!vakt && u1 < u0],

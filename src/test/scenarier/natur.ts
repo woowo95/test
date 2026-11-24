@@ -69,6 +69,7 @@ SCENARIER.djur = {
     bearbetaVid(s, p, DJUR.kanin, 1);
     const slakt = amountOf(s, 'kott') === 3 * SIM.kottAv(p, SLAKT.kott) && amountOf(s, 'vilt') < 1e-9 && Math.abs(amountOf(s, 'ben') - 3 * SLAKT.ben) < 1e-9 && Math.abs(amountOf(s, 'skinn') - 3) < 1e-9; // köttet i hela saker (steg 2.10.7)
     // senorna blir ibland ett rep, men bara för den som kan tekniken Rep
+    s.projektSaknar = { ...s.projektSaknar, rep: { beh: 1000, n: 1000, b: 1 } }; // repet görs när ett projekt behöver det (steg 13.8.4)
     const repAv = (kan: boolean) => { let r = 0; for (let i = 0; i < 200; i++) { setMat(s, { vilt: KANIN }); setAmount(s, 'rep', 0); p.tek = { ...p.tek, rep: kan ? 1 : 0 }; bearbetaVid(s, p, DJUR.kanin, 1); r += amountOf(s, 'rep'); } return r; };
     const medRep = repAv(true), utanRep = repAv(false);
     // receptet i saker.ts (för värdet) och DJUR (det som händer) säger samma sak, inom 10 %, för de arter vars delar har ett
@@ -1480,7 +1481,7 @@ SCENARIER.bagborr = {
   kor: () => {
     const { igniterOf, tryLight, canLight, newTing, nTools, BYN, RECEPT, TEK, IGNITERS } = SIM;
     const s = createState(1, START); klockan(s, 10); tandEld(s, 6);
-    setAmount(s, 'ved', 60); setAmount(s, 'grenar', 40); setAmount(s, 'torrgras', 40); setAmount(s, 'flinta', 1); setAmount(s, 'naver', 0);
+    setAmount(s, 'ved', 60); setAmount(s, 'grenar', 40); setAmount(s, 'torrgras', 80); setAmount(s, 'flinta', 1); setAmount(s, 'naver', 0); // höet över reserven också när det är kallt (steg 13.8.6)
     const r = RECEPT.bagborr, tek = TEK.bagborr, regler = r.av?.ved === 1 && r.av?.grenar === 2 && r.av?.rep === 1 && r.bank === 'snickarbank' && !!r.bara && tek?.niva === 4 && tek.krav.includes('snickarbank') && tek.krav.includes('rep') && !!tek.episk;
     const fl = IGNITERS.find(i => i.id === 'flinta')!, bo = IGNITERS.find(i => i.id === 'bagborr')!;
     const forsok = [1 / fl.chance, 1 / bo.chance]; // väntat antal försök utan lärandet

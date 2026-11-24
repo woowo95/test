@@ -186,6 +186,7 @@ SCENARIER.slojdbankar = {
     for (const g of SIM.PROJEKT_LIST) { const ko = SIM.PROJEKT[g].ko; if (!ko || !gor.includes(ko.act)) continue; med1.push(ko.act); const b = SIM.bristNu(s, g); if (Number.isNaN(b)) nan.push(g); if (b > 0) vantat += ko.saknas(s) * ko.min; }
     const vid = SIM.koKrok.vid(s, 'flatarbank');
     const utanKo = gor.filter(a => !med1.includes(a));
+    s.projektSaknar = { ...s.projektSaknar, rep: { beh: 3, n: 3, b: 1 } }; // repet görs när ett projekt behöver det (steg 13.8.4): här tre
     const rep = SIM.PROJEKT.rep.ko!, repSaknas = Math.ceil(SIM.villHaAv(s, 'rep') - SIM.amountOf(s, 'rep') - 1e-9);
     const hinner = SIM.STATIONER.flatarbank.hinner!;
     // med ett bestämt arbete som väntar
