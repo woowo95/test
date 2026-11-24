@@ -73,7 +73,7 @@ import { woodDays } from './eld';
 import { gruppOf, isFood } from './saker';
 
 export const PRIS = balans('pris', {
-  min: 0.5, max: 2.5, // priset (och vart och ett av påslagen) håller sig mellan de här, gånger grundvärdet
+  min: 0.5, max: 2.5, // priset och gruppens påslag håller sig mellan de här, gånger grundvärdet
   elast: 0.5, // bristen upphöjd till så mycket blir påslaget: dubbelt så stor brist gör priset ungefär 1,4 gånger högre
   utjamna: 1, // läggs till både det byn vill ha och det den har (i saker, dygn eller grundvärde)
 });
@@ -109,7 +109,7 @@ export function sakPaslag(s: State, k: string, gp = gruppPaslag(s, gruppAv(k)!))
   const g = gruppAv(k);
   if (!g || g === 'mat' || g === 'bransle') return 1;
   const vh = villOchHar(s, k);
-  return vh ? clamp(paslag(vh[0], vh[1]) / gp, PRIS.min, PRIS.max) : 1;
+  return vh ? paslag(vh[0], vh[1]) / gp : 1; // utan egna gränser: priset (byPaslag) har dem, så att brist på en sak bara höjer den
 }
 // priset i huvudbyn som påslag på grundvärdet (1 = grundvärdet), mellan PRIS.min och PRIS.max
 export function byPaslag(s: State, k: string): number {

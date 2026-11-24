@@ -1771,7 +1771,8 @@ SCENARIER.stengrav = {
     klockan(s, 9); tandEld(s); setFood(s, 400); SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'huggen_sten', 2);
     for (const q of SIM.living(s)) if (q !== d) SIM.handelse(s, d, 'bjorndodare', undefined, undefined, q, 2);
     const g = begrav(s, a.v[0], d), forst = SIM.vardFor(s, g);
-    let h = 0; while (!g.vard && h < 48 * 12) { kor(s, 1 / 12); h++; }
+    // i en rik by vilar folk mycket, och vården tävlar med de andra raderna på Förbättra: den kan dröja några dygn
+    let h = 0; while (!g.vard && h < 96 * 12) { kor(s, 1 / 12); h++; }
     const sten = SIM.amountOf(s, 'huggen_sten');
     // en tro med tyngd för bud av storlek 2 som kan hugga sten: stensättningen går före stockramen, skeppssättningen före gravhögen
     const c = medTro(6, 2); c.tr.natur = 50; c.tr.sk = { ...c.tr.sk, oppen: 90, livet: 90, fest: 20 };
