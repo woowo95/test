@@ -29,7 +29,12 @@ export const SKYLT = {
   minSkarm: 9, // namnen syns bara när texten blir minst så här många punkter hög på skärmen; annars är kartan för utzoomad
   luft: 1, // så många punkter i världen mellan två namn
   ikon: 8, // rollsymbolens storlek i världens punkter: symbolerna är 8 × 8 och ritas i hel skala
+  avstand: 2, // så många punkter i världen mellan figuren och namnet, lika under fötterna som ovanför huvudet (steg 13.10.5)
 };
+// var namnet står: nederkanten på namnet under figuren (fot = figurens nedersta punkt), och nederkanten på namnet ovanför den
+// valda (topp = det översta som ritas över hen: huvudet, det hen bär där eller symbolen över huvudet)
+export const skyltUnder = (fot: number) => fot + SKYLT.avstand + SKYLT.hojd;
+export const skyltOver = (topp: number) => topp - SKYLT.avstand;
 
 // en skylt att placera: mitten av nederkanten (x, y) i världens punkter, bredden på texten och om den har en symbol. forst = går
 // före de andra (den valda och den under musen har sin stora skylt; därefter rollerna)

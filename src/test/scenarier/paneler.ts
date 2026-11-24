@@ -7,7 +7,7 @@ import { setByn } from '../../ui/lage';
 import { START, kronikaVakt } from '../kor';
 import { readdirSync, readFileSync } from 'node:fs';
 import { hasIcon } from '../../ikoner';
-import { ROLLSYMBOLER, SKYLT, figurRam, rollAv, synligaSkyltar, type Skylt } from '../../ui/namnskyltar';
+import { ROLLSYMBOLER, SKYLT, figurRam, rollAv, skyltOver, skyltUnder, synligaSkyltar, type Skylt } from '../../ui/namnskyltar';
 
 SCENARIER.namnskyltar = {
   text: 'Steg 12.1.157 och 12.1.262: varje kolonist har sitt namn i liten text vid figuren, och den som har en roll (ledaren, prästen) en symbol vid namnet ur ROLLSYMBOLER. När kartan är utzoomad eller många står tätt göms namnen så att de inte täcker varandra, och rollerna går före',
@@ -44,6 +44,9 @@ SCENARIER.namnskyltar = {
       [`utzoomat syns inga namn (${utZoom.size})`, utZoom.size === 0],
       [`när alla står tätt syns bara några namn och inga täcker varandra (${tat.size} av ${alla.length})`, tat.size > 0 && tat.size < alla.length && !overlapp],
       [`i trängseln går rollerna före: de namn som syns är ledarens eller prästens (${[...tat].map(id => SIM.byId(s, id)?.name).join(', ')})`, [...tat].every(id => id === led.id || id === pr.id)],
+      // avståndet (steg 13.10.5): namnet under fötterna har sin överkant lika långt under figuren som namnet ovanför den valda
+      // har sin nederkant över huvudet, och avståndet är SKYLT.avstand
+      [`namnet står lika långt från figuren under fötterna som ovanför huvudet (${skyltUnder(100) - SKYLT.hojd - 100} och ${50 - skyltOver(50)} punkter, SKYLT.avstand ${SKYLT.avstand})`, skyltUnder(100) - SKYLT.hojd - 100 === SKYLT.avstand && 50 - skyltOver(50) === SKYLT.avstand && SKYLT.avstand === 2],
       [`namnen under den valdas stora skylt göms (${stor.size})`, stor.size === 0],
     ];
   },
