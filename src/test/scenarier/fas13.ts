@@ -690,7 +690,7 @@ SCENARIER.djurhorn = {
     return [
       ['signalhornet och dryckeshornet görs av 1 djurhorn (dryckeshornet på 3 minuter)', recept],
       ['dryckeshornet går för hand men fortare och bättre vid slöjdbänken', bank],
-      [`utan horn dricks vinet utan tanken (${utan})`, utan === 0 && SIM.amountOf(s, 'vin') >= 0],
+      [`utan horn dricks vinet utan tanken (${utan})`, utan === 0],
       [`ur byns horn ingen glad tanke, men hornet slits (${medByns}, ${bynsSlits})`, medByns === 0 && bynsSlits],
       [`det egna hornet tas före byns och ger en glad tanke (${medEget.toFixed(3)})`, egetForst && Math.abs(medEget - SIM.RUS.hornGlad) < 1e-9],
       [`på festdagen är tanken större (${paFest.toFixed(3)})`, paFest > medEget * 2],
@@ -800,19 +800,19 @@ SCENARIER.pilting = {
 // tjäran (steg 13.5.1): det tjärade träet som står ute slits hälften så fort i 10 dygn, en tjära räcker till fyra rutor, och
 // redskapen tjäras inte
 SCENARIER.tjara = {
-  text: 'Tjäran skyddar trä som står ute: en tjärad brygga och en tjärad vägg slits hälften så fort, skyddet tar slut efter 10 dygn, en tjära räcker till fyra rutor och ett redskap tjäras inte (steg 13.5.1)',
+  text: 'Tjäran skyddar trä som står ute: en tjärad brygga och en tjärad vägg slits hälften så fort, skyddet tar slut efter 10 dygn, en tjära räcker till sexton rutor nära varandra, bryggan är värd att tjära och ett redskap tjäras inte (steg 13.5.1)',
   kor: () => {
     const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
     klockan(s, 10);
     const by = SIM.bitsOf(s), x0 = Math.floor(p.x) + 6, y0 = Math.floor(p.y) + 6;
     let id = 900000;
     const bit = (k: 'vagg' | 'golv', m: string, x: number, y: number) => { const b = { id: id++, x, y, k, m, b: 1, mat: 1, c: 1 } as SIM.Bit; by.push(b); return b; };
-    const brygga = [0, 1, 2, 3, 4].map(i => bit('golv', 'brygga', x0 + i, y0)), vagg = [bit('vagg', 'timmer', x0, y0 + 10), bit('vagg', 'timmer', x0 + 5, y0 + 10)];
+    const brygga = Array.from({ length: 20 }, (_, i) => bit('golv', 'brygga', x0 + i % 5, y0 + Math.floor(i / 5))), vagg = [bit('vagg', 'timmer', x0, y0 + 10), bit('vagg', 'timmer', x0 + 5, y0 + 10)];
     // en tjära i en kruka
     const kruka = SIM.addTool(s, 'lerkruka_stor', p); kruka.hos = undefined; kruka.x = Math.floor(p.x); kruka.y = Math.floor(p.y);
     SIM.fyllVatska(s, 'tjara', 1, kruka);
     const val = SIM.tjaraVal(s, p);
-    // tjärningen görs: bryggan först (den bästa), fyra rutor med en tjära
+    // tjärningen görs: bryggan först (den bästa), sexton rutor med en tjära
     const tk = { act: 'tjara', tool: 'bit:' + brygga[0].id } as SIM.Task;
     SIM.tjaraKlar(s, p, tk);
     const tjarade = brygga.filter(b => (b.tj ?? 0) > s.now).length, tomKruka = !kruka.inne && SIM.tingOf(s).includes(kruka);
@@ -831,12 +831,12 @@ SCENARIER.tjara = {
     const material = Object.keys(SIM.MATERIAL).filter(k => SIM.MATERIAL[k].tjaras).sort().join(',');
     return [
       [`det som tjäras: ${material}, staketen och fordonen`, material === 'brygga,stockvag,timmer' && !!SIM.TJARAS.staket && !!SIM.TJARAS.fordon],
-      [`en tjära tjärar fyra rutor av bryggan (${tjarade}) och krukan blir kvar tom`, tjarade === 4 && tomKruka],
+      [`en tjära tjärar sexton rutor av bryggan (${tjarade}) och krukan blir kvar tom`, tjarade === SIM.TJARA.rutor && tomKruka],
       [`den tjärade bryggan slits hälften så fort (${slit[0].toExponential(2)} mot ${slit[1].toExponential(2)})`, halv(slit[0], slit[1])],
       [`den tjärade väggen slits hälften så fort (${slit[2].toExponential(2)} mot ${slit[3].toExponential(2)})`, halv(slit[2], slit[3])],
       [`efter ${SIM.TJARA.dygn} dygn är skyddet slut`, slut],
       ['ett redskap tjäras inte', ingetRedskap],
-      [`valet: poängen är det sparade värdet mot tjärans (${val ? val.slag + ' ' + val.sc.toFixed(2) : 'inget värt det'})`, true],
+      [`valet: poängen är det sparade värdet mot tjärans (${val ? val.slag + ' ' + val.sc.toFixed(2) : 'inget värt det'})`, !!val && val.sc > 0],
     ];
   },
 };
@@ -2584,6 +2584,53 @@ SCENARIER.stridrorelse = {
       [`rövarna utanför striden vänder sällan (${m.uteVand} av ${m.ute} steg)`, m.ute > 200 && m.uteVand <= m.ute * 0.02],
       [`den som slåss går inte av och an (${m.vand} av ${m.steg} steg)`, m.steg > 30 && m.vand <= m.steg * 0.1],
       [`målet byts sällan (${m.mal} gånger på ${m.sek} steg i striden)`, m.sek > 100 && m.mal <= m.sek * 0.08],
+    ];
+  },
+};
+
+// kodgenomgången av fas 13 (steg 13.10.20): det som granskningen hittade
+SCENARIER.fallvittj = {
+  lang: true,
+  text: 'Fällorna vittjas som mjärden (steg 7.4.2, 7.5.10 och 13.8.3): en snara som slitits ut behåller sin fångst tills den vittjas, sedan är den borta, och en snara med en hare i vittjas av den som har tid',
+  kor: () => {
+    const s = SIM.cloneState(testBy(25)), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    s.mjardar = [];
+    const m = SIM.sattUt(s, p, 'snara')!, n0 = SIM.FALLOR.snara.fangst, f = SIM.FALLOR.snara;
+    f.fangst = 50; f.rik = () => 1;
+    for (let i = 0; i < 200 && !SIM.trasig(m); i++) SIM.stepMjardar(s, 3600);
+    f.fangst = n0; delete f.rik;
+    const fangst = m.n, kvar = s.mjardar.includes(m), full = SIM.timTillFull(s, m) === 0;
+    const vilt0 = SIM.amountOf(s, 'vilt') + SIM.amountOf(s, 'fagel');
+    SIM.vittja(s, p, m);
+    const fick = SIM.amountOf(s, 'vilt') + SIM.amountOf(s, 'fagel') - vilt0, borta = !s.mjardar.includes(m);
+    // en snara med en enda hare i vittjas
+    const m2 = SIM.sattUt(s, p, 'snara')!; m2.fisk = { vilt: 1 }; m2.n = 1;
+    klockan(s, 9);
+    const fore = s.stat?.mjardeVittjad ?? 0;
+    kor(s, 24);
+    return [
+      [`den utslitna snaran har sin fångst kvar (${fangst}) och räknas som full`, fangst > 0 && kvar && full],
+      [`den som vittjar får fångsten (${fick}), och den utslitna snaran är borta`, fick === fangst && borta],
+      [`en snara med en hare i vittjas inom ett dygn (${(s.stat?.mjardeVittjad ?? 0) - fore})`, (s.stat?.mjardeVittjad ?? 0) > fore],
+    ];
+  },
+};
+SCENARIER.granskat13 = {
+  text: 'Kodgenomgången av fas 13 (steg 13.10.20): staketets tjära följer staketet, och det redskap som bara är en fördel tas inte ur en grav',
+  kor: () => {
+    const s = SIM.cloneState(testBy(25)), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    const i = 4321; s.staket = [i]; s.tjarat = { [i]: s.now + SIM.DAY };
+    SIM.rivStaket(s, i);
+    const staket = !s.staket.length && s.tjarat[i] === undefined;
+    // nålen i graven: den som syr lånar den inte därifrån
+    s.ting = SIM.tingOf(s).filter(t => t.k !== 'jarnnal');
+    const utan = SIM.ledigaRedskap(s, p, 'jarnnal');
+    SIM.gravRedskap.n(s, p, 'jarnnal');
+    const g = s.gravar?.[0]; if (g) g.saker = [{ k: 'jarnnal', n: 1, c: 1, t: s.now } as never];
+    const fart = SIM.nalFart(s, p, 'rock');
+    return [
+      ['när staketet rivs är tjäran på rutan borta', staket],
+      [`järnnålen i graven gör inte sömnaden snabbare (${utan}, ${fart})`, utan === 0 && fart === 1],
     ];
   },
 };

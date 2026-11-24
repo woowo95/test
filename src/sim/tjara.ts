@@ -22,7 +22,7 @@ import { TJARA } from './tjarlatt';
 
 // det som kan tjäras: var det står, vad det är värt, slitaget per timme (i skick, 0–1) och när skyddet tar slut
 export interface TjarMal { id: string; x: number; y: number; spot: { x: number; y: number }; varde: number; per: number; tj?: number; satt: (till: number) => void }
-// registret: ett slag av det som tjäras per rad. rutor = slaget tjäras fyra rutor i taget, annars en sak
+// registret: ett slag av det som tjäras per rad. rutor = slaget tjäras TJARA.rutor rutor i taget, annars en sak
 export const TJARAS: Record<string, { namn: string; rutor: boolean; mal: (s: State) => TjarMal[] }> = {
   // väggarna av timmer, stockvägarna och bryggan: materialets värde och arbetet att bygga dem, och slitaget
   bit: { namn: 'trä', rutor: true, mal: s => bitsOf(s).filter(b => b.b >= 1 && MATERIAL[b.m]?.tjaras).map(b => {
@@ -55,11 +55,13 @@ function grupp(s: State, slag: string, m: TjarMal, alla: TjarMal[]) {
 // Bara den vuxna, när byn har tjära, och inte det någon annan redan tjärar
 export function tjaraVal(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || vatskaAv(s, 'tjara') < 1) return undefined;
-  const upptaget = new Set(living(s).map(q => q !== p && q.task?.act === 'tjara' ? q.task.tool : undefined).filter(Boolean));
+  const upptaget = new Set(living(s).map(q => q !== p && q.task?.act === 'tjara' ? q.task.tool : undefined).filter(Boolean) as string[]);
   const kost = grundvarde('tjara') + TJARA.min / 60 * ARBETE; // tjäran och arbetet
   let bast: { slag: string; m: TjarMal; sc: number } | undefined;
   for (const slag in TJARAS) {
-    const alla = TJARAS[slag].mal(s);
+    const M = TJARAS[slag].mal(s);
+    for (const m of M) if (upptaget.has(m.id)) for (const q of grupp(s, slag, m, M)) upptaget.add(q.id); // hela gruppen den andra tjärar
+    const alla = M.filter(m => !upptaget.has(m.id));
     for (const m of alla) {
       if (!otjarad(s, m) || upptaget.has(m.id) || sparar(m) * (TJARAS[slag].rutor ? TJARA.rutor : 1) <= (bast?.sc ?? 0) * kost) continue; // kan inte bli bättre
       const sc = (grupp(s, slag, m, alla).reduce((n, q) => n + sparar(q), 0) - kost) / kost;

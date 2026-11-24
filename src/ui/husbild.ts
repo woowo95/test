@@ -4,7 +4,7 @@ import { smutsGrad, smutsigFarg, tjaradFarg } from './slitbild';
 import { KARTBILDER } from '../kartbilder';
 import { TS, husLayer } from './scen';
 import { takYtor, vaggSkuggor } from './skugga';
-import { ruinPunkter, vagg } from './timmerbild';
+import { ruinGrannar, ruinPunkter, vagg } from './timmerbild';
 
 // ---------- husets utseende: timmerväggen och golven som pixelbilder (steg 2.2.13, 16 punkter per ruta i steg 5.1.2.4) ----------
 // Varje ruta är 16 × 16 punkter (en världspixel per punkt). Bilderna är bildstilens godkända (5.2.4.4, kartbilder.ts): timmerväggen
@@ -92,14 +92,13 @@ function bildNu(s: State, b: Bit) {
 // den rasade muren på en liten karta (steg 13.1.2): punkterna räknas i timmerbild.ts
 const ruinCache = new Map<string, PIXI.Texture>();
 function ruinTextur(murar: Set<string>, x: number, y: number) {
-  const { key, px } = ruinPunkter(murar, x, y);
+  const n = ruinGrannar(murar, x, y), key = `${x},${y},${n}`;
   let t = ruinCache.get(key);
   if (t) return t;
   const c = document.createElement('canvas'); c.width = 16; c.height = 16;
   const g = c.getContext('2d')!;
-  px.forEach((col, i) => { if (col) { g.fillStyle = col; g.fillRect(i % 16, i >> 4, 1, 1); } });
+  ruinPunkter(n, x, y).forEach((col, i) => { if (col) { g.fillStyle = col; g.fillRect(i % 16, i >> 4, 1, 1); } });
   t = PIXI.Texture.from(c, { scaleMode: PIXI.SCALE_MODES.NEAREST });
-  if (ruinCache.size > 2000) { for (const v of ruinCache.values()) v.destroy(true); ruinCache.clear(); }
   ruinCache.set(key, t);
   return t;
 }

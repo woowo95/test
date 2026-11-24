@@ -1241,6 +1241,7 @@ SCENARIER.forhistoria = {
 };
 
 SCENARIER.radvakt = {
+  lang: true,
   text: 'Vakten för raden (steg 11.3.14, radVakt i rad.ts): det stora testet larmar om ett tal i en rad som inte är helt, en by som växer utan gräns eller för många byar som gått under; en värld efter förhistorien är tyst',
   env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,forhist.ar=400' },
   kor: () => {

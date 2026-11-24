@@ -441,7 +441,8 @@ export function takeMaterial(s: State, p: Person, k: string, n: number, common =
   const alt = ERSATT[k];
   if (!alt) return takeMaterial1(s, p, k, n, common, kom, ut);
   const ag: Del = {}, alla = [k, ...alt];
-  for (let i = 0; i < alla.length && n > 1e-12; i++) { const m = Math.min(n, getable1(s, p, alla[i])); if (m <= 1e-12) continue; const d = takeMaterial1(s, p, alla[i], m, common, kom, ut); addDel(ag, d); n -= Math.min(m, sumOf(d)); }
+  // det hen får ta (det hen bär, det egna, byns) av alla slagen går före det som är andras
+  for (const q of [...alla.map(k => ({ k, fri: true })), ...alla.map(k => ({ k, fri: false }))]) { if (n <= 1e-12) break; const m = Math.min(n, q.fri ? mayTake(s, p, q.k) + iBordan(p, q.k) : getable1(s, p, q.k)); if (m <= 1e-12) continue; const d = takeMaterial1(s, p, q.k, m, common, kom, ut); addDel(ag, d); n -= Math.min(m, sumOf(d)); }
   // det som ändå fattas tas som slaget k: där finns också det som tas ur en grav (steg 13.1.4)
   if (n > 1e-12) addDel(ag, takeMaterial1(s, p, k, n, common, kom, ut));
   return ag;

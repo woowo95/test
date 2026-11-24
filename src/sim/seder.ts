@@ -144,7 +144,7 @@ export function drar(s: State, p: Person) {
     if (e) for (const k in e) d[k as Sed] += e[k as Sed]! * SED.uppSteg;
   }
   for (const m of minnen(s, p).values()) for (const k in m.d) d[k as Sed] += m.d[k as Sed]!;
-  for (const k of SED_LIST) d[k] += arv(p, k) + talat(s, p, k);
+  for (const k of SED_LIST) d[k] = d[k] + arv(p, k) + talat(s, p, k);
   return d;
 }
 // en enda seds dragning, samma tal som drar(s, p)[k] med samma tillägg i samma ordning (steg 12.1.104): för den som bara läser en sed

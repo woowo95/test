@@ -24,6 +24,7 @@ import { groundOf, markslag } from './mark';
 import { TORR } from './trad';
 import { nyStubbe } from './skog';
 import { faltAt, faltBrann, faltIndex, faltOf, faltRutor, grodaPa, harStaket } from './odling';
+import { rivStaket } from './hage';
 import { tamDor, tamdjurOf } from './tamdjur';
 import { honsDor, honsOf } from './hons';
 import { wearUsed } from './redskap';
@@ -458,7 +459,7 @@ function slocknar(s: State, b: Brand) {
       for (const k of tingOf(s).filter(q => q.vid === st.id && q.hos === undefined && q.lass === undefined && !SAKER[q.k]?.brinnerInte)) { brann(b, SAKER[k.k]?.namn ?? k.k); s.ting = tingOf(s).filter(q => q !== k); kartaBorta(s, k); }
       brann(b, stationDef(st.k)?.namn ?? st.k); count(s, 'brand station'); taBort(s, st); flytt = true;
     }
-    if (upp && s.staket?.length && harStaket(s, i)) { s.staket = s.staket.filter(j => j !== i); brann(b, 'Staket'); count(s, 'brand staket'); }
+    if (upp && s.staket?.length && harStaket(s, i)) { rivStaket(s, i); brann(b, 'Staket'); count(s, 'brand staket'); }
     if (upp) for (const k of tingPaMarken(s)) if (Math.floor(k.x!) === x && Math.floor(k.y!) === y) { brann(b, SAKER[k.k]?.namn ?? k.k); s.ting = tingOf(s).filter(q => q !== k); kartaBorta(s, k); count(s, 'brand redskap'); }
     // sakerna brinner upp, och grödan
     for (const st of stacksOf(s)) {

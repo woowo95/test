@@ -11,7 +11,7 @@ import { amountOf, gain, harTillHands, iBordan, put, timKvar, use } from './lage
 import { getable, Recept, saknatAv, takeMaterial, takeRecipe, tillHands } from './behov';
 import { addDel } from './egendom';
 import { eldReserv, villAv, villHaAv } from './forradsmal';
-import { addTool, freeTools, halvOf, ledigtTing, nTools, ownsFree, slitTing, take, tingOf, wearTool } from './agande';
+import { addTool, freeTools, halvOf, ledigaRedskap, ledigtTing, nTools, ownsFree, slitTing, take, tingOf, wearTool } from './agande';
 import { RUS, hornKrok } from './rus';
 import { tanke } from './tankar';
 import { festNu } from './kultlatt';
@@ -67,7 +67,7 @@ export const SPJUT_FORSOK = ACTS.fiske.redskap!.fiskespjut.haller!; // så mång
 export const isSpear = (k?: string) => !!k && gruppOf(k) === 'spjut';
 export const spears = (s: State) => SPJUT.reduce((a, k) => a + nTools(s, k), 0);
 // ett ledigt redskap av några slag: sitt eget först, annars det bästa som ingen annan arbetar med (agande.ts)
-export const freeOfKinds = (s: State, p: Person, ks: string[]) => ks.find(k => ownsFree(s, p, k)) ?? ks.find(k => freeTools(s, p, k) > 0);
+export const freeOfKinds = (s: State, p: Person, ks: string[]) => ks.find(k => ownsFree(s, p, k)) ?? ks.find(k => ledigaRedskap(s, p, k) > 0) ?? ks.find(k => freeTools(s, p, k) > 0);
 export const freeSpear = (s: State, p: Person) => freeOfKinds(s, p, SPJUT);
 // slitage på redskapet i handen: n av det handlingen slits per (ACTS.slits: träd, kaniner, fiskeförsök, djur eller det som
 // samlas, steg 2.3.12), så att ett redskap räcker lika länge hur fort arbetet än går. Går det sönder räknas det, och första
@@ -369,16 +369,16 @@ export const flintaTillVerktyg = (s: State) => {
 // (steg 12.2.6): knivens tal kvalitet i slaktens rad (handlingar.ts) gånger REDSKAP.kvRedskap, som en bättre station
 // järnnålen (steg 12.5.3): den som syr ett plagg (det som inte smids) och har en ledig järnnål syr tre gånger så fort, och
 // plagget blir oftare bra, som det som täljs med järnkniven
-const harJarnnal = (s: State, p: Person) => freeTools(s, p, 'jarnnal') > 0 || tingOf(s).some(t => t.k === 'jarnnal' && t.hos === p.id);
+const harJarnnal = (s: State, p: Person) => ledigaRedskap(s, p, 'jarnnal') > 0 || tingOf(s).some(t => t.k === 'jarnnal' && t.hos === p.id);
 export const nalFart = (s: State, p: Person, act: string) => SYDDA.has(act) && harJarnnal(s, p) ? REDSKAP.nalFart : 1;
 // den som börjar sy tar en ledig järnnål i handen (steg 12.1.239), och den slits för varje plagg som blir klart
-export function taNal(s: State, p: Person, act: string) { if (SYDDA.has(act) && !tingOf(s).some(t => t.k === 'jarnnal' && t.hos === p.id) && freeTools(s, p, 'jarnnal') > 0) take(s, p, 'jarnnal'); }
+export function taNal(s: State, p: Person, act: string) { if (SYDDA.has(act) && !tingOf(s).some(t => t.k === 'jarnnal' && t.hos === p.id) && ledigaRedskap(s, p, 'jarnnal') > 0) take(s, p, 'jarnnal'); }
 export function slitNal(s: State, p: Person, act: string) { if (SYDDA.has(act) && tingOf(s).some(t => t.k === 'jarnnal' && t.hos === p.id)) wearTool(s, p, 'jarnnal', 1 / REDSKAP.nalPlagg); }
 export const nalKv = (s: State, p: Person, k: string) => SYDDA.has(gruppOf(k)) && harJarnnal(s, p) ? (REDSKAP.nalKv - 1) * REDSKAP.kvRedskap : 0;
 export function knivKv(s: State, p: Person, k: string) {
   const r = SAKER[k]?.skaffa as { verktyg?: Record<string, string>; kniv?: true } | undefined;
   if (!r?.kniv && !r?.verktyg?.kniv) return 0;
-  const kniv = ['jarnkniv'].find(q => freeTools(s, p, q) > 0 || tingOf(s).some(t => t.k === q && t.hos === p.id));
+  const kniv = ['jarnkniv'].find(q => ledigaRedskap(s, p, q) > 0 || tingOf(s).some(t => t.k === q && t.hos === p.id));
   return kniv ? (redskapTal('slakta', kniv).kvalitet - 1) * REDSKAP.kvRedskap : 0;
 }
 // dryckeshornet (steg 13.4.1): den som dricker öl, mjöd eller vin tar ett ledigt horn, sitt eget först, sedan byns och sist ett lånat

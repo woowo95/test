@@ -1736,6 +1736,7 @@ SCENARIER.slackning = {
 };
 
 SCENARIER.brinnerupp = {
+  lang: true,
   text: 'Steg 6.4.3: allt av trä och allt i lagren kan brinna: golv, dörrar, stationer och möbler med det som ligger i dem, och sakerna i högarna och på marken. Sten och flinta blir kvar, ett trägolv blir jordgolv, och det som brunnit skrivs i branden',
   kor: () => {
     const a = torrAng();

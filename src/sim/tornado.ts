@@ -24,6 +24,7 @@ import { FOREST, isSoil } from './vag';
 import { tingOf } from './agande';
 import { FYND, UTTAG_IDS, tagits, takenOf } from './fynd';
 import { faltTornado, harStaket } from './odling';
+import { rivStaket } from './hage';
 import { tamDor, tamdjurOf } from './tamdjur';
 import { honsDor, honsOf } from './hons';
 import { bjornarOf, djurOf, dodaDjur, faglarOf, flockdjurOf } from './djur';
@@ -360,7 +361,7 @@ function naraZon(s: State, t: Tornado, rutor: number[]) {
       if (v.c <= 0) { const h = rasar(s, v); t.vagg++; count(s, 'tornado vagg'); drabbadHus(s, h, 'tornadon som förstörde huset'); }
       rev = true;
     } else if (v?.k === 'oppning' && v.dorr && ur(s, t, i, 3847) < TORNADO.trasig) { delete v.dorr; t.forstort = (t.forstort ?? 0) + 1; count(s, 'tornado forstort'); rev = true; }
-    if (harStaket(s, i) && ur(s, t, i, 3864) < TORNADO.trasig) { s.staket = s.staket!.filter(j => j !== i); t.forstort = (t.forstort ?? 0) + 1; count(s, 'tornado staket'); } // staketet rivs som dörrarna (steg 10.10.10)
+    if (harStaket(s, i) && ur(s, t, i, 3864) < TORNADO.trasig) { rivStaket(s, i); t.forstort = (t.forstort ?? 0) + 1; count(s, 'tornado staket'); } // staketet rivs som dörrarna (steg 10.10.10)
     const st = s.stationer?.length ? stationAt(s, x, y) : undefined;
     if (st && ur(s, t, st.id, 3848) < TORNADO.trasig) {
       // redskapen som låg i den blir liggande på rutan
@@ -474,7 +475,7 @@ function karnan(s: State, t: Tornado, rutor: number[]) {
     if (v?.k === 'vagg' && v.b >= 1) { const h = rasar(s, v); t.vagg++; count(s, 'tornado vagg'); drabbadHus(s, h, 'tornadon som förstörde huset'); rev = true; }
     else if (v?.k === 'golv' && v.m !== 'jord') { if (MATERIAL[v.m].vag) vagBort(s, v); else v.m = 'jord'; borta(); rev = true; }
     else if (v?.k === 'oppning' && v.dorr) { delete v.dorr; borta(); rev = true; }
-    if (harStaket(s, i)) { s.staket = s.staket!.filter(j => j !== i); borta(); count(s, 'tornado staket'); } // staketet (steg 10.10.10)
+    if (harStaket(s, i)) { rivStaket(s, i); borta(); count(s, 'tornado staket'); } // staketet (steg 10.10.10)
     const st = s.stationer?.length ? stationAt(s, x, y) : undefined;
     if (st) { s.ting = tingOf(s).filter(q => !(q.vid === st.id && q.hos === undefined && q.lass === undefined)); taBort(s, st); borta(); flytt = true; }
   }

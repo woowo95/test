@@ -1045,7 +1045,7 @@ function flockarMots(s: State, a: Rovarflock, b: Rovarflock) {
   if (a.klan === b.klan || flockStrid(s, a) || flockStrid(s, b) || kartStrider(s).some(g => g.efter?.typ === 'rovarMot')) return;
   const ka = klanById(s, a.klan), kb = klanById(s, b.klan);
   if ((ka?.inst ?? 0) > 0 && (kb?.inst ?? 0) > 0) return;
-  const ra = rovarna(s, a), rb = rovarna(s, b);
+  const ra = rovarna(s, a).filter(r => !gr(r).flytt), rb = rovarna(s, b).filter(r => !gr(r).flytt); // de som flyr från den förra striden är inte med
   if (!ra.some(x => rb.some(y => avst(x, y) < KLOCKA.faraSyn))) return;
   count(s, 'flockarSlass');
   log(s, `Två rövargäng möttes vid byn och slogs med varandra.`, 'world'); kronika(s, 'Två rövargäng slogs med varandra vid byn.', 'rovare');

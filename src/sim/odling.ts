@@ -15,7 +15,7 @@ import { FOREST, VAG } from './vag';
 import { knows, tankePa } from './teknik';
 import { bynsDel, getable, takeMaterial } from './behov';
 import { utsadeKrok } from './ratter';
-import { freeTools, ledigtTing, nTools, slitTing, tingOf, wearTool } from './agande';
+import { ledigaRedskap, ledigtTing, nTools, slitTing, tingOf, wearTool } from './agande';
 import { FORDON, FORDON_TAL, fordonI, lediga } from './fordon';
 import { tamEg } from './tamdjur';
 import { SAKER } from './saker';
@@ -464,7 +464,7 @@ function plogar(s: State, p: Person): BeredRedskap | undefined {
   }
   return bast;
 }
-export const beredRedskap = (s: State, p: Person): BeredRedskap | undefined => [...BEREDA_REDSKAP().filter(r => freeTools(s, p, r.k)), plogar(s, p)].filter(r => !!r).sort((a, b) => b!.fart - a!.fart)[0];
+export const beredRedskap = (s: State, p: Person): BeredRedskap | undefined => [...BEREDA_REDSKAP().filter(r => ledigaRedskap(s, p, r.k)), plogar(s, p)].filter(r => !!r).sort((a, b) => b!.fart - a!.fart)[0];
 // fart på fältet: att gräva upp jorden går fortare med det snabbaste lediga redskapet
 const fart = (s: State, p: Person, st: FaltSteg) => (st === 'bereda' ? beredRedskap(s, p)?.fart ?? 1 : 1) * (1 + (p.skill.odling ?? 0) / ODLING.skillFart); // färdigheten Odling (steg 9.7.7)
 // arbetet som är kvar på rutorna i steget st (ms), utan farten: på sådden bara så många rutor som det finns frön till
