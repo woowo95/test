@@ -42,6 +42,7 @@ import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from '.
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
 import { FORRAD, FORRADSMAL, TROSKEL, buffert, lyxtak, materialTimme, materialTak, eldReserv, villHaAv } from './forradsmal';
+import { stadaUppgift, stadaVal } from './stada';
 import { tjaraUppgift, tjaraVal } from './tjara';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, forstRuttnar, freeOfKinds, handelTask, toolGroups, underhallGrupp } from './redskap';
 import { PROJEKT, PROJEKT_LIST, PROJEKT_TAL, Uppgift, arv, bastaProjekt, bristAlla, hamtas, projektNu } from './projekt';
@@ -176,7 +177,7 @@ export const VAL = balans('val', {
   forbLust: 15, // maten och veden över bufferten: behovet gånger lusten (Försörjningens poäng, median ungefär 23 för maten och 7 för veden) delat med detta
   forbStam: 8, // ... och veden så här många gånger mer när en fälld stam ligger kvar och personen har en ledig yxa
   forbFritid: 0.04, // ... och fritiden, som vinner när förråden är nära eller över taket (det mjuka taket, steg 10.2.4)
-  forbForsok: 0.6, forbTek: 0.5, forbHandel: 0.4, forbUnderhall: 0.45, forbLara: 0.35, forbFylla: 0.2, forbTatu: 0.3, forbFarg: 0.3, forbTjara: 0.3, forbBrygga: 0.4, forbDjur: 0.4, forbFalt: 0.45, // forbBrygga, forbDjur (ullen, hamlingen) och forbFalt (staketet, fågelskrämman): steg 13.8.7; forbFarg: färgbadet (steg 13.3.2), forbTjara: tjäran (steg 13.5.1)
+  forbForsok: 0.6, forbTek: 0.5, forbHandel: 0.4, forbUnderhall: 0.45, forbLara: 0.35, forbFylla: 0.2, forbTatu: 0.3, forbFarg: 0.3, forbTjara: 0.3, forbStada: 1, forbBrygga: 0.4, forbDjur: 0.4, forbFalt: 0.45, // forbBrygga, forbDjur (ullen, hamlingen) och forbFalt (staketet, fågelskrämman): steg 13.8.7; forbFarg: färgbadet (steg 13.3.2), forbTjara: tjäran (steg 13.5.1)
   // handarbetet på fritiden (craft, steg 10.2.3): viltet och fisken som ruttnar, torka, grilla, gå i lära, pröva sig fram (gånger
   // nyfikenheten och sedvanan) och pyssla med ett eget projekt
   hantSlakt: 1, hantRensa: 0.9, hantTorka: 0.6, hantGrilla: 0.5, hantLara: 0.4, hantForsok: 0.5, hantProjekt: 0.3,
@@ -641,6 +642,8 @@ export const FORBATTRA: readonly ForbRad[] = [
   // färgbadet (steg 13.3.2, farg.ts): smaken, anseendet och värdet färgen ger plagget, minus maten i växterna (fargVal)
   // tjäran (steg 13.5.1, tjara.ts): det sparade värdet mot tjärans
   { id: 'tjara', kand: c => { const d = tjaraVal(c.s, c.p); if (!d) return undefined; return { sc: VAL.forbTjara * d.sc * brus(c), gor: () => projektVal(c.v, tjaraUppgift(d), 'Byn har det den behöver') }; } },
+  // städningen (steg 14.1.2, stada.ts): finheten smutsen tar och äcklet, efter hur mycket rummet angår en
+  { id: 'stada', kand: c => { const d = stadaVal(c.s, c.p); if (!d) return undefined; return { sc: VAL.forbStada * d.sc * brus(c), gor: () => projektVal(c.v, stadaUppgift(d), 'Golvet är smutsigt') }; } },
   { id: 'farga', kand: c => { const d = fargVal(c.s, c.p); if (!d) return undefined; return { sc: VAL.forbFarg * d.sc * brus(c), gor: () => { projektVal(c.v, { act: 'farga', text: `Badar ${d.t.t ? tingNamn(d.t.t).toLowerCase() : 'sin matta'} i ${FARGER[d.bad].namn.toLowerCase()} färg vid örtköket.`, min: FARG.min, tool: fargTool(d.bad, !!d.t.matta), ref: d.t.id }, 'Byn har det den behöver'); } }; } },
   // bryggningen, ullen, hamlingen, staketet och fågelskrämman (steg 13.8.7) vägs med poäng mot de andra raderna på Förbättra
   { id: 'brygga', kand: c => { if (c.a < ALDER.vuxen) return undefined; const { s, p, v } = c; const b = bryggVal(s, p); if (!b) return undefined; return { sc: VAL.forbBrygga * brus(c), gor: () => { projektVal(v, { act: b.act, text: b.act === 'tappa' ? (b.v === 'sprit' ? 'Häller upp spriten ur brännpannan i en liten lerkruka.' : 'Silar satsen och häller upp den i lerkrukor.') : b.act === 'branna' ? 'Häller vin eller öl i brännpannan och eldar under den.' : b.act === 'malta' ? 'Blöter korn och hänger upp det på torkställningen till malt.' : BRYGD[b.v].gor, min: b.act === 'tappa' ? BRYGG.tappMin : b.act === 'branna' ? BRYGG.brannMin : b.act === 'malta' ? BRYGG.maltMin : BRYGG.prepMin, spot: vidStation(b.kar), ref: b.kar.id }, b.act === 'tappa' ? 'Satsen i bryggkaret har jäst klart' : 'Byn vill ha mer att dricka'); } }; } }, // steg 9.6.12–9.6.13

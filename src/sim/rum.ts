@@ -4,6 +4,7 @@ import { balans } from './balans';
 import { brasorOf } from './brasor';
 import { eldPlats } from './karta';
 import { SMUTS, flackNu, flackarOf } from './smuts';
+import { blodNu, blodOf } from './blod';
 import { isKlar, krukaHemma, sovrum, stationDef, stationerOf, storlekAv } from './stationer';
 import { PERFEKT, kvOf } from './kvalitet';
 import { krukaPyntQ } from './kruka';
@@ -136,8 +137,19 @@ export function rumInfo(s: State, r: Rum, utanFolk = false): RumInfo {
   const lagret = new Set<number>();
   for (const a of s.stackar ?? []) { const t = a.y * W + a.x; if (rutor.has(t) && a.n > 0) { i.bara.add(a.k); lagret.add(t); } }
   i.forvar += lagret.size;
-  for (const f of flackarOf(s)) if (rutor.has(f.i) && flackNu(f, s.now) >= RUM.smutsMin) i.smuts += f.k === 'toa' ? SMUTS.toaInne : 1; // en toahög väger tyngre i rummets smuts (steg 11.1.73)
+  for (const v of smutsRutor(s, r).values()) i.smuts += v;
   return i;
+}
+
+// smutsen på rummets golv, per ruta: en toahög väger tyngre (steg 11.1.73), en ruta med blod som syns räknas som en fläck
+// (steg 14.1.2). Det som bleknat räknas inte
+export function smutsRutor(s: State, r: Rum): Map<number, number> {
+  const rutor = new Set(r.tiles), ut = new Map<number, number>();
+  for (const f of flackarOf(s)) if (rutor.has(f.i) && flackNu(f, s.now) >= RUM.smutsMin) ut.set(f.i, (ut.get(f.i) ?? 0) + (f.k === 'toa' ? SMUTS.toaInne : 1));
+  const blod = new Set<number>();
+  for (const b of blodOf(s)) { const i = Math.floor(b.y) * W + Math.floor(b.x); if (rutor.has(i) && blodNu(b, s.now) >= SMUTS.blodSyns) blod.add(i); }
+  for (const i of blod) ut.set(i, (ut.get(i) ?? 0) + 1);
+  return ut;
 }
 
 // taggarna räknas högst en gång i timmen per rum, och om när något byggs (de frågar bara det som redan står)

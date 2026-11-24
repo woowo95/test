@@ -330,6 +330,7 @@ KLAR.valla = (s, p, t) => vallaKlar(s, p, t.ref);
 KLAR.klippa = (s, p, t) => { klippKlar(s, p, t.ref); wearUsed(s, p, 1); }; // ullsaxen slits för varje får (steg 12.5.2)
 KLAR.tatuera = (s, p, t) => tatKlar(s, p, t.ref);
 KLAR.farga = fargaKlar; // färgbadet (farg.ts, steg 13.3.2)
+KLAR.stada = stadaKlar; // städningen (stada.ts, steg 14.1.2)
 KLAR.tjara = tjaraKlar; // tjäran (tjara.ts, steg 13.5.1)
 KLAR.mjolka = (s, p, t) => mjolkaKlar(s, p, t.ref);
 KLAR.skatta = (s, p, t) => skattaKlar(s, p, t.ref); // bikupan (bin.ts, steg 10.10.20)
@@ -1840,6 +1841,7 @@ import { avlivaKlar, klippKlar, mjolkaKlar, stepBoskap } from './boskap';
 import { tatKlar } from './tatuering';
 import { barGillad, fargaKlar, FARG, stepFargsmak } from './farg';
 import { tjaraKlar } from './tjara';
+import { stadaKlar } from './stada';
 import { angKlar, slaKlar, stepVinter, hamlaKlar } from './slatter';
 import { stepHons } from './hons';
 import { baddVila, bredvidKaresta, iDass, sittVila, sattaKlar } from './mobler';

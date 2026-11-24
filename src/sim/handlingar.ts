@@ -307,6 +307,7 @@ const DEF = {
   valla: { namn: 'Vallar djuren', slag: 'odla', verb: 'vallar', yrke: 'Herde' }, // tamdjur.ts (steg 9.8.4)
   staket: { namn: 'Sätter staket runt fältet', slag: 'odla', verb: 'sätter staket', tungt: true }, // odling.ts (steg 9.7.10)
   rojaSly: { namn: 'Röjer sly i ett stråk', vidRutan: true, slag: 'tra', verb: 'röjer sly', stilla: true }, // en buske, planta eller ett ungträd i ett gångstråk, utan yxa (skog.ts, steg 13.8.16)
+  stada: { namn: 'Städar', slag: 'hantverk', verb: 'städar', framme: true, stilla: true }, // torkar golvet ruta för ruta (stada.ts, steg 14.1.2)
   sopor: { namn: 'Bär resterna till sophögen', slag: 'hantverk', verb: 'bär bort resterna' }, // rester.ts (steg 9.7.5)
   tomma_latrin: { namn: 'Tömmer latrinen i komposten', slag: 'hantverk', verb: 'tömmer latrinen', tungt: true }, // rester.ts (steg 9.7.6)
   gropa: { namn: 'Lagar festmåltid', slag: 'hantverk', hantverk: true, ovar: 'matlagning', social: true, verb: 'lagar festmåltid', plats: 'station' }, // laddar kokgropen inför en högtid eller ett bröllop (matlagning.ts, steg 10.7.28)

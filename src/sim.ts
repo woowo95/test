@@ -170,6 +170,7 @@ export * from './sim/tatuering';
 export * from './sim/farg';
 export * from './sim/tjarlatt';
 export * from './sim/tjara';
+export * from './sim/stada';
 export * from './sim/vatskor';
 export * from './sim/protes';
 export * from './sim/roller';
