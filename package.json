@@ -41,7 +41,8 @@
     "utseende": "tsx src/test/utseende.ts",
     "svavar": "tsx src/test/svavar.ts",
     "radhandel": "tsx src/test/radhandel.ts",
-    "radanfall": "tsx src/test/radanfall.ts"
+    "radanfall": "tsx src/test/radanfall.ts",
+    "dynamik": "tsx src/test/dynamik.ts"
   },
   "repository": {
     "type": "git",
