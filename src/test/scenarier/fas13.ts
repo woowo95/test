@@ -1761,3 +1761,31 @@ SCENARIER.foljder = {
     ];
   },
 };
+
+SCENARIER.avvikare = {
+  text: 'Steg 13.9.4: avvikaren. Den som drar en sed långt åt ett håll och har hög karisma talar för den i samtalen, och den som tycker om hen drar lite åt samma håll en tid, som ett rykte. En avvikare utan karisma övertygar ingen, och det bleknar efter några dygn',
+  kor: () => {
+    const { SED_LIST, sedOppen, drar, drarSed, talaForSed } = SIM;
+    const s = SIM.createState(9, START); klockan(s, 12);
+    const a = nyInvanare(s, 'm', 30), b = nyInvanare(s, 'k', 30), c = nyInvanare(s, 'k', 30);
+    Object.assign(a.pot, { karisma: 18, aggression: 20, mod: 20, empati: 1, flit: 20, intelligens: 20, nyfikenhet: 20 });
+    const d = drar(s, a), k = SED_LIST.filter(x => sedOppen(s, x)).sort((x, y) => Math.abs(d[y]) - Math.abs(d[x]))[0]!, rikt = Math.sign(d[k]);
+    const fore = drarSed(s, b, k) * rikt;
+    for (let i = 0; i < 10; i++) { talaForSed(s, a, b, 60); talaForSed(s, a, c, 5); }
+    const efter = drarSed(s, b, k) * rikt, ovan = drarSed(s, c, k) * rikt;
+    // en avvikare utan karisma
+    const tyst = nyInvanare(s, 'm', 30), lyss = nyInvanare(s, 'k', 30);
+    Object.assign(tyst.pot, { ...a.pot, karisma: 6 });
+    const tFore = drarSed(s, lyss, k); for (let i = 0; i < 10; i++) talaForSed(s, tyst, lyss, 60);
+    const tEfter = drarSed(s, lyss, k);
+    s.now += 20 * SIM.DAY;
+    const sedan = drarSed(s, b, k) * rikt;
+    return [
+      [`avvikaren drar ${k} långt (${d[k].toFixed(2)})`, Math.abs(d[k]) >= 1],
+      [`vännen drar mer åt samma håll efter tio samtal (${fore.toFixed(2)} → ${efter.toFixed(2)})`, efter - fore > 0.2],
+      [`den som inte tycker om hen påverkas inte (${(ovan - fore).toFixed(2)})`, Math.abs(ovan - drarSed(s, c, k) * rikt) < 1e-9 && ovan <= fore + 1e-9],
+      [`avvikaren utan karisma övertygar ingen (${tFore.toFixed(2)} → ${tEfter.toFixed(2)})`, tFore === tEfter],
+      [`efter 20 dygn (20 år i spelet) har det nästan bleknat (${sedan.toFixed(2)})`, sedan - fore < (efter - fore) * 0.1],
+    ];
+  },
+};

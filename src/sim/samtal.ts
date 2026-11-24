@@ -1,3 +1,4 @@
+import { talaForSed } from './seder';
 import { fraktionSamtal } from './rost';
 import { personHand } from './personlogg';
 import { barnTill, upplev } from './uppvaxt';
@@ -231,6 +232,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     if (a.tek?.ledarskap) tankePa(s, a, 'lag', SAMTAL.ledTanke * SAMTAL.lagTanke); // och sedan på lag (steg 8.4.1)
     if (lonTankbar(s, a)) tankePa(s, a, 'lon', SAMTAL.ledTanke * SAMTAL.lonTanke); // och på lön, när byn tagit in nog i skatt (steg 10.5.9)
     tankePa(s, a, 'ledarskap', SAMTAL.ledTanke); // och kommer på vad som krävs för att leda (steg 3.5.1)
+    talaForSed(s, a, b, r.op); // och avvikaren talar för sin sed (steg 13.9.4)
     berattaSmak(a, b, r.op); // och om sin favoritmat eller det man avskyr (steg 9.6.6)
     berattaSpecial(s, a, b, r.op); // och om byns egen rätt (steg 10.7.29)
     beOmForlatelse(s, a, b); // och den som gjort den andra illa ber om förlåtelse (steg 10.8.2)
