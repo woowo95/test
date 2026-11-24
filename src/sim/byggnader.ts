@@ -350,6 +350,7 @@ function boende(s: State): Boende {
   const overblivna: Person[] = [];
   for (const e of new Set(egna.values())) overblivna.push(...fordela(e.tiles, e.folk));
   fordela(gemensamt, [...ovriga, ...overblivna]);
+  sjukaISinAnde(s, ppl, plats, new Set([...agd.keys(), ...sjuka.map(x => plats.get(x.q.id)!)]));
   b = { key, egna, gemensamt, ovriga, plats };
   boenden.set(s, b);
   return b;
@@ -409,16 +410,39 @@ export function utanBadd(s: State) {
 export const homeless = (s: State) => { const b = boende(s); return Math.max(0, b.ovriga.length - b.gemensamt.length); };
 // byn har inget tak att sova under: inga gemensamma sovplatser
 export const utanTak = (s: State) => !boende(s).gemensamt.length;
-// den sjuke sover för sig (steg 9.5.5, kunskapen Smittan): i ett färdigt hus där ingen bor, när någon i byn kan Smittan och
-// sjukdomen smittar. En ruta per sjuk i huset, ingen frisk sover där (ingen bor där)
+// den sjuke sover för sig (steg 9.5.5 och 13.10.19, kunskapen Smittan): när någon i byn kan Smittan och sjukdomen smittar, i ett
+// färdigt hus att sova i (en hydda, ett långhus eller ett familjehus) där ingen bor. Finns inget sådant ligger de i rummets ena
+// ände (sjukaISinAnde). En ruta per sjuk i huset, ingen frisk sover där
+const smittar = (p: Person) => !!p.sjuk && p.sjuk.st !== undefined && SJUKDOMAR[p.sjuk.k].smitta > 0;
+const kanSmittan = (s: State) => living(s).some(q => kn(q, 'smitta') >= 0.5);
+// de sjuka i ett rum byter plats med de friska, så att de sjuka får rutorna i rummets ena ände. Egna bäddar, sjukstugans bäddar och
+// de minsta barnen (som sover hos en förälder) flyttas inte
+function sjukaISinAnde(s: State, ppl: Person[], plats: Map<number, number>, fasta: Set<number>) {
+  if (!ppl.some(smittar) || !kanSmittan(s)) return;
+  const rum = new Map<Rum, Person[]>();
+  for (const q of ppl) {
+    const i = plats.get(q.id), r = i === undefined || fasta.has(i) || ageOf(q, s.now) < ALDER.smabarn ? undefined : roomAt(s, i % W, Math.floor(i / W));
+    if (r) rum.set(r, [...(rum.get(r) ?? []), q]);
+  }
+  for (const [r, folk] of rum) {
+    if (!folk.some(smittar)) continue;
+    const xs = r.tiles.map(i => i % W), ys = r.tiles.map(i => Math.floor(i / W)), bred = Math.max(...xs) - Math.min(...xs) >= Math.max(...ys) - Math.min(...ys);
+    const led = (i: number) => bred ? (i % W) * W + Math.floor(i / W) : i;
+    const rutor = folk.map(q => plats.get(q.id)!).sort((a, c) => led(a) - led(c));
+    [...folk].sort((a, c) => +smittar(c) - +smittar(a) || led(plats.get(a.id)!) - led(plats.get(c.id)!) || a.id - c.id).forEach((q, n) => plats.set(q.id, rutor[n]));
+  }
+}
+// p ligger sjuk för sig
+export const forSig = (s: State, p: Person) => smittar(p) && kanSmittan(s) && (sjukBadd(s, p) !== undefined || boende(s).plats.has(p.id));
+export const FOR_SIG = 'Ligger sjuk för sig, så att de andra inte smittas';
 function sjukBadd(s: State, p: Person) {
-  if (!p.sjuk || p.sjuk.st === undefined || SJUKDOMAR[p.sjuk.k].smitta <= 0 || !living(s).some(q => kn(q, 'smitta') >= 0.5)) return undefined;
+  if (!smittar(p) || !kanSmittan(s)) return undefined;
   const b = boende(s), bor = new Set([...b.plats.values()]);
   for (const h of housesOf(s)) {
     if (!h.klar || h.ut) continue;
-    const rutor = gridOf(s).rooms.filter(r => r.hus === h.id).flatMap(r => r.tiles).filter(i => !blot(s, i)); // (ingen sover på en blöt ruta)
-    if (!rutor.length || rutor.some(i => bor.has(i))) continue;
-    const sjuka = living(s).filter(q => q.sjuk && q.sjuk.st !== undefined && SJUKDOMAR[q.sjuk.k].smitta > 0).sort((a, c) => a.id - c.id);
+    const rutor = gridOf(s).rooms.filter(r => r.hus === h.id && rumFnOf(s, r).sover).flatMap(r => sovRutor(s, r)).filter(i => !blot(s, i)); // (ingen sover på en blöt ruta)
+    if (!rutor.length || gridOf(s).rooms.some(r => r.hus === h.id && r.tiles.some(i => bor.has(i)))) continue;
+    const sjuka = living(s).filter(smittar).sort((a, c) => a.id - c.id);
     return rutor[sjuka.indexOf(p) % rutor.length];
   }
   return undefined;

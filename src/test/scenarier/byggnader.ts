@@ -814,6 +814,40 @@ const friRekt = (s: SIM.State, x: number, y: number, w: number, h: number) => {
   return true;
 };
 
+// de sjuka ligger för sig (steg 13.10.19)
+SCENARIER.sjukhus = {
+  text: 'En by som kan Smittan lägger de förkylda för sig i en tom hydda och aldrig i förrådshuset; utan en ledig hydda ligger de i rummets ena ände, skilda från de friska (steg 13.10.19)',
+  kor: () => {
+    const kor = (tom: boolean) => {
+      const s = createState(6, START); klockan(s, 10); const e = SIM.eldPlats(s);
+      const hus: SIM.Hus[] = [], till = (fn: SIM.Hus['fn'], w: number, namn: string) => {
+        for (let d = 4; d < 40; d++) for (let a = 0; a < 16; a++) { const x = Math.round(e.x + Math.cos(a) * d), y = Math.round(e.y + Math.sin(a) * d); if (friRekt(s, x, y, w, 5)) { hus.push(husPa(s, x, y, w, 5, true, { namn, fn })); return; } }
+      };
+      till('forrad', 6, 'Förrådshuset'); till('sovsal', 11, 'Långhuset'); if (tom) till('sovsal', 5, 'Hyddan');
+      for (let i = 0; i < 4 && SIM.homeless(s); i++) { s.people.pop(); SIM.touch(s); }
+      const folk = living(s), sjuka = folk.filter(q => SIM.ageOf(q, s.now) >= 18).slice(1, 3);
+      folk.forEach(q => SIM.learnK(q, 'smitta', 1, s.now));
+      const fore = folk.every(q => SIM.bedTile(s, q) !== undefined);
+      for (const q of sjuka) { SIM.insjukna(s, q, 'forkylning'); q.sjuk!.tecken = s.now; q.sjuk!.st = 0; q.sjuk!.grad = 0.7; }
+      s.now += 1000; SIM.touch(s);
+      const iHus = (q: SIM.Person) => { const i = SIM.bedTile(s, q); return i === undefined ? undefined : SIM.roomAt(s, i % W, Math.floor(i / W))?.hus; };
+      const vuxna = folk.filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.smabarn && SIM.bedTile(s, q) !== undefined), x = (q: SIM.Person) => SIM.bedTile(s, q)! % W;
+      const L = hus[1], i = vuxna.filter(q => iHus(q) === L.id), frisk = i.filter(q => !sjuka.includes(q)), sj = i.filter(q => sjuka.includes(q));
+      const skilda = !!sj.length && !!frisk.length && Math.max(...sj.map(x)) <= Math.min(...frisk.map(x));
+      const skal = sjuka.map(q => { q.task = undefined; SIM.chooseTask(s, q); return (q as SIM.Person).task?.why ?? ''; });
+      return { hus, fore, husen: sjuka.map(iHus), frHus: folk.filter(q => !sjuka.includes(q)).map(iHus), skilda, skal, n: sjuka.length };
+    };
+    const med = kor(true), utan = kor(false);
+    return [
+      [`byn sover i långhuset (${med.fore})`, med.fore && med.n >= 2],
+      ['med en tom hydda ligger alla förkylda i den', med.hus.length === 3 && med.husen.every(h => h === med.hus[2].id)],
+      ['ingen frisk sover där', med.frHus.every(h => h !== med.hus[2].id)],
+      ['utan hyddan ligger ingen i förrådshuset, och de ligger i rummets ena ände', utan.husen.every(h => h === utan.hus[1].id) && utan.skilda],
+      [`skälet säger varför (${med.skal[0]})`, [...med.skal, ...utan.skal].some(t => t === SIM.FOR_SIG)],
+    ];
+  },
+};
+
 SCENARIER.eldflytt = {
   text: 'Elden flyttas när byn vuxit ifrån den (husens och lagrets mitt mer än ELDFLYTT.vuxit rutor bort) och när ett hus behöver platsen där elden står: den släcks, stenarna i ringen bärs dit, grillen följer med och elden tänds där igen med flinta',
   kor: () => {

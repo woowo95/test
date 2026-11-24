@@ -23,7 +23,7 @@ import { ACTS } from './handlingar';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, gjort, isParent, livet, living, log, ovning, raddAkt, paKartan } from './folk';
 import { amountOf, avbryt, fetchSpot } from './lager';
 import { fearPlace } from './minne';
-import { SJUK, foljd, isSick, ligger } from './sjukdom';
+import { SJUK, SJUKDOMAR, foljd, isSick, ligger } from './sjukdom';
 // febern av en sjukdom: medvetandet utan klockan (sjukdomen vet när tecknen kommit, st)
 const sjukFeber = (p: Person) => p.sjuk?.st !== undefined ? foljd(p, p.sjuk.tecken, 'feber') : 0;
 import { TORST } from './torst';
@@ -680,9 +680,9 @@ export const VARD: Record<string, VardDef> = {
   spala: { namn: 'Spjäla', text: 'Binder en spjäla av två grenar och en remsa runt brottet', krav: (_s, _q, w) => w.k === 'benbrott' && !w.spala && !BARA_VILA.has(w.d), material: { grenar: 2 }, tid: 2, risk: 0, bradska: 2, andra: true, gor: (s, g, _q, w) => { ta(s, g, 'grenar', 2); if (har(s, g, 'remsa') >= 1) ta(s, g, 'remsa', 1); else if (har(s, g, 'rep') >= 1) ta(s, g, 'rep', 1); w.spala = 1; count(s, 'spjalat'); } }, // steg 9.5.28
   protes: { namn: 'Sätta på en protes', text: 'Sätter på träbenet, kryckan, kroken eller ögonlappen och spänner remmarna', krav: (s, q) => !!protesFor(s, q), tid: 2, risk: 0, bradska: 0.5, andra: true, hel: true, gor: (s, _g, q) => protesPa(s, q) }, // steg 10.11.19: den som behöver den mest får den först (protes.ts)
   forlossa: { namn: 'Hjälpa vid förlossningen', text: 'Hjälper modern att föda och stannar hos henne tills barnet kommit', krav: (_s, q, _w, g) => !!q.foder && q.foder.hjalp === undefined && g !== q, tid: 0, risk: 0, bradska: 3, andra: true, hel: true, gor: (_s, g, q) => { q.foder!.hjalp = g.id; } }, // steg 12.1.82: hjälparen stannar (vardKlar), och vården sänker riskerna (forlossning.ts)
-  // tvålen mot smittan (steg 13.5.3): den som kan Smittan tvättar sig med 1 tvål när hen varit hos en som smittar (i samma rum,
-  // vid samma eld eller bredvid, smittaTimme i sjukdom.ts), och smittar och smittas sedan hälften så lätt i ett dygn
-  tvatta: { namn: 'Tvätta sig med tvål', text: 'Tvättar sig med tvål efter att ha varit hos en som smittar', krav: (s, q, _w, g) => g === q && kn(q, 'smitta') >= 0.5 && (q.smittNara ?? -Infinity) > s.now - HALSA.tvalTim * HOUR && !((q.tval ?? -Infinity) > s.now), material: { tval: 1 }, tid: 1, risk: 0, bradska: 1, hel: true, gor: (s, g) => {
+  // tvålen mot smittan (steg 13.5.3): den som kan Smittan tvättar sig med 1 tvål när någon i huset smittar (smittaTimme i
+  // sjukdom.ts) och efter att ha vårdat en sjuk (vardatSjuk, steg 13.10.18), och smittar och smittas sedan hälften så lätt i ett dygn
+  tvatta: { namn: 'Tvätta sig med tvål', text: 'Tvättar sig med tvål efter att ha varit i samma hus som en som smittar, eller vårdat hen', krav: (s, q, _w, g) => g === q && kn(q, 'smitta') >= 0.5 && (q.smittNara ?? -Infinity) > s.now - HALSA.tvalTim * HOUR && !((q.tval ?? -Infinity) > s.now), material: { tval: 1 }, tid: 1, risk: 0, bradska: 1, hel: true, gor: (s, g) => {
     ta(s, g, 'tval', 1); g.tval = s.now + HALSA.tvalTim * HOUR; count(s, 'tvalSmitta');
     if (forstaGang(s, 'tvalSmittaForsta')) log(s, `${g.name} tvättade sig med tvål efter att ha varit hos de sjuka, så att smittan inte skulle fastna.`, 'world', [g.id]);
   } },
@@ -712,8 +712,19 @@ export function vardHamtas(s: State, g: Person, t: Task) {
     for (const m of ['remsa', 'mossa']) if (amountOf(s, m) >= (av[m] ?? 0) + 1) av[m] = (av[m] ?? 0) + 1; // mossan under remsan (steg 12.1.6)
     if (kn(g, 'renahander') >= 0.5 && !av.tval && amountOf(s, 'tval') >= 1) av.tval = 1; // tvålen till händerna (steg 12.4.12)
   }
+  // materialet till det som gäller hela människan: tvålen till tvätten mot smittan (steg 13.10.18)
+  for (const v of Object.values(VARD)) if (v.hel && v.material && v.krav(s, q, undefined as unknown as Skada, g)) for (const [m, n] of Object.entries(v.material)) av[m] = (av[m] ?? 0) + n;
   return Object.keys(av).length ? av : undefined;
 }
+// hur lång tid vården tar (startWork i paborjat.ts): den som bara gör något för sig själv som inte är ett sår (tvätten, teet) tar
+// radens tid i VARD, annars HALSA.vardMin (steg 13.10.18)
+export function vardTid(s: State, g: Person, t: Task) {
+  const q = byId(s, t.ref);
+  const n = q === g ? vardNasta(s, g, g) : [];
+  return n.length && n.every(x => VARD[x.k].hel) ? n.reduce((a, x) => a + VARD[x.k].tid, 0) : HALSA.vardMin;
+}
+// g har vårdat eller burit mat och vatten till q: smittar q och syns det, vill den som kan Smittan tvätta sig (steg 13.10.18)
+export function vardatSjuk(s: State, g: Person, q: Person) { if (q !== g && q.sjuk && q.sjuk.st !== undefined && SJUKDOMAR[q.sjuk.k].smitta > 0) g.smittNara = s.now; }
 // vem som vårdat såret, och om hen kan Rena händer (steg 9.5.25)
 // den som kan Rena händer tvättar dem med en tvål om byn har någon (steg 12.4.12): rh = 2, och såret blir mer sällan infekterat
 function vardadAv(s: State, w: Skada, g: Person) {
@@ -830,6 +841,7 @@ export function vardKlar(s: State, p: Person, t: Task) {
   count(s, 'vard');
   ovning(p, 'lakekonst', HALSA.lakeOvning); gjort(s, p, 'vardat'); // läkekonsten växer när man vårdar (steg 9.5.7)
   if (q !== p && q.health < UPPV.naraHalsa) { upplev(s, p, 'raddade', q.name); upplev(s, q, 'raddad', p.name); } // nära döden (steg 4.1.1.2)
+  vardatSjuk(s, p, q);
   if (q !== p) { count(s, 'vard av andra'); livet(s, p, 'vardat'); tanke(q, 'togHandOm', s.now, { namn: p.name }); q.vardadAv = { id: p.id, t: s.now }; } // den som vårdade (steg 12.1.134)
   if (b.bara) bara(s, p, q, t);
 }

@@ -21,7 +21,7 @@ import { clamp, rnd } from './slump';
 import { brunnFinns, brunnKrok, genomIsenVid, halMin, halVal, islagt, naVattnet, vakNabar } from './is';
 import { Act, GRANNAR4, H, HOUR_S, Person, State, T, Task, W, inMap } from './typer';
 import { balans } from './balans';
-import { hemma, kanGa, kroppLust } from './halsa';
+import { hemma, kanGa, kroppLust, vardatSjuk } from './halsa';
 import { hjalperFange } from './fangelse';
 import { fylldSack, freeTools, toolsOf } from './agande';
 import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
@@ -336,6 +336,7 @@ export function vattenFram(s: State, p: Person, t: Task) {
   }
   const q = byId(s, t.ref);
   if (q && (paKartan(q) || gastLever(q)) && Math.hypot(q.x - p.x, q.y - p.y) <= 2) {
+    vardatSjuk(s, p, q); // (steg 13.10.18)
     if (t.sno) { q.torst = Math.min(1, q.torst + TORST.snoSlacker); q.warm = Math.max(0, q.warm - TORST.snoKyla); count(s, 'bar sno'); tanke(q, 'gavVatten', s.now, { namn: p.name }); p.task = undefined; return; } // snön släcker och kyler som när man äter den själv
     q.torst = t.tool ? 1 : Math.min(1, q.torst + TORST.hander); // (forstaGang räknar 'bar vatten' varje gång)
     if (q.gast && t.tool) gastSackKrok.fyll(q); // gästen får också sin säck fylld, så att hen har vatten på vägen (steg 12.1.228)

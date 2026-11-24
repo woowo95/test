@@ -16,7 +16,7 @@ import { DRICKA_ACTS, TORST, drickMin, startSmalta } from './torst';
 import { halGjort, halMin, halVakt } from './is';
 import { ACTS, redskapTal } from './handlingar';
 import { balans } from './balans';
-import { HALSA } from './halsa';
+import { vardTid } from './halsa';
 import { startOdla } from './odling';
 
 // ---------- påbörjat arbete (steg 1.5.14) ----------
@@ -54,7 +54,7 @@ function startWork0(s: State, p: Person, tk: Task) {
   if (tk.act === 'uppsatt') { tk.until = s.now + UPPSATT.min * MIN; return; } // en uppsatt fackla (ljus.ts)
   if (tk.act === 'dorr') { tk.until = s.now + (dorrDef(tk.tool)?.min ?? 0) * MIN / kunnaFart(s, p, tk.act, tk.tool); return; } // en dörr i en öppning (bygg.ts)
   if (DRICKA_ACTS.has(tk.act)) { tk.until = s.now + drickMin(s, p, tk.act) * MIN; if (tk.act === 'dricka') halGjort(s, p, tk.tx, tk.ty); startSmalta(s, p, tk); return; } // att dricka (torst.ts); snön i en kruka vid elden (steg 10.2.50)
-  if (tk.act === 'varda') { tk.until = s.now + HALSA.vardMin * MIN; return; } // vården (halsa.ts)
+  if (tk.act === 'varda') { tk.until = s.now + vardTid(s, p, tk) * MIN; return; } // vården (halsa.ts)
   if (tk.act === 'vatten') { const hm = halMin(s, p, tk.tx, tk.ty); tk.until = s.now + TORST.fyllSek * SEC + hm * MIN; halVakt.lyss?.(tk, hm); halGjort(s, p, tk.tx, tk.ty); return; } // kärlet fylls (torst.ts), med hålet i isen (is.ts)
   if (tk.act === 'tillbehor') { tk.until = s.now + (tillbehorDef(tk.tool ?? '')?.min ?? 0) * MIN / kunnaFart(s, p, tk.act, tk.tool); return; } // ett tillbehör till en möbel (stationer.ts)
   if (tk.act === 'falla') { const i = tileOf(tk.tx, tk.ty); tk.until = s.now + Math.max(0, fallTid(s, i) / redskapTal('falla', tk.tool).fart - (s.halvfallt?.[i] ?? 0)); return; } // järnyxan fäller fortare (steg 12.2.6)

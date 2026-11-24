@@ -6,7 +6,7 @@ import { REL, byId, count, isKin, log, relKey, stat, living } from './folk';
 import { bitsOf, dorrDef, gridOf, housesOf, husById, type Hus } from './byggnad';
 import { moodOf } from './humor';
 import { tanke } from './tankar';
-import { hemma, kanGa, utanVard } from './halsa';
+import { hemma, kanGa, utanVard, vardatSjuk } from './halsa';
 import { handelse } from './rykten';
 
 // ---------- fängelset (steg 11.12.1, Fångar och fängelset i designdokumentet) ----------
@@ -247,7 +247,7 @@ export function matTagen(s: State, p: Person, t: import('./typer').Task) {
 export function matFram(s: State, p: Person, t: import('./typer').Task) {
   const q = byId(s, t.ref);
   if (q?.fange && t.tool === 'ved' && Math.hypot(q.x - p.x, q.y - p.y) <= 2) { (s.fangEld ??= {})[q.fange.hus] = s.now + FANG.eldTim * HOUR; tanke(q, 'tandeEldAt', s.now, { namn: p.name }); count(s, 'eld at fangen'); }
-  else if (q && t.tool && Math.hypot(q.x - p.x, q.y - p.y) <= 2) { fangelseKrok.ata(s, q, t.tool); tanke(q, 'barMatTill', s.now, { namn: p.name }); count(s, q.fange ? 'bar mat till fangen' : 'bar mat till sjuk'); }
+  else if (q && t.tool && Math.hypot(q.x - p.x, q.y - p.y) <= 2) { fangelseKrok.ata(s, q, t.tool); vardatSjuk(s, p, q); tanke(q, 'barMatTill', s.now, { namn: p.name }); count(s, q.fange ? 'bar mat till fangen' : 'bar mat till sjuk'); }
   p.task = undefined;
 }
 // den som sitter inne och de som vill ut (gränssnittet och scenarierna)

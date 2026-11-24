@@ -176,11 +176,11 @@ export function smittaTimme(s: State, dt = 3600) {
   if (!sjuka.length) return;
   const eldar = eldarOf(s).map(f => eldXY(s, f)), vidEld = (p: Person) => eldar.findIndex(e => Math.hypot(p.x - e.x - 0.5, p.y - e.y - 0.5) < SJUK.eldNara);
   for (const p of sjuka) {
-    const k = p.sjuk!.k, d = SJUKDOMAR[k], rp = roomAt(s, p.x, p.y), ep = vidEld(p);
+    const k = p.sjuk!.k, d = SJUKDOMAR[k], rp = roomAt(s, p.x, p.y), husP = rp?.hus, ep = vidEld(p);
     for (const q of living(s)) {
       if (q === p || q.sjuk || q.immun?.[k]) continue;
       const nara = Math.hypot(q.x - p.x, q.y - p.y) < SJUK.nara, rum = !!rp && roomAt(s, q.x, q.y) === rp, eld = ep >= 0 && vidEld(q) === ep;
-      if (nara || rum || eld) q.smittNara = s.now; // den som kan Smittan tvättar sig sedan med tvål (VARD.tvatta i halsa.ts, steg 13.5.3)
+      if (isSick(p, s.now) && (rum || husP !== undefined && roomAt(s, q.x, q.y)?.hus === husP)) q.smittNara = s.now; // i samma hus som en som syns vara sjuk: den som kan Smittan tvättar sig sedan med tvål (VARD.tvatta i halsa.ts, steg 13.10.18)
       const tval = ((q.tval ?? -Infinity) > s.now ? HALSA.tvalSmitta : 1) * ((p.tval ?? -Infinity) > s.now ? HALSA.tvalSmitta : 1); // den tvättade smittas och smittar hälften så lätt
       const v = (nara ? 1 : rum ? SJUK.rum : eld ? SJUK.eld : 0) * (kn(q, 'smitta') >= 0.5 ? SJUK.vet : 1) * tval; // den som kan Smittan håller sig undan (9.5.5)
       if (v > 0 && chansPer(s, d.smitta * v, 3600, dt, 'halsa', q) && insjukna(s, q, k)) { q.sjuk!.av = p.id; count(s, 'smittad_' + k); }

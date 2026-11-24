@@ -871,12 +871,14 @@ SCENARIER.lim = {
 // tvålen mot smittan (steg 13.5.3): den som kan Smittan och varit hos en som smittar tvättar sig med 1 tvål (en rad i VARD), och
 // smittar och smittas sedan hälften så lätt i ett dygn
 SCENARIER.tvalsmitta = {
-  text: 'Tvålen mot smittan: den som kan Smittan och varit hos en sjuk som smittar tvättar sig med 1 tvål, och smittas och smittar hälften så lätt i ett dygn (steg 13.5.3)',
+  text: 'Tvålen mot smittan: den som kan Smittan och är i samma hus som en sjuk som smittar hämtar 1 tvål i förrådet och tvättar sig en gång, och smittas och smittar hälften så lätt i ett dygn; den som bara sitter vid samma eld tvättar sig inte (steg 13.5.3 och 13.10.18)',
   kor: () => {
     const s = SIM.createState(5, START), [sjuk, p] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen) as [SIM.Person, SIM.Person];
+    klockan(s, 12); const h = medHus(s)!, golv = SIM.gridOf(s).rooms.find(r => r.hus === h.id)!.tiles;
     for (const q of SIM.living(s)) if (q !== sjuk && q !== p) { q.x = sjuk.x + 30; q.y = sjuk.y + 30; }
+    sjuk.x = golv[0] % SIM.W + 0.5; sjuk.y = Math.floor(golv[0] / SIM.W) + 0.5;
     p.x = sjuk.x + 0.5; p.y = sjuk.y;
-    SIM.insjukna(s, sjuk, 'massling');
+    SIM.insjukna(s, sjuk, 'massling'); sjuk.sjuk!.tecken = s.now; sjuk.sjuk!.st = 0; sjuk.sjuk!.grad = 0.4;
     SIM.learnK(p, 'smitta', 1, s.now);
     SIM.put(s, 'tval', 2, { 0: 2 });
     const fore = SIM.vardBehov(s, p, p)?.tvatt ?? false;
@@ -884,6 +886,17 @@ SCENARIER.tvalsmitta = {
     const tp = SIM.living(t).find(q => q.id === p.id)!;
     tp.sjuk = undefined;
     const behov = SIM.vardBehov(t, tp, tp)?.tvatt ?? false, val = SIM.vardVal(t, tp, true)?.why ?? '';
+    // vid samma eld men i inget hus: ingen tvätt
+    const e = SIM.cloneState(s), [es, ep] = [sjuk, p].map(q => SIM.living(e).find(x => x.id === q.id)!), el = SIM.eldPlats(e);
+    es.x = el.x - 0.9; es.y = el.y + 0.5; ep.x = el.x + 1.9; ep.y = el.y + 0.5; tandEld(e); SIM.smittaTimme(e, 1); ep.sjuk = undefined;
+    const vidElden = SIM.vardBehov(e, ep, ep)?.tvatt ?? false;
+    // i spelet: tvålen ligger i lagret, hämtas, och tvätten görs en gång
+    const g = SIM.cloneState(t); g.people = g.people.filter(q => q.id === p.id || q.id === sjuk.id);
+    const gp = SIM.living(g).find(q => q.id === p.id)!, gs = SIM.living(g).find(q => q.id === sjuk.id)!;
+    gp.task = undefined; gp.hunger = gp.torst = gp.rest = gp.warm = 1; gp.toa = 1; gs.immun = { massling: 1 };
+    const g0 = SIM.amountOf(g, 'tval'); let n = 0, forra = '', vard = 0, framme = 0, gick = 0;
+    korTills(g, () => false, 3600, () => { const a = gp.task?.act ?? ''; if (a === 'varda' && forra !== 'varda') n++; if (gp.task?.hamta?.tval) gick++; if (a === 'varda' && gp.task?.phase === 'do' && !gp.task.site) { if (!framme) framme = g.now; vard = g.now - framme; } forra = a; gp.sjuk = undefined; });
+    const gTval = g0 - SIM.amountOf(g, 'tval'), gTvattar = Number(g.stat?.tvalSmitta ?? 0);
     const tval0 = SIM.amountOf(t, 'tval');
     SIM.vardKlar(t, tp, { act: 'varda', phase: 'do', tx: tp.x, ty: tp.y, until: t.now, carry: 0, why: '', ref: tp.id } as SIM.Task);
     const tagen = tval0 - SIM.amountOf(t, 'tval'), skydd = (tp.tval ?? 0) > t.now, igen = SIM.vardBehov(t, tp, tp)?.tvatt ?? false;
@@ -902,6 +915,9 @@ SCENARIER.tvalsmitta = {
     return [
       [`ingen tvätt innan hen varit hos den sjuka (${fore})`, !fore],
       [`efter en timme bredvid den sjuka vill hen tvätta sig (${val})`, behov && val.includes('tvål')],
+      [`den som suttit vid samma eld tvättar sig inte (${vidElden})`, !vidElden],
+      [`i spelet hämtas tvålen (${gick > 0}), hen tvättar sig en gång på en timme (${gTvattar}, valdes ${n}) och förrådet har en tvål mindre (${gTval})`, gick > 0 && gTvattar === 1 && n === 1 && gTval === 1],
+      [`tvätten tar radens tid (${(vard / SIM.MIN).toFixed(1)} av 1 minut)`, vard <= 1.2 * SIM.MIN],
       [`tvätten tar 1 tvål (${tagen}) och skyddar ett dygn, och hen tvättar sig inte igen medan skyddet håller`, tagen === 1 && skydd && !igen],
       [`smittad på två timmar bredvid: ${(utan * 100).toFixed(0)} % otvättad, ${(med * 100).toFixed(0)} % tvättad, ${(bada * 100).toFixed(0)} % när båda tvättat sig`, med < utan * 0.75 && bada < med * 0.8],
     ];

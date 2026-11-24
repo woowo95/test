@@ -62,7 +62,7 @@ import { allows, amountOf, avbryt, carryKind, iHelaForradet, iRackhall, narmaste
 import { BYGG, avail, bedFor, buildJob, siteOf } from './bygg';
 import { type Mjarde, kanVittja, timTillFull } from './fisk';
 import { bitAt, bitsOf, blocked, freeNear, husById, roomAt } from './byggnad';
-import { homeless, samlingRum, varmareInne } from './byggnader';
+import { FOR_SIG, forSig, homeless, samlingRum, varmareInne } from './byggnader';
 import { groundOf, isForest, punktIRuta, tileOf } from './mark';
 import { SKOG, axeTask, egenStock, fallTid, stockOverHus, stocks } from './skog';
 import { GA_TID, startWork, startsOnArrival } from './paborjat';
@@ -341,6 +341,7 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
     const badd = bed && rum && (varmareInne(s, rum, c, f) || c === 0 || nederbord(s)) ? bed : undefined; // när det inte är kallt räcker värmen överallt; i regnet under tak
     // vilan (steg 10.2.76 och 13.8.18): den som vilar lägger sig i bädden eller sätter sig på en ledig stubbe, stol eller bänk, efter
     // vilan platsen ger mot vägen dit (vilPlats i mobler.ts), och lägger sig annars på marken
+    if (act === 'vila' && badd && forSig(s, p)) return badd; // den sjuke som ligger för sig (steg 13.10.19)
     if (act === 'vila') { const at = moblerKrok.vilPlats(s, p, p, badd); if (at) return at; }
     else if (badd) return badd;
     return glesPlats(s, p, k => {
@@ -735,7 +736,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'torstFarligt', niva: 2, poang: c => torstNod(c), prova: c => torstNod(c) > 0 && kanGa(c.p) && dricka(c.s, c.p, c.v) },
   { id: 'hungrig', niva: 2, poang: ({ p }) => VAL.nodSvalt * nodUnder(p.hunger, KROPP.hungrig * VARDRATT.snal), prova: ({ s, p, v, a }) => (p.hunger < KROPP.hungrig * VARDRATT.snal || a < ALDER.smabarn || ligger(p, s.now) || halsa(p) < KROPP.svag) && kanGa(p) && ataVal(s, p, v) },
   { id: 'smabarn', niva: 2, poang: ({ a }) => a < ALDER.smabarn ? VAL.nodVila : 0, prova: ({ v, a }) => a < ALDER.smabarn && set(v, 'sova', 'Är ett litet barn') },
-  { id: 'sjuk', niva: 2, poang: ({ s, p }) => ligger(p, s.now) ? VAL.nodVila : 0, prova: ({ s, p, v }) => ligger(p, s.now) && set(v, 'sova', 'Är sjuk') }, // med feber eller svårt sjuk lägger man sig (steg 9.5.1)
+  { id: 'sjuk', niva: 2, poang: ({ s, p }) => ligger(p, s.now) ? VAL.nodVila : 0, prova: ({ s, p, v }) => ligger(p, s.now) && set(v, 'sova', forSig(s, p) ? FOR_SIG : 'Är sjuk') }, // med feber eller svårt sjuk lägger man sig (steg 9.5.1)
   { id: 'svag', niva: 2, poang: ({ p }) => halsa(p) < KROPP.svag ? VAL.nodVila : 0, prova: ({ p, v }) => halsa(p) < KROPP.svag && set(v, 'sova', 'Är för svag för att orka något') }, // också av blodförlust och smärta (halsa.ts)
   { id: 'varda', niva: 2, poang: () => VAL.nodVarda, prova: ({ s, p, v }) => varda(s, p, v, false) }, // en skadad är en fara: vården går före förbättringarna (steg 2.5.2)
   { id: 'vatten', niva: 2, poang: () => VAL.nodVatten, prova: ({ s, p, v }) => hamtaVatten(s, p, v) }, // vatten i säcken åt den som inte kan gå (steg 2.10.1)
@@ -795,7 +796,7 @@ export const ARBETEN: readonly Arbete[] = [
     if (utanforByn(s, Math.floor(p.x), Math.floor(p.y)) <= GANG.kravlaMax) return set(v, 'vila', 'Är skadad och kravlar hem');
     set(v, 'vila', 'Kan inte gå och väntar på att bäras hem'); v.spot = { x: p.x, y: p.y }; return true;
   } },
-  { id: 'vilaSkadad', niva: 4, poang: ({ p }) => vilaHellre(p) ? VAL.grundSkadad : 0, prova: ({ s, p, v }) => vilaHellre(p) && set(v, 'vila', vilaSkal(p, s.now)) }, // sjuk eller skadad (steg 12.1.46)
+  { id: 'vilaSkadad', niva: 4, poang: ({ p }) => vilaHellre(p) ? VAL.grundSkadad : 0, prova: ({ s, p, v }) => vilaHellre(p) && set(v, 'vila', forSig(s, p) ? FOR_SIG : vilaSkal(p, s.now)) }, // sjuk eller skadad (steg 12.1.46)
   { id: 'trott', niva: 4, poang: ({ p, lazy, light }) => grund(VAL.grundVila, p.rest, (light ? KROPP.trottDag : KROPP.trottNatt) + KROPP.latVila * lazy), prova: ({ p, v, lazy, light }) => p.rest < (light ? KROPP.trottDag : KROPP.trottNatt) + KROPP.latVila * lazy && set(v, 'vila', 'Är trött') },
   // hungrig och det finns en ledig plats vid ett bord nära nog: man går dit och äter tillsammans med de andra (steg 2.2.15).
   // Bordet gör inte att man äter tidigare; det väger mer än maten där den ligger ju närmare det är (bordVikt, steg 13.8.10)
@@ -883,7 +884,7 @@ export const ARBETEN: readonly Arbete[] = [
     // lusten är en faktor på både leken och hjälpen (steg 12.1.216), och det de förlorar blir vilan
     const kl = kroppLust(p, s.now), lek = (VAL.lekBas + VAL.lekSed * s.seder.v.barn) * (1 + VAL.lekUng * (1 - a / ALDER.vuxen)), hjalp = a / ALDER.vuxen * (VAL.barnHjalp + d.u);
     const r = rnd(s, 'val', p) * (lek + hjalp), vila = (lek + hjalp) * (1 - kl);
-    if (r < vila) return set(v, 'vila', vilaSkal(p, s.now));
+    if (r < vila) return set(v, 'vila', forSig(s, p) ? FOR_SIG : vilaSkal(p, s.now));
     if (r < vila + lek * kl) return set(v, 'leka', lekText(s));
     // hjälpen väljs med samma poäng som de vuxnas rader på nivån (steg 12.1.45): den går till det som fattas, och skälet är
     // radens eget. Barnet som hjälper arbetar i dag; fattas inget (ingen rad har poäng eller alla har sina arbetare) leker det
