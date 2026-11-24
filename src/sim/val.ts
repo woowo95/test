@@ -27,7 +27,7 @@ import { brandHetta, brandUndan, brandVal, hjalpaVal, slackaSigVal } from './bra
 import { foodDays, foodDaysAll } from './ekonomi';
 import { ACTS, WORK, redskapTal, usesTool } from './handlingar';
 import { flyttaEldVal } from './eldflytt';
-import { tandStalle, eldFor, eldForst, eldXY, nagonGlod, eldarOf, emberOn, vidEld, needStones, needTinder, woodDays } from './eld';
+import { tandStalle, eldFor, eldForst, eldXY, nagonGlod, eldarOf, emberOn, vidEld, needStones, woodDays } from './eld';
 import { ALDER, KROPP, REL, ageOf, count, enTill, enTillDar, familjOf, isSick, living, relKey, stat } from './folk';
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
@@ -163,7 +163,6 @@ export const VAL = balans('val', {
   hantSlakt: 1, hantRensa: 0.9, hantTorka: 0.6, hantGrilla: 0.5, hantLara: 0.4, hantForsok: 0.5, hantProjekt: 0.3,
   torkPabud: 0.6, // ledarens påbud om torkat ändrar chansen att torka så mycket (-1 till 1, steg 3.5.2, styre.ts)
   egenDygn: 1.5, // den som har mat för kortare tid än så själv (sin egen, byns och familjens) arbetar för maten, hur fullt byns förråd än är (steg 3.10.26)
-  tandMin: 0.8, tandVikt: 3, // tändmaterial: årstiden räknas minst Min, gånger Vikt
   prospektMin: 0.05, prospektMax: 1.3, // hur mycket platserna ger just nu räknas mellan dessa
   // fritid (leisure): vikter (ju större desto oftare), u = hur akut byn behöver arbete
   vilaVikt: 2, vilaLat: 0.6, // vila: per saknad vila, plus för den lata ...
@@ -910,7 +909,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'ved', niva: 6, nar: 'dag', poang: c => { const d = dag(c); return d.works && d.wd < buffert(c.s, 'ved') ? d.wWood * d.rad.ved.sc : 0; },
     full: c => radFull(c.s, c.p, 'ved') && !faror(c).kyla,
     prova: c => { const d = dag(c); forByn(c); arbeta(c, d.rad.ved.act, `Byn behöver ved, förrådet räcker ${dygn(d.wd)}`); return true; } },
-  { id: 'tand', niva: 6, nar: 'dag', poang: c => { const d = dag(c); return d.works && needTinder(c.s) ? Math.max(d.wBy, d.wEgen) * d.rad.tand.sc : 0; },
+  { id: 'tand', niva: 6, nar: 'dag', poang: c => { const d = dag(c); return d.works ? d.wTand * d.rad.tand.sc : 0; }, // efter det som fattas (steg 13.8.5)
     full: c => radFull(c.s, c.p, 'tand'),
     prova: c => { forByn(c); arbeta(c, dag(c).rad.tand.act, 'Byn behöver tändmaterial till elden', { tandmat: true }); return true; } },
   // vakten vid fängelset (steg 11.12.5, fangelse.ts): dag och natt, med poäng bland maten och veden, mer ju farligare fången är
@@ -1101,7 +1100,7 @@ function dricka(s: State, p: Person, v: Val) {
 // dagen (nivå 6–9, steg 6.2.18): byns behov från timmens början (steg 6.1.12), poängen för varje arbete, bygget och om p
 // arbetar alls (flit och plikt mot hur akut byn behöver arbete). Räknas första gången en rad på nivå 6–9 frågar
 type Job = NonNullable<ReturnType<typeof buildJob>>;
-interface Dag { utanYxa: boolean; fd: number; fdBy: number; malBy: number; wd: number; tot: number; matBuf: number; best: Act; wBy: number; wEgen: number; egen: number; wWood: number; rad: Record<'mat' | 'ved' | 'tand', { act: Act; sc: number }>; job?: Job; u: number; works: boolean }
+interface Dag { utanYxa: boolean; fd: number; fdBy: number; malBy: number; wd: number; tot: number; matBuf: number; best: Act; wBy: number; wEgen: number; egen: number; wWood: number; wTand: number; rad: Record<'mat' | 'ved' | 'tand', { act: Act; sc: number }>; job?: Job; u: number; works: boolean }
 // bygget väger mindre när kylan eller hungern är en fara och när timret saknas utan en ledig yxa (steg 10.2.6 och 12.1.74)
 const byggDampning = (f: Faror, utanYxa: boolean) => (f.kyla || f.svalt ? VAL.byggKyla : 1) * (utanYxa ? VAL.byggUtanYxa : 1);
 function dag(c: Ctx): Dag {
@@ -1117,7 +1116,7 @@ function dag(c: Ctx): Dag {
   const sat = Math.min(p.hunger, p.rest, p.social); // hur väl de egna behoven är fyllda
   const works = rnd(s, 'val', p) < (1 - lazy) * (VAL.flitigBas + VAL.flitigAkut * u) + lazy * sat * (VAL.latBas + VAL.latAkut * u);
   // bufferten (forradsmal.ts), med p:s aning om en hård vinter
-  return c.d = { utanYxa, fd, fdBy: w.fdBy, malBy: w.malBy, wd, tot, matBuf: buffert(s, 'mat', p.varsel ? varselSamla(s, p) : 0), best: w.best, wBy: w.wBy, wEgen: w.wEgen, egen: w.egen, wWood: w.wWood, rad: w.rad, job, u, works };
+  return c.d = { utanYxa, fd, fdBy: w.fdBy, malBy: w.malBy, wd, tot, matBuf: buffert(s, 'mat', p.varsel ? varselSamla(s, p) : 0), best: w.best, wBy: w.wBy, wEgen: w.wEgen, egen: w.egen, wWood: w.wWood, wTand: w.wTand, rad: w.rad, job, u, works };
 }
 // ett arbete under Försörjning, Tak eller Förbättra: skälet, passet, redskapen (withTools) och det som hämtas
 // arbete för byns förråd: betalas ur förrådets del när lönelagen gäller, och det som bärs hem blir byns (steg 10.5.9, lon.ts)
@@ -1248,6 +1247,8 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
   const vBuf = V.dygn * vs; // bufferten i dygn (steg 13.8.4): där behovet nedan når V.min
   const wWood = (wd < vBuf ? clamp(FORRAD.behovTomt - wd / vBuf * (FORRAD.behovTomt - V.min), V.min, FORRAD.behovMax) : mjuktTak(wd, vBuf, vBuf * V.matt, V.min, V.minMatt)) * (kallTid(ai) ? ARSTID.vedKall : 1) * om; // byns ved, gånger omtanken (steg 10.5.2) // inför och under istiden väger veden tyngre
   const vikt = { mat: wFood, ved: wWood };
+  // tändmaterialet (steg 13.8.5): behovet efter hur mycket som fattas av raden i FORRADSMAL, samma kurva som veden under bufferten
+  const wTand = (['torrgras', 'grenar'] as const).reduce((m, k) => { const b = tandBuffert(s, k); return b > 0 && amountOf(s, k) < b ? Math.max(m, FORRAD.behovTomt - amountOf(s, k) / b * (FORRAD.behovTomt - V.min)) : m; }, 0) * om;
   let best: Act = 'samla', bs = -1, burg = 0;
   // det bästa arbetet för varje rad under Försörjning (steg 6.2.18) och dess poäng utan behovet: lusten, nyttan och bruset
   const rad: Dag['rad'] = { mat: { act: 'samla', sc: 0 }, ved: { act: 'ved', sc: 0 }, tand: { act: 'samla', sc: 0 } };
@@ -1257,21 +1258,22 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     // behovet, tändmaterialet och vattnet står i handlingens rad (ACTS i handlingar.ts, steg 2.12.3)
     const d = ACTS[w], need = vikt[d.behov!];
     if (d.vid === 'vatten' && !vaderTillater(s, 'lugnt')) continue; // inget fiske i storm (steg 6.1.12)
-    const tinder = !!d.tand && needTinder(s);
+    const tinder = !!d.tand && wTand > 0;
     // nytta för byn; det platserna har kvar väger också in hur mycket de ger just nu, och att fiske med händerna ger lite
     const yieldR = !d.resurs ? 1 : clamp(prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (d.vid === 'vatten' ? FANGST.handFiske * (naSjon(s, p) ? 1 : 0) : 1) * toolGain(s, p, w, fara); // genom isen bara med ett hål (is.ts)
     const yieldF = tinder ? 1 : yieldR, season = d.sasong![ai];
     // maten som någon längtar efter är mer värd att hämta (steg 2.6.2)
-    const col = need * (!d.resurs ? 1 : tinder ? Math.max(VAL.tandMin, season) * VAL.tandVikt : season * yieldF * onskan(p, w, s.now))
-      * fullVikt(s, p, tinder ? 'tand' : d.behov!); // raden som har sina arbetare väger en tredjedel (steg 6.1.13)
+    // tändmaterialet vägs efter det som fattas av det (wTand, steg 13.8.5), och arbetet efter det mest behövda av det och dess eget behov
+    const colEget = need * (!d.resurs ? 1 : season * yieldF * onskan(p, w, s.now)) * fullVikt(s, p, d.behov!); // raden som har sina arbetare väger en tredjedel (steg 6.1.13)
+    const col = tinder ? Math.max(colEget, wTand * fullVikt(s, p, 'tand')) : colEget;
     const like = lust(s, p, w as Skill, ACTS[w].egenskap!, [w], tot) * (VAL.brusMin + rnd(s, 'val', p) * VAL.brusSpann) * bredvidVikt(s, p, w, ppl); // egen lust och vana, och vad vänner och ovänner gör (steg 3.1.1)
     const sc = col * like;
     burg = Math.max(burg, col);
     if (sc > bs) { bs = sc; best = w; }
-    if (tinder) radBast('tand', w, Math.max(VAL.tandMin, season) * VAL.tandVikt * like);
+    if (tinder) radBast('tand', w, like);
     radBast(d.behov!, w, (!d.resurs ? 1 : season * yieldR * onskan(p, w, s.now)) * like);
   }
-  return { best, burg, wBy, wEgen, egen: wNod >= wFam ? egen : famDygn, fdBy, malBy, wWood, rad };
+  return { best, burg, wBy, wEgen, egen: wNod >= wFam ? egen : famDygn, fdBy, malBy, wWood, wTand, rad };
 }
 
 // att bygga eller laga en del av ett hus. Saknas material hämtar man det först

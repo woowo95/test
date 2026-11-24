@@ -1306,3 +1306,25 @@ SCENARIER.mjukttak = {
     ];
   },
 };
+
+// steg 13.8.5: tändmaterialet efter det som fattas
+SCENARIER.tandbehov = {
+  text: 'Steg 13.8.5: tändmaterialet efter det som fattas. Behovet av hö och kvistar till elden räknas ur deras rad i FORRADSMAL och hur mycket som fattas, inte ur matens behov: en by med mycket tände och lite mat hämtar inte tände, och en by utan tände hämtar det fast maten räcker',
+  kor: () => {
+    const prov = (mat: number, tande: number) => {
+      const s = SIM.createState(1, START); klockan(s, 10); SIM.setAmount(s, 'ved', 100); setFood(s, mat);
+      SIM.setAmount(s, 'grenar', tande); SIM.setAmount(s, 'torrgras', tande);
+      let n = 0, alla = 0;
+      for (const p of SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)) {
+        Object.assign(p, { rest: 1, toa: 1, torst: 1, hunger: 1, social: 1, warm: 1, task: undefined });
+        SIM.chooseTask(s, p); alla++; if (p.task?.tandmat) n++;
+      }
+      return { n, alla };
+    };
+    const mycketTande = prov(0, 200), utanTande = prov(60, 0);
+    return [
+      [`en by med mycket tände och lite mat hämtar inget tände (${mycketTande.n} av ${mycketTande.alla} vuxna)`, mycketTande.n === 0],
+      [`en by utan tände hämtar det fast maten räcker (${utanTande.n} av ${utanTande.alla} vuxna)`, utanTande.n > 0],
+    ];
+  },
+};
