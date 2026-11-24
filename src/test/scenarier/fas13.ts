@@ -2224,3 +2224,64 @@ SCENARIER.delrad = {
     ];
   },
 };
+
+// striden, brådskande system B
+SCENARIER.vargbyte = {
+  text: 'Steg B.11: vargarna börjar ingen ny strid mot den som redan ligger nere; efter segern äter flocken av den som dog eller drar sig undan. Närstriden övas av slagen och paraderna, så den som inte slagit blir inte skickligare',
+  kor: () => {
+    const prov = (seed: number, nere: boolean) => {
+      const s = SIM.createState(seed, START); s.kal = SIM.nyKalender(s.now, 0); klockan(s, 12); SIM.setAmount(s, 'ved', 0); s.fire.lit = false;
+      const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+      for (const q of SIM.living(s)) if (q !== p) { q.x = 4; q.y = 4; q.task = { act: 'sova', phase: 'do', tx: 4, ty: 4, until: s.now + 5 * SIM.HOUR, carry: 0 } as SIM.Task; }
+      const e = SIM.eldPlats(s); Object.assign(p, SIM.freeNear(s, e.x + 14, e.y));
+      if (nere) p.svimmat = true;
+      p.task = { act: nere ? 'medvetslos' : 'vila', phase: 'do', tx: p.x, ty: p.y, until: s.now + 5 * SIM.HOUR, carry: 0 } as SIM.Task;
+      const k0 = p.skill.narstrid, f: SIM.Vargflock = { id: 9001, vargar: [10_072_008, 10_072_009, 10_072_010], x: p.x + 3, y: p.y, mx: p.x + 3, my: p.y, gar: s.now + SIM.DAY, hunger: 0.95, gor: 'stryker' };
+      s.vargar = [f];
+      for (let i = 0; i < 400 && s.vargar; i++) { if (nere) { p.svimmat = true; p.blod = 1; } s.now += 1000; SIM.vargSteg(s, 1); if (s.kartStrider) break; }
+      return { s, p, f, k0, strid: !!s.kartStrider?.length };
+    };
+    const liggande = [1, 2, 3, 4].map(n => prov(n, true)), staende = [1, 2, 3, 4].map(n => prov(n, false));
+    // striderna mot dem som stod går till slutet
+    const slut = staende.filter(q => q.strid).map(q => {
+      const g = q.s.kartStrider![0]!, st = g.st;
+      for (let n = 0; n < 3000 && q.s.kartStrider?.length; n++) { q.s.now += 1000; SIM.kartStridSteg(q.s, 1); }
+      const k = st.kampar.find(x => x.pid === q.p.id)!;
+      return { vann: st.slut?.vinnare, gor: q.f.gor, dog: q.p.died !== undefined, n: SIM.ovadeSlag(st, k), upp: q.p.skill.narstrid - q.k0 };
+    });
+    return [
+      [`ingen strid börjar mot den som ligger (${liggande.filter(q => q.strid).length} av 4)`, liggande.every(q => !q.strid)],
+      [`mot den som står ensam börjar den (${slut.length} av 4)`, slut.length >= 2],
+      [`efter striden äter flocken eller drar sig undan (${slut.map(q => q.gor).join(', ')})`, slut.every(q => q.gor === 'flyr' || q.gor === 'ater' && q.dog)],
+      [`närstriden växer med slagen (${slut.map(q => `${q.n}: ${q.upp.toFixed(3)}`).join(', ')})`, slut.every(q => q.dog || (q.n > 0) === (q.upp > 0))],
+    ];
+  },
+};
+
+SCENARIER.vaknar = {
+  text: 'Steg B.12: den som svimmat och vaknar medan striden pågår blir liggande och dras inte in i striden igen, och den som bär hen till vården fortsätter bära',
+  kor: () => {
+    const prov = (seed: number, bars: boolean) => {
+      const s = SIM.createState(seed, START); klockan(s, 12); nyInvanare(s, 'm', 30);
+      const [a, c, b, d, v, ...ovriga] = SIM.living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen);
+      for (const q of [...ovriga, ...(v ? [v] : [])]) { q.x = a.x + 30; q.y = a.y; q.task = undefined; }
+      c.x = a.x; c.y = a.y + 1; b.x = a.x + 1.2; b.y = a.y; d.x = b.x; d.y = b.y + 1;
+      for (const q of [a, b, c, d]) { q.pot.mod = 18; q.pot.aggression = 18; q.task = undefined; }
+      const g = SIM.kartStridBorja(s, 'skada', [[a, c], [b, d]], 'för att pröva');
+      const ett = () => { s.now += 500; SIM.kartStridSteg(s, 0.5); };
+      ett(); const ka = g.st.kampar.find(k => k.pid === a.id)!; ka.lage = 'nere'; a.svimmat = true; a.task = { act: 'medvetslos', phase: 'do', tx: a.x, ty: a.y, until: s.now + SIM.HOUR, carry: 0 } as SIM.Task;
+      ett();
+      if (bars && v) { a.task = { act: 'buren', phase: 'do', tx: a.x, ty: a.y, until: s.now + SIM.HOUR, carry: 0, ref: v.id } as SIM.Task; v.x = a.x; v.y = a.y; v.task = { act: 'varda', phase: 'back', tx: a.x + 20, ty: a.y, until: s.now + SIM.HOUR, carry: 0, ref: a.id, bar: a.id } as SIM.Task; }
+      const plats = { x: a.x, y: a.y };
+      a.svimmat = undefined; if (a.task?.act === 'medvetslos') a.task = undefined;
+      let strid = 0, acts = new Set<string>(), n = 0;
+      for (let i = 0; i < 20 && !g.st.slut; i++) { ett(); n++; if (bars) { a.x += 0.2; plats.x = a.x; } if (a.task?.act === 'strid') strid++; acts.add(a.task?.act ?? '-'); SIM.kartStridMed(s, g, a, 0); }
+      return { n, strid, acts: [...acts].join(', '), kvar: Math.hypot(a.x - plats.x, a.y - plats.y), finns: !bars || !!v };
+    };
+    const l = [1, 2, 3].map(n => prov(n, false)), b = [1, 2, 3].map(n => prov(n, true)).filter(x => x.finns);
+    return [
+      [`den som vaknar blir liggande (${l.map(x => x.acts).join('; ')}, ${l.map(x => x.n).join('/')} steg)`, l.every(x => x.n > 2 && x.strid === 0 && x.kvar < 1e-9 && x.acts === 'vila')],
+      [`den som bärs bärs vidare (${b.map(x => x.acts).join('; ')})`, b.length > 0 && b.every(x => x.strid === 0 && x.acts === 'buren')],
+    ];
+  },
+};

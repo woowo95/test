@@ -1131,8 +1131,8 @@ export const SLAGSMAL = balans('slagsmal', {
   gralTorst: 4, // ... gånger 1 + gralTorst × blodtörsten hos den som grälar (humor.ts)
   lek: 0.12, // chansen i timmen att ett barn som leker brottas med ett annat barn som leker nära ...
   lekNara: 3, // ... inom så här många rutor
-  ovning: 0.15, // närstriden växer så här mycket efter en strid (ovning i folk.ts) ...
-  ovningLek: 0.06, // ... och efter en lek
+  ovning: 0.006, // närstriden växer så här mycket per slag och parad i striden (ovning i folk.ts, steg B.11) ...
+  ovningLek: 0.001, // ... och i en lek
   kast: 0.03, // träffsäkerheten växer så här mycket per timme lek (kastlek med stenar och pinnar)
   jakt: 0.05, // ... och så här mycket per kanin man fångar
   op: 8, // relationen sjunker så här mycket efter ett slagsmål ...
@@ -1149,10 +1149,13 @@ export function svartSkadad(k: Kampe) { return k.lage === 'nere' || k.skador.som
 // närstriden övas och hen minns hur det gick (tanke, vann)
 // tankarna efter en kamp (rader i TANKAR, tankar.ts): styrkan är SLAGSMAL.vann eller -SLAGSMAL.forlora
 export type KampTanke = 'falldeBjorn' | 'bjornUndan' | 'anfollsBjorn' | 'klaradeVargar' | 'anfollsVargar' | 'drevBortRovare' | 'slogsRovare' | 'falldeVildsvin' | 'anfollsVildsvin';
+// närstriden övas av det hen gjorde i striden (steg B.11): varje slag hen slog (inte kasten) och varje parad, inte av att ha varit med
+export const ovadeSlag = (st: Strid, k: Kampe) => slagen(st).filter(h => !h.kast && (h.fran === k.id || h.mot === k.id && h.utfall === 'parera')).length;
+const ovaNarstrid = (p: Person, st: Strid, k: Kampe, per: number) => { const n = ovadeSlag(st, k); if (n) ovning(p, 'narstrid', per * n); };
 export function efterKampen(s: State, p: Person, st: Strid, k: Kampe, svara: string[] | undefined, t: KampTanke, vann: boolean) {
   slitKastat(s, p, st, k);
   if (svara && svartSkadad(k)) svara.push(p.name);
-  ovning(p, 'narstrid', SLAGSMAL.ovning);
+  ovaNarstrid(p, st, k, SLAGSMAL.ovning);
   tanke(p, t, s.now, { v: vann ? SLAGSMAL.vann : -SLAGSMAL.forlora, tid: SLAGSMAL.tankeTim * HOUR });
 }
 
@@ -1183,7 +1186,7 @@ export function stridRad(s: State, st: Strid, namn: (sd: 0 | 1) => string, orsak
 // det striden lämnar hos den som var med och lever (övningen, tycket för vapnet, krönikan, relationerna och tankarna). Såren, blodet
 // och döden är redan på personen. mot = motståndarna, vanner = den egna sidan, person = kämpens person
 export function efterStrid(s: State, st: Strid, k: Kampe, p: Person, mot: Person[], vanner: Person[], person: (o: Kampe) => Person | undefined, lek: boolean, vinnare: 0 | 1 | -1) {
-  ovning(p, 'narstrid', lek ? SLAGSMAL.ovningLek : SLAGSMAL.ovning);
+  ovaNarstrid(p, st, k, lek ? SLAGSMAL.ovningLek : SLAGSMAL.ovning);
   // tycket för vapnet (steg 3.7.10): den som vann eller övade med det gillar det, en svår förlust ger ogillande
   const svar = k.lage === 'nere' || k.skador.reduce((a, w) => a + w.g, 0) >= STRID.tyckeSvar;
   if (svartSkadad(k)) { notis(s, 'strid', `${p.name} skadades svårt i ${lek ? 'en lek' : 'ett slagsmål'} med ${och(mot.map(q => q.name))}.`, [p.id, ...mot.map(q => q.id)], { x: Math.floor(p.x), y: Math.floor(p.y) }); kronikaBer(s, lek ? 'k_skadadLek' : 'k_skadad', p.id, { ...personFalt(p), mot: och(mot.map(q => q.name)), flera: mot.length > 1 }); } // steg 3.7.16: döden skriver die
