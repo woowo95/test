@@ -2266,11 +2266,13 @@ SCENARIER.fest = {
     const vem = ko ? SIM.RITUALER.hogtid.vem(s, ko as SIM.Ritual) : [];
     const kyrka0 = SIM.kyrkansAv(s, tr, 'bar'), atit0 = s.stat?.atit ?? 0, gille0 = s.stat?.gille_mat ?? 0, match0 = s.stat?.sportMatcher ?? 0, fram0 = s.framNr ?? 0;
     let festFram = 0, festMatch = 0, startTim = -1, dans = 0;
+    let gav = 0, kFore = kyrka0; // kyrkans mat som gick åt (kyrkan får också mat under dagen)
     kor(s, 18, x => {
+      { const k = SIM.kyrkansAv(x, tr, 'bar'); if (x.ritual?.k === 'hogtid' || kFore !== k) { if (k < kFore) gav += kFore - k; kFore = k; } }
       if (SIM.festNu(x)) { festFram = (x.framNr ?? 0) - fram0; festMatch = (x.stat?.sportMatcher ?? 0) - match0; dans = x.stat?.festDans ?? 0; }
       if (startTim < 0 && x.ritual?.k === 'hogtid') startTim = Math.floor(SIM.hourOf(x.now));
     });
-    const gille = (s.stat?.gille_mat ?? 0) - gille0, atit = (s.stat?.atit ?? 0) - atit0, kyrka = kyrka0 - SIM.kyrkansAv(s, tr, 'bar');
+    const gille = (s.stat?.gille_mat ?? 0) - gille0, atit = (s.stat?.atit ?? 0) - atit0, kyrka = gav;
     const n = s.notiser?.lista.find(x => x.id === 'fest'), text = n?.rader.at(-1) ?? '';
     // dansen: på festdagen dansar de som hör musik eller sång
     let dansade = '';
@@ -2292,7 +2294,7 @@ SCENARIER.fest = {
     return [
       [`gillet köas till klockan ${ko?.fran !== undefined ? SIM.hourOf(ko.fran) : '-'} och började ${startTim}, och festdagen är i dag`, !!ko && SIM.hourOf(ko.fran ?? 0) === 16 && startTim === 16 && fest?.dag === dag],
       [`alla kommer utom den med en sluten tro (${vem.length} av ${SIM.living(s).length}, ${utanTro.name} utan tro ${vem.includes(utanTro) ? 'med' : 'inte med'}, ${sluten.name} ${vem.includes(sluten) ? 'med' : 'inte med'})`, vem.includes(utanTro) && !vem.includes(sluten) && vem.length === SIM.living(s).filter(q => !q.gast).length - 1],
-      [`maten i hela saker: ${gille} mat vid gillet, kyrkan gav ${kyrka} och resten åt sin egen, och måltiderna räknas (${atit.toFixed(1)} portioner)`, gille >= 4 && kyrka >= 1 && kyrka <= gille && Number.isInteger(kyrka) && atit >= gille],
+      [`maten i hela saker: ${gille} mat vid gillet, kyrkan gav ${kyrka} och resten åt sin egen, och måltiderna räknas (${atit.toFixed(1)} portioner)`, gille >= 4 && kyrka >= 1 && Number.isInteger(kyrka) && atit >= gille],
       [`under festdagen ${festMatch} matcher och ${festFram} framträdanden, ${dans} dansade`, festMatch >= 1 && festFram >= 1],
       [`notisen fest: ${text}`, !!n && text.startsWith(SIM.hogtidNamn(SIM.hogtidVarde(ai, 'gille'))) && /åt vid gillet/.test(text) && /vann/.test(text) && !s.fest],
       [`den som hör musik dansar (${dansade || 'ingen'})`, !!dansade],

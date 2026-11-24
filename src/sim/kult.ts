@@ -320,7 +320,7 @@ export function ritualMat(s: State, p: Person): { av: Record<string, number>; fr
     const ord = hogtidMat(tr).filter(q => !matAvstar(s, p, q)), k = mat ? ord.find(q => kyrkansAv(s, tr, q) >= 1) : undefined;
     const m = mat && !k ? ord.filter(q => ownsAmount(s, p, q) >= 1).sort((a, b) => (hogtidKrav(tr, b) ? 1 : 0) - (hogtidKrav(tr, a) ? 1 : 0) || ownsAmount(s, p, b) - ownsAmount(s, p, a))[0] : undefined;
     if (k) { av[k] = 1; fran = { [k]: [kyrkaId(tr.id), 1] }; }
-    if (m) av[m] = 1;
+    if (m) { av[m] = 1; fran = { [m]: [p.id, 1] }; }
     if (p.tro === tr.id && budIn(tr, 'offer') && foljer(p, 'offer')) { const o = FOOD.filter(q => ownsAmount(s, p, q) >= 1 + (q === k ? 0 : av[q] ?? 0)).sort((a, b) => ownsAmount(s, p, b) - ownsAmount(s, p, a))[0]; if (o) av[o] = (av[o] ?? 0) + 1; }
   } else if (mat) { const k = FOOD.filter(q => mayTake(s, p, q) >= 1).sort((a, b) => amountOf(s, b) - amountOf(s, a))[0]; if (k) av[k] = 1; }
   return Object.keys(av).length ? { av, fran } : undefined;
