@@ -55,7 +55,7 @@ export const KARTSTRID = balans('kartstrid', {
 // en strid som pågår på kartan. val = vad de som sett striden valt (personens id: skilja, undan eller kvar), fri = de som lämnat den
 export interface KartStrid {
   id: number; st: Strid; orsak: string; t0: number; rest: number; // rest = sekunder som inte räckt till ett helt stridssteg än
-  val?: Record<number, 'skilja' | 'undan' | 'kvar'>; fri?: number[]; skild?: number; // skild = den som gick emellan
+  svimmade?: number[]; /* de som svimmat i striden (steg B.12) */ val?: Record<number, 'skilja' | 'undan' | 'kvar'>; fri?: number[]; skild?: number; // skild = den som gick emellan
   efter?: Efter; // det som ska ske när striden är slut (registret EFTER i efterstrid.ts, steg 10.1.7)
   djur?: { k: number; art: string; id: number }[]; // djuren i striden (steg 10.1.17): kämpens id, arten och djurets id
 }
@@ -240,7 +240,10 @@ export function kartStridSteg(s: State, dtSec: number) {
           if (g.efter?.typ === 'rovare' && !p.gast) { p.gavSig = s.now; p.larmRoll = undefined; }
           if (p.gast && k.lage === 'ger') gastKrok.ger?.(s, p, st.avsikt); // gästen som gett upp för den som kuvar (steg 11.12.6, rovare.ts) // flydde eller gav upp för rövarna: gömmer sig sedan (rovarSkydd i rovare.ts)
           if (p.task?.act === 'strid') p.task.until = s.now;
-        } else if (k.lage === 'strid' || k.lage === 'flykt' || (k.lage === 'nere' && !p.svimmat)) { // den som står, flyr eller ligger vaken är kvar i striden, också när en skada avbrutit det hen gjorde: den som ligger går inte iväg mot vården förrän striden är slut
+        } else if (k.lage === 'nere' && (p.svimmat || g.svimmade?.includes(p.id) || p.task?.act === 'buren')) { // den som svimmat ligger kvar utanför striden också när hen vaknar, och den som bärs till vården bärs vidare (steg B.12)
+          if (p.svimmat) { if (!g.svimmade?.includes(p.id)) (g.svimmade ??= []).push(p.id); if (p.task?.act === 'strid') { p.task.tx = p.x; p.task.ty = p.y; } } // kroppen och hälsan avgör vad hen gör
+          else if (p.task?.act !== 'buren' && p.task?.act !== 'vila') { avbryt(s, p); p.task = { act: 'vila', phase: 'do', tx: p.x, ty: p.y, until: s.now + (STRID.maxTid + 60) * SEC, carry: 0, why: 'Ligger kvar, har svimmat i striden' }; }
+        } else if (k.lage === 'strid' || k.lage === 'flykt' || k.lage === 'nere') { // den som står, flyr eller ligger vaken är kvar i striden, också när en skada avbrutit det hen gjorde: den som ligger går inte iväg mot vården förrän striden är slut
           if (p.task?.act !== 'strid') { avbryt(s, p); stridsUppgift(s, p, g.orsak); } else { p.task.tx = p.x; p.task.ty = p.y; }
         } else if (p.task?.act === 'strid') { p.task.tx = p.x; p.task.ty = p.y; } // den som svimmat: kroppen och hälsan avgör vad hen gör sedan
       }
@@ -288,7 +291,7 @@ function kartStridSlut(s: State, g: KartStrid) {
   const ids = [...sidor[0], ...sidor[1]].map(p => p.id);
   const skiljare = g.skild !== undefined ? byId(s, g.skild) : undefined;
   if (g.efter?.egen) { // den som började striden tar själv hand om följderna (rövarna)
-    for (const k of st.kampar) { const p = personAv(s, k); if (p && p.died === undefined && p.task?.act === 'strid') p.task.until = s.now; }
+    for (const k of st.kampar) { const p = personAv(s, k); if (p && p.died === undefined && (p.task?.act === 'strid' || p.task?.act === 'vila' && g.svimmade?.includes(p.id))) p.task.until = s.now; }
     avslutad(s, g, vinnare);
     EFTER[g.efter.typ]?.(s, g.efter, vinnare, g);
     return;
@@ -304,7 +307,7 @@ function kartStridSlut(s: State, g: KartStrid) {
     slitKastat(s, p, st, k);
     if (k.kryper) blodas(s, p.x, p.y, 'kryp', k.kryper * STRID.krypBlod); // släpspåret efter den som kröp undan (steg 3.7.19)
     efterStrid(s, st, k, p, mot, sidor[k.sida], o => personAv(s, o), lek, vinnare);
-    if (p.task?.act === 'strid') p.task.until = s.now; // striden är slut: hen väljer på nytt
+    if (p.task?.act === 'strid' || p.task?.act === 'vila' && g.svimmade?.includes(p.id)) p.task.until = s.now; // striden är slut: hen väljer på nytt
   }
   if (g.efter) EFTER[g.efter.typ]?.(s, g.efter, vinnare, g); // det den som började striden väntade på (steg 10.1.7)
   // vinnaren blir ett rykte i byn (steg 3.3.1): de som såg det minns det
