@@ -161,10 +161,8 @@ export const MAT: Behov = {
   id: 'mat', namn: 'mat', slag: FOOD, minst: 0.3, mangd: portionOf,
   // det man själv äter på ett dygn, efter kroppen (kroppensMat i ekonomi.ts)
   kvar: (s, p) => kroppensMat(p, s.now),
-  // vid bordet äter man lite tidigare än annars: det är därför man satt sig där
   // i en hård by med knapp mat äter den som inte kan arbeta först när hen är hungrigare (steg 9.5.30)
-  behover: (s, p) => p.hunger < KROPP.hungrig && (p.hunger < KROPP.hungrig * VARDRATT.snal || !mindreMat(s, p, () => foodDays(s)))
-    || vidBordet(p) && p.hunger < KROPP.hungrig + KROPP.bordHunger && !mindreMat(s, p, () => foodDays(s)), genast: true,
+  behover: (s, p) => p.hunger < KROPP.hungrig && (p.hunger < KROPP.hungrig * VARDRATT.snal || !mindreMat(s, p, () => foodDays(s))), genast: true, // bordet gör inte att man äter tidigare (steg 13.8.10)
   fara: (_s, p) => p.hunger <= 0 ? 1 - p.health : 0, // man svälter när hungern är slut, och hälsan sjunker
   anvand: eat,
 };

@@ -1438,7 +1438,7 @@ const gift = (s: SIM.State, a: SIM.Person, b: SIM.Person) => {
   SIM.pair(s, a, b, true);
 };
 // alla i folk tycker om varandra fullt ut
-const allaGillar = (s: SIM.State, folk: SIM.Person[]) => { for (const q of folk) for (const r of folk) if (q !== r) SIM.getRel(s, q, r).op = 100; };
+export const allaGillar = (s: SIM.State, folk: SIM.Person[]) => { for (const q of folk) for (const r of folk) if (q !== r) SIM.getRel(s, q, r).op = 100; };
 function satLedare(s: SIM.State, l: SIM.Person, mer: Partial<NonNullable<SIM.State['styre']>> = {}): asserts s is SIM.State & { styre: NonNullable<SIM.State['styre']> } {
   s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: {} as never, ...mer };
 }
@@ -3820,7 +3820,7 @@ SCENARIER.dryckval = {
     // registret: alla drycker har en rad, och bara de med alkohol tas på kvällen
     const rader = SIM.DRYCKER.every(k => !!SIM.dryckAv(k)?.stat) && SIM.DRYCKER.filter(k => SIM.dryckAv(k)!.kvall !== undefined).every(k => (SIM.dryckAv(k)!.alkohol ?? 0) > 0);
     // drycken är en rad i kvällens dragning i FRITID (steg 13.8.8), med vikten RUS.kvall gånger lusten
-    const rad = SIM.FRITID.find(f => f.id === 'dryck'), vikt = SIM.kvallsVikt(s, p);
+    const rad = SIM.FRITID.find(f => f.id === 'dryck'), vikt = SIM.kvallsVikt(s, p), forv = SIM.RUS.kvall * SIM.rusLust(s, p); // (före ölet nedan, som ändrar humöret)
     // ölet släcker lite törst och ger rus
     p.torst = 0.2; p.rus = 0; SIM.drickHemma(s, p, 'ol');
     const ol = p.torst > 0.2 && (p.rus ?? 0) > 0;
@@ -3830,7 +3830,7 @@ SCENARIER.dryckval = {
       ['saften släcker törsten och ger sin tanke, ur raden', slackt],
       [`på kvällen vinet före ölet (${kv}), med smak för öl ölet (${kvOl})`, kv === 'vin' && kvOl === 'ol'],
       ['varje dryck har en rad, och bara de med alkohol tas på kvällen', rader],
-      [`kvällsdrycken är en rad i fritidens dragning på kvällen (${rad?.nar}, vikten ${vikt.toFixed(2)})`, rad?.nar === 'natt' && Math.abs(vikt - SIM.RUS.kvall * SIM.rusLust(s, p)) < 1e-9 && vikt > 0],
+      [`kvällsdrycken är en rad i fritidens dragning på kvällen (${rad?.nar}, vikten ${vikt.toFixed(2)})`, rad?.nar === 'natt' && Math.abs(vikt - forv) < 1e-9 && vikt > 0],
       ['ölet släcker lite törst och ger rus', ol],
     ];
   },

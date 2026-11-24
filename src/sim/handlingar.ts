@@ -254,7 +254,7 @@ const DEF = {
   ryggsack: { namn: 'Syr en ryggsäck', slag: 'hantverk', hantverk: true, stilla: true, verb: 'syr', plats: 'station' }, // vid slöjdbänken med bensylen (steg 7.1.3)
   boll: { namn: 'Syr en boll', slag: 'hantverk', hantverk: true, verb: 'syr', plats: 'station' }, // sportens föremål (steg 4.3.1.2, sport.ts)
   handla: { namn: 'Handlar med handlaren', slag: 'prata', stilla: true }, // byns handel vid handlarens filt (steg 4.4.1.3, handel.ts): task.ref är handlarens id. Inte social: den som handlar pratar bara med handlaren (steg 4.5.7.5)
-  koa: { namn: 'Står i kö till handlaren', slag: 'prata', social: true, stilla: true }, // kön till handlaren (steg 4.5.7.5, handel.ts): de som väntar får prata med varandra
+  koa: { namn: 'Står i kö till handlaren', slag: 'prata', social: true, skamfri: true, stilla: true }, // den som skäms får handla (steg 13.8.10) // kön till handlaren (steg 4.5.7.5, handel.ts): de som väntar får prata med varandra
   slagtra: { namn: 'Täljer ett slagträ', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' },
   skara_remsor: { namn: 'Skär remsor', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'elden' }, skara_lin: { namn: 'Skär remsor av lin', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'elden' }, nal: { namn: 'Slipar en bennål', slag: 'hantverk', hantverk: true, verb: 'slipar', plats: 'station' }, // förbanden (steg 9.5.15)
   kalke: { namn: 'Gör en kälke', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 10.10.2

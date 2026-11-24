@@ -5,6 +5,7 @@ import { GRAFER, grafHtml } from '../../ui/graf';
 import { setByn } from '../../ui/lage';
 import { BEAT, START } from '../kor';
 import { sakOrd } from '../../sim/ord';
+import { allaGillar, kvall, upptrad } from './kultur';
 import { BIT, rakna, stallMark } from '../../ui/mark';
 
 // regeln för stationerna (steg 13.1.1): varje recept vid en station med kvalitet är "bara här" eller "fortare och bättre här"
@@ -1452,6 +1453,47 @@ SCENARIER.nodpoang = {
       [`den mycket törstiga dricker före den lite hungriga (${torst})`, !/ata|maltid/.test(torst.split(':')[0]!) && /dric|vatten|sno/i.test(torst)],
       [`den som blir stucken flyr bina före såret (${bin})`, bin.startsWith('flyBin')],
       ['raderna på nivå 2 har poäng', A.filter(r => r.niva === 2).every(r => !!r.poang)],
+    ];
+  },
+};
+
+SCENARIER.tillfallepoang = {
+  text: 'Steg 13.8.10: tillfällen och grundbehov i poäng. Inom nivå 3 och 4 vägs raderna mot varandra med poäng och personligheten, så att den lata vilar tidigare än den flitiga. Bordet gör inte att man äter tidigare: man äter när man är hungrig och väljer bordet om det är nära nog. Den som skäms får handla på kvällen men går inte och lyssnar på framträdandet',
+  kor: () => {
+    const tk = (q: SIM.Person) => q.task as SIM.Task | undefined;
+    const nivaer = SIM.ARBETEN.filter(r => r.niva === 3 || r.niva === 4), utan = nivaer.filter(r => !r.poang).map(r => r.id);
+    // den lata och den flitiga lika trötta på dagen, mitt emellan deras gränser
+    const s = SIM.createState(1, START); klockan(s, 11); setFood(s, 400); tandEld(s);
+    const [lat, flitig] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen && SIM.ageOf(r, s.now) < 50) as [SIM.Person, SIM.Person];
+    lat.pot.flit = 0; flitig.pot.flit = 100;
+    const lz = (p: SIM.Person) => 1 - SIM.duty(s, p), fyll = (p: SIM.Person) => Object.assign(p, { rest: 1, toa: 1, torst: 1, hunger: 1, social: 1, warm: 1, task: undefined });
+    const val = (p: SIM.Person) => { p.task = undefined; SIM.chooseTask(s, p); return `${tk(p)?.act ?? '-'}: ${tk(p)?.why ?? ''}`; };
+    fyll(lat); fyll(flitig);
+    lat.rest = flitig.rest = SIM.KROPP.trottDag + SIM.KROPP.latVila * (lz(lat) + lz(flitig)) / 2;
+    const vLat = val(lat), vFlit = val(flitig);
+    // bordet: lite över hungrig äter ingen, med eller utan bord; hungrig väljer bordet när det är nära, annars maten
+    const t = SIM.createState(1, START); klockan(t, 12); setFood(t, 400); tandEld(t);
+    const p = SIM.living(t).filter(r => SIM.ageOf(r, t.now) >= SIM.ALDER.vuxen)[0]!;
+    const matval = (hunger: number) => { Object.assign(p, { rest: 1, toa: 1, torst: 1, hunger, social: 1, warm: 1, task: undefined }); SIM.chooseTask(t, p); return tk(p)?.act ?? '-'; };
+    const nastan = SIM.KROPP.hungrig + 0.05, hungrig = SIM.KROPP.hungrig - 0.02;
+    const utanBordNastan = matval(nastan), utanBord = matval(hungrig);
+    medBank(t, 'bord');
+    const medBordNastan = matval(nastan), medBord = matval(hungrig);
+    // den som skäms: lyssnar inte på framträdandet, men handlar (raden handla prövar inte skammen, och kön är skamfri)
+    const { s: k, v } = kvall(); allaGillar(k, k.people);
+    const [, skam] = v as [SIM.Person, SIM.Person]; skam.skam = k.now + SIM.DAY;
+    upptrad(k, v[0]!);
+    skam.task = undefined; SIM.chooseTask(k, skam);
+    const lyssnar = tk(skam)?.act === 'lyssna' || tk(skam)?.act === 'skams' && !!SIM.ACTS.lyssna.social;
+    const ovriga = v.slice(2).filter(q => { q.task = undefined; SIM.chooseTask(k, q); return tk(q)?.act === 'lyssna'; }).length;
+    const handla = SIM.ARBETEN.find(r => r.id === 'handla')!, koSkamfri = !!SIM.ACTS.koa.skamfri;
+    return [
+      [`alla rader på nivå 3 och 4 har poäng (${utan.join(', ') || 'alla'})`, utan.length === 0],
+      [`den lata vilar före den flitiga när de är lika trötta (lat ${lz(lat).toFixed(2)}: ${vLat}; flitig ${lz(flitig).toFixed(2)}: ${vFlit})`, vLat.includes('Är trött') && !vFlit.includes('Är trött')],
+      [`lite över hungrig äter man inte, med eller utan bord (utan: ${utanBordNastan}, med: ${medBordNastan})`, !['ata', 'maltid'].includes(utanBordNastan) && !['ata', 'maltid'].includes(medBordNastan)],
+      [`hungrig äter man vid bordet när det är nära, annars där maten ligger (med bord: ${medBord}, utan: ${utanBord})`, medBord === 'maltid' && utanBord === 'ata'],
+      [`den som skäms går inte och lyssnar (${tk(skam)?.act}: ${tk(skam)?.why}), de andra gör det (${ovriga})`, !lyssnar && ovriga > 0],
+      [`den som skäms får handla: raden handla prövar inte skammen och kön är skamfri (${koSkamfri})`, koSkamfri && !handla.prova.toString().includes('skams')],
     ];
   },
 };

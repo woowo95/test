@@ -167,6 +167,12 @@ export function passaVal(s: State, p: Person) {
   }
   return undefined;
 }
+// det som står på spel vid tillsynen n (steg 13.8.10): det som går förlorat om den missas (miss), och mer ju närmare den
+// sista stunden (dubbelt när tiden nästan är ute). Raden passa i ARBETEN väger med det
+export function passaVikt(s: State, b: Branning, n: { fran: number; till: number }) {
+  const miss = Object.values(BRANNINGAR[b.b].miss).reduce((x, y) => x + y, 0);
+  return miss * (1 + Math.min(1, Math.max(0, (s.now - n.fran) / (n.till - n.fran))));
+}
 export const passaUppgift = (v: NonNullable<ReturnType<typeof passaVal>>) => ({ act: 'passa' as const, text: v.d.tillsyn_text, min: BRANN.tillsynMin, spot: vidStation(v.t), ref: v.t.id });
 // tillsynen är gjord (KLAR i steg.ts): den räknas, om den inte hann bli missad medan den gjordes
 export function passaKlar(s: State, p: Person, tk: Task) {

@@ -41,7 +41,6 @@ export const KROPP = balans('kropp', {
   badSvalka: 0.4, // ett bad kyler den som är varmare än idealet så här mycket, ner till idealet
   // hunger
   hungrig: 0.45, // under detta är man hungrig och äter
-  bordHunger: 0.15, // vid ett bord äter man redan när mättnaden är så här mycket över hungrig (måltiden, steg 2.2.15) ...
   bordGlad: 0.06, bordGladTim: 6, // ... och blir så här mycket gladare av det, i så många timmar
   hungerTim: 22, // timmar från full mättnad till tom (16 före balansen av fas 2, steg 2.12.1)
   mattar: 0.55, // en hel portion av god mat höjer mättnaden så mycket (eat i behov.ts)
