@@ -28,7 +28,9 @@ stridProv.slut = (s, m) => {
       return r?.h === 'avstar' ? 'drog sig undan' : r?.h === 'skild' ? 'skildes åt' : k.lage === 'nere' ? 'för skadad' : k.lage === 'ger' ? 'gav upp' : 'flydde';
     });
     for (const k of st.kampar) { const p = k.pid !== undefined ? s.people.find(q => q.id === k.pid) : undefined; if (p && p.died === undefined && p.skador?.length) saren.push({ rad: {}, pid: p.id, t: s.now }); }
-    const rad = { sort, forsok, slut: [slut(0), slut(1)], efter: 0, dag: +((s.now - s.founded) / 86400000).toFixed(1), orsak, vinnare: st.slut?.vinnare ?? -1, sek: Math.round(st.slut?.t ?? st.t), vuxna, kom, by: per(0), mot: per(1), h };
+    const tunga = st.logg.filter(x => x.h === 'traff' && x.sl && !x.kast && (x.g ?? 0) >= 0.2).length; // de riktiga slagen: de som ger mer än en skråma
+    const langd = st.slut?.t ?? st.t;
+    const rad = { t0: s.now - langd * 1000, t1: s.now, tunga, sort, forsok, slut: [slut(0), slut(1)], efter: 0, dag: +((s.now - s.founded) / 86400000).toFixed(1), orsak, vinnare: st.slut?.vinnare ?? -1, sek: Math.round(st.slut?.t ?? st.t), vuxna, kom, by: per(0), mot: per(1), h };
     for (const x of saren) if (x.t === s.now && !Object.keys(x.rad).length) x.rad = rad;
     rader.push(rad);
 };
