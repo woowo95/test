@@ -2415,6 +2415,39 @@ const MDEF = {
     { t: 'Det fanns alltid djur omkring {namn} när {hen} var liten.', om: iPerson },
   ],
   // rättegången (styre.ts, när tinget dömt): {namn} = den som dömdes, {ledare}, {brott}, {straff} = 'utvisade', {fri}
+  // bildstenens bild (steg 13.9.16, bildsten.ts): vad bilderna föreställer, efter motivet i BILDMOTIV. {fig} = den som avbildas
+  // ('en man', 'en kvinna', 'folket i byn'), {ting} = det som hände i bild ('en stor björn', 'lågor över taken'), {motiv} = radens id
+  b_bild: [
+    { t: '{fig} med spjut framför {ting}', om: f => f.motiv === 'strid' },
+    { t: '{fig} som lyfter yxan mot {ting}', om: f => f.motiv === 'strid' },
+    { t: '{fig} och {ting} mitt i striden', om: f => f.motiv === 'strid' },
+    { t: '{fig} med skölden höjd mot {ting}', om: f => f.motiv === 'strid' },
+    { t: '{ting} som faller, och bakom står {fig} med vapnet i handen', om: f => f.motiv === 'strid' },
+    { t: '{fig} på knä med händerna lyfta mot himlen', om: f => f.motiv === 'helig' && !f.gud },
+    { t: '{fig} som ber, och ett ljus som faller ner över {ting}', om: f => f.motiv === 'helig' && !f.gud },
+    { t: '{fig} framför {ting}, med blicken mot himlen', om: f => f.motiv === 'helig' && !f.gud },
+    { t: '{ting} över de troende', om: f => f.motiv === 'helig' && f.gud === true },
+    { t: '{ting} som stiger ner bland folket', om: f => f.motiv === 'helig' && f.gud === true },
+    { t: '{ting}, och runt omkring står folk med händerna lyfta', om: f => f.motiv === 'helig' && f.gud === true },
+    { t: '{fig} inför en stor publik', om: f => f.motiv === 'tavling' },
+    { t: '{fig} med {ting} i händerna, och folk som jublar', om: f => f.motiv === 'tavling' },
+    { t: '{fig} som står främst bland de andra, med {ting}', om: f => f.motiv === 'tavling' },
+    { t: '{fig} på en lång väg mellan berg och skog', om: f => f.motiv === 'resa' },
+    { t: '{fig} med packning på ryggen, på väg hem från {ting}', om: f => f.motiv === 'resa' },
+    { t: '{fig} och ett sällskap som vandrar mot {ting}', om: f => f.motiv === 'resa' },
+    { t: '{fig} som visar {ting} för byn', om: f => f.motiv === 'uppfinning' },
+    { t: '{fig} böjd över {ting}', om: f => f.motiv === 'uppfinning' },
+    { t: '{fig} med {ting} i händerna och folk runt omkring', om: f => f.motiv === 'uppfinning' },
+    { t: '{fig} framför {ting}', om: f => f.motiv === 'byn' },
+    { t: '{ting}, och mitt i det {fig}', om: f => f.motiv === 'byn' },
+    { t: 'byns hus och {ting}, och {fig} som står kvar', om: f => f.motiv === 'byn' },
+  ],
+  // det som ibland ristas till (steg 13.9.16): ett motiv utan något med händelsen att göra
+  b_extra: [', och över dem flyger två korpar', ', och runt bilden slingrar sig en orm', ', och i hörnet står en hjort', ', och över alltihop lyser solen', ', och vid kanten växer ett stort träd', ', och under dem springer en varg', ', och runt kanten går en flätad slinga'],
+  // ristarens gud på en sten om en strid eller en resa (steg 13.9.16): {gud} = 'guden Dunvald', {omr} = 'åskan och himlen', {i} = var anden bor
+  b_gud: [', och över dem står {gud}, som råder över {omr}', ', och bakom dem vakar {gud}', ', och {gud} håller sin hand över dem'],
+  // det bilderna berättar: {vad} = händelsen ('Ivar dödade en björn'), {nar} = 'en vinter', {ristare}
+  b_berattar: ['Den berättar hur {vad}.', 'Bilderna berättar hur {vad}.', 'Den berättar hur {vad}, {nar}.', 'Så minns byn hur {vad}.', '{Ristare} ristade den för att minnas hur {vad}.'],
   k_ratt: [
     { t: 'Tinget dömde {namn} för att {hen} {brott}: {ledare} {straff} {honom}.', om: f => iBy(f) && !f.fri },
     { t: 'Det var {arstid} när {namn} stod inför tinget för att {hen} {brott}. {Ledare} {straff} {honom}.', om: f => iBy(f) && !f.fri },

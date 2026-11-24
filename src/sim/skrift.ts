@@ -31,7 +31,7 @@ import { O_BESOKT, O_KANT, O_RYKTE, kannerOrt, larOrt, ortensRad, platsText, rad
 import { byPlats, varldPlatsNr } from './landmarken';
 import { tanke } from './tankar';
 import { upplev } from './uppvaxt';
-import { BILDMOTIV, bildHandelser, bildstenarOm, stenMotiv, type BildMotivId } from './bildsten';
+import { BILDMOTIV, bildHandelser, bildText, bildstenarOm, stenMotiv, type BildMotivId } from './bildsten';
 
 // ---------- skriften (system 10.6) ----------
 // Skriften i tre stadier: runstenen, pergamentet och boken. Registret SKRIFTER har en rad per slag av innehåll, med de stadier
@@ -74,7 +74,7 @@ export function runor(text: string) {
 // p:s starkaste lust att resa en sten: sorgen efter en nära anhörig (sorgen i stadier, liv.ts; borta när den döda redan har en sten
 // eller en gravtext) eller stoltheten efter en egen stor bedrift (p.bedrift, rykten.ts), som avtar till noll på stolthetDygn, och
 // halveras för varje sten p redan rest; eller, för prästen och lärjungen, trons heliga kväden
-interface Lust { w: number; slag: SkriftSlag; om: { id: number; namn: string }; bev?: Bevis[]; lag?: SkriftLag; motiv?: BildMotivId; ht?: number; vad?: string }
+interface Lust { w: number; slag: SkriftSlag; om: { id: number; namn: string }; bev?: Bevis[]; lag?: SkriftLag; motiv?: BildMotivId; ht?: number; vad?: string; k?: string; ting?: string }
 const harSten = (s: State, slag: SkriftSlag, om: number, t?: number) => !!s.runstenar?.some(r => r.slag === slag && r.om.id === om && (t === undefined || r.bev?.[0]?.t === t));
 // sorgen och bedriften, som stenen och bladet båda skriver om (fynd 197). Sorgen: de döda p sörjer, med lusten gånger hur känd
 // den döda är: den byn minns väljs oftare, på stenen och på bladet (kandVikt, steg 10.6.14 och 12.1.166). Bedriften: p:s egen stora bedrift (p.bedrift, rykten.ts), som avtar till noll på stolthetDygn, om den inte redan finns
@@ -102,7 +102,7 @@ export function runstenLust(s: State, p: Person): Lust | undefined {
   // en stor händelse personen varit med om eller minns (BILDMOTIV i bildsten.ts, steg 13.9.15), mindre för varje bildsten byn har om samma sort
   for (const h of bildHandelser(s, p, (om, t, m) => !!s.runstenar?.some(r => r.slag === 'handelse' && r.om.id === om && (r.ht ?? r.bev?.[0]?.t) === t && stenMotiv(r) === m))) {
     const w = h.w * SKRIFT.motivAvtar ** bildstenarOm(s, h.motiv);
-    if (!best || w > best.w) best = { w, slag: 'handelse', om: h.om, ...(h.bev ? { bev: [h.bev] } : {}), motiv: h.motiv, ht: h.t, vad: h.vad };
+    if (!best || w > best.w) best = { w, slag: 'handelse', om: h.om, ...(h.bev ? { bev: [h.bev] } : {}), motiv: h.motiv, ht: h.t, vad: h.vad, k: h.k, ...(h.ting ? { ting: h.ting } : {}) };
   }
   if (best) best.w *= SKRIFT.avtar ** (s.runstenar ?? []).filter(r => r.av.id === p.id && r.slag !== 'helig').length;
   // trons heliga kväden: prästen eller lärjungen som kan dem utantill (steg 10.6.2), mindre för varje helig sten tron har
@@ -197,7 +197,7 @@ export function runstenKlar(s: State, p: Person, t: Task) {
   const l = runstenLust(s, p), x = Math.floor(t.tx), y = Math.floor(t.ty);
   if (!l || l.slag !== t.tool || l.om.id !== t.ref || runstenAt(s, x, y) || getable(s, p, 'huggen_sten') < SKRIFT.stenar) return;
   takeMaterial(s, p, 'huggen_sten', SKRIFT.stenar, true, t.kom ??= {});
-  let text: string, bev = l.bev;
+  let text = '', bev = l.bev;
   if (l.slag === 'minne') {
     const d = byId(s, l.om.id), r = s.rels[relKey(p.id, l.om.id)];
     const par = !!d && (d.partner === p.id || r?.par !== undefined);
@@ -211,12 +211,11 @@ export function runstenKlar(s: State, p: Person, t: Task) {
     text = troOf(s, l.om.id)?.kvade?.text ?? ''; // kvädet som det löd när det ristades
   } else if (l.lag) {
     text = `${l.om.namn}: ${lagText(l.lag)}`;
-  } else {
-    // en händelse berättas i bilder i stället för runor: bildstenen (steg 10.7.1)
-    text = `${p.name} reste stenen, och bilderna på den visar hur ${l.vad ?? bevisText(bev![0], p.name).trim().replace(/\.$/, '')}.`;
   }
   const bild = l.slag === 'handelse';
   const id = (s.runstenar?.reduce((m, r) => Math.max(m, r.id), 0) ?? 0) + 1;
+  // en händelse berättas i bilder i stället för runor: bildstenen (steg 10.7.1), och texten säger vad bilderna visar (steg 13.9.16)
+  if (bild) text = bildText(s, p, { motiv: l.motiv ?? stenMotiv({ bev }) ?? 'strid', k: l.k ?? bev?.[0]?.h ?? '', t: l.ht ?? bev?.[0]?.t ?? s.now, om: l.om, vad: l.vad ?? bevisText(bev![0], l.om.namn).trim().replace(/\.$/, ''), ...(l.ting ? { ting: l.ting } : {}), ...(bev?.[0] ? { bev: bev[0] } : {}) }, id);
   runstenarOf(s).push({ id, x, y, t: s.now, slag: l.slag, av: { id: p.id, namn: p.name }, om: l.om, ...(bev?.length ? { bev } : {}), ...(l.slag === 'helig' ? { tro: l.om.id } : {}), ...(l.lag ? { lag: l.lag } : {}), ...(bild ? { bild: 1 as const, ...(l.motiv ? { motiv: l.motiv } : {}), ...(l.ht !== undefined ? { ht: l.ht } : {}) } : {}), text, runor: bild ? '' : runor(text) });
   s.byggV = (s.byggV ?? 0) + 1;
   count(s, 'runsten'); count(s, 'runsten_' + l.slag); if (bild) { count(s, 'bildsten'); if (l.motiv) count(s, 'bildsten_' + l.motiv); }

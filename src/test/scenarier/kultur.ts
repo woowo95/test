@@ -792,7 +792,7 @@ SCENARIER.bildyta = {
       [`bilden visar helst en händelse: ${skold.ber?.mo?.namn} som fällde en varg, inte den starkare ${d1.name} utan händelse`, skold.ber?.mo?.om === d2.id && skold.ber.mo.b?.h === 'vargdodare' && ber.includes(d2.name) && ber.includes('dödade en varg')],
       ['en fin kniv får ingen bild, och den fina sköldens berättelse är bara bilden', !kniv.ber?.mo && !ber.includes('mästerverk')],
       [`den döda på skölden bleknar långsammare: säkerheten ${med.toFixed(2)} mot ${utan.toFixed(2)} efter fem dygn`, med > utan],
-      [`en sten om en händelse är en bildsten (${r ? SIM.runstenRubrik(r) : 'ingen sten'}: "${r?.text}")`, !!r && r.slag === 'handelse' && r.bild === 1 && r.runor === '' && /bilderna/.test(r.text) && SIM.runstenRubrik(r).includes('bildsten')],
+      [`en sten om en händelse är en bildsten (${r ? SIM.runstenRubrik(r) : 'ingen sten'}: "${r?.text}")`, !!r && r.slag === 'handelse' && r.bild === 1 && r.runor === '' && /^Stenen visar /.test(r.text) && SIM.runstenRubrik(r).includes('bildsten')],
     ];
   },
 };

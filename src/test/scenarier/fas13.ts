@@ -1989,3 +1989,30 @@ SCENARIER.bildmotiv = {
     ];
   },
 };
+
+SCENARIER.bildtext = {
+  text: 'Steg 13.9.16: bildstenens text visar bilden. Rutan säger först vad bilderna föreställer och sedan vad de berättar; bilden byggs ur radens motiv i BILDMOTIV, ur det som hände och ibland ett slumpat motiv, väljs när stenen reses och sparas. Två stenar om samma sorts händelse får olika bilder, och texten nämner personerna och händelsen',
+  kor: () => {
+    const s = SIM.createState(9, START); klockan(s, 10);
+    const folk = [nyInvanare(s, 'm', 35), nyInvanare(s, 'k', 32), nyInvanare(s, 'm', 40), nyInvanare(s, 'k', 28)];
+    const texter: string[] = [];
+    for (const p of SIM.living(s)) { (p.tek ??= {}).stenhuggarplats = 1; p.bedrift = undefined; p.upp = (p.upp ?? []).filter(u => u.t === undefined); p.intryck = []; }
+    for (const [i, p] of folk.entries()) {
+      p.bedrift = { h: 'bjorndodare', t: s.now - i * SIM.HOUR };
+      const l = SIM.runstenLust(s, p);
+      SIM.setAmount(s, 'huggen_sten', 3);
+      const at = SIM.runstenPlats(s)!; p.x = at.x + 0.5; p.y = at.y + 0.5;
+      if (l) SIM.runstenKlar(s, p, { act: 'runsten', phase: 'do', until: s.now, tool: l.slag, ref: l.om.id, tx: at.x + 0.5, ty: at.y + 0.5 } as SIM.Task);
+      texter.push(s.runstenar?.[s.runstenar.length - 1]?.text ?? '');
+    }
+    const bilder = texter.map(t => t.split('. ')[0]);
+    const sparad = s.runstenar?.[0]?.text, efter = SIM.runstenarOf(s)[0]?.text;
+    return [
+      [`fyra stenar om björnar reses (${texter.filter(Boolean).length})`, texter.filter(Boolean).length === 4],
+      [`texten börjar med bilden och berättar sedan: "${texter[0]}"`, texter.every(t => /^Stenen visar .+\. .+/.test(t))],
+      [`bilderna skiljer sig (${new Set(bilder).size} olika av ${bilder.length}: ${bilder.join(' | ')})`, new Set(bilder).size >= 2],
+      ['texten nämner björnen och den som fällde den', texter.every((t, i) => /björn/.test(t) && t.includes(folk[i]!.name))],
+      ['bilden sparas med stenen', !!sparad && sparad === efter],
+    ];
+  },
+};
