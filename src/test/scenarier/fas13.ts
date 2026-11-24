@@ -1356,3 +1356,41 @@ SCENARIER.trosklar = {
     ];
   },
 };
+
+// steg 13.8.7: samma villkor för alla rader på Förbättra
+SCENARIER.forbvillkor = {
+  text: 'Steg 13.8.7: Förbättra har samma villkor för alla rader. Att bära ut sopor, att baka och slåttern gäller bara den som arbetar i dag och dämpas av kyla och svält, bygget dämpas inte längre utan yxa, och bryggningen, ullen, hamlingen, staketet och fågelskrämman vägs med poäng mot lärandet, prövandet och fritiden',
+  kor: () => {
+    const rad = (id: string) => SIM.ARBETEN.find(a => a.id === id);
+    const forbRader = ['sopor', 'baka', 'slatterForb'].filter(id => rad(id)?.forb && rad(id)?.niva === 8);
+    const vagda = ['brygga', 'klippa', 'hamla', 'staket', 'skramma'];
+    const iPoang = vagda.filter(id => SIM.FORBATTRA.some(f => f.id === id) && !!rad(id)?.poang);
+    // bagaren i en by med bakugn och mjöl: med mat i förrådet bakar någon, när byn svälter ingen
+    const bak = (mat: number) => {
+      const s = SIM.createState(1, START); klockan(s, 10);
+      const ugn = { id: 992, k: 'bakugn', x: 2, y: 8, kvar: 0 } as SIM.Station; s.stationer = [...(s.stationer ?? []), ugn];
+      SIM.setAmount(s, 'ved', 100); SIM.setAmount(s, 'grenar', 60); SIM.setAmount(s, 'torrgras', 60); SIM.setAmount(s, 'mjol', 20); setFood(s, mat);
+      for (const k of ['mossa', 'sten', 'flinta']) SIM.setAmount(s, k, 40); for (const f of SIM.FROSORTER) SIM.setAmount(s, f, SIM.utsade(s, f)); // Försörjningen har det den behöver
+      let n = 0, alla = 0;
+      for (let varv = 0; varv < 20; varv++) for (const p of SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)) {
+        p.tek = { ...(p.tek ?? {}), bakugn: 1 }; p.skill.matlagning = SIM.MATLAG.brannFull;
+        if (varv === 0) medVatska(s, p, 'vattensack', 'vatten', 1);
+        Object.assign(p, { rest: 1, toa: 1, torst: 1, hunger: 1, social: 1, warm: 1, task: undefined });
+        SIM.chooseTask(s, p); alla++; if (p.task?.act === 'baka') n++;
+        s.now += 5 * SIM.MIN;
+      }
+      return { n, alla };
+    };
+    const matt = bak(60), svalt = bak(0);
+    // brusets spann: lärandet kan väga mer än bryggningen
+    const V = SIM.VAL, hi = V.brusMin + V.brusSpann, lo = V.brusMin;
+    return [
+      [`att bära ut sopor, att baka och slåttern har Förbättras villkor (${forbRader.join(', ')})`, forbRader.length === 3],
+      [`bygget dämpas inte längre utan yxa (${'byggUtanYxa' in V ? 'finns kvar' : 'borta'})`, !('byggUtanYxa' in V)],
+      [`bryggningen, ullen, hamlingen, staketet och fågelskrämman vägs med poäng på Förbättra (${iPoang.join(', ')})`, iPoang.length === vagda.length],
+      [`lärandet kan väga mer än bryggningen (lärandet upp till ${(V.forbLara * hi).toFixed(2)}, bryggningen ner till ${(V.forbBrygga * lo).toFixed(2)})`, V.forbLara * hi > V.forbBrygga * lo],
+      [`med mat i förrådet bakar någon (${matt.n} av ${matt.alla} val)`, matt.n > 0],
+      [`när byn svälter bakar ingen (${svalt.n} av ${svalt.alla} val)`, svalt.n === 0],
+    ];
+  },
+};
