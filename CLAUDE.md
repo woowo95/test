@@ -69,6 +69,8 @@ Sök i dokumentet i stället för att läsa allt; det är långt.
 
 - Kodgranskning: när Björn ber om en grundlig genomgång av koden, följ `GRANSKNING.md`.
 
+- Björns kommentarer: Björn skriver kommentarer direkt på spelets sida och bildstilens sida (kommentarsläget på claude.ai). De sparas på sidan och väcker ingen chatt. Säger Björn "gå igenom mina kommentarer" (eller liknande), läs de öppna trådarna med ArtifactComments (`action: "read"`) på spelets och bildstilens URL. Varje kommentar behandlas som en prompt: det som hör till ett steg som byggs nu byggs, resten skrivs in i designdokumentet enligt "Nya system som Björn beskriver", och en fråga besvaras. Svara kort i tråden med vad som gjordes och stäng den (`reply` och `resolve`); det går bara i trådar som är skickade till Claude. Säg i svaret vad som gjordes med varje kommentar, och vilka trådar som står öppna för att de inte är skickade till Claude (Björn stänger dem själv eller skickar dem till Claude).
+
 ## Bygga och publicera
 
 - `npm install`, sedan `npm run build`. Det ger `samhallssimulatorn.html`, och i `publicera/` källkoden som .txt och fillistan `filer.json`.
