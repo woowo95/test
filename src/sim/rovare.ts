@@ -74,6 +74,9 @@ export const ROVARE = balans('rovare', {
   fartSpann: 0.08, // ... och upp till så här mycket långsammare än en bybo
   nara: 1.5, // rövarna är framme vid förrådet så här nära
   // rövarnas val (steg 10.1.9–10.1.15, ROVARHANDLINGAR)
+  isKostnad: 5, // den som hamnat på vattnet (isen) går därifrån över det: så mycket kostar en sådan ruta i vägsökningen (steg B.43)
+  utanVag: 10, // den som anfaller och inte hittar någon väg till målet står kvar och prövar igen, och ger upp efter så här många minuter (steg B.43)
+  stillSek: 60, // gänget väntar inte på den som stått still så här länge på väg till rastplatsen (steg B.44)
   rastR: 3, // rastplatsen: så här nära mitten håller de sig, och så långt går den som går omkring
   rastaPoang: 0.35, gaPoang: 0.2, prataPoang: 0.38, // poängen för att vila, gå omkring och prata på rastplatsen (steg 10.2.24: vilan vann nästan alltid med 0,5; steg 10.2.94: mer prat, mindre gång)
   sparEfter: 0.15, // bilden: det som flyttar rövaren efter en gång som redan sparats till samma tid visas så här många sekunder senare (steg 10.2.96)
@@ -232,7 +235,7 @@ export function gaMot(s: State, r: Person, mx: number, my: number, sek: number, 
     if (nara) gr(r).pk = mal;
     else if (gr(r).ingen !== undefined && s.now - (gr(r).ingenT ?? 0) < ROVARE.vagSok * SEC && Math.hypot(gr(r).ingen! % W - mx, Math.floor(gr(r).ingen! / W) - my) <= ROVARE.vagFlytt) return -1; // (också ett mål nära det som inte gick)
     else {
-      gr(r).pk = mal; gr(r).path = findPath(g, r.x, r.y, mx, my, false, undefined, runt) ?? undefined;
+      gr(r).pk = mal; gr(r).path = findPath(g, r.x, r.y, mx, my, false, iVatten(s, r.x, r.y) ? ROVARE.isKostnad : undefined, runt) ?? undefined;
       if (!gr(r).path) { gr(r).pk = undefined; gr(r).ingen = mal; gr(r).ingenT = s.now; return -1; }
       gr(r).ingen = undefined;
     }
@@ -607,8 +610,8 @@ export const ROVARHANDLINGAR: Record<RovarGor, { namn: string; ansikte?: 'arg' |
   tillRast: { namn: 'Går mot rastplatsen', ansikte: 'lugn', poang: c => !c.f.anfaller && c.f.rast && avst(c.r, c.f.rast) > ROVARE.rastR ? 1 : -1, gor: c => { ga(c, c.f.rast!, runtByn(c.s, ROVARE.rundUt)); } }, // runt byn (steg B.16)
   // på rastplatsen: vilar, går omkring lite och pratar med de andra
   // var och en vilar på sin egen plats runt rastplatsen, så att gänget sprider ut sig (steg 10.2.24)
-  rasta: { namn: 'Rastar', poang: c => c.f.anfaller ? -1 : ROVARE.rastaPoang, gor: c => { const g = gr(c.r); if (!c.f.rast) return; if (g.vx === undefined && avst(c.r, c.f.rast) <= ROVARE.rastR && !rovarna(c.s, c.f).some(q => q !== c.r && avst(q, c.r) < 0.8)) { g.vx = c.r.x!; g.vy = c.r.y!; } /* vilar där hen står, om ingen står på samma plats (steg 10.2.94) */ g.vx ??= c.f.rast.x + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; g.vy ??= c.f.rast.y + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; if (avst(c.r, { x: g.vx, y: g.vy }) > 0.6) ga(c, { x: g.vx, y: g.vy }); } },
-  gaOmkring: { namn: 'Går omkring', poang: c => c.f.anfaller || !c.f.rast ? -1 : ROVARE.gaPoang, gor: c => { const g = gr(c.r); g.vx ??= c.f.rast!.x + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; g.vy ??= c.f.rast!.y + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; if (ga(c, { x: g.vx, y: g.vy }) < 0.6) g.gorTill = 0; } },
+  rasta: { namn: 'Rastar', poang: c => c.f.anfaller ? -1 : ROVARE.rastaPoang, gor: c => { const g = gr(c.r); if (!c.f.rast) return; if (g.vx === undefined && avst(c.r, c.f.rast) <= ROVARE.rastR && !iVatten(c.s, c.r.x, c.r.y) && !rovarna(c.s, c.f).some(q => q !== c.r && avst(q, c.r) < 0.8)) { g.vx = c.r.x!; g.vy = c.r.y!; } /* vilar där hen står, om ingen står på samma plats (steg 10.2.94) */ const p = rastPunkt(c); if (avst(c.r, p) > 0.6 && ga(c, p) < 0) g.vx = undefined; } },
+  gaOmkring: { namn: 'Går omkring', poang: c => c.f.anfaller || !c.f.rast ? -1 : ROVARE.gaPoang, gor: c => { const d = ga(c, rastPunkt(c)); if (d < 0) gr(c.r).vx = undefined; else if (d < 0.6) gr(c.r).gorTill = 0; } },
   // pratar med den närmaste i gänget: går fram och samtalar i samma samtalssystem som byn, med pratbubbla (steg 10.2.24)
   prata: { namn: 'Pratar', poang: c => c.f.anfaller || c.kvar < 2 ? -1 : ROVARE.prataPoang, gor: c => {
     const o = rovarna(c.s, c.f).filter(q => q !== c.r).sort((a, b) => avst(a, c.r) - avst(b, c.r))[0];
@@ -617,7 +620,7 @@ export const ROVARHANDLINGAR: Record<RovarGor, { namn: string; ansikte?: 'arg' |
     if (rnd(c.s, 'rovare') < c.dt / ROVARE.pratSek) rovarPrat.prata?.(c.s, c.r, o, c.ev); // ungefär ett samtal på pratSek sekunder
   } },
   // mot målet när flocken anfaller
-  motMalet: { namn: 'Går mot byn', ansikte: 'lugn', poang: c => c.f.anfaller && !gr(c.r).nojd && !c.f.klar && avst(c.r, c.mal) > ROVARE.nara ? 1 : -1, gor: c => { if (ga(c, c.mal) < 0) gr(c.r).flytt = true; } }, // ingen väg dit: hen ger upp
+  motMalet: { namn: 'Går mot byn', ansikte: 'lugn', poang: c => c.f.anfaller && !gr(c.r).nojd && !c.f.klar && avst(c.r, c.mal) > ROVARE.nara ? 1 : -1, gor: c => { const g = gr(c.r); if (ga(c, c.mal) >= 0) g.utanVag = undefined; else if (c.s.now - (g.utanVag ??= c.s.now) > ROVARE.utanVag * MIN) g.flytt = true; } }, // ingen väg dit: hen står kvar och prövar igen (steg B.43), och ger upp efter en stund
   // slår den som står i vägen: den som står emot inom ROVARE.moter. Modet drar till striden och övermakten från den
   // den som inte står emot men står i vägen slår bara den aggressiva, när inget annat lockar mer
   sla: { namn: 'Slåss', ansikte: 'arg', poang: c => c.fiende ? 1.5 + ROVARE.slaMod * (stat(c.r, 'mod', c.s.now) - 10) / 10 - ROVARE.slaHot * Math.max(0, c.hot - 1) : c.ivagen ? ROVARE.slaIvagen * stat(c.r, 'aggression', c.s.now) / 10 + c.brus('sla') * ROVARE.valBrus : -1, gor: c => slaSteg(c) },
@@ -633,6 +636,16 @@ export const ROVARHANDLINGAR: Record<RovarGor, { namn: string; ansikte?: 'arg' |
   // flyr: blodet, övermakten hen ser, modet och hur många i flocken som är kvar
   fly: { namn: 'Flyr', ansikte: 'radd', poang: c => (gr(c.r).flytt ? 3 : -0.6) + ROVARE.flyBlod * (1 - c.r.blod) + ROVARE.flyHot * Math.max(0, c.hot - 1) * (1 - (stat(c.r, 'mod', c.s.now) - 10) / 10) + ROVARE.flyDoda * (1 - c.kvar / Math.max(1, c.f.antal ?? c.kvar)), gor: c => { gr(c.r).flytt = true; hemat(c); } },
 };
+// platsen där rövaren vilar eller dit hen går omkring (steg B.43): på land kring rastplatsen, som byborna väljer sin (glesPlats), och den
+// behålls tills hen väljer något annat eller inte hittar någon väg dit
+function rastPunkt(c: RCtx) {
+  const g = gr(c.r), m = c.f.rast!;
+  if (g.vx === undefined || g.vy === undefined) {
+    const at = glesPlats(c.s, c.r, () => { const p = freeNear(c.s, m.x + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR, m.y + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR); return inMap(p.x, p.y) && !iVatten(c.s, p.x, p.y) && !bitAt(c.s, p.x, p.y) ? p : undefined; }) ?? m;
+    g.vx = at.x; g.vy = at.y;
+  }
+  return { x: g.vx, y: g.vy };
+}
 const RGOR = Object.keys(ROVARHANDLINGAR) as RovarGor[];
 // går mot punkten, i en bybos fart med samma vägsökning. Svarar hur långt det är kvar, −1 när det inte finns någon väg
 // var och en går mot sin egen plats i klungan runt målet, så att de inte står på samma punkt
@@ -657,7 +670,13 @@ function hemat(c: RCtx) {
   // där det finns väg till den närmaste kanten från en ruta men inte från nästa
   const g = gr(r);
   let kvar = g.ut ? ga(c, g.ut) : -1;
-  if (kvar < 0) { g.ut = undefined; for (const k of [kantMot(s, f.klan), ...kanterna(r.x, r.y)]) { if (!k) continue; kvar = ga(c, k); if (kvar >= 0) { g.ut = k; break; } } }
+  if (kvar < 0) { // ingen väg ut: hen står kvar och prövar alla kanter igen efter en stund (steg B.43)
+    g.ut = undefined;
+    if (g.utT !== undefined && s.now - g.utT < ROVARE.vagSok * SEC) return;
+    g.utT = s.now;
+    for (const k of [kantMot(s, f.klan), ...kanterna(r.x, r.y)]) { if (!k) continue; kvar = ga(c, k); if (kvar >= 0) { g.ut = k; g.utT = undefined; break; } }
+    if (kvar < 0) return;
+  }
   if (f.rad) iFarten(s, r, c.dt); // saker i farten (steg 8.8.3)
   if (kvar >= 0.5) return;
   f.folk = f.folk.filter(id => id !== r.id);
@@ -812,7 +831,10 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
   const fo = rovarna(s, f);
   if (!f.anfaller) {
     const gar = fo.filter(r => !gr(r).flytt && kanGa(r) && !iStriden(s, f, r)); // de som är på väg till rastplatsen eller framme
-    if (!f.vantat && gar.length && gar.every(r => avst(r, f.rast!) <= ROVARE.rastR * 1.5)) { f.vantat = true; f.till = s.now + (f.test ? ROVARE.testVanta : mellan(s, ROVARE.lurMin)) * MIN; }
+    // den som inte kommer vidare väntar gänget inte på (steg B.44): den utan väg dit, eller som stått still en stund
+    for (const r of fo) { const g = gr(r); if (!g.still || Math.hypot(g.still.x - r.x, g.still.y - r.y) > 0.5) g.still = { x: r.x, y: r.y, t: s.now }; }
+    const framme = (r: Person) => avst(r, f.rast!) <= ROVARE.rastR * 1.5, fast = (r: Person) => gr(r).ingen !== undefined && s.now - gr(r).still!.t > 5 * SEC || s.now - gr(r).still!.t > ROVARE.stillSek * SEC;
+    if (!f.vantat && gar.some(framme) && gar.every(r => framme(r) || fast(r))) { f.vantat = true; f.till = s.now + (f.test ? ROVARE.testVanta : mellan(s, ROVARE.lurMin)) * MIN; }
     if (f.vantat && s.now >= f.till) { f.anfaller = true; f.anfallT = s.now; count(s, 'rovarGarTill'); if (isLight(s.now)) count(s, 'rovarGarTillDag'); if (f.sedd !== undefined) { count(s, 'rovarGarTillSedd'); if (isLight(s.now)) count(s, 'rovarGarTillDagSedd'); } } // hur ofta byn sett gänget innan det anfaller (npm run strid)
     if (f.vantat && f.sedd !== undefined) budSteg(s, f, folk);
   }

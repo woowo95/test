@@ -2997,3 +2997,52 @@ SCENARIER.langforlossning = {
     ];
   },
 };
+
+// en plats på land minst fran rutor från målet, i byns närhet, dit man kan gå (scenarierna om rövarna)
+function landVid(s: SIM.State, fran: number, prova: (x: number, y: number) => boolean = () => true) {
+  const m = SIM.malet(s), vt = SIM.vattenNu(s);
+  for (let r = fran; r < fran + 40; r++) for (let i = 0; i < 32; i++) {
+    const v = i * Math.PI / 16, x = Math.floor(m.x + Math.cos(v) * r) + 0.5, y = Math.floor(m.y + Math.sin(v) * r) + 0.5;
+    if (SIM.inMap(x, y) && vt[Math.floor(y) * SIM.W + Math.floor(x)] !== SIM.T.Vatten && !SIM.bitAt(s, x, y) && prova(x, y) && SIM.findPath(SIM.groundOf(s), x, y, m.x, m.y)) return { x, y };
+  }
+  return undefined;
+}
+// den sparade byn vid klockan timme, med ovänliga grannar
+const rovarBy = (timme: number, n = 0) => { const s = lasBy('test/rovarby.json.gz'); klockan(s, timme); for (const c of SIM.klanerOf(s)) c.inst = -60; s.seed = (s.seed ?? 0) + n * 7; return s; };
+const ettGang = (s: SIM.State, f: SIM.Rovarflock) => { if (s.rovareFler?.length) { s.rovareFler = undefined; s.rovare = f; } };
+const vuxnaI = (s: SIM.State) => SIM.living(s).filter(p => !p.gast && SIM.vuxenKan(s, p));
+
+SCENARIER.rastland = {
+  text: 'Steg B.43: rövarna väljer platserna på rastplatsen på land, och den som står på isen går därifrån i stället för att försvinna: ett gäng med rastplatsen vid en frusen sjö har lika många rövare när anfallet börjar som när det kom fram',
+  kor: () => {
+    const s = rovarBy(11), vt = SIM.vattenNu(s), T = (x: number, y: number) => SIM.inMap(x, y) && vt[Math.floor(y) * SIM.W + Math.floor(x)] === SIM.T.Vatten;
+    const vatten = (x: number, y: number) => { let n = 0; for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) if (T(x + dx, y + dy)) n++; return n; };
+    const vid = landVid(s, 28, (x, y) => vatten(x, y) >= 16)!, f = rovarGang(s, 5, vid); ettGang(s, f);
+    f.vantat = true; f.till = s.now + 5 * SIM.MIN; const n = f.folk.length;
+    // byborna är långt bort, så att ingen möter gänget under väntan
+    { const m = SIM.malet(s); for (const p of SIM.living(s)) if (!p.gast) { Object.assign(p, SIM.freeNear(s, m.x - (vid.x - m.x) * 0.5, m.y - (vid.y - m.y) * 0.5)); p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.HOUR, carry: 0, why: 'test' } as SIM.Task; } }
+    // en står redan ute på vattnet (isen)
+    const fo = SIM.rovarna(s, f); let ute: { x: number; y: number } | undefined;
+    for (let d = 1; d < 5 && !ute; d++) for (let i = 0; i < 16 && !ute; i++) { const x = vid.x + Math.cos(i) * d, y = vid.y + Math.sin(i) * d; if (T(x, y)) ute = { x, y }; }
+    Object.assign(fo[0], ute); fo[0].gast!.path = undefined; fo[0].gast!.pk = undefined;
+    let iVatten = 0, m = 0
+    korTills(s, () => !!f.anfaller, 600, () => { ettGang(s, f); if (f.till - s.now < 3 * SIM.MIN) for (const r of SIM.rovarna(s, f)) { m++; if (T(r.x, r.y)) iVatten++; } });
+    return [
+      [`lika många vid anfallet (${f.folk.length} av ${n}, ${fo.filter(r => r.gast?.flytt).length} har gett upp)`, f.folk.length === n && !fo.some(r => r.gast?.flytt)],
+      [`ingen står i vattnet de sista minuterna (${iVatten} av ${m})`, m > 0 && iVatten === 0],
+    ];
+  },
+};
+
+SCENARIER.fastrovare = {
+  text: 'Steg B.44: gänget väntar bara på dem som är på väg: med en rövare som inte kommer fram till rastplatsen anfaller det ändå inom fem minuter efter att de andra kommit fram',
+  kor: () => {
+    const s = rovarBy(11), vid = landVid(s, 30)!, f = rovarGang(s, 4, vid); f.vantat = false; f.test = false; ettGang(s, f);
+    const fo = SIM.rovarna(s, f), fast = fo[3], at = landVid(s, 45)!; let framme = -1;
+    korTills(s, () => !!f.anfaller || !s.rovare, 900, () => {
+      ettGang(s, f); fast.x = at.x; fast.y = at.y; fast.gast!.path = undefined; // kommer aldrig ur fläcken
+      if (framme < 0 && fo.slice(0, 3).every(q => Math.hypot(q.x - f.rast!.x, q.y - f.rast!.y) <= SIM.ROVARE.rastR * 1.5)) framme = s.now;
+    });
+    return [[`gänget anfaller ${((s.now - framme) / SIM.MIN).toFixed(1)} min efter att de andra kommit fram`, !!f.anfaller && framme > 0 && s.now - framme <= 5.5 * SIM.MIN + SIM.ROVARE.stillSek * 1000]];
+  },
+};
