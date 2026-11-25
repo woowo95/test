@@ -47,6 +47,15 @@ SCENARIER.namnskyltar = {
       // avståndet (steg 13.10.5): namnet under fötterna har sin överkant lika långt under figuren som namnet ovanför den valda
       // har sin nederkant över huvudet, och avståndet är SKYLT.avstand
       [`namnet står lika långt från figuren under fötterna som ovanför huvudet (${skyltUnder(100) - SKYLT.hojd - 100} och ${50 - skyltOver(50)} punkter, SKYLT.avstand ${SKYLT.avstand})`, skyltUnder(100) - SKYLT.hojd - 100 === SKYLT.avstand && 50 - skyltOver(50) === SKYLT.avstand && SKYLT.avstand === 2],
+      ['i en tät strid står namnen kvar på sina platser när figurerna rör sig lite (steg B.35)', (() => {
+        const minne = new Map<number, number>(); let byten = 0, forra = new Map<number, number>();
+        for (let f = 0; f < 60; f++) {
+          synligaSkyltar(alla.slice(0, 8).map((p, i) => ({ ...skylt(p, 100 + (i % 4) * 14 + Math.sin(f * 0.7 + i) * 2, 100 + Math.floor(i / 4) * 14 + Math.cos(f * 0.9 + i) * 2), forst: 2, flytt: SKYLT.flytt })), 3, [], minne);
+          for (const [id, i] of minne) if (forra.has(id) && forra.get(id) !== i) byten++;
+          forra = new Map(minne);
+        }
+        return byten <= 10;
+      })()],
       [`namnen under den valdas stora skylt göms (${stor.size})`, stor.size === 0],
     ];
   },

@@ -86,6 +86,7 @@ function smabarnet(p: Person, u: Skapad) {
   u.del.frisyr = KARNA.radAv(KARNA.slumpFran(11 + hash(p.id, 54, 1) * SMABARN.frisyrer | 0), 'frisyr', 'barn', kon, 0);
 }
 export function skapad(s: State, p: Person): Skapad {
+  if (p.gast?.sort === 'rovare' || p.gast?.sort === 'fange') { const u = rovarSkapad(s, p, 'lugn'); return Object.assign(u, kropp(s, p, u.del)); } // rövaren ser ut som på kartan också i porträttet och som fånge (steg B.35)
   const d = drag(s, p), alder = alderAv(ageOf(p, s.now));
   const u: Skapad = alder !== 'barn' && d.anlag ? KARNA.somUng(d) : { ...d, del: { ...d.del } };
   u.alder = alder;
