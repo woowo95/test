@@ -35,8 +35,8 @@ function vagg(n: string, lx: number, ly: number, gx: number, gy: number) {
 
 const MOSSA = [farg('oliv', 1), farg('oliv', 2), farg('oliv', 3)], LAV = farg('senap', 3), GRAS = farg('oliv', 2);
 // murrutan x, y: murar = de andra murrutorna ("x,y"); 256 färger, rad för rad ('' = marken syns)
-export function ruinPunkter(murar: Set<string>, x: number, y: number) {
-  const n = [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dy]) => murar.has(`${x + dx!},${y + dy!}`) ? 'W' : '.').join('') + '....';
+export const ruinGrannar = (murar: Set<string>, x: number, y: number) => [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dy]) => murar.has(`${x + dx!},${y + dy!}`) ? 'W' : '.').join('') + '....';
+export function ruinPunkter(n: string, x: number, y: number) {
   const rasat = hash3(x, y, 71) < 0.35, ras0 = 3 + Math.floor(hash3(x, y, 72) * 7), ras1 = ras0 + 3 + Math.floor(hash3(x, y, 73) * 4);
   const vagrat = n[0] === 'W' || n[1] === 'W' || (n[2] !== 'W' && n[3] !== 'W');
   const px: string[] = [];
@@ -50,5 +50,5 @@ export function ruinPunkter(murar: Set<string>, x: number, y: number) {
     } else if (hash3(gx, gy, 78) < 0.05) col = GRAS; // grässtrån där marken syns
     px.push(col);
   }
-  return { key: `${x},${y},${n}`, px };
+  return px;
 }

@@ -1294,11 +1294,7 @@ export function sakerPaRutan(s: State, tk: Task, x: number, y: number): { k: str
   // stenarna ligger flera på rutan vid stenarna; flintan är sällsynt, en på var hundrade ruta där (RUNDA.flintTat), och bara så
   // länge byn behöver flinta (som förut i forageItems, eld.ts)
   if (turMal(tk)) return []; // den som hämtar tändmaterial, hö eller grenar plockar inte bär och rötter (steg 12.1.39): hö och kvistar tas efter tiden ute
-  if (tk.sok) {
-    const v = rutVarde(s, tk)(x, y), sten = letarNu(s, tk) === 'sten';
-    const n = sten ? Math.floor(v * RUNDA.stenSaker + 1e-9) : hash3(s.seed, i, 991) < v * RUNDA.flintTat && letaFattas(s, 'flinta') > 0 ? 1 : 0; // rutans tal först: det är billigt, och de flesta rutor har ingen flinta
-    return [{ k: sten ? 'sten' : 'flinta', n: Math.max(0, n - plockatPa(s, plockKey(tk, i))) }];
-  }
+  if (tk.sok) return [{ k: letarNu(s, tk) === 'sten' ? 'sten' : 'flinta', n: sokLasare(s, tk)(x, y) }];
   // bär och rötter, och svampen som växer där (kantarellen och den giftiga spindlingen)
   // antalet är rikedomen räknad i saker, och resten avgör om det ligger en sak till (räknat ur rutan och dygnet, ingen slump),
   // så att det i snitt finns lika mycket som rikedomen säger
@@ -1314,10 +1310,19 @@ const LAGREN_PA: Partial<Record<string, readonly FyndId[]>> = {};
 const lagrenPa = (res: Lager) => LAGREN_PA[res] ??= [...lagren(res), ...(res === 'samla' ? ['kantarell', 'spindling', 'honung'] as FyndId[] : [])]; // honungen i vildbona räknas som svampen (steg 10.10.15)
 // sakerPa för den som frågar om många rutor på en gång utan att något i byn ändras emellan (nästa mål, sträckan): väggarna, dygnet
 // och det som gäller hela kartan hämtas en gång, och inga listor byggs. Samma antal som sakerPa
+// stenarna eller flintan på rutan: det som bara beror på byn (vad som letas efter och om det fattas) räknas en gång
+function sokLasare(s: State, tk: Task): (x: number, y: number) => number {
+  const v = rutVarde(s, tk), sten = letarNu(s, tk) === 'sten'; let fattas: boolean | undefined;
+  return (x, y) => {
+    const i = y * W + x, w = v(x, y);
+    const n = sten ? Math.floor(w * RUNDA.stenSaker + 1e-9) : hash3(s.seed, i, 991) < w * RUNDA.flintTat && (fattas ??= letaFattas(s, 'flinta') > 0) ? 1 : 0; // rutans tal först: de flesta rutor har ingen flinta
+    return Math.max(0, n - plockatPa(s, plockKey(tk, i)));
+  };
+}
 function sakerLasare(s: State, tk: Task): (x: number, y: number) => number {
   const res = ACTS[tk.act].resurs;
   if (turMal(tk)) return () => 0; // (sakerPaRutan)
-  if (tk.sok) return (x, y) => sakerPa(s, tk, x, y); // stenarna och flintan räknas som vanligt
+  if (tk.sok) { const f = sokLasare(s, tk), solid = gridOf(s).solid; return (x, y) => !inMap(x, y) || solid[y * W + x] === 1 ? 0 : f(x, y); }
   if (!res) { // grenarna: samma tal som sakerPaRutan, utan att bygga en lista per ruta
     const solid = gridOf(s).solid, tr = groundOf(s).trees;
     return (x, y) => {

@@ -1241,6 +1241,7 @@ SCENARIER.forhistoria = {
 };
 
 SCENARIER.radvakt = {
+  lang: true,
   text: 'Vakten för raden (steg 11.3.14, radVakt i rad.ts): det stora testet larmar om ett tal i en rad som inte är helt, en by som växer utan gräns eller för många byar som gått under; en värld efter förhistorien är tyst',
   env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,forhist.ar=400' },
   kor: () => {
@@ -5878,7 +5879,8 @@ SCENARIER.vilsegang = {
 
 // rånet på vägen för utlysningarna (steg 11.8.11–12): sällskapet vid ett nytt rövarläger, med en tunika som ägs av ins (eller byns)
 function ranatSallskap(ins: boolean) {
-  const s = SIM.cloneState(testBy(10)), vl = s.varld!, w = vl.mark.w;
+  const s = SIM.cloneState(testBy(10, b => SIM.living(b).filter(p => !p.gast && SIM.ageOf(p, b.now) >= 20 && SIM.ageOf(p, b.now) < 50).length >= 3 && SIM.living(b).filter(p => !p.gast && SIM.ageOf(p, b.now) >= 20).length >= 4)), // tre rånas och en fjärde köper tillbaka
+    vl = s.varld!, w = vl.mark.w;
   const folk = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= 20 && SIM.ageOf(p, s.now) < 50 && !p.gast).slice(0, 3);
   const r = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && SIM.byPlats(vl, x.nr)?.grannar?.length)!;
   const L = SIM.nyttLager(s, vl, r, 10, s.now)!, lp = SIM.byPlats(vl, L.nr)!;

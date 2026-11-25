@@ -1766,6 +1766,7 @@ SCENARIER.gravvard = {
   },
 };
 SCENARIER.stengrav = {
+  lang: true,
   text: 'Steg 10.4.3: stengravarna. Utan tro blir det en gravsten när byn har en huggen sten, och stenen tas när ristningen börjar; en tro går från trä till sten när tyngden räcker, och de stora får en skeppssättning',
   kor: () => {
     const a = medLedare(), s = a.s, d = a.v[1];

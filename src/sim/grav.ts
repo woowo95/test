@@ -619,7 +619,8 @@ gravRedskap.n = (s, p, k) => {
 gravRedskap.ta = (s, p, k): Ting | undefined => {
   if (!gravRedskap.n(s, p, k)) return;
   let bast: { g: Grav; a: GravSak } | undefined;
-  for (const g of s.gravar ?? []) for (const a of g.saker ?? []) if (a.n > 0 && iSlag(a.k, k) && (!bast || (SAKER[a.k]?.rang ?? 0) > (SAKER[bast.a.k]?.rang ?? 0) || a.c > bast.a.c)) bast = { g, a };
+  const rang = (a: GravSak) => SAKER[a.k]?.rang ?? 0;
+  for (const g of s.gravar ?? []) for (const a of g.saker ?? []) if (a.n > 0 && iSlag(a.k, k) && (!bast || rang(a) > rang(bast.a) || (rang(a) === rang(bast.a) && a.c > bast.a.c))) bast = { g, a };
   if (!bast) return;
   const { g, a } = bast;
   a.n--; stada(g); stulen(g, p, a.k, 1); count(s, 'gravstold');

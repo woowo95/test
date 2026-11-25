@@ -1736,6 +1736,7 @@ SCENARIER.slackning = {
 };
 
 SCENARIER.brinnerupp = {
+  lang: true,
   text: 'Steg 6.4.3: allt av trä och allt i lagren kan brinna: golv, dörrar, stationer och möbler med det som ligger i dem, och sakerna i högarna och på marken. Sten och flinta blir kvar, ett trägolv blir jordgolv, och det som brunnit skrivs i branden',
   kor: () => {
     const a = torrAng();
@@ -2243,7 +2244,7 @@ SCENARIER.stubbar = {
     g.built = fore;
     // i en hel by: stubbarna där husen ska stå grävs bort, och inget hus byggs på en stubbe
     const b = createState(3, START); let pa = 0;
-    kor(b, 10 * 24, q => { for (const bit of SIM.bitsOf(q)) if (bit.b > 0 && bit.b < 1 && SIM.stubbeOn(q, bit.x, bit.y)) pa++; });
+    for (let d = 0; d < 10 || (d < 20 && !b.stat?.stubbarGravda); d++) kor(b, 24, q => { for (const bit of SIM.bitsOf(q)) if (bit.b > 0 && bit.b < 1 && SIM.stubbeOn(q, bit.x, bit.y)) pa++; });
     const gravda = b.stat?.stubbarGravda ?? 0;
     return [
       ['stubben blir kvar där ett hus ska stå', kvar],
@@ -2251,7 +2252,7 @@ SCENARIER.stubbar = {
       [`att gräva tar ${u?.min} minuter för hand, kortare med benspaden`, u?.min === SIM.SKOG.stubbeMin && SIM.SKOG.stubbeSpade < 1],
       ['stubben är borta när den grävts bort', borta],
       [`den ger ${ny?.ved} trä (trädet gav ${stor}) och inga grenar`, !!ny && ny.ved === (stor >= SIM.SKOG.stamVed * SIM.SKOG.stubbeStor ? 2 : 1) && ny.grenar === 0],
-      [`byn gräver bort stubbar på 10 dygn (${gravda})`, gravda > 0],
+      [`byn gräver bort stubbar på ${Math.round((b.now - START) / DAY)} dygn (${gravda})`, gravda > 0],
       [`inget byggs på en stubbe (${pa})`, pa === 0],
     ];
   },

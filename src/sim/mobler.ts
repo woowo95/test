@@ -236,6 +236,7 @@ finareKrok.stugaSkap = (s, k) => { if (k !== 'hylla') return 0; const r = sjukRu
 export const stugaVarme = (s: State) => { const r = sjukRum(s); return r && stugaSaknar(s, r).varme && !paborjad(s, 'fyrfat', r) ? r : undefined; };
 // var bädden och hyllan till sjukstugan står: i rummet, när det är den som behövs (en bädd bara när alla andra har en)
 moblerKrok.stugaSite = (s, k) => {
+  if (k !== 'halmbadd' && k !== 'hylla') return undefined;
   const r = sjukRum(s);
   if (!r) return undefined;
   const sak = stugaSaknar(s, r);

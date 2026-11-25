@@ -155,6 +155,8 @@ export function hageKlar(s: State, p: Person, i?: number) {
 // staketet slits av vädret (och djuren i hagen): ibland går en ruta av rutorna rs sönder, med chansen c i timmen (stepHagar
 // räknas en gång i timmen i registret TAKTER, så slitaget är detsamma med korta som med långa slag)
 // Den tjärade rutan slits hälften så mycket (steg 13.5.1): chansen gånger rutornas medel, och rutan väljs efter sin del
+// staketet på rutan i är borta, med sin tjära (steg 13.5.1)
+export function rivStaket(s: State, i: number) { s.staket = (s.staket ?? []).filter(j => j !== i); if (s.tjarat) delete s.tjarat[i]; }
 function slitStaket(s: State, rs: number[], c: number, dt: number) {
   const k = rs.filter(i => harStaket(s, i));
   if (!k.length) return;
@@ -163,7 +165,7 @@ function slitStaket(s: State, rs: number[], c: number, dt: number) {
   let r = rnd(s, 'tamdjur') * sum, j = 0;
   while (j < k.length - 1 && (r -= f[j]) >= 0) j++;
   const i = k[j];
-  s.staket = (s.staket ?? []).filter(j => j !== i); count(s, 'staketSonder');
+  rivStaket(s, i); count(s, 'staketSonder');
 }
 // rutan djuret helst äter på av rutorna rs (geten buskar och ungträd först), eller undefined
 function betesRuta(s: State, d: Tamdjur, rs: number[]) {

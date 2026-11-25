@@ -67,7 +67,7 @@ const iHandenAv = (s: State, p: Person, k: string) => { const r = ryms(s, p), w 
 const stackPa = (s: State, x: number, y: number, k: string) => Math.floor((s.stackar ?? []).filter(q => q.x === Math.floor(x) && q.y === Math.floor(y) && q.k === k).reduce((a, q) => a + q.n, 0) + 1e-9);
 import { allows, amountOf, avbryt, carryKind, iHelaForradet, iRackhall, narmasteMed, fetchSpot, flodUndan, haulJob, isStored, timKvar, zoneAt, zonesOf } from './lager';
 import { BYGG, avail, bedFor, buildJob, siteOf } from './bygg';
-import { type Mjarde, kanVittja, timTillFull } from './fisk';
+import { FALLOR, type Mjarde, kanVittja, timTillFull, trasig } from './fisk';
 import { bitAt, bitsOf, blocked, freeNear, husById, roomAt } from './byggnad';
 import { FOR_SIG, forSig, homeless, samlingRum, varmareInne } from './byggnader';
 import { groundOf, isForest, punktIRuta, tileOf } from './mark';
@@ -476,13 +476,17 @@ flintaKrok.verktyg = flintaTillVerktyg; // flintan till redskapen i förrådsmå
 // bruket (steg 13.9.9, behov.ts): plaggen man skulle ta på sig, och recepten i projekten vars arbete man gör (habitShare över DELA.yrke)
 Object.assign(brukKrok, {
   kladFor, kladPlatser, plaggVill: (s: State, p: Person, k: string) => plaggPoang(s, p, k, undefined) > KLADER.valByte,
-  recept: (_s: State, p: Person) => {
+  recept: (s: State, p: Person) => { // en gång per person och stund: det frågas för varje sak i varje val
+    const c = receptMinne.get(p);
+    if (c && c.now === s.now) return c.ut;
     const tot = habitTotal(p), ut: Record<string, number>[] = [];
     for (const k of PROJEKT_LIST) { const a = PROJEKT[k].arbete, av = a && ((RECEPT as Record<string, { av?: Record<string, number> }>)[a.k ?? k]?.av ?? TILLVERKA[k]?.av); if (av && habitShare(p, [a.act], tot) > DELA.yrke) ut.push(av); }
+    receptMinne.set(p, { now: s.now, ut });
     return ut;
   },
   ravara: (k: string) => (ravaror ??= new Set([...Object.values(RECEPT as Record<string, { av?: Record<string, number> }>), ...Object.values(TILLVERKA), ...Object.values(SAKER).map(d => d!.skaffa ?? {})].flatMap(r => Object.keys((r as { av?: Record<string, number> }).av ?? {})))).has(k),
 });
+const receptMinne = new WeakMap<Person, { now: number; ut: Record<string, number>[] }>();
 let ravaror: Set<string> | undefined; // det som går åt i något recept, räknat när det frågas första gången
 // kolet som eldarna med kol som bränsle (ässjan, fyrfaten) rymmer: det byn vill ha i förrådet av kol (steg 13.8.6)
 kolKrok.eldar = s => { let n = 0; for (const t of stationerOf(s)) { const e = ELDSTATIONER[t.k]; if (e?.bransle === 'kol' && isKlar(t)) n += e.max; } return Math.ceil(n); };
@@ -889,7 +893,7 @@ export const ARBETEN: readonly Arbete[] = [
     if (a < ALDER.vuxen) return false;
     const m = kanVittja(s).filter(q => snartFull(s, q) && !living(s).some(o => o !== p && o.task?.act === 'vittja' && o.task.ref === q.id)).sort((x, y) => Math.hypot(x.x - p.x, x.y - p.y) - Math.hypot(y.x - p.x, y.y - p.y))[0];
     if (!m) return false;
-    set(v, 'vittja', 'Mjärden är snart full.'); v.ref = m.id; v.spot = { x: m.x + 0.5, y: m.y + 0.5 }; v.dur = VAL.vittjaMin * MIN;
+    set(v, 'vittja', trasig(m) ? `${fallNamn(m)} är utsliten och ska tömmas.` : `${fallNamn(m)} är snart full.`); v.ref = m.id; v.spot = { x: m.x + 0.5, y: m.y + 0.5 }; v.dur = VAL.vittjaMin * MIN;
     return true;
   } },
   // vakten på natten hör till Försörjning, efter Rädda (steg 13.8.2)
@@ -934,7 +938,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'vattna', niva: 6, nar: 'dag', poang: c => { if (!dag(c).works) return 0; const d = vattenVal(c.s, c.p, 'odla'); return d ? d.sc : 0; },
     prova: ({ s, p, v }) => hamtaVatten(s, p, v, 'odla') },
   { id: 'vittjaMat', niva: 6, nar: 'dag', poang: c => { if (c.a < ALDER.vuxen || !dag(c).works || !mjardeAttTa(c.s, c.p)) return 0; const d = dag(c); return VAL.mognaVikt + Math.max(d.wBy, d.wEgen) * d.rad.mat.sc; },
-    prova: ({ s, p, v }) => { const m = mjardeAttTa(s, p); if (!m) return false; set(v, 'vittja', 'Mjärden har fisk i sig.'); v.ref = m.id; v.spot = { x: m.x + 0.5, y: m.y + 0.5 }; v.dur = VAL.vittjaMin * MIN; return true; } },
+    prova: ({ s, p, v }) => { const m = mjardeAttTa(s, p); if (!m) return false; set(v, 'vittja', `${fallNamn(m)} har fångat något.`); v.ref = m.id; v.spot = { x: m.x + 0.5, y: m.y + 0.5 }; v.dur = VAL.vittjaMin * MIN; return true; } },
   // kolet i en utbrunnen lägereld och flintan och stenarna till elden är rader med poäng bland maten och veden (steg 10.11.13):
   // kolet efter hur lite elden behöver tändas, flintan efter bristen i förrådsmålet
   { id: 'kol', niva: 6, nar: 'dag', poang: c => { const e = kolEld(c), b = materialBuffert(c.s, 'kol'); return e && b > 0 ? VAL.kolVikt * clamp(1 - amountOf(c.s, 'kol') / b, 0, 1) : 0; }, // efter det som fattas (steg 13.8.6)
@@ -1031,10 +1035,11 @@ function vinnare(c: Ctx, rader: Arbete[]): Arbete[] {
   return ledig ? ut.sort((a, b) => b.x - a.x).map(u => u.r) : [];
 }
 
-// mjärden blir full inom VAL.vittjaTim timmar med den fångst vattnet ger (steg 13.8.3)
+const fallNamn = (m: Mjarde) => FALLOR[m.k ?? 'mjarde'].namnDen;
+// fällan blir full inom VAL.vittjaTim timmar med den fångst vattnet ger (steg 13.8.3)
 const snartFull = (s: State, m: Mjarde) => timTillFull(s, m) < VAL.vittjaTim;
-// den närmaste mjärden med fisk som ingen annan är på väg till
-const mjardeAttTa = (s: State, p: Person) => kanVittja(s).filter(q => (q.k ?? 'mjarde') === 'mjarde' && !living(s).some(o => o !== p && o.task?.act === 'vittja' && o.task.ref === q.id)).sort((x, y) => Math.hypot(x.x - p.x, x.y - p.y) - Math.hypot(y.x - p.x, y.y - p.y))[0];
+// den närmaste fällan med fångst som ingen annan är på väg till
+const mjardeAttTa = (s: State, p: Person) => kanVittja(s).filter(q => !living(s).some(o => o !== p && o.task?.act === 'vittja' && o.task.ref === q.id)).sort((x, y) => Math.hypot(x.x - p.x, x.y - p.y) - Math.hypot(y.x - p.x, y.y - p.y))[0];
 export function chooseTask(s: State, p: Person) { iHelaForradet(() => valjTask(s, p)); } // valet ser hela förrådet (steg 11.1.74)
 function valjTask(s: State, p: Person) {
   if (fangeVal(s, p)) return; // den som sitter i fängelset (steg 11.12.1, fangelse.ts)
@@ -1083,10 +1088,14 @@ function valjTask(s: State, p: Person) {
   }
   const mal = !v.spot && turMal(v as unknown as Task);
   if (mal) v.spot = tandStalle(s, p, mal); // turen går dit målet finns, närmast (steg 12.1.39)
-  const sp0 = v.spot ?? spotFor(s, v.act, p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
-  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, fron: v.fron, hot: v.hot, falt: v.falt, sno: v.sno, ho: v.ho, gava: v.gava, skal: v.skal, hamtar: v.hamtar, lon: v.lon, brand: v.brand, kalla: v.kalla, stanna: v.stanna, eldFor: v.eldFor, pass: v.pass !== undefined ? s.now + v.pass : undefined };
+  const sp0 = v.spot ?? spotFor(s, v.act, p); let sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
   // det som ligger för nära ett gäng man vet om går man inte till (steg B.13, hotKrok i roller.ts): man stannar nära byn. Nöden och faran går före
-  if ((rad?.niva ?? 9) > 2 && hotKrok.plats(s, p, sp.x, sp.y)) { const at = platsIByn(s, p, 'val'); p.task = { act: 'vila', phase: 'go', tx: at.x, ty: at.y, until: s.now + VAL.vilaMin * MIN, carry: 0, why: 'Rövare är nära, stannar i byn', paus: true, dark: !light }; }
+  if ((rad?.niva ?? 9) > 2 && hotKrok.plats(s, p, sp.x, sp.y)) {
+    const at = platsIByn(s, p, 'val');
+    for (const k in v) delete (v as unknown as Record<string, unknown>)[k];
+    Object.assign(v, { act: 'vila', dur: VAL.vilaMin * MIN, why: 'Rövare är nära, stannar i byn', paus: true }); sp = at;
+  }
+  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, fron: v.fron, hot: v.hot, falt: v.falt, sno: v.sno, ho: v.ho, gava: v.gava, skal: v.skal, hamtar: v.hamtar, lon: v.lon, brand: v.brand, kalla: v.kalla, stanna: v.stanna, eldFor: v.eldFor, pass: v.pass !== undefined ? s.now + v.pass : undefined };
   balteForband(s, p, p.task.act);
   if (ACTS[v.act].plats === 'station') { const st = stationFor(s, v.act, p); if (st && Math.hypot(sp.x - vidStation(st).x, sp.y - vidStation(st).y) < 2) stationBrukad(s, st); } // hur mycket stationen används (steg 9.4.8)
   if (v.act === 'samtal' && !v.spot) samtalMed(s, p); // fram till den man vill prata med (steg 4.5.6.7)

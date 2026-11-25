@@ -86,6 +86,8 @@ const freeOf = (s: State, p: Person, k: string) => toolsOf(s, k).filter(t => usa
 // gravgodset (steg 13.1.4): den som saknar ett redskap och tar av andras tar det ur en grav, med samma stöld som annars
 // (grav.ts sätter kroken; n = hur många hen kan ta, ta = tar det bästa och ger tinget)
 export const gravRedskap = { n: (_s: State, _p: Person, _k: string) => 0, ta: (_s: State, _p: Person, _k: string): Ting | undefined => undefined };
+// lediga redskap utan gravgodset: där redskapet bara gör arbetet snabbare eller bättre tar ingen det ur en grav
+export const ledigaRedskap = (s: State, p: Person, k: string) => freeOf(s, p, k).length;
 export const freeTools = (s: State, p: Person, k: string) => freeOf(s, p, k).length || gravRedskap.n(s, p, k);
 // det lediga tinget av slaget k som p helst tar (sitt eget, byns, sist lånat), eller undefined (kälken, fordon.ts)
 export const ledigtTing = (s: State, p: Person, k: string) => freeOf(s, p, k).sort((a, b) => bast(a.k) - bast(b.k) || rank(p, a) - rank(p, b) || b.c - a.c)[0];
