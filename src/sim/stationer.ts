@@ -1433,7 +1433,7 @@ export function ledigPlats(s: State, p: Person) {
   if (!borden.length) return undefined;
   // när det är kallt eller regnar äter och pratar man under tak om det går (Matsal, steg 7.2.8)
   const inneHellre = nederbord(s) || coldOf(temperature(s)) > 0;
-  const tagen = new Set<number>(), andra = living(s).filter(q => q !== p);
+  const tagen = new Set<number>(), andra = [...living(s), ...s.people.filter(q => q.gast?.sort === 'kund')].filter(q => q !== p); // gästerna i företagen sitter också (steg 14.1.11)
   for (const q of andra) if (q.task && VID_BORDET.has(q.task.act)) tagen.add(Math.floor(q.task.ty) * W + Math.floor(q.task.tx));
   let best: { x: number; y: number } | undefined, bd = Infinity;
   const hemma = sovHus(s, p);

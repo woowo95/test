@@ -65,7 +65,8 @@ function gastAkt(s: State, p: Person): Act {
     return h.fas === 'kommer' ? 'gastKommer' : h.fas === 'gar' ? 'gaHem' : 'gastLager';
   }
   if (g.sort === 'besok' && g.fas === 'pratar' && g.gor === 'hjalper') return 'bygga'; // besökaren hjälper byn att bygga (steg 11.13.23)
-  if (g.sort === 'framling' || g.sort === 'besok') return g.fas === 'pratar' ? 'gastVantar' : g.fas === 'gar' ? 'gaHem' : 'gastKommer';
+  if (g.sort === 'kund' && g.fas === 'pratar') return g.gor === 'ko' ? 'koaDisk' : g.gor === 'ater' ? 'maltid' : 'gastVantar'; // vid disken och bordet (steg 14.1.11)
+  if (g.sort === 'framling' || g.sort === 'besok' || g.sort === 'kund') return g.fas === 'pratar' ? 'gastVantar' : g.fas === 'gar' ? 'gaHem' : 'gastKommer';
   return 'gastKommer';
 }
 function satt(s: State, p: Person, act: Act) {

@@ -2,7 +2,7 @@ import { tecknet } from '../ikoner';
 import { styck } from '../sim/ord';
 import { rovarFlockar } from '../sim/rovare';
 import { kartKampe } from './stridbild';
-import { ROVARHANDLINGAR, type RovarGor, hp, gastLever, gastTingOf, TEK, HANDEL, HANDLAR_UTR, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, rovarna, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
+import { RANG, ROVARHANDLINGAR, type RovarGor, hp, gastLever, gastTingOf, TEK, HANDEL, HANDLAR_UTR, byId, gillar, handlarPerson, foddNar, gastLiv, gastNyckel, handlarFas, handlarPlats, rovarPlats, rovarna, klanById, grundvarde, handlarVarde, kgOf, kortTal, rymmer, sakNamn } from '../sim';
 import type { ByteMinne, GastLiv, GastRel, Person, Roll, State } from '../sim';
 import { iconImg } from '../ikoner';
 import { esc } from './hjalp';
@@ -83,6 +83,18 @@ export const GASTER: ((s: State, t: number) => Gast[])[] = [
       gor: g.fas === 'pratar' ? 'Pratar med ledaren' : g.fas === 'gar' ? 'Går vidare' : 'På väg mot byn',
       fran: k ? `${k.namn} vid ${k.hem}` : undefined,
       rader: g.tek ? [{ namn: 'Kan', varde: esc(TEK[g.tek]?.namn ?? g.tek), title: 'Det främlingen kan som ingen i byn kan' }] : [],
+      liv: livFor(s, g.klan, p.name, p.sex, 'gast', p.born),
+    };
+  }),
+  // företagens gäster (steg 14.1.11, foretagsgast.ts)
+  s => s.people.filter(p => p.gast?.sort === 'kund' && gastLever(p)).map(p => {
+    const g = p.gast!, k = klanById(s, g.klan), f = s.foretag?.find(q => q.id === g.mal);
+    return {
+      id: p.id, namn: p.name, sex: p.sex, sort: RANG[g.rang ?? 'vanlig'].namn, ...rovarPlats(p, ui.nu), p,
+      gor: g.fas === 'pratar' ? g.gor === 'ko' ? 'Väntar vid disken' : g.gor === 'ater' ? 'Äter vid bordet' : 'Ser sig om' : g.fas === 'gar' ? 'Går hem' : `På väg till ${f?.namn ?? 'byn'}`,
+      fran: k ? `${k.namn} vid ${k.hem}` : undefined,
+      rader: [{ namn: 'Silver', varde: `${iconImg('silver', 12)}${g.silver ?? 0}`, title: 'Silvret gästen har med sig' },
+        ...Object.keys(g.kop ?? {}).length ? [{ namn: 'Köpt', varde: Object.entries(g.kop!).map(([q, n]) => `<span title="${esc(sakNamn(q))}">${iconImg(q, 12)}${n > 1 ? n : ''}</span>`).join(' '), title: 'Det gästen köpt och bär hem' }] : []],
       liv: livFor(s, g.klan, p.name, p.sex, 'gast', p.born),
     };
   }),

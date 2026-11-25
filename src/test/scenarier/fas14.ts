@@ -378,3 +378,47 @@ SCENARIER.foretagsrykte = {
     ];
   },
 };
+
+SCENARIER.foretagsgast = {
+  text: 'Steg 14.1.11: grannbyarnas folk kommer till företagen efter relationen och ryktet (finare med gott rykte, aldrig från en ovän), köper vid disken som kunder, och hur de blev bemötta ändrar relationen',
+  kor: () => {
+    const { s, p, f, r, disk, fin } = foretagBy(), k = SIM.klanerOf(s).find(q => q.rad !== undefined)!, rad = s.varld!.rader!.find(q => q.nr === k.rad)!;
+    for (const q of SIM.living(s)) q.task = undefined;
+    k.inst = 0; const neutral = SIM.lockar(f, k), finN = SIM.finChans(f, k);
+    k.inst = 60; const van = SIM.lockar(f, k); k.inst = -15; const lite = SIM.lockar(f, k), finL = SIM.finChans(f, k); k.inst = -60; const ovan = SIM.lockar(f, k); k.inst = 0;
+    f.byar = { [k.rad!]: { v: 1, n: 3 } }; const gott = SIM.lockar(f, k), finG = SIM.finChans(f, k); f.byar = undefined;
+    const ut = [SIM.klanerOf(s).filter(q => q.rad === undefined).every(q => SIM.lockar(f, q) === 0)];
+    // gästen kommer, ställer sig i kön, köper, äter och går hem
+    s.finhet = { ...s.finhet, [SIM.rumNyckel(r)]: 0.5 };
+    rad.tal.silver = 200; const s0 = rad.tal.silver;
+    const g = SIM.nyForetagsgast(s, f, k, 'rik')!, medSig = g.gast!.silver!, ur = s0 - rad.tal.silver, kom = { x: g.x, y: g.y };
+    const vanlig = SIM.nyForetagsgast(s, f, k, 'vanlig')!, forv = [vanlig.finForv!, g.finForv!], silv = [vanlig.gast!.silver!, medSig];
+    SIM.gastHemIgen(s, vanlig);
+    const o = SIM.koPlats(s, disk); g.x = o.x; g.y = o.y; g.hunger = 0.4;
+    for (let i = 0; i < 5 && g.gast!.gor !== 'ko'; i++) SIM.foretagsgastSteg(s, 1);
+    const iko = f.ko?.some(q => q.p === g.id) ?? false, varor0 = SIM.ownsId(s, p.id, fin), agSilver0 = SIM.ownsAmount(s, p, 'silver');
+    const ro = f.ko?.find(q => q.p === g.id); let kopt = false;
+    if (ro) { p.task = { act: 'betjana', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', ref: f.id }; const v = SIM.vidStation(disk); p.x = v.x; p.y = v.y; SIM.use(s, undefined, ro.k, 1, true, p.id); p.task.items = { [ro.k]: 1 }; p.task.ag = { [ro.k]: { [p.id]: 1 } }; SIM.betjanaKlar(s, p, p.task); p.task = undefined; kopt = !!g.gast!.gjort; }
+    const betalt = medSig - g.gast!.silver!, fick = SIM.ownsAmount(s, p, 'silver') - agSilver0, ater = g.gast!.gor, bem = g.gast!.bemott?.v ?? 0;
+    const inst0 = k.inst; SIM.gastHemIgen(s, g); const instG = k.inst, kvarS = rad.tal.silver, borta = !s.people.includes(g), ryktG = SIM.ryktetI(f, k.rad!);
+    // den som får vänta förgäves går missnöjd; hövdingens dåliga bemötande väger mest
+    const missnojd = (rang: 'vanlig' | 'hovding') => { if (!k.personer.some(q => /hövding/i.test(q.roll))) k.personer.push({ namn: 'Alvhild', sex: 'k', roll: 'hövding' }); k.inst = 0; const h = SIM.nyForetagsgast(s, f, k, rang)!; h.gast!.bemott = { v: -1, n: 1 }; SIM.gastHemIgen(s, h); return k.inst; };
+    const v1 = missnojd('vanlig'), v2 = missnojd('hovding');
+    k.inst = 0; const h = SIM.nyForetagsgast(s, f, k, 'vanlig')!; h.x = o.x; h.y = o.y; for (let i = 0; i < 5 && h.gast!.gor !== 'ko'; i++) SIM.foretagsgastSteg(s, 1);
+    s.now += SIM.KASSA.tal * 60000 + 1000; SIM.foretagsgastSteg(s, 1); const gick = h.gast!.fas === 'gar', miss = h.gast!.bemott?.v ?? 0;
+    // utan företag kommer ingen
+    const n0 = s.people.length; s.foretag = []; for (let i = 0; i < 100; i++) SIM.foretagsgasterKommer(s, 3600); const inga = s.people.length === n0;
+    return [
+      [`en vän kommer oftare (${van.toFixed(2)}) än en neutral (${neutral.toFixed(2)}) och en som tycker lite illa (${lite.toFixed(2)}); en ovän aldrig (${ovan})`, van > neutral && neutral > lite && lite > 0 && ovan === 0 && ut[0]],
+      [`gott rykte drar inte så mycket fler (${gott.toFixed(2)}) men finare gäster (${finN.toFixed(2)} → ${finG.toFixed(2)}), och från den som tycker illa inga fina (${finL})`, gott > neutral && gott < neutral * 1.5 && finG > finN * 2 && finL === 0],
+      [`den rika gästen har mer silver (${silv.join(' mot ')}) och väntar sig finare (${forv.map(x => x.toFixed(2)).join(' mot ')}); silvret kommer ur hembyn (${ur})`, silv[1] > silv[0] && forv[1] > forv[0] && ur === medSig],
+      [`gästen kommer från kanten (${kom.x.toFixed(0)}, ${kom.y.toFixed(0)}) och ställer sig i kön (${iko})`, iko],
+      [`köper vid disken: betalar ${betalt} silver, ägaren får ${fick}, och sätter sig (${ater})`, kopt && betalt >= 1 && fick === betalt && ater === 'ater'],
+      [`varan är borta (${varor0} → ${SIM.ownsId(s, p.id, fin)})`, SIM.ownsId(s, p.id, fin) === varor0 - 1],
+      [`hemma igen: silvret som blev över i raden (${kvarS}), relationen upp (${inst0} → ${instG}) efter bemötandet (${bem.toFixed(2)}), och byn hör (${ryktG.toFixed(2)})`, borta && kvarS === s0 - betalt && instG > inst0 && bem > 0 && ryktG > 0],
+      [`hövdingens dåliga bemötande sänker mer (${v2}) än den vanliga gästens (${v1})`, v1 < 0 && v2 < v1],
+      [`den som fått vänta för länge går missnöjd (${miss})`, gick && miss < 0],
+      ['utan företag kommer ingen', inga],
+    ];
+  },
+};

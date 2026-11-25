@@ -379,13 +379,13 @@ const DEF = {
   bjornjakt: { namn: 'Jagar björn', slag: 'jaga', ger: 'bjorn', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 6.6.6 (bjorn.ts): en stor grupp med spjut, och den fällda björnen styckas och bärs hem
   vargjakt: { namn: 'Jagar varg', slag: 'jaga', ger: 'varg', tungt: true, fortsatter: ['brand', 'tornado', 'varg'] as const }, // steg 3.7.1 (varg.ts): ledaren samlar jägare, och den fällda vargen bärs hem
   // gästernas egna handlingar (steg 9.2.113, gastvardag.ts): sorten är kravet
-  gastKommer: { namn: 'Går till byn', tecken: '🚶', gast: ['handlare', 'rovare', 'framling', 'folje', 'besok'] as const },
+  gastKommer: { namn: 'Går till byn', tecken: '🚶', gast: ['handlare', 'rovare', 'framling', 'folje', 'besok', 'kund'] as const },
   gastLager: { namn: 'Sitter i lägret', tecken: '🔥', stilla: true, gast: ['folje'] as const }, // karavanens följe utanför byn (steg 11.11.6, handel.ts)
-  gastVantar: { namn: 'Väntar', tecken: '🕓', stilla: true, gast: ['handlare', 'rovare', 'framling', 'besok'] as const },
+  gastVantar: { namn: 'Väntar', tecken: '🕓', stilla: true, gast: ['handlare', 'rovare', 'framling', 'besok', 'kund'] as const },
   gastHandla: { namn: 'Handlar vid filten', slag: 'prata', stilla: true, gast: ['handlare'] as const },
   plundra: { namn: 'Plundrar byn', tecken: '💰', gast: ['rovare'] as const },
   gastFly: { namn: 'Flyr från byn', tecken: '🏃', gast: ['rovare', 'framling'] as const },
-  gaHem: { namn: 'Går hem', tecken: '🚶', gast: ['handlare', 'rovare', 'framling', 'folje', 'fange', 'besok'] as const },
+  gaHem: { namn: 'Går hem', tecken: '🚶', gast: ['handlare', 'rovare', 'framling', 'folje', 'fange', 'besok', 'kund'] as const },
   fangeVantar: { namn: 'Har gett upp', tecken: '🏳️', ikon: 'fangelse', stilla: true, gast: ['fange'] as const }, // steg 11.12.6 (rovare.ts): väntar på hur striden slutar
   skrika: { namn: 'Skriker och gråter', tecken: '😭', ikon: 'utb1', dygn: true, stilla: true }, // barnens (steg 3.2.4)
 } satisfies Record<string, ActDef>;

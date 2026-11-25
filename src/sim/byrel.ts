@@ -19,7 +19,7 @@ export const BYREL = balans('byrel', {
   slaktTak: 30, // ... högst så mycket
   moderby: 3, // en by och dess moderby har så många släktband från början
   // verkan av handlingarna i BYHANDELSER
-  handel: 2, gava: 1, turne: 5, besked: 3, ovanligt: 6, mottagen: 3, bortvisad: 6,
+  handel: 2, gava: 1, turne: 5, besked: 3, ovanligt: 6, mottagen: 3, bortvisad: 6, bemott: 2, illaBemott: 3,
   lurad: 10, ran: 10, plundring: 20, dodade: 15, skandad: 5, bruten: 25, slappt: 6, avrattad: 20,
   turneMinns: 6, // en by minns den från huvudbyn som uppträtt där så många dygn (år i spelet), och dess handlare talar om hen så länge (steg 11.8.18)
 });
@@ -34,6 +34,8 @@ export const BYHANDELSER = {
   ovanligt: { namn: 'ovänligt besked', tal: 'ovanligt', tecken: -1 },
   mottagen: { namn: 'mottagen främling', tal: 'mottagen', tecken: 1 },
   bortvisad: { namn: 'bortvisad främling', tal: 'bortvisad', tecken: -1 },
+  bemott: { namn: 'väl bemött gäst', tal: 'bemott', tecken: 1 }, // företagens gäster (steg 14.1.11, foretagsgast.ts)
+  illaBemott: { namn: 'illa bemött gäst', tal: 'illaBemott', tecken: -1 },
   lurad: { namn: 'lurad i handeln', tal: 'lurad', tecken: -1 },
   ran: { namn: 'rån', tal: 'ran', tecken: -1 },
   plundring: { namn: 'plundring', tal: 'plundring', tecken: -1 },

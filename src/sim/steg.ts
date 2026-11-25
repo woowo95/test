@@ -14,6 +14,7 @@ import { branningKlar, branningSteg, passaKlar } from './brann';
 import { jarngruvorSteg } from './gruva';
 import { smidaKlar } from './jarnsaker';
 import { stenBruten } from './byggsten';
+import { foretagsgastSteg, foretagsgasterKommer } from './foretagsgast';
 import { GASTVARD, gastVardag } from './gastvardag';
 import { husKlaraTimme } from './bygg';
 import { personHand } from './personlogg';
@@ -460,6 +461,7 @@ export const TAKTER: Takt[] = [
   { namn: 'björnen', sek: 0, fn: s => bjornSteg(s) }, // den som kommer nära björnen (bjorn.ts, steg 6.6.5)
   { namn: 'rövarna', sek: 0, fn: (s, dt, c) => rovarSteg(s, dt, c.events) }, // rövarflocken (rovare.ts, steg 4.4.5)
   { namn: 'främlingen', sek: 0, fn: (s, dt) => framlingSteg(s, dt) }, // som kommer gående (liv.ts, steg 9.2.115)
+  { namn: 'företagens gäster', sek: 0, fn: (s, dt) => foretagsgastSteg(s, dt) }, // går, köper och går hem (foretagsgast.ts, steg 14.1.11)
   { namn: 'besökarna', sek: 0, fn: (s, dt) => besokSteg(s, dt) }, // huvudbyns resenärer i en väckt by (vacktgast.ts, steg 11.13.10)
   { namn: 'tornadon', sek: 0, fn: s => tornadoSteg(s, { rovarTornado, handlarTornado, handlarPlats }) }, // drar fram (tornado.ts, steg 3.8.4), och rövarna och handlaren drabbas (steg 6.4.12)
   { namn: 'blixten', sek: 3600, fn: s => blixtTimme(s) }, // blixten nära byn (brand.ts, steg 12.1.107)
@@ -526,6 +528,7 @@ export const TAKTER: Takt[] = [
   { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); lonDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
   { namn: 'kassan', sek: 30, fn: s => { if (s.foretag?.length) kassaTakt(s); } }, // den som kan betjäna kallas till disken (kassa.ts, steg 14.1.6)
   { namn: 'företagen', sek: 3600, fn: s => { foretagTimme(s); } }, // företagens hus och ägare (foretag.ts, steg 14.1.5)
+  { namn: 'företagens gäster kommer', sek: 3600, fn: (s, dt) => foretagsgasterKommer(s, dt) }, // steg 14.1.11
   { namn: 'företagens dygn', sek: 86400, fas: (SKATT.timme + 1) / 24, fn: s => { foretagDygn(s); } }, // nya företag, efter skatten och lönerna
   { namn: 'rädslan', sek: 86400, fas: STR.timme / 24, fn: (s, dt) => { raddDygn(s, dt); } }, // rädslan för handlingar bleknar och berättas vidare, också i en by utan ledare (radsla.ts, steg 12.1.60 och 12.1.84)
   { namn: 'gravDygn', sek: 86400, fas: 0.37, fn: s => { gravDygn(s); } }, // gravarna som vuxit igen helt (steg 10.4.8)

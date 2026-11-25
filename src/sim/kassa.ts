@@ -7,6 +7,7 @@ import { MIN, W, type Person, type State, type Task } from './typer';
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, count, familjOf, forstaGang, living, log } from './folk';
 import { ACTS } from './handlingar';
+import { gastLever } from './gast';
 import { kanGa } from './halsa';
 import { BYN } from './egendom';
 import { blocked, husById } from './byggnad';
@@ -89,18 +90,32 @@ function betalar(varor: Betalvaror, G: Part, pris: number) {
   return bast;
 }
 // ---------- kunden ----------
-import { hyllan, taVaran, vilMangd } from './affar';
+import { hyllan, type HyllVara, taVaran, vilMangd } from './affar';
 import { ryms } from './utrustning';
 export interface Erbjudande { n: number; f: Foretag; v: string; k: string; pris: number; net: number; disk: Station }
+// gästen som kund (foretagsgast.ts, steg 14.1.11): hen har sitt silver hos sig och bär det hen köper
+export const gastKund = {
+  part: (_s: State, _p: Person): Part => ({ id: _p.id, namn: _p.name, x: _p.x, y: _p.y, varde: () => 1, over: () => [] }),
+  noje: (_s: State, _p: Person, _v: string, _k: string) => 0,
+  mangd: (_s: State, _p: Person, _h: HyllVara) => 0,
+  betalar: (_s: State, _f: Foretag, _p: Person, _betal: Vara[]) => {},
+  far: (_s: State, _f: Foretag, _p: Person, _h: HyllVara, _n: number) => {},
+  at: (_s: State, _p: Person, _k: string) => {},
+  klar: (_s: State, _p: Person, _v: string, _sitter: boolean) => {},
+};
+const kundPart = (s: State, p: Person) => p.gast ? gastKund.part(s, p) : personPart(s, p);
+const kundNoje = (s: State, p: Person, v: string, k: string) => p.gast ? gastKund.noje(s, p, v, k) : VERKSAMHETER[v].noje(s, p, k);
 // vad kunden p tycker om företaget utöver varan (finheten mot förväntan, ryktet: steg 14.1.9 och 14.1.10 lägger till)
 export const tycker: ((s: State, p: Person, f: Foretag, v: string) => number)[] = [];
 // det bästa p kan köpa av verksamheten v nu, om det är mer värt för hen än det kostar
-export function kundVal(s: State, p: Person, v: string): Erbjudande | undefined {
+export const kundVal = (s: State, p: Person, v: string): Erbjudande | undefined => erbjudandet(s, p, v);
+// bara = bara det företaget (gästen som kommit dit)
+export function erbjudandet(s: State, p: Person, v: string, bara?: Foretag): Erbjudande | undefined {
   if (!s.foretag?.length) return undefined;
   let bast: Erbjudande | undefined, M: Part | undefined;
   const ville: Foretag[] = [];
   for (const f of s.foretag) {
-    if (!f.verk.includes(v) || f.ag === p.id || !oppna(s, f).includes(v)) continue;
+    if (bara && f !== bara || !f.verk.includes(v) || f.ag === p.id || !oppna(s, f).includes(v)) continue;
     const disk = diskarAv(s, f)[0];
     if (!disk) continue;
     const d = Math.hypot(disk.x - p.x, disk.y - p.y);
@@ -110,10 +125,10 @@ export function kundVal(s: State, p: Person, v: string): Erbjudande | undefined 
     const om = tycker.reduce((a, g) => a + g(s, p, f, v), 0) - d * KASSA.vag - (f.ko?.length ?? 0) * KASSA.koNet;
     let varor: Betalvaror | undefined;
     for (const k of varorAv(s, f, v, G)) {
-      M ??= personPart(s, p);
+      M ??= kundPart(s, p);
       const n = VERKSAMHETER[v].hylla ? kopMangd(s, p, f, k) : 1;
       if (n < 1) continue;
-      const kv = kvAv(s, f, v, k), far = n * kv * ((VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * M.varde(k)) + VERKSAMHETER[v].noje(s, p, k)) + om, pris = prisAv(s, f, v, k, G, n);
+      const kv = kvAv(s, f, v, k), far = n * kv * ((VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * M.varde(k)) + kundNoje(s, p, v, k)) + om, pris = prisAv(s, f, v, k, G, n);
       if (far > 0 && !ville.includes(f)) ville.push(f);
       if (far <= (bast?.net ?? 0)) continue;
       varor ??= betalVaror(M, G, []);
@@ -132,6 +147,7 @@ export const fragat: ((s: State, p: Person, f: Foretag, v: string, valde: boolea
 function kopMangd(s: State, p: Person, f: Foretag, k: string) {
   const h = hyllan(s, f).find(q => q.k === k), r = ryms(s, p);
   if (!h) return 0;
+  if (p.gast) return gastKund.mangd(s, p, h);
   const max = Math.min(h.n, vilMangd(s, p, k));
   if (h.t) return max;
   let n = 0;
@@ -146,7 +162,7 @@ export function stallIKo(s: State, p: Person, e: Erbjudande) {
   ko.push({ p: p.id, v: e.v, k: e.k, n: e.n, t: s.now });
   return { spot: koPlats(s, e.disk, ko.flatMap(r => { const q = r.p !== p.id && byId(s, r.p), tk = q && q.task; return tk ? [{ x: tk.tx, y: tk.ty }] : []; })), dur: KASSA.tal * MIN, ref: e.f.id, why: `Går till ${e.f.namn}` };
 }
-const iKo = (p: Person | undefined, f: Foretag, now: number, r: KoRad) => !!p && alive(p) && (r.t === now || p.task?.act === 'koaDisk' && p.task.ref === f.id);
+const iKo = (p: Person | undefined, f: Foretag, now: number, r: KoRad) => !!p && (alive(p) || gastLever(p)) && (r.t === now || p.task?.act === 'koaDisk' && p.task.ref === f.id);
 function rensaKo(s: State, f: Foretag) { if (f.ko?.length) f.ko = f.ko.filter(r => iKo(byId(s, r.p), f, s.now, r)); }
 const framme = (s: State, f: Foretag) => (f.ko ?? []).filter(r => byId(s, r.p)?.task?.phase === 'do');
 // den som väntat för länge går (KLAR i steg.ts)
@@ -206,22 +222,26 @@ export function betjanaKlar(s: State, q: Person, t: Task) {
 }
 // kunden p betalar och får det hen vill ha. Svarar med sant om köpet blev av
 export function kopVid(s: State, f: Foretag, p: Person, r: KoRad, at: Person): boolean {
-  const V = VERKSAMHETER[r.v], G = saljPart(s, f), M = personPart(s, p), t = V.vatska ? karl(s, f, r.k) : undefined;
+  const V = VERKSAMHETER[r.v], G = saljPart(s, f), M = kundPart(s, p), t = V.vatska ? karl(s, f, r.k) : undefined;
   p.task = undefined;
   const fel = () => { for (const g of omdome) g(s, p, f); count(s, 'koUtan'); return false; };
   if (V.ats && iRackhall(at.x, at.y, () => ownsId(s, f.ag, r.k)) < 1) return fel(); // maten kom aldrig fram
   if (!G || (V.vatska ? !t : !varorAv(s, f, r.v, G).includes(r.k))) return fel(); // slut
   const h = V.hylla ? hyllan(s, f).find(q => q.k === r.k) : undefined, n = h ? Math.min(r.n, h.n) : 1;
-  const pris = prisAv(s, f, r.v, r.k, G, n), kv = kvAv(s, f, r.v, r.k), far = n * kv * ((V.grund?.(r.k) ?? grundvarde(r.k) * M.varde(r.k)) + V.noje(s, p, r.k)), b = betalar(betalVaror(M, G, []), G, pris);
+  const pris = prisAv(s, f, r.v, r.k, G, n), kv = kvAv(s, f, r.v, r.k), far = n * kv * ((V.grund?.(r.k) ?? grundvarde(r.k) * M.varde(r.k)) + kundNoje(s, p, r.v, r.k)), b = betalar(betalVaror(M, G, []), G, pris);
   if (!b) return fel();
+  const betala = () => { if (p.gast) gastKund.betalar(s, f, p, b.betal); else for (const w of b.betal) flytta(s, w, M, G); };
   if (h) {
-    for (const w of b.betal) flytta(s, w, M, G);
-    taVaran(s, f, p, h, n);
+    betala();
+    if (p.gast) gastKund.far(s, f, p, h, n); else taVaran(s, f, p, h, n);
   } else if (t) {
-    for (const w of b.betal) flytta(s, w, M, G);
+    betala();
     t.inne!.n -= 1; if (t.inne!.n <= 0) t.inne = undefined;
     drickAlkohol(s, p, r.k as never, true);
     p.torst = Math.min(1, p.torst + (dryckAv(r.k)?.slacker ?? 0));
+  } else if (p.gast) { // gästen äter det vid bordet
+    betala();
+    iRackhall(at.x, at.y, () => use(s, at, r.k, 1, true, f.ag)); gastKund.at(s, p, r.k);
   } else {
     const fatt: Vara[] = [{ k: r.k, n: 1 }];
     genomfor(s, M, G, fatt, b.betal, r.v);
@@ -234,7 +254,8 @@ export function kopVid(s: State, f: Foretag, p: Person, r: KoRad, at: Person): b
   if (forstaGang(s, 'foretagSalt')) log(s, `${p.name} blev den första kunden: ${f.namn}.`, 'world', [p.id]);
   for (const g of omdome) g(s, p, f, { v: r.v, far, net: far - b.kost, kv, vantat: (s.now - r.t) / MIN });
   // kunden sätter sig vid ett bord i rummet med det hen köpt
-  if (V.ats || t) {
+  if (p.gast) gastKund.klar(s, p, r.v, !!(V.ats || t));
+  else if (V.ats || t) {
     const plats = ledigPlats(s, p) ?? { x: p.x, y: p.y };
     p.task = { act: 'maltid', phase: 'go', tx: plats.x, ty: plats.y, until: s.now + KASSA.ata * MIN, carry: 0, why: `Äter och dricker: ${f.namn}` };
   }
