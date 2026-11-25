@@ -2,12 +2,23 @@
 // som var med, hur länge den varade, utgången och vad som hände var och en. Skriver JSON (används av strid.ts)
 import './utc';
 import { korBy } from './kor';
-import { ALDER, HALSA, ageOf, living, stridProv } from '../sim';
+import { ALDER, HALSA, ageOf, isLight, living, rovarProv, stridProv, type Rovarflock } from '../sim';
 const [seed, dagar] = process.argv.slice(2).map(Number);
 const rader: Record<string, unknown>[] = [];
 const saren: { rad: Record<string, unknown>; pid: number; t: number }[] = []; // de som lever med sår när striden är slut: förblöder de efteråt?
 // försöken (anfallen) och hur de gick, utan kast och skott
 const FORSOK = ['traff', 'tog', 'miss', 'parera', 'duck', 'knuff', 'omkull'];
+// inspelningen (steg B.56): en bild varje gång stridens tid passerar en hel femsekund, i striderna med rövare: [tid, kämparna]
+const BILD = 5, bilder = new WeakMap<object, [number, [number, number, string, number, number][]][]>();
+stridProv.steg = (_s, m) => {
+  if (m.efter?.typ !== 'rovare') return;
+  const l = bilder.get(m) ?? []; bilder.set(m, l);
+  if (l.length && Math.floor(m.st.t / BILD) <= Math.floor(l[l.length - 1][0] / BILD)) return;
+  l.push([m.st.t, m.st.kampar.map(k => [k.id, k.sida, k.lage, +k.x.toFixed(1), +k.y.toFixed(1)])]);
+};
+// gängen (steg B.56): tiden från att det kom tills det sågs, tills alla var framme och till anfallet, i sekunder i verkligheten
+const gang: Rovarflock[] = [];
+rovarProv.kom = f => { gang.push(f); };
 stridProv.slut = (s, m) => {
     const st = m.st, vuxna = living(s).filter(p => !p.gast && ageOf(p, s.now) >= ALDER.vaktFran).length;
     const sida = (n: 0 | 1) => st.kampar.filter(k => k.sida === n);
@@ -30,11 +41,13 @@ stridProv.slut = (s, m) => {
     for (const k of st.kampar) { const p = k.pid !== undefined ? s.people.find(q => q.id === k.pid) : undefined; if (p && p.died === undefined && p.skador?.length) saren.push({ rad: {}, pid: p.id, t: s.now }); }
     const tunga = st.logg.filter(x => x.h === 'traff' && x.sl && !x.kast && (x.g ?? 0) >= 0.2).length; // de riktiga slagen: de som ger mer än en skråma
     const langd = st.slut?.t ?? st.t;
-    const rad = { t0: s.now - langd * 1000, t1: s.now, tunga, sort, forsok, slut: [slut(0), slut(1)], efter: 0, dag: +((s.now - s.founded) / 86400000).toFixed(1), orsak, vinnare: st.slut?.vinnare ?? -1, sek: Math.round(st.slut?.t ?? st.t), vuxna, kom, by: per(0), mot: per(1), h };
+    const rad = { t0: s.now - langd * 1000, t1: s.now, tunga, sort, forsok, slut: [slut(0), slut(1)], efter: 0, dag: +((s.now - s.founded) / 86400000).toFixed(1), orsak, vinnare: st.slut?.vinnare ?? -1, sek: Math.round(st.slut?.t ?? st.t), vuxna, kom, by: per(0), mot: per(1), h, ...(bilder.has(m) ? { bilder: bilder.get(m) } : {}) };
     for (const x of saren) if (x.t === s.now && !Object.keys(x.rad).length) x.rad = rad;
     rader.push(rad);
 };
 const r = korBy(seed, dagar);
 for (const x of saren) { const p = r.s.people.find(q => q.id === x.pid); if (p?.died !== undefined && p.died - x.t < 86400000 && p.cause === 'blod') (x.rad as { efter: number }).efter++; } // förblödde inom ett dygn (ett år i spelet) efter striden
 const st = r.s.stat ?? {}, anfall = { n: st.rovarGarTill ?? 0, sedd: st.rovarGarTillSedd ?? 0, dag: st.rovarGarTillDag ?? 0, dagSedd: st.rovarGarTillDagSedd ?? 0 }; // hur ofta gänget sågs innan det anföll
-console.log(JSON.stringify({ seed, pop: r.n.pop, rader, anfall, vakter: r.vakter.length, larm: r.vakter }));
+const efter = (f: Rovarflock, t?: number) => t === undefined ? undefined : Math.round((t - f.kom!) / 1000);
+const gangen = gang.map(f => ({ n: f.antal ?? f.folk.length, sedd: efter(f, f.sedd), framme: efter(f, f.frammeT), anfall: efter(f, f.anfallT), dag: f.anfallT !== undefined && isLight(f.anfallT) }));
+console.log(JSON.stringify({ seed, pop: r.n.pop, rader, gangen, anfall, vakter: r.vakter.length, larm: r.vakter }));

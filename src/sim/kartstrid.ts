@@ -244,7 +244,7 @@ export function kartStridSteg(s: State, dtSec: number) {
       }
       skiljSteg(s, g);
       const n0 = st.logg.length;
-      iVarlden(v, () => stridSteg(st));
+      iVarlden(v, () => stridSteg(st)); stridProv.steg?.(s, g);
       if (stridBild.pa) tillBilden(g, n0);
       // ... och efter det
       for (const k of st.kampar) {
@@ -300,7 +300,7 @@ function avslutad(s: State, g: KartStrid, vinnare: 0 | 1 | -1) {
   s.kartStrider = s.kartStrider!.filter(x => x !== g);
 }
 // för mätningen av striderna (npm run strid): varje strid som är slut, innan följderna (läses aldrig av spelet)
-export const stridProv: { slut?: (s: State, g: KartStrid) => void } = {};
+export const stridProv: { slut?: (s: State, g: KartStrid) => void; steg?: (s: State, g: KartStrid) => void } = {};
 function kartStridSlut(s: State, g: KartStrid) {
   stridProv.slut?.(s, g);
   const st = g.st, lek = lekAv(st.avsikt), vinnare = st.slut!.vinnare;
