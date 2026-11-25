@@ -339,7 +339,7 @@ export interface Kampe {
   x: number; y: number; // rutor (med decimaler)
   skador: { d: Kroppsdel; k: SkadaTyp; g: number; ny: number; fast?: 1; av?: 1; ont?: number }[]; // ont = slagets grad i brottningen, där det gör ont utan att bli ett sår (steg B.63). av = delen höggs av (olyckshugget, steg 9.5.22) // ny = öppet sår som blöder (1) eller levrat (0), fast = ett spjut sitter kvar
   blod: number; ork: number; modNu: number; lage: KampeLage;
-  overraskad?: number; /* den som inte sett sin anfallare komma (steg B.30): så många sekunder till innan hen märker det, om ingen slår henne eller honom först */ vant: number; platsV?: { m: number; i: number }; /* platsen vid målet m som hen går till (steg B.34) */ runtSida?: 1 | -1; /* åt det håll hen senast gick runt någon (steg B.20) */ oppning?: number; kastVant?: number; mal?: number; backar?: true; // sekunder till nästa slag, sedan väntan på en öppning hos den som står och slåss (STRID.glesare) och för nästa kast in i en närstrid, målet, och om hen backar undan för att hämta andan
+  runtP?: { x: number; y: number; mal?: number }; /* punkten på vägen runt dem som står i vägen */ overraskad?: number; /* den som inte sett sin anfallare komma (steg B.30): så många sekunder till innan hen märker det, om ingen slår henne eller honom först */ vant: number; platsV?: { m: number; i: number }; /* platsen vid målet m som hen går till (steg B.34) */ runtSida?: 1 | -1; /* åt det håll hen senast gick runt någon (steg B.20) */ oppning?: number; kastVant?: number; mal?: number; backar?: true; // sekunder till nästa slag, sedan väntan på en öppning hos den som står och slåss (STRID.glesare) och för nästa kast in i en närstrid, målet, och om hen backar undan för att hämta andan
   slag: number; traffar: number; gjort: number; // för rapporten: slag, träffar och summan av skadornas grad
   reserv?: Vapen; skott?: number; // steg 3.7.7: reservvapnet i bältet och kasten som är kvar
   haller?: true; vantar?: true; ifatt?: true; vada?: number; // håller avståndet, väntar på fritt läge, blev ifattsprungen utan reserv, vådaträffar
@@ -547,6 +547,11 @@ function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number, vrid = V
   let dx = mx - k.x, dy = my - k.y, d = Math.hypot(dx, dy);
   if (d < 1e-6) return;
   const fi = ivagen(st, k, mx, my);
+  if (k.runtP && k.runtP.mal === k.mal && k.lage !== 'flykt') { // på väg runt: till punkten på vägen innan hen går rakt på igen
+    const q = k.runtP, qd = Math.hypot(q.x - k.x, q.y - k.y), ql = Math.min(langd, qd), qx = k.x + (q.x - k.x) / qd * ql, qy = k.y + (q.y - k.y) / qd * ql;
+    if (qd > 0.1 && fri(st, k, qx, qy, fi, mx, my)) { k.x = qx; k.y = qy; return; }
+  }
+  k.runtP = undefined;
   if ((st.hinder || varld) && !sikt(st, k.x, k.y, mx, my)) { // bakom en vägg: mot nästa punkt på vägen runt
     const p = vagRunt(st, k, mx, my, fi);
     if (p) { dx = p[0] - k.x; dy = p[1] - k.y; d = Math.hypot(dx, dy); if (d < 1e-6) return; }
@@ -559,7 +564,14 @@ function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number, vrid = V
     const nx = clamp(k.x + Math.cos(v + r) * l, KANT, st.w - KANT), ny = clamp(k.y + Math.sin(v + r) * l, KANT, st.h - KANT);
     if (fri(st, k, nx, ny, fi, mx, my)) { k.x = nx; k.y = ny; k.runtSida = r > 0 ? 1 : -1; return; }
   }
-  // stängt åt alla håll: hen står kvar
+  // stängt åt alla håll: vägen runt dem som står i vägen, vänner som fiender (som på flykten); finns ingen står hen kvar
+  if (vrid !== VRID) return;
+  const p = vagRunt(st, k, mx, my, fi, st.kampar.filter(o => o !== k && iStrid(o) && Math.hypot(o.x - mx, o.y - my) > 0.01).map(o => ({ o, r: o.sida === k.sida ? STRID.van : STRID.kropp })));
+  if (!p) return;
+  const pd = Math.hypot(p[0] - k.x, p[1] - k.y), pl = Math.min(langd, pd);
+  if (pd < 1e-6) return;
+  const px = k.x + (p[0] - k.x) / pd * pl, py = k.y + (p[1] - k.y) / pd * pl;
+  if (fri(st, k, px, py, fi, mx, my)) { k.x = px; k.y = py; k.runtP = { x: p[0], y: p[1], mal: k.mal }; }
 }
 
 // Flykten (steg B.31): hen väljer den närmaste tillflykten som det finns en väg till förbi fienderna, med de vänner som står och slåss
