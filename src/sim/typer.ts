@@ -544,7 +544,7 @@ export const IGNITERS: Igniter[] = [
 ];
 
 // nyckeltalen i tal-ordning: [tid, värde, värde, …] per timme och per dygn, och krönikans rader [tid, text]
-export interface Historik { tal: string[]; tim: number[][]; dygn: number[][]; kronika: ([number, string] | [number, string, string])[]; kartor?: [number, string][]; rik?: RikRad[] } // kartor: en bild av kartan per dygn (kartminne.ts, steg 5.4.5.2); rik: byns rikedom per dygn (historik.ts, steg 6.9.13)
+export interface Historik { tal: string[]; tim: number[][]; dygn: number[][]; kronika: ([number, string] | [number, string, string] | [number, string, string, number])[]; kartor?: [number, string][]; rik?: RikRad[] } // kartor: en bild av kartan per dygn (kartminne.ts, steg 5.4.5.2); rik: byns rikedom per dygn (historik.ts, steg 6.9.13)
 // tid, förrådets, redskapens och husens värde, varje levande persons förmögenhet (id till värde) och antalet av varje sak
 export type RikRad = [number, number, number, number, Record<string, number>, Record<string, number>];
 export interface FireLog { t: number; k: 'tänd' | 'fyll' | 'slocknade' | 'glöd' | 'sprack'; id?: number; n?: number }

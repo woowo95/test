@@ -4,7 +4,7 @@ import { SAKER, isTool } from './saker';
 import { antal, och } from './ord';
 import { Ting } from './agande';
 import { ALDER, ageOf } from './folk';
-import { loggBer } from './berattelser';
+import { kronikaBer, loggBer } from './berattelser';
 import { ownMove, zoneAt } from './lager';
 import { bitAt, blocked } from './byggnad';
 import { stationAt } from './stationer';
@@ -18,16 +18,17 @@ import { notis } from './notiser';
 
 // ---------- ett bytessystem för alla byten (steg 4.4.1.1) ----------
 // Ett byte mellan två bybor och ett byte med handlaren (handel.ts) är samma byte: två parter (Part), samma värdering (var och
-// en efter sitt eget behov, `varde`), samma gång i bytet (byte i behov.ts) och samma rad i loggen och krönikan. En part är en
+// en efter sitt eget behov, `varde`), samma gång i bytet (byte i behov.ts) och samma rader i loggen och krönikan. En part är en
 // bybo, byn (det gemensamma förrådet) eller handlaren; parten säger själv vad den behöver, vad den kan byta bort och hur en
 // sak lämnar och kommer till den. Ett stort byte (ett redskap, flera saker åt gången eller mycket värt, BYTE.stort) görs på
 // en filt: båda lägger fram bara det som förhandlas om. När bytet är godkänt syns ett handslag över båda (BYTE.handslagSek),
 // sakerna går från den ena filten till den andra (BYTE.flyttSek) och filtarna plockas ihop strax efter (BYTE.packaMin).
 // Små vardagsbyten och gåvor är snabba överlämningar: saken syns gå från hand till hand (s.overl). Loggen tar alla byten;
-// krönikan bara de stora och de gåvor som betyder något (ett redskap till ett barn, mat till den som höll på att dö).
+// krönikan bara de som är värda BYTE.stort eller mer, med kvaliteten (B.41), och de gåvor som betyder något (ett redskap till ett barn, mat till den som höll på att dö).
 export const BYTE = balans('byte', {
-  stort: 15, // ett byte värt så mycket (grundvärdet av det som byts, ungefär arbetstimmar) eller mer är ett stort byte ...
-  stortSlag: 4, // ... och så också ett byte med så många slag av saker eller fler (ett redskap är alltid ett stort byte)
+  stort: 15, // ett byte värt så mycket (grundvärdet av det som byts, ungefär arbetstimmar) eller mer är ett stort byte: det görs på filtar och står i krönikan (B.41) ...
+  viktVarde: 0.025, // ett stort bytes vikt i sammanfattningen: 1 + så här mycket per värde (B.41)
+  stortSlag: 4, // ... på filtar görs också ett byte med så många slag av saker eller fler, och ett byte med ett redskap
   handslagSek: 3, // så många sekunder syns handslaget över båda när ett byte är godkänt (steg 4.5.4.17) ...
   flyttSek: 3, // ... sedan går sakerna från den ena filten till den andra på så många sekunder ...
   packaMin: 1, // ... och filtarna plockas ihop så här många minuter efter det
@@ -150,11 +151,13 @@ function overlamna(s: State, varor: Vara[], a: Part, b: Part) {
   if (o.length > 40) o.splice(0, o.length - 40);
 }
 
-// är bytet stort? Ett redskap, flera slag av saker eller mycket värt
+// vad bytet är värt: båda sidornas varor, med kvaliteten (B.41). Det avgör om det står i krönikan och hur viktigt det är där
+export const byteVarde = (varor: Vara[]) => varor.reduce((x, w) => x + w.n * vardeOf(w), 0);
+// görs bytet på filtar? Ett redskap, flera slag av saker eller mycket värt
 export function stortByte(varor: Vara[]) {
   if (varor.some(w => w.t || w.hus !== undefined || isTool(w.k))) return true;
   if (new Set(varor.map(w => w.k)).size >= BYTE.stortSlag) return true;
-  return varor.reduce((x, w) => x + w.n * vardeOf(w), 0) >= BYTE.stort;
+  return byteVarde(varor) >= BYTE.stort;
 }
 
 // det andra system gör när ett byte är klart (handlarens minne av bytena, handel.ts)
@@ -223,8 +226,11 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
   const rad = loggBer(s, 'l_byte', Math.abs(m.id) * 997 + Math.abs(g.id), { namn: m.namn, med: g.namn, fatt: varorText(fatt), betal: varorText(betal), desperat }, 'rel', [m.id, g.id].filter(i => i > 0), vardag ? { slag: 'byte', k: 0, n: '', d: `${slag(fatt)} mot ${slag(betal)}` } : undefined);
   const text = rad.text;
   loggaByte(s, rad, minne, [m.p, g.p]);
-  if (hf) notis(s, 'byte', text, [m.id, g.id].filter(i => i > 0));
-  if (stort) kronika(s, text, 'byte');
+  const varde = byteVarde(alla);
+  if (varde >= BYTE.stort) { // viktigt efter vad som byttes (B.41): en rad i krönikan, och en notis när det är handlaren
+    if (hf) notis(s, 'byte', text, [m.id, g.id].filter(i => i > 0));
+    kronikaBer(s, 'k_handel', Math.floor(s.now / HOUR), { a: m.namn, b: g.namn, fick: varorText(fatt), gav: varorText(betal) }, Math.round((1 + varde * BYTE.viktVarde) * 10) / 10);
+  }
   for (const f of vidByte) f(s, m, g, fatt, betal, minne);
   return stort;
 }

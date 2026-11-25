@@ -3,7 +3,7 @@ import { SAK_ART, heligtBrutet, matBrutet } from './kultlatt';
 import { utsadeKrok } from './ratter';
 import { hans, honom } from './ord';
 import { upplev } from './uppvaxt';
-import { loggBer, kronikaBer, BERATT } from './berattelser';
+import { loggBer } from './berattelser';
 import { State, Person, HOUR, DAY, MIN } from './typer';
 import { ERSATT, FOOD, REDSKAP_SLAG, SAKER, SAK_LIST, gruppOf, isTool, viktOf } from './saker';
 import { ACTS, actsOf, usesTool } from './handlingar';
@@ -1004,7 +1004,6 @@ export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[]
   for (const X of [M, G]) if (X.p) { ovning(X.p, 'handel', HANDLA.ovning * (0.5 + X.p.pot.intelligens / 20)); gjort(s, X.p, 'bytt'); }
   if (lurare) { const X = lurare === M ? G : M, markt = lurad(s, X, lurare); for (const f of vidLura) f(s, lurare, X, markt); }
   else { const v = (l: Vara[]) => l.reduce((a, w) => a + (w.varde ?? grundvarde(w.k) * w.n), 0), vf = v(fatt), vb = v(betal); // den som gav mer än hen fick: ett bra pris (steg 12.1.134)
-    if (vf + vb >= BERATT.stortByte) kronikaBer(s, 'k_handel', Math.floor(s.now / HOUR), { a: M.namn, b: G.namn, fick: varorText(fatt), gav: varorText(betal) }); // ett stort byte (steg 12.1.135)
     if (G.p && M.p && vf >= vb * (1 + RYKTE.braPris) && vb > 0) handelse(s, G.p, 'braPris', M.p); else if (G.p && M.p && vb >= vf * (1 + RYKTE.braPris) && vf > 0) handelse(s, M.p, 'braPris', G.p); }
   const n = enheter(fatt);
   count(s, 'byten'); count(s, 'byte_' + typ, n); if (delad) count(s, 'kvallsbyten');

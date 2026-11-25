@@ -56,7 +56,7 @@ const tal = (rader: Rad[]) => ({ dodaTal: rader.filter(isDod).length, foddaTal: 
 // berättelsen om tiden från "fran" till nu: ett eller flera stycken (steg 5.4.4)
 export function bortaBerattelse(st: State, b: Borta): string[] {
   const ar = (st.now - b.fran) / DAY, L = BORTA_LANGD.find(l => ar < l.till)!;
-  const rader: Rad[] = (st.hist?.kronika ?? []).map((k, i) => ({ t: k[0], text: k[1], v: vikt(k[2]), i, slag: k[2] })).filter(r => r.t >= b.fran);
+  const rader: Rad[] = (st.hist?.kronika ?? []).map((k, i) => ({ t: k[0], text: k[1], v: k[3] ?? vikt(k[2]), i, slag: k[2] })).filter(r => r.t >= b.fran);
   const kallt = kalender(st).ai === 0;
   if (!rader.length && L.dela === 'en') return [berattelse(st, 'b_lugnt', b.fran, { kallt })];
   const ut: string[] = [];

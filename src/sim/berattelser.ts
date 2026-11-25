@@ -83,7 +83,6 @@ export const BERATT = balans('beratt', {
   // relationerna utförligt (steg 3.9.6)
   kemi: 0.4, // personkemin (−1 till 1) nämns från så här långt från noll
   relIntryck: 2, // så här många av intrycken visas
-  stortByte: 40, // ett byte där båda sidor tillsammans är värda så här mycket (grundvärde, ett silver = 1) står i krönikan (steg 12.1.135)
 });
 
 // ---------- registren ----------
@@ -2984,14 +2983,14 @@ export { talOrd, och }; // talen och listorna bor i ordlagret (steg 6.7.1)
 const tre = (x: string) => x.split(/\s+/).filter(o => !/^[A-ZÅÄÖ]/.test(o)).slice(0, 3).join(' ').toLowerCase().replace(/[^a-zåäö ]/g, '');
 // årstiden, vädret och natten nu, för krönikans och loggens mallar (kodgenomgången, fynd 210)
 const vaderFalt = (s: State): Fyllning => { const v = vaderNu(s); return { arstid: ARSTIDER[kalender(s).ai], kallt: temperature(s) < 0, sno: v.sno, regn: v.lage === 'regn', blast: v.lage === 'blast', natt: !isLight(s.now) }; };
-export function kronikaBer(s: State, mall: MallId, nyckel: number, f: Fyllning) {
+export function kronikaBer(s: State, mall: MallId, nyckel: number, f: Fyllning, vikt?: number) {
   const g: Fyllning = { ...vaderFalt(s), ...f };
   // varianten väljs ur nyckeln och timmen; en som börjar som någon av de tre senaste raderna med samma mall hoppas över
   // (textminnet, steg 6.7.3, m_upprepning). Minnet ligger utanför historiken, så att byn blir likadan utan den
   const tm = (s.textminne ??= {}), forra = (tm[mall] ??= []);
   const text = fyll(valjVariant(s, mall, nyckel, g, undefined, x => forra.includes(tre(x))), g);
   forra.push(tre(text)); if (forra.length > 3) forra.shift();
-  kronika(s, text, mall);
+  kronika(s, text, mall, vikt);
   return text;
 }
 // en rad i händelseloggen ur en mall (steg 6.7.7): som kronikaBer, med årstiden, vädret och natten, och raden minns mallen
