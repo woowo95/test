@@ -166,7 +166,8 @@ SCENARIER.anstalld = {
 
 // en by med ett företag: ett hus med disk och bord (också för de andra scenarierna)
 export function foretagBy(verk = ['servering'], silver = 60) {
-  const s = SIM.cloneState(testBy(25)), W = SIM.W;
+  // en by med minst tio vuxna och ett hus som rymmer disken och bordet
+  const s = SIM.cloneState(testBy(25, b => SIM.living(b).filter(q => !q.gast && SIM.ageOf(q, b.now) >= SIM.ALDER.vuxen && SIM.kanGa(q)).length >= 10 && SIM.gridOf(b).rooms.some(x => x.hus !== undefined && SIM.husById(b, x.hus)?.klar && SIM.husById(b, x.hus)!.tro === undefined && x.tiles.length >= 12))), W = SIM.W;
   const vux = SIM.living(s).filter(q => !q.gast && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && SIM.kanGa(q));
   const p = vux[0];
   const r = [...SIM.gridOf(s).rooms].filter(x => x.hus !== undefined && SIM.husById(s, x.hus)?.klar && SIM.husById(s, x.hus)!.tro === undefined).sort((a, b) => b.tiles.length - a.tiles.length)[0];
