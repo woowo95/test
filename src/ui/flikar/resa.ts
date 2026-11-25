@@ -19,7 +19,7 @@ const sak = (k: string, n: number) => `${n} ${esc((SAKER[k]?.namn ?? k).toLowerC
 
 export function resaHtml(r?: Redogorelse) {
   if (!r) return '<p class="muted">Resan är glömd.</p>';
-  const huvud = `<h2>🎒 ${esc(r.titel)}</h2><p class="muted">${esc(clockTxt(r.borjan))} till ${esc(clockTxt(r.hem))}</p>`;
+  const huvud = `<h2 class="rutrub" data-passa="12">🎒 ${esc(r.titel)}</h2><p class="muted">${esc(clockTxt(r.borjan))} till ${esc(clockTxt(r.hem))}</p>`;
   const folk = `<ul class="fame">${r.medl.map(id => `<li title="${id === r.ledare ? 'Ledde resan' : 'Följde med'}">${id === r.ledare ? '⭐' : '🚶'} ${vemLank(id, namn(id))}</li>`).join('')}</ul>`;
   const bok = `<h3>Dagboken</h3><ul class="fame">${r.dagbok.map(([t, text, slag]) => {
     const d = slag ? DAGBOK[slag] : undefined;

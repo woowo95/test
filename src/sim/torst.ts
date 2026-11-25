@@ -282,7 +282,7 @@ export function vattenVal(s: State, p: Person, slag: 'torst' | 'odla' = 'torst')
     // den som sitter i fängelset (steg 11.12.2): p går när fångens törst gånger närheten är stor nog (fangelse.ts)
     if (q.gast) { if (!torstig(q, 0)) continue; } // gästen får vattnet där hen stannar: filten ligger en bit utanför byn (filtPlats i handel.ts), och TORST.hamtaR säger hur långt
     else if (q.fange) { if (q === p || !hjalperFange(s, p, q, 1 - q.torst)) continue; }
-    else if (q === p || kanGa(q) && qa >= ALDER.smabarn || !torstig(q, 0) || qa < TORST.ammaAr && ammas(s, q) || !hemma(s, q)) continue;
+    else if (q === p || kanGa(q) && !q.foder && qa >= ALDER.smabarn || !torstig(q, 0) || qa < TORST.ammaAr && ammas(s, q) || !hemma(s, q)) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);
     if (d >= bd || hamtas(s, p, q)) continue;
     best = q; bd = d;
@@ -341,7 +341,7 @@ export function vattenFram(s: State, p: Person, t: Task) {
     q.torst = t.tool ? 1 : Math.min(1, q.torst + TORST.hander); // (forstaGang räknar 'bar vatten' varje gång)
     if (q.gast && t.tool) gastSackKrok.fyll(q); // gästen får också sin säck fylld, så att hen har vatten på vägen (steg 12.1.228)
     tanke(q, 'gavVatten', s.now, { namn: p.name }); count(s, t.tool ? 'bar vatten' : 'bar vatten i handerna');
-    if (forstaGang(s, 'bar vatten')) log(s, `${p.name} bar vatten ${t.tool === 'vattensack' ? 'i säcken' : t.tool ? 'i en kruka' : 'i händerna'} till ${q.name}, ${q.gast ? 'som var gäst i byn' : ageOf(q, s.now) < ALDER.smabarn ? 'som var för liten att gå själv' : 'som inte kunde gå'}.`, 'world', [p.id, q.id]);
+    if (forstaGang(s, 'bar vatten')) log(s, `${p.name} bar vatten ${t.tool === 'vattensack' ? 'i säcken' : t.tool ? 'i en kruka' : 'i händerna'} till ${q.name}, ${q.gast ? 'som var gäst i byn' : ageOf(q, s.now) < ALDER.smabarn ? 'som var för liten att gå själv' : q.foder ? 'som födde barn' : 'som inte kunde gå'}.`, 'world', [p.id, q.id]);
     if (t.vatten !== undefined) smutsigt(s, q, t.vatten);
     if (t.tool) wearUsed(s, p, 1);
   }

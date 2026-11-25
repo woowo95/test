@@ -1445,7 +1445,7 @@ export function hjalpSlut(s: State, sl: Sallskap, t: number) {
   avslutaUppdrag(s, vl, u, true);
   uppdragUtfall(s, sl, namn, 'klart', fick, `${namn}: uppdraget är utfört${tim !== undefined ? ` efter ${spelTid(tim * HOUR)} av arbete` : ''}. Belöningen: ${sakLista(fick) || 'ingen'}.`, t);
 }
-const sakLista = (x: Record<string, number>) => och(Object.entries(x).filter(([, n]) => n >= 1).map(([k, n]) => antal(Math.floor(n), k)));
+export const sakLista = (x: Record<string, number>) => och(Object.entries(x).filter(([, n]) => n >= 1).map(([k, n]) => antal(Math.floor(n), k)));
 // hemkomsten: byn får veta om resan
 export function redogorelse(s: State, sl: Sallskap, t: number) {
   const vl = s.varld;

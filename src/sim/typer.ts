@@ -241,7 +241,8 @@ export interface Person {
   gavSig?: number; // när hen flydde eller gav upp i en strid med rövare (steg 10.1.14): hen ställer sig inte i vägen igen på en stund (rovarSkydd)
   framme?: number; // räknad fram till den här tiden: under de korta stegen tar den som inte är inblandad i faran sitt arbete en minutbit i förväg (steg 10.1.4, slag i steg.ts)
   gast?: import('./gast').GastRad; smitta?: import('./sjukdom').SjukId; // en gäst: handlaren, en rövare eller en främling (steg 9.2.111, gast.ts); id är då negativt; smitta: sjukdomen en gäst bär utan att någon ser det (steg 9.5.5)
-  born: number; died?: number; cause?: string; left?: number;
+  born: number; died?: number; cause?: string; left?: number; flyttSkal?: { tanke?: string; byn?: string; text?: string }; // varför hen lämnade byn (flyttskal.ts, B.42)
+ 
   ute?: number; // borta från byn sedan den här tiden (steg 11.2.3, ute.ts): fortfarande bybo och äger sitt, men inte på bykartan
   dodVag?: { orsak: string; t: number }; // dog på resan, men byn vet det inte förrän beskedet kommer (steg 11.5.18, resa.ts)
   fran?: number; // grannklanen hen kom ifrån (en främling, steg 4.4.4.2)
@@ -431,7 +432,7 @@ export interface State {
   matSnitt?: number; // maten i förrådet i dygn för alla, glidande snitt över ungefär ett år (liv.ts)
   halvfallt?: Record<number, number>; // träd som någon har börjat fälla: ruta -> hur länge (ms) man har arbetat med det (paborjat.ts)
   fynd?: string; // hur mycket som tagits ur varje plats (bär, vilt, fisk), packat
-  byggen?: import('./byggnad').Bit[]; hus?: import('./byggnad').Hus[]; byggV?: number; nextBit?: number; byggSok?: number; byggBehov?: Record<string, number>; mjardar?: import('./fisk').Mjarde[]; torg?: { x: number; y: number; w: number; h: number }; infart?: { klar?: 1; stopp?: 1 }; bryggV?: number; byplan?: import('./byggplan').Byplan; // väggar, golv och öppningar, husen byn planerat, ändringsräknare
+  byggen?: import('./byggnad').Bit[]; hus?: import('./byggnad').Hus[]; byggV?: number; nextBit?: number; byggSok?: number; byggBehov?: Record<string, number>; hyllPlan?: { x: number; y: number; t: number }; /* hyllan byggplanen valt (steg B.37) */ mjardar?: import('./fisk').Mjarde[]; torg?: { x: number; y: number; w: number; h: number }; infart?: { klar?: 1; stopp?: 1 }; bryggV?: number; byplan?: import('./byggplan').Byplan; // väggar, golv och öppningar, husen byn planerat, ändringsräknare
   kal?: { t0: number; a0: number; b0: number }; // kalendern: tidsåldern a0 började t0 och slutar måndagen b0 (dagens nummer), se tid.ts
   ruttet?: number; // mat som ruttnat bort på sistone (glöms med tiden, byggnader.ts)
   skramma?: number[]; // fälten som har en fågelskrämma (steg 9.7.11, odling.ts)
@@ -552,7 +553,7 @@ export const IGNITERS: Igniter[] = [
 ];
 
 // nyckeltalen i tal-ordning: [tid, värde, värde, …] per timme och per dygn, och krönikans rader [tid, text]
-export interface Historik { tal: string[]; tim: number[][]; dygn: number[][]; kronika: ([number, string] | [number, string, string])[]; kartor?: [number, string][]; rik?: RikRad[] } // kartor: en bild av kartan per dygn (kartminne.ts, steg 5.4.5.2); rik: byns rikedom per dygn (historik.ts, steg 6.9.13)
+export interface Historik { tal: string[]; tim: number[][]; dygn: number[][]; kronika: ([number, string] | [number, string, string] | [number, string, string, number])[]; kartor?: [number, string][]; rik?: RikRad[] } // kartor: en bild av kartan per dygn (kartminne.ts, steg 5.4.5.2); rik: byns rikedom per dygn (historik.ts, steg 6.9.13)
 // tid, förrådets, redskapens och husens värde, varje levande persons förmögenhet (id till värde) och antalet av varje sak
 export type RikRad = [number, number, number, number, Record<string, number>, Record<string, number>];
 export interface FireLog { t: number; k: 'tänd' | 'fyll' | 'slocknade' | 'glöd' | 'sprack'; id?: number; n?: number }

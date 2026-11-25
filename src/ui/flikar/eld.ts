@@ -27,15 +27,15 @@ function fireHtml() {
   const fills = Object.entries(f.fills).map(([id, n]) => ({ p: byId(s, Number(id)), n })).filter(x => x.p).sort((a, b) => b.n - a.n).slice(0, 6);
   const tgt = forsta ? fireWant(s) : f.want ?? 0;
   return `
-    <div class="phead"><span class="dot big" role="img" tabindex="0" aria-label="${f.lit ? 'Brinner' : glod ? 'Glöder' : 'Släckt'}" title="${esc(`${f.lit ? 'Brinner' : glod ? 'Glöder' : 'Släckt'}. Pricken är gul när elden brinner, rost när den glöder och grå när den är släckt`)}" style="background:${f.lit ? '#d8b25f' : glod ? 'var(--g-rost)' : 'var(--tom)'}"></span><div><h2>${esc(h.name)}</h2>
-    <p class="muted">${esc(h.desc)}${forsta ? '' : ' En lägereld till, nära sovplatserna.'}</p><p class="status">${status}</p></div>${hjalpKnapp('eld-om', 'Vad gör elden?')}</div>${hjalpText('eld-om', `<p class="muted small">Elden värmer dem som är nära och lagar maten. Den bränner ved, någon fyller på när den vill ha mer, och slocknar den måste den tändas igen.</p>`)}
+    <div class="phead"><span class="dot big" role="img" tabindex="0" aria-label="${f.lit ? 'Brinner' : glod ? 'Glöder' : 'Släckt'}" title="${esc(`${f.lit ? 'Brinner' : glod ? 'Glöder' : 'Släckt'}. Pricken är gul när elden brinner, rost när den glöder och grå när den är släckt`)}" style="background:${f.lit ? '#d8b25f' : glod ? 'var(--g-rost)' : 'var(--tom)'}"></span><div><h2 class="rutrub" data-passa="12">${esc(h.name)}</h2></div>${hjalpKnapp('eld-om', 'Vad gör elden?')}</div>
+    <p class="muted">${esc(h.desc)}${forsta ? '' : ' En lägereld till, nära sovplatserna.'}</p><p class="status">${status}</p>${hjalpText('eld-om', `<p class="muted small">Elden värmer dem som är nära och lagar maten. Den bränner ved, någon fyller på när den vill ha mer, och slocknar den måste den tändas igen.</p>`)}
     <h3>Just nu</h3><dl class="kv">
       <dt>Trä på elden</dt><dd>${bar(f.fuel / h.maxFuel)}<span>${fmtN(f.fuel)} av ${h.maxFuel} ved</span></dd>
       <dt>Värme</dt><dd>${bar(fireHeat(s, f))}<span>${f.lit ? `${num(heatRadius(s, f))} rutor ut` : '–'}</span></dd>
       <dt>Förbrukning</dt><dd>${num(takt)} ved i timmen${fr > 1 || fv > 1 || f.blot ? ` <span class="muted">(${[fr > 1 ? 'regnet' : '', fv > 1 ? 'den hårda vintern' : '', f.blot ? 'den blöta veden' : ''].filter(Boolean).join(' och ')})</span>` : ''}</dd>
       <dt>Räcker</dt><dd>${f.lit ? `ca ${durTxt(f.fuel / takt * HOUR)}` : '–'}</dd>
       <dt>Önskat</dt><dd>${fmtN(tgt)} ved på elden</dd>
-      ${f.wantWhy && byId(s, f.wantBy) ? `<dt>Önskas av</dt><dd>${pLink(byId(s, f.wantBy))}: ${esc(f.wantWhy).toLowerCase()}</dd>` : ''}
+      ${f.wantWhy && byId(s, f.wantBy) ? `<dt>Önskas av</dt><dd><span>${pLink(byId(s, f.wantBy))}: ${esc(f.wantWhy).toLowerCase()}</span></dd>` : ''}
       ${tender ? `<dt>Hämtar trä</dt><dd>${pLink(tender)}</dd>` : ''}
     </dl>
     ${f.lit ? `<h3>Denna eld</h3><dl class="kv fam">

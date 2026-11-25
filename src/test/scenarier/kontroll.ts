@@ -315,8 +315,10 @@ SCENARIER.rovardrakt = {
     const kring = (n: number, p: number) => n > 60 * p * 0.4 && n < 60 * p * 1.8;
     return [
       ['samma rövare ser likadan ut varje gång', lika],
-      [`luvan ${luva}, duken ${duk}, rocken av slitet skinn ${skinn}, vargskinnet ${varg} av 60 (GASTUTRUSTNING)`, kring(luva, ROVARDRAKT.luva) && kring(duk, ROVARDRAKT.duk) && kring(skinn, ROVARDRAKT.rovarskinn) && varg > 0],
+      [`luvan ${luva}, duken ${duk}, rocken av slitet skinn ${skinn}, vargskinnet ${varg} av 60 (GASTUTRUSTNING)`, kring(luva, ROVARDRAKT.luva) && kring(duk, ROVARDRAKT.duk) && kring(skinn, ROVARDRAKT.rovarskinn + (1 - ROVARDRAKT.luva - ROVARDRAKT.duk) * (1 - ROVARDRAKT.rovarskinn)) && varg > 0],
       ['rövaren har vapnet i handen', vapen],
+      ['ingen rövare saknar gängets dräkt (steg B.35)', a.every(q => RS.has(q.del.huvudbonad ?? '') || q.klader.rock === 'rovarskinn')],
+      ['porträttet och fången har samma ansikte och dräkt som figuren', rov.every((r, i) => { const pr = skapad(s, r); r.gast!.sort = 'fange'; const fa = skapad(s, r); r.gast!.sort = 'rovare'; return [pr, fa].every(q => q.del.huvudbonad === a[i].del.huvudbonad && q.klader!.rock === a[i].klader.rock && q.del.frisyr === a[i].del.frisyr); })],
       ['byborna bär aldrig rövarens delar', bybor],
     ];
   },

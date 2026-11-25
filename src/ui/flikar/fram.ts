@@ -21,7 +21,7 @@ const medel = (v: number[]) => v.length ? Math.round(v.reduce((a, b) => a + b, 0
 export function framHtml(m?: FramMinne) {
   if (!m) return '<p class="muted">Framträdandet är glömt.</p>';
   const d = FRAM_AV[m.k], bud = m.bud ? BUDSKAP[m.bud] : undefined;
-  const huvud = `<h2>${esc(d?.namn ?? 'Framträdandet')}</h2><p class="muted">${esc(clockTxt(m.t))}</p>`;
+  const huvud = `<h2 class="rutrub" data-passa="12">${esc(d?.namn ?? 'Framträdandet')}</h2><p class="muted">${esc(clockTxt(m.t))}</p>`;
   const fakta = [
     `<li title="Den som uppträdde">${iconImg('scen', 16)} ${vemLank(m.p, m.namn)}</li>`,
     m.inst ? `<li title="${esc(`Instrumentet: ${sakNamn(m.inst).toLowerCase()}`)}">${iconImg(m.inst, 16)} ${esc(sakNamn(m.inst))}</li>` : '',

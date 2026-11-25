@@ -14,18 +14,18 @@ import { stenFrakt, stenFraktKostnad } from './byggsten';
 import { eldPlats, getMap } from './karta';
 import { groundOf } from './mark';
 import { PLATS, rektAvstand } from './plats';
-import { type Station, delarAv, nyPlatsDel, rivDel, rivStation, stangerIn, stationDef, stationRutor, stationerOf, storlekAv, uteStation } from './stationer';
+import { STATIONER, forvarAt, halvbyggd, hyllPlatser, type Station, delarAv, nyPlatsDel, rivDel, rivStation, stangerIn, stationDef, stationRutor, stationerOf, storlekAv, uteStation } from './stationer';
 import { enOrd, heltOrd, stor, tal, husIMening } from './ord';
 import { knows } from './teknik';
-import { LAGER, matUtanPlats, utanPlatsNu, amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, usable, zonesOf } from './lager';
+import { LAGER, isStored, stacksOf, matUtanPlats, utanPlatsNu, amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
 import { BAR, findPath } from './vag';
 import { paMyr } from './myr';
-import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, arHem, fnId, fnOf, husIText, husNamn, harArbete, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
+import { hogar, Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, arHem, fnId, fnOf, husIText, husNamn, harArbete, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
 import { kronika } from './historik';
 import { clamp } from './slump';
 import { ledareOf } from './styre';
-import { PROJEKT_TAL } from './projekt';
+import { PROJEKT_TAL, receptKostnad } from './projekt';
 import { ARBETE, formogenheter, grundvarde, husVarde, rikedom, varuVarde } from './varde';
 import { BYGG, VAGGVAL, tillbaka, tramat } from './bygg';
 import { DAY, GRANNAR4, H, HOUR, Person, State, T, W, inMap } from './typer';
@@ -249,6 +249,27 @@ const stenVaggA: AtgardDef = {
     return ut;
   },
 };
+// en hylla i ett förrådshus som finns (steg B.37): en full hög på golvet ställs på en hylla, och på hyllan ryms två högar till av
+// samma slag. Så många högar får plats som det finns till av slaget i förrådet
+const hyllaA: AtgardDef = {
+  namn: 'En hylla', steg: 0,
+  foresla: (s, b) => {
+    if (b.fn !== 'forrad' || !kanTek(s, 'hylla') || !Object.entries(STATIONER.hylla.av).every(([k, n]) => amountOf(s, k) >= n)) return [];
+    const rymmer = STATIONER.hylla.forvar!.rymmer, want = onskadPlats(s, b), alla: Record<string, number> = {};
+    for (const a of stacksOf(s)) if (a.n > 0 && isStored(s, a.x, a.y) && !forvarAt(s, a.x, a.y)) alla[a.k] = (alla[a.k] ?? 0) + hogar(a);
+    return hyllPlatser(s).flatMap(q => {
+      const k = stacksOf(s).find(a => a.x === q.x && a.y === q.y && a.n > 0)?.k, plats = k ? Math.min(rymmer - 1, alla[k] - 1) : 0;
+      return plats > 0 ? [{ at: 'hyllaA' as const, x: q.x, y: q.y, w: 0, h: 0, ritning: [], oppnas: [], kostnad: receptKostnad(STATIONER.hylla), varde: Math.min(1, plats / Math.max(1, want)), plats }] : [];
+    });
+  },
+};
+// hyllan byggplanen valt är på väg: den byggs som ett projekt (forvarBrist i stationer.ts). Den glöms när den står där, när högen
+// är borta eller när ingen hunnit bygga den på PLAN.husVanta dygn
+function hyllPlanNu(s: State) {
+  const h = s.hyllPlan;
+  if (h && (stationerOf(s).some(t => t.x === h.x && t.y === h.y) || !hyllPlatser(s).some(q => q.x === h.x && q.y === h.y) || s.now - h.t > PLAN.husVanta * DAY)) s.hyllPlan = undefined;
+}
+const hyllaPaVag = (s: State) => !!s.hyllPlan || !!halvbyggd(s, 'hylla');
 const nyttHus: AtgardDef = {
   namn: 'Nytt hus', steg: 3,
   foresla: (s, b, okAt) => {
@@ -768,7 +789,7 @@ const bryggaA: AtgardDef = {
     return bast ? [{ at: 'bryggaA', x: 0, y: 0, w: 0, h: 0, ritning: bast, oppnas: [], kostnad: ritningKostnad(bast), varde: PLAN.forbBrygga, plats: 0 }] : [];
   },
 };
-export const BYGGATGARDER = { stockvagA, infartA, bryggaA, omkringA, nyttHus, byggaUt, battreGolv, stenVaggA, egetRum, rikUt, kopaHus } satisfies Record<string, AtgardDef>;
+export const BYGGATGARDER = { hyllaA, stockvagA, infartA, bryggaA, omkringA, nyttHus, byggaUt, battreGolv, stenVaggA, egetRum, rikUt, kopaHus } satisfies Record<string, AtgardDef>;
 type Atgard = keyof typeof BYGGATGARDER;
 const ATGARDER = BYGGATGARDER as Record<string, AtgardDef>;
 
@@ -776,6 +797,7 @@ const ATGARDER = BYGGATGARDER as Record<string, AtgardDef>;
 // Varje ritning prövas av samma kontroll innan den godtas: husets regler (balanstal i HUS och BYGG), en ytterdörr, inget i vattnet,
 // på elden eller där vattnet steg sist, inga väggar över en annan byggnad. Då kan en ny åtgärd i registret inte göra ett trasigt hus.
 function ritningOk(s: State, f: Forslag, okAt: (i: number) => boolean): boolean {
+  if (f.at === 'hyllaA') return true;
   if (f.at === 'stockvagA' || f.at === 'bryggaA' || f.at === 'infartA') return f.ritning.length > 0;
   if (f.at === 'omkringA') return f.ritning.some(q => q.m === 'oppning') && f.ritning.every(q => MATERIAL[q.m]); // väggarna står runt det som redan står
   const iw = f.w - 2, ih = f.h - 2;
@@ -807,6 +829,7 @@ export function stepByggplan(s: State) {
   byplanNu(s);
   torgNu(s);
   husAffar(s);
+  hyllPlanNu(s);
   rivOmTomt(s);
 }
 // lagret (steg 7.2.18): det som inte fått plats ligger bredvid. Lagret görs större, och ett nytt läggs när det inte går. Marken
@@ -840,7 +863,7 @@ export function planBuild(s: State) {
   let provat = false, funnit = false; // det som väntar på ett bygge eller ett köp prövas inte
   for (const u of behov) {
     const ag = u.a.tro !== undefined ? TRO_AG - u.a.tro : u.a.ag ?? -1;
-    if (klara.has(ag) || upptagen(s, ag) || s.husAffar?.ag === ag) continue; // den som väntar på att köpa ett hus bygger inget under tiden
+    if (klara.has(ag) || upptagen(s, ag) || s.husAffar?.ag === ag || u.fn === 'forrad' && hyllaPaVag(s)) continue; // den som väntar på att köpa ett hus bygger inget under tiden
     const bast = valj(s, u, okAt);
     provat = true;
     if (!bast) continue;
@@ -860,16 +883,17 @@ export function planBuild(s: State) {
 export function planeraHus(s: State, fn: Fn, a: Akut): Hus | undefined {
   const ppl = living(s);
   if (!ppl.length) return undefined;
-  const { okAt } = byggbart(s), u: ByggBehov = { fn, a, sc: 0 }, f = valj(s, u, okAt);
+  const { okAt } = byggbart(s), u: ByggBehov = { fn, a, sc: 0 }, f = valj(s, u, okAt, ['hyllaA']);
   if (!f || (f.at !== 'nyttHus' && f.at !== 'byggaUt') || f.ny) return undefined; // ett nytt hus eller ett hus som byggs ut (elden flyttas inte för en by som byggs)
   const n0 = housesOf(s).length;
   utfor(s, f, u, ppl.filter(p => canBuildWalls(p, s)), ppl);
   return f.at === 'byggaUt' ? f.hus : housesOf(s).length > n0 ? housesOf(s)[housesOf(s).length - 1] : undefined;
 }
 // förslaget med mest värde per kostnad; varje steg längre ner i ordningen kostar mer (Vägarna till mer plats)
-function valj(s: State, u: ByggBehov, okAt: (i: number) => boolean) {
+function valj(s: State, u: ByggBehov, okAt: (i: number) => boolean, utan: string[] = []) {
   let bast: Forslag | undefined, bs = -Infinity;
   for (const k of Object.keys(ATGARDER)) {
+    if (utan.includes(k)) continue;
     if (u.a.tro !== undefined && k !== 'nyttHus' && k !== 'byggaUt') continue; // trons hus byggs nytt eller byggs ut (steg 10.3.19)
     const d = ATGARDER[k];
     // förslagen får poäng först, och de PLAN.perBehov bästa prövas (steg 10.11.7): förut togs de första i den ordning åtgärden gav dem
@@ -898,6 +922,7 @@ function bytMaterial(b: Bit, m: string, forb = true) {
 }
 function utfor(s: State, f: Forslag, u: ByggBehov, byggare: Person[], ppl: Person[]) {
   const fam = u.a.ag !== undefined ? familjOf(s, u.a.ag) : [], by = byggare.find(p => fam.includes(p)) ?? (fam.find(p => p.id === u.a.ag) ?? byggare[0] ?? ppl[0]);
+  if (f.at === 'hyllaA') { s.hyllPlan = { x: f.x, y: f.y, t: s.now }; count(s, 'planerad_hylla'); return; }
   if (f.at === 'kopaHus') { s.husAffar = { hus: f.hus!.id, ag: u.a.ag!, t: s.now }; return; }
   if (f.at === 'stockvagA' || f.at === 'bryggaA' || f.at === 'infartA') {
     s.nextBit ??= 1;
@@ -912,8 +937,8 @@ function utfor(s: State, f: Forslag, u: ByggBehov, byggare: Person[], ppl: Perso
     return;
   }
   if (f.at === 'byggaUt') return byggUt(s, f, by, u.fn === 'forbattra');
-  if (f.at === 'stenVaggA') { bytMaterial(bitAt(s, f.ritning[0].x, f.ritning[0].y)!, 'sten'); touch(s); count(s, 'stenVagg'); if (forstaGang(s, 'stenVaggByte')) log(s, `${by.name} vill byta väggarna i ${f.hus!.namn.toLowerCase()} till sten.`, 'world', [by.id]); return; }
-  if (f.at === 'battreGolv') { bytMaterial(bitAt(s, f.ritning[0].x, f.ritning[0].y)!, f.ritning[0].m); touch(s); count(s, 'forbGolv'); log(s, `${by.name} vill lägga ett trägolv i ${f.hus!.namn.toLowerCase()}.`, 'world', [by.id]); return; }
+  if (f.at === 'stenVaggA') { bytMaterial(bitAt(s, f.ritning[0].x, f.ritning[0].y)!, 'sten'); touch(s); count(s, 'stenVagg'); if (forstaGang(s, 'stenVaggByte')) log(s, `${by.name} vill byta väggarna i ${husIText(f.hus!)} till sten.`, 'world', [by.id]); return; }
+  if (f.at === 'battreGolv') { bytMaterial(bitAt(s, f.ritning[0].x, f.ritning[0].y)!, f.ritning[0].m); touch(s); count(s, 'forbGolv'); log(s, `${by.name} vill lägga ett trägolv i ${husIText(f.hus!)}.`, 'world', [by.id]); return; }
   if (f.at === 'egetRum') {
     for (const a of f.ritning) bytMaterial(bitAt(s, a.x, a.y)!, a.m);
     touch(s); count(s, 'forbRum');

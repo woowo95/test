@@ -37,9 +37,28 @@ function bandFarg(b: GuiBild): [string, string] {
   f = [b.pal[mest] ?? '#61767a', b.pal.a ?? '#24201d']; fargerna.set(b, f);
   return f;
 }
+// medaljongen mitt i bandet är fylld (steg 13.10.30): det genomskinliga inuti ringen (det som inte går att nå från bildens kant)
+// får skissens pergament, så att remsan inte syns genom den
+const MEDALJONG = 18; // medaljongens halva bredd i punkter
+const PERGAMENT = '#dad0bb';
+const fyllda = new Map<GuiBild, GuiBild>();
+export function fylldMedaljong(b: GuiBild): GuiBild {
+  let f = fyllda.get(b);
+  if (f) return f;
+  const g = b.rader.map(r => [...r]), ute: [number, number][] = [];
+  const ut = (x: number, y: number) => { if (g[y]?.[x] === '.') { g[y][x] = ' '; ute.push([x, y]); } };
+  for (let x = 0; x < b.w; x++) { ut(x, 0); ut(x, b.h - 1); }
+  for (let y = 0; y < b.h; y++) { ut(0, y); ut(b.w - 1, y); }
+  while (ute.length) { const [x, y] = ute.pop()!; ut(x + 1, y); ut(x - 1, y); ut(x, y + 1); ut(x, y - 1); }
+  const ledig = [...'0123456789'].find(k => !b.pal[k])!;
+  f = { ...b, pal: { ...b.pal, [ledig]: PERGAMENT }, rader: g.map(r => r.map((k, x) => k === ' ' ? '.' : k === '.' && Math.abs(x + 0.5 - b.w / 2) < MEDALJONG ? ledig : k).join('')) };
+  fyllda.set(b, f);
+  return f;
+}
 export function bandHtml(flik: string) {
-  const b = GUI.band[STEN[flik]];
-  if (!b) return '';
-  const [bf, bk] = bandFarg(b);
+  const b0 = GUI.band[STEN[flik]];
+  if (!b0) return '';
+  const b = fylldMedaljong(b0);
+  const [bf, bk] = bandFarg(b0);
   return `<div class="band" aria-hidden="true" style="--bf:${bf};--bk:${bk}"><img src="${url(b)}" width="${b.w * 2}" height="${b.h * 2}" alt="" draggable="false"></div>`;
 }

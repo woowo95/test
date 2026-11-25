@@ -45,7 +45,7 @@ function toaHog(i: number) {
   const inf = toaInfo(s, f), vem = f.av !== undefined ? byId(s, f.av) : undefined;
   const gor = [inf.akel && 'Äcklar dem som går förbi', inf.plock && 'Sämre att plocka här och bredvid: den som äter det kan bli magsjuk', inf.vatten && 'Smutsar vattnet i närheten'].filter(Boolean);
   return `
-    <div class="phead">${iconImg('toa', 32)}<div><h2>${esc(sakNamn('toa'))}</h2></div></div>
+    <div class="phead">${iconImg('toa', 32)}<div><h2 class="rutrub" data-passa="12">${esc(sakNamn('toa'))}</h2></div></div>
     <dl class="kv">
       <dt>Färsk</dt><dd>${condBar(inf.n)}<span>${Math.round(inf.n * 100)} %</span></dd>
       <dt>Lämnad</dt><dd>${vem ? `av ${pLink(vem)}, ` : ''}för ${durTxt(s.now - f.t)} sedan</dd>
@@ -59,26 +59,26 @@ const GRAVSTIL: Record<GravStil, string> = { jord: 'Begravd i jorden', bal: 'En 
 function grav(i: number) {
   const g = gravAt(s, i % W, Math.floor(i / W));
   if (!g) return '<p class="muted">Graven finns inte längre.</p>';
-  return `<div class="phead">${iconImg('grav', 32)}<div><h2>${gen(esc(g.namn))} grav</h2></div></div><p>${esc(GRAVSTIL[g.stil])}${g.ovardig ? ', utan heder' : ''}${g.stil === 'bal' ? '' : g.vard ? `, med ${GRAVAR[g.vard].namn.toLowerCase()}` : ', en jordhög'}. Begravd för ${durTxt(s.now - g.t)} sedan.</p><p class="small">${skickOrd(gravSkick(s, g))}${g.gavor ? `, ${g.gavor === 1 ? 'en gåva' : `${g.gavor} gåvor`} har lagts här` : ''}.</p>${g.text ? `<p><i>”${esc(g.text)}”</i></p><p class="small muted">Ristat av ${esc(g.textAv?.namn ?? 'någon')}.</p>` : ''}${g.saker?.length ? `<p class="small">I och på graven: ${g.saker.map(a => `${iconImg(a.k, 16)} ${esc(sakNamn(a.k))}${a.n > 1 ? ` × ${a.n}` : ''}`).join(', ')}</p>` : g.med?.length ? `<p class="small">${g.stil === 'bal' ? 'Brändes med' : 'I graven'}: ${esc(g.med.map(k => sakNamn(k)).join(', '))}</p>` : ''}`; // sakerna som ligger där (steg 13.1.3)
+  return `<div class="phead">${iconImg('grav', 32)}<div><h2 class="rutrub" data-passa="12">${gen(esc(g.namn))} grav</h2></div></div><p>${esc(GRAVSTIL[g.stil])}${g.ovardig ? ', utan heder' : ''}${g.stil === 'bal' ? '' : g.vard ? `, med ${GRAVAR[g.vard].namn.toLowerCase()}` : ', en jordhög'}. Begravd för ${durTxt(s.now - g.t)} sedan.</p><p class="small">${skickOrd(gravSkick(s, g))}${g.gavor ? `, ${g.gavor === 1 ? 'en gåva' : `${g.gavor} gåvor`} har lagts här` : ''}.</p>${g.text ? `<p><i>”${esc(g.text)}”</i></p><p class="small muted">Ristat av ${esc(g.textAv?.namn ?? 'någon')}.</p>` : ''}${g.saker?.length ? `<p class="small">I och på graven: ${g.saker.map(a => `${iconImg(a.k, 16)} ${esc(sakNamn(a.k))}${a.n > 1 ? ` × ${a.n}` : ''}`).join(', ')}</p>` : g.med?.length ? `<p class="small">${g.stil === 'bal' ? 'Brändes med' : 'I graven'}: ${esc(g.med.map(k => sakNamn(k)).join(', '))}</p>` : ''}`; // sakerna som ligger där (steg 13.1.3)
 }
 // runstenen (steg 10.6.1): runorna överst och texten på svenska under
 function runsten(id: number) {
   const r = s.runstenar?.find(q => q.id === id);
   if (!r) return '<p class="muted">Stenen finns inte längre.</p>';
-  return `<div class="phead">${iconImg(r.bild ? 'bildsten' : 'huggen_sten', 32)}<div><h2>${esc(runstenRubrik(r))}</h2></div></div>${r.bild ? '<p class="small muted">Stenen berättar i bilder i stället för runor.</p>' : `<p class="runor">${esc(r.runor)}</p>`}<p><i>”${esc(r.text)}”</i></p><p class="small muted">Rest för ${durTxt(s.now - r.t)} sedan.</p>`;
+  return `<div class="phead">${iconImg(r.bild ? 'bildsten' : 'huggen_sten', 32)}<div><h2 class="rutrub" data-passa="12">${esc(runstenRubrik(r))}</h2></div></div>${r.bild ? '<p class="small muted">Stenen berättar i bilder i stället för runor.</p>' : `<p class="runor">${esc(r.runor)}</p>`}<p><i>”${esc(r.text)}”</i></p><p class="small muted">Rest för ${durTxt(s.now - r.t)} sedan.</p>`;
 }
 function heligPlats(i: number) {
   const h = heligAt(s, i % W, Math.floor(i / W));
   if (!h) return '<p class="muted">Platsen är inte helig längre.</p>';
   const d = HELIGA_PLATSER[h.k], tr = troOf(s, h.tro);
-  return `<div class="phead">${iconImg(d.ikon, 32)}<div><h2>${esc(d.namn)}</h2></div></div><p>Platsen ${esc(h.om)}${tr ? `, helig för ${esc(troNamn(tr).toLowerCase())}` : ''}.${h.skandad ? ' Den har vanhelgats.' : ''}</p>`;
+  return `<div class="phead">${iconImg(d.ikon, 32)}<div><h2 class="rutrub" data-passa="12">${esc(d.namn)}</h2></div></div><p>Platsen ${esc(h.om)}${tr ? `, helig för ${esc(troNamn(tr).toLowerCase())}` : ''}.${h.skandad ? ' Den har vanhelgats.' : ''}</p>`;
 }
 // det som blivit kvar av en människa (steg 8.2.3, kvarlevor.ts)
 function kvarleva(id: number) {
   const q = kvarById(s, id);
   if (!q) return '<p class="muted">Det finns inte kvar längre.</p>';
   const d = KVARLEVOR[q.k];
-  return `<div class="phead">${iconImg(d.ikon, 32)}<div><h2>${esc(q.text)}</h2></div></div>
+  return `<div class="phead">${iconImg(d.ikon, 32)}<div><h2 class="rutrub" data-passa="12">${esc(q.text)}</h2></div></div>
     <p>${esc(d.namn)}. Ruttnar bort om ${durTxt(q.t + d.haller * DAY - s.now)}.</p>`;
 }
 // stubben efter ett fällt träd (steg 3.10.6): när trädet fälldes och hur länge det dröjer innan den ruttnat bort (STUBBE_LIV, skog.ts)
@@ -86,7 +86,7 @@ function stubbe(i: number) {
   const u = s.stubbar?.find(q => q.x === i % W && q.y === Math.floor(i / W));
   if (!u) return '<p class="muted">Stubben har ruttnat bort.</p>';
   return `
-    <div class="phead">${iconImg('sittplats', 32)}<div><h2>Stubbe</h2></div></div>
+    <div class="phead">${iconImg('sittplats', 32)}<div><h2 class="rutrub" data-passa="12">Stubbe</h2></div></div>
     <dl class="kv">
       <dt>Fälldes</dt><dd>för ${durTxt(s.now - u.t)} sedan</dd>
       <dt>Ruttnar bort</dt><dd>om ${durTxt(Math.max(0, STUBBE_LIV - (s.now - u.t)))}</dd>
@@ -99,7 +99,7 @@ function hage(id: number) {
   const b = hageBete(s, h), dj = djurIHagen(s, h), kant = hageKant(s, h), hela = kant.filter(i => harStaket(s, i)).length, dygn = hageDygn(s, h);
   const djur = dj.map(d => { const q = d.agare !== undefined ? byId(s, d.agare) : undefined; return `${iconImg(TAMDJUR[d.art].ikon, 12)} ${esc(TAMDJUR[d.art].namn)}, ${Math.floor(tamAlder(s, d))} år, hunger ${Math.round(d.hunger * 100)} %${q ? `, ${pLink(q)}` : ', byns'}`; }).join('<br>');
   return `
-    <div class="phead">${iconImg('hage', 32)}<div><h2>Hage</h2></div></div>
+    <div class="phead">${iconImg('hage', 32)}<div><h2 class="rutrub" data-passa="12">Hage</h2></div></div>
     <dl class="kv">
       <dt>Storlek</dt><dd>${h.w} × ${h.h} rutor</dd>
       <dt title="Gräset (rutor fulla med gräs), buskarna och ungträden som djuren kan äta">Bete</dt><dd>🍃 ${kortTal(b.gras)} · 🌳 ${b.buskar} · 🌲 ${b.unga}</dd>
@@ -117,7 +117,7 @@ function trad(i: number) {
   const ar = Math.floor(tradAlder(g, i, MARK.tradDygn));
   const alder = ar < 1 ? 'Under ett år' : `${ar} år`, stam = stamAv(g, i); // trä och grenar när det fälls (steg 5.1.4.4)
   return `
-    <div class="phead"><img class="ikon" src="${tradBildUrl(b)}" width="${b.typ === 'torr' ? 32 : 28}" style="height:auto;image-rendering:pixelated" alt=""><div><h2>${esc(art)}</h2><span class="muted">${esc(namn)}</span></div></div>
+    <div class="phead"><img class="ikon" src="${tradBildUrl(b)}" width="${b.typ === 'torr' ? 32 : 28}" style="height:auto;image-rendering:pixelated" alt=""><div><h2 class="rutrub" data-passa="12">${esc(art)}</h2><span class="muted">${esc(namn)}</span></div></div>
     <dl class="kv">
       <dt>Ålder</dt><dd>${alder}</dd>
       ${g.trees[i] >= FOREST ? `<dt>Fälls</dt><dd>${iconImg('ved', 14)} ${stam.ved} ${iconImg('grenar', 14)} ${stam.grenar}</dd>` : ''}
@@ -136,7 +136,7 @@ function buske(i: number) {
   const g = groundOf(s), bu = busksort(g, i);
   if (!bu) return '<p class="muted">Busken finns inte kvar.</p>';
   return `
-    <div class="phead"><img class="ikon" src="${tradBildUrl(buskBild(i % W, Math.floor(i / W)))}" width="32" style="height:auto;image-rendering:pixelated" alt=""><div><h2>${esc(bu.namn)}</h2></div></div>
+    <div class="phead"><img class="ikon" src="${tradBildUrl(buskBild(i % W, Math.floor(i / W)))}" width="32" style="height:auto;image-rendering:pixelated" alt=""><div><h2 class="rutrub" data-passa="12">${esc(bu.namn)}</h2></div></div>
     <p>${esc(bu.text)}</p>`;
 }
 // den uppsatta facklan (ljus.ts, steg 6.3.7): om den brinner och hur mycket som är kvar
@@ -144,7 +144,7 @@ function fackla(i: number) {
   const f = s.uppsatta?.find(q => q.x === i % W && q.y === Math.floor(i / W));
   if (!f) return '<p class="muted">Facklan är borta.</p>';
   return `
-    <div class="phead">${iconImg('fackla', 32)}<div><h2>Uppsatt fackla</h2></div></div>
+    <div class="phead">${iconImg('fackla', 32)}<div><h2 class="rutrub" data-passa="12">Uppsatt fackla</h2></div></div>
     <dl class="kv"><dt>${f.tand ? 'Brinner' : 'Släckt'}</dt><dd>${condBar(f.c)}<span>${Math.round(f.c * 100)} % kvar</span></dd></dl>`;
 }
 // stocken (skog.ts, skogsvard.ts): ett fällt träd eller ett vindfall som väntar på att huggas, och vad det ger
@@ -152,7 +152,7 @@ function stock(id: number) {
   const k = s.stockar?.find(q => q.id === id);
   if (!k) return '<p class="muted">Stocken är huggen.</p>';
   return `
-    <div class="phead">${iconImg('ved', 32)}<div><h2>Stock</h2></div></div>
+    <div class="phead">${iconImg('ved', 32)}<div><h2 class="rutrub" data-passa="12">Stock</h2></div></div>
     <p>Ett fällt träd som väntar på att huggas.</p>
     <dl class="kv"><dt>${iconImg('ved')}</dt><dd>${Math.floor(k.ved)} ved</dd><dt>${iconImg('grenar')}</dt><dd>${Math.floor(k.grenar)} grenar</dd></dl>`;
 }
@@ -189,7 +189,7 @@ function slitageAvSlag(k: string) {
 function slagIForradet(k: string) {
   const n = amountOf(s, k), v = grundvarde(k), ag = agareAvSlag(k), sl = slitageAvSlag(k);
   return `
-    <div class="phead">${iconImg(k, 32)}<div><h2>${esc(sakNamn(k))}</h2></div></div>
+    <div class="phead">${iconImg(k, 32)}<div><h2 class="rutrub" data-passa="12">${esc(sakNamn(k))}</h2></div></div>
     <dl class="kv">
       <dt>I förrådet</dt><dd>${isTool(k) ? Math.ceil(n - 1e-9) : Math.round(n)} st</dd>
       ${v ? `<dt title="Ungefär i arbetstimmar: det det tar att skaffa eller göra den">Värde</dt><dd>${tecknet('sym_vag', '⚖', 12)} ${kortTal(v)} styck</dd>` : ''}
@@ -230,7 +230,7 @@ export const sak: Flik = {
     const kv = t && !t.halv && t.q !== undefined ? `<dt>Kvalitet</dt><dd>${kvOrd(t) || 'Normal'}${kvOf(t) === NORMAL ? '' : ` <span class="muted">${esc(kvText(t).replace(/^[^:]*: /, ''))}</span>`}</dd>` : ''; // (steg 2.2.2)
     const ber = t && !t.halv ? sakBerattelse(s, t, sakNamn(k)) : ''; // mästerverken och de usla sakerna (steg 3.9.4)
     return `
-    <div class="phead">${iconImg(SAKER[k]?.bildyta && t?.ber?.mo ? k + '_malad' : k, 32)}<div><h2>${t?.helig !== undefined ? `<span title="Heligt i tron, står på altaret">${iconImg('heligt', 16)}</span> ` : ''}${t?.ber?.namn ? `★ ${esc(t.ber.namn)}: ` : ''}${egetNamn(s, k) ? `${esc(egetNamn(s, k)!)}: ` : ''}${esc(sakNamn(k))}${halv}</h2></div></div>${specialText(s, k, sakNamn) ? `<p class="small">${esc(specialText(s, k, sakNamn))}</p>` : ''}
+    <div class="phead">${iconImg(SAKER[k]?.bildyta && t?.ber?.mo ? k + '_malad' : k, 32)}<div><h2 class="rutrub" data-passa="12">${t?.helig !== undefined ? `<span title="Heligt i tron, står på altaret">${iconImg('heligt', 16)}</span> ` : ''}${t?.ber?.namn ? `★ ${esc(t.ber.namn)}: ` : ''}${egetNamn(s, k) ? `${esc(egetNamn(s, k)!)}: ` : ''}${esc(sakNamn(k))}${halv}</h2></div></div>${specialText(s, k, sakNamn) ? `<p class="small">${esc(specialText(s, k, sakNamn))}</p>` : ''}
     ${ber ? `<p class="besk">${esc(ber)}</p>` : ''}
     <dl class="kv">
       <dt class="klick falla" ${fallUt(skickId)} title="${esc(`${orsak}${sl.per > 0 ? `, ${perDygn(sl.per)} % per år` : ''}`)}">Skick</dt><dd>${condBar(c)}<span>${Math.round(c * 100)} %${haller ? ` · ${haller}` : ''}</span></dd>
@@ -253,13 +253,13 @@ export const sak: Flik = {
 // tornadon (steg 9.2.22): storleken, var den kom ifrån, hur långt den har kvar och vad den fällt, lyft och skadat hittills
 function tornadoRuta() {
   const t = s.tornado;
-  if (!t) return '<div class="phead"><div><h2>Tornadon</h2></div></div><p class="muted">Tornadon har dragit förbi.</p>';
+  if (!t) return '<div class="phead"><div><h2 class="rutrub" data-passa="12">Tornadon</h2></div></div><p class="muted">Tornadon har dragit förbi.</p>';
   const u = tornadoAndel(t, ui.nu), kvar = Math.max(0, Math.round((1 - u) * t.L)), tid = Math.max(0, t.till - ui.nu);
   const st = { liten: 'En liten tornado', medel: 'En tornado', stor: 'En stor tornado' }[t.storlek ?? 'medel'];
   const fran = tornadoPos(t, 0), fx = Math.round(fran.x), fy = Math.round(fran.y);
   const rad = (namn: string, n: number | undefined) => n ? `<dt>${namn}</dt><dd>${n}</dd>` : '';
   const gjort = rad('Träd fällda', t.trad) + rad('Saker lyfta', t.lyft) + rad('Väggar rivna', t.vagg) + rad('Saker sönder', t.sonder) + rad('Skadade', t.skadade) + rad('Döda', t.doda) + rad('Djur dödade', t.djur) + rad('Förstört', t.forstort);
-  return `<div class="phead"><div><h2>${iconImg('tornado', 20)} Tornadon</h2><p class="muted">${st}${t.test ? ' (testläget)' : ''}</p></div></div>
+  return `<div class="phead"><div><h2 class="rutrub" data-passa="12">${iconImg('tornado', 20)} Tornadon</h2><p class="muted">${st}${t.test ? ' (testläget)' : ''}</p></div></div>
     <dl class="kv"><dt>Kom från</dt><dd>Kartans kant ${esc(vaderstreck(s, fx, fy))} om elden</dd><dt>Kvar</dt><dd>${kvar} rutor, ${durTxt(tid)}</dd></dl>
     <h3>Hittills</h3>${gjort ? `<dl class="kv">${gjort}</dl>` : '<p class="muted">Inget än.</p>'}`;
 }

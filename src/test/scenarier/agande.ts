@@ -895,7 +895,7 @@ SCENARIER.bytessystem = {
     const korg = askForTool(s, a, b) === 'byte';
     const fb = s.filtar?.find(f => f.vem === b.id), fa = s.filtar?.find(f => f.vem === a.id);
     const filt = s.filtar?.length === 2 && !!fa && !!fb && fa.par === fb.par && fb.varor.some(v => v.k === 'korg' && v.fran === b.id) && fa.varor.length > 0 && fa.varor.every(v => v.fran === a.id);
-    const stort = korg && logg(s, 'l_byte') === 1 && kron(s, 'byte') === 1 && (s.stat?.storaByten ?? 0) === 1;
+    const stort = korg && logg(s, 'l_byte') === 1 && (s.stat?.storaByten ?? 0) === 1;
     // filten plockas ihop efter en stund
     s.now += 2 * HOUR; SIM.stadaByten(s);
     const ihop = !s.filtar?.length;
@@ -903,7 +903,7 @@ SCENARIER.bytessystem = {
     ({ s, a, b } = ny());
     a.hunger = 0.3; addTo(s, 'bar', 5); gain(s, b, 'bar', 6); gain(s, a, 'ved', 6);
     needLadder(s, a, 1);
-    const litet = (s.stat?.byten ?? 0) === 1 && logg(s, 'l_byte') === 1 && kron(s, 'byte') === 0 && !s.filtar?.length
+    const litet = (s.stat?.byten ?? 0) === 1 && logg(s, 'l_byte') === 1 && kron(s, 'k_handel') === 0 && !s.filtar?.length
       && (s.overl ?? []).some(o => o.a === b.id && o.b === a.id && o.k === 'bar') && (s.overl ?? []).some(o => o.a === a.id && o.b === b.id && o.k === 'ved');
     // en förälder ger ett redskap till sitt barn: i krönikan
     ({ s, a, b } = ny());
@@ -930,7 +930,7 @@ SCENARIER.bytessystem = {
     const led = medRep(true, 5), utanLed = medRep(false, 5), utan = medRep(false, 0);
     return [
       [`ett redskap byts på en filt med sakerna från båda (${korg ? 'bytte' : 'inget byte'})`, korg && filt],
-      ['det stora bytet står i loggen och i krönikan', stort],
+      ['bytet på filtarna står i loggen och räknas', stort],
       ['filten plockas ihop efter en stund', ihop],
       ['ett litet byte är en överlämning från hand till hand, i loggen men inte i krönikan', litet],
       ['ett redskap som ges till ett barn står i krönikan', barnGava],
@@ -938,6 +938,30 @@ SCENARIER.bytessystem = {
       [`ledaren byter till sig rep av en bybo åt byn (byn äger ${led.byn}, bybon har ${led.rep} kvar och fick betalt)`, led.byn >= 1 && led.byn <= 3 && led.rep === 5 - led.byn && led.fick > 0],
       [`i en by utan ledare gör den skickligaste i Handel detsamma (byn äger ${utanLed.byn})`, utanLed.byn >= 1],
       [`en bybo utan överflöd byter inte (byn äger ${utan.byn})`, utan.byn === 0],
+    ];
+  },
+};
+
+SCENARIER.bytesvikt = {
+  text: 'Bytenas vikt efter värdet (B.41): ett byte under BYTE.stort i värde, båda sidornas med kvaliteten, ger ingen rad i krönikan också om ett redskap var med, och över det en enda rad vars vikt i sammanfattningen växer med värdet. Ett rep mot en fisk syns inte i sammanfattningen, ett hus mot silver gör det',
+  kor: () => {
+    const { s, a, b } = bytesBy(), A = SIM.personPart(s, a, true), B = SIM.personPart(s, b, true);
+    const rader = () => (s.hist?.kronika ?? []).filter(k => k[2] === 'k_handel');
+    const n0 = (s.hist?.kronika ?? []).length;
+    SIM.byteKlart(s, A, B, [{ k: 'rep', n: 1 }], [{ k: 'rafisk', n: 1 }]);
+    SIM.byteKlart(s, A, B, [{ k: 'korg', n: 1 }], [{ k: 'rafisk', n: 1 }]);
+    const smaRader = (s.hist?.kronika ?? []).length - n0;
+    SIM.byteKlart(s, A, B, [{ k: 'ved', n: 20 }], [{ k: 'silver', n: 20 }]);
+    SIM.byteKlart(s, A, B, [{ k: 'hus', n: 1, hus: 1, varde: 200 }], [{ k: 'silver', n: 200 }]);
+    const r = rader(), [mellan, hus] = r;
+    // några andra händelser samma dag: det största bytet får plats bland de viktigaste, det mindre inte
+    for (let i = 0; i < 2; i++) SIM.kronika(s, `Byn fann något nytt ${i}.`, 'k_uppfann');
+    const text = bortaBerattelse(s, { fran: s.now - HOUR, fodda: 0, doda: 0 } as never).join(' ');
+    return [
+      [`ett rep mot en fisk och en korg mot en fisk ger ingen rad i krönikan (${smaRader})`, smaRader === 0],
+      [`två större byten ger en rad var (${r.length})`, r.length === 2],
+      [`vikten växer med värdet (${mellan?.[3]} och ${hus?.[3]})`, !!mellan && !!hus && hus[3]! > mellan[3]! && hus[3]! > 5],
+      [`huset mot silver syns i sammanfattningen, det mindre bytet inte (${text.slice(0, 120)})`, !!hus && text.includes(hus[1]) && !text.includes(mellan[1])],
     ];
   },
 };

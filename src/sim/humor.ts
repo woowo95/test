@@ -3,6 +3,7 @@ import { personHand, satHumor } from './personlogg';
 import { ALDER, ageOf, count, franMitt, getRel, isParent, livet, living, log, relKey, stat } from './folk';
 import { Kroppsdel, SkadaTyp, halsa, skada } from './halsa';
 import { die, leave } from './liv';
+import { flyttRad, sattFlyttSkal } from './flyttskal';
 import { skiljas } from './samtal';
 import { upplev } from './uppvaxt';
 import { blodas } from './blod';
@@ -238,8 +239,10 @@ export function flyttaUt(s: State, p: Person) {
   const folk = living(s), now = s.now;
   if (folk.some(q => q.id === p.partner) || folk.filter(q => q !== p && ageOf(q, now) >= ALDER.vuxen).length < HUMOR.flyttaVuxna) return false;
   const barn = folk.filter(c => isParent(p, c) && ageOf(c, now) < ALDER.vuxen && !folk.some(o => o !== p && isParent(o, c)));
+  sattFlyttSkal(s, p); // innan utbrottet, vars tankar är följden (B.42)
   utbrottBorjar(s, p, 'flytta');
   leave(s, p, ...barn);
+  flyttRad(s, [p, ...barn], 1, 'utan att stå ut längre', { logg: false });
   count(s, 'utvandrade', 1 + barn.length);
   return true;
 }

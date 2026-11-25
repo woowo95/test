@@ -38,6 +38,7 @@ const utlysFor = (s: SIM.State, p: SIM.Person, k: SIM.UppdragId, q: SIM.VarldPla
 };
 // en handlare från byn rad med lasten last kommer genom spelets egen väg in (handlarFram och handelSteg), förbi infarten
 const handlarenKommer = (s: SIM.State, rad: number, last: SIM.RadFard['last']) => {
+  s.varld!.farder = s.varld!.farder?.filter(f => !(f.handlare && f.fran === rad)); // byns egen handlare är inte redan på väg
   (s.varld!.farder ??= []).push({ id: 99001, fran: rad, till: s.varld!.huvud!, g: 'mat', n: 0, t0: s.now, t1: s.now, handlare: true, last } as SIM.RadFard);
   delete s.handlare; (s as { infart?: unknown }).infart = { klar: true };
   SIM.handlarFram(s, rad);
@@ -434,8 +435,29 @@ SCENARIER.platser = {
   },
 };
 
+SCENARIER.varldhel = {
+  text: 'Världskartan i helskärm (steg B.38): väljs världskartan i Omvärlden öppnas den över hela skärmen, och krysset eller Esc stänger den och Omvärlden står kvar på den del man såg. Rutan för det valda ligger ovanpå kartan till höger, och under den på en smal skärm',
+  kor: () => {
+    utanWebblasare(); const s = utanVarld(testBy(10)); SIM.medVarld(s); setByn(s); ui.omvDel = 'handlare';
+    const h: string[] = [], fore = (globalThis as { window?: unknown }).window;
+    (globalThis as { window?: unknown }).window = { dispatchEvent: (e: Event) => h.push(e.type) };
+    const knapp = { closest: () => ({ dataset: { odel: 'karta' } }) } as unknown as HTMLElement;
+    let tog = false; try { tog = !!grannarFlik.klick!(knapp); } finally { (globalThis as { window?: unknown }).window = fore; }
+    const kvar = ui.omvDel, html = grannarFlik.html();
+    ui.omvDel = 'karta'; const forsta = grannarFlik.html(); ui.omvDel = 'grannar';
+    const kod = readFileSync(new URL('../../ui/varldskarta.ts', import.meta.url), 'utf8');
+    return [
+      ['delen finns i Omvärlden', html.includes('data-odel="karta"')],
+      ['ett tryck öppnar kartan, och delen man såg står kvar under den', tog && h.join() === 'varldskarta' && kvar === 'handlare'],
+      ['Omvärlden visar aldrig kartan som en del i panelen', /data-odel="grannar" aria-selected="true"/.test(forsta) && !forsta.includes('vkHost')],
+      ['kartan täcker hela skärmen och stängs med krysset eller Esc', /\.vkRuta \{ position: fixed; inset: 0/.test(kod) && /'\.vkStang'\)!\.addEventListener\('click', stang\)/.test(kod) && /'Escape' && visas\(\)/.test(kod)],
+      ['rutan ligger ovanpå kartan till höger, och under den på en smal skärm', /\.vkSida \{ position: absolute; top: 56px; right: 8px/.test(kod) && /@media \(max-width: 700px\) \{ \.vkSida \{ position: static/.test(kod)],
+    ];
+  },
+};
+
 SCENARIER.varldskarta = {
-  text: 'Världskartan (steg 11.2.16): kartan ritar marken i färger, floderna och platserna med tecken ur paletten, och den går att dra och zooma. Den är en del i fliken Omvärlden, först i delraden, utan knapp i sidhuvudet, med en fast höjd, och lederna binds bara ihop rakt (steg 12.1.29)',
+  text: 'Världskartan (steg 11.2.16): kartan ritar marken i färger, floderna och platserna med tecken ur paletten, och den går att dra och zooma. Den är en del i fliken Omvärlden, först i delraden, utan knapp i sidhuvudet, och lederna binds bara ihop rakt (steg 12.1.29)',
   kor: () => {
     const s = utanVarld(testBy(10)), vl = SIM.medVarld(s), v = SIM.varldMark(s)!, b = VB.ritaVarld(vl, v), K = VB.VK;
     const px = (x: number, y: number) => { const i = (y * b.w + x) * 4; return '#' + [0, 1, 2].map(j => b.data[i + j].toString(16).padStart(2, '0')).join(''); };
@@ -478,7 +500,7 @@ SCENARIER.varldskarta = {
     // knappen och rutan
     const kod = readFileSync(new URL('../../ui/varldskarta.ts', import.meta.url), 'utf8'), main = readFileSync(new URL('../../main.ts', import.meta.url), 'utf8');
     const omv = readFileSync(new URL('../../ui/flikar/grannar.ts', import.meta.url), 'utf8');
-    const iOmv = /import '\.\/ui\/varldskarta'/.test(main) && !kod.includes('calVarld') && /getElementById\('vkHost'\)/.test(kod) && /MutationObserver/.test(kod) && /const DELAR: Del\[\] = \[\s*\{ id: 'karta'[^\n]*id="vkHost"/.test(omv) && /\.vkDuk \{[^}]*height: min\(/.test(kod);
+    const iOmv = /import '\.\/ui\/varldskarta'/.test(main) && !kod.includes('calVarld') && /const DELAR: Del\[\] = \[\s*\{ id: 'karta'[^\n]*hel: 'varldskarta'/.test(omv);
     const handelser = ['wheel', 'pointerdown', 'pointermove', 'pointerup'].every(h => kod.includes(`'${h}'`));
     // lederna binds ihop rakt (steg 12.1.29): två vägrutor snett intill varandra binds genom hörnrutan, inte med ett snett streck
     const upptagen = (x: number, y: number) => x < 0 || y < 0 || x >= v.w || y >= v.h || !!v.flod[y * v.w + x] || platsRuta.has(y * v.w + x) || (hb?.x === x && hb?.y === y);
@@ -504,7 +526,7 @@ SCENARIER.varldskarta = {
       ['zoomen håller punkten under musen kvar, och dra flyttar kartan', kvar && draOk],
       ['kartan går inte att dra bort, och zoomen har en gräns åt båda hållen', inne && zMax],
       ['en punkt på skärmen hittar sin världsruta', rutan],
-      ['kartan är den första delen i Omvärlden, utan knapp i sidhuvudet och med en fast höjd, och går att dra och zooma med mus och fingrar', iOmv && handelser],
+      ['kartan är den första delen i Omvärlden, utan knapp i sidhuvudet, och går att dra och zooma med mus och fingrar', iOmv && handelser],
       [`lederna binds bara ihop rakt: två vägrutor snett intill varandra går genom hörnrutan (${lx}, ${ly})`, rakt],
     ];
   },
@@ -1118,7 +1140,7 @@ SCENARIER.radledare = {
       [`egenskaperna är en bybos (1–20): ${SIM.STATS.slice(0, 4).map(k => `${k} ${Math.round(eg[k])}`).join(', ')} …`, egOk],
       [`ledarna blir som byborna gamla: median ${Math.round(median)} år (fjärdedelarna ${Math.round(aldrar[100])}–${Math.round(aldrar[300])})`, median > 50 && median < 90 && aldrar[0] >= SIM.RADPERSON.ledareFran],
       [`varje by som ska ha en ledare har en efter en timme (${med.length} byar), och den första är hövdingen huvudbyn känner (${l0.namn})`, alla && !!hovding && hovding.namn === l0.namn],
-      [`ledaren byts när hen dör (${l0.namn} → ${l1?.namn}), vid den kända tiden, och världens krönika får Ny ledare`, !!l1 && l1.nyckel !== l0.nyckel && l1.fodd < s.now && krona && r.fasta.length === 1],
+      [`ledaren byts när hen dör (${l0.namn} → ${l1?.namn}), vid den kända tiden, och världens krönika får Ny ledare`, !!l1 && l1.nyckel !== l0.nyckel && l1.fodd < s.now && krona && r.fasta.filter(x => x.roll === 'ledare').length === 1],
       [`den nya ledaren är hövding i huvudbyns förbindelse (${nyH.map(q => q.namn).join(', ')})`, nyH.length === 1 && nyH[0].namn === l1?.namn],
     ];
   },
@@ -1614,7 +1636,7 @@ SCENARIER.byruta = {
     const rad = SIM.varldHandelse(vl, 'rad', t0, { by: r.nr, mot: vl.huvud });
     const kand = SIM.byFlikar(s, nr)!, egenF = SIM.byFlikar(s, egenNr)!;
     const kod = readFileSync(new URL('../../ui/varldskarta.ts', import.meta.url), 'utf8');
-    const ui = /BYFLIKAR = \[(\s*\{ id: '\w+'[^\n]*\n){6}\]/.test(kod) && /\.vkHuvud \{[^}]*flex-wrap: wrap/.test(kod) && /\.vkDuk \{[^}]*flex: 3 1/.test(kod) && /class="vkOkand"[^>]*>\?</.test(kod) && kod.includes("'👁' : '👂'") && /data-id="\$\{p\.id\}"/.test(kod);
+    const ui = /BYFLIKAR = \[(\s*\{ id: '\w+'[^\n]*\n){6}\]/.test(kod) && /\.vkSida \{ position: absolute[^}]*right: 8px/.test(kod) && /class="vkOkand"[^>]*>\?</.test(kod) && kod.includes("'👁' : '👂'") && /data-id="\$\{p\.id\}"/.test(kod);
     return [
       [`flikarna: okänd by har inget om folket, teknikerna eller förbindelsen (${okandF.ruta.visshet ?? 'ingen visshet'})`, !okandF.ruta.visshet && !okandF.folket && !okandF.tek && !okandF.forb],
       [`hört av någon är Byn tror (${kand.ruta.visshet}), den egna byn Byn vet (${egenF.ruta.visshet})`, kand.ruta.visshet === 'tror' && egenF.ruta.visshet === 'vet' && en.visshet === 'tror'],
@@ -2685,6 +2707,38 @@ SCENARIER.byhandlingar = {
 // färden som byn just skickade (steg 12.1.111): den med ett nummer efter n0, numret före handlingen. Den senaste färden från byn
 // kan vara en äldre som redan kommit fram (testbyn är sparad och kan ha en färd ute), och dess post finns inte längre i kön
 const nyFard = (vl: SIM.Varlden, n0: number, villkor: (f: NonNullable<SIM.Varlden['farder']>[number]) => boolean) => vl.farder?.find(x => x.id > n0 && villkor(x));
+SCENARIER.fardruta = {
+  text: 'Ett tryck på en annan bys färd (steg B.39, fardfolk.ts och ui/varldskarta.ts): handelsfärden har två namngivna bärare ur byn, samma namn på raden, och rutan visar varifrån, vart, varför, lasten och när den väntas; handlaren till huvudbyn är en av byns handlare; de döda i en plundring försvinner ur färden; trycket träffar symbolen där den ritas',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!; vl.farder = [];
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && SIM.BYSORTER[x.sort].ledare && SIM.radGrannar(vl, x).some(g => g.nr !== vl.huvud))!, dyr = SIM.radGrannar(vl, r).find(g => g.nr !== vl.huvud)!;
+    SIM.mots(vl, r.nr, dyr.nr); SIM.mots(vl, dyr.nr, r.nr); r.tal.folk = Math.max(r.tal.folk, 20);
+    SIM.radVaror(r); SIM.radVaror(dyr); fyllEfterVilja(r);
+    r.varor!.virke = 3 * Math.round(SIM.radVill(r, 'virke', SIM.rikMal(r))); r.tal.rikedom = SIM.radRikedomUr(r);
+    dyr.varor!.virke = 0; dyr.tal.silver = 200; dyr.tal.rikedom = SIM.radRikedomUr(dyr);
+    const led = SIM.radLedare(r)?.namn, n0 = vl.nastaFard ?? 0;
+    SIM.BYHANDLINGAR.handel.gor(SIM.byCtx(s, vl, r, dyr));
+    const f = nyFard(vl, n0, x => x.fran === r.nr)!;
+    if (!f) return [['färden ger sig av', false]];
+    s.now = f.t0 + (f.t1 - f.t0) / 2;
+    const q = SIM.fardRuta(s, f, SIM.BYHANDLING.barare)!, i = SIM.fastaI(r, f.t0).map(p => p.namn);
+    const f2: SIM.RadFard = { id: 990077, fran: r.nr, till: dyr.nr, g: 'mat', n: 0, anfall: 4, t0: f.t0, t1: f.t1 };
+    vl.farder!.push(f2); SIM.namnFolk(vl, f2, 4); const fore = [...f2.folk ?? []];
+    SIM.fardDoda(vl, f2, 2, f.t1);
+    const hb = vl.rader!.find(x => x.syn && x.nr !== r.nr && SIM.lever(vl, x)), f3 = hb && { id: 990078, fran: hb.nr, till: vl.huvud!, g: 'mat', n: 0, handlare: true, t0: f.t0, t1: f.t1 } as SIM.RadFard;
+    if (f3) SIM.namnFolk(vl, f3, 1);
+    const gammal = SIM.fardRuta(s, { ...f, folk: undefined }, SIM.BYHANDLING.barare)!;
+    const kod = readFileSync(new URL('../../ui/varldskarta.ts', import.meta.url), 'utf8');
+    return [
+      [`två namngivna bärare (${q.folk.join(', ')}), som finns i byn och inte leder den`, q.folk.length === 2 && q.folk.every(n => i.includes(n) && n !== led)],
+      [`rutan: ${q.titel}, från ${q.fran} till ${q.till}, ${q.varfor}, bär ${q.bar.join(', ')}, framme om ${q.kvar.toFixed(2)} dygn`, q.titel === 'Handelsfärd' && q.fran === r.namn && q.till === dyr.namn && /Sälja/.test(q.varfor) && q.bar.length === 1 && !q.hemat && q.kvar > 0],
+      [`en plundring har andra namn (${fore.join(', ')}), och två döda försvinner`, fore.length === 4 && fore.every(n => !q.folk.includes(n)) && f2.folk!.length === 2],
+      [`handlaren till huvudbyn är en av byns handlare (${f3?.folk?.[0]})`, !!f3 && hb!.syn!.personer.some(p => p.roll === 'handlare' && p.namn === f3.folk?.[0])],
+      ['en äldre sparning utan namn visar antalet', gammal.folk.length === 0 && gammal.antal === 2],
+      ['trycket träffar symbolen där den ritas', /traff\(fardLage\(/.test(kod) && /if \(fd\) return fardHtml\(fd\)/.test(kod)],
+    ];
+  },
+};
 SCENARIER.handelsfard = {
   text: 'Handelsfärden mellan två byar (steg 11.6.6): en by med överflöd skickar en färd till den granne där gruppen är dyrast när resan är dragen; lasten lämnar byn när färden går, mottagaren får den och betalar när den kommer fram, och betalningen kommer hem, allt i hela tal',
   kor: () => {

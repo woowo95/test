@@ -26,7 +26,7 @@ export const lager: Flik = {
     const what = !z.slag ? '' : z.slag === 'mat' ? 'Här läggs maten. ' : 'Här läggs material och redskap. ';
     const vaxer = z.hus !== undefined ? 'Golvet i ett förrådshus: det växer inte och krymper inte.' : 'Byn gör lagerplatsen större när den blir full och mindre när den står tom.';
     return `
-    <div class="phead"><div><h2>${esc(z.namn ?? 'Lagret')}</h2></div>${hjalpKnapp('lager', 'Hur fungerar lagret?')}</div>
+    <div class="phead"><div><h2 class="rutrub" data-passa="12">${esc(z.namn ?? 'Lagret')}</h2></div>${hjalpKnapp('lager', 'Hur fungerar lagret?')}</div>
     ${hjalpText('lager', `<p class="muted small">${what}${vaxer}${zs.length > 1 ? ` Lagerplats ${nr} av ${zs.length}.` : ''}</p>`)}
     ${kvRubrik('Stackar')}${ps.length ? `<dl class="kv stk">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${hallCirkel(condOf(p))}</dd>`).join('')}</dl>` : '<p class="muted">Lagret är tomt.</p>'}
     <h3>På väg med saker</h3>${barare.length ? `<ul class="rels">${barare.map(p => `<li>${pLink(p)}<span></span><span></span><span class="muted">${esc(carryTxt(p))}</span></li>`).join('')}</ul>` : '<p class="muted">Ingen bär något just nu.</p>'}
@@ -43,7 +43,7 @@ export const hog: Flik = {
     if (!ps.length) return '<p class="muted">Här ligger inget längre.</p>';
     const who = living(s).filter(p => p.task?.act === 'bara' && Math.floor(p.task.tx) === at.x && Math.floor(p.task.ty) === at.y);
     return `
-    <div class="phead"><div><h2>${mark ? 'På marken' : 'Bredvid lagret'}</h2></div>${hjalpKnapp('hog', 'Varför ligger det här?')}</div>
+    <div class="phead"><div><h2 class="rutrub" data-passa="12">${mark ? 'På marken' : 'Bredvid lagret'}</h2></div>${hjalpKnapp('hog', 'Varför ligger det här?')}</div>
     ${hjalpText('hog', `<p class="muted small">${mark ? 'Lades ner av någon som kallades bort till något annat.' : 'Fick inte plats i lagret.'} Slits ${num(LAGER.ute)} gånger så fort som i lagret.</p>`)}
     ${kvRubrik('Här ligger')}<dl class="kv stk">${ps.map(p => `<dt class="tryck${frystAttr(p.k)}" ${sakAttr(p)}>${pileTxt(p)}</dt><dd>${hallCirkel(condOf(p))}</dd>`).join('')}</dl>
     ${who.length ? `<p class="muted">${who.map(p => pLink(p)).join(', ')} är på väg för att bära in det.</p>` : ''}`;

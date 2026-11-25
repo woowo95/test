@@ -27,6 +27,7 @@ export function figurRam(f: FigurRitad): { x: number; topp: number; botten: numb
 export const SKYLT = {
   hojd: 7, // textens höjd i världens punkter (en ruta är 16)
   minSkarm: 9, // namnen syns bara när texten blir minst så här många punkter hög på skärmen; annars är kartan för utzoomad
+  kvar: 60, // ett namn i en strid byter plats när den nya platsen täcker så här många kvadratpunkter mindre av figurerna
   luft: 1, // så många punkter i världen mellan två namn
   ikon: 8, // rollsymbolens storlek i världens punkter: symbolerna är 8 × 8 och ritas i hel skala
   // platserna ett namn på den som slåss får stå på, i tur och ordning: åt sidan (-1 vänster, 1 höger om figuren, 0 mitt för) och
@@ -44,8 +45,10 @@ export const skyltOver = (topp: number) => topp - SKYLT.avstand;
 // före de andra (den valda och den under musen har sin stora skylt; därefter rollerna). flytt = platserna namnet får stå på (SKYLT.flytt), för dem som slåss (steg B.19)
 export type Skylt = { id: number; x: number; y: number; w: number; ikon?: string; forst?: number; flytt?: [number, number][] };
 // vilka skyltar som syns: inga när texten blir för liten på skärmen (skala = världens punkter till skärmens), annars i tur och
-// ordning (forst, sedan id, så att samma namn står kvar från bild till bild) de som inte täcker en skylt som redan står
-export function synligaSkyltar(skyltar: Skylt[], skala: number, upptaget: { x: number; y: number; w: number; h: number }[] = []): Set<number> {
+// ordning (forst, sedan id, så att samma namn står kvar från bild till bild) de som inte täcker en skylt som redan står. forra =
+// platsen i flytt som var och en hade i förra bilden: namnet står kvar där så länge platsen är ledig och inte täcker mycket mer av
+// figurerna än den bästa (SKYLT.kvar, steg B.35)
+export function synligaSkyltar(skyltar: Skylt[], skala: number, upptaget: { x: number; y: number; w: number; h: number }[] = [], forra?: Map<number, number>): Set<number> {
   const ut = new Set<number>();
   if (SKYLT.hojd * skala < SKYLT.minSkarm) return ut;
   const tagna = [...upptaget], L = SKYLT.luft, [fb, fh] = SKYLT.figur;
@@ -55,11 +58,13 @@ export function synligaSkyltar(skyltar: Skylt[], skala: number, upptaget: { x: n
     const w = k.w + (k.ikon ? SKYLT.ikon + 1 : 0), ram = ([sida, dy]: [number, number]) => ({ x: k.x + sida * (w / 2 + fb + 1) - w / 2, y: k.y + dy - SKYLT.hojd, w, h: SKYLT.hojd });
     type Ram = ReturnType<typeof ram>;
     const krock = (r: Ram, o: Ram) => r.x < o.x + o.w + L && o.x < r.x + r.w + L && r.y < o.y + o.h + L && o.y < r.y + r.h + L;
-    const fria = (k.flytt ?? [[0, 0] as [number, number]]).map(ram).filter(r => !tagna.some(o => krock(r, o)));
+    const fria = (k.flytt ?? [[0, 0] as [number, number]]).map((f, i) => ({ i, ...ram(f) })).filter(r => !tagna.some(o => krock(r, o)));
     if (!fria.length) continue;
     // den första lediga platsen som täcker minst av figurerna
     const tackt = (r: Ram) => figurer.reduce((a, o) => a + Math.max(0, Math.min(r.x + r.w, o.x + o.w) - Math.max(r.x, o.x)) * Math.max(0, Math.min(r.y + r.h, o.y + o.h) - Math.max(r.y, o.y)), 0);
-    const r = k.flytt ? fria.reduce((a, b) => (tackt(b) < tackt(a) ? b : a)) : fria[0];
+    const bast = k.flytt ? fria.reduce((a, b) => (tackt(b) < tackt(a) ? b : a)) : fria[0], hade = k.flytt && forra ? fria.find(r => r.i === forra.get(k.id)) : undefined;
+    const r = hade && tackt(hade) <= tackt(bast) + SKYLT.kvar ? hade : bast;
+    if (k.flytt) forra?.set(k.id, r.i);
     tagna.push(r); ut.add(k.id); k.x = r.x + w / 2; k.y = r.y + SKYLT.hojd;
   }
   return ut;

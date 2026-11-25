@@ -21,7 +21,7 @@ export function matchHtml(m?: MatchMinne) {
   if (!m) return '<p class="muted">Matchen är glömd.</p>';
   const ber = matchBerattelse(s, m); // berättelsen högst upp (steg 5.4.8.2)
   const d = SPORT_AV[m.k], fard = d ? SKILL_NAMES[d.skill] : '';
-  const huvud = `<h2>${iconImg('boll', 18)} ${esc(d?.namn ?? 'Matchen')}</h2><p class="muted">${esc(clockTxt(m.t))}</p>${ber ? `<p class="ovBer">${esc(ber)}</p>` : ''}`;
+  const huvud = `<h2 class="rutrub" data-passa="12">${iconImg('boll', 18)} ${esc(d?.namn ?? 'Matchen')}</h2><p class="muted">${esc(clockTxt(m.t))}</p>${ber ? `<p class="ovBer">${esc(ber)}</p>` : ''}`;
   const fakta = [
     `<li title="Platsen">${iconImg('a_leka', 16)} I byn</li>`,
     `<li title="${esc(`Matchen varade i ${spelTid(minuter(m.t, m.slut) * MIN)}`)}">{sym_klocka} ${spelTid(minuter(m.t, m.slut) * MIN)}</li>`,

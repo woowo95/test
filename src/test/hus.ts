@@ -8,7 +8,7 @@ import { median } from './nyckeltal';
 const [antal = 16, dagar = 35] = process.argv.slice(2).map(Number);
 const seeds = Array.from({ length: antal }, (_, i) => seedAv(i));
 type Tim = { rutt: number; full: number; behov: number; tomma: number; forst: number; harForrad: number };
-type Ut = { seed: number; pop: number; planerat: Record<string, number>; ut: number; utbyggt: number; rivet: number; rasat: number; brand: number; brandVagg: number; bytt: Record<string, number>; nu: Record<string, number>; husKopt: number; kop: { billigt: number; utanHus: number; billigtStort: number; billigtRad: number; prisSum: number; radSum: number; vill: number; finnsHus: number; saljbart: number; stort: number; pris: number; affar: number; affarer: number };
+type Ut = { seed: number; pop: number; planerat: Record<string, number>; hyllor: number; hyllorNu: number; ut: number; utbyggt: number; rivet: number; rasat: number; brand: number; brandVagg: number; bytt: Record<string, number>; nu: Record<string, number>; husKopt: number; kop: { billigt: number; utanHus: number; billigtStort: number; billigtRad: number; prisSum: number; radSum: number; vill: number; finnsHus: number; saljbart: number; stort: number; pris: number; affar: number; affarer: number };
   ruttnat: number; rottMax: number; tim: Tim; fore: Record<string, number>; forradDag: number; vakter: number; larm: string[] };
 const t0 = Date.now();
 const rs = await pool(seeds.map(seed => () => korJson<Ut>('hus-en.ts', [String(seed), String(dagar)], `by ${seed}`)));
@@ -19,6 +19,8 @@ console.log(`${antal} byar, ${dagar} dygn (${dagar} år i spelet), ${sek(t0)} s 
 console.log('\nHUSEN                      totalt   per by (median)   byar där det hänt');
 const rad = (namn: string, fn: (r: Ut) => number) => console.log(namn.padEnd(26) + String(sum(fn)).padStart(7) + String(med(fn)).padStart(18) + `${rs.filter(r => fn(r) > 0).length}/${antal}`.padStart(20));
 for (const fn of nycklar(r => r.planerat)) rad(`planerat ${fn}`, r => r.planerat[fn] ?? 0);
+rad('planerad hylla', r => r.hyllor);
+rad('hyllor nu', r => r.hyllorNu);
 rad('planerad utbyggnad', r => r.ut);
 rad('färdig utbyggnad', r => r.utbyggt);
 for (const fn of nycklar(r => r.bytt)) rad(`bytt till ${fn}`, r => r.bytt[fn] ?? 0);

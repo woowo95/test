@@ -3,7 +3,7 @@
 // vakterna för det orimliga hela tiden. Det sista dygnet (ett år i spelet) följs några slumpvis valda personer i varje by
 // varje minut: allt de gjorde, varför, var de stod och vad de bar, och alla texter spelet skrev om dem; byns förråd och behov
 // skrivs varje timme. Sedan tar npm run utseende bilderna av kartan, rutorna och varje flik på datorn och i mobilen, i ljust
-// och mörkt läge, med vakterna för formen (UTAN_BILDER=1 hoppar över dem). Allt hamnar i mappen (node_modules/.cache/granska/<tid>
+// och mörkt läge, med vakterna för formen, och radbryt.ts mäter radbrytningarna (UTAN_BILDER=1 hoppar över dem). Allt hamnar i mappen (node_modules/.cache/granska/<tid>
 // om ingen anges), med LASMIG.md som säger vad som finns var. Läsarna och prövningen av fynden är arbetsflödet
 // .claude/workflows/granska.js. Utan tal: byarna 1, 1511 och 4634 i 10 dygn (10 år i spelet)
 import './utc';
@@ -66,7 +66,9 @@ if (i >= 0) {
     spawnSync('node', ['build.mjs'], { stdio: 'inherit' });
     const u = spawnSync('npx', ['tsx', 'src/test/utseende.ts', join(ut, 'bilder'), String(byar[0])], { encoding: 'utf8', env: { ...process.env, FALL: process.env.FALL ?? 'dag' }, maxBuffer: 1 << 26 });
     writeFileSync(join(ut, 'form.txt'), (u.stdout ?? '') + (u.stderr ?? ''));
-    bilder = `bilder/ (kartan på dagen, och bilder/flikar/: varje flik och personens ruta), form.txt (vakterna för formen)`;
+    const r = spawnSync('npx', ['tsx', 'src/test/radbryt.ts', ut], { encoding: 'utf8', maxBuffer: 1 << 26 }); // radbrytningarna (steg 13.10.43)
+    console.log((r.stdout ?? '').trim() + (r.status ? '\nradbryt: KRASCH ' + (r.stderr ?? '').slice(-300) : ''));
+    bilder = `radbryt.md och radbryt/ (radbrytningarna: var raderna bryts i alla rutor, på datorn och i mobilen, med en bild av varje ruta som larmar), bilder/ (kartan på dagen, och bilder/flikar/: varje flik och personens ruta), form.txt (vakterna för formen)`;
   }
   writeFileSync(join(ut, 'LASMIG.md'), [`# Granskarens underlag (steg 12.1.44)`, '', `Byarna ${byar.join(', ')} i ${dygn} dygn (${dygn} år i spelet), skapat ${new Date().toISOString().slice(0, 16)}.`, '',
     ...byar.map(b => `- by-${b}.md: personerna som följdes det sista dygnet, minut för minut, deras texter, byns logg, förråden och behoven varje timme, och vakternas larm`), `- ${bilder}`, '',

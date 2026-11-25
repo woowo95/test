@@ -1,4 +1,4 @@
-import { bestamd, han, heltOrd, honom, stor } from './ord';
+import { bestamd, han, heltOrd, honom, stor, tal } from './ord';
 import { gastensPlatser, horOmGast, kannerOrt, kartaBorta, O_KANT, ORT, radBesoker } from './ort';
 import { SKRIFT } from './skriftTal';
 import { NORMAL } from './kvalitet';
@@ -334,7 +334,9 @@ function filtPlats(s: State) {
 // i världen från kanten närmast byn (en av de två närmaste, slumpat), på land
 function kommer(s: State, tvinga?: boolean, rad?: number) {
   const fran = rad === undefined ? undefined : klanerOf(s).find(k => k.rad === rad);
-  const kh = fran ? klanHandlare(s, fran) : rad === undefined ? handlarKlan(s, tvinga) : undefined; // byn som skickade hen, eller (testläget) vilken som helst
+  const gick = s.varld?.farder?.find(x => x.handlare && x.fran === rad && x.t2 === undefined)?.folk?.[0]; // den som gav sig av på färden (steg B.39)
+  const gp = fran && gick !== undefined ? fran.personer.find(q => q.namn === gick && q.roll === 'handlare') : undefined;
+  const kh = fran ? gp ? { klan: fran, person: gp } : klanHandlare(s, fran) : rad === undefined ? handlarKlan(s, tvinga) : undefined; // byn som skickade hen, eller (testläget) vilken som helst
   if (!kh) return false;
   const e = eldPlats(s), m = getMap(s.seed), mal = filtPlats(s);
   const k = () => kanterna(e.x, e.y).filter(p => m.tiles[Math.floor(p.y) * W + Math.floor(p.x)] !== T.Vatten);
@@ -355,7 +357,7 @@ function kommer(s: State, tvinga?: boolean, rad?: number) {
   const hpers = nyGast(s, { id: h.id, namn: kh.person.namn, sex, fodd, rad: { sort: 'handlare', klan: kh.klan.id, hem: kh.klan.hem }, x: ut.x, y: ut.y, nyckel, skill: { handel: heltMellan(s, HANDEL.handel) } });
   s.people.push(hpers);
   gastTillbaka(s, hpers); // samma person som förra gången, om hen varit här (steg 9.2.114)
-  if (h.vagnar) karavanFolje(s, h, kh.klan.id, kh.klan.hem, (last?.folk ?? 1) - 1, mal, ut); // följet och lägret (steg 11.11.6)
+  if (h.vagnar) karavanFolje(s, h, kh.klan.id, kh.klan.hem, (last?.folk ?? 1) - 1, mal, ut, i => fard && handlarKrok.person(s, fard, i + 1)); // följet och lägret (steg 11.11.6)
   if (s.varld?.huvud !== undefined) { const hb = byPlats(s.varld, s.varld.huvud); if (hb) radBesoker(s.varld, kh.klan.rad, hb.nr); trampaFard(s, kh.klan.rad, s.varld.huvud, sallskapTyngd(last?.folk ?? 1)); } // handlarens by har besökt huvudbyn (steg 11.4.10), och hen trampade vägen (steg 11.5.1)
   gastensPlatser(s, hpers); // det hens by känner (steg 11.4.11); handlaren själv, inte den sista i följet (steg 12.1.64)
   h.varor = last ? last.varor : packa(s, rymmer(h));
@@ -391,7 +393,7 @@ function handlarKarta(s: State, h: Handlare) {
 // handlaren från byn rad har kommit fram till kartans kant (byhandling.ts, steg 11.6.8) och går in när det är fritt
 export function handlarFram(s: State, rad: number) { (s.handlarVantar ??= []).push(rad); }
 // handlaren har gått från byn: färden hem på världskartan börjar (krok, så att handel.ts inte laddar byhandling.ts)
-export const handlarKrok = { hem: (_s: State, _rad: number, _last?: HandlarLast) => {}, borta: (_s: State, _rad: number) => {}, sorter: (_s: State): string[] => [] }; // borta: hen dog i byn; last: det hen bär hem; sorter: de sorter grannbyarna skulle skicka (steg 11.6.10)
+export const handlarKrok = { person: (_s: State, _f: import('./byhandling').RadFard, _i: number): { namn: string; sex: 'm' | 'k' } | undefined => undefined, hem: (_s: State, _rad: number, _last?: HandlarLast) => {}, borta: (_s: State, _rad: number) => {}, sorter: (_s: State): string[] => [] }; // borta: hen dog i byn; last: det hen bär hem; sorter: de sorter grannbyarna skulle skicka (steg 11.6.10)
 const handlarHem = (s: State, rad: number, h?: Handlare) => handlarKrok.hem(s, rad, h ? handlarHemLast(h) : undefined);
 const handlarBorta = (s: State, h: Handlare) => { const kl = hp(s, h).gast?.klan, rad = kl !== undefined ? klanById(s, kl)?.rad : undefined; if (rad !== undefined) handlarKrok.borta(s, rad); foljetGar(s, h); };
 
@@ -475,7 +477,7 @@ export function handlarTornado(s: State, h: Handlare, dod: boolean, del: number,
   h.varor = h.varor.filter(w => w.n >= 1);
   if (till) { hp(s, h).x = till.x + 0.5; hp(s, h).y = till.y + 0.5; }
   gar(s, h, true);
-  log(s, `Tornadon kastade handlaren ${hp(s, h).name} ${till ? 'en bit bort' : 'åt sidan'}${sonder ? ` och ${sonder} av varorna i packningen gick sönder` : ''}. ${stor(han(hp(s, h)))} går hem.`, 'world');
+  log(s, `Tornadon kastade handlaren ${hp(s, h).name} ${till ? 'en bit bort' : 'åt sidan'}${sonder ? ` och ${tal(sonder)} av varorna i packningen gick sönder` : ''}. ${stor(han(hp(s, h)))} går hem.`, 'world');
 }
 
 // handlaren dog av svält, kyla eller sjukdom (gastvardag.ts, steg 9.2.113): packningen tas ihop, besöket tar slut och nästa
@@ -505,10 +507,10 @@ export function karavanLager(s: State, mal: { x: number; y: number }, ut: { x: n
   return { x: ut.x, y: ut.y };
 }
 // följet är gäster av sorten folje ur samma by som ledaren, och lägret läggs ut
-function karavanFolje(s: State, h: Handlare, klan: number, hem: string, n: number, mal: { x: number; y: number }, ut: { x: number; y: number }) {
+function karavanFolje(s: State, h: Handlare, klan: number, hem: string, n: number, mal: { x: number; y: number }, ut: { x: number; y: number }, vem: (i: number) => { namn: string; sex: 'm' | 'k' } | undefined) {
   h.lager = karavanLager(s, mal, ut); h.folj = [];
   for (let i = 0; i < n; i++) {
-    const sex = rnd(s, 'handel') < 0.5 ? 'm' as const : 'k' as const, namn = makeName(s, sex, 'handel'), age = 18 + rnd(s, 'handel') * 30;
+    const v = vem(i), sex0 = rnd(s, 'handel') < 0.5 ? 'm' as const : 'k' as const, namn0 = makeName(s, sex0, 'handel'), sex = v?.sex ?? sex0, namn = v?.namn ?? namn0, age = 18 + rnd(s, 'handel') * 30;
     const id = nyttGastId(s), p = nyGast(s, { id, namn, sex, fodd: s.now - age * DAY, rad: { sort: 'folje', klan, hem }, x: ut.x, y: ut.y, nyckel: (s.gastNr ?? 0) * 7919 + i });
     s.people.push(p); h.folj.push(id);
   }

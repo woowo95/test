@@ -116,8 +116,8 @@ function kretsVikter(s: State, tr: Tro) {
   return folk.map(p => ({ p, w: 1, andel: (1 - (pr && folk.includes(pr) ? a : 0)) / folk.length + (p === pr ? a : 0) }));
 }
 // ---------- registret ----------
-export interface Rost { id: number; namn: string; w: number; ja: boolean; why: string; }
-export interface Omrostning { t: number; f: string; namn: string; fram: number; framNamn: string; roster: Rost[]; ja: number; nej: number; gick: boolean; varfor?: string; om?: string; andr?: RostAndring } // om: vad lagen eller påbudet gör (steg 10.2.58)
+export interface Rost { id: number; namn: string; w: number; ja: boolean; why: string; pa?: number; } // pa: kandidaten rösten gick till i ett ledarval (steg B.40)
+export interface Omrostning { t: number; f: string; namn: string; fram: number; framNamn: string; roster: Rost[]; ja: number; nej: number; gick: boolean; andelar?: { id: number; namn: string; a: number }[] /* kandidaterna i ett ledarval och deras andel av de vägda rösterna, den som vann först (steg B.40) */; varfor?: string; om?: string; andr?: RostAndring } // om: vad lagen eller påbudet gör (steg 10.2.58)
 export interface Fraga { f: string; d: FragaData; fram: number; prio?: number }
 // vad en omröstning ändrar, från vad och till vad (steg 11.1.28): k = 'pabud:<påbud>' eller 'lagtal:<lag>:<tal>', så att fliken skriver talen
 export interface RostAndring { k: string; fran: number; till: number; del?: RostAndring[] } // del: alla talen när ett påbud har flera (steg 12.1.27)

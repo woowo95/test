@@ -35,7 +35,7 @@ function sjoHtml() {
   const fiskar = har('fiske'), badar = har('bada');
   const sankta = (s.sankta ?? []).filter(q => q.sjo === n).slice().reverse(); // de döda som sänkts här (steg 10.4.5)
   return `
-    <div class="phead"><span class="dot big" style="background:var(--g-skiffer)"></span><div><h2>${esc(sjoNamn(s, n))}</h2>
+    <div class="phead"><span class="dot big" style="background:var(--g-skiffer)"></span><div><h2 class="rutrub" data-passa="12">${esc(sjoNamn(s, n))}</h2>
     <p class="muted">${rutor.length} rutor vatten. Man fiskar och badar från stranden.</p></div>${hjalpKnapp('sjo-om', 'Vad gör sjön?')}</div>${hjalpText('sjo-om', `<p class="muted small">I sjön finns fisk, som blir färre där man fiskar mycket och växer till igen med tiden. Man dricker och badar här, och i kylan fryser sjön.</p>`)}
     <h3>Just nu</h3><dl class="kv">
       <dt>${iconImg('abborre', 14)} Fisk</dt><dd>${bar(kvar)}<span>${Math.round(kvar * 100)} % av en rik sjö</span></dd>

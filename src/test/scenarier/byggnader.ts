@@ -82,6 +82,47 @@ SCENARIER.fulltforrad = {
   },
 };
 
+SCENARIER.hyllorforst = {
+  text: 'Hyllor före nya förrådshus (steg B.37): förrådet räknas i högar, en hylla i ett förrådshus som finns är ett av byggplanens förslag med samma poäng (värde per kostnad) som att bygga ut eller bygga nytt, och byn väljer den när den kan göra hyllor och har en full hög att ställa på den. Utan tekniken eller materialet byggs det ut eller nytt',
+  kor: () => {
+    const s = createState(6, START);
+    klockan(s); byggare(s);
+    for (let i = 0; i < 4 && !housesOf(s).some(h => h.fn === 'forrad' && h.klar); i++) {
+      for (const k of ['ved', 'grenar', 'sten', 'torrgras', 'bar', 'rotter', 'kantarell', 'abborre', 'flinta', 'kanin']) SIM.put(s, k, 60);
+      planBuild(s); byggKlart(s);
+    }
+    const h = housesOf(s).find(q => q.fn === 'forrad' && q.klar), z = zonesOf(s).find(q => q.hus === h?.id);
+    if (!h || !z) return [['byn har ett förrådshus', false]];
+    // golvet fullt av grenar, och fler högar grenar utan plats under tak
+    for (const k of ['ved', 'sten', 'torrgras', 'bar', 'rotter', 'kantarell', 'abborre', 'flinta', 'kanin']) SIM.setAmount(s, k, 0);
+    SIM.setAmount(s, 'grenar', 0); SIM.setAmount(s, 'virke', 60); SIM.setAmount(s, 'plankor', 4); SIM.setAmount(s, 'rep', 4);
+    SIM.setAmount(s, 'grenar', SIM.rutaOf('grenar') * (z.w * z.h + 12));
+    const brist = () => BYGGNADER.forrad.akut!(s).plats;
+    const plan = (mat: boolean, tek: boolean) => {
+      const v = SIM.cloneState(s);
+      for (const p of v.people) p.tek = { ...p.tek, hylla: tek ? 1 : 0 };
+      if (!mat) { SIM.setAmount(v, 'plankor', 0); SIM.setAmount(v, 'rep', 0); }
+      SIM.touch(v);
+      for (let i = 0; i < 4 && !v.hyllPlan && !housesOf(v).some(q => !q.klar) ; i++) planBuild(v);
+      return v;
+    };
+    const utan = plan(false, true), okand = plan(true, false), med = plan(true, true);
+    const hp = med.hyllPlan, efter = (v: State) => housesOf(v).some(q => !q.klar && q.fn === 'forrad');
+    const tidigt = efter(med), brist1 = SIM.PROJEKT.hylla!.brist(med), plats = SIM.stationSite(med, 'hylla');
+    let t = 0;
+    while (t < 240 && !SIM.stationerOf(med).some(q => q.k === 'hylla' && SIM.isKlar(q))) { kor(med, 1); t++; }
+    const hy = SIM.stationerOf(med).find(q => q.k === 'hylla' && SIM.isKlar(q));
+    return [
+      [`förrådet räknas i högar: högarna utan plats under tak är bristen (${brist()})`, brist() > 0],
+      ['utan material ingen hylla: byn bygger ut eller nytt', !utan.hyllPlan],
+      ['utan tekniken ingen hylla', !okand.hyllPlan],
+      [`med båda väljer byggplanen en hylla i förrådshuset (${JSON.stringify(hp)})`, !!hp && inZone(z, hp.x, hp.y) && !tidigt],
+      ['hyllan blir ett projekt på den platsen', brist1 > 0 && !!plats && !!hp && plats.x === hp.x && plats.y === hp.y],
+      [`och byggs (${t} timmar), och sedan är det valet glömt`, !!hy && (kor(med, 1), med.hyllPlan?.x !== hy.x || med.hyllPlan.y !== hy.y)],
+    ];
+  },
+};
+
 SCENARIER.forradshus = {
   lang: true,
   text: 'Fyller förrådet fler rutor än förrådshusen rymmer bygger byn ett förrådshus (steg 10.2.67). Golvet blir en lagerplats under tak, där det som ligger ruttnar och slits mindre, och maten bärs in dit',
@@ -796,7 +837,7 @@ SCENARIER.heltal = {
 
 // ett hus med yttermåtten w×h och hörnet (x, y), som planBuild gör det: timmerväggar, en öppning på södra sidan (i kolumnen dorr,
 // mitt på om inget anges) och golvet av trä om inget annat anges. klar = färdigbyggt
-function husPa(s: SIM.State, x: number, y: number, w: number, h: number, klar: boolean, val: { golv?: string; dorr?: number; namn?: string; fn?: SIM.Hus['fn'] } = {}) {
+export function husPa(s: SIM.State, x: number, y: number, w: number, h: number, klar: boolean, val: { golv?: string; dorr?: number; namn?: string; fn?: SIM.Hus['fn'] } = {}) {
   const hus: SIM.Hus = { id: (s.nextBit ??= 1), namn: val.namn ?? 'Hydda', x, y, w, h, fn: val.fn ?? 'sovsal' };
   s.nextBit++;
   for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) {

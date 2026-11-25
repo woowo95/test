@@ -66,7 +66,7 @@ const histOf = (s: State) => (s.hist ??= ny());
 // som inte står här visas bara när ingen kategori är vald
 export interface KronikaKat { id: string; namn: string; ikon: string; tecken: string; slag: string[] }
 export const KRONIKA_KAT: KronikaKat[] = [
-  { id: 'liv', namn: 'Liv', ikon: 'kk_liv', tecken: '❤️', slag: ['k_fodd', 'k_dog', 'k_dogSpad', 'k_gift', 'k_atergrundad', 'k_djur', 'arv', 'flytt', 'utflytt', 'forlat'] }, // utflytt: de som flyttade till en by i världen (steg 11.3.5)
+  { id: 'liv', namn: 'Liv', ikon: 'kk_liv', tecken: '❤️', slag: ['k_fodd', 'k_dog', 'k_dogSpad', 'k_gift', 'k_atergrundad', 'k_djur', 'arv', 'flytt', 'k_flytt', 'utflytt', 'forlat'] }, // utflytt: de som flyttade till en by i världen (steg 11.3.5)
   { id: 'styre', namn: 'Styre', ikon: 'kk_styre', tecken: '👑', slag: ['ledare', 'k_ledare', 'k_forstaLedare', 'k_utvisad', 'k_ratt', 'bynamn'] },
   { id: 'strid', namn: 'Strid', ikon: 'kk_strid', tecken: '⚔️', slag: ['rovare', 'k_rovare', 'k_vargAnfall', 'k_vargSprang', 'k_vargjakt', 'k_forstaVarg', 'k_bjornAnfall', 'k_bjornSprang', 'k_bjornjakt', 'k_bjornjaktMiss', 'k_forstaBjorn', 'k_skadad'] },
   { id: 'tro', namn: 'Tro', ikon: 'kk_tro', tecken: '☀️', slag: ['tro', 'k_tro'] },
@@ -79,14 +79,15 @@ export const KRONIKA_KAT: KronikaKat[] = [
 const KAT_AV = new Map(KRONIKA_KAT.flatMap(k => k.slag.map(sl => [sl, k.id] as const)));
 // kategorin för ett slag av krönikerad (undefined = ingen, t.ex. en rad i en gammal sparfil utan slag)
 export const kronikaKat = (slag?: string) => slag === undefined ? undefined : KAT_AV.get(slag);
-export const kronika = (s: State, text: string, slag?: string) => kronikaVid(s, s.now, text, slag);
+// vikt: hur viktig raden är i sammanfattningen (ui/borta.ts), när det inte följer av slaget (ett byte efter värdet, B.41)
+export const kronika = (s: State, text: string, slag?: string, vikt?: number) => kronikaVid(s, s.now, text, slag, vikt);
 // en rad vid en annan tid än nu (den väckta byns krönika bakåt, steg 11.13.17)
-export function kronikaVid(s: State, tid: number, text: string, slag?: string) {
+export function kronikaVid(s: State, tid: number, text: string, slag?: string, vikt?: number) {
   horText('kronika', text);
   const k = histOf(s).kronika, t = Math.round(tid);
   let i = k.length;
   while (i > 0 && k[i - 1][0] > t) i--;
-  k.splice(i, 0, slag ? [t, text, slag] : [t, text]);
+  k.splice(i, 0, slag ? vikt !== undefined ? [t, text, slag, vikt] : [t, text, slag] : [t, text]);
 }
 
 // varje timme: en rad med nyckeltalen, och timmar äldre än en vecka slås ihop till ett värde per dygn

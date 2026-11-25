@@ -263,6 +263,43 @@ SCENARIER.utflyttning = {
   },
 };
 
+SCENARIER.flyttskal = {
+  text: 'Skälet att lämna byn (B.42): den som går väljs efter hur hen mår och banden till byn, och skälet, det som tyngde hen mest och byns skäl, står i krönikan, notisen och personen',
+  kor: () => {
+    const ny = () => {
+      const s = createState(6, START); rikBy(s); setFood(s, 300); s.styre = undefined;
+      for (const q of living(s)) { q.mother = q.father = q.partner = undefined; q.born = s.now - 25 * DAY; }
+      for (let i = 0; i < 26; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 25);
+      for (const q of living(s)) SIM.think(q, 'Trångt', -0.2, s.now, 30 * DAY);
+      const arg = living(s)[3];
+      SIM.tanke(arg, 'gralade', s.now, { namn: living(s)[4].name, v: -0.5, tid: 30 * DAY });
+      return { s, arg };
+    };
+    const { s, arg } = ny(), hus = living(s)[5];
+    const v0 = SIM.flyttVikt(s, hus), vArg = SIM.flyttVikt(s, arg);
+    for (const i of [6, 7, 8]) getRel(s, hus, living(s)[i]).op = 90;
+    const barn = nyInvanare(s, 'm', 5); barn.mother = hus.id;
+    const vBand = SIM.flyttVikt(s, hus);
+    // den som går för att hen inte står ut: raden säger tanken
+    SIM.flyttaUt(s, arg);
+    const rad = s.hist!.kronika.find(k => k[2] === 'k_flytt')?.[1] ?? '', not = JSON.stringify((s.notiser?.lista ?? []).filter(n => n.id === 'utflytt'));
+    // ur en trång by: skälet är tanken och byns
+    const t = ny();
+    for (let i = 0; i < 500 && !t.s.stat?.utvandrade; i++) { regulate(t.s, 3600); t.s.now += HOUR; }
+    const gick = t.s.people.find(q => q.left !== undefined && q.flyttSkal), rad2 = t.s.hist!.kronika.find(k => k[2] === 'k_flytt')?.[1] ?? '';
+    const st = ny(); st.s.styre = { historia: [], ledare: st.arg.id } as never; SIM.flyttaUt(st.s, st.arg); SIM.slutarStyre(st.s, 'lämnade byn');
+    const slut = st.s.hist!.kronika.find(k => k[2] === 'ledare')?.[1] ?? '';
+    return [
+      [`den som mår sämst går oftare (${vArg.toFixed(2)} mot ${v0.toFixed(2)})`, vArg > v0],
+      [`den med vänner och barn i byn går mer sällan (${vBand.toFixed(2)})`, vBand < v0 * 0.6],
+      [`raden i krönikan nämner tanken (${rad})`, rad.includes(arg.name) && !!arg.flyttSkal?.tanke && rad.includes(arg.flyttSkal.tanke)],
+      [`notisen säger samma sak (${not.slice(0, 80)})`, not.includes(arg.flyttSkal?.tanke ?? '?')],
+      [`ur den trånga byn står tanken och byns skäl (${rad2} ${JSON.stringify(gick?.flyttSkal)} ${gick?.name})`, !!gick && rad2.includes(gick.flyttSkal!.tanke!) && !!gick.flyttSkal!.byn && rad2.includes(gick.flyttSkal!.text!)],
+      [`raden om ledaren som slutade säger skälet (${slut})`, slut.includes(st.arg.flyttSkal?.tanke ?? '?')],
+    ];
+  },
+};
+
 SCENARIER.personlighet = {
   text: 'Utpräglade personligheter: de flesta egenskaper är tydligt låga eller höga, balanserade personer är ovanliga, och barnen ärver egenskaperna utan att de drar mot mitten (steg 2.3.11)',
   kor: () => {
@@ -1084,7 +1121,7 @@ SCENARIER.blockera = {
     // samma dörr som riktiga rutor på kartan (steg 10.1.6, testarenans plats): väggen är rutorna x = 27 utom rutan y = 19, och
     // striden frågar världen om dem (provVarld). Samma sak ska gälla: ingen förbi den som står i öppningen, ingen i en vägg
     const X0 = 20, Y0 = 15, rutor = new Set<number>(); // inne på den minsta kartan (64 × 40 när ingen by är laddad)
-    for (let y = 0; y < 9; y++) if (y !== 4) rutor.add((Y0 + y) * SIM.W + X0 + 7);
+    for (let y = -13; y < 22; y++) if (y !== 4) rutor.add((Y0 + y) * SIM.W + X0 + 7); // längre än vägen runt söks: annars går den som inte får plats runt väggen till den bakom (steg B.34)
     const varld = SIM.provVarld(undefined, rutor), iRuta = (x: number, y: number) => rutor.has(Math.floor(y) * SIM.W + Math.floor(x));
     let kForbi = 0, kVagg = 0, kIgenom = 0, kN = 0;
     for (let fro = 1; fro <= 40; fro++) {
@@ -1104,7 +1141,7 @@ SCENARIER.blockera = {
       [`dörren som riktiga rutor på kartan: ingen kommer förbi den som står i öppningen (${kForbi}) eller står i en vägg (${kVagg}), och när hen fallit går de igenom (${kIgenom} av ${kN})`, kForbi === 0 && kVagg === 0 && kIgenom >= kN * 0.6],
       [`hundra strider i rad går genom samma värld (${manga.n} strider genom dörren, ${manga.vann[0]} mot ${manga.vann[1]}, ${manga.oavgjort} oavgjorda)`, manga.n === 50 && manga.vann[0] + manga.vann[1] > 0],
       [`öppen plan, 60 strider tre mot tre (${steg} steg): ingen kliver närmare än ${KR} rutor till en fiende som står (${nara} gånger)`, steg > 1000 && nara === 0],
-      [`den som flyr förbi en fiende som står går runt hen (som närmast ${runt.toFixed(2)} rutor) och kommer undan (${borta ? 'ja' : 'nej'})`, runt >= KR - 1e-6 && runt < 1.2 && borta],
+      [`den som flyr förbi en fiende som står går runt hen (som närmast ${runt.toFixed(2)} rutor) och kommer undan (${borta ? 'ja' : 'nej'})`, runt >= KR - 1e-6 && runt < 1.2 + SIM.STRID.flyHall - SIM.STRID.kropp && borta],
       [`dörröppningen: ingen kommer förbi den som står i den (${forbi} gånger) eller går genom väggen (${iVaggen}, ${utan} vid sidan av öppningen)`, forbi === 0 && iVaggen === 0 && utan === 0],
       [`när den i öppningen fallit går de andra igenom och slåss med den bakom (${igenom} av ${n} strider)`, igenom >= n * 0.6],
     ];
@@ -2756,6 +2793,7 @@ SCENARIER.rovarrast = {
       step(s, 30, ev);
       prat += ev.filter(e => ids.has(e.a) && ids.has(e.b)).length;
       if (!f.vantat) continue;
+      if (!rastTid) f.till = s.now + 20 * SIM.MIN; // en längre vila än vanligt (steg B.27)
       rastTid += 30;
       const fo = SIM.rovarna(s, f), gor = fo.map(r => r.gast!.gor ?? '');
       gor.forEach(g => handlingar.add(g));
@@ -3061,6 +3099,7 @@ SCENARIER.rovarprat = {
       const ev: TalkEvent[] = [];
       step(s, 10, ev);
       if (!f.vantat) { forra = new Map(); continue; }
+      if (!rastSek) f.till = s.now + 20 * SIM.MIN; // en längre vila än vanligt (lurMin, steg B.27), så att livet på rastplatsen hinner synas
       rastSek += 10;
       prat += ev.filter(e => ids.has(e.a) && ids.has(e.b)).length;
       for (const r of SIM.rovarna(s, f)) { const q = forra.get(r.id); if (q) { if (Math.hypot(r.x! - q.x, r.y! - q.y) > 0.2) gar++; else star++; } forra.set(r.id, { x: r.x!, y: r.y! }); }

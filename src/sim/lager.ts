@@ -187,7 +187,8 @@ export function lagerRutor(s: State) {
 export function stacksOf(s: State): Stack[] {
   return s.stackar ??= [];
 }
-export const tidy = (s: State) => { s.stackar = stacksOf(s).filter(a => a.n > 1e-6 || (a.dold ?? 0) > 1e-6); changed(s); };
+const harNagot = (a: Stack) => a.n > 1e-6 || (a.dold ?? 0) > 1e-6; // i stacken ligger något, om så bara det som är gömt i den (den giftiga svampen)
+export const tidy = (s: State) => { s.stackar = stacksOf(s).filter(harNagot); changed(s); };
 
 // ---------- summorna ----------
 // Summorna räknas om när en stack ändrats. Allt som ändrar en stack anropar changed (bygg.ts när ett hus flyttar en stack),
@@ -565,7 +566,7 @@ function occupancy(s: State, ts = tingOf(s)) {
   m.redskap = new Map();
   m.eld = eldRutor(s); // i elden läggs inget (steg 12.1.153)
   const g = lagerRutor(s);
-  for (const a of stacksOf(s)) if (lagradI(s, g, a.x, a.y)) { const i = key(a.x, a.y); if (a.n <= 1e-6 && m.has(i)) continue; /* en tom stack tar inte platsen från det som ligger där */ m.set(i, a); if (isTool(a.k)) m.redskap.set(i, (m.redskap.get(i) ?? 0) + a.n); } // redskapen i ett ställ tar var sin plats
+  for (const a of stacksOf(s)) if (lagradI(s, g, a.x, a.y)) { const i = key(a.x, a.y); if (!harNagot(a) && m.has(i)) continue; /* en tom stack tar inte platsen från det som ligger där */ m.set(i, a); if (isTool(a.k)) m.redskap.set(i, (m.redskap.get(i) ?? 0) + a.n); } // redskapen i ett ställ tar var sin plats
   for (const t of ts) if (paRutan(t) && lagradI(s, g, t.x!, t.y!)) { const i = key(t.x!, t.y!); m.set(i, asStack(t)); m.redskap.set(i, (m.redskap.get(i) ?? 0) + 1); }
   return m;
 }
@@ -1353,7 +1354,7 @@ function tingRuta(s: State, st: Stack[], eld: Set<number>, tx: number, ty: numbe
   for (let r = 0; r <= 4; r++) for (let y = ty - r; y <= ty + r; y++) for (let x = tx - r; x <= tx + r; x++) {
     if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) !== r || !inMap(x, y) || eld.has(key(x, y)) || sittAt(s, x, y)) continue;
     if (r > 0 && (!usable(s, x, y) && !ledigtGolv(s, x, y) || stubbeOn(s, x, y) || isStored(s, x, y))) continue;
-    if (st.some(q => q.x === x && q.y === y && q.n > 1e-6)) continue;
+    if (st.some(q => q.x === x && q.y === y && harNagot(q))) continue;
     return { x, y };
   }
   return { x: tx, y: ty };
@@ -1367,7 +1368,7 @@ function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: numb
     if (r === 0 && sittAt(s, x, y)) continue; // där man står eller sitter vid en station eller ett bord läggs inget, inte heller det man burit dit (steg 12.1.158)
     if (r > 0 && (!usable(s, x, y) && !ledigtGolv(s, x, y) || stubbeOn(s, x, y) || !vid && isStored(s, x, y))) continue;
     // där något annat redan ligger; på rutan själv bara i ett lager, där varje ruta har en sort (en hög på marken får vara blandad)
-    if ((r > 0 || isStored(s, x, y)) && st.some(q => q.x === x && q.y === y && q.k !== k && q.n > 1e-6)) continue;
+    if ((r > 0 || isStored(s, x, y)) && st.some(q => q.x === x && q.y === y && q.k !== k && harNagot(q))) continue;
     if (isStored(s, x, y) && ((tingRutor ??= new Set(lying(s).map(t => key(t.x!, t.y!)))).has(key(x, y)) || forvarAt(s, x, y))) continue; // (i en förvaring läggs inget bredvid)
     let g = st.find(q => q.x === x && q.y === y && q.k === k);
     const v = Math.min(n, Math.max(0, helt(rymd(s, x, y, k)) - (g?.n ?? 0)));
@@ -1379,7 +1380,7 @@ function laggBredvid(s: State, st: Stack[], eld: Set<number>, k: string, n: numb
   if (n <= 1e-9) return forst;
   if (ingenPlats(tx, ty)) { place(s, k, n, c, ag); return forst; } // runt elden eller väggen är fullt: i förrådet eller bredvid det
   // i ett lager rymmer rutan en sak: ligger något annat där läggs resten i förrådet
-  if (isStored(s, tx, ty) && (st.some(q => q.x === tx && q.y === ty && q.k !== k && q.n > 1e-6) || (tingRutor ??= new Set(lying(s).map(t => key(t.x!, t.y!)))).has(key(tx, ty)) || forvarAt(s, tx, ty))) { place(s, k, n, c, ag); return forst; }
+  if (isStored(s, tx, ty) && (st.some(q => q.x === tx && q.y === ty && q.k !== k && harNagot(q)) || (tingRutor ??= new Set(lying(s).map(t => key(t.x!, t.y!)))).has(key(tx, ty)) || forvarAt(s, tx, ty))) { place(s, k, n, c, ag); return forst; }
   let g = st.find(q => q.x === tx && q.y === ty && q.k === k); if (!g) st.push(g = { x: tx, y: ty, k, n: 0, c }); addToStack(s, g, n, c, ag); // runt omkring är fullt
   return forst ?? { x: tx, y: ty };
 }

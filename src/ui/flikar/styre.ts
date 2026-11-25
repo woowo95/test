@@ -1,4 +1,4 @@
-import { BUDGET, budgetAndel, budgetNu, sakNamn, type Omrostning, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagTakDelar, lagarNu, skrivenVar, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_FRAGOR, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, lagerAv, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
+import { BUDGET, budgetAndel, budgetNu, sakNamn, type Omrostning, type Rost, type Lag, titelOm, LAG, LAGAR, efterlevs, lagTak, lagTakDelar, lagarNu, skrivenVar, MINISTRAR, TRONFOLJD_TEXT, tronfoljd, DAY, LED, PABUD, PABUD_FRAGOR, Pabud, Rattegang, SEDER, STR, STRAFF_NAMN, VAGSKALAR, byId, lagerAv, legitimitet, ledareOf, onskatDygn, pabud, pabudAndel, rattegang, styrelseform, timeLabel, torkAndel } from '../../sim';
 import { iconImg } from '../../ikoner';
 import { bar, delRad, esc, fallUt, flikLank, hjalpKnapp, hjalpText, num, pLink } from '../hjalp';
 import { s, ui } from '../lage';
@@ -35,7 +35,7 @@ function styretHtml() {
       return `<li ${sedKlick(v.sed!)}>${sedVag(x, esc(d.neg), esc(d.pos))}${sedFormat(v.sed!, dragen)}${sedLista(v.sed!, dragen)}</li>`;
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc([...(h.forr ?? []), h.titel].map(x => x.toLowerCase()).join(', sedan '))}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
-    return `${ledare}<div class="phead"><div><h3>Maktens seder</h3></div>${flikLank('seder', 'Alla seder')}</div><ul class="seder">${skalar}</ul>${omrostningar()}${rattegangar()}<h3>Ledarna genom tiden</h3><ol class="logg">${hist}</ol>`;
+    return `${ledare}<div class="phead rubrad"><div><h3>Maktens seder</h3></div>${flikLank('seder', 'Alla seder')}</div><ul class="seder">${skalar}</ul>${omrostningar()}${rattegangar()}<h3>Ledarna genom tiden</h3><ol class="logg">${hist}</ol>`;
 }
 
 // stenen Styre (steg 9.3.1): delarna i en rad knappar överst, styret och påbuden. Registret: en ny del är en rad i DELAR
@@ -152,20 +152,23 @@ export function omrostningar(lista = s.styre?.roster, rubrik = 'Omröstningar') 
   if (!lista?.length) return '';
   return `${rubrik ? `<h3>${esc(rubrik)}</h3>` : ''}<ol class="logg">${lista.slice().reverse().map(o => {
     const id = `rost-${o.t}-${o.f}-${o.fram}`, val = o.f === 'ledare';
-    return `<li class="klick falla" ${fallUt(id, 'rost-')} title="Tryck för alla röster"><span class="when">${timeLabel(s, o.t)}</span>${esc(o.namn)}${val ? `: ${esc(o.framNamn)}` : ` ${o.gick ? 'ja' : 'nej'}`} <span class="muted">${val ? '' : `(${Math.round(o.ja * 100)} % mot ${Math.round(o.nej * 100)} %)`}</span></li>${hjalpText(id, rostMer(o))}`;
+    return `<li class="klick falla" ${fallUt(id, 'rost-')} title="Tryck för alla röster"><span class="when">${timeLabel(s, o.t)}</span>${esc(o.namn)}${val ? `: ${esc(valAndelar(o))}` : ` ${o.gick ? 'ja' : 'nej'}`} <span class="muted">${val ? '' : `(${Math.round(o.ja * 100)} % mot ${Math.round(o.nej * 100)} %)`}</span></li>${hjalpText(id, rostMer(o))}`;
   }).join('')}</ol>`;
 }
 // en omröstning utfälld (steg 9.2.65): en stapel som delas i ja och nej efter vikten, och under den en rad per röst med en symbol
 // för ja eller nej, namnet och en liten stapel för vikten, ja-rösterna först och de tyngsta överst. Den som lade fram frågan har en
 // egen symbol och ledaren sin krona; varför personen röstade så syns vid musen eller med ett tryck på raden
+// ledarvalets kandidater med andelen av rösterna, vinnaren först (steg B.40); ett äldre val har bara vinnaren
+export const valAndelar = (o: Omrostning) => o.andelar?.length ? o.andelar.map(x => `${x.namn} ${Math.round(x.a * 100)} %`).join(', ') : o.framNamn;
 function rostMer(o: Omrostning) {
   const val = o.f === 'ledare', l = ledareOf(s), tot = o.roster.reduce((a, r) => a + r.w, 0) || 1, ja = o.roster.filter(r => r.ja).reduce((a, r) => a + r.w, 0) / tot;
   const max = Math.max(0.01, ...o.roster.map(r => r.w));
   const stapel = val ? '' : `<div class="rostbar" title="${esc(`Ja ${Math.round(ja * 100)} %, nej ${Math.round((1 - ja) * 100)} % av vikten`)}"><span class="ja" style="width:${(ja * 100).toFixed(1)}%"></span><span class="nej" style="width:${((1 - ja) * 100).toFixed(1)}%"></span></div>`;
-  const rader = o.roster.slice().sort((a, b) => (val ? 0 : Number(b.ja) - Number(a.ja)) || b.w - a.w).map(r => {
+  const plats = (r: Rost) => o.andelar?.findIndex(x => x.id === r.pa) ?? 0; // i ett ledarval: rösterna på vinnaren först, sedan nästa kandidat
+  const rader = o.roster.slice().sort((a, b) => (val ? plats(a) - plats(b) : Number(b.ja) - Number(a.ja)) || b.w - a.w).map(r => {
     const id = `rr-${o.t}-${r.id}`, sym = val ? '' : `<span title="${r.ja ? 'Ja' : 'Nej'}">${iconImg(r.ja ? 'r_ja' : 'r_nej', 12)}</span>`;
-    const mark = (r.id === o.fram ? ` <span title="Lade fram frågan">${iconImg('r_fram', 12)}</span>` : '') + (l?.id === r.id ? ` <span title="Byns ledare">${iconImg('ledarskap', 12)}</span>` : '');
-    return `<li class="klick falla" ${fallUt(id, 'rr-')} title="${esc(r.why)}">${sym}<span class="rnamn">${esc(r.namn)}${mark}</span><span class="rostw" title="Väger ${Math.round(r.w * 100)} %">${bar(r.w / max)}</span></li>${hjalpText(id, `<li class="small muted rvarfor">${esc(r.why)}</li>`)}`;
+    const mark = (!val && r.id === o.fram ? ` <span title="Lade fram frågan">${iconImg('r_fram', 12)}</span>` : '') + (l?.id === r.id ? ` <span title="Byns ledare">${iconImg('ledarskap', 12)}</span>` : '');
+    return `<li class="klick falla" ${fallUt(id, 'rr-')} title="${esc(r.why)}">${sym}<span class="rnamn">${esc(r.namn)}${mark}${val && r.pa !== undefined ? ` <span class="muted">${esc(o.andelar?.find(x => x.id === r.pa)?.namn ?? '')}</span>` : ''}</span><span class="rostw" title="Väger ${Math.round(r.w * 100)} %">${bar(r.w / max)}</span></li>${hjalpText(id, `<li class="small muted rvarfor">${esc(r.why)}</li>`)}`;
   }).join('');
   return `<li class="small">${o.andr && andrText(o.andr) ? `<p><b>${esc(andrText(o.andr))}</b></p>` : ''}${o.om ? `<p>${esc(o.om)}</p>` : ''}<p class="muted">${val ? `Byn valde ${esc(o.framNamn)}.` : `Lades fram av ${esc(o.framNamn)}.`} ${o.varfor ? esc(o.varfor) : ''}</p>${stapel}<ul class="roster">${rader}</ul></li>`;
 }

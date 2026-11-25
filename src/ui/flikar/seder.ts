@@ -23,11 +23,11 @@ export const seder: Flik = {
 // den sidan, högst VIKTER, och den tunga skålen sjunker. Orden står vid ändarna, stora nog att väga upp vågen
 const VIKTER = 5;
 // långa ord delas vid sammansättningen med ett mjukt bindestreck, som i skissen (Själv-försörjning)
-const bryt = (o: string) => o.replace(/^(Själv|Samman|Gemen)(?=\S{5})/, '$1&shy;');
+const bryt = (o: string) => o.replace(/^(Själv|Samman)(?=\S{6})/, '$1&shy;');
 // ingen pil vid vågen (steg 12.1.28): vart seden är på väg syns på raderna under den
 export function sedVag(v: number, neg = '', pos = '') {
   const n = Math.min(VIKTER, Math.round(Math.abs(v) * VIKTER));
-  return `<div class="sedvag"><span class="sedord">${bryt(neg)}</span><span class="vag" role="img" aria-label="${n ? `${n} av ${VIKTER} åt ${v < 0 ? 'vänster' : 'höger'}` : 'i jämvikt'}">${vagSvg(n, v < 0 ? -1 : 1)}</span><span class="sedord">${bryt(pos)}</span></div>`;
+  return `<div class="sedvag"><span class="sedord">${bryt(neg)}</span><span class="vag" role="img" aria-label="${n ? `${n} av ${VIKTER} åt ${v < 0 ? 'vänster' : 'höger'}` : 'i jämvikt'}"><span class="vagstor">${vagSvg(n, v < 0 ? -1 : 1)}</span><span class="vagliten">${vagSvg(n, v < 0 ? -1 : 1, 1)}</span></span><span class="sedord">${bryt(pos)}</span></div>`;
 }
 export const sedBar = (v: number) => mittStapel(v);
 
