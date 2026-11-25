@@ -26,7 +26,7 @@ export const foretagFinhet = (s: State, f: Foretag, v: string): number | undefin
   for (const r of foretagRum(s, f)) { const x = finhetAv(s, r); if (x !== undefined && (b === undefined || x > b)) b = x; }
   return b === undefined || !VERKSAMHETER[v] ? undefined : b;
 };
-const overForvantan = (s: State, p: Person, f: Foretag, v: string) => { const x = foretagFinhet(s, f, v); return x === undefined ? 0 : x - (p.finForv ?? FORVANTAN.grund); };
+export const overForvantan = (s: State, p: Person, f: Foretag, v: string) => { const x = foretagFinhet(s, f, v); return x === undefined ? 0 : x - (p.finForv ?? FORVANTAN.grund); };
 tycker.push((s, p, f, v) => (d => d > 0 ? d * KONKURRENS.over : d)(overForvantan(s, p, f, v)) * KONKURRENS.finhet * (VERKSAMHETER[v].hylla ? KONKURRENS.hylla : 1));
 // dagens kunder: den som avstod, och hur fint hen väntat sig att det var
 fragat.push((s, p, f, v, valde) => {

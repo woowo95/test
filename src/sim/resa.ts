@@ -1003,8 +1003,12 @@ export function radBesok(s: State, sl: Sallskap, t: number) {
     r.fasta.push({ namn: makeName(s, kon, 'resa'), kon, fodd: Math.round(t - (18 + rnd(s, 'resa') * 30) * DAY), roll: 'mott' });
   }
   if (k) k.inst = Math.min(100, k.inst + RESA.besokInst);
+  for (const g of motkrok) g(s, r.nr, folk);
   dagbok(s, sl, 'mote', `Mötte folket i ${r.namn}.`, t); count(s, 'resa besök');
 }
+
+// det som händer när resenärerna möter folket i grannbyn (foretagsrykte.ts)
+export const motkrok: ((s: State, nr: number, folk: Person[]) => void)[] = [];
 
 // ---------- hemkomsten och andelarna (steg 11.5.9, Andelarna i tal) ----------
 // Hemma går det som finns kvar av insatserna tillbaka till sina ägare (av en sak som flera satsat delat efter hur mycket var och

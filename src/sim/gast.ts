@@ -161,9 +161,12 @@ export function gastGar(s: State, id: number, hem?: boolean) {
 // handlingen och gästraden). Hemma åldras hen (födelsen står kvar) och lever förenklat: skadorna läker, sjukdomen går över
 // och behoven är fyllda när hen kommer igen, och tankar som hunnit blekna är borta. Samma person kommer tillbaka (gastTillbaka)
 export const BESOKET = ['id', 'x', 'y', 'task', 'gast', 'died', 'cause', 'left'] as const;
+// det som händer när gästen kommer hem (foretagsrykte.ts)
+export const hemkrok: ((s: State, p: Person) => void)[] = [];
 export function gastHem(s: State, p: Person) {
   const k = klanById(s, p.gast?.klan);
   if (!k || p.died !== undefined) return;
+  for (const g of hemkrok) g(s, p);
   let kp = k.personer.find(q => q.namn === p.name && q.sex === p.sex);
   if (!kp) { if (p.gast!.sort === 'handlare') return; kp = { namn: p.name, sex: p.sex, roll: p.gast!.sort }; k.personer.push(kp); } // en rövare som flydde hem, en främling som visades bort
   skrivVanor(); // vanornas tal skrivs till vanobjektet innan personen kopieras (seder.ts)

@@ -25,6 +25,7 @@ import { tystISporten } from './sport';
 // ---------- balanstal (regel 8) ----------
 // Samtalen: vem man pratar med, vilket slags samtal det blir, hur det går och vad det ger, och humöret. Relationen (op) går från
 // -100 till 100 och humöret från 0 till 1 (gränserna för relationen, REL, står i folk.ts, åldern för flirt i ALDER)
+export const samtalskrok: ((s: State, a: Person, b: Person) => void)[] = []; // det som också berättas i ett samtal
 export const SAMTAL = balans('samtal', {
   lagTanke: 0.5, // lag kommer man på hälften så fort som ledarskap, när man redan kan det
   lonTanke: 0.5, // lön likaså, när byn tagit in nog i skatt
@@ -235,6 +236,7 @@ export function converse(s: State, a: Person, others: Person[], events?: TalkEve
     talaForSed(s, a, b, r.op); // och avvikaren talar för sin sed (steg 13.9.4)
     berattaSmak(a, b, r.op); // och om sin favoritmat eller det man avskyr (steg 9.6.6)
     berattaSpecial(s, a, b, r.op); // och om byns egen rätt (steg 10.7.29)
+    for (const g of samtalskrok) g(s, a, b); // och om företagen (steg 14.1.10)
     beOmForlatelse(s, a, b); // och den som gjort den andra illa ber om förlåtelse (steg 10.8.2)
     berattaBrist(a, b, now); // och vad man längtar efter ("jag längtar efter kött", steg 2.6.2)
     samtalAmne(s, a, b, kind);

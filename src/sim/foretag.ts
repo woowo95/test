@@ -42,8 +42,9 @@ export const FORETAG = balans('foretag', {
   minne: 0.5, // så mycket av det företaget säljer på ett dygn glöms till nästa
 });
 // dag = dagens köp och de som ville men avstod, gap = hur mycket finare rum dagens kunder väntat sig, enkelt = medlet (konkurrens.ts)
+// byar = ryktet i grannbyarna, efter radens nummer (foretagsrykte.ts)
 // det företaget sålt: n = kunder och v = värdet, per dygn (glöms med FORETAG.minne)
-export interface Foretag { id: number; ag: number; hus?: number; verk: string[]; namn: string; t: number; salt?: Record<string, number>; intakt?: number; vinst?: number; pris?: Record<string, number>; ko?: import('./kassa').KoRad[]; lamnat?: number; kallad?: number; dag?: Record<string, { salt?: number; nej?: number[]; gatt?: number }>; gap?: { n: number; v: number; vem: number[] }; enkelt?: number }
+export interface Foretag { id: number; ag: number; hus?: number; verk: string[]; namn: string; t: number; salt?: Record<string, number>; intakt?: number; vinst?: number; pris?: Record<string, number>; ko?: import('./kassa').KoRad[]; lamnat?: number; kallad?: number; dag?: Record<string, { salt?: number; nej?: number[]; gatt?: number }>; gap?: { n: number; v: number; vem: number[] }; enkelt?: number; byar?: Record<number, { v: number; n: number }> }
 export const foretagOf = (s: State): Foretag[] => s.foretag ?? [];
 export const foretagAvHus = (s: State, hus?: number) => hus === undefined ? undefined : foretagOf(s).find(f => f.hus === hus);
 

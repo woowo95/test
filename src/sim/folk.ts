@@ -351,7 +351,7 @@ export const MALL: Record<keyof Person, undefined> = {
   y: undefined, task: undefined, fame: undefined, hand: undefined, sportVinst: undefined, kallad: undefined, hue: undefined, tag: undefined,
   bast: undefined, arke: undefined, rivaler: undefined, rivalom: undefined, mentor: undefined, mentorSk: undefined, upp: undefined,
   anlag: undefined, andlig: undefined, tro: undefined, troStyrka: undefined, svartSjuk: undefined, prat: undefined, binamn: undefined,
-  varsel: undefined, forv: undefined, finForv: undefined, utb: undefined, ubr: undefined, angr: undefined, lekt: undefined, morkT: undefined, larm: undefined,
+  varsel: undefined, forv: undefined, finForv: undefined, omd: undefined, utb: undefined, ubr: undefined, angr: undefined, lekt: undefined, morkT: undefined, larm: undefined,
   intryck: undefined, sedArv: undefined, sedTal: undefined, smak: undefined, reservAlltid: undefined, liv: undefined, skam: undefined,
 };
 export const nyPerson = (p: Person): Person => ({ ...MALL, ...p }) as unknown as Person;

@@ -156,10 +156,11 @@ export function koaKlar(s: State, p: Person, t: Task) {
   const v = f.ko!.splice(i, 1)[0].v; (f.dag ??= {})[v] = { ...f.dag?.[v], gatt: (f.dag?.[v]?.gatt ?? 0) + 1 };
   f.lamnat = (f.lamnat ?? 0) + 1;
   tanke(p, 'vantadeForgaves', s.now); count(s, 'koLamnat');
-  for (const g of omdome) g(s, p, f, undefined, 0);
+  for (const g of omdome) g(s, p, f);
 }
 // det som händer när kunden fått en vara (k) eller gått utan (undefined): omdömet och försäljningen (steg 14.1.9 och 14.1.10)
-export const omdome: ((s: State, p: Person, f: Foretag, k: string | undefined, net: number) => void)[] = [];
+// besöket: far = det varan var värd för kunden, net = det som är kvar när den är betald, kv = kvaliteten, vantat = minuter i kön
+export const omdome: ((s: State, p: Person, f: Foretag, b?: { v: string; far: number; net: number; kv: number; vantat: number }) => void)[] = [];
 // ---------- att betjäna ----------
 // så gärna p betjänar i företaget f: ägaren och de anställda, och ägarens familj
 export const arbetarI: ((s: State, p: Person, f: Foretag) => number)[] = [];
@@ -207,7 +208,7 @@ export function betjanaKlar(s: State, q: Person, t: Task) {
 export function kopVid(s: State, f: Foretag, p: Person, r: KoRad, at: Person): boolean {
   const V = VERKSAMHETER[r.v], G = saljPart(s, f), M = personPart(s, p), t = V.vatska ? karl(s, f, r.k) : undefined;
   p.task = undefined;
-  const fel = () => { for (const g of omdome) g(s, p, f, undefined, 0); count(s, 'koUtan'); return false; };
+  const fel = () => { for (const g of omdome) g(s, p, f); count(s, 'koUtan'); return false; };
   if (V.ats && iRackhall(at.x, at.y, () => ownsId(s, f.ag, r.k)) < 1) return fel(); // maten kom aldrig fram
   if (!G || (V.vatska ? !t : !varorAv(s, f, r.v, G).includes(r.k))) return fel(); // slut
   const h = V.hylla ? hyllan(s, f).find(q => q.k === r.k) : undefined, n = h ? Math.min(r.n, h.n) : 1;
@@ -231,7 +232,7 @@ export function kopVid(s: State, f: Foretag, p: Person, r: KoRad, at: Person): b
   (f.salt ??= {})[r.v] = (f.salt[r.v] ?? 0) + 1; f.intakt = (f.intakt ?? 0) + betalt; f.vinst = (f.vinst ?? 0) + betalt - n * kv * (V.grund?.(r.k) ?? grundvarde(r.k) * G.varde(r.k));
   count(s, 'foretagSalt'); count(s, 'foretagSalt_' + r.v);
   if (forstaGang(s, 'foretagSalt')) log(s, `${p.name} blev den första kunden: ${f.namn}.`, 'world', [p.id]);
-  for (const g of omdome) g(s, p, f, r.k, far - b.kost);
+  for (const g of omdome) g(s, p, f, { v: r.v, far, net: far - b.kost, kv, vantat: (s.now - r.t) / MIN });
   // kunden sätter sig vid ett bord i rummet med det hen köpt
   if (V.ats || t) {
     const plats = ledigPlats(s, p) ?? { x: p.x, y: p.y };

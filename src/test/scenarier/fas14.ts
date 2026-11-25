@@ -342,3 +342,39 @@ SCENARIER.konkurrens = {
     ];
   },
 };
+
+SCENARIER.foretagsrykte = {
+  text: 'Steg 14.1.10: varje besök ger ett omdöme (kvaliteten, priset, finheten och väntan), omdömena är företagets rykte, de sprids i samtalen och till grannbyarna, och kunden går hellre dit hen var nöjd',
+  kor: () => {
+    const { s, f, f2, r, vux } = tvaForetag(), [a, b] = vux, c = SIM.living(s).find(q => q !== a && q !== b && q.id !== f.ag)!;
+    for (const q of vux) { q.finForv = 0.3; q.hunger = 0.4; }
+    s.finhet = { ...s.finhet, [SIM.rumNyckel(r)]: 0.3 };
+    const om = (o: Partial<SIM.Besok>) => SIM.omdomeAv({ s, p: a, f, v: 'servering', far: 4, net: 1.6, kv: 1, vantat: 4, ...o });
+    const mitt = om({}), kv = om({ kv: 1.5 }), pris = om({ net: 0.4 }), kort = om({ vantat: 0.2 });
+    const fint = (() => { s.finhet![SIM.rumNyckel(r)] = 0.8; const x = om({}); s.finhet![SIM.rumNyckel(r)] = 0.3; return x; })();
+    for (const g of SIM.omdome) g(s, a, f, { v: 'servering', far: 4, net: 3.8, kv: 1.5, vantat: 0.2 });
+    for (const g of SIM.omdome) g(s, b, f2);
+    const gott = a.omd![f.id].v, daligt = b.omd![f2.id].v, rykt = SIM.ryktet(s, f), rykt2 = SIM.ryktet(s, f2);
+    // samtalet: den som inte varit där hör, den som varit där ändrar sig mindre
+    SIM.berattaForetag(s, a, c); const horde = c.omd?.[f.id]?.v ?? 0;
+    b.omd![f.id] = { v: 0, n: 4 }; SIM.berattaForetag(s, a, b); const varit = b.omd![f.id].v; delete b.omd![f.id];
+    // valet: allt lika utom det man tycker
+    f.pris = f2.pris = undefined; a.omd = { [f.id]: { v: 1, n: 1 } }; const valG = SIM.tycker.reduce((x, g) => x + g(s, a, f, 'servering'), 0); a.omd = { [f.id]: { v: -1, n: 1 } }; const valD = SIM.tycker.reduce((x, g) => x + g(s, a, f, 'servering'), 0);
+    // grannbyn, med den som reser och med gästen som går hem
+    a.omd = { [f.id]: { v: 0.9, n: 2 } }; for (const g of SIM.motkrok) g(s, 5, [a]); const by = SIM.ryktetI(f, 5), by2 = SIM.ryktetI(f, 6);
+    const k = SIM.klanerOf(s).find(q => q.rad !== undefined); let hem = 0;
+    if (k) { const g = { ...a, omd: undefined, gast: { sort: 'framling', klan: k.id } } as unknown as typeof a; if (g) { g.omd = { [f2.id]: { v: -0.8, n: 1 } }; SIM.hemkrok.forEach(q => q(s, g)); hem = SIM.ryktetI(f2, k.rad!); } }
+    // ett stängt företag glöms
+    s.foretag = s.foretag!.filter(q => q !== f2); for (const g of SIM.dygnet) g(s);
+    return [
+      [`kvaliteten, priset, finheten och väntan gör omdömet (${[mitt, kv, pris, fint, kort].map(x => x.toFixed(2)).join(', ')})`, kv > mitt && pris < mitt && fint > mitt && kort > mitt],
+      [`det goda besöket ger ett gott omdöme och den som gick utan ett dåligt (${gott.toFixed(2)}, ${daligt.toFixed(2)})`, gott > 0.4 && daligt < -0.3],
+      [`omdömena är företagets rykte (${rykt?.toFixed(2)}, ${rykt2?.toFixed(2)})`, rykt === gott && rykt2 === daligt],
+      [`i samtalet hör den andra om det (${horde.toFixed(2)}), den som varit där själv ändrar sig mindre (${varit.toFixed(2)})`, horde > varit && varit > 0],
+      [`man går hellre dit man var nöjd (${valG.toFixed(2)} mot ${valD.toFixed(2)})`, valG > valD + 0.5],
+      [`grannbyn hör av den som reser (${by.toFixed(2)}), en annan by inte (${by2})`, by > 0 && by2 === 0],
+      [`och av gästen som går hem (${hem.toFixed(2)})`, !k || hem < 0],
+      ['det man tyckt om ett stängt företag glöms', b.omd?.[f2.id] === undefined],
+    ];
+  },
+};
