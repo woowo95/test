@@ -32,6 +32,8 @@ Bildstilens guide (regler för allt som ritas):
 - Det som kan vändas ritas åt båda håll: en sak som står längs eller tvärs på kartan (en kälke, en ho, ett kar) ritas både liggande vågrätt och stående lodrätt.
 - Samma storlek när något ritas om: en sak som ritas om behåller sin storlek, om inte kommentaren säger något annat.
 - Väggar helt uppifrån: en vägg (av timmer, sten eller flätverk) ritas rakt ovanifrån som spelets timmervägg, ett band av krönet utan någon framsida.
+- Djuren i verklig storlek mot människan: ett djur har sin verkliga storlek bredvid en vuxen kolonist (hästen och oxen når med ryggen till axeln och är längre än kolonisten är lång, kon något lägre, haren och hönan små vid foten). När storleken rättas görs djuret större, aldrig mindre.
+- Byns bild är förlagan: en sak som syns både på världskartan och i byn (vagnen, huset) ritas efter hur den ser ut i byn, inte efter den lilla bilden på världskartan.
 - Ett godkänt djur är modellen: en variant av ett godkänt djur (oxen eller hästen av kon) ritas med exakt samma modell, samma form, ställning och storlek; bara det som skiljer på riktigt ändras (längre horn, man, svans, färg).
 - Det valda djuret från två håll: när ett djur är valt ritas samma djur (samma form) från två vinklar, snett framifrån och från sidan, och med två eller tre täckningar (pälsens färg och teckning).
 - Bredvid sina släktingar: ett förslag av något som redan finns i andra sorter (en sköld, en vagn, en yxa) visas bredvid sorterna som finns i spelet.

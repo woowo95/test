@@ -16,8 +16,8 @@
   "EFE.......",
   "EE........"
  ],
- "ritad": 3,
- "av": "API:t (claude-opus-5-5), tre idéer",
+ "ritad": 4,
+ "av": "för hand (programmeringschatten), API-krediterna slut",
  "pal": {
   "E": "#3f2415",
   "F": "#5e3c24",
@@ -30,32 +30,68 @@
  },
  "versioner": [
   {
-   "ide": "",
+   "ide": "Flintyxans form i järn: samma raka skaft snett från nedre vänstra hörnet upp mot högra, och ett kilformat huvud överst, nu i grått järn med en ljus slipad egg längs högra kanten och en mörk krage där skaftet går in. Ingen röd färg i eggen.",
    "rader": [
-    "....QQQQQ.",
-    "...QTSRSTQ",
-    "...QSGRSTQ",
-    "...EHQRSTQ",
-    "...EGEQRTQ",
-    "..EHE..QTQ",
-    "..EGE...Q.",
+    ".....QQQQ.",
+    "....QSSSTQ",
+    "...QQRSSTQ",
+    "...QEQRSTQ",
+    "...EGQRSTQ",
+    "..EHEQRSTQ",
+    "..EGE.QQQ.",
     ".EHE......",
     ".EGE......",
     "EHE.......",
     "EFE.......",
     "EE........"
    ],
-   "om": "Flintyxans bild är grunden, i samma storlek (10×12) och form, och skaftet är oförändrat från rad 3 och nedåt. Bara huvudet är bytt: flintklumpen är ersatt av ett smitt järnhuvud i skiffertoner med kontur i skiffer0. Huvudet har ett skafthål där skaftets ände syns som trä, en kort nacke och ett blad som vidgar sig åt höger till en rak egg. Eggen har en ljus slipad kant i skiffer3. Ljuset kommer uppifrån vänster och den mörka sidan är nere till höger. Ingen surrning. Granskningen: Inget rättat; punkterna är oförändrade. Storleken (10 × 12) fyller rutan och är rimlig mot kolonisten (14 × 20). Yxan ligger snett, med skaftet diagonalt nerifrån vänster upp genom skafthålet. Träet syns i hålet (G vid rad 2), och det finns ingen surrning, så idén följs. Skaftet har jordtoner (H, G, F) med jord0-kontur och järnet skiffertoner (T, S, R) med skiffer0-kontur. Ingen svart används. Ljuset kommer uppifrån vänster: det ljusaste järnet ligger uppe till vänster i huvudet. Den ljusa eggkanten är den slipade eggen och räknas som glans, inte som en ljuskälla. Det ljusgrå järnet och det ljusa träet med mörk kontur syns tydligt mot olivgräset. Silhuetten med skäggat blad är läsbar i liten storlek, och yxan är byggd på flintyxans modell med ett smitt järnhuvud."
+   "om": "Ritad för hand: Flintyxans form i järn: samma raka skaft snett från nedre vänstra hörnet upp mot högra, och ett kilformat huvud överst, nu i grått järn med en ljus slipad egg längs högra kanten och en mörk krage där skaftet går in. Ingen röd färg i eggen."
   },
   {
-   "ide": "",
+   "ide": "Skäggyxa: flintyxans skaft och läge, men järnhuvudet är smalt upptill och drar ner i ett långt skägg som krokar bakåt mot skaftet, så att eggen blir lång och huvudet ser ut som en krok.",
    "rader": [
-    "....QQQ...",
-    "...QTHTQQQ",
-    "...QSGSTTQ",
-    "...QSSSSTQ",
-    "...EGQRSSQ",
-    "..EHE.QRRQ",
+    "......QQ..",
+    ".....QTQ..",
+    "....QSTQ..",
+    "...EHQSTQ.",
+    "...EGEQSTQ",
+    "..EHE.QSTQ",
+    "..EGEQRSTQ",
+    ".EHEQRSSTQ",
+    ".EGEQRSTQ.",
+    "EHE.QQQQ..",
+    "EFE.......",
+    "EE........"
+   ],
+   "om": "Ritad för hand: Skäggyxa: flintyxans skaft och läge, men järnhuvudet är smalt upptill och drar ner i ett långt skägg som krokar bakåt mot skaftet, så att eggen blir lång och huvudet ser ut som en krok."
+  },
+  {
+   "ide": "Bredyxa: ett längre skaft med läderlindning nertill, och ett stort halvmåneformat blad som går från skaftets topp långt ner längs skaftet, med en lång rundad egg.",
+   "rader": [
+    ".......QQ.",
+    "......QSTQ",
+    ".....QRSTQ",
+    "...EHQRSTQ",
+    "...EGQRSTQ",
+    "..EHEQRSTQ",
+    "..EGEQRSTQ",
+    ".EHE.QRSTQ",
+    ".EGE..QSTQ",
+    "EKE....QQ.",
+    "EJE.......",
+    "EE........"
+   ],
+   "om": "Ritad för hand: Bredyxa: ett längre skaft med läderlindning nertill, och ett stort halvmåneformat blad som går från skaftets topp långt ner längs skaftet, med en lång rundad egg."
+  },
+  {
+   "ide": "Yxa med nacke: järnhuvudet går tvärs över skaftets topp genom ett skafthål, med en trubbig nacke till vänster om skaftet och eggen till höger, som en riktig smidd yxa.",
+   "rader": [
+    ".QQQQQQQ..",
+    "QRSSRSSTQ.",
+    "QRRSRSSSTQ",
+    ".QQQEQRSTQ",
+    "...EGEQSTQ",
+    "..EHE.QTQ.",
     "..EGE..QQ.",
     ".EHE......",
     ".EGE......",
@@ -63,25 +99,25 @@
     "EFE.......",
     "EE........"
    ],
-   "om": "Ritad från flintyxans bild i samma storlek (10×12) och form. Skaftet är oförändrat, liksom vinkeln från nedre vänstra till övre högra hörnet. Bara huvudet är bytt mot ett smitt järnhuvud i skiffergrått med skiffer0 som kontur. Huvudet har en ring runt skafthålet, där skaftets ände i trä (jord3/jord2) syns ovanifrån. Från ringen går en hals ut i ett blad som vidgar sig åt höger och nedåt. Ljuset kommer uppifrån vänster och eggen har en ljus kant. Ingen surrning. Granskningen: Ingen rättning behövs; punkterna är oförändrade. Storleken på 10 × 12 punkter är rimlig för en handyxa bredvid kolonisten (14 × 20) och samma som flintyxans modell. Yxan ligger snett, och ljuset faller uppe till vänster: T och H är ljusast upptill vid ögat och R mörkast nere till höger på bladet. Järnhuvudet är grått i skiffer (S/T/R) med skiffer0 som kontur och ett skafthål där skaftets topp syns genom ögat. Skaftet passerar inuti huvudet, och ingen surrning syns, som idén säger. Skaftet är trä i jord med jord0 som kontur och korn mellan H och G. Det grå järnet och den bruna konturen syns tydligt mot det olivgröna gräset, och silhuetten är lättläst i liten storlek. Inga otillåtna färger, inget svart och ingen ren vit glans."
+   "om": "Ritad för hand: Yxa med nacke: järnhuvudet går tvärs över skaftets topp genom ett skafthål, med en trubbig nacke till vänster om skaftet och eggen till höger, som en riktig smidd yxa."
   },
   {
-   "ide": "",
+   "ide": "Liten handyxa: ett kort skaft och ett litet järnhuvud med svagt rundad egg, där skaftets ljusa ände med kilen syns ovanför huvudet, och en läderögla längst ner på skaftet.",
    "rader": [
-    "....QQQ.QQ",
-    "...QTTSQTQ",
-    "...QSGSRTQ",
-    "...QSRRRSQ",
-    "...EGQQRSQ",
-    "..EHE..QQ.",
-    "..EGE.....",
-    ".EHE......",
-    ".EGE......",
+    "....QQQ...",
+    "...QSSTQ..",
+    "..QHSRSTQ.",
+    "..EGQRSSTQ",
+    "..EGEQRSTQ",
+    ".EHE.QRTQ.",
+    ".EGE..QQ..",
     "EHE.......",
+    "EGE.......",
     "EFE.......",
-    "EE........"
+    "EEE.......",
+    ".pp......."
    ],
-   "om": "Flintyxans bild i samma storlek och form. Skaftet är oförändrat från rad 4 och ned. Bara huvudet är bytt: flintklumpen är ersatt av ett smitt järnhuvud i skiffertoner. Det har en rundad hylsa runt skafttoppen, där skafthålet syns med träets ände (G) i mitten, en smal hals och ett utsvängt blad med ljus egg till höger. Konturen är skiffer0, ljuset kommer uppifrån till vänster och det finns ingen surrning. Granskningen: Ingen rättning behövs; punkterna är oförändrade. Storleken stämmer: 10 × 12 punkter, och yxan är kortare än kolonisten (20 punkter), alltså ett handredskap. Vinkeln är rätt: yxan ligger snett på marken, med skaftänden synlig i skafthålet ovanifrån. Det finns ingen surrning, och huvudet är smitt järn i tonerna skiffer 0–3, med konturen skiffer0. Skaftet är trä i jord1–3 med konturen jord0, och kornet växlar mellan H och G längs skaftet. Ljuset faller uppifrån vänster: T uppe till vänster på huvudet och den mörkare tonen R nere mot skafthålet. Eggen är något ljusare, som slipat järn. Glansen är bara två T-punkter och ingen vit. Både järnet och träet har kontur och ljusa mellantoner, så yxan syns väl mot gräset i oliv och barr. Formen bygger på flintyxans modell: snett skaft från nedre vänstra hörnet till huvudet uppe till höger. Kol0 används inte."
+   "om": "Ritad för hand: Liten handyxa: ett kort skaft och ett litet järnhuvud med svagt rundad egg, där skaftets ljusa ände med kilen syns ovanför huvudet, och en läderögla längst ner på skaftet."
   }
  ],
  "forra": {
@@ -101,5 +137,5 @@
    "EE........."
   ]
  },
- "kommentar": "inte tillräckligt lika flintyxan: utgå från flintyxans bild (Flintyxa, bredvid) i samma storlek och form, och byt bara huvudet mot ett smitt järnhuvud med skafthål; ingen surrning"
+ "kommentar": "fem nya versioner utan förlaga som liknar flintyxan men är mer avancerade; inte tillräckligt lika flintyxan"
 }

@@ -1,6 +1,7 @@
 // Sparar Björns senaste svar med hans egna ord i svar/forra.json, så att de syns på kortet när det ritats om:
 // node bildstil/api/forra.mjs <mapp>   (mappen där ArtifactData list sparat samlingen 'val', med eller utan /val på slutet)
-// Kör det innan hans dokument tas bort ur 'val'. Ett nytt svar på samma kort ersätter det förra; best-* och del-* hör till
+// Kör det innan hans dokument tas bort ur 'val'. Ett nytt svar på samma kort ersätter det förra, och
+// det förra med en kommentar sparas i `tidigare`, så att Björns äldre önskemål också syns på kortet; best-* och del-* hör till
 // best- och delskaparna och tas inte med.
 import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 const rot = path.dirname(path.dirname(fileURLToPath(import.meta.url))), fil = rot + '/svar/forra.json';
@@ -13,7 +14,11 @@ for (const f of fs.readdirSync(mapp).filter(f => f.endsWith('.json')).sort()) {
   const d = JSON.parse(fs.readFileSync(mapp + '/' + f, 'utf8')); if (!d.svar && !d.kommentar) continue;
   const nu = forra[id];
   if (nu && nu.nar && d.nar && nu.nar > d.nar) continue;
-  forra[id] = { svar: d.svar || '', kommentar: (d.kommentar || '').trim(), nar: d.nar || '' }; n++;
+  const ny = { svar: d.svar || '', kommentar: (d.kommentar || '').trim(), nar: d.nar || '' };
+  if (nu && nu.nar === ny.nar) continue; // samma svar som redan är sparat
+  const tidigare = [...(nu?.tidigare || [])];
+  if (nu?.kommentar && nu.kommentar !== ny.kommentar && !tidigare.some(t => t.kommentar === nu.kommentar)) tidigare.push({ svar: nu.svar, kommentar: nu.kommentar, nar: nu.nar });
+  forra[id] = tidigare.length ? { ...ny, tidigare } : ny; n++;
 }
 fs.writeFileSync(fil, JSON.stringify(Object.fromEntries(Object.entries(forra).sort()), null, 1) + '\n');
 console.log(n + ' svar sparade i svar/forra.json');

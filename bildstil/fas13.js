@@ -108,6 +108,21 @@
   const KORT = (id, namn, vad, versioner, slag = []) => VAL.push({ id, namn, typ: 'tre', slag, vad, versioner });
   // tonen efter var punkten ligger: ljuset uppe till vänster
   const lj = (a, b, c, k, m1, m2) => (x, y) => { const v = x * k + y; return v < m1 ? a : v < m2 ? b : c; };
+  // ritningar som redan finns i spelet, lagda i en version: hex-paletten (bilder/<id>.json) eller tecknen i PORTRATT.tecken,
+  // och spegling för ett djur som ska gå åt höger
+  const tonAv = (P, t) => P.i(t.slice(0, -1), +t.slice(-1));
+  const lagdHex = (B, P, d, x0, y0, byt = {}) => d.rader.forEach((r, y) => [...r].forEach((c, x) => { const t = byt[x + ',' + y]; if (t) B.satt(x0 + x, y0 + y, tonAv(P, t)); else if (d.pal[c]) B.satt(x0 + x, y0 + y, P.av(d.pal[c])); }));
+  const lagdTecken = (B, P, rader, x0, y0, spegla = false) => rader.forEach((r, y) => [...(spegla ? [...r].reverse().join('') : r)].forEach((c, x) => { const t = c !== '.' && PORTRATT.tecken[c]; if (t) B.satt(x0 + x, y0 + y, tonAv(P, t)); }));
+  const flyttad = (B, dx, dy) => ({ w: B.w, h: B.h, P: B.P, satt: (x, y, c) => B.satt(x + dx, y + dy, c) });
+  const streck = (B, P, x0, y0, x1, y1, t) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let k = 0; k <= n; k++) B.satt(Math.round(x0 + (x1 - x0) * k / n), Math.round(y0 + (y1 - y0) * k / n), tonAv(P, t)); };
+  // spelets stora lerkruka (bilder/lerkruka_stor.json) oförändrad (Björn: "krukan ska vara exakt den krukan som finns i spelet
+  // redan"). Bara mynningens fyra punkter (rad 1, x 5–8, där ölet och vinet syns i spelet) får innehållets toner, och ovan är
+  // punkter [x, y, ton] som sticker upp över kanten (y under 0)
+  const KRUKA = (text, mynning, ovan = []) => ({ text, w: 18, h: 24, rita: (B, P) => {
+    const byt = {}; mynning.forEach((t, k) => { byt[(5 + k) + ',1'] = t; });
+    lagdHex(B, P, BILDFILER.lerkruka_stor, 2, 5, byt);
+    for (const [x, y, t] of ovan) B.satt(2 + x, 5 + y, tonAv(P, t));
+  } });
 
   KORT('f13_dryckeshorn', 'Dryckeshornet', 'Steg 13.4.1: ett dryckeshorn skrapat ur ett djurhorn. Den som dricker öl, mjöd, cider eller vin dricker ur det. Ligger snett, med mynningen uppåt.', [
     bild('Ett böjt horn som det är, ljust vid mynningen och mörkt i spetsen.', 16, 16, [
@@ -128,24 +143,24 @@
     [linje(x0, y0, x0 + ux * 3.2, y0 + uy * 3.2, 1.3), spets === 'smal' ? 'ben2' : 'rost2'], [linje(x0, y0, x0 + ux * 3.2, y0 + uy * 3.2, 0.5), 'jord1'],
     [linje(x1 - ux * lang, y1 - uy * lang, x1 - ux * lang * 0.6, y1 - uy * lang * 0.6, spets === 'bred' ? 1.9 : 0.9), 'skiffer1'],
     [linje(x1 - ux * lang, y1 - uy * lang, x1, y1, spets === 'bred' ? 1 : 0.8), 'skiffer2'], [linje(x1 - ux * 2, y1 - uy * 2, x1, y1, 0.5), 'skiffer3']]; };
-  KORT('f13_jarnpilar', 'Järnpilarna', 'Steg 13.4.2: pilar med spetsar av järn, som skadar mer än pilarna med flinta. Ligger snett, som det som hålls i handen.', [
+  // varje version visas till höger om de godkända pilarna med flinta (bilder/pilar.json), med fötterna på samma rad
+  const MED_FLINTA = v => { const F = () => BILDFILER.pilar, w = 15 + 4 + v.w, h = Math.max(21 + 4, v.h);
+    return { text: v.text + ' Till vänster pilarna med flinta.', w, h, rita: (B, P) => { lagdHex(B, P, F(), 2, h - 2 - 21); v.rita(flyttad(B, 17, h - v.h), P); } }; };
+  KORT('f13_jarnpilar', 'Järnpilarna', 'Steg 13.4.2: pilar med spetsar av järn, som skadar mer än pilarna med flinta. Ligger snett, som det som hålls i handen. Varje version bredvid pilarna med flinta som finns i spelet.', [
     bild('En knippa av tre i solfjäder, med breda blad av ljust järn.', 22, 23, [...PIL(1, 15, 5, 1, 'bred'), ...PIL(6, 20, 21, 15, 'bred'), ...PIL(3, 18, 16, 5, 'bred')]),
     bild('En enda lång pil med en smal nål till spets, som går genom en brynja.', 18, 18, PIL(2, 16, 16, 2, 'smal', 6)),
     bild('Ett tätt knippe, ombundet med snöre, med spetsarna åt samma håll.', 18, 18, [
       ...PIL(1, 13, 11, 1, 'smal'), ...PIL(5, 17, 17, 6, 'smal'), ...PIL(3, 15, 15, 3, 'smal'), [linje(6.5, 8, 10.5, 12, 1), 'ben1'], [linje(6.5, 7.6, 10, 11.1, 0.5), 'ben3']]),
-  ]);
+  ].map(MED_FLINTA));
 
   const STR = [[2, 8, 8, 5], [5, 10, 12, 8], [7, 5, 14, 8], [3, 10, 9, 8], [9, 10, 15, 10], [6, 7, 11, 5], [4, 6, 10, 10]];
-  KORT('f13_surkal', 'Surkålen', 'Steg 13.6.2: strimlad kål som syrats i en stor lerkruka. Ett blekt gulgrönt, som skiljer den från den färska kålen.', [
-    bild('En hög av strimlor, som de ligger på marken.', 18, 13, [
-      [oval(8.5, 8.5, 7.5, 3.6), 'oliv2'], ...STR.map(([a, b, c, d], n) => [linje(a, b, c, d, 0.6), n % 3 === 0 ? 'ben3' : n % 2 ? 'senap3' : 'oliv3'])]),
-    bild('En träskål med surkål upp över kanten.', 17, 14, [
-      [oval(8, 8.5, 7.5, 4.8), (x, y) => y < 7 ? 'jord3' : y < 10 ? 'jord2' : 'jord1'],
-      [oval(8, 6, 6.2, 2.6), 'jord0'], [oval(8, 5, 5.4, 2.8), 'oliv3'],
-      [linje(4, 4.6, 12, 4.6, 0.5), 'senap3'], [linje(5, 6, 11, 6, 0.5), 'ben3'], [linje(6, 3, 10, 3, 0.5), 'ben3']]),
-    bild('En öppen lerkruka, sedd snett uppifrån, med kålen under en tyngd av sten.', 15, 19, [
-      [oval(7, 11, 6.6, 7), (x, y) => x < 4 ? 'rost3' : x > 10 ? 'rost1' : 'rost2'], [oval(7, 4, 5.2, 2.8), 'rost0'],
-      [oval(7, 4.2, 4.2, 1.9), 'oliv3'], [oval(7, 3.6, 2.2, 1.4), 'skiffer2'], [linje(6, 3, 8, 3, 0.5), 'skiffer3']]),
+  // surkålen ligger kvar i krukan den syrats i (steg 13.10.44): spelets stora lerkruka, oförändrad, med kålen i mynningen
+  KORT('f13_surkal', 'Surkålen', 'Steg 13.6.2: strimlad kål som syrats i en stor lerkruka och ligger kvar i den. Ett blekt gulgrönt, som skiljer den från den färska kålen. Krukan är spelets stora lerkruka, oförändrad; bara mynningen är ny.', [
+    KRUKA('Krukan full till kanten med strimlorna, blekt gulgröna med ljusa ränder.', ['ben3', 'oliv3', 'senap3', 'oliv2']),
+    KRUKA('Kålen pressad under en flat sten som sticker upp över kanten.', ['oliv3', 'skiffer2', 'skiffer2', 'oliv2'],
+      [[5, -1, 'skiffer3'], [6, -1, 'skiffer2'], [7, -1, 'skiffer2'], [8, -1, 'skiffer1'], [5, -2, 'kol0'], [6, -2, 'kol0'], [7, -2, 'kol0'], [8, -2, 'kol0'], [4, -1, 'kol0'], [9, -1, 'kol0']]),
+    KRUKA('Kålen i en liten hög över kanten, med strimlor som hänger ut.', ['oliv3', 'senap3', 'oliv3', 'oliv2'],
+      [[5, -1, 'oliv3'], [6, -1, 'ben3'], [7, -1, 'senap3'], [8, -1, 'oliv2'], [6, -2, 'oliv3'], [7, -2, 'oliv3'], [4, -1, 'kol0'], [9, -1, 'kol0'], [5, -2, 'kol0'], [8, -2, 'kol0'], [6, -3, 'kol0'], [7, -3, 'kol0']]),
   ]);
 
   KORT('f13_surfisk', 'Surfisken', 'Steg 13.6.2: fisk som syrats i en stor lerkruka. Blek och mjuk, till skillnad från den torkade fisken.', [
@@ -194,7 +209,18 @@
   ]);
 
   // plogen från sidan, dragen åt höger: oxen eller hästen går framför. Åt andra håll vrids den i spelet
-  KORT('f13_plog', 'Plogen', 'Steg 13.7.2: plogen dras av oxen eller hästen och gräver upp fältet fortare än spaden. Bilden visar den när den dras åt höger, där djuret går; vänster hålls av den som plöjer.', [
+  // varje plog visas förspänd: överst bakom oxen, under bakom hästen (de godkända, f10_oxe v1 speglad så att den går åt höger,
+  // och f10_hast v3), med draget från plogens främre ände till djurets bog
+  const SPANN = (v, fram) => { const djur = () => [[FORSLAG.f10_oxe.versioner[0].bilder[0].rader, true], [FORSLAG.f10_hast.versioner[2].bilder[0].rader, false]];
+    const w = v.w + 35, h = 2 * 27 + 2;
+    return { text: v.text + ' Överst bakom oxen, under bakom hästen.', w, h, rita: (B, P) => djur().forEach(([rader, spegla], n) => {
+      const fot = (n + 1) * 27, ax = v.w + 1, dw = rader[0].length, dh = rader.length;
+      v.rita(flyttad(B, 0, fot - v.h + 1), P);
+      lagdTecken(B, P, rader, ax, fot - dh, spegla);
+      const bx = ax + (spegla ? Math.round(dw * 0.3) : Math.round(dw * 0.15)), by = fot - Math.round(dh * 0.55);
+      streck(B, P, fram[0], fot - v.h + 1 + fram[1], bx, by, 'jord1');
+    }) }; };
+  KORT('f13_plog', 'Plogen', 'Steg 13.7.2: plogen dras av oxen eller hästen och gräver upp fältet fortare än spaden. Bilden visar den när den dras åt höger, där djuret går; vänster hålls av den som plöjer. Varje plog visas förspänd bakom oxen och hästen.', [
     bild('En krokig årder av en enda böjd stock, med ett handtag bak och en spets av järn i jorden.', 42, 22, [
       [bage([[10, 15], [16, 4], [40, 8]], 1.6, 1.1), (x, y) => y < 9 ? 'jord3' : 'jord2'], [linje(3, 1, 11, 16, 1.2), 'jord2'], [linje(1, 2, 5, 1, 1), 'jord3'], [linje(9, 15, 20, 19, 1.9), 'jord1'], [linje(16, 17.6, 23, 20, 1.2), 'skiffer2'], [linje(17, 17, 22, 19, 0.5), 'skiffer3']]),
     bild('En tung plog med hjul fram, en rak ås och ett brett skär som vänder jorden.', 42, 24, [
@@ -204,11 +230,10 @@
     bild('En lätt plog sedd snett uppifrån: två skaklar som djuret går mellan, en krok på tvären och två handtag.', 42, 22, [
       [linje(18, 5, 41, 3, 0.9), 'jord3'], [linje(18, 16, 41, 18, 0.9), 'jord2'], [linje(18, 4, 18, 17, 1.4), 'jord1'], [linje(18, 10.5, 8, 10.5, 1.5), 'jord2'],
       [linje(1, 5, 9, 9, 1), 'jord3'], [linje(1, 16, 9, 12, 1), 'jord2'], [(x, y) => x >= 10 && x <= 17 && Math.abs(y - 10.5) <= (x - 9) * 0.5, 'skiffer1'], [linje(11, 10, 17, 10, 0.5), 'skiffer3'], [linje(17, 8, 17, 13, 0.5), 'skiffer2']]),
-  ]);
-  // ciderns färg (steg 13.4.1): den färdiga cidern i den godkända krukan med öl, med vätskans yta i cidernas färg
-  const CIDER = (ton, ljus, text) => bild(text, 14, 15, [
-    [oval(7, 8, 6.6, 6.8), (x, y) => x < 4 ? 'rost3' : x > 10 ? 'rost1' : 'rost2'], [oval(7, 3, 5, 2.6), 'rost0'], [oval(7, 3.4, 4, 1.7), ton], [linje(5, 3, 8, 3, 0.5), ljus]]);
-  VAL.push({ id: 'f13_cider', namn: 'Ciderns färg', typ: 'janej', slag: [], vad: 'Steg 13.4.1: cidern är gulgrön, ljusare och grönare än ölet, så att de skiljs åt i krukor och horn.', versioner: [CIDER('oliv3', 'senap3', 'Den stora lerkrukan snett uppifrån med cidern, i den gröna ton som spelet redan använder.')] });
+  ].map((v, n) => SPANN(v, [[42, 10], [43, 11], [43, 5]][n])));
+  // ciderns färg (steg 13.4.1): spelets stora lerkruka, oförändrad (Björn: "krukan ska vara exakt den krukan som finns i spelet
+  // redan"), som ölet och vinet i spelet: bara mynningens fyra punkter är cidern, ljust gulgrön utan ölets skum
+  VAL.push({ id: 'f13_cider', namn: 'Ciderns färg', typ: 'janej', slag: [], vad: 'Steg 13.4.1: cidern är gulgrön, ljusare och grönare än ölet, så att de skiljs åt i krukor och horn. Krukan är spelets stora lerkruka, exakt som den är; bara cidern i mynningen är ny.', versioner: [KRUKA('Spelets stora lerkruka med cidern i mynningen: ljust gulgrön, utan ölets skum.', ['senap3', 'oliv3', 'oliv3', 'oliv2'])] });
 
   // spjälan (steg B.36): benet stort till vänster och kolonisten i kartans storlek till höger, med spjälan på samma ben
   const FIGUR = [[oval(34, 7, 3.2, 3.4), 'rost3'], [oval(34, 5.2, 3.4, 2.4), 'jord1'], [(x, y) => x >= 30 && x <= 38 && y >= 11 && y <= 18, (x, y) => x < 32 ? 'ben0' : 'ben1'], [linje(29.4, 12, 29.4, 18, 0.7), 'rost3'], [linje(38.6, 12, 38.6, 18, 0.7), 'rost3'], [linje(32, 19, 32, 25, 0.9), 'jord0'], [linje(36, 19, 36, 25, 0.9), 'jord0']];
