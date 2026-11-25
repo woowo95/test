@@ -2756,6 +2756,7 @@ SCENARIER.rovarrast = {
       step(s, 30, ev);
       prat += ev.filter(e => ids.has(e.a) && ids.has(e.b)).length;
       if (!f.vantat) continue;
+      if (!rastTid) f.till = s.now + 20 * SIM.MIN; // en längre vila än vanligt (steg B.27)
       rastTid += 30;
       const fo = SIM.rovarna(s, f), gor = fo.map(r => r.gast!.gor ?? '');
       gor.forEach(g => handlingar.add(g));
@@ -3061,6 +3062,7 @@ SCENARIER.rovarprat = {
       const ev: TalkEvent[] = [];
       step(s, 10, ev);
       if (!f.vantat) { forra = new Map(); continue; }
+      if (!rastSek) f.till = s.now + 20 * SIM.MIN; // en längre vila än vanligt (lurMin, steg B.27), så att livet på rastplatsen hinner synas
       rastSek += 10;
       prat += ev.filter(e => ids.has(e.a) && ids.has(e.b)).length;
       for (const r of SIM.rovarna(s, f)) { const q = forra.get(r.id); if (q) { if (Math.hypot(r.x! - q.x, r.y! - q.y) > 0.2) gar++; else star++; } forra.set(r.id, { x: r.x!, y: r.y! }); }
