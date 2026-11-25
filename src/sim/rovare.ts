@@ -118,7 +118,7 @@ export const ROVARE = balans('rovare', {
   lurUt: 15, // väntplatsen ligger minst så här många rutor utanför byns område (utanforByn), också för en vanlig flock (steg 9.2.103)
   // vem som strider, hjälper eller gömmer sig (steg 9.2.116, rovarVilja): mod / 20 + iver, minus skadad × det som fattas i hälsan,
   // sjuk när hen är sjuk och gammal för de gamla, plus seden, familjen, plikten och ledaren (rovarVilja). Från kampeFran strider hen, från hjalpFran hjälper hen och står bakom en bit bakom kämparna, annars gömmer hen sig
-  hotAvst: 20, // hotet i valet (steg B.29, rovarHot): på så här många rutor väger gänget hälften
+  hotAvst: 20, hotSteg: 6, // hotet i valet (steg B.29, rovarHot): på så här många rutor väger gänget hälften
   budMarg: 1.2, budMax: 2, // budbäraren (steg 9.2.117) går bara om vägen dit, gånger budMarg, hinns före anfallet, och ger upp efter budMax timmar
   overmakt: 0.2, // övermakten i viljan vid larmet (steg B.32): så mycket mindre vilja per gång starkare gänget är än de egna som kan slåss
   kampeFran: 0.15, hjalpFran: 0.05, skadad: 1, sjuk: 0.5, gammal: 0.3, bakom: 3,
@@ -436,6 +436,17 @@ export function rovarHot(s: State, q: Person) {
   return h;
 }
 hotKrok.fara = (s, p) => p.larm?.rovare ? rovarHot(s, p) : 0;
+// hotet på en plats och på vägen dit (steg B.48): hur nära de rövare p vet om är, där vägen kommer närmast dem (hotSteg rutor isär)
+hotKrok.vag = (s, p, x, y) => {
+  if (!p.larm?.rovare) return 0;
+  const dit = Math.hypot(x - p.x, y - p.y), n = Math.max(1, Math.ceil(dit / ROVARE.hotSteg));
+  let d = Infinity;
+  for (const f of rovarFlockar(s)) {
+    if (f.gor === 'flyr' || !harLarm(s, p, f)) continue;
+    for (const r of rovarna(s, f)) if (!gr(r).flytt) for (let i = 1; i <= n; i++) d = Math.min(d, Math.hypot(p.x + (x - p.x) * i / n - r.x, p.y + (y - p.y) * i / n - r.y));
+  }
+  return d === Infinity ? 0 : 1 / (1 + d / ROVARE.hotAvst);
+};
 // den som står redo, hjälper eller gömmer sig går tillbaka till sitt när inget gäng längre hotar: alla flyr
 const REDO = new Set<string>(['forsvarRovare', 'hjalpaRovare', 'gomma']);
 function lugnar(s: State, folk: Person[]) {
@@ -553,7 +564,20 @@ function radMal(s: State, f: Rovarflock, fria: Person[]) {
 }
 export function radLinje(s: State, f: Rovarflock) {
   const mal = radMal(s, f, rovarna(s, f).filter(r => !gr(r).flytt)), fran = f.rast ?? f, d = Math.max(0.01, avst(fran, mal)), ux = (fran.x - mal.x) / d, uy = (fran.y - mal.y) / d, fram = Math.min(ROVARE.radFram, d);
-  return { mal, ux, uy, mitten: { x: mal.x + ux * fram, y: mal.y + uy * fram }, vantM: { x: mal.x - ux * ROVARE.samlAvst, y: mal.y - uy * ROVARE.samlAvst } };
+  return { mal, ux, uy, mitten: { x: mal.x + ux * fram, y: mal.y + uy * fram }, vantM: vantPlats(s, f, mal, ux, uy) };
+}
+// väntplatsen (steg B.48): samlAvst rutor från målet, åt det håll som är längst från både vägen gänget kommer och vägen det går hem
+function vantPlats(s: State, f: Rovarflock, mal: { x: number; y: number }, ux: number, uy: number) {
+  const h = kantMot(s, f.klan) ?? kanterna(mal.x, mal.y)[0], hd = Math.max(0.01, avst(h, mal)), hx = (h.x - mal.x) / hd, hy = (h.y - mal.y) / hd;
+  let bast = { x: mal.x - ux * ROVARE.samlAvst, y: mal.y - uy * ROVARE.samlAvst }, bp = Infinity;
+  for (let i = 0; i < 12; i++) {
+    const v = i * Math.PI / 6, c = Math.cos(v), n = Math.sin(v), at = { x: mal.x + c * ROVARE.samlAvst, y: mal.y + n * ROVARE.samlAvst };
+    const fri = freeNear(s, at.x, at.y);
+    if (Math.hypot(fri.x - at.x, fri.y - at.y) > 1.5) continue; // i vattnet eller i en vägg
+    const mot = Math.max(c * ux + n * uy, c * hx + n * hy);
+    if (mot < bp - 1e-9) { bp = mot; bast = at; }
+  }
+  return bast;
 }
 function radMitt(s: State, f: Rovarflock | undefined, folk: Person[], bakom = false) {
   if (!f) return undefined;

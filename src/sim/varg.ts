@@ -42,7 +42,7 @@ import { vaderNu } from './vader';
 import { notis } from './notiser';
 import { lamnaFallt, styckaFallt } from './styckning';
 import { tecken } from './religion';
-import { LARMHOT, rollVid, viljaKrok } from './roller';
+import { hotKrok, LARMHOT, LARMROLL, rollVid, tryggast, vagMedHot, viljaKrok } from './roller';
 import { glesPlats } from './trangsel';
 
 // ---------- vargen och vakten (steg 3.7.1) ----------
@@ -286,16 +286,24 @@ export const vargarNara = (s: State) => flockarna(s).some(f => f.gor !== 'flyr' 
 export const skyddas = (s: State, p: Person) => !viljaKrok.kan(s, p);
 export const iHus = (s: State, p: Person) => !!roomAt(s, Math.floor(p.x), Math.floor(p.y));
 // närmaste plats under tak: den egna sängen om den är under tak, annars en ruta i närmaste rum
+// Vet p om rövare väger hotet på platsen och på vägen dit (steg B.48, roller.ts), och sängen är en av platserna
 export function husPlats(s: State, p: Person) {
-  const bed = bedFor(s, p);
-  if (bed && roomAt(s, Math.floor(bed.x), Math.floor(bed.y))) return bed;
+  const bed = bedFor(s, p), iRum = bed && roomAt(s, Math.floor(bed.x), Math.floor(bed.y)) ? bed : undefined, hotat = !!p.larm?.rovare;
+  if (iRum && !hotat) return iRum;
   let bast: number | undefined, bd = Infinity;
-  for (const r of gridOf(s).rooms) for (const i of r.tiles) { const d = Math.hypot(i % W + 0.5 - p.x, Math.floor(i / W) + 0.5 - p.y); if (d < bd) { bd = d; bast = i; } }
+  for (const r of gridOf(s).rooms) for (const i of r.tiles) { const at = { x: i % W + 0.5, y: Math.floor(i / W) + 0.5 }, d = hotat ? vagMedHot(s, p, at) : Math.hypot(at.x - p.x, at.y - p.y); if (d < bd) { bd = d; bast = i; } }
+  if (iRum && vagMedHot(s, p, iRum) - LARMROLL.hotVikt / 10 <= bd) return iRum; // den egna sängen hellre, om den inte är farligare
   return bast === undefined ? undefined : punktIRuta(s, bast, p);
 }
 export const skyddVidElden = (s: State) => { const e = eldPlats(s); return freeNear(s, e.x + 0.5, e.y + 1.5); };
 // de som gömmer sig vid elden sprider ut sig (steg B.15): platsen närmast den vanliga där ingen står (trängseln, glesPlats i trangsel.ts)
-const gomdVidElden = (s: State, p: Person) => { const e = eldPlats(s); return glesPlats(s, p, k => { const v = k * 2.399, r = 0.9 * Math.sqrt(k); return freeNear(s, e.x + 0.5 + Math.cos(v) * r, e.y + 1.5 + Math.sin(v) * r); })!; };
+// och när rövarna är nära elden den sida av den, eller den plats längre bort, där hotet är mindre (steg B.48)
+const gomdVidElden = (s: State, p: Person) => {
+  const e = eldPlats(s), vid = { x: e.x + 0.5, y: e.y + 1.5 }, platser = hotKrok.vag(s, p, vid.x, vid.y) > 0 ? [vid, ...GOMRINGAR.flatMap(r => [0, 1, 2, 3, 4, 5, 6, 7].map(i => freeNear(s, vid.x + Math.cos(i * Math.PI / 4) * r, vid.y + Math.sin(i * Math.PI / 4) * r)))] : [vid];
+  const m = tryggast(s, p, platser)!;
+  return glesPlats(s, p, k => { const v = k * 2.399, r = 0.9 * Math.sqrt(k); return freeNear(s, m.x + Math.cos(v) * r, m.y + Math.sin(v) * r); })!;
+};
+const GOMRINGAR = [4, 9, 15, 22]; // så många rutor från elden den som gömmer sig prövar platserna runt den
 // vad p gör när vargar är nära (val.ts), eller undefined
 type Skydd = { act: Act; why: string; spot?: { x: number; y: number }; dur: number; hot?: 'rovare' | 'varg' };
 // valet när rövare är nära (rovarSkydd i rovare.ts, som sätter det här när modulen laddas, så att varg.ts inte behöver importera rovare.ts)
@@ -319,12 +327,13 @@ export function vargSkydd(s: State, p: Person): Skydd | undefined {
 }
 // den som inte slåss eller hjälper: sover hen i ett hus sover hen vidare, annars gömmer hen sig i närmaste hus och utan hus
 // vid elden nära de vuxna (mot vargarna och rövarna)
+const HUSTRYGGT = 0.3; // ett hus är så mycket tryggare än ute (steg B.48)
 export function gomSig(s: State, p: Person, vad: string, hot: 'rovare' | 'varg', dur: number): Skydd | undefined {
   if (p.task?.act === 'sova' && iHus(s, p)) return;
   // i huset om det är varmare där än vid elden, som sovplatsen (val.ts, plats sang): ett kallt hus skyddar inte mot kylan
   const plats = husPlats(s, p), c = coldOf(temperature(s)), rum = plats && roomAt(s, plats.x, plats.y);
-  const hus = plats && (!rum || c === 0 || varmareInne(s, rum, c)) ? plats : undefined;
-  return { act: 'gomma', why: `${vad} är nära, ${hus ? 'gömmer sig i huset' : 'håller sig vid elden nära de vuxna'}`, hot, spot: hus ?? gomdVidElden(s, p), dur };
+  const eld = gomdVidElden(s, p), hus = plats && (!rum || c === 0 || varmareInne(s, rum, c)) && (hot !== 'rovare' || hotKrok.vag(s, p, plats.x, plats.y) <= hotKrok.vag(s, p, eld.x, eld.y) + HUSTRYGGT) ? plats : undefined;
+  return { act: 'gomma', why: `${vad} är nära, ${hus ? 'gömmer sig i huset' : 'håller sig vid elden nära de vuxna'}`, hot, spot: hus ?? eld, dur };
 }
 // den som hör ropet avbryter det hen gör och söker skydd (inte den som slåss, vårdar, bärs eller håller vakt)
 export function soker(s: State, folk: Person[]) {

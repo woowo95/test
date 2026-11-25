@@ -3172,3 +3172,30 @@ SCENARIER.ingenvantan = {
     ];
   },
 };
+
+SCENARIER.undanhot = {
+  text: 'Steg B.48: den som inte slåss väljer plats efter hotet där och på vägen dit: väntplatsen ligger inte mellan förrådet och gängets hemkant, den som gömmer sig vid elden gör det på sidan bort från gänget, och den som flytt från striden vårdas bort från gänget',
+  kor: () => {
+    const s = rovarBy(11), m = SIM.malet(s), f = rovarGang(s, 5, landVid(s, 30)!); ettGang(s, f); f.vantat = true; f.anfaller = true; f.test = false;
+    const l = SIM.radLinje(s, f), h = SIM.kantMot(s, f.klan) ?? SIM.kanterna(m.x, m.y)[0];
+    const vinkel = (a: { x: number; y: number }, b: { x: number; y: number }, c: { x: number; y: number }) => { const u = [a.x - b.x, a.y - b.y], w = [c.x - b.x, c.y - b.y]; return Math.acos((u[0] * w[0] + u[1] * w[1]) / Math.max(1e-6, Math.hypot(u[0], u[1]) * Math.hypot(w[0], w[1]))) * 180 / Math.PI; };
+    const hem = vinkel(l.vantM, l.mal, h), in_ = vinkel(l.vantM, l.mal, f.rast ?? f);
+    // gänget plundrar vid förrådet
+    for (const [i, r] of SIM.rovarna(s, f).entries()) Object.assign(r, SIM.freeNear(s, m.x + i % 3, m.y + Math.floor(i / 3)));
+    const v = vuxnaI(s), p = v[0], d = (at: { x: number; y: number }) => Math.min(...SIM.rovarna(s, f).map(r => Math.hypot(r.x - at.x, r.y - at.y)));
+    for (const q of SIM.living(s)) if (!q.gast) q.task = undefined;
+    Object.assign(p, SIM.freeNear(s, m.x + 9, m.y + 1)); SIM.horLarm(p, { t: s.now, vad: 'rovare', storlek: 5, led: 1, varnat: 1, om: [f.id] });
+    const g = SIM.gomSig(s, p, 'Rövare', 'rovare', SIM.HOUR)!;
+    const utan = (() => { const la = p.larm; p.larm = undefined; const x = SIM.gomSig(s, p, 'Rövare', 'rovare', SIM.HOUR)!; p.larm = la; return x; })();
+    // den sårade: förbanden ligger i förrådet bland rövarna
+    SIM.setAmount(s, 'remsa', 4); SIM.skada(s, p, 'armV', 'skarsar', 0.7, 'rovare', 'prov');
+    const egen = SIM.vardVal(s, p, true), hot = SIM.forbandHot(s, p);
+    const t = egen && { act: 'varda', phase: 'go', tx: p.x, ty: p.y, ref: p.id, stanna: egen.stanna } as SIM.Task;
+    const hamtar = t && SIM.vardHamtas(s, p, t);
+    return [
+      [`väntplatsen ligger inte på vägen hem (${hem.toFixed(0)}° från hemkanten, ${in_.toFixed(0)}° från rasten)`, hem > 60 && in_ > 60],
+      [`gömslet ligger längre från gänget (${d(g.spot!).toFixed(1)} mot ${d(utan.spot!).toFixed(1)} rutor utan hotet)`, d(g.spot!) >= d(utan.spot!) && d(g.spot!) > d(p) - 1],
+      [`den sårade går inte till förrådet bland rövarna efter förband (hotet ${hot.toFixed(2)}, ${JSON.stringify(SIM.vardBehov(s, p, p))}, tid kvar ${SIM.tidKvar(p).toFixed(2)} tim, stannar ${egen?.stanna}, hämtar ${JSON.stringify(hamtar)})`, !!egen?.stanna && !hamtar],
+    ];
+  },
+};
