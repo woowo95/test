@@ -359,6 +359,9 @@ export const blodFaktor = (p: Person) => blodSteg(p) >= 1 ? HALSA.blekFaktor : 1
 export const sarStorlek = (w: Skada) => w.g < HALSA.smaSar ? 'litet' : w.g < HALSA.storSar ? 'medelstort' : 'stort';
 // timmar tills hen förblöder med den blödning hen har nu (Infinity när ingen blöder). Räknas varje slag (kortet och notisen)
 export function tidKvar(p: Person) { const b = blodning(p); return b > 0 ? Math.max(0, ((p.blod ?? 1) - HALSA.blodDod) / b) : Infinity; }
+// blodet som syns på personen (steg B.67): 0 = inget, 1 = en strimma när ett sår blöder, 2 = på ansiktet och kläderna hos den som
+// är blek, 3 = genomblodig när hen inte orkar slåss
+export const blodSyns = (p: Person) => blodSteg(p) >= 1 ? Math.min(3, blodSteg(p) + 1) : blodning(p) > 0 ? 1 : 0;
 // blodet personen förlorar i timmen just nu
 export function blodning(p: Person) {
   let v = 0;
@@ -436,8 +439,9 @@ export const FORMAGOR = {
 // en ny skada: loggen, byns räknare, rädsla för platsen och att arbetet avbryts. Returnerar dödsorsaken om den dödar direkt
 // hen i texten om när det hände: efter ett verb som slog eller straffade är den skadade föremålet (honom), annars subjektet (han)
 const narOm = (nar: string, p: Person) => nar.replace(/(slog|straffade|sparkade) hen\b/, (_m, v: string) => `${v} ${honom(p)}`).replace(/\bhen\b/g, han(p));
+// riktning: hållet slaget gick, dit blodet stänker (steg B.67)
 // iStrid: såret kom i en strid, där striden själv avgör om delen huggs av (olyckshugget i strid.ts, steg 12.1.82)
-export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number, dod: Dodsorsak, nar: string, iStrid = false): Dodsorsak | undefined {
+export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number, dod: Dodsorsak, nar: string, iStrid = false, riktning?: number): Dodsorsak | undefined {
   d = finDel(s, p, d);
   if (p.saknas?.includes(d)) d = (DEL[d].under as Kroppsdel | undefined) ?? 'bal'; // delen finns inte längre
   // en skråma där det redan finns ett likadant öppet sår gör det såret värre, och det blöder igen (steg B.10)
@@ -450,7 +454,7 @@ export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number,
   uppdateraSinnen(p);
   if (SKADA[k].blod > 0 && g >= HALSA.vardFel) { p.ropT = s.now; nyttILarmet(s); } // den skadade ropar på hjälp (steg 9.5.16), och rollerna vid larmet väljs om (steg 9.5.19)
   if (!iStrid && (k === 'skarsar' || k === 'bett') && DEL[d].ute && g >= HALSA.forloraGrad && !HALSA_PROV.grov && rnd(s, 'halsa', p) < HALSA.forloraChans) forlora(s, p, d, k === 'bett' ? 'bets av' : 'höggs av');
-  if (SKADA[k].blod > 0 && p.ute === undefined) blodas(s, p.x, p.y, 'skada', g * SKADA[k].blod); // den som är på resa blöder inte på byns karta
+  if (SKADA[k].blod > 0 && p.ute === undefined) blodas(s, p.x, p.y, 'skada', g * SKADA[k].blod, riktning); // den som är på resa blöder inte på byns karta
   count(s, 'skador'); count(s, 'skada ' + SKADA[k].namn.toLowerCase());
   if (g >= UPPV.skadaGrad) livet(s, p, 'skadad', true); // det hen överlevt (steg 3.9.8)
   nar = narOm(nar, p); // "när hen slaktade" blir "när han slaktade", "när Ask slog hen" "när Ask slog henne" (ordlagret, steg 6.7.2)

@@ -51,6 +51,18 @@ function ritaSpjalor(B: Bild, delar: NonNullable<Skapad['spjala']>, l: Lage) {
     }
   }
 }
+// blodet på figuren (steg B.67, platshållare): en punkt i steg 1, fläckar i steg 2 och nästan hela figuren i steg 3. Den som
+// ligger under täcket visar bara det som sticker upp
+const BLODFARG = [FARGER.indexOf(farg('rost', 0)), FARGER.indexOf(farg('rost', 1))], BLODDEL = [0, 0.04, 0.24, 0.6];
+function ritaBlodig(B: Bild, niva: number, l: Lage) {
+  const del = BLODDEL[Math.min(3, niva)];
+  for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) {
+    const uppifran = l.ligga ? x : y;
+    if (B.px[y * B.w + x] <= 0 || (l.tacke && uppifran > 8)) continue;
+    const v = Math.sin((l.ligga ? y : x) * 12.9898 + uppifran * 78.233) * 43758.5453, h = v - Math.floor(v);
+    if (h < del) B.px[y * B.w + x] = BLODFARG[h < del * 0.5 ? 0 : 1];
+  }
+}
 const MAX = 3000; // så många bilder sparas; sedan börjar det om (personerna åldras och byter läge)
 const figurer = new Map<string, PIXI.Texture>(), portratt = new Map<string, string>();
 // handen i figurens bild (punkter från övre vänstra hörnet), till redskapen i arbetena (steg 5.1.9.4, ui/arbetsbild.ts)
@@ -62,6 +74,7 @@ export function figurTex(q: Skapad, l: Lage, vald: boolean, qNyckel = JSON.strin
   if (!t) {
     if (figurer.size > MAX) figurer.clear();
     const B: Bild = KARNA.kartFigur(q, l.rikt, l.ben, l.arm, { ligga: l.ligga, tacke: l.tacke, smabarn: l.smabarn });
+    if (q.blod) ritaBlodig(B, q.blod, l);
     if (q.spjala) ritaSpjalor(B, q.spjala, l);
     t = PIXI.Texture.from(canvasAv(vald ? ljusKontur(B) : B), { scaleMode: PIXI.SCALE_MODES.NEAREST });
     figurer.set(k, t);

@@ -3,7 +3,7 @@
 // födseln: ett barn ärver dem från mamman och pappan (barnAv), och de första i byn, nykomlingarna och personerna i byar
 // som sparats före porträtten får dem slumpade ur byns frö och personens nummer. Allt räknas ur numret och föräldrarna,
 // så att samma person alltid ser likadan ut och simuleringen inte märker något. Bara utseende.
-import { FARGER, type FargId, gastTingOf, gastVapen, infStadium, blodSteg, ALDER, BERATT, BESK_ANSIKTE, KLADMATERIAL, KROPP, ageOf, blodning, byId, hash, isSick, kladAv, load, moodOf, utbrottNu, utrustning, tatDel } from '../sim';
+import { FARGER, type FargId, gastTingOf, gastVapen, infStadium, blodSteg, ALDER, BERATT, BESK_ANSIKTE, KLADMATERIAL, KROPP, ageOf, blodSyns, byId, hash, isSick, kladAv, load, moodOf, utbrottNu, utrustning, tatDel } from '../sim';
 import type { Person, State } from '../sim';
 import { KARNA } from '../portrattkarna';
 import { stridAnsikte } from './stridansikte';
@@ -12,7 +12,7 @@ import { s as visad, uppgiftVid } from './lage';
 // en person i karaktärsskaparens form (skapare.js): kön, ålder, en del per sort, färgerna, humöret och det man bär
 export interface Skapad {
   kon: 'kvinna' | 'man'; alder: 'barn' | 'ung' | 'vuxen' | 'gammal'; del: Record<string, string | null>; hud: number; har: number; ogon: number;
-  humor: string; skonhet: number; forband: string[]; ogonlapp: boolean; sjuk: boolean; kyla: boolean; blod: boolean;
+  humor: string; skonhet: number; forband: string[]; ogonlapp: boolean; sjuk: boolean; kyla: boolean; blod: number;
   klader: { rock: string | null; skor: boolean; balte: boolean; axelrem?: boolean; ryggsack?: boolean; krokar?: number; byxor?: string; skjorta?: string }; lagen: Record<string, string>; lager: string[] | null; rynkor: number | null;
   spjala?: ('benV' | 'benH' | 'armV' | 'armH')[]; // spjälorna (steg B.36)
   anlag?: { skagg: string | null; frisyr: string | null };
@@ -80,7 +80,7 @@ function kropp(s: State, p: Person, del: Record<string, string | null>) {
   const forband = huvud.some(w => w.f) ? ['forband-huvud'] : [];
   if (huvud.some(w => !w.f && (w.k === 'blamarke' || w.k === 'krossar'))) del.blamarke = 'blamarke-1';
   const spjala = SPJALDELAR.filter(d => (p.skador ?? []).some(w => w.spala && w.d.endsWith(d.slice(-1)) && SPJALPA[d.slice(0, 3)].some(x => w.d.startsWith(x))));
-  return { ...spjala.length ? { spjala } : {}, humor, forband, ogonlapp: !!p.saknas?.some(d => d === 'ogaV' || d === 'ogaH'), sjuk: isSick(p, s.now) || blodSteg(p) >= 1 || (p.skador ?? []).some(w => infStadium(w) >= 2) /* blek av blodförlusten (steg 9.5.17) och av feber i ett sår (steg 9.5.24) */, kyla: p.warm < KROPP.kallt, blod: blodning(p) > 0 };
+  return { ...spjala.length ? { spjala } : {}, humor, forband, ogonlapp: !!p.saknas?.some(d => d === 'ogaV' || d === 'ogaH'), sjuk: isSick(p, s.now) || blodSteg(p) >= 1 || (p.skador ?? []).some(w => infStadium(w) >= 2) /* blek av blodförlusten (steg 9.5.17) och av feber i ett sår (steg 9.5.24) */, kyla: p.warm < KROPP.kallt, blod: blodSyns(p) };
 }
 // små barns porträtt (steg 10.2.54): barn upp till SMABARN.ar år har ett eget, enklare ansikte med få varianter (samma drag för
 // alla små barn och en av SMABARN.frisyrer frisyrer), medan hårfärgen och hudfärgen är barnets egna och följer med när det växer
@@ -187,7 +187,7 @@ function gastSkapad(s: State, slag: 'handlare' | 'rovare', namn: string, sex: 'm
     let h = s.seed | 0;
     for (let i = 0; i < k.length; i++) h = Math.imul(h ^ k.charCodeAt(i), 0x01000193);
     d = KARNA.slumpPerson(KARNA.slumpFran(h), { kon: sex === 'k' ? 'kvinna' : 'man', alder: 'vuxen' }) as Skapad;
-    d.sjuk = false; d.kyla = false; d.blod = false; d.forband = [];
+    d.sjuk = false; d.kyla = false; d.blod = 0; d.forband = [];
     if (slag === 'rovare') { d.del.huvudbonad = null; d.del.smycke = null; d.klader = { rock: null, skor: false, balte: false }; }
     if (GARV.size > 400) GARV.clear();
     GARV.set(nyckel, d);
@@ -199,5 +199,5 @@ export function handlarSkapad(s: State, namn: string, sex: 'm' | 'k', p?: Person
   return p ? buren(s, p, d) : d;
 }
 export function rovarSkapad(s: State, r: Person, humor: string): Skapad {
-  return { ...buren(s, r, gastSkapad(s, 'rovare', r.name, r.sex)), humor, blod: r.blod < 0.7 };
+  return { ...buren(s, r, gastSkapad(s, 'rovare', r.name, r.sex)), humor, blod: blodSyns(r) };
 }

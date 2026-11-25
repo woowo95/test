@@ -3472,3 +3472,43 @@ SCENARIER.rikgang = {
     ];
   },
 };
+
+SCENARIER.blodstrid = {
+  text: 'Steg B.67: striden syns blodig. I fyra mot fyra med vapen på kartan lägger varje träff som öppnar ett sår ett stänk på minst BLODET.minStank inom en ruta från den som träffades, åt hållet slaget gick; den som förlorat mer än 30 % av blodet har blodsteg 3, och den som blöder steg 1',
+  kor: () => {
+    const s = SIM.createState(6, START); klockan(s);
+    for (const c of SIM.klanerOf(s)) c.inst = -60;
+    const mal = SIM.malet(s), by = vuxnaI(s).slice(0, 4);
+    for (const p of SIM.living(s)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * SIM.HOUR, carry: 0 };
+    const f = rovarGang(s, 4, { x: mal.x + 2, y: mal.y }), rov = SIM.rovarna(s, f);
+    by.forEach((p, i) => Object.assign(p, SIM.freeNear(s, mal.x - 1, mal.y - 3 + i * 2)));
+    rov.forEach((r, i) => Object.assign(r, SIM.freeNear(s, mal.x + 1, mal.y - 3 + i * 2)));
+    for (const p of [...by, ...rov]) { p.pot.mod = 20; p.blod = 1; }
+    SIM.kartStridBorja(s, 'skada', [by, rov], 'för att pröva');
+    // varje träff mäts för sig: stänket som finns när skadan kommit, mot det som fanns förut
+    let traffar = 0, ratt = 0, hall = 0; const steg = { t: 0, r: 0 };
+    const alla = [...by, ...rov], mangd = (x: number, y: number) => SIM.blodOf(s).filter(b => b.f === 'stank' && Math.hypot(b.x - x, b.y - y) <= 1).reduce((a, b) => a + b.m, 0);
+    for (let i = 0; i < 600; i++) {
+      const fore = alla.map(p => ({ n: (p.skador ?? []).filter(w => w.b > 0).length, m: mangd(p.x, p.y) }));
+      s.blod = []; // varje slag från en ren mark, så att stänket kan räknas
+      SIM.step(s, SIM.nastaSteg(s));
+      alla.forEach((p, j) => {
+        if ((p.skador ?? []).filter(w => w.b > 0).length <= fore[j].n || p.died !== undefined) return;
+        traffar++; if (mangd(p.x, p.y) >= SIM.BLODET.minStank - 1e-6) ratt++;
+        if (SIM.blodOf(s).some(b => b.f === 'stank' && b.a !== undefined && Math.hypot(b.x - p.x, b.y - p.y) <= 1)) hall++;
+      });
+      for (const p of alla) if (p.died === undefined) { steg.t++; const v = SIM.blodSyns(p), b = p.blod ?? 1; if (v === (b < SIM.HALSA.slass ? 3 : b < SIM.HALSA.blek ? 2 : SIM.blodning(p) > 0 ? 1 : 0)) steg.r++; }
+    }
+    const t = SIM.createState(6, START); t.blod = []; SIM.blodas(t, 20.5, 20.5, 'skada', 0.01, 0); const liten = SIM.blodOf(t).filter(b => b.f === 'stank')[0];
+    t.blod = []; SIM.blodas(t, 20.5, 20.5, 'skada', 0.5, 0); const djup = SIM.blodOf(t).filter(b => b.f === 'stank')[0];
+    const p = alla[0]; p.blod = 0.65;
+    return [
+      [`varje träff som öppnar ett sår ger stänk (${ratt} av ${traffar})`, traffar >= 5 && ratt === traffar],
+      [`stänket har en riktning (${hall} av ${traffar})`, hall === traffar],
+      [`den minsta träffen ger minst ${SIM.BLODET.minStank} och den djupa mer (${liten.m} och ${djup.m})`, liten.m >= SIM.BLODET.minStank && djup.m > liten.m],
+      [`stänket hamnar åt hållet slaget gick`, liten.a === 0 && liten.x >= 20.5],
+      [`under 0,7 av blodet är blodsteget 3 (${SIM.blodSyns(p)})`, SIM.blodSyns(p) === 3],
+      [`blodsteget följer blodet under hela striden (${steg.r} av ${steg.t})`, steg.r === steg.t],
+    ];
+  },
+};
