@@ -3,7 +3,7 @@ export const meta = {
   description: 'Granskaren som spelar (steg 12.1.44): läsare går igenom underlaget från npm run granska, en del var, och varje fynd prövas mot koden',
   whenToUse: 'När ett system i Färdplanen är klart: kör först npm run granska och ge mappen som args.mapp',
   phases: [
-    { title: 'Läs', detail: 'fem läsare, var och en med sina listor ur Att hitta felen' },
+    { title: 'Läs', detail: 'sex läsare, var och en med sina listor ur Att hitta felen' },
     { title: 'Pröva', detail: 'varje läsares fynd prövas mot koden innan det kommer med' },
   ],
 }
@@ -63,6 +63,7 @@ const LASARE = [
   { id: 'rorelse', namn: 'Rörelsen och sakerna', listor: 'Rörelsen: någon står still länge mitt i ett arbete; går fram och tillbaka mellan två platser; går långt förbi en närmare källa; går hem tom eller ut full; fastnar; många står på samma ruta; någon står i vatten, i en vägg eller på en möbel. Sakerna: något hämtas och används inte; samma sak läggs ner och plockas upp; något ligger kvar ute och ruttnar bredvid ett lager med plats; ett förråd växer utan slut; ett redskap, en station eller ett hus byggs och används aldrig; något försvinner eller dyker upp utan att någon burit det.' },
   { id: 'kropp', namn: 'Kroppen och byn över tid', listor: 'Kroppen: någon är hungrig, törstig, fryser, är för varm eller skadad länge fast hjälpen finns inom räckhåll (mat i förrådet, kläder på hyllan, en ledig vårdare, en ledig bädd); någon sover ute bredvid sitt hus; någon arbetar med ett brutet ben. Byn över tid: ett system som aldrig används; ett projekt som aldrig blir klart; ett bygge som står påbörjat i flera dygn med material och händer; samma händelse gång på gång i krönikan eller notiserna; en teknik alla byar fastnar vid. Vakternas larm i underlaget är ledtrådar: pröva dem mot raderna.' },
   { id: 'bild', namn: 'Panelerna och bilden', listor: 'Titta på bilderna i bilder/ och bilder/flikar/ (Read visar dem) och läs form.txt (vakterna för formen). Panelerna: två ställen visar olika tal för samma sak; en lista saknar det kartan visar; en symbol saknas eller är fel; text som inte ryms eller gömmer något. Bilden: saker ritade på varandra; möbler framför dörren; någon bär något annat än rutan säger; något ritas på fel ruta eller i fel storlek; något som finns syns inte, eller syns fast det är borta. Leta också efter det som uppenbart kan göras snyggare, på datorn och i mobilen, i ljust och mörkt läge. Formvakternas larm är redan listade; ta bara med det som de inte fångar, eller det viktigaste av dem.' },
+  { id: 'radbryt', namn: 'Radbrytningarna', listor: 'Läs radbryt.md och titta på bilderna i radbryt/ (Read visar dem) och i bilder/flikar/. Leta efter rader som bryts fult: en pil eller en symbol ensam på en rad; ett tal skilt från sin symbol eller enhet; ett skiljetecken först på en rad; ett ensamt ord sist; en knapp eller sak ensam på en ny rad; text trängd till många rader i en smal ruta; ett namn eller en rubrik bruten mitt i ordet; kolumner som inte står i linje. Larmen i radbryt.md är ledtrådar: pröva dem mot bilden, ta inte med det som ser bra ut, och leta efter det som mätningen inte fångar.' },
 ]
 
 const resultat = await pipeline(

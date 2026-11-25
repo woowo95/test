@@ -34,7 +34,7 @@ export const RADBRYT_MATA = `({ g, vy }) => {
   const inline = el => /^(inline|contents|inline-block|inline-flex|inline-grid|ruby)/.test(getComputedStyle(el).display);
   const ENHET = /^(%|dygn|år|månad(er)?|veckor?|timm(e|ar)|min(uter)?|kg|grader|°C?)\\b|^%/;
   const TAL = /^[−-]?\\d+([,.]\\d+)?$/;
-  const SKILJE = /^[·,.;:)⇄+=]/;
+  const SKILJE = /^[·,.;:)+=]/;
   for (const pan of [...document.querySelectorAll('.panel:not([hidden]) .panelkropp')].filter(syns)) {
     const alla = [...pan.querySelectorAll('*')].filter(syns);
     for (const el of alla) {
@@ -49,7 +49,7 @@ export const RADBRYT_MATA = `({ g, vy }) => {
         // en rad av saker som bryts: den sista ensam på en ny rad
         if (/^flex/.test(d) && getComputedStyle(el).flexWrap === 'wrap') {
           const barn = [...el.children].filter(syns), sist = barn[barn.length - 1], forra = barn[barn.length - 2];
-          if (sist && forra && sist.getBoundingClientRect().top >= forra.getBoundingClientRect().bottom - 2 && sist.getBoundingClientRect().width < 60 && barn.length > 2 && barn.filter(b => b.getBoundingClientRect().top === sist.getBoundingClientRect().top).length === 1 && (sist.matches('button, img, svg') || sist.querySelector('img, svg')) && !sist.matches('.famp')) larm('sak', el, 'det sista står ensamt på en ny rad');
+          if (sist && forra && sist.getBoundingClientRect().top >= forra.getBoundingClientRect().bottom - 2 && sist.getBoundingClientRect().width < 60 && barn.length > 2 && barn.filter(b => b.getBoundingClientRect().top === sist.getBoundingClientRect().top).length === 1 && (sist.matches('button, img, svg') || sist.querySelector('img, svg')) && !sist.matches('.famp') && !el.matches('.tekrad')) larm('sak', el, 'det sista står ensamt på en ny rad');
         }
         continue;
       }
@@ -90,7 +90,7 @@ export const RADBRYT_MATA = `({ g, vy }) => {
       }
       const hela = rader.filter(Boolean).flat(), sista = rader[rader.length - 1], nast = rader[rader.length - 2];
       if (sista && nast && sista.length === 1 && !sista[0].sym && !sista[0].stapel && hela.filter(b => !b.sym).length >= 4 && sista[0].r.top - nast[nast.length - 1].e.top < lh * 2.2 && sista[0].r.width < el.clientWidth * 0.3) larm('ensamt', el, '"' + sista[0].t + '" ensamt på sista raden');
-      if (el.clientWidth && el.clientWidth < g.smal && rader.filter(Boolean).length >= g.smalRader && !rader.includes(undefined)) larm('smal', el, rader.length + ' rader i ' + el.clientWidth + ' punkter');
+      if (el.clientWidth && !el.closest('.vkBlek') && el.clientWidth < g.smal && rader.filter(Boolean).length >= g.smalRader && !rader.includes(undefined)) larm('smal', el, rader.length + ' rader i ' + el.clientWidth + ' punkter');
     }
   }
   return ut;

@@ -42,3 +42,5 @@ export function passa(rot: HTMLElement) {
     while (px > min && el.scrollWidth > el.clientWidth) el.style.fontSize = `${--px}px`;
   }
 }
+// typsnittet laddas när det först behövs, och innan dess mäts ett annat: mät om när det kommit
+if (typeof document !== 'undefined') document.fonts?.addEventListener?.('loadingdone', () => passa(document.body));
