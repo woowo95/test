@@ -135,7 +135,7 @@ export const planRutor = (s: State, tr: Tro, storlek: string) => clamp(Math.ceil
 // Huset är ett hus i byggsystemet med Hus.tro. Bara de troende bygger det, och allt material tas ur kyrkans egendom (bygg.ts).
 // Möblerna är stationer med flaggan tro (stationer.ts: altare, gudabild, trosbank) som står i husets rum, och huset är klart
 // när väggarna och altaret står. Då hålls högtiden och den ledda bönen vid altaret (kult.ts).
-export const troshusAv = (s: State, tr: Tro): Hus[] => housesOf(s).filter(h => h.tro === tr.id);
+export const troshusAv = (s: State, tr: Tro): Hus[] => housesOf(s).filter(h => h.tro === tr.id && h.fn !== 'naringshus'); // inte kyrkans företag (steg 14.1.5)
 export const golvAv = (h: Hus) => Math.max(0, h.w - 2) * Math.max(0, h.h - 2);
 export const troshusGolv = (s: State, tr: Tro) => troshusAv(s, tr).reduce((n, h) => n + golvAv(h), 0);
 // rummet i trons första färdiga hus

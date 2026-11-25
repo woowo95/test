@@ -4,7 +4,7 @@
 // samma rad alltid ger samma by. Den väckta byn går sedan i samma slag som huvudbyn (s.vackta, steg 11.13.1)
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, familjOf, living, newPerson, startSkills } from './folk';
-import { BYGGNADER, Fn, HUS, homeless, verkstadPlats } from './byggnader';
+import { BYGGNADER, Fn, HUS, arHem, homeless, verkstadPlats } from './byggnader';
 import { delarIRad, fyllPlatser, STATIONER, StationDef, StationSlag, stationSite } from './stationer';
 import { knows } from './teknik';
 import { nyKvalitet } from './kvalitet';
@@ -257,7 +257,7 @@ export function byggHem(b: State) {
     const pa = byId(b, o.partner);
     if (!pa || !alive(pa) || pa.id < o.id) continue;
     const folk = familjOf(b, o.id);
-    if (folk.length < HUS.familjMin || housesOf(b).some(h => h.ag === o.id || h.ag === pa.id)) continue;
+    if (folk.length < HUS.familjMin || housesOf(b).some(h => arHem(h) && (h.ag === o.id || h.ag === pa.id))) continue;
     const tomt = housesOf(b).find(h => h.fn === 'familjehus' && h.ag === undefined); // ett familjehus ur minnet som ingen äger (steg 11.13.12)
     if (tomt) { tomt.ag = o.id; continue; }
     const h = planeraHus(b, 'familjehus', { v: 1, plats: folk.length, ag: o.id });

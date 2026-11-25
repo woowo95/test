@@ -146,6 +146,7 @@ export * from './sim/skatt';
 export * from './sim/budget';
 export * from './sim/lon';
 export * from './sim/dagsarbete';
+export * from './sim/foretag';
 export * from './sim/varde';
 export * from './sim/uppdrag';
 export * from './sim/arv';

@@ -89,3 +89,41 @@ SCENARIER.forvantan = {
     ];
   },
 };
+
+SCENARIER.foretag = {
+  text: 'Steg 14.1.5: ett företag är en ägare, ett hus och verksamheter utan egen kassa; det startas när det lönar sig, huset byggs med byggsystemet och företaget följer huset när det ärvs',
+  kor: () => {
+    const s = SIM.cloneState(testBy(25));
+    s.foretag = [];
+    const vux = SIM.living(s).filter(q => !q.gast && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), kan = (q: typeof vux[number]) => SIM.startPoang(s, q.id, ['servering']).poang;
+    const p = [...vux].sort((x, y) => kan(y) - kan(x))[0], arvinge = vux.find(q => q !== p)!;
+    const spara = JSON.stringify(s.foretag), utan = SIM.startPoang(s, p.id, ['servering']);
+    // gott om mat som är god nog, och kunder som kan betala
+    const fin = SIM.FOOD.find(k => SIM.maltidsNiva(k) === 'fin')!;
+    SIM.laggIn(s, fin, 400, p.id);
+    for (const q of vux) SIM.laggIn(s, 'silver', 200, q.id);
+    const med = SIM.startPoang(s, p.id, ['servering']), b = SIM.bastaStart(s);
+    const hi = SIM.efterfragan(s, 'servering', p.id);
+    const f = SIM.starta(s, p.id, ['servering']), kvar = SIM.efterfragan(s, 'servering', arvinge.id);
+    const a = SIM.foretagKrok.akut(s), bygger = SIM.BYGGNADER.naringshus.akut!(s);
+    // huset: ett som är klart och blir ägarens
+    const h = SIM.housesOf(s).find(x => x.klar && x.tro === undefined && SIM.gridOf(s).rooms.some(r => r.hus === x.id && r.tiles.length > 5))!;
+    const fn0 = h.fn; h.fn = 'naringshus' as never; h.ag = p.id;
+    SIM.foretagTimme(s);
+    const fick = f.hus === h.id, klarAkut = SIM.foretagKrok.akut(s).v, bordrum = SIM.foretagBord.rum(s);
+    h.ag = arvinge.id; SIM.foretagTimme(s); const arvt = f.ag === arvinge.id;
+    h.fn = fn0; SIM.foretagTimme(s); const utanHus = f.hus === undefined;
+    return [
+      [`utan kunder som kan betala lönar det sig inte (${utan.poang.toFixed(2)}, ${spara})`, utan.poang <= 0],
+      [`med god mat och kunder med silver lönar det sig (${med.poang.toFixed(2)}, ${med.kunder.toFixed(1)} kunder per dygn)`, med.poang > 0],
+      [`någon i byn skulle starta ett (${b ? b.verk.join('+') + ' ' + b.poang.toFixed(2) : 'ingen'})`, !!b],
+      [`det som redan säljs efterfrågas inte en gång till (${hi.kunder.toFixed(1)} → ${kvar.kunder.toFixed(1)})`, kvar.kunder < hi.kunder],
+      [`huset blir ett bygge för ägaren (akut ${a.v}, ägare ${a.ag === p.id})`, a.v > 0 && a.ag === p.id && bygger.v === a.v],
+      [`huset blir företagets när det är klart (${fick}), och inget mer byggs (${klarAkut})`, fick && klarAkut === 0],
+      [`företagets rum vill ha platser vid bord (${bordrum[0]?.folk ?? 0})`, bordrum.length === 1 && bordrum[0].folk >= 2],
+      [`företaget följer huset när det ärvs`, arvt],
+      [`när huset får en annan funktion saknar företaget hus`, utanHus],
+      [`registret har raderna servering och dryck`, !!SIM.VERKSAMHETER.servering && !!SIM.VERKSAMHETER.dryck],
+    ];
+  },
+};

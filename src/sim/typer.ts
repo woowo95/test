@@ -396,6 +396,7 @@ export interface State {
   seder: Seder;
   tron?: import('./religion').Tro[]; // trosriktningarna i byn (steg 4.1.2, religion.ts)
   troSkalor?: import('./religion').SkalaId[]; // skalorna som låsts upp efter de två första (steg 4.1.4, religion.ts)
+  foretag?: import('./foretag').Foretag[]; nextForetag?: number; // företagen (steg 14.1.5, foretag.ts)
   anst?: import('./dagsarbete').Anst[]; // årets anställningar (steg 14.1.4, dagsarbete.ts)
   budget?: import('./budget').Budget; // styrets budget (steg 10.5.7, budget.ts)
   delning?: import('./delning').Delning; // byns rikedom och hur mycket av det nya som ges till byn (delning.ts)

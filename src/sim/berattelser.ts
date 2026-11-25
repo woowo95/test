@@ -2871,7 +2871,7 @@ function agodel(s: State, p: Person): [MallId, number, string?] | undefined {
     if (med > 0 && w >= BERATT.rik * med) return ['besk_rik', 0.5];
     if (med > 0 && w <= BERATT.fattig * med) return ['besk_fattig', 0.5];
   }
-  if (s.hus?.some(h => h.ag === p.id && h.klar !== undefined)) return ['besk_egetHus', 0.4];
+  if (s.hus?.some(h => h.ag === p.id && h.klar !== undefined && h.fn !== 'naringshus')) return ['besk_egetHus', 0.4];
   return undefined;
 }
 // skammen: det byn inte glömt

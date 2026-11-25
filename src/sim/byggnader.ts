@@ -82,6 +82,8 @@ export interface Byggnad {
   akut?: (s: State) => Akut; // saknas: byn planerar inga nya hus för det
   namnFor?: (s: State, w: number, h: number, same: number, a: Akut) => string; // det nya husets namn
 }
+// företagens hus (foretag.ts sätter kroken, eftersom den läses efter den här filen)
+export const foretagKrok: { akut: (s: State) => Akut; namn: (s: State, a: Akut) => string } = { akut: () => ({ v: 0, plats: 0 }), namn: () => 'Företaget' };
 export const BYGGNADER = {
   sovsal: {
     namn: 'Sovsal', ikon: '🛏️', behov: 'Sovplatser under tak åt alla, mot kylan', fara: true, vikt: 3, sover: true,
@@ -148,6 +150,12 @@ export const BYGGNADER = {
     },
     namnFor: (_s, _w, _h, same) => same ? `Verkstad ${same + 1}` : 'Verkstaden',
   },
+  // ett företags hus (steg 14.1.5, foretag.ts): den som startat ett företag bygger det hus företaget saknar
+  naringshus: {
+    namn: 'Företagets hus', ikon: 'bord', behov: 'Den som startat ett företag behöver ett hus för det', fara: false, vikt: 1,
+    akut: s => foretagKrok.akut(s),
+    namnFor: (s, _w, _h, _same, a) => foretagKrok.namn(s, a),
+  },
   // trons hus (steg 10.3.19, troshus.ts): när trons plan är klar, så många golvrutor som planen vill ha och trons hus inte har.
   // Behovet är trons (Akut.tro): bara de troende bygger, av det kyrkan äger, och det hindrar inte byns andra byggen (byggplan.ts)
   // fängelset (steg 11.12.1 och 12.1.27, fangelse.ts): när byn vill ha ett och saknar det, eller det är fullt
@@ -187,6 +195,7 @@ export type Fn = keyof typeof BYGGNADER;
 export const FN = Object.keys(BYGGNADER) as Fn[];
 export const fnId = (h: Hus): Fn => (h.fn ?? 'sovsal') as Fn; // husets funktion; hus från äldre sparfiler är sovsalar
 export const fnOf = (h: Hus): Byggnad => BYGGNADER[fnId(h)] ?? BYGGNADER.sovsal;
+export const arHem = (h: Hus) => !!fnOf(h).sover; // ett hus man bor i (ett företags hus ägs också av en person, steg 14.1.5)
 // funktionen sitter på rummet (steg 7.2.1): rummets egen om den har någon, annars husets, så att ett hus från en gammal sparfil
 // blir ett rum med husets funktion. Ett rum utanför något hus räknas som en sovsal
 export const rumNyckel = (r: Rum) => String(r.tiles.length ? Math.min(...r.tiles) : -1);
@@ -260,7 +269,7 @@ function formogenhet(s: State, folk: Person[]) {
   return v;
 }
 // vad ett hus med plats för n kostar: timret och trägolvet och arbetet med dem
-function husKostnad(n: number) {
+export function husKostnad(n: number) {
   const w = Math.max(HUS.minSida, Math.ceil(Math.sqrt(n))), h = Math.max(HUS.minSida, Math.ceil(n / w)), vagg = 2 * (w + 2) + 2 * h - 1, V = MATERIAL.timmer, G = MATERIAL.tra;
   return vagg * (V.n * grundvarde(V.item!) + V.tim * ARBETE) + w * h * (G.n * grundvarde(G.item!) + G.tim * ARBETE);
 }
@@ -275,7 +284,7 @@ function familjUtanHus(s: State): { ag: number; folk: Person[]; kop?: boolean } 
     const pa = byId(s, o.partner);
     if (!pa || !alive(pa) || pa.id < o.id) continue; // paret räknas en gång, från den med lägst id
     const folk = familjOf(s, o.id);
-    if (folk.length < HUS.familjMin || hs.some(h => h.ag === o.id || h.ag === pa.id)) continue;
+    if (folk.length < HUS.familjMin || hs.some(h => arHem(h) && (h.ag === o.id || h.ag === pa.id))) continue;
     if (formogenhet(s, folk) >= husKostnad(folk.length)) return { ag: o.id, folk };
     if (kanKopaF(s, o.id, folk.length)) return { ag: o.id, folk, kop: true };
   }

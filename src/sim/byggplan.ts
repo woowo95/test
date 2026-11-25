@@ -21,7 +21,7 @@ import { LAGER, matUtanPlats, utanPlatsNu, amountOf, changed, flyttaLager, inZon
 import { tingOf } from './agande';
 import { BAR, findPath } from './vag';
 import { paMyr } from './myr';
-import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, fnId, fnOf, husIText, husNamn, harArbete, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
+import { Akut, BYGGNADER, Byggnad, FN, Fn, HUS, antalLika, arHem, fnId, fnOf, husIText, husNamn, harArbete, satKanKopa, sovHus, sovPersoner, sovRutorFor, sovplatser, torkUte, vedUte } from './byggnader';
 import { kronika } from './historik';
 import { clamp } from './slump';
 import { ledareOf } from './styre';
@@ -297,7 +297,7 @@ function dorrPlats(s: State, x0: number, y0: number, W2: number, H2: number, f: 
 const byggaUt: AtgardDef = {
   namn: 'Bygga ut', steg: 1,
   foresla: (s, b, okAt) => {
-    const hs = housesOf(s).filter(h => h.klar && !h.ut && !fnOf(h).omkring && (b.a.hus !== undefined ? h.id === b.a.hus : b.a.tro !== undefined ? h.tro === b.a.tro : b.a.ag !== undefined ? h.ag === b.a.ag : h.ag === undefined && h.tro === undefined && fnId(h) === b.fn && (!fnOf(h).lager || (h.w - 2) * (h.h - 2) < HUS.forradMax))); // ett förrådshus byggs ut till sin största storlek (steg 12.1.18)
+    const hs = housesOf(s).filter(h => h.klar && !h.ut && !fnOf(h).omkring && (b.a.hus !== undefined ? h.id === b.a.hus : b.a.tro !== undefined ? h.tro === b.a.tro && fnId(h) === b.fn : b.a.ag !== undefined ? h.ag === b.a.ag && fnId(h) === b.fn : h.ag === undefined && h.tro === undefined && fnId(h) === b.fn && (!fnOf(h).lager || (h.w - 2) * (h.h - 2) < HUS.forradMax))); // ett förrådshus byggs ut till sin största storlek (steg 12.1.18)
     const ut: Forslag[] = [], want = onskadPlats(s, b);
     for (const h of hs) for (const side of ['v', 'o', 'n', 's'] as const) {
       const lodrat = side === 'n' || side === 's', iw = h.w - 2, ih = h.h - 2;
@@ -366,7 +366,7 @@ const egetRum: AtgardDef = {
     const st = stationRutor(s);
     for (const h of housesOf(s)) {
       // ett eget rum åt var och en i familjen (steg 10.2.69): värdet växer med överskottet, i stället för en gräns för familjens storlek
-      if (h.ag === undefined || !h.klar || h.ut || hemOverskott(s, h.ag) <= 0 || rumI(s, h) >= familjOf(s, h.ag).length) continue;
+      if (h.ag === undefined || !arHem(h) || !h.klar || h.ut || hemOverskott(s, h.ag) <= 0 || rumI(s, h) >= familjOf(s, h.ag).length) continue;
       if (rumI(s, h) > 1) continue; // (delningen mitt på huset går bara i ett hus med ett rum; fler rum kommer med utbyggnaden)
       const iw = h.w - 2, ih = h.h - 2, lang = iw >= ih, n = lang ? iw : ih, tvars = lang ? ih : iw;
       if (n < 2 * HUS.minSida + 1) continue;
@@ -395,6 +395,7 @@ const rikUt: AtgardDef = {
     if (b.fn !== 'forbattra') return [];
     for (const h of housesOf(s)) {
       // den rika bygger större, och en familj med överskott som har färre rum än den är många bygger ut för egna rum (steg 10.2.69)
+      if (!arHem(h)) continue;
       const over = h.ag !== undefined ? hemOverskott(s, h.ag) : 0, rum = h.ag !== undefined && over > 0 && rumI(s, h) < familjOf(s, h.ag).length;
       if (h.ag === undefined || !h.klar || h.ut || !rikOf(s, h.ag) && !rum) continue;
       const fs = byggaUt.foresla(s, { fn: fnId(h), a: { v: 1, plats: PLAN.rikExtra, ag: h.ag, hus: h.id }, sc: 0 }, okAt);
@@ -561,7 +562,7 @@ export function villKopa(s: State, h: Hus): boolean {
     const pa = byId(s, o.partner);
     if (!pa || !living(s).includes(pa) || pa.id < o.id || o.id === h.ag || pa.id === h.ag) continue;
     const folk = familjOf(s, o.id);
-    if (folk.length < HUS.familjMin || folk.length > plats || hs.some(q => q.ag === o.id || q.ag === pa.id)) continue;
+    if (folk.length < HUS.familjMin || folk.length > plats || hs.some(q => arHem(q) && (q.ag === o.id || q.ag === pa.id))) continue;
     if (kopPris(s, o.id, nyttLika(s, h)) >= salj) return true;
   }
   return false;
@@ -570,7 +571,7 @@ export function villKopa(s: State, h: Hus): boolean {
 // det på PLAN.rivDygn dygn river familjen det (steg 7.2.15): hälften av materialet går till ägaren
 export function rivOmTomt(s: State) {
   for (const h of housesOf(s)) {
-    if (h.ag === undefined || !h.klar || h.ut) continue;
+    if (h.ag === undefined || !arHem(h) || !h.klar || h.ut) continue;
     const folk = familjOf(s, h.ag);
     if (folk.length && folk.some(q => sovHus(s, q) === h.id)) { h.tom = undefined; continue; }
     if (h.tom === undefined || villKopa(s, h)) { h.tom = s.now; continue; } // till salu: tiden räknas från då ingen längre ville köpa

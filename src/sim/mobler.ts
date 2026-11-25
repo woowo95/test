@@ -219,7 +219,7 @@ function sjukRum(s: State) {
   let best: Rum | undefined, bs = -1;
   for (const r of gridOf(s).rooms) {
     const h = husById(s, r.hus);
-    if (!h?.klar || !r.tiles.length || h.tro !== undefined) continue;
+    if (!h?.klar || !r.tiles.length || h.tro !== undefined || h.fn === 'naringshus') continue;
     if (arStuga(s, r)) { if (sovKvar(s, r) >= 2) return r; continue; } // en halmbädd tar två rutor
     if (h.ag !== undefined || !rumFn(s, r).sover) continue;
     const i = rumInfo(s, r), delar = (i.eld >= 1 ? 1 : 0) + ((i.skap ?? 0) >= 1 ? 1 : 0) + ((i.badd ?? 0) >= 1 ? 1 : 0);

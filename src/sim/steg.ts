@@ -109,6 +109,7 @@ import { stepDelning } from './delning';
 import { omtankeTimme } from './omtanke';
 import { lonOmtanke, lonRegister } from './lon';
 import { lonDygn, lonRakna } from './dagsarbete';
+import { foretagDygn, foretagTimme } from './foretag';
 import { finishOdla, froFynd, stepOdling, workOdla } from './odling';
 import { balans } from './balans';
 import { grilla, torka } from './matlagning';
@@ -522,6 +523,8 @@ export const TAKTER: Takt[] = [
   { namn: 'huvudbyns rad', sek: 3600, fn: s => { if (s.varld && s.vackt === undefined && s.vacktPlats === undefined) skrivHuvudRad(s); } }, // talen i huvudbyns rad i världen (radtal.ts, steg 11.2.9)
   { namn: 'skatten', sek: 86400, fas: SKATT.timme / 24, fn: (s, dt) => { skattDygn(s, dt * SEC); } }, // skatten på rikedomen (skatt.ts, steg 10.5.3)
   { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); lonDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
+  { namn: 'företagen', sek: 3600, fn: s => { foretagTimme(s); } }, // företagens hus och ägare (foretag.ts, steg 14.1.5)
+  { namn: 'företagens dygn', sek: 86400, fas: (SKATT.timme + 1) / 24, fn: s => { foretagDygn(s); } }, // nya företag, efter skatten och lönerna
   { namn: 'rädslan', sek: 86400, fas: STR.timme / 24, fn: (s, dt) => { raddDygn(s, dt); } }, // rädslan för handlingar bleknar och berättas vidare, också i en by utan ledare (radsla.ts, steg 12.1.60 och 12.1.84)
   { namn: 'gravDygn', sek: 86400, fas: 0.37, fn: s => { gravDygn(s); } }, // gravarna som vuxit igen helt (steg 10.4.8)
   { namn: 'gudlös', sek: 86400, fas: 0.81, fn: s => { gudlosDygn(s); } }, // den som håller sig borta från tron (rykten.ts, steg 12.1.173)

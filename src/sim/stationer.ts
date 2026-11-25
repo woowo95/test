@@ -975,7 +975,7 @@ function siteInne(s: State, k: string, bara?: Rum, far?: (h: Hus) => boolean) {
   let best: { x: number; y: number; rot?: 1; inne: 1 } | undefined, bs = Infinity;
   for (const r of g.rooms) {
     const hus = husById(s, r.hus);
-    if (!hus?.klar || !r.tiles.length || bara && r !== bara || far && !far(hus) || (hus.tro !== undefined) !== !!d.tro) continue; // i trons hus står bara trons möbler (steg 10.3.19)
+    if (!hus?.klar || !r.tiles.length || bara && r !== bara || far && !far(hus) || (hus.tro !== undefined && hus.fn !== 'naringshus') !== !!d.tro) continue; // i trons hus står bara trons möbler (steg 10.3.19)
     const fn = rumFnOf(s, r);
     if (d.sover ? !fn.sover : fn.lager) continue;
     const rum = new Set(r.tiles), kvar = sovKvar(s, r), bonus = (!d.sover && !fn.sover ? -STATION.samling : 0) - (d.kok && rumTaggar(s, r).has('kok') ? STATION.kokSamla : 0); // köket samlar sina stationer (steg 10.2.92)
@@ -1424,7 +1424,7 @@ export function ledigPlats(s: State, p: Person) {
   let best: { x: number; y: number } | undefined, bd = Infinity;
   const hemma = sovHus(s, p);
   for (const t of borden) {
-    const hus = husAv(s, t), borta = hus?.ag !== undefined && hus.id !== hemma ? STATION.bordHemma : 0;
+    const hus = husAv(s, t), borta = hus?.ag !== undefined && hus.fn !== 'naringshus' && hus.id !== hemma ? STATION.bordHemma : 0;
     const platser = bordPlatser(t);
     for (const [i, q] of platser.entries()) {
     const d = Math.hypot(q.x + 0.5 - p.x, q.y + 0.5 - p.y) + borta + (inneHellre && !roofed(s, q.x, q.y) ? STATION.bordUte : 0) - STATION.sittVal * sateNiva(t, i)
@@ -1445,6 +1445,8 @@ export function bordVid(s: State, p: { x: number; y: number }) {
 // samlingssalen och långhuset (eller platsen ute vid elden när ingen sal finns) hela byn och alla platser. Ett bord som inte
 // får plats i rummet med sina sittplatser går inte att välja där. Nyttan är platserna bordet fyller åt dem som saknar, så att
 // projektets värde (nyttan delad med virket och arbetet, projekt.ts) väljer storleken. p = bara de hus p får bygga i
+// rummen i företagens hus som vill ha bord, och åt hur många (foretag.ts sätter kroken)
+export const foretagBord: { rum: (s: State) => { r: Rum; folk: number }[] } = { rum: () => [] };
 interface BordStalle { r?: Rum; folk: number; har: number }
 const bordCache = new WeakMap<State, { key: string; m: Map<string, { r?: Rum; fyller: number } | undefined> }>();
 function bordStallen(s: State): BordStalle[] {
@@ -1453,6 +1455,11 @@ function bordStallen(s: State): BordStalle[] {
   for (const [hus, folk] of husFolk(s)) {
     const har = bordenOf(s).filter(t => stationRum(s, t)?.hus === hus).reduce((a, t) => a + platserAv(t.k), 0);
     for (const r of gridOf(s).rooms) if (r.hus === hus) ut.push({ r, folk: folk.length, har });
+  }
+  // företagens hus (steg 14.1.5, foretag.ts): platser åt så många kunder som väntas samtidigt
+  for (const f of foretagBord.rum(s)) {
+    const har = bordenOf(s).filter(t => stationRum(s, t) === f.r).reduce((a, t) => a + platserAv(t.k), 0);
+    ut.push({ r: f.r, folk: f.folk, har });
   }
   ut.push({ folk: n, har: alla }); // ute nära elden, sist: ett rum går före när det fyller lika många
   return ut;
