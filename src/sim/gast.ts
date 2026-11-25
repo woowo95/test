@@ -130,6 +130,8 @@ export function hp(s: State, h: { id: number }): Person {
 
 // ett nytt id för en gäst som inte är handlaren (handlarens id är −handlarNr): långt under alla andra, och aldrig samma två gånger
 export const nyttGastId = (s: State) => -1e9 - (s.gastNr = (s.gastNr ?? 0) + 1);
+// rövarlägrets vapen (steg B.70): lagervapen.ts sätter dem (laddas efter)
+export const LAGERKROK = { bevapna: (_s: State, _r: import('./radtal').VarldRad, _gang: Person[]) => {}, lamna: (_s: State, _r: import('./radtal').VarldRad, _id: number) => {} };
 // en gäst skapas som en bybo, men ur hash3 (se ovan): samma frö och nyckel ger samma person
 export function nyGast(s: State, o: { id: number; namn: string; sex: 'm' | 'k'; fodd: number; rad: GastRad; x: number; y: number; nyckel: number; skill?: Partial<Record<Skill, number>>; pot?: Partial<Record<Stat, number>> }): Person {
   let i = 0;

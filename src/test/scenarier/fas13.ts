@@ -3541,3 +3541,74 @@ SCENARIER.lagerkalla = {
     ];
   },
 };
+
+SCENARIER.lagervaxer = {
+  text: 'Lägret växer av bytet och krymper av förlusterna (steg B.69): två läger lika nära samma svältande by, det ena med mat och rikedom efter en plundring: under fem dygn (fem år i spelet) flyttar fler till det rika; ett läger utan mat som förlorat hälften i ett anfall har krympt efter fem dygn',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!, t = s.now, h0 = Math.floor(t / 3600e3);
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && SIM.byPlats(vl, x.nr)?.grannar?.length)!;
+    r.tal.folk = 60; r.tal.mat = 0; r.tal.rikedom = 600;
+    const rik = SIM.nyttLager(s, vl, r, 8, t)!, fattig = SIM.nyttLager(s, vl, r, 8, t)!, l = SIM.nyttLager(s, vl, r, 30, t)!;
+    l.tal.folk = 0;
+    const g = (l: SIM.VarldRad) => SIM.byPlats(vl, l.nr)!.grannar!.find(q => q.nr === SIM.byPlats(vl, r.nr)!.nr)!;
+    g(fattig).dygn = g(rik).dygn; // lika nära
+    let fikRik = 0, fikFattig = 0;
+    const borja = new Set((vl.ko ?? []).map(p => p));
+    const satt = () => { for (const [l, mat, ri] of [[rik, 8 * 500, 4000], [fattig, 0, 0]] as const) { l.tal.folk = 8; l.tal.mat = mat; l.tal.rikedom = ri; } r.tal.folk = 60; r.tal.mat = 0; r.tal.rikedom = 600; };
+    for (let d = 0; d < 10; d++) for (let n = 0; n < 5 * 24; n++) { satt(); SIM.radFlytt(s, vl, r, h0 + d * 1000 + n); } // fem dygn, tio gånger
+    for (const p of vl.ko ?? []) if (!borja.has(p) && p.typ === 'flytt') { if (p.sak === rik.nr) fikRik += p.data!.n; if (p.sak === fattig.nr) fikFattig += p.data!.n; }
+    // det slagna lägret: hälften dog, och maten är slut
+    l.tal.folk = 15; l.tal.mat = 0; l.tal.styrka = 10;
+    const mal = SIM.flyttMal(vl, SIM.varldMark(s), l).length;
+    let gick = 0;
+    const l0 = l.tal.folk;
+    for (let n = 0; n < 20 * 24; n++) { l.tal.folk = 15; l.tal.mat = 0; SIM.radFlytt(s, vl, l, h0 + n); gick += l0 - l.tal.folk; } // utan mat ger de sig av
+    l.tal.folk = 15;
+    for (let n = 0; n < 5 * 24 && l.tal.folk > 0; n++) { SIM.radFlytt(s, vl, l, h0 + n); SIM.radMat(s, vl, l, h0 + n); }
+    return [
+      [`till det rika lägret flyttar fler (${fikRik}) än till det fattiga (${fikFattig})`, fikRik > fikFattig && fikRik > 0],
+      [`folk i lägret har någonstans att gå (${mal} platser), och några gav sig av (${gick})`, mal > 0 && gick > 0],
+      [`det slagna lägret utan mat har krympt (${l0} → ${l.tal.folk} efter fem dygn)`, l.tal.folk < l0],
+    ];
+  },
+};
+
+SCENARIER.lagervapen = {
+  text: 'Lägrets vapen (steg B.70): gänget från ett rövarläger utan vapen och varor bär stenar, och samma läger efter att ha rånat två spjut skickar ett gäng där två bär spjut; det bästa vapnet tas först, gänget är aldrig fler än lägrets folk, vapnen som kommer hem går tillbaka, och texten säger lägrets namn',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    const by = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && SIM.byPlats(vl, x.nr)?.grannar?.length)!;
+    by.tal.folk = 60;
+    const L = SIM.nyttLager(s, vl, by, 6, s.now)!;
+    const tomt = () => { SIM.radHar(L, 'sten'); for (const g of Object.keys(L.varor!)) L.varor![g] = 0; delete L.stulet; delete L.vapen; };
+    const bort = () => { for (const g of SIM.gasterNu(s, 'rovare')) SIM.gastGar(s, g.id); s.rovare = undefined; delete s.rovareFler; };
+    const gang = (n: number, r: SIM.VarldRad) => { bort(); const f = SIM.radKommer(s, r.syn, n, undefined, undefined, r); return f.folk.map(id => SIM.gastAv(s, id)!); };
+    const vapen = (g: SIM.Person[]) => g.map(p => SIM.gastTingOf(s, p).find(t => t.hos === p.id)?.k ?? 'hand');
+    const skydd = (g: SIM.Person[]) => g.reduce((a, p) => a + SIM.gastTingOf(s, p).filter(t => SIM.LAGERSKYDD.flat().includes(t.k)).length, 0);
+    tomt();
+    const g0 = gang(5, L), v0 = vapen(g0), s0 = skydd(g0);
+    const namnet = s.rovare!.ur === L.nr;
+    tomt(); SIM.radTar(L, 'flintspjut', 2);
+    const v1 = vapen(gang(5, L));
+    tomt(); SIM.radTar(L, 'kniv', 1); SIM.radTar(L, 'svard', 1); SIM.radTar(L, 'hjalm_lader', 1);
+    const g2 = gang(2, L), v2 = vapen(g2), s2 = skydd(g2), kvar = { ...L.stulet, ...L.vapen };
+    for (const p of g2) SIM.lamnaVapen(s, L, p.id);
+    const ater = { ...L.stulet, ...L.vapen };
+    tomt(); SIM.radLaggTill(L, 'redskap', 40);
+    const v3 = vapen(gang(5, L)), red = SIM.radHar(L, 'redskap');
+    L.tal.folk = 6; L.tal.styrka = 6;
+    const storst = SIM.flockStorlek(L, 0, vl.rader!.find(r => r.nr === vl.huvud)!);
+    const vB = vapen(gang(6, by));
+    bort();
+    return [
+      [`utan vapen bär alla stenar, inga skydd (${v0.join(', ')}; ${s0} skydd)`, v0.length === 5 && v0.every(k => k === 'sten') && s0 === 0],
+      [`efter två rånade spjut bär två av fem spjut (${v1.join(', ')})`, v1.filter(k => k === 'flintspjut').length === 2 && v1.filter(k => k === 'sten').length === 3],
+      [`det bästa tas först, och hjälmen (${v2.join(', ')}, ${s2} skydd; kvar ${Object.keys(kvar).length})`, v2[0] === 'svard' && v2[1] === 'kniv' && s2 === 1 && !Object.keys(kvar).length],
+      [`vapnen som kom hem är lägrets igen (${Object.entries(ater).map(([k, n]) => `${n} ${k}`).join(', ')})`, ater.svard === 1 && ater.kniv === 1 && ater.hjalm_lader === 1],
+      [`varorna räcker till några (${v3.join(', ')}; ${red} kvar)`, v3.some(k => k !== 'sten') && red < 40],
+      [`gänget är inte fler än lägrets folk (${storst} av 6)`, storst <= 6],
+      [`gänget från en by får vapen som förut (${vB.join(', ')})`, vB.some(k => k !== 'sten') && vB.every(k => k !== 'sten')],
+      ['flocken vet vilket läger den kom från', namnet],
+    ];
+  },
+};

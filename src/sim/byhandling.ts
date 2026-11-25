@@ -489,7 +489,7 @@ function anfallFram(s: State, vl: Varlden, f: RadFard, r: VarldRad, mot: VarldRa
 // flocken kommer till huvudbyn (steg 11.6.20): rövarna går in från kanten mot byn som skickade dem, så många som flocken är,
 // och skälet kommer ur klanens syn på huvudbyn (rader.ts). Färden väntar tills flocken lämnat kartan (flockKrok.slut)
 function huvudAnfall(s: State, f: RadFard, r: VarldRad) {
-  const fl = radKommer(s, r.syn, f.anfall!, undefined, Array.from({ length: f.anfall! }, (_, i) => fardPerson(s.varld!, f, i)));
+  const fl = radKommer(s, r.syn, f.anfall!, undefined, Array.from({ length: f.anfall! }, (_, i) => fardPerson(s.varld!, f, i)), r);
   fl.fard = f.id;
   count(s, 'varldsanfall');
 }

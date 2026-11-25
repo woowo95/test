@@ -30,7 +30,7 @@ import { grundvarde } from './varde';
 import { gomSig, iHus, kanterna, setRovarVal, vargIStrid, vargStrid } from './varg';
 import { bastaVapen, taVapen } from './vakt';
 import { foddNar, gastNyckel } from './gastliv';
-import { gastAv, gastAvvapna, gastGar, gastTillbaka, gastTingOf, gasterNu, nyGast, nyttGastId } from './gast';
+import { gastAv, gastAvvapna, gastGar, gastTillbaka, gastTingOf, LAGERKROK, gasterNu, nyGast, nyttGastId } from './gast';
 import { brytKlar, fangeVal, fangelseDorr, fangelseLedigt, satt as sattIFangelset } from './fangelse';
 import { notis } from './notiser';
 import type { TalkEvent } from './samtal';
@@ -51,6 +51,7 @@ import { forlustFore, forlustEfter } from './tankelage';
 import { allaBarn } from './uppvaxt';
 import { kronikaBer } from './berattelser';
 import { glesPlats } from './trangsel';
+import { radNr, type VarldRad } from './radtal';
 
 // ---------- rövarflocken (steg 4.4.5, Striden på kartan i designdokumentet) ----------
 // När världen skickar dem (radanfall.ts, steg 11.6.20) kommer ett gäng rövare: folk från en grannklan som inte
@@ -134,7 +135,7 @@ export const rovarna = (s: State, f: { folk: number[] }): Person[] => f.folk.map
 const gr = (r: Person) => r.gast!;
 // x, y: mitten av gänget (steg 10.2.25), mx, my: målet. test: flocken kom från testläget och rastar kortare (steg 9.2.103).
 // anfall: flocken har setts i eller nära byn, och byn går mot den (steg 9.2.104). strider: hur många strider flocken varit i
-export interface Rovarflock { ingenMer?: number; /* så många hade larmet när alla på väg till raden var framme och inte räckte (steg B.47 och B.60) */ radMal?: { x: number; y: number }; /* målet raden väntar vid (steg B.33) */ fard?: number; hemN?: number; hemBar?: Record<string, number>; /* världens färd som skickade flocken, hur många som kommit hem och vad de bar (steg 11.6.20) */ rast?: { x: number; y: number }; vantat?: boolean; anfaller?: boolean; anfallT?: number; /* när det gick till anfall (steg B.13) */ kom?: number; frammeT?: number; /* när gänget kom, och när alla var framme vid rastplatsen, för mätningen (steg B.56) */ klar?: boolean; radKlar?: boolean; antal?: number; strider?: number; tagit?: Record<string, number>; gravTagit?: Record<string, number>; /* det som togs ur gravarna (steg 13.1.5) */ sx?: number; sy?: number; skal?: import('./rader').RadSkal; rad?: boolean; mal?: number; hugger?: { bit: number; till: number }; tant?: boolean; id: number; klan?: number; folk: number[]; x: number; y: number; mx: number; my: number; gor: 'kommer' | 'vantar' | 'slass' | 'flyr' | 'letar' | 'rotar'; /* det de flesta gör, för texterna (steg 10.2.30) */ letar?: number[]; letat?: boolean; till: number; sedd?: number; gissning?: number; test?: boolean; anfall?: boolean; bud?: { av: number; till: number; t: number } }
+export interface Rovarflock { ingenMer?: number; /* så många hade larmet när alla på väg till raden var framme och inte räckte (steg B.47 och B.60) */ radMal?: { x: number; y: number }; /* målet raden väntar vid (steg B.33) */ ur?: number; /* numret på byn eller lägret som skickade flocken (steg B.70) */ fard?: number; hemN?: number; hemBar?: Record<string, number>; /* världens färd som skickade flocken, hur många som kommit hem och vad de bar (steg 11.6.20) */ rast?: { x: number; y: number }; vantat?: boolean; anfaller?: boolean; anfallT?: number; /* när det gick till anfall (steg B.13) */ kom?: number; frammeT?: number; /* när gänget kom, och när alla var framme vid rastplatsen, för mätningen (steg B.56) */ klar?: boolean; radKlar?: boolean; antal?: number; strider?: number; tagit?: Record<string, number>; gravTagit?: Record<string, number>; /* det som togs ur gravarna (steg 13.1.5) */ sx?: number; sy?: number; skal?: import('./rader').RadSkal; rad?: boolean; mal?: number; hugger?: { bit: number; till: number }; tant?: boolean; id: number; klan?: number; folk: number[]; x: number; y: number; mx: number; my: number; gor: 'kommer' | 'vantar' | 'slass' | 'flyr' | 'letar' | 'rotar'; /* det de flesta gör, för texterna (steg 10.2.30) */ letar?: number[]; letat?: boolean; till: number; sedd?: number; gissning?: number; test?: boolean; anfall?: boolean; bud?: { av: number; till: number; t: number } }
 
 // för mätningen av striderna (npm run strid, steg B.56): varje gäng som kommer (läses aldrig av spelet)
 export const rovarProv: { kom?: (f: Rovarflock) => void } = {};
@@ -164,7 +165,7 @@ export function skickaRovare(s: State, n: number): { ok: boolean; text: string }
 // men går annars som en vanlig flock
 // Rövare kommer bara när en by eller ett läger i världen skickar dem (steg 11.6.20, plundringen i byhandling.ts), med så många som
 // flocken där är; klan = -1 är ett gäng utan klan
-export function rovarnaKommer(s: State, tvinga: number, direkt?: boolean, klan?: number, vilka?: ({ namn: string; sex: 'm' | 'k' } | undefined)[]) { // vilka: de som gav sig av på färden (steg B.39)
+export function rovarnaKommer(s: State, tvinga: number, direkt?: boolean, klan?: number, vilka?: ({ namn: string; sex: 'm' | 'k' } | undefined)[], ur?: VarldRad) { // vilka: de som gav sig av på färden (steg B.39); ur: raden som skickade dem (steg B.70)
   // en ny flock kan komma medan en annan är på kartan (steg 8.7.18): den går samtidigt med den (rovareFler, rovarSteg)
   const forra = s.rovare;
   const m = getMap(s.seed); // testläget kommer in från kanten som ett vanligt gäng (steg 10.1.16): bara väntan är kortare
@@ -192,17 +193,18 @@ export function rovarnaKommer(s: State, tvinga: number, direkt?: boolean, klan?:
     s.people.push(p);
     return p.id;
   });
+  if (ur?.sort === 'rovarlager') LAGERKROK.bevapna(s, ur, folk.map(id => gastAv(s, id)!)); // lägrets egna vapen och skydd (steg B.70)
   folk.forEach((id, j) => { const g = gastAv(s, id)?.gast; if (g) g.fil = j - (folk.length - 1) / 2; }); // var sin fil bredvid de andra (steg 10.2.25)
   const nr = s.rovarNr = (s.rovarNr ?? 0) + 1;
   // testläget (steg 9.2.103): gänget rastar ROVARE.testVanta minuter i stället för den vanliga väntan
-  s.rovare = { id: nr, klan: k?.id, folk, x, y, mx: x, my: y, gor: 'kommer', till: 0, kom: s.now, ...(direkt ? { test: true } : {}) };
+  s.rovare = { id: nr, klan: k?.id, folk, x, y, mx: x, my: y, gor: 'kommer', till: 0, kom: s.now, ...(ur ? { ur: ur.nr } : {}), ...(direkt ? { test: true } : {}) };
   stallUpp(s, s.rovare, x, y);
   s.rovarVila = s.now;
   rovarProv.kom?.(s.rovare);
   if (forra) { (s.rovareFler ??= []).push(s.rovare); s.rovare = forra; count(s, 'tvaFlockar'); }
   count(s, 'rovarflockar'); count(s, 'rovare', n);
 }
-const fran = (s: State, f: Rovarflock) => { const k = klanById(s, f.klan); return k ? `från ${k.namn}` : 'utan klan'; };
+const fran = (s: State, f: Rovarflock) => { const namn = klanById(s, f.klan)?.namn ?? (f.ur !== undefined ? radNr(s.varld ?? {}, f.ur)?.namn : undefined); return namn ? `från ${namn}` : 'utan klan'; }; // byn eller lägret de kom från (steg B.70)
 
 // ---------- rövarna som människor (steg 6.6.9) ----------
 // Varje rövare står och går för sig, i en bybos fart (GANG.fart gånger marken, lite olika för var och en) med samma vägsökning
@@ -766,6 +768,8 @@ function hemat(c: RCtx) {
   if (kvar >= 0.5) return;
   f.folk = f.folk.filter(id => id !== r.id);
   if (f.fard !== undefined) { f.hemN = (f.hemN ?? 0) + 1; for (const [k, n] of Object.entries(g.bar ?? {})) (f.hemBar ??= {})[k] = (f.hemBar[k] ?? 0) + n; } // det hen bär kommer till byn som skickade flocken
+  const ur = f.ur !== undefined ? radNr(s.varld ?? {}, f.ur) : undefined;
+  if (ur?.sort === 'rovarlager' && ur.tal.folk > 0) LAGERKROK.lamna(s, ur, r.id); // vapnen går tillbaka till lägret (steg B.70)
   gastGar(s, r.id, true);
 }
 // mötet (steg 10.1.14): striden börjar där de möts, och den som redan pågår får en till

@@ -197,6 +197,7 @@ export * from './sim/vagmote';
 export * from './sim/radanfall';
 export * from './sim/vagran';
 export * from './sim/vaktat';
+export * from './sim/lagervapen';
 export * from './sim/gravfynd';
 export * from './sim/gomma';
 export * from './sim/kyrkuppdrag';
