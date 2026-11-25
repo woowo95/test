@@ -23,7 +23,7 @@ import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './b
 import { GRODOR, ODLING, STAKET, faltBrist, faltUppgift } from './odling';
 import { hageBrist, hageUppgift } from './hage';
 import { VINTER, angBrist, angUppgift } from './slatter';
-import { SKOG, fallTid, fellingTiles, klyvStam, stockOverHus, egenStock, fallVilja, rojSpot, rojBrist, slyBrist, slySpot, stubbBrist, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
+import { SKOG, stamTill, fallTid, fellingTiles, klyvStam, stockOverHus, egenStock, fallVilja, rojSpot, rojBrist, slyBrist, slySpot, stubbBrist, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
 import { freeTools, harReceptVatten, tingOf } from './agande';
 import { ACTS, redskapTal } from './handlingar';
 import { tileOf } from './mark';
@@ -52,13 +52,12 @@ import { VATSKOR, ar_vatska, karSomBlirLedig, ledigFor, vatskaAv, type VatskaId 
 
 // en fälld stam vars krona ligger över ett färdigt hus huggs före nästa fällning (steg 9.2.86, skog.ts)
 // och den som fällt ett träd hugger helst stammen själv innan hen fäller nästa (steg 9.2.87)
-const overHusUppgift = (s: State, p?: Person, virke = false): Uppgift | undefined => {
-  const o = stockOverHus(s);
-  if (o) return { act: 'hugga', text: 'Hugger en fälld stam som ligger över ett hus.', tool: 'yxa', spot: { x: o.x + 0.3, y: o.y + 0.2 }, ref: o.id };
-  const e = p && egenStock(s, p);
-  if (e) return virke && e.ved >= SKOG.virkeVed
-    ? { act: 'klyva', text: `Klyver virke ur stammen ${han(p)} fällde.`, tool: 'yxa', spot: { x: e.x + 0.3, y: e.y + 0.2 }, ref: e.id }
-    : { act: 'hugga', text: `Hugger stammen ${han(p)} fällde.`, tool: 'yxa', spot: { x: e.x + 0.3, y: e.y + 0.2 }, ref: e.id };
+// klyvs till virke eller huggs till ved efter vad byn behöver (stamTill, steg 13.10.26)
+const overHusUppgift = (s: State, p?: Person): Uppgift | undefined => {
+  const o = stockOverHus(s), e = o ?? (p && egenStock(s, p));
+  if (!e) return undefined;
+  const act = stamTill(s, e), gor = act === 'klyva' ? 'Klyver virke ur' : 'Hugger';
+  return { act, text: o ? `${gor} en fälld stam som ligger över ett hus.` : `${gor} stammen ${han(p!)} fällde.`, tool: 'yxa', spot: { x: e.x + 0.3, y: e.y + 0.2 }, ref: e.id };
 };
 
 export const PROJEKT_TAL = balans('projekt', {
@@ -260,7 +259,7 @@ export const PROJEKT: Record<string, ProjektDef> = {
     kan: (s, p) => freeTools(s, p, 'yxa') > 0 && (!!klyvStam(s) || !!treeSpot(s, fellingTiles(s, p), p)),
     // finns ingen fälld stam fälls ett träd först (steg 6.2.19)
     uppgift: (s, p) => {
-      const o = overHusUppgift(s, p, true);
+      const o = overHusUppgift(s, p);
       if (o) return o;
       const k = klyvStam(s);
       if (k) return { act: 'klyva', text: 'Klyver virke ur en fälld stam.', tool: 'yxa', spot: { x: k.x + 0.3, y: k.y + 0.2 }, ref: k.id };

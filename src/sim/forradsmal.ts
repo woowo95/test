@@ -23,6 +23,7 @@ import { ELD, eldarOf, hearthOf, woodDays } from './eld';
 import { foodDaysAll } from './ekonomi';
 import { ERSATT, SAKER, isFood } from './saker';
 import { ljusPlatser } from './ljus';
+import { virkeKrok } from './skog';
 import { allows, amountOf as iForradet, iHelaForradet, rymd, zonesOf } from './lager';
 // förrådsmålen gäller hela byns förråd, också när frågan ställs mitt i ett arbete där bara det inom räckhåll nås (steg 11.1.74)
 // det som kan användas i stället (ERSATT, den torkade röllekan, steg 13.6.1) räknas med
@@ -237,6 +238,7 @@ const perVuxna = (s: State, per: number, fran: number = ALDER.vuxen) => Math.max
 // ett spjut per tre vuxna, när någon väl har börjat fiska eller jaga
 const spjutVill = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_jakt ?? 0) > 0 ? perVuxna(s, VILLTAL.spjutPerVuxna) : 0;
 // flintan till redskapen byn vill ha och saknar (redskap.ts, satt där så att filerna inte importerar varandra)
+virkeKrok.mal = s => materialBuffert(s, 'virke'); // stammen blir virke eller ved (skog.ts, steg 13.10.26)
 export const flintaKrok = { verktyg: (_s: State) => 0 };
 // kolet som eldarna som bränner kol vill ha (ässjan, fyrfaten), satt där de finns (steg 13.8.6)
 export const kolKrok = { eldar: (_s: State) => 0 };

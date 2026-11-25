@@ -5,6 +5,7 @@ import { bynsMitt, utanforByn } from './omrade';
 import { freeTools } from './agande';
 import { budTillfalle, count, forstaGang, gjort, living, log } from './folk';
 import { wearUsed } from './redskap';
+import { amountOf } from './lager';
 import { groundOf, isForest, tileOf } from './mark';
 import { FOREST, Ground } from './vag';
 import { stadium, stadiumAv } from './trad';
@@ -171,6 +172,9 @@ export function overHus(s: State, k: Stock) {
 }
 export const stockOverHus = (s: State) => stocks(s).find(k => k.ved > 0 && overHus(s, k));
 // stammen p själv fällt och som inte är huggen än (steg 9.2.87): hela trädet tas om hand innan nästa fälls
+// den fällda stammen blir virke när byn saknar det och stammen räcker, annars ved: valet för alla som tar hand om en stam (steg 13.10.26)
+export const stamTill = (s: State, k: Stock): 'klyva' | 'hugga' => k.ved >= SKOG.virkeVed && amountOf(s, 'virke') < virkeKrok.mal(s) ? 'klyva' : 'hugga';
+export const virkeKrok: { mal: (s: State) => number } = { mal: () => 0 }; // bufferten (sätts av forradsmal.ts)
 export const egenStock = (s: State, p: Person) => stocks(s).find(k => k.ved > 0 && k.av === p.id);
 // viljan att fälla ett nytt träd för ett projekt sjunker med antalet fällda stammar som ligger i byn (steg 9.2.87)
 export const fallVilja = (s: State) => 1 / (1 + SKOG.liggande * stocks(s).filter(k => k.ved > 0 && !utanforByn(s, k.x, k.y)).length);

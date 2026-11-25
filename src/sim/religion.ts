@@ -321,7 +321,7 @@ export function tecken(s: State, p: Person, k: TeckenTyp, om?: string) {
   if (!alive(p) || ageOf(p, s.now) < UPPV.fran) return;
   count(s, 'tecken_' + k); // byns statistik: tecknen som någon var med om
   const text = teckenText(k, om);
-  upplev(s, p, 'tecken', text);
+  if (k !== 'bonSvar') upplev(s, p, 'tecken', text); // den hörda bönen är redan en upplevelse (bonHjalpte, steg 13.10.24)
   const egen = troOf(s, p.tro);
   if (egen) { egen.bekr = s.now; p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + TRO.bekrafta); count(s, 'tro_bekr'); if (egen.namn) gudFor(s, egen, TDEF[k].omr, text); return; }
   if (formas(s, p) || andlighet(s, p) < TRO.grunda || rnd(s, 'tro', p) >= TECKENTAL[k]) return;

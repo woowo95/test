@@ -906,8 +906,8 @@ function utfor(s: State, f: Forslag, u: ByggBehov, byggare: Person[], ppl: Perso
     return;
   }
   if (f.at === 'byggaUt') return byggUt(s, f, by, u.fn === 'forbattra');
-  if (f.at === 'stenVaggA') { bytMaterial(bitAt(s, f.ritning[0].x, f.ritning[0].y)!, 'sten'); touch(s); count(s, 'stenVagg'); if (forstaGang(s, 'stenVaggByte')) log(s, `${by.name} vill byta väggarna i ${f.hus!.namn.toLowerCase()} till sten.`, 'world', [by.id]); return; }
-  if (f.at === 'battreGolv') { bytMaterial(bitAt(s, f.ritning[0].x, f.ritning[0].y)!, f.ritning[0].m); touch(s); count(s, 'forbGolv'); log(s, `${by.name} vill lägga ett trägolv i ${f.hus!.namn.toLowerCase()}.`, 'world', [by.id]); return; }
+  if (f.at === 'stenVaggA') { bytMaterial(bitAt(s, f.ritning[0].x, f.ritning[0].y)!, 'sten'); touch(s); count(s, 'stenVagg'); if (forstaGang(s, 'stenVaggByte')) log(s, `${by.name} vill byta väggarna i ${husIText(f.hus!)} till sten.`, 'world', [by.id]); return; }
+  if (f.at === 'battreGolv') { bytMaterial(bitAt(s, f.ritning[0].x, f.ritning[0].y)!, f.ritning[0].m); touch(s); count(s, 'forbGolv'); log(s, `${by.name} vill lägga ett trägolv i ${husIText(f.hus!)}.`, 'world', [by.id]); return; }
   if (f.at === 'egetRum') {
     for (const a of f.ritning) bytMaterial(bitAt(s, a.x, a.y)!, a.m);
     touch(s); count(s, 'forbRum');
