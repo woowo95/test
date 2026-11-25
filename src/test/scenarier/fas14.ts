@@ -478,7 +478,7 @@ SCENARIER.verksamheter = {
 SCENARIER.stanga = {
   text: 'Steg 14.1.13: ägaren jämför vinsten med vad hen kunde tjäna på annat; är den sämre länge säljs företaget, ett gott rykte höjer priset, och vill ingen köpa stängs det och huset byter funktion',
   kor: () => {
-    const dygn = (s: SIM.State, n: number, vinst = 0, kunder = 0) => { for (let i = 0; i < n; i++) { s.now += SIM.DAY; for (const f of s.foretag ?? []) { f.vinst = (f.vinst ?? 0) + vinst; (f.salt ??= {})[f.verk[0]] = (f.salt[f.verk[0]] ?? 0) + kunder; } const alla = s.foretag; SIM.foretagDygn(s); s.foretag = s.foretag!.filter(f => alla!.includes(f)); } };
+    const dygn = (s: SIM.State, n: number, vinst = 0, kunder = 0) => { for (let i = 0; i < n; i++) { s.now += SIM.DAY; for (const f of s.foretag ?? []) { f.vinst = (f.vinst ?? 0) + vinst; (f.salt ??= {})[f.verk[0]] = (f.salt[f.verk[0]] ?? 0) + kunder; } const alla = [...s.foretag ?? []]; SIM.foretagDygn(s); s.foretag = s.foretag!.filter(f => alla!.includes(f)); } };
     // med god vinst stannar det
     const A = foretagBy(['servering']); dygn(A.s, 12, 60, 10);
     const kvar = A.s.foretag!.includes(A.f) && A.f.salu === undefined, res = A.f.resultat!;
@@ -521,6 +521,7 @@ SCENARIER.marknad = {
     const tomt = [...SIM.handelslust(s).values()].reduce((x, y) => x + y, 0); SIM.marknadDygn(s); const ingen = !s.marknad;
     for (const q of folk) q.bruk = undefined;
     // a har benspadar över, och de andra saknar en
+    s.ting = s.ting!.filter(t => t.k !== 'benspade');
     for (let i = 0; i < 12; i++) SIM.addTool(s, 'benspade', a);
     const lust = SIM.handelslust(s); SIM.marknadDygn(s); const m = s.marknad as SIM.Marknad | undefined;
     const v0 = SIM.marknadVikt(s, b); if (m) s.now = m.t + SIM.HOUR; const v1 = SIM.marknadVikt(s, b), vv = SIM.marknadVal(s, b);

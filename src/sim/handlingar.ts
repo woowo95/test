@@ -263,7 +263,7 @@ const DEF = {
   marknad: { namn: 'Handlar på marknaden', nara: true, slag: 'prata', social: true, stilla: true, dygn: true, fardighet: 'handel' }, // marknad.ts, steg 14.1.14
   koaDisk: { namn: 'Väntar vid disken', nara: true, slag: 'prata', social: true, stilla: true }, // kunden (kassa.ts, steg 14.1.6): task.ref är företaget
   stallaFram: { namn: 'Ställer fram varor', slag: 'hantverk', verb: 'ställer fram varor', fardighet: 'handel', kunna: 0.2 }, // till varubordet (affar.ts, steg 14.1.8)
-  betjana: { namn: 'Betjänar', nara: true, slag: 'prata', verb: 'betjänar', fardighet: 'handel', kunna: 0.2, stilla: true }, // vid disken (kassa.ts, steg 14.1.6)
+  betjana: { namn: 'Betjänar', nara: true, slag: 'prata', verb: 'betjänar', fardighet: 'handel', kunna: 0.2, stilla: true, framme: true }, // vid disken (kassa.ts, steg 14.1.6)
   slagtra: { namn: 'Täljer ett slagträ', slag: 'hantverk', hantverk: true, verb: 'täljer', plats: 'station' },
   skara_remsor: { namn: 'Skär remsor', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'elden' }, skara_lin: { namn: 'Skär remsor av lin', slag: 'hantverk', hantverk: true, verb: 'skär', plats: 'elden' }, nal: { namn: 'Slipar en bennål', slag: 'hantverk', hantverk: true, verb: 'slipar', plats: 'station' }, // förbanden (steg 9.5.15)
   kalke: { namn: 'Gör en kälke', slag: 'hantverk', hantverk: true, verb: 'gör', plats: 'station' }, // steg 10.10.2
