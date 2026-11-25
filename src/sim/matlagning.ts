@@ -327,9 +327,9 @@ const KOKKARL_LIST = Object.keys(KOKKARL);
 // ett kokkärl som är färdigt, tomt, inte bärs och inte står på elden, det som tar mest först
 export const ledigKruka = (s: State) => { for (const k of KOKKARL_LIST) { const t = tingOf(s).find(t => t.k === k && t.ler === undefined && !t.inne && !t.kok && !t.vaxt && t.hos === undefined && t.c > 0); if (t) return t; } return undefined; };
 // krukorna som står på elden
-export const kokarNu = (s: State) => tingOf(s).filter(t => t.kok);
+export const kokarNu = (s: State) => tingOf(s).filter(t => t.kok && !t.kok.klar);
 // så mycket av k som syras eller sjuder i krukorna just nu
-export const iKrukorna = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (t.kok?.r === k ? t.kok.n : 0), 0);
+export const iKrukorna = (s: State, k: string) => tingOf(s).reduce((n, t) => n + (t.kok?.r === k && !t.kok.klar ? t.kok.n : 0), 0);
 // ---------- syrningen (steg 13.6.2) ----------
 // Kål eller fisk packas med salt i en stor lerkruka (TILLVERKA.syra_kal och syra_fisk) och syras i sin egen saft i SYRA.dygn dygn,
 // utan eld. Krukan är upptagen så länge (t.kok med syr). Det som syras är det byn inte hinner äta innan det ruttnar, samma
@@ -365,15 +365,28 @@ export function kokaKlar(s: State, p: Person) {
   ovaMat(s, p, KOK.prepMin / 60);
   if (forstaGang(s, 'kokForsta')) log(s, `${p.name} lagade byns första ${SAKER[r.id]!.namn.split(' · ')[0].toLowerCase()} i ${t.k === 'jarngryta' ? 'en järngryta' : 'en lerkruka'} över elden.`, 'world', [p.id]);
 }
+// det syrade ligger kvar i krukorna (steg 13.10.44): byns surkål och surfisk är det som ligger i dem, och det som äts eller byts
+// bort tas ur krukan med minst kvar. Den tömda krukan är ledig igen. Det som inte ryms i krukorna (köpt surkål) ligger för sig
+export function syratTas(s: State) {
+  for (const { blir } of SYRAS) {
+    let kvar = -1;
+    for (const t of tingOf(s).filter(q => q.kok?.klar && q.kok.r === blir).sort((a, b) => b.kok!.n - a.kok!.n || a.id - b.id)) {
+      if (kvar < 0) kvar = amountOf(s, blir);
+      t.kok!.n = Math.min(t.kok!.n, Math.max(0, kvar)); kvar -= t.kok!.n;
+      if (t.kok!.n <= 0) t.kok = undefined;
+    }
+  }
+}
 // krukorna på elden kokar medan elden brinner (TAKTER i steg.ts, med tiden sedan sist dt i sekunder), och den färdiga rätten läggs i förrådet
 // Det som syras (steg 13.6.2) står utan eld och syras när det är varmt nog (SYRA.kall) eller krukan står inne i ett hus
 export function stepKok(s: State, dt: number) {
+  syratTas(s);
   stepGrop(s, dt); // kokgropen (steg 10.7.28)
   const varmt = temperature(s) >= SYRA.kall;
   for (const t of kokarNu(s)) {
     if (t.kok!.syr ? varmt || t.x !== undefined && roofed(s, Math.floor(t.x), Math.floor(t.y!)) : nagonEld(s)) t.kok!.kvar -= dt * SEC;
     if (t.kok!.kvar > 0) continue;
-    if (t.kok!.syr) { put(s, t.kok!.r, t.kok!.n, delaEfter(s, t.kok!.ag, t.kok!.n)); count(s, 'syrat_' + t.kok!.r, t.kok!.n); t.kok = undefined; continue; }
+    if (t.kok!.syr) { const k = t.kok!; put(s, k.r, k.n, delaEfter(s, k.ag, k.n)); count(s, 'syrat_' + k.r, k.n); t.kok = { r: k.r, n: k.n, kvar: 0, ag: {}, klar: 1 }; continue; }
     if (t.kok!.vatska) { t.inne = { v: t.kok!.r as import('./vatskor').VatskaId, n: t.kok!.n, q: t.kok!.q, t: s.now }; count(s, 'kokt_' + t.kok!.r, t.kok!.n); t.kok = undefined; continue; } // buljongen står kvar i krukan (steg 10.7.24)
     const ag = delaEfter(s, t.kok!.ag, t.kok!.n);
     if (t.kok!.n > 0) { handI(s, t.kok!.r, t.kok!.h ?? 0, t.kok!.n, amountOf(s, t.kok!.r)); put(s, t.kok!.r, t.kok!.n, ag); }

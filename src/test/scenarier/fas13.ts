@@ -1016,11 +1016,16 @@ SCENARIER.syrat = {
     SIM.stepKok(s, (SYRA.dygn * 24 - 1) * 3600);
     const inteAn = amountOf(s, 'surkal') === 0 && !!kruka.kok;
     SIM.stepKok(s, 2 * 3600);
-    const surkal = amountOf(s, 'surkal') === 6 && !kruka.kok;
+    const iK = (n: number) => kruka.kok?.klar === 1 && kruka.kok.n === n && !SIM.karSomBlirLedig(s, 'lerkruka_stor') && SIM.iKrukorna(s, 'surkal') === 0;
+    const surkal = amountOf(s, 'surkal') === 6 && iK(6);
+    // den som äter tar ur krukan (steg 13.10.44): den tömda krukan är ledig igen
+    setAmount(s, 'surkal', 2); SIM.stepKok(s, 60); const halv = iK(2);
+    setAmount(s, 'surkal', 0); SIM.stepKok(s, 60); const tom = !kruka.kok && !!SIM.karSomBlirLedig(s, 'lerkruka_stor');
     // fisken likadant
     setAmount(s, 'fisk', 6); klar(df);
     SIM.stepKok(s, (SYRA.dygn * 24 + 1) * 3600);
-    const surfisk = amountOf(s, 'surfisk') === 6 && !kruka.kok;
+    const surfisk = amountOf(s, 'surfisk') === 6 && kruka.kok?.klar === 1;
+    setAmount(s, 'surfisk', 0); SIM.stepKok(s, 60);
     // kallt ute: syrningen stannar; inne i ett hus går den
     setAmount(s, 'kal', 6); setAmount(s, 'salt', 1); s.now = kall; klar(dk);
     const kvar0 = kruka.kok?.kvar ?? 0;
@@ -1036,7 +1041,8 @@ SCENARIER.syrat = {
       ['utan en stor lerkruka eller utan salt syras inget', utanKruka && utanSalt],
       [`byn vill syra kålen den inte hinner äta (${villFore})`, villFore >= 6],
       ['kålen packas i krukan utan eld, och krukan är upptagen medan den syras', packad && upptagen && iKruk],
-      [`efter ${SYRA.dygn} dygn ligger 6 surkål i förrådet och krukan är ledig`, inteAn && surkal],
+      [`efter ${SYRA.dygn} dygn ligger 6 surkål kvar i krukan`, inteAn && surkal],
+      ['den som äter tar ur krukan, och den tomma krukan är ledig igen', halv && tom],
       ['fisken blir surfisk på samma sätt', surfisk],
       [`under ${SYRA.kall} grader stannar syrningen ute (${stannar}, ${SIM.temperature(s).toFixed(0)} grader), men inne i ett hus går den (${inne})`, stannar && inne],
       ['surkålen och surfisken håller 20 dygn', k.haller === 20 && f.haller === 20],

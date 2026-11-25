@@ -198,7 +198,7 @@ const tillverk = (k: string): ProjektDef => {
   const d = TILLVERKA[k];
   // tjäran, salvan och limmet räknas i sina behållare och behöver en ledig som passar (steg 9.4.14, vatskor.ts)
   // det som sjuder eller syras i krukorna räknas med (steg 13.6.2)
-  const antal = (s: State) => (ar_vatska(d.ger) ? vatskaAv(s, d.ger) : amountOf(s, d.ger)) + (d.sjud || d.syr ? tingOf(s).reduce((n, t) => n + (t.kok?.r === d.ger ? t.kok.n : 0), 0) : 0), kar = (s: State) => !ar_vatska(d.ger) || !!ledigFor(s, d.ger);
+  const antal = (s: State) => (ar_vatska(d.ger) ? vatskaAv(s, d.ger) : amountOf(s, d.ger)) + (d.sjud || d.syr ? tingOf(s).reduce((n, t) => n + (t.kok?.r === d.ger && !t.kok.klar ? t.kok.n : 0), 0) : 0), kar = (s: State) => !ar_vatska(d.ger) || !!ledigFor(s, d.ger);
   // så många byn vill ha: det som följer förbrukningen (salvan, tjäran, limmet, tvålen; MATERIALMAL, steg 10.2.12) efter den, det andra efter raden
   const vill = (s: State) => tillverkVill(s, d);
   // det som kokas vid en eld när byn inte har stationen: elden ska brinna arbetet och sjudandet ut (ELDARBETEN i eld.ts)

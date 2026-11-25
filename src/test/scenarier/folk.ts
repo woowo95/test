@@ -294,7 +294,7 @@ SCENARIER.flyttskal = {
       [`den med vänner och barn i byn går mer sällan (${vBand.toFixed(2)})`, vBand < v0 * 0.6],
       [`raden i krönikan nämner tanken (${rad})`, rad.includes(arg.name) && !!arg.flyttSkal?.tanke && rad.includes(arg.flyttSkal.tanke)],
       [`notisen säger samma sak (${not.slice(0, 80)})`, not.includes(arg.flyttSkal?.tanke ?? '?')],
-      [`ur den trånga byn står tanken och byns skäl (${rad2} ${JSON.stringify(gick?.flyttSkal)} ${gick?.name})`, !!gick && rad2.includes(gick.flyttSkal!.tanke!) && rad2.toLowerCase().includes(gick.flyttSkal!.byn!)],
+      [`ur den trånga byn står tanken och byns skäl (${rad2} ${JSON.stringify(gick?.flyttSkal)} ${gick?.name})`, !!gick && rad2.includes(gick.flyttSkal!.tanke!) && !!gick.flyttSkal!.byn && rad2.includes(gick.flyttSkal!.text!)],
       [`raden om ledaren som slutade säger skälet (${slut})`, slut.includes(st.arg.flyttSkal?.tanke ?? '?')],
     ];
   },
