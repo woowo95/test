@@ -4,32 +4,70 @@
  "slag": [
   "symbol"
  ],
- "vad": "Steg 12.1.157: ledaren får en symbol till vänster om namnet på kartan. Här återanvänds styrets symbol: emblemet på Styre-stenen (kronan över hallen), i guld och i hel skala, 15 × 13 punkter. Ja eller nej? Din kommentar förra gången: ”försök hitta en befintlig symbol för ledarskap att återanvända”",
+ "vad": "Steg 12.1.157: ledaren får en symbol till vänster om namnet på kartan: en enkel kungakrona i guld, i hel skala.",
  "av": "programmeringschatten, för hand",
  "versioner": [
   {
-   "ide": "Styre-stenens emblem i guld.",
-   "anteckning": "Styre-stenens emblem i guld.",
+   "ide": "Tre spetsar med en kula i toppen på var och en, och ett slätt guldband nedtill.",
    "bilder": [
     {
-     "namn": "f12_roll_ledare_styre",
+     "namn": "f12_roll_ledare_krona1",
      "rader": [
+      ".k.....k.....k.",
+      "kLk...kLk...kLk",
+      ".k.....k.....k.",
+      ".kk...kKk...kk.",
+      ".kLk.kKLKk.kLk.",
+      ".kLKkKLKJKkKJk.",
+      ".kLKKLKKKJKKJk.",
+      ".kLKKKKKKKKKJk.",
       "kkkkkkkkkkkkkkk",
-      "kKkkKkkKkkKkkKk",
-      "kLKkLKkKkLJkLJk",
-      "kKKLKKLKLKKLKJk",
-      "kkLKKKKKKKKKJkk",
-      ".kLJJJJJJJJJJk.",
-      ".kKkkkkkkkkkKk.",
-      ".kKkLKKKKKKkKk.",
-      ".kKkKkkkkkKkKk.",
-      ".kKkKkkkkkKkKk.",
-      ".kLKJKKKKKJKJk.",
-      ".kKkkkkkkkkkKk.",
-      ".kkk.......kkk."
+      "kLLKKKKKKKKKJIk",
+      "kKJJJJJJJJJJJIk",
+      "kkkkkkkkkkkkkkk"
+     ]
+    }
+   ]
+  },
+  {
+   "ide": "En låg krona med fem små spetsar i rad och tre röda stenar i bandet.",
+   "bilder": [
+    {
+     "namn": "f12_roll_ledare_krona2",
+     "rader": [
+      ".k..k..k..k..k.",
+      "kLkkLkkLkkLkkJk",
+      "kLKKLKKLKKJKKJk",
+      "kkkkkkkkkkkkkkk",
+      "kLKsKKKsKKKsKJk",
+      "kKJJJJJJJJJJJIk",
+      "kkkkkkkkkkkkkkk"
+     ]
+    }
+   ]
+  },
+  {
+   "ide": "En hög spets i mitten med en röd sten, två lägre spetsar på sidorna och två stenar i bandet.",
+   "bilder": [
+    {
+     "namn": "f12_roll_ledare_krona3",
+     "rader": [
+      ".......k.......",
+      "......kLk......",
+      "......kLk......",
+      ".k...kKLKk...k.",
+      "kLk..kKLKk..kLk",
+      "kLKk.kKsKk.kKJk",
+      "kLKKkKKKKKkKKJk",
+      "kLKKKKKKKKKKKJk",
+      "kkkkkkkkkkkkkkk",
+      "kLKKsKKKKKsKKJk",
+      "kKJJJJJJJJJJJIk",
+      "kkkkkkkkkkkkkkk"
      ]
     }
    ]
   }
- ]
+ ],
+ "kommentar": "det ska vara en enkel kungakrona (förra gången: försök hitta en befintlig symbol för ledarskap att återanvända)"
 }

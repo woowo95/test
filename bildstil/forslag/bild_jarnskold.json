@@ -2,150 +2,15 @@
  "kort": "bild_jarnskold",
  "namn": "Järnsköld",
  "slag": null,
- "typ": "tre",
+ "typ": "janej",
  "av": "API:t (claude-opus-5-5), tre idéer",
- "vad": "Järnskölden: en rund sköld av trä med en grå järnbuckla i mitten och en brun läderkant, som den ligger på marken (steg 12.2.8). Du väljer bara bland de tre versionerna till vänster. Bilderna till höger är inget val: där står skölden av trä och sköldens symbol, bara för att du ska se att järnskölden hör ihop med dem.",
+ "vad": "Järnskölden ser ut som sköldens symbol. Ja eller nej?",
  "versioner": [
   {
-   "ide": "Liggande platt, sedd snett uppifrån: en spegelsymmetrisk bred oval, 14 punkter bred och omkring 10 hög, där framkanten nedtill är ett smalt band på 2 punkter i läderns mörkare ton (F och E) som visar sköldens tjocklek. Läderkanten är en ring 1–2 punkter bred i F och G med kontur i jord0 (E), träytan innanför har korn i G och H med några plankfogar i F som går lodrätt, och mitt i sitter järnbucklan som en liten oval kupol, cirka 4×3 punkter, i skiffer S och T med kontur i skiffer0 (Q) och en enda glanspunkt i T uppe till vänster. Ljuset faller uppifrån vänster, så vänster övre del av ovalen är ljusast och höger nedre mörkast; inget ligger under skölden och ingen skugga ritas.",
+   "ide": "Sköldens symbol, som du tyckte var snygg, används som järnskölden: rund, med järnkant, träplankor och en järnbuckla i mitten.",
    "bilder": [
     {
      "namn": "järnsköld",
-     "rader": [
-      "....EEEEEE....",
-      "..EEGGGGGFEE..",
-      ".EGHFHHGHFGFE.",
-      "EGHHFHGHHFGGFE",
-      "EGHGHQQQQHGGFE",
-      "EGHHQTSSSQGHFE",
-      "EGHGQSSSRQHGFE",
-      "EGGHGQQQQGHGFE",
-      ".EGGFGHGGFGFE.",
-      "..EGFFFFFFFE..",
-      "...EEFFFFEE...",
-      ".....EEEE....."
-     ]
-    },
-    {
-     "namn": "skölden som finns",
-     "rader": [
-      ".kkkkkkkkkkkkkk.",
-      "kGGGGGGGGGGGGGGk",
-      "kGGGGGHHHHGGGGGk",
-      "kHHHHHHHHHEHHHHk",
-      "kGGGGGHHEEFFGGGk",
-      "kGGGGGGFFFFGGGGk",
-      ".kkkkkkkkkkkkkk."
-     ]
-    },
-    {
-     "namn": "symbolen sköld",
-     "rader": [
-      ".....QQQQQQ.....",
-      "...QQTTTTTSQQ...",
-      "..QTTHHGHGGSSQ..",
-      ".QTHFHHGHGGFGSQ.",
-      ".QTHFHGHGHGFGSQ.",
-      "QTHHFGQQQQGFGGSQ",
-      "QTHGFQqTSSQFGFSQ",
-      "QTGHFQTSSRQFGGRQ",
-      "QSHGFQSSRRQFFGRQ",
-      "QSGGFQSRRRQFGFRQ",
-      "QSGHFGQQQQGFFGRQ",
-      ".QSGFGHGGFGFFRQ.",
-      ".QSGFGGFGFGFFRQ.",
-      "..QSFGGFGFFRRQ..",
-      "...QQSSRRRRQQ...",
-      ".....QQQQQQ....."
-     ]
-    }
-   ]
-  },
-  {
-   "ide": "Stående lutad på kanten, smalare och högre: skölden står på sin nederkant och lutar lite bakåt, så den syns som en lodrät oval, omkring 10 punkter bred och 13 hög, spegelsymmetrisk kring mittlinjen. Framsidan vetter mot betraktaren och är förkortad uppifrån: läderkanten är en ring i F och G med kontur i E, men nederst syns en bit av kantens tjocklek som ett smalt mörkt band på 2 punkter (E och F) där skölden möter marken, och upptill ser man inget av baksidan. Träet har lodrätt plankkorn i G och H, järnbucklan sitter något över mitten som en rund kupol, cirka 4×4 punkter, i S och T med kontur i Q och en glanspunkt uppe till vänster, så att bucklan sticker fram och bryter silhuetten lite.",
-   "bilder": [
-    {
-     "namn": "järnsköld",
-     "rader": [
-      "...EEEE...",
-      "..EGGGFE..",
-      ".EGHGHGFE.",
-      "EGHGQQHGFE",
-      "EGHQTSQGFE",
-      "EGHQSRQGFE",
-      "EGHGQQHGFE",
-      "EGHGHGHGFE",
-      "EGHGHGGGFE",
-      ".EFHGHGFE.",
-      ".EFFGFFFE.",
-      "..EFFFFE..",
-      "...EEEE..."
-     ]
-    },
-    {
-     "namn": "skölden som finns",
-     "rader": [
-      ".kkkkkkkkkkkkkk.",
-      "kGGGGGGGGGGGGGGk",
-      "kGGGGGHHHHGGGGGk",
-      "kHHHHHHHHHEHHHHk",
-      "kGGGGGHHEEFFGGGk",
-      "kGGGGGGFFFFGGGGk",
-      ".kkkkkkkkkkkkkk."
-     ]
-    },
-    {
-     "namn": "symbolen sköld",
-     "rader": [
-      ".....QQQQQQ.....",
-      "...QQTTTTTSQQ...",
-      "..QTTHHGHGGSSQ..",
-      ".QTHFHHGHGGFGSQ.",
-      ".QTHFHGHGHGFGSQ.",
-      "QTHHFGQQQQGFGGSQ",
-      "QTHGFQqTSSQFGFSQ",
-      "QTGHFQTSSRQFGGRQ",
-      "QSHGFQSSRRQFFGRQ",
-      "QSGGFQSRRRQFGFRQ",
-      "QSGHFGQQQQGFFGRQ",
-      ".QSGFGHGGFGFFRQ.",
-      ".QSGFGGFGFGFFRQ.",
-      "..QSFGGFGFFRRQ..",
-      "...QQSSRRRRQQ...",
-      ".....QQQQQQ....."
-     ]
-    }
-   ]
-  },
-  {
-   "ide": "Liggande med baksidan upp och lutad så att den ses nästan från kanten: en låg, bred oval där handtaget av trä går tvärs över mitten och bucklans järnplatta syns runt det.",
-   "bilder": [
-    {
-     "namn": "järnsköld",
-     "rader": [
-      "...EEEEEEEE...",
-      ".EEGGGFFGGGEE.",
-      "EGGGRQQQQRGGGE",
-      "EFFFFFFFFFFFFE",
-      "EGGGRQQQQRGGGE",
-      ".EEGGGFFGGGEE.",
-      "...EEEEEEEE..."
-     ]
-    },
-    {
-     "namn": "skölden som finns",
-     "rader": [
-      ".kkkkkkkkkkkkkk.",
-      "kGGGGGGGGGGGGGGk",
-      "kGGGGGHHHHGGGGGk",
-      "kHHHHHHHHHEHHHHk",
-      "kGGGGGHHEEFFGGGk",
-      "kGGGGGGFFFFGGGGk",
-      ".kkkkkkkkkkkkkk."
-     ]
-    },
-    {
-     "namn": "symbolen sköld",
      "rader": [
       ".....QQQQQQ.....",
       "...QQTTTTTSQQ...",
@@ -167,5 +32,7 @@
     }
    ]
   }
- ]
+ ],
+ "fore": "Ritad om för hand efter din kommentar.",
+ "kommentar": "sköldens symbol är väldigt snygg. Använd den som järnskölden (förra gången: texten är väldigt förvirrande och jag förstår inte vilken symbol jag väljer)"
 }
