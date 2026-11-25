@@ -14,7 +14,7 @@ import { genomfor, betalVaror, betalaAv, bynPart, personPart, ataPortion } from 
 import { flytta, type Part, type Vara } from './byte';
 import { avbryt, dropLoad, iHelaForradet, iRackhall, ownsId, use } from './lager';
 import { grundvarde } from './varde';
-import { SAK_LIST, isTool } from './saker';
+import { SAK_LIST, isTool, viktOf } from './saker';
 import { type Ting, tingOf } from './agande';
 import { dryckAv } from './vatskor';
 import { drickAlkohol } from './rus';
@@ -35,7 +35,7 @@ export const KASSA = balans('kassa', {
   familj: 0.7, // ägarens familj betjänar, mindre gärna än ägaren och de anställda
 });
 // en kund i kön: vad hen vill köpa och när hen ställde sig där
-export interface KoRad { p: number; v: string; k: string; t: number; klar?: number }
+export interface KoRad { p: number; v: string; k: string; n: number; t: number; klar?: number }
 // ---------- disken ----------
 export const diskarAv = (s: State, f: Foretag): Station[] => { const rum = new Set(foretagRum(s, f)); return rum.size ? stationerOf(s).filter(t => t.k === 'disk' && isKlar(t) && rum.has(stationRum(s, t)!)) : []; };
 // företagen med ett rum som saknar en disk (också en som är under arbete)
@@ -67,12 +67,13 @@ export function varorAv(s: State, f: Foretag, v: string, G = saljPart(s, f)): st
   if (!G) return [];
   const V = VERKSAMHETER[v], alla = V.varor(s);
   if (!alla.length) return [];
+  if (V.hylla) return [...new Set(hyllan(s, f).map(h => h.k))];
   if (V.vatska) return alla.filter(k => karl(s, f, k));
   const har = new Set(G.over([]).filter(w => !w.t && w.n >= 1).map(w => w.k));
   return alla.filter(k => har.has(k));
 }
 // priset på en vara i hela silver: det varan är värd för ägaren och hälften av det en vanlig kund vinner, gånger ägarens pris (steg 14.1.9)
-export const prisAv = (_s: State, f: Foretag, v: string, k: string, G: Part) => Math.max(1, Math.round(((VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * G.varde(k)) + VERKSAMHETER[v].snitt(k) * FORETAG.del) * (f.pris?.[v] ?? 1)));
+export const prisAv = (_s: State, f: Foretag, v: string, k: string, G: Part, n = 1) => Math.max(1, Math.round(n * ((VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * G.varde(k)) + VERKSAMHETER[v].snitt(k) * FORETAG.del) * (f.pris?.[v] ?? 1)));
 // det M betalar: silver, varor eller allt hen har över, det som kostar minst för hen
 type Betalvaror = ReturnType<typeof betalVaror>;
 function betalar(varor: Betalvaror, G: Part, pris: number) {
@@ -84,7 +85,9 @@ function betalar(varor: Betalvaror, G: Part, pris: number) {
   return bast;
 }
 // ---------- kunden ----------
-export interface Erbjudande { f: Foretag; v: string; k: string; pris: number; net: number; disk: Station }
+import { hyllan, taVaran, vilMangd } from './affar';
+import { ryms } from './utrustning';
+export interface Erbjudande { n: number; f: Foretag; v: string; k: string; pris: number; net: number; disk: Station }
 // vad kunden p tycker om företaget utöver varan (finheten mot förväntan, ryktet: steg 14.1.9 och 14.1.10 lägger till)
 export const tycker: ((s: State, p: Person, f: Foretag) => number)[] = [];
 // det bästa p kan köpa av verksamheten v nu, om det är mer värt för hen än det kostar
@@ -103,23 +106,35 @@ export function kundVal(s: State, p: Person, v: string): Erbjudande | undefined 
     let varor: Betalvaror | undefined;
     for (const k of varorAv(s, f, v, G)) {
       M ??= personPart(s, p);
-      const far = (VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * M.varde(k)) + VERKSAMHETER[v].noje(s, p, k) + om, pris = prisAv(s, f, v, k, G);
+      const n = VERKSAMHETER[v].hylla ? kopMangd(s, p, f, k) : 1;
+      if (n < 1) continue;
+      const far = n * ((VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * M.varde(k)) + VERKSAMHETER[v].noje(s, p, k)) + om, pris = prisAv(s, f, v, k, G, n);
       if (far <= (bast?.net ?? 0)) continue;
       varor ??= betalVaror(M, G, []);
       const b = betalar(varor, G, pris);
       if (!b) continue; // kan inte betala
       const net = far - b.kost;
-      if (net > (bast?.net ?? 0)) bast = { f, v, k, pris, net, disk };
+      if (net > (bast?.net ?? 0)) bast = { f, v, k, n, pris, net, disk };
     }
   }
   return bast;
+}
+// så många av k kunden köper från varubordet: det hen saknar, finns där och kan bära
+function kopMangd(s: State, p: Person, f: Foretag, k: string) {
+  const h = hyllan(s, f).find(q => q.k === k), r = ryms(s, p);
+  if (!h) return 0;
+  const max = Math.min(h.n, vilMangd(s, p, k));
+  if (h.t) return max;
+  let n = 0;
+  while (n < max && r({ [k]: (n + 1) * viktOf(k) })) n++;
+  return n;
 }
 // kunden ställer sig i kön: platsen, tiden och varför
 export function stallIKo(s: State, p: Person, e: Erbjudande) {
   rensaKo(s, e.f);
   const ko = e.f.ko ??= [], i = ko.findIndex(q => q.p === p.id);
   if (i >= 0) ko.splice(i, 1);
-  ko.push({ p: p.id, v: e.v, k: e.k, t: s.now });
+  ko.push({ p: p.id, v: e.v, k: e.k, n: e.n, t: s.now });
   return { spot: koPlats(s, e.disk, ko.flatMap(r => { const q = r.p !== p.id && byId(s, r.p), tk = q && q.task; return tk ? [{ x: tk.tx, y: tk.ty }] : []; })), dur: KASSA.tal * MIN, ref: e.f.id, why: `Går till ${e.f.namn}` };
 }
 const iKo = (p: Person | undefined, f: Foretag, now: number, r: KoRad) => !!p && alive(p) && (r.t === now || p.task?.act === 'koaDisk' && p.task.ref === f.id);
@@ -162,7 +177,7 @@ export function betjanVal(s: State, p: Person): { f: Foretag; sc: number; spot: 
 // det den som betjänar hämtar till disken (hamtning.ts): maten kunderna framme vid den vill ha, av ägarens
 export function betjanHamtas(s: State, t: Task): Record<string, number> | undefined {
   const f = foretagOf(s).find(q => q.id === t.ref), av: Record<string, number> = {};
-  if (f) for (const r of framme(s, f)) if (!VERKSAMHETER[r.v].vatska) av[r.k] = Math.min(Math.floor(ownsId(s, f.ag, r.k) + 1e-9), (av[r.k] ?? 0) + 1);
+  if (f) for (const r of framme(s, f)) if (!VERKSAMHETER[r.v].vatska && !VERKSAMHETER[r.v].hylla) av[r.k] = Math.min(Math.floor(ownsId(s, f.ag, r.k) + 1e-9), (av[r.k] ?? 0) + 1);
   for (const k in av) if (av[k] < 1) delete av[k];
   return Object.keys(av).length ? av : undefined;
 }
@@ -185,9 +200,13 @@ export function kopVid(s: State, f: Foretag, p: Person, r: KoRad, at: Person): b
   const fel = () => { for (const g of omdome) g(s, p, f, undefined, 0); count(s, 'koUtan'); return false; };
   if (V.ats && iRackhall(at.x, at.y, () => ownsId(s, f.ag, r.k)) < 1) return fel(); // maten kom aldrig fram
   if (!G || (V.vatska ? !t : !varorAv(s, f, r.v, G).includes(r.k))) return fel(); // slut
-  const pris = prisAv(s, f, r.v, r.k, G), far = (V.grund?.(r.k) ?? grundvarde(r.k) * M.varde(r.k)) + V.noje(s, p, r.k), b = betalar(betalVaror(M, G, []), G, pris);
+  const h = V.hylla ? hyllan(s, f).find(q => q.k === r.k) : undefined, n = h ? Math.min(r.n, h.n) : 1;
+  const pris = prisAv(s, f, r.v, r.k, G, n), far = n * ((V.grund?.(r.k) ?? grundvarde(r.k) * M.varde(r.k)) + V.noje(s, p, r.k)), b = betalar(betalVaror(M, G, []), G, pris);
   if (!b) return fel();
-  if (t) {
+  if (h) {
+    for (const w of b.betal) flytta(s, w, M, G);
+    taVaran(s, f, p, h, n);
+  } else if (t) {
     for (const w of b.betal) flytta(s, w, M, G);
     t.inne!.n -= 1; if (t.inne!.n <= 0) t.inne = undefined;
     drickAlkohol(s, p, r.k as never, true);
@@ -198,7 +217,7 @@ export function kopVid(s: State, f: Foretag, p: Person, r: KoRad, at: Person): b
     if (V.ats) { iRackhall(at.x, at.y, () => use(s, at, r.k, 1, true, p.id)); ataPortion(s, p, r.k); }
   }
   const betalt = b.betal.reduce((a, w) => a + grundvarde(w.k) * w.n, 0);
-  (f.salt ??= {})[r.v] = (f.salt[r.v] ?? 0) + 1; f.intakt = (f.intakt ?? 0) + betalt; f.vinst = (f.vinst ?? 0) + betalt - (V.grund?.(r.k) ?? grundvarde(r.k) * G.varde(r.k));
+  (f.salt ??= {})[r.v] = (f.salt[r.v] ?? 0) + 1; f.intakt = (f.intakt ?? 0) + betalt; f.vinst = (f.vinst ?? 0) + betalt - n * (V.grund?.(r.k) ?? grundvarde(r.k) * G.varde(r.k));
   count(s, 'foretagSalt'); count(s, 'foretagSalt_' + r.v);
   if (forstaGang(s, 'foretagSalt')) log(s, `${p.name} blev den första kunden: ${f.namn}.`, 'world', [p.id]);
   for (const g of omdome) g(s, p, f, r.k, far - b.kost);

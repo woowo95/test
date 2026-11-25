@@ -103,6 +103,7 @@ export const PAL: Record<string, Record<string, string>> = {
   blomma: { o: '#24201d', g: '#647025', l: '#898b4c', y: '#d8b25f', c: '#bd753e', w: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // steg 10.7.3, platshållare
   bildsten: { o: '#24201d', g: '#8a9c9e', m: '#61767a', r: '#a14808', b: '#3f2415', d: '#474138', y: '#d8b25f', z: 'rgba(36,32,29,.30)' }, // steg 10.7.1, platshållare
   bokhylla: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', r: '#742a01', g: '#4b4f00', w: '#dad0bb', z: 'rgba(36,32,29,.30)' }, // steg 10.6.16, platshållare
+  varubord: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#987e62', d: '#7d5b40' }, // steg 14.1.8
   disk: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', d: '#987e62' }, // steg 14.1.6
   skrivpulpet: { o: '#24201d', a: '#3f2415', b: '#5e3c24', c: '#7d5b40', w: '#dad0bb', d: '#24201d', z: 'rgba(36,32,29,.30)' }, // steg 10.6.11, platshållare
   bok: { h: '#7d5b40', w: '#dad0bb', d: '#24201d' }, // steg 10.6.6, platshållare // steg 10.6.5, platshållare // steg 10.6.4, platshållare
@@ -2003,6 +2004,24 @@ export const PIX: Record<string, string[]> = {
     '..oo........oo..',
     '..zzzzzzzzzzzz..',
   ],
+  varubord: [ // platshållare (steg 14.1.8): en bred skiva med en kant runt om
+    '................................',
+    '................................',
+    '................................',
+    '.oooooooooooooooooooooooooooooo.',
+    'occcccccccccccccccccccccccccccco',
+    'ocddddddddddddddddddddddddddddco',
+    'ocdcccccccccdccccccccdcccccccdco',
+    'ocdcccccccccdccccccccdcccccccdco',
+    'ocdcccccccccdccccccccdcccccccdco',
+    'ocdcccccccccdccccccccdcccccccdco',
+    'ocddddddddddddddddddddddddddddco',
+    'oooooooooooooooooooooooooooooooo',
+    '.oa..........................ao.',
+    '.oa..........................ao.',
+    '.oo..........................oo.',
+    '................................',
+  ],
   disk: [ // platshållare (steg 14.1.6): en skiva två rutor bred, med en front av plankor
     '................................',
     '................................',
@@ -3670,7 +3689,7 @@ PIX.balte = PIX.balte_rep; PAL.balte = PAL.balte_rep;
 // Björns val efter v193 (steg 3.10.13): den fångade kaninen på kartan ser ut som viltet i förrådet
 PIX.kanin_dod = KARTBILDER.vilt.rader; PAL.kanin_dod = KARTBILDER.vilt.pal; // i viltets naturliga storlek, som kartan ritar
 // pyntet (steg 4.3.4): samma bild på kartan och i listorna, och lerkrukan för intrycket smakfull
-for (const k of ['kruka', 'disk', 'skrivpulpet', 'bokhylla']) { PIX[k + '_karta'] = PIX[k]; PAL[k + '_karta'] = PAL[k]; } // skrivpulpeten och bokhyllan (steg 10.6.11, 10.6.16): platshållarna på kartan
+for (const k of ['kruka', 'disk', 'varubord', 'skrivpulpet', 'bokhylla']) { PIX[k + '_karta'] = PIX[k]; PAL[k + '_karta'] = PAL[k]; } // skrivpulpeten och bokhyllan (steg 10.6.11, 10.6.16): platshållarna på kartan
 // bänken och krubban vridna ett kvarts varv (platshållare tills de stående bilderna är ritade, steg 10.2.68 och 10.2.88)
 for (const k of ['bank', 'krubba', 'altare']) { const r = PIX[k]; PIX[k + '_karta_v'] = Array.from({ length: r[0].length }, (_, x) => Array.from({ length: r.length }, (_, y) => r[r.length - 1 - y][x]).join('')); PAL[k + '_karta_v'] = PAL[k]; }
 

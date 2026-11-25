@@ -129,17 +129,41 @@ function isStoredNu(s: State, x: number, y: number) {
   // en ruta på ett fält hör aldrig till förrådet, också när en lagerplats flyttats eller vuxit intill fältet: det som ligger där
   // ligger utanför lagret och bärs in som annat utanför
   for (let i = 0; i < zs.length; i++) if (nearZone(zs[i], x, y, LAGER.bredvid)) return !faltAt(s, x, y);
-  return false;
+  return varuRutor(s).includes(Math.floor(y) * W + Math.floor(x));
 }
 // ---------- förrådets rutor i ett rutnät (steg 12.1.186) ----------
+// affärernas varubord (steg 14.1.8): rutorna hör till förrådet, men inte till någon lagerplats
+const varuRutor = (s: State) => { const ut: number[] = []; for (const t of s.stationer ?? []) if (stationDef(t.k)?.vara) for (let y = t.y; y < t.y + (t.rot ? 2 : 1); y++) for (let x = t.x; x < t.x + (t.rot ? 1 : 2); x++) ut.push(y * W + x); return ut; };
+// affärens krokar (affar.ts): dit det man bär ska, och de rutor där det en ägare lagt får ligga
+export const besokLager: { till: Partial<Record<Act, (s: State, t: Task) => { x: number; y: number } | undefined>>; framme: (s: State) => Map<number, number> } = { till: {}, framme: () => new Map() };
+// så mycket av högen a som är ag:s
+export const arAgd = (a: Stack, ag: number) => ag === BYN ? a.n - sumOf(a.ag) : a.ag?.[ag] ?? 0;
+// n av ag:s del av högen a läggs i bördan
+export function taUrStack(s: State, a: Stack, n: number, ag: number, t: Task) {
+  (t.items ??= {})[a.k] = (t.items[a.k] ?? 0) + n; (t.cond ??= {})[a.k] = a.c;
+  if (ag !== BYN) { ((t.ag ??= {})[a.k] ??= {})[ag] = (t.ag[a.k]?.[ag] ?? 0) + n; a.ag![ag] -= n; }
+  a.n -= n;
+  cleanDel(s, a);
+}
+export const rymdPa = (s: State, x: number, y: number, k: string) => rymd(s, x, y, k);
+// bördan ställs på rutan (x, y), om den är ledig
+export function stallPaRutan(s: State, t: Task, x: number, y: number) {
+  if (things(s).some(a => a.x === x && a.y === y && a.n > 1e-6)) return false;
+  for (const id of t.ting ?? []) { const g = tingOf(s).find(q => q.id === id); if (g) { g.lass = undefined; g.x = x; g.y = y; } }
+  t.ting = undefined;
+  const all = loadOf(t);
+  for (const k in all) if (all[k] > 1e-9) stacksOf(s).push({ k, n: all[k], c: t.cond?.[k] ?? 1, x, y, ag: t.ag?.[k] });
+  tomBorda(t); changed(s);
+  return true;
+}
 // 1 = rutan hör till förrådet. Rutnätet räknas om när något det beror på ändrats: kartans storlek, lagerplatserna (deras
 // rutor) och fälten (samma nyckel som faltAt i odling.ts: byggV, antalet fält och nästa fälts nummer)
 interface Rutor { zs: Zone[]; k: number[]; g: Uint8Array; satta: number[] }
 const rutor = new WeakMap<State, Rutor>();
 function rutorGiltiga(r: Rutor, s: State, zs: Zone[]) {
   const k = r.k;
-  if (r.zs !== zs || k[0] !== W || k[1] !== H || k[2] !== (s.byggV ?? 0) || k[3] !== (s.falt?.length ?? 0) || k[4] !== (s.nextFalt ?? 0) || k[5] !== zs.length) return false;
-  for (let i = 0, j = 6; i < zs.length; i++, j += 4) { const z = zs[i]; if (k[j] !== z.x || k[j + 1] !== z.y || k[j + 2] !== z.w || k[j + 3] !== z.h) return false; }
+  if (r.zs !== zs || k[0] !== W || k[1] !== H || k[2] !== (s.byggV ?? 0) || k[3] !== (s.falt?.length ?? 0) || k[4] !== (s.nextFalt ?? 0) || k[5] !== zs.length || k[6] !== (s.stationer?.length ?? 0)) return false;
+  for (let i = 0, j = 7; i < zs.length; i++, j += 4) { const z = zs[i]; if (k[j] !== z.x || k[j + 1] !== z.y || k[j + 2] !== z.w || k[j + 3] !== z.h) return false; }
   return true;
 }
 export function lagerRutor(s: State) {
@@ -155,7 +179,8 @@ export function lagerRutor(s: State) {
     if (r.g[i]) continue;
     if (!faltAt(s, x, y)) { r.g[i] = 1; r.satta.push(i); }
   }
-  r.zs = zs; r.k = [W, H, s.byggV ?? 0, s.falt?.length ?? 0, s.nextFalt ?? 0, zs.length];
+  r.zs = zs; r.k = [W, H, s.byggV ?? 0, s.falt?.length ?? 0, s.nextFalt ?? 0, zs.length, s.stationer?.length ?? 0];
+  for (const i of varuRutor(s)) if (!r.g[i]) { r.g[i] = 1; r.satta.push(i); }
   for (const z of zs) r.k.push(z.x, z.y, z.w, z.h);
   return r.g;
 }
@@ -494,7 +519,7 @@ const key = (x: number, y: number) => y * W + x;
 // redskapen som ligger på en ruta (inte i någons hand eller börda). En kniv vid slaktbänken (vid, stationer.ts) ligger kvar
 // där och räknas inte till det som ligger i förrådet eller på marken
 const ligger = (t: Ting) => t.x !== undefined && t.hos === undefined && t.lass === undefined && t.vid === undefined && t.bar === undefined && t.krok === undefined;
-const lying = (s: State) => tingOf(s).filter(ligger);
+export const lying = (s: State) => tingOf(s).filter(ligger);
 // står redskapet på en ruta, också ett som hör till en station (lyran vid scenen): då lägger ingen något annat där. Ett hus
 // som blir förrådshus gör rutan till förråd, med det som redan står där (steg 9.1)
 const paRutan = (t: Ting) => t.x !== undefined && ingenHar(t) && t.krok === undefined;
@@ -630,6 +655,8 @@ export function dropSpot(s: State, k: string) {
 // till en lagerplats som är bättre än den det låg i, räknat som när flytten valdes (barLista): finns ingen sådan plats längre läggs
 // det tillbaka där det låg, om rutan tar emot det (annars dit det får ligga, steg 12.1.214). Den som bara bär ett redskap (det låg på marken) bär det till förrådet
 export function backSpot(s: State, t: Task) {
+  const till = besokLager.till[t.act]?.(s, t);
+  if (till) return till;
   let k = homeKind(t);
   if (!isCarrying(t)) { const g = t.ting?.map(id => tingOf(s).find(q => q.id === id)).find(q => !!q); if (g) k = g.k; }
   const x = Math.floor(t.tx), y = Math.floor(t.ty), z = t.act === 'bara' && isStored(s, x, y) ? zonesOf(s)[zoneAt(s, x, y)] : undefined;
@@ -1086,7 +1113,7 @@ export function sakerPaGolvet(s: State) {
 // en gång i timmen: större när något inte får plats, en ny lagerplats när de inte kan växa mer, mindre när de står tomma
 const vanliga = (s: State) => zonesOf(s).filter(z => z.hus === undefined).length;
 // det i förrådet som inte fått plats i en lagerplats utan ligger bredvid
-export const overflow = (s: State) => things(s).filter(a => zoneAt(s, a.x, a.y) < 0 && isStored(s, a.x, a.y));
+export const overflow = (s: State) => { const v = varuRutor(s); return things(s).filter(a => zoneAt(s, a.x, a.y) < 0 && isStored(s, a.x, a.y) && !v.includes(key(a.x, a.y))); };
 // förrådet är fullt: det finns många lagerplatser och det ligger saker bredvid dem (förrådshuset, byggnader.ts)
 export const storeFull = (s: State) => vanliga(s) >= LAGER.forradFran && overflow(s).length >= LAGER.fullt;
 // när förrådet växer över marken (eller ett förrådshus blir klart) kan det ligga flera saker på en ruta som nu hör till
@@ -1469,7 +1496,10 @@ function barLista(s: State) {
     if (!hamnar.has(k)) { const r = besideSpot(s, k, occ); hamnar.set(k, utanforByn(s, r.x, r.y)); }
     return hamnar.get(k)!;
   };
+  const framme = besokLager.framme(s);
   for (const a of things(s)) {
+    const fa = framme.size ? framme.get(a.y * W + a.x) : undefined;
+    if (fa !== undefined && (a.id !== undefined ? (a.ag ? a.ag[fa] : fa === BYN) : arAgd(a, fa) > a.n - 1e-9)) continue; // ägarens varor på varubordet (steg 14.1.8)
     const d = utanforByn(s, a.x, a.y); // nära lägret: elden eller någon lagerplats
     const zi = zoneAt(s, a.x, a.y);
     let why: string | undefined, sc = d, min: number | undefined;

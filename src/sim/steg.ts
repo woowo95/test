@@ -332,7 +332,7 @@ KLAR.valla = (s, p, t) => vallaKlar(s, p, t.ref);
 KLAR.klippa = (s, p, t) => { klippKlar(s, p, t.ref); wearUsed(s, p, 1); }; // ullsaxen slits för varje får (steg 12.5.2)
 KLAR.tatuera = (s, p, t) => tatKlar(s, p, t.ref);
 KLAR.farga = fargaKlar; // färgbadet (farg.ts, steg 13.3.2)
-KLAR.koaDisk = koaKlar; KLAR.betjana = betjanaKlar; // kassan (kassa.ts, steg 14.1.6)
+KLAR.stallaFram = stallaKlar; KLAR.koaDisk = koaKlar; KLAR.betjana = betjanaKlar; // kassan (kassa.ts, steg 14.1.6)
 KLAR.stada = stadaKlar; // städningen (stada.ts, steg 14.1.2)
 KLAR.tjara = tjaraKlar; // tjäran (tjara.ts, steg 13.5.1)
 KLAR.mjolka = (s, p, t) => mjolkaKlar(s, p, t.ref);
@@ -1092,7 +1092,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
   } else if (tk.hamta && tk.site && tk.phase === 'go') hamtat(s, p, tk); // vid stacken: materialet till arbetet (steg 11.1.74, hamtning.ts)
   else if (tk.phase === 'back' && LAMNA[tk.act]) LAMNA[tk.act]!(s, p, tk); // framme hos den man bär till (LAMNA)
   else if (tk.phase === 'back') {
-    storeLoad(s, tk, p.x, p.y, tk.lon === 'forradet' ? BYN : p.id); // det som bärs hem i arbete för byns förråd mot lön blir byns (steg 10.5.9)
+    if (tk.act !== 'stallaFram' || !stallaFramme(s, tk)) storeLoad(s, tk, p.x, p.y, tk.lon === 'forradet' ? BYN : p.id); // det som bärs hem i arbete för byns förråd mot lön blir byns (steg 10.5.9)
     // ett arbetspass är klart: gå tillbaka och fortsätt om arbetet inte är slut och dagen inte vänt
     const r = tk.res;
     if (r && r.until > now + STEG.kvarMin * MIN && tk.dark === !light) { tk.phase = 'go'; tk.tx = r.x; tk.ty = r.y; tk.until = r.until; tk.res = undefined; }
@@ -1850,6 +1850,7 @@ import { barGillad, fargaKlar, FARG, stepFargsmak } from './farg';
 import { tjaraKlar } from './tjara';
 import { stadaKlar } from './stada';
 import { betjanaKlar, kassaTakt, koaKlar } from './kassa';
+import { stallaFramme, stallaKlar } from './affar';
 import { forvantanTanke, forvantanTimme } from './forvantan';
 import { angKlar, slaKlar, stepVinter, hamlaKlar } from './slatter';
 import { stepHons } from './hons';

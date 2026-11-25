@@ -13,7 +13,7 @@ import { BYN, kyrkaId } from './egendom';
 import { kronika } from './historik';
 import { ledareOf } from './styre';
 import { prastOf } from './kult';
-import { payable } from './behov';
+import { behovAv, DELA, payable, saknarNu } from './behov';
 import { grundvarde, formogenheter } from './varde';
 import { kroppensMat } from './ekonomi';
 import { amountOf, ownsAmount, ownsId } from './lager';
@@ -31,6 +31,7 @@ export const FORETAG = balans('foretag', {
   dryckVarde: 0.5, // så många silver är själva drycken värd
   andel: 0.5, // så stor del av måltiderna och dryckerna räknar man med att kunderna köper
   del: 0.5, // så stor del av kundens vinst räknar man med att kunna ta betalt för
+  saknarDygn: 0.2, // så ofta per dygn (år i spelet) köper man var sak man saknar
   timKund: 0.04, // så många timmar arbete tar en kund
   ar: 30, // huset ska vara betalt på så många dygn (år i spelet)
   pung: 15, // det kunden kan betala med räcker så många dygn
@@ -55,6 +56,7 @@ export interface Verksamhet {
   snitt: (k: string) => number; // det en vanlig kund vinner, i silver
   grund?: (k: string) => number; // varans värde när den inte är en sak i förrådet
   ats?: true; // äts och dricks i rummet
+  hylla?: true; // det som ligger på varubordet i rummet (affar.ts)
   vatska?: true; // säljs ur ett kärl
   perDygn: (s: State, p: Person) => number; // så många gånger per dygn kunden skulle kunna köpa
   kunnande: (p: Person) => number; // hur väl den som driver den kan den, 1 = vanligt
@@ -78,6 +80,15 @@ export const VERKSAMHETER: Record<string, Verksamhet> = {
     snitt: k => FORETAG.dryck * (dryckAv(k)?.kvall ?? 0.5), grund: () => FORETAG.dryckVarde, vatska: true,
     perDygn: (s, p) => ageOf(p, s.now) >= ALDER.vuxen ? 1 : 0,
     kunnande: p => skick((p.skill.matlagning + p.skill.handel) / 2),
+  },
+  // affären (steg 14.1.8, affar.ts): kunden vinner så mycket mer hen behöver saken än den som har den över
+  affar: {
+    namn: 'Affär', sym: '🧺', rum: 'affar', hylla: true,
+    varor: s => [...new Set(living(s).flatMap(p => p.gast ? [] : saknarNu(s, p)))].filter(k => grundvarde(k) > 0 && amountOf(s, k) >= 1),
+    noje: (s, p, k) => grundvarde(k) * Math.max(0, behovAv(s, p, k) - DELA.over),
+    snitt: k => grundvarde(k) * (DELA.saknar - DELA.over), grund: k => grundvarde(k) * DELA.over,
+    perDygn: (s, p) => p.gast ? 0 : saknarNu(s, p).length * FORETAG.saknarDygn,
+    kunnande: p => skick(p.skill.handel),
   },
 };
 // företagets sorts namn efter verksamheterna: servering och dryck tillsammans är en taverna
@@ -173,7 +184,7 @@ export function oppna(s: State, f: Foretag): string[] {
 export const saltAv = (f: Foretag) => Object.values(f.salt ?? {}).reduce((a, b) => a + b, 0);
 export const kundVinst = (f: Foretag) => Math.max(0, saltAv(f) >= 0.5 ? (f.vinst ?? 0) / saltAv(f) : 1);
 // kunderna som gått utan att bli betjänade är det ägarens timmar inte räckte till: en timme till vid disken är värd det de hade gett
-DAGSVERK.foretag = { namn: 'Företaget', sym: '🏪', gor: (_s, a, _p, tk) => tk?.act === 'betjana' && tk.ref === a.mal,
+DAGSVERK.foretag = { namn: 'Företaget', sym: '🏪', gor: (_s, a, _p, tk) => (tk?.act === 'betjana' || tk?.act === 'stallaFram') && tk.ref === a.mal,
   bud: s => foretagOf(s).flatMap(f => {
     const g = f.lamnat ?? 0, p = foretagare(s, f.ag);
     return g > 0 && p && foretagRum(s, f).length ? [{ av: f.ag, antal: 1, tim: kundVinst(f) / FORETAG.timKund, tak: Math.floor(ownsId(s, f.ag, 'silver') + 1e-9), timMax: g * FORETAG.timKund, mal: f.id, kan: (q: Person) => q.id !== p.id && !familjOf(s, p.id).includes(q) }] : [];

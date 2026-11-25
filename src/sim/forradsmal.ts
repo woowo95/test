@@ -362,6 +362,7 @@ export function stationBrist(s: State, k: StationSlag) {
 }
 function nyBrist(s: State, k: StationSlag, d: StationDef) {
   if (d.tro) return Math.max(0, ...(s.tron ?? []).map(tr => trosMobelBrist(s, tr, k))); // trons möbler i trons hus (steg 10.3.19)
+  if (d.vara) return foretagBord.varuBrist(s); // affärernas varubord (steg 14.1.8)
   if (d.disk) return foretagBord.diskBrist(s); // företagens diskar (steg 14.1.6)
   if (d.varmer) return finareKrok.fyrfat(s); // fyrfatet i ett rum utan eld (steg 12.4.11, mobler.ts)
   if (d.finare) return finareKrok.finare(s, k); // utedasset i stället för latrinen (steg 12.4.9, mobler.ts)

@@ -63,6 +63,7 @@ const DEF = {
   klyvplats: { var: 'station', av: { virke: 1, ved: 2 }, min: 15, slag: 'stor', tek: 'klyvplats' },
   ortkok: { var: 'station', av: { virke: 2, sten: 4 }, min: 20, slag: 'stor', tek: 'ortkok' },
   snickarbank: { var: 'station', av: { virke: 2, plankor: 2 }, min: 15, slag: 'stor', tek: 'snickarbank' }, // steg 9.4.4
+  varubord: { var: 'station', av: { virke: 4 }, min: 12, slag: 'stor' }, // steg 14.1.8
   disk: { var: 'station', av: { virke: 5 }, min: 15, slag: 'stor' }, // steg 14.1.6
   skrivpulpet: { var: 'station', av: { plankor: 2, virke: 1 }, min: 15, slag: 'stor', tek: 'skrivpulpet' }, // steg 10.6.11
   garvning: { var: 'station', av: { grenar: 4, rep: 2 }, min: 15, slag: 'stor', tek: 'garvning' },

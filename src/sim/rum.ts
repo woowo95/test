@@ -41,7 +41,7 @@ export const RUM = balans('rum', {
 // det som står i rummet, räknat en gång per rum
 export interface RumInfo {
   rutor: number; sov: number; folk: number; bord: number; eld: number; arbete: number; forvar: number; scen: number;
-  tork: number; pynt: number; smuts: number; slakt: number; krubba: number; kok: number; bara: Set<string>; smedja?: number; skap?: number; badd?: number; sjukTek?: boolean;
+  tork: number; pynt: number; smuts: number; slakt: number; krubba: number; kok: number; bara: Set<string>; vara?: number; smedja?: number; skap?: number; badd?: number; sjukTek?: boolean;
 }
 export type RumSlag = 'grund' | 'egenskap' | 'kombination';
 export interface RumsTyp {
@@ -57,6 +57,7 @@ export const RUMSTYPER = {
   kok: { namn: 'Kök', ikon: 'lagereld', slag: 'grund', om: 'Här finns en härd, ett örtkök, en bakugn eller en kvarnsten', krav: i => i.eld >= 1 || i.kok >= 1 }, // steg 10.2.92
   forrad: { namn: 'Förråd', ikon: '📦', slag: 'grund', om: 'Hyllor, kistor, ställ eller lagerrutor', krav: i => i.forvar >= RUM.forradMin },
   verkstad: { namn: 'Verkstad', ikon: 'verkstad', slag: 'grund', om: 'Här står en arbetsbänk', krav: i => i.arbete >= 1 },
+  affar: { namn: 'Affär', ikon: 'varubord', slag: 'grund', om: 'Här står ett varubord med det som är till salu', krav: i => !!i.vara },
   scensal: { namn: 'Scensal', ikon: 'scen', slag: 'grund', om: 'Här står en scen', krav: i => i.scen >= 1 },
   vedbod: { namn: 'Vedbod', ikon: 'ved', slag: 'grund', om: 'Bara ved på golvet', krav: i => i.bara.size === 1 && i.bara.has('ved') && i.sov === 0 },
   slakteri: { namn: 'Slakteri', ikon: 'slaktbank', slag: 'grund', om: 'Här står en slaktbänk', krav: i => i.slakt >= 1 },
@@ -119,6 +120,7 @@ export function rumInfo(s: State, r: Rum, utanFolk = false): RumInfo {
     if (!d) continue;
     if (d.platser) i.bord++;
     if (d.forvar) i.forvar++;
+    if (d.vara) i.vara = (i.vara ?? 0) + 1; // varubordet (steg 14.1.8)
     if (d.pynt) i.pynt++;
     if (t.k === 'scen') i.scen++;
     if (t.k === 'tork') i.tork++;

@@ -232,3 +232,60 @@ SCENARIER.kassa = {
     ];
   },
 };
+
+// steg 14.1.8: affären säljer det som ligger på varubordet
+SCENARIER.affar = {
+  text: 'Steg 14.1.8: ägaren ställer fram det hen har över och som andra saknar på varubordet, kunden betalar vid disken och får saken, och det andra i byn bär inte bort det som är framme',
+  kor: () => {
+    const { s, p, f, vux } = foretagBy(['affar']);
+    for (const q of s.people) q.task = undefined;
+    const v1 = SIM.stationSite(s, 'varubord')!;
+    const brist0 = SIM.foretagBord.varuBrist(s), utan = SIM.oppna(s, f).includes('affar');
+    const vb = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'varubord', x: v1.x, y: v1.y, rot: v1.rot, kvar: 0, inne: 1 } as unknown as SIM.Station; s.stationer!.push(vb); SIM.touch(s);
+    const vr = (i: number) => vb.rot ? { x: vb.x, y: vb.y + i } : { x: vb.x + i, y: vb.y };
+    // de andra har inget metspö längre, och ägaren har två
+    const k = 'metspo', utanKniv = (b: SIM.State) => { b.ting = SIM.tingOf(b).filter(t => t.k !== k); for (const q of SIM.living(b)) q.bruk = undefined; };
+    utanKniv(s);
+    const kund = vux.find(q => { const t = SIM.addTool(s, k, p); const ja = SIM.vilMangd(s, q, k) > 0; s.ting = SIM.tingOf(s).filter(x => x !== t); return ja; });
+    const a1 = SIM.addTool(s, k as never, p), a2 = SIM.addTool(s, k as never, p); a2.agare = a1.agare = p.id;
+    SIM.placeTools(s); for (const q of vux) SIM.saknarNu(s, q);
+    const val = SIM.stallaVal(s, p), annan = vux.find(q => q !== kund)!, va = SIM.stallaVal(s, annan);
+    const gor = (h: SIM.HyllVara) => {
+      p.x = h.x + 0.5; p.y = h.y + 0.5; p.task = { act: 'stallaFram', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', ref: f.id, tool: h.k } as SIM.Task;
+      SIM.stallaKlar(s, p, p.task); const d = SIM.backSpot(s, p.task); p.task.phase = 'back'; p.task.tx = d.x; p.task.ty = d.y;
+      const ok = SIM.stallaFramme(s, p.task); p.task = undefined; return ok;
+    };
+    const ok = val ? gor(val.h) : false, hylla = SIM.hyllan(s, f), pa = hylla.every(h => vr(0).x === h.x && vr(0).y === h.y || vr(1).x === h.x && vr(1).y === h.y);
+    const lagrad = SIM.isStored(s, vb.x, vb.y), vakt = SIM.lagerVakt(s), bar = SIM.haulJob(s), ute = bar && Math.floor(bar.x) === vb.x && Math.floor(bar.y) === vb.y;
+    // en hög: virke som någon saknar
+    SIM.stacksOf(s).push({ k: 'virke', n: 6, c: 1, ...vr(1), ag: { [p.id]: 6 } }); SIM.changed(s);
+    const kanske = kund && SIM.kundVal(s, kund, 'affar'), dyr = (() => { f.pris = { affar: 80 }; const x = kund && SIM.kundVal(s, kund, 'affar'); f.pris = undefined; return x; })();
+    let kopt = false, betalt = 0, bytt = false;
+    if (kund && kanske) {
+      const o = SIM.stallIKo(s, kund, kanske); kund.x = o.spot.x; kund.y = o.spot.y; kund.task = { act: 'koaDisk', phase: 'do', tx: kund.x, ty: kund.y, until: s.now + 480000, carry: 0, why: '', ref: f.id };
+      const n0 = SIM.ownsAmount(s, p, 'silver');
+      p.task = { act: 'betjana', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', ref: f.id };
+      SIM.betjanaKlar(s, p, p.task); kopt = (f.salt?.affar ?? 0) === 1; betalt = SIM.ownsAmount(s, p, 'silver') - n0;
+      bytt = kanske.k === 'virke' ? (kund.task?.items?.virke ?? 0) > 0 : SIM.tingOf(s).some(t => t.k === kanske.k && t.agare === kund.id);
+    }
+    // högen köps och bärs hem av kunden
+    const h = SIM.hyllan(s, f).find(q => q.k === 'virke')!; annan.task = undefined;
+    const tog = h ? SIM.taVaran(s, f, annan, h, 2) : 0, kvar = SIM.hyllan(s, f).find(q => q.k === 'virke')?.n ?? 0, bars = annan.task as SIM.Task | undefined;
+    // i spelet: byn går och någon köper själv
+    const s2 = foretagBy(['affar']); utanKniv(s2.s); for (const q of s2.vux) { q.habit = { ...q.habit, fiske: 200 } as never; q.task = undefined; } s2.s.stationer!.push({ ...vb } as never); SIM.touch(s2.s);
+    for (let i = 0; i < 12; i++) { const t = SIM.addTool(s2.s, k, s2.p); t.agare = s2.p.id; if (!i) { t.x = vb.x; t.y = vb.y; } } SIM.placeTools(s2.s); SIM.touch(s2.s);
+    let stallt = 0, salt = 0;
+    for (let j = 0; j < 7200 && !(stallt && salt); j++) { s2.s.now += 2000; SIM.step(s2.s, 2); stallt = s2.s.stat?.stalltFram ?? 0; salt = s2.s.stat?.foretagSalt_affar ?? 0; }
+    return [
+      [`utan varubord är affären stängd och vill ha ett (${brist0})`, !utan && brist0 === 1],
+      [`ägaren vill ställa fram det någon saknar (${val?.h.k}, ${val?.sc.toFixed(2)}), en annan inte`, !!val && !va],
+      [`det ställs på varubordet (${hylla.map(x => x.k).join(',')})`, ok && pa && hylla.length === 1],
+      [`varubordet hör till förrådet, men ingen bär bort det som är framme (${vakt.join(';')})`, lagrad && !ute && !vakt.length],
+      [`affären är öppen`, SIM.oppna(s, f).includes('affar')],
+      [`den som saknar något köper (${kanske?.k} för ${kanske?.pris}), men inte till åttio gånger priset`, !!kanske && !dyr],
+      [`köpet blir av (${betalt} silver) och saken är kundens`, kopt && bytt],
+      [`en hög tas ur affären och bärs hem (${tog}, kvar ${kvar})`, tog === 2 && kvar >= 3 && bars?.items?.virke === 2 && bars.phase === 'back'],
+      [`i byn ställs varor fram och köps (${stallt}, ${salt})`, stallt > 0 && salt > 0],
+    ];
+  },
+};

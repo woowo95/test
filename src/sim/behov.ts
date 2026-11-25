@@ -632,6 +632,7 @@ function brukRakna(s: State, p: Person) {
   p.bruk = { t: Math.floor(s.now / HOUR), k: ut };
   return ut;
 }
+export const saknarNu = (s: State, p: Person) => saknarLista(s, p).map(e => e[1]);
 const saknarLista = (s: State, p: Person) => p.bruk && p.bruk.t >= Math.floor(s.now / HOUR) - 1 ? p.bruk.k : brukRakna(s, p);
 // a och b talar. Saknar någon av dem något (raderna i rader) som den andra har över? Då byter de, eller så ger den andra det.
 // Raderna prövas i registrets ordning, och för var och en den ena och sedan den andra. nu = det saknade räknas nu (askForTool)

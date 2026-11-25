@@ -43,6 +43,8 @@ import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from '.
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
 import { FORRAD, FORRADSMAL, TROSKEL, buffert, lyxtak, materialTimme, materialTak, eldReserv, villHaAv } from './forradsmal';
+import { stallaVal, AFFAR } from './affar';
+import { saknarNu } from './behov';
 import { betjanVal, kundVal, stallIKo, KASSA, type Erbjudande } from './kassa';
 import { stadaUppgift, stadaVal } from './stada';
 import { tjaraUppgift, tjaraVal } from './tjara';
@@ -141,7 +143,7 @@ export const VAL = balans('val', {
   // Tillfälle (nivå 3, steg 13.8.10): det som står på spel. Jakten på besten skyddar byn, resan och bönen är redan bestämda,
   // handeln och framträdandet går förlorade när handlaren eller berättaren går. Tillsynen vid milan och ugnen väger efter det
   // som går förlorat (BRANNINGAR.miss) gånger tillPassa, och mer ju närmare den sista stunden (passaVikt i brann.ts)
-  tillJakt: 2, tillResa: 1.8, tillBon: 1.5, tillRitual: 1.2, tillHandla: 1, tillBetjana: 0.3, tillSport: 0.8, tillLyssna: 0.7, tillPassa: 0.5,
+  tillJakt: 2, tillResa: 1.8, tillBon: 1.5, tillRitual: 1.2, tillHandla: 1, tillBetjana: 0.3, tillAffar: 0.6, /* affären när köpet är värt ett silver mer än det kostar */ tillSport: 0.8, tillLyssna: 0.7, tillPassa: 0.5,
   // Grundbehov (nivå 4, steg 13.8.10): vikten gånger hur långt under gränsen man är (nodUnder). Gränsen är högre för den lata
   // (latToa, latVarme, TORST.lat, latVila), så den lata tar grundbehoven tidigare och väljer dem före de andra
   grundKyla: 1.4, grundTorst: 1.3, grundKravla: 1.2, grundToa: 1.1, grundMat: 1, grundSkadad: 0.9, grundVila: 0.8, grundUtbrott: 0.5,
@@ -550,7 +552,7 @@ const arbBehov = (s: State) => s.arbBehov ?? (arbetsTimme(s), s.arbBehov!);
 // nivåerna: 1 Fara, 2 Nöd och vård, 3 Tillfälle, 4 Grundbehov, 5 Rädda, 6 Försörjning, 7 Tak, 8 Förbättra, 9 Fritid
 type Niva = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 // det valet vet om personen; farorna räknas första gången en rad frågar och gäller hela valet
-interface Ctx { betj?: ReturnType<typeof betjanVal>; kund?: Erbjudande; s: State; p: Person; v: Val; a: number; lazy: number; light: boolean; f?: Faror; d?: Dag; forb?: boolean; fb?: Record<string, { sc: number; gor: () => void } | undefined>; bord?: { x: number; y: number } | null }
+interface Ctx { stall?: ReturnType<typeof stallaVal>; betj?: ReturnType<typeof betjanVal>; kund?: Erbjudande; s: State; p: Person; v: Val; a: number; lazy: number; light: boolean; f?: Faror; d?: Dag; forb?: boolean; fb?: Record<string, { sc: number; gor: () => void } | undefined>; bord?: { x: number; y: number } | null }
 const faror = (c: Ctx) => c.f ??= dangers(c.s);
 // Förbättra dämpas mjukt (steg 10.11.20): när kylan eller hungern är en fara tas raderna på Förbättra och projekten med chansen
 // VAL.projFara (en dragning per val), som bygget dämpas (byggDampning): tiden går helst till faran, men ingenting stängs av
@@ -786,6 +788,9 @@ export const ARBETEN: readonly Arbete[] = [
   } },
   // disken (steg 14.1.6, kassa.ts): att betjäna väger mer ju fler som väntar och ju längre de väntat
   { id: 'betjana', niva: 3, poang: c => { if (!c.s.foretag?.length) return 0; const d = (c.betj = betjanVal(c.s, c.p)); return d ? VAL.tillBetjana * d.sc : 0; }, prova: ({ v, betj: d }) => { if (!d) return false; v.spot = d.spot; v.dur = d.dur; v.ref = d.f.id; return set(v, 'betjana', `Betjänar: ${d.f.namn}`); } },
+  // affären (steg 14.1.8, affar.ts): den som saknar något köper det när det är mer värt än det kostar, och ägaren ställer fram
+  { id: 'affar', niva: 3, nar: 'dag', poang: c => { if (!c.s.foretag?.length || c.a < ALDER.hjalper || !saknarNu(c.s, c.p).length) return 0; const e = (c.kund = kundVal(c.s, c.p, 'affar')); return e ? VAL.tillAffar * Math.min(1, e.net) : 0; }, prova: ({ s, p, v, kund: e }) => !!e && koa(s, p, v, e) },
+  { id: 'stallaFram', niva: 3, nar: 'dag', poang: c => { if (!c.s.foretag?.length || c.a < ALDER.vuxen) return 0; const d = (c.stall = stallaVal(c.s, c.p)); return d ? Math.min(VAL.tillAffar, d.sc) : 0; }, prova: ({ v, stall: d }) => { if (!d) return false; v.spot = { x: d.h.x + 0.5, y: d.h.y + 0.5 }; v.dur = AFFAR.min * MIN; v.ref = d.f.id; v.tool = d.h.k; return set(v, 'stallaFram', `Ställer fram varor: ${d.f.namn}`); } },
   // ett framträdande (steg 10.7.9, framtradande.ts): den som ville lyssna vid kallelsen går dit, men inte den som skäms
   { id: 'lyssna', niva: 3, poang: () => VAL.tillLyssna, prova: ({ s, p, v }) => {
     const l = skams(p, s.now) ? undefined : lyssnaVal(s, p, q => spotFor(s, 'beratta', q));

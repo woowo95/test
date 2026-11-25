@@ -148,6 +148,7 @@ export * from './sim/lon';
 export * from './sim/dagsarbete';
 export * from './sim/foretag';
 export * from './sim/kassa';
+export * from './sim/affar';
 export * from './sim/varde';
 export * from './sim/uppdrag';
 export * from './sim/arv';

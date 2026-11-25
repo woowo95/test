@@ -65,6 +65,7 @@ export const PROJEKT_TAL = balans('projekt', {
   overBuffert: 0.3, // ett redskap, vapen eller plagg över det byn behöver väger så här mycket när det är långt till taket (steg 10.2.74)
   kyla: 0.3, // när kylan är en fara väger varje projekt så här mycket av sitt värde (steg 10.2.6): tiden går helst till värmen
   kniv: 1.2, yxa: 1.2, spjut: 1, metspo: 0.8, korg: 0.8, bensyl: 1, rock: 1, barnklader: 0.8, skor: 0.7, balte: 0.6, axelrem: 0.4, ryggsack: 0.5, barsele: 0.4, benspade: 0.6, vattensack: 0.5, slanda: 0.5, bagborr: 0.6, kalke: 0.6, slade: 0.6, vagn: 0.6, plog: 0.6, fackla: 0.4, talgljus: 0.3, boll: 0.3, slagtra: 0.3, mal: 0.3, trumma: 0.3, benflojt: 0.3, lyra: 0.3, bok: 0.3, // hur mycket varje redskap väger när byn saknar alla den vill ha
+  varubord: 0.6, // ... varubordet när affärens rum saknar ett (steg 14.1.8)
   disk: 0.6, // ... disken när ett företags rum saknar en (steg 14.1.6)
   slaktbank: 1, flatarbank: 0.6, scen: 0.3, // ... varje station när byn saknar den
   grill: 0.8, // ... grillställningen (steg 2.8.1)
