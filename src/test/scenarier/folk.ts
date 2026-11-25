@@ -3166,7 +3166,7 @@ SCENARIER.vaktser = {
     Object.assign(vakt, post); vakt.task = { act: 'vakt', phase: 'do', tx: vakt.x, ty: vakt.y, until: s.now + 2 * HOUR, carry: 0 } as SIM.Task;
     const f = rovarGang(s, 3, rast);
     const d = Math.hypot(vakt.x - f.x, vakt.y - f.y);
-    for (let i = 0; i < 20 && f.sedd === undefined; i++) step(s, 1);
+    for (let i = 0; i < 180 && f.sedd === undefined; i++) step(s, 1); // (en chans per tid, steg B.57)
     return [
       [`vakten står ${d.toFixed(0)} rutor från gänget på rastplatsen, på andra sidan byn (folk ser ${SIM.ROVARE.folkSer})`, !!rast && d > SIM.ROVARE.lur],
       [`vakten ser gänget och vet om det (${f.sedd !== undefined ? 'ja' : 'nej'})`, f.sedd !== undefined && vakt.larm?.rovare !== undefined],

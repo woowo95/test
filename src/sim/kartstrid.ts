@@ -127,14 +127,13 @@ function flyMal(s: State, p: Person) {
 }
 const stridsUppgift = (s: State, p: Person, why: string) => { p.task = { act: 'strid', phase: 'do', tx: p.x, ty: p.y, until: s.now + (STRID.maxTid + 60) * SEC, carry: 0, why }; };
 // Överraskningen (steg B.30, "Mötet" i fliken Människan): den som blir anfallen mitt i något annat (arbetet, maten, samtalet), eller som
-// inte visste om gänget förrän nu, har inte sett sin anfallare komma. Den som håller ögonen öppna (vakten, kämparna, jägaren) och den som
-// gick till anfall har det. Lika för alla: en rövare på rastplatsen eller vid bytet kan också överraskas
-const VAKSAM = new Set<string>(['vakt', 'varna', 'forsvar', 'forsvarRovare', 'hjalpaRovare', 'budRovare', 'gomma', 'strid', 'undan']);
+// inte visste om gänget förrän nu, har inte sett sin anfallare komma. Den som håller ögonen öppna (vaksam i ACTS) och den som
+// själv går in i striden har det (steg B.52). Lika för alla: en rövare på rastplatsen eller vid bytet kan också överraskas
 const UPPTAGEN = new Set<string>(['rasta', 'gaOmkring', 'prata', 'ta']);
 function overraskad(s: State, p: Person, efter: Efter | undefined): { overraskad?: number } {
   if (!efter?.egen) return {};
   const tk = p.task, l = p.larm?.rovare;
-  const ja = p.gast ? UPPTAGEN.has(p.gast.gor ?? '') : !VAKSAM.has(tk?.act ?? '') && (!tk || ACTS[tk.act].slag !== 'jaga') && (tk?.phase === 'do' || efter.typ === 'rovare' && (!l || s.now - l.t < STRID.overraskSek * SEC));
+  const ja = p.gast ? UPPTAGEN.has(p.gast.gor ?? '') : !(tk && ACTS[tk.act].vaksam) && (tk?.phase === 'do' || efter.typ === 'rovare' && (!l || s.now - l.t < STRID.overraskSek * SEC));
   if (ja) count(s, 'overraskad');
   return ja ? { overraskad: STRID.overraskSek } : {};
 }
@@ -162,7 +161,7 @@ export function kartStridMed(s: State, g: KartStrid, p: Person, sida: 0 | 1, hja
   if (g.st.slut || g.st.kampar.some(k => k.pid === p.id && !g.fri?.includes(p.id))) return;
   if (g.fri?.includes(p.id)) return; // den som lämnat striden går inte in i den igen
   const id = Math.max(0, ...g.st.kampar.map(k => k.id)) + 1;
-  laggTill(g.st, { ...personKampe(s, p, id, sida, p.x, p.y), ...flyMal(s, p), ...overraskad(s, p, g.efter), ...(hjalp ? { hjalp } : {}) });
+  laggTill(g.st, { ...personKampe(s, p, id, sida, p.x, p.y), ...flyMal(s, p), ...(hjalp ? { hjalp } : {}) });
   if (g.efter && !hjalp) MED[g.efter.typ]?.(s, g.efter, g.st.kampar[g.st.kampar.length - 1], p); // det stridens slag ger den som kommer senare (steg 12.1.58)
   avbryt(s, p); stridsUppgift(s, p, hjalp ? `Hjälper de fallna (${g.orsak})` : g.orsak);
   count(s, hjalp ? 'kartStridHjalp' : 'kartStridMed');

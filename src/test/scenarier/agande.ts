@@ -2510,6 +2510,7 @@ SCENARIER.rovartest = {
 };
 
 SCENARIER.rovarfackla = {
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,rovare.ser=100000' }, // den som har gänget inom synhåll ser det genast: provet gäller synhållet (chansen: seavstand)
   text: 'Facklan på natten (steg 10.1.10, rovare.ts, ljus.ts): på natten håller minst en rövare i gänget en tänd fackla, ett ting hen äger, som lyser som andra facklor, och därför syns gänget på längre håll än i mörker utan fackla (ROVARE.fackelSer mot ROVARE.nattSer). På dagen är facklan släckt, och när det blir dag släcks den. Ett gäng går aldrig ut utan en fackla.',
   kor: () => {
     const { ROVARE, HOUR } = SIM;
@@ -2560,7 +2561,8 @@ SCENARIER.rovarfackla = {
 };
 
 SCENARIER.rovarsyn = {
-  text: 'Att se faran (steg 10.1.11, rovare.ts): var och en som är vaken och har ett rövare inom synhåll ser gänget och får larmet: vanligt folk på ROVARE.folkSer rutor, den som håller vakt på ROVARE.vaktSer, kortare i dimma och i mörker, men som på dagen när gänget har en tänd fackla. Den som sover ser inget. Den som ser dem och är utanför byn varnar och springer sedan hem. Den som är långt borta vet ingenting förrän hen själv ser dem eller hör larmet, som sprids led för led från den som varnar.',
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,rovare.ser=100000,rovare.folkSer=25' }, // den som har gänget inom synhåll ser det genast: provet gäller synhållet (chansen: seavstand)
+  text: 'Att se faran (steg 10.1.11, rovare.ts): var och en som är vaken och har ett rövare inom synhåll ser gänget och får larmet: vanligt folk på ROVARE.folkSer rutor, den som håller vakt på ROVARE.vaktSer, kortare i dimma och i mörker, men längre bort när gänget har en tänd fackla. Den som sover ser inget. Den som ser dem och är utanför byn varnar och springer sedan hem. Den som är långt borta vet ingenting förrän hen själv ser dem eller hör larmet, som sprids led för led från den som varnar.',
   kor: () => {
     const { ROVARE, HOUR } = SIM;
     const ny = (timme = 12) => { const s = createState(6, START); klockan(s, timme); for (const c of SIM.klanerOf(s)) c.inst = -60; for (const p of living(s)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * HOUR, carry: 0 }; return s; };

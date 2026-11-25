@@ -698,7 +698,7 @@ export function slagen(st: Strid, fran = 0): SlagHandelse[] {
   }
   return ut;
 }
-const utsatt = (b: Kampe) => b.lage === 'nere' || b.lage === 'flykt' || b.ligger || b.bocker || b.overraskad;
+const utsatt = (b: Kampe) => b.lage === 'nere' || b.lage === 'flykt' || b.ligger || b.bocker;
 // öppningen (steg B.7): den som står och slåss med någon nära väjer och tar emot slagen, så man väntar på en öppning (Kampe.oppning);
 // den som ligger, böjer sig ner, flyr eller ännu inte är i närstrid ger en genast
 const oppen = (st: Strid, m: Kampe) => utsatt(m) || !st.kampar.some(o => o.sida !== m.sida && iStrid(o) && dist(o, m) <= STRID.nara);
