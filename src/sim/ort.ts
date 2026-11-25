@@ -437,7 +437,7 @@ export interface ByFlikar {
   historia: { ar: number; text: string }[];
   forb?: { inst?: number; hallning?: string; rader: number; lage?: string; dygn?: number };
 }
-const FOLKROLL: Record<string, string> = { ledare: 'Ledare', handlare: 'Handlare', mott: 'Mött' };
+const FOLKROLL: Record<string, string> = { ledare: 'Ledare', handlare: 'Handlare', mott: 'Mött', fard: 'Har varit på färd' };
 export function byFlikar(s: State, nr: number, tekNamn: (id: string) => string = id => id): ByFlikar | undefined {
   const vl = s.varld, ruta = platsRuta(s, nr), r = ortensRad(s, nr), q = vl && varldPlatsNr(vl, nr);
   if (!vl || !ruta || !q) return undefined;
@@ -447,7 +447,7 @@ export function byFlikar(s: State, nr: number, tekNamn: (id: string) => string =
   if (!kand) return ut;
   const folk: ByFolk[] = [], sedda = new Set<string>();
   const med = (namn: string, roll: string, id?: number) => { if (sedda.has(namn)) return; sedda.add(namn); folk.push({ namn, roll, ...(id !== undefined && byId(s, id) ? { id } : {}) }); };
-  r.fasta.forEach((f, i) => { if (f.dor === undefined) med(f.namn, i === r.ledare ? 'Ledare' : FOLKROLL[f.roll] ?? f.roll, f.id); });
+  r.fasta.forEach((f, i) => { if (f.dor === undefined || f.roll === 'fard' && f.dor > s.now) med(f.namn, i === r.ledare ? 'Ledare' : FOLKROLL[f.roll] ?? f.roll, f.id); });
   for (const p of ruta.egen ? [] : r.syn?.personer ?? []) if (p.borta === undefined) med(p.namn, KLAN_ROLLER[p.roll]?.namn ?? p.roll, p.id);
   ut.folket = folk;
   ut.tek = r.tek.map(tekNamn);

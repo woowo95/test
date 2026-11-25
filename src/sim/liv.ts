@@ -261,16 +261,16 @@ export function regulate(s: State, dtSec: number) {
   // de som flyttat hit från en by i världen kommer som främlingar (flytten, byflytt.ts, steg 11.3.5)
   for (const fran of s.varld?.tillHuvud?.splice(0) ?? []) framling(s, undefined, fran);
   // grannbyarnas sändebud kommer som gäster (steg 11.6.23)
-  for (const b of s.varld?.budTillHuvud?.splice(0) ?? []) sandebud(s, b.fran, b.ton, b.gava);
+  for (const b of s.varld?.budTillHuvud?.splice(0) ?? []) sandebud(s, b.fran, b.ton, b.gava, b.vem);
 }
 // ---------- sändebudet från en grannby (steg 11.6.23, Flera samhällen: Sändebudet) ----------
 // Budet går in på kartan från kanten mot grannbyn, går till ledaren (eller elden), pratar med hen en stund som främlingen gör,
 // och efter samtalet verkar beskedet: huvudbyns syn på grannbyn går upp (vänligt) eller ner (ovänligt). En gåva läggs i
 // förrådet, som hela saker. Dör budet eller går det innan samtalet är klart ändrar det inget. Sedan går hen hem igen
-export function sandebud(s: State, fran: number, ton: import('./byhandling').BeskedTon, gava?: import('./handel').HVara[]) {
+export function sandebud(s: State, fran: number, ton: import('./byhandling').BeskedTon, gava?: import('./handel').HVara[], vem?: { namn: string; sex: 'm' | 'k' }) {
   const rad = s.varld?.rader?.find(r => r.nr === fran), k = rad?.syn;
   if (!k) return undefined;
-  const sex = rnd(s, 'klan') < 0.5 ? 'm' as const : 'k' as const, namn = makeName(s, sex, 'klan'), age = 25 + rnd(s, 'klan') * 20;
+  const sex0 = rnd(s, 'klan') < 0.5 ? 'm' as const : 'k' as const, namn0 = makeName(s, sex0, 'klan'), sex = vem?.sex ?? sex0, namn = vem?.namn ?? namn0, age = 25 + rnd(s, 'klan') * 20;
   const id = nyttGastId(s), ut = kantMot(s, k.id) ?? kanten(s, W / 2, 0);
   const p = nyGast(s, { id, namn, sex, fodd: s.now - age * DAY, rad: { sort: 'sandebud', klan: k.id, hem: k.hem, fas: 'kommer', besked: ton, hemRad: fran, ...gava?.length ? { gava } : {} }, x: ut.x, y: ut.y, nyckel: (s.gastNr ?? 0) * 7919 + fran, skill: { handel: Math.round(5 + rnd(s, 'klan') * 10) } });
   s.people.push(p);

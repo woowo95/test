@@ -55,13 +55,13 @@ const SKAL: Record<RadSkal, { vikt(): number; galler(s: State, k: Klan): boolean
 export const skalGaller = (s: State, k: Klan, skal: RadSkal) => SKAL[skal].galler(s, k); // scenarierna
 // en flock från klanen k kommer till byn (steg 11.6.20: världens plundring skickar den, byhandling.ts; scenarierna med tvingaSkal):
 // n anfallare, och skälet lottas bland dem som gäller för klanen (plundring när inget annat gäller)
-export function radKommer(s: State, k: Klan | undefined, n: number, tvingaSkal?: RadSkal): Rovarflock {
+export function radKommer(s: State, k: Klan | undefined, n: number, tvingaSkal?: RadSkal, vilka?: ({ namn: string; sex: 'm' | 'k' } | undefined)[]): Rovarflock {
   const skal = k ? (Object.keys(SKAL) as RadSkal[]).filter(q => SKAL[q].galler(s, k)) : [];
   const tot = skal.reduce((a, q) => a + SKAL[q].vikt(), 0); let x = rnd(s, 'rovare') * tot, val: RadSkal = skal[0] ?? 'plundra';
   for (const q of skal) { x -= SKAL[q].vikt(); if (x <= 0) { val = q; break; } }
   val = tvingaSkal ?? val;
   const forra = s.rovare;
-  rovarnaKommer(s, n, false, k?.id ?? -1);
+  rovarnaKommer(s, n, false, k?.id ?? -1, vilka);
   const f = forra ? s.rovareFler![s.rovareFler!.length - 1] : s.rovare!; // fanns redan en flock väntar den nya bland flockarna (steg 8.7.18)
   if (!k) return f;
   f.skal = val; f.rad = true; k.radT = s.now;

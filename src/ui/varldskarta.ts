@@ -4,7 +4,7 @@
 // platserna där, och ett tryck utan att dra skriver det nere till vänster. Byns, sällskapets eller färdens ruta ligger ovanpå
 // kartan till höger, och på en smal skärm under den.
 // Själva bilden räknas i ui/varldbild.ts.
-import { byFlikar, PlatsRuta, Sallskap, TEKNIK, vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
+import { BYHANDLING, fardRuta, RadFard, byFlikar, PlatsRuta, Sallskap, TEKNIK, vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { gaIn, huvud, s } from './lage';
 import { durTxt, ejLig, esc, omUngefar } from './hjalp';
@@ -210,9 +210,14 @@ const slapp = (e: PointerEvent) => {
     if (vl && v) {
       const q = rutaVid(vy, e.clientX - r.left, e.clientY - r.top), kn = bynsKarta(s!);
       info.innerHTML = rutaHtml(q.x, q.y);
-      const sl = sallskapNu(vl).find(x => { const l = sallskapLage(s!, x); return !!l && Math.round(l.x) === q.x && Math.round(l.y) === q.y; });
+      // symbolen där den ritas, den översta först (steg B.39)
+      const mx = vy.x + (e.clientX - r.left) / vy.z, my = vy.y + (e.clientY - r.top) / vy.z;
+      const traff = (l?: { x: number; y: number }) => !!l && mx >= Math.round(l.x * VK) && mx < Math.round(l.x * VK) + VK && my >= Math.round(l.y * VK) && my < Math.round(l.y * VK) + VK;
+      const fd = [...vl.farder ?? []].reverse().find(x => traff(fardLage(vl, x, s!.now, v.w)));
+      const sl = [...sallskapNu(vl)].reverse().find(x => traff(sallskapLage(s!, x)));
       const by = (vl.platser ?? []).find(p => p.x === q.x && p.y === q.y && syns(kn, p) && p.by !== undefined);
-      if (sl) { valt = { sl: sl.id }; sida.innerHTML = sidaHtml(); }
+      if (fd) { valt = { fard: fd.id }; sida.innerHTML = sidaHtml(); }
+      else if (sl) { valt = { sl: sl.id }; sida.innerHTML = sidaHtml(); }
       else if (by) { valt = { by: by.nr }; sida.innerHTML = sidaHtml(); }
     }
   }
@@ -262,7 +267,7 @@ export const BYFLIKAR = [
   { id: 'forb', tecken: '🤝', namn: 'Förbindelsen' },
 ] as const;
 type ByFlikId = (typeof BYFLIKAR)[number]['id'];
-let valt: { by?: number; sl?: number } | undefined, byFlik: ByFlikId = 'oversikt';
+let valt: { by?: number; sl?: number; fard?: number } | undefined, byFlik: ByFlikId = 'oversikt';
 const OKAND = '<span class="vkOkand" title="Byn vet inte">?</span>';
 function alderText(ar: number) { const n = kalender(s!, s!.now).ar - ar; return n <= 0 ? 'från i år' : n === 1 ? 'ett år gammal' : `${n} år gammal`; }
 function viss(r: PlatsRuta, sant?: string, varde?: string) {
@@ -275,8 +280,10 @@ function sidaHtml(): string {
   if (!s?.varld) return '';
   const sl = valt?.sl !== undefined ? sallskapNu(s.varld).find(x => x.id === valt!.sl) : undefined;
   if (sl) return sallskapHtml(sl);
+  const fd = valt?.fard !== undefined ? s.varld.farder?.find(x => x.id === valt!.fard) : undefined;
+  if (fd) return fardHtml(fd);
   const f = valt?.by !== undefined ? byFlikar(s, valt.by, id => TEKNIK.find(x => x.id === id)?.namn ?? id) : undefined;
-  if (!f) return '<div class="vkTom">Tryck på en by eller ett sällskap på kartan</div>';
+  if (!f) return '<div class="vkTom">Tryck på en by, ett sällskap eller en färd på kartan</div>';
   const r = f.ruta, rad = (id: string) => r.rader.find(d => d.id === id);
   const tal = (id: string) => { const d = rad(id); return `<tr><th>${esc(d?.namn ?? id)}</th><td>${uppg(r, d?.tror, d?.sant)}</td></tr>`; };
   const flikar = `<div class="vkFlikar" role="tablist">${BYFLIKAR.map(x => `<button type="button" role="tab" data-vkflik="${x.id}" aria-selected="${x.id === byFlik}" title="${x.namn}">${x.tecken}</button>`).join('')}</div>`;
@@ -303,6 +310,16 @@ function sallskapHtml(sl: Sallskap): string {
     + `<table><tr><th>Vart</th><td>${esc(r.mal)}</td></tr><tr><th>Varför</th><td>${esc(r.varfor)}</td></tr><tr><th>Skede</th><td>${esc(r.skede)}${kvar} ${inKnapp}</td></tr>`
     + `<tr><th>Vilka</th><td>${vem || '–'}${r.djur.length ? ` med ${r.djur.map(d => esc(d.toLowerCase())).join(', ')}` : ''}</td></tr>`
     + `${r.pack.length ? `<tr><th>Packning</th><td>${r.pack.map(([k, n]) => `${n} ${esc(k.toLowerCase())}`).join(', ')}</td></tr>` : ''}</table>${bok}`;
+}
+// en annan bys färd (steg B.39): varifrån, vart, varför, vilka, vad de bär och när de väntas fram
+function fardHtml(f: RadFard): string {
+  const r = fardRuta(s!, f, BYHANDLING.barare);
+  if (!r) return '';
+  return `<div><b>🚶 ${esc(r.titel)}: ${esc(r.fran)}</b></div>`
+    + `<table><tr><th>Från</th><td>${esc(r.fran)}</td></tr><tr><th>Vart</th><td>${esc(r.hemat ? `Hem från ${r.till}` : r.till)}</td></tr><tr><th>Varför</th><td>${esc(r.varfor)}</td></tr>`
+    + `<tr><th>Vilka</th><td>${r.folk.length ? r.folk.map(esc).join(', ') : r.antal === 1 ? 'En person' : `${r.antal} personer`}${r.djur.length ? ` med ${r.djur.map(d => esc(d.toLowerCase())).join(', ')}` : ''}</td></tr>`
+    + `<tr><th>Bär</th><td>${r.bar.length ? r.bar.map(esc).join(', ') : 'Inget'}</td></tr>`
+    + `<tr><th>${r.hemat ? 'Hemma' : 'Framme'}</th><td>om ${omUngefar(r.kvar * DAY)}</td></tr></table>`;
 }
 sida.addEventListener('click', e => {
   const el = e.target as HTMLElement, b = el.closest<HTMLElement>('[data-vkflik]');

@@ -31,6 +31,7 @@ import { flockKrok } from './rovare';
 import { radKommer } from './rader';
 import { VAKTKROK } from './vagran';
 import { avslutaUppdrag, belonVarde, fyndId, ruinKvar, ruinRad, taRuin, uppdragDef, uppdragNr } from './uppdrag';
+import { fardDoda, fardPerson, namnFolk } from './fardfolk';
 import { valjDragfordon } from './fordon';
 import { ageIndex, iIstiden } from './tid';
 import { RECEPT } from './recept';
@@ -245,7 +246,7 @@ export function byarnasHandlingar(s: State, vl: Varlden, n: number) {
 // mottagaren betalar med silver och, när silvret inte räcker, med det den själv har mest överflöd av. Betalningen bärs hem och
 // läggs i byns förråd när färden kommer hem. Färden trampar vägen åt båda håll och syns på världskartan. Huvudbyn som mål kommer
 // med handlaren (11.6.8).
-export interface RadFard { uppdrag?: number; /* uppdraget färden går mot (steg 11.8.9) */ besked?: BeskedTon; /* sändebudets besked (steg 11.6.23) */ gava?: true; anfall?: number; byte?: Partial<Record<VarugruppId, number>>; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[] } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
+export interface RadFard { uppdrag?: number; /* uppdraget färden går mot (steg 11.8.9) */ besked?: BeskedTon; /* sändebudets besked (steg 11.6.23) */ gava?: true; anfall?: number; byte?: Partial<Record<VarugruppId, number>>; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[]; folk?: string[] /* namnen på dem som går (steg B.39, fardfolk.ts) */ } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
 // tonen i beskedet och dess poäng: det vänliga eller det ovänliga, det som lönar sig mest (huvudbyns stat och kyrka väljer
 // likadant, sandebud.ts)
 // fejden (steg 12.1.114): ju längre ner byn ser på grannen under beskedRel, desto mindre vill den vara vänlig (gåvan och det
@@ -336,6 +337,7 @@ export function gavaAffar(c: ByCtx): FardAffar | undefined {
 const fardNr = (vl: Varlden) => vl.nastaFard = (vl.nastaFard ?? 0) + 1;
 function skicka(s: State, vl: Varlden, f: RadFard, tyngd: number) {
   (vl.farder ??= []).push(f);
+  namnFolk(vl, f, f.handlare ? f.last?.folk ?? 1 : tyngd);
   trampaFard(s, f.fran, f.till, sallskapTyngd(tyngd), f.t0);
   laggIKo(vl, f.t1, 'fardFram', { sak: f.id });
 }
@@ -447,7 +449,7 @@ KOHANDELSER.fardFram = (s, vl, p) => {
 // mottagaren; finns mottagaren inte längre ändrar det inget
 function beskedFram(s: State, vl: Varlden, f: RadFard, r: VarldRad | undefined, mot: VarldRad | undefined) {
   if (!r || !mot || !BYSORTER[mot.sort].folk || (mot.nr !== vl.huvud && mot.tal.folk <= 0)) return;
-  if (mot.nr === vl.huvud) { (vl.budTillHuvud ??= []).push({ fran: r.nr, ton: f.besked!, ...f.last?.varor.length ? { gava: f.last.varor } : {} }); f.last = undefined; return; }
+  if (mot.nr === vl.huvud) { (vl.budTillHuvud ??= []).push({ fran: r.nr, ton: f.besked!, vem: fardPerson(vl, f, 0), ...f.last?.varor.length ? { gava: f.last.varor } : {} }); f.last = undefined; return; }
   byHandelse(vl, f.besked!, r.nr, mot.nr);
   count(s, 'radbesked_fram');
 }
@@ -472,7 +474,7 @@ function anfallFram(s: State, vl: Varlden, f: RadFard, r: VarldRad, mot: VarldRa
   const u = anfallUtfall(r, mot, f.anfall!, i => varldSlump(vl, r.nr, f.id, 0x414e + i), enhet);
   count(s, 'radanfall_med', f.anfall! + forsvarare(mot)); // alla som var med, för andelen döda (steg 11.6.19)
   radDoda(r, u.dodaA); radDoda(mot, u.dodaF);
-  f.anfall! -= u.dodaA;
+  f.anfall! -= u.dodaA; fardDoda(vl, f, u.dodaA, f.t1);
   for (const [g, n] of Object.entries(u.byte) as [VarugruppId, number][]) radTaUr(mot, g, n);
   f.byte = u.byte;
   byHandelse(vl, 'plundring', r.nr, mot.nr);
@@ -483,7 +485,7 @@ function anfallFram(s: State, vl: Varlden, f: RadFard, r: VarldRad, mot: VarldRa
 // flocken kommer till huvudbyn (steg 11.6.20): rövarna går in från kanten mot byn som skickade dem, så många som flocken är,
 // och skälet kommer ur klanens syn på huvudbyn (rader.ts). Färden väntar tills flocken lämnat kartan (flockKrok.slut)
 function huvudAnfall(s: State, f: RadFard, r: VarldRad) {
-  const fl = radKommer(s, r.syn, f.anfall!);
+  const fl = radKommer(s, r.syn, f.anfall!, undefined, Array.from({ length: f.anfall! }, (_, i) => fardPerson(s.varld!, f, i)));
   fl.fard = f.id;
   count(s, 'varldsanfall');
 }
@@ -493,6 +495,7 @@ flockKrok.slut = (s, fl) => {
   if (!vl || !f) return;
   const hem = fl.hemN ?? 0, doda = Math.max(0, f.anfall! - hem);
   if (r) radDoda(r, doda);
+  fardDoda(vl, f, doda, s.now);
   count(s, 'varldsanfall_doda', doda);
   f.anfall = hem;
   f.hem = Object.entries(fl.hemBar ?? {}).filter(([k, n]) => k in SAKER && n > 0).map(([k, n]) => ({ k: k as HVara['k'], n }));

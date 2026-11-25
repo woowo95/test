@@ -158,7 +158,7 @@ export function skickaRovare(s: State, n: number): { ok: boolean; text: string }
 // men går annars som en vanlig flock
 // Rövare kommer bara när en by eller ett läger i världen skickar dem (steg 11.6.20, plundringen i byhandling.ts), med så många som
 // flocken där är; klan = -1 är ett gäng utan klan
-export function rovarnaKommer(s: State, tvinga: number, direkt?: boolean, klan?: number) {
+export function rovarnaKommer(s: State, tvinga: number, direkt?: boolean, klan?: number, vilka?: ({ namn: string; sex: 'm' | 'k' } | undefined)[]) { // vilka: de som gav sig av på färden (steg B.39)
   // en ny flock kan komma medan en annan är på kartan (steg 8.7.18): den går samtidigt med den (rovareFler, rovarSteg)
   const forra = s.rovare;
   const m = getMap(s.seed); // testläget kommer in från kanten som ett vanligt gäng (steg 10.1.16): bara väntan är kortare
@@ -173,9 +173,9 @@ export function rovarnaKommer(s: State, tvinga: number, direkt?: boolean, klan?:
     if (m.tiles[Math.floor(y) * W + Math.floor(x)] !== T.Vatten) break;
   }
   const n = tvinga;
-  const folk: number[] = Array.from({ length: n }, () => { // gänget har ingen ledare (steg 10.2.25)
+  const folk: number[] = Array.from({ length: n }, (_, i) => { // gänget har ingen ledare (steg 10.2.25)
     const slump = rnd(s, 'rovare') < 0.5 ? 'm' as const : 'k' as const; // man eller kvinna som alla andra (steg 10.2.100)
-    const hem = k?.personer.find(q => q.roll === 'rovare' && q.kropp); // en som flydde hem förra gången kommer igen (steg 9.2.114); slumpen dras ändå
+    const hem = vilka?.[i] ?? k?.personer.find(q => q.roll === 'rovare' && q.kropp); // en som flydde hem förra gången kommer igen (steg 9.2.114); slumpen dras ändå
     const sex = hem?.sex ?? slump;
     const namn = hem?.namn ?? makeName(s, sex, 'rovare'); // vapnet och kläderna kommer ur registret GASTUTRUSTNING (gast.ts, steg 10.1.8)
     const styrka = mellan(s, ROVARE.styrka), uthallighet = mellan(s, ROVARE.uthallighet), mod = mellan(s, ROVARE.mod), smidighet = mellan(s, ROVARE.smidighet), skick = mellan(s, ROVARE.skicklighet);
