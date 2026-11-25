@@ -18,7 +18,8 @@ type Ut = { seed: number; pop: number; rader: Rad[]; anfall?: { n: number; sedd:
 const t0 = Date.now();
 const git = (k: string) => { try { return execSync(`git ${k}`, { encoding: 'utf8' }).trim(); } catch { return ''; } };
 const orord = !git('status --porcelain --untracked-files=no -- src') && git('rev-parse --short HEAD'); // ett oändrat bygge fortsätter där det slutade
-const mapp = `node_modules/.cache/strid/${orord || 'andrad'}-${dagar}`;
+const tal = (process.env.BALANS ?? "").replace(/[^\w.=,/-]+/g, "").replace(/\//g, "_"); // andra balanstal ger andra byar: de sparas för sig
+const mapp = `node_modules/.cache/strid/${orord || "andrad"}-${dagar}${tal && `-${tal}`}`;
 if (!orord) rmSync(mapp, { recursive: true, force: true });
 mkdirSync(mapp, { recursive: true });
 const rs: Ut[] = [];
