@@ -194,7 +194,8 @@ SCENARIER.amnen2 = {
     const fa = NYA.filter(k => !(k in SIM.AMNEN) || !(`p_${k}` in SIM.BERATTELSER) || SIM.BERATTELSER[`p_${k}` as SIM.MallId].length < 8 || !hasIcon(SIM.AMNEN[k].ikon ?? ''));
     const s = SIM.cloneState(testBy(20)), [a, b] = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen && !p.gast);
     const amnen = (forbered: () => void) => {
-      for (const p of [a, b]) { p.thoughts = []; delete p.sjuk; }
+      for (const p of SIM.living(s)) delete p.sjuk; // (ingen annan i byn är sjuk: då hade de pratat om hen)
+      for (const p of [a, b]) p.thoughts = [];
       forbered();
       const ut = new Map<string, string | undefined>(), t0 = s.now;
       for (let m = 0; m < 300; m++) { s.now = t0 + m * SIM.MIN; SIM.samtalBorjar(); const x = SIM.samtalAmne(s, a, b, 'prat'); ut.set(x.k, x.o); }

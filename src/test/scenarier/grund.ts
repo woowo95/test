@@ -372,7 +372,7 @@ SCENARIER.uppsatt = {
 // inne sitter på väggen och lyser upp rummet
 // En nygrundad by ligger hela inom eldens ljus (steg 12.1.156), så det prövas i en testby som vuxit, utan mörka platser och facklor
 function helaByn(): [string, boolean][] {
-  const s = testBy(10); s.morkPlats = undefined; s.uppsatta = [];
+  const s = testBy(10, b => !!medHus(SIM.cloneState(b))); s.morkPlats = undefined; // (en by som har plats för ett hus) s.uppsatta = [];
   const e = SIM.eldXY(s, s.fire), m = SIM.morkStalle(s);
   const iByn = !!m && SIM.iByn(s, m.x, m.y), langt = !!m && Math.hypot(m.x - e.x, m.y - e.y) > SIM.FACKLA.r * 1.5;
   const hus = medHus(s), bit = hus && SIM.bitsOf(s).find(b => b.hus === hus.id && SIM.roomAt(s, b.x, b.y) && [[0, -1], [-1, 0], [1, 0], [0, 1]].some(([dx, dy]) => SIM.isWall(s, b.x + dx, b.y + dy)));

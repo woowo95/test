@@ -1967,10 +1967,10 @@ SCENARIER.samlaresa = {
   lang: true,
   text: 'Att samla till en resa (steg 11.5.10, resaPlan och raden samlaResa i val.ts): en nyfiken och modig bybo som hört rykten om en plats samlar till en resa dit, med en poäng som vägs mot byns andra arbeten; en försiktig får lägre poäng, och i en by i nöd reser ingen',
   kor: () => {
-    // (en testby där familjen till den som ska resa har mat, och utan vargar och rövare nära: den som har mat för kort tid själv
+    // (en testby där familjen till den som ska resa har mat, och utan vargar, rövare och förlossning: den som har mat för kort tid själv
     // arbetar för maten, steg 3.10.26, och vid ett hot försvarar man byn)
-    const lediga = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.ageOf(q, b.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, b.now) && q.task?.act !== 'vakt');
-    const s = SIM.cloneState(testBy(30, b => { const v = lediga(b); return v.length >= 2 && SIM.familjMatDygn(b, SIM.familjOf(b, v[0]!.id)) >= 5 && !b.vargar?.length && !b.rovare; })), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
+    const lediga = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.ageOf(q, b.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, b.now) && q.task?.act !== 'vakt' && q.task?.act !== 'foder');
+    const s = SIM.cloneState(testBy(30, b => { const v = lediga(b); return v.length >= 2 && SIM.familjMatDygn(b, SIM.familjOf(b, v[0]!.id)) >= 5 && !b.vargar?.length && !b.rovare && !SIM.living(b).some(q => q.task?.act === 'foder' || q.task?.act === 'forlossa'); })), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
     vl.bud = undefined; // inget bud väntar på att skickas (sändebudet, steg 11.6.23, reser annars också i nöd)
     const vuxna = lediga(s);
     const a = vuxna[0]!, b = vuxna[1]!;
@@ -1999,6 +1999,7 @@ SCENARIER.samlaresa = {
     // (a kan ha lett en resa förut: bara ett nytt sällskap räknas)
     const fore1 = new Set((s1.varld!.sallskap ?? []).map(x => x.id)), nytt = () => s1.varld!.sallskap?.find(x => x.ledare === a1.id && !fore1.has(x.id));
     if (vann) vann.gor(); // valet: nästa gång a väljer går hen till samlingsplatsen (resaVal, nivån Tillfälle)
+    { const n = nytt(); if (n) n.krav = 0; } // (kommer någon av de andra inte i tid ställs resan annars in: för få för vägens faror)
     korTills(s1, () => !!nytt() && nytt()!.skede !== 'samlas', 12 * 3600);
     const sl = nytt();
     // samma by i nöd: maten är slut
@@ -4153,11 +4154,11 @@ SCENARIER.turne = {
     vl.bud = undefined; // inget bud väntar på att skickas (sändebudet, steg 11.6.23, vinner annars över resan som prövas här)
     const vuxna = modigaste(s);
     const p = vuxna[0]!;
-    p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'uppdrag');
+    p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'uppdrag' && l.k !== 'ort'); // (inga andra platser att se)
     p.bedrift = undefined; // en färsk bedrift som väger mer (påhittig, 0,5 mot turnéns 0,4) står annars kvar (steg 12.1.112)
     const q = narmasteBy(vl, hem, x => x.by !== undefined && !!SIM.radNr(vl, x.by)?.syn && SIM.radNr(vl, x.by)!.tal.folk > 0);
     const r = SIM.radNr(vl, q.by!)!;
-    SIM.larOrt(s, p, q.nr, SIM.O_KANT, 1);
+    SIM.larOrt(s, p, q.nr, SIM.O_BESOKT, 1); // (hen har varit där: annars kan resan dit vara för att se platsen)
     r.syn!.inst = 40; r.tal.silver = Math.max(r.tal.silver, 100);
     const okand = SIM.turneKraft(s, p);
     // hen blir skicklig och känd: skaldskapen och tävlingen som hela byn sett
@@ -5260,6 +5261,7 @@ SCENARIER.nyafasta = {
     const s = SIM.cloneState(testBy(3)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!, [a] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
     const mal = grannby(vl, hb, 4, r => !!r.syn);
     const r = SIM.radNr(vl, mal.by!)!;
+    r.tal.folk = Math.max(r.tal.folk, r.fasta.length + 10); // (så att det finns folk utöver de fasta personerna)
     const b = SIM.vackTest(s, r.nr)!;
     const sl = SIM.nyttSallskap(s, a!, mal.nr, 'handel')!;
     sl.pack = {}; sl.skede = 'framme'; sl.framme = s.now;
