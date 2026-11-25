@@ -135,6 +135,7 @@ export const STRID = balans('strid', {
   duckSmid: 0.06, // ... gånger 1 + duckSmid × (smidigheten − 10)
   duckTung: 0.15, // ... och så här mycket mindre i ett tungt plagg (rocken, PLAGG i klader.ts: tungt att röra sig i)
   ringa: -1, // ett mål vars uppmärksamhet är på någon annan väljs som om det stod så här många rutor närmare (negativt: den som redan slåss med någon lockar mindre, steg B.6)
+  vanNod: 7, nodMod: 0.3, // ... och den som slåss mot en vän i nöd (som blöder, eller har mindre mod kvar än nodMod) som om hen stod så här många rutor närmare, gånger hur stor nöden är (steg B.50)
   malKvar: 1.5, // den man redan går mot väljs som om den stod så här många rutor närmare, så att målet inte byts fram och tillbaka (steg B.20)
   platsNara: 4, // från så här många rutor räknar man platserna kring målet (steg B.34) ...
   utanPlats: 4, // ... och ett mål utan plats väljs som om det stod så här många rutor längre bort ...
@@ -443,16 +444,20 @@ function platsVid(st: Strid, k: Kampe, m: Kampe): { x: number; y: number } | und
   if (bast && k.mal === m.id) k.platsV = { m: m.id, i: bast.i };
   return bast;
 }
+// hur illa det är för vännen v i striden (steg B.50): hen blöder eller har lite mod kvar. 0 = ingen nöd, 1 = den värsta
+const nodAv = (v: Kampe) => clamp((blodSek(v) > 0 ? 0.5 : 0) + (1 - v.blod) + Math.max(0, 1 - v.modNu / STRID.nodMod), 0, 1);
 // målet: den närmaste fienden som går att slå (den som ligger eller flyr bara om avsikten är att döda)
 function valjMal(st: Strid, k: Kampe) {
   if (k.jagar !== undefined) { const m = st.kampar.find(o => o.pid === k.jagar && iStrid(o)); if (m) return m; }
   const nere = AVS[st.avsikt].nere;
   const led = k.skyddar !== undefined ? st.kampar.find(o => o.id === k.skyddar && iStrid(o)) : undefined;
+  const fri = !st.kampar.some(o => o.sida !== k.sida && iStrid(o) && o.mal === k.id); // ingen slår mot hen: hen står bakom eller är en av många kring samma fiende (steg B.50)
   let bast: Kampe | undefined, bd = Infinity;
   for (const m of st.kampar) {
     if (m.sida === k.sida || (m.hjalp && dist(k, m) > STRID.hjalpNara) || !(iStrid(m) || (nere && (m.lage === 'nere' || m.lage === 'flykt') && st.t - (m.fallT ?? st.t) < sortAv(k).forfoljer))) continue; // djuren förföljer inte (KAMPAR)
     const vanner = st.kampar.reduce((a, o) => a + (o !== k && o.sida === k.sida && iStrid(o) && o.mal === m.id ? 1 : 0), 0);
-    const d = dist(k, m) + (m.lage === 'nere' ? 2 : 0) - (iStrid(m) && m.mal !== undefined && m.mal !== k.id ? STRID.ringa : 0) + STRID.trangsel * vanner - (k.mal === m.id ? STRID.malKvar : 0) + (dist(k, m) < STRID.platsNara && !platsVid(st, k, m) ? STRID.utanPlats : 0) - (led && m.mal === led.id && dist(m, led) <= STRID.skyddVakt ? STRID.skyddMal : 0); // vännen går hellre mot den som anfaller ledaren (steg 3.7.12); // den som står är farligare än den som ligger, den som slåss med en annan lockar mindre, och den som redan har många mot sig väljs helst inte (steg B.6)
+    const van = fri && iStrid(m) && m.mal !== undefined && m.mal !== k.id && !m.hjalp ? st.kampar.find(o => o.id === m.mal && o.sida === k.sida && iStrid(o)) : undefined; // vännen fienden slåss med
+    const d = dist(k, m) - (van ? STRID.vanNod * nodAv(van) : 0) + (m.lage === 'nere' ? 2 : 0) - (iStrid(m) && m.mal !== undefined && m.mal !== k.id ? STRID.ringa : 0) + STRID.trangsel * vanner - (k.mal === m.id ? STRID.malKvar : 0) + (dist(k, m) < STRID.platsNara && !platsVid(st, k, m) ? STRID.utanPlats : 0) - (led && m.mal === led.id && dist(m, led) <= STRID.skyddVakt ? STRID.skyddMal : 0); // vännen går hellre mot den som anfaller ledaren (steg 3.7.12); // den som står är farligare än den som ligger, den som slåss med en annan lockar mindre, och den som redan har många mot sig väljs helst inte (steg B.6)
     if (d < bd) { bd = d; bast = m; }
   }
   return bast;
@@ -864,6 +869,12 @@ function hotet(st: Strid): { andel: [number, number]; framst: [number, number]; 
 const modMed = (k: Kampe, h: ReturnType<typeof hotet>) => k.modNu + STRID.hot * (h.andel[k.sida] - 0.5) * 2 + STRID.framst * (h.framst[k.sida] - 0.5) + h.led[k.sida];
 
 const farten = (k: Kampe) => STRID.fart * k.fart * smidFart(k) * rorlighet(k);
+// vågar de slåss (steg B.53)? Samma mod och hot som när man drar sig undan före första slaget: hur mycket den räddaste av dem har över
+// gränsen, 0 = någon av dem skulle dra sig undan, 1 = så modiga de kan vara
+export function vagarSlass(u: Uppstallning): number {
+  const st = nyStrid(u, 1), h = hotet(st);
+  return clamp(Math.min(...st.kampar.map(k => modMed(k, h) - STRID.avsta)) / (1 - STRID.avsta), 0, 1);
+}
 // den som kan kasta (steg 3.7.7): håller avståndet och kastar. Den som nåtts av en fiende backar om hen är snabbare, byter
 // annars till reservvapnet eller slår med det hen har (och minns att hen saknade en reserv). Spjutet kastas bara av den som
 // har ett reservvapen och mot den som är en bit bort. Returnerar true om kämpen gjort sitt i det här steget
@@ -1236,6 +1247,7 @@ function skjutnaPilar(s: State, p: Person, pil: string, skott: number, rack: num
 export const SLAGSMAL = balans('slagsmal', {
   rapporter: 60, // så många äldre strider sparas som rapport (steg 8.8.10)
   gral: 0.02, // (0,04 före steg 3.10.26: intrycket stark dominerade) chansen att ett gräl mellan två som är minst småbarn blir ett slagsmål ...
+  gralMod: 2, // så många gånger modet över gränsen för att dra sig undan (0–1) ger viljan att slåss, högst hela (steg B.53)
   gralTorst: 4, // ... gånger 1 + gralTorst × blodtörsten hos den som grälar (humor.ts)
   lek: 0.12, // chansen i timmen att ett barn som leker brottas med ett annat barn som leker nära ...
   lekNara: 3, // ... inom så här många rutor

@@ -31,7 +31,7 @@ import { die } from './liv';
 import { lista, och } from './ord';
 import { handelse, larma } from './rykten';
 import { clamp, rnd } from './slump';
-import { AVSIKTER, Avsikt, Kampe, SLAGSMAL, STRID, laggTill, Strid, StridVarld, Uppstallning, efterStrid, foljet, iVarlden, nyStrid, personKampe, skilj, slagen, harSlagits, slitKastat, starKvar, stridRad, stridSteg, vadretIStriden } from './strid';
+import { AVSIKTER, Avsikt, Kampe, SLAGSMAL, STRID, laggTill, Strid, StridVarld, Uppstallning, efterStrid, foljet, iVarlden, nyStrid, personKampe, skilj, slagen, harSlagits, slitKastat, starKvar, stridRad, stridSteg, vadretIStriden, vagarSlass } from './strid';
 import { ledareOf } from './styre';
 import { larmRollNu } from './roller';
 import { Act, H, HOUR, Person, SEC, State, W } from './typer';
@@ -384,7 +384,11 @@ export function gralBlirSlagsmal(s: State, a: Person, b: Person) {
   // åldern och storleken (steg 12.1.47): den större slåss ogärna med den mindre, och en vuxen mycket ogärna med ett barn
   const vaxt = (q: Person) => clamp(ageOf(q, s.now) / ALDER.vuxen, 0, 1), va = vaxt(a), vb = vaxt(b);
   const storlek = (Math.min(va, vb) / Math.max(va, vb, 1e-9)) ** SLAGSMAL.storlek;
-  if (rnd(s, 'strid', a) >= SLAGSMAL.gral * (1 + SLAGSMAL.gralTorst * blodtorst(s, a)) * storlek) return;
+  const dras = rnd(s, 'strid', a), vilja = SLAGSMAL.gral * (1 + SLAGSMAL.gralTorst * blodtorst(s, a)) * storlek;
+  if (dras >= vilja) return;
+  // modet och hotet (steg B.53): den som skulle dra sig undan börjar inte slåss
+  const vagar = vagarSlass({ avsikt: 'slagsmal', w: W, h: H, kampar: [a, b].map((p, i) => ({ ...personKampe(s, p, i + 1, i as 0 | 1, p.x, p.y) })) });
+  if (dras >= vilja * Math.min(1, vagar * SLAGSMAL.gralMod)) { if (!vagar) count(s, 'gralRadd'); return; }
   if (budHindrar(s, a, 'ingenStrid')) { count(s, 'bud_ingenStrid'); return; } // den heliga dagen (steg 10.3.22)
   // ett litet barn slåss inte på kartan: det gråter i stället
   const liten = [a, b].find(q => ageOf(q, s.now) < SLAGSMAL.smaBarn);

@@ -3229,3 +3229,54 @@ SCENARIER.egenplats = {
     ];
   },
 };
+
+SCENARIER.vaninod = {
+  text: 'Steg B.50: vännen i nöd: målvalet i striden väger in en vän som blöder eller har lite mod kvar: fyra bybor mot två rövare, där en femte står ensam mot den andra rövaren och blöder: någon av de fyra går dit',
+  kor: () => {
+    const m = (id: number, sida: 0 | 1, x: number, y = 7) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 14, mod: 14, smidighet: 10, skicklighet: 10 }, vapen: 'kniv' as SIM.Vapen, klader: [], fart: 1, x, y });
+    const prov = (nod: boolean, fro: number) => {
+      // fyra mot rövaren 11, och en ensam mot rövaren 12 tio rutor bort
+      const st = SIM.nyStrid({ avsikt: 'skada', w: 40, h: 20, kampar: [m(1, 0, 9, 6), m(2, 0, 9, 7), m(3, 0, 9, 8), m(4, 0, 8, 7), m(5, 0, 16, 7), m(11, 1, 10, 7), m(12, 1, 17, 7)] }, fro);
+      const ensam = st.kampar[4], r1 = st.kampar[5], r2 = st.kampar[6];
+      ensam.mal = 12; r2.mal = 5; r1.mal = 1; for (let i = 0; i < 4; i++) st.kampar[i].mal = 11;
+      if (nod) { ensam.skador = [{ d: 'bal', k: 'skarsar', g: 0.6, ny: 1 }]; ensam.blod = 0.8; ensam.modNu = 0.3; }
+      for (let i = 0; i < 6; i++) SIM.stridSteg(st);
+      return st.kampar.slice(0, 4).filter(k => k.mal === 12).length;
+    };
+    const ut = (nod: boolean) => [1, 2, 3, 4, 5, 6].map(f => prov(nod, f));
+    const med = ut(true), utan = ut(false);
+    return [
+      [`någon av de fyra går till vännen som blöder (${med.join(', ')})`, med.filter(n => n > 0).length >= 5],
+      [`fler än när vännen klarar sig (${utan.join(', ')})`, med.reduce((a, b) => a + b, 0) > utan.reduce((a, b) => a + b, 0)],
+      [`alla fyra springer inte dit (${med.join(', ')})`, med.every(n => n < 4)],
+    ];
+  },
+};
+
+SCENARIER.gralmod = {
+  text: 'Steg B.53: grälet blir slagsmål efter modet: en rädd bybo som grälar med en starkare slåss inte, två modiga kan göra det, och ingen som börjat drar sig undan före första slaget',
+  kor: () => {
+    const prov = (radd: boolean) => {
+      let n = 0, avstar = 0;
+      for (let i = 0; i < 400; i++) {
+        const s = rovarBy(11, 1 + i % 7), [a, b] = vuxnaI(s);
+        s.rngs = {}; s.seed += i * 31;
+        a.pot.mod = radd ? 1 : 15; a.pot.styrka = radd ? 3 : 12; a.pot.aggression = 18; b.pot.mod = 15; b.pot.styrka = radd ? 18 : 12;
+        for (const p of [a, b]) p.task = undefined;
+        Object.assign(b, { x: a.x + 1, y: a.y });
+        for (let j = 0; j < 200 && !s.kartStrider?.length; j++) SIM.gralBlirSlagsmal(s, a, b);
+        const g = s.kartStrider?.[0]; if (!g) { if (i > 14) break; continue; }
+        n++; for (let j = 0; j < 8 && !g.st.slut; j++) SIM.stridSteg(g.st);
+        if (g.st.logg.some(r => r.h === 'avstar')) avstar++;
+        if (n >= 10) break;
+      }
+      return { n, avstar };
+    };
+    const r = prov(true), m = prov(false);
+    return [
+      [`den rädda slåss inte (${r.n} slagsmål)`, r.n === 0],
+      [`de modiga kan (${m.n} slagsmål)`, m.n >= 3],
+      [`ingen drar sig undan före första slaget (${m.avstar})`, m.avstar === 0],
+    ];
+  },
+};
