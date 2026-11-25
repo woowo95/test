@@ -138,7 +138,7 @@ const gr = (r: Person) => r.gast!;
 export interface Rovarflock { ingenMer?: number; /* så många hade larmet när alla på väg till raden var framme och inte räckte (steg B.47 och B.60) */ radMal?: { x: number; y: number }; /* målet raden väntar vid (steg B.33) */ ur?: number; /* numret på byn eller lägret som skickade flocken (steg B.70) */ fard?: number; hemN?: number; hemBar?: Record<string, number>; /* världens färd som skickade flocken, hur många som kommit hem och vad de bar (steg 11.6.20) */ rast?: { x: number; y: number }; vantat?: boolean; anfaller?: boolean; anfallT?: number; /* när det gick till anfall (steg B.13) */ kom?: number; frammeT?: number; /* när gänget kom, och när alla var framme vid rastplatsen, för mätningen (steg B.56) */ klar?: boolean; radKlar?: boolean; antal?: number; strider?: number; tagit?: Record<string, number>; gravTagit?: Record<string, number>; /* det som togs ur gravarna (steg 13.1.5) */ sx?: number; sy?: number; skal?: import('./rader').RadSkal; rad?: boolean; mal?: number; hugger?: { bit: number; till: number }; tant?: boolean; id: number; klan?: number; folk: number[]; x: number; y: number; mx: number; my: number; gor: 'kommer' | 'vantar' | 'slass' | 'flyr' | 'letar' | 'rotar'; /* det de flesta gör, för texterna (steg 10.2.30) */ letar?: number[]; letat?: boolean; till: number; sedd?: number; gissning?: number; test?: boolean; anfall?: boolean; bud?: { av: number; till: number; t: number } }
 
 // för mätningen av striderna (npm run strid, steg B.56): varje gäng som kommer (läses aldrig av spelet)
-export const rovarProv: { kom?: (f: Rovarflock) => void } = {};
+export const rovarProv: { kom?: (f: Rovarflock, s: State) => void } = {};
 const vaken = (p: Person) => p.task?.act !== 'sova';
 const mellan = (s: State, [a, b]: readonly number[]) => a + rnd(s, 'rovare') * (b - a);
 export const vuxenKan = (s: State, p: Person) => { const a = ageOf(p, s.now); return a >= ALDER.vaktFran && a < ALDER.vaktTill && halsa(p) >= KROPP.svag && kanGa(p); }; // den sjuka kan slåss men vill mindre (ROVARE.sjuk i rovarVilja)
@@ -200,7 +200,7 @@ export function rovarnaKommer(s: State, tvinga: number, direkt?: boolean, klan?:
   s.rovare = { id: nr, klan: k?.id, folk, x, y, mx: x, my: y, gor: 'kommer', till: 0, kom: s.now, ...(ur ? { ur: ur.nr } : {}), ...(direkt ? { test: true } : {}) };
   stallUpp(s, s.rovare, x, y);
   s.rovarVila = s.now;
-  rovarProv.kom?.(s.rovare);
+  rovarProv.kom?.(s.rovare, s);
   if (forra) { (s.rovareFler ??= []).push(s.rovare); s.rovare = forra; count(s, 'tvaFlockar'); }
   count(s, 'rovarflockar'); count(s, 'rovare', n);
 }

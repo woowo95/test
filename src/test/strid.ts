@@ -14,7 +14,7 @@ const [antal = 24, dagar = 35] = process.argv.slice(2).map(Number);
 const seeds = Array.from({ length: antal }, (_, i) => seedAv(i));
 type Sida = { vapen?: string; n: number; folk: number; dod: number; ger: number; flykt: number; nere: number; skadade: number; skador: number; slag: number; traffar: number };
 type Rad = { grader: number[]; flytt: [number, number][]; allvar: number; kampar: number; t0: number; t1: number; tunga: number; dag: number; orsak: string; vinnare: number; sek: number; vuxna: number; kom: number; by: Sida; mot: Sida; h: Record<string, number>; sort: string; forsok: Record<string, number>; slut: [string[], string[]]; efter: number };
-type Ut = { seed: number; pop: number; rader: Rad[]; anfall?: { n: number; sedd: number; dag: number; dagSedd: number }; vakter: number; larm: string[]; gangen?: { n: number; sedd?: number; framme?: number; anfall?: number; dag: boolean }[] };
+type Ut = { seed: number; pop: number; rader: Rad[]; anfall?: { n: number; sedd: number; dag: number; dagSedd: number }; vakter: number; larm: string[]; rikt?: number; lager?: number; lagerFolk?: Record<string, number>; gangen?: { ur?: string; namn?: string; vapen?: string[]; n: number; sedd?: number; framme?: number; anfall?: number; dag: boolean }[] };
 const t0 = Date.now();
 const git = (k: string) => { try { return execSync(`git ${k}`, { encoding: 'utf8' }).trim(); } catch { return ''; } };
 const orord = !git('status --porcelain --untracked-files=no -- src') && git('rev-parse --short HEAD'); // ett oändrat bygge fortsätter där det slutade
@@ -86,6 +86,18 @@ console.log(`\nRÖVARNAS ANFALL: ${an('n')} gånger gick ett gäng till anfall; 
 const gg = rs.flatMap(r => (r.gangen ?? []).map(g => ({ ...g, seed: r.seed }))), mn = (x?: number) => x === undefined ? 'aldrig' : `${(x / 60).toFixed(1)} min`;
 console.log(`\nGÄNGEN: ${gg.length} kom (tiden i verkligheten från att gänget kom; median: sågs ${mn(gg.length ? median(gg.filter(g => g.sedd !== undefined).map(g => g.sedd!)) : undefined)}, alla framme ${mn(median(gg.filter(g => g.framme !== undefined).map(g => g.framme!)))}, anfall ${mn(median(gg.filter(g => g.anfall !== undefined).map(g => g.anfall!)))}); anföll ${gg.filter(g => g.anfall !== undefined).length}, sågs innan anfallet på dagen ${gg.filter(g => g.anfall !== undefined && g.dag && g.sedd !== undefined && g.sedd <= g.anfall).length} av ${gg.filter(g => g.anfall !== undefined && g.dag).length}, på natten ${gg.filter(g => g.anfall !== undefined && !g.dag && g.sedd !== undefined && g.sedd <= g.anfall).length} av ${gg.filter(g => g.anfall !== undefined && !g.dag).length}`);
 for (const g of gg) console.log(`  by ${g.seed}: ${g.n} rövare, sågs ${mn(g.sedd)}, alla framme ${mn(g.framme)}, anfall ${mn(g.anfall)}${g.anfall !== undefined ? g.dag ? ' (dag)' : ' (natt)' : ''}`);
+// flockens storlek och vapen per avsändare (steg B.70), och gängen per by efter byns rikedom (steg B.71)
+for (const ur of ['läger', 'by', 'okänd']) {
+  const g = gg.filter(x => x.ur === ur); if (!g.length) continue;
+  const vp: Record<string, number> = {}; for (const x of g) for (const k of x.vapen ?? []) vp[k] = (vp[k] ?? 0) + 1;
+  console.log(`  från ${ur}: ${g.length} gäng, storlek median ${median(g.map(x => x.n))} (${g.map(x => x.n).sort((a, b) => a - b).join(', ')}), vapen ${Object.entries(vp).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(', ')}`);
+}
+const rikast = [...rs].sort((a, b) => (b.rikt ?? 0) - (a.rikt ?? 0)), tre = Math.max(1, Math.floor(rikast.length / 3)), gn = (r: Ut) => r.gangen?.length ?? 0;
+console.log('\nGÄNGEN PER BY (rikast per person först, snittet under tiden):');
+for (const r of rikast) console.log(`  by ${r.seed}: rikedom ${Math.round(r.rikt ?? 0)} per person, ${gn(r)} gäng${gn(r) ? ` (${r.gangen!.map(g => `${g.n} från ${g.ur === 'läger' ? 'lägret ' : ''}${g.namn}`).join(', ')})` : ''}; ${r.lager ?? 0} läger i världen${Object.keys(r.lagerFolk ?? {}).length ? `, folket kom från ${Object.entries(r.lagerFolk!).map(([k, n]) => `${k} ${n}`).join('; ')}` : ''}`);
+const topp = rikast.slice(0, tre), botten = rikast.slice(-tre), gsum = (l: Ut[]) => l.reduce((a, r) => a + gn(r), 0);
+const smaLager = gg.filter(g => g.ur === 'läger').length, storaBy = gg.filter(g => g.ur === 'by').length;
+console.log(`  rikaste tredjedelen ${gsum(topp)} gäng (median ${median(topp.map(gn))}), fattigaste ${gsum(botten)}; gräns: minst dubbelt så många och median minst 2 ${gsum(topp) >= 2 * gsum(botten) && gsum(topp) > 0 && median(topp.map(gn)) >= 2 ? '✓' : '✗'}; från läger ${smaLager}, från byar ${storaBy} ${smaLager > storaBy ? '✓' : '✗'}`);
 const v = rs.reduce((a, r) => a + r.vakter, 0);
 console.log(v ? '\nVAKTER LARMAR:\n  ' + rs.flatMap(r => r.larm.map(l => `by ${r.seed}: ${l}`)).join('\n  ') : '\nVakter: inga fel.');
 }
