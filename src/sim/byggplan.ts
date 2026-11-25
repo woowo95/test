@@ -433,7 +433,9 @@ export function lage(s: State, h: { x: number; y: number; w: number; h: number }
 // säljarens lägsta pris: värdet (byn säljer billigt), och behöver säljaren huset också vad det kostar att bygga ett nytt lika stort.
 // Därför säljs ett hus där familjen bor nästan aldrig: köparen betalar aldrig mer än det kostar att bygga nytt (PLAN.kopMax)
 // En säljare med skatteskuld nöjer sig med mindre, efter hur mycket mer silvret är värt för hen (steg 10.5.5)
-export const saljPris = (s: State, h: Hus) => (husVarde(s, h) * (h.ag === undefined ? PLAN.bynSalj : PLAN.salj) + saljBehov(s, h) * husKostnadAv((h.w - 2) * (h.h - 2))) * lage(s, h) * finhetPris(husFinhet(s, h.id)) / saljSkuld(s, h);
+// behov = hur mycket säljaren behöver huset att bo i (ett företags hus bor ingen i, stangning.ts)
+export const husPris = (s: State, h: Hus, behov = 0) => (husVarde(s, h) * (h.ag === undefined ? PLAN.bynSalj : PLAN.salj) + behov * husKostnadAv((h.w - 2) * (h.h - 2))) * lage(s, h) * finhetPris(husFinhet(s, h.id)) / saljSkuld(s, h);
+export const saljPris = (s: State, h: Hus) => husPris(s, h, saljBehov(s, h));
 const saljSkuld = (s: State, h: Hus) => { const q = h.ag !== undefined ? byId(s, h.ag) : undefined; return q?.skatteskuld ? skuldFaktor(s, q) : 1; };
 // vad köparen jämför med: ett nytt lika stort hus, på samma läge (köparen betalar också för läget och för finheten, steg 14.1.3)
 const nyttLika = (s: State, h: Hus) => husKostnadAv((h.w - 2) * (h.h - 2)) * lage(s, h) * finhetPris(husFinhet(s, h.id));
@@ -469,10 +471,11 @@ export const husKostnadAv = (n: number) => { const w = Math.max(HUS.minSida, Mat
 // den andras, handslag, en rad i loggen och krönikan, relationen och Handel som i alla byten. Priset hamnar mellan säljarens lägsta och
 // köparens högsta: vän eller släkt betalar mindre, och den skickligare får det bättre. Köparen betalar med det som hen behöver minst, i
 // hela saker, efter grundvärdet. Går det inte att betala blir det inget. Bara en bybo kan köpa (kanTaHus i byte.ts), aldrig en handlare
-export function kopHus(s: State, h: Hus, ag: number, bud?: Person) {
+// affar = priserna, funktionen och namnet när det är ett företag som säljs (stangning.ts)
+export function kopHus(s: State, h: Hus, ag: number, bud?: Person, affar?: { salj: number; hog: number; fn: Fn; namn: string }) {
   const kopare = byId(s, ag), saljare = h.ag !== undefined ? byId(s, h.ag) : undefined;
   if (!kopare || h.ag === ag) return false;
-  const salj = saljPris(s, h), hog = kopPris(s, ag, nyttLika(s, h));
+  const salj = affar?.salj ?? saljPris(s, h), hog = affar?.hog ?? kopPris(s, ag, nyttLika(s, h));
   const rel = saljare ? getRel(s, saljare, kopare).op / 100 : 0, skill = clamp(((kopare.skill.handel ?? 0) - ((saljare ?? bud)?.skill.handel ?? 0)) / 100, -1, 1);
   const pris = Math.ceil(salj + (hog - salj) * clamp(0.5 - rel * PLAN.prisRel - skill * PLAN.prisSkill, 0, 1));
   const M = personPart(s, kopare), G0 = saljare ? personPart(s, saljare) : bynPart(s, kopare.x, kopare.y, bud);
@@ -495,7 +498,7 @@ export function kopHus(s: State, h: Hus, ag: number, bud?: Person) {
   const betal = val.map(w => ({ k: w.k, n: w.n, t: w.t }));
   genomfor(s, M, G, [{ k: 'hus', n: 1, hus: h.id, varde: pris }], betal, 'hus');
   if (saljare?.skatteskuld) { const tx = `${saljare.name} sålde sitt hus för att betala skatten.`; log(s, tx, 'world', [saljare.id, kopare.id]); kronika(s, tx, 'byte'); count(s, 'husSkuld'); } // steg 10.5.5
-  h.ag = ag; h.fn = 'familjehus'; h.tom = undefined; h.rumFn = undefined; h.namn = husNamn(kopare.name); husNytt(s, h, 'ag', `Nyss köpt av ${kopare.name}.`); touch(s); count(s, 'husKopt');
+  h.ag = ag; h.fn = affar?.fn ?? 'familjehus'; h.tom = undefined; h.rumFn = undefined; h.namn = affar?.namn ?? husNamn(kopare.name); husNytt(s, h, 'ag', `Nyss köpt av ${kopare.name}.`); touch(s); count(s, 'husKopt');
   return true;
 }
 // ett hus byter ägare när köparen och säljaren möts (som i alla stora byten): varje timme tills de gör det, högst PLAN.husVanta dygn.

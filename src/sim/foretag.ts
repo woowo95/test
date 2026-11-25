@@ -43,9 +43,10 @@ export const FORETAG = balans('foretag', {
   minne: 0.5, // så mycket av det företaget säljer på ett dygn glöms till nästa
 });
 // dag = dagens köp och de som ville men avstod, gap = hur mycket finare rum dagens kunder väntat sig, enkelt = medlet (konkurrens.ts)
+// resultat = medlet av vinsten mot vad ägaren kunde tjäna på annat, bok = det som var kvar sedan förra dygnet, salu = till salu sedan (stangning.ts)
 // byar = ryktet i grannbyarna, efter radens nummer (foretagsrykte.ts)
 // det företaget sålt: n = kunder och v = värdet, per dygn (glöms med FORETAG.minne)
-export interface Foretag { id: number; ag: number; hus?: number; verk: string[]; namn: string; t: number; salt?: Record<string, number>; intakt?: number; vinst?: number; pris?: Record<string, number>; ko?: import('./kassa').KoRad[]; lamnat?: number; kallad?: number; dag?: Record<string, { salt?: number; nej?: number[]; gatt?: number }>; gap?: { n: number; v: number; vem: number[] }; enkelt?: number; byar?: Record<number, { v: number; n: number }> }
+export interface Foretag { id: number; ag: number; hus?: number; verk: string[]; namn: string; t: number; salt?: Record<string, number>; intakt?: number; vinst?: number; pris?: Record<string, number>; ko?: import('./kassa').KoRad[]; lamnat?: number; kallad?: number; dag?: Record<string, { salt?: number; nej?: number[]; gatt?: number }>; gap?: { n: number; v: number; vem: number[] }; enkelt?: number; byar?: Record<number, { v: number; n: number }>; bok?: { vinst: number; kunder: number }; resultat?: number; oppnat?: number; salu?: number }
 export const foretagOf = (s: State): Foretag[] => s.foretag ?? [];
 export const foretagAvHus = (s: State, hus?: number) => hus === undefined ? undefined : foretagOf(s).find(f => f.hus === hus);
 
@@ -129,6 +130,8 @@ export function efterfragan(s: State, v: string, ag: number): { kunder: number; 
   }
   const g = V.gaster?.(s) ?? 0;
   kunder += g; vinst += g * V.snitt(varor[0]) * FORETAG.del;
+  const lart = s.foretagLart?.[v]; // det byn lärt sig av ett stängt företag (stangning.ts)
+  if (lart !== undefined) { kunder *= lart; vinst *= lart; }
   // det som redan säljs: ett företag som inte hunnit öppna räknas som om det sålde hela sin del
   for (const f of foretagOf(s)) if (f.verk.includes(v) && kunder > 0) {
     const sald = f.hus !== undefined && husById(s, f.hus)?.klar && f.salt?.[v] !== undefined ? Math.min(kunder, f.salt[v]) : kunder;

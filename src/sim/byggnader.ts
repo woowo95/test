@@ -506,7 +506,7 @@ function nyttNamn(s: State, h: Hus, fn: Fn, a: Akut) {
   return r.namnFor ? r.namnFor(s, w, hh, same, a) : r.namn;
 }
 // ett förrådshus byter aldrig funktion, så lagerplatsen behöver inte tas bort här
-function bytFn(s: State, h: Hus, fn: Fn) {
+export function bytFn(s: State, h: Hus, fn: Fn) {
   const fore = h.namn;
   husNytt(s, h, 'fn', `Var nyss ${fore.toLowerCase()}.`);
   h.fn = fn; h.tom = undefined; h.rumFn = undefined;

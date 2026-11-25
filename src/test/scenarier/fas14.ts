@@ -471,3 +471,35 @@ SCENARIER.verksamheter = {
     ];
   },
 };
+
+SCENARIER.stanga = {
+  text: 'Steg 14.1.13: ägaren jämför vinsten med vad hen kunde tjäna på annat; är den sämre länge säljs företaget, ett gott rykte höjer priset, och vill ingen köpa stängs det och huset byter funktion',
+  kor: () => {
+    const dygn = (s: SIM.State, n: number, vinst = 0, kunder = 0) => { for (let i = 0; i < n; i++) { s.now += SIM.DAY; for (const f of s.foretag ?? []) { f.vinst = (f.vinst ?? 0) + vinst; (f.salt ??= {})[f.verk[0]] = (f.salt[f.verk[0]] ?? 0) + kunder; } const alla = s.foretag; SIM.foretagDygn(s); s.foretag = s.foretag!.filter(f => alla!.includes(f)); } };
+    // med god vinst stannar det
+    const A = foretagBy(['servering']); dygn(A.s, 12, 60, 10);
+    const kvar = A.s.foretag!.includes(A.f) && A.f.salu === undefined, res = A.f.resultat!;
+    // utan kunder: till salu, och ingen vill köpa
+    const B = foretagBy(['servering'], 0); B.f.verk = ['servering'];
+    dygn(B.s, 4); const provar = B.f.salu === undefined;
+    dygn(B.s, 3); const salu = B.f.salu !== undefined;
+    dygn(B.s, 5); const stangt = !B.s.foretag!.includes(B.f), fn = B.h.fn, lart = B.s.foretagLart?.servering;
+    // en köpare: priset följer ryktet, säljaren får betalt och huset och företaget byter ägare
+    const C = foretagBy(['servering'], 400), { s, f, h, p } = C;
+    f.salu = s.now; f.resultat = -1;
+    const pris0 = SIM.foretagPris(s, f, h); for (const q of SIM.living(s)) q.omd = { [f.id]: { v: 0.8, n: 1 } } as never;
+    const pris1 = SIM.foretagPris(s, f, h), k = SIM.foretagKopare(s, f, h), hog = k ? SIM.foretagHogst(s, f, k.id) : 0;
+    if (k) { k.x = p.x; k.y = p.y; k.task = p.task = undefined; }
+    const silv0 = SIM.formogenheter(s).egen.get(p.id) ?? 0;
+    SIM.iHelaForradet(() => { SIM.foretagMarknad(s); });
+    const silv1 = SIM.formogenheter(s).egen.get(p.id) ?? 0;
+    return [
+      [`företaget som går bra stannar (resultat ${res.toFixed(1)} per dygn)`, kvar && res > 0],
+      [`ägaren prövar först (${provar}), sedan är det till salu (${salu})`, provar && salu],
+      [`ingen köper: det stängs och huset blir ${fn}, byn räknar med färre kunder (${lart?.toFixed(2)})`, stangt && fn === 'familjehus' && lart !== undefined && lart < 0.5],
+      [`ett gott rykte gör det värt mer (${pris0.toFixed(0)} → ${pris1.toFixed(0)})`, pris1 > pris0 * 1.3],
+      [`den som tjänar på det köper (${k?.name}, högst ${hog.toFixed(0)}): ägare ${f.ag === k?.id}, ${f.namn}`, !!k && hog >= pris1 && f.ag === k.id && h.ag === k.id && h.fn === 'naringshus' && f.salu === undefined],
+      [`säljaren fick betalt (förmögenhet ${silv0.toFixed(0)} → ${silv1.toFixed(0)}, huset borta)`, silv1 > 0 && !!k],
+    ];
+  },
+};

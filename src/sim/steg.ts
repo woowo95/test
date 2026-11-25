@@ -111,6 +111,7 @@ import { omtankeTimme } from './omtanke';
 import { lonOmtanke, lonRegister } from './lon';
 import { lonDygn, lonRakna } from './dagsarbete';
 import { foretagDygn, foretagTimme } from './foretag';
+import { foretagMarknad } from './stangning';
 import { finishOdla, froFynd, stepOdling, workOdla } from './odling';
 import { balans } from './balans';
 import { grilla, torka } from './matlagning';
@@ -527,7 +528,7 @@ export const TAKTER: Takt[] = [
   { namn: 'skatten', sek: 86400, fas: SKATT.timme / 24, fn: (s, dt) => { skattDygn(s, dt * SEC); } }, // skatten på rikedomen (skatt.ts, steg 10.5.3)
   { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); lonDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
   { namn: 'kassan', sek: 30, fn: s => { if (s.foretag?.length) kassaTakt(s); } }, // den som kan betjäna kallas till disken (kassa.ts, steg 14.1.6)
-  { namn: 'företagen', sek: 3600, fn: s => { foretagTimme(s); } }, // företagens hus och ägare (foretag.ts, steg 14.1.5)
+  { namn: 'företagen', sek: 3600, fn: s => { foretagTimme(s); foretagMarknad(s); } }, // företagens hus och ägare (foretag.ts, steg 14.1.5)
   { namn: 'företagens gäster kommer', sek: 3600, fn: (s, dt) => foretagsgasterKommer(s, dt) }, // steg 14.1.11
   { namn: 'företagens dygn', sek: 86400, fas: (SKATT.timme + 1) / 24, fn: s => { foretagDygn(s); } }, // nya företag, efter skatten och lönerna
   { namn: 'rädslan', sek: 86400, fas: STR.timme / 24, fn: (s, dt) => { raddDygn(s, dt); } }, // rädslan för handlingar bleknar och berättas vidare, också i en by utan ledare (radsla.ts, steg 12.1.60 och 12.1.84)
