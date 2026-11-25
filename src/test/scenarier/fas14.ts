@@ -315,6 +315,9 @@ SCENARIER.konkurrens = {
     const nyckel = (x: typeof r) => SIM.rumNyckel(x);
     const satt = (a: number, b: number) => { s.finhet = { ...s.finhet, [nyckel(r)]: a, [nyckel(r2)]: b }; };
     for (const q of vux) { q.finForv = 0.3; q.hunger = 0.4; }
+    // hälften står nära var disk, så att avståndet inte avgör allt
+    const d1 = SIM.diskarAv(s, f)[0], d2 = SIM.diskarAv(s, f2)[0];
+    vux.forEach((q, i) => { const d = i % 2 ? d2 : d1; q.x = d.x + 0.5; q.y = d.y + 2.5; q.task = undefined; });
     const val = (x: typeof f) => vux.filter(q => SIM.kundVal(s, q, 'servering')?.f === x).length;
     satt(0.3, 0.3); f.pris = { servering: 1 }; f2.pris = { servering: 1 };
     f.dag = f2.dag = f.gap = f2.gap = undefined; const lika = [val(f), val(f2)], nej = (f2 as SIM.Foretag).dag?.servering?.nej?.length ?? 0;
@@ -457,7 +460,7 @@ SCENARIER.verksamheter = {
     // djurhandeln
     s.tamdjur = []; const djur = [1, 2, 3, 4].map(() => SIM.nyttTamdjur(s, 'far', p.x, p.y, p.id, s.now - 3 * SIM.DAY));
     djur.forEach((d, i) => { d.hona = i % 2 === 0; });
-    const kund = SIM.living(s).find(q => q !== p && !SIM.familjOf(s, p.id).includes(q) && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!; SIM.put(s, 'silver', 60, { [kund.id]: 60 }); kund.skill.skotsel = 20;
+    const kund = SIM.living(s).find(q => q !== p && !SIM.familjOf(s, p.id).includes(q) && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!; SIM.put(s, 'silver', 60, { [kund.id]: 60 }); kund.skill.skotsel = 20; kund.x = p.x; kund.y = p.y; kund.task = undefined; // bybon står i byn, nära affären
     const eD = SIM.kundVal(s, kund, 'djurhandel'), kd = kop(kund, 'djurhandel', 'far'), agare = djur.filter(d => d.agare === kund.id).length;
     g.gast!.silver = 100; const kg = kop(g, 'djurhandel', 'far'), hemMed = g.gast!.kop?.levfar ?? 0, kvar = SIM.tamdjurOf(s).filter(d => d.agare === p.id).length, slut = SIM.tillSalu(s, p.id, 'far');
     return [

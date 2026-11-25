@@ -5,8 +5,7 @@
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, familjOf, living, newPerson, startSkills } from './folk';
 import { BYGGNADER, Fn, HUS, arHem, homeless, verkstadPlats } from './byggnader';
-import { delarIRad, fyllPlatser, STATIONER, StationDef, StationSlag, stationSite } from './stationer';
-import { knows } from './teknik';
+import { delarIRad, fyllPlatser, kanTek, STATIONER, StationDef, StationSlag, stationSite } from './stationer';
 import { nyKvalitet } from './kvalitet';
 import { nyEld } from './brasor';
 import { grundvarde, rikedomDelar } from './varde';
@@ -289,7 +288,7 @@ export function byggHus(b: State, r: VarldRad) {
   const slag = (Object.keys(STATIONER) as StationSlag[]).filter(k => gemensam(STATIONER[k])).sort((a, c) => kostnad(STATIONER[a]) - kostnad(STATIONER[c]) || (a < c ? -1 : 1));
   for (const k of slag) {
     const d: StationDef = STATIONER[k], kr = kostnad(d);
-    const p = b.people.filter(q => d.tek.some(t => knows(q, t))).sort((a, c) => a.id - c.id)[0];
+    const p = b.people.filter(q => kanTek(q, d)).sort((a, c) => a.id - c.id)[0];
     if (!p || kr > kvar) continue;
     let at = stationSite(b, k, p);
     if (!at && d.inne && kanTimra(b)) { // en verkstad åt den

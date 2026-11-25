@@ -19,7 +19,7 @@ import { budgetAv, budgetFor, budgetId } from './budget';
 import { fellingTiles, kronaOver } from './skog';
 import { stubbeOn } from './stubbar';
 import { FOREST } from './vag';
-import { HUS, bedTile, familjOf, fnOf, husKlar, sovPersoner } from './byggnader';
+import { husIText, HUS, bedTile, familjOf, fnOf, husKlar, sovPersoner } from './byggnader';
 import { GRANNAR4, HOUR_S, Person, State, Task, W, inMap } from './typer';
 import { iVattnetNu } from './sjo';
 import { FLOD } from './flod';
@@ -268,7 +268,7 @@ function flyttKlar(s: State, h: Hus) {
   h.fn = g.fn; h.ag = g.ag; h.tro = g.tro;
   const ved = rivHus(s, g);
   count(s, 'husFlyttat');
-  log(s, `${stor(iMening(h.namn))} står klart närmare byns mitt, och ${g.namn.toLowerCase()} som skadades revs.${ved ? ` ${ved} trä kom tillbaka.` : ''}`, 'world');
+  log(s, `${stor(iMening(h.namn))} står klart närmare byns mitt, och ${husIText(g)} som skadades revs.${ved ? ` ${ved} trä kom tillbaka.` : ''}`, 'world');
 }
 // material som inte längre finns i huset (en vägg som rasat eller rivits) räknas inte till det
 function glomKom(h: Hus, k: string, n: number) {

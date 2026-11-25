@@ -279,7 +279,8 @@ export { familjOf } from './folk'; // familjen står i folk.ts, så att odlingen
 export const husNamn = (namn: string) => /[sxz]$/i.test(namn) ? `${namn} hus` : `${namn}s hus`;
 // husets namn mitt i en mening (steg 12.1.199): en familjs hus heter efter en person (Ingos hus) och behåller den stora
 // bokstaven, annars skrivs det med liten (hyddan, sovsalen, familjens hus)
-export const husIText = (h: { namn: string; fn?: string }) => h.fn === 'familjehus' && / hus$/.test(h.namn) && !h.namn.startsWith('Familjens') ? h.namn : h.namn.toLowerCase();
+// ett företags hus (steg 14.1.5) heter också efter sin ägare (Ingos servering), utom byns och kyrkans
+export const husIText = (h: { namn: string; fn?: string }) => h.fn === 'familjehus' && / hus$/.test(h.namn) && !h.namn.startsWith('Familjens') ? h.namn : h.fn === 'naringshus' ? husIMening(h.namn) : h.namn.toLowerCase();
 // vad familjen äger, i grundvärde: det i förrådet och redskapen
 function formogenhet(s: State, folk: Person[]) {
   const ids = new Set(folk.map(q => q.id));

@@ -131,7 +131,7 @@ export function iMening(namn: string) {
   return n < NUMMER.length ? `${den} ${NUMMER[n]} ${best}` : `ännu ${den === 'det' ? 'ett' : 'en'} ${m[1].toLowerCase()}`;
 }
 // ett hus namn mitt i en mening: "den andra hyddan", "långhuset", men "Stevids hus" som det står (ett namn)
-export const husIMening = (namn: string) => /^\S+ \d+$/.test(namn) ? iMening(namn) : /^\S+s hus$/.test(namn) ? namn : liten(namn);
+export const husIMening = (namn: string) => /^\S+ \d+$/.test(namn) ? iMening(namn) : /^\S+[sxz] \S+$/.test(namn) && !/^(Byns|Kyrkans|Familjens|Företagets|Någons|Trons) /.test(namn) ? namn : liten(namn); // huset eller företaget (steg 14.1.5) heter efter en person
 // en eller ett framför ett namn ur ett register ("en runsten", "ett rövarläger")
 export const artikel = (namn: string) => arEtt(namn.toLowerCase()) ? 'ett' : 'en';
 // sakens bestämda form och pronomen: "den mellanstora lerkrukan", "det" för slagträet (steg 12.1.118, fynd 14)

@@ -4973,7 +4973,7 @@ SCENARIER.vackthus = {
     const st = SIM.stationerOf(b), rutor = new Map<number, number>();
     let krock = 0;
     for (const t of st) { const { w, h } = SIM.storlek(t.k, t.rot); for (let y = t.y; y < t.y + h; y++) for (let x = t.x; x < t.x + w; x++) { const i = y * b.W! + x; if (rutor.has(i) && !SIM.stationDef(t.k)?.golv) krock++; rutor.set(i, t.id); } }
-    const inne = st.filter(t => SIM.stationDef(t.k)?.inne), kanAlla = st.every(t => b.people.some(p => SIM.stationDef(t.k)!.tek.some(k => SIM.knows(p, k))));
+    const inne = st.filter(t => SIM.stationDef(t.k)?.inne), kanAlla = st.every(t => b.people.some(p => SIM.kanTek(p, SIM.stationDef(t.k)!)));
     const kr = kostnad(b), rik = st.length;
     SIM.useMap(s);
     r.tal.rikedom = 100;

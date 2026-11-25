@@ -1264,7 +1264,7 @@ function utanLager(s: State) {
 export function inneUtanPlats(s: State): StationSlag | undefined {
   return STATION_LIST.find(k => {
     const d: StationDef = STATIONER[k];
-    return d.inne && !d.sover && !d.golv && !harStation(s, k) && !halvbyggd(s, k) && living(s).some(p => d.tek.some(t => knows(p, t))) && !stationSite(s, k);
+    return d.inne && !d.sover && !d.golv && !harStation(s, k) && !halvbyggd(s, k) && living(s).some(p => kanTek(p, d)) && !stationSite(s, k);
   });
 }
 // rummet där en station som står inne står
@@ -1282,10 +1282,13 @@ export const halvbyggd = (s: State, k: string, p?: Person) => stationerOf(s).fin
 const nyPaVag = (s: State, k: string, p?: Person) => living(s).some(q => q !== p && q.task?.act === 'station' && q.task.tool === k);
 // p kan bygga (eller bygga vidare på) en station av sorten k som byn saknar (det byn kan ha flera av: om projektet säger att byn
 // saknar fler, projekt.ts)
+// den som bygger en station kan en av dess tekniker; en station utan tekniker (disken, varubordet) kan alla bygga, och ett vrak
+// (grundarnas trasiga vagn) bygger ingen
+export const kanTek = (p: Person, d: { tek: readonly string[]; vrak?: true }) => !d.vrak && (!d.tek.length || d.tek.some(t => knows(p, t)));
 export function kanBygga(s: State, p: Person, k: StationSlag) {
   const d: StationDef = STATIONER[k];
   if (d.tro) return kanByggaTro(s, p, k);
-  if (!enTill(s, 'station', p) || (d.brasa ? ageOf(p, s.now) < ALDER.ansvar : !d.tek.some(k => knows(p, k))) || !(d.flera || d.hinner) && harStation(s, k) || d.verktyg && !freeTools(s, p, d.verktyg)) return false;
+  if (!enTill(s, 'station', p) || (d.brasa ? ageOf(p, s.now) < ALDER.ansvar : !kanTek(p, d)) || !(d.flera || d.hinner) && harStation(s, k) || d.verktyg && !freeTools(s, p, d.verktyg)) return false;
   const h = halvbyggd(s, k, p);
   if (h) return Object.entries(nastaAv(k, h)).every(([m, n]) => getable(s, p, m) >= n); // nästa del tar sitt material (steg 12.1.17)
   if (nyPaVag(s, k, p)) return false; // en annan är redan på väg att bygga en ny av sorten: det byn saknar är under arbete
@@ -1303,7 +1306,7 @@ function kanByggaTro(s: State, p: Person, k: StationSlag) {
 // Brasans stenar letas för sig (brasor.ts)
 export function receptStation(s: State, p: Person, k: StationSlag): Recept | undefined {
   const d: StationDef = STATIONER[k];
-  if (d.tro || d.brasa || !enTill(s, 'station', p) || !d.tek.some(k => knows(p, k)) || !(d.flera || d.hinner) && harStation(s, k)) return undefined;
+  if (d.tro || d.brasa || !enTill(s, 'station', p) || !kanTek(p, d) || !(d.flera || d.hinner) && harStation(s, k)) return undefined;
   const h = halvbyggd(s, k, p);
   if (h) { const av = nastaAv(k, h); return Object.keys(av).length ? { av } : undefined; } // nästa del av en station i delar (steg 12.1.17)
   if (nyPaVag(s, k, p)) return undefined;
