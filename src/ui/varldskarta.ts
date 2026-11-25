@@ -1,8 +1,8 @@
 // ---------- världskartan på skärmen (steg 11.2.16) ----------
-// Världskartan är en del i fliken Omvärlden (steg 12.1.29): delen är en tom plats (vkHost i flikar/grannar.ts), och kartan
-// (ett och samma element hela tiden, så att vyn står kvar när panelen ritas om) läggs dit när platsen finns. Kartan går att dra
-// med musen eller fingret och zooma med hjulet eller två fingrar. Musen över en ruta visar marken och platserna där, och ett tryck
-// utan att dra skriver det under kartan. Kartan har en fast höjd, så att den behåller sin storlek när texten under den ändras.
+// Världskartan väljs i fliken Omvärlden och öppnas i helskärm (steg B.38): krysset eller Esc stänger den och går tillbaka till
+// Omvärlden. Kartan går att dra med musen eller fingret och zooma med hjulet eller två fingrar. Musen över en ruta visar marken och
+// platserna där, och ett tryck utan att dra skriver det nere till vänster. Byns, sällskapets eller färdens ruta ligger ovanpå
+// kartan till höger, och på en smal skärm under den.
 // Själva bilden räknas i ui/varldbild.ts.
 import { byFlikar, PlatsRuta, Sallskap, TEKNIK, vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
@@ -13,12 +13,14 @@ import { bildDuk } from './bildduk';
 
 const stil = document.createElement('style');
 stil.textContent = `
-.vkRuta { display: flex; flex-direction: column; gap: 4px; }
-.vkHuvud { display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-start; }
-.vkDuk { position: relative; height: min(62vh, 520px); flex: 3 1 340px; min-width: 0; background: ${farg('kol', 0)}; border-radius: 3px; overflow: hidden; }
+.vkRuta { position: fixed; inset: 0; z-index: 60; background: ${farg('kol', 0)}; display: flex; flex-direction: column; }
+.vkRuta[hidden] { display: none; }
+.vkDuk { position: relative; flex: 1 1 0; min-height: 0; overflow: hidden; }
+.vkStang { position: absolute; top: 8px; right: 8px; z-index: 2; min-width: 40px; min-height: 40px; font: inherit; font-size: 18px; line-height: 1; border-radius: 3px;
+  border: 1px solid ${farg('kol', 3)}; background: ${farg('kol', 1)}; color: ${farg('ben', 3)}; cursor: pointer; }
 .vkDuk canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; image-rendering: pixelated; }
 .vkDuk canvas.drar { cursor: grabbing; }
-.vkInfo { margin: 0; padding: 6px 8px; min-height: 1.4em; color: ${farg('ben', 3)}; background: ${farg('kol', 1)}; border-radius: 3px; }
+.vkInfo { position: absolute; left: 8px; bottom: 8px; max-width: min(420px, calc(100% - 16px)); max-height: 40%; overflow: auto; box-sizing: border-box; margin: 0; padding: 6px 8px; border: 1px solid ${farg('kol', 3)}; color: ${farg('ben', 3)}; background: ${farg('kol', 1)}; border-radius: 3px; }
 .vkInfo:empty { display: none; }
 .vkInfo .vkPlats { margin-top: 4px; }
 .vkInfo table { border-collapse: collapse; margin-top: 2px; }
@@ -26,8 +28,10 @@ stil.textContent = `
 .vkInfo th { color: ${farg('ben', 1)}; }
 .vkInfo .vkGaIn { font: inherit; margin-left: 6px; padding: 1px 6px; border-radius: 3px; border: 1px solid ${farg('kol', 3)}; background: ${farg('kol', 2)}; color: ${farg('ben', 3)}; cursor: pointer; }
 .vkInfo .vkVarna { color: ${farg('rost', 3)}; }
-.vkSida { flex: 1 1 240px; min-width: 0; max-height: min(62vh, 520px); overflow: auto; padding: 6px 8px; box-sizing: border-box;
-  color: ${farg('ben', 3)}; background: ${farg('kol', 1)}; border-radius: 3px; }
+.vkSida { position: absolute; top: 56px; right: 8px; width: min(340px, 40%); max-height: calc(100% - 64px); overflow: auto; padding: 8px 10px; box-sizing: border-box;
+  color: ${farg('ben', 3)}; background: ${farg('kol', 1)}; border: 1px solid ${farg('kol', 3)}; border-radius: 3px; }
+.vkSida .plink { font: inherit; padding: 0; border: 0; background: none; color: inherit; text-decoration: underline; cursor: pointer; }
+@media (max-width: 700px) { .vkSida { position: static; width: auto; max-height: 45%; border-width: 1px 0 0; border-radius: 0; } }
 .vkSida .vkTom { color: ${farg('ben', 1)}; }
 .vkSida .vkFlikar { display: flex; flex-wrap: wrap; gap: 2px; margin: 4px 0; }
 .vkSida .vkFlikar button { font: inherit; padding: 1px 6px; border-radius: 3px; border: 1px solid ${farg('kol', 3)}; background: ${farg('kol', 2)}; color: ${farg('ben', 3)}; cursor: pointer; }
@@ -41,7 +45,7 @@ stil.textContent = `
 .vkSida .vkDag { cursor: help; }
 .vkSida .vkBok { margin-top: 4px; }
 .vkSida .vkVarna { color: ${farg('rost', 3)}; }
-.vkKronika { position: absolute; top: 6px; left: 6px; max-width: calc(100% - 12px); max-height: 45%; overflow: auto; padding: 4px 8px;
+.vkKronika { position: absolute; top: 6px; left: 6px; max-width: min(420px, calc(100% - 70px)); max-height: 45%; overflow: auto; padding: 4px 8px;
   background: ${farg('kol', 1)}; color: ${farg('ben', 3)}; border: 1px solid ${farg('kol', 3)}; border-radius: 3px; }
 .vkKronika summary { cursor: pointer; }
 .vkKronika ol { margin: 4px 0 0; padding-left: 0; list-style: none; }
@@ -59,10 +63,11 @@ function teckenBild(namn: string, spegel = false) {
 }
 
 const ruta = document.createElement('div');
-ruta.className = 'vkRuta'; ruta.setAttribute('aria-label', 'Världskartan');
-ruta.innerHTML = `<div class="vkHuvud"><div class="vkDuk"><canvas></canvas><details class="vkKronika"><summary title="Världens krönika: det byn hört i full färg, resten blekare">📜</summary><ol></ol></details></div><aside class="vkSida" aria-label="Byns ruta"></aside></div><div class="vkInfo"></div>`;
+ruta.className = 'vkRuta'; ruta.hidden = true; ruta.setAttribute('role', 'dialog'); ruta.setAttribute('aria-label', 'Världskartan');
+ruta.innerHTML = `<div class="vkDuk"><canvas></canvas><details class="vkKronika"><summary title="Världens krönika: det byn hört i full färg, resten blekare">📜</summary><ol></ol></details><div class="vkInfo"></div></div><aside class="vkSida" aria-label="Rutan för det valda"></aside><button type="button" class="vkStang" title="Stäng" aria-label="Stäng">✕</button>`;
+document.body.appendChild(ruta);
 const duk = ruta.querySelector('canvas')!, info = ruta.querySelector<HTMLElement>('.vkInfo')!, kronLista = ruta.querySelector('.vkKronika ol')!, sida = ruta.querySelector<HTMLElement>('.vkSida')!;
-const visas = () => ruta.isConnected;
+const visas = () => !ruta.hidden;
 
 // bilden räknas en gång per värld och när platserna ändrats
 let bild: HTMLCanvasElement | undefined, bildFor: Varlden | undefined, bildPlatser = -1, bildVet = -1, bildLed = -1, bildMark = '';
@@ -136,13 +141,12 @@ function ritaNamn(g: CanvasRenderingContext2D, dpr: number) {
 }
 const senare = () => { if (!ritas) { ritas = true; requestAnimationFrame(rita); } };
 
-// kartan läggs på sin plats i Omvärlden när platsen finns (panelen ritar om sin text, men platsen är densamma tills delen byts);
+// kartan öppnas över hela skärmen (OPPNA i flikar/grannar.ts ropar på den) och stängs med krysset eller Esc;
 // vyn börjar vid huvudbyn, lite inzoomat, första gången för varje värld
 let vyFor: Varlden | undefined;
-function montera() {
-  const host = document.getElementById('vkHost');
-  if (!host || ruta.parentElement === host || !s?.varld) return;
-  host.appendChild(ruta);
+function oppna() {
+  if (!s?.varld) return;
+  ruta.hidden = false;
   kronLista.innerHTML = kronikaHtml();
   if (vyFor !== s.varld) { vy = undefined; info.textContent = ''; valt = undefined; }
   sida.innerHTML = sidaHtml();
@@ -154,7 +158,10 @@ function montera() {
   }
   vyFor = vl;
 }
-new MutationObserver(montera).observe(document.body, { childList: true, subtree: true });
+const stang = () => { ruta.hidden = true; };
+window.addEventListener('varldskarta', oppna);
+ruta.querySelector('.vkStang')!.addEventListener('click', stang);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && visas()) { e.stopImmediatePropagation(); stang(); } }, true);
 setInterval(() => { if (visas() && (sallskapNu(s?.varld).length || s?.varld?.farder?.length)) senare(); }, 1000); // sällskapen rör sig
 window.addEventListener('resize', () => { if (visas()) senare(); });
 
@@ -198,7 +205,7 @@ duk.addEventListener('pointermove', e => {
 const slapp = (e: PointerEvent) => {
   const fanns = pekare.delete(e.pointerId);
   if (!pekare.size) duk.classList.remove('drar');
-  if (fanns && !pekare.size && drog < 6 && vy) { // ett tryck utan att dra: rutans text under kartan
+  if (fanns && !pekare.size && drog < 6 && vy) { // ett tryck utan att dra: rutans text i rutan nere till vänster
     const r = duk.getBoundingClientRect(), vl = s?.varld, v = s && varldMark(s);
     if (vl && v) {
       const q = rutaVid(vy, e.clientX - r.left, e.clientY - r.top), kn = bynsKarta(s!);
@@ -215,7 +222,7 @@ duk.addEventListener('pointerup', slapp);
 info.addEventListener('click', e => {
   const nr = (e.target as HTMLElement).closest<HTMLElement>('[data-gain]')?.dataset.gain;
   const b = nr !== undefined ? vacktMedBesok(huvud(), Number(nr)) : undefined;
-  if (b) gaIn(b);
+  if (b) { stang(); gaIn(b); }
 });
 duk.addEventListener('pointercancel', e => { pekare.delete(e.pointerId); if (!pekare.size) duk.classList.remove('drar'); });
 
@@ -302,7 +309,8 @@ sida.addEventListener('click', e => {
   if (b) { byFlik = b.dataset.vkflik as ByFlikId; sida.innerHTML = sidaHtml(); return; }
   const nr = el.closest<HTMLElement>('[data-gain]')?.dataset.gain; // Gå in (steg 11.13.11)
   const v = nr !== undefined ? vacktMedBesok(huvud(), Number(nr)) : undefined;
-  if (v) gaIn(v);
+  if (v) { stang(); gaIn(v); return; }
+  if (el.closest('[data-id]')) stang(); // personens panel (panel.ts)
 });
 
 // världens krönika (steg 11.4.13): de senaste först, det byn hört i full färg och resten blekare

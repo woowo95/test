@@ -76,10 +76,10 @@ export function uppdragHtml() {
 
 // stenen Omvärlden (steg 9.3.3): världskartan, grannklanerna, handlarna, räderna och byns försvar i delar överst. Blek tills
 // byn känner någon utanför eller har en värld. Registret: en ny del är en rad i DELAR
-// världskartan (steg 12.1.29): en tom plats som ui/varldskarta.ts lägger kartan i, så att den står kvar när panelen ritas om
-interface Del { id: string; tecken: string; namn: string; html(): string; syns?(): boolean; hjalp?: false }
+// världskartan (steg B.38): delen öppnar kartan över hela skärmen (ui/varldskarta.ts), och Omvärlden står kvar under den
+interface Del { id: string; tecken: string; namn: string; html(): string; syns?(): boolean; hel?: string /* öppnas i helskärm: händelsen som öppnar */ }
 const DELAR: Del[] = [
-  { id: 'karta', tecken: '📍', namn: 'Världskartan', html: () => '<div id="vkHost" class="vkHost"></div>', syns: () => !!s.varld, hjalp: false },
+  { id: 'karta', tecken: '📍', namn: 'Världskartan', html: () => '', syns: () => !!s.varld, hel: 'varldskarta' },
   { id: 'grannar', tecken: '👥', namn: 'Grannarna', html: grannarHtml },
   { id: 'handlare', tecken: '⚖️', namn: 'Handlarna', html: handlareHtml },
   { id: 'rader', tecken: '⚔️', namn: 'Räderna', html: raderHtml },
@@ -87,7 +87,7 @@ const DELAR: Del[] = [
   { id: 'uppdrag', tecken: '📜', namn: 'Uppdragen', html: uppdragHtml }, // steg 11.8.16
 ];
 const delarNu = () => DELAR.filter(d => d.syns?.() ?? true);
-const oppen = () => delarNu().find(d => d.id === ui.omvDel) ?? delarNu()[0]!;
+const oppen = () => delarNu().find(d => d.id === ui.omvDel && !d.hel) ?? delarNu().find(d => !d.hel)!;
 export const grannar: Flik = {
   namn: 'Omvärlden',
   krav: 'öppnas när byn känner en klan, har haft handlare eller rövare eller känner till ett uppdrag',
@@ -95,11 +95,13 @@ export const grannar: Flik = {
   html() {
     const del = oppen();
     return `${delRad('data-odel', delarNu(), del.id)}
-      ${del.hjalp === false ? '' : `<div class="phead"><div></div>${hjalpKnapp('omvarlden', 'Vad är klanernas hållning?')}</div>${hjalpText('omvarlden', hallText())}`}${del.html()}`;
+      <div class="phead"><div></div>${hjalpKnapp('omvarlden', 'Vad är klanernas hållning?')}</div>${hjalpText('omvarlden', hallText())}${del.html()}`;
   },
   klick(el) {
     const b = el.closest<HTMLButtonElement>('[data-odel]');
     if (!b) return false;
+    const hel = DELAR.find(d => d.id === b.dataset.odel)?.hel;
+    if (hel) { window.dispatchEvent(new Event(hel)); return true; }
     ui.omvDel = b.dataset.odel!;
     return true;
   },
