@@ -154,6 +154,7 @@ export * from './sim/foretagsrykte';
 export * from './sim/foretagsgast';
 export * from './sim/verksamheter';
 export * from './sim/stangning';
+export * from './sim/marknad';
 export * from './sim/varde';
 export * from './sim/uppdrag';
 export * from './sim/arv';

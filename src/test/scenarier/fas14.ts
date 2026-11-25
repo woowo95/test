@@ -503,3 +503,34 @@ SCENARIER.stanga = {
     ];
   },
 };
+
+SCENARIER.marknad = {
+  text: 'Steg 14.1.14: när byborna vinner på att mötas kallar någon till marknad på torget nästa dag, man går dit efter vad man själv vinner och byter med dem som är där, och finns inget att vinna blir det ingen',
+  kor: () => {
+    const s = SIM.cloneState(testBy(25)), folk = SIM.living(s).filter(q => !q.gast && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && SIM.kanGa(q));
+    s.marknad = undefined; s.foretag = [];
+    const a = folk[0], b = folk.find(q => q !== a && !SIM.familjOf(s, a.id).includes(q))!;
+    b.habit = { samla: 1000 } as never; a.habit = { vakt: 1000 } as never;
+    for (const q of folk) q.task = undefined;
+    for (const q of folk) SIM.laggIn(s, 'silver', 30, q.id);
+    const l0 = [...SIM.handelslust(s).values()].reduce((x, y) => x + y, 0);
+    for (const q of folk) q.bruk = { t: Math.floor(s.now / SIM.HOUR), k: [] };
+    const tomt = [...SIM.handelslust(s).values()].reduce((x, y) => x + y, 0); SIM.marknadDygn(s); const ingen = !s.marknad;
+    for (const q of folk) q.bruk = undefined;
+    // a har benspadar över, och de andra saknar en
+    for (let i = 0; i < 12; i++) SIM.addTool(s, 'benspade', a);
+    const lust = SIM.handelslust(s); SIM.marknadDygn(s); const m = s.marknad as SIM.Marknad | undefined;
+    const v0 = SIM.marknadVikt(s, b); if (m) s.now = m.t + SIM.HOUR; const v1 = SIM.marknadVikt(s, b), vv = SIM.marknadVal(s, b);
+    if (m) for (const q of [a, b]) { q.x = m.x + (q === a ? 1 : -1); q.y = m.y; q.task = { act: 'marknad', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '' } as never; }
+    const mat0 = SIM.tingOf(s).filter(t => t.agare === b.id && t.k === 'benspade').length; SIM.iHelaForradet(() => SIM.marknadKlar(s, b)); const mat1 = SIM.tingOf(s).filter(t => t.agare === b.id && t.k === 'benspade').length, v2 = SIM.marknadVikt(s, b);
+    if (m) s.now = m.slut; const stangd = !SIM.marknadOppen(s);
+    return [
+      [`lusten i byn (${l0.toFixed(0)}), och saknar ingen något (${tomt}) blir det ingen marknad`, tomt === 0 && ingen],
+      [`den som har och de som saknar vinner (${[a, b].map(q => (lust.get(q.id) ?? 0).toFixed(1)).join(', ')}), och någon kallar till marknad`, !!m && (lust.get(a.id) ?? 0) > 0 && (lust.get(b.id) ?? 0) > 0],
+      [`den öppnar ${m && (SIM.hourOf(m.t)).toFixed(1)} på byns mitt`, !!m && Math.abs(SIM.hourOf(m.t) - SIM.MARKNAD.oppnar) < 0.01],
+      [`ingen går dit innan (${v0}), men när den är öppen (${v1.toFixed(2)})`, v0 === 0 && v1 > 0 && !!vv],
+      [`där byter man (${mat0} → ${mat1} benspadar, ${m?.byten} byten), och ärendet är gjort (${v2})`, mat1 > mat0 && (m?.byten ?? 0) >= 1 && v2 === 0],
+      ['på kvällen är den slut', stangd],
+    ];
+  },
+};

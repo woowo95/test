@@ -36,6 +36,7 @@ import { ALDER, KROPP, REL, ageOf, count, enTill, enTillDar, familjOf, isSick, l
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
 import { VARDRATT, halsa, hemma, kanGa, kroppLust, vardBehov, vardVal, vilaHellre, vilaSkal } from './halsa';
+import { marknadVal, marknadVikt } from './marknad';
 import { DELA, MAT, brukKrok, bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial, vatskaMaterial } from './behov';
 import { FANGST, type FyndId, Kind, RUTFYND, flintSpot, richnessFor } from './fynd';
 import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
@@ -1607,6 +1608,10 @@ export const FRITID: readonly FritidRad[] = [
   { id: 'framtradande', nar: 'natt', kraver: 'en kväll utan framträdande, och att inte skämmas', ger: 'humör åt publiken och färdighet', drar: 'skaldskapet och karisman', akt: ['upptrada'],
     vikt: c => skams(c.p, c.s.now) ? 0 : framVikt(c.s, c.p),
     gor: c => { const fr = framVal(c.s, c.p); if (!fr) return false; const v = c.v; set(v, fr.act, fr.why); v.spot = fr.spot ?? spotFor(c.s, 'beratta', c.p); v.dur = fr.dur; v.ref = fr.ref; v.tool = fr.tool; return true; } },
+  // marknaden (steg 14.1.14, marknad.ts): lusten är vad hen själv vinner på att mötas
+  { id: 'marknad', nar: 'dag', kraver: 'en öppen marknad', ger: 'saker, silver och sällskap', drar: 'det man saknar och det man har över', akt: ['marknad'],
+    vikt: c => c.a >= ALDER.hjalper ? marknadVikt(c.s, c.p) : 0,
+    gor: c => { const m = marknadVal(c.s, c.p); if (!m) return false; const v = c.v; set(v, 'marknad', m.why); v.spot = m.spot; v.dur = m.dur; v.ref = m.ref; return true; } },
   { id: 'titta', nar: 'dag', kraver: 'en match som pågår', ger: 'humör', drar: 'lugnet', akt: ['titta'],
     vikt: c => tittaVikt(c.s, c.p, c.calm), // att titta på matchen (steg 10.7.16)
     gor: c => { const ti = tittaVal(c.s, c.p); if (!ti) return false; const v = c.v; set(v, 'titta', ti.why); v.spot = ti.spot; v.dur = ti.dur; v.ref = ti.ref; v.tool = ti.tool; return true; } },

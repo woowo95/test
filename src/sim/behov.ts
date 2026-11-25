@@ -554,6 +554,8 @@ function give(t: Ting, g: Person, m: Person) {
   t.krok = undefined; // ett redskap som hängde i bältet (steg 7.1.1) läggs i förrådet
 }
 // a talar med b. Saknar någon av dem ett redskap som den andra har över? Returnerar vad som hände (samma väg som allt annat, brukByte)
+// alla raderna, som i samtalet (marknad.ts)
+export const bytenMellan = (s: State, a: Person, b: Person) => brukByte(s, a, b, BRUK, true);
 export const askForTool = (s: State, a: Person, b: Person) => brukByte(s, a, b, [BRUK_REDSKAP], true);
 
 // ---------- bruket (steg 13.9.9, Arbetsdelningen: Alla saker byts efter samma regler) ----------

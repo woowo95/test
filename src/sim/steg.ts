@@ -112,6 +112,7 @@ import { lonOmtanke, lonRegister } from './lon';
 import { lonDygn, lonRakna } from './dagsarbete';
 import { foretagDygn, foretagTimme } from './foretag';
 import { foretagMarknad } from './stangning';
+import { marknadDygn, marknadKlar } from './marknad';
 import { finishOdla, froFynd, stepOdling, workOdla } from './odling';
 import { balans } from './balans';
 import { grilla, torka } from './matlagning';
@@ -334,6 +335,7 @@ KLAR.valla = (s, p, t) => vallaKlar(s, p, t.ref);
 KLAR.klippa = (s, p, t) => { klippKlar(s, p, t.ref); wearUsed(s, p, 1); }; // ullsaxen slits för varje får (steg 12.5.2)
 KLAR.tatuera = (s, p, t) => tatKlar(s, p, t.ref);
 KLAR.farga = fargaKlar; // färgbadet (farg.ts, steg 13.3.2)
+KLAR.marknad = marknadKlar; // marknaden (marknad.ts, steg 14.1.14)
 KLAR.stallaFram = stallaKlar; KLAR.koaDisk = koaKlar; KLAR.betjana = betjanaKlar; // kassan (kassa.ts, steg 14.1.6)
 KLAR.stada = stadaKlar; // städningen (stada.ts, steg 14.1.2)
 KLAR.tjara = tjaraKlar; // tjäran (tjara.ts, steg 13.5.1)
@@ -529,6 +531,7 @@ export const TAKTER: Takt[] = [
   { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); lonDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
   { namn: 'kassan', sek: 30, fn: s => { if (s.foretag?.length) kassaTakt(s); } }, // den som kan betjäna kallas till disken (kassa.ts, steg 14.1.6)
   { namn: 'företagen', sek: 3600, fn: s => { foretagTimme(s); foretagMarknad(s); } }, // företagens hus och ägare (foretag.ts, steg 14.1.5)
+  { namn: 'marknaden', sek: 86400, fas: 19 / 24, fn: s => { marknadDygn(s); } }, // är det värt att mötas på torget i morgon? (marknad.ts, steg 14.1.14)
   { namn: 'företagens gäster kommer', sek: 3600, fn: (s, dt) => foretagsgasterKommer(s, dt) }, // steg 14.1.11
   { namn: 'företagens dygn', sek: 86400, fas: (SKATT.timme + 1) / 24, fn: s => { foretagDygn(s); } }, // nya företag, efter skatten och lönerna
   { namn: 'rädslan', sek: 86400, fas: STR.timme / 24, fn: (s, dt) => { raddDygn(s, dt); } }, // rädslan för handlingar bleknar och berättas vidare, också i en by utan ledare (radsla.ts, steg 12.1.60 och 12.1.84)

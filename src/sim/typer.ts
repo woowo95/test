@@ -471,6 +471,7 @@ export interface State {
   bjornJakt?: { ar: number; sedd: number; sag: number; x?: number; y?: number; timme?: number; jagare?: number[]; kallare?: number; kallTill?: number; jaktTill?: number; samlas?: number };
   bjornFalld?: number;
   flod?: { niva: number; hogst?: number; mindes?: 1 }; // översvämningen (steg 3.8.3, flod.ts): så många rutor upp på land som vattnet står, det högsta det nått och om byn redan minns det (steg 3.8.7)
+  marknad?: import('./marknad').Marknad; // marknaden som kallats (marknad.ts)
   foretagLart?: Record<string, number>; // så stor del av de väntade kunderna ett stängt företag fick (stangning.ts)
   husAffar?: { hus: number; ag: number; t: number }; // ett hus som ska byta ägare när köparen och säljaren möts (steg 7.2.12, byggplan.ts)
   flodHot?: number; flodBlot?: number; flodMinne?: number; // medan vattnet stiger: så många rutor upp på land som byn bär undan maten från; så många som är blöta (vattnet står där nu eller stod där nyss, ingen sover där); och så högt som byn minns att vattnet nått (inget byggs där). Räknas varje timme (steg 3.8.7, flod.ts, flodHotad i sjo.ts)
