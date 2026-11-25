@@ -337,7 +337,7 @@ export interface Kampe {
   id: number; namn: string; sida: 0 | 1; pid?: number; djur?: string; // pid = personen i byn, djur = sorten i KAMPAR (kampar.ts); utan den en människa
   st: KampeStats; vapen: Vapen; klader: string[]; fart: number; // fart = gånger STRID.fart
   x: number; y: number; // rutor (med decimaler)
-  skador: { d: Kroppsdel; k: SkadaTyp; g: number; ny: number; fast?: 1; av?: 1 }[]; // av = delen höggs av (olyckshugget, steg 9.5.22) // ny = öppet sår som blöder (1) eller levrat (0), fast = ett spjut sitter kvar
+  skador: { d: Kroppsdel; k: SkadaTyp; g: number; ny: number; fast?: 1; av?: 1; ont?: number }[]; // ont = slagets grad i brottningen, där det gör ont utan att bli ett sår (steg B.63). av = delen höggs av (olyckshugget, steg 9.5.22) // ny = öppet sår som blöder (1) eller levrat (0), fast = ett spjut sitter kvar
   blod: number; ork: number; modNu: number; lage: KampeLage;
   overraskad?: number; /* den som inte sett sin anfallare komma (steg B.30): så många sekunder till innan hen märker det, om ingen slår henne eller honom först */ vant: number; platsV?: { m: number; i: number }; /* platsen vid målet m som hen går till (steg B.34) */ runtSida?: 1 | -1; /* åt det håll hen senast gick runt någon (steg B.20) */ oppning?: number; kastVant?: number; mal?: number; backar?: true; // sekunder till nästa slag, sedan väntan på en öppning hos den som står och slåss (STRID.glesare) och för nästa kast in i en närstrid, målet, och om hen backar undan för att hämta andan
   slag: number; traffar: number; gjort: number; // för rapporten: slag, träffar och summan av skadornas grad
@@ -348,7 +348,7 @@ export interface Kampe {
   fallT?: number; /* stridens tid när hen föll eller började fly */ gast?: 1; /* en gäst (rövare, handlare, främling), inte en bybo */ ledare?: 'fram' | 'bak'; skyddar?: number; // steg 3.7.12: byns ledare (går först eller står bakom), och ledaren (kämpens id) som vännen skyddar
   kryper?: number; // steg 3.7.19: hen kan inte gå och kryper undan; rutorna hen krupit
   fly?: { x: number; y: number }; // steg 9.2.76: dit hen flyr (rutor på platsen), i stället för mot närmaste kanten
-  flyAndra?: { x: number; y: number }[]; flyVag?: { t: number; x: number; y: number; m?: { x: number; y: number } }; // andra tillflykter när vägen dit är stängd, och vägen hen valt just nu: dit hen går och tillflykten (steg B.31)
+  flyAndra?: { x: number; y: number }[]; flyVag?: { t: number; x: number; y: number; v?: number /* hållet när ingen tillflykt går att nå (steg B.61) */; m?: { x: number; y: number } }; // andra tillflykter när vägen dit är stängd, och vägen hen valt just nu: dit hen går och tillflykten (steg B.31)
 }
 // en rad i loggen: tiden (sekunder), vem (a) och mot vem (b), del, skada och grad, och det kläderna tog
 // Varje rad är en händelse (steg 10.1.3, "Ett slag är en händelse"): tiden, vad som hände, vem och mot vem. Ett anfall (ett slag,
@@ -397,7 +397,7 @@ export function nyStrid(u: Uppstallning, fro: number): Strid {
 }
 
 // ---------- kroppen i striden ----------
-const smartaAv = (k: Kampe) => k.skador.reduce((a, w) => a + SKADOR[w.k].smarta * w.g, 0);
+const smartaAv = (k: Kampe) => k.skador.reduce((a, w) => a + SKADOR[w.k].smarta * (w.ont ?? w.g), 0);
 const delFel = (k: Kampe, d: Kroppsdel) => Math.min(1, k.skador.reduce((a, w) => a + (w.d === d ? SKADOR[w.k].fel * w.g : 0), 0));
 const smidFart = (k: Kampe) => 1 + STRID.smidFart * (k.st.smidighet - 10); // den smidiga är snabbare (steg 3.7.6)
 function rorlighet(k: Kampe) {
@@ -577,19 +577,33 @@ function flyVal(st: Strid, k: Kampe) {
     }
   }
   // bort från de närmaste fienderna: den riktning där de är längst bort (de närmaste väger mest)
-  let bast: [number, number] = [k.x, k.y], bv = Infinity;
+  // (bara de riktningar som går att gå, samma prövning som steget, och den hen springer åt behålls tills den stängs, steg B.61)
+  const gar = (v: number) => flyFri(st, k, v, farten(k) * STRID.tick, fi);
+  const forr = k.flyVag?.v;
+  if (forr !== undefined && gar(forr)) return { t: st.t, x: k.x, y: k.y, v: forr };
+  let bast: number | undefined, bv = Infinity;
   for (let i = 0; i < 16; i++) {
     const v = i * Math.PI / 8, x = clamp(k.x + Math.cos(v) * 2, KANT, st.w - KANT), y = clamp(k.y + Math.sin(v) * 2, KANT, st.h - KANT);
-    if (!sikt(st, k.x, k.y, x, y) || van.some(o => Math.hypot(o.x - x, o.y - y) < STRID.kropp)) continue;
+    if (!gar(v)) continue;
     const h = fi.reduce((a, o) => { const dx = x - k.x, dy = y - k.y, u = clamp(((o.x - k.x) * dx + (o.y - k.y) * dy) / (dx * dx + dy * dy || 1), 0, 1); return a + 1 / Math.max(0.1, Math.hypot(k.x + dx * u - o.x, k.y + dy * u - o.y)) ** 2 + 1 / Math.max(0.1, Math.hypot(o.x - x, o.y - y)) ** 2; }, 0);
-    if (h < bv) { bv = h; bast = [x, y]; }
+    if (h < bv) { bv = h; bast = v; }
   }
-  return { t: st.t, x: bast[0], y: bast[1] };
+  return { t: st.t, x: k.x, y: k.y, ...(bast !== undefined ? { v: bast } : {}) };
+}
+// går steget åt hållet v: fritt från väggar och andra, och inte närmare den närmaste fienden (steg B.61)
+const narmastFi = (fi: Kampe[], x: number, y: number) => fi.reduce((a, o) => Math.min(a, Math.hypot(o.x - x, o.y - y)), Infinity);
+function flyFri(st: Strid, k: Kampe, v: number, l: number, fi: Kampe[]) {
+  const x = k.x + Math.cos(v) * l, y = k.y + Math.sin(v) * l;
+  return x >= KANT && y >= KANT && x <= st.w - KANT && y <= st.h - KANT && fri(st, k, x, y, fi, x, y) && narmastFi(fi, x, y) >= narmastFi(fi, k.x, k.y) - 1e-6;
 }
 function flySteg(st: Strid, k: Kampe, lang: number) {
   let v = k.flyVag;
-  if (!v || st.t - v.t >= STRID.flySek || Math.hypot(v.x - k.x, v.y - k.y) < 0.1) v = k.flyVag = flyVal(st, k);
-  ga(st, k, v.x, v.y, lang, RUNT);
+  if (!v || st.t - v.t >= STRID.flySek || v.v === undefined && Math.hypot(v.x - k.x, v.y - k.y) < 0.1) v = k.flyVag = flyVal(st, k);
+  if (v.m) { ga(st, k, v.x, v.y, lang, RUNT); return; }
+  // ingen tillflykt att nå: åt sitt håll tills det är stängt, sedan väljs ett nytt; går inget steg står hen kvar (steg B.61)
+  const fi = st.kampar.filter(o => o.sida !== k.sida && iStrid(o));
+  if (v.v !== undefined && !flyFri(st, k, v.v, lang, fi)) { k.flyVag = undefined; v = k.flyVag = flyVal(st, k); }
+  if (v.v !== undefined && flyFri(st, k, v.v, lang, fi)) { k.x += Math.cos(v.v) * lang; k.y += Math.sin(v.v) * lang; }
 }
 
 // den som står i någon annan (eller för nära) kliver isär (steg B.19): dit det blir längst till den närmaste, och den som når sin
@@ -778,23 +792,24 @@ export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, 
   let kl: string | undefined;
   for (const c of b.klader) { const sk = SKYDD[c]; if (sk?.delar.includes(d)) { g *= 1 - (sk.tar[sl] ?? 0); kl = c; } }
   g *= 1 - sortAv(b).skydd; // päls och hud (KAMPAR)
-  if (AVS[st.avsikt].sport) g *= STRID.brottning; // brottningen: svaga slag (steg 9.2.92)
   g = Math.min(1, g);
+  // brottningen: slaget gör lika ont som annars, men såret blir litet (steg 9.2.92 och B.63)
+  const sport = AVS[st.avsikt].sport, ont = g; if (sport) g *= STRID.brottning;
   a.traffar++;
   const kf = kast ? 1 as const : undefined;
-  if (g < STRID.ingen) { st.logg.push({ t: st.t, h: 'tog', a: a.id, b: b.id, d, v: a.vapen, kl, kast: kf }); return; }
+  if (ont < STRID.ingen) { st.logg.push({ t: st.t, h: 'tog', a: a.id, b: b.id, d, v: a.vapen, kl, kast: kf }); return; }
   const k = skadaAv(sl, g, d);
   if (k === 'hjarnskakning') b.ork = Math.max(0, b.ork - STRID.hjarnaOrk);
   const fast = kastad?.fastnar && sl === 'stick' && g >= STRID.fastnaGrad && slump(st) < STRID.fastna ? 1 as const : undefined;
   // olyckshugget (steg 9.5.22): vapnets skärpa, slagets kraft och skyddet på delen
   const av = !AVS[st.avsikt].sport && !AVS[st.avsikt].lek && g >= STRID.huggMin && VAP[a.vapen].skarpa > 0 && slump(st) < VAP[a.vapen].skarpa * g * g * STRID.hugg * (kl ? STRID.skyddHugg : 1) && ((KROPPSDELAR[d] as { livsviktig?: true }).livsviktig || !!(KROPPSDELAR[d] as { ute?: true }).ute) ? 1 as const : undefined;
-  const sar: Kampe['skador'][number] = { d, k, g, ny: SKADOR[k].blod > 0 ? 1 : 0, fast, ...(av ? { av } : {}) };
+  const sar: Kampe['skador'][number] = { d, k, g, ny: !sport && SKADOR[k].blod > 0 ? 1 : 0, fast, ...(av ? { av } : {}), ...(sport ? { ont } : {}) };
   // en skråma där det redan finns ett likadant sår gör det såret värre (som skada i halsa.ts, steg B.10)
   const gammalt = g < HALSA.skrama && !av ? b.skador.find(w => w.d === d && w.k === k && !w.fast && !w.av) : undefined;
-  if (gammalt) { gammalt.g = Math.min(1, gammalt.g + g); gammalt.ny = sar.ny; } else b.skador.push(sar);
-  b.blod -= SKADOR[k].blod * g * STRID.blodSlag;
+  if (gammalt) { gammalt.g = Math.min(1, gammalt.g + g); if (sport) gammalt.ont = Math.min(1, (gammalt.ont ?? 0) + ont); gammalt.ny = sar.ny; } else b.skador.push(sar);
+  if (!sport) b.blod -= SKADOR[k].blod * g * STRID.blodSlag;
   const dogAvSaret = !!varld?.skada?.(b, sar, a); // på kartan sitter såret på personen direkt (steg 10.1.4)
-  b.modNu -= STRID.modSkada * g * clamp(1 + STRID.modFeg * (10 - b.st.mod) / 10, 1 - STRID.modFeg, 1 + STRID.modFeg); // den modiga ger upp långsammare (steg 9.2.116)
+  b.modNu -= STRID.modSkada * ont * clamp(1 + STRID.modFeg * (10 - b.st.mod) / 10, 1 - STRID.modFeg, 1 + STRID.modFeg); // den modiga ger upp långsammare (steg 9.2.116)
   a.gjort += g;
   st.logg.push({ t: st.t, h: 'traff', a: a.id, b: b.id, d, k, g, v: a.vapen, kl, kast: kf });
   if (fast) st.logg.push({ t: st.t, h: 'fastnar', a: b.id, d, v: a.vapen });
@@ -806,7 +821,7 @@ export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, 
   if (AVS[st.avsikt].lek && g >= STRID.lek) return falla(st, b, 'ger');
   if (b.lage === 'nere') return; // den som redan ligger
   if ((iStrid(b) || b.lage === 'flykt') && !kanGaK(b)) { b.kryper = 0; return falla(st, b, 'nere', 'kryper'); } // kan inte resa sig utan kryper undan (steg 3.7.19)
-  if (smartaAv(b) >= STRID.nere) return falla(st, b, 'nere');
+  if (smartaAv(b) >= STRID.nere) return falla(st, b, sport ? 'ger' : 'nere'); // den som har för ont i brottningen ger sig
 }
 
 // knuffen (steg 3.7.8): ingen skada, men den kan fälla. Den som ser den komma kan kliva undan
