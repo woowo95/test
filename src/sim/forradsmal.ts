@@ -373,8 +373,8 @@ function nyBrist(s: State, k: StationSlag, d: StationDef) {
   if (d.utkant?.drag) return kupBrist(s, k); // bikupan (steg 10.10.16)
   if (d.hage) return hoBrist(s); // vattenhon i hagen som inte når vattnet (steg 10.10.30)
   if (d.hinner) return koBrist(s, k, d.hinner); // slöjdbänken: arbetet som väntar vid den (steg 12.1.150)
-  if (d.fahus) { const n = fahusHus(s).length; return n ? fahusUtanKrubba(s).length / n : 0; } // en krubba i varje fähus (steg 10.2.88)
-  return d.pynt ? pyntBrist(s, k) : d.brasa ? brasaBrist(s) : d.sover ? Math.max(living(s).length ? utanBadd(s) / living(s).length : 0, finareKrok.sjuk(s)) /* och en bädd i sjukstugan (steg 13.1.14, mobler.ts) */ : d.platser ? bordBrist(s, k)
+  if (d.fahus) { const n = fahusHus(s).length; return Math.max(foretagBord.krubbaBrist(s), n ? fahusUtanKrubba(s).length / n : 0); } // en krubba i varje fähus (steg 10.2.88)
+  return d.pynt ? pyntBrist(s, k) : d.brasa ? brasaBrist(s) : d.sover ? Math.max(living(s).length ? utanBadd(s) / living(s).length : 0, finareKrok.sjuk(s), foretagBord.baddBrist(s)) /* och en bädd i sjukstugan (steg 13.1.14, mobler.ts) */ : d.platser ? bordBrist(s, k)
     : d.forvar ? Math.max(forvarBrist(s, k), finareKrok.stugaSkap(s, k)) /* och en hylla i sjukstugan (steg 13.1.14) */ : d.gor.includes('toa') ? latrinBrist(s) : d.gor.includes('torka') ? torkBrist(s) : harStation(s, k) ? 0 : 1;
 }
 // sängen i stället för halmbädden (steg 12.4.3): bristen sätts i mobler.ts, som läses efter den här filen

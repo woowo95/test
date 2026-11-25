@@ -1,3 +1,4 @@
+import { husById } from './byggnad';
 import { HUS, bedTile, sjukKrok, sovplatser } from './byggnader';
 import { Hus, MATERIAL, Rum, gridOf } from './byggnad';
 import { balans } from './balans';
@@ -126,7 +127,7 @@ export function rumInfo(s: State, r: Rum, utanFolk = false): RumInfo {
     if (t.k === 'tork') i.tork++;
     if (t.k === 'slaktbank') i.slakt++;
     if (t.k === 'smedja') i.smedja = (i.smedja ?? 0) + 1; // steg 12.2.4
-    if (d.sover) i.badd = (i.badd ?? 0) + 1; // halmbädden och sängen
+    if (d.sover) { i.badd = (i.badd ?? 0) + 1; if (husById(s, r.hus)?.fn === 'naringshus') i.sov++; } // nattlogiets bäddar är gästernas sovplatser (steg 14.1.12) // halmbädden och sängen
     if (t.k === 'hylla' || t.k === 'kista') i.skap = (i.skap ?? 0) + 1; // för salvan och förbanden i sjukstugan (steg 13.1.14)
     if (d.fahus) i.krubba++;
     if (d.varmer) i.eld++; // fyrfatet värmer rummet som en härd (taggen Varmt, steg 12.4.11)

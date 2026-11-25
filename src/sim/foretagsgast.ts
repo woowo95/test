@@ -16,7 +16,7 @@ import { klanHandelse } from './byrel';
 import { gaMot } from './rovare';
 import { hourOf } from './tid';
 import { diskarAv, erbjudandet, gastKund, KASSA, koaKlar, koPlats, omdome, stallIKo, type Erbjudande } from './kassa';
-import { foretagOf, oppna, VERKSAMHETER, type Foretag } from './foretag';
+import { foretagOf, gastFlode, oppna, VERKSAMHETER, type Foretag } from './foretag';
 import { ryktetI, omdomeAv } from './foretagsrykte';
 import { FORVANTAN } from './forvantan';
 import { radPaslag, radTar } from './priser';
@@ -41,6 +41,8 @@ export const FGAST = balans('foretagsgast', {
   ata: 10, // så länge (minuter) sitter gästen med det hen köpt
   fran: 9, till: 18, // gästen kommer fram under dagen
   moten: 6, // så många gånger tas det hen redan haft av samma sort som mindre lockande (1 / antalet)
+  vag: 0.4, // ett dygns väg tar så mycket av vilan
+  ridande: 0.2, // så ofta kommer en vanlig gäst med ett riddjur (de fina gör det alltid)
   igen: 0.5, // så ofta är det någon som varit här förut, om det finns någon
 });
 // vem gästen är. silver = så stor del av silvret per person hemma hen tar med (och lägst), kg = det hen kan bära, forv = finheten hen väntar sig
@@ -64,6 +66,7 @@ export function lockar(f: Foretag, k: Klan): number {
   if (k.rad === undefined || k.inst <= KLAN.handelMin) return 0; // en ovänby besöker aldrig
   return FGAST.perDygn * narhet(k) * Math.max(0, 1 + FGAST.inst * k.inst / 100) * Math.max(0, 1 + FGAST.rykte * ryktetI(f, k.rad));
 }
+gastFlode.push(s => foretagOf(s).length ? klanerOf(s).reduce((a, k) => a + Math.max(...foretagOf(s).map(f => lockar(f, k))), 0) : 0);
 export const finChans = (f: Foretag, k: Klan) => k.inst < 0 || k.rad === undefined ? 0 : clamp(FGAST.fin + FGAST.finRykte * ryktetI(f, k.rad) + FGAST.finInst * k.inst / 100, 0, 1);
 // i timmens takt (TAKTER): kommer någon?
 export function foretagsgasterKommer(s: State, sek: number) {
@@ -88,6 +91,8 @@ export function nyForetagsgast(s: State, f: Foretag, k: Klan, rang?: RangId): Pe
   // silvret tas ur hembyn
   const hem = Math.floor((r?.tal.silver ?? 0) / Math.max(1, r?.tal.folk ?? 1) * R(p).silver), sil = Math.min(r ? Math.floor(r.tal.silver) : R(p).minst, Math.max(R(p).minst, hem));
   p.gast!.silver = sil;
+  p.rest = clamp(p.rest - FGAST.vag * (k.dygn ?? 0), 0.1, 1); // trött av vägen
+  if (R(p).fin || u(6) < FGAST.ridande) p.gast!.riddjur = 1;
   if (r) radTar(r, 'silver', -sil);
   s.people.push(p);
   count(s, 'foretagsgast'); count(s, 'foretagsgast_' + id); if (R(p).fin) count(s, 'foretagsgastFin');
@@ -124,6 +129,7 @@ gastKund.at = (_s, p, k) => ata(p, { [k]: KROPP.mattar });
 gastKund.klar = (s, p, v, sitter) => {
   const g = p.gast!;
   (g.haft ??= {})[v] = (g.haft[v] ?? 0) + 1; g.gjort = (g.gjort ?? 0) + 1;
+  if (g.gor === 'sover') { p.task = undefined; return; } // bädden hen köpt (verksamheter.ts)
   if (sitter) { const q = ledigPlats(s, p); g.gor = 'ater'; g.till = s.now + FGAST.ata * MIN; g.vx = q?.x ?? p.x; g.vy = q?.y ?? p.y; } else g.gor = undefined;
   p.task = undefined;
 };
@@ -155,6 +161,9 @@ export function foretagsgastSteg(s: State, dtSec: number) {
       } else if (g.gor === 'ater') {
         if (Math.hypot(p.x - (g.vx ?? p.x), p.y - (g.vy ?? p.y)) > 0.3) gaMot(s, p, g.vx!, g.vy!, dtSec, t0);
         if (s.now >= (g.till ?? 0)) { g.gor = undefined; g.path = undefined; g.pk = undefined; }
+      } else if (g.gor === 'sover') { // går till bädden, sover ut och går upp
+        if (g.sovit) { g.sovit = undefined; g.gor = undefined; g.path = undefined; g.pk = undefined; }
+        else if (gaMot(s, p, g.vx!, g.vy!, dtSec, t0) < 0.6) { p.x = g.vx!; p.y = g.vy!; g.sover = 1; g.sovit = 1; }
       } else {
         const e = (g.gjort ?? 0) < FGAST.kop ? basta(s, p, f!) : undefined;
         if (!e) { if (!g.gjort && !g.bemott) for (const o of omdome) o(s, p, f!); gaHem(p); continue; } // inget lockade, eller allt är slut

@@ -21,7 +21,7 @@ import { Zone, amountOf, eldRutor, ingetIElden, bordanAv, flyttaLager, inZone, o
 import { PLATS } from './plats';
 import { balans } from './balans';
 import { Hus, Rum, bitAt, blocked, gridOf, housesOf, husById, roofed, roomAt, touch } from './byggnad';
-import { HUS, bedTile, husIText, fahusUtanKrubba, husFolk, krubbaKrok, fnOf, langhusRum, rumFnOf, samlingRum, sovHus, sovKvar, sovPlats } from './byggnader';
+import { HUS, bedTile, husIText, fahusUtanKrubba, husFolk, krubbaKrok, fnOf, langhusRum, rumFnOf, samlingRum, sovHus, sovKvar, sovPlats, utanBadd } from './byggnader';
 import { coldOf, nederbord, temperature } from './vader';
 import { ACTS, GARVA_ACTS, redskapTal } from './handlingar';
 import { SAKER, isTool } from './saker';
@@ -757,7 +757,7 @@ function friRunt(s: State, rutor: { x: number; y: number }[], motVagg = false, m
 export interface Rekt { x: number; y: number; w: number; h: number }
 // platsen för en station av sorten k: inne i ett hus om registret säger det, annars nära elden. Samma plats varje gång (ingen slump)
 // borden och scenen står hellre i samlingssalen när den har plats (steg 7.2.7 och 7.2.8)
-const siteSal = (s: State, k: string, p?: Person) => { const sal = stationDef(k)?.disk ? foretagBord.diskRum(s) : stationDef(k)?.vara ? foretagBord.varuRum(s) : stationDef(k)?.fahus ? fahusUtanKrubba(s)[0] : stationDef(k)?.langhus ? langhusRum(s) : k === 'scen' ? samlingRum(s) : stationDef(k)?.platser ? bordVal(s, k, p)?.r : undefined; return sal && siteInne(s, k, sal); }; // långhusets möbler i långhuset (steg 10.2.68)
+const siteSal = (s: State, k: string, p?: Person) => { const sal = stationDef(k)?.disk ? foretagBord.diskRum(s) : stationDef(k)?.vara ? foretagBord.varuRum(s) : stationDef(k)?.fahus ? foretagBord.krubbaRum(s) ?? fahusUtanKrubba(s)[0] : stationDef(k)?.langhus ? langhusRum(s) : k === 'scen' ? samlingRum(s) : stationDef(k)?.platser ? bordVal(s, k, p)?.r : undefined; return sal && siteInne(s, k, sal); }; // långhusets möbler i långhuset (steg 10.2.68)
 export const stationSite = (s: State, k: string, p?: Person) => iPlatsMinne(`${k}|${p?.id ?? ''}`, () => sokSite(s, k, p));
 // medan f körs ger samma fråga om en plats (q) samma svar utan att söka igen: för projektvalet, som frågar om p kan göra
 // projektet (kan) och sedan var (uppgift) utan att något i byn ändras emellan (bastaProjekt i projekt.ts). Utanför söks det varje gång
@@ -772,7 +772,8 @@ export function iPlatsMinne<T>(q: string, f: () => T): T {
   if (!platsMinne.has(q)) platsMinne.set(q, f());
   return platsMinne.get(q) as T;
 }
-const sokSite = (s: State, k: string, p?: Person) => moblerKrok.stugaSite(s, k) ?? sokSite0(s, k, p); // sjukstugans bädd och hylla (steg 13.1.14, mobler.ts)
+const siteLogi = (s: State, k: string) => (r => r && siteInne(s, k, r))(foretagBord.baddRum(s)); // nattlogiets bädd (steg 14.1.12), efter byborna som saknar en
+const sokSite = (s: State, k: string, p?: Person) => moblerKrok.stugaSite(s, k) ?? (k === 'halmbadd' && !utanBadd(s) ? siteLogi(s, k) : undefined) ?? sokSite0(s, k, p) ?? (k === 'halmbadd' ? siteLogi(s, k) : undefined); // sjukstugans bädd och hylla (steg 13.1.14, mobler.ts)
 const sokSite0 = (s: State, k: string, p?: Person) => stationDef(k)?.vagga || stationDef(k)?.varmer ? (r => r && siteInne(s, k, r))(stationDef(k)?.vagga ? moblerKrok.vaggaRum(s) : moblerKrok.fyrfatRum(s)) : stationDef(k)?.ersatter ? moblerKrok.site(s, k, p) : stationDef(k)?.hage ? siteHo(s) : stationDef(k)?.tro ? siteTro(s, k, p) : siteSal(s, k, p) || (stationDef(k)?.forvar?.privat || stationDef(k)?.pynt ? p && siteKista(s, k, p) : stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? somUtanLager(() => siteUte(s, k, sokUtkant, 'utkant:' + k)) : stationDef(k)?.inne ? siteInne(s, k, undefined, h => farBygga(s, h, p)) : somUtanLager(() => siteUte(s, k)));
 // trons möbler (steg 10.3.19): i rummet i trons hus, för den troende p
 function siteTro(s: State, k: string, p?: Person) {
@@ -987,7 +988,7 @@ function siteInne(s: State, k: string, bara?: Rum, far?: (h: Hus) => boolean) {
     const hus = husById(s, r.hus);
     if (!hus?.klar || !r.tiles.length || bara && r !== bara || far && !far(hus) || (hus.tro !== undefined && hus.fn !== 'naringshus') !== !!d.tro) continue; // i trons hus står bara trons möbler (steg 10.3.19)
     const fn = rumFnOf(s, r);
-    if (d.sover ? !fn.sover : fn.lager) continue;
+    if (d.sover ? !fn.sover && !(bara && hus.fn === 'naringshus') : fn.lager) continue; // nattlogiets bäddar (steg 14.1.12)
     const rum = new Set(r.tiles), kvar = sovKvar(s, r), bonus = (!d.sover && !fn.sover ? -STATION.samling : 0) - (d.kok && rumTaggar(s, r).has('kok') ? STATION.kokSamla : 0); // köket samlar sina stationer (steg 10.2.92)
     for (const rot of [0, 1] as const) {
       const { w, h } = storlek(k, rot), tar = d.sover || d.pynt || d.varmer || d.vagga ? 0 : w * h; // halmbädden är en del av sovplatsen, och pyntet tar ingen (steg 9.2.36), inte heller fyrfatet och vaggan (steg 12.4.5, 12.4.11)
@@ -1460,7 +1461,7 @@ export function bordVid(s: State, p: { x: number; y: number }) {
 // får plats i rummet med sina sittplatser går inte att välja där. Nyttan är platserna bordet fyller åt dem som saknar, så att
 // projektets värde (nyttan delad med virket och arbetet, projekt.ts) väljer storleken. p = bara de hus p får bygga i
 // rummen i företagens hus som vill ha bord, och åt hur många (foretag.ts sätter kroken)
-export const foretagBord: { rum: (s: State) => { r: Rum; folk: number }[]; diskRum: (s: State) => Rum | undefined; diskBrist: (s: State) => number; varuRum: (s: State) => Rum | undefined; varuBrist: (s: State) => number; finare: (s: State, p: Person) => { r: Rum; lust: number } | undefined } = { finare: () => undefined, rum: () => [], diskRum: () => undefined, diskBrist: () => 0, varuRum: () => undefined, varuBrist: () => 0 };
+export const foretagBord: { rum: (s: State) => { r: Rum; folk: number }[]; diskRum: (s: State) => Rum | undefined; diskBrist: (s: State) => number; varuRum: (s: State) => Rum | undefined; varuBrist: (s: State) => number; finare: (s: State, p: Person) => { r: Rum; lust: number } | undefined; baddRum: (s: State) => Rum | undefined; baddBrist: (s: State) => number; krubbaRum: (s: State) => Rum | undefined; krubbaBrist: (s: State) => number } = { baddRum: () => undefined, baddBrist: () => 0, krubbaRum: () => undefined, krubbaBrist: () => 0, finare: () => undefined, rum: () => [], diskRum: () => undefined, diskBrist: () => 0, varuRum: () => undefined, varuBrist: () => 0 };
 interface BordStalle { r?: Rum; folk: number; har: number }
 const bordCache = new WeakMap<State, { key: string; m: Map<string, { r?: Rum; fyller: number } | undefined> }>();
 function bordStallen(s: State): BordStalle[] {

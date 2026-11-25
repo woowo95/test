@@ -422,3 +422,52 @@ SCENARIER.foretagsgast = {
     ];
   },
 };
+
+SCENARIER.verksamheter = {
+  text: 'Steg 14.1.12: nattlogi (trötta gäster köper en bädd och sover), stall (riddjuret får foder) och djurhandel (ett par behålls, djuret byter ägare eller följer gästen hem), och ett företag lägger till dem efter samma poäng som en start',
+  kor: () => {
+    const { s, p, f, r, disk } = foretagBy(['servering']), W = SIM.W, k = SIM.klanerOf(s).find(q => q.rad !== undefined)!, rad = s.varld!.rader!.find(q => q.nr === k.rad)!;
+    for (const q of SIM.living(s)) { q.task = undefined; (q.tek ??= {}).halmbadd = 1; q.tek.snickarbank = 1; }
+    rad.tal.silver = 300; k.inst = 0;
+    const fint = () => { s.finhet = { ...s.finhet, [SIM.rumNyckel(SIM.foretagRum(s, f)[0])]: 0.6 }; }; fint();
+    const V = SIM.VERKSAMHETER;
+    // tillägget: samma poäng som en start, utan huset
+    const start = SIM.startPoang(s, p.id, ['nattlogi']).poang, till = SIM.startPoang(s, p.id, ['nattlogi'], 1).poang, g0 = SIM.efterfragan(s, 'nattlogi', p.id);
+    const utan = s.foretag!; s.foretag = []; const ingen = SIM.efterfragan(s, 'nattlogi', p.id).kunder; s.foretag = utan;
+    f.byar = undefined; const u = SIM.bastaUtok(s);
+    SIM.utoka(s, f, ['nattlogi', 'stall', 'djurhandel']);
+    const kraver = [SIM.oppna(s, f).includes('nattlogi'), SIM.foretagBord.baddBrist(s), SIM.foretagBord.krubbaBrist(s)], site = SIM.stationSite(s, 'halmbadd'), krub = SIM.stationSite(s, 'krubba');
+    const sattNer = (kk: string, q?: { x: number; y: number; rot?: 1 }) => { if (q) { s.stationer!.push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: kk, x: q.x, y: q.y, rot: q.rot, kvar: 0, inne: 1 } as unknown as SIM.Station); SIM.touch(s); } return !!q && r.tiles.includes(Math.floor(q.y) * W + Math.floor(q.x)); };
+    const iRum = [sattNer('halmbadd', site), sattNer('krubba', SIM.stationSite(s, 'krubba'))], opp = SIM.oppna(s, f);
+    // den trötta gästen köper en bädd, sover och går upp
+    const g = SIM.nyForetagsgast(s, f, k, 'rik')!; const trott = g.rest; g.rest = 0.1; g.gast!.riddjur = undefined;
+    const pigg = V.nattlogi.noje(s, { ...g, rest: 0.95 } as typeof g, 'natt'), tr = V.nattlogi.noje(s, g, 'natt');
+    const o = SIM.koPlats(s, disk); g.x = o.x; g.y = o.y; g.gast!.fas = 'pratar';
+    const e = SIM.erbjudandet(s, g, 'nattlogi', f);
+    const kop = (q: typeof g, v: string, kk: string) => SIM.kopVid(s, f, q, { p: q.id, v, k: kk, n: 1, t: s.now }, p);
+    const silver0 = SIM.ownsAmount(s, p, 'silver'), kopt = kop(g, 'nattlogi', 'natt'), fick = SIM.ownsAmount(s, p, 'silver') - silver0, full = SIM.ledigaBaddar(s, f).length;
+    for (let i = 0; i < 400 && !g.gast!.sover; i++) { s.now += 1000; SIM.foretagsgastSteg(s, 1); }
+    const sov = !!g.gast!.sover; for (let i = 0; i < 8 * 60 && g.gast!.sover; i++) { s.now += 60000; SIM.gastVardag(s, 60, () => 1); }
+    const utvilad = g.rest; SIM.foretagsgastSteg(s, 1); const uppe = g.gast!.gor !== 'sover', led = SIM.ledigaBaddar(s, f).length;
+    // stallet: utan djur inget, med djur ett foder
+    const utanDjur = SIM.erbjudandet(s, g, 'stall', f); g.gast!.riddjur = 1; fint(); SIM.put(s, 'torrgras', 3, { [p.id]: 3 }); const f0 = SIM.ownsId(s, p.id, 'torrgras'), eS = SIM.erbjudandet(s, g, 'stall', f), st = SIM.iHelaForradet(() => kop(g, 'stall', 'djurvard')), f1 = SIM.ownsId(s, p.id, 'torrgras'), klart = g.gast!.riddjur === undefined;
+    // djurhandeln
+    s.tamdjur = []; const djur = [1, 2, 3, 4].map(() => SIM.nyttTamdjur(s, 'far', p.x, p.y, p.id, s.now - 3 * SIM.DAY));
+    djur.forEach((d, i) => { d.hona = i % 2 === 0; });
+    const kund = SIM.living(s).find(q => q !== p && !SIM.familjOf(s, p.id).includes(q) && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!; SIM.put(s, 'silver', 60, { [kund.id]: 60 }); kund.skill.skotsel = 20;
+    const eD = SIM.kundVal(s, kund, 'djurhandel'), kd = kop(kund, 'djurhandel', 'far'), agare = djur.filter(d => d.agare === kund.id).length;
+    g.gast!.silver = 100; const kg = kop(g, 'djurhandel', 'far'), hemMed = g.gast!.kop?.levfar ?? 0, kvar = SIM.tamdjurOf(s).filter(d => d.agare === p.id).length, slut = SIM.tillSalu(s, p.id, 'far');
+    return [
+      [`nattlogiet räknar med gästerna (${g0.kunder.toFixed(2)} per dygn), och utan företag kommer inga (${ingen})`, g0.kunder > 0 && ingen === 0],
+      [`tillägget är värt mer än ett nytt hus (${till.toFixed(2)} mot ${start.toFixed(2)}), och det bästa väljs (${u?.verk ?? 'inget'})`, till > start && (!u || u.poang > 0)],
+      [`rummet saknar bädd och krubba (${kraver.join(', ')}), och båda ställs i företagets rum (${iRum.join(', ')})`, kraver[0] === false && Number(kraver[1]) > 0 && Number(kraver[2]) > 0 && !!krub && iRum.every(Boolean)],
+      [`då är verksamheterna öppna (${opp.join(', ')})`, ['nattlogi', 'stall', 'djurhandel'].every(v => opp.includes(v))],
+      [`den trötta vinner mer på en bädd (${tr.toFixed(1)}) än den pigga (${pigg.toFixed(1)}), vägen tröttar (${trott.toFixed(2)})`, tr > pigg * 5 && trott < 0.9 && !!e],
+      [`gästen betalar (${fick} silver), bädden är upptagen (${full}) och hen somnar (${sov})`, kopt && fick >= 1 && full === 0 && sov],
+      [`hen vaknar utsövd (${utvilad.toFixed(2)}) och bädden blir ledig (${led})`, utvilad >= 0.94 && uppe && led === 1],
+      [`stallet: utan djur inget (${!!utanDjur}), med djur (${!!eS}, ${g.gast!.silver}, ${g.x.toFixed()} ${disk.x}) går ett foder åt (${f0} → ${f1}), ${st} ${klart}`, !utanDjur && !!eS && st && f1 === f0 - 1 && klart],
+      [`bybon köper ett djur (${eD?.k}), och det byter ägare (${agare})`, !!eD && kd && agare === 1],
+      [`gästen leder hem sitt (${hemMed}), och ett par är kvar (${kvar})`, kg && hemMed === 1 && kvar === 2 && !slut],
+    ];
+  },
+};

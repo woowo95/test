@@ -79,6 +79,7 @@ function satt(s: State, p: Person, act: Act) {
 function kanSova(s: State, p: Person) {
   const h = s.handlare;
   if (p.gast!.sort === 'folje') return !!h?.folj?.includes(p.id) && (h.fas === 'vantar' || h.fas === 'handlar'); // följet sover i lägret
+  if (p.gast!.sort === 'kund') return p.gast!.gor === 'sover'; // i bädden hen köpt (steg 14.1.12)
   if (p.gast!.sort === 'fange') return !!p.fange && p.task?.act === 'fangen' && p.task.phase === 'do'; // fången sover i fängelset
   if (p.gast!.sort === 'besok') return p.gast!.fas === 'pratar'; // besökaren sover i byn hen besöker (steg 11.13.10)
   if (p.gast!.sort !== 'handlare') return false;

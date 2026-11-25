@@ -71,6 +71,7 @@ export function varorAv(s: State, f: Foretag, v: string, G = saljPart(s, f)): st
   if (!G) return [];
   const V = VERKSAMHETER[v], alla = V.varor(s);
   if (!alla.length) return [];
+  if (V.egen) return V.egen.har(s, f);
   if (V.hylla) return [...new Set(hyllan(s, f).map(h => h.k))];
   if (V.vatska) return alla.filter(k => karl(s, f, k));
   const har = new Set(G.over([]).filter(w => !w.t && w.n >= 1).map(w => w.k));
@@ -127,7 +128,7 @@ export function erbjudandet(s: State, p: Person, v: string, bara?: Foretag): Erb
     for (const k of varorAv(s, f, v, G)) {
       M ??= kundPart(s, p);
       const n = VERKSAMHETER[v].hylla ? kopMangd(s, p, f, k) : 1;
-      if (n < 1) continue;
+      if (n < 1 || VERKSAMHETER[v].egen && kundNoje(s, p, v, k) <= 0) continue; // den som inte har någon nytta av tjänsten
       const kv = kvAv(s, f, v, k), far = n * kv * ((VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * M.varde(k)) + kundNoje(s, p, v, k)) + om, pris = prisAv(s, f, v, k, G, n);
       if (far > 0 && !ville.includes(f)) ville.push(f);
       if (far <= (bast?.net ?? 0)) continue;
@@ -204,7 +205,7 @@ export function betjanVal(s: State, p: Person): { f: Foretag; sc: number; spot: 
 // det den som betjänar hämtar till disken (hamtning.ts): maten kunderna framme vid den vill ha, av ägarens
 export function betjanHamtas(s: State, t: Task): Record<string, number> | undefined {
   const f = foretagOf(s).find(q => q.id === t.ref), av: Record<string, number> = {};
-  if (f) for (const r of framme(s, f)) if (!VERKSAMHETER[r.v].vatska && !VERKSAMHETER[r.v].hylla) av[r.k] = Math.min(Math.floor(ownsId(s, f.ag, r.k) + 1e-9), (av[r.k] ?? 0) + 1);
+  if (f) for (const r of framme(s, f)) if (!VERKSAMHETER[r.v].vatska && !VERKSAMHETER[r.v].egen && !VERKSAMHETER[r.v].hylla) av[r.k] = Math.min(Math.floor(ownsId(s, f.ag, r.k) + 1e-9), (av[r.k] ?? 0) + 1);
   for (const k in av) if (av[k] < 1) delete av[k];
   return Object.keys(av).length ? av : undefined;
 }
@@ -234,6 +235,9 @@ export function kopVid(s: State, f: Foretag, p: Person, r: KoRad, at: Person): b
   if (h) {
     betala();
     if (p.gast) gastKund.far(s, f, p, h, n); else taVaran(s, f, p, h, n);
+  } else if (V.egen) {
+    betala();
+    V.egen.ge(s, f, p, r.k);
   } else if (t) {
     betala();
     t.inne!.n -= 1; if (t.inne!.n <= 0) t.inne = undefined;

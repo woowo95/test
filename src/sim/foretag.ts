@@ -24,6 +24,7 @@ import { DRYCKER, dryckAv, vatskaAv, type VatskaId } from './vatskor';
 import { DAGSVERK, egetVarde } from './dagsarbete';
 import { rumTaggar } from './rum';
 import { foretagBord } from './stationer';
+import { RECEPT } from './recept';
 
 export const FORETAG = balans('foretag', {
   humor: 20, // en hel punkt bättre humör under en tanke är värd så många silver för kunden
@@ -52,7 +53,8 @@ export const foretagAvHus = (s: State, hus?: number) => hus === undefined ? unde
 // En verksamhet: rummet den kräver (en rumstyp, rum.ts), vad den säljer, och vad kunden p vinner på en vara mot att ta den hemma.
 export interface Verksamhet {
   namn: string; sym: string;
-  rum: string; // rumstypen
+  rum: string | readonly string[]; // rumstypen (någon av dem)
+  sak?: string; // stationen den kräver utöver disken (utbyggnaden kostar den)
   varor: (s: State) => string[]; // det som går att sälja i byn nu
   noje: (s: State, p: Person, k: string) => number; // det kunden vinner mot att ta det hen har hemma, i silver
   snitt: (k: string) => number; // det en vanlig kund vinner, i silver
@@ -61,11 +63,13 @@ export interface Verksamhet {
   hylla?: true; // det som ligger på varubordet i rummet (affar.ts)
   vatska?: true; // säljs ur ett kärl
   perDygn: (s: State, p: Person) => number; // så många gånger per dygn kunden skulle kunna köpa
+  gaster?: (s: State) => number; // så många gäster per dygn väntas vilja ha den
+  egen?: { har: (s: State, f: Foretag) => string[]; ge: (s: State, f: Foretag, p: Person, k: string) => void }; // det som inte är en sak i förrådet (verksamheter.ts)
   kunnande: (p: Person) => number; // hur väl den som driver den kan den, 1 = vanligt
 }
 // den bästa maten p har hemma
 const hemmaNoje = (s: State, p: Person) => FOOD.reduce((m, k) => { const n = MALTIDSNIVA[maltidsNiva(k)].humor; return n > m && ownsAmount(s, p, k) >= 1 ? n : m; }, 0);
-const skick = (n: number) => clamp(0.6 + n / 25, 0.6, 1.4);
+export const skick = (n: number) => clamp(0.6 + n / 25, 0.6, 1.4);
 export const VERKSAMHETER: Record<string, Verksamhet> = {
   servering: {
     namn: 'Servering', sym: '🍲', rum: 'matsal',
@@ -106,6 +110,8 @@ const agNamn = (s: State, ag: number) => ag === BYN ? 'Byns' : ag < 0 ? 'Kyrkans
 const husAv = (s: State, ag: number): Hus[] => housesOf(s).filter(h => h.fn === 'naringshus' && (ag < 0 ? h.tro !== undefined && kyrkaId(h.tro) === ag : h.tro === undefined && (h.ag ?? BYN) === ag));
 
 // ---------- efterfrågan ----------
+// så många gäster per dygn väntas till byns företag (foretagsgast.ts)
+export const gastFlode: ((s: State) => number)[] = [];
 // vad kunden p kan betala per dygn: silvret och det hen har över, ska räcka en tid
 export const kundPung = (s: State, p: Person) => payable(s, p, []).reduce((a, w) => a + (w.t ? 0 : w.n * grundvarde(w.k)), 0);
 // det kunderna skulle ge per dygn utöver varans värde om de kunde köpa verksamheten v av ag: antalet kunder och vinsten
@@ -121,6 +127,8 @@ export function efterfragan(s: State, v: string, ag: number): { kunder: number; 
     const n = Math.min(V.perDygn(s, p) * FORETAG.andel, kundPung(s, p) / FORETAG.pung / Math.max(0.1, pris));
     kunder += n; vinst += n * bast * FORETAG.del;
   }
+  const g = V.gaster?.(s) ?? 0;
+  kunder += g; vinst += g * V.snitt(varor[0]) * FORETAG.del;
   // det som redan säljs: ett företag som inte hunnit öppna räknas som om det sålde hela sin del
   for (const f of foretagOf(s)) if (f.verk.includes(v) && kunder > 0) {
     const sald = f.hus !== undefined && husById(s, f.hus)?.klar && f.salt?.[v] !== undefined ? Math.min(kunder, f.salt[v]) : kunder;
@@ -130,10 +138,10 @@ export function efterfragan(s: State, v: string, ag: number): { kunder: number; 
 }
 export interface Forsok { ag: number; verk: string[]; poang: number; kunder: number }
 // vad det är värt för ag att starta verksamheterna verk: vinsten per dygn minus arbetet och huset
-export function startPoang(s: State, ag: number, verk: string[]): Forsok {
+export function startPoang(s: State, ag: number, verk: string[], kostar = husKostnad(FORETAG.plats)): Forsok {
   const p = foretagare(s, ag);
   if (!p) return { ag, verk, poang: 0, kunder: 0 };
-  let kunder = 0, ut = -husKostnad(FORETAG.plats) / FORETAG.ar;
+  let kunder = 0, ut = -kostar / FORETAG.ar;
   for (const v of verk) { const e = efterfragan(s, v, ag); kunder += e.kunder; ut += e.vinst * VERKSAMHETER[v].kunnande(p) - e.kunder * FORETAG.timKund * egetVarde(s, p); }
   // läggningen: den som är driftig och modig startar hellre
   const lagg = clamp((stat(p, 'flit', s.now) + stat(p, 'mod', s.now) + stat(p, 'karisma', s.now)) / (3 * EGENSKAP.mitt), 0.3, 1.7);
@@ -153,6 +161,23 @@ export function bastaStart(s: State): Forsok | undefined {
   let bast: Forsok | undefined;
   for (const ag of startare(s)) for (const verk of par) { const f = startPoang(s, ag, verk); if (f.poang > (bast?.poang ?? 0)) bast = f; }
   return bast;
+}
+// det bästa tillägget: ett företag som har sitt hus tar upp en verksamhet till, med samma poäng som ett nytt. Det kostar stationen
+export interface Utok extends Forsok { f: Foretag }
+const sakKostnad = (k?: string) => Object.entries((RECEPT as Record<string, { av?: Record<string, number> }>)[k ?? '']?.av ?? {}).reduce((a, [q, n]) => a + n * grundvarde(q), 0);
+export function bastaUtok(s: State): Utok | undefined {
+  let bast: Utok | undefined;
+  for (const f of foretagOf(s)) if (foretagRum(s, f).length) for (const v of Object.keys(VERKSAMHETER)) if (!f.verk.includes(v)) {
+    const q = startPoang(s, f.ag, [v], sakKostnad(VERKSAMHETER[v].sak));
+    if (q.poang > (bast?.poang ?? 0)) bast = { ...q, f };
+  }
+  return bast;
+}
+export function utoka(s: State, f: Foretag, verk: string[]) {
+  f.verk = [...f.verk, ...verk];
+  count(s, 'foretagUtok'); for (const v of verk) count(s, 'foretagUtok_' + v);
+  const p = foretagare(s, f.ag);
+  log(s, `${f.namn} tog upp något nytt: ${verk.map(v => VERKSAMHETER[v].namn.toLowerCase()).join(' och ')}.`, 'world', p ? [p.id] : []);
 }
 export function starta(s: State, ag: number, verk: string[]): Foretag {
   const f: Foretag = { id: (s.nextForetag = (s.nextForetag ?? 0) + 1), ag, verk, namn: `${agNamn(s, ag)} ${sortNamn(verk).toLowerCase()}`, t: s.now };
@@ -175,11 +200,12 @@ foretagKrok.namn = (s, a: Akut) => foretagOf(s).find(q => q.hus === undefined &&
 export const foretagRum = (s: State, f: Foretag): Rum[] => f.hus === undefined || !husById(s, f.hus)?.klar ? [] : gridOf(s).rooms.filter(r => r.hus === f.hus && r.tiles.length);
 // så många kunder väntas samtidigt, och så många platser vid bord vill företaget ha
 export const vantadeKunder = (s: State, f: Foretag) => f.verk.reduce((n, v) => n + Math.max(f.salt?.[v] ?? 0, living(s).length * FORETAG.andel), 0);
-foretagBord.rum = s => foretagOf(s).flatMap(f => f.verk.some(v => VERKSAMHETER[v]?.rum === 'matsal') ? foretagRum(s, f).slice(0, 1).map(r => ({ r, folk: Math.max(2, Math.min(FORETAG.bordKunder, Math.round(vantadeKunder(s, f) * FORETAG.samtidigt * 2))) })) : []);
+foretagBord.rum = s => foretagOf(s).flatMap(f => f.verk.some(v => rumAv(v).includes('matsal')) ? foretagRum(s, f).slice(0, 1).map(r => ({ r, folk: Math.max(2, Math.min(FORETAG.bordKunder, Math.round(vantadeKunder(s, f) * FORETAG.samtidigt * 2))) })) : []);
+const rumAv = (v: string): readonly string[] => (r => r === undefined ? [] : typeof r === 'string' ? [r] : r)(VERKSAMHETER[v]?.rum);
 // verksamheterna som är öppna: rummet har sin rumstyp
 export function oppna(s: State, f: Foretag): string[] {
   const rum = foretagRum(s, f);
-  return f.verk.filter(v => rum.some(r => rumTaggar(s, r).has(VERKSAMHETER[v].rum as never)));
+  return f.verk.filter(v => rum.some(r => rumAv(v).some(q => rumTaggar(s, r).has(q as never))));
 }
 // ---------- de anställda (steg 14.1.7, dagsarbetet) ----------
 // det en kund ger utöver varan, efter det som sålts
@@ -212,5 +238,7 @@ export function foretagDygn(s: State) {
   for (const g of dygnet) g(s);
   for (const f of foretagOf(s)) { for (const v in f.salt) f.salt[v] *= 1 - FORETAG.minne; if (f.intakt !== undefined) f.intakt *= 1 - FORETAG.minne; if (f.vinst !== undefined) f.vinst *= 1 - FORETAG.minne; if (f.lamnat !== undefined) f.lamnat *= 1 - FORETAG.minne; }
   const b = bastaStart(s);
-  if (b) starta(s, b.ag, b.verk);
+  const u = bastaUtok(s);
+  if (u && u.poang > (b?.poang ?? 0)) utoka(s, u.f, u.verk);
+  else if (b) starta(s, b.ag, b.verk);
 }
