@@ -3151,3 +3151,24 @@ SCENARIER.seavstand = {
   },
   lang: true,
 };
+
+SCENARIER.ingenvantan = {
+  text: 'Steg B.47: om de egna räcker räknas likadant vid larmet och i mötet, och när alla på väg är framme och ändå inte räcker väljs rollen om: två kämpar mot sex rövare står inte kvar på väntplatsen',
+  kor: () => {
+    const prov = (n: number, kampar: number) => {
+      const s = rovarBy(11, n), f = rovarGang(s, 6, landVid(s, 40)!); ettGang(s, f); f.vantat = true; f.till = s.now + SIM.HOUR; f.test = false;
+      const v = vuxnaI(s).slice(0, kampar), m = SIM.malet(s);
+      // de andra är borta: bara kämparna finns i byn
+      for (const p of SIM.living(s)) if (!p.gast && !v.includes(p)) p.larmRoll = { hot: 'rovare', roll: 'gomd', v: s.larmV ?? 0, t: s.now + SIM.HOUR };
+      v.forEach((p, i) => { Object.assign(p, SIM.freeNear(s, m.x + 4 + i, m.y)); p.pot.mod = 12; SIM.horLarm(p, { t: s.now, vad: 'rovare', storlek: 6, led: 1, varnat: 1, om: [f.id] }); p.larmRoll = { hot: 'rovare', roll: 'kampe', v: s.larmV ?? 0, t: s.now }; p.task = { act: 'forsvarRovare', phase: 'go', tx: m.x, ty: m.y, until: s.now + SIM.HOUR, carry: 0, why: 'test' } as SIM.Task; });
+      let sist = 0; const t0 = s.now;
+      korTills(s, () => false, 240, () => { ettGang(s, f); if (v.some(p => p.task?.act === 'forsvarRovare' && p.task.vantar)) sist = (s.now - t0) / 1000; });
+      return { sist, roller: v.map(p => p.larmRoll?.roll ?? '-') };
+    };
+    const a = [0, 1, 2].map(n => prov(n, 2)), b = prov(0, 7);
+    return [
+      [`två mot sex väntar inte på ingen (väntar sist efter ${a.map(x => x.sist.toFixed(0)).join(', ')} s; ${a.map(x => x.roller.join('+')).join(', ')})`, a.every(x => x.sist < 90 && x.roller.every(r => r !== 'kampe'))],
+      [`sju mot sex är kvar som kämpar (${b.roller.join(', ')})`, b.roller.filter(r => r === 'kampe').length >= 4],
+    ];
+  },
+};
