@@ -40,7 +40,7 @@ export const person: Flik = {
     const bi = g ? `<span class="muted small">${esc(g.sort.toLowerCase())}</span>` : binamnHtml(p).trim();
     const marken = `${alive(p) ? prickar(p) : ''}${g ? '' : anseende(p)}`.trim();
     return `
-      <div class="phead">${portrattImg(skapad(s, p), "big stor")}<div class="phuvud"><h2><span class="pnamn"${namnStorlek(p.name)}>${esc(p.name)}</span>${lever ? `<button type="button" class="oga${ui.follow === p.id ? ' sel' : ''}" data-folj="${p.id}" title="Följ ${esc(p.name)} med kartan (som att trycka två gånger på porträttet)" aria-label="Följ med kartan">{sym_oga}</button>` : ''}</h2>
+      <div class="phead">${portrattImg(skapad(s, p), "big stor")}<div class="phuvud"><h2><span class="pnamn" data-passa="11">${esc(p.name)}</span>${lever ? `<button type="button" class="oga${ui.follow === p.id ? ' sel' : ''}" data-folj="${p.id}" title="Följ ${esc(p.name)} med kartan (som att trycka två gånger på porträttet)" aria-label="Följ med kartan">{sym_oga}</button>` : ''}</h2>
       <p class="binamnrad">${bi || '&nbsp;'}</p>${g ? '' : binamnForkl(p)}
       <p class="pfakta">${[pFakta(p), g?.fran ? `från ${esc(g.fran)}` : ''].filter(Boolean).join(' · ') || '&nbsp;'}</p><p class="pmarken">${marken || '&nbsp;'}</p>
       <p class="status klick${hel ? ' hel' : ''}" ${fallUt(sid)} title="${esc(hel ? 'Tryck för att korta' : 'Tryck för hela texten och skälet')}">${status}</p>${hel && why ? `<p class="muted small pskal">${esc(why)}</p>` : ''}</div></div>
@@ -164,8 +164,6 @@ function gastRelRad(namn: string, r: GastRel, g?: number, gast?: boolean, klan?:
   const title = `${opOrd(r.op)}${g === undefined ? '' : `. Handlaren ${g > 0.25 ? 'gillar' : g < -0.25 ? 'ogillar' : 'har inget särskilt emot'} bybon${g > 0.25 ? ' och kräver lite mindre' : g < -0.25 ? ' och kräver mer' : ''}`}`;
   return `<li>${namn}${gast ? ' <span class="muted small">gäst</span>' : ''}<span class="rw ${r.op < REL.osams || r.irr > 0.05 ? 'neg' : r.op > REL.vanOrd ? 'pos' : ''}" title="${esc(title)}">${opOrd(r.op)}</span><span class="muted">${r.n} ${r.n === 1 ? 'affär' : 'affärer'}${mer ? ` · ${esc(mer)}` : ''}</span>${klan ? `<span class="muted small">${esc(klan)}</span>` : ''}</li>`;
 }
-// namnet bredvid porträttet får alltid plats (steg 9.2.128): ett långt namn står med mindre bokstäver i stället för att klippas
-const namnStorlek = (namn: string) => namn.length <= 10 ? '' : ` style="font-size:${Math.max(14, Math.round(24 * 10 / namn.length))}px"`;
 // bredvid porträttet (steg 9.2.95): kön, ålder och yrke, och partnern om det finns en ("med …")
 // raden bredvid porträttet: yrket och partnern. Kön och ålder står under Presentation (steg 10.2.53)
 // raden i huvudet (steg 11.1.41): yrket och partnern. Åldern står en gång, i Översikt (steg 12.1.25)
@@ -358,7 +356,7 @@ function halsaHtml(p: Person) {
   // (steg 11.1.48). Förmågorna har gångfarten, och Näring bara näringsämnena (vätskan står under Behov)
   const fig = `<div class="kroppfig"><div class="hvrad"><span class="hv" title="Personens högra sida">H</span>${gubbe}<span class="hv" title="Personens vänstra sida">V</span></div><p class="muted small">Tryck på en kroppsdel</p></div>`;
   return `<div class="kropp">${fig}${oppen ? `<div class="kroppinfo">${oppen}</div>` : ''}</div>
-    ${gravidRad(p)}<h3>Det som är fel</h3>${lista}${vardRad}<h3>Förmågor</h3><dl class="kv">${formagor}${gangRad(p)}</dl><h3>Näring</h3><dl class="kv">${naring}</dl>`;
+    ${gravidRad(p)}<h3>Det som är fel</h3>${lista}${vardRad}<h3>Förmågor</h3><dl class="kv enrad">${formagor}${gangRad(p)}</dl><h3>Näring</h3><dl class="kv enrad">${naring}</dl>`;
 }
 // det en egenskap eller färdighet gör: arbetena som går fortare (ACTS) och raderna i STAT_GOR och SKILL_GOR
 function gorHtml(rader: string[], nu: string, extra = '') {

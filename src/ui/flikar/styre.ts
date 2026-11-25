@@ -35,7 +35,7 @@ function styretHtml() {
       return `<li ${sedKlick(v.sed!)}>${sedVag(x, esc(d.neg), esc(d.pos))}${sedFormat(v.sed!, dragen)}${sedLista(v.sed!, dragen)}</li>`;
     }).join('');
     const hist = st.historia.slice().reverse().map(h => `<li><span class="when">${timeLabel(s, h.fran)}</span>${pLink(byId(s, h.id)) === '–' ? esc(h.namn) : pLink(byId(s, h.id))}, ${esc([...(h.forr ?? []), h.titel].map(x => x.toLowerCase()).join(', sedan '))}${h.till !== undefined ? ` – ${dygnTxt(h.till - h.fran)}, ${esc(h.slut ?? '')}` : ''}</li>`).join('');
-    return `${ledare}<div class="phead"><div><h3>Maktens seder</h3></div>${flikLank('seder', 'Alla seder')}</div><ul class="seder">${skalar}</ul>${omrostningar()}${rattegangar()}<h3>Ledarna genom tiden</h3><ol class="logg">${hist}</ol>`;
+    return `${ledare}<div class="phead rubrad"><div><h3>Maktens seder</h3></div>${flikLank('seder', 'Alla seder')}</div><ul class="seder">${skalar}</ul>${omrostningar()}${rattegangar()}<h3>Ledarna genom tiden</h3><ol class="logg">${hist}</ol>`;
 }
 
 // stenen Styre (steg 9.3.1): delarna i en rad knappar överst, styret och påbuden. Registret: en ny del är en rad i DELAR

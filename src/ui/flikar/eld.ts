@@ -27,7 +27,7 @@ function fireHtml() {
   const fills = Object.entries(f.fills).map(([id, n]) => ({ p: byId(s, Number(id)), n })).filter(x => x.p).sort((a, b) => b.n - a.n).slice(0, 6);
   const tgt = forsta ? fireWant(s) : f.want ?? 0;
   return `
-    <div class="phead"><span class="dot big" role="img" tabindex="0" aria-label="${f.lit ? 'Brinner' : glod ? 'Glöder' : 'Släckt'}" title="${esc(`${f.lit ? 'Brinner' : glod ? 'Glöder' : 'Släckt'}. Pricken är gul när elden brinner, rost när den glöder och grå när den är släckt`)}" style="background:${f.lit ? '#d8b25f' : glod ? 'var(--g-rost)' : 'var(--tom)'}"></span><div><h2>${esc(h.name)}</h2>
+    <div class="phead"><span class="dot big" role="img" tabindex="0" aria-label="${f.lit ? 'Brinner' : glod ? 'Glöder' : 'Släckt'}" title="${esc(`${f.lit ? 'Brinner' : glod ? 'Glöder' : 'Släckt'}. Pricken är gul när elden brinner, rost när den glöder och grå när den är släckt`)}" style="background:${f.lit ? '#d8b25f' : glod ? 'var(--g-rost)' : 'var(--tom)'}"></span><div><h2 class="rutrub" data-passa="12">${esc(h.name)}</h2>
     <p class="muted">${esc(h.desc)}${forsta ? '' : ' En lägereld till, nära sovplatserna.'}</p><p class="status">${status}</p></div>${hjalpKnapp('eld-om', 'Vad gör elden?')}</div>${hjalpText('eld-om', `<p class="muted small">Elden värmer dem som är nära och lagar maten. Den bränner ved, någon fyller på när den vill ha mer, och slocknar den måste den tändas igen.</p>`)}
     <h3>Just nu</h3><dl class="kv">
       <dt>Trä på elden</dt><dd>${bar(f.fuel / h.maxFuel)}<span>${fmtN(f.fuel)} av ${h.maxFuel} ved</span></dd>

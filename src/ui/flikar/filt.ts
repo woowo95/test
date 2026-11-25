@@ -35,7 +35,7 @@ function minneHtml() {
   if (!b) return '<p class="muted">Bytet är glömt.</p>';
   const sidor = b.avbruten ? `<p>${vem(b.a)} <span class="muted">och</span> ${esc(b.bn)} <span class="muted">blev inte överens.</span></p>` : `<div class="filtpar">${minneSida(b.a, b.an, b.ag)}${minneSida(b.b, b.bn, b.bg)}</div>`;
   const ber = handelBerattelse(s, b);
-  return `<h2>${b.avbruten ? 'Affären' : 'Bytet'}</h2><p class="muted">${esc(clockTxt(b.t))}</p>${ber ? `<p class="ovBer">${esc(ber)}</p>` : ''}${sidor}${forsokHtml(b)}`;
+  return `<h2 class="rutrub" data-passa="12">${b.avbruten ? 'Affären' : 'Bytet'}</h2><p class="muted">${esc(clockTxt(b.t))}</p>${ber ? `<p class="ovBer">${esc(ber)}</p>` : ''}${sidor}${forsokHtml(b)}`;
 }
 // förhandlingen med handlaren (steg 5.4.6.1): varje bud som symboler (det kunden ville ha ⇐ det hen bjöd), vad budet var värt
 // och vad handlaren krävde i silver, ja eller nej, och hur relationen ändrades. Texten kommer fram när man håller över raden
@@ -91,9 +91,9 @@ function filtHtml() {
   const m = filtMot(s, f);
   if (m) {
     const [a, b] = f.handlare !== undefined || m.handlare === undefined && f.y <= m.y ? [f, m] : [m, f]; // handlarens (eller den övre) först
-    return `<h2>Bytet</h2>${affarHtml(f, m)}<div class="filtpar">${sida(a, a.vem ?? a.varor[0]?.fran ?? 0, a.varor, b, true)}${sida(b, b.vem ?? b.varor[0]?.fran ?? 0, b.varor, a, true)}</div>`;
+    return `<h2 class="rutrub" data-passa="12">Bytet</h2>${affarHtml(f, m)}<div class="filtpar">${sida(a, a.vem ?? a.varor[0]?.fran ?? 0, a.varor, b, true)}${sida(b, b.vem ?? b.varor[0]?.fran ?? 0, b.varor, a, true)}</div>`;
   }
-  return `<h2>Filten</h2>${sida(f, f.vem ?? f.varor[0]?.fran ?? 0, f.varor)}`; // en filt ensam: en part per filt (steg 4.5.4.13)
+  return `<h2 class="rutrub" data-passa="12">Filten</h2>${sida(f, f.vem ?? f.varor[0]?.fran ?? 0, f.varor)}`; // en filt ensam: en part per filt (steg 4.5.4.13)
 }
 
 // bytet som pågår vid handlarens filt (steg 9.2.45): vem som började och vad hen ville ha, buden hittills och hur förhandlingen

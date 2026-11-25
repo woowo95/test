@@ -27,6 +27,7 @@ import { OPPNAR, bubblaKlick } from './bubbla';
 import { piles, s, satRitaOm, ui, vidNyBy } from './lage';
 import { renderPorts, startFollow, stopFollow } from './portratt';
 import { gaster } from './gaster';
+import { hallIhop, passa } from './radbryt';
 import { bandHtml, stenHtml } from './runstenar';
 
 // panelerna: flikarna och listan över allt byn äger.
@@ -103,7 +104,7 @@ function skriv(sd: Sida, id: FlikId | undefined, force: boolean) {
   if (!force && sd.body.contains(document.activeElement) && document.activeElement?.matches('input[type="text"]')) return; // den som skriver i rutan (steg 12.1.41) blir inte avbruten
   const html = bandHtml(ALLA[id].band?.() ?? id) + konstigHtml(id, ui) + ALLA[id].html(); // bandet överst i fliken (steg 5.3.3.1); knappen Det här är konstigt (steg 12.1.41, konstigt.ts)
   if (!force && html === sd.html) return;
-  sd.html = html; sd.body.innerHTML = html;
+  sd.html = html; sd.body.innerHTML = html; hallIhop(sd.body); passa(sd.body);
 }
 satRitaOm(() => renderPanel(true));
 // bakåtknappen (steg 6.9.5): panelerna minns vad man tittat på. Det som bestämmer vad panelerna visar sparas när det ändras,

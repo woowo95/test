@@ -34,7 +34,7 @@ function tamHtml() {
   const ho = hage ? hoI(s, hage) : undefined;
   const plats = fahus ? rd('Plats', 'Står i fähuset under istiden', 'Fähuset') : hage ? rd('Plats', ho ? `Går i hagen och betar. Vattenhon har ${ho.vatten ?? 0} av ${HO.rymmer} vatten` : hageVidVatten(s, hage) ? 'Går i hagen och betar, och dricker vid stranden' : 'Går i hagen och betar', `Hagen ${hage.w} × ${hage.h}${ho ? ` · ${ho.vatten ?? 0}/${HO.rymmer}` : ''}`) : rd('🍃', 'Går lös och betar där det finns bete', 'Lös');
   return `
-    <div class="phead">${levande({ art: a.ikon, id: d.id })}<div><h2>${esc(tamNamn(d))}</h2></div></div>
+    <div class="phead">${levande({ art: a.ikon, id: d.id })}<div><h2 class="rutrub" data-passa="12">${esc(tamNamn(d))}</h2></div></div>
     <dl class="kv">
       ${rd('Ålder', `${alder} år gammal. ${tamNamn(d)} lever högst ${a.liv} år`, `${alder} år`)}
       ${rad('Mättnad', 1 - d.hunger, pr(1 - d.hunger), d.hunger >= 1 ? 'Svälter' : d.hunger >= 0.5 ? 'Hungrig: behöver mat' : 'Mätt', d.hunger > 0.6 ? 'low' : '')}
@@ -62,7 +62,7 @@ function honsHtml() {
   if (!h) return '<p class="muted">Hönsen finns inte längre.</p>';
   const q = byId(s, h.agare), agg = iIstiden(kalender(s).ai) ? 0 : h.n * HONS.agg * (DAY / HOUR);
   return `
-    <div class="phead">${levande({ art: 'fagel', id: HONS_ID0 })}<div><h2>Höns</h2></div></div>
+    <div class="phead">${levande({ art: 'fagel', id: HONS_ID0 })}<div><h2 class="rutrub" data-passa="12">Höns</h2></div></div>
     <dl class="kv">
       ${rd('Flock', 'Så många hönor går i flocken. De letar mat själva, så ingen matar dem', `${h.n} ${h.n === 1 ? 'höna' : 'hönor'}`)}
       ${rd('Ägare', h.agare !== undefined ? 'Ägaren. Äggen blir hens' : 'Byn äger flocken', q ? pLink(q) : h.agare !== undefined ? '–' : 'Byn')}
@@ -77,7 +77,7 @@ function djurHtml() {
   const art = stridOf(d.art), drag = dragOf(d.art, d.id), h = halsaOf(s, d.id), g = d.art === 'kanin' ? grupperOf(s, ui.nu).find(x => x.id === d.grupp) : FLOCKARTER[d.art] ? flockGrupper(s, FLOCKARTER[d.art], ui.nu).find(x => x.id === d.grupp) : d.art === 'fagel' ? fagelFlockar(s, ui.nu).find(x => x.id === d.grupp) : undefined;
   const f = d.art === 'varg' ? s.vargar?.find(x => x.id === d.grupp) : undefined, topp = 1 + INDIVID.spann;
   return `
-    <div class="phead">${levande(d)}<div><h2>${esc(art.art)}</h2></div></div>
+    <div class="phead">${levande(d)}<div><h2 class="rutrub" data-passa="12">${esc(art.art)}</h2></div></div>
     <dl class="kv">
       ${rad('Ålder', drag.alder / art.alder, `${drag.alder} år`, `${drag.alder} år gammal. Arten blir högst ${art.alder} år.`)}
       ${rad('Styrka', drag.styrka / (art.styrka * topp), `${Math.round(drag.styrka / (art.styrka * topp) * 100)} % av artens bästa`, `Styrka ${kortTal(drag.styrka)}, ${jfr(drag.styrka, art.styrka)}`)}
