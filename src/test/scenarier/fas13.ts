@@ -3447,3 +3447,28 @@ SCENARIER.brottning = {
     return [[`de flesta avgörs (${ger} av ${n}, i snitt ${Math.round(sek / n)} s)`, ger >= n * 0.8], [`ingen får ett sår eller ligger kvar (${sar} och ${nere})`, sar === 0 && nere === 0]];
   },
 };
+
+SCENARIER.rikgang = {
+  text: 'Rikedomen lockar plundrare också utan fejd (steg B.66): samma värld två gånger, där huvudbyn i den ena är fyra gånger så rik per person som grannarna, relationen till grannarna är 0 och ingen svälter: under tio dygn (tio år i spelet) väljer någon granne plundringen mot den rika byn, men ingen mot den fattiga',
+  kor: () => {
+    const prov = (ggr: number) => {
+      const s = SIM.cloneState(testBy(10)), vl = s.varld!, h = vl.rader!.find(r => r.nr === vl.huvud)!;
+      const gr = vl.rader!.filter(r => r.nr !== vl.huvud && r.sort === 'by' && SIM.lever(vl, r) && SIM.radGrannar(vl, r).some(g => g.nr === vl.huvud));
+      const rik = (r: SIM.VarldRad, folk: number, per: number) => { r.tal.folk = folk; r.tal.styrka = Math.round(folk / 2); r.tal.mat = folk * 400; r.varor = undefined; r.egen = undefined; r.hus = undefined; r.tal.rikedom = folk * per; SIM.radVaror(r); r.tal.rikedom = SIM.radRikedomUr(r); };
+      rik(h, 12, 20 * ggr);
+      for (const g of gr) { rik(g, 30, 20); delete g.tro; SIM.mots(vl, g.nr, h.nr); if (g.syn) g.syn.inst = 0; else vl.rel = { ...vl.rel, [`${g.nr}>${h.nr}`]: 0 }; }
+      let n = 0, max = -9;
+      for (let d = 0; d < 10; d++) for (const g of gr) {
+        const v = SIM.byVal(s, vl, g, Math.floor(s.now / SIM.DAY) + d);
+        if (v?.id === 'plundra' && v.c.mot === h) n++;
+        max = Math.max(max, SIM.BYHANDLINGAR.plundra.poang(SIM.byCtx(s, vl, g, h)));
+      }
+      return { n, max, gr: gr.length, per: h.tal.rikedom / h.tal.folk };
+    };
+    const rik = prov(4), fattig = prov(1);
+    return [
+      [`någon granne väljer plundringen mot den rika byn (${rik.n} gånger av ${rik.gr} grannar, ${rik.per.toFixed(2)} per person, poängen ${rik.max.toFixed(2)})`, rik.n > 0],
+      [`ingen mot den fattiga (${fattig.n} gånger, ${fattig.per.toFixed(2)} per person, poängen ${fattig.max.toFixed(2)})`, fattig.n === 0],
+    ];
+  },
+};
