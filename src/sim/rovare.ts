@@ -606,7 +606,7 @@ function vantPlats(s: State, f: Rovarflock, mal: { x: number; y: number }, ux: n
 function radMitt(s: State, f: Rovarflock | undefined, folk: Person[], bakom = false) {
   if (!f) return undefined;
   const g = flockStrid(s, f), l = radLinje(s, f);
-  const slass = g ? g.st.kampar.filter(k => k.sida === 0 && k.lage === 'strid') : [], kampar = folk.filter(q => alive(q) && q.task?.act === 'forsvarRovare'), vantar = kampar.filter(q => q.task!.vantar);
+  const slass = g ? g.st.kampar.filter(k => k.sida === 0 && k.lage === 'strid') : [], kampar = folk.filter(q => alive(q) && q.task?.act === 'forsvarRovare' && narmasteFlock(s, q) === f), vantar = kampar.filter(q => q.task!.vantar);
   const rad = slass.length ? slass : vantar.length ? vantar : f.anfall && !f.anfaller ? kampar.filter(q => q.task!.phase === 'do') : [];
   const c = rad.length ? { x: rad.reduce((a, k) => a + k.x, 0) / rad.length, y: rad.reduce((a, k) => a + k.y, 0) / rad.length } : bakom && !kampar.length ? l.vantM : l.mitten;
   return { x: c.x, y: c.y, ux: l.ux, uy: l.uy };

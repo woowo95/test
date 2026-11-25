@@ -428,8 +428,8 @@ const PLATSER = 16;
 function platsVid(st: Strid, k: Kampe, m: Kampe): { x: number; y: number } | undefined {
   const rack = VAP[k.vapen].rack, d = dist(k, m);
   if (!sikt(st, k.x, k.y, m.x, m.y)) return m; // bakom en vägg: vägen runt den först
-  if (d <= rack) { if (k.platsV) k.platsV = undefined; return k; }
   const r = Math.max(rack * 0.9, Math.min(STRID.kropp, rack)), v = 2 * Math.PI / PLATSER, i0 = Math.round(Math.atan2(k.y - m.y, k.x - m.x) / v);
+  if (d <= rack) { if (k.platsV?.m === m.id) k.platsV.i = (i0 + PLATSER) % PLATSER; return k; } // platsen hen står på är nu hens
   const andra = st.kampar.filter(o => o !== k && o !== m && iStrid(o) && Math.hypot(o.x - m.x, o.y - m.y) < r + STRID.van);
   const tidigare = k.platsV?.m === m.id ? k.platsV.i : undefined, stangt = [false, false];
   let bast: { x: number; y: number; i: number } | undefined;
@@ -837,7 +837,7 @@ function hamtaSteg(st: Strid, k: Kampe, dt: number): boolean {
   if (k.vapen !== 'hand' || sortAv(k).naturligt || !AVS[st.avsikt].vapen) return false;
   if (k.reserv) { byt(st, k); return true; }
   let g: Strid['marken'][number] | undefined, gd = STRID.hamta;
-  for (const o of st.marken) { const d = Math.hypot(o.x - k.x, o.y - k.y); if (d <= gd) { gd = d; g = o; } }
+  for (const o of st.marken) { const d = Math.hypot(o.x - k.x, o.y - k.y); if (d <= gd && !st.kampar.some(q => q !== k && iStrid(q) && Math.hypot(q.x - o.x, q.y - o.y) < Math.min(d, STRID.kropp))) { gd = d; g = o; } } // det någon annan står på kommer man inte åt
   if (!g) return false;
   if (gd <= 0.6) k.bocker = STRID.plocka; else ga(st, k, g.x, g.y, farten(k) * dt);
   return true;
@@ -974,6 +974,7 @@ export function stridSteg(st: Strid) {
       continue;
     }
     const m = valjMal(st, k);
+    if (k.mal !== m?.id) k.platsV = undefined; // platsen vid målet glöms när målet byts (steg B.55)
     k.mal = m?.id;
     isar(st, k, m, dt);
     if (!m) continue;
