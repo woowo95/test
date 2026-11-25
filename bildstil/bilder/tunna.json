@@ -19,8 +19,8 @@
   ".EGGFGFGFFFE.",
   "..EEEEEEEEE.."
  ],
- "ritad": 3,
- "av": "API:t (claude-opus-5-5), tre idéer",
+ "ritad": 4,
+ "av": "för hand (programmeringschatten), API-krediterna slut",
  "pal": {
   "E": "#3f2415",
   "F": "#5e3c24",
@@ -96,7 +96,132 @@
     "..EEEEEEE.."
    ],
    "om": "En hög och slank vattentunna, 11 punkter bred och 15 hög, med bara lätt buk: 9 punkter bred upptill och nedtill och 11 på mitten. Överst sticker stavändarna upp som en ring i jord0–jord1 runt ett insänkt lock, en ellips på 3 rader i jord2–jord3 som är ljusast uppe till vänster. Stavarna är lodräta remsor i jord1–jord3 med skarvar i jord0, ljusa till vänster och mörka till höger. De två banden i kol1–kol2 sitter på en tredjedel och två tredjedelar av höjden och böjer sig nedåt på mitten efter tunnans rundning. Granskningen: Storleken (11 × 15) passar bredvid kolonisten (14 × 20) och har fått stå kvar. Rättelserna gäller annat. Locket var bara tre ljusa rader utan ring. Nu ligger det insänkt som en ellips på 3 rader (G, H) med rundade hörn, och runt det sticker stavändarna upp som en ring i jord0–jord1, med bakkanten på rad 1 och framkanten på rad 5, som idén säger. Silhuetten var osymmetrisk: smal i fyra rader upptill men bara en rad nedtill. Nu är den 9 punkter bred vid ringen, 11 över buken och 9 och sedan 7 nedtill, där bottenkanten bågnar som en ellips. Skarvarna mellan stavarna gick i kolumn 3 och 6 och ligger nu i 3 och 7, symmetriskt kring mitten, så att bara ljuset skiljer sidorna åt: jord3 till vänster och jord1 till höger. Banden ligger kvar som bågar nedåt i kol1–kol2, med kanterna en rad högre än mitten. De sitter nu på ungefär en och två tredjedelar av stavarnas höjd, och den mörkaste tonen (l) ligger till höger. Konturen är jord0 runt hela tunnan, så den syns på gräset."
+  },
+  {
+   "ide": "Hög och smal tunna: 9 punkter bred och 17 hög, raka sidor, fyra mörka järnband jämnt fördelade och ett platt lock av bräder.",
+   "rader": [
+    ".EEEEEEE.",
+    "EHHFGGFGE",
+    "EGHFGGFFE",
+    ".EEEEEEE.",
+    "EmmnnnnnE",
+    "EHGEGGEFE",
+    "EHGEGGEFE",
+    "EHGEGGEFE",
+    "EHGEGGEFE",
+    "EmmnnnnnE",
+    "EHGEGGEFE",
+    "EHGEGGEFE",
+    "EHGEGGEFE",
+    "EHGEGGEFE",
+    "EmmnnnnnE",
+    "EHGEGGEFE",
+    ".EEEEEEE."
+   ],
+   "om": "Ritad för hand: Hög och smal tunna: 9 punkter bred och 17 hög, raka sidor, fyra mörka järnband jämnt fördelade och ett platt lock av bräder."
+  },
+  {
+   "ide": "Låg och bred kagge: 15 punkter bred och 11 hög, kraftig buk som en liten ankare, två band tätt mot kanterna och locket som en bred oval.",
+   "rader": [
+    "...EEEEEEEEE...",
+    ".EEHHFGGGFGGEE.",
+    "EHHHHFGGGFGGFFE",
+    ".EEEEEEEEEEEEE.",
+    "EmmnnnnnnnnnnnE",
+    "EHHHGEGGGEGFFFE",
+    "EHHHGEGGGEGFFFE",
+    "EHHHGEGGGEGFFFE",
+    "EmmnnnnnnnnnnnE",
+    ".EEHGEGGGEGFEE.",
+    "...EEEEEEEEE..."
+   ],
+   "om": "Ritad för hand: Låg och bred kagge: 15 punkter bred och 11 hög, kraftig buk som en liten ankare, två band tätt mot kanterna och locket som en bred oval."
+  },
+  {
+   "ide": "Liggande tunna: tunnan ligger på sidan på två klossar, med botten och dess bräder åt vänster, stavarna längs med och två järnband runt.",
+   "rader": [
+    "..EEEEEEEEEEEE..",
+    ".EEHHnHHHHHnHHE.",
+    "EHGEHnHGGGHnGGFE",
+    "EGHEGnGGGGGnGGFE",
+    "EHGEGnGGGGGnGFFE",
+    "EGHEGnGGGGGnGFFE",
+    "EHGEFnGGFGGnFFFE",
+    ".EEEFnFFFFFnFFE.",
+    "..EEEEEEEEEEEE..",
+    ".EFE........EFE.",
+    ".EEE........EEE."
+   ],
+   "om": "Ritad för hand: Liggande tunna: tunnan ligger på sidan på två klossar, med botten och dess bräder åt vänster, stavarna längs med och två järnband runt."
+  },
+  {
+   "ide": "Öppen balja: en låg och bred tunna utan lock, med den mörka insidan synlig, två band och två högre stavar med hål som handtag, en på var sida.",
+   "rader": [
+    "..EE.......EE..",
+    "..EHE.....EHE..",
+    "..EkE.....EkE..",
+    ".EEHEEEEEEEFEE.",
+    "EHHEllllllllEFE",
+    "EHEkkkkkkkkkkEE",
+    "EGHEllllllllEFE",
+    ".EEEEEEEEEEEEE.",
+    "EmmnnnnnnnnnnnE",
+    "EHHGEGGEGGEFFFE",
+    ".EHGEGGEGGEFFE.",
+    "..EEEEEEEEEEE.."
+   ],
+   "om": "Ritad för hand: Öppen balja: en låg och bred tunna utan lock, med den mörka insidan synlig, två band och två högre stavar med hål som handtag, en på var sida."
+  },
+  {
+   "ide": "Tunna med tapp på en bock: en stående tunna med en träplugg och tapp nära botten, upplyft på en låg bänk av trä så att man kommer åt att tappa.",
+   "rader": [
+    "...EEEEEEE...",
+    "..EHHFGGFGE..",
+    ".EHHHFGGFGGE.",
+    "..EEEEEEEEE..",
+    ".EmmnnnnnnnE.",
+    ".EHHGEGGEFFE.",
+    ".EHHGEGGEFFE.",
+    ".EHHGEEEEFFE.",
+    ".EHHGEFGEFFE.",
+    ".EHHGEEEEFFE.",
+    ".EmmnnnEnnnE.",
+    "..EHGEGGEFE..",
+    "EEEEEEEEEEEEE",
+    "EHHHGGGGGGFFE",
+    "EEEEEEEEEEEEE",
+    ".EGE.....EFE.",
+    ".EGE.....EFE.",
+    ".EGE.....EFE.",
+    ".EEE.....EEE."
+   ],
+   "om": "Ritad för hand: Tunna med tapp på en bock: en stående tunna med en träplugg och tapp nära botten, upplyft på en låg bänk av trä så att man kommer åt att tappa."
+  },
+  {
+   "ide": "Bärtunna med hög repbåge: en bukig tunna med band av tvinnat rep och en hög båge av rep över locket att bära den i.",
+   "rader": [
+    "....qpppq....",
+    "...p.....p...",
+    "..p.......p..",
+    "..p.......p..",
+    "..p.......p..",
+    "..qEEEEEEEq..",
+    ".EEHHFGGFGEE.",
+    ".EHHHFGGFGGE.",
+    "..EEEEEEEEE..",
+    ".EtsstsstssE.",
+    ".EHGEGGEGFFE.",
+    ".EHGEGGEGFFE.",
+    "EHHGEGGEGFFFE",
+    "EHHGEGGEGFFFE",
+    "EtsstsstsstsE",
+    "EHHGEGGEGFFFE",
+    "EHHGEGGEGFFFE",
+    ".EEEEEEEEEEE.",
+    "...EEEEEEE..."
+   ],
+   "om": "Ritad för hand: Bärtunna med hög repbåge: en bukig tunna med band av tvinnat rep och en hög båge av rep över locket att bära den i."
   }
  ],
- "kommentar": "nya versioner: rita en enkel tunna som en vanlig trätunna ser ut i dag"
+ "kommentar": "sex nya versioner, behåll de tre gamla; en enkel tunna som den ser ut i dag"
 }
