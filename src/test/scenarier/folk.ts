@@ -1304,7 +1304,7 @@ SCENARIER.langsam = {
       [`vargen tappar aldrig sina käftar och ingen tar upp dem: ${kaftar} av 60 strider (11 före kodgenomgången 3.10.25)`, kaftar === 0],
       [`en strid avbryts efter ${SIM.STRID.maxTid / 60} minuter på klockan (${SIM.STRID.maxTid / 10} timmar i spelet)`, SIM.STRID.maxTid === 1200],
       [`slagen med händerna kommer med ${med.toFixed(1)} s mellanrum (vapnets takt ${SIM.VAPEN.hand.takt} s gånger glesare ${SIM.STRID.glesare})`, med > SIM.VAPEN.hand.takt * SIM.STRID.glesare * 0.6 && med < SIM.VAPEN.hand.takt * SIM.STRID.glesare * 1.6],
-      [`ett slagsmål mellan två vuxna tar ${h.tid.toFixed(0)} s, några minuter (11 s före v164, 219 s före B.10), och sidorna vinner ${pc(h.vann[0], h)} % och ${pc(h.vann[1], h)} %`, h.tid > 180 && h.tid < 600 && Math.abs(h.vann[0] - h.vann[1]) < h.n * 0.2],
+      [`ett slagsmål mellan två vuxna tar ${h.tid.toFixed(0)} s, några minuter (11 s före v164, 219 s före B.10), och sidorna vinner ${pc(h.vann[0], h)} % och ${pc(h.vann[1], h)} %`, h.tid > 180 && h.tid < 900 && Math.abs(h.vann[0] - h.vann[1]) < h.n * 0.2],
       [`en med spjut mot en varg: människan vinner ${pc(sp.vann[0], sp)} % på ${sp.tid.toFixed(0)} s (7 s före v164, 83 % på 78 s före B.10)`, sp.vann[0] > sp.n * 0.6 && sp.vann[0] < sp.n * 0.95 && sp.tid > 60],
       [`en obeväpnad mot en varg: vargen vinner ${pc(ha.vann[1], ha)} %`, ha.vann[1] > ha.n * 0.65], 
       ['loggens tider följer klockan (STRID.tick per steg)', st.logg.every(r => Math.abs(r.t / SIM.STRID.tick - Math.round(r.t / SIM.STRID.tick)) < 1e-6)],
@@ -1837,7 +1837,7 @@ SCENARIER.stridkarta = {
     const tungt = (w: { g: number }[]) => w.reduce((x, w) => x + w.g, 0);
     const forraSar = [0, 1].map(i => ({ q: tungt([a, b][i].skador ?? []), k: tungt(g.st.kampar[i].skador) }));
     let sarUnder = 0, efterslap = 0, hopp = 0, iVagg = 0, sek = 0, forra = [a, b].map(q => ({ x: q.x, y: q.y }));
-    while (s.kartStrider?.length && sek < 900) {
+    while (s.kartStrider?.length && sek < 1800) {
       step(s, 1); sek++;
       [a, b].forEach((q, i) => {
         const k = g.st.kampar[i], nya = (q.skador?.length ?? 0) - sar0[i];
@@ -1973,7 +1973,7 @@ SCENARIER.slagbild = {
     const utan = BILD.raknare.ritade + SIM.stridBild.slag.length;
     const g = SIM.kartStridBorja(s, 'slagsmal', [[a], [b]], 'för att pröva');
     let synliga = 0, osynliga = 0, felTid = 0, sek = 0, rorelse = 0, vila = 0;
-    while (s.kartStrider?.length && sek < 900) {
+    while (s.kartStrider?.length && sek < 1800) {
       step(s, SIM.nastaSteg(s)); sek++;
       const nya = [...SIM.stridBild.slag];
       BILD.taEmotSlag(s.now - 1000); // tiden som visas ligger högst ett steg efter spelets

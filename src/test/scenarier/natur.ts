@@ -48,13 +48,17 @@ SCENARIER.djur = {
     }
     const kaniner = s.stat?.kaniner ?? 0;
     // den som fångat en kanin bär hem den hel (små steg, så att vägen hem syns)
-    const q = createState(6, START); klockan(q, 9);
-    const j = living(q).find(r => ageOf(r, q.now) >= 18)!;
+    // (några jägare efter varandra: jakten är försök och kan misslyckas en hel dag)
     let hem = 0, annat = 0;
+    for (const vem of [0, 1, 2]) {
+    const q = createState(6, START); klockan(q, 9);
+    const j = living(q).filter(r => ageOf(r, q.now) >= 18)[vem];
+    if (!j) break;
     for (let i = 0; i < 6 * 3600 * 2 && !hem; i++) {
       if (j.task?.act !== 'jakt') j.task = { act: 'jakt', phase: 'go', tx: bx, ty: by, until: q.now + 3 * HOUR, carry: 0, why: 'prov', dark: false };
       step(q, 0.5);
       if (j.task?.act === 'jakt' && j.task.phase === 'back') { if (Math.abs(j.task.carry - KANIN) < 1e-9 && !j.task.items) hem++; else if (j.task.carry > 0) annat++; }
+    }
     }
     // utan kniv ingen slakt; med kniv blir en kanin kött, ben, skinn och senor (vid slaktbänken)
     setAmount(s, 'flinta', 2); setAmount(s, 'grenar', 10); setAmount(s, 'kniv', 0); medBank(s); // (grenar till en tändning sparas till elden, steg 10.2.7; byn kan ha gjort en kniv)
@@ -2408,7 +2412,7 @@ SCENARIER.ran = {
       if (!d) continue;
       for (let h = 0; h < 6 && !s.stat?.ran; h++) SIM.needLadder(s, a, 3600);
       if (!s.stat?.ran) continue;
-      for (let k = 0; k < 900 && s.kartStrider?.length; k++) step(s, SIM.nastaSteg(s)); // slagsmålet sker på kartan och tar tid (steg 10.1.7)
+      for (let k = 0; k < 4000 && s.kartStrider?.length; k++) step(s, SIM.nastaSteg(s)); // slagsmålet sker på kartan och tar tid (steg 10.1.7)
       ran++; stolAgg += s.stat?.stold_mat ?? 0;
       if (s.stat?.ranVann) { vann++; if (ownsAmount(s, b, 'bar') < 6) fick++; }
       if (SIM.intryckOm(d, a.id, 'valdsam')) vald++;

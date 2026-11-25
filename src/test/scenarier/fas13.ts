@@ -2368,7 +2368,7 @@ SCENARIER.kortvantan = {
 };
 
 SCENARIER.gangsyns = {
-  text: 'Steg B.28 och B.57: på dagen ses gänget på vägen till rastplatsen av den som är ute på den sidan av byn, på natten ofta först vid rastplatsen eller anfallet, och larmet går',
+  text: 'Steg B.28 och B.57: på dagen ses gänget på vägen till rastplatsen av den som är ute på den sidan av byn, på natten lika långt när gänget har en fackla (B.64), och larmet går',
   kor: () => {
     const prov = (timme: number, seed: number) => {
       const s = rovarBy(timme, seed), m = SIM.malet(s), vt = SIM.vattenNu(s); let vid: { x: number; y: number } | undefined, bast = 0;
@@ -2378,10 +2378,10 @@ SCENARIER.gangsyns = {
       const sedd = f.sedd === undefined ? undefined : (f.sedd - t0) / SIM.MIN;
       SIM.step(s, 30); return { fore: sedd !== undefined && !framme, vid: sedd !== undefined && !f.anfaller, sedd, larm: SIM.living(s).filter(p => p.larm?.rovare).length };
     };
-    const dag = [1, 2, 3, 4, 5, 6].map(i => prov(11, i)), natt = [1, 2, 3, 4, 5, 6].map(i => prov(1, i)), n = (l: typeof dag) => l.filter(x => x.fore).length, visa = (l: typeof dag) => l.map(x => x.sedd === undefined ? 'aldrig' : `${x.sedd.toFixed(1)} min${x.fore ? ' på vägen' : x.vid ? ' vid rastplatsen' : ' vid anfallet'}`).join(', ');
+    const alla = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], dag = alla.map(i => prov(11, i)), natt = alla.map(i => prov(1, i)), n = (l: typeof dag) => l.filter(x => x.fore).length, visa = (l: typeof dag) => l.map(x => x.sedd === undefined ? 'aldrig' : `${x.sedd.toFixed(1)} min${x.fore ? ' på vägen' : x.vid ? ' vid rastplatsen' : ' vid anfallet'}`).join(', ');
     return [
-      [`på dagen ses gänget oftast innan det anfaller (${visa(dag)})`, dag.filter(x => x.vid).length >= 4],
-      [`på natten mer sällan på vägen (${n(natt)} mot ${n(dag)}: ${visa(natt)})`, n(natt) < n(dag) || n(dag) === 0 && n(natt) === 0],
+      [`på dagen ses gänget oftast innan det anfaller (${visa(dag)})`, dag.filter(x => x.vid).length >= 6],
+      [`på natten ungefär lika ofta, för facklan syns (steg B.64) (${n(natt)} mot ${n(dag)}: ${visa(natt)})`, Math.abs(n(natt) - n(dag)) <= 3 && natt.every(x => x.sedd !== undefined)],
       [`larmet går (${dag.map(x => x.larm).join(', ')} vet)`, dag.filter(x => x.vid).every(x => x.larm > 0)],
     ];
   },
