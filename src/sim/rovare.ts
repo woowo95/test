@@ -271,9 +271,9 @@ export function gaMot(s: State, r: Person, mx: number, my: number, sek: number, 
     gr(r).path!.shift(); spara(s, r, t0 + tid * SEC);
   }
 }
-// en människa i byn som står på vägens punkt (wx, wy): den fria punkten STRID.kropp bredvid hen, närmast vägens
+// en människa i byn som står på eller tätt intill vägens punkt (wx, wy): den fria punkten STRID.kropp bredvid hen, närmast vägens
 function iVagen(s: State, wx: number, wy: number, mx: number, my: number) {
-  const q = living(s).find(o => !o.gast && o.ute === undefined && Math.hypot(o.x - wx, o.y - wy) < STRID.kropp / 2 && Math.hypot(o.x - mx, o.y - my) >= STRID.kropp);
+  const q = living(s).find(o => !o.gast && o.ute === undefined && Math.hypot(o.x - wx, o.y - wy) < STRID.kropp && Math.hypot(o.x - mx, o.y - my) >= STRID.kropp);
   if (!q) return undefined;
   const v0 = Math.atan2(wy - q.y, wx - q.x);
   for (const dv of [0, 0.8, -0.8, 1.6, -1.6, 2.4, -2.4, Math.PI]) { const x = q.x + Math.cos(v0 + dv) * STRID.kropp, y = q.y + Math.sin(v0 + dv) * STRID.kropp; if (inMap(x, y) && !iVatten(s, x, y) && !bitAt(s, x, y)) return { x, y }; }
@@ -292,7 +292,7 @@ function runtOm(s: State, r: Person, wx: number, wy: number, mx: number, my: num
   const ux = wx - r.x!, uy = wy - r.y!, l2 = ux * ux + uy * uy, halv = STRID.kropp / 2;
   if (l2 < 1e-9) return undefined;
   for (const q of living(s)) {
-    if (q.gast || q.ute !== undefined || Math.hypot(q.x - mx, q.y - my) < STRID.kropp || Math.hypot(q.x - wx, q.y - wy) < STRID.kropp) continue; // den som står på vägen själv går det inte att gå runt
+    if (q.gast || q.ute !== undefined || Math.hypot(q.x - mx, q.y - my) < STRID.kropp || Math.hypot(q.x - wx, q.y - wy) < STRID.kropp * 0.99) continue; // den som står på vägen själv går det inte att gå runt
     const t = clamp(((q.x - r.x!) * ux + (q.y - r.y!) * uy) / l2, 0, 1), px = r.x! + ux * t - q.x, py = r.y! + uy * t - q.y;
     if (Math.hypot(px, py) >= halv || Math.hypot(r.x! - q.x, r.y! - q.y) < halv) continue;
     const l = Math.sqrt(l2), sida = (r.x! - q.x) * -uy / l + (r.y! - q.y) * ux / l >= 0 ? 1 : -1; // åt det håll rövaren redan står
