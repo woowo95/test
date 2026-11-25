@@ -236,7 +236,7 @@
   } });
   VAL.push({ id: 'f13_roll_rovare', namn: 'Rövarens symbol vid namnet', typ: 'tre', slag: ['symbol'], vad: 'Steg B.62: en rövare som byn sett får en symbol till vänster om namnet, 8 × 8 punkter, och namnet i rostrött i stället för benvitt, så att man ser vilka som är fienden. I spelet är det nu hotmärket (platshållare). Bilden visar symbolen på gräset och namnet som en rostfärgad rand bredvid.', versioner: [
     VID('Hotmärket: en röd trekant med ett utropstecken, samma varning som vid larmet.', ['...oo...', '..orro..', '..obbo..', '.orbbro.', '.orbbro.', 'orrrrrro', 'orrbbrro', 'oooooooo']),
-    VID('Två korslagda klingor med skaften nedåt.', ['b......b', 'bb....bb', '.bb..bb.', '..bbbb..', '...bb...', '.r.bb.r.', '..r..r..', '.j....j.']),
+    VID('Två korslagda klingor med skaften nedåt.', ['b......b', 'bb....bb', '.bb..bb.', '..bbbb..', '...bb...', '.rb..br.', '.jr..rj.', 'j......j']),
     VID('Rövaren själv: en mörk huva med en skugga och två ljusa ögon.', ['..oooo..', '.oRRRRo.', 'oRrrrrRo', 'oRooooRo', 'oobooboo', 'oRooooRo', '.oRRRRo.', '..oooo..']),
   ] });
 })();
