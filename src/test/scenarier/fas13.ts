@@ -3165,6 +3165,28 @@ SCENARIER.seavstand = {
   lang: true,
 };
 
+SCENARIER.nattsyn = {
+  text: 'Steg B.64: på natten ser vakten och de som är vakna oftast gänget innan det anfaller, och något enstaka anfall överraskar byn',
+  kor: () => {
+    const prov = (n: number) => {
+      const s = lasBy('test/rovarby.json.gz'); klockan(s, 22); const steg = (sek: number, klart: () => boolean) => { const t0 = s.now; while (s.now - t0 < sek * 1000 && !klart()) SIM.step(s, Math.min(SIM.nastaSteg(s), 5)); };
+      for (let i = 0; i < n; i++) { SIM.rnd(s, 'rovare'); SIM.rnd(s, 'vakt'); } // en annan slump i samma by
+      steg(180 + n * 20, () => false);
+      const vakt = SIM.living(s).some(p => p.task?.act === 'vakt');
+      s.rovare = s.rovareFler = undefined; SIM.rovarnaKommer(s, 4); const f = s.rovare!, t0 = s.now; let sedd = Infinity, anf = Infinity;
+      steg(1200, () => { ettGang(s, f); if (sedd === Infinity && f.sedd !== undefined) sedd = s.now - t0; if (anf === Infinity && f.anfaller) anf = s.now - t0; return !f.folk.length || anf < Infinity; });
+      return { vakt, anf, sedd, over: anf < Infinity && !(sedd < anf) };
+    };
+    const a = Array.from({ length: 24 }, (_, n) => prov(n)).filter(x => x.anf < Infinity), fore = a.filter(x => !x.over).length;
+    return [
+      [`byn har en vakt ute (${a.filter(x => x.vakt).length} av ${a.length} nätter)`, a.filter(x => x.vakt).length >= a.length * 0.8],
+      [`de flesta gängen ses före anfallet (${fore} av ${a.length})`, a.length >= 16 && fore >= a.length * 0.7],
+      [`något enstaka överraskar (${a.length - fore} av ${a.length})`, a.length - fore >= 1],
+    ];
+  },
+  lang: true,
+};
+
 SCENARIER.ingenvantan = {
   text: 'Steg B.47: om de egna räcker räknas likadant vid larmet och i mötet, och när alla på väg är framme och ändå inte räcker väljs rollen om: två kämpar mot sex rövare står inte kvar på väntplatsen',
   kor: () => {

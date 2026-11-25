@@ -87,7 +87,7 @@ export const ROVARE = balans('rovare', {
   horhall: 30, // den som varnar hörs så här många rutor (gånger LARM.natt på natten): hörhållet är stort (steg 10.1.12) ...
   varnaSek: 4, // ... och att varna tar så här många sekunder
   ser: 3, serSkog: 0.5, // den som är vaken, ute och har gänget inom synhåll upptäcker det så här många gånger per minut på halva synhållet: oftare ju närmare, vid synhållets kant inte alls (steg B.57), och gånger serSkog när gänget går i skog
-  fackelSer: 0.5, // på natten syns ett gäng med en tänd fackla så här långt jämfört med på dagen, annars gånger nattSer (steg 10.1.10)
+  fackelSer: 0.7, // på natten syns ett gäng med en tänd fackla så här långt jämfört med på dagen (lågan syns långt i mörkret, steg B.64: förut 0,5, och bara hälften av nattens gäng sågs före anfallet), annars gånger nattSer (steg 10.1.10)
   moter: 6, // en rövare och den som står emot börjar slåss när de är så här nära varandra (rutor) ...
   slaIvagen: 0.5, hotaPoang: 0.6, taBordaPoang: 0.8, // ... och den som inte står emot men är så nära: den aggressiva slår (gånger aggressionen / 10), den modiga hotar (gånger modet / 10), och den som har plats tar det hen bär (steg 10.2.26)
   slaOvetande: 0.5, // ... och så mycket mer mot den som inte vet om gänget: hen kan överraskas (steg B.57)
