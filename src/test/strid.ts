@@ -13,7 +13,7 @@ import { median } from './nyckeltal';
 const [antal = 24, dagar = 35] = process.argv.slice(2).map(Number);
 const seeds = Array.from({ length: antal }, (_, i) => seedAv(i));
 type Sida = { vapen?: string; n: number; folk: number; dod: number; ger: number; flykt: number; nere: number; skadade: number; skador: number; slag: number; traffar: number };
-type Rad = { t0: number; t1: number; tunga: number; dag: number; orsak: string; vinnare: number; sek: number; vuxna: number; kom: number; by: Sida; mot: Sida; h: Record<string, number>; sort: string; forsok: Record<string, number>; slut: [string[], string[]]; efter: number };
+type Rad = { grader: number[]; flytt: [number, number][]; allvar: number; kampar: number; t0: number; t1: number; tunga: number; dag: number; orsak: string; vinnare: number; sek: number; vuxna: number; kom: number; by: Sida; mot: Sida; h: Record<string, number>; sort: string; forsok: Record<string, number>; slut: [string[], string[]]; efter: number };
 type Ut = { seed: number; pop: number; rader: Rad[]; anfall?: { n: number; sedd: number; dag: number; dagSedd: number }; vakter: number; larm: string[]; gangen?: { n: number; sedd?: number; framme?: number; anfall?: number; dag: boolean }[] };
 const t0 = Date.now();
 const git = (k: string) => { try { return execSync(`git ${k}`, { encoding: 'utf8' }).trim(); } catch { return ''; } };
@@ -70,6 +70,8 @@ for (const o of SORTER) {
   const forl: Record<string, number> = {}; for (const q of avg) { const ss = q.slut[1 - q.vinnare].filter(k => k !== 'står'); const a: Record<string, number> = {}; for (const k of ss) a[k] = (a[k] ?? 0) + 1; const b = Object.keys(a).sort((u, v) => a[v] - a[u])[0]; if (b) forl[b] = (forl[b] ?? 0) + 1; }
   console.log(`  ${o.toUpperCase()}: ${x.length} strider, varav ${x.length - t.length} på 0 sekunder (räknas inte i längden), längd median ${m(t)} s (en fjärdedel under ${t[Math.floor(t.length / 4)] ?? '–'}, en fjärdedel över ${t[Math.floor(t.length * 3 / 4)] ?? '–'}, längst ${t[t.length - 1] ?? '–'}); byns sida vann ${avg.filter(q => q.vinnare === 0).length} av ${x.length}, oavgjort ${x.length - avg.length}`);
   console.log(`    försöken (${(n / Math.max(1, t.length)).toFixed(0)} per strid): ${sum(x.map(q => q.tunga))} av ${n} blev ett slag som gav mer än en skråma (${(100 * sum(x.map(q => q.tunga)) / n).toFixed(1)} %); träffar ${((100 * ((f.traff ?? 0) + (f.tog ?? 0))) / n).toFixed(0)} %, missar ${pr('miss')}, pareras ${pr('parera')}, duckas ${pr('duck')}, knuffar ${((100 * ((f.knuff ?? 0) + (f.omkull ?? 0))) / n).toFixed(0)} %`);
+  const gr = x.flatMap(q => q.grader ?? []).sort((u, v) => u - v), fl = x.flatMap(q => q.flytt ?? []), dm = sum(x.map(q => q.by.dod + q.mot.dod));
+  if (gr.length) console.log(`    skadan per träff: median ${gr[gr.length >> 1].toFixed(3)} (en fjärdedel över ${gr[Math.floor(gr.length * 0.75)].toFixed(3)}); av ${fl.length} som flydde hade ${fl.filter(w => w[0] >= 0.3 || w[1] < 0.7).length} ett allvarligt sår (svåraste såret minst 0,3 eller blodet under 70 %); av ${sum(x.map(q => q.kampar ?? 0))} som slogs fick ${sum(x.map(q => q.allvar ?? 0))} ett; döda ${(dm / x.length).toFixed(2)} per strid och efteråt ${(sum(x.map(q => q.efter)) / x.length).toFixed(2)}`);
   console.log(`    striderna slutade mest med att förlorarna: ${Object.entries(forl).sort((a, b) => b[1] - a[1]).map(([k, c]) => `${k} ${(100 * c / Math.max(1, avg.length)).toFixed(0)} %`).join(', ')}`);
   console.log(`    byns sida: ${per(0)}; motståndarna: ${per(1)}; förblödde inom ett dygn efteråt ${sum(x.map(q => q.efter))}`);
 }

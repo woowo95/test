@@ -3187,6 +3187,31 @@ SCENARIER.nattsyn = {
   lang: true,
 };
 
+SCENARIER.farligstrid = {
+  text: 'Steg B.65: striderna är farliga: i fyra mot fyra med vapen får de flesta ett allvarligt sår, någon dör eller blir liggande, och nästan ingen flyr utan ett allvarligt sår; en skråma sänker modet nästan inte alls',
+  kor: () => {
+    const k = (id: number, sida: 0 | 1, vapen: SIM.Vapen, y: number, mod: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod, smidighet: 10, skicklighet: 10 }, vapen, klader: [] as string[], fart: 1, x: sida ? 12 : 4, y });
+    let n = 0, allv = 0, flydde = 0, flyAllv = 0, nere = 0, dod = 0; const g: number[] = [];
+    for (let i = 0; i < 60; i++) {
+      const st = SIM.stridTillSlut(SIM.nyStrid({ avsikt: 'skada', w: 16, h: 8, kampar: [7, 9, 12, 14].flatMap((mod, j) => [k(1 + j, 0, 'flintspjut', 2.5 + j, mod), k(5 + j, 1, 'yxa', 2.5 + j, mod)]) }, 7919 * (i + 1)));
+      for (const x of st.logg) if (x.h === 'traff') g.push(x.g ?? 0);
+      for (const q of st.kampar) {
+        const svar = Math.max(0, ...q.skador.map(w => w.g)) >= 0.3 || q.blod < 0.7;
+        n++; if (svar) allv++;
+        if (q.lage === 'flykt' || q.lage === 'borta') { flydde++; if (svar) flyAllv++; }
+        if (q.lage === 'nere') nere++; if (q.lage === 'dod') dod++;
+      }
+    }
+    g.sort((a, b) => a - b);
+    return [
+      [`de flesta får ett allvarligt sår (${allv} av ${n})`, allv > n * 0.6],
+      [`nästan ingen flyr utan ett (${flyAllv} av ${flydde})`, flydde >= 20 && flyAllv >= flydde * 0.85],
+      [`någon faller (${(nere / 60).toFixed(1)} per strid) och någon dör ibland (${dod} på 60 strider)`, nere >= 60 && dod >= 1],
+      [`skadan per träff är inte nästan ingen (median ${g[g.length >> 1].toFixed(3)}, en fjärdedel över ${g[Math.floor(g.length * 0.75)].toFixed(3)})`, g[g.length >> 1] >= 0.025 && g[Math.floor(g.length * 0.75)] >= 0.08],
+    ];
+  },
+};
+
 SCENARIER.ingenvantan = {
   text: 'Steg B.47: om de egna räcker räknas likadant vid larmet och i mötet, och när alla på väg är framme och ändå inte räcker väljs rollen om: två kämpar mot sex rövare står inte kvar på väntplatsen',
   kor: () => {
