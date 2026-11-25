@@ -1681,10 +1681,10 @@ SCENARIER.larm = {
     // den första står längst ut, där gänget kommer, den tredje vid elden; jägaren åt ett annat håll, utom hörhåll från elden
     bf.forEach((q, i) => { q.x = eld.x + sida * (2 - i) * steg; q.y = y0; q.task = undefined; q.larm = undefined; });
     for (const q of living(b)) if (!bf.includes(q)) { q.x = eld.x; q.y = y0 + 2; q.task = undefined; }
-    const jagare = bf[3]; jagare.x = eld.x; jagare.y = y0 + (y0 < 60 ? 1 : -1) * (SIM.ROVARE.horhall + 8);
+    const jagare = bf[3]; jagare.x = eld.x; jagare.y = y0 + (y0 < 60 ? 1 : -1) * (SIM.ROVARE.horhall + 8); const jx = jagare.x, jy = jagare.y; // hålls kvar där: att se gänget tar tid, och hen går annars hem
     const gang = rovarGang(b, 3, { x: bf[0].x + sida * (SIM.ROVARE.folkSer - 4), y: y0 });
     let varnar = false, jagareFick = false;
-    korTills(b, () => bf.slice(0, 3).every(q => q.larm?.rovare?.varnat), 300, () => { if (bf.some(q => q.task?.act === 'varna')) varnar = true; if (jagare.larm) jagareFick = true; });
+    korTills(b, () => bf.slice(0, 3).every(q => q.larm?.rovare?.varnat), 300, () => { if (bf.some(q => q.task?.act === 'varna')) varnar = true; jagare.x = jx; jagare.y = jy; if (jagare.larm) jagareFick = true; });
     const led = bf.slice(0, 3).map(q => q.larm?.rovare?.led ?? -1), vst = b.stat ?? {};
     const sag = led[0] === 0 && gang.sedd !== undefined, ledvis = led[1] >= 1 && led[2] > led[1];
     return [

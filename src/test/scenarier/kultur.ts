@@ -1753,6 +1753,7 @@ function begrav(s: State, p: Person, d: Person) {
   return s.gravar!.find(g => g.vem === d.id)!;
 }
 SCENARIER.gravvard = {
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,val.forbTek=0.05' }, // teknikens arbete tar annars nästan all tid på Förbättra, och provet gäller vården
   text: 'Steg 10.4.2: graven är först en jordhög, och den som minns den döda gör vården. Utan tro en gravstolpe innan byn har plankor och sedan en gravbräda; med tro blir raden som drar mest sed vid den första begravningen, de stora får en gravhög, den ovärdiga ingen, och utan material står jordhögen kvar',
   kor: () => {
     // utan tro: en gravstolpe, gjord av någon som minns den döda

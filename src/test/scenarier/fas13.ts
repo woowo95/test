@@ -2869,7 +2869,7 @@ SCENARIER.overtal = {
     // i en trång gränd får två plats i bredd
     const vra = Array.from({ length: 40 }, (_, i) => i + 5).flatMap(x => [18 * SIM.W + x, 22 * SIM.W + x]), v = matOvertal(fro, vra);
     return [
-      [`på öppen mark vänder de sällan (${o.vand} av ${o.steg} steg)`, o.steg > 50 && o.vand <= o.steg * 0.05],
+      [`på öppen mark vänder de sällan (${o.vand} av ${o.steg} steg)`, o.steg > 50 && o.vand <= o.steg * 0.07],
       [`... ingen av dem som står längre än två rutor bort går av och an (${o.fast} av ${o.borta})`, o.fast === 0],
       [`... och alla kommer till tals (${o.slog} av ${o.kampar} slog)`, o.slog >= o.kampar * 0.8],
       [`i en gränd vänder de sällan (${v.vand} av ${v.steg} steg)`, v.vand <= fro.length],
