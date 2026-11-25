@@ -14,6 +14,7 @@ export interface Skapad {
   kon: 'kvinna' | 'man'; alder: 'barn' | 'ung' | 'vuxen' | 'gammal'; del: Record<string, string | null>; hud: number; har: number; ogon: number;
   humor: string; skonhet: number; forband: string[]; ogonlapp: boolean; sjuk: boolean; kyla: boolean; blod: boolean;
   klader: { rock: string | null; skor: boolean; balte: boolean; axelrem?: boolean; ryggsack?: boolean; krokar?: number; byxor?: string; skjorta?: string }; lagen: Record<string, string>; lager: string[] | null; rynkor: number | null;
+  spjala?: ('benV' | 'benH' | 'armV' | 'armH')[]; // spjälorna (steg B.36)
   anlag?: { skagg: string | null; frisyr: string | null };
 }
 // åldern i skaparen: barn tills man är vuxen i byn, ung till 30, vuxen till 55 och sedan gammal (registret aldrar)
@@ -68,6 +69,9 @@ export function drag(s: State, p: Person, djup = 0): Skapad {
 // är arg, den som flyr eller gömmer sig är rädd, och annars humöret som orden i invånarlistan (moodWord). Ett sår i huvudet
 // har förband när det är omlagt, ett blåmärke eller krossår i huvudet syns som blåmärke, och blodet syns när ett sår blöder
 export const HUMORGRANS = { glad: 0.75, nojd: 0.55, lugn: 0.4 };
+// delarna på figuren där en spjäla ritas (steg B.36): foten ritas på benet och handen på armen
+const SPJALDELAR = ['benV', 'benH', 'armV', 'armH'] as const;
+const SPJALPA: Record<string, string[]> = { ben: ['ben', 'fot'], arm: ['arm', 'hand'] };
 function kropp(s: State, p: Person, del: Record<string, string | null>) {
   const t = p.task, gor = t?.act;
   const m = moodOf(p, s.now);
@@ -75,7 +79,8 @@ function kropp(s: State, p: Person, del: Record<string, string | null>) {
   const huvud = (p.skador ?? []).filter(w => w.d === 'huvud');
   const forband = huvud.some(w => w.f) ? ['forband-huvud'] : [];
   if (huvud.some(w => !w.f && (w.k === 'blamarke' || w.k === 'krossar'))) del.blamarke = 'blamarke-1';
-  return { humor, forband, ogonlapp: !!p.saknas?.some(d => d === 'ogaV' || d === 'ogaH'), sjuk: isSick(p, s.now) || blodSteg(p) >= 1 || (p.skador ?? []).some(w => infStadium(w) >= 2) /* blek av blodförlusten (steg 9.5.17) och av feber i ett sår (steg 9.5.24) */, kyla: p.warm < KROPP.kallt, blod: blodning(p) > 0 };
+  const spjala = SPJALDELAR.filter(d => (p.skador ?? []).some(w => w.spala && w.d.endsWith(d.slice(-1)) && SPJALPA[d.slice(0, 3)].some(x => w.d.startsWith(x))));
+  return { ...spjala.length ? { spjala } : {}, humor, forband, ogonlapp: !!p.saknas?.some(d => d === 'ogaV' || d === 'ogaH'), sjuk: isSick(p, s.now) || blodSteg(p) >= 1 || (p.skador ?? []).some(w => infStadium(w) >= 2) /* blek av blodförlusten (steg 9.5.17) och av feber i ett sår (steg 9.5.24) */, kyla: p.warm < KROPP.kallt, blod: blodning(p) > 0 };
 }
 // små barns porträtt (steg 10.2.54): barn upp till SMABARN.ar år har ett eget, enklare ansikte med få varianter (samma drag för
 // alla små barn och en av SMABARN.frisyrer frisyrer), medan hårfärgen och hudfärgen är barnets egna och följer med när det växer

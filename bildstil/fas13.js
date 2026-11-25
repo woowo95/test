@@ -209,4 +209,19 @@
   const CIDER = (ton, ljus, text) => bild(text, 14, 15, [
     [oval(7, 8, 6.6, 6.8), (x, y) => x < 4 ? 'rost3' : x > 10 ? 'rost1' : 'rost2'], [oval(7, 3, 5, 2.6), 'rost0'], [oval(7, 3.4, 4, 1.7), ton], [linje(5, 3, 8, 3, 0.5), ljus]]);
   VAL.push({ id: 'f13_cider', namn: 'Ciderns färg', typ: 'janej', slag: [], vad: 'Steg 13.4.1: cidern är gulgrön, ljusare och grönare än ölet, så att de skiljs åt i krukor och horn.', versioner: [CIDER('oliv3', 'senap3', 'Den stora lerkrukan snett uppifrån med cidern, i den gröna ton som spelet redan använder.')] });
+
+  // spjälan (steg B.36): benet stort till vänster och kolonisten i kartans storlek till höger, med spjälan på samma ben
+  const FIGUR = [[oval(34, 7, 3.2, 3.4), 'rost3'], [oval(34, 5.2, 3.4, 2.4), 'jord1'], [(x, y) => x >= 30 && x <= 38 && y >= 11 && y <= 18, (x, y) => x < 32 ? 'ben0' : 'ben1'], [linje(29.4, 12, 29.4, 18, 0.7), 'rost3'], [linje(38.6, 12, 38.6, 18, 0.7), 'rost3'], [linje(32, 19, 32, 25, 0.9), 'jord0'], [linje(36, 19, 36, 25, 0.9), 'jord0']];
+  const BEN = [[linje(9, 1, 9, 24, 3.6), 'rost3'], [linje(7, 1, 7, 24, 0.8), 'rost2'], [oval(11, 26, 5, 2.2), 'jord0']];
+  KORT('f13_spjala', 'Spjälan', 'Steg B.36: spjälan på ett brutet ben eller en bruten arm, av två grenar och en remsa. Den ritas på delen på kartan så länge den sitter på.', [
+    bild('Två raka pinnar, en på var sida, och tre lindor av remsan.', 44, 30, [...BEN, ...FIGUR,
+      [linje(4.5, 4, 4.5, 23, 1), 'jord2'], [linje(13.5, 4, 13.5, 23, 1), 'jord2'], ...[7, 13, 20].flatMap(y => [[linje(4, y, 14, y, 1), 'ben3'], [linje(5, y + 1.4, 13, y + 1.4, 0.4), 'ben1']]),
+      [linje(38, 19, 38, 25, 0.5), 'jord3'], [linje(34.6, 19, 34.6, 25, 0.5), 'jord3'], [linje(34.6, 22, 38, 22, 0.5), 'ben3']]),
+    bild('Grenarna tätt lindade med remsan ända från foten till knäet; bara ändarna sticker ut.', 44, 30, [...BEN, ...FIGUR,
+      [linje(4.5, 2, 4.5, 25, 0.9), 'jord2'], [linje(13.5, 2, 13.5, 25, 0.9), 'jord2'], [(x, y) => x >= 4 && x <= 14 && y >= 6 && y <= 21, (x, y) => (x + y * 2) % 5 < 1 ? 'ben0' : (x + y * 2) % 5 < 3 ? 'ben2' : 'ben3'],
+      [(x, y) => x >= 35 && x <= 37 && y >= 20 && y <= 24, (_x, y) => y % 2 ? 'ben3' : 'ben2'], [linje(36, 18.6, 36, 19, 0.4), 'jord3']]),
+    bild('Ett galler av kluvna grenar runt hela benet, knutet i kors mitt på.', 44, 30, [...BEN, ...FIGUR,
+      ...[4.5, 7.5, 10.5, 13.5].map((x, i) => [linje(x, 4, x, 22, 0.9), i % 2 ? 'jord3' : 'jord2']), [linje(4, 9, 14, 17, 0.8), 'ben3'], [linje(14, 9, 4, 17, 0.8), 'ben3'], [oval(9, 13, 1.6, 1.6), 'ben2'],
+      [linje(35, 19, 35, 25, 0.4), 'jord3'], [linje(37, 19, 37, 25, 0.4), 'jord2'], [linje(35, 21, 37, 23, 0.4), 'ben3'], [linje(37, 21, 35, 23, 0.4), 'ben3']]),
+  ]);
 })();

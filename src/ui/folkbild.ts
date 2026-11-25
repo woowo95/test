@@ -31,6 +31,26 @@ function ljusKontur(B: Bild) {
   for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) if (B.px[y * B.w + x] === 0 && (tom(x - 1, y) || tom(x + 1, y) || tom(x, y - 1) || tom(x, y + 1))) px[y * B.w + x] = BEN_LJUS;
   return { ...B, px };
 }
+// spjälan på figuren (steg B.36): två pinnar av gren med en remsa runt, på benet eller armen. En platshållare tills Björn valt i
+// bildstilen. Delen letas upp i figurens bild: den yttersta punkten innanför konturen på delens sida. Den som ligger under täcket
+// visar ingen
+const SPJAL = { pinne: FARGER.indexOf(farg('jord', 1)), remsa: FARGER.indexOf(farg('ben', 3)), ben: [14, 18], arm: [10, 13] };
+function ritaSpjalor(B: Bild, delar: NonNullable<Skapad['spjala']>, l: Lage) {
+  if (l.tacke || l.smabarn || l.ben === 'sitta') return;
+  const at = (x: number, y: number) => l.ligga ? [y, x] as const : [x, y] as const, bredd = l.ligga ? B.h : B.w;
+  const hojd = l.ligga ? B.w : B.h, v = (x: number, y: number) => { const [a, b] = at(x, y); return a < 0 || b < 0 || a >= B.w || b >= B.h ? -1 : B.px[b * B.w + a]; };
+  for (const d of delar) {
+    const ben = d.startsWith('ben'), hoger = l.rikt === 'bak' ? d.endsWith('H') : d.endsWith('V');
+    const [y0, y1] = ben ? SPJAL.ben : SPJAL.arm, mitt = Math.round((y0 + y1) / 2);
+    for (let y = y0; y <= Math.min(y1, hojd - 2); y++) {
+      let x = -1;
+      for (let i = 0; i < bredd; i++) { const q = hoger ? bredd - 1 - i : i; if (v(q, y) > 0) { x = q; break; } }
+      if (x < 0) continue;
+      const [a, b] = at(x, y); B.px[b * B.w + a] = y === mitt ? SPJAL.remsa : SPJAL.pinne;
+      if (y === mitt) { const [c, e] = at(x + (hoger ? -1 : 1), y); if (v(x + (hoger ? -1 : 1), y) > 0) B.px[e * B.w + c] = SPJAL.remsa; }
+    }
+  }
+}
 const MAX = 3000; // så många bilder sparas; sedan börjar det om (personerna åldras och byter läge)
 const figurer = new Map<string, PIXI.Texture>(), portratt = new Map<string, string>();
 // handen i figurens bild (punkter från övre vänstra hörnet), till redskapen i arbetena (steg 5.1.9.4, ui/arbetsbild.ts)
@@ -42,6 +62,7 @@ export function figurTex(q: Skapad, l: Lage, vald: boolean, qNyckel = JSON.strin
   if (!t) {
     if (figurer.size > MAX) figurer.clear();
     const B: Bild = KARNA.kartFigur(q, l.rikt, l.ben, l.arm, { ligga: l.ligga, tacke: l.tacke, smabarn: l.smabarn });
+    if (q.spjala) ritaSpjalor(B, q.spjala, l);
     t = PIXI.Texture.from(canvasAv(vald ? ljusKontur(B) : B), { scaleMode: PIXI.SCALE_MODES.NEAREST });
     figurer.set(k, t);
     const h = (B as Bild & { hand?: [number, number] | null }).hand; if (h) hander.set(t, h);

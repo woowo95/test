@@ -636,6 +636,32 @@ function sattaBenet(): [string, boolean][] {
   ];
 }
 
+SCENARIER.spjala = {
+  text: 'Steg B.36: spjälan. Ett satt brott med spjäla läker på den vanliga tiden utan men och gör hälften så ont; utan spjäla glider det när delen används, läker snett på dubbla tiden och kan ge men. Den som vilar glider inte, spjälan läggs bara på ett satt brott, och kortet och figuren visar den',
+  kor: () => {
+    const { halsaSteg, HALSA, VARD, sarSmarta } = SIM, s = createState(1, START);
+    const p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen && SIM.ageOf(r, s.now) < SIM.ALDER.gammal)!, g = SIM.living(s).find(r => r !== p)!;
+    const brott = (mer: object) => ({ d: 'benV' as const, k: 'benbrott' as const, g: 0.3, g0: 0.7, b: 0, t0: s.now, ...mer });
+    // läk brottet med eller utan spjäla medan hen går: glider det, hur lång tid och blir det men?
+    const prova = (mer: object, gar: boolean, i: number) => { const c = SIM.cloneState(s); const q = c.people.find(r => r.id === p.id)!; for (let j = 0; j < i * 7; j++) SIM.rnd(c, 'halsa', q); q.skador = [brott(mer)]; q.men = undefined;
+      let t = 0, gled = false;
+      for (; (q.skador as unknown[] | undefined)?.length && t < 200; t++) { q.task = gar ? { act: 'samla', phase: 'go' } as never : { act: 'vila', phase: 'do' } as never; c.now += SIM.HOUR; halsaSteg(c, q, 3600); if ((q.skador as SIM.Skada[] | undefined)?.[0]?.gled) gled = true; }
+      return { t, gled, men: !!(q.men as unknown[] | undefined)?.length }; };
+    const N = 30, kor = (mer: object, gar: boolean) => Array.from({ length: N }, (_, i) => prova(mer, gar, i + 1));
+    const med = kor({ satt: 1, spala: 1 }, true), utan = kor({ satt: 1 }, true), vilar = kor({ satt: 1 }, false), n = (r: { gled: boolean; men: boolean }[], k: 'gled' | 'men') => r.filter(x => x[k]).length;
+    const snitt = (r: { t: number }[]) => r.reduce((a, x) => a + x.t, 0) / r.length;
+    p.skador = [brott({ satt: 1 })]; const w = p.skador[0], ont = sarSmarta(w), far = VARD.spala.krav(s, p, w, g); w.spala = 1; const ont2 = sarSmarta(w);
+    return [
+      [`med spjäla glider det aldrig och läker utan men (${n(med, 'gled')} gled, ${n(med, 'men')} men av ${N})`, n(med, 'gled') === 0 && n(med, 'men') === 0],
+      [`utan spjäla glider det för den som går (${n(utan, 'gled')} av ${N}) och kan ge men (${n(utan, 'men')})`, n(utan, 'gled') > N / 3 && n(utan, 'men') > 0],
+      [`den som vilar glider inte (${n(vilar, 'gled')})`, n(vilar, 'gled') === 0],
+      [`det som gled läker långsammare (${snitt(utan).toFixed(0)} mot ${snitt(med).toFixed(0)} timmar)`, snitt(utan) > snitt(med) * 1.2],
+      [`spjälan halverar smärtan (${ont.toFixed(2)} → ${ont2.toFixed(2)})`, Math.abs(ont2 - ont * HALSA.spalaOnt) < 1e-9],
+      ['spjälan läggs på ett satt brott och inte på ett osatt', far && !VARD.spala.krav(s, p, brott({}), g)],
+      ['kortet säger att brottet är spjälat', SIM.skadeLista(p, s.now)[0].gjort.includes('spjälat')],
+    ];
+  },
+};
 SCENARIER.benbrott = {
   text: 'Steg 9.5.27: benbrottets två slag och läkningen. Ett brott är slutet eller öppet (ett stort sår dessutom), revben och skalle vilas bara, ett brott som inte sätts i tid läker snett på dubbla tiden och kan ge ett bestående men, och barn läker fortare och gamla långsammare. Att sätta benet och spjälan (steg 9.5.28): benet sätts inom tiden, det går fel utan Läkekonst, kryckan låter hen gå och den spjälade armen halverar händigheten',
   kor: () => {

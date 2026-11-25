@@ -41,7 +41,7 @@ export const HALSOTECKEN: Record<string, TeckenDef> = {
   satt: { notis: 'bensatt', varde: (_s, p) => (p.skador ?? []).filter(w => w.k === 'benbrott' && w.satt).length,
     text: (p, f, t) => t > f ? `Benbrottet hos ${p.name} är satt.` : undefined },
   snett: { notis: 'snett', varde: (_s, p) => (p.skador ?? []).filter(w => w.k === 'benbrott' && w.snett).length,
-    text: (p, f, t) => t > f ? `Benbrottet hos ${p.name} sattes inte i tid och läker snett.` : undefined },
+    text: (p, f, t) => t > f ? (p.skador ?? []).some(w => w.gled) && !(p.skador ?? []).some(w => w.snett && !w.gled) ? `Benbrottet hos ${p.name} gled, för det var inte spjälat, och läker snett.` : `Benbrottet hos ${p.name} sattes inte i tid och läker snett.` : undefined },
   avhuggen: { notis: 'avhuggen', varde: (_s, p) => p.saknas?.length ?? 0,
     text: (p, f, t) => t > f && p.saknas ? `${p.name} har förlorat ${delNamn(p.saknas[p.saknas.length - 1] as Del)}.` : undefined },
 };
