@@ -115,7 +115,7 @@ export const ROVARE = balans('rovare', {
   // sjuk när hen är sjuk och gammal för de gamla, plus seden, familjen, plikten och ledaren (rovarVilja). Från kampeFran strider hen, från hjalpFran hjälper hen och står bakom en bit bakom kämparna, annars gömmer hen sig
   // hotet i valet (steg B.13, rovarHot): hur nära gänget är och om det rör sig mot byn. På hotAvst rutor väger det hälften, ett gäng
   // som ligger stilla väger hotStilla av ett som är på väg för den som är i byn, men inte för den som är utanför den, och från hotFran går man från det man gör för att försvara sig, hjälpa till eller gömma sig
-  hotAvst: 20, hotStilla: 0.5, hotFran: 0.35,
+  hotAvst: 20, hotStilla: 0.5, hotFran: 0.35, hotSteg: 8, // (vägen prövas var hotSteg:e ruta, steg B.30)
   budMarg: 1.2, budMax: 2, // budbäraren (steg 9.2.117) går bara om vägen dit, gånger budMarg, hinns före anfallet, och ger upp efter budMax timmar
   overmakt: 0.2, // övermakten i viljan vid larmet (steg B.28): så mycket mindre vilja per gång starkare gänget är än de egna som kan slåss
   kampeFran: 0.15, hjalpFran: 0.05, skadad: 1, sjuk: 0.5, gammal: 0.3, bakom: 3,
@@ -340,7 +340,8 @@ export function synhall(s: State, f: Rovarflock, q: Person) {
 // Att se dem: var och en som är vaken och har gänget inom synhåll ser det och vet (larmet hos personen). Den som är långt borta vet
 // ingenting förrän hen själv ser dem eller hör en varning. Vakthunden hör dem före vakten (steg 9.8.11)
 function seSteg(s: State, f: Rovarflock, folk: Person[]) {
-  const ser = (q: Person) => vaken(q) && narmast(s, f, q) < synhall(s, f, q);
+  const strid = flockStrid(s, f), horStrid = LARM.hor * (isLight(s.now) ? 1 : LARM.natt);
+  const ser = (q: Person) => vaken(q) && (narmast(s, f, q) < synhall(s, f, q) || !!strid && horsel(q) >= LARM.dov && strid.st.kampar.some(k => k.lage === 'strid' && Math.hypot(k.x - q.x, k.y - q.y) < horStrid)); // striden hörs (steg B.30)
   const hund = hundSkaller(s, d => narmast(s, f, d));
   for (const q of folk) {
     if (!alive(q) || harLarm(s, q)) continue;
@@ -398,7 +399,8 @@ const forsvarar = (q: Person) => q.task?.act === 'forsvarRovare' || q.task?.act 
 // sprids från hen på vägen. Budet är klart när den som skulle hämtas har larmet, eller när budMax timmar gått
 export const rovarFlockar = (s: State) => [s.rovare, ...(s.rovareFler ?? [])].filter((f): f is Rovarflock => !!f); // alla rövarflockar på kartan (steg 8.7.18)
 // vet hen om rövarna nu? Larmet från före anfallet säger inget om att gänget är på väg (steg B.13): den som ser det gå varnar på nytt
-const harLarm = (s: State, q: Person) => { const l = q.larm?.rovare; return !!l && s.now - l.t < ROVARE.larmTim * HOUR && !rovarFlockar(s).some(f => f.anfallT !== undefined && f.gor !== 'flyr' && f.gor !== 'slass' && l.t < f.anfallT); };
+// och en strid som börjat sedan dess är något nytt (steg B.30)
+const harLarm = (s: State, q: Person) => { const l = q.larm?.rovare; return !!l && s.now - l.t < ROVARE.larmTim * HOUR && !rovarFlockar(s).some(f => f.anfallT !== undefined && f.gor !== 'flyr' && f.gor !== 'slass' && l.t < f.anfallT || l.t < (flockStrid(s, f)?.t0 ?? -Infinity)); };
 // Hotet som q känner det på platsen (x, y) (steg B.13, "Att se dem" i fliken Människan): hur nära det närmaste gänget är platsen eller
 // byn, och om det rör sig mot byn. Att gänget gått till anfall vet bara den som sett eller hört det sedan dess. Ett gäng som flyr hotar
 // ingen. Utan gäng på kartan vet man bara det man hört (larmet, som tas bort när det sista gänget är borta, rovarSteg)
@@ -418,7 +420,17 @@ export function rovarHot(s: State, q: Person, x = q.x, y = q.y) {
 }
 // hotet som q svarar på: det där hen står, och för den som försvarar byn också hotet mot byn, så att den som är utanför byn kommer till hjälp (steg B.17)
 const hotFor = (s: State, q: Person) => { const h = rovarHot(s, q); if (h >= ROVARE.hotFran || rollVid(s, q, 'rovare') === 'gomd') return h; const m = malet(s); return Math.max(h, rovarHot(s, q, m.x, m.y)); };
-hotKrok.plats = (s, p, x, y) => rovarFlockar(s).length > 0 && harLarm(s, p) && rovarHot(s, p, x, y) >= ROVARE.hotFran;
+// minns hen att det finns ett gäng? Också den som inte vet att det gått till anfall aktar sig för det
+const minnsGang = (s: State, p: Person) => rovarFlockar(s).length > 0 && !!p.larm?.rovare && s.now - p.larm.rovare.t < ROVARE.larmTim * HOUR;
+hotKrok.plats = (s, p, x, y) => minnsGang(s, p) && rovarHot(s, p, x, y) >= ROVARE.hotFran;
+// hotet vid platsen och på vägen dit (steg B.30), det som är mer än där hen står
+hotKrok.vag = (s, p, x, y) => {
+  if (!minnsGang(s, p)) return 0;
+  const d = Math.hypot(x - p.x, y - p.y), n = Math.max(1, Math.ceil(d / ROVARE.hotSteg)), har = rovarHot(s, p);
+  let h = 0;
+  for (let i = 1; i <= n; i++) h = Math.max(h, rovarHot(s, p, p.x + (x - p.x) * i / n, p.y + (y - p.y) * i / n));
+  return h >= ROVARE.hotFran && h >= har ? 1 : Math.min(1, Math.max(0, h - har) / ROVARE.hotFran);
+};
 hotKrok.vaktas = (s, p) => harLarm(s, p) && rovarFlockar(s).some(f => f.folk.length && f.vantat && !f.anfaller && f.sedd !== undefined) && rollVid(s, p, 'rovare') === 'kampe';
 // den som står redo, hjälper eller gömmer sig går tillbaka till sitt när hotet inte längre väger så mycket: gänget har slagit sig ner, eller flyr
 const REDO = new Set<string>(['forsvarRovare', 'hjalpaRovare', 'gomma']);

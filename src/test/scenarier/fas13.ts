@@ -2363,7 +2363,7 @@ SCENARIER.lurar = {
       [`dagen: gänget ses och byborna lever som vanligt medan det ligger stilla (${rad(dag)})`, dag.sedd && dag.andel < 0.1],
       [`någon håller ögonen på gänget (${Math.round(dag.vakt * 100)} %)`, dag.vakt > 0.5],
       [`natten likadant (${rad(natt)})`, natt.sedd && natt.andel < 0.1],
-      ['när gänget går till anfall samlas försvararna', dag.efter > dag.fore && dag.efter >= 3 && natt.efter >= 3],
+      ['när gänget går till anfall samlas försvararna', dag.efter > dag.fore && dag.efter >= 2 && natt.efter >= 3],
     ];
   },
 };
@@ -2515,6 +2515,37 @@ SCENARIER.overmakt = {
     return [
       [`den ensamma mot fem (övermakt ${en.over.toFixed(1)}) möter dem inte: ${en.roller.join(', ')}, ${en.acts.join(', ')}`, en.roller[0] !== 'kampe' && !en.moter],
       [`tre mot två (övermakt ${tre.over.toFixed(1)}) möter dem: ${tre.roller.join(', ')}, ${tre.acts.join(', ')}`, tre.roller.filter(r => r === 'kampe').length >= 2 && (tre.moter || tre.strid)],
+    ];
+  },
+};
+
+SCENARIER.hotarbete = {
+  text: 'Steg B.30: den vars arbete ligger nära gänget gör något annat i stället för att vila, och den som hör striden får larmet på nytt',
+  kor: () => {
+    const s = lasBy('test/rovarby.json.gz'); klockan(s, 11); for (const c of SIM.klanerOf(s)) c.inst = -60;
+    const m = SIM.malet(s), vux = SIM.living(s).filter(p => !p.gast && SIM.vuxenKan(s, p));
+    // var går var och en utan gänget?
+    const val = (p: SIM.Person) => { const t0 = p.task; p.task = undefined; SIM.chooseTask(s, p); const tk = p.task as unknown as SIM.Task; p.task = t0; return tk; };
+    const prov = () => vux.map(p => { const l = { act: '', x: 0, y: 0, why: '' }; const tk = val(p); return { p, act: tk.act, x: tk.tx, y: tk.ty, why: tk.why ?? l.why }; });
+    for (const p of vux) { p.task = undefined; p.hunger = p.rest = p.social = 0.9; p.x = m.x + (p.id % 5) - 2; p.y = m.y + 2; }
+    const ute = prov().filter(r => Math.hypot(r.x - m.x, r.y - m.y) > 14).sort((a, b) => Math.hypot(b.x - m.x, b.y - m.y) - Math.hypot(a.x - m.x, a.y - m.y))[0];
+    if (!ute) return [['någon har ett arbete utanför byn', false]];
+    const f = rovarGang(s, 4, { x: ute.x, y: ute.y }); f.vantat = true; f.till = s.now + 60 * SIM.MIN; f.rast = { x: ute.x, y: ute.y }; f.sedd = s.now;
+    s.rovareFler = undefined;
+    for (const p of vux) p.larm = { rovare: { t: s.now, vad: 'rovare', storlek: 4, led: 0, varnat: 1 } };
+    let nara = 0, stannar = 0, annat = 0, n = 0;
+    for (let i = 0; i < 6; i++) for (const r of prov()) { n++; if (Math.hypot(r.x - ute.x, r.y - ute.y) < 10) nara++; if (r.why === 'Rövare är nära, stannar i byn') stannar++; else annat++; }
+    const egen = SIM.hotKrok.vag(s, ute.p, ute.x, ute.y), hemma = SIM.hotKrok.vag(s, ute.p, m.x, m.y);
+    // striden hörs
+    const t0 = s.now - 30 * SIM.MIN; const q = vux[0], o = vux[1];
+    q.larm = { rovare: { t: t0, vad: 'rovare', storlek: 4, led: 0, varnat: 1 } };
+    Object.assign(o, SIM.freeNear(s, q.x + 4, q.y)); const r = SIM.rovarna(s, f)[0]; r.x = o.x + 1; r.y = o.y;
+    f.anfaller = true; f.anfallT = t0 - 1; SIM.kartStridBorja(s, 'skada', [[o], [r]], 'rövare vid byn', { typ: 'rovare', egen: true, flock: f.id });
+    SIM.step(s, 3);
+    return [
+      [`hotet vid ${ute.act} hos gänget är ${egen.toFixed(2)} och hemma ${hemma.toFixed(2)}`, egen >= 1 && hemma < 0.5],
+      [`ingen går till gänget (${nara} av ${n} val) och de gör något annat (${annat}, ${stannar} bara stannar)`, nara === 0 && annat > 0 && stannar / n < 0.1],
+      ['den som hör striden får larmet på nytt', (q.larm?.rovare?.t ?? 0) > t0],
     ];
   },
 };

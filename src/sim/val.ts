@@ -893,7 +893,7 @@ export const ARBETEN: readonly Arbete[] = [
     // hjälpen väljs med samma poäng som de vuxnas rader på nivån (steg 12.1.45): den går till det som fattas, och skälet är
     // radens eget. Barnet som hjälper arbetar i dag; fattas inget (ingen rad har poäng eller alla har sina arbetare) leker det
     const cb: Ctx = { ...c, d: { ...d, works: true } };
-    const w = vinnare(cb, POANGRADER[6].filter(r => radGaller(s, r, a, 'dag'))).find(r => r.prova(cb));
+    const w = vinnare(cb, POANGRADER[6].filter(r => radGaller(s, r, a, 'dag'))).find(u => u.r.prova(cb))?.r;
     if (!w) return set(v, 'leka', lekText(s));
     v.why = `Hjälper till. ${v.why}`;
     return true;
@@ -995,7 +995,7 @@ const POANGRADER = Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => [n, A
 // den rad som har högst poäng; en rad som har sina arbetare väger VAL.fullRad. Har alla rader som gäller sina arbetare finns
 // ingen vinnare, och man går till nästa nivå. Lika poäng: registrets ordning
 // raderna med poäng, bäst först (steg 13.8.9): blir den bästa inte av (det den kräver saknas) prövas nästa
-function vinnare(c: Ctx, rader: Arbete[]): Arbete[] {
+function vinnare(c: Ctx, rader: Arbete[]): { r: Arbete; x: number }[] {
   const ut: { r: Arbete; x: number }[] = [];
   let ledig = false;
   for (const r of rader) {
@@ -1005,7 +1005,7 @@ function vinnare(c: Ctx, rader: Arbete[]): Arbete[] {
     if (!full) ledig = true;
     ut.push({ r, x: full ? sc * VAL.fullRad : sc });
   }
-  return ledig ? ut.sort((a, b) => b.x - a.x).map(u => u.r) : [];
+  return ledig ? ut.sort((a, b) => b.x - a.x) : [];
 }
 
 const fallNamn = (m: Mjarde) => FALLOR[m.k ?? 'mjarde'].namnDen;
@@ -1014,6 +1014,14 @@ const snartFull = (s: State, m: Mjarde) => timTillFull(s, m) < VAL.vittjaTim;
 // den närmaste fällan med fångst som ingen annan är på väg till
 const mjardeAttTa = (s: State, p: Person) => kanVittja(s).filter(q => !living(s).some(o => o !== p && o.task?.act === 'vittja' && o.task.ref === q.id)).sort((x, y) => Math.hypot(x.x - p.x, x.y - p.y) - Math.hypot(y.x - p.x, y.y - p.y))[0];
 export function chooseTask(s: State, p: Person) { iHelaForradet(() => valjTask(s, p)); } // valet ser hela förrådet (steg 11.1.74)
+// så mycket drar hotet på platsen för det valda och på vägen dit ner det (steg B.30, hotKrok i roller.ts): 0 = inget, 1 = för nära gänget
+function hotDrag(s: State, p: Person, v: Val) {
+  if (!hotNara(s, p)) return 0;
+  const tur = v.spot ? undefined : turMal(v as unknown as Task), at = v.spot ?? (tur && tandStalle(s, p, tur)) ?? spotFor(s, v.act, p);
+  return hotKrok.vag(s, p, at.x, at.y);
+}
+const hotNara = (s: State, p: Person) => (!!s.rovare || !!s.rovareFler?.length) && !!p.larm?.rovare;
+const tomVal = (v: Val) => { const dur = v.dur; for (const k in v) delete (v as unknown as Record<string, unknown>)[k]; v.dur = dur; v.act = 'vila'; v.why = ''; v.paus = true; };
 function valjTask(s: State, p: Person) {
   if (fangeVal(s, p)) return; // den som sitter i fängelset (steg 11.12.1, fangelse.ts)
   if (p.svimmat) { p.task = { act: 'medvetslos', phase: 'do', tx: p.x, ty: p.y, until: s.now + 30 * MIN, carry: 0, dark: false, why: 'Har svimmat' }; return; } // kan inte göra något (steg 8.2.6)
@@ -1029,11 +1037,22 @@ function valjTask(s: State, p: Person) {
       if (r.poang) { // raderna med poäng på nivån vägs mot varandra en gång (steg 6.2.18)
         if (vagd === r.niva) continue;
         vagd = r.niva;
-        for (const w of vinnare(c, POANGRADER[r.niva].filter(galler))) { if (w.vila) break; if (w.prova(c)) { rad = w; return true; } } // vinner fritiden görs inget sämre på nivån
+        // hotet vid platsen och på vägen dit drar ner poängen (steg B.30, hotDrag): då prövas nästa, och den som har mest kvar görs
+        let bast: { r: Arbete; x: number; v: Val } | undefined;
+        for (const { r: w, x } of vinnare(c, POANGRADER[r.niva].filter(galler))) {
+          if (bast && bast.x >= x) break;
+          if (w.vila) { bast = undefined; break; } // vinner fritiden görs inget sämre på nivån
+          if (!w.prova(c)) continue;
+          const kvar = r.niva > 2 ? x * (1 - hotDrag(s, p, v)) : x;
+          if (kvar >= x) { rad = w; return true; }
+          if (kvar > (bast?.x ?? 0)) bast = { r: w, x: kvar, v: { ...v } };
+          tomVal(v);
+        }
+        if (bast) { Object.assign(v, bast.v); rad = bast.r; return true; }
         continue;
       }
       if ((r.arbetar || r.forb) && !dag(c).works || r.forb && !forbNu(c)) continue; // villkoren i den ordning raderna prövade dem
-      if (r.prova(c)) { rad = r; return true; }
+      if (r.prova(c)) { if (r.niva > 2 && hotDrag(s, p, v) >= 1) { tomVal(v); continue; } rad = r; return true; }
     }
     return false;
   };
@@ -1316,7 +1335,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     // tändmaterialet vägs efter det som fattas av det (wTand, steg 13.8.5), och arbetet efter det mest behövda av det och dess eget behov
     const colEget = need * (!d.resurs ? 1 : season * yieldF * onskan(p, w, s.now)) * fullVikt(s, p, d.behov!); // raden som har sina arbetare väger en tredjedel (steg 6.1.13)
     const col = tinder ? Math.max(colEget, wTand * fullVikt(s, p, 'tand')) : colEget;
-    const like = lust(s, p, w as Skill, ACTS[w].egenskap!, [w], tot) * (VAL.brusMin + rnd(s, 'val', p) * VAL.brusSpann) * bredvidVikt(s, p, w, ppl); // egen lust och vana, och vad vänner och ovänner gör (steg 3.1.1)
+    const like = lust(s, p, w as Skill, ACTS[w].egenskap!, [w], tot) * (VAL.brusMin + rnd(s, 'val', p) * VAL.brusSpann) * bredvidVikt(s, p, w, ppl) * (1 - hotDrag(s, p, { act: w, why: '', dur: 0 })); // egen lust och vana, och vad vänner och ovänner gör (steg 3.1.1)
     const sc = col * like;
     burg = Math.max(burg, col);
     if (sc > bs) { bs = sc; best = w; }
