@@ -796,7 +796,7 @@ SCENARIER.heltal = {
 
 // ett hus med yttermåtten w×h och hörnet (x, y), som planBuild gör det: timmerväggar, en öppning på södra sidan (i kolumnen dorr,
 // mitt på om inget anges) och golvet av trä om inget annat anges. klar = färdigbyggt
-function husPa(s: SIM.State, x: number, y: number, w: number, h: number, klar: boolean, val: { golv?: string; dorr?: number; namn?: string; fn?: SIM.Hus['fn'] } = {}) {
+export function husPa(s: SIM.State, x: number, y: number, w: number, h: number, klar: boolean, val: { golv?: string; dorr?: number; namn?: string; fn?: SIM.Hus['fn'] } = {}) {
   const hus: SIM.Hus = { id: (s.nextBit ??= 1), namn: val.namn ?? 'Hydda', x, y, w, h, fn: val.fn ?? 'sovsal' };
   s.nextBit++;
   for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) {

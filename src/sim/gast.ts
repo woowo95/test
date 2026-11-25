@@ -88,7 +88,7 @@ function utrusta(s: State, p: Person, r: () => number) {
   for (const v of Object.values(u.plagg)) { const k = valj(v, r()); if (k) ny(k, SAKER[k]?.klad ? 'bar' : undefined); } // plaggen på sig, det andra (facklan) löst
   for (let i = 0; i < 2; i++) if (r() < u.arr) (p.arr ??= []).push({ d: ARRDELAR[Math.floor(r() * ARRDELAR.length)], n: Math.floor(r() * 10) + 1 });
   if (p.gast!.klan !== undefined) klanTatKrok.klan(s, p, p.gast!.klan, r); // klanens märken (steg 12.1.165)
-  if (u.drakt) { const b = r(); p.gast!.drakt = { ...(b < u.drakt.luva ? { bonad: 'luva' as const } : b < u.drakt.luva + u.drakt.duk ? { bonad: 'duk' as const } : {}), ...(r() < u.drakt.rovarskinn ? { rovarskinn: true as const } : {}) }; }
+  if (u.drakt) { const b = r(), skinn = r() < u.drakt.rovarskinn, bonad = b < u.drakt.luva ? 'luva' as const : b < u.drakt.luva + u.drakt.duk ? 'duk' as const : undefined; p.gast!.drakt = { ...(bonad ? { bonad } : {}), ...(skinn || !bonad ? { rovarskinn: true as const } : {}) }; } // var och en har något av gängets dräkt: den utan luva och duk har rocken (steg B.35)
 }
 // vapnet gästen har i handen (slaget), om något
 export const gastVapen = (s: State, p: Person) => (s.gastTing ?? []).find(t => t.hos === p.id)?.k;

@@ -227,7 +227,7 @@ export const hjalperFange = (s: State, p: Person, q: Person, nod: number) => nod
 export function matTillFange(s: State, p: Person): { spot: { x: number; y: number }; ref: number; why: string; ved?: true } | undefined {
   if (p.fange || !kanGa(p)) return undefined;
   let best: Person | undefined, bn = 0, ved = false;
-  for (const q of [...fangar(s), ...living(s).filter(o => !o.fange && !kanGa(o) && hemma(s, o) && !utanVard(s, o))]) {
+  for (const q of [...fangar(s), ...living(s).filter(o => !o.fange && (!kanGa(o) || o.foder) && hemma(s, o) && !utanVard(s, o))]) {
     if (q === p || s.people.some(o => o !== p && o.task?.act === 'barmat' && o.task.ref === q.id)) continue;
     const nod = 1 - q.hunger, kold = !q.fange || fangEldBrinner(s, q.fange.hus) ? 0 : (1 - q.warm) * FANG.eld;
     if (nod > bn && hjalperFange(s, p, q, nod)) { best = q; bn = nod; ved = false; }
@@ -235,7 +235,7 @@ export function matTillFange(s: State, p: Person): { spot: { x: number; y: numbe
   }
   if (!best) return undefined;
   const spot = fangelseKrok.matStack(s, p, ved); // det närmaste i förrådet där det ligger mat eller ved (sätts av steg.ts)
-  return spot ? { spot, ref: best.id, why: ved ? `Hämtar ved åt ${best.name}, som fryser i fängelset` : `Hämtar mat åt ${best.name}, som ${best.fange ? 'sitter i fängelset' : best.svimmat ? 'är medvetslös' : 'inte kan gå'}`, ...(ved ? { ved: true as const } : {}) } : undefined;
+  return spot ? { spot, ref: best.id, why: ved ? `Hämtar ved åt ${best.name}, som fryser i fängelset` : `Hämtar mat åt ${best.name}, som ${best.fange ? 'sitter i fängelset' : best.svimmat ? 'är medvetslös' : best.foder ? 'föder barn' : 'inte kan gå'}`, ...(ved ? { ved: true as const } : {}) } : undefined;
 }
 // maten eller veden är tagen (KLAR i steg.ts): en hel portion av det som finns, eller en ved, och den bärs till fången
 export function matTagen(s: State, p: Person, t: import('./typer').Task) {

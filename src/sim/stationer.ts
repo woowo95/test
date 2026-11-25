@@ -1851,6 +1851,7 @@ export const farBygga = (s: State, h: Hus | undefined, p?: Person) => h?.ag === 
 const husAv = (s: State, t: Station) => husById(s, stationRum(s, t)?.hus);
 // står bädden där ägaren o får sova: i familjens hus, annars i byns hus där man sover
 function ratt(s: State, h: Hus | undefined, o: Person) {
+  const i = sovPlats(s, o); if (h && i !== undefined && roomAt(s, i % W, Math.floor(i / W))?.hus === h.id) return true; // den som inte fick plats i familjens hus sover här (steg 13.10.21)
   const egen = sovHus(s, o);
   return egen !== undefined ? h?.id === egen : !!h && h.ag === undefined && !!fnOf(h).sover;
 }
@@ -1888,7 +1889,7 @@ function scenIn(s: State) {
   if (!samlingRum(s)) return;
   const at = utan(s, t, () => { const sal = samlingRum(s); return sal && siteInne(s, t.k, sal); }); // rummen räknas om när scenen är borta
   if (!at) return;
-  rivStation(s, t, `Scenen revs för att byggas upp igen i ${husById(s, samlingRum(s)?.hus ?? -1)?.namn.toLowerCase() ?? 'salen'}. Där går det att uppträda också när det är kallt eller regnar.`);
+  rivStation(s, t, `Scenen revs för att byggas upp igen i ${(h => h && husIText(h))(husById(s, samlingRum(s)?.hus ?? -1)) ?? 'salen'}. Där går det att uppträda också när det är kallt eller regnar.`);
 }
 // en station rivs (för ett hus, steg 10.2.77, när scenen flyttas eller förbjuds, steg 8.1.16, eller när anfallare slår sönder den):
 // den tas isär, en eld i den släcks, och en del av materialet kommer tillbaka som när ett hus rivs. Projekten bygger den

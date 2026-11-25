@@ -81,7 +81,7 @@ import { chance, clamp, hash3, r3, rnd } from './slump';
 import { VAR, ageIndex, hourOf, isLight } from './tid';
 import { ACTS, toolRow } from './handlingar';
 import { kunnaVikt } from './kunna';
-import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, kartAv, Historik, simulera, T, inMap, GRANNAR4 } from './typer';
+import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Fire, Person, SEC, SKILL_NAMES, State, Task, W, H, useMap, kartAv, Historik, simulera, T, inMap, GRANNAR4 } from './typer';
 import { FOREST, findPath, wear } from './vag';
 import { barKropp, gangVakt, kroppFart, rutFart, smidig, snoFart } from './gang';
 import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './ljus';
@@ -100,7 +100,7 @@ import { JAKT, jaktBar, jaktFallt, jaktForsok, jaktKlar } from './jakt';
 import { bristSteg, frysFaktor, naringSjunker, skorbjugg, trottFaktor } from './naring';
 import { stepByggnader } from './byggnader';
 import { BYN, sumOf } from './egendom';
-import { vaggRensa, husKlart, avail, takeForHouse, buildJob, finishDorr, needOf, noteKom, siteOf, wearBuild, workOn } from './bygg';
+import { vaggRensa, husKlart, avail, takeForHouse, bitFri, buildJob, finishDorr, needOf, noteKom, siteOf, wearBuild, workOn } from './bygg';
 import { Bit, bitAt, bitsOf, husById, MATERIAL, bitById, blocked, freeNear, gridOf, roomAt, roofed, shelterOf } from './byggnad';
 import { histParts, historikSteg, joinHist } from './historik';
 import { migrate } from './varld';
@@ -116,7 +116,7 @@ import { iVattnetNu, sjoRakna, vattenNu } from './sjo';
 import { FANG, brytKlar, fangEldBrinner, fangelseKrok, matFram, matTagen, stoppaFram, stoppaVal } from './fangelse';
 import { akel, latrinUpptagen, latrinerVaxerIgen, regnetTvattar, smutsigtPlock, smutsMatTimme, toaBesok, toaNara } from './smuts';
 import { iselenSteg, seleMed } from './barsele';
-import { DRICKA_ACTS, TORST, drick, torstSteg, vattenFram, vattenFylld } from './torst';
+import { DRICKA_ACTS, TORST, dryckKrok, drick, torstig, torstSteg, vattenFram, vattenFylld } from './torst';
 import { kvarTimme } from './kvarlevor';
 import { lasKlar, runstenBorja, runstenKlar, runstenTimme, skrivKlar } from './skrift';
 import { fangeOde } from './fangeval';
@@ -126,7 +126,7 @@ import { KYRKA_TIMME, andligTimme, kyrkaDygn, kyrkaRegister, kyrkaTimme, satBudH
 import { lagRegister } from './lagar';
 import { raddDygn, raddRegister } from './radsla';
 import { LARM, handelse, larma } from './rykten';
-import { tal, horsel, barMed, binStick, burenSteg, halsa, halsaSteg, lakerFullt, lamnaAv, vardKlar, vardMal } from './halsa';
+import { tal, horsel, barMed, binStick, burenSteg, halsa, halsaSteg, hemma, lakerFullt, lamnaAv, vardKlar, vardMal } from './halsa';
 import { bordPlats, fullBorda, kladVarme, klaAvKlar, klaPaKlar, rustaKlar, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
 import { dragdjurBredvid, fartI, fordonI, rymsI } from './fordon';
 import { KLADER, NAKEN_PLATS, PLAGG, kladAv } from './klader';
@@ -822,9 +822,18 @@ export const gravidDel = (p: Person, now: number) => p.pregnantSince === undefin
 export const fodVilja = (pop: number, matDygn: number, barnMatF: number, sed: number) => birthWish(pop) * clamp(matDygn / STEG.matDygn, STEG.matMin, 1) * barnMatF * (1 + STEG.sedBarn * sed);
 export function fodslarPerAr(vilja: number) { const c = STEG.chans * vilja; return c / (1 + c * (STEG.dragtid + STEG.mellanFodslar)); }
 // graviditet: en kvinna med partner kan bli gravid; viljan styrs av hur många byn är, maten och sederna
+// medan modern föder (steg 13.10.29) äter hon det som ligger inom räckhåll (needLadder) och dricker byns drycker när hon är hemma, som alla andra; resten
+// bär någon dit (vattenVal, matTillFange). Hjälpen räknas bara medan hjälparen står kvar hos henne, annars kan någon annan komma
+function foderSteg(s: State, p: Person) {
+  const fo = p.foder!, h = fo.hjalp === undefined ? undefined : byId(s, fo.hjalp);
+  if (fo.hjalp !== undefined && !(h && h.task?.act === 'forlossa' && h.task.ref === p.id)) fo.hjalp = undefined;
+  if (torstig(p, 0) && p.task?.act === 'foder' && p.task.phase === 'do' && hemma(s, p) && dryckKrok.finns(s)) { dryckKrok.drick(s, p); count(s, 'foderDrack'); }
+}
 function pregnancy(s: State, p: Person, a: number, pop: number, dtSec: number) {
   const now = s.now;
-  if (p.foder) { if (now >= p.foder.till) birth(s, p); } // förlossningen tar tid (steg 9.5.29)
+  if (p.foder) { // förlossningen tar tid (steg 9.5.29)
+    if (now >= p.foder.till) birth(s, p); else foderSteg(s, p);
+  }
   else if (p.pregnantSince !== undefined) { if (now - p.pregnantSince > STEG.dragtid * DAY) borjaForlossning(s, p); }
   else if (p.sex === 'k' && p.partner !== undefined && a >= ALDER.gravFran && a <= ALDER.gravTill && (!p.lastBirth || now - p.lastBirth > STEG.mellanFodslar * DAY)) {
     const f = fodVilja(pop, foodDays(s), barnMat(s, pop), s.seder.v.barn);
@@ -839,6 +848,15 @@ export const grenarMed = (s: State, tk: Task) => {
   const har = forradAv(s, 'grenar') + (tk.items?.grenar ?? 0), tak = materialTak(s, 'grenar');
   return har < tak ? 1 : (tak / Math.max(1e-9, har)) ** 2;
 };
+// den som tänder och fått slut på tändmaterialet behåller flintan och hämtar bara mer av det som fattas (steg 13.10.27). Finns
+// det inget mer i förrådet ger hen upp och bär hem flintan
+function merTandmaterial(s: State, p: Person, t: Task, f: Fire) {
+  const hamtad = t.hamtad;
+  t.hamtad = undefined;
+  if (iHelaForradet(() => canLight(s, p, f), p) && hamtaForst(s, p, t)) return true;
+  t.hamtad = hamtad;
+  return false;
+}
 // Uppgiften under ett steg. Tiden i steget går åt till det som händer i tur och ordning: att avsluta och välja, att gå
 // (tiden följer vägen), att arbeta i bitar och att bära hem. Det räknas likadant i spelet och vid ikappräkning; spelet
 // visar bara samma rörelse (spar). Vanor och idéer växer medan man håller på
@@ -852,7 +870,8 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     if (t && t.phase === 'do' && t.until <= now) iRackhall(p.x, p.y, () => KLAR[t.act]?.(s, p, t, 0)); // ett träd som fällts färdigt, en yxa som gjorts klar
     const tf = t?.act === 'tanda' ? eldById(s, t.ref) : undefined, lightDone = t?.act === 'tanda' && (!tf || tf.lit || !t.brand && !t.vanda && !(t.phase === 'do' ? iRackhall(p.x, p.y, () => canLight(s, p, tf)) : iHelaForradet(() => canLight(s, p, tf), t.site ?? { x: t.tx, y: t.ty }))); // framme: det hen bär och når, som försöken (steg 11.1.75); på väg efter mer: också det som redan ligger vid eldplatsen
     const mustGo = t && p.toa < KROPP.toaAvbryt && !ACTS[t.act].nodFri && a >= ALDER.smabarn; // nöden avbryter det man håller på med (inte den som bärs eller den som slåss)
-    if (!t || (t.until <= now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone) {
+    const merTand = lightDone && t && tf && !tf.lit && t.phase === 'do' && t.until > now && !phaseFlip && !mustGo && merTandmaterial(s, p, t, tf);
+    if (!merTand && (!t || (t.until <= now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone)) {
       if (t && barHem(t) && t.act !== 'elda') { t.phase = 'back'; const d = backSpot(s, t); t.tx = d.x + sida(p, 0.2); t.ty = d.y + sida(p, -0.2); } // samma lagerplatser som när flytten valdes, och redskapet läggs tillbaka (steg 12.1.49)
       else if (!(t?.med !== undefined && t.phase === 'do' && !phaseFlip && !mustGo && t.until <= now && skiljsAt(s, p))) chooseTask(s, p); // efter samtalet går man isär en bit (steg 4.5.6.7)
     }
@@ -1664,7 +1683,7 @@ function buildStep(s: State, p: Person, tk: Task, dtSec: number) {
   // bara det som fattas läggs i bygget: har någon annan lagt material i väggen under tiden behåller man resten
   const har = (k && tk.items?.[k]) || 0, anv = Math.min(har, needOf(b));
   const done = b.b >= 1 && b.lp === undefined && b.c >= 0.5;
-  if (!done && needOf(b) - har <= 1e-9) {
+  if (!done && bitFri(s, b) && needOf(b) - har <= 1e-9) { // (en stubbe, ett träd eller en eld i vägen: nästa bit, steg 13.10.28)
     if (!workOn(s, p, b, dtSec, anv)) return;
     if (anv) {
       const kvar = har - anv;
@@ -1686,7 +1705,7 @@ function buildStep(s: State, p: Person, tk: Task, dtSec: number) {
 function byggMer(s: State, b: Bit, k: string) {
   const andra = new Set(living(s).filter(q => q.task?.act === 'bygga').map(q => q.task!.ref));
   let n = 0;
-  for (const c of bitsOf(s)) if (c !== b && c.hus === b.hus && c.b < 1 && !c.forb && MATERIAL[c.m].item === k && !andra.has(c.id)) n += needOf(c);
+  for (const c of bitsOf(s)) if (c !== b && c.hus === b.hus && c.b < 1 && !c.forb && bitFri(s, c) && MATERIAL[c.m].item === k && !andra.has(c.id)) n += needOf(c);
   return n;
 }
 

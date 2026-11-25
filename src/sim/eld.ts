@@ -565,12 +565,12 @@ export function eldForst(s: State, p: Person, act: Act): { ok: boolean; gor?: { 
     const sa = tandSatt(s, p, f);
     if (!sa) return { ok: false };
     const at = sa.kalla ? vidEld(s, sa.kalla, (rnd(s, 'eld', p) - 0.5) * 1.2, 1.3) : tandPlats(s, f, p);
-    return { ok: true, gor: { act: 'tanda', spot: at, dur: ELD.tandTim * HOUR, ref: f.id, why: why('tänder hen elden'), ...(sa.kalla ? { brand: 'hamta' as const, kalla: sa.kalla.id ?? -1 } : sa.fackla ? { brand: 'bar' as const } : {}) } };
+    return { ok: true, gor: { act: 'tanda', spot: at, dur: ELD.tandTim * HOUR, ref: f.id, why: why(`tänder ${han(p)} elden`), ...(sa.kalla ? { brand: 'hamta' as const, kalla: sa.kalla.id ?? -1 } : sa.fackla ? { brand: 'bar' as const } : {}) } };
   }
   const behov = arbeteBransle(s, p, act, f);
   if (f.fuel >= behov * ELD.arbeteMarg || andra('elda') || ageOf(p, s.now) < ALDER.hjalper || fuelStock(s) < ELD.hamtaMin || fuelFor(s, p) < ELD.hamtaMin) return { ok: f.lit };
   const k = takeLimit(s, 'ved', p) >= 1 ? 'ved' : 'grenar';
-  return { ok: true, gor: { act: 'elda', spot: fetchSpot(s, k, p, () => takeLimit(s, k, p)), dur: ELD.hamtaTim * HOUR, ref: f.id, why: why('lägger hen ved på elden') } };
+  return { ok: true, gor: { act: 'elda', spot: fetchSpot(s, k, p, () => takeLimit(s, k, p)), dur: ELD.hamtaTim * HOUR, ref: f.id, why: why(`lägger ${han(p)} ved på elden`) } };
 }
 // samling hittar tändmaterial, sten och flinta när förrådet behöver det
 // fart: hö och grenar växer på platsen och hittas lika mycket fortare som det man samlar (steg 2.12.4); stenar och flinta letar man efter

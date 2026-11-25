@@ -130,7 +130,7 @@ export function buildJob(s: State, p: Person, forb = false): Job | undefined {
     if (b.hus !== undefined && husById(s, b.hus)?.flyttas !== undefined) continue; // huset byggs upp på en ny plats (steg 9.4.6): det gamla lagas inte
     if (lagerIVagen(s, b)) continue; // sakerna i den gamla lagerplatsen bärs ut först (steg 8.1.15)
     if (s.flod && iVattnetNu(s, b.y * W + b.x)) continue; // där vattnet står byggs och lagas inget förrän det sjunkit undan (flod.ts)
-    if (taken.has(b.id) || b.k === 'oppning' || (b.b < 1 && (treeOn(s, b) || stubbeOn(s, b.x, b.y) || vidElden(s, b.x, b.y) || (b.k === 'vagg' && (s.stockar ?? []).some(k => Math.floor(k.x) === b.x && Math.floor(k.y) === b.y))))) continue; // en vägg byggs inte på en stock (steg 8.1.13) // där elden står byggs inget förrän den flyttats (eldflytt.ts)
+    if (taken.has(b.id) || b.k === 'oppning' || !bitFri(s, b)) continue;
     const M = MATERIAL[b.m], repair = b.b >= 1;
     if (repair && b.c >= BYGG.laga) continue;
     if (M.tek && !knows(p, M.tek)) continue;
@@ -147,6 +147,9 @@ export function buildJob(s: State, p: Person, forb = false): Job | undefined {
 }
 // materialet en lagning kräver: en del av det nya, i hela saker och minst en (steg 3.6.13: inga resurser i decimaler)
 export const lagKostnad = (M: { n: number }) => M.n > 0 ? Math.max(1, Math.floor(M.n / BYGG.lagMatDiv)) : 0;
+// är platsen fri att bygga på (steg 13.10.28): inget träd, ingen stubbe, ingen eld (den flyttas, eldflytt.ts) och för en vägg
+// ingen stock (steg 8.1.13)
+export const bitFri = (s: State, b: Bit) => b.b >= 1 || !(treeOn(s, b) || stubbeOn(s, b.x, b.y) || vidElden(s, b.x, b.y) || (b.k === 'vagg' && (s.stockar ?? []).some(k => Math.floor(k.x) === b.x && Math.floor(k.y) === b.y)));
 // material som fattas på bygget eller lagningen
 export function needOf(b: Bit) {
   const M = MATERIAL[b.m];

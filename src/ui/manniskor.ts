@@ -384,6 +384,7 @@ function utseendeAv(p: Person) {
   }
   return m;
 }
+const skyltPlats = new Map<number, number>(); // platsen namnet vid var och en som slåss har (steg B.35)
 export function drawPeople(t: number) {
   peopleG.clear(); bubbleG.clear();
   sedd.clear(); figurFot.clear();
@@ -564,7 +565,8 @@ export function drawPeople(t: number) {
     const roll = rollAv(s, p);
     skyltar.push({ id: p.id, x: f.x, y: skyltUnder(f.y), w: tx.width, ikon: roll && hasIcon(roll.ikon) ? roll.ikon : undefined, forst: slass.has(p.id) ? 2 : roll ? 1 : 0, ...(slass.has(p.id) ? { flytt: SKYLT.flytt } : {}) });
   }
-  const syns = synligaSkyltar(skyltar, world.scale.x, upptaget);
+  const syns = synligaSkyltar(skyltar, world.scale.x, upptaget, skyltPlats);
+  for (const id of skyltPlats.keys()) if (!slass.has(id)) skyltPlats.delete(id);
   for (const k of skyltar) {
     const tx = smaNamn.get(k.id)!;
     tx.visible = syns.has(k.id);

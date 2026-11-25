@@ -274,7 +274,7 @@ function ses(s: State, f: Vargflock, folk: Person[]) {
 // utan larm (den som kallar till vargjakt, steg 12.1.82) räknas den största flocken byn sett nyligen
 const kandFlock = (s: State) => Math.max(1, ...flockarna(s).filter(f => f.sedd !== undefined && s.now - f.sedd < VARG.jaktVet * HOUR).map(f => f.vargar.length));
 LARMHOT.varg = { namn: 'Vargarna', plus: (s, p) => VARG.fler * living(s).filter(q => viljaKrok.kan(s, q)).length / Math.max(1, larmNu(s, p, 'varg')?.storlek ?? kandFlock(s)), kampe: () => VARG.vagar + 1e-12, hjalp: () => VARG.hjalpFran };
-const vargLarm = (s: State, p: Person) => { const v = larmNu(s, p, 'varg'), r = larmNu(s, p, 'rovare'); return v && (s.now - v.t < VARG.vakenTim * HOUR || vargarNara(s)) ? v : r && s.now - r.t < VARG.vakenTim * HOUR ? r : undefined; }; // vargarna eller rövarna (ett larm per sort, steg 12.1.211)
+export const vargLarm = (s: State, p: Person) => { const v = larmNu(s, p, 'varg'), r = larmNu(s, p, 'rovare'); return v && (s.now - v.t < VARG.vakenTim * HOUR || vargarNara(s)) ? v : r && s.now - r.t < VARG.vakenTim * HOUR ? r : undefined; }; // vargarna eller rövarna (ett larm per sort, steg 12.1.211)
 export const vargarNara = (s: State) => flockarna(s).some(f => f.gor !== 'flyr' && f.vargar.length > 0 && f.sedd !== undefined && s.now - f.sedd < VARG.seddTim * HOUR && utanforByn(s, f.x, f.y) < VARG.naraByn);
 
 // ---------- skyddet när vargen kommer (steg 3.7.15) ----------
