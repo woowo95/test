@@ -1363,6 +1363,15 @@ SCENARIER.eldruta = {
     // husets härd tar två gånger två rutor (steg 12.1.207)
     const hx = at.x + 3, hy = at.y + 12, husHard = { ...SIM.newFire(), hearth: 'hard', at: { x: hx, y: hy } } as SIM.Fire; s.eldar!.push(husHard);
     const e2 = SIM.eldRutor(s), fyra = [[0, 0], [1, 0], [0, 1], [1, 1]].every(([dx, dy]) => e2.has((hy + dy) * SIM.W + hx + dx)) && !e2.has((hy + 2) * SIM.W + hx);
+    // en ny härd tömmer alla sina fyra rutor, och ett kastat spjut blir inte liggande i den (steg B.54)
+    const ny = SIM.createState(9, START), nx = Math.floor(SIM.eldPlats(ny).x) + 6, nyy = Math.floor(SIM.eldPlats(ny).y) + 6;
+    (ny.stackar ??= []).push({ k: 'sten', n: 1, c: 1, x: nx + 1, y: nyy + 1 });
+    const ht = { id: 993, k: 'hard', x: nx, y: nyy, kvar: 0 } as SIM.Station; (ny.stationer ??= []).push(ht);
+    SIM.nyEld(ny, ht, true);
+    const e4 = SIM.eldRutor(ny), tom = SIM.stacksOf(ny).every(a => !(a.n > 0) || !e4.has(a.y * SIM.W + a.x)) && e4.has((nyy + 1) * SIM.W + nx + 1);
+    const kastare = nyInvanare(ny, 'm', 30); SIM.addTool(ny, 'spjut', kastare); for (const q of SIM.toolsOf(ny, 'spjut')) q.agare = kastare.id;
+    let kast: string | undefined = 'x'; for (let k = 0; k < 20 && kast; k++) kast = SIM.kastat(ny, kastare, 'spjut', 3, nx + 1.5, nyy + 1.5, () => 0.99);
+    const spj = SIM.toolsOf(ny, 'spjut')[0], kastOk = !spj || spj.x === undefined || !e4.has(spj.y! * SIM.W + spj.x);
     // en lägereld som står i härdens hörn tas isär: stenarna läggs inte i härden (steg 12.1.194)
     const brasa = { ...SIM.newFire(), at: { x: hx + 1, y: hy + 1 } } as SIM.Fire; s.eldar!.push(brasa);
     const stenAlla = () => SIM.stacksOf(s).filter(a => a.k === 'sten' && a.n > 0), stenFore = stenAlla().reduce((t, a) => t + a.n, 0);
@@ -1377,6 +1386,8 @@ SCENARIER.eldruta = {
       ['inget läggs i den första elden', forsta],
       ['örtkökets härd är en eldruta, men inte resten av köket', iHard],
       ['husets härd är fyra eldrutor', fyra],
+      ['en ny härd tömmer alla sina fyra rutor (steg B.54)', tom],
+      [`det kastade spjutet blir inte liggande i elden (${kast ?? 'ligger'})`, !!spj && kast === undefined && kastOk],
       ['stenarna från en lägereld som tas isär läggs inte i en annan eld', isar],
     ];
   },

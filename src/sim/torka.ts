@@ -6,7 +6,7 @@ import { freeNear, lagretsMitt, touch } from './byggnad';
 import { groundOf, nyttVatten, tileOf } from './mark';
 import { nasbara } from './vag';
 import { tagits, takenOf } from './fynd';
-import { avbryt } from './lager';
+import { avbryt, ingetIElden } from './lager';
 import { sjoNamn, sjoarna, vattenNu } from './sjo';
 import { vaderNu } from './vader';
 import { DAY, H, State, T, W, inMap } from './typer';
@@ -86,6 +86,7 @@ export function vattnetAndrat(s: State, fore: Uint8Array, flytta = true) {
   if (!flytta) return;
   for (const a of s.stackar ?? []) if (blot(a.x, a.y)) { const f = freeNear(s, a.x, a.y); a.x = f.x; a.y = f.y; }
   for (const t of s.ting ?? []) if (t.x !== undefined && t.y !== undefined && blot(t.x, t.y)) { const f = freeNear(s, t.x, t.y); t.x = f.x; t.y = f.y; }
+  ingetIElden(s); // det som flyttats läggs inte i en eld (steg B.54)
 }
 // den som vattnet har skurit av från lägret (en udde på torr sjöbotten som blev en ö när sjön kom tillbaka, eller en strand
 // som översvämningen tog vägen till) vadar i land: hen hamnar på den närmaste rutan som når lägret, som den som stod där

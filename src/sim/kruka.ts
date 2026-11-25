@@ -56,7 +56,7 @@ export function stepKrukor(s: State, dt = 3600) {
 // krukan flyttar sig inte själv). Efter arbetet ställs den tillbaka i förrådet som redskapen (placeTools), och sedan bärs den hit
 // igen. Raden krukaHem i ARBETEN (val.ts) väljer det bland det man gör för att göra det bättre; hen går till krukan, tar upp den
 // (KLAR i steg.ts), bär den till en fri ruta i rummet och ställer ner den där (LAMNA i steg.ts)
-const fri = (s: State, x: number, y: number) => !stationAt(s, x, y) && !sittAt(s, x, y) && !tingOf(s).some(t => t.x === x && t.y === y) && !(s.stackar ?? []).some(a => a.x === x && a.y === y);
+const fri = (s: State, x: number, y: number) => !stationAt(s, x, y) && !sittAt(s, x, y) && !tingOf(s).some(t => t.x === x && t.y === y) && !(s.stackar ?? []).some(a => a.x === x && a.y === y) && !eldRutor(s).has(y * W + x); // inte i husets härd (steg B.54)
 const barsHem = (s: State, p: Person, t: Ting) => annanGor(s, p, 'krukaHem', t.id);
 export function krukaHemVal(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || pyntOf(s, p)) return undefined;
@@ -196,6 +196,6 @@ export function ortSattaKlar(s: State, p: Person, ref?: number) {
 }
 import { GRODOR, GrodaDef, GrodaSlag, ODLING } from './odling';
 import { roomAt } from './byggnad';
-import { amountOf, put } from './lager';
+import { eldRutor, amountOf, put } from './lager';
 import { getable, takeMaterial } from './behov';
 import { knows } from './teknik';

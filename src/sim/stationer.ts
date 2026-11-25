@@ -1372,9 +1372,7 @@ export function finishStation(s: State, p: Person, tk: Task) {
   s.byggV = (s.byggV ?? 0) + 1; // den färdiga räknas: bristen och platserna räknas om (bristNu i projekt.ts)
   const d = stationDef(t.k)!;
   if (d.hard) { // härden är lagd: den blir en eld inne i huset (steg 7.5.3)
-    nyEld(s, t);
-    const f = (s.eldar ?? []).find(q => q.id === t.id);
-    if (f) { f.hearth = 'hard'; f.ring = undefined; }
+    nyEld(s, t, true);
     if (forstaGang(s, 'station_' + t.k)) { log(s, forstaText(d.forsta, p), 'world', [p.id]); p.fame.push('Lade byns första härd'); }
     return;
   }

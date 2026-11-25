@@ -11,7 +11,7 @@ import { kunnighet } from './ekonomi';
 import { eldReserv } from './forradsmal';
 import { ARSTID, iIstiden } from './tid';
 import { knows } from './teknik';
-import { amountOf, changed, enPerRuta, ownMove, ownsAmount, ownsId, put, use, zonesOf } from './lager';
+import { amountOf, changed, enPerRuta, ingetIElden, ownMove, ownsAmount, ownsId, put, use, zonesOf } from './lager';
 import { freeTools, nTools, tingOf } from './agande';
 import { getable, Recept, takeMaterial } from './behov';
 import { BYN, Del, kyrkaId, sumOf } from './egendom';
@@ -222,7 +222,7 @@ export function vaggRensa(s: State) {
   if (zonesOf(s).some(z => z.hus !== undefined && !husById(s, z.hus))) { s.lagren = zonesOf(s).filter(z => z.hus === undefined || husById(s, z.hus)); changed(s); }
   for (const a of s.stackar ?? []) { if (isWall(s, a.x + 0.5, a.y + 0.5)) { const f = freeNear(s, a.x, a.y, true); a.x = Math.floor(f.x); a.y = Math.floor(f.y); changed(s); } }
   for (const t of tingOf(s)) { if (t.x === undefined || t.y === undefined || t.hos !== undefined || t.lass !== undefined) continue; if (isWall(s, t.x + 0.5, t.y + 0.5)) { const f = freeNear(s, t.x, t.y, true); t.x = Math.floor(f.x); t.y = Math.floor(f.y); t.vid = undefined; } }
-  enPerRuta(s);
+  enPerRuta(s); ingetIElden(s); // inte heller i en eld bredvid väggen (steg B.54)
 }
 // huset är färdigt: alla bitar byggda och inga fällda träd kvar inne i det. Prövas när en bit blir klar och när en stock huggits slut
 // en gång i timmen (stepByggnader): ett hus som väntade på att ett träd över det skulle fällas blir klart när det är borta
@@ -325,7 +325,7 @@ function clearTile(s: State, b: Bit) {
   for (const a of s.stackar ?? []) if (a.x === b.x && a.y === b.y) { a.x = free.x; a.y = free.y; }
   // ett redskap som ligger på rutan (inte i handen eller en börda) läggs bredvid
   for (const t of tingOf(s)) if (t.x === b.x && t.y === b.y && t.hos === undefined && t.lass === undefined) { t.x = free.x; t.y = free.y; }
-  enPerRuta(s); // det som flyttats kan ha hamnat på en ruta där något redan låg
+  enPerRuta(s); ingetIElden(s); // det som flyttats kan ha hamnat på en ruta där något redan låg, eller i en eld (steg B.54)
   changed(s); // summorna i förrådet räknas om (lager.ts)
 }
 
