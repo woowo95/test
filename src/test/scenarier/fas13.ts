@@ -2634,3 +2634,37 @@ SCENARIER.granskat13 = {
     ];
   },
 };
+SCENARIER.flyktvag = {
+  text: 'Den som flyr kommer undan (steg B.27): hen väljer en väg förbi fienderna, runt en vän som slåss och runt en vägg, tar en annan tillflykt när vägen till den första är stängd, och springer bort från fienderna när ingen väg finns',
+  kor: () => {
+    const m = (id: number, sida: 0 | 1, x: number, y: number, fly: { x: number; y: number }, flyAndra?: { x: number; y: number }[]) => ({ id, namn: `${sida ? 'R' : 'B'}${id}`, sida, vapen: 'hand', klader: [] as string[], x, y, fart: 1, st: { styrka: 10, uthallighet: 10, mod: 20, skicklighet: 10, aggression: 10, smidighet: 10 }, fly, ...(flyAndra ? { flyAndra } : {}) }) as unknown as SIM.Uppstallning['kampar'][number];
+    const prova = (vaggar: number[], flyr: ReturnType<typeof m>, andra: ReturnType<typeof m>[]) => {
+      let ut = 0, sek = 0, stilla = 0;
+      for (let fro = 1; fro <= 10; fro++) {
+        const st = SIM.nyStrid({ karta: true, avsikt: 'skada', w: SIM.W, h: SIM.H, kampar: [flyr, ...andra] }, fro), k = st.kampar[0];
+        k.lage = 'flykt';
+        SIM.iVarlden(SIM.provVarld(undefined, new Set(vaggar)), () => {
+          let t = 0, st0 = 0;
+          while (!st.slut && k.lage === 'flykt' && t < 60) { const x = k.x, y = k.y; SIM.stridSteg(st); t += SIM.STRID.tick; if (Math.hypot(k.x - x, k.y - y) < 0.05) st0 += SIM.STRID.tick; }
+          if ((k.lage as string) === 'borta') ut++;
+          sek = Math.max(sek, t); stilla = Math.max(stilla, st0);
+        });
+      }
+      return { ut, sek, stilla };
+    };
+    const hem = { x: 40, y: 20 }, bort = { x: 1, y: 20 };
+    const vagg = Array.from({ length: 9 }, (_, i) => (16 + i) * SIM.W + 26);
+    // en vän som slåss och en husvägg mellan hen och huset, och två fiender i vägen
+    const a = prova(vagg, m(1, 0, 22, 20, hem), [m(2, 0, 23.4, 20, hem), m(3, 1, 24.2, 20, bort), m(4, 1, 23, 18.6, bort)]);
+    // huset är inmurat: den andra tillflykten tas
+    const mur = [-2, -1, 0, 1, 2].flatMap(d => [(18) * SIM.W + 40 + d, 22 * SIM.W + 40 + d, (20 + d) * SIM.W + 38, (20 + d) * SIM.W + 42]);
+    const b = prova(mur, m(1, 0, 34, 20, hem, [{ x: 20, y: 20 }]), [m(2, 1, 34.9, 20, bort)]);
+    // ingen tillflykt går att nå: bort från fienden, också bakåt från det håll hen annars skulle
+    const c = prova(mur, m(1, 0, 34, 20, hem), [m(2, 1, 35, 20, bort), m(3, 1, 34.6, 20.8, bort)]);
+    return [
+      [`med en vän och en vägg i vägen kommer hen undan (${a.ut} av 10, högst ${a.sek} s, stilla ${a.stilla} s)`, a.ut === 10 && a.sek < 40 && a.stilla < 3],
+      [`med huset stängt tar hen en annan tillflykt (${b.ut} av 10, högst ${b.sek} s)`, b.ut === 10 && b.sek < 40],
+      [`utan en väg springer hen bort från fienderna (${c.ut} av 10, högst ${c.sek} s)`, c.ut === 10 && c.sek < 40],
+    ];
+  },
+};

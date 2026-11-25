@@ -1104,7 +1104,7 @@ SCENARIER.blockera = {
       [`dörren som riktiga rutor på kartan: ingen kommer förbi den som står i öppningen (${kForbi}) eller står i en vägg (${kVagg}), och när hen fallit går de igenom (${kIgenom} av ${kN})`, kForbi === 0 && kVagg === 0 && kIgenom >= kN * 0.6],
       [`hundra strider i rad går genom samma värld (${manga.n} strider genom dörren, ${manga.vann[0]} mot ${manga.vann[1]}, ${manga.oavgjort} oavgjorda)`, manga.n === 50 && manga.vann[0] + manga.vann[1] > 0],
       [`öppen plan, 60 strider tre mot tre (${steg} steg): ingen kliver närmare än ${KR} rutor till en fiende som står (${nara} gånger)`, steg > 1000 && nara === 0],
-      [`den som flyr förbi en fiende som står går runt hen (som närmast ${runt.toFixed(2)} rutor) och kommer undan (${borta ? 'ja' : 'nej'})`, runt >= KR - 1e-6 && runt < 1.2 && borta],
+      [`den som flyr förbi en fiende som står går runt hen (som närmast ${runt.toFixed(2)} rutor) och kommer undan (${borta ? 'ja' : 'nej'})`, runt >= KR - 1e-6 && runt < 1.2 + SIM.STRID.flyHall - SIM.STRID.kropp && borta],
       [`dörröppningen: ingen kommer förbi den som står i den (${forbi} gånger) eller går genom väggen (${iVaggen}, ${utan} vid sidan av öppningen)`, forbi === 0 && iVaggen === 0 && utan === 0],
       [`när den i öppningen fallit går de andra igenom och slåss med den bakom (${igenom} av ${n} strider)`, igenom >= n * 0.6],
     ];

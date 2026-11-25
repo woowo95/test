@@ -118,14 +118,18 @@ export function slagLangd(s: State) {
 }
 
 // ---------- striden börjar ----------
-// dit den som flyr springer: sitt hus, annars elden
-function flyMal(s: State, p: Person) { if (p.gast) return kanterna(p.x, p.y)[0]; /* en gäst flyr mot närmaste kanten av kartan */ const h = husPlats(s, p) ?? (() => { const e = eldPlats(s); return freeNear(s, e.x + 0.5, e.y + 1.5); })(); return { x: h.x, y: h.y }; }
+// dit den som flyr springer: sitt hus, annars elden (en gäst mot kartans kanter, den närmaste först). Är vägen dit stängd väljer hen en annan av dem (steg B.27)
+function flyMal(s: State, p: Person) {
+  const eld = () => { const e = eldPlats(s); return freeNear(s, e.x + 0.5, e.y + 1.5); }, h = p.gast ? undefined : husPlats(s, p);
+  const [fly, ...andra] = (p.gast ? kanterna(p.x, p.y) : h ? [h, eld()] : [eld()]).map(m => ({ x: m.x, y: m.y }));
+  return { fly, ...(andra.length ? { flyAndra: andra } : {}) };
+}
 const stridsUppgift = (s: State, p: Person, why: string) => { p.task = { act: 'strid', phase: 'do', tx: p.x, ty: p.y, until: s.now + (STRID.maxTid + 60) * SEC, carry: 0, why }; };
 // en strid börjar mellan två sidor av folk, där de står. Den stegas sedan med byn (kartStridSteg)
 export function kartStridBorja(s: State, avsikt: Avsikt, sidor: [Person[], Person[]], orsak: string, efter?: Efter, djur: DjurMed[] = []): KartStrid {
   const lek = lekAv(avsikt), sport = sportAv(avsikt);
-  const kampar: Uppstallning['kampar'] = sidor.flatMap((sida, sd) => sida.map(p => ({ ...personKampe(s, p, 0, sd as 0 | 1, p.x, p.y), fly: flyMal(s, p) })));
-  for (const d of djur) kampar.push({ ...d.k, fly: d.k.fly ?? kanterna(d.k.x, d.k.y)[0] }); // djuren (steg 10.1.17): de flyr mot kartans kant
+  const kampar: Uppstallning['kampar'] = sidor.flatMap((sida, sd) => sida.map(p => ({ ...personKampe(s, p, 0, sd as 0 | 1, p.x, p.y), ...flyMal(s, p) })));
+  for (const d of djur) { const [fly, ...andra] = kanterna(d.k.x, d.k.y); kampar.push({ ...d.k, fly: d.k.fly ?? fly, flyAndra: d.k.fly ? undefined : andra }); } // djuren (steg 10.1.17): de flyr mot kartans kant
   kampar.forEach((k, i) => { k.id = i + 1; });
   foljet(s, kampar);
   const st = nyStrid({ avsikt, w: W, h: H, ...vadretIStriden(s), kampar }, Math.floor(rnd(s, 'strid') * 2147483647));
@@ -145,7 +149,7 @@ export function kartStridMed(s: State, g: KartStrid, p: Person, sida: 0 | 1, hja
   if (g.st.slut || g.st.kampar.some(k => k.pid === p.id && !g.fri?.includes(p.id))) return;
   if (g.fri?.includes(p.id)) return; // den som lämnat striden går inte in i den igen
   const id = Math.max(0, ...g.st.kampar.map(k => k.id)) + 1;
-  laggTill(g.st, { ...personKampe(s, p, id, sida, p.x, p.y), fly: flyMal(s, p), ...(hjalp ? { hjalp } : {}) });
+  laggTill(g.st, { ...personKampe(s, p, id, sida, p.x, p.y), ...flyMal(s, p), ...(hjalp ? { hjalp } : {}) });
   if (g.efter && !hjalp) MED[g.efter.typ]?.(s, g.efter, g.st.kampar[g.st.kampar.length - 1], p); // det stridens slag ger den som kommer senare (steg 12.1.58)
   avbryt(s, p); stridsUppgift(s, p, hjalp ? `Hjälper de fallna (${g.orsak})` : g.orsak);
   count(s, hjalp ? 'kartStridHjalp' : 'kartStridMed');

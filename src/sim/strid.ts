@@ -98,6 +98,8 @@ export const STRID = balans('strid', {
   isarSlack: 0.1, isarFart: 0.5, // den som ändå står närmare (den kom till där en annan redan stod) kliver isär, så här mycket närmare får man stå innan, med den här delen av farten (steg B.19)
   runtUt: 8, // på kartan söks vägen runt en vägg så här många rutor utanför de två (steg 10.1.4)
   flyBort: 6, // den som flyr mot en plats (Kampe.fly) har lämnat striden så här många rutor från närmaste fiende som står (steg 9.2.76)
+  flyHall: 1.6, // den som flyr väljer helst en väg som håller så här många rutor till fienderna, annars så nära som man går förbi dem (kropp) (steg B.27)
+  flySek: 0.5, // ... och väljer vägen på nytt så ofta
   fart: 1.6, // rutor i sekunden för en frisk vuxen som springer i strid (gånger djurets fart)
   traffBas: 0.6, // chansen att träffa någon som är lika skicklig
   traffPer: 0.03, // ... och så här mycket mer per poäng skicklighet över motståndarens
@@ -340,6 +342,7 @@ export interface Kampe {
   fallT?: number; /* stridens tid när hen föll eller började fly */ gast?: 1; /* en gäst (rövare, handlare, främling), inte en bybo */ ledare?: 'fram' | 'bak'; skyddar?: number; // steg 3.7.12: byns ledare (går först eller står bakom), och ledaren (kämpens id) som vännen skyddar
   kryper?: number; // steg 3.7.19: hen kan inte gå och kryper undan; rutorna hen krupit
   fly?: { x: number; y: number }; // steg 9.2.76: dit hen flyr (rutor på platsen), i stället för mot närmaste kanten
+  flyAndra?: { x: number; y: number }[]; flyVag?: { t: number; x: number; y: number; m?: { x: number; y: number } }; // andra tillflykter när vägen dit är stängd, och vägen hen valt just nu: dit hen går och tillflykten (steg B.27)
 }
 // en rad i loggen: tiden (sekunder), vem (a) och mot vem (b), del, skada och grad, och det kläderna tog
 // Varje rad är en händelse (steg 10.1.3, "Ett slag är en händelse"): tiden, vad som hände, vem och mot vem. Ett anfall (ett slag,
@@ -459,10 +462,17 @@ function sikt(st: Strid, x0: number, y0: number, x1: number, y1: number) {
   for (let i = 1; i <= n; i++) if (iVagg(st, x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n)) return false;
   return true;
 }
+// den raka vägen går förbi hindren (på deras avstånd, eller bort från den man redan står nära)
+interface Vaj { o: Kampe; r: number }
+function fritt(k: Kampe, mx: number, my: number, hinder: Vaj[]) {
+  const dx = mx - k.x, dy = my - k.y, L = dx * dx + dy * dy;
+  return hinder.every(({ o, r }) => { const u = L ? clamp(((o.x - k.x) * dx + (o.y - k.y) * dy) / L, 0, 1) : 0, d = Math.hypot(k.x + dx * u - o.x, k.y + dy * u - o.y); return d >= Math.min(r, dist(k, o)) - 1e-6; });
+}
 // vägen runt väggarna (rutor om en halv ruta, bredden först): den sista punkten på vägen som syns härifrån. Fienderna som
 // står i vägen räknas med om det finns en väg förbi dem; annars går man fram till dem och väntar
 const RUT = 0.5;
-function vagRunt(st: Strid, k: Kampe, mx: number, my: number, fi: Kampe[]): [number, number] | undefined {
+// (flykt: hindren med sina avstånd, och bara den vägen; utan en väg förbi dem svarar den undefined, steg B.27)
+function vagRunt(st: Strid, k: Kampe, mx: number, my: number, fi: Kampe[], flykt?: Vaj[]): [number, number] | undefined {
   // på kartan söks vägen i ett fönster kring de två (STRID.runtUt rutor åt varje håll), inte över hela kartan
   const ut = STRID.runtUt, ox = st.karta ? Math.max(0, Math.floor(Math.min(k.x, mx) - ut)) : 0, oy = st.karta ? Math.max(0, Math.floor(Math.min(k.y, my) - ut)) : 0;
   const bw = st.karta ? Math.min(st.w, Math.ceil(Math.max(k.x, mx) + ut)) - ox : st.w, bh = st.karta ? Math.min(st.h, Math.ceil(Math.max(k.y, my) + ut)) - oy : st.h;
@@ -471,7 +481,8 @@ function vagRunt(st: Strid, k: Kampe, mx: number, my: number, fi: Kampe[]): [num
   const fran = cell(k.x, k.y), till = cell(mx, my);
   // (rutornas väggar en gång för båda varven, och utan nya listor för varje ruta: vägen kostade mest i striden, steg 10.2.101)
   const vagg = new Int8Array(W * H), ko = new Int32Array(W * H), prev = new Int32Array(W * H);
-  for (const med of [fi, []]) {
+  const rad = (o: Kampe) => ({ o, r: STRID.kropp });
+  for (const med of flykt ? [flykt] : [fi.map(rad), []]) {
     prev.fill(-1); ko[0] = fran; let n0 = 1;
     prev[fran] = fran;
     for (let i = 0; i < n0 && prev[till] < 0; i++) {
@@ -484,7 +495,7 @@ function vagRunt(st: Strid, k: Kampe, mx: number, my: number, fi: Kampe[]): [num
           if (!vagg[n]) vagg[n] = iVagg(st, px, py) ? 2 : 1;
           if (vagg[n] === 2) continue;
           let nara = false;
-          for (const o of med) if (Math.hypot(o.x - px, o.y - py) < STRID.kropp) { nara = true; break; }
+          for (const h of med) { const d = Math.hypot(h.o.x - px, h.o.y - py); if (d < h.r && !(flykt && d >= dist(k, h.o))) { nara = true; break; } } // (bort från den man redan står nära går alltid på flykten)
           if (nara) continue;
         }
         prev[n] = c; ko[n0++] = n;
@@ -493,12 +504,13 @@ function vagRunt(st: Strid, k: Kampe, mx: number, my: number, fi: Kampe[]): [num
     if (prev[till] < 0) continue;
     const vag: number[] = [];
     for (let c = till; c !== fran; c = prev[c]) vag.push(c);
-    for (let i = 0; i < vag.length; i++) { const [px, py] = mitt(vag[i]); if (i === vag.length - 1 || sikt(st, k.x, k.y, px, py)) return i === 0 ? [mx, my] : [px, py]; }
+    for (let i = 0; i < vag.length; i++) { const [px, py] = mitt(vag[i]); if (i === vag.length - 1 || sikt(st, k.x, k.y, px, py) && (!flykt || fritt(k, px, py, flykt))) return i === 0 ? [mx, my] : [px, py]; }
   }
   return undefined;
 }
 const VRID = [0.6, -0.6, 1.2, -1.2, 1.5, -1.5]; // åt sidan, mer och mer, när den raka vägen är stängd
-function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number) {
+const RUNT = [...VRID, 2.1, -2.1, 2.7, -2.7, Math.PI]; // den som flyr går åt alla håll, också bakåt (steg B.27)
+function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number, vrid = VRID) {
   let dx = mx - k.x, dy = my - k.y, d = Math.hypot(dx, dy);
   if (d < 1e-6) return;
   const fi = ivagen(st, k, mx, my);
@@ -509,12 +521,42 @@ function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number) {
   const l = Math.min(langd, d), x = clamp(k.x + dx / d * l, KANT, st.w - KANT), y = clamp(k.y + dy / d * l, KANT, st.h - KANT);
   if (fri(st, k, x, y, fi, mx, my)) { k.x = x; k.y = y; return; }
   const v = Math.atan2(dy, dx), sida = k.runtSida ?? 1; // runt åt samma håll som förra steget, så att hen inte går fram och tillbaka (steg B.20)
-  for (const r0 of VRID) {
+  for (const r0 of vrid) {
     const r = r0 * sida;
     const nx = clamp(k.x + Math.cos(v + r) * l, KANT, st.w - KANT), ny = clamp(k.y + Math.sin(v + r) * l, KANT, st.h - KANT);
     if (fri(st, k, nx, ny, fi, mx, my)) { k.x = nx; k.y = ny; k.runtSida = r > 0 ? 1 : -1; return; }
   }
   // stängt åt alla håll: hen står kvar
+}
+
+// Flykten (steg B.27): hen väljer den närmaste tillflykten som det finns en väg till förbi fienderna, med de vänner som står och slåss
+// som hinder att gå runt, och helst på avstånd från fienderna. Finns ingen väg springer hen bort från de närmaste fienderna
+function flyVal(st: Strid, k: Kampe) {
+  const fi = st.kampar.filter(o => o.sida !== k.sida && iStrid(o)), van = st.kampar.filter(o => o !== k && o.sida === k.sida && iStrid(o));
+  const till = k.fly ? [k.fly, ...(k.flyAndra ?? [])] : [{ x: 0, y: k.y }, { x: st.w, y: k.y }, { x: k.x, y: 0 }, { x: k.x, y: st.h }].sort((a, b) => Math.hypot(a.x - k.x, a.y - k.y) - Math.hypot(b.x - k.x, b.y - k.y));
+  for (const [f, v] of [[STRID.flyHall, STRID.van], [STRID.kropp, STRID.kropp]]) {
+    const hinder = [...fi.map(o => ({ o, r: f })), ...van.map(o => ({ o, r: v }))];
+    for (const m of till) {
+      const mx = clamp(m.x, KANT, st.w - KANT), my = clamp(m.y, KANT, st.h - KANT);
+      if (sikt(st, k.x, k.y, mx, my) && fritt(k, mx, my, hinder)) return { t: st.t, x: mx, y: my, m };
+      const p = vagRunt(st, k, mx, my, fi, hinder);
+      if (p) return { t: st.t, x: p[0], y: p[1], m };
+    }
+  }
+  // bort från de närmaste fienderna: den riktning där de är längst bort (de närmaste väger mest)
+  let bast: [number, number] = [k.x, k.y], bv = Infinity;
+  for (let i = 0; i < 16; i++) {
+    const v = i * Math.PI / 8, x = clamp(k.x + Math.cos(v) * 2, KANT, st.w - KANT), y = clamp(k.y + Math.sin(v) * 2, KANT, st.h - KANT);
+    if (!sikt(st, k.x, k.y, x, y) || van.some(o => Math.hypot(o.x - x, o.y - y) < STRID.kropp)) continue;
+    const h = fi.reduce((a, o) => { const dx = x - k.x, dy = y - k.y, u = clamp(((o.x - k.x) * dx + (o.y - k.y) * dy) / (dx * dx + dy * dy || 1), 0, 1); return a + 1 / Math.max(0.1, Math.hypot(k.x + dx * u - o.x, k.y + dy * u - o.y)) ** 2 + 1 / Math.max(0.1, Math.hypot(o.x - x, o.y - y)) ** 2; }, 0);
+    if (h < bv) { bv = h; bast = [x, y]; }
+  }
+  return { t: st.t, x: bast[0], y: bast[1] };
+}
+function flySteg(st: Strid, k: Kampe, lang: number) {
+  let v = k.flyVag;
+  if (!v || st.t - v.t >= STRID.flySek || Math.hypot(v.x - k.x, v.y - k.y) < 0.1) v = k.flyVag = flyVal(st, k);
+  ga(st, k, v.x, v.y, lang, RUNT);
 }
 
 // den som står i någon annan (eller för nära) kliver isär (steg B.19): dit det blir längst till den närmaste, och den som når sin
@@ -856,17 +898,11 @@ export function stridSteg(st: Strid) {
     if (k.blod < HALSA.blodDod) { falla(st, k, 'dod'); continue; }
     if (k.blod < HALSA.slass && iStrid(k)) { falla(st, k, 'nere'); continue; } // den som förlorat mycket blod orkar inte slåss och faller ur striden (steg 9.5.17)
     if (k.lage === 'nere' && k.kryper !== undefined) { krypa(st, k, dt); continue; }
-    if (k.lage === 'flykt') { // springer mot närmaste kanten och är borta när hen når den
+    if (k.lage === 'flykt') { // springer mot sin tillflykt eller kanten och är borta när hen når den
       const lang = farten(k) * dt;
-      if (k.fly) { // eller mot sin plats (hus eller eld), och har lämnat striden en bit bort från fienderna (steg 9.2.76)
-        ga(st, k, k.fly.x, k.fly.y, lang);
-        const fi = st.kampar.filter(o => o.sida !== k.sida && iStrid(o)), nara = fi.length ? Math.min(...fi.map(o => dist(k, o))) : Infinity;
-        if (nara >= STRID.flyBort || Math.hypot(k.fly.x - k.x, k.fly.y - k.y) < 0.5 || Math.min(k.x, st.w - k.x, k.y, st.h - k.y) <= 0.31) { k.lage = 'borta'; st.logg.push({ t: st.t, h: 'borta', a: k.id }); }
-        continue;
-      }
-      const ut = [k.x, st.w - k.x, k.y, st.h - k.y], i = ut.indexOf(Math.min(...ut));
-      ga(st, k, i === 0 ? 0 : i === 1 ? st.w : k.x, i === 2 ? 0 : i === 3 ? st.h : k.y, lang);
-      if (Math.min(k.x, st.w - k.x, k.y, st.h - k.y) <= 0.31) { k.lage = 'borta'; st.logg.push({ t: st.t, h: 'borta', a: k.id }); }
+      flySteg(st, k, lang); // till sin plats (hus eller eld) eller bort, och har lämnat striden en bit bort från fienderna (steg 9.2.76 och B.27)
+      const kant = Math.min(k.x, st.w - k.x, k.y, st.h - k.y) <= 0.31, fi = k.fly ? st.kampar.filter(o => o.sida !== k.sida && iStrid(o)) : [], nara = fi.length ? Math.min(...fi.map(o => dist(k, o))) : Infinity;
+      if (kant || k.fly && (nara >= STRID.flyBort || [k.fly, ...(k.flyAndra ?? [])].some(m => Math.hypot(m.x - k.x, m.y - k.y) < 0.5))) { k.lage = 'borta'; st.logg.push({ t: st.t, h: 'borta', a: k.id }); }
       continue;
     }
     if (!iStrid(k)) continue;
