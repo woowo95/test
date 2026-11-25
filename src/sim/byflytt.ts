@@ -61,6 +61,8 @@ export const NYBY = balans('nyby', {
 // ärendena i världens slump (timmen; rad.ts har 1–6)
 const A = { flytt: 11, mal: 12, ut: 13, ny: 14, tek: 15, ruin: 16, in: 17, lager: 18 };
 const platsAv = (vl: Varlden, r: VarldRad) => { const p = byPlats(vl, r.nr); return p?.k === 'by' ? p : undefined; };
+// platsen folk flyttar ifrån: byn, eller lägret (ett läger i nöd ger sig av som en by, steg B.69)
+const hemPlats = (vl: Varlden, r: VarldRad) => platsAv(vl, r) ?? (r.sort === 'rovarlager' ? byPlats(vl, r.nr) : undefined);
 
 // hur många som vill flytta ur raden per dygn (ett år i spelet): trängseln och hungern, med huvudbyns regler
 export const flyttPerDygn = (r: VarldRad) => emigrationRate(r.tal.folk, LIV.nojd) + hungerFlyttAv(matGottAv(matDygn(r)), r.tal.folk);
@@ -74,8 +76,15 @@ export const ROVLAGER = balans('rovarlager', {
   chans: 0.5, // chansen att en grupp som flyttar slår läger som rövare, gånger lusten (lagerLust)
   dras: 0.6, // ett läger inom räckhåll väger så här mycket för den som flyttar, gånger lusten
   missnoje: 0.5, // missnöjets del av flytten räknas så här mycket mot hungerns (ur huvudbyn, steg B.68)
+  lockByte: 1, // lägret väger 1 + så mycket gånger hur mycket bättre ställt det är än byn man lämnar (−1 till 1, lagerByte), steg B.69
   fredlos: 0.5, // chansen att den utvisade slår läger
 });
+// hur bytet lockar (steg B.69): lägrets mat och rikedom per person mot byns, där lika är 1 och bara det ena ställets är hela vägen
+const battre = (a: number, b: number) => a + b > 0 ? (a - b) / (a + b) : 0;
+export const lagerByte = (l: VarldRad, r: VarldRad) => {
+  const per = (q: VarldRad) => q.tal.rikedom / Math.max(1, q.tal.folk);
+  return Math.max(0, 1 + ROVLAGER.lockByte * (battre(matDygn(l), matDygn(r)) + battre(per(l), per(r))) / 2);
+};
 // raderna i världen har inget humör, så där är det bara hungern
 const radDelar = (r: VarldRad): FlyttDelar => ({ hunger: hungerDel(r) });
 // hur mycket det de flyttar för drar dem till rövarna (0 till 1): hungern, missnöjet, och den utvisade helt
@@ -89,7 +98,7 @@ const lagerSkal = (d: FlyttDelar): LagerSkal => d.fredlos ? 'fredlos' : d.hunger
 // byarna inom räckhåll från raden, med vikten för den som flyttar dit
 export function flyttMal(vl: Varlden, v: VarldMark | undefined, r: VarldRad, d = radDelar(r)): { r: VarldRad; dygn: number; vikt: number }[] {
   const ut: { r: VarldRad; dygn: number; vikt: number }[] = [];
-  for (const g of platsAv(vl, r)?.grannar ?? []) {
+  for (const g of hemPlats(vl, r)?.grannar ?? []) {
     if (g.dygn > FLYTT.dygn) continue;
     const p = varldPlatsNr(vl, g.nr), m = radNr(vl, p?.by);
     if (!m || m.nr === r.nr || !BYSORTER[m.sort].folk || (m.tal.folk <= 0 && m.nr !== vl.huvud)) continue;
@@ -100,11 +109,11 @@ export function flyttMal(vl: Varlden, v: VarldMark | undefined, r: VarldRad, d =
     if (vikt > 0) ut.push({ r: m, dygn: g.dygn, vikt });
   }
   // rövarlägren inom räckhåll (lägrets grannät går till byarna omkring), för den som flyttar för hunger, missnöje eller är utvisad
-  const hem = platsAv(vl, r), lust = lagerLust(d);
+  const hem = hemPlats(vl, r), lust = lagerLust(d);
   if (hem && lust > 0) for (const m of vl.rader ?? []) {
-    if (m.sort !== 'rovarlager' || m.tal.folk <= 0) continue;
+    if (m.sort !== 'rovarlager' || m.tal.folk <= 0 || m.nr === r.nr) continue;
     const g = byPlats(vl, m.nr)?.grannar?.find(q => q.nr === hem.nr);
-    if (g && g.dygn <= FLYTT.dygn) ut.push({ r: m, dygn: g.dygn, vikt: lust * ROVLAGER.dras / (1 + g.dygn / FLYTT.narDygn) });
+    if (g && g.dygn <= FLYTT.dygn) ut.push({ r: m, dygn: g.dygn, vikt: lust * ROVLAGER.dras * lagerByte(m, r) / (1 + g.dygn / FLYTT.narDygn) });
   }
   return ut;
 }
@@ -140,7 +149,7 @@ const rutorFor = (v: VarldMark, k: 'by' | 'rovarlager') => {
 // fynd 184: byn och lägret på samma sätt); gor ger den nya raden det som skiljer (teknikerna, tron, styrkan) innan den läggs
 // in. undefined om ingen plats finns
 function utflytt(s: State, vl: Varlden, r: VarldRad, grupp: number, t: number, k: 'by' | 'rovarlager', gor: (ny: VarldRad) => void, handelse: VarldHandelseId, matMed?: number): VarldRad | undefined {
-  const v = varldMark(s), hem = platsAv(vl, r);
+  const v = varldMark(s), hem = hemPlats(vl, r);
   if (!v || !hem) return undefined;
   const alla = rutorFor(v, k);
   // bara rutorna inom räckhåll: varje steg kostar minst 1, så en ruta längre bort i x eller y än räckhållet nås inte
