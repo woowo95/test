@@ -958,7 +958,7 @@ export const ARBETEN: readonly Arbete[] = [
     prova: c => { const at = fangvaktPlats(c.s); if (!at) return false; set(c.v, 'fangvakt', 'Vaktar fängelset'); c.v.spot = at; c.v.dur = FANG.vaktPass * MIN; taVapen(c.s, c.p); return true; } },
   // 7 Tak: att bygga åt den som saknar sovplats och laga det som är slitet. När bygget har sina arbetare går man vidare
   { id: 'flyttaeld', niva: 7, nar: 'dag', prova: ({ s, p, v, a }) => { const d = flyttaEldVal(s, p, a); if (!d) return false; v.spot = d.spot; v.dur = d.dur; return set(v, 'flyttaeld', d.why); } }, // elden flyttas (steg 2.10.4, eldflytt.ts)
-  { id: 'bygga', niva: 7, nar: 'dag', prova: c => { const d = dag(c), dmp = byggDampning(faror(c)); return d.works && !!d.job && !radFull(c.s, c.p, 'bygga') && (dmp >= 1 || rnd(c.s, 'val', c.p) < dmp) && bygg(c); } },
+  { id: 'bygga', niva: 7, nar: 'dag', prova: c => { const d = dag(c), dmp = byggDampning(faror(c)); return d.works && (!!d.job || !!c.s.hyllPlan) && !radFull(c.s, c.p, 'bygga') && (dmp >= 1 || rnd(c.s, 'val', c.p) < dmp) && (byggHylla(c) || !!d.job && bygg(c)); } },
   { id: 'tomma_latrin', niva: 7, nar: 'dag', prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen) return false; const l = latrinAttTomma(s); if (!l || !enTill(s, 'tomma_latrin', p)) return false; projektVal(v, { act: 'tomma_latrin', text: 'Tömmer latrinen i komposten, så att ingen ny grop behöver grävas.', min: REST.tomMin, ref: l.id, spot: { x: l.x + 0.5, y: l.y + 0.5 } }, 'Latrinen är nästan full'); return true; } }, // steg 9.7.6: när byn har en kompost
   // 8 Förbättra (steg 6.1.17–6.2.15): det mest värda projekt byn eller p saknar, sedan teknik, varor, underhåll och lära
   // (forbattra), och sist förråden till taket (fylla). Mer sällan när kylan eller hungern är en fara (forbNu, steg 10.11.20)
@@ -1169,6 +1169,12 @@ function arbeta(c: Ctx, act0: Act, what: string, o: { tandmat?: boolean; hamtar?
 // bygget (Tak): saknas material hämtas det först
 // i kylan bärs det som ruttnar in som vanligt och det andra mer sällan (steg 13.8.13); vid svält det som inte är mat mer sällan
 export const baraFara = (f: { kyla: boolean; svalt: boolean }, k: string) => (f.kyla && SAKER[k]?.haller === undefined) || (f.svalt && !isFood(k));
+// hyllan byggplanen valt (steg B.37) är ett bygge som husen: den byggs av dem som bygger, och en åt gången
+function byggHylla(c: Ctx) {
+  const u = c.s.hyllPlan && !c.s.people.some(q => q !== c.p && q.task?.act === 'bygga' && q.task.tool === 'hylla') ? projektNu(c.s, c.p, 'hylla', faror(c)) : undefined;
+  if (u) projektVal(c.v, u, 'Förrådet är fullt');
+  return !!u;
+}
 function bygg(c: Ctx, job = dag(c).job!) {
   if (!job.missing) { building(c.s, c.p, c.v, job); return true; }
   const it = job.item;

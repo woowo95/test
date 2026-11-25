@@ -97,7 +97,7 @@ export const PROJEKT_TAL = balans('projekt', {
 // vikten för projektet k i PROJEKT_TAL, eller annars om det inte har en egen rad
 const viktAv = (k: string, annars: number) => (PROJEKT_TAL as Record<string, number>)[k] ?? annars;
 // det ett recept kostar: materialets värde och arbetstiden (varde.ts)
-const receptKostnad = (d: { av: Record<string, number>; min: number }) => varuVarde(d.av, d.min / 60 * ARBETE);
+export const receptKostnad = (d: { av: Record<string, number>; min: number }) => varuVarde(d.av, d.min / 60 * ARBETE);
 
 // projektet k som uppgift, om p kan göra det nu (steg 6.2.17): ett redskap görs bara så, i arbetet som behöver det
 // (withTools i val.ts), på Förbättra eller som pyssel på fritiden. undefined annars

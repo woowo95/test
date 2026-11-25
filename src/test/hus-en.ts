@@ -2,7 +2,7 @@
 // (steg 9.9.4). Skriver måtten som JSON (används av hus.ts).
 import './utc';
 import { STEG_TIM, korBy } from './kor';
-import { BYGGNADER, Byggnad, FN, HUS, housesOf, storeFull, DAY, living, familjOf } from '../sim';
+import { BYGGNADER, Byggnad, FN, HUS, housesOf, storeFull, DAY, living, familjOf, stationerOf } from '../sim';
 import { byggbehov, kopbart, saljBehov, saljPris, kopPris, husKostnadAv, onskadPlats } from '../sim/byggplan';
 import { sovPersoner, sovRutorFor } from '../sim/byggnader';
 
@@ -63,5 +63,5 @@ const planerat: Record<string, number> = {}, bytt: Record<string, number> = {};
 for (const fn of FN) { if (n('planerat_' + fn)) planerat[fn] = n('planerat_' + fn); if (n('bytt_' + fn)) bytt[fn] = n('bytt_' + fn); }
 const nu: Record<string, number> = {};
 for (const h of housesOf(s)) if (h.klar) { const k = (BYGGNADER as Record<string, Byggnad>)[h.fn ?? 'sovsal'] ? h.fn ?? 'sovsal' : 'sovsal'; nu[k] = (nu[k] ?? 0) + 1; }
-console.log(JSON.stringify({ seed, pop: r.n.pop, planerat, ut: n('planerat_ut'), utbyggt: n('utbyggt'), rivet: n('rivet'), rasat: n('rasat'), brand: n('brand'), brandVagg: n('brand vagg'), bytt, nu, husKopt: n('husKopt'),
+console.log(JSON.stringify({ seed, pop: r.n.pop, planerat, hyllor: n('planerad_hylla'), hyllorNu: stationerOf(s).filter(t => t.k === 'hylla').length, ut: n('planerat_ut'), utbyggt: n('utbyggt'), rivet: n('rivet'), rasat: n('rasat'), brand: n('brand'), brandVagg: n('brand vagg'), bytt, nu, husKopt: n('husKopt'),
   kop, ruttnat: n('ruttnat'), rottMax, tim, fore, forradDag, vakter: r.vakter.length, larm: r.vakter }));

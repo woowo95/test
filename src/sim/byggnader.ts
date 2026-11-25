@@ -16,7 +16,8 @@ import { ARBETE, grundvarde, tingVarde, varuVarde } from './varde';
 import { Person, State } from './typer';
 import { balans } from './balans';
 import { flodBlot } from './sjo';
-import { inneUtanPlats, isKlar, stationDef, stationRum, stationRutor, stationerOf, storlek } from './stationer';
+import { rutaOf } from './saker';
+import { forvarAt, inneUtanPlats, isKlar, stationDef, stationRum, stationRutor, stationerOf, storlek } from './stationer';
 import { SJUKDOMAR } from './sjukdom';
 import { kn } from './kunskap';
 import { fahusAkut } from './slatter';
@@ -205,6 +206,25 @@ export function antalLika(s: State, fn: Fn, w: number, h: number, utom?: Hus) {
   return fn === 'sovsal' ? hs.filter(q => q.namn.startsWith(big ? 'Långhus' : 'Hydda')).length : hs.filter(q => fnId(q) === fn).length;
 }
 
+// hur många högar stacken är (steg B.37)
+export const hogar = (a: { k: string; n: number }) => Math.max(1, Math.ceil(a.n / rutaOf(a.k) - 1e-9));
+// högarna i förrådet som ligger utanför förrådshusen (forrad = husen, inne = deras rutor) och inte får plats på en hylla med samma
+// slag, per slag och sammanlagt, och hur många högar till som får plats på golvet och på de tomma hyllorna (steg B.37)
+export function forradHogar(s: State, forrad: Set<number>, inne: number) {
+  const zs = zonesOf(s), iForrad = (x: number, y: number) => { const z = zs[zoneAt(s, x, y)]; return z?.hus !== undefined && forrad.has(z.hus); };
+  const slag: Record<string, number> = {}, hylla: Record<string, number> = {};
+  let ledigt = inne;
+  for (const a of stacksOf(s)) {
+    if (a.n <= 0 || !isStored(s, a.x, a.y)) continue;
+    if (!iForrad(a.x, a.y)) { slag[a.k] = (slag[a.k] ?? 0) + hogar(a); continue; }
+    ledigt--;
+    const f = forvarAt(s, a.x, a.y);
+    if (f && !f.redskap) hylla[a.k] = (hylla[a.k] ?? 0) + Math.max(0, f.rymmer - hogar(a));
+  }
+  for (const t of stationerOf(s)) { const f = iForrad(t.x, t.y) ? forvarAt(s, t.x, t.y) : undefined; if (f && !f.redskap && t.x !== undefined && !stacksOf(s).some(a => a.x === t.x && a.y === t.y && a.n > 0)) ledigt += f.rymmer - 1; }
+  for (const k in slag) slag[k] = Math.max(0, slag[k] - (hylla[k] ?? 0));
+  return { slag, ute: Object.values(slag).reduce((a, n) => a + n, 0), ledigt };
+}
 // ett för maten när den ruttnar, ett för materialet när förrådet är fullt
 // förrådshusen växer med förrådet (steg 10.2.67): det byn vill ha under tak (rutorna förrådet fyller, efter förrådsmålen) mot det
 // förrådshusen rymmer. Bristen avgör hur akut det är och hur stort huset blir; ett förrådshus som blivit för litet byggs ut
@@ -214,10 +234,10 @@ function forradBehov(s: State): Akut {
   for (const z of zonesOf(s)) if (z.hus !== undefined && forrad.has(z.hus)) inne += z.w * z.h;
   const rutor = new Set<number>(); // rutorna förrådet fyller
   for (const a of stacksOf(s)) if (a.n > 0 && isStored(s, a.x, a.y)) rutor.add(a.y * W + a.x);
-  let ute = 0, inneFullt = 0;
-  const zs = zonesOf(s);
-  for (const i of rutor) { const z = zs[zoneAt(s, i % W, Math.floor(i / W))]; if (z?.hus !== undefined && forrad.has(z.hus)) inneFullt++; else ute++; }
-  const brist = ute - (inne - inneFullt) + Math.round(utanPlatsNu(s)); // och det som legat på marken utan plats (steg 12.1.18)
+  // i högar (steg B.37): en ruta på golvet rymmer en hög och en hylla tre av ett slag. Högarna utanför som får plats på hyllorna
+  // med samma slag är inte utan plats
+  const { ute, ledigt } = forradHogar(s, forrad, inne);
+  const brist = ute - ledigt + Math.round(utanPlatsNu(s)); // och det som legat på marken utan plats (steg 12.1.18)
   if (brist < HUS.forradMinBrist) return { v: 0, plats: 0 };
   // huset tar emot allt, mat och material (inget slag): det byggs för förrådet, inte ett för maten och ett för materialet
   const plats = Math.max(HUS.forradPlats, Math.min(HUS.forradMax, brist));

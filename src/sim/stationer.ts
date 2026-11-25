@@ -1040,6 +1040,7 @@ export const forvarBrist = (s: State, k: string) => {
   const f = stationDef(k)?.forvar;
   if (!f) return 0;
   if (f.privat) return +living(s).some(p => villKista(s, p));
+  if (k === 'hylla' && s.hyllPlan) return 1; // byggplanen har valt en hylla (steg B.37)
   const fulla = Math.min(1, golvet(s, k).length / (f.redskap ? STATION.forvarLosa : STATION.forvarFulla));
   return f.redskap || !golvet(s, k, true).length ? fulla : Math.max(fulla, golvFullt(s));
 };
@@ -1200,7 +1201,10 @@ function nas(s: State, z: Zone, extra: number) {
 // platsen för en möbel av sorten k: i en lagerplats under tak, efter lagrets prioritet och närmast lagrets hörn
 // (steg 4.5.4.6: helst längs väggarna, så att gångarna i huset hålls fria, och helst på en full hög; när golvet börjar bli
 // fullt också på en hög som inte är full)
+// platserna för en hylla i byns förrådshus (steg B.37): varje full hög på golvet dit man kommer åt, och hyllans slag
+export const hyllPlatser = (s: State) => golvet(s, 'hylla').filter(q => housesOf(s).some(h => h.id === q.z.hus && h.fn === 'forrad' && h.klar) && !iIngang(s, q.x, q.y, 1, 1) && nas(s, q.z, q.y * W + q.x));
 function siteForvar(s: State, k: string) {
+  if (k === 'hylla' && s.hyllPlan) return { x: s.hyllPlan.x, y: s.hyllPlan.y, rot: undefined, inne: 1 as const };
   const zs = zonesOf(s), mot = (q: { x: number; y: number }) => GRANNAR4.some(([dx, dy]) => bitAt(s, q.x + dx, q.y + dy)?.k === 'vagg') ? 0 : 1;
   const c = golvet(s, k, !stationDef(k)?.forvar?.redskap && golvFullt(s) > 0)
     .sort((a, b) => mot(a) - mot(b) || +b.full - +a.full || ((b.z.prio ?? 0) - (a.z.prio ?? 0)) || zs.indexOf(a.z) - zs.indexOf(b.z) || a.y - b.y || a.x - b.x);
