@@ -1,4 +1,4 @@
-import { bestamd, han, heltOrd, honom, stor } from './ord';
+import { bestamd, han, heltOrd, honom, stor, tal } from './ord';
 import { gastensPlatser, horOmGast, kannerOrt, kartaBorta, O_KANT, ORT, radBesoker } from './ort';
 import { SKRIFT } from './skriftTal';
 import { NORMAL } from './kvalitet';
@@ -475,7 +475,7 @@ export function handlarTornado(s: State, h: Handlare, dod: boolean, del: number,
   h.varor = h.varor.filter(w => w.n >= 1);
   if (till) { hp(s, h).x = till.x + 0.5; hp(s, h).y = till.y + 0.5; }
   gar(s, h, true);
-  log(s, `Tornadon kastade handlaren ${hp(s, h).name} ${till ? 'en bit bort' : 'åt sidan'}${sonder ? ` och ${sonder} av varorna i packningen gick sönder` : ''}. ${stor(han(hp(s, h)))} går hem.`, 'world');
+  log(s, `Tornadon kastade handlaren ${hp(s, h).name} ${till ? 'en bit bort' : 'åt sidan'}${sonder ? ` och ${tal(sonder)} av varorna i packningen gick sönder` : ''}. ${stor(han(hp(s, h)))} går hem.`, 'world');
 }
 
 // handlaren dog av svält, kyla eller sjukdom (gastvardag.ts, steg 9.2.113): packningen tas ihop, besöket tar slut och nästa
