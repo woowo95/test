@@ -2,13 +2,15 @@
 // text vid figuren, och den som har en roll i byn en liten symbol vid namnet ur registret ROLLSYMBOLER. När kartan är
 // utzoomad eller många står tätt göms namnen så att de inte täcker varandra. Ingen ritning här, så att scenariot namnskyltar
 // prövar samma regler som bilden (ui/manniskor.ts ritar)
-import { ledareOf, prastOf, troOf, type Person, type State } from '../sim';
+import { ledareOf, prastOf, rovarFlockar, troOf, type Person, type State } from '../sim';
 
 // rollernas symboler, en rad per roll: har = om personen har rollen, ikon = bildens nyckel i ikoner.ts, namn = det som står
-// vid musen. En roll till är en rad till; den första raden personen har ger symbolen
-export const ROLLSYMBOLER: { id: string; namn: string; ikon: string; har: (s: State, p: Person) => boolean }[] = [
+// vid musen, farg = namnets egen färg (annars benvitt), som visar sidan (steg B.62). En roll till är en rad till; den första raden personen har ger symbolen
+export const ROLLSYMBOLER: { id: string; namn: string; ikon: string; farg?: [string, number]; har: (s: State, p: Person) => boolean }[] = [
   { id: 'ledare', namn: 'Byns ledare', ikon: 'roll_ledare', har: (s, p) => ledareOf(s)?.id === p.id },
   { id: 'prast', namn: 'Prästen', ikon: 'roll_prast', har: (s, p) => { const tr = troOf(s, p.tro); return !!tr && prastOf(s, tr)?.id === p.id; } },
+  // fienden: ett gäng som byn sett har skylten redan före striden (steg B.62)
+  { id: 'rovare', namn: 'Rövare', ikon: 'roll_rovare', farg: ['rost', 3], har: (s, p) => !!p.gast && rovarFlockar(s).some(f => f.sedd !== undefined && f.folk.includes(p.id)) },
 ];
 export const rollAv = (s: State, p: Person) => ROLLSYMBOLER.find(r => r.har(s, p));
 

@@ -2623,8 +2623,21 @@ SCENARIER.overmakt = {
       });
       return { acts: [...acts], roller, moter, strid, over: SIM.overmakt(s, n, f, de) };
     };
-    const en = prova(1, 5), tre = prova(3, 2);
+    const en = prova(1, 5), tre = prova(3, 2), atta = prova(8, 4), tva = prova(2, 10);
+    // ordningen de väljer i ändrar inte utfallet (steg B.60): samma by, rollerna frågade åt båda hållen
+    const ordning = [false, true].map(bak => {
+      const s = lasBy('test/rovarby.json.gz'); klockan(s, 11); for (const c of SIM.klanerOf(s)) c.inst = -60;
+      const de: SIM.Person[] = []; while (de.length < 5) { nyInvanare(s, 'm', 25); de.push(s.people[s.people.length - 1]); }
+      s.people = s.people.filter(p => de.includes(p) || p.gast);
+      const z = SIM.zoneOf(s)!, f = rovarGang(s, 4, { x: Math.min(SIM.W - 3, z.x + z.w + 25), y: z.y + z.h / 2 }, { anfaller: true }); f.sedd = s.now;
+      de.forEach((p, i) => { p.health = 1; p.blod = 1; p.skador = []; p.larmRoll = undefined; p.gavSig = undefined; p.pot.mod = 9 + i; p.larm = { rovare: { t: s.now, vad: 'rovare', storlek: 4, led: 0, varnat: 1 } }; });
+      const r = new Map<number, string>(); for (const p of bak ? [...de].reverse() : de) { const q = SIM.rollVid(s, p, 'rovare'); r.set(p.id, q); p.task = q === 'kampe' ? { act: 'forsvarRovare', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.HOUR, carry: 0 } : undefined; }
+      return de.map(p => r.get(p.id)).join(' ');
+    });
     return [
+      [`åtta mot fyra (övermakt ${atta.over.toFixed(1)}) möter dem: ${atta.roller.join(', ')}`, atta.roller.filter(r => r === 'kampe').length >= 4 && (atta.moter || atta.strid)],
+      [`två mot tio (övermakt ${tva.over.toFixed(1)}) gömmer sig: ${tva.roller.join(', ')}, ${tva.acts.join(', ')}`, tva.roller.every(r => r === 'gomd') && !tva.moter],
+      [`ordningen de väljer i ändrar inget (${ordning[0]})`, ordning[0] === ordning[1]],
       [`den ensamma mot fem (övermakt ${en.over.toFixed(1)}) möter dem inte: ${en.roller.join(', ')}, ${en.acts.join(', ')}`, en.roller[0] !== 'kampe' && !en.moter],
       [`tre mot två (övermakt ${tre.over.toFixed(1)}) möter dem: ${tre.roller.join(', ')}, ${tre.acts.join(', ')}`, tre.roller.filter(r => r === 'kampe').length >= 2 && (tre.moter || tre.strid)],
     ];
@@ -3113,7 +3126,7 @@ SCENARIER.ettlarm = {
 };
 
 SCENARIER.seavstand = {
-  text: 'Steg B.57: chansen att upptäcka gänget växer ju närmare det är jämfört med synhållet: på natten ses samma gäng senare än på dagen, bortom allas synhåll ses det inte alls, och ett snabbt nattanfall överraskar någon',
+  text: 'Steg B.57: chansen att upptäcka gänget växer ju närmare det är jämfört med synhållet: på natten syns gänget med sin fackla lika långt som på dagen, bortom allas synhåll ses det inte alls, och ett snabbt nattanfall mot en by utan vakt överraskar den',
   kor: () => {
     // en vaken person ute på ett avstånd, gänget står still: hur många sekunder tills hen ser det
     const tid = (timme: number, d: number, n: number) => {
@@ -3132,11 +3145,11 @@ SCENARIER.seavstand = {
       for (let n = 0; n < 12; n++) {
         const s = rovarBy(timme, n), m = SIM.malet(s), vid = landVid(s, 34)!, f = rovarGang(s, 5, vid); ettGang(s, f); f.vantat = true; f.till = s.now; s.kartStridNr = n; for (const q of SIM.rovarna(s, f)) q.pot.aggression = 16;
         const l = Math.hypot(vid.x - m.x, vid.y - m.y), o = vuxnaI(s)[0], pl = SIM.freeNear(s, m.x + (vid.x - m.x) / l * 8, m.y + (vid.y - m.y) / l * 8);
-        for (const p of SIM.living(s)) if (!p.gast) p.task = { act: p === o ? 'samla' : 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.HOUR, carry: 0, why: 'test' } as SIM.Task;
+        for (const p of SIM.living(s)) if (!p.gast) p.task = { act: p === o && timme === 11 ? 'samla' : 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.HOUR, carry: 0, why: 'test' } as SIM.Task;
         Object.assign(o, pl); Object.assign(o.task!, { tx: pl.x, ty: pl.y });
         let t = 0, d = 0; // d = avståndet när gänget sågs
         const de = new Set<number>();
-        korTills(s, () => !f.folk.length || t > 20, 300, () => { ettGang(s, f); if (!d && f.sedd !== undefined) d = Math.min(...SIM.rovarna(s, f).map(q => Math.hypot(q.x - pl.x, q.y - pl.y))); if (!t && !o.larm?.rovare) { Object.assign(o, pl); o.task = { act: 'samla', phase: 'do', tx: pl.x, ty: pl.y, until: s.now + SIM.HOUR, carry: 0, why: 'test' } as SIM.Task; } const g = SIM.flockStrid(s, f); if (g) { t++; for (const k of g.st.kampar) if (k.sida === 0 && k.overraskad) de.add(k.pid!); } });
+        korTills(s, () => !f.folk.length || t > 20, 300, () => { ettGang(s, f); if (!d && f.sedd !== undefined) d = Math.min(...SIM.rovarna(s, f).map(q => Math.hypot(q.x - pl.x, q.y - pl.y))); if (!t && !o.larm?.rovare) { Object.assign(o, pl); o.task = { act: timme === 11 ? 'samla' : 'sova', phase: 'do', tx: pl.x, ty: pl.y, until: s.now + SIM.HOUR, carry: 0, why: 'test' } as SIM.Task; } const g = SIM.flockStrid(s, f); if (g) { t++; for (const k of g.st.kampar) if (k.sida === 0 && k.overraskad) de.add(k.pid!); } });
         over += de.size; sag += f.sedd === undefined ? 0 : d;
       }
       return { over, sag: sag / 12 };
@@ -3144,12 +3157,57 @@ SCENARIER.seavstand = {
     const n1 = snabbt(1), d1 = snabbt(11);
     return [
       [`dagen: ses fortare ju närmare (${nara} s på 4 rutor, ${mitt} s på 13, ${langt} s på 22)`, nara < mitt && mitt < langt && nara <= 20],
-      [`natten senare än dagen på samma avstånd (${natt} mot ${mitt} s)`, natt > mitt],
+      [`på natten ses det med sin fackla lika fort på samma avstånd som på dagen (${natt} s mot ${mitt})`, natt <= mitt * 2],
       [`utanför synhållet ses det inte alls (${bort === 600 ? 'inte på tio minuter' : bort + ' s'})`, bort === 600],
-      [`snabba nattanfall: ${n1.over} bybor överraskas i 12 anfall (på dagen ${d1.over}); gänget ses ${n1.sag.toFixed(0)} rutor bort (på dagen ${d1.sag.toFixed(0)})`, n1.over >= 2 && n1.over > d1.over && n1.sag < d1.sag],
+      [`ett snabbt nattanfall mot en by utan vakt överraskar den (sett före i genomsnitt ${n1.sag.toFixed(0)} rutor bort, på dagen med en vaken ${d1.sag.toFixed(0)})`, n1.sag === 0 && d1.sag > 5],
     ];
   },
   lang: true,
+};
+
+SCENARIER.nattsyn = {
+  text: 'Steg B.64: facklan syns i mörkret: på natten ser vakten gänget före anfallet i minst åtta av tio nätter, och samma by utan vakt ser det oftast först vid anfallet',
+  kor: () => {
+    const prov = (n: number, medVakt: boolean) => {
+      const s = lasBy('test/rovarby.json.gz'); klockan(s, 22);
+      const sova = () => { if (!medVakt) for (const p of SIM.living(s)) if (!p.gast && !p.larm?.rovare) { Object.assign(p, { rest: 0.2, hunger: 0.9, torst: 0.9, toa: 0.9 }); if (p.task?.act !== 'sova') p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.HOUR, carry: 0, why: 'test' } as SIM.Task; } };
+      const steg = (sek: number, klart: () => boolean) => { const t0 = s.now; while (s.now - t0 < sek * 1000 && !klart()) { sova(); SIM.step(s, Math.min(SIM.nastaSteg(s), 5)); } };
+      for (let i = 0; i < n; i++) { SIM.rnd(s, 'rovare'); SIM.rnd(s, 'vakt'); } // en annan slump i samma by
+      steg(180 + n * 20, () => false);
+      s.rovare = s.rovareFler = undefined; SIM.rovarnaKommer(s, 4); const f = s.rovare!, t0 = s.now; let sedd = Infinity, anf = Infinity;
+      steg(1200, () => { ettGang(s, f); if (sedd === Infinity && f.sedd !== undefined) sedd = s.now - t0; if (anf === Infinity && f.anfaller) anf = s.now - t0; return !f.folk.length || anf < Infinity; });
+      return { kom: anf < Infinity || sedd < Infinity, sedd: sedd < anf };
+    };
+    const tio = (v: boolean) => Array.from({ length: 10 }, (_, n) => prov(n, v)), a = tio(true), b = tio(false);
+    const sa = a.filter(x => x.sedd).length, sb = b.filter(x => x.sedd).length;
+    return [
+      [`vakten ser gänget före anfallet (${sa} av 10 nätter)`, a.every(x => x.kom) && sa >= 8],
+      [`utan vakt ses det oftast först vid anfallet (${sb} av 10 sågs före)`, sb <= 4],
+    ];
+  },
+  lang: true,
+};
+SCENARIER.flyktsar = {
+  text: 'Steg B.65: man flyr av sina sår, inte av skrämsel: i fyra mot fyra med vapen (tio frön) flyr nästan ingen utan ett sår på minst 0,2 (eller blod under HALSA.blek), några flyr, och striden tar minst lika lång tid som förut (150 s)',
+  kor: () => {
+    const k = (id: number, sida: 0 | 1, vapen: SIM.Vapen, y: number, mod: number) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod, smidighet: 10, skicklighet: 10 }, vapen, klader: [] as string[], fart: 1, x: sida ? 12 : 4, y });
+    let flydde = 0, sarad = 0, sar = 0; const tid: number[] = [];
+    for (let i = 0; i < 10; i++) {
+      const st = SIM.stridTillSlut(SIM.nyStrid({ avsikt: 'skada', w: 16, h: 8, kampar: [7, 9, 12, 14].flatMap((mod, j) => [k(1 + j, 0, 'flintspjut', 2.5 + j, mod), k(5 + j, 1, 'yxa', 2.5 + j, mod)]) }, 7919 * (i + 1)));
+      tid.push(st.t);
+      for (const q of st.kampar) {
+        const svar = Math.max(0, ...q.skador.map(w => w.g)) >= 0.2 || q.blod < SIM.HALSA.blek;
+        if (svar) sar++;
+        if (q.lage === 'flykt' || q.lage === 'borta') { flydde++; if (svar) sarad++; }
+      }
+    }
+    tid.sort((a, b) => a - b);
+    return [
+      [`nästan ingen flyr utan ett ordentligt sår (${sarad} av ${flydde})`, flydde >= 8 && sarad >= flydde * 0.8],
+      [`striden tar minst lika lång tid som förut (${tid[5].toFixed(0)} s)`, tid[5] >= 150],
+      [`många har ordentliga sår efteråt (${sar} av 80)`, sar >= 40],
+    ];
+  },
 };
 
 SCENARIER.ingenvantan = {
@@ -3277,6 +3335,280 @@ SCENARIER.gralmod = {
       [`den rädda slåss inte (${r.n} slagsmål)`, r.n === 0],
       [`de modiga kan (${m.n} slagsmål)`, m.n >= 3],
       [`ingen drar sig undan före första slaget (${m.avstar})`, m.avstar === 0],
+    ];
+  },
+};
+
+SCENARIER.rovarhus = {
+  text: 'Steg B.58: plundringen i ett hus: rövarna ställer sig på golvet och vid väggarna efter samma regel som gången, och den som inte får en egen ruta intill tar från närmaste lediga: alla tar något, ingen står kvar i samma ruta och gänget går inom några minuter',
+  kor: () => {
+    const rader: string[] = []; let alla = true, fast = true, gick = true;
+    for (const n of [8, 10]) {
+      const s = rovarBy(11, n), z = SIM.zoneOf(s)!, m0 = SIM.malet(s), g = SIM.groundOf(s);
+      const x = Math.floor(m0.x) - 3, y = Math.floor(m0.y) - 3;
+      for (let yy = y - 2; yy < y + 10; yy++) for (let xx = x - 2; xx < x + 10; xx++) g.trees[yy * SIM.W + xx] = 0;
+      husPa(s, x, y, 7, 7, true, { fn: 'forrad' as SIM.Hus['fn'] });
+      for (const [k, a] of [['ved', 120], ['flinta', 30], ['sten', 40]] as const) SIM.setAmount(s, k, a);
+      const f = rovarGang(s, n, landVid(s, 25)!, { anfaller: true }), ids = [...f.folk], tog = new Set<number>(), still = new Map<number, { t: number; i: number }>(); let langst = 0, borjan = -1, slut = -1;
+      const t0 = s.now;
+      korTills(s, () => !s.rovare, 1500, () => {
+        ettGang(s, f);
+        for (const p of SIM.living(s)) if (!p.gast) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.HOUR, carry: 0, why: 'prov' };
+        for (const id of ids) {
+          const r = s.people.find(q => q.id === id), gr = r?.gast; if (!r || !gr) continue;
+          if (Object.values(gr.bar ?? {}).some(v => v > 0) || SIM.tingOf(s).some(t => t.hos === id && (t as { stulen?: 1 }).stulen)) tog.add(id);
+          const i = Math.floor(r.y) * SIM.W + Math.floor(r.x), st = still.get(id);
+          if (!st || st.i !== i || gr.gor === 'baraHem') still.set(id, { i, t: s.now }); else if (borjan > 0) langst = Math.max(langst, s.now - st.t);
+        }
+        if (borjan < 0 && tog.size) borjan = s.now;
+        if (borjan > 0 && slut < 0 && SIM.rovarna(s, f).every(r => SIM.utanforByn(s, r.x, r.y) > 8)) slut = s.now;
+      });
+      const forr = langst / SIM.MIN, tid = slut < 0 ? -1 : (slut - borjan) / SIM.MIN;
+      rader.push(`${n} rövare: ${tog.size} tog, längst i en ruta ${forr.toFixed(1)} min, borta efter ${tid.toFixed(1)} min (${((s.now - t0) / SIM.MIN).toFixed(0)} min i allt, ${z.w}×${z.h})`);
+      alla &&= tog.size === n; fast &&= forr < 5; gick &&= tid >= 0 && tid < 10;
+    }
+    return [[`alla tar något (${rader.join('; ')})`, alla], ['ingen står kvar i samma ruta', fast], ['gänget går inom några minuter', gick]];
+  },
+};
+
+SCENARIER.langtlarm = {
+  lang: true,
+  text: 'Steg B.59: larmet gäller så länge gänget finns: med ett gäng som stannar mer än två timmar håller sig byn gömd eller redo hela tiden, ingen varnar två gånger för samma gäng, och byn arbetar igen inom fem minuter efter att det gått',
+  kor: () => {
+    const s = rovarBy(10), f = rovarGang(s, 5, landVid(s, 45)!); f.vantat = true; f.till = s.now + 10 * SIM.HOUR; f.sedd = s.now;
+    for (const q of SIM.living(s)) if (!q.gast) { q.larm = { rovare: { t: s.now, vad: 'rovare', storlek: 5, led: 0, varnat: 1, om: [f.id] } }; q.task = undefined; }
+    const varnar = new Map<number, number>(); let prov = 0, under = 0, forraT = new Map<number, string | undefined>(); const annat: Record<string, number> = {};
+    const SKYDD = new Set(['gomma', 'forsvarRovare', 'hjalpaRovare', 'varna', 'budRovare', 'strid']);
+    const t0 = s.now;
+    korTills(s, () => s.now - t0 > 2.6 * SIM.HOUR, 2.8 * 3600, () => {
+      ettGang(s, f); f.till = s.now + 10 * SIM.HOUR; f.sedd = s.now;
+      for (const r of SIM.rovarna(s, f)) if (Math.hypot(r.x - f.rast!.x, r.y - f.rast!.y) > 10) { r.x = f.rast!.x; r.y = f.rast!.y; r.gast!.path = undefined; }
+      for (const q of SIM.living(s)) {
+        if (q.gast) continue;
+        if (q.task?.act === 'varna' && forraT.get(q.id) !== 'varna') varnar.set(q.id, (varnar.get(q.id) ?? 0) + 1);
+        forraT.set(q.id, q.task?.act);
+        if (s.now - t0 > 2 * SIM.HOUR && SIM.vuxenKan(s, q)) { prov++; if (q.larm?.rovare && (!q.task || SKYDD.has(q.task.act))) under++; else annat[q.task?.act ?? '-'] = (annat[q.task?.act ?? '-'] ?? 0) + 1; }
+      }
+    });
+    const tva = [...varnar.values()].filter(v => v > 1).length;
+    s.people = s.people.filter(p => !f.folk.includes(p.id)); f.folk = []; // gänget har lämnat kartan
+    let arbete = -1; const t1 = s.now;
+    korTills(s, () => arbete >= 0, 600, () => { if (SIM.living(s).every(q => q.gast || !q.task || !SKYDD.has(q.task.act))) arbete = s.now - t1; });
+    return [
+      [`byn håller sig gömd eller redo efter två timmar (${under} av ${prov} prov, annat: ${Object.entries(annat).map(e => e.join(' ')).join(', ') || 'inget'})`, prov > 0 && under >= prov * 0.8],
+      [`ingen varnar två gånger (${tva})`, tva === 0],
+      [`byn arbetar igen ${(arbete / SIM.MIN).toFixed(1)} min efter att gänget gått`, arbete >= 0 && arbete <= 5 * SIM.MIN],
+    ];
+  },
+};
+
+SCENARIER.flykthus = {
+  text: 'Steg B.61: flykten i trånga lägen: den som flyr inne i ett hus med fienden vid dörren pendlar inte och kommer aldrig närmare fienden',
+  kor: () => {
+    const m = (id: number, sida: 0 | 1, x: number, y: number, fly: { x: number; y: number }) => ({ id, namn: `${sida ? 'R' : 'B'}${id}`, sida, vapen: 'hand' as const, klader: [] as string[], x, y, fart: 1, st: { styrka: 10, uthallighet: 10, mod: 20, skicklighet: 10, aggression: 10, smidighet: 10 }, fly });
+    const vagg: number[] = []; // ett rum 4×4 (30–33, 20–23) med dörr åt söder (32, 24)
+    for (let x = 29; x <= 34; x++) for (let y = 19; y <= 24; y++) if ((x === 29 || x === 34 || y === 19 || y === 24) && !(x === 32 && y === 24)) vagg.push(y * SIM.W + x);
+    let vand = 0, narmre = 0, steg = 0; const rader: string[] = [];
+    for (const [sx, sy] of [[32.5, 21], [30.6, 22.5], [33.4, 20.6], [31, 23.4]]) for (let fro = 1; fro <= 5; fro++) {
+      const st = SIM.nyStrid({ karta: true, avsikt: 'skada', w: SIM.W, h: SIM.H, kampar: [m(1, 0, sx, sy, { x: 60, y: 40 }), m(2, 1, 32.3, 24.4, { x: 1, y: 1 }), m(3, 1, 32.7, 24.9, { x: 1, y: 1 })] }, fro), k = st.kampar[0];
+      k.lage = 'flykt';
+      SIM.iVarlden(SIM.provVarld(undefined, new Set(vagg)), () => {
+        let dx = 0, dy = 0, t = 0, v = 0;
+        while (!st.slut && k.lage === 'flykt' && t < 12) {
+          const ute = [...st.kampar.slice(1)].map(o => ({ x: o.x, y: o.y, l: o.lage })), x = k.x, y = k.y, utan = !k.flyVag?.m;
+          const d0 = Math.min(...ute.filter(o => o.l === 'strid').map(o => Math.hypot(o.x - x, o.y - y)));
+          SIM.stridSteg(st); t += SIM.STRID.tick; steg++;
+          const ex = k.x - x, ey = k.y - y, l = Math.hypot(ex, ey), L = Math.hypot(dx, dy);
+          if (!utan || k.flyVag?.m) { dx = dy = 0; continue; }
+          const nu = [...ute.filter(o => o.l === 'strid').map(o => Math.hypot(o.x - k.x, o.y - k.y))];
+          if (l > 0.01 && nu.length && Math.min(...nu) < d0 - 0.15) narmre++;
+          if (l > 0.02 && L > 0.02 && ex * dx + ey * dy < -0.5 * l * L) { vand++; v++; }
+          if (l > 0.02) { dx = ex; dy = ey; }
+        }
+        rader.push(`${v}`);
+      });
+    }
+    return [[`vänder inte fram och tillbaka (${vand} vändningar i ${steg} steg: ${rader.join(' ')})`, vand <= steg * 0.02], [`kommer aldrig närmare (${narmre} steg)`, narmre === 0]];
+  },
+};
+
+SCENARIER.brottning = {
+  text: 'Steg B.63: brottningen avgörs: slaget gör lika ont som annars men blir inget sår, så de flesta brottningar på arenan avgörs före taket och ingen får ett sår',
+  kor: () => {
+    let ger = 0, sek = 0, sar = 0, nere = 0; const n = 60;
+    for (let fro = 1; fro <= n; fro++) {
+      const k = (id: number, sida: 0 | 1) => ({ id, namn: `k${id}`, sida, vapen: 'hand' as const, klader: [] as string[], x: 18 + sida * 4, y: 20, fart: 1, st: { styrka: 8 + (fro * 7 + id) % 5, uthallighet: 10, mod: 8 + (fro * 3 + id) % 5, skicklighet: 10, aggression: 10, smidighet: 10 } });
+      const st = SIM.nyStrid({ avsikt: 'brottning', w: 40, h: 40, kampar: [k(1, 0), k(2, 1)] }, fro);
+      while (!st.slut) SIM.stridSteg(st);
+      if (st.t < SIM.STRID.maxTid - 1 && st.kampar.some(q => q.lage === 'ger')) ger++;
+      sek += st.t; if (st.kampar.some(q => q.lage === 'nere' || q.lage === 'dod')) nere++;
+      sar += st.kampar.filter(q => q.skador.some(w => w.g >= SIM.STRID.lek || w.ny) || q.blod < 1).length;
+    }
+    return [[`de flesta avgörs (${ger} av ${n}, i snitt ${Math.round(sek / n)} s)`, ger >= n * 0.8], [`ingen får ett sår eller ligger kvar (${sar} och ${nere})`, sar === 0 && nere === 0]];
+  },
+};
+
+SCENARIER.rikgang = {
+  text: 'Rikedomen lockar plundrare också utan fejd (steg B.66): samma värld två gånger, där huvudbyn i den ena är fyra gånger så rik per person som grannarna, relationen till grannarna är 0 och ingen svälter: under tio dygn (tio år i spelet) väljer någon granne plundringen mot den rika byn, men ingen mot den fattiga',
+  kor: () => {
+    const prov = (ggr: number) => {
+      const s = SIM.cloneState(testBy(10)), vl = s.varld!, h = vl.rader!.find(r => r.nr === vl.huvud)!;
+      const gr = vl.rader!.filter(r => r.nr !== vl.huvud && r.sort === 'by' && SIM.lever(vl, r) && SIM.radGrannar(vl, r).some(g => g.nr === vl.huvud));
+      const rik = (r: SIM.VarldRad, folk: number, per: number) => { r.tal.folk = folk; r.tal.styrka = Math.round(folk / 2); r.tal.mat = folk * 400; r.varor = undefined; r.egen = undefined; r.hus = undefined; r.tal.rikedom = folk * per; SIM.radVaror(r); r.tal.rikedom = SIM.radRikedomUr(r); };
+      rik(h, 12, 20 * ggr);
+      for (const g of gr) { rik(g, 30, 20); delete g.tro; SIM.mots(vl, g.nr, h.nr); if (g.syn) g.syn.inst = 0; else vl.rel = { ...vl.rel, [`${g.nr}>${h.nr}`]: 0 }; }
+      let n = 0, max = -9;
+      for (let d = 0; d < 10; d++) for (const g of gr) {
+        const v = SIM.byVal(s, vl, g, Math.floor(s.now / SIM.DAY) + d);
+        if (v?.id === 'plundra' && v.c.mot === h) n++;
+        max = Math.max(max, SIM.BYHANDLINGAR.plundra.poang(SIM.byCtx(s, vl, g, h)));
+      }
+      return { n, max, gr: gr.length, per: h.tal.rikedom / h.tal.folk };
+    };
+    const rik = prov(4), fattig = prov(1);
+    return [
+      [`någon granne väljer plundringen mot den rika byn (${rik.n} gånger av ${rik.gr} grannar, ${rik.per.toFixed(2)} per person, poängen ${rik.max.toFixed(2)})`, rik.n > 0],
+      [`ingen mot den fattiga (${fattig.n} gånger, ${fattig.per.toFixed(2)} per person, poängen ${fattig.max.toFixed(2)})`, fattig.n === 0],
+    ];
+  },
+};
+
+SCENARIER.blodstrid = {
+  text: 'Steg B.67: striden syns blodig. I fyra mot fyra med vapen på kartan lägger varje träff som öppnar ett sår ett stänk på minst BLODET.minStank inom en ruta från den som träffades, åt hållet slaget gick; den som förlorat mer än 30 % av blodet har blodsteg 3, och den som blöder steg 1',
+  kor: () => {
+    const s = SIM.createState(6, START); klockan(s);
+    for (const c of SIM.klanerOf(s)) c.inst = -60;
+    const mal = SIM.malet(s), by = vuxnaI(s).slice(0, 4);
+    for (const p of SIM.living(s)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * SIM.HOUR, carry: 0 };
+    const f = rovarGang(s, 4, { x: mal.x + 2, y: mal.y }), rov = SIM.rovarna(s, f);
+    by.forEach((p, i) => Object.assign(p, SIM.freeNear(s, mal.x - 1, mal.y - 3 + i * 2)));
+    rov.forEach((r, i) => Object.assign(r, SIM.freeNear(s, mal.x + 1, mal.y - 3 + i * 2)));
+    for (const p of [...by, ...rov]) { p.pot.mod = 20; p.blod = 1; }
+    SIM.kartStridBorja(s, 'skada', [by, rov], 'för att pröva');
+    // varje träff mäts för sig: stänket som finns när skadan kommit, mot det som fanns förut
+    let traffar = 0, ratt = 0, hall = 0; const steg = { t: 0, r: 0 };
+    const alla = [...by, ...rov], mangd = (x: number, y: number) => SIM.blodOf(s).filter(b => b.f === 'stank' && Math.hypot(b.x - x, b.y - y) <= 1).reduce((a, b) => a + b.m, 0);
+    for (let i = 0; i < 600; i++) {
+      const fore = alla.map(p => ({ n: (p.skador ?? []).filter(w => w.b > 0).length, m: mangd(p.x, p.y) }));
+      s.blod = []; // varje slag från en ren mark, så att stänket kan räknas
+      SIM.step(s, SIM.nastaSteg(s));
+      alla.forEach((p, j) => {
+        if ((p.skador ?? []).filter(w => w.b > 0).length <= fore[j].n || p.died !== undefined) return;
+        traffar++; if (mangd(p.x, p.y) >= SIM.BLODET.minStank - 1e-6) ratt++;
+        if (SIM.blodOf(s).some(b => b.f === 'stank' && b.a !== undefined && Math.hypot(b.x - p.x, b.y - p.y) <= 1)) hall++;
+      });
+      for (const p of alla) if (p.died === undefined) { steg.t++; const v = SIM.blodSyns(p), b = p.blod ?? 1; if (v === (b < SIM.HALSA.slass ? 3 : b < SIM.HALSA.blek ? 2 : SIM.blodning(p) > 0 ? 1 : 0)) steg.r++; }
+    }
+    const t = SIM.createState(6, START); t.blod = []; SIM.blodas(t, 20.5, 20.5, 'skada', 0.01, 0); const liten = SIM.blodOf(t).filter(b => b.f === 'stank')[0];
+    t.blod = []; SIM.blodas(t, 20.5, 20.5, 'skada', 0.5, 0); const djup = SIM.blodOf(t).filter(b => b.f === 'stank')[0];
+    const p = alla[0]; p.blod = 0.65;
+    return [
+      [`varje träff som öppnar ett sår ger stänk (${ratt} av ${traffar})`, traffar >= 5 && ratt === traffar],
+      [`stänket har en riktning (${hall} av ${traffar})`, hall === traffar],
+      [`den minsta träffen ger minst ${SIM.BLODET.minStank} och den djupa mer (${liten.m} och ${djup.m})`, liten.m >= SIM.BLODET.minStank && djup.m > liten.m],
+      [`stänket hamnar åt hållet slaget gick`, liten.a === 0 && liten.x >= 20.5],
+      [`under 0,7 av blodet är blodsteget 3 (${SIM.blodSyns(p)})`, SIM.blodSyns(p) === 3],
+      [`blodsteget följer blodet under hela striden (${steg.r} av ${steg.t})`, steg.r === steg.t],
+    ];
+  },
+};
+
+SCENARIER.lagerkalla = {
+  text: 'Fler vägar till rövarlägret (steg B.68): ur en huvudby med lågt humör och en utvisad hamnar under tio dygn (tio år i spelet) några av dem som går i ett rövarläger, och krönikan säger varför; samma by nöjd, mätt och utan utvisad skickar ingen dit',
+  env: { BALANS: 'liv.flyttMissnoje=1.5' }, // fler som går under de tio dygnen, så att provet inte avgörs av en enda
+  kor: () => {
+    const prov = (dyster: boolean) => {
+      let gick = 0, till = 0, utv = 0, kron = 0;
+      for (const dag of [5, 10, 15, 20]) {
+        const s = SIM.cloneState(testBy(dag)), g0 = s.stat?.utvandrade ?? 0, vl = s.varld!;
+        const t0 = (s.stat?.lagerAvBybor ?? 0) + (s.stat?.tillLager ?? 0);
+        if (dyster) { const v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen && p.id !== s.styre?.ledare); if (v.length > 2) { SIM.utvisa(s, v[0], v[1], 'för att hen stal'); utv++; } }
+        for (let i = 0; i < 240; i++) {
+          s.matSnitt = 20; s.now += 3600e3;
+          for (const p of SIM.living(s)) { p.thoughts = [{ ...p.thoughts[0], k: 'saknarFlytt', text: dyster ? 'allt är svart' : 'allt är bra', v: dyster ? -0.9 : 0.6, until: s.now + 1e9 } as never]; }
+          SIM.regulate(s, 3600);
+        }
+        gick += (s.stat?.utvandrade ?? 0) - g0; till += (s.stat?.lagerAvBybor ?? 0) + (s.stat?.tillLager ?? 0) - t0;
+        kron += (vl.kronika ?? []).filter(h => h.k === 'lagerMissnoje' || h.k === 'lagerFredlos').length;
+      }
+      return { gick, till, utv, kron };
+    };
+    const a = prov(true), b = prov(false);
+    return [
+      [`ur de dystra byarna gick ${a.gick} och ${a.utv} utvisades, ${a.till} hamnade i ett rövarläger`, a.till > 0],
+      [`världens krönika säger varför lägren bildades (${a.kron})`, a.kron > 0],
+      [`ur de nöjda gick ${b.gick}, och ${b.till} hamnade i ett läger`, b.till === 0],
+    ];
+  },
+};
+
+SCENARIER.lagervaxer = {
+  text: 'Lägret växer av bytet och krymper av förlusterna (steg B.69): två läger lika nära samma svältande by, det ena med mat och rikedom efter en plundring: under fem dygn (fem år i spelet) flyttar fler till det rika; ett läger utan mat som förlorat hälften i ett anfall har krympt efter fem dygn',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!, t = s.now, h0 = Math.floor(t / 3600e3);
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && SIM.byPlats(vl, x.nr)?.grannar?.length)!;
+    r.tal.folk = 60; r.tal.mat = 0; r.tal.rikedom = 600;
+    const rik = SIM.nyttLager(s, vl, r, 8, t)!, fattig = SIM.nyttLager(s, vl, r, 8, t)!, l = SIM.nyttLager(s, vl, r, 30, t)!;
+    l.tal.folk = 0;
+    const g = (l: SIM.VarldRad) => SIM.byPlats(vl, l.nr)!.grannar!.find(q => q.nr === SIM.byPlats(vl, r.nr)!.nr)!;
+    g(fattig).dygn = g(rik).dygn; // lika nära
+    let fikRik = 0, fikFattig = 0;
+    const borja = new Set((vl.ko ?? []).map(p => p));
+    const satt = () => { for (const [l, mat, ri] of [[rik, 8 * 500, 4000], [fattig, 0, 0]] as const) { l.tal.folk = 8; l.tal.mat = mat; l.tal.rikedom = ri; } r.tal.folk = 60; r.tal.mat = 0; r.tal.rikedom = 600; };
+    for (let d = 0; d < 10; d++) for (let n = 0; n < 5 * 24; n++) { satt(); SIM.radFlytt(s, vl, r, h0 + d * 1000 + n); } // fem dygn, tio gånger
+    for (const p of vl.ko ?? []) if (!borja.has(p) && p.typ === 'flytt') { if (p.sak === rik.nr) fikRik += p.data!.n; if (p.sak === fattig.nr) fikFattig += p.data!.n; }
+    // det slagna lägret: hälften dog, och maten är slut
+    l.tal.folk = 15; l.tal.mat = 0; l.tal.styrka = 10;
+    const mal = SIM.flyttMal(vl, SIM.varldMark(s), l).length;
+    let gick = 0;
+    const l0 = l.tal.folk;
+    for (let n = 0; n < 20 * 24; n++) { l.tal.folk = 15; l.tal.mat = 0; SIM.radFlytt(s, vl, l, h0 + n); gick += l0 - l.tal.folk; } // utan mat ger de sig av
+    l.tal.folk = 15;
+    for (let n = 0; n < 5 * 24 && l.tal.folk > 0; n++) { SIM.radFlytt(s, vl, l, h0 + n); SIM.radMat(s, vl, l, h0 + n); }
+    return [
+      [`till det rika lägret flyttar fler (${fikRik}) än till det fattiga (${fikFattig})`, fikRik > fikFattig && fikRik > 0],
+      [`folk i lägret har någonstans att gå (${mal} platser), och några gav sig av (${gick})`, mal > 0 && gick > 0],
+      [`det slagna lägret utan mat har krympt (${l0} → ${l.tal.folk} efter fem dygn)`, l.tal.folk < l0],
+    ];
+  },
+};
+
+SCENARIER.lagervapen = {
+  text: 'Lägrets vapen (steg B.70): gänget från ett rövarläger utan vapen och varor bär stenar, och samma läger efter att ha rånat två spjut skickar ett gäng där två bär spjut; det bästa vapnet tas först, gänget är aldrig fler än lägrets folk, vapnen som kommer hem går tillbaka, och texten säger lägrets namn',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    const by = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && SIM.byPlats(vl, x.nr)?.grannar?.length)!;
+    by.tal.folk = 60;
+    const L = SIM.nyttLager(s, vl, by, 6, s.now)!;
+    const tomt = () => { SIM.radHar(L, 'sten'); for (const g of Object.keys(L.varor!)) L.varor![g] = 0; delete L.stulet; delete L.vapen; };
+    const bort = () => { for (const g of SIM.gasterNu(s, 'rovare')) SIM.gastGar(s, g.id); s.rovare = undefined; delete s.rovareFler; };
+    const gang = (n: number, r: SIM.VarldRad) => { bort(); const f = SIM.radKommer(s, r.syn, n, undefined, undefined, r); return f.folk.map(id => SIM.gastAv(s, id)!); };
+    const vapen = (g: SIM.Person[]) => g.map(p => SIM.gastTingOf(s, p).find(t => t.hos === p.id)?.k ?? 'hand');
+    const skydd = (g: SIM.Person[]) => g.reduce((a, p) => a + SIM.gastTingOf(s, p).filter(t => SIM.LAGERSKYDD.flat().includes(t.k)).length, 0);
+    tomt();
+    const g0 = gang(5, L), v0 = vapen(g0), s0 = skydd(g0);
+    const namnet = s.rovare!.ur === L.nr;
+    tomt(); SIM.radTar(L, 'flintspjut', 2);
+    const v1 = vapen(gang(5, L));
+    tomt(); SIM.radTar(L, 'kniv', 1); SIM.radTar(L, 'svard', 1); SIM.radTar(L, 'hjalm_lader', 1);
+    const g2 = gang(2, L), v2 = vapen(g2), s2 = skydd(g2), kvar = { ...L.stulet, ...L.vapen };
+    for (const p of g2) SIM.lamnaVapen(s, L, p.id);
+    const ater = { ...L.stulet, ...L.vapen };
+    tomt(); SIM.radLaggTill(L, 'redskap', 40);
+    const v3 = vapen(gang(5, L)), red = SIM.radHar(L, 'redskap');
+    L.tal.folk = 6; L.tal.styrka = 6;
+    const storst = SIM.flockStorlek(L, 0, vl.rader!.find(r => r.nr === vl.huvud)!);
+    const vB = vapen(gang(6, by));
+    bort();
+    return [
+      [`utan vapen bär alla stenar, inga skydd (${v0.join(', ')}; ${s0} skydd)`, v0.length === 5 && v0.every(k => k === 'sten') && s0 === 0],
+      [`efter två rånade spjut bär två av fem spjut (${v1.join(', ')})`, v1.filter(k => k === 'flintspjut').length === 2 && v1.filter(k => k === 'sten').length === 3],
+      [`det bästa tas först, och hjälmen (${v2.join(', ')}, ${s2} skydd; kvar ${Object.keys(kvar).length})`, v2[0] === 'svard' && v2[1] === 'kniv' && s2 === 1 && !Object.keys(kvar).length],
+      [`vapnen som kom hem är lägrets igen (${Object.entries(ater).map(([k, n]) => `${n} ${k}`).join(', ')})`, ater.svard === 1 && ater.kniv === 1 && ater.hjalm_lader === 1],
+      [`varorna räcker till några (${v3.join(', ')}; ${red} kvar)`, v3.some(k => k !== 'sten') && red < 40],
+      [`gänget är inte fler än lägrets folk (${storst} av 6)`, storst <= 6],
+      [`gänget från en by får vapen som förut (${vB.join(', ')})`, vB.some(k => k !== 'sten') && vB.every(k => k !== 'sten')],
+      ['flocken vet vilket läger den kom från', namnet],
     ];
   },
 };

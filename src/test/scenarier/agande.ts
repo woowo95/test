@@ -2402,15 +2402,15 @@ SCENARIER.rovarforsvar = {
       const rov = g!.st.kampar.filter(k => k.sida === 1 && (k.lage === 'strid' || k.lage === 'flykt'));
       for (let a = 0; a < rov.length; a++) for (let b = a + 1; b < rov.length; b++) if (Math.hypot(rov[a].x - rov[b].x, rov[a].y - rov[b].y) < 0.05) ihop = true;
     });
-    // den som flyr är fri medan striden pågår: en feg försvarare mot fem rövare
+    // den som flyr är fri medan striden pågår: en feg försvarare och en modig mot två rövare
     const t = createState(6, START); klockan(t);
     for (const c of SIM.klanerOf(t)) c.inst = -60;
     const tz = SIM.zoneOf(t)!, tm = { x: tz.x + tz.w / 2, y: tz.y + tz.h / 2 };
     const tv = living(t).filter(p => SIM.ageOf(p, t.now) >= SIM.ALDER.vaktFran && SIM.ageOf(p, t.now) < SIM.ALDER.gammal);
     for (const p of living(t)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: t.now + 20 * HOUR, carry: 0 };
     const [modig, feg] = tv;
-    for (const [p, dx] of [[modig, 0.6], [feg, -0.6]] as const) { p.x = tm.x + dx; p.y = tm.y; p.larm = { rovare: { t: t.now, vad: 'rovare', storlek: 5, led: 0, varnat: 1 } }; p.task = { act: 'forsvarRovare', phase: 'do', tx: p.x, ty: p.y, until: t.now + HOUR, carry: 0 }; }
-    const tf = rovarGang(t, 5, { x: tm.x + 8, y: tm.y }, { anfaller: true }); tf.sedd = t.now;
+    for (const [p, dx] of [[modig, 0.6], [feg, -0.6]] as const) { p.x = tm.x + dx; p.y = tm.y; p.larm = { rovare: { t: t.now, vad: 'rovare', storlek: 2, led: 0, varnat: 1 } }; p.task = { act: 'forsvarRovare', phase: 'do', tx: p.x, ty: p.y, until: t.now + HOUR, carry: 0 }; }
+    const tf = rovarGang(t, 2, { x: tm.x + 8, y: tm.y }, { anfaller: true }); tf.sedd = t.now;
     korTills(t, () => !!SIM.flockStrid(t, tf), 600);
     const tg = SIM.flockStrid(t, tf);
     if (tg) for (const k of tg.st.kampar) { if (k.pid === feg.id) { k.st.mod = 0; k.modNu = -1; } if (k.pid === modig.id) { k.st.mod = 20; k.modNu = 3; } } /* modet just nu räknades när striden började */

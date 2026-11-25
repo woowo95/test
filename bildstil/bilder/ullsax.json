@@ -15,8 +15,8 @@
   "QSRRRQ..",
   ".QQQQ..."
  ],
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), tre idéer",
+ "ritad": 3,
+ "av": "för hand (programmeringschatten), API-krediterna slut",
  "pal": {
   "E": "#3f2415",
   "F": "#5e3c24",
@@ -30,56 +30,56 @@
  },
  "versioner": [
   {
-   "ide": "Stängd sax som en enda smal kil: fjäderbågen är en liten rund ögla, cirka 3×3 punkter med ett genomskinligt hål i mitten, i nedre vänstra hörnet där handen håller. De två skären ligger tätt ihop och går snett upp mot övre högra hörnet som en kil, 3 punkter bred, som smalnar till en spets, med en mörk skarvlinje (skiffer0) längs mitten mellan skären. Järnet ritas i skiffer1–skiffer3 med kontur i skiffer0, den ljusa sidan uppe till vänster på varje skär och en enda glanspunkt i skiffer3 på det övre skärets egg; silhuetten är spegelsymmetrisk kring saxens egen snedställda längdaxel.",
+   "ide": "Vanlig sax, stängd och upprätt: två raka blad som ligger mot varandra och slutar i en spets uppåt, en nit där de korsar varandra och två runda ögon för fingrarna nertill, ett på var sida.",
    "rader": [
-    "......QQ",
-    ".....QSQ",
-    "....QSRQ",
-    "...QTQRQ",
-    "..QSQRQ.",
-    "..QSQRQ.",
-    ".QSQRQ..",
-    "QSSRQ...",
-    "QS.RQ...",
-    "QR.Q....",
-    ".QQ....."
-   ],
-   "om": "Ullsaxen ligger stängd som en smal kil, snett från nedre vänstra hörnet upp mot spetsen i övre högra. Skären har en mörk skarvlinje (skiffer0) i mitten: det övre skäret är i skiffer2 med en enda glanspunkt i skiffer3 på eggen, det undre i skiffer1–2. Konturen runt kilen är skiffer0. Nere till vänster sitter fjäderbågen som en liten rund ögla, 3×3 punkter med ett genomskinligt hål, ljus uppe till vänster och mörk nere till höger, där handen håller saxen. Bilden är 8×11 punkter. Granskningen: Fjäderöglan i nedre vänstra hörnet saknade kontur och var bara en tunn ring (SSR/S.Q/RQQ). Den låg mot bildkanten utan skiffer0 på vänster och övre sida och flöt ihop med gräset. Öglan är nu omritad som en rundad båge på rad 7–10 med skiffer0-kontur runt om, skiffer1–2 på insidan (ljust uppe till vänster) och ett genomskinligt hål på 1×2 punkter i mitten. Skären går nu ihop med fjädern på rad 7, där skarvlinjen slutar, så att man ser att bågen håller ihop skären. Kilen har samma bredd, skarvlinje (skiffer0) och enda glanspunkt (skiffer3) på det övre skärets egg som förut, men flyttades upp en rad så att öglan får plats. Storleken är oförändrad: 8×11 punkter, liten bredvid kolonisten på 14×20. Den ligger snett på marken som en sak och har ingen sidovy."
-  },
-  {
-   "ide": "Öppen sax som en smal gaffel: fjäderbågen nere till vänster är spetsig och droppformad, och de två skären skiljs åt direkt ovanför den och går isär snett uppåt höger, så att det blir en smal V-form med 1–2 genomskinliga punkter mellan spetsarna. Varje skär är 2 punkter brett med en rak egg mot glipan och en rundad rygg utåt, i järnets skiffer1–skiffer3 med kontur i skiffer0. Skären är lika stora och lika formade, bara ljuset skiljer dem: det övre vänstra skäret är ljusare och det nedre högra mörkare.",
-   "rader": [
-    "....QQ..",
-    "...QTSQ.",
+    "...QQ...",
+    "...QT...",
     "..QTSQ..",
-    "..QTS.QQ",
-    ".QTS.SRQ",
-    ".QTS.RRQ",
-    ".QSSRRQ.",
-    ".QTSRQ..",
-    "QT.SRQ..",
-    "QS.RQ...",
-    "QQQQ...."
+    "..QTRQ..",
+    "..QTRQ..",
+    "..QSRQ..",
+    "...QQ...",
+    ".QQ..QQ.",
+    "Q..QQ..Q",
+    "Q..QQ..Q",
+    ".QQ..QQ."
    ],
-   "om": "Ullsax av järn i 8×11 punkter, liggande snett från nedre vänstra till övre högra hörnet. Den droppformade fjäderbågen sitter nere till vänster, med en genomskinlig punkt i öglan och spetsen åt nedre vänstra hörnet. Strax ovanför bågen skiljs de två skären åt i en smal V-form. Mellan dem går en glipa på en punkt, och vid spetsarna är den två punkter. Det övre vänstra skäret är ljust (skiffer3 och skiffer2). Det nedre högra är mörkare (skiffer2 och skiffer1). Eggen mot glipan är rak och ryggen utåt rundad. Konturen är skiffer0. Granskningen: Ritningen följer i stort idén och reglerna. Saxen är 8 × 11 punkter och fyller rutan, vilket är rimligt mot kolonisten (14 × 20). Den ligger platt på marken och syns ovanifrån. Skären är lika stora och lika formade och bildar ett smalt V med en genomskinlig punkt i glipan. Det övre vänstra skäret är ljusare (skiffer3–2) och det nedre högra mörkare (skiffer2–1), alltså ljus uppifrån vänster. Konturen i skiffer0 gör att saxen syns mot det olivgröna gräset. Fjäderbågen nere till vänster är en sluten, droppformad ögla. Rättat: den högra armen av bågen (skiffer1 på rad 10, kolumn 4) saknade kontur nedåt. Nedersta raden är därför förlängd från QQQ till QQQQ, så att bågen sluts helt med skiffer0. Övriga punkter är oförändrade."
+   "om": "Ritad för hand: Vanlig sax, stängd och upprätt: två raka blad som ligger mot varandra och slutar i en spets uppåt, en nit där de korsar varandra och två runda ögon för fingrarna nertill, ett på var sida."
   },
   {
-   "ide": "Sax med lindat handtag och korta breda skär: fjäderbågen är ett brett platt järnband böjt till en tydlig rund båge längst ner till vänster, och de två armarna ovanför den är lindade med en läderrem i jord1–jord2 med kontur i jord0 där handen klämmer. Därifrån går två korta, breda och trekantiga skär snett upp mot övre högra hörnet, tätt ihop, i skiffer1–skiffer3 med kontur i skiffer0. Silhuetten blir som en tjock knopp nertill som smalnar till en kort bred spets upptill, med tre tydliga delar: båge, grepp och skär.",
+   "ide": "Fårsax med fjäderbåge: två breda raka blad sida vid sida uppåt med spetsarna isär, och nertill en rund båge av samma järn som förenar dem och fjädrar tillbaka.",
    "rader": [
-    "......QQ",
-    ".....QTQ",
-    "....QTRQ",
-    "...QTRSQ",
-    "..QTRSRQ",
-    "..EHGE..",
-    ".EHGFE..",
-    ".EGFE...",
-    "QTSRQ...",
-    "QS.RQ...",
-    ".QRQ...."
+    ".QQ..QQ.",
+    ".QTQ.QSQ",
+    ".QTQ.QSQ",
+    ".QTQ.QRQ",
+    ".QSQ.QRQ",
+    ".QSQQSRQ",
+    "..QQ.QQ.",
+    "..Q...Q.",
+    "..Q...Q.",
+    "...Q.Q..",
+    "....Q..."
    ],
-   "om": "Ullsaxen ligger snett från nedre vänstra till övre högra hörnet och består av tre delar. Längst ner till vänster sitter fjäderbågen, ett platt järnband böjt till en rund ögla med ett litet hål. Ovanför den är greppet lindat med läderrem i jord1–jord3 med kontur i jord0. Överst går två korta, breda, trekantiga skär i skiffer1–skiffer3 tätt ihop mot spetsen, med en mörkare fog mellan dem och kontur i skiffer0. Ljuset faller uppifrån vänster. Granskningen: Storleken (8 × 11), paletten, ljuset uppe till vänster, konturerna i skiffer0 och jord0, den läderlindade greppdelen och fjäderbågen nere till vänster följer reglerna och idén. Saken syns bra på gräset och är rimligt liten mot kolonisten. En sax är platt och ligger på marken, så den behöver ingen särskild vinkel för snett ovanifrån. En sak blev ändrad: skären läste som ett enda massivt blad, och den mörka skiljelinjen fanns bara på en rad. Nu går en sammanhängande skarv i skiffer1 diagonalt från greppet upp mot spetsen, så att man ser två skär tätt ihop. Skärens bas på rad 4 är bredare än greppet, så att de blir de korta, breda och trekantiga skär som idén beskriver. Det övre högra skäret har en skuggad kant i skiffer1 mot konturen. Båge, grepp och skär är oförändrade i övrigt."
+   "om": "Ritad för hand: Fårsax med fjäderbåge: två breda raka blad sida vid sida uppåt med spetsarna isär, och nertill en rund båge av samma järn som förenar dem och fjädrar tillbaka."
+  },
+  {
+   "ide": "Öppen sax i kryss: två raka blad som går isär uppåt som ett V, korsade vid en nit i mitten, och två fingerögon som går isär nedåt, så att saxen bildar ett X.",
+   "rader": [
+    "Q......Q",
+    "QT....SQ",
+    ".QT..SQ.",
+    "..QTSQ..",
+    "...QQ...",
+    "..QRRQ..",
+    ".QQ..QQ.",
+    "Q.Q..Q.Q",
+    "Q.Q..Q.Q",
+    ".Q....Q.",
+    "........"
+   ],
+   "om": "Ritad för hand: Öppen sax i kryss: två raka blad som går isär uppåt som ett V, korsade vid en nit i mitten, och två fingerögon som går isär nedåt, så att saxen bildar ett X."
   }
  ],
- "kommentar": "Björn sa nej till förra ritningen utan att skriva varför: rita en bättre."
+ "kommentar": "ser inte ut som saxar"
 }

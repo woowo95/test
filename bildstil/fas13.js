@@ -108,6 +108,21 @@
   const KORT = (id, namn, vad, versioner, slag = []) => VAL.push({ id, namn, typ: 'tre', slag, vad, versioner });
   // tonen efter var punkten ligger: ljuset uppe till vänster
   const lj = (a, b, c, k, m1, m2) => (x, y) => { const v = x * k + y; return v < m1 ? a : v < m2 ? b : c; };
+  // ritningar som redan finns i spelet, lagda i en version: hex-paletten (bilder/<id>.json) eller tecknen i PORTRATT.tecken,
+  // och spegling för ett djur som ska gå åt höger
+  const tonAv = (P, t) => P.i(t.slice(0, -1), +t.slice(-1));
+  const lagdHex = (B, P, d, x0, y0, byt = {}) => d.rader.forEach((r, y) => [...r].forEach((c, x) => { const t = byt[x + ',' + y]; if (t) B.satt(x0 + x, y0 + y, tonAv(P, t)); else if (d.pal[c]) B.satt(x0 + x, y0 + y, P.av(d.pal[c])); }));
+  const lagdTecken = (B, P, rader, x0, y0, spegla = false) => rader.forEach((r, y) => [...(spegla ? [...r].reverse().join('') : r)].forEach((c, x) => { const t = c !== '.' && PORTRATT.tecken[c]; if (t) B.satt(x0 + x, y0 + y, tonAv(P, t)); }));
+  const flyttad = (B, dx, dy) => ({ w: B.w, h: B.h, P: B.P, satt: (x, y, c) => B.satt(x + dx, y + dy, c) });
+  const streck = (B, P, x0, y0, x1, y1, t) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let k = 0; k <= n; k++) B.satt(Math.round(x0 + (x1 - x0) * k / n), Math.round(y0 + (y1 - y0) * k / n), tonAv(P, t)); };
+  // spelets stora lerkruka (bilder/lerkruka_stor.json) oförändrad (Björn: "krukan ska vara exakt den krukan som finns i spelet
+  // redan"). Bara mynningens fyra punkter (rad 1, x 5–8, där ölet och vinet syns i spelet) får innehållets toner, och ovan är
+  // punkter [x, y, ton] som sticker upp över kanten (y under 0)
+  const KRUKA = (text, mynning, ovan = []) => ({ text, w: 18, h: 24, rita: (B, P) => {
+    const byt = {}; mynning.forEach((t, k) => { byt[(5 + k) + ',1'] = t; });
+    lagdHex(B, P, BILDFILER.lerkruka_stor, 2, 5, byt);
+    for (const [x, y, t] of ovan) B.satt(2 + x, 5 + y, tonAv(P, t));
+  } });
 
   KORT('f13_dryckeshorn', 'Dryckeshornet', 'Steg 13.4.1: ett dryckeshorn skrapat ur ett djurhorn. Den som dricker öl, mjöd, cider eller vin dricker ur det. Ligger snett, med mynningen uppåt.', [
     bild('Ett böjt horn som det är, ljust vid mynningen och mörkt i spetsen.', 16, 16, [
@@ -128,24 +143,24 @@
     [linje(x0, y0, x0 + ux * 3.2, y0 + uy * 3.2, 1.3), spets === 'smal' ? 'ben2' : 'rost2'], [linje(x0, y0, x0 + ux * 3.2, y0 + uy * 3.2, 0.5), 'jord1'],
     [linje(x1 - ux * lang, y1 - uy * lang, x1 - ux * lang * 0.6, y1 - uy * lang * 0.6, spets === 'bred' ? 1.9 : 0.9), 'skiffer1'],
     [linje(x1 - ux * lang, y1 - uy * lang, x1, y1, spets === 'bred' ? 1 : 0.8), 'skiffer2'], [linje(x1 - ux * 2, y1 - uy * 2, x1, y1, 0.5), 'skiffer3']]; };
-  KORT('f13_jarnpilar', 'Järnpilarna', 'Steg 13.4.2: pilar med spetsar av järn, som skadar mer än pilarna med flinta. Ligger snett, som det som hålls i handen.', [
+  // varje version visas till höger om de godkända pilarna med flinta (bilder/pilar.json), med fötterna på samma rad
+  const MED_FLINTA = v => { const F = () => BILDFILER.pilar, w = 15 + 4 + v.w, h = Math.max(21 + 4, v.h);
+    return { text: v.text + ' Till vänster pilarna med flinta.', w, h, rita: (B, P) => { lagdHex(B, P, F(), 2, h - 2 - 21); v.rita(flyttad(B, 17, h - v.h), P); } }; };
+  KORT('f13_jarnpilar', 'Järnpilarna', 'Steg 13.4.2: pilar med spetsar av järn, som skadar mer än pilarna med flinta. Ligger snett, som det som hålls i handen. Varje version bredvid pilarna med flinta som finns i spelet.', [
     bild('En knippa av tre i solfjäder, med breda blad av ljust järn.', 22, 23, [...PIL(1, 15, 5, 1, 'bred'), ...PIL(6, 20, 21, 15, 'bred'), ...PIL(3, 18, 16, 5, 'bred')]),
     bild('En enda lång pil med en smal nål till spets, som går genom en brynja.', 18, 18, PIL(2, 16, 16, 2, 'smal', 6)),
     bild('Ett tätt knippe, ombundet med snöre, med spetsarna åt samma håll.', 18, 18, [
       ...PIL(1, 13, 11, 1, 'smal'), ...PIL(5, 17, 17, 6, 'smal'), ...PIL(3, 15, 15, 3, 'smal'), [linje(6.5, 8, 10.5, 12, 1), 'ben1'], [linje(6.5, 7.6, 10, 11.1, 0.5), 'ben3']]),
-  ]);
+  ].map(MED_FLINTA));
 
   const STR = [[2, 8, 8, 5], [5, 10, 12, 8], [7, 5, 14, 8], [3, 10, 9, 8], [9, 10, 15, 10], [6, 7, 11, 5], [4, 6, 10, 10]];
-  KORT('f13_surkal', 'Surkålen', 'Steg 13.6.2: strimlad kål som syrats i en stor lerkruka. Ett blekt gulgrönt, som skiljer den från den färska kålen.', [
-    bild('En hög av strimlor, som de ligger på marken.', 18, 13, [
-      [oval(8.5, 8.5, 7.5, 3.6), 'oliv2'], ...STR.map(([a, b, c, d], n) => [linje(a, b, c, d, 0.6), n % 3 === 0 ? 'ben3' : n % 2 ? 'senap3' : 'oliv3'])]),
-    bild('En träskål med surkål upp över kanten.', 17, 14, [
-      [oval(8, 8.5, 7.5, 4.8), (x, y) => y < 7 ? 'jord3' : y < 10 ? 'jord2' : 'jord1'],
-      [oval(8, 6, 6.2, 2.6), 'jord0'], [oval(8, 5, 5.4, 2.8), 'oliv3'],
-      [linje(4, 4.6, 12, 4.6, 0.5), 'senap3'], [linje(5, 6, 11, 6, 0.5), 'ben3'], [linje(6, 3, 10, 3, 0.5), 'ben3']]),
-    bild('En öppen lerkruka, sedd snett uppifrån, med kålen under en tyngd av sten.', 15, 19, [
-      [oval(7, 11, 6.6, 7), (x, y) => x < 4 ? 'rost3' : x > 10 ? 'rost1' : 'rost2'], [oval(7, 4, 5.2, 2.8), 'rost0'],
-      [oval(7, 4.2, 4.2, 1.9), 'oliv3'], [oval(7, 3.6, 2.2, 1.4), 'skiffer2'], [linje(6, 3, 8, 3, 0.5), 'skiffer3']]),
+  // surkålen ligger kvar i krukan den syrats i (steg 13.10.44): spelets stora lerkruka, oförändrad, med kålen i mynningen
+  KORT('f13_surkal', 'Surkålen', 'Steg 13.6.2: strimlad kål som syrats i en stor lerkruka och ligger kvar i den. Ett blekt gulgrönt, som skiljer den från den färska kålen. Krukan är spelets stora lerkruka, oförändrad; bara mynningen är ny.', [
+    KRUKA('Krukan full till kanten med strimlorna, blekt gulgröna med ljusa ränder.', ['ben3', 'oliv3', 'senap3', 'oliv2']),
+    KRUKA('Kålen pressad under en flat sten som sticker upp över kanten.', ['oliv3', 'skiffer2', 'skiffer2', 'oliv2'],
+      [[5, -1, 'skiffer3'], [6, -1, 'skiffer2'], [7, -1, 'skiffer2'], [8, -1, 'skiffer1'], [5, -2, 'kol0'], [6, -2, 'kol0'], [7, -2, 'kol0'], [8, -2, 'kol0'], [4, -1, 'kol0'], [9, -1, 'kol0']]),
+    KRUKA('Kålen i en liten hög över kanten, med strimlor som hänger ut.', ['oliv3', 'senap3', 'oliv3', 'oliv2'],
+      [[5, -1, 'oliv3'], [6, -1, 'ben3'], [7, -1, 'senap3'], [8, -1, 'oliv2'], [6, -2, 'oliv3'], [7, -2, 'oliv3'], [4, -1, 'kol0'], [9, -1, 'kol0'], [5, -2, 'kol0'], [8, -2, 'kol0'], [6, -3, 'kol0'], [7, -3, 'kol0']]),
   ]);
 
   KORT('f13_surfisk', 'Surfisken', 'Steg 13.6.2: fisk som syrats i en stor lerkruka. Blek och mjuk, till skillnad från den torkade fisken.', [
@@ -194,7 +209,18 @@
   ]);
 
   // plogen från sidan, dragen åt höger: oxen eller hästen går framför. Åt andra håll vrids den i spelet
-  KORT('f13_plog', 'Plogen', 'Steg 13.7.2: plogen dras av oxen eller hästen och gräver upp fältet fortare än spaden. Bilden visar den när den dras åt höger, där djuret går; vänster hålls av den som plöjer.', [
+  // varje plog visas förspänd: överst bakom oxen, under bakom hästen (de godkända, f10_oxe v1 speglad så att den går åt höger,
+  // och f10_hast v3), med draget från plogens främre ände till djurets bog
+  const SPANN = (v, fram) => { const djur = () => [[FORSLAG.f10_oxe.versioner[0].bilder[0].rader, true], [FORSLAG.f10_hast.versioner[2].bilder[0].rader, false]];
+    const w = v.w + 35, h = 2 * 27 + 2;
+    return { text: v.text + ' Överst bakom oxen, under bakom hästen.', w, h, rita: (B, P) => djur().forEach(([rader, spegla], n) => {
+      const fot = (n + 1) * 27, ax = v.w + 1, dw = rader[0].length, dh = rader.length;
+      v.rita(flyttad(B, 0, fot - v.h + 1), P);
+      lagdTecken(B, P, rader, ax, fot - dh, spegla);
+      const bx = ax + (spegla ? Math.round(dw * 0.3) : Math.round(dw * 0.15)), by = fot - Math.round(dh * 0.55);
+      streck(B, P, fram[0], fot - v.h + 1 + fram[1], bx, by, 'jord1');
+    }) }; };
+  KORT('f13_plog', 'Plogen', 'Steg 13.7.2: plogen dras av oxen eller hästen och gräver upp fältet fortare än spaden. Bilden visar den när den dras åt höger, där djuret går; vänster hålls av den som plöjer. Varje plog visas förspänd bakom oxen och hästen.', [
     bild('En krokig årder av en enda böjd stock, med ett handtag bak och en spets av järn i jorden.', 42, 22, [
       [bage([[10, 15], [16, 4], [40, 8]], 1.6, 1.1), (x, y) => y < 9 ? 'jord3' : 'jord2'], [linje(3, 1, 11, 16, 1.2), 'jord2'], [linje(1, 2, 5, 1, 1), 'jord3'], [linje(9, 15, 20, 19, 1.9), 'jord1'], [linje(16, 17.6, 23, 20, 1.2), 'skiffer2'], [linje(17, 17, 22, 19, 0.5), 'skiffer3']]),
     bild('En tung plog med hjul fram, en rak ås och ett brett skär som vänder jorden.', 42, 24, [
@@ -204,11 +230,10 @@
     bild('En lätt plog sedd snett uppifrån: två skaklar som djuret går mellan, en krok på tvären och två handtag.', 42, 22, [
       [linje(18, 5, 41, 3, 0.9), 'jord3'], [linje(18, 16, 41, 18, 0.9), 'jord2'], [linje(18, 4, 18, 17, 1.4), 'jord1'], [linje(18, 10.5, 8, 10.5, 1.5), 'jord2'],
       [linje(1, 5, 9, 9, 1), 'jord3'], [linje(1, 16, 9, 12, 1), 'jord2'], [(x, y) => x >= 10 && x <= 17 && Math.abs(y - 10.5) <= (x - 9) * 0.5, 'skiffer1'], [linje(11, 10, 17, 10, 0.5), 'skiffer3'], [linje(17, 8, 17, 13, 0.5), 'skiffer2']]),
-  ]);
-  // ciderns färg (steg 13.4.1): den färdiga cidern i den godkända krukan med öl, med vätskans yta i cidernas färg
-  const CIDER = (ton, ljus, text) => bild(text, 14, 15, [
-    [oval(7, 8, 6.6, 6.8), (x, y) => x < 4 ? 'rost3' : x > 10 ? 'rost1' : 'rost2'], [oval(7, 3, 5, 2.6), 'rost0'], [oval(7, 3.4, 4, 1.7), ton], [linje(5, 3, 8, 3, 0.5), ljus]]);
-  VAL.push({ id: 'f13_cider', namn: 'Ciderns färg', typ: 'janej', slag: [], vad: 'Steg 13.4.1: cidern är gulgrön, ljusare och grönare än ölet, så att de skiljs åt i krukor och horn.', versioner: [CIDER('oliv3', 'senap3', 'Den stora lerkrukan snett uppifrån med cidern, i den gröna ton som spelet redan använder.')] });
+  ].map((v, n) => SPANN(v, [[42, 10], [43, 11], [43, 5]][n])));
+  // ciderns färg (steg 13.4.1): spelets stora lerkruka, oförändrad (Björn: "krukan ska vara exakt den krukan som finns i spelet
+  // redan"), som ölet och vinet i spelet: bara mynningens fyra punkter är cidern, ljust gulgrön utan ölets skum
+  VAL.push({ id: 'f13_cider', namn: 'Ciderns färg', typ: 'janej', slag: [], vad: 'Steg 13.4.1: cidern är gulgrön, ljusare och grönare än ölet, så att de skiljs åt i krukor och horn. Krukan är spelets stora lerkruka, exakt som den är; bara cidern i mynningen är ny.', versioner: [KRUKA('Spelets stora lerkruka med cidern i mynningen: ljust gulgrön, utan ölets skum.', ['senap3', 'oliv3', 'oliv3', 'oliv2'])] });
 
   // spjälan (steg B.36): benet stort till vänster och kolonisten i kartans storlek till höger, med spjälan på samma ben
   const FIGUR = [[oval(34, 7, 3.2, 3.4), 'rost3'], [oval(34, 5.2, 3.4, 2.4), 'jord1'], [(x, y) => x >= 30 && x <= 38 && y >= 11 && y <= 18, (x, y) => x < 32 ? 'ben0' : 'ben1'], [linje(29.4, 12, 29.4, 18, 0.7), 'rost3'], [linje(38.6, 12, 38.6, 18, 0.7), 'rost3'], [linje(32, 19, 32, 25, 0.9), 'jord0'], [linje(36, 19, 36, 25, 0.9), 'jord0']];
@@ -224,4 +249,69 @@
       ...[4.5, 7.5, 10.5, 13.5].map((x, i) => [linje(x, 4, x, 22, 0.9), i % 2 ? 'jord3' : 'jord2']), [linje(4, 9, 14, 17, 0.8), 'ben3'], [linje(14, 9, 4, 17, 0.8), 'ben3'], [oval(9, 13, 1.6, 1.6), 'ben2'],
       [linje(35, 19, 35, 25, 0.4), 'jord3'], [linje(37, 19, 37, 25, 0.4), 'jord2'], [linje(35, 21, 37, 23, 0.4), 'ben3'], [linje(37, 21, 35, 23, 0.4), 'ben3']]),
   ]);
+})();
+
+// fas 13: rövarnas symbol vid namnet på kartan (steg B.62): 8 × 8 punkter till vänster om namnet, som har en egen rostfärg
+(() => {
+  const PAL = { o: '#24201d', r: '#a14808', R: '#742a01', b: '#dad0bb', k: '#4f4a42', j: '#7d5b40' };
+  const VID = (text, rader) => ({ text, w: 40, h: 16, rita: (B, P) => {
+    const g = P.i('oliv', 2); for (let y = 0; y < 16; y++) for (let x = 0; x < 40; x++) B.satt(x, y, g);
+    rader.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') B.satt(4 + x, 4 + y, P.av(PAL[ch])); }));
+    for (let x = 14; x < 36; x++) for (let y = 5; y < 11; y++) B.satt(x, y, P.av(y === 5 || y === 10 || x % 4 === 3 ? '#24201d' : '#bd753e')); // namnet som en rand i skyltens egen färg
+  } });
+  VAL.push({ id: 'f13_roll_rovare', namn: 'Rövarens symbol vid namnet', typ: 'tre', slag: ['symbol'], vad: 'Steg B.62: en rövare som byn sett får en symbol till vänster om namnet, 8 × 8 punkter, och namnet i rostrött i stället för benvitt, så att man ser vilka som är fienden. I spelet är det nu hotmärket (platshållare). Bilden visar symbolen på gräset och namnet som en rostfärgad rand bredvid.', versioner: [
+    VID('Hotmärket: en röd trekant med ett utropstecken, samma varning som vid larmet.', ['...oo...', '..orro..', '..obbo..', '.orbbro.', '.orbbro.', 'orrrrrro', 'orrbbrro', 'oooooooo']),
+    VID('Två korslagda klingor med skaften nedåt.', ['b......b', 'bb....bb', '.bb..bb.', '..bbbb..', '...bb...', '.rb..br.', '.jr..rj.', 'j......j']),
+    VID('Rövaren själv: en mörk huva med en skugga och två ljusa ögon.', ['..oooo..', '.oRRRRo.', 'oRrrrrRo', 'oRooooRo', 'oobooboo', 'oRooooRo', '.oRRRRo.', '..oooo..']),
+  ] });
+})();
+
+// fas 13: blodet på den som är blodig (steg B.67): porträttet till vänster, figuren på kartan framifrån, från sidan och bakifrån
+// till höger, i spelets storlek och en gång uppförstorad. Blodet ligger i formens egna skuggor: en mörk punkt får den mörka rosten
+(() => {
+  const BILD = (text, mal, karta) => ({ text, w: 104, h: 68, rita: (B, P) => {
+    const PR = window.PORTRATTEN; if (!PR || !window.BYBO) return;
+    const gras = P.i('oliv', 2); for (let y = 0; y < 68; y++) for (let x = 66; x < 104; x++) B.satt(x, y, gras);
+    const ljus = c => { const r = P.cols[c].rgb; return r[0] + r[1] + r[2]; };
+    const m = PR.neutral('man'); m.alder = 'vuxen'; m.klader = { rock: 'harskinn', skor: true, balte: false };
+    const Q = PR.portratt(m); Q.plats = { ox: 2, oy: 2 };
+    for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+      const c = Q.px[y * 64 + x]; if (c < 0) continue;
+      const fig = !Q.figur || Q.figur[y * 64 + x], oga = y >= 26 && y <= 31 && (x >= 23 && x <= 29 || x >= 35 && x <= 41);
+      const t = fig && x > 1 && y > 1 && x < 62 && y < 62 && !oga ? mal(x, y) : undefined;
+      B.satt(2 + x, 2 + y, t === undefined ? c : P.i('rost', Math.max(0, t - (ljus(c) < 170 ? 1 : 0))));
+    }
+    ['fram', 'sida', 'bak'].forEach((rikt, n) => {
+      const F = window.BYBO(22, rikt, 'sta', 'hanga', null, { rock: 'harskinn' }), x0 = 74 + (n === 1 ? 14 : 0) - (n === 2 ? 0 : 0), y0 = n < 2 ? 8 : 38;
+      F.plats = { ox: x0, oy: y0 };
+      for (let x = 2; x < F.w - 2; x++) B.morka(x0 + x, y0 + F.h);
+      for (let y = 0; y < F.h; y++) for (let x = 0; x < F.w; x++) { const c = F.px[y * F.w + x]; if (c < 0) continue; const t = karta(x - F.w / 2, y, rikt, F.h); B.satt(x0 + x, y0 + y, t === undefined ? c : P.i('rost', t)); }
+    });
+  } });
+  const slump = (x, y) => { const v = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453; return v - Math.floor(v); };
+  // en droppe: en rund klick med radien r
+  const i = (x, y, l) => l.some(([cx, cy, r]) => (x - cx) ** 2 + (y - cy) ** 2 <= r * r);
+  const strimma = (x, y, l) => l.some(([sx, y0, y1, b]) => y >= y0 && y <= y1 && Math.abs(x - sx - Math.sin(y * 0.4) * 0.8) <= b);
+  VAL.push({ id: 'f13_blod2', namn: 'Blodig (steg 2)', typ: 'tre', slag: ['manniska'], vad: 'Steg B.67: blodet på den som blött en hel del, på ansiktet och kläderna. I spelet är det nu spridda fläckar (platshållare). Porträttet till vänster, figuren på kartan till höger: framifrån, från sidan och bakifrån.', versioner: [
+    BILD('Blodet rinner: från ett sår i hårfästet i strimmor ner över ansiktet, och en våt fläck som runnit ner på bröstet.',
+      (x, y) => strimma(x, y, [[22, 15, 44, 1], [25, 13, 33, 1.4], [28, 14, 25, 0.7], [27, 33, 46, 0.6]]) ? (slump(x, y) < 0.3 ? 0 : 1) : y >= 46 && Math.hypot((x - 26) * 1.1, (y - 49) * 0.8) < 8 - slump(x, 0) * 2 || strimma(x, y, [[21, 52, 60, 1], [27, 52, 61, 1.2], [31, 52, 57, 0.6]]) ? 1 : undefined,
+      (dx, y, r) => r === 'bak' ? (dx < 0 && dx > -3 && y < 4 ? 1 : undefined) : y <= 8 && dx >= -3 && dx <= -2 ? 1 : y > 8 && y < 16 && Math.abs(dx + 1.5) < 2.2 ? (y % 3 ? 1 : 0) : undefined),
+    BILD('Blodet har stänkt: droppar i en båge snett över ansiktet och bröstet, stora och små.',
+      (x, y) => i(x, y, [[18, 20, 1.6], [23, 24, 2.2], [27, 35, 1.6], [33, 33, 1.3], [36, 38, 2.4], [41, 35, 1.1], [42, 42, 1.4], [21, 30, 0.8], [30, 22, 0.9], [38, 22, 0.8], [46, 51, 3], [40, 55, 1.8], [51, 56, 2.2], [35, 52, 1.2], [44, 60, 1.5], [28, 57, 1.4], [54, 50, 1], [20, 54, 0.9]]) ? (slump(x, y) < 0.35 ? 0 : 1) : undefined,
+      (dx, y, r) => slump(Math.round(dx) + (r === 'bak' ? 40 : 7), y) < (r === 'bak' ? 0.05 : 0.17) ? (slump(y, dx) < 0.4 ? 0 : 1) : undefined),
+    BILD('Blodet är utsmetat: hen har torkat sig med handen, i breda drag över pannan och kinden och på bröstet.',
+      (x, y) => { const d = [[20, 18, 44, 20], [19, 34, 34, 40], [22, 38, 36, 44], [16, 50, 40, 54], [20, 54, 46, 58], [15, 57, 34, 61]].some(([x0, y0, x1, y1]) => { const t = (x - x0) / (x1 - x0); return t >= 0 && t <= 1 && Math.abs(y - (y0 + (y1 - y0) * t)) < 1.8 * (1 - t * 0.5) && slump(x >> 1, Math.round(y - (y1 - y0) * t)) > t * 0.55; }); return d ? ((x + y) % 4 ? 1 : 0) : undefined; },
+      (dx, y, r) => r === 'bak' ? undefined : y === 3 && dx < 2 ? 1 : (y === 6 && dx > -3 && dx < 1) ? 1 : (y === 11 || y === 13) && Math.abs(dx) < 4 - (y - 11) ? 1 : y === 15 && dx > -2 && dx < 3 ? 0 : undefined),
+  ] });
+  VAL.push({ id: 'f13_blod3', namn: 'Genomblodig (steg 3)', typ: 'tre', slag: ['manniska'], vad: 'Steg B.67: den som blött mycket är genomblodig, så att det syns på avstånd. I spelet är det nu fläckar över nästan hela figuren (platshållare). Porträttet till vänster, figuren på kartan till höger: framifrån, från sidan och bakifrån.', versioner: [
+    BILD('Halva ansiktet och hela bröstet är täckt, och blodet rinner i trådar nedför kläderna.',
+      (x, y) => { const kant = 31 + Math.sin(y * 0.6) * 1.6; if (y < 47) return x < kant ? (slump(x >> 1, y >> 2) < 0.25 ? 0 : slump(x, y) < 0.07 ? 2 : 1) : undefined; const djup = 55 + slump(x >> 1, 3) * 9; return y < djup && x > 12 && x < 52 ? (slump(x >> 1, y >> 2) < 0.35 ? 0 : 1) : undefined; },
+      (dx, y, r, h) => r === 'bak' ? (dx < 0 && y < 6 || y > 7 && y < 11 + slump(dx, 1) * 4 ? 1 : undefined) : (y < 8 ? dx < 0.5 : y < 12 + slump(Math.round(dx), 2) * (h - 14)) ? (slump(dx, y) < 0.3 ? 0 : 1) : undefined),
+    BILD('Dränkt: hela hen är röd, håret, ansiktet och kläderna, och bara ögonen är fria. Blanka ljusa strimmor där det är vått.',
+      (x, y) => slump(x, y) < 0.05 && y > 14 ? undefined : (x + (y >> 1)) % 9 === 0 && slump(x >> 1, y >> 2) < 0.55 ? 2 : slump(x >> 1, y >> 1) < 0.3 ? 0 : 1,
+      (dx, y) => slump(Math.round(dx), y) < 0.08 ? undefined : slump(Math.round(dx) + 3, y) < 0.14 ? 2 : slump(y, Math.round(dx)) < 0.32 ? 0 : 1),
+    BILD('Levrat: tjocka mörka kakor med nästan svart kant i håret, på kinden och över bröstet, och huden lyser fram mellan dem.',
+      (x, y) => { let d = 9; for (const [cx, cy, r] of [[22, 13, 7], [38, 11, 6], [20, 36, 7], [40, 40, 5], [33, 23, 3], [22, 53, 9], [41, 54, 9], [31, 60, 6], [53, 59, 5]]) d = Math.min(d, Math.hypot(x - cx, y - cy) - r - (slump(x >> 1, y >> 1) - 0.5) * 2); return d < -1.4 ? (slump(x >> 1, y) < 0.25 ? 2 : 1) : d < 0.4 ? 0 : undefined; },
+      (dx, y, r) => { const v = slump(Math.floor((dx + 20) / 3), Math.floor((y + (r === 'bak' ? 1 : 0)) / 3)); return v < 0.62 ? ((Math.round(dx + 20) % 3 === 0 || y % 3 === 0) ? 0 : 1) : undefined; }),
+  ] });
 })();

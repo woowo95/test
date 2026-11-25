@@ -13,6 +13,7 @@ import { balans } from './balans';
 
 export const BLODET = balans('blod', {
   max: 300, // så många fläckar finns som mest; de äldsta tas bort först
+  minStank: 0.3, // så mycket stänk ger varje träff som öppnar ett sår, hur litet det än är (steg B.67); ett djupare sår ger mer
   dropparVar: 20, // den som blöder tappar droppar var så här många minuter i spelet ...
   dropparMin: 0.02, // ... om hen blöder mer än så här i timmen (1 = allt blod) ...
   dropparPer: 3, dropparMax: 1.5, // ... så här mycket (droppar) för varje blod i timmen, och som mest så här mycket
@@ -30,12 +31,12 @@ export const BLODFORM = {
 export type BlodForm = keyof typeof BLODFORM;
 const FORM: Record<string, FormDef> = BLODFORM;
 
-interface SortDef { namn: string; delar: [BlodForm, number][]; sprid: number }
+interface SortDef { namn: string; delar: [BlodForm, number][]; sprid: number; minst?: number }
 // delar = formerna och hur mycket av varje för en enhet (ett slaktat djur, en skada av grad 1, en timmes blödning);
-// sprid = hur långt från platsen (rutor) de hamnar
+// sprid = hur långt från platsen (rutor) de hamnar; minst = så mycket blir det alltid (läggs till mängden)
 export const BLOD = {
   slakt: { namn: 'Slakt', delar: [['pol', 0.7], ['stank', 0.8]], sprid: 0.3 },
-  skada: { namn: 'Skada', delar: [['stank', 1], ['pol', 0.3]], sprid: 0.2 },
+  skada: { namn: 'Skada', delar: [['stank', 1], ['pol', 0.3]], sprid: 0.2, minst: BLODET.minStank },
   blodning: { namn: 'Blödning', delar: [['droppar', 1]], sprid: 0.15 },
   forblodning: { namn: 'Förblödning', delar: [['pol', 2.5], ['stank', 0.5]], sprid: 0.1 },
   jakt: { namn: 'Jakt', delar: [['stank', 0.6], ['spar', 0.6]], sprid: 0.2 },
@@ -80,9 +81,11 @@ export function blodas(s: State, x: number, y: number, sort: BlodSort, mangd: nu
   if (!(mangd > 0) || !Number.isFinite(x) || !Number.isFinite(y)) return;
   const def: SortDef = BLOD[sort];
   s.blod = blodOf(s).filter(b => blodNu(b, s.now) > 0);
+  mangd += def.minst ?? 0;
   def.delar.forEach(([f, per], i) => {
     const h1 = hash(x * 13 + i, y * 17 + s.now / MIN), h2 = hash(y * 11 + i, x * 19 + s.now / MIN);
-    const v = h1 * Math.PI * 2, r = def.sprid * h2;
+    // stänk med en riktning hamnar åt det hållet (steg B.67), annat runt om
+    const v = f === 'stank' && riktning !== undefined ? riktning : h1 * Math.PI * 2, r = def.sprid * h2;
     const a = f === 'stank' || f === 'spar' ? riktning ?? hash(x + i, y + s.now / HOUR) * Math.PI * 2 : undefined;
     lagg(s, f, x + Math.cos(v) * r, y + Math.sin(v) * r, mangd * per, a);
   });

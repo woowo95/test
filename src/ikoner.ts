@@ -61,6 +61,7 @@ export const PAL: Record<string, Record<string, string>> = {
   // rollernas symboler vid namnet på kartan (steg 12.1.157, platshållare)
   roll_ledare: { o: '#24201d', a: '#d8b25f' },
   roll_prast: { o: '#24201d', a: '#d8b25f' },
+  roll_rovare: { o: '#24201d', r: '#a14808', b: '#dad0bb' }, // hotmärket (steg B.62, platshållare)
   // grödorna från fälten och grodden på fältet (steg 2.10.3, platshållare i bildstilens palett)
   grodd: { G: '#647025', L: '#898b4c', g: '#4b4f00' },
   grodd_liten: { G: '#647025', L: '#898b4c', g: '#4b4f00', j: '#7d5b40' },
@@ -1173,6 +1174,16 @@ export const PIX: Record<string, string[]> = {
     '..oaao..',
     '..oaao..',
     '..o..o..',
+  ],
+  roll_rovare: [
+    '...oo...',
+    '..orro..',
+    '..obbo..',
+    '.orbbro.',
+    '.orbbro.',
+    'orrrrrro',
+    'orrbbrro',
+    'oooooooo',
   ],
   roll_prast: [
     '..oooo..',

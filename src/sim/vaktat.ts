@@ -17,6 +17,7 @@ import { radNr, VarldRad } from './radtal';
 import { radDoda } from './rad';
 import { resenarer, Sallskap, UPPDRAGFRAM } from './resa';
 import { isFood, SAKER } from './saker';
+import { arVapen } from './lagervapen';
 import { clamp, rnd } from './slump';
 import { avslutaUppdrag, fyndId, larUppdrag, uppdragen } from './uppdrag';
 import { grundvarde } from './varde';
@@ -38,8 +39,9 @@ export const VAKTAT = balans('vaktat', {
 
 export const behalls = (k: string) => k !== 'silver' && !isFood(k) && !!SAKER[k] && !SAKER[k]!.levande && grundvarde(k) >= VAKTAT.minVarde;
 radTarKrok.behall = (r, k, n) => {
-  if (r.sort !== 'rovarlager' || !behalls(k)) return false;
-  (r.stulet ??= {})[k] = (r.stulet[k] ?? 0) + Math.floor(n);
+  if (r.sort !== 'rovarlager' || !behalls(k) && !arVapen(k)) return false;
+  const f = behalls(k) ? (r.stulet ??= {}) : (r.vapen ??= {}); // vapnen och skydden är lägrets egna, också de billiga (steg B.70)
+  f[k] = (f[k] ?? 0) + Math.floor(n);
   return true;
 };
 export const stulVarde = (r: VarldRad) => Object.entries(r.stulet ?? {}).reduce((a, [k, n]) => a + n * grundvarde(k), 0);

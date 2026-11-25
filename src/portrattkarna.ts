@@ -292,7 +292,17 @@ export const KARNA: any = (() => {
     },
     // skallen: överdelen av huvudet ner till ögonlinjen, densamma i alla mallar
     skalle(dk, G) { const inne = G.huvud('rund'); fyll(dk, (x, y) => y + 0.5 <= G.ey + 0.5 && inne(x, y), 'hud', [12, 6, 52, G.ey], { mitt: G.skugga }); },
-    blod(dk, G) {
+    // blodet i tre steg (steg B.67, platshållare): 1 strimman, 2 på ansiktet och kläderna, 3 genomblodig
+    blod(dk, G, niva) {
+      if (niva >= 2) {
+        const k = kroppInne(G), h = G.huvud('rund'), s0 = G.K.axel0, flack = niva >= 3 ? 0.62 : 0.24;
+        const brus = (x, y) => { const v = Math.sin((x >> 1) * 12.9898 + (y >> 1) * 78.233) * 43758.5453; return v - Math.floor(v); };
+        for (let y = 12; y < 64; y++) for (let x = 8; x < 56; x++) {
+          if (y >= s0 ? !k(x, y) : !h(x, y)) continue;
+          const v = brus(x, y) + (y >= s0 ? 0 : x < 30 ? -0.1 : 0.12);
+          if (v < flack) dk.satt(x, y, v < flack * 0.4 ? 'rost0' : 'rost1');
+        }
+      }
       punkter(dk, [[24, 17], [24, 18], [23, 19], [23, 20], [23, 21], [23, 22]], 'rost1'); dk.satt(22, 23, 'rost0');
       const nb = G.nasa[1] + 7; dk.satt(31, nb, 'rost1'); dk.satt(31, nb + 1, 'rost0'); dk.satt(36, G.mun[1] + 1, 'rost1');
     },
@@ -351,7 +361,7 @@ export const KARNA: any = (() => {
     for (const t of ['tatPanna', 'tatKind', 'tatHals']) if (D(t)) lagg('tatuering', dk => delen(dk, G, D(t), p, t)); // tatueringarna (steg 10.7.5)
     if (D('arr')) lagg('arr', dk => delen(dk, G, D('arr'), p, 'arr'));
     if (D('blamarke')) lagg('blamarke', dk => delen(dk, G, D('blamarke'), p, 'blamarke'));
-    if (p.blod) lagg('blod', dk => RITA.blod(dk, G));
+    if (p.blod) lagg('blod', dk => RITA.blod(dk, G, +p.blod || 1));
     lagg('ogon', dk => delen(dk, G, D('oga'), p, 'oga'), { maskbar: true });
     lagg('ogonbryn', dk => delen(dk, G, D('ogonbryn'), p, 'ogonbryn'));
     lagg('nasa', dk => delen(dk, G, D('nasa'), p, 'nasa'));

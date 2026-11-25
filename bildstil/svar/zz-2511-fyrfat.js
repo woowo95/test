@@ -1,0 +1,18 @@
+// Björns svar 2026-11-25: fyrfatet (bild_fyrfat). Björn valde v1 och skrev "visa den nu med animerad eld". Fatet utan fötter
+// (hans kommentar förra gången: "ta bort fötterna på detta fatet. Elden ska vara liknande som den ser ut i lägerelden"), och
+// ovanpå lägereldens fladdrande lågor (eld_stort i src/animbilder.ts, som anim.js ger spelet), fyra bilder i spelets takt.
+// Bara lågorna tas med, inte vedträna och stenarna under dem; vid ja byggs lågorna in på fyrfatet i spelet.
+(() => {
+  BESLUT.bild_fyrfat = { val: 1, steg: '13.10.1', text: 'Fyrfatet utan fötter; elden prövas i kortet Fyrfatet med elden.' };
+  const FAT = ["...rrrrrrrrrr...",".rtuuttttttsssr.","rtulmnmlmlmlmssr","rtnmlmknmlmklmsr","rtmnlkmlmnlmklsr","rtlmnmlklmlmlksr","rtmlmklmnlkmlmsr","rttlmlklmlmlmssr",".rtttttttttsssr.",".rssssssssssssr.","..rssssssssssr..","...rrrrrrrrrr..."], PAL = {"E":"#3f2415","F":"#5e3c24","G":"#7d5b40","H":"#987e62","K":"#b2921b","L":"#d8b25f","l":"#2f261d","m":"#372f25","s":"#742a01","t":"#a14808","u":"#bd753e","k":"#24201d","o":"#7e7362","p":"#a0947d","q":"#bdb39b","r":"#521100","n":"#474138"};
+  const ELD = [{"rader":["....................","....................","....................","....................","..........a.........","..........a.........",".........ab.........",".........bba........",".........bcb........",".......dbccbbd......","......debfffbeg.....",".....ehbcfffcbid...."],"pal":{"a":"#a14808","b":"#b2921b","c":"#d8b25f","d":"#372f25","e":"#2f261d","f":"#dad0bb","g":"#474138","h":"#5e3c24","i":"#7d5b40","j":"#3f2415"}},{"rader":["....................","....................","....................","....................","...........a........",".........a.a........",".........b.b........","........abab........","........bbbc........",".......dbcbc.d......","......dbceeebfg.....",".....fhcceeecbid...."],"pal":{"a":"#a14808","b":"#b2921b","c":"#d8b25f","d":"#372f25","e":"#dad0bb","f":"#2f261d","g":"#474138","h":"#5e3c24","i":"#7d5b40","j":"#3f2415"}},{"rader":["....................","....................","....................",".........a..........",".........a..........",".........b..........",".........ba.........",".........bba........","........acbba.......",".......dbccbbd......","......decfffcbg.....",".....ehbcfffccid...."],"pal":{"a":"#a14808","b":"#b2921b","c":"#d8b25f","d":"#372f25","e":"#2f261d","f":"#dad0bb","g":"#474138","h":"#5e3c24","i":"#7d5b40","j":"#3f2415"}},{"rader":["....................","....................","....................","..........a.........","..........a.........","..........b.........",".........ab.........",".........bb.a.......",".........bcab.......",".......b.ccbbd......","......dbbeeecfg.....",".....fhcceeecbid...."],"pal":{"a":"#a14808","b":"#b2921b","c":"#d8b25f","d":"#372f25","e":"#dad0bb","f":"#2f261d","g":"#474138","h":"#5e3c24","i":"#7d5b40","j":"#3f2415"}}];
+  const LAGA = new Set(['#a14808', '#b2921b', '#d8b25f', '#dad0bb', '#2f261d', '#372f25', '#474138']);
+  const W = 24, H = 22, X0 = 4, Y0 = 8;
+  const rita = (B, P, ruta = 0) => {
+    FAT.forEach((r, y) => [...r].forEach((c, x) => { if (PAL[c]) B.satt(X0 + x, Y0 + y, P.av(PAL[c])); }));
+    const e = ELD[ruta % 4];
+    e.rader.forEach((r, y) => [...r].forEach((c, x) => { const h = e.pal[c]; if (h && LAGA.has(h)) B.satt(X0 - 2 + x, Y0 - 6 + y, P.av(h)); }));
+  };
+  VAL.push({ id: 'f13_fyrfat_eld', namn: 'Fyrfatet med elden', typ: 'janej', slag: [], vad: 'Steg 13.7.6: fyrfatet (v1, utan fötter) när det brinner, med samma fladdrande lågor som lägerelden i spelet. Fyra bilder i spelets takt.',
+    versioner: [{ text: 'Fyrfatet v1 med lägereldens lågor i kolet, animerade.', w: W, h: H, rutor: 4, takt: 230, rita }] });
+})();

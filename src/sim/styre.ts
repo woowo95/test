@@ -22,7 +22,9 @@ import { sakNamn } from './saker';
 import { ownMove, ownsAmount } from './lager';
 import { rnd } from './slump';
 import { UPPV, upplev, barnTill } from './uppvaxt';
-import { ambeteKrok } from './flyttskal';
+import { foodOf } from './lager';
+import { radKrok } from './radtal';
+import { ambeteKrok, sattFlyttSkal } from './flyttskal';
 import { kronika } from './historik';
 import { Sed, drarSed, influence } from './seder';
 import { knows } from './teknik';
@@ -468,7 +470,14 @@ function seOverTitel(s: State, l: Person) {
 export function utvisa(s: State, q: Person, av: Person, varfor: string) {
   kronikaBer(s, 'k_utvisad', q.id, { ...personFalt(q), ledare: av.name, varfor }); count(s, 'utvisad'); notis(s, 'utflytt', `${q.name} blev utvisad.`, [q.id]);
   if (s.styre?.ledare === q.id) slutarStyre(s, 'drevs ut');
+  drivUt(s, q);
+}
+// den utvisade lämnar byn och söker sig till en by eller ett rövarläger, eller slår ett eget (steg B.68)
+function drivUt(s: State, q: Person) {
+  sattFlyttSkal(s, q);
+  const mat = foodOf(s);
   leave(s, q);
+  radKrok.utflytt(s, 1, { delar: { hunger: 0, fredlos: true }, mat: mat - foodOf(s), med: [q] });
 }
 export function slutarStyre(s: State, varfor: string) {
   const st = s.styre!, h = st.historia[st.historia.length - 1], l = byId(s, st.ledare!);
@@ -579,7 +588,7 @@ function doma(s: State, l: Person) {
     if (steg === 1) q.skam = now + STR.skamDygn * DAY;
     if (steg === 9) { const h = fangelseLedigt(s); if (h) { const dygn = fangelseDygn(vikt); r.dygn = dygn; satt(s, q, h, `Dömd för att ${hon(q)} ${brottText(b)}`, now + dygn * DAY, true); q.fange!.av = l.id; } }
     if (steg === 2) { const dod = skada(s, q, 'bal', 'blamarke', STR.slagG, 'drap', `när ${l.name} straffade hen`); if (dod) { r.dog = true; die(s, q, dod); continue; } }
-    if (steg === 3) { kronikaBer(s, 'k_utvisad', q.id, { ...personFalt(q), ledare: l.name, varfor: `för att ${hon(q)} ${brottText(b)}` }); count(s, 'utvisad'); notis(s, 'utflytt', `${q.name} blev utvisad ur byn av ${l.name}.`, [q.id, l.id]); leave(s, q); }
+    if (steg === 3) { kronikaBer(s, 'k_utvisad', q.id, { ...personFalt(q), ledare: l.name, varfor: `för att ${hon(q)} ${brottText(b)}` }); count(s, 'utvisad'); notis(s, 'utflytt', `${q.name} blev utvisad ur byn av ${l.name}.`, [q.id, l.id]); drivUt(s, q); }
     if (orattvist) {
       missnojeStrafft(s, q, familj);
       count(s, 'straff_orattvist');

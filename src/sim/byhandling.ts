@@ -56,6 +56,7 @@ export const BYHANDLING = balans('byhandling', {
   plundraRel: 0, // fejden: byn vill plundra den den ser lägre på än minus så mycket ...
   plundraFull: 50, // ... och vill det fullt ut vid minus så mycket mer
   plundraVan: 20, // svälten: en by som saknar mat plundrar en granne den inte ser så här väl på
+  plundraRik: 3, // avunden (steg B.66): en granne som är så många gånger rikare per person än byn själv, utöver lika rik, vill byn plundra fullt ut
   dodVarde: 20, // en död egen väger så mycket (i grundvärde) mot bytet
   plundraKostnad: 0.2, // det anfallet kostar i poäng (tiden, risken för hämnd)
   // kriget (steg 11.6.22)
@@ -98,7 +99,7 @@ export const BYHANDLINGAR = {
     gor: c => skickaBud(c, beskedTon(c).ton),
   },
   // plundringen (steg 11.6.16): en flock ur byns styrka anfaller en granne den ser ner på (en fejd), eller som den inte är vän med
-  // när den själv saknar mat (svälten), mer av en aggressiv ledare och en krigisk tro, när bytet väger mer än de döda man väntar sig; anfallet avgörs när flocken kommer fram (radanfall.ts)
+  // när den själv saknar mat (svälten) eller när grannen är mycket rikare per person (avunden, steg B.66), mer av en aggressiv ledare och en krigisk tro, när bytet väger mer än de döda man väntar sig; anfallet avgörs när flocken kommer fram (radanfall.ts)
   plundra: {
     namn: 'Plundring',
     poang: c => {
@@ -106,7 +107,9 @@ export const BYHANDLINGAR = {
       if (!n || restid(c.vl, c.r, c.mot) === undefined) return -1;
       const fejd = Math.max(BYLAGEN[byLage(c.vl, c.r.nr, c.mot.nr)].fejd, clamp((-c.rel - BYHANDLING.plundraRel) / BYHANDLING.plundraFull, 0, 1)); // i krig vill byn plundra fullt ut
       const svalt = c.rel < BYHANDLING.plundraVan ? clamp(1 - c.r.tal.mat / Math.max(1, radVill(c.r, 'mat', rikMal(c.r))), 0, 1) : 0;
-      const vilja = Math.max(fejd, svalt) * (0.5 + ledDrag(c, 'aggression')) * (0.5 + c.krig);
+      const perP = (q: VarldRad) => q.tal.rikedom / Math.max(1, q.tal.folk);
+      const avund = c.rel < BYHANDLING.plundraVan ? clamp((perP(c.mot) / Math.max(1, perP(c.r)) - 1) / BYHANDLING.plundraRik, 0, 1) : 0; // rikedomen lockar också utan fejd (steg B.66), samma mått på båda sidor
+      const vilja = Math.max(fejd, svalt, avund) * (0.5 + ledDrag(c, 'aggression')) * (0.5 + c.krig);
       const p = vinstChans(c.r, c.mot, n), byte = lockVarde(c.mot, n); // det som finns över bärbördan lockar ändå (steg 12.1.21)
       const doda = n * (p * BYANFALL.dodVinnare + (1 - p) * BYANFALL.dod);
       return vilja * (p * byte - doda * BYHANDLING.dodVarde) / BYHANDLING.skala - BYHANDLING.plundraKostnad;
@@ -486,7 +489,7 @@ function anfallFram(s: State, vl: Varlden, f: RadFard, r: VarldRad, mot: VarldRa
 // flocken kommer till huvudbyn (steg 11.6.20): rövarna går in från kanten mot byn som skickade dem, så många som flocken är,
 // och skälet kommer ur klanens syn på huvudbyn (rader.ts). Färden väntar tills flocken lämnat kartan (flockKrok.slut)
 function huvudAnfall(s: State, f: RadFard, r: VarldRad) {
-  const fl = radKommer(s, r.syn, f.anfall!, undefined, Array.from({ length: f.anfall! }, (_, i) => fardPerson(s.varld!, f, i)));
+  const fl = radKommer(s, r.syn, f.anfall!, undefined, Array.from({ length: f.anfall! }, (_, i) => fardPerson(s.varld!, f, i)), r);
   fl.fard = f.id;
   count(s, 'varldsanfall');
 }

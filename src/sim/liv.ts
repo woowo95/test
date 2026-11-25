@@ -15,6 +15,7 @@ import { Act, DAY, HOUR_S, MIN, Person, SEC, State, T, W } from './typer';
 import { vattenNu } from './sjo';
 import { tileOf } from './mark';
 import { foodDays } from './ekonomi';
+import { foodOf } from './lager';
 import { ageIndex, foreIstiden, kallTid, kalender } from './tid';
 import { amountOf, avbryt, put, releaseOwner } from './lager';
 import { inherit, packUp } from './arv';
@@ -24,7 +25,7 @@ import { rykteDod, startSmak, handelse } from './rykten';
 import { tecken, GudOmr, gudHandelse } from './religion';
 import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
 import { KLAN, klanById, klanerOf, narhet, type Klan } from './klaner';
-import { radKrok } from './radtal';
+import { radKrok, type FlyttDelar } from './radtal';
 import { BYREL, byHandelse, gavaRel, klanHandelse } from './byrel';
 import { kantMot, utbrytning } from './grannbyar';
 import { handlarenDog, prisIPrat } from './handel';
@@ -256,7 +257,7 @@ export function regulate(s: State, dtSec: number) {
   s.matSnitt = s.matSnitt === undefined ? fd : s.matSnitt + (fd - s.matSnitt) * Math.min(1, dtSec * SEC / (LIV.matSnittDygn * DAY));
   if (rnd(s, 'flytt') < dtSec / HOUR_S) { // humöret räknas om ungefär en gång i timmen
     const d = { ...flyttDelar(pop, avgMood(s, LIV.nojd)), hunger: hungerFlytt(s, pop) }, rate = d.trang + d.missnoje + d.hunger;
-    if (chance(s, rate / 86400, HOUR_S, 'flytt')) emigrate(s, (Object.keys(d) as FlyttSkal[]).reduce((m, k) => d[k] > d[m] ? k : m)); // texten efter den största orsaken (steg 12.1.65)
+    if (chance(s, rate / 86400, HOUR_S, 'flytt')) emigrate(s, (Object.keys(d) as FlyttSkal[]).reduce((m, k) => d[k] > d[m] ? k : m), { hunger: rate > 0 ? d.hunger / rate : 0, missnoje: rate > 0 ? d.missnoje / rate : 0 }); // texten efter den största orsaken (steg 12.1.65)
   }
   if (chance(s, immigrationRate(pop) * (LIV.nybyggareMatMin + LIV.nybyggareMat * matGott(s)) / 86400, dtSec, 'flytt')) immigrate(s, false);
   // de som flyttat hit från en by i världen kommer som främlingar (flytten, byflytt.ts, steg 11.3.5)
@@ -455,18 +456,19 @@ function utflyttade(s: State, med: Person[]) {
   for (const q of living(s)) for (const g of med) { const r = s.rels[relKey(q.id, g.id)]; if (r && r.op > REL.saknar) { tanke(q, 'saknarFlytt', s.now, { namn: g.name, v: LIV.saknarFlytt, tid: LIV.saknarFlyttDygn * DAY }); break; } }
 }
 // någon lämnar byn (B.42): den som går väljs efter de egna skälen (flyttVikt), och en partner och barnen följer med
-function emigrate(s: State, skal: FlyttSkal) {
+function emigrate(s: State, skal: FlyttSkal, delar: FlyttDelar) {
   const now = s.now, folk = living(s), barn = (...f: Person[]) => folk.filter(c => f.some(q => isParent(q, c)) && ageOf(c, now) < ALDER.vuxen);
   const cands = folk.filter(p => p.partner !== undefined ? byId(s, p.partner) && ageOf(p, now) > LIV.parFran && ageOf(p, now) < LIV.parTill : ageOf(p, now) >= LIV.ensamFran && ageOf(p, now) < LIV.ensamTill);
   if (!cands.length) return;
   const a = pickViktat(s, cands, cands.map(p => flyttVikt(s, p, folk)), 'flytt'), b = byId(s, a.partner);
   const vuxna = b ? [a, b] : [a], med = [...vuxna, ...barn(...vuxna)];
   for (const p of vuxna) sattFlyttSkal(s, p, skal);
+  const mat = foodOf(s);
   leave(s, ...med);
   const ny = b && utbrytning(s, med, folk.length); // ur en mycket stor by blir de en ny by i världen (steg 4.4.4.1, grannbyar.ts)
   if (!ny) flyttRad(s, med, vuxna.length, b ? 'för att grunda en egen boplats' : 'för att söka lyckan på annat håll');
   utflyttade(s, med);
-  if (!ny) radKrok.utflytt(s, med.length); // annars går de till en by i världen (byflytt.ts, steg 11.3.5)
+  if (!ny) radKrok.utflytt(s, med.length, { delar, mat: mat - foodOf(s), med }); // annars går de till en by i världen (byflytt.ts, steg 11.3.5)
 }
 
 // sorgen i stadier (steg 9.2.33): q förlorade p. Först förlusten, och sorgTimme byter till sorgen och saknaden

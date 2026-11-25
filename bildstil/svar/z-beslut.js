@@ -48,7 +48,7 @@
   const S10 = (val, text) => ({ val, steg: '11.14.1', text: text ? text + ' Byggs in i steg 11.14.1.' : undefined, stack: true });
   Object.assign(BESLUT, {
     f9_naverask: S10(3),
-    f9_spjala: S10(2),
+    f9_spjala: { ...S10(2), stack: false }, // spjälan görs vid bädden av två grenar och ligger aldrig i förrådet: ingen stack
     f9_nat: S10(3),
     f9_braxen: S10(1),
     f9_sik: S10(1),

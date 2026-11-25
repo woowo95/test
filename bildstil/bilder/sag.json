@@ -11,8 +11,8 @@
   "EH..GESQQ.Q...",
   ".EEEEEQ.Q....."
  ],
- "ritad": 2,
- "av": "API:t (claude-opus-5-5), tre idéer",
+ "ritad": 3,
+ "av": "för hand (programmeringschatten), API-krediterna slut",
  "pal": {
   "E": "#3f2415",
   "F": "#5e3c24",
@@ -25,70 +25,44 @@
  },
  "versioner": [
   {
-   "ide": "Rak bred bladsåg: ett rektangulärt järnblad, ungefär 9 punkter långt och 3 brett, ligger snett från nedre vänstra till övre högra hörnet, med rak rygg och spetsen tvärt avskuren uppe till höger. Bladet har skiffer2 och skiffer3 i korn med en skiffer3-glans på ryggen nära handtaget, kontur i skiffer0, och längs underkanten en sågtandad rad där skiffer1 och skiffer0 växlar punkt för punkt. Handtaget i nedre vänstra änden är en rak, rund trästav på 4 punkter i jord2 och jord3 med kontur i jord0 och en jord1-ring där bladet går in.",
+   "ide": "Ramsåg: en rak ram av trä, två lodräta armar förbundna av en tvärslå i mitten och ett vridet snöre överst, och ett rakt järnblad med små tänder spänt längs nederkanten mellan armarna.",
    "rader": [
-    "..........QQQQ",
-    "........QQTTSQ",
-    "......QQTTSTSQ",
-    ".....QTSSTSSRQ",
-    ".EEEFTSTSSRQ..",
-    "EHHGFSSRQ.....",
-    "EEEEEQRQ......"
+    ".EE........EE.",
+    ".EGpqpqpqpqGE.",
+    ".EG........FE.",
+    ".EGEEEEEEEEFE.",
+    ".EG........FE.",
+    "QTTTTTTTTTTTTQ",
+    ".QRQRQRQRQRQQ."
    ],
-   "om": "Rak bred bladsåg, 14×7 punkter, som stiger snett från nedre vänstra till övre högra hörnet. Järnbladet är 9 punkter långt och 3 brett. Ryggen är rak och har en skiffer0-kontur. Spetsen är tvärt avskuren uppe till höger. Ytan har korn i skiffer2 och skiffer3, med en glans i skiffer3 på ryggen närmast handtaget. Längs underkanten går en tandrad där skiffer1 och skiffer0 växlar punkt för punkt. Handtaget i nedre vänstra änden är en rak, rund trästav på 4 punkter i jord3 och jord2 med kontur i jord0. Där bladet går in sitter en ring i jord1. Granskningen: Det rättade: Bladet var för smalt och spetsigt och läste som en kniv eller ett svärd på gräset. Nu är det ett brett parallellogram, 3–4 punkter tjockt, som idén säger. Ryggen är rak i skiffer0, och spetsen är tvärt avskuren med en lodrät kant uppe till höger. Längs underkanten går en trappstegad tandrad där skiffer1 och skiffer0 växlar punkt för punkt, så att det syns att det är en såg. Bladet har korn i skiffer2 och skiffer3, med glansen på ryggen nära handtaget. Handtaget är en rak trästav på 4 punkter i jord2 och jord3 med kontur i jord0 och en jord1-ring där bladet går in. Det oförändrade: Sågen ligger fortfarande snett från nedre vänstra till övre högra hörnet och håller sig inom 14 × 7 punkter. Den ljusa kanten uppe till vänster följer ljuset, och den grå järnytan med mörk kontur syns mot gräset."
+   "om": "Ritad för hand: Ramsåg: en rak ram av trä, två lodräta armar förbundna av en tvärslå i mitten och ett vridet snöre överst, och ett rakt järnblad med små tänder spänt längs nederkanten mellan armarna."
   },
   {
-   "ide": "Krökt rygg och pistolgrepp: bladet ligger snett uppåt höger och har en rygg som buktar uppåt som på en kniv men en rak tandad underkant, så att det är brett mitt på och smalnar till en trubbig spets. Järnet är skiffer2 och skiffer3 i korn med kontur i skiffer0, och tänderna är en växlande rad av skiffer1 och skiffer0. Handtaget i nedre vänstra änden är ett slutet grepp av trä, en tjock ögla i jord2 och jord3 med kontur i jord0, och i mitten ett hål på 1–2 punkter som är genomskinligt.",
+   "ide": "Handsåg: ett kort handtag av trä med ett grepphål till vänster, och ett rakt, jämnbrett järnblad åt höger med tänder längs underkanten. Ryggen är helt rak.",
    "rader": [
-    ".......QQQQQ..",
-    ".EEE.QQTTTSTQQ",
-    "EHHGETTSTSSQRQ",
-    "EH.GESTSSQR...",
-    "EG.FESSQR.....",
-    "EGFFEQR.......",
-    ".EEE.........."
+    "..............",
+    "EEEE..........",
+    "EHGEQQQQQQQQQQ",
+    "E..ETTTTTTTSSQ",
+    "E..ESSSSSSSSRQ",
+    "EHGEQRQRQRQRQ.",
+    "EEEE.........."
    ],
-   "om": "Sågen ligger snett och stiger åt övre högra hörnet. Ryggen buktar uppåt som på en kniv, och underkanten är rak och tandad. Där tänderna växlar mellan skiffer1 och skiffer0. Bladet är brett mitt på och slutar i en trubbig spets uppe till höger. Järnet är skiffer3 och skiffer2 i korn och ljusast mot ryggen, med kontur i skiffer0. Handtaget nere till vänster är en sluten ögla av trä i jord3, jord2 och jord1 med kontur i jord0. Öglan är ljus uppe till vänster och mörk nere till höger, och i mitten finns ett genomskinligt hål på 2 punkter. Bilden är 14 punkter bred och 7 hög. Granskningen: Rättat så att sågen följer idén. Bladet var en smal diagonal remsa utan synliga tänder: underkanten var bara kontur i skiffer0 med lite skiffer1 i oordning. Nu är underkanten en rak trappa från handtaget upp mot spetsen, med tänder som växlar skiffer0 och skiffer1 (en av varje per steg), så att den läses som en såg. Ryggen buktar uppåt mitt på (rad 0) och sjunker mot en trubbig spets i skiffer0 längst till höger. Bladet blir brett på mitten, tre punkter järn plus kanterna, och smalnar mot spetsen. Järnet har korn i skiffer3 och skiffer2, ljusast uppe till vänster och mörkare nedåt höger. Handtaget, den slutna öglan i jord0, jord2 och jord3 med det genomskinliga hålet på två punkter, är oförändrat. Storleken håller sig inom 14 × 7, och sågen ligger snett med konturen ljusare än gräset."
+   "om": "Ritad för hand: Handsåg: ett kort handtag av trä med ett grepphål till vänster, och ett rakt, jämnbrett järnblad åt höger med tänder längs underkanten. Ryggen är helt rak."
   },
   {
-   "ide": "Kilformat blad med öppet D-grepp: bladet är brett och kraftigt vid handtaget, omkring 4 punkter, och smalnar jämnt till en smal spets uppe till höger, så att silhuetten blir en lång triangel. Järnet tonas från skiffer3 längs ryggen till skiffer2 mot tänderna, med kontur i skiffer0 och en tandrad i skiffer1 och skiffer0 längs underkanten. Handtaget nere till vänster är ett öppet D, en träbåge i jord2 och jord3 med kontur i jord0, som är fäst i bladet upptill och nedtill med två nitar i skiffer1.",
+   "ide": "Stocksåg för två: ett långt rakt järnblad med tänder längs underkanten och ett lodrätt handtag av trä i var ände, ett för varje person.",
    "rader": [
-    "..........QQQQ",
-    ".EEEE..QQQTTSQ",
-    "EHHHGQQTTTSSR.",
-    "EHE..RTTSSRQ..",
-    "EGE..STSSQ....",
-    "EGGGGRSQR.....",
-    ".EEEEQQ......."
+    ".E..........E.",
+    "EHE........EHE",
+    "EGE........EGE",
+    "EGQQQQQQQQQQFE",
+    "EFTTTSTTSTTSFE",
+    "EESSSRSSRSSREE",
+    "..QRQRQRQRQR.."
    ],
-   "om": "Kilformat blad med öppet D-grepp: bladet är omkring 4 punkter brett vid handtaget och smalnar till en spets uppe till höger. Ryggen är i skiffer3 och tonas till skiffer2 mot tänderna, med kontur i skiffer0. Längs underkanten växlar tänderna mellan skiffer1 och skiffer0. Handtaget nere till vänster är en öppen träbåge i jord3 och jord2 med kontur i jord0. Bågen är fäst vid bladet upptill och nedtill, och två nitar i skiffer1 sitter i bladets bakände. Granskningen: Ritningen håller reglerna: den är 14 × 7 punkter och lagom stor bredvid kolonisten (14 × 20). Den ligger snett, med ljuset uppifrån vänster: ryggen är i skiffer3 och tonar mot skiffer2 vid tänderna. Den följer idén med ett kilformat blad som smalnar till en spets uppe till höger, en tandrad i skiffer1 och skiffer0 längs underkanten och ett öppet D-grepp i jord2 och jord3 med kontur i jord0. Konturen gör att den syns på gräset. Jag rättade en sak: punkten under den nedre niten (rad 6, kolumn 5) var skiffer1 och blev skiffer0. Nu är bladets nederkant en sammanhängande kontur, och den nedre niten speglar den övre, som har skiffer0 ovanför sig."
-  },
-  {
-   "ide": "Kort bred såg med tvärslå: bladet är kort och nästan fyrkantigt, omkring 7 punkter långt och 4 brett, med rundad yttre ände uppe till höger, i skiffer2 och skiffer3 med kontur i skiffer0 och fina tänder i skiffer1 och skiffer0 längs underkanten. I nedre vänstra änden sitter ett kort skaft som slutar i en tvärslå av trä, ett T-grepp som ligger på tvären mot bladet, i jord2 och jord3 med kontur i jord0. Silhuetten blir en tydlig hammarlik form med det tunga greppet nere och det breda bladet uppe.",
-   "rader": [
-    ".........QQQ..",
-    ".EE....QQTTTQ.",
-    "EHGE.QQTTSSSSQ",
-    "EHFEEQTSSSSSRQ",
-    "EGFGFQSSSSRRQ.",
-    "EGFEEQRQRQRQ..",
-    ".EE..........."
-   ],
-   "om": "Kort bred såg med T-grepp, 14 × 7 punkter, liggande snett från nedre vänstra till övre högra hörnet. Bladet är brett och nästan fyrkantigt, med rundad yttre ände uppe till höger. Det har skiffer3 och skiffer2 med ljuset uppe till vänster, skiffer1 nere till höger och kontur i skiffer0. Tänderna sitter längs underkanten som en rad i skiffer1 och skiffer0 om vartannat. Nere till vänster går ett kort träskaft in i bladet och slutar i en tvärslå som ligger på tvären mot bladet. Trät har jord3 och jord2 med jord1 i skuggan och kontur i jord0. Silhuetten blir hammarlik, med det tunga greppet nere och det breda bladet uppe. Granskningen: Bladet var bra och är oförändrat. Det är kort och brett med rundad yttre ände uppe till höger, ljust (skiffer3) uppe till vänster och mörkare (skiffer1) nere till höger, med kontur i skiffer0 och fina tänder (skiffer1/skiffer0) längs underkanten. Greppet var däremot en otydlig klump: en jord0-prick mitt i ytan (EHEHG) och ett hål i övre konturen (EE.EE), så att tvärslån inte gick att läsa. Jag har ritat om greppet till ett tydligt T. Tvärslån står lodrätt i vänsterkanten (kolumn 0–3, rad 1–6) med jord3/jord2 på den ljusa vänstra sidan och jord1 åt höger. Ett kort skaft (jord2/jord1 mellan jord0-kanter) går från slån in i bladets nedre vänstra hörn. Konturen runt allt trä är jord0 utan mörka fläckar inne i ytan. Storleken är 14 × 7 och fyller rutan. Den ligger snett, som de andra sakerna på marken, och det ljusa bladet och träet i jord3 syns mot gräset."
-  },
-  {
-   "ide": "Knivsåg med hylsa och knopp: ett långt, smalare blad på 2–3 punkter ligger snett och slutar i en lätt nedåtböjd spets uppe till höger, i skiffer2 och skiffer3 med kontur i skiffer0 och en tandrad i skiffer1 och skiffer0 längs underkanten. Där bladet möter handtaget sitter en kort järnhylsa i skiffer1 med en skiffer3-glans. Handtaget nere till vänster är ett avlångt skaft i jord2 och jord3 med kontur i jord0 som slutar i en rund knopp av trä, så att greppet blir tydligt även i liten storlek.",
-   "rader": [
-    "............Q.",
-    "..........QQTQ",
-    "........QQTTSQ",
-    ".EE..QQQTTSSQ.",
-    "EHGEETSTSSQR..",
-    "EGFHGRSSQR....",
-    ".EEEEQQR......"
-   ],
-   "om": "Knivsåg med hylsa och knopp, liggande snett från nedre vänstra till övre högra hörnet, 14×7 punkter. Bladet är smalt och långt i skiffer2 och skiffer3 med kontur i skiffer0, och spetsen uppe till höger böjer lätt nedåt. Tandraden i skiffer1 och skiffer0 löper längs bladets underkant. Hylsan av järn i skiffer1 har en enda glanspunkt i skiffer3. Skaftet i jord2 och jord3 med kontur i jord0 slutar i en rund träknopp nere till vänster, så att greppet syns även i liten storlek. Granskningen: Jag ritade om sågen efter idén. Bladet var för brett och fyllde hela övre högra delen. Nu är det ett smalt band på 2–3 punkter som ligger snett från hylsan upp till höger, med kontur i skiffer0, skiffer3 överst mot ljuset och skiffer2 under. Spetsen böjer sig lätt nedåt. Tandraden går längs hela underkanten, växelvis i skiffer1 och skiffer0. Mellan handtag och blad finns nu en tydlig järnhylsa: en skiffer3-glans över skiffer1, inramad i skiffer0. Bladets första punkt bredvid hylsan är skiffer2, så att hylsan inte flyter ihop med bladet. Handtaget nere till vänster har fått ett avlångt skaft i jord2 och jord3 med kontur i jord0 och en rund knopp i änden. Knoppen är något större än skaftet och har ljuset uppe till vänster, så att greppet syns även i liten storlek. Storleken är kvar: 14 × 7 punkter. Den grå stålen och det ljusa träet syns mot det olivgröna gräset, och sågen är tydligt mindre än kolonisten (14 × 20). Den ligger snett på marken. Det är ingen station, så ingen yta behövs ovanifrån. Någon spegelsymmetri krävs inte för ett verktyg."
+   "om": "Ritad för hand: Stocksåg för två: ett långt rakt järnblad med tänder längs underkanten och ett lodrätt handtag av trä i var ände, ett för varje person."
   }
  ],
- "kommentar": "gör 5 helt nya alternativ utan förlaga"
+ "kommentar": "gör dem rakare; helt nya alternativ utan förlaga"
 }
