@@ -2490,6 +2490,57 @@ SCENARIER.samlad = {
   },
 };
 
+SCENARIER.overmakt = {
+  text: 'Steg B.28: övermakten väger i viljan att möta gänget: en ensam vuxen mot fem rövare gömmer sig eller hjälper, och tre mot två möter dem',
+  kor: () => {
+    const prova = (byn: number, n: number) => {
+      const s = lasBy('test/rovarby.json.gz'); klockan(s, 11); for (const c of SIM.klanerOf(s)) c.inst = -60;
+      const z = SIM.zoneOf(s)!;
+      const de: SIM.Person[] = []; // nya vuxna, utan småbarn och skador
+      while (de.length < byn) { nyInvanare(s, 'm', 25); de.push(s.people[s.people.length - 1]); }
+      const barn = SIM.living(s).filter(p => !p.gast && SIM.ageOf(p, s.now) < 12).slice(0, 1);
+      s.people = s.people.filter(p => de.includes(p) || barn.includes(p) || p.gast);
+      const f = rovarGang(s, n, { x: Math.min(SIM.W - 3, z.x + z.w + 25), y: z.y + z.h / 2 }, { anfaller: true }); f.sedd = s.now; f.anfallT = s.now;
+      const m = SIM.malet(s);
+      for (const p of de) { p.x = m.x + 1; p.y = m.y; p.health = 1; p.blod = 1; p.skador = []; p.task = undefined; p.larmRoll = undefined; p.gavSig = undefined; p.pot.mod = 11; p.larm = { rovare: { t: s.now, vad: 'rovare', storlek: n, led: 0, varnat: 1 } }; }
+      const acts = new Set<string>(), roller = de.map(p => SIM.rollVid(s, p, 'rovare')); let moter = false, strid = false;
+      korTills(s, () => !s.rovare, 300, () => {
+        if (s.rovareFler?.length) { s.rovareFler = undefined; s.rovare = f; }
+        for (const p of de) { if (p.task) acts.add(p.task.act); if (p.task?.act === 'forsvarRovare' && p.task.vantar === false) moter = true; }
+        if (SIM.kartStrider(s).some(q => q.efter?.typ === 'rovare')) strid = true;
+      });
+      return { acts: [...acts], roller, moter, strid, over: SIM.overmakt(s, n, f, de) };
+    };
+    const en = prova(1, 5), tre = prova(3, 2);
+    return [
+      [`den ensamma mot fem (övermakt ${en.over.toFixed(1)}) möter dem inte: ${en.roller.join(', ')}, ${en.acts.join(', ')}`, en.roller[0] !== 'kampe' && !en.moter],
+      [`tre mot två (övermakt ${tre.over.toFixed(1)}) möter dem: ${tre.roller.join(', ')}, ${tre.acts.join(', ')}`, tre.roller.filter(r => r === 'kampe').length >= 2 && (tre.moter || tre.strid)],
+    ];
+  },
+};
+
+SCENARIER.radriktning = {
+  text: 'Steg B.29: raden vänds mot hållet gänget kommer ifrån och står still när rövarna rör sig vid förrådet, och de som går tillsammans räknas som samlade var de än är',
+  kor: () => {
+    const s = lasBy('test/rovarby.json.gz'); klockan(s, 11);
+    const z = SIM.zoneOf(s)!, f = rovarGang(s, 4, { x: Math.min(SIM.W - 3, z.x + z.w + 25), y: z.y + z.h / 2 }, { anfaller: true });
+    const rast = f.rast ?? (f.rast = { x: f.x, y: f.y }), a = SIM.radLinje(s, f), fo = SIM.rovarna(s, f);
+    let flytt = 0, bak = 0;
+    for (let i = 0; i < 16; i++) { // rövarna går runt målet
+      fo.forEach((r, j) => { const v = i * Math.PI / 8 + j; r.x = a.mal.x + Math.cos(v) * (1 + j); r.y = a.mal.y + Math.sin(v) * (1 + j); });
+      f.x = fo[0].x; f.y = fo[0].y;
+      const b = SIM.radLinje(s, f); flytt = Math.max(flytt, Math.hypot(a.mitten.x - b.mitten.x, a.mitten.y - b.mitten.y)); bak = Math.max(bak, Math.hypot(a.vantM.x - b.vantM.x, a.vantM.y - b.vantM.y));
+    }
+    const nara = Math.hypot(a.mitten.x - rast.x, a.mitten.y - rast.y) < Math.hypot(a.mal.x - rast.x, a.mal.y - rast.y);
+    const grupp = [[0, 0], [2, 0], [3, 2], [30, 0]].map(([x, y]) => ({ x: a.mal.x - 25 + x, y: a.mal.y + y }) as SIM.Person), sam = SIM.samladGrupp(grupp);
+    return [
+      ['raden står på den sida av målet som gänget kom ifrån', nara],
+      [`raden står still när rövarna går runt förrådet (${flytt.toFixed(2)} rutor, väntplatsen ${bak.toFixed(2)})`, flytt < 0.1 && bak < 0.1],
+      [`tre som går tillsammans långt från raden är samlade, den fjärde inte (${sam.length})`, sam.length === 3],
+    ];
+  },
+};
+
 SCENARIER.stridlogg = {
   text: 'Steg B.18: en strid där ingen slagit ett slag skrivs inte som en strid i loggen och krönikan, och rövarna har sin titel (Rövaren och namnet) i alla rader om dem',
   kor: () => {
