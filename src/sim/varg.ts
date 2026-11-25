@@ -42,7 +42,7 @@ import { vaderNu } from './vader';
 import { notis } from './notiser';
 import { lamnaFallt, styckaFallt } from './styckning';
 import { tecken } from './religion';
-import { hotKrok, LARMHOT, LARMROLL, rollVid, tryggast, vagMedHot, viljaKrok } from './roller';
+import { hotKrok, LARMHOT, LARMROLL, rollVid, vagMedHot, viljaKrok } from './roller';
 import { glesPlats } from './trangsel';
 
 // ---------- vargen och vakten (steg 3.7.1) ----------
@@ -300,7 +300,9 @@ export const skyddVidElden = (s: State) => { const e = eldPlats(s); return freeN
 // och när rövarna är nära elden den sida av den, eller den plats längre bort, där hotet är mindre (steg B.48)
 const gomdVidElden = (s: State, p: Person) => {
   const e = eldPlats(s), vid = { x: e.x + 0.5, y: e.y + 1.5 }, platser = hotKrok.vag(s, p, vid.x, vid.y) > 0 ? [vid, ...GOMRINGAR.flatMap(r => [0, 1, 2, 3, 4, 5, 6, 7].map(i => freeNear(s, vid.x + Math.cos(i * Math.PI / 4) * r, vid.y + Math.sin(i * Math.PI / 4) * r)))] : [vid];
-  const m = tryggast(s, p, platser)!;
+  // vid elden är man nära de vuxna: en plats längre från elden måste vara mindre hotad för att vara bättre, hur nära den än ligger p
+  const pris = (at: { x: number; y: number }) => Math.hypot(at.x - vid.x, at.y - vid.y) + LARMROLL.hotVikt * hotKrok.vag(s, p, at.x, at.y);
+  const m = platser.length < 2 ? vid : platser.map(at => ({ at, d: pris(at) })).reduce((a, b) => b.d < a.d ? b : a).at;
   return glesPlats(s, p, k => { const v = k * 2.399, r = 0.9 * Math.sqrt(k); return freeNear(s, m.x + Math.cos(v) * r, m.y + Math.sin(v) * r); })!;
 };
 const GOMRINGAR = [4, 9, 15, 22]; // så många rutor från elden den som gömmer sig prövar platserna runt den
@@ -333,7 +335,7 @@ export function gomSig(s: State, p: Person, vad: string, hot: 'rovare' | 'varg',
   // i huset om det är varmare där än vid elden, som sovplatsen (val.ts, plats sang): ett kallt hus skyddar inte mot kylan
   const plats = husPlats(s, p), c = coldOf(temperature(s)), rum = plats && roomAt(s, plats.x, plats.y);
   const eld = gomdVidElden(s, p), hus = plats && (!rum || c === 0 || varmareInne(s, rum, c)) && (hot !== 'rovare' || hotKrok.vag(s, p, plats.x, plats.y) <= hotKrok.vag(s, p, eld.x, eld.y) + HUSTRYGGT) ? plats : undefined;
-  return { act: 'gomma', why: `${vad} är nära, ${hus ? 'gömmer sig i huset' : 'håller sig vid elden nära de vuxna'}`, hot, spot: hus ?? eld, dur };
+  return { act: 'gomma', why: `${vad} är nära, ${hus ? 'gömmer sig i huset' : avst(eld, skyddVidElden(s)) > 6 ? 'håller sig undan' : 'håller sig vid elden nära de vuxna'}`, hot, spot: hus ?? eld, dur };
 }
 // den som hör ropet avbryter det hen gör och söker skydd (inte den som slåss, vårdar, bärs eller håller vakt)
 export function soker(s: State, folk: Person[]) {

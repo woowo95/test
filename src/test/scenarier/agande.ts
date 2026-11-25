@@ -1085,6 +1085,7 @@ SCENARIER.handelsvaror = {
   },
 };
 SCENARIER.handlare = {
+  lang: true,
   text: 'Handlaren (steg 4.4.1.2, handel.ts) kommer bara när en by i världen skickat hen (steg 11.6.8). Handlaren kommer gående från kartans kant, väntar på kvällen (steg 4.5.4.11), breder ut en filt med sina varor nära elden på kvällen och går hem på morgonen. Byborna handlar på kvällen. Varorna ryms i ryggsäcken, den första handlaren står i krönikan, och under istiden kommer ingen. Byn köper det projekten saknar och säljer sedan sitt överflöd i samma besök, men inte det projekten behöver (steg 10.5.17).',
   kor: () => {
     const timmar = (s: State, n: number) => { for (let i = 0; i < n * 3600 / BEAT; i++) step(s, BEAT); };
@@ -2112,7 +2113,8 @@ SCENARIER.rovare = {
     for (const p of vuxna) { Object.assign(p, SIM.freeNear(c, m.x, m.y)); p.task = { act: 'forsvarRovare', phase: 'do', tx: p.x, ty: p.y, until: c.now + HOUR, carry: 0 }; }
     korTills(c, () => !!SIM.flockStrid(c, fc), 1800);
     const gc = SIM.flockStrid(c, fc);
-    const strid = (c.stat?.rovarStrid ?? 0) === 1 && !!gc && /rövare/.test(gc.orsak) && vuxna.every(p => p.task?.act === 'strid');
+    const strid = (c.stat?.rovarStrid ?? 0) === 1 && !!gc && /rövare/.test(gc.orsak) && vuxna.some(p => p.task?.act === 'strid');
+    const bada = new Set<number>(); korTills(c, () => { for (const p of vuxna) if (p.task?.act === 'strid') bada.add(p.id); return bada.size === vuxna.length || !SIM.flockStrid(c, fc); }, 120); // den andra kommer när hen märker striden
     // byn väntar med många fler: rövarna står inte emot, och tar ingenting. De flyr eller faller, och de som flyr lämnar kartan
     const d = cloneState(bas); for (const [x, al] of [['m', 30], ['k', 28], ['m', 34], ['k', 26]] as const) nyInvanare(d, x, al); // åtta vuxna mot två
     rovarGang(d, 2, { x: malet(d).x + 12, y: malet(d).y }, { anfaller: true });
@@ -2131,7 +2133,7 @@ SCENARIER.rovare = {
       ['den som får larmet varnar först ...', varnar],
       ['... och skyddar sig sedan som mot vargar', skydd],
       ['ett tyst anfall plundrar förrådet osett och skrivs i krönikan', tyst],
-      ['de vuxna som står emot slåss med rövarna', strid],
+      ['de vuxna som står emot slåss med rövarna', strid && bada.size === vuxna.length],
       ['står många fler emot flyr eller faller rövarna utan att ha tagit något', vande],
       ['de som flyr lämnar kartan', borta],
       ['direkt efter ett anfall är chansen liten, och den växer med tiden', vila],
@@ -3158,6 +3160,7 @@ SCENARIER.skriftlista = {
 };
 
 SCENARIER.kronikalista = {
+  lang: true,
   text: 'Krönikan och händelserna i en lista (steg 5.4.2 och 10.2.60, ui/flikar/kronika.ts): en rad symboler där en i taget är vald (det viktiga, kategorierna och allt), alltid nyast först under en rubrik per år, och stenen Byns tal alla byns grafer (steg 9.3.2). Man bläddrar år för år. Bara panelen.',
   kor: () => {
     utanWebblasare();
