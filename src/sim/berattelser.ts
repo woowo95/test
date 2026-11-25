@@ -1767,6 +1767,14 @@ const MDEF = {
     { t: 'I snön lämnade {vem} byn {mal}. {skal}', om: f => f.sno === true },
     { t: 'I regnet lämnade {vem} byn {mal}. {skal}', om: f => f.regn === true },
   ],
+  // de som lämnade byn slog läger som rövare (byflytt.ts, B.68): {vem} = de som gick, {lager} = lägrets namn, {skal} = k_flyttSkal
+  k_rovlager: [
+    '{vem} slog läger som rövare: {lager}. {skal}',
+    '{vem} kom aldrig fram till någon by. I {lager} blev det rövare av dem som gått. {skal}',
+    'Vägen slutade i {lager}, där {vem} slog läger och levde av att råna. {skal}',
+    { t: 'Utan by och utan vänner slog {namn} läger som rövare: {lager}. {skal}', om: f => f.fredlos === true },
+    { t: 'Den utvisade byggde sig ett näste, {lager}, och började leva av att råna. {skal}', om: f => f.fredlos === true },
+  ],
   // skälet: {tanke} = det som tyngde hen mest (som det står i humöret), {byn} = byns skäl
   k_flyttSkal: [
     { t: 'Det som tyngde {honom} mest var ”{tanke}”, och {byn}.', om: f => !!f.tanke && !!f.byn },

@@ -3512,3 +3512,32 @@ SCENARIER.blodstrid = {
     ];
   },
 };
+
+SCENARIER.lagerkalla = {
+  text: 'Fler vägar till rövarlägret (steg B.68): ur en huvudby med lågt humör och en utvisad hamnar under tio dygn (tio år i spelet) några av dem som går i ett rövarläger, och krönikan säger varför; samma by nöjd, mätt och utan utvisad skickar ingen dit',
+  env: { BALANS: 'liv.flyttMissnoje=1.5' }, // fler som går under de tio dygnen, så att provet inte avgörs av en enda
+  kor: () => {
+    const prov = (dyster: boolean) => {
+      let gick = 0, till = 0, utv = 0, kron = 0;
+      for (const dag of [5, 10, 15, 20]) {
+        const s = SIM.cloneState(testBy(dag)), g0 = s.stat?.utvandrade ?? 0, vl = s.varld!;
+        const t0 = (s.stat?.lagerAvBybor ?? 0) + (s.stat?.tillLager ?? 0);
+        if (dyster) { const v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen && p.id !== s.styre?.ledare); if (v.length > 2) { SIM.utvisa(s, v[0], v[1], 'för att hen stal'); utv++; } }
+        for (let i = 0; i < 240; i++) {
+          s.matSnitt = 20; s.now += 3600e3;
+          for (const p of SIM.living(s)) { p.thoughts = [{ ...p.thoughts[0], k: 'saknarFlytt', text: dyster ? 'allt är svart' : 'allt är bra', v: dyster ? -0.9 : 0.6, until: s.now + 1e9 } as never]; }
+          SIM.regulate(s, 3600);
+        }
+        gick += (s.stat?.utvandrade ?? 0) - g0; till += (s.stat?.lagerAvBybor ?? 0) + (s.stat?.tillLager ?? 0) - t0;
+        kron += (vl.kronika ?? []).filter(h => h.k === 'lagerMissnoje' || h.k === 'lagerFredlos').length;
+      }
+      return { gick, till, utv, kron };
+    };
+    const a = prov(true), b = prov(false);
+    return [
+      [`ur de dystra byarna gick ${a.gick} och ${a.utv} utvisades, ${a.till} hamnade i ett rövarläger`, a.till > 0],
+      [`världens krönika säger varför lägren bildades (${a.kron})`, a.kron > 0],
+      [`ur de nöjda gick ${b.gick}, och ${b.till} hamnade i ett läger`, b.till === 0],
+    ];
+  },
+};

@@ -65,9 +65,13 @@ export interface VarldRad {
   stulet?: Record<string, number>; // det ett rövarläger tagit och behållit som det är, i hela saker (steg 11.13.27, vaktat.ts)
   vaken?: 1; minne?: import('./vacktsomna').VacktMinne; // byn är väckt och raden står still för sina regler, och minnesbilden från förra besöket (steg 11.13.12, vacktsomna.ts)
 }
+// de som lämnar huvudbyn (steg B.68): hur stor del av flytten som är hunger och missnöje (0 till 1), om de blivit utvisade, hur
+// mycket mat de bär med sig (portioner) och vilka de är
+export interface FlyttDelar { hunger: number; missnoje?: number; fredlos?: boolean }
+export interface Utflyttning { delar: FlyttDelar; mat: number; med: Person[] }
 // det radens regler (rad.ts) säger om en ny rad; rad.ts sätter det när den laddas, så att filerna som skapar rader inte
 // behöver ladda reglerna
-export const radKrok = { startMat: (_folk: number) => 0, startTek: (): string[] => [], utflytt: (_s: State, _n: number) => {}, nybyggare: (_s: State, _n: number): VarldRad | null | undefined => undefined }; // utflytt: de som lämnar huvudbyn (byflytt.ts, steg 11.3.5); nybyggare: byn de kommer ur, null om ingen by kan skicka dem, undefined utan värld (steg 11.6.13)
+export const radKrok = { startMat: (_folk: number) => 0, startTek: (): string[] => [], utflytt: (_s: State, _n: number, _o?: Utflyttning) => {}, nybyggare: (_s: State, _n: number): VarldRad | null | undefined => undefined }; // utflytt: de som lämnar huvudbyn (byflytt.ts, steg 11.3.5); nybyggare: byn de kommer ur, null om ingen by kan skicka dem, undefined utan värld (steg 11.6.13)
 const fast = (p: Person, roll: FastPerson['roll']): FastPerson => ({ namn: p.name, kon: p.sex, fodd: p.born, roll, id: p.id });
 // tron flest bybor har, och den näst största som annan
 function radTro(s: State): RadTro | undefined {
