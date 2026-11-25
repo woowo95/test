@@ -144,6 +144,8 @@ export function betjanar(s: State, p: Person, f: Foretag): number {
   const a = Math.max(0, ...arbetarI.map(g => g(s, p, f)));
   return a || (f.ag > 0 && familjOf(s, f.ag).includes(p) ? KASSA.familj : 0);
 }
+// den anställda (steg 14.1.7)
+arbetarI.push((_s, p, f) => p.anst?.arb === 'foretag' && p.anst.mal === f.id ? 1 : 0);
 const nagonBetjanar = (s: State, f: Foretag, utom?: Person) => living(s).some(q => q !== utom && q.task?.act === 'betjana' && q.task.ref === f.id);
 export function betjanPoang(s: State, p: Person, f: Foretag) {
   const ko = framme(s, f);
@@ -196,7 +198,7 @@ export function kopVid(s: State, f: Foretag, p: Person, r: KoRad, at: Person): b
     if (V.ats) { iRackhall(at.x, at.y, () => use(s, at, r.k, 1, true, p.id)); ataPortion(s, p, r.k); }
   }
   const betalt = b.betal.reduce((a, w) => a + grundvarde(w.k) * w.n, 0);
-  (f.salt ??= {})[r.v] = (f.salt[r.v] ?? 0) + 1; f.intakt = (f.intakt ?? 0) + betalt;
+  (f.salt ??= {})[r.v] = (f.salt[r.v] ?? 0) + 1; f.intakt = (f.intakt ?? 0) + betalt; f.vinst = (f.vinst ?? 0) + betalt - (V.grund?.(r.k) ?? grundvarde(r.k) * G.varde(r.k));
   count(s, 'foretagSalt'); count(s, 'foretagSalt_' + r.v);
   if (forstaGang(s, 'foretagSalt')) log(s, `${p.name} blev den första kunden: ${f.namn}.`, 'world', [p.id]);
   for (const g of omdome) g(s, p, f, r.k, far - b.kost);

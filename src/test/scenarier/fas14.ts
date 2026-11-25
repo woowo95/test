@@ -128,6 +128,42 @@ SCENARIER.foretag = {
   },
 };
 
+// steg 14.1.7: ägaren anställer den som betjänar när kunder fått gå
+SCENARIER.anstalld = {
+  text: 'Steg 14.1.7: ägaren anställer med dagsarbetet när hens timmar inte räcker och kunderna som går är värda mer än lönen; den anställda betjänar',
+  kor: () => {
+    const { s, p, f } = foretagBy(), utan = SIM.DAGSVERK.foretag.bud(s).length;
+    SIM.laggIn(s, 'silver', 40, p.id);
+    f.salt = { servering: 6 }; f.vinst = 9; f.lamnat = 6;
+    const bud = SIM.DAGSVERK.foretag.bud(s)[0];
+    for (const q of s.people) q.anst = undefined;
+    SIM.anstallDygn(s);
+    const a = s.anst?.find(q => q.arb === 'foretag'), q = a && SIM.byId(s, a.p), w = q ? SIM.betjanar(s, q, f) : 0;
+    // den anställda kallas till disken när ägaren sover
+    let kallad = false;
+    if (q) {
+      const k = SIM.living(s).find(x => x !== q && x !== p && SIM.kundVal(s, x, 'servering')), e = k && SIM.kundVal(s, k, 'servering');
+      if (k && e) { const st = SIM.stallIKo(s, k, e); k.x = st.spot.x; k.y = st.spot.y; k.task = { act: 'koaDisk', phase: 'do', tx: k.x, ty: k.y, until: s.now + 8 * 60000, carry: 0, why: '', ref: f.id }; }
+      p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 3600000, carry: 0, why: '' };
+      q.task = undefined;
+      kallad = SIM.betjanVal(s, q)?.f === f;
+      f.ko = [];
+    }
+    if (a) { a.verk = 1; a.tim = 1; }
+    const s0 = q ? SIM.ownsAmount(s, q, 'silver') : 0;
+    SIM.lonDygn(s);
+    f.lamnat = 0;
+    return [
+      [`utan kunder som går anställs ingen (${utan})`, utan === 0],
+      [`budet följer det kunderna hade gett (${bud?.tim.toFixed(0)} per timme, högst ${bud?.timMax?.toFixed(2)} timmar)`, !!bud && bud.tim * bud.timMax! > 1 && bud.mal === f.id],
+      [`någon anställs för mindre än det är värt (${q?.name}, ${a?.lon} silver)`, !!a && a.lon >= 1 && a.lon <= bud.tim * bud.timMax!],
+      [`den anställda betjänar och väljer disken (${w})`, w === 1 && kallad],
+      [`lönen betalas (${q ? SIM.ownsAmount(s, q, 'silver') - s0 : 0})`, !!q && SIM.ownsAmount(s, q, 'silver') - s0 === a!.lon],
+      [`räcker timmarna igen görs inget bud (${SIM.DAGSVERK.foretag.bud(s).length})`, SIM.DAGSVERK.foretag.bud(s).length === 0],
+    ];
+  },
+};
+
 // en by med ett företag: ett hus med disk och bord (också för de andra scenarierna)
 export function foretagBy(verk = ['servering'], silver = 60) {
   const s = SIM.cloneState(testBy(25)), W = SIM.W;

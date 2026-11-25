@@ -6,7 +6,7 @@
 import { Person, State } from './typer';
 import { balans } from './balans';
 import { clamp } from './slump';
-import { ALDER, EGENSKAP, ageOf, alive, byId, count, forstaGang, living, log, stat } from './folk';
+import { ALDER, EGENSKAP, ageOf, alive, byId, count, familjOf, forstaGang, living, log, stat } from './folk';
 import { gridOf, housesOf, husById, type Hus, type Rum } from './byggnad';
 import { type Akut, foretagKrok, husKostnad } from './byggnader';
 import { BYN, kyrkaId } from './egendom';
@@ -16,12 +16,12 @@ import { prastOf } from './kult';
 import { payable } from './behov';
 import { grundvarde, formogenheter } from './varde';
 import { kroppensMat } from './ekonomi';
-import { amountOf, ownsAmount } from './lager';
+import { amountOf, ownsAmount, ownsId } from './lager';
 import { rusLust } from './rus';
 import { FOOD } from './saker';
 import { MALTIDSNIVA, maltidsNiva } from './ratter';
 import { DRYCKER, dryckAv, vatskaAv, type VatskaId } from './vatskor';
-import { egetVarde } from './dagsarbete';
+import { DAGSVERK, egetVarde } from './dagsarbete';
 import { rumTaggar } from './rum';
 import { foretagBord } from './stationer';
 
@@ -31,7 +31,7 @@ export const FORETAG = balans('foretag', {
   dryckVarde: 0.5, // så många silver är själva drycken värd
   andel: 0.5, // så stor del av måltiderna och dryckerna räknar man med att kunderna köper
   del: 0.5, // så stor del av kundens vinst räknar man med att kunna ta betalt för
-  timKund: 0.1, // så många timmar arbete tar en kund
+  timKund: 0.04, // så många timmar arbete tar en kund
   ar: 30, // huset ska vara betalt på så många dygn (år i spelet)
   pung: 15, // det kunden kan betala med räcker så många dygn
   plats: 9, // så många golvrutor har ett nytt hus
@@ -41,7 +41,7 @@ export const FORETAG = balans('foretag', {
   minne: 0.5, // så mycket av det företaget säljer på ett dygn glöms till nästa
 });
 // det företaget sålt: n = kunder och v = värdet, per dygn (glöms med FORETAG.minne)
-export interface Foretag { id: number; ag: number; hus?: number; verk: string[]; namn: string; t: number; salt?: Record<string, number>; intakt?: number; pris?: Record<string, number>; ko?: import('./kassa').KoRad[]; lamnat?: number; kallad?: number }
+export interface Foretag { id: number; ag: number; hus?: number; verk: string[]; namn: string; t: number; salt?: Record<string, number>; intakt?: number; vinst?: number; pris?: Record<string, number>; ko?: import('./kassa').KoRad[]; lamnat?: number; kallad?: number }
 export const foretagOf = (s: State): Foretag[] => s.foretag ?? [];
 export const foretagAvHus = (s: State, hus?: number) => hus === undefined ? undefined : foretagOf(s).find(f => f.hus === hus);
 
@@ -168,6 +168,16 @@ export function oppna(s: State, f: Foretag): string[] {
   const rum = foretagRum(s, f);
   return f.verk.filter(v => rum.some(r => rumTaggar(s, r).has(VERKSAMHETER[v].rum as never)));
 }
+// ---------- de anställda (steg 14.1.7, dagsarbetet) ----------
+// det en kund ger utöver varan, efter det som sålts
+export const saltAv = (f: Foretag) => Object.values(f.salt ?? {}).reduce((a, b) => a + b, 0);
+export const kundVinst = (f: Foretag) => Math.max(0, saltAv(f) >= 0.5 ? (f.vinst ?? 0) / saltAv(f) : 1);
+// kunderna som gått utan att bli betjänade är det ägarens timmar inte räckte till: en timme till vid disken är värd det de hade gett
+DAGSVERK.foretag = { namn: 'Företaget', sym: '🏪', gor: (_s, a, _p, tk) => tk?.act === 'betjana' && tk.ref === a.mal,
+  bud: s => foretagOf(s).flatMap(f => {
+    const g = f.lamnat ?? 0, p = foretagare(s, f.ag);
+    return g > 0 && p && foretagRum(s, f).length ? [{ av: f.ag, antal: 1, tim: kundVinst(f) / FORETAG.timKund, tak: Math.floor(ownsId(s, f.ag, 'silver') + 1e-9), timMax: g * FORETAG.timKund, mal: f.id, kan: (q: Person) => q.id !== p.id && !familjOf(s, p.id).includes(q) }] : [];
+  }) };
 // ---------- varje timme och dygn (TAKTER) ----------
 export function foretagTimme(s: State) {
   if (!s.foretag?.length) return;
@@ -184,7 +194,7 @@ export function foretagTimme(s: State) {
 }
 // en gång per dygn (ett år i spelet): den som tjänar mest på det startar ett företag, och det som sålts glöms
 export function foretagDygn(s: State) {
-  for (const f of foretagOf(s)) { for (const v in f.salt) f.salt[v] *= 1 - FORETAG.minne; if (f.intakt !== undefined) f.intakt *= 1 - FORETAG.minne; }
+  for (const f of foretagOf(s)) { for (const v in f.salt) f.salt[v] *= 1 - FORETAG.minne; if (f.intakt !== undefined) f.intakt *= 1 - FORETAG.minne; if (f.vinst !== undefined) f.vinst *= 1 - FORETAG.minne; if (f.lamnat !== undefined) f.lamnat *= 1 - FORETAG.minne; }
   const b = bastaStart(s);
   if (b) starta(s, b.ag, b.verk);
 }
