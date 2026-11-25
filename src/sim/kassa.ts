@@ -21,6 +21,7 @@ import { drickAlkohol } from './rus';
 import { foretagOf, type Foretag, foretagare, foretagRum, FORETAG, oppna, troAvAgare, VERKSAMHETER } from './foretag';
 import { foretagBord, isKlar, ledigPlats, stationerOf, stationRum, type Station, vidStation } from './stationer';
 import { tanke } from './tankar';
+import { kvOf, kvVarde } from './kvalitet';
 
 export const KASSA = balans('kassa', {
   min: 0.5, // så lång tid (minuter) tar det att betjäna en kund
@@ -61,7 +62,9 @@ export function saljPart(s: State, f: Foretag): Part | undefined {
     over: utom => SAK_LIST.filter(k => !utom.includes(k) && !isTool(k) && grundvarde(k) > 0 && ownsId(s, f.ag, k) >= 1).map(k => ({ k, n: Math.floor(ownsId(s, f.ag, k) + 1e-9) })) };
 }
 // dryckerna företaget kan sälja: i ett kärl som är ägarens
-const karl = (s: State, f: Foretag, k: string): Ting | undefined => tingOf(s).find(t => t.inne?.v === k && t.inne.n >= 1 && (t.agare ?? BYN) === f.ag && t.hos === undefined && t.bar === undefined);
+const karl = (s: State, f: Foretag, k: string): Ting | undefined => tingOf(s).filter(t => t.inne?.v === k && t.inne.n >= 1 && (t.agare ?? BYN) === f.ag && t.hos === undefined && t.bar === undefined).sort((a, b) => kvOf(b.inne) - kvOf(a.inne))[0];
+// varans kvalitet i pris och nytta (steg 14.1.9): det som är bättre gjort är mer värt, som i alla byten
+const kvAv = (s: State, f: Foretag, v: string, k: string) => { const V = VERKSAMHETER[v]; return V.vatska ? kvVarde(karl(s, f, k)?.inne) : V.hylla ? kvVarde(hyllan(s, f).find(h => h.k === k)?.t) : 1; };
 // det företaget har att sälja av verksamheten v
 export function varorAv(s: State, f: Foretag, v: string, G = saljPart(s, f)): string[] {
   if (!G) return [];
@@ -73,7 +76,8 @@ export function varorAv(s: State, f: Foretag, v: string, G = saljPart(s, f)): st
   return alla.filter(k => har.has(k));
 }
 // priset på en vara i hela silver: det varan är värd för ägaren och hälften av det en vanlig kund vinner, gånger ägarens pris (steg 14.1.9)
-export const prisAv = (_s: State, f: Foretag, v: string, k: string, G: Part, n = 1) => Math.max(1, Math.round(n * ((VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * G.varde(k)) + VERKSAMHETER[v].snitt(k) * FORETAG.del) * (f.pris?.[v] ?? 1)));
+// (konkurrens.ts), men aldrig under det varan är värd för ägaren: för mindre säljer hen inte
+export const prisAv = (s: State, f: Foretag, v: string, k: string, G: Part, n = 1) => { const egen = n * kvAv(s, f, v, k) * (VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * G.varde(k)); return Math.max(1, Math.ceil(egen - 1e-9), Math.round((egen + n * VERKSAMHETER[v].snitt(k) * FORETAG.del) * (f.pris?.[v] ?? 1))); };
 // det M betalar: silver, varor eller allt hen har över, det som kostar minst för hen
 type Betalvaror = ReturnType<typeof betalVaror>;
 function betalar(varor: Betalvaror, G: Part, pris: number) {
@@ -89,11 +93,12 @@ import { hyllan, taVaran, vilMangd } from './affar';
 import { ryms } from './utrustning';
 export interface Erbjudande { n: number; f: Foretag; v: string; k: string; pris: number; net: number; disk: Station }
 // vad kunden p tycker om företaget utöver varan (finheten mot förväntan, ryktet: steg 14.1.9 och 14.1.10 lägger till)
-export const tycker: ((s: State, p: Person, f: Foretag) => number)[] = [];
+export const tycker: ((s: State, p: Person, f: Foretag, v: string) => number)[] = [];
 // det bästa p kan köpa av verksamheten v nu, om det är mer värt för hen än det kostar
 export function kundVal(s: State, p: Person, v: string): Erbjudande | undefined {
   if (!s.foretag?.length) return undefined;
   let bast: Erbjudande | undefined, M: Part | undefined;
+  const ville: Foretag[] = [];
   for (const f of s.foretag) {
     if (!f.verk.includes(v) || f.ag === p.id || !oppna(s, f).includes(v)) continue;
     const disk = diskarAv(s, f)[0];
@@ -102,13 +107,14 @@ export function kundVal(s: State, p: Person, v: string): Erbjudande | undefined 
     if (d > KASSA.langd || familjOf(s, f.ag).includes(p)) continue;
     const G = saljPart(s, f);
     if (!G) continue;
-    const om = tycker.reduce((a, g) => a + g(s, p, f), 0) - d * KASSA.vag - (f.ko?.length ?? 0) * KASSA.koNet;
+    const om = tycker.reduce((a, g) => a + g(s, p, f, v), 0) - d * KASSA.vag - (f.ko?.length ?? 0) * KASSA.koNet;
     let varor: Betalvaror | undefined;
     for (const k of varorAv(s, f, v, G)) {
       M ??= personPart(s, p);
       const n = VERKSAMHETER[v].hylla ? kopMangd(s, p, f, k) : 1;
       if (n < 1) continue;
-      const far = n * ((VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * M.varde(k)) + VERKSAMHETER[v].noje(s, p, k)) + om, pris = prisAv(s, f, v, k, G, n);
+      const kv = kvAv(s, f, v, k), far = n * kv * ((VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * M.varde(k)) + VERKSAMHETER[v].noje(s, p, k)) + om, pris = prisAv(s, f, v, k, G, n);
+      if (far > 0 && !ville.includes(f)) ville.push(f);
       if (far <= (bast?.net ?? 0)) continue;
       varor ??= betalVaror(M, G, []);
       const b = betalar(varor, G, pris);
@@ -117,8 +123,11 @@ export function kundVal(s: State, p: Person, v: string): Erbjudande | undefined 
       if (net > (bast?.net ?? 0)) bast = { f, v, k, n, pris, net, disk };
     }
   }
+  for (const f of ville) for (const g of fragat) g(s, p, f, v, f === bast?.f);
   return bast;
 }
+// den som ville ha något av företagets varor och valde det eller inte (priset följer det, steg 14.1.9)
+export const fragat: ((s: State, p: Person, f: Foretag, v: string, valde: boolean) => void)[] = [];
 // så många av k kunden köper från varubordet: det hen saknar, finns där och kan bära
 function kopMangd(s: State, p: Person, f: Foretag, k: string) {
   const h = hyllan(s, f).find(q => q.k === k), r = ryms(s, p);
@@ -144,7 +153,8 @@ const framme = (s: State, f: Foretag) => (f.ko ?? []).filter(r => byId(s, r.p)?.
 export function koaKlar(s: State, p: Person, t: Task) {
   const f = foretagOf(s).find(q => q.id === t.ref), i = f?.ko?.findIndex(r => r.p === p.id) ?? -1;
   if (!f || i < 0) return;
-  f.ko!.splice(i, 1); f.lamnat = (f.lamnat ?? 0) + 1;
+  const v = f.ko!.splice(i, 1)[0].v; (f.dag ??= {})[v] = { ...f.dag?.[v], gatt: (f.dag?.[v]?.gatt ?? 0) + 1 };
+  f.lamnat = (f.lamnat ?? 0) + 1;
   tanke(p, 'vantadeForgaves', s.now); count(s, 'koLamnat');
   for (const g of omdome) g(s, p, f, undefined, 0);
 }
@@ -201,7 +211,7 @@ export function kopVid(s: State, f: Foretag, p: Person, r: KoRad, at: Person): b
   if (V.ats && iRackhall(at.x, at.y, () => ownsId(s, f.ag, r.k)) < 1) return fel(); // maten kom aldrig fram
   if (!G || (V.vatska ? !t : !varorAv(s, f, r.v, G).includes(r.k))) return fel(); // slut
   const h = V.hylla ? hyllan(s, f).find(q => q.k === r.k) : undefined, n = h ? Math.min(r.n, h.n) : 1;
-  const pris = prisAv(s, f, r.v, r.k, G, n), far = n * ((V.grund?.(r.k) ?? grundvarde(r.k) * M.varde(r.k)) + V.noje(s, p, r.k)), b = betalar(betalVaror(M, G, []), G, pris);
+  const pris = prisAv(s, f, r.v, r.k, G, n), kv = kvAv(s, f, r.v, r.k), far = n * kv * ((V.grund?.(r.k) ?? grundvarde(r.k) * M.varde(r.k)) + V.noje(s, p, r.k)), b = betalar(betalVaror(M, G, []), G, pris);
   if (!b) return fel();
   if (h) {
     for (const w of b.betal) flytta(s, w, M, G);
@@ -217,7 +227,8 @@ export function kopVid(s: State, f: Foretag, p: Person, r: KoRad, at: Person): b
     if (V.ats) { iRackhall(at.x, at.y, () => use(s, at, r.k, 1, true, p.id)); ataPortion(s, p, r.k); }
   }
   const betalt = b.betal.reduce((a, w) => a + grundvarde(w.k) * w.n, 0);
-  (f.salt ??= {})[r.v] = (f.salt[r.v] ?? 0) + 1; f.intakt = (f.intakt ?? 0) + betalt; f.vinst = (f.vinst ?? 0) + betalt - n * (V.grund?.(r.k) ?? grundvarde(r.k) * G.varde(r.k));
+  (f.dag ??= {})[r.v] = { ...f.dag?.[r.v], salt: (f.dag?.[r.v]?.salt ?? 0) + 1 };
+  (f.salt ??= {})[r.v] = (f.salt[r.v] ?? 0) + 1; f.intakt = (f.intakt ?? 0) + betalt; f.vinst = (f.vinst ?? 0) + betalt - n * kv * (V.grund?.(r.k) ?? grundvarde(r.k) * G.varde(r.k));
   count(s, 'foretagSalt'); count(s, 'foretagSalt_' + r.v);
   if (forstaGang(s, 'foretagSalt')) log(s, `${p.name} blev den första kunden: ${f.namn}.`, 'world', [p.id]);
   for (const g of omdome) g(s, p, f, r.k, far - b.kost);

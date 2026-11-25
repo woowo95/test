@@ -41,8 +41,9 @@ export const FORETAG = balans('foretag', {
   akut: 0.6, // hur akut ett företags hus är att bygga (familjens hus är HUS.familjAkut)
   minne: 0.5, // så mycket av det företaget säljer på ett dygn glöms till nästa
 });
+// dag = dagens köp och de som ville men avstod, gap = hur mycket finare rum dagens kunder väntat sig, enkelt = medlet (konkurrens.ts)
 // det företaget sålt: n = kunder och v = värdet, per dygn (glöms med FORETAG.minne)
-export interface Foretag { id: number; ag: number; hus?: number; verk: string[]; namn: string; t: number; salt?: Record<string, number>; intakt?: number; vinst?: number; pris?: Record<string, number>; ko?: import('./kassa').KoRad[]; lamnat?: number; kallad?: number }
+export interface Foretag { id: number; ag: number; hus?: number; verk: string[]; namn: string; t: number; salt?: Record<string, number>; intakt?: number; vinst?: number; pris?: Record<string, number>; ko?: import('./kassa').KoRad[]; lamnat?: number; kallad?: number; dag?: Record<string, { salt?: number; nej?: number[]; gatt?: number }>; gap?: { n: number; v: number; vem: number[] }; enkelt?: number }
 export const foretagOf = (s: State): Foretag[] => s.foretag ?? [];
 export const foretagAvHus = (s: State, hus?: number) => hus === undefined ? undefined : foretagOf(s).find(f => f.hus === hus);
 
@@ -203,8 +204,11 @@ export function foretagTimme(s: State) {
   for (const f of s.foretag) if (f.hus === undefined) { const h = husAv(s, f.ag).find(q => !tagna.has(q.id)); if (h) { f.hus = h.id; tagna.add(h.id); } }
   s.foretag = s.foretag.filter(f => f.hus !== undefined || f.ag === BYN || foretagare(s, f.ag) || troAvAgare(s, f.ag)); // ägaren dog innan något byggts
 }
+// det som görs per dygn före det nya företaget (konkurrens.ts)
+export const dygnet: ((s: State) => void)[] = [];
 // en gång per dygn (ett år i spelet): den som tjänar mest på det startar ett företag, och det som sålts glöms
 export function foretagDygn(s: State) {
+  for (const g of dygnet) g(s);
   for (const f of foretagOf(s)) { for (const v in f.salt) f.salt[v] *= 1 - FORETAG.minne; if (f.intakt !== undefined) f.intakt *= 1 - FORETAG.minne; if (f.vinst !== undefined) f.vinst *= 1 - FORETAG.minne; if (f.lamnat !== undefined) f.lamnat *= 1 - FORETAG.minne; }
   const b = bastaStart(s);
   if (b) starta(s, b.ag, b.verk);

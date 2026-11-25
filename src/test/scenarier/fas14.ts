@@ -289,3 +289,56 @@ SCENARIER.affar = {
     ];
   },
 };
+
+// steg 14.1.9: två serveringar i byn (foretagBy ger den ena, det största huset kvar blir den andra)
+export function tvaForetag() {
+  const b = foretagBy(), { s, vux, fin } = b, W = SIM.W;
+  const p2 = vux[0], r2 = [...SIM.gridOf(s).rooms].filter(x => x.hus !== undefined && x.hus !== b.h.id && SIM.husById(s, x.hus)?.klar && SIM.husById(s, x.hus)!.tro === undefined).sort((a, c) => c.tiles.length - a.tiles.length)[0];
+  const h2 = SIM.husById(s, r2.hus)!, i = new Set(r2.tiles);
+  h2.fn = 'naringshus' as never; h2.ag = p2.id;
+  s.stationer = s.stationer!.filter(t => !i.has(t.y * W + t.x));
+  s.lagren = (s.lagren ?? []).filter(z => !i.has(z.y * W + z.x));
+  s.stackar = (s.stackar ?? []).filter(a => !i.has(Math.floor(a.y) * W + Math.floor(a.x)));
+  const f2 = SIM.starta(s, p2.id, ['servering']); SIM.touch(s); SIM.foretagTimme(s);
+  for (const k of ['disk', 'bord']) { const t = SIM.stationSite(s, k); if (t && i.has(t.y * W + t.x)) { s.stationer!.push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: t.x, y: t.y, rot: t.rot, kvar: 0, inne: 1 } as unknown as SIM.Station); SIM.touch(s); } }
+  if (!s.stationer!.some(t => t.k === 'bord' && i.has(t.y * W + t.x))) { const j = r2.tiles.find(t => i.has(t + 1) && i.has(t + W) && !s.stationer!.some(q => Math.abs(q.x - t % W) < 2 && Math.abs(q.y - Math.floor(t / W)) < 2))!; s.stationer!.push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'bord', x: j % W, y: Math.floor(j / W), kvar: 0, inne: 1 } as unknown as SIM.Station); SIM.touch(s); }
+  SIM.laggIn(s, fin, 300, p2.id);
+  return { ...b, f2, r2, p2, vux: vux.filter(q => q !== p2 && !SIM.familjOf(s, p2.id).includes(q)) };
+}
+SCENARIER.konkurrens = {
+  text: 'Steg 14.1.9: kunden väljer företaget efter priset och finheten mot sin förväntan, liknande företag delar kunderna, priset följer dem som köper och avstår, och ägaren gör rummet finare när kunderna väntat sig det',
+  kor: () => {
+    const { s, p, f, f2, r, r2, vux } = tvaForetag(), oppna = [f, f2].map(x => SIM.oppna(s, x).includes('servering'));
+    const nyckel = (x: typeof r) => SIM.rumNyckel(x);
+    const satt = (a: number, b: number) => { s.finhet = { ...s.finhet, [nyckel(r)]: a, [nyckel(r2)]: b }; };
+    for (const q of vux) { q.finForv = 0.3; q.hunger = 0.4; }
+    const val = (x: typeof f) => vux.filter(q => SIM.kundVal(s, q, 'servering')?.f === x).length;
+    satt(0.3, 0.3); f.pris = { servering: 1 }; f2.pris = { servering: 1 };
+    f.dag = f2.dag = f.gap = f2.gap = undefined; const lika = [val(f), val(f2)], nej = (f2 as SIM.Foretag).dag?.servering?.nej?.length ?? 0;
+    f.pris = { servering: 2.5 }; const dyr = [val(f), val(f2)];
+    satt(0.9, 0.1); f.pris = { servering: 1 }; const fint = [val(f), val(f2)];
+    // den kräsne går till det fina och dyra, den som inte väntar sig något till det billiga
+    satt(0.95, 0.15); f.pris = { servering: 2 }; f2.pris = { servering: 0.8 };
+    vux.forEach((q, i) => { q.finForv = i % 2 ? 0.55 : 0.05; });
+    const nisch = [val(f), val(f2)];
+    // priset: köper alla går det upp, avstår alla går det ner
+    f.pris = f2.pris = undefined; f.dag = { servering: { salt: 6, nej: [1] } }; f2.dag = { servering: { salt: 0, nej: [1, 2, 3] } };
+    f.gap = { n: 4, v: 1.2, vem: [] };
+    for (const g of SIM.dygnet) g(s);
+    const upp = f.pris!.servering, ner = f2.pris!.servering, finare = SIM.foretagBord.finare(s, p);
+    const G = SIM.saljPart(s, f)!, fin = SIM.varorAv(s, f, 'servering', G)[0];
+    f.pris = { servering: 0.01 }; const golv = SIM.prisAv(s, f, 'servering', fin, G), eget = SIM.grundvarde(fin) * G.varde(fin);
+    f.enkelt = 0; const nojd = SIM.foretagBord.finare(s, p);
+    return [
+      [`båda serveringarna är öppna (${oppna.join(',')})`, oppna.every(Boolean)],
+      [`lika företag delar kunderna (${lika.join(' och ')} av ${vux.length})`, lika[0] > 0 && lika[1] > 0],
+      [`den som valt det andra räknas som den som avstod (${nej})`, nej > 0],
+      [`blir det ena dyrare går kunderna till det andra (${dyr.join(' och ')})`, dyr[0] < lika[0] && dyr[1] >= lika[1]],
+      [`det finare rummet drar kunderna (${fint.join(' och ')})`, fint[0] > lika[0]],
+      [`det dyra fina och det billiga enkla har var sina kunder (${nisch.join(' och ')})`, nisch[0] > 0 && nisch[1] > 0],
+      [`priset går upp när många köper och ner när de avstår (${upp.toFixed(2)}, ${ner.toFixed(2)})`, upp > 1 && ner < 1],
+      [`ingen säljer under det varan är värd för ägaren (${golv} mot ${eget.toFixed(2)})`, golv >= eget - 1e-9],
+      [`ägaren vill göra rummet finare när kunderna väntat sig det (${finare?.lust.toFixed(2)}), annars inte`, !!finare && finare.r.hus === r.hus && !nojd],
+    ];
+  },
+};

@@ -1084,7 +1084,11 @@ export const gillarPynt = (s: State, p: Person, sort: string) => { const r = PYN
 // sorten i smaken för pyntet k
 export const pyntSmakAv = (k: string) => stationDef(k)?.smak ?? k;
 // p vill ha pyntet k: hen är vuxen, sover inne, bygger inte redan ett och tycker om sorten. En matta: den storlek och det tyg p väljer
-export const villPynt = (s: State, p: Person, k: string) => ageOf(p, s.now) >= ALDER.vuxen && !halvPynt(s, p) && gillarPynt(s, p, pyntSmakAv(k)) && bedTile(s, p) !== undefined && (!stationDef(k)?.golv || mattaVal(s, p) === k);
+export const villPynt = (s: State, p: Person, k: string) => ageOf(p, s.now) >= ALDER.vuxen && !halvPynt(s, p) && (!!stationDef(k)?.golv && !!foretagBord.finare(s, p) || gillarPynt(s, p, pyntSmakAv(k)) && bedTile(s, p) !== undefined) && (!stationDef(k)?.golv || mattaVal(s, p) === k);
+// rummet p väver en matta till: det egna företagets, när kunderna väntat sig ett finare (steg 14.1.9, konkurrens.ts), annars sovrummet
+const mattaRum = (s: State, p: Person) => foretagBord.finare(s, p)?.r ?? sovrum(s, p);
+// lusten efter en matta till: kundernas, annars lusten efter pynt
+const mattaLust = (s: State, p: Person) => foretagBord.finare(s, p)?.lust ?? pyntLust(s, p);
 // mattan p vill väva (steg 10.7.6): tyget efter vad byn har (lintyg eller ylle, mest först, och annars det som finns att väva av), och
 // storleken efter en poäng bland dem som får plats på golvet i rummet där p sover: lusten efter pynt gånger värdet (en stor eller rund
 // matta är finare) och p:s smak, mot bristen på tyg gånger hur mycket den tar. Samma svar inom samma ögonblick
@@ -1093,11 +1097,11 @@ export function mattaVal(s: State, p: Person): string | undefined {
   let c = mattaCache.get(s);
   if (!c || c.now !== s.now || c.v !== (s.byggV ?? 0)) { c = { now: s.now, v: s.byggV ?? 0, m: new Map() }; mattaCache.set(s, c); }
   if (c.m.has(p.id)) return c.m.get(p.id);
-  const rum = sovrum(s, p);
+  const rum = mattaRum(s, p);
   let val: string | undefined;
   if (rum) {
     const har = (t: MattaTyg) => amountOf(s, t) + amountOf(s, t === 'ylle' ? 'ulltrad' : 'trad') / 3;
-    const tyg = MATTA_TYG_LIST.reduce((b, t) => har(t) > har(b) ? t : b), brist = Math.max(0, 1 - amountOf(s, tyg) / STATION.mattaTygMal), lust = pyntLust(s, p);
+    const tyg = MATTA_TYG_LIST.reduce((b, t) => har(t) > har(b) ? t : b), brist = Math.max(0, 1 - amountOf(s, tyg) / STATION.mattaTygMal), lust = mattaLust(s, p);
     let bs = -Infinity;
     MATTA_LIST.forEach((k, i) => {
       const m: MattaDef = MATTOR[k], id = mattaId(k, tyg);
@@ -1111,12 +1115,12 @@ export function mattaVal(s: State, p: Person): string | undefined {
 // hur mycket de vuxna som sover inne vill ha pyntet k (projektets brist): lusten hos dem som vill ha det, delat med hur många de är
 export function pyntBrist(s: State, k: string) {
   const v = living(s).filter(p => ageOf(p, s.now) >= ALDER.vuxen && bedTile(s, p) !== undefined);
-  return v.length ? v.reduce((a, p) => a + (villPynt(s, p, k) ? pyntLust(s, p) : 0), 0) / v.length : 0;
+  return v.length ? v.reduce((a, p) => a + (villPynt(s, p, k) ? stationDef(k)?.golv ? mattaLust(s, p) : pyntLust(s, p) : 0), 0) / v.length : 0;
 }
 // rummet där p sover
 export const sovrum = (s: State, p: Person) => { const b = bedTile(s, p); return b === undefined ? undefined : roomAt(s, b % W, Math.floor(b / W)); };
 // platsen för p:s kista: en ledig golvruta i rummet där hen sover (siteInne)
-function siteKista(s: State, k: string, p: Person) { const r = sovrum(s, p); return r && (stationDef(k)?.golv ? siteMatta(s, k, r) : siteInne(s, k, r)); }
+function siteKista(s: State, k: string, p: Person) { const r = stationDef(k)?.golv ? mattaRum(s, p) : sovrum(s, p); return r && (stationDef(k)?.golv ? siteMatta(s, k, r) : siteInne(s, k, r)); }
 // mattan (steg 10.7.6): på golvrutor i rummet där ingen annan matta ligger och ingen eld brinner. Möbler och det som ligger får
 // stå på den. Helst mitt i rummet
 function siteMatta(s: State, k: string, rum: Rum) {
@@ -1456,7 +1460,7 @@ export function bordVid(s: State, p: { x: number; y: number }) {
 // får plats i rummet med sina sittplatser går inte att välja där. Nyttan är platserna bordet fyller åt dem som saknar, så att
 // projektets värde (nyttan delad med virket och arbetet, projekt.ts) väljer storleken. p = bara de hus p får bygga i
 // rummen i företagens hus som vill ha bord, och åt hur många (foretag.ts sätter kroken)
-export const foretagBord: { rum: (s: State) => { r: Rum; folk: number }[]; diskRum: (s: State) => Rum | undefined; diskBrist: (s: State) => number; varuRum: (s: State) => Rum | undefined; varuBrist: (s: State) => number } = { rum: () => [], diskRum: () => undefined, diskBrist: () => 0, varuRum: () => undefined, varuBrist: () => 0 };
+export const foretagBord: { rum: (s: State) => { r: Rum; folk: number }[]; diskRum: (s: State) => Rum | undefined; diskBrist: (s: State) => number; varuRum: (s: State) => Rum | undefined; varuBrist: (s: State) => number; finare: (s: State, p: Person) => { r: Rum; lust: number } | undefined } = { finare: () => undefined, rum: () => [], diskRum: () => undefined, diskBrist: () => 0, varuRum: () => undefined, varuBrist: () => 0 };
 interface BordStalle { r?: Rum; folk: number; har: number }
 const bordCache = new WeakMap<State, { key: string; m: Map<string, { r?: Rum; fyller: number } | undefined> }>();
 function bordStallen(s: State): BordStalle[] {
