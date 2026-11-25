@@ -21,7 +21,7 @@ import { GANG, kroppFart } from './gang';
 import { iVattnetNu, sjoNamn, sjoVid, strandNu, vattenNu } from './sjo';
 import { freeTools, take } from './agande';
 import { PLATS } from './plats';
-import { vargSkydd, vargjaktVal } from './varg';
+import { vargLarm, vargSkydd, vargjaktVal } from './varg';
 import { hotKrok } from './roller';
 import { bjornjaktVal } from './bjorn';
 import { RESA, resaPlan, resaVal, samlaResa } from './resa';
@@ -133,7 +133,7 @@ export const VAL = balans('val', {
   byggKyla: 0.3, // bygget väger så här mycket när kylan eller hungern är en fara (steg 10.2.6)
   // nöden (steg 13.8.9): raderna på nivå 2 vägs efter hur nära döden de för. Raden för något som dödar har sin vikt gånger
   // (1 + hur långt under gränsen man är, 0 till 1), så att en svag törst inte går före en svår hunger; det som dödar fortast väger mest
-  nodStrid: 3, nodKyla: 1.5, nodVarme: 1.2, nodSar: 1.3, nodTorst: 1.2, nodToa: 1.1, nodSvalt: 1, nodVarmeSpann: 0.3,
+  nodHot: 4, /* ett gäng man vet om, gånger hotet (steg B.29) */ nodStrid: 3, nodKyla: 1.5, nodVarme: 1.2, nodSar: 1.3, nodTorst: 1.2, nodToa: 1.1, nodSvalt: 1, nodVarmeSpann: 0.3,
   nodVila: 0.6, nodVarda: 0.5, nodVatten: 0.45, nodBarmat: 0.4, // det som inte dödar en själv: sova som sjuk, svag eller litet barn, vårda andra, vatten åt den som inte kan gå, mat till fången
   // Tillfälle (nivå 3, steg 13.8.10): det som står på spel. Jakten på besten skyddar byn, resan och bönen är redan bestämda,
   // handeln och framträdandet går förlorade när handlaren eller berättaren går. Tillsynen vid milan och ugnen väger efter det
@@ -490,6 +490,13 @@ export function balteForband(s: State, p: Person, act: Act) { if (BALTE_FORBAND.
 export interface Val { fron?: true; eldFor?: Act; skal?: Task['skal']; paus?: true; /* vilan är en paus när inget annat lockar, inte trötthet (steg 11.1.72) */ fordon?: number; dragdjur?: number; stanna?: boolean; act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true | 'sten' | 'flinta'; hot?: 'rovare' | 'varg'; tandmat?: true; falt?: true; sno?: true; ho?: true; gava?: true; hamtar?: string; lon?: string; brand?: Task['brand']; kalla?: number }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; v.paus = undefined; v.skal = undefined; return true; };
 const paus = (v: Val, why: string) => { set(v, 'vila', why); v.paus = true; return true; }; // vilan när inget annat lockar (steg 11.1.72)
+// den som hört om gänget och varnat; skyddet mot det som hotar (den som hjälper vårdar den som blöder först)
+const varnatGang = (s: State, p: Person) => !!p.larm?.rovare?.varnat && vargLarm(s, p)?.vad === 'rovare';
+function skyddVal(s: State, p: Person, v: Val, sk: ReturnType<typeof vargSkydd> | ReturnType<typeof tornadoSkydd>) {
+  if (!sk) return false;
+  if (sk.act === 'hjalpaRovare') { const d = vardVal(s, p, false), q = d && living(s).find(x => x.id === d.ref); if (q && vardBehov(s, q, p)?.blod && varda(s, p, v, false)) return true; }
+  set(v, sk.act, sk.why); v.spot = sk.spot; v.dur = sk.dur; v.hot = 'hot' in sk ? sk.hot : undefined; return true;
+}
 
 // Registret ARBETEN (steg 6.1.11, "Arbetsordningen" i designdokumentet): en rad per uppgift, i den ordning valet prövar dem.
 // Valet går igenom registret uppifrån och tar den första rad som gäller nu (nar: dag, natt eller båda) och väljer något.
@@ -708,11 +715,8 @@ export const ARBETEN: readonly Arbete[] = [
   // förut stod alla kvar i försvaret medan de sårade förblödde på en halvtimme
   { id: 'stoppa', niva: 1, prova: ({ s, p, v, a }) => { if (a < ALDER.vuxen) return false; const d = stoppaVal(s, p); if (!d) return false; set(v, 'stoppa', d.why); v.spot = d.spot; v.ref = d.ref; v.dur = FANG.stoppMin * MIN; return true; } },
   { id: 'rusta', niva: 1, prova: ({ s, p, v }) => { const r = rustaVal(s, p); if (!r) return false; v.spot = r.spot; v.ref = r.ref; v.dur = 2 * MIN; return set(v, 'rusta', r.why); } }, // byta om inför strid (steg 8.7.8): hör till Försvara byn under Fara (steg 13.8.2)
-  { id: 'skydd', niva: 1, prova: ({ s, p, v }) => {
-    const sk = vargSkydd(s, p) ?? tornadoSkydd(s, p); if (!sk) return false;
-    if (sk.act === 'hjalpaRovare') { const d = vardVal(s, p, false), q = d && living(s).find(x => x.id === d.ref); if (q && vardBehov(s, q, p)?.blod && varda(s, p, v, false)) return true; }
-    set(v, sk.act, sk.why); v.spot = sk.spot; v.dur = sk.dur; v.hot = 'hot' in sk ? sk.hot : undefined; return true;
-  } },
+  // den som vet om ett gäng varnar först, och gör sig sedan redo under Nöden (steg B.29, raden redo)
+  { id: 'skydd', niva: 1, prova: ({ s, p, v }) => varnatGang(s, p) ? skyddVal(s, p, v, tornadoSkydd(s, p)) : skyddVal(s, p, v, vargSkydd(s, p) ?? tornadoSkydd(s, p)) },
   { id: 'brand', niva: 1, prova: ({ s, p, v }) => { const br = brandVal(s, p); if (!br) return false; set(v, br.act, br.why); v.spot = br.spot; v.dur = br.dur; v.tool = br.tool; v.ref = br.ref; return true; } },
   // de vuxna som orkar bär undan maten från lagerplatserna vattnet kan nå, också på natten (flod.ts)
   { id: 'flod', niva: 1, prova: ({ s, p, v, a }) => {
@@ -721,6 +725,8 @@ export const ARBETEN: readonly Arbete[] = [
     set(v, 'bara', fl.why); v.skal = 'flod'; v.spot = fl; v.dur = VAL.baraTim * HOUR; count(s, 'flod undan'); return true;
   } },
   // 2 Nöd och vård (sjuk, svag, fryser farligt, måste på toa genast)
+  // den som vet om ett gäng gör sig redo (steg B.29): hotet väger efter hur nära gänget är (rovarHot), så att bara det som är värre går före
+  { id: 'redo', niva: 2, poang: ({ s, p }) => varnatGang(s, p) ? VAL.nodHot * hotKrok.fara(s, p) : 0, prova: ({ s, p, v }) => skyddVal(s, p, v, vargSkydd(s, p)) },
   // den som ser ett slagsmål går emellan eller går undan (steg 10.1.4, narStridVal i kartstrid.ts)
   { id: 'slagsmal', niva: 2, poang: ({ s, p }) => narStridVal(s, p) ? VAL.nodStrid : 0, prova: ({ s, p, v }) => { const d = narStridVal(s, p); if (!d) return false; set(v, d.act, d.why); v.spot = d.spot; v.dur = d.dur; v.ref = d.ref; return true; } },
   // den som är mycket hungrig (under det man äter av även när maten ska räcka, VARDRATT.snal) går till maten före vilan, och
@@ -752,8 +758,6 @@ export const ARBETEN: readonly Arbete[] = [
     set(v, 'vargjakt', j.why); v.spot = j.spot; v.dur = j.dur; return true;
   } },
   // ... och den som ska följa med på björnjakten (bjorn.ts, steg 6.6.6)
-  // medan ett gäng man vet om ligger stilla håller några ögonen på det också på dagen, så många som nattens vakter blir (steg B.13)
-  { id: 'vaktGang', niva: 3, nar: 'dag', pass: 'vakt', poang: ({ s, p }) => hotKrok.vaktas(s, p) && living(s).filter(q => q !== p && q.task?.act === 'vakt').length < Math.max(1, Math.round(vaktHot(s))) ? VAL.tillJakt : 0, prova: ({ v }) => set(v, 'vakt', 'Håller ögonen på rövarna') },
   { id: 'bjornjakt', niva: 3, poang: () => VAL.tillJakt, prova: ({ s, p, v }) => {
     const j = bjornjaktVal(s, p);
     if (!j) return false;
@@ -893,7 +897,7 @@ export const ARBETEN: readonly Arbete[] = [
     // hjälpen väljs med samma poäng som de vuxnas rader på nivån (steg 12.1.45): den går till det som fattas, och skälet är
     // radens eget. Barnet som hjälper arbetar i dag; fattas inget (ingen rad har poäng eller alla har sina arbetare) leker det
     const cb: Ctx = { ...c, d: { ...d, works: true } };
-    const w = vinnare(cb, POANGRADER[6].filter(r => radGaller(s, r, a, 'dag'))).find(u => u.r.prova(cb))?.r;
+    const w = vinnare(cb, POANGRADER[6].filter(r => radGaller(s, r, a, 'dag'))).find(r => r.prova(cb));
     if (!w) return set(v, 'leka', lekText(s));
     v.why = `Hjälper till. ${v.why}`;
     return true;
@@ -995,7 +999,7 @@ const POANGRADER = Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => [n, A
 // den rad som har högst poäng; en rad som har sina arbetare väger VAL.fullRad. Har alla rader som gäller sina arbetare finns
 // ingen vinnare, och man går till nästa nivå. Lika poäng: registrets ordning
 // raderna med poäng, bäst först (steg 13.8.9): blir den bästa inte av (det den kräver saknas) prövas nästa
-function vinnare(c: Ctx, rader: Arbete[]): { r: Arbete; x: number }[] {
+function vinnare(c: Ctx, rader: Arbete[]): Arbete[] {
   const ut: { r: Arbete; x: number }[] = [];
   let ledig = false;
   for (const r of rader) {
@@ -1005,7 +1009,7 @@ function vinnare(c: Ctx, rader: Arbete[]): { r: Arbete; x: number }[] {
     if (!full) ledig = true;
     ut.push({ r, x: full ? sc * VAL.fullRad : sc });
   }
-  return ledig ? ut.sort((a, b) => b.x - a.x) : [];
+  return ledig ? ut.sort((a, b) => b.x - a.x).map(u => u.r) : [];
 }
 
 const fallNamn = (m: Mjarde) => FALLOR[m.k ?? 'mjarde'].namnDen;
@@ -1014,14 +1018,6 @@ const snartFull = (s: State, m: Mjarde) => timTillFull(s, m) < VAL.vittjaTim;
 // den närmaste fällan med fångst som ingen annan är på väg till
 const mjardeAttTa = (s: State, p: Person) => kanVittja(s).filter(q => !living(s).some(o => o !== p && o.task?.act === 'vittja' && o.task.ref === q.id)).sort((x, y) => Math.hypot(x.x - p.x, x.y - p.y) - Math.hypot(y.x - p.x, y.y - p.y))[0];
 export function chooseTask(s: State, p: Person) { iHelaForradet(() => valjTask(s, p)); } // valet ser hela förrådet (steg 11.1.74)
-// så mycket drar hotet på platsen för det valda och på vägen dit ner det (steg B.30, hotKrok i roller.ts): 0 = inget, 1 = för nära gänget
-function hotDrag(s: State, p: Person, v: Val) {
-  if (!hotNara(s, p)) return 0;
-  const tur = v.spot ? undefined : turMal(v as unknown as Task), at = v.spot ?? (tur && tandStalle(s, p, tur)) ?? spotFor(s, v.act, p);
-  return hotKrok.vag(s, p, at.x, at.y);
-}
-const hotNara = (s: State, p: Person) => (!!s.rovare || !!s.rovareFler?.length) && !!p.larm?.rovare;
-const tomVal = (v: Val) => { const dur = v.dur; for (const k in v) delete (v as unknown as Record<string, unknown>)[k]; v.dur = dur; v.act = 'vila'; v.why = ''; v.paus = true; };
 function valjTask(s: State, p: Person) {
   if (fangeVal(s, p)) return; // den som sitter i fängelset (steg 11.12.1, fangelse.ts)
   if (p.svimmat) { p.task = { act: 'medvetslos', phase: 'do', tx: p.x, ty: p.y, until: s.now + 30 * MIN, carry: 0, dark: false, why: 'Har svimmat' }; return; } // kan inte göra något (steg 8.2.6)
@@ -1037,22 +1033,11 @@ function valjTask(s: State, p: Person) {
       if (r.poang) { // raderna med poäng på nivån vägs mot varandra en gång (steg 6.2.18)
         if (vagd === r.niva) continue;
         vagd = r.niva;
-        // hotet vid platsen och på vägen dit drar ner poängen (steg B.30, hotDrag): då prövas nästa, och den som har mest kvar görs
-        let bast: { r: Arbete; x: number; v: Val } | undefined;
-        for (const { r: w, x } of vinnare(c, POANGRADER[r.niva].filter(galler))) {
-          if (bast && bast.x >= x) break;
-          if (w.vila) { bast = undefined; break; } // vinner fritiden görs inget sämre på nivån
-          if (!w.prova(c)) continue;
-          const kvar = r.niva > 2 ? x * (1 - hotDrag(s, p, v)) : x;
-          if (kvar >= x) { rad = w; return true; }
-          if (kvar > (bast?.x ?? 0)) bast = { r: w, x: kvar, v: { ...v } };
-          tomVal(v);
-        }
-        if (bast) { Object.assign(v, bast.v); rad = bast.r; return true; }
+        for (const w of vinnare(c, POANGRADER[r.niva].filter(galler))) { if (w.vila) break; if (w.prova(c)) { rad = w; return true; } } // vinner fritiden görs inget sämre på nivån
         continue;
       }
       if ((r.arbetar || r.forb) && !dag(c).works || r.forb && !forbNu(c)) continue; // villkoren i den ordning raderna prövade dem
-      if (r.prova(c)) { if (r.niva > 2 && hotDrag(s, p, v) >= 1) { tomVal(v); continue; } rad = r; return true; }
+      if (r.prova(c)) { rad = r; return true; }
     }
     return false;
   };
@@ -1081,12 +1066,6 @@ function valjTask(s: State, p: Person) {
   const mal = !v.spot && turMal(v as unknown as Task);
   if (mal) v.spot = tandStalle(s, p, mal); // turen går dit målet finns, närmast (steg 12.1.39)
   const sp0 = v.spot ?? spotFor(s, v.act, p); let sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
-  // det som ligger för nära ett gäng man vet om går man inte till (steg B.13, hotKrok i roller.ts): man stannar nära byn. Nöden och faran går före
-  if ((rad?.niva ?? 9) > 2 && hotKrok.plats(s, p, sp.x, sp.y)) {
-    const at = platsIByn(s, p, 'val');
-    for (const k in v) delete (v as unknown as Record<string, unknown>)[k];
-    Object.assign(v, { act: 'vila', dur: VAL.vilaMin * MIN, why: 'Rövare är nära, stannar i byn', paus: true }); sp = at;
-  }
   p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, fron: v.fron, hot: v.hot, falt: v.falt, sno: v.sno, ho: v.ho, gava: v.gava, skal: v.skal, hamtar: v.hamtar, lon: v.lon, brand: v.brand, kalla: v.kalla, stanna: v.stanna, eldFor: v.eldFor, pass: v.pass !== undefined ? s.now + v.pass : undefined };
   balteForband(s, p, p.task.act);
   if (ACTS[v.act].plats === 'station') { const st = stationFor(s, v.act, p); if (st && Math.hypot(sp.x - vidStation(st).x, sp.y - vidStation(st).y) < 2) stationBrukad(s, st); } // hur mycket stationen används (steg 9.4.8)
@@ -1335,7 +1314,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     // tändmaterialet vägs efter det som fattas av det (wTand, steg 13.8.5), och arbetet efter det mest behövda av det och dess eget behov
     const colEget = need * (!d.resurs ? 1 : season * yieldF * onskan(p, w, s.now)) * fullVikt(s, p, d.behov!); // raden som har sina arbetare väger en tredjedel (steg 6.1.13)
     const col = tinder ? Math.max(colEget, wTand * fullVikt(s, p, 'tand')) : colEget;
-    const like = lust(s, p, w as Skill, ACTS[w].egenskap!, [w], tot) * (VAL.brusMin + rnd(s, 'val', p) * VAL.brusSpann) * bredvidVikt(s, p, w, ppl) * (1 - hotDrag(s, p, { act: w, why: '', dur: 0 })); // egen lust och vana, och vad vänner och ovänner gör (steg 3.1.1)
+    const like = lust(s, p, w as Skill, ACTS[w].egenskap!, [w], tot) * (VAL.brusMin + rnd(s, 'val', p) * VAL.brusSpann) * bredvidVikt(s, p, w, ppl); // egen lust och vana, och vad vänner och ovänner gör (steg 3.1.1)
     const sc = col * like;
     burg = Math.max(burg, col);
     if (sc > bs) { bs = sc; best = w; }

@@ -1084,7 +1084,7 @@ SCENARIER.blockera = {
     // samma dörr som riktiga rutor på kartan (steg 10.1.6, testarenans plats): väggen är rutorna x = 27 utom rutan y = 19, och
     // striden frågar världen om dem (provVarld). Samma sak ska gälla: ingen förbi den som står i öppningen, ingen i en vägg
     const X0 = 20, Y0 = 15, rutor = new Set<number>(); // inne på den minsta kartan (64 × 40 när ingen by är laddad)
-    for (let y = -13; y < 22; y++) if (y !== 4) rutor.add((Y0 + y) * SIM.W + X0 + 7); // längre än vägen runt söks: annars går den som inte får plats runt väggen till den bakom (steg B.31)
+    for (let y = -13; y < 22; y++) if (y !== 4) rutor.add((Y0 + y) * SIM.W + X0 + 7); // längre än vägen runt söks: annars går den som inte får plats runt väggen till den bakom (steg B.34)
     const varld = SIM.provVarld(undefined, rutor), iRuta = (x: number, y: number) => rutor.has(Math.floor(y) * SIM.W + Math.floor(x));
     let kForbi = 0, kVagg = 0, kIgenom = 0, kN = 0;
     for (let fro = 1; fro <= 40; fro++) {

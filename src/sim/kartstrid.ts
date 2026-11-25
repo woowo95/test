@@ -13,6 +13,7 @@
 // och djuren i stegen efter.
 import { loggNamn } from './gast';
 import { balans } from './balans';
+import { ACTS } from './handlingar';
 import { KLOCKA, SLAGHINDER, nasTid } from './klocka';
 import { GANG } from './gang';
 import { blocked, freeNear } from './byggnad';
@@ -118,17 +119,29 @@ export function slagLangd(s: State) {
 }
 
 // ---------- striden börjar ----------
-// dit den som flyr springer: sitt hus, annars elden (en gäst mot kartans kanter, den närmaste först). Är vägen dit stängd väljer hen en annan av dem (steg B.27)
+// dit den som flyr springer: sitt hus, annars elden (en gäst mot kartans kanter, den närmaste först). Är vägen dit stängd väljer hen en annan av dem (steg B.31)
 function flyMal(s: State, p: Person) {
   const eld = () => { const e = eldPlats(s); return freeNear(s, e.x + 0.5, e.y + 1.5); }, h = p.gast ? undefined : husPlats(s, p);
   const [fly, ...andra] = (p.gast ? kanterna(p.x, p.y) : h ? [h, eld()] : [eld()]).map(m => ({ x: m.x, y: m.y }));
   return { fly, ...(andra.length ? { flyAndra: andra } : {}) };
 }
 const stridsUppgift = (s: State, p: Person, why: string) => { p.task = { act: 'strid', phase: 'do', tx: p.x, ty: p.y, until: s.now + (STRID.maxTid + 60) * SEC, carry: 0, why }; };
+// Överraskningen (steg B.30, "Mötet" i fliken Människan): den som blir anfallen mitt i något annat (arbetet, maten, samtalet), eller som
+// inte visste om gänget förrän nu, har inte sett sin anfallare komma. Den som håller ögonen öppna (vakten, kämparna, jägaren) och den som
+// gick till anfall har det. Lika för alla: en rövare på rastplatsen eller vid bytet kan också överraskas
+const VAKSAM = new Set<string>(['vakt', 'varna', 'forsvar', 'forsvarRovare', 'hjalpaRovare', 'budRovare', 'gomma', 'strid', 'undan']);
+const UPPTAGEN = new Set<string>(['rasta', 'gaOmkring', 'prata', 'ta']);
+function overraskad(s: State, p: Person, efter: Efter | undefined): { overraskad?: number } {
+  if (!efter?.egen) return {};
+  const tk = p.task, l = p.larm?.rovare;
+  const ja = p.gast ? UPPTAGEN.has(p.gast.gor ?? '') : !VAKSAM.has(tk?.act ?? '') && (!tk || ACTS[tk.act].slag !== 'jaga') && (tk?.phase === 'do' || efter.typ === 'rovare' && (!l || s.now - l.t < STRID.overraskSek * SEC));
+  if (ja) count(s, 'overraskad');
+  return ja ? { overraskad: STRID.overraskSek } : {};
+}
 // en strid börjar mellan två sidor av folk, där de står. Den stegas sedan med byn (kartStridSteg)
 export function kartStridBorja(s: State, avsikt: Avsikt, sidor: [Person[], Person[]], orsak: string, efter?: Efter, djur: DjurMed[] = []): KartStrid {
   const lek = lekAv(avsikt), sport = sportAv(avsikt);
-  const kampar: Uppstallning['kampar'] = sidor.flatMap((sida, sd) => sida.map(p => ({ ...personKampe(s, p, 0, sd as 0 | 1, p.x, p.y), ...flyMal(s, p) })));
+  const kampar: Uppstallning['kampar'] = sidor.flatMap((sida, sd) => sida.map(p => ({ ...personKampe(s, p, 0, sd as 0 | 1, p.x, p.y), ...flyMal(s, p), ...overraskad(s, p, efter) })));
   for (const d of djur) { const [fly, ...andra] = kanterna(d.k.x, d.k.y); kampar.push({ ...d.k, fly: d.k.fly ?? fly, flyAndra: d.k.fly ? undefined : andra }); } // djuren (steg 10.1.17): de flyr mot kartans kant
   kampar.forEach((k, i) => { k.id = i + 1; });
   foljet(s, kampar);
@@ -149,7 +162,7 @@ export function kartStridMed(s: State, g: KartStrid, p: Person, sida: 0 | 1, hja
   if (g.st.slut || g.st.kampar.some(k => k.pid === p.id && !g.fri?.includes(p.id))) return;
   if (g.fri?.includes(p.id)) return; // den som lämnat striden går inte in i den igen
   const id = Math.max(0, ...g.st.kampar.map(k => k.id)) + 1;
-  laggTill(g.st, { ...personKampe(s, p, id, sida, p.x, p.y), ...flyMal(s, p), ...(hjalp ? { hjalp } : {}) });
+  laggTill(g.st, { ...personKampe(s, p, id, sida, p.x, p.y), ...flyMal(s, p), ...overraskad(s, p, g.efter), ...(hjalp ? { hjalp } : {}) });
   if (g.efter && !hjalp) MED[g.efter.typ]?.(s, g.efter, g.st.kampar[g.st.kampar.length - 1], p); // det stridens slag ger den som kommer senare (steg 12.1.58)
   avbryt(s, p); stridsUppgift(s, p, hjalp ? `Hjälper de fallna (${g.orsak})` : g.orsak);
   count(s, hjalp ? 'kartStridHjalp' : 'kartStridMed');
