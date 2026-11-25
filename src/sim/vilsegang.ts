@@ -11,7 +11,7 @@ import { balans } from './balans';
 import { count, isKin, living } from './folk';
 import { put } from './lager';
 import { laggUndan, overVarde, styretNod } from './utlysa';
-import { dagbok, hittadDod, resenarer, resenarNamn, SAKNADKROK, Sallskap, sallskapFor, vandHem, vantadDygn } from './resa';
+import { dagbok, hittadDod, resenarer, resenarNamn, sakLista, SAKNADKROK, Sallskap, sallskapFor, vandHem, vantadDygn } from './resa';
 import { avslutaUppdrag, belonVarde, larUppdrag, uppdragen, utlys, type Utlyst } from './uppdrag';
 import { radTar } from './priser';
 import { radNr } from './radtal';
@@ -70,7 +70,7 @@ export function hitta(s: State, finn: Sallskap, vilse: Sallskap, t: number): boo
   const dod = !resenarer(s, vilse).length, namn = resenarNamn(s, vilse), fick = hittad(s, vl, u, vilse, resenarNamn(s, finn), t);
   for (const [k, n] of Object.entries(fick)) if (n >= 1) finn.pack[k] = (finn.pack[k] ?? 0) + n;
   finn.utfall = { namn: 'Vilsegången', hur: 'klart', fick };
-  dagbok(s, finn, 'uppdrag', `Hittade ${namn}${dod ? ' döda' : ''} vid leden. Belöningen: ${Object.entries(fick).map(([k, n]) => `${n} ${k}`).join(', ') || 'ingen'}.`, t);
+  dagbok(s, finn, 'uppdrag', `Hittade ${namn}${dod ? ' döda' : ''} vid leden. Belöningen: ${sakLista(fick) || 'ingen'}.`, t);
   if (finn.skede === 'ute' || finn.skede === 'framme') vandHem(s, finn);
   return true;
 }
