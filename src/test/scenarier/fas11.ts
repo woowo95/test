@@ -4854,7 +4854,7 @@ SCENARIER.fangeval = {
     const ub = u.s.people.find(q => q.gast?.losenFor === u.r.id);
     if (ub) SIM.gastDor(u.s, ub, 'i scenariot');
     u.s.now = u.r.gast!.losen!.till; SIM.fangeOde(u.s);
-    const igen = (u.s.stat?.fange_losen_uteblev ?? 0) > 0 && !u.r.gast?.losen && ((u.s.stat?.fange_val_tasUpp ?? 0) + (u.s.stat?.fange_val_slapps ?? 0)) > 0;
+    const igen = (u.s.stat?.fange_losen_uteblev ?? 0) > 0 && !u.r.gast?.losen && ((u.s.stat?.fange_val_tasUpp ?? 0) + (u.s.stat?.fange_val_slapps ?? 0) + (u.s.stat?.fange_val_dodas ?? 0)) > 0;
     return [
       [`med seden Förlikning släpps fången (${Object.keys(f.s.stat ?? {}).filter(k => k.startsWith('fange_val_'))}) och går hem`, slappt && hem],
       [`med seden Fejd dödas fången`, dod],

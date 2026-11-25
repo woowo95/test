@@ -1586,7 +1586,9 @@ SCENARIER.liggande = {
     const nara: SIM.Stock = { id: 97, x: c.x + 1.5, y: c.y + 1.5, ved: 9, grenar: 0 };
     const egen: SIM.Stock = { id: 96, x: c.x + 6.5, y: c.y + 5.5, ved: 9, grenar: 0, av: p.id };
     s.stockar = [nara, egen];
-    const ax = SIM.axeTask(s, p), virke = SIM.PROJEKT.virke.uppgift(s, p), roj = SIM.PROJEKT.rojning.uppgift(s, p);
+    const ax = SIM.axeTask(s, p), mal0 = SIM.virkeKrok.mal;
+    SIM.virkeKrok.mal = q => SIM.amountOf(q, "virke") + 5; const virke = SIM.PROJEKT.virke.uppgift(s, p); SIM.virkeKrok.mal = mal0; // byn saknar virke (stamTill)
+    const roj = SIM.PROJEKT.rojning.uppgift(s, p);
     s.stockar = [];
     const v0 = SIM.fallVilja(s);
     s.stockar = [1, 2, 3].map(i => ({ id: 90 + i, x: c.x + i + 0.5, y: c.y + 0.5, ved: 6, grenar: 0 }));

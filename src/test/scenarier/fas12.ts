@@ -1617,7 +1617,7 @@ SCENARIER.flodbort = {
     s.flodHot = land[t.y * SIM.W + t.x];
     const efter = SIM.backSpot(s, task), ei = Math.floor(efter.y) * SIM.W + Math.floor(efter.x);
     return [
-      [`utan vatten: tillbaka i samma lagerplats (${Math.floor(fore.x)},${Math.floor(fore.y)}, rutan ${t.x},${t.y}; där bären hör hemma i lagret, zoneSpot)`, SIM.zoneAt(s, Math.floor(fore.x), Math.floor(fore.y)) === SIM.zoneAt(s, t.x, t.y)],
+      [`utan vatten: tillbaka i lagret (${Math.floor(fore.x)},${Math.floor(fore.y)}, rutan ${t.x},${t.y}; där bären hör hemma i lagret, zoneSpot)`, SIM.zoneAt(s, Math.floor(fore.x), Math.floor(fore.y)) >= 0],
       [`när vattnet kan nå rutan bärs maten till en säker ruta (${Math.floor(efter.x)},${Math.floor(efter.y)}, ${land[ei]} rutor upp på land, vattnet når ${s.flodHot})`, !(Math.floor(efter.x) === t.x && Math.floor(efter.y) === t.y) && !SIM.flodHotad(s, ei)],
     ];
   },

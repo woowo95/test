@@ -1751,7 +1751,7 @@ SCENARIER.filtar = {
     t.filtar = [f1]; f1.par = undefined;
     const ensam = filtFlik.html();
     const lista = !parRuta.includes('Filten<') && parRuta.includes('Bytet') && parRuta.includes(a.name) && parRuta.includes(b.name)
-      && ensam.includes('<h2>Filten</h2>') && !ensam.includes('Värt') && ensam.includes(byId(t, f1.vem!)!.name);
+      && ensam.includes('>Filten</h2>') && !ensam.includes('Värt') && ensam.includes(byId(t, f1.vem!)!.name);
     return [
       ['handlaren har sin filt ute', !!hf && hf.vem === h.id && hf.par !== undefined],
       [`den som handlar för byn (${forByn?.name ?? 'ingen'}) lägger ut byns saker på en filt mitt emot handlarens`, motBy],
@@ -1922,7 +1922,7 @@ SCENARIER.handslag = {
     ui.nu = t.now; ui.selected = a.id; ui.personDel = 'hand'; // bytena står under Händelser (steg 11.1.45)
     const rad = !!e && linkify(e).includes(`data-byte="${m?.nr}"`), sida = person.html(), visas = sida.includes('<h3>Byten</h3>') && sida.includes(`data-byte="${m?.nr}"`);
     const klickat = filtFlik.klick!({ closest: () => ({ dataset: { byte: String(m?.nr) } }) } as unknown as HTMLElement) && ui.byteNr === m?.nr && ui.tab === 'filt';
-    const ruta = filtFlik.html(), helRuta = ruta.includes('<h2>Bytet</h2>') && ruta.includes(a.name) && ruta.includes(b.name) && ruta.includes('Värt') && /silver/.test(ruta);
+    const ruta = filtFlik.html(), helRuta = ruta.includes('>Bytet</h2>') && ruta.includes(a.name) && ruta.includes(b.name) && ruta.includes('Värt') && /silver/.test(ruta);
     ui.byteNr = -1;
     // filtarna plockas ihop strax efter
     for (let i = 0; i < 40 && (t.filtar?.length ?? 0) > 0; i++) { t.now += SIM.MIN; SIM.stadaByten(t); }

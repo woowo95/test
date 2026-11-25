@@ -1762,6 +1762,8 @@ const MDEF = {
     '{vem} packade det som gick att bära och lämnade byn {mal}. {skal}',
     'Det var {arstid} när {vem} lämnade byn {mal}. {skal}',
     '{vem} gick sin väg {mal}. {skal}',
+    '{vem} tog farväl och gick {mal}. {skal}',
+    '{vem} bröt upp från byn {mal}. {skal}',
     { t: 'I snön lämnade {vem} byn {mal}. {skal}', om: f => f.sno === true },
     { t: 'I regnet lämnade {vem} byn {mal}. {skal}', om: f => f.regn === true },
   ],
@@ -1772,6 +1774,8 @@ const MDEF = {
     { t: '{Byn}, och {namn} bar på något eget: ”{tanke}”.', om: f => !!f.tanke && !!f.byn },
     { t: 'Det som tyngde {honom} mest var ”{tanke}”.', om: f => !!f.tanke && !f.byn },
     { t: '{namn} bar på något som inte gick att leva med: ”{tanke}”.', om: f => !!f.tanke && !f.byn },
+    { t: 'Byn fick gå sin väg utan {honom}, för ”{tanke}” tyngde mer för var dag.', om: f => !!f.tanke && !f.byn },
+    { t: 'Skälet var enkelt: {byn}.', om: f => !f.tanke && !!f.byn },
     { t: '{Byn}.', om: f => !f.tanke && !!f.byn },
   ],
   // berättelsen om tiden borta (steg 5.4.4, ui/borta.ts): kronikans rader binds ihop av de här meningarna.
