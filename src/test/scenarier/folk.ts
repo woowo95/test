@@ -1757,6 +1757,25 @@ SCENARIER.smidighet = {
   },
 };
 
+SCENARIER.stridflytt = {
+  text: 'Den som flyttar från byn mitt i en strid lämnar också striden: hen får ingen uppgift mer, och striden tar slut utan hen',
+  kor: () => {
+    const s = createState(3, START); klockan(s, 12);
+    const [a, b, ...ovriga] = living(s).filter(x => ageOf(x, s.now) >= SIM.ALDER.vuxen);
+    b.x = a.x + 1.2; b.y = a.y;
+    for (const q of [a, b]) { q.pot.mod = 16; q.pot.aggression = 16; q.pot.empati = 4; q.task = undefined; }
+    for (const q of ovriga) { q.x = a.x + 40; q.y = a.y; q.task = undefined; }
+    SIM.kartStridBorja(s, 'slagsmal', [[a], [b]], 'på prov');
+    for (let i = 0; i < 3; i++) step(s, 1);
+    const slogs = a.task?.act === 'strid';
+    SIM.leave(s, a);
+    for (let i = 0; i < 60; i++) step(s, 1);
+    return [
+      [`den som slogs har ingen uppgift när hen flyttat (${a.task?.act ?? 'ingen'})`, slogs && !a.task],
+      ['striden tar slut utan hen', !(s.kartStrider ?? []).some(g => g.st.kampar.some(k => k.pid === a.id)) && SIM.alive(b)],
+    ];
+  },
+};
 SCENARIER.stridkarta = {
   text: 'Steg 10.1.4: ett slagsmål sker på kartans rutor. De som slåss är personerna själva, där de står; såret sitter på personen i samma ögonblick som slaget träffar, ingen flyttas till en annan plats och ingen står i en vägg. Byn går i korta steg medan det pågår och i samma följd av steg i spelet och i ikappräkningen. Den som står nära går emellan eller går undan, efter empati och mod',
   kor: () => {
