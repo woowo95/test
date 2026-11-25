@@ -127,3 +127,72 @@ SCENARIER.foretag = {
     ];
   },
 };
+
+// en by med ett företag: ett hus med disk och bord (också för de andra scenarierna)
+export function foretagBy(verk = ['servering'], silver = 60) {
+  const s = SIM.cloneState(testBy(25)), W = SIM.W;
+  const vux = SIM.living(s).filter(q => !q.gast && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && SIM.kanGa(q));
+  const p = vux[0];
+  const r = [...SIM.gridOf(s).rooms].filter(x => x.hus !== undefined && SIM.husById(s, x.hus)?.klar && SIM.husById(s, x.hus)!.tro === undefined).sort((a, b) => b.tiles.length - a.tiles.length)[0];
+  const h = SIM.husById(s, r.hus)!, i = new Set(r.tiles);
+  h.fn = 'naringshus' as never; h.ag = p.id;
+  s.stationer = s.stationer!.filter(t => !i.has(t.y * W + t.x));
+  s.lagren = (s.lagren ?? []).filter(z => !i.has(z.y * W + z.x));
+  s.stackar = (s.stackar ?? []).filter(a => !i.has(Math.floor(a.y) * W + Math.floor(a.x)));
+  const stall = (k: string, x: number, y: number) => { const t = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x, y, kvar: 0, inne: 1 } as unknown as SIM.Station; s.stationer!.push(t); SIM.touch(s); return t; };
+  const ok = (x: number, y: number) => [0, 1].every(d => i.has(y * W + x + d));
+  const d0 = r.tiles.find(t => ok(t % W, Math.floor(t / W)) && i.has(t + W) && i.has(t + W + 1))!;
+  const disk = stall('disk', d0 % W, Math.floor(d0 / W));
+  const b0 = [...r.tiles].reverse().find(t => ok(t % W, Math.floor(t / W)) && (Math.floor(t / W) > disk.y + 2 || Math.abs(t % W - disk.x) > 2))!;
+  stall('bord', b0 % W, Math.floor(b0 / W));
+  const fin = SIM.FOOD.find(k => SIM.maltidsNiva(k) === 'fin')!;
+  SIM.laggIn(s, fin, 300, p.id);
+  for (const q of vux) if (q !== p) SIM.laggIn(s, 'silver', silver, q.id);
+  s.foretag = []; const f = SIM.starta(s, p.id, verk); SIM.foretagTimme(s);
+  return { s, p, f, h, r, disk, fin, vux: vux.filter(q => q !== p && !SIM.familjOf(s, p.id).includes(q)) };
+}
+
+SCENARIER.kassa = {
+  text: 'Steg 14.1.6: kunden köper maten vid disken när den är mer värd än den kostar, väntar där tills någon betjänar, och går om det dröjer för länge; poängen för att betjäna växer med kön och väntan',
+  kor: () => {
+    const { s, p, f, disk, fin, vux } = foretagBy(), m = 60000, kan = vux.filter(q => SIM.kundVal(s, q, 'servering')), k = kan[0], k2 = kan[1];
+    const oppet = SIM.oppna(s, f), e = SIM.kundVal(s, k, 'servering');
+    const dyr = (() => { f.pris = { servering: 50 }; const x = SIM.kundVal(s, k, 'servering'); f.pris = undefined; return x; })();
+    const stalla = (q: typeof k, dt = 0) => { const x = SIM.kundVal(s, q, 'servering'); if (!x) return false; const o = SIM.stallIKo(s, q, x); q.x = o.spot.x; q.y = o.spot.y; q.task = { act: 'koaDisk', phase: 'do', tx: o.spot.x, ty: o.spot.y, until: s.now + o.dur - dt, carry: 0, why: o.why, ref: o.ref }; f.ko![f.ko!.length - 1].t = s.now - dt; return true; };
+    if (e) stalla(k);
+    const p1 = SIM.betjanPoang(s, p, f);
+    f.ko![0].t -= 4 * m; const p2 = SIM.betjanPoang(s, p, f);
+    if (k2) stalla(k2); const p3 = SIM.betjanPoang(s, p, f);
+    const platser = new Set((f.ko ?? []).map(r => { const q = SIM.byId(s, r.p)!; return `${Math.floor(q.x)},${Math.floor(q.y)}`; }));
+    const annan = vux.find(q => q !== k && q !== k2), pa = annan ? SIM.betjanPoang(s, annan, f) : 0;
+    // ägaren kallas till disken, väljer att betjäna och kunden får sin mat
+    const silver0 = SIM.ownsAmount(s, k, 'silver'), varor0 = SIM.ownsId(s, p.id, fin), hung0 = k.hunger = 0.4;
+    const b = SIM.betjanVal(s, p);
+    p.task = { act: 'betjana', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', ref: f.id };
+    for (const a of s.stackar!) if (a.k === fin) { a.x = Math.floor(p.x); a.y = Math.floor(p.y); } // maten ligger framme vid disken
+    SIM.touch(s);
+    SIM.betjanaKlar(s, p, p.task!); p.task = undefined;
+    const mat = k.hunger > hung0, betalt = silver0 - SIM.ownsAmount(s, k, 'silver'), salt = f.salt?.servering ?? 0, sitter = k.task?.act;
+    // den andra väntar för länge
+    const l0 = f.lamnat ?? 0; if (k2?.task) SIM.koaKlar(s, k2, k2.task);
+    // i spelet: byn går och någon köper själv
+    const s2 = foretagBy(); let kopt = 0;
+    for (const q of s2.vux) { q.hunger = 0.25; q.task = undefined; }
+    s2.p.task = undefined; s2.p.hunger = 1;
+    for (let j = 0; j < 1800 && !kopt; j++) { s2.s.now += 2000; SIM.step(s2.s, 2); kopt = s2.s.stat?.foretagSalt ?? 0; }
+    return [
+      [`serveringen är öppen med bord och disk (${oppet.join(',')})`, oppet.includes('servering')],
+      [`kunden vill köpa (${e?.k} för ${e?.pris.toFixed(1)}, vinner ${e?.net.toFixed(2)}), men inte till femtio gånger priset`, !!e && !dyr],
+      [`poängen för att betjäna växer med väntan och kön (${p1.toFixed(2)} < ${p2.toFixed(2)} < ${p3.toFixed(2)})`, p1 > 0 && p1 < p2 && p2 < p3],
+      [`kunderna står på varsin plats i kön (${platser.size})`, platser.size === 2],
+      [`flera vill köpa (${kan.length})`, kan.length >= 2],
+      [`bara den som arbetar i företaget betjänar (${pa})`, pa === 0],
+      [`ägaren väljer att betjäna (${b?.f.namn})`, b?.f === f],
+      [`kunden äter och betalar, och det sålda räknas (${betalt} silver, ${salt}, ${(varor0 - SIM.ownsId(s, p.id, fin)).toFixed(1)} mat)`, mat && salt === 1 && varor0 - SIM.ownsId(s, p.id, fin) >= 0.9],
+      [`kunden sätter sig vid bordet (${sitter})`, sitter === 'maltid'],
+      [`den som väntat för länge går, med en dålig tanke (${(f.lamnat ?? 0) - l0})`, (f.lamnat ?? 0) === l0 + 1 && k2!.thoughts.some(t => t.k === 'vantadeForgaves')],
+      [`i byn köper någon själv (${kopt} köp, gått ${s2.s.stat?.koLamnat ?? 0})`, kopt > 0],
+      [`disken är en station av virke`, disk.k === 'disk' && !!SIM.stationDef('disk')?.av],
+    ];
+  },
+};

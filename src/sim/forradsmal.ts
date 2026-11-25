@@ -32,7 +32,7 @@ import { ALDER, ageOf, living } from './folk';
 import { TORST } from './torst';
 import { harMyr } from './myr';
 import { sportFor } from './sport';
-import { STATION, STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, kupBrist, harStation, isKlar, pyntBrist, pyntLust, stationerOf, tommaPlatser, villPynt } from './stationer';
+import { foretagBord, STATION, STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, kupBrist, harStation, isKlar, pyntBrist, pyntLust, stationerOf, tommaPlatser, villPynt } from './stationer';
 import { nTools } from './agande';
 import { brasaBrist, brasaStenMal } from './brasor';
 import { BYGGNADER, fahusUtanKrubba, fnId, langhusRum, sovplatser, utanBadd } from './byggnader';
@@ -362,6 +362,7 @@ export function stationBrist(s: State, k: StationSlag) {
 }
 function nyBrist(s: State, k: StationSlag, d: StationDef) {
   if (d.tro) return Math.max(0, ...(s.tron ?? []).map(tr => trosMobelBrist(s, tr, k))); // trons möbler i trons hus (steg 10.3.19)
+  if (d.disk) return foretagBord.diskBrist(s); // företagens diskar (steg 14.1.6)
   if (d.varmer) return finareKrok.fyrfat(s); // fyrfatet i ett rum utan eld (steg 12.4.11, mobler.ts)
   if (d.finare) return finareKrok.finare(s, k); // utedasset i stället för latrinen (steg 12.4.9, mobler.ts)
   if (d.vagga) return finareKrok.vagga(s); // en vagga i varje rum där ett spädbarn sover (steg 12.4.5, mobler.ts)

@@ -45,6 +45,7 @@ export const TANKAR = {
   sovVagga: rad({ text: 'Sov gott i vaggan', tid: 8 * HOUR, nar: 'spädbarnet sov i en vagga; styrkan STATION.vaggaGlad gånger hur utvilad (vila i STATIONER, steg 12.4.5)' }),
   bredvidKaresta: rad({ text: 'Sov bredvid sin käresta', nar: 'sov i en säng intill kärestans (mobler.ts, steg 12.4.3)' }),
   rumPlus: rad({ text: (a: { text: string }) => a.text, tid: 8 * HOUR, nar: 'sover eller äter i ett rum med ett plus; texten och styrkan i RUM_PLUS (rum.ts, steg 12.1.143)' }),
+  vantadeForgaves: rad({ text: 'Väntade förgäves vid disken', v: -0.05, tid: 6 * HOUR, nar: 'ingen betjänade i tid (kassa.ts, steg 14.1.6)' }),
   rumFint: rad({ text: 'Rummet är finare än väntat', tid: 8 * HOUR, nar: 'sover eller äter i ett rum finare än man väntat sig (forvantan.ts, steg 14.1.3)' }),
   rumEnkelt: rad({ text: 'Rummet är för enkelt', tid: 8 * HOUR, nar: 'sover eller äter i ett rum enklare än man väntat sig (forvantan.ts, steg 14.1.3)' }),
   promenad: rad({ text: 'Tog en skön promenad', v: 0.06, tid: 6 * HOUR, nar: 'promenaden (steg.ts)' }),

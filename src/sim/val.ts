@@ -10,7 +10,8 @@ import { ELDSTATIONER } from './stationseld';
 import { isKlar, stationerOf } from './stationer';
 import { flintaTillVerktyg } from './redskap';
 import { VATSKOR, type VatskaId, ar_vatska, taVatska, vatskaAv, vatskaKrok, } from './vatskor';
-import { kvallsDryck, kvallsVikt } from './rus';
+import { budHindrar } from './kyrka';
+import { RUS, kvallsDryck, kvallsVikt, rusAv } from './rus';
 import { forbrukat, lagerPabud } from './forradsmal';
 import { grundvarde } from './varde';
 import { narStridVal } from './kartstrid';
@@ -42,6 +43,7 @@ import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from '.
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
 import { FORRAD, FORRADSMAL, TROSKEL, buffert, lyxtak, materialTimme, materialTak, eldReserv, villHaAv } from './forradsmal';
+import { betjanVal, kundVal, stallIKo, KASSA, type Erbjudande } from './kassa';
 import { stadaUppgift, stadaVal } from './stada';
 import { tjaraUppgift, tjaraVal } from './tjara';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, forstRuttnar, freeOfKinds, handelTask, toolGroups, underhallGrupp } from './redskap';
@@ -139,7 +141,7 @@ export const VAL = balans('val', {
   // Tillfälle (nivå 3, steg 13.8.10): det som står på spel. Jakten på besten skyddar byn, resan och bönen är redan bestämda,
   // handeln och framträdandet går förlorade när handlaren eller berättaren går. Tillsynen vid milan och ugnen väger efter det
   // som går förlorat (BRANNINGAR.miss) gånger tillPassa, och mer ju närmare den sista stunden (passaVikt i brann.ts)
-  tillJakt: 2, tillResa: 1.8, tillBon: 1.5, tillRitual: 1.2, tillHandla: 1, tillSport: 0.8, tillLyssna: 0.7, tillPassa: 0.5,
+  tillJakt: 2, tillResa: 1.8, tillBon: 1.5, tillRitual: 1.2, tillHandla: 1, tillBetjana: 0.3, tillSport: 0.8, tillLyssna: 0.7, tillPassa: 0.5,
   // Grundbehov (nivå 4, steg 13.8.10): vikten gånger hur långt under gränsen man är (nodUnder). Gränsen är högre för den lata
   // (latToa, latVarme, TORST.lat, latVila), så den lata tar grundbehoven tidigare och väljer dem före de andra
   grundKyla: 1.4, grundTorst: 1.3, grundKravla: 1.2, grundToa: 1.1, grundMat: 1, grundSkadad: 0.9, grundVila: 0.8, grundUtbrott: 0.5,
@@ -487,6 +489,7 @@ const BALTE_FORBAND = new Set<Act>(['jakt', 'vargjakt', 'bjornjakt', 'forsvar', 
 export function balteForband(s: State, p: Person, act: Act) { if (BALTE_FORBAND.has(act) && !p.forbandMed) iRackhall(p.x, p.y, () => { if (getable(s, p, 'remsa') >= 1) { takeMaterial(s, p, 'remsa', 1); p.forbandMed = 1; } }); }
 export interface Val { fron?: true; eldFor?: Act; skal?: Task['skal']; paus?: true; /* vilan är en paus när inget annat lockar, inte trötthet (steg 11.1.72) */ fordon?: number; dragdjur?: number; stanna?: boolean; act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true | 'sten' | 'flinta'; hot?: 'rovare' | 'varg'; tandmat?: true; falt?: true; sno?: true; ho?: true; gava?: true; hamtar?: string; lon?: string; brand?: Task['brand']; kalla?: number }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; v.paus = undefined; v.skal = undefined; return true; };
+const koa = (s: State, p: Person, v: Val, e: Erbjudande) => { const k = stallIKo(s, p, e); set(v, 'koaDisk', k.why); v.spot = k.spot; v.dur = k.dur; v.ref = k.ref; return true; }; // kunden går till disken (kassa.ts)
 const paus = (v: Val, why: string) => { set(v, 'vila', why); v.paus = true; return true; }; // vilan när inget annat lockar (steg 11.1.72)
 
 // Registret ARBETEN (steg 6.1.11, "Arbetsordningen" i designdokumentet): en rad per uppgift, i den ordning valet prövar dem.
@@ -547,7 +550,7 @@ const arbBehov = (s: State) => s.arbBehov ?? (arbetsTimme(s), s.arbBehov!);
 // nivåerna: 1 Fara, 2 Nöd och vård, 3 Tillfälle, 4 Grundbehov, 5 Rädda, 6 Försörjning, 7 Tak, 8 Förbättra, 9 Fritid
 type Niva = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 // det valet vet om personen; farorna räknas första gången en rad frågar och gäller hela valet
-interface Ctx { s: State; p: Person; v: Val; a: number; lazy: number; light: boolean; f?: Faror; d?: Dag; forb?: boolean; fb?: Record<string, { sc: number; gor: () => void } | undefined>; bord?: { x: number; y: number } | null }
+interface Ctx { betj?: ReturnType<typeof betjanVal>; kund?: Erbjudande; s: State; p: Person; v: Val; a: number; lazy: number; light: boolean; f?: Faror; d?: Dag; forb?: boolean; fb?: Record<string, { sc: number; gor: () => void } | undefined>; bord?: { x: number; y: number } | null }
 const faror = (c: Ctx) => c.f ??= dangers(c.s);
 // Förbättra dämpas mjukt (steg 10.11.20): när kylan eller hungern är en fara tas raderna på Förbättra och projekten med chansen
 // VAL.projFara (en dragning per val), som bygget dämpas (byggDampning): tiden går helst till faran, men ingenting stängs av
@@ -781,6 +784,8 @@ export const ARBETEN: readonly Arbete[] = [
     if (!hv) return false;
     set(v, hv.act, hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return true;
   } },
+  // disken (steg 14.1.6, kassa.ts): att betjäna väger mer ju fler som väntar och ju längre de väntat
+  { id: 'betjana', niva: 3, poang: c => { if (!c.s.foretag?.length) return 0; const d = (c.betj = betjanVal(c.s, c.p)); return d ? VAL.tillBetjana * d.sc : 0; }, prova: ({ v, betj: d }) => { if (!d) return false; v.spot = d.spot; v.dur = d.dur; v.ref = d.f.id; return set(v, 'betjana', `Betjänar: ${d.f.namn}`); } },
   // ett framträdande (steg 10.7.9, framtradande.ts): den som ville lyssna vid kallelsen går dit, men inte den som skäms
   { id: 'lyssna', niva: 3, poang: () => VAL.tillLyssna, prova: ({ s, p, v }) => {
     const l = skams(p, s.now) ? undefined : lyssnaVal(s, p, q => spotFor(s, 'beratta', q));
@@ -809,6 +814,8 @@ export const ARBETEN: readonly Arbete[] = [
     if (!bord) return false;
     v.spot = bord; v.dur = (VAL.maltidMin + rnd(s, 'val', p) * VAL.maltidSpann) * MIN; return set(v, 'maltid', 'Är hungrig och äter vid bordet');
   } },
+  // serveringen (steg 14.1.6, kassa.ts): den hungrige köper sin måltid när den är mer värd än den kostar
+  { id: 'servering', niva: 4, poang: c => { if (!c.s.foretag?.length || c.a < ALDER.hjalper || !MAT.behover(c.s, c.p)) return 0; const e = (c.kund = kundVal(c.s, c.p, 'servering')); return e ? VAL.grundMat * nodUnder(c.p.hunger, KROPP.hungrig) * (1 + KASSA.lust * Math.min(1, e.net)) : 0; }, prova: ({ s, p, v, kund: e }) => !!e && koa(s, p, v, e) },
   // hungrig, och maten ligger inte där hen står: hen går till den närmaste stacken med mat hen får ta och äter där (steg 11.1.77)
   { id: 'ata', niva: 4, poang: matPoang, prova: ({ s, p, v }) => ataVal(s, p, v) },
   { id: 'utbrott', niva: 4, nar: 'dag', poang: () => VAL.grundUtbrott, prova: ({ s, p, v }) => utbrottVal(s, p, v) },
@@ -1456,7 +1463,7 @@ export interface FritidC {
   why: string; // skälet till handarbetet
   at: { x: number; y: number }; // där hen skulle skriva
   fara: ReturnType<typeof dangers>;
-  dr?: ReturnType<typeof kvallsDryck>; fb?: ReturnType<typeof besokVal>; gb?: ReturnType<typeof gravbesokVal>; sk?: ReturnType<typeof skrivVal>; la?: ReturnType<typeof lasVal>;
+  dr?: ReturnType<typeof kvallsDryck>; kund?: Erbjudande; fb?: ReturnType<typeof besokVal>; gb?: ReturnType<typeof gravbesokVal>; sk?: ReturnType<typeof skrivVal>; la?: ReturnType<typeof lasVal>;
 }
 export interface FritidRad {
   id: string;
@@ -1586,6 +1593,10 @@ export const FRITID: readonly FritidRad[] = [
   { id: 'dryck', nar: 'natt', kraver: 'en dryck med alkohol och att vara hemma', ger: 'rus och humör', drar: 'lusten till rus: humöret, vanan och sederna', akt: ['dryck'],
     vikt: c => (c.dr = kvallsDryck(c.s, c.p, hemma(c.s, c.p))) ? kvallsVikt(c.s, c.p) : 0,
     gor: c => { const d = c.dr!, v = c.v; v.spot = { x: c.p.x, y: c.p.y }; v.dur = 0; v.tool = d; return set(v, 'dryck', `Dricker ${VATSKOR[d].namn.toLowerCase()} vid elden`); } },
+  // en dryck hos den som säljer (steg 14.1.6, kassa.ts): lusten till rus och det kunden vinner på köpet
+  { id: 'krog', nar: 'natt', kraver: 'ett företag som säljer dryck, och att kunna betala', ger: 'rus, humör och sällskap', drar: 'lusten till rus och priset', akt: ['koaDisk'],
+    vikt: c => { if (!c.s.foretag?.length || c.a < ALDER.vuxen || rusAv(c.p) >= RUS.mest || budHindrar(c.s, c.p, 'ingetRus')) return 0; c.kund = kundVal(c.s, c.p, 'dryck'); return c.kund ? kvallsVikt(c.s, c.p) * (1 + c.kund.net) : 0; },
+    gor: c => !!c.kund && koa(c.s, c.p, c.v, c.kund) },
   // ett framträdande vid scenen eller elden (steg 4.3.2, 10.7.9 och 13.8.8, framtradande.ts): den som vill uppträda kallar
   { id: 'framtradande', nar: 'natt', kraver: 'en kväll utan framträdande, och att inte skämmas', ger: 'humör åt publiken och färdighet', drar: 'skaldskapet och karisman', akt: ['upptrada'],
     vikt: c => skams(c.p, c.s.now) ? 0 : framVikt(c.s, c.p),

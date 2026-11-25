@@ -332,6 +332,7 @@ KLAR.valla = (s, p, t) => vallaKlar(s, p, t.ref);
 KLAR.klippa = (s, p, t) => { klippKlar(s, p, t.ref); wearUsed(s, p, 1); }; // ullsaxen slits för varje får (steg 12.5.2)
 KLAR.tatuera = (s, p, t) => tatKlar(s, p, t.ref);
 KLAR.farga = fargaKlar; // färgbadet (farg.ts, steg 13.3.2)
+KLAR.koaDisk = koaKlar; KLAR.betjana = betjanaKlar; // kassan (kassa.ts, steg 14.1.6)
 KLAR.stada = stadaKlar; // städningen (stada.ts, steg 14.1.2)
 KLAR.tjara = tjaraKlar; // tjäran (tjara.ts, steg 13.5.1)
 KLAR.mjolka = (s, p, t) => mjolkaKlar(s, p, t.ref);
@@ -523,6 +524,7 @@ export const TAKTER: Takt[] = [
   { namn: 'huvudbyns rad', sek: 3600, fn: s => { if (s.varld && s.vackt === undefined && s.vacktPlats === undefined) skrivHuvudRad(s); } }, // talen i huvudbyns rad i världen (radtal.ts, steg 11.2.9)
   { namn: 'skatten', sek: 86400, fas: SKATT.timme / 24, fn: (s, dt) => { skattDygn(s, dt * SEC); } }, // skatten på rikedomen (skatt.ts, steg 10.5.3)
   { namn: 'budgeten', sek: 86400, fas: SKATT.timme / 24, fn: s => { if (s.budget) budgetDygn(s); lonDygn(s); } }, // budgeten delar byns förråd, efter skatten (budget.ts, steg 10.5.7)
+  { namn: 'kassan', sek: 30, fn: s => { if (s.foretag?.length) kassaTakt(s); } }, // den som kan betjäna kallas till disken (kassa.ts, steg 14.1.6)
   { namn: 'företagen', sek: 3600, fn: s => { foretagTimme(s); } }, // företagens hus och ägare (foretag.ts, steg 14.1.5)
   { namn: 'företagens dygn', sek: 86400, fas: (SKATT.timme + 1) / 24, fn: s => { foretagDygn(s); } }, // nya företag, efter skatten och lönerna
   { namn: 'rädslan', sek: 86400, fas: STR.timme / 24, fn: (s, dt) => { raddDygn(s, dt); } }, // rädslan för handlingar bleknar och berättas vidare, också i en by utan ledare (radsla.ts, steg 12.1.60 och 12.1.84)
@@ -1847,6 +1849,7 @@ import { tatKlar } from './tatuering';
 import { barGillad, fargaKlar, FARG, stepFargsmak } from './farg';
 import { tjaraKlar } from './tjara';
 import { stadaKlar } from './stada';
+import { betjanaKlar, kassaTakt, koaKlar } from './kassa';
 import { forvantanTanke, forvantanTimme } from './forvantan';
 import { angKlar, slaKlar, stepVinter, hamlaKlar } from './slatter';
 import { stepHons } from './hons';

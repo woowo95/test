@@ -198,3 +198,6 @@ import { branningHamtas } from './brann';
 HAMTAS.smida = { av: (_s, _p, tk) => smidaHamtas(tk) };
 import { smidaHamtas } from './jarnsaker';
 import { redskapTal } from './handlingar';
+// maten till kunden vid disken (steg 14.1.6, kassa.ts): ur ägarens förråd
+HAMTAS.betjana = { av: (s, _p, tk) => betjanHamtas(s, tk), fran: (s, _p, tk) => betjanFran(s, tk) };
+import { betjanFran, betjanHamtas } from './kassa';

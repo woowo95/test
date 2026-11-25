@@ -16,7 +16,8 @@ import { prastOf } from './kult';
 import { payable } from './behov';
 import { grundvarde, formogenheter } from './varde';
 import { kroppensMat } from './ekonomi';
-import { amountOf } from './lager';
+import { amountOf, ownsAmount } from './lager';
+import { rusLust } from './rus';
 import { FOOD } from './saker';
 import { MALTIDSNIVA, maltidsNiva } from './ratter';
 import { DRYCKER, dryckAv, vatskaAv, type VatskaId } from './vatskor';
@@ -27,6 +28,7 @@ import { foretagBord } from './stationer';
 export const FORETAG = balans('foretag', {
   humor: 20, // en hel punkt bättre humör under en tanke är värd så många silver för kunden
   dryck: 0.6, // så många silver är en kvällsdryck värd mer än drycken själv, gånger hur gärna den tas
+  dryckVarde: 0.5, // så många silver är själva drycken värd
   andel: 0.5, // så stor del av måltiderna och dryckerna räknar man med att kunderna köper
   del: 0.5, // så stor del av kundens vinst räknar man med att kunna ta betalt för
   timKund: 0.1, // så många timmar arbete tar en kund
@@ -39,7 +41,7 @@ export const FORETAG = balans('foretag', {
   minne: 0.5, // så mycket av det företaget säljer på ett dygn glöms till nästa
 });
 // det företaget sålt: n = kunder och v = värdet, per dygn (glöms med FORETAG.minne)
-export interface Foretag { id: number; ag: number; hus?: number; verk: string[]; namn: string; t: number; salt?: Record<string, number>; intakt?: number }
+export interface Foretag { id: number; ag: number; hus?: number; verk: string[]; namn: string; t: number; salt?: Record<string, number>; intakt?: number; pris?: Record<string, number>; ko?: import('./kassa').KoRad[]; lamnat?: number; kallad?: number }
 export const foretagOf = (s: State): Foretag[] => s.foretag ?? [];
 export const foretagAvHus = (s: State, hus?: number) => hus === undefined ? undefined : foretagOf(s).find(f => f.hus === hus);
 
@@ -49,23 +51,31 @@ export interface Verksamhet {
   namn: string; sym: string;
   rum: string; // rumstypen
   varor: (s: State) => string[]; // det som går att sälja i byn nu
-  noje: (s: State, p: Person, k: string) => number; // det kunden vinner, i silver
+  noje: (s: State, p: Person, k: string) => number; // det kunden vinner mot att ta det hen har hemma, i silver
+  snitt: (k: string) => number; // det en vanlig kund vinner, i silver
+  grund?: (k: string) => number; // varans värde när den inte är en sak i förrådet
+  ats?: true; // äts och dricks i rummet
+  vatska?: true; // säljs ur ett kärl
   perDygn: (s: State, p: Person) => number; // så många gånger per dygn kunden skulle kunna köpa
   kunnande: (p: Person) => number; // hur väl den som driver den kan den, 1 = vanligt
 }
+// den bästa maten p har hemma
+const hemmaNoje = (s: State, p: Person) => FOOD.reduce((m, k) => { const n = MALTIDSNIVA[maltidsNiva(k)].humor; return n > m && ownsAmount(s, p, k) >= 1 ? n : m; }, 0);
 const skick = (n: number) => clamp(0.6 + n / 25, 0.6, 1.4);
 export const VERKSAMHETER: Record<string, Verksamhet> = {
   servering: {
     namn: 'Servering', sym: '🍲', rum: 'matsal',
     varor: s => FOOD.filter(k => MALTIDSNIVA[maltidsNiva(k)].humor > 0 && amountOf(s, k) >= 1),
-    noje: (_s, _p, k) => FORETAG.humor * MALTIDSNIVA[maltidsNiva(k)].humor,
+    noje: (s, p, k) => FORETAG.humor * Math.max(0, MALTIDSNIVA[maltidsNiva(k)].humor - hemmaNoje(s, p)),
+    snitt: k => FORETAG.humor * MALTIDSNIVA[maltidsNiva(k)].humor, ats: true,
     perDygn: (s, p) => kroppensMat(p, s.now),
     kunnande: p => skick((p.skill.matlagning + p.skill.handel) / 2),
   },
   dryck: {
     namn: 'Dryck', sym: '🍺', rum: 'matsal',
     varor: s => DRYCKER.filter(v => dryckAv(v)?.alkohol && vatskaAv(s, v as VatskaId) >= 1),
-    noje: (_s, _p, k) => FORETAG.dryck * (dryckAv(k)?.kvall ?? 0.5),
+    noje: (_s, p, k) => FORETAG.dryck * (dryckAv(k)?.kvall ?? 0.5) * rusLust(_s, p),
+    snitt: k => FORETAG.dryck * (dryckAv(k)?.kvall ?? 0.5), grund: () => FORETAG.dryckVarde, vatska: true,
     perDygn: (s, p) => ageOf(p, s.now) >= ALDER.vuxen ? 1 : 0,
     kunnande: p => skick((p.skill.matlagning + p.skill.handel) / 2),
   },
@@ -93,7 +103,7 @@ export function efterfragan(s: State, v: string, ag: number): { kunder: number; 
   for (const p of living(s)) {
     if (p.id === ag || ageOf(p, s.now) < ALDER.hjalper) continue;
     let bast = 0, pris = 1;
-    for (const k of varor) { const n = V.noje(s, p, k); if (n > bast) { bast = n; pris = grundvarde(k) + n * FORETAG.del; } }
+    for (const k of varor) { const n = V.noje(s, p, k); if (n > bast) { bast = n; pris = (V.grund?.(k) ?? grundvarde(k)) + n * FORETAG.del; } }
     if (bast <= 0) continue;
     const n = Math.min(V.perDygn(s, p) * FORETAG.andel, kundPung(s, p) / FORETAG.pung / Math.max(0.1, pris));
     kunder += n; vinst += n * bast * FORETAG.del;
