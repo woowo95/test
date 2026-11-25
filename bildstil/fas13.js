@@ -265,3 +265,53 @@
     VID('Rövaren själv: en mörk huva med en skugga och två ljusa ögon.', ['..oooo..', '.oRRRRo.', 'oRrrrrRo', 'oRooooRo', 'oobooboo', 'oRooooRo', '.oRRRRo.', '..oooo..']),
   ] });
 })();
+
+// fas 13: blodet på den som är blodig (steg B.67): porträttet till vänster, figuren på kartan framifrån, från sidan och bakifrån
+// till höger, i spelets storlek och en gång uppförstorad. Blodet ligger i formens egna skuggor: en mörk punkt får den mörka rosten
+(() => {
+  const BILD = (text, mal, karta) => ({ text, w: 104, h: 68, rita: (B, P) => {
+    const PR = window.PORTRATTEN; if (!PR || !window.BYBO) return;
+    const gras = P.i('oliv', 2); for (let y = 0; y < 68; y++) for (let x = 66; x < 104; x++) B.satt(x, y, gras);
+    const ljus = c => { const r = P.cols[c].rgb; return r[0] + r[1] + r[2]; };
+    const m = PR.neutral('man'); m.alder = 'vuxen'; m.klader = { rock: 'harskinn', skor: true, balte: false };
+    const Q = PR.portratt(m); Q.plats = { ox: 2, oy: 2 };
+    for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+      const c = Q.px[y * 64 + x]; if (c < 0) continue;
+      const fig = !Q.figur || Q.figur[y * 64 + x], oga = y >= 26 && y <= 31 && (x >= 23 && x <= 29 || x >= 35 && x <= 41);
+      const t = fig && x > 1 && y > 1 && x < 62 && y < 62 && !oga ? mal(x, y) : undefined;
+      B.satt(2 + x, 2 + y, t === undefined ? c : P.i('rost', Math.max(0, t - (ljus(c) < 170 ? 1 : 0))));
+    }
+    ['fram', 'sida', 'bak'].forEach((rikt, n) => {
+      const F = window.BYBO(22, rikt, 'sta', 'hanga', null, { rock: 'harskinn' }), x0 = 74 + (n === 1 ? 14 : 0) - (n === 2 ? 0 : 0), y0 = n < 2 ? 8 : 38;
+      F.plats = { ox: x0, oy: y0 };
+      for (let x = 2; x < F.w - 2; x++) B.morka(x0 + x, y0 + F.h);
+      for (let y = 0; y < F.h; y++) for (let x = 0; x < F.w; x++) { const c = F.px[y * F.w + x]; if (c < 0) continue; const t = karta(x - F.w / 2, y, rikt, F.h); B.satt(x0 + x, y0 + y, t === undefined ? c : P.i('rost', t)); }
+    });
+  } });
+  const slump = (x, y) => { const v = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453; return v - Math.floor(v); };
+  // en droppe: en rund klick med radien r
+  const i = (x, y, l) => l.some(([cx, cy, r]) => (x - cx) ** 2 + (y - cy) ** 2 <= r * r);
+  const strimma = (x, y, l) => l.some(([sx, y0, y1, b]) => y >= y0 && y <= y1 && Math.abs(x - sx - Math.sin(y * 0.4) * 0.8) <= b);
+  VAL.push({ id: 'f13_blod2', namn: 'Blodig (steg 2)', typ: 'tre', slag: ['manniska'], vad: 'Steg B.67: blodet på den som blött en hel del, på ansiktet och kläderna. I spelet är det nu spridda fläckar (platshållare). Porträttet till vänster, figuren på kartan till höger: framifrån, från sidan och bakifrån.', versioner: [
+    BILD('Blodet rinner: från ett sår i hårfästet i strimmor ner över ansiktet, och en våt fläck som runnit ner på bröstet.',
+      (x, y) => strimma(x, y, [[22, 15, 44, 1], [25, 13, 33, 1.4], [28, 14, 25, 0.7], [27, 33, 46, 0.6]]) ? (slump(x, y) < 0.3 ? 0 : 1) : y >= 46 && Math.hypot((x - 26) * 1.1, (y - 49) * 0.8) < 8 - slump(x, 0) * 2 || strimma(x, y, [[21, 52, 60, 1], [27, 52, 61, 1.2], [31, 52, 57, 0.6]]) ? 1 : undefined,
+      (dx, y, r) => r === 'bak' ? (dx < 0 && dx > -3 && y < 4 ? 1 : undefined) : y <= 8 && dx >= -3 && dx <= -2 ? 1 : y > 8 && y < 16 && Math.abs(dx + 1.5) < 2.2 ? (y % 3 ? 1 : 0) : undefined),
+    BILD('Blodet har stänkt: droppar i en båge snett över ansiktet och bröstet, stora och små.',
+      (x, y) => i(x, y, [[18, 20, 1.6], [23, 24, 2.2], [27, 35, 1.6], [33, 33, 1.3], [36, 38, 2.4], [41, 35, 1.1], [42, 42, 1.4], [21, 30, 0.8], [30, 22, 0.9], [38, 22, 0.8], [46, 51, 3], [40, 55, 1.8], [51, 56, 2.2], [35, 52, 1.2], [44, 60, 1.5], [28, 57, 1.4], [54, 50, 1], [20, 54, 0.9]]) ? (slump(x, y) < 0.35 ? 0 : 1) : undefined,
+      (dx, y, r) => slump(Math.round(dx) + (r === 'bak' ? 40 : 7), y) < (r === 'bak' ? 0.05 : 0.17) ? (slump(y, dx) < 0.4 ? 0 : 1) : undefined),
+    BILD('Blodet är utsmetat: hen har torkat sig med handen, i breda drag över pannan och kinden och på bröstet.',
+      (x, y) => { const d = [[20, 18, 44, 20], [19, 34, 34, 40], [22, 38, 36, 44], [16, 50, 40, 54], [20, 54, 46, 58], [15, 57, 34, 61]].some(([x0, y0, x1, y1]) => { const t = (x - x0) / (x1 - x0); return t >= 0 && t <= 1 && Math.abs(y - (y0 + (y1 - y0) * t)) < 1.8 * (1 - t * 0.5) && slump(x >> 1, Math.round(y - (y1 - y0) * t)) > t * 0.55; }); return d ? ((x + y) % 4 ? 1 : 0) : undefined; },
+      (dx, y, r) => r === 'bak' ? undefined : y === 3 && dx < 2 ? 1 : (y === 6 && dx > -3 && dx < 1) ? 1 : (y === 11 || y === 13) && Math.abs(dx) < 4 - (y - 11) ? 1 : y === 15 && dx > -2 && dx < 3 ? 0 : undefined),
+  ] });
+  VAL.push({ id: 'f13_blod3', namn: 'Genomblodig (steg 3)', typ: 'tre', slag: ['manniska'], vad: 'Steg B.67: den som blött mycket är genomblodig, så att det syns på avstånd. I spelet är det nu fläckar över nästan hela figuren (platshållare). Porträttet till vänster, figuren på kartan till höger: framifrån, från sidan och bakifrån.', versioner: [
+    BILD('Halva ansiktet och hela bröstet är täckt, och blodet rinner i trådar nedför kläderna.',
+      (x, y) => { const kant = 31 + Math.sin(y * 0.6) * 1.6; if (y < 47) return x < kant ? (slump(x >> 1, y >> 2) < 0.25 ? 0 : slump(x, y) < 0.07 ? 2 : 1) : undefined; const djup = 55 + slump(x >> 1, 3) * 9; return y < djup && x > 12 && x < 52 ? (slump(x >> 1, y >> 2) < 0.35 ? 0 : 1) : undefined; },
+      (dx, y, r, h) => r === 'bak' ? (dx < 0 && y < 6 || y > 7 && y < 11 + slump(dx, 1) * 4 ? 1 : undefined) : (y < 8 ? dx < 0.5 : y < 12 + slump(Math.round(dx), 2) * (h - 14)) ? (slump(dx, y) < 0.3 ? 0 : 1) : undefined),
+    BILD('Dränkt: hela hen är röd, håret, ansiktet och kläderna, och bara ögonen är fria. Blanka ljusa strimmor där det är vått.',
+      (x, y) => slump(x, y) < 0.05 && y > 14 ? undefined : (x + (y >> 1)) % 9 === 0 && slump(x >> 1, y >> 2) < 0.55 ? 2 : slump(x >> 1, y >> 1) < 0.3 ? 0 : 1,
+      (dx, y) => slump(Math.round(dx), y) < 0.08 ? undefined : slump(Math.round(dx) + 3, y) < 0.14 ? 2 : slump(y, Math.round(dx)) < 0.32 ? 0 : 1),
+    BILD('Levrat: tjocka mörka kakor med nästan svart kant i håret, på kinden och över bröstet, och huden lyser fram mellan dem.',
+      (x, y) => { let d = 9; for (const [cx, cy, r] of [[22, 13, 7], [38, 11, 6], [20, 36, 7], [40, 40, 5], [33, 23, 3], [22, 53, 9], [41, 54, 9], [31, 60, 6], [53, 59, 5]]) d = Math.min(d, Math.hypot(x - cx, y - cy) - r - (slump(x >> 1, y >> 1) - 0.5) * 2); return d < -1.4 ? (slump(x >> 1, y) < 0.25 ? 2 : 1) : d < 0.4 ? 0 : undefined; },
+      (dx, y, r) => { const v = slump(Math.floor((dx + 20) / 3), Math.floor((y + (r === 'bak' ? 1 : 0)) / 3)); return v < 0.62 ? ((Math.round(dx + 20) % 3 === 0 || y % 3 === 0) ? 0 : 1) : undefined; }),
+  ] });
+})();
