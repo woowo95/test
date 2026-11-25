@@ -2750,3 +2750,49 @@ SCENARIER.flyktvag = {
     ];
   },
 };
+
+// fem rövare mot två bybor (steg B.31), mätta varje stridssteg från tre sekunder in
+export function matOvertal(fro: number[], vaggar: number[] = []) {
+  const m = { steg: 0, vand: 0, borta: 0, fast: 0, slog: 0, kampar: 0, vantar: 0, byten: 0 };
+  for (const fr of fro) {
+    const k = (id: number, sida: 0 | 1, x: number, y: number, vapen: string) => ({ id, namn: `${sida ? 'R' : 'B'}${id}`, sida, vapen, klader: [], x, y, fart: 1, st: { styrka: 10, uthallighet: 10, mod: 20, skicklighet: 10, aggression: 10, smidighet: 10 }, fly: { x: sida ? 60 : 4, y: 20 } }) as unknown as SIM.Uppstallning['kampar'][number];
+    const st = SIM.nyStrid({ karta: true, avsikt: 'skada', w: SIM.W, h: SIM.H, kampar: [k(1, 0, 20, 20, 'fiskespjut'), k(2, 0, 20, 21, 'yxa'), ...[0, 1, 2, 3, 4].map(i => k(3 + i, 1, 27 + (vaggar.length ? 2 * (i >> 1) : i % 2), vaggar.length ? 19.2 + (i % 3) : 18 + i * 1.5, i % 2 ? 'kniv' : 'yxa'))] }, fr);
+    for (const q of st.kampar) q.blod = 1;
+    SIM.iVarlden(SIM.provVarld(undefined, new Set(vaggar)), () => {
+      const fore = new Map<number, { x: number; y: number; dx: number; dy: number; mal?: number; fast: number; vand: number[] }>(), slog = new Set<number>();
+      while (!st.slut && st.t < 120) {
+        SIM.stridSteg(st);
+        for (const q of st.kampar) {
+          if (q.sida !== 1 || q.lage !== 'strid' || q.ligger || q.bocker || q.backar) { fore.delete(q.id); continue; }
+          const o = st.kampar.find(z => z.id === q.mal), b = fore.get(q.id) ?? { x: q.x, y: q.y, dx: 0, dy: 0, mal: q.mal, fast: 0, vand: [] as number[] };
+          const dx = q.x - b.x, dy = q.y - b.y, l = Math.hypot(dx, dy), L = Math.hypot(b.dx, b.dy), om = l > 0.02 && L > 0.02 && b.mal === q.mal && dx * b.dx + dy * b.dy < -0.5 * l * L; // den som byter mål får vända
+          if (st.t > 3) {
+            if (l > 0.02) { m.steg++; if (om) m.vand++; }
+            if (b.mal !== q.mal) m.byten++;
+            // längre än två rutor från sitt mål: går den av och an utan att komma närmare på tio sekunder?
+            if (o && Math.hypot(q.x - o.x, q.y - o.y) > 2) { m.borta++; if (l <= 0.02 || b.mal !== q.mal) m.vantar++; if (om) b.vand = [...b.vand.filter(t => st.t - t < 10), st.t]; if (b.vand.length >= 2) m.fast++; }
+          }
+          fore.set(q.id, { x: q.x, y: q.y, dx: l > 0.02 ? dx : b.dx, dy: l > 0.02 ? dy : b.dy, mal: q.mal, fast: 0, vand: b.vand });
+        }
+        for (const r of st.logg) if ((r.h === 'traff' || r.h === 'miss' || r.h === 'parera' || r.h === 'duck') && r.a! > 2) slog.add(r.a!);
+      }
+      m.kampar += 5; m.slog += slog.size;
+    });
+  }
+  return m;
+}
+SCENARIER.overtal = {
+  text: 'De som inte når fram (steg B.31): när fem rövare anfaller två bybor vänder ingen fram och tillbaka, och den som inte får plats runt sitt mål väljer ett annat eller står lugnt kvar bakom',
+  kor: () => {
+    const fro = [1, 2, 3, 4, 5, 6], o = matOvertal(fro);
+    // i en trång gränd får två plats i bredd
+    const vra = Array.from({ length: 40 }, (_, i) => i + 5).flatMap(x => [18 * SIM.W + x, 22 * SIM.W + x]), v = matOvertal(fro, vra);
+    return [
+      [`på öppen mark vänder de sällan (${o.vand} av ${o.steg} steg)`, o.steg > 50 && o.vand <= o.steg * 0.05],
+      [`... ingen av dem som står längre än två rutor bort går av och an (${o.fast} av ${o.borta})`, o.fast === 0],
+      [`... och alla kommer till tals (${o.slog} av ${o.kampar} slog)`, o.slog >= o.kampar * 0.8],
+      [`i en gränd vänder de sällan (${v.vand} av ${v.steg} steg)`, v.vand <= fro.length],
+      [`... ingen av dem som inte når fram går av och an (${v.fast} av ${v.borta}, ${v.vantar} väntar eller byter mål)`, v.borta > 500 && v.fast === 0 && v.vantar >= v.borta * 0.9],
+    ];
+  },
+};
