@@ -12,7 +12,7 @@ import { eldPlats, getMap, vaderstreck } from './karta';
 import { Klan, klanById, klanerOf } from './klaner';
 import { klanHandelse } from './byrel';
 import { kantMot } from './grannbyar';
-import { addTo, amountOf, avbryt, carryKind, dropLoad, isCarrying, zoneOf, zonesOf } from './lager';
+import { addTo, amountOf, avbryt, carryKind, dropLoad, isCarrying, zoneAt, zoneOf, zonesOf } from './lager';
 import { hundSkaller, tamArt, tamStulen, tamUte } from './tamdjur';
 import { DORRAR, bitAt, bitsOf, freeNear, husById, roomAt } from './byggnad';
 import { LARM, handelse, horLarm } from './rykten';
@@ -34,7 +34,7 @@ import { gastAv, gastAvvapna, gastGar, gastTillbaka, gastTingOf, gasterNu, nyGas
 import { brytKlar, fangeVal, fangelseDorr, fangelseLedigt, satt as sattIFangelset } from './fangelse';
 import { notis } from './notiser';
 import type { TalkEvent } from './samtal';
-import { groundOf, tileOf } from './mark';
+import { groundOf, isForest, tileOf } from './mark';
 import { findPath, markFart } from './vag';
 import { GANG } from './gang';
 import { Grav, kvarlevor } from './kvarlevor';
@@ -66,7 +66,7 @@ export const ROVARE = balans('rovare', {
   antal: [2, 5], // så många rövare (minst, högst)
   lur: 30, // flocken stannar så här många rutor från förrådet och väntar (lurMin minuter) när alla kommit fram, innan den går till anfall (steg 6.6.9 och B.27) ...
   lurMin: [1, 5], // ... minst, högst
-  vaktSer: 70, folkSer: 25, nattSer: 0.5, dimmaSer: 0.5, // vakten ser rövare inom så här många rutor (steg 10.2.97: också gänget på rastplatsen på andra sidan byn), andra inom folkSer, gånger nattSer i mörkret
+  vaktSer: 90, folkSer: 45, nattSer: 0.3, dimmaSer: 0.5, // vakten ser rövare inom så här många rutor (steg 10.2.97: också gänget på rastplatsen på andra sidan byn), andra inom folkSer, gånger nattSer i mörkret
   gissFel: 0.5, // vaktens gissning av antalet: fel med upp till så här stor del, gånger avståndet / vaktSer (andra gissar som på längsta avståndet)
   bredvid: 2, // var och en går mot en egen punkt upp till så här många rutor från gängets mål (steg 10.2.25) ...
   filBredd: 1.1, // ... och går en egen fil så här många rutor från de andras
@@ -74,6 +74,9 @@ export const ROVARE = balans('rovare', {
   fartSpann: 0.08, // ... och upp till så här mycket långsammare än en bybo
   nara: 1.5, // rövarna är framme vid förrådet så här nära
   // rövarnas val (steg 10.1.9–10.1.15, ROVARHANDLINGAR)
+  isKostnad: 5, // den som hamnat på vattnet (isen) går därifrån över det: så mycket kostar en sådan ruta i vägsökningen (steg B.43)
+  utanVag: 10, // den som anfaller och inte hittar någon väg till målet står kvar och prövar igen, och ger upp efter så här många minuter (steg B.43)
+  stillSek: 60, // gänget väntar inte på den som stått still så här länge på väg till rastplatsen (steg B.44)
   rastR: 3, // rastplatsen: så här nära mitten håller de sig, och så långt går den som går omkring
   rastaPoang: 0.35, gaPoang: 0.2, prataPoang: 0.38, // poängen för att vila, gå omkring och prata på rastplatsen (steg 10.2.24: vilan vann nästan alltid med 0,5; steg 10.2.94: mer prat, mindre gång)
   sparEfter: 0.15, // bilden: det som flyttar rövaren efter en gång som redan sparats till samma tid visas så här många sekunder senare (steg 10.2.96)
@@ -82,10 +85,11 @@ export const ROVARE = balans('rovare', {
   valKvar: 0.2, valBrus: 0.3, // det hen redan gör har så här mycket försteg i valet, och vilan, promenaden och samtalet slumpas med så här mycket
   horhall: 30, // den som varnar hörs så här många rutor (gånger LARM.natt på natten): hörhållet är stort (steg 10.1.12) ...
   varnaSek: 4, // ... och att varna tar så här många sekunder
-  seDag: 0.97, seNatt: 0.8, // medan gänget går till rastplatsen upptäcker byn det med den här chansen per minut, på dagen och på natten (steg B.28)
-  fackelSer: 1, // på natten syns ett gäng med en tänd fackla som på dagen (gånger detta), annars gånger nattSer (steg 10.1.10)
+  ser: 3, serSkog: 0.5, // den som är vaken, ute och har gänget inom synhåll upptäcker det så här många gånger per minut på halva synhållet: oftare ju närmare, vid synhållets kant inte alls (steg B.57), och gånger serSkog när gänget går i skog
+  fackelSer: 0.5, // på natten syns ett gäng med en tänd fackla så här långt jämfört med på dagen, annars gånger nattSer (steg 10.1.10)
   moter: 6, // en rövare och den som står emot börjar slåss när de är så här nära varandra (rutor) ...
   slaIvagen: 0.5, hotaPoang: 0.6, taBordaPoang: 0.8, // ... och den som inte står emot men är så nära: den aggressiva slår (gånger aggressionen / 10), den modiga hotar (gånger modet / 10), och den som har plats tar det hen bär (steg 10.2.26)
+  slaOvetande: 0.5, // ... och så mycket mer mot den som inte vet om gänget: hen kan överraskas (steg B.57)
   slaMod: 0.5, slaHot: 0.6, // viljan att slå: per tio steg mod över 10, och minus detta per gång fler som står emot än de själva
   hotVapen: 2, // i hotet räknas var och en som 1 + detta gånger vapnets skada
   flyBlod: 2.5, flyHot: 0.8, flyDoda: 1.2, // viljan att fly: blodet hen förlorat, övermakten hen ser (mindre för den modiga) och delen av flocken som är borta
@@ -101,12 +105,12 @@ export const ROVARE = balans('rovare', {
   styrka: [8, 14], mod: [8, 15], uthallighet: [9, 14], smidighet: [8, 14], skicklighet: [6, 11], // rövarnas kroppar (lägst, högst)
   testVanta: 4, // testläget: gänget rastar så här många minuter innan anfallet, i stället för lurMin, så att man hinner se livet på rastplatsen (steg 10.1.16 och 10.2.31); inget annat skiljer
   larmTim: 2, // ... om hen inte redan fått larmet de senaste så här många timmarna
-  radFram: 2, radIsar: 1.3, // de som väntar på gänget står så här många rutor från målet mot gänget, i en rad med så här många rutor mellan sig (steg B.5)
-  // den som är i underläge väntar på de andra (steg B.17): övermakten rövarna får ha är samlFran + modet / 20, de högst samlNara rutor från raden eller
+  radFram: 2, radIsar: 1.3, radUt: 6, /* så långt letas fri mark till raden (steg B.49) */ // de som väntar på gänget står så här många rutor från målet mot gänget, i en rad med så här många rutor mellan sig (steg B.5)
+  // den som är i underläge väntar på de andra (steg B.17): räcker de som samlats (motVilja, steg B.47) möter de gänget, de högst samlNara rutor från raden eller
   // från gruppens egen mitt är samlade (byn väntar samlAvst rutor bortom målet sett från gänget), och de som hinner till raden innan gänget kommit samlHinner
-  // gånger så långt räknas med. Finns ingen annan inom samlVag rutor väntar man inte
+  // gånger så långt räknas med. Är alla inom samlVag rutor framme väntar man inte längre
   // (den som bestämt sig för att möta dem tål mer, samlKvar, så att valet inte vippar)
-  samlFran: 0.5, samlKvar: 0.6, samlHinner: 1, samlNara: 6, samlVag: 60, samlAvst: 11,
+  samlKvar: 0.6, samlHinner: 1, samlNara: 6, samlVag: 60, samlAvst: 11,
   radFlytt: 2.5, // hjälparen går till en ny plats bakom raden när den hen har är så här många rutor från den (steg B.14)
   foljSek: 12, // den som inte står emot och springer undan följs så här många sekunder (steg B.14), sedan går rövaren vidare
   anfallUt: 2, // en flock som setts så här nära byns område (utanforByn) eller inne i det gör att byn går i anfallsläge (steg 9.2.104)
@@ -114,7 +118,7 @@ export const ROVARE = balans('rovare', {
   lurUt: 15, // väntplatsen ligger minst så här många rutor utanför byns område (utanforByn), också för en vanlig flock (steg 9.2.103)
   // vem som strider, hjälper eller gömmer sig (steg 9.2.116, rovarVilja): mod / 20 + iver, minus skadad × det som fattas i hälsan,
   // sjuk när hen är sjuk och gammal för de gamla, plus seden, familjen, plikten och ledaren (rovarVilja). Från kampeFran strider hen, från hjalpFran hjälper hen och står bakom en bit bakom kämparna, annars gömmer hen sig
-  hotAvst: 20, // hotet i valet (steg B.29, rovarHot): på så här många rutor väger gänget hälften
+  hotAvst: 20, hotSteg: 6, // hotet i valet (steg B.29, rovarHot): på så här många rutor väger gänget hälften
   budMarg: 1.2, budMax: 2, // budbäraren (steg 9.2.117) går bara om vägen dit, gånger budMarg, hinns före anfallet, och ger upp efter budMax timmar
   overmakt: 0.2, // övermakten i viljan vid larmet (steg B.32): så mycket mindre vilja per gång starkare gänget är än de egna som kan slåss
   kampeFran: 0.15, hjalpFran: 0.05, skadad: 1, sjuk: 0.5, gammal: 0.3, bakom: 3,
@@ -130,8 +134,10 @@ export const rovarna = (s: State, f: { folk: number[] }): Person[] => f.folk.map
 const gr = (r: Person) => r.gast!;
 // x, y: mitten av gänget (steg 10.2.25), mx, my: målet. test: flocken kom från testläget och rastar kortare (steg 9.2.103).
 // anfall: flocken har setts i eller nära byn, och byn går mot den (steg 9.2.104). strider: hur många strider flocken varit i
-export interface Rovarflock { radMal?: { x: number; y: number }; /* målet raden väntar vid (steg B.33) */ fard?: number; hemN?: number; hemBar?: Record<string, number>; /* världens färd som skickade flocken, hur många som kommit hem och vad de bar (steg 11.6.20) */ rast?: { x: number; y: number }; vantat?: boolean; anfaller?: boolean; anfallT?: number; /* när det gick till anfall (steg B.13) */ klar?: boolean; radKlar?: boolean; antal?: number; strider?: number; tagit?: Record<string, number>; gravTagit?: Record<string, number>; /* det som togs ur gravarna (steg 13.1.5) */ sx?: number; sy?: number; skal?: import('./rader').RadSkal; rad?: boolean; mal?: number; hugger?: { bit: number; till: number }; tant?: boolean; id: number; klan?: number; folk: number[]; x: number; y: number; mx: number; my: number; gor: 'kommer' | 'vantar' | 'slass' | 'flyr' | 'letar' | 'rotar'; /* det de flesta gör, för texterna (steg 10.2.30) */ letar?: number[]; letat?: boolean; till: number; sedd?: number; gissning?: number; test?: boolean; anfall?: boolean; bud?: { av: number; till: number; t: number } }
+export interface Rovarflock { ingenMer?: boolean; /* alla på väg till raden är framme, och de räcker inte (steg B.47) */ radMal?: { x: number; y: number }; /* målet raden väntar vid (steg B.33) */ fard?: number; hemN?: number; hemBar?: Record<string, number>; /* världens färd som skickade flocken, hur många som kommit hem och vad de bar (steg 11.6.20) */ rast?: { x: number; y: number }; vantat?: boolean; anfaller?: boolean; anfallT?: number; /* när det gick till anfall (steg B.13) */ kom?: number; frammeT?: number; /* när gänget kom, och när alla var framme vid rastplatsen, för mätningen (steg B.56) */ klar?: boolean; radKlar?: boolean; antal?: number; strider?: number; tagit?: Record<string, number>; gravTagit?: Record<string, number>; /* det som togs ur gravarna (steg 13.1.5) */ sx?: number; sy?: number; skal?: import('./rader').RadSkal; rad?: boolean; mal?: number; hugger?: { bit: number; till: number }; tant?: boolean; id: number; klan?: number; folk: number[]; x: number; y: number; mx: number; my: number; gor: 'kommer' | 'vantar' | 'slass' | 'flyr' | 'letar' | 'rotar'; /* det de flesta gör, för texterna (steg 10.2.30) */ letar?: number[]; letat?: boolean; till: number; sedd?: number; gissning?: number; test?: boolean; anfall?: boolean; bud?: { av: number; till: number; t: number } }
 
+// för mätningen av striderna (npm run strid, steg B.56): varje gäng som kommer (läses aldrig av spelet)
+export const rovarProv: { kom?: (f: Rovarflock) => void } = {};
 const vaken = (p: Person) => p.task?.act !== 'sova';
 const mellan = (s: State, [a, b]: readonly number[]) => a + rnd(s, 'rovare') * (b - a);
 export const vuxenKan = (s: State, p: Person) => { const a = ageOf(p, s.now); return a >= ALDER.vaktFran && a < ALDER.vaktTill && halsa(p) >= KROPP.svag && kanGa(p); }; // den sjuka kan slåss men vill mindre (ROVARE.sjuk i rovarVilja)
@@ -189,9 +195,10 @@ export function rovarnaKommer(s: State, tvinga: number, direkt?: boolean, klan?:
   folk.forEach((id, j) => { const g = gastAv(s, id)?.gast; if (g) g.fil = j - (folk.length - 1) / 2; }); // var sin fil bredvid de andra (steg 10.2.25)
   const nr = s.rovarNr = (s.rovarNr ?? 0) + 1;
   // testläget (steg 9.2.103): gänget rastar ROVARE.testVanta minuter i stället för den vanliga väntan
-  s.rovare = { id: nr, klan: k?.id, folk, x, y, mx: x, my: y, gor: 'kommer', till: 0, ...(direkt ? { test: true } : {}) };
+  s.rovare = { id: nr, klan: k?.id, folk, x, y, mx: x, my: y, gor: 'kommer', till: 0, kom: s.now, ...(direkt ? { test: true } : {}) };
   stallUpp(s, s.rovare, x, y);
   s.rovarVila = s.now;
+  rovarProv.kom?.(s.rovare);
   if (forra) { (s.rovareFler ??= []).push(s.rovare); s.rovare = forra; count(s, 'tvaFlockar'); }
   count(s, 'rovarflockar'); count(s, 'rovare', n);
 }
@@ -232,7 +239,7 @@ export function gaMot(s: State, r: Person, mx: number, my: number, sek: number, 
     if (nara) gr(r).pk = mal;
     else if (gr(r).ingen !== undefined && s.now - (gr(r).ingenT ?? 0) < ROVARE.vagSok * SEC && Math.hypot(gr(r).ingen! % W - mx, Math.floor(gr(r).ingen! / W) - my) <= ROVARE.vagFlytt) return -1; // (också ett mål nära det som inte gick)
     else {
-      gr(r).pk = mal; gr(r).path = findPath(g, r.x, r.y, mx, my, false, undefined, runt) ?? undefined;
+      gr(r).pk = mal; gr(r).path = findPath(g, r.x, r.y, mx, my, false, iVatten(s, r.x, r.y) ? ROVARE.isKostnad : undefined, runt) ?? undefined;
       if (!gr(r).path) { gr(r).pk = undefined; gr(r).ingen = mal; gr(r).ingenT = s.now; return -1; }
       gr(r).ingen = undefined;
     }
@@ -250,6 +257,7 @@ export function gaMot(s: State, r: Person, mx: number, my: number, sek: number, 
       // bakom den som går i filen, och hen ska inte gå tillbaka till den (steg B.20)
       if ((wx - r.x!) * ux + (wy - r.y!) * uy < 0 && fritt(s, r.x!, r.y!, wx + ux, wy + uy)) { gr(r).path!.shift(); continue; }
     }
+    if (!sist) { const q = iVagen(s, wx, wy, mx, my); if (q) { wx = q.x; wy = q.y; } } // någon står på nästa punkt på vägen: bredvid hen (steg B.49)
     // ingen går genom en människa: man kliver åt sidan runt hen. Står rövaren redan där (vägen går tätt bakom den hen gått
     // runt), tränger hen sig förbi
     const runt = (q => q && Math.hypot(q.x - r.x!, q.y - r.y!) > 1e-3 ? q : undefined)(runtOm(s, r, wx, wy, mx, my));
@@ -262,6 +270,14 @@ export function gaMot(s: State, r: Person, mx: number, my: number, sek: number, 
     if (sist) { spara(s, r, t0 + tid * SEC); return 0; }
     gr(r).path!.shift(); spara(s, r, t0 + tid * SEC);
   }
+}
+// en människa i byn som står på vägens punkt (wx, wy): den fria punkten STRID.kropp bredvid hen, närmast vägens
+function iVagen(s: State, wx: number, wy: number, mx: number, my: number) {
+  const q = living(s).find(o => !o.gast && o.ute === undefined && Math.hypot(o.x - wx, o.y - wy) < STRID.kropp / 2 && Math.hypot(o.x - mx, o.y - my) >= STRID.kropp);
+  if (!q) return undefined;
+  const v0 = Math.atan2(wy - q.y, wx - q.x);
+  for (const dv of [0, 0.8, -0.8, 1.6, -1.6, 2.4, -2.4, Math.PI]) { const x = q.x + Math.cos(v0 + dv) * STRID.kropp, y = q.y + Math.sin(v0 + dv) * STRID.kropp; if (inMap(x, y) && !iVatten(s, x, y) && !bitAt(s, x, y)) return { x, y }; }
+  return undefined;
 }
 // marken på den raka linjen går att gå på (inget vatten, inget hus)
 function fritt(s: State, x0: number, y0: number, x1: number, y1: number) {
@@ -331,28 +347,32 @@ function facklaSteg(s: State, f: Rovarflock) {
   if (!t) { const led = rovarna(s, f)[0]; if (!led) return; t = { id: -(s.gastTingNr = (s.gastTingNr ?? 0) + 1), k: 'fackla', c: 1, agare: led.id }; (s.gastTing ??= []).push(t); } // ett gäng går aldrig ut utan en fackla
   t.tand = t.agare; t.tandT = s.now; count(s, 'rovarFackla');
 }
-// så långt ser q gänget: vakten längst, kortare på natten (men som på dagen när gänget har en tänd fackla) och i dimma
+// så långt ser q gänget: vakten längst, kortare på natten (men längre bort när gänget har en tänd fackla) och i dimma
 export function synhall(s: State, f: Rovarflock, q: Person) {
   const ljus = lightLevel(s.now) > 0 ? 1 : facklaTand(s, f) ? ROVARE.fackelSer : ROVARE.nattSer;
   return (q.task?.act === 'vakt' ? ROVARE.vaktSer : ROVARE.folkSer) * ljus * (1 - ROVARE.dimmaSer * vaderNu(s).dimma);
 }
-// Att se dem: var och en som är vaken och har gänget inom synhåll ser det och vet (larmet hos personen). Den som är långt borta vet
+// Att se dem: var och en som är vaken och ute och har gänget inom synhåll kan upptäcka det (en chans per tid) och vet sedan (larmet hos personen). Den som är långt borta vet
 // ingenting förrän hen själv ser dem eller hör en varning. Vakthunden hör dem före vakten (steg 9.8.11)
 function seSteg(s: State, f: Rovarflock, folk: Person[], dtSec: number) {
   const strid = flockStrid(s, f), horStrid = LARM.hor * (isLight(s.now) ? 1 : LARM.natt);
-  const ser = (q: Person) => vaken(q) && (narmast(s, f, q) < synhall(s, f, q) || !!strid && horsel(q) >= LARM.dov && strid.st.kampar.some(k => k.lage === 'strid' && Math.hypot(k.x - q.x, k.y - q.y) < horStrid)); // striden hörs (steg B.29)
+  if (!strid && !pavag(s, f)) return; // (steg B.51)
+  const chans = 1 - Math.exp(-ROVARE.ser * dtSec / 60);
+  // en chans per tid som växer ju närmare gänget är jämfört med synhållet, och mindre när den närmaste rövaren går i skog (steg B.57)
+  const synsFor = (q: Person) => {
+    const syn = synhall(s, f, q);
+    let d = Infinity, skog = false;
+    const rum = roomAt(s, q.x, q.y); // den som är inne ser bara den som är i samma rum
+    for (const r of rovarna(s, f)) { if (rum && roomAt(s, r.x, r.y) !== rum) continue; const a = Math.hypot(r.x - q.x, r.y - q.y); if (a < d) { d = a; skog = inMap(r.x, r.y) && isForest(s, tileOf(r.x, r.y)); } }
+    if (d >= syn || ageOf(q, s.now) < ALDER.smabarn) return false;
+    return rnd(s, 'rovare') < 1 - (1 - chans) ** ((syn / Math.max(0.5, d) - 1) * (skog ? ROVARE.serSkog : 1));
+  };
+  const ser = (q: Person) => vaken(q) && (synsFor(q) || !!strid && horsel(q) >= LARM.dov && strid.st.kampar.some(k => k.lage === 'strid' && Math.hypot(k.x - q.x, k.y - q.y) < horStrid)); // striden hörs (steg B.29)
   const hund = hundSkaller(s, d => narmast(s, f, d));
-  // på vägen till rastplatsen upptäcks gänget ofta också på längre håll (steg B.28): den som är vaken och närmast ser det
-  let upptacker: Person | undefined;
-  if (f.sedd === undefined && !f.vantat && !f.anfaller && f.rast && rnd(s, 'rovare') < 1 - (1 - (lightLevel(s.now) > 0 ? ROVARE.seDag : ROVARE.seNatt) * (1 - ROVARE.dimmaSer * vaderNu(s).dimma)) ** (dtSec / 60)) {
-    let d = Infinity;
-    for (const q of folk) { if (!alive(q) || !vaken(q) || harLarm(s, q) || ageOf(q, s.now) < ALDER.smabarn) continue; const a = narmast(s, f, q); if (a < d) { d = a; upptacker = q; } }
-    if (upptacker) count(s, 'rovarUpptackta');
-  }
   for (const q of folk) {
-    if (!alive(q) || harLarm(s, q)) continue;
+    if (!alive(q) || harLarm(s, q, f)) continue;
     const viaHund = hund?.p === q;
-    if (q !== upptacker && !ser(q) && !viaHund) continue;
+    if (!ser(q) && !viaHund) continue;
     if (viaHund && q.task?.act === 'sova') { avbryt(s, q); q.task = undefined; }
     if (f.sedd === undefined) { // den första som ser dem gissar hur många de är (sämre på långt håll)
       const n = f.folk.length, fel = ROVARE.gissFel * Math.min(1, narmast(s, f, q) / Math.max(1, synhall(s, f, q))) * (rnd(s, 'rovare') * 2 - 1);
@@ -362,7 +382,7 @@ function seSteg(s: State, f: Rovarflock, folk: Person[], dtSec: number) {
       const text = `${q.name} såg rövare ${f.anfaller ? 'på väg mot byn' : 'utanför byn'}, ungefär ${f.gissning} (${fran(s, f)}).`;
       log(s, text, 'world', [q.id]); notis(s, 'anfall', text, [q.id], { x: Math.floor(f.x), y: Math.floor(f.y) });
     }
-    horLarm(q, { t: s.now, vad: 'rovare', storlek: f.gissning ?? f.folk.length, led: 0 });
+    larmOm(s, q, f, f.gissning ?? f.folk.length, 0);
     count(s, 'rovarSer');
     if (q.task && (q.task.act === 'vakt' || larmAvbryter(q.task.act, 'varg'))) { avbryt(s, q); q.task = undefined; } // hen väljer på nytt: först varnar hen (rovarSkydd)
   }
@@ -374,9 +394,10 @@ function hors(s: State, fran: Person, r: number) {
   const horn = (s.ting ?? []).some(t => t.k === 'horn' && (t.hos === fran.id || t.agare === fran.id));
   const led = (fran.larm?.rovare?.led ?? 0) + 1, st = fran.larm?.rovare?.storlek ?? 1;
   let n = 0;
+  const om = fran.larm?.rovare?.om, nya = (o: Person) => !harLarm(s, o) || !!om && !!o.larm!.rovare!.om && om.some(i => !o.larm!.rovare!.om!.includes(i));
   for (const o of living(s)) {
-    if (o === fran || harLarm(s, o) || horsel(o) < LARM.dov || (!horn && avst(o, fran) > r)) continue;
-    horLarm(o, { t: s.now, vad: 'rovare', storlek: Math.max(1, Math.round(st * (1 + LARM.forvrang * (2 * rnd(s, 'rykte', o) - 1)))), led });
+    if (o === fran || !nya(o) || horsel(o) < LARM.dov || (!horn && avst(o, fran) > r)) continue;
+    horLarm(o, { t: s.now, vad: 'rovare', storlek: Math.max(1, Math.round(st * (1 + LARM.forvrang * (2 * rnd(s, 'rykte', o) - 1)))), led, ...(om ? { om: [...new Set([...(harLarm(s, o) ? o.larm!.rovare!.om ?? [] : []), ...om])] } : {}) });
     tanke(o, 'hordeRop', s.now, { vad: 'rövare', v: -LARM.oro, tid: LARM.oroTim * HOUR });
     count(s, 'larm_hort'); n++;
     if (!o.task) continue;
@@ -404,15 +425,18 @@ const forsvarar = (q: Person) => q.task?.act === 'forsvarRovare' || q.task?.act 
 // inte hört ropet, springer den vuxna som har larmet och står närmast och hämtar dem, om hen hinner fram före anfallet. Ropet
 // sprids från hen på vägen. Budet är klart när den som skulle hämtas har larmet, eller när budMax timmar gått
 export const rovarFlockar = (s: State) => [s.rovare, ...(s.rovareFler ?? [])].filter((f): f is Rovarflock => !!f); // alla rövarflockar på kartan (steg 8.7.18)
-// vet hen om rövarna nu? Larmet från före anfallet säger inget om att gänget är på väg (steg B.13): den som ser det gå varnar på nytt
-// och en strid som börjat sedan dess är något nytt (steg B.29)
-const harLarm = (s: State, q: Person) => { const l = q.larm?.rovare; return !!l && s.now - l.t < ROVARE.larmTim * HOUR && !rovarFlockar(s).some(f => f.anfallT !== undefined && f.gor !== 'flyr' && f.gor !== 'slass' && l.t < f.anfallT || l.t < (flockStrid(s, f)?.t0 ?? -Infinity)); };
+// vet hen om rövarna (om gänget f) nu? Ett larm räcker för samma gäng: inget nytt när det går till anfall eller när striden börjar (steg B.51)
+const harLarm = (s: State, q: Person, f?: Rovarflock) => { const l = q.larm?.rovare; return !!l && s.now - l.t < ROVARE.larmTim * HOUR && (!f || !l.om || l.om.includes(f.id)); };
+// larmet om gänget f: ett gäng till är ett nytt larm att varna för, ett gäng man vet om är det inte (steg B.51)
+const larmOm = (s: State, q: Person, f: Rovarflock, storlek: number, led: number, varnat?: 1) => { const om = harLarm(s, q) ? q.larm!.rovare!.om ?? [] : []; horLarm(q, { t: s.now, vad: 'rovare', storlek, led, om: [...om, f.id], ...(varnat ? { varnat } : {}) }); };
+// ett gäng som flyr eller bär hem det de tagit är inget nytt hot
+const pavag = (s: State, f: Rovarflock) => f.gor !== 'flyr' && !f.klar && rovarna(s, f).some(r => !gr(r).flytt && !gr(r).nojd);
 // Hotet som q känner det (steg B.29, "Att se dem" i fliken Människan): hur nära det närmaste gänget är hen eller byn, vare sig gänget
 // ligger stilla eller rör sig. Ett gäng som flyr hotar ingen. Utan gäng på kartan vet man bara det man hört (larmet, som tas bort när det
 // sista gänget är borta, rovarSteg). Valet väger det som en fara (raden redo i val.ts)
 export function rovarHot(s: State, q: Person) {
   const fl = rovarFlockar(s).filter(f => f.folk.length);
-  if (!fl.length) return 1;
+  if (!fl.length) return harLarm(s, q) ? 1 : 0; // ett gammalt larm är inget hot (steg B.46)
   const ute = utanforByn(s, q.x, q.y) > 0;
   let h = 0;
   for (const f of fl) {
@@ -424,10 +448,21 @@ export function rovarHot(s: State, q: Person) {
   return h;
 }
 hotKrok.fara = (s, p) => p.larm?.rovare ? rovarHot(s, p) : 0;
+// hotet på en plats och på vägen dit (steg B.48): hur nära de rövare p vet om är, där vägen kommer närmast dem (hotSteg rutor isär)
+hotKrok.vag = (s, p, x, y) => {
+  if (!p.larm?.rovare) return 0;
+  const dit = Math.hypot(x - p.x, y - p.y), n = Math.max(1, Math.ceil(dit / ROVARE.hotSteg));
+  let d = Infinity;
+  for (const f of rovarFlockar(s)) {
+    if (f.gor === 'flyr' || !harLarm(s, p, f)) continue;
+    for (const r of rovarna(s, f)) if (!gr(r).flytt) for (let i = 1; i <= n; i++) d = Math.min(d, Math.hypot(p.x + (x - p.x) * i / n - r.x, p.y + (y - p.y) * i / n - r.y));
+  }
+  return d === Infinity ? 0 : 1 / (1 + d / ROVARE.hotAvst);
+};
 // den som står redo, hjälper eller gömmer sig går tillbaka till sitt när inget gäng längre hotar: alla flyr
 const REDO = new Set<string>(['forsvarRovare', 'hjalpaRovare', 'gomma']);
 function lugnar(s: State, folk: Person[]) {
-  for (const q of folk) if (q.task && REDO.has(q.task.act) && q.larm?.rovare && !q.larm.varg && (q.task.act !== 'gomma' || q.task.hot === 'rovare') && rovarHot(s, q) <= 0) { avbryt(s, q); q.task = undefined; count(s, 'rovarLugn'); }
+  for (const q of folk) if (q.task && REDO.has(q.task.act) && q.larm?.rovare && (q.task.act !== 'gomma' || q.task.hot === 'rovare') && (!s.rovare || rovarHot(s, q) <= 0)) { avbryt(s, q); q.task = undefined; count(s, 'rovarLugn'); }
 }
 function budFor(s: State, p: Person) {
   const b = rovarFlockar(s).find(f => f.bud?.av === p.id)?.bud;
@@ -499,16 +534,20 @@ export function overmakt(s: State, n: number, f: Rovarflock | undefined, folk: P
   const en = fria.length ? fria.reduce((a, q) => a + kraftMed(vapenSkada(s, q)), 0) / fria.length : kraftMed(0);
   let vi = 0;
   for (const q of folk) {
-    const t = bastaVapen(s, q, tagna); if (t) tagna.add(t.id);
-    vi += kraftMed(Math.max(vapenSkada(s, q), t ? VAPEN[t.k as keyof typeof VAPEN].skada : 0));
+    const har = vapenSkada(s, q), t = bastaVapen(s, q, tagna), b = t ? VAPEN[t.k as keyof typeof VAPEN].skada : 0;
+    if (t && b > har) tagna.add(t.id); // (reserveras bara när det är bättre än det hen har, steg B.55)
+    vi += kraftMed(Math.max(har, b));
   }
   return n * en / Math.max(0.5, vi);
 }
 const overmaktAvdrag = (over: number) => ROVARE.overmakt * Math.max(0, over - 1);
+// om de egna räcker (steg B.47): viljan att möta gänget med dem som skulle stå i raden, minus övermakten. En enda regel, vid larmet
+// (var och ens egen) och i mötet (gruppens medel)
+const motVilja = (s: State, p: Person, over: number) => rovarVilja(s, p) - gavSigAvdrag(s, p) - overmaktAvdrag(over);
 const narmasteFlock = (s: State, p: { x: number; y: number }) => rovarFlockar(s).filter(q => q.folk.length && q.gor !== 'flyr').sort((a, b) => avst(a, p) - avst(b, p))[0];
-// (de som gömmer sig eller hjälper räknas inte)
-const kanMota = (s: State, p: Person) => living(s).filter(q => q === p || vuxenKan(s, q) && !(q.larmRoll?.hot === 'rovare' && larmRollNu(s, q) && q.larmRoll.roll !== 'kampe'));
-LARMHOT.rovare = { namn: 'Rövarna', plus: (s, p) => -gavSigAvdrag(s, p) - (p.larm?.rovare && vuxenKan(s, p) ? overmaktAvdrag(overmakt(s, p.larm.rovare.storlek ?? 1, narmasteFlock(s, p), kanMota(s, p))) : 0), kampe: () => ROVARE.kampeFran, hjalp: () => ROVARE.hjalpFran };
+// de som skulle stå i raden: de som gömmer sig eller hjälper räknas inte, och när alla på väg är framme bara de som står där (steg B.47)
+const kanMota = (s: State, p: Person, f?: Rovarflock) => living(s).filter(q => q === p || vuxenKan(s, q) && (!f?.ingenMer || q.task?.act === 'forsvarRovare') && !(q.larmRoll?.hot === 'rovare' && larmRollNu(s, q) && q.larmRoll.roll !== 'kampe'));
+LARMHOT.rovare = { namn: 'Rövarna', plus: (s, p) => { const f = narmasteFlock(s, p); return motVilja(s, p, p.larm?.rovare && vuxenKan(s, p) ? overmakt(s, f?.ingenMer ? f.folk.length : p.larm.rovare.storlek ?? 1, f, kanMota(s, p, f)) : 1) - rovarVilja(s, p); }, kampe: () => ROVARE.kampeFran, hjalp: () => ROVARE.hjalpFran };
 function rovarSkydd(s: State, p: Person, _storlek: number, dur: number) {
   // den som vet men inte varnat än varnar först (steg 10.1.12)
   if (!!p.larm?.rovare && !p.larm.rovare.varnat && vaken(p) && ageOf(p, s.now) >= ALDER.smabarn) return { act: 'varna' as const, why: 'Varnar för rövare', spot: { x: p.x, y: p.y }, dur: ROVARE.varnaSek * SEC };
@@ -525,6 +564,19 @@ function rovarSkydd(s: State, p: Person, _storlek: number, dur: number) {
   }
   return gomSig(s, p, 'Rövare', 'rovare', dur);
 }
+// fri mark att stå på i raden (steg B.49): inte i ett hus, en vägg eller vatten och inte på lagret
+const friMark = (s: State, x: number, y: number) => inMap(x, y) && !bitAt(s, x, y) && !iVatten(s, x, y) && !roomAt(s, Math.floor(x), Math.floor(y)) && zoneAt(s, Math.floor(x), Math.floor(y)) < 0;
+// den fria marken närmast (x, y) där ingen av de andra i raden står (upptagna, rutorna)
+function radRuta(s: State, x: number, y: number, upptagna?: Set<number>) {
+  const duger = (a: number, b: number) => friMark(s, a, b) && !upptagna?.has(tileOf(a, b));
+  if (duger(x, y)) return { x, y };
+  let bast: { x: number; y: number } | undefined, bd = Infinity;
+  for (let dy = -ROVARE.radUt; dy <= ROVARE.radUt; dy++) for (let dx = -ROVARE.radUt; dx <= ROVARE.radUt; dx++) {
+    const d = dx * dx + dy * dy;
+    if (d < bd && duger(x + dx, y + dy)) { bd = d; bast = { x: x + dx, y: y + dy }; }
+  }
+  return bast ?? freeNear(s, x, y);
+}
 // Raden som väntar på gänget (steg B.5, B.14 och B.33, "Mötet" i fliken Människan): ROVARE.radFram rutor från målet mot hållet gänget kommer
 // ifrån, och i striden och när byn går emot där kämparna står. Hållet är från målet mot rastplatsen, så att raden står still när rövarna rör
 // sig vid målet. Utan gäng (bara larmet) är det målet självt. bakom = för den som hjälper: utan kämpar finns ingen rad att stå bakom, och
@@ -536,13 +588,28 @@ function radMal(s: State, f: Rovarflock, fria: Person[]) {
   return f.radMal = { x: ny.x, y: ny.y };
 }
 export function radLinje(s: State, f: Rovarflock) {
-  const mal = radMal(s, f, rovarna(s, f).filter(r => !gr(r).flytt)), fran = f.rast ?? f, d = Math.max(0.01, avst(fran, mal)), ux = (fran.x - mal.x) / d, uy = (fran.y - mal.y) / d, fram = Math.min(ROVARE.radFram, d);
-  return { mal, ux, uy, mitten: { x: mal.x + ux * fram, y: mal.y + uy * fram }, vantM: { x: mal.x - ux * ROVARE.samlAvst, y: mal.y - uy * ROVARE.samlAvst } };
+  const mal = radMal(s, f, rovarna(s, f).filter(r => !gr(r).flytt)), fran = f.rast ?? f, d = Math.max(0.01, avst(fran, mal)), ux = (fran.x - mal.x) / d, uy = (fran.y - mal.y) / d;
+  let fram = Math.min(ROVARE.radFram, d);
+  while (fram < d && fram < ROVARE.radFram + ROVARE.radUt && !friMark(s, mal.x + ux * fram, mal.y + uy * fram)) fram = Math.min(d, fram + 0.5); // framför huset eller lagret, inte i det (steg B.49)
+  return { mal, ux, uy, mitten: { x: mal.x + ux * fram, y: mal.y + uy * fram }, vantM: vantPlats(s, f, mal, ux, uy) };
+}
+// väntplatsen (steg B.48): samlAvst rutor från målet, åt det håll som är längst från både vägen gänget kommer och vägen det går hem
+function vantPlats(s: State, f: Rovarflock, mal: { x: number; y: number }, ux: number, uy: number) {
+  const h = kantMot(s, f.klan) ?? kanterna(mal.x, mal.y)[0], hd = Math.max(0.01, avst(h, mal)), hx = (h.x - mal.x) / hd, hy = (h.y - mal.y) / hd;
+  let bast = { x: mal.x - ux * ROVARE.samlAvst, y: mal.y - uy * ROVARE.samlAvst }, bp = Infinity;
+  for (let i = 0; i < 12; i++) {
+    const v = i * Math.PI / 6, c = Math.cos(v), n = Math.sin(v), at = { x: mal.x + c * ROVARE.samlAvst, y: mal.y + n * ROVARE.samlAvst };
+    const fri = freeNear(s, at.x, at.y);
+    if (Math.hypot(fri.x - at.x, fri.y - at.y) > 1.5) continue; // i vattnet eller i en vägg
+    const mot = Math.max(c * ux + n * uy, c * hx + n * hy);
+    if (mot < bp - 1e-9) { bp = mot; bast = at; }
+  }
+  return bast;
 }
 function radMitt(s: State, f: Rovarflock | undefined, folk: Person[], bakom = false) {
   if (!f) return undefined;
   const g = flockStrid(s, f), l = radLinje(s, f);
-  const slass = g ? g.st.kampar.filter(k => k.sida === 0 && k.lage === 'strid') : [], kampar = folk.filter(q => alive(q) && q.task?.act === 'forsvarRovare'), vantar = kampar.filter(q => q.task!.vantar);
+  const slass = g ? g.st.kampar.filter(k => k.sida === 0 && k.lage === 'strid') : [], kampar = folk.filter(q => alive(q) && q.task?.act === 'forsvarRovare' && narmasteFlock(s, q) === f), vantar = kampar.filter(q => q.task!.vantar);
   const rad = slass.length ? slass : vantar.length ? vantar : f.anfall && !f.anfaller ? kampar.filter(q => q.task!.phase === 'do') : [];
   const c = rad.length ? { x: rad.reduce((a, k) => a + k.x, 0) / rad.length, y: rad.reduce((a, k) => a + k.y, 0) / rad.length } : bakom && !kampar.length ? l.vantM : l.mitten;
   return { x: c.x, y: c.y, ux: l.ux, uy: l.uy };
@@ -550,7 +617,7 @@ function radMitt(s: State, f: Rovarflock | undefined, folk: Person[], bakom = fa
 // platsen i raden, bak rutor bakom den (hjälparen): den närmast mitten där ingen står (trängseln, glesPlats i trangsel.ts)
 function radPlats(s: State, p: Person, f: Rovarflock | undefined, bak: number, folk: Person[]) {
   const m = radMitt(s, f, folk, bak > 0) ?? { ...malet(s), ux: 0, uy: -1 };
-  return glesPlats(s, p, k => { const sida = (k % 2 ? 1 : -1) * Math.ceil(k / 2) * ROVARE.radIsar; return freeNear(s, m.x - m.ux * bak - m.uy * sida, m.y - m.uy * bak + m.ux * sida); })!;
+  return glesPlats(s, p, k => { const sida = (k % 2 ? 1 : -1) * Math.ceil(k / 2) * ROVARE.radIsar; return radRuta(s, m.x - m.ux * bak - m.uy * sida, m.y - m.uy * bak + m.ux * sida); })!;
 }
 setRovarVal(rovarSkydd);
 
@@ -607,8 +674,8 @@ export const ROVARHANDLINGAR: Record<RovarGor, { namn: string; ansikte?: 'arg' |
   tillRast: { namn: 'Går mot rastplatsen', ansikte: 'lugn', poang: c => !c.f.anfaller && c.f.rast && avst(c.r, c.f.rast) > ROVARE.rastR ? 1 : -1, gor: c => { ga(c, c.f.rast!, runtByn(c.s, ROVARE.rundUt)); } }, // runt byn (steg B.16)
   // på rastplatsen: vilar, går omkring lite och pratar med de andra
   // var och en vilar på sin egen plats runt rastplatsen, så att gänget sprider ut sig (steg 10.2.24)
-  rasta: { namn: 'Rastar', poang: c => c.f.anfaller ? -1 : ROVARE.rastaPoang, gor: c => { const g = gr(c.r); if (!c.f.rast) return; if (g.vx === undefined && avst(c.r, c.f.rast) <= ROVARE.rastR && !rovarna(c.s, c.f).some(q => q !== c.r && avst(q, c.r) < 0.8)) { g.vx = c.r.x!; g.vy = c.r.y!; } /* vilar där hen står, om ingen står på samma plats (steg 10.2.94) */ g.vx ??= c.f.rast.x + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; g.vy ??= c.f.rast.y + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; if (avst(c.r, { x: g.vx, y: g.vy }) > 0.6) ga(c, { x: g.vx, y: g.vy }); } },
-  gaOmkring: { namn: 'Går omkring', poang: c => c.f.anfaller || !c.f.rast ? -1 : ROVARE.gaPoang, gor: c => { const g = gr(c.r); g.vx ??= c.f.rast!.x + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; g.vy ??= c.f.rast!.y + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR; if (ga(c, { x: g.vx, y: g.vy }) < 0.6) g.gorTill = 0; } },
+  rasta: { namn: 'Rastar', poang: c => c.f.anfaller ? -1 : ROVARE.rastaPoang, gor: c => { const g = gr(c.r); if (!c.f.rast) return; if (g.vx === undefined && avst(c.r, c.f.rast) <= ROVARE.rastR && !iVatten(c.s, c.r.x, c.r.y) && !rovarna(c.s, c.f).some(q => q !== c.r && avst(q, c.r) < 0.8)) { g.vx = c.r.x!; g.vy = c.r.y!; } /* vilar där hen står, om ingen står på samma plats (steg 10.2.94) */ const p = rastPunkt(c); if (avst(c.r, p) > 0.6 && ga(c, p) < 0) g.vx = undefined; } },
+  gaOmkring: { namn: 'Går omkring', poang: c => c.f.anfaller || !c.f.rast ? -1 : ROVARE.gaPoang, gor: c => { const d = ga(c, rastPunkt(c)); if (d < 0) gr(c.r).vx = undefined; else if (d < 0.6) gr(c.r).gorTill = 0; } },
   // pratar med den närmaste i gänget: går fram och samtalar i samma samtalssystem som byn, med pratbubbla (steg 10.2.24)
   prata: { namn: 'Pratar', poang: c => c.f.anfaller || c.kvar < 2 ? -1 : ROVARE.prataPoang, gor: c => {
     const o = rovarna(c.s, c.f).filter(q => q !== c.r).sort((a, b) => avst(a, c.r) - avst(b, c.r))[0];
@@ -617,10 +684,10 @@ export const ROVARHANDLINGAR: Record<RovarGor, { namn: string; ansikte?: 'arg' |
     if (rnd(c.s, 'rovare') < c.dt / ROVARE.pratSek) rovarPrat.prata?.(c.s, c.r, o, c.ev); // ungefär ett samtal på pratSek sekunder
   } },
   // mot målet när flocken anfaller
-  motMalet: { namn: 'Går mot byn', ansikte: 'lugn', poang: c => c.f.anfaller && !gr(c.r).nojd && !c.f.klar && avst(c.r, c.mal) > ROVARE.nara ? 1 : -1, gor: c => { if (ga(c, c.mal) < 0) gr(c.r).flytt = true; } }, // ingen väg dit: hen ger upp
+  motMalet: { namn: 'Går mot byn', ansikte: 'lugn', poang: c => c.f.anfaller && !gr(c.r).nojd && !c.f.klar && avst(c.r, c.mal) > ROVARE.nara ? 1 : -1, gor: c => { const g = gr(c.r); if (ga(c, c.mal) >= 0) g.utanVag = undefined; else if (c.s.now - (g.utanVag ??= c.s.now) > ROVARE.utanVag * MIN) g.flytt = true; } }, // ingen väg dit: hen står kvar och prövar igen (steg B.43), och ger upp efter en stund
   // slår den som står i vägen: den som står emot inom ROVARE.moter. Modet drar till striden och övermakten från den
   // den som inte står emot men står i vägen slår bara den aggressiva, när inget annat lockar mer
-  sla: { namn: 'Slåss', ansikte: 'arg', poang: c => c.fiende ? 1.5 + ROVARE.slaMod * (stat(c.r, 'mod', c.s.now) - 10) / 10 - ROVARE.slaHot * Math.max(0, c.hot - 1) : c.ivagen ? ROVARE.slaIvagen * stat(c.r, 'aggression', c.s.now) / 10 + c.brus('sla') * ROVARE.valBrus : -1, gor: c => slaSteg(c) },
+  sla: { namn: 'Slåss', ansikte: 'arg', poang: c => c.fiende ? 1.5 + ROVARE.slaMod * (stat(c.r, 'mod', c.s.now) - 10) / 10 - ROVARE.slaHot * Math.max(0, c.hot - 1) : c.ivagen ? (ROVARE.slaIvagen + (harLarm(c.s, c.ivagen, c.f) ? 0 : ROVARE.slaOvetande)) * stat(c.r, 'aggression', c.s.now) / 10 + c.brus('sla') * ROVARE.valBrus : -1, gor: c => slaSteg(c) },
   // mötet på vägen (steg 10.2.26): den som inte står emot men är nära kan hotas bort eller bli av med det hen bär, efter modet och
   // målet; annars går rövaren förbi mot byn. Slumpen (valBrus) gör att olika rövare väljer olika
   hota: { namn: 'Hotar', ansikte: 'arg', poang: c => c.ivagen && !c.fiende ? ROVARE.hotaPoang * stat(c.r, 'mod', c.s.now) / 10 + c.brus('hota') * ROVARE.valBrus : -1, gor: c => motet(c, false) },
@@ -633,6 +700,16 @@ export const ROVARHANDLINGAR: Record<RovarGor, { namn: string; ansikte?: 'arg' |
   // flyr: blodet, övermakten hen ser, modet och hur många i flocken som är kvar
   fly: { namn: 'Flyr', ansikte: 'radd', poang: c => (gr(c.r).flytt ? 3 : -0.6) + ROVARE.flyBlod * (1 - c.r.blod) + ROVARE.flyHot * Math.max(0, c.hot - 1) * (1 - (stat(c.r, 'mod', c.s.now) - 10) / 10) + ROVARE.flyDoda * (1 - c.kvar / Math.max(1, c.f.antal ?? c.kvar)), gor: c => { gr(c.r).flytt = true; hemat(c); } },
 };
+// platsen där rövaren vilar eller dit hen går omkring (steg B.43): på land kring rastplatsen, som byborna väljer sin (glesPlats), och den
+// behålls tills hen väljer något annat eller inte hittar någon väg dit
+function rastPunkt(c: RCtx) {
+  const g = gr(c.r), m = c.f.rast!;
+  if (g.vx === undefined || g.vy === undefined) {
+    const at = glesPlats(c.s, c.r, () => { const p = freeNear(c.s, m.x + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR, m.y + (rnd(c.s, 'rovare') - 0.5) * 2 * ROVARE.rastR); return inMap(p.x, p.y) && !iVatten(c.s, p.x, p.y) && !bitAt(c.s, p.x, p.y) ? p : undefined; }) ?? m;
+    g.vx = at.x; g.vy = at.y;
+  }
+  return { x: g.vx, y: g.vy };
+}
 const RGOR = Object.keys(ROVARHANDLINGAR) as RovarGor[];
 // går mot punkten, i en bybos fart med samma vägsökning. Svarar hur långt det är kvar, −1 när det inte finns någon väg
 // var och en går mot sin egen plats i klungan runt målet, så att de inte står på samma punkt
@@ -641,7 +718,7 @@ function ga(c: RCtx, m: { x: number; y: number }, runt?: Uint8Array) {
   // rutan där en annan i gänget redan står
   const [dx0, dy0] = egenPunkt(c.r), n = clamp((avst(c.r, m) - 3) / 5, 0, 1), dx = dx0 * n, dy = dy0 * n; // nära målet går alla dit
   const k = { x: clamp(m.x + dx, 0.3, W - 0.3), y: clamp(m.y + dy, 0.3, H - 0.3) };
-  const upptagen = rovarna(c.s, c.f).some(o => o !== c.r && tileOf(o.x!, o.y!) === tileOf(k.x, k.y));
+  const upptagen = rovarna(c.s, c.f).some(o => o !== c.r && tileOf(o.x!, o.y!) === tileOf(k.x, k.y)) || personI(c.s, k.x, k.y);
   const fri = !upptagen && !iVatten(c.s, k.x, k.y) && !bitAt(c.s, k.x, k.y) ? gaMot(c.s, c.r, k.x, k.y, c.dt, c.s.now - c.dt * SEC, egenFart(c.r), runt) : -1;
   return fri >= 0 ? fri : gaMot(c.s, c.r, m.x, m.y, c.dt, c.s.now - c.dt * SEC, egenFart(c.r), runt); // ingen väg till den egna punkten: rakt mot målet
 }
@@ -657,7 +734,13 @@ function hemat(c: RCtx) {
   // där det finns väg till den närmaste kanten från en ruta men inte från nästa
   const g = gr(r);
   let kvar = g.ut ? ga(c, g.ut) : -1;
-  if (kvar < 0) { g.ut = undefined; for (const k of [kantMot(s, f.klan), ...kanterna(r.x, r.y)]) { if (!k) continue; kvar = ga(c, k); if (kvar >= 0) { g.ut = k; break; } } }
+  if (kvar < 0) { // ingen väg ut: hen står kvar och prövar alla kanter igen efter en stund (steg B.43)
+    g.ut = undefined;
+    if (g.utT !== undefined && s.now - g.utT < ROVARE.vagSok * SEC) return;
+    g.utT = s.now;
+    for (const k of [kantMot(s, f.klan), ...kanterna(r.x, r.y)]) { if (!k) continue; kvar = ga(c, k); if (kvar >= 0) { g.ut = k; g.utT = undefined; break; } }
+    if (kvar < 0) return;
+  }
   if (f.rad) iFarten(s, r, c.dt); // saker i farten (steg 8.8.3)
   if (kvar >= 0.5) return;
   f.folk = f.folk.filter(id => id !== r.id);
@@ -695,16 +778,39 @@ function slaSteg(c: RCtx) {
   for (const k of ny.st.kampar) { const p = k.pid !== undefined ? byId(s, k.pid) : undefined; if (p && !p.gast) overtygad(s, f, k, p); if (p?.gast && f.mal !== undefined) k.jagar = f.mal; } // övertygelsen (steg 8.8.8), och hämnden riktar sig mot målet (steg 8.8.5)
   f.strider = (f.strider ?? 0) + 1;
   count(s, 'rovarStrid');
-  for (const p of mot) { horLarm(p, { t: s.now, vad: 'rovare', storlek: f.gissning ?? f.folk.length, led: p.larm?.rovare?.led ?? 0, varnat: 1 }); hors(s, p, LARM.hor * (isLight(s.now) ? 1 : LARM.natt)); } // striden hörs: de som slåss ropar
+  for (const p of mot) { if (!harLarm(s, p, f)) larmOm(s, p, f, f.gissning ?? f.folk.length, p.larm?.rovare?.led ?? 0, 1); hors(s, p, LARM.hor * (isLight(s.now) ? 1 : LARM.natt)); } // striden hörs: de som slåss ropar
   count(s, 'rovarStridRop');
 }
 // plundringen (steg 10.1.15): en sak i taget ur lagerplatsen hen står vid, det med högst pris per vikt först
+// var och en tar ur förrådet från sin egen plats bredvid det (steg B.49): den närmaste rutan intill målet där ingen annan står eller
+// ska stå. Svarar om hen är framme; går det inte att komma dit tar hen där hen står, om ingen annan står i rutan
+function paTaPlats(c: RCtx) {
+  const { s, f, r, mal } = c, g = gr(r), andra = rovarna(s, f).filter(o => o !== r && !gr(o).flytt);
+  const tagen = (x: number, y: number) => andra.some(o => tileOf(o.x, o.y) === tileOf(x, y) || (gr(o).gor === 'ta' && gr(o).taVid && tileOf(gr(o).taVid!.x, gr(o).taVid!.y) === tileOf(x, y))) || personI(s, x, y);
+  if (g.taVid && (avst(g.taVid, mal) > ROVARE.nara + 0.5 || andra.some(o => tileOf(o.x, o.y) === tileOf(g.taVid!.x, g.taVid!.y)))) g.taVid = undefined;
+  if (!g.taVid) {
+    let bd = Infinity;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+      const at = { x: Math.floor(mal.x) + dx + 0.5, y: Math.floor(mal.y) + dy + 0.5 }, d = avst(at, r);
+      if (d >= bd || avst(at, mal) > ROVARE.nara + 0.4 || !inMap(at.x, at.y) || iVatten(s, at.x, at.y) || bitAt(s, at.x, at.y) || tagen(at.x, at.y)) continue;
+      bd = d; g.taVid = at;
+    }
+    if (!g.taVid) return !andra.some(o => tileOf(o.x, o.y) === tileOf(r.x, r.y));
+  }
+  if (avst(g.taVid, r) < 0.3) return true;
+  const kvar = gaMot(s, r, g.taVid.x, g.taVid.y, c.dt, s.now - c.dt * SEC, egenFart(r));
+  if (kvar < 0) { g.taVid = undefined; return !andra.some(o => tileOf(o.x, o.y) === tileOf(r.x, r.y)); }
+  return kvar < 0.3;
+}
+// en människa i byn står still i rutan (den som går flyttar sig själv)
+const personI = (s: State, x: number, y: number) => living(s).some(q => !q.gast && q.ute === undefined && q.task?.phase === 'do' && tileOf(q.x, q.y) === tileOf(x, y));
 function taSteg(c: RCtx) {
   const { s, f, r } = c, g = gr(r);
   // hämnden och det heliga kriget (rader.ts): när flocken är framme och ingen står emot gör den det den kom för, en gång
   if (f.skal && !f.radKlar) { f.radKlar = true; if (radSeger(s, f)) { if ((f.gor as string) !== 'letar') { tandaHus(s, f); f.klar = true; } return; } }
   if (f.gor === 'letar' || f.letar?.length) { letaSteg(s, f, c.folk); return; }
   if (huggDorr(s, f, c.folk)) return; // en stängd dörr huggs sönder (steg 8.9.1–8.9.2)
+  if (!paTaPlats(c)) return; // till sin egen plats vid förrådet (steg B.49)
   forlustFore(s, 'ran'); // förmögenheten när plundringen börjar (steg 12.1.131)
   g.taTid = (g.taTid ?? 0) + c.dt;
   while (g.taTid >= ROVARE.taSek) {
@@ -786,14 +892,16 @@ function hotMot(s: State, f: Rovarflock, r: Person, folk: Person[]) {
 }
 // De som möter gänget (steg B.17, "Mötet" i fliken Människan): de som hinner till raden före gänget, eller är samlade där byn väntar, om de är många
 // och starka nog för sitt mod. De andra väntar, också den som är ensam (steg B.32)
-function moterNu(s: State, rad: Person[], fria: Person[], radM: { x: number; y: number }, vantM: { x: number; y: number }) {
-  const kraft = (l: Person[]) => l.reduce((a, p) => a + 1 + ROVARE.hotVapen * vapenSkada(s, p), 0), mot = kraft(fria);
+function moterNu(s: State, f: Rovarflock, rad: Person[], fria: Person[], radM: { x: number; y: number }, vantM: { x: number; y: number }) {
   const dg = fria.length ? Math.min(...fria.map(r => avst(r, radM))) : Infinity;
-  const rack = (l: Person[]) => l.length > 0 && mot / kraft(l) * (l.some(p => p.task?.vantar === false) ? ROVARE.samlKvar : 1) <= ROVARE.samlFran + l.reduce((a, p) => a + stat(p, 'mod', s.now), 0) / l.length / 20;
+  // räcker de som samlats? (den som bestämt sig för att möta dem tål mer, samlKvar)
+  const rack = (l: Person[]) => { if (!l.length) return false; const over = overmakt(s, f.folk.length, f, l) * (l.some(p => p.task?.vantar === false) ? ROVARE.samlKvar : 1); return l.reduce((a, p) => a + motVilja(s, p, over), 0) / l.length >= ROVARE.kampeFran; };
   const hinner = rad.filter(p => avst(p, radM) <= Math.max(ROVARE.samlNara, dg * ROVARE.samlHinner)), samlade = samladGrupp(rad), alla = rad.filter(p => avst(p, vantM) <= ROVARE.samlVag);
-  // alla som är på väg är framme, ingen mer att vänta på: då väger de om de klarar det själva (steg B.32)
-  const framme = (l: Person[]) => l.length > 0 && alla.every(p => l.includes(p)) && l.reduce((a, p) => a + rovarVilja(s, p) - gavSigAvdrag(s, p), 0) / l.length - overmaktAvdrag(mot / kraft(l)) >= ROVARE.kampeFran;
-  return new Set([...(framme(hinner) || rack(hinner) ? hinner : []), ...(framme(samlade) || rack(samlade) ? samlade : [])]);
+  const moter = new Set([...(rack(hinner) ? hinner : []), ...(rack(samlade) ? samlade : [])]);
+  // alla som är på väg är framme och de räcker ändå inte: ingen väntar på ingen, rollen väljs om med dem som står där (steg B.47)
+  f.ingenMer = alla.length > 0 && !moter.size && alla.every(p => samlade.includes(p));
+  if (f.ingenMer && !flockStrid(s, f)) for (const p of alla) { p.larmRoll = undefined; if (rollVid(s, p, 'rovare') !== 'kampe') { avbryt(s, p); p.task = undefined; } }
+  return moter;
 }
 // de som är samlade (steg B.33): den största gruppen, räknad från dess egen mitt, så att den som går med de andra räknas var de än är
 export function samladGrupp(rad: Person[]) {
@@ -812,7 +920,10 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
   const fo = rovarna(s, f);
   if (!f.anfaller) {
     const gar = fo.filter(r => !gr(r).flytt && kanGa(r) && !iStriden(s, f, r)); // de som är på väg till rastplatsen eller framme
-    if (!f.vantat && gar.length && gar.every(r => avst(r, f.rast!) <= ROVARE.rastR * 1.5)) { f.vantat = true; f.till = s.now + (f.test ? ROVARE.testVanta : mellan(s, ROVARE.lurMin)) * MIN; }
+    // den som inte kommer vidare väntar gänget inte på (steg B.44): den utan väg dit, eller som stått still en stund
+    for (const r of fo) { const g = gr(r); if (!g.still || Math.hypot(g.still.x - r.x, g.still.y - r.y) > 0.5) g.still = { x: r.x, y: r.y, t: s.now }; }
+    const framme = (r: Person) => avst(r, f.rast!) <= ROVARE.rastR * 1.5, fast = (r: Person) => gr(r).ingen !== undefined && s.now - gr(r).still!.t > 5 * SEC || s.now - gr(r).still!.t > ROVARE.stillSek * SEC;
+    if (!f.vantat && gar.some(framme) && gar.every(r => framme(r) || fast(r))) { f.vantat = true; f.frammeT = s.now; f.till = s.now + (f.test ? ROVARE.testVanta : mellan(s, ROVARE.lurMin)) * MIN; }
     if (f.vantat && s.now >= f.till) { f.anfaller = true; f.anfallT = s.now; count(s, 'rovarGarTill'); if (isLight(s.now)) count(s, 'rovarGarTillDag'); if (f.sedd !== undefined) { count(s, 'rovarGarTillSedd'); if (isLight(s.now)) count(s, 'rovarGarTillDagSedd'); } } // hur ofta byn sett gänget innan det anfaller (npm run strid)
     if (f.vantat && f.sedd !== undefined) budSteg(s, f, folk);
   }
@@ -830,10 +941,10 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
   const rad = folk.filter(q => alive(q) && vaken(q) && q.task?.act === 'forsvarRovare' && kanStaEmot(s, q) && narmasteFlock(s, q) === f).sort((a, b) => a.id - b.id);
   const fria = fo.filter(x => !gr(x).flytt); // den som flyr jagas inte
   const { ux, uy, mitten, vantM } = radLinje(s, f); // raden har ett mål och ett håll: gängets, inte var och ens närmaste rövares
-  const moter = moterNu(s, rad, fria, mitten, vantM);
+  const moter = moterNu(s, f, rad, fria, mitten, vantM), star = new Set<number>(); // rutorna i raden som är tagna (steg B.49)
   rad.forEach((q, i) => {
     const r = [...fria].sort((a, b) => avst(a, q) - avst(b, q))[0];
-    if (!r) return;
+    if (!r || q.task?.act !== 'forsvarRovare') return; // (rollen kan ha valts om nyss, steg B.47)
     const ser = avst(r, q) <= KLOCKA.faraSyn, vet = ser || (!!q.larm?.rovare && s.now - q.larm.rovare.t < ROVARE.larmTim * HOUR);
     if (!vet) return;
     if (avst(r, q) < ROVARE.moter && !flockStrid(s, f)) { slaSteg({ s, f, r, folk, dt: dtSec, mal: r, fiende: q, hot: 1, last: 0, kvar: f.folk.length, brus: () => 0 }); return; } // (striden väljer inget, så inga slumptal)
@@ -846,7 +957,9 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
     } else if (vantar) { m = { x: vantM.x - uy * sida, y: vantM.y + ux * sida }; why = 'Väntar in de andra'; }
     // platsen i raden: ROVARE.radFram rutor från målet mot gänget, och var och en ROVARE.radIsar rutor från den förra, åt sidan
     else if (!mot) m = { x: mitten.x - uy * sida, y: mitten.y + ux * sida };
-    if (Math.hypot(tk.tx - m.x, tk.ty - m.y) > 1.5) { const at = freeNear(s, m.x, m.y); tk.tx = at.x; tk.ty = at.y; /* man går dit på land, aldrig ut i vattnet */ tk.phase = 'go'; tk.path = undefined; tk.pk = undefined; tk.why = why; }
+    tk.why = why;
+    if (Math.hypot(tk.tx - m.x, tk.ty - m.y) > 1.5) { const at = strid || mot && !vantar ? freeNear(s, m.x, m.y) : radRuta(s, m.x, m.y, star); /* man går dit på land, aldrig ut i vattnet */ if (Math.hypot(tk.tx - at.x, tk.ty - at.y) > 0.6) { tk.tx = at.x; tk.ty = at.y; tk.phase = 'go'; tk.path = undefined; tk.pk = undefined; } }
+    star.add(tileOf(tk.tx, tk.ty));
   });
   // hjälparna följer raden och står kvar bakom den (steg B.14)
   const hj = folk.filter(q => alive(q) && vaken(q) && q.task?.act === 'hjalpaRovare' && !!q.larm?.rovare && narmasteFlock(s, q) === f), mitt = hj.length ? radMitt(s, f, folk, true) : undefined;
@@ -1074,8 +1187,8 @@ export function rovarSteg(s: State, dtSec: number, ev?: TalkEvent[]) {
   for (const f of rovarFlockar(s)) if (!f.folk.length) flockTom(s, f);
   if (s.rovare && !s.rovare.folk.length) s.rovare = undefined;
   if (s.rovareFler) { s.rovareFler = s.rovareFler.filter(q => q.folk.length); if (!s.rovare) s.rovare = s.rovareFler.shift(); if (!s.rovareFler.length) s.rovareFler = undefined; }
-  if (!s.rovare) { for (const q of folk) if (q.larm?.rovare) delete q.larm.rovare; } // det sista gänget är borta: ingen fara längre
-  else lugnar(s, folk);
+  lugnar(s, folk);
+  if (!s.rovare) for (const q of folk) if (q.larm?.rovare) delete q.larm.rovare; // det sista gänget är borta: ingen fara längre
   // möts flockar från klaner som inte tycker om varandra slåss de
   if (s.rovare) for (const o of s.rovareFler ?? []) flockarMots(s, s.rovare, o);
   for (const f of rovarFlockar(s)) if (f) djurMotRovare(s, f);

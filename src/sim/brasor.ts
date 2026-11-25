@@ -58,10 +58,11 @@ export const brasaStenMal = (s: State) => Math.max(0, brasaRing(s) - paMarken(s,
 // stenarna på marken som lägereldens ring inte redan räknat bort (steg 13.10.10)
 export const stenOver = (s: State) => Math.max(0, paMarken(s, 'sten') - brasaRing(s));
 // ringen är lagd (finishStation i stationer.ts): den påbörjade stationen blir en lägereld på samma ruta, med samma nummer
-export function nyEld(s: State, t: Station) {
+export function nyEld(s: State, t: Station, hard = false) {
   s.stationer = (s.stationer ?? []).filter(q => q !== t);
   const f = newFire();
   Object.assign(f, { id: t.id, at: { x: t.x, y: t.y }, ring: true, klar: s.now, folk: [] });
+  if (hard) { f.hearth = 'hard'; f.ring = undefined; } // härden är två gånger två rutor: alla töms (steg B.54)
   (s.eldar ??= []).push(f);
   s.byggV = (s.byggV ?? 0) + 1; // rutan är en eldplats: vägarna och platserna räknas om
   ingetIElden(s); // det som låg där flyttas (steg 12.1.153)

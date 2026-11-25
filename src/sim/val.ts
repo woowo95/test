@@ -35,7 +35,7 @@ import { arTand, tandStalle, turMal, eldFor, eldForst, eldXY, nagonGlod, eldarOf
 import { ALDER, KROPP, REL, ageOf, count, enTill, enTillDar, familjOf, isSick, living, relKey, stat } from './folk';
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
-import { VARDRATT, halsa, hemma, kanGa, kroppLust, vardBehov, vardVal, vilaHellre, vilaSkal } from './halsa';
+import { VARDRATT, forbandHot, halsa, hemma, kanGa, kroppLust, vardBehov, vardVal, vilaHellre, vilaSkal } from './halsa';
 import { kopval, type Kopval } from './kopbuffert';
 import { marknadVal, marknadVikt } from './marknad';
 import { DELA, MAT, brukKrok, bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial, vatskaMaterial } from './behov';
@@ -759,7 +759,7 @@ export const ARBETEN: readonly Arbete[] = [
     if (p.warm >= KROPP.extremVarm && brandHetta(s, p.x, p.y) > 0) { const bu = brandUndan(s, p); if (bu) { v.spot = bu.spot; v.dur = bu.dur; return set(v, bu.act, 'Är för varm av branden och går undan'); } }
     return p.warm >= KROPP.extremVarm && svalkaRad(c, 'Är för varm');
   } },
-  { id: 'vardaSig', niva: 2, poang: () => VAL.nodSar, prova: ({ s, p, v }) => varda(s, p, v, true) }, // sina egna sår: trycka på, lägga förband och rengöra (steg 2.5.2)
+  { id: 'vardaSig', niva: 2, poang: ({ s, p }) => VAL.nodSar * (1 - forbandHot(s, p)), prova: ({ s, p, v }) => varda(s, p, v, true) }, // sina egna sår: trycka på, lägga förband och rengöra (steg 2.5.2)
   { id: 'toaGenast', niva: 2, minAlder: ALDER.smabarn, poang: ({ p }) => p.toa < KROPP.toaGenast ? VAL.nodToa * nodUnder(p.toa, KROPP.toaGenast) : 0, prova: ({ p, v }) => p.toa < KROPP.toaGenast && set(v, 'toa', 'Måste gå på toa genast') },
   { id: 'torstFarligt', niva: 2, poang: c => torstNod(c), prova: c => torstNod(c) > 0 && kanGa(c.p) && dricka(c.s, c.p, c.v) },
   { id: 'hungrig', niva: 2, poang: ({ p }) => VAL.nodSvalt * nodUnder(p.hunger, KROPP.hungrig * VARDRATT.snal), prova: ({ s, p, v, a }) => (p.hunger < KROPP.hungrig * VARDRATT.snal || a < ALDER.smabarn || ligger(p, s.now) || halsa(p) < KROPP.svag) && kanGa(p) && ataVal(s, p, v) },

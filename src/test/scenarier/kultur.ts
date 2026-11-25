@@ -3093,6 +3093,9 @@ SCENARIER.kruka = {
     placeTools(s); SIM.stepKrukor(s);
     const stodKvar = krukaHemma(s, p) === undefined && k.x !== undefined;
     const val = krukaHemVal(s, p);
+    // en härd på rutan: krukan ställs på en annan (steg B.54)
+    const eldar0 = s.eldar; if (val) s.eldar = [...(eldar0 ?? []), { ...SIM.newFire(), hearth: 'hard', at: { x: val.i % SIM.W, y: Math.floor(val.i / SIM.W) } } as SIM.Fire];
+    const val2 = krukaHemVal(s, p), inteIHarden = !!val && (!val2 || !SIM.eldRutor(s).has(val2.i)); s.eldar = eldar0;
     const tk = p.task = { act: 'krukaHem', phase: 'do', tx: k.x! + 0.5, ty: k.y! + 0.5, until: s.now, carry: 0, ref: k.id, why: '' } as SIM.Task;
     krukaUpp(s, p, tk);
     const bars = tk.phase === 'back' && k.hos === p.id && k.x === undefined && krukaHemma(s, p) === undefined;
@@ -3105,6 +3108,7 @@ SCENARIER.kruka = {
     // byn vill ha krukor: till dem som vill ha en kruka som pynt, och en att bära vatten i utan säck
     const vill = krukaVill(s), pyntare = Math.round(SIM.living(s).reduce((n, q) => n + (SIM.villPynt(s, q, 'kruka') ? SIM.pyntLust(s, q) : 0), 0)); // (lusten efter en kruka till avtar, steg 10.2.43)
     return [
+      ['lerkrukan ställs inte i husets härd (steg B.54)', inteIHarden],
       [`en kruka som torkar går inte att använda (${torkar ? 'nej' : 'ja'})`, torkar],
       [`utan vattensäck bär man vatten i den mellanstora krukan (${vattenKarl(s, p) ?? 'inget'})`, vatten],
       [`krukan i förrådet flyttar sig inte själv (${stodKvar ? 'står kvar' : 'flyttade sig'}), och ägaren vill bära den hem (${val?.t === k ? 'ja' : 'nej'})`, stodKvar && val?.t === k],

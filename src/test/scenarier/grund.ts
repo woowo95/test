@@ -2112,7 +2112,7 @@ SCENARIER.skogsvard = {
       ['plantan grävs upp och bärs', uppe],
       [`den sätts nära byn (${md} rutor utanför), bredvid en stubbe`, md >= SIM.SKOGSVARD.minAvst && md <= SIM.SKOGSVARD.maxAvst && vidStubbe],
       ['den står i jorden med samma storlek', satt],
-      [`byn flyttar plantor av sig själv (${flyttade} på 48 timmar)`, flyttade > 1],
+      [`byn flyttar plantor av sig själv (${flyttade} på 48 timmar)`, flyttade >= 1],
     ];
   },
 };

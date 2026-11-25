@@ -49,7 +49,7 @@ import { GRANNAR4, HOUR, T } from './typer';
 import { UTRUSTNING, harBalte, paSig, paSigVikt } from './utrustning';
 import { PLAGG, kladAv } from './klader';
 import { amountOf, laggPaRutan, use } from './lager';
-import { capacity, enPerRuta } from './lager';
+import { capacity, enPerRuta, ingetIElden } from './lager';
 import { snoPaMarken, vaderNu } from './vader';
 import { viktOf } from './saker';
 import { allaTing, ownedBy, toolsOf, wearTool } from './agande';
@@ -100,6 +100,7 @@ export const STRID = balans('strid', {
   flyBort: 6, // den som flyr mot en plats (Kampe.fly) har lämnat striden så här många rutor från närmaste fiende som står (steg 9.2.76)
   overraskSek: 3, // den som inte sett sin anfallare komma märker det efter så här många sekunder, eller av det första slaget, som hen inte värjer sig mot (steg B.30)
   flyHall: 1.6, // den som flyr väljer helst en väg som håller så här många rutor till fienderna, annars så nära som man går förbi dem (kropp) (steg B.31)
+  flyTrang: 0.5, // finns ingen sådan väg tränger hen sig förbi dem på så här nära (steg B.45)
   flySek: 0.5, // ... och väljer vägen på nytt så ofta
   fart: 1.6, // rutor i sekunden för en frisk vuxen som springer i strid (gånger djurets fart)
   traffBas: 0.6, // chansen att träffa någon som är lika skicklig
@@ -134,6 +135,7 @@ export const STRID = balans('strid', {
   duckSmid: 0.06, // ... gånger 1 + duckSmid × (smidigheten − 10)
   duckTung: 0.15, // ... och så här mycket mindre i ett tungt plagg (rocken, PLAGG i klader.ts: tungt att röra sig i)
   ringa: -1, // ett mål vars uppmärksamhet är på någon annan väljs som om det stod så här många rutor närmare (negativt: den som redan slåss med någon lockar mindre, steg B.6)
+  vanNod: 7, nodMod: 0.3, // ... och den som slåss mot en vän i nöd (som blöder, eller har mindre mod kvar än nodMod) som om hen stod så här många rutor närmare, gånger hur stor nöden är (steg B.50)
   malKvar: 1.5, // den man redan går mot väljs som om den stod så här många rutor närmare, så att målet inte byts fram och tillbaka (steg B.20)
   platsNara: 4, // från så här många rutor räknar man platserna kring målet (steg B.34) ...
   utanPlats: 4, // ... och ett mål utan plats väljs som om det stod så här många rutor längre bort ...
@@ -426,8 +428,8 @@ const PLATSER = 16;
 function platsVid(st: Strid, k: Kampe, m: Kampe): { x: number; y: number } | undefined {
   const rack = VAP[k.vapen].rack, d = dist(k, m);
   if (!sikt(st, k.x, k.y, m.x, m.y)) return m; // bakom en vägg: vägen runt den först
-  if (d <= rack) { if (k.platsV) k.platsV = undefined; return k; }
   const r = Math.max(rack * 0.9, Math.min(STRID.kropp, rack)), v = 2 * Math.PI / PLATSER, i0 = Math.round(Math.atan2(k.y - m.y, k.x - m.x) / v);
+  if (d <= rack) { if (k.platsV?.m === m.id) k.platsV.i = (i0 + PLATSER) % PLATSER; return k; } // platsen hen står på är nu hens
   const andra = st.kampar.filter(o => o !== k && o !== m && iStrid(o) && Math.hypot(o.x - m.x, o.y - m.y) < r + STRID.van);
   const tidigare = k.platsV?.m === m.id ? k.platsV.i : undefined, stangt = [false, false];
   let bast: { x: number; y: number; i: number } | undefined;
@@ -442,16 +444,20 @@ function platsVid(st: Strid, k: Kampe, m: Kampe): { x: number; y: number } | und
   if (bast && k.mal === m.id) k.platsV = { m: m.id, i: bast.i };
   return bast;
 }
+// hur illa det är för vännen v i striden (steg B.50): hen blöder eller har lite mod kvar. 0 = ingen nöd, 1 = den värsta
+const nodAv = (v: Kampe) => clamp((blodSek(v) > 0 ? 0.5 : 0) + (1 - v.blod) + Math.max(0, 1 - v.modNu / STRID.nodMod), 0, 1);
 // målet: den närmaste fienden som går att slå (den som ligger eller flyr bara om avsikten är att döda)
 function valjMal(st: Strid, k: Kampe) {
   if (k.jagar !== undefined) { const m = st.kampar.find(o => o.pid === k.jagar && iStrid(o)); if (m) return m; }
   const nere = AVS[st.avsikt].nere;
   const led = k.skyddar !== undefined ? st.kampar.find(o => o.id === k.skyddar && iStrid(o)) : undefined;
+  const fri = !st.kampar.some(o => o.sida !== k.sida && iStrid(o) && o.mal === k.id); // ingen slår mot hen: hen står bakom eller är en av många kring samma fiende (steg B.50)
   let bast: Kampe | undefined, bd = Infinity;
   for (const m of st.kampar) {
     if (m.sida === k.sida || (m.hjalp && dist(k, m) > STRID.hjalpNara) || !(iStrid(m) || (nere && (m.lage === 'nere' || m.lage === 'flykt') && st.t - (m.fallT ?? st.t) < sortAv(k).forfoljer))) continue; // djuren förföljer inte (KAMPAR)
     const vanner = st.kampar.reduce((a, o) => a + (o !== k && o.sida === k.sida && iStrid(o) && o.mal === m.id ? 1 : 0), 0);
-    const d = dist(k, m) + (m.lage === 'nere' ? 2 : 0) - (iStrid(m) && m.mal !== undefined && m.mal !== k.id ? STRID.ringa : 0) + STRID.trangsel * vanner - (k.mal === m.id ? STRID.malKvar : 0) + (dist(k, m) < STRID.platsNara && !platsVid(st, k, m) ? STRID.utanPlats : 0) - (led && m.mal === led.id && dist(m, led) <= STRID.skyddVakt ? STRID.skyddMal : 0); // vännen går hellre mot den som anfaller ledaren (steg 3.7.12); // den som står är farligare än den som ligger, den som slåss med en annan lockar mindre, och den som redan har många mot sig väljs helst inte (steg B.6)
+    const van = fri && iStrid(m) && m.mal !== undefined && m.mal !== k.id && !m.hjalp ? st.kampar.find(o => o.id === m.mal && o.sida === k.sida && iStrid(o)) : undefined; // vännen fienden slåss med
+    const d = dist(k, m) - (van ? STRID.vanNod * nodAv(van) : 0) + (m.lage === 'nere' ? 2 : 0) - (iStrid(m) && m.mal !== undefined && m.mal !== k.id ? STRID.ringa : 0) + STRID.trangsel * vanner - (k.mal === m.id ? STRID.malKvar : 0) + (dist(k, m) < STRID.platsNara && !platsVid(st, k, m) ? STRID.utanPlats : 0) - (led && m.mal === led.id && dist(m, led) <= STRID.skyddVakt ? STRID.skyddMal : 0); // vännen går hellre mot den som anfaller ledaren (steg 3.7.12); // den som står är farligare än den som ligger, den som slåss med en annan lockar mindre, och den som redan har många mot sig väljs helst inte (steg B.6)
     if (d < bd) { bd = d; bast = m; }
   }
   return bast;
@@ -472,13 +478,13 @@ const iVagg = (st: Strid, x: number, y: number) => varld ? varld.vagg(x, y) : !!
 // fiender som står i vägen för k (inte den hen går mot, som står vid mx, my)
 const ivagen = (st: Strid, k: Kampe, mx: number, my: number) => st.kampar.filter(o => o.sida !== k.sida && iStrid(o) && Math.hypot(o.x - mx, o.y - my) > 0.01);
 function fri(st: Strid, k: Kampe, x: number, y: number, fi: Kampe[], mx: number, my: number) {
-  const egen = Math.hypot(mx - k.x, my - k.y);
+  const egen = Math.hypot(mx - k.x, my - k.y), flyr = k.lage === 'flykt', kropp = flyr ? STRID.flyTrang : STRID.kropp; // den som flyr tränger sig förbi (steg B.45)
   if (iVagg(st, x, y)) return false;
-  for (const o of fi) { const d = Math.hypot(o.x - x, o.y - y); if (d < STRID.kropp && d < dist(k, o) - 1e-9) return false; } // bort från en som står för nära går alltid
+  for (const o of fi) { const d = Math.hypot(o.x - x, o.y - y); if (d < kropp && d < dist(k, o) - 1e-9) return false; } // bort från en som står för nära går alltid
   for (const o of st.kampar) { // en på samma sida som står eller flyr: man står inte i varandra (steg 9.2.78)
     if (o === k || o.sida !== k.sida || !(iStrid(o) || o.lage === 'flykt')) continue;
     // den som är närmast dit hen ska går först, tätt förbi den andra: annars stänger två vänner en smal öppning för varandra (steg B.19)
-    const d = Math.hypot(o.x - x, o.y - y); if (d < (Math.hypot(mx - o.x, my - o.y) > egen ? STRID.kropp : STRID.van) && d < dist(k, o) - 1e-9) return false;
+    const d = Math.hypot(o.x - x, o.y - y); if (d < (flyr || Math.hypot(mx - o.x, my - o.y) > egen ? kropp : STRID.van) && d < dist(k, o) - 1e-9) return false;
   }
   return true;
 }
@@ -561,7 +567,7 @@ function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number, vrid = V
 function flyVal(st: Strid, k: Kampe) {
   const fi = st.kampar.filter(o => o.sida !== k.sida && iStrid(o)), van = st.kampar.filter(o => o !== k && o.sida === k.sida && iStrid(o));
   const till = k.fly ? [k.fly, ...(k.flyAndra ?? [])] : [{ x: 0, y: k.y }, { x: st.w, y: k.y }, { x: k.x, y: 0 }, { x: k.x, y: st.h }].sort((a, b) => Math.hypot(a.x - k.x, a.y - k.y) - Math.hypot(b.x - k.x, b.y - k.y));
-  for (const [f, v] of [[STRID.flyHall, STRID.van], [STRID.kropp, STRID.kropp]]) {
+  for (const [f, v] of [[STRID.flyHall, STRID.van], [STRID.kropp, STRID.kropp], [STRID.flyTrang, STRID.flyTrang]]) { // helst på avstånd, annars tätt förbi, och sist trängande mellan dem (steg B.45)
     const hinder = [...fi.map(o => ({ o, r: f })), ...van.map(o => ({ o, r: v }))];
     for (const m of till) {
       const mx = clamp(m.x, KANT, st.w - KANT), my = clamp(m.y, KANT, st.h - KANT);
@@ -697,7 +703,7 @@ export function slagen(st: Strid, fran = 0): SlagHandelse[] {
   }
   return ut;
 }
-const utsatt = (b: Kampe) => b.lage === 'nere' || b.lage === 'flykt' || b.ligger || b.bocker || b.overraskad;
+const utsatt = (b: Kampe) => b.lage === 'nere' || b.lage === 'flykt' || b.ligger || b.bocker;
 // öppningen (steg B.7): den som står och slåss med någon nära väjer och tar emot slagen, så man väntar på en öppning (Kampe.oppning);
 // den som ligger, böjer sig ner, flyr eller ännu inte är i närstrid ger en genast
 const oppen = (st: Strid, m: Kampe) => utsatt(m) || !st.kampar.some(o => o.sida !== m.sida && iStrid(o) && dist(o, m) <= STRID.nara);
@@ -831,7 +837,7 @@ function hamtaSteg(st: Strid, k: Kampe, dt: number): boolean {
   if (k.vapen !== 'hand' || sortAv(k).naturligt || !AVS[st.avsikt].vapen) return false;
   if (k.reserv) { byt(st, k); return true; }
   let g: Strid['marken'][number] | undefined, gd = STRID.hamta;
-  for (const o of st.marken) { const d = Math.hypot(o.x - k.x, o.y - k.y); if (d <= gd) { gd = d; g = o; } }
+  for (const o of st.marken) { const d = Math.hypot(o.x - k.x, o.y - k.y); if (d <= gd && !st.kampar.some(q => q !== k && iStrid(q) && Math.hypot(q.x - o.x, q.y - o.y) < Math.min(d, STRID.kropp))) { gd = d; g = o; } } // det någon annan står på kommer man inte åt
   if (!g) return false;
   if (gd <= 0.6) k.bocker = STRID.plocka; else ga(st, k, g.x, g.y, farten(k) * dt);
   return true;
@@ -863,6 +869,12 @@ function hotet(st: Strid): { andel: [number, number]; framst: [number, number]; 
 const modMed = (k: Kampe, h: ReturnType<typeof hotet>) => k.modNu + STRID.hot * (h.andel[k.sida] - 0.5) * 2 + STRID.framst * (h.framst[k.sida] - 0.5) + h.led[k.sida];
 
 const farten = (k: Kampe) => STRID.fart * k.fart * smidFart(k) * rorlighet(k);
+// vågar de slåss (steg B.53)? Samma mod och hot som när man drar sig undan före första slaget: hur mycket den räddaste av dem har över
+// gränsen, 0 = någon av dem skulle dra sig undan, 1 = så modiga de kan vara
+export function vagarSlass(u: Uppstallning): number {
+  const st = nyStrid(u, 1), h = hotet(st);
+  return clamp(Math.min(...st.kampar.map(k => modMed(k, h) - STRID.avsta)) / (1 - STRID.avsta), 0, 1);
+}
 // den som kan kasta (steg 3.7.7): håller avståndet och kastar. Den som nåtts av en fiende backar om hen är snabbare, byter
 // annars till reservvapnet eller slår med det hen har (och minns att hen saknade en reserv). Spjutet kastas bara av den som
 // har ett reservvapen och mot den som är en bit bort. Returnerar true om kämpen gjort sitt i det här steget
@@ -962,6 +974,7 @@ export function stridSteg(st: Strid) {
       continue;
     }
     const m = valjMal(st, k);
+    if (k.mal !== m?.id) k.platsV = undefined; // platsen vid målet glöms när målet byts (steg B.55)
     k.mal = m?.id;
     isar(st, k, m, dt);
     if (!m) continue;
@@ -1197,7 +1210,7 @@ export function kastat(s: State, p: Person, v: string, d: number, x: number, y: 
   if (wearTool(s, p, v, r() * KAST.slit)) return 'trasig';
   // det som kastas blir ett ting på marken där det landade (steg 8.7.4); det ligger som allt annat utanför lagret och bärs in
   const t = toolsOf(s, v).find(q => q.agare === p.id && q.bar === undefined) ?? toolsOf(s, v)[0];
-  if (t) { t.hos = undefined; t.lass = undefined; t.vid = undefined; t.x = Math.floor(x); t.y = Math.floor(y); count(s, 'kastLigger'); enPerRuta(s); } // på en upptagen ruta i lagret får det en egen plats
+  if (t) { t.hos = undefined; t.lass = undefined; t.vid = undefined; t.x = Math.floor(x); t.y = Math.floor(y); count(s, 'kastLigger'); enPerRuta(s); ingetIElden(s); } // på en upptagen ruta i lagret får det en egen plats
   return undefined;
 }
 
@@ -1235,6 +1248,7 @@ function skjutnaPilar(s: State, p: Person, pil: string, skott: number, rack: num
 export const SLAGSMAL = balans('slagsmal', {
   rapporter: 60, // så många äldre strider sparas som rapport (steg 8.8.10)
   gral: 0.02, // (0,04 före steg 3.10.26: intrycket stark dominerade) chansen att ett gräl mellan två som är minst småbarn blir ett slagsmål ...
+  gralMod: 2, // så många gånger modet över gränsen för att dra sig undan (0–1) ger viljan att slåss, högst hela (steg B.53)
   gralTorst: 4, // ... gånger 1 + gralTorst × blodtörsten hos den som grälar (humor.ts)
   lek: 0.12, // chansen i timmen att ett barn som leker brottas med ett annat barn som leker nära ...
   lekNara: 3, // ... inom så här många rutor

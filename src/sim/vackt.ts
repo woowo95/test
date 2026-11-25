@@ -317,7 +317,7 @@ function stallStation(b: State, p: Person, k: StationSlag, at: { x: number; y: n
   const delar = delarIRad(k, at.x, at.y, at.rot); if (delar) t.delar = delar;
   if (d.agd) t.ag = p.id;
   (b.stationer ??= []).push(t);
-  if (d.hard) { nyEld(b, t); const f = (b.eldar ?? []).find(q => q.id === t.id); if (f) { f.hearth = 'hard'; f.ring = undefined; } }
+  if (d.hard) nyEld(b, t, true);
   if (d.mobel) nyKvalitet(b, p, t, 0, d.namn.toLowerCase());
   b.byggV = (b.byggV ?? 0) + 1;
   touch(b);

@@ -2560,7 +2560,7 @@ SCENARIER.gangar = {
     const lp = stationSite(s, 'latrin');
     const latrin = lp ? utanforByn(s, lp.x, lp.y) : -1;
     // husen: minst husMellan fritt emellan i en by som byggt flera hus
-    const b = createState(3, START); // by 3 bygger hus tidigt (by 5 kommer på yxan sent sedan steg 6.2)
+    const b = createState(7, START); // by 7 bygger många hus tidigt
     let minst = Infinity;
     for (let d = 0; d < 12; d++) {
       kor(b, 24);

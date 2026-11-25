@@ -14,10 +14,10 @@ const [antal = 24, dagar = 35] = process.argv.slice(2).map(Number);
 const seeds = Array.from({ length: antal }, (_, i) => seedAv(i));
 type Sida = { vapen?: string; n: number; folk: number; dod: number; ger: number; flykt: number; nere: number; skadade: number; skador: number; slag: number; traffar: number };
 type Rad = { t0: number; t1: number; tunga: number; dag: number; orsak: string; vinnare: number; sek: number; vuxna: number; kom: number; by: Sida; mot: Sida; h: Record<string, number>; sort: string; forsok: Record<string, number>; slut: [string[], string[]]; efter: number };
-type Ut = { seed: number; pop: number; rader: Rad[]; anfall?: { n: number; sedd: number; dag: number; dagSedd: number }; vakter: number; larm: string[] };
+type Ut = { seed: number; pop: number; rader: Rad[]; anfall?: { n: number; sedd: number; dag: number; dagSedd: number }; vakter: number; larm: string[]; gangen?: { n: number; sedd?: number; framme?: number; anfall?: number; dag: boolean }[] };
 const t0 = Date.now();
 const git = (k: string) => { try { return execSync(`git ${k}`, { encoding: 'utf8' }).trim(); } catch { return ''; } };
-const orord = !git('status --porcelain -- src') && git('rev-parse --short HEAD'); // ett oändrat bygge fortsätter där det slutade
+const orord = !git('status --porcelain --untracked-files=no -- src') && git('rev-parse --short HEAD'); // ett oändrat bygge fortsätter där det slutade
 const mapp = `node_modules/.cache/strid/${orord || 'andrad'}-${dagar}`;
 if (!orord) rmSync(mapp, { recursive: true, force: true });
 mkdirSync(mapp, { recursive: true });
@@ -80,6 +80,10 @@ const rl = [...ran.values()].map(r => (r.t1 - r.t0) / 60000);
 console.log(`  RÅNEN: ${rl.length}, strider per rån (median) ${m([...ran.values()].map(r => r.n))}, från första till sista striden (median) ${m(rl, 1)} minuter, längst ${rl.length ? Math.max(...rl).toFixed(1) : '–'} minuter`);
 const an = (k: 'n' | 'sedd' | 'dag' | 'dagSedd') => rs.reduce((a, r) => a + (r.anfall?.[k] ?? 0), 0);
 console.log(`\nRÖVARNAS ANFALL: ${an('n')} gånger gick ett gäng till anfall; byn hade sett det innan ${an('sedd')} gånger, på dagen ${an('dagSedd')} av ${an('dag')}`);
+// gängen (steg B.56): hur många som kom, och hur lång tid det tog från att de kom tills de sågs, tills alla var framme och till anfallet
+const gg = rs.flatMap(r => (r.gangen ?? []).map(g => ({ ...g, seed: r.seed }))), mn = (x?: number) => x === undefined ? 'aldrig' : `${(x / 60).toFixed(1)} min`;
+console.log(`\nGÄNGEN: ${gg.length} kom (tiden i verkligheten från att gänget kom; median: sågs ${mn(gg.length ? median(gg.filter(g => g.sedd !== undefined).map(g => g.sedd!)) : undefined)}, alla framme ${mn(median(gg.filter(g => g.framme !== undefined).map(g => g.framme!)))}, anfall ${mn(median(gg.filter(g => g.anfall !== undefined).map(g => g.anfall!)))}); anföll ${gg.filter(g => g.anfall !== undefined).length}, sågs innan anfallet på dagen ${gg.filter(g => g.anfall !== undefined && g.dag && g.sedd !== undefined && g.sedd <= g.anfall).length} av ${gg.filter(g => g.anfall !== undefined && g.dag).length}, på natten ${gg.filter(g => g.anfall !== undefined && !g.dag && g.sedd !== undefined && g.sedd <= g.anfall).length} av ${gg.filter(g => g.anfall !== undefined && !g.dag).length}`);
+for (const g of gg) console.log(`  by ${g.seed}: ${g.n} rövare, sågs ${mn(g.sedd)}, alla framme ${mn(g.framme)}, anfall ${mn(g.anfall)}${g.anfall !== undefined ? g.dag ? ' (dag)' : ' (natt)' : ''}`);
 const v = rs.reduce((a, r) => a + r.vakter, 0);
 console.log(v ? '\nVAKTER LARMAR:\n  ' + rs.flatMap(r => r.larm.map(l => `by ${r.seed}: ${l}`)).join('\n  ') : '\nVakter: inga fel.');
 }
