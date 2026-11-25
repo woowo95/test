@@ -2073,7 +2073,7 @@ SCENARIER.lon = {
 SCENARIER.tjanster = {
   text: 'Steg 14.1.4: betalda tjänster är samma anställning: den skadade betalar den som vårdar, lärlingen mästaren, den som bygger sitt hus en bygghjälpare, och för barnet betalar föräldern. Arbetaren begär det hen får på annat håll, och vill ha mer ju mindre egen mat hen har; utan silver anställer ingen',
   kor: () => {
-    const s = SIM.cloneState(testBy(25));
+    const s = SIM.cloneState(testBy(5, b => living(b).filter(q => ageOf(q, b.now) >= 20 && ageOf(q, b.now) < 55).length >= 4 && living(b).length >= 7));
     klockan(s);
     const ppl = living(s).filter(q => ageOf(q, s.now) >= 20 && ageOf(q, s.now) < 55), [sarad, larare, elev] = ppl;
     setAmount(s, 'silver', 0);
