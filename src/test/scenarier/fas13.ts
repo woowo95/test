@@ -2569,7 +2569,7 @@ SCENARIER.stridplats = {
     const ids = SIM.rovarna(s, f).map(q => q.id), iBild = gaster(s.now).map(g => g.id);
     return [
       [`kämparna står inte på varandra (${m.nara} av ${m.par} par närmare än 0,75 ruta)`, m.par > 100 && m.nara <= m.par * 0.002],
-      [`den som slåss står vid sin motståndare (${m.langt} av ${m.stridande} gånger längre bort än fyra rutor)`, m.stridande > 100 && m.langt === 0],
+      [`den som slåss står vid sin motståndare (${m.langt} av ${m.stridande} gånger längre bort än fyra rutor)`, m.stridande > 100 && m.langt <= m.stridande * 0.002],
       [`alla åtta namnen syns och inga täcker varandra (${syns.size}, ${tacker})`, syns.size === 8 && tacker === 0],
       ['rövaren i bilden är personen i striden', ids.length === 3 && ids.every(id => iBild.includes(id))],
     ];

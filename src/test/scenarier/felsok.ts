@@ -51,7 +51,7 @@ SCENARIER.konstigt = {
 SCENARIER.rimligt = {
   text: 'Vakterna för det orimliga (steg 12.1.42, src/test/rimligt.ts): varje vakt i RIMLIGT larmar med by, person och tid när det orimliga händer (ett skäl som inte stämmer, en handling som inte hör till skälet, ett förråd långt över taket, den som byter fram och tillbaka, den som är hungrig länge med mat i förrådet, många som gör samma sak av samma skäl, den som står still mitt i arbetet) och tiger när det stämmer',
   kor: () => {
-    const s = testBy(10), r = new Rimlig(s, 7), folk = SIM.living(s).filter(p => !p.gast && SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), p = folk[0]!;
+    const s = testBy(10, b => SIM.living(b).filter(p => !p.gast && SIM.ageOf(p, b.now) >= SIM.ALDER.vuxen).length >= 4), r = new Rimlig(s, 7), folk = SIM.living(s).filter(p => !p.gast && SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), p = folk[0]!;
     const uppgift = (act: SIM.Act, why: string): SIM.Task => ({ act, phase: 'go', tx: p.x, ty: p.y, until: s.now + 3600e3, carry: 0, why, dark: false } as SIM.Task);
     const larm = (v: string) => r.larmen.filter(l => l.vakt === v);
     // skälet: byn behöver ved fast förrådet räcker länge, och samla (mat) med skälet ved

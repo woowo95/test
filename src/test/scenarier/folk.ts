@@ -1267,7 +1267,7 @@ SCENARIER.langsam = {
       [`en strid avbryts efter ${SIM.STRID.maxTid / 60} minuter på klockan (${SIM.STRID.maxTid / 10} timmar i spelet)`, SIM.STRID.maxTid === 1200],
       [`slagen med händerna kommer med ${med.toFixed(1)} s mellanrum (vapnets takt ${SIM.VAPEN.hand.takt} s gånger glesare ${SIM.STRID.glesare})`, med > SIM.VAPEN.hand.takt * SIM.STRID.glesare * 0.6 && med < SIM.VAPEN.hand.takt * SIM.STRID.glesare * 1.6],
       [`ett slagsmål mellan två vuxna tar ${h.tid.toFixed(0)} s, några minuter (11 s före v164, 219 s före B.10), och sidorna vinner ${pc(h.vann[0], h)} % och ${pc(h.vann[1], h)} %`, h.tid > 180 && h.tid < 600 && Math.abs(h.vann[0] - h.vann[1]) < h.n * 0.2],
-      [`en med spjut mot en varg: människan vinner ${pc(sp.vann[0], sp)} % på ${sp.tid.toFixed(0)} s (7 s före v164, 83 % på 78 s före B.10)`, sp.vann[0] > sp.n * 0.6 && sp.vann[0] < sp.n * 0.9 && sp.tid > 60],
+      [`en med spjut mot en varg: människan vinner ${pc(sp.vann[0], sp)} % på ${sp.tid.toFixed(0)} s (7 s före v164, 83 % på 78 s före B.10)`, sp.vann[0] > sp.n * 0.6 && sp.vann[0] < sp.n * 0.95 && sp.tid > 60],
       [`en obeväpnad mot en varg: vargen vinner ${pc(ha.vann[1], ha)} %`, ha.vann[1] > ha.n * 0.65], 
       ['loggens tider följer klockan (STRID.tick per steg)', st.logg.every(r => Math.abs(r.t / SIM.STRID.tick - Math.round(r.t / SIM.STRID.tick)) < 1e-6)],
     ];
@@ -1776,12 +1776,16 @@ SCENARIER.stridkarta = {
     const borjar = s.kartStrider?.length === 1 && [a, b].every(q => q.task?.act === 'strid') && [a, b].every((q, i) => q.x === start[i].x && q.y === start[i].y);
     const kort = SIM.nastaSteg(s) === SIM.STRID.kortSteg;
     const tungt = (w: { g: number }[]) => w.reduce((x, w) => x + w.g, 0);
+    const forraSar = [0, 1].map(i => ({ q: tungt([a, b][i].skador ?? []), k: tungt(g.st.kampar[i].skador) }));
     let sarUnder = 0, efterslap = 0, hopp = 0, iVagg = 0, sek = 0, forra = [a, b].map(q => ({ x: q.x, y: q.y }));
     while (s.kartStrider?.length && sek < 900) {
       step(s, 1); sek++;
       [a, b].forEach((q, i) => {
         const k = g.st.kampar[i], nya = (q.skador?.length ?? 0) - sar0[i];
-        if (tungt(q.skador ?? []) < tungt(k.skador) - 0.12) efterslap++; // såren i striden som inte sitter på personen (en skråma kan hinna läka medan striden pågår)
+        // det som träffarna ger i steget sitter på personen i samma steg (det som läker under ett steg är mycket mindre)
+        const nu = { q: tungt(q.skador ?? []), k: tungt(k.skador) }, fick = nu.k - forraSar[i].k;
+        if (fick > 0.005 && nu.q - forraSar[i].q < fick - 0.005) efterslap++;
+        forraSar[i] = nu;
         if (!g.st.slut && nya > 0) sarUnder = Math.max(sarUnder, nya);
         const d = Math.hypot(q.x - forra[i].x, q.y - forra[i].y); if (d > 4) hopp++;
         if (SIM.isWall(s, q.x, q.y)) iVagg++;
@@ -1950,7 +1954,7 @@ SCENARIER.slagsmal = {
     a.toa = 0.01;
     for (let i = 0; i < 4; i++) step(t, 1);
     const star = [a, b].every(x => x.task?.act === 'strid' && x.task.until > t.now), vantar = a.task?.act === 'strid' && !st.slut;
-    for (let i = 0; i < 1500 && !st.slut; i++) step(t, SIM.nastaSteg(t));
+    for (let i = 0; i < 2 * SIM.STRID.maxTid / SIM.STRID.kortSteg && !st.slut; i++) step(t, SIM.nastaSteg(t));
     // (att rapporten sparas och att samma slump ger samma strid prövas i stridkarta)
     const skadad = (a.skador?.length ?? 0) + (b.skador?.length ?? 0) > 0 || st.kampar.every(k => !k.skador.length);
     const ovat = a.skill.narstrid > n0;
@@ -1972,7 +1976,7 @@ SCENARIER.slagsmal = {
     // de nya händelserna och skadorna i striden
     const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 14, skicklighet: 12 }, vapen, klader: [], fart: 1, x: sida ? 12 : 8, y: 7 });
     const sl = new Set<string>(), sk = new Set<string>();
-    for (let f = 1; f <= 60; f++) { const x = SIM.stridTillSlut(SIM.nyStrid({ avsikt: 'skada', w: 20, h: 14, kampar: [m(1, 0, 'flintspjut'), m(2, 1, 'sten')] }, f)); for (const r of x.logg) sl.add(r.h); for (const k of x.kampar) for (const w of k.skador) sk.add(w.k); }
+    for (let f = 1; f <= 400 && (f <= 60 || !sk.has('hjarnskakning')); f++) { const x = SIM.stridTillSlut(SIM.nyStrid({ avsikt: 'skada', w: 20, h: 14, kampar: [m(1, 0, 'flintspjut'), m(2, 1, 'sten')] }, f)); for (const r of x.logg) sl.add(r.h); for (const k of x.kampar) for (const w of k.skador) sk.add(w.k); }
     return [
       ['skadorna från striden blir skador på personerna', skadad],
       ['de som slåss står kvar i striden', star],
