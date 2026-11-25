@@ -52,12 +52,26 @@
  "bild_brunn": {
   "svar": "1",
   "kommentar": "det ser bra ut men gör brunnen större i jämförelse med en människa",
-  "nar": "2026-11-25T10:15:30.562Z"
+  "nar": "2026-11-25T10:15:30.562Z",
+  "tidigare": [
+   {
+    "svar": "1",
+    "kommentar": "träställningen ser ut att stå bakom brunnen och inte på stenkonstruktionen som den ska. Gör repet tunnare",
+    "nar": "2026-11-22T15:57:38.066Z"
+   }
+  ]
  },
  "bild_drejskiva": {
   "svar": "nej",
   "kommentar": "alla versionerna är för lika varandra",
-  "nar": "2026-11-25T10:15:50.758Z"
+  "nar": "2026-11-25T10:15:50.758Z",
+  "tidigare": [
+   {
+    "svar": "1",
+    "kommentar": "gör 5 versioner av version 1. ta bort lerklumpen i mitten",
+    "nar": "2026-11-22T15:58:16.978Z"
+   }
+  ]
  },
  "bild_eldstal": {
   "svar": "1",
@@ -67,12 +81,26 @@
  "bild_fyrfat": {
   "svar": "1",
   "kommentar": "använd denna versionen. Visa den nu med animerad eld",
-  "nar": "2026-11-25T10:16:19.566Z"
+  "nar": "2026-11-25T10:16:19.566Z",
+  "tidigare": [
+   {
+    "svar": "1",
+    "kommentar": "ta bort fötterna på detta fatet. Elden ska vara liknande som den ser ut i lägerelden. och animerad",
+    "nar": "2026-11-22T15:58:52.757Z"
+   }
+  ]
  },
  "bild_hatt_halm": {
   "svar": "nej",
   "kommentar": "version 1 ser bäst ut men den sitter fortfarande konstigt på huvudet",
-  "nar": "2026-11-25T10:06:26.238Z"
+  "nar": "2026-11-25T10:06:26.238Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "den sitter för högt på huvudet.",
+    "nar": "2026-11-22T15:52:18.745Z"
+   }
+  ]
  },
  "bild_isborr": {
   "svar": "1",
@@ -82,7 +110,14 @@
  "bild_jarn": {
   "svar": "3",
   "kommentar": "",
-  "nar": "2026-11-25T10:16:29.126Z"
+  "nar": "2026-11-25T10:16:29.126Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "varför är allt järn rött i kanten? ta bort det. gör tacka som ser ut som en vanlig tacka. så som dem brukar vara formade i moden tid",
+    "nar": "2026-11-22T15:59:49.332Z"
+   }
+  ]
  },
  "bild_jarngryta": {
   "svar": "",
@@ -97,7 +132,14 @@
  "bild_jarnhjalm_jarn": {
   "svar": "3",
   "kommentar": "",
-  "nar": "2026-11-25T10:06:43.447Z"
+  "nar": "2026-11-25T10:06:43.447Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "gör 5 olika förslag",
+    "nar": "2026-11-22T15:52:33.085Z"
+   }
+  ]
  },
  "bild_jarnkniv": {
   "svar": "1",
@@ -112,7 +154,14 @@
  "bild_jarnskold": {
   "svar": "",
   "kommentar": "sköldens symbol är väldigt snygg. Använd den som järnsköldet.",
-  "nar": "2026-11-25T10:08:00.312Z"
+  "nar": "2026-11-25T10:08:00.312Z",
+  "tidigare": [
+   {
+    "svar": "",
+    "kommentar": "texten är väldigt förvirrande och jag förstår inte vilken symbol jag väljer mellan",
+    "nar": "2026-11-22T15:53:50.158Z"
+   }
+  ]
  },
  "bild_jarnskrot": {
   "svar": "2",
@@ -127,12 +176,26 @@
  "bild_jarnyxa": {
   "svar": "nej",
   "kommentar": "gör 5 nya versioner utan förlaga men som liknar flinyxan men mer avancerade",
-  "nar": "2026-11-25T10:17:48.314Z"
+  "nar": "2026-11-25T10:17:48.314Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "inte tillräckligt lika flintyxan",
+    "nar": "2026-11-22T16:02:58.711Z"
+   }
+  ]
  },
  "bild_kolmila": {
   "svar": "1",
   "kommentar": "spara version 1. Prova att göra pinnar som håller upp kolet så som det görs på riktigt",
-  "nar": "2026-11-25T10:18:54.397Z"
+  "nar": "2026-11-25T10:18:54.397Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "gör den svart så man ser kolet",
+    "nar": "2026-11-22T16:03:10.442Z"
+   }
+  ]
  },
  "bild_kudde": {
   "svar": "3",
@@ -172,7 +235,14 @@
  "bild_ost": {
   "svar": "",
   "kommentar": "min version",
-  "nar": "2026-11-25T10:21:19.404Z"
+  "nar": "2026-11-25T10:21:19.404Z",
+  "tidigare": [
+   {
+    "svar": "",
+    "kommentar": "gör en tydlig rund och och en trekantig ost. gör 4 alternativ av varje",
+    "nar": "2026-11-22T16:04:08.205Z"
+   }
+  ]
  },
  "bild_pall": {
   "svar": "3",
@@ -187,17 +257,38 @@
  "bild_ringbrynja_jarn": {
   "svar": "2",
   "kommentar": "använd denna versionen hur den syns på kartan. På porträttet är rutnätet lite för finmaskigt och den sitter konstigt i kragen",
-  "nar": "2026-11-25T10:09:19.084Z"
+  "nar": "2026-11-25T10:09:19.084Z",
+  "tidigare": [
+   {
+    "svar": "",
+    "kommentar": "rita 5 olika versioner i portsättet",
+    "nar": "2026-11-22T15:54:55.783Z"
+   }
+  ]
  },
  "bild_sag": {
   "svar": "nej",
   "kommentar": "gör dem rakare",
-  "nar": "2026-11-25T10:21:53.178Z"
+  "nar": "2026-11-25T10:21:53.178Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "gör 5 helt nya alternativ utan förlaga",
+    "nar": "2026-11-22T16:04:39.462Z"
+   }
+  ]
  },
  "bild_sang": {
   "svar": "nej",
   "kommentar": "du har inte följt min instruktion.",
-  "nar": "2026-11-25T10:22:20.759Z"
+  "nar": "2026-11-25T10:22:20.759Z",
+  "tidigare": [
+   {
+    "svar": "3",
+    "kommentar": "ta bort kudden efter som att det är ett eget föremål",
+    "nar": "2026-11-22T16:05:05.050Z"
+   }
+  ]
  },
  "bild_sjukbadd": {
   "svar": "nej",
@@ -207,7 +298,14 @@
  "bild_smedja": {
   "svar": "1",
   "kommentar": "",
-  "nar": "2026-11-25T10:22:38.141Z"
+  "nar": "2026-11-25T10:22:38.141Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "rita bälgen på sidan av elden istället.",
+    "nar": "2026-11-22T16:06:31.600Z"
+   }
+  ]
  },
  "bild_spanne_jarn": {
   "svar": "2",
@@ -222,7 +320,14 @@
  "bild_stol": {
   "svar": "1",
   "kommentar": "utgå från denna och rita den från sidan och bakifrån. bredvid varandra. ta bort dem andra korten på stolen dem ser inte bra ut",
-  "nar": "2026-11-25T10:24:05.260Z"
+  "nar": "2026-11-25T10:24:05.260Z",
+  "tidigare": [
+   {
+    "svar": "2",
+    "kommentar": "version 2 fast med rakare ben. Den ska också ritas från sidan och bakifrån",
+    "nar": "2026-11-22T16:07:16.706Z"
+   }
+  ]
  },
  "bild_stol_bak": {
   "svar": "nej",
@@ -252,7 +357,14 @@
  "bild_tunna": {
   "svar": "nej",
   "kommentar": "gör 6 nya versioner av tunnan behåll dom gamla",
-  "nar": "2026-11-25T10:24:30.235Z"
+  "nar": "2026-11-25T10:24:30.235Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "rita en enkel tunna som den ser ut idag.",
+    "nar": "2026-11-22T16:08:58.918Z"
+   }
+  ]
  },
  "bild_ullsax": {
   "svar": "nej",
@@ -367,7 +479,14 @@
  "f10_hast": {
   "svar": "3",
   "kommentar": "använd version 3 men gör hästen större. Så den knänns som en ralistisk storlek i jämförelse med en vuxen man som står bredvid. Gå igenom alla andra djur också och se om dem behöver justeras. justera bara storlekarna uppåt för att göra saker större om det behövs gör dem inte mindre",
-  "nar": "2026-11-25T09:59:04.053Z"
+  "nar": "2026-11-25T09:59:04.053Z",
+  "tidigare": [
+   {
+    "svar": "",
+    "kommentar": "utgå från version 2 och 3 och gör 5 versioner av varje som jag kan välja mellan. Gör även 5 helt nya versioner utan förlaga",
+    "nar": "2026-11-22T12:49:22.024Z"
+   }
+  ]
  },
  "f10_heligt": {
   "svar": "nej",
@@ -407,7 +526,14 @@
  "f10_kott_far": {
   "svar": "3",
   "kommentar": "",
-  "nar": "2026-11-25T10:09:56.096Z"
+  "nar": "2026-11-25T10:09:56.096Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "gör5 versioner av revbenspjäll",
+    "nar": "2026-11-22T15:56:07.411Z"
+   }
+  ]
  },
  "f10_kott_get": {
   "svar": "1",
@@ -517,7 +643,14 @@
  "f11_gravhog": {
   "svar": "1",
   "kommentar": "",
-  "nar": "2026-11-25T10:00:00.603Z"
+  "nar": "2026-11-25T10:00:00.603Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "gör en hög med ett kors på",
+    "nar": "2026-11-22T12:50:15.585Z"
+   }
+  ]
  },
  "f11_kartblad": {
   "svar": "2",
@@ -562,7 +695,14 @@
  "f11_sym_bud": {
   "svar": "1",
   "kommentar": "",
-  "nar": "2026-11-25T10:00:16.560Z"
+  "nar": "2026-11-25T10:00:16.560Z",
+  "tidigare": [
+   {
+    "svar": "",
+    "kommentar": "jag förstår inte vad detta ska representera förklara i chatten vad jag väljer",
+    "nar": "2026-11-22T15:46:16.297Z"
+   }
+  ]
  },
  "f11_sym_helgon": {
   "svar": "ja",
@@ -612,12 +752,26 @@
  "f11_vagnsvrak": {
   "svar": "nej",
   "kommentar": "du har inte följt min instruktion",
-  "nar": "2026-11-25T09:59:52.464Z"
+  "nar": "2026-11-25T09:59:52.464Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "nu tog du vagnen från kartan som förlaga. Jag menade att du skulle ta vagnen så som den ser ut i byn som förlaga",
+    "nar": "2026-11-22T12:49:57.310Z"
+   }
+  ]
  },
  "f12_fliknamn": {
   "svar": "3",
   "kommentar": "",
-  "nar": "2026-11-25T10:00:45.940Z"
+  "nar": "2026-11-25T10:00:45.940Z",
+  "tidigare": [
+   {
+    "svar": "1",
+    "kommentar": "version 1 men gör kedjorna lite tydligare och se till att dom går hela vägen upp till flätan ovanför",
+    "nar": "2026-11-22T15:48:24.009Z"
+   }
+  ]
  },
  "f12_jarngruva": {
   "svar": "1",
@@ -632,12 +786,26 @@
  "f12_roll_ledare": {
   "svar": "nej",
   "kommentar": "det ska vara en enkel kungakrona",
-  "nar": "2026-11-25T10:00:37.315Z"
+  "nar": "2026-11-25T10:00:37.315Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "försök hitta en befintlig symbol för ledarskap att återanvända",
+    "nar": "2026-11-22T15:47:40.029Z"
+   }
+  ]
  },
  "f12_roll_prast": {
   "svar": "1",
   "kommentar": "",
-  "nar": "2026-11-25T10:00:19.037Z"
+  "nar": "2026-11-25T10:00:19.037Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "samma symbol som den generella symbolen för religon",
+    "nar": "2026-11-22T15:47:17.171Z"
+   }
+  ]
  },
  "f12_sederband": {
   "svar": "ja",
@@ -662,7 +830,14 @@
  "f12_sym_kedja": {
   "svar": "1",
   "kommentar": "",
-  "nar": "2026-11-25T10:01:45.306Z"
+  "nar": "2026-11-25T10:01:45.306Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "använd symbolen för religon men överstruken",
+    "nar": "2026-11-22T15:50:32.432Z"
+   }
+  ]
  },
  "f12_sym_kompass": {
   "svar": "3",
@@ -672,22 +847,50 @@
  "f12_sym_las": {
   "svar": "1",
   "kommentar": "",
-  "nar": "2026-11-25T10:02:03.800Z"
+  "nar": "2026-11-25T10:02:03.800Z",
+  "tidigare": [
+   {
+    "svar": "2",
+    "kommentar": "gör den mer symmetrisk",
+    "nar": "2026-11-22T15:51:35.735Z"
+   }
+  ]
  },
  "f12_sym_ljus": {
   "svar": "1",
   "kommentar": "",
-  "nar": "2026-11-25T10:01:42.927Z"
+  "nar": "2026-11-25T10:01:42.927Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "använd symbolen för religon",
+    "nar": "2026-11-22T15:50:17.376Z"
+   }
+  ]
  },
  "f12_sym_ol": {
   "svar": "3",
   "kommentar": "",
-  "nar": "2026-11-25T10:01:55.959Z"
+  "nar": "2026-11-25T10:01:55.959Z",
+  "tidigare": [
+   {
+    "svar": "1",
+    "kommentar": "men gör drycken mer gul som öl",
+    "nar": "2026-11-22T15:50:49.562Z"
+   }
+  ]
  },
  "f12_sym_ort": {
   "svar": "1",
   "kommentar": "",
-  "nar": "2026-11-25T10:01:03.142Z"
+  "nar": "2026-11-25T10:01:03.142Z",
+  "tidigare": [
+   {
+    "svar": "nej",
+    "kommentar": "gör ett rött kors",
+    "nar": "2026-11-22T15:49:33.731Z"
+   }
+  ]
  },
  "f12_sym_rav": {
   "svar": "1",
@@ -697,12 +900,26 @@
  "f12_sym_scen": {
   "svar": "1",
   "kommentar": "",
-  "nar": "2026-11-25T10:01:08.992Z"
+  "nar": "2026-11-25T10:01:08.992Z",
+  "tidigare": [
+   {
+    "svar": "2",
+    "kommentar": "gör tre nya versioner av version 2.",
+    "nar": "2026-11-22T15:49:48.437Z"
+   }
+  ]
  },
  "f12_sym_vilt": {
   "svar": "3",
   "kommentar": "",
-  "nar": "2026-11-25T10:01:01.083Z"
+  "nar": "2026-11-25T10:01:01.083Z",
+  "tidigare": [
+   {
+    "svar": "3",
+    "kommentar": "gör tre nya versioner av version 3. Behåll original",
+    "nar": "2026-11-22T15:49:02.913Z"
+   }
+  ]
  },
  "f13_cider": {
   "svar": "nej",

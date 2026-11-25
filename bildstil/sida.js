@@ -660,7 +660,8 @@ const forraRad = s => {
   const f = FORRA[s.id]; if (!f) return '';
   const esc = x => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const val = f.svar === 'ja' ? 'Du sa ja' : f.svar === 'nej' ? 'Du sa nej' : f.svar ? 'Du valde version ' + esc(f.svar) : '';
-  return `<p class="forra">${f.kommentar ? 'Din kommentar förra gången' + (val ? ' (' + val.toLowerCase().replace('du ', '') + ')' : '') + ': ”' + esc(f.kommentar) + '”' : val + ' förra gången, utan kommentar.'}</p>`;
+  const tidigare = (f.tidigare || []).map(t => `<p class="forra">Din kommentar en gång innan: ”${esc(t.kommentar)}”</p>`).join('');
+  return `<p class="forra">${f.kommentar ? 'Din kommentar förra gången' + (val ? ' (' + val.toLowerCase().replace('du ', '') + ')' : '') + ': ”' + esc(f.kommentar) + '”' : val + ' förra gången, utan kommentar.'}</p>` + tidigare;
 };
 let DB = null;
 function byggVal(P) {
