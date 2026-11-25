@@ -69,10 +69,11 @@ const kvAv = (s: State, f: Foretag, v: string, k: string) => { const V = VERKSAM
 // det företaget har att sälja av verksamheten v
 export function varorAv(s: State, f: Foretag, v: string, G = saljPart(s, f)): string[] {
   if (!G) return [];
-  const V = VERKSAMHETER[v], alla = V.varor(s);
+  const V = VERKSAMHETER[v];
+  if (V.hylla) return [...new Set(hyllan(s, f).map(h => h.k))];
+  const alla = V.varor(s);
   if (!alla.length) return [];
   if (V.egen) return V.egen.har(s, f);
-  if (V.hylla) return [...new Set(hyllan(s, f).map(h => h.k))];
   if (V.vatska) return alla.filter(k => karl(s, f, k));
   const har = new Set(G.over([]).filter(w => !w.t && w.n >= 1).map(w => w.k));
   return alla.filter(k => har.has(k));
@@ -111,7 +112,8 @@ export const tycker: ((s: State, p: Person, f: Foretag, v: string) => number)[] 
 // det bästa p kan köpa av verksamheten v nu, om det är mer värt för hen än det kostar
 export const kundVal = (s: State, p: Person, v: string): Erbjudande | undefined => erbjudandet(s, p, v);
 // bara = bara det företaget (gästen som kommit dit)
-export function erbjudandet(s: State, p: Person, v: string, bara?: Foretag): Erbjudande | undefined {
+// kan = bara de varorna (kopbuffert.ts)
+export function erbjudandet(s: State, p: Person, v: string, bara?: Foretag, kan?: (k: string) => boolean): Erbjudande | undefined {
   if (!s.foretag?.length) return undefined;
   let bast: Erbjudande | undefined, M: Part | undefined;
   const ville: Foretag[] = [];
@@ -126,6 +128,7 @@ export function erbjudandet(s: State, p: Person, v: string, bara?: Foretag): Erb
     const om = tycker.reduce((a, g) => a + g(s, p, f, v), 0) - d * KASSA.vag - (f.ko?.length ?? 0) * KASSA.koNet;
     let varor: Betalvaror | undefined;
     for (const k of varorAv(s, f, v, G)) {
+      if (kan && !kan(k)) continue;
       M ??= kundPart(s, p);
       const n = VERKSAMHETER[v].hylla ? kopMangd(s, p, f, k) : 1;
       if (n < 1 || VERKSAMHETER[v].egen && kundNoje(s, p, v, k) <= 0) continue; // den som inte har någon nytta av tjänsten
@@ -139,7 +142,7 @@ export function erbjudandet(s: State, p: Person, v: string, bara?: Foretag): Erb
       if (net > (bast?.net ?? 0)) bast = { f, v, k, n, pris, net, disk };
     }
   }
-  for (const f of ville) for (const g of fragat) g(s, p, f, v, f === bast?.f);
+  if (!kan) for (const f of ville) for (const g of fragat) g(s, p, f, v, f === bast?.f);
   return bast;
 }
 // den som ville ha något av företagets varor och valde det eller inte (priset följer det, steg 14.1.9)
@@ -266,7 +269,7 @@ export function kopVid(s: State, f: Foretag, p: Person, r: KoRad, at: Person): b
   return true;
 }
 // ---------- varje halvminut (TAKTER): den som kan betjäna kallas till disken ----------
-const SOVER = new Set<string>(['sova', 'vila', 'badd']);
+export const SOVER = new Set<string>(['sova', 'vila', 'badd']);
 const kanKomma = (q: Person) => alive(q) && kanGa(q) && !(q.task && (SOVER.has(q.task.act) || q.task.act === 'betjana' || q.task.act === 'koaDisk' || ACTS[q.task.act]?.fortsatter?.length || ACTS[q.task.act]?.vila));
 export function kassaTakt(s: State) {
   for (const f of s.foretag ?? []) {

@@ -82,7 +82,7 @@ export const DAGSVERK: Record<string, Dagsverk> = {
     bud: s => bynsBud(s, 'vagar', antalFor(tim(s, b => BUDGET.vagar.bit!(s, b)))) },
   forradet: { namn: 'Byns förråd', sym: '📦', del: 'forradet', gor: (_s, _a, _p, tk) => tk?.lon === 'forradet', bud: s => bynsBud(s, 'forradet', vuxna(s).length) },
   // bygghjälpen: den som äger ett hus som byggs, eller kyrkan, anställer dem som bygger
-  bygghjalp: { namn: 'Bygghjälp', sym: '🔨', gor: (s, a, _p, tk) => { const b = bygger(s, tk); return !!b && bitAgare(s, b) === a.av; },
+  bygghjalp: { namn: 'Bygghjälp', sym: '🏠', gor: (s, a, _p, tk) => { const b = bygger(s, tk); return !!b && bitAgare(s, b) === a.av; },
     bud: s => {
       const t = new Map<number, number>();
       for (const b of bitsOf(s)) { const ag = b.hus === undefined ? BYN : bitAgare(s, b); if (ag !== BYN) t.set(ag, (t.get(ag) ?? 0) + byggTim(b)); }
@@ -92,7 +92,7 @@ export const DAGSVERK: Record<string, Dagsverk> = {
   vard: { namn: 'Vård', sym: '🩹', gor: (_s, a, _p, tk) => tk?.act === 'varda' && tk.ref === a.mal,
     bud: s => living(s).filter(q => !q.gast && (q.skador?.length || q.sjuk) && vuxna(s).some(g => g !== q && vardBehov(s, q, g))).map(q => { const b = betalare(s, q); return { av: b.id, antal: 1, tim: ARBETE * DAGS.vard, tak: silverAv(s, b.id), timMax: 1, mal: q.id, kan: (p: Person) => p !== q }; }) },
   // undervisningen: lärlingen, eller för barnet föräldern, betalar mästaren
-  undervisning: { namn: 'Undervisning', sym: '📖', ostort: true, gor: (s, a) => { const q = byId(s, a.mal); return q?.task?.act === 'lara' && q.lar?.av === a.p; },
+  undervisning: { namn: 'Undervisning', sym: '📜', ostort: true, gor: (s, a) => { const q = byId(s, a.mal); return q?.task?.act === 'lara' && q.lar?.av === a.p; },
     bud: s => living(s).filter(q => !q.gast && ageOf(q, s.now) >= ALDER.uppfinner).map(q => { const b = betalare(s, q); return { av: b.id, antal: 1, tim: ARBETE * DAGS.lara, tak: silverAv(s, b.id), mal: q.id, kan: (m: Person) => q !== m && (q.lar ? q.lar.av === m.id : kanLaraUt(s, m, q)) }; }).filter(b => b.tak >= 1) },
 };
 const INGEN = {} as import('./byggnad').Bit;

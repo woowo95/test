@@ -258,6 +258,7 @@ const DEF = {
   boll: { namn: 'Syr en boll', slag: 'hantverk', hantverk: true, fardighet: 'somnad', verb: 'syr', plats: 'station' }, // sportens föremål (steg 4.3.1.2, sport.ts)
   handla: { namn: 'Handlar med handlaren', nara: true, slag: 'prata', stilla: true }, // byns handel vid handlarens filt (steg 4.4.1.3, handel.ts): task.ref är handlarens id. Inte social: den som handlar pratar bara med handlaren (steg 4.5.7.5)
   koa: { namn: 'Står i kö till handlaren', nara: true, slag: 'prata', social: true, skamfri: true, stilla: true }, // den som skäms får handla (steg 13.8.10) // kön till handlaren (steg 4.5.7.5, handel.ts): de som väntar får prata med varandra
+  bytHos: { namn: 'Byter hos en granne', nara: true, slag: 'prata', social: true, stilla: true, dygn: true, fardighet: 'handel' }, // kopbuffert.ts, steg 14.1.15
   marknad: { namn: 'Handlar på marknaden', nara: true, slag: 'prata', social: true, stilla: true, dygn: true, fardighet: 'handel' }, // marknad.ts, steg 14.1.14
   koaDisk: { namn: 'Väntar vid disken', nara: true, slag: 'prata', social: true, stilla: true }, // kunden (kassa.ts, steg 14.1.6): task.ref är företaget
   stallaFram: { namn: 'Ställer fram varor', slag: 'hantverk', verb: 'ställer fram varor', fardighet: 'handel', kunna: 0.2 }, // till varubordet (affar.ts, steg 14.1.8)

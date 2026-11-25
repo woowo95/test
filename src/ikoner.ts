@@ -3691,7 +3691,7 @@ PIX.kanin_dod = KARTBILDER.vilt.rader; PAL.kanin_dod = KARTBILDER.vilt.pal; // i
 // pyntet (steg 4.3.4): samma bild på kartan och i listorna, och lerkrukan för intrycket smakfull
 for (const k of ['kruka', 'disk', 'varubord', 'skrivpulpet', 'bokhylla']) { PIX[k + '_karta'] = PIX[k]; PAL[k + '_karta'] = PAL[k]; } // skrivpulpeten och bokhyllan (steg 10.6.11, 10.6.16): platshållarna på kartan
 // bänken och krubban vridna ett kvarts varv (platshållare tills de stående bilderna är ritade, steg 10.2.68 och 10.2.88)
-for (const k of ['bank', 'krubba', 'altare']) { const r = PIX[k]; PIX[k + '_karta_v'] = Array.from({ length: r[0].length }, (_, x) => Array.from({ length: r.length }, (_, y) => r[r.length - 1 - y][x]).join('')); PAL[k + '_karta_v'] = PAL[k]; }
+for (const k of ['bank', 'krubba', 'altare', 'disk', 'varubord']) { const r = PIX[k]; PIX[k + '_karta_v'] = Array.from({ length: r[0].length }, (_, x) => Array.from({ length: r.length }, (_, y) => r[r.length - 1 - y][x]).join('')); PAL[k + '_karta_v'] = PAL[k]; }
 
 // den vilda rovan har samma symbol som rovan (Björn efter v245, steg 4.5.2)
 PIX.vildrova = PIX.rovor; PAL.vildrova = PAL.rovor;

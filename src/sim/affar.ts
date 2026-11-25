@@ -5,7 +5,7 @@
 import { W, type Person, type State, type Task } from './typer';
 import { balans } from './balans';
 import { count, familjOf, living } from './folk';
-import { brukAv, MAT, saknarNu } from './behov';
+import { brukAv, MAT, ownFor, saknarNu } from './behov';
 import { VED } from './eld';
 import { foretagOf, foretagRum, type Foretag } from './foretag';
 import { arAgd, taUrStack, lying, rymdPa, stacksOf, changed, tidy, dropSpot, besokLager, stallPaRutan } from './lager';
@@ -19,6 +19,7 @@ import type { Part } from './byte';
 
 export const AFFAR = balans('affar', {
   min: 1, // så lång tid (minuter) tar det att ta det som ska ställas fram
+  buffert: 0.3, // den som saknar mat eller ved till sitt eget förråd räknas så mycket mot den som saknar det nu
   bord: 3, // så många varubord vill en affär högst ha
   vikt: 0.5, // så mycket väger att ställa fram, per det de som saknar saken skulle betala
 });
@@ -42,7 +43,7 @@ export function hyllan(s: State, f: Foretag): HyllVara[] {
 export function vilMangd(s: State, p: Person, k: string): number {
   const r = brukAv(k);
   if (k === 'silver') return 0;
-  if (r.behov) { const b = r.behov(); return Math.ceil(r.saknar(s, p, b.id) / (b.per?.[k] ?? 1) - 1e-9); }
+  if (r.behov) { const b = r.behov(); return Math.ceil(Math.max(r.saknar(s, p, b.id), r.behall(s, p, k) - ownFor(s, p, b)) / (b.per?.[k] ?? 1) - 1e-9); } // upp till det hen vill ha kvar (maten till den egna gränsen, steg 14.1.15)
   return Math.ceil(r.saknar(s, p, k) - 1e-9);
 }
 // ---------- att ställa fram ----------
@@ -52,6 +53,8 @@ export function efterfragat(s: State, ag: number): Map<string, number> {
   const m = new Map<string, number>();
   const fam = ag > 0 ? familjOf(s, ag) : [];
   for (const p of living(s)) if (!p.gast && p.id !== ag && !fam.includes(p)) for (const k of saknarNu(s, p)) if (BEHOVEN.includes(k) || vilMangd(s, p, k) > 0) m.set(k, (m.get(k) ?? 0) + 1);
+  // maten och veden vill man också ha upp till det man själv vill ha kvar (steg 14.1.15)
+  for (const p of living(s)) if (!p.gast && p.id !== ag && !fam.includes(p)) for (const b of [MAT, VED]) if (brukAv(b.id).behall(s, p, b.id) - ownFor(s, p, b) >= 1) m.set(b.id, (m.get(b.id) ?? 0) + AFFAR.buffert);
   return m;
 }
 const BEHOVEN: string[] = [MAT.id, VED.id]; // deras nyckel är behovets

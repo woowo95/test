@@ -73,7 +73,7 @@ const hemmaNoje = (s: State, p: Person) => FOOD.reduce((m, k) => { const n = MAL
 export const skick = (n: number) => clamp(0.6 + n / 25, 0.6, 1.4);
 export const VERKSAMHETER: Record<string, Verksamhet> = {
   servering: {
-    namn: 'Servering', sym: '🍲', rum: 'matsal',
+    namn: 'Servering', sym: '🍽', rum: 'matsal',
     varor: s => FOOD.filter(k => MALTIDSNIVA[maltidsNiva(k)].humor > 0 && amountOf(s, k) >= 1),
     noje: (s, p, k) => FORETAG.humor * Math.max(0, MALTIDSNIVA[maltidsNiva(k)].humor - hemmaNoje(s, p)),
     snitt: k => FORETAG.humor * MALTIDSNIVA[maltidsNiva(k)].humor, ats: true,
@@ -90,7 +90,7 @@ export const VERKSAMHETER: Record<string, Verksamhet> = {
   },
   // affären (steg 14.1.8, affar.ts): kunden vinner så mycket mer hen behöver saken än den som har den över
   affar: {
-    namn: 'Affär', sym: '🧺', rum: 'affar', hylla: true,
+    namn: 'Affär', sym: '👛', rum: 'affar', hylla: true,
     varor: s => [...new Set(living(s).flatMap(p => p.gast ? [] : saknarNu(s, p)))].filter(k => grundvarde(k) > 0 && amountOf(s, k) >= 1),
     noje: (s, p, k) => grundvarde(k) * Math.max(0, behovAv(s, p, k) - DELA.over),
     snitt: k => grundvarde(k) * (DELA.saknar - DELA.over), grund: k => grundvarde(k) * DELA.over,
@@ -215,7 +215,7 @@ export function oppna(s: State, f: Foretag): string[] {
 export const saltAv = (f: Foretag) => Object.values(f.salt ?? {}).reduce((a, b) => a + b, 0);
 export const kundVinst = (f: Foretag) => Math.max(0, saltAv(f) >= 0.5 ? (f.vinst ?? 0) / saltAv(f) : 1);
 // kunderna som gått utan att bli betjänade är det ägarens timmar inte räckte till: en timme till vid disken är värd det de hade gett
-DAGSVERK.foretag = { namn: 'Företaget', sym: '🏪', gor: (_s, a, _p, tk) => (tk?.act === 'betjana' || tk?.act === 'stallaFram') && tk.ref === a.mal,
+DAGSVERK.foretag = { namn: 'Företaget', sym: '💰', gor: (_s, a, _p, tk) => (tk?.act === 'betjana' || tk?.act === 'stallaFram') && tk.ref === a.mal,
   bud: s => foretagOf(s).flatMap(f => {
     const g = f.lamnat ?? 0, p = foretagare(s, f.ag);
     return g > 0 && p && foretagRum(s, f).length ? [{ av: f.ag, antal: 1, tim: kundVinst(f) / FORETAG.timKund, tak: Math.floor(ownsId(s, f.ag, 'silver') + 1e-9), timMax: g * FORETAG.timKund, mal: f.id, kan: (q: Person) => q.id !== p.id && !familjOf(s, p.id).includes(q) }] : [];

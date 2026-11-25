@@ -36,6 +36,7 @@ import { ALDER, KROPP, REL, ageOf, count, enTill, enTillDar, familjOf, isSick, l
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
 import { VARDRATT, halsa, hemma, kanGa, kroppLust, vardBehov, vardVal, vilaHellre, vilaSkal } from './halsa';
+import { kopval, type Kopval } from './kopbuffert';
 import { marknadVal, marknadVikt } from './marknad';
 import { DELA, MAT, brukKrok, bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial, vatskaMaterial } from './behov';
 import { FANGST, type FyndId, Kind, RUTFYND, flintSpot, richnessFor } from './fynd';
@@ -493,6 +494,11 @@ export function balteForband(s: State, p: Person, act: Act) { if (BALTE_FORBAND.
 export interface Val { fron?: true; eldFor?: Act; skal?: Task['skal']; paus?: true; /* vilan är en paus när inget annat lockar, inte trötthet (steg 11.1.72) */ fordon?: number; dragdjur?: number; stanna?: boolean; act: Act; why: string; dur: number; pass?: number; spot?: { x: number; y: number }; ref?: number; tool?: string; site?: { x: number; y: number }; sok?: true | 'sten' | 'flinta'; hot?: 'rovare' | 'varg'; tandmat?: true; falt?: true; sno?: true; ho?: true; gava?: true; hamtar?: string; lon?: string; brand?: Task['brand']; kalla?: number }
 const set = (v: Val, act: Act, why: string) => { v.act = act; v.why = why; v.paus = undefined; v.skal = undefined; return true; };
 const koa = (s: State, p: Person, v: Val, e: Erbjudande) => { const k = stallIKo(s, p, e); set(v, 'koaDisk', k.why); v.spot = k.spot; v.dur = k.dur; v.ref = k.ref; return true; }; // kunden går till disken (kassa.ts)
+const kopa = (c: Ctx, k = c.kop) => { // affären eller grannen (kopbuffert.ts)
+  if (!k) return false;
+  if (k.kund) return koa(c.s, c.p, c.v, k.kund);
+  set(c.v, 'bytHos', `Köper ${sakNamn(k.k!).toLowerCase()} av en granne`); c.v.spot = k.spot; c.v.dur = k.dur; c.v.ref = k.granne; c.v.tool = k.k; return true;
+};
 const paus = (v: Val, why: string) => { set(v, 'vila', why); v.paus = true; return true; }; // vilan när inget annat lockar (steg 11.1.72)
 
 // Registret ARBETEN (steg 6.1.11, "Arbetsordningen" i designdokumentet): en rad per uppgift, i den ordning valet prövar dem.
@@ -553,7 +559,7 @@ const arbBehov = (s: State) => s.arbBehov ?? (arbetsTimme(s), s.arbBehov!);
 // nivåerna: 1 Fara, 2 Nöd och vård, 3 Tillfälle, 4 Grundbehov, 5 Rädda, 6 Försörjning, 7 Tak, 8 Förbättra, 9 Fritid
 type Niva = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 // det valet vet om personen; farorna räknas första gången en rad frågar och gäller hela valet
-interface Ctx { stall?: ReturnType<typeof stallaVal>; betj?: ReturnType<typeof betjanVal>; kund?: Erbjudande; s: State; p: Person; v: Val; a: number; lazy: number; light: boolean; f?: Faror; d?: Dag; forb?: boolean; fb?: Record<string, { sc: number; gor: () => void } | undefined>; bord?: { x: number; y: number } | null }
+interface Ctx { stall?: ReturnType<typeof stallaVal>; betj?: ReturnType<typeof betjanVal>; kop?: Kopval; kopV?: Kopval; kund?: Erbjudande; s: State; p: Person; v: Val; a: number; lazy: number; light: boolean; f?: Faror; d?: Dag; forb?: boolean; fb?: Record<string, { sc: number; gor: () => void } | undefined>; bord?: { x: number; y: number } | null }
 const faror = (c: Ctx) => c.f ??= dangers(c.s);
 // Förbättra dämpas mjukt (steg 10.11.20): när kylan eller hungern är en fara tas raderna på Förbättra och projekten med chansen
 // VAL.projFara (en dragning per val), som bygget dämpas (byggDampning): tiden går helst till faran, men ingenting stängs av
@@ -954,6 +960,9 @@ export const ARBETEN: readonly Arbete[] = [
   // den egna maten är en rad för personen och familjen (Förråden, bufferten per jag), ingen spärr: den har inga arbetare att fylla
   { id: 'egenMat', niva: 6, nar: 'dag', poang: c => { const d = dag(c); return d.works ? d.wEgen * d.rad.mat.sc : 0; },
     prova: c => { const d = dag(c); arbeta(c, d.rad.mat.act, `Behöver egen mat, har för ${dygn(d.egen)}`); return true; } },
+  // skaffar genom byte (steg 14.1.15, kopbuffert.ts): samma behov som samlandet, gånger vad en timme köpande ger mot en timme samlande
+  { id: 'kopaMat', niva: 6, nar: 'dag', poang: c => { const d = dag(c); if (!d.works || d.wEgen <= 0) return 0; const k = (c.kop = kopval(c.s, c.p, 'mat')); return k ? d.wEgen * d.rad.mat.sc * k.faktor : 0; }, prova: c => kopa(c) },
+  { id: 'kopaVed', niva: 6, nar: 'dag', poang: c => { const d = dag(c); if (!d.works || d.wWood <= 0) return 0; const k = (c.kopV = kopval(c.s, c.p, 'ved')); return k ? d.wWood * d.rad.ved.sc * k.faktor : 0; }, prova: c => kopa(c, c.kopV) },
   { id: 'ved', niva: 6, nar: 'dag', poang: c => { const d = dag(c); return d.works && d.wd < buffert(c.s, 'ved') ? d.wWood * d.rad.ved.sc : 0; },
     full: c => radFull(c.s, c.p, 'ved') && !faror(c).kyla,
     prova: c => { const d = dag(c); forByn(c); arbeta(c, d.rad.ved.act, `Byn behöver ved, förrådet räcker ${dygn(d.wd)}`); return true; } },

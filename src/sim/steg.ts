@@ -113,6 +113,7 @@ import { lonDygn, lonRakna } from './dagsarbete';
 import { foretagDygn, foretagTimme } from './foretag';
 import { foretagMarknad } from './stangning';
 import { marknadDygn, marknadKlar } from './marknad';
+import { bytHosKlar } from './kopbuffert';
 import { finishOdla, froFynd, stepOdling, workOdla } from './odling';
 import { balans } from './balans';
 import { grilla, torka } from './matlagning';
@@ -335,6 +336,7 @@ KLAR.valla = (s, p, t) => vallaKlar(s, p, t.ref);
 KLAR.klippa = (s, p, t) => { klippKlar(s, p, t.ref); wearUsed(s, p, 1); }; // ullsaxen slits för varje får (steg 12.5.2)
 KLAR.tatuera = (s, p, t) => tatKlar(s, p, t.ref);
 KLAR.farga = fargaKlar; // färgbadet (farg.ts, steg 13.3.2)
+KLAR.bytHos = (s, p, t) => { iHelaForradet(() => bytHosKlar(s, p, t)); }; // köpet hos grannen (kopbuffert.ts, steg 14.1.15)
 KLAR.marknad = marknadKlar; // marknaden (marknad.ts, steg 14.1.14)
 KLAR.stallaFram = stallaKlar; KLAR.koaDisk = koaKlar; KLAR.betjana = betjanaKlar; // kassan (kassa.ts, steg 14.1.6)
 KLAR.stada = stadaKlar; // städningen (stada.ts, steg 14.1.2)

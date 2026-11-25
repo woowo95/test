@@ -534,3 +534,43 @@ SCENARIER.marknad = {
     ];
   },
 };
+
+SCENARIER.kopabuffert = {
+  text: 'Steg 14.1.15: att köpa vägs mot att samla efter vad en timme ger: den som har silver köper mat upp till sin gräns i affären eller av en granne, den fattiga samlar, och finns inget att köpa köper ingen',
+  kor: () => {
+    const { s, p, f, r, vux } = foretagBy(['affar'], 0), W = SIM.W, [rik, fattig] = vux;
+    for (const q of SIM.living(s)) { q.task = undefined; for (const k of SIM.FOOD) { const n = SIM.ownsAmount(s, q, k); if (n > 0 && q !== p) SIM.use(s, undefined, k, n, true, q.id); } }
+    const tom = (q: SIM.Person) => { const n = SIM.ownsAmount(s, q, 'silver'); if (n > 0) SIM.use(s, undefined, 'silver', n, true, q.id); };
+    tom(rik); tom(fattig);
+    for (const k of SIM.SAK_LIST) { const n = SIM.ownsAmount(s, fattig, k); if (n > 0) SIM.use(s, undefined, k, n, true, fattig.id); }
+    s.ting = s.ting!.filter(t => t.agare !== fattig.id);
+    SIM.laggIn(s, 'silver', 200, rik.id);
+    // ägarens mat är ägarens eget förråd; ingen affär och ingen granne med över
+    const d0 = r.tiles.find(t => !s.stationer!.some(q => Math.abs(q.x - t % W) < 3 && Math.abs(q.y - Math.floor(t / W)) < 2) && r.tiles.includes(t + 1))!;
+    const alla = s.foretag!; s.foretag = [];
+    const gr = SIM.kopval(s, rik, 'mat'); // ägaren har mat över: en granne
+    for (const q of SIM.living(s)) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '' } as never;
+    const ingen = SIM.kopval(s, rik, 'mat');
+    s.foretag = alla;
+    // affären med mat på varubordet
+    s.stationer!.push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'varubord', x: d0 % W, y: Math.floor(d0 / W), kvar: 0, inne: 1 } as unknown as SIM.Station); SIM.touch(s);
+    const mat = 'notter' in SIM.SAKER ? 'notter' : SIM.FOOD[0]; s.stackar!.push({ x: d0 % W, y: Math.floor(d0 / W), k: mat, n: 20, ag: { [p.id]: 20 } } as never);
+    SIM.changed(s); p.task = undefined; SIM.foretagTimme(s);
+    const d = r.tiles[0]; for (const q of SIM.living(s)) if (q !== p) q.task = undefined; for (const q of [rik, fattig]) { q.x = d % W + 0.5; q.y = Math.floor(d / W) + 0.5; }
+    p.x = d % W + 0.5; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '' } as never; // varubordet och disken står kvar; själv är ägaren ingen granne att byta med
+    f.pris = { affar: 0.5 }; // priset har följt kunderna ner
+    const eR = SIM.kopval(s, rik, 'mat'), eF = SIM.kopval(s, fattig, 'mat');
+    const grans = SIM.vilMangd(s, rik, mat);
+    // hos grannen: bytet
+    p.task = undefined; s.foretag = []; p.x = rik.x; p.y = rik.y;
+    const g = SIM.kopval(s, rik, 'mat'); const m0 = SIM.FOOD.reduce((a, k) => a + SIM.ownsAmount(s, rik, k), 0);
+    if (g?.k) SIM.iHelaForradet(() => SIM.bytHosKlar(s, rik, { act: 'bytHos', phase: 'do', tx: rik.x, ty: rik.y, until: s.now, carry: 0, why: '', ref: g.granne, tool: g.k } as never));
+    const m1 = SIM.FOOD.reduce((a, k) => a + SIM.ownsAmount(s, rik, k), 0), fatt = SIM.kopval(s, fattig, 'mat');
+    return [
+      [`utan affär: grannen med över (${gr?.granne === p.id}); sover hen finns inget att köpa (${ingen?.faktor ?? 0})`, gr?.granne === p.id && !ingen && alla.includes(f)],
+      [`den rika köper i affären (${eR?.kund?.k}, ${eR?.kund?.n}, en timme ger ${eR?.faktor.toFixed(2)} mot samlandet), högst till sin gräns (${grans})`, !!eR?.kund && eR.kund.n <= grans && eR.faktor > 0.5],
+      [`den fattiga utan något att betala med samlar (${eF?.faktor ?? 0}, ${fatt?.faktor ?? 0})`, !eF && !fatt],
+      [`hos grannen byter hen till sig mat (${m0} → ${m1})`, m1 > m0],
+    ];
+  },
+};

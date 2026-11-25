@@ -271,7 +271,7 @@ export const overOf = (s: State, g: Person, b: Behov, m: Person) =>
   ownFor(s, g, b) - (forsorjer(s, g, m) ? 0 : isFamily(g, m) ? b.mangd(g, s.now) : b.kvar(s, g));
 // kretsen m frågar: de i närheten som har det m behöver (har), de som helst ger (w) först. Familjen kan man väcka. En gåva
 // ger bara den som vill ge (w > 0), ett byte gör man med alla man inte är osams med
-const osams = (s: State, g: Person, m: Person) => getRel(s, g, m).op < REL.osams;
+export const osams = (s: State, g: Person, m: Person) => getRel(s, g, m).op < REL.osams;
 function kretsen(s: State, m: Person, har: (g: Person) => boolean, w: (g: Person) => number, byte = false) {
   return living(s).filter(g => g !== m && narvarande(g, m) && har(g) && !osams(s, g, m))
     .map(g => ({ g, w: w(g) })).filter(x => byte || x.w > 0).sort((a, b) => b.w - a.w || a.g.id - b.g.id).map(x => x.g);
@@ -554,6 +554,13 @@ function give(t: Ting, g: Person, m: Person) {
   t.krok = undefined; // ett redskap som hängde i bältet (steg 7.1.1) läggs i förrådet
 }
 // a talar med b. Saknar någon av dem ett redskap som den andra har över? Returnerar vad som hände (samma väg som allt annat, brukByte)
+// det g har över av behovet b som m kan köpa: det g och familjen inte behöver (kopbuffert.ts)
+export const grannensOver = (s: State, g: Person, b: Behov, _m: Person) => overEget(s, g, b);
+// m köper n av k hos g, till det hen vill ha kvar
+export function bytaHos(s: State, m: Person, g: Person, k: string, n: number) {
+  const b = brukAv(k).behov?.(), v = b ? Math.min(n, Math.floor(overEget(s, g, b) / perOf(b, k) + 1e-9), helt(ownsAmount(s, g, k))) : 0;
+  return v < 1 ? 0 : byte(s, m, g, [{ k, n: v }], { behov: behovAv(s, m, k), minst: 1, fara: 0, typ: 'kop', utom: b!.slag });
+}
 // alla raderna, som i samtalet (marknad.ts)
 export const bytenMellan = (s: State, a: Person, b: Person) => brukByte(s, a, b, BRUK, true);
 export const askForTool = (s: State, a: Person, b: Person) => brukByte(s, a, b, [BRUK_REDSKAP], true);
