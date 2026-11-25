@@ -450,7 +450,7 @@ SCENARIER.verksamheter = {
     const sov = !!g.gast!.sover; for (let i = 0; i < 8 * 60 && g.gast!.sover; i++) { s.now += 60000; SIM.gastVardag(s, 60, () => 1); }
     const utvilad = g.rest; SIM.foretagsgastSteg(s, 1); const uppe = g.gast!.gor !== 'sover', led = SIM.ledigaBaddar(s, f).length;
     // stallet: utan djur inget, med djur ett foder
-    const utanDjur = SIM.erbjudandet(s, g, 'stall', f); g.gast!.riddjur = 1; fint(); SIM.put(s, 'torrgras', 3, { [p.id]: 3 }); const f0 = SIM.ownsId(s, p.id, 'torrgras'), eS = SIM.erbjudandet(s, g, 'stall', f), st = SIM.iHelaForradet(() => kop(g, 'stall', 'djurvard')), f1 = SIM.ownsId(s, p.id, 'torrgras'), klart = g.gast!.riddjur === undefined;
+    const utanDjur = SIM.erbjudandet(s, g, 'stall', f); g.gast!.riddjur = 1; fint(); SIM.put(s, 'torrgras', 3, { [p.id]: 3 }); const f0 = (f.pris = { stall: 0.5 }, SIM.ownsId(s, p.id, 'torrgras')), eS = SIM.erbjudandet(s, g, 'stall', f), st = SIM.iHelaForradet(() => kop(g, 'stall', 'djurvard')), f1 = SIM.ownsId(s, p.id, 'torrgras'), klart = g.gast!.riddjur === undefined;
     // djurhandeln
     s.tamdjur = []; const djur = [1, 2, 3, 4].map(() => SIM.nyttTamdjur(s, 'far', p.x, p.y, p.id, s.now - 3 * SIM.DAY));
     djur.forEach((d, i) => { d.hona = i % 2 === 0; });
