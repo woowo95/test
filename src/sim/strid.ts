@@ -100,6 +100,7 @@ export const STRID = balans('strid', {
   flyBort: 6, // den som flyr mot en plats (Kampe.fly) har lämnat striden så här många rutor från närmaste fiende som står (steg 9.2.76)
   overraskSek: 3, // den som inte sett sin anfallare komma märker det efter så här många sekunder, eller av det första slaget, som hen inte värjer sig mot (steg B.30)
   flyHall: 1.6, // den som flyr väljer helst en väg som håller så här många rutor till fienderna, annars så nära som man går förbi dem (kropp) (steg B.31)
+  flyTrang: 0.5, // finns ingen sådan väg tränger hen sig förbi dem på så här nära (steg B.45)
   flySek: 0.5, // ... och väljer vägen på nytt så ofta
   fart: 1.6, // rutor i sekunden för en frisk vuxen som springer i strid (gånger djurets fart)
   traffBas: 0.6, // chansen att träffa någon som är lika skicklig
@@ -472,13 +473,13 @@ const iVagg = (st: Strid, x: number, y: number) => varld ? varld.vagg(x, y) : !!
 // fiender som står i vägen för k (inte den hen går mot, som står vid mx, my)
 const ivagen = (st: Strid, k: Kampe, mx: number, my: number) => st.kampar.filter(o => o.sida !== k.sida && iStrid(o) && Math.hypot(o.x - mx, o.y - my) > 0.01);
 function fri(st: Strid, k: Kampe, x: number, y: number, fi: Kampe[], mx: number, my: number) {
-  const egen = Math.hypot(mx - k.x, my - k.y);
+  const egen = Math.hypot(mx - k.x, my - k.y), flyr = k.lage === 'flykt', kropp = flyr ? STRID.flyTrang : STRID.kropp; // den som flyr tränger sig förbi (steg B.45)
   if (iVagg(st, x, y)) return false;
-  for (const o of fi) { const d = Math.hypot(o.x - x, o.y - y); if (d < STRID.kropp && d < dist(k, o) - 1e-9) return false; } // bort från en som står för nära går alltid
+  for (const o of fi) { const d = Math.hypot(o.x - x, o.y - y); if (d < kropp && d < dist(k, o) - 1e-9) return false; } // bort från en som står för nära går alltid
   for (const o of st.kampar) { // en på samma sida som står eller flyr: man står inte i varandra (steg 9.2.78)
     if (o === k || o.sida !== k.sida || !(iStrid(o) || o.lage === 'flykt')) continue;
     // den som är närmast dit hen ska går först, tätt förbi den andra: annars stänger två vänner en smal öppning för varandra (steg B.19)
-    const d = Math.hypot(o.x - x, o.y - y); if (d < (Math.hypot(mx - o.x, my - o.y) > egen ? STRID.kropp : STRID.van) && d < dist(k, o) - 1e-9) return false;
+    const d = Math.hypot(o.x - x, o.y - y); if (d < (flyr || Math.hypot(mx - o.x, my - o.y) > egen ? kropp : STRID.van) && d < dist(k, o) - 1e-9) return false;
   }
   return true;
 }
@@ -561,7 +562,7 @@ function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number, vrid = V
 function flyVal(st: Strid, k: Kampe) {
   const fi = st.kampar.filter(o => o.sida !== k.sida && iStrid(o)), van = st.kampar.filter(o => o !== k && o.sida === k.sida && iStrid(o));
   const till = k.fly ? [k.fly, ...(k.flyAndra ?? [])] : [{ x: 0, y: k.y }, { x: st.w, y: k.y }, { x: k.x, y: 0 }, { x: k.x, y: st.h }].sort((a, b) => Math.hypot(a.x - k.x, a.y - k.y) - Math.hypot(b.x - k.x, b.y - k.y));
-  for (const [f, v] of [[STRID.flyHall, STRID.van], [STRID.kropp, STRID.kropp]]) {
+  for (const [f, v] of [[STRID.flyHall, STRID.van], [STRID.kropp, STRID.kropp], [STRID.flyTrang, STRID.flyTrang]]) { // helst på avstånd, annars tätt förbi, och sist trängande mellan dem (steg B.45)
     const hinder = [...fi.map(o => ({ o, r: f })), ...van.map(o => ({ o, r: v }))];
     for (const m of till) {
       const mx = clamp(m.x, KANT, st.w - KANT), my = clamp(m.y, KANT, st.h - KANT);

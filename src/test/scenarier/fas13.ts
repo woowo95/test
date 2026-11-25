@@ -3046,3 +3046,25 @@ SCENARIER.fastrovare = {
     return [[`gänget anfaller ${((s.now - framme) / SIM.MIN).toFixed(1)} min efter att de andra kommit fram`, !!f.anfaller && framme > 0 && s.now - framme <= 5.5 * SIM.MIN + SIM.ROVARE.stillSek * 1000]];
   },
 };
+
+SCENARIER.omringad = {
+  text: 'Steg B.45: den som flyr tränger sig förbi en fiende när ingen annan väg finns: en rövare som flyr mellan tre bybor är sex rutor bort inom tio sekunder',
+  kor: () => {
+    const k = (id: number, sida: 0 | 1, x: number, y: number) => ({ id, namn: `${sida ? 'R' : 'B'}${id}`, sida, vapen: 'hand', klader: [], x, y, fart: 1, st: { styrka: 10, uthallighet: 10, mod: 20, skicklighet: 10, aggression: 10, smidighet: 10 }, fly: { x: sida ? 1 : 60, y: 20 } }) as unknown as SIM.Uppstallning['kampar'][number];
+    const prov = (n: number, r: number, v0: number) => {
+      let sek = 0, ut = 0;
+      for (let fro = 1; fro <= 10; fro++) {
+        const st = SIM.nyStrid({ karta: true, avsikt: 'skada', w: SIM.W, h: SIM.H, kampar: [k(1, 1, 40, 20), ...Array.from({ length: n }, (_, i) => k(2 + i, 0, 40 + Math.cos(v0 + i * 2 * Math.PI / n) * r, 20 + Math.sin(v0 + i * 2 * Math.PI / n) * r))] }, fro), q = st.kampar[0];
+        q.lage = 'flykt';
+        SIM.iVarlden(SIM.provVarld(undefined, new Set()), () => {
+          let t = 0; const kvar = () => Math.min(...st.kampar.slice(1).filter(o => o.lage === 'strid').map(o => Math.hypot(o.x - q.x, o.y - q.y)));
+          while (!st.slut && q.lage === 'flykt' && kvar() < 6 && t < 30) { SIM.stridSteg(st); t += SIM.STRID.tick; }
+          if (q.lage !== 'nere' && q.lage !== 'dod' && t <= 10) ut++; sek = Math.max(sek, t);
+        });
+      }
+      return { sek, ut };
+    };
+    const a = prov(3, 0.8, 0), b = prov(3, 0.8, 1), c = prov(3, 1.1, 2);
+    return [[`mellan tre bybor kommer hen undan inom tio sekunder (${[a, b, c].map(x => `${x.ut} av 10, högst ${x.sek.toFixed(1)} s`).join('; ')})`, [a, b, c].every(x => x.ut >= 9)]];
+  },
+};
