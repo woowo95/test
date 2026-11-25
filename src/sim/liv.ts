@@ -1,5 +1,5 @@
-import { gen, heltOrd } from './ord';
-import { antal, honom, och, tal, talOrd } from './ord';
+import { gen } from './ord';
+import { antal, honom, och, talOrd } from './ord';
 import { gastensPlatser, horOmGast, raknaBynVet } from './ort';
 import { personNara } from './personlogg';
 import { upplev, uppvaxtDod, uppvaxtFodd, type UpplevelseTyp } from './uppvaxt';
@@ -44,6 +44,7 @@ import { nyttILarmet } from './roller';
 import { forlossRisk } from './forlossning';
 import { tanke, tankeText } from './tankar';
 import { HALSA } from './halsa';
+import { flyttRad, flyttVikt, sattFlyttSkal, type BynsSkal } from './flyttskal';
 
 // ---------- balanstal (regel 8) ----------
 // Befolkningen regleras av naturen, inte av ett fast tak: en trång by får färre barn och fler som flyttar, en liten by lockar
@@ -79,7 +80,7 @@ export const LIV = balans('liv', {
   hungerTakt: 0.6, hungerFran: 7, hungerSpann: 4, // knapp mat får så här många att flytta per dygn, från åtta invånare
   // vilka som flyttar (emigrate)
   parFran: 18, parTill: 38, // ett par där hen som valts är över Fran och under Till flyttar tillsammans (med sina barn under ALDER.vuxen)
-  ensamFran: 16, ensamTill: 40, // annars ger sig en ensam vuxen i den åldern av
+  ensamFran: 16, ensamTill: 40, // den som är ensam ger sig av i den åldern
   // död och födsel
   // tankarna efter en död eller flytt: styrkan (humör) och hur länge de varar (dygn)
   sorjPartner: -0.3, sorjPartnerDygn: 1.2, // partnern
@@ -447,34 +448,25 @@ export function leave(s: State, ...med: Person[]) {
   for (const q of s.people) if (alive(q) && !paKartan(q) && med.some(x => x.id === q.partner)) q.partner = undefined; // också den som är på resa
 }
 
-type FlyttSkal = 'trang' | 'missnoje' | 'hunger';
-const FLYTT_SKAL: Record<FlyttSkal, string> = { trang: 'Byn blev trång.', missnoje: 'Missnöjet i byn växte.', hunger: 'Maten räckte inte till alla.' };
-// de som flyttade står i loggen och i notisen (utom när de grundar en ny by, som har sin egen), och deras vänner saknar dem
-function utflyttade(s: State, med: Person[], text: string, notisen = true) {
-  log(s, text, 'move', med.map(g => g.id));
-  if (notisen) notis(s, 'utflytt', text, med.map(g => g.id));
+type FlyttSkal = BynsSkal;
+// de som flyttade räknas, och deras vänner saknar dem
+function utflyttade(s: State, med: Person[]) {
   count(s, 'utvandrade', med.length);
   for (const q of living(s)) for (const g of med) { const r = s.rels[relKey(q.id, g.id)]; if (r && r.op > REL.saknar) { tanke(q, 'saknarFlytt', s.now, { namn: g.name, v: LIV.saknarFlytt, tid: LIV.saknarFlyttDygn * DAY }); break; } }
 }
+// någon lämnar byn (B.42): den som går väljs efter de egna skälen (flyttVikt), och en partner och barnen följer med
 function emigrate(s: State, skal: FlyttSkal) {
-  const now = s.now, barn = (...f: Person[]) => living(s).filter(c => f.some(q => isParent(q, c)) && ageOf(c, now) < ALDER.vuxen);
-  const cands = living(s).filter(p => p.partner !== undefined && ageOf(p, now) > LIV.parFran && ageOf(p, now) < LIV.parTill);
-  if (!cands.length) { // inget ungt par: en ensam vuxen ger sig av
-    const one = living(s).filter(p => p.partner === undefined && ageOf(p, now) >= LIV.ensamFran && ageOf(p, now) < LIV.ensamTill);
-    if (!one.length) return;
-    const p = pick(s, one, 'flytt'), med = [p, ...barn(p)]; // en ensam förälder tar med sina barn
-    leave(s, ...med);
-    utflyttade(s, med, `${FLYTT_SKAL[skal]} ${p.name} lämnade byn${med.length > 1 ? ` med ${med.length === 2 ? 'ett barn' : `${tal(med.length - 1)} barn`}` : ''} för att söka lyckan på annat håll.`);
-    radKrok.utflytt(s, med.length); // de går till en by i världen (byflytt.ts, steg 11.3.5)
-    return;
-  }
-  const a = pick(s, cands, 'flytt'), b = byId(s, a.partner);
-  if (!b) return;
-  const group = [a, b, ...barn(a, b)], pop = living(s).length;
-  leave(s, ...group);
-  const n = group.length - 2, ny = utbrytning(s, group, pop);
-  utflyttade(s, group, `${FLYTT_SKAL[skal]} ${a.name} och ${b.name} lämnade byn${n ? ` med ${n === 1 ? 'ett' : heltOrd(n)} barn` : ''} för att grunda en egen boplats.`, !ny);
-  if (!ny) radKrok.utflytt(s, group.length); // ur en mycket stor by blir de en ny by i världen (steg 4.4.4.1, grannbyar.ts), annars går de till en by i världen (byflytt.ts, steg 11.3.5)
+  const now = s.now, folk = living(s), barn = (...f: Person[]) => folk.filter(c => f.some(q => isParent(q, c)) && ageOf(c, now) < ALDER.vuxen);
+  const cands = folk.filter(p => p.partner !== undefined ? byId(s, p.partner) && ageOf(p, now) > LIV.parFran && ageOf(p, now) < LIV.parTill : ageOf(p, now) >= LIV.ensamFran && ageOf(p, now) < LIV.ensamTill);
+  if (!cands.length) return;
+  const a = pickViktat(s, cands, cands.map(p => flyttVikt(s, p, folk)), 'flytt'), b = byId(s, a.partner);
+  const vuxna = b ? [a, b] : [a], med = [...vuxna, ...barn(...vuxna)];
+  for (const p of vuxna) sattFlyttSkal(s, p, skal);
+  leave(s, ...med);
+  const ny = b && utbrytning(s, med, folk.length); // ur en mycket stor by blir de en ny by i världen (steg 4.4.4.1, grannbyar.ts)
+  if (!ny) flyttRad(s, med, vuxna.length, b ? 'för att grunda en egen boplats' : 'för att söka lyckan på annat håll');
+  utflyttade(s, med);
+  if (!ny) radKrok.utflytt(s, med.length); // annars går de till en by i världen (byflytt.ts, steg 11.3.5)
 }
 
 // sorgen i stadier (steg 9.2.33): q förlorade p. Först förlusten, och sorgTimme byter till sorgen och saknaden

@@ -241,7 +241,8 @@ export interface Person {
   gavSig?: number; // när hen flydde eller gav upp i en strid med rövare (steg 10.1.14): hen ställer sig inte i vägen igen på en stund (rovarSkydd)
   framme?: number; // räknad fram till den här tiden: under de korta stegen tar den som inte är inblandad i faran sitt arbete en minutbit i förväg (steg 10.1.4, slag i steg.ts)
   gast?: import('./gast').GastRad; smitta?: import('./sjukdom').SjukId; // en gäst: handlaren, en rövare eller en främling (steg 9.2.111, gast.ts); id är då negativt; smitta: sjukdomen en gäst bär utan att någon ser det (steg 9.5.5)
-  born: number; died?: number; cause?: string; left?: number;
+  born: number; died?: number; cause?: string; left?: number; flyttSkal?: { tanke?: string; byn?: string; text?: string }; // varför hen lämnade byn (flyttskal.ts, B.42)
+ 
   ute?: number; // borta från byn sedan den här tiden (steg 11.2.3, ute.ts): fortfarande bybo och äger sitt, men inte på bykartan
   dodVag?: { orsak: string; t: number }; // dog på resan, men byn vet det inte förrän beskedet kommer (steg 11.5.18, resa.ts)
   fran?: number; // grannklanen hen kom ifrån (en främling, steg 4.4.4.2)

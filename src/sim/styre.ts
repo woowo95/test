@@ -22,6 +22,7 @@ import { sakNamn } from './saker';
 import { ownMove, ownsAmount } from './lager';
 import { rnd } from './slump';
 import { UPPV, upplev, barnTill } from './uppvaxt';
+import { ambeteKrok } from './flyttskal';
 import { kronika } from './historik';
 import { Sed, drarSed, influence } from './seder';
 import { knows } from './teknik';
@@ -472,7 +473,7 @@ export function utvisa(s: State, q: Person, av: Person, varfor: string) {
 export function slutarStyre(s: State, varfor: string) {
   const st = s.styre!, h = st.historia[st.historia.length - 1], l = byId(s, st.ledare!);
   if (h && h.till === undefined) { h.till = s.now; h.slut = varfor; }
-  if (l) kronika(s, `${l.name} slutade leda byn (${varfor}).`, 'ledare');
+  if (l) kronika(s, `${l.name} slutade leda byn (${varfor}).${l.left !== undefined && l.flyttSkal?.text ? ` ${l.flyttSkal.text}` : ''}`, 'ledare'); // den som flyttade: samma skäl (B.42)
   st.hanForbud = undefined; st.ledare = undefined; st.sedan = undefined; st.titel = undefined; st.pabud = undefined; st.pabudAi = undefined;
   if (!vuxnaOf(s).some(p => knows(p, 'ledarskap'))) log(s, 'Ingen i byn kan leda den längre. Påbuden gäller inte mer.', 'world');
 }
@@ -647,6 +648,7 @@ export function styretsKvall(s: State) {
   const l = ledareOf(s);
   if (l && kvall(s)) { doma(s, l); rostKvall(s); if (!s.styre?.fragor?.length) tasUppKvall(s); }
 }
+ambeteKrok.har = (s, p) => prastAmbete(s, p) !== undefined; // ett band till byn (flyttskal.ts, B.42)
 // ---------- en gång i timmen ----------
 export function stepStyre(s: State, h = 1) { // h: timmarna sedan sist (TAKTER)
   const st = s.styre;

@@ -66,7 +66,7 @@ const histOf = (s: State) => (s.hist ??= ny());
 // som inte står här visas bara när ingen kategori är vald
 export interface KronikaKat { id: string; namn: string; ikon: string; tecken: string; slag: string[] }
 export const KRONIKA_KAT: KronikaKat[] = [
-  { id: 'liv', namn: 'Liv', ikon: 'kk_liv', tecken: '❤️', slag: ['k_fodd', 'k_dog', 'k_dogSpad', 'k_gift', 'k_atergrundad', 'k_djur', 'arv', 'flytt', 'utflytt', 'forlat'] }, // utflytt: de som flyttade till en by i världen (steg 11.3.5)
+  { id: 'liv', namn: 'Liv', ikon: 'kk_liv', tecken: '❤️', slag: ['k_fodd', 'k_dog', 'k_dogSpad', 'k_gift', 'k_atergrundad', 'k_djur', 'arv', 'flytt', 'k_flytt', 'utflytt', 'forlat'] }, // utflytt: de som flyttade till en by i världen (steg 11.3.5)
   { id: 'styre', namn: 'Styre', ikon: 'kk_styre', tecken: '👑', slag: ['ledare', 'k_ledare', 'k_forstaLedare', 'k_utvisad', 'k_ratt', 'bynamn'] },
   { id: 'strid', namn: 'Strid', ikon: 'kk_strid', tecken: '⚔️', slag: ['rovare', 'k_rovare', 'k_vargAnfall', 'k_vargSprang', 'k_vargjakt', 'k_forstaVarg', 'k_bjornAnfall', 'k_bjornSprang', 'k_bjornjakt', 'k_bjornjaktMiss', 'k_forstaBjorn', 'k_skadad'] },
   { id: 'tro', namn: 'Tro', ikon: 'kk_tro', tecken: '☀️', slag: ['tro', 'k_tro'] },

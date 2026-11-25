@@ -32,7 +32,7 @@ export const person: Flik = {
     const lever = g ? gastLever(p) : alive(p);
     const { flikar, flik, delar } = valda(d => lever || !d.levande);
     const med = alive(p) ? pratarMed(s, p) : undefined;
-    const status = g ? (lever ? `${statusRad(p, undefined)} <span class="muted">· ${esc(g.gor)}</span>` : `Dog ${p.cause ?? ''}`) : alive(p) ? statusRad(p, med) : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})`;
+    const status = g ? (lever ? `${statusRad(p, undefined)} <span class="muted">· ${esc(g.gor)}</span>` : `Dog ${p.cause ?? ''}`) : alive(p) ? statusRad(p, med) : p.died !== undefined ? `Dog ${p.cause} (${timeLabel(s, p.died)})` : `Flyttade från byn (${timeLabel(s, p.left!)})${p.flyttSkal?.text ? `. ${esc(p.flyttSkal.text)}` : ''}`; // skälet (B.42)
     // huvudet står still (steg 11.1.41): namnet, öknamnet eller titeln, ålder och yrke, märkena och det hen gör, en rad var och
     // alltid lika många rader, så att inget flyttar sig när man byter person. Det hen gör klipps med tre punkter, och ett tryck
     // visar hela texten och skälet

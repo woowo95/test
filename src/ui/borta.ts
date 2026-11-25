@@ -20,7 +20,7 @@ export const BORTA_VIKT: Record<string, number> = {
   motgang: 6,
   rovare: 5, k_vargAnfall: 5, k_bjornAnfall: 5, k_bjornjakt: 5, k_bjornjaktMiss: 5, k_bjornSprang: 5, k_forstaBjorn: 5, k_vargjakt: 5, k_vargSprang: 5, k_forstaVarg: 5,
   k_utvisad: 4,
-  flytt: 3,
+  flytt: 3, k_flytt: 3,
   k_uppfann: 2, episk: 2, k_husKlar: 2, forlust: 2, k_forstaEld: 2, handel: 2,
 };
 // hur länge man varit borta (år i spelet = dygn i verkligheten) och hur texten blir: upp till "till" år borta delas

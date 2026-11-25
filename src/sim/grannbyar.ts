@@ -113,7 +113,7 @@ export function utbrytning(s: State, grupp: Person[], pop: number) {
   const r = s.varld?.rader?.find(x => x.nr === k.rad);
   if (r) { r.grundad = s.now; r.fran = s.varld!.huvud; r.tal.styrka = k.styrka; varldHandelse(s.varld!, 'delad', s.now, { by: s.varld!.huvud, mot: r.nr }); }
   count(s, 'utbrytning');
-  const text = `${namn} är en ny by vid ${k.hem}: ${grupp.map(p => p.name).join(', ')} som lämnade byn.`;
+  const text = `${namn} är en ny by vid ${k.hem}: ${grupp.map(p => p.name).join(', ')} som lämnade byn.${forst.flyttSkal?.text ? ` ${forst.flyttSkal.text}` : ''}`; // skälet (B.42)
   log(s, text, 'world', grupp.map(p => p.id)); notis(s, 'utflytt', text, grupp.map(p => p.id));
   kronika(s, text, 'utbrytning');
   return k;

@@ -73,6 +73,7 @@ export * from './sim/handelsber';
 export * from './sim/klaner';
 export * from './sim/rovare';
 export * from './sim/liv';
+export * from './sim/flyttskal';
 export * from './sim/steg';
 export * from './sim/sjo';
 export * from './sim/torst';

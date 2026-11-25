@@ -263,6 +263,43 @@ SCENARIER.utflyttning = {
   },
 };
 
+SCENARIER.flyttskal = {
+  text: 'Skälet att lämna byn (B.42): den som går väljs efter hur hen mår och banden till byn, och skälet, det som tyngde hen mest och byns skäl, står i krönikan, notisen och personen',
+  kor: () => {
+    const ny = () => {
+      const s = createState(6, START); rikBy(s); setFood(s, 300); s.styre = undefined;
+      for (const q of living(s)) { q.mother = q.father = q.partner = undefined; q.born = s.now - 25 * DAY; }
+      for (let i = 0; i < 26; i++) nyInvanare(s, i % 2 ? 'm' : 'k', 25);
+      for (const q of living(s)) SIM.think(q, 'Trångt', -0.2, s.now, 30 * DAY);
+      const arg = living(s)[3];
+      SIM.tanke(arg, 'gralade', s.now, { namn: living(s)[4].name, v: -0.5, tid: 30 * DAY });
+      return { s, arg };
+    };
+    const { s, arg } = ny(), hus = living(s)[5];
+    const v0 = SIM.flyttVikt(s, hus), vArg = SIM.flyttVikt(s, arg);
+    for (const i of [6, 7, 8]) getRel(s, hus, living(s)[i]).op = 90;
+    const barn = nyInvanare(s, 'm', 5); barn.mother = hus.id;
+    const vBand = SIM.flyttVikt(s, hus);
+    // den som går för att hen inte står ut: raden säger tanken
+    SIM.flyttaUt(s, arg);
+    const rad = s.hist!.kronika.find(k => k[2] === 'k_flytt')?.[1] ?? '', not = JSON.stringify((s.notiser?.lista ?? []).filter(n => n.id === 'utflytt'));
+    // ur en trång by: skälet är tanken och byns
+    const t = ny();
+    for (let i = 0; i < 500 && !t.s.stat?.utvandrade; i++) { regulate(t.s, 3600); t.s.now += HOUR; }
+    const gick = t.s.people.find(q => q.left !== undefined && q.flyttSkal), rad2 = t.s.hist!.kronika.find(k => k[2] === 'k_flytt')?.[1] ?? '';
+    const st = ny(); st.s.styre = { historia: [], ledare: st.arg.id } as never; SIM.flyttaUt(st.s, st.arg); SIM.slutarStyre(st.s, 'lämnade byn');
+    const slut = st.s.hist!.kronika.find(k => k[2] === 'ledare')?.[1] ?? '';
+    return [
+      [`den som mår sämst går oftare (${vArg.toFixed(2)} mot ${v0.toFixed(2)})`, vArg > v0],
+      [`den med vänner och barn i byn går mer sällan (${vBand.toFixed(2)})`, vBand < v0 * 0.6],
+      [`raden i krönikan nämner tanken (${rad})`, rad.includes(arg.name) && !!arg.flyttSkal?.tanke && rad.includes(arg.flyttSkal.tanke)],
+      [`notisen säger samma sak (${not.slice(0, 80)})`, not.includes(arg.flyttSkal?.tanke ?? '?')],
+      [`ur den trånga byn står tanken och byns skäl (${rad2} ${JSON.stringify(gick?.flyttSkal)} ${gick?.name})`, !!gick && rad2.includes(gick.flyttSkal!.tanke!) && rad2.toLowerCase().includes(gick.flyttSkal!.byn!)],
+      [`raden om ledaren som slutade säger skälet (${slut})`, slut.includes(st.arg.flyttSkal?.tanke ?? '?')],
+    ];
+  },
+};
+
 SCENARIER.personlighet = {
   text: 'Utpräglade personligheter: de flesta egenskaper är tydligt låga eller höga, balanserade personer är ovanliga, och barnen ärver egenskaperna utan att de drar mot mitten (steg 2.3.11)',
   kor: () => {

@@ -1756,6 +1756,24 @@ const MDEF = {
     { t: 'I snön gifte sig {a} och {b}.', om: f => f.sno === true },
     { t: 'En ljus natt gifte sig {a} och {b}.', om: f => f.natt === true && f.kallt !== true },
   ],
+  // den som lämnade byn (flyttskal.ts, B.42): {vem} = de som gick, {mal} = vad de gick för att göra, {skal} = meningen ur k_flyttSkal
+  k_flytt: [
+    '{vem} lämnade byn {mal}. {skal}',
+    '{vem} packade det som gick att bära och lämnade byn {mal}. {skal}',
+    'Det var {arstid} när {vem} lämnade byn {mal}. {skal}',
+    '{vem} gick sin väg {mal}. {skal}',
+    { t: 'I snön lämnade {vem} byn {mal}. {skal}', om: f => f.sno === true },
+    { t: 'I regnet lämnade {vem} byn {mal}. {skal}', om: f => f.regn === true },
+  ],
+  // skälet: {tanke} = det som tyngde hen mest (som det står i humöret), {byn} = byns skäl
+  k_flyttSkal: [
+    { t: 'Det som tyngde {honom} mest var ”{tanke}”, och {byn}.', om: f => !!f.tanke && !!f.byn },
+    { t: '”{tanke}” var det värsta, och dessutom var det så att {byn}.', om: f => !!f.tanke && !!f.byn },
+    { t: '{Byn}, och {namn} bar på något eget: ”{tanke}”.', om: f => !!f.tanke && !!f.byn },
+    { t: 'Det som tyngde {honom} mest var ”{tanke}”.', om: f => !!f.tanke && !f.byn },
+    { t: '{namn} bar på något som inte gick att leva med: ”{tanke}”.', om: f => !!f.tanke && !f.byn },
+    { t: '{Byn}.', om: f => !f.tanke && !!f.byn },
+  ],
   // berättelsen om tiden borta (steg 5.4.4, ui/borta.ts): kronikans rader binds ihop av de här meningarna.
   // {ar} = antal år (i ord), {fore} och {nu} = invånare när man gick och nu, {fodda} och {doda} = antal (i ord)
   b_lugnt: [
