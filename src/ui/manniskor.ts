@@ -297,6 +297,16 @@ const nameStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: 22, fill:
 // namnen vid alla (steg 12.1.157, ui/namnskyltar.ts): mindre text under fötterna, en text per person som återanvänds
 const smaStyle = new PIXI.TextStyle({ fontFamily: NAMNFONT, fontSize: SKYLT.hojd * 2, fill: fargTal(farg('ben', 3)), stroke: fargTal(farg('kol', 0)), strokeThickness: 4, fontWeight: '700' });
 if (typeof document !== 'undefined') document.fonts?.ready.then(() => { for (const st of [nameStyle, smaStyle]) { st.fontFamily = 'system-ui'; st.fontFamily = NAMNFONT; } });
+// namnets egen färg ur rollens rad (steg B.62): en stil per färg
+const fargStilar = new Map<string, PIXI.TextStyle>();
+function skyltStil(roll: ReturnType<typeof rollAv>, bas: PIXI.TextStyle) {
+  if (!roll?.farg) return bas;
+  const n = roll.id + (bas === smaStyle ? 's' : 'b');
+  let st = fargStilar.get(n);
+  if (!st) { st = bas.clone(); st.fill = fargTal(farg(...(roll.farg as Parameters<typeof farg>))); fargStilar.set(n, st); }
+  if (st.fontFamily !== bas.fontFamily) st.fontFamily = bas.fontFamily; // typsnittet laddas efter hand
+  return st;
+}
 const smaNamn = new Map<number, PIXI.Text>();
 const rollIkoner = new Ikoner(labels);
 const figurFot = new Map<number, { x: number; y: number }>(); // var figuren ritades i bildrutan: mitten och fötterna
@@ -550,19 +560,21 @@ export function drawPeople(t: number) {
     tx.position.set(q.x * TS, skyltOver(markOf(p) ? topp - SYMBOL_LUFT - 5 : topp)); tx.visible = true; // lika långt från figuren som namnet under (steg 13.10.5)
     stora.add(p.id); upptaget.push({ x: q.x * TS - tx.width / 2, y: tx.position.y - tx.height, w: tx.width, h: tx.height });
     const roll = rollAv(s, p); // rollens symbol till vänster om namnet (steg 12.1.157)
+    { const st = skyltStil(roll, nameStyle); if (tx.style !== st) tx.style = st; }
     if (roll && hasIcon(roll.ikon)) rollIkoner.add(roll.ikon, Math.round(q.x * TS - tx.width / 2 - SKYLT.ikon - 1), Math.round(tx.position.y - tx.height / 2 - SKYLT.ikon / 2), 1);
   }
   for (; n < nameTags.length; n++) nameTags[n].visible = false;
   // namnen vid alla andra (steg 12.1.157, ui/namnskyltar.ts): i liten text under fötterna, med rollens symbol till vänster, och
   // gömda när kartan är utzoomad eller när de skulle täcka varandra
   const skyltar: Skylt[] = [], slass = new Set((s.kartStrider ?? []).flatMap(g => g.st.kampar.flatMap(k => k.pid !== undefined && !g.fri?.includes(k.pid) ? [k.pid] : []))); // namnen på dem som slåss syns alltid, flyttade om de skulle täcka varandra (steg B.19)
-  for (const p of [...ppl, ...s.people.filter(q => q.gast && slass.has(q.id))]) { // gästerna har namn på kartan när de slåss
+  for (const p of [...ppl, ...s.people.filter(q => q.gast && (slass.has(q.id) || rollAv(s, q)))]) { // gästerna har namn på kartan när de slåss, och fienden som byn sett redan före (steg B.62)
     const f = figurFot.get(p.id);
     if (!f || !sedd.has(p.id) || stora.has(p.id) || (!p.gast && !paKartan(p))) continue;
     let tx = smaNamn.get(p.id);
     if (!tx) { tx = new PIXI.Text('', smaStyle); tx.scale.set(0.5); tx.anchor.set(0.5, 1); labels.addChild(tx); smaNamn.set(p.id, tx); }
     { const n = ejLig(p.name); if (tx.text !== n) tx.text = n; }
     const roll = rollAv(s, p);
+    { const st = skyltStil(roll, smaStyle); if (tx.style !== st) tx.style = st; }
     skyltar.push({ id: p.id, x: f.x, y: skyltUnder(f.y), w: tx.width, ikon: roll && hasIcon(roll.ikon) ? roll.ikon : undefined, forst: slass.has(p.id) ? 2 : roll ? 1 : 0, ...(slass.has(p.id) ? { flytt: SKYLT.flytt } : {}) });
   }
   const syns = synligaSkyltar(skyltar, world.scale.x, upptaget, skyltPlats);

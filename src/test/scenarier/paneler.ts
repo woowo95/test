@@ -1,6 +1,6 @@
 // Scenarier för kartbilden och panelerna i fas 12 (grenen par-paneler).
 import * as SIM from '../../sim';
-import { SCENARIER, medHus, utanWebblasare } from './hjalp';
+import { SCENARIER, medHus, rovarGang, utanWebblasare } from './hjalp';
 import { INGEN, SKUGGA, eldSkuggor, iSkuggan, skrivsOm } from '../../ui/eldskugga';
 import { GRAFER, grafHtml } from '../../ui/graf';
 import { setByn } from '../../ui/lage';
@@ -8,6 +8,20 @@ import { START, kronikaVakt } from '../kor';
 import { readdirSync, readFileSync } from 'node:fs';
 import { hasIcon } from '../../ikoner';
 import { ROLLSYMBOLER, SKYLT, figurRam, rollAv, skyltOver, skyltUnder, synligaSkyltar, type Skylt } from '../../ui/namnskyltar';
+
+SCENARIER.rovarskylt = {
+  text: 'Steg B.62: en rövare i ett gäng som byn sett har rövarskylten (hotmärket och en egen färg) redan före striden; en osedd rövare, en handlare och en bybo har den inte',
+  kor: () => {
+    const s = SIM.createState(3, START), f = rovarGang(s, 3), r = SIM.rovarna(s, f)[0], osedd = rollAv(s, r)?.id;
+    f.sedd = s.now;
+    const rad = rollAv(s, r), bybo = SIM.living(s).filter(p => !p.gast).filter(p => rollAv(s, p)?.id === 'rovare').length;
+    return [
+      [`en osedd rövare har ingen skylt (${osedd ?? 'ingen'})`, osedd === undefined],
+      [`en sedd rövare har rövarskylten (${rad?.id}) med symbol och egen färg`, rad?.id === 'rovare' && hasIcon(rad.ikon) && !!rad.farg],
+      [`ingen bybo har den (${bybo})`, bybo === 0],
+    ];
+  },
+};
 
 SCENARIER.namnskyltar = {
   text: 'Steg 12.1.157 och 12.1.262: varje kolonist har sitt namn i liten text vid figuren, och den som har en roll (ledaren, prästen) en symbol vid namnet ur ROLLSYMBOLER. När kartan är utzoomad eller många står tätt göms namnen så att de inte täcker varandra, och rollerna går före',
