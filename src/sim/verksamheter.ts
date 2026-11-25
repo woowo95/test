@@ -22,7 +22,7 @@ export const VERK = balans('verksamheter', {
   natt: 6, // en natt i en bädd är värd så många silver för den som är helt utmattad
   trott: 0.5, // så stor del av gästerna räknar man med är trötta
   ridande: 0.3, // så stor del av gästerna räknar man med kommer med ett riddjur
-  stall: 3, // så många silver är det värt för gästen att djuret får foder och vila
+  stall: 5, // så många silver är det värt för gästen att djuret får foder och vila
   baddar: 4, // så många bäddar har ett nattlogi högst
   par: 2, // så många av en djurart behåller ägaren
   djurlust: 0.4, // det första djuret av sin sort är så mycket mer värt för den som inget har, gånger djurskötseln (full skicklighet)

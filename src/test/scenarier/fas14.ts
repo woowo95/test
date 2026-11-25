@@ -465,7 +465,7 @@ SCENARIER.verksamheter = {
       [`den trötta vinner mer på en bädd (${tr.toFixed(1)}) än den pigga (${pigg.toFixed(1)}), vägen tröttar (${trott.toFixed(2)})`, tr > pigg * 5 && trott < 0.9 && !!e],
       [`gästen betalar (${fick} silver), bädden är upptagen (${full}) och hen somnar (${sov})`, kopt && fick >= 1 && full === 0 && sov],
       [`hen vaknar utsövd (${utvilad.toFixed(2)}) och bädden blir ledig (${led})`, utvilad >= 0.94 && uppe && led === 1],
-      [`stallet: utan djur inget (${!!utanDjur}), med djur (${!!eS}, ${g.gast!.silver}, ${g.x.toFixed()} ${disk.x}) går ett foder åt (${f0} → ${f1}), ${st} ${klart}`, !utanDjur && !!eS && st && f1 === f0 - 1 && klart],
+      [`stallet: utan djur inget (${!!utanDjur}), med djur (${!!eS}) går ett foder åt (${f0} → ${f1}), ${st} ${klart}`, !utanDjur && !!eS && st && f1 === f0 - 1 && klart],
       [`bybon köper ett djur (${eD?.k}), och det byter ägare (${agare})`, !!eD && kd && agare === 1],
       [`gästen leder hem sitt (${hemMed}), och ett par är kvar (${kvar})`, kg && hemMed === 1 && kvar === 2 && !slut],
     ];
