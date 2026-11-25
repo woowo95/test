@@ -42,3 +42,14 @@ Gänget syns 4–31 s efter ankomsten, anfaller efter 3,1–5,5 min, hela anfall
 ## Referensinspelning
 
 `insp/1-30_0.1h_4r.json` – `fasb` 66bae34 (B.56), by 1-30, 0,1 h fram, 4 rövare: 516 bilder, 0 stridsrader, 735 s. Sedda efter 161 s (Frörhild varnade, tio hörde), plundrade förrådet vid 541 s utan strid, flydde.
+
+## Hur steg skrivs (Björn, 2026-11-25; gäller alltid)
+
+Ett steg skrivs först när både koden (senaste `fasb`) och designdokumentet är lästa för just det steget. Inget steg bygger på en gissning om hur något fungerar i dag.
+
+- Kolla först om det redan finns: fråga koden (grep, läs funktionen) innan steget säger att något saknas.
+- Steget säger exakt vad som ändras: filen, funktionen eller raden, balanstalets namn och värde från och till, och regeln som formel när det är en regel.
+- Steget säger varför i dag, med siffror från mätningen eller inspelningen och var i koden det kommer ifrån.
+- Mål som går att mäta (kommando och gräns) och ett scenario som prövar verkan. Är ett balanstal osäkert: "högst tre försök, och talet som blev skrivs i steget".
+- Saknas något i avsnittet som steget pekar på, fylls avsnittet i först, så att "Läs:" leder till det som gäller.
+- Är det oklart vad Björn menar, frågas han innan steget skrivs. Programmeraren ska inte behöva gissa.
