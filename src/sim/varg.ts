@@ -42,7 +42,7 @@ import { vaderNu } from './vader';
 import { notis } from './notiser';
 import { lamnaFallt, styckaFallt } from './styckning';
 import { tecken } from './religion';
-import { hotKrok, LARMHOT, LARMROLL, rollVid, vagMedHot, viljaKrok } from './roller';
+import { hotKrok, larmBleknar, larmGaller, LARMHOT, LARMROLL, rollVid, vagMedHot, viljaKrok } from './roller';
 import { glesPlats } from './trangsel';
 
 // ---------- vargen och vakten (steg 3.7.1) ----------
@@ -88,9 +88,7 @@ export const VARG = balans('varg', {
   kaninR: 6, kaninChans: 0.4, kaninMat: 0.25, // en hungrig flock nära en kaningrupp tar en kanin i timmen med den här chansen, och hungern sjunker så här mycket
   // att se vargar och väcka byn
   vaktSer: 24, folkSer: 10, nattSer: 0.6, // vakten ser vargar inom så här många rutor, andra inom folkSer, gånger nattSer i mörkret
-  larmTim: 2, // samma flock larmas om högst så här ofta
   vack: 25, // vakten väcker byn när flocken är så här nära byns område (utanforByn)
-  vakenTim: 1, // den som väckts håller sig vaken vid elden så här många timmar
   // vargjakten
   jaktTim: 3, // jägarna letar efter flocken högst så här många timmar
   kallMin: 30, // den som ska följa med på vargjakten har så här många minuter på sig att komma iväg (nivån Tillfälle i val.ts, steg 6.1.14)
@@ -119,6 +117,7 @@ export const VARG = balans('varg', {
   // vuxna som kan slåss / vargarna); från vagar strider man (väntar med vapen vid elden), från hjalpFran håller man sig bakom, annars gömmer man sig
   hjalpFran: 0.5,
   bakom: 3, // hjälparna står så här många rutor bakom kämparna vid elden
+  skyddMin: 3, // den som gömmer sig eller väntar väljer om så här ofta (minuter), så att hen är i arbete snart efter att larmet tagit slut (steg B.59)
   seddTim: 3, // larmet håller så länge flocken är nära byn och har setts de senaste så här många timmarna ...
   naraByn: 25, // ... och är så här nära byns område (utanforByn)
   // dörren (steg 3.7.21): en hungrig flock som inte ser någon ensam väntar utanför en stängd dörr så här många timmar
@@ -248,17 +247,20 @@ function kaninJakt(s: State, f: Vargflock) {
 
 // de som är vakna ser flocken och ropar; vakten ser längst och väcker byn när flocken är nära
 function ses(s: State, f: Vargflock, folk: Person[]) {
-  if (f.sedd !== undefined && s.now - f.sedd < VARG.larmTim * HOUR) return;
+  if (f.sedd !== undefined && s.now - f.sedd < MIN) return;
   const natt = isLight(s.now) ? 1 : VARG.nattSer, dimma = 1 - VARG.dimmaSer * vaderNu(s).dimma;
   const ser = (q: Person) => vaken(q) && avst(q, f) < (q.task?.act === 'vakt' ? VARG.vaktSer : VARG.folkSer) * natt * dimma;
   const hund = folk.some(q => q.task?.act === 'vakt' && ser(q)) ? undefined : hundSkaller(s, d => avst(d, f)); // vakthunden hör flocken före vakten (steg 9.8.11)
   if (hund && hund.p.task?.act === 'sova') { avbryt(s, hund.p); hund.p.task = undefined; }
   const vakt = folk.find(q => q.task?.act === 'vakt' && ser(q)) ?? hund?.p, p = vakt ?? folk.find(ser);
   if (!p) return;
+  // den som ser flocken och redan vet förnyar larmet tyst; den första som inte vet ropar (steg B.59)
+  const vet = new Set(folk.filter(q => larmGaller(s, q, 'varg'))), nytt = !vet.size;
   f.sedd = s.now; f.sag = p.id; f.sx = f.x; f.sy = f.y; // där flocken sågs (märket på kartan, steg 9.2.122)
+  if (vet.has(p) && !folk.some(q => !vet.has(q) && ser(q))) return;
   if (forstaGang(s, 'vargSedd')) log(s, `${p.name} såg ${f.vargar.length > 1 ? `en flock på ${tal(f.vargar.length)} vargar` : 'en ensam varg'} för första gången.`, 'world', [p.id]);
-  notis(s, 'anfall', `${p.name} såg ${f.vargar.length > 1 ? `en flock på ${tal(f.vargar.length)} vargar` : 'en ensam varg'} nära byn.`, [p.id], { x: Math.floor(f.x), y: Math.floor(f.y) });
-  const hort = larma(s, 'varg', f.vargar.length, [p]);
+  if (nytt) notis(s, 'anfall', `${p.name} såg ${f.vargar.length > 1 ? `en flock på ${tal(f.vargar.length)} vargar` : 'en ensam varg'} nära byn.`, [p.id], { x: Math.floor(f.x), y: Math.floor(f.y) });
+  const hort = larma(s, 'varg', f.vargar.length, [p]).filter(q => !vet.has(q));
   // vakten väcker de vuxna som sover när flocken är nära byn
   if (vakt && utanforByn(s, f.x, f.y) < VARG.vack) {
     let n = 0;
@@ -267,21 +269,21 @@ function ses(s: State, f: Vargflock, folk: Person[]) {
   }
   soker(s, [p, ...hort]);
 }
-// har p hört att vargar är nära (ropet eller vakten) inom VARG.vakenTim?
+// vet p om vargar som är nära (ropet eller vakten)?
 // (eller rövare, steg 4.4.5: byn skyddar sig likadant)
 // Larmet om vargarna håller så länge flocken är nära byn och har setts nyligen (steg 9.2.121), inte bara en timme efter ropet
 // vargarnas rad bland hoten (steg 9.5.19, roller.ts): viljan plus fler × (de vuxna som kan slåss / vargarna i larmet)
 // utan larm (den som kallar till vargjakt, steg 12.1.82) räknas den största flocken byn sett nyligen
 const kandFlock = (s: State) => Math.max(1, ...flockarna(s).filter(f => f.sedd !== undefined && s.now - f.sedd < VARG.jaktVet * HOUR).map(f => f.vargar.length));
-LARMHOT.varg = { namn: 'Vargarna', plus: (s, p) => VARG.fler * living(s).filter(q => viljaKrok.kan(s, q)).length / Math.max(1, larmNu(s, p, 'varg')?.storlek ?? kandFlock(s)), kampe: () => VARG.vagar + 1e-12, hjalp: () => VARG.hjalpFran };
-export const vargLarm = (s: State, p: Person) => { const v = larmNu(s, p, 'varg'), r = larmNu(s, p, 'rovare'); return v && (s.now - v.t < VARG.vakenTim * HOUR || vargarNara(s)) ? v : r && s.now - r.t < VARG.vakenTim * HOUR ? r : undefined; }; // vargarna eller rövarna (ett larm per sort, steg 12.1.211)
-export const vargarNara = (s: State) => flockarna(s).some(f => f.gor !== 'flyr' && f.vargar.length > 0 && f.sedd !== undefined && s.now - f.sedd < VARG.seddTim * HOUR && utanforByn(s, f.x, f.y) < VARG.naraByn);
+LARMHOT.varg = { namn: 'Vargarna', nara: (s, p) => vargarNara(s, p), plus: (s, p) => VARG.fler * living(s).filter(q => viljaKrok.kan(s, q)).length / Math.max(1, larmNu(s, p, 'varg')?.storlek ?? kandFlock(s)), kampe: () => VARG.vagar + 1e-12, hjalp: () => VARG.hjalpFran };
+export const vargLarm = (s: State, p: Person) => larmGaller(s, p, 'varg') ?? larmGaller(s, p, 'rovare'); // vargarna eller rövarna (ett larm per sort, steg 12.1.211)
+export const vargarNara = (s: State, p?: Person) => flockarna(s).some(f => f.gor !== 'flyr' && f.vargar.length > 0 && f.sedd !== undefined && s.now - f.sedd < VARG.seddTim * HOUR && (utanforByn(s, f.x, f.y) < VARG.naraByn || !!p && avst(f, p) < VARG.naraByn)); // nära byn, eller nära p (steg B.59)
 
 // ---------- skyddet när vargen kommer (steg 3.7.15) ----------
 // När ropet hörs eller vakten väcker byn går barnen, de gamla, de sjuka och de svårt skadade in i närmaste hus, familjens eget
 // först, och utan hus till elden nära de vuxna. Den som redan sover i ett hus sover vidare. En förälder med små barn stannar
 // hos dem. De vuxna som vågar möta flocken (modet mot flockens storlek) tar sitt eget bästa vapen eller byns och samlas vid
-// elden. Det varar VARG.vakenTim; sedan läggs vapnet tillbaka (agande.ts: tidyTools)
+// elden. Det varar så länge larmet gäller (larmGaller i roller.ts); sedan läggs vapnet tillbaka (agande.ts: tidyTools)
 // den som inte kan slåss (barnen, de för gamla och de för svaga, vuxenKan i rovare.ts): samma förlager som mot rövarna (steg 12.1.82)
 export const skyddas = (s: State, p: Person) => !viljaKrok.kan(s, p);
 export const iHus = (s: State, p: Person) => !!roomAt(s, Math.floor(p.x), Math.floor(p.y));
@@ -316,8 +318,8 @@ export function vargSkydd(s: State, p: Person): Skydd | undefined {
   if (fi) return { act: 'gomma', why: `${fi.vargar.length > 1 ? 'Vargarna' : 'Vargen'} väntar utanför dörren`, hot: 'varg', spot: { x: p.x, y: p.y }, dur: Math.max(MIN, fi.vantar! + VARG.vantaTim * HOUR - s.now) };
   const l = vargLarm(s, p);
   if (!l || !kanGa(p)) return;
-  const dur = l.vad === 'varg' && vargarNara(s) ? HOUR : Math.max(MIN, l.t + VARG.vakenTim * HOUR - s.now), fi2 = l.vad === 'rovare' ? 'Rövare' : 'Vargar';
-  if (l.vad === 'rovare' && rovarVal) return rovarVal(s, p, l.storlek, dur); // rövarna väljs med sina egna tal (steg 9.2.75, rovare.ts)
+  const dur = VARG.skyddMin * MIN, fi2 = l.vad === 'rovare' ? 'Rövare' : 'Vargar';
+  if (l.vad === 'rovare' && rovarVal) return rovarVal(s, p, l.storlek, HOUR); // rövarna väljs med sina egna tal (steg 9.2.75, rovare.ts)
   // rollerna (steg 9.2.121): kämpe, hjälpare eller gömd, med samma värde som mot rövarna; ingen står och pratar vid elden
   const roll = rollVid(s, p, 'varg');
   if (roll === 'kampe') return { act: 'forsvar', why: `${fi2} är nära, tar ${taVapen(s, p) ? 'ett vapen' : 'det som finns'} och väntar vid elden`, dur };
@@ -720,6 +722,7 @@ export function vargSteg(s: State, dtSec: number) {
   if (nyTimme) kommer(s);
   if (!s.vargar?.length) return;
   const folk = living(s);
+  larmBleknar(s, folk, 'varg');
   for (const f of s.vargar) {
     const strid = vargIStrid(s, f);
     if (strid) { const k = (strid.djur ?? []).map(d => strid.st.kampar.find(q => q.id === d.k)!).filter(q => q && q.lage !== 'dod' && q.lage !== 'borta'); if (k.length) { f.x = k.reduce((a, q) => a + q.x, 0) / k.length; f.y = k.reduce((a, q) => a + q.y, 0) / k.length; } continue; } // flocken slåss på kartan (steg 10.1.17): den står där vargarna står

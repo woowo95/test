@@ -2229,10 +2229,10 @@ SCENARIER.vargskydd = {
       const c = bynsMitt(s); nyFlock(s, 2, c.x + 9, c.y, 0.1);
       let gom = 0, svaga = 0, iHus = 0, vidEld = 0, forsvar = 0, medVapen = 0, foralder = 0;
       kor(s, 0.4);
-      // steg 9.2.121: medan flocken står nära och har setts nyligen håller larmet, också efter VARG.vakenTim, och ingen vuxen samtalar
+      // steg 9.2.121: medan flocken står nära och har setts nyligen håller larmet, också efter en timme, och ingen vuxen samtalar
       const f0 = s.vargar![0], fast = { x: f0.x, y: f0.y };
       let haller = 0, prat = 0, nara = 0;
-      kor(s, SIM.VARG.vakenTim + 0.5, v => {
+      kor(s, 1.5, v => {
         const f = v.vargar?.[0]; if (!f) return;
         Object.assign(f, { x: fast.x, y: fast.y, mx: fast.x, my: fast.y, gor: 'stryker' }); // flocken står kvar nära byn
         if (!SIM.vargarNara(v)) return;
@@ -2261,7 +2261,7 @@ SCENARIER.vargskydd = {
     const sum = (r: ReturnType<typeof prov>[], k: Exclude<keyof ReturnType<typeof prov>, 'namn'>) => r.reduce((a, x) => a + x[k], 0);
     const alla = [...ute, ...inne];
     return [
-      [`medan flocken står nära håller skyddet efter mer än ${SIM.VARG.vakenTim} timme (${sum(ute, 'haller') + sum(inne, 'haller')} gömmer sig eller väntar)`, alla.every(r => r.nara > 0) && alla.every(r => r.haller > 0)],
+      [`medan flocken står nära håller skyddet efter mer än 1 timme (${sum(ute, 'haller') + sum(inne, 'haller')} gömmer sig eller väntar)`, alla.every(r => r.nara > 0) && alla.every(r => r.haller > 0)],
       [`ingen vuxen samtalar som om inget hänt medan flocken är nära (${sum(ute, 'prat') + sum(inne, 'prat')} prov)`, sum(ute, 'prat') + sum(inne, 'prat') === 0],
       [`kortet säger vad var och en gör (${[...new Set(alla.flatMap(r => r.namn.split(', ')).filter(Boolean))].join(', ')})`, alla.some(r => r.roller > 0)],
       [`ropet får folk att söka skydd (${sum(ute, 'skydd') + sum(inne, 'skydd')} avbrutna uppgifter)`, sum(ute, 'skydd') + sum(inne, 'skydd') > 0],
