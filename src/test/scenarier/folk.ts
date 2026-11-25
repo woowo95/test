@@ -1072,6 +1072,7 @@ SCENARIER.titel = {
 };
 
 SCENARIER.blockera = {
+  lang: true,
   text: 'Fiender blockerar vägen (steg 3.7.20): i striden går man inte närmare än STRID.kropp en fiende som står, utan runt hen, och inte genom väggar. Den som står i en dörröppning stänger den; när hen fallit går de andra igenom öppningen. Vänner och de som ligger går man igenom',
   kor: () => {
     const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, x: number, y: number, fart = 1) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 14, smidighet: 10, skicklighet: 10 }, vapen, klader: [] as string[], fart, x, y });
@@ -1452,6 +1453,7 @@ SCENARIER.avstand = {
 };
 
 SCENARIER.knuff = {
+  lang: true,
   text: 'Knuff, fall och tappade vapen (steg 3.7.8): knuffen fäller lättare den som bär tungt och på hal mark, man halkar på hal mark, den som fallit reser sig, i lek och hos den som inte är blodtörstig får den som ligger resa sig, och ett tappat vapen hämtas av ägaren eller en motståndare',
   kor: () => {
     type K = SIM.Uppstallning['kampar'][number];

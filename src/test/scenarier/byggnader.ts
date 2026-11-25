@@ -563,7 +563,7 @@ SCENARIER.lager = {
   lang: true,
   text: 'Saker ligger i stackar på en lagerplats som byn gör större och mindre, och var och en bär efter sin styrka',
   kor: () => {
-    const s = createState(3, START);
+    const s = createState(6, START); // by 6: lagerplatsen flyttas inte för ett hus under tiden (i by 3 blir en liten by efter med bärandet)
     const start = zoneOf(s).w * zoneOf(s).h;
     setFood(s, 230); setAmount(s, 'ved', 90); setAmount(s, 'grenar', 70); setAmount(s, 'flinta', 3); // mycket på en gång
     kor(s, 18);
