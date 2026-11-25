@@ -3199,3 +3199,33 @@ SCENARIER.undanhot = {
     ];
   },
 };
+
+SCENARIER.egenplats = {
+  text: 'Steg B.49: var och en på sin plats: fem rövare som plundrar står på fem olika rutor, och raden står på fri mark mellan gänget och det som försvaras, var och en i sin ruta, inte i ett hus eller på lagret',
+  kor: () => {
+    const s = rovarBy(11), m = SIM.malet(s), f = rovarGang(s, 5, landVid(s, 30)!); ettGang(s, f); f.vantat = true; f.anfaller = true; f.test = false;
+    for (const p of SIM.living(s)) if (!p.gast) { Object.assign(p, SIM.freeNear(s, SIM.clamp(m.x - 50, 2, SIM.W - 2), m.y)); p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.HOUR, carry: 0, why: 'test' } as SIM.Task; }
+    for (const r of SIM.rovarna(s, f)) Object.assign(r, SIM.freeNear(s, m.x + 1, m.y + 1));
+    SIM.setAmount(s, 'skinn', 80);
+    let tog = 0, samma = 0;
+    korTills(s, () => f.klar === true || tog > 30, 120, () => {
+      ettGang(s, f); const ta = SIM.rovarna(s, f).filter(r => r.gast!.gor === 'ta' && Object.keys(r.gast!.bar ?? {}).length);
+      if (ta.length < 2) return; tog++;
+      if (new Set(ta.map(r => Math.floor(r.y) * SIM.W + Math.floor(r.x))).size < ta.length) samma++;
+    });
+    const tagna = SIM.rovarna(s, f).map(r => `${r.x.toFixed(1)},${r.y.toFixed(1)}`);
+    // raden
+    const s2 = rovarBy(11), f2 = rovarGang(s2, 2, landVid(s2, 40)!); ettGang(s2, f2); f2.vantat = true; f2.till = s2.now + SIM.HOUR; f2.test = false;
+    const v = vuxnaI(s2).slice(0, 6);
+    for (const p of SIM.living(s2)) if (!p.gast && !v.includes(p)) p.larmRoll = { hot: 'rovare', roll: 'gomd', v: s2.larmV ?? 0, t: s2.now + SIM.HOUR };
+    for (const p of v) { p.pot.mod = 16; SIM.horLarm(p, { t: s2.now, vad: 'rovare', storlek: 2, led: 1, varnat: 1, om: [f2.id] }); p.larmRoll = { hot: 'rovare', roll: 'kampe', v: s2.larmV ?? 0, t: s2.now + SIM.HOUR }; p.task = undefined; Object.assign(p, { hunger: 0.9, torst: 0.9, toa: 0.9, rest: 0.9 }); }
+    korTills(s2, () => false, 120, () => ettGang(s2, f2));
+    const rad = v.filter(p => p.task?.act === 'forsvarRovare'), inne = rad.filter(p => SIM.roomAt(s2, Math.floor(p.x), Math.floor(p.y)) || SIM.zoneAt(s2, Math.floor(p.x), Math.floor(p.y)) >= 0);
+    const rutor = new Set(rad.map(p => Math.floor(p.y) * SIM.W + Math.floor(p.x)));
+    return [
+      [`plundrarna står på olika rutor (${samma} av ${tog} slag delar två en ruta; ${tagna.join(' ')})`, tog > 0 && samma === 0],
+      [`raden: ${rad.length} står i den, ${inne.length} i ett hus eller på lagret`, rad.length >= 3 && inne.length === 0],
+      [`var och en i sin ruta (${rutor.size} av ${rad.length})`, rutor.size === rad.length],
+    ];
+  },
+};
