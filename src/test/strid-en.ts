@@ -44,7 +44,7 @@ stridProv.slut = (s, m) => {
     // skadan per träff (graden, inte i brottningen och leken) och hur skadade de som flydde var: det svåraste såret och blodet (steg B.65)
     const grader = st.avsikt === 'lek' || st.avsikt === 'brottning' ? [] : st.logg.filter(x => x.h === 'traff').map(x => +(x.g ?? 0).toFixed(3));
     const varst = (k: typeof st.kampar[number]) => +Math.max(0, ...k.skador.map(w => w.g)).toFixed(2), flytt = st.kampar.filter(k => ['flykt', 'borta'].includes(k.lage)).map(k => [varst(k), +k.blod.toFixed(2)]);
-    const allvar = st.kampar.filter(k => varst(k) >= 0.3 || k.blod < 0.7).length;
+    const allvar = st.kampar.filter(k => varst(k) >= 0.2 || k.blod < 0.85).length;
     const rad = { grader, flytt, allvar, kampar: st.kampar.length, t0: s.now - langd * 1000, t1: s.now, tunga, sort, forsok, slut: [slut(0), slut(1)], efter: 0, dag: +((s.now - s.founded) / 86400000).toFixed(1), orsak, vinnare: st.slut?.vinnare ?? -1, sek: Math.round(st.slut?.t ?? st.t), vuxna, kom, by: per(0), mot: per(1), h, ...(bilder.has(m) ? { bilder: bilder.get(m) } : {}) };
     for (const x of saren) if (x.t === s.now && !Object.keys(x.rad).length) x.rad = rad;
     rader.push(rad);

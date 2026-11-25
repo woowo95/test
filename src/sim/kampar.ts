@@ -21,19 +21,16 @@ export interface KampeSort {
   avstar: boolean; // kan dra sig undan före första slaget när modet inte räcker
   leder: boolean; // kan vara ledare som går först
   forfoljer: number; // så många sekunder följer sorten efter den som flyr eller fallit och slår hen (där avsikten är att döda). Människan ger sig inte; djuren vill mest bli av med hotet
-  modGrad: number; // stridsmodet sjunker av ett sår efter graden upphöjd till detta: 1 = lika mycket av smått som av svårt, 2 = en skråma nästan inte alls och ett djupt sår mycket (steg B.65)
-  modBlod: boolean; // ... och av blodet som är borta (STRID.modBlod)
-  kring: number; // så mycket väger underläget, de främstas mod och vänner som faller medan striden pågår (1 = fullt; före första slaget alltid fullt)
   flock: boolean; // en flock: när en av dem faller eller flyr tappar de andra mer mod (STRID.flock), och flykten räknas som ett fall
 }
-const manniska: KampeSort = { namn: 'Människan', art: 'Människa', fart: 1, vapen: ['hand'], skydd: 0, naturligt: false, parerar: true, kryper: true, raddar: true, avstar: true, leder: true, forfoljer: Infinity, modGrad: 2, modBlod: true, kring: 0.3, flock: false };
+const manniska: KampeSort = { namn: 'Människan', art: 'Människa', fart: 1, vapen: ['hand'], skydd: 0, naturligt: false, parerar: true, kryper: true, raddar: true, avstar: true, leder: true, forfoljer: Infinity, flock: false };
 // ett djur: slåss med kroppen, parerar inte, kryper inte, räddar ingen och drar sig inte undan i förväg
 const djur = (namn: string, art: string, alder: number, kropp: NonNullable<KampeSort['kropp']>, fart: number, vapen: Vapen): KampeSort =>
-  ({ namn, art, alder, kropp, fart, vapen: [vapen], skydd: 0, naturligt: true, parerar: false, kryper: false, raddar: false, avstar: false, leder: false, forfoljer: 5, modGrad: 1.5, modBlod: false, kring: 1, flock: true });
+  ({ namn, art, alder, kropp, fart, vapen: [vapen], skydd: 0, naturligt: true, parerar: false, kryper: false, raddar: false, avstar: false, leder: false, forfoljer: 5, flock: true });
 export const KAMPAR = {
   manniska,
   kanin: djur('Haren', 'Hare', 6, { styrka: 2, uthallighet: 6, mod: 2, smidighet: 16, skicklighet: 4 }, 1.4, 'bett'),
-  varg: djur('Vargen', 'Varg', 12, { styrka: 13, uthallighet: 14, mod: 10, smidighet: 16, skicklighet: 9 }, 1.5, 'vargbett'), // snabb och svår att träffa, duckar men parerar inte och biter hårt (steg 3.7.1)
+  varg: djur('Vargen', 'Varg', 12, { styrka: 10, uthallighet: 14, mod: 10, smidighet: 16, skicklighet: 9 }, 1.5, 'vargbett'), // snabb och svår att träffa, duckar men parerar inte och biter hårt (steg 3.7.1)
   radjur: djur('Rådjuret', 'Rådjur', 10, { styrka: 4, uthallighet: 12, mod: 2, smidighet: 16, skicklighet: 4 }, 1.7, 'bett'),
   vildsvin: djur('Vildsvinet', 'Vildsvin', 12, { styrka: 12, uthallighet: 14, mod: 12, smidighet: 10, skicklighet: 7 }, 1.3, 'betar'), // tungt och envist, flyr oftast men vänder sig ibland mot jägaren (steg 10.10.4)
   fagel: djur('Fågeln', 'Fågel', 5, { styrka: 1, uthallighet: 4, mod: 1, smidighet: 18, skicklighet: 2 }, 1.6, 'bett'),

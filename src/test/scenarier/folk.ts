@@ -1502,7 +1502,7 @@ SCENARIER.knuff = {
 };
 
 SCENARIER.hot = {
-  text: 'Mod, hot och att ge upp (steg 3.7.9): varje sida jämför sin styrka med motståndarnas, den svagare ger upp eller flyr tidigare och kan dra sig undan före första slaget, de främstas mod drar med de andra, den rädda drar sig bakom vännerna, leken följer inte hotet, och den som backar i byn får rykte om sig att vara feg',
+  text: 'Mod, hot och att ge upp (steg 3.7.9): varje sida jämför sin styrka med motståndarnas, den svagare ger upp eller flyr tidigare men inte av skrämsel före första slaget (steg B.65), de främstas mod drar med de andra, den rädda drar sig bakom vännerna, leken följer inte hotet, och den som backar i byn får rykte om sig att vara feg',
   kor: () => {
     type K = SIM.Uppstallning['kampar'][number];
     const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, o: Partial<K> = {}, st: Partial<K['st']> = {}): K => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 10, ...st }, vapen, klader: [], fart: 1, x: sida ? 13 : 7, y: 7, ...o });
@@ -1510,9 +1510,9 @@ SCENARIER.hot = {
     const avstar = (sts: SIM.Strid[], id: number) => sts.filter(st => st.logg.some(r => r.h === 'avstar' && r.a === id)).length;
     const traffar = (sts: SIM.Strid[], id: number) => sts.reduce((a, st) => a + st.logg.filter(r => (r.h === 'traff' || r.h === 'tog') && r.b === id).length, 0);
     // ensam mot tre, och med händerna mot två yxor
-    const enEn = kor('skada', [m(1, 0, 'kniv', {}, { mod: 3 }), m(2, 1, 'kniv')], 100);
-    const enTre = kor('skada', [m(1, 0, 'kniv', {}, { mod: 3 }), m(2, 1, 'kniv', { y: 5 }), m(3, 1, 'kniv'), m(4, 1, 'kniv', { y: 9 })], 100);
-    const handYxa = kor('skada', [m(1, 0, 'hand', {}, { mod: 2 }), m(2, 1, 'yxa'), m(3, 1, 'yxa', { y: 9 })], 100), handHand = kor('skada', [m(1, 0, 'hand', {}, { mod: 2 }), m(2, 1, 'hand'), m(3, 1, 'hand', { y: 9 })], 100);
+    const enEn = kor('skada', [m(1, 0, 'kniv', {}, { mod: 1 }), m(2, 1, 'kniv')], 100);
+    const enTre = kor('skada', [m(1, 0, 'kniv', {}, { mod: 1 }), m(2, 1, 'kniv', { y: 5 }), m(3, 1, 'kniv'), m(4, 1, 'kniv', { y: 9 })], 100);
+    const handYxa = kor('skada', [m(1, 0, 'hand', {}, { mod: 1 }), m(2, 1, 'yxa'), m(3, 1, 'yxa', { y: 9 })], 100), handHand = kor('skada', [m(1, 0, 'hand', {}, { mod: 1 }), m(2, 1, 'hand'), m(3, 1, 'hand', { y: 9 })], 100);
     // de främstas mod: den räddas vän går först, modig eller rädd
     const modigFram = kor('skada', [m(1, 0, 'kniv', { x: 8 }, { mod: 20 }), m(2, 0, 'kniv', { x: 4 }, { mod: 4 }), m(3, 1, 'kniv'), m(4, 1, 'kniv', { y: 9 })], 150);
     const raddFram = kor('skada', [m(1, 0, 'kniv', { x: 8 }, { mod: 1 }), m(2, 0, 'kniv', { x: 4 }, { mod: 4 }), m(3, 1, 'kniv'), m(4, 1, 'kniv', { y: 9 })], 150);
@@ -1537,8 +1537,9 @@ SCENARIER.hot = {
     }
     const texter = [...enTre, ...handYxa, ...bakom].every(st => st.logg.every(r => SIM.stridText(st, r).length > 5 && !SIM.stridText(st, r).includes('undefined')));
     return [
-      [`ensam mot tre drar den rädda sig undan utan strid oftare (${avstar(enTre, 1)} av 100) än mot en (${avstar(enEn, 1)})`, avstar(enTre, 1) > avstar(enEn, 1)],
-      [`med händerna mot två yxor oftare (${avstar(handYxa, 1)} av 100) än mot två med händerna (${avstar(handHand, 1)})`, avstar(handYxa, 1) > avstar(handHand, 1)],
+      [`ingen flyr av skrämsel före första slaget (ensam mot tre ${avstar(enTre, 1)} av 100, mot en ${avstar(enEn, 1)}, med händerna mot yxor ${avstar(handYxa, 1)}; steg B.65)`, avstar(enTre, 1) + avstar(enEn, 1) + avstar(handYxa, 1) === 0],
+      [`ensam mot tre står den rädda kvar kortare (${kvar(enTre, 1).toFixed(0)} s) än mot en (${kvar(enEn, 1).toFixed(0)} s)`, kvar(enTre, 1) < kvar(enEn, 1)],
+      [`med händerna mot två yxor kortare (${kvar(handYxa, 1).toFixed(0)} s) än mot två med händerna (${kvar(handHand, 1).toFixed(0)} s)`, kvar(handYxa, 1) < kvar(handHand, 1)],
       [`den rädda står kvar längre när en modig går först (${kvar(modigFram, 2).toFixed(1)} s) än när en rädd gör det (${kvar(raddFram, 2).toFixed(1)} s)`, kvar(modigFram, 2) > kvar(raddFram, 2)],
       [`man ger också upp mitt i striden, efter att ha blivit träffad (${mitt} av 100 ensam mot tre med mod 12)`, mitt > 0],
       [`den rädda drar sig bakom vännen (${backar} gånger på 150 strider)`, backar > 0],
@@ -2863,7 +2864,7 @@ SCENARIER.rovarmote = {
   text: 'Försvararna går dit rövarna är på väg (steg 10.2.27 och B.5): de som ska slåss ställer sig mellan gänget och det gänget är ute efter, också en lagerplats i byns utkant, och väntar där, och striden börjar där de möts',
   kor: () => {
     const s = rovarBy();
-    SIM.skickaRovare(s, 3);
+    SIM.skickaRovare(s, 2);
     const f = s.rovare!, hem = SIM.malet(s);
     let gick = 0, strid: { x: number; y: number } | undefined;
     for (let i = 0; i < 600 && f.folk.length && !strid; i++) {

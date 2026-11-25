@@ -72,7 +72,7 @@ export const STRID = balans('strid', {
   // ett ben, en hand eller en fot huggs av, och huvudet eller bålen dödar direkt
   hugg: 0.12, skyddHugg: 0.5, huggMin: 0.5, // bara en träff av minst huggMin kan hugga av
   bjornBett: 3, // björnen biter med käftarna vart så här många slag som träffar, och river med ramarna annars (steg 9.5.13)
-  smitta: 0.1, // så mycket de andras mod sjunker när någon ger upp (steg 8.8.8)
+  smitta: 0.03, // så mycket de andras mod sjunker när någon ger upp (steg 8.8.8)
   pilSonder: 0.25, // chansen att en skjuten pil går sönder; de andra landar på marken (steg 13.4.5)
   jarnPil: 1.25, // järnpilen skadar så här många gånger mer än flintpilen (steg 13.4.2)
   ringad: 0.1, // så mycket lättare det är att träffa den som redan slåss med en annan, per extra motståndare (steg 8.7.7)
@@ -88,7 +88,7 @@ export const STRID = balans('strid', {
   // slaget mot den som står och slåss tar sällan rent: hen vrider sig undan och tar emot det. Slagets tyngd (så stor del av vapnets skada det
   // gör) är latt + (1 − latt) × slumpen upphöjd till latthet: nästan alltid lätt, någon gång fullt, så att ett enda slag ännu kan döda
   // eller ge ett sår man förblöder av. Den som ligger, böjer sig ner eller flyr tar slaget fullt, och kast och skott väjer man inte för så
-  latt: 0.05, latthet: 6, // steg B.65: förut 0,02 och 15, så att tre av fyra träffar nästan inte skadade
+  latt: 0.02, latthet: 15,
   maxTid: 1200, // en strid slutar senast efter så här många sekunder på klockan (oavgjort)
   efterTid: 20, // när ena sidan inte har någon kvar som slåss slutar striden senast så här många sekunder senare, också om någon ännu flyr eller ligger (den som inte kommer undan blir kvar på platsen)
   krypNara: 1, // den som kryper stannar så här många rutor från vännen hen kryper mot (steg 3.7.19) ...
@@ -120,10 +120,9 @@ export const STRID = balans('strid', {
   nere: 1.5, // den som har så här ont faller och kan inte slåss längre
   modStart: 0.4, // stridsmodet när striden börjar: modStart + mod / 20 × modMod
   modMod: 0.6,
-  modSkada: 1.4, // stridsmodet sjunker så här mycket gånger sårets grad upphöjd till sortens modGrad (kampar.ts): hos människan en skråma nästan inte alls, ett djupt sår mycket (steg B.65) ...
-  modBlod: 2, // ... och så mycket gånger den del av blodet som är borta, upphöjd likadant, hos den som räknar med det (sortens modBlod)
+  modSkada: 3, // stridsmodet sjunker så här mycket gånger den del av ett sår som är djupare än en skråma (HALSA.skrama, steg B.65) ...
   modFeg: 0.5, // ... gånger 1 + modFeg × (10 − modet) / 10, högst modFeg åt vardera hållet (steg 9.2.116)
-  modVan: 0.2, // ... och så här mycket när en vän faller
+  modVan: 0.05, // ... och så här mycket när en vän faller
   lek: 0.2, // i lek slutar striden vid första skada av den här graden
   brottning: 0.3, // i brottningen (steg 9.2.92) är slagen så här starka mot i ett slagsmål med händerna, men ingen dör och slag under STRID.lek blir inga sår och den som känner smärta ger sig
   utsatt: 1.5, // chansen att träffa den som ligger eller flyr, gånger detta
@@ -179,7 +178,7 @@ export const STRID = balans('strid', {
   plocka: 0.6, // sekunder det tar att böja sig ner och ta upp det
   ruser: 0.35, // den som har så här mycket blodtörst rusar fram mot den som ligger i ett slagsmål (de andra låter hen resa sig)
   // hotet (steg 3.7.9)
-  hot: 0.6, // stridsmodet ändras så här mycket gånger (sidans andel av styrkan − ½) × 2: −hot ensam mot en övermakt ...
+  hot: 0.2, // stridsmodet ändras så här mycket gånger (sidans andel av styrkan − ½) × 2: −hot ensam mot en övermakt ...
   framst: 0.3, // ... och så här mycket gånger (de främstas stridsmod − ½), de två som står närmast fienden
   avsta: 0.2, // före första slaget drar sig den undan vars stridsmod med hotet är under så här mycket
   tyckeSkick: 2, // tycket för vapnet (steg 3.7.10, -1 till 1) ger så här mycket skicklighet med det ...
@@ -679,11 +678,11 @@ function falla(st: Strid, k: Kampe, h: 'nere' | 'dod' | 'ger' | 'flykt', rad: Ha
   k.bar = undefined; // den som bar någon släpper hen (steg 12.1.87)
   if (h === 'nere' || h === 'flykt') k.fallT ??= st.t; // när hen föll eller vände (hur länge en sort följer efter: KAMPAR.forfoljer)
   k.lage = h; k.mal = undefined; k.ligger = undefined; k.bocker = undefined;
-  if (h === 'ger') for (const v of st.kampar) if (v.sida === k.sida && v !== k && iStrid(v)) v.modNu -= STRID.smitta * sortAv(v).kring; // varje bybo som gett upp sänker de andras mod (steg 8.8.8)
+  if (h === 'ger') for (const v of st.kampar) if (v.sida === k.sida && v !== k && iStrid(v)) v.modNu -= STRID.smitta; // varje bybo som gett upp sänker de andras mod (steg 8.8.8)
   st.logg.push({ t: st.t, h: rad, a: k.id });
   varld?.fall?.(k, h); // på kartan är den som dör död direkt (steg 10.1.4)
   // när en faller sjunker modet hos de andra på samma sida; i en flock också när en varg flyr svårt skadad (steg 3.7.1)
-  if (h === 'nere' || h === 'dod' || (h === 'flykt' && sortAv(k).flock)) for (const v of st.kampar) if (v.sida === k.sida && v !== k && iStrid(v)) v.modNu -= (STRID.modVan + (k.ledare ? STRID.ledFaller : 0) + (sortAv(k).flock ? STRID.flock : 0)) * sortAv(v).kring;
+  if (h === 'nere' || h === 'dod' || (h === 'flykt' && sortAv(k).flock)) for (const v of st.kampar) if (v.sida === k.sida && v !== k && iStrid(v)) v.modNu -= STRID.modVan + (k.ledare ? STRID.ledFaller : 0) + (sortAv(k).flock ? STRID.flock : 0);
   if (k.ledare && (h === 'nere' || h === 'dod') && !AVS[st.avsikt].lek) st.logg.push({ t: st.t, h: 'ledareFaller', a: k.id }); // steg 3.7.12
 }
 // någon går emellan (steg 10.1.4): de som står slutar slåss, och striden tar slut utan vinnare
@@ -781,7 +780,8 @@ function byt(st: Strid, a: Kampe) {
 }
 export const TRAFFDEL_PROV: { del?: Kroppsdel } = {};
 // en träff av graden skada med slaget sl: kroppsdelen, kläderna, skadan och följderna
-const modSar = (k: Kampe, g: number, sport?: true) => Math.pow(g, sport ? 1 : sortAv(k).modGrad); // hur mycket ett sår av graden g väger i modet (steg B.65); i brottningen är det smärtan i varje tag som räknas, också den lilla
+// stridsmodet sjunker bara av den del av ett sår som är djupare än en skråma (steg B.65); i brottningen och leken räknas hela slaget (steg B.63)
+const modSar = (g: number, hela?: boolean) => hela ? g : Math.max(0, g - HALSA.skrama);
 export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, kast?: true) {
   skada0 *= a.kv?.[a.vapen] ?? 1; // vapnets kvalitet (steg 12.2.6)
   const kastad = kast ? VAP[a.vapen].kast : undefined;
@@ -808,11 +808,11 @@ export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, 
   const sar: Kampe['skador'][number] = { d, k, g, ny: !sport && SKADOR[k].blod > 0 ? 1 : 0, fast, ...(av ? { av } : {}), ...(sport ? { ont } : {}) };
   // en skråma där det redan finns ett likadant sår gör det såret värre (som skada i halsa.ts, steg B.10)
   const gammalt = g < HALSA.skrama && !av ? b.skador.find(w => w.d === d && w.k === k && !w.fast && !w.av) : undefined;
-  const forr = gammalt ? gammalt.ont ?? gammalt.g : 0; // såret innan (en träff i ett sår som finns gör det svårare)
+  const forr = gammalt ? gammalt.ont ?? gammalt.g : 0, efter = Math.min(1, forr + ont); // sårets grad före och efter träffen (steg B.65)
   if (gammalt) { gammalt.g = Math.min(1, gammalt.g + g); if (sport) gammalt.ont = Math.min(1, (gammalt.ont ?? 0) + ont); gammalt.ny = sar.ny; } else b.skador.push(sar);
   if (!sport) b.blod -= SKADOR[k].blod * g * STRID.blodSlag;
   const dogAvSaret = !!varld?.skada?.(b, sar, a); // på kartan sitter såret på personen direkt (steg 10.1.4)
-  b.modNu -= STRID.modSkada * (modSar(b, Math.min(1, forr + ont), sport) - modSar(b, forr, sport)) * clamp(1 + STRID.modFeg * (10 - b.st.mod) / 10, 1 - STRID.modFeg, 1 + STRID.modFeg); // den modiga ger upp långsammare (steg 9.2.116)
+  b.modNu -= STRID.modSkada * (modSar(efter, sport || AVS[st.avsikt].lek) - modSar(forr, sport || AVS[st.avsikt].lek)) * clamp(1 + STRID.modFeg * (10 - b.st.mod) / 10, 1 - STRID.modFeg, 1 + STRID.modFeg); // den modiga ger upp långsammare (steg 9.2.116)
   a.gjort += g;
   st.logg.push({ t: st.t, h: 'traff', a: a.id, b: b.id, d, k, g, v: a.vapen, kl, kast: kf });
   if (fast) st.logg.push({ t: st.t, h: 'fastnar', a: b.id, d, v: a.vapen });
@@ -884,14 +884,14 @@ function hotet(st: Strid): { andel: [number, number]; framst: [number, number]; 
   const sum = kr[0] + kr[1] || 1;
   return { andel: [kr[0] / sum, kr[1] / sum], framst: fr, led };
 }
-const modMed = (k: Kampe, h: ReturnType<typeof hotet>, i: boolean) => k.modNu - (sortAv(k).modBlod ? STRID.modBlod * modSar(k, 1 - k.blod) : 0) + (i ? sortAv(k).kring : 1) * (STRID.hot * (h.andel[k.sida] - 0.5) * 2 + STRID.framst * (h.framst[k.sida] - 0.5)) + h.led[k.sida]; // i = mitt i striden: då är det de egna såren som avgör (steg B.65)
+const modMed = (k: Kampe, h: ReturnType<typeof hotet>) => k.modNu + STRID.hot * (h.andel[k.sida] - 0.5) * 2 + STRID.framst * (h.framst[k.sida] - 0.5) + h.led[k.sida];
 
 const farten = (k: Kampe) => STRID.fart * k.fart * smidFart(k) * rorlighet(k);
 // vågar de slåss (steg B.53)? Samma mod och hot som när man drar sig undan före första slaget: hur mycket den räddaste av dem har över
 // gränsen, 0 = någon av dem skulle dra sig undan, 1 = så modiga de kan vara
 export function vagarSlass(u: Uppstallning): number {
   const st = nyStrid(u, 1), h = hotet(st);
-  return clamp(Math.min(...st.kampar.map(k => modMed(k, h, false) - STRID.avsta)) / (1 - STRID.avsta), 0, 1);
+  return clamp(Math.min(...st.kampar.map(k => modMed(k, h) - STRID.avsta)) / (1 - STRID.avsta), 0, 1);
 }
 // den som kan kasta (steg 3.7.7): håller avståndet och kastar. Den som nåtts av en fiende backar om hen är snabbare, byter
 // annars till reservvapnet eller slår med det hen har (och minns att hen saknade en reserv). Spjutet kastas bara av den som
@@ -970,7 +970,7 @@ export function stridSteg(st: Strid) {
     if (!iStrid(k)) continue;
     if (k.overraskad && (k.overraskad -= dt) > 0) continue; // har inte märkt något än (steg B.30)
     k.overraskad = undefined;
-    const mod = avs.lek ? k.modNu : modMed(k, hot, slagits); // leken följer inte hotet
+    const mod = avs.lek ? k.modNu : modMed(k, hot); // leken följer inte hotet
     const ger = avs.modSlut === 'ge' || (avs.kuva && k.sida === 1); // den som möter den som kuvar ger upp (steg 11.12.6)
     if (!avs.lek && !slagits && sortAv(k).avstar && mod < STRID.avsta) { falla(st, k, ger ? 'ger' : 'flykt', 'avstar'); continue; } // drar sig undan utan strid
     if (mod <= 0) { falla(st, k, ger ? 'ger' : 'flykt'); continue; }

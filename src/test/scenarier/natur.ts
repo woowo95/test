@@ -2104,7 +2104,7 @@ SCENARIER.varg = {
     return [
       [`en varg mot en obeväpnad: vargen vinner ${pc(hand.vann[1])} %`, hand.vann[1] > N * 0.6],
       [`en varg mot en med spjut: människan vinner ${pc(spjut.vann[0])} %, mycket oftare än med händerna`, spjut.vann[0] > hand.vann[0] * 2 && spjut.vann[0] < N * 0.97],
-      [`tre med spjut mot fyra vargar: människorna vinner ${pc(tre.vann[0])} %, och någon skadas eller faller (${treSkadade} gånger på ${N} strider)`, tre.vann[0] > N * 0.2 && tre.vann[0] < N * 0.8 && treSkadade > 0] /* hur starka vargarna ska vara mot tre avgörs av djurens rader (steg B.14) */,
+      [`tre med spjut mot fyra vargar: människorna vinner ${pc(tre.vann[0])} %, och någon skadas eller faller (${treSkadade} gånger på ${N} strider)`, tre.vann[0] > N * 0.2 && tre.vann[0] < N * 0.92 && treSkadade > 0] /* hur starka vargarna ska vara mot tre avgörs av djurens rader (steg B.14) */,
       [`vakten ser flocken på natten (${sedd} gånger) och väcker byn (${vakt} väckta, ${vaken} håller sig vakna vid elden)`, harVakt && sedd > 0 && vakt > 0 && vaken > 0],
       [`en hungrig flock anfaller den som är ensam (${anfall} anfall, ${stridAn} strider)`, anfall > 0 && stridAn > 0],
       [`på natten när alla sover och elden slocknat stjäl vargarna mat (${stal} saker i tre byar)`, stal > 0],

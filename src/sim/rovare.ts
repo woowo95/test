@@ -87,13 +87,13 @@ export const ROVARE = balans('rovare', {
   horhall: 30, // den som varnar hörs så här många rutor (gånger LARM.natt på natten): hörhållet är stort (steg 10.1.12) ...
   varnaSek: 4, // ... och att varna tar så här många sekunder
   ser: 3, serSkog: 0.5, // den som är vaken, ute och har gänget inom synhåll upptäcker det så här många gånger per minut på halva synhållet: oftare ju närmare, vid synhållets kant inte alls (steg B.57), och gånger serSkog när gänget går i skog
-  fackelSer: 0.7, // på natten syns ett gäng med en tänd fackla så här långt jämfört med på dagen (lågan syns långt i mörkret, steg B.64: förut 0,5, och bara hälften av nattens gäng sågs före anfallet), annars gånger nattSer (steg 10.1.10)
+  fackelSer: 1, // på natten syns ett gäng med en tänd fackla så här långt jämfört med på dagen (eldsken i mörkret syns långt, steg B.64), annars gånger nattSer (steg 10.1.10)
   moter: 6, // en rövare och den som står emot börjar slåss när de är så här nära varandra (rutor) ...
   slaIvagen: 0.5, hotaPoang: 0.6, taBordaPoang: 0.8, // ... och den som inte står emot men är så nära: den aggressiva slår (gånger aggressionen / 10), den modiga hotar (gånger modet / 10), och den som har plats tar det hen bär (steg 10.2.26)
   slaOvetande: 0.5, // ... och så mycket mer mot den som inte vet om gänget: hen kan överraskas (steg B.57)
   slaMod: 0.5, slaHot: 0.6, // viljan att slå: per tio steg mod över 10, och minus detta per gång fler som står emot än de själva
   hotVapen: 2, // i hotet räknas var och en som 1 + detta gånger vapnets skada
-  flyBlod: 2.5, flyHot: 0.8, flyDoda: 1.2, // viljan att fly: blodet hen förlorat, övermakten hen ser (mindre för den modiga) och delen av flocken som är borta
+  flyBlod: 2.5, flyHot: 0.2, flyDoda: 0.4, // viljan att fly: blodet hen förlorat, övermakten hen ser (mindre för den modiga) och delen av flocken som är borta
   platsAvst: 10, // platserna att plundra väljs efter värdet delat med avståndet plus så här många rutor (steg 13.1.5) ...
   platsMin: 3, // ... och en plats där det som ligger är värt mindre än så här är inte värd besväret
   taSek: 12, // så många sekunder tar det att ta en sak ur förrådet (steg 10.1.15): tiden följer hur mycket det finns att ta
