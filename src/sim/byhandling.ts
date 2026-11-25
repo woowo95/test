@@ -376,6 +376,7 @@ export function radHandlarSort(s: State, r: VarldRad): string {
   for (const [id, d] of Object.entries(HANDLARSORTER)) if (per >= d.rik && (!d.djur || djur) && (!d.tek || r.tek.includes(d.tek))) ut = id;
   return ut;
 }
+handlarKrok.person = (s, f, i) => fardPerson(s.varld!, f, i); // följets namn (steg B.39)
 handlarKrok.sorter = s => { const vl = s.varld, h = vl && radNr(vl, vl.huvud); return vl && h ? radGrannar(vl, h).filter(r => r.syn).map(r => radHandlarSort(s, r)) : []; };
 // lasten ur byns rad (steg 11.6.9, Flera samhällen: Det som kommer till huvudbyn kommer ur en rad): när byn skickar sin handlare
 // dras varorna ur HANDLARVAROR bland det byns tekniker kan göra (sakens tek), högst det byn har över i sakens varugrupp

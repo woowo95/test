@@ -1,5 +1,4 @@
 import { bestamd, han, heltOrd, honom, stor, tal } from './ord';
-import { fardPerson } from './fardfolk';
 import { gastensPlatser, horOmGast, kannerOrt, kartaBorta, O_KANT, ORT, radBesoker } from './ort';
 import { SKRIFT } from './skriftTal';
 import { NORMAL } from './kvalitet';
@@ -358,7 +357,7 @@ function kommer(s: State, tvinga?: boolean, rad?: number) {
   const hpers = nyGast(s, { id: h.id, namn: kh.person.namn, sex, fodd, rad: { sort: 'handlare', klan: kh.klan.id, hem: kh.klan.hem }, x: ut.x, y: ut.y, nyckel, skill: { handel: heltMellan(s, HANDEL.handel) } });
   s.people.push(hpers);
   gastTillbaka(s, hpers); // samma person som förra gången, om hen varit här (steg 9.2.114)
-  if (h.vagnar) karavanFolje(s, h, kh.klan.id, kh.klan.hem, (last?.folk ?? 1) - 1, mal, ut, i => fard && fardPerson(s.varld!, fard, i + 1)); // följet och lägret (steg 11.11.6)
+  if (h.vagnar) karavanFolje(s, h, kh.klan.id, kh.klan.hem, (last?.folk ?? 1) - 1, mal, ut, i => fard && handlarKrok.person(s, fard, i + 1)); // följet och lägret (steg 11.11.6)
   if (s.varld?.huvud !== undefined) { const hb = byPlats(s.varld, s.varld.huvud); if (hb) radBesoker(s.varld, kh.klan.rad, hb.nr); trampaFard(s, kh.klan.rad, s.varld.huvud, sallskapTyngd(last?.folk ?? 1)); } // handlarens by har besökt huvudbyn (steg 11.4.10), och hen trampade vägen (steg 11.5.1)
   gastensPlatser(s, hpers); // det hens by känner (steg 11.4.11); handlaren själv, inte den sista i följet (steg 12.1.64)
   h.varor = last ? last.varor : packa(s, rymmer(h));
@@ -394,7 +393,7 @@ function handlarKarta(s: State, h: Handlare) {
 // handlaren från byn rad har kommit fram till kartans kant (byhandling.ts, steg 11.6.8) och går in när det är fritt
 export function handlarFram(s: State, rad: number) { (s.handlarVantar ??= []).push(rad); }
 // handlaren har gått från byn: färden hem på världskartan börjar (krok, så att handel.ts inte laddar byhandling.ts)
-export const handlarKrok = { hem: (_s: State, _rad: number, _last?: HandlarLast) => {}, borta: (_s: State, _rad: number) => {}, sorter: (_s: State): string[] => [] }; // borta: hen dog i byn; last: det hen bär hem; sorter: de sorter grannbyarna skulle skicka (steg 11.6.10)
+export const handlarKrok = { person: (_s: State, _f: import('./byhandling').RadFard, _i: number): { namn: string; sex: 'm' | 'k' } | undefined => undefined, hem: (_s: State, _rad: number, _last?: HandlarLast) => {}, borta: (_s: State, _rad: number) => {}, sorter: (_s: State): string[] => [] }; // borta: hen dog i byn; last: det hen bär hem; sorter: de sorter grannbyarna skulle skicka (steg 11.6.10)
 const handlarHem = (s: State, rad: number, h?: Handlare) => handlarKrok.hem(s, rad, h ? handlarHemLast(h) : undefined);
 const handlarBorta = (s: State, h: Handlare) => { const kl = hp(s, h).gast?.klan, rad = kl !== undefined ? klanById(s, kl)?.rad : undefined; if (rad !== undefined) handlarKrok.borta(s, rad); foljetGar(s, h); };
 

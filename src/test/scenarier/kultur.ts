@@ -13,7 +13,7 @@ import { setByn, ui } from '../../ui/lage';
 import { station as stationFlik } from '../../ui/flikar/station';
 import { person as personFlik } from '../../ui/flikar/person';
 import { kronika as kronikaFlik, val as kronikaVal } from '../../ui/flikar/kronika';
-import { styre as styreFlik } from '../../ui/flikar/styre';
+import { styre as styreFlik, valAndelar } from '../../ui/flikar/styre';
 import { seder as sederFlik } from '../../ui/flikar/seder';
 import { religion as religionFlik } from '../../ui/flikar/religion';
 import { teknik as teknikFlik } from '../../ui/flikar/teknik';
@@ -1089,6 +1089,33 @@ SCENARIER.omrostning = {
       ['samma fråga läggs inte fram två gånger', iKo === 1],
       ['frågan avgörs vid elden och ett ja gör det raden säger', satt],
       [`omröstningen sparar vad som ändras, från vad och till vad (${JSON.stringify(o.andr)}, steg 11.1.28)`, o.andr?.k === 'pabud:matlager' && o.andr.fran === 0 && o.andr.till === 0.9],
+    ];
+  },
+};
+SCENARIER.ledarandel = {
+  text: 'Steg B.40: när byn väljer en ny ledare sparas varje kandidats andel av de vägda rösterna; fliken visar kandidaterna i procent, den som vann först, och ett tryck visar vem som röstade på vem. Ett äldre val utan andelar visar bara vinnaren',
+  kor: () => {
+    utanWebblasare();
+    const s = createState(6, START), v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), [a, b, c] = v;
+    satLedare(s, c!); s.styre.roster = [];
+    for (const p of v) { p.tek ??= {}; if (p === a || p === b) p.tek.ledarskap = 1; else delete p.tek.ledarskap; }
+    // alla utom den sista gillar a, den sista och b röstar på b
+    for (const p of v) for (const q of [a!, b!]) if (p !== q) { const k = SIM.relKey(p.id, q.id); s.rels[k] = { ...(s.rels[k] ?? { chem: 0, talks: 1, last: 0, irr: 0 }), op: (q === a) === (p !== v[v.length - 1] && p !== b) ? 90 : -90 } as never; }
+    s.rels[SIM.relKey(a!.id, b!.id)]!.op = -50;
+    const vann = SIM.rostval(s, v);
+    const o = s.styre.roster![0]!, summa = (o?.andelar ?? []).reduce((n, x) => n + x.a, 0);
+    const ur = (id: number) => o.roster.filter(r => r.pa === id).reduce((n, r) => n + r.w, 0) / o.roster.reduce((n, r) => n + r.w, 0);
+    setByn(s); ui.styreDel = 'styre';
+    const rad = styreFlik.html(), namn = (id: number) => SIM.byId(s, id)!.name;
+    const tryck = (id: string) => hjalpKlick({ closest: () => ({ dataset: { hjalp: id, hjalpGrupp: id.slice(0, id.indexOf('-') + 1) } }) } as unknown as HTMLElement);
+    tryck(`rost-${o.t}-${o.f}-${o.fram}`);
+    const lista = styreFlik.html().match(/<ul class="roster">([\s\S]*?)<\/ul>/)?.[1] ?? '';
+    return [
+      [`andelarna sparas med vinnaren först (${o.andelar?.map(x => `${x.namn} ${Math.round(x.a * 100)} %`).join(', ')})`, o.andelar?.length === 2 && o.andelar[0]!.id === vann?.id && Math.abs(summa - 1) < 1e-9],
+      ['andelen är de vägda rösterna', o.andelar!.every(x => Math.abs(x.a - ur(x.id)) < 1e-9)],
+      ['raden i fliken visar procenten', rad.includes(`Ny ledare: ${o.andelar!.map(x => `${x.namn} ${Math.round(x.a * 100)} %`).join(', ')}`)],
+      ['utfälld står vem varje person röstade på', o.roster.every(r => lista.includes(`${r.namn}`) && lista.includes(`<span class="muted">${namn(r.pa!)}</span>`))],
+      ['ett äldre val visar vinnaren', valAndelar({ ...o, andelar: undefined }) === o.framNamn],
     ];
   },
 };

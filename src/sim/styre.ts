@@ -353,7 +353,7 @@ function arvinge(s: State, vuxna: Person[]) {
   const barn = vuxna.filter(c => isParent(forra, c) && kanLeda(s, c)).sort((a, b) => a.born - b.born)[0];
   return barn ?? vuxna.filter(c => isKin(forra, c) && kanLeda(s, c)).sort((a, b) => a.born - b.born)[0];
 }
-function rostval(s: State, vuxna: Person[]) {
+export function rostval(s: State, vuxna: Person[]) {
   // var och en röstar efter vänskap och karisma, och vikten avgör (registret FRAGOR: ledaren finns inte där, utfallet sparas som en omröstning)
   const kand = vuxna.filter(c => kanLeda(s, c));
   if (!kand.length) return undefined;
@@ -362,12 +362,13 @@ function rostval(s: State, vuxna: Person[]) {
     let b = kand[0], bv = -Infinity;
     for (const c of kand) { const x = (c === p ? LED.egenRost : (s.rels[relKey(p.id, c.id)]?.op ?? 0)) + stat(c, 'karisma', s.now) * LED.karisma; if (x > bv) { bv = x; b = c; } }
     summa.set(b.id, (summa.get(b.id) ?? 0) + andel);
-    roster.push({ id: p.id, namn: p.name, w: andel, ja: true, why: `Röstade på ${b.name}` });
+    roster.push({ id: p.id, namn: p.name, w: andel, ja: true, why: `Röstade på ${b.name}`, pa: b.id });
   }
   let best = kand[0], bs = -1;
   for (const c of kand) { const x = summa.get(c.id) ?? 0; if (x > bs) { bs = x; best = c; } }
-  const st = styreAv(s);
-  (st.roster ??= []).push({ t: s.now, f: 'ledare', namn: 'Ny ledare', fram: best.id, framNamn: best.name, roster, ja: bs, nej: 1 - bs, gick: true });
+  const st = styreAv(s), tot = [...summa.values()].reduce((a, x) => a + x, 0) || 1;
+  const andelar = kand.map(c => ({ id: c.id, namn: c.name, a: (summa.get(c.id) ?? 0) / tot })).filter(x => x.a > 0 || x.id === best.id).sort((a, b) => Number(b.id === best.id) - Number(a.id === best.id) || b.a - a.a);
+  (st.roster ??= []).push({ t: s.now, f: 'ledare', andelar, namn: 'Ny ledare', fram: best.id, framNamn: best.name, roster, ja: bs, nej: 1 - bs, gick: true });
   if (st.roster.length > ROST.sparas) st.roster.splice(0, st.roster.length - ROST.sparas);
   return best;
 }

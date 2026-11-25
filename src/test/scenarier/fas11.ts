@@ -1140,7 +1140,7 @@ SCENARIER.radledare = {
       [`egenskaperna är en bybos (1–20): ${SIM.STATS.slice(0, 4).map(k => `${k} ${Math.round(eg[k])}`).join(', ')} …`, egOk],
       [`ledarna blir som byborna gamla: median ${Math.round(median)} år (fjärdedelarna ${Math.round(aldrar[100])}–${Math.round(aldrar[300])})`, median > 50 && median < 90 && aldrar[0] >= SIM.RADPERSON.ledareFran],
       [`varje by som ska ha en ledare har en efter en timme (${med.length} byar), och den första är hövdingen huvudbyn känner (${l0.namn})`, alla && !!hovding && hovding.namn === l0.namn],
-      [`ledaren byts när hen dör (${l0.namn} → ${l1?.namn}), vid den kända tiden, och världens krönika får Ny ledare`, !!l1 && l1.nyckel !== l0.nyckel && l1.fodd < s.now && krona && r.fasta.length === 1],
+      [`ledaren byts när hen dör (${l0.namn} → ${l1?.namn}), vid den kända tiden, och världens krönika får Ny ledare`, !!l1 && l1.nyckel !== l0.nyckel && l1.fodd < s.now && krona && r.fasta.filter(x => x.roll === 'ledare').length === 1],
       [`den nya ledaren är hövding i huvudbyns förbindelse (${nyH.map(q => q.namn).join(', ')})`, nyH.length === 1 && nyH[0].namn === l1?.namn],
     ];
   },
