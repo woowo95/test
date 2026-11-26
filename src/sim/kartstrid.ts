@@ -314,7 +314,7 @@ function kartStridSlut(s: State, g: KartStrid) {
     EFTER[g.efter.typ]?.(s, g.efter, vinnare, g);
     return;
   }
-  if (skiljare) log(s, `${namn(0)} och ${namn(1)} slogs (${g.orsak}). ${skiljare.name} gick emellan, och de slutade.`, 'rel', [...ids, skiljare.id]);
+  if (skiljare) log(s, `${lista([...sidor[0], ...sidor[1]].map(loggNamn))} slogs (${g.orsak}). ${skiljare.name} gick emellan, och de slutade.`, 'rel', [...ids, skiljare.id]);
   else if (!lek) stridRad(s, st, namn, g.orsak, ids);
   for (const k of st.kampar) {
     const p = personAv(s, k); if (!p || p.died !== undefined) continue;
