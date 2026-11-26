@@ -94,12 +94,15 @@ SCENARIER.foretag = {
   text: 'Steg 14.1.5: ett företag är en ägare, ett hus och verksamheter utan egen kassa; det startas när det lönar sig, huset byggs med byggsystemet och företaget följer huset när det ärvs',
   kor: () => {
     const s = SIM.cloneState(testBy(25, naraGranne));
-    s.foretag = [];
-    const vux = SIM.living(s).filter(q => !q.gast && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), kan = (q: typeof vux[number]) => SIM.startPoang(s, q.id, ['servering']).poang;
-    const p = [...vux].sort((x, y) => kan(y) - kan(x))[0], arvinge = vux.find(q => q !== p)!;
+    s.foretag = []; s.foretagLart = undefined; // inga företag, och inget byn lärt sig av ett som stängts (stangning.ts) i den sparade byn
+    const vux = SIM.living(s).filter(q => !q.gast && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
+    const fin = SIM.FOOD.find(k => SIM.maltidsNiva(k) === 'fin')!;
+    // ägaren är den som det lönar sig mest för när maten och kunderna finns (prövat i en kopia av byn)
+    const prov = SIM.cloneState(s); for (const q of vux) SIM.laggIn(prov, 'silver', 200, q.id);
+    const kan = (q: typeof vux[number]) => { const c = SIM.cloneState(prov); SIM.laggIn(c, fin, 400, q.id); return SIM.startPoang(c, q.id, ['servering']).poang; };
+    const p = [...vux].map(q => ({ q, v: kan(q) })).sort((x, y) => y.v - x.v)[0].q, arvinge = vux.find(q => q !== p)!;
     const spara = JSON.stringify(s.foretag), utan = SIM.startPoang(s, p.id, ['servering']);
     // gott om mat som är god nog, och kunder som kan betala
-    const fin = SIM.FOOD.find(k => SIM.maltidsNiva(k) === 'fin')!;
     SIM.laggIn(s, fin, 400, p.id);
     for (const q of vux) SIM.laggIn(s, 'silver', 200, q.id);
     const med = SIM.startPoang(s, p.id, ['servering']), b = SIM.bastaStart(s);
@@ -176,6 +179,8 @@ export function foretagBy(verk = ['servering'], silver = 60) {
   s.stationer = s.stationer!.filter(t => !i.has(t.y * W + t.x));
   s.lagren = (s.lagren ?? []).filter(z => !i.has(z.y * W + z.x));
   s.stackar = (s.stackar ?? []).filter(a => !i.has(Math.floor(a.y) * W + Math.floor(a.x)));
+  // golvet är städat: den sparade byn kan ha blod och toa-fläckar i rummet, och det enkla rummet är det scenarierna prövar (städningen prövas i stada)
+  s.flackar = (s.flackar ?? []).filter(q => !i.has(q.i)); s.blod = (s.blod ?? []).filter(b => !i.has(Math.floor(b.y) * W + Math.floor(b.x)));
   const stall = (k: string, x: number, y: number) => { const t = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x, y, kvar: 0, inne: 1 } as unknown as SIM.Station; s.stationer!.push(t); SIM.touch(s); return t; };
   const ok = (x: number, y: number) => [0, 1].every(d => i.has(y * W + x + d));
   const d0 = r.tiles.find(t => ok(t % W, Math.floor(t / W)) && i.has(t + W) && i.has(t + W + 1))!;
@@ -185,7 +190,7 @@ export function foretagBy(verk = ['servering'], silver = 60) {
   const fin = SIM.FOOD.find(k => SIM.maltidsNiva(k) === 'fin')!;
   SIM.laggIn(s, fin, 300, p.id);
   for (const q of vux) if (q !== p) SIM.laggIn(s, 'silver', silver, q.id);
-  s.foretag = []; const f = SIM.starta(s, p.id, verk); SIM.foretagTimme(s);
+  s.foretag = []; const f = SIM.starta(s, p.id, verk); SIM.foretagTimme(s); SIM.finhetTimme(s);
   return { s, p, f, h, r, disk, fin, vux: vux.filter(q => q !== p && !SIM.familjOf(s, p.id).includes(q)) };
 }
 
@@ -325,6 +330,9 @@ SCENARIER.konkurrens = {
     satt(0.9, 0.1); f.pris = { servering: 1 }; const fint = [val(f), val(f2)];
     // den kräsne går till det fina och dyra, den som inte väntar sig något till det billiga
     satt(0.95, 0.15); f.pris = { servering: 2 }; f2.pris = { servering: 0.8 };
+    // kunderna har ingen egen mat över (den sparade byn kan ha gett dem mycket, och då är en måltid värd hälften för alla)
+    const ids = new Set(vux.map(q => String(q.id)));
+    s.stackar = (s.stackar ?? []).map(a => a.ag && SIM.FOOD.includes(a.k) ? { ...a, ag: Object.fromEntries(Object.entries(a.ag).filter(([id]) => !ids.has(id))) } : a);
     vux.forEach((q, i) => { q.finForv = i % 2 ? 0.55 : 0.05; });
     const nisch = [val(f), val(f2)];
     // priset: köper alla går det upp, avstår alla går det ner

@@ -381,13 +381,14 @@ export function utgang(s: State, sl: Sallskap): Utgang | undefined {
   const d = sx > 0 ? W - 1 - c.x : sx < 0 ? c.x : sy > 0 ? H - 1 - c.y : c.y;
   // samlingsplatsen är den första platsen utanför byn på linjen som går att gå till från byns mitt, inte en udde på andra
   // sidan en sjö som ingen når. En sträcka land på linjen som inte går att nå prövas en gång
-  const g = groundOf(s);
+  // vägen räknas från en fri ruta vid byns mitt: står ett hus eller en station mitt i byn går ingen väg därifrån
+  const g = groundOf(s), fran = freeNear(s, c.x, c.y);
   let samla: { x: number; y: number } | undefined, onad = false;
   for (let n = 0; n <= d && !samla; n++) {
     const x = c.x + sx * n, y = c.y + sy * n;
     if (blocked(s, x, y)) { onad = false; continue; }
     if (onad || utanforByn(s, x, y) < 1) continue;
-    if (findPath(g, c.x, c.y, x, y)) samla = { x, y }; else onad = true;
+    if (findPath(g, fran.x, fran.y, x, y)) samla = { x, y }; else onad = true;
   }
   return { samla: samla ?? freeNear(s, c.x + sx * d, c.y + sy * d), kant: freeNear(s, c.x + sx * d, c.y + sy * d) };
 }

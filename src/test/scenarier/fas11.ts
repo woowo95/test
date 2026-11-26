@@ -2076,10 +2076,12 @@ SCENARIER.sallskapfast = {
     const sover = (s: SIM.State, q: SIM.Person) => () => { if (q.task?.act !== 'sova') q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: s.now + 12 * SIM.HOUR, carry: 0, dark: false, why: 'Sover' }; };
     // 1. ledaren kommer aldrig: den andra tar över och sällskapet packar
     const s1 = SIM.cloneState(s0), a1 = s1.people.find(q => q.id === vuxna[0]!.id)!, b1 = s1.people.find(q => q.id === vuxna[1]!.id)!;
+    a1.task = b1.task = undefined; // ledaren väljer att samla när hen är ledig, och den som följer med lämnar det hen gjorde
     const sl1 = SIM.samlaResa(s1, a1, plan)!; SIM.foljMed(s1.varld!, sl1, b1);
     korTills(s1, () => sl1.skede !== 'samlas' || !s1.varld!.sallskap!.includes(sl1), 3 * 3600, sover(s1, a1));
     // 2. en kommer aldrig medan sällskapet packar: sällskapet går utan hen
     const s2 = SIM.cloneState(s0), a2 = s2.people.find(q => q.id === vuxna[0]!.id)!, b2 = s2.people.find(q => q.id === vuxna[1]!.id)!;
+    a2.task = b2.task = undefined; // ledaren väljer att samla när hen är ledig, och den som följer med lämnar det hen gjorde
     const sl2 = SIM.samlaResa(s2, a2, plan)!; SIM.foljMed(s2.varld!, sl2, b2);
     korTills(s2, () => sl2.skede !== 'samlas', 3 * 3600);
     const packade2 = sl2.skede === 'packar';
@@ -2087,6 +2089,7 @@ SCENARIER.sallskapfast = {
     korTills(s2, () => sl2.skede === 'ute' || !s2.varld!.sallskap!.includes(sl2), 4 * 3600, packade2 ? sover(s2, b2) : undefined);
     // 3. ingen kommer: den ena kommer aldrig, och ledaren dör när hen packat. Resan ställs in, och packningen läggs på samlingsplatsen
     const s3 = SIM.cloneState(s0), a3 = s3.people.find(q => q.id === vuxna[0]!.id)!, b3 = s3.people.find(q => q.id === vuxna[1]!.id)!;
+    a3.task = b3.task = undefined; // ledaren väljer att samla när hen är ledig, och den som följer med lämnar det hen gjorde
     const sl3 = SIM.samlaResa(s3, a3, plan)!; SIM.foljMed(s3.varld!, sl3, b3);
     korTills(s3, () => Object.keys(sl3.pack).length > 0 || !s3.varld!.sallskap!.includes(sl3), 4 * 3600, sover(s3, b3));
     const packat3 = Object.values(sl3.pack).reduce((a, n) => a + n, 0);
