@@ -774,6 +774,9 @@ export function iPlatsMinne<T>(q: string, f: () => T): T {
 }
 const siteLogi = (s: State, k: string) => (r => r && siteInne(s, k, r))(foretagBord.baddRum(s)); // nattlogiets bädd (steg 14.1.12), efter byborna som saknar en
 const sokSite = (s: State, k: string, p?: Person) => moblerKrok.stugaSite(s, k) ?? (k === 'halmbadd' && !utanBadd(s) ? siteLogi(s, k) : undefined) ?? sokSite0(s, k, p) ?? (k === 'halmbadd' ? siteLogi(s, k) : undefined); // sjukstugans bädd och hylla (steg 13.1.14, mobler.ts)
+// stationen ställs efter den allmänna regeln för det som står inne (sista grenen i sokSite0): byns stationer, inte det som har en
+// egen plats (disken, varubordet, krubban, borden, bäddarna, förvaringen, pyntet). Ett företags hus tar inte emot dem (iVagen)
+const allmanInne = (k: string) => { const d = stationDef(k); return !!d?.inne && !(d.vagga || d.varmer || d.ersatter || d.hage || d.tro || d.disk || d.vara || d.fahus || d.langhus || d.platser || d.sover || d.forvar || d.pynt || d.golv || d.brasa || d.eld || d.utkant || k === 'scen'); };
 // disken och varubordet står bara i ett företags rum (siteSal): finns inget sådant rum med plats finns ingen plats för dem.
 // Ett företags hus är företagets: byns andra stationer ställs inte där (bara det företaget tar emot, siteSal)
 const sokSite0 = (s: State, k: string, p?: Person) => stationDef(k)?.vagga || stationDef(k)?.varmer ? (r => r && siteInne(s, k, r))(stationDef(k)?.vagga ? moblerKrok.vaggaRum(s) : moblerKrok.fyrfatRum(s)) : stationDef(k)?.ersatter ? moblerKrok.site(s, k, p) : stationDef(k)?.hage ? siteHo(s) : stationDef(k)?.tro ? siteTro(s, k, p) : stationDef(k)?.disk || stationDef(k)?.vara ? siteSal(s, k, p) : siteSal(s, k, p) || (stationDef(k)?.forvar?.privat || stationDef(k)?.pynt ? p && siteKista(s, k, p) : stationDef(k)?.brasa ? siteBrasa(s) : stationDef(k)?.eld ? siteEld(s) : stationDef(k)?.forvar ? siteForvar(s, k) : stationDef(k)?.utkant ? somUtanLager(() => siteUte(s, k, sokUtkant, 'utkant:' + k)) : stationDef(k)?.inne ? siteInne(s, k, undefined, h => farBygga(s, h, p) && h?.fn !== 'naringshus') : somUtanLager(() => siteUte(s, k)));
@@ -1756,18 +1759,20 @@ function stangerGolv(s: State, t: Station) {
   const d = stationDef(t.k), r = stationRum(s, t);
   return !!r && !d?.golv && !golvNas(s, r) && utan(s, t, () => golvNas(s, r));
 }
+// en av byns stationer i ett företags hus (ställd där innan företagets hus hölls åt företaget, steg 14.1.6)
+const iForetag = (s: State, t: Station) => t.inne && allmanInne(t.k) && husAv(s, t)?.fn === 'naringshus';
 function iVagen(s: State) {
   const fram = framRutor(s);
   const t = [...stationerOf(s)].reverse().find(t => { // den senast byggda först: när två saker tillsammans stänger in golvet står den senare fel
     const d = stationDef(t.k);
     if (!d || !isKlar(t) || d.eld || d.brasa || d.forvar && !iIngangen(s, t)) return false;
     const { w, h } = storlekAv(t), rutor = rutorAv(t.x, t.y, w, h);
-    if (!rutor.some(q => fram.has(q.y * W + q.x)) && !iIngangen(s, t) && !(arbetar(d) && !framLand(s, t.x, t.y, w, h)) && !(t.inne && stangerGolv(s, t))) return false;
+    if (!rutor.some(q => fram.has(q.y * W + q.x)) && !iIngangen(s, t) && !(arbetar(d) && !framLand(s, t.x, t.y, w, h)) && !(t.inne && stangerGolv(s, t)) && !iForetag(s, t)) return false;
     return !living(s).some(q => arbetarVid(t, q)) && !living(s).some(p => rutor.some(q => q.x === Math.floor(p.x) && q.y === Math.floor(p.y)));
   });
   if (!t) return;
   const d = stationDef(t.k)!, { w, h } = storlekAv(t);
-  const var_ = rutorAv(t.x, t.y, w, h).some(q => fram.has(q.y * W + q.x)) ? 'där man arbetar vid en bänk' : arbetar(d) && !framLand(s, t.x, t.y, w, h) ? 'så att man fick stå i vattnet' : iIngangen(s, t) ? 'i ingången' : 'så att man inte kom fram i huset';
+  const var_ = iForetag(s, t) ? 'i ett företags hus' : rutorAv(t.x, t.y, w, h).some(q => fram.has(q.y * W + q.x)) ? 'där man arbetar vid en bänk' : arbetar(d) && !framLand(s, t.x, t.y, w, h) ? 'så att man fick stå i vattnet' : iIngangen(s, t) ? 'i ingången' : 'så att man inte kom fram i huset';
   const at = utan(s, t, () => stationSite(s, t.k, byId(s, t.ag)));
   count(s, 'station i vägen');
   if (t.k === 'scen') { rivStation(s, t, `Scenen revs eftersom den stod ${var_}.`); return; } // scenen bärs aldrig (steg 8.1.16)
