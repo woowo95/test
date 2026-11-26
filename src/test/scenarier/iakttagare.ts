@@ -131,6 +131,8 @@ for (const [ks, why] of [
   [['kal', 'bonor', 'kalfron', 'appel', 'appelplanta', 'levfar'], 'kålen, bönorna, äppelträdet och fåren (steg 9.7.8, 9.7.13 och 9.8.5) kommer med handlaren, och byn köper dem inte alltid inom 35 dygn; scenarierna grodor, flerarig och boskap prövar dem'],
   [['hamla', 'lovkarve'], 'lövtäkten (steg 9.8.16) kräver betesdjur och för lite hö; scenariot hamla prövar den'],
   [['kompost'], 'gödseln (steg 9.7.6) är en teknik på nivå 5 som byn kommer på av sig själv efter odlingen och latrinen, när resterna legat på sophögen, och inte i alla byar på 50 dygn; scenarierna kompost och kompostfalt prövar den'],
+  [['koaDisk', 'betjana'], 'disken (steg 14.1.6) väger in ägarens förtjänst, men i de små testbyarna går virket och tiden på 50 dygn till lagningen av husen, saften och det andra som väger mer, så ingen disk hinner byggas; gränsen för nya system mäts i fasens Balans (24 byar, steg 14.2.5), och scenarierna kassa och anstalld prövar den'],
+  [['latrin'], 'tekniken latrin (nivå 4) kräver benspaden, som görs sent eller inte alls på 50 dygn (se benspade); scenariot latrin prövar den'],
   [['kokgrop'], 'kokgropen (steg 10.7.28) är en teknik på nivå 4 som byn prövar sig fram till efter lerkrukan, och inte i alla byar på 50 dygn; scenariot festmaltid prövar den'],
   [['tomma_latrin'], 'latrinen töms (steg 9.7.6) bara när byn har en kompost och latrinen är nästan full; scenariot kompost prövar det'],
   [['krossa_saft'], 'saften (steg 9.6.9) kräver lerkrukan; scenariot saft prövar den'],
