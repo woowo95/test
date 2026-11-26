@@ -253,3 +253,8 @@
 ## 12.1.229 (kylan, grenen par-kylan sammanslagen med varld)
 
 - Mätt på Macen med 8 byar i 35 dygn på 61c11aac: tre dör ut, 8 döda av kyla, inga vaktlarm. Ändrar byarna (gömstället, veden för den som fryser, småbarnen, var stationer och högar läggs): skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit. Scenarierna fullaforrad och lager var röda på varld redan före sammanslagningen (515efcd9).
+
+## Fas 14.2 Balans (pausad, kedjan på 13dc4209)
+
+- Koll: 1029 av 1034 scenarier OK. Röda: sallskapfast, foretag, anstalld, kassa (kraschar) och konkurrens. Rättas först, sedan `npm run riktad -- --mot 13dc4209 --roda`. Likhet: grön, 4 av 4 byar exakt lika.
+- Kvar att köra: `npm run kedja -- "npm run -s balans -- 24 35" "npm run -s jamfor -- 35 64 --mot v539" "TESTDYGN=90 npm test" "npm run -s dynamik"`. Sedan hela kedjan en gång på versionen som publiceras, och sedan 14.2.2 (granska).
