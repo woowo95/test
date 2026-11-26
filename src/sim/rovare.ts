@@ -9,7 +9,7 @@ import { isParent, ALDER, KROPP, ageOf, alive, byId, count, isSick, living, log,
 import { halsa, horsel, kanGa } from './halsa';
 import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
-import { Klan, klanById, klanerOf } from './klaner';
+import { Klan, kandIgen, klanById, klanerOf } from './klaner';
 import { klanHandelse } from './byrel';
 import { kantMot } from './grannbyar';
 import { addTo, amountOf, avbryt, carryKind, dropLoad, isCarrying, zoneAt, zoneOf, zonesOf } from './lager';
@@ -182,7 +182,8 @@ export function rovarnaKommer(s: State, tvinga: number, direkt?: boolean, klan?:
   const n = tvinga;
   const folk: number[] = Array.from({ length: n }, (_, i) => { // gänget har ingen ledare (steg 10.2.25)
     const slump = rnd(s, 'rovare') < 0.5 ? 'm' as const : 'k' as const; // man eller kvinna som alla andra (steg 10.2.100)
-    const hem = vilka?.[i] ?? k?.personer.find(q => q.roll === 'rovare' && q.kropp); // en som flydde hem förra gången kommer igen (steg 9.2.114); slumpen dras ändå
+    const hem = vilka?.[i] ?? k?.personer.find(q => q.roll === 'rovare' && q.kropp) // en som flydde hem förra gången kommer igen (steg 9.2.114); slumpen dras ändå
+      ?? (k ? kandIgen(s, k, q => q.roll === 'rovare', ((s.rovarNr ?? 0) * 0.618 + i * 0.382) % 1) : undefined); // grannbyn har inte fler personer än sitt folk (steg 14.2.6)
     const sex = hem?.sex ?? slump;
     const namn = hem?.namn ?? makeName(s, sex, 'rovare'); // vapnet och kläderna kommer ur registret GASTUTRUSTNING (gast.ts, steg 10.1.8)
     const styrka = mellan(s, ROVARE.styrka), uthallighet = mellan(s, ROVARE.uthallighet), mod = mellan(s, ROVARE.mod), smidighet = mellan(s, ROVARE.smidighet), skick = mellan(s, ROVARE.skicklighet);

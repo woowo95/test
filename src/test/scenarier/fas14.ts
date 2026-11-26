@@ -589,3 +589,33 @@ SCENARIER.kopabuffert = {
     ];
   },
 };
+
+SCENARIER.grannfolk = {
+  text: 'Steg 14.2.6: en grannby har inte fler personer än sitt folk. När huvudbyn känner lika många därifrån som byn har, är nästa kund, handlare och rövare därifrån en som kommer igen, och världens del av sparfilen växer inte med tiden',
+  kor: () => {
+    const { s, f } = foretagBy(), k = SIM.klanerOf(s).find(q => q.rad !== undefined)!;
+    for (const q of SIM.living(s)) q.task = undefined;
+    k.inst = 0;
+    // innan byn är full kommer nya personer
+    k.folk = k.personer.length + 5;
+    const fore = k.personer.length;
+    for (let i = 0; i < 12; i++) { const g = SIM.nyForetagsgast(s, f, k, 'vanlig'); if (g) SIM.gastHemIgen(s, g); }
+    const vaxte = k.personer.length > fore;
+    // full: lika många kända som folket
+    k.folk = k.personer.length;
+    const kanda = new Set(k.personer.map(q => q.namn)), n0 = k.personer.length;
+    const kunder: string[] = [];
+    for (let i = 0; i < 20; i++) { const g = SIM.nyForetagsgast(s, f, k, 'vanlig'); if (g) { kunder.push(g.name); SIM.gastHemIgen(s, g); } }
+    const handlare = Array.from({ length: 10 }, () => SIM.klanHandlare(s, k).person.namn);
+    const rovNr = SIM.living(s).length;
+    SIM.rovarnaKommer(s, 4, true, k.id);
+    const rovare = s.people.filter(q => q.gast?.sort === 'rovare').map(q => q.name);
+    return [
+      [`innan grannbyn är full kommer nya personer därifrån (${fore} → ${n0})`, vaxte],
+      [`när alla är kända är kunderna sådana man känner (${kunder.filter(n => kanda.has(n)).length} av ${kunder.length})`, kunder.length > 0 && kunder.every(n => kanda.has(n))],
+      [`och handlarna (${handlare.filter(n => kanda.has(n)).length} av ${handlare.length})`, handlare.every(n => kanda.has(n))],
+      [`och rövarna (${rovare.filter(n => kanda.has(n)).length} av ${rovare.length}; ${rovNr} bybor)`, rovare.length > 0 && rovare.every(n => kanda.has(n))],
+      [`grannbyn har lika många personer som förut (${n0} → ${k.personer.length})`, k.personer.length === n0],
+    ];
+  },
+};

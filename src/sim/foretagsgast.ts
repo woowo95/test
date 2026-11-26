@@ -10,7 +10,7 @@ import { balans } from './balans';
 import { clamp, hash3 } from './slump';
 import { ALDER, count, log, makeName } from './folk';
 import { gastGar, gastLever, gastTillbaka, nyGast, nyttGastId } from './gast';
-import { klanById, klanerOf, KLAN, narhet, type Klan } from './klaner';
+import { kandIgen, klanById, klanerOf, KLAN, narhet, type Klan } from './klaner';
 import { kantMot } from './grannbyar';
 import { klanHandelse } from './byrel';
 import { gaMot } from './rovare';
@@ -83,7 +83,8 @@ export function nyForetagsgast(s: State, f: Foretag, k: Klan, rang?: RangId): Pe
   if (id === 'prast' && !r?.tro) id = 'rik'; // en by utan tro har ingen präst
   const roll = (RANG[id] as Rang).roll, har = k.personer.filter(q => roll ? roll.test(q.roll) : q.roll === 'kund' && q.kropp);
   if (id === 'hovding' && !har.length) id = 'rik';
-  const kp = har.length && (roll || u(2) < FGAST.igen) && !s.people.some(q => q.gast?.klan === k.id && har.some(x => x.namn === q.name)) ? har[Math.floor(u(3) * har.length)] : undefined;
+  const kp = (har.length && (roll || u(2) < FGAST.igen) && !s.people.some(q => q.gast?.klan === k.id && har.some(x => x.namn === q.name)) ? har[Math.floor(u(3) * har.length)] : undefined)
+    ?? (roll ? undefined : kandIgen(s, k, q => q.roll === 'kund', u(7))); // grannbyn har inte fler personer än sitt folk (steg 14.2.6)
   const sex = kp?.sex ?? (u(4) < 0.5 ? 'm' as const : 'k' as const), ut = kantMot(s, k.id) ?? { x: W / 2, y: 0.5 };
   const p = nyGast(s, { id: nyttGastId(s), namn: kp?.namn ?? makeName(s, sex, 'klan'), sex, fodd: kp?.fodd ?? s.now - (ALDER.vuxen + 2 + u(5) * 30) * DAY, rad: { sort: 'kund', klan: k.id, hem: k.hem, hemRad: k.rad, fas: 'kommer', rang: id, mal: f.id }, x: ut.x, y: ut.y, nyckel: nr });
   if (kp?.kropp) gastTillbaka(s, p);

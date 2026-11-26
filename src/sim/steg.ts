@@ -1816,8 +1816,10 @@ export function lasVackta(s: State, delar: Record<string, string>) {
 }
 // Gränsen för varje del av sparfilen i KB (steg 11.2.2, Världens kostnad och lagringen): vakten för storleken i det stora
 // testet larmar när en del växer över sin gräns. "historik" gäller varje veckas del. En ny del får en rad här. Världen bär
-// sedan steg 11.2.15 grannbyarnas priser (en per sak) och personer, som förut låg i byn: de växer med grannarna, inte med tiden
-export const SPARGRANS: Record<string, number> = { byn: 1536, folket: 1536, kartor: 512, fynden: 256, loggen: 128, notiser: 256, historik: 512, varlden: 512 };
+// sedan steg 11.2.15 grannbyarnas priser (en per sak) och personer, som förut låg i byn: de växer med grannarna, inte med tiden.
+// Grannbyarnas personer är hela personer som byborna (steg 9.2.114) och högst lika många som byns folk (steg 14.2.6), så världen
+// har folkets gräns
+export const SPARGRANS: Record<string, number> = { byn: 1536, folket: 1536, kartor: 512, fynden: 256, loggen: 128, notiser: 256, historik: 512, varlden: 1536 };
 export const delGrans = (d0: string) => { const d = d0.replace(VACKT_DEL, '$2'); return SPARGRANS[d.startsWith('historik-') ? 'historik' : d]; }; // en väckt bys delar har huvudbyns gränser
 // varje del av sparfilen: storleken i KB (byte i UTF-8, som databaserna räknar) och gränsen
 export const sparStorlek = (s: State) => Object.entries(serializeParts(s)).map(([del, txt]) => ({ del, kb: new TextEncoder().encode(txt).length / 1024, grans: delGrans(del) }));

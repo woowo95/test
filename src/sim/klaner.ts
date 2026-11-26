@@ -57,6 +57,15 @@ export interface Klan {
   pris?: Record<string, number>; // de slumpade priserna före v532 (steg 10.5.14); tas bort när byn laddas, priset finns i raden (priser.ts)
   rad?: number; dygn?: number; sallsynt?: string[]; // raden i världen, restiden dit till fots och det som är sällsynt på marken där (steg 11.2.15)
 }
+// En grannby har inte fler personer än sitt folk: när huvudbyn känner lika många därifrån som byn har är nästa gäst därifrån en
+// av dem som kommer igen, inte en ny (steg 14.2.6, Flera samhällen: Grannbyns folk). Den som redan är i byn kommer inte en gång
+// till; den som har sin kropp sparad och har samma roll väljs först. u är en slump 0–1 som den som frågar drar
+export function kandIgen(s: State, k: Klan, roll: (q: KlanPerson) => boolean, u: number): KlanPerson | undefined {
+  if (k.personer.length < Math.max(1, Math.round(k.folk))) return undefined;
+  const borta = k.personer.filter(q => !s.people.some(p => p.gast?.klan === k.id && p.name === q.namn && p.sex === q.sex));
+  const v = [borta.filter(q => roll(q) && q.kropp), borta.filter(roll), borta.filter(q => q.kropp), borta].find(x => x.length);
+  return v?.[Math.min(v.length - 1, Math.floor(u * v.length))];
+}
 // förbindelserna med världens byar, i radernas ordning (räknas om när en rad läggs till eller går under); en ruin har ingen
 const lista = new WeakMap<object, { n: number; k: Klan[] }>();
 export function klanerOf(s: State): Klan[] {
@@ -102,6 +111,8 @@ export function handlarKlan(s: State, alla?: boolean): { klan: Klan; person: Kla
 export function klanHandlare(s: State, klan: Klan): { klan: Klan; person: KlanPerson } {
   const har = klan.personer.filter(p => p.roll === 'handlare');
   if (har.length >= KLAN.handlarePer || (har.length && rnd(s, 'klan') < 0.5)) return { klan, person: pick(s, har, 'klan') };
+  const kand = kandIgen(s, klan, q => q.roll === 'handlare', rnd(s, 'klan'));
+  if (kand) return { klan, person: kand };
   const sex = rnd(s, 'klan') < 0.5 ? 'm' : 'k', person = { namn: makeName(s, sex, 'klan'), sex, roll: 'handlare' } as KlanPerson;
   klan.personer.push(person);
   return { klan, person };
