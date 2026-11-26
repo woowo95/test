@@ -1,6 +1,6 @@
 import { SKATT, skattDygn, skattRegister } from './skatt';
 import { varmeKrok } from './varme';
-import { timminnenIn, timminnenUt } from './timminne';
+import { TIMMINNEN, timminnenIn, timminnenUt } from './timminne';
 import { raknaBynVet, sparaHistorik } from './ort';
 import { budgetDygn, budgetRegister } from './budget';
 import { bynamnRegister } from './bynamn';
@@ -936,6 +936,8 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
 const sida = (p: Person, f: number) => (((p.id * 37) % 7) - 3) * f / 3;
 // vägarna mellan två rutor sparas en stund: stigarna ändras långsamt, så de räknas om var fjärde timme och när något byggs
 const vagar = new WeakMap<State, { key: string; m: Map<number, number[] | null> }>();
+// vägarna som räknats under de fyra timmarna följer med till arbetaren, så att den går samma väg som sidan hade gått (steg 12.1.248)
+TIMMINNEN.vagar = { ut: s => { const c = vagar.get(s); return c && { key: c.key, m: [...c.m] }; }, in: (s, v) => { const o = v as { key: string; m: [number, number[] | null][] }; vagar.set(s, { key: o.key, m: new Map(o.m) }); } };
 function pathFor(s: State, g: ReturnType<typeof groundOf>, x0: number, y0: number, x1: number, y1: number) {
   // under en brand ändras vägarna med elden (steg 9.2.136): de räknas om varje gång, och den som är instängd går ut genom elden
   const is = isKost(s); // över sjöns is när den ligger (steg 12.1.209)
