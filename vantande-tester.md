@@ -254,7 +254,6 @@
 
 - Mätt på Macen med 8 byar i 35 dygn på 61c11aac: tre dör ut, 8 döda av kyla, inga vaktlarm. Ändrar byarna (gömstället, veden för den som fryser, småbarnen, var stationer och högar läggs): skyldig `npm run kedja -- "npm run -s koll" "npm run -s likhet"` med nytt facit. Scenarierna fullaforrad och lager var röda på varld redan före sammanslagningen (515efcd9).
 
-## Fas 14.2 Balans (pausad, kedjan på 13dc4209)
+## Fas 13 och 14.2 Balans (6f66b03d, i tio chattar i molnet)
 
-- Koll: 1029 av 1034 scenarier OK. Röda: sallskapfast, foretag, anstalld, kassa (kraschar) och konkurrens. Rättas först, sedan `npm run riktad -- --mot 13dc4209 --roda`. Likhet: grön, 4 av 4 byar exakt lika.
-- Kvar att köra: `npm run kedja -- "npm run -s balans -- 24 35" "npm run -s jamfor -- 35 64 --mot v539" "TESTDYGN=90 npm test" "npm run -s dynamik"`. Sedan hela kedjan en gång på versionen som publiceras, och sedan 14.2.2 (granska).
+- På 6f66b03d (grannbyns folk 14.2.6 och fältet efter behovet 13.9.13) körs i egna chattar: scenarierna i fyra delar, `npm run facit` (nytt facit på grenen facit-6f66b03d), `npm run likhet`, `npm run balans -- 24 35`, `TESTDYGN=90 npm test`, `npm run jamfor -- 35 64 --mot v539` och `npm run dynamik`. Före ombyggnaderna (b3a97d05) var koll, likhet och balansen gröna; 90 dygn larmade sparstorlek (rättat i 14.2.6).
