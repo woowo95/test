@@ -5,7 +5,7 @@ import { Person, Act, Task, createState, ownedBy, tidyTools, addTool, toolsOf, h
 import * as SIM from '../../sim';
 import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import { lasBy } from '../delby';
-import { testBy, rovarGang, korTills, medHus, setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare, tandOchFlinta, utanStartKlader, bearbetaVid, vidForradet, vidStack } from './hjalp';
+import { testBy, naraGranne, rovarGang, korTills, medHus, setItems, setMat, setFood, kor, klockan, tandEld, tomtForrad, treVuxna, SCENARIER, rikBy, medBank, utanWebblasare, nyInvanare, tandOchFlinta, utanStartKlader, bearbetaVid, vidForradet, vidStack } from './hjalp';
 import { setByn, ui } from '../../ui/lage';
 import { notisHtml, notisKlick, notisKnapp, notisVal } from '../../ui/notiser';
 import { bortaBerattelse, bortaHtml, forloppText, ikappHtml, spolaText } from '../../ui/borta';
@@ -1141,7 +1141,7 @@ function byHandel(): [string, boolean][] {
   // klanen tar vanligt pris för allt och den som handlar tror inget annat: vad den sparade byns ledare råkar tro om klanens priser
   // (steg 10.5.16) prövas inte här
   const kannerPriser = (s: State, h: SIM.Handlare) => { const kl = SIM.klanById(s, SIM.hp(s, h).gast?.klan ?? -1); if (kl) SIM.sattKlanPris(s, kl, Object.fromEntries(SIM.sakerMedPris().map(k => [k, 1]))); const p = vuxen(s); p.lardomar = p.lardomar?.filter(l => l.k !== 'pris'); };
-  const bas = cloneState(testBy(10));
+  const bas = cloneState(testBy(10, naraGranne));
   // byn saknar knivar och flinta: kniven är ett projekt med brist, och flintan står i listan
   const s = cloneState(bas), h = fram(s);
   s.ting = tingOf(s).filter(t => !SIM.GORS.kniv.includes(t.k));

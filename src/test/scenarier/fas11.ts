@@ -2066,7 +2066,7 @@ SCENARIER.sallskapfast = {
   text: 'Sällskapet som inte kommer iväg (steg 12.1.8, samlasSteg, utanDeSomInteKom och inteIvag i resa.ts): kommer ledaren aldrig till samlingsplatsen tar den som är där över efter samma tid som ledaren väntar; den som aldrig kommer fram medan sällskapet packar är inte med, och sällskapet går; kommer ingen alls ställs resan in och packningen går tillbaka',
   kor: () => {
     const resbara = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.ageOf(q, b.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, b.now));
-    const s0 = SIM.cloneState(testBy(30, b => naraGranne(b) && resbara(b).length >= 2)), vl0 = s0.varld!, hem = SIM.byPlats(vl0, vl0.huvud!)!;
+    const s0 = SIM.cloneState(testBy(10, b => naraGranne(b) && resbara(b).length >= 2)), vl0 = s0.varld!, hem = SIM.byPlats(vl0, vl0.huvud!)!;
     const vuxna = resbara(s0);
     for (const f of SIM.FOOD) if (SIM.amountOf(s0, f) > 0) SIM.setAmount(s0, f, Math.max(SIM.amountOf(s0, f), 60));
     const vm = SIM.varldMark(s0)!, mal = vl0.platser!.filter(q => q.nr !== hem.nr && q.k !== 'by' && !(SIM.LANDMARKEN[q.k] as { tillfallig?: true }).tillfallig).sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y)).find(q => SIM.vagDygn(s0, hem.y * vm.w + hem.x, q.y * vm.w + q.x))!;
@@ -2795,7 +2795,7 @@ SCENARIER.handlarby = {
   lang: true,
   text: 'Handlaren kommer från en by (steg 11.6.8): en by med överflöd skickar sin handlare till huvudbyn som en färd på världskartan, hen väntar vid kartans kant och går in när ingen annan handlare är där, och när hen går hem börjar färden hem; en by skickar aldrig två',
   kor: () => {
-    const s = SIM.cloneState(testBy(10, x => !x.handlare)), vl = s.varld!;
+    const s = SIM.cloneState(testBy(10, x => !x.handlare && naraGranne(x) && !SIM.iIstiden(SIM.ageIndex(x)))), vl = s.varld!;
     s.handlare = undefined; delete s.handlarVantar; vl.farder = [];
     // den första byn med syn på huvudbyn som får en affär där när den har tre gånger så mycket som den vill av allt
     const { huvud, r, c } = forstaByMedAffar(s, false);
@@ -2816,7 +2816,8 @@ SCENARIER.handlarby = {
     korTills(s, () => !s.handlare, 3 * 86400);
     const hem = vl.farder!.find(x => x.id === f.id);
     const paVagHem = !s.handlare && !!hem && hem.t2 !== undefined && hem.t2 > s.now;
-    if (hem) SIM.KOHANDELSER.fardHem(s, vl, vl.ko!.find(p => p.typ === 'fardHem' && p.sak === f.id)!);
+    const hemKo = vl.ko?.find(p => p.typ === 'fardHem' && p.sak === f.id);
+    if (hemKo) SIM.KOHANDELSER.fardHem(s, vl, hemKo);
     const slut = !vl.farder!.some(x => x.id === f.id) && !!SIM.fardAffar(SIM.byCtx(s, vl, r, huvud));
     return [
       ['byn skickar sin handlare som en färd till huvudbyn, utan last', skickad],
@@ -2824,7 +2825,7 @@ SCENARIER.handlarby = {
       ['byn skickar inte en handlare till medan hen är ute', inteTva],
       ['handlaren väntar vid kanten när färden är framme', vantar],
       ['handlaren från byn går in i huvudbyn', kom],
-      ['när hen går börjar färden hem', paVagHem],
+      [`när hen går börjar färden hem (handlaren ${s.handlare ? 'kvar' : 'borta'}, färden ${hem ? 'finns' : 'borta'}, i kön ${hemKo ? 'ja' : 'nej'})`, paVagHem && !!hemKo],
       ['hemma igen kan byn skicka en ny', slut],
     ];
   },
@@ -2834,7 +2835,7 @@ SCENARIER.handlarlast = {
   lang: true,
   text: 'Handlarens varor ur raden (steg 11.6.9): lasten tas bland det byns tekniker kan göra och högst det byn har över, dras ur raden när hen går hemifrån och är det hen har i huvudbyn; det hen har kvar och köpt går hem till raden',
   kor: () => {
-    const s = SIM.cloneState(testBy(10, x => !x.handlare)), vl = s.varld!;
+    const s = SIM.cloneState(testBy(10, x => !x.handlare && naraGranne(x) && !SIM.iIstiden(SIM.ageIndex(x)))), vl = s.varld!;
     s.handlare = undefined; delete s.handlarVantar; vl.farder = [];
     const { r, c } = forstaByMedAffar(s, true);
     if (!r || !c) return [['en by kan skicka en handlare till huvudbyn', false]];
@@ -2848,7 +2849,7 @@ SCENARIER.handlarlast = {
     const dragit = r.tal.silver === sv0 - last.silver && SIM.VARUGRUPP_IDS.some(g => SIM.radHar(r!, g) < har0[g]!);
     const hela = last.varor.every(w => Number.isInteger(w.n) && w.n >= 1) && Number.isInteger(last.silver), lastText = last?.varor.map(w => `${w.n} ${w.k}`).join(', ');
     // en by utan överskott ger ingen last
-    const fattig = SIM.packaRad(SIM.cloneState(testBy(10)).varld!.rader!.find(x => x.nr === r!.nr)!, () => 0.5, () => 0).varor.length === 0;
+    const fattig = SIM.packaRad(SIM.cloneState(testBy(10, naraGranne)).varld!.rader!.find(x => x.nr === r!.nr)!, () => 0.5, () => 0).varor.length === 0;
     // hen kommer fram med lasten
     SIM.KOHANDELSER.fardFram(s, vl, vl.ko!.find(p => p.typ === 'fardFram' && p.sak === f.id)!);
     korTills(s, () => !!s.handlare, 3 * 3600);
@@ -2999,19 +3000,19 @@ SCENARIER.flyttare = {
     const iVagnen = (ny.stackar ?? []).filter(a => vagn && a.x === vagn.x && a.y === vagn.y).map(a => `${a.n} ${a.k}`);
     const kanBygga = SIM.living(ny).some(p => SIM.kanBygga(ny, p, 'vagn'));
     // nybyggaren ur en by
-    const s = SIM.cloneState(testBy(30)), vl = s.varld!;
+    const s = SIM.cloneState(testBy(30, naraGranne)), vl = s.varld!;
     const folk0 = (vl.rader ?? []).filter(r => r.nr !== vl.huvud).reduce((a, r) => a + r.tal.folk, 0), pop0 = SIM.living(s).length;
     const p = SIM.immigrate(s, false);
     const folk1 = (vl.rader ?? []).filter(r => r.nr !== vl.huvud).reduce((a, r) => a + r.tal.folk, 0), kom = SIM.living(s).length - pop0;
     const text = s.log.at(-1)?.text ?? '';
     // ingen by kan skicka någon: ingen kommer
-    const s2 = SIM.cloneState(testBy(30));
+    const s2 = SIM.cloneState(testBy(30, naraGranne));
     for (const r of s2.varld!.rader ?? []) if (r.nr !== s2.varld!.huvud) r.tal.folk = Math.min(r.tal.folk, 1);
     const pop2 = SIM.living(s2).length, p2 = SIM.immigrate(s2, false);
     // utflyttaren läggs till en by
-    const s3 = SIM.cloneState(testBy(30)), ko0 = (s3.varld!.ko ?? []).filter(k => k.typ === 'flytt').length;
+    const s3 = SIM.cloneState(testBy(30, naraGranne)), fore3 = new Set((s3.varld!.ko ?? []).filter(k => k.typ === 'flytt')), ko0 = fore3.size;
     SIM.radKrok.utflytt(s3, 2);
-    const ut = (s3.varld!.ko ?? []).filter(k => k.typ === 'flytt').at(-1);
+    const ut = (s3.varld!.ko ?? []).find(k => k.typ === 'flytt' && !fore3.has(k)); // den nya raden (kön står i tidsordning)
     // återgrundaren: ingen by får färre, och vagnen står i lagret
     const s4 = SIM.cloneState(testBy(30));
     s4.stationer = (s4.stationer ?? []).filter(t => t.k !== 'vagn');
@@ -3257,7 +3258,7 @@ SCENARIER.varldsanfall = {
   text: 'Anfallet mot huvudbyn ur världen (steg 11.6.20): rövare kommer bara när en by eller ett läger skickar dem; flocken är högst så stor som raden har styrka till, går på världskartan, kommer in på huvudbyns karta, och de döda och det de bär hem skrivs tillbaka till byn som skickade den',
   kor: () => {
     // en granne med en klan skickar en flock till huvudbyn
-    const s = SIM.cloneState(testBy(10)), vl = s.varld!, h = SIM.huvudRad(s)!;
+    const s = SIM.cloneState(testBy(10, naraGranne)), vl = s.varld!, h = SIM.huvudRad(s)!;
     s.rovare = undefined; s.rovareFler = undefined;
     const flockar = (q: SIM.State): SIM.Rovarflock[] => [q.rovare, ...(q.rovareFler ?? [])].filter((x): x is SIM.Rovarflock => !!x);
     const r = vl.rader!.find(x => SIM.lever(vl, x) && x.syn && SIM.byPlats(vl, x.nr)?.grannar?.some(g => g.nr === SIM.byPlats(vl, vl.huvud!)?.nr))!;
@@ -4115,7 +4116,7 @@ SCENARIER.uppdragflik = {
 SCENARIER.uppdragrykte = {
   text: 'Rykten och upplevelser av uppdrag (steg 11.8.17): när sällskapet kommer hem med ett klarat uppdrag får de som ser dem intrycket äventyrare (HANDELSER.uppdrag), och resan sitter en tid i humöret, glad efter ett klarat uppdrag och besviken efter en tom plats',
   kor: () => {
-    const s = SIM.cloneState(testBy(3)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
+    const s = SIM.cloneState(testBy(3, naraGranne)), vl = s.varld!, hem = SIM.byPlats(vl, vl.huvud!)!;
     vl.bud = undefined; // inget bud väntar på att skickas (sändebudet, steg 11.6.23, vinner annars över resan som prövas här)
     const vuxna = modigaste(s);
     const p = vuxna[0]!;
@@ -4683,7 +4684,7 @@ SCENARIER.karavan = {
 SCENARIER.karavanattack = {
   text: 'Anfall mot karavanen (steg 11.11.7, handlarLast och taEn i rovare.ts, handlarenDog i handel.ts): rövare som vinner tar ur handlarens last som annat byte efter värde per vikt, lasten efter en död handlare är herrelös och hamnar i byns förråd, en levande handlares last är orörd, och lägrets djur och vagnar tas inte',
   kor: () => {
-    const bas = testBy(3, x => !x.handlare && !x.people.some(p => p.gast && p.died === undefined)), vl0 = bas.varld!; // inga gäster är där redan
+    const bas = testBy(3, x => naraGranne(x) && !x.handlare && !x.people.some(p => p.gast && p.died === undefined)), vl0 = bas.varld!; // inga gäster är där redan
     const rad = SIM.klanerOf(bas).map(k => k.rad).find(nr => nr !== undefined && vl0.rader?.some(r => r.nr === nr))!;
     // en karavan vid filten, och byn sover långt bort
     const karavan = () => {
@@ -4722,7 +4723,7 @@ SCENARIER.karavanattack = {
       [`rövarna tog ur handlarens last (${rovat} saker, ${c.k} ${n0} → ${n1})`, rovat > 0 && n1 < n0],
       [`lägrets djur och vagnar är kvar (${a.s.handlare?.vagnar} vagnar, ${a.s.handlare?.djur})`, kvar],
       [`en levande handlares last är orörd när ingen anfaller`, orord],
-      [`lasten efter den döda handlaren ligger på marken (${pa} ${c.k} vid ${plats.x},${plats.y}) och hamnar i byns förråd (${inne} av 6)`, pa >= 6 && inne >= 6 && !c.s.handlare],
+      [`lasten efter den döda handlaren ligger på marken (${pa} ${c.k} vid ${plats.x},${plats.y}) och hamnar i byns förråd (${inne} av 6)`, pa >= 6 && inne >= 6 && c.s.handlare?.id !== c.h.id],
     ];
   },
 };
@@ -5180,10 +5181,10 @@ SCENARIER.vacktvy = {
 SCENARIER.somna = {
   text: 'Byn somnar (steg 11.13.12, somna, minnesbild och byggMinne i vacktsomna.ts): medan byn är väckt står radens egna regler still, och det världen gör mot raden fortsätter. När byn somnar läggs det byn ändrat till raden, teknikerna byn kan blir radens och en minnesbild sparas. Nästa väckning bygger husen, gravarna och de heliga platserna ur minnesbilden på samma platser',
   kor: () => {
-    const s = SIM.cloneState(testBy(3, naraGranne)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
+    const s = SIM.cloneState(testBy(10, naraGranne)), vl = s.varld!, hb = SIM.byPlats(vl, vl.huvud!)!;
     const rader = hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)).filter(p => p?.k === 'by' && p.by !== undefined && SIM.radNr(vl, p.by)!.tal.folk > 0).map(p => SIM.radNr(vl, p!.by!)!);
     const kanLara = (x: SIM.VarldRad) => Object.keys(SIM.TEK).some(id => !x.tek.includes(id) && SIM.TEK[id].krav.every(k => x.tek.includes(k)));
-    const r = rader.filter(kanLara).sort((a, c) => c.tek.length - a.tek.length)[0]!; // den som kan mest och har något kvar att lära
+    const r = rader.filter(x => kanLara(x) && (x.hus ?? 0) > 0).sort((a, c) => c.tek.length - a.tek.length)[0]!; // den som kan mest och har något kvar att lära, med hus att minnas
     const b = SIM.vackTest(s, r.nr)!;
     const fore = { ...r.tal }, vaken = r.vaken === 1;
     // radens regler står still medan byn är väckt
@@ -5732,7 +5733,7 @@ SCENARIER.ruinkarta = {
 SCENARIER.vaktatting = {
   text: 'Det vaktade föremålet (steg 11.13.27, vaktat.ts): ett rövarläger behåller det värdefulla det rånat som det är, de rånade minns var det finns, och sällskapet som kommer dit smyger in, köper tillbaka, slåss eller går därifrån efter det som kostar minst. Den lilla kartan visar det stulna',
   kor: () => {
-    const s = SIM.cloneState(testBy(10)), vl = s.varld!, w = vl.mark.w;
+    const s = SIM.cloneState(testBy(10, naraGranne)), vl = s.varld!, w = vl.mark.w;
     const folk = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= 20 && SIM.ageOf(p, s.now) < 50).slice(0, 3);
     const r = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && SIM.byPlats(vl, x.nr)?.grannar?.length)!;
     const L = SIM.nyttLager(s, vl, r, 10, s.now)!, lp = SIM.byPlats(vl, L.nr)!;
@@ -5935,7 +5936,7 @@ SCENARIER.vilsegang = {
 
 // rånet på vägen för utlysningarna (steg 11.8.11–12): sällskapet vid ett nytt rövarläger, med en tunika som ägs av ins (eller byns)
 function ranatSallskap(ins: boolean) {
-  const s = SIM.cloneState(testBy(10, b => SIM.living(b).filter(p => !p.gast && SIM.ageOf(p, b.now) >= 20 && SIM.ageOf(p, b.now) < 50).length >= 3 && SIM.living(b).filter(p => !p.gast && SIM.ageOf(p, b.now) >= 20).length >= 4)), // tre rånas och en fjärde köper tillbaka
+  const s = SIM.cloneState(testBy(10, b => naraGranne(b) && SIM.living(b).filter(p => !p.gast && SIM.ageOf(p, b.now) >= 20 && SIM.ageOf(p, b.now) < 50).length >= 3 && SIM.living(b).filter(p => !p.gast && SIM.ageOf(p, b.now) >= 20).length >= 4)), // tre rånas och en fjärde köper tillbaka
     vl = s.varld!, w = vl.mark.w;
   const folk = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= 20 && SIM.ageOf(p, s.now) < 50 && !p.gast).slice(0, 3);
   const r = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by' && SIM.byPlats(vl, x.nr)?.grannar?.length)!;

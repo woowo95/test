@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import * as SIM from '../../sim';
 import { husPa } from './byggnader';
-import { SCENARIER, byggare, klockan, kor, korTills, rovarGang, medBank, medHus, medVatska, nyInvanare, setFood, setMat, tandEld, testBy, utanWebblasare, vidStack } from './hjalp';
+import { SCENARIER, byggare, klockan, kor, korTills, rovarGang, medBank, medHus, medVatska, naraGranne, nyInvanare, setFood, setMat, tandEld, testBy, utanWebblasare, vidStack } from './hjalp';
 import { GRAFER, grafHtml } from '../../ui/graf';
 import { setByn } from '../../ui/lage';
 import { lasBy } from '../delby';
@@ -3452,7 +3452,7 @@ SCENARIER.rikgang = {
   text: 'Rikedomen lockar plundrare också utan fejd (steg B.66): samma värld två gånger, där huvudbyn i den ena är fyra gånger så rik per person som grannarna, relationen till grannarna är 0 och ingen svälter: under tio dygn (tio år i spelet) väljer någon granne plundringen mot den rika byn, men ingen mot den fattiga',
   kor: () => {
     const prov = (ggr: number) => {
-      const s = SIM.cloneState(testBy(10)), vl = s.varld!, h = vl.rader!.find(r => r.nr === vl.huvud)!;
+      const s = SIM.cloneState(testBy(10, naraGranne)), vl = s.varld!, h = vl.rader!.find(r => r.nr === vl.huvud)!;
       const gr = vl.rader!.filter(r => r.nr !== vl.huvud && r.sort === 'by' && SIM.lever(vl, r) && SIM.radGrannar(vl, r).some(g => g.nr === vl.huvud));
       const rik = (r: SIM.VarldRad, folk: number, per: number) => { r.tal.folk = folk; r.tal.styrka = Math.round(folk / 2); r.tal.mat = folk * 400; r.varor = undefined; r.egen = undefined; r.hus = undefined; r.tal.rikedom = folk * per; SIM.radVaror(r); r.tal.rikedom = SIM.radRikedomUr(r); };
       rik(h, 12, 20 * ggr);
