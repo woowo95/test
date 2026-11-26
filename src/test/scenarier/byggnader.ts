@@ -1073,7 +1073,7 @@ SCENARIER.strak = {
     const nyttPa: string[] = [];
     let dygnSedan = new Set<number>(), tradFore = 0; // stråken tre dygn före slutet och träden i dem: de har haft tre dygn på sig att fällas (vakthållningen kan ta ett helt dygn, och i kylan och när rövarna skadat folk görs få projekt)
     for (let t = 0; t < timmar * STEG_TIM; t++) {
-      if (t === (timmar - 72) * STEG_TIM) { dygnSedan = new Set(SIM.straken(s).vagar.flatMap(q => q.rutor)); tradFore = [...dygnSedan].filter(i => groundOf(s).trees[i] >= SIM.FOREST).length; }
+      if (t === (timmar - 72) * STEG_TIM) { dygnSedan = new Set(SIM.straken(s).vagar.flatMap(q => q.rutor)); const g = groundOf(s); if (![...dygnSedan].some(i => g.trees[i] >= SIM.FOREST)) for (const i of [...dygnSedan].filter(i => !SIM.straken(s).vagar.some(v => v.rutor[0] === i)).slice(2, 5)) g.trees[i] = SIM.FOREST; /* står inget träd på stråken sätts några ut: provet gäller att de fälls */ tradFore = [...dygnSedan].filter(i => g.trees[i] >= SIM.FOREST).length; }
       const fore = SIM.straken(s).ruta.slice();
       const st0 = new Set(SIM.stationerOf(s)), f0 = new Set(s.falt ?? []), h0 = new Set(housesOf(s));
       kor(s, 1 / STEG_TIM);
@@ -2075,7 +2075,7 @@ SCENARIER.lon = {
 SCENARIER.tjanster = {
   text: 'Steg 14.1.4: betalda tjänster är samma anställning: den skadade betalar den som vårdar, lärlingen mästaren, den som bygger sitt hus en bygghjälpare, och för barnet betalar föräldern. Arbetaren begär det hen får på annat håll, och vill ha mer ju mindre egen mat hen har; utan silver anställer ingen',
   kor: () => {
-    const s = SIM.cloneState(testBy(5, b => living(b).filter(q => ageOf(q, b.now) >= 20 && ageOf(q, b.now) < 55).length >= 4 && living(b).length >= 7));
+    const s = SIM.cloneState(testBy(5, b => living(b).filter(q => ageOf(q, b.now) >= 20 && ageOf(q, b.now) < 55).length >= 5 && living(b).length >= 7));
     klockan(s);
     const ppl = living(s).filter(q => ageOf(q, s.now) >= 20 && ageOf(q, s.now) < 55), [sarad, larare, elev] = ppl;
     setAmount(s, 'silver', 0);

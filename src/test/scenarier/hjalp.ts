@@ -72,6 +72,8 @@ export type Koll = [string, boolean];
 // ingen sparad by (före första facit) körs by 1 dit
 const TESTBY_VUXNA = 3;
 // en by där minst tre vuxna är friska: testbyarna kan ha sparats mitt i en farsot, och en resa räknar med friska resenärer
+// en by med en grannby som går att nå på några dygn: proven för resorna räknar med en granne nära (en by som flyttat ut i vildmarken har ingen)
+export const naraGranne = (b: State, dygn = 3) => { const vl = b.varld, hb = vl && SIM.byPlats(vl, vl.huvud!), g = hb?.grannar?.[0]; return !!g && g.dygn <= dygn && !!SIM.byPlats(vl!, g.nr); };
 export const friskaVuxna = (b: State) => SIM.living(b).filter(p => SIM.ageOf(p, b.now) >= SIM.ALDER.vuxen && !SIM.isSick(p, b.now)).length >= TESTBY_VUXNA;
 export const testBy = (minDygn: number, villkor?: (s: State) => boolean): State => {
   const dir = fileURLToPath(new URL('../../../test/facit-byar/', import.meta.url));

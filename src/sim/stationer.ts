@@ -12,7 +12,7 @@ import { knows } from './teknik';
 import { ALDER, ageOf, alive, byId, count, andraGor, enTill, familjOf, forstaGang, gjort, living, log } from './folk';
 import { enOrd, han, hans, sinOrd, stor } from './ord';
 import { getable, Recept, takeMaterial } from './behov';
-import { eldReserv } from './forradsmal';
+import { eldReserv, stationBrist } from './forradsmal';
 import { Ting, freeTools, nTools, redskapSlitet, tingOf, wearTool, ingenHar } from './agande';
 import { BYN, kyrkaId } from './egendom';
 import { troOf } from './religion';
@@ -1264,7 +1264,7 @@ function utanLager(s: State) {
 export function inneUtanPlats(s: State): StationSlag | undefined {
   return STATION_LIST.find(k => {
     const d: StationDef = STATIONER[k];
-    return d.inne && !d.sover && !d.golv && !harStation(s, k) && !halvbyggd(s, k) && living(s).some(p => kanTek(p, d)) && !stationSite(s, k);
+    return d.inne && !d.sover && !d.golv && !harStation(s, k) && !halvbyggd(s, k) && living(s).some(p => kanTek(p, d)) && !stationSite(s, k) && stationBrist(s, k) > 0; // ett rum bara åt en station byn saknar (disken och varubordet saknas bara i ett företags hus)
   });
 }
 // rummet där en station som står inne står
