@@ -2859,8 +2859,11 @@ SCENARIER.faltvikt = {
     ingen();
     const v0 = varde(), finns = !!SIM.faltTillUppgift(s, p);
     // andra saknar mat och kan betala: ett fält till är värt något
+    // byn delar inget, de andra äger ingen mat men har silver, och familjen har gott om egen mat
     s.now += HOUR; ingen();
-    for (const q of andra) { q.bruk = { t: tim(), k: [[0, 'mat']] }; SIM.put(s, 'silver', 5, { [q.id]: 5 }); }
+    s.delning = { ...(s.delning ?? {}), andel: 0 } as typeof s.delning;
+    s.stackar = (s.stackar ?? []).map(a => SIM.FOOD.includes(a.k) ? { ...a, ag: { [p.id]: a.n } } : a); // all mat är familjens
+    for (const q of andra) SIM.put(s, 'silver', 5, { [q.id]: 5 });
     const v1 = varde(), u1 = SIM.faltTillUppgift(s, p);
     // den skicklige ser mer värde per egen timme
     const sk = SIM.kunnaSkill('odla'), fore = p.skill[sk];

@@ -13,7 +13,7 @@ import { getMap, hash } from './karta';
 import { groundOf } from './mark';
 import { FOREST, VAG } from './vag';
 import { knows, tankePa } from './teknik';
-import { bynsDel, familjMatDygn, getable, payable, saknarNu, takeMaterial } from './behov';
+import { bynsDel, egnaMatDygn, familjMatDygn, getable, payable, takeMaterial } from './behov';
 import { utsadeKrok } from './ratter';
 import { ledigaRedskap, ledigtTing, nTools, slitTing, tingOf, wearTool } from './agande';
 import { FORDON, FORDON_TAL, fordonI, lediga } from './fordon';
@@ -449,7 +449,9 @@ function matKopare(s: State) {
   let k = KOPARE.get(s);
   if (k?.t === t) return k;
   const vuxna = living(s).filter(q => !q.gast && ageOf(q, s.now) >= ALDER.vuxen);
-  const ids = new Set(vuxna.filter(q => saknarNu(s, q).includes('mat') && payable(s, q, []).length > 0).map(q => q.id));
+  // saknar mat som familjen: den egna maten räcker kortare än den egna bufferten (egenFull gånger bufferten, som spärren i val.ts)
+  const nod = buffert(s, 'mat') * (FORRADSMAL.mat.egenFull ?? 1);
+  const ids = new Set(vuxna.filter(q => egnaMatDygn(s, q) < nod && payable(s, q, []).length > 0).map(q => q.id));
   KOPARE.set(s, k = { t, ids, vuxna: vuxna.map(q => q.id) });
   return k;
 }
