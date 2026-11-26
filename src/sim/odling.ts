@@ -13,7 +13,7 @@ import { getMap, hash } from './karta';
 import { groundOf } from './mark';
 import { FOREST, VAG } from './vag';
 import { knows, tankePa } from './teknik';
-import { bynsDel, getable, takeMaterial } from './behov';
+import { bynsDel, familjMatDygn, getable, payable, saknarNu, takeMaterial } from './behov';
 import { utsadeKrok } from './ratter';
 import { ledigaRedskap, ledigtTing, nTools, slitTing, tingOf, wearTool } from './agande';
 import { FORDON, FORDON_TAL, fordonI, lediga } from './fordon';
@@ -425,9 +425,41 @@ export function faltUppgift(s: State, p: Person): FaltUppgift | undefined {
     const st = rutorAv(b.f)[b.k].st;
     return { tool: st, text: `${(FALT_STEG[st] as { gor?: string }).gor}.`, min: ODLING.pass, spot: rutaMitt(b.f, b.k), ref: b.f.id, ruta: b.k };
   }
-  if (familjFalt(s, p) || storlek(s, p) < ODLING.faltMin) return undefined;
+  if (familjFalt(s, p)) return undefined; // familjen har ett fält: ett till är ett eget projekt (faltTillUppgift)
+  return nyttFaltUppgift(s, p);
+}
+function nyttFaltUppgift(s: State, p: Person): FaltUppgift | undefined {
+  if (storlek(s, p) < ODLING.faltMin) return undefined;
   const at = nyttFalt(s, p);
   return at && { tool: 'roja', text: `${FALT_STEG.roja.gor}.`, min: ODLING.pass, spot: { x: at.x + 0.5, y: at.y + 0.5 } };
+}
+// Ett fält till (steg 13.9.13, Arbetsdelningen: Maten åt resten): en familj som redan har ett fält röjer ett till när det är
+// värt det, inte efter en regel om ett fält per familj. Det vägs i projekten (projekt.ts) efter faltTillEgen: hur mycket mat
+// familjen saknar mot sin egen buffert, och hur många av de andra i byn som saknar mat och kan betala för den. Byns brist
+// räknas inte, för fältet blir familjens. Den som är bäst på att odla ser mest värde per egen timme (arbetet i projektet)
+export function faltTillUppgift(s: State, p: Person): FaltUppgift | undefined {
+  if (!isLight(s.now) || !kanOdla(s, p) || !faltOf(s).some(f => f.agare === p.id) && !familjFalt(s, p)) return undefined;
+  if (faltUppgift(s, p)) return undefined; // det finns arbete på familjens fält
+  return nyttFaltUppgift(s, p);
+}
+// de andra i byn som saknar mat och kan betala för den: hur stor del av de vuxna utanför familjen, räknat en gång i timmen
+const KOPARE = new WeakMap<State, { t: number; ids: Set<number>; vuxna: number[] }>();
+function matKopare(s: State) {
+  const t = Math.floor(s.now / HOUR);
+  let k = KOPARE.get(s);
+  if (k?.t === t) return k;
+  const vuxna = living(s).filter(q => !q.gast && ageOf(q, s.now) >= ALDER.vuxen);
+  const ids = new Set(vuxna.filter(q => saknarNu(s, q).includes('mat') && payable(s, q, []).length > 0).map(q => q.id));
+  KOPARE.set(s, k = { t, ids, vuxna: vuxna.map(q => q.id) });
+  return k;
+}
+export function faltTillEgen(s: State, fam: readonly Person[], p?: Person) {
+  if (!p) return 0;
+  const f = fam.length ? fam : [p], mal = buffert(s, 'mat') * (1 - (s.delning?.andel ?? 1)) * (FORRADSMAL.mat.egenFull ?? 1);
+  const saknar = mal > 0 ? clamp(1 - familjMatDygn(s, f) / mal, 0, 1) : 0;
+  const k = matKopare(s), ids = new Set(f.map(q => q.id)), andra = k.vuxna.filter(id => !ids.has(id));
+  const salja = andra.length ? andra.filter(id => k.ids.has(id)).length / andra.length : 0;
+  return clamp(saknar + salja, 0, 1);
 }
 // arbetet på fältet (val.ts): den mogna grödan skördas före förbättringar, och den vars familj har ett fält arbetar på det när
 // ingen fara går före. Ett nytt fält är ett projekt (projekt.ts)
@@ -486,9 +518,9 @@ function nastaI(s: State, p: Person, f: Falt, st: FaltSteg, k: number) {
   }
   return -1;
 }
-// ett nytt fält röjs där uppgiften pekar, om hen och familjen inte har något och storleken räcker
+// ett nytt fält röjs där uppgiften pekar, om storleken räcker
 function nyttFaltHar(s: State, p: Person, tk: Task): Falt | undefined {
-  if (faltOf(s).some(q => q.agare === p.id) || familjFalt(s, p) || storlek(s, p) < ODLING.faltMin) return undefined;
+  if (storlek(s, p) < ODLING.faltMin) return undefined; // valet har vägt om ett nytt fält är värt det (faltUppgift och faltTillUppgift)
   const x = Math.floor(tk.tx), y = Math.floor(tk.ty), gr = byGrans(s), at = nyttFalt(s, p);
   const passar = (w: number) => {
     const ny: Falt = { id: 0, x, y, w, dir: faltRiktning(s, y), n: iRader(w, storlek(s, p)), agare: p.id, steg: 'roja', klara: 0, kvar: minPer('roja'), rord: s.now };
