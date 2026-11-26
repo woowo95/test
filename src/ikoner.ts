@@ -4076,6 +4076,7 @@ PIX.far = PIX.radjur; PAL.far = PAL.radjur; PIX.get = PIX.radjur; PAL.get = PAL.
   if (sv) for (let q = 0; q < 4; q++) lagg('kb_stenvag_' + q, sv.rader.slice((q >> 1) * 16, (q >> 1) * 16 + 16).map(r => r.slice((q & 1) * 16, (q & 1) * 16 + 16)), sv.pal);
   const moln = KARTBILDER.biarg_moln; if (moln) lagg('kb_biarg_moln_v', spegla(moln.rader), moln.pal);
   const hons = KARTBILDER.hons; if (hons) lagg('kb_hons_vast', spegla(hons.rader), hons.pal);
+  const stolS = KARTBILDER.stol_sida; if (stolS) lagg('kb_stol_vast', spegla(stolS.rader), stolS.pal); // stolen från andra sidan (steg 13.7.7)
   // de tama djuren: hunden och valpen från tre håll, fåret och geten bara från sidan (framåt och bakåt syns de från sidan)
   for (let v = 1; v <= 3; v++) {
     for (const a of ['hund', 'valp']) { const sida = KARTBILDER[`tam_${a}_${v}_sida`]; if (!sida) continue; lagg(`kb_tam_${a}_${v}_vast`, spegla(sida.rader), sida.pal); }

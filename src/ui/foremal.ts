@@ -300,7 +300,12 @@ export function drawStructures(t: number) {
     if ((st.q ?? 0) >= MASTERVERK) glans(st.x * TS + w - 3, st.y * TS + 3, t, st.id, st.q === PERFEKT);
     // stubbarna (Björn valde den korta stocken efter v89) är en ruta stora: framför bänken och runt bordet
     if (d?.sitt) pileIcons.add(SITT, st.x * TS + w / 2 - TS / 2, (st.y + bh) * TS, TS / iconCanvas(SITT).width);
-    bordPlatser(st).forEach((q, i) => { const k = st.sate?.[i] && hasIcon('kb_' + st.sate[i]) ? 'kb_' + st.sate[i] : SITT; pileIcons.add(k, q.x * TS, q.y * TS, TS / iconCanvas(k).width); }); // pallen och stolen i stubbens ställe (steg 12.4.4)
+    { // pallen och stolen i stubbens ställe (steg 12.4.4). Stolen vänder sig mot bordet (steg 13.7.7): framifrån norr om bordet,
+      // bakifrån söder om det och från sidan till vänster och höger, så att ryggstödet står bort från bordet
+      const pl = bordPlatser(st), { w: bw, h: bh } = storlekAv(st);
+      const hall = (q: { x: number; y: number }) => q.y === st.y - 1 ? '' : q.y === st.y + bh ? '_bak' : q.x === st.x - 1 ? '_sida' : q.x === st.x + bw ? '_vast' : '';
+      pl.forEach((q, i) => { const b = st.sate?.[i], kh = b === 'stol' && hasIcon('kb_stol' + hall(q)) ? 'kb_stol' + hall(q) : '', k = kh || (b && hasIcon('kb_' + b) ? 'kb_' + b : SITT); pileIcons.add(k, q.x * TS, q.y * TS, TS / iconCanvas(k).width); });
+    }
     for (const k of st.med ?? []) { const b = 'kb_' + tillbehorDef(k)?.ikon + v; if (kb && hasIcon(b)) pileIcons.add(b, x0, y0, 1); else pileIcons.add(tillbehorDef(k)?.ikon + '_karta' + v, x0, y0, 2); } // tillbehören i den (skinnfällen i bädden), i bildstilen lagd ovanpå bädden
     if (st.tork?.length) hangande(st, x0, y0);
     if (st.k === 'fyrfat' && stationBrinner(st)) { const cx = x0 + (iconCanvas(ik).width >> 1), cy = y0 + 8; pileIcons.add(eldBild('lite'), cx - ELD.x, cy - ELD.y, 1); rokIkoner.add(rokBild(undefined, st.x + st.y), cx - ANIMTAKT.rok.x, cy - ANIMTAKT.rok.y, 1); } // fyrfatets glöd och lågor, rörliga som lägerelden (steg 13.7.6)
