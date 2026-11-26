@@ -2073,13 +2073,17 @@ SCENARIER.lon = {
 };
 
 SCENARIER.tjanster = {
-  text: 'Steg 14.1.4: betalda tjänster är samma anställning: den skadade betalar den som vårdar, lärlingen mästaren, den som bygger sitt hus en bygghjälpare, och för barnet betalar föräldern. Arbetaren begär det hen får på annat håll, och vill ha mer ju mindre egen mat hen har; utan silver anställer ingen',
+  text: 'Steg 14.1.4: betalda tjänster är samma anställning: den skadade betalar den som vårdar, lärlingen mästaren, den som bygger sitt hus en bygghjälpare, och för barnet betalar föräldern. Arbetaren begär det hen får på annat håll, och vill ha mer ju mindre egen mat hen har; lönen betalas med silver eller det man har över, och den som inget har anställer ingen',
   kor: () => {
     const s = SIM.cloneState(testBy(5, b => living(b).filter(q => ageOf(q, b.now) >= 20 && ageOf(q, b.now) < 55).length >= 5 && living(b).length >= 7));
     klockan(s);
     const ppl = living(s).filter(q => ageOf(q, s.now) >= 20 && ageOf(q, s.now) < 55), [sarad, larare, elev] = ppl;
     setAmount(s, 'silver', 0);
     for (const q of living(s)) { q.skador = []; q.sjuk = undefined; q.lar = undefined; }
+    // lönen betalas med silver eller det man har över (samma byten som allt annat): med sina saker kan någon anställa ...
+    const medVaror = (() => { const c = SIM.cloneState(s); SIM.anstallDygn(c); return c.anst!.length; })();
+    // ... och den som inget äger anställer ingen
+    s.stackar = (s.stackar ?? []).map(a => a.ag ? { ...a, ag: undefined } : a);
     const tom = (SIM.anstallDygn(s), s.anst!.length);
     put(s, 'silver', 20, { [sarad.id]: 20 });
     sarad.skador = [{ d: 'armV', k: 'skarsar', g: 0.5, b: 1 }];
@@ -2111,7 +2115,8 @@ SCENARIER.tjanster = {
     // det man begär
     const matt = ppl[4], e0 = SIM.egetVarde(s, matt); for (const k of SIM.FOOD) setAmount(s, k, 0); const e1 = SIM.egetVarde(s, matt);
     return [
-      [`utan silver anställer ingen person (${tom})`, tom === 0],
+      [`den som har saker över kan betala en lön med dem (${medVaror} anställda utan silver)`, medVaror > 0],
+      [`utan något att betala med anställer ingen person (${tom})`, tom === 0],
       [`den skadade anställer den som vårdar (${vard?.lon} silver, vårdrätt ${ratt.toFixed(1)}), och lönen betalas (${fick})`, tarVard && !!vard && fick === vard.lon && ratt > 1],
       [`föräldern betalar mästaren för barnet (${lara?.lon} silver)`, !!lara && lara.av === elev.id && lara.p === larare.id],
       [`den som bygger anställer en bygghjälpare (${hjalp?.lon} silver), som hellre bygger hos hen (${omU.toFixed(2)} → ${omH.toFixed(2)})`, !!hjalp && omH > omU],

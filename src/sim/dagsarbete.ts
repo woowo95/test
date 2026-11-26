@@ -1,7 +1,8 @@
 // ---------- dagsarbetet (steg 14.1.4, Ekonomi och handel: Dagsarbetet, i fliken Människan) ----------
 // Lönen är ett och samma system för byn, kyrkan och personerna. En gång per dygn (ett år i spelet) betalas fjolårets
 // anställningar och nya görs upp. En anställning är en rad i s.anst: vem som betalar (av, en ägare: BYN, en kyrka eller en
-// person), arbetet (en rad i DAGSVERK), den anställda (p), lönen i hela silver och det hon hunnit. Varje anställning är ett
+// person), arbetet (en rad i DAGSVERK), den anställda (p), lönen räknad i hela silver och det hon hunnit. En person betalar med
+// silvret och sedan med det hen har över, som i bytena (Gränsen mot fas 14). Varje anställning är ett
 // lönesamtal: den som betalar bjuder högst vad arbetet är värt efter det personen hann förra gången (verket: timmarna gånger
 // hur fort skickligheten gör arbetet, KUNNA), arbetaren begär det hen får på annat håll (eget arbete eller ett annat bud), och
 // lönen blir mitt emellan. Byn bjuder högst det lönelagen säger för en vanlig arbetstimme, ur budgetdelen arbetet hör till, och
@@ -20,7 +21,7 @@ import { BYN, kyrkaId } from './egendom';
 import { FOOD } from './saker';
 import { foodDaysAll, matPerDygn } from './ekonomi';
 import { FORRADSMAL, buffert } from './forradsmal';
-import { egnaMatDygn, forsorjer } from './behov';
+import { egnaMatDygn, forsorjer, payable } from './behov';
 import { kunnaFart } from './kunna';
 import { tanke } from './tankar';
 import { ledareOf } from './styre';
@@ -59,6 +60,13 @@ const forsorjare = (s: State, p: Person) => [p.mother, p.father].map(id => livin
 // den som betalar för p: hen själv, eller för ett barn föräldern
 const betalare = (s: State, p: Person) => forsorjare(s, p) ?? p;
 const silverAv = (s: State, id: number) => Math.floor(ownsId(s, id, 'silver') + 1e-9);
+// det id kan betala en lön med: dagsarbetet ligger på samma byten som allt annat (Gränsen mot fas 14 i fliken Människan), så en
+// person betalar med silvret och det hen har över, värderat efter grundvärdet (som kunden vid disken, kundPung i foretag.ts).
+// Kyrkan betalar med sitt silver
+const formaga = (s: State, id: number) => {
+  const p = id > 0 ? byId(s, id) : undefined;
+  return p ? Math.floor(payable(s, p, []).reduce((a, w) => a + (w.t ? 0 : w.n * grundvarde(w.k)), 0) + 1e-9) : silverAv(s, id);
+};
 
 // det byn kan betala ur delen: delens andel av byns silver och av maten över bufferten
 const bynsTak = (s: State, del: string) => {
@@ -86,14 +94,14 @@ export const DAGSVERK: Record<string, Dagsverk> = {
     bud: s => {
       const t = new Map<number, number>();
       for (const b of bitsOf(s)) { const ag = b.hus === undefined ? BYN : bitAgare(s, b); if (ag !== BYN) t.set(ag, (t.get(ag) ?? 0) + byggTim(b)); }
-      return [...t].filter(([ag, n]) => n > 0 && (ag < 0 || byId(s, ag) && living(s).some(q => q.id === ag))).map(([av, n]) => ({ av, antal: antalFor(n), tim: ARBETE, tak: silverAv(s, av), timMax: n,
+      return [...t].filter(([ag, n]) => n > 0 && (ag < 0 || byId(s, ag) && living(s).some(q => q.id === ag))).map(([av, n]) => ({ av, antal: antalFor(n), tim: ARBETE, tak: formaga(s, av), timMax: n,
         kan: (p: Person) => av < 0 ? p.tro !== undefined && kyrkaId(p.tro) === av : p.partner !== av }));
     } },
   vard: { namn: 'Vård', sym: '🩹', gor: (_s, a, _p, tk) => tk?.act === 'varda' && tk.ref === a.mal,
-    bud: s => living(s).filter(q => !q.gast && (q.skador?.length || q.sjuk) && vuxna(s).some(g => g !== q && vardBehov(s, q, g))).map(q => { const b = betalare(s, q); return { av: b.id, antal: 1, tim: ARBETE * DAGS.vard, tak: silverAv(s, b.id), timMax: 1, mal: q.id, kan: (p: Person) => p !== q }; }) },
+    bud: s => living(s).filter(q => !q.gast && (q.skador?.length || q.sjuk) && vuxna(s).some(g => g !== q && vardBehov(s, q, g))).map(q => { const b = betalare(s, q); return { av: b.id, antal: 1, tim: ARBETE * DAGS.vard, tak: formaga(s, b.id), timMax: 1, mal: q.id, kan: (p: Person) => p !== q }; }) },
   // undervisningen: lärlingen, eller för barnet föräldern, betalar mästaren
   undervisning: { namn: 'Undervisning', sym: '📜', ostort: true, gor: (s, a) => { const q = byId(s, a.mal); return q?.task?.act === 'lara' && q.lar?.av === a.p; },
-    bud: s => living(s).filter(q => !q.gast && ageOf(q, s.now) >= ALDER.uppfinner).map(q => { const b = betalare(s, q); return { av: b.id, antal: 1, tim: ARBETE * DAGS.lara, tak: silverAv(s, b.id), mal: q.id, kan: (m: Person) => q !== m && (q.lar ? q.lar.av === m.id : kanLaraUt(s, m, q)) }; }).filter(b => b.tak >= 1) },
+    bud: s => living(s).filter(q => !q.gast && ageOf(q, s.now) >= ALDER.uppfinner).map(q => { const b = betalare(s, q); return { av: b.id, antal: 1, tim: ARBETE * DAGS.lara, tak: formaga(s, b.id), mal: q.id, kan: (m: Person) => q !== m && (q.lar ? q.lar.av === m.id : kanLaraUt(s, m, q)) }; }).filter(b => b.tak >= 1) },
 };
 const INGEN = {} as import('./byggnad').Bit;
 // hur många vakter natten vill ha (val.ts sätter kroken)
@@ -158,6 +166,15 @@ function betala(s: State, a: Anst, till: number) {
   const id = a.del ? budgetId(a.del) : a.av, silver = Math.min(a.lon, silverAv(s, id));
   let kvar = a.lon - (silver >= 1 ? ownMove(s, 'silver', silver, id, till) : 0);
   if (kvar < a.lon) count(s, 'lonSilver', a.lon - kvar);
+  // en person betalar resten med det hen har över, det mest värda först, i hela saker som inte är värda mer än det som är kvar
+  const q = a.av > 0 ? byId(s, a.av) : undefined;
+  if (q && kvar >= 1 - 1e-9) for (const w of payable(s, q, ['silver']).filter(x => !x.t).sort((x, y) => grundvarde(y.k) - grundvarde(x.k) || (x.k < y.k ? -1 : 1))) {
+    const v = grundvarde(w.k), m = v > 0 ? Math.min(Math.floor(w.n + 1e-9), Math.floor(kvar / v + 1e-9)) : 0;
+    if (m < 1) continue;
+    const g = ownMove(s, w.k, m, a.av, till);
+    kvar -= g * v; if (g) count(s, 'lonVaror', g);
+    if (kvar < 1 - 1e-9) break;
+  }
   if (a.av === BYN) for (const k of FOOD) {
     const v = grundvarde(k);
     while (kvar >= v - 1e-9 && v > 0 && foodDaysAll(s) > buffert(s, 'mat')) {
