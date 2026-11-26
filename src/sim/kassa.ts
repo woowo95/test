@@ -43,6 +43,7 @@ export const diskarAv = (s: State, f: Foretag): Station[] => { const rum = new S
 // företagen med ett rum som saknar en disk (också en som är under arbete)
 const utanDisk = (s: State) => foretagOf(s).filter(f => { const rum = foretagRum(s, f); return rum.length && !stationerOf(s).some(t => t.k === 'disk' && rum.includes(stationRum(s, t)!)); });
 foretagBord.diskRum = s => { const f = utanDisk(s)[0]; return f && foretagRum(s, f)[0]; };
+foretagBord.diskEgen = (s, fam) => utanDisk(s).some(f => fam.some(q => q === foretagare(s, f.ag))) ? 1 : 0; // ägarens familj saknar disken i sitt företag
 foretagBord.diskBrist = s => { const n = foretagOf(s).filter(f => foretagRum(s, f).length).length; return n ? utanDisk(s).length / n : 0; };
 // var kunden i kön står: rummets lediga rutor, närmast disken först, inte där betjänaren eller en annan kund står
 export function koPlats(s: State, t: Station, upptagna: { x: number; y: number }[] = []): { x: number; y: number } {

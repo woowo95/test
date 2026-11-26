@@ -7,9 +7,9 @@ import { balans } from './balans';
 import { count, familjOf, living } from './folk';
 import { brukAv, MAT, ownFor, saknarNu } from './behov';
 import { VED } from './eld';
-import { foretagOf, foretagRum, type Foretag } from './foretag';
+import { foretagare, foretagOf, foretagRum, type Foretag } from './foretag';
 import { arAgd, taUrStack, lying, rymdPa, stacksOf, changed, tidy, dropSpot, besokLager, stallPaRutan } from './lager';
-import { betjanar, saljPart } from './kassa';
+import { betjanar, diskarAv, saljPart } from './kassa';
 import { foretagBord, isKlar, type Station, stationDef, stationerOf, stationRum } from './stationer';
 import { grundvarde } from './varde';
 import { isTool, viktOf } from './saker';
@@ -27,8 +27,10 @@ const varubord = (s: State, f: Foretag): Station[] => { const rum = foretagRum(s
 const rutor = (s: State, f: Foretag) => varubord(s, f).flatMap(t => { const ut = []; const w = t.rot ? 1 : 2, h = t.rot ? 2 : 1; for (let y = t.y; y < t.y + h; y++) for (let x = t.x; x < t.x + w; x++) ut.push({ x, y }); return ut; });
 // bristen: rummen utan varubord, och de där alla är fulla
 const affarer = (s: State) => foretagOf(s).filter(f => f.verk.includes('affar') && foretagRum(s, f).length);
-const vill = (s: State, f: Foretag) => { const rum = foretagRum(s, f), n = stationerOf(s).filter(t => stationDef(t.k)?.vara && rum.includes(stationRum(s, t)!)).length; return !n || n < AFFAR.bord && !ledigRuta(s, f) && !!attStalla(s, f, true); };
+// ett varubord till är bara värt något när det som står framme säljs, alltså när affären har en disk att sälja vid
+const vill = (s: State, f: Foretag) => { const rum = foretagRum(s, f), n = stationerOf(s).filter(t => stationDef(t.k)?.vara && rum.includes(stationRum(s, t)!)).length; return !n || n < AFFAR.bord && diskarAv(s, f).length > 0 && !ledigRuta(s, f) && !!attStalla(s, f, true); };
 foretagBord.varuRum = s => { const f = affarer(s).find(q => vill(s, q)); return f && foretagRum(s, f)[0]; };
+foretagBord.varuEgen = (s, fam) => affarer(s).some(f => vill(s, f) && fam.some(q => q === foretagare(s, f.ag))) ? 1 : 0; // ägarens familj saknar varubordet i sin affär
 foretagBord.varuBrist = s => { const a = affarer(s); return a.length ? a.filter(f => vill(s, f)).length / a.length : 0; };
 // ---------- det som är till salu ----------
 export interface HyllVara { k: string; n: number; x: number; y: number; t?: Ting }

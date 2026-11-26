@@ -17,7 +17,7 @@ import { coldOf, temperature } from './vader';
 import { ARBETE, grundvarde, varuVarde } from './varde';
 import { balans } from './balans';
 import { DJURARTER, GORS, ersattAv, freeOfKinds, harAv, makeTask, minOf, receptTill, takAv, wantsRope, wantsTool } from './redskap';
-import { moblerKrok, STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, receptStation, receptTillbehor, stationSpot, medPlatsMinne, villKista, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
+import { foretagBord, moblerKrok, STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, receptStation, receptTillbehor, stationSpot, medPlatsMinne, villKista, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './bygg';
 import { GRODOR, ODLING, STAKET, faltBrist, faltUppgift } from './odling';
@@ -161,8 +161,9 @@ const station = (k: StationSlag): ProjektDef => {
   const d: StationDef = STATIONER[k];
   return {
     namn: d.namn, vikt: viktAv(k, d.smak ? viktAv(d.smak, 1) : 1), // alla mattor väger som en (steg 10.7.6)
+    // familjens företag saknar sin disk eller sitt varubord (steg 14.1.6, 14.1.8): det är ägarens egen förtjänst som står på spel
     // någon i familjen sover under tak utan en bädd, eller p vill ha en egen kista (steg 2.10.18): den byggs också som pyssel på fritiden
-    egen: d.sover && !d.ersatter ? (s, fam) => utanEgenBadd(s, fam) : d.forvar?.privat ? (s, _fam, p) => p && villKista(s, p) ? 1 : 0 : undefined,
+    egen: d.disk ? (s, fam) => foretagBord.diskEgen(s, fam) : d.vara ? (s, fam) => foretagBord.varuEgen(s, fam) : d.sover && !d.ersatter ? (s, fam) => utanEgenBadd(s, fam) : d.forvar?.privat ? (s, _fam, p) => p && villKista(s, p) ? 1 : 0 : undefined,
     brist: s => stationBrist(s, k), // bufferten står i forradsmal.ts (steg 6.2.17)
     kostnad: () => receptKostnad(d),
     arbete: { act: 'station', k, min: d.min },
