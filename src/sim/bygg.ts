@@ -1,6 +1,6 @@
 import { husNytt } from './byggnad';
 import { omtankeOm } from './omtanke';
-import { bestamd, gen, hans, iMening, stor, tal } from './ord';
+import { bestamd, gen, hans, husIMening, iMening, stor, tal } from './ord';
 import { upplev } from './uppvaxt';
 import { ALDER, ageOf, count, andraGor, forstaGang, livet, living, log } from './folk';
 import { kronikaBer, personFalt } from './berattelser';
@@ -406,5 +406,6 @@ function husFalt(namn: string) {
     const ett = bestamd(m[1])[1] === 'det';
     return { hus: iMening(namn), klart: ett ? 'färdigt' : 'färdig' };
   }
-  return { hus: / hus$/.test(namn) ? namn : namn.charAt(0).toLowerCase() + namn.slice(1), klart: /(et|hus)$/.test(namn) ? 'färdigt' : 'färdig' };
+  return { hus: / hus$/.test(namn) ? namn : husIMening(namn), // företagets hus heter efter ägaren (steg 14.1.5)
+    klart: /(et|hus)$/.test(namn) ? 'färdigt' : 'färdig' };
 }

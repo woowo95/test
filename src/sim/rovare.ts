@@ -677,13 +677,19 @@ const handlarLast = (s: State) => { const h = s.handlare; if (!h || (h.fas !== '
 // det som ligger där, delat med avståndet (plus ROVARE.platsAvst rutor), så att en rik plats lite längre bort går före en fattig nära
 const gravVarde = (g: Grav) => (g.saker ?? []).reduce((a, x) => a + grundvarde(x.k) * x.n, 0);
 export const gravVid = (s: State, r: { x: number; y: number }) => (s.gravar ?? []).find(g => g.saker?.some(a => a.n >= 1) && avst(r, { x: g.x + 0.5, y: g.y + 0.5 }) <= ROVARE.nara + 1);
+// Rövaren håller fast vid platsen hen valt tills det som ligger där inte längre är värt besväret (Klockan och slagen: man väljer
+// om när man är klar eller något nytt syns). Valdes platsen om varje slag efter fågelvägen kunde hen pendla för alltid mellan
+// två hus vars vägar går förbi varandra
 function taPlats(s: State, r: Person) {
-  let b: { x: number; y: number } | undefined, bv = 0;
-  const prova = (c: { x: number; y: number }, v: number) => { const w = v / (avst(r, c) + ROVARE.platsAvst); if (v >= ROVARE.platsMin && w > bv) { bv = w; b = c; } };
+  let b: { x: number; y: number } | undefined, bv = 0, kvar: { x: number; y: number } | undefined;
+  const g = r.gast, forra = g?.plats;
+  const prova = (c: { x: number; y: number }, v: number) => { if (v < ROVARE.platsMin) return; if (forra && Math.hypot(forra.x - c.x, forra.y - c.y) < 0.01) kvar = c; const w = v / (avst(r, c) + ROVARE.platsAvst); if (w > bv) { bv = w; b = c; } };
   const hl = handlarLast(s); if (hl) prova({ x: hl.x, y: hl.y }, hl.h.varor.reduce((a, w) => a + grundvarde(w.k) * w.n, 0));
   for (const z of zonesOf(s)) { let v = 0; for (const a of s.stackar ?? []) if (a.n >= 1 && a.x >= z.x && a.x < z.x + z.w && a.y >= z.y && a.y < z.y + z.h) v += grundvarde(a.k) * a.n; prova({ x: z.x + z.w / 2, y: z.y + z.h / 2 }, v); }
-  for (const g of s.gravar ?? []) if (g.saker?.length) prova({ x: g.x + 0.5, y: g.y + 0.5 }, gravVarde(g));
-  return b;
+  for (const q of s.gravar ?? []) if (q.saker?.length) prova({ x: q.x + 0.5, y: q.y + 0.5 }, gravVarde(q));
+  const p = kvar ?? b;
+  if (g) g.plats = p;
+  return p;
 }
 // dit rövaren går när flocken anfaller: hämnden letar hus för hus (f.letar), annars den närmaste lagerplatsen med något i, annars förrådet
 function malFor(s: State, f: Rovarflock, r: Person) {
