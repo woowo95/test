@@ -1,0 +1,236 @@
+# Texterna, delen ovriga (varld 73a44558)
+
+Godkänt av redaktören. Varje rad anger mallen och raden i koden (fil:rad) på commit 73a44558. Bygg in allt i listan; en ändring som inte längre passar koden hoppas över och nämns i commiten.
+
+**Läsarens sammanfattning:** Jag har gått igenom texterna utanför BERATTELSER: personloggen (personlogg.ts och tillägget h_ont/h_gott i personRader), notiserna (NOTISER och alla anrop till notis() i src/sim), krönikans rader (kronika() och kronikaVid() i src/sim, KRONIKA_KAT och HISTORIK_TAL) samt berättelserna från framber, matchber och handelsber (mallarna f_*, m_* och h_*). Underlaget är texter.txt/json och en dumpning av krönikan, notiserna och personloggen i de sparade testbyarna 1-40, 1511-45 och 4634-45 (1108 rader i krönikan, 2004 notiser och 647 rader i personloggarna). Skriptet src/test/zz_dump.ts är borttaget, och inget under src/, test/ eller bildstil/ är ändrat.
+
+Det viktigaste:
+1) Textkontrollerna missar mycket, eftersom notiserna och krönikan prövas som hela meningar med platsen -2 och bara sex exempel sparas. Fel som syns direkt i byarna har kommit igenom: "har brutit hjärta", "Där görs plankor." utan något som "där" syftar på, "Man går på toa", "kunde sköld", "År 45: År 45, med att …", "lagen Skatt", "tolv hatt av halm", "Efter en bud", "ville ha höna" och "Kolfast för byn gick fram till … för byns räkning".
+2) Flera texter påstår sådant som inte stämmer i spelet. Handlarens filt ligger utanför byns område, inte "nära elden". Framträdandena kan hållas vid scenen, och texten säger ändå "vid elden". "Nästan hela byn" kontrolleras bara mot fler än fem lyssnare. När ett hus blir klart i timkollen får en godtycklig bybo äran av att "satte sista biten". Det nyfödda barnet får sin egen födelse i personloggen, med en känsla till ("Hon är stolt över det."). Domen står i presens och upprepar namnet på domaren, som också är den drabbade.
+3) Upprepningen är störst bland notiserna och i krönikan, inte i mallarna. Matchnotisen är 41 % av alla notiser och nästan alltid "X vann brottningen." I krönikan finns 148 rader av typen "X reste en bildsten om en uppfinning", 189 handelsrader och 119 rättegångar. Nyheterna från världen upprepar ortens namn i varje mening. Notiserna och personloggens rader är fasta strängar utan varianter, så Björns önskan om variation når dem inte. De borde bli mallar (n_*, pl_*) med samma villkor som resten.
+4) Tillägget i personloggen (h_gott används 20 629 gånger, h_ont 6 117) väljs bara efter personligheten och humöret, inte efter händelsen. Därför blir ett bröllop eller en födelse "en liten glädje som räckte en stund", och den som slog någon "tar det med fattning".
+
+**Känslan:** En spelare som öppnar notiserna möter först en lång rad likadana meningar: "Frörhild vann brottningen.", "Halar vann brottningen.", "Bina i ett vildbo blev uppretade av arbetet vid boet." (55 gånger) och "X väntar barn." Det känns som ett protokoll, inte som en by. Krönikan har fina stycken, som de episka uppfinningarna ("Tukveig grävde och fyllde igen, grop efter grop …") och trons berättelser, men de drunknar bland bildstenar, byten och tillrättavisningar i presens, och här och där står en uppenbar maskinmening ("kunde sköld", "Där görs plankor.", "År 45: År 45"). Personloggen är det mest personliga, men tillägget efter varje rad är så allmänt att det snart låter tomt. Samma "Det var en liten glädje, men den räckte en stund." står efter ett bröllop, en ny färdighet och ett nytt yrke, och det nyfödda barnet "tänker gärna tillbaka" på sin egen födelse. Berättelserna om handeln och framträdandena läses bäst. Där finns repliker och en tydlig gång i det som händer, men små grammatikfel ("ville ha skrivet blad", "Efter en bud") och upprepade namn ("tyckte sämre om Dardgerd efteråt" när Dardgerd redan är den som uppträdde) drar ner dem.
+
+## Rättelser
+
+- [HALSOTECKEN.benbrott (notis benbrott), src/sim/halsonotiser.ts:40] Delens namn används utan bestämd form och utan sitt ("brutit höger ben"), och benbrott hamnar på delar utan ben (hjärta, huvud). Texten ska använda KROPPSDELAR[d].i. Att ett benbrott kan sitta i hjärtat är också ett fel i skadesystemet, som bara borde bryta delar med ben.
+  - Nu: Svakel har brutit hjärta. Behöver: tvätta sig med tvål. / Ulvlaug har brutit höger ben.
+  - Blir: `${p.name} har brutit ${KROPPSDELAR[w.d].i}.${behovText(b)}` → "Ulvlaug har brutit högra benet." (och skadesystemet bör bara ge benbrott på delar med ben)
+- [notis teknik (TEKNIK.effekt), src/sim/teknik.ts:334 (effekt i teknik.ts:68, 69, 79, 82)] Effekttexten är skriven för kortet, där stationens namn står som rubrik. I notisen har "Där" ingenting att syfta på. Samma sak gäller stenhuggarplatsen, snickarbänken och örtköket, och fiskespjutets "Ger mycket mer fisk …" saknar subjekt.
+  - Nu: Igik kom på hur man kan klyva plankor. Där görs plankor.
+  - Blir: "På klyvplatsen görs plankor.", "Vid stenhuggarplatsen görs huggen sten.", "Vid snickarbänken görs träsakerna fortare och bättre, och där görs bågen, lyran, skölden, kryckan och träbenet.", "Vid örtköket görs salva, tjära, benlim, tvål, brännolja och rökelse.", "Fiskespjutet ger mycket mer fisk än händerna och hjälper på jakten, men det slits fort."
+- [TEKNIK latrin.effekt (notis teknik), src/sim/teknik.ts:190] "Toa" är ett modernt ord, och nyttOrd fångade det inte.
+  - Nu: Man går på toa på ett ställe, närmare än förut, och lämnar ingen smuts efter sig.
+  - Blir: Man uträttar sina behov på ett ställe, närmare än förut, och lämnar ingen smuts efter sig. Gropen fylls och måste grävas på nytt.
+- [notis inflytt / kronika flytt, src/sim/liv.ts:399] Teknikens namn står där ett verb behövs ("kunde sköld", "kunde staket", "kunde proteser").
+  - Nu: Kolleif från Kråkby kom till byn och kunde sköld, som ingen i byn kunde.
+  - Blir: `… kom till byn och kunde ${goraUtan(TEK[tek])}, något ingen i byn kunde.` → "Kolleif från Kråkby kom till byn och kunde göra sköldar, något ingen i byn kunde."
+- [kronika runsten (handböckerna), src/sim/skrift.ts:237] Samma fel: ett substantiv står efter "kan" ("kan längre klyvplats").
+  - Nu: Ingen i byn kan längre ${TEK[k.tek]!.namn.toLowerCase()}, men konsten står kvar i …
+  - Blir: `Ingen i byn kan längre ${goraUtan(TEK[k.tek]!)}, men konsten står kvar i ${gen(k.av.namn)} bok.`
+- [kronika forlust, src/sim/teknik.ts:526] "Konsten" står i singular framför en lista med flera konster.
+  - Nu: Med Fröborg dog konsten att fläta bikupor, att göra fällor och att bygga en scen.
+  - Blir: `Med ${p.name} dog ${borta.length > 1 ? 'konsterna' : 'konsten'} ${konst}.`
+- [kronika tro (en gud visar sig), src/sim/religion.ts:427 och 345] Året står två gånger, eftersom raden lägger "År {ar}: " framför en text som redan börjar med året, och "med att …" är ogrammatiskt.
+  - Nu: År 45: År 45, med att Arulf överlevde en svår sjukdom, visade sig Ättstav för dem som tror på förfädernas tro.
+  - Blir: religion.ts:427: kronika(s, g.ber, 'tro'), och gudBer skrivs om till: `Det började med ${h}, år ${ar}. Då visade sig ${namn} för dem som tror på ${liten(tro)}.`
+- [kronika tro (nytt bud), src/sim/kyrka.ts:681] Två kolon efter varandra, eftersom budnamnet självt innehåller ett kolon.
+  - Nu: Förfädernas tro fick ett nytt bud: högtid: Skördenatten.
+  - Blir: Förfädernas tro fick ett nytt bud: att fira Skördenatten.
+- [kronika forlust (glömd plats), src/sim/ort.ts:209] Platsordet saknar bestämd form ("ruin Vitsta", "by Vithem").
+  - Nu: Ingen i byn minns längre ruin Vitsta; Kolleif var den sista som visste om den.
+  - Blir: Ingen i byn minns längre ruinen Vitsta; Kolleif var den sista som visste om den.
+- [kronika ledare (lagens tal), src/sim/lagar.ts:238] Lagens namn står med stor bokstav mitt i meningen (på rad 254 görs det om till liten), och det står en siffra.
+  - Nu: Osgerd påbjöd en ändring av lagen Skatt: den undre ribban är nu 40 (förut ingen).
+  - Blir: `… lagen ${LAGAR[l.id].namn.toLowerCase()}: …` och talet med heltOrd: "Osgerd ändrade lagen om skatt: den som har mindre än fyrtio silver betalar ingenting."
+- [kronika ledare (budgeten), src/sim/budget.ts:247-248] "Budget" och "%" är moderna ord och tecken, och nyttOrd släppte igenom dem.
+  - Nu: Byn ändrade budgetens del för mat till alla till 100 %.
+  - Blir: Byn bestämde att allt det gemensamma silvret ska gå till mat åt alla. (andelen i ord: allt, tre fjärdedelar, hälften, en fjärdedel)
+- [kronika ledare (ledaren slutar), src/sim/styre.ts:485] Skälet står inom parentes och ser ut som en programrad.
+  - Nu: Kolny slutade leda byn (dog).
+  - Blir: dog → "Kolny ledde byn tills han dog.", lämnade byn → "Kolny lämnade byn och därmed också styret.", avsattes → "Kolny avsattes som byns ledare.", störtades → "Kolny störtades.", drevs ut → "Kolny drevs ut ur byn och leder den inte längre."
+- [kronika byte (företaget köps), src/sim/stangning.ts:59] Företagets namn står med stor bokstav mitt i meningen.
+  - Nu: Fröborg köpte Byns affär.
+  - Blir: `${kop.name} köpte ${/^Byns /.test(gammal) ? liten(gammal) : gammal}.` → "Fröborg köpte byns affär."
+- [notis dom (och k_ratt straff), src/sim/styre.ts:574-575] Notisen och krönikan står i presens (STRAFF_REG.nu) om något som har hänt, och domarens namn upprepas när domaren också är den drabbade, eftersom brottText anropas utan ledaren. "Tog remsa av" saknar dessutom artikel.
+  - Nu: Eborg tillrättavisar Frörhild för att hon tog rötter av Eborg.
+  - Blir: `${l.name} ${STRAFF_REG[steg].da} ${q.name} för att ${hon(q)} ${brottText(b, l.name, l)}.` → "Eborg tillrättavisade Frörhild för att hon tog rötter av henne." (samma da-form till k_ratt)
+- [notis gast (handlaren breder ut filten), src/sim/handel.ts:438] Filten läggs utanför byns område (filtPlats, HANDEL.avstand på handel.ts:63), inte nära elden. Elden behöver inte heller brinna.
+  - Nu: Borkulf från skogen i öster har brett ut en filt nära elden och väntar på kunder.
+  - Blir: Borkulf från skogen i öster har brett ut en filt strax utanför byn och väntar på kunder.
+- [notis hus, src/sim/bygg.ts:228 och 239] husKlaraTimme skickar living(s)[0] som den som satte sista biten. När huset blir klart för att ett träd fällts får därför en godtycklig bybo äran, och notisen och personloggen ljuger.
+  - Nu: Gunja satte sista biten: hyddan är färdig.
+  - Blir: Utan någon som byggde (husKlaraTimme): `${stor(hf.hus)} är ${hf.klart} nu när trädet över det är borta.`, utan namn och utan livet(s, p, 'hus'); annars som förut.
+- [notis anfall (rövarna syns), src/sim/rovare.ts:388] En siffra och en parentes i löptexten.
+  - Nu: Torgaut såg rövare utanför byn, ungefär 10 (från Lindfors).
+  - Blir: `${q.name} såg ungefär ${heltOrd(f.gissning)} rövare ${fran(s, f)} ${f.anfaller ? 'på väg mot byn' : 'utanför byn'}.` → "Torgaut såg ungefär tio rövare från Lindfors utanför byn."
+- [notis motgang (branden), src/sim/brand.ts:381] I spelet är "elden" lägerelden, så det ser ut som om byns eld slocknat.
+  - Nu: Elden har slocknat. Den brände en liten bit mark.
+  - Blir: Branden har slocknat. Den brände en liten bit mark.
+- [notis motgang / k_rovare (vad rövarna tog), src/sim/ord.ts:99 (antal)] Pluralen saknas för sammansatta saknamn och för plantorna.
+  - Nu: … många hatt av halm, tolv hatt av halm, tre jordgubbsplanta …
+  - Blir: … många hattar av halm, tolv hattar av halm, tre jordgubbsplantor …
+- [notis byte och h_* (kunden för byn), src/sim/behov.ts:841, src/sim/handelsber.ts:52] Partens namn "X för byn" används som kundens namn, så "för byn" upprepas och står mitt i meningarna.
+  - Nu: Ylvbjörn för byn gick fram till Gerdvald för byns räkning. / Byn skickade Fahild för byn / Det var salt Raorm för byn ville ha.
+  - Blir: handelsber.ts:57: kund: b.an.replace(/ för byn$/, '') och byn sätts när det strippats → "Ylvbjörn gick fram till Gerdvald för byns räkning."
+- [h_start, h_slut, h_arg ({vara}), src/sim/handelsber.ts:51] {vara} saknar artikel (sakNamn i grundform).
+  - Nu: Igvald gick fram till Maar och ville ha skrivet blad. / pekade på rep och frågade vad … ville ha för det / Det var jordgubbsplanta som fick …
+  - Blir: vara: antal(1, k) → "Igvald gick fram till Maar och ville ha ett skrivet blad."
+- [h_slut[1], src/sim/berattelser.ts:1951 (fältet i handelsber.ts:52)] heltOrd(1) ger "en", så villkoret f.bud !== 'ett' släpper igenom raden, och "bud" är neutrum.
+  - Nu: Efter en bud var de överens, och de skakade hand.
+  - Blir: bud: heltOrd(b.forsok!.length, true), så att villkoret f.bud !== 'ett' fungerar och 'Efter ett bud …' blir rätt böjt.
+- [f_start[7], src/sim/berattelser.ts:1971] {amne} slutar ofta med en bisats, så "och gav varje person en egen röst" läses som om Inso gav rösterna.
+  - Nu: Ymgerd och Maskgerd spelade teater om Inso, som är en tjuv och gav varje person en egen röst.
+  - Blir: {Namn} gav varje person en egen röst när det blev teater om {amne}.
+- [f_start[1], f_publik[2,3], f_mott[2,9], f_inget[0,1,4,7], src/sim/berattelser.ts:1965, 2003, 2004, 2014, 2021, 2041, 2042, 2045, 2048] Framträdandet hålls vid scenen när det inte är kallt eller regnar (scenen() i framtradande.ts:311), och elden brinner inte alltid. Texterna påstår ändå att det var vid en brinnande eld.
+  - Nu: När elden brann som bäst började … / satt runt elden och lyssnade / Elden sprakade, men ingen kom …
+  - Blir: Nytt fält vid: 'scen' | 'eld' | 'sal' (scenen(s), framtradande.ts:311) och eld = s.fire.lit. Raderna om elden får villkoret f.vid === 'eld' && f.eld; för scenen t.ex. "{N} satt framför scenen och lyssnade."
+- [f_publik[6], src/sim/berattelser.ts:2007] Villkoret är bara nTal > 5. I en by med fyrtio invånare är åtta inte nästan hela byn.
+  - Nu: Nästan hela byn var där, åtta stycken.
+  - Blir: Nytt fält andel = n / living(s).length; villkoret f.andel >= 0.8.
+- [f_bud[18], src/sim/berattelser.ts:1997] Namnet upprepas där det ska stå ett pronomen, och med en grupp blir det fel tal.
+  - Nu: Dardgerd ville att de andra skulle tro som Dardgerd själv.
+  - Blir: {Namn} ville vinna de andra för tron.
+- [f_mott[12], src/sim/berattelser.ts:2024] Samma namn två gånger i meningen.
+  - Nu: Dardgerd tappade tråden flera gånger, och publiken tyckte sämre om Dardgerd efteråt.
+  - Blir: {Namn} tappade tråden flera gånger, och efteråt tyckte publiken sämre om det hela.
+- [f_verkan[4], src/sim/berattelser.ts:2032] Samma namn två gånger i meningen.
+  - Nu: Publiken skrattade åt Ylve den yngre, och Ylve den yngre blev arg på Erindrun.
+  - Blir: Publiken skrattade åt {ledare}, som blev arg på {namn}.
+- [m_start[2], src/sim/berattelser.ts:2054] Ett rep har två ändar, men i dragkamp med lag drar fem personer.
+  - Nu: Hildulf, Ehild, Lofrid, Omka och Ylvbjörn drog i var sin ände av repet.
+  - Blir: { t: '{Spelare} drog i var sin ände av repet.', om: f => f.sport === 'dragkamp' && !f.lag } och för lag: '{Spelare} delade upp sig i två lag och tog tag i repet.'
+- [m_vinst[2], m_vinst[8] (lagsport), src/sim/berattelser.ts:2082, 2088] Adjektivet böjs efter en person, inte efter ett lag.
+  - Nu: Laget med Igik och Ranunn vann och såg nöjd ut. / … och laget med Frörhild fick se sig slagen.
+  - Blir: Fält lag = m.vinnLag !== undefined; för lag: '{Vinnare} vann och såg nöjda ut.' och '… och {bast} fick se sig slaget.'
+- [m_slut[0], m_slut[1], src/sim/berattelser.ts:2092-2093] "Vinnarna" står i plural också när en enda vann (brottning, kast mot mål).
+  - Nu: Efteråt var vinnarna på gott humör, medan de andra surade en stund.
+  - Blir: Utan lag: '{Vinnare} var på gott humör efteråt, medan de andra surade en stund.' och villkoret !!f.lag på raderna med 'vinnarna'.
+- [m_publik[7], src/sim/berattelser.ts:2121] Raden väljs också vid snöbollskrig och i istiden, när det inte finns något gräs att sitta i.
+  - Nu: Lofrid satt i gräset och tittade på hela matchen.
+  - Blir: om: f => Number(f.nPub) === 1 && f.sport !== 'snoboll' && !f.sno (sno ur s.vader?.sno i matchMinne, sport.ts:146)
+- [m_vinst[4], src/sim/berattelser.ts:2084] "Planen" är ett modernt ord från lagidrotten och passar inte brottning eller kast.
+  - Nu: Torndo var bäst på planen och vann.
+  - Blir: {Vinnare} var skickligast av dem och vann.
+- [bastI titel, src/sim/sport.ts:423] Att hänga på "en" ger fel form för Bågskytte (och tveksam för andra grenar).
+  - Nu: `Den bästa i ${d.namn.toLowerCase()}${d.id === 'kast' ? '' : 'en'}` → "Den bästa i bågskytteen"
+  - Blir: `Den bästa i byn på ${d.namn.toLowerCase()}` → "Den bästa i byn på bågskytte"
+- [personRader (ihopslagna rader), src/sim/berattelser.ts:3299] Siffra i löptexten.
+  - Nu: Lärde sig att göra flintspjut av Halar den yngre. … Och 6 saker till av samma slag det året.
+  - Blir: ` Och ${tal(n)} ${n === 1 ? 'sak' : 'saker'} till av samma slag det året.`
+- [PERSONLOGG.tjarade, src/sim/tjara.ts:85] Siffra i löptexten, och "rutor trä" är spelets språk.
+  - Nu: Tjärade 16 rutor trä.
+  - Blir: `Tjärade ${heltOrd(g.length)} rutor ${slag === 'staket' ? 'staket' : 'virke'}.` (eller hellre utan rutor: "Tjärade virket i huset.")
+- [PERSONLOGG.nara (notisen fodd hos barnet), src/sim/liv.ts:210, src/sim/personlogg.ts:55] Notisen fodd har barnets id i ids, så det nyfödda barnet får sin egen födelse i loggen med en känsla om den. När modern dör samma dygn slås en god och en ond rad ihop under ett enda tillägg ("… Borkborg dog i barnsäng. Det skrämde honom." hos det nyfödda barnet).
+  - Nu: Erija: "Byn fick en ny invånare, Erija, dotter till Silaug och Gervald. Det var en liten glädje, men den räckte en stund."
+  - Blir: Barnets egen rad utan känsla: personNotis hoppar över tillägget för den vars born === s.now, och kanslaRad får tonen per rad, så att en god och en ond rad inte slås ihop under ett tillägg.
+- [PERSONLOGG.titel (öknamnet), src/sim/berattelser.ts:2604] Släktnamnet och öknamnet sparas utan ton. ontOrd träffar inte, så blandat() gör ett öknamn till något gott.
+  - Nu: Kallas Asleif Lögnaren. Han gläds åt det.
+  - Blir: personHand(s, p, 'titel', `Kallas ${heltNamn(p)}.`, heder ? 'gott' : 'ont')
+- [k_flyttSkal[5], src/sim/berattelser.ts:1790] Ologiskt: det är inte byn som går sin väg. Dessutom citeras humörets etikett (”Har inget på fötterna, benen och överkroppen”, ”Är naken”) som om det vore något personen sagt.
+  - Nu: Halstig med två barn bröt upp från byn … Byn fick gå sin väg utan honom, för ”Sörjer Borkborg” tyngde mer för var dag.
+  - Blir: {Hen} kunde inte stanna, för {tanke} tyngde mer för var dag. ({tanke} som en bisats: "att han inte hade något på fötterna")
+- [notis sjuk, src/sim/sjukdom.ts:233 och 264] Listan med symtom är etiketter, inte en mening.
+  - Nu: Ingfast är sämre: förkyld, hostar.
+  - Blir: `${p.name} har blivit sämre i ${SJUKDOMAR[j.k].namn.toLowerCase()}en och ${symtom}.` → "Ingfast har blivit sämre i förkylningen och hostar."
+- [notis ledare, src/sim/styre.ts:422] Titeln hänger lös som en apposition.
+  - Nu: Halar är byns nya ledare, byfader.
+  - Blir: `${best.name} är byns nya ledare och kallas ${titel.toLowerCase()}.`
+- [notis nyhet / kronika nyhet, src/sim/ort.ts:497-500] Händelserna läggs efter varandra utan att slås ihop, så samma mening står två gånger och ortens namn upprepas i varje mening.
+  - Nu: Nyheter från Sterndistad: Örnhem gjorde en räd mot Sterndistad. Lindfors gjorde en räd mot Sterndistad. Lindfors gjorde en räd mot Sterndistad. …
+  - Blir: Ta bort dubbletterna och slå ihop dem med samma verb: "Nyheter från Sterndistad: Örnhem och Lindfors har gjort räder mot byn, Lindfors två gånger."
+
+## Varianter som tas bort (säger samma sak som en annan)
+
+- [h_gott, src/sim/berattelser.ts:2310] Ta bort: "Det var en liten glädje, men den räckte en stund." (står kvar: "Det lyfte {honom} lite.")
+- [h_ont, src/sim/berattelser.ts:2298] Ta bort: "{Hen} har inte orkat tänka på annat sedan dess." (står kvar: "{Hen} har svårt att släppa det.")
+- [f_publik, src/sim/berattelser.ts:2002] Ta bort: "Publiken var liten, bara en enda." (står kvar: "Bara {n} satt och lyssnade.")
+- [f_publik, src/sim/berattelser.ts:2005] Ta bort: "Publiken var {n} till antalet." (står kvar: "{N} hade samlats för att lyssna.")
+- [f_inget, src/sim/berattelser.ts:2042] Ta bort: "{Namn} väntade på publik, men elden var tom." (står kvar: "Platsen vid elden förblev tom, och {namn} fick vänta förgäves.")
+- [f_bud, src/sim/berattelser.ts:1980] Ta bort: "Alla visste vem det gällde: {om}." (står kvar: "Det handlade egentligen om {om}, och alla förstod vad {namn} menade.")
+- [m_vinst, src/sim/berattelser.ts:2083] Ta bort: "Det var {vinnare} som vann, som alla hade trott." (står kvar: "{Vinnare} vann, ingen var förvånad.")
+- [m_vinst, src/sim/berattelser.ts:2087] Ta bort: "Det var {vinnare} som vann." (står kvar: "Till slut vann {vinnare}.")
+- [h_stamning, src/sim/berattelser.ts:1938] Ta bort: "Det var en lugn förhandling." (står kvar: "Det gick fort, och ingen behövde höja rösten.")
+- [h_stamning, src/sim/berattelser.ts:1943] Ta bort: "Det blev en seg förhandling. {Handlare} sa nej {nej} gånger." (står kvar: "De prutade länge, och {handlare} skakade på huvudet {nej} gånger.")
+- [h_start, src/sim/berattelser.ts:1881] Ta bort: "Det var {vara} som fick {kund} att gå fram till {handlare}." (står kvar: "{Kund} gick fram till {handlare} och ville ha {vara}.")
+- [h_arg (langt), src/sim/berattelser.ts:1909] Ta bort: "{Handlare} sa att vägen hit hade varit lång." (står kvar: "{Handlare} talade om den långa vägen och om hur tung packningen var.")
+- [h_arg (kemiGod), src/sim/berattelser.ts:1924] Ta bort: "Det var lätt att prata, för de tyckte om varandra." (står kvar: "De kom bra överens från första stund.")
+
+## Nya varianter
+
+- [NOTISER.match (sport.ts, ny mall n_match), src/sim/sport.ts:153] `{vinnare} vann {best} över {forlorare}.` om: `f => !f.lag && f.antal === 2`
+  - Fält: forlorare = namnet på den andra i har (sport.ts:149), antal = har.length, lag = vinnLag !== undefined. Notisen är en inline-text i dag (sport.ts:151), så det behövs en ny mall n_match.
+  - Säger: Vem som förlorade. Det är det spelaren saknar i "X vann brottningen", som står 823 gånger.
+- [NOTISER.match (n_match), src/sim/sport.ts:153] `{vinnare} vann {best}, fast {bast} var skickligare.` om: `f => f.skrall === true`
+  - Fält: skrall och bast ur matchber.ts, flyttade till en gemensam funktion
+  - Säger: Att det var en skräll, alltså att den svagare vann.
+- [NOTISER.match (n_match), src/sim/sport.ts:153] `{vinnare} vann {best} medan {publik} såg på.` om: `f => Number(f.nPub) > 0`
+  - Fält: publik = och(mm.publik.map(q => q.namn)), nPub (sport.ts:150)
+  - Säger: Vilka som såg på.
+- [NOTISER.gravid (ny mall n_gravid), src/sim/steg.ts:858] `{namn} väntar barn med {partner}.` om: `f => !!f.partner`
+  - Fält: partner = byId(s, p.pregnantBy)?.name (steg.ts:858), ny mall n_gravid
+  - Säger: Vem fadern är.
+- [NOTISER.gravid (n_gravid), src/sim/steg.ts:858] `{namn} väntar sitt första barn.` om: `f => f.forsta === true`
+  - Fält: forsta = !s.people.some(q => q.mother === p.id)
+  - Säger: Att det är första barnet.
+- [NOTISER.dod (ny mall n_dod), src/sim/liv.ts:163] `{namn} dog {orsak}, {alder}, och lämnar {efter} efter sig.` om: `f => !!f.efter`
+  - Fält: orsak = cause, alder = aText (liv.ts:162-163); efter = och(levande partner och barn), t.ex. 'Halstig och två barn'
+  - Säger: Vem den döde lämnar efter sig.
+- [NOTISER.dod (n_dod), src/sim/liv.ts:163] `{namn}, en av dem som grundade byn, dog {orsak}, {alder}.` om: `f => f.grundare === true`
+  - Fält: grundare: samma prov som besk_grundare
+  - Säger: Att en grundare är borta, vilket är en händelse för hela byn.
+- [NOTISER.ledare (ny mall n_ledare), src/sim/styre.ts:422] `{namn} tar över efter {forre} och kallas nu {titel}.` om: `f => !!f.forre`
+  - Fält: forre = namnet på den förra ledaren i st.historia (styre.ts:417), titel = titel.toLowerCase()
+  - Säger: Vem som ledde förut.
+- [NOTISER.gast (ny mall n_gast), src/sim/handel.ts:438] `På kvällen bredde {handlare} från {hem} ut sin filt strax utanför byn.`
+  - Fält: handlare, hem (handel.ts:438). Att det är kväll följer av kvallNu.
+  - Säger: Tiden på dygnet och var filten ligger, som det verkligen är.
+- [NOTISER.gast (n_gast), src/sim/handel.ts:438] `{handlare} från {hem} kom med {utr} full av varor och bredde ut en filt strax utanför byn.`
+  - Fält: utr = bestamd(HANDLAR_UTR[h.utr].namn), med 'fullt' för neutrum som på handel.ts:439
+  - Säger: Hur handlaren bar varorna (vagn, kärra, packning).
+- [NOTISER.hus (ny mall n_hus), src/sim/bygg.ts:239] `{namn} satte sista biten: {hus} är {klart}. Nu kan {sova} sova under tak.` om: `f => !!f.sova`
+  - Fält: sova = tal(sovPersoner(n)) när fnOf(h).sover (bygg.ts:236-238)
+  - Säger: Vad huset betyder för byn: hur många som får tak över huvudet.
+- [NOTISER.bynamn (ny mall n_bynamn), src/sim/bynamn.ts:232] `Byn kallar sig nu {namn}, efter {om}.` om: `f => f.slag === 'person' && !!f.om`
+  - Fält: slag = DEF[k.rad].slag, om = byId(s, k.om)?.name (bynamn.ts). Kontrollera att slaget heter 'person'.
+  - Säger: Vem byn har fått sitt namn efter.
+- [NOTISER.bynamn (n_bynamn), src/sim/bynamn.ts:232] `Byn kallar sig nu {namn}, så att ingen ska glömma det som hände.` om: `f => f.slag === 'minne'`
+  - Fält: slag som ovan
+  - Säger: Varför namnet valdes: minnet.
+- [NOTISER.bynamn (n_bynamn), src/sim/bynamn.ts:232] `Byn kallar sig nu {namn}. De troende säger att namnet är heligt.` om: `f => f.slag === 'tro'`
+  - Fält: slag som ovan
+  - Säger: Namnets heliga mening.
+- [kronika runsten (bildstenen), src/sim/skrift.ts:222] `{namn} reste en bildsten om {motiv}. {bild}` om: `f => !!f.bild`
+  - Fält: bild = text ur bildText (skrift.ts:217)
+  - Säger: Vad stenen visar, i stället för 148 likadana rader om "en uppfinning". Konsten får vara abstrakt.
+- [h_ont, src/sim/berattelser.ts:2292] `Det kom mitt i en god tid för {honom}.` om: `f => f.glad === true`
+  - Fält: glad (berattelser.ts:3309)
+  - Säger: Hur personen mådde innan, alltså att det onda bröt en god tid.
+- [h_ont, src/sim/berattelser.ts:2292] `Det krävs mer än så för att skrämma {honom}.` om: `f => f.modig === true && (f.slag === 'fara' || f.slag === 'strid')`
+  - Fält: modig; slag = k i kanslaRad (berattelser.ts:3305). Kontrollera att id:na i PERSONLOGG heter så.
+  - Säger: Personens mod inför just faran, inte bara att hen tar det med fattning.
+- [h_ont, src/sim/berattelser.ts:2292] `{Hen} är inte den som tiger om sådant.` om: `f => f.talfor === true`
+  - Fält: talfor
+  - Säger: Ett drag hos personen: hen pratar om det onda också.
+- [h_gott, src/sim/berattelser.ts:2304] `Det kom när allt annat kändes tungt.` om: `f => f.nere === true`
+  - Fält: nere
+  - Säger: Att det goda kom mitt i en svår tid. Den ersätter "liten glädje" och säger mer.
+- [h_gott, src/sim/berattelser.ts:2304] `Det hade {hen} väntat länge på.` om: `f => f.slag === 'lart' || f.slag === 'yrke'`
+  - Fält: slag = k i kanslaRad
+  - Säger: Att det är frukten av arbete, för lärdomar och yrken.
+- [h_gott, src/sim/berattelser.ts:2304] `Det var en stor dag för {honom}.` om: `f => f.slag === 'nara' || f.slag === 'relation'`
+  - Fält: slag = k i kanslaRad
+  - Säger: Tyngden i de stora händelserna: bröllop, födelser och vänskap.
+- [f_publik, src/sim/berattelser.ts:2000] `Det var så kallt att de satt tätt ihop medan de lyssnade.` om: `f => f.kallt === true && Number(f.nTal) > 1`
+  - Fält: kallt = coldOf(temperature(s)) > 0 när det börjar (framtradande.ts)
+  - Säger: Vädret och kylan, ett sinnesintryck.
+- [f_publik, src/sim/berattelser.ts:2000] `Ingen av dem hade hört {namn} uppträda förut.` om: `f => f.forsta === true`
+  - Fält: forsta: det första framträdandet för den som uppträdde (en räknare per person)
+  - Säger: Att det var första gången, vilket gör det till en händelse.
+- [m_lopp, src/sim/berattelser.ts:2066] `Snön yrde, och det var svårt att se vem som träffade vem.` om: `f => f.sport === 'snoboll' && f.jamnt === true`
+  - Fält: sport, jamnt
+  - Säger: Ett sinnesintryck från just snöbollskriget.
+- [m_lopp, src/sim/berattelser.ts:2066] `Båda föll i gräset flera gånger innan det var avgjort.` om: `f => f.sport === 'brottning' && f.jamnt === true && !f.sno`
+  - Fält: sport, jamnt, sno (s.vader?.sno, sport.ts:146)
+  - Säger: Hur brottningen såg ut.

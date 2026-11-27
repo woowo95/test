@@ -1,0 +1,256 @@
+# Texterna, delen handelser (varld 73a44558)
+
+Godkänt av redaktören. Varje rad anger mallen och raden i koden (fil:rad) på commit 73a44558. Bygg in allt i listan; en ändring som inte längre passar koden hoppas över och nämns i commiten.
+
+**Läsarens sammanfattning:** Jag gick igenom src/sim/berattelser.ts rad 700–1400, från besk_egetHus till p_langtan: beskrivningens ägodelar och boende, eftermälet (e_*), krönikans händelser (k_*), rättegångarna (r_ratt/r_folk), sakernas berättelser (m_*/u_*) och samtalen (p_*). Jag läste också koden som fyller dem: kronikaBer/vaderFalt (berattelser.ts:3020), die (liv.ts:152–164), födseln (liv.ts:204–219), husKlart (bygg.ts:230–241), learn (teknik.ts:325–332), styrets val (styre.ts:380–421), utvisa och rost.ts, strid.ts:1344, varg.ts:610–707, bjorn.ts:176–240, sakMinne/sakBerattelse (berattelser.ts:3069–3150) och pratText (berattelser.ts:3233). Underlaget är texter.txt v3. Kontrollerna hittade inga fel, men det finns många sakfel som kontrollerna inte ser.
+
+Det vanligaste felet är "vid elden" när ingen eld brinner. Ingen krönikamall har fältet eld, men r_ratt har det och använder det ändå inte i sex varianter. Flera texter påstår också något som simuleringen kan motsäga: "De fällde björnen" när jägaren var ensam, "{partner} vakade hos {helt} till slutet" när döden kom plötsligt, "Byn valde" när makten ärvdes eller vanns i strid, "Nu kan byn leda byn", "Precis före kylan" när det redan är kallt, "drev ut honom efter att ha störtats" (där det är fel person som syftas på) och "säger {namn}" om en gjord sak när den som gjorde den är död.
+
+Omskrivningarna är tydligast i besk_utkant, besk_fattig, besk_rik, besk_inget, besk_arv, e_minns, p_plats och p_langtan, och i nästan varje k_-mall, som har tre till fem varianter med samma påstående i ny ordföljd. Regeln om minst åtta varianter per mall gör att de stryks bara om regeln ändras (folk.ts:2085, 2236, 2281, 2348). Annars blir scenariot berattelser rött.
+
+De nya varianterna bygger på det simuleringen redan vet men inte skickar till texten. Det är vem barnet är uppkallat efter, åska vid födseln (ett tecken i spelet), tvillingar och första barnet. Hur många flintförsök den första elden tog och stenringen runt den. Vilka som hjälpte till att bygga huset och hur många som nu kan sova under tak. Om den skadade vann slagsmålet och var såret satt. Hur ledaren fick makten och vem som ledde förut. Vapnet och blodspåret vid den första vargen. Vem som bär den dödas namn och var graven ligger. Hur många vintrar ledaren har lett byn, och om föräldern som egenskapen kommer från är död. Varje ny variant har sitt fält och raden där värdet finns.
+
+**Känslan:** Krönikan läses som en lista med formler. "Det var vår när …", "Byn kommer ihåg dagen då …", "Ingen glömmer när …" och "Byn talade länge om …" kommer tillbaka i nästan varje mall. Textminnet ser bara de tre senaste raderna i samma mall, så spelaren som scrollar krönikan läser "Det var istid när" om ett hus, en död, en ledare och en varg i följd. Varianterna i en mall säger nästan alltid bara att händelsen hände, vem som gjorde det och vilken årstid det var. Det finns sällan något om vad det kostade, vem som var med eller vad som hände sedan, fast simuleringen vet det: byggarna, vinnaren, vapnet, försöken, namnet barnet fick efter någon. Eftermälet (890 läsningar) slutar oftast med "Vid elden berättar man fortfarande om henne" eller "De som var med minns hur det var när han levde", och efter några döda känns det tomt. De bästa raderna är de konkreta: "Ingen grät som Ikel när Ira dog av kyla", "Ord blev slag". Sakfelen ("Elden brann lågt den kvällen" fast elden var släckt, "De fällde björnen" om en ensam jägare) bryter illusionen. Samtalen är begripliga men stela, och några är rena omskrivningar av varandra, så att samma två bybor "berättade för", "fick veta av" och "sa till … att det finns" om vatten.
+
+## Rättelser
+
+- [r_ratt, src/sim/berattelser.ts:1033] Fältet eld finns (styre.ts:569, s.fire.lit) men används inte. Fem varianter till säger 'vid elden' utan villkor: rad 1034, 1036, 1037, 1038 och 1041. När elden är släckt säger de emot varianten på rad 1045 ('Elden hade slocknat').
+  - Nu: På kvällen samlades byn vid elden. {ledare} {straff} {namn} för att {hen} {brott}.
+  - Blir: { t: 'På kvällen samlades byn vid elden. {ledare} {straff} {namn} för att {hen} {brott}.', om: f => f.eld === true } (samma villkor på raderna 1034, 1036, 1037, 1038 och 1041)
+- [r_folk, src/sim/berattelser.ts:1053] 'runt elden' gäller i samma stund som domen, men villkoret läser inte eld.
+  - Nu: Det blev tyst runt elden, men ingen tyckte att {ledare} hade gjort fel.
+  - Blir: { t: 'Det blev tyst runt elden, men ingen tyckte att {ledare} hade gjort fel.', om: f => !f.oratt && !f.dog && f.eld === true }
+- [k_dog, src/sim/berattelser.ts:898] Varianten har inget villkor. Döden kan komma mitt på dagen, och elden kan vara släckt. Den som dör av kyla dör ofta just för att elden är släckt. Krönikans fält saknar eld.
+  - Nu: Elden brann lågt den kvällen. Rago hade dött av kyla, två år gammal.
+  - Blir: { t: 'Elden brann lågt den kvällen. {helt} hade dött {orsak}, {alder} år gammal.', om: f => f.eld === true && f.natt === true }, och eld: s.fire.lit i vaderFalt (berattelser.ts:3020)
+- [k_dog, src/sim/berattelser.ts:900] Villkoret är bara att partnern lever. Vid en olycka, i en tornado, av en varg eller på en resa ('dog på en resa och kom aldrig hem') vakade ingen. Orsaken skickas inte som id.
+  - Nu: {partner} vakade hos {helt} till slutet. {Hen} dog {orsak}, {alder} år gammal.
+  - Blir: { t: '{partner} vakade hos {helt} till slutet. {Hen} dog {orsak}, {alder} år gammal.', om: f => !!f.partner && ['alderdom','sjukdom','magsjuka','matforgiftning','forkylning','lunginflammation','massling','koppor','barnsjukdom','kallbrand','skorbjugg','svalt','torst','blod'].includes(f.orsakId as string) }, med det nya fältet orsakId: orsak (die, liv.ts:164)
+- [k_dog, src/sim/berattelser.ts:906] {nar} kan vara 'när han lade ved på elden', 'grillade mat' eller 'badade i sjön' (NAR_AKT, liv.ts:139). Då var den döda kvar i byn, och 'kom aldrig tillbaka' blir fel.
+  - Nu: {helt} kom aldrig tillbaka. {Hen} dog {orsak} {nar}, {alder} år gammal.
+  - Blir: { t: '{helt} kom aldrig tillbaka. {Hen} dog {orsak} {nar}, {alder} år gammal.', om: f => !!f.nar && /(fällde ett träd|var ute på jakt|fiskade|samlade grenar|samlade bär|var ute och gick)$/.test(f.nar as string) }
+- [k_dogSpad, src/sim/berattelser.ts:921] Samma fel som i k_dog: varianten har inget villkor om eld eller kväll.
+  - Nu: Elden brann lågt den kvällen. Lilla Tusvi hade dött av en barnsjukdom.
+  - Blir: { t: 'Elden brann lågt den kvällen. Lilla {namn} hade dött {orsak}.', om: f => f.eld === true && f.natt === true }
+- [e_dog, src/sim/berattelser.ts:820] Orsaken för forsvunnen (liv.ts:131, 'på en resa och kom aldrig hem') är en hel fras med ett eget verb. I e_dog och k_dog hamnar årstiden och åldern efter 'kom aldrig hem'. I k_dog står byns väder på samma rad ('Snön föll när … dog på en resa'), fast den döda var långt borta.
+  - Nu: {namn} dog på en resa och kom aldrig hem på hösten år 24, 47 år gammal.
+  - Blir: DOD.forsvunnen.text = 'på en resa' (liv.ts:131). e_dog blir då '{namn} dog på en resa på hösten år 24, 47 år gammal.' Lägg till fältet borta: p.ute !== undefined i die (liv.ts:164), och villkoret !f.borta på k_dog-varianterna med snö, natt och 'Elden brann lågt'.
+- [k_fodd, src/sim/berattelser.ts:936] Villkoret är bara kallt. Elden kan vara släckt, och fältet eld saknas.
+  - Nu: I kylan föddes Maik, son till Hilhild och Avid, och alla samlades kring elden.
+  - Blir: { t: 'I kylan föddes {namn}, {barnet} till {foraldrar}, och alla samlades kring elden.', om: f => f.kallt === true && f.eld === true }
+- [k_fodd, src/sim/berattelser.ts:930] Modern kan dö i barnsäng direkt efter raden (liv.ts:219, risk.mor dras efter kronikaBer). Samma sak gäller rad 933 ('{mor} födde {namn}, och byn samlades för att se barnet'). Texten blir också loggens och notisens rad.
+  - Nu: Rago föddes. Fahild höll sitt barn i famnen hela natten.
+  - Blir: Dra rnd(s, 'halsa', mother) < risk.mor före kronikaBer (liv.ts:209) och spara den i morDor, och anropa die efteråt som nu (liv.ts:219). Ge raderna 930 och 933 villkoret om: f => !f.morDor, till exempel { t: '{namn} föddes. {mor} höll sitt barn i famnen hela natten.', om: f => !f.morDor }
+- [k_forstaEld, src/sim/berattelser.ts:942] Den första elden tänds ofta en sommar, när byn inte frusit alls. Varianten har inget villkor.
+  - Nu: Byn hade frusit länge. Sedan tände Odis den första elden, och alla samlades kring den.
+  - Blir: { t: 'Byn hade frusit länge. Sedan tände {namn} den första elden, och alla samlades kring den.', om: f => f.kallt === true }
+- [k_uppfann, src/sim/berattelser.ts:977] Med de sociala teknikerna ({lara} = 'leda byn', 'stifta lagar') blir det 'byn … byn'. Texten står också i presens, fast krönikan berättar i dåtid.
+  - Nu: Nu kan byn leda byn, och det var Ulhild som kom på hur.
+  - Blir: '{namn} kom på hur man kan {lara}, och från den dagen kunde byn det.'
+- [k_husKlar, src/sim/berattelser.ts:994] Villkoret är kallt, alltså att det redan är minusgrader. Då är det inte 'före kylan'.
+  - Nu: Precis före kylan blev Yndes hus färdigt.
+  - Blir: { t: 'Mitt i kylan blev {hus} {klart}.', om: f => f.kallt === true }
+- [k_ledare, src/sim/berattelser.ts:1014] 'valde till den vise' är inte naturlig svenska när titeln är ett binamn. Ledaren väljs dessutom inte alltid: hen kan ärva makten, vinna striden om den eller bli utsedd (styre.ts:384–399). Samma sak gäller k_forstaLedare rad 1004 ('Byn valde … till sin första ledare').
+  - Nu: Byn valde Tusik till den vise.
+  - Blir: { t: 'Byn valde {namn} till ledare, och man kallade {honom} {titel}.', om: f => f.satt === 'val' }. På rad 1004: { t: 'Byn valde {namn} till sin första ledare, {titel}, och började undra om alla är lika mycket värda.', om: f => f.satt === 'val' }. Fältet satt: tronfoljd(s) (styre.ts:387, flyttas ut ur else-blocket), 'val' när best kom ur rostval (best ??= valet), och 'frak' när best = fv (styre.ts:385).
+- [k_forstaLedare, src/sim/berattelser.ts:998] En parentes i krönikan låter som en tabell och inte som en berättelse. Samma sak på rad 1009 i k_ledare.
+  - Nu: {namn} blev byns första ledare ({titel}).
+  - Blir: '{namn} blev byns första ledare, och man kallade {honom} {titel}.' (k_forstaLedare 998) och '{namn} blev byns ledare, och man kallade {honom} {titel}.' (k_ledare 1009)
+- [k_utvisad, src/sim/berattelser.ts:1026] Infinitivfrasen syftar på satsens subjekt, alltså Aldra, men det var Oso som störtades (rost.ts:359). 'för att ha velat störta ledaren' (rost.ts:326) har samma fel och blir dessutom konstigt när den som driver ut någon själv är ledaren.
+  - Nu: Så slutade tiden i byn för Oso: Aldra drev ut honom efter att ha störtats.
+  - Blir: utvisa(s, l, led, `sedan ${han(l)} störtats`) (rost.ts:359), utvisa(s, q, l, `för att ${han(q)} velat störta ${honom(l)}`) (rost.ts:326), utvisa(s, led, l, `för att ${han(led)} försökt ta makten`) (rost.ts:363). Texten blir 'Så slutade tiden i byn för Oso: Aldra drev ut honom sedan han störtats.'
+- [k_bjornjakt, src/sim/berattelser.ts:1138] {folk} kan vara en enda jägare (bjorn.ts:236). Då blir 'De' fel. Samma sak på rad 1140 ('och de fällde den'), rad 1144 ('bar de björnen') och i k_bjornSprang rad 1163 ('när de kom fram'). Mallen saknar fältet de, som k_vargjakt har.
+  - Nu: Det var {arstid} när {folk} gick på björnjakt. De fällde björnen.{svara}
+  - Blir: Fältet de: folk.length > 1 ? 'de' : han(folk[0]) i bjorn.ts:239. Raderna blir 'Det var {arstid} när {folk} gick på björnjakt. {De} fällde björnen.{svara}', 'Med spjuten i händerna gick {folk} mot björnen, och {de} fällde den.{svara}', och i k_bjornSprang (rad 1163) '{namn} gick på björnjakt{med}, men skogen var tom när {de} kom fram.'
+- [k_bjornjakt, src/sim/berattelser.ts:1144] Björnen är för tung att bära hel. Den styckas, och det ingen orkar bära blir liggande där den föll (bjorn.ts:225–233). Pluralfelet finns också här.
+  - Nu: När {folk} kom hem från björnjakten bar de björnen med sig.{svara}
+  - Blir: '{folk} kom hem från björnjakten med så mycket av björnen som {de} orkade bära.{svara}'
+- [k_vargjakt, src/sim/berattelser.ts:1104] Spjut är bara en faktor i vargjakten (varg.ts:57, 96: med händerna går det också). Rad 1106 ('Med spjuten i händerna') har samma fel.
+  - Nu: {folk} tog sina spjut och gick mot {vargar}. {De} fällde {fallde}.{svara}
+  - Blir: { t: '{folk} tog sina spjut och gick mot {vargar}. {De} fällde {fallde}.{svara}', om: f => f.spjut === true } och samma villkor på rad 1106, med spjut: folk.every(p => harSpjut(s, p)) vid varg.ts:706
+- [k_vargjakt, src/sim/berattelser.ts:1109] Kommatecknet före 'och' med samma subjekt bryter meningen.
+  - Nu: Bjelle gick ut för att göra slut på en varg, och fällde ingen.
+  - Blir: '{folk} gick ut för att göra slut på {vargar} och fällde {fallde}.{svara}'
+- [m_minne, src/sim/berattelser.ts:1244] m.mn sätts också på kläder (sakMinne, berattelser.ts:3087), och man ristar inte i skor av kaninskinn. m_konst undantar klad, men m_minne och m_inskr gör det inte.
+  - Nu: I {den} har {namn} ristat sitt märke och orden "Till minne av {om}."
+  - Blir: { t: 'I {den} har {namn} sytt in sitt märke och orden "Till minne av {om}."', om: f => f.klad === true }, och villkoret !f.klad på de ristade varianterna i m_minne och m_inskr. Fältet klad: sakGrupp(t.k) === 'klad' (fylls i vid berattelser.ts:3139–3145).
+- [m_gjord, src/sim/berattelser.ts:1209] Natten sparas (m.natt), men inte om elden brann. Saken kan ha gjorts i mörkret eller vid en fackla.
+  - Nu: Det var natt när {namn} gjorde klart {saken}, i skenet från elden.
+  - Blir: Spara m.eld = s.fire.lit i sakMinne (berattelser.ts:3074), och { t: 'Det var natt när {namn} gjorde klart {saken}, i skenet från elden.', om: f => f.natt === true && f.eld === true }
+- [u_gjord, src/sim/berattelser.ts:1288] Presens om den som gjorde saken. Saken lever kvar när hen dött, och då är 'säger' fel. Rad 1291 ('"Det håller nog en dag till", säger {namn} … varje dag') har samma fel.
+  - Nu: {namn} säger att {saken} blev som {hen} tänkt sig. Ingen tror på det.
+  - Blir: { t: '{namn} säger att {saken} blev som {hen} tänkt sig. Ingen tror på det.', om: f => f.lever === true } och samma villkor på rad 1291, med fältet lever: alive(p)
+- [p_fara, src/sim/berattelser.ts:1332] 'av blodförlust av Sigrun': {om} slutar ofta med 'av …', och det blir dubbelt.
+  - Nu: Erilvo fick höra om platsen där Endrun dog av blodförlust av Sigrun.
+  - Blir: 'Av {namn} fick {med} höra om {om}.'
+- [p_fara, src/sim/berattelser.ts:1333] 'det' syftar inte på något, eftersom platsen inte nämns i meningen.
+  - Nu: Maskgerd överdrev nog hur farligt det är, men Ymgerd lyssnade ändå.
+  - Blir: '{namn} gjorde nog {om} farligare än det var, men {med} lyssnade ändå.'
+- [p_fjarran, src/sim/berattelser.ts:1384] uppdrag.ts:195 delar ämnet fjarran med {om} = 'ett uppdrag' eller uppdragets namn. Det är ingen plats, så 'hur det står till i', 'vägen till' (rad 1381) och 'långt härifrån' (rad 1379, 'pratade om ett uppdrag, långt härifrån') blir fel.
+  - Nu: Hilvid och Avid undrade hur det står till i ett uppdrag.
+  - Blir: Fältet plats: false när uppdrag.ts:195 delar ett uppdrag, och villkoret f.plats !== false på raderna 1379, 1381 och 1384
+- [p_gral, src/sim/berattelser.ts:1315] 'som så ofta förut' kontrolleras inte. Det kan vara deras första gräl.
+  - Nu: Det blev gräl mellan Alleif och Gurkve, som så ofta förut.
+  - Blir: { t: 'Det blev gräl mellan {namn} och {med}, som så ofta förut.', om: f => f.forr === true }, med forr: !!s.rels[relKey(t.id, l.id)]?.minns?.gral i pratText (berattelser.ts:3239)
+
+## Varianter som tas bort (säger samma sak som en annan)
+
+- [k_skadad, src/sim/berattelser.ts:1069] Ta bort: "Det blev slagsmål mellan {namn} och {mot}, och {namn} skadades svårt." (står kvar: "{namn} skadades svårt i ett slagsmål med {mot}.")
+- [k_utvisad, src/sim/berattelser.ts:1020] Ta bort: "{namn} fick lämna byn. {ledare} drev ut {honom} {varfor}." (står kvar: "{ledare} drev ut {namn} ur byn {varfor}.")
+- [k_forstaLedare, src/sim/berattelser.ts:1003] Ta bort: "Från den dagen ledde {namn} byn, den första som gjorde det. Man kallade {honom} {titel}." (står kvar: "Den första som ledde byn var {namn}, {titel}.")
+- [k_ledare, src/sim/berattelser.ts:1011] Ta bort: "Nu var det {namn} som ledde byn, {titel}." (står kvar: "Byn fick en ny ledare: {namn}, {titel}.")
+- [k_forstaBjorn, src/sim/berattelser.ts:1172] Ta bort: "Den första björnen som byn fick, den fällde {namn}." (står kvar: "Det var {namn} som fällde byns första björn.")
+- [k_forstaVarg, src/sim/berattelser.ts:1091] Ta bort: "Det var {namn} som fällde byns första varg." (står kvar: "{namn} dödade byns första varg.")
+- [k_vargAnfall, src/sim/berattelser.ts:1126] Ta bort: "Vargarna anföll, och {svara} skadades svårt." (står kvar: "{svara} skadades svårt när vargar anföll.")
+- [k_atergrundad, src/sim/berattelser.ts:1193] Ta bort: "Byn var tom tills {namn} kom och grundade den på nytt." (står kvar: "Byn hade stått tom. Sedan kom {namn} och grundade den på nytt.")
+- [k_bjornjaktMiss, src/sim/berattelser.ts:1153] Ta bort: "Björnen tog sig undan, och {folk} gick hem tomhänta.{svara}" (står kvar: "Det blev ingen björn den gången. {folk} fick gå hem utan den.{svara}")
+- [e_dog, src/sim/berattelser.ts:825] Ta bort: "{namn} lever inte längre: {hen} dog {orsak} {iarstid} år {ar}, {aldern} år gammal." (står kvar: "{namn} dog {orsak} {iarstid} år {ar}, {aldern} år gammal.")
+- [e_minns, src/sim/berattelser.ts:886] Ta bort: "Ännu talar man om {honom} vid elden." (står kvar: "Vid elden berättar man fortfarande om {honom}.")
+- [e_minns, src/sim/berattelser.ts:883] Ta bort: "De som var med minns hur det var när {hen} levde." (står kvar: "Byn har inte glömt {honom}.")
+- [besk_arv, src/sim/berattelser.ts:759] Ta bort: "{Hans} {vad} är ett arv från {hans} {fo2}." (står kvar: "{Hen} har ärvt sin {fo} {vad}.")
+- [besk_arv, src/sim/berattelser.ts:760] Ta bort: "Sin {fo} {vad} har {hen} fått i arv." (står kvar: "{Hen} har sin {fo} {vad}.")
+- [besk_utkant, src/sim/berattelser.ts:771] Ta bort: "{Hen} sover i ett hus i byns ytterkant." (står kvar: "{Hen} bor i utkanten av byn.")
+- [besk_utkant, src/sim/berattelser.ts:773] Ta bort: "{Hans} sovplats ligger i byns utkant." (står kvar: "{Hen} sover i byns utkant, en bit från de andra.")
+- [besk_fattig, src/sim/berattelser.ts:729] Ta bort: "{Hen} har mycket få ägodelar." (står kvar: "{Hen} äger nästan ingenting.")
+- [besk_rik, src/sim/berattelser.ts:720] Ta bort: "{Hans} ägodelar är fler än de flesta andras." (står kvar: "{Hen} äger mer än de flesta i byn.")
+- [besk_ledare, src/sim/berattelser.ts:740] Ta bort: "{Hen} är byns ledare och bär titeln {titel}." (står kvar: "Som {titel} leder {hen} byn.")
+- [besk_inget, src/sim/berattelser.ts:810] Ta bort: "{Hen} är ännu inte känd för något särskilt." (står kvar: "{Hen} har inte hunnit bli känd för något än.")
+- [besk_egetHus, src/sim/berattelser.ts:707] Ta bort: "{Hen} äger huset {hen} bor i." (står kvar: "{Hen} bor i ett eget hus.")
+- [p_rykte, src/sim/berattelser.ts:1342] Ta bort: "{med} fick höra ett och annat om {om} av {namn}." (står kvar: "{namn} berättade för {med} vad man säger om {om}.")
+- [p_plats, src/sim/berattelser.ts:1371] Ta bort: "{med} fick veta av {namn} var det finns {om}." (står kvar: "{namn} berättade för {med} var det finns {om}.")
+- [p_plats, src/sim/berattelser.ts:1375] Ta bort: "{namn} och {med} pratade om {om} och var det brukar finnas." (står kvar: "{namn} och {med} pratade om var man hittar {om}.")
+- [p_langtan, src/sim/berattelser.ts:1405] Ta bort: "{namn} sa att {om} var det {hen} längtade mest efter." (står kvar: "{namn} sa till {med} att {hen} längtar efter {om}.")
+- [p_langtan, src/sim/berattelser.ts:1402] Ta bort: "{med} fick höra att {namn} saknar {om}." (står kvar: "{namn} klagade för {med} att {hen} inte fått {om} på länge.")
+- [p_gral, src/sim/berattelser.ts:1310] Ta bort: "{namn} och {med} kunde inte hålla sams." (står kvar: "{namn} och {med} skildes osams.")
+
+## Nya varianter
+
+- [k_fodd, src/sim/berattelser.ts:926] `{namn} föddes, {barnet} till {foraldrar}, och fick sitt namn efter {efter}.` om: `f => !!f.efter && !f.efterDod`
+  - Fält: efter: byId(s, ch.uppkallad)?.name, efterDod: !alive(q). Sätts i newPerson före kronikaBer (liv.ts:209).
+  - Säger: Vem barnet är uppkallat efter. Det står i dag bara i loggen.
+- [k_fodd, src/sim/berattelser.ts:926] `{foraldrar} gav sin {barnet} namnet {namn}, efter {efter} som inte längre levde.` om: `f => !!f.efter && f.efterDod === true`
+  - Fält: efter och efterDod (som nr 1)
+  - Säger: Att den döda lever vidare i namnet.
+- [k_fodd, src/sim/berattelser.ts:926] `Åskan gick över byn när {namn} föddes, {barnet} till {foraldrar}, och {mor} tog det som ett tecken.` om: `f => f.aska === true`
+  - Fält: aska: vaderNu(s).aska i vaderFalt (berattelser.ts:3020). Läses redan på liv.ts:208, där föräldrarna får tecknet barnAska.
+  - Säger: Ett varsel vid födseln, som spelet räknar som ett tecken.
+- [k_fodd, src/sim/berattelser.ts:926] `Strax efter {syskonet} kom {namn}. {foraldrar} hade fått tvillingar.` om: `f => !!f.syskonet`
+  - Fält: syskonet: ch.name, skickas bara med i tvillingens kronikaBer (liv.ts:218)
+  - Säger: Att det blev tvillingar.
+- [k_fodd, src/sim/berattelser.ts:926] `{namn} var det första barnet som föddes i byn, {barnet} till {foraldrar}.` om: `f => f.forsta === true`
+  - Fält: forsta: !s.stat?.fodda före count(s,'fodda') (liv.ts:211)
+  - Säger: Att det är byns första barn.
+- [k_dog, src/sim/berattelser.ts:891] `Det var första gången döden kom till byn: {helt} dog {orsak}, {alder} år gammal.` om: `f => f.forsta === true`
+  - Fält: forsta: s.stat.doda === 1. count(s,'doda') kommer före kronikaBer (liv.ts:164).
+  - Säger: Att det är byns första död.
+- [k_dog, src/sim/berattelser.ts:891] `{helt} hade blivit gammal och trött, och till sist orkade kroppen inte mer. {Hen} blev {alder} år.` om: `f => f.orsakId === 'alderdom'`
+  - Fält: orsakId: orsak (die, liv.ts:152)
+  - Säger: Hur döden kom, när det var ålderdom.
+- [k_dog, src/sim/berattelser.ts:891] `Hungern blev för svår för {helt}. {Hen} dog, {alder} år gammal.` om: `f => f.orsakId === 'svalt'`
+  - Fält: orsakId
+  - Säger: Hur svälten känns, i stället för bara orsaken.
+- [k_dog, src/sim/berattelser.ts:891] `{helt} dog {orsak}, {alder} år gammal, och {partner} fick leva vidare utan {honom}.` om: `f => !!f.partner`
+  - Fält: partner (finns, liv.ts:164)
+  - Säger: En följd för den som blev kvar. Den kan ersätta 'vakade hos' vid plötsliga dödsfall.
+- [k_dog, src/sim/berattelser.ts:891] `Kylan tog {helt} medan elden låg släckt. {Hen} blev {alder} år.` om: `f => f.orsakId === 'kyla' && f.eld === false && !f.borta`
+  - Fält: orsakId, eld (vaderFalt, nr 3 i FEL), borta (FEL nr 7)
+  - Säger: Orsak och följd: elden var släckt.
+- [k_forstaEld, src/sim/berattelser.ts:939] `Gnistorna slocknade gång på gång. Först efter {forsok} försök tog elden fäste, och byn hade fått sin första eld.` om: `f => (f.forsokN as number) >= 5`
+  - Fält: forsok: tal(f.tries), forsokN: f.tries, läses före f.tries = 0 (eld.ts:321)
+  - Säger: Vad det kostade att få fram elden.
+- [k_forstaEld, src/sim/berattelser.ts:939] `{namn} tände byns första eld och lade en ring av stenar runt den.` om: `f => f.ring === true`
+  - Fält: ring: f.ring efter laggRing (eld.ts:314)
+  - Säger: Hur eldplatsen kom till.
+- [k_forstaEld, src/sim/berattelser.ts:939] `De var bara {antal} i byn när {namn} tände den första elden.` om: `f => (f.antalN as number) <= 8`
+  - Fält: antal: talOrd(living(s).length), antalN: living(s).length, vid eld.ts:320
+  - Säger: Hur liten byn var då.
+- [k_uppfann, src/sim/berattelser.ts:972] `{namn} var bara ett barn, men det var {hen} som först kom på hur man kan {lara}.` om: `f => f.ung === true`
+  - Fält: ung: ageOf(p, s.now) < ALDER.vuxen, skickas från teknik.ts:331
+  - Säger: Vem uppfinnaren var: ett barn.
+- [k_uppfann, src/sim/berattelser.ts:972] `{namn} kom på hur man kan {lara}. {effekt}` om: `f => !!f.effekt && !/^Där\b/.test(f.effekt as string)`
+  - Fält: effekt: t.effekt (TEKNIKER, skickas från teknik.ts:331)
+  - Säger: Vad uppfinningen betydde för byn ('Man bär hem mer från varje tur och spiller mindre bär.').
+- [k_uppfann, src/sim/berattelser.ts:972] `{namn} hade kommit på nya saker förut, och nu kom {hen} också på hur man kan {lara}.` om: `f => (f.fler as number) >= 2`
+  - Fält: fler: uppfann(p).length efter att tekniken lagts till (teknik.ts:331)
+  - Säger: Att uppfinnaren kommit på saker förut.
+- [k_uppfann, src/sim/berattelser.ts:972] `Snön föll utanför när {namn} kom på hur man kan {lara}.` om: `f => f.sno === true`
+  - Fält: sno (vaderFalt)
+  - Säger: Vädret. I dag har mallen bara regn och kyla.
+- [k_husKlar, src/sim/berattelser.ts:985] `{Hus} stod {klart}, och nu kunde {sova} av byborna sova under tak.` om: `f => !!f.sova`
+  - Fält: sova: tal(sovPersoner(n)) när fnOf(h).sover (bygg.ts:236–238)
+  - Säger: Vad huset betyder för byn.
+- [k_husKlar, src/sim/berattelser.ts:985] `{byggare} hade burit och byggt tillsammans med {namn}, och nu stod {hus} {klart}.` om: `f => !!f.byggare`
+  - Fält: byggare: och() av namnen i h.byggare utom p (byggnad.ts:31), vid bygg.ts:241
+  - Säger: Vilka som hjälpte till att bygga.
+- [k_husKlar, src/sim/berattelser.ts:985] `Det var byns första hus. {namn} lade den sista biten, och {hus2} stod {klart}.` om: `f => f.forsta === true`
+  - Fält: forsta: antalet färdiga hus utom naringshus === 1, vid bygg.ts:241
+  - Säger: Att det är det första huset.
+- [k_husKlar, src/sim/berattelser.ts:985] `Snön föll medan {namn} gjorde klart {hus3}.` om: `f => f.sno === true`
+  - Fält: sno, hus3 (finns)
+  - Säger: Vädret när huset byggdes klart.
+- [k_skadad, src/sim/berattelser.ts:1067] `{namn} vann slagsmålet mot {mot}, men fick svåra sår.` om: `f => f.vann === true`
+  - Fält: vann: vinnare === k.sida (strid.ts:1340–1344)
+  - Säger: Vem som vann.
+- [k_skadad, src/sim/berattelser.ts:1067] `{namn} fick ett svårt sår i {del} när {hen} slogs med {mot}.` om: `f => !!f.del`
+  - Fält: del: DEL[w.d].i för det svåraste såret (formen 'huvudet', som i halsa.ts:524)
+  - Säger: Var såret satt.
+- [k_skadad, src/sim/berattelser.ts:1067] `{namn} och {mot} hade länge varit ovänner, och till sist blev det slagsmål. {namn} skadades svårt.` om: `f => f.ovan === true && !f.flera`
+  - Fält: ovan: s.rels[relKey(p.id, mot[0].id)]?.op < REL.ovan, vid strid.ts:1344
+  - Säger: Varför slagsmålet kom.
+- [k_skadad, src/sim/berattelser.ts:1067] `{vanner} slogs på samma sida som {namn}, men det hjälpte inte: {namn} skadades svårt av {mot}.` om: `f => !!f.vanner`
+  - Fält: vanner: och() av namnen på den egna sidan utom p (strid.ts:1340)
+  - Säger: Vilka som var med på den egna sidan.
+- [k_ledare, src/sim/berattelser.ts:1008] `Efter {forra} var det {namn} som ledde byn, och man kallade {honom} {titel}.` om: `f => !!f.forra`
+  - Fält: forra: st.historia.at(-2)?.namn efter push (styre.ts:418)
+  - Säger: Vem som ledde före.
+- [k_ledare, src/sim/berattelser.ts:1008] `{namn} ärvde makten och blev byns ledare, {titel}.` om: `f => f.satt === 'arv'`
+  - Fält: satt: tronfoljd(s) när best kom ur sättet (styre.ts:387–388)
+  - Säger: Hur makten kom: i arv.
+- [k_ledare, src/sim/berattelser.ts:1008] `{namn} hade vunnit striden om ledarskapet, och nu ledde {hen} byn, {titel}.` om: `f => f.satt === 'strid'`
+  - Fält: satt: 'strid' bara när frakVald kom ur tronstriden (styre.ts:694). Spara ursprunget, eftersom frakVald också sätts av kuppen (rost.ts:336, 358).
+  - Säger: Hur makten kom: genom strid.
+- [k_ledare, src/sim/berattelser.ts:1008] `Prästen ville ha {namn}, och så blev {hen} byns ledare, {titel}.` om: `f => f.satt === 'prast'`
+  - Fält: satt: 'prast' (styre.ts:389)
+  - Säger: Att tron avgjorde valet.
+- [k_forstaLedare, src/sim/berattelser.ts:997] `Byn hade vuxit till {vuxna} vuxna, och nu behövdes någon som bestämde. Det blev {namn}, byns första ledare, {titel}.`
+  - Fält: vuxna: talOrd(vuxna.length) (styre.ts:380)
+  - Säger: Varför byn fick en ledare.
+- [k_forstaVarg, src/sim/berattelser.ts:1089] `{namn} fällde byns första varg med {vapnet}.` om: `f => !!f.vapnet`
+  - Fält: vapnet: bestämd form av sakNamn(r.v) när r.v finns (varg.ts:676)
+  - Säger: Vapnet.
+- [k_forstaVarg, src/sim/berattelser.ts:1089] `Vargen var skadad och sprang, men {namn} följde blodspåret och fällde den. Det var byns första varg.` om: `f => f.spar === true`
+  - Fält: spar (varg.ts:671)
+  - Säger: Hur jakten gick till.
+- [k_vargjakt, src/sim/berattelser.ts:1101] `{folk} fällde {fallde} av {vargar}, och ingen av jägarna skadades svårt.` om: `f => !f.svara && (f.falldeN as number) > 0`
+  - Fält: falldeN: doda.length (nytt, varg.ts:706), svara (finns)
+  - Säger: Att ingen skadades.
+- [k_vargjakt, src/sim/berattelser.ts:1101] `{folk} fällde {fallde} av {vargar}, men {de} orkade inte bära hem alla. {Kvar} fick ligga kvar i skogen.{svara}` om: `f => (f.kvarN as number) > 0 && (f.falldeN as number) >= 2`
+  - Fält: kvarN: doda.length - bar.size, Kvar: stor(tal(kvarN)) (varg.ts:699)
+  - Säger: Vad som blev kvar efter jakten.
+- [e_minns, src/sim/berattelser.ts:879] `{uppkallad} bär {hans} namn i dag.` om: `f => !!f.uppkallad`
+  - Fält: uppkallad: namnet på ett levande barn med c.uppkallad === p.id, i eftermale (berattelser.ts:2957)
+  - Säger: Att den döda lever vidare i ett barns namn.
+- [e_minns, src/sim/berattelser.ts:879] `{Hans} grav ligger utanför byn.` om: `f => f.grav === true`
+  - Fält: grav: s.gravar?.some(g => g.vem === p.id && !g.fiende) (grav.ts:507)
+  - Säger: Var den döda ligger.
+- [besk_arv, src/sim/berattelser.ts:756] `{Hans} {fo2} lever inte längre, men {hans} {fo} {vad} lever vidare i {honom}.` om: `f => f.foDod === true`
+  - Fält: foDod: !alive(q) för föräldern som arv() ger (berattelser.ts:2808)
+  - Säger: Att arvet lever kvar efter föräldern.
+- [besk_arv, src/sim/berattelser.ts:756] `Fast {hen} ännu är ett barn syns det redan: {hen} är {adj} som sin {fo2}.` om: `f => f.ung === true`
+  - Fält: ung: ageOf(p, s.now) < ALDER.vuxen
+  - Säger: Att det syns redan i barndomen.
+- [besk_ledare, src/sim/berattelser.ts:734] `{Hen} har lett byn genom {vintrar} vintrar.` om: `f => (f.vintrarN as number) >= 2`
+  - Fält: vintrar: talOrd(s.styre.vintrar), vintrarN (styre.ts:415)
+  - Säger: Hur länge hen har lett byn.
+- [besk_ledare, src/sim/berattelser.ts:734] `Allt fler i byn är missnöjda med hur {hen} leder.` om: `f => f.svag === true`
+  - Fält: svag: legitimitet(s) under ett nytt tal i LED, vid berattelser.ts:2776
+  - Säger: Hur byn ser på ledaren.
+- [p_langtan, src/sim/berattelser.ts:1397] `{namn} sa till {med} att barnen hemma också behövde {om}.` om: `f => f.barn === true`
+  - Fält: barn (finns i pratText: talaren har barn under vuxen ålder, berattelser.ts:3240)
+  - Säger: Att längtan gäller barnen också.
+- [p_langtan, src/sim/berattelser.ts:1397] `{namn} sa till {med} att {hen} skulle orka mer som {yrke} med {om} i magen.` om: `f => !!f.yrke && f.mat === true`
+  - Fält: yrke (finns), mat: nytt, sant när längtan gäller mat
+  - Säger: Vad bristen kostar i arbetet.
+- [p_gral, src/sim/berattelser.ts:1307] `Mitt i natten grälade {namn} och {med}, och det hördes mellan husen.` om: `f => f.natt === true && !f.inne`
+  - Fält: natt, inne (finns i pratText)
+  - Säger: När och hur de grälade.

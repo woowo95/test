@@ -1,0 +1,406 @@
+# Texterna, delen personen (varld 73a44558)
+
+Godkänt av redaktören. Varje rad anger mallen och raden i koden (fil:rad) på commit 73a44558. Bygg in allt i listan; en ändring som inte längre passar koden hoppas över och nämns i commiten.
+
+**Läsarens sammanfattning:** Jag har gått igenom berattelser.ts:145–830 (öknamnen, släktnamnen, alla besk_* som BESK_DELAR använder) och koden som fyller i dem (2533–3010), och jämfört med texter.txt (8 byar i 45 dygn, 45 år i spelet). Kontrollerna i textkoll.ts hittar 0 fel, men det finns flera fel som de inte ser. De största: (1) besk_bedrift skriver "Han den bästa i kast mot mål", eftersom sportens titel ("Den bästa i …", sport.ts:426) räknas som en bedrift och inte som en titel (TITEL, berattelser.ts:2699). (2) Det vackras verkan (VERKAN, 2720) räknas ut men skrivs aldrig: de tre varianterna med om: f.verkan (438–440) har ingen {verkan}. (3) besk_fiende säger "är ovänner" och "är osams", men ärkefienden behöver inte vara ömsesidig (relationer.ts:126). (4) besk_minne skriver "var 3 år när hon levde i överflöd": upplevelser som varar en tid passar inte i "var X år när". (5) Det som pågår nu läses som när det hände: "Det var en kall tid när…" (kallt = temperaturen när namnet ges, 2589). (6) Varianterna utan bevis (tillst) säger "det har alla sett" och "det är sant". (7) "Hon är mästare till sysslan": p.tag 'Mästare' används som yrke. (8) Påståenden som inget fält visar: "sedan länge", "har sett X dö", "för länge sedan", "starka nävar", "fler än de flesta" och "minns knappt". Nästan varje besk-mall är åtta omskrivningar av samma påstående; besk_drag2 (2105 gånger) och besk_drag1 (1205) är värst, med stela former som "Utmärkande för X:", "Två egenskaper utmärker" och "dels … dels". I samma 45 dygn valdes besk_binamn 1331 gånger och besk_grundare 1005 gånger, med samma sak åtta gånger. Jag föreslår att ta bort ungefär 70 omskrivningar och lägga till nya varianter som säger något eget ur det simuleringen redan vet: vem som såg det som gav namnet, det förra namnet, hur många av grundarna som lever, hur byn vuxit under ledaren, vad upplevelsen gjorde med personen, gräl och slagsmål mellan ovänner, strider sida vid sida med vännen, ämnet läraren lär ut, mästerverkets görare och fällda vargar, och vad förälderns rykte betyder för anseendet.
+
+**Känslan:** En beskrivning läses som ett register och inte som en berättare: "Två egenskaper utmärker Oso: vig men snabbt trött. Han kom hit när byn grundades. Byn minns att han röjde byns första fält." Varje mening är sann men tom, och den som tittar på flera bybor ser snart att alla meningar har samma form och bara byter ord ("har binamnet", "går under namnet", "det namn byn använder om"). Byråkratiska ord som "Härkomst:", "Partner: …; bästa vän: …", "byns allmänna omdöme", "genomsnittlig" och "har högst färdighet i" bryter järnålderskänslan. Öknamnen och hedersnamnen i krönikan är det bästa här: "Omka den kloka, säger de nu, och Omka låtsas inte höra det men ler" har liv. Men också där upprepas skälet i varje variant, och nästan alla skäl är "kom på hur man kan …". Det som saknas är följder och sammanhang: vem som såg det, vad det kostade, vad som hände sedan och hur det känns. Simuleringen vet mycket av det redan (Rel.minns, Upplevelse.e och t, Styre.folk0 och vintrar, SakMinne, mentorSk), men texterna använder det inte.
+
+## Rättelser
+
+- [besk_bedrift, src/sim/berattelser.ts:490 (och 491–497, orsaken i sport.ts:426 och berattelser.ts:2699)] Sportens titel "Den bästa i …" (sport.ts:426) läggs i p.fame utan verb och räknas som en bedrift, eftersom TITEL bara känner igen Mästare i, Byns första ledare och Mor till. Då saknas verbet i alla bedriftsvarianter, och ihop() tar bort "den" ur det andra ledet. Felet ligger i systemet: titeln hör till TITEL, så att den hamnar i besk_titel.
+  - Nu: Han den bästa i kast mot mål och blev en legend i byn. / Det var Ehild som den bästa i brottningen. / Bland hennes bedrifter: hon den bästa i kast mot mål och bästa i dragkampen.
+  - Blir: const TITEL = /^(Mästare i|Byns första ledare|Mor till|Den bästa i)/;  → "Hon är känd som den bästa i kast mot mål." (besk_titel)
+- [besk_vacker, src/sim/berattelser.ts:438–440 (VERKAN 2720, b.f.verkan 2767)] Verkan ("och den som möter dem glömmer vad den skulle säga") räknas ut, men ingen variant har {verkan}. De tre varianterna med om: f.verkan säger därför bara samma sak som de utan villkor.
+  - Nu: {namn} är vacker och har {del}. / {Hen} har {del}. / Det man minns hos {honom} är {del}.
+  - Blir: { t: '{namn} har {del}, {verkan}.', om: f => !!f.verkan }
+- [besk_fiende, src/sim/berattelser.ts:353] "Sedan länge" visar inget fält, och det är mallens vanligaste variant (44 gånger).
+  - Nu: Lofrid är hans ovän sedan länge.
+  - Blir: {fiende} är {hans} ovän.
+- [besk_minne, src/sim/berattelser.ts:399–406 (starkastUpp 2677, upplevelserna uppvaxt.ts:64–140)] Upplevelser som varar en tid (overflod, lek, trygg, djur, fester, smedjan, faltet, bastaVan) blir ologiska i "var X år när" och "hände när". De varianterna behöver villkoret !f.varaktig och en egen variant för det varaktiga (nytt fält varaktig ur u.k).
+  - Nu: Han var 3 år när han levde i överflöd. / Från när han var 4 år minns han särskilt att han levde i överflöd. / Det som präglat honom mest hände när han var 5: han levde i överflöd.
+  - Blir: { t: 'Det {hen} minns bäst är tiden när {hen} {minne}.', om: f => f.varaktig === true }; '{Hen} var {vid} år när …', 'Det som präglat {honom} mest hände när …' och 'Vid {vid} års ålder hände …' får om: f => !f.varaktig  (varaktig = ['lek','trygg','djur','fester','smedjan','faltet','overflod','bastaVan'].includes(u.k), satt i delen minne, berattelser.ts:2820)
+- [besk_minne, src/sim/berattelser.ts:401, 404, 405] Siffran står utan "år", som i ett formulär (kontrollen siffra släpper igenom den eftersom inget ord följer).
+  - Nu: Det starkaste minnet hon har är från när hon var 33: hon flyttade till en ny by.
+  - Blir: Det starkaste minnet {hen} har är från när {hen} var {vid} år: {hen} {minne}.
+- [besk_minneSpad, src/sim/berattelser.ts:414] Den starkaste upplevelsen kan vara god (trygg, djur, syskonFodd: "växte upp tryggt i ett varmt hus"). Då blir "började svårt" fel. Varianten behöver ett villkor på att upplevelsen var svår (nytt fält svar, t.ex. summan av u.e < 0 eller ande).
+  - Nu: {Hans} liv började svårt, för {hen} {minne} innan {hen} kunde gå.
+  - Blir: { t: '{Hans} liv började svårt, för {hen} {minne} innan {hen} kunde gå.', om: f => f.svar === true }  (svar = SVAR.has(u.k), med SVAR = svalt, frys, svamp, sjuk, foralder, syskon, sagDod, foraldralos, slagen, slagenIgen, hardVinter, torka, epidemi, rovarePlundring, skadad)
+- [hedersnamn, src/sim/berattelser.ts:155] kallt = temperature(s) < 0 när namnet ges (2589), inte när det namnet bygger på hände. Texten daterar alltså dådet fel.
+  - Nu: Det var en kall tid när Ylvbjörn kom på hur man kan göra halmbäddar. Sedan dess heter han Ylvbjörn den listige.
+  - Blir: { t: 'Det var kallt i byn när namnet {helt} började sägas. {Hen} {skal}.', om: f => !f.tillst && f.kallt === true }
+- [oknamn, src/sim/berattelser.ts:187] Samma fel: kylan är nu, inte när det hände.
+  - Nu: Det var i kylan som Ylve misshandlade Ylve den yngre. Ingen har glömt det: hon heter Ylve den hårda.
+  - Blir: { t: 'Det var kallt i byn när man började säga {helt}. Ingen har glömt varför: {hen} {skal}.', om: f => !f.tillst && f.kallt === true }
+- [hedersnamn, src/sim/berattelser.ts:158] tillst betyder att ingen har ett bevis (steg 6.7.6), så "det har alla sett" säger emot villkoret.
+  - Nu: Byn har börjat kalla {namn} för {binamn}. {Hen} är {tillstand}, och det har alla sett.
+  - Blir: Byn har börjat kalla {namn} för {binamn}. Ingen kan säga när det började, men alla tycker att {hen} är {tillstand}.
+- [hedersnamn, src/sim/berattelser.ts:163] "Det är sant" påstår ett bevis som inte finns (tillst).
+  - Nu: Ehild den välförsedda, säger de nu, och det är sant: Ehild är välbärgad.
+  - Blir: {helt}, säger de nu, för alla tycker att {namn} är {tillstand}.
+- [hedersnamn, src/sim/berattelser.ts:153] Att "ropa efter" någon är att håna, och det passar inte ett hedersnamn. Varianten väljs också när byn inte har några barn (samma gäller 161, 184 och 192). De behöver ett villkor på ett nytt fält barn = antalet levande under ALDER.vuxen, satt i gebinamn (2589).
+  - Nu: Barnen ropar den listige efter Hildulf.
+  - Blir: { t: 'Barnen leker att de är {helt}. {Hen} {skal}, och det har de inte glömt.', om: f => !f.tillst && (f.barn as number) > 0 }; rad 161 får också (f.barn as number) > 0  (barn = living(s).filter(q => ageOf(q, s.now) < ALDER.vuxen).length, satt i f i gebinamn, 2589)
+- [oknamn, src/sim/berattelser.ts:184, 192] Väljs också när det inte finns några barn i byn.
+  - Nu: Barnen härmar Emunn och ropar den vilda.
+  - Blir: { t: 'Barnen härmar {namn} och ropar {binamn}. {Hen} {skal}, och det sitter i.', om: f => !f.tillst && (f.barn as number) > 0 }  (samma villkor på rad 192)
+- [oknamn, src/sim/berattelser.ts:186 (arg i 2589)] arg är ett myntkast (hash < 0.5), inte något simuleringen vet. Det är ett påstående om känslor utan grund, och dessutom står "{hen}" två gånger i rad.
+  - Nu: {namn} blev arg när {hen} hörde att {hen} heter {binamn}. Men {hen} {skal}.
+  - Blir: { t: '{namn} brusar upp när {hen} hör namnet {binamn}. Men {hen} {skal}.', om: f => !f.tillst && f.hetlevrad === true }  (hetlevrad = p.pot.aggression - 10 >= BERATT.drag)
+- [oknamn, src/sim/berattelser.ts:181] "Säger man … när man säger det" upprepar verbet.
+  - Nu: Sedan han slog Sigrun, säger man Erivan den vilde, och man fnissar när man säger det.
+  - Blir: Sedan {hen} {skal}, säger man {helt}, och man fnissar bakom ryggen på {honom}.
+- [slaktnamn, src/sim/berattelser.ts:174] Ingen kod visar att de bor i samma hus (lekNamnAv frågar bara om förälder eller barn).
+  - Nu: I Raorms hus finns två med samma namnslut, och Tusorm kallas därför Lillorm.
+  - Blir: I släkten finns två med samma namnslut, och {namn} kallas därför {binamn}.
+- [slaktnamn, src/sim/berattelser.ts:172 (och 168)] "Heter som … i slutet" och "har samma namn i slutet" är inte naturlig svenska.
+  - Nu: Namnet Storrun kommer av släkten: Sigrun heter som hennes dotter Endrun i slutet.
+  - Blir: Namnet {binamn} kommer av släkten, för {hens} {rel} heter {slakting}.  (rad 168: '{namn} och {hens} {rel} {slakting} slutar likadant på namnet, så byn kallar {honom} {binamn}.')
+- [slaktnamn, src/sim/berattelser.ts:169] De heter inte samma, bara samma slut, och "går inte ihop vid elden" säger inget som går att förstå.
+  - Nu: Två i samma släkt med samma namn går inte ihop vid elden.
+  - Blir: När två i samma släkt slutar likadant på namnet blir det lätt fel. {namn} blev {binamn}, för {hens} {rel} heter {slakting}.
+- [besk_yrkeRykte / besk_yrke, src/sim/berattelser.ts:276 (fältet 2988, också eftermälet 2961)] p.tag 'Mästare' är en titel, inte en syssla. Fältet yrke bör hoppa över den (eller ge 'mästare i X' ur titlar(p)), som det redan gör med 'Dagdrivare'.
+  - Nu: Hon är mästare till sysslan, och byn ser henne som en skvallerbytta. / Byn känner henne som mästare.
+  - Blir: f.yrke = p.tag && p.tag !== 'Dagdrivare' && p.tag !== 'Mästare' ? liten(p.tag) : undefined  (i beskrivning och i eftermale)
+- [besk_titel, src/sim/berattelser.ts:470, 474] Med vad = 'mor till många barn' eller 'den bästa i dragkampen' blir "har titeln mor till många barn" fel, och "Bland annat är hon …" säger inget.
+  - Nu: {namn} har titeln {vad}. / Bland annat är {hen} {vad}.
+  - Blir: Ta bort '{namn} har titeln {vad}.' och 'Bland annat är {hen} {vad}.'; kvar står bland andra 'I byn är {hen} känd som {vad}.' och 'Byn känner {honom} som {vad}.'
+- [besk_saknar, src/sim/berattelser.ts:528] saknad() (2701) tar också den som dog nyss, när sorgen redan är över. "För länge sedan" visar inget fält.
+  - Nu: Hilhild dog för länge sedan, och han minns det fortfarande.
+  - Blir: { t: '{dod} dog för länge sedan, och {hen} minns det fortfarande.', om: f => f.lange === true }  (lange = s.now - q.died > BERATT.glomtDygn * DAY, satt i delen saknad, 2799)
+- [besk_saknar, src/sim/berattelser.ts:529] Inget visar att hen var där. Upplevelsen sagDod (uppvaxt.ts:72) med om = namnet visar det.
+  - Nu: Hon har sett Ulvvald, sin far, dö.
+  - Blir: { t: '{Hen} såg {dod}, sin {vem}, dö.', om: f => f.sag === true }  (sag = !!p.upp?.some(u => u.k === 'sagDod' && u.om === q.name))
+- [besk_handGilla, src/sim/berattelser.ts:549] Väljs utan villkor, också för den som är klen.
+  - Nu: Ehild har starka nävar och använder dem gärna i strid.
+  - Blir: { t: '{namn} har starka nävar och använder dem gärna i strid.', om: f => f.stark === true }  (stark = p.pot.styrka - 10 >= BERATT.drag)
+- [besk_barn, src/sim/berattelser.ts:566–568, 572] familj() (2827) räknar alla barn, också de döda, så "har fem barn" och "i familjen finns" kan vara fel. "Fler än de flesta" jämförs aldrig.
+  - Nu: {Hen} har {vad}. / I {hans} familj finns {vad}. / {Hen} har {vad}, fler än de flesta i byn.
+  - Blir: '{Hen} har {vad}.' och 'I {hans} familj finns {vad}.' får om: f => f.allaLever === true (allaLever = alla barnen i familj, 2827, lever); '{Hen} har {vad}, fler än de flesta i byn.' tas bort
+- [besk_foraldralos, src/sim/berattelser.ts:582] Gäller också den som var tretton år när föräldrarna dog. Behöver ett villkor på åldern då (nytt fält vid ur Math.max(mor.died, far.died), familj 2830).
+  - Nu: {Hen} minns knappt sina föräldrar.
+  - Blir: { t: '{Hen} minns knappt sina föräldrar.', om: f => (f.vidFor as number) < 5 }  (vidFor = Math.floor((Math.max(mor.died, far.died) - p.born) / DAY), satt i familj, 2830)
+
+## Varianter som tas bort (säger samma sak som en annan)
+
+- [besk_drag2, src/sim/berattelser.ts:200] Ta bort: "{namn} beskrivs som {drag1} {bind} {drag2}." (står kvar: "{namn} är {drag1} {bind} {drag2}.")
+- [besk_drag2, src/sim/berattelser.ts:201] Ta bort: "{namn} är en {alder}, {drag1} men också {drag2}." (står kvar: "{namn} är en {alder}, {drag1} {bind} {drag2}.")
+- [besk_drag2, src/sim/berattelser.ts:204] Ta bort: "Utmärkande för {namn}: {drag1} {bind} {drag2}." (står kvar: "{namn} är {drag1} {bind} {drag2}.")
+- [besk_drag2, src/sim/berattelser.ts:206] Ta bort: "{namn} har två framträdande egenskaper: {hen} är {drag1}, och {hen} är {drag2}." (står kvar: "{namn} är {drag1} {bind} {drag2}.")
+- [besk_drag2, src/sim/berattelser.ts:213] Ta bort: "{Drag1} och {drag2}: det är de främsta dragen hos {namn}." (står kvar: "{namn} är {drag1} {bind} {drag2}.")
+- [besk_drag2, src/sim/berattelser.ts:215] Ta bort: "{namn} är {drag1}; {hen} är även {drag2}." (står kvar: "{namn} är både {drag1} och {drag2}.")
+- [besk_drag2, src/sim/berattelser.ts:216] Ta bort: "Två egenskaper utmärker {namn}: {drag1} {bind} {drag2}." (står kvar: "{namn} är till sin natur {drag1} {bind} {drag2}.")
+- [besk_drag2, src/sim/berattelser.ts:217] Ta bort: "{namn} är dels {drag1}, dels {drag2}." (står kvar: "{namn} är {drag1} {bind} {drag2}.")
+- [besk_drag2, src/sim/berattelser.ts:218] Ta bort: "{namn}, en {alder}, är {drag1} {bind} {drag2}." (står kvar: "{namn} är en {alder}, {drag1} {bind} {drag2}.")
+- [besk_drag2, src/sim/berattelser.ts:219] Ta bort: "{namn} är ett barn som är {drag1} {bind} {drag2}." (står kvar: "{namn} är ännu inte vuxen men redan {drag1} {bind} {drag2}.")
+- [besk_drag1, src/sim/berattelser.ts:225] Ta bort: "Det mest utmärkande draget hos {namn} är att {hen} är {drag1}." (står kvar: "{namn} är framför allt {drag1}.")
+- [besk_drag1, src/sim/berattelser.ts:227] Ta bort: "{namn} är en {alder} och känd för att vara {drag1}." (står kvar: "{namn} är en {alder} som är {drag1}.")
+- [besk_drag1, src/sim/berattelser.ts:231] Ta bort: "{namn} är känd för att vara {drag1}." (står kvar: "{namn} har alltid varit {drag1}.")
+- [besk_drag1, src/sim/berattelser.ts:232] Ta bort: "Utmärkande drag hos {namn}: {drag1}." (står kvar: "{namn} är framför allt {drag1}.")
+- [besk_drag1, src/sim/berattelser.ts:233] Ta bort: "{namn}, en {alder}, är tydligt {drag1}." (står kvar: "{namn} är en {alder}, och mer än något annat {drag1}.")
+- [besk_drag1, src/sim/berattelser.ts:234] Ta bort: "{namn} är i hög grad {drag1}." (står kvar: "{namn} är framför allt {drag1}.")
+- [besk_drag0, src/sim/berattelser.ts:240] Ta bort: "{namn} är en {alder} med genomsnittliga egenskaper." (står kvar: "{namn} är en vanlig {alder}.")
+- [besk_drag0, src/sim/berattelser.ts:242] Ta bort: "{namn} är en {alder} som ligger nära genomsnittet i allt." (står kvar: "{namn} är en vanlig {alder}.")
+- [besk_drag0, src/sim/berattelser.ts:243] Ta bort: "{namn} är en {alder} utan påfallande egenskaper." (står kvar: "{namn} är en {alder} utan särskilt utmärkande drag.")
+- [besk_drag0, src/sim/berattelser.ts:248] Ta bort: "{namn} är i de flesta avseenden genomsnittlig." (står kvar: "{namn} har inga utmärkande drag.")
+- [besk_drag0, src/sim/berattelser.ts:250] Ta bort: "{namn} har varken större styrkor eller större svagheter." (står kvar: "{namn} är en {alder} utan större styrkor eller svagheter.")
+- [besk_trots, src/sim/berattelser.ts:257] Ta bort: "Åldern till trots är {hen} {trots}." (står kvar: "Trots sin ålder är {hen} {trots}.")
+- [besk_trots, src/sim/berattelser.ts:255] Ta bort: "{Hen} är fortfarande {trots}, trots åldern." (står kvar: "{Hen} är gammal men {trots}.")
+- [besk_trots, src/sim/berattelser.ts:261] Ta bort: "Trots sin unga ålder är {hen} {trots}." (står kvar: "{Hen} är ett barn men {trots}.")
+- [besk_binamn, src/sim/berattelser.ts:266] Ta bort: "{Hen} har binamnet {binamn}." (står kvar: "Byn kallar {honom} {binamn}.")
+- [besk_binamn, src/sim/berattelser.ts:269] Ta bort: "Det namn byn använder om {honom} är {binamn}." (står kvar: "Byn kallar {honom} {binamn}.")
+- [besk_binamn, src/sim/berattelser.ts:271] Ta bort: "Byn gav {honom} namnet {binamn}." (står kvar: "I byn kallas {hen} oftast {binamn}.")
+- [besk_binamn, src/sim/berattelser.ts:272] Ta bort: "I byn går {hen} under namnet {binamn}." (står kvar: "{Hen} är känd under namnet {binamn}.")
+- [besk_yrkeRykte, src/sim/berattelser.ts:277] Ta bort: "{Hen} är {yrke}; byns omdöme är att {hen} är {rykte}." (står kvar: "{Hen} är {yrke} och har rykte om sig att vara {rykte}.")
+- [besk_yrkeRykte, src/sim/berattelser.ts:282] Ta bort: "{Hen} är till yrket {yrke}, och ryktet i byn är att {hen} är {rykte}." (står kvar: "{Hen} arbetar mest som {yrke} och räknas i byn som {rykte}.")
+- [besk_yrkeRykte, src/sim/berattelser.ts:280] Ta bort: "{Hen} är {yrke} och har rykte om sig att vara {rykte}." (står kvar: "Byn känner {honom} som {yrke}, och {hen} har rykte om sig att vara {rykte}.")
+- [besk_yrke, src/sim/berattelser.ts:289] Ta bort: "{Hen} är till yrket {yrke}." (står kvar: "{Hen} är {yrke} till sysslan.")
+- [besk_yrke, src/sim/berattelser.ts:292] Ta bort: "{Hen} arbetar i första hand som {yrke}." (står kvar: "{Hen} arbetar mest som {yrke}.")
+- [besk_yrke, src/sim/berattelser.ts:291] Ta bort: "{Hen} försörjer sig som {yrke}." (står kvar: "Det mesta av sin tid arbetar {hen} som {yrke}.")
+- [besk_rykte, src/sim/berattelser.ts:300] Ta bort: "Byns allmänna omdöme är att {hen} är {rykte}." (står kvar: "Byn ser {honom} som {rykte}.")
+- [besk_rykte, src/sim/berattelser.ts:298] Ta bort: "Enligt byn är {hen} {rykte}." (står kvar: "I byn räknas {hen} som {rykte}.")
+- [besk_rykte, src/sim/berattelser.ts:302] Ta bort: "Ryktet i byn är att {hen} är {rykte}." (står kvar: "{Hen} har rykte om sig att vara {rykte}.")
+- [besk_partnerVan, src/sim/berattelser.ts:310] Ta bort: "Partner: {partner}; bästa vän: {van}." (står kvar: "{Hen} lever med {partner}, och {van} är {hans} bästa vän.")
+- [besk_partnerVan, src/sim/berattelser.ts:311] Ta bort: "Två personer står {honom} nära: partnern {partner} och vännen {van}." (står kvar: "{Hen} lever med {partner}, och {van} är {hans} bästa vän.")
+- [besk_partnerVan, src/sim/berattelser.ts:312] Ta bort: "{Hen} har {partner} som partner och {van} som bästa vän." (står kvar: "{Hen} är tillsammans med {partner} och har {van} som bästa vän.")
+- [besk_partner, src/sim/berattelser.ts:317] Ta bort: "{partner} är {hans} partner." (står kvar: "{Hen} och {partner} är ett par.")
+- [besk_partner, src/sim/berattelser.ts:322] Ta bort: "{Hans} partner heter {partner}." (står kvar: "{Hen} och {partner} är ett par.")
+- [besk_partner, src/sim/berattelser.ts:320] Ta bort: "{Hen} delar hushåll med {partner}." (står kvar: "{Hen} bor tillsammans med {partner}.")
+- [besk_partner, src/sim/berattelser.ts:323] Ta bort: "{Hen} lever tillsammans med {partner}." (står kvar: "{Hen} lever med {partner}.")
+- [besk_van, src/sim/berattelser.ts:331] Ta bort: "{Hen} är bästa vän med {van}." (står kvar: "{Hen} har {van} som bästa vän.")
+- [besk_van, src/sim/berattelser.ts:327] Ta bort: "{Hans} närmaste vän är {van}." (står kvar: "{van} är {hans} bästa vän.")
+- [besk_van, src/sim/berattelser.ts:333] Ta bort: "Bland vännerna står {van} {honom} närmast." (står kvar: "{Hen} och {van} är nära vänner.")
+- [besk_foralder, src/sim/berattelser.ts:342] Ta bort: "Härkomst: {barnet} till {vem}, som byn anser vara {vad}." (står kvar: "{Hen} är {barnet} till {vem}, som byn anser vara {vad}.")
+- [besk_foralder, src/sim/berattelser.ts:339] Ta bort: "{Hen} omtalas ofta som {barnet} till {vem}, som byn anser vara {vad}." (står kvar: "{Hen} är känd som {barnet} till {vem}, som byn anser vara {vad}.")
+- [besk_foralder, src/sim/berattelser.ts:340] Ta bort: "I byn räknas {hen} främst som {barnet} till {vem}, som byn anser vara {vad}." (står kvar: "Alla vet vems {barnet} {hen} är: {vem}, som byn anser vara {vad}.")
+- [besk_foralder, src/sim/berattelser.ts:341] Ta bort: "Byn ser {honom} gärna som {barnet} till {vem}, som byn anser vara {vad}." (står kvar: "Alla vet vems {barnet} {hen} är: {vem}, som byn anser vara {vad}.")
+- [besk_foralder, src/sim/berattelser.ts:344] Ta bort: "I byn är {hen} {barnet} till {vem}, som byn anser vara {vad}." (står kvar: "{Hen} är {barnet} till {vem}, som byn anser vara {vad}.")
+- [besk_fiende, src/sim/berattelser.ts:351] Ta bort: "{Hen} har ett dåligt förhållande till {fiende}." (står kvar: "{fiende} är {hans} ovän.")
+- [besk_fiende, src/sim/berattelser.ts:350] Ta bort: "Mellan {honom} och {fiende} råder fiendskap." (står kvar: "{Hen} och {fiende} är ovänner.")
+- [besk_arbeteGilla, src/sim/berattelser.ts:359] Ta bort: "{Hen} tycker om när {hen} {vad}." (står kvar: "{Hen} trivs bäst när {hen} {vad}.")
+- [besk_arbeteGilla, src/sim/berattelser.ts:361] Ta bort: "{Hen} arbetar helst när {hen} {vad}." (står kvar: "{Hen} trivs bäst när {hen} {vad}.")
+- [besk_arbeteOgilla, src/sim/berattelser.ts:369] Ta bort: "{Hen} tycker illa om när {hen} {vad}." (står kvar: "{Hen} ogillar när {hen} {vad}.")
+- [besk_matGilla, src/sim/berattelser.ts:382] Ta bort: "Det {hen} helst äter är {vad}." (står kvar: "{Hen} äter helst {vad}.")
+- [besk_matGilla, src/sim/berattelser.ts:383] Ta bort: "{Hen} tycker om {vad}." (står kvar: "{Hen} äter gärna {vad}.")
+- [besk_matGilla, src/sim/berattelser.ts:379] Ta bort: "{Hans} favoritmat är {vad}." (står kvar: "{Hen} äter helst {vad}.")
+- [besk_minne, src/sim/berattelser.ts:403] Ta bort: "Vid {vid} års ålder hände något som {hen} minns: {hen} {minne}." (står kvar: "{Hen} var {vid} år när {hen} {minne}.")
+- [besk_minne, src/sim/berattelser.ts:405] Ta bort: "{Hen} minns fortfarande något från när {hen} var {vid}: {hen} {minne}." (står kvar: "Det starkaste minnet {hen} har är från när {hen} var {vid} år: {hen} {minne}.")
+- [besk_minne, src/sim/berattelser.ts:406] Ta bort: "Ett minne {hen} bär med sig är från {vid} års ålder: {hen} {minne}." (står kvar: "{Hans} starkaste minne är från {vid} års ålder: {hen} {minne}.")
+- [besk_minneSpad, src/sim/berattelser.ts:417] Ta bort: "{Hen} var för liten för att minnas det, men {hen} {minne}." (står kvar: "{Hen} minns det inte själv, men {hen} var bara ett spädbarn när {hen} {minne}.")
+- [besk_minneSpad, src/sim/berattelser.ts:411] Ta bort: "{Hen} var inte ens ett år när {hen} {minne}." (står kvar: "{Hen} var bara ett spädbarn när {hen} {minne}.")
+- [besk_grundare, src/sim/berattelser.ts:427] Ta bort: "{namn} fanns här från byns början." (står kvar: "{namn} var en av dem som grundade byn.")
+- [besk_grundare, src/sim/berattelser.ts:428] Ta bort: "{Hen} kom hit när byn grundades." (står kvar: "{Hen} hörde till de första som slog sig ner här.")
+- [besk_grundare, src/sim/berattelser.ts:423] Ta bort: "{Hen} hör till byns grundare." (står kvar: "{namn} var en av dem som grundade byn.")
+- [besk_vacker, src/sim/berattelser.ts:441] Ta bort: "{namn} är vacker; {hen} har {del}." (står kvar: "{namn} är vacker, med {del}.")
+- [besk_vacker, src/sim/berattelser.ts:443] Ta bort: "Hos {namn} märks särskilt {del}." (står kvar: "Det man lägger märke till hos {honom} är {del}.")
+- [besk_ful, src/sim/berattelser.ts:452] Ta bort: "Ett kännetecken hos {namn} är {del}." (står kvar: "{namn} är lätt att känna igen på {del}.")
+- [besk_ful, src/sim/berattelser.ts:453] Ta bort: "Hos {honom} märks {del}." (står kvar: "Det man först lägger märke till hos {honom} är {del}.")
+- [besk_ful, src/sim/berattelser.ts:450] Ta bort: "Det som utmärker {honom} är {del}." (står kvar: "Det man först lägger märke till hos {honom} är {del}.")
+- [besk_aldst, src/sim/berattelser.ts:464] Ta bort: "{namn} är byns äldsta invånare med {ar} år." (står kvar: "{namn} är äldst i byn, {ar} år gammal.")
+- [besk_aldst, src/sim/berattelser.ts:461] Ta bort: "{namn} är {ar} år och den äldsta i byn." (står kvar: "{namn} är äldst i byn, {ar} år gammal.")
+- [besk_aldst, src/sim/berattelser.ts:462] Ta bort: "Byns äldsta är {namn}, {ar} år." (står kvar: "Ingen i byn är äldre än {namn}, som är {ar} år.")
+- [besk_titel, src/sim/berattelser.ts:470] Ta bort: "{namn} har titeln {vad}." (står kvar: "I byn är {hen} känd som {vad}.")
+- [besk_titel, src/sim/berattelser.ts:474] Ta bort: "Bland annat är {hen} {vad}." (står kvar: "{Hen} är känd som {vad}.")
+- [besk_uppfann, src/sim/berattelser.ts:483] Ta bort: "{namn} uppfann sättet att {vad}." (står kvar: "Det var {namn} som kom på hur man kan {vad}.")
+- [besk_uppfann, src/sim/berattelser.ts:486] Ta bort: "Kunskapen att {vad} kommer från {namn}." (står kvar: "Det var {namn} som först lärde byn att {vad}.")
+- [besk_bedrift, src/sim/berattelser.ts:492] Ta bort: "Bland {hans} bedrifter: {hen} {vad}." (står kvar: "Till {hans} bedrifter hör att {hen} {vad}.")
+- [besk_bedrift, src/sim/berattelser.ts:497] Ta bort: "I byns historia nämns att {namn} {vad}." (står kvar: "Byn minns att {hen} {vad}.")
+- [besk_sorjer, src/sim/berattelser.ts:517] Ta bort: "{Hen} sörjer fortfarande {dod}." (står kvar: "{Hen} sörjer {dod}, sin {vem}.")
+- [besk_sorjer, src/sim/berattelser.ts:512] Ta bort: "{Hen} är i sorg efter {dod}." (står kvar: "{Hen} sörjer {dod}, sin {vem}.")
+- [besk_saknar, src/sim/berattelser.ts:525] Ta bort: "{Hen} minns {dod}, sin {vem}, som är död." (står kvar: "{dod}, {hans} {vem}, lever inte längre.")
+- [besk_saknar, src/sim/berattelser.ts:527] Ta bort: "{Hen} minns fortfarande {dod}." (står kvar: "{Hen} tänker ibland på {dod}.")
+- [besk_vapenOgilla, src/sim/berattelser.ts:555] Ta bort: "{Hen} har dåliga erfarenheter av {vad}." (står kvar: "{Hen} litar inte på {vad} i strid.")
+- [besk_vapenOgilla, src/sim/berattelser.ts:559] Ta bort: "{Hen} har förlorat flera gånger med {vad}." (står kvar: "{Hen} slåss sämre med {vad} än med något annat.")
+- [besk_barn, src/sim/berattelser.ts:571] Ta bort: "{Hen} har bidragit till byn med {vad}." (står kvar: "{Hen} har fostrat {vad}.")
+- [besk_forstFodd, src/sim/berattelser.ts:591] Ta bort: "Av alla som fötts i byn föddes {namn} först." (står kvar: "Det första barnet som föddes i byn var {namn}.")
+- [besk_forstFodd, src/sim/berattelser.ts:590] Ta bort: "{namn} är det första barnet som fötts i byn." (står kvar: "{Hen} var det första barnet som föddes i byn.")
+- [besk_forstFodd, src/sim/berattelser.ts:588] Ta bort: "{Hen} föddes först av alla i byn." (står kvar: "Ingen i byn föddes före {honom}.")
+- [besk_bast, src/sim/berattelser.ts:612] Ta bort: "{Hen} har högst färdighet i {vad} av alla i byn." (står kvar: "{Hen} är bäst i byn på {vadAtt}.")
+- [besk_vargar, src/sim/berattelser.ts:624] Ta bort: "Hittills har {hen} fällt {vad}." (står kvar: "Hittills har {namn} fällt {vad} i strid.")
+- [besk_vargar, src/sim/berattelser.ts:623] Ta bort: "{namn} har dödat {vad}." (står kvar: "{Hen} har dödat {vad}.")
+- [besk_hus, src/sim/berattelser.ts:641] Ta bort: "{namn} har byggt {vad}." (står kvar: "{Hen} har byggt {vad} i byn.")
+- [besk_larling, src/sim/berattelser.ts:666] Ta bort: "{Hen} får sin undervisning av {vem}." (står kvar: "{Hen} lär sig av {vem}.")
+- [besk_larling, src/sim/berattelser.ts:664] Ta bort: "{namn} lärs upp av {vem}." (står kvar: "{Hen} går i lära hos {vem}.")
+- [besk_raddVarg, src/sim/berattelser.ts:676] Ta bort: "Ett vargbett har lämnat {honom} med en rädsla för vargar." (står kvar: "Sedan vargen bet {honom} är {hen} rädd för vargar.")
+- [besk_raddVarg, src/sim/berattelser.ts:677] Ta bort: "{Hen} blev en gång biten av en varg och är rädd för dem sedan dess." (står kvar: "{Hen} är rädd för vargar sedan {hen} blev biten.")
+- [besk_overlevt, src/sim/berattelser.ts:686] Ta bort: "Bland det {hen} har överlevt finns {vad}." (står kvar: "{Hen} har överlevt {vad}.")
+- [besk_overlevt, src/sim/berattelser.ts:687] Ta bort: "{Hen} har klarat {vad}." (står kvar: "{Hen} har klarat sig igenom {vad}.")
+- [besk_mastarverk, src/sim/berattelser.ts:699] Ta bort: "Ägare till mästerverket {vad}: {namn}." (står kvar: "Mästerverket {vad} tillhör {namn}.")
+- [besk_egetHus, src/sim/berattelser.ts:708] Ta bort: "{Hen} är husägare." (står kvar: "{Hen} har ett eget hus.")
+- [besk_rik, src/sim/berattelser.ts:721] Ta bort: "{Hen} är förmögen." (står kvar: "{Hen} är rik.")
+- [besk_fattig, src/sim/berattelser.ts:730] Ta bort: "{Hans} egendom är liten." (står kvar: "{Hen} har knappt något eget.")
+- [besk_ledare, src/sim/berattelser.ts:742] Ta bort: "{namn} leder byn." (står kvar: "{Hen} är byns ledare.")
+- [besk_skam, src/sim/berattelser.ts:749] Ta bort: "{Hen} {vad}, och det påverkar hur byn ser på {honom}." (står kvar: "Byn minns att {namn} {vad}.")
+- [besk_skam, src/sim/berattelser.ts:751] Ta bort: "Förtroendet för {honom} är lågt, eftersom {hen} {vad}." (står kvar: "Det är känt i byn att {hen} {vad}.")
+- [besk_arv, src/sim/berattelser.ts:758] Ta bort: "{Hen} har ärvt sin {fo} {vad}." (står kvar: "{Hen} har sin {fo} {vad}.")
+- [besk_arv, src/sim/berattelser.ts:760] Ta bort: "Sin {fo} {vad} har {hen} fått i arv." (står kvar: "{Hans} {vad} har {hen} efter sin {fo2}.")
+- [besk_utkant, src/sim/berattelser.ts:771] Ta bort: "{Hen} sover i ett hus i byns ytterkant." (står kvar: "{Hen} sover i byns utkant, en bit från de andra.")
+- [besk_utkant, src/sim/berattelser.ts:773] Ta bort: "{Hans} sovplats ligger i byns utkant." (står kvar: "I byns utkant har {hen} sin sovplats.")
+- [besk_verkstad, src/sim/berattelser.ts:784] Ta bort: "{Hans} hus står mitt emot verkstaden." (står kvar: "{Hen} bor mitt emot verkstaden.")
+- [besk_langeHus, src/sim/berattelser.ts:794] Ta bort: "{Hen} har haft samma hus länge." (står kvar: "{Hen} har bott i samma hus i många år.")
+- [besk_langtan, src/sim/berattelser.ts:805] Ta bort: "Den {hen} är förälskad i heter {vem}." (står kvar: "{Hen} är förälskad i {vem}.")
+- [besk_inget, src/sim/berattelser.ts:814] Ta bort: "{Hans} historia i byn är ännu kort." (står kvar: "{Hen} har ännu inte gjort något som byn minns.")
+
+## Nya varianter
+
+- [hedersnamn, src/sim/berattelser.ts:146] `{ t: '{vittne} såg det med egna ögon när {namn} {skal}, och sedan dess säger byn {helt}.', om: f => !f.tillst && !!f.vittne }` om: `f => !f.tillst && !!f.vittne`
+  - Fält: vittne: namnet på den q i skalTill (2543–2546) vars bevis ger bast, men bara när b.sett är satt. Det returneras tillsammans med skal.
+  - Säger: Vem som såg det och gav namnet.
+- [hedersnamn, src/sim/berattelser.ts:146] `{ t: 'Förut kallades {hen} {fore}, men sedan {hen} {skal} säger ingen det längre. Nu heter {hen} {helt}.', om: f => !f.tillst && !!f.fore }` om: `f => !f.tillst && !!f.fore`
+  - Fält: fore = fore?.namn (gebinamn, 2587)
+  - Säger: Att ett gammalt namn byttes ut.
+- [oknamn, src/sim/berattelser.ts:177] `{ t: 'Det var {vittne} som såg {namn} när {hen} {skal}. Sedan dess säger man {helt} bakom ryggen på {honom}.', om: f => !f.tillst && !!f.vittne }` om: `f => !f.tillst && !!f.vittne`
+  - Fält: vittne (se nya 1)
+  - Säger: Vem som avslöjade det.
+- [oknamn, src/sim/berattelser.ts:177] `{ t: 'Förr kallade man {honom} {fore}. Nu säger man {binamn}, sedan {hen} {skal}.', om: f => !f.tillst && !!f.fore }` om: `f => !f.tillst && !!f.fore`
+  - Fält: fore (se nya 2)
+  - Säger: Fallet från ett gott namn till ett dåligt.
+- [oknamn, src/sim/berattelser.ts:177] `{ t: 'Nu ger folk ogärna {namn} något. {Hen} {skal}, och därför heter {hen} {helt}.', om: f => !f.tillst && (f.k === "tjuv" || f.k === "lurendrejare") }` om: `f => !f.tillst && (f.k === 'tjuv' || f.k === 'lurendrejare')`
+  - Fält: k = intrycket (argumentet k i gebinamn). Verkan står i INTRYCK.tjuv och INTRYCK.lurendrejare (dampar.ge, rykten.ts:129 och 163).
+  - Säger: Vad namnet kostar: ingen ger hen något.
+- [slaktnamn, src/sim/berattelser.ts:167] `Den äldre blir Stor- och den yngre Lill-, så gör man i byn. {namn} blev {binamn}, och {slakting} fick behålla sitt namn.`
+  - Fält: Fälten finns redan (slaktnamn, 2600). Regeln står i lekNamnAv (2575).
+  - Säger: Hur byn gör med namnen och vad det betyder för den andra.
+- [besk_drag1, src/sim/berattelser.ts:222] `{ t: '{namn} är {drag1}, och det är {hen} som brusar upp först när något går emot {honom}.', om: f => f.drag1 === "hetlevrad" }` om: `f => f.drag1 === 'hetlevrad'`
+  - Fält: drag1 finns. Aggressionen ger utbrotten (humor.ts).
+  - Säger: Vad draget gör i byn.
+- [besk_drag1, src/sim/berattelser.ts:222] `{ t: '{namn} är {drag1} och arbetar för byn också när ingen ber {honom} om det.', om: f => f.drag1 === "arbetsam" }` om: `f => f.drag1 === 'arbetsam'`
+  - Fält: drag1 finns. Flit höjer plikten (seder.ts:244).
+  - Säger: Vad flitigheten syns som.
+- [besk_drag1, src/sim/berattelser.ts:222] `{ t: '{namn} är {drag1} och sitter gärna och prövar sig fram till något nytt.', om: f => f.drag1 === "nyfiken på allt" }` om: `f => f.drag1 === 'nyfiken på allt'`
+  - Fält: drag1 finns. Nyfikenheten styr chansen att pröva sig fram (forsokChans, teknik.ts:389).
+  - Säger: Följden av nyfikenheten.
+- [besk_trots, src/sim/berattelser.ts:253] `{ t: '{Hen} är gammal, men bär fortfarande mer än en del av de unga.', om: f => f.gammal === true && f.trots === "stark" }` om: `f => f.gammal === true && f.trots === 'stark'`
+  - Fält: gammal och trots finns. Bördan räknas i lager.ts:1272.
+  - Säger: Vad styrkan betyder för en gammal.
+- [besk_trots, src/sim/berattelser.ts:253] `{ t: 'Åren syns på {honom}, men {hen} rör sig fortfarande lätt.', om: f => f.gammal === true && f.trots === "vig" }` om: `f => f.gammal === true && f.trots === 'vig'`
+  - Fält: Fälten finns.
+  - Säger: Kontrasten som en bild i stället för ett påstående.
+- [besk_trots, src/sim/berattelser.ts:253] `{ t: '{Hen} är bara ett barn, men lär sig fortare än många vuxna.', om: f => f.ung === true && f.trots === "klok" }` om: `f => f.ung === true && f.trots === 'klok'`
+  - Fält: Fälten finns. Intelligensen avgör hur fort hen lär sig (teknik.ts:437 och 466, minne.ts:444).
+  - Säger: Vad klokheten gör.
+- [besk_trots, src/sim/berattelser.ts:253] `{ t: '{Hen} är ett barn, men minns sådant som många vuxna redan har glömt.', om: f => f.ung === true && f.trots === "minnesgod" }` om: `f => f.ung === true && f.trots === 'minnesgod'`
+  - Fält: Fälten finns. Minnet avgör hur fort det glöms (minne.ts:499).
+  - Säger: Vad minnet gör.
+- [besk_binamn, src/sim/berattelser.ts:264] `{ t: 'Byn kallar {honom} {binamn} sedan {hen} {bskal}.', om: f => !!f.bskal && f.heder === true }` om: `f => !!f.bskal && f.heder === true`
+  - Fält: bskal = p.binamn.skal och heder = arHeder(p.binamn), satta i beskrivning
+  - Säger: Varför hen har namnet.
+- [besk_binamn, src/sim/berattelser.ts:264] `{ t: 'Bakom ryggen kallas {hen} {binamn}, sedan {hen} {bskal}.', om: f => !!f.bskal && f.heder === false }` om: `f => !!f.bskal && f.heder === false`
+  - Fält: bskal och heder (se nya 15)
+  - Säger: Att ett öknamn sägs i smyg, och varför.
+- [besk_binamn, src/sim/berattelser.ts:264] `{ t: 'Byn kallar {honom} {binamn}, så att ingen blandar ihop {honom} med {slakt}.', om: f => !!f.slakt }` om: `f => !!f.slakt`
+  - Fält: slakt = p.binamn.slakt
+  - Säger: Släktnamnets skäl.
+- [besk_binamn, src/sim/berattelser.ts:264] `{ t: 'Ingen kan säga vad {hen} har gjort, men byn kallar {honom} {binamn} ändå.', om: f => f.btillst === true }` om: `f => f.btillst === true`
+  - Fält: btillst = p.binamn.tillst
+  - Säger: Att namnet bara bygger på vad byn tycker.
+- [besk_binamn, src/sim/berattelser.ts:264] `{ t: 'Namnet {binamn} har följt {honom} i {bar} år.', om: f => (f.barN as number) >= 2 }` om: `f => (f.barN as number) >= 2`
+  - Fält: barN = Math.floor((s.now - p.binamn.t) / DAY) och bar = heltOrd(barN). heltOrd behövs, eftersom talOrd bara går till tolv.
+  - Säger: Hur länge hen haft namnet.
+- [besk_rykte, src/sim/berattelser.ts:294] `{ t: 'Byn ser {honom} som {rykte}, sedan {hen} {rskal}.', om: f => !!f.rskal }` om: `f => !!f.rskal`
+  - Fält: rskal = skalTill(s, p, by[0]).skal, satt bredvid f.rykte (2989)
+  - Säger: Vad ryktet bygger på.
+- [besk_rykte, src/sim/berattelser.ts:294] `{ t: 'Det {hen} berättar tror man mindre på, för {hen} räknas som {rykte}.', om: f => f.rk === "logn" }` om: `f => f.rk === 'logn'`
+  - Fält: rk = by[0]. Verkan står i RYKTE.lognTro (rykten.ts:59).
+  - Säger: Vad det kostar att vara lögnare.
+- [besk_rykte, src/sim/berattelser.ts:294] `{ t: 'Folk ger ogärna {honom} något, för {hen} räknas som {rykte}.', om: f => f.rk === "tjuv" || f.rk === "lurendrejare" }` om: `f => f.rk === 'tjuv' || f.rk === 'lurendrejare'`
+  - Fält: rk (se nya 21). Verkan står i dampar.ge.
+  - Säger: Följden av ryktet.
+- [besk_yrkeRykte, src/sim/berattelser.ts:274] `{ t: '{Hen} arbetar mest som {yrke}, men det byn talar om är att {hen} {rskal}.', om: f => !!f.rskal }` om: `f => !!f.rskal`
+  - Fält: rskal (se nya 20)
+  - Säger: Den händelse som byn minns i stället för yrket.
+- [besk_partner, src/sim/berattelser.ts:315] `{ t: '{Hen} är gift med {partner}.', om: f => f.gift === true }` om: `f => f.gift === true`
+  - Fält: gift = s.rels[relKey(p.id, p.partner)]?.gift !== undefined
+  - Säger: Gift eller bara ett par.
+- [besk_partner, src/sim/berattelser.ts:315] `{ t: '{Hen} och {partner} har hållit ihop i {parAr} år.', om: f => (f.parN as number) >= 3 }` om: `f => (f.parN as number) >= 3`
+  - Fält: parN = Math.floor((s.now - r.par) / DAY) och parAr = heltOrd(parN). Rel.par är tiden de blev ett par (relationer.ts:142).
+  - Säger: Hur länge de varit tillsammans.
+- [besk_partner, src/sim/berattelser.ts:315] `{ t: '{Hen} och {partner} har fått {barnTills} tillsammans.', om: f => !!f.barnTills }` om: `f => !!f.barnTills`
+  - Fält: barnTills = 'ett barn' eller '{heltOrd(n)} barn', där n är antalet barn med p och partnern som föräldrar
+  - Säger: Familjen de bildat.
+- [besk_partnerVan, src/sim/berattelser.ts:305] `{ t: '{Hen} är gift med {partner}, men det är med {van} {hen} pratar mest.', om: f => f.gift === true && f.vanPrat === true }` om: `f => f.gift === true && f.vanPrat === true`
+  - Fält: gift, och vanPrat = rel(p, van).talks > rel(p, partner).talks
+  - Säger: En spänning mellan vänskap och äktenskap, som syns i hur mycket de pratar.
+- [besk_van, src/sim/berattelser.ts:325] `{ t: '{Hen} och {van} har stått sida vid sida i strid {sidaGgr}.', om: f => !!f.sidaGgr }` om: `f => !!f.sidaGgr`
+  - Fält: sidaGgr = ganger(r.minns.sida) när sida finns
+  - Säger: Vad vännerna gått igenom tillsammans.
+- [besk_van, src/sim/berattelser.ts:325] `{ t: '{Hen} och {van} har varit vänner sedan de var barn.', om: f => f.barndomsvan === true }` om: `f => f.barndomsvan === true`
+  - Fält: barndomsvan = !!p.upp?.some(u => u.k === 'bastaVan' && u.om === van). Upplevelsen gäller bara barn.
+  - Säger: Hur gammal vänskapen är.
+- [besk_van, src/sim/berattelser.ts:325] `{ t: '{Hen} och {van} brukar ge varandra gåvor.', om: f => f.gavaBada === true }` om: `f => f.gavaBada === true`
+  - Fält: gavaBada = (r.minns?.gav?.[0] ?? 0) > 0 && (r.minns?.gav?.[1] ?? 0) > 0
+  - Säger: Hur vänskapen syns.
+- [besk_van, src/sim/berattelser.ts:325] `{ t: '{Hen} och {van} brottas ofta på lek.', om: f => (f.lek as number) >= 2 }` om: `f => (f.lek as number) >= 2`
+  - Fält: lek = r.minns?.lek ?? 0
+  - Säger: Lek och närhet.
+- [besk_fiende, src/sim/berattelser.ts:346] `{ t: '{Hen} och {fiende} har slagits {slagGgr}.', om: f => !!f.slagGgr }` om: `f => !!f.slagGgr`
+  - Fält: slagGgr = ganger(r.minns.slag) i relationen till p.arke
+  - Säger: Varför de är ovänner.
+- [besk_fiende, src/sim/berattelser.ts:346] `{ t: '{Hen} och {fiende} har grälat {gralGgr}.', om: f => !!f.gralGgr && !f.slagGgr }` om: `f => !!f.gralGgr && !f.slagGgr`
+  - Fält: gralGgr = ganger(r.minns.gral)
+  - Säger: Grälen bakom fiendskapen.
+- [besk_fiende, src/sim/berattelser.ts:346] `{ t: '{Hans} värsta ovän är {fiende}, men själv räknar {fiende} en annan som sin värsta.', om: f => f.omsesidig === false }` om: `f => f.omsesidig === false`
+  - Fält: omsesidig = byId(s, p.arke)?.arke === p.id
+  - Säger: Att hatet går åt ett håll.
+- [besk_foralder, src/sim/berattelser.ts:336] `{ t: 'Något av glansen från {vem}, som byn ser som {vad}, faller också på {honom}.', om: f => (f.vadTecken as number) > 0 && f.arv === true }` om: `f => (f.vadTecken as number) > 0 && f.arv === true`
+  - Fält: vadTecken = INTRYCK[r.k].tecken och arv = arvAndel(s) > 0 (arvAnseende, rykten.ts:524)
+  - Säger: Vad förälderns rykte gör för barnet.
+- [besk_foralder, src/sim/berattelser.ts:336] `{ t: 'Byn ser {vem} som {vad}, och det hänger kvar också vid {honom}.', om: f => (f.vadTecken as number) < 0 && f.arv === true }` om: `f => (f.vadTecken as number) < 0 && f.arv === true`
+  - Fält: vadTecken och arv (se nya 35)
+  - Säger: Att ett dåligt rykte går i arv.
+- [besk_foralder, src/sim/berattelser.ts:336] `{ t: '{Hans} {foOrd} {vem} lever inte längre, men byn minns {vemHonom} som {vad}.', om: f => f.vemDod === true }` om: `f => f.vemDod === true`
+  - Fält: vemDod = r.q.died !== undefined, foOrd = r.q.sex === 'k' ? 'mor' : 'far' och vemHonom = honom(r.q)
+  - Säger: Att ryktet lever längre än föräldern.
+- [besk_minne, src/sim/berattelser.ts:398] `{ t: '{Hen} var {vid} år när {hen} {minne}. Efter det blev {hen} {blev}.', om: f => !!f.blev && !f.varaktig }` om: `f => !!f.blev && !f.varaktig`
+  - Fält: blev är jämförelseformen för den egenskap i u.e som ändrades mest. Det kräver en egen tabell (modigare/räddare, varmare/kallare, flitigare/latare, starkare/klenare …), eftersom 'mer' + DRAG ger 'mer klen' eller 'mer trög i tanken'.
+  - Säger: Vad upplevelsen gjorde med personen.
+- [besk_minne, src/sim/berattelser.ts:398] `{ t: 'Det var {iarstid} år {ar} som {hen} {minne}, och det har {hen} burit med sig sedan dess.', om: f => !!f.iarstid && !f.varaktig }` om: `f => !!f.iarstid && !f.varaktig`
+  - Fält: iarstid och ar ur kalender(s, u.t). u.t finns bara för upplevelser från vuxenlivet (uppvaxt.ts:190), så villkoret behövs.
+  - Säger: När det hände: årstiden och året.
+- [besk_minne, src/sim/berattelser.ts:398] `{ t: 'Det {hen} minns bäst är tiden när {hen} {minne}.', om: f => f.varaktig === true }` om: `f => f.varaktig === true`
+  - Fält: varaktig (se fel 5)
+  - Säger: En tid i stället för en stund (rättar också felet).
+- [besk_grundare, src/sim/berattelser.ts:420] `{ t: '{Hen} är den sista som lever av dem som grundade byn.', om: f => f.kvar !== false && f.grundKvar === 0 }` om: `f => f.kvar !== false && f.grundKvar === 0`
+  - Fält: grundKvar = living(s).filter(q => q.grundare && q !== p).length
+  - Säger: Att en generation är på väg bort.
+- [besk_grundare, src/sim/berattelser.ts:420] `{ t: 'Av dem som grundade byn lever {namn} och {grundKvarOrd} till.', om: f => f.kvar !== false && (f.grundKvar as number) > 0 }` om: `f => f.kvar !== false && (f.grundKvar as number) > 0`
+  - Fält: grundKvarOrd = heltOrd(grundKvar)
+  - Säger: Hur många av de första som är kvar.
+- [besk_grundare, src/sim/berattelser.ts:420] `{ t: 'De var {grundFolk} när {namn} var med och grundade byn. Nu bor {folk} här.', om: f => !f.ny && (f.folkN as number) > (f.grundN as number) }` om: `f => !f.ny && (f.folkN as number) > (f.grundN as number)`
+  - Fält: grundN = s.people.filter(q => q.grundare).length och folkN = living(s).length, med heltOrd. Villkoret !f.ny behövs, eftersom en by som grundats på nytt blandar två slags grundare.
+  - Säger: Hur byn har vuxit sedan början.
+- [besk_grundare, src/sim/berattelser.ts:420] `{ t: '{namn} var med och grundade byn för {bynAr} år sedan.', om: f => (f.bynN as number) >= 2 }` om: `f => (f.bynN as number) >= 2`
+  - Fält: bynN = Math.floor((s.now - s.founded) / DAY) och bynAr = heltOrd(bynN). Fältet s.founded finns (typer.ts:372).
+  - Säger: Hur länge sedan det var.
+- [besk_vacker, src/sim/berattelser.ts:433] `{ t: '{namn} har {del}, och mer än en i byn har fallit för {honom}.', om: f => (f.friare as number) >= 2 }` om: `f => (f.friare as number) >= 2`
+  - Fält: friare = antalet levande vuxna q med s.rels[relKey(q.id, p.id)].rom >= BERATT.langtan
+  - Säger: Vad skönheten gör med andra.
+- [besk_ful, src/sim/berattelser.ts:445] `{ t: '{namn} har {del}, men {partner} valde {honom} ändå.', om: f => !!f.partner }` om: `f => !!f.partner`
+  - Fält: partner sätts före delarna (2992)
+  - Säger: En följd som säger emot utseendet.
+- [besk_aldst, src/sim/berattelser.ts:456] `{ t: '{namn} är äldst i byn, {ar} år gammal, och har {barnbarn} i livet.', om: f => !!f.barnbarn }` om: `f => !!f.barnbarn`
+  - Fält: barnbarn = 'ett barnbarn' eller '{heltOrd(n)} barnbarn', där n är antalet levande barn till p:s barn
+  - Säger: Släkten efter den äldsta.
+- [besk_aldst, src/sim/berattelser.ts:456] `{ t: 'Sedan {namn} föddes har {doda} av byns folk dött.', om: f => (f.dodaN as number) >= 3 }` om: `f => (f.dodaN as number) >= 3`
+  - Fält: dodaN = s.people.filter(q => q.died !== undefined && q.died > p.born).length och doda = heltOrd(dodaN)
+  - Säger: Vad ett långt liv har innehållit.
+- [besk_bast, src/sim/berattelser.ts:606] `{ t: 'Bara {tvaa} kommer i närheten av {honom} i {vad}.', om: f => !!f.tvaa }` om: `f => !!f.tvaa`
+  - Fält: tvaa: den vuxna med näst högst p.skill[k] (bastPa, 2837) när skillnaden är mindre än BERATT.bastSk / 4
+  - Säger: Vem som tävlar med den bästa.
+- [besk_vargar, src/sim/berattelser.ts:617] `{ t: '{namn} har fällt {vad} och bär själv märken efter ett vargbett.', om: f => f.bett === true }` om: `f => f.bett === true`
+  - Fält: bett = (p.liv?.bett ?? 0) > 0
+  - Säger: Vad segern kostade.
+- [besk_larare, src/sim/berattelser.ts:648] `{ t: '{Hen} lär upp {vem} i {amne}.', om: f => !!f.amne }` om: `f => !!f.amne`
+  - Fält: amne = skillNamn(lärlingen.mentorSk), med liten bokstav (relationer.ts:62)
+  - Säger: Vad läraren lär ut.
+- [besk_larare, src/sim/berattelser.ts:648] `{vem} arbetar gärna bredvid {honom}, för där går lärandet fortare.`
+  - Fält: vem finns. Verkan står i relationer.ts:62.
+  - Säger: Hur lärandet går till.
+- [besk_larling, src/sim/berattelser.ts:658] `{ t: '{Hen} går i lära hos {vem} i {amne}, tills {hen} har kommit ikapp.', om: f => !!f.amne }` om: `f => !!f.amne`
+  - Fält: amne = skillNamn(p.mentorSk) (relationer.ts:63)
+  - Säger: Vad hen lär sig och när det tar slut.
+- [besk_mastarverk, src/sim/berattelser.ts:693] `{ t: '{Hen} äger {vad}, som {gorare} gjorde.', om: f => !!f.gorare }` om: `f => !!f.gorare`
+  - Fält: gorare = byId(s, t.ber.g)?.name när t.ber.g !== p.id
+  - Säger: Vem som gjorde mästerverket.
+- [besk_mastarverk, src/sim/berattelser.ts:693] `{ t: '{namn} gjorde mästerverket {vad} själv och har behållit det.', om: f => f.egetVerk === true }` om: `f => f.egetVerk === true`
+  - Fält: egetVerk = t.ber.g === p.id
+  - Säger: Att hen gjorde det själv.
+- [besk_mastarverk, src/sim/berattelser.ts:693] `{ t: 'Med {vad}, som {namn} äger nu, har {vargarSak} fällts.', om: f => !!f.vargarSak }` om: `f => !!f.vargarSak`
+  - Fält: vargarSak = 'en varg' eller '{heltOrd(n)} vargar' ur t.ber.varg
+  - Säger: Sakens historia.
+- [besk_mastarverk, src/sim/berattelser.ts:693] `{ t: 'På {vad} är {motiv} {ristat}, och bilden stannar kvar hos den som har sett den.', om: f => !!f.motiv }` om: `f => !!f.motiv`
+  - Fält: motiv = t.ber.mo.namn och ristat = t.ber.mo.mal ? 'målad' : 'ristad'
+  - Säger: Bilden på saken och vad den gör med den som ser den.
+- [besk_ledare, src/sim/berattelser.ts:734] `{ t: 'Sedan {namn} blev ledare har byn vuxit från {folk0} till {folk} människor.', om: f => (f.folkN as number) > (f.folk0N as number) }` om: `f => (f.folkN as number) > (f.folk0N as number)`
+  - Fält: folk0N = s.styre.folk0 (styre.ts:415) och folkN = living(s).length, med heltOrd
+  - Säger: Vad ledaren har åstadkommit.
+- [besk_ledare, src/sim/berattelser.ts:734] `{ t: 'De var {folk0} i byn när {namn} tog över, och nu är de bara {folk}.', om: f => (f.folkN as number) < (f.folk0N as number) }` om: `f => (f.folkN as number) < (f.folk0N as number)`
+  - Fält: folk0N och folkN (se nya 58)
+  - Säger: Att byn krympt under ledaren.
+- [besk_ledare, src/sim/berattelser.ts:734] `{ t: '{Hen} har lett byn genom {vintrar}.', om: f => (f.vintrarN as number) >= 1 }` om: `f => (f.vintrarN as number) >= 1`
+  - Fält: vintrarN = s.styre.vintrar (räknas på styre.ts:669), och vintrar = 'en istid' eller '{heltOrd(n)} istider'
+  - Säger: Hur länge och genom vad.
+- [besk_ledare, src/sim/berattelser.ts:734] `{ t: '{namn} tog över efter {forra}.', om: f => !!f.forra }` om: `f => !!f.forra`
+  - Fält: forra = s.styre.historia[historia.length - 2]?.namn. Den nuvarande ledaren ligger sist i listan (styre.ts:417), så den förra står näst sist.
+  - Säger: Vem hen efterträdde.
+- [besk_arv, src/sim/berattelser.ts:756] `{ t: '{Hans} {fo2} lever inte längre, men {hans} {vad} finns kvar i {honom}.', om: f => f.foDod === true }` om: `f => f.foDod === true`
+  - Fält: foDod = q.died !== undefined för föräldern i arvet (2807)
+  - Säger: Arvet efter en död förälder.
+- [besk_sorjer, src/sim/berattelser.ts:511] `{ t: '{Hen} sörjer {dod}, sin {vem}, som dog {orsak}.', om: f => !!f.orsak }` om: `f => !!f.orsak`
+  - Fält: orsak = q.cause
+  - Säger: Hur den döda dog.
+- [besk_sorjer, src/sim/berattelser.ts:511] `{Hen} har svårt att glädja sig åt något sedan {dod} dog.`
+  - Fält: dod finns. Sorgens tanke sänker humöret.
+  - Säger: Vad sorgen gör med vardagen.
+- [besk_saknar, src/sim/berattelser.ts:521] `{ t: '{dod}, {hans} {vem}, dog {orsak} för {sedanAr} år sedan.', om: f => !!f.orsak && (f.sedanN as number) >= 1 }` om: `f => !!f.orsak && (f.sedanN as number) >= 1`
+  - Fält: sedanN = Math.floor((s.now - q.died) / DAY) och sedanAr = heltOrd(sedanN)
+  - Säger: När och hur.
+- [besk_barn, src/sim/berattelser.ts:564] `{ t: 'Av {hans} {vad} lever {levande} än.', om: f => (f.dodaBarn as number) > 0 && (f.levandeN as number) > 0 }` om: `f => (f.dodaBarn as number) > 0 && (f.levandeN as number) > 0`
+  - Fält: dodaBarn, levandeN och levande = heltOrd(levandeN) i familj (2828)
+  - Säger: Att alla barn inte levde.
+- [besk_forstFodd, src/sim/berattelser.ts:584] `{namn} föddes {iarstid} år {ar}, som det första barnet i byn.`
+  - Fält: iarstid och ar ur kalender(s, p.born), satta i familj
+  - Säger: När det var.
+- [besk_langtan, src/sim/berattelser.ts:797] `{ t: '{Hen} är förälskad i {vem}, som redan har någon annan.', om: f => f.vemUpptagen === true }` om: `f => f.vemUpptagen === true`
+  - Fält: vemUpptagen = q.partner !== undefined för den hen längtar efter (langtar)
+  - Säger: Att kärleken är olycklig.

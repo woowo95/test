@@ -1,0 +1,333 @@
+# Texterna, delen loggen (varld 73a44558)
+
+Godkänt av redaktören. Varje rad anger mallen och raden i koden (fil:rad) på commit 73a44558. Bygg in allt i listan; en ändring som inte längre passar koden hoppas över och nämns i commiten.
+
+**Läsarens sammanfattning:** Jag har gått igenom loggens mallar (l_*, h_*) och mallarna från de nya systemen (k_*, b_*) på raderna 2134–2502 i src/sim/berattelser.ts. Jag har också läst koden som fyller dem: byte.ts, samtal.ts, relationer.ts, rykten.ts, minne.ts, teknik.ts, steg.ts, strid.ts, styre.ts, resa.ts, tamdjur.ts och bildsten.ts. Samtalens ämnen (samtalAmne, pratText) och relationText har jag läst och jämfört mot texter.txt.
+
+Loggens mallar har nästan inga villkor: l_vanner, l_bastaVanner, l_ovanner, l_rivaler, l_arke, l_rykte och l_lart (4042 gånger) säger åtta gånger exakt samma påstående. Det beror på att scenarierna kräver minst åtta varianter per mall (folk.ts:2085 och 2236). Samtidigt har platserna som skriver raderna gott om värden som texterna aldrig får:
+- samtal.ts:250 vet om paret varit ovänner, slagits sida vid sida eller tröstat varandra.
+- relationer.ts:166 vet om rivaliteten gäller yrket eller samma kärlek.
+- rykten.ts:414 vet vem som berättade, vad som hände och om det var påhittat.
+- styre.ts:574 vet om domen var för hård, för mild mot en närstående, och om anklagelsen var falsk.
+
+De flesta nya varianterna bygger därför på sådana nya fält, med fil:rad där värdet finns.
+
+Allvarliga fel jag hittade:
+- **Fel tempus och fel ordföljd i k_ratt:** {straff} är presens ("tillrättavisar") i krönikan, och "dömde till böter honom" blir fel ordföljd.
+- **Ogrammatiska fyllningar i bildstenarna:** "fick publiken med sig i föreläsning", "en man böjd över hur man kan snickra", "en kvinna med teater i händerna", "anden Stendis som flintberget över de troende".
+- **Fel orsak i l_slagsmal:** "slogs uppror" och "slogs en ledarstrid" (rost.ts:352).
+- **Tre fel i k_resa:** "en färd för att se platsen till Östernäs" (resa.ts:167), "kom hem med" om ett byte inne i byn, och "Det var istid när …" som blir felböjt.
+- **Personens rader i k_ratt stämmer inte:** de säger att personen själv stått inför tinget, när det var föräldern som dömdes (foralderDomd).
+- **Varianter som påstår något falskt:** l_rivaler säger "gör samma arbete" fast rivaliteten kan gälla en kärlek, l_lart säger "såg på när {av} arbetade" fast de flesta lär sig i samtal, och l_svartSjuk säger "Kylan tog {namn}" vid vilken sjukdom som helst.
+
+Inga filer under src/, test/ eller bildstil/ är ändrade, och inga egna skript är skapade.
+
+**Känslan:** Loggen läses som en lista med samma påståenden. "X och Y har blivit nära vänner", "goda vänner", "har hittat varandra" och "söker sig till varandra" ger spelaren inget nytt när hen märkt mönstret. De omskrivna varianterna låter dessutom konstlade ("{namn} har fått en vän i {med}, och {med} i {namn}", "Ett byte mellan A och B: …"). Bytena och lärdomarna är de rader som syns mest, och de är rena faktarader där ordföljden byts. Det fungerar som bokföring men aldrig som berättelse.
+
+Krönikans k-mallar har mer liv (röken som syntes långt, askan som låg kvar). Men de används sällan, och flera av dem blir ogrammatiska när fälten fylls i. Bildstenarna har de mest stämningsfulla texterna, men just där syns felen mest ("en kvinna med teater i händerna").
+
+Det som saknas är det som gör en händelse till just den här händelsen: att två ovänner blev vänner, att den som gav gåvan var ens bästa vän, att domen var för hård, att flintan hittades i mörkret. Spelet vet allt det redan.
+
+## Rättelser
+
+- [k_ratt, src/sim/styre.ts:574 (fylls med STRAFF_REG[steg].nu)] Krönikan står i dåtid, men {straff} är presens (nu). Fältet ska vara da.
+  - Nu: Tinget dömde Omka för att hon tog bär av Ehild: Ehild tillrättavisar henne.
+  - Blir: Tinget dömde Omka för att hon tog bär av Ehild: Ehild tillrättavisade henne.
+- [k_ratt, src/sim/berattelser.ts:2486–2490 och styre.ts:492–500] Ordföljden blir fel för straffen med efterled (böter, extra arbete, döden): objektet hamnar efter 'till böter'. {straff} behöver delas i verbet och efterledet, t.ex. da: 'dömde', efter: ' till böter', och mallarna skrivs '{straff} {honom}{straffEfter}'.
+  - Nu: Ehild dömde till böter Omka, som tog virke av Ehild.
+  - Blir: Ehild dömde Omka till böter, för att hon tog virke av Ehild.
+- [k_ratt, src/sim/berattelser.ts:2495–2496] varMed (berattelser.ts:2873) väljer k_ratt för upplevelsen foralderDomd, alltså när en förälder dömdes. Då är det fel att personen själv stått inför tinget. Personmallarna behöver fältet upp (u.k, berattelser.ts:2876) och uppOm (u.om, förälderns namn).
+  - Nu: Hilda har stått inför tinget. / Hon vet hur det är att dömas inför byn.
+  - Blir: { t: '{namn} såg tinget döma {uppOm}.', om: f => iPerson(f) && f.upp === 'foralderDomd' }, och '{namn} har stått inför tinget.' och '{Hen} vet hur det är att dömas inför byn.' med om: f => iPerson(f) && f.upp === 'fangelse'
+- [k_ratt, src/sim/berattelser.ts:2497] Konstlat och oklart vad det betyder.
+  - Nu: Sirdar har sett tinget döma nära sig.
+  - Blir: { t: '{Hen} minns hur byn stod och såg på när {uppOm} dömdes.', om: f => iPerson(f) && f.upp === 'foralderDomd' }
+- [l_slagsmal, src/sim/rost.ts:352 (orsak till kartStridBorja)] orsak ska vara en adverbial fras som 'efter ett gräl', men ledarstriden ger 'uppror' och 'en ledarstrid'. Samma orsak står i parentes i strid.ts:1328 och kartstrid.ts:317, och där fungerar den nya formen också.
+  - Nu: Bovi, Bovid, Erindrun, Ylve den yngre, Hala och Halka slogs uppror, och Bovi, Bovid och Erindrun gick segrande därifrån. / Ylve, Kakger och Ylve den yngre slogs en ledarstrid.
+  - Blir: orsak: stor ? 'i ett uppror' : 'om makten i byn' (rost.ts:352) → "Ylve, Kakger och Ylve den yngre slogs om makten i byn."
+- [l_rivaler, src/sim/berattelser.ts:2192] Rivaler blir man av samma yrke ELLER av romans med samma person (relationer.ts:157–160). Vid kärleken är det falskt att de gör samma arbete.
+  - Nu: {namn} och {med} gör samma arbete, och båda vill vara bäst. De är rivaler.
+  - Blir: { t: '{namn} och {med} gör samma arbete, och båda vill vara bäst. De är rivaler.', om: f => !!f.yrke }
+- [l_lart, src/sim/berattelser.ts:2263] Det stämmer bara när man lär sig bredvid någon eller som lärling (teknik.ts:468). De flesta lär sig i samtal (teknik.ts:439, minne.ts:447), och en del i en föreläsning (framtradande.ts:139). Raden behöver fältet hur.
+  - Nu: Ikel såg på när Ulhild arbetade, och nu kan han själv tvinna rep.
+  - Blir: { t: '{namn} såg på när {av} arbetade, och nu kan {hen} själv {lara}.', om: f => f.hur === 'bredvid' || f.hur === 'larling' }
+- [l_svartSjuk, src/sim/berattelser.ts:2254] Varianten väljs så fort det är kallt, vilken sjukdom det än är (magsjuka, mässlingen). Kylan orsakar bara förkylningen (sjukdom.ts:64, orsak 'kyla').
+  - Nu: Kylan tog Fröskar, som blev svårt sjuk.
+  - Blir: { t: 'Kylan tog {namn}, som blev svårt sjuk.', om: f => !!f.kallt && f.forkyld === true } (forkyld = p.sjuk.k === 'forkylning' på steg.ts:818)
+- [l_raMat, src/sim/berattelser.ts:2243] vad kan vara 'rått ägg' (matlagning.ts:129), och ett ägg grillar man inte.
+  - Nu: Ylvbjörn borde ha grillat maten. Nu är han matförgiftad.
+  - Blir: {namn} borde ha lagat maten. Nu är {hen} matförgiftad.
+- [l_vanner, src/sim/berattelser.ts:2164] På svenska betyder 'har hittat varandra' att de blivit ett par, men raden gäller just dem som inte är ett par (samtal.ts:250, a.partner !== b.id).
+  - Nu: {namn} och {med} har hittat varandra.
+  - Blir: {namn} och {med} har funnit en vän i varandra.
+- [l_ovanner, src/sim/berattelser.ts:2180, 2184] Båda säger att de varit vänner, men raden skrivs när relationen sjunker under REL.ovan, oavsett om de någonsin var vänner.
+  - Nu: Fahild och Ikel är inte vänner längre. / Det som fanns mellan Fahild och Ikel är borta.
+  - Blir: { t: '{namn} och {med} är inte vänner längre.', om: f => f.forr === true } och { t: 'Det som fanns mellan {namn} och {med} är borta. De har blivit ovänner.', om: f => f.forr === true } (forr = !!(r.flags & 1), samtal.ts:251)
+- [l_bastaVanner, src/sim/berattelser.ts:2169, 2175] Den bästa vännen väljs utan partnern, föräldrarna och barnen (relationer.ts:109), så 'ingen står så nära' är falskt för den som har en partner. 'Delar allt' visar spelet inte.
+  - Nu: Ingen står Ehild så nära som Hildulf. / Ehild och Hildulf delar allt nu.
+  - Blir: { t: 'Ingen står {namn} så nära som {med}.', om: f => !f.partner } (partner = p.partner !== undefined) och { t: '{namn} och {med} har gett varandra gåvor många gånger. De är bästa vänner.', om: f => f.gavBada === true } (gavBada = !!r.minns?.gav?.[0] && !!r.minns?.gav?.[1])
+- [k_handel, src/sim/berattelser.ts:2433] De flesta stora byten görs inne i byn, mellan två bybor, så 'kom hem med' är ologiskt.
+  - Nu: Ylvbjörn för byn handlade med Asleif och kom hem med fem huggna stenar.
+  - Blir: {a} handlade med {b} och fick {fick}.
+- [k_resa, src/sim/resa.ts:167 (RESMAL.se.resa) och berattelser.ts:2412–2420] Syftet kommer före målet, så det blir 'se platsen till Östernäs'. RESMAL ska ge färden och syftet var för sig: resa: 'en färd', syfte: ' för att se platsen'. Mallen skrivs 'från {resa} till {mal}{syfte}'.
+  - Nu: Steveig kom hem från en färd för att se platsen till Östernäs.
+  - Blir: Steveig kom hem från en färd till Östernäs för att se platsen. (RESMAL.se: resa: 'en färd', syfte: ' för att se platsen'; mallen '{resa} till {mal}{syfte}')
+- [k_tro, src/sim/berattelser.ts:2399] {tecken} är ibland en att-sats (teckenText, religion.ts:355), och då blir 'vad {tecken} betydde' ogrammatiskt.
+  - Nu: En ny tro föddes när Ynde förstod vad att Evka överlevde en svår sjukdom betydde.
+  - Blir: { t: '{grundare} kunde inte sluta tänka på {tecken}. Det måste betyda något, och så föddes en ny tro.', om: f => iBy(f) && !f.huset }
+- [k_epidemi, src/sim/sjukdom.ts:172] Sjukdomen ska stå i bestämd form i berättelsen.
+  - Nu: Byn minns tiden med magsjuka, då tre blev sjuka. / Det blev tyst i byn medan förkylning gick runt.
+  - Blir: Byn minns tiden med magsjukan, då tre blev sjuka. / Det blev tyst i byn medan förkylningen gick runt. (nytt fält bf i SJUKDOMAR: 'magsjukan', 'förkylningen', 'lunginflammationen', 'mässlingen', 'kopporna'; sjukdom.ts:172 skickar bf)
+- [k_brand, src/sim/berattelser.ts:2342] Med {vaggar} är subjektet plural, så adjektivet ska böjas i plural.
+  - Nu: Det brann: en liten bit mark och två väggar blev svart.
+  - Blir: { t: 'Det brann: {mark} blev svart.', om: f => iBy(f) && !f.vaggar } och { t: 'Det brann: {mark}{vaggar} blev svarta.', om: f => iBy(f) && !!f.vaggar }
+- [b_bild, src/sim/berattelser.ts:2472–2474 (ting = bev.sak, bildsten.ts:92)] För uppfinningen är {ting} en sats ('hur man kan …'), inte ett ting. Den kan inte stå efter 'över' eller 'med … i händerna'.
+  - Nu: en man böjd över hur man kan snickra / en kvinna med hur man kan göra flintspjut i händerna och folk runt omkring
+  - Blir: { t: '{fig} som tänker ut {ting}', om: f => f.motiv === 'uppfinning' } och { t: '{fig} som lär de andra {ting}', om: f => f.motiv === 'uppfinning' }, och '{fig} som visar byn {ting}'
+- [b_bild, src/sim/berattelser.ts:2467–2468] För tävlingen är {ting} konstformen ('teater', 'tal', 'kväde', 'föreläsning'), och den kan man inte hålla i händerna.
+  - Nu: en kvinna med teater i händerna, och folk som jublar / en man som står främst bland de andra, med kväde
+  - Blir: { t: '{fig} som höjer händerna mot himlen, och folk som jublar', om: f => f.motiv === 'tavling' } och { t: '{fig} som står främst bland de andra', om: f => f.motiv === 'tavling' }
+- [b_bild, src/sim/bildsten.ts:73] Guden får ' som {i}' (var anden bor), och då blir det två 'som' i rad, eller 'som flintberget' som inte betyder något.
+  - Nu: anden Glansbjörn som lärkan som stiger ner bland folket / anden Stendis som flintberget över de troende
+  - Blir: ting: `${formNamn(g.form, true).toLowerCase()} ${g.namn}${g.i ? ` i ${g.i}` : ''}` (bildsten.ts:73) → "anden Glansbjörn i lärkan, som stiger ner bland folket" / "anden Stendis i flintberget över de troende"
+- [b_berattar, src/sim/berattelser.ts:2484] 'hur {vad}' ger 'hur … hur' när vad är en uppfinning. Varianten [4] upprepar namnet när ristaren själv är den som avbildas, vilket är vanligt eftersom ens egen bedrift väger tyngst (bildsten.ts:61).
+  - Nu: Den berättar hur Omka kom på hur man kan göra fällor. / Lofrid ristade den för att minnas hur Lofrid kom på hur man kan bygga en grillställning.
+  - Blir: Den berättar om när Omka kom på hur man kan göra fällor. (alla b_berattar skrivs 'om när {vad}' i stället för 'hur {vad}'), och '{Ristare} ristade den för att minnas …' får om: f => !f.egen (egen = ristare.id === h.om.id)
+- [b_berattar, src/sim/rykten.ts (HANDELSER, texten för scenBra/tavling: 'fick publiken med sig i {sak}')] 'i föreläsning' och 'i tal' är ogrammatiskt.
+  - Nu: Så ristades minnet av hur Lofrid fick publiken med sig i föreläsning, en höst.
+  - Blir: Så ristades minnet av när Lofrid fick publiken med sig, en höst.
+- [l_byte, src/sim/byte.ts:226 (varorText)] Sakens namn står i singular efter ett tal (pluralformen saknas i SAKER för jordgubbsplantan).
+  - Nu: Ett byte mellan Fahild för byn och Sikel: tre jordgubbsplanta och ett får mot …
+  - Blir: … tre jordgubbsplantor och ett får mot …
+- [relationText, src/sim/berattelser.ts:3265] Läraren gissas vara den äldre, men r.lart räknas åt båda hållen (lartUt), och barnet kan ha lärt den vuxna.
+  - Nu: Ehild har lärt Lofrid något tre gånger.
+  - Blir: De har lärt varandra något tre gånger.
+
+## Varianter som tas bort (säger samma sak som en annan)
+
+- [l_byte, src/sim/berattelser.ts:2142] Ta bort: "Ett byte mellan {namn} och {med}: {fatt} mot {betal}." (står kvar: "{namn} bytte med {med}: {fatt} mot {betal}.")
+- [l_gava, src/sim/berattelser.ts:2149] Ta bort: "{namn} lät {om} få {varor}." (står kvar: "{namn} gav {varor} till {om}.")
+- [l_gava, src/sim/berattelser.ts:2155] Ta bort: "Utan att fråga om något gav {namn} {varor} till {om}." (står kvar: "{namn} gav {om} {varor} och bad inte om något tillbaka.")
+- [l_vanner, src/sim/berattelser.ts:2161] Ta bort: "{namn} och {med} har blivit goda vänner." (står kvar: "{namn} och {med} har blivit nära vänner.")
+- [l_vanner, src/sim/berattelser.ts:2163] Ta bort: "{namn} har fått en vän i {med}, och {med} i {namn}." (står kvar: "{namn} och {med} har blivit nära vänner.")
+- [l_bastaVanner, src/sim/berattelser.ts:2170] Ta bort: "{namn} och {med} är bästa vänner nu." (står kvar: "{namn} och {med} har blivit bästa vänner.")
+- [l_bastaVanner, src/sim/berattelser.ts:2173] Ta bort: "{namn} har ingen närmare än {med}, och {med} ingen närmare än {namn}." (står kvar: "Ingen står {namn} så nära som {med}.")
+- [l_ovanner, src/sim/berattelser.ts:2181] Ta bort: "{namn} och {med} går inte ihop längre." (står kvar: "{namn} och {med} har blivit ovänner.")
+- [l_rivaler, src/sim/berattelser.ts:2189] Ta bort: "{namn} vill vara bättre än {med}, och {med} vill vara bättre än {namn}. De är rivaler." (står kvar: "{namn} vill inte vara sämre än {med}. De har blivit rivaler.")
+- [l_rivaler, src/sim/berattelser.ts:2191] Ta bort: "Det är en tävlan mellan {namn} och {med}. De har blivit rivaler." (står kvar: "Mellan {namn} och {med} är det en tävlan nu.")
+- [l_arke, src/sim/berattelser.ts:2205] Ta bort: "Det finns ingen {namn} hatar som {om}." (står kvar: "{namn} hatar {om} mer än någon annan i byn.")
+- [l_arke, src/sim/berattelser.ts:2199] Ta bort: "{namn} hatar ingen som {om}. {om} är {hans} ärkefiende nu." (står kvar: "{namn} har bestämt sig: {om} är {hans} ärkefiende.")
+- [l_slagsmal, src/sim/berattelser.ts:2215] Ta bort: "{namn} och {mot} slogs {orsak}, och {vinnare} vann." (står kvar: "{namn} och {mot} slogs {orsak}. {vinnare} vann.")
+- [l_slagsmal, src/sim/berattelser.ts:2216] Ta bort: "Ingen av {namn} och {mot} vann när de slogs {orsak}." (står kvar: "{namn} och {mot} slogs {orsak}, men ingen av dem vann.")
+- [l_larm, src/sim/berattelser.ts:2226] Ta bort: "{namn} ropade larm. {N} hörde det: {vadtext}." (står kvar: "{namn} ropade larm: {vadtext}. {N} hörde det.")
+- [l_larm, src/sim/berattelser.ts:2227] Ta bort: "{namn} ropade larm, men det var inget: {vadtext}. {N} hörde det." (står kvar: "{namn} ropade att {vadtext}, men det var inte sant. {N} hörde det.")
+- [l_magsjuk, src/sim/berattelser.ts:2235] Ta bort: "{namn} åt skämd mat och blev magsjuk." (står kvar: "{namn} blev magsjuk av skämd mat.")
+- [l_magsjuk, src/sim/berattelser.ts:2237] Ta bort: "{namn} har ont i magen. Maten {hen} åt var skämd." (står kvar: "{namn} ligger med ont i magen. Maten var skämd.")
+- [l_raMat, src/sim/berattelser.ts:2244] Ta bort: "{namn} åt {vad} och blev matförgiftad." (står kvar: "{namn} blev matförgiftad av {vad}.")
+- [l_raMat, src/sim/berattelser.ts:2241] Ta bort: "{namn} åt {vad} och blev sjuk av det." (står kvar: "{namn} blev sjuk av {vad}.")
+- [l_svartSjuk, src/sim/berattelser.ts:2255] Ta bort: "{namn} har blivit svårt sjuk." (står kvar: "{namn} blev svårt sjuk.")
+- [l_lart, src/sim/berattelser.ts:2267] Ta bort: "{namn} kan nu {lara}. {av} lärde {honom}." (står kvar: "Nu kan {namn} också {lara}. {av} visade {honom} hur.")
+- [l_rykte, src/sim/berattelser.ts:2276] Ta bort: "Det sägs att {namn} är {rykte}." (står kvar: "Man säger i byn att {namn} är {rykte}.")
+- [l_rykte, src/sim/berattelser.ts:2277] Ta bort: "I byn har man börjat säga att {namn} är {rykte}." (står kvar: "Man säger i byn att {namn} är {rykte}.")
+- [l_flinta, src/sim/berattelser.ts:2285] Ta bort: "{namn} hittade en flinta {plats}." (står kvar: "{namn} hittade en flintsten {plats}.")
+- [l_flinta, src/sim/berattelser.ts:2284] Ta bort: "En flintsten! {namn} hittade den {plats}." (står kvar: "{namn} hittade en flintsten {plats}.")
+- [k_handel, src/sim/berattelser.ts:2434] Ta bort: "{b} fick {gav} av {a}, och {a} fick {fick}." (står kvar: "{a} gav {gav} och fick {fick} av {b}.")
+- [k_handel, src/sim/berattelser.ts:2432] Ta bort: "Ett stort byte: {a} lämnade {gav} och tog {fick} från {b}." (står kvar: "{a} bytte till sig {fick} av {b} för {gav}.")
+- [k_ratt, src/sim/berattelser.ts:2488] Ta bort: "{ledare} {straff} {namn}, som {brott}." (står kvar: "{namn} {brott}, och {ledare} {straff} {honom} inför byn.")
+- [k_ratt, src/sim/berattelser.ts:2491] Ta bort: "Tinget friade {namn}." (står kvar: "{namn} stod inför tinget men gick fri.")
+- [k_epidemi, src/sim/berattelser.ts:2388] Ta bort: "{Sjukdom} kom till byn och gick över. {Antal} låg sjuka.{doda}" (står kvar: "{Sjukdom} gick genom byn. {Antal} blev sjuka.{doda}")
+- [k_djur, src/sim/berattelser.ts:2441] Ta bort: "Med {djur} började byn hålla djur." (står kvar: "Byn fick sitt första tamdjur: {djur}.")
+- [b_berattar, src/sim/berattelser.ts:2484 (andra varianten)] Ta bort: "Bilderna berättar hur {vad}." (står kvar: "Den berättar hur {vad}.")
+- [b_berattar, src/sim/berattelser.ts:2484 (sista varianten)] Ta bort: "Så ristades minnet av hur {vad}, {nar}." (står kvar: "Den berättar hur {vad}, {nar}.")
+
+## Nya varianter
+
+- [l_byte, src/sim/berattelser.ts:2136] `{namn} och {med} lade fram varorna på var sin filt och tog i hand: {fatt} mot {betal}.` om: `f => !f.desperat && f.stort === true && !f.handlare`
+  - Fält: stort = stort (byte.ts:206); handlare (se nr 2)
+  - Säger: Hur det gick till: filtarna och handslaget som spelet visar
+- [l_byte, src/sim/berattelser.ts:2136] `Handlaren {med} hade det {namn} ville ha: {fatt}. {namn} betalade med {betal}.` om: `f => !f.desperat && f.handlare === 'med'`
+  - Fält: handlare = hf?.handlare === g.id ? 'med' : hf?.handlare === m.id ? 'namn' : undefined (byte.ts:213)
+  - Säger: Att det var handlaren som kom med varan
+- [l_byte, src/sim/berattelser.ts:2136] `Handlaren {namn} köpte {fatt} av {med} och betalade med {betal}.` om: `f => !f.desperat && f.handlare === 'namn'`
+  - Fält: handlare (byte.ts:213)
+  - Säger: Att byborna sålde till handlaren
+- [l_byte, src/sim/berattelser.ts:2136] `Det var redan mörkt när {namn} och {med} gjorde upp: {fatt} mot {betal}.` om: `f => !f.desperat && f.natt === true`
+  - Fält: natt (vaderFalt, berattelser.ts:3018)
+  - Säger: När det hände
+- [l_gava, src/sim/berattelser.ts:2146] `{namn} gav sitt barn {om} {varor}.` om: `f => !f.fara && f.foralder === true`
+  - Fält: foralder = !!m.p && !!g.p && (m.p.mother === g.p.id || m.p.father === g.p.id) (byte.ts:244)
+  - Säger: Att gåvan gick från förälder till barn
+- [l_gava, src/sim/berattelser.ts:2146] `{om} fick {varor} av sin bästa vän {namn}.` om: `f => !f.fara && f.bast === true`
+  - Fält: bast = !!m.p && m.p.bast === g.p?.id (byte.ts:244)
+  - Säger: Vem givaren är för mottagaren
+- [l_gava, src/sim/berattelser.ts:2146] `{namn} och {om} står inte varandra nära, men {namn} gav ändå {honom2} {varor}.` om: `f => !f.fara && f.inteVan === true`
+  - Fält: inteVan = !!g.p && !!m.p && getRel(s, g.p, m.p).op <= REL.vanOrd && !isKin(g.p, m.p) (byte.ts:244)
+  - Säger: Att gåvan gick över ett ovänskap
+- [l_vanner, src/sim/berattelser.ts:2157] `{namn} och {med} var ovänner en gång. Nu är de nära vänner.` om: `f => f.ovanForr === true`
+  - Fält: ovanForr = !!(r.flags & 2) (samtal.ts:250)
+  - Säger: Vägen dit: från ovänskap till vänskap
+- [l_vanner, src/sim/berattelser.ts:2157] `När {med} behövde tröst var det {namn} som kom. Nu är de nära vänner.` om: `f => f.trost === true`
+  - Fält: trost = kind === 'tröst' (samtal.ts:250; a tröstar b, samtal.ts:201)
+  - Säger: Vad som gjorde dem till vänner
+- [l_vanner, src/sim/berattelser.ts:2157] `{namn} och {med} har stått sida vid sida i strid. Sedan dess är de nära vänner.` om: `f => f.sida === true`
+  - Fält: sida = !!r.minns?.sida (samtal.ts:250)
+  - Säger: Det de varit med om tillsammans
+- [l_vanner, src/sim/berattelser.ts:2157] `{namn} och {med} har pratat med varandra {ggr}. Nu är de nära vänner.` om: `f => f.mycketPrat === true`
+  - Fält: ggr = ganger(r.talks) och mycketPrat = r.talks >= BERATT.mycketPrat (nytt balanstal; samtal.ts:250, r.talks har redan räknats upp på rad 246)
+  - Säger: Hur lång tid vänskapen tog
+- [l_vanner, src/sim/berattelser.ts:2157] `Det skiljer många år mellan {namn} och {med}, men de har blivit nära vänner.` om: `f => f.aldersSkillnad === true`
+  - Fält: aldersSkillnad = Math.abs(ageOf(a, s.now) - ageOf(b, s.now)) >= BERATT.aldersSkillnad (samtal.ts:250)
+  - Säger: Det ovanliga i vänskapen
+- [l_bastaVanner, src/sim/berattelser.ts:2167] `{namn} och {med} var rivaler en gång. Nu är de bästa vänner.` om: `f => f.rival === true`
+  - Fält: rival = !!(r.flags & 4) (relationer.ts:119)
+  - Säger: Vägen dit
+- [l_bastaVanner, src/sim/berattelser.ts:2167] `Det var ont mellan {namn} och {med} förut, men nu är de bästa vänner.` om: `f => f.ovanForr === true && !f.rival`
+  - Fält: ovanForr = !!(r.flags & 2) (relationer.ts:119)
+  - Säger: Försoningen
+- [l_bastaVanner, src/sim/berattelser.ts:2167] `Barnen {namn} och {med} har blivit bästa vänner.` om: `f => f.barnBada === true`
+  - Fält: barnBada = ageOf(p, s.now) < ALDER.vuxen && ageOf(q!, s.now) < ALDER.vuxen (relationer.ts:119)
+  - Säger: Att det är en barnvänskap
+- [l_ovanner, src/sim/berattelser.ts:2177] `{namn} och {med} lever ihop, men nu är det ont mellan dem.` om: `f => f.partner === true`
+  - Fält: partner = a.partner === b.id (samtal.ts:251)
+  - Säger: Att ovänskapen är mellan två som lever ihop
+- [l_ovanner, src/sim/berattelser.ts:2177] `{namn} och {med} är släkt, men det hjälper inte. De har blivit ovänner.` om: `f => f.kin === true && !f.partner`
+  - Fält: kin = isKin(a, b) (samtal.ts:251)
+  - Säger: Att det är en fejd inom släkten
+- [l_ovanner, src/sim/berattelser.ts:2177] `{namn} och {med} har slagits mot varandra, och det har ingen av dem glömt.` om: `f => f.slag === true`
+  - Fält: slag = !!r.minns?.slag (samtal.ts:251)
+  - Säger: Orsaken
+- [l_rivaler, src/sim/berattelser.ts:2187] `{namn} och {med} har båda fattat tycke för {karlek}. Nu är de rivaler.` om: `f => !!f.karlek`
+  - Fält: karlek = namnet på c i romans-kontrollen (relationer.ts:158), sparat per par
+  - Säger: Rivaliteten om en kärlek
+- [l_rivaler, src/sim/berattelser.ts:2187] `{namn} och {med} arbetar båda som {yrke}, och ingen av dem vill vara sämre.` om: `f => !!f.yrke`
+  - Fält: yrke = p.tag.toLowerCase() när yrke var sant, per par (relationer.ts:157; inte p.rivalom, som bara sparar det sista)
+  - Säger: Vilket arbete de tävlar i
+- [l_rivaler, src/sim/berattelser.ts:2187] `{namn} och {med} var nära vänner förut. Nu är de rivaler.` om: `f => f.forr === true`
+  - Fält: forr = !!(r.flags & 1) (relationer.ts:165)
+  - Säger: Vad de var innan
+- [l_arke, src/sim/berattelser.ts:2197] `{namn} hatar {om}, och {om} hatar {namn} lika mycket.` om: `f => f.omsesidig === true`
+  - Fält: omsesidig = worst.arke === p.id (relationer.ts:135)
+  - Säger: Att hatet är ömsesidigt (det behöver det inte vara)
+- [l_arke, src/sim/berattelser.ts:2197] `{namn} och {om} var nära vänner en gång. Nu hatar {namn} ingen som {om}.` om: `f => f.forr === true`
+  - Fält: forr = !!(rel(p, worst)!.flags & 1) (relationer.ts:135)
+  - Säger: Fallet från vänskap
+- [l_arke, src/sim/berattelser.ts:2197] `{namn} och {om} har slagits mot varandra, och nu är {om} {hans} ärkefiende.` om: `f => f.slag === true`
+  - Fält: slag = !!rel(p, worst)?.minns?.slag (relationer.ts:135)
+  - Säger: Orsaken
+- [l_arke, src/sim/berattelser.ts:2197] `{om} är {hans} egen släkt, men {namn} hatar ingen som {om}.` om: `f => f.kin === true`
+  - Fält: kin = isKin(p, worst) (relationer.ts:135)
+  - Säger: Att hatet är inom släkten
+- [l_lart, src/sim/berattelser.ts:2259] `{namn} har gått i lära hos {av}, och nu kan {hen} själv {lara}.` om: `f => f.hur === 'larling'`
+  - Fält: hur: learn(s, p, t, from, hur): 'samtal' (teknik.ts:439, minne.ts:447), mastare ? 'larling' : 'bredvid' (teknik.ts:468), 'forelasning' (framtradande.ts:139); till loggBer på teknik.ts:326
+  - Säger: Lärlingstiden
+- [l_lart, src/sim/berattelser.ts:2259] `{namn} satt bland dem som lyssnade på {av}, och efter det kunde {hen} {lara}.` om: `f => f.hur === 'forelasning'`
+  - Fält: hur (framtradande.ts:139)
+  - Säger: Att det var en föreläsning
+- [l_lart, src/sim/berattelser.ts:2259] `Det var i ett samtal med {av} som {namn} lärde sig att {lara}.` om: `f => f.hur === 'samtal'`
+  - Fält: hur (teknik.ts:439, minne.ts:447)
+  - Säger: Att det lärdes i ett samtal
+- [l_lart, src/sim/berattelser.ts:2259] `{av} är yngre än {namn}, men det var {av} som lärde {honom} att {lara}.` om: `f => f.yngreLarare === true`
+  - Fält: yngreLarare = ageOf(from, s.now) < ageOf(p, s.now) - BERATT.yngreLarare (teknik.ts:326; a och b i minne.ts:447)
+  - Säger: Det ovanliga: att den yngre lär den äldre
+- [l_rykte, src/sim/berattelser.ts:2269] `Det var {fran} som berättade för {till} att {namn} är {rykte}. Så började ryktet.` om: `f => !!f.fran && !f.scen`
+  - Fält: fran = a.name, till = b.name (rykten.ts:414; forstaGang gör att raden bara skrivs första gången)
+  - Säger: Vem som började ryktet
+- [l_rykte, src/sim/berattelser.ts:2269] `Det började med att {namn} {bevis}. Nu säger man att {hen} är {rykte}.` om: `f => !!f.bevis && !f.falsk`
+  - Fält: bevis = HANDELSER[ex.h].text med {om} och {sak} ifyllda som i berattelser.ts:3276, ex = e.bev?.[0] (rykten.ts:396)
+  - Säger: Vad ryktet bygger på
+- [l_rykte, src/sim/berattelser.ts:2269] `Det är inte sant, men ryktet går ändå: {namn} är {rykte}.` om: `f => f.falsk === true`
+  - Fält: falsk = !!ex?.falsk (rykten.ts:396)
+  - Säger: Att ryktet är påhittat
+- [l_rykte, src/sim/berattelser.ts:2269] `Det var på scenen som folk fick höra att {namn} är {rykte}.` om: `f => f.scen === true`
+  - Fält: scen = vFast !== undefined (rykten.ts:395)
+  - Säger: Var ryktet kom ifrån
+- [l_rykte, src/sim/berattelser.ts:2269] `{namn} lever inte längre, men det sägs att {hen} var {rykte}.` om: `f => f.dod === true`
+  - Fält: dod = !alive(q) (rykten.ts:414)
+  - Säger: Att ryktet lever längre än personen
+- [l_flinta, src/sim/berattelser.ts:2279] `{namn} hittade en flinta där ingen trodde att det fanns någon.` om: `f => !f.plats`
+  - Fält: plats (steg.ts:1203)
+  - Säger: Det märkliga i fyndet, som tecknet bygger på
+- [l_flinta, src/sim/berattelser.ts:2279] `Regnet fick stenarna att glänsa, och {namn} såg en flinta bland dem.` om: `f => f.regn === true && f.plats === 'vid stenarna'`
+  - Fält: regn (vaderFalt)
+  - Säger: Ett sinnesintryck och vädret
+- [l_flinta, src/sim/berattelser.ts:2279] `I mörkret kände {namn} sig fram {plats} och fick tag i en flinta.` om: `f => f.natt === true && !!f.plats`
+  - Fält: natt (vaderFalt)
+  - Säger: Hur det var att leta på natten
+- [l_flinta, src/sim/berattelser.ts:2279] `Byn hade ingen flinta kvar när {namn} hittade en {plats}.` om: `f => f.slut === true && !!f.plats`
+  - Fält: slut = amountOf(s, 'flinta') === 0, räknat före bar (steg.ts:1201)
+  - Säger: Vad fyndet betydde för byn
+- [l_larm, src/sim/berattelser.ts:2218] `{namn} blåste i hornet, och ljudet bar långt: {vadtext}. {N} hörde det.` om: `f => !f.falskt && f.horn === true`
+  - Fält: horn = harHorn (rykten.ts:776)
+  - Säger: Hornet, som hörs över hela kartan
+- [l_larm, src/sim/berattelser.ts:2218] `{namn} slog på trumman: {vadtext}. {N} hörde det.` om: `f => !f.falskt && f.trumma === true`
+  - Fält: trumma = harTrumma (rykten.ts:776)
+  - Säger: Trumman
+- [l_larm, src/sim/berattelser.ts:2218] `Ropet gick genom natten: {vadtext}. {N} hörde {namn} i mörkret.` om: `f => !f.falskt && f.natt === true && !f.horn && !f.trumma`
+  - Fält: natt (vaderFalt)
+  - Säger: Hur ropet hördes på natten
+- [l_larm, src/sim/berattelser.ts:2218] `Det blåste hårt när {namn} ropade att det brinner. {N} hörde det.` om: `f => !f.falskt && f.vad === 'brand' && f.blast === true`
+  - Fält: vad, blast (finns redan)
+  - Säger: Vinden, som gör branden farligare
+- [l_svartSjuk, src/sim/berattelser.ts:2249] `{namn} ligger illa till med {sjukdom}.` om: `f => !!f.sjukdom`
+  - Fält: sjukdom = SJUKDOMAR[p.sjuk.k].bf (bestämd form, samma fält som FEL 16), steg.ts:818
+  - Säger: Vilken sjukdom det är
+- [h_gott, src/sim/berattelser.ts:2304] `{Hen} gläds med dem.` om: `f => f.slag === 'nara' && f.glad === true`
+  - Fält: slag = k (kanslaRad, berattelser.ts:3305; PERSONLOGG.nara finns)
+  - Säger: Glädje för någon annans skull (rader om de närmaste)
+- [h_gott, src/sim/berattelser.ts:2304] `{Hen} vill gärna visa vad {hen} kan nu.` om: `f => f.slag === 'lart' && f.talfor === true`
+  - Fält: slag = k
+  - Säger: Hur personligheten tar emot en ny kunskap
+- [h_ont, src/sim/berattelser.ts:2292] `Det tar hårt på {honom}, för det gäller en av de närmaste.` om: `f => f.slag === 'nara' && f.nere === true`
+  - Fält: slag = k
+  - Säger: Sorgen efter någon nära
+- [h_ont, src/sim/berattelser.ts:2292] `{Hen} skulle stå där igen om det behövdes.` om: `f => f.slag === 'strid' && f.modig === true`
+  - Fält: slag = k
+  - Säger: Den modiges syn på striden
+- [h_ont, src/sim/berattelser.ts:2292] `{Hen} är rädd att det inte ska läka.` om: `f => f.slag === 'skada' && f.orolig === true`
+  - Fält: slag = k
+  - Säger: Den oroligas syn på skadan
+- [h_ont, src/sim/berattelser.ts:2292] `{Hen} ser sig om oftare nu.` om: `f => f.slag === 'fara' && f.orolig === true`
+  - Fält: slag = k
+  - Säger: Hur faran sitter kvar
+- [k_ratt, src/sim/berattelser.ts:2485] `Det var inte sant att {namn} {brott}, men {ledare} {straff} {honom}{straffEfter} ändå.` om: `f => iBy(f) && !f.fri && f.falsk === true`
+  - Fält: falsk = !!b.falsk (styre.ts:563); straff/straffEfter (FEL 2)
+  - Säger: Att domen var orättvis, anklagelsen var falsk
+- [k_ratt, src/sim/berattelser.ts:2485] `Många tyckte att domen var för hård när {ledare} {straff} {namn}{straffEfter} för att {hen} {brott}.` om: `f => iBy(f) && !f.fri && f.hard === true`
+  - Fält: hard = steg > lagom (styre.ts:562)
+  - Säger: Vad byn tyckte om domen
+- [k_ratt, src/sim/berattelser.ts:2485] `{namn} stod {ledare} nära, och domen blev mild: {ledare} {straff} {honom}{straffEfter}.` om: `f => iBy(f) && !f.fri && f.mild === true`
+  - Fält: mild = nara && steg < lagom (styre.ts:563)
+  - Säger: Att släktskapen gav en mild dom
+- [k_ratt, src/sim/berattelser.ts:2485] `Ingen annan var där när {ledare} {straff} {namn}{straffEfter}.` om: `f => iBy(f) && !f.fri && f.publik === 0`
+  - Fält: publik = sett.length (styre.ts:564)
+  - Säger: Att domen föll utan vittnen
+- [k_ratt, src/sim/berattelser.ts:2485] `{namn} hade gjort {ledare} själv orätt, och {ledare} dömde i sin egen sak: {straff} {honom}{straffEfter}.` om: `f => iBy(f) && !f.fri && f.egenSak === true`
+  - Fält: egenSak = b.mot === l.id (styre.ts:574)
+  - Säger: Att ledaren dömde i sin egen sak, som texter.txt visar är vanligt
+- [k_handel, src/sim/berattelser.ts:2426] `Handlaren {b} hade burit sina varor långt, och {a} bytte till sig {fick} för {gav}.` om: `f => iBy(f) && f.handlareB === true`
+  - Fält: handlareB = hf?.handlare === g.id (byte.ts:213, till kronikaBer på byte.ts:232)
+  - Säger: Att varan kom långväga ifrån
+- [k_handel, src/sim/berattelser.ts:2426] `{a} och {b} lade ut sina varor på var sin filt och tog i hand: {gav} mot {fick}.` om: `f => iBy(f) && f.stort === true && !f.handlareB`
+  - Fält: stort (byte.ts:206)
+  - Säger: Hur bytet gick till
+- [k_resa, src/sim/berattelser.ts:2411] `På vägen tog rövare en del av packningen, men {folk} kom hem från {resa} till {mal}{syfte}.` om: `f => iBy(f) && f.ranad === true`
+  - Fält: ranad = !!sl.forlust?.length (resa.ts:186, till kronikaBer på resa.ts:1464); syfte (FEL 14)
+  - Säger: Vad som hände på vägen
+- [k_resa, src/sim/berattelser.ts:2411] `{folk} gick ända till {mal}, men platsen fanns inte längre.` om: `f => iBy(f) && f.tom === true`
+  - Fält: tom = sl.borta === 1 (resa.ts:189)
+  - Säger: Hur resan slutade
+- [k_resa, src/sim/berattelser.ts:2411] `{folk} red hem från {resa} till {mal}{syfte}.` om: `f => iBy(f) && f.red === true`
+  - Fält: red = (sl.rider?.length ?? 0) >= sl.medl.length (resa.ts:181)
+  - Säger: Att de hade hästar
+- [k_tro, src/sim/berattelser.ts:2396] `De troende säger att det heliga nu har ett hem i byn: {hus}.` om: `f => iBy(f) && f.huset === true`
+  - Fält: hus (bygg.ts:240)
+  - Säger: Vad huset betyder för de troende (tron får vara abstrakt)
+- [k_djur, src/sim/berattelser.ts:2437] `{agare} blev den första i byn som ägde ett djur: {djur}.` om: `f => iBy(f) && f.forsta === true && !!f.agare`
+  - Fält: agare = q?.name (tamdjur.ts:87–88)
+  - Säger: Vem som ägde det första djuret
+- [b_bild, src/sim/berattelser.ts:2454] `{ting}, som vakar över byns tak` om: `f => f.motiv === 'helig' && f.gud === true`
+  - Fält: ting, gud (bildsten.ts:92–93)
+  - Säger: En ny bild av guden över byn (konsten får vara abstrakt)
+- [b_berattar, src/sim/berattelser.ts:2484] `Det är {ristare} själv som står på stenen.` om: `f => f.egen === true`
+  - Fält: egen = ristare.id === h.om.id (bildsten.ts:93)
+  - Säger: Att ristaren avbildade sig själv
