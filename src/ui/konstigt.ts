@@ -5,7 +5,7 @@
 // En chatt läser rapporterna med ArtifactData (samlingen `rapporter`, och byn i bitar i `rapportfil`, hämtade som filer med
 // out_dir och hopsatta med npm run rapport), undersöker var och en i den sparade byn (npm run by) och tar bort rapporten när felet är rättat eller förklarat. Samlingarna ligger utanför
 // data/users/, som är privat också för ägaren, så att chatten kan läsa dem. Filen rör aldrig byn
-import { ACTS, Person, STATIONER, State, byId, husById, husVisas, sakNamn, stationById } from '../sim';
+import { ACTS, Person, taskName, STATIONER, State, byId, husById, husVisas, sakNamn, stationById } from '../sim';
 import { iconImg } from '../ikoner';
 import { bar, behovNu, forradNu } from './bylage';
 import { byTillFil } from './byfil';
@@ -38,7 +38,7 @@ function valtText(s: State, ruta: KonstigRuta, v: Valt) {
 function personDel(s: State, p: Person): Rapport['person'] {
   const t = p.task;
   return {
-    id: p.id, namn: p.name, handling: t ? ACTS[t.act]?.namn ?? t.act : 'väljer', act: t?.act, skal: t?.why ?? '', fas: t?.phase,
+    id: p.id, namn: p.name, handling: t ? (ACTS[t.act] ? taskName(t) : t.act) : 'väljer', act: t?.act, skal: t?.why ?? '', fas: t?.phase,
     plats: `${r1(p.x)},${r1(p.y)}`, mal: t ? `${r1(t.tx)},${r1(t.ty)}` : undefined, bar: bar(s, p),
     kropp: `mätt ${pr(p.hunger)}, törst ${pr(p.torst)}, värme ${pr(p.warm)}, vila ${pr(p.rest)}, hälsa ${pr(p.health)}`,
     logg: (p.hand ?? []).slice(-15).map(([tt, , text]) => `${new Date(tt).toISOString().slice(0, 16)} ${text}`),

@@ -10,7 +10,7 @@ import './utc';
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { ACTS, DAY, HOUR, Person, ageOf, createState, hourOf, living, step } from '../sim';
+import { ACTS, DAY, taskName, HOUR, Person, ageOf, createState, hourOf, living, step } from '../sim';
 import { START } from './kor';
 import { LAG_PRIO, korSkript } from './pool';
 import { type Larm, Rimlig } from './rimligt';
@@ -27,7 +27,7 @@ if (i >= 0) {
   const ordning = [...folk].sort((a, b) => hash(a.id) - hash(b.id)), barn = ordning.find(p => ageOf(p, s.now) < 18);
   const foljda = [...new Set([...ordning.filter(p => ageOf(p, s.now) >= 18).slice(0, FOLJ - (barn ? 1 : 0)), ...(barn ? [barn] : [])])].slice(0, FOLJ);
   const kl = (t: number) => { const h = hourOf(t); return `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.floor((h % 1) * 60)).padStart(2, '0')}`; };
-  const rad = (p: Person) => { const t = p.task; return `${t ? `${ACTS[t.act]?.namn ?? t.act} [${t.act}, ${t.phase}]` : 'väljer'} — ${t?.why ?? ''} | på ${p.x.toFixed(1)},${p.y.toFixed(1)}${t ? ` mot ${t.tx.toFixed(1)},${t.ty.toFixed(1)}` : ''} | bär: ${bar(s, p)} | mätt ${Math.round(p.hunger * 100)} törst ${Math.round(p.torst * 100)} värme ${Math.round(p.warm * 100)} vila ${Math.round(p.rest * 100)}`; };
+  const rad = (p: Person) => { const t = p.task; return `${t ? `${ACTS[t.act] ? taskName(t) : t.act} [${t.act}, ${t.phase}]` : 'väljer'} — ${t?.why ?? ''} | på ${p.x.toFixed(1)},${p.y.toFixed(1)}${t ? ` mot ${t.tx.toFixed(1)},${t.ty.toFixed(1)}` : ''} | bär: ${bar(s, p)} | mätt ${Math.round(p.hunger * 100)} törst ${Math.round(p.torst * 100)} värme ${Math.round(p.warm * 100)} vila ${Math.round(p.rest * 100)}`; };
   const dag: Record<number, string[]> = {}, sist: Record<number, string> = {}, timmar: string[] = [];
   const logg0 = s.log.length ? s.log[s.log.length - 1].t : 0;
   let timme = -1;
