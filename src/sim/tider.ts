@@ -56,7 +56,7 @@ export const TID_MARG = 1.5;
 // handling får alltså alltid ett slag (en ny sak kräver redan sitt slag, steg 2.12.8)
 // att slakta, rensa, grilla och torka görs i omgångar (en hel fångst i ett pass, SLAKT i redskap.ts), så passet är en stund;
 // tiden per bit står i recepten (liten eller stor sak) och prövas av scenariot tider
-const STATION_AKT = new Set(['station', 'tillbehor', 'dorr']), FYLLA = new Set(['vatten']); // att hämta vatten är att fylla ett kärl (steg 12.1.37)
+const STATION_AKT = new Set(['station', 'tillbehor', 'dorr', 'forsok']), FYLLA = new Set(['vatten']); // att hämta vatten är att fylla ett kärl (steg 12.1.37); ett försök med en teknik tar lika lång tid som arbetet vid en station (steg 15.1.6)
 let tidAkt: Record<Act, TidSlag | 'stund'> | undefined; // räknas när den behövs (saker.ts läser den här filen när den laddas)
 export function tidSlagAv(a: Act): TidSlag | 'stund' {
   tidAkt ??= Object.fromEntries((Object.keys(ACTS) as Act[]).map(x => {

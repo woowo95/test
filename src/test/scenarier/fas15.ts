@@ -3,6 +3,7 @@ import * as SIM from '../../sim';
 import { START } from '../kor';
 import { SCENARIER, klockan, kor, setMat, tandEld, tandOchFlinta, testBy } from './hjalp';
 import { bynNu, RIM } from '../rimligt';
+import { forLangtArbete, tidSlagAv } from '../../sim/tider';
 
 SCENARIER.matskal = {
   text: 'Steg 15.1.1: skälet för maten säger byns egen del av maten, det tal som avgjorde valet, och vakten för skälet mäter samma tal. När familjerna äger mat säger skälet att resten är deras',
@@ -104,6 +105,20 @@ SCENARIER.eldtext = {
       [`någon säger att hen är vid elden när den brinner (${fore})`, !!p],
       [`när elden brunnit ut säger texten var hen är (${efter})`, !!p && !efter.includes(' vid elden') && /i mörkret|i huset|ute/.test(efter)],
       [`utan eld säger ingen "vid elden" (${texter.filter(w => w.includes(' vid elden')).length} av ${texter.length})`, !texter.some(w => w.includes(' vid elden'))],
+    ];
+  },
+};
+
+SCENARIER.forsoktid = {
+  text: 'Steg 15.1.6: ett försök med en teknik tar 10–20 riktiga minuter (två och en halv till fem dagar i spelet), som arbetet vid en station, och vakten för arbetstiderna (steg 9.2.63) känner igen försöken. Chansen per arbetad timme står kvar',
+  kor: () => {
+    const s = SIM.createState(5, START), min = SIM.TEKTAL.forsokMin;
+    const uppg = (m: number) => ({ act: 'forsok' as const, until: s.now + m * SIM.MIN });
+    return [
+      [`ett försök tar ${min} minuter, mellan 10 och 20`, min >= 10 && min <= 20],
+      [`vakten räknar försöket som arbete vid en station (${tidSlagAv('forsok')})`, tidSlagAv('forsok') === 'station'],
+      ['vakten godtar ett försök av den längden', forLangtArbete(uppg(min), s.now) === undefined],
+      [`och larmar för ett på 90 minuter (${forLangtArbete(uppg(90), s.now) ?? 'inget larm'})`, forLangtArbete(uppg(90), s.now) !== undefined],
     ];
   },
 };
