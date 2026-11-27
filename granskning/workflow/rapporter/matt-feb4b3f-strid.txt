@@ -2,3 +2,4 @@
 > samhallssimulatorn@1.0.0 strid
 > tsx src/test/strid.ts 12 35
 
+by 72272 klar (8 av 12, 885 s)
