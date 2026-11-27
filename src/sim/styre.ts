@@ -512,7 +512,7 @@ function stegOf(v: number, h: HandelseTyp, rang: number, fang = false) {
   if (rang >= STR.slagRang && v >= STR.slag) return 2;
   return v >= STR.skam ? 1 : 0;
 }
-// led: den som dömer; var hen själv den drabbade står det "av henne själv" (steg 6.7.3)
+// led: den som dömer; var hen själv den drabbade står det "av henne själv" i loggen, krönikan, notisen och rättegången (steg 6.7.3, 15.1.38)
 const brottText = (b: Bevis, led?: string, l?: Person) => HANDELSER[b.h].text.replace('{om}', b.motNamn !== undefined && b.motNamn === led ? `${l ? honom(l) : 'ledaren'} själv` : b.motNamn ?? 'någon').replace('{sak}', b.sak ?? 'något');
 // hårdhetens delar (1 + delarna, mellan STR.min och STR.max): sederna och ledarens empati, humör och aggression
 function hardDelar(s: State, l: Person) {
@@ -569,12 +569,12 @@ function doma(s: State, l: Person) {
       ...(temperature(s) < 0 ? { kallt: true } : {}), ...(s.fire.lit ? { eld: true } : {}), ...(!isLight(now) ? { natt: true } : {}) };
     ratt.push(r);
     count(s, 'straff'); count(s, 'straff_' + steg);
-    log(s, `${l.name} ${STRAFF_REG[steg].nu} ${q.name} för att ${hon(q)} ${brottText(b)}.`, 'rel', [l.id, q.id]);
+    log(s, `${l.name} ${STRAFF_REG[steg].nu} ${q.name} för att ${hon(q)} ${brottText(b, l.name, l)}.`, 'rel', [l.id, q.id]);
     if (!straffEgenRad(steg)) { // tinget dömde (steg 12.1.135); utvisningen och döden har sina rader och notiser (steg 12.1.253)
-      kronikaBer(s, 'k_ratt', q.id, { ...personFalt(q), ledare: l.name, brott: brottText(b), straff: STRAFF_REG[steg].nu });
-      notis(s, 'dom', `${l.name} ${STRAFF_REG[steg].nu} ${q.name} för att ${hon(q)} ${brottText(b)}.`, [l.id, q.id]);
+      kronikaBer(s, 'k_ratt', q.id, { ...personFalt(q), ledare: l.name, brott: brottText(b, l.name, l), straff: STRAFF_REG[steg].nu });
+      notis(s, 'dom', `${l.name} ${STRAFF_REG[steg].nu} ${q.name} för att ${hon(q)} ${brottText(b, l.name, l)}.`, [l.id, q.id]);
     }
-    if (steg === 6) notis(s, 'avrattning', `${q.name} avrättades. ${l.name} dömde ${q.sex === 'k' ? 'henne' : 'honom'} till döden för att ${hon(q)} ${brottText(b)}.`, [q.id, l.id]); // (steg 12.1.137)
+    if (steg === 6) notis(s, 'avrattning', `${q.name} avrättades. ${l.name} dömde ${q.sex === 'k' ? 'henne' : 'honom'} till döden för att ${hon(q)} ${brottText(b, l.name, l)}.`, [q.id, l.id]); // (steg 12.1.137)
     allmant(s, q, b, STR.hord, sett); // de som ser straffet får höra om brottet
     tanke(q, 'straffad', now, { namn: l.name, v: -STR.tanke * (steg + 1), tid: STR.tankeDygn * DAY });
     barnTill(s, q, undefined, 'foralderDomd', q.name); // barnen (steg 12.1.133)
@@ -586,9 +586,9 @@ function doma(s: State, l: Person) {
     if (steg === 8) q.utanVard = now + STR.vardDygn * DAY; // ingen vårdar hen under tiden (vardRatt i halsa.ts)
     if (steg === 6) { r.dog = true; q.brottsling = true; kronika(s, `${q.name} dömdes till döden.`, 'ledare'); die(s, q, 'avrattad'); continue; }
     if (steg === 1) q.skam = now + STR.skamDygn * DAY;
-    if (steg === 9) { const h = fangelseLedigt(s); if (h) { const dygn = fangelseDygn(vikt); r.dygn = dygn; satt(s, q, h, `Dömd för att ${hon(q)} ${brottText(b)}`, now + dygn * DAY, true); q.fange!.av = l.id; } }
+    if (steg === 9) { const h = fangelseLedigt(s); if (h) { const dygn = fangelseDygn(vikt); r.dygn = dygn; satt(s, q, h, `Dömd för att ${hon(q)} ${brottText(b, l.name, l)}`, now + dygn * DAY, true); q.fange!.av = l.id; } }
     if (steg === 2) { const dod = skada(s, q, 'bal', 'blamarke', STR.slagG, 'drap', `när ${l.name} straffade hen`); if (dod) { r.dog = true; die(s, q, dod); continue; } }
-    if (steg === 3) { kronikaBer(s, 'k_utvisad', q.id, { ...personFalt(q), ledare: l.name, varfor: `för att ${hon(q)} ${brottText(b)}` }); count(s, 'utvisad'); notis(s, 'utflytt', `${q.name} blev utvisad ur byn av ${l.name}.`, [q.id, l.id]); drivUt(s, q); }
+    if (steg === 3) { kronikaBer(s, 'k_utvisad', q.id, { ...personFalt(q), ledare: l.name, varfor: `för att ${hon(q)} ${brottText(b, l.name, l)}` }); count(s, 'utvisad'); notis(s, 'utflytt', `${q.name} blev utvisad ur byn av ${l.name}.`, [q.id, l.id]); drivUt(s, q); }
     if (orattvist) {
       missnojeStrafft(s, q, familj);
       count(s, 'straff_orattvist');
@@ -643,7 +643,7 @@ export function rattegang(s: State, r: Rattegang) {
   const egen = q && l ? slaktOrd(l, q) : undefined; // "Igik dömde sin egen dotter." (steg 6.7.2)
   return {
     berattelse: `${enGang(fyll(valjVariant(s, 'r_ratt', nyckel, f, t), f))} ${fyll(valjVariant(s, 'r_folk', nyckel, f, t), f)}${egen ? ` ${r.ledNamn} dömde sin egen ${egen}.` : ''}`,
-    brott: brottText(r.b), sett: r.sett.length ? namn(r.sett) : '', hort: r.hort.length ? namn(r.hort) : '',
+    brott: brottText(r.b, r.ledNamn, l), sett: r.sett.length ? namn(r.sett) : '', hort: r.hort.length ? namn(r.hort) : '',
   };
 }
 
