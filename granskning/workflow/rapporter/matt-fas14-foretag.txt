@@ -1,0 +1,158 @@
+12 byar, 35 dygn (35 år i spelet), med och utan företag (utan: BALANS="foretag.ar=0.000001"), 6445 s datorns tid
+
+=== by 1001: 9 invånare (utan företag 13)
+ dygn 10: folk 10, företag 1 (första startade dygn 1.6), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   #1 ag 4 [affar,nattlogi] start d1.6 hus klart/naringshus rum 1 disk i rummet 0 (klar 0) öppna [] sålt {} intäkt 0 resultat -3.24 kö nu 0
+   stat {"foretagStart":1,"foretagUtok":1,"kopGranne":2,"kopMissat":2}
+   timmar (vuxna, från grundandet): {"mat":58,"ved":61,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}   utan företag: {"mat":73,"ved":62,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 10, stat {"kopGranne":2,"kopMissat":1}
+ dygn 20: folk 11, företag 1 (första startade dygn 1.6), diskar 1 (klara 1, i något rum 1), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   #1 ag 1 [affar,nattlogi,servering,stall] start d1.6 hus klart/naringshus rum 1 disk i rummet 1 (klar 1) öppna [nattlogi] sålt {} intäkt 0 resultat -3.24 kö nu 0
+   stat {"foretagStart":1,"foretagUtok":3,"foretagSalt":1,"foretagTillSalu":1,"kopGranne":12,"kopMissat":18,"foretagsgast":18}
+   timmar (vuxna, från grundandet): {"mat":152,"ved":121,"betjana":0,"stallaFram":0,"bytHos":2,"marknad":0,"koaDisk":0}   utan företag: {"mat":140,"ved":118,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 10, stat {"kopGranne":10,"kopMissat":7}
+ dygn 35: folk 9, företag 1 (första startade dygn 1.6), diskar 1 (klara 1, i något rum 1), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   #1 ag 8 [affar,nattlogi,servering,stall] start d1.6 hus klart/naringshus rum 1 disk i rummet 1 (klar 1) öppna [nattlogi] sålt {} intäkt 0 resultat -3.24 kö nu 0
+   stat {"foretagStart":1,"foretagUtok":3,"foretagSalt":4,"foretagTillSalu":4,"kopGranne":16,"kopMissat":31,"foretagsgast":45}
+   timmar (vuxna, från grundandet): {"mat":248,"ved":164,"betjana":0,"stallaFram":0,"bytHos":4,"marknad":0,"koaDisk":0}   utan företag: {"mat":319,"ved":161,"betjana":0,"stallaFram":0,"bytHos":1,"marknad":2,"koaDisk":0}, folk 13, stat {"marknad":2,"kopGranne":38,"kopMissat":43}
+=== by 8920: 4 invånare (utan företag 1)
+ dygn 10: folk 6, företag 1 (första startade dygn 0.6), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   #1 ag 1 [affar] start d0.6 hus bygge/naringshus rum 0 disk i rummet 0 (klar 0) öppna [] sålt {} intäkt 0 resultat – kö nu 0
+   stat {"foretagStart":1,"kopGranne":2,"kopMissat":1}
+   timmar (vuxna, från grundandet): {"mat":61,"ved":61,"betjana":0,"stallaFram":0,"bytHos":1,"marknad":0,"koaDisk":0}   utan företag: {"mat":57,"ved":55,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 8, stat {"kopGranne":3,"kopMissat":9}
+ dygn 20: folk 5, företag 1 (första startade dygn 0.6), diskar 1 (klara 1, i något rum 1), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   #1 ag 5 [affar,servering,nattlogi,stall] start d0.6 hus klart/naringshus rum 1 disk i rummet 1 (klar 1) öppna [affar,nattlogi] sålt {} intäkt 0 resultat – kö nu 0
+   stat {"foretagStart":1,"foretagUtok":3,"foretagSalt":1,"foretagTillSalu":1,"kopGranne":13,"kopMissat":5,"foretagsgast":5,"stalltFram":20}
+   timmar (vuxna, från grundandet): {"mat":93,"ved":120,"betjana":0,"stallaFram":3,"bytHos":2,"marknad":0,"koaDisk":0}   utan företag: {"mat":164,"ved":96,"betjana":0,"stallaFram":0,"bytHos":1,"marknad":1,"koaDisk":0}, folk 7, stat {"marknad":2,"kopGranne":18,"kopMissat":22}
+ dygn 35: folk 4, företag 1 (första startade dygn 0.6), diskar 1 (klara 1, i något rum 1), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   #1 ag 5 [affar,servering,nattlogi,stall] start d0.6 hus klart/naringshus rum 1 disk i rummet 1 (klar 1) öppna [affar,nattlogi] sålt {} intäkt 0 resultat -3.24 kö nu 0
+   stat {"foretagStart":1,"foretagUtok":3,"foretagSalt":3,"foretagTillSalu":3,"marknad":4,"kopGranne":18,"kopMissat":11,"foretagsgast":24,"stalltFram":25}
+   timmar (vuxna, från grundandet): {"mat":274,"ved":128,"betjana":0,"stallaFram":6,"bytHos":2,"marknad":0,"koaDisk":0}   utan företag: {"mat":237,"ved":101,"betjana":0,"stallaFram":0,"bytHos":1,"marknad":1,"koaDisk":0}, folk 1, stat {"marknad":2,"kopGranne":18,"kopMissat":22}
+=== by 16839: 5 invånare (utan företag 5)
+ dygn 10: folk 9, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"kopGranne":1}
+   timmar (vuxna, från grundandet): {"mat":33,"ved":62,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}   utan företag: {"mat":33,"ved":62,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 9, stat {"kopGranne":1}
+ dygn 20: folk 8, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"kopGranne":10,"kopMissat":32}
+   timmar (vuxna, från grundandet): {"mat":111,"ved":77,"betjana":0,"stallaFram":0,"bytHos":4,"marknad":0,"koaDisk":0}   utan företag: {"mat":111,"ved":77,"betjana":0,"stallaFram":0,"bytHos":4,"marknad":0,"koaDisk":0}, folk 8, stat {"kopGranne":10,"kopMissat":32}
+ dygn 35: folk 5, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"marknad":1,"kopGranne":47,"kopMissat":57}
+   timmar (vuxna, från grundandet): {"mat":212,"ved":115,"betjana":0,"stallaFram":0,"bytHos":7,"marknad":0,"koaDisk":0}   utan företag: {"mat":212,"ved":115,"betjana":0,"stallaFram":0,"bytHos":7,"marknad":0,"koaDisk":0}, folk 5, stat {"marknad":1,"kopGranne":47,"kopMissat":57}
+=== by 24758: 1 invånare (utan företag 6)
+ dygn 10: folk 10, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"kopGranne":1,"kopMissat":1}
+   timmar (vuxna, från grundandet): {"mat":57,"ved":38,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}   utan företag: {"mat":57,"ved":38,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 10, stat {"kopGranne":1,"kopMissat":1}
+ dygn 20: folk 12, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"kopGranne":5,"kopMissat":2}
+   timmar (vuxna, från grundandet): {"mat":156,"ved":39,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}   utan företag: {"mat":156,"ved":39,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 12, stat {"kopGranne":5,"kopMissat":2}
+ dygn 35: folk 1, företag 1 (första startade dygn 21.6), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   #1 ag 0 [affar] start d21.6 hus bygge/naringshus rum 0 disk i rummet 0 (klar 0) öppna [] sålt {} intäkt 0 resultat – kö nu 0
+   stat {"foretagStart":1,"kopGranne":9,"kopMissat":17}
+   timmar (vuxna, från grundandet): {"mat":309,"ved":48,"betjana":0,"stallaFram":0,"bytHos":2,"marknad":0,"koaDisk":0}   utan företag: {"mat":304,"ved":68,"betjana":0,"stallaFram":0,"bytHos":3,"marknad":0,"koaDisk":0}, folk 6, stat {"kopGranne":12,"kopMissat":25}
+=== by 32677: 5 invånare (utan företag 10)
+ dygn 10: folk 10, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"marknad":1,"kopGranne":5,"kopMissat":7}
+   timmar (vuxna, från grundandet): {"mat":96,"ved":52,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":2,"koaDisk":0}   utan företag: {"mat":96,"ved":52,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":2,"koaDisk":0}, folk 10, stat {"marknad":1,"kopGranne":5,"kopMissat":7}
+ dygn 20: folk 10, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"marknad":1,"kopGranne":11,"kopMissat":15}
+   timmar (vuxna, från grundandet): {"mat":148,"ved":105,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":2,"koaDisk":0}   utan företag: {"mat":148,"ved":105,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":2,"koaDisk":0}, folk 10, stat {"marknad":1,"kopGranne":11,"kopMissat":15}
+ dygn 35: folk 5, företag 2 (första startade dygn 21.6), diskar 2 (klara 2, i något rum 2), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   #1 ag 0 [servering,stall,affar] start d21.6 hus klart/naringshus rum 1 disk i rummet 1 (klar 1) öppna [stall] sålt {} intäkt 0 resultat -2.71 kö nu 0
+   #2 ag 13 [nattlogi] start d22.6 hus klart/naringshus rum 1 disk i rummet 1 (klar 1) öppna [nattlogi] sålt {} intäkt 0 resultat -2.71 kö nu 0
+   stat {"foretagStart":2,"foretagUtok":2,"foretagSalt":2,"foretagTillSalu":2,"marknad":4,"kopGranne":15,"kopMissat":21,"foretagsgast":63}
+   timmar (vuxna, från grundandet): {"mat":383,"ved":127,"betjana":0,"stallaFram":0,"bytHos":1,"marknad":4,"koaDisk":0}   utan företag: {"mat":329,"ved":145,"betjana":0,"stallaFram":0,"bytHos":2,"marknad":2,"koaDisk":0}, folk 10, stat {"marknad":2,"kopGranne":16,"kopMissat":31}
+=== by 40596: 4 invånare (utan företag 1)
+ dygn 10: folk 10, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"kopGranne":2}
+   timmar (vuxna, från grundandet): {"mat":58,"ved":73,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}   utan företag: {"mat":58,"ved":73,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 10, stat {"kopGranne":2}
+ dygn 20: folk 12, företag 1 (första startade dygn 18.6), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   #1 ag 1 [servering] start d18.6 hus bygge/naringshus rum 0 disk i rummet 0 (klar 0) öppna [] sålt {} intäkt 0 resultat – kö nu 0
+   stat {"foretagStart":1,"kopGranne":5}
+   timmar (vuxna, från grundandet): {"mat":221,"ved":119,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}   utan företag: {"mat":212,"ved":122,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 12, stat {"kopGranne":6,"kopMissat":6}
+ dygn 35: folk 4, företag 0 (första startade dygn 18.6), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"foretagStart":1,"foretagUtok":3,"foretagStangt":1,"foretagTillSalu":1,"marknad":1,"kopGranne":5}
+   timmar (vuxna, från grundandet): {"mat":497,"ved":133,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}   utan företag: {"mat":313,"ved":126,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 1, stat {"kopGranne":9,"kopMissat":13}
+=== by 48515: 7 invånare (utan företag 7) VAKTER: text ochoch (1 ggr), första: dag 31.7: log: Åfast och Kakger och Ylve i "Åfast och Kakger och Ylve den yngre slogs (en ledarstrid). Ylve gick emellan, och de slutade."
+ dygn 10: folk 8, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"kopGranne":1}
+   timmar (vuxna, från grundandet): {"mat":53,"ved":45,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}   utan företag: {"mat":53,"ved":45,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 8, stat {"kopGranne":1}
+ dygn 20: folk 10, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"kopGranne":8,"kopMissat":10}
+   timmar (vuxna, från grundandet): {"mat":98,"ved":73,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}   utan företag: {"mat":98,"ved":73,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 10, stat {"kopGranne":8,"kopMissat":10}
+ dygn 35: folk 7, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"kopGranne":13,"kopMissat":13}
+   timmar (vuxna, från grundandet): {"mat":217,"ved":99,"betjana":0,"stallaFram":0,"bytHos":2,"marknad":0,"koaDisk":0}   utan företag: {"mat":217,"ved":99,"betjana":0,"stallaFram":0,"bytHos":2,"marknad":0,"koaDisk":0}, folk 7, stat {"kopGranne":13,"kopMissat":13}
+=== by 56434: 15 invånare (utan företag 15)
+ dygn 10: folk 10, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"kopGranne":2,"kopMissat":3}
+   timmar (vuxna, från grundandet): {"mat":62,"ved":63,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}   utan företag: {"mat":62,"ved":63,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 10, stat {"kopGranne":2,"kopMissat":3}
+ dygn 20: folk 14, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"kopGranne":5,"kopMissat":5}
+   timmar (vuxna, från grundandet): {"mat":281,"ved":82,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}   utan företag: {"mat":281,"ved":82,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 14, stat {"kopGranne":5,"kopMissat":5}
+ dygn 35: folk 15, företag 1 (första startade dygn 33.6), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   #1 ag 0 [affar] start d33.6 hus bygge/naringshus rum 0 disk i rummet 0 (klar 0) öppna [] sålt {} intäkt 0 resultat – kö nu 0
+   stat {"foretagStart":1,"kopGranne":11,"kopMissat":40}
+   timmar (vuxna, från grundandet): {"mat":825,"ved":124,"betjana":0,"stallaFram":0,"bytHos":3,"marknad":0,"koaDisk":0}   utan företag: {"mat":803,"ved":137,"betjana":0,"stallaFram":0,"bytHos":3,"marknad":0,"koaDisk":0}, folk 15, stat {"kopGranne":14,"kopMissat":41}
+=== by 64353: 13 invånare (utan företag 13)
+ dygn 10: folk 10, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"kopGranne":2,"kopMissat":4}
+   timmar (vuxna, från grundandet): {"mat":56,"ved":60,"betjana":0,"stallaFram":0,"bytHos":1,"marknad":0,"koaDisk":0}   utan företag: {"mat":56,"ved":60,"betjana":0,"stallaFram":0,"bytHos":1,"marknad":0,"koaDisk":0}, folk 10, stat {"kopGranne":2,"kopMissat":4}
+ dygn 20: folk 13, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"kopGranne":6,"kopMissat":11}
+   timmar (vuxna, från grundandet): {"mat":136,"ved":146,"betjana":0,"stallaFram":0,"bytHos":1,"marknad":0,"koaDisk":0}   utan företag: {"mat":136,"ved":146,"betjana":0,"stallaFram":0,"bytHos":1,"marknad":0,"koaDisk":0}, folk 13, stat {"kopGranne":6,"kopMissat":11}
+ dygn 35: folk 13, företag 1 (första startade dygn 24.6), diskar 1 (klara 1, i något rum 1), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   #1 ag 12 [affar,nattlogi,stall,servering] start d24.6 hus klart/naringshus rum 1 disk i rummet 1 (klar 1) öppna [nattlogi] sålt {} intäkt 0 resultat -2.71 TILL SALU kö nu 0
+   stat {"foretagStart":1,"foretagUtok":3,"foretagTillSalu":1,"kopGranne":15,"kopMissat":27,"foretagsgast":2}
+   timmar (vuxna, från grundandet): {"mat":466,"ved":219,"betjana":0,"stallaFram":0,"bytHos":2,"marknad":0,"koaDisk":0}   utan företag: {"mat":497,"ved":175,"betjana":0,"stallaFram":0,"bytHos":1,"marknad":1,"koaDisk":0}, folk 13, stat {"marknad":1,"kopGranne":11,"kopMissat":17}
+=== by 72272: 5 invånare (utan företag 5)
+ dygn 10: folk 9, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"kopGranne":3,"kopMissat":12}
+   timmar (vuxna, från grundandet): {"mat":40,"ved":43,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}   utan företag: {"mat":40,"ved":43,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 9, stat {"kopGranne":3,"kopMissat":12}
+ dygn 20: folk 6, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"marknad":2,"kopGranne":6,"kopMissat":15}
+   timmar (vuxna, från grundandet): {"mat":57,"ved":75,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":1,"koaDisk":0}   utan företag: {"mat":57,"ved":75,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":1,"koaDisk":0}, folk 6, stat {"marknad":2,"kopGranne":6,"kopMissat":15}
+ dygn 35: folk 5, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"marknad":3,"kopGranne":26,"kopMissat":26}
+   timmar (vuxna, från grundandet): {"mat":114,"ved":94,"betjana":0,"stallaFram":0,"bytHos":1,"marknad":1,"koaDisk":0}   utan företag: {"mat":114,"ved":94,"betjana":0,"stallaFram":0,"bytHos":1,"marknad":1,"koaDisk":0}, folk 5, stat {"marknad":3,"kopGranne":26,"kopMissat":26}
+=== by 80191: 8 invånare (utan företag 7)
+ dygn 10: folk 9, företag 1 (första startade dygn 8.6), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   #1 ag 0 [affar] start d8.6 hus inget rum 0 disk i rummet 0 (klar 0) öppna [] sålt {} intäkt 0 resultat – kö nu 0
+   stat {"foretagStart":1,"marknad":2,"kopGranne":5,"kopMissat":9}
+   timmar (vuxna, från grundandet): {"mat":81,"ved":72,"betjana":0,"stallaFram":0,"bytHos":1,"marknad":1,"koaDisk":0}   utan företag: {"mat":81,"ved":72,"betjana":0,"stallaFram":0,"bytHos":1,"marknad":1,"koaDisk":0}, folk 9, stat {"marknad":2,"kopGranne":5,"kopMissat":9}
+ dygn 20: folk 8, företag 1 (första startade dygn 8.6), diskar 1 (klara 1, i något rum 1), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   #1 ag 0 [affar,nattlogi,stall,servering] start d8.6 hus klart/naringshus rum 1 disk i rummet 1 (klar 1) öppna [nattlogi] sålt {} intäkt 0 resultat -2.71 kö nu 0
+   stat {"foretagStart":1,"foretagUtok":3,"marknad":5,"kopGranne":9,"kopMissat":19,"foretagsgast":7}
+   timmar (vuxna, från grundandet): {"mat":192,"ved":103,"betjana":0,"stallaFram":0,"bytHos":2,"marknad":3,"koaDisk":0}   utan företag: {"mat":187,"ved":111,"betjana":0,"stallaFram":0,"bytHos":2,"marknad":5,"koaDisk":0}, folk 8, stat {"marknad":6,"kopGranne":10,"kopMissat":18}
+ dygn 35: folk 8, företag 1 (första startade dygn 8.6), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   #2 ag 0 [affar] start d34.6 hus inget rum 0 disk i rummet 0 (klar 0) öppna [] sålt {} intäkt 0 resultat – kö nu 0
+   stat {"foretagStart":2,"foretagUtok":3,"foretagSalt":1,"foretagStangt":1,"foretagTillSalu":2,"marknad":5,"kopGranne":10,"kopMissat":19,"foretagsgast":37}
+   timmar (vuxna, från grundandet): {"mat":332,"ved":139,"betjana":0,"stallaFram":0,"bytHos":2,"marknad":3,"koaDisk":0}   utan företag: {"mat":296,"ved":155,"betjana":0,"stallaFram":0,"bytHos":3,"marknad":5,"koaDisk":0}, folk 7, stat {"marknad":6,"kopGranne":11,"kopMissat":26}
+=== by 88110: 7 invånare (utan företag 8)
+ dygn 10: folk 9, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"kopGranne":3}
+   timmar (vuxna, från grundandet): {"mat":83,"ved":59,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}   utan företag: {"mat":83,"ved":59,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 9, stat {"kopGranne":3}
+ dygn 20: folk 11, företag 0 (första startade dygn –), diskar 0 (klara 0, i något rum 0), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   stat {"kopGranne":9,"kopMissat":15}
+   timmar (vuxna, från grundandet): {"mat":183,"ved":86,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}   utan företag: {"mat":183,"ved":86,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 11, stat {"kopGranne":9,"kopMissat":15}
+ dygn 35: folk 7, företag 1 (första startade dygn 32.6), diskar 1 (klara 1, i något rum 1), kunder i kö 0, anställningar åt företag (dygn·person) 0
+   #1 ag 0 [affar,servering,nattlogi] start d32.6 hus klart/naringshus rum 1 disk i rummet 1 (klar 1) öppna [] sålt {} intäkt 0 resultat -2.71 kö nu 0
+   stat {"foretagStart":1,"foretagUtok":2,"marknad":1,"kopGranne":12,"kopMissat":18}
+   timmar (vuxna, från grundandet): {"mat":416,"ved":135,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}   utan företag: {"mat":467,"ved":122,"betjana":0,"stallaFram":0,"bytHos":0,"marknad":0,"koaDisk":0}, folk 8, stat {"marknad":1,"kopGranne":12,"kopMissat":18}
+
+real	107m26.588s
+user	304m16.844s
+sys	3m17.165s
+
+==== SAMMANFATTNING (granskaren, efter körningen) ====
+Körning: 12 byar (seedAv(0..11)) från grundandet i 35 dygn (35 år i spelet, fem veckor i verkligheten), med företag och med
+BALANS="foretag.ar=0.000001" (startPoang blir negativ, inget företag startar). Byarna är identiska med och utan tills det första
+företaget startar, så avstängningen ändrar bara företagen. Datorns tid 107 min för 24 byar (tre åt gången).
+- Företag startade i 9 av 12 byar (inte 16839, 48515, 72272). Första start: dygn 0,6 / 1,6 / 8,6 / 18,6 / 21,6 / 21,6 / 24,6 / 32,6 / 33,6 (median 21,6).
+- Hus klart dygn 35: 6 företag i 5 byar (1001, 8920, 32677 x2, 64353, 88110); 80191 hade hus dygn 20 men stängde; 40596 stängde; 3 byar huset under bygge.
+- Disk i företagets rum: i ALLA företag med klart hus (7 av 7 med hus någon gång). Disken byggs alltså.
+- Öppna verksamheter dygn 35: nattlogi i 5, stall i 1, affär i 1 (8920), servering i 0. Rummen är 9 rutor (FORETAG.plats).
+- Sålt till kunder: 0 i alla byar, intäkt 0, kunder i kö 0, timmar betjäna 0, anställningar åt företag 0.
+- stat foretagSalt 1-4 i 5 byar är INTE kundköp utan att företaget sålts (saljForetag räknar samma räknare, stangning.ts:58); ägaren byter (1001: 4 -> 1 -> 8).
+- Resultat -3,24 / -2,71 = bara husets kostnad per dygn (husKostnad/FORETAG.ar), till salu 1-4 gånger, stängt i 2 byar (40596, 80191).
+- Gäster för företagen: 2-63 per by (foretagsgast), ingen köade: gästen har 0 silver (raderna i världen har tal.silver 0).
+- Marknader (stat marknad): i 8 av 12 byar, 1-5 st.
+- Timmar på mat och ved (vuxna, timprov från grundandet), 9 byar med företag: mat 3750 med / 3565 utan, ved 1217 / 1190; folk 66 / 74
+  (skillnaden i folk är brus från fyra små byar). Företagen tar inga timmar från maten och veden, eftersom de inte gör något.
