@@ -176,3 +176,32 @@ SCENARIER.gastbetalar = {
     ];
   },
 };
+
+SCENARIER.efterfragan = {
+  text: 'Steg 15.1.12: efterfrågan på en affär räknar bara bybor som kan köpa och bara varor ägaren har över. Ägarens familj räknas inte, maten räknas som en vara, och den som saknar flera saker räknas som en kund för var och en',
+  kor: () => {
+    const s = SIM.cloneState(testBy(25));
+    const vux = SIM.living(s).filter(q => !q.gast && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
+    const ag = vux[0]!, fam = SIM.familjOf(s, ag.id).filter(q => q !== ag), andra = vux.filter(q => q !== ag && !fam.includes(q));
+    // alla utom ägaren äger inget, och maten i byn är ägarens: den som är hungrig saknar mat
+    for (const q of SIM.living(s)) if (q !== ag) { s.ting = (s.ting ?? []).filter(x => x.agare !== q.id); for (const a of s.stackar ?? []) if (a.ag?.[q.id]) delete a.ag[q.id]; }
+    for (const k of SIM.FOOD) SIM.setAmount(s, k, 0);
+    for (const q of SIM.living(s)) { q.bruk = undefined; q.hunger = 0.9; if (q !== ag) SIM.laggIn(s, 'silver', 200, q.id); } // kunderna har råd
+    const kunder = (vem: SIM.Person[]) => { for (const q of SIM.living(s)) if (q !== ag) q.bruk = { t: Math.floor(s.now / SIM.HOUR), k: vem.includes(q) ? SIM.saknarNu((q.bruk = undefined, s), q).map(k => [0, k] as [number, string]) : [] }; return SIM.efterfragan(s, 'affar', ag.id).kunder; };
+    const p = andra[0]!, A = SIM.VERKSAMHETER.affar, utan = kunder([p]);
+    // per vara: den som saknar just den
+    p.bruk = undefined; const lar = SIM.saknarNu(s, p).filter(k => k !== 'mat'), inte = ['korg', 'yxa', 'spjut'].find(k => !lar.includes(k))!;
+    const perVara = lar.every(k => A.perDygn(s, p, k) > 0) && A.perDygn(s, p, inte) === 0;
+    const familj = fam.length ? kunder(fam) : 0;
+    // maten: den hungriga räknas för maten ägaren har över, en gång hur många sorter ägaren än har
+    p.hunger = 0.2; SIM.laggIn(s, 'torrkott', 200, ag.id); p.bruk = undefined; const matNu = SIM.saknarNu(s, p).includes('mat'), mat1 = kunder([p]);
+    SIM.laggIn(s, 'bar', 200, ag.id); SIM.laggIn(s, 'rotter', 200, ag.id); const mat3 = kunder([p]);
+    return [
+      [`ägaren utan varor över ger ingen efterfrågan (${utan.toFixed(2)})`, utan === 0],
+      [`affären räknar per vara: den som saknar ${lar.join(', ')} räknas för var och en, men inte för ${inte}`, lar.length >= 2 && perVara],
+      [`familjen räknas inte (${familj.toFixed(2)}, ${fam.length} i familjen)`, familj === 0],
+      [`den som saknar mat räknas för maten ägaren har över (${matNu ? 'saknar mat' : 'saknar inte mat'}, ${mat1.toFixed(2)})`, matNu && mat1 > 0],
+      [`maten är en vara: tre sorter ger inte fler kunder (${mat3.toFixed(2)} mot ${mat1.toFixed(2)})`, Math.abs(mat3 - mat1) < mat1 * 0.5],
+    ];
+  },
+};

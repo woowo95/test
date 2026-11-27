@@ -13,7 +13,7 @@ import { BYN, kyrkaId } from './egendom';
 import { kronika } from './historik';
 import { ledareOf } from './styre';
 import { prastOf } from './kult';
-import { behovAv, DELA, payable, saknarNu } from './behov';
+import { behovAv, DELA, payable, personPart, saknarNu } from './behov';
 import { grundvarde, formogenheter } from './varde';
 import { kroppensMat } from './ekonomi';
 import { amountOf, ownsAmount, ownsId } from './lager';
@@ -56,14 +56,14 @@ export interface Verksamhet {
   namn: string; sym: string;
   rum: string | readonly string[]; // rumstypen (någon av dem)
   sak?: string; // stationen den kräver utöver disken (utbyggnaden kostar den)
-  varor: (s: State) => string[]; // det som går att sälja i byn nu
+  varor: (s: State, ag?: number) => string[]; // det som går att sälja i byn nu (av ägaren ag, när det gäller en start)
   noje: (s: State, p: Person, k: string) => number; // det kunden vinner mot att ta det hen har hemma, i silver
   snitt: (k: string) => number; // det en vanlig kund vinner, i silver
   grund?: (k: string) => number; // varans värde när den inte är en sak i förrådet
   ats?: true; // äts och dricks i rummet
   hylla?: true; // det som ligger på varubordet i rummet (affar.ts)
   vatska?: true; // säljs ur ett kärl
-  perDygn: (s: State, p: Person) => number; // så många gånger per dygn kunden skulle kunna köpa
+  perDygn: (s: State, p: Person, k?: string) => number; // så många gånger per dygn kunden skulle kunna köpa (varan k: affären räknar per vara)
   gaster?: (s: State) => number; // så många gäster per dygn väntas vilja ha den
   egen?: { har: (s: State, f: Foretag) => string[]; ge: (s: State, f: Foretag, p: Person, k: string) => void }; // det som inte är en sak i förrådet (verksamheter.ts)
   kunnande: (p: Person) => number; // hur väl den som driver den kan den, 1 = vanligt
@@ -91,10 +91,15 @@ export const VERKSAMHETER: Record<string, Verksamhet> = {
   // affären (steg 14.1.8, affar.ts): kunden vinner så mycket mer hen behöver saken än den som har den över
   affar: {
     namn: 'Affär', sym: '👛', rum: 'affar', hylla: true,
-    varor: s => [...new Set(living(s).flatMap(p => p.gast ? [] : saknarNu(s, p)))].filter(k => grundvarde(k) > 0 && amountOf(s, k) >= 1),
+    // det någon saknar (maten som all mat), och som ägaren har över; utan ägare det som finns i byn (steg 15.1.12)
+    varor: (s, ag) => {
+      const sak = new Set(living(s).flatMap(p => p.gast ? [] : saknarNu(s, p))), mat = sak.has('mat'), q = ag !== undefined && ag > 0 ? byId(s, ag) : undefined;
+      const har = q ? personPart(s, q).over([]).filter(w => w.n >= 1).map(w => w.k) : undefined;
+      return (har ?? [...sak, ...mat ? FOOD : []].filter(k => amountOf(s, k) >= 1)).filter(k => grundvarde(k) > 0 && (sak.has(k) || mat && FOOD.includes(k)));
+    },
     noje: (s, p, k) => grundvarde(k) * Math.max(0, behovAv(s, p, k) - DELA.over),
     snitt: k => grundvarde(k) * (DELA.saknar - DELA.over), grund: k => grundvarde(k) * DELA.over,
-    perDygn: (s, p) => p.gast ? 0 : saknarNu(s, p).length * FORETAG.saknarDygn,
+    perDygn: (s, p, k) => { if (p.gast) return 0; const sak = saknarNu(s, p); return k === undefined ? sak.length * FORETAG.saknarDygn : sak.includes(k) || FOOD.includes(k) && sak.includes('mat') ? FORETAG.saknarDygn : 0; }, // per vara: den som saknar just den
     kunnande: p => skick(p.skill.handel),
   },
 };
@@ -117,16 +122,22 @@ export const gastFlode: ((s: State) => number)[] = [];
 export const kundPung = (s: State, p: Person) => payable(s, p, []).reduce((a, w) => a + (w.t ? 0 : w.n * grundvarde(w.k)), 0);
 // det kunderna skulle ge per dygn utöver varans värde om de kunde köpa verksamheten v av ag: antalet kunder och vinsten
 export function efterfragan(s: State, v: string, ag: number): { kunder: number; vinst: number } {
-  const V = VERKSAMHETER[v], varor = V.varor(s);
+  const V = VERKSAMHETER[v], varor = V.varor(s, ag), fam = familjOf(s, ag);
   let kunder = 0, vinst = 0;
   if (!varor.length) return { kunder, vinst };
+  // ägarens familj köper inte av hen (som i kassan, steg 15.1.12); affären räknas per vara, de andra efter den bästa
+  const kund = (p: Person, k: string, nj: number) => { const pris = (V.grund?.(k) ?? grundvarde(k)) + nj * FORETAG.del, n = Math.min(V.perDygn(s, p, k) * FORETAG.andel, kundPung(s, p) / FORETAG.pung / Math.max(0.1, pris)); kunder += n; vinst += n * nj * FORETAG.del; };
   for (const p of living(s)) {
-    if (p.id === ag || ageOf(p, s.now) < ALDER.hjalper) continue;
-    let bast = 0, pris = 1;
-    for (const k of varor) { const n = V.noje(s, p, k); if (n > bast) { bast = n; pris = (V.grund?.(k) ?? grundvarde(k)) + n * FORETAG.del; } }
-    if (bast <= 0) continue;
-    const n = Math.min(V.perDygn(s, p) * FORETAG.andel, kundPung(s, p) / FORETAG.pung / Math.max(0.1, pris));
-    kunder += n; vinst += n * bast * FORETAG.del;
+    if (p.id === ag || fam.includes(p) || ageOf(p, s.now) < ALDER.hjalper) continue;
+    if (V.hylla) { // per vara, och maten som en vara: den bästa maten hen saknar
+      let mk = '', mn = 0;
+      for (const k of varor) { const nj = V.noje(s, p, k); if (nj <= 0) continue; if (!FOOD.includes(k)) kund(p, k, nj); else if (nj > mn) { mn = nj; mk = k; } }
+      if (mn > 0) kund(p, mk, mn);
+      continue;
+    }
+    let bast = 0, bk = '';
+    for (const k of varor) { const nj = V.noje(s, p, k); if (nj > bast) { bast = nj; bk = k; } }
+    if (bast > 0) kund(p, bk, bast);
   }
   const g = V.gaster?.(s) ?? 0;
   kunder += g; vinst += g * V.snitt(varor[0]) * FORETAG.del;
