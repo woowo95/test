@@ -1080,11 +1080,16 @@ SCENARIER.angflytt = {
     const ny = marka(), nyUte = !!ny && ute(ny), racker = SIM.angBrist(s) === 0;
     // ett stråk över ängen: ängen läggs på ett stråk utanför byn, stråket går kvar över den och ängen flyttas
     const utanfor = (q: SIM.State) => { const Wq = SIM.W; return straken(q).vagar.flatMap(v => v.rutor).find(i => [-1, 0, 1].every(dy => [-1, 0, 1].every(dx => !iByn(q, i % Wq + dx, Math.floor(i / Wq) + dy)))); };
-    const b = SIM.cloneState(testBy(10, q => utanfor(q) !== undefined)), Wb = SIM.W; // en by med hus och ett stråk utanför byn
-    const r = utanfor(b);
+    const b = SIM.cloneState(testBy(10)), Wb = SIM.W; // en by med hus
+    // går inget stråk ut ur byn (stråken går mellan husen, elden, lagret och vattnet, som oftast ligger i byn) läggs ett ut på marken
+    // närmast elden där rutan och grannarna ligger utanför byn
+    const ute3 = (i: number) => [-1, 0, 1].every(dy => [-1, 0, 1].every(dx => SIM.inMap(i % Wb + dx, Math.floor(i / Wb) + dy) && !iByn(b, i % Wb + dx, Math.floor(i / Wb) + dy)));
+    const lagt = utanfor(b) === undefined, e0 = SIM.eldPlats(b);
+    const r = lagt ? Array.from({ length: Wb * SIM.H }, (_, i) => i).filter(ute3).sort((i, j) => Math.hypot(i % Wb - e0.x, Math.floor(i / Wb) - e0.y) - Math.hypot(j % Wb - e0.x, Math.floor(j / Wb) - e0.y))[0] : utanfor(b);
     let strakFlytt = false, strakKvar = false;
     if (r !== undefined) {
       b.angar = [{ id: 10, x: r % Wb - 1, y: Math.floor(r / Wb) - 1, w: 3, h: 3 }]; b.byggV = (b.byggV ?? 0) + 1;
+      if (lagt) straken(b).ruta[r] = 1;
       strakKvar = straken(b).ruta[r] > 0;
       const f0 = b.stat?.['angFlyttad strak'] ?? 0;
       angIVagen(b); strakFlytt = angarOf(b).length === 0 && (b.stat?.['angFlyttad strak'] ?? 0) === f0 + 1;
