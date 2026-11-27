@@ -19,7 +19,8 @@ import { diskarAv, erbjudandet, gastKund, KASSA, koaKlar, koPlats, omdome, stall
 import { foretagOf, gastFlode, oppna, VERKSAMHETER, type Foretag } from './foretag';
 import { ryktetI, omdomeAv } from './foretagsrykte';
 import { FORVANTAN } from './forvantan';
-import { radPaslag, radTar } from './priser';
+import { radOverskott, radPaslag, radTar } from './priser';
+import { packaRad } from './byhandling';
 import { grundvarde } from './varde';
 import { isFood, viktOf } from './saker';
 import { arAgd, put, stacksOf, taUrStack, tidy } from './lager';
@@ -44,6 +45,7 @@ export const FGAST = balans('foretagsgast', {
   vag: 0.4, // ett dygns väg tar så mycket av vilan
   ridande: 0.2, // så ofta kommer en vanlig gäst med ett riddjur (de fina gör det alltid)
   igen: 0.5, // så ofta är det någon som varit här förut, om det finns någon
+  varor: 0.5, // så stor del av det gästen orkar bära packas med varor ur hembyns överskott att betala med (steg 15.1.11)
 });
 // vem gästen är. silver = så stor del av silvret per person hemma hen tar med (och lägst), kg = det hen kan bära, forv = finheten hen väntar sig
 // utöver den vanliga, vikt = hur mycket hembyn lyssnar på hur hen blev bemött
@@ -95,17 +97,19 @@ export function nyForetagsgast(s: State, f: Foretag, k: Klan, rang?: RangId): Pe
   p.rest = clamp(p.rest - FGAST.vag * (k.dygn ?? 0), 0.1, 1); // trött av vägen
   if (R(p).fin || u(6) < FGAST.ridande) p.gast!.riddjur = 1;
   if (r) radTar(r, 'silver', -sil);
+  // varorna ur hembyns överskott, packade som handlarens last (steg 15.1.11): gästen betalar med silvret och med dem
+  if (r) { let i = 0; const l = packaRad(r, () => u(20 + i++), g => radOverskott(r, g), 'vandrande', undefined, false, { kg: R(p).kg * FGAST.varor, utanSilver: true }); if (l.varor.length) { const v: Record<string, number> = p.gast!.varor = {}; for (const w of l.varor) v[w.k] = (v[w.k] ?? 0) + w.n; } }
   s.people.push(p);
   count(s, 'foretagsgast'); count(s, 'foretagsgast_' + id); if (R(p).fin) count(s, 'foretagsgastFin');
   log(s, `${R(p).titel} ${p.name} från ${k.namn} kommer för att besöka ${f.namn}.`, 'move', [p.id]);
   return p;
 }
 // ---------- gästen som kund (kassa.ts) ----------
-const buret = (p: Person) => Object.entries(p.gast!.kop ?? {}).reduce((a, [k, n]) => a + n * viktOf(k), 0);
+const buret = (p: Person) => [...Object.entries(p.gast!.kop ?? {}), ...Object.entries(p.gast!.varor ?? {})].reduce((a, [k, n]) => a + n * viktOf(k), 0);
 gastKund.part = (s, p): Part => ({
   id: p.id, namn: p.name, x: p.x, y: p.y, handel: p.skill.handel ?? 0,
   varde: k => k === 'silver' ? 1 : isFood(k) ? 0.5 + (1 - p.hunger) : (r => r ? radPaslag(s, r, k) : 1)(radAv(s, p)), // hemma är saken värd det byn betalar för den
-  over: utom => (p.gast!.silver ?? 0) >= 1 && !utom.includes('silver') ? [{ k: 'silver', n: p.gast!.silver! }] : [],
+  over: utom => [...(p.gast!.silver ?? 0) >= 1 && !utom.includes('silver') ? [{ k: 'silver', n: p.gast!.silver! }] : [], ...Object.entries(p.gast!.varor ?? {}).filter(([k, n]) => n >= 1 && !utom.includes(k)).map(([k, n]) => ({ k, n }))], // silvret och varorna hen har med sig (steg 15.1.11)
 });
 // ju fler gånger hen redan ätit eller druckit här, desto mindre lockar det
 const trott = (p: Person, v: string) => 1 / (1 + (p.gast!.haft?.[v] ?? 0) * FGAST.moten);
@@ -115,7 +119,7 @@ gastKund.noje = (s, p, v, k) => {
 };
 gastKund.mangd = (_s, p, h) => { const rum = Math.floor((R(p).kg - buret(p)) / Math.max(0.01, viktOf(h.k)) + 1e-9); return Math.max(0, Math.min(h.n, rum, h.t ? 1 : rum)); };
 gastKund.betalar = (s, f, p, betal: Vara[]) => {
-  for (const w of betal) { p.gast!.silver = (p.gast!.silver ?? 0) - w.n; put(s, w.k, w.n, f.ag === BYN ? undefined : { [f.ag]: w.n }); }
+  for (const w of betal) { const g = p.gast!; if (w.k === 'silver') g.silver = (g.silver ?? 0) - w.n; else if (g.varor) g.varor[w.k] = (g.varor[w.k] ?? 0) - w.n; put(s, w.k, w.n, f.ag === BYN ? undefined : { [f.ag]: w.n }); }
 };
 // varan: ur hyllan till det gästen bär, annars äts maten vid bordet
 gastKund.far = (s, f, p, h, n) => {
@@ -181,7 +185,7 @@ export function foretagsgastSteg(s: State, dtSec: number) {
 // gästen är hemma igen: det hen köpt och silvret hen har kvar kommer till byn, och relationen följer hur hen blev bemött
 export function gastHemIgen(s: State, p: Person) {
   const g = p.gast!, r = radAv(s, p), k = klanById(s, g.klan);
-  if (r) { radTar(r, 'silver', g.silver ?? 0); for (const q in g.kop) radTar(r, q, g.kop[q]); }
+  if (r) { radTar(r, 'silver', g.silver ?? 0); for (const q in g.kop) radTar(r, q, g.kop[q]); for (const q in g.varor) if (g.varor[q] >= 1) radTar(r, q, g.varor[q]); } // det hen inte betalade med går hem igen
   if (k && g.bemott?.n) { const v = g.bemott.v / g.bemott.n; klanHandelse(s.varld, k, v >= 0 ? 'bemott' : 'illaBemott', Math.abs(v) * R(p).vikt); count(s, v >= 0 ? 'gastNojd' : 'gastMissnojd'); }
   gastGar(s, p.id, true);
 }

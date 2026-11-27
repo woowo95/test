@@ -458,7 +458,7 @@ SCENARIER.verksamheter = {
     const sattNer = (kk: string, q?: { x: number; y: number; rot?: 1 }) => { if (q) { s.stationer!.push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: kk, x: q.x, y: q.y, rot: q.rot, kvar: 0, inne: 1 } as unknown as SIM.Station); SIM.touch(s); } return !!q && r.tiles.includes(Math.floor(q.y) * W + Math.floor(q.x)); };
     const iRum = [sattNer('halmbadd', site), sattNer('krubba', SIM.stationSite(s, 'krubba'))], opp = SIM.oppna(s, f);
     // den trötta gästen köper en bädd, sover och går upp
-    const g = SIM.nyForetagsgast(s, f, k, 'rik')!; const trott = g.rest; g.rest = 0.1; g.gast!.riddjur = undefined;
+    const g = SIM.nyForetagsgast(s, f, k, 'rik')!; const trott = g.rest; g.rest = 0.1; g.gast!.riddjur = undefined; g.gast!.varor = undefined; // betalar med silvret (varorna prövas i gastbetalar)
     const pigg = V.nattlogi.noje(s, { ...g, rest: 0.95 } as typeof g, 'natt'), tr = V.nattlogi.noje(s, g, 'natt');
     const o = SIM.koPlats(s, disk); g.x = o.x; g.y = o.y; g.gast!.fas = 'pratar';
     const e = SIM.erbjudandet(s, g, 'nattlogi', f);

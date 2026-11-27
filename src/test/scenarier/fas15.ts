@@ -4,6 +4,7 @@ import { START } from '../kor';
 import { SCENARIER, klockan, kor, naraGranne, setMat, tandEld, tandOchFlinta, testBy } from './hjalp';
 import { bynNu, RIM } from '../rimligt';
 import { forLangtArbete, tidSlagAv } from '../../sim/tider';
+import { foretagBy } from './fas14';
 
 SCENARIER.matskal = {
   text: 'Steg 15.1.1: skälet för maten säger byns egen del av maten, det tal som avgjorde valet, och vakten för skälet mäter samma tal. När familjerna äger mat säger skälet att resten är deras',
@@ -143,6 +144,35 @@ SCENARIER.gruvslut = {
       [`världen har lika många gruvor som förut (${gruvor().length} av ${fran})`, gruvor().length === fran],
       [`den nya gruvan ligger på ett annat berg (${ny ? `${ny.x},${ny.y}` : 'ingen'} mot ${g.x},${g.y})`, !!ny && (ny.x !== g.x || ny.y !== g.y) && SIM.MARK_IDS[v.mark[ny.y * v.w + ny.x]] === 'berg'],
       ['huvudbyns folk känner inte till den nya gruvan', !!ny && !SIM.living(s).some(p => SIM.findL(p, 'ort', ny.nr))],
+    ];
+  },
+};
+
+SCENARIER.gastbetalar = {
+  text: 'Steg 15.1.11: företagets gäst tar med sig silver och varor ur hembyns överskott, packade som handlarens last, och betalar med det hen har. Det hen betalar med lämnar raden, och det hen inte betalade med går hem igen',
+  kor: () => {
+    const { s, p, f, disk, fin } = foretagBy(), k = SIM.klanerOf(s).find(q => q.rad !== undefined)!, rad = s.varld!.rader!.find(q => q.nr === k.rad)!;
+    for (const q of SIM.living(s)) q.task = undefined;
+    k.inst = 20; rad.tal.silver = 0; // grannbyn har inget silver, men mat över
+    SIM.radTar(rad, 'torrkott', 80); const mat0 = SIM.radOverskott(rad, 'mat');
+    // gästerna packar olika varor; en levande get är för mycket att betala en måltid med i hela saker, så den första gästen som har
+    // något lagom köper
+    const o = SIM.koPlats(s, disk), andra: SIM.Person[] = [];
+    let g = SIM.nyForetagsgast(s, f, k, 'vanlig')!;
+    for (let i = 0; i < 12; i++) { g.x = o.x; g.y = o.y; g.hunger = 0.4; if (SIM.erbjudandet(s, g, 'servering', f)) break; andra.push(g); g = SIM.nyForetagsgast(s, f, k, 'vanlig')!; }
+    const med = { ...g.gast!.varor ?? {} };
+    for (const q of andra) SIM.gastHemIgen(s, q);
+    for (let i = 0; i < 5 && g.gast!.gor !== 'ko'; i++) SIM.foretagsgastSteg(s, 1);
+    const ro = f.ko?.find(q => q.p === g.id), varor0 = SIM.ownsId(s, p.id, fin);
+    if (ro) { p.task = { act: 'betjana', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', ref: f.id }; const v = SIM.vidStation(disk); p.x = v.x; p.y = v.y; SIM.use(s, undefined, ro.k, 1, true, p.id); p.task.items = { [ro.k]: 1 }; p.task.ag = { [ro.k]: { [p.id]: 1 } }; SIM.betjanaKlar(s, p, p.task); p.task = undefined; }
+    const kvar = g.gast!.varor ?? {}, gav = Object.keys(med).reduce((n, q) => n + (med[q]! - (kvar[q] ?? 0)), 0);
+    const fore = Object.values(kvar).reduce((a, n) => a + n, 0), radFore = SIM.VARUGRUPP_IDS.map(q => SIM.radHar(rad, q));
+    SIM.gastHemIgen(s, g);
+    const radEfter = SIM.VARUGRUPP_IDS.map(q => SIM.radHar(rad, q)), vaxte = radEfter.some((x, i) => x > radFore[i]! + 1e-9) && radEfter.every((x, i) => x >= radFore[i]! - 1e-9);
+    return [
+      [`gästen kommer utan silver (${g.gast!.silver ?? 0}) men med varor ur hembyns överskott (${JSON.stringify(med)}, matöverskott ${mat0})`, (g.gast!.silver ?? 0) === 0 && Object.keys(med).length > 0],
+      [`gästen köpte en måltid och betalade med varor (${gav} saker)`, !!ro && gav >= 1 && SIM.ownsId(s, p.id, fin) === varor0 - 1],
+      [`det som blev över (${fore} saker) går hem till raden`, fore === 0 || vaxte],
     ];
   },
 };
