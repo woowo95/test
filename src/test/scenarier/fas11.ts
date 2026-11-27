@@ -2023,11 +2023,11 @@ SCENARIER.samlaresa = {
 SCENARIER.kallelse = {
   text: 'Kallelsen (steg 11.5.11, kallelse och samlasSteg i resa.ts): ledaren kallar som vid björnjakten, och de villigaste följer med tills kraften räcker mot ledens fara; en kort och ofarlig resa går ledaren ensam, eftersom fler bara späder andelarna. Resenärerna går till samlingsplatsen; den som inte kommit inom en timme är inte med, och räcker inte kraften ställs resan in',
   kor: () => {
-    // den första testbyn med sex vuxna som kan följa med, så att kraften kan räcka mot en farlig led (testbyn efter 30 dygn
+    // testbyn efter 30 dygn med sex vuxna som kan följa med, så att kraften kan räcka mot en farlig led (testbyn efter 30 dygn
     // har fyra, med kraften 3,2 mot kravet 4,5; steg 12.1.112)
     const kan = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.ageOf(q, b.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, b.now));
-    const s0 = SIM.cloneState(testBy(30, b => kan(b).length >= 6)), vl0 = s0.varld!, hem = SIM.byPlats(vl0, vl0.huvud!)!;
-    for (let i = 0; kan(s0).length < 6 && i < 6; i++) { const q = nyInvanare(s0, i % 2 ? 'k' : 'm', 25 + i); q.pot.mod = 16; } // hittas ingen testby med sex vuxna som kan följa med, flyttar några in
+    const s0 = SIM.cloneState(testBy(30)), vl0 = s0.varld!, hem = SIM.byPlats(vl0, vl0.huvud!)!;
+    for (let i = 0; kan(s0).length < 6 && i < 6; i++) { const q = nyInvanare(s0, i % 2 ? 'k' : 'm', 25 + i); q.pot.mod = 16; } // har testbyn färre än sex vuxna som kan följa med, flyttar några in
     const vuxna = kan(s0).filter(q => q.task?.act !== 'vakt'); // (ledaren håller inte vakt i natt)
     // modet och nyfikenheten i anlagen också: uppväxten räknar om pot ur anlagen när någon får en upplevelse (raknaPot i
     // uppvaxt.ts), och då föll modet tillbaka medan sällskapet samlades (steg 12.1.112)
@@ -5538,7 +5538,7 @@ SCENARIER.aterbygge = {
         hus: SIM.housesOf(b).filter(h => h.klar !== undefined).map(h => `${h.x},${h.y},${h.w},${h.h}`).sort(),
         forrad: SIM.housesOf(b).filter(h => h.fn === 'forrad').length,
         falt: SIM.faltOf(b).map(f => `${f.x},${f.y},${f.w},${f.n}`).sort(), hagar: (b.hagar ?? []).map(h => `${h.x},${h.y},${h.w},${h.h}`),
-        lager: (b.lagren ?? []).filter(z => z.hus === undefined).map(z => `${z.x},${z.y},${z.w},${z.h}`).sort(),
+        lager: (b.lagren ?? []).filter(z => z.hus === undefined).map(z => `${z.x},${z.y},${z.w},${z.h}`).sort(), flyttat: b.stat?.lagerFlyttat ?? 0,
         gravar: (b.gravar ?? []).map(g => `${g.x},${g.y},${g.namn}`).sort(), namn: new Set(b.people.map(p => p.name)),
         agare: SIM.faltOf(b).filter(f => f.agare !== 0).every(f => { const p = b.people.find(q => q.id === f.agare); return !!p && SIM.knows(p, 'odling'); }),
         agda: SIM.faltOf(b).filter(f => f.agare !== 0).length,
@@ -5562,7 +5562,7 @@ SCENARIER.aterbygge = {
       [`invånarna är radens antal (${c.folk} mot ${Math.round(r.tal.folk)})`, Math.abs(c.folk - Math.round(r.tal.folk)) <= 1],
       [`husen står kvar på samma platser (${a.hus.filter(h => c.hus.includes(h)).length} av ${a.hus.length})`, a.hus.length > 0 && a.hus.every(h => c.hus.includes(h))],
       ['gravarna ligger kvar', a.gravar.every(g => c.gravar.includes(g))],
-      [`lagerplatserna ligger kvar (${a.lager.length})`, a.lager.length > 0 && a.lager.every(z => c.lager.includes(z))],
+      [`lagerplatserna ligger kvar (${a.lager.filter(z => c.lager.includes(z)).length} av ${a.lager.length}, ${c.flyttat} flyttad för ett bygge)`, a.lager.length > 0 && c.lager.length === a.lager.length && a.lager.filter(z => c.lager.includes(z)).length >= a.lager.length - c.flyttat], // fler invånare kan ge ett hus som byggs ut över en lagerplats, som då flyttas
       [`fälten ligger kvar (${a.falt.filter(f => c.falt.includes(f)).length} av ${a.falt.length})`, a.falt.length > 0 && a.falt.every(f => c.falt.includes(f))], // folket byggs om ur raden, så ett nytt hushåll kan få ett fält till
       [`fälten har ägare som kan odla (${c.agda} av ${c.falt.length})`, c.agda > 0 && c.agare],
       ['hagen ligger kvar med staketet runt om', lika(a.hagar, c.hagar) && c.hel],
