@@ -1,0 +1,4 @@
+
+> samhallssimulatorn@1.0.0 trangsel
+> tsx src/test/trangsel.ts
+
