@@ -1,7 +1,7 @@
 // Scenarier för fas 15.
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, klockan, kor, setMat, tandEld, tandOchFlinta, testBy } from './hjalp';
+import { SCENARIER, klockan, kor, naraGranne, setMat, tandEld, tandOchFlinta, testBy } from './hjalp';
 import { bynNu, RIM } from '../rimligt';
 import { forLangtArbete, tidSlagAv } from '../../sim/tider';
 
@@ -119,6 +119,30 @@ SCENARIER.forsoktid = {
       [`vakten räknar försöket som arbete vid en station (${tidSlagAv('forsok')})`, tidSlagAv('forsok') === 'station'],
       ['vakten godtar ett försök av den längden', forLangtArbete(uppg(min), s.now) === undefined],
       [`och larmar för ett på 90 minuter (${forLangtArbete(uppg(90), s.now) ?? 'inget larm'})`, forLangtArbete(uppg(90), s.now) !== undefined],
+    ];
+  },
+};
+
+SCENARIER.gruvslut = {
+  text: 'Steg 15.1.10: silvergruvan tar slut. Varje gruva har SILVER.innehall silver, det som bryts tas ur den och det sista bryts bara så långt det räcker. Sällskapet vänder hem när gruvan är tom, platsen tas bort ur världen och en ny gruva läggs på ett annat berg som huvudbyn inte känner till',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3, naraGranne)), vl = s.varld!, v = SIM.varldMark(s)!, hem = SIM.byPlats(vl, vl.huvud!)!;
+    const gruvor = () => (vl.platser ?? []).filter(q => q.k === 'silvergruva');
+    const g = gruvor().sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y)).find(q => SIM.vagDygn(s, hem.y * v.w + hem.x, q.y * v.w + q.x))!;
+    const fran = gruvor().length, fore = new Set(gruvor().map(q => q.nr));
+    (g.inne ??= {}).silver = 3; // en gruva med lite silver kvar
+    const [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.ageOf(q, s.now) < 50 && SIM.kanGa(q));
+    const sl = SIM.nyttSallskap(s, a!, g.nr, 'hamta')!; SIM.foljMed(vl, sl, b!);
+    sl.nere = 2; sl.pack = { brod: 10 }; sl.skede = 'framme'; sl.framme = s.now; sl.behov = { matt: 1, vatska: 1, ork: 1, fulla: 0, foder: 0 };
+    for (let h = 0; h < 48 && sl.skede === 'framme'; h++) { s.now += SIM.HOUR; SIM.resaBehov(s, SIM.HOUR); }
+    const ny = gruvor().find(q => !fore.has(q.nr));
+    return [
+      [`sällskapet bröt det som fanns, 3 silver (${sl.pack.silver ?? 0})`, (sl.pack.silver ?? 0) === 3],
+      [`och vände hem när gruvan var tom (${sl.skede})`, sl.skede !== 'framme'],
+      ['den tomma gruvan är borta ur världen', !gruvor().includes(g) && !!s.stat?.gruvaTom],
+      [`världen har lika många gruvor som förut (${gruvor().length} av ${fran})`, gruvor().length === fran],
+      [`den nya gruvan ligger på ett annat berg (${ny ? `${ny.x},${ny.y}` : 'ingen'} mot ${g.x},${g.y})`, !!ny && (ny.x !== g.x || ny.y !== g.y) && SIM.MARK_IDS[v.mark[ny.y * v.w + ny.x]] === 'berg'],
+      ['huvudbyns folk känner inte till den nya gruvan', !!ny && !SIM.living(s).some(p => SIM.findL(p, 'ort', ny.nr))],
     ];
   },
 };

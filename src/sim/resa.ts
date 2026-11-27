@@ -30,7 +30,7 @@ import { ledigtTing, tingOf, type Ting } from './agande';
 import type { Fardsatt } from './varldmark';
 import { viktOf } from './saker';
 import { grundvarde } from './varde';
-import { GRUVSAK, SILVER } from './gruva';
+import { GRUVSAK, SILVER, laggGruvor, silverKvar } from './gruva';
 import { VARLD, VARLDMARK, MARK_IDS, VarldMark } from './varldmark';
 import { kostnader, sparadVag, vagMellan, vagRutor, VarldVag } from './vagval';
 import { delFel, GADELAR } from './halsa';
@@ -45,7 +45,7 @@ import { rnd } from './slump';
 import { DAY } from './typer';
 import { kanGa } from './halsa';
 import { SEC } from './typer';
-import { kannerOrt, O_RYKTE, vetBorta } from './ort';
+import { kannerOrt, O_RYKTE, taBortPlats, vetBorta } from './ort';
 import { MATERIALMAL, villHaAv } from './forradsmal';
 import { kannerPris, trorPris } from './minne';
 import { PAB, pabud } from './styre';
@@ -760,9 +760,22 @@ function gruvBit(s: State, sl: Sallskap, t: number, dt: number) {
   const h1 = (t - (sl.framme ?? t)) / HOUR;
   const gs = GRUVSAK[gruvaFor(s, sl)] ?? GRUVSAK.silvergruva; // silvret, eller malmen i järngruvan (steg 12.2.13)
   sl.silverArb = (sl.silverArb ?? 0) + n * gs.mellan(Math.max(0, h1 - tim), h1);
-  const m = Math.floor(sl.silverArb + 1e-9), rum = Math.floor((barNu(s, sl) - packVikt(sl)) / viktOf(gs.sak) + 1e-9), fick = Math.max(0, Math.min(m, rum));
-  if (fick > 0) { sl.pack[gs.sak] = (sl.pack[gs.sak] ?? 0) + fick; sl.silverArb -= fick; }
+  // silvergruvan har sitt innehåll (steg 15.1.10): det sista bryts bara så långt det räcker
+  const q = slMal(s, sl), finns = q ? Math.floor(silverKvar(q) + 1e-9) : Infinity;
+  const m = Math.floor(sl.silverArb + 1e-9), rum = Math.floor((barNu(s, sl) - packVikt(sl)) / viktOf(gs.sak) + 1e-9), fick = Math.max(0, Math.min(m, rum, finns));
+  if (fick > 0) { sl.pack[gs.sak] = (sl.pack[gs.sak] ?? 0) + fick; sl.silverArb -= fick; if (q && finns < Infinity) (q.inne ??= {}).silver = finns - fick; }
   if (m > rum) { sl.silverArb = 0; sl.nere = Math.min(stannarFor(sl), (t - (sl.framme ?? t)) / DAY); } // fullt: tiden nere är slut
+  else if (q && finns - fick <= 0) { sl.silverArb = 0; sl.nere = Math.min(stannarFor(sl), (t - (sl.framme ?? t)) / DAY); gruvanTom(s, sl, q, folk); } // tom: sällskapet vänder hem
+}
+// gruvan är tom (steg 15.1.10): den tas bort ur världen, sällskapet vet att den är borta (byn får höra det när de kommer hem),
+// och en ny gruva läggs på ett berg där ingen gruva tömts, så att världen åter har SILVER.gruvor gruvor
+function gruvanTom(s: State, sl: Sallskap, q: VarldPlats, folk: Person[]) {
+  const vl = s.varld, v = varldMark(s);
+  if (!vl || !vl.platser?.includes(q)) return;
+  if (v) (vl.tommaGruvor ??= []).push(q.y * v.w + q.x);
+  taBortPlats(s, vl, q); vetBorta(s, folk, q.nr);
+  if (v) laggGruvor(vl, v, s.now);
+  dagbok(s, sl, 'fram', `Gruvan är tom. Det sista silvret är brutet.`); count(s, 'gruvaTom');
 }
 // på väg ut ur byn sitter ryttaren på hästen: hästen följer hen till kanten (steg 11.11.4)
 export function ridBredvid(s: State, p: Person) {

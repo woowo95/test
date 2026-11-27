@@ -22,6 +22,7 @@ export interface Varlden {
   borjan?: number; perioder?: Record<import('./varldslag').PeriodId, number>; // världens början och perioderna som räknats (steg 11.2.17, varldslag.ts)
   ko?: import('./varldslag').KoPost[]; nastaKo?: number; // det som händer vid en känd tid, sorterat på tiden
   vagar?: import('./vagval').VarldVag[]; // de vägar som räknats (steg 11.2.20, vagval.ts)
+  tommaGruvor?: number[]; // rutorna där en silvergruva tömts: ingen ny läggs där (steg 15.1.10, gruva.ts)
   jarnLagd?: 1; // järngruvorna har lagts ut (steg 12.2.13, gruva.ts)
   frusen?: true; // istiden: sjö, myr och floder går att korsa (steg 11.11.8, leder.ts)
   leder?: Record<number, import('./leder').LedSlitage>; ledVer?: number; sallskap?: import('./resa').Sallskap[]; nastaSallskap?: number; gommor?: import('./resa').Gomma[]; gravar?: import('./resa').VagGrav[]; // det sällskap släppt vid vägen (steg 11.5.17) // sällskapen (steg 11.5.2, resa.ts); // slitaget per ruta och kostnadernas version (steg 11.5.1, leder.ts)
