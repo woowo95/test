@@ -205,3 +205,39 @@ SCENARIER.efterfragan = {
     ];
   },
 };
+
+SCENARIER.gastefterfragan = {
+  text: 'Steg 15.1.13: gästerna räknas i efterfrågan bara om de kan betala, ett öppet företag drar av det det sålt (och inget om det inget sålt), och en affär drar bara av från samma vara',
+  kor: () => {
+    const { s, p, f } = foretagBy(), N = SIM.VERKSAMHETER.nattlogi;
+    // gästerna: med hembyns silver kan de betala, utan silver och utan något över kan de inte
+    for (const r of s.varld?.rader ?? []) r.tal.silver = 500;
+    const rika = N.gaster!(s, 6);
+    s.now += SIM.HOUR; // gästens pung räknas en gång i timmen
+    for (const r of s.varld?.rader ?? []) { r.tal.silver = 0; r.tal.mat = 0; r.varor = {}; }
+    const fattiga = N.gaster!(s, 6);
+    // servering: ett öppet företag som inget sålt tar ingen efterfrågan, ett som sålt drar av det
+    const ag2 = SIM.living(s).find(q => !q.gast && q !== p && !SIM.familjOf(s, p.id).includes(q) && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    const ef = (v: string) => SIM.efterfragan(s, v, ag2.id);
+    f.salt = undefined; const inget = ef('servering').kunder;
+    s.foretag = []; const utan = ef('servering').kunder; s.foretag = [f];
+    f.salt = { servering: 0.5 }; const salt = ef('servering').kunder;
+    // affären: krukorna som säljs tar inget från skinnet
+    const fk = SIM.starta(s, p.id, ['affar']); fk.hus = f.hus; f.verk = []; // samma hus, med disken
+    const c = SIM.living(s).find(q => !q.gast && q !== ag2 && q !== p && !SIM.familjOf(s, ag2.id).includes(q) && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    // en hungrig kund utan egen mat, och maten i byn är ägarens
+    for (const q of SIM.FOOD) SIM.setAmount(s, q, 0);
+    for (const a of s.stackar ?? []) if (a.ag?.[c.id]) delete a.ag[c.id];
+    c.hunger = 0.2; c.bruk = undefined; SIM.laggIn(s, 'silver', 200, c.id); SIM.laggIn(s, 'torrkott', 100, ag2.id);
+    const v0 = ef('affar').perVara, k = Object.keys(v0).find(x => v0[x]! > 0 && x !== 'lerkruka_mellan');
+    fk.saltVara = { lerkruka_mellan: 50 }; const kruka = k ? ef('affar').perVara[k] ?? 0 : 0;
+    if (k) fk.saltVara = { [k]: 50 }; const samma = k ? ef('affar').perVara[k] ?? 0 : 0;
+    return [
+      [`gäster som kan betala räknas (${rika.toFixed(2)}), gäster utan något att betala med inte (${fattiga.toFixed(2)})`, rika > 0 && fattiga === 0],
+      [`ett öppet företag som inget sålt tar ingen efterfrågan (${inget.toFixed(2)} mot ${utan.toFixed(2)} utan det)`, Math.abs(inget - utan) < 1e-9 && utan > 0],
+      [`ett som sålt drar av det (${salt.toFixed(2)})`, salt < utan - 0.1],
+      [`krukorna som säljs tar inget från ${k ?? '(ingen vara)'} (${kruka.toFixed(2)} mot ${(k ? v0[k]! : 0).toFixed(2)})`, !!k && Math.abs(kruka - v0[k]!) < 1e-9],
+      [`men samma vara gör det (${samma.toFixed(2)})`, !!k && samma < v0[k]! - 1e-9],
+    ];
+  },
+};

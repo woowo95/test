@@ -258,7 +258,7 @@ export function kopVid(s: State, f: Foretag, p: Person, r: KoRad, at: Person): b
   }
   const betalt = b.betal.reduce((a, w) => a + grundvarde(w.k) * w.n, 0);
   (f.dag ??= {})[r.v] = { ...f.dag?.[r.v], salt: (f.dag?.[r.v]?.salt ?? 0) + 1 };
-  (f.salt ??= {})[r.v] = (f.salt[r.v] ?? 0) + 1; f.intakt = (f.intakt ?? 0) + betalt; f.vinst = (f.vinst ?? 0) + betalt - n * kv * (V.grund?.(r.k) ?? grundvarde(r.k) * G.varde(r.k));
+  (f.salt ??= {})[r.v] = (f.salt[r.v] ?? 0) + 1; (f.saltVara ??= {})[r.k] = (f.saltVara[r.k] ?? 0) + 1; f.intakt = (f.intakt ?? 0) + betalt; f.vinst = (f.vinst ?? 0) + betalt - n * kv * (V.grund?.(r.k) ?? grundvarde(r.k) * G.varde(r.k));
   count(s, 'foretagSalt'); count(s, 'foretagSalt_' + r.v);
   if (forstaGang(s, 'foretagSalt')) log(s, `${p.name} blev den första kunden: ${f.namn}.`, 'world', [p.id]);
   for (const g of omdome) g(s, p, f, { v: r.v, far, net: far - b.kost, kv, vantat: (s.now - r.t) / MIN });

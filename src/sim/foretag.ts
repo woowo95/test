@@ -23,7 +23,7 @@ import { MALTIDSNIVA, maltidsNiva } from './ratter';
 import { DRYCKER, dryckAv, vatskaAv, type VatskaId } from './vatskor';
 import { DAGSVERK, egetVarde } from './dagsarbete';
 import { rumTaggar } from './rum';
-import { foretagBord } from './stationer';
+import { foretagBord, isKlar, stationerOf, stationRum } from './stationer';
 import { RECEPT } from './recept';
 
 export const FORETAG = balans('foretag', {
@@ -46,7 +46,7 @@ export const FORETAG = balans('foretag', {
 // resultat = medlet av vinsten mot vad ägaren kunde tjäna på annat, bok = det som var kvar sedan förra dygnet, salu = till salu sedan (stangning.ts)
 // byar = ryktet i grannbyarna, efter radens nummer (foretagsrykte.ts)
 // det företaget sålt: n = kunder och v = värdet, per dygn (glöms med FORETAG.minne)
-export interface Foretag { id: number; ag: number; hus?: number; verk: string[]; namn: string; t: number; salt?: Record<string, number>; intakt?: number; vinst?: number; pris?: Record<string, number>; ko?: import('./kassa').KoRad[]; lamnat?: number; kallad?: number; dag?: Record<string, { salt?: number; nej?: number[]; gatt?: number }>; gap?: { n: number; v: number; vem: number[] }; enkelt?: number; byar?: Record<number, { v: number; n: number }>; bok?: { vinst: number; kunder: number }; resultat?: number; oppnat?: number; salu?: number }
+export interface Foretag { id: number; ag: number; hus?: number; verk: string[]; namn: string; t: number; salt?: Record<string, number>; saltVara?: Record<string, number>; /* det sålda per vara, halveras varje dygn (steg 15.1.13) */ vantat?: Record<string, number>; /* kunderna per dygn det väntade sig när verksamheten togs upp, per verksamhet och vara (steg 15.1.13) */ intakt?: number; vinst?: number; pris?: Record<string, number>; ko?: import('./kassa').KoRad[]; lamnat?: number; kallad?: number; dag?: Record<string, { salt?: number; nej?: number[]; gatt?: number }>; gap?: { n: number; v: number; vem: number[] }; enkelt?: number; byar?: Record<number, { v: number; n: number }>; bok?: { vinst: number; kunder: number }; resultat?: number; oppnat?: number; salu?: number }
 export const foretagOf = (s: State): Foretag[] => s.foretag ?? [];
 export const foretagAvHus = (s: State, hus?: number) => hus === undefined ? undefined : foretagOf(s).find(f => f.hus === hus);
 
@@ -64,7 +64,7 @@ export interface Verksamhet {
   hylla?: true; // det som ligger på varubordet i rummet (affar.ts)
   vatska?: true; // säljs ur ett kärl
   perDygn: (s: State, p: Person, k?: string) => number; // så många gånger per dygn kunden skulle kunna köpa (varan k: affären räknar per vara)
-  gaster?: (s: State) => number; // så många gäster per dygn väntas vilja ha den
+  gaster?: (s: State, pris: number) => number; // så många gäster per dygn väntas vilja ha den och kunna betala priset
   egen?: { har: (s: State, f: Foretag) => string[]; ge: (s: State, f: Foretag, p: Person, k: string) => void }; // det som inte är en sak i förrådet (verksamheter.ts)
   kunnande: (p: Person) => number; // hur väl den som driver den kan den, 1 = vanligt
 }
@@ -117,16 +117,17 @@ const husAv = (s: State, ag: number): Hus[] => housesOf(s).filter(h => h.fn === 
 
 // ---------- efterfrågan ----------
 // så många gäster per dygn väntas till byns företag (foretagsgast.ts)
-export const gastFlode: ((s: State) => number)[] = [];
+export const gastFlode: ((s: State, pris: number) => number)[] = []; // de som kan betala priset (steg 15.1.13)
 // vad kunden p kan betala per dygn: silvret och det hen har över, ska räcka en tid
 export const kundPung = (s: State, p: Person) => payable(s, p, []).reduce((a, w) => a + (w.t ? 0 : w.n * grundvarde(w.k)), 0);
 // det kunderna skulle ge per dygn utöver varans värde om de kunde köpa verksamheten v av ag: antalet kunder och vinsten
-export function efterfragan(s: State, v: string, ag: number): { kunder: number; vinst: number } {
-  const V = VERKSAMHETER[v], varor = V.varor(s, ag), fam = familjOf(s, ag);
-  let kunder = 0, vinst = 0;
-  if (!varor.length) return { kunder, vinst };
+// ett företag har öppnat: det har sitt hus och en disk i rummet (steg 15.1.13)
+const harDisk = (s: State, f: Foretag) => { const rum = foretagRum(s, f); return rum.length > 0 && stationerOf(s).some(t => t.k === 'disk' && isKlar(t) && rum.includes(stationRum(s, t)!)); };
+export function efterfragan(s: State, v: string, ag: number): { kunder: number; vinst: number; perVara: Record<string, number> } {
+  const V = VERKSAMHETER[v], varor = V.varor(s, ag), fam = familjOf(s, ag), perVara: Record<string, number> = {}, vinstVara: Record<string, number> = {};
+  if (!varor.length) return { kunder: 0, vinst: 0, perVara };
   // ägarens familj köper inte av hen (som i kassan, steg 15.1.12); affären räknas per vara, de andra efter den bästa
-  const kund = (p: Person, k: string, nj: number) => { const pris = (V.grund?.(k) ?? grundvarde(k)) + nj * FORETAG.del, n = Math.min(V.perDygn(s, p, k) * FORETAG.andel, kundPung(s, p) / FORETAG.pung / Math.max(0.1, pris)); kunder += n; vinst += n * nj * FORETAG.del; };
+  const kund = (p: Person, k: string, nj: number) => { const pris = (V.grund?.(k) ?? grundvarde(k)) + nj * FORETAG.del, n = Math.min(V.perDygn(s, p, k) * FORETAG.andel, kundPung(s, p) / FORETAG.pung / Math.max(0.1, pris)); perVara[k] = (perVara[k] ?? 0) + n; vinstVara[k] = (vinstVara[k] ?? 0) + n * nj * FORETAG.del; };
   for (const p of living(s)) {
     if (p.id === ag || fam.includes(p) || ageOf(p, s.now) < ALDER.hjalper) continue;
     if (V.hylla) { // per vara, och maten som en vara: den bästa maten hen saknar
@@ -139,16 +140,29 @@ export function efterfragan(s: State, v: string, ag: number): { kunder: number; 
     for (const k of varor) { const nj = V.noje(s, p, k); if (nj > bast) { bast = nj; bk = k; } }
     if (bast > 0) kund(p, bk, bast);
   }
-  const g = V.gaster?.(s) ?? 0;
-  kunder += g; vinst += g * V.snitt(varor[0]) * FORETAG.del;
+  // gästerna som kan betala det en vanlig kund betalar (steg 15.1.13)
+  const k0 = varor[0]!, g = V.gaster?.(s, (V.grund?.(k0) ?? grundvarde(k0)) + V.snitt(k0) * FORETAG.del) ?? 0;
+  if (g > 0) { perVara[k0] = (perVara[k0] ?? 0) + g; vinstVara[k0] = (vinstVara[k0] ?? 0) + g * V.snitt(k0) * FORETAG.del; }
   const lart = s.foretagLart?.[v]; // det byn lärt sig av ett stängt företag (stangning.ts)
-  if (lart !== undefined) { kunder *= lart; vinst *= lart; }
-  // det som redan säljs: ett företag som inte hunnit öppna räknas som om det sålde hela sin del
-  for (const f of foretagOf(s)) if (f.verk.includes(v) && kunder > 0) {
-    const sald = f.hus !== undefined && husById(s, f.hus)?.klar && f.salt?.[v] !== undefined ? Math.min(kunder, f.salt[v]) : kunder;
-    vinst *= 1 - sald / kunder; kunder -= sald;
+  if (lart !== undefined) for (const k in perVara) { perVara[k] *= lart; vinstVara[k] *= lart; }
+  // det som redan säljs (steg 15.1.13): ett öppet företag med det det sålt (affären per vara), ett som inte öppnat med det det
+  // väntade sig när det startade, och bara från samma vara
+  for (const f of foretagOf(s)) {
+    if (!f.verk.includes(v)) continue;
+    const oppet = harDisk(s, f), sald = (k: string) => V.hylla ? (oppet ? f.saltVara?.[k] ?? 0 : f.vantat?.[`${v}:${k}`] ?? 0) : 0;
+    if (V.hylla) for (const k in perVara) { const d = Math.min(perVara[k]!, sald(k)); if (d > 0) { vinstVara[k] *= 1 - d / perVara[k]!; perVara[k] -= d; } }
+    else {
+      const tot = Object.values(perVara).reduce((a, n) => a + n, 0), d = Math.min(tot, oppet ? f.salt?.[v] ?? 0 : f.vantat?.[v] ?? 0);
+      if (tot > 0 && d > 0) for (const k in perVara) { vinstVara[k] *= 1 - d / tot; perVara[k] *= 1 - d / tot; }
+    }
   }
-  return { kunder, vinst };
+  return { kunder: Object.values(perVara).reduce((a, n) => a + n, 0), vinst: Object.values(vinstVara).reduce((a, n) => a + n, 0), perVara };
+}
+// det företaget väntar sig när verksamheterna verk tas upp (steg 15.1.13): per verksamhet, och för affären per vara
+function vantas(s: State, ag: number, verk: string[]) {
+  const ut: Record<string, number> = {};
+  for (const v of verk) { const e = efterfragan(s, v, ag); ut[v] = e.kunder; if (VERKSAMHETER[v].hylla) for (const k in e.perVara) ut[`${v}:${k}`] = e.perVara[k]!; }
+  return ut;
 }
 export interface Forsok { ag: number; verk: string[]; poang: number; kunder: number }
 // vad det är värt för ag att starta verksamheterna verk: vinsten per dygn minus arbetet och huset
@@ -188,13 +202,15 @@ export function bastaUtok(s: State): Utok | undefined {
   return bast;
 }
 export function utoka(s: State, f: Foretag, verk: string[]) {
+  f.vantat = { ...f.vantat, ...vantas(s, f.ag, verk) };
   f.verk = [...f.verk, ...verk];
   count(s, 'foretagUtok'); for (const v of verk) count(s, 'foretagUtok_' + v);
   const p = foretagare(s, f.ag);
   log(s, `${f.namn} tog upp något nytt: ${verk.map(v => VERKSAMHETER[v].namn.toLowerCase()).join(' och ')}.`, 'world', p ? [p.id] : []);
 }
 export function starta(s: State, ag: number, verk: string[]): Foretag {
-  const f: Foretag = { id: (s.nextForetag = (s.nextForetag ?? 0) + 1), ag, verk, namn: `${agNamn(s, ag)} ${sortNamn(verk).toLowerCase()}`, t: s.now };
+  const vantat = vantas(s, ag, verk); // innan företaget finns: det drar inte av från sig självt
+  const f: Foretag = { id: (s.nextForetag = (s.nextForetag ?? 0) + 1), ag, verk, namn: `${agNamn(s, ag)} ${sortNamn(verk).toLowerCase()}`, t: s.now, vantat };
   (s.foretag ??= []).push(f);
   count(s, 'foretagStart'); for (const v of verk) count(s, 'foretagStart_' + v);
   const p = foretagare(s, ag);
@@ -250,7 +266,7 @@ export const dygnet: ((s: State) => void)[] = [];
 // en gång per dygn (ett år i spelet): den som tjänar mest på det startar ett företag, och det som sålts glöms
 export function foretagDygn(s: State) {
   for (const g of dygnet) g(s);
-  for (const f of foretagOf(s)) { for (const v in f.salt) f.salt[v] *= 1 - FORETAG.minne; if (f.intakt !== undefined) f.intakt *= 1 - FORETAG.minne; if (f.vinst !== undefined) f.vinst *= 1 - FORETAG.minne; if (f.lamnat !== undefined) f.lamnat *= 1 - FORETAG.minne; }
+  for (const f of foretagOf(s)) { for (const v in f.salt) f.salt[v] *= 1 - FORETAG.minne; for (const k in f.saltVara) f.saltVara[k] *= 1 - FORETAG.minne; if (f.intakt !== undefined) f.intakt *= 1 - FORETAG.minne; if (f.vinst !== undefined) f.vinst *= 1 - FORETAG.minne; if (f.lamnat !== undefined) f.lamnat *= 1 - FORETAG.minne; }
   const b = bastaStart(s);
   const u = bastaUtok(s);
   if (u && u.poang > (b?.poang ?? 0)) utoka(s, u.f, u.verk);

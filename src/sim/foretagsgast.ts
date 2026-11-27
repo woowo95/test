@@ -21,6 +21,7 @@ import { ryktetI, omdomeAv } from './foretagsrykte';
 import { FORVANTAN } from './forvantan';
 import { radOverskott, radPaslag, radTar } from './priser';
 import { packaRad } from './byhandling';
+import type { VarldRad } from './radtal';
 import { grundvarde } from './varde';
 import { isFood, viktOf } from './saker';
 import { arAgd, put, stacksOf, taUrStack, tidy } from './lager';
@@ -68,7 +69,22 @@ export function lockar(f: Foretag, k: Klan): number {
   if (k.rad === undefined || k.inst <= KLAN.handelMin) return 0; // en ovänby besöker aldrig
   return FGAST.perDygn * narhet(k) * Math.max(0, 1 + FGAST.inst * k.inst / 100) * Math.max(0, 1 + FGAST.rykte * ryktetI(f, k.rad));
 }
-gastFlode.push(s => foretagOf(s).length ? klanerOf(s).reduce((a, k) => a + Math.max(...foretagOf(s).map(f => lockar(f, k))), 0) : 0);
+// det en gäst av rangen tar med sig av hembyns silver (r: hembyns rad)
+const gastSilver = (r: VarldRad | undefined, rang: Rang) => { const hem = Math.floor((r?.tal.silver ?? 0) / Math.max(1, r?.tal.folk ?? 1) * rang.silver); return Math.min(r ? Math.floor(r.tal.silver) : rang.minst, Math.max(rang.minst, hem)); };
+// det en vanlig gäst från grannbyn k kan betala med (steg 15.1.13): silvret och värdet av varorna hen packar ur hembyns överskott,
+// som när hen kommer (nyForetagsgast). Räknas en gång i timmen per by
+const pungMinne = new WeakMap<Klan, { t: number; v: number }>();
+export function gastPung(s: State, k: Klan): number {
+  const tim = Math.floor(s.now / HOUR), m = pungMinne.get(k);
+  if (m && m.t === tim) return m.v;
+  const r = s.varld?.rader?.find(q => q.nr === k.rad);
+  let v = gastSilver(r, RANG.vanlig);
+  if (r) { let i = 0; const l = packaRad(structuredClone(r), () => hash3(s.seed, tim, k.id, 0x6a59 + i++), g => radOverskott(r, g), 'vandrande', undefined, false, { kg: RANG.vanlig.kg * FGAST.varor, utanSilver: true }); v += l.varor.reduce((a, w) => a + w.n * grundvarde(w.k), 0); }
+  pungMinne.set(k, { t: tim, v });
+  return v;
+}
+// gästerna per dygn som kan betala priset (efterfragan i foretag.ts, steg 15.1.13)
+gastFlode.push((s, pris) => foretagOf(s).length ? klanerOf(s).reduce((a, k) => a + (gastPung(s, k) >= pris ? Math.max(...foretagOf(s).map(f => lockar(f, k))) : 0), 0) : 0);
 export const finChans = (f: Foretag, k: Klan) => k.inst < 0 || k.rad === undefined ? 0 : clamp(FGAST.fin + FGAST.finRykte * ryktetI(f, k.rad) + FGAST.finInst * k.inst / 100, 0, 1);
 // i timmens takt (TAKTER): kommer någon?
 export function foretagsgasterKommer(s: State, sek: number) {
@@ -92,7 +108,7 @@ export function nyForetagsgast(s: State, f: Foretag, k: Klan, rang?: RangId): Pe
   if (kp?.kropp) gastTillbaka(s, p);
   p.finForv = clamp(FORVANTAN.grund + R(p).forv, FORVANTAN.min, FORVANTAN.max);
   // silvret tas ur hembyn
-  const hem = Math.floor((r?.tal.silver ?? 0) / Math.max(1, r?.tal.folk ?? 1) * R(p).silver), sil = Math.min(r ? Math.floor(r.tal.silver) : R(p).minst, Math.max(R(p).minst, hem));
+  const sil = gastSilver(r, R(p));
   p.gast!.silver = sil;
   p.rest = clamp(p.rest - FGAST.vag * (k.dygn ?? 0), 0.1, 1); // trött av vägen
   if (R(p).fin || u(6) < FGAST.ridande) p.gast!.riddjur = 1;

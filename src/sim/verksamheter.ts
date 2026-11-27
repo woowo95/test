@@ -61,7 +61,7 @@ VERKSAMHETER.nattlogi = {
   varor: s => living(s).some(p => knows(p, 'halmbadd')) ? ['natt'] : [],
   noje: (_s, p) => p.gast ? VERK.natt * (1 - p.rest) : 0, // byborna sover hemma
   snitt: () => VERK.natt * 0.5, grund: () => 0,
-  perDygn: () => 0, gaster: s => gastFlode.reduce((a, g) => a + g(s), 0) * VERK.trott,
+  perDygn: () => 0, gaster: (s, pris) => gastFlode.reduce((a, g) => a + g(s, pris), 0) * VERK.trott,
   kunnande: p => skick(p.skill.handel),
   egen: {
     har: (s, f) => ledigaBaddar(s, f).length ? ['natt'] : [],
@@ -77,7 +77,7 @@ VERKSAMHETER.stall = {
   varor: s => living(s).some(p => knows(p, 'snickarbank')) && FODER.some(k => living(s).length && s.stackar?.some(a => a.k === k)) ? ['djurvard'] : [],
   noje: (_s, p) => p.gast?.riddjur ? VERK.stall : 0,
   snitt: () => VERK.stall, grund: () => grundvarde(FODER[0]),
-  perDygn: () => 0, gaster: s => gastFlode.reduce((a, g) => a + g(s), 0) * VERK.ridande,
+  perDygn: () => 0, gaster: (s, pris) => gastFlode.reduce((a, g) => a + g(s, pris), 0) * VERK.ridande,
   kunnande: p => skick((p.skill.skotsel + p.skill.handel) / 2),
   egen: {
     har: (s, f) => iHelaForradet(() => foderAv(s, f.ag)) ? ['djurvard'] : [],
