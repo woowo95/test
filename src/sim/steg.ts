@@ -61,7 +61,7 @@ import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
 import { FYND, fyndAt, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, richness, richnessDelar, richnessFor, type Lager, takeFrom } from './fynd';
 import { halMin, halVal, isKost, isNiva, islagt, stepIs, halGjort } from './is';
 import { blotSteg, coldOf, forVarm, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
-import { ELD, VED, type Tand, turMal, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, letaFattas, letarNu, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tryLight, nagonEld, plockatKvar, woodDays } from './eld';
+import { ELD, VED, brinnerNara, type Tand, turMal, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, letaFattas, letarNu, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tryLight, nagonEld, plockatKvar, woodDays } from './eld';
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat } from './folk';
 import { BIN, binDod, binSteg, djurStickSteg, retadeSteg, skattaKlar } from './bin';
@@ -86,7 +86,7 @@ import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Fire, Person, SEC, SKILL_NAME
 import { FOREST, findPath, wear } from './vag';
 import { barKropp, gangVakt, kroppFart, rutFart, smidig, snoFart } from './gang';
 import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './ljus';
-import { arbetsTimme, chooseTask, farligtBehov, nastaRedskap, spotFor } from './val';
+import { VAL, arbetsTimme, chooseTask, eldOrd, farligtBehov, nastaRedskap, spotFor } from './val';
 import { FAGEL, djurSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { bjornSteg, bjornjaktSteg } from './bjorn';
@@ -884,6 +884,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     if (!alive(p)) break; // dödad mitt i steget, i en strid hen själv började (en vargjakt hen kallade till); kodgenomgången 3.10.25
     s.now = t1 - left * SEC;
     const now = s.now, light = isLight(now), t = p.task;
+    if (t?.eldText && !brinnerNara(s, t.tx, t.ty, VAL.eldNara)) { t.why = eldOrd(s, t.why ?? '', t.tx, t.ty); t.eldText = undefined; } // elden har slocknat: texten säger var hen är (steg 15.1.5)
     const phaseFlip = t && t.dark !== !light && ACTS[t.act].dygn; // dag blev natt eller tvärtom
     if (t && t.phase === 'do' && t.until <= now) iRackhall(p.x, p.y, () => KLAR[t.act]?.(s, p, t, 0)); // ett träd som fällts färdigt, en yxa som gjorts klar
     const tf = t?.act === 'tanda' ? eldById(s, t.ref) : undefined, lightDone = t?.act === 'tanda' && (!tf || tf.lit || !t.brand && !t.vanda && !(t.phase === 'do' ? iRackhall(p.x, p.y, () => canLight(s, p, tf)) : iHelaForradet(() => canLight(s, p, tf), t.site ?? { x: t.tx, y: t.ty }))); // framme: det hen bär och når, som försöken (steg 11.1.75); på väg efter mer: också det som redan ligger vid eldplatsen

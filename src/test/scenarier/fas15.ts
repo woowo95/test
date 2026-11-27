@@ -85,3 +85,25 @@ SCENARIER.avbrott = {
     ];
   },
 };
+
+SCENARIER.eldtext = {
+  text: 'Steg 15.1.5: texten säger "vid elden" bara när en eld brinner nära, annars "i mörkret" eller "i huset". Slocknar elden medan man sitter kvar byter texten',
+  kor: () => {
+    const s = SIM.createState(5, START); klockan(s, 21); tandEld(s, 6); setMat(s, { torrkott: 100 });
+    const folk = SIM.living(s), vid = () => folk.find(p => (p.task?.why ?? '').includes(' vid elden'));
+    for (let i = 0; i < 20 && !vid(); i++) for (const p of folk) { Object.assign(p, { hunger: 0.9, rest: 0.6, social: 0.3, toa: 0.9, torst: 0.9, warm: 0.9, health: 1 }); p.task = undefined; SIM.chooseTask(s, p); }
+    const p = vid(), fore = p?.task?.why ?? '(ingen)';
+    for (const f of SIM.eldarOf(s)) Object.assign(f, { lit: false, fuel: 0 }); // elden brinner ut
+    kor(s, 0.05);
+    const efter = p?.task?.why ?? '';
+    // utan eld från början säger texten aldrig "vid elden"
+    const m = SIM.createState(5, START); klockan(m, 21); setMat(m, { torrkott: 100 }); for (const f of SIM.eldarOf(m)) Object.assign(f, { lit: false, fuel: 0 });
+    const texter: string[] = [];
+    for (const q of SIM.living(m)) { Object.assign(q, { hunger: 0.9, rest: 0.6, social: 0.3, toa: 0.9, torst: 0.9, warm: 0.9, health: 1 }); q.task = undefined; SIM.chooseTask(m, q); texter.push((q.task as SIM.Task | undefined)?.why ?? ''); }
+    return [
+      [`någon säger att hen är vid elden när den brinner (${fore})`, !!p],
+      [`när elden brunnit ut säger texten var hen är (${efter})`, !!p && !efter.includes(' vid elden') && /i mörkret|i huset|ute/.test(efter)],
+      [`utan eld säger ingen "vid elden" (${texter.filter(w => w.includes(' vid elden')).length} av ${texter.length})`, !texter.some(w => w.includes(' vid elden'))],
+    ];
+  },
+};

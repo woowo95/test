@@ -31,7 +31,7 @@ import { brandHetta, brandUndan, brandVal, hjalpaVal, slackaSigVal } from './bra
 import { foodDays, foodDaysAll } from './ekonomi';
 import { ACTS, WORK, redskapTal, usesTool } from './handlingar';
 import { flyttaEldVal } from './eldflytt';
-import { arTand, tandStalle, turMal, eldFor, eldForst, eldXY, nagonGlod, eldarOf, emberOn, vidEld, type LetaSak, letaMest, stenTill, woodDays } from './eld';
+import { arTand, tandStalle, turMal, eldFor, eldForst, eldXY, nagonGlod, eldarOf, emberOn, vidEld, type LetaSak, letaMest, stenTill, woodDays, brinnerNara } from './eld';
 import { ALDER, KROPP, REL, ageOf, count, enTill, enTillDar, familjOf, isSick, living, relKey, stat } from './folk';
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
@@ -115,6 +115,7 @@ import { ligger } from './sjukdom';
 export const VAL = balans('val', {
   // alla pass
   pass: 0.5, // dagens pass är så stor del av vad de var före steg 1.5.11 (arbete, bygge och fritid kortas lika mycket)
+  eldNara: 4, // så nära (rutor) brinner en eld när texten säger "vid elden" (steg 15.1.5)
   vilaMin: 20, vilaSpann: 40, // ett val som inte säger annat (nöd och grundbehov)
   toaMin: 4, toaSpann: 4, // ett toabesök
   // var man arbetar (spotFor)
@@ -722,6 +723,9 @@ const nodUnder = (x: number, grans: number) => 1 + clamp(1 - x / grans, 0, 1); /
 // ett farligt behov (steg 15.1.4): törsten, hungern eller kylan vid de gränser där nödraderna tar över. Det avbryter ett långt
 // arbete eller ett vaktpass som toan gör (taskStep i steg.ts), och den som valde sin uppgift med behovet redan farligt har
 // räknat med det i poängen och avbryts inte igen
+// var man är, i ord: i huset, vid elden när en eld brinner nära, annars i mörkret eller ute (steg 15.1.5)
+export const platsOrd = (s: State, x: number, y: number) => roomAt(s, x, y) ? 'i huset' : brinnerNara(s, x, y, VAL.eldNara) ? 'vid elden' : isLight(s.now) ? 'ute' : 'i mörkret';
+export const eldOrd = (s: State, why: string, x: number, y: number) => why.replace(' vid elden', ' ' + platsOrd(s, x, y));
 export const farligtBehov = (p: Person) => tortarFarligt(p) || p.hunger < KROPP.hungrig * VARDRATT.snal || p.warm < KROPP.farligt;
 export const ARBETEN: readonly Arbete[] = [
   // 1 Fara: vargar är nära (steg 3.7.15), en tornado kommer (steg 3.8.4), det brinner (steg 3.8.5) eller vattnet stiger (steg 3.8.7)
@@ -1103,8 +1107,11 @@ function valjTask(s: State, p: Person) {
   const mal = !v.spot && turMal(v as unknown as Task);
   if (mal) v.spot = tandStalle(s, p, mal); // turen går dit målet finns, närmast (steg 12.1.39)
   const sp0 = v.spot ?? spotFor(s, v.act, p); let sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
-  if (v.viloPlats && v.act === 'vila') v.why += roomAt(s, sp.x, sp.y) ? ' i huset' : ' vid elden';
-  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(farligtBehov(p) ? { nodVald: true as const } : {}), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, fron: v.fron, hot: v.hot, falt: v.falt, sno: v.sno, ho: v.ho, gava: v.gava, skal: v.skal, hamtar: v.hamtar, lon: v.lon, brand: v.brand, kalla: v.kalla, stanna: v.stanna, eldFor: v.eldFor, pass: v.pass !== undefined ? s.now + v.pass : undefined };
+  if (v.viloPlats && v.act === 'vila') v.why += ' vid elden';
+  // texten säger "vid elden" bara när en eld brinner nära platsen (steg 15.1.5); slocknar den byts texten (taskStep i steg.ts)
+  const vidE = v.why.includes(' vid elden');
+  if (vidE) v.why = eldOrd(s, v.why, sp.x, sp.y);
+  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(farligtBehov(p) ? { nodVald: true as const } : {}), ...(vidE ? { eldText: true as const } : {}), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, fron: v.fron, hot: v.hot, falt: v.falt, sno: v.sno, ho: v.ho, gava: v.gava, skal: v.skal, hamtar: v.hamtar, lon: v.lon, brand: v.brand, kalla: v.kalla, stanna: v.stanna, eldFor: v.eldFor, pass: v.pass !== undefined ? s.now + v.pass : undefined };
   balteForband(s, p, p.task.act);
   if (ACTS[v.act].plats === 'station') { const st = stationFor(s, v.act, p); if (st && Math.hypot(sp.x - vidStation(st).x, sp.y - vidStation(st).y) < 2) stationBrukad(s, st); } // hur mycket stationen används (steg 9.4.8)
   if (v.act === 'samtal' && !v.spot) samtalMed(s, p); // fram till den man vill prata med (steg 4.5.6.7)
