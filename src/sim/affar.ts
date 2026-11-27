@@ -8,7 +8,7 @@ import { count, familjOf, living } from './folk';
 import { brukAv, MAT, ownFor, saknarNu } from './behov';
 import { VED } from './eld';
 import { foretagare, foretagOf, foretagRum, type Foretag } from './foretag';
-import { arAgd, taUrStack, lying, rymdPa, stacksOf, changed, tidy, dropSpot, besokLager, stallPaRutan } from './lager';
+import { arAgd, taUrStack, lying, rymdPa, stacksOf, changed, tidy, dropSpot, besokLager, stallPaRutan, iHelaForradet } from './lager';
 import { betjanar, diskarAv, saljPart } from './kassa';
 import { foretagBord, isKlar, type Station, stationDef, stationerOf, stationRum } from './stationer';
 import { grundvarde } from './varde';
@@ -80,7 +80,7 @@ export function attStalla(s: State, f: Foretag, utanRuta = false): HyllVara | un
 export function stallaVal(s: State, p: Person): { f: Foretag; h: HyllVara; sc: number } | undefined {
   let bast: { f: Foretag; h: HyllVara; sc: number } | undefined;
   for (const f of s.foretag ?? []) {
-    if (!f.verk.includes('affar')) continue;
+    if (!f.verk.includes('affar') || !diskarAv(s, f).length) continue; // utan disk kan inget säljas, och då är det inget värt att ställa fram (steg 15.1.14)
     const g = betjanar(s, p, f);
     if (g <= 0 || living(s).some(q => q !== p && q.task?.act === 'stallaFram' && q.task.ref === f.id)) continue;
     const h = attStalla(s, f);
@@ -96,7 +96,8 @@ export function stallaKlar(s: State, p: Person, t: Task) {
   if (g) { g.x = g.y = undefined; g.lass = p.id; (t.ting ??= []).push(g.id); changed(s); return; }
   const a = stacksOf(s).find(q => q.x === x && q.y === y && q.k === t.tool);
   if (!a) return;
-  const over = saljPart(s, f)?.over([]).find(w => w.k === a.k && !w.t)?.n ?? 0, max = Math.min(Math.floor(arAgd(a, f.ag) + 1e-9), Math.floor(over + 1e-9), rymdPa(s, till.x, till.y, a.k)), r = ryms(s, p);
+  const over = iHelaForradet(() => saljPart(s, f)?.over([]).find(w => w.k === a.k && !w.t)?.n ?? 0), // på hela förrådet, som när arbetet valdes (steg 15.1.14)
+    max = Math.min(Math.floor(arAgd(a, f.ag) + 1e-9), Math.floor(over + 1e-9), rymdPa(s, till.x, till.y, a.k)), r = ryms(s, p);
   let n = 0;
   while (n < max && r({ [a.k]: (n + 1) * viktOf(a.k) })) n++;
   if (n > 0) { taUrStack(s, a, n, f.ag, t); tidy(s); }

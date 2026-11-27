@@ -241,3 +241,30 @@ SCENARIER.gastefterfragan = {
     ];
   },
 };
+
+SCENARIER.stallafram = {
+  text: 'Steg 15.1.14: ägaren fastnar inte vid varubordet. Det ägaren har över räknas på hela förrådet när hen är framme vid högen, som när arbetet valdes, så att varan flyttas och hen sedan gör annat. I en affär utan disk är det inget värt att ställa fram',
+  kor: () => {
+    const { s, p, f, vux, fin } = foretagBy(['affar']);
+    for (const q of s.people) q.task = undefined;
+    for (const m of SIM.FOOD) if (m !== fin) SIM.setAmount(s, m, 0); // bara ägaren har mat, och de andra är hungriga
+    const v1 = SIM.stationSite(s, 'varubord')!;
+    s.stationer!.push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'varubord', x: v1.x, y: v1.y, rot: v1.rot, kvar: 0, inne: 1 } as unknown as SIM.Station); SIM.touch(s);
+    for (const q of vux) { SIM.laggIn(s, 'silver', 60, q.id); q.hunger = 0.3; q.bruk = undefined; }
+    const val = SIM.stallaVal(s, p);
+    let starter = 0, forra: SIM.Task | undefined;
+    const lyckat0 = s.stat?.stalltFram ?? 0;
+    for (let i = 0; i < 2 * 360; i++) { SIM.step(s, 10); const t = p.task; if (t && t !== forra && t.act === 'stallaFram') starter++; forra = t; } // korta slag, så att varje gång syns
+    const lyckat = (s.stat?.stalltFram ?? 0) - lyckat0;
+    const framme = SIM.hyllan(s, f).length;
+    // utan disk ställs inget fram
+    s.stationer = s.stationer!.filter(t => t.k !== 'disk'); SIM.touch(s); p.task = undefined;
+    const utanDisk = SIM.stallaVal(s, p);
+    return [
+      [`ägaren vill ställa fram något (${val?.h.k ?? 'inget'})`, !!val],
+      [`varan kom upp på varubordet (${framme} framme)`, framme > 0],
+      [`ägaren ställer fram några gånger och gör sedan annat (${starter} gånger på två timmar, ${lyckat} lyckade)`, starter >= 1 && starter <= lyckat + 1],
+      [`i en affär utan disk ställs inget fram (${utanDisk?.h.k ?? 'inget'})`, !utanDisk],
+    ];
+  },
+};
