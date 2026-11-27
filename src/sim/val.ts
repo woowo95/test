@@ -54,7 +54,7 @@ import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, forstRuttnar, fre
 import { PROJEKT, PROJEKT_LIST, PROJEKT_TAL, Uppgift, arv, bastaProjekt, bristAlla, hamtas, projektNu } from './projekt';
 import { omtanke } from './omtanke';
 import { anstByn, vaktAntalKrok } from './dagsarbete';
-import { beredRedskap, faltNu, froBrist, vildFronPlats } from './odling';
+import { beredRedskap, faltNu, faltTillUppgift, faltTillVarde, froBrist, vildFronPlats } from './odling';
 import { type Tur, areaOf, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
 import { bordPlats, kladFor, kladPlatser, plaggPoang, rustaVal, ryggsack, ryms } from './utrustning';
@@ -941,6 +941,9 @@ export const ARBETEN: readonly Arbete[] = [
   // fältarbetet, vattnet till fältet och örtköket och fisken i mjärden vägs med poäng under Försörjning (steg 13.8.3)
   { id: 'faltArbete', niva: 6, nar: 'dag', poang: c => c.a >= ALDER.vuxen && dag(c).works && faltNu(c.s, c.p, false) ? VAL.faltVikt : 0,
     prova: c => { const sk = faltNu(c.s, c.p, false); if (!sk) return false; projektVal(c.v, { act: 'odla', text: sk.text, min: sk.min, tool: sk.tool, spot: sk.spot, ref: sk.ref }, 'Arbetar vidare på sitt fält'); return true; } },
+  // ett fält till (steg 13.9.13, odling.ts): vägs som fältarbetet, gånger det fältet är värt för familjen och farten på fältet
+  { id: 'faltTill', niva: 6, nar: 'dag', poang: c => c.a >= ALDER.vuxen && dag(c).works && faltTillUppgift(c.s, c.p) ? VAL.faltVikt * faltTillVarde(c.s, c.p) : 0,
+    prova: c => { const sk = faltTillUppgift(c.s, c.p); if (!sk) return false; projektVal(c.v, { act: 'odla', text: sk.text, min: sk.min, tool: sk.tool, spot: sk.spot }, 'Familjen behöver mer mat'); return true; } },
   { id: 'vattna', niva: 6, nar: 'dag', poang: c => { if (!dag(c).works) return 0; const d = vattenVal(c.s, c.p, 'odla'); return d ? d.sc : 0; },
     prova: ({ s, p, v }) => hamtaVatten(s, p, v, 'odla') },
   { id: 'vittjaMat', niva: 6, nar: 'dag', poang: c => { if (c.a < ALDER.vuxen || !dag(c).works || !mjardeAttTa(c.s, c.p)) return 0; const d = dag(c); return VAL.mognaVikt + Math.max(d.wBy, d.wEgen) * d.rad.mat.sc; },

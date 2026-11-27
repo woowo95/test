@@ -2841,7 +2841,7 @@ SCENARIER.snosmalt = {
 };
 
 SCENARIER.faltvikt = {
-  text: 'Steg 13.9.13: en familj som redan har ett fält röjer ett till när det är värt det: när familjen saknar mat mot sin egen buffert eller andra i byn saknar mat och kan betala för den, och mer värt för den som är skicklig på att odla. Ingen regel om ett fält per familj',
+  text: 'Steg 13.9.13: en familj som redan har ett fält röjer ett till när det är värt det: när familjen saknar mat mot sin egen buffert eller andra i byn saknar mat och kan betala för den, och mer värt för den som är skicklig på att odla och har skäran eller lien. Det är en rad under Försörjning, inte en regel om ett fält per familj',
   kor: () => {
     const s = testBy(25, b => SIM.faltOf(b).some(f => living(b).some(q => q.id === f.agare && ageOf(q, b.now) >= SIM.ALDER.vuxen)));
     klockan(s, 10);
@@ -2853,7 +2853,7 @@ SCENARIER.faltvikt = {
     const andra = living(s).filter(q => !q.gast && !ids.has(q.id) && ageOf(q, s.now) >= SIM.ALDER.vuxen);
     const tim = () => Math.floor(s.now / HOUR);
     const ingen = () => { for (const q of living(s)) q.bruk = { t: tim(), k: [] }; };
-    const varde = () => SIM.personVarde(s, 'faltTill', fam, SIM.omtanke(s, p), p);
+    const varde = () => SIM.faltTillVarde(s, p); // raden under Försörjning (val.ts) väger det gånger VAL.faltVikt
     // byn delar allt och ingen saknar mat: inget fält till
     s.delning = { ...(s.delning ?? {}), andel: 1 } as typeof s.delning;
     ingen();
@@ -2866,10 +2866,14 @@ SCENARIER.faltvikt = {
     for (const q of andra) SIM.put(s, 'silver', 5, { [q.id]: 5 });
     const v1 = varde(), u1 = SIM.faltTillUppgift(s, p);
     // den skicklige ser mer värde per egen timme
-    const sk = SIM.kunnaSkill('odla'), fore = p.skill[sk];
-    p.skill[sk] = 0; const oskicklig = varde();
-    p.skill[sk] = 30; const skicklig = varde();
-    p.skill[sk] = fore;
+    const fore = p.skill.odling;
+    p.skill.odling = 0; const oskicklig = varde();
+    p.skill.odling = 30; const skicklig = varde();
+    p.skill.odling = fore;
+    // skäran och lien röjer fortare, och då är ett fält till värt mer
+    const utan = SIM.faltFart(s, p);
+    SIM.addTool(s, 'skara', p); const skara = SIM.faltFart(s, p), rSkara = SIM.rojRedskap(s, p)?.k;
+    SIM.addTool(s, 'lie', p); const lie = SIM.faltFart(s, p), rLie = SIM.rojRedskap(s, p)?.k;
     // familjen saknar mat mot sin egen buffert, och ingen köper: också värt något
     s.now += HOUR; ingen();
     s.delning = { ...(s.delning ?? {}), andel: 0.3 } as typeof s.delning;
@@ -2884,6 +2888,7 @@ SCENARIER.faltvikt = {
       [`byn delar allt och ingen saknar mat: ett fält till är inte värt något (${v0.toFixed(2)})`, v0 === 0 && finns],
       [`andra saknar mat och kan betala (${andra.length} vuxna): det är värt något (${v1.toFixed(2)}) och uppgiften är att röja`, v1 > 0 && u1?.tool === 'roja'],
       [`den skicklige ser mer värde per egen timme (${oskicklig.toFixed(3)} → ${skicklig.toFixed(3)})`, skicklig > oskicklig],
+      [`skäran och lien röjer fortare (fart ${utan.toFixed(2)} → ${skara.toFixed(2)} med ${rSkara} → ${lie.toFixed(2)} med ${rLie})`, skara > utan && lie > skara && rSkara === 'skara' && rLie === 'lie'],
       [`familjen saknar mat: också värt något (${v2.toFixed(2)})`, v2 > 0],
       [`det nya fältet röjs åt familjen (${n0} → ${SIM.faltOf(s).length} fält)`, !!ny && ny.agare === p.id],
     ];

@@ -77,6 +77,9 @@ export const ODLING = balans('odling', {
   beredaMin: 4, // minuters arbete per ruta att gräva upp jorden för hand (8 före steg 3.10.23) ...
   beredaSpade: 4 / 1.5, // ... så här många gånger fortare med benspaden: 1,5 minuter (3,2 före steg 3.10.23) ...
   spadeSlit: 0.0125, // ... som slits så här mycket per ruta
+  rojaSkara: 1.5, // röjningen av gräs och buskar går så här många gånger fortare med skäran (steg 13.9.13) ...
+  rojaLie: 4.5, // ... och med lien från smedjan, som slår tre gånger så fort som skäran ...
+  rojaSlit: 0.01, // ... och redskapet slits så här mycket per ruta
   beredaHacka: 6, // med järnhackan från smedjan så här många gånger fortare: 0,67 minuter per ruta (steg 13.7.1) ...
   hackaSlit: 0.5, // ... och den slits så här stor del av spadens slitage per ruta
   saMin: 1, // minuters arbete per ruta att så (2 före steg 3.10.23)
@@ -434,9 +437,9 @@ function nyttFaltUppgift(s: State, p: Person): FaltUppgift | undefined {
   return at && { tool: 'roja', text: `${FALT_STEG.roja.gor}.`, min: ODLING.pass, spot: { x: at.x + 0.5, y: at.y + 0.5 } };
 }
 // Ett fält till (steg 13.9.13, Arbetsdelningen: Maten åt resten): en familj som redan har ett fält röjer ett till när det är
-// värt det, inte efter en regel om ett fält per familj. Det vägs i projekten (projekt.ts) efter faltTillEgen: hur mycket mat
-// familjen saknar mot sin egen buffert, och hur många av de andra i byn som saknar mat och kan betala för den. Byns brist
-// räknas inte, för fältet blir familjens. Den som är bäst på att odla ser mest värde per egen timme (arbetet i projektet)
+// värt det, inte efter en regel om ett fält per familj. Det är en rad under Försörjning i valet (val.ts), som fältarbetet, och
+// vägs med faltTillVarde: hur mycket mat familjen saknar mot sin egen buffert och hur många av de andra i byn som saknar mat och
+// kan betala för den, gånger hur fort p röjer, gräver och sår (redskapen och skickligheten). Den som odlar bäst odlar åt resten
 export function faltTillUppgift(s: State, p: Person): FaltUppgift | undefined {
   if (!isLight(s.now) || !kanOdla(s, p) || !faltOf(s).some(f => f.agare === p.id) && !familjFalt(s, p)) return undefined;
   if (faltUppgift(s, p)) return undefined; // det finns arbete på familjens fält
@@ -463,6 +466,7 @@ export function faltTillEgen(s: State, fam: readonly Person[], p?: Person) {
   const salja = andra.length ? andra.filter(id => k.ids.has(id)).length / andra.length : 0;
   return clamp(saknar + salja, 0, 1);
 }
+export const faltTillVarde = (s: State, p: Person) => faltTillEgen(s, familjOf(s, p.id), p) * faltFart(s, p);
 // arbetet på fältet (val.ts): den mogna grödan skördas före förbättringar, och den vars familj har ett fält arbetar på det när
 // ingen fara går före. Ett nytt fält är ett projekt (projekt.ts)
 export function faltNu(s: State, p: Person, fara: boolean) {
@@ -499,8 +503,21 @@ function plogar(s: State, p: Person): BeredRedskap | undefined {
   return bast;
 }
 export const beredRedskap = (s: State, p: Person): BeredRedskap | undefined => [...BEREDA_REDSKAP().filter(r => ledigaRedskap(s, p, r.k)), plogar(s, p)].filter(r => !!r).sort((a, b) => b!.fart - a!.fart)[0];
-// fart på fältet: att gräva upp jorden går fortare med det snabbaste lediga redskapet
-const fart = (s: State, p: Person, st: FaltSteg) => (st === 'bereda' ? beredRedskap(s, p)?.fart ?? 1 : 1) * (1 + (p.skill.odling ?? 0) / ODLING.skillFart); // färdigheten Odling (steg 9.7.7)
+// redskapen som röjer gräset och buskarna (steg 13.9.13): skäran och lien, som vid slåttern. Den som röjer tar det lediga som går fortast
+export const ROJA_REDSKAP = () => [
+  { k: 'skara', fart: ODLING.rojaSkara, slit: ODLING.rojaSlit },
+  { k: 'lie', fart: ODLING.rojaLie, slit: ODLING.rojaSlit },
+];
+export const rojRedskap = (s: State, p: Person): BeredRedskap | undefined => ROJA_REDSKAP().filter(r => ledigaRedskap(s, p, r.k)).sort((a, b) => b.fart - a.fart)[0];
+const stegRedskap = (s: State, p: Person, st: FaltSteg) => st === 'bereda' ? beredRedskap(s, p) : st === 'roja' ? rojRedskap(s, p) : undefined;
+// fart på fältet: att röja och gräva upp jorden går fortare med det snabbaste lediga redskapet, och allt fortare med färdigheten
+const fart = (s: State, p: Person, st: FaltSteg) => (stegRedskap(s, p, st)?.fart ?? 1) * (1 + (p.skill.odling ?? 0) / ODLING.skillFart); // färdigheten Odling (steg 9.7.7)
+// hur många gånger fortare än för hand p röjer, gräver och sår ett nytt fält, med redskapen och skickligheten (steg 13.9.13)
+export function faltFart(s: State, p: Person) {
+  const steg: FaltSteg[] = ['roja', 'bereda', 'sa'];
+  const hand = steg.reduce((a, st) => a + minPer(st), 0), med = steg.reduce((a, st) => a + minPer(st) / fart(s, p, st), 0);
+  return med > 0 ? hand / med : 1;
+}
 // arbetet som är kvar på rutorna i steget st (ms), utan farten: på sådden bara så många rutor som det finns frön till
 function kvarTid(s: State, p: Person, f: Falt, st: FaltSteg) {
   let ms = 0, n = 0;
@@ -587,6 +604,8 @@ export function rutaKlar(s: State, p: Person, f: Falt, k: number) {
     const i = faltRuta(f, k), g = groundOf(s); g.trees[i] = 0; g.cover[i] = 0; tabortBuske(g, i); // gräs, buskar och ungskog är borta
     r.st = 'bereda';
     if (forstaGang(s, 'faltForst')) { log(s, `${p.name} röjde byns första fält. Där ska frön sås.`, 'world', [p.id]); p.fame.push('Röjde byns första fält'); }
+    const rr = rojRedskap(s, p); // skäran eller lien slits (steg 13.9.13)
+    if (rr && wearTool(s, p, rr.k, rr.slit)) { const tr = SAKER[rr.k]?.trasig; if (tr) count(s, tr.stat); }
   } else if (r.st === 'bereda') {
     const rd = beredRedskap(s, p), pt = rd?.ting !== undefined ? tingOf(s).find(q => q.id === rd.ting) : undefined; // det snabbaste lediga redskapet slits (steg 13.7.1), plogen i bördan (13.7.2)
     if (rd && (pt ? slitTing(s, pt, rd.slit) : wearTool(s, p, rd.k, rd.slit))) { const tr = SAKER[rd.k]?.trasig; if (tr) count(s, tr.stat); }

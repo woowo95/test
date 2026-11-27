@@ -20,7 +20,7 @@ import { DJURARTER, GORS, ersattAv, freeOfKinds, harAv, makeTask, minOf, receptT
 import { foretagBord, moblerKrok, STATIONER, STATION_LIST, StationDef, StationSlag, TILLBEHOR, TILLBEHOR_LIST, TillbehorDef, TillbehorSlag, kanBygga, kanGoraTillbehor, receptStation, receptTillbehor, stationSpot, medPlatsMinne, villKista, tillbehorSpot, tillbehorStationer, utanTillbehor } from './stationer';
 import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './bygg';
-import { GRODOR, ODLING, STAKET, faltBrist, faltTillEgen, faltTillUppgift, faltUppgift } from './odling';
+import { GRODOR, ODLING, STAKET, faltBrist, faltUppgift } from './odling';
 import { hageBrist, hageUppgift } from './hage';
 import { VINTER, angBrist, angUppgift } from './slatter';
 import { SKOG, stamTill, fallTid, fellingTiles, klyvStam, stockOverHus, egenStock, fallVilja, rojSpot, rojBrist, slyBrist, slySpot, stubbBrist, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
@@ -94,7 +94,6 @@ export const PROJEKT_TAL = balans('projekt', {
   uppsatt: 0.4, // ... att sätta upp en fackla där folk ofta är vakna i mörker (steg 6.3.7, ljus.ts)
   hage: 1, ang: 1, // ... hagen och ängen åt betesdjuren (steg 10.2.36)
   falt: 1, // ... arbetet på fälten när ett fält har arbete att göra, eller någon som kan odla har frön men inget fält (steg 2.10.3)
-  faltTill: 1, // ... ett fält till åt en familj som redan har ett, när familjen saknar mat eller andra i byn saknar och kan betala (steg 13.9.13)
   minKostnad: 0.25, // kostnaden räknas aldrig under så här många arbetstimmar
 });
 // vikten för projektet k i PROJEKT_TAL, eller annars om det inte har en egen rad
@@ -372,17 +371,6 @@ export const PROJEKT: Record<string, ProjektDef> = {
     kostnad: () => varuVarde({ [GRODOR.rovor.fro]: ODLING.froPerRuta * ODLING.rutorPerMun }, (ODLING.beredaMin + ODLING.saMin) * ODLING.rutorPerMun / 60 * ARBETE), // ett fält för en person
     kan: (s, p) => !!faltUppgift(s, p),
     uppgift: (s, p) => { const u = faltUppgift(s, p); return u && { act: 'odla', text: u.text, min: u.min, tool: u.tool, spot: u.spot, ref: u.ref }; },
-  },
-  // ett fält till (steg 13.9.13, odling.ts): för en familj som redan har ett, vägt efter maten familjen saknar och kan sälja.
-  // Byns brist räknas inte, för fältet blir familjens; den som är bäst på att odla ser mest värde per egen timme
-  faltTill: {
-    namn: 'Ett fält till', vikt: PROJEKT_TAL.faltTill, skal: 'Familjen behöver mer mat',
-    brist: () => 0,
-    egen: (s, fam, p) => faltTillEgen(s, fam, p),
-    kostnad: () => varuVarde({ [GRODOR.rovor.fro]: ODLING.froPerRuta * ODLING.rutorPerMun }, (ODLING.beredaMin + ODLING.saMin) * ODLING.rutorPerMun / 60 * ARBETE),
-    arbete: { act: 'odla', min: (ODLING.beredaMin + ODLING.saMin) * ODLING.rutorPerMun },
-    kan: (s, p) => !!faltTillUppgift(s, p),
-    uppgift: (s, p) => { const u = faltTillUppgift(s, p); return u && { act: 'odla', text: u.text, min: u.min, tool: u.tool, spot: u.spot }; },
   },
   // hagen åt betesdjuren (steg 9.8.4 och 10.2.36, hage.ts): staketet runt den, eller att märka ut en ny så stor som djuren behöver
   hage: {
