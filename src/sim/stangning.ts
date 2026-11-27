@@ -27,8 +27,10 @@ export const STANG = balans('stangning', {
 // det ägaren fått ut av företaget utöver vad hen kunde tjänat på annat, för ett dygn med så mycket vinst och så många kunder
 export function dygnsResultat(s: State, f: Foretag, vinst: number, kunder: number) {
   const p = foretagare(s, f.ag), h = f.hus !== undefined ? husById(s, f.hus) : undefined;
-  if (!p || !h) return 0;
-  return vinst - kunder * FORETAG.timKund * egetVarde(s, p) - husKostnad((h.w - 2) * (h.h - 2)) / FORETAG.ar;
+  if (!h) return 0;
+  // utan någon som driver det (byn utan ledare, kyrkan utan präst) kostar ingens timmar, men huset kostar ändå, så att ett
+  // företag som ingen driver går med förlust och säljs eller stängs som de andra
+  return vinst - (p ? kunder * FORETAG.timKund * egetVarde(s, p) : 0) - husKostnad((h.w - 2) * (h.h - 2)) / FORETAG.ar;
 }
 const ryktesVarde = (s: State, f: Foretag) => 1 + STANG.rykte * Math.max(0, ryktet(s, f) ?? 0);
 export const foretagPris = (s: State, f: Foretag, h: Hus) => husPris(s, h) * ryktesVarde(s, f);

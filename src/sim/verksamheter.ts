@@ -50,7 +50,8 @@ const agda = (s: State, ag: number, art: TamArtId): Tamdjur[] => tamdjurOf(s).fi
 export function tillSalu(s: State, ag: number, art: TamArtId): Tamdjur | undefined {
   const d = agda(s, ag, art), honor = d.filter(arHona).length;
   if (d.length <= VERK.par) return undefined;
-  return d.filter(q => tamAlder(s, q) >= tamArt(art).vuxen && (arHona(q) ? honor > 1 : d.length - honor > 1 || honor > VERK.par)).sort((a, b) => a.born - b.born || a.id - b.id)[0];
+  // ett par behålls: en hona säljs bara när det finns fler än en hona, och en hane bara när det finns fler än en hane
+  return d.filter(q => tamAlder(s, q) >= tamArt(art).vuxen && (arHona(q) ? honor > 1 : d.length - honor > 1)).sort((a, b) => a.born - b.born || a.id - b.id)[0];
 }
 const arter = (s: State) => TAM_LIST.filter(a => tamdjurOf(s).some(d => d.art === a && tillSalu(s, d.agare ?? BYN, a) !== undefined));
 const radAv = (s: State, p: Person) => { const nr = klanById(s, p.gast?.klan)?.rad; return s.varld?.rader?.find(r => r.nr === nr); };

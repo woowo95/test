@@ -160,7 +160,7 @@ export function lonRakna(s: State, dt: number) {
   for (const p of living(s)) if (p.lonObetald) p.missnoje = clamp((p.missnoje ?? 0) + DAGS.miss * p.lonObetald * dt / HOUR_S, 0, 1);
 }
 // lönen delen är skyldig för årets anställningar (det budgeten ska ge delen)
-export const skuldFor = (s: State, del: string) => (s.anst ?? []).reduce((n, a) => n + (a.del === del && a.av === BYN && a.verk >= DAGS.minVerk ? a.lon : 0), 0);
+export const skuldFor = (s: State, del: string) => (s.anst ?? []).reduce((n, a) => n + (a.del === del && a.av === BYN && a.verk >= DAGS.minVerk && byId(s, a.p)?.died === undefined ? a.lon : 0), 0); // den döda får ingen lön (lonDygn), så den reserveras inte
 // av betalar n silver till p: silvret först, sedan (byn) hela saker av den mat byn har över bufferten. Svarar med det som betalades
 function betala(s: State, a: Anst, till: number) {
   const id = a.del ? budgetId(a.del) : a.av, silver = Math.min(a.lon, silverAv(s, id));

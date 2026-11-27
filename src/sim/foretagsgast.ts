@@ -40,7 +40,7 @@ export const FGAST = balans('foretagsgast', {
   kop: 4, // så många gånger köper en gäst högst under ett besök (så länge något lockar)
   ata: 10, // så länge (minuter) sitter gästen med det hen köpt
   fran: 9, till: 18, // gästen kommer fram under dagen
-  moten: 6, // så många gånger tas det hen redan haft av samma sort som mindre lockande (1 / antalet)
+  moten: 6, // det hen redan haft lockar mindre: 1 / (1 + antalet gånger × moten)
   vag: 0.4, // ett dygns väg tar så mycket av vilan
   ridande: 0.2, // så ofta kommer en vanlig gäst med ett riddjur (de fina gör det alltid)
   igen: 0.5, // så ofta är det någon som varit här förut, om det finns någon
@@ -55,7 +55,7 @@ export const RANG = {
   hovding: { namn: 'Hövding', titel: 'Hövdingen', silver: 3, minst: 20, kg: 18, forv: FORVANTAN.ledare + FORVANTAN.rik * 2, vikt: 4, fin: true, roll: /hövding/i },
 } as const satisfies Record<string, Rang>;
 export type RangId = keyof typeof RANG;
-const RANGER = Object.keys(RANG) as RangId[];
+const RANGER = Object.keys(RANG) as RangId[], FINA = RANGER.filter(x => (RANG[x] as Rang).fin);
 const R = (p: Person): Rang => RANG[p.gast!.rang ?? 'vanlig'];
 const radAv = (s: State, p: Person) => { const nr = klanById(s, p.gast?.klan)?.rad; return s.varld?.rader?.find(r => r.nr === nr); };
 
@@ -79,7 +79,7 @@ export function foretagsgasterKommer(s: State, sek: number) {
 export function nyForetagsgast(s: State, f: Foretag, k: Klan, rang?: RangId): Person | undefined {
   const nr = (s.gastNr ?? 0) * 7919 + k.id, u = (i: number) => hash3(s.seed, nr, i, 0x6a58);
   const r = s.varld?.rader?.find(q => q.nr === k.rad);
-  let id = rang ?? (u(0) < finChans(f, k) ? RANGER.filter(x => (RANG[x] as Rang).fin)[Math.floor(u(1) * 3)] : 'vanlig');
+  let id = rang ?? (u(0) < finChans(f, k) ? FINA[Math.floor(u(1) * FINA.length)] : 'vanlig');
   if (id === 'prast' && !r?.tro) id = 'rik'; // en by utan tro har ingen präst
   const roll = (RANG[id] as Rang).roll, har = k.personer.filter(q => roll ? roll.test(q.roll) : q.roll === 'kund' && q.kropp);
   if (id === 'hovding' && !har.length) id = 'rik';

@@ -572,7 +572,7 @@ const arbBehov = (s: State) => s.arbBehov ?? (arbetsTimme(s), s.arbBehov!);
 // nivåerna: 1 Fara, 2 Nöd och vård, 3 Tillfälle, 4 Grundbehov, 5 Rädda, 6 Försörjning, 7 Tak, 8 Förbättra, 9 Fritid
 type Niva = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 // det valet vet om personen; farorna räknas första gången en rad frågar och gäller hela valet
-interface Ctx { stall?: ReturnType<typeof stallaVal>; betj?: ReturnType<typeof betjanVal>; kop?: Kopval; kopV?: Kopval; kund?: Erbjudande; s: State; p: Person; v: Val; a: number; lazy: number; light: boolean; f?: Faror; d?: Dag; forb?: boolean; fb?: Record<string, { sc: number; gor: () => void } | undefined>; bord?: { x: number; y: number } | null }
+interface Ctx { stall?: ReturnType<typeof stallaVal>; betj?: ReturnType<typeof betjanVal>; kop?: Kopval; kopV?: Kopval; kunder?: Record<string, Erbjudande | undefined>; s: State; p: Person; v: Val; a: number; lazy: number; light: boolean; f?: Faror; d?: Dag; forb?: boolean; fb?: Record<string, { sc: number; gor: () => void } | undefined>; bord?: { x: number; y: number } | null }
 const faror = (c: Ctx) => c.f ??= dangers(c.s);
 // Förbättra dämpas mjukt (steg 10.11.20): när kylan eller hungern är en fara tas raderna på Förbättra och projekten med chansen
 // VAL.projFara (en dragning per val), som bygget dämpas (byggDampning): tiden går helst till faran, men ingenting stängs av
@@ -805,9 +805,10 @@ export const ARBETEN: readonly Arbete[] = [
   } },
   // disken (steg 14.1.6, kassa.ts): att betjäna väger mer ju fler som väntar och ju längre de väntat
   { id: 'betjana', niva: 3, poang: c => { if (!c.s.foretag?.length) return 0; const d = (c.betj = betjanVal(c.s, c.p)); return d ? VAL.tillBetjana * d.sc : 0; }, prova: ({ v, betj: d }) => { if (!d) return false; v.spot = d.spot; v.dur = d.dur; v.ref = d.f.id; return set(v, 'betjana', `Betjänar: ${d.f.namn}`); } },
-  // affären (steg 14.1.8, affar.ts): den som saknar något köper det när det är mer värt än det kostar, och ägaren ställer fram
-  { id: 'affar', niva: 3, nar: 'dag', poang: c => { if (!c.s.foretag?.length || c.a < ALDER.hjalper || !saknarNu(c.s, c.p).length) return 0; const e = (c.kund = kundVal(c.s, c.p, 'affar')); return e ? VAL.tillAffar * Math.min(1, e.net) : 0; }, prova: ({ s, p, v, kund: e }) => !!e && koa(s, p, v, e) },
-  { id: 'djurkop', niva: 3, nar: 'dag', poang: c => { if (c.a < ALDER.vuxen || !c.s.foretag?.some(f => f.verk.includes('djurhandel'))) return 0; const e = (c.kund = kundVal(c.s, c.p, 'djurhandel')); return e ? VAL.tillAffar * Math.min(1, e.net) : 0; }, prova: ({ s, p, v, kund: e }) => !!e && koa(s, p, v, e) }, // ett djur (steg 14.1.12, verksamheter.ts)
+  // affären (steg 14.1.8, affar.ts): den som saknar något köper det när det är mer värt än det kostar, och ägaren ställer fram.
+  // Varje rad har sitt erbjudande i c.kunder, eftersom raderna på samma nivå räknas innan vinnaren provas
+  { id: 'affar', niva: 3, nar: 'dag', poang: c => { if (!c.s.foretag?.length || c.a < ALDER.hjalper || !saknarNu(c.s, c.p).length) return 0; const e = ((c.kunder ??= {}).affar = kundVal(c.s, c.p, 'affar')); return e ? VAL.tillAffar * Math.min(1, e.net) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.affar; return !!e && koa(s, p, v, e); } },
+  { id: 'djurkop', niva: 3, nar: 'dag', poang: c => { if (c.a < ALDER.vuxen || !c.s.foretag?.some(f => f.verk.includes('djurhandel'))) return 0; const e = ((c.kunder ??= {}).djurkop = kundVal(c.s, c.p, 'djurhandel')); return e ? VAL.tillAffar * Math.min(1, e.net) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.djurkop; return !!e && koa(s, p, v, e); } }, // ett djur (steg 14.1.12, verksamheter.ts)
   { id: 'stallaFram', niva: 3, nar: 'dag', poang: c => { if (!c.s.foretag?.length || c.a < ALDER.vuxen) return 0; const d = (c.stall = stallaVal(c.s, c.p)); return d ? Math.min(VAL.tillAffar, d.sc) : 0; }, prova: ({ v, stall: d }) => { if (!d) return false; v.spot = { x: d.h.x + 0.5, y: d.h.y + 0.5 }; v.dur = AFFAR.min * MIN; v.ref = d.f.id; v.tool = d.h.k; return set(v, 'stallaFram', `Ställer fram varor: ${d.f.namn}`); } },
   // ett framträdande (steg 10.7.9, framtradande.ts): den som ville lyssna vid kallelsen går dit, men inte den som skäms
   { id: 'lyssna', niva: 3, poang: () => VAL.tillLyssna, prova: ({ s, p, v }) => {
@@ -838,7 +839,7 @@ export const ARBETEN: readonly Arbete[] = [
     v.spot = bord; v.dur = (VAL.maltidMin + rnd(s, 'val', p) * VAL.maltidSpann) * MIN; return set(v, 'maltid', 'Är hungrig och äter vid bordet');
   } },
   // serveringen (steg 14.1.6, kassa.ts): den hungrige köper sin måltid när den är mer värd än den kostar
-  { id: 'servering', niva: 4, poang: c => { if (!c.s.foretag?.length || c.a < ALDER.hjalper || !MAT.behover(c.s, c.p)) return 0; const e = (c.kund = kundVal(c.s, c.p, 'servering')); return e ? VAL.grundMat * nodUnder(c.p.hunger, KROPP.hungrig) * (1 + KASSA.lust * Math.min(1, e.net)) : 0; }, prova: ({ s, p, v, kund: e }) => !!e && koa(s, p, v, e) },
+  { id: 'servering', niva: 4, poang: c => { if (!c.s.foretag?.length || c.a < ALDER.hjalper || !MAT.behover(c.s, c.p)) return 0; const e = ((c.kunder ??= {}).servering = kundVal(c.s, c.p, 'servering')); return e ? VAL.grundMat * nodUnder(c.p.hunger, KROPP.hungrig) * (1 + KASSA.lust * Math.min(1, e.net)) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.servering; return !!e && koa(s, p, v, e); } },
   // hungrig, och maten ligger inte där hen står: hen går till den närmaste stacken med mat hen får ta och äter där (steg 11.1.77)
   { id: 'ata', niva: 4, poang: matPoang, prova: ({ s, p, v }) => ataVal(s, p, v) },
   { id: 'utbrott', niva: 4, nar: 'dag', poang: () => VAL.grundUtbrott, prova: ({ s, p, v }) => utbrottVal(s, p, v) },

@@ -107,16 +107,18 @@ export const RUM_PLUS: RumPlus[] = [
 const PLUS_TANKE: Record<string, string> = { ljust: 'Varmt och ljust inne', eget: 'Har ett eget rum' };
 export const rumPlusTanke = (id: string) => PLUS_TANKE[id] ?? id;
 
+// en station hör till rummet när någon av dess rutor ligger i det (rummets ruta och finheten räknar likadant)
+const stationIRum = (t: { x: number; y: number; k: string; rot?: unknown }, rutor: Set<number>) => {
+  const { w, h } = storlekAv(t as Parameters<typeof storlekAv>[0]);
+  for (let y = t.y; y < t.y + h; y++) for (let x = t.x; x < t.x + w; x++) if (rutor.has(y * W + x)) return true;
+  return false;
+};
 // utanFolk: utan att räkna vem som sover där (valet av sovplats frågar om rummet är en sjukstuga, steg 13.1.14)
 export function rumInfo(s: State, r: Rum, utanFolk = false): RumInfo {
   const rutor = new Set(r.tiles), i: RumInfo = { rutor: r.tiles.length, sov: sovplatser(s, r), folk: 0, bord: 0, eld: 0, arbete: 0, forvar: 0, scen: 0, tork: 0, pynt: 0, smuts: 0, slakt: 0, krubba: 0, kok: 0, bara: new Set(), sjukTek: living(s).some(q => knows(q, 'sjukstuga')) };
   if (!utanFolk) for (const p of living(s)) { const t = bedTile(s, p); if (t !== undefined && rutor.has(t)) i.folk++; }
   for (const t of stationerOf(s)) {
-    if (!isKlar(t)) continue;
-    const { w, h } = storlekAv(t);
-    let inne = false;
-    for (let y = t.y; y < t.y + h && !inne; y++) for (let x = t.x; x < t.x + w && !inne; x++) inne = rutor.has(y * W + x);
-    if (!inne) continue;
+    if (!isKlar(t) || !stationIRum(t, rutor)) continue;
     const d = stationDef(t.k);
     if (!d) continue;
     if (d.platser) i.bord++;
@@ -228,7 +230,7 @@ export function finhetDelar(s: State, r: Rum): { tal: number; delar: { id: strin
   const rutor = new Set(r.tiles), d: FinhetRum = { s, r, i: rumInfo(s, r), mobler: [], pynt: 0, ljus: false };
   const pynta = (q: number) => { d.pynt += q / 2; };
   for (const t of stationerOf(s)) {
-    if (!isKlar(t) || !rutor.has(t.y * W + t.x)) continue;
+    if (!isKlar(t) || !stationIRum(t, rutor)) continue;
     const def = stationDef(t.k);
     if (!def) continue;
     if (def.pynt) pynta(Math.min(PERFEKT, kvOf(t) + (def.pyntQ ?? 0)));

@@ -43,7 +43,7 @@ dygnet.push(s => {
       if (ja + nej > 0) (f.pris ??= {})[v] = clamp((f.pris[v] ?? 1) * (1 + KONKURRENS.steg * (ja - nej) / (ja + nej)), KONKURRENS.min, KONKURRENS.max);
     }
     f.dag = undefined;
-    if (f.gap) f.enkelt = f.gap.v / Math.max(1, f.gap.n);
+    f.enkelt = f.gap ? f.gap.v / Math.max(1, f.gap.n) : undefined; // ingen som avstod för att rummet var för enkelt: ingen brist
     f.gap = undefined;
   }
 });

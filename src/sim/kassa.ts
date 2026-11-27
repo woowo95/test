@@ -20,7 +20,7 @@ import { type Ting, tingOf } from './agande';
 import { dryckAv } from './vatskor';
 import { drickAlkohol } from './rus';
 import { foretagOf, type Foretag, foretagare, foretagRum, FORETAG, oppna, troAvAgare, VERKSAMHETER } from './foretag';
-import { foretagBord, isKlar, ledigPlats, stationerOf, stationRum, type Station, vidStation } from './stationer';
+import { foretagBord, isKlar, ledigPlats, stationerOf, stationRum, storlekAv, type Station, vidStation } from './stationer';
 import { tanke } from './tankar';
 import { kvOf, kvVarde } from './kvalitet';
 
@@ -48,7 +48,8 @@ foretagBord.diskBrist = s => { const n = foretagOf(s).filter(f => foretagRum(s, 
 // var kunden i kön står: rummets lediga rutor, närmast disken först, inte där betjänaren eller en annan kund står
 export function koPlats(s: State, t: Station, upptagna: { x: number; y: number }[] = []): { x: number; y: number } {
   const bak = vidStation(t), bi = Math.floor(bak.y) * W + Math.floor(bak.x), cx = t.x + (t.rot ? 0.5 : 1), cy = t.y + (t.rot ? 1 : 0.5);
-  const r = stationRum(s, t), fria = (r?.tiles ?? []).filter(j => j !== bi && !blocked(s, j % W, Math.floor(j / W)) && !stationerOf(s).some(q => q.k === 'disk' && q === t && Math.floor(j / W) === q.y && j % W >= q.x && j % W < q.x + 2));
+  const { w: dw, h: dh } = storlekAv(t), paDisken = (j: number) => j % W >= t.x && j % W < t.x + dw && Math.floor(j / W) >= t.y && Math.floor(j / W) < t.y + dh; // också en vriden disk
+  const r = stationRum(s, t), fria = (r?.tiles ?? []).filter(j => j !== bi && !blocked(s, j % W, Math.floor(j / W)) && !paDisken(j));
   fria.sort((a, b) => Math.hypot(a % W + 0.5 - cx, Math.floor(a / W) + 0.5 - cy) - Math.hypot(b % W + 0.5 - cx, Math.floor(b / W) + 0.5 - cy) || a - b);
   const tagna = new Set(upptagna.map(q => Math.floor(q.y) * W + Math.floor(q.x))), j = fria.find(q => !tagna.has(q)) ?? fria[fria.length - 1];
   return j === undefined ? bak : { x: j % W + 0.5, y: Math.floor(j / W) + 0.5 };

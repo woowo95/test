@@ -51,8 +51,7 @@ export function kopval(s: State, p: Person, id: 'mat' | 'ved'): Kopval | undefin
       const G = personPart(s, g), ger = n * grundvarde(k) * G.varde(k), far = n * grundvarde(k) * behovAv(s, p, k);
       const bet = betalaAv(betalVaror(M, G, b.slag), G, ger);
       if (bet.fick < ger - 1e-9) continue;
-      prova({ faktor: perTimme(s, p, far - bet.kost, d, KOPBUFFERT.prat), granne: g.id, k, spot: { x: g.x, y: g.y }, dur: KOPBUFFERT.prat * MIN });
-      break;
+      prova({ faktor: perTimme(s, p, far - bet.kost, d, KOPBUFFERT.prat), granne: g.id, k, spot: { x: g.x, y: g.y }, dur: KOPBUFFERT.prat * MIN }); // varje sort vägs, och prova behåller det bästa köpet
     }
   }
   if (bast) bast.faktor = Math.min(KOPBUFFERT.mest, bast.faktor);

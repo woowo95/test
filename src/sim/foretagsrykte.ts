@@ -81,7 +81,7 @@ export function ryktet(s: State, f: Foretag): number | undefined {
   for (const p of living(s)) { const o = p.omd?.[f.id]; if (o) { const g = 1 + Math.min(4, o.n); v += o.v * g; w += g; } }
   return w ? v / w : undefined;
 }
-// ryktet i en grannby, och i alla grannbyar tillsammans (för gästerna)
+// ryktet i grannbyn med numret nr (för gästerna därifrån)
 export const ryktetI = (f: Foretag, nr: number) => f.byar?.[nr]?.v ?? 0;
 // omdömena bleknar, och det om företag som stängt glöms
 dygnet.push(s => {
