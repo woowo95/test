@@ -2028,6 +2028,7 @@ SCENARIER.kallelse = {
     const kan = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.ageOf(q, b.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, b.now));
     const s0 = SIM.cloneState(testBy(30)), vl0 = s0.varld!, hem = SIM.byPlats(vl0, vl0.huvud!)!;
     for (let i = 0; kan(s0).length < 6 && i < 6; i++) { const q = nyInvanare(s0, i % 2 ? 'k' : 'm', 25 + i); q.pot.mod = 16; } // har testbyn färre än sex vuxna som kan följa med, flyttar några in
+    s0.vargar = undefined; // ingen vargflock nära, som väcker den som sover
     const vuxna = kan(s0).filter(q => q.task?.act !== 'vakt'); // (ledaren håller inte vakt i natt)
     // modet och nyfikenheten i anlagen också: uppväxten räknar om pot ur anlagen när någon får en upplevelse (raknaPot i
     // uppvaxt.ts), och då föll modet tillbaka medan sällskapet samlades (steg 12.1.112)
@@ -2047,7 +2048,7 @@ SCENARIER.kallelse = {
     // en som sover länge kommer inte inom en timme: sällskapet går utan hen
     const s3 = SIM.cloneState(s0), led3 = s3.people.find(q => q.id === vuxna[0]!.id)!, b3 = s3.people.find(q => q.id === vuxna[1]!.id)!;
     const sl3 = SIM.samlaResa(s3, led3, plan(0.01))!; SIM.foljMed(s3.varld!, sl3, b3);
-    b3.task = { act: 'sova', phase: 'do', tx: b3.x, ty: b3.y, until: s3.now + 3 * SIM.HOUR, carry: 0, dark: false, why: 'Sover' };
+    b3.rest = 0.05; b3.task = { act: 'sova', phase: 'do', tx: b3.x, ty: b3.y, until: s3.now + 3 * SIM.HOUR, carry: 0, dark: false, why: 'Sover' }; // trött, så att hen sover länge
     korTills(s3, () => sl3.skede !== 'samlas' || !s3.varld!.sallskap!.includes(sl3), 2 * 3600);
     // kraften räcker inte: resan ställs in
     const s4 = SIM.cloneState(s0), led4 = s4.people.find(q => q.id === vuxna[0]!.id)!;
