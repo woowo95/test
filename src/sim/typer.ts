@@ -192,6 +192,7 @@ export interface Task {
   fran?: number; // den man tar ved av till elden (stöld, behov.ts)
   kom?: Record<string, number>; // var materialet till bygget kom ifrån (bygg.ts)
   fron?: true; // plockar vilda frön (raden fron i valet, steg 13.8.7): räknas för sig, inte bland matens arbetare
+  nodVald?: true; // uppgiften valdes när ett behov redan var farligt (farligtBehov i val.ts): behovet avbryter den inte (steg 15.1.4)
   sok?: true | 'sten' | 'flinta'; // letar flinta eller stenar vid stenarna: blir platsen tom fortsätter man ändå i stället för att gå hem (steg.ts, workStep)
   pass?: number; // när ett pass med redskap som görs är slut (ms): blir ett klart före det görs ett till om byn vill ha fler (steg 2.3.8)
   hamtar?: string; // materialet uppgiften hämtar till ett projekt eller bygge (steg 6.1.17): samlandet ger det, också när förrådet har tändmaterial nog

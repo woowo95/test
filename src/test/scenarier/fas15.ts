@@ -58,3 +58,30 @@ SCENARIER.stentur = {
     ];
   },
 };
+
+SCENARIER.avbrott = {
+  text: 'Steg 15.1.4: farlig törst, hunger och kyla avbryter ett långt arbete eller ett vaktpass, som behovet att gå på toa redan gör, och den som avbryter väljer om med behovet i poängen. Den som valde sin uppgift när behovet redan var farligt avbryts inte igen',
+  kor: () => {
+    const drick = new Set(['dricka', 'dryck', 'smalta', 'ata_sno']);
+    const pass = () => {
+      const s = SIM.createState(5, START); klockan(s, 23); tandEld(s); setMat(s, { torrkott: 100 });
+      const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!, e = SIM.eldPlats(s);
+      Object.assign(p, { x: e.x + 1.5, y: e.y + 0.5, hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, warm: 0.9, health: 1, torst: 0.9 });
+      p.task = { act: 'vakt', phase: 'do', tx: p.x, ty: p.y, until: s.now + 6 * SIM.HOUR, carry: 0, dark: true, why: 'Håller vakt i natt' };
+      return { s, p };
+    };
+    // vakten med god törst står kvar, med farlig törst går hen och dricker
+    const a = pass(); kor(a.s, 0.25); const kvar = a.p.task?.act;
+    const b = pass(); b.p.torst = SIM.TORST.farligt - 0.03; let drack = false;
+    const gjorde: string[] = [];
+    kor(b.s, 1, () => { const k = b.p.task?.act ?? ''; if (gjorde.at(-1) !== k) gjorde.push(k); if (drick.has(k) || b.p.torst > 0.5) drack = true; }); // ett slag är längre än det tar att dricka
+    // den som valde med törsten redan farlig och fick samma uppgift igen avbryts inte i varje slag
+    const c = pass(); c.p.torst = SIM.TORST.farligt - 0.03; c.p.task!.nodVald = true; let byten = 0, forra = c.p.task;
+    kor(c.s, 0.1, () => { if (c.p.task !== forra) { byten++; forra = c.p.task; } });
+    return [
+      [`vakten står kvar när törsten inte är farlig (${kvar})`, kvar === 'vakt'],
+      [`vakten avbryter och dricker när törsten är farlig (${gjorde.join(", ")}, törst ${Math.round(b.p.torst * 100)} %)`, drack && gjorde[0] !== 'vakt'],
+      [`den som valde med behovet i poängen avbryts inte igen (${byten} byten)`, byten === 0],
+    ];
+  },
+};
