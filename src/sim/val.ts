@@ -970,7 +970,7 @@ export const ARBETEN: readonly Arbete[] = [
     prova: c => { const l = letaMest(c.s); if (!l) return false; arbeta(c, 'samla', `Byn behöver ${l.k === 'sten' ? 'stenar' : 'flinta'}`, { leta: l.k }); return true; } },
   { id: 'mat', niva: 6, nar: 'dag', poang: c => { const d = dag(c); return d.works && d.fdBy < d.malBy ? d.wBy * d.rad.mat.sc : 0; },
     full: c => radFull(c.s, c.p, 'mat') && !faror(c).svalt,
-    prova: c => { const d = dag(c); forByn(c); arbeta(c, d.rad.mat.act, `Byn behöver mat, förrådet räcker ${dygn(d.fd)}`); return true; } }, // raden har poäng bara när maten är under målet
+    prova: c => { const d = dag(c); forByn(c); arbeta(c, d.rad.mat.act, `Byn behöver mat, byns mat räcker ${dygn(d.fdBy)}${d.fd - d.fdBy >= 0.5 ? ', resten är familjernas' : ''}`); return true; } }, // raden har poäng bara när byns egen mat är under målet, och skälet säger det talet (steg 15.1.1)
   // den egna maten är en rad för personen och familjen (Förråden, bufferten per jag), ingen spärr: den har inga arbetare att fylla
   { id: 'egenMat', niva: 6, nar: 'dag', poang: c => { const d = dag(c); return d.works ? d.wEgen * d.rad.mat.sc : 0; },
     prova: c => { const d = dag(c); arbeta(c, d.rad.mat.act, `Behöver egen mat, har för ${dygn(d.egen)}`); return true; } },
