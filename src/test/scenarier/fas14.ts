@@ -445,10 +445,14 @@ SCENARIER.verksamheter = {
     rad.tal.silver = 300; k.inst = 0;
     const fint = () => { s.finhet = { ...s.finhet, [SIM.rumNyckel(SIM.foretagRum(s, f)[0])]: 0.6 }; }; fint();
     const V = SIM.VERKSAMHETER;
+    // rummet börjar utan det verksamheterna behöver (en sparad testby kan redan ha en bädd eller krubba där)
+    const behov = new Set(Object.values(V).flatMap(v => (v as { sak?: string | string[] }).sak ?? []).flat());
+    s.stationer = (s.stationer ?? []).filter(q => !(behov.has(q.k) && r.tiles.includes(q.y * W + q.x))); SIM.touch(s);
     // tillägget: samma poäng som en start, utan huset
     const start = SIM.startPoang(s, p.id, ['nattlogi']).poang, till = SIM.startPoang(s, p.id, ['nattlogi'], 1).poang, g0 = SIM.efterfragan(s, 'nattlogi', p.id);
     const utan = s.foretag!; s.foretag = []; const ingen = SIM.efterfragan(s, 'nattlogi', p.id).kunder; s.foretag = utan;
     f.byar = undefined; const u = SIM.bastaUtok(s);
+    const sovNu = ['sovrum', 'sovsal'].some(q => SIM.rumTaggar(s, r).has(q as never)); // folk sover redan i rummet: då är nattlogit öppet direkt
     SIM.utoka(s, f, ['nattlogi', 'stall', 'djurhandel']);
     const kraver = [SIM.oppna(s, f).includes('nattlogi'), SIM.foretagBord.baddBrist(s), SIM.foretagBord.krubbaBrist(s)], site = SIM.stationSite(s, 'halmbadd'), krub = SIM.stationSite(s, 'krubba');
     const sattNer = (kk: string, q?: { x: number; y: number; rot?: 1 }) => { if (q) { s.stationer!.push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: kk, x: q.x, y: q.y, rot: q.rot, kvar: 0, inne: 1 } as unknown as SIM.Station); SIM.touch(s); } return !!q && r.tiles.includes(Math.floor(q.y) * W + Math.floor(q.x)); };
@@ -474,7 +478,7 @@ SCENARIER.verksamheter = {
     return [
       [`nattlogiet räknar med gästerna (${g0.kunder.toFixed(2)} per dygn), och utan företag kommer inga (${ingen})`, g0.kunder > 0 && ingen === 0],
       [`tillägget är värt mer än ett nytt hus (${till.toFixed(2)} mot ${start.toFixed(2)}), och det bästa väljs (${u?.verk ?? 'inget'})`, till > start && (!u || u.poang > 0)],
-      [`rummet saknar bädd och krubba (${kraver.join(', ')}), och båda ställs i företagets rum (${iRum.join(', ')})`, kraver[0] === false && Number(kraver[1]) > 0 && Number(kraver[2]) > 0 && !!krub && iRum.every(Boolean)],
+      [`rummet saknar bädd och krubba (${kraver.join(', ')}; sovrum redan: ${sovNu}), och båda ställs i företagets rum (${iRum.join(', ')})`, kraver[0] === sovNu && Number(kraver[1]) > 0 && Number(kraver[2]) > 0 && !!krub && iRum.every(Boolean)],
       [`då är verksamheterna öppna (${opp.join(', ')})`, ['nattlogi', 'stall', 'djurhandel'].every(v => opp.includes(v))],
       [`den trötta vinner mer på en bädd (${tr.toFixed(1)}) än den pigga (${pigg.toFixed(1)}), vägen tröttar (${trott.toFixed(2)})`, tr > pigg * 5 && trott < 0.9 && !!e],
       [`gästen betalar (${fick} silver), bädden är upptagen (${full}) och hen somnar (${sov})`, kopt && fick >= 1 && full === 0 && sov],
@@ -560,9 +564,12 @@ SCENARIER.kopabuffert = {
     for (const k of SIM.SAK_LIST) { const n = SIM.ownsAmount(s, fattig, k); if (n > 0) SIM.use(s, undefined, k, n, true, fattig.id); }
     s.ting = s.ting!.filter(t => t.agare !== fattig.id);
     SIM.laggIn(s, 'silver', 200, rik.id);
+    SIM.laggIn(s, 'notter' in SIM.SAKER ? 'notter' : SIM.FOOD[0], 60, p.id); // ägaren har mat över (en sparad testby kan sakna den)
     // ägarens mat är ägarens eget förråd; ingen affär och ingen granne med över
     const d0 = r.tiles.find(t => !s.stationer!.some(q => Math.abs(q.x - t % W) < 3 && Math.abs(q.y - Math.floor(t / W)) < 2) && r.tiles.includes(t + 1))!;
     const alla = s.foretag!; s.foretag = [];
+    p.x = rik.x + 1; p.y = rik.y; // ägaren står nära (en sparad testby kan ha dem längre isär än KOPBUFFERT.langd)
+    for (const q of [rik, fattig]) for (const [a, b] of [[p, q], [q, p]]) SIM.getRel(s, a, b).op = Math.max(SIM.getRel(s, a, b).op, 0); // och de är inte osams
     const gr = SIM.kopval(s, rik, 'mat'); // ägaren har mat över: en granne
     for (const q of SIM.living(s)) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '' } as never;
     const ingen = SIM.kopval(s, rik, 'mat');
