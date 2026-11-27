@@ -1,4 +1,4 @@
-// Städningen (steg 14.1.2, Byggsystemet: Rummens finhet). Den som bor eller arbetar i rummet, eller äger huset, torkar golvet
+// Städningen (steg 14.1.2, Byggsystemet: Rummens finhet). Den som bor i rummet, eller hen eller familjen äger huset, torkar golvet
 // ruta för ruta: blodet (blod.ts) och toaletternas fläckar (smuts.ts) på rutan tas bort när den är klar. Värdet av att städa är
 // det finheten vinner (rum.ts) och det äcklet kostar dem som bor där (smuts.ts)
 import { balans } from './balans';
@@ -17,7 +17,7 @@ export const STADA = balans('stada', {
   allas: 0.6, // byns rum (ett hus utan ägare) angår alla så här mycket
   akel: 1, // en punkt sämre humör för den som bor där väger så här mycket mot en hel finhet
 });
-// hur mycket rummet angår p: sitt eget sovrum, sitt eller familjens hus, det man arbetar i, byns hus och andras
+// hur mycket rummet angår p: sitt eget sovrum, sitt eller familjens hus, byns hus och andras
 export function rumAngar(s: State, p: Person, r: Rum): number {
   if (sovrum(s, p) === r) return 1;
   const h = husById(s, r.hus);

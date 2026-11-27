@@ -80,7 +80,7 @@ dygnet.push(s => {
     if (!h?.klar) continue;
     const kunder = Object.values(f.salt ?? {}).reduce((a, b) => a + b, 0), vinst = f.vinst ?? 0, b = f.bok ?? { vinst: 0, kunder: 0 };
     const r = dygnsResultat(s, f, vinst - b.vinst, kunder - b.kunder);
-    f.bok = { vinst: vinst * (1 - FORETAG.minne), kunder: kunder * (1 - FORETAG.minne) };
+    f.bok = { vinst: vinst * (1 - FORETAG.minne), kunder: kunder * (1 - FORETAG.minne) }; // foretagDygn låter vinsten blekna med FORETAG.minne efter dygnet-raderna, så boken räknar med samma förfall
     f.resultat = f.resultat === undefined ? r : f.resultat + (r - f.resultat) * STANG.minne;
     f.oppnat ??= s.now;
     if (s.now - f.oppnat < STANG.prova * DAY || f.resultat >= 0) { f.salu = undefined; continue; }
