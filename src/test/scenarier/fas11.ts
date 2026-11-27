@@ -2027,6 +2027,7 @@ SCENARIER.kallelse = {
     // har fyra, med kraften 3,2 mot kravet 4,5; steg 12.1.112)
     const kan = (b: SIM.State) => SIM.living(b).filter(q => SIM.ageOf(q, b.now) >= 18 && SIM.ageOf(q, b.now) < 50 && SIM.kanGa(q) && !SIM.vilaHellre(q) && !SIM.isSick(q, b.now));
     const s0 = SIM.cloneState(testBy(30, b => kan(b).length >= 6)), vl0 = s0.varld!, hem = SIM.byPlats(vl0, vl0.huvud!)!;
+    for (let i = 0; kan(s0).length < 6 && i < 6; i++) { const q = nyInvanare(s0, i % 2 ? 'k' : 'm', 25 + i); q.pot.mod = 16; } // hittas ingen testby med sex vuxna som kan följa med, flyttar några in
     const vuxna = kan(s0).filter(q => q.task?.act !== 'vakt'); // (ledaren håller inte vakt i natt)
     // modet och nyfikenheten i anlagen också: uppväxten räknar om pot ur anlagen när någon får en upplevelse (raknaPot i
     // uppvaxt.ts), och då föll modet tillbaka medan sällskapet samlades (steg 12.1.112)
