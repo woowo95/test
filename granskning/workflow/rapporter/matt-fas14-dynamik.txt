@@ -1,0 +1,4 @@
+
+> samhallssimulatorn@1.0.0 dynamik
+> tsx src/test/dynamik.ts 12 35
+
