@@ -3,3 +3,5 @@
 > tsx src/test/strid.ts 12 35
 
 by 72272 klar (8 av 12, 885 s)
+by 64353 klar (9 av 12, 1247 s)
+by 80191 klar (10 av 12, 1274 s)

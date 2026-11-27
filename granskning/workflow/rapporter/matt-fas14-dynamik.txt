@@ -62,3 +62,85 @@ VAKTER LARMAR:
 real	55m58.108s
 user	169m18.804s
 sys	1m40.426s
+
+==== JÄMFÖRELSE MED FAS 13 (granskaren) ====
+Designdokumentet har inga sparade siffror för arbetsdelningen i fas 13 (13.10.45 skriver bara gränserna), så samma kommando kördes
+på v539 (feb4b3fa, versionen före fas 14, samma dynamik-en.ts) i en egen kopia: npx tsx src/test/dynamik.ts 12 35. Utskriften följer.
+Median per by                                   fas 14 (f8daf269)   fas 13 (v539)
+  flitigaste femtedelens del av bygga                47 %             47 %
+  ... elda                                           73 %             71 %
+  ... fiska                                          52 %             57 %
+  ... hantverk                                       58 %             59 %
+  ... jaga                                           38 %             61 %
+  ... odla                                           62 %             60 %
+  ... samla                                          50 %             54 %
+  ... tra                                            46 %             57 %
+  vuxna med under en tiondel i maten              0 av 12          0 av 12
+  matens timmar per invånare och dygn, dygn 35       1.9              2.5
+  mat köpt av bybor / given                        31 / 17          36 / 13
+  köpt av handlaren / av varandra                  10 / 626         13 / 740
+  timmar bygget / hantverket                      190 / 434        163 / 421
+OBS brus: i v539 hade två byar (8920, 24758) 1-2 invånare och 0 tekniker i slutet; där står en ensam vuxen för 100 % av sitt slag, vilket
+höjer fas 13:s andelar. Med 12 byar är skillnaden i jaga (61 -> 38) och tra (57 -> 46) den enda som är stor; resten är inom bruset.
+Företagens arbete (betjana har slaget 'prata', handlingar.ts:266) räknas inte alls i dynamik (INTE_ARBETE, dynamik-en.ts:13).
+
+--- utskriften från v539 ---
+12 byar, 35 dygn (35 år i spelet, 5 veckor i verkligheten), 4267 s datorns tid
+
+BYARNAS FÖRÄNDRING      mittenbyar   olikhet   händelser per by (median)   längsta tystnad (median / värsta, dygn)
+Sederna                        0 %      0.76                          47                                4 / 10
+Styret                        17 %      0.63                          34                               16 / 35
+Tron                          50 %      0.22                           2                               25 / 35
+
+HÄNDELSERNA (totalt, byar där det hänt)
+  seder: en sed flyttade                         620   12/12
+  styre: en lag stiftad eller borttagen           30   10/12
+  styre: en minister tillsatt eller avsatt        31   10/12
+  styre: en vågskål flyttade                     179   10/12
+  styre: ett påbud ändrat                         85   10/12
+  styre: ett uppror                                3    2/12
+  styre: ny ledare                                18   10/12
+  tro: en ny tro                                  13    9/12
+  tro: en profets syn                              2    2/12
+  tro: en skala flyttade                           7    3/12
+  tro: ett bud antaget eller borttaget            24    9/12
+  tro: flera bytte tro                             2    2/12
+
+ARBETSDELNINGEN (median per by)
+  den flitigaste femtedelens del av bygga           47 %
+  den flitigaste femtedelens del av elda            71 %
+  den flitigaste femtedelens del av fiska           57 %
+  den flitigaste femtedelens del av hantverk        59 %
+  den flitigaste femtedelens del av jaga            61 %
+  den flitigaste femtedelens del av odla            60 %
+  den flitigaste femtedelens del av samla           54 %
+  den flitigaste femtedelens del av tra             57 %
+  vuxna med under en tiondel av timmarna i maten     0 av 12
+  matens timmar per invånare och dygn: dygn 1: 4.8, dygn 10: 0.4, dygn 25: 0.6, dygn 35: 2.5
+  mat köpt av andra bybor / given (enheter)          36 / 13
+  köpt av handlaren / av varandra (enheter)         13 / 740
+  timmar i bygget / hantverket                     163 / 421
+
+per by: seed, invånare, tekniker, händelser (seder/styre/tro), längsta tystnad, mittenby
+  by 1001    11 inv  45 tek  20/25/2  6/15/25 dygn  –
+  by 8920     1 inv   0 tek  74/44/14  4/9/7 dygn  Tron
+  by 16839    1 inv   4 tek  47/44/7  6/7/17 dygn  Tron
+  by 24758    2 inv   0 tek  120/0/0  2/35/35 dygn  Styret, Tron
+  by 32677    7 inv  45 tek  64/36/2  2/3/19 dygn  Tron
+  by 40596    8 inv  31 tek  46/45/9  3/17/8 dygn  –
+  by 48515    6 inv  30 tek  23/34/7  10/16/11 dygn  –
+  by 56434    9 inv  43 tek  53/31/0  3/19/35 dygn  Tron
+  by 64353    4 inv  28 tek  27/0/0  4/35/35 dygn  Styret, Tron
+  by 72272    8 inv  43 tek  42/34/2  4/23/22 dygn  –
+  by 80191    8 inv  39 tek  66/23/2  2/16/34 dygn  –
+  by 88110    6 inv  41 tek  38/30/3  5/15/34 dygn  –
+
+GRÄNSERNA BRYTS:
+  Styret: 9 byar har gått mer än 10 dygn utan något (längst 35)
+  Tron: 50 % av byarna är mittenbyar (högst 33 %)
+  Tron: 10 byar har gått mer än 10 dygn utan något (längst 35)
+Vakter: inga fel.
+
+real	71m7.353s
+user	135m31.089s
+sys	1m27.885s
