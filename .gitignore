@@ -8,3 +8,6 @@ utseende/
 balans-stat.json
 bildstil/kontroll-ut/
 bildstil/api/logg/*.txt
+
+# granskarens underlag (npm run granska), genereras om
+granskning-*/
