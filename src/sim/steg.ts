@@ -113,7 +113,7 @@ import { lonDygn, lonRakna } from './dagsarbete';
 import { foretagDygn, foretagTimme } from './foretag';
 import { foretagMarknad } from './stangning';
 import { marknadDygn, marknadKlar } from './marknad';
-import { bytHosKlar } from './kopbuffert';
+import { bytHosKlar, samlaTimme } from './kopbuffert';
 import { finishOdla, froFynd, stepOdling, workOdla } from './odling';
 import { balans } from './balans';
 import { grilla, torka } from './matlagning';
@@ -477,6 +477,7 @@ export const TAKTER: Takt[] = [
   // (fynden som växer igen, glömskan, ryktena, husens slitage) räknas glesare och får tiden sedan sist
   { namn: 'atSteg', sek: 3600, fn: s => { atSteg(s); } },
   { namn: 'stepSeder', sek: 3600, fn: s => { stepSeder(s); } },
+  { namn: 'vad samlandet ger', sek: 3600, fn: (s, dt) => samlaTimme(s, dt) }, // det glidande medlet som köpet vägs mot (kopbuffert.ts, steg 15.1.19)
   { namn: 'updateTags', sek: 3600, fn: s => { updateTags(s); } },
   { namn: 'stepRelationer', sek: 3600, fn: s => { stepRelationer(s); } },
   { namn: 'stepUppvaxt', sek: 3600, fn: s => { stepUppvaxt(s); } },

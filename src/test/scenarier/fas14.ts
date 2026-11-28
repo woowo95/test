@@ -583,6 +583,15 @@ SCENARIER.kopabuffert = {
     f.pris = { affar: 0.5 }; // priset har följt kunderna ner
     const eR = SIM.kopval(s, rik, 'mat'), eF = SIM.kopval(s, fattig, 'mat');
     const grans = SIM.vilMangd(s, rik, mat);
+    // köpet vägs mot vad en timme samlande faktiskt ger (steg 15.1.19): det glidande medlet av det som burits hem
+    const ger0 = s.samlaGer; s.samlaGer = undefined; s.hemburet = { samla: 6, jakt: 2, ved: 50 };
+    const samlare = SIM.living(s).filter(q => q !== rik && q !== fattig && q !== p).slice(0, 2), uppg = samlare.map(q => q.task);
+    for (const q of samlare) q.task = { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: s.now + SIM.HOUR, carry: 0, why: '' } as never;
+    SIM.samlaTimme(s, 3600); samlare.forEach((q, i) => { q.task = uppg[i]; });
+    const medel = SIM.samlaPerTimme(s, 'mat'), utanVed = SIM.samlaPerTimme(s, 'ved');
+    s.samlaGer = { mat: { v: 0.5, h: 10 } }; const lite = SIM.kopval(s, rik, 'mat')?.faktor ?? 0;
+    s.samlaGer = { mat: { v: 2000, h: 10 } }; const mycket = SIM.kopval(s, rik, 'mat')?.faktor ?? 0;
+    s.samlaGer = ger0;
     // hos grannen: bytet
     p.task = undefined; s.foretag = []; p.x = rik.x; p.y = rik.y;
     const g = SIM.kopval(s, rik, 'mat'); const m0 = SIM.FOOD.reduce((a, k) => a + SIM.ownsAmount(s, rik, k), 0);
@@ -593,6 +602,8 @@ SCENARIER.kopabuffert = {
       [`den rika köper i affären (${eR?.kund?.k}, ${eR?.kund?.n}, en timme ger ${eR?.faktor.toFixed(2)} mot samlandet), högst till sin gräns (${grans})`, !!eR?.kund && eR.kund.n <= grans && eR.faktor > 0.5],
       [`den fattiga utan något att betala med samlar (${eF?.faktor ?? 0}, ${fatt?.faktor ?? 0})`, !eF && !fatt],
       [`hos grannen byter hen till sig mat (${m0} → ${m1})`, m1 > m0],
+      [`en timme samlande ger det som burits hem delat med timmarna (${medel?.toFixed(1)}: 8 på två timmar), och veden utan någon som hugger har inget medel (${utanVed})`, medel !== undefined && Math.abs(medel - 4) < 1e-9 && utanVed === undefined],
+      [`den rika köper när samlandet ger lite (${lite.toFixed(2)} gånger en timme samlande) och samlar när det ger mycket (${mycket.toFixed(2)})`, lite > 1 && mycket < 1],
     ];
   },
 };

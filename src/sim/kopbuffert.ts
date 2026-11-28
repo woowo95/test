@@ -4,7 +4,7 @@
 // Samlandets timme är värd egetVarde (dagsarbete.ts). Finns inget att köpa är det noll. Den som har mycket silver eller mycket
 // över köper därför hellre, och den fattiga samlar. Maten köps upp till familjens gräns för egen mat, veden till det man själv
 // vill ha, och det köpta är köparens. Marknaden går man till på fritiden (marknad.ts), och bytena när man möts är kvar.
-import { MIN, type Person, type State, type Task } from './typer';
+import { type Act, MIN, type Person, type State, type Task } from './typer';
 import { balans } from './balans';
 import { ageOf, ALDER, alive, byId, count, living } from './folk';
 import { type Behov, behovAv, betalaAv, betalVaror, bytaHos, grannensOver, MAT, osams, personPart } from './behov';
@@ -21,10 +21,28 @@ export const KOPBUFFERT = balans('kopbuffert', {
   mest: 3, // köpet räknas som högst så många gånger mer än vad en timme samlande ger
   langd: 40, // så långt går man för att byta
   nara: 4, // så nära måste grannen vara när man kommer fram
+  medel: 24, // det glidande medlet av vad en timme samlande ger glömmer hälften på så många timmar (steg 15.1.19)
 });
+// arbetena som skaffar maten och veden själv (steg 15.1.19): det köpet vägs mot
+export const SAMLAR: Record<'mat' | 'ved', readonly Act[]> = { mat: ['samla', 'jakt', 'fiske'], ved: ['ved', 'hugga'] };
+// en gång i timmen (TAKTER): värdet som burits hem i arbetena och timmarna i dem (de som arbetar nu, gånger tiden sedan sist)
+// läggs till det glidande medlet
+export function samlaTimme(s: State, dtSec: number) {
+  const h = dtSec / 3600, kvar = Math.pow(0.5, h / KOPBUFFERT.medel), folk = living(s);
+  for (const id of ['mat', 'ved'] as const) {
+    const arb = SAMLAR[id], v = arb.reduce((a, k) => a + (s.hemburet?.[k] ?? 0), 0), tim = folk.filter(p => p.task && arb.includes(p.task.act)).length * h;
+    const m = (s.samlaGer ??= {})[id] ??= { v: 0, h: 0 };
+    m.v = m.v * kvar + v; m.h = m.h * kvar + tim;
+  }
+  s.hemburet = undefined;
+}
+// vad en timme samlande av behovet id ger, i grundvärde: medlet, eller utan mätningar inget svar
+export const samlaPerTimme = (s: State, id: 'mat' | 'ved') => { const m = s.samlaGer?.[id]; return m && m.h >= 1 ? m.v / m.h : undefined; };
 export interface Kopval { faktor: number; kund?: Erbjudande; granne?: number; k?: string; spot?: { x: number; y: number }; dur: number }
 const behovet = (id: 'mat' | 'ved'): Behov => id === 'mat' ? MAT : VED;
-const perTimme = (s: State, p: Person, net: number, d: number, min: number) => net / (d / KOPBUFFERT.gang / 3600 + min / 60) / Math.max(0.01, egetVarde(s, p));
+// köpets värde per timme mot vad en timme samlande ger, värderat som p värderar varan k (steg 15.1.19); utan mätningar mot det en
+// timme åt sig själv är värd
+const perTimme = (s: State, p: Person, id: 'mat' | 'ved', k: string, net: number, d: number, min: number) => { const g = samlaPerTimme(s, id); return net / (d / KOPBUFFERT.gang / 3600 + min / 60) / Math.max(0.01, g !== undefined ? g * behovAv(s, p, k) : egetVarde(s, p)); };
 // det bästa p kan köpa av behovet id, mot vad en timme samlande ger
 export function kopval(s: State, p: Person, id: 'mat' | 'ved'): Kopval | undefined {
   if (p.gast || ageOf(p, s.now) < ALDER.hjalper) return undefined;
@@ -34,7 +52,7 @@ export function kopval(s: State, p: Person, id: 'mat' | 'ved'): Kopval | undefin
   // affären
   if (s.foretag?.some(f => f.verk.includes('affar'))) {
     const e = erbjudandet(s, p, 'affar', undefined, k => b.slag.includes(k));
-    if (e) prova({ faktor: perTimme(s, p, e.net, Math.hypot(e.disk.x - p.x, e.disk.y - p.y), KASSA.tal / 2), kund: e, dur: 0 });
+    if (e) prova({ faktor: perTimme(s, p, id, e.k, e.net, Math.hypot(e.disk.x - p.x, e.disk.y - p.y), KASSA.tal / 2), kund: e, dur: 0 });
   }
   // en granne som har över
   let M: ReturnType<typeof personPart> | undefined;
@@ -51,7 +69,7 @@ export function kopval(s: State, p: Person, id: 'mat' | 'ved'): Kopval | undefin
       const G = personPart(s, g), ger = n * grundvarde(k) * G.varde(k), far = n * grundvarde(k) * behovAv(s, p, k);
       const bet = betalaAv(betalVaror(M, G, b.slag), G, ger);
       if (bet.fick < ger - 1e-9) continue;
-      prova({ faktor: perTimme(s, p, far - bet.kost, d, KOPBUFFERT.prat), granne: g.id, k, spot: { x: g.x, y: g.y }, dur: KOPBUFFERT.prat * MIN }); // varje sort vägs, och prova behåller det bästa köpet
+      prova({ faktor: perTimme(s, p, id, k, far - bet.kost, d, KOPBUFFERT.prat), granne: g.id, k, spot: { x: g.x, y: g.y }, dur: KOPBUFFERT.prat * MIN }); // varje sort vägs, och prova behåller det bästa köpet
     }
   }
   if (bast) bast.faktor = Math.min(KOPBUFFERT.mest, bast.faktor);

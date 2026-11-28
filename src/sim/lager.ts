@@ -1331,6 +1331,7 @@ function aterlagt(s: State, t: Task) {
 export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN) {
   aterlagt(s, t);
   const all = loadOf(t), at = x !== undefined ? { x: Math.floor(x), y: Math.floor(y!) } : undefined;
+  if (ACTS[t.act]?.arbete && ACTS[t.act]?.ger) { let v = 0; for (const k in all) v += all[k] * grundvarde(k); if (v > 0) (s.hemburet ??= {})[t.act] = (s.hemburet[t.act] ?? 0) + v; } // vad arbetet bar hem (kopbuffert.ts, steg 15.1.19)
   if ((all.virke ?? 0) > 1e-9) count(s, 'virkeBuret', all.virke); // virket som burits hem: släden prövas fram av den som ofta bär virke (steg 10.10.2)
   const fo = t.ting?.map(id => tingOf(s).find(g => g.id === id)).find(g => g && SAKER[g.k]?.fordon);
   if (fo) { count(s, `fordonTur_${fo.k}`); count(s, 'fordonTur'); if (fo.djur !== undefined) count(s, 'dragdjurTur'); count(s, 'fordonSaker', Object.values(all).reduce((n, v) => n + v, 0)); } // turerna med kälken och det den drog (steg 10.10.2)
