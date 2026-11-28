@@ -20,7 +20,7 @@ import { troshusRum, trosMobelBrist } from './troshus';
 import { LAGER, Zone, amountOf, eldRutor, isStored, stacksOf, ingetIElden, bordanAv, flyttaLager, inZone, ownsId, pilesInne, put, stallBorta, usable, use, zoneAt, zonesOf } from './lager';
 import { PLATS } from './plats';
 import { balans } from './balans';
-import { Hus, Rum, bitAt, blocked, gridOf, housesOf, husById, roofed, roomAt, touch } from './byggnad';
+import { Hus, Rum, bitAt, blocked, freeNear, gridOf, housesOf, husById, roofed, roomAt, touch } from './byggnad';
 import { HUS, bedTile, husIText, fahusUtanKrubba, husFolk, krubbaKrok, fnOf, langhusRum, rumFnOf, samlingRum, sovHus, sovKvar, sovPlats, utanBadd } from './byggnader';
 import { coldOf, nederbord, temperature } from './vader';
 import { ACTS, GARVA_ACTS, redskapTal } from './handlingar';
@@ -1373,7 +1373,7 @@ export function stationBorja(s: State, p: Person, tk: Task) {
   if (!at) return;
   const t = nyStation(s, p, k, at, undefined, undefined, true), sp = stationSpot(s, k, p);
   tk.ref = t.id;
-  if (sp) { tk.tx = sp.x; tk.ty = sp.y; } // materialet bärs till stationen där den påbörjades
+  if (sp) { const f = freeNear(s, sp.x, sp.y); tk.tx = f.x; tk.ty = f.y; } // materialet bärs till stationen där den påbörjades, till platsen bredvid som valet (val.ts): aldrig i en husvägg
 }
 export function startStation(s: State, p: Person, tk: Task) {
   const k = tk.tool ?? '', d = stationDef(k);
