@@ -21,7 +21,9 @@ import { antalUr } from './varldslag';
 export const BYANFALL = balans('byanfall', {
   skicka: 0.6, // så stor del av byns styrka går med ett anfall ...
   minst: 3, // ... och minst så många (har byn färre anfaller den inte)
-  hemma: 1.5, // försvararnas skydd: de slåss hemma, vid husen och med det de har till hands
+  // försvararnas skydd: de slåss hemma, vid husen och med det de har till hands. Hemmafördelen är liten (1,2): försvaret ska bara
+  // påverka lite, så att det som avgör ett anfall är antalet och utrustningen på båda sidor och hur många som är hemma, inte att man slåss hemma
+  hemma: 1.2,
   utrDel: 1.5, // utrustningen var och en har (steg 15.1.152): vapen och skydd värda högst så många gånger rikedomen per person
   kastDel: 0.3, // så stor del av ett gäng från en by som kan göra bågar eller slungor bär dem (steg 15.1.153)
   antalVikt: 1.2, // en flocks styrka är värdet per person gånger antalet upphöjt till detta: många kan gå flera mot en
