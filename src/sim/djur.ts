@@ -23,7 +23,7 @@ import { ISTID, ageIndex, dygnStart, yearNo } from './tid';
 // still där. De enskilda kaninerna ritas bara; jakten ger mest nära en grupp (`narvaroAt`, via richness). Fler arter
 // (rådjur, fågel) blir egna lager och grupper senare.
 export interface Djur { id: number; art: 'kanin' | 'varg' | 'radjur' | 'vildsvin' | 'fagel' | 'bjorn' | 'bjornunge'; x: number; y: number; grupp: number; u?: number } // u: fågelns utseende (steg 6.6.3) // grupp = kaningruppen eller vargflocken
-export interface Kaningrupp { id: number; x: number; y: number; n: number } // n: så många kaniner gruppen har just nu
+export interface Kaningrupp { id: number; x: number; y: number; n: number; n0: number } // n: så många kaniner gruppen har just nu, n0: så många den hade när den kom (steg 15.1.129)
 // Balanstal (regel 8): kaninernas grupper (antal, storlek, hur länge de stannar och hur långt de rör sig), hur de flyr
 // från folk och hur mycket jakten ger nära dem. Jaktens ursprungliga värde finns i viltlagret (FYND.jakt i fynd.ts)
 export const KANINER = balans('djur', {
@@ -164,7 +164,7 @@ export function grupperOf(s: State, t = s.now, bara?: (x: number, y: number) => 
       har += v * (tj ? 1 - tj[i] : 1); kan += v;
     }
     const n = kan > 0 ? Math.round(c.st.n0 * Math.min(1, har / kan)) : 0;
-    ut.push({ id, x: gx, y: gy, n });
+    ut.push({ id, x: gx, y: gy, n, n0: c.st.n0 });
   }
   return ut;
 }
@@ -198,9 +198,11 @@ export const KANIN_UT = KANINER.spridd + 0.6 * Math.SQRT2 + KANINER.hopp * KANIN
 export function djurOf(s: State, t = s.now, folk?: readonly { x: number; y: number }[], bara?: (x: number, y: number) => boolean): Djur[] {
   const ppl = folk ?? living(s), out: Djur[] = [], vt = vattenNu(s), torr = (q: { x: number; y: number }) => vt[Math.floor(q.y) * W + Math.floor(q.x)] !== T.Vatten;
   const doda = new Set(s.djurDoda?.map(d => d.id));
-  for (const g of grupperOf(s, t, bara)) for (let j = 0, kvar = g.n; j < 8 && kvar > 0; j++) {
+  // gruppens platser är de n0 den hade när den kom; en dödad kanin är borta, och de som syns är högst så många som lagret har
+  // kvar (n), så att den dödade räknas en gång: i lagret, som jakten tar ur (steg 15.1.129)
+  for (const g of grupperOf(s, t, bara)) for (let j = 0, kvar = g.n; j < g.n0 && kvar > 0; j++) {
     const id = g.id * 8 + j;
-    if (doda.has(id)) continue; // en dödad kanin är borta, och nästa i gruppen syns i stället (steg 3.7.13)
+    if (doda.has(id)) continue;
     kvar--;
     const ang = hash(id, 4, 11) * Math.PI * 2, r = KANINER.spridd * Math.sqrt(hash(id, 5, 13));
     const hx = g.x + Math.cos(ang) * r, hy = g.y + Math.sin(ang) * r;
@@ -345,7 +347,7 @@ export function flockGrupper(s: State, f: FlockArt, t = s.now, bara?: (x: number
     if (!st) continue;
     const id = f.G + e * f.tal.grupper + k, fl = flyttAv(s, id, t), x = fl ? clamp(st.x + fl.dx, 1, W - 1) : st.x, y = fl ? clamp(st.y + fl.dy, 1, H - 1) : st.y;
     if (bara && !bara(x, y)) continue;
-    ut.push({ id, x, y, n: st.n });
+    ut.push({ id, x, y, n: st.n, n0: st.n });
   }
   return ut;
 }
@@ -457,7 +459,7 @@ export function fagelFlockar(s: State, t = s.now, bara?: (x: number, y: number) 
   for (let k = 0; k < FAGEL.grupper; k++) {
     const e = Math.floor((t - fagTid(k)) / FAG_LIV), st = fagStart(s, k, e);
     if (!st || (bara && !bara(st.x, st.y)) || borta(s, st.x, st.y, t)) continue;
-    ut.push({ id: FAG_G + e * FAGEL.grupper + k, x: st.x, y: st.y, n: st.n, u: st.u });
+    ut.push({ id: FAG_G + e * FAGEL.grupper + k, x: st.x, y: st.y, n: st.n, n0: st.n, u: st.u });
   }
   return ut;
 }

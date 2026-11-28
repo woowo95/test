@@ -15,12 +15,12 @@ import { EFTER, Efter, STRIDSLAG } from './efterstrid';
 import { alive, byId, count, forstaGang, gjort, log, ovning, stat } from './folk';
 import { skada, syn } from './halsa';
 import { groundOf, markslag, tileOf } from './mark';
-import { KANIN } from './redskap';
+import { DJUR, KANIN } from './redskap';
 import { avst, clamp, rnd } from './slump';
 import { KAST, SLAGSMAL, STRID, VAPEN, Vapen, Uppstallning, chansMot, djurKampe, kastat, efterKampen, nyStrid, slump, traffa } from './strid';
 import { isLight } from './tid';
 import { HOUR, Jaktforsok, Person, SEC, State, T, Task, W, inMap } from './typer';
-import { viltStart } from './fynd';
+import { takeFrom, viltStart } from './fynd';
 import { getMap, hash } from './karta';
 import { motgangNu } from './motgang';
 import { snoPaMarken, vaderNu } from './vader';
@@ -295,6 +295,7 @@ export function jaktKlar(s: State, p: Person, tk: Task) {
     dodaDjur(s, f.id);
     if (forstaGang(s, 'kaniner')) log(s, `${p.name} fångade byns första hare och bar hem den hel.`, 'world', [p.id]);
     tk.carry += KANIN;
+    takeFrom(s, 'jakt', f.x, f.y, DJUR.kanin.mat); // haren är borta ur gruppen tills den växt tillbaka (steg 15.1.129)
     blodas(s, f.x, f.y, 'jakt', 1); // där kaninen fångades
     ovning(p, f.kast > 0 ? 'traff' : 'narstrid', SLAGSMAL.jakt); // träffsäkerheten eller närstriden (strid.ts)
     if (f.hand && r() < JAKT.bett) { count(s, 'jaktBett'); skada(s, p, r() < 0.5 ? 'handH' : 'handV', 'bett', JAKT.bettGrad, 'jakt', 'när hen grep en hare'); }

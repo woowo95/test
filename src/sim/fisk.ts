@@ -1,6 +1,6 @@
 import { balans } from './balans';
 import { forstaGang, count, living, log } from './folk';
-import { richness } from './fynd';
+import { Lager, richness, takeFrom } from './fynd';
 import { put } from './lager';
 import { ageIndex } from './tid';
 import { chansPer, rnd } from './slump';
@@ -72,7 +72,8 @@ export function stepMjardar(s: State, dt = 3600) {
     const rik = d.rik ? d.rik(s, m.x, m.y) : Math.min(MJARDE.rikMax, richness(s, d.lager as 'fiske', m.x, m.y));
     if (!chansPer(s, d.fangst * rik, 3600, dt, 'arbete', p)) continue;
     const k = d.ger(s, p);
-    m.fisk[k] = (m.fisk[k] ?? 0) + 1; m.n++; d.fangad?.(s, m.x, m.y);
+    m.fisk[k] = (m.fisk[k] ?? 0) + 1; m.n++;
+    if (d.fangad) d.fangad(s, m.x, m.y); else takeFrom(s, d.lager as Lager, m.x + 0.5, m.y + 0.5, 1); // det fångade är borta ur lagret (steg 15.1.129)
     if (forstaGang(s, 'fallaFangst_' + (m.k ?? 'mjarde'))) log(s, `Byns första ${d.namn.toLowerCase()} fångade något.`, 'world');
     if (d.slits) m.c = (m.c ?? 1) - d.slits;
   }
