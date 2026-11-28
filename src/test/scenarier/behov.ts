@@ -160,7 +160,9 @@ SCENARIER.aktivitet = {
         const helKanin = t?.act === 'jakt' && !t.items && Math.abs(t.carry - SIM.KANIN) < 1e-9;
         if (t?.phase === 'back' && t.act !== 'bara' && !helKanin && !ryms(s, p)(bordSlag(t)) && Object.values(bordSlag(t)).reduce((a, b) => a + b, 0) > bordPlats(s, p) + 1e-6) tungt++; // aldrig mer än som ryms i de fria händerna (steg 6.1.8)
         const r = t?.phase === 'do' && !ACTS[t.act].runda ? ACTS[t.act].vandra?.r : undefined; // hur långt från platsen man rör sig (handlingar.ts); rundan (steg 4.5.6.1) går från ruta till ruta
-        if (t && r && Math.hypot(p.x - t.tx, p.y - t.ty) > r + 0.6) utanfor++;
+        // matchen och striden har ingen fast plats: knuffen trycker tillbaka och matchen vandrar med spelarna (steg 15.1.68)
+        const iMatch = t?.act === 'sport' || t?.act === 'strid';
+        if (t && r && !iMatch && Math.hypot(p.x - t.tx, p.y - t.ty) > r + 0.6) utanfor++;
         if (t?.phase === 'do' && isWork(t.act)) arbete += BEAT / 3600;
       }
     }
