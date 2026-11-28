@@ -9,7 +9,7 @@ import { krukaAv } from './kruka';
 import { DAY, HOUR, MIN, Person, State } from './typer';
 import { balans } from './balans';
 import { KROPP, count, forstaGang, log } from './folk';
-import { isSick } from './sjukdom';
+import { isSick, SJUK } from './sjukdom';
 import { HALSA, hemma, salvaKrok, teKrok, vattenKrok } from './halsa';
 import { teVarme } from './varme';
 
@@ -27,6 +27,7 @@ export const TE = balans('te', {
 const kanTe = (s: State, p: Person) => (p.te?.till ?? 0) <= s.now && hemma(s, p) && !!medVatska(s, 'te');
 teKrok.vill = (s, p) => kanTe(s, p) && (isSick(p, s.now) || (p.skador ?? []).some(w => w.inf !== undefined));
 teKrok.drick = (s, p) => drickTe(s, p);
+teKrok.faktor = (s, p) => teFaktor(s, p, SJUK.lakeort); // teet ger motståndet mot infektionen ett tillskott (steg 15.1.106)
 teVarme.kan = kanTe; teVarme.varm = TE.varm;
 export function drickTe(s: State, p: Person) {
   const k = medVatska(s, 'te');

@@ -194,6 +194,7 @@ function varldAv(s: State, g: KartStrid): StridVarld {
       if (sport && w.g < STRID.lek) return false; // brottningen: de svaga slagen gör ont men blir ingen skada (steg 9.2.92)
       const slag = g.efter && !p.gast ? STRIDSLAG[g.efter.typ] : undefined; // striden med rövare eller djur: såret och döden heter efter den
       const dog = !!skada(s, p, w.d, w.k, w.g, (slag?.orsak ?? 'drap') as Parameters<typeof skada>[5], slag?.text ?? `i ${lek ? 'ett lekslagsmål' : 'en strid'} med ${av.namn}`, true, Math.atan2(k.y - av.y, k.x - av.x));
+      if (!dog && slag?.blodigt && p.skador?.length) p.skador[p.skador.length - 1].smuts = 1; // rövarnas och djurens vapen och käftar är blodiga (steg 15.1.105)
       if (!dog) slag?.sar?.(s, p, w);
       if (w.fast && p.skador?.length) p.skador[p.skador.length - 1].fast = 1; // spjutet sitter kvar till vården (steg 3.7.7)
       if (!dog && w.av && !(KROPPSDELAR[w.d] as { livsviktig?: true }).livsviktig) forlora(s, p, w.d, 'höggs av'); // olyckshugget (steg 9.5.22)
@@ -426,4 +427,4 @@ export function djurIKartStrid(s: State, art: string, id?: number) {
   for (const g of kartStrider(s)) { const d = g.djur?.find(q => q.art === art && (id === undefined || q.id === id)); if (d) return { g, k: g.st.kampar.find(k => k.id === d.k)! }; }
   return undefined;
 }
-STRIDSLAG.rovare = { orsak: 'rovare', text: 'i en strid med rövare', dod: s => count(s, 'dodRovare') };
+STRIDSLAG.rovare = { orsak: 'rovare', text: 'i en strid med rövare', blodigt: true, dod: s => count(s, 'dodRovare') };

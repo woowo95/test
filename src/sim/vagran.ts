@@ -107,6 +107,7 @@ export function vagStrid(s: State, sl: Sallskap, fiender: Uppstallning['kampar']
       const p = person(k);
       if (!p || p.dodVag) return false;
       const dod = skada(s, p, w.d, w.k, w.g, (sl0?.orsak ?? 'drap') as Parameters<typeof skada>[5], 'på resan', true);
+      if (!dod && sl0?.blodigt && p.skador?.length) p.skador[p.skador.length - 1].smuts = 1; // rövarnas och djurens vapen och käftar är blodiga (steg 15.1.105)
       if (!dod && w.av && !(KROPPSDELAR[w.d] as { livsviktig?: true }).livsviktig) forlora(s, p, w.d, 'höggs av'); // olyckshugget (steg 9.5.22): striden avgör (steg 12.1.82)
       if (dod) dorPaVagen(s, sl, p, dod, t);
       return !!dod;

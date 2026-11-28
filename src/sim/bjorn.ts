@@ -195,7 +195,7 @@ export function bjornStrid(s: State, id: number, folk: Person[], medUngar: boole
   kartStridBorja(s, avsikt, [med, []], jakt ? 'På björnjakt' : rovarna ? BJORN_MOT_ROVARNA : 'Anfölls av en björn', { typ: 'bjorn', egen: true, djur: id, avsikt, ...(medUngar ? { ungar: true } : {}) }, [{ art: 'bjorn', id, k, blod: halsaOf(s, id).blod }]);
   count(s, 'djurStrid');
 }
-STRIDSLAG.bjorn = { orsak: 'bjorn', text: 'i en strid med en björn', dod: s => count(s, 'dodBjorn') };
+STRIDSLAG.bjorn = { orsak: 'bjorn', text: 'i en strid med en björn', blodigt: true, dod: s => count(s, 'dodBjorn') };
 // striden med björnen är slut (EFTER.bjorn, kartstrid.ts)
 function bjornSlut(s: State, efter: Efter, vinnare: 0 | 1 | -1, g: KartStrid) {
   const id = Number(efter.djur), avsikt = efter.avsikt as Avsikt, medUngar = !!efter.ungar, st = g.st;

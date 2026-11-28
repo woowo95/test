@@ -4,7 +4,7 @@ import { stor, tal } from './ord';
 // vuxen, tecknen i varje stadium, följderna, vården som hjälper, dödligheten per ålder och om man blir immun efteråt. Tiderna är
 // dygn (ett dygn är ett år i spelet och en dag i verkligheten).
 // Motståndet (steg 9.5.2): sjukdomen och kroppens motstånd är två tal 0–1 hos den sjuke, och båda växer varje slag. Motståndet
-// växer i radens takt (1 på radens längd för en frisk vuxen) gånger näringen, vilan, värmen och läkeörten; sjukdomen växer i
+// växer i radens takt (1 på radens längd för en frisk vuxen) gånger näringen (protein och vitaminer), vilan, värmen och läkeörten; sjukdomen växer i
 // samma takt gånger radens farlighet för hens ålder och en slumpfaktor som dras när hen insjuknar, fortare för den som arbetar.
 // Når sjukdomen 1 först dör hen av sjukdomen (dödsorsaken heter som raden); når motståndet 1 först blir hen frisk, och immun om
 // raden säger det. Dödligheten per ålder ställs alltså in med farligheten, inte med en tärning vid slutet: farligheten f ger
@@ -17,7 +17,7 @@ import { balans } from './balans';
 import { ARSTID, iIstiden } from './tid';
 import { ageOf, ALDER, KROPP, count } from './folk';
 import { chansPer, clamp, rnd } from './slump';
-import { naringNu, mattnad } from './naring';
+import { bristGrad } from './naring';
 import { living } from './folk';
 import { roomAt } from './byggnad';
 import { eldarOf, eldXY } from './eld';
@@ -90,8 +90,9 @@ export const SJUK = balans('sjuk', {
   arbetar: 1.5, // sjukdomen växer så här mycket fortare för den som arbetar
   vila: 2, // motståndet växer dubbelt för den som sover
   fryser: 0.5, // ... och hälften för den som fryser
-  naringMin: 0.4, // motståndet gånger näringen, aldrig mindre än så här (en svältande har ändå lite motstånd)
+  naringMin: 0.4, // motståndet vid full brist på protein eller vitaminer (naringMot, steg 15.1.107): en svältande har ändå lite motstånd
   lakeort: 2, // läkeörten eller teet (9.5.6) gånger motståndet
+  barnMot: 0.5, // motståndet gånger detta för barn under ALDER.barnsjuk (steg 15.1.112, Sjukdomar: Motståndet)
   // chansen att bli sjuk av orsaken, gånger det här: sjukdomarna varar dygn i stället för timmar som förut (steg 9.5.1), så
   // chansen är lika mycket mindre, och lika många är sjuka som förut. Vatten och skämd mat ger magsjuka, rått kött
   // matförgiftning och kylan förkylning
@@ -218,6 +219,9 @@ function epidemi(s: State, p: Person, k: SjukId) {
   if (!e.skriven && e.ids.length >= Math.max(3, living(s).length * SJUK.epidemi)) { e.skriven = 1; allaBarn(s, 'epidemi'); kronika(s, `${SJUKDOMAR[k].namn} gick genom byn. ${stor(tal(e.ids.length))} blev sjuka.`, 'sjukdom'); count(s, 'epidemi'); }
 }
 
+// näringen i motståndet (steg 15.1.107, Sjukdomar: Motståndet): protein och vitaminer, inte mättnaden. Den som har det som
+// behövs (minst NARINGBAL.brist) har fullt motstånd, och med full brist på det ena eller andra SJUK.naringMin
+export const naringMot = (p: Person) => 1 - (1 - SJUK.naringMin) * Math.max(bristGrad(p, 'protein'), bristGrad(p, 'vitamin'));
 // förloppet varje slag (steg.ts): sjukdomen och motståndet växer. Svarar med dödsorsaken om sjukdomen vann
 // dödsorsaken när sjukdomen vann (die i liv.ts)
 export const SJUK_DOD: Record<SjukId, Dodsorsak> = { magsjuka: 'magsjuka', matforgiftning: 'matforgiftning', svampforgiftning: 'svamp', forkylning: 'forkylning', lunginflammation: 'lunginflammation', massling: 'massling', koppor: 'koppor' };
@@ -233,8 +237,7 @@ export function sjukSteg(s: State, p: Person, dtSec: number, sover: boolean, arb
     else notis(s, 'sjuk', `${p.name} har insjuknat: ${sjukText(p).toLowerCase()}.`, [p.id]);
   }
   const d = SJUKDOMAR[j.k], h = dtSec / HOUR_S, bas = 1 / (((d.langd[0] + d.langd[1]) / 2) * 24); // i timmen: 1 på radens längd
-  const naring = Math.max(SJUK.naringMin, mattnad(naringNu(p)));
-  const mot = bas * naring * (sover ? SJUK.vila : 1) * (p.warm < KROPP.kallt ? SJUK.fryser : 1) * lakeort;
+  const mot = bas * naringMot(p) * (sover ? SJUK.vila : 1) * (p.warm < KROPP.kallt ? SJUK.fryser : 1) * (ageOf(p, s.now) < ALDER.barnsjuk ? SJUK.barnMot : 1) * lakeort; // barn under fem har långsammare motstånd (steg 15.1.112)
   j.mot = Math.min(1, j.mot + mot * h);
   j.grad = Math.min(1, j.grad + bas * farlighet(d, p, s.now) * j.r * (arbetar ? SJUK.arbetar : 1) * h);
   if (j.grad >= 1 && j.mot < 1) {
