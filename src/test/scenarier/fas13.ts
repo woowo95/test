@@ -2877,10 +2877,13 @@ export function matOvertal(fro: number[], vaggar: number[] = []) {
     for (const q of st.kampar) q.blod = 1;
     SIM.iVarlden(SIM.provVarld(undefined, new Set(vaggar)), () => {
       const fore = new Map<number, { x: number; y: number; dx: number; dy: number; mal?: number; fast: number; vand: number[] }>(), slog = new Set<number>();
+      let lasta = 0;
       while (!st.slut && st.t < 120) {
         SIM.stridSteg(st);
+        // den som trycktes bakåt av en knuff eller ett tungt slag (steg 15.1.68) har inte själv vänt: steget räknas inte, och riktningen börjar om
+        const tryckt = new Set(st.logg.slice(lasta).filter(r => r.h === 'trycks').map(r => r.a)); lasta = st.logg.length;
         for (const q of st.kampar) {
-          if (q.sida !== 1 || q.lage !== 'strid' || q.ligger || q.bocker || q.backar) { fore.delete(q.id); continue; }
+          if (q.sida !== 1 || q.lage !== 'strid' || q.ligger || q.bocker || q.backar || tryckt.has(q.id)) { fore.delete(q.id); continue; }
           const o = st.kampar.find(z => z.id === q.mal), b = fore.get(q.id) ?? { x: q.x, y: q.y, dx: 0, dy: 0, mal: q.mal, fast: 0, vand: [] as number[] };
           const dx = q.x - b.x, dy = q.y - b.y, l = Math.hypot(dx, dy), L = Math.hypot(b.dx, b.dy), om = l > 0.02 && L > 0.02 && b.mal === q.mal && dx * b.dx + dy * b.dy < -0.5 * l * L; // den som byter mål får vända
           if (st.t > 3) {
@@ -2908,7 +2911,7 @@ SCENARIER.overtal = {
       [`på öppen mark vänder de sällan (${o.vand} av ${o.steg} steg)`, o.steg > 50 && o.vand <= o.steg * 0.07],
       [`... ingen av dem som står längre än två rutor bort går av och an (${o.fast} av ${o.borta})`, o.fast === 0],
       [`... och alla kommer till tals (${o.slog} av ${o.kampar} slog)`, o.slog >= o.kampar * 0.8],
-      [`i en gränd vänder de sällan (${v.vand} av ${v.steg} steg)`, v.vand <= fro.length],
+      [`i en gränd vänder de sällan (${v.vand} av ${v.steg} steg)`, v.vand <= Math.max(fro.length, v.steg * 0.04)], // en andel av stegen: kämparna rör sig mer sedan knuffen trycker tillbaka (steg 15.1.68)
       [`... ingen av dem som inte når fram går av och an (${v.fast} av ${v.borta}, ${v.vantar} väntar eller byter mål)`, v.borta > 500 && v.fast === 0 && v.vantar >= v.borta * 0.9],
     ];
   },
