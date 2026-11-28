@@ -202,6 +202,7 @@ export * from './sim/byrel';
 export * from './sim/priser';
 export * from './sim/kartrecept';
 export * from './sim/byhandling';
+export * from './sim/fardresa';
 export * from './sim/fardfolk';
 export * from './sim/byflytt';
 export * from './sim/giftermal';

@@ -3123,9 +3123,9 @@ SCENARIER.radanfall = {
     const tagit = Object.values(f.byte ?? {}).reduce((a, x) => a + (x ?? 0), 0);
     const hela = [dodaA, dodaF, ...Object.values(f.byte ?? {})].every(x => Number.isInteger(x));
     const rel1 = SIM.relation(vl, mot.nr, r.nr) ?? 0;
-    const matFore = mat0 - mot.tal.mat, rM0 = r.tal.mat;
+    const matFore = mat0 - mot.tal.mat, rM0 = r.tal.mat, packat = SIM.FOOD.reduce((a, k) => a + Math.floor(f.pack?.[k] ?? 0), 0); // maten flocken packat och inte ätit kommer också hem (steg 15.1.86)
     SIM.KOHANDELSER.fardHem(s, vl, fardPost(vl, f, 'fardHem')!);
-    const hem = r.tal.mat - rM0 === (f.byte?.mat ?? 0) && matFore === (f.byte?.mat ?? 0);
+    const hem = r.tal.mat - rM0 === (f.byte?.mat ?? 0) + packat && matFore === (f.byte?.mat ?? 0);
     const kron = (vl.kronika ?? []).some(h => h.k === 'rad' && h.by === r.nr && h.mot === mot.nr);
     // samma anfall ger samma utfall, och många anfall: förlorarna dör mer
     let vinst = 0, dA = 0, dF = 0;

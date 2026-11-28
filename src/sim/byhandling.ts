@@ -44,7 +44,8 @@ import { ageIndex, iIstiden } from './tid';
 import { RECEPT } from './recept';
 import { HANDEL, HANDLARSORTER, HANDLARVAROR, HANDLAR_UTR, HVara, HandlarLast, KARAVAN, handlarFram, handlarKrok, kgOf, utrVikt } from './handel';
 import type { TamArtId } from './tamdjur';
-import { gaLangs, type Gang } from './resa';
+import { gaLangs, orkFart, type Gang, type ResBehov } from './resa';
+import { FARDKROK, fardBehov, fardLetaFart, packaFard, packaUr } from './fardresa';
 import { snoPaMarken } from './vader';
 import { isLight } from './tid';
 import { vagMellan } from './vagval';
@@ -323,7 +324,7 @@ export function byarnasHandlingar(s: State, vl: Varlden, n: number) {
 // mottagaren betalar med silver och, när silvret inte räcker, med det den själv har mest överflöd av. Betalningen bärs hem och
 // läggs i byns förråd när färden kommer hem. Färden trampar vägen åt båda håll och syns på världskartan. Huvudbyn som mål kommer
 // med handlaren (11.6.8).
-export interface RadFard { gruva?: true; vant?: number; nere?: number; /* gruvfärden (steg 15.1.28): till är gruvans plats, vant det väntade silvret och nere dygnen i gruvan */ uppdrag?: number; /* uppdraget färden går mot (steg 11.8.9) */ besked?: BeskedTon; /* sändebudets besked (steg 11.6.23) */ gava?: true; anfall?: number; byte?: Partial<Record<VarugruppId, number>>; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[]; folk?: string[] /* namnen på dem som går (steg B.39, fardfolk.ts) */; flytt?: number /* de som flyttar (steg 15.1.85) */; gar?: 'ut' | 'hem' /* färden går dit eller hem (steg 15.1.85) */; vg?: Gang /* gången längs vägen, som huvudbyns sällskap (steg 15.1.85) */ } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
+export interface RadFard { gruva?: true; vant?: number; nere?: number; /* gruvfärden (steg 15.1.28): till är gruvans plats, vant det väntade silvret och nere dygnen i gruvan */ uppdrag?: number; /* uppdraget färden går mot (steg 11.8.9) */ besked?: BeskedTon; /* sändebudets besked (steg 11.6.23) */ gava?: true; anfall?: number; byte?: Partial<Record<VarugruppId, number>>; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[]; folk?: string[] /* namnen på dem som går (steg B.39, fardfolk.ts) */; flytt?: number /* de som flyttar (steg 15.1.85) */; gar?: 'ut' | 'hem' /* färden går dit eller hem (steg 15.1.85) */; vg?: Gang /* gången längs vägen, som huvudbyns sällskap (steg 15.1.85) */; pack?: Record<string, number>; behov?: ResBehov; matNasta?: number; halsa?: number; letaHel?: number; letaArb?: number /* packningen, behoven, maten som tar slut, hälsan och letandet (steg 15.1.86, fardresa.ts) */; } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
 // tonen i beskedet och dess poäng: det vänliga eller det ovänliga, det som lönar sig mest (huvudbyns stat och kyrka väljer
 // likadant, sandebud.ts)
 // fejden (steg 12.1.114): ju längre ner byn ser på grannen under beskedRel, desto mindre vill den vara vänlig (gåvan och det
@@ -441,6 +442,7 @@ function skicka(s: State, vl: Varlden, f: RadFard, tyngd: number) {
   f.t0 += d; f.t1 += d;
   (vl.farder ??= []).push(f);
   namnFolk(vl, f, f.handlare ? f.last?.folk ?? 1 : tyngd);
+  packaFard(s, vl, f, fardFart(s)); // maten, vattnet, tälten och fodret ur byns förråd (steg 15.1.86)
   if (!gaUt(s, vl, f, f.fran, f.till, 'ut')) { trampaFardDit(s, f, sallskapTyngd(tyngd), f.t0); laggIKo(vl, f.t1, 'fardFram', { sak: f.id }); } // utan väg: som förut, vid den väntade tiden
 }
 // färden vänder hem från målet; den går lika fort som dit
@@ -454,7 +456,7 @@ function vandHem(s: State, vl: Varlden, f: RadFard, tyngd: number) {
 // fart (en frisk vuxen 1, i snö RESA.snoFart), och rastar på natten. Den kommer fram när gången når målet, inte vid en uträknad
 // tid. Varje timme i världen (PERIODRADER) går färderna i bitar om tio minuter, som sällskapen (TAKTER), från tiden de gav sig av
 const platsFor = (vl: Varlden, nr: number) => byPlats(vl, nr) ?? varldPlatsNr(vl, nr);
-function gaUt(s: State, vl: Varlden, f: RadFard, fran: number, till: number, gar: 'ut' | 'hem'): boolean {
+export function gaUt(s: State, vl: Varlden, f: RadFard, fran: number, till: number, gar: 'ut' | 'hem'): boolean {
   const v = varldMark(s), a = platsFor(vl, fran), b = platsFor(vl, till);
   if (!v || !a || !b) return false;
   const i = a.y * v.w + a.x, j = b.y * v.w + b.x, vag = i === j ? undefined : vagMellan(vl, v, i, j, 'fots', s.now);
@@ -463,24 +465,42 @@ function gaUt(s: State, vl: Varlden, f: RadFard, fran: number, till: number, gar
   return true;
 }
 // färdens fart: färdfolket är friska vuxna (1); snön bromsar som för sällskapet
-export const fardFart = (s: State) => snoPaMarken(s) >= RESA.snoFran ? RESA.snoFart : 1;
+export const fardFart = (s: State, f?: RadFard) => (snoPaMarken(s) >= RESA.snoFran ? RESA.snoFart : 1) * (f ? orkFart(f) : 1); // orken som sällskapets (steg 15.1.86)
 const fardTyngd = (f: RadFard) => sallskapTyngd(fardAntal(f, BYHANDLING.barare), f.last?.djur && !f.last.vagnar ? 1 : 0, f.last?.vagnar ?? 0);
 export function farderGar(s: State, vl: Varlden, n: number) {
   const tb = periodSlut(vl, 'timme', n), bit = 600 * SEC;
   for (const f of [...vl.farder ?? []]) {
+    if (f.gruva && !f.gar && f.vg) { // nere i gruvan: de äter och dricker som sällskapet framme (steg 15.1.86)
+      for (let t = tb - PERIODER.timme.sek * SEC + bit; t <= tb + 1e-6 && !f.gar; t += bit) if (!fardBehov(s, vl, f, t, bit, true)) break;
+      continue;
+    }
     if (!f.gar || !f.vg) continue;
     for (let t = tb - PERIODER.timme.sek * SEC + bit; t <= tb + 1e-6 && f.gar && f.vg; t += bit) {
-      if (t <= f.t0 || !isLight(t)) continue; // har inte gett sig av, eller natt: rastar
-      if (!gaLangs(s, f.vg, 'fots', fardFart(s), fardTyngd(f), t, bit)) continue;
+      if (t <= f.t0) continue; // har inte gett sig av
+      if (!fardBehov(s, vl, f, t, bit)) break; // de äter, dricker och rastar som sällskapet (steg 15.1.86); alla dog
+      if (!isLight(t)) continue; // natt: rastar
+      if (!gaLangs(s, f.vg, 'fots', fardFart(s, f) * fardLetaFart(f, t), fardTyngd(f), t, bit)) continue;
       if (f.gar === 'ut') fardFramme(s, vl, f, t);
       else { f.gar = undefined; fardHemma(s, vl, f, t); }
     }
   }
 }
+// maten tog slut och ledaren vände (MATSLUT, fardresa.ts): färden går hem härifrån med det den bär
+FARDKROK.vand = (s, vl, f, t) => {
+  if (f.gar !== 'ut' || !f.vg) return;
+  const v = varldMark(s), a = f.vg.ruta, b = platsFor(vl, f.fran);
+  if (!v || a === undefined || !b) return;
+  const vag = a === b.y * v.w + b.x ? undefined : vagMellan(vl, v, a, b.y * v.w + b.x, 'fots', t);
+  if (f.n > 0 && !f.anfall) { f.h = f.g; f.hn = f.n; f.n = 0; } // lasten bärs hem igen
+  f.t1 = t; f.t2 = t + (t - f.t0);
+  if (!vag) { fardHemma(s, vl, f, t); return; }
+  f.gar = 'hem'; f.vg = { ...f.vg, ruta: a, vag: { fran: vag.fran, till: vag.till, steg: vag.steg }, pos: 0, gang: 0 };
+};
 // de som flyttar ger sig av (byflytt.ts): en färd med n personer, som kommer fram när den gått dit
 export function skickaFlytt(s: State, vl: Varlden, fran: number, till: number, n: number, t0: number, dygn: number) {
   const f: RadFard = { id: fardNr(vl), fran, till, g: 'mat', n: 0, t0, t1: t0 + dygn * DAY, flytt: n };
   (vl.farder ??= []).push(f);
+  packaFard(s, vl, f, fardFart(s)); // maten för vägen, ur byn de lämnar (steg 15.1.86)
   if (!gaUt(s, vl, f, fran, till, 'ut')) { vl.farder = vl.farder.filter(x => x !== f); laggIKo(vl, f.t1, 'flytt', { sak: till, data: { fran, n } }); } // utan väg: som förut
 }
 // gåvan: det byn r har över (högst BYHANDLING.gava i grundvärde, i hela enheter) som mottagaren mot behöver mest, efter
@@ -603,6 +623,7 @@ KOHANDELSER.gruvUpp = (s, vl, p) => { const f = vl.farder?.find(x => x.id === p.
 // de som flyttade kommer fram (som KOHANDELSER.flytt i byflytt.ts): färden är slut
 function flyttFram(s: State, vl: Varlden, f: RadFard, t: number) {
   vl.farder = (vl.farder ?? []).filter(x => x !== f);
+  packaUr(radNr(vl, f.till) ?? radNr(vl, f.fran), f); // det som blev över har de med sig (steg 15.1.86)
   fardSlut(s, 'flytt', (t - f.t0) / DAY); // (steg 15.1.84)
   KOHANDELSER.flytt?.(s, vl, { t, nr: 0, typ: 'flytt', sak: f.till, data: { fran: f.fran, n: f.flytt! } });
 }
@@ -621,6 +642,7 @@ export function fardHemma(s: State, vl: Varlden, f: RadFard, t: number) {
   if (i < 0) return;
   const r = radNr(vl, f.fran);
   vl.farder!.splice(i, 1);
+  packaUr(r && r.tal.folk > 0 ? r : undefined, f); // det som inte gått åt kommer hem (steg 15.1.86)
   fardSlut(s, fardSort(f), (p.t - f.t0) / DAY); // (steg 15.1.84)
   if (!r || !BYSORTER[r.sort].folk || r.tal.folk <= 0) return;
   r.tal.silver += f.silver ?? 0;
