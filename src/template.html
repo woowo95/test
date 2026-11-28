@@ -371,7 +371,7 @@ button.tnod.liten.ryk { cursor: pointer; width: 36px; height: 36px; }
 .kar { margin: 12px 0 2px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); }
 .plink { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent); text-underline-offset: 2px; cursor: pointer; }
 .ihop { white-space: nowrap; } /* det som hör ihop bryts inte isär (steg 13.10.37, ui/radbryt.ts) */
-.panelkropp p, .panelkropp li, .panelkropp dd, .panelkropp .small, .panelkropp .txt { text-wrap: pretty; } /* inget ord ensamt på sista raden (steg 13.10.43) */
+.panelkropp p, .panelkropp li, .panelkropp dt, .panelkropp dd, .panelkropp .small, .panelkropp .txt { text-wrap: pretty; } /* inget ord ensamt på sista raden (steg 13.10.43), också namnen i listorna (dt, steg 15.1.50) */
 .phead { display: flex; gap: 10px; align-items: flex-start; }
 .phead.rubrad { align-items: baseline; } .phead.rubrad > :last-child { margin-left: auto; flex: none; white-space: nowrap; } /* länken på rubrikens rad (steg 13.10.41) */
 .phead > div:has(> .rutrub) { flex: 1; } .phead .rutrub, .rutrub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; } /* symbolen och namnet på en rad som krymper (steg 13.10.34) */
