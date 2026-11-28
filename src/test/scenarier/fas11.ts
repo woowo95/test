@@ -3092,7 +3092,7 @@ SCENARIER.radanfall = {
     const r = vl.rader!.find(x => SIM.lever(vl, x) && x.nr !== vl.huvud && SIM.BYSORTER[x.sort].ledare && SIM.radGrannar(vl, x).some(g => g.nr !== vl.huvud))!;
     const mot = SIM.radGrannar(vl, r).find(g => g.nr !== vl.huvud)!;
     SIM.mots(vl, r.nr, mot.nr);
-    r.tal.folk = 40; r.tal.styrka = 20; mot.tal.folk = 30; mot.tal.styrka = 10; SIM.radVaror(mot); mot.tal.mat = 200;
+    r.tal.folk = 40; r.tal.styrka = 24; mot.tal.folk = 30; mot.tal.styrka = 10; SIM.radVaror(mot); mot.tal.mat = 200;
     // chansen följer antal och utrustning, och försvararna har skyddet
     const n = SIM.flockStorlek(r), p = SIM.vinstChans(r, mot, n), pLika = SIM.vinstChans(r, { ...mot, tal: { ...mot.tal, styrka: n } }, n);
     const fattig = { ...r, tal: { ...r.tal, rikedom: 0 } }, rik = { ...r, tal: { ...r.tal, rikedom: r.tal.folk * SIM.RAD.rikPer } }, pFattig = SIM.vinstChans(fattig, mot, n), pRik = SIM.vinstChans(rik, mot, n);
@@ -3279,7 +3279,7 @@ SCENARIER.varldsanfall = {
     SIM.BYHANDLINGAR.plundra.gor(c);
     const f = (vl.farder ?? []).find(x => x.fran === r.nr && x.anfall && !fore.has(x.id))!; // den nya färden
     const syns = !!f && SIM.fardLage(vl, f, (f.t0 + f.t1) / 2, vl.mark.w) !== undefined;
-    const n1 = SIM.flockStorlek(r, SIM.anfallUte(vl, r.nr));
+    const n1 = SIM.flockStorlek(r, SIM.radUte(vl, r.nr));
     // flocken kommer fram och går in på kartan
     s.now = Math.max(s.now, f.t1);
     const fp = vl.ko!.find(q => q.typ === 'fardFram' && q.sak === f.id)!; vl.ko = vl.ko!.filter(q => q !== fp); // den kommer fram nu, inte en gång till

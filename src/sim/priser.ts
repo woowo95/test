@@ -200,9 +200,10 @@ export function markGrupp(s: State, r: VarldRad, g: VarugruppId): number {
   return clamp(1 + RADPRIS.markProd * n, 0.25, 3);
 }
 // gruppens påslag i en by i världen (huvudbyns rad räknas ur byn)
-export function radGruppPaslag(s: State, r: VarldRad, g: VarugruppId): number {
+// paVag: det som redan är på väg dit i gruppen (färderna från andra byar, steg 15.1.73), räknat som om det redan fanns
+export function radGruppPaslag(s: State, r: VarldRad, g: VarugruppId, paVag = 0): number {
   if (r.nr === s.varld?.huvud) return gruppPaslag(s, g);
-  return paslag(radVill(r, g, rikMal(r)), radHar(r, g));
+  return paslag(radVill(r, g, rikMal(r)), radHar(r, g) + paVag);
 }
 // sakens eget påslag i raden: posten om den finns, annars det marken ger
 export const radSakPaslag = (s: State, r: VarldRad, k: string) => r.egen?.[k] ?? markPaslag(s, r, k);

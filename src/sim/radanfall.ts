@@ -36,7 +36,8 @@ export const forsvarare = (r: VarldRad) => Math.max(0, Math.min(r.tal.folk, Math
 // så många skickar byn r i ett anfall, 0 om den är för svag; ute = de som redan är ute i ett anfall (steg 11.6.20)
 // mot = byn som anfalls (steg 12.1.21): då går så många som bytet och försvaret drar, och aldrig fler än byn kan skicka
 export const flockStorlek = (r: VarldRad, ute = 0, mot?: VarldRad) => {
-  const n = Math.floor(Math.min(r.tal.folk, r.tal.styrka) * BYANFALL.skicka) - ute;
+  const kan = Math.min(r.tal.folk, r.tal.styrka);
+  const n = Math.min(Math.floor(kan * BYANFALL.skicka) - ute, Math.floor((kan - ute) / 2)); // minst dubbelt så många lediga som går (steg 15.1.73)
   if (n < BYANFALL.minst) return 0;
   if (!mot) return n;
   const kraft = Math.ceil(forsvarare(mot) * anfallUtr(mot) * BYANFALL.hemma * BYANFALL.vinstMal / anfallUtr(r)); // så många som behövs för att vinna
