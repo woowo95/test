@@ -21,7 +21,7 @@ import { groundOf } from './mark';
 import { findPath } from './vag';
 import { gaBort, ute } from './ute';
 import { Varlden, varldMark } from './varlden';
-import { byPlats, kandPlats, varldPlatserPa, varldPlatsNr, type VarldPlats } from './landmarken';
+import { LANDMARKEN, byPlats, kandPlats, varldPlatserPa, varldPlatsNr, type VarldPlats } from './landmarken';
 import { clamp } from './slump';
 import { ryggsack } from './utrustning';
 import { Tamdjur, tamArt, tamdjurOf, tamEg } from './tamdjur';
@@ -38,7 +38,8 @@ import { snoPaMarken } from './vader';
 import { ledKlass, sallskapTyngd, trampa } from './leder';
 import type { Skill } from './typer';
 import { kommHem } from './ute';
-import { larOrt, O_BESOKT, radBesoker } from './ort';
+import { larOrt, O_BESOKT, O_KANT, radBesoker } from './ort';
+import { findL } from './minne';
 import { BYSORTER, radNr, type VarldRad } from './radtal';
 import { byPaslag, gruppAv, radHar, radPaslag, radPrisAndras, radTar } from './priser';
 import { rnd } from './slump';
@@ -136,6 +137,8 @@ export const RESA = balans('resa', {
   gralOvan: 2, // ... och gånger 1 + så här mycket gånger hur illa de två som tycker sämst om varandra tycker (0–1, relationen under 0)
   flodRegn: 1, flodSmalt: 1, // översvämningen: risken gånger regnet eller snöfallet (0–1) och snösmältningen (snö på marken i töväder)
   flodTim: 12, // timmar i gång sällskapet väntar tills vattnet sjunkit
+  // det man ser på vägen (steg 15.1.91)
+  hemligSe: 2, // en hemlig plats på eller bredvid rutan ses med den här chansen per dygn gånger den bästa spårarens färdighet (jakt, 0–1)
   // när maten tar slut (steg 11.5.15)
   hungerKost: 5, // det ett dygn utan mat kostar en resenär, i värde (samma skala som resans värde)
   tidKost: 3, // det ett dygn längre resa kostar en resenär, i värde
@@ -935,10 +938,33 @@ export function gaLangs(s: State, g: Gang, fs: Fardsatt, fart: number, tyngd: nu
 }
 // en bit av dagen i gång (dt millisekunder) för huvudbyns sällskap: den del av dagen som går till letande går i halv fart (steg 15.1.90)
 function ga(s: State, sl: Sallskap, t: number, dt: number) {
-  const tyngd = sallskapTyngd(resenarer(s, sl).length, sl.djur.length - (sl.drag ? 1 : 0), sl.drag ? 1 : 0);
-  if (!gaLangs(s, sl, fardsatt(sl), sallskapFart(s, sl) * letaFartAv(letaNu(sl, t)), tyngd, t, dt)) return;
+  const tyngd = sallskapTyngd(resenarer(s, sl).length, sl.djur.length - (sl.drag ? 1 : 0), sl.drag ? 1 : 0), pos0 = sl.pos ?? 0, vag0 = sl.vag;
+  const framme = gaLangs(s, sl, fardsatt(sl), sallskapFart(s, sl) * letaFartAv(letaNu(sl, t)), tyngd, t, dt);
+  seLangs(s, sl, sl.vag === vag0 ? pos0 + 1 : 0, t, dt); // landmärkena längs vägen (steg 15.1.91)
+  if (!framme) return;
   if (sl.skede === 'ute') { sl.skede = 'framme'; sl.framme = t; count(s, 'resa framme'); radBesok(s, sl, t); vackKrok.framme?.(s, sl); }
   else if (sl.skede === 'hemat') hemkomst(s, sl, t);
+}
+// ---------- det man ser på vägen (steg 15.1.91, Flera samhällen: Det man ser och möter på vägen) ----------
+// Resenärerna ser landmärkena på och bredvid rutorna de går över och vet sedan var de ligger (en lärdom av slaget ort, O_KANT);
+// hemma berättar de om dem, och platsen blir ett rykte i byn som andra lärdomar (ort.ts). En hemlig plats på eller bredvid rutan
+// ses bara med en chans per tid efter den bästa spårarens färdighet (jakt). fran: den första rutan längs vägen som är ny
+function seLangs(s: State, sl: Sallskap, fran: number, t: number, dt: number) {
+  const vl = s.varld, v = varldMark(s), rutor = vagenRutor(s, sl), folk = resenarer(s, sl), pos = sl.pos ?? 0;
+  if (!vl || !v || !rutor.length || !folk.length) return;
+  const runt = (i: number, f: (p: VarldPlats) => void) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const x = i % v.w + dx, y = Math.floor(i / v.w) + dy; if (x >= 0 && y >= 0 && x < v.w && y < v.h) for (const p of varldPlatserPa(vl, x, y)) f(p); } };
+  const sett = new Set<VarldPlats>();
+  for (let j = Math.max(0, fran); j <= Math.min(pos, rutor.length - 1); j++) runt(rutor[j]!, p => { if (!(LANDMARKEN[p.k] as { hemlig?: true } | undefined)?.hemlig && p.k !== 'by') sett.add(p); });
+  for (const p of sett) { for (const q of folk) larOrt(s, q, p.nr, O_KANT, 1, { t }); count(s, 'resa såg landmärke'); }
+  // det hemliga: en chans per tid (inte per ruta), där sällskapet står
+  const i = sl.ruta ?? rutor[pos];
+  if (i === undefined) return;
+  const chans = 1 - Math.exp(-RESA.hemligSe * basta(s, sl, 'jakt') / 20 * dt / DAY);
+  runt(i, p => {
+    if (!(LANDMARKEN[p.k] as { hemlig?: true } | undefined)?.hemlig || folk.every(q => (findL(q, 'ort', p.nr)?.v ?? -1) >= O_KANT) || rnd(s, 'resa') >= chans) return;
+    for (const q of folk) { larOrt(s, q, p.nr, O_KANT, 1, { t }); if (p.k === 'gomma') FYNDSETT.gomma?.(s, q, p.nr, t); }
+    dagbok(s, sl, 'fynd', `Fick syn på ${p.namn}, som inte syns för den som inte vet var den ligger.`, t); count(s, 'resa såg hemligt');
+  });
 }
 // sällskapet är hemma: resenärerna kommer in vid kanten de gick ut från, och djuren med dem
 export function hemkomst(s: State, sl: Sallskap, t: number) {
