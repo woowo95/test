@@ -47,7 +47,7 @@ export function siteHo(s: State) {
   let best: { x: number; y: number; rot?: 1 } | undefined, bd = Infinity;
   for (const h of utanHo(s)) for (let y = h.y; y < h.y + h.h; y++) for (let x = h.x; x < h.x + h.w; x++) {
     const d = Math.hypot(x + 0.5 - m.x, y + 0.5 - m.y);
-    if (d < bd && ledig(s, x, y) && !blocked(s, x + 0.5, y + 0.5)) { bd = d; best = { x, y }; }
+    if (d < bd && ledig(s, x, y, undefined, true) && !blocked(s, x + 0.5, y + 0.5)) { bd = d; best = { x, y }; }
   }
   return best;
 }

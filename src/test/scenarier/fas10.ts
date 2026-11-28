@@ -1199,7 +1199,7 @@ SCENARIER.vattenho = {
     if (tb) { tb.vatten = 0; for (let i = 0; i < 24 * 30; i++) { b.now += 3600_000; hoRegn(b, 3600); max = Math.max(max, tb.vatten ?? 0); } }
     return [
       [`hagen utan vatten saknar en ho (brist ${brist.toFixed(2)}), och den huggs ur ${JSON.stringify(RECEPT.vattenho.av)} på ${RECEPT.vattenho.min} minuter`, brist > 0 && RECEPT.vattenho.av.virke === 1 && RECEPT.vattenho.min === 10],
-      [`hon byggdes i hagen (${byggd}) och bristen är borta (${efter})`, byggd && efter === 0],
+      [`hon byggdes i hagen (${byggd}) och bristen är mindre (${brist} → ${efter}; en ny hage som inte når vattnet vill också ha en, steg 15.1.144)`, byggd && efter < brist],
       [`en full mellanstor kruka ger ${n1} vatten i hon och krukan blir kvar tom (${tom})`, n1 === 5 && tom],
       [`full ho: ${n2} hälls i, ${rest} blir kvar i krukan och hon har ${full}`, n2 === 2 && rest === 3 && full === HO.rymmer],
       [`första påfyllningen står i loggen (${forstaRad ? 'ja' : 'nej'})`, forstaRad],

@@ -186,3 +186,26 @@ SCENARIER.ullagare = {
     ];
   },
 };
+
+SCENARIER.hagelager = {
+  text: 'Steg 15.1.148: lagret läggs inte i hagen. Ett lager som växer intill en hage har inga rutor i hagen eller på staketet, en ruta inne i hagen hör inte till förrådet, och ett lager som redan ligger i en hage flyttas ut',
+  kor: () => {
+    const b = medHage(0);
+    if (!b) return [['en by med en hage', false]];
+    const { s } = b, z = SIM.zonesOf(s).find(q => q.hus === undefined);
+    if (!z) return [['byn har en lagerplats ute', false]];
+    // hagen ligger tätt intill lagret, på dess östra sida
+    const h = s.hagar![0]; h.x = z.x + z.w + 1; h.y = z.y; s.staket = SIM.hageKant(s, h); s.byggV = (s.byggV ?? 0) + 1; SIM.changed(s);
+    const rutorI = () => SIM.zonesOf(s).filter(q => q.hus === undefined).reduce((n, q) => { let k = 0; for (let y = q.y; y < q.y + q.h; y++) for (let x = q.x; x < q.x + q.w; x++) if (SIM.iHageRuta(s, x, y)) k++; return n + k; }, 0);
+    let vaxt = 0; for (let i = 0; i < 12; i++) if (SIM.lagerStorre(s)) vaxt++;
+    const efterVaxt = rutorI(), forrad = SIM.isStored(s, h.x + 1, h.y + 1);
+    // ett lager som ligger i hagen flyttas ut
+    const z2 = SIM.zonesOf(s).find(q => q.hus === undefined)!; z2.x = h.x; z2.y = h.y; SIM.changed(s);
+    const fore = rutorI(); SIM.lagerIHagen(s); const efter = rutorI();
+    return [
+      [`lagret växer (${vaxt} gånger) och har ${efterVaxt} rutor i hagen eller på staketet`, vaxt > 0 && efterVaxt === 0],
+      [`en ruta inne i hagen hör inte till förrådet (${forrad})`, !forrad],
+      [`ett lager i hagen (${fore} rutor) flyttas ut (${efter})`, fore > 0 && efter === 0],
+    ];
+  },
+};

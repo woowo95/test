@@ -22,6 +22,7 @@ import { personHand } from './personlogg';
 import { hamtaForst, hamtat, taMed } from './hamtning';
 import { sorgTimme } from './liv';
 import { lagerIStraket } from './strak';
+import { lagerIHagen } from './lager';
 import { angIVagen, angMark } from './slatter';
 import { tamFaraSteg } from './djurflykt';
 import { hoRegn } from './vattenho';
@@ -554,7 +555,7 @@ export const TAKTER: Takt[] = [
   { namn: 'planBuild', sek: PLAN.varTim * 3600, fn: s => { planBuild(s); } }, // byggplanen (steg 7.2.3)
   { namn: 'stationFlytt', sek: 24 * 3600, fn: s => { stationFlyttTimme(s); } }, // en station ute närmare dem som använder den (steg 9.4.8); en gång per dygn: var folk bor och arbetar ändras långsamt, och sökningen är dyr
   { namn: 'stepEldFlytt', sek: 3600, fn: s => { stepEldFlytt(s); } },
-  { namn: 'lagerIStraket', sek: 3600, fn: s => { lagerIStraket(s); } },
+  { namn: 'lagerIStraket', sek: 3600, fn: s => { lagerIStraket(s); lagerIHagen(s); } }, // och i en hage (steg 15.1.148)
   { namn: 'stepPaborjat', sek: 3600, fn: s => { stepPaborjat(s); } },
   { namn: 'stepStationer', sek: 3600, fn: s => { stepStationer(s); } },
   { namn: 'stepPynt', sek: 3600, fn: (s, dt) => { stepPynt(s, dt / HOUR_S); } },
