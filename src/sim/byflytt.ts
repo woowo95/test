@@ -30,7 +30,7 @@ import { byRutor } from './placering';
 import { byPlats, hinder, LANDMARKEN, laggPlats, varldPlatsNr } from './landmarken';
 import { narmasteMal } from './vagval';
 import { overge } from './utpost';
-import { byGrannar } from './grannat';
+import { byGrannar, nyaGrannar } from './grannat';
 import { varldHandelse, VarldHandelseId } from './varldkronika';
 import { TEK } from './teknik';
 import { SAKER } from './saker';
@@ -166,8 +166,8 @@ function utflytt(s: State, vl: Varlden, r: VarldRad, grupp: number, t: number, k
   gor(ny);
   vl.rader!.push(ny);
   p.by = nr;
-  p.grannar = byGrannar(vl, v, p, t);
-  if (k === 'by') hem.grannar = byGrannar(vl, v, hem, t);
+  if (k === 'by') nyaGrannar(vl, v, [p, hem], t); // en väg går åt båda hållen (steg 15.1.142)
+  else p.grannar = byGrannar(vl, v, p, t);
   mots(vl, r.nr, nr);
   varldHandelse(vl, handelse, t, { by: r.nr, mot: nr });
   return ny;
