@@ -41,6 +41,7 @@
     "utseende": "tsx src/test/utseende.ts",
     "svavar": "tsx src/test/svavar.ts",
     "radhandel": "tsx src/test/radhandel.ts",
+    "resor": "tsx src/test/resor.ts",
     "radanfall": "tsx src/test/radanfall.ts",
     "dynamik": "tsx src/test/dynamik.ts"
   },
