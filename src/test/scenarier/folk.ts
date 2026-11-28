@@ -2800,25 +2800,31 @@ SCENARIER.rovarinne = {
 SCENARIER.rovarrast = {
   text: 'Livet på rastplatsen (steg 10.2.24): rövarna sprider ut sig, vilar, går omkring och pratar med varandra i samma samtalssystem som byn, med pratbubbla, och var och en har sin egen handling (panelen visar den)',
   kor: () => {
-    const s = rovarBy();
+    // fyra byar: hur ofta tre rövare gör olika saker skiljer sig mycket mellan gängen (de tre kan prata med varandra hela rasten)
+    const handlingar = new Set<string>(), olika = { ja: 0, prov: 0 };
+    let prat = 0, rastTid = Infinity, isar = 0;
+    for (const by of [4, 5, 6, 7]) {
+    const s = createState(by, START); for (let i = 0; i < 12; i++) step(s, 300);
     SIM.rovarnaKommer(s, 3);
-    const f = s.rovare!, ids = new Set(f.folk), handlingar = new Set<string>(), olika = { ja: 0, prov: 0 };
-    let prat = 0, rastTid = 0, isar = 0;
+    const f = s.rovare!, ids = new Set(f.folk);
+    let rast = 0;
     for (let i = 0; i < 120 && !f.anfaller; i++) {
       const ev: TalkEvent[] = [];
       step(s, 30, ev);
       prat += ev.filter(e => ids.has(e.a) && ids.has(e.b)).length;
       if (!f.vantat) continue;
-      if (!rastTid) f.till = s.now + 20 * SIM.MIN; // en längre vila än vanligt (steg B.27)
-      rastTid += 30;
+      if (!rast) f.till = s.now + 20 * SIM.MIN; // en längre vila än vanligt (steg B.27)
+      rast += 30;
       const fo = SIM.rovarna(s, f), gor = fo.map(r => r.gast!.gor ?? '');
       gor.forEach(g => handlingar.add(g));
       olika.prov++; if (new Set(gor).size > 1) olika.ja++;
       const par = fo.flatMap((a, j) => fo.slice(j + 1).map(b => Math.hypot(a.x! - b.x!, a.y! - b.y!))), d = par.reduce((x, y) => x + y, 0) / Math.max(1, par.length);
       if (d > 0.7) isar++; // inte på samma punkt (de som pratar står nära varandra, steg 10.2.94)
     }
+    rastTid = Math.min(rastTid, rast);
+    }
     return [
-      [`gänget rastade ${Math.round(rastTid / 60)} minuter`, rastTid >= 600],
+      [`gängen rastade minst ${Math.round(rastTid / 60)} minuter`, rastTid >= 600],
       [`och gjorde ${[...handlingar].join(', ')}`, handlingar.has('rasta') && handlingar.has('prata')], // gå omkring gör de bara ibland (steg 10.2.94)
       [`de pratade med varandra med pratbubbla (${prat} samtal)`, prat > 0],
       [`var och en gör sitt (olika handlingar i ${olika.ja} av ${olika.prov} prov) och de står utspridda (${isar} prov)`, olika.ja > olika.prov * 0.2 && isar > olika.prov * 0.3],

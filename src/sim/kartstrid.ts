@@ -252,7 +252,8 @@ export function kartStridSteg(s: State, dtSec: number) {
       g.rest -= STRID.tick;
       // kämpen är personen: platsen och blodet är personens före stridssteget ...
       for (const k of st.kampar) {
-        const p = personAv(s, k); if (!p) continue;
+        const p = personAv(s, k);
+        if (!p) { if (k.pid !== undefined && k.lage !== 'borta' && k.lage !== 'dod') { k.lage = 'borta'; k.mal = undefined; st.logg.push({ t: st.t, h: 'borta', a: k.id }); } continue; } // den som inte längre finns i folket (en gäst som tagits ur, gastGar) är inte kvar på kartan
         if (p.died !== undefined) { if (k.lage !== 'dod') { k.lage = 'dod'; k.mal = undefined; } continue; } // dog av något annat
         if (p.left !== undefined) { if (k.lage !== 'borta') { k.lage = 'borta'; k.mal = undefined; st.logg.push({ t: st.t, h: 'borta', a: k.id }); } if (!g.fri?.includes(p.id)) (g.fri ??= []).push(p.id); continue; } // den som flyttat är inte kvar på kartan
         if (sport && p.task?.act !== 'sport' && k.lage !== 'borta') { k.lage = 'borta'; k.mal = undefined; st.logg.push({ t: st.t, h: 'borta', a: k.id }); (g.fri ??= []).push(p.id); continue; } // brottaren som lämnat matchen (den slutade, eller hen gick och åt) har lämnat kampen
