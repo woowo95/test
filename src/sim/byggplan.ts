@@ -15,7 +15,7 @@ import { eldPlats, getMap } from './karta';
 import { groundOf } from './mark';
 import { PLATS, rektAvstand } from './plats';
 import { STATIONER, forvarAt, halvbyggd, hyllPlatser, type Station, delarAv, nyPlatsDel, rivDel, rivStation, stangerIn, stationDef, stationRutor, stationerOf, storlekAv, uteStation } from './stationer';
-import { enOrd, heltOrd, stor, tal, husIMening } from './ord';
+import { artikel, enOrd, heltOrd, stor, tal, husIMening } from './ord';
 import { knows } from './teknik';
 import { LAGER, isStored, stacksOf, matUtanPlats, utanPlatsNu, amountOf, changed, flyttaLager, inZone, lagerFullt, lagerNy, overflow, overlaps, lagerStorre, ownedAll, usable, zonesOf } from './lager';
 import { tingOf } from './agande';
@@ -573,7 +573,7 @@ function planSkadat(s: State, okAt: (i: number) => boolean, byggare: Person[]) {
     if (!nytt) continue;
     nytt.flyttFran = h.id; h.flyttas = nytt.id;
     count(s, 'skadatFlyttas');
-    log(s, `${by.name} vill bygga upp ${husIMening(h.namn)} närmare byns mitt i stället för där det rasade.`, 'world', [by.id]);
+    log(s, `${by.name} vill bygga upp ${husFor(by, h)} närmare byns mitt i stället för där det rasade.`, 'world', [by.id]);
     return; // ett i taget
   }
 }
@@ -937,12 +937,12 @@ function utfor(s: State, f: Forslag, u: ByggBehov, byggare: Person[], ppl: Perso
     return;
   }
   if (f.at === 'byggaUt') return byggUt(s, f, by, u.fn === 'forbattra');
-  if (f.at === 'stenVaggA') { bytMaterial(bitAt(s, f.ritning[0].x, f.ritning[0].y)!, 'sten'); touch(s); count(s, 'stenVagg'); if (forstaGang(s, 'stenVaggByte')) log(s, `${by.name} vill byta väggarna i ${husIText(f.hus!)} till sten.`, 'world', [by.id]); return; }
-  if (f.at === 'battreGolv') { bytMaterial(bitAt(s, f.ritning[0].x, f.ritning[0].y)!, f.ritning[0].m); touch(s); count(s, 'forbGolv'); log(s, `${by.name} vill lägga ett trägolv i ${husIText(f.hus!)}.`, 'world', [by.id]); return; }
+  if (f.at === 'stenVaggA') { bytMaterial(bitAt(s, f.ritning[0].x, f.ritning[0].y)!, 'sten'); touch(s); count(s, 'stenVagg'); if (forstaGang(s, 'stenVaggByte')) log(s, `${by.name} vill byta väggarna i ${husFor(by, f.hus!, true)} till sten.`, 'world', [by.id]); return; }
+  if (f.at === 'battreGolv') { bytMaterial(bitAt(s, f.ritning[0].x, f.ritning[0].y)!, f.ritning[0].m); touch(s); count(s, 'forbGolv'); log(s, `${by.name} vill lägga ett trägolv i ${husFor(by, f.hus!, true)}.`, 'world', [by.id]); return; }
   if (f.at === 'egetRum') {
     for (const a of f.ritning) bytMaterial(bitAt(s, a.x, a.y)!, a.m);
     touch(s); count(s, 'forbRum');
-    log(s, `${by.name} vill dela upp ${husIText(f.hus!)}, så att familjen får ett eget rum.`, 'world', [by.id]);
+    log(s, `${by.name} vill dela upp ${husFor(by, f.hus!, true)}, så att familjen får ett eget rum.`, 'world', [by.id]);
     return;
   }
   bygg(s, f, u, by);
@@ -983,6 +983,13 @@ function bygg(s: State, f: Forslag, u: ByggBehov, by: Person) {
   log(s, planText(by, u.fn as Fn, hus, (BYGGNADER as Record<string, Byggnad>)[u.fn]?.sover ? sovPersoner(iw * ih) : iw * ih, same) + (f.ny ? ' Elden måste flyttas först.' : ''), 'world', [by.id]); count(s, 'planerat_' + u.fn);
   if (u.fn === 'sovsal' && sovPersoner(iw * ih) >= HUS.langhus) count(s, 'planerat_langhus'); // ett långhus (så ofta det händer, samhalle-192)
 }
+// huset i en mening om den som planerar: "sitt hus" eller "sin hydda" när hen äger det och huset heter efter hen, annars husets
+// namn (steg 15.1.41). iText = som husIText ("i Ufasts hus"), annars som husIMening
+function husFor(by: Person, h: Hus, iText = false) {
+  const sort = h.ag === by.id ? [`${by.name}s `, `${by.name} `].find(f => h.namn.startsWith(f) && !h.namn.slice(f.length).includes(' ')) : undefined;
+  if (sort) { const ord = h.namn.slice(sort.length).toLowerCase(); return `${artikel(ord) === 'ett' ? 'sitt' : 'sin'} ${ord}`; }
+  return iText ? husIText(h) : husIMening(h.namn);
+}
 // en utbyggnad: den nya delen blir bitar i huset, och den gamla väggen öppnas när den är klar (slutUt i bygg.ts)
 export function byggUt(s: State, f: Forslag, by: Person, forb: boolean) {
   const h = f.hus!;
@@ -999,7 +1006,7 @@ export function byggUt(s: State, f: Forslag, by: Person, forb: boolean) {
   }
   touch(s); count(s, 'planerat_ut');
   const nr = f.ritning.filter(a => MATERIAL[a.m].k === 'golv').length + f.oppnas.length; // den gamla väggen blir golv också (steg 12.1.50)
-  log(s, `${by.name} planerar att bygga ut ${husIMening(h.namn)}${nr ? ` med ${nr === 1 ? 'en ruta' : `${tal(nr)} rutor`}` : ''}.`, 'world', [by.id]);
+  log(s, `${by.name} planerar att bygga ut ${husFor(by, h)}${nr ? ` med ${nr === 1 ? 'en ruta' : `${tal(nr)} rutor`}` : ''}.`, 'world', [by.id]);
 }
 // ---------- byns planering (steg 7.2.11–7.2.12) ----------
 // Ledaren eller rådet sätter några tal i Byggplanen: husen i en ring kring mitten eller i rader längs gångstråken, tätt eller

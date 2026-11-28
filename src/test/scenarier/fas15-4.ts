@@ -1,7 +1,7 @@
 // Scenarier för fas 15, grupp 4 av 15.1.
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, klockan, nyInvanare, rikBy, styreTimme, tomtForrad, treVuxna, vidForradet } from './hjalp';
+import { SCENARIER, klockan, medHus, nyInvanare, rikBy, styreTimme, tomtForrad, treVuxna, vidForradet } from './hjalp';
 
 SCENARIER.domsjalv = {
   text: 'Steg 15.1.38: ledaren som dömer för det hen själv förlorat. Loggen, krönikan och notisen säger "av henne själv" eller "av honom själv" när den drabbade är ledaren, som rättegångens rad redan gör',
@@ -88,6 +88,27 @@ SCENARIER.barnbyte = {
       [`en vuxen som saknar en korg köper en (${vuxenKopte ? 'köpte' : 'köpte inte'})`, vuxenKopte],
       [`en treåring köper ingen korg (bären ${barnKopte ? 'gick till säljaren' : 'är kvar'})`, !barnKopte],
       [`en treåring betalar inte och ger inte bort korgen hen nyss fått (${barnGav ? 'gav bort den' : 'har den kvar'})`, !barnGav],
+    ];
+  },
+};
+
+SCENARIER.egethus = {
+  text: 'Steg 15.1.41: "bygga ut sitt hus". Loggen skriver "sitt hus" (eller "sin hydda") när den som planerar äger huset, i stället för ägarens namn en gång till, och husets namn när någon annan planerar',
+  kor: () => {
+    const rad = (agare: boolean, namn?: (p: SIM.Person) => string) => {
+      const b = SIM.createState(5, START); klockan(b); medHus(b);
+      const h = SIM.housesOf(b).find(q => q.klar)!, [p, q] = SIM.living(b).filter(x => SIM.ageOf(x, b.now) >= SIM.ALDER.vuxen);
+      h.fn = 'familjehus'; h.ag = p.id; h.namn = namn ? namn(p) : SIM.husNamn(p.name);
+      const f = SIM.BYGGATGARDER.byggaUt.foresla(b, { fn: SIM.fnId(h) as SIM.Fn, a: { v: 1, plats: 0, hus: h.id }, sc: 0 }, () => true)[0];
+      const by = agare ? p : q;
+      if (f) SIM.byggUt(b, f, by, false);
+      return { text: b.log.find(x => x.text.startsWith(`${by.name} planerar att bygga ut`))?.text ?? '(ingen utbyggnad)', p, h };
+    };
+    const egen = rad(true), annan = rad(false), hydda = rad(true, p => `${p.name}s hydda`);
+    return [
+      [`ägaren bygger ut sitt hus: ${egen.text}`, egen.text.includes('bygga ut sitt hus') && egen.text.split(egen.p.name).length === 2],
+      [`en annan bygger ut ägarens hus: ${annan.text}`, annan.text.includes(`bygga ut ${annan.h.namn}`)],
+      [`ägaren bygger ut sin hydda: ${hydda.text}`, hydda.text.includes('bygga ut sin hydda')],
     ];
   },
 };
