@@ -1200,7 +1200,7 @@ SCENARIER.latrin = {
     step(lk, 60);
     const vantar = l1.task?.prog !== undefined && l2.task?.prog === undefined && (l2.task?.until ?? 0) > slut0, brist1 = latrinBrist(lk);
     const enITaget = vantar && brist1 === brist0; // väntan räknas inte som brist (steg 13.8.17)
-    lat.fyllt = STATION.latrinNy; const brist = latrinBrist(l) === 1;
+    lat.fyllt = 0.5; const halv = latrinBrist(l); lat.fyllt = 1 - 1 / STATION.latrinRymmer; const brist = halv === 0 && latrinBrist(l) > 0.9; // den räknas efter det den rymmer av dygnets besök (steg 15.1.162)
     lat.fyllt = 1 - 0.5 / STATION.latrinRymmer; toaBesok(l, lp, lat.id);
     const igen = !stationerOf(l).some(t => t.id === lat.id) && l.stat?.['latriner fyllda'] === 1 && groundOf(l).cover[lat.y * W + lat.x] === 0 && latrinFor(l, lp) === undefined;
     const sparad = (() => { const k = createState(1, START), t = medBank(k, 'latrin'); t.fyllt = 0.3; toaBesok(k, k.people[0]!); const c = cloneState(k); return c.stationer?.find(x => x.id === t.id)?.fyllt === 0.3 && JSON.stringify(c.flackar) === JSON.stringify(k.flackar); })();
@@ -1262,7 +1262,7 @@ SCENARIER.latrin = {
       [`latrinen ligger i byns utkant, och längre från vattnet när byn kan hygien (${d0.toFixed(1)} → ${d1.toFixed(1)} rutor)`, utkant && d1 > d0],
       ['den som går på toa går till latrinen', gar],
       ['i latrinen blir det ingen fläck, gropen fylls och man får vara ifred', ifred],
-      ['byn vill ha en ny latrin när den är nästan full', brist],
+      ['byn vill ha en ny latrin när den som finns inte räcker dygnet ut (steg 15.1.162), men inte när den är halvfull', brist],
       ['en full latrin fylls igen och blir bar jord', igen],
       ['latrinen och fläckarna följer med när byn sparas', sparad],
       ['benspaden är en teknik efter slaktbänken och repet, och latrinen en teknik efter benspaden', tek],

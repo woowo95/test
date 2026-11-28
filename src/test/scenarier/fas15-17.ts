@@ -1,8 +1,40 @@
 // Scenarier för fas 15, grupp 17 (steg 15.1.161–15.1.170).
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, klockan } from './hjalp';
+import { SCENARIER, klockan, medBank, nyInvanare } from './hjalp';
 import { foretagBy } from './fas14';
+
+SCENARIER.latrinko = {
+  text: 'Steg 15.1.162: kön till latrinen är ingen brist. Den som väntar på en upptagen latrin köar eller går till en annan, och hur många latriner byn behöver räknas över dygnet (SMUTS.latrinPer): en grävd latrin räknas efter hur stor del av dygnets besök den rymmer, så en by med 18 invånare har högst fyra latriner på 20 dygn. Kön ger ingen brist, och väntan förlänger bara besöket',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 8);
+    while (SIM.living(s).length < 18) nyInvanare(s, SIM.living(s).length % 2 ? 'm' : 'k', 25);
+    const folk = SIM.living(s), per = SIM.latrinBesokDygn(folk.length) / 144;
+    // byn gräver en ny latrin när bristen säger det, och den är klar en timme senare (en i taget, som ett projekt)
+    let mest = 0, besok = 0, n = 0, grav: number | undefined;
+    for (let i = 0; i < 20 * 144; i++) {
+      s.now += 10 * SIM.MIN;
+      if (grav !== undefined && s.now >= grav) { const t = medBank(s, 'latrin'); t.klar = s.now; grav = undefined; }
+      if (grav === undefined && SIM.latrinBrist(s) > 0) grav = s.now + SIM.HOUR;
+      for (besok += per; besok >= 1; besok--) {
+        const p = folk[n++ % folk.length]!, l = SIM.latrinFor(s, p);
+        if (l) { p.x = l.x + 0.5; p.y = l.y + 0.5; } SIM.toaBesok(s, p, l?.id);
+      }
+      mest = Math.max(mest, SIM.latriner(s).length + (grav !== undefined ? 1 : 0));
+    }
+    // kön: två väntar vid samma latrin, och bristen är densamma som utan kön
+    const l = SIM.latriner(s).find(SIM.isKlar) ?? medBank(s, 'latrin'), [a, b] = folk as [SIM.Person, SIM.Person];
+    const fore = SIM.latrinBrist(s);
+    for (const q of [a, b]) Object.assign(q, { x: l.x + 0.5, y: l.y + 0.5, task: { act: 'toa', phase: 'do', tx: l.x + 0.5, ty: l.y + 0.5, until: s.now + 10 * SIM.MIN, carry: 0, why: '', ref: l.id } });
+    a.task!.prog = 0;
+    const iKo = SIM.latrinUpptagen(s, l, b), med = SIM.latrinBrist(s);
+    return [
+      [`byn med ${folk.length} invånare har högst fyra latriner på 20 dygn (som mest ${mest}, byn vill ha ${Math.ceil(folk.length / SIM.SMUTS.latrinPer)} i bruk)`, mest <= 4 && mest >= 3],
+      [`${s.stat?.latrinbesok ?? 0} besök i latrinerna, och fläckar bara innan den första var grävd (${s.stat?.['toafläckar'] ?? 0})`, (s.stat?.latrinbesok ?? 0) > 900 && (s.stat?.['toafläckar'] ?? 0) <= 5],
+      [`den som köar ger ingen brist (${SIM.kortTal(fore)} utan kön, ${SIM.kortTal(med)} med)`, iKo && med === fore],
+    ];
+  },
+};
 
 SCENARIER.bjorngris = {
   text: 'Steg 15.1.166: björnen tar grisar. En gris som går lös nära björnen, utan någon vaken bredvid, tas med en chans per tid (samma prov som vargen, vaktat i tamdjur.ts); en gris i fähuset tas inte, och inte en med en vaken bredvid',

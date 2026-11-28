@@ -15,7 +15,7 @@ import { getMap } from './karta';
 import { STATION, Station, isKlar, stationById, stationDef, stationFor, stationerOf, storlekAv } from './stationer';
 import { clamp } from './slump';
 import { balans } from './balans';
-import { count, forstaGang, living, log } from './folk';
+import { KROPP, count, forstaGang, living, log } from './folk';
 import { groundOf, tileOf } from './mark';
 import { FOREST } from './vag';
 import { smutsOf } from './sjo';
@@ -30,7 +30,7 @@ import { tanke } from './tankar';
 // ---------- balanstal (regel 8) ----------
 export const SMUTS = balans('smuts', {
   latrinPer: 8, // byn vill ha en latrin per så här många invånare, avrundat uppåt (steg 13.8.17)
-  latrinUpptagen: 8, // en latrin där någon redan är räknas som så här många rutor längre bort när man väljer latrin (steg 11.1.71), och en ledig latrin inom så här många rutor gör att väntan inte är brist
+  latrinUpptagen: 8, // en latrin där någon redan är räknas som så här många rutor längre bort när man väljer latrin (steg 11.1.71); kön är ingen brist (steg 15.1.162)
   latrinGlomDygn: 2, // en latrin som ingen använt på så här många dygn (år i spelet) växer igen och försvinner (steg 11.1.71)
   vattenNara: 3, // toa-smuts så här många rutor från vattnet gör vattnet smutsigare ...
   vattenPer: 0.25, // ... så här mycket för en toa-fläck i full styrka på stranden (mindre längre bort) ...
@@ -254,14 +254,22 @@ export function latrinerVaxerIgen(s: State) {
     fyllIgen(s, t, false); count(s, 'latriner igenvuxna');
   }
 }
-// bristen på latriner (steg 13.8.17): byn vill ha en per SMUTS.latrinPer invånare, avrundat uppåt, och bristen är den del som
-// saknas. En latrin räknas när den byggs eller går att använda: med en kompost töms utedasset och står kvar (steg 12.4.9), men en
-// grävd latrin som tömts går inte att använda igen, så den nästan fulla räknas inte
+// bristen på latriner (steg 13.8.17 och 15.1.162): byn vill ha en per SMUTS.latrinPer invånare, avrundat uppåt, och bristen är
+// den del som saknas. Kön är ingen brist: hur många som behövs räknas över dygnet. En latrin räknas när den byggs eller går att
+// använda: med en kompost töms utedasset och står kvar (steg 12.4.9). En grävd latrin går inte att använda igen när den är full, så
+// den räknas efter det den rymmer: helt om den räcker sin del av byns besök över dygnet, annars den del av dygnet den räcker
 export const latrinBrist = (s: State) => {
-  const ko = harKompost(s), vill = Math.max(1, Math.ceil(living(s).length / SMUTS.latrinPer));
-  const har = latriner(s).filter(t => !isKlar(t) || latrinFyllt(t) < (ko && stationDef(t.k)?.dass ? 1 - 1e-9 : STATION.latrinNy)).length;
+  const n = living(s).length, ko = harKompost(s), vill = Math.max(1, Math.ceil(n / SMUTS.latrinPer));
+  const perLatrin = Math.max(1, latrinBesokDygn(n) / vill);
+  let har = 0;
+  for (const t of latriner(s)) {
+    if (!isKlar(t) || ko && stationDef(t.k)?.dass) { har += !isKlar(t) || latrinFyllt(t) < 1 - 1e-9 ? 1 : 0; continue; }
+    har += clamp((1 - latrinFyllt(t)) * STATION.latrinRymmer / perLatrin, 0, 1);
+  }
   return clamp((vill - har) / vill, 0, 1);
 };
+// så många gånger n invånare går på toa över ett dygn: toa-nöden växer på KROPP.toaTim timmar, långsammare i sömnen (steg.ts)
+export const latrinBesokDygn = (n: number) => n * (16 + 8 * KROPP.toaSomn) / KROPP.toaTim;
 // någon annan använder latrinen t just nu (står där och har börjat): latrinen används av en i taget (steg 10.2.79)
 export const latrinUpptagen = (s: State, t: Station, p: Person) => living(s).some(q => q !== p && q.task?.act === 'toa' && q.task.ref === t.id && q.task.phase === 'do' && q.task.prog !== undefined);
 const harKompost = (s: State) => stationerOf(s).some(t => t.k === 'kompost' && isKlar(t));
