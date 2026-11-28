@@ -1,6 +1,6 @@
 // Scenarier för fas 15, grupp 15 (steg 15.1.141–15.1.150).
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, kor } from './hjalp';
+import { SCENARIER, klockan, kor, tandEld } from './hjalp';
 import { START } from '../kor';
 import { foretagBy } from './fas14';
 
@@ -140,6 +140,28 @@ SCENARIER.herde = {
       [`den med skötsel 6 mjölkar fortare (${SIM.kortTal(SIM.BOSKAP.mjolkMin / fa)} min) än den med skötsel 1 (${SIM.kortTal(SIM.BOSKAP.mjolkMin / fb)} min)`, fa > fb],
       [`övningen följer den arbetade tiden: den långsamma övar mer på samma mjölkning (${ovat.toFixed(4)} mot ${ovatA.toFixed(4)})`, ovat > ovatA && ovatA > 0],
       [`vakten larmar för en handling med yrke utan färdighet (${vakt.join('; ')}), och inte för spelets (${SIM.utanFardighet().length})`, vakt.some(x => x.startsWith('provherde')) && SIM.utanFardighet().length === 0],
+    ];
+  },
+};
+
+SCENARIER.klippning = {
+  text: 'Steg 15.1.146: klippningen är ett moget arbete. Ullen går förlorad när den väntar, som mjölken, och vägs på nivå 6 efter det byn behöver av ullen: en by med ett får med full ull och en kniv klipper inom ett dygn (ett år i spelet), och ullen hamnar i förrådet',
+  kor: () => {
+    const b = medHage(1);
+    if (!b) return [['en by med en hage och ett får', false]];
+    const { s, h } = b, far = SIM.tamdjurOf(s)[0];
+    const ho = SIM.hageVidVatten(s, h) ? undefined : SIM.siteHo(s);
+    if (ho) { s.stationer = [...(s.stationer ?? []), { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'vattenho', x: ho.x, y: ho.y, kvar: 0, vatten: SIM.HO.rymmer } as unknown as SIM.Station]; SIM.touch(s); }
+    far.ull = 1; tandEld(s); SIM.setAmount(s, 'ved', 60); SIM.setAmount(s, 'kniv', 2); SIM.setAmount(s, 'torrgras', 60);
+    const rad = SIM.ARBETEN.find(r => r.id === 'klippa'), iForb = SIM.FORBATTRA.some(r => r.id === 'klippa');
+    const ull0 = SIM.amountOf(s, 'ull');
+    let tim = 0;
+    for (; tim < 24 && !(s.stat?.klippt); tim++) kor(s, 1, x => { for (const d of SIM.tamdjurOf(x)) { d.hunger = 0; d.torstTim = 0; } });
+    if (!s.stat?.klippt) kor(s, 1);
+    return [
+      [`klippningen är en rad på nivå 6 i ARBETEN (${rad?.niva}) och inte i Förbättra (${iForb})`, rad?.niva === 6 && !iForb],
+      [`fåret klipps inom ett dygn (${s.stat?.klippt ? `efter ${tim} timmar` : 'inte'})`, !!s.stat?.klippt],
+      [`ullen hamnar i förrådet (${ull0} → ${SIM.amountOf(s, 'ull')})`, SIM.amountOf(s, 'ull') >= ull0 + (SIM.tamArt('far').ull ?? 0)],
     ];
   },
 };

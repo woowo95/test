@@ -877,7 +877,7 @@ SCENARIER.sag = {
 SCENARIER.ullsax = {
   text: 'Ullsaxen (steg 12.5.2): en sax från smedjan (1 järn, 3 minuter) som klipper ett får på en tredjedel av tiden mot kniven; en by utan sax klipper med kniven som förut',
   kor: () => {
-    const R = SIM.RECEPT.ullsax, rad = SIM.FORBATTRA.find(a => a.id === 'klippa')!; // en rad med poäng på Förbättra (steg 13.8.7)
+    const R = SIM.RECEPT.ullsax, rad = SIM.ARBETEN.find(a => a.id === 'klippa')!; // ett moget arbete på nivå 6 (steg 15.1.146)
     // ett får vars ull vuxit ut, och vad den vuxne väljer med kniven och med saxen
     const val = (sax: boolean) => {
       const s = SIM.createState(2, START); klockan(s, 10);
@@ -886,7 +886,7 @@ SCENARIER.ullsax = {
       const d = SIM.tamdjurOf(s).find(q => q.art === 'far')!; d.ull = 1;
       if (sax) SIM.addTool(s, 'ullsax', p); else SIM.setAmount(s, 'kniv', 1);
       const v = { act: 'vila', why: '', dur: 0 } as SIM.Val;
-      const k = rad.kand({ s, p, v, a: SIM.ageOf(p, s.now) } as never, undefined as never); k?.gor(); const ok = !!k;
+      const ok = !!rad.prova?.({ s, p, v, a: SIM.ageOf(p, s.now) } as never);
       return { ok, tool: v.tool, min: v.dur / SIM.MIN, s, p };
     };
     const kniv = val(false), sax = val(true);
