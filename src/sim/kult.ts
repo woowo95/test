@@ -31,7 +31,7 @@ import { PLAGG, kladAv } from './klader';
 import { BYTA, FEST, svikKrok, tvivla, farorNu, heligtDjurAv, matAvstar, nyRitual, satEgendomVarde, satGravVarde, vanhelgaPlats } from './kultlatt';
 import { tamdjurOf } from './tamdjur';
 import { grundvarde, tingVarde, varuVarde } from './varde';
-import { och, sakOrd, tal } from './ord';
+import { och, sakOrd, stor, tal } from './ord';
 import { type Ting, tingOf } from './agande';
 import { notis } from './notiser';
 satGravVarde(t => (SAKER[t.k]?.gravgava ? GRAVGAVA_FORST : 0) + tingVarde(t)); // gravgåvan är den finaste saken (steg 10.3.5), och det som får följa en död (gravgava i SAKER: järnsakerna, steg 13.1.6) går före
@@ -466,7 +466,7 @@ function vinnare(v: Record<string, number>) {
 function festSlut(s: State) {
   const f = s.fest!; s.fest = undefined;
   const delar = [f.at ? `${tal(f.at)} åt vid gillet` : 'ingen åt vid gillet', ...(f.fram.length ? [`${och(f.fram)} uppträdde`] : []), ...vinnare(f.vann)];
-  const text = `${f.namn}: ${och(delar)}.`;
+  const text = `${f.namn} firades. ${stor(och(delar))}.`; // en berättande mening, inte ett formulär (steg 15.1.119)
   log(s, text, 'rel', []); notis(s, 'fest', text, [], { x: f.x, y: f.y }); kronika(s, text, 'tro');
   count(s, 'fest');
 }
