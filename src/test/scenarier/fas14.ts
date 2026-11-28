@@ -47,7 +47,7 @@ SCENARIER.stada = {
     const dirty = SIM.smutsRutor(s, r).size, del0 = SIM.finhetDelar(s, r).tal, d = SIM.stadaVal(s, p), a = annan && SIM.stadaVal(s, annan);
     const rn = d!.rum, egen = d!.sc;
     // hen städar: uppgiften sätts som valet gör, och byn går en stund
-    const u = SIM.stadaUppgift(d!); p.toa = 1; p.hunger = 0;
+    const u = SIM.stadaUppgift(d!); p.toa = 1; p.hunger = 1; p.torst = 1;
     p.x = u.spot.x; p.y = u.spot.y;
     p.task = { act: 'stada', phase: 'go', tx: u.spot.x, ty: u.spot.y, until: s.now + 60 * m, arbTid: u.min * m, carry: 0, why: u.text, ref: u.ref };
     const t0 = s.now; let s1 = s.now;
