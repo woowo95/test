@@ -105,3 +105,52 @@ SCENARIER.kroppresa = {
     ];
   },
 };
+
+SCENARIER.letaresa = {
+  text: 'Steg 15.1.90: sällskapet letar mat längs vägen. Ledaren väger med en poäng hur stor del av dagen det letar, letandet sänker farten och fyndet följer marken, årstiden, kylan och den bästa samlaren, i hela portioner. Ett sällskap som letar kommer fram senare och med mer mat kvar än ett som inte letar, och ett sällskap utan mat i packningen kan inte leva på letandet',
+  kor: () => {
+    const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, v = SIM.varldMark(s0)!, hb = SIM.byPlats(vl0, vl0.huvud!)!;
+    const vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50 && SIM.personFart(s0, q) === 1);
+    // en plats ett och ett halvt till fem dygn bort med vatten längs vägen och mark som ger mat (i snitt minst som slätten); sällskapet går på hösten
+    const mal = (vl0.platser ?? []).find(q => {
+      const vd = q.nr === hb.nr ? undefined : SIM.vagDygn(s0, hb.y * v.w + hb.x, q.y * v.w + q.x);
+      return !!vd && vd.dygn >= 1.5 && vd.dygn <= 5 && vd.torr <= 1 && vd.rutor.reduce((a, i) => a + SIM.VARLDMARK[SIM.MARK_IDS[v.mark[i]]].leta, 0) / vd.rutor.length >= 0.5;
+    })!;
+    const sommar = (x: { s: SIM.State }) => { for (let d = 0; d < 1600 && (SIM.ageIndex(x.s, x.s.now) !== 3 || SIM.temperature(x.s, x.s.now) < SIM.RESA.fyndVarm + 3); d++) x.s.now += SIM.DAY / 4; };
+    const resa = (ids: number[], pack: Record<string, number>, leta: boolean | 'hela') => {
+      const x = paVagen(s0, ids, mal.nr, 'se'); sommar(x);
+      const w = SIM.varldMark(x.s)!; for (const i of SIM.vagenRutor(x.s, x.sl)) w.mark[i] = SIM.MARK_IDS.indexOf('skog'); // skog längs hela vägen, där letandet ger mest (och inget vatten: säckarna räcker)
+      for (const p of x.folk) { p.pot = { ...p.pot, flit: 10, mod: 10 }; p.skill.samla = 20; } // skickliga samlare
+      x.sl.pack = { ...pack, vattensack: 24 * ids.length }; // vatten nog för sju dygn (här prövas maten)
+      const t0 = x.s.now;
+      let framme = 0, matFramme = 0; // maten just innan de kom fram (framme blir de gäster på platsens karta och lämnar maten där)
+      if (!leta) x.sl.letaNasta = Infinity; // ledaren väger aldrig att leta
+      if (leta === 'hela') { x.sl.letaNasta = Infinity; x.sl.letaHel = Infinity; } // sällskapet letar hela dagen
+      utanHandelser(() => gaHem(x, 30, () => { if (x.sl.skede === 'ute') matFramme = SIM.FOOD.reduce((a, k) => a + Math.floor(x.sl.pack[k] ?? 0), 0); else if (!framme && x.sl.skede === 'framme') framme = (x.s.now - t0) / SIM.DAY; }));
+      return { x, framme, matFramme, hittat: x.s.stat?.['resa letade fram'] ?? 0, utanMat: x.s.stat?.['resa utan mat'] ?? 0, dygn: (x.s.now - t0) / SIM.DAY };
+    };
+    const ids = [vuxna[0]!.id]; // en ensam: för den drygar letandet ut packningen
+    const behov = (() => { const x = paVagen(s0, ids, mal.nr, 'se'); return SIM.packbehov(x.s, x.sl)!.mat; })();
+    const lite = { torrkott: Math.ceil(behov * 0.4) }; // för lite mat för hela resan
+    const med = resa(ids, lite, true), utan = resa(ids, lite, false);
+    // fyra utan mat som letar hela dagen: letandet ger mindre än de äter
+    const fyra = resa(vuxna.slice(0, 4).map(p => p.id), {}, 'hela');
+    // utan vattensäckar letar ledaren mindre: den torra sträckan tar längre tid
+    const torr = (() => { const x = paVagen(s0, ids, mal.nr, 'se'); sommar(x); x.folk[0]!.skill.samla = 20; x.sl.pack = { ...lite }; return x; })(), vat = SIM.cloneState(torr.s);
+    const vsl = vat.varld!.sallskap!.find(q => q.id === torr.sl.id)!; vsl.pack.vattensack = 8;
+    const aUtan = SIM.letaVal(torr.s, torr.sl)[0]!.a, aMed = SIM.letaVal(vat, vsl)[0]!.a;
+    const perDygn = fyra.hittat / Math.max(1e-9, fyra.dygn), ater = 4 * SIM.matPerResenar();
+    // den bästa tänkbara dagen för en ensam (skogsmark på hösten, full färdighet) är mindre än hen äter
+    const bast = SIM.RESA.dagTim * SIM.RESA.letaPerTim * SIM.VARLDMARK.skog.leta * Math.max(...SIM.RESA.letaTid) * (1 + SIM.RESA.fardSank);
+    const hela = Object.values(med.x.sl.pack).every(n => Number.isInteger(n));
+    return [
+      [`ledaren lät sällskapet leta (${med.hittat} portioner hittade); det som inte letar hittar inget (${utan.hittat})`, med.hittat > 0 && utan.hittat === 0],
+      [`den som letar kommer fram senare (${med.framme.toFixed(2)} mot ${utan.framme.toFixed(2)} dygn)`, med.framme > utan.framme + 0.05 && utan.framme > 0],
+      [`och med mer mat kvar (${med.matFramme} mot ${utan.matFramme} portioner framme)`, med.matFramme > utan.matFramme],
+      [`utan vattensäckar letar sällskapet mindre (${aUtan} av dagen mot ${aMed} med)`, aUtan < aMed && SIM.torrKvar(torr.s, torr.sl) > 0],
+      [`det som hittas är hela portioner (${JSON.stringify(med.x.sl.pack)})`, hela],
+      [`fyra utan mat hittar ${perDygn.toFixed(1)} portioner per dygn men äter ${ater.toFixed(1)}, och hungrar (${fyra.utanMat} gånger utan mat)`, fyra.hittat > 0 && perDygn < ater && fyra.utanMat > 0],
+      [`den bästa dagen för en ensam ger ${bast.toFixed(2)} portioner, mindre än hen äter (${SIM.matPerResenar().toFixed(2)})`, bast < SIM.matPerResenar()],
+    ];
+  },
+};

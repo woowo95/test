@@ -1842,7 +1842,7 @@ SCENARIER.vagbehov = {
     gang.s.now = dagT + 10 * SIM.HOUR; SIM.resaBehov(gang.s, 10 * SIM.HOUR);
     gang.sl.behov!.ork = 1; const fartUtvilad = SIM.orkFart(gang.sl); gang.sl.behov!.ork = 0.2; const fartTrott = SIM.orkFart(gang.sl);
     // maten, vattnet och höet under två dygn på en torr ruta utan bete, med en häst
-    const lang = ny(dagT, { fisk: 2, brod: 10, vattensack: 2, torrgras: 6 }, torr);
+    const lang = ny(dagT, { fisk: 2, brod: 10, vattensack: 16, torrgras: 6 }, torr); // vatten för två dygn (utan törstar de ihjäl, steg 15.1.89)
     lang.sl.djur.push(SIM.TAM_ID0 + 99999);
     const fiskForst: boolean[] = [];
     for (let h = 1; h <= 48; h++) { lang.s.now = dagT + h * SIM.HOUR; SIM.resaBehov(lang.s, SIM.HOUR); fiskForst.push((lang.sl.pack.brod ?? 0) === 10 || !lang.sl.pack.fisk); }
@@ -1853,7 +1853,7 @@ SCENARIER.vagbehov = {
       [`en dag i gång sänker orken (${gang.sl.behov!.ork.toFixed(2)})`, gang.sl.behov!.ork < 0.6],
       [`ett trött sällskap går långsammare (fart ${fartTrott.toFixed(2)} mot ${fartUtvilad.toFixed(2)})`, fartTrott < fartUtvilad && fartTrott >= SIM.RESA.orkFartMin],
       [`maten går åt i hela saker, fisken (håller kortast) före brödet (kvar: ${JSON.stringify(p)})`, hel && !p.fisk && (p.brod ?? 0) < 10 && fiskForst.every(x => x)],
-      [`vattnet ur säckarna på den torra sträckan (${lang.sl.behov!.fulla} fulla kvar)`, lang.sl.behov!.fulla === 0 && (lang.s.stat?.['resa dricker ur säcken'] ?? 0) >= 1],
+      [`vattnet ur säckarna på den torra sträckan (${lang.sl.behov!.fulla} fulla kvar av 16)`, lang.sl.behov!.fulla < 16 && (lang.s.stat?.['resa dricker ur säcken'] ?? 0) >= 1],
       [`hästen äter hö där den inte kan beta (${p.torrgras ?? 0} kvar av 6)`, (p.torrgras ?? 0) <= 2],
       [`mättnaden hålls uppe av maten (${lang.sl.behov!.matt.toFixed(2)})`, lang.sl.behov!.matt > 0.3],
     ];
@@ -1891,7 +1891,7 @@ SCENARIER.resfart = {
     const tung = ny([vuxna[0]!.id, vuxna[1]!.id]); tung.sl.pack = { brod: 36 }; const fL = SIM.lastFart(tung.s, tung.sl);
     // hela resan: fram, stanna och hem
     const hel = ny([vuxna[0]!.id, vuxna[1]!.id]), sett = new Set<string>();
-    hel.sl.pack = { brod: 30 }; // mat för resan (utan mat går gästerna hem från grannbyn genast, vacktgast.ts)
+    hel.sl.pack = { brod: 30, vattensack: 24 }; // mat för resan (utan mat går gästerna hem från grannbyn genast, vacktgast.ts), och vatten för de torra sträckorna (utan vatten törstar de ihjäl, steg 15.1.89)
     // (var tionde minut, som TAKTER räknar sällskapen: ett kort besök framme syns inte timme för timme)
     for (let m = 0; m < 60 * 24 * 6 && hel.sl.skede !== 'hemma'; m++) { hel.s.now += 10 * SIM.MIN; SIM.resaBehov(hel.s, 10 * SIM.MIN); sett.add(hel.sl.skede); }
     const trampat = Object.keys(hel.s.varld!.leder ?? {}).length;
@@ -2273,7 +2273,9 @@ SCENARIER.matslut = {
     const forst = (x: { s: SIM.State; sl: SIM.Sallskap }) => SIM.matslutVal(x.s, x.sl).val[0]?.id;
     const nara = ny(varm(true), { del: 0.02, varde: 0 });
     const kallt = ny(kalla[0]!, { del: 0.4, varde: 200, far: true }); kallt.p.pot.empati = 20; // en ledare som bryr sig om de andras hunger
-    const leta = ny(varm(true), { del: 0.3, varde: 200 });
+    const host = (() => { for (let d = 1; d < 400; d++) { const t = (Math.floor(s0.now / SIM.DAY) + d) * SIM.DAY + 12 * SIM.HOUR; if (SIM.ageIndex(s0, t) === 3 && SIM.temperature(s0, t) >= SIM.RESA.fyndVarm + 5) return t; } return s0.now; })();
+    const leta = ny(host, { del: 0.3, varde: 200 }); // en varm höstdag (steg 15.1.90: marken ger mest på hösten)
+    { const w = SIM.varldMark(leta.s)!; w.mark[leta.sl.ruta!] = SIM.MARK_IDS.indexOf('skog'); } // i skogen, där letandet ger mest (steg 15.1.90)
     const hemat = ny(varm(true), { del: 0.9, varde: 200, hemat: true });
     const val = [nara, kallt, leta, hemat].map(forst);
     // empatin väger hungern tyngre
@@ -2283,17 +2285,17 @@ SCENARIER.matslut = {
     const pos0 = nara.sl.pos; kor(nara, 1);
     kor(kallt, 1); const farDog = !!kallt.s.tamdjur!.find(d => d.id === 900001)?.dog;
     const kott = Object.entries(kallt.sl.pack).filter(([k]) => SIM.FOOD.includes(k));
-    kor(leta, 1); const letat = leta.sl.dagbok.filter(d => d[1].includes('letade')).length;
+    kor(leta, 1); const letat = leta.sl.dagbok.filter(d => d[1].includes('letar mat hela dagen')).length;
     const beslut0 = leta.sl.dagbok.length; kor(leta, 3); const igen = leta.sl.dagbok.filter(d => d[1].startsWith('Maten tog slut')).length;
     return [
       [`nära hemmet, med ett mål långt bort (${mal.namn}, ${Math.round(Math.hypot(mal.x - hb.x, mal.y - hb.y))} rutor), med lite att vinna vänder sällskapet (${val[0]}: ${SIM.matslutVal(nara.s, nara.sl).val.map(x => `${x.id} ${Math.round(x.sc)}`).join(', ')})`, val[0] === 'vanda' || nara.sl.skede !== 'ute'],
       [`långt bort i kylan slaktar en omtänksam ledare fåret (${val[1]}: ${SIM.matslutVal(kallt.s, kallt.sl).val.map(x => `${x.id} ${Math.round(x.sc)}`).join(', ')}, ${SIM.matLage(kallt.s, kallt.sl).kvar} dygn kvar)`, val[1] === 'slakta'],
-      [`en varm dag letar det (${val[2]})`, val[2] === 'leta'],
+      [`en varm dag letar det (${val[2]}: ${SIM.letaDag(leta.s, leta.sl).toFixed(2)} portioner per timme)`, val[2] === 'leta'],
       [`på väg hem kan det inte vända (${val[3]})`, val[3] !== 'vanda'],
       [`en ledare med empati väger hungern tyngre (${hk3.toFixed(1)} → ${hk18.toFixed(1)})`, hk18 > hk3],
       [`vände: sällskapet går hem (${nara.sl.skede}, ${pos0} → ${nara.sl.pos})`, nara.sl.skede === 'hemat' || nara.sl.skede === 'hemma'],
       [`slaktade: fåret är dött och köttet i hela saker i packningen (${kott.map(([k, n]) => `${n} ${k}`).join(', ')})`, farDog && kott.length > 0 && kott.every(([, n]) => Number.isInteger(n))],
-      [`letade: tiden går förlorad (${letat} gång)`, letat === 1],
+      [`letade: sällskapet letar hela dagen, samma letande som längs vägen (steg 15.1.90; ${letat} gång)`, letat === 1 && (leta.sl.letaHel ?? 0) > leta.s.now],
       [`ledaren väger inte igen förrän efter ${SIM.RESA.matOmTim} timmar (${beslut0} → ${leta.sl.dagbok.length} rader, ${igen} beslut)`, igen <= 1],
     ];
   },
