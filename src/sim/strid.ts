@@ -1224,7 +1224,10 @@ export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: num
   const egen = (t: { hos?: number; lass?: number; bar?: number }) => (t.hos === undefined || t.hos === p.id) && (t.lass === undefined || t.lass === p.id) && (t.bar === undefined || t.bar === p.id);
   const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p).filter(egen), ...allaTing(s).filter(t => t.hos === p.id)].map(t => t.k))]; // också det en gäst bär (steg 10.1.8)
   if ((p.stenar?.n ?? 0) >= 1) bar.push('sten'); // stenarna i handen är ett vapen hen bär (steg 15.1.69, vakt.ts)
-  const val = (v: Vapen) => VAP[v].skada * (1 + STRID.tyckeVal * smakAv(p, 'v:' + v)); // tycket drar i valet (steg 3.7.10)
+  // tycket drar i valet (steg 3.7.10). Bågen och slungan räknas efter skottet, och den som också har ett litet vapen att ha i reserv
+  // skjuter först och slåss med det när någon kommer nära (steg 15.1.71)
+  const skjuter = (v: Vapen) => !!VAP[v].kast && !VAP[v].kast!.reserv && bar.some(o => o !== v && VAP[o as Vapen]?.liten);
+  const val = (v: Vapen) => (skjuter(v) ? 1 : 0) + Math.max(VAP[v].skada, VAP[v].kast && !VAP[v].kast!.reserv ? VAP[v].kast!.skada : 0) * (1 + STRID.tyckeVal * smakAv(p, 'v:' + v));
   const ammoOk = (v: Vapen) => { const am = VAP[v].kast?.ammo; return !am || !!p.gast || !!bastaAmmo(s, am); }; // en gäst har sina egna pilar // bågen utan pilar och slungan utan stenar tas inte (steg 8.7.6)
   const vapen = MANNISKOVAPEN.filter(v => bar.includes(v) && ammoOk(v)).sort((a, b) => val(b) - val(a))[0] ?? 'hand';
   const res = (MANNISKOVAPEN.filter(v => v !== vapen && VAP[v].liten && bar.includes(v)) as Vapen[]).sort((a, b) => VAP[a].takt - VAP[b].takt)[0]; // den snabbaste (kniven)

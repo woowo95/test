@@ -175,3 +175,32 @@ SCENARIER.hjalpkast = {
     ];
   },
 };
+
+SCENARIER.rovarskytt = {
+  text: 'Steg 15.1.71: rövarna har ibland bågar och slungor. Ungefär en rövare av sex har ett vapen för avstånd och en kniv i reserven; skytten håller avståndet och skjuter, och byter till kniven när någon kommer nära',
+  kor: () => {
+    // rövarna som kommer: hur många har båge eller slunga, och har de kniven med sig
+    const s = SIM.createState(6, START); let alla = 0, skyttar = 0, kniv = 0;
+    for (let i = 0; i < 30; i++) {
+      const f = rovarGang(s, 6);
+      for (const p of SIM.rovarna(s, f)) { alla++; const v = SIM.gastVapen(s, p); if (v === 'bage' || v === 'slunga') { skyttar++; if (SIM.gastTingOf(s, p).some(t => t.k === 'kniv') && SIM.personKampe(s, p, 1, 1, p.x, p.y).reserv === 'kniv') kniv++; } }
+      s.rovare = undefined; s.rovareFler = undefined; s.people = s.people.filter(p => !p.gast);
+    }
+    // skytten i arenan: en rövare med båge och kniv mot en snabbare bybo med yxa som börjar en bit bort
+    let kast = 0, byter = 0, avstand = 0, narstrid = 0;
+    for (let i = 0; i < 20; i++) {
+      const st = SIM.nyStrid({ avsikt: 'skada', w: 30, h: 12, kampar: [kampe(1, 0, 'yxa', 6, 6, {}, { mod: 18, smidighet: 16 }), kampe(2, 1, 'bage', 15, 6, { reserv: 'kniv' }, { mod: 18 })] }, i * 7919 + 17);
+      stega(st);
+      kast += st.logg.filter(r => r.a === 2 && r.kast && r.sl).length;
+      if (st.logg.some(r => r.h === 'byter' && r.a === 2 && r.v === 'kniv')) byter++;
+      if (st.logg.some(r => r.h === 'avstand' && r.a === 2)) avstand++;
+      if (st.logg.some(r => r.a === 2 && r.sl && !r.kast && r.v === 'kniv')) narstrid++;
+    }
+    return [
+      [`ungefär en rövare av sex har båge eller slunga (${skyttar} av ${alla})`, skyttar >= alla / 10 && skyttar <= alla / 4],
+      [`... och alla de har en kniv i reserven i striden (${kniv} av ${skyttar})`, skyttar > 0 && kniv === skyttar],
+      [`skytten skjuter på avstånd (${kast} skott i 20 strider, höll avståndet i ${avstand})`, kast >= 20],
+      [`... byter till kniven när bybon kommer nära (${byter} av 20) och slåss med den (${narstrid})`, byter >= 15 && narstrid >= 10],
+    ];
+  },
+};
