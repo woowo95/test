@@ -536,10 +536,10 @@ function fri(st: Strid, k: Kampe, x: number, y: number, fi: Kampe[], mx: number,
   const egen = Math.hypot(mx - k.x, my - k.y), flyr = k.lage === 'flykt', kropp = flyr ? STRID.flyTrang : STRID.kropp; // den som flyr tränger sig förbi (steg B.45)
   if (iVagg(st, x, y)) return false;
   for (const o of fi) { const d = Math.hypot(o.x - x, o.y - y); if (d < kropp && d < dist(k, o) - 1e-9) return false; } // bort från en som står för nära går alltid
-  for (const o of st.kampar) { // en på samma sida som står eller flyr: man står inte i varandra (steg 9.2.78)
-    if (o === k || o.sida !== k.sida || !(iStrid(o) || o.lage === 'flykt')) continue;
+  for (const o of st.kampar) { // en på samma sida som står, flyr eller ligger: man står inte i varandra (steg 9.2.78) och inte över en vän som fallit
+    if (o === k || o.sida !== k.sida || !(iStrid(o) || o.lage === 'flykt' || o.lage === 'nere')) continue;
     // den som är närmast dit hen ska går först, tätt förbi den andra: annars stänger två vänner en smal öppning för varandra (steg B.19)
-    const d = Math.hypot(o.x - x, o.y - y); if (d < (flyr || Math.hypot(mx - o.x, my - o.y) > egen ? kropp : STRID.van) && d < dist(k, o) - 1e-9) return false;
+    const d = Math.hypot(o.x - x, o.y - y); if (d < (flyr || o.lage !== 'nere' && Math.hypot(mx - o.x, my - o.y) > egen ? kropp : STRID.van) && d < dist(k, o) - 1e-9) return false; // (förbi en vän som ligger går man inte tätt, utom på flykten)
   }
   return true;
 }
@@ -913,10 +913,13 @@ export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, 
 function trycka(st: Strid, a: Kampe, b: Kampe, l: number) {
   const d = Math.max(0.01, dist(a, b)), ux = (b.x - a.x) / d, uy = (b.y - a.y) / d, mx = b.x + ux * l, my = b.y + uy * l;
   const fi = st.kampar.filter(o => o.sida !== b.sida && iStrid(o) && o !== a);
+  // också en fiende som ligger är en kropp (fri räknar de egna som ligger, men bara de fiender som står)
+  const liggande = st.kampar.filter(o => o !== a && o.sida !== b.sida && o.lage === 'nere');
+  const iKropp = (x: number, y: number) => liggande.some(o => { const d = Math.hypot(o.x - x, o.y - y); return d < STRID.kropp && d < dist(b, o) - 1e-9; });
   let gatt = 0;
   while (gatt < l - 1e-9) {
     const steg = Math.min(0.1, l - gatt), x = b.x + ux * steg, y = b.y + uy * steg;
-    if (x < KANT || y < KANT || x > st.w - KANT || y > st.h - KANT || !fri(st, b, x, y, fi, mx, my)) break;
+    if (x < KANT || y < KANT || x > st.w - KANT || y > st.h - KANT || !fri(st, b, x, y, fi, mx, my) || iKropp(x, y)) break;
     b.x = x; b.y = y; gatt += steg;
   }
   if (gatt > 0) { b.runtP = undefined; st.logg.push({ t: st.t, h: 'trycks', a: b.id, b: a.id }); }
