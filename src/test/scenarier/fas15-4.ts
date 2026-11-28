@@ -1,7 +1,7 @@
 // Scenarier för fas 15, grupp 4 av 15.1.
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, klockan, medHus, nyInvanare, rikBy, styreTimme, tomtForrad, treVuxna, vidForradet } from './hjalp';
+import { SCENARIER, klockan, kor, medHus, nyInvanare, rikBy, styreTimme, tandOchFlinta, tomtForrad, treVuxna, vidForradet } from './hjalp';
 
 SCENARIER.domsjalv = {
   text: 'Steg 15.1.38: ledaren som dömer för det hen själv förlorat. Loggen, krönikan och notisen säger "av henne själv" eller "av honom själv" när den drabbade är ledaren, som rättegångens rad redan gör',
@@ -109,6 +109,32 @@ SCENARIER.egethus = {
       [`ägaren bygger ut sitt hus: ${egen.text}`, egen.text.includes('bygga ut sitt hus') && egen.text.split(egen.p.name).length === 2],
       [`en annan bygger ut ägarens hus: ${annan.text}`, annan.text.includes(`bygga ut ${annan.h.namn}`)],
       [`ägaren bygger ut sin hydda: ${hydda.text}`, hydda.text.includes('bygga ut sin hydda')],
+    ];
+  },
+};
+
+SCENARIER.vaktvarm = {
+  text: 'Steg 15.1.42: vakten som fryser värmer sig. Den som fryser på sitt vaktpass gör det värmen erbjuder i registret VARMA (tänder elden, lägger på ved eller går in en stund) i stället för att stå vid en slocknad eld, innan värmen blir farlig, och går sedan vakt igen',
+  kor: () => {
+    const s = SIM.createState(5, START); s.kal = SIM.nyKalender(s.now, SIM.HOST); klockan(s, 23); // en kall höstnatt
+    Object.assign(s.fire, { lit: false, fuel: 0, emberUntil: undefined, ring: true }); tandOchFlinta(s); SIM.setAmount(s, 'ved', 40);
+    const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!, e = SIM.eldPlats(s);
+    Object.assign(p, { x: e.x + 1.5, y: e.y + 0.5, hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, health: 1, warm: SIM.KROPP.kallt - 0.03 });
+    p.task = { act: 'vakt', phase: 'do', tx: p.x, ty: p.y, until: s.now + 6 * SIM.HOUR, carry: 0, dark: true, why: 'Håller vakt i natt' };
+    p.guardDay = s.lastGuardDay = SIM.yearNo(s, s.now - SIM.VAL.vaktByte * SIM.HOUR); // nattens vakt
+    const temp = SIM.temperature(s), gjorde: string[] = [];
+    let minVarm = p.warm, varmde = false;
+    kor(s, 3, () => {
+      const k = p.task?.act ?? ''; if (gjorde.at(-1) !== k) gjorde.push(k);
+      if (['tanda', 'elda', 'varma'].includes(k) || (k === 'vila' && SIM.roomAt(s, p.x, p.y))) varmde = true;
+      minVarm = Math.min(minVarm, p.warm);
+    });
+    return [
+      [`det är kallt (${Math.round(temp)} °C) och elden är släckt när vakten börjar frysa`, temp < 5],
+      [`vakten värmer sig som värmen erbjuder (${gjorde.join(' → ')})`, varmde],
+      [`värmen blir aldrig farlig (lägst ${minVarm.toFixed(2)}, farligt under ${SIM.KROPP.farligt})`, minVarm >= SIM.KROPP.farligt],
+      [`vakten går vakt igen när hen är varm (${gjorde.join(' → ')})`, gjorde.lastIndexOf('vakt') > 0],
+      [`vakten står inte vid en slocknad eld och fryser (${s.fire.lit ? 'elden brinner' : 'elden är släckt'}, värmen ${p.warm.toFixed(2)})`, s.fire.lit || p.warm >= SIM.KROPP.kallt || !!SIM.roomAt(s, p.x, p.y)],
     ];
   },
 };

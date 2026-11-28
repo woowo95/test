@@ -1,5 +1,5 @@
 import { FANG, besokVal, fangar, fangeVal, fangvaktFull, fangvaktPlats, fangvaktPoang, matTillFange, stoppaVal } from './fangelse';
-import { taVapen } from './vakt';
+import { taVapen, vaktKrok } from './vakt';
 import { heligtAvstar } from './kultlatt';
 import { hoVal } from './djurtorst';
 import { TATU, TATUERINGAR, tatVal } from './tatuering';
@@ -581,7 +581,10 @@ const slatterRad = ({ s, p, v }: Ctx, i = slaVal(s, p)) => { if (i === undefined
 // den som är skadad eller sjuk tar Förbättra mer sällan, efter hur svårt (kroppLust, steg 12.1.46): vilan väger tyngre än förbättringarna
 const forbNu = (c: Ctx) => { const f = faror(c), ch = (f.kyla || f.svalt ? VAL.projFara : 1) * kroppLust(c.p, c.s.now); return ch >= 1 || (c.forb ??= rnd(c.s, 'val', c.p) < ch); };
 // lat: hur mycket tidigare den lata tar grundbehoven
-const fryser = (c: Ctx) => c.p.warm < KROPP.kallt + KROPP.latVarme * c.lazy;
+// fryser p (lazy = hur lat hen är)? Också vakten som fryser på sitt pass (vakt.ts, steg 15.1.42)
+const fryserLat = (p: Person, lazy: number) => p.warm < KROPP.kallt + KROPP.latVarme * lazy;
+const fryser = (c: Ctx) => fryserLat(c.p, c.lazy);
+vaktKrok.fryser = (s, p) => fryserLat(p, 1 - duty(s, p)); // lika lat som i valet (chooseTask)
 // ett grundbehov i poäng (steg 13.8.10): vikten gånger hur långt under gränsen man är, noll över gränsen
 const grund = (vikt: number, x: number, grans: number) => x < grans ? vikt * nodUnder(x, grans) : 0;
 // hungern i poäng: den som behöver äta (MAT.behover) och har mat att ta
