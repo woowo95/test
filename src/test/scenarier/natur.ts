@@ -809,6 +809,7 @@ SCENARIER.mobler = {
     const utanBank = !stationSite(createState(1, START), 'flatarbank'); // utan hus finns ingen plats för slöjdbänken
     for (const r of s.people) r.tek = { ...r.tek, halmbadd: 1 };
     setMat(s, { bar: 200 }); setAmount(s, 'torrgras', 40); setAmount(s, 'grenar', 30); setAmount(s, 'ved', 30);
+    for (const q of living(s)) SIM.laggIn(s, 'bar', 20, q.id); // var och en har egen mat, så att ingen behöver skaffa den först (raden egenMat i val.ts)
     const brist0 = PROJEKT.halmbadd!.brist(s);
     let h = 0;
     while (!stationerOf(s).some(t => t.k === 'halmbadd' && isKlar(t)) && h < 72) { kor(s, 1); h++; }
