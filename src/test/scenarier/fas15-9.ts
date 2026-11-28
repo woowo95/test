@@ -102,7 +102,7 @@ SCENARIER.hyllval = {
     for (let i = 0; i < 3 * 360 && !(SIM.hyllan(s, f).some(h => h.k === fin) && !SIM.hyllan(s, f).some(h => h.k === X)); i++) { SIM.step(s, 10); if (p.task?.act === 'stallaFram' && p.task.tillbaka) tillbaka = true; }
     const kvar = SIM.hyllan(s, f).filter(h => h.k === X).length, mat = SIM.hyllan(s, f).find(h => h.k === fin);
     // köpet vid hyllan är ett byte: säljaren övar handel och relationen växer
-    const k = vux.find(q => SIM.kundVal(s, q, 'affar')), e = k && SIM.kundVal(s, k, 'affar');
+    const k = vux.find(q => SIM.erbjudandet(s, q, 'affar')), e = k && SIM.erbjudandet(s, k, 'affar');
     let hFore = 0, hEfter = 0, rFore = 0, rEfter = 0, kopt = false;
     if (k && e) {
       hFore = p.skill.handel; rFore = SIM.getRel(s, k, p).op;
@@ -136,9 +136,9 @@ SCENARIER.affarkropp = {
     const kropp = (q: SIM.Person) => { Object.assign(q, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1 }); q.bruk = undefined; q.task = undefined; };
     const kund = (q: SIM.Person) => { kropp(q); q.hunger = 0.3; }; // kunderna är lite hungriga och har ingen egen mat
     for (const q of vux) { SIM.laggIn(s, 'silver', 60, q.id); kund(q); }
-    const kunder = vux.filter(q => SIM.kundVal(s, q, 'affar')), k = kunder[0], c = kunder[1];
+    const kunder = vux.filter(q => SIM.erbjudandet(s, q, 'affar')), k = kunder[0], c = kunder[1];
     if (!k || !c) return [[`två kunder vill köpa mat (${kunder.length})`, false]];
-    const e = SIM.kundVal(s, k, 'affar')!, ko = SIM.stallIKo(s, k, e);
+    const e = SIM.erbjudandet(s, k, 'affar')!, ko = SIM.stallIKo(s, k, e);
     k.task = { act: 'koaDisk', phase: 'do', tx: ko.spot.x, ty: ko.spot.y, until: s.now + ko.dur, carry: 0, ref: f.id, why: ko.why };
     const val = (q: SIM.Person) => { SIM.chooseTask(s, q); const tk = (q as { task?: SIM.Task }).task, a = tk?.act ?? 'inget'; skal.push(`${a}: ${tk?.why ?? ''}`); q.task = undefined; return a; }, skal: string[] = [];
     // ägaren: byn har mat för en tid, så att försörjningen inte brådskar

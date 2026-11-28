@@ -97,19 +97,19 @@ SCENARIER.prisisilver = {
   kor: () => {
     const { s, p, f, vux, disk } = foretagBy(), G = SIM.saljPart(s, f)!, bak = SIM.vidStation(disk);
     p.x = bak.x; p.y = bak.y; p.task = undefined;
-    const k = vux.find(q => SIM.kundVal(s, q, 'servering'))!, e = SIM.kundVal(s, k, 'servering')!;
+    const k = vux.find(q => SIM.erbjudandet(s, q, 'servering'))!, e = SIM.erbjudandet(s, k, 'servering')!;
     // kunder som har lite silver men inte nog: priset sjunker
     const dag = () => { f.dag = undefined; f.gap = undefined; };
     const fattiga = vux.filter(q => q !== k).slice(0, 4), rika0 = f.pris?.servering ?? 1;
     for (const q of fattiga) { utanAllt(s, q); SIM.laggIn(s, 'silver', 1, q.id); }
-    dag(); for (const q of fattiga) SIM.kundVal(s, q, 'servering');
+    dag(); for (const q of fattiga) SIM.erbjudandet(s, q, 'servering');
     const nejLite = f.dag?.servering?.nej?.length ?? 0;
     for (const g of SIM.dygnet) g(s);
     const efterLite = f.pris?.servering ?? 1;
     // kunder som inget har: priset står kvar
     f.pris = undefined as SIM.Foretag['pris'];
     for (const q of fattiga) utanAllt(s, q);
-    dag(); for (const q of fattiga) SIM.kundVal(s, q, 'servering');
+    dag(); for (const q of fattiga) SIM.erbjudandet(s, q, 'servering');
     const nejInget = f.dag?.servering?.nej?.length ?? 0;
     for (const g of SIM.dygnet) g(s);
     const efterInget = (f.pris as SIM.Foretag['pris'])?.servering ?? 1;
@@ -142,7 +142,7 @@ SCENARIER.bynsdel = {
     const f = SIM.starta(s, SIM.BYN, ['servering']); SIM.foretagTimme(s); SIM.touch(s);
     const del = SIM.bynsDel(s, fin), ager = SIM.ownsId(s, SIM.BYN, fin), G = SIM.saljPart(s, f)!, over = G.over([]).find(w => w.k === fin)?.n ?? 0;
     // en kund köper en måltid; den som betjänar står vid disken, och maten ligger där
-    const kund = vux.find(q => q !== dod && SIM.kundVal(s, q, 'servering'))!, e = kund && SIM.kundVal(s, kund, 'servering');
+    const kund = vux.find(q => q !== dod && SIM.erbjudandet(s, q, 'servering'))!, e = kund && SIM.erbjudandet(s, kund, 'servering');
     const hog = s.stackar!.find(a => a.k === fin)!, at = SIM.foretagare(s, SIM.BYN) ?? vux.find(q => q !== kund)!; at.x = hog.x + 0.5; at.y = hog.y + 0.5; at.task = undefined; // den som betjänar har hämtat maten
     const fore = { byn: SIM.ownsId(s, SIM.BYN, fin), dod: SIM.ownsId(s, dod.id, fin), budget: SIM.ownsId(s, budget, fin), kyrka: SIM.ownsId(s, kyrka, fin) };
     let kopt = false;

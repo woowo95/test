@@ -48,7 +48,7 @@ import { varselSamla } from './motgang';
 import { FORRAD, FORRADSMAL, TROSKEL, buffert, foretagMal, lyxtak, materialTimme, materialTak, eldReserv, villHaAv } from './forradsmal';
 import { stallaVal, AFFAR } from './affar';
 import { behovAv, saknarNu } from './behov';
-import { betjanVal, kundVal, stallIKo, KASSA, type Erbjudande } from './kassa';
+import { betjanVal, erbjudandet, stallIKo, KASSA, type Erbjudande } from './kassa';
 import { stadaUppgift, stadaVal } from './stada';
 import { tjaraUppgift, tjaraVal } from './tjara';
 import { ammoOk } from './strid';
@@ -820,7 +820,7 @@ export const ARBETEN: readonly Arbete[] = [
     if (!hv) return false;
     set(v, hv.act, hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return true;
   } },
-  { id: 'djurkop', niva: 3, nar: 'dag', poang: c => { if (c.a < ALDER.vuxen || !c.s.foretag?.some(f => f.verk.includes('djurhandel'))) return 0; const e = ((c.kunder ??= {}).djurkop = kundVal(c.s, c.p, 'djurhandel')); return e ? VAL.tillAffar * Math.min(1, e.net) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.djurkop; return !!e && koa(s, p, v, e); } }, // ett djur (steg 14.1.12, verksamheter.ts)
+  { id: 'djurkop', niva: 3, nar: 'dag', poang: c => { if (c.a < ALDER.vuxen || !c.s.foretag?.some(f => f.verk.includes('djurhandel'))) return 0; const e = ((c.kunder ??= {}).djurkop = erbjudandet(c.s, c.p, 'djurhandel')); return e ? VAL.tillAffar * Math.min(1, e.net) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.djurkop; return !!e && koa(s, p, v, e); } }, // ett djur (steg 14.1.12, verksamheter.ts)
   // ett framträdande (steg 10.7.9, framtradande.ts): den som ville lyssna vid kallelsen går dit, men inte den som skäms
   { id: 'lyssna', niva: 3, poang: () => VAL.tillLyssna, prova: ({ s, p, v }) => {
     const l = skams(p, s.now) ? undefined : lyssnaVal(s, p, q => spotFor(s, 'beratta', q));
@@ -850,7 +850,7 @@ export const ARBETEN: readonly Arbete[] = [
     v.spot = bord; v.dur = (VAL.maltidMin + rnd(s, 'val', p) * VAL.maltidSpann) * MIN; return set(v, 'maltid', 'Är hungrig och äter vid bordet');
   } },
   // serveringen (steg 14.1.6, kassa.ts): den hungrige köper sin måltid när den är mer värd än den kostar
-  { id: 'servering', niva: 4, poang: c => { if (!c.s.foretag?.length || c.a < ALDER.hjalper || !MAT.behover(c.s, c.p)) return 0; const e = ((c.kunder ??= {}).servering = kundVal(c.s, c.p, 'servering')); return e ? VAL.grundMat * nodUnder(c.p.hunger, KROPP.hungrig) * (1 + KASSA.lust * Math.min(1, e.net)) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.servering; return !!e && koa(s, p, v, e); } },
+  { id: 'servering', niva: 4, poang: c => { if (!c.s.foretag?.length || c.a < ALDER.hjalper || !MAT.behover(c.s, c.p)) return 0; const e = ((c.kunder ??= {}).servering = erbjudandet(c.s, c.p, 'servering')); return e ? VAL.grundMat * nodUnder(c.p.hunger, KROPP.hungrig) * (1 + KASSA.lust * Math.min(1, e.net)) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.servering; return !!e && koa(s, p, v, e); } },
   // hungrig, och maten ligger inte där hen står: hen går till den närmaste stacken med mat hen får ta och äter där (steg 11.1.77)
   { id: 'ata', niva: 4, poang: matPoang, prova: ({ s, p, v }) => ataVal(s, p, v) },
   { id: 'utbrott', niva: 4, nar: 'dag', poang: () => VAL.grundUtbrott, prova: ({ s, p, v }) => utbrottVal(s, p, v) },
@@ -993,7 +993,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'betjana', niva: 6, poang: c => { if (!c.s.foretag?.length) return 0; const d = (c.betj = betjanVal(c.s, c.p)); return d ? VAL.tillBetjana * d.sc : 0; }, prova: ({ v, betj: d }) => { if (!d) return false; v.spot = d.spot; v.dur = d.dur; v.ref = d.f.id; return set(v, 'betjana', `Betjänar: ${d.f.namn}`); } },
   // affären (steg 14.1.8, affar.ts): den som saknar något köper det när det är mer värt än det kostar, och ägaren ställer fram.
   // Varje rad har sitt erbjudande i c.kunder, eftersom raderna på samma nivå räknas innan vinnaren provas
-  { id: 'affar', niva: 6, nar: 'dag', poang: c => { if (!c.s.foretag?.length || c.a < ALDER.hjalper || !saknarNu(c.s, c.p).length) return 0; const e = ((c.kunder ??= {}).affar = kundVal(c.s, c.p, 'affar')); return e ? VAL.tillAffar * Math.min(1, e.net) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.affar; return !!e && koa(s, p, v, e); } },
+  { id: 'affar', niva: 6, nar: 'dag', poang: c => { if (!c.s.foretag?.length || c.a < ALDER.hjalper || !saknarNu(c.s, c.p).length) return 0; const e = ((c.kunder ??= {}).affar = erbjudandet(c.s, c.p, 'affar')); return e ? VAL.tillAffar * Math.min(1, e.net) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.affar; return !!e && koa(s, p, v, e); } },
   { id: 'stallaFram', niva: 6, nar: 'dag', poang: c => { if (!c.s.foretag?.length || c.a < ALDER.vuxen) return 0; const d = (c.stall = stallaVal(c.s, c.p)); return d ? Math.min(VAL.tillAffar, d.sc) : 0; }, prova: ({ v, stall: d }) => { if (!d) return false; v.spot = { x: d.h.x + 0.5, y: d.h.y + 0.5 }; v.dur = AFFAR.min * MIN; v.ref = d.f.id; v.tool = d.h.k; return set(v, 'stallaFram', d.h.tillbaka ? `Bär tillbaka varor som inte säljer: ${d.f.namn}` : `Ställer fram varor: ${d.f.namn}`); } }, // eller tillbaka till förrådet (steg 15.1.99)
   { id: 'kopaMat', niva: 6, nar: 'dag', poang: c => { const d = dag(c); if (!d.works || d.wEgen <= 0) return 0; const k = (c.kop = kopval(c.s, c.p, 'mat')); return k ? d.wEgen * d.rad.mat.sc * k.faktor : 0; }, prova: c => kopa(c) },
   { id: 'kopaVed', niva: 6, nar: 'dag', poang: c => { const d = dag(c); if (!d.works || d.wWood <= 0) return 0; const k = (c.kopV = kopval(c.s, c.p, 'ved')); return k ? d.wWood * d.rad.ved.sc * k.faktor : 0; }, prova: c => kopa(c, c.kopV) },
@@ -1658,7 +1658,7 @@ export const FRITID: readonly FritidRad[] = [
     gor: c => { const d = c.dr!, v = c.v; v.spot = { x: c.p.x, y: c.p.y }; v.dur = 0; v.tool = d; return set(v, 'dryck', `Dricker ${VATSKOR[d].namn.toLowerCase()} vid elden`); } },
   // en dryck hos den som säljer (steg 14.1.6, kassa.ts): lusten till rus och det kunden vinner på köpet
   { id: 'krog', nar: 'natt', kraver: 'ett företag som säljer dryck, och att kunna betala', ger: 'rus, humör och sällskap', drar: 'lusten till rus och priset', akt: ['koaDisk'],
-    vikt: c => { if (!c.s.foretag?.length || c.a < ALDER.vuxen || rusAv(c.p) >= RUS.mest || budHindrar(c.s, c.p, 'ingetRus')) return 0; c.kund = kundVal(c.s, c.p, 'dryck'); return c.kund ? kvallsVikt(c.s, c.p) * (1 + c.kund.net) : 0; },
+    vikt: c => { if (!c.s.foretag?.length || c.a < ALDER.vuxen || rusAv(c.p) >= RUS.mest || budHindrar(c.s, c.p, 'ingetRus')) return 0; c.kund = erbjudandet(c.s, c.p, 'dryck'); return c.kund ? kvallsVikt(c.s, c.p) * (1 + c.kund.net) : 0; },
     gor: c => !!c.kund && koa(c.s, c.p, c.v, c.kund) },
   // ett framträdande vid scenen eller elden (steg 4.3.2, 10.7.9 och 13.8.8, framtradande.ts): den som vill uppträda kallar
   { id: 'framtradande', nar: 'natt', kraver: 'en kväll utan framträdande, och att inte skämmas', ger: 'humör åt publiken och färdighet', drar: 'skaldskapet och karisman', akt: ['upptrada'],

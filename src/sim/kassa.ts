@@ -1,6 +1,6 @@
 // ---------- kassan (steg 14.1.6, Ekonomi och handel: Kassan och affären, i fliken Människan) ----------
 // Disken är en station i ett rum med verksamheten. Kunden väljer företaget när det hen får är mer värt för hen än det det
-// kostar (kundVal), går till disken och väntar där (koaDisk), flera i kö. Att betjäna är ett arbete (betjanVal, ARBETEN i
+// kostar (erbjudandet), går till disken och väntar där (koaDisk), flera i kö. Att betjäna är ett arbete (betjanVal, ARBETEN i
 // val.ts): poängen växer med dem som väntar och hur länge de väntat. Betjänaren tar emot den första i kön, som betalar med
 // silver och varor som i alla byten (byte.ts), och det hen köpte äts vid bordet. Den som väntat för länge går.
 import { MIN, W, type Person, type State, type Task } from './typer';
@@ -129,7 +129,6 @@ const kundNoje = (s: State, p: Person, v: string, k: string) => p.gast ? gastKun
 // vad kunden p tycker om företaget utöver varan (finheten mot förväntan, ryktet: steg 14.1.9 och 14.1.10 lägger till)
 export const tycker: ((s: State, p: Person, f: Foretag, v: string) => number)[] = [];
 // det bästa p kan köpa av verksamheten v nu, om det är mer värt för hen än det kostar
-export const kundVal = (s: State, p: Person, v: string): Erbjudande | undefined => erbjudandet(s, p, v);
 // bara = bara det företaget (gästen som kommit dit)
 // kan = bara de varorna (kopbuffert.ts)
 export function erbjudandet(s: State, p: Person, v: string, bara?: Foretag, kan?: (k: string) => boolean): Erbjudande | undefined {

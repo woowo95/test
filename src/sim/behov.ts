@@ -559,8 +559,6 @@ function give(t: Ting, g: Person, m: Person) {
   t.krok = undefined; // ett redskap som hängde i bältet (steg 7.1.1) läggs i förrådet
 }
 // a talar med b. Saknar någon av dem ett redskap som den andra har över? Returnerar vad som hände (samma väg som allt annat, brukByte)
-// det g har över av behovet b som m kan köpa: det g och familjen inte behöver (kopbuffert.ts)
-export const grannensOver = (s: State, g: Person, b: Behov, _m: Person) => overEget(s, g, b);
 // m köper n av k hos g, till det hen vill ha kvar
 export function bytaHos(s: State, m: Person, g: Person, k: string, n: number) {
   const b = brukAv(k).behov?.(), v = b ? Math.min(n, Math.floor(overEget(s, g, b) / perOf(b, k) + 1e-9), helt(ownsAmount(s, g, k))) : 0;
@@ -731,7 +729,7 @@ export function behovAv(s: State, p: Person, k: string) {
 }
 // det p har över av behovet b: det hen själv behöver (b.kvar), och för maten det familjen behöver upp till sin gräns (steg 10.5.12,
 // 13.9.6: egenGrans för var och en i familjen), mot det familjen äger
-function overEget(s: State, p: Person, b: Behov) {
+export function overEget(s: State, p: Person, b: Behov) {
   const egen = ownFor(s, p, b) - b.kvar(s, p);
   if (b.id !== 'mat') return egen;
   const fam = familjOf(s, p.id), fp = fam.length ? fam : [p];
@@ -755,6 +753,8 @@ export function payable(s: State, p: Person, utom: readonly string[]): Vara[] {
   }
   return ut;
 }
+// vad p kan betala med: silvret och det hen har över (payable), värderat efter grundvärdet (kunden vid disken, dagsarbetets lön)
+export const betalVarde = (s: State, p: Person) => payable(s, p, []).reduce((a, w) => a + (w.t ? 0 : w.n * grundvarde(w.k)), 0);
 // bybon p som part i ett byte (byte.ts). Silver går att betala med också inom byn (steg 7.2.13), värt sitt grundvärde för alla
 export function personPart(s: State, p: Person, silver = true): Part {
   return { id: p.id, namn: p.name, p, x: p.x, y: p.y, handel: p.skill.handel ?? 0, varde: k => behovAv(s, p, k), kanner: nr => kannerOrt(s, p, nr), over: utom => payable(s, p, silver ? utom : [...utom, 'silver']) };

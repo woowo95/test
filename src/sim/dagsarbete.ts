@@ -21,7 +21,7 @@ import { BYN, kyrkaId } from './egendom';
 import { FOOD } from './saker';
 import { foodDaysAll, matPerDygn } from './ekonomi';
 import { FORRADSMAL, buffert } from './forradsmal';
-import { egnaMatDygn, forsorjer, payable } from './behov';
+import { betalVarde, egnaMatDygn, forsorjer, payable } from './behov';
 import { kunnaFart } from './kunna';
 import { tanke } from './tankar';
 import { ledareOf } from './styre';
@@ -52,7 +52,6 @@ export interface Dagsverk {
   bud(s: State): LonBud[];
 }
 export const lonNu = (s: State) => lagGaller(s, 'lon') && lagGaller(s, 'skatt');
-export const anstAv = (s: State, p: Person) => s.anst?.find(a => a.p === p.id);
 // anställd av byn i arbetet arb (i år)
 export const anstByn = (p: Person, arb: string) => p.anst?.av === BYN && p.anst.arb === arb;
 // föräldern som försörjer p, modern först
@@ -61,11 +60,11 @@ const forsorjare = (s: State, p: Person) => [p.mother, p.father].map(id => livin
 const betalare = (s: State, p: Person) => forsorjare(s, p) ?? p;
 const silverAv = (s: State, id: number) => Math.floor(ownsId(s, id, 'silver') + 1e-9);
 // det id kan betala en lön med: dagsarbetet ligger på samma byten som allt annat (Gränsen mot fas 14 i fliken Människan), så en
-// person betalar med silvret och det hen har över, värderat efter grundvärdet (som kunden vid disken, kundPung i foretag.ts).
+// person betalar med silvret och det hen har över, värderat efter grundvärdet (som kunden vid disken: betalVarde i behov.ts).
 // Kyrkan betalar med sitt silver
 const formaga = (s: State, id: number) => {
   const p = id > 0 ? byId(s, id) : undefined;
-  return p ? Math.floor(payable(s, p, []).reduce((a, w) => a + (w.t ? 0 : w.n * grundvarde(w.k)), 0) + 1e-9) : silverAv(s, id);
+  return p ? Math.floor(betalVarde(s, p) + 1e-9) : silverAv(s, id);
 };
 
 // det byn kan betala ur delen: delens andel av byns silver och av maten över bufferten

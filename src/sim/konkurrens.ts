@@ -1,5 +1,5 @@
 // ---------- kundernas val och konkurrensen (steg 14.1.9, Ekonomi och handel: Företagen, i fliken Människan) ----------
-// Kunden väljer det företag som är bäst för just hen (kundVal i kassa.ts): nyttan och kvaliteten mot priset, vägen, kön och rummets
+// Kunden väljer det företag som är bäst för just hen (erbjudandet i kassa.ts): nyttan och kvaliteten mot priset, vägen, kön och rummets
 // finhet mot det hen väntar sig (forvantan.ts). Företag som liknar varandra delar därför kunderna. En gång per dygn ändrar ägaren
 // priset efter dem som köpt och dem som ville men avstod, och den vars kunder väntat sig ett finare rum gör det finare (mattan)
 import type { Person, State } from './typer';
