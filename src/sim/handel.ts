@@ -798,9 +798,19 @@ const kravAv = (s: State, h: Handlare, M: Part) => clamp(1 - HANDEL.krav * ((M.h
 function budNu(s: State, h: Handlare, a: Affar, M: Part) {
   const H_ = trodd(s, h, byId(s, a.vem)); // kunden räknar med det hen tror om klanens priser (steg 10.5.16)
   if (a.salj) {
-    const n = Math.min(h.silver, Math.max(1, Math.round(vardFor(a.bud, H_, true) * (2 - a.f))));
-    a.kop = n >= 1 ? [{ k: 'silver', n }] : [];
-    return n >= 1;
+    // handlaren betalar med samma betalaAv som kunden (steg 15.1.25): först silvret och sedan det av varorna som är värt minst för
+    // hen och mest för kunden, i hela saker, tills det hen ger är värt det kunden ber om för handlaren (som silvret förut)
+    const mal = Math.max(1, Math.round(vardFor(a.bud, H_, true) * (2 - a.f))), utom = [...a.bud.map(w => w.k), 'silver'];
+    const varor = betalVaror(H_, M, a.bud.map(w => w.k)).filter(w => w.k === 'silver').concat(betalVaror(H_, M, utom)).map(w => ({ ...w, ut: w.in, inN: undefined }));
+    const b = betalaAv(varor, M, mal);
+    // handlaren ger aldrig mer än kunden ber om: går det inte jämnt ut med hela saker ger hen mindre, som när silvret inte räcker
+    let over = b.kost - mal;
+    for (let i = b.betal.length - 1; i >= 0 && over > 1e-9; i--) {
+      const w = b.betal[i], per = varor.find(x => x.k === w.k && x.t === w.t)!.in, n = Math.min(w.n, Math.ceil(over / per - 1e-9));
+      w.n -= n; over -= n * per;
+    }
+    a.kop = b.betal.filter(w => w.n >= 1);
+    return a.kop.length > 0;
   }
   while (a.kop.length) {
     const ger = vardFor(a.kop, H_), far = vardFor(a.kop, M, true);

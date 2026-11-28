@@ -1,6 +1,8 @@
 // Scenarier för fas 15, grupp 2 av rättningarna från spelgranskningen (system 15.1).
 import * as SIM from '../../sim';
-import { SCENARIER } from './hjalp';
+import { SCENARIER, rikBy, tandEld } from './hjalp';
+import { BEAT, START } from '../kor';
+import { helAffar, utanVantan, vanligBy } from './agande';
 import { foretagBy } from './fas14';
 
 SCENARIER.handelsfart = {
@@ -60,6 +62,29 @@ SCENARIER.diskvarde = {
       [`företaget med många väntade kunder (${t(manga.kunder)} om dygnet) ser ett värde i disken (${t(manga.e)})`, manga.e > 0],
       [`det med få (${t(fa.kunder)}) ser mindre (${t(fa.e)})`, fa.kunder < manga.kunder && fa.e < manga.e],
       [`och disken är värd mer som projekt för det första (${t(manga.v * 100)} mot ${t(fa.v * 100)} hundradelar)`, manga.v > fa.v],
+    ];
+  },
+};
+
+SCENARIER.handlarbyte = {
+  text: 'Steg 15.1.25: när en bybo säljer till handlaren bjuder handlaren först silver och sedan sina varor, med samma betalaAv som när kunden köper: en handlare utan silver köper en sak av en bybo och betalar med en vara',
+  kor: () => {
+    const s = SIM.createState(6, START);
+    rikBy(s); tandEld(s); SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'grenar', 30); SIM.setAmount(s, 'torrgras', 30);
+    SIM.handlarFram(s, vanligBy(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!));
+    for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { SIM.step(s, BEAT); utanVantan(s); }
+    const h = s.handlare!, [a] = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    h.bynKlar = true; h.silver = 0; h.varor = [{ k: 'ved', n: 6 }]; // handlaren har inget silver, bara ved
+    for (const p of SIM.living(s)) if (p.task?.act === 'handla') p.task = undefined;
+    const k = 'skinn';
+    SIM.put(s, k, 12, { [a.id]: 12 }); // a har mycket mer än hen behöver
+    const fore = SIM.ownsAmount(s, a, k), silver0 = SIM.ownsAmount(s, a, 'silver'), rep0 = SIM.ownsAmount(s, a, 'ved');
+    const va = SIM.handlaVal(s, a);
+    const st = va ? helAffar(s, a).steg : [];
+    const salt = fore - SIM.ownsAmount(s, a, k), kruk = SIM.ownsAmount(s, a, 'ved') - rep0, silver = SIM.ownsAmount(s, a, 'silver') - silver0;
+    return [
+      [`den som har skinn över går till handlaren utan silver (${va?.why ?? 'går inte'})`, !!va],
+      [`handlaren köper (${salt} skinn) och betalar med ved (${kruk}), inte med silver (${silver}) (${st.join(' → ')})`, salt >= 1 && kruk >= 1 && silver === 0 && h.varor.some(w => w.k === k) && (s.stat?.saltOver ?? 0) >= 1],
     ];
   },
 };

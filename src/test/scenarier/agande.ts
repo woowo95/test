@@ -22,13 +22,13 @@ import { tal as talFlik, talVal } from '../../ui/flikar/tal';
 import { rikVal } from '../../ui/graf';
 // handlaren väntar på kvällen innan filten läggs ut (steg 4.5.4.11): testerna som handlar på dagen hoppar över väntan
 // handlaren lägger ut filten i slutet av nästa anrop av step, så att byn inte hinner handla innan scenariot ställt i ordning
-const utanVantan = (s: State) => { if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now + (BEAT - 2) * SIM.SEC; };
+export const utanVantan = (s: State) => { if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now + (BEAT - 2) * SIM.SEC; };
 // p gör hela sin affär med handlaren (steg 4.5.7.4): hen får uppgiften handlaVal ger, står på platsen och gör klart den, steg för
 // steg tills affären är över. forByn = hen handlar för byn, vem som än skulle ha gjort det. Ger den första uppgiften och alla
 // tills = stanna (med uppgiften kvar) när affären kommit till den fasen och p står på sin plats.
 // handlarens by har det den vill ha av allt och marken gör inget dyrare där, så att priserna där är grundvärdet (en ny by i
 // världen är fattig och har allt dyrt, men en sådan by skickar ingen handlare i spelet, steg 11.6.8)
-const vanligBy = (s: State, rad: number) => {
+export const vanligBy = (s: State, rad: number) => {
   const r = s.varld?.rader?.find(x => x.nr === rad);
   if (!r) return rad;
   const v = SIM.radVaror(r), m = SIM.rikMal(r);
@@ -37,7 +37,7 @@ const vanligBy = (s: State, rad: number) => {
   r.hus = Math.round(m * SIM.RADPRIS.husAndel); r.egen = Object.fromEntries(SIM.sakerMedPris().map(k => [k, 1])); r.tal.rikedom = SIM.radRikedomUr(r);
   return rad;
 };
-const helAffar = (s: State, p: Person, forByn = false, tills?: SIM.Affar['fas']) => {
+export const helAffar = (s: State, p: Person, forByn = false, tills?: SIM.Affar['fas']) => {
   const h = s.handlare, steg: string[] = [];
   if (!h) return { steg };
   if (forByn) h.affar = { vem: p.id, namn: p.name, byn: true, fas: 'fraga', kop: [], bud: [], hamta: [], framme: [], nej: 0, f: SIM.HANDEL.forstaBud, t: s.now };
@@ -1214,7 +1214,7 @@ SCENARIER.silver = {
     const u = createState(6, START), k = fram(u);
     setAmount(u, 'torrfisk', 120); // något att betala med, som ovan (byns egna förråd när handlaren kommer beror på vad den hunnit samla)
     let gick = false;
-    for (let i = 0; i < 12 * 3600 / BEAT && !k.bynKlar && u.handlare; i++) { step(u, BEAT); if (u.log.some(l => SIM.radByte(u, l)?.an.endsWith('för byn'))) gick = true; } // affären tar bara någon minut (steg 4.5.7.4)
+    for (let i = 0; i < 12 * 3600 / BEAT && !k.bynKlar && u.handlare; i++) { step(u, BEAT); if (u.log.some(l => SIM.radByte(u, l)?.an.endsWith('för byn'))) gick = true; }
     return [
       [`byn säljer det den har gott om (handlaren har nu ${h.varor.map(w => `${w.n} ${SIM.sakNamn(w.k).toLowerCase()}`).join(', ')})`, salde],
       [`byn köper det den saknar (rep ${Math.round(amountOf(s, 'rep'))}, flinta ${Math.round(amountOf(s, 'flinta'))})`, kopte],

@@ -1883,7 +1883,7 @@ const MDEF = {
     '{Kund} hade länge velat ha {vara}, och nu låg det på filten.',
     { t: '{Kund} gick fram till {handlare} för byns räkning. Byn behövde {vara}.', om: f => f.byn === true && f.salj !== true },
     { t: 'Byn skickade {kund}, och det var {vara} byn ville ha.', om: f => f.byn === true && f.salj !== true },
-    { t: '{Kund} hade {vara} över och ville sälja det för silver.', om: f => f.salj === true },
+    { t: '{Kund} hade {vara} över och ville sälja det.', om: f => f.salj === true },
     { t: '{Kund} bar fram {vara} och frågade om {handlare} ville köpa.', om: f => f.salj === true },
   ],
   // ett argument ur registret HANDELSARG (handelsber.ts): {arg} = argumentets id, {bynamn} = byns namn, som handlaren säger
