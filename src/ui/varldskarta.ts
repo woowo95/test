@@ -8,7 +8,7 @@ import { BYHANDLING, byTecken, fardRuta, RadFard, byFlikar, PlatsRuta, Sallskap,
 import { farg } from '../palett';
 import { gaIn, huvud, s } from './lage';
 import { durTxt, ejLig, esc, omUngefar } from './hjalp';
-import { TECKEN, TECKENPAL, VK, fardTecken, kandaRutor, huvudbynsPlats, Vy, begransa, dra, helaKartan, namnPaKartan, NAMNZOOM, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
+import { TECKEN, TECKENPAL, VK, fardTecken, kandaRutor, huvudbynsPlats, Vy, begransa, dra, helaKartan, namnPaKartan, namnUtanKrock, NAMNZOOM, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
 import { bildDuk } from './bildduk';
 
 const stil = document.createElement('style');
@@ -135,9 +135,11 @@ function ritaNamn(g: CanvasRenderingContext2D, dpr: number) {
   const vl = s?.varld; if (!vl || !vy || vy.z < NAMNZOOM) return;
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.textAlign = 'center'; g.textBaseline = 'top'; g.lineJoin = 'round'; g.lineWidth = 3;
-  for (const n of namnPaKartan(vl, bynsKarta(s!))) {
+  const font = (n: { egen: boolean }) => `${n.egen ? 700 : 500} 12px "Pixelify Sans", system-ui, sans-serif`;
+  const bredd = (n: { egen: boolean; namn: string }) => { g.font = font(n); return g.measureText(ejLig(n.namn)).width + 4; }; // med den ljusa kanten
+  for (const n of namnUtanKrock(namnPaKartan(vl, bynsKarta(s!)), vy.z, bredd)) { // huvudbyns först, och inget namn över ett annat (steg 15.1.81)
     const sx = ((n.x + 0.5) * VK - vy.x) * vy.z, sy = ((n.y + 1) * VK - vy.y) * vy.z + 1;
-    g.font = `${n.egen ? 700 : 500} 12px "Pixelify Sans", system-ui, sans-serif`;
+    g.font = font(n);
     const namn = ejLig(n.namn); // fi och fl slås inte ihop, i kanten och fyllningen (steg 12.1.50, 12.1.204)
     g.strokeStyle = farg('ben', 3); g.strokeText(namn, sx, sy);
     g.fillStyle = n.egen ? farg('rost', 0) : farg('kol', 1); g.fillText(namn, sx, sy);

@@ -187,6 +187,20 @@ export function namnPaKartan(vl: Varlden, kn?: BynsKarta): KartNamn[] {
   return ut;
 }
 
+// namnen som ritas utan att krocka (steg 15.1.81): huvudbyns först, sedan i platsernas ordning; ett namn vars ruta på skärmen
+// (bredden ur bredd, NAMNHOJD hög, under tecknet) går in i ett namn som redan står hoppas över. z är skärmpunkter per bildpunkt
+export const NAMNHOJD = 13;
+export function namnUtanKrock(namn: KartNamn[], z: number, bredd: (n: KartNamn) => number): KartNamn[] {
+  const stod: { x0: number; x1: number; y0: number; y1: number }[] = [], ut: KartNamn[] = [];
+  for (const n of [...namn.filter(x => x.egen), ...namn.filter(x => !x.egen)]) {
+    const cx = (n.x + 0.5) * VK * z, y0 = (n.y + 1) * VK * z + 1, w = bredd(n);
+    const r = { x0: cx - w / 2, x1: cx + w / 2, y0, y1: y0 + NAMNHOJD };
+    if (stod.some(q => r.x0 < q.x1 && q.x0 < r.x1 && r.y0 < q.y1 && q.y0 < r.y1)) continue;
+    stod.push(r); ut.push(n);
+  }
+  return ut;
+}
+
 // lederna (steg 11.5.1): en trampad ruta binds ihop med de trampade grannarna med ett streck, tunt för en stig och bredare
 // för en led och en väg; platshållare i paletten tills bildstilen ritat lederna. Strecken går bara rakt (steg 12.1.29), så att
 // ingen ruta får ett kryss: två trampade rutor snett intill varandra binds ihop genom hörnet bara när ingen rak granne redan gör det

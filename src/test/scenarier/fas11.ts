@@ -4220,8 +4220,21 @@ SCENARIER.kartrecept = {
   },
 };
 
+// namnen krockar inte (steg 15.1.81): utzoomat står namnen över varandra, och huvudbyns namn går först
+function kartnamnKrock(vl: SIM.Varlden, hb: SIM.VarldPlats): [string, boolean][] {
+  const alla = VB.namnPaKartan(vl), bredd = (n: VB.KartNamn) => n.namn.length * 7 + 4;
+  const ut = VB.namnUtanKrock(alla, 0.5, bredd), nara = VB.namnUtanKrock(alla, 4, bredd);
+  const rutor = ut.map(n => { const cx = (n.x + 0.5) * VB.VK * 0.5, y0 = (n.y + 1) * VB.VK * 0.5 + 1, w = bredd(n); return { x0: cx - w / 2, x1: cx + w / 2, y0, y1: y0 + VB.NAMNHOJD }; });
+  const krock = rutor.some((a, i) => rutor.some((b, j) => i < j && a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1));
+  // två namn på samma ruta: bara det första står; huvudbyns går före
+  const tva = VB.namnUtanKrock([{ x: hb.x, y: hb.y, namn: 'Annan', egen: false }, { x: hb.x, y: hb.y, namn: hb.namn, egen: true }], 1, bredd);
+  return [
+    [`utzoomat står inga namn över varandra (${ut.length} av ${alla.length} ritas), inzoomat fler (${nara.length})`, !krock && ut.length < alla.length && nara.length > ut.length],
+    [`huvudbyns namn går först (${tva.map(n => n.namn).join(', ')})`, tva.length === 1 && tva[0].egen],
+  ];
+}
 SCENARIER.kartnamn = {
-  text: 'Platsernas namn på världskartan (steg 11.9.3, namnPaKartan i ui/varldbild.ts): huvudbyn och de platser byn känner får sitt namn under tecknet, men inte en plats som byn bara hört rykten om eller en hemlig plats som byn inte vet om',
+  text: 'Platsernas namn på världskartan (steg 11.9.3, namnPaKartan i ui/varldbild.ts): huvudbyn och de platser byn känner får sitt namn under tecknet, men inte en plats som byn bara hört rykten om eller en hemlig plats som byn inte vet om; ett namn som krockar med ett annat hoppas över, och huvudbyns går först (steg 15.1.81)',
   kor: () => {
     const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
     const langt = vl.platser!.filter(x => x.by !== vl.huvud && !SIM.iNaromradet(s, x.nr) && !(SIM.LANDMARKEN[x.k] as SIM.LandmarkDef).folk), kand = langt[0]!, rykt = langt.find(x => x !== kand)!;
@@ -4236,6 +4249,7 @@ SCENARIER.kartnamn = {
       [`platsen byn bara hört rykten om (${rykt.namn}) har inget namn`, !har(rykt.namn) || rykt.namn === kand.namn],
       ['den hemliga platsen har inget namn', !har('Gömman')],
       [`utan byns kunskap har alla platser namn (${VB.namnPaKartan(vl).length} av ${vl.platser!.filter(p => p.namn).length})`, VB.namnPaKartan(vl).length === vl.platser!.filter(p => p.namn).length],
+      ...kartnamnKrock(vl, hb),
     ];
   },
 };
