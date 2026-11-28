@@ -415,14 +415,14 @@ SCENARIER.samlartur = {
             if (v.vid !== undefined && v.vid !== plats) v.tomda.add(v.vid); // rutan hen lämnade är tömd (eller bördan full)
             v.vid = plats;
           }
-          if (t.phase === 'back' && v.last !== 'back') v.full = fullBorda(s, p, t);
+          if (t.phase === 'back' && v.last !== 'back') v.full = fullBorda(s, p, t) || t.until <= s.now; // full, eller passet är slut (sedan steg 15.1.44 är turerna längre och fler slutar med passet)
           v.last = t.phase;
         }
       }
     }
     const vidare = turer.filter(t => t.flytt > 0).length, full = turer.filter(t => t.full).length;
     return [
-      [`man bär hem en full börda eller går hem när det drar hemåt (${full} av ${turer.length} turer fulla)`, turer.length >= 20 && full >= 0.5 * turer.length],
+      [`man bär hem en full börda, går hem när passet är slut eller när det drar hemåt (${full} av ${turer.length} turer fulla eller vid passets slut)`, turer.length >= 20 && full >= 0.5 * turer.length],
       [`man går vidare till nästa ruta med saker (${vidare} av ${turer.length} turer)`, vidare >= turer.length / 2],
       [`ingen står kvar vid en tom ruta längre än ett steg (10 sekunder) (${tomt} av ${arbete} gånger)`, arbete > 0 && tomt === 0],
       [`ingen går tillbaka till en ruta hen tömt på turen (${tillbaka} av ${plock} plock)`, plock > 0 && tillbaka <= plock * 0.02],
