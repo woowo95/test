@@ -49,7 +49,8 @@ import { handelse, smaka, smakAv } from './rykten';
 import { GRANNAR4, HOUR, T } from './typer';
 import { UTRUSTNING, harBalte, paSig, paSigVikt } from './utrustning';
 import { PLAGG, kladAv } from './klader';
-import { amountOf, laggPaRutan, use } from './lager';
+import { amountOf, laggPaRutan } from './lager';
+import { BYN } from './egendom';
 import { capacity, enPerRuta, ingetIElden } from './lager';
 import { snoPaMarken, vaderNu } from './vader';
 import { viktOf } from './saker';
@@ -395,6 +396,7 @@ export interface Kampe {
   runtP?: { x: number; y: number; mal?: number }; /* punkten på vägen runt dem som står i vägen */ overraskad?: number; /* den som inte sett sin anfallare komma (steg B.30): så många sekunder till innan hen märker det, om ingen slår henne eller honom först */ vant: number; platsV?: { m: number; i: number }; /* platsen vid målet m som hen går till (steg B.34) */ runtSida?: 1 | -1; /* åt det håll hen senast gick runt någon (steg B.20) */ oppning?: number; kastVant?: number; mal?: number; backar?: true; // sekunder till nästa slag, sedan väntan på en öppning hos den som står och slåss (STRID.glesare) och för nästa kast in i en närstrid, målet, och om hen backar undan för att hämta andan
   slag: number; traffar: number; gjort: number; // för rapporten: slag, träffar och summan av skadornas grad
   reserv?: Vapen; skott?: number; // steg 3.7.7: reservvapnet i bältet och kasten som är kvar
+  har?: number; // så många skott hen har med sig till sitt vapen (pilarna, stenarna, steg 15.1.69); utan talet de vapnet rymmer (kast.skott)
   haller?: true; vantar?: true; ifatt?: true; vada?: number; // håller avståndet, väntar på fritt läge, blev ifattsprungen utan reserv, vådaträffar
   tung?: number; // steg 3.7.8: bördan (det hen bär genom vad hen orkar, 0–1) ...
   ligger?: number; bocker?: number; later?: number; // ... sekunder kvar på marken och kvar av att böja sig ner, den hen låter resa sig
@@ -443,7 +445,7 @@ export function nyStrid(u: Uppstallning, fro: number): Strid {
   if (u.hinder?.length) st.hinder = u.hinder.map(o => ({ ...o }));
   if (u.karta) st.karta = true; // på kartans rutor (steg 10.1.4)
   if (!AVS[u.avsikt].vapen) for (const k of kampar) if (!sortAv(k).naturligt) { k.vapen = 'hand'; k.reserv = undefined; }
-  for (const k of kampar) { const kv = VAP[k.vapen].kast; if (kv) k.skott = kv.skott; }
+  for (const k of kampar) { const kv = VAP[k.vapen].kast; if (kv) k.skott = k.har !== undefined ? Math.min(kv.skott, k.har) : kv.skott; }
   for (const k of kampar) k.vant = slump(st) * VAP[k.vapen].takt; // ingen slår exakt samtidigt (den första öppningen är när man möts)
   for (const k of kampar) if (k.ledare === 'fram' && sortAv(k).leder && !AVS[u.avsikt].lek) st.logg.push({ t: 0, h: 'leder', a: k.id });
   return st;
@@ -1267,11 +1269,40 @@ export function korManga(u: Uppstallning, fro: number, n: number, v?: StridVarld
 // Närstrid (steg 3.7.2) och siktet Träffsäkerhet (steg 3.7.7); smidigheten och blodtörsten (steg 3.7.6). Reservvapnet
 // (steg 3.7.7): ett litet vapen i bältet, om hen har ett bälte på sig och orkar bära det; den som en gång blev ifattsprungen
 // utan reserv tar alltid med en
-// pilarnas slag (steg 13.4.2) och hur mycket mer de skadar: skytten skjuter de bästa pilarna byn har
+// pilarnas slag (steg 13.4.2) och hur mycket mer de skadar: skytten skjuter de bästa pilarna hen har med sig
 export const PILSLAG: Record<string, () => number> = { pilar: () => 1, jarnpilar: () => STRID.jarnPil };
-const bastaAmmo = (s: State, am: string) => am === 'pilar' ? Object.keys(PILSLAG).filter(k => amountOf(s, k) >= 1).sort((a, b) => PILSLAG[b]() - PILSLAG[a]())[0] : amountOf(s, am) >= 1 ? am : undefined;
-// bågen utan pilar och slungan utan stenar tas inte (steg 8.7.6), i strid och på jakt (steg 15.1.133); en gäst har sina egna pilar
-export const ammoOk = (s: State, p: Person, v: string) => { const am = (VAP as Record<string, { kast?: { ammo?: string } }>)[v]?.kast?.ammo; return !am || !!p.gast || !!bastaAmmo(s, am); };
+// Det man skjuter och kastar (pilarna, slungans och handens stenar) är saker som allt annat man bär: det hen har i handen
+// (Person.ammo, hämtat när larmet gick, vakt.ts) och det hen bär i bördan (pilarna på jakten, HAMTAS i hamtning.ts). Man skjuter
+// bara det man har med sig, och det som skjuts tas ur det (steg 15.1.69)
+export const burna = (p: Person, k: string) => (p.ammo?.[k]?.n ?? 0) + Math.floor((p.task?.items?.[k] ?? 0) + 1e-9);
+// slagen som är ammunitionen am: pilarna i alla sina slag, annars slaget självt; det bästa först
+const ammoSlag = (am: string) => am === 'pilar' ? Object.keys(PILSLAG) : [am];
+const bastaSlag = (har: (k: string) => number, am: string) => ammoSlag(am).filter(k => har(k) >= 1).sort((a, b) => (PILSLAG[b]?.() ?? 0) - (PILSLAG[a]?.() ?? 0))[0];
+export const bastaBurna = (p: Person, am: string) => bastaSlag(k => burna(p, k), am);
+export const bastaIForradet = (s: State, am: string) => bastaSlag(k => amountOf(s, k), am);
+export const vapnetsAmmo = (v: string) => (VAP as Record<string, { kast?: { ammo?: string } }>)[v]?.kast?.ammo;
+// bågen utan pilar och slungan utan stenar skjuter inte (steg 8.7.6): har p med sig det vapnet skjuter med? En gäst har sina egna
+export const ammoHar = (p: Person, v: string) => { const am = vapnetsAmmo(v); return !am || !!p.gast || !!bastaBurna(p, am); };
+// ... eller finns det att hämta i förrådet (valet av redskap på jakten, steg 15.1.133)
+export const ammoFinns = (s: State, p: Person, v: string) => { const am = vapnetsAmmo(v); return !am || !!p.gast || !!bastaBurna(p, am) || !!bastaIForradet(s, am); };
+// n av slaget k tas ur det p har med sig, ur handen först och sedan ur bördan; svarar med ägarna (bördans utan ägare är byns)
+export function taBurna(p: Person, k: string, n: number): Record<number, number> {
+  const ut: Record<number, number> = {};
+  let kvar = n;
+  const ta = (del: Record<number, number>, mest: number) => { let fick = 0; for (const o of Object.keys(del)) { if (fick >= mest - 1e-9) break; const v = Math.min(mest - fick, del[+o]); if (v <= 1e-9) continue; del[+o] -= v; if (del[+o] < 1e-9) delete del[+o]; ut[+o] = (ut[+o] ?? 0) + v; fick += v; } return fick; };
+  const h = p.ammo?.[k];
+  if (h) {
+    const v = ta(h.ag, Math.min(kvar, h.n)); h.n -= v; kvar -= v;
+    if (h.n < 1 - 1e-9) { delete p.ammo![k]; if (!Object.keys(p.ammo!).length) p.ammo = undefined; }
+  }
+  const tk = p.task, i = tk?.items?.[k] ?? 0;
+  if (kvar > 1e-9 && i >= 1 - 1e-9) {
+    const m = Math.min(kvar, Math.floor(i + 1e-9)), v = tk!.ag?.[k] ? ta(tk!.ag[k]!, m) : 0;
+    if (m - v > 1e-9) ut[BYN] = (ut[BYN] ?? 0) + m - v;
+    tk!.items![k] = i - m; if (tk!.items![k]! < 1e-9) delete tk!.items![k];
+  }
+  return ut;
+}
 export const TVA_HAND = new Set<string>(['flintspjut', 'fiskespjut', 'bage', 'jarnspjut']); // med båda händerna: ingen sköld
 // kläderna skyddar bara den som har dem på sig, också rustningen och hjälmen (steg 8.7.8)
 export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: number, y: number): Uppstallning['kampar'][number] {
@@ -1279,12 +1310,15 @@ export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: num
   // eller i bördan (samma regel som taVapen i vakt.ts)
   const egen = (t: { hos?: number; lass?: number; bar?: number }) => (t.hos === undefined || t.hos === p.id) && (t.lass === undefined || t.lass === p.id) && (t.bar === undefined || t.bar === p.id);
   const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p).filter(egen), ...allaTing(s).filter(t => t.hos === p.id)].map(t => t.k))]; // också det en gäst bär (steg 10.1.8)
-  if ((p.stenar?.n ?? 0) >= 1) bar.push('sten'); // stenarna i handen är ett vapen hen bär (steg 15.1.69, vakt.ts)
+  if ((p.ammo?.sten?.n ?? 0) >= 1) bar.push('sten'); // stenarna i handen är ett vapen hen bär (steg 15.1.69, vakt.ts)
   // tycket drar i valet (steg 3.7.10). Bågen och slungan räknas efter skottet, och den som också har ett litet vapen att ha i reserv
   // skjuter först och slåss med det när någon kommer nära (steg 15.1.71)
   const skjuter = (v: Vapen) => !!VAP[v].kast && !VAP[v].kast!.reserv && bar.some(o => o !== v && VAP[o as Vapen]?.liten);
   const val = (v: Vapen) => (skjuter(v) ? 1 : 0) + Math.max(VAP[v].skada, VAP[v].kast && !VAP[v].kast!.reserv ? VAP[v].kast!.skada : 0) * (1 + STRID.tyckeVal * smakAv(p, 'v:' + v));
-  const vapen = MANNISKOVAPEN.filter(v => bar.includes(v) && ammoOk(s, p, v)).sort((a, b) => val(b) - val(a))[0] ?? 'hand';
+  const vapen = MANNISKOVAPEN.filter(v => bar.includes(v) && ammoHar(p, v)).sort((a, b) => val(b) - val(a))[0] ?? 'hand';
+  // så många skott hen har med sig: pilarna av det bästa slaget, slungans stenar och stenarna i handen (en gäst har sina egna)
+  const am = vapen === 'sten' ? 'sten' : vapnetsAmmo(vapen), pil = !p.gast && VAP[vapen].kast?.pil ? bastaBurna(p, 'pilar') : undefined;
+  const har = p.gast || !am ? undefined : vapen === 'sten' ? p.ammo?.sten?.n ?? 0 : burna(p, pil ?? am);
   const res = (MANNISKOVAPEN.filter(v => v !== vapen && VAP[v].liten && bar.includes(v)) as Vapen[]).sort((a, b) => VAP[a].takt - VAP[b].takt)[0]; // den snabbaste (kniven)
   const reserv = res && (p.reservAlltid || (harBalte(s, p) && paSigVikt(s, p) + viktOf(res) <= capacity(s, p) * UTRUSTNING.kropp)) ? res : undefined;
   // vapnens kvalitet (steg 12.2.6): det bästa tinget av varje vapen hen har, och skadan gånger STRID.kvSkada efter kvaliteten
@@ -1292,7 +1326,7 @@ export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: num
   for (const t of [...ownedBy(s, p).filter(egen), ...allaTing(s).filter(t => t.hos === p.id)]) if (t.k === vapen || t.k === reserv) kv[t.k] = Math.max(kv[t.k] ?? 0, STRID.kvSkada[kvOf(t)]);
   for (const k in kv) if (kv[k] === 1) delete kv[k];
   return {
-    emp: stat(p, 'empati', s.now), id, namn: loggNamn(p), sida, pid: p.id, blod0: p.blod, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined /* rövarna har ingen ledare (steg 10.2.25) */, gast: p.gast ? 1 : undefined, kv: Object.keys(kv).length ? kv : undefined, pil: !p.gast && VAP[vapen].kast?.pil ? bastaAmmo(s, 'pilar') : undefined, skoldJarn: bar.includes('jarnskold') && !TVA_HAND.has(vapen) ? true : undefined, skold: (bar.includes('skold') || bar.includes('jarnskold')) && !TVA_HAND.has(vapen) ? true : undefined, klader: [...new Set(paSig(s, p).map(q => q.k))].filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / UTRUSTNING.kropp / Math.max(1, capacity(s, p)), 0, 1),
+    emp: stat(p, 'empati', s.now), id, namn: loggNamn(p), sida, pid: p.id, blod0: p.blod, vapen, reserv, ledare: ledareOf(s) === p ? ledarPlats(s, p) : undefined /* rövarna har ingen ledare (steg 10.2.25) */, gast: p.gast ? 1 : undefined, kv: Object.keys(kv).length ? kv : undefined, pil, har, skoldJarn: bar.includes('jarnskold') && !TVA_HAND.has(vapen) ? true : undefined, skold: (bar.includes('skold') || bar.includes('jarnskold')) && !TVA_HAND.has(vapen) ? true : undefined, klader: [...new Set(paSig(s, p).map(q => q.k))].filter(k => SKYDD[k]), fart: 1, x, y, tung: clamp(paSigVikt(s, p) / UTRUSTNING.kropp / Math.max(1, capacity(s, p)), 0, 1),
     st: { styrka: stat(p, 'styrka', s.now), uthallighet: stat(p, 'uthallighet', s.now), mod: stat(p, 'mod', s.now), smidighet: stat(p, 'smidighet', s.now) - paSig(s, p).reduce((a, q) => a + (PLAGG[kladAv(q.k)?.plagg as keyof typeof PLAGG]?.smid ?? 0), 0) - rusSmid(p), skicklighet: 5 + (p.skill.narstrid ?? 0) / 2 + STRID.tyckeSkick * smakAv(p, 'v:' + vapen) - rusTraff(p), sikte: (5 + (p.skill.traff ?? 0) / 2) * syn(p) * blodFaktor(p) - rusTraff(p), /* ruset (steg 9.6.14) */ torst: blodtorst(s, p) },
   };
 }
@@ -1358,14 +1392,14 @@ export function slitKastat(s: State, p: Person, st: Strid, k: Kampe) {
   for (const r of st.logg) if (r.a === k.id && r.v && r.kast) { const am = VAP[r.v].kast!.ammo; if (am) { if (VAP[r.v].kast!.pil) skott++; continue; } if (r.v === 'sten') { stenLandar(s, p, st, r); continue; } kastat(s, p, r.v, VAP[r.v].kast!.rack / 2, p.x, p.y, () => rnd(s, 'strid')); }
   if (!p.gast) skjutnaPilar(s, p, k.pil ?? 'pilar', skott, VAP.bage.kast!.rack);
 }
-// ett skott på jakt (steg 15.1.133): en pil eller sten med vapnet v (bågen, slungan) tas ur förrådet och landar på (x, y), d rutor
+// ett skott på jakt (steg 15.1.133): en pil eller sten med vapnet v (bågen, slungan) tas ur det hen bär och landar på (x, y), d rutor
 // från skytten, som pilarna i striden (skjutnaPilar): pilen kan gå sönder, och båda kan försvinna där de landade. Svarar
 // false om vapnet inte skjuter något
 export function skottLandar(s: State, p: Person, v: string, d: number, x: number, y: number, r: () => number) {
-  const kv = (VAP as Record<string, { kast?: { ammo?: string; pil?: boolean; rack: number } }>)[v]?.kast, k = kv?.ammo && bastaAmmo(s, kv.ammo);
+  const kv = (VAP as Record<string, { kast?: { ammo?: string; pil?: boolean; rack: number } }>)[v]?.kast, k = kv?.ammo && bastaBurna(p, kv.ammo);
   if (!kv?.ammo) return false;
   if (!k) return true;
-  const ag = use(s, p, k, 1);
+  const ag = taBurna(p, k, 1);
   if (kv.pil && r() < STRID.pilSonder) count(s, 'pilSonder');
   else if (r() < KAST.borta * kastFaktor(s, x, y, d, kv.rack)) count(s, kv.pil ? 'pilBorta' : 'skottBorta');
   else { laggPaRutan(s, k, 1, x, y, ag); count(s, kv.pil ? 'pilLigger' : 'skottLigger'); }
@@ -1374,18 +1408,17 @@ export function skottLandar(s: State, p: Person, v: string, d: number, x: number
 // den kastade stenen (steg 15.1.69) landar där den som den kastades mot stod när striden var slut, som det kastade spjutet: den tas
 // ur kastarens hand och läggs på rutan med sin ägare. Den som slängs bort i snön eller vattnet kan försvinna (kastFaktor)
 function stenLandar(s: State, p: Person, st: Strid, r: StridRad) {
-  const h = p.stenar, agare = h && Object.keys(h.ag).find(o => h.ag[+o] >= 1 - 1e-9);
-  if (!h || h.n < 1 || agare === undefined) return;
-  h.n -= 1; h.ag[+agare] -= 1; if (h.ag[+agare] < 1e-9) delete h.ag[+agare]; if (h.n < 1) p.stenar = undefined;
+  if ((p.ammo?.sten?.n ?? 0) < 1) return;
+  const ag = taBurna(p, 'sten', 1);
   const b = st.kampar.find(q => q.id === r.b), x = b?.x ?? p.x, y = b?.y ?? p.y;
   if (rnd(s, 'strid') < KAST.borta * kastFaktor(s, x, y, Math.hypot(x - p.x, y - p.y), VAP.sten.kast!.rack)) { count(s, 'kastBorta'); return; }
-  laggPaRutan(s, 'sten', 1, x, y, { [+agare]: 1 }); count(s, 'kastLigger');
+  laggPaRutan(s, 'sten', 1, x, y, ag); count(s, 'kastLigger');
 }
-// pilarna landar (steg 13.4.5): de skott pilar av slaget pil (de bästa byn har, steg 13.4.2) som p sköt tas ur förrådet. Var och en
+// pilarna landar (steg 13.4.5): de skott pilar av slaget pil (de bästa hen har, steg 13.4.2) som p sköt tas ur det hen har med sig. Var och en
 // går sönder med chansen STRID.pilSonder, kan försvinna där den landade med samma chans som ett kastat spjut (kastFaktor), och
 // resten blir en hög på marken där hen sköt, med sina ägare, som bärs in som allt annat som ligger utanför lagret
 function skjutnaPilar(s: State, p: Person, pil: string, skott: number, rack: number) {
-  const n = Math.min(skott, Math.floor(amountOf(s, pil) + 1e-9));
+  const n = Math.min(skott, burna(p, pil));
   if (n < 1) return;
   let hela = 0;
   for (let i = 0; i < n; i++) {
@@ -1394,7 +1427,7 @@ function skjutnaPilar(s: State, p: Person, pil: string, skott: number, rack: num
     else if (rnd(s, 'strid') < KAST.borta * kastFaktor(s, p.x, p.y, d, rack)) count(s, 'pilBorta');
     else hela++;
   }
-  const ag = use(s, p, pil, n);
+  const ag = taBurna(p, pil, n);
   if (hela) { laggPaRutan(s, pil, hela, p.x, p.y, ag); count(s, 'pilLigger', hela); }
 }
 

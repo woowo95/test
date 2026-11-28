@@ -135,7 +135,7 @@ SCENARIER.stenkast = {
     let bar = 0, stenKampe = 0, kast = 0; const sedda = new Set<number>();
     const ligger0 = s.stat?.kastLigger ?? 0;
     korTills(s, () => !s.rovare && !SIM.kartStrider(s).length, 900, () => {
-      for (const p of SIM.living(s)) if (!p.gast && (p.stenar?.n ?? 0) >= 1) bar = Math.max(bar, p.stenar!.n);
+      for (const p of SIM.living(s)) if (!p.gast && (p.ammo?.sten?.n ?? 0) >= 1) bar = Math.max(bar, p.ammo!.sten!.n);
       for (const g of SIM.kartStrider(s)) for (const k of g.st.kampar) if (k.sida === 0 && !k.gast && !sedda.has(k.id * 1000 + g.id)) { sedda.add(k.id * 1000 + g.id); if (k.vapen === 'sten') stenKampe++; }
       for (const g of SIM.kartStrider(s)) kast = Math.max(kast, g.st.logg.filter(r => r.kast && r.v === 'sten').length);
     });
