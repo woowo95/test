@@ -75,7 +75,7 @@ export function kopval(s: State, p: Person, id: 'mat' | 'ved'): Kopval | undefin
   if (bast) bast.faktor = Math.min(KOPBUFFERT.mest, bast.faktor);
   return bast;
 }
-// framme hos grannen (KLAR i steg.ts): bytet som i alla byten. Har grannen gått blir det inget
+// framme hos grannen (MEDAN i steg.ts, i första slaget, steg 15.1.20): bytet som i alla byten. Har grannen gått blir det inget
 export function bytHosKlar(s: State, p: Person, t: Task) {
   const g = byId(s, t.ref), k = t.tool as string | undefined;
   if (!g || !k || !alive(g) || Math.hypot(g.x - p.x, g.y - p.y) > KOPBUFFERT.nara || (g.task && SOVER.has(g.task.act))) { count(s, 'kopMissat'); return; }

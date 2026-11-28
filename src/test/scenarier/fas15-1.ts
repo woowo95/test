@@ -1,6 +1,6 @@
 // Scenarier för fas 15, grupp 1 av 15.1 (Rättningar från spelgranskningen).
 import * as SIM from '../../sim';
-import { SCENARIER, byggKlart, testBy } from './hjalp';
+import { SCENARIER, byggKlart, klockan, testBy } from './hjalp';
 import { foretagBy } from './fas14';
 
 // en by med minst tio vuxna, utan företag, där ägaren har god mat och de andra silver
@@ -154,6 +154,39 @@ SCENARIER.bynsdel = {
       [`byns företag har bara det byn äger att sälja (${over})`, over <= 3],
       [`en kund vill köpa en måltid av byns servering (${e ? `${e.k} för ${e.pris}` : 'ingen'})`, !!e],
       [`måltiden såldes ur byns förråd (byn ${fore.byn} → ${efter.byn}, den döda ${fore.dod} → ${efter.dod}, kyrkan ${fore.kyrka} → ${efter.kyrka}, budgeten ${fore.budget} → ${efter.budget}; det den döda hade blir byns när högen rörs)`, kopt && efter.byn === fore.byn - 1 + fore.dod - efter.dod && efter.kyrka === fore.kyrka && efter.budget === fore.budget],
+    ];
+  },
+};
+
+SCENARIER.bytHos = {
+  text: 'Steg 15.1.20: bytet hos grannen blir av. Den som går till en granne följer hen om hen flyttat sig, och bytet prövas i första slaget när man kommit fram, inte först när samtalet är slut',
+  kor: () => {
+    const { s, p: g, vux } = foretagBy(['affar'], 0), rik = vux[0], mat = 'notter' in SIM.SAKER ? 'notter' : SIM.FOOD[0];
+    s.foretag = []; klockan(s, 10);
+    for (const q of [rik, g]) Object.assign(q, { hunger: 0.95, rest: 0.95, social: 0.95, toa: 0.95, torst: 0.95, warm: 0.95, health: 1 });
+    for (const q of SIM.living(s)) { q.task = undefined; for (const k of SIM.FOOD) { const n = SIM.ownsAmount(s, q, k); if (n > 0 && q !== g) SIM.use(s, undefined, k, n, true, q.id); } }
+    SIM.laggIn(s, 'silver', 200, rik.id); SIM.laggIn(s, mat, 60, g.id);
+    for (const [a, b] of [[g, rik], [rik, g]]) SIM.getRel(s, a, b).op = Math.max(SIM.getRel(s, a, b).op, 0);
+    rik.x = g.x + 6; rik.y = g.y;
+    const k = SIM.kopval(s, rik, 'mat');
+    // grannen går iväg medan köparen är på väg, och köparen följer
+    const W = SIM.W, dit = (() => { for (let r = 8; r < 20; r++) for (const [dx, dy] of [[-r, 0], [0, r], [0, -r], [r, 0]]) { const x = Math.floor(g.x) + dx, y = Math.floor(g.y) + dy; if (SIM.inMap(x, y) && !SIM.blocked(s, x + 0.5, y + 0.5) && SIM.getMap(s.seed).tiles[y * W + x] !== SIM.T.Vatten) return { x: x + 0.5, y: y + 0.5 }; } return { x: g.x, y: g.y }; })();
+    g.task = { act: 'samla', phase: 'go', tx: dit.x, ty: dit.y, until: s.now + 2 * SIM.HOUR, carry: 0, dark: false, why: 'Går en bit bort' } as SIM.Task;
+    const fore = SIM.ownsAmount(s, rik, k?.k ?? mat), kop0 = s.stat?.kopGranne ?? 0, miss0 = s.stat?.kopMissat ?? 0;
+    if (k?.granne !== undefined) rik.task = { act: 'bytHos', phase: 'go', tx: k.spot!.x, ty: k.spot!.y, until: s.now + k.dur + SIM.GA_TID, arbTid: k.dur, ...(SIM.farligtBehov(rik) ? { nodVald: true as const } : {}), carry: 0, dark: false, why: 'Köper av en granne', ref: k.granne, tool: k.k } as SIM.Task; // som valet ger uppgiften (val.ts)
+    let framme = -1, bytt = -1; const t0 = s.now;
+    for (let i = 0; i < 600 && rik.task?.act === 'bytHos'; i++) {
+      SIM.step(s, 1);
+      if (framme < 0 && rik.task?.phase === 'do') framme = s.now;
+      if (bytt < 0 && (s.stat?.kopGranne ?? 0) > kop0) bytt = s.now;
+    }
+    const efter = SIM.ownsAmount(s, rik, k?.k ?? mat), flyttat = Math.hypot(g.x - (k?.spot?.x ?? g.x), g.y - (k?.spot?.y ?? g.y));
+    return [
+      [`den rika vill köpa av grannen (${k?.granne === g.id ? k.k : 'nej'})`, k?.granne === g.id],
+      [`grannen flyttade sig (${flyttat.toFixed(1)} rutor från där hen stod)`, flyttat > SIM.KOPBUFFERT.nara],
+      [`köparen följde och kom fram (${framme >= 0 ? `efter ${((framme - t0) / 1000).toFixed(0)} s` : 'aldrig'})`, framme >= 0],
+      [`bytet blev av när hen kom fram (${bytt >= 0 ? `${((bytt - framme) / 1000).toFixed(0)} s efter` : 'aldrig'}, missade ${(s.stat?.kopMissat ?? 0) - miss0})`, bytt >= 0 && bytt - framme <= 5000],
+      [`köparen fick maten (${fore} → ${efter})`, efter > fore],
     ];
   },
 };
