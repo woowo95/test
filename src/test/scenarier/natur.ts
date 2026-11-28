@@ -976,14 +976,15 @@ SCENARIER.bord = {
     // ett dygn med bordet: måltider och samtal vid det, och aldrig två på samma plats
     const plats = new Set(pl.map(q => q.y * W + q.x));
     let samtal = 0, krock = 0;
-    const mal0 = s.stat?.bordMal ?? 0;
+    const mal0 = s.stat?.bordMal ?? 0, gladaId = new Set<number>(); // de som blev glada av bordet under dygnet (tanken varar KROPP.bordGladTim)
     for (let i = 0; i < 144; i++) {
       kor(s, 0.5);
+      for (const p of living(s)) if (p.thoughts.some(t => t.text === 'Åt vid bordet')) gladaId.add(p.id);
       const vid = living(s).filter(p => p.task && plats.has(Math.floor(p.task.ty) * W + Math.floor(p.task.tx)) && ['maltid', 'samtal', 'beratta'].includes(p.task.act));
       samtal += vid.filter(p => p.task!.act !== 'maltid' && p.task!.phase === 'do').length;
       if (new Set(vid.map(p => Math.floor(p.task!.ty) * W + Math.floor(p.task!.tx))).size < vid.length) krock++;
     }
-    const mal = (s.stat?.bordMal ?? 0) - mal0, glada = living(s).filter(p => p.thoughts.some(t => t.text === 'Åt vid bordet')).length;
+    const mal = (s.stat?.bordMal ?? 0) - mal0, glada = gladaId.size;
     const tek = TEK.bord;
     return [
       [`alla storlekar har bristen efter platserna de fyller åt ${n} (${text00})`, alla],
