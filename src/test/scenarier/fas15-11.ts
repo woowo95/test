@@ -67,7 +67,7 @@ SCENARIER.packresa = {
     return [
       [`en vuxen äter ${SIM.matPerResenar().toFixed(2)} portioner per dygn på vägen, som kroppen i byn (${kropp.toFixed(2)})`, Math.abs(SIM.matPerResenar() - kropp) < 1e-9 && SIM.matPerResenar() > 1.8 && SIM.matPerResenar() < 2.2],
       [`två resenärer i ${pb!.dygn} dygn med marginalen 1,25 tar ${pb!.mat} portioner`, pb!.mat >= mat(pb!.dygn - 0.01) && pb!.mat <= mat(pb!.dygn + 0.01)],
-      [`den längsta sträckan utan vatten (${torr.toFixed(2)} dygn dit) ger ${pb!.vatten} vattensäckar, mer än tre per resenär och dygn`, pb!.vatten >= 2 * 3 * torr],
+      [`den längsta sträckan utan vatten (${torr.toFixed(2)} dygn dit) ger ${pb!.vatten} vattensäckar med ${pb!.vatten * SIM.klunkarPerSack()} klunkar, mer än tre per resenär och dygn och högst ${SIM.RESA.sackar} säckar var`, pb!.vatten * SIM.klunkarPerSack() >= 2 * 3 * torr && pb!.vatten <= 2 * SIM.RESA.sackar],
       [`resan kom hem (${x!.sl.skede})`, x!.sl.skede === 'hemma'],
       [`maten räckte: ingen tom mättnad (lägst ${minMatt.toFixed(2)}, ${st('resa utan mat')} gånger utan mat)`, minMatt > 0 && st('resa utan mat') === 0],
       [`packningen ryms (${pb!.vikt} av ${pb!.bar})`, pb!.ryms],
@@ -129,17 +129,17 @@ SCENARIER.letaresa = {
   kor: () => {
     const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, v = SIM.varldMark(s0)!, hb = SIM.byPlats(vl0, vl0.huvud!)!;
     const vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50 && SIM.personFart(s0, q) === 1);
-    // en plats ett och ett halvt till fem dygn bort med vatten längs vägen och mark som ger mat (i snitt minst som slätten); sällskapet går på hösten
-    const mal = (vl0.platser ?? []).find(q => {
-      const vd = q.nr === hb.nr ? undefined : SIM.vagDygn(s0, hb.y * v.w + hb.x, q.y * v.w + q.x);
-      return !!vd && vd.dygn >= 1.5 && vd.dygn <= 5 && vd.torr <= 1 && vd.rutor.reduce((a, i) => a + SIM.VARLDMARK[SIM.MARK_IDS[v.mark[i]]].leta, 0) / vd.rutor.length >= 0.5;
-    })!;
+    // den längsta vägen till en plats ett och ett halvt till sex dygn bort med vatten längs vägen och mark som ger mat (i snitt
+    // minst som slätten), så att letandet hinner ge något; sällskapet går på hösten
+    const mal = (vl0.platser ?? []).map(q => ({ q, vd: q.nr === hb.nr ? undefined : SIM.vagDygn(s0, hb.y * v.w + hb.x, q.y * v.w + q.x) }))
+      .filter(({ vd }) => !!vd && vd.dygn >= 1.5 && vd.dygn <= 6 && vd.torr <= 1 && vd.rutor.reduce((a, i) => a + SIM.VARLDMARK[SIM.MARK_IDS[v.mark[i]]].leta, 0) / vd.rutor.length >= 0.5)
+      .sort((a, b) => b.vd!.dygn - a.vd!.dygn)[0]!.q;
     const sommar = (x: { s: SIM.State }) => { for (let d = 0; d < 1600 && (SIM.ageIndex(x.s, x.s.now) !== 3 || SIM.temperature(x.s, x.s.now) < SIM.RESA.fyndVarm + 3); d++) x.s.now += SIM.DAY / 4; };
     const resa = (ids: number[], pack: Record<string, number>, leta: boolean | 'hela') => {
       const x = paVagen(s0, ids, mal.nr, 'se'); sommar(x);
       const w = SIM.varldMark(x.s)!; for (const i of SIM.vagenRutor(x.s, x.sl)) w.mark[i] = SIM.MARK_IDS.indexOf('skog'); // skog längs hela vägen, där letandet ger mest (och inget vatten: säckarna räcker)
       for (const p of x.folk) { p.pot = { ...p.pot, flit: 10, mod: 10 }; p.skill.samla = 20; } // skickliga samlare
-      x.sl.pack = { ...pack, vattensack: 24 * ids.length }; // vatten nog för sju dygn (här prövas maten)
+      x.sl.pack = { ...pack, vattensack: Math.ceil(24 / SIM.klunkarPerSack()) * ids.length, ved: Math.ceil(16 * ids.length / SIM.viktOf('ved')) }; // vatten nog för sju dygn, 24 klunkar var (här prövas maten), och en last som tynger, så att resan tar några dygn
       const t0 = x.s.now;
       let framme = 0, matFramme = 0; // maten just innan de kom fram (framme blir de gäster på platsens karta och lämnar maten där)
       if (!leta) x.sl.letaNasta = Infinity; // ledaren väger aldrig att leta

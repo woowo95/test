@@ -1855,7 +1855,7 @@ SCENARIER.vagbehov = {
       [`en dag i gång sänker orken (${gang.sl.behov!.ork.toFixed(2)})`, gang.sl.behov!.ork < 0.6],
       [`ett trött sällskap går långsammare (fart ${fartTrott.toFixed(2)} mot ${fartUtvilad.toFixed(2)})`, fartTrott < fartUtvilad && fartTrott >= SIM.RESA.orkFartMin],
       [`maten går åt i hela saker, fisken (håller kortast) före brödet (kvar: ${JSON.stringify(p)})`, hel && !p.fisk && (p.brod ?? 0) < 10 && fiskForst.every(x => x)],
-      [`vattnet ur säckarna på den torra sträckan (${lang.sl.behov!.fulla} fulla kvar av 16)`, lang.sl.behov!.fulla < 16 && (lang.s.stat?.['resa dricker ur säcken'] ?? 0) >= 1],
+      [`vattnet ur säckarna på den torra sträckan (${lang.sl.behov!.fulla} klunkar kvar av ${16 * SIM.klunkarPerSack()})`, lang.sl.behov!.fulla < 16 * SIM.klunkarPerSack() && (lang.s.stat?.['resa dricker ur säcken'] ?? 0) >= 1],
       [`hästen äter hö där den inte kan beta (${p.torrgras ?? 0} kvar av 6)`, (p.torrgras ?? 0) <= 2],
       [`mättnaden hålls uppe av maten (${lang.sl.behov!.matt.toFixed(2)})`, lang.sl.behov!.matt > 0.3],
     ];

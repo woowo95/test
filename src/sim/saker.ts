@@ -15,6 +15,7 @@ export interface SakDef {
   fordon?: true; // ett fordon i registret FORDON (fordon.ts): följer med i bördan och drar det tunga (kälken, steg 10.10.2)
   hander?: 1 | 2; // låst till så många händer (som pilbågen); annars räknas det fram ur vikten och styrkan (utrustning.ts)
   rymmer?: number; // det som hålls i en hand rymmer så mycket vikt, av vilka slag som helst (korgen)
+  klunkar?: number; // en behållare för vatten på resan rymmer så många klunkar; en klunk släcker törsten en gång (vattensäcken, resa.ts)
   ruta?: number; // hur mycket som ryms i en stack på en ruta i lagret; saknas = en börda
   mapp?: string; // mappen i listan över allt byn äger
   mat?: number; // mat: i vilken ordning den äts, lägst först (det som förstörs fortast)
@@ -258,7 +259,7 @@ const DEF = {
   // sländan (steg 7.7.8): med den spinner man lin till tråd var som helst, och i vävstolen fortare (steg 7.7.9)
   slanda: { namn: 'Slända', hanger: 'balte', skaffa: RECEPT.slanda, vikt: 0.3, stack: 5, mapp: 'Redskap', slits: 0.002, redskap: true, trasig: { stat: 'slandorTrasiga', text: '{namn}s slända gick sönder.' },
     gors: { text: 'Gör en slända av en pinne och en tyngd av sten.', stat: 'slandorGjorda', forsta: '{namn} gjorde byns första slända. Med den spinner man lin till tråd var som helst.' } },
-  vattensack: { namn: 'Vattensäck', hanger: 'axel', skaffa: RECEPT.vattensack, vikt: 2, hander: 1, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'vattensackarTrasiga', text: '{namn}s vattensäck gick sönder.' },
+  vattensack: { namn: 'Vattensäck', hanger: 'axel', skaffa: RECEPT.vattensack, vikt: 2, klunkar: 8, hander: 1, stack: 1, mapp: 'Redskap', slits: 0.0003, redskap: true, trasig: { stat: 'vattensackarTrasiga', text: '{namn}s vattensäck gick sönder.' },
     gors: { text: 'Syr en vattensäck av skinn.', stat: 'vattensackarGjorda', forsta: '{namn} sydde byns första vattensäck. Med den kan man bära vatten till den som inte kan gå.' } },
   // fröna (steg 2.10.2, odling.ts): tas med från de vilda grödorna när man samlar, rovfrön från den vilda rovan och ärtfrön
   // (artfron, sist i registret) från de vilda ärterna (steg 3.10.23.8; rovfröna hette frön förut och har deras plats). De kan

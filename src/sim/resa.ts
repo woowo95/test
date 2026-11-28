@@ -79,6 +79,7 @@ export const RESA = balans('resa', {
   // packningen (steg 11.5.3)
   margModig: 1, margMitt: 1.25, margForsiktig: 1.5, // ledarens marginal: den modiga och slarviga, mitten och den försiktiga
   utanVatten: 0.5, // en sträcka utan vatten längre än så många dygn kräver vattensäckar: så många som resenärerna dricker på den (steg 15.1.88)
+  sackar: 2, // så många vattensäckar bär en resenär (hur mycket en säck rymmer står i SAKER.vattensack.klunkar)
   foderPerDygn: 2, // hö per djur och dygn där det inte går att beta
   hander: 20, rygg: 20, // vikt en resenär bär i händerna och i en ryggsäck
   andelVarde: 40, // en andel per så mycket i värde för varje insats (Andelarna i tal)
@@ -171,8 +172,13 @@ export const RESA = balans('resa', {
 // när vätskan sjunkit under TORST.torstig, med törsten i dagsljuset och den långsammare i nattens sömn
 export const matPerResenar = () => 24 / KROPP.hungerTim / KROPP.mattar;
 export const drickPerResenar = () => (RESA.dagTim + (24 - RESA.dagTim) * TORST.somn) / TORST.tim / (1 - TORST.torstig);
-// vattensäckarna för en sträcka utan vatten på torr dygn: så många som n resenärer dricker på den, när den är längre än RESA.utanVatten
-export const packVatten = (n: number, torr: number) => torr > RESA.utanVatten ? Math.ceil(n * torr * drickPerResenar() - 1e-9) : 0;
+// klunkarna i en full vattensäck (en klunk släcker törsten en gång för en resenär)
+export const klunkarPerSack = () => SAKER.vattensack!.klunkar ?? 1;
+// vattensäckarna för en sträcka utan vatten på torr dygn: så många som rymmer de klunkar n resenärer dricker på den, när den är
+// längre än RESA.utanVatten, och högst RESA.sackar per resenär
+export const packVatten = (n: number, torr: number) => torr > RESA.utanVatten ? Math.min(n * RESA.sackar, Math.ceil(Math.ceil(n * torr * drickPerResenar() - 1e-9) / klunkarPerSack() - 1e-9)) : 0;
+// klunkarna i säckarna när de fylls: alla packade säckar fulla
+export const fullaKlunkar = (pack: Record<string, number>) => Math.floor(pack.vattensack ?? 0) * klunkarPerSack();
 // det sällskapet behåller för vägen och inte säljer (maten säljs inte heller)
 export const BEHALL = ['torrgras', 'vattensack', 'talt', 'silver', 'packsadel', 'ridsadel', 'vagn'];
 // sällskapets mål och hemby i världen (kodgenomgången, fynd 185)
@@ -238,7 +244,7 @@ export interface Sallskap {
 }
 export type BurenSatt = 'vagn' | 'djur' | 'bar';
 // sällskapets tre tal på vägen (0–1), de fyllda vattensäckarna och fodret djuren ätit sedan sist (arbetet mot nästa hela hö)
-export interface ResBehov { matt: number; vatska: number; ork: number; fulla: number; foder: number }
+export interface ResBehov { matt: number; vatska: number; ork: number; fulla: number; foder: number } // fulla: klunkarna kvar i vattensäckarna (en sparning från före klunkarna har en per säck, som då)
 
 // ett nytt sällskap med ledaren som första medlem; det samlas tills det packar
 export function nyttSallskap(s: State, ledare: Person, mal: number, skal: ResmalId): Sallskap | undefined {
@@ -674,7 +680,7 @@ function vagnHem(s: State, sl: Sallskap, x: number, y: number) {
 export const PA_VAGEN: readonly Skede[] = ['ute', 'framme', 'hemat'];
 // väckningen av byn dit (vackt.ts sätter den, så att resa.ts inte importerar vackt.ts)
 export const vackKrok: { borja?: (s: State, nr: number, t0: number, dygn: number) => unknown; framme?: (s: State, sl: Sallskap) => void; vander?: (s: State, sl: Sallskap, t: number) => void } = {}; // framme och vander: resenärerna kliver in i och ut ur den väckta byn (vacktgast.ts, steg 11.13.10)
-const behovOf = (sl: Sallskap) => sl.behov ??= { matt: 1, vatska: 1, ork: 1, fulla: sl.pack.vattensack ?? 0, foder: 0 };
+const behovOf = (sl: Sallskap) => sl.behov ??= { matt: 1, vatska: 1, ork: 1, fulla: fullaKlunkar(sl.pack), foder: 0 };
 // rutan sällskapet är på (i världen), och om det går att beta och finns vatten där
 function rutaNu(s: State, sl: Sallskap) {
   const v = varldMark(s), i = sl.ruta;
@@ -734,9 +740,10 @@ function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
     b.matt = clamp(b.matt + KROPP.mattar * at / n, 0, 1);
     count(s, 'resa måltid');
   }
-  // dricka: vid vatten fylls säckarna, annars dricker gruppen ur dem, en per resenär
-  if (r.vatten) { b.vatska = 1; b.fulla = Math.floor(sl.pack.vattensack ?? 0); }
+  // dricka: vid vatten fylls säckarna, annars dricker gruppen ur dem, en klunk per resenär; en säck som tappats tar sitt vatten med sig
+  if (r.vatten) { b.vatska = 1; b.fulla = fullaKlunkar(sl.pack); }
   else if (b.vatska < TORST.torstig) {
+    b.fulla = Math.min(b.fulla, fullaKlunkar(sl.pack));
     if (b.fulla >= n) { b.fulla -= n; b.vatska = 1; count(s, 'resa dricker ur säcken'); } else count(s, 'resa utan vatten');
   }
   // djuren äter hö där det inte går att beta
@@ -1810,14 +1817,14 @@ export function letaDag(s: State, sl: Sallskap, t = s.now) {
 }
 // poängen för varje del av dagen: det väntade fyndet mot de dygn resan blir längre, som också äter mat. Maten som saknas för resten
 // av resan väger RESA.behovVarde per portion, som när mat släpps, och dygnen RESA.tidKost per resenär. Tar den torra sträckan
-// längre tid än vätskan och vattensäckarna räcker (gruppen dricker en säck var åt gången, behovBit) kostar timmarna utan vatten
+// längre tid än vätskan och vattensäckarna räcker (gruppen dricker en klunk var åt gången, behovBit) kostar timmarna utan vatten
 // resenärerna: efter TORST.tomTim timmar törstar de ihjäl, och en död resenär kostar som att lämna en (RESA.lamnaKost). Ledaren
 // räknar den torra sträckan med sin marginal, som maten i packningen
 export function letaVal(s: State, sl: Sallskap, t = s.now): { a: number; sc: number; fynd: number }[] {
   const l = matLage(s, sl, t), takt = letaDag(s, sl, t), har = FOOD.reduce((x, k) => x + Math.floor(sl.pack[k] ?? 0), 0);
   const gang = Math.max(0, l.kvar - (sl.skede === 'ute' ? stannarFor(sl) : 0)); // dygnen kvar i gång
   const led = resenarer(s, sl).find(p => p.id === sl.ledare), fart = Math.max(0.05, sallskapFart(s, sl)), torr = torrKvar(s, sl) * (led ? marginal(led) : RESA.margMitt), d = drickPerResenar();
-  const racker = (sl.behov?.vatska ?? 1) / (d * (1 - TORST.torstig)) + Math.floor(Math.floor(sl.pack.vattensack ?? 0) / Math.max(1, l.n)) / d; // dygn vätskan och säckarna räcker
+  const racker = (sl.behov?.vatska ?? 1) / (d * (1 - TORST.torstig)) + Math.floor((sl.behov?.fulla ?? fullaKlunkar(sl.pack)) / Math.max(1, l.n)) / d; // dygn vätskan och klunkarna i säckarna räcker
   return LETA_ANDELAR.map(a => {
     const gangA = gang / letaFartAv(a), dygn = l.kvar - gang + gangA, fynd = a * RESA.dagTim * gangA * takt;
     const brist = Math.max(0, l.n * matPerResenar() * dygn - har - fynd);
@@ -2134,10 +2141,12 @@ function lamnaKvar(s: State, sl: Sallskap, p: Person, t: number) {
   if (sl.buren) { sl.buren = sl.buren.filter(b => b[0] !== p.id); if (!sl.buren.length) delete sl.buren; }
   const ny = nyttSallskap(s, p, sl.mal, sl.skal);
   if (!ny) return;
-  ny.skede = 'hemat'; ny.ruta = sl.ruta; ny.ut = sl.ut; ny.borjan = sl.borjan; ny.behov = { ...behovOf(sl), fulla: 0, foder: 0 };
+  const b = behovOf(sl), sackar = Math.floor(sl.pack.vattensack ?? 0);
+  ny.skede = 'hemat'; ny.ruta = sl.ruta; ny.ut = sl.ut; ny.borjan = sl.borjan; ny.behov = { ...b, fulla: 0, foder: 0 };
   const n = resenarer(s, sl).length + 1;
   for (const k of [...FOOD, 'vattensack']) { const m = Math.floor((sl.pack[k] ?? 0) / n); if (m > 0) { tappa(sl, k, m); ny.pack[k] = m; } }
-  ny.behov.fulla = Math.floor(ny.pack.vattensack ?? 0);
+  const med = sackar ? Math.floor(Math.min(b.fulla, fullaKlunkar(sl.pack) + fullaKlunkar(ny.pack)) * Math.floor(ny.pack.vattensack ?? 0) / sackar) : 0; // vattnet i säckarna hen får
+  ny.behov.fulla = med; b.fulla = Math.min(b.fulla - med, fullaKlunkar(sl.pack));
   vandHem(s, ny);
   count(s, 'resa lämnade');
   dagbok(s, sl, 'ut', `${p.name} gick för långsamt och lämnades att gå hem ensam.`, t);
