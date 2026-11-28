@@ -291,7 +291,7 @@ SCENARIER.fragetecken = {
     const fragor = [...html.matchAll(/<button type="button" class="hjalp" data-hjalp="([^"]*)"[^>]*title="([^"]*)"[^>]*>\?<\/button>/g)].map(m => m[2]);
     const bocker = [...html.matchAll(/<button type="button" class="hjalp bok" data-hjalp="([^"]*)"[^>]*title="([^"]*)"/g)].map(m => m[2]);
     const ovriga = (s.tron ?? []).filter(tr => tr.slut === undefined).length - 3;
-    const mer = /class="tekhead klick falla" data-hjalp="tro-ovriga"[^>]*aria-expanded="false"[^>]*><b>Övriga trosriktningar<\/b>/.test(html);
+    const mer = /class="trorad klick falla" data-hjalp="tro-ovriga"[^>]*aria-expanded="false"[^>]*><b>Övriga trosriktningar<\/b>/.test(html);
     hjalpKlick({ closest: () => ({ dataset: { hjalp: 'tro-ovriga' } }) } as unknown as HTMLElement);
     const oppen = religion.html();
     hjalpKlick({ closest: () => ({ dataset: { hjalp: 'tro-ovriga' } }) } as unknown as HTMLElement);
