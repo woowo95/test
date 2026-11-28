@@ -156,10 +156,11 @@ export const MATERIALMAL = {
   torrgras: { min: s => harNaver(s) ? 0 : tand(s) * (kallt(s) || coldOf(temperature(s)) > 0 ? FORRAD.kyla : 1), buffert: true }, // hö till elden och åt djuren; kylan höjer reserven till elden (steg 13.8.6) // med näver, eller ett blad och ved att tälja den ur, behövs inget hö till tändningen (steg 6.3.3)
   sten: { min: s => (s.fire.ring ? 0 : ELD.ring) + brasaStenMal(s) }, // de stenar eldringarna byn planerar saknar (steg 10.11.4)
   flinta: { min: s => (nTools(s, 'bagborr') > 0 ? 0 : TROSKEL.flintaMinsta) + flintaKrok.verktyg(s) }, // med en bågborr behövs ingen flinta till elden (steg 10.6.13), // och flintan till de redskap byn vill ha och saknar (steg 10.2.12)
-  // virket, byggstenen och leran har ingen buffert (steg 13.8.12): det projekten saknar (projektSaknar), och det husen och det
-  // Byggplanen planerat av sten saknar hämtas av bygget när det byggs (bygg i val.ts)
+  // virket och leran har ingen buffert (steg 13.8.12): det projekten saknar (projektSaknar), och det husen saknar hämtas av bygget
+  // när det byggs (bygg i val.ts). Byggstenen bryts för det Byggplanen planerat (steg 10.10.5): förrådsmålet räknar de planerade
+  // vägarna och väggarna (STENBEHOV i byggsten.ts), så att stenen som bröts vid berget körs hem
   virke: { min: () => 0 },
-  byggsten: { min: () => 0 },
+  byggsten: { min: stenTillPlan },
   // färgväxterna (steg 13.3.2, farg.ts): så mycket som ett bad tar, när någon kan färga
   mara: { min: s => fargVill(s, 'mara') }, vejde: { min: s => fargVill(s, 'vejde') }, krapp: { min: s => fargVill(s, 'krapp') },
   lera: { min: () => 0 }, // leran till krukorna är det krukans projekt saknar (projektSaknar, steg 13.8.12)
