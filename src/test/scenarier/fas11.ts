@@ -1753,10 +1753,10 @@ SCENARIER.packning = {
     const hela = [slarv, fors, med, langt].every(x => !x || [x.mat, x.vatten, x.foder].every(Number.isInteger));
     return [
       [`ledarens marginal: slarvig ${SIM.marginal({ ...a!, pot: { ...pot, mod: 18, flit: 3 } } as SIM.Person).toFixed(2)}, försiktig ${SIM.marginal({ ...a!, pot: { ...pot, mod: 3, flit: 18 } } as SIM.Person).toFixed(2)}`, SIM.marginal({ ...a!, pot: { ...pot, mod: 18, flit: 3 } } as SIM.Person) < SIM.marginal({ ...a!, pot: { ...pot, mod: 3, flit: 18 } } as SIM.Person)],
-      [`två resenärer i ${slarv.dygn} dygn: den försiktiga tar ${fors.mat} portioner, den slarviga ${slarv.mat}`, fors.mat > slarv.mat && slarv.mat >= Math.floor(2 * SIM.RESA.matPerDygn * slarv.dygn)],
+      [`två resenärer i ${slarv.dygn} dygn: den försiktiga tar ${fors.mat} portioner, den slarviga ${slarv.mat}`, fors.mat > slarv.mat && slarv.mat >= Math.floor(2 * SIM.matPerResenar() * slarv.dygn)],
       [`ett djur behöver foder där det inte kan beta (${med.foder} hö) och bär (${med.bar} mot ${fors.bar})`, !djur || med.bar >= fors.bar],
       [`allt är hela saker`, hela],
-      [`taket: den ensamma på lång resa (${langt?.dygn} dygn) bär högst sin bärförmåga (${langt?.vikt} av ${langt?.bar})`, !!langt && langt.vikt <= langt.bar && (langt.ryms || langt.mat < Math.ceil(SIM.RESA.matPerDygn * langt.dygn))],
+      [`taket: den ensamma på lång resa (${langt?.dygn} dygn) bär högst sin bärförmåga (${langt?.vikt} av ${langt?.bar})`, !!langt && langt.vikt <= langt.bar && (langt.ryms || langt.mat < Math.ceil(SIM.matPerResenar() * langt.dygn))],
     ];
   },
 };
@@ -4312,8 +4312,10 @@ SCENARIER.silvergruva = {
     // ett sällskap vid gruvan
     const g = gruvor.sort((a, b) => Math.hypot(a.x - hem.x, a.y - hem.y) - Math.hypot(b.x - hem.x, b.y - hem.y)).find(q => SIM.vagDygn(s, hem.y * v.w + hem.x, q.y * v.w + q.x));
     const [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.ageOf(q, s.now) < 50 && SIM.kanGa(q));
+    const vattna = (x: SIM.State) => { const w = SIM.varldMark(x)!; for (const i of SIM.vagDygn(x, hem.y * w.w + hem.x, g!.y * w.w + g!.x)!.rutor) w.flod[i] = w.flod[i] || 1; }; // bäckar längs vägen och vid gruvan: utan vatten törstar de som bryter (steg 15.1.89) och vattnet tar bärförmågan (15.1.88); här prövas gruvan
     const ny = (nere?: number) => {
-      const s2 = SIM.cloneState(s), sl = SIM.nyttSallskap(s2, s2.people.find(q => q.id === a!.id)!, g!.nr, 'hamta')!;
+      const s2 = SIM.cloneState(s); vattna(s2);
+      const sl = SIM.nyttSallskap(s2, s2.people.find(q => q.id === a!.id)!, g!.nr, 'hamta')!;
       SIM.foljMed(s2.varld!, sl, s2.people.find(q => q.id === b!.id)!);
       sl.nere = SIM.gruvPlanFor(s2, sl)?.nere;
       const plan = (sl.nere ?? 0) * 24;
