@@ -473,6 +473,28 @@ export function byFlikar(s: State, nr: number, tekNamn: (id: string) => string =
 // Byn har hört en händelse när dess uppgifter om platsen är nyare än händelsen (minst känd; ett rykte ger bara namnet). Det
 // som händer i byn själv har den alltid hört. En nyhet som når byn (den första i byn som får nyare uppgifter med en stor
 // ändring) skrivs i byns krönika med vem som kom med den och ger en notis; händelserna däremellan i världens krönika är nyheten
+// ---------- byns tecken på världskartan (steg 15.1.80, Tydligare gränssnitt: Omvärlden, Byns ruta) ----------
+// Det den egna byn tror om en by, så som kartan ritar den: storleken ur det byn tror om invånarna (BYSTORLEK, tre tecken),
+// hållningen mot den egna byn (förbindelsens inställning, som i Förbindelsen) och om byn är i krig enligt det byn hört
+// (den senaste raden krig eller fred om byn i världens krönika). Utan uppgifter (bara ett rykte) ritas den minsta och inga märken
+export const BYSTORLEK = [
+  { tecken: 'hus', upp: 15 }, // högst så många invånare
+  { tecken: 'hus2', upp: 40 },
+  { tecken: 'hus3', upp: Infinity },
+] as const;
+export type ByHallning = 'van' | 'ovan';
+export interface ByTecken { tecken: string; hallning?: ByHallning; krig: boolean }
+export function byTecken(s: State, nr: number): ByTecken {
+  const vl = s.varld, ruta = platsRuta(s, nr), r = ortensRad(s, nr);
+  const tror = ruta?.rader.find(x => x.id === 'folk')?.tror, folk = tror !== undefined ? Number(tror) : undefined;
+  const tecken = folk === undefined || !Number.isFinite(folk) ? BYSTORLEK[0].tecken : BYSTORLEK.find(b => folk <= b.upp)!.tecken;
+  if (!vl || !r || !ruta?.visshet || ruta.egen) return { tecken, krig: false };
+  const inst = r.syn?.inst, h = inst === undefined ? undefined : instText(inst);
+  const hallning: ByHallning | undefined = h === 'vänner' || h === 'vänliga' ? 'van' : h === 'misstänksamma' || h === 'fientliga' ? 'ovan' : undefined;
+  const sista = [...vl.kronika ?? []].reverse().find(x => (x.k === 'krig' || x.k === 'fred') && (x.by === r.nr || x.mot === r.nr) && hortHandelse(s, x));
+  return { tecken, ...hallning ? { hallning } : {}, krig: sista?.k === 'krig' };
+}
+
 export function hortHandelse(s: State, h: VarldHandelse): boolean {
   const vl = s.varld;
   if (!vl) return false;

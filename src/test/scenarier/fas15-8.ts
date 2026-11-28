@@ -208,3 +208,36 @@ SCENARIER.fardtecken = {
     ];
   },
 };
+
+SCENARIER.bytecken = {
+  text: 'Steg 15.1.80: en by på världskartan ritas i tre storlekar (hus, hus2, hus3) efter det den egna byn tror om invånarna, med ett märke för hållningen mot den egna byn och ett för krig när byn hört om kriget',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!, v = SIM.varldMark(s)!;
+    // en bybo har besökt en grannby med förbindelse
+    const p = (vl.platser ?? []).find(q => q.k === 'by' && q.by !== vl.huvud && SIM.ortensRad(s, q.nr)?.syn);
+    const vem = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= 20);
+    if (p && vem) { SIM.larOrt(s, vem, p.nr, SIM.O_BESOKT, 1, { t: s.now }); SIM.raknaBynVet(s); }
+    if (!p || !SIM.platsRuta(s, p.nr)?.visshet) return [['den egna byn känner en grannby med förbindelse', false]];
+    const r = SIM.ortensRad(s, p.nr)!, tror = Number(SIM.platsRuta(s, p.nr)!.rader.find(x => x.id === 'folk')!.tror);
+    const t0 = SIM.byTecken(s, p.nr), vantat = tror <= 15 ? 'hus' : tror <= 40 ? 'hus2' : 'hus3';
+    r.syn!.inst = 60; const van = SIM.byTecken(s, p.nr).hallning;
+    r.syn!.inst = -60; const ovan = SIM.byTecken(s, p.nr).hallning;
+    r.syn!.inst = 0; const neutral = SIM.byTecken(s, p.nr).hallning;
+    const annan = SIM.radGrannar(vl, r).find(x => x.nr !== vl.huvud) ?? r;
+    (vl.kronika ??= []).push({ k: 'krig', t: vl.borjan!, by: r.nr, mot: annan.nr } as NonNullable<SIM.Varlden['kronika']>[number]);
+    const krig = SIM.byTecken(s, p.nr).krig;
+    // bilden: byn ritas med sitt tecken och sina märken
+    const byar = new Map([[p.nr, { tecken: 'hus3', hallning: 'ovan' as const, krig: true }]]);
+    const b = VB.ritaVarld(vl, v, undefined, [], byar), b0 = VB.ritaVarld(vl, v, undefined, []);
+    let skiljer = 0;
+    for (let y = 0; y < VB.VK; y++) for (let x = 0; x < VB.VK; x++) { const i = ((p.y * VB.VK + y) * b.w + p.x * VB.VK + x) * 4; if (b.data[i] !== b0.data[i] || b.data[i + 1] !== b0.data[i + 1]) skiljer++; }
+    const form = ['hus2', 'hus3', 'van', 'ovan', 'krig'].every(k => VB.TECKEN[k]?.length === VB.VK && VB.TECKEN[k]!.every(rr => rr.length === VB.VK && [...rr].every(c => c === '.' || c in VB.TECKENPAL)));
+    return [
+      [`storleken följer det byn tror om invånarna (${tror} invånare: ${t0.tecken})`, t0.tecken === vantat],
+      [`hållningen syns som ett märke (vänner: ${van}, fientliga: ${ovan}, neutrala: ${neutral ?? 'inget'})`, van === 'van' && ovan === 'ovan' && neutral === undefined],
+      [`kriget syns när byn hört om det (${krig})`, krig === true],
+      [`kartan ritar byns tecken och märken (${skiljer} punkter skiljer)`, skiljer > 10],
+      ['tecknen och märkena är platshållare i 16 × 16 punkter i paletten', form],
+    ];
+  },
+};

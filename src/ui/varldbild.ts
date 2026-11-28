@@ -4,7 +4,7 @@
 // del av rutorna och platsernas tecken (LANDMARKEN) på sina rutor; huvudbyn får en ljus ram. Allt tar sina färger ur paletten.
 // Här finns bara det som går att räkna utan webbläsaren: bilden som punkter, tecknen (platshållare i 16 punkter tills Björn
 // valt i bildstilen) och vyns matematik för att dra och zooma. Knappen och rutan som visar kartan är ui/varldskarta.ts.
-import { BynsKarta, FLOD_NEDRE, LANDMARKEN, LEDER, LedId, ledKlass, MARK_IDS, O_KANT, syns, VARLDMARK, Varlden, VarldMark, VarldPlats } from '../sim';
+import { ByTecken, BynsKarta, FLOD_NEDRE, LANDMARKEN, LEDER, LedId, ledKlass, MARK_IDS, O_KANT, syns, VARLDMARK, Varlden, VarldMark, VarldPlats } from '../sim';
 import { hash3 } from '../sim/slump';
 import { farg } from '../palett';
 import { rgb255 } from './pixel';
@@ -54,6 +54,13 @@ export const TECKEN: Record<string, string[]> = {
   sallskap: t('', '', '.....kk.....kk', '....kwwk...kwwk', '....kwwk...kwwk', '..jj.kk.....kk', '.jJJkrrk...krrk', '.jJlkrrk...krrk', '.jJJkrrk...krrk', '..jjkrrk...krrk', '.....kjk....kjk', '.....k.k....k.k', '.....k.k....k.k', '....kk.kk..kk.kk'),
   // karavanen (steg 11.11.6, platshållare): en vagn med last, ett dragdjur framför och en vandrare
   karavan: t('', '', '...kk', '..kwwk', '..kwwk..kkkkkkk', '...kk..kJJJJJJk', '..kJJk.kJJJJJJk', '..kJJk.kjjjjjjk..kk', '..kJJkkkkkkkkkkkkJJk', '..kJJk.k.kk..kk.kJJk', '..kjjk..kWWk.kWWkkk', '..k.k....kk...kk.k.k', '..k.k............k.k'),
+  // byarna i tre storlekar (steg 15.1.80, platshållare): två och tre hus
+  hus2: t('', '', '', '...k', '..kJk.....k', '.kJJJk...kJk', 'kkkkkkk.kJJJk', '.kwjwk.kkkkkkk', '.kwjwk..kwwjk', '.kkkkk..kwwjk', '........kkkkk'),
+  hus3: t('', '', '.......k', '......kJk', '..k..kJJJk...k', '.kJk.kkkkkk.kJk', 'kJJJk.kwjwk.kJJJk', 'kkkkkkkwjwkkkkkkk', '.kwjk.kkkkk.kwjk', '.kwjk.......kwjk', '.kkkk.......kkkk'),
+  // märkena (steg 15.1.80, platshållare) i rutans övre vänstra hörn: vänlig (grön), ovänlig (röd) och krig (korsade svärd)
+  van: t('kkkk', 'kGGk', 'kGGk', 'kkkk'),
+  ovan: t('kkkk', 'kRRk', 'kRRk', 'kkkk'),
+  krig: t('', '', '', '', '', '', '', '', '', '', '', 'k...k', '.kSk', '..k', '.kSk', 'k...k'),
   // flocken (steg 15.1.79, platshållare): tre i rad åt höger, med spjut över axlarna
   flock: t('', '..........k', '.kk..kk..kk', 'kwwkkwwkkwwk', 'kwwkkwwkkwwk', '.kkk.kkk.kk.', 'krrkkrrkkrrk', 'krrkkrrkkrrk', 'krrkkrrkkrrk', '.kjk.kjk.kjk', '.k.k.k.k.k.k', '.k.k.k.k.k.k'),
   // packdjuret (steg 15.1.79, platshållare): en vandrare som leder ett djur med packning på ryggen
@@ -122,7 +129,8 @@ export function lager(kn: BynsKarta, kand: Set<number>, w: number, x: number, y:
   return kn.rykten.some(o => Math.hypot(x + 0.5 - o.x, y + 0.5 - o.y) < o.r) ? 'rykte' : 'blek';
 }
 // marken = platserna (världsplatsens nummer) där byn känner till ett uppdrag eller ett fynd (steg 11.8.16)
-export function ritaVarld(vl: Varlden, v: VarldMark, kn?: BynsKarta, marken?: number[]): VarldBild {
+// byar: byarnas tecken (steg 15.1.80) per platsens nummer, ur det byn tror (byTecken i sim/ort.ts)
+export function ritaVarld(vl: Varlden, v: VarldMark, kn?: BynsKarta, marken?: number[], byar?: Map<number, ByTecken>): VarldBild {
   const b: VarldBild = { w: v.w * VK, h: v.h * VK, data: new Uint8ClampedArray(v.w * VK * v.h * VK * 4) };
   for (let ry = 0; ry < v.h; ry++) for (let rx = 0; rx < v.w; rx++) {
     const c = MARKRGB[v.mark[ry * v.w + rx]];
@@ -140,7 +148,12 @@ export function ritaVarld(vl: Varlden, v: VarldMark, kn?: BynsKarta, marken?: nu
     const tk = (VARLDMARK[MARK_IDS[v.mark[ry * v.w + rx]]] as { tecken?: string }).tecken;
     if (tk && !upptagen.has(ry * v.w + rx) && !v.flod[ry * v.w + rx] && visarMarktecken(v, rx, ry)) ritaTecken(b, tk, rx, ry);
   }
-  for (const p of vl.platser ?? []) if (syns(kn, p)) ritaTecken(b, LANDMARKEN[p.k].tecken, p.x, p.y);
+  for (const p of vl.platser ?? []) if (syns(kn, p)) {
+    const bt = byar?.get(p.nr);
+    ritaTecken(b, bt?.tecken ?? LANDMARKEN[p.k].tecken, p.x, p.y);
+    if (bt?.hallning) ritaTecken(b, bt.hallning, p.x, p.y);
+    if (bt?.krig) ritaTecken(b, 'krig', p.x, p.y);
+  }
   if (kn) {
     const kand = new Set((vl.platser ?? []).filter(p => (kn.niva(p.nr) ?? -1) >= O_KANT).map(p => p.y * v.w + p.x)), rc = rgb(RYKTFARG), bc = rgb(BLEKFARG);
     for (let ry = 0; ry < v.h; ry++) for (let rx = 0; rx < v.w; rx++) {

@@ -4,7 +4,7 @@
 // platserna där, och ett tryck utan att dra skriver det nere till vänster. Byns, sällskapets eller färdens ruta ligger ovanpå
 // kartan till höger, och på en smal skärm under den.
 // Själva bilden räknas i ui/varldbild.ts.
-import { BYHANDLING, fardRuta, RadFard, byFlikar, PlatsRuta, Sallskap, TEKNIK, vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
+import { BYHANDLING, byTecken, fardRuta, RadFard, byFlikar, PlatsRuta, Sallskap, TEKNIK, vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { gaIn, huvud, s } from './lage';
 import { durTxt, ejLig, esc, omUngefar } from './hjalp';
@@ -70,19 +70,21 @@ const duk = ruta.querySelector('canvas')!, info = ruta.querySelector<HTMLElement
 const visas = () => !ruta.hidden;
 
 // bilden räknas en gång per värld och när platserna ändrats
-let bild: HTMLCanvasElement | undefined, bildFor: Varlden | undefined, bildPlatser = -1, bildVet = -1, bildLed = -1, bildMark = '';
+let bild: HTMLCanvasElement | undefined, bildFor: Varlden | undefined, bildPlatser = -1, bildVet = -1, bildLed = -1, bildMark = '', bildByar = '';
 // platserna med ett uppdrag eller fynd som byn känner till och tror på (steg 11.8.16)
 const markNr = () => [...new Set(bynsUppdrag(s!).filter(u => u.nr !== undefined && !u.tomt && u.tilltro >= 0.25).map(u => u.nr!))].sort((a, b) => a - b);
 function bilden() {
   const vl = s?.varld, v = s && varldMark(s);
   if (!vl || !v) return undefined;
   const n = vl.platser?.length ?? 0, vet = s!.bynVet?.t ?? 0, led = vl.ledVer ?? 0, mk = markNr(), mks = mk.join(',');
-  if (!bild || bildFor !== vl || bildPlatser !== n || bildVet !== vet || bildLed !== led || bildMark !== mks) { // och när en led bytt klass (steg 11.5.1) // och när det byn vet räknats om (steg 11.4.7)
-    const b = ritaVarld(vl, v, bynsKarta(s!), mk);
+  const byar = new Map((vl.platser ?? []).filter(p => p.k === 'by').map(p => [p.nr, byTecken(s!, p.nr)] as const)); // byarnas tecken (steg 15.1.80)
+  const bys = [...byar.values()].map(b => `${b.tecken}${b.hallning ?? ''}${b.krig ? 'k' : ''}`).join(',');
+  if (!bild || bildFor !== vl || bildPlatser !== n || bildVet !== vet || bildLed !== led || bildMark !== mks || bildByar !== bys) { // och när en led bytt klass (steg 11.5.1) // och när det byn vet räknats om (steg 11.4.7)
+    const b = ritaVarld(vl, v, bynsKarta(s!), mk, byar);
     bild = document.createElement('canvas'); bild.width = b.w; bild.height = b.h;
     const g = bild.getContext('2d')!, id = g.createImageData(b.w, b.h);
     id.data.set(b.data); g.putImageData(id, 0, 0);
-    bildFor = vl; bildPlatser = n; bildVet = vet; bildLed = led; bildMark = mks;
+    bildFor = vl; bildPlatser = n; bildVet = vet; bildLed = led; bildMark = mks; bildByar = bys;
   }
   return bild;
 }
