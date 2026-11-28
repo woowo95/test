@@ -977,7 +977,7 @@ export function bytaMed(s: State, M: Part, G: Part, vill: Vara[], v: Villkor): n
 export function betalVaror(M: Part, G: Part, utom: readonly string[]) {
   // in = den första som M ger; kostar de följande M mer (byn, steg 12.1.188) räknar inN det som går åt
   return M.over(utom).map(w => ({ ...w, ut: vardeAv(w, G, true), in: Math.max(1e-9, gerVarde(w, M, 1)), ...M.kvar && !w.t ? { inN: (n: number) => gerVarde(w, M, n) } : {} }))
-    .filter(w => w.ut > 1e-9).sort((a, b) => b.ut / b.in - a.ut / a.in || +!!a.t - +!!b.t);
+    .filter(w => w.ut > 1e-9).sort((a, b) => +(b.k === 'silver') - +(a.k === 'silver') || b.ut / b.in - a.ut / a.in || +!!a.t - +!!b.t); // silvret först, sedan varorna (steg 15.1.29)
 }
 // det M betalar för att G ska få mal (för G), i hela saker: man betalar hellre lite för mycket (steg 2.10.7). fick = värt för G, kost = värt för M
 // Kan G bara bära en viss vikt (handlaren, steg 4.4.1.3) räknas vikten först (steg 12.1.148): frigjord är vikten av det G ger

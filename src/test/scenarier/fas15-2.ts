@@ -152,3 +152,32 @@ SCENARIER.radgruva = {
     ];
   },
 };
+
+SCENARIER.silverforst = {
+  text: 'Steg 15.1.29: alla betalar helst med silver. Silvret kommer först i det den som betalar ger, och bara det som inte räcker betalas med varor: en bybo med både silver och mat över betalar en måltid med silver, och den utan silver betalar med varor',
+  kor: () => {
+    const kop = (utanSilver: boolean) => {
+      const { s, p, f, fin, vux } = foretagBy();
+      SIM.oppna(s, f);
+      const k = vux.find(q => SIM.kundVal(s, q, 'servering'))!;
+      SIM.laggIn(s, 'torrfisk', 40, k.id); // mat över
+      if (utanSilver) SIM.use(s, undefined, 'silver', SIM.ownsAmount(s, k, 'silver'), false, k.id);
+      const e = SIM.kundVal(s, k, 'servering');
+      if (!e) return { e, silver: 0, fisk: 0, gav: '' };
+      const o = SIM.stallIKo(s, k, e);
+      k.x = o.spot.x; k.y = o.spot.y; k.task = { act: 'koaDisk', phase: 'do', tx: o.spot.x, ty: o.spot.y, until: s.now + o.dur, carry: 0, why: o.why, ref: o.ref };
+      const allt = () => new Map(SIM.SAK_LIST.map(x => [x, SIM.ownsAmount(s, k, x)] as const)), fore = allt();
+      const silver0 = SIM.ownsAmount(s, k, 'silver');
+      p.task = { act: 'betjana', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', ref: f.id };
+      for (const a of s.stackar!) if (a.k === fin) { a.x = Math.floor(p.x); a.y = Math.floor(p.y); }
+      SIM.touch(s); SIM.betjanaKlar(s, p, p.task!);
+      const efter = allt(), gav = [...fore].filter(([x, n]) => x !== 'silver' && n - (efter.get(x) ?? 0) >= 1).map(([x, n]) => `${n - efter.get(x)!} ${x}`);
+      return { e, silver: silver0 - SIM.ownsAmount(s, k, 'silver'), fisk: gav.length, gav: gav.join(', ') };
+    };
+    const rik = kop(false), fattig = kop(true);
+    return [
+      [`den som har silver och mat över betalar måltiden med silver (${rik.silver} silver, varor: ${rik.gav || 'inga'})`, !!rik.e && rik.silver >= 1 && rik.fisk === 0],
+      [`den utan silver betalar med varor (${fattig.silver} silver, varor: ${fattig.gav || 'inga'})`, !!fattig.e && fattig.silver === 0 && fattig.fisk >= 1],
+    ];
+  },
+};

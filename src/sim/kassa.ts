@@ -91,15 +91,11 @@ export function varorAv(s: State, f: Foretag, v: string, G = saljPart(s, f)): st
 // priset på en vara i hela silver: det varan är värd för ägaren och hälften av det en vanlig kund vinner, gånger ägarens pris (steg 14.1.9)
 // (konkurrens.ts), men aldrig under det varan är värd för ägaren: för mindre säljer hen inte
 export const prisAv = (s: State, f: Foretag, v: string, k: string, G: Part, n = 1) => { const egen = n * kvAv(s, f, v, k) * (VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * G.varde(k)); return Math.max(1, Math.ceil(egen - 1e-9), Math.round((egen + n * VERKSAMHETER[v].snitt(k) * FORETAG.del) * (f.pris?.[v] ?? 1))); };
-// det M betalar: silver, varor eller allt hen har över, det som kostar minst för hen
+// det M betalar: silvret först och det som inte räcker med varor, som i alla byten (betalVaror, steg 15.1.29)
 type Betalvaror = ReturnType<typeof betalVaror>;
 function betalar(varor: Betalvaror, G: Part, pris: number) {
-  let bast: ReturnType<typeof betalaAv> | undefined;
-  for (const del of [varor.filter(w => w.k === 'silver'), varor.filter(w => !w.t && w.k !== 'silver'), varor]) {
-    const b = betalaAv(del, G, pris);
-    if (b.fick >= pris - 1e-9 && (!bast || b.kost < bast.kost - 1e-9)) bast = b;
-  }
-  return bast;
+  const b = betalaAv(varor, G, pris);
+  return b.fick >= pris - 1e-9 ? b : undefined;
 }
 // ---------- kunden ----------
 import { hyllan, type HyllVara, taVaran, vilMangd } from './affar';
