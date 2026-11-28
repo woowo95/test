@@ -88,7 +88,7 @@ export const STRID = balans('strid', {
   // slaget mot den som står och slåss tar sällan rent: hen vrider sig undan och tar emot det. Slagets tyngd (så stor del av vapnets skada det
   // gör) är latt + (1 − latt) × slumpen upphöjd till latthet: nästan alltid lätt, någon gång fullt, så att ett enda slag ännu kan döda
   // eller ge ett sår man förblöder av. Den som ligger, böjer sig ner eller flyr tar slaget fullt, och kast och skott väjer man inte för så
-  latt: 0.02, latthet: 15,
+  latt: 0.02, latthet: 8, // (15 före steg 15.1.66: nästan allt blev skråmor)
   maxTid: 1200, // en strid slutar senast efter så här många sekunder på klockan (oavgjort)
   efterTid: 20, // när ena sidan inte har någon kvar som slåss slutar striden senast så här många sekunder senare, också om någon ännu flyr eller ligger (den som inte kommer undan blir kvar på platsen)
   krypNara: 1, // den som kryper stannar så här många rutor från vännen hen kryper mot (steg 3.7.19) ...

@@ -35,3 +35,26 @@ SCENARIER.hjalpavstand = {
     ];
   },
 };
+
+SCENARIER.rustning = {
+  text: 'Steg 15.1.66: slagen tar rent oftare, och skyddet avgör. Samma slag mot bålen på en utan skydd och en i ringbrynja: den utan får ett sår på minst 0,2 tydligt oftare',
+  kor: () => {
+    const rena = (klader: string[]) => {
+      let tunga = 0, alla = 0;
+      SIM.TRAFFDEL_PROV.del = 'bal';
+      try {
+        for (let i = 0; i < 80; i++) {
+          const st = SIM.stridTillSlut(SIM.nyStrid({ avsikt: 'skada', w: 16, h: 8, kampar: [kampe(1, 0, 'yxa', 7, 4, {}, { mod: 18 }), kampe(2, 1, 'yxa', 9, 4, { klader }, { mod: 18 })] }, i * 7919 + 11));
+          for (const r of st.logg) if (r.b === 2 && r.sl && !r.kast && (r.h === 'traff' || r.h === 'tog')) { alla++; if (r.h === 'traff' && (r.g ?? 0) >= 0.2) tunga++; }
+        }
+      } finally { SIM.TRAFFDEL_PROV.del = undefined; }
+      return { tunga, alla, andel: tunga / Math.max(1, alla) };
+    };
+    const utan = rena([]), ring = rena(['ringbrynja_jarn']), pc = (x: { tunga: number; alla: number; andel: number }) => `${(100 * x.andel).toFixed(1)} % (${x.tunga} av ${x.alla})`;
+    return [
+      ['ringbrynjan skyddar bålen i striden', !!SIM.SKYDD.ringbrynja_jarn?.delar.includes('bal')],
+      [`utan skydd tar slaget rent ibland: ${pc(utan)} av träffarna blir ett sår på minst 0,2`, utan.alla > 100 && utan.andel >= 0.05],
+      [`i ringbrynja sällan: ${pc(ring)}`, ring.alla > 100 && ring.andel <= utan.andel / 3],
+    ];
+  },
+};
