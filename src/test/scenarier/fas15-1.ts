@@ -173,7 +173,7 @@ SCENARIER.bytHos = {
     const W = SIM.W, dit = (() => { for (let r = 8; r < 20; r++) for (const [dx, dy] of [[-r, 0], [0, r], [0, -r], [r, 0]]) { const x = Math.floor(g.x) + dx, y = Math.floor(g.y) + dy; if (SIM.inMap(x, y) && !SIM.blocked(s, x + 0.5, y + 0.5) && SIM.getMap(s.seed).tiles[y * W + x] !== SIM.T.Vatten) return { x: x + 0.5, y: y + 0.5 }; } return { x: g.x, y: g.y }; })();
     g.task = { act: 'samla', phase: 'go', tx: dit.x, ty: dit.y, until: s.now + 2 * SIM.HOUR, carry: 0, dark: false, why: 'Går en bit bort' } as SIM.Task;
     const fore = SIM.ownsAmount(s, rik, k?.k ?? mat), kop0 = s.stat?.kopGranne ?? 0, miss0 = s.stat?.kopMissat ?? 0;
-    if (k?.granne !== undefined) rik.task = { act: 'bytHos', phase: 'go', tx: k.spot!.x, ty: k.spot!.y, until: s.now + k.dur + SIM.GA_TID, arbTid: k.dur, ...(SIM.farligtBehov(rik) ? { nodVald: true as const } : {}), carry: 0, dark: false, why: 'Köper av en granne', ref: k.granne, tool: k.k } as SIM.Task; // som valet ger uppgiften (val.ts)
+    if (k?.granne !== undefined) rik.task = { act: 'bytHos', phase: 'go', tx: k.spot!.x, ty: k.spot!.y, until: s.now + k.dur + SIM.GA_TID, arbTid: k.dur, ...(SIM.farligaBehov(rik) ? { nod: SIM.farligaBehov(rik) } : {}), carry: 0, dark: false, why: 'Köper av en granne', ref: k.granne, tool: k.k } as SIM.Task; // som valet ger uppgiften (val.ts)
     let framme = -1, bytt = -1; const t0 = s.now;
     for (let i = 0; i < 600 && rik.task?.act === 'bytHos'; i++) {
       SIM.step(s, 1);

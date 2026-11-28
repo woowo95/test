@@ -89,7 +89,7 @@ import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Fire, Person, SEC, SKILL_NAME
 import { FOREST, findPath, wear } from './vag';
 import { barKropp, gangVakt, kroppFart, rutFart, smidig, snoFart } from './gang';
 import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './ljus';
-import { VAL, arbetsTimme, chooseTask, tomtFor, eldOrd, farligtBehov, nastaRedskap, spotFor } from './val';
+import { VAL, arbetsTimme, chooseTask, tomtFor, eldOrd, farligaBehov, nastaRedskap, spotFor } from './val';
 import { FAGEL, djurSteg, viltSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { bjornSteg, bjornjaktSteg } from './bjorn';
@@ -671,7 +671,13 @@ export const TAKTER: Takt[] = [
 function vantar(p: Person, tk: Task, now: number, dt: number) {
   const d = ACTS[tk.act];
   return tk.phase === 'do' && !d.tur && !d.runda && !d.varjeSlag && tk.med === undefined && tk.until > now + 1e-6
-    && (tk.vant ?? 0) + dt < KLOCKA.arbetsBit && p.toa >= KROPP.toaAvbryt && !(d.dygn && tk.dark !== !isLight(now));
+    && (tk.vant ?? 0) + dt < KLOCKA.arbetsBit && !nodAvbryter(p, tk, ageOf(p, now)) && !(d.dygn && tk.dark !== !isLight(now));
+}
+// nöden avbryter uppgiften t (steg 15.1.4 och 15.1.181): ett farligt behov (törst, hunger, kyla eller toa) finns och de farliga
+// behoven är andra än när uppgiften valdes (t.nod). Inte den som bärs, slåss eller redan går avsides (nodFri), och inte de minsta barnen
+function nodAvbryter(p: Person, t: Task, a: number) {
+  const f = farligaBehov(p);
+  return f !== 0 && f !== (t.nod ?? 0) && !ACTS[t.act].nodFri && a >= ALDER.smabarn;
 }
 // tiden (sekunder) sedan raden t räknades, om den ska räknas i slaget som slutar vid now, annars undefined. Sist räknad står i
 // s.takter; en by som saknar den (en ny eller äldre sparning) räknar raden som om den räknats när slaget började
@@ -904,7 +910,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     const phaseFlip = t && t.dark !== !light && ACTS[t.act].dygn; // dag blev natt eller tvärtom
     if (t && t.phase === 'do' && t.until <= now) iRackhall(p.x, p.y, () => KLAR[t.act]?.(s, p, t, 0)); // ett träd som fällts färdigt, en yxa som gjorts klar
     const tf = t?.act === 'tanda' ? eldById(s, t.ref) : undefined, lightDone = t?.act === 'tanda' && (!tf || tf.lit || !t.brand && !t.vanda && !(t.phase === 'do' ? iRackhall(p.x, p.y, () => canLight(s, p, tf)) : iHelaForradet(() => canLight(s, p, tf), t.site ?? { x: t.tx, y: t.ty }))); // framme: det hen bär och når, som försöken (steg 11.1.75); på väg efter mer: också det som redan ligger vid eldplatsen
-    const mustGo = t && (p.toa < KROPP.toaAvbryt || !t.nodVald && farligtBehov(p)) && !ACTS[t.act].nodFri && a >= ALDER.smabarn; // nöden avbryter det man håller på med (inte den som bärs eller den som slåss), också farlig törst, hunger och kyla (steg 15.1.4)
+    const mustGo = t && nodAvbryter(p, t, a); // nöden avbryter det man håller på med (steg 15.1.4 och 15.1.181)
     const merTand = lightDone && t && tf && !tf.lit && t.phase === 'do' && t.until > now && !phaseFlip && !mustGo && merTandmaterial(s, p, t, tf);
     if (!merTand && (!t || (t.until <= now && t.phase !== 'back') || ((phaseFlip || mustGo) && t.phase !== 'back') || lightDone)) {
       if (t && barHem(t) && t.act !== 'elda') { t.phase = 'back'; const d = backSpot(s, t); t.tx = d.x + sida(p, 0.2); t.ty = d.y + sida(p, -0.2); } // samma lagerplatser som när flytten valdes, och redskapet läggs tillbaka (steg 12.1.49)
