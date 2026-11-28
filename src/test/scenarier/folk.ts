@@ -1,3 +1,4 @@
+import { yearNo } from '../../sim/tid';
 // Scenarier. Folket: befolkning, faror, seder, samtal, liv och utflyttning.
 import * as BILD from '../../ui/stridbild';
 import { Person, createState, tidyTools, addTool, getRel, step, living, temperature, coldOf, emigrationRate, birthWish, immigrationRate, ageStart, amountOf, isLight, ageOf, DAY, HOUR, State, findL, areaOf, stat, hoped, gain, ownedSum, setAmount, setStock, tingOf, planBuild, regulate, ACTS } from '../../sim';
@@ -1821,6 +1822,7 @@ SCENARIER.stridkarta = {
   kor: () => {
     const ny = (seed: number) => {
       const s = createState(seed, START); klockan(s, 12);
+      s.bjornFalld = yearNo(s, s.now); // ingen björn i närheten i år: slagsmålet prövas för sig (björnen ger också korta steg)
       const [a, b, ...ovriga] = living(s).filter(x => ageOf(x, s.now) >= SIM.ALDER.vuxen);
       b.x = a.x + 1.2; b.y = a.y;
       for (const q of [a, b]) { q.pot.mod = 16; q.pot.aggression = 16; q.pot.empati = 4; q.task = undefined; }
