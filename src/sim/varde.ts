@@ -26,14 +26,18 @@ export const VARDE = balans('varde', {
   nivaPaslag: 0.25, // så mycket mer en sak är värd för varje teknisk nivå
   sallsynt: 1.5, // så mycket mer en sällsynt råvara är värd
   konst: 0.5, // så mycket mer ett mästerverk med ristningar eller en målning är värt (steg 4.3.3)
+  fin: 0.25, fest: 0.5, // så mycket mer en fin måltid och en festmåltid är värd än det den lagas av och arbetet (steg 15.1.33)
   kartKand: 3, kartRykte: 1, // en karta är värd bladet plus så mycket för varje känd plats och varje rykte, gånger kvaliteten (steg 11.7.5)
 });
 
 // det som kommer ur en bränning (kolet ur milan, järnet ur blästerugnen; brann.ts) görs som en sak: värdet av det som går in
 // plus arbetet vid stationen, delat på det som kommer ut, och tekniken för bränningen ger nivån. Registreras av brann.ts
-interface Ur { av: Record<string, number>; min: number; ger: number; tek: string; tid?: undefined; act?: undefined; sallsynt?: undefined }
+// En rätt (matlagning.ts, steg 15.1.33) registreras likadant, med ett påslag (pa) för en finare måltid
+export interface Ur { av: Record<string, number>; min: number; ger: number; tek: string; pa?: number; tid?: undefined; act?: undefined; sallsynt?: undefined }
 const UR: Record<string, Ur> = {};
 export function vardeUr(k: string, u: Ur) { UR[k] = u; raVarde.clear(); varden.clear(); sakNiva.clear(); }
+const urOf = (k: string): Ur | undefined => UR[k] ?? rattUr(k);
+export const harVardeUr = (k: string) => !!urOf(k); // saken får sitt värde ur det den görs av utan ett recept i saker.ts
 
 // den tekniska nivån: en teknik utan krav är nivå 1, och varje teknik den bygger på lägger till en
 const tekNiva = new Map<string, number>();
@@ -47,7 +51,7 @@ const sakNiva = new Map<string, number>();
 export function nivaOf(k: string): number {
   let n = sakNiva.get(k);
   if (n === undefined) {
-    const f = UR[k] ?? SAKER[k]?.skaffa;
+    const f = urOf(k) ?? SAKER[k]?.skaffa;
     n = Math.max(f?.tek ? nivaOfTek(f.tek) : 0, ...Object.keys(f?.av ?? {}).map(nivaOf));
     sakNiva.set(k, n);
   }
@@ -70,7 +74,7 @@ const djurOf = (k: string) => (djurMap ??= new Map(Object.values(DJUR as Record<
 function rakna(k: string): number {
   let v = raVarde.get(k);
   if (v !== undefined) return v;
-  const f = UR[k] ?? SAKER[k]?.skaffa;
+  const f = urOf(k) ?? SAKER[k]?.skaffa;
   const dj = djurOf(k);
   if (SAKER[k]?.varde !== undefined) v = SAKER[k]!.varde!; // silvret
   else if (dj) v = varuVarde(dj.slakt) / dj.mat; // ett djur är värt det som slaktas ur det (steg 15.1.31)
@@ -82,7 +86,7 @@ function rakna(k: string): number {
     x /= f.ger ?? 1; // ett recept som ger flera (en ved blir fyra näver)
     // påslaget räknas bara för de nivåer saken ligger över sitt högsta material: materialets värde bär redan sina (steg 15.1.30)
     const matNiva = Math.max(0, ...Object.keys(f.av ?? {}).map(nivaOf));
-    v = x * (1 + VARDE.nivaPaslag * (nivaOf(k) - matNiva)) * (f.sallsynt ? VARDE.sallsynt : 1);
+    v = x * (1 + VARDE.nivaPaslag * (nivaOf(k) - matNiva)) * (f.sallsynt ? VARDE.sallsynt : 1) * (1 + (urOf(k)?.pa ?? 0));
   }
   raVarde.set(k, v);
   return v;
@@ -169,3 +173,4 @@ import { djurVarde, tamArt, tamdjurOf } from './tamdjur';
 import { honsVarde } from './hons';
 import { BIN, samhallen } from './bin';
 import { DJUR, Djurart } from './redskap';
+import { rattUr } from './matlagning';

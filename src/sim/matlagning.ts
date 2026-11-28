@@ -552,3 +552,29 @@ import { ataPortion } from './behov';
 import { festKrok } from './ratter';
 import { specialSats } from './special';
 import { tanke } from './tankar';
+
+// ---------- rätternas värde (steg 15.1.33) ----------
+// en rätt är värd det den lagas av och arbetet, som annat man gör (vardeUr i varde.ts): en sats med huvudingrediensen, en
+// råvara ur en annan grupp och smaken på en fin måltid, delad på portionerna, och med tillagningens teknik som nivå. Den som
+// lagar väljer råvarorna efter det som finns, så värdet räknas på en vanlig sats: huvudingrediensens råvara (smakSak), rötter
+// som stärkelsen (bär till det som självt är stärkelse) och röllekan som smaken. En fin måltid och festen får VARDE.fin och .fest ovanpå
+const ANDRA_I_RATT = (h: RattHuvud) => h === 'sad' || h === 'rot' ? 'bar' : 'rotter', SMAK_I_RATT = 'rolleka';
+const rattUrar = new Map<string, Ur | undefined>();
+// läses av varde.ts (urOf) när ett värde räknas, inte när filen laddas: varde.ts och den här filen importerar varandra
+export function rattUr(id: string): Ur | undefined {
+  if (rattUrar.has(id)) return rattUrar.get(id);
+  const r = rattInfo(id); let u: Ur | undefined;
+  if (r) {
+    const huvud = smakSak(id), andra = ANDRA_I_RATT(r.huvud), fin = r.niva !== 'lagad', pa = r.niva === 'fest' ? VARDE.fest : fin ? VARDE.fin : 0;
+    const av: Record<string, number> = {}, lagg = (k: string, n: number) => { av[k] = (av[k] ?? 0) + n; };
+    if (r.kat === 'stek') { lagg(huvud, STEK.huvud); lagg('talg', STEK.talg); if (fin) lagg(SMAK_I_RATT, RATT.smak); u = { av, min: STEK.min, ger: STEK.huvud, tek: TILLAGNING.steka.tek, pa }; }
+    else if (r.kat === 'grop') { // festen: krukans mängder gånger GROP.ganger, med två råvaror ur nya grupper
+      lagg(huvud, RATT.huvud * GROP.ganger); lagg(andra, RATT.andra * GROP.ganger); lagg(['bar', 'kott', 'svamp'].find(k => k !== huvud && k !== andra)!, RATT.andra * GROP.ganger); lagg(SMAK_I_RATT, RATT.smak * GROP.ganger);
+      u = { av, min: GROP.prepMin, ger: RATT.portioner * GROP.ganger, tek: TILLAGNING.grop.tek, pa };
+    } else { lagg(huvud, RATT.huvud); lagg(andra, RATT.andra); if (fin) lagg(SMAK_I_RATT, RATT.smak); u = { av, min: KOK.prepMin, ger: RATT.portioner, tek: TILLAGNING.koka.tek, pa }; }
+  }
+  rattUrar.set(id, u);
+  return u;
+}
+import { Ur, VARDE } from './varde';
+import { TILLAGNING, rattInfo, smakSak } from './ratter';

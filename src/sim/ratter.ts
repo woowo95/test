@@ -157,7 +157,7 @@ const NARING: Record<RattHuvud, SakDef['naring']> = {
 };
 export function rattSaker(): Record<string, SakDef> {
   const ut: Record<string, SakDef> = {};
-  const rad = (h: RattHuvud, k: Kategori, n: Maltidsniva, haller: number) => { const ett = k === 'grop' ? (RATT_HUVUD[h] as { gropEtt?: true }).gropEtt : (KATEGORIER[k] as { ett?: true }).ett; ut[rattId(h, k, n, haller)] = { namn: rattNamn(h, k, n), ...(ett ? { ett } : {}), varde: 1.5, stack: 25, ruta: 75, mapp: 'Mat', mat: rattMat(haller), naring: NARING[h], haller }; };
+  const rad = (h: RattHuvud, k: Kategori, n: Maltidsniva, haller: number) => { const ett = k === 'grop' ? (RATT_HUVUD[h] as { gropEtt?: true }).gropEtt : (KATEGORIER[k] as { ett?: true }).ett; ut[rattId(h, k, n, haller)] = { namn: rattNamn(h, k, n), ...(ett ? { ett } : {}), stack: 25, ruta: 75, mapp: 'Mat', mat: rattMat(haller), naring: NARING[h], haller }; };
   for (const haller of HALLER_STEG) for (const n of ['lagad', 'fin'] as Maltidsniva[]) {
     for (const h of ['kott', 'fisk'] as RattHuvud[]) rad(h, 'stek', n, haller); // steken (steg 9.6.21)
     for (const h of RATT_HUVUD_LIST) for (const k of RATT_HUVUD[h].kat) rad(h, k, n, haller);

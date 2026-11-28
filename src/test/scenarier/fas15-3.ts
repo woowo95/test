@@ -50,3 +50,19 @@ SCENARIER.skinnvarde = {
     [`kohuden höjer inte kläderna: en mantel av harskinn är värd ${t(v('mantel_kaninskinn'))}`, v('mantel_kaninskinn') <= v('mantel_kohud') + 0.01 && v('mantel_kaninskinn') < 20],
   ],
 };
+
+SCENARIER.rattvarde = {
+  text: 'Steg 15.1.33: varje rätt får sitt grundvärde ur ingredienserna och arbetet, och en finare måltid får ett påslag. En rätt är värd mer än sina ingredienser, och en fest mer än en vardagsrätt',
+  kor: () => {
+    const ratter = SIM.RATT_SAKER, fel: string[] = [];
+    for (const k of ratter) { const u = SIM.rattUr(k); if (!u) { fel.push(`${k} utan recept`); continue; } const ing = SIM.varuVarde(u.av) / u.ger; if (!(v(k) > ing)) fel.push(`${k} ${t(v(k))} mot ingredienserna ${t(ing)}`); }
+    const lagade = ratter.filter(k => SIM.rattInfo(k)?.niva === 'lagad'), fester = ratter.filter(k => SIM.rattInfo(k)?.niva === 'fest');
+    const maxLagad = Math.max(...lagade.map(v)), minFest = Math.min(...fester.map(v));
+    const gryta = SIM.rattId('kott', 'gryta', 'lagad'), fin = SIM.rattId('kott', 'gryta', 'fin');
+    return [
+      [`varje rätt (${ratter.length}) är värd mer än sina ingredienser per portion${fel.length ? ': ' + fel.slice(0, 5).join(', ') : ''}`, fel.length === 0],
+      [`köttgrytan (${t(v(gryta))}) är värd mer än det råa köttet (${t(v('kott'))}), och den fina (${t(v(fin))}) mer än den lagade`, v(gryta) > v('kott') && v(fin) > v(gryta)],
+      [`den billigaste festen (${t(minFest)}) är värd mer än den dyraste vardagsrätten (${t(maxLagad)})`, minFest > maxLagad],
+    ];
+  },
+};
