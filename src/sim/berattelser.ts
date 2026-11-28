@@ -4,7 +4,7 @@ import { personHand } from './personlogg';
 import { ALDER, KROPP, REL, ageOf, alive, byId, count, isKin, isParent, living, log, namnSlut, relKey, stat, vuxnaOf } from './folk';
 import { ACTS, Act, slagIkon } from './handlingar';
 import { TAGS } from './seder';
-import { kronika } from './historik';
+import { kronika, tre } from './historik';
 import { Bevis, HANDELSER, INTRYCK, IntryckTyp, arvAndel, bevisText, intryckOm, intryckText, foralderRykte, kandVikt, samlatIntryck } from './rykten';
 import { SAKER, gruppOf, sakNamn } from './saker';
 import { moodOf } from './humor';
@@ -3097,16 +3097,14 @@ export { talOrd, och }; // talen och listorna bor i ordlagret (steg 6.7.1)
 // en händelse som en liten berättelse i krönikan, med årstiden, vädret och natten (loggen behåller sin korta rad).
 // Raden får mallens id som slag, så att den kan hittas utan att läsa texten
 // början på en rad utan namnen (ord med stor bokstav): 'Sige prövade och misslyckades' och 'Gunve prövade och …' är samma början
-const tre = (x: string) => x.split(/\s+/).filter(o => !/^[A-ZÅÄÖ]/.test(o)).slice(0, 3).join(' ').toLowerCase().replace(/[^a-zåäö ]/g, '');
 // årstiden, vädret och natten nu, för krönikans och loggens mallar (kodgenomgången, fynd 210)
 const vaderFalt = (s: State): Fyllning => { const v = vaderNu(s); return { arstid: ARSTIDER[kalender(s).ai], kallt: temperature(s) < 0, sno: v.sno, regn: v.lage === 'regn', blast: v.lage === 'blast', natt: !isLight(s.now), eld: s.fire.lit, aska: !!v.aska }; }; // eld och åska (steg 15.1.115)
 export function kronikaBer(s: State, mall: MallId, nyckel: number, f: Fyllning, vikt?: number) {
   const g: Fyllning = { ...vaderFalt(s), ...f };
-  // varianten väljs ur nyckeln och timmen; en som börjar som någon av de tre senaste raderna med samma mall hoppas över
-  // (textminnet, steg 6.7.3, m_upprepning). Minnet ligger utanför historiken, så att byn blir likadan utan den
-  const tm = (s.textminne ??= {}), forra = (tm[mall] ??= []);
+  // varianten väljs ur nyckeln och timmen; en som börjar som någon av de sex senaste raderna i krönikan hoppas över, vilken
+  // mall de än kom ur (textminnet, steg 6.7.3 och 15.1.120). Minnet ligger utanför historiken (kronikaVid i historik.ts)
+  const forra = s.textminne?.['*'] ?? [];
   const text = fyll(valjVariant(s, mall, nyckel, g, undefined, x => forra.includes(tre(x))), g);
-  forra.push(tre(text)); if (forra.length > 3) forra.shift();
   kronika(s, text, mall, vikt);
   return text;
 }

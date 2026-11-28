@@ -82,8 +82,14 @@ export const kronikaKat = (slag?: string) => slag === undefined ? undefined : KA
 // vikt: hur viktig raden är i sammanfattningen (ui/borta.ts), när det inte följer av slaget (ett byte efter värdet, B.41)
 export const kronika = (s: State, text: string, slag?: string, vikt?: number) => kronikaVid(s, s.now, text, slag, vikt);
 // en rad vid en annan tid än nu (den väckta byns krönika bakåt, steg 11.13.17)
+// början på en rad utan namnen (ord med stor bokstav): 'Sige prövade och misslyckades' och 'Gunve prövade och …' är samma början
+export const tre = (x: string) => x.split(/\s+/).filter(o => !/^[A-ZÅÄÖ]/.test(o)).slice(0, 3).join(' ').toLowerCase().replace(/[^a-zåäö ]/g, '');
+// krönikans minne (steg 15.1.120): början på de KRON_MINNE senaste raderna, vilken mall de än kom ur. Det ligger utanför
+// historiken, så att byn blir likadan utan den
+export const KRON_MINNE = 6;
 export function kronikaVid(s: State, tid: number, text: string, slag?: string, vikt?: number) {
   horText('kronika', text);
+  const m = ((s.textminne ??= {})['*'] ??= []); m.push(tre(text)); if (m.length > KRON_MINNE) m.splice(0, m.length - KRON_MINNE);
   const k = histOf(s).kronika, t = Math.round(tid);
   let i = k.length;
   while (i > 0 && k[i - 1][0] > t) i--;

@@ -2394,7 +2394,14 @@ SCENARIER.kronika = {
     const slag = new Set(ber.map(k => k[2]));
     const fodda = ber.filter(k => k[2] === 'k_fodd').map(k => k[1]);
     const logFodd = t.log.find(l => l.kind === 'birth' && l.m === 'k_fodd')?.text ?? '';
+    // krönikans minne gäller hela krönikan (steg 15.1.120): två rader efter varandra börjar inte likadant, vilken mall de än kom ur
+    const u = SIM.cloneState(t), mallar = ['k_fodd', 'k_dog', 'k_husKlar', 'k_uppfann', 'k_forstaEld'] as const, folk = SIM.living(u);
+    const fore = (u.hist?.kronika ?? []).length;
+    for (let i = 0; i < 40; i++) { const p = folk[i % folk.length]!; SIM.kronikaBer(u, mallar[i % mallar.length], p.id + i * 101, { ...SIM.personFalt(p), barnet: 'son', mor: p.name, foraldrar: p.name, orsak: 'av kyla', alder: 'tre', hus: 'huset', Hus: 'Huset', klart: 'färdigt', hus2: 'huset', hus3: 'huset', lara: 'odla', teknik: 'odling' }); u.now += SIM.HOUR; }
+    const nya = (u.hist?.kronika ?? []).slice(fore).map(k => SIM.tre(k[1]));
+    const lika = nya.filter((x, i) => i > 0 && x === nya[i - 1]).length;
     return [
+      [`två rader efter varandra börjar inte likadant (${lika} av ${nya.length})`, nya.length >= 30 && lika === 0],
       [`krönikan har berättelser (${ber.length} av ${rader.length} rader, ${slag.size} slag)`, ber.length >= 5 && slag.size >= 3],
       [`varje berättelse är hel (t.ex. ${ber.slice(0, 3).map(k => k[1]).join(' | ')})`, hela],
       [`födslarna berättas olika (${new Set(fodda).size} texter av ${fodda.length})`, fodda.length >= 3 && new Set(fodda).size >= 2],
