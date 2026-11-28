@@ -207,6 +207,7 @@ export const PAL: Record<string, Record<string, string>> = {
   i_scenDalig: { a: '#bdb39b', b: '#24201d', o: '#24201d', z: 'rgba(36,32,29,.30)' }, // steg 12.1.134: platshållare
   i_skrivkunnig: { a: '#dad0bb', b: '#3e5156', o: '#24201d', z: 'rgba(36,32,29,.30)' }, // steg 12.1.134: platshållare
   i_from: { a: '#3e5156', b: '#d8b25f', o: '#24201d', z: 'rgba(36,32,29,.30)' }, // steg 12.1.134: platshållare
+  i_hycklare: { a: '#3e5156', b: '#d8b25f', o: '#24201d', z: 'rgba(36,32,29,.30)' }, // steg 15.1.127: platshållare, en orm
   i_gudlos: { a: '#bdb39b', b: '#24201d', o: '#24201d', z: 'rgba(36,32,29,.30)' }, // steg 12.1.134: platshållare
   i_suput: { a: '#bd753e', b: '#7d5b40', o: '#24201d', z: 'rgba(36,32,29,.30)' }, // steg 12.1.134: platshållare
   i_lurendrejare: { a: '#d8b25f', b: '#a14808', o: '#24201d', z: 'rgba(36,32,29,.30)' }, // steg 12.1.134: platshållare
@@ -3087,6 +3088,24 @@ export const PIX: Record<string, string[]> = {
     '....oooaaooozz..',
     '.....zoooozzz...',
     '.......zzzz.....',
+  ],
+  i_hycklare: [ // steg 15.1.127: platshållare, en orm
+    '................',
+    '........oooo....',
+    '.......oaaaao...',
+    '......oaboaaao..',
+    '......oaaaooao..',
+    '.......ooo.oao..',
+    '..........oaao..',
+    '....ooooooaaoz..',
+    '...oaaaaaaaoz...',
+    '..oaaoooooozz...',
+    '..oaozzzzzz.....',
+    '..oaaoooooooo...',
+    '...oaaaaaaaaao..',
+    '....ooooooooaoz.',
+    '.....zzzzzzzooz.',
+    '...........zz...',
   ],
   i_gudlos: [ // steg 12.1.134: platshållare
     '................',

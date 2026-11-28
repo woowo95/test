@@ -10,6 +10,7 @@ import { allaBarn, formas, upplev } from './uppvaxt';
 import { tornadoStorlek, tornadoTid } from './tornado';
 import { TeckenTyp, tecken } from './religion';
 import { notis } from './notiser';
+import { svikKrok } from './kultlatt';
 
 // Motgångarna (steg 3.8, "Motgångarna i spelet" i designdokumentet): en hård vinter, torka, översvämning och tornado.
 // Varje motgång är en rad i registret MOTGANGAR och räknas ur byns frö och tiden, precis som vädret (vader.ts), så att
@@ -206,6 +207,7 @@ export function stepMotgang(s: State) {
     log(s, borjar, 'world'); notis(s, 'motgang', borjar);
     kronika(s, `${borjar.split('.')[0]}.`, 'motgang'); // raden står under sitt år i krönikan (steg 15.1.49)
     allaBarn(s, nu.id);
+    svikKrok.motgang(s); // den som just offrat tvivlar (steg 15.1.125)
   }
   for (const p of s.people) if (p.varsel && (!alive(p) || p.varsel.t < s.now - DAY * 7)) p.varsel = undefined;
 }

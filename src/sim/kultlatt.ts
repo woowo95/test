@@ -52,7 +52,15 @@ export const BYTA = balans('bytatro', {
   tvivel: 0.5, bas: 0.02, // chansen att byta tro: tvivlet gånger tvivel, plus bas ...
   styrka: 150, // ... mindre ju starkare tron är (helt borta vid så här stark) ...
   oppen: 200, // ... och ju öppnare den egna tron är för andra (helt borta vid så här öppen)
+  tvivelDygn: 10, // tvivlet bleknar med en tidskonstant på så här många dygn (år i spelet, steg 15.1.125)
 });
+// en troende tvivlar n mer (steg 15.1.125): bönen som inte hjälpte, den man bett för som dog, motgången efter offret och de stora
+// livshändelserna. Den som inte tror tvivlar inte
+export function tvivla(p: Person, n: number) { if (p.tro !== undefined) p.tvivel = (p.tvivel ?? 0) + n; }
+// det ett nytt intryck gör med den som får det, utöver relationen (rykten.ts anropar, kyrka.ts sätter hycklaren, steg 15.1.127)
+export const intryckKrok: Partial<Record<import('./rykten').IntryckTyp, (s: State, p: Person, om: number) => void>> = {};
+// motgången som kommer strax efter ett offer (kult.ts sätter kroken, motgang.ts anropar den när en motgång börjar)
+export const svikKrok = { motgang: (_s: State) => {} };
 export const bytaChans = (p: Person, oppen: number) => ((p.tvivel ?? 0) * BYTA.tvivel + BYTA.bas) * (1 - (p.troStyrka ?? 0) / BYTA.styrka) * (1 - oppen / BYTA.oppen);
 
 // ---------- det heliga djuret (steg 10.3.15) ----------

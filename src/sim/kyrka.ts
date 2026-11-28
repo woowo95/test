@@ -27,7 +27,7 @@ import { LAGAR, LagForslag, lagGaller } from './lagar';
 import { amountOf, iRackhall, ownMove, ownedStock, ownsAmount, ownsId, put, takeLimit, use } from './lager';
 import { BYN, kyrkaId } from './egendom';
 import { eldPlats } from './karta';
-import { heligVarde, heligtDjurAv, heligtDjurVarde, satHeligtDjur, satMatBud } from './kultlatt';
+import { heligVarde, heligtDjurAv, heligtDjurVarde, satHeligtDjur, satMatBud, intryckKrok, tvivla } from './kultlatt';
 import { INGREDIENSER, RATT_HUVUD, type RattHuvud, rattInfo } from './ratter';
 import { DJURARTER } from './redskap';
 import { bedFor } from './bygg';
@@ -338,6 +338,7 @@ export function budBrutet(s: State, p: Person, id: BudId) {
   count(s, 'bud_brutet');
   if (lagGaller(s, budLag(id))) handelseBud(s, p, id);
   if (!budIn(tr, id)) return;
+  if (tr && prastOf(s, tr) === p) handelse(s, p, 'prastBrot', undefined, BDEF[id].namn.toLowerCase()); // de som ser det, och de som hör om det (steg 15.1.127)
   p.skuld = (p.skuld ?? 0) + KYRKA.skuld; p.troStyrka = Math.max(0, (p.troStyrka ?? 0) - KYRKA.skuldTro);
   tanke(p, 'brotBud', s.now, { bud: BDEF[id].namn.toLowerCase(), v: KYRKA.skuldHumor });
   if ((skalaV(tr, 'forlat') ?? 0) > 70 && rymsBud(s, tr, 4) && (p.skuld ?? 0) >= KYRKA.stotaUt) {
@@ -345,6 +346,8 @@ export function budBrutet(s: State, p: Person, id: BudId) {
     log(s, `${troNamn(tr)} stötte ut ${p.name}.`, 'rel', [p.id]);
   }
 }
+// den troende som ser eller hör att prästen i hens tro brutit ett bud tvivlar (steg 15.1.127)
+intryckKrok.hycklare = (s, q, om) => { const pr = byId(s, om); if (!pr || q.tro === undefined || q.tro !== pr.tro) return; upplev(s, q, 'prastBrot', pr.name); tvivla(q, 1); };
 let handelseBud: (s: State, p: Person, id: BudId) => void = () => {};
 export const satBudHandelse = (f: typeof handelseBud) => { handelseBud = f; };
 // bikten (steg 8.6.9): på Förlåtande-sidan, hos prästen
@@ -538,7 +541,7 @@ function budDygn(s: State) {
     // djuroffret en gång i veckan, och människooffret: bara den som dömts, högst en gång på offerDygn
     if ((dag + tr.id) % KYRKA.vecka === 0 && budIn(tr, 'djuroffer')) {
       const slag = KOTTSLAG.reduce((a, k) => takeLimit(s, k) > takeLimit(s, a) ? k : a, 'kott'); // det köttslag byn har mest av (steg 10.3.14)
-      if (takeLimit(s, slag) >= KYRKA.djur) { use(s, undefined, slag, KYRKA.djur, true); count(s, 'djuroffer'); for (const p of med('djuroffer')) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + 2); }
+      if (takeLimit(s, slag) >= KYRKA.djur) { use(s, undefined, slag, KYRKA.djur, true); count(s, 'djuroffer'); for (const p of med('djuroffer')) { p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + 2); p.offrade = s.now; } }
       else for (const p of med('djuroffer')) tanke(p, 'djurSaknas', s.now, { v: KYRKA.djurSakna });
     }
     if (budIn(tr, 'manniskooffer') && dag - (tr.offrad ?? -Infinity) >= KYRKA.offerDygn) {

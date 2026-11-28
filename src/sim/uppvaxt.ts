@@ -8,9 +8,10 @@ import { roomAt } from './byggnad';
 import { balans } from './balans';
 import { andeRiktning, troUpplev } from './religion';
 import { foodDays } from './ekonomi';
-import type { Sed } from './seder';
+import { arFoljd, foljdHande, type Sed } from './seder';
 import { svartSjukNu } from './sjukdom';
 import { STATIONER } from './stationer';
+import { tvivla } from './kultlatt';
 import { UPP_LAR } from './typer';
 import type { Skill } from './typer';
 
@@ -131,6 +132,7 @@ export const UPPLEVELSER = {
   fester: { text: 'Växte upp med fester, sport och framträdanden', chans: 0.02, e: [{ karisma: 2 }, { karisma: 1, empati: 1 }], vem: 'barn', sed: { prat: 1, gemenskap: 1 } }, // vid varje framträdande, match och gästabud
   lasaBarn: { text: 'Lärde sig läsa som barn', chans: 0.5, e: [{ intelligens: 1, minne: 1 }, { nyfikenhet: 2 }], vem: 'barn', sed: { nyfikenhet: 1 } },
   smedjan: { text: 'Växte upp vid smedjan', chans: 0.004, e: [{ flit: 1 }, { flit: 1, uthallighet: 1 }], vem: 'barn', lar: 'hantverk', sed: { arbete: 1 } }, // en timme i taget nära den som smider (steg 13.1.7); smidet är hantverk
+  prastBrot: { text: 'Såg prästen {om} bryta mot ett bud', kort: 'Såg prästen bryta mot ett bud', chans: 0.5, e: [{ empati: -1 }, { nyfikenhet: 1 }], vem: 'bada', vuxenTal: true, ande: true }, // steg 15.1.127 (kyrka.ts)
   // följderna som drar en sed tillbaka (steg 13.9.3, foljder i SEDER): de kommer av det byn gör
   frosIhjal: { text: 'Såg {om} frysa ihjäl medan andra hade ved', kort: 'Såg någon frysa ihjäl medan andra hade ved', chans: 0.5, e: [{ empati: 1 }, { empati: 1, flit: 1 }], vem: 'bada', vuxenTal: true, sed: { gemenskap: 2 } },
   stupade: { text: 'Miste {om} i en strid', kort: 'Miste någon i en strid', chans: 0.5, e: [{ aggression: -1 }, { mod: -1 }, { empati: 1 }], vem: 'bada', vuxenTal: true, ande: true, sed: { krig: -2 } },
@@ -180,10 +182,16 @@ function effektFor(d: UpplevelseDef, e: Partial<Record<Stat, number>>, vuxen: bo
 // gång i vuxenlivet; det fastnar med chansen i registret. Drar ur personens egen slumpföljd, så att inget annat ändras
 export const tatKrok = { upplev: (_s: State, _p: Person, _k: string) => {}, vuxen: (_s: State, _p: Person) => {} };
 // ggr (steg 11.12.4): en starkare upplevelse, effekten gånger så här mycket (fängelset efter dygnen inne)
-export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string, ggr = 1) {
+// borjar (steg 15.1.123): händelsen börjar nu. För ett tillstånd som prövas varje timme (nära döden, överflöd) bara den
+// timme det börjar; då händer följden, en gång per händelse och före spärrarna för upplevelsen
+export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string, ggr = 1, borjar = true) {
   const d: UpplevelseDef = DEF[k];
   if (!alive(p)) return;
   const vuxen = !formas(s, p);
+  if (borjar) {
+    if (arFoljd(k)) foljdHande(s, p, k, chansFor(d, vuxen)); // följderna minns (steg 15.1.123, seder.ts)
+    troUpplev(s, p, k, chansFor(d, vuxen)); // trons skalor rör sig efter det de troende varit med om, per händelse (steg 13.9.5, 15.1.124)
+  }
   if (d.vem === (vuxen ? 'barn' : 'vuxen') || (!vuxen && !d.tidig && ageOf(p, s.now) < UPPV.fran) || p.upp?.some(u => u.k === k && vuxenUpp(u) === vuxen)) return;
   if (rnd(s, 'uppvaxt', p) >= chansFor(d, vuxen)) return;
   const e0 = effektFor(d, pick(s, d.e, 'uppvaxt', p), vuxen), e = ggr === 1 ? e0 : Object.fromEntries(Object.entries(e0).map(([x, v]) => [x, Math.round((v ?? 0) * ggr)])) as typeof e0;
@@ -201,10 +209,12 @@ export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string, ggr =
   p.upp = lista;
   raknaPot(p);
   count(s, 'upp_' + k); if (vuxen) count(s, 'upp_vuxen');
-  troUpplev(s, p, k); // trons skalor rör sig efter det de troende varit med om (steg 13.9.5)
+  if (UPP_TVIVEL.has(k)) tvivla(p, 0.5); // en stor livshändelse får en troende att tvivla (steg 15.1.125)
   if (vuxen) tatKrok.upplev(s, p, k); // händelsen kan märkas i huden (steg 10.7.5, tatuering.ts sätter kroken)
   log(s, `${p.name}, ${talOrd(u.a)} år, ${liten(upplevelseText(u))}.`, 'rel', [p.id]);
 }
+// de stora livshändelserna som får en troende att tvivla när de fastnar (steg 15.1.125)
+const UPP_TVIVEL = new Set<string>(['barnDod', 'dodade', 'fangelse', 'svalt']);
 // alla i byn var med om k (barnen och, sedan steg 4.1.1.2, de vuxna)
 export function allaBarn(s: State, k: UpplevelseTyp, om?: string) { for (const q of living(s)) upplev(s, q, k, om); }
 foljdKrok.ruttnade = s => allaBarn(s, 'ruttnade'); // maten som ruttnar i förrådet (steg 13.9.3, lager.ts)
@@ -272,14 +282,21 @@ const smidesNara = (s: State, p: Person) => { const sm = (SMIDE ??= new Set<stri
 // en upplevelse med en färdighet (lar) gör den lättare att lära (ovning i folk.ts läser UPP_LAR)
 for (const [k, d] of Object.entries(DEF)) if (d.lar) UPP_LAR.k[k] = d.lar;
 UPP_LAR.fart = UPPV.lar;
+// tillståndet k gäller nu (nu) för p: sant bara den timme det börjar. p.uppNu minns vilka som pågår (steg 15.1.123)
+function borjarNu(p: Person, k: UpplevelseTyp, nu: boolean) {
+  const var_ = !!p.uppNu?.includes(k);
+  if (nu && !var_) (p.uppNu ??= []).push(k);
+  else if (!nu && var_) { p.uppNu = p.uppNu!.filter(x => x !== k); if (!p.uppNu.length) p.uppNu = undefined; }
+  return nu && !var_;
+}
 export function stepUppvaxt(s: State) {
   const overflod = foodDays(s) > UPPV.overflodDygn;
   for (const p of s.people) {
     if (paKartan(p)) for (const [k, nara] of NARA_DODEN) if (nara(p, s.now)) livet(s, p, k, true); // det hen överlevt (i byn; den som är borta, steg 11.2.4), i alla åldrar (steg 3.9.8)
     if (!alive(p) || ageOf(p, s.now) < UPPV.fran) continue;
     if (p.upp?.some(vuxenUpp)) blekna(s, p);
-    for (const [k, nara] of NARA_DODEN) if (nara(p, s.now)) upplev(s, p, k); // barn och vuxna (steg 4.1.1.2)
-    if (overflod) upplev(s, p, 'overflod');
+    for (const [k, nara] of NARA_DODEN) { const nu = nara(p, s.now), b = borjarNu(p, k, nu); if (nu) upplev(s, p, k, undefined, 1, b); } // barn och vuxna (steg 4.1.1.2)
+    { const b = borjarNu(p, 'overflod', overflod); if (overflod) upplev(s, p, 'overflod', undefined, 1, b); }
     if (!formas(s, p)) continue;
     if (p.task?.act === 'leka' && p.task.phase === 'do') upplev(s, p, 'lek');
     if (p.task?.act === 'odla' && p.task.phase === 'do') upplev(s, p, 'faltet'); // (steg 12.1.133)

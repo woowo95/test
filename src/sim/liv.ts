@@ -39,7 +39,7 @@ import { grundvarde } from './varde';
 import { notis } from './notiser';
 import { vaderNu } from './vader';
 import { nyKvarleva } from './kvarlevor';
-import { gravgava } from './kultlatt';
+import { gravgava, tvivla } from './kultlatt';
 import { barSmitta, insjukna } from './sjukdom';
 import { nyttILarmet } from './roller';
 import { forlossRisk } from './forlossning';
@@ -129,7 +129,7 @@ const DOD = {
   bistick: { text: 'av bistick' }, // steg 10.10.22 (halsa.ts binStick) // steg 3.8.5 (brand.ts)
   rovare: { text: 'av rövare', gud: 'kriget', sorg: true, foljd: 'stupade', efter: 'efter rövarnas anfall' }, // steg 4.4.5 (rovare.ts)
   avrattad: { text: 'för sitt brott', gud: 'kriget' }, // dödsstraffet (steg 8.4.8)
-  drap: { text: 'av våld', gud: 'kriget', efter: 'efter ett slagsmål' },
+  drap: { text: 'av våld', gud: 'kriget', efter: 'efter ett slagsmål', foljd: 'stupade' }, // den som dör på kartan i en strid utan ett STRIDSLAG dör av drap (kartstrid.ts, steg 15.1.123)
   forsvunnen: { text: 'på en resa', sorg: true }, // ett eget verb efter orsaken blir fel i krönikan (steg 15.1.115) // steg 11.5.18 (resa.ts)
   offrad: { text: 'som offer', gud: 'kriget' }, // människooffret (budet, steg 8.6.6) // slagen till döds i ett utbrott (steg 3.2.3, humor.ts)
 } satisfies Record<string, DodDef>;
@@ -183,6 +183,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   for (const q of living(s)) {
     // den som var gift sörjer mer, den bästa vännen länge och en nära vän lite mer än en vän (steg 3.1.1)
     const r = s.rels[relKey(p.id, q.id)], varPartner = q.partner === p.id;
+    if (q.bonVan?.vem === p.id) tvivla(q, 1); // den troende sörjer den hen bett för (steg 15.1.125)
     // sorgen i stadier (steg 9.2.33): först förlusten med stor tyngd, sedan sorgen och sist saknaden, svag och länge (sorgTimme)
     if (varPartner) { q.partner = undefined; const f = r?.gift !== undefined ? RELT.giftSorj : 1; sorj(s, q, p, p.sex === 'k' ? (r?.gift !== undefined ? 'sin hustru' : 'sin kvinna') : 'sin man', LIV.sorjPartner * f, LIV.sorjPartnerDygn * f, dodFarg); }
     else if (isParent(q, p)) sorj(s, q, p, 'sitt barn', LIV.sorjNara, LIV.sorjNaraDygn, dodFarg);

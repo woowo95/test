@@ -50,7 +50,9 @@ export const MISS = balans('missnoje', {
   utvisadMiss: 0.1, // så mycket missnöjet växer hos dem i fraktionen när ledaren driver ut den som ledde den
   gavEfter: 0.5, // missnöjet i fraktionen gånger detta, när ledaren ger efter
   svalt: 0.012, kyla: 0.008, // så mycket missnöjet växer i timmen den som svälter och fryser
-  seder: 0.002, // ... långsamt när sederna ligger långt från ens egna åsikter (mer än sederAvst)
+  seder: 0.002, // ... långsamt när sederna ligger långt från ens egna åsikter (mer än sederAvst), i ett eget minne (sedAgg, steg 15.1.128)
+  aggDygn: 20, // missnöjet över sederna bleknar med den här tidskonstanten (dygn) ...
+  aggVikt: 0.5, // ... och väger så här mycket bredvid det andra missnöjet när fraktionen prövas
   sederAvst: 0.6,
   orattvist: 0.2, // ... när man själv straffas orättvist (familjen hälften)
   // det som gått dåligt medan ledaren styrt (steg 15.1.161): ledaren bär missnöjet
@@ -257,7 +259,7 @@ const SED_NAMN: Partial<Record<Sed, string>> = { fortjanst: 'om det är duglighe
 export function missnojeTimme(s: State, h = 1) { // h: timmarna sedan sist (TAKTER)
   const st = s.styre;
   if (!st?.historia.length) return;
-  const f = Math.exp(-h / 24 / MISS.bleknarDygn);
+  const f = Math.exp(-h / 24 / MISS.bleknarDygn), fa = Math.exp(-h / 24 / MISS.aggDygn);
   const sv = s.seder.v;
   for (const p of living(s)) {
     if (!vuxenRost(s, p)) continue;
@@ -266,7 +268,10 @@ export function missnojeTimme(s: State, h = 1) { // h: timmarna sedan sist (TAKT
     if (p.warm < MISS.kylaUnder) m += MISS.kyla * h;
     const d = drar(s, p); let av = 0, n = 0;
     for (const k of SED_LIST) if (sv[k]) { av += Math.abs(clamp(d[k], -1, 1) - sv[k]); n++; }
-    if (n && av / n > MISS.sederAvst) m += MISS.seder * h;
+    // missnöjet över sederna är ett eget minne: ett ledarbyte ändrar inte sederna (steg 15.1.128)
+    let g = (p.sedAgg ?? 0) * fa;
+    if (n && av / n > MISS.sederAvst) g += MISS.seder * h;
+    p.sedAgg = g < 0.001 ? undefined : clamp(g, 0, 1);
     p.missnoje = m < 0.001 ? undefined : clamp(m, 0, 1);
   }
   fraktionTimme(s);
@@ -280,6 +285,8 @@ export function missnojeMotgang(s: State, v: number, nara: readonly Person[] = [
 }
 // någon i byn dog av det som gått dåligt (dodKrok i folk.ts, satt i steg.ts): de nära är familjen och den bästa vännen
 export const missnojeDod = (s: State, p: Person) => { if (!p.gast) missnojeMotgang(s, MISS.dod, living(s).filter(q => q.partner === p.id || isKin(q, p) || q.bast === p.id), MISS.dodNara); };
+// hur missnöjd p är med styret (steg 15.1.128): missnöjet och missnöjet över sederna, som fraktionen prövas mot
+export const missnojd = (p: Person) => (p.missnoje ?? 0) + (p.sedAgg ?? 0) * MISS.aggVikt;
 export const missnojeStrafft = (_s: State, q: Person, familj: Person[]) => { q.missnoje = clamp((q.missnoje ?? 0) + MISS.orattvist, 0, 1); for (const f of familj) if (f !== q) f.missnoje = clamp((f.missnoje ?? 0) + MISS.orattvist / 2, 0, 1); };
 export const missnojeLatt = (s: State) => { for (const p of living(s)) if (p.missnoje) p.missnoje *= 1 - MISS.vintern; };
 export const missnojeNoll = (s: State) => { for (const p of living(s)) p.missnoje = undefined; const st = styreAv(s); st.frak = undefined; st.lugn = s.now + MISS.lugnDygn * DAY; };
@@ -292,7 +299,7 @@ function fraktionTimme(s: State) {
   const f = st.frak;
   if (f) { f.med = f.med.filter((id: number) => { const p = byId(s, id); return p && alive(p) && p !== l; }); if (!f.med.length) { st.frak = undefined; return; } }
   // den som är missnöjd nog vill byta ledare; finns ingen fraktion blir hen den första
-  if (!f) { const p = living(s).find(q => q !== l && vuxenRost(s, q) && (q.missnoje ?? 0) >= MISS.grans); if (p) { st.frak = { led: p.id, med: [p.id] }; count(s, 'fraktion'); } }
+  if (!f) { const p = living(s).find(q => q !== l && vuxenRost(s, q) && missnojd(q) >= MISS.grans); if (p) { st.frak = { led: p.id, med: [p.id] }; count(s, 'fraktion'); } }
   if (!st.frak) return;
   const g = st.frak;
   let bk = -1;
@@ -307,7 +314,7 @@ export function fraktionSamtal(s: State, a: Person, b: Person) {
   fulspel(s, a, b);
   if ((s.rels[relKey(a.id, b.id)]?.op ?? 0) < MISS.litar || rnd(s, 'samtal', a) >= MISS.sprid) return;
   const l = ledareOf(s);
-  if ((b.missnoje ?? 0) >= MISS.ta) { f.med.push(b.id); count(s, 'fraktion_med'); return; }
+  if (missnojd(b) >= MISS.ta) { f.med.push(b.id); count(s, 'fraktion_med'); return; }
   if (l && (s.rels[relKey(b.id, l.id)]?.op ?? 0) >= MISS.lojal && rnd(s, 'samtal', b) < MISS.avslojar) avslojad(s, l, f, b);
 }
 // Fulspel (steg 10.8.7): en medlem i fraktionen som pratar med någon utanför den hittar på något om ledaren med chansen

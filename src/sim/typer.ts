@@ -274,7 +274,7 @@ export interface Person {
   tiggde?: number; // senast hen fick mat av någon utanför familjen (steg 10.5.11, behov.ts): intrycket tiggare
   anst?: { av: number; arb: string; mal?: number; w: number }; verk?: Record<string, number>; // årets anställning (vem man arbetar åt, arbetet, lönen per timme mot en arbetstimmes värde) och det man hinner på ett år i varje arbete (steg 14.1.4, dagsarbete.ts)
   lonFick?: number; lonObetald?: number; // den del av lönen man fått de senaste åren, och den del man inte fick i fjol
-  bonD?: number; bonNodD?: number; bonVan?: { t: number; o: string; vem?: number; x?: number; y?: number }; tack?: string; tvivel?: number; profet?: boolean; sedDod?: number[]; sedSkand?: number[]; fasta?: number; skuld?: number; // bönen och tron (system 8.5)
+  bonD?: number; bonNodD?: number; bonVan?: { t: number; o: string; vem?: number; x?: number; y?: number }; tack?: string; tvivel?: number; offrade?: number; /* när personen sist offrade (steg 15.1.125) */ profet?: boolean; sedDod?: number[]; sedSkand?: number[]; fasta?: number; skuld?: number; // bönen och tron (system 8.5)
   drag?: { namn: string; v: number; t: number }; // anfallarnas tro som en dragning efter att ha svurit trohet (steg 8.8.6)
   missnoje?: number; // missnöjet med styret, 0–1 (steg 8.3.10, rost.ts)
   skatteskuld?: number; // skatten som inte kunde betalas, i grundvärde (steg 10.5.5, skatt.ts)
@@ -332,6 +332,9 @@ export interface Person {
   morkT?: number; // när hen senast var vaken i mörkret (lite sämre humör en stund, steg 6.3.4, ljus.ts)
   larm?: Partial<Record<string, import('./rykten').Larm>>; // larmen man hört, det senaste av varje sort (steg 3.7.11 och 12.1.211, rykten.ts)
   sedTal?: { v: Partial<Record<keyof Seder['v'], number>>; t: number }; // det avvikarna fått personen att dra sederna åt, och när det sist ändrades (steg 13.9.4, seder.ts)
+  foljd?: { v: Partial<Record<keyof Seder['v'], number>>; t: number }; // följderna personen varit med om, som drar sederna tillbaka och bleknar, och när de sist ändrades (steg 15.1.123, seder.ts)
+  sedAgg?: number; // missnöjet över sederna (0–1), som bleknar långsamt och inte nollas när ledaren byts (steg 15.1.128, rost.ts)
+  uppNu?: string[]; // de tillstånd i UPPLEVELSER som pågår just nu (nära döden, överflöd): troUpplev och följden räknas bara när de börjar (steg 15.1.123–15.1.124, uppvaxt.ts)
   sedArv?: Partial<Record<keyof Seder['v'], number>>; // byns sed som personen tagit till sig, mest under uppväxten (steg 13.9.2, seder.ts)
   intryck?: import('./rykten').Intryck[]; // det personen tycker att andra är, och varför (steg 3.3, rykten.ts)
   smak?: Record<string, number>; // tycke och smak: 'a:' + arbete, 'm:' + mat eller 'v:' + vapen (steg 3.7.10), -1 till 1 (steg 3.3.5, rykten.ts)

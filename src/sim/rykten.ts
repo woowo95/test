@@ -17,6 +17,7 @@ import { ACTS, Act } from './handlingar';
 import { isLight } from './tid';
 import { vaderNu } from './vader';
 import { fargKrok } from './fargkrok';
+import { intryckKrok } from './kultlatt';
 
 // Rykten (steg 3.3–3.4, "Rykten, anseende och minnet efter döden" i designdokumentet).
 // Det någon gör (en händelse: stöld, slag, gåva, mästerverk …) blir ett intryck hos den som ser det (våldsam, tjuv, generös,
@@ -158,6 +159,7 @@ const IDEF = {
   scenDalig: { namn: 'dålig på scenen', tecken: -1, op: -3, sym: '🥱', betyder: 'Publiken tog illa emot framträdandet.' },
   skrivkunnig: { namn: 'skrivkunnig', tecken: 1, op: 5, sym: '🪶', sed: { nyfikenhet: 1 }, betyder: 'Har skrivit ett blad, en bok eller ristat en sten.' },
   from: { namn: 'from', tecken: 1, op: 4, sym: '🕯️', sed: { andlig: 1 }, betyder: 'Ber och offrar mycket.' },
+  hycklare: { namn: 'hycklare', tecken: -1, op: -15, sym: '🐍', som: 'en hycklare', sed: { andlig: -1 }, betyder: 'Har som präst brutit mot ett av trons bud.' }, // steg 15.1.127 (kyrka.ts)
   gudlos: { namn: 'gudlös', tecken: -1, op: -6, sym: '⛓️', sed: { andlig: -1 }, betyder: 'Har vanhelgat det heliga, stötts ut ur tron eller håller sig borta från tron när de andra tror.' },
   suput: { namn: 'suput', tecken: -1, op: -6, sym: '🍺', som: 'en suput', betyder: 'Är ofta full.' },
   lurendrejare: { namn: 'lurendrejare', tecken: -1, op: -20, sym: '🦊', som: 'en lurendrejare', betyder: 'Har lurat någon i ett byte.', dampar: { ge: 0.3 }, beteende: 'Man ger ogärna till en lurendrejare.' },
@@ -239,6 +241,7 @@ const HDEF = {
   skrev: { i: 'skrivkunnig', vikt: 0.3, text: 'skrev {sak}', prestation: true },
   bad: { i: 'from', vikt: 0.05, text: 'bad och offrade till gudarna' },
   skandade: { i: 'gudlos', vikt: 0.5, text: 'skändade {sak}' },
+  prastBrot: { i: 'hycklare', vikt: 0.4, text: 'bröt som präst mot budet {sak}' }, // steg 15.1.127
   utstott: { i: 'gudlos', vikt: 0.4, text: 'stöttes ut ur tron' },
   utanTro: { i: 'gudlos', vikt: 0.1, text: 'höll sig borta från tron' }, // steg 12.1.173
   full: { i: 'suput', vikt: 0.15, text: 'var full igen' },
@@ -308,6 +311,7 @@ function intryck(s: State, p: Person, om: Person | { id: number; name: string },
     e = { om: om.id, namn: om.name, k, v: Math.min(v, RYKTE.vMax), c, t: s.now, ...(src !== undefined ? { src } : {}), ...(led ? { led } : {}) };
     (p.intryck ??= []).push(e);
     count(s, 'rykte_intryck');
+    intryckKrok[k]?.(s, p, om.id); // det man fått veta om någon, sett eller hört, kan göra mer än relationen (steg 15.1.127)
   }
   if (b) addBevis(e, b);
   if (!utanOp) relEffekt(s, p, om.id, k, styrka(e) - fore, prestation);

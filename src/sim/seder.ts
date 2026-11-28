@@ -3,7 +3,7 @@ import { personHand } from './personlogg';
 
 import { HOUR } from './typer';
 import { ALDER, ageOf, count, living, log } from './folk';
-import { clamp } from './slump';
+import { clamp, rnd } from './slump';
 import { DAY, Person, Seder, State } from './typer';
 import { balans } from './balans';
 import { kortTal } from './format';
@@ -38,16 +38,19 @@ export const SED = balans('seder', {
   rostBas: 0.5,
   rostKarisma: 20,
   minneSteg: 0.1, minneMax: 0.5, // minnet av en död drar så här mycket per steg i INTRYCK:s sedkolumn gånger minnets styrka, och alla minnen tillsammans högst minneMax per sed (steg 10.4.9)
+  // följderna minns (steg 15.1.123): varje följd drar personen upplevelsens sedkolumn gånger uppSteg, det bleknar med en
+  // tidskonstant på foljdDygn dygn, och tillsammans högst foljdMax åt varje håll
+  foljdDygn: 15, foljdMax: 0.8,
   uppSteg: 0.1, // en upplevelse drar personens hållning så här mycket per steg i sedkolumnen (UPPLEVELSER i uppvaxt.ts, steg 4.5.4.9)
-  snittVikt: 1.8, // målet för en sed är byns snitt gånger så här mycket, från -1 till 1
+  snittVikt: 1.1, // målet för en sed är byns snitt gånger så här mycket, från -1 till 1
   rorDygn: 6, // sederna rör sig mot målet med en tidskonstant på så här många dygn: byns minne, så att seden inte bara speglar vilka som bor där just nu
   // byns sed i var och en (steg 13.9.2): det man tagit av byns sed drar med så här stor vikt, och tas med en tidskonstant
   // på arvBarn dygn under uppväxten (yngre än ALDER.vuxen) och arvVuxen dygn som vuxen
   arvVikt: 0.35, arvBarn: 3, arvVuxen: 40,
-  // avvikaren (steg 13.9.4): den som drar en sed minst avvikFran åt ett håll och har minst avvikKarisma i karisma talar för den
-  // i samtalen; den som tycker om hen (minst avvikGillar) drar avvikSteg mer åt samma håll, högst avvikMax, och det bleknar
+  // avvikaren (steg 13.9.4, 15.1.122): den som skiljer sig minst avvikFran från byns sed och har minst avvikKarisma i karisma talar
+  // för sin sida i samtalen; den som tycker om hen (minst avvikGillar) drar avvikSteg mer åt samma håll, högst avvikMax, och det bleknar
   // med en tidskonstant på avvikDygn dygn, som ett rykte
-  avvikFran: 1, avvikKarisma: 14, avvikGillar: 20, avvikSteg: 0.04, avvikMax: 0.5, avvikDygn: 6,
+  avvikFran: 0.8, avvikKarisma: 14, avvikGillar: 20, avvikSteg: 0.04, avvikMax: 0.5, avvikDygn: 6,
   // pliktkänslan (0 till 1): bas + (flit - mitt) * pliktFlit + (empati - mitt) * pliktEmpati + arbetsseden * pliktSed
   pliktBas: 0.6,
   pliktFlit: 0.035,
@@ -121,38 +124,61 @@ export const fjardedel = (x: number) => clamp(Math.round(x * 4) / 4, 0, 1);
 const arv = (p: Person, k: Sed) => (p.sedArv?.[k] ?? 0) * SED.arvVikt;
 // det en avvikare fått personen att dra åt (steg 13.9.4), bleknat sedan det sist ändrades
 const talat = (s: State, p: Person, k: Sed) => { const t = p.sedTal; const v = t?.v[k]; return v ? v * Math.exp(-(s.now - t!.t) / (SED.avvikDygn * DAY)) : 0; };
-// i ett samtal talar a för den sed hen drar längst åt, om hen drar långt och har karisma, och b som tycker om a drar lite åt
-// samma håll en tid (steg 13.9.4). Så kan en enda människa vända en by
+// i ett samtal talar a emot byn i den sed där hen skiljer sig mest från byns sed, om skillnaden är stor och hen har karisma,
+// och b som tycker om a drar lite åt a:s håll en tid (steg 13.9.4, 15.1.122). Så kan en enda människa vända en by
 export function talaForSed(s: State, a: Person, b: Person, op: number) {
   if (op < SED.avvikGillar || a.pot.karisma < SED.avvikKarisma) return;
-  const d = drar(s, a);
-  let k: Sed | undefined;
-  for (const x of SED_LIST) if (sedOppen(s, x) && Math.abs(d[x]) >= SED.avvikFran && (!k || Math.abs(d[x]) > Math.abs(d[k]))) k = x;
+  const d = drar(s, a), av = (x: Sed) => clamp(d[x], -1, 1) - (s.seder.v[x] ?? 0);
+  let k: Sed | undefined, ak = 0;
+  for (const x of SED_LIST) { if (!sedOppen(s, x)) continue; const v = av(x); if (Math.abs(v) >= SED.avvikFran && Math.abs(v) > Math.abs(ak)) { k = x; ak = v; } }
   if (!k) return;
   const t = b.sedTal ??= { v: {}, t: s.now }, f = Math.exp(-(s.now - t.t) / (SED.avvikDygn * DAY));
   for (const x in t.v) t.v[x as Sed]! *= f;
   t.t = s.now;
-  t.v[k] = clamp((t.v[k] ?? 0) + Math.sign(d[k]) * SED.avvikSteg, -SED.avvikMax, SED.avvikMax);
+  t.v[k] = clamp((t.v[k] ?? 0) + Math.sign(ak) * SED.avvikSteg, -SED.avvikMax, SED.avvikMax);
   count(s, 'sedTalad');
 }
 export function drar(s: State, p: Person) {
   const barn = foraldrar(s).has(p.id), d = nollor();
-  for (const k of SED_LIST) d[k] = SEDER[k].dra(p.pot, barn);
-  d.andlig = (andlighet(s, p) - 50) / 50; // byns snitt av andlighet drar seden Världslig – Andlig (steg 8.6.1)
+  // läggningen (personligheten, det man tagit av byns sed och av avvikarna) har en gräns per person, och det man varit med
+  // om ligger utanför den (steg 15.1.121)
+  for (const k of SED_LIST) d[k] = laggning(s, p, k, barn);
   for (const u of p.upp ?? []) {
     const e = upplevelseSed(u.k);
     if (e) for (const k in e) d[k as Sed] += e[k as Sed]! * SED.uppSteg;
   }
   for (const m of minnen(s, p).values()) for (const k in m.d) d[k as Sed] += m.d[k as Sed]!;
-  for (const k of SED_LIST) d[k] = d[k] + arv(p, k) + talat(s, p, k);
+  if (p.foljd) for (const k in p.foljd.v) d[k as Sed] += foljdNu(s, p, k as Sed);
   return d;
 }
 // en enda seds dragning, samma tal som drar(s, p)[k] med samma tillägg i samma ordning (steg 12.1.104): för den som bara läser en sed
 export function drarSed(s: State, p: Person, k: Sed) {
-  let v = k === 'andlig' ? (andlighet(s, p) - 50) / 50 : SEDER[k].dra(p.pot, foraldrar(s).has(p.id));
+  let v = laggning(s, p, k, foraldrar(s).has(p.id));
   for (const u of p.upp ?? []) { const e = upplevelseSed(u.k)?.[k]; if (e !== undefined) v += e * SED.uppSteg; }
   for (const m of minnen(s, p).values()) { const x = m.d[k]; if (x !== undefined) v += x; }
-  return v + arv(p, k) + talat(s, p, k);
+  return v + foljdNu(s, p, k);
+}
+// det följderna drar personen i sed k, bleknat sedan det sist ändrades (steg 15.1.123)
+const foljdNu = (s: State, p: Person, k: Sed) => { const f = p.foljd, v = f?.v[k]; return v ? v * Math.exp(-(s.now - f!.t) / (SED.foljdDygn * DAY)) : 0; };
+// upplevelserna som är följder för någon sed (foljder i SEDER)
+let FOLJDER: Set<string> | undefined;
+export const arFoljd = (k: string) => (FOLJDER ??= new Set(SED_LIST.flatMap(x => SEDER[x].foljder ?? []))).has(k);
+// p var med om följden k (steg 15.1.123): med chansen fastnar den, en gång per händelse och utan spärren för samma
+// upplevelse, och drar personen upplevelsens sedkolumn gånger uppSteg. Det gamla bleknar först
+export function foljdHande(s: State, p: Person, k: UpplevelseTyp, chans: number) {
+  const e = upplevelseSed(k);
+  if (!e || rnd(s, 'foljd', p) >= chans) return;
+  const f = p.foljd ??= { v: {}, t: s.now }, g = Math.exp(-(s.now - f.t) / (SED.foljdDygn * DAY));
+  for (const x in f.v) f.v[x as Sed]! *= g;
+  f.t = s.now;
+  for (const x in e) f.v[x as Sed] = clamp((f.v[x as Sed] ?? 0) + e[x as Sed]! * SED.uppSteg, -SED.foljdMax, SED.foljdMax);
+  count(s, 'foljd_' + k);
+}
+// personens läggning i en sed (steg 15.1.121): personligheten (för Världslig – Andlig byns andlighet, steg 8.6.1), det man
+// tagit av byns sed och det avvikarna fått en att dra åt, inom -1 till 1
+function laggning(s: State, p: Person, k: Sed, barn: boolean) {
+  const v = k === 'andlig' ? (andlighet(s, p) - 50) / 50 : SEDER[k].dra(p.pot, barn);
+  return clamp(v + arv(p, k) + talat(s, p, k), -1, 1);
 }
 // minnena av de döda som drar personens hållning (steg 10.4.9): per död, INTRYCK:s sedkolumn gånger minnets styrka (styrka
 // gånger säkerhet) gånger minneSteg. Tillsammans drar de högst minneMax per sed; blir det mer krymper alla lika mycket
@@ -206,9 +232,7 @@ export function sedLaggning(s: State): Record<Sed, number> {
   const t = nollor(), barn = foraldrar(s);
   for (const { p, andel } of vikter(s)) {
     if (!andel) continue;
-    for (const k of SED_LIST) t[k] += SEDER[k].dra(p.pot, barn.has(p.id)) * andel;
-    t.andlig += (andlighet(s, p) - 50) / 50 * andel;
-    for (const k of SED_LIST) t[k] += (arv(p, k) + talat(s, p, k)) * andel; // det man tagit av byns sed och av avvikarna hör till läggningen
+    for (const k of SED_LIST) t[k] += laggning(s, p, k, barn.has(p.id)) * andel; // det man tagit av byns sed och av avvikarna hör till läggningen
   }
   for (const k of SED_LIST) t[k] = sedOppen(s, k) ? t[k] * SED.snittVikt : 0;
   return t;

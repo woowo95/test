@@ -131,6 +131,7 @@ const BDEF: Record<IntryckTyp, BinamnDef> = {
   scenDalig: { namn: [['Gäspet', 'Gäspet'], ['den tråkige', 'den tråkiga'], ['Sömnsången', 'Sömnsången'], ['Gnällaren', 'Gnällerskan']] },
   skrivkunnig: { namn: [['Skrivaren', 'Skriverskan'], ['Runkarlen', 'Runkvinnan'], ['den lärde', 'den lärda'], ['Fjäderpennan', 'Fjäderpennan']] },
   from: { namn: [['den fromme', 'den fromma'], ['Bönemannen', 'Bönekvinnan'], ['den helige', 'den heliga'], ['Offraren', 'Offrerskan']] },
+  hycklare: { namn: [['Hycklaren', 'Hycklerskan'], ['den falske prästen', 'den falska prästen'], ['Ormtungan', 'Ormtungan'], ['den skenhelige', 'den skenheliga']] }, // steg 15.1.127
   gudlos: { namn: [['den gudlöse', 'den gudlösa'], ['Hädaren', 'Häderskan'], ['den otrogne', 'den otrogna'], ['Gudsföraktaren', 'Gudsförakterskan']] },
   suput: { namn: [['Suputen', 'Suputen'], ['Ölstruten', 'Ölstruten'], ['den törstige', 'den törstiga'], ['Hornet', 'Hornet']] },
   lurendrejare: { namn: [['Lurendrejaren', 'Lurendrejerskan'], ['Rävtungan', 'Rävtungan'], ['den listige', 'den listiga'], ['Fiffaren', 'Fifferskan']] },
