@@ -83,6 +83,7 @@ SCENARIER.fulltforrad = {
 };
 
 SCENARIER.hyllorforst = {
+  lang: true,
   text: 'Hyllor före nya förrådshus (steg B.37): förrådet räknas i högar, en hylla i ett förrådshus som finns är ett av byggplanens förslag med samma poäng (värde per kostnad) som att bygga ut eller bygga nytt, och byn väljer den när den kan göra hyllor och har en full hög att ställa på den. Utan tekniken eller materialet byggs det ut eller nytt',
   kor: () => {
     const s = createState(6, START);
@@ -2538,6 +2539,7 @@ function traSaker(): [string, boolean][] {
 }
 
 SCENARIER.snickarbank = {
+  lang: true,
   text: 'Steg 9.4.4–9.4.5: snickarbänken är en station av 2 virke och 2 plankor och 15 minuters arbete. Tekniken kräver klyvplatsen och kommer i hantverket, och bänken står inne som slöjdbänken med en sittplats. Träsakerna görs fortare och bättre där, bågen, lyran och skölden bara där, och bågen och lyran kräver kniven på bänken',
   kor: () => {
     const { stationDef, stationerOf, stationRum, isKlar, TEKNIK } = SIM;

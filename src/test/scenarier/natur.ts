@@ -1140,13 +1140,14 @@ SCENARIER.latriner = {
     // bristen efter antalet: 18 invånare vill ha tre, så en saknar två tredjedelar och tre ingen
     const brist = (n: number) => { const k = cloneState(s); k.stationer = (k.stationer ?? []).filter(t => t.k !== 'latrin' && t.k !== 'utedass'); for (let i = 0; i < n; i++) { const t = medBank(k, 'latrin'); t.fyllt = 0; } return SIM.latrinBrist(k); };
     const b1 = brist(1), b3 = brist(3);
-    let mest = 0, nadde = false;
+    let mest = 0, nadde = false, flest = living(s).length;
     const anv = (v: SIM.State) => SIM.latriner(v).filter(t => SIM.isKlar(t) && (t.fyllt ?? 0) < SIM.STATION.latrinNy).length;
-    kor(s, 5 * 24, v => { const n = SIM.latriner(v).length; if (n > mest) mest = n; if (anv(v) >= 3) nadde = true; });
+    kor(s, 5 * 24, v => { const n = SIM.latriner(v).length; if (n > mest) mest = n; if (anv(v) >= 3) nadde = true; flest = Math.max(flest, living(v).length); });
+    // latrinerna byggs efter dem som bor i byn och står kvar när någon dör eller flyttar: gränsen räknas på de flesta under tiden
     const folk = living(s).length;
     return [
       [`18 invånare vill ha tre latriner: med en saknas ${b1.toFixed(2)}, med tre ${b3.toFixed(2)}`, Math.abs(b1 - 2 / 3) < 1e-9 && b3 === 0],
-      [`${folk} invånare: byn hade tre latriner att använda under 5 år (${nadde}), högst ${mest} (${s.stat?.['latriner igenvuxna'] ?? 0} växte igen, ${s.stat?.latrinTomd ?? 0} tömda)`, nadde && mest <= Math.ceil(folk / 8) + 2],
+      [`${folk} invånare (som mest ${flest}): byn hade tre latriner att använda under 5 år (${nadde}), högst ${mest} (${s.stat?.['latriner igenvuxna'] ?? 0} växte igen, ${s.stat?.latrinTomd ?? 0} tömda)`, nadde && mest <= Math.ceil(flest / 8) + 2],
     ];
   },
 };

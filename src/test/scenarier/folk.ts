@@ -3154,6 +3154,9 @@ SCENARIER.rovarhopp = {
   text: 'Steg 10.2.96: rövarna hoppar inte i bilden. Bilden visar rövarna längs vägen de faktiskt gått, också när striden på kartan flyttar dem, och mellan två bilder flyttar sig ingen rövare längre än hen hinner gå eller springa',
   kor: () => {
     const s = rovarBy();
+    // barnet är vaket och ute, som när scenariot skrevs: sedan steg 15.1.46 sover det kvar på morgonen, och då gömmer sig de vuxna
+    // i stället för att slåss, så att ingen strid flyttar rövarna
+    for (const p of living(s)) if (p.task?.act === 'sova') { p.rest = SIM.VAL.nattVilaBarn; SIM.avbryt(s, p); p.task = undefined; }
     const f = rovarGang(s, 4, undefined, { anfaller: true });
     const t0 = s.now, max = SIM.GANG.fart * 0.1 * 1.6 + 0.05;
     let hopp = 0, prov = 0, fel = 0;

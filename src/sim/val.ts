@@ -73,7 +73,7 @@ import { FALLOR, type Mjarde, kanVittja, timTillFull, trasig } from './fisk';
 import { bitAt, bitsOf, blocked, freeNear, friUteNear, husById, roomAt } from './byggnad';
 import { FOR_SIG, arHem, forSig, homeless, husIText, samlingRum, varmareInne } from './byggnader';
 import { groundOf, isForest, punktIRuta, tileOf } from './mark';
-import { axeTask, egenStock, fallTid, stamTill, stockOverHus, stocks } from './skog';
+import { axeTask, egenStock, fallTid, fellingTiles, stamTill, stockOverHus, stocks } from './skog';
 import { GA_TID, startWork, startsOnArrival } from './paborjat';
 import { hamtaForst } from './hamtning';
 import { duty, dygn, habitShare, habitTotal } from './seder';
@@ -243,12 +243,15 @@ export const VAL = balans('val', {
 export const iSkugga = (s: State, x: number, y: number) => !!roomAt(s, x, y) || groundOf(s).trees[tileOf(x, y)] > KROPP.skugga;
 // för varm och i solen, så att solen värmer mer: då vilar man och gör handarbete i skuggan
 const forVarmISol = (s: State, p: Person, over = KROPP.forVarm) => p.warm > over && isLight(s.now) && temperature(s) > KROPP.solFran;
+// skuggan som finns kvar de närmaste timmarna (steg 2.3.13: det som kyler mest de närmaste timmarna): under ett träd som någon
+// håller på att fälla (fellingTiles) blir det snart sol, i ett hus inte
+const skuggaKvar = (s: State, x: number, y: number, fall: Set<number>) => iSkugga(s, x, y) && (!!roomAt(s, x, y) || !fall.has(tileOf(x, y)));
 // en skuggig plats nära (x, y): en av de närmaste rutorna under ett träd eller i ett hus, inte i en vägg eller på en möbel
-function skuggaNara(s: State, p: Person, x0: number, y0: number): { x: number; y: number } | undefined {
+function skuggaNara(s: State, p: Person, x0: number, y0: number, fall = fellingTiles(s, p)): { x: number; y: number } | undefined {
   const R = VAL.skuggaRadie, cx = Math.floor(x0), cy = Math.floor(y0), c: { x: number; y: number; d: number }[] = [];
   for (let y = cy - R; y <= cy + R; y++) for (let x = cx - R; x <= cx + R; x++) {
     const d = Math.hypot(x - cx, y - cy);
-    if (d > R || !inMap(x, y) || blocked(s, x + 0.5, y + 0.5) || bitAt(s, x, y) && !roomAt(s, x + 0.5, y + 0.5) || stationAt(s, x + 0.5, y + 0.5) || sittAt(s, x + 0.5, y + 0.5) || !iSkugga(s, x + 0.5, y + 0.5)) continue;
+    if (d > R || !inMap(x, y) || blocked(s, x + 0.5, y + 0.5) || bitAt(s, x, y) && !roomAt(s, x + 0.5, y + 0.5) || stationAt(s, x + 0.5, y + 0.5) || sittAt(s, x + 0.5, y + 0.5) || !skuggaKvar(s, x + 0.5, y + 0.5, fall)) continue;
     c.push({ x, y, d });
   }
   if (!c.length) return undefined;
@@ -257,7 +260,7 @@ function skuggaNara(s: State, p: Person, x0: number, y0: number): { x: number; y
   return { x: t.x + 0.3 + rnd(s, 'val', p) * 0.4, y: t.y + 0.3 + rnd(s, 'val', p) * 0.4 };
 }
 // där p står om det är skugga, annars en skuggig plats nära
-const skuggaHar = (s: State, p: Person) => iSkugga(s, p.x, p.y) ? { x: p.x, y: p.y } : skuggaNara(s, p, p.x, p.y);
+const skuggaHar = (s: State, p: Person) => { const fall = fellingTiles(s, p); return skuggaKvar(s, p.x, p.y, fall) ? { x: p.x, y: p.y } : skuggaNara(s, p, p.x, p.y, fall); };
 // handarbete utan bänk (steg 2.10.6): någonstans inne i byns område (omrade.ts, steg 6.2.4), eller under tak i samlingshuset,
 // så att arbetet inte hänger på var elden ligger. Inte i en vägg, i vattnet, i en station eller på en stubbe vid bordet.
 // Den som är för varm i solen söker skugga nära platsen (steg 2.3.13).

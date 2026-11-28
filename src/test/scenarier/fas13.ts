@@ -452,10 +452,11 @@ SCENARIER.kudde = {
       const q = SIM.cloneState(s), t = q.stationer!.find(r => r.id === b.id)!, p = SIM.living(q)[0]!;
       t.med = med as typeof t.med;
       p.x = t.x + 0.5; p.y = t.y + 0.5; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: q.now + SIM.HOUR, carry: 0 } as SIM.Task;
-      const kyla = varmeDelar(q, p, 1, new Map([[roomAt(q, p.x, p.y)!.id, 1]])).kyla;
+      // kylan och täcket räknas på bädden som den ställts i ordning: under stegen kan någon i byn hinna lägga ett nytt tillbehör i den
+      const kyla = varmeDelar(q, p, 1, new Map([[roomAt(q, p.x, p.y)!.id, 1]])).kyla, tacker = SIM.tillbehorTacker(t);
       p.rest = 0.1; const r0 = p.rest;
       for (let i = 0; i < 3; i++) { p.task!.until = q.now + SIM.HOUR; SIM.step(q, BEAT); }
-      return { kyla, vila: p.rest - r0, tacker: SIM.tillbehorTacker(t) };
+      return { kyla, vila: p.rest - r0, tacker };
     };
     const utan = sover([]), fall = sover(['skinnfall']), tacke = sover(['ylletacke']), bada = sover(['skinnfall', 'ylletacke']), kudde = sover(['kudde']), allt = sover(['skinnfall', 'kudde']);
     const nara = (a: number, x: number) => Math.abs(a - x) < 1e-9;
@@ -1411,8 +1412,9 @@ SCENARIER.forbvillkor = {
   kor: () => {
     const rad = (id: string) => SIM.ARBETEN.find(a => a.id === id);
     const forbRader = ['sopor', 'baka', 'slatterForb'].filter(id => rad(id)?.forb && rad(id)?.niva === 8);
+    // klippningen är ett moget arbete på nivå 6 sedan steg 15.1.146, en egen rad i ARBETEN som också vägs med poäng
     const vagda = ['brygga', 'klippa', 'hamla', 'staket', 'skramma'];
-    const iPoang = vagda.filter(id => SIM.FORBATTRA.some(f => f.id === id) && !!rad(id)?.poang);
+    const iPoang = vagda.filter(id => (id === 'klippa' || SIM.FORBATTRA.some(f => f.id === id)) && !!rad(id)?.poang);
     // bagaren i en by med bakugn och mjöl: med mat i förrådet bakar någon, när byn svälter ingen
     const bak = (mat: number) => {
       const s = SIM.createState(1, START); klockan(s, 10);
@@ -1897,7 +1899,7 @@ SCENARIER.sparren = {
   text: 'Steg 13.9.6: spärren för den egna maten. Raden för egen mat är full när familjen har sin gräns (egenFull i FORRADSMAL, halva familjens buffert), så den som har mer än så går vidare till annat arbete. Den som har silver köper mat upp till gränsen av den som har mer, och den som säljer behåller lika mycket för sin egen familj. Den fattiga utan silver samlar själv.',
   kor: () => {
     const { MAT, FORRADSMAL, egenGrans, gain, ownsAmount, chooseTask, askForGift, payable } = SIM;
-    const s = SIM.createState(5, START); klockan(s, 10); tandEld(s); setFood(s, 300); SIM.setAmount(s, 'ved', 80); s.delning = { andel: 0 };
+    const s = SIM.createState(5, START); klockan(s, 10); tandEld(s); setFood(s, 40); SIM.setAmount(s, 'ved', 80); s.delning = { andel: 0 }; // byns mat under förrådets tak, så att det bybornas eget läggs i förrådet (steg 15.1.45)
     const halv = nyInvanare(s, 'm', 30), fattig = nyInvanare(s, 'k', 30), kopare = nyInvanare(s, 'm', 30), odlare = nyInvanare(s, 'k', 30);
     const grans = egenGrans(s, halv), dygn = MAT.kvar(s, halv), full = grans / (FORRADSMAL.mat.egenFull ?? 1);
     const egenMat = (q: SIM.Person) => { let n = 0; for (let i = 0; i < 30; i++) { q.task = undefined; chooseTask(s, q); if ((q.task as SIM.Task | undefined)?.why?.startsWith('Behöver egen mat')) n++; } return n; };
@@ -3515,6 +3517,8 @@ SCENARIER.blodstrid = {
     const mal = SIM.malet(s), by = vuxnaI(s).slice(0, 4);
     for (const p of SIM.living(s)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * SIM.HOUR, carry: 0 };
     const f = rovarGang(s, 4, { x: mal.x + 2, y: mal.y }), rov = SIM.rovarna(s, f);
+    // rövarna med vapen som öppnar sår: gänget rustas efter hembyn (steg 15.1.153), och den här byns gäng hade bara stenar
+    rov.forEach((r, i) => SIM.gastVapenSatt(s, r, (['yxa', 'kniv', 'flintspjut', 'yxa'] as const)[i]));
     by.forEach((p, i) => Object.assign(p, SIM.freeNear(s, mal.x - 1, mal.y - 3 + i * 2)));
     rov.forEach((r, i) => Object.assign(r, SIM.freeNear(s, mal.x + 1, mal.y - 3 + i * 2)));
     for (const p of [...by, ...rov]) { p.pot.mod = 20; p.blod = 1; }
