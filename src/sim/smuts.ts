@@ -191,12 +191,15 @@ export function akel(s: State, p: Person) {
   if (!s.flackar?.length) return;
   if (toaNara(s, tileOf(p.x, p.y)) > SMUTS.akel) tanke(p, 'akelSmuts', s.now, { v: SMUTS.akelHumor, tid: SMUTS.akelTim * HOUR });
   // en toahög inomhus (steg 11.1.73): den som är i rummet eller sover där äcklas mer än av en hög ute i byn
+  // toahögarna som syns räknas först, och sovplatsen bara när det finns någon (steg 15.1.182)
+  const inne = flackarOf(s).filter(f => f.k === 'toa' && flackNu(f, s.now) > SMUTS.akel);
+  if (!inne.length) return;
   const i = tileOf(p.x, p.y), har = roomAt(s, i % W, Math.floor(i / W)), b = bedTile(s, p), sov = b === undefined ? undefined : roomAt(s, b % W, Math.floor(b / W));
-  if ((har || sov) && toaIRum(s, [har, sov])) tanke(p, 'akelToa', s.now, { v: SMUTS.akelHumor * SMUTS.toaInne, tid: SMUTS.akelTim * HOUR });
+  if ((har || sov) && toaIRum(inne, [har, sov])) tanke(p, 'akelToa', s.now, { v: SMUTS.akelHumor * SMUTS.toaInne, tid: SMUTS.akelTim * HOUR });
 }
 // en toahög som syns (starkare än SMUTS.akel) på golvet i något av rummen
-function toaIRum(s: State, rum: (ReturnType<typeof roomAt>)[]) {
-  for (const f of flackarOf(s)) if (f.k === 'toa' && flackNu(f, s.now) > SMUTS.akel) for (const r of rum) if (r && r.tiles.includes(f.i)) return true;
+function toaIRum(inne: readonly Flack[], rum: (ReturnType<typeof roomAt>)[]) {
+  for (const f of inne) for (const r of rum) if (r && r.tiles.includes(f.i)) return true;
   return false;
 }
 // blodet, toa-högarna och resterna inne i byn som syns (punkter), och rutorna där det ligger blod (blod), med styrkan vid timmens

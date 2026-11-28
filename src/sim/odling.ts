@@ -421,15 +421,17 @@ function bastaRuta(s: State, p: Person, fs: Falt[], st?: FaltSteg) {
 // det p gör på fältet: den ruta på familjens fält som ger mest poäng, eller att röja ett nytt fält om familjen inget har och
 // hen har frön. Inget i mörkret. Ett träd fälls och en stubbe grävs bort innan rutan röjs (skog.ts, steg 3.6.9 och 6.5.7)
 const iVagen = (s: State, i: number) => groundOf(s).trees[i] >= FOREST || stubbeOn(s, i % W, Math.floor(i / W));
+// arbetet på den bästa rutan på familjens fält fs
+function rutaUppgift(s: State, p: Person, fs: Falt[]): FaltUppgift | undefined {
+  const b = bastaRuta(s, p, fs);
+  if (!b) return undefined;
+  const st = rutorAv(b.f)[b.k].st;
+  return { tool: st, text: `${(FALT_STEG[st] as { gor?: string }).gor}.`, min: ODLING.pass, spot: rutaMitt(b.f, b.k), ref: b.f.id, ruta: b.k };
+}
 export function faltUppgift(s: State, p: Person): FaltUppgift | undefined {
   if (!isLight(s.now) || !kanOdla(s, p)) return undefined;
   const fs = familjensFalt(s, p);
-  if (fs.length) {
-    const b = bastaRuta(s, p, fs);
-    if (!b) return undefined;
-    const st = rutorAv(b.f)[b.k].st;
-    return { tool: st, text: `${(FALT_STEG[st] as { gor?: string }).gor}.`, min: ODLING.pass, spot: rutaMitt(b.f, b.k), ref: b.f.id, ruta: b.k };
-  }
+  if (fs.length) return rutaUppgift(s, p, fs);
   if (familjFalt(s, p)) return undefined; // familjen har ett fält: ett till är ett eget projekt (faltTillUppgift)
   return nyttFaltUppgift(s, p);
 }
@@ -472,7 +474,10 @@ export const faltTillVarde = (s: State, p: Person) => faltTillEgen(s, familjOf(s
 // arbetet på fältet (val.ts): den mogna grödan skördas före förbättringar, och den vars familj har ett fält arbetar på det när
 // ingen fara går före. Ett nytt fält är ett projekt (projekt.ts)
 export function faltNu(s: State, p: Person, fara: boolean) {
-  const u = faltUppgift(s, p);
+  if (!isLight(s.now) || !kanOdla(s, p)) return undefined;
+  const fs = familjensFalt(s, p);
+  if (!fs.length) return undefined; // utan familjens fält finns inget att göra här: ett nytt fält är ett projekt (steg 15.1.182)
+  const u = rutaUppgift(s, p, fs);
   if (!u || u.ref === undefined) return undefined;
   if (u.tool === 'mogen') return u;
   const f = faltById(s, u.ref);
