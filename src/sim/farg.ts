@@ -8,7 +8,7 @@
 // färgen, anseendet den ger och värdet den lägger på plagget, minus maten i växterna (bären) när byn är hungrig. Smaken för en
 // färg ligger i p.smak med 'f:' före (rykten.ts); var den kommer ifrån är steg 13.3.5.
 import { balans } from './balans';
-import { MIN, Person, State, Task } from './typer';
+import { Person, State, Task } from './typer';
 import { Ting, allaTing, harReceptVatten, taReceptVatten } from './agande';
 import { KLADMATERIAL, kladAv } from './klader';
 import { getable, takeMaterial } from './behov';
@@ -145,7 +145,6 @@ export function fargaKlar(s: State, p: Person, tk: Task) {
 }
 // färgerna p har på sig och tycker om: den största smaken (för tanken i steg.ts)
 export function barGillad(p: Person, pa: Ting[]) { let v = 0; for (const t of pa) if (t.farg) v = Math.max(v, fargSmak(p, t.farg)); return v; }
-export const fargMin = () => FARG.min * MIN;
 
 // ---------- var smaken för en färg kommer ifrån (steg 13.3.5, Färgade kläder och mode i fliken Människan) ----------
 // Smaken för en färg ligger i p.smak med 'f:' före och bleknar inte av sig själv. När smaken för en färg växer sjunker hens

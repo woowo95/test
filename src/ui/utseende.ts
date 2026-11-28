@@ -113,11 +113,11 @@ const HALSSMYCKE: Partial<Record<string, string>> = { benband: 'smycke-2', tandb
 type Klader = NonNullable<Skapad['klader']>;
 type Mat = keyof typeof KLADMATERIAL;
 // m = materialet i ritningen: materialets namn, eller färgens ramp (farg-<ramp>) när plagget är färgat (steg 13.3.2). Tunikan
-// ritas med rockens bild tills den fått en egen
+// ritas med rockens bild tills den fått en egen. Bärselen ritas inte än
 const PLAGG_FALT: Record<string, (k: Klader, m: string) => void> = {
   rock: (k, m) => { k.rock = m; }, mantel: (k, m) => { k.rock = m; }, kappa: (k, m) => { k.rock = m; }, tunika: (k, m) => { k.rock = m; },
   skor: k => { k.skor = true; }, stovlar: k => { k.skor = true; }, byxor: (k, m) => { k.byxor = m; }, skjorta: (k, m) => { k.skjorta = m; },
-  balte: k => { k.balte = true; }, axelrem: k => { k.axelrem = true; }, barsele: () => {}, barnklader: (k, m) => { k.rock = m; k.byxor = m; }, ryggsack: k => { k.ryggsack = true; },
+  balte: k => { k.balte = true; }, axelrem: k => { k.axelrem = true; }, barnklader: (k, m) => { k.rock = m; k.byxor = m; }, ryggsack: k => { k.ryggsack = true; },
 };
 const klada = (k: Klader, a: { plagg: string; mat: Mat }, farg?: string) => PLAGG_FALT[a.plagg]?.(k, farg && FARGER[farg as FargId] ? `farg-${FARGER[farg as FargId].ramp}` : KLADMATERIAL[a.mat].namn);
 function utrustad(s: State, p: Person, u: Skapad) {

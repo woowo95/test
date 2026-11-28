@@ -55,19 +55,25 @@ export function kopval(s: State, p: Person, id: 'mat' | 'ved'): Kopval | undefin
     if (e) prova({ faktor: perTimme(s, p, id, e.k, e.net, Math.hypot(e.disk.x - p.x, e.disk.y - p.y), KASSA.tal / 2), kund: e, dur: 0 });
   }
   // en granne som har över
+  // det p vill ha av varje slag beror inte på grannen, och grannen och det p kan betala med inte på slaget (steg 15.1.174)
+  const vill = new Map<string, number>();
+  for (const k of b.slag) { const v = vilMangd(s, p, k); if (Math.floor(v + 1e-9) >= 1) vill.set(k, v); }
   let M: ReturnType<typeof personPart> | undefined;
+  // grannarna gås igenom också när p inte vill ha något: osams skapar relationen (getRel) med slumpen när två inte mötts förut
   for (const g of living(s)) {
-    if (g === p || g.gast || (g.task && SOVER.has(g.task.act)) || osams(s, g, p)) continue;
+    if (g === p || g.gast || (g.task && SOVER.has(g.task.act)) || osams(s, g, p) || !vill.size) continue;
     const d = Math.hypot(g.x - p.x, g.y - p.y);
     if (d > KOPBUFFERT.langd) continue;
     const over = overEget(s, g, b);
     if (over < b.minst) continue;
     M ??= personPart(s, p);
-    for (const k of b.slag) {
-      const n = Math.floor(Math.min(vilMangd(s, p, k), over / (b.per?.[k] ?? 1), ownsAmount(s, g, k)) + 1e-9);
+    let G: ReturnType<typeof personPart> | undefined, varor: ReturnType<typeof betalVaror> | undefined;
+    for (const [k, v] of vill) {
+      const n = Math.floor(Math.min(v, over / (b.per?.[k] ?? 1), ownsAmount(s, g, k)) + 1e-9);
       if (n < 1) continue;
-      const G = personPart(s, g), ger = n * grundvarde(k) * G.varde(k), far = n * grundvarde(k) * behovAv(s, p, k);
-      const bet = betalaAv(betalVaror(M, G, b.slag), G, ger);
+      G ??= personPart(s, g); varor ??= betalVaror(M, G, b.slag);
+      const ger = n * grundvarde(k) * G.varde(k), far = n * grundvarde(k) * behovAv(s, p, k);
+      const bet = betalaAv(varor, G, ger);
       if (bet.fick < ger - 1e-9) continue;
       prova({ faktor: perTimme(s, p, id, k, far - bet.kost, d, KOPBUFFERT.prat), granne: g.id, k, spot: { x: g.x, y: g.y }, dur: KOPBUFFERT.prat * MIN }); // varje sort vägs, och prova behåller det bästa köpet
     }

@@ -1690,6 +1690,7 @@ SCENARIER.faltglanta = {
 };
 
 SCENARIER.falt = {
+  lang: true,
   text: 'Steg 2.10.3, 2.10.13 och 3.10.14: den som kan odla och har frön röjer ett fält på jorden utanför byn, så stort som familjen behöver och fröna räcker till, och gräver upp det och sår ruta för ruta. Grödan växer när det är varmt, skördas när den är mogen och ger mat och nya frön. Frosten dödar den, den mogna ruttnar om ingen skördar, och ett fält som ingen sköter blir gräs igen',
   kor: () => {
     const s = createState(6, START); // by 6: röjer fält med och utan hela saker (by 7 gjorde det inte efter steg 2.10.7, slumpen)
