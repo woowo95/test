@@ -3589,10 +3589,11 @@ SCENARIER.lagervaxer = {
     const g = (l: SIM.VarldRad) => SIM.byPlats(vl, l.nr)!.grannar!.find(q => q.nr === SIM.byPlats(vl, r.nr)!.nr)!;
     g(fattig).dygn = g(rik).dygn; // lika nära
     let fikRik = 0, fikFattig = 0;
-    const borja = new Set((vl.ko ?? []).map(p => p));
+    const borja = new Set((vl.ko ?? []).map(p => p)), borjaF = new Set(vl.farder ?? []);
     const satt = () => { for (const [l, mat, ri] of [[rik, 8 * 500, 4000], [fattig, 0, 0]] as const) { l.tal.folk = 8; l.tal.mat = mat; l.tal.rikedom = ri; } r.tal.folk = 60; r.tal.mat = 0; r.tal.rikedom = 600; };
     for (let d = 0; d < 10; d++) for (let n = 0; n < 5 * 24; n++) { satt(); SIM.radFlytt(s, vl, r, h0 + d * 1000 + n); } // fem dygn, tio gånger
-    for (const p of vl.ko ?? []) if (!borja.has(p) && p.typ === 'flytt') { if (p.sak === rik.nr) fikRik += p.data!.n; if (p.sak === fattig.nr) fikFattig += p.data!.n; }
+    for (const p of vl.ko ?? []) if (!borja.has(p) && p.typ === 'flytt') { if (p.sak === rik.nr) fikRik += p.data!.n; if (p.sak === fattig.nr) fikFattig += p.data!.n; } // utan väg
+    for (const f of vl.farder ?? []) if (!borjaF.has(f) && f.flytt) { if (f.till === rik.nr) fikRik += f.flytt; if (f.till === fattig.nr) fikFattig += f.flytt; } // de som går dit som en färd (steg 15.1.85)
     // det slagna lägret: hälften dog, och maten är slut
     l.tal.folk = 15; l.tal.mat = 0; l.tal.styrka = 10;
     const mal = SIM.flyttMal(vl, SIM.varldMark(s), l).length;
