@@ -354,8 +354,8 @@ SCENARIER.blodning = {
     const { halsaSteg, tidKvar, sarStorlek, HALSA } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     const prov = (g: number, tim: number) => { const c = SIM.cloneState(s), q = c.people.find(r => r.id === p.id)!; q.skador = [{ d: 'benV', k: 'skarsar', g, b: 1 }]; q.blod = 1; halsaSteg(c, q, tim * 3600); return { b: q.skador?.[0]?.b ?? 0, q, c }; };
-    const litet = prov(0.2, 2), medel = prov(0.45, 2), stort = prov(0.8, 0.5);
-    const storlekar = [sarStorlek({ d: 'benV', k: 'skarsar', g: 0.2, b: 1 }), sarStorlek({ d: 'benV', k: 'skarsar', g: 0.45, b: 1 }), sarStorlek({ d: 'benV', k: 'skarsar', g: 0.8, b: 1 })].join(', ');
+    const litet = prov(0.1, 2), medel = prov(0.45, 2), stort = prov(0.8, 0.5); // ett litet sår är under HALSA.smaSar, 0,15 (steg 15.1.103)
+    const storlekar = [sarStorlek({ d: 'benV', k: 'skarsar', g: 0.1, b: 1 }), sarStorlek({ d: 'benV', k: 'skarsar', g: 0.45, b: 1 }), sarStorlek({ d: 'benV', k: 'skarsar', g: 0.8, b: 1 })].join(', ');
     // ett stort sår: tiden kvar sjunker, och när den är kort kommer notisen
     const c = SIM.cloneState(s), q = c.people.find(r => r.id === p.id)!;
     q.skador = [{ d: 'bal', k: 'sticksar', g: 0.9, b: 1 }]; q.blod = 1;

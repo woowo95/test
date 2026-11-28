@@ -220,3 +220,23 @@ SCENARIER.forbandflode = {
     ];
   },
 };
+
+SCENARIER.levra = {
+  text: 'Steg 15.1.103: levringen räknas ur sårets första grad. Ett sår på 0,6 levrar sig inte fast det läker, ett på 0,2 levrar sig långsamt och ett på 0,1 fort',
+  kor: () => {
+    const { s, q } = sarBy([{ d: 'armV', k: 'skarsar', g: 0.6 }, { d: 'armH', k: 'skarsar', g: 0.2 }, { d: 'benV', k: 'skarsar', g: 0.1 }]);
+    const [stort, medel, litet] = q.skador!;
+    const storlek = q.skador!.map(w => SIM.sarStorlek(w)).join(', ');
+    const nar: (number | undefined)[] = [undefined, undefined, undefined];
+    for (let m = 1; m <= 8 * 60; m++) { SIM.halsaSteg(s, q, 60); q.blod = 1; for (const [i, w] of [stort, medel, litet].entries()) if (w!.b === 0 && nar[i] === undefined) nar[i] = m / 60; }
+    const sw = { d: 'bal', k: 'sticksar', g: 0.9, g0: 0.9, b: 1 } as SIM.Skada; SIM.setAmount(s, 'rep', 2); SIM.VARD.sy.gor(s, q, q, sw); const sytt = SIM.sarStorlek(sw);
+    const tim = (x?: number) => x === undefined ? 'aldrig' : `${x.toFixed(1)} h`;
+    return [
+      [`storlekarna efter första graden: ${storlek}`, storlek === 'stort, medelstort, litet'],
+      [`såret på 0,6 levrar sig inte på 8 timmar (${tim(nar[0])}), fast det läkt till ${stort!.g.toFixed(2)}`, nar[0] === undefined && stort!.b > 0],
+      [`såret på 0,2 levrar sig långsamt (${tim(nar[1])})`, nar[1] !== undefined && nar[1] > 2],
+      [`såret på 0,1 levrar sig fort (${tim(nar[2])})`, nar[2] !== undefined && nar[2] < 1.5 && nar[2] < nar[1]!],
+      [`det sydda såret räknas inte som stort (${sytt})`, sytt !== 'stort'],
+    ];
+  },
+};
