@@ -902,29 +902,41 @@ function satVag(s: State, sl: Sallskap, bort: boolean) {
 }
 export const vagenRutor = (s: State, sl: Sallskap) => { const v = varldMark(s); return v && sl.vag ? vagRutor(sl.vag as VarldVag, v.w) : []; };
 // en bit av dagen i gång (dt millisekunder): framåt längs vägen i rutornas kostnad
-function ga(s: State, sl: Sallskap, t: number, dt: number) {
-  const vl = s.varld, v = varldMark(s), rutor = vagenRutor(s, sl);
-  if (!vl || !v || !rutor.length) return;
-  if (sl.forlorat && sl.forlorat > 0) { const d = Math.min(dt, sl.forlorat * HOUR); sl.forlorat = Math.max(0, sl.forlorat - d / HOUR); dt -= d; if (dt <= 0) return; } // vilse eller väntar ut ett oväder (steg 11.5.14)
-  const fs = fardsatt(sl), k = kostnader(vl, v, fs), tyngd = sallskapTyngd(resenarer(s, sl).length, sl.djur.length - (sl.drag ? 1 : 0), sl.drag ? 1 : 0);
-  sl.gang = (sl.gang ?? 0) + VARLD.gangPerDygn / RESA.dagTim * sallskapFart(s, sl) * letaFartAv(letaNu(sl, t)) * dt / HOUR; // den del av dagen som går till letande går i halv fart (steg 15.1.90)
-  let pos = sl.pos ?? 0;
+// ---------- gången längs vägen för alla resor (steg 15.1.85, Flera samhällen: Alla resor i ett system) ----------
+// Huvudbyns sällskap och världens byars färder går med samma gång: i dagsljuset ruta för ruta längs vägen i rutornas kostnad,
+// i sin fart (en frisk vuxen 1), med de förlorade timmarna först, och de trampar leden. Gången är framme när den når vägens
+// sista ruta, och svarar då true
+export interface Gang { ruta?: number; vag?: { fran: number; till: number; steg: string }; pos?: number; gang?: number; forlorat?: number; spar?: number[] }
+export function gaLangs(s: State, g: Gang, fs: Fardsatt, fart: number, tyngd: number, t: number, dt: number): boolean {
+  const vl = s.varld, v = varldMark(s);
+  let rutor = v && g.vag ? vagRutor(g.vag as VarldVag, v.w) : [];
+  if (!vl || !v || !rutor.length) return false;
+  if (g.forlorat && g.forlorat > 0) { const d = Math.min(dt, g.forlorat * HOUR); g.forlorat = Math.max(0, g.forlorat - d / HOUR); dt -= d; if (dt <= 0) return false; } // vilse eller väntar ut ett oväder (steg 11.5.14)
+  const k = kostnader(vl, v, fs);
+  g.gang = (g.gang ?? 0) + VARLD.gangPerDygn / RESA.dagTim * fart * dt / HOUR;
+  let pos = g.pos ?? 0;
   // isen har gått (steg 11.11.8): den som står på land och har vatten framför sig tar en ny väg därifrån; den som är ute på isen
   // har hunnit över och går vidare som på slätt
   if (pos < rutor.length - 1 && !isFinite(k[rutor[pos + 1]]) && isFinite(k[rutor[pos]])) {
     const vag = vagMellan(vl, v, rutor[pos], rutor[rutor.length - 1], fs, t);
     const r2 = vag && vagRutor(vag, v.w);
-    if (vag && r2!.length > 1 && isFinite(k[r2![1]])) { sl.vag = { fran: vag.fran, till: vag.till, steg: vag.steg }; sl.pos = 0; count(s, 'resa isen gick'); return ga(s, sl, t, 0); }
+    if (vag && r2!.length > 1 && isFinite(k[r2![1]])) { g.vag = { fran: vag.fran, till: vag.till, steg: vag.steg }; g.pos = pos = 0; rutor = r2!; count(s, 'resa isen gick'); }
   }
   const kost = (i: number) => isFinite(k[i]) ? k[i] : 1;
-  while (pos < rutor.length - 1 && sl.gang >= kost(rutor[pos + 1]) - 1e-9) {
-    sl.gang -= kost(rutor[pos + 1]);
+  while (pos < rutor.length - 1 && g.gang >= kost(rutor[pos + 1]) - 1e-9) {
+    g.gang -= kost(rutor[pos + 1]);
     trampa(vl, [rutor[pos], rutor[pos + 1]], tyngd, t);
-    pos++; sl.ruta = rutor[pos]; (sl.spar ??= []).push(sl.ruta); // rutorna sedan sist, för mötena (steg 11.6.12)
+    pos++; g.ruta = rutor[pos]; (g.spar ??= []).push(g.ruta); // rutorna sedan sist, för mötena (steg 11.6.12)
   }
-  sl.pos = pos;
-  if (pos < rutor.length - 1) return;
-  sl.gang = 0;
+  g.pos = pos;
+  if (pos < rutor.length - 1) return false;
+  g.gang = 0;
+  return true;
+}
+// en bit av dagen i gång (dt millisekunder) för huvudbyns sällskap: den del av dagen som går till letande går i halv fart (steg 15.1.90)
+function ga(s: State, sl: Sallskap, t: number, dt: number) {
+  const tyngd = sallskapTyngd(resenarer(s, sl).length, sl.djur.length - (sl.drag ? 1 : 0), sl.drag ? 1 : 0);
+  if (!gaLangs(s, sl, fardsatt(sl), sallskapFart(s, sl) * letaFartAv(letaNu(sl, t)), tyngd, t, dt)) return;
   if (sl.skede === 'ute') { sl.skede = 'framme'; sl.framme = t; count(s, 'resa framme'); radBesok(s, sl, t); vackKrok.framme?.(s, sl); }
   else if (sl.skede === 'hemat') hemkomst(s, sl, t);
 }

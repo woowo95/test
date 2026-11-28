@@ -1,5 +1,6 @@
 // Scenarier för fas 15, grupp 8 (steg 15.1.73–15.1.83): världens byar och omvärlden.
 import * as SIM from '../../sim';
+import { fardPost } from './fas15-11';
 import { SCENARIER, testBy, varldEfter } from './hjalp';
 import * as VB from '../../ui/varldbild';
 import { readFileSync } from 'node:fs';
@@ -73,7 +74,7 @@ SCENARIER.anfallminne = {
     const f = vl.farder!.find(x => x.fran === r.nr && x.anfall)!;
     if (!f) return [['byn skickar en flock', false]];
     s.now = Math.max(s.now, f.t1);
-    const fram = vl.ko!.find(q => q.typ === 'fardFram' && q.sak === f.id)!; vl.ko = vl.ko!.filter(q => q !== fram);
+    const fram = fardPost(vl, f, 'fardFram')!; vl.ko = vl.ko!.filter(q => q !== fram);
     SIM.KOHANDELSER.fardFram(s, vl, fram);
     const a = vl.ovanligt[`${r.nr}>${mot.nr}`], b = vl.ovanligt[`${mot.nr}>${r.nr}`];
     const relMot = SIM.relation(vl, mot.nr, r.nr)!;
@@ -147,7 +148,7 @@ SCENARIER.plundradnod = {
     const f = vl.farder!.find(x => x.fran === r.nr && x.anfall);
     if (!f) return [['byn skickar en flock', false]];
     s.now = Math.max(s.now, f.t1);
-    const fram = vl.ko!.find(q => q.typ === 'fardFram' && q.sak === f.id)!; vl.ko = vl.ko!.filter(q => q !== fram);
+    const fram = fardPost(vl, f, 'fardFram')!; vl.ko = vl.ko!.filter(q => q !== fram);
     SIM.KOHANDELSER.fardFram(s, vl, fram);
     const nod = mot.nod ?? 0, byte = Object.values(f.byte ?? {}).reduce((a, x) => a + x, 0);
     // samma mat: bara nöden skiljer

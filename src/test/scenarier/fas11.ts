@@ -1,5 +1,6 @@
 // Scenarier för fas 11: världen.
 import * as SIM from '../../sim';
+import { fardPost, flyttFramNu, flyttPoster } from './fas15-11';
 import { medVatska, nyInvanare, SCENARIER, varldEfter, klockan, kor, korTills, medHus, packatSomISpelet, rovarGang, setItems, testBy, friskaVuxna, naraGranne, utanWebblasare } from './hjalp';
 import { START } from '../kor';
 import { farg, iPaletten } from '../../palett';
@@ -923,7 +924,7 @@ SCENARIER.byflytt = {
     SIM.mots(vl, tr.nr, annan.r.nr); vl.rel![`${tr.nr}>${annan.r.nr}`] = -80;
     const ovan = SIM.flyttMal(vl, v, tr).find(m => m.r.nr === annan.r.nr)?.vikt ?? 0;
     delete vl.rel![`${tr.nr}>${annan.r.nr}`]; delete vl.rel![`${annan.r.nr}>${tr.nr}`];
-    const summa = () => vl.rader!.reduce((a, r) => a + (r.nr === vl.huvud ? 0 : r.tal.folk), 0) + (vl.ko ?? []).filter(p => p.typ === 'flytt').reduce((a, p) => a + p.data!.n, 0) + (vl.tillHuvud?.length ?? 0);
+    const summa = () => vl.rader!.reduce((a, r) => a + (r.nr === vl.huvud ? 0 : r.tal.folk), 0) + flyttPoster(vl).reduce((a, p) => a + p.data!.n, 0) + (vl.tillHuvud?.length ?? 0);
     const per = SIM.flyttPerDygn(tr), stor = levande.find(r => r !== tr)!, perStor = SIM.flyttPerDygn({ ...stor, tal: { ...stor.tal, folk: 12, mat: 1000 } });
     // bara flytten: maten och folket står still
     const fore = summa(), folk0 = tr.tal.folk, utan = vl.rader!.filter(r => r !== tr && r.nr !== vl.huvud).map(r => r.tal.folk);
@@ -932,9 +933,9 @@ SCENARIER.byflytt = {
       const f = tr.tal.folk; SIM.radFlytt(s, vl, tr, 1000 + n); ut += f - tr.tal.folk;
       hela &&= Number.isInteger(tr.tal.folk) && tr.tal.folk >= 0;
     }
-    const iKo = (vl.ko ?? []).filter(p => p.typ === 'flytt').length, mitt = summa();
+    const iKo = flyttPoster(vl).length, mitt = summa();
     // tiden går tills alla kommit fram
-    for (const p of [...vl.ko ?? []].filter(q => q.typ === 'flytt')) { vl.ko = vl.ko!.filter(q => q !== p); SIM.KOHANDELSER.flytt(s, vl, p); }
+    flyttFramNu(s, vl); // de som flyttar kommer fram (steg 15.1.85: de går dit som en färd)
     framlingar = vl.tillHuvud?.length ?? 0;
     const efter = summa(), fram = vl.rader!.filter(r => r !== tr && r.nr !== vl.huvud).reduce((a, r, i) => a + r.tal.folk - utan[i], 0);
     const band = mal.some(m => SIM.slaktband(vl, tr.nr, m.r.nr) > (tr.fran === m.r.nr || m.r.fran === tr.nr ? SIM.BYREL.moderby : 0));
@@ -991,7 +992,7 @@ SCENARIER.giftermal = {
     for (let h = 0; h < 40 * 24 && tp.partner === undefined && tp.left === undefined; h++) { t.now += 3600e3; SIM.giftSteg(t, 3600); }
     const sjalv = tp.partner !== undefined || tp.left !== undefined;
     // utflytten ur huvudbyn går till en by i världen
-    const fran = () => (vl.ko ?? []).filter(x => x.typ === 'flytt' && x.data!.fran === vl.huvud && x.data!.n === 2).length, ko0 = fran();
+    const fran = () => flyttPoster(vl).filter(x => x.data!.fran === vl.huvud && x.data!.n === 2).length, ko0 = fran();
     SIM.radKrok.utflytt(s, 2);
     const utflytt = fran() === ko0 + 1;
     return [
@@ -2777,12 +2778,12 @@ SCENARIER.handelsfard = {
     if (!f) return [[`byn skickar en handelsfärd till grannen där virket är dyrt (affären: ${aff ? `${aff.n} ${aff.g}` : 'ingen'})`, false]];
     // den kommer fram
     const dv0 = dyr.varor!.virke ?? 0, ds0 = dyr.tal.silver;
-    const fram = vl.ko!.find(p => p.typ === 'fardFram' && p.sak === f.id)!;
+    const fram = fardPost(vl, f, 'fardFram')!;
     SIM.KOHANDELSER.fardFram(s, vl, fram);
     const betalt = (dyr.varor!.virke ?? 0) === dv0 + f.n && dyr.tal.silver === ds0 - (f.silver ?? 0) && (f.silver ?? 0) > 0;
     const rel = (SIM.relation(vl, dyr.nr, r.nr) ?? 0) > rel0;
     // och hem
-    const rs0 = r.tal.silver, hem = vl.ko!.find(p => p.typ === 'fardHem' && p.sak === f.id)!;
+    const rs0 = r.tal.silver, hem = fardPost(vl, f, 'fardHem')!;
     SIM.KOHANDELSER.fardHem(s, vl, hem);
     const hemma = r.tal.silver === rs0 + (f.silver ?? 0) && !vl.farder!.some(x => x.id === f.id);
     const hela = [r, dyr].every(x => Number.isInteger(x.tal.silver) && Object.values(x.varor ?? {}).every(n => Number.isInteger(n ?? 0)));
@@ -2818,7 +2819,7 @@ SCENARIER.handlarby = {
     const syns = !!SIM.fardLage(vl, f, (f.t0 + f.t1) / 2, SIM.varldMark(s)!.w);
     const inteTva = !SIM.fardAffar(SIM.byCtx(s, vl, r, huvud));
     // hen kommer fram till kanten och går in
-    SIM.KOHANDELSER.fardFram(s, vl, vl.ko!.find(p => p.typ === 'fardFram' && p.sak === f.id)!);
+    SIM.KOHANDELSER.fardFram(s, vl, fardPost(vl, f, 'fardFram')!);
     const vantar = !!(s.handlarVantar as number[] | undefined)?.includes(r.nr) && !SIM.fardAffar(SIM.byCtx(s, vl, r, huvud));
     korTills(s, () => !!s.handlare, 3 * 3600);
     const kom = !!s.handlare && SIM.klanById(s, SIM.hp(s, s.handlare).gast!.klan!)?.rad === r.nr; // handlarens egen klan
@@ -2826,7 +2827,7 @@ SCENARIER.handlarby = {
     korTills(s, () => !s.handlare, 3 * 86400);
     const hem = vl.farder!.find(x => x.id === f.id);
     const paVagHem = !s.handlare && !!hem && hem.t2 !== undefined && hem.t2 > s.now;
-    const hemKo = vl.ko?.find(p => p.typ === 'fardHem' && p.sak === f.id);
+    const hemKo = fardPost(vl, f, 'fardHem');
     if (hemKo) SIM.KOHANDELSER.fardHem(s, vl, hemKo);
     const slut = !vl.farder!.some(x => x.id === f.id) && !!SIM.fardAffar(SIM.byCtx(s, vl, r, huvud));
     return [
@@ -2861,7 +2862,7 @@ SCENARIER.handlarlast = {
     // en by utan överskott ger ingen last
     const fattig = SIM.packaRad(SIM.cloneState(testBy(10, naraGranne)).varld!.rader!.find(x => x.nr === r!.nr)!, () => 0.5, () => 0).varor.length === 0;
     // hen kommer fram med lasten
-    SIM.KOHANDELSER.fardFram(s, vl, vl.ko!.find(p => p.typ === 'fardFram' && p.sak === f.id)!);
+    SIM.KOHANDELSER.fardFram(s, vl, fardPost(vl, f, 'fardFram')!);
     korTills(s, () => !!s.handlare, 3 * 3600);
     const h = s.handlare!;
     const samma = !!h && h.silver === last.silver && h.varor.map(w => w.k).join() === last.varor.map(w => w.k).join();
@@ -2870,7 +2871,7 @@ SCENARIER.handlarlast = {
     korTills(s, () => !s.handlare, 3 * 86400);
     const hem = vl.farder!.find(x => x.id === f.id)!;
     const ved0 = SIM.radHar(r, SIM.gruppAv('ved')!), s1 = r.tal.silver, bar = hem?.silver ?? -1;
-    if (hem) SIM.KOHANDELSER.fardHem(s, vl, vl.ko!.find(p => p.typ === 'fardHem' && p.sak === f.id)!);
+    if (hem) SIM.KOHANDELSER.fardHem(s, vl, fardPost(vl, f, 'fardHem')!);
     const hemma = !!hem && r.tal.silver === s1 + bar && SIM.radHar(r, SIM.gruppAv('ved')!) > ved0;
     return [
       [`lasten är sådant byns tekniker kan göra (${lastText})`, kan],
@@ -3020,9 +3021,9 @@ SCENARIER.flyttare = {
     for (const r of s2.varld!.rader ?? []) if (r.nr !== s2.varld!.huvud) r.tal.folk = Math.min(r.tal.folk, 1);
     const pop2 = SIM.living(s2).length, p2 = SIM.immigrate(s2, false);
     // utflyttaren läggs till en by
-    const s3 = SIM.cloneState(testBy(30, naraGranne)), fore3 = new Set((s3.varld!.ko ?? []).filter(k => k.typ === 'flytt')), ko0 = fore3.size;
+    const s3 = SIM.cloneState(testBy(30, naraGranne)), fore3 = new Set(flyttPoster(s3.varld!)), ko0 = fore3.size;
     SIM.radKrok.utflytt(s3, 2);
-    const ut = (s3.varld!.ko ?? []).find(k => k.typ === 'flytt' && !fore3.has(k)); // den nya raden (kön står i tidsordning)
+    const ut = flyttPoster(s3.varld!).find(k => !fore3.has(k)); // den nya raden (kön står i tidsordning)
     // återgrundaren: ingen by får färre, och vagnen står i lagret
     const s4 = SIM.cloneState(testBy(30));
     s4.stationer = (s4.stationer ?? []).filter(t => t.k !== 'vagn');
@@ -3035,7 +3036,7 @@ SCENARIER.flyttare = {
       ['ingen kan bygga en trasig vagn', !kanBygga],
       [`nybyggaren tas ur en by (${kom} kom, byarnas folk ${folk0} → ${folk1}: "${text}")`, !!p && kom >= 1 && folk1 === folk0 - kom && text.includes(' från ')],
       [`kan ingen by skicka någon kommer ingen (${SIM.living(s2).length - pop2})`, !p2 && SIM.living(s2).length === pop2],
-      [`den som flyttar ut är på väg till en by i världen (${ut ? `${ut.data?.n} till rad ${ut.sak}` : 'ingen'})`, !!ut && (s3.varld!.ko ?? []).filter(k => k.typ === 'flytt').length === ko0 + 1 && ut.data?.n === 2 && ut.sak !== s3.varld!.huvud],
+      [`den som flyttar ut är på väg till en by i världen (${ut ? `${ut.data?.n} till rad ${ut.sak}` : 'ingen'})`, !!ut && flyttPoster(s3.varld!).length === ko0 + 1 && ut.data?.n === 2 && ut.sak !== s3.varld!.huvud],
       [`den som återgrundar byn tas inte ur någon by (${folk4} → ${folk4b}), och vagnen står i lagret`, SIM.living(s4).length === 1 && folk4b === folk4 && !!s4.stationer?.some(t => t.k === 'vagn')],
     ];
   },
@@ -3069,9 +3070,9 @@ SCENARIER.bygava = {
     if (!f) return [[`byn skickar en gåva till grannen (affären: ${aff ? `${aff.n} ${aff.g}` : 'ingen'})`, false]];
     const ut = !!f && f.g === 'virke' && r.varor!.virke === v0 - f.n && Number.isInteger(f.n) && f.n > 0;
     const n = f?.n ?? 0, varde = n * (f?.g === 'mat' ? SIM.RADPRIS.portion : 1), vantad = Math.max(1, Math.round(SIM.BYREL.gava * varde / 10));
-    SIM.KOHANDELSER.fardFram(s, vl, vl.ko!.find(p => p.typ === 'fardFram' && p.sak === f.id)!);
+    SIM.KOHANDELSER.fardFram(s, vl, fardPost(vl, f, 'fardFram')!);
     const fram = (mot.varor!.virke ?? 0) === mv0 + n, rel1 = SIM.relation(vl, mot.nr, r.nr) ?? 0;
-    const hemKo = vl.ko!.find(p => p.typ === 'fardHem' && p.sak === f.id);
+    const hemKo = fardPost(vl, f, 'fardHem');
     if (hemKo) SIM.KOHANDELSER.fardHem(s, vl, hemKo);
     const tomHem = r.varor!.virke === v0 - n && r.tal.silver >= 0;
     const lagst = SIM.gavaRel(1) === 1 && SIM.gavaRel(0.2) === 1;
@@ -3111,7 +3112,7 @@ SCENARIER.radanfall = {
     const fore = new Set((vl.farder ?? []).map(x => x.id));
     SIM.BYHANDLINGAR.plundra.gor(c);
     const f = (vl.farder ?? []).find(x => x.fran === r.nr && x.anfall && !fore.has(x.id))!; // den nya färden
-    const fp = vl.ko!.find(q => q.typ === 'fardFram' && q.sak === f.id)!; vl.ko = vl.ko!.filter(q => q !== fp); // den kommer fram nu, inte en gång till
+    const fp = fardPost(vl, f, 'fardFram')!; vl.ko = vl.ko!.filter(q => q !== fp); // den kommer fram nu, inte en gång till
     const vann0 = s.stat?.radanfall_vann ?? 0;
     SIM.KOHANDELSER.fardFram(s, vl, fp);
     const vann = (s.stat?.radanfall_vann ?? 0) > vann0, dodaA = folk0[0] - r.tal.folk, dodaF = folk0[1] - mot.tal.folk;
@@ -3119,7 +3120,7 @@ SCENARIER.radanfall = {
     const hela = [dodaA, dodaF, ...Object.values(f.byte ?? {})].every(x => Number.isInteger(x));
     const rel1 = SIM.relation(vl, mot.nr, r.nr) ?? 0;
     const matFore = mat0 - mot.tal.mat, rM0 = r.tal.mat;
-    SIM.KOHANDELSER.fardHem(s, vl, vl.ko!.find(q => q.typ === 'fardHem' && q.sak === f.id)!);
+    SIM.KOHANDELSER.fardHem(s, vl, fardPost(vl, f, 'fardHem')!);
     const hem = r.tal.mat - rM0 === (f.byte?.mat ?? 0) && matFore === (f.byte?.mat ?? 0);
     const kron = (vl.kronika ?? []).some(h => h.k === 'rad' && h.by === r.nr && h.mot === mot.nr);
     // samma anfall ger samma utfall, och många anfall: förlorarna dör mer
@@ -3287,7 +3288,7 @@ SCENARIER.varldsanfall = {
     const n1 = SIM.flockStorlek(r, SIM.radUte(vl, r.nr));
     // flocken kommer fram och går in på kartan
     s.now = Math.max(s.now, f.t1);
-    const fp = vl.ko!.find(q => q.typ === 'fardFram' && q.sak === f.id)!; vl.ko = vl.ko!.filter(q => q !== fp); // den kommer fram nu, inte en gång till
+    const fp = fardPost(vl, f, 'fardFram')!; vl.ko = vl.ko!.filter(q => q !== fp); // den kommer fram nu, inte en gång till
     SIM.KOHANDELSER.fardFram(s, vl, fp);
     const fl = flockar(s).find(x => x?.fard === f.id);
     const n = f.anfall!, inne = fl?.folk.length;
@@ -3299,7 +3300,7 @@ SCENARIER.varldsanfall = {
     const hemN = fl?.hemN ?? 0, doda = n - hemN, borta = !flockar(s).some(x => x?.fard === f.id);
     const hemBar = Object.values(fl?.hemBar ?? {}).reduce((a, x) => a + x, 0), iFard = (f.hem ?? []).reduce((a, x) => a + x.n, 0);
     const rik0 = SIM.radRikedomUr(r);
-    const hemPost = vl.ko!.find(q => q.typ === 'fardHem' && q.sak === f.id);
+    const hemPost = fardPost(vl, f, 'fardHem');
     if (hemPost) SIM.KOHANDELSER.fardHem(s, vl, hemPost);
     const rik1 = SIM.radRikedomUr(r);
     return [
