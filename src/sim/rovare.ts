@@ -12,7 +12,7 @@ import { eldPlats, getMap, vaderstreck } from './karta';
 import { Klan, kandIgen, klanById, klanerOf } from './klaner';
 import { klanHandelse } from './byrel';
 import { kantMot } from './grannbyar';
-import { LAGER, addTo, amountOf, iRackhall, iRackvidd, avbryt, carryKind, dropLoad, isCarrying, zoneAt, zoneOf, zonesOf } from './lager';
+import { LAGER, addTo, amountOf, iRackhall, iRackvidd, avbryt, carryKind, dropLoad, isCarrying, lagerVersion, zoneAt, zoneOf, zonesOf, type Zone } from './lager';
 import { hundSkaller, tamArt, tamStulen, tamUte } from './tamdjur';
 import { DORRAR, bitAt, bitsOf, freeNear, isWall, husById, roomAt } from './byggnad';
 import { LARM, handelse, horLarm } from './rykten';
@@ -709,12 +709,22 @@ export const gravVid = (s: State, r: { x: number; y: number }) => (s.gravar ?? [
 // Rövaren håller fast vid platsen hen valt tills det som ligger där inte längre är värt besväret (Klockan och slagen: man väljer
 // om när man är klar eller något nytt syns). Valdes platsen om varje slag efter fågelvägen kunde hen pendla för alltid mellan
 // två hus vars vägar går förbi varandra
+// värdet av det som ligger på varje lagerplats, räknat en gång per slag och när stackarna eller lagerplatserna ändrats (steg 15.1.176)
+const platsMinne = new WeakMap<State, { t: number; v: number; z: Zone[]; varden: number[] }>();
+function platsVarden(s: State, zs: Zone[]) {
+  const m = platsMinne.get(s), v = lagerVersion();
+  if (m && m.t === s.now && m.v === v && m.z === zs) return m.varden;
+  const varden = zs.map(z => { let n = 0; for (const a of s.stackar ?? []) if (a.n >= 1 && a.x >= z.x && a.x < z.x + z.w && a.y >= z.y && a.y < z.y + z.h) n += grundvarde(a.k) * a.n; return n; });
+  platsMinne.set(s, { t: s.now, v, z: zs, varden });
+  return varden;
+}
 function taPlats(s: State, r: Person) {
   let b: { x: number; y: number } | undefined, bv = 0, kvar: { x: number; y: number } | undefined;
   const g = r.gast, forra = g?.plats;
   const prova = (c: { x: number; y: number }, v: number) => { if (v < ROVARE.platsMin) return; if (forra && Math.hypot(forra.x - c.x, forra.y - c.y) < 0.01) kvar = c; const w = v / (avst(r, c) + ROVARE.platsAvst); if (w > bv) { bv = w; b = c; } };
   const hl = handlarLast(s); if (hl) prova({ x: hl.x, y: hl.y }, hl.h.varor.reduce((a, w) => a + grundvarde(w.k) * w.n, 0));
-  for (const z of zonesOf(s)) { let v = 0; for (const a of s.stackar ?? []) if (a.n >= 1 && a.x >= z.x && a.x < z.x + z.w && a.y >= z.y && a.y < z.y + z.h) v += grundvarde(a.k) * a.n; prova({ x: z.x + z.w / 2, y: z.y + z.h / 2 }, v); }
+  const zs = zonesOf(s), vz = platsVarden(s, zs);
+  zs.forEach((z, i) => prova({ x: z.x + z.w / 2, y: z.y + z.h / 2 }, vz[i]));
   for (const q of s.gravar ?? []) if (q.saker?.length) prova({ x: q.x + 0.5, y: q.y + 0.5 }, gravVarde(q));
   const p = kvar ?? b;
   if (g) g.plats = p;

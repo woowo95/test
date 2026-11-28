@@ -196,6 +196,8 @@ export const tidy = (s: State) => { s.stackar = stacksOf(s).filter(harNagot); ch
 // som glömmer summorna
 export const changed = (s: State) => { summor.delete(s); lagerV++; };
 let lagerV = 0; // ökar varje gång en stack ändrats (slagen inom räckhåll, slagFinns)
+// talet som ökar varje gång en stack ändrats, för den som sparar något ur stackarna (rövarens platser, steg 15.1.176)
+export const lagerVersion = () => lagerV;
 // testläget (steg 4.5.7.8): lagerplatsen tas bort. Det som låg där blir liggande som högar på marken, och byn bär det till
 // de andra lagerplatserna. Den sista lagerplatsen tas inte bort (lagerHinder). false = den togs inte bort
 export const lagerHinder = (s: State) => zonesOf(s).length <= 1 ? 'Byn har bara den här lagerplatsen' : undefined;
