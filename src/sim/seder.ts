@@ -44,10 +44,10 @@ export const SED = balans('seder', {
   // byns sed i var och en (steg 13.9.2): det man tagit av byns sed drar med så här stor vikt, och tas med en tidskonstant
   // på arvBarn dygn under uppväxten (yngre än ALDER.vuxen) och arvVuxen dygn som vuxen
   arvVikt: 0.35, arvBarn: 3, arvVuxen: 40,
-  // avvikaren (steg 13.9.4): den som drar en sed minst avvikFran åt ett håll och har minst avvikKarisma i karisma talar för den
-  // i samtalen; den som tycker om hen (minst avvikGillar) drar avvikSteg mer åt samma håll, högst avvikMax, och det bleknar
+  // avvikaren (steg 13.9.4, 15.1.122): den som skiljer sig minst avvikFran från byns sed och har minst avvikKarisma i karisma talar
+  // för sin sida i samtalen; den som tycker om hen (minst avvikGillar) drar avvikSteg mer åt samma håll, högst avvikMax, och det bleknar
   // med en tidskonstant på avvikDygn dygn, som ett rykte
-  avvikFran: 1, avvikKarisma: 14, avvikGillar: 20, avvikSteg: 0.04, avvikMax: 0.5, avvikDygn: 6,
+  avvikFran: 0.8, avvikKarisma: 14, avvikGillar: 20, avvikSteg: 0.04, avvikMax: 0.5, avvikDygn: 6,
   // pliktkänslan (0 till 1): bas + (flit - mitt) * pliktFlit + (empati - mitt) * pliktEmpati + arbetsseden * pliktSed
   pliktBas: 0.6,
   pliktFlit: 0.035,
@@ -121,18 +121,18 @@ export const fjardedel = (x: number) => clamp(Math.round(x * 4) / 4, 0, 1);
 const arv = (p: Person, k: Sed) => (p.sedArv?.[k] ?? 0) * SED.arvVikt;
 // det en avvikare fått personen att dra åt (steg 13.9.4), bleknat sedan det sist ändrades
 const talat = (s: State, p: Person, k: Sed) => { const t = p.sedTal; const v = t?.v[k]; return v ? v * Math.exp(-(s.now - t!.t) / (SED.avvikDygn * DAY)) : 0; };
-// i ett samtal talar a för den sed hen drar längst åt, om hen drar långt och har karisma, och b som tycker om a drar lite åt
-// samma håll en tid (steg 13.9.4). Så kan en enda människa vända en by
+// i ett samtal talar a emot byn i den sed där hen skiljer sig mest från byns sed, om skillnaden är stor och hen har karisma,
+// och b som tycker om a drar lite åt a:s håll en tid (steg 13.9.4, 15.1.122). Så kan en enda människa vända en by
 export function talaForSed(s: State, a: Person, b: Person, op: number) {
   if (op < SED.avvikGillar || a.pot.karisma < SED.avvikKarisma) return;
-  const d = drar(s, a);
-  let k: Sed | undefined;
-  for (const x of SED_LIST) if (sedOppen(s, x) && Math.abs(d[x]) >= SED.avvikFran && (!k || Math.abs(d[x]) > Math.abs(d[k]))) k = x;
+  const d = drar(s, a), av = (x: Sed) => clamp(d[x], -1, 1) - (s.seder.v[x] ?? 0);
+  let k: Sed | undefined, ak = 0;
+  for (const x of SED_LIST) { if (!sedOppen(s, x)) continue; const v = av(x); if (Math.abs(v) >= SED.avvikFran && Math.abs(v) > Math.abs(ak)) { k = x; ak = v; } }
   if (!k) return;
   const t = b.sedTal ??= { v: {}, t: s.now }, f = Math.exp(-(s.now - t.t) / (SED.avvikDygn * DAY));
   for (const x in t.v) t.v[x as Sed]! *= f;
   t.t = s.now;
-  t.v[k] = clamp((t.v[k] ?? 0) + Math.sign(d[k]) * SED.avvikSteg, -SED.avvikMax, SED.avvikMax);
+  t.v[k] = clamp((t.v[k] ?? 0) + Math.sign(ak) * SED.avvikSteg, -SED.avvikMax, SED.avvikMax);
   count(s, 'sedTalad');
 }
 export function drar(s: State, p: Person) {

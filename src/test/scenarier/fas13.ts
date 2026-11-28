@@ -1820,28 +1820,41 @@ SCENARIER.foljder = {
 };
 
 SCENARIER.avvikare = {
-  text: 'Steg 13.9.4: avvikaren. Den som drar en sed långt åt ett håll och har hög karisma talar för den i samtalen, och den som tycker om hen drar lite åt samma håll en tid, som ett rykte. En avvikare utan karisma övertygar ingen, och det bleknar efter några dygn',
+  text: 'Steg 13.9.4 och 15.1.122: avvikaren talar emot byn. Den karismatiska vars läggning skiljer sig mycket från byns sed talar för sin sida i samtalen, och de som tycker om hen drar lite åt hens håll en tid, som ett rykte, så att byns sed flyttas dit. Den som tänker som byn talar inte för något, en avvikare utan karisma övertygar ingen, och det bleknar efter några dygn',
   kor: () => {
     const { SED_LIST, sedOppen, drar, drarSed, talaForSed } = SIM;
     const s = SIM.createState(9, START); klockan(s, 12);
     const a = nyInvanare(s, 'm', 30), b = nyInvanare(s, 'k', 30), c = nyInvanare(s, 'k', 30);
-    Object.assign(a.pot, { karisma: 18, aggression: 20, mod: 20, empati: 1, flit: 20, intelligens: 20, nyfikenhet: 20 });
-    for (const q of [b, c]) for (const x in q.pot) q.pot[x as keyof typeof q.pot] = SIM.SED.mitt; // vännerna har en vanlig läggning, långt från läggningens gräns (steg 15.1.121)
-    const d = drar(s, a), k = SED_LIST.filter(x => sedOppen(s, x)).sort((x, y) => Math.abs(d[y]) - Math.abs(d[x]))[0]!, rikt = Math.sign(d[k]);
-    const fore = drarSed(s, b, k) * rikt;
-    for (let i = 0; i < 10; i++) { talaForSed(s, a, b, 60); talaForSed(s, a, c, 5); }
-    const efter = drarSed(s, b, k) * rikt, ovan = drarSed(s, c, k) * rikt;
+    Object.assign(a.pot, { karisma: 18, flit: 20 });
+    const vanner = [b, c, ...Array.from({ length: 6 }, (_, i) => nyInvanare(s, i % 2 ? 'm' : 'k', 30))];
+    for (const q of vanner) for (const x in q.pot) q.pot[x as keyof typeof q.pot] = SIM.SED.mitt; // vännerna har en vanlig läggning
+    // byns sed är avvikarens i allt utom arbetet, där byn vilar och avvikaren drar åt Plikt
+    const d = drar(s, a), k: SIM.Sed = 'arbete';
+    for (const x of SED_LIST) s.seder.v[x] = sedOppen(s, x) ? Math.max(-1, Math.min(1, d[x])) : 0;
+    s.seder.v[k] = -0.8;
+    const mal0 = SIM.sederTarget(s)[k], fore = drarSed(s, b, k);
+    for (let i = 0; i < 10; i++) { for (const q of vanner) talaForSed(s, a, q, q === c ? 5 : 60); }
+    const efter = drarSed(s, b, k), ovan = drarSed(s, c, k), mal1 = SIM.sederTarget(s)[k];
+    // den som tänker som byn: samma läggning som byns sed i allt
+    const lik = nyInvanare(s, 'm', 30), hor = nyInvanare(s, 'k', 30);
+    Object.assign(lik.pot, { ...a.pot }); for (const x in hor.pot) hor.pot[x as keyof typeof hor.pot] = SIM.SED.mitt;
+    const dl = drar(s, lik); for (const x of SED_LIST) if (sedOppen(s, x)) s.seder.v[x] = Math.max(-1, Math.min(1, dl[x]));
+    for (let i = 0; i < 10; i++) talaForSed(s, lik, hor, 60);
+    const likTal = hor.sedTal ? Object.keys(hor.sedTal.v).length : 0;
+    s.seder.v[k] = -0.8;
     // en avvikare utan karisma
     const tyst = nyInvanare(s, 'm', 30), lyss = nyInvanare(s, 'k', 30);
-    Object.assign(tyst.pot, { ...a.pot, karisma: 6 });
+    Object.assign(tyst.pot, { ...a.pot, karisma: 6 }); for (const x in lyss.pot) lyss.pot[x as keyof typeof lyss.pot] = SIM.SED.mitt;
     const tFore = drarSed(s, lyss, k); for (let i = 0; i < 10; i++) talaForSed(s, tyst, lyss, 60);
     const tEfter = drarSed(s, lyss, k);
     s.now += 20 * SIM.DAY;
-    const sedan = drarSed(s, b, k) * rikt;
+    const sedan = drarSed(s, b, k);
     return [
-      [`avvikaren drar ${k} långt (${d[k].toFixed(2)})`, Math.abs(d[k]) >= 1],
-      [`vännen drar mer åt samma håll efter tio samtal (${fore.toFixed(2)} → ${efter.toFixed(2)})`, efter - fore > 0.2],
-      [`den som inte tycker om hen påverkas inte (${(ovan - fore).toFixed(2)})`, Math.abs(ovan - drarSed(s, c, k) * rikt) < 1e-9 && ovan <= fore + 1e-9],
+      [`avvikaren drar ${k} åt Plikt (${d[k].toFixed(2)}) och byn vilar (−0,80)`, d[k] >= 0.8],
+      [`vännen drar mer åt Plikt efter tio samtal (${fore.toFixed(2)} → ${efter.toFixed(2)})`, efter - fore > 0.2],
+      [`byns mål för ${k} flyttas åt avvikarens håll (${mal0.toFixed(2)} → ${mal1.toFixed(2)})`, mal1 > mal0 + 0.05],
+      [`den som inte tycker om hen påverkas inte (${(ovan - fore).toFixed(2)})`, Math.abs(ovan - fore) < 1e-9],
+      [`den som tänker som byn talar inte för något (${likTal} seder)`, likTal === 0],
       [`avvikaren utan karisma övertygar ingen (${tFore.toFixed(2)} → ${tEfter.toFixed(2)})`, tFore === tEfter],
       [`efter 20 dygn (20 år i spelet) har det nästan bleknat (${sedan.toFixed(2)})`, sedan - fore < (efter - fore) * 0.1],
     ];
