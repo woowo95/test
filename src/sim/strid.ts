@@ -929,7 +929,7 @@ function knuffa(st: Strid, a: Kampe, b: Kampe) {
   const c = STRID.fallBas * Math.max(0.2, 1 + (a.st.styrka - b.st.styrka) * STRID.fallStyrka)
     * (1 + STRID.fallTrott * (1 - b.ork) + STRID.fallSkadad * (1 - rorlighet(b)) + STRID.fallTung * (b.tung ?? 0) + STRID.fallHalt * st.halt);
   if (slump(st) < c * tyngdSnitt()) omkull(st, b, a);
-  else { st.logg.push({ t: st.t, h: 'knuff', a: a.id, b: b.id }); trycka(st, a, b, STRID.knuffBak * Math.max(0.2, 1 + (a.st.styrka - b.st.styrka) * STRID.fallStyrka)); } // knuffen trycker tillbaka den som står kvar (steg 15.1.68)
+  else { st.logg.push({ t: st.t, h: 'knuff', a: a.id, b: b.id }); if (iStrid(b)) trycka(st, a, b, STRID.knuffBak * Math.max(0.2, 1 + (a.st.styrka - b.st.styrka) * STRID.fallStyrka)); } // knuffen trycker tillbaka den som står kvar (steg 15.1.68)
   b.overraskad = undefined;
 }
 // k faller omkull (knuffad av av, annars halkade hen) och kan tappa vapnet
