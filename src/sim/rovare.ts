@@ -586,7 +586,7 @@ const narmasteFlock = (s: State, p: { x: number; y: number }) => rovarFlockar(s)
 const medLarm = (s: State, f?: Rovarflock) => living(s).filter(q => vuxenKan(s, q) && harLarm(s, q, f));
 const ingenMer = (s: State, f?: Rovarflock) => f?.ingenMer !== undefined && medLarm(s, f).length <= f.ingenMer;
 const kanMota = (s: State, p: Person, f?: Rovarflock) => { const i = ingenMer(s, f), l = medLarm(s, f).filter(q => !i || q === p || q.task?.act === 'forsvarRovare'); return l.includes(p) ? l : [...l, p]; };
-LARMHOT.rovare = { namn: 'Rövarna', nara: (s, _p, l) => rovarFlockar(s).some(f => f.folk.length > 0 && (!l.om || l.om.includes(f.id))), plus: (s, p) => { const f = narmasteFlock(s, p); return motVilja(s, p, p.larm?.rovare && vuxenKan(s, p) ? overmakt(s, ingenMer(s, f) ? f!.folk.length : p.larm.rovare.storlek ?? 1, f, kanMota(s, p, f)) : 1) - rovarVilja(s, p); }, kampe: () => ROVARE.kampeFran, hjalp: () => ROVARE.hjalpFran };
+LARMHOT.rovare = { namn: 'Rövarna', nara: (s, _p, l) => rovarFlockar(s).some(f => f.folk.length > 0 && (!l.om || l.om.includes(f.id))), plus: (s, p) => { if (ageOf(p, s.now) < ALDER.vaktFran || !vuxenKan(s, p)) return -Infinity; const f = narmasteFlock(s, p); return motVilja(s, p, p.larm?.rovare && vuxenKan(s, p) ? overmakt(s, ingenMer(s, f) ? f!.folk.length : p.larm.rovare.storlek ?? 1, f, kanMota(s, p, f)) : 1) - rovarVilja(s, p); }, kampe: () => ROVARE.kampeFran, hjalp: () => ROVARE.hjalpFran };
 // rollen som ändrats (fler har fått larmet, någon har skadats) ändrar också det hen gör (steg B.60)
 const ROLLACT: Record<string, string[]> = { kampe: ['forsvarRovare'], hjalpare: ['hjalpaRovare'], gomd: ['gomma'] };
 function rollByte(s: State, folk: Person[]) {
