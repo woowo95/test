@@ -41,7 +41,7 @@ foretagBord.baddRum = s => { const f = login(s, 'nattlogi').find(q => villBadd(s
 foretagBord.baddBrist = s => { const a = login(s, 'nattlogi'); return a.length ? a.filter(f => villBadd(s, f)).length / a.length : 0; };
 // ---------- stallet och djurhandeln ----------
 const utanKrubba = (s: State) => [...new Set([...login(s, 'stall'), ...login(s, 'djurhandel')])].filter(f => !iRum(s, f, arKrubba, true).length);
-foretagBord.krubbaRum = s => { const f = utanKrubba(s)[0]; return f && foretagRum(s, f)[0]; };
+foretagBord.krubbaRum = s => utanKrubba(s).flatMap(f => foretagRum(s, f)); // stallföretagens rum utan krubba, i tur och ordning (steg 15.1.141)
 foretagBord.krubbaBrist = s => { const a = login(s, 'stall').length + login(s, 'djurhandel').length; return a ? Math.min(1, utanKrubba(s).length / a) : 0; };
 const FODER = TAMDJUR.hast.foder;
 export const foderAv = (s: State, ag: number) => FODER.find(k => ownsId(s, ag, k) >= 1);
