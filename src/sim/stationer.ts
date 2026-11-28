@@ -986,7 +986,7 @@ export function golvNas(s: State, r: Rum, ny: readonly number[] = []) {
 // inne: i ett färdigt hus (en möbel man sover i bara där man sover, det andra inte i ett förrådshus), på lediga golvrutor med
 // golv framför sig, och bara om den inte tar en sovplats som någon behöver. Helst mot en vägg och inte vid öppningen, och en
 // bädd aldrig i ingången. bara = bara i det rummet, far = bara i de husen (ingen bygger i någon annans hus, steg 3.10.2)
-function siteInne(s: State, k: string, bara?: Rum, far?: (h: Hus) => boolean) {
+export function siteInne(s: State, k: string, bara?: Rum, far?: (h: Hus) => boolean) {
   const d = stationDef(k)!, g = gridOf(s);
   let best: { x: number; y: number; rot?: 1; inne: 1 } | undefined, bs = Infinity;
   for (const r of g.rooms) {
