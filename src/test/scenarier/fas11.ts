@@ -2740,7 +2740,11 @@ SCENARIER.fardruta = {
     if (f3) SIM.namnFolk(vl, f3, 1);
     const gammal = SIM.fardRuta(s, { ...f, folk: undefined }, SIM.BYHANDLING.barare)!;
     const kod = readFileSync(new URL('../../ui/varldskarta.ts', import.meta.url), 'utf8');
+    // rutan följer färden (steg 15.1.188): texten ändras medan den går, och klockan skriver om rutan för en vald färd när texten ändrats
+    const nu0 = s.now; s.now = f.t0 + (f.t1 - f.t0) * 0.9; const sen = SIM.fardRuta(s, f, SIM.BYHANDLING.barare)!; s.now = nu0;
+    const omskriv = /let sidaSist/.test(kod) && /valt\?\.fard !== undefined[^\n]*sidaHtml\(\); if \(h !== sidaSist\)/.test(kod) && !/sida\.innerHTML = sidaHtml\(\)/.test(kod);
     return [
+      [`rutan för en vald färd skrivs om när texten ändrats (framme om ${q.kvar.toFixed(2)} → ${sen.kvar.toFixed(2)} dygn; klockan skriver om: ${omskriv})`, sen.kvar < q.kvar && omskriv],
       [`två namngivna bärare (${q.folk.join(', ')}), som finns i byn och inte leder den`, q.folk.length === 2 && q.folk.every(n => i.includes(n) && n !== led)],
       [`rutan: ${q.titel}, från ${q.fran} till ${q.till}, ${q.varfor}, bär ${q.bar.join(', ')}, framme om ${q.kvar.toFixed(2)} dygn`, q.titel === 'Handelsfärd' && q.fran === r.namn && q.till === dyr.namn && /Sälja/.test(q.varfor) && q.bar.length === 1 && !q.hemat && q.kvar > 0],
       [`en plundring har andra namn (${fore.join(', ')}), och två döda försvinner`, fore.length === 4 && fore.every(n => !q.folk.includes(n)) && f2.folk!.length === 2],
