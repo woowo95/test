@@ -1,9 +1,10 @@
 // Scenarier för fas 15, grupp 2 av rättningarna från spelgranskningen (system 15.1).
 import * as SIM from '../../sim';
-import { SCENARIER, rikBy, tandEld } from './hjalp';
+import { SCENARIER, korTills, rikBy, rovarGang, tandEld, testBy } from './hjalp';
 import { BEAT, START } from '../kor';
 import { helAffar, utanVantan, vanligBy } from './agande';
 import { foretagBy } from './fas14';
+import { antal } from '../../sim/ord';
 
 SCENARIER.handelsfart = {
   text: 'Steg 15.1.23: att betjäna, ställa fram varor och städa går fortare för den skickliga, som allt annat arbete',
@@ -85,6 +86,36 @@ SCENARIER.handlarbyte = {
     return [
       [`den som har skinn över går till handlaren utan silver (${va?.why ?? 'går inte'})`, !!va],
       [`handlaren köper (${salt} skinn) och betalar med ved (${kruk}), inte med silver (${silver}) (${st.join(' → ')})`, salt >= 1 && kruk >= 1 && silver === 0 && h.varor.some(w => w.k === k) && (s.stat?.saltOver ?? 0) >= 1],
+    ];
+  },
+};
+
+SCENARIER.losen = {
+  text: 'Steg 15.1.26: lösen är det hembyn har: först silvret och sedan varor ur dess förråd i hela saker. En hemby utan silver betalar med varor, och byn får varorna men inget silver, så att inget silver skapas ur ingenting',
+  kor: () => {
+    const bas = testBy(3, x => SIM.housesOf(x).some(q => q.klar && SIM.fangelseDorr(x, q))), vl0 = bas.varld!;
+    const klan = SIM.klanerOf(bas).find(k => k.rad !== undefined && vl0.rader?.some(r => r.nr === k.rad && SIM.lever(vl0, r) && r.sort === 'by'))!;
+    const s = SIM.cloneState(bas); s.seder.v.fejd = 0; s.styre = undefined;
+    const hus = SIM.housesOf(s).find(q => q.klar && SIM.fangelseDorr(s, q))!; hus.fn = 'fangelse'; SIM.fangelseDorr(s, hus)!.dorr = 'tradorr'; SIM.touch(s);
+    for (const q of SIM.living(s)) q.task = undefined;
+    const z = SIM.zoneOf(s)!, f = rovarGang(s, 1, { x: z.x + z.w / 2 + 6, y: z.y + z.h / 2 }, { klan: klan.id });
+    const r = SIM.gastAv(s, f.folk[0])!; SIM.geUpp(s, r);
+    SIM.satt(s, r, SIM.fangelseLedigt(s)!, 'Tagen i scenariot'); r.gast!.tagen = s.now - SIM.DAY - 1;
+    const rad = s.varld!.rader!.find(x => x.nr === klan.rad)!; rad.tal.silver = 0; // hembyn har inget silver
+    const varor0 = { ...SIM.radVaror(rad) }, silver0 = SIM.amountOf(s, 'silver');
+    SIM.fangeOde(s); if (r.gast!.losen) r.gast!.losen.t = s.now;
+    let bud: SIM.Person | undefined, bar: { k: string; n: number }[] = [];
+    korTills(s, () => !r.fange, 8 * 3600, () => { if (!bud) { bud = s.people.find(q => q.gast?.losenFor === r.id); bar = (bud?.gast?.gava ?? []).map(w => ({ ...w })); } });
+    const varde = bar.reduce((a, w) => a + w.n * SIM.grundvarde(w.k), 0), varor1 = SIM.radVaror(rad);
+    const drogs = SIM.VARUGRUPP_IDS.reduce((a, g) => a + ((varor0[g] ?? 0) - (varor1[g] ?? 0)), 0);
+    const fick = bar.every(w => SIM.amountOf(s, w.k) >= w.n);
+    const text = s.log.find(l => l.text.includes('i lösen för'))?.text ?? '';
+    return [
+      [`ledaren valde lösen (${s.stat?.fange_val_losen ?? 0}) och ett sändebud kom`, (s.stat?.fange_val_losen ?? 0) > 0 && !!bud],
+      [`sändebudet bar varor värda minst lösen (${bar.map(w => `${w.n} ${w.k}`).join(', ')}: ${varde.toFixed(0)} av ${SIM.FANGEVAL.losen}) och inget silver`, varde >= SIM.FANGEVAL.losen - 1e-9 && !bar.some(w => w.k === 'silver')],
+      [`varorna drogs ur hembyn (${drogs.toFixed(0)} i grundvärde)`, drogs >= varde - 1],
+      [`byn fick varorna (${fick}) men inget silver (${(SIM.amountOf(s, 'silver') - silver0).toFixed(0)}), och fången följde med hem`, fick && Math.abs(SIM.amountOf(s, 'silver') - silver0) < 1e-9 && !r.fange],
+      [`texten säger vad som betalades (${text})`, bar.length > 0 && text.includes(antal(bar[0].n, bar[0].k))],
     ];
   },
 };
