@@ -22,7 +22,8 @@ import { halsa, kanGa } from './halsa';
 import { avbryt, foodOf } from './lager';
 import { notis } from './notiser';
 import { handelse, larma, larmNu } from './rykten';
-import { clamp, rnd } from './slump';
+import { chansPer, clamp, rnd } from './slump';
+import { tamArt, tamDor, tamUte, vaktat } from './tamdjur';
 import { SLAGSMAL, VAPEN, Avsikt, personKampe, efterKampen, harSlagits } from './strid';
 import { DjurMed, KartStrid, djurIKartStrid, kartStridBorja, kartStridMed } from './kartstrid';
 import { EFTER, Efter, FAROR, STRIDSLAG } from './efterstrid';
@@ -44,6 +45,9 @@ export const BJORNMOTE = balans('bjornmote', {
   larmNara: 25, // den som möter björnen ropar när björnen är högst så här många rutor utanför byn (steg 12.1.142): björnen håller sig oftast längre bort
   undanTim: 4, // efter en strid som björnen vunnit eller gett upp går den bort från byn och kommer inte tillbaka på så här många timmar (steg 9.2.30) ...
   undanR: 30, // ... så här många rutor bort från platsen
+  grisR: 3, // björnen tar en gris som är ute inom så här många rutor ... (steg 15.1.166)
+  grisChans: 0.5, // ... med den här chansen i timmen ...
+  grisVaken: 5, // ... när ingen vaken är inom så här många rutor från grisen, eller en vakthund på dubbla (vaktat i tamdjur.ts, som vargen)
   gaMed: 0.6, // den som jagar nära en björnstrid går med om modet (0 till 1) är minst så här stort, annars håller hen sig undan (steg 9.2.29)
 });
 
@@ -70,11 +74,12 @@ const vaken = (p: Person) => p.task?.act !== 'sova';
 const harSpjut = (s: State, p: Person) => VAPEN[personKampe(s, p, 0, 0, 0, 0).vapen].slag === 'stick';
 
 // varje slag (steg.ts): den som är vaken, ute och kommer nära björnen möter den
-export function bjornSteg(s: State) {
+export function bjornSteg(s: State, dt = 0) {
   const alla = bjornarOf(s);
   const b = alla.find(d => d.art === 'bjorn');
   if (!b) return;
   if (djurIKartStrid(s, 'bjorn')) { jagareVidStriden(s); return; } // striden pågår på kartan (steg 9.2.29)
+  if (dt > 0) bjornGris(s, b, dt);
   const ungar = alla.filter(d => d.art === 'bjornunge'), R = ungar.length ? BJORNMOTE.naraUngar : BJORNMOTE.nara;
   const ar = yearNo(s, s.now);
   if (s.bjornMott && s.bjornMott.ar !== ar) s.bjornMott = undefined;
@@ -101,6 +106,20 @@ export function bjornSteg(s: State) {
   }
   const j = s.bjornJakt;
   if (j && Math.floor(s.now / HOUR) !== j.timme) { j.timme = Math.floor(s.now / HOUR); jaktBeslut(s, b.x, b.y); }
+}
+
+// björnen tar grisar (steg 9.8.12 och 15.1.166): en gris som går lös nära björnen, utan någon vaken eller en vakthund bredvid,
+// tas med en chans per tid, med samma prov som vargen (vaktat). En gris i fähuset står inte ute (tamUte)
+function bjornGris(s: State, b: { x: number; y: number }, dt: number) {
+  const folk = living(s);
+  for (const d of tamUte(s)) {
+    if (d.art !== 'gris' || Math.hypot(d.x - b.x, d.y - b.y) > BJORNMOTE.grisR || vaktat(s, d.x, d.y, BJORNMOTE.grisVaken, folk)) continue;
+    if (!chansPer(s, BJORNMOTE.grisChans, HOUR / SEC, dt, 'bjorn')) continue;
+    tamDor(s, d, 'av björnen'); blodas(s, d.x, d.y, 'jakt', 1);
+    count(s, 'bjornTogGris');
+    notis(s, 'motgang', `En björn tog ${tamArt(d.art).ord[0]} ${tamArt(d.art).ord[1]} som gick lös.`, d.agare !== undefined ? [d.agare] : [], { x: Math.floor(d.x), y: Math.floor(d.y) });
+    return; // en gris i taget
+  }
 }
 
 // platsen på land närmast björnen, där jägarna möter den
