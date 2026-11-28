@@ -123,7 +123,7 @@ export const kundPung = (s: State, p: Person) => payable(s, p, []).reduce((a, w)
 // det kunderna skulle ge per dygn utöver varans värde om de kunde köpa verksamheten v av ag: antalet kunder och vinsten
 // ett företag har öppnat: det har sitt hus och en disk i rummet (steg 15.1.13)
 const harDisk = (s: State, f: Foretag) => { const rum = foretagRum(s, f); return rum.length > 0 && stationerOf(s).some(t => t.k === 'disk' && isKlar(t) && rum.includes(stationRum(s, t)!)); };
-export function efterfragan(s: State, v: string, ag: number): { kunder: number; vinst: number; perVara: Record<string, number> } {
+export function efterfragan(s: State, v: string, ag: number, utan?: Foretag): { kunder: number; vinst: number; perVara: Record<string, number> } {
   const V = VERKSAMHETER[v], varor = V.varor(s, ag), fam = familjOf(s, ag), perVara: Record<string, number> = {}, vinstVara: Record<string, number> = {};
   if (!varor.length) return { kunder: 0, vinst: 0, perVara };
   // ägarens familj köper inte av hen (som i kassan, steg 15.1.12); affären räknas per vara, de andra efter den bästa
@@ -148,7 +148,7 @@ export function efterfragan(s: State, v: string, ag: number): { kunder: number; 
   // det som redan säljs (steg 15.1.13): ett öppet företag med det det sålt (affären per vara), ett som inte öppnat med det det
   // väntade sig när det startade, och bara från samma vara
   for (const f of foretagOf(s)) {
-    if (!f.verk.includes(v)) continue;
+    if (!f.verk.includes(v) || f === utan) continue; // utan: företaget självt, när det räknar vad det tjänar (steg 15.1.24)
     const oppet = harDisk(s, f), sald = (k: string) => V.hylla ? (oppet ? f.saltVara?.[k] ?? 0 : f.vantat?.[`${v}:${k}`] ?? 0) : 0;
     if (V.hylla) for (const k in perVara) { const d = Math.min(perVara[k]!, sald(k)); if (d > 0) { vinstVara[k] *= 1 - d / perVara[k]!; perVara[k] -= d; } }
     else {
@@ -166,11 +166,11 @@ function vantas(s: State, ag: number, verk: string[]) {
 }
 export interface Forsok { ag: number; verk: string[]; poang: number; kunder: number }
 // vad det är värt för ag att starta verksamheterna verk: vinsten per dygn minus arbetet och huset
-export function startPoang(s: State, ag: number, verk: string[], kostar = husKostnad(FORETAG.plats)): Forsok {
+export function startPoang(s: State, ag: number, verk: string[], kostar = husKostnad(FORETAG.plats), utan?: Foretag): Forsok {
   const p = foretagare(s, ag);
   if (!p) return { ag, verk, poang: 0, kunder: 0 };
   let kunder = 0, ut = -kostar / FORETAG.ar;
-  for (const v of verk) { const e = efterfragan(s, v, ag); kunder += e.kunder; ut += e.vinst * VERKSAMHETER[v].kunnande(p) - e.kunder * FORETAG.timKund * egetVarde(s, p); }
+  for (const v of verk) { const e = efterfragan(s, v, ag, utan); kunder += e.kunder; ut += e.vinst * VERKSAMHETER[v].kunnande(p) - e.kunder * FORETAG.timKund * egetVarde(s, p); }
   // läggningen: den som är driftig och modig startar hellre
   const lagg = clamp((stat(p, 'flit', s.now) + stat(p, 'mod', s.now) + stat(p, 'karisma', s.now)) / (3 * EGENSKAP.mitt), 0.3, 1.7);
   return { ag, verk, poang: ut > 0 ? ut * lagg : ut, kunder };

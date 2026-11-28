@@ -43,3 +43,23 @@ SCENARIER.skicklighetvakt = {
     ];
   },
 };
+
+SCENARIER.diskvarde = {
+  text: 'Steg 15.1.24: diskens värde som projekt är det företaget tjänar på ett år med den, delat med vad disken kostar: ett företag med många väntade kunder bygger sin disk före ett med få',
+  kor: () => {
+    const varde = (kvar: number) => {
+      const { s, p, f } = foretagBy(['servering']);
+      for (const q of SIM.living(s).filter(q => q !== p && !SIM.familjOf(s, p.id).includes(q)).slice(kvar)) q.left = s.now; // få som kan köpa
+      s.stationer = s.stationer!.filter(t => t.k !== 'disk'); SIM.touch(s);
+      const fam = SIM.familjOf(s, p.id), e = SIM.foretagBord.diskEgen(s, fam), kunder = SIM.startPoang(s, f.ag, f.verk, 0, f).kunder;
+      return { e, kunder, v: SIM.personVarde(s, 'disk', fam, 0, p) };
+    };
+    const manga = varde(99), fa = varde(3);
+    const t = (n: number) => n.toFixed(2);
+    return [
+      [`företaget med många väntade kunder (${t(manga.kunder)} om dygnet) ser ett värde i disken (${t(manga.e)})`, manga.e > 0],
+      [`det med få (${t(fa.kunder)}) ser mindre (${t(fa.e)})`, fa.kunder < manga.kunder && fa.e < manga.e],
+      [`och disken är värd mer som projekt för det första (${t(manga.v * 100)} mot ${t(fa.v * 100)} hundradelar)`, manga.v > fa.v],
+    ];
+  },
+};

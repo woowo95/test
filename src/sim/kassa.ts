@@ -20,8 +20,9 @@ import { SAK_LIST, isTool, viktOf } from './saker';
 import { type Ting, tingOf } from './agande';
 import { dryckAv } from './vatskor';
 import { drickAlkohol } from './rus';
-import { foretagOf, type Foretag, foretagare, foretagRum, FORETAG, oppna, troAvAgare, VERKSAMHETER } from './foretag';
-import { foretagBord, isKlar, ledigPlats, stationerOf, stationRum, storlekAv, type Station, vidStation } from './stationer';
+import { foretagOf, type Foretag, foretagare, foretagRum, FORETAG, oppna, startPoang, troAvAgare, VERKSAMHETER } from './foretag';
+import { receptKostnad } from './projekt';
+import { foretagBord, STATIONER, isKlar, ledigPlats, stationerOf, stationRum, storlekAv, type Station, vidStation } from './stationer';
 import { tanke } from './tankar';
 import { kvOf, kvVarde } from './kvalitet';
 
@@ -44,7 +45,13 @@ export const diskarAv = (s: State, f: Foretag): Station[] => { const rum = new S
 // företagen med ett rum som saknar en disk (också en som är under arbete)
 const utanDisk = (s: State) => foretagOf(s).filter(f => { const rum = foretagRum(s, f); return rum.length && !stationerOf(s).some(t => t.k === 'disk' && rum.includes(stationRum(s, t)!)); });
 foretagBord.diskRum = s => { const f = utanDisk(s)[0]; return f && foretagRum(s, f)[0]; };
-foretagBord.diskEgen = (s, fam) => utanDisk(s).some(f => fam.some(q => q === foretagare(s, f.ag))) ? 1 : 0; // ägarens familj saknar disken i sitt företag
+// diskens värde för ägarens familj (steg 15.1.24): det företaget tjänar på ett år med disken (startPoang för verksamheterna, utan
+// huset som redan finns och utan företaget självt som konkurrent), delat med vad disken kostar. Den som väntar många kunder bygger först
+foretagBord.diskEgen = (s, fam) => {
+  let v = 0;
+  for (const f of utanDisk(s)) if (fam.some(q => q === foretagare(s, f.ag))) v = Math.max(v, startPoang(s, f.ag, f.verk, 0, f).poang / Math.max(1e-9, receptKostnad(STATIONER.disk)));
+  return Math.max(0, v);
+};
 foretagBord.diskBrist = s => { const n = foretagOf(s).filter(f => foretagRum(s, f).length).length; return n ? utanDisk(s).length / n : 0; };
 // var kunden i kön står: rummets lediga rutor, närmast disken först, inte där betjänaren eller en annan kund står
 export function koPlats(s: State, t: Station, upptagna: { x: number; y: number }[] = []): { x: number; y: number } {
