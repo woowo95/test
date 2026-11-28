@@ -166,6 +166,8 @@ SCENARIER.fullaforrad = {
         setFood(s, 100); for (let i = 0; i < 40 && SIM.foodDaysAll(s) < mat; i++) setFood(s, SIM.foodOf(s) * 1.1);
         if (!full) for (let i = 0; i < 40 && SIM.foodDays(s) > mat; i++) setFood(s, SIM.foodOf(s) * 0.9);
         SIM.setAmount(s, 'ved', Math.ceil(vd * SIM.hearthOf(s.fire).burn * 24));
+        // veden räknas i dygn som förråden gör det (woodDays: alla eldar), inte bara den här eldens förbrukning
+        for (let i = 0; i < 40 && (full ? SIM.woodDays(s) < vd : SIM.woodDays(s) > vd) && SIM.amountOf(s, 'ved') > 1; i++) SIM.setAmount(s, 'ved', full ? Math.ceil(SIM.amountOf(s, 'ved') * 1.1) : Math.floor(SIM.amountOf(s, 'ved') * 0.9));
         SIM.arbetsTimme(s);
         if (full) setItems(s, { flinta: 6, torrgras: Math.ceil(SIM.materialTak(s, 'torrgras')) + 5, grenar: Math.ceil(SIM.materialTak(s, 'grenar')) + 5 });
         return s;
