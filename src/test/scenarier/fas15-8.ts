@@ -55,3 +55,35 @@ SCENARIER.fardvag = {
     ];
   },
 };
+
+SCENARIER.anfallminne = {
+  text: 'Steg 15.1.74: ett anfall mellan två byar i världen är en fientlig handling (vl.ovanligt) åt båda håll, så att den anfallna byn kan gå i krig utan att först ha skickat ett ovänligt besked; minnet av anfallet bleknar som relationen och glöms när det nått grundläget',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!; vl.farder = []; vl.ovanligt = {};
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && SIM.BYSORTER[x.sort].ledare && SIM.radGrannar(vl, x).some(g => g.nr !== vl.huvud && SIM.BYSORTER[g.sort].ledare))!;
+    const mot = SIM.radGrannar(vl, r).find(g => g.nr !== vl.huvud && SIM.BYSORTER[g.sort].ledare)!;
+    SIM.mots(vl, r.nr, mot.nr);
+    vl.rel![`${r.nr}>${mot.nr}`] = -60; vl.rel![`${mot.nr}>${r.nr}`] = -40;
+    r.tal.folk = 60; r.tal.styrka = 30; fyll(r); mot.tal.folk = 40; mot.tal.styrka = 12; fyll(mot, 2);
+    const krigFore = SIM.BYHANDLINGAR.krig.poang(SIM.byCtx(s, vl, mot, r));
+    const c = SIM.byCtx(s, vl, r, mot); c.led = { ...(c.led ?? {} as Record<SIM.Stat, number>), aggression: 19 }; c.krig = 1;
+    SIM.BYHANDLINGAR.plundra.gor(c);
+    const f = vl.farder!.find(x => x.fran === r.nr && x.anfall)!;
+    if (!f) return [['byn skickar en flock', false]];
+    s.now = Math.max(s.now, f.t1);
+    const fram = vl.ko!.find(q => q.typ === 'fardFram' && q.sak === f.id)!; vl.ko = vl.ko!.filter(q => q !== fram);
+    SIM.KOHANDELSER.fardFram(s, vl, fram);
+    const a = vl.ovanligt[`${r.nr}>${mot.nr}`], b = vl.ovanligt[`${mot.nr}>${r.nr}`];
+    const relMot = SIM.relation(vl, mot.nr, r.nr)!;
+    const cm = SIM.byCtx(s, vl, mot, r); cm.led = { ...(cm.led ?? {} as Record<SIM.Stat, number>), aggression: 19 }; cm.krig = 1;
+    const krigEfter = SIM.BYHANDLINGAR.krig.poang(cm);
+    // minnet bleknar
+    const b0 = b; SIM.relGlom(vl); const b1 = vl.ovanligt[`${mot.nr}>${r.nr}`];
+    let dygn = 1; for (; dygn < 400 && vl.ovanligt[`${mot.nr}>${r.nr}`] !== undefined; dygn++) SIM.relGlom(vl);
+    return [
+      [`anfallet sparas som en fientlig handling åt båda håll (${r.nr}>${mot.nr}: ${a}, ${mot.nr}>${r.nr}: ${b})`, a === -60 && b === -40],
+      [`den anfallna byns syn sjönk efter anfallet (${relMot}), så kriget går att välja (poängen ${krigFore.toFixed(2)} → ${krigEfter.toFixed(2)})`, relMot < (b ?? 0) && krigFore === -1 && krigEfter > -1],
+      [`minnet bleknar mot grundläget (${b0} → ${b1}) och är glömt efter ${dygn} dygn`, b1 !== undefined && b1 > b0! && dygn < 400],
+    ];
+  },
+};

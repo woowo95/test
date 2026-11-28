@@ -117,4 +117,10 @@ export function relGlom(vl: Varlden) {
     vl.rel![k] = glom(vl.rel![k], grundlage(vl, a, b));
   }
   if (vl.huvud !== undefined) for (const r of vl.rader ?? []) if (r.syn) r.syn.inst = glom(r.syn.inst, grundlage(vl, r.nr, vl.huvud));
+  // minnet av en fientlig handling (det ovänliga beskedet och anfallet, vl.ovanligt) bleknar på samma sätt, och när det nått
+  // grundläget är det glömt (steg 15.1.74)
+  for (const k of Object.keys(vl.ovanligt ?? {})) {
+    const [a, b] = k.split('>').map(Number), g = grundlage(vl, a, b), v = glom(vl.ovanligt![k], g);
+    if (v === g) delete vl.ovanligt![k]; else vl.ovanligt![k] = v;
+  }
 }

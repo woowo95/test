@@ -269,6 +269,12 @@ export type BeskedTon = 'besked' | 'ovanligt';
 // val mot den grannen, och kriget är det. vl.ovanligt har relationen när beskedet skickades; har relationen stigit över gränsen
 // för beskedet (det hjälpte) gäller det inte längre
 const beskedGivet = (c: ByCtx) => { const v = c.vl.ovanligt?.[`${c.r.nr}>${c.mot.nr}`]; return v !== undefined && c.rel < -BYHANDLING.beskedRel; };
+// en fientlig handling mellan a och b (steg 15.1.74): det ovänliga beskedet och anfallet. vl.ovanligt får a:s syn på b just då,
+// om den inte redan har en lägre; minnet bleknar som relationen (relGlom i byrel.ts)
+function fientlig(vl: Varlden, a: number, b: number) {
+  const k = `${a}>${b}`, v = Math.round(relation(vl, a, b) ?? 0), o = (vl.ovanligt ??= {});
+  o[k] = o[k] === undefined ? v : Math.min(o[k], v);
+}
 // ett bud från byn a till b är redan på väg
 const beskedUte = (vl: Varlden, a: number, b: number) => !!vl.farder?.some(f => f.besked && f.fran === a && f.till === b);
 // budet ger sig av: en färd utan last, med byns gåva när beskedet är vänligt och byn har något över
@@ -276,7 +282,7 @@ function skickaBud(c: ByCtx, ton: BeskedTon) {
   const { s, vl, r, mot } = c, dygn = restid(vl, r, mot);
   if (dygn === undefined) return;
   const t0 = c.t, f: RadFard = { id: fardNr(vl), fran: r.nr, till: mot.nr, g: 'mat', n: 0, t0, t1: t0 + dygn * DAY, besked: ton };
-  if (ton === 'ovanligt') (vl.ovanligt ??= {})[`${r.nr}>${mot.nr}`] = Math.round(c.rel); // relationen när beskedet gick
+  if (ton === 'ovanligt') fientlig(vl, r.nr, mot.nr); // relationen när beskedet gick
   const a = ton === 'besked' && kanSkicka(vl, r, BYHANDLING.barare) ? gavaGrupp(s, vl, r, mot) : undefined; // gåvan: det byn har mest över
   if (a) {
     if (mot.nr === vl.huvud) { let i = 0; const l = packaRad(r, () => varldSlump(vl, r.nr, f.id, 0x4247 + i++), g => g === a.g ? a.n : 0, radHandlarSort(s, r), radDjur(s, r), iIstiden(ageIndex(s, t0))); if (l.varor.length) f.last = { ...l, silver: 0 }; } // till huvudbyn: hela saker som budet bär
@@ -495,6 +501,7 @@ function anfallFram(s: State, vl: Varlden, f: RadFard, r: VarldRad, mot: VarldRa
   f.anfall! -= u.dodaA; fardDoda(vl, f, u.dodaA, f.t1);
   for (const [g, n] of Object.entries(u.byte) as [VarugruppId, number][]) radTaUr(mot, g, n);
   f.byte = u.byte;
+  fientlig(vl, r.nr, mot.nr); fientlig(vl, mot.nr, r.nr); // anfallet är en fientlig handling mellan byarna (steg 15.1.74)
   byHandelse(vl, 'plundring', r.nr, mot.nr);
   if (u.dodaF) byHandelse(vl, 'dodade', r.nr, mot.nr, u.dodaF);
   varldHandelse(vl, 'rad', f.t1, { by: r.nr, mot: mot.nr });
