@@ -17,3 +17,13 @@ SCENARIER.larmnan = {
     ];
   },
 };
+
+SCENARIER.bildstental = {
+  text: 'Steg 15.1.186: bildstenens chanser är balanstal och syns i npm run talen',
+  kor: () => {
+    const t = SIM.balansTal().bildsten;
+    return [
+      ['bildsten.extra och bildsten.gud finns bland balanstalen', !!t && t.extra === SIM.BILDSTEN.extra && t.gud === SIM.BILDSTEN.gud],
+    ];
+  },
+};

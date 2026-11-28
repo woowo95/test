@@ -14,6 +14,7 @@ import { valjVariant, fyll, type Fyllning, type MallId } from './berattelser';
 import { byId } from './folk';
 import { kalender } from './tid';
 import { hash3 } from './slump';
+import { balans } from './balans';
 
 export interface BildMotiv {
   namn: string;
@@ -83,7 +84,7 @@ export const bildstenarOm = (s: State, motiv: BildMotivId) => (s.runstenar ?? []
 // Rutan vid ett tryck säger först vad bilderna föreställer och sedan vad de ska berätta. Bilden byggs ur radens motiv, ur det som
 // hände (vem, vad och när) och ibland ett slumpat motiv (mallarna b_bild, b_extra, b_gud och b_berattar i berattelser.ts), och
 // väljs när stenen reses och sparas i stenens text. Den som tror kan få sin gud med på en sten om en strid eller en resa
-export const BILDSTEN = { extra: 0.35, gud: 0.4 } as const; // chansen för ett slumpat motiv och för ristarens gud
+export const BILDSTEN = balans('bildsten', { extra: 0.35, gud: 0.4 }); // chansen för ett slumpat motiv och för ristarens gud
 const NAR = ['en vinter', 'en vår', 'en sommar', 'en höst'];
 const GUD_FOR: Partial<Record<BildMotivId, string[]>> = { strid: ['kriget', 'jakt', 'aska'], resa: ['solen', 'sjon', 'jakt'] }; // gudarna som helst följer med
 export function bildText(s: State, ristare: Person, h: Pick<BildHandelse, 'motiv' | 'k' | 't' | 'om' | 'vad' | 'ting' | 'bev'>, id: number) {

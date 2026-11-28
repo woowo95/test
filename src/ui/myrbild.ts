@@ -1,7 +1,7 @@
 // Malmen i myren (steg 12.1.2, sim/myr.ts): rostbruna klumpar ovanpå marken. Myren själv ritas i markens bild (ui/mark.ts,
 // steg 13.7.5), med mjuka gränser och gölar som blir fler när den står under vatten. Ritas om bara när byn eller malmen ändras
 import * as PIXI from 'pixi.js';
-import { H, HOUR, W, fyndAt, groundOf, myrOf } from '../sim';
+import { H, HOUR, W, fyndAt, myrOf } from '../sim';
 import { s } from './lage';
 import { lagerEfter, terrainG } from './scen';
 import { farg, fargTal } from '../palett';
@@ -17,7 +17,7 @@ const prick = (x: number, y: number, px: number, py: number) => {
   return (h >>> 0) / 4294967296;
 };
 export function ritaMyr() {
-  const a = myrOf(s.seed), vatten = !!groundOf(s).myrVatten, nyckel = `${s.seed}|${W}x${H}|${vatten}|${!!a}|${s.stat?.malmGravd ?? 0}|${Math.floor(s.now / (6 * HOUR))}`; // malmen som grävts och växer igen (steg 12.1.2)
+  const a = myrOf(s.seed), nyckel = `${s.seed}|${W}x${H}|${!!a}|${s.stat?.malmGravd ?? 0}|${Math.floor(s.now / (6 * HOUR))}`; // malmen som grävts och växer igen (steg 12.1.2)
   if (nyckel === ritad) return;
   ritad = nyckel;
   myrG.clear();

@@ -146,12 +146,6 @@ function slaIhop(hur: 'snitt' | 'sist', v: (number | null)[]) {
   if (!med.length) return NaN;
   return hur === 'sist' ? med[med.length - 1] : Math.round(med.reduce((a, x) => a + x, 0) / med.length * 1000) / 1000;
 }
-// när byn läses in (uppgradering 24 i varld.ts): kolumnerna i registrets ordning direkt, så att graferna har ett nytt tal
-// redan före nästa timme
-export function historikKolumner(s: State) {
-  const h = s.hist;
-  if (h && h.tal.join() !== HISTORIK_TAL.map(t => t.id).join()) omordna(h);
-}
 // ett nytt nyckeltal får inget värde bakåt (NaN sparas som null), ett borttaget försvinner
 function omordna(h: Historik) {
   const ids = HISTORIK_TAL.map(t => t.id), flytta = (r: number[]) => [r[0], ...ids.map(id => { const i = h.tal.indexOf(id); return i < 0 ? NaN : r[i + 1]; })];
