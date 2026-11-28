@@ -109,7 +109,6 @@ export const VARG = balans('varg', {
   spara: 1.5, // jägarna följer blodspåret och fäller en skadad varg som sprang, med chansen spara × (1 − vargens blod)
   flyrJakt: 0.3, // flocken springer innan striden med den här chansen, gånger jägarnas antal mot vargarnas (högst 1)
   // striden
-  bettInf: 0.3, // ett vargbett blir infekterat med den här chansen
   // skyddet (steg 3.7.15): den vuxna vågar möta flocken när mod / 20 + fler × (de vuxna som kan slåss / vargarna) är över vagar
   fler: 0.3,
   vagar: 0.8,
@@ -644,14 +643,12 @@ export function vargStrid(s: State, f: Vargflock, folk: Person[], avsikt: Avsikt
 }
 // striden med flocken som pågår på kartan
 export const vargIStrid = (s: State, f: Vargflock) => kartStrider(s).find(g => g.efter?.typ === 'varg' && g.efter.flock === f.id);
-// såren i striden med vargar: bettet skrämmer, och blir ofta infekterat
+// såren i striden med vargar: bettet skrämmer, och käftarna är blodiga (steg 15.1.105)
 STRIDSLAG.varg = {
-  orsak: 'varg', text: 'i en strid med vargar', dod: s => count(s, 'dodVarg'),
+  orsak: 'varg', text: 'i en strid med vargar', blodigt: true, dod: s => count(s, 'dodVarg'),
   sar: (s, p, w) => {
     if (w.k !== 'bett') return;
     livet(s, p, 'bett', true); upplev(s, p, 'vargbett'); if (w.g >= 0.5) tecken(s, p, 'overlevde', p.name); // rädd för vargar efteråt (steg 3.9.8, 4.1.1.2)
-    const sk = p.skador?.[p.skador.length - 1];
-    if (sk && rnd(s, 'varg', p) < VARG.bettInf) { sk.inf ??= 0; count(s, 'vargbettInf'); }
   },
 };
 // striden med vargarna är slut (EFTER.varg, kartstrid.ts): vargarna som dog och skadades, vem som bär hem, och raderna om det

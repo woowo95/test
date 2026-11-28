@@ -588,7 +588,7 @@ SCENARIER.infektion = {
 };
 
 SCENARIER.infbalans = {
-  text: 'Steg 9.5.26: infektionens balans. Ett ovårdat bett eller sticksår infekteras i ungefär hälften av fallen, ett skärsår med en remsa nästan aldrig, och den som sköljer och vilar klarar sig nästan alltid (spelets hälsa på 200 likadana sår, tills de läkt eller blivit infekterade)',
+  text: 'Steg 9.5.26: infektionens balans. Ett ovårdat bett eller sticksår infekteras i ungefär hälften av fallen, ett skärsår med en remsa nästan aldrig, och den som sköljer och vilar klarar sig nästan alltid (spelets hälsa på 200 likadana färska sår, tills de läkt, levrat sig eller blivit infekterade)',
   kor: () => {
     const { halsaSteg } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
@@ -596,7 +596,7 @@ SCENARIER.infbalans = {
     const andel = (k: 'bett' | 'sticksar' | 'skarsar', f?: 2, skoljt = false) => {
       let inf = 0;
       for (let i = 0; i < 200; i++) {
-        p.skador = [{ d: 'armV', k, g: 0.5, b: 0, ...(f ? { f, fT: s.now } : {}), ...(skoljt ? { ren: s.now + 1000 * SIM.HOUR } : {}) }];
+        p.skador = [{ d: 'armV', k, g: 0.5, b: 1, ...(f ? { f, fT: s.now } : {}), ...(skoljt ? { ren: s.now + 1000 * SIM.HOUR } : {}) }];
         for (let h = 0; h < 200 && p.skador?.length && p.skador[0].inf === undefined; h++) { p.hunger = 1; p.task = undefined; halsaSteg(s, p, 3600); }
         if (p.skador?.[0]?.inf !== undefined) inf++;
       }

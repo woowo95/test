@@ -313,7 +313,7 @@ function vildsvinAnfaller(s: State, p: Person, f: Jaktforsok) {
   kartStridBorja(s, 'doda', [[p], []], 'Anfölls av ett vildsvin', { typ: 'vildsvin', egen: true, djur: f.id }, [{ art: 'vildsvin', id: f.id, k, blod: halsaOf(s, f.id).blod }]);
   count(s, 'vildsvinAnfall'); count(s, 'djurStrid');
 }
-STRIDSLAG.vildsvin = { orsak: 'jakt', text: 'i en strid med ett vildsvin', dod: s => count(s, 'dodVildsvin') };
+STRIDSLAG.vildsvin = { orsak: 'jakt', text: 'i en strid med ett vildsvin', blodigt: true, dod: s => count(s, 'dodVildsvin') };
 function vildsvinSlut(s: State, efter: Efter, g: KartStrid) {
   const id = Number(efter.djur), st = g.st, vk = st.kampar.find(k => k.djur === 'vildsvin'), falld = vk?.lage === 'dod';
   const folk = st.kampar.filter(k => k.pid !== undefined).map(k => byId(s, k.pid!)).filter((q): q is Person => !!q && alive(q));

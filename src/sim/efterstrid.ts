@@ -17,4 +17,4 @@ export const gastKrok: { dod?: (s: State, p: import('./typer').Person, av?: impo
 export const FAROR: ((s: State) => boolean)[] = [];
 // striderna mot djur och rövare (steg 10.1.17): vad såren och döden heter i en strid av det slaget (dödsorsaken och texten på
 // såret), och det som sker med den sårade just då (vargbettet som blir infekterat). kartstrid.ts frågar raden för stridens slag
-export const STRIDSLAG: Record<string, { orsak: string; text: string; sar?: (s: State, p: import('./typer').Person, w: { k: string; g: number }) => void; dod?: (s: State, p: import('./typer').Person) => void }> = {};
+export const STRIDSLAG: Record<string, { orsak: string; text: string; blodigt?: true; /* vapnen eller käftarna är blodiga: såret blir smutsigare (steg 15.1.105) */ sar?: (s: State, p: import('./typer').Person, w: { k: string; g: number }) => void; dod?: (s: State, p: import('./typer').Person) => void }> = {};
