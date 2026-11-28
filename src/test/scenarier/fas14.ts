@@ -590,6 +590,10 @@ SCENARIER.kopabuffert = {
     f.pris = { affar: 0.5 }; // priset har följt kunderna ner
     const eR = SIM.kopval(s, rik, 'mat'), eF = SIM.kopval(s, fattig, 'mat');
     const grans = SIM.vilMangd(s, rik, mat);
+    // vägen dit går i köparens fart (steg 15.1.55): den gamla som går långsamt får mindre ut av en timme att köpa
+    const ger1 = s.samlaGer; s.samlaGer = { mat: { v: 2000, h: 10 } }; // under taket, så att skillnaden syns
+    const b0 = rik.born, langsam = (() => { rik.born = s.now - (SIM.ALDER.gangGammal + 20) * SIM.DAY; try { return SIM.kopval(s, rik, 'mat')?.faktor ?? 0; } finally { rik.born = b0; } })(), vanlig = SIM.kopval(s, rik, 'mat')?.faktor ?? 0;
+    s.samlaGer = ger1;
     // köpet vägs mot vad en timme samlande faktiskt ger (steg 15.1.19): det glidande medlet av det som burits hem
     const ger0 = s.samlaGer; s.samlaGer = undefined; s.hemburet = { samla: 6, jakt: 2, ved: 50 };
     const samlare = SIM.living(s).filter(q => q !== rik && q !== fattig && q !== p).slice(0, 2), uppg = samlare.map(q => q.task);
@@ -607,6 +611,7 @@ SCENARIER.kopabuffert = {
     return [
       [`utan affär: grannen med över (${gr?.granne === p.id}); sover hen finns inget att köpa (${ingen?.faktor ?? 0})`, gr?.granne === p.id && !ingen && alla.includes(f)],
       [`den rika köper i affären (${eR?.kund?.k}, ${eR?.kund?.n}, en timme ger ${eR?.faktor.toFixed(2)} mot samlandet), högst till sin gräns (${grans})`, !!eR?.kund && eR.kund.n <= grans && eR.faktor > 0.5],
+      [`vägen räknas i köparens fart, utan ett eget tal för gången (${vanlig.toFixed(3)}, som gammal och långsam ${langsam.toFixed(3)})`, langsam < vanlig && !('gang' in SIM.KOPBUFFERT)],
       [`den fattiga utan något att betala med samlar (${eF?.faktor ?? 0}, ${fatt?.faktor ?? 0})`, !eF && !fatt],
       [`hos grannen byter hen till sig mat (${m0} → ${m1})`, m1 > m0],
       [`en timme samlande ger det som burits hem delat med timmarna (${medel?.toFixed(1)}: 8 på två timmar), och veden utan någon som hugger har inget medel (${utanVed})`, medel !== undefined && Math.abs(medel - 4) < 1e-9 && utanVed === undefined],

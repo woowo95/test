@@ -14,10 +14,10 @@ import { egetVarde } from './dagsarbete';
 import { vilMangd } from './affar';
 import { SOVER, erbjudandet, type Erbjudande, KASSA } from './kassa';
 import { ownsAmount } from './lager';
+import { kroppFart } from './gang';
 
 export const KOPBUFFERT = balans('kopbuffert', {
   prat: 4, // så många minuter tar bytet hos grannen
-  gang: 1.2, // rutor per sekund i vanlig gång
   mest: 3, // köpet räknas som högst så många gånger mer än vad en timme samlande ger
   langd: 40, // så långt går man för att byta
   nara: 4, // så nära måste grannen vara när man kommer fram
@@ -40,9 +40,9 @@ export function samlaTimme(s: State, dtSec: number) {
 export const samlaPerTimme = (s: State, id: 'mat' | 'ved') => { const m = s.samlaGer?.[id]; return m && m.h >= 1 ? m.v / m.h : undefined; };
 export interface Kopval { faktor: number; kund?: Erbjudande; granne?: number; k?: string; spot?: { x: number; y: number }; dur: number }
 const behovet = (id: 'mat' | 'ved'): Behov => id === 'mat' ? MAT : VED;
-// köpets värde per timme mot vad en timme samlande ger, värderat som p värderar varan k (steg 15.1.19); utan mätningar mot det en
+// köpets värde per timme, med vägen dit i köparens fart (gang.ts, steg 15.1.55), mot vad en timme samlande ger, värderat som p värderar varan k (steg 15.1.19); utan mätningar mot det en
 // timme åt sig själv är värd
-const perTimme = (s: State, p: Person, id: 'mat' | 'ved', k: string, net: number, d: number, min: number) => { const g = samlaPerTimme(s, id); return net / (d / KOPBUFFERT.gang / 3600 + min / 60) / Math.max(0.01, g !== undefined ? g * behovAv(s, p, k) : egetVarde(s, p)); };
+const perTimme = (s: State, p: Person, id: 'mat' | 'ved', k: string, net: number, d: number, min: number) => { const g = samlaPerTimme(s, id); return net / (d / kroppFart(p, s.now) / 3600 + min / 60) / Math.max(0.01, g !== undefined ? g * behovAv(s, p, k) : egetVarde(s, p)); };
 // det bästa p kan köpa av behovet id, mot vad en timme samlande ger
 export function kopval(s: State, p: Person, id: 'mat' | 'ved'): Kopval | undefined {
   if (p.gast || ageOf(p, s.now) < ALDER.hjalper) return undefined;
