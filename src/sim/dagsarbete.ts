@@ -143,7 +143,7 @@ export function anstallDygn(s: State) {
     s.anst.push({ av: b.av, arb, p: p.id, lon, verk: 0, mal: b.mal, del: b.av === BYN ? DAGSVERK[arb].del : undefined, t: s.now });
     p.anst = { av: b.av, arb, mal: b.mal, w: lon / Math.max(1, Math.min(vantatVerk(p, arb), b.timMax ?? Infinity)) / ARBETE };
     upptagen.add(p); plats.set(b, (plats.get(b) ?? 0) + 1); kvar.set(kassa, tak - lon);
-    count(s, 'anstalld'); count(s, 'anstalld_' + arb);
+    count(s, 'anstalld_' + arb);
     if (forstaGang(s, 'anstalld')) { const l = ledareOf(s), av = b.av > 0 ? byId(s, b.av)?.name : b.av === BYN ? l?.name ?? 'Byn' : 'Kyrkan'; log(s, `${av} anställde ${p.name} för ett år: ${DAGSVERK[arb].namn.toLowerCase()}, ${lon} silver.`, 'world', [p.id]); }
   }
 }

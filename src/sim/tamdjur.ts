@@ -257,7 +257,6 @@ export function hundSkaller(s: State, avst: (d: Tamdjur) => number) {
     if (d.art !== 'hund' || (d.lojal ?? HUND.start) < VAKTHUND.lojal || d.fahus !== undefined || d.agare === undefined || avst(d) >= VAKTHUND.hor) continue;
     const p = byId(s, d.agare);
     if (!p || p.died !== undefined) continue;
-    count(s, 'hundSkallde');
     if (forstaGang(s, 'hundSkallde')) log(s, `${gen(p.name)} hund skällde: den hade hört något ute i mörkret.`, 'world', [p.id]);
     return { hund: d, p };
   }

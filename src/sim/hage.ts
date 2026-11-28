@@ -263,7 +263,6 @@ export function vallaKlar(s: State, p: Person, ref?: number) {
   const fria = rs.filter(i => !blocked(s, i % W + 0.5, Math.floor(i / W) + 0.5)), plats = fria.length ? fria : rs; // inte i ett träd eller en vägg
   for (const q of fl) { const i = plats[Math.floor(rnd(s, 'tamdjur') * plats.length)]; q.hage = h.id; q.x = i % W + 0.5; q.y = Math.floor(i / W) + 0.5; }
   ovaArbete(s, p, 'valla', HAGE.vallaMin); gjort(s, p, 'vallat'); count(s, 'vallat', fl.length);
-  if (fran) count(s, 'hageFlytt');
   if (fl.length > 1) count(s, 'vallatMedHund');
   if (fran && forstaGang(s, 'hageFlytt')) log(s, `${p.name} flyttade ${fl.length > 1 ? 'djuren med hundens hjälp' : tamArt(d.art).ord[3]} till en ny hage, och den gamla fick växa igen.`, 'world', [p.id]);
   else if (forstaGang(s, 'vallatDjur')) log(s, `${p.name} ledde ${tamArt(d.art).ord[3]} in i hagen med ett rep.`, 'world', [p.id]);
