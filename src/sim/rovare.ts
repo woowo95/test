@@ -120,6 +120,8 @@ export const ROVARE = balans('rovare', {
   // vem som strider, hjälper eller gömmer sig (steg 9.2.116, rovarVilja): mod / 20 + iver, minus skadad × det som fattas i hälsan,
   // sjuk när hen är sjuk och gammal för de gamla, plus seden, familjen, plikten och ledaren (rovarVilja). Från kampeFran strider hen, från hjalpFran hjälper hen och står bakom en bit bakom kämparna, annars gömmer hen sig
   hotAvst: 20, hotSteg: 6, // hotet i valet (steg B.29, rovarHot): på så här många rutor väger gänget hälften
+  husDamp: 0.5, // faran på en plats i ett hus från en rövare utanför rummet (väggarna skyddar), gånger så här mycket (steg 15.1.58)
+  gomOm: 0.25, // den som gömmer sig väljer om när faran på platsen vuxit med mer än så här mycket sedan hen valde (steg 15.1.58)
   budMarg: 1.2, budMax: 2, // budbäraren (steg 9.2.117) går bara om vägen dit, gånger budMarg, hinns före anfallet, och ger upp efter budMax timmar
   overmakt: 0.2, // övermakten i viljan vid larmet (steg B.32): så mycket mindre vilja per gång starkare gänget är än de egna som kan slåss
   kampeFran: 0.15, hjalpFran: 0.05, skadad: 1, sjuk: 0.5, gammal: 0.3, bakom: 3,
@@ -468,6 +470,30 @@ hotKrok.vag = (s, p, x, y) => {
   }
   return d === Infinity ? 0 : 1 / (1 + d / ROVARE.hotAvst);
 };
+// faran på själva platsen (steg 15.1.58): hur nära den närmaste rövaren p vet om och som hotar är (som rovarHot), och i ett hus
+// dämpar väggarna faran från den som inte är i samma rum. Gömstället och platsen att vårda sig på väljs efter den
+hotKrok.plats = (s, p, x, y) => {
+  if (!p.larm?.rovare) return 0;
+  const rum = roomAt(s, Math.floor(x), Math.floor(y));
+  let h = 0;
+  for (const f of rovarFlockar(s)) {
+    if (f.gor === 'flyr' || !harLarm(s, p, f)) continue;
+    for (const r of rovarna(s, f)) if (!gr(r).flytt) {
+      const v = 1 / (1 + Math.hypot(x - r.x, y - r.y) / ROVARE.hotAvst);
+      h = Math.max(h, rum && roomAt(s, Math.floor(r.x), Math.floor(r.y)) !== rum ? v * ROVARE.husDamp : v);
+    }
+  }
+  return h;
+};
+// den som gömt sig väljer om när faran på platsen har vuxit mycket sedan hen valde den (steg 15.1.58): gänget har kommit dit
+function farligPlats(s: State, folk: Person[]) {
+  for (const q of folk) {
+    const tk = q.task; if (!tk || tk.act !== 'gomma' || tk.hot !== 'rovare') continue;
+    const h = hotKrok.plats(s, q, tk.tx, tk.ty);
+    if (tk.fara === undefined) tk.fara = h;
+    else if (h - tk.fara > ROVARE.gomOm) { avbryt(s, q); q.task = undefined; count(s, 'rovarGomOm'); }
+  }
+}
 // den som står redo, hjälper eller gömmer sig går tillbaka till sitt när inget gäng längre hotar: alla flyr
 const REDO = new Set<string>(['forsvarRovare', 'hjalpaRovare', 'gomma']);
 function lugnar(s: State, folk: Person[]) {
@@ -1226,6 +1252,7 @@ export function rovarSteg(s: State, dtSec: number, ev?: TalkEvent[]) {
   if (s.rovare && !s.rovare.folk.length) s.rovare = undefined;
   if (s.rovareFler) { s.rovareFler = s.rovareFler.filter(q => q.folk.length); if (!s.rovare) s.rovare = s.rovareFler.shift(); if (!s.rovareFler.length) s.rovareFler = undefined; }
   lugnar(s, folk);
+  farligPlats(s, folk);
   if (!s.rovare) for (const q of folk) if (q.larm?.rovare) delete q.larm.rovare; // det sista gänget är borta: ingen fara längre
   // möts flockar från klaner som inte tycker om varandra slåss de
   if (s.rovare) for (const o of s.rovareFler ?? []) flockarMots(s, s.rovare, o);

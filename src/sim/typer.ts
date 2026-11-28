@@ -200,6 +200,7 @@ export interface Task {
   lon?: string; // arbetet för byn betalas ur den här budgetdelen, och det som bärs hem blir byns (steg 10.5.9, lon.ts)
   still?: number; // på rundan: sekunder hen stått still utan att gå eller plocka i ett svep (byns statistik, steg 12.1.38)
   hot?: 'rovare' | 'varg'; // gömmer sig för rövarna eller vargarna (taskName, steg 12.1.56)
+  fara?: number; // faran på platsen när den valdes (hotKrok.plats, steg 15.1.58): har den vuxit mycket väljer man om
   tandmat?: true; // samlar tändmaterial åt en släckt eld: blir platsen tom på bär fortsätter man tills tändmaterialet räcker (steg.ts, workStep)
   bar?: number; // vården: den skadade som bärs hem (halsa.ts, steg 2.5.2)
   gava?: true; // gravbesöket: en gåva läggs på graven (steg 12.1.61, gravGava i grav.ts)

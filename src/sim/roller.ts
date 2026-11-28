@@ -14,8 +14,8 @@ export const LARMROLL = balans("larmroll", { efter: 3 /* minuter som larmet blek
 // värdet (viljan att möta hotet) och vem som alls kan slåss (vuxenKan) sätts av rovare.ts, som de två hoten delar
 export const viljaKrok = { vilja: (_s: State, _p: Person) => 0, kan: (_s: State, _p: Person) => true };
 // hur stort hotet är från gänget p vet om (steg B.29, rovarHot i rovare.ts): 0 = inget, mot 1 när det är alldeles intill
-// vag: hotet på platsen (x, y) och på vägen dit (steg B.48)
-export const hotKrok = { fara: (_s: State, _p: Person) => 0, vag: (_s: State, _p: Person, _x: number, _y: number) => 0 };
+// vag: hotet på platsen (x, y) och på vägen dit (steg B.48); plats: bara på platsen, där ett hus dämpar faran (steg 15.1.58)
+export const hotKrok = { fara: (_s: State, _p: Person) => 0, vag: (_s: State, _p: Person, _x: number, _y: number) => 0, plats: (_s: State, _p: Person, _x: number, _y: number) => 0 };
 // platsen som väljs av den som inte slåss (gömslet, väntplatsen, vården): vägen dit och hotet på den (steg B.48)
 export const vagMedHot = (s: State, p: Person, at: { x: number; y: number }) => Math.hypot(at.x - p.x, at.y - p.y) + LARMROLL.hotVikt * hotKrok.vag(s, p, at.x, at.y);
 export function tryggast<T extends { x: number; y: number }>(s: State, p: Person, platser: T[]): T | undefined {

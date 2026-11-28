@@ -2,6 +2,7 @@
 import * as SIM from '../../sim';
 import { SCENARIER, klockan, korTills, rovarGang } from './hjalp';
 import { lasBy } from '../delby';
+import { husPa } from './byggnader';
 
 // den sparade byn vid klockan timme, med ovänliga grannar
 const rovarBy = (timme: number) => { const s = lasBy('test/rovarby.json.gz'); klockan(s, timme); for (const c of SIM.klanerOf(s)) c.inst = -60; return s; };
@@ -43,6 +44,46 @@ SCENARIER.gangflyr = {
       [`den ena rövaren gick ut ur kartan under striden (${gick !== undefined})`, gick !== undefined && kvarGomda >= 0],
       [`läget är "slass" i varje slag medan striden pågår (${slag - fel} av ${slag}; ${[...lagen].join(', ')})`, slag > 0 && fel === 0],
       [`de som gömt sig förblir gömda (${kvarGomda} av ${gomda.length} en halv minut efter)`, gomda.length > 0 && kvarGomda === gomda.length],
+    ];
+  },
+};
+
+// ett förrådshus intill målet i rövarbyn, som gänget plundrar
+function medForradshus(s: SIM.State) {
+  const m0 = SIM.malet(s), g = SIM.groundOf(s), x = Math.floor(m0.x) - 3, y = Math.floor(m0.y) - 3;
+  for (let yy = y - 2; yy < y + 10; yy++) for (let xx = x - 2; xx < x + 10; xx++) g.trees[yy * SIM.W + xx] = 0;
+  husPa(s, x, y, 7, 7, true, { fn: 'forrad' as SIM.Hus['fn'] });
+  return { x: x + 3.5, y: y + 3.5 };
+}
+const radd = (s: SIM.State, p: SIM.Person) => { p.pot.mod *= 0.05 / Math.max(0.1, SIM.stat(p, 'mod', s.now)); p.larmRoll = undefined; };
+
+SCENARIER.gomplats = {
+  text: 'Steg 15.1.58: de gömda gömmer sig inte där gänget plundrar. Faran på själva platsen jämförs, huset mot elden, och huset dämpar den. När gänget plundrar ett hus gömmer sig ingen där, och den som redan gömt sig där går till en tryggare plats',
+  kor: () => {
+    const s = rovarBy(11), mitt = medForradshus(s), rum = SIM.roomAt(s, Math.floor(mitt.x), Math.floor(mitt.y));
+    const f = rovarGang(s, 3, SIM.freeNear(s, mitt.x + 30, mitt.y), { anfaller: true }); ettGang(s, f); f.sedd = s.now;
+    const [a, b] = vuxnaI(s); radd(s, a); radd(s, b);
+    for (const p of [a, b]) { p.larm = { rovare: { t: s.now, vad: 'rovare', storlek: 3, led: 0, varnat: 1, om: [f.id] } }; p.task = undefined; }
+    // a har gömt sig i huset medan gänget var långt borta
+    const inne = SIM.freeNear(s, mitt.x - 1, mitt.y - 1); Object.assign(a, inne);
+    a.task = { act: 'gomma', phase: 'do', tx: inne.x, ty: inne.y, until: s.now + SIM.HOUR, carry: 0, why: 'prov', hot: 'rovare' } as SIM.Task;
+    SIM.rovarSteg(s, 1);
+    const fore = SIM.byId(s, a.id)?.task?.act === 'gomma' && SIM.roomAt(s, Math.floor(a.task!.tx), Math.floor(a.task!.ty)) === rum;
+    // gänget kommer in i huset och plundrar
+    for (const [i, r] of SIM.rovarna(s, f).entries()) Object.assign(r, SIM.freeNear(s, mitt.x + i - 1, mitt.y + 1));
+    const rovInne = SIM.rovarna(s, f).filter(r => SIM.roomAt(s, Math.floor(r.x), Math.floor(r.y)) === rum).length;
+    SIM.rovarSteg(s, 1);
+    const valdeOm = a.task?.act !== 'gomma';
+    if (!a.task) SIM.chooseTask(s, a);
+    const aSpot = a.task ? { x: a.task.tx, y: a.task.ty } : a, aRum = SIM.roomAt(s, Math.floor(aSpot.x), Math.floor(aSpot.y));
+    // b väljer ett gömställe nu
+    const sk = SIM.gomSig(s, b, 'Rövare', 'rovare', SIM.HOUR), bRum = sk?.spot && SIM.roomAt(s, Math.floor(sk.spot.x), Math.floor(sk.spot.y));
+    const nara = (at: { x: number; y: number }) => Math.min(...SIM.rovarna(s, f).map(r => Math.hypot(r.x - at.x, r.y - at.y)));
+    return [
+      [`hen gömde sig i huset medan gänget var långt borta (${fore})`, fore],
+      [`gänget plundrar i huset (${rovInne} av 3 inne)`, rovInne === 3],
+      [`den som gömt sig i huset väljer om (${valdeOm}) och går till en plats utanför det (${a.task?.act}: ${a.task?.why}, ${nara(aSpot).toFixed(1)} rutor från gänget)`, valdeOm && aRum !== rum && nara(aSpot) > 4],
+      [`den som gömmer sig nu gömmer sig inte i huset (${sk?.why}, ${sk?.spot ? nara(sk.spot).toFixed(1) : '-'} rutor från gänget)`, !!sk && bRum !== rum],
     ];
   },
 };

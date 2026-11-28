@@ -330,13 +330,13 @@ export function vargSkydd(s: State, p: Person): Skydd | undefined {
   return gomSig(s, p, fi2, l.vad === 'rovare' ? 'rovare' : 'varg', dur);
 }
 // den som inte slåss eller hjälper: sover hen i ett hus sover hen vidare, annars gömmer hen sig i närmaste hus och utan hus
-// vid elden nära de vuxna (mot vargarna och rövarna)
-const HUSTRYGGT = 0.3; // ett hus är så mycket tryggare än ute (steg B.48)
+// vid elden nära de vuxna (mot vargarna och rövarna). Mot rövarna jämförs faran på själva platsen, huset mot elden, där huset
+// dämpar faran (hotKrok.plats, steg 15.1.58)
 export function gomSig(s: State, p: Person, vad: string, hot: 'rovare' | 'varg', dur: number): Skydd | undefined {
   if (p.task?.act === 'sova' && iHus(s, p)) return;
   // i huset om det är varmare där än vid elden, som sovplatsen (val.ts, plats sang): ett kallt hus skyddar inte mot kylan
   const plats = husPlats(s, p), c = coldOf(temperature(s)), rum = plats && roomAt(s, plats.x, plats.y);
-  const eld = gomdVidElden(s, p), hus = plats && (!rum || c === 0 || varmareInne(s, rum, c)) && (hot !== 'rovare' || hotKrok.vag(s, p, plats.x, plats.y) <= hotKrok.vag(s, p, eld.x, eld.y) + HUSTRYGGT) ? plats : undefined;
+  const eld = gomdVidElden(s, p), hus = plats && (!rum || c === 0 || varmareInne(s, rum, c)) && (hot !== 'rovare' || hotKrok.plats(s, p, plats.x, plats.y) <= hotKrok.plats(s, p, eld.x, eld.y)) ? plats : undefined;
   return { act: 'gomma', why: `${vad} är nära, ${hus ? 'gömmer sig i huset' : avst(eld, skyddVidElden(s)) > 6 ? 'håller sig undan' : 'håller sig vid elden nära de vuxna'}`, hot, spot: hus ?? eld, dur };
 }
 // den som hör ropet avbryter det hen gör och söker skydd (inte den som slåss, vårdar, bärs eller håller vakt)
