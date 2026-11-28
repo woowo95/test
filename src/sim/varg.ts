@@ -198,8 +198,17 @@ function ga(s: State, f: Vargflock, fart: number, dtSec: number, sokt = false): 
 function nyttMal(s: State, f: Vargflock, bort?: { x: number; y: number }) {
   const e = eldPlats(s), ex = e.x + 0.5, ey = e.y + 0.5;
   if (bort) { const d = avst(f, bort) || 1; f.mx = clamp(f.x + (f.x - bort.x) / d * VARG.vandra, 1, W - 1); f.my = clamp(f.y + (f.y - bort.y) / d * VARG.vandra, 1, H - 1); return; }
-  const g = f.hunger > VARG.motKanin ? grupperOf(s).filter(q => q.n > 0 && Math.hypot(q.x - ex, q.y - ey) > VARG.eldR * VARG.kaninEld).sort((a, b) => avst(a, f) - avst(b, f))[0] : undefined;
-  if (g && avst(g, f) < VARG.vandra * 2) { f.mx = g.x; f.my = g.y; return; }
+  // den hungriga flocken söker bytet: harars grupper långt från elden och tamdjuren som står ute utan vakna nära (steg 15.1.134;
+  // elden håller flocken borta från tamdjuren genom regeln i flockSteg)
+  if (f.hunger > VARG.motKanin) {
+    const folk = living(s).filter(vaken);
+    const mal: { x: number; y: number }[] = [
+      ...grupperOf(s).filter(q => q.n > 0 && Math.hypot(q.x - ex, q.y - ey) > VARG.eldR * VARG.kaninEld),
+      ...tamUte(s).filter(d => !folk.some(q => avst(q, d) < VARG.vaken)),
+    ];
+    const g = mal.sort((a, b) => avst(a, f) - avst(b, f))[0];
+    if (g && avst(g, f) < VARG.vandra * 2) { f.mx = g.x; f.my = g.y; return; }
+  }
   let bx = f.x, by = f.y, bd = -1;
   for (let i = 0; i < 3; i++) {
     const v = rnd(s, 'varg') * Math.PI * 2, x = clamp(f.x + Math.cos(v) * VARG.vandra, 1, W - 1), y = clamp(f.y + Math.sin(v) * VARG.vandra, 1, H - 1);
