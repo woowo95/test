@@ -145,3 +145,37 @@ SCENARIER.dodsorsak = {
     ];
   },
 };
+
+SCENARIER.vardfel = {
+  text: 'Steg 15.1.110: vården kan misslyckas med radens risk, mindre för den skicklige (HALSA.lakeRisk). Den ovana som syr misslyckas tydligt oftare än den skickliga, och ett misslyckat sår blir värre; materialet går åt ändå. Avsnörningen för hårt skadar delen efter halva tiden, och benet som sätts fel läker snett',
+  kor: () => {
+    const s = SIM.createState(3, START), H = SIM.HALSA;
+    const [g, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    SIM.setAmount(s, 'rep', 500);
+    const sy = (lake: number, n: number) => {
+      g.skill.lakekonst = lake; let fel = 0, varre = 0; const rep0 = SIM.amountOf(s, 'rep');
+      for (let i = 0; i < n; i++) {
+        const w: SIM.Skada = { d: 'armV', k: 'skarsar', g: 0.7, b: 1, g0: 0.7 };
+        SIM.vardGor(s, g, q, w, 'sy');
+        if (!w.sydd) { fel++; if (w.g > 0.7) varre++; }
+      }
+      return { fel: fel / n, varre, rep: rep0 - SIM.amountOf(s, 'rep') };
+    };
+    const ovan = sy(0, 200), skicklig = sy(8, 200);
+    const fore = Number(s.stat?.vardFel_sy ?? 0);
+    // avsnörningen och benet hos den ovana, tills det gått fel
+    g.skill.lakekonst = 0;
+    let av: SIM.Skada | undefined, ben: SIM.Skada | undefined;
+    for (let i = 0; i < 300 && !av; i++) { const w: SIM.Skada = { d: 'benV', k: 'skarsar', g: 0.8, b: 1, g0: 0.8 }; SIM.vardGor(s, g, q, w, 'avsnora'); if (w.av !== undefined && w.av < s.now) av = w; }
+    for (let i = 0; i < 300 && !ben; i++) { const w: SIM.Skada = { d: 'benV', k: 'benbrott', g: 0.5, b: 0, g0: 0.5, t0: s.now }; SIM.vardGor(s, g, q, w, 'satta'); if (w.snett) ben = w; }
+    const f = (x: number) => `${Math.round(x * 100)} %`;
+    return [
+      [`den ovana syr fel tydligt oftare än den skickliga (${f(ovan.fel)} mot ${f(skicklig.fel)})`, ovan.fel > 0.1 && ovan.fel > skicklig.fel * 3],
+      [`det misslyckade såret blev värre (${ovan.varre} av ${Math.round(ovan.fel * 200)})`, ovan.varre === Math.round(ovan.fel * 200) && ovan.varre > 0],
+      [`repet gick åt också när det gick fel (${ovan.rep} av 200)`, ovan.rep === 200],
+      [`felen räknas (vardFel_sy ${fore})`, fore === Math.round((ovan.fel + skicklig.fel) * 200)],
+      [`avsnörningen för hårt räknas från halva tiden (${av ? ((s.now - av.av!) / SIM.HOUR).toFixed(1) : '–'} timmar)`, !!av && Math.abs((s.now - av.av!) / SIM.HOUR - H.avsnoraTim / 2) < 1e-6],
+      [`benet som sattes fel läker snett (${ben ? 'ja' : 'nej'})`, !!ben && !ben.satt],
+    ];
+  },
+};

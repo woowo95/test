@@ -619,7 +619,7 @@ function sattaBenet(): [string, boolean][] {
   const s = createState(1, START), [g, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
   const vard = () => vardPa(s, g, q);
   setAmount(s, 'grenar', 10); setAmount(s, 'remsa', 4);
-  g.skill.lakekonst = HALSA.sattaLak;
+  g.skill.lakekonst = HALSA.lakeRisk; // den skickliga: det går aldrig fel (steg 15.1.110)
   q.skador = [{ d: 'benV', k: 'benbrott', g: 0.6, b: 0, t0: s.now }]; vard();
   const satt = !!q.skador[0].satt && !!q.skador[0].spala;
   const utanKrycka = kanGa(q);

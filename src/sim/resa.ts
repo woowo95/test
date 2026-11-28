@@ -55,7 +55,7 @@ import { DJUR } from './redskap';
 import { SLAKTAD } from './boskap';
 import { handelsPris } from './handel';
 import { notis } from './notiser';
-import { ARMAR, BEN, FOTTER, HANDER, HALSA, VARD, halsaSteg, skada, vardKalla, vardKan, type Kroppsdel, type SkadaTyp } from './halsa';
+import { ARMAR, BEN, FOTTER, HANDER, HALSA, VARD, halsaSteg, skada, vardGor, vardKalla, vardKan, type Kroppsdel, type SkadaTyp } from './halsa';
 import { SJUK_DOD, insjukna, sjukSteg, type SjukId } from './sjukdom';
 import { DODSORSAKER, die, type Dodsorsak } from './liv';
 import { GRODOR, rutorAv } from './odling';
@@ -1711,7 +1711,7 @@ export function vardaPaVagen(s: State, sl: Sallskap, q: Person, folk = resenarer
   try {
     for (const w of [...q.skador ?? []]) for (const k of VAGVARD) {
       const v = VARD[k]!, vem = v.andra && g === q ? undefined : g;
-      if (vem && v.krav(s, q, w, vem) && vardKan(s, vem, v, q)) { v.gor(s, vem, q, w); gjorde = true; }
+      if (vem && v.krav(s, q, w, vem) && vardKan(s, vem, v, q)) { vardGor(s, vem, q, w, k); gjorde = true; }
     }
   } finally { vardKalla.pack = undefined; }
   if (!gjorde) return;
