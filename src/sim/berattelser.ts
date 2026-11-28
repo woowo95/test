@@ -446,7 +446,7 @@ const MDEF = {
     'Det man först lägger märke till hos {honom} är {del}.',
     '{Hen} räknas inte som vacker och har {del}.',
     '{namn} är lätt att känna igen på {del}.',
-    '{namn} anses inte vacker; {hen} har {del}.',
+    '{namn} är ingen skönhet; {hen} har {del}.',
     { t: '{namn} har {del}, men {partner} valde {honom} ändå.', om: f => !!f.partner },
     'Barnen tittar gärna en extra gång på {namn}, som har {del}.',
     'Ingen tar miste på {namn}, med {del}.',
