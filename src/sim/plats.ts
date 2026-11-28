@@ -8,6 +8,7 @@ export const PLATS = balans('plats', {
   toppProspekt: 10, // byns närområde räknas som snittet av så många av de bästa platserna (fynd.ts)
   toppArea: 5, // ett område räknas som snittet av så många av de bästa rutorna (minne.ts)
   tomtGrans: 0.08, // en plats som ger mindre än så (rikedom, richness) är tömd: man går därifrån (steg.ts)
+  lamna: 0.5, // ... och en plats som ger mindre än så här stor del av den bästa plats personen känner till (steg 15.1.132)
   husMellan: 2, // så många rutor fritt mellan två hus (steg 2.10.8 och 9.2.132: 3 i steg 6.2.10–9.2.131), och Byggplanens husregler (byggplan.ts) följer samma tal. Hus som redan står flyttas inte ...
   uteFri: 1, // ... och så många fria rutor runt en station eller möbel som står ute, mot lagerplatser och andra stationer (stationer.ts; mot en husvägg får den stå)
 });

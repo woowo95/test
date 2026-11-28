@@ -39,7 +39,7 @@ import { VARDRATT, forbandHot, halsa, hemma, kanGa, kroppLust, vardBehov, vardVa
 import { kopval, type Kopval } from './kopbuffert';
 import { marknadVal, marknadVikt } from './marknad';
 import { DELA, MAT, brukKrok, bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial, vatskaMaterial } from './behov';
-import { FANGST, type FyndId, Kind, RUTFYND, flintSpot, richnessFor } from './fynd';
+import { FANGST, type FyndId, Kind, RUTFYND, flintSpot, richness, richnessFor } from './fynd';
 import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
@@ -55,7 +55,7 @@ import { PROJEKT, PROJEKT_LIST, PROJEKT_TAL, Uppgift, arv, bastaProjekt, bristAl
 import { omtanke } from './omtanke';
 import { anstByn, vaktAntalKrok } from './dagsarbete';
 import { beredRedskap, faltNu, faltTillUppgift, faltTillVarde, froBrist, vildFronPlats } from './odling';
-import { type Tur, areaOf, flintArea, pickSpot, prospectFor } from './minne';
+import { type Tur, areaOf, bestKnown, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
 import { bordPlats, kladFor, kladPlatser, plaggPoang, rustaVal, ryggsack, ryms } from './utrustning';
 import { KLADER } from './klader';
@@ -289,6 +289,11 @@ function isarIRum(s: State, p: Person, rum: number[]) {
 // var en handling görs, efter platsen i handlingar.ts
 // platsen för act; under en översvämning aldrig i vattnet: ett rum eller en säng kan stå under vatten (vaktlarmet i by 42
 // efter v271: en som lyssnade på musik i regnet satt i samlingshuset, där golvet stod under vatten), så då den närmaste torra rutan
+// en plats är tömd för p när den ger mindre än tomtGrans, eller mindre än PLATS.lamna av den bästa plats hen känner till
+// (steg 15.1.132): då går hen därifrån. Gränsen räknas bara när platsen ger mindre än den högsta gränsen kan bli
+export const LAMNA_MAX = Math.max(PLATS.tomtGrans, PLATS.lamna * VAL.prospektMax);
+export const tomtFor = (s: State, p: Person, k: Kind, rik: number) =>
+  rik < PLATS.tomtGrans || (rik < LAMNA_MAX && rik < PLATS.lamna * Math.min(VAL.prospektMax, bestKnown(s, p, k)));
 export function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const u = platsFor(s, act, p);
   return s.flod && inMap(u.x, u.y) && iVattnetNu(s, tileOf(u.x, u.y)) ? freeNear(s, u.x, u.y) : u;
@@ -1360,7 +1365,9 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     if (d.vid === 'vatten' && !vaderTillater(s, 'lugnt')) continue; // inget fiske i storm (steg 6.1.12)
     const tinder = !!d.tand && wTand > 0;
     // nytta för byn; det platserna har kvar väger också in hur mycket de ger just nu, och att fiske med händerna ger lite
-    const yieldR = !d.resurs ? 1 : clamp(prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (d.vid === 'vatten' ? FANGST.handFiske * (naSjon(s, p) ? 1 : 0) : 1) * toolGain(s, p, w, fara); // genom isen bara med ett hål (is.ts)
+    // den som redan arbetar med raden väger den med platsen där hen står, inte med den bästa hen känner till (steg 15.1.132)
+    const har = p.task?.act === w && p.task.phase === 'do' && d.resurs ? richness(s, d.resurs as Kind, p.task.tx, p.task.ty) : undefined;
+    const yieldR = !d.resurs ? 1 : clamp(har ?? prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (d.vid === 'vatten' ? FANGST.handFiske * (naSjon(s, p) ? 1 : 0) : 1) * toolGain(s, p, w, fara); // genom isen bara med ett hål (is.ts)
     const yieldF = tinder ? 1 : yieldR, season = d.sasong![ai];
     // maten som någon längtar efter är mer värd att hämta (steg 2.6.2)
     // tändmaterialet vägs efter det som fattas av det (wTand, steg 13.8.5), och arbetet efter det mest behövda av det och dess eget behov

@@ -1,7 +1,7 @@
 // Scenarier för fas 15, grupp 14 (steg 15.1.129–15.1.140).
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, jaktFran, klockan } from './hjalp';
+import { SCENARIER, jaktFran, klockan, kor, tandEld } from './hjalp';
 
 // en jägare fångar haren d (som jaktKlar gör när försöket slutar med en fångst)
 function fanga(s: SIM.State, p: SIM.Person, d: { id: number; x: number; y: number }) {
@@ -69,6 +69,38 @@ SCENARIER.jaktval = {
       [`jägaren väljer ett rådjur (valde ${valt}${val !== undefined ? ' på ' + avs(val) + ' rutor' : ''})`, valt === 'radjur'],
       [`det fällda djuret är värt det slakten ger: vilt ${SIM.grundvarde('vilt').toFixed(1)}, rådjur ${SIM.grundvarde('radjur').toFixed(1)}, vildsvin ${SIM.grundvarde('vildsvin').toFixed(1)}, fågel ${SIM.grundvarde('fagel').toFixed(1)}`,
         SIM.grundvarde('radjur') > SIM.grundvarde('vilt') * 3 && SIM.grundvarde('vildsvin') > SIM.grundvarde('radjur')],
+    ];
+  },
+};
+
+SCENARIER.fiskbyte = {
+  text: 'Steg 15.1.132: fiskaren lämnar en utfiskad plats. En fiskare vid en tömd plats går till en annan inom en timme i spelet. I en by fiskar de där rikedomen är över 0,5, med 5–15 % napp per försök, och byter plats',
+  kor: () => {
+    const s = SIM.createState(6, START); klockan(s, 9); tandEld(s);
+    const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    Object.assign(p, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1 });
+    const sp = SIM.spotFor(s, 'fiske', p);
+    for (let i = 0; i < 200 && SIM.richness(s, 'fiske', sp.x, sp.y) > 0.04; i++) SIM.takeFrom(s, 'fiske', sp.x, sp.y, 1);
+    SIM.lookAround(s, p, sp.x, sp.y);
+    p.x = sp.x; p.y = sp.y;
+    const tk: SIM.Task = { act: 'fiske', phase: 'do', tx: sp.x, ty: sp.y, until: s.now + 3 * SIM.HOUR, carry: 0, why: 'test', dark: !SIM.isLight(s.now) };
+    p.task = tk;
+    const t0 = s.now, rik0 = SIM.richness(s, 'fiske', sp.x, sp.y);
+    let bytte = -1, rikNy = 0;
+    for (let i = 0; i < SIM.HOUR / SIM.SEC && bytte < 0 && p.task === tk; i++) {
+      SIM.step(s, 1);
+      if (Math.hypot(tk.tx - sp.x, tk.ty - sp.y) > 1.5) { bytte = s.now - t0; rikNy = SIM.richness(s, 'fiske', tk.tx, tk.ty); }
+    }
+    // i en by: rikedomen där de fiskar, napp per försök och platsbytena
+    const b = SIM.createState(6, START), a0 = { ...(b.stat ?? {}) }, rik: number[] = [];
+    kor(b, 72, v => { for (const q of SIM.living(v)) if (q.task?.act === 'fiske' && q.task.phase === 'do' && Math.floor(v.now / SIM.SEC) % 60 === 0) rik.push(SIM.richness(v, 'fiske', q.task.tx, q.task.ty)); });
+    const d = (k: string) => (b.stat?.[k] ?? 0) - (a0[k] ?? 0), napp = d('fiskeNapp') / Math.max(1, d('fiskeForsok'));
+    const med = rik.length ? [...rik].sort((x, y) => x - y)[Math.floor(rik.length / 2)] : 0;
+    return [
+      [`fiskaren lämnar den tömda platsen (${rik0.toFixed(2)}) inom en timme (${bytte < 0 ? (p.task === tk ? 'stannade' : 'slutade fiska') : Math.round(bytte / SIM.MIN) + ' min'}) för en rikare (${rikNy.toFixed(2)})`, bytte >= 0 && bytte <= SIM.HOUR && rikNy > rik0],
+      [`i byn fiskar de där rikedomen är ${med.toFixed(2)} (medianen av ${rik.length} prov)`, rik.length > 0 && med > 0.5],
+      [`napp per försök: ${(napp * 100).toFixed(1)} % (${d('fiskeNapp')} av ${d('fiskeForsok')})`, napp >= 0.05 && napp <= 0.15],
+      [`fiskaren bytte plats vid vattnet (fiskeByter ${s.stat?.fiskeByter ?? 0}; i byn ${d('fiskeByter')} gånger på tre dygn)`, (s.stat?.fiskeByter ?? 0) > 0],
     ];
   },
 };
