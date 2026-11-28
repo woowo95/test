@@ -35,13 +35,14 @@ export const KASSA = balans('kassa', {
   kalla: 2, // så ofta (minuter) kallas den som kan betjäna till disken
   vanta: 0.2, // poängen för att betjäna växer så mycket per minut någon väntat
   familj: 0.7, // ägarens familj betjänar, mindre gärna än ägaren och de anställda
+  koDisk: 3, // står så många framme i kön per disk saknar företaget en disk till (steg 15.1.154)
 });
 // en kund i kön: vad hen vill köpa och när hen ställde sig där
 export interface KoRad { p: number; v: string; k: string; n: number; t: number; klar?: number }
 // ---------- disken ----------
 export const diskarAv = (s: State, f: Foretag): Station[] => { const rum = new Set(foretagRum(s, f)); return rum.size ? stationerOf(s).filter(t => t.k === 'disk' && isKlar(t) && rum.has(stationRum(s, t)!)) : []; };
-// företagen med ett rum som saknar en disk (också en som är under arbete)
-const utanDisk = (s: State) => foretagOf(s).filter(f => { const rum = foretagRum(s, f); return rum.length && !stationerOf(s).some(t => t.k === 'disk' && rum.includes(stationRum(s, t)!)); });
+// företagen med ett rum som saknar en disk (också en som är under arbete räknas), eller en disk till när kön är lång (steg 15.1.154)
+const utanDisk = (s: State) => foretagOf(s).filter(f => { const rum = foretagRum(s, f); if (!rum.length) return false; const n = stationerOf(s).filter(t => t.k === 'disk' && rum.includes(stationRum(s, t)!)).length; return !n || framme(s, f).length >= KASSA.koDisk * n; });
 foretagBord.diskRum = s => { const f = utanDisk(s)[0]; return f && foretagRum(s, f)[0]; };
 foretagBord.diskEgen = (s, fam) => utanDisk(s).some(f => fam.some(q => q === foretagare(s, f.ag))) ? 1 : 0; // ägarens familj saknar disken i sitt företag
 foretagBord.diskBrist = s => { const n = foretagOf(s).filter(f => foretagRum(s, f).length).length; return n ? utanDisk(s).length / n : 0; };
@@ -194,18 +195,20 @@ export function betjanar(s: State, p: Person, f: Foretag): number {
 }
 // den anställda (steg 14.1.7)
 arbetarI.push((_s, p, f) => p.anst?.arb === 'foretag' && p.anst.mal === f.id ? 1 : 0);
-const nagonBetjanar = (s: State, f: Foretag, utom?: Person) => living(s).some(q => q !== utom && q.task?.act === 'betjana' && q.task.ref === f.id);
+// en person vid varje disk (steg 15.1.154): disken har en plats, där den som betjänar står
+const betjanare = (s: State, f: Foretag, utom?: Person) => living(s).filter(q => q !== utom && q.task?.act === 'betjana' && q.task.ref === f.id);
+const ledigDisk = (s: State, f: Foretag, utom?: Person) => { const upp = betjanare(s, f, utom).map(q => q.task!); return diskarAv(s, f).find(t => { const v = vidStation(t); return !upp.some(u => Math.floor(u.tx) === Math.floor(v.x) && Math.floor(u.ty) === Math.floor(v.y)); }); };
+// poängen: kön framme delad med dem som redan betjänar och p, och hur länge den första väntat
 export function betjanPoang(s: State, p: Person, f: Foretag) {
   const ko = framme(s, f);
   if (!ko.length) return 0;
-  const langst = Math.max(...ko.map(r => s.now - r.t)) / MIN;
-  return betjanar(s, p, f) * (ko.length + langst * KASSA.vanta);
+  const langst = Math.max(...ko.map(r => s.now - r.t)) / MIN, andra = betjanare(s, f, p).length;
+  return betjanar(s, p, f) * (Math.min(1, ko.length / (andra + 1)) * ko.length + langst * KASSA.vanta);
 }
 export function betjanVal(s: State, p: Person): { f: Foretag; sc: number; spot: { x: number; y: number }; dur: number } | undefined {
-  let bast: { f: Foretag; sc: number } | undefined;
-  for (const f of s.foretag ?? []) if (f.ko?.length) { const sc = betjanPoang(s, p, f); if (sc > (bast?.sc ?? 0) && !nagonBetjanar(s, f, p)) bast = { f, sc }; }
-  const disk = bast && diskarAv(s, bast.f)[0];
-  return bast && disk ? { ...bast, spot: vidStation(disk), dur: KASSA.min * MIN } : undefined;
+  let bast: { f: Foretag; sc: number; disk: Station } | undefined;
+  for (const f of s.foretag ?? []) if (f.ko?.length) { const disk = ledigDisk(s, f, p), sc = disk && framme(s, f).length > betjanare(s, f, p).length ? betjanPoang(s, p, f) : 0; if (disk && sc > (bast?.sc ?? 0)) bast = { f, sc, disk }; }
+  return bast && { f: bast.f, sc: bast.sc, spot: vidStation(bast.disk), dur: KASSA.min * MIN };
 }
 // det den som betjänar hämtar till disken (hamtning.ts): maten kunderna framme vid den vill ha, av ägarens
 export function betjanHamtas(s: State, t: Task): Record<string, number> | undefined {
@@ -277,8 +280,8 @@ export function kassaTakt(s: State) {
   for (const f of s.foretag ?? []) {
     if (!f.ko?.length) continue;
     rensaKo(s, f);
-    if (!framme(s, f).length || nagonBetjanar(s, f) || f.kallad !== undefined && s.now - f.kallad < KASSA.kalla * MIN) continue;
-    const disk = diskarAv(s, f)[0];
+    if (framme(s, f).length <= betjanare(s, f).length || f.kallad !== undefined && s.now - f.kallad < KASSA.kalla * MIN) continue;
+    const disk = ledigDisk(s, f);
     if (!disk) continue;
     let b: Person | undefined, bs = 0;
     for (const q of living(s)) { const n = kanKomma(q) ? betjanar(s, q, f) / (1 + Math.hypot(q.x - disk.x, q.y - disk.y) / 20) : 0; if (n > bs) { bs = n; b = q; } }

@@ -4,7 +4,7 @@
 import { balans } from './balans';
 import { blodOf } from './blod';
 import { gridOf, husById, roomAt, type Rum } from './byggnad';
-import { ALDER, ageOf, andraGor, count, familjOf, forstaGang, gjort, living, log } from './folk';
+import { ALDER, ageOf, count, familjOf, forstaGang, gjort, living, log } from './folk';
 import { GA_TID } from './paborjat';
 import { FINHET, smutsRutor } from './rum';
 import { SMUTS, flackNu, flackarOf } from './smuts';
@@ -44,9 +44,14 @@ export function stadaVal(s: State, p: Person): StadaVal | undefined {
   let bast: StadaVal | undefined;
   for (const r of smutsigaRum(s)) {
     const rutor = smutsRutor(s, r);
-    if (!rutor.size || andraGor(s, 'stada', p, t => r.tiles.includes(t.ref ?? -1))) continue; // någon städar redan
-    const sc = stadaVarde(s, r, rutor) * rumAngar(s, p, r);
-    if (sc > (bast?.sc ?? 0)) bast = { rum: r, i: narmast(rutor, p.x, p.y), sc };
+    if (!rutor.size) continue;
+    // det som återstår delat med dem som redan städar där (steg 15.1.154): rutorna ingen annan torkar just nu, delade med dem och p,
+    // så att en till hjälper när rummet är stort och smutsigt
+    const tagna = new Set(living(s).filter(q => q !== p && q.task?.act === 'stada' && r.tiles.includes(q.task.ref ?? -1)).map(q => q.task!.ref!));
+    const fria = new Map([...rutor].filter(([i]) => !tagna.has(i)));
+    if (!fria.size) continue;
+    const sc = stadaVarde(s, r, rutor) * rumAngar(s, p, r) * Math.min(1, fria.size / (tagna.size + 1));
+    if (sc > (bast?.sc ?? 0)) bast = { rum: r, i: narmast(fria, p.x, p.y), sc };
   }
   return bast;
 }
@@ -66,7 +71,9 @@ export function stadaKlar(s: State, p: Person, tk: Task) {
   if (s.flackar) s.flackar = s.flackar.filter(f => f.i !== i);
   if (s.blod) s.blod = s.blod.filter(b => Math.floor(b.y) * W + Math.floor(b.x) !== i);
   if ((s.flackar?.length ?? 0) < f0 || (s.blod?.length ?? 0) < b0) count(s, 'stadadRuta');
-  const n = narmast(smutsRutor(s, r), p.x, p.y);
+  const tagna = new Set(living(s).filter(q => q !== p && q.task?.act === 'stada').map(q => q.task!.ref)); // den andra rutan torkar någon annan
+  const kvar = smutsRutor(s, r), n = narmast(new Map([...kvar].filter(([j]) => !tagna.has(j))), p.x, p.y);
+  if (n < 0 && kvar.size) return; // de sista rutorna torkar de andra
   if (n < 0) {
     count(s, 'stadat'); gjort(s, p, 'stadat');
     if (forstaGang(s, 'forstaStad')) log(s, `${p.name} torkade golvet rent i ett av husen.`, 'world', [p.id]);

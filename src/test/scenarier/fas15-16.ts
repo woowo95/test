@@ -2,6 +2,7 @@
 import * as SIM from '../../sim';
 import { START } from '../kor';
 import { SCENARIER, testBy } from './hjalp';
+import { foretagBy } from './fas14';
 
 // en vuxen i en ny by, utan något på sig (det som bärs läggs till i scenariot)
 function vuxenUtanSaker(s: SIM.State) {
@@ -86,6 +87,52 @@ SCENARIER.radvapen = {
       [`järngänget är färre (${jarn.n} mot ${sten.n})`, jarn.n < sten.n],
       [`gängets stridsvärde följer det världen räknade med (järn ${SIM.kortTal(jarn.sv)} mot ${SIM.kortTal(jarn.varld)}, sten ${SIM.kortTal(sten.sv)} mot ${SIM.kortTal(sten.varld)})`, jarn.sv > sten.sv * 1.5 && [jarn, sten].every(g => g.sv / g.varld > 0.7 && g.sv / g.varld < 1.7)], // rövarnas kropp (ROVARE) och kläderna mot kylan gör dem lite starkare än mittersta kroppen
       [`krönikan säger hur gänget var rustat: ${text}`, /svärd/.test(text) && /järnhjälm|ringbrynja/.test(text)],
+    ];
+  },
+};
+
+SCENARIER.tvadiskar = {
+  text: 'Steg 15.1.154: en vid varje disk. En affär med lång kö får brist på en disk till, och med två diskar betjänar två samtidigt; ett stort smutsigt rum städas av två, men den sista rutan bara av en',
+  kor: () => {
+    const { s, p, f, vux, disk, r } = foretagBy(['affar']);
+    for (const q of s.people) q.task = undefined;
+    const brist0 = SIM.foretagBord.diskBrist(s);
+    // fyra kunder står framme i kön
+    const kunder = vux.slice(0, 4);
+    f.ko = [];
+    kunder.forEach((q, i) => { const sp = SIM.koPlats(s, disk, kunder.slice(0, i).map(k => ({ x: k.x, y: k.y }))); q.x = sp.x; q.y = sp.y; q.task = { act: 'koaDisk', phase: 'do', tx: sp.x, ty: sp.y, until: s.now + 8 * SIM.MIN, carry: 0, why: '', ref: f.id }; f.ko!.push({ p: q.id, v: 'affar', k: 'virke', n: 1, t: s.now }); });
+    const brist = SIM.foretagBord.diskBrist(s), rum = SIM.foretagBord.diskRum(s);
+    // en disk till i rummet
+    const W = SIM.W, upp = new Set([disk.y * W + disk.x, disk.y * W + disk.x + 1, ...kunder.map(q => Math.floor(q.y) * W + Math.floor(q.x)), ...SIM.stationerOf(s).flatMap(t => [t.y * W + t.x, t.y * W + t.x + 1])]);
+    const i = new Set(r.tiles), d1 = r.tiles.find(t => [0, 1].every(d => i.has(t + d) && !upp.has(t + d)) && i.has(t + W) && i.has(t + W + 1) && !upp.has(t + W) && !upp.has(t + W + 1) && Math.abs(Math.floor(t / W) - disk.y) >= 2)!;
+    const disk2 = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'disk', x: d1 % W, y: Math.floor(d1 / W), kvar: 0, inne: 1 } as unknown as SIM.Station;
+    s.stationer!.push(disk2); SIM.touch(s);
+    const anst = vux[5]; anst.anst = { av: p.id, arb: 'foretag', mal: f.id, w: 1 };
+    const b1 = SIM.betjanVal(s, p)!;
+    p.task = { act: 'betjana', phase: 'do', tx: b1.spot.x, ty: b1.spot.y, until: s.now + SIM.MIN, carry: 0, why: '', ref: f.id };
+    const b2 = SIM.betjanVal(s, anst);
+    anst.task = b2 && { act: 'betjana', phase: 'do', tx: b2.spot.x, ty: b2.spot.y, until: s.now + SIM.MIN, carry: 0, why: '', ref: f.id };
+    const b3 = SIM.betjanVal(s, vux[6]); // en tredje (ägarens familj eller ingen): ingen disk är ledig
+    const tva = !!b2 && (Math.floor(b1.spot.x) !== Math.floor(b2.spot.x) || Math.floor(b1.spot.y) !== Math.floor(b2.spot.y));
+    // städningen: ett stort smutsigt rum och ett med en fläck
+    const t = SIM.cloneState(testBy(25));
+    const rummen = SIM.gridOf(t).rooms.filter(x => x.tiles.length >= 10 && SIM.sovplatser(t, x) > 0);
+    const bor = (x: SIM.Rum) => SIM.living(t).filter(q => SIM.ageOf(q, t.now) >= SIM.ALDER.vuxen && !q.gast && SIM.husById(t, x.hus)?.ag !== undefined && (SIM.husById(t, x.hus)!.ag === q.id || SIM.familjOf(t, SIM.husById(t, x.hus)!.ag!).includes(q)));
+    const stort = rummen.find(x => bor(x).length >= 2)!, [a, b] = bor(stort);
+    t.flackar = []; t.blod = [];
+    t.flackar = stort.tiles.slice(0, 10).map(j => ({ k: 'toa', i: j, n: 1, t: t.now }));
+    const va = SIM.stadaVal(t, a)!;
+    const ua = SIM.stadaUppgift(va); a.task = { act: 'stada', phase: 'do', tx: ua.spot.x, ty: ua.spot.y, until: t.now + SIM.MIN, carry: 0, why: '', ref: ua.ref };
+    const vb = SIM.stadaVal(t, b);
+    // samma rum med bara en smutsig ruta, som a redan torkar
+    t.flackar = [{ k: 'toa', i: ua.ref, n: 1, t: t.now }];
+    const vb1 = SIM.stadaVal(t, b);
+    return [
+      [`utan kö saknas ingen disk (${brist0}); med fyra framme i kön vid en disk saknas en till (${brist})`, brist0 === 0 && brist > 0 && rum?.hus === f.hus],
+      [`ägaren och den anställda betjänar vid var sin disk (${b1.spot.x.toFixed(1)},${b1.spot.y.toFixed(1)} och ${b2 ? `${b2.spot.x.toFixed(1)},${b2.spot.y.toFixed(1)}` : 'ingen'})`, tva],
+      [`ingen tredje får en disk (${b3 ? 'fick' : 'ingen'})`, !b3],
+      [`i det stora smutsiga rummet hjälper en andra till med en annan ruta (${vb ? `${vb.sc.toFixed(2)} mot ${va.sc.toFixed(2)}` : 'ingen'})`, !!vb && vb.rum === stort && vb.i !== ua.ref && vb.sc >= va.sc * 0.5],
+      [`den sista rutan torkar bara en (${vb1 && vb1.rum === stort ? 'två' : 'en'})`, !vb1 || vb1.rum !== stort],
     ];
   },
 };

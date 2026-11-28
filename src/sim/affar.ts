@@ -77,14 +77,27 @@ export function attStalla(s: State, f: Foretag, utanRuta = false): HyllVara | un
   }
   return bast;
 }
+// så många varor till som går att ställa fram: det ägaren har över som efterfrågas och inte ligger framme, högst de lediga rutorna
+function kvarAttStalla(s: State, f: Foretag): number {
+  const G = saljPart(s, f);
+  if (!G) return 0;
+  const m = efterfragat(s, f.ag), fram = new Set(hyllan(s, f).map(h => h.k));
+  const varor = G.over([]).filter(w => w.k !== 'silver' && w.n >= 1 && !fram.has(w.k) && lust(m, w.k) > 0 && (!!w.t || !isTool(w.k))).length;
+  const upp = new Set(stacksOf(s).filter(a => a.n > 1e-6).map(a => a.y * W + a.x));
+  for (const t of tingOf(s)) if (t.x !== undefined && t.hos === undefined) upp.add(t.y! * W + t.x);
+  for (const q of living(s)) if (q.task?.act === 'stallaFram') upp.add(Math.floor(q.task.ty) * W + Math.floor(q.task.tx));
+  return Math.min(varor, rutor(s, f).filter(q => !upp.has(q.y * W + q.x)).length);
+}
 export function stallaVal(s: State, p: Person): { f: Foretag; h: HyllVara; sc: number } | undefined {
   let bast: { f: Foretag; h: HyllVara; sc: number } | undefined;
   for (const f of s.foretag ?? []) {
     if (!f.verk.includes('affar') || !diskarAv(s, f).length) continue; // utan disk kan inget säljas, och då är det inget värt att ställa fram (steg 15.1.14)
     const g = betjanar(s, p, f);
-    if (g <= 0 || living(s).some(q => q !== p && q.task?.act === 'stallaFram' && q.task.ref === f.id)) continue;
-    const h = attStalla(s, f);
-    if (h) { const sc = g * AFFAR.vikt * lust(efterfragat(s, f.ag), h.k); if (sc > (bast?.sc ?? 0)) bast = { f, h, sc }; }
+    if (g <= 0) continue;
+    // det som återstår delat med dem som redan ställer fram (steg 15.1.154): en till hjälper när det är mycket
+    const andra = living(s).filter(q => q !== p && q.task?.act === 'stallaFram' && q.task.ref === f.id).length;
+    const h = attStalla(s, f), kvar = andra ? kvarAttStalla(s, f) : 1;
+    if (h) { const sc = g * AFFAR.vikt * lust(efterfragat(s, f.ag), h.k) * Math.min(1, kvar / (andra + 1)); if (sc > (bast?.sc ?? 0)) bast = { f, h, sc }; }
   }
   return bast;
 }
