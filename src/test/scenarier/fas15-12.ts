@@ -3,6 +3,7 @@ import * as SIM from '../../sim';
 import { BERATTELSER, Fyllning, MallId, bedrifter, beskrivning, fyll } from '../../sim/berattelser';
 import { SCENARIER, testBy } from './hjalp';
 import { antal } from '../../sim/ord';
+import { KONTROLLER, MALLKOLL } from '../textkoll';
 
 // varianterna i en mall som gäller med fälten f
 const giltiga = (m: MallId, f: Fyllning) => BERATTELSER[m].filter(v => typeof v === 'string' || v.om(f)).map(v => fyll(typeof v === 'string' ? v : v.t, f));
@@ -94,6 +95,25 @@ SCENARIER.ovrigatext = {
       ['latrinen nämner ingen toa', !/toa/i.test(String((SIM.TEKNIK as unknown as Record<string, { effekt?: string }>).latrin?.effekt))],
       ['lagen i dragkamp drar inte i var sin ände', start.every(t => !/var sin ände/.test(t))],
       ['ingen sitter i gräset i snön', pub.every(t => !/gräset/.test(t))],
+    ];
+  },
+};
+
+SCENARIER.textkontroll = {
+  text: 'Steg 15.1.119: kontrollerna som håller texterna naturliga. En omskrivning (samma fält, villkor och innehållsord), elden eller natten utan villkor och formulärets språk ("Härkomst:", "partner") larmar, och de rätta varianterna gör det inte',
+  kor: () => {
+    const reg = {
+      prov: ['{namn} gick till sjön.', 'Till sjön gick {namn}.', { t: 'Vid elden satt {namn}.', om: (f: Fyllning) => f.eld === true }, 'Om natten sov {namn}.', 'Vid elden sjöng {namn}.'],
+    };
+    const om = MALLKOLL.find(k => k.id === 'omskrivning')!.hitta(reg), lage = MALLKOLL.find(k => k.id === 'lage')!.hitta(reg);
+    const form = KONTROLLER.find(k => k.id === 'formular')!, kon = () => undefined;
+    return [
+      [`omskrivningen hittas (${om.map(x => x.vad).join(' | ')})`, om.length === 1 && /\[0\] och \[1\]/.test(om[0].vad)],
+      [`elden och natten utan villkor larmar, med villkor inte (${lage.length})`, lage.length === 2 && lage.every(x => !/\[2\]/.test(x.vad))],
+      ['"Härkomst:" och "partner" larmar', !!form.hitta('Härkomst: dotter till Ask.', {}, kon, true) && !!form.hitta('Hon lever med sin partner.', {}, kon, true)],
+      ['en vanlig mening larmar inte', !form.hitta('Hon lever med Ask, och Ylva är hennes bästa vän.', {}, kon, true)],
+      [`inga mallar har formulärets ord (${Object.values(SIM.BERATTELSER).flat().filter(v => form.hitta((typeof v === 'string' ? v : v.t).replace(/\{\w+\}/g, 'Ask'), {}, kon, true)).length})`,
+        Object.values(SIM.BERATTELSER).flat().every(v => !form.hitta((typeof v === 'string' ? v : v.t).replace(/\{\w+\}/g, 'Ask'), {}, kon, true))],
     ];
   },
 };

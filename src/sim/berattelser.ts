@@ -294,17 +294,17 @@ const MDEF = {
   // {partner}, {van} = bästa vännen, {fiende} = ärkefienden
   besk_partnerVan: [
     '{Hen} lever med {partner}, och {van} är {hans} bästa vän.',
-    '{partner} är {hans} partner och {van} {hans} närmaste vän.',
+    'Med {partner} delar {hen} sitt liv, och med {van} sina tankar.',
     '{Hen} bor med {partner}; {hans} närmaste vän är {van}.',
     '{Hen} är tillsammans med {partner} och har {van} som bästa vän.',
-    '{Hans} partner är {partner}, och {hans} bästa vän är {van}.',
+    '{partner} och {hen} hör ihop, och {van} är {hans} närmaste vän.',
     { t: '{Hen} är gift med {partner}, men det är med {van} {hen} pratar mest.', om: f => f.gift === true && f.vanPrat === true },
   ],
   besk_partner: [
     '{Hen} lever med {partner}.',
     '{Hen} bor tillsammans med {partner}.',
     '{Hen} och {partner} är ett par.',
-    'Närmast {honom} står {partner}, {hans} partner.',
+    'Ingen står {honom} närmare än {partner}.',
     { t: '{Hen} är gift med {partner}.', om: f => f.gift === true },
     { t: '{Hen} och {partner} har hållit ihop i {parAr} år.', om: f => (f.parN as number) >= 3 },
     { t: '{Hen} och {partner} har fått {barnTills} tillsammans.', om: f => !!f.barnTills },
