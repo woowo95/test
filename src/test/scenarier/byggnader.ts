@@ -686,7 +686,9 @@ SCENARIER.lagerplatser = {
 
 SCENARIER.verkstad = {
   text: 'Rummets funktion (steg 2.2.17): ett rum får sin funktion av det som står i det. När byn vill bygga en slöjdbänk men sovsalarna är fulla planerar den en verkstad åt den, och en sovsal som ingen sover i men där en station står blir en verkstad i stället för att rivas',
-  env: { BALANS: 'hus.sovFast=0' }, // utan rutor för rymd blir sovsalen precis full: alla har en sovplats och inget golv blir över (steg 9.2.36)
+  // utan rutor för rymd blir sovsalen precis full: alla har en sovplats och inget golv blir över (steg 9.2.36). Scenariot prövar en
+  // slöjdbänk: byn som saknar kläder vill annars ha en till (steg 12.1.150), och den andra som byggs i verkstaden stänger den första ute
+  env: { BALANS: 'hus.sovFast=0,station.bankHinner=100000' },
   kor: () => {
     const { HUS, stationDef, inneUtanPlats, rumTaggar, sovKvar, stationerOf, stationRum, stationSite, isKlar } = SIM;
     // en by med en sovsal som är så full att slöjdbänken inte får plats där, där alla kan bygga en slöjdbänk
