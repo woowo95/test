@@ -265,14 +265,15 @@ export const SKYDD: Record<string, { delar: Kroppsdel[]; tar: Partial<Record<Sla
 // ---------- avsikten (registret) ----------
 // vapen = man slåss med vapen (annars med händerna), nere = man slår den som ligger, slut = vad som avslutar striden för
 // den drabbade: 'skada' vid första skadan av graden STRID.lek, 'ge' att man ger upp när modet tar slut, 'fly' att man flyr
-interface AvsiktDef { namn: string; text: string; vapen: boolean; nere: boolean; modSlut: 'ge' | 'fly'; lek?: true; sport?: true; kuva?: true } // kuva = sidan som börjar (sida 0) vill ta fångar: den som möter den ger upp när modet tar slut (steg 11.12.6) // sport = brottningen (steg 9.2.92): svaga slag, ingen dör, och man är kvar i matchen
+// gor = hur man slåss, början på skälet under striden (steg 15.1.39)
+interface AvsiktDef { namn: string; text: string; gor: string; vapen: boolean; nere: boolean; modSlut: 'ge' | 'fly'; lek?: true; sport?: true; kuva?: true } // kuva = sidan som börjar (sida 0) vill ta fångar: den som möter den ger upp när modet tar slut (steg 11.12.6) // sport = brottningen (steg 9.2.92): svaga slag, ingen dör, och man är kvar i matchen
 export const AVSIKTER = {
-  lek: { namn: 'Lek', text: 'Man brottas och slår på skoj och slutar vid första riktiga smärta.', vapen: false, nere: false, modSlut: 'ge', lek: true },
-  brottning: { namn: 'Brottning', text: 'Två brottas för sportens skull utan vapen. Slagen är svaga och den som känner smärta ger sig; en skada är ovanlig.', vapen: false, nere: false, modSlut: 'ge', lek: true, sport: true },
-  slagsmal: { namn: 'Slagsmål', text: 'Med händerna tills den ena ger upp eller ligger.', vapen: false, nere: false, modSlut: 'ge' },
-  skada: { namn: 'Skada', text: 'Med vapen tills den andra ligger, flyr eller ger upp.', vapen: true, nere: false, modSlut: 'fly' },
-  kuva: { namn: 'Kuva', text: 'Med vapen för att ta fångar. Den som möter den som kuvar ger upp när modet tar slut i stället för att fly; den som kuvar flyr som vid Skada.', vapen: true, nere: false, modSlut: 'fly', kuva: true },
-  doda: { namn: 'Döda', text: 'Med vapen, och den som ligger slås ihjäl.', vapen: true, nere: true, modSlut: 'fly' },
+  lek: { gor: 'Brottas på lek', namn: 'Lek', text: 'Man brottas och slår på skoj och slutar vid första riktiga smärta.', vapen: false, nere: false, modSlut: 'ge', lek: true },
+  brottning: { gor: 'Brottas', namn: 'Brottning', text: 'Två brottas för sportens skull utan vapen. Slagen är svaga och den som känner smärta ger sig; en skada är ovanlig.', vapen: false, nere: false, modSlut: 'ge', lek: true, sport: true },
+  slagsmal: { gor: 'Slåss', namn: 'Slagsmål', text: 'Med händerna tills den ena ger upp eller ligger.', vapen: false, nere: false, modSlut: 'ge' },
+  skada: { gor: 'Slåss', namn: 'Skada', text: 'Med vapen tills den andra ligger, flyr eller ger upp.', vapen: true, nere: false, modSlut: 'fly' },
+  kuva: { gor: 'Slåss', namn: 'Kuva', text: 'Med vapen för att ta fångar. Den som möter den som kuvar ger upp när modet tar slut i stället för att fly; den som kuvar flyr som vid Skada.', vapen: true, nere: false, modSlut: 'fly', kuva: true },
+  doda: { gor: 'Slåss', namn: 'Döda', text: 'Med vapen, och den som ligger slås ihjäl.', vapen: true, nere: true, modSlut: 'fly' },
 } satisfies Record<string, AvsiktDef>;
 export type Avsikt = keyof typeof AVSIKTER;
 const AVS: Record<Avsikt, AvsiktDef> = AVSIKTER;

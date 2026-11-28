@@ -126,6 +126,18 @@ function flyMal(s: State, p: Person) {
   return { fly, ...(andra.length ? { flyAndra: andra } : {}) };
 }
 const stridsUppgift = (s: State, p: Person, why: string) => { p.task = { act: 'strid', phase: 'do', tx: p.x, ty: p.y, until: s.now + (STRID.maxTid + 60) * SEC, carry: 0, why }; };
+// skälet under striden är en hel mening ur hur man slåss (GOR i AVSIKTER), motståndarna och stridens orsak (steg 15.1.39):
+// "Slåss med Ufast efter ett gräl". Orsaken är loggens bit: en bit som börjar med ett förhållningsord läggs efter namnen, en
+// strid ("en holmgång") får "i" före, och en hel mening ("Anfölls av en björn") står kvar som den är
+const EFTER_NAMN = /^(efter|vid|i|på|när|nära|utanför|under|om|för|mot) /;
+function stridSkal(g: KartStrid, p: Person): string {
+  const min = g.st.kampar.find(k => k.pid === p.id), o = g.orsak, gor = AVSIKTER[g.st.avsikt].gor;
+  const mot = g.st.kampar.filter(k => min && k.sida !== min.sida && !k.hjalp && k.pid !== undefined).map(k => k.namn);
+  const vem = mot.length > 2 ? `${mot[0]} och ${mot.length - 1} till` : och(mot);
+  if (!mot.length) return /^\p{Lu}/u.test(o) ? o : `${gor} mot ${o}`;
+  if (/^\p{Lu}/u.test(o)) return `${gor} med ${vem} (${o})`;
+  return EFTER_NAMN.test(o) ? `${gor} med ${vem} ${o}` : /^(en|ett|striden|matchen) /.test(o) ? `${gor} med ${vem} i ${o}` : `${gor} med ${vem}: ${o}`;
+}
 // Överraskningen (steg B.30, "Mötet" i fliken Människan): den som blir anfallen mitt i något annat (arbetet, maten, samtalet), eller som
 // inte visste om gänget förrän nu, har inte sett sin anfallare komma. Den som håller ögonen öppna (vaksam i ACTS) och den som
 // själv går in i striden har det (steg B.52). Lika för alla: en rövare på rastplatsen eller vid bytet kan också överraskas
@@ -150,7 +162,7 @@ export function kartStridBorja(s: State, avsikt: Avsikt, sidor: [Person[], Perso
   if (djur.length) { const n0 = kampar.length - djur.length; g.djur = djur.map((d, j) => ({ k: n0 + j + 1, art: d.art, id: d.id })); djur.forEach((d, j) => { if (d.blod !== undefined) st.kampar[n0 + j].blod = d.blod; }); }
   (s.kartStrider ??= []).push(g);
   count(s, 'strid_' + avsikt); count(s, 'kartStrid');
-  if (!sport) for (const p of [...sidor[0], ...sidor[1]]) { avbryt(s, p); stridsUppgift(s, p, orsak); } // brottaren är kvar i matchen (steg 9.2.92)
+  if (!sport) for (const p of [...sidor[0], ...sidor[1]]) { avbryt(s, p); stridsUppgift(s, p, stridSkal(g, p)); } // brottaren är kvar i matchen (steg 9.2.92)
   if (!lek && !djur.length) larma(s, 'slagsmål', kampar.length, [...sidor[0], ...sidor[1]].filter(p => p.task?.act !== 'sova' && !p.gast)); // de som slåss ropar (steg 3.7.11): byns larm är bybornas, gästerna ropar det inte (steg B.3)
   return g;
 }
@@ -163,7 +175,7 @@ export function kartStridMed(s: State, g: KartStrid, p: Person, sida: 0 | 1, hja
   const id = Math.max(0, ...g.st.kampar.map(k => k.id)) + 1;
   laggTill(g.st, { ...personKampe(s, p, id, sida, p.x, p.y), ...flyMal(s, p), ...(hjalp ? { hjalp } : {}) });
   if (g.efter && !hjalp) MED[g.efter.typ]?.(s, g.efter, g.st.kampar[g.st.kampar.length - 1], p); // det stridens slag ger den som kommer senare (steg 12.1.58)
-  avbryt(s, p); stridsUppgift(s, p, hjalp ? `Hjälper de fallna (${g.orsak})` : g.orsak);
+  avbryt(s, p); stridsUppgift(s, p, hjalp ? `Hjälper de fallna (${g.orsak})` : stridSkal(g, p));
   count(s, hjalp ? 'kartStridHjalp' : 'kartStridMed');
 }
 // byns hjälpare vid ett larm (rollen hjälpare mot samma hot, Tre roller vid larm) går in i striden mot hotet när en bybo slåss nära,
@@ -262,7 +274,7 @@ export function kartStridSteg(s: State, dtSec: number) {
           if (p.svimmat) { if (!g.svimmade?.includes(p.id)) (g.svimmade ??= []).push(p.id); if (p.task?.act === 'strid') { p.task.tx = p.x; p.task.ty = p.y; } } // kroppen och hälsan avgör vad hen gör
           else if (p.task?.act !== 'buren' && p.task?.act !== 'vila') { avbryt(s, p); p.task = { act: 'vila', phase: 'do', tx: p.x, ty: p.y, until: s.now + (STRID.maxTid + 60) * SEC, carry: 0, why: 'Ligger kvar, har svimmat i striden' }; }
         } else if (k.lage === 'strid' || k.lage === 'flykt' || k.lage === 'nere') { // den som står, flyr eller ligger vaken är kvar i striden, också när en skada avbrutit det hen gjorde: den som ligger går inte iväg mot vården förrän striden är slut
-          if (p.task?.act !== 'strid') { avbryt(s, p); stridsUppgift(s, p, g.orsak); } else { p.task.tx = p.x; p.task.ty = p.y; }
+          if (p.task?.act !== 'strid') { avbryt(s, p); stridsUppgift(s, p, stridSkal(g, p)); } else { p.task.tx = p.x; p.task.ty = p.y; }
         } else if (p.task?.act === 'strid') { p.task.tx = p.x; p.task.ty = p.y; } // den som svimmat: kroppen och hälsan avgör vad hen gör sedan
       }
     }

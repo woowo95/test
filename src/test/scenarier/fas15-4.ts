@@ -32,3 +32,27 @@ SCENARIER.domsjalv = {
     ];
   },
 };
+
+SCENARIER.stridskal = {
+  text: 'Steg 15.1.39: skälet under en strid är en hel mening byggd av stridens orsak och motståndaren, till exempel "Slåss med Ufast efter ett gräl", i stället för loggens bit "efter ett gräl"',
+  kor: () => {
+    const s = SIM.createState(11, START); klockan(s, 11);
+    const v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), [a, b, c, d] = v;
+    for (const q of v) { q.x = v[0].x + 1; q.y = v[0].y; }
+    SIM.kartStridBorja(s, 'slagsmal', [[a], [b]], 'efter ett gräl');
+    const gral = [a.task?.why ?? '', b.task?.why ?? ''];
+    SIM.kartStridBorja(s, 'skada', [[c], [d]], 'en holmgång');
+    const holm = c.task?.why ?? '';
+    const t = SIM.createState(12, START); klockan(t, 11);
+    const w = SIM.living(t).filter(p => SIM.ageOf(p, t.now) >= SIM.ALDER.vuxen);
+    SIM.kartStridBorja(t, 'skada', [[w[0]], w.slice(1)], 'ett uppror');
+    const manga = w[0].task?.why ?? '';
+    return [
+      [`den som började slåss: "${gral[0]}"`, gral[0] === `Slåss med ${b.name} efter ett gräl`],
+      [`den andra: "${gral[1]}"`, gral[1] === `Slåss med ${a.name} efter ett gräl`],
+      [`holmgången: "${holm}"`, holm === `Slåss med ${d.name} i en holmgång`],
+      [`mot flera (${w.length - 1}): "${manga}"`, manga.startsWith(`Slåss med ${w[1].name}`) && manga.endsWith('i ett uppror') && !manga.includes('undefined')],
+      ['ingen har bara loggens bit som skäl', ![...gral, holm, manga].some(x => /^\p{Ll}/u.test(x))],
+    ];
+  },
+};
