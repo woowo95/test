@@ -2643,7 +2643,7 @@ SCENARIER.sorg = {
     s.now += 3 * DAY; SIM.sorgTimme(s);
     const t3 = tanke().join(', '), v3 = a.thoughts.find(t => t.text.startsWith('Saknar'))?.v ?? 0;
     return [
-      [`först förlusten: ${t1}`, /^Förlorade sin partner/.test(t1) && !/Sörjer/.test(t1)],
+      [`först förlusten: ${t1}`, /^Förlorade sin (man|hustru|kvinna)/.test(t1) && !/Sörjer/.test(t1)],
       [`sedan sorgen, med mindre tyngd: ${t2}`, /Sörjer/.test(t2) && !/Förlorade/.test(t2) && Math.abs(v2) < Math.abs(v1)],
       [`sist saknaden, svagast: ${t3}`, /Saknar/.test(t3) && Math.abs(v3) < Math.abs(v2)],
     ];
