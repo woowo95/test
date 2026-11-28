@@ -216,7 +216,7 @@ export const VAL = balans('val', {
   berattaAlder: 50, berattaBonus: 6, berattaDiv: 40, // berättande: (färdigheten + Bonus över Alder) / Div
   nattHantDiv: 70, // handarbete: (hantverk + flit) / Div
   nattNar: 2, nattLangt: 8, nattBara: 0.5, nattBaraTim: 2, // de modiga går upp till Nar + Langt rutor för att bära in, med vikten Bara, i så många timmar
-  nattBarnSamtal: 0.6, nattBarnSova: 0.4, // ett barn sitter med de vuxna eller sover, med dessa vikter
+  nattVilaBarn: 0.8, // barnets sömnbehov: på natten vill barnet vars vila är under detta sova, med vikten nattVilaVikt gånger (1 − vilan / detta) (steg 15.1.46)
   nattSamtal: 0.4, nattPaus: 0.1, // vikten för att umgås vid elden och för att bara vila där
   // borden (steg 2.2.15)
   maltidMin: 20, maltidSpann: 10, // en måltid vid bordet
@@ -1568,8 +1568,9 @@ export const FRITID: readonly FritidRad[] = [
   { id: 'paus', nar: 'natt', kraver: 'inget', ger: 'vila', drar: 'inget annat lockar', akt: ['vila'],
     vikt: c => vuxen(c) ? VAL.nattPaus : 0,
     gor: c => viloSkal(c.v) && paus(c.v, 'Mörkt, vilar') },
-  { id: 'sova', nar: 'natt', kraver: 'att vara barn', ger: 'sömn', drar: 'barndomen', akt: ['sova'],
-    vikt: c => vuxen(c) ? 0 : VAL.nattBarnSova,
+  // barnets sömn ur kroppen som de vuxnas vila (steg 15.1.46): vilan mot barnets större sömnbehov
+  { id: 'sova', nar: 'natt', kraver: 'att vara barn', ger: 'sömn', drar: 'tröttheten och barnets sömnbehov', akt: ['sova'],
+    vikt: c => !vuxen(c) && c.p.rest < VAL.nattVilaBarn ? VAL.nattVilaVikt * (1 - c.p.rest / VAL.nattVilaBarn) : 0,
     gor: c => set(c.v, 'sova', 'Barn sover på natten') },
   { id: 'bara', nar: 'natt', kraver: 'något som ligger ute nära lägret', ger: 'saker i förrådet', drar: 'modet: de modiga går längre ut i mörkret', akt: ['bara'],
     vikt: c => c.a >= ALDER.ansvar && c.s.stackar?.length ? VAL.nattBara : 0,
@@ -1599,11 +1600,11 @@ export const FRITID: readonly FritidRad[] = [
     projektVal(c.v, pr.u, c.why); return true;
   }, 'material och ett projekt'),
   { id: 'samtal', kraver: 'sällskap', ger: 'umgänge', drar: 'det saknade umgänget', akt: ['samtal'],
-    vikt: c => c.natt ? (vuxen(c) ? VAL.nattSamtal : VAL.nattBarnSamtal) : (1 - c.p.social) * VAL.umgasVikt,
+    // på natten sitter man med de andra vid elden; barnet dessutom mer ju mer umgänge det saknar, som på dagen (steg 15.1.46)
+    vikt: c => c.natt ? VAL.nattSamtal + (vuxen(c) ? 0 : (1 - c.p.social) * VAL.umgasVikt) : (1 - c.p.social) * VAL.umgasVikt,
     gor: c => {
       if (!c.natt) return set(c.v, 'samtal', 'Vill umgås');
-      if (!vuxen(c)) return set(c.v, 'samtal', 'Mörkt, sitter med de vuxna vid elden');
-      set(c.v, 'samtal', 'Mörkt, umgås vid elden'); c.v.dur = (VAL.nattPrat + rnd(c.s, 'val', c.p) * VAL.nattPratSpann) * MIN; return true; // en stund, sedan går man en bit till nästa samtal
+      set(c.v, 'samtal', vuxen(c) ? 'Mörkt, umgås vid elden' : 'Mörkt, sitter med de vuxna vid elden'); c.v.dur = (VAL.nattPrat + rnd(c.s, 'val', c.p) * VAL.nattPratSpann) * MIN; return true; // en stund, sedan går man en bit till nästa samtal
     } },
   { id: 'promenad', nar: 'dag', kraver: 'inget', ger: 'humör', drar: 'nyfikenheten; nyfikna och modiga går längre', akt: ['promenad'],
     vikt: c => (VAL.promBas + stat(c.p, 'nyfikenhet', c.s.now) / VAL.promNyfiken) * c.calm,
