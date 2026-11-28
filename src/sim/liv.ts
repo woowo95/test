@@ -5,7 +5,7 @@ import { personNara } from './personlogg';
 import { upplev, uppvaxtDod, uppvaxtFodd, type UpplevelseTyp } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
 import { kronika } from './historik';
-import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, isParent, living, log, makeName, paKartan, newPerson, raddAkt, relKey, startSkills, uppkalladLogg } from './folk';
+import { ALDER, REL, ageOf, alive, budTillfalle, byId, count, dodKrok, isParent, living, log, makeName, paKartan, newPerson, raddAkt, relKey, startSkills, uppkalladLogg } from './folk';
 import { pair, stallVagn } from './varld';
 import { avgMood } from './humor';
 import { chance, clamp, hash3, pick, pickViktat, rnd } from './slump';
@@ -172,6 +172,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   if (a >= ALDER.hogAlder) p.fame.push(`Blev ${a} år gammal`);
   uppvaxtDod(s, p); // barnen som miste hen eller såg det (steg 3.1.2)
   const fd: DodDef = DODSORSAKER[orsak];
+  if (fd.sorg) for (const k of dodKrok) k(s, p);
   if (fd.foljd && !p.gast && (fd.foljdNar?.(s) ?? true)) for (const q of living(s)) if (q !== p && !q.gast) upplev(s, q, fd.foljd, p.name); // följden för byn (steg 13.9.3)
   rykteDod(s, p); // byn minns hen (steg 3.4.1)
   kunskapDod(s, p); // lärlingen och det som ingen annan kan (steg 4.2.3.4)

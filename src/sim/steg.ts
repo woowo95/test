@@ -63,7 +63,8 @@ import { halMin, halVal, isKost, isNiva, islagt, stepIs, halGjort } from './is';
 import { blotSteg, coldOf, forVarm, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { ELD, VED, brinnerNara, type Tand, turMal, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, letaFattas, letarNu, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tryLight, nagonEld, plockatKvar, woodDays } from './eld';
 import { gastLever } from './gast';
-import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, dodKrok, forstaGang, gjort, isSick, living, log, ovning, stat } from './folk';
+import { missnojeDod } from './rost';
 import { BIN, binDod, binSteg, djurStickSteg, retadeSteg, skattaKlar } from './bin';
 import { SJUK, SJUKDOMAR, SJUK_DOD, forkylning, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme, svartSjukNu } from './sjukdom';
 import { eldPlats, getMap } from './karta';
@@ -440,6 +441,7 @@ function stegBy(s: State, dtSec: number, events?: TalkEvent[], efter?: () => voi
   if (skuld > 1e-9) s.skuld = Math.round(skuld * 1000) / 1000; else delete s.skuld;
 }
 // två rövare som pratar på rastplatsen samtalar som byborna (steg 10.2.24)
+dodKrok.push(missnojeDod); // ledaren bär missnöjet när någon dör av det som gått dåligt (rost.ts, steg 15.1.161)
 rovarPrat.prata = (s, a, b, ev) => { converse(s, a, [b], ev); count(s, 'rovarPrat'); };
 // det ett slag delar mellan systemen i TAKTER
 type Slag = { dt: number; t0: number; now: number; ai: number; ppl: Person[]; events?: TalkEvent[]; social: Person[]; inRum?: Map<number, number> };

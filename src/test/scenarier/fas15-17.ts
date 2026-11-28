@@ -1,7 +1,7 @@
 // Scenarier för fas 15, grupp 17 (steg 15.1.161–15.1.170).
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, klockan, kor, medBank, nyInvanare, setMat, tandEld, testBy, utanWebblasare } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, nyInvanare, setMat, styreTimme, tandEld, testBy, utanWebblasare } from './hjalp';
 import { foretagBy } from './fas14';
 import { hus as husFlik } from '../../ui/flikar/hus';
 import { setByn, ui } from '../../ui/lage';
@@ -279,6 +279,53 @@ SCENARIER.jaktsamling = {
     return [
       [`vargjakter med strid: ${varg.length}, den som kallade var ensam i ${ensamV} (i snitt ${snitt(varg)} jägare i striden; utan strid ${vargUtan.join(' ')})`, varg.length >= 5 && ensamV * 10 <= varg.length],
       [`björnjakter med strid: ${bjorn.length}, den som kallade var ensam i ${ensamB} (i snitt ${snitt(bjorn)} jägare i striden; utan strid ${bjornUtan.join(' ')})`, bjorn.length >= 3 && ensamB * 10 <= bjorn.length],
+    ];
+  },
+};
+
+SCENARIER.motkraft = {
+  text: 'Steg 15.1.161: styret och tron står inte still. Ledaren bär missnöjet av det som gått dåligt medan hen styrt (döda av svält, kyla, vargar, rövare och farsoter, förlorade strider mot rövarna), och missnöjet drar legitimiteten (LED.wMiss). En bön i nöd som inte hjälpte gör tron svagare hos den som bad och de andra troende som delade nöden, och den vars tro blir för svag lämnar den (KULT.bonTapp, bonTvivel, lamna)',
+  kor: () => {
+    // ledaren och svälten
+    const by = () => {
+      const s = SIM.createState(11, START); klockan(s, 11);
+      for (const [x, a] of [['m', 33], ['k', 29], ['m', 26], ['k', 31], ['m', 40]] as const) nyInvanare(s, x, a);
+      const vuxna = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), l = vuxna[0]!;
+      (l.tek ??= {}).ledarskap = 1;
+      for (const q of vuxna) if (q !== l) SIM.getRel(s, l, q).op = 40;
+      styreTimme(s);
+      return { s, l, vuxna };
+    };
+    const a = by(), leg0 = SIM.legitimitet(a.s).v;
+    const offer = a.vuxna.filter(q => q !== a.l).slice(0, 2);
+    for (const q of offer) SIM.die(a.s, q, 'svalt');
+    for (const q of SIM.living(a.s)) q.hunger = 0.05; SIM.missnojeTimme(a.s, 6); // de andra svälter några timmar
+    const leg1 = SIM.legitimitet(a.s).v, miss = SIM.legitimitet(a.s).miss ?? 0;
+    // de som dör av ålderdom ger inget missnöje
+    const b = by(), legB0 = SIM.legitimitet(b.s).v;
+    for (const q of b.vuxna.filter(q => q !== b.l).slice(0, 2)) SIM.die(b.s, q, 'alderdom');
+    const legB1 = SIM.legitimitet(b.s).v;
+    // tron och sjukdomen: den andliga ber för sitt sjuka barn, barnet dör, och tron tappar tilltro hos de troende i familjen
+    const t = SIM.createState(5, START); klockan(t, 11);
+    const vux = SIM.living(t).filter(p => SIM.ageOf(p, t.now) >= SIM.ALDER.vuxen), mor = vux[0]!;
+    mor.andlig = 90; SIM.grunda(t, mor, 'drom');
+    const tro = mor.tro!;
+    const barn = nyInvanare(t, 'k', 6); barn.mother = mor.id;
+    const far = vux.find(q => q !== mor)!; mor.partner = far.id; far.partner = mor.id; barn.father = far.id;
+    for (const q of [far, ...vux.filter(q => q !== mor && q !== far)]) { q.tro = tro; q.troStyrka = 20; }
+    const fore = SIM.living(t).filter(q => q.tro === tro).length;
+    for (let i = 0; i < 3; i++) { // tre gånger: barnet blir sjukt, mor ber, och barnet dör
+      const c = i ? nyInvanare(t, 'k', 6) : barn; c.mother = mor.id; c.father = far.id;
+      mor.troStyrka = Math.max(mor.troStyrka ?? 0, SIM.KULT.nodTro); mor.bonNodD = undefined;
+      mor.bonVan = { t: t.now, o: 'nara', vem: c.id, x: Math.floor(mor.x), y: Math.floor(mor.y) };
+      SIM.die(t, c, 'sjukdom'); t.now += SIM.HOUR; SIM.kultTimme(t, 1);
+    }
+    const efter = SIM.living(t).filter(q => q.tro === tro).length;
+    return [
+      [`ledaren tappar legitimitet när två svälter ihjäl och de andra svälter (${SIM.kortTal(leg0)} till ${SIM.kortTal(leg1)}, missnöjet ${SIM.kortTal(miss)})`, leg1 < leg0 - 0.05 && miss > 0],
+      [`två som dör av ålderdom ger inget missnöje (${SIM.kortTal(legB0)} till ${SIM.kortTal(legB1)})`, Math.abs(legB1 - legB0) < 0.02],
+      [`tron vars böner inte hjälpte under sjukdomen tappar troende (${fore} till ${efter}, ${t.stat?.tro_lamnade ?? 0} lämnade)`, efter < fore && (t.stat?.tro_lamnade ?? 0) > 0],
+      [`den som bad tror svagare (${SIM.kortTal(mor.troStyrka ?? 0)})`, (mor.troStyrka ?? 0) < SIM.KULT.nodTro],
     ];
   },
 };

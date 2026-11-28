@@ -65,6 +65,9 @@ export const KULT = balans('kult', {
   vuxenTro: 3, // den unga får så här mycket tro av sitt vuxenblivande, de andra ritualens vanliga (steg 10.3.4)
   fastaTro: 4, // fastan ger tron så här mycket i stället för högtidens 3 (steg 10.3.3)
   offerTro: 2, offerInget: -0.02, // offret vid högtiden: tron hos den som offrar, och humöret hos den som inget har
+  // en bön i nöd som inte hjälpte (steg 15.1.161): tron tappar tilltro hos den som bad och, mindre, hos de andra troende som delade
+  // nöden (hela byn i svälten och kylan, familjen när det gällde någon nära). Den vars tro blir svagare än lamna lämnar den
+  bonTapp: 15, bonTvivel: 6, lamna: 12,
 });
 
 // ---------- bönen (steg 8.5.2–8.5.4) ----------
@@ -125,8 +128,24 @@ function bonSvar(s: State, p: Person) {
   const f = farorNu(s), over = b.o === 'svalt' ? !f.svalt : b.o === 'kyla' ? !f.kyla : frisk;
   if (over || s.now - b.t >= KULT.hjalpDygn * DAY || b.o === 'nara' && (!q || !alive(q))) {
     p.bonVan = undefined;
-    if (over) { upplev(s, p, 'bonHjalpte'); count(s, 'bon_hjalpte'); bonSvarPlats(s, p, b); tecken(s, p, 'bonSvar'); } else { upplev(s, p, 'bonInte'); p.tvivel = (p.tvivel ?? 0) + 1; count(s, 'bon_inte'); }
+    if (over) { upplev(s, p, 'bonHjalpte'); count(s, 'bon_hjalpte'); bonSvarPlats(s, p, b); tecken(s, p, 'bonSvar'); }
+    else {
+      upplev(s, p, 'bonInte'); p.tvivel = (p.tvivel ?? 0) + 1; count(s, 'bon_inte');
+      const tr = p.tro, nara = (x: Person, y?: Person) => !!y && (x === y || x.partner === y.id || isParent(x, y) || isParent(y, x));
+      for (const o of living(s)) if (o.tro === tr && o !== p && (b.o !== 'nara' || nara(o, q))) tilltro(s, o, KULT.bonTvivel);
+      tilltro(s, p, KULT.bonTapp);
+    }
   }
+}
+// tron tappar tilltro hos p (steg 15.1.161): blir den svagare än KULT.lamna lämnar p tron
+function tilltro(s: State, p: Person, v: number) {
+  const tr = troOf(s, p.tro);
+  if (!tr) return;
+  p.troStyrka = Math.max(0, (p.troStyrka ?? 0) - v);
+  if (p.troStyrka >= KULT.lamna) return;
+  p.tro = undefined; p.troStyrka = undefined; p.tvivel = undefined;
+  count(s, 'tro_lamnade');
+  log(s, `${p.name} slutade tro på ${troNamn(tr).toLowerCase()}: bönerna hjälpte inte.`, 'rel', [p.id]);
 }
 // rutan där bönen i nöd hölls och fick svar blir en kandidat till en helig plats, också utan präst (steg 10.3.10)
 const bonSvarPlats = (s: State, p: Person, v: NonNullable<Person['bonVan']>) => { const tr = troOf(s, p.tro); if (!tr) return; heligKandidat(tr, { x: v.x ?? Math.floor(p.x), y: v.y ?? Math.floor(p.y), t: s.now, om: `där ${gen(p.name)} bön fick svar` }); };

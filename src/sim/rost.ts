@@ -53,6 +53,9 @@ export const MISS = balans('missnoje', {
   seder: 0.002, // ... långsamt när sederna ligger långt från ens egna åsikter (mer än sederAvst)
   sederAvst: 0.6,
   orattvist: 0.2, // ... när man själv straffas orättvist (familjen hälften)
+  // det som gått dåligt medan ledaren styrt (steg 15.1.161): ledaren bär missnöjet
+  dod: 0.06, dodNara: 0.15, // när någon i byn dör av svält, kyla, vargar, rövare eller en farsot (sorg i DODSORSAKER): hos de vuxna, och hos de nära
+  forlust: 0.1, // när byn förlorar en strid mot rövarna: hos de vuxna
   bleknarDygn: 5, // missnöjet bleknar med den här tidskonstanten ...
   vintern: 0.3, // ... och sjunker så här mycket efter en klarad vinter eller en vunnen strid
   grans: 0.45, // över den här gränsen vill man byta ledare (fraktionen)
@@ -268,6 +271,15 @@ export function missnojeTimme(s: State, h = 1) { // h: timmarna sedan sist (TAKT
   }
   fraktionTimme(s);
 }
+// det som gått dåligt medan ledaren styrt (steg 15.1.161): de vuxna blir v mer missnöjda, de nära (nara) vNara
+export function missnojeMotgang(s: State, v: number, nara: readonly Person[] = [], vNara = v) {
+  const l = ledareOf(s);
+  if (!l) return;
+  for (const q of living(s)) if (q !== l && !q.gast && vuxenRost(s, q)) q.missnoje = clamp((q.missnoje ?? 0) + (nara.includes(q) ? vNara : v), 0, 1);
+  count(s, 'missnojeMotgang');
+}
+// någon i byn dog av det som gått dåligt (dodKrok i folk.ts, satt i steg.ts): de nära är familjen och den bästa vännen
+export const missnojeDod = (s: State, p: Person) => { if (!p.gast) missnojeMotgang(s, MISS.dod, living(s).filter(q => q.partner === p.id || isKin(q, p) || q.bast === p.id), MISS.dodNara); };
 export const missnojeStrafft = (_s: State, q: Person, familj: Person[]) => { q.missnoje = clamp((q.missnoje ?? 0) + MISS.orattvist, 0, 1); for (const f of familj) if (f !== q) f.missnoje = clamp((f.missnoje ?? 0) + MISS.orattvist / 2, 0, 1); };
 export const missnojeLatt = (s: State) => { for (const p of living(s)) if (p.missnoje) p.missnoje *= 1 - MISS.vintern; };
 export const missnojeNoll = (s: State) => { for (const p of living(s)) p.missnoje = undefined; const st = styreAv(s); st.frak = undefined; st.lugn = s.now + MISS.lugnDygn * DAY; };

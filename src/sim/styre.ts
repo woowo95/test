@@ -67,6 +67,7 @@ export const LED = balans('ledare', {
   // plus hur ledaren tillsattes och framgångarna, minus orättvisan
   wStod: 0.6, wVint: 0.2, vintrar: 2,
   orattDygn: 3, // orättvisan bleknar med en tidskonstant på så här många dygn
+  wMiss: 0.5, // byns missnöje (snittet efter inflytandet) drar så här mycket av legitimiteten (steg 15.1.161)
   tanke: 0.04, // ledaren mår så här mycket bättre (tanken Leder byn)
 });
 export const PAB = balans('pabud', {
@@ -297,21 +298,22 @@ const LASTA_SEDER: readonly Sed[] = [...MAKT_SEDER, 'krig', 'natur', 'prat'];
 export const sedOppen = (s: State, k: Sed) => !LASTA_SEDER.includes(k) || !!s.styre?.oppna.includes(k);
 
 // ---------- legitimiteten ----------
-type Leg = { v: number; stod: number; satt: number; fram: number; vint: number; oratt: number };
+type Leg = { v: number; stod: number; satt: number; fram: number; vint: number; oratt: number; miss?: number };
 export function legitimitet(s: State): Leg {
   const st = s.styre, l = ledareOf(s);
   if (!st || !l) return { v: 0, stod: 0, satt: 0, fram: 0, vint: 0, oratt: 0 };
-  let op = 0, w = 0;
+  let op = 0, w = 0, miss = 0;
   for (const q of living(s)) {
     if (q === l) continue;
     const wq = influence(s, q); if (!wq) continue;
-    op += (s.rels[relKey(l.id, q.id)]?.op ?? 0) * wq; w += wq;
+    op += (s.rels[relKey(l.id, q.id)]?.op ?? 0) * wq; w += wq; miss += (q.missnoje ?? 0) * wq;
   }
+  miss = w ? miss / w : 0; // missnöjet med det som gått dåligt medan ledaren styrt (steg 15.1.161, rost.ts)
   const stod = clamp(0.5 + (w ? op / w : 0) / 200, 0, 1);
   const satt = st.satt ?? 1, fram = clamp((st.vunna ?? 0) / LED.vunna + (living(s).length - (st.folk0 ?? living(s).length)) / LED.vaxt, 0, 1); // hur ledaren tillsattes och framgångarna (steg 8.3.9)
   const vint = Math.min(1, (st.vintrar ?? 0) / LED.vintrar);
   const oratt = (st.oratt ?? 0) * Math.exp(-(s.now - (st.orattT ?? s.now)) / (LED.orattDygn * DAY));
-  return { v: clamp(stod * LED.wStod + satt * LED.wSatt + fram * LED.wFram + vint * LED.wVint - oratt + (st.kyrka ?? 0) * (st.kyrkaVikt ?? 0), 0, 1), stod, satt, fram, vint, oratt };
+  return { v: clamp(stod * LED.wStod + satt * LED.wSatt + fram * LED.wFram + vint * LED.wVint - oratt - miss * LED.wMiss + (st.kyrka ?? 0) * (st.kyrkaVikt ?? 0), 0, 1), stod, satt, fram, vint, oratt, miss };
 }
 // ledarens vikt i sederna (seder.ts): en del av byns samlade vikt
 export function ledarVikt(s: State): { p: Person; w: number } | undefined {
