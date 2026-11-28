@@ -107,9 +107,11 @@ export const medBank = (s: State, k = 'slaktbank') => {
   return t;
 };
 // ett jaktförsök från början: djuren som förut (inga döda, skadade, skrämda eller flyende, och det i extra), inget annat
-// flintspjut än verktyget i jägarens hand, och uppgiften mot målet (som söks när djuren nollställts)
+// flintspjut än verktyget i jägarens hand, och uppgiften mot målet (som söks när djuren nollställts). Hararna som fångats är
+// tillbaka i viltlagret (steg 15.1.129), så att varje försök möter lika många
 export const jaktFran = (s: State, p: Person, verktyg: string | undefined, mal: { x: number; y: number } | (() => { x: number; y: number }), extra: Partial<State> = {}) => {
   Object.assign(s, { djurDoda: undefined, djurHalsa: undefined, djurSkramd: undefined, djurFlykt: undefined, ...extra }); s.ting = (s.ting ?? []).filter(t => t.k !== 'flintspjut');
+  SIM.takenOf(s).jakt?.fill(0);
   if (verktyg) { const t = SIM.addTool(s, verktyg, p); t.hos = p.id; }
   const m = typeof mal === 'function' ? mal() : mal;
   return { act: 'jakt', phase: 'do', tx: m.x, ty: m.y, until: s.now + HOUR, carry: 0, tool: verktyg } as Task;

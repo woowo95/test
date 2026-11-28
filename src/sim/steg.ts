@@ -60,7 +60,7 @@ import { DJURARTER, REDSKAP, bearbeta, forstRuttnar, twineRope, wearUsed } from 
 import { GOR_ACTS, finishHalf, startWork, stepPaborjat, workHalf } from './paborjat';
 import { arbetaBredvid, forsokKlar, forsokSteg, haftSteg, hantSkill, stepLarlingar, thinkWhileWorking } from './teknik';
 import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
-import { FYND, fyndAt, type FyndId, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, richness, richnessDelar, richnessFor, type Lager, takeFrom } from './fynd';
+import { FYND, fyndAt, type FyndId, type Kind, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, richness, richnessDelar, richnessFor, type Lager, takeFrom } from './fynd';
 import { halMin, halVal, isKost, isNiva, islagt, stepIs, halGjort } from './is';
 import { blotSteg, coldOf, forVarm, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { ELD, VED, brinnerNara, type Tand, turMal, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, letaFattas, letarNu, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tryLight, nagonEld, plockatKvar, woodDays } from './eld';
@@ -89,7 +89,7 @@ import { AGES_BORJAR, Act, DAY, HOUR, HOUR_S, MIN, Fire, Person, SEC, SKILL_NAME
 import { FOREST, findPath, wear } from './vag';
 import { barKropp, gangVakt, kroppFart, rutFart, smidig, snoFart } from './gang';
 import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './ljus';
-import { VAL, arbetsTimme, chooseTask, eldOrd, farligtBehov, nastaRedskap, spotFor } from './val';
+import { VAL, arbetsTimme, chooseTask, tomtFor, eldOrd, farligtBehov, nastaRedskap, spotFor } from './val';
 import { FAGEL, djurSteg, viltSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { bjornSteg, bjornjaktSteg } from './bjorn';
@@ -1186,7 +1186,7 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
     // stranden är utfiskad (steg 2.12.4): fiskaren ser det, minns det och går till en annan plats vid vattnet. Finns ingen bättre slutar hen
     // (hen ser det först när hen fiskat en stund där, en bit om BIT sekunder, hur korta byns steg än är)
     tk.koll = (tk.koll ?? 0) + dtSec;
-    if (tk.koll >= BIT - 1e-6 && (tk.koll = 0, true) && !tk.carry && richness(s, 'fiske', tk.tx, tk.ty) < PLATS.tomtGrans) {
+    if (tk.koll >= BIT - 1e-6 && (tk.koll = 0, true) && tomtFor(s, p, 'fiske', richness(s, 'fiske', tk.tx, tk.ty))) { // också den som bär fisk (steg 15.1.132)
       lookAround(s, p, tk.tx, tk.ty);
       const sp0 = spotFor(s, 'fiske', p), sp = freeNear(s, sp0.x, sp0.y); // aldrig i en husvägg
       if (Math.hypot(sp.x - tk.tx, sp.y - tk.ty) > 1.5) { tk.tx = sp.x; tk.ty = sp.y; tk.phase = 'go'; tk.hal = undefined; count(s, 'fiskeByter'); }
@@ -1668,7 +1668,7 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   if (rd && y > 0 && d.slits?.per === 'ger') wearUsed(s, p, y); // korgen slits för det som samlas, inte per timme (steg 2.3.12)
   if (rk?.rad.haller && y > 0 && d.slits?.per === 'ger') slitRygg(s, rk.t, y, rk.rad.haller); // och ryggsäcken likadant (steg 7.1.3)
   // tomt här: gå vidare eller hem (nedan). Den som letar flinta eller stenar fortsätter
-  const tomt = !!del && rich < PLATS.tomtGrans && !tk.sok;
+  const tomt = !!del && !tk.sok && tomtFor(s, p, res as Kind, rich); // samma gräns som fisket (steg 15.1.132)
   if (res && del) takeFrom(s, res, tk.tx, tk.ty, y, del.r);
   // den som arbetar ser hur mycket som finns i området och minns det
   if (res && (rich < PLATS.tomtGrans || chance(s, 1 / STEG.minneSek, dtSec, 'minne', p))) lookAround(s, p, tk.tx, tk.ty);

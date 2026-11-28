@@ -639,7 +639,7 @@ const infOppet = (w: Skada) => oppet(w) && !w.sydd && (w.b > 0 || w.av !== undef
 function infSteg(s: State, p: Person, w: Skada, h: number, dtSec: number) {
   if (w.inf === undefined) {
     if (!infOppet(w) || !chance(s, HALSA.infRisk * (SKADA[w.k].inf ?? 1) * (0.5 + w.g) * (vilaLak(s, p) > 1 ? HALSA.vilaRisk : 1) * (w.smuts ? HALSA.blodigt : 1) * (1 + HALSA.infSmuts * toaNara(s, tileOf(p.x, p.y))) * ((w.ren ?? 0) > s.now ? HALSA.infRen : 1) * forbandRisk(w.f) * (forbandGammalt(s, w) ? HALSA.gammaltForband : 1) * (w.rh === 2 ? HALSA.tval : w.rh ? HALSA.renaHander : 1) * (w.fast ? HALSA.fastInf : 1) * (1 - SALVA.skydd * salvaVerkan(w)) / HOUR_S, dtSec, 'halsa', p)) return; // ett gammalt förband och rena händer (steg 9.5.25) // sårslaget, smutsen, rengöringen och förbandet (steg 9.5.24); läkesalvan sänker risken (steg 9.5.10)
-    w.inf = 0; w.mot = 0; w.r = 1 - SJUK.spann + 2 * SJUK.spann * rnd(s, 'halsa', p); count(s, 'infektioner'); // infektionens egen takt (steg 15.1.106)
+    w.inf = 0; w.mot = 0; w.r = 1 - SJUK.spann + 2 * SJUK.spann * rnd(s, 'halsa', p); count(s, 'infektioner'); count(s, 'infektioner_' + w.k); // infektionens egen takt (steg 15.1.106), per sårslag (steg 15.1.135)
     const v = w.vardare !== undefined ? byId(s, w.vardare) : undefined; // den som vårdade såret förstår att händerna och redskapen inte var rena (steg 9.5.25)
     if (v && alive(v) && kn(v, 'renahander') < 1) { learnK(v, 'renahander', HALSA.renaLar, s.now); count(s, 'renaHanderLart'); }
     if (w.g >= HALSA.logg) log(s, `${gen(p.name)} sår i ${DEL[w.d].i} blev infekterat.`, 'world', [p.id]);

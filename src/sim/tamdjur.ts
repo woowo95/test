@@ -92,7 +92,7 @@ export function nyttTamdjur(s: State, art: TamArtId, x: number, y: number, agare
 }
 // djuret dör (av hunger, ålder eller ett rovdjur) och tas bort ur byn
 // hur ett tamdjur dog, skrivet efter "dog": orsaken som byns statistik räknar (tamDog_svalt …) och orden i texten
-const DOG_HUR: Record<string, string> = { svalt: 'av hunger', alder: 'av ålder', 'frös ihjäl': 'av kölden' };
+const DOG_HUR: Record<string, string> = { svalt: 'av hunger', alder: 'av ålder', kyla: 'av kölden', torst: 'av törst' }; // nycklar utan mellanslag i statistiken (steg 15.1.140)
 export function tamDor(s: State, d: Tamdjur, orsak: string) {
   d.dog = s.now; s.tamdjur = (s.tamdjur ?? []).filter(q => q !== d);
   count(s, `tamDog_${orsak}`);

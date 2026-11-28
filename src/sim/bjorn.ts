@@ -31,6 +31,7 @@ import { lamnaFallt, styckaFallt } from './styckning';
 import { upplev } from './uppvaxt';
 import { tecken } from './religion';
 import { H, HOUR, MIN, Person, SEC, State, Task, W } from './typer';
+import { hundSkaller } from './tamdjur';
 import { bynsMitt, utanforByn } from './omrade';
 import { tanke } from './tankar';
 
@@ -42,6 +43,7 @@ export const BJORNMOTE = balans('bjornmote', {
   rädd: 0.25, // så mycket sämre humör den får som ser björnen på nära håll
   räddTim: 6, // i så många timmar
   med: 2.5, // de som är så här nära (rutor) den som anfalls slåss med
+  grupp: 0.5, // en grupp skrämmer björnen: chansen att den anfaller delas med 1 + så här mycket för varje person utöver den första (steg 15.1.136)
   larmNara: 25, // den som möter björnen ropar när björnen är högst så här många rutor utanför byn (steg 12.1.142): björnen håller sig oftast längre bort
   undanTim: 4, // efter en strid som björnen vunnit eller gett upp går den bort från byn och kommer inte tillbaka på så här många timmar (steg 9.2.30) ...
   undanR: 30, // ... så här många rutor bort från platsen
@@ -83,26 +85,41 @@ export function bjornSteg(s: State, dt = 0) {
   const ungar = alla.filter(d => d.art === 'bjornunge'), R = ungar.length ? BJORNMOTE.naraUngar : BJORNMOTE.nara;
   const ar = yearNo(s, s.now);
   if (s.bjornMott && s.bjornMott.ar !== ar) s.bjornMott = undefined;
-  for (const p of living(s)) {
-    if (!vaken(p) || p.task?.act === 'strid' || roomAt(s, p.x, p.y)) continue;
-    if (Math.hypot(p.x - b.x, p.y - b.y) > R && !ungar.some(u => Math.hypot(p.x - u.x, p.y - u.y) < BJORNMOTE.nara)) continue;
+  // vakthunden hör björnen (steg 9.8.11, 15.1.137), en gång per minut: när den skäller och björnen är nära byn väcks ägaren och byn larmas
+  if (s.bjornHundT === undefined || s.now - s.bjornHundT >= MIN) {
+    s.bjornHundT = s.now;
+    const h = hundSkaller(s, d => Math.hypot(d.x - b.x, d.y - b.y));
+    if (h && utanforByn(s, b.x, b.y) <= BJORNMOTE.larmNara) {
+      if (h.p.task?.act === 'sova') { avbryt(s, h.p); h.p.task = undefined; }
+      if (!larmNu(s, h.p, 'bjorn')) { larma(s, 'bjorn', 1 + ungar.length, [h.p]); count(s, 'bjornHundLarm'); }
+    }
+  }
+  // alla som är nya i mötet samlas först (de vakna inom R, eller nära en unge), och sedan slås en tärning för mötet (steg 15.1.136):
+  // en grupp skrämmer björnen, så chansen delas med 1 + grupp för varje person utöver den första
+  const ute = (q: Person) => vaken(q) && q.task?.act !== 'strid' && !roomAt(s, q.x, q.y);
+  const nya = living(s).filter(p => ute(p) && !s.bjornMott?.ids.includes(p.id) && (Math.hypot(p.x - b.x, p.y - b.y) <= R || ungar.some(u => Math.hypot(p.x - u.x, p.y - u.y) < BJORNMOTE.nara)));
+  if (nya.length) {
     const mott = s.bjornMott ??= { ar, ids: [] };
-    if (mott.ids.includes(p.id)) continue;
-    mott.ids.push(p.id);
-    count(s, 'bjornmote');
-    if (utanforByn(s, b.x, b.y) <= BJORNMOTE.larmNara && !larmNu(s, p, 'bjorn')) { larma(s, 'bjorn', 1 + ungar.length, [p]); count(s, 'bjorn larm'); } // den som ser björnen nära byn ropar (steg 12.1.142)
-    if (!s.bjornJakt?.jagare) s.bjornJakt = { ar, sedd: s.now, sag: p.id, x: b.x, y: b.y, timme: s.bjornJakt?.timme }; // timmen behålls: chansen till jakt slås en gång i timmen, inte vid varje nytt möte (steg 12.1.59) // byn vet var björnen går (björnjakten, steg 6.6.6), och märket står där (steg 9.2.122)
-    if (rnd(s, 'bjorn') < (ungar.length ? BJORNMOTE.anfallUngar : BJORNMOTE.anfall)) {
-      const folk = living(s).filter(q => q === p || vaken(q) && q.task?.act !== 'strid' && !roomAt(s, q.x, q.y) && Math.hypot(q.x - p.x, q.y - p.y) <= BJORNMOTE.med);
+    for (const p of nya) { mott.ids.push(p.id); count(s, 'bjornmote'); }
+    count(s, 'bjornmoten'); count(s, 'bjornmoteFolk', nya.length);
+    const ropar = nya.filter(p => !larmNu(s, p, 'bjorn'));
+    if (utanforByn(s, b.x, b.y) <= BJORNMOTE.larmNara && ropar.length) { larma(s, 'bjorn', 1 + ungar.length, ropar); count(s, 'bjorn larm'); } // den som ser björnen nära byn ropar (steg 12.1.142)
+    if (!s.bjornJakt?.jagare) s.bjornJakt = { ar, sedd: s.now, sag: nya[0].id, x: b.x, y: b.y, timme: s.bjornJakt?.timme }; // timmen behålls: chansen till jakt slås en gång i timmen, inte vid varje nytt möte (steg 12.1.59) // byn vet var björnen går (björnjakten, steg 6.6.6), och märket står där (steg 9.2.122)
+    const chans = (ungar.length ? BJORNMOTE.anfallUngar : BJORNMOTE.anfall) / (1 + BJORNMOTE.grupp * (nya.length - 1));
+    if (rnd(s, 'bjorn') < chans) {
+      const folk = living(s).filter(q => nya.includes(q) || ute(q) && nya.some(p => Math.hypot(q.x - p.x, q.y - p.y) <= BJORNMOTE.med));
       for (const q of folk) if (!mott.ids.includes(q.id)) mott.ids.push(q.id);
+      count(s, 'bjornmoteAnfall');
       bjornStrid(s, b.id, folk, ungar.length > 0, 'skada');
       return; // en strid per slag
     }
-    // den ser björnen, blir rädd och går därifrån
-    tanke(p, ungar.length ? 'sagBjornUngar' : 'sagBjorn', s.now, { v: -BJORNMOTE.rädd, tid: BJORNMOTE.räddTim * HOUR });
-    avbryt(s, p);
-    tecken(s, p, 'bjornVande'); // björnen som vände om (steg 10.3.7)
-    log(s, `${p.name} kom nära en björn${ungar.length ? ' med ungar' : ''} och drog sig försiktigt undan.`, 'world', [p.id]);
+    // de ser björnen, blir rädda och går därifrån
+    for (const p of nya) {
+      tanke(p, ungar.length ? 'sagBjornUngar' : 'sagBjorn', s.now, { v: -BJORNMOTE.rädd, tid: BJORNMOTE.räddTim * HOUR });
+      avbryt(s, p);
+      tecken(s, p, 'bjornVande'); // björnen som vände om (steg 10.3.7)
+      log(s, `${p.name} kom nära en björn${ungar.length ? ' med ungar' : ''} och drog sig försiktigt undan.`, 'world', [p.id]);
+    }
   }
   const j = s.bjornJakt;
   if (j && Math.floor(s.now / HOUR) !== j.timme) { j.timme = Math.floor(s.now / HOUR); jaktBeslut(s, b.x, b.y); }

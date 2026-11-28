@@ -15,12 +15,12 @@ import { EFTER, Efter, STRIDSLAG } from './efterstrid';
 import { alive, byId, count, forstaGang, gjort, log, ovning, stat } from './folk';
 import { skada, syn } from './halsa';
 import { groundOf, markslag, tileOf } from './mark';
-import { KANIN } from './redskap';
+import { DJUR, KANIN } from './redskap';
 import { avst, clamp, rnd } from './slump';
-import { KAST, SLAGSMAL, STRID, VAPEN, Vapen, Uppstallning, chansMot, djurKampe, kastat, efterKampen, nyStrid, slump, traffa } from './strid';
+import { KAST, SLAGSMAL, STRID, VAPEN, Vapen, Uppstallning, ammoOk, chansMot, djurKampe, kastat, efterKampen, nyStrid, skottLandar, slump, traffa } from './strid';
 import { isLight } from './tid';
 import { HOUR, Jaktforsok, Person, SEC, State, T, Task, W, inMap } from './typer';
-import { viltStart } from './fynd';
+import { takeFrom, viltStart } from './fynd';
 import { getMap, hash } from './karta';
 import { motgangNu } from './motgang';
 import { snoPaMarken, vaderNu } from './vader';
@@ -37,8 +37,6 @@ import { kn, learnK, useK } from './kunskap';
 // Kaninen slår aldrig tillbaka, men den som griper en levande kanin kan bli biten. Hela försöket räknas när det börjar
 // med stridens regler och en egen slumpföljd (fröet ur jägarens följd), så att det blir likadant i båda lägena. Gruppen
 // skräms av varje försök och är svårare att smyga på en stund. Stenen träffar sämre och tappas oftast bort
-// det fällda djuret av varje art, vars grundvärde bytet väljs efter (steg 10.2.37)
-const BYTE: Record<string, string> = { kanin: 'vilt', fagel: 'fagel' }; // flockarterna: saken på artens rad (FLOCKARTER)
 export const JAKT = balans('jakt', {
   smygSek: 120, // ett försök: så många sekunder att leta upp en kanin och smyga sig fram
   letaR: 30, // finns ingen kanin nära jaktplatsen går jägaren till den närmaste gruppen inom så här många rutor ...
@@ -153,13 +151,14 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   const dj = djurOf(s, s.now, undefined, (gx, gy) => Math.hypot(gx - tk.tx, gy - tk.ty) < md + KANIN_UT || Math.hypot(gx - p.x, gy - p.y) < JAKT.letaR + KANIN_UT);
   // jägaren väljer bytet med högst värde (steg 10.2.37): det fällda djurets grundvärde, mindre ju längre bort det är. Rådjuren
   // (steg 6.6.2) fälls bara med spjutet och syns på längre håll; fåglarna (steg 6.6.3) och kaninerna inom räckhåll
-  const spjut = !!tk.tool && tk.tool in VAPEN && !!(VAPEN as Record<string, { kast?: unknown }>)[tk.tool].kast;
+  const spjut = !!tk.tool && tk.tool in VAPEN && !!(VAPEN as Record<string, { kast?: unknown }>)[tk.tool].kast && ammoOk(s, p, tk.tool); // också bågen och slungan med pilar och stenar (steg 15.1.133)
   let bv = 0;
   const svalt = farorNu(s).svalt;
   const prova = (d: NonNullable<typeof m>, r: number) => {
     const dd = Math.hypot(d.x - tk.tx, d.y - tk.ty);
     if (dd >= r || heligtAvstar(s, p, d.art, svalt)) return; // det heliga djuret jagas inte, utom i svält (steg 10.3.15)
-    const v = grundvarde(BYTE[d.art] ?? FLOCKARTER[d.art]?.sak ?? 'vilt') / (1 + dd / JAKT.bytesNara);
+    // det fällda djurets värde, ur artens rad i DJUR: en hare är DJUR.kanin.mat fällt vilt (steg 15.1.131)
+    const rad = (DJUR as Record<string, { sak: string }>)[d.art], v = grundvarde(rad?.sak ?? 'vilt') * (d.art === 'kanin' ? DJUR.kanin.mat : 1) / (1 + dd / JAKT.bytesNara);
     if (v > bv) { bv = v; m = d; }
   };
   for (const d of dj) prova(d, md);
@@ -235,7 +234,9 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   // vildsvinet (steg 10.10.4): det som märkt jägaren eller blivit skadat vänder sig ibland mot hen i stället för att fly
   const anfall = !!rad && rad.tal.anfall > 0 && !dog && (sett || traff) && r() < rad.tal.anfall;
   // det kastade: stenen tappas oftast bort och då letar hen upp en ny, annars hämtas det som kastades
-  const extra = (kastD > 0 ? (v === 'sten' && r() < JAKT.stenBorta ? JAKT.stenSek : JAKT.hamtaSek) : 0) + Math.round(MOTVIND.runtSek * mv * (1 + rak) / 2);
+  // pilen och slungans sten hämtas inte: de ligger där de landade och bärs in som allt annat (steg 15.1.133)
+  const skott = !!(VAPEN[v] as { kast?: { ammo?: string } }).kast?.ammo;
+  const extra = (kastD > 0 && !skott ? (v === 'sten' && r() < JAKT.stenBorta ? JAKT.stenSek : JAKT.hamtaSek) : 0) + Math.round(MOTVIND.runtSek * mv * (1 + rak) / 2);
   // djuret kände lukten och flydde: jägaren lär sig lite om vinden (steg 6.6.7)
   if (sett && vm > 0) {
     const fore = kn(p, 'motvind'), efter = learnK(p, 'motvind', MOTVIND.lar * blast * vm, now);
@@ -261,7 +262,9 @@ export const jaktBar = (tk: Task) => !!tk.carry || jaktFallt(tk);
 export function jaktKlar(s: State, p: Person, tk: Task) {
   const f = tk.jf!, r = () => rnd(s, 'arbete', p);
   tk.jf = undefined;
-  if (f.kast > 0 && f.v !== 'sten') {
+  if (f.kast > 0 && skottLandar(s, p, f.v, f.kast, f.x, f.y, r)) { // en pil eller sten landar där den tog, och bågen slits (steg 15.1.133)
+    if (tk.tool && wearTool(s, p, tk.tool, r() * KAST.slit)) tk.tool = undefined;
+  } else if (f.kast > 0 && f.v !== 'sten') {
     const ut = kastat(s, p, f.v, f.kast, f.x, f.y, r);
     if (ut) {
       tk.tool = undefined;
@@ -295,6 +298,7 @@ export function jaktKlar(s: State, p: Person, tk: Task) {
     dodaDjur(s, f.id);
     if (forstaGang(s, 'kaniner')) log(s, `${p.name} fångade byns första hare och bar hem den hel.`, 'world', [p.id]);
     tk.carry += KANIN;
+    takeFrom(s, 'jakt', f.x, f.y, DJUR.kanin.mat); // haren är borta ur gruppen tills den växt tillbaka (steg 15.1.129)
     blodas(s, f.x, f.y, 'jakt', 1); // där kaninen fångades
     ovning(p, f.kast > 0 ? 'traff' : 'narstrid', SLAGSMAL.jakt); // träffsäkerheten eller närstriden (strid.ts)
     if (f.hand && r() < JAKT.bett) { count(s, 'jaktBett'); skada(s, p, r() < 0.5 ? 'handH' : 'handV', 'bett', JAKT.bettGrad, 'jakt', 'när hen grep en hare'); }

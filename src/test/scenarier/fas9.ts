@@ -2177,20 +2177,23 @@ SCENARIER.vakthund = {
 };
 
 SCENARIER.djurfara = {
-  text: 'Steg 9.8.12: djuren i fara. En hungrig vargflock smyger fram till ett får som står ute och tar det, men inte ett som står i fähuset; rövarna driver bort boskap i räden; den som svälter slaktar någon annans djur, och boskapsstölden är ett brott som byn kan stifta en lag mot',
+  text: 'Steg 9.8.12: djuren i fara. En hungrig vargflock söker upp ett får som står ute 22 rutor bort och tar det inom ett dygn (steg 15.1.134), men inte ett som står i fähuset; rövarna driver bort boskap i räden; den som svälter slaktar någon annans djur, och boskapsstölden är ett brott som byn kan stifta en lag mot',
   kor: () => {
     const { nyttTamdjur, tamdjurOf, vargSteg, HOUR, SEC } = SIM;
     const varg = (inne: boolean) => {
-      const s = createState(3, START); klockan(s, 2); s.kal = SIM.nyKalender(s.now, SIM.ISTID);
+      const s = createState(3, START); klockan(s, 11); s.kal = SIM.nyKalender(s.now, SIM.ISTID); // på dagen: flocken smyger inte till förrådet, den söker bytet
       const folk = SIM.living(s);
       for (const q of folk) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: s.now + 20 * HOUR, carry: 0 };
       const c = SIM.bynsMitt(s);
       const d = nyttTamdjur(s, 'far', c.x + 12, c.y);
       if (inne) d.fahus = 1;
-      const f: SIM.Vargflock = { id: s.vargNr = 1, vargar: [10_000_008, 10_000_009], x: d.x + 10, y: d.y, mx: d.x + 10, my: d.y, gar: s.now + 48 * HOUR, hunger: 0.9, gor: 'stryker', sedd: s.now };
+      // flocken 22 rutor bort, elden släckt: den söker upp fåret (steg 15.1.134) och tar det inom ett dygn i spelet
+      s.fire.lit = false;
+      const f: SIM.Vargflock = { id: s.vargNr = 1, vargar: [10_000_008, 10_000_009], x: d.x, y: d.y + 22, mx: d.x, my: d.y + 22, gar: s.now + 48 * HOUR, hunger: 0.9, gor: 'stryker', sedd: s.now };
       (s.vargar ??= []).push(f);
-      for (let i = 0; i < 1500 && tamdjurOf(s).includes(d); i++) { s.now += 10 * SEC; if (inne) d.fahus = 1; vargSteg(s, 10); }
-      return { s, d };
+      const t0 = s.now;
+      for (let i = 0; i < 24 * 360 && tamdjurOf(s).includes(d); i++) { s.now += 10 * SEC; if (inne) d.fahus = 1; vargSteg(s, 10); }
+      return { s, d, tid: (s.now - t0) / HOUR };
     };
     const ute = varg(false), inne = varg(true);
     // rövarna
@@ -2214,7 +2217,7 @@ SCENARIER.djurfara = {
     const kott = SIM.ownedStock(b, tjuv).slaktfar ?? 0;
     const lag = SIM.LAGAR.boskapsforbud;
     return [
-      [`vargarna tar fåret som står ute (${ute.s.stat?.vargTogTam ?? 0})`, !tamdjurOf(ute.s).includes(ute.d) && (ute.s.stat?.vargTogTam ?? 0) === 1],
+      [`vargarna tar fåret som står ute (${ute.s.stat?.vargTogTam ?? 0}) efter ${ute.tid.toFixed(1)} timmar`, !tamdjurOf(ute.s).includes(ute.d) && (ute.s.stat?.vargTogTam ?? 0) === 1],
       ['fåret i fähuset tar de inte', tamdjurOf(inne.s).includes(inne.d)],
       [`två rövare driver bort två får (${drivna})`, drivna === 2 && (r.stat?.boskapStulen ?? 0) === 2],
       [`den som är mätt slaktar inte någon annans får (${mett ? 'jo' : 'nej'})`, !mett],

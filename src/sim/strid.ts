@@ -1171,6 +1171,8 @@ export function korManga(u: Uppstallning, fro: number, n: number, v?: StridVarld
 // pilarnas slag (steg 13.4.2) och hur mycket mer de skadar: skytten skjuter de bästa pilarna byn har
 export const PILSLAG: Record<string, () => number> = { pilar: () => 1, jarnpilar: () => STRID.jarnPil };
 const bastaAmmo = (s: State, am: string) => am === 'pilar' ? Object.keys(PILSLAG).filter(k => amountOf(s, k) >= 1).sort((a, b) => PILSLAG[b]() - PILSLAG[a]())[0] : amountOf(s, am) >= 1 ? am : undefined;
+// bågen utan pilar och slungan utan stenar tas inte (steg 8.7.6), i strid och på jakt (steg 15.1.133); en gäst har sina egna pilar
+export const ammoOk = (s: State, p: Person, v: string) => { const am = (VAP as Record<string, { kast?: { ammo?: string } }>)[v]?.kast?.ammo; return !am || !!p.gast || !!bastaAmmo(s, am); };
 const TVA_HAND = new Set<string>(['flintspjut', 'fiskespjut', 'bage', 'jarnspjut']); // med båda händerna: ingen sköld
 // kläderna skyddar bara den som har dem på sig, också rustningen och hjälmen (steg 8.7.8)
 export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: number, y: number): Uppstallning['kampar'][number] {
@@ -1179,8 +1181,7 @@ export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: num
   const egen = (t: { hos?: number; lass?: number; bar?: number }) => (t.hos === undefined || t.hos === p.id) && (t.lass === undefined || t.lass === p.id) && (t.bar === undefined || t.bar === p.id);
   const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p).filter(egen), ...allaTing(s).filter(t => t.hos === p.id)].map(t => t.k))]; // också det en gäst bär (steg 10.1.8)
   const val = (v: Vapen) => VAP[v].skada * (1 + STRID.tyckeVal * smakAv(p, 'v:' + v)); // tycket drar i valet (steg 3.7.10)
-  const ammoOk = (v: Vapen) => { const am = VAP[v].kast?.ammo; return !am || !!p.gast || !!bastaAmmo(s, am); }; // en gäst har sina egna pilar // bågen utan pilar och slungan utan stenar tas inte (steg 8.7.6)
-  const vapen = MANNISKOVAPEN.filter(v => bar.includes(v) && ammoOk(v)).sort((a, b) => val(b) - val(a))[0] ?? 'hand';
+  const vapen = MANNISKOVAPEN.filter(v => bar.includes(v) && ammoOk(s, p, v)).sort((a, b) => val(b) - val(a))[0] ?? 'hand';
   const res = (MANNISKOVAPEN.filter(v => v !== vapen && VAP[v].liten && bar.includes(v)) as Vapen[]).sort((a, b) => VAP[a].takt - VAP[b].takt)[0]; // den snabbaste (kniven)
   const reserv = res && (p.reservAlltid || (harBalte(s, p) && paSigVikt(s, p) + viktOf(res) <= capacity(s, p) * UTRUSTNING.kropp)) ? res : undefined;
   // vapnens kvalitet (steg 12.2.6): det bästa tinget av varje vapen hen har, och skadan gånger STRID.kvSkada efter kvaliteten
@@ -1251,6 +1252,19 @@ export function slitKastat(s: State, p: Person, st: Strid, k: Kampe) {
   let skott = 0;
   for (const r of st.logg) if (r.a === k.id && r.v && r.kast) { const am = VAP[r.v].kast!.ammo; if (am) { if (VAP[r.v].kast!.pil) skott++; continue; } kastat(s, p, r.v, VAP[r.v].kast!.rack / 2, p.x, p.y, () => rnd(s, 'strid')); }
   if (!p.gast) skjutnaPilar(s, p, k.pil ?? 'pilar', skott, VAP.bage.kast!.rack);
+}
+// ett skott på jakt (steg 15.1.133): en pil eller sten med vapnet v (bågen, slungan) tas ur förrådet och landar på (x, y), d rutor
+// från skytten, som pilarna i striden (skjutnaPilar): pilen kan gå sönder, och båda kan försvinna där de landade. Svarar
+// false om vapnet inte skjuter något
+export function skottLandar(s: State, p: Person, v: string, d: number, x: number, y: number, r: () => number) {
+  const kv = (VAP as Record<string, { kast?: { ammo?: string; pil?: boolean; rack: number } }>)[v]?.kast, k = kv?.ammo && bastaAmmo(s, kv.ammo);
+  if (!kv?.ammo) return false;
+  if (!k) return true;
+  const ag = use(s, p, k, 1);
+  if (kv.pil && r() < STRID.pilSonder) count(s, 'pilSonder');
+  else if (r() < KAST.borta * kastFaktor(s, x, y, d, kv.rack)) count(s, kv.pil ? 'pilBorta' : 'skottBorta');
+  else { laggPaRutan(s, k, 1, x, y, ag); count(s, kv.pil ? 'pilLigger' : 'skottLigger'); }
+  return true;
 }
 // pilarna landar (steg 13.4.5): de skott pilar av slaget pil (de bästa byn har, steg 13.4.2) som p sköt tas ur förrådet. Var och en
 // går sönder med chansen STRID.pilSonder, kan försvinna där den landade med samma chans som ett kastat spjut (kastFaktor), och

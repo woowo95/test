@@ -305,7 +305,7 @@ export function sightOf(s: State, p: Person) {
 // sight kan räknas ut i förväg när samma person frågas om många rutor
 export const sees = (s: State, p: Person, x: number, y: number, sight = sightOf(s, p)) => Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y) <= sight;
 // det bästa personen tror finns utanför närområdet, inom en halv dags gång
-function bestKnown(s: State, p: Person, k: Kind) {
+export function bestKnown(s: State, p: Person, k: Kind) {
   const o = fjarran(s), u = trustUnknown(s, p);
   let best = 0;
   for (let j = 0; j < o.a.length; j++) {

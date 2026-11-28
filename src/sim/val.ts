@@ -40,7 +40,7 @@ import { VARDRATT, forbandHot, halsa, hemma, kanGa, kroppLust, vardBehov, vardVa
 import { kopval, type Kopval } from './kopbuffert';
 import { marknadVal, marknadVikt } from './marknad';
 import { DELA, MAT, brukKrok, bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial, vatskaMaterial } from './behov';
-import { FANGST, type FyndId, Kind, RUTFYND, flintSpot, richnessFor } from './fynd';
+import { FANGST, type FyndId, Kind, RUTFYND, flintSpot, richness, richnessFor } from './fynd';
 import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from './vader';
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
@@ -51,12 +51,13 @@ import { behovAv, saknarNu } from './behov';
 import { betjanVal, kundVal, stallIKo, KASSA, type Erbjudande } from './kassa';
 import { stadaUppgift, stadaVal } from './stada';
 import { tjaraUppgift, tjaraVal } from './tjara';
+import { ammoOk } from './strid';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, forstRuttnar, freeOfKinds, handelTask, toolGroups, underhallGrupp } from './redskap';
 import { PROJEKT, PROJEKT_LIST, PROJEKT_TAL, Uppgift, arv, bastaProjekt, bristAlla, hamtas, projektNu } from './projekt';
 import { omtanke } from './omtanke';
 import { anstByn, vaktAntalKrok } from './dagsarbete';
 import { beredRedskap, faltNu, faltTillUppgift, faltTillVarde, froBrist, vildFronPlats } from './odling';
-import { type Tur, areaOf, flintArea, pickSpot, prospectFor } from './minne';
+import { type Tur, areaOf, bestKnown, flintArea, pickSpot, prospectFor } from './minne';
 import { eldPlats, getMap } from './karta';
 import { bordPlats, kladFor, kladPlatser, plaggPoang, rustaVal, ryggsack, ryms } from './utrustning';
 import { KLADER } from './klader';
@@ -290,6 +291,11 @@ function isarIRum(s: State, p: Person, rum: number[]) {
 // var en handling görs, efter platsen i handlingar.ts
 // platsen för act; under en översvämning aldrig i vattnet: ett rum eller en säng kan stå under vatten (vaktlarmet i by 42
 // efter v271: en som lyssnade på musik i regnet satt i samlingshuset, där golvet stod under vatten), så då den närmaste torra rutan
+// en plats är tömd för p när den ger mindre än tomtGrans, eller mindre än PLATS.lamna av den bästa plats hen känner till
+// (steg 15.1.132): då går hen därifrån. Gränsen räknas bara när platsen ger mindre än den högsta gränsen kan bli
+export const LAMNA_MAX = Math.max(PLATS.tomtGrans, PLATS.lamna * VAL.prospektMax);
+export const tomtFor = (s: State, p: Person, k: Kind, rik: number) =>
+  rik < PLATS.tomtGrans || (rik < LAMNA_MAX && rik < PLATS.lamna * Math.min(VAL.prospektMax, bestKnown(s, p, k)));
 export function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
   const u0 = platsFor(s, act, p), u = ACTS[act].ute ? friUteNear(s, u0.x, u0.y) : u0; // det som görs utomhus (steg 15.1.61)
   return s.flod && inMap(u.x, u.y) && iVattnetNu(s, tileOf(u.x, u.y)) ? freeNear(s, u.x, u.y) : u;
@@ -948,7 +954,7 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'skatta', niva: 6, nar: 'dag', poang: c => dag(c).works && skattaVal(c.s, c.p) ? VAL.mognaVikt + (() => { const d = dag(c); return Math.max(d.wBy, d.wEgen) * d.rad.mat.sc; })() : 0, prova: c => { const { s, p, v } = c; const t = skattaVal(s, p); if (!t) return false; projektVal(v, { act: 'skatta', text: 'Skär honungskakor ur bikupan.', min: BIN.skattaMin / kunnaFart(s, p, 'skatta'), spot: { x: t.x + 0.5, y: t.y + 0.5 }, ref: t.id }, 'Kupan har honung över'); const fk = freeOfKinds(s, p, ['fackla']); if (fk) { v.tool = fk; v.why = v.why.replace(/\.$/, '') + '. ' + ACTS.skatta.redskap!.fackla.tar; } return true; } }, // steg 10.10.20
   // ullen är något moget som går förlorat när det väntar, som mjölken (steg 15.1.146): värt det byn eller personen behöver av ullen
   { id: 'klippa', niva: 6, nar: 'dag', poang: c => dag(c).works && klippVal(c.s, c.p) ? VAL.mognaVikt * behovAv(c.s, c.p, 'ull') / DELA.saknar * 2 : 0, prova: c => { const { s, p, v } = c; const d = klippVal(s, p); if (!d) return false; const sax = freeOfKinds(s, p, ['ullsax']); projektVal(v, { act: 'klippa', text: sax ? 'Klipper ullen av fåret med saxen.' : 'Klipper ullen av fåret med kniven.', min: BOSKAP.klippMin / kunnaFart(s, p, 'klippa') / tamEg(d).tamhet / redskapTal('klippa', sax).fart, tool: sax ?? 'kniv', spot: { x: d.x, y: d.y }, ref: d.id }, 'Fårets ull har vuxit ut'); return true; } }, // steg 9.8.5; med ullsaxen på en tredjedel av tiden (steg 12.5.2)
-  { id: 'mjolka', niva: 6, nar: 'dag', poang: c => dag(c).works && mjolkaVal(c.s, c.p) ? VAL.mognaVikt + (() => { const d = dag(c); return Math.max(d.wBy, d.wEgen) * d.rad.mat.sc; })() : 0, prova: c => { const { s, p, v } = c; const d = mjolkaVal(s, p); if (!d) return false; projektVal(v, { act: 'mjolka', text: 'Mjölkar geten i en lerkruka.', min: BOSKAP.mjolkMin / kunnaFart(s, p, 'mjolka') / tamEg(d).tamhet, spot: { x: d.x, y: d.y }, ref: d.id }, 'Geten har mjölk'); return true; } }, // steg 9.8.8
+  { id: 'mjolka', niva: 6, nar: 'dag', poang: c => dag(c).works && mjolkaVal(c.s, c.p) ? VAL.mognaVikt + (() => { const d = dag(c); return Math.max(d.wBy, d.wEgen) * d.rad.mat.sc; })() : 0, prova: c => { const { s, p, v } = c; const d = mjolkaVal(s, p); if (!d) return false; projektVal(v, { act: 'mjolka', text: `Mjölkar ${tamArt(d.art).ord[3]} i en lerkruka.`, min: BOSKAP.mjolkMin / kunnaFart(s, p, 'mjolka') / tamEg(d).tamhet, spot: { x: d.x, y: d.y }, ref: d.id }, 'Geten har mjölk'); return true; } }, // steg 9.8.8
   // fältarbetet, vattnet till fältet och örtköket och fisken i mjärden vägs med poäng under Försörjning (steg 13.8.3)
   { id: 'faltArbete', niva: 6, nar: 'dag', poang: c => c.a >= ALDER.vuxen && dag(c).works && faltNu(c.s, c.p, false) ? VAL.faltVikt : 0,
     prova: c => { const sk = faltNu(c.s, c.p, false); if (!sk) return false; projektVal(c.v, { act: 'odla', text: sk.text, min: sk.min, tool: sk.tool, spot: sk.spot, ref: sk.ref }, 'Arbetar vidare på sitt fält'); return true; } },
@@ -1362,7 +1368,9 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     if (d.vid === 'vatten' && !vaderTillater(s, 'lugnt')) continue; // inget fiske i storm (steg 6.1.12)
     const tinder = !!d.tand && wTand > 0;
     // nytta för byn; det platserna har kvar väger också in hur mycket de ger just nu, och att fiske med händerna ger lite
-    const yieldR = !d.resurs ? 1 : clamp(prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (d.vid === 'vatten' ? FANGST.handFiske * (naSjon(s, p) ? 1 : 0) : 1) * toolGain(s, p, w, fara); // genom isen bara med ett hål (is.ts)
+    // den som redan arbetar med raden väger den med platsen där hen står, inte med den bästa hen känner till (steg 15.1.132)
+    const har = p.task?.act === w && p.task.phase === 'do' && d.resurs ? richness(s, d.resurs as Kind, p.task.tx, p.task.ty) : undefined;
+    const yieldR = !d.resurs ? 1 : clamp(har ?? prospectFor(s, p, w as Kind), VAL.prospektMin, VAL.prospektMax) * (d.vid === 'vatten' ? FANGST.handFiske * (naSjon(s, p) ? 1 : 0) : 1) * toolGain(s, p, w, fara); // genom isen bara med ett hål (is.ts)
     const yieldF = tinder ? 1 : yieldR, season = d.sasong![ai];
     // maten som någon längtar efter är mer värd att hämta (steg 2.6.2)
     // tändmaterialet vägs efter det som fattas av det (wTand, steg 13.8.5), och arbetet efter det mest behövda av det och dess eget behov
@@ -1437,6 +1445,7 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fara: F
   if (rader) for (const [g, ks] of Object.entries(toolGroups(v.act))) {
     if (!rader[ks[0]].tar) continue; // yxan väljs med arbetet (axeTask)
     if (g === 'korg' && ryggsack(s, p)) continue; // den som har en ryggsäck på sig tar ingen korg (steg 7.1.3)
+    if (!ammoOk(s, p, ks[0])) continue; // bågen utan pilar och slungan utan stenar (steg 15.1.133)
     const k = freeOfKinds(s, p, ks);
     if (k) { v.tool = k; v.why = v.why.replace(/\.$/, '') + '. ' + rader[k].tar; return; }
     const u = GORS[g] && nuForst(s, p, fara) ? projektNu(s, p, g, fara) : undefined; // redskapet görs som projekt (steg 6.2.17), vid sin egen plats: inget ärvs från flintletandet eller tändmaterialet
@@ -1451,6 +1460,7 @@ export function toolGain(s: State, p: Person, act: Act, fara: Faror) {
   for (const [g, ks] of Object.entries(toolGroups(act))) {
     if (g === 'korg' && ryggsack(s, p)) return ACTS[act].redskap![ks[0]].ger ?? 1; // ryggsäcken ger det korgen ger (steg 7.1.3)
     const ger = ACTS[act].redskap![ks[0]].ger ?? 1;
+    if (!ammoOk(s, p, ks[0])) continue; // bågen utan pilar och slungan utan stenar (steg 15.1.133)
     if (freeOfKinds(s, p, ks)) return ger;
     if (GORS[g] && PROJEKT[g].kan(s, p, fara)) return fara.kyla ? 1 + (ger - 1) * PROJEKT_TAL.kyla : ger; // i kylan görs det mer sällan först (nuForst, steg 10.2.6)
   }

@@ -473,6 +473,7 @@ export interface State {
   djurHalsa?: import('./djur').DjurHalsa[]; djurDoda?: { id: number; t: number }[]; // skadade och dödade djur (steg 3.7.13, djur.ts)
   vilt?: Record<string, { b: number; n?: Record<number, number> }>; // flockarternas bestånd kring byn (1 = som när byn grundades) och storleken på de flockar som syns nu, efter flockens id (steg 15.1.169, djur.ts)
   bjornMott?: { ar: number; ids: number[] }; // de som mött björnen i år (steg 6.6.5, bjorn.ts): var och en en gång per år
+  bjornHundT?: number; // när vakthunden sist lyssnade efter björnen (steg 15.1.137, bjorn.ts): en gång per minut i spelet
   // björnjakten (steg 6.6.6, bjorn.ts): när och av vem björnen senast sågs, jägarna och den som kallade, och året björnen fälldes
   bjornJakt?: { ar: number; sedd: number; sag: number; x?: number; y?: number; timme?: number; jagare?: number[]; kallare?: number; kallTill?: number; jaktTill?: number; samlas?: number };
   bjornFalld?: number;
