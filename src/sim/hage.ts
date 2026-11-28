@@ -49,7 +49,10 @@ export const HAGE = balans('hage', {
   fri: 12, // ett djur utan hage strövar högst så här långt (rutor) från byns mitt
   flyttDygn: 1, // en hage vars bete räcker kortare än så här många dygn för djuren i den är nedbetad: djuren flyttas (steg 9.8.6)
   hundLojal: 0.6, // en hund som är minst så här lojal hjälper ägaren att valla hela flocken på en gång
+  vattenVikt: 0.5, // platsen för en ny hage kostar 1 + vattenVikt × avståndet till vattnet / hagens sida gånger mer (steg 15.1.144)
 });
+// byn vill ha betesdjur (boskap.ts sätter den, steg 15.1.143), och hur många dygn vattnet i hagen räcker för djur som dricker så mycket (vattenho.ts)
+export const hageKrok: { vill: (s: State) => boolean; vattenDygn: (s: State, h: Hage, dricker: number) => number } = { vill: () => false, vattenDygn: () => Infinity }; // vattnet sätts i vattenho.ts
 export const hagarOf = (s: State) => s.hagar ?? [];
 export const hageById = (s: State, id?: number) => id === undefined ? undefined : hagarOf(s).find(h => h.id === id);
 export const hageAt = (s: State, x: number, y: number) => hagarOf(s).find(h => x >= h.x && x < h.x + h.w && y >= h.y && y < h.y + h.h);
@@ -83,10 +86,11 @@ export function hageBete(s: State, h: Hage) {
   return { gras, buskar, unga };
 }
 // hur många dygn betet räcker för djuren som går där (utan återväxt)
+// och vattnet (steg 15.1.144): räcker vattnet kortare än betet är det vattnet som avgör
 export function hageDygn(s: State, h: Hage, extra = 0) {
-  const n = atarSom(djurIHagen(s, h)) + extra;
+  const ds = djurIHagen(s, h), n = atarSom(ds) + extra;
   if (!n) return Infinity;
-  return hageMat(s, h) / (n * TAM.hungerTim * 24);
+  return Math.min(hageMat(s, h) / (n * TAM.hungerTim * 24), hageKrok.vattenDygn(s, h, ds.reduce((a, d) => a + (tamArt(d.art).dricker ?? 0), 0) + extra));
 }
 // hur mycket hunger betet i hagen stillar
 export function hageMat(s: State, h: Hage) { const b = hageBete(s, h); return b.gras / HAGE.bett * HAGE.grasMat + b.buskar * HAGE.buskMat + b.unga * HAGE.tradMat; }
@@ -107,8 +111,6 @@ export function malHage(s: State, n: number, fran?: Hage) {
 export const hageSida = (s: State) => Math.min(HAGE.maxSida, Math.max(HAGE.minSida, Math.ceil(Math.sqrt(Math.max(1, betesTal(s)) * HAGE.perDjur))));
 // behöver djuren en ny hage? När det inte finns någon, eller en hage är nedbetad och ingen annan har bete (steg 9.8.6); en
 // nedbetad hage står kvar och växer igen. En hage som inte har staket runt om än blir färdig först
-// byn vill ha betesdjur (boskap.ts sätter den, steg 15.1.143)
-export const hageKrok = { vill: (_s: State) => false };
 const villBetesdjur = (s: State) => hageKrok.vill(s);
 export function nyHageBehov(s: State) {
   if (!betesdjurOf(s).length && !villBetesdjur(s)) return false; // hagen märks ut för de djur byn vill ha, innan de kommer (steg 15.1.143)
@@ -124,13 +126,13 @@ export function hageUppgift(s: State, p: Person) {
   const v = hageVal(s, p);
   if (v) return { act: 'hage' as const, text: 'Sätter staket runt hagen, så att djuren inte rymmer.', min: STAKET.min, spot: { x: v.i % W + 0.5, y: Math.floor(v.i / W) + 0.5 }, ref: v.i };
   if (!nyHageBehov(s) || annanGor(s, p, 'hage', -1)) return undefined;
-  const n = hageSida(s), at = faltSite(s, n, n * n);
+  const n = hageSida(s), at = faltSite(s, n, n * n, false, HAGE.vattenVikt);
   return at && { act: 'hage' as const, text: 'Märker ut en hage åt djuren.', min: HAGE.matMin, spot: { x: at.x + 0.5, y: at.y + 0.5 }, ref: -1 };
 }
 // hagen märks ut (hageKlar med ref −1) på samma sorts plats som ett fält
 function laggUtHage(s: State, p: Person) {
   if (!nyHageBehov(s)) return;
-  const hs = hagarOf(s), n = hageSida(s), at = faltSite(s, n, n * n);
+  const hs = hagarOf(s), n = hageSida(s), at = faltSite(s, n, n * n, false, HAGE.vattenVikt);
   if (!at) return;
   const y = faltRiktning(s, at.y) > 0 ? at.y : at.y - (n - 1);
   (s.hagar ??= []).push({ id: (s.hagar?.length ?? 0) + 1, x: at.x, y, w: n, h: n });
@@ -229,6 +231,12 @@ function flocken(s: State, p: Person, d: Tamdjur) {
   if (!vallaHund(s, p)) return [d];
   return betesdjurOf(s).filter(q => q.hage === d.hage && (d.hage !== undefined || Math.hypot(q.x - d.x, q.y - d.y) <= TAM.mataR));
 }
+// hagen djuret d leds till med n djur: den med längst bete, och för ett löst djur annars den närmaste hela hage där djuren har både
+// bete och vatten en tid (hageDygn, steg 15.1.144)
+function vallaMal(s: State, d: Tamdjur, n: number, fran?: Hage) {
+  if (fran) return malHage(s, n, fran);
+  return malHage(s, n) ?? hagarOf(s).filter(q => hageHel(s, q) && hageDygn(s, q, n) > 0).sort((a, b) => Math.hypot(a.x - d.x, a.y - d.y) - Math.hypot(b.x - d.x, b.y - d.y))[0];
+}
 export function vallaVal(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || getable(s, p, 'rep') < 1 || !isLight(s.now)) return undefined;
   if (!hagarOf(s).some(h => hageHel(s, h))) return undefined;
@@ -236,7 +244,7 @@ export function vallaVal(s: State, p: Person) {
   for (const d of betesdjurOf(s)) {
     if (d.fahus !== undefined || annanGor(s, p, 'valla', d.id)) continue; // djuren i fähuset står kvar
     const h = hageById(s, d.hage);
-    if (h && !(nedbetad(s, h) && malHage(s, flocken(s, p, d).length, h))) continue;
+    if (h ? !(nedbetad(s, h) && malHage(s, flocken(s, p, d).length, h)) : !vallaMal(s, d, flocken(s, p, d).length)) continue; // ingen hage att leda det till
     const dd = Math.hypot(d.x - p.x, d.y - p.y);
     if (dd < bd) { b = d; bd = dd; }
   }
@@ -248,7 +256,7 @@ export function vallaKlar(s: State, p: Person, ref?: number) {
   const fran = hageById(s, d.hage);
   if (fran && !nedbetad(s, fran)) return;
   const fl = flocken(s, p, d);
-  const h = fran ? malHage(s, fl.length, fran) : (malHage(s, fl.length) ?? hagarOf(s).filter(q => hageHel(s, q)).sort((a, b) => Math.hypot(a.x - d.x, a.y - d.y) - Math.hypot(b.x - d.x, b.y - d.y))[0]);
+  const h = vallaMal(s, d, fl.length, fran);
   if (!h) return;
   const rs = hageRutor(h);
   const fria = rs.filter(i => !blocked(s, i % W + 0.5, Math.floor(i / W) + 0.5)), plats = fria.length ? fria : rs; // inte i ett träd eller en vägg

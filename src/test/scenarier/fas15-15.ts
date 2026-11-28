@@ -48,8 +48,8 @@ SCENARIER.grannat2 = {
 };
 
 // en by med en färdig hage, staketet runt om, och faren får (som hageUtanVatten i fas10.ts, men vilken hage som helst)
-const medHage = (faren: number) => {
-  for (let seed = 3; seed < 30; seed++) {
+const medHage = (faren: number, fran = 0) => {
+  for (let seed = 3 + fran * 30; seed < 30 + fran * 30; seed++) {
     const b = SIM.createState(seed, START); klockan(b, 8);
     const p = SIM.living(b).filter(r => SIM.ageOf(r, b.now) >= SIM.ALDER.vuxen)[0];
     if (faren) { SIM.setAmount(b, 'levfar', faren); SIM.stepBoskap(b); }
@@ -58,7 +58,7 @@ const medHage = (faren: number) => {
     const mat = SIM.hageUppgift(b, p); if (mat?.ref === -1) SIM.hageKlar(b, p, -1);
     for (let v = SIM.hageVal(b, p), n = 0; v && n < 200; v = SIM.hageVal(b, p), n++) SIM.hageKlar(b, p, v.i);
     const h = SIM.hagarOf(b)[0];
-    if (h && SIM.hageHel(b, h)) { for (const d of SIM.tamdjurOf(b)) d.hage = h.id; return { s: b, h, p }; }
+    if (h && SIM.hageHel(b, h) && (!fran || !SIM.hageVidVatten(b, h))) { for (const d of SIM.tamdjurOf(b)) d.hage = h.id; return { s: b, h, p }; }
   }
   return undefined;
 };
@@ -69,6 +69,8 @@ SCENARIER.stampar = {
     const b = medHage(1);
     if (!b) return [['en by med en hage och en tacka', false]];
     const { s, h } = b, tacka = SIM.tamdjurOf(s)[0]; tacka.hona = true;
+    const ho = SIM.hageVidVatten(s, h) ? undefined : SIM.siteHo(s); // vatten i hagen, annars föds inga unga (steg 15.1.144)
+    if (ho) { s.stationer = [...(s.stationer ?? []), { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'vattenho', x: ho.x, y: ho.y, kvar: 0, vatten: SIM.HO.rymmer } as unknown as SIM.Station]; SIM.touch(s); }
     const utanHo = SIM.bynKopAntal(s, 'levfar'), utanHoBehov = SIM.bynBehov(s, 'levfar');
     SIM.setAmount(s, 'torrgras', 60);
     const behov = SIM.bynBehov(s, 'levfar'), antal = SIM.bynKopAntal(s, 'levfar'), getter = SIM.bynKopAntal(s, 'levget');
@@ -92,6 +94,31 @@ SCENARIER.stampar = {
       [`det köpta fåret är en bagge (${nya.map(d => SIM.arHona(d) ? 'tacka' : 'bagge').join(', ')})`, bagge],
       [`sedan saknar byn inga får (behovet ${SIM.kortTal(efter)})`, efter < SIM.DELA.saknar],
       [`på våren föds ett lamm (${lamm})`, lamm >= 1],
+    ];
+  },
+};
+
+SCENARIER.hagvatten = {
+  text: 'Steg 15.1.144: hagen räknar vattnet. Ett löst får som dricker vid sjön vallas inte in i en hel hage som inte når vattnet och saknar ho; byn vill ha en ho där så snart den har betesdjur, och när hon står klar med vatten leds fåret in. Platsen för en ny hage väljs närmare vattnet',
+  kor: () => {
+    let b: ReturnType<typeof medHage>;
+    for (let i = 0; i < 6; i++) { b = medHage(1, i); if (!b || !SIM.hageVidVatten(b.s, b.h)) break; }
+    if (!b || SIM.hageVidVatten(b.s, b.h)) return [['en by med en hage som inte når vattnet', false]];
+    const { s, h, p } = b, far = SIM.tamdjurOf(s)[0]; far.hage = undefined;
+    SIM.setAmount(s, 'rep', 4);
+    const torr = SIM.hageDygn(s, h, 1), fore = SIM.vallaVal(s, p); SIM.vallaKlar(s, p, far.id);
+    const inne = far.hage !== undefined, brist = SIM.hoBrist(s), plats = SIM.siteHo(s);
+    if (!plats) return [['det finns plats för en ho i hagen', false]];
+    s.stationer = [...(s.stationer ?? []), { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'vattenho', x: plats.x, y: plats.y, kvar: 0, vatten: SIM.HO.rymmer } as unknown as SIM.Station]; SIM.touch(s);
+    const n = SIM.hageSida(s), land = SIM.djupOf(s.seed).land, avst = (at?: { x: number; y: number }) => at ? land[at.y * SIM.W + at.x] : Infinity;
+    const utanVikt = avst(SIM.faltSite(s, n, n * n)), medVikt = avst(SIM.faltSite(s, n, n * n, false, SIM.HAGE.vattenVikt));
+    const blot = SIM.hageDygn(s, h, 1), efter = SIM.vallaVal(s, p); if (efter) SIM.vallaKlar(s, p, efter.id);
+    return [
+      [`utan ho räcker hagen inga dygn för fåret (${SIM.kortTal(torr)})`, torr === 0],
+      [`fåret vallas inte in (${fore ? 'valt' : 'inte valt'}, ${inne ? 'inne' : 'löst'})`, !fore && !inne],
+      [`byn vill ha en ho i hagen innan djuren står där (brist ${brist})`, brist > 0],
+      [`en ny hage ligger inte längre från vattnet med vattnets vikt (${medVikt} mot ${utanVikt} rutor)`, medVikt <= utanVikt && medVikt < Infinity],
+      [`med vatten i hon räcker hagen (${SIM.kortTal(blot)} dygn), och fåret leds in (${far.hage === h.id ? 'inne' : 'löst'})`, blot > 1 && efter === far && far.hage === h.id],
     ];
   },
 };

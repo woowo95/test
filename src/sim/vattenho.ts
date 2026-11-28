@@ -7,8 +7,8 @@ import { balans } from './balans';
 import { Ting } from './agande';
 import { getMap } from './karta';
 import { Station, isKlar, ledig, stationerOf } from './stationer';
-import { Hage, hagarOf } from './hage';
-import { tamdjurOf } from './tamdjur';
+import { Hage, betesdjurOf, hageHel, hageKrok, hagarOf } from './hage';
+import { TAM, tamdjurOf } from './tamdjur';
 import { vaderNu } from './vader';
 import { blocked } from './byggnad';
 import { bynsMitt } from './omrade';
@@ -30,7 +30,11 @@ export const hoarOf = (s: State) => stationerOf(s).filter(t => t.k === 'vattenho
 // hon i hagen, om det står en (färdig eller påbörjad)
 export const hoI = (s: State, h: Hage) => hoarOf(s).find(t => iHagen(h, t.x, t.y));
 // hagarna med djur som inte når vattnet (de behöver en ho), och de av dem som saknar en
-const behoverHo = (s: State) => hagarOf(s).filter(h => tamdjurOf(s).some(d => d.hage === h.id) && !hageVidVatten(s, h));
+// En hel hage som inte når vattnet behöver en ho så snart byn har betesdjur, annars byggs hon aldrig (steg 15.1.144)
+const behoverHo = (s: State) => hagarOf(s).filter(h => (tamdjurOf(s).some(d => d.hage === h.id) || hageHel(s, h) && betesdjurOf(s).length > 0) && !hageVidVatten(s, h));
+// hur många dygn vattnet i hagen räcker för djur som dricker så mycket (hageDygn i hage.ts): hela tiden vid vattnet, hons vatten
+// delat med det djuren dricker per dygn om hon står färdig, och annars inget
+hageKrok.vattenDygn = (s, h, dricker) => { if (hageVidVatten(s, h)) return Infinity; const ho = hoI(s, h); if (!ho || !isKlar(ho)) return 0; return dricker > 0 ? (ho.vatten ?? 0) / (dricker * 24 / TAM.torstTim) : Infinity; };
 const utanHo = (s: State) => behoverHo(s).filter(h => !hoI(s, h));
 // en ho i varje hage med djur som inte når vattnet (stationBrist i forradsmal.ts)
 export function hoBrist(s: State) {
