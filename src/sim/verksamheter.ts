@@ -17,11 +17,11 @@ import { TAM_LIST, TAMDJUR, arHona, tamAlder, tamArt, tamdjurOf, type TamArtId, 
 import { radPaslag } from './priser';
 import { klanById } from './klaner';
 import { skick } from './foretag';
+import { FGAST } from './foretagsgast';
 
 export const VERK = balans('verksamheter', {
   natt: 6, // en natt i en bädd är värd så många silver för den som är helt utmattad
   trott: 0.5, // så stor del av gästerna räknar man med är trötta
-  ridande: 0.3, // så stor del av gästerna räknar man med kommer med ett riddjur
   stall: 5, // så många silver är det värt för gästen att djuret får foder och vila
   baddar: 4, // så många bäddar har ett nattlogi högst
   par: 2, // så många av en djurart behåller ägaren
@@ -77,11 +77,11 @@ VERKSAMHETER.stall = {
   varor: s => living(s).some(p => knows(p, 'snickarbank')) && FODER.some(k => living(s).length && s.stackar?.some(a => a.k === k)) ? ['djurvard'] : [],
   noje: (_s, p) => p.gast?.riddjur ? VERK.stall : 0,
   snitt: () => VERK.stall, grund: () => grundvarde(FODER[0]),
-  perDygn: () => 0, gaster: (s, pris) => gastFlode.reduce((a, g) => a + g(s, pris), 0) * VERK.ridande,
+  perDygn: () => 0, gaster: (s, pris) => gastFlode.reduce((a, g) => a + g(s, pris), 0) * FGAST.ridande, // samma andel som gästerna kommer med (steg 15.1.170)
   kunnande: p => skick((p.skill.skotsel + p.skill.handel) / 2),
   egen: {
     har: (s, f) => iHelaForradet(() => foderAv(s, f.ag)) ? ['djurvard'] : [],
-    ge: (s, f, p) => { const k = foderAv(s, f.ag); if (k) use(s, undefined, k, 1, true, f.ag); if (p.gast) p.gast.riddjur = undefined; count(s, 'djurvard'); },
+    ge: (s, f, p) => { const k = foderAv(s, f.ag); if (k) use(s, undefined, k, 1, true, f.ag); if (p.gast) { p.gast.riddjur = undefined; p.gast.rodd = 1; } count(s, 'djurvard'); },
   },
 };
 VERKSAMHETER.djurhandel = {

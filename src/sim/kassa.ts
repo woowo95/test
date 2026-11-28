@@ -85,6 +85,16 @@ export function varorAv(s: State, f: Foretag, v: string, G = saljPart(s, f)): st
 // silver, delat med vad ett silver är värt för hen (steg 15.1.17)
 export const silverVarde = (G: Part) => Math.max(1e-9, grundvarde('silver') * G.varde('silver'));
 export const prisAv = (s: State, f: Foretag, v: string, k: string, G: Part, n = 1) => { const egen = n * kvAv(s, f, v, k) * (VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * G.varde(k) / silverVarde(G)); return Math.max(1, Math.ceil(egen - 1e-9), Math.round((egen + n * VERKSAMHETER[v].snitt(k) * FORETAG.del) * (f.pris?.[v] ?? 1))); };
+// det affärens ruta visar (steg 15.1.163): för varje verksamhet om den har öppet (en disk i rummet, rummet passar och det finns
+// något att sälja), de första varorna med priset i silver, och hur många som står i kön
+export function affarLage(s: State, f: Foretag) {
+  const G = saljPart(s, f), disk = diskarAv(s, f).length > 0, opp = oppna(s, f);
+  const verk = f.verk.map(v => {
+    const varor = G && disk && opp.includes(v) ? iHelaForradet(() => varorAv(s, f, v, G)) : [];
+    return { v, oppet: varor.length > 0, varor: varor.slice(0, 4).map(k => ({ k, pris: prisAv(s, f, v, k, G!) })), fler: Math.max(0, varor.length - 4) };
+  });
+  return { verk, ko: f.ko?.length ?? 0 };
+}
 // det M betalar: silver, varor eller allt hen har över, det som kostar minst för hen. Priset är i silver: G ska få lika mycket
 // som så många silver är värda för hen (steg 15.1.17)
 type Betalvaror = ReturnType<typeof betalVaror>;

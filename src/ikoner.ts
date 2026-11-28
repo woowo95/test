@@ -4229,3 +4229,12 @@ laggTillFas12(PIX, PAL, iRutan);
 // grafernas symbol (steg 13.10.15, platshållare tills Björn valt i bildstilen): en linje som stiger och faller mellan två axlar
 PIX.sym_graf = ['................', '.k..............', '.k...........kk.', '.k..........krrk', '.k.........krrk.', '.k..kk....krrk..', '.k.krrk..krrk...', '.k.krrrkkrrk....', '.kkrrkrrrrk.....', '.krrk.krrk......', '.krk...kk.......', '.kk.............', '.k..............', '.kkkkkkkkkkkkkk.', '................', '................'];
 PAL.sym_graf = { k: '#5e3c24', r: '#a14808' };
+
+// affärens ruta (steg 15.1.163, platshållare tills Björn valt i bildstilen): öppet (en öppen dörr med ljus inne), stängt (en dörr
+// med en bom över) och kön (tre huvuden i rad)
+PIX.sym_oppet = ['................', '...kkkkkkkkk....', '...kyyyyyyyk....', '...kyYYYYYyk....', '...kyYYYYYyjj...', '...kyYYYYYyjJj..', '...kyYYYYYyjJj..', '...kyYYYYYyjJj..', '...kyYYYYYyjJj..', '...kyYYYYYyjJj..', '...kyYYYYYyjJj..', '...kyyyyyyyjJj..', '...kkkkkkkkjj...', '................', '................', '................'];
+PAL.sym_oppet = { k: '#24201d', y: '#906f0f', Y: '#d8b25f', j: '#5e3c24', J: '#7d5b40' };
+PIX.sym_stangt = ['................', '...kkkkkkkkk....', '...kjJjJjJjk....', '...kjJjJjJjk....', '...kjJjJjJjk....', '.kkkkkkkkkkkkk..', '.kssssssssssk...', '.kkkkkkkkkkkkk..', '...kjJjJjJjk....', '...kjJjJjJjk....', '...kjJjJjJjk....', '...kjJjJjJjk....', '...kkkkkkkkk....', '................', '................', '................'];
+PAL.sym_stangt = { k: '#24201d', j: '#5e3c24', J: '#7d5b40', s: '#61767a' };
+PIX.sym_ko = ['................', '................', '................', '.kkk..kkk..kkk..', 'kwwwk.kwwk.kwwk.', 'kwwwk.kwwk.kwwk.', '.kkk..kkk..kkk..', '..k....k....k...', '.kjk..kjk..kjk..', 'kjjjk.kjjk.kjjk.', 'kjjjk.kjjk.kjjk.', 'kjjjk.kjjk.kjjk.', 'kjjjk.kjjk.kjjk.', '.k.k..k.k..k.k..', '.k.k..k.k..k.k..', '................'];
+PAL.sym_ko = { k: '#24201d', w: '#bdb39b', j: '#7d5b40' };

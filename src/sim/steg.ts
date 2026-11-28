@@ -63,7 +63,8 @@ import { halMin, halVal, isKost, isNiva, islagt, stepIs, halGjort } from './is';
 import { blotSteg, coldOf, forVarm, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
 import { ELD, VED, brinnerNara, type Tand, turMal, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, letaFattas, letarNu, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tryLight, nagonEld, plockatKvar, woodDays } from './eld';
 import { gastLever } from './gast';
-import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, gjort, isSick, living, log, ovning, stat } from './folk';
+import { ALDER, KROPP, ageOf, alive, byId, count, dodKrok, forstaGang, gjort, isSick, living, log, ovning, stat } from './folk';
+import { missnojeDod } from './rost';
 import { BIN, binDod, binSteg, djurStickSteg, retadeSteg, skattaKlar } from './bin';
 import { SJUK, SJUKDOMAR, SJUK_DOD, forkylning, insjukna, sjukSteg, smittaTimme, smittaUtifranTimme, svartSjukNu } from './sjukdom';
 import { eldPlats, getMap } from './karta';
@@ -87,7 +88,7 @@ import { FOREST, findPath, wear } from './vag';
 import { barKropp, gangVakt, kroppFart, rutFart, smidig, snoFart } from './gang';
 import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './ljus';
 import { VAL, arbetsTimme, chooseTask, eldOrd, farligtBehov, nastaRedskap, spotFor } from './val';
-import { FAGEL, djurSteg } from './djur';
+import { FAGEL, djurSteg, viltSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { bjornSteg, bjornjaktSteg } from './bjorn';
 import { resaSteg, resaBehov, ridBredvid } from './resa';
@@ -440,6 +441,7 @@ function stegBy(s: State, dtSec: number, events?: TalkEvent[], efter?: () => voi
   if (skuld > 1e-9) s.skuld = Math.round(skuld * 1000) / 1000; else delete s.skuld;
 }
 // två rövare som pratar på rastplatsen samtalar som byborna (steg 10.2.24)
+dodKrok.push(missnojeDod); // ledaren bär missnöjet när någon dör av det som gått dåligt (rost.ts, steg 15.1.161)
 rovarPrat.prata = (s, a, b, ev) => { converse(s, a, [b], ev); count(s, 'rovarPrat'); };
 // det ett slag delar mellan systemen i TAKTER
 type Slag = { dt: number; t0: number; now: number; ai: number; ppl: Person[]; events?: TalkEvent[]; social: Person[]; inRum?: Map<number, number> };
@@ -459,11 +461,12 @@ export const TAKTER: Takt[] = [
   { namn: 'rummens finhet', sek: 3600, fas: 0.02, fn: s => { finhetTimme(s); forvantanTimme(s); } }, // steg 14.1.1 och 14.1.3
   { namn: 'tidsåldern', sek: 60, fn: (s, _dt, c) => { if (c.ai !== s.lastAgeIdx) { s.lastAgeIdx = c.ai; log(s, AGES_BORJAR[c.ai], 'world'); } } },
   { namn: 'kaninerna', sek: 10, fn: (s, dt) => djurSteg(s, dt) }, // kaningrupperna väljer plats när deras tid börjar
+  { namn: 'viltet', sek: 600, fn: (s, dt) => viltSteg(s, dt) }, // rådjurens och vildsvinens bestånd växer, och flockarna får sin storlek (djur.ts, steg 15.1.169)
   { namn: 'giftermålen', sek: 3600, fn: (s, dt) => giftSteg(s, dt) }, // med någon i en vänlig grannby (giftermal.ts, steg 11.3.6)
   { namn: 'handlaren som väntar', sek: 3600, fn: s => handlarVantarTimme(s) }, // en handlare som en by skickat går in (handel.ts, steg 12.1.107)
   { namn: 'handlaren', sek: 0, fn: (s, dt) => handelSteg(s, dt) }, // kommer, handlar och går (handel.ts, steg 4.4.1)
   { namn: 'vargarna', sek: 0, fn: (s, dt) => vargSteg(s, dt) }, // under istiden (varg.ts, steg 3.7.1)
-  { namn: 'björnen', sek: 0, fn: s => bjornSteg(s) }, // den som kommer nära björnen (bjorn.ts, steg 6.6.5)
+  { namn: 'björnen', sek: 0, fn: (s, dt) => bjornSteg(s, dt) }, // den som kommer nära björnen (bjorn.ts, steg 6.6.5), och grisen den tar (steg 15.1.166)
   { namn: 'rövarna', sek: 0, fn: (s, dt, c) => rovarSteg(s, dt, c.events) }, // rövarflocken (rovare.ts, steg 4.4.5)
   { namn: 'främlingen', sek: 0, fn: (s, dt) => framlingSteg(s, dt) }, // som kommer gående (liv.ts, steg 9.2.115)
   { namn: 'företagens gäster', sek: 0, fn: (s, dt) => foretagsgastSteg(s, dt) }, // går, köper och går hem (foretagsgast.ts, steg 14.1.11)

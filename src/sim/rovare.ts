@@ -24,6 +24,7 @@ import { isLight, lightLevel } from './tid';
 import { larmAvbryter } from './handlingar';
 import { lagGaller } from './lagar';
 import { ledareOf } from './styre';
+import { MISS, missnojeMotgang } from './rost';
 import { DAY, HOUR, MIN, Person, SEC, State, T, Task, W, H, inMap } from './typer';
 import { vaderNu } from './vader';
 import { grundvarde } from './varde';
@@ -1177,6 +1178,7 @@ EFTER.rovare = (s, e, vinnare, strid) => {
   const ids = bybor.map(b => b.k.pid!).filter(x => x !== undefined), plats = forst ? { x: Math.floor(forst.x), y: Math.floor(forst.y) } : undefined;
   if (harSlagits(st)) { log(s, text, 'world', ids); notis(s, 'strid', text, ids, plats); kronika(s, text, 'rovare'); } // (utan ett slag är det ingen strid att skriva om, steg B.18)
   if (f && vinnare === 0) for (const r of rovarna(s, f)) gr(r).flytt = true; // den slagna flocken flyr
+  if (vinnare === 1 && harSlagits(st)) missnojeMotgang(s, MISS.forlust); // rövarna vann: ledaren bär missnöjet (steg 15.1.161)
   if (vinnare === 0 && s.styre && ledareOf(s)) s.styre.vunna = (s.styre.vunna ?? 0) + 1; // byn slog tillbaka rövarna: en vunnen strid i ledarens framgång (steg 8.3.9, fynd 456)
   if (vinnare === 0) allaBarn(s, 'rovareBort'); // barnen som såg det (steg 12.1.133)
 };

@@ -14,6 +14,7 @@ import { kandIgen, klanById, klanerOf, KLAN, narhet, type Klan } from './klaner'
 import { kantMot } from './grannbyar';
 import { klanHandelse } from './byrel';
 import { gaMot } from './rovare';
+import { FORDON_TAL } from './fordon';
 import { hourOf } from './tid';
 import { diskarAv, erbjudandet, gastKund, KASSA, koaKlar, koPlats, omdome, stallIKo, type Erbjudande } from './kassa';
 import { foretagOf, gastFlode, oppna, VERKSAMHETER, type Foretag } from './foretag';
@@ -44,7 +45,7 @@ export const FGAST = balans('foretagsgast', {
   fran: 9, till: 18, // gästen kommer fram under dagen
   moten: 6, // det hen redan haft lockar mindre: 1 / (1 + antalet gånger × moten)
   vag: 0.4, // ett dygns väg tar så mycket av vilan
-  ridande: 0.2, // så ofta kommer en vanlig gäst med ett riddjur (de fina gör det alltid)
+  ridande: 0.2, // så ofta kommer en vanlig gäst med ett riddjur (de fina gör det alltid); stallet räknar med samma tal (verksamheter.ts, steg 15.1.170)
   igen: 0.5, // så ofta är det någon som varit här förut, om det finns någon
   varor: 0.5, // så stor del av det gästen orkar bära packas med varor ur hembyns överskott att betala med (steg 15.1.11)
 });
@@ -166,7 +167,12 @@ const basta = (s: State, p: Person, f: Foretag): Erbjudande | undefined => {
   for (const v of f.verk) { const e = erbjudandet(s, p, v, f); if (e && e.net > (b?.net ?? 0)) b = e; }
   return b;
 };
-const gaHem = (p: Person) => { const g = p.gast!; g.fas = 'gar'; g.gor = undefined; g.path = undefined; g.pk = undefined; p.task = undefined; };
+// gästen går hem. Ett riddjur som inte fått foder gör gästen missnöjd, som en måltid hen inte fick (steg 15.1.170)
+const gaHem = (p: Person, s?: State, f?: Foretag) => {
+  const g = p.gast!;
+  if (s && f && g.fas === 'pratar' && g.riddjur) { for (const o of omdome) o(s, p, f); count(s, 'riddjurUtanFoder'); }
+  g.fas = 'gar'; g.gor = undefined; g.path = undefined; g.pk = undefined; p.task = undefined;
+};
 export function foretagsgastSteg(s: State, dtSec: number) {
   const t0 = s.now - dtSec * SEC;
   for (const p of s.people.filter(q => q.gast?.sort === 'kund' && gastLever(q))) {
@@ -181,7 +187,7 @@ export function foretagsgastSteg(s: State, dtSec: number) {
       if (g.gor === 'ko') {
         const r = f!.ko?.find(q => q.p === p.id);
         if (!r) g.gor = undefined; // kön tömdes utan att hen fick något
-        else if (s.now - r.t >= KASSA.tal * MIN) { koaKlar(s, p, p.task ?? { act: 'koaDisk', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', ref: f!.id }); gaHem(p); }
+        else if (s.now - r.t >= KASSA.tal * MIN) { koaKlar(s, p, p.task ?? { act: 'koaDisk', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', ref: f!.id }); gaHem(p, s, f); }
       } else if (g.gor === 'ater') {
         if (Math.hypot(p.x - (g.vx ?? p.x), p.y - (g.vy ?? p.y)) > 0.3) gaMot(s, p, g.vx!, g.vy!, dtSec, t0);
         if (s.now >= (g.till ?? 0)) { g.gor = undefined; g.path = undefined; g.pk = undefined; }
@@ -190,13 +196,13 @@ export function foretagsgastSteg(s: State, dtSec: number) {
         else if (gaMot(s, p, g.vx!, g.vy!, dtSec, t0) < 0.6) { p.x = g.vx!; p.y = g.vy!; g.sover = 1; g.sovit = 1; }
       } else {
         const e = (g.gjort ?? 0) < FGAST.kop ? basta(s, p, f!) : undefined;
-        if (!e) { if (!g.gjort && !g.bemott) for (const o of omdome) o(s, p, f!); gaHem(p); continue; } // inget lockade, eller allt är slut
+        if (!e) { if (!g.gjort && !g.bemott) for (const o of omdome) o(s, p, f!); gaHem(p, s, f); continue; } // inget lockade, eller allt är slut
         const o = stallIKo(s, p, e);
         p.x = o.spot.x; p.y = o.spot.y; g.gor = 'ko';
         p.task = { act: 'koaDisk', phase: 'do', tx: p.x, ty: p.y, until: s.now + KASSA.tal * MIN, carry: 0, why: o.why, ref: f!.id };
       }
     } else {
-      const ut = kantMot(s, g.klan) ?? { x: W / 2, y: 0.5 }, kvar = gaMot(s, p, ut.x, ut.y, dtSec, t0);
+      const ut = kantMot(s, g.klan) ?? { x: W / 2, y: 0.5 }, kvar = gaMot(s, p, ut.x, ut.y, dtSec, t0, g.rodd ? FORDON_TAL.ridFart : 1); // ett fött riddjur bär gästen hem i ryttarens fart (steg 15.1.170)
       if (kvar < 0.5) gastHemIgen(s, p);
     }
   }

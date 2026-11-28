@@ -392,7 +392,7 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
     return;
   }
   if (f.gor === 'smyger') {
-    if (folk.some(q => vaken(q) && avst(q, f) < VARG.vaken)) { f.gor = 'stryker'; f.tam = undefined; nyttMal(s, f, eld); return; }
+    if (vaktat(s, f.x, f.y, VARG.vaken, folk)) { f.gor = 'stryker'; f.tam = undefined; nyttMal(s, f, eld); return; } // en vaken eller en vakthund nära (steg 15.1.168)
     if (f.tam !== undefined) { tamSmyger(s, f, dtSec); return; }
     const kvar = ga(s, f, VARG.gaFart, dtSec);
     if (kvar < 0) { f.gor = 'stryker'; nyttMal(s, f, eld); } // förrådet är i ett stängt hus
@@ -543,7 +543,7 @@ function stjal(s: State, f: Vargflock) {
 
 // ---------- vargarna och betesdjuren (steg 9.8.12) ----------
 // Ett får eller en get som står ute (inte i fähuset) och som ingen vaken människa är nära kan flocken smyga fram till och ta.
-const tamBytet = (s: State, f: Vargflock, folk: Person[]) => tamUte(s).filter(d => avst(d, f) < VARG.ser && !folk.some(q => vaken(q) && avst(q, d) < VARG.vaken)).sort((a, b) => avst(a, f) - avst(b, f))[0];
+const tamBytet = (s: State, f: Vargflock, folk: Person[]) => tamUte(s).filter(d => avst(d, f) < VARG.ser && !vaktat(s, d.x, d.y, VARG.vaken, folk)).sort((a, b) => avst(a, f) - avst(b, f))[0];
 function tamSmyger(s: State, f: Vargflock, dtSec: number) {
   const d = tamUte(s).find(q => q.id === f.tam);
   if (!d) { f.gor = 'stryker'; f.tam = undefined; nyttMal(s, f); return; } // djuret står inne eller är borta
@@ -731,7 +731,7 @@ export function vargSteg(s: State, dtSec: number) {
   s.vargar = s.vargar.filter(f => f.vargar.length || vargIStrid(s, f));
   if (!s.vargar.length) s.vargar = undefined;
 }
-import { VALP, hundSkaller, tamArt, tamDor, tamUte, vargValp } from './tamdjur';
+import { VALP, hundSkaller, tamArt, tamDor, tamUte, vaktat, vargValp } from './tamdjur';
 // slaget hålls kort medan vargarna är på kartan (klocka.ts, steg 10.2.14)
 SLAGHINDER.push(s => s.vargar?.length ? KLOCKA.slag : undefined);
 // vargar och bybor som kan nå varandra under ett slag, plus synhållet, eller en flock som anfaller: byn går i korta steg (steg 10.2.18)

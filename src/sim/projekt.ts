@@ -22,7 +22,8 @@ import { DORRAR, DORR_LIST, DorrDef, DorrSlag } from './byggnad';
 import { dorrOppningar, dorrSpot, kanHangaDorr, receptDorr, utanDorr } from './bygg';
 import { GRODOR, ODLING, STAKET, faltBrist, faltUppgift } from './odling';
 import { hageBrist, hageUppgift } from './hage';
-import { VINTER, angBrist, angUppgift } from './slatter';
+import { VINTER, angBrist, angUppgift, hoFattas } from './slatter';
+import { hoSpel } from './vattenho';
 import { SKOG, stamTill, fallTid, fellingTiles, klyvStam, stockOverHus, egenStock, fallVilja, rojSpot, rojBrist, slyBrist, slySpot, stubbBrist, stubbeSpot, stubbeUppgift, treeSpot } from './skog';
 import { freeTools, harReceptVatten, tingOf } from './agande';
 import { ACTS, redskapTal } from './handlingar';
@@ -95,6 +96,7 @@ export const PROJEKT_TAL = balans('projekt', {
   hage: 1, ang: 1, // ... hagen och ängen åt betesdjuren (steg 10.2.36)
   falt: 1, // ... arbetet på fälten när ett fält har arbete att göra, eller någon som kan odla har frön men inget fält (steg 2.10.3)
   minKostnad: 0.25, // kostnaden räknas aldrig under så här många arbetstimmar
+  spel: 0.05, // det som står på spel (spel i ProjektDef, steg 15.1.165) väger så här mycket per silver
 });
 // vikten för projektet k i PROJEKT_TAL, eller annars om det inte har en egen rad
 const viktAv = (k: string, annars: number) => (PROJEKT_TAL as Record<string, number>)[k] ?? annars;
@@ -125,6 +127,9 @@ export interface ProjektDef {
   ko?: { act: Act; min: number; saknas(s: State): number };
   // arbetet i projektet (steg 13.9.8): handlingen, saken och minuterna. Den skicklige ser mer värde per egen timme (personVarde)
   arbete?: { act: Act; k?: string; min: number };
+  // det som står på spel (steg 15.1.165): värdet i silver av det som hänger på projektet (djuren som törstar, höet som fattas till
+  // vintern). Projektet ärver det som vikt, gånger PROJEKT_TAL.spel, på samma väg som det ärver värde och brist av materialet
+  spel?(s: State): number;
   paVag?(s: State, p?: Person): number; // den del av bristen (0 till 1) som de andra (inte p) som redan gör det fyller när de är klara (steg 12.1.53): räknas varje gång, inte en gång i timmen som bristen
 }
 
@@ -389,6 +394,12 @@ export const PROJEKT: Record<string, ProjektDef> = {
     uppgift: (s, p) => angUppgift(s, p),
   },
 };
+// det som står på spel för projekten (steg 15.1.165, spel i ProjektDef): ett register efter projektets namn
+export const SPEL: Record<string, (s: State) => number> = {
+  vattenho: hoSpel, // djuren i hagarna utan vatten och ho, mer ju törstigare de är (vattenho.ts)
+  skara: hoFattas, // höet som saknas till vintern när byn har en äng (slatter.ts)
+};
+for (const k in SPEL) if (PROJEKT[k]) PROJEKT[k].spel = SPEL[k];
 export const PROJEKT_LIST = Object.keys(PROJEKT);
 // arbetet som väntar vid stationen k (steg 12.1.150, koKrok i forradsmal.ts): för varje sak som görs där, bristen i projektet gånger
 // receptets minuter
@@ -432,7 +443,9 @@ export function laggTillProjekt(rader: Record<string, ProjektDef>) { for (const 
 // värdet av projektet just nu: vikten gånger bristen, delat med kostnaden
 // det som skyddar mot kylan väger mer ju kallare det är (steg 10.2.71, KLADER.kylaVikt)
 const kylFaktor = (s: State, d: ProjektDef) => d.motKyla ? 1 + KLADER.kylaVikt * coldOf(temperature(s)) : 1;
-export const projektVarde = (s: State, k: string) => { const d = PROJEKT[k]; return d.vikt * kylFaktor(s, d) * d.brist(s) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad(s)); };
+// vikten och det som står på spel (steg 15.1.165)
+const viktNu = (s: State, d: ProjektDef) => d.vikt * kylFaktor(s, d) + (d.spel ? PROJEKT_TAL.spel * d.spel(s) : 0);
+export const projektVarde = (s: State, k: string) => { const d = PROJEKT[k]; return viktNu(s, d) * d.brist(s) / Math.max(PROJEKT_TAL.minKostnad, d.kostnad(s)); };
 // det projektet är värt för den som har familjen fam och omtanken om byn om: byns brist gånger omtanken och det egna (vad p och familjen saknar)
 // Byns brist kommer från timräkningen (arbetsTimme i val.ts, steg 6.2.21), så länge den finns
 // byns brist ur timmens räkning (val.ts), men räknas fram igen en gång när något byggts eller satts upp sedan dess (s.byggV), så
@@ -452,7 +465,7 @@ export function personVarde(s: State, k: string, fam: readonly Person[], om: num
   const d = PROJEKT[k], e = d.egen ? d.egen(s, fam, p) : 0;
   // det de andra redan är på väg att göra räknas med (steg 12.1.53)
   const b = om ? Math.max(0, bristNu(s, k) - (d.paVag?.(s, p) ?? 0)) : 0;
-  return d.vikt * kylFaktor(s, d) * (b * om + e) / Math.max(PROJEKT_TAL.minKostnad, kostnadFor(s, d, p));
+  return viktNu(s, d) * (b * om + e) / Math.max(PROJEKT_TAL.minKostnad, kostnadFor(s, d, p));
 }
 // kostnaden för p (steg 13.9.8): arbetet räknas i p:s egna timmar, så den skicklige ser mer värde per timme i det hen är bra på
 function kostnadFor(s: State, d: ProjektDef, p?: Person) {

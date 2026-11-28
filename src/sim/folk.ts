@@ -226,6 +226,8 @@ export const ageOf = (p: Person, now: number) => ((p.died ?? p.left ?? now) - p.
 // de som är i byn (paKartan): bybor som lever och inte är borta (steg 11.2.3, ute.ts). Den som är borta är fortfarande bybo (alive), men
 // går inte i slaget, ritas inte och väljs inte till något
 export const paKartan = (p: Person) => alive(p) && p.ute === undefined;
+// de som vill veta när någon dör av det som gått dåligt (sorg i DODSORSAKER, die i liv.ts): ledaren bär missnöjet (rost.ts, steg 15.1.161)
+export const dodKrok: ((s: State, p: Person) => void)[] = [];
 export function living(s: State) { return s.people.filter(paKartan); }
 export { isSick } from './sjukdom'; // sjuk just nu: sjukdomen har visat sig (steg 9.5.1, sjukdom.ts)
 export function byId(s: State, id?: number) { return id === undefined ? undefined : s.people.find(p => p.id === id); }
