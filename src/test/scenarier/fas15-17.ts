@@ -1,8 +1,12 @@
 // Scenarier för fas 15, grupp 17 (steg 15.1.161–15.1.170).
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, klockan, kor, medBank, nyInvanare, testBy } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, nyInvanare, testBy, utanWebblasare } from './hjalp';
 import { foretagBy } from './fas14';
+import { hus as husFlik } from '../../ui/flikar/hus';
+import { setByn, ui } from '../../ui/lage';
+import { hasIcon } from '../../ikoner';
+import { hjalpKlick, stangAllaHjalp } from '../../ui/hjalp';
 
 SCENARIER.latrinko = {
   text: 'Steg 15.1.162: kön till latrinen är ingen brist. Den som väntar på en upptagen latrin köar eller går till en annan, och hur många latriner byn behöver räknas över dygnet (SMUTS.latrinPer): en grävd latrin räknas efter hur stor del av dygnets besök den rymmer, så en by med 18 invånare har högst fyra latriner på 20 dygn. Kön ger ingen brist, och väntan förlänger bara besöket',
@@ -195,6 +199,29 @@ SCENARIER.hovarde = {
       [`vattenhon byggs inom ett dygn (${tim} timmar)`, SIM.hoarOf(b).some(SIM.isKlar) && tim < 24],
       [`skäran står på plats ${p1} med äng och utan hö (${SIM.kortTal(spel)} silver på spel)`, p1 >= 1 && p1 <= 10 && spel > 0],
       [`en skära görs inom ett dygn (${st} timmar)`, SIM.tingOf(s).some(t => SIM.GORS.skara?.includes(t.k))],
+    ];
+  },
+};
+
+SCENARIER.affarruta = {
+  text: 'Steg 15.1.163: affärens ruta visar vad den gör. Husets ruta för en affär visar med symboler om varje verksamhet har öppet, vad den säljer, priset i silver och kön (platshållarna sym_oppet, sym_stangt och sym_ko), och texten kommer fram när man trycker',
+  kor: () => {
+    const { s, p, f } = foretagBy(['servering']);
+    const g = SIM.living(s).find(q => q !== p && !SIM.familjOf(s, p.id).includes(q) && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    (f.ko ??= []).push({ p: g.id, v: 'servering', k: SIM.FOOD.find(k => SIM.ownsId(s, p.id, k) >= 1)!, n: 1, t: s.now });
+    utanWebblasare(); setByn(s); ui.husId = f.hus!;
+    const html = husFlik.html!(), a = SIM.affarLage(s, f), namn = SIM.VERKSAMHETER.servering!.namn;
+    hjalpKlick({ closest: () => ({ dataset: { hjalp: `affar-${f.hus}` } }) } as unknown as HTMLElement); // trycket på frågetecknet
+    const tryckt = husFlik.html!(); stangAllaHjalp();
+    // stängt: utan disk
+    const d = SIM.diskarAv(s, f)[0]!; s.stationer = s.stationer!.filter(t => t !== d); SIM.touch(s);
+    const stangd = husFlik.html!();
+    return [
+      [`rutan visar att serveringen har öppet (${a.verk.map(r => `${r.v}: ${r.oppet}`).join(', ')})`, html.includes(`aria-label="${namn}: öppet"`) && hasIcon('sym_oppet')],
+      [`och kön med en som väntar (${a.ko})`, html.includes('aria-label="1 i kön"') && hasIcon('sym_ko')],
+      [`varorna med priset i silver (${a.verk[0]?.varor.map(w => `${w.k} ${w.pris}`).join(', ')})`, (a.verk[0]?.varor.length ?? 0) > 0 && a.verk[0]!.varor.every(w => w.pris >= 1) && hasIcon('silver')],
+      ['texten om affären kommer fram först när man trycker', /Vad affären gör/.test(html) && !html.includes(`${namn}: öppet, säljer`) && tryckt.includes(`${namn}: öppet, säljer`) && tryckt.includes('väntar i kön')],
+      ['utan disk är den stängd', stangd.includes(`aria-label="${namn}: stängt"`) && hasIcon('sym_stangt')],
     ];
   },
 };

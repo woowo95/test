@@ -1,6 +1,6 @@
 import { stOrd } from '../../sim/ord';
-import { DAY, KOM, NYSS_HUS, fangEldBrinner, fangar, husVisas, rumVisas, rumMinus, rumPlus, finhetAv, finhetDelar, foretagAvHus, ryktet, ryktesOrd, OMDOME, VERKSAMHETER, bitsOf, byId, dorrDef, fnOf, gridOf, husById, insulation, komOf, sakNamn, sovplatser } from '../../sim';
-import { iconImg, tecknet } from '../../ikoner';
+import { DAY, KOM, NYSS_HUS, fangEldBrinner, fangar, husVisas, rumVisas, rumMinus, rumPlus, finhetAv, finhetDelar, foretagAvHus, affarLage, type Foretag, SAKER, TAMDJUR, ryktet, ryktesOrd, OMDOME, VERKSAMHETER, bitsOf, byId, dorrDef, fnOf, gridOf, husById, insulation, komOf, sakNamn, sovplatser } from '../../sim';
+import { hasIcon, iconImg, tecknet } from '../../ikoner';
 import { cap, esc, fmtN, hjalpKnapp, hjalpText, omUngefar, pLink } from '../hjalp';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
@@ -14,6 +14,23 @@ const HUR: Record<typeof KOM[number], string> = {
   gava: 'Skänkt',
   stold: 'Taget utan lov',
 };
+
+// affärens rad (steg 15.1.163): för varje verksamhet symbolen, öppet eller stängt, varorna med priset i silver, och kön. Texten
+// kommer fram när man trycker
+const sym = (k: string, namn: string, size = 16, alt = esc(namn)) => `<span title="${esc(namn)}" aria-label="${esc(namn)}">${tecknet(k, alt, size)}</span>`; // alt: tecknet (emojin) när symbolen inte är ritad
+// varans namn: saken, djuret i djurhandeln, eller verksamheten själv (en natt i nattlogit, foder i stallet)
+const varNamn = (k: string, v: string) => SAKER[k]?.namn ?? (TAMDJUR as Record<string, { namn: string }>)[k]?.namn ?? VERKSAMHETER[v].namn;
+function affarRad(ft: Foretag, hid: number) {
+  const a = affarLage(s, ft), id = `affar-${hid}`;
+  const rad = a.verk.map(r => {
+    const V = VERKSAMHETER[r.v], namn = V.namn;
+    const varor = r.varor.map(w => `${sym(hasIcon(w.k) ? w.k : V.sym, varNamn(w.k, r.v), 16, V.sym)}<span class="muted">${tecknet('silver', '', 12)}${w.pris}</span>`).join(' ');
+    return `<span class="affar-verk">${sym(V.sym, namn, 20, V.sym)}${sym(r.oppet ? 'sym_oppet' : 'sym_stangt', r.oppet ? `${namn}: öppet` : `${namn}: stängt`)} ${varor}${r.fler ? `<span class="muted">+${r.fler}</span>` : ''}</span>`;
+  }).join(' · ');
+  const ko = a.ko ? ` ${sym('sym_ko', `${a.ko} i kön`)}<span class="muted">${a.ko}</span>` : '';
+  const om = a.verk.map(r => `${VERKSAMHETER[r.v].namn}: ${r.oppet ? `öppet, säljer ${r.varor.map(w => `${varNamn(w.k, r.v).toLowerCase()} för ${w.pris} silver`).join(', ')}${r.fler ? ` och ${r.fler} till` : ''}` : 'stängt'}.`).join(' ') + (a.ko ? ` ${a.ko} väntar i kön.` : ' Ingen står i kön.');
+  return `<p class="affar">${rad}${ko} ${hjalpKnapp(id, 'Vad affären gör')}</p>${hjalpText(id, `<p class="small">${esc(om)}</p>`)}`;
+}
 
 // ett hus: öppnas genom att trycka på det på kartan
 export const hus: Flik = {
@@ -62,7 +79,7 @@ export const hus: Flik = {
     const fangHtml = h.fn === 'fangelse' ? `<h3>Fångar${fangEldBrinner(s, h.id) ? ' <span title="En liten eld brinner därinne" aria-label="En liten eld brinner">🔥</span>' : ''}</h3>${fang ? `<ul class="fangar">${fang}</ul>` : '<p class="muted">Ingen sitter här nu.</p>'}` : '';
     // företaget i huset (steg 14.1.5 och 14.1.10): verksamheterna och ryktet, och förklaringen bakom ett tryck
     const ft = foretagAvHus(s, h.id), ry = ft && ryktet(s, ft), rid = `rykte-${h.id}`;
-    const ftHtml = ft ? `<p>${ft.verk.map(v => `<span title="${esc(VERKSAMHETER[v].namn)}" aria-label="${esc(VERKSAMHETER[v].namn)}">${VERKSAMHETER[v].sym}</span>`).join(' ')} ${esc(ft.namn)}${ry === undefined ? '' : ` <span class="finhet">${'★'.repeat(1 + Math.round((ry + 1) * 2))}</span>${hjalpKnapp(rid, 'Företagets rykte')}${hjalpText(rid, `<p class="small">${esc(`Ryktet är ${ryktesOrd(ry)}. Det är det kunderna tycker om ${Object.values(OMDOME).map(o => o.namn).join(', ')}.`)}</p>`)}`}</p>` : '';
+    const ftHtml = ft ? `<p>${esc(ft.namn)}${ry === undefined ? '' : ` <span class="finhet">${'★'.repeat(1 + Math.round((ry + 1) * 2))}</span>${hjalpKnapp(rid, 'Företagets rykte')}${hjalpText(rid, `<p class="small">${esc(`Ryktet är ${ryktesOrd(ry)}. Det är det kunderna tycker om ${Object.values(OMDOME).map(o => o.namn).join(', ')}.`)}</p>`)}`}</p>${affarRad(ft, h.id)}` : '';
     return `
     <div class="phead"><div><h2 class="rutrub" data-passa="12"><span title="${esc(`${fn.namn}: ${fn.behov}`)}" aria-label="${esc(fn.namn)}">${tecknet(fn.ikon, fn.ikon, 20)}</span> ${esc(husVisas(s, h))}</h2>${nytt}<p class="muted">${status}</p>${rumRad && klar === bits.length ? `<p><span class="etik">Rummen</span> ${rumRad}</p>` : ''}${agare ? `<p class="muted">Ägs av ${pLink(agare)} och familjen.</p>` : ''}${dorrar && klar === bits.length ? `<p><span class="etik">${dorrar.includes(', ') ? 'Dörrarna' : 'Dörren'}</span> ${dorrar}</p>` : ''}</div>${hjalpKnapp('hus-om', 'Vad gör huset?')}</div>${hjalpText('hus-om', `<p class="muted small">Huset håller värmen och skyddar mot väder och kyla. Rummen används till det byn behöver, och den som äger huset bor där med familjen.</p>`)}
     ${ftHtml}${fangHtml}<h3>Materialet kom från</h3>${rader ? rader : '<p class="muted">Inget material än.</p>'}`;
