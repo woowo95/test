@@ -2292,31 +2292,32 @@ SCENARIER.rovarstarkvar = {
 };
 
 SCENARIER.rovarrotar = {
-  text: 'Steg 9.2.120, 10.1.15: plundringen går sak för sak. Rövarna går till lagerplatsen med något i och tar en sak var tolfte sekund (ROVARE.taSek), det dyraste per vikt först, tills de bär så mycket de orkar. Ingen fast tid för att rota: tiden följer bytet, så att byn hinner reagera medan de tar',
+  text: 'Steg 9.2.120, 10.1.15 och 15.1.65: rövarna går till lagerplatsen med något i och tar, framme vid en hög, på en gång så mycket de bär av det dyraste per vikt inom räckhåll, som byborna när de hämtar, och går sedan till nästa hög eller hem',
   kor: () => {
     const s = createState(6, START);
     for (const c of SIM.klanerOf(s)) c.inst = -60;
     const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
-    // en andra lagerplats utan något i, och silver (dyrt och lätt) i förrådet
+    // en andra lagerplats utan något i, och blommor (dyra och lätta) i förrådet; silvret är gömt i sin behållare och syns inte för den som rotar
     SIM.zonesOf(s).push({ ...z, x: z.x + 8, y: z.y, w: 2, h: 2, namn: 'Lagret bortom' }); SIM.touch(s);
-    setAmount(s, 'silver', 30);
+    setAmount(s, 'blomma', 30);
     for (const p of living(s)) { Object.assign(p, SIM.freeNear(s, m.x + 30, m.y + 30)); p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * HOUR, carry: 0 }; }
     const f = rovarGang(s, 2, { x: m.x + 3, y: m.y }, { anfaller: true });
     let framme = -1, forsta = -1, vid = true;
     const antalTagna = () => Object.values(f.tagit ?? {}).reduce((a, b) => a + b, 0);
+    const blommaAt = (s.stackar ?? []).filter(a => a.k === 'blomma' && a.n >= 1).map(a => ({ x: a.x, y: a.y })), vidBlomma = new Set<number>(); // blommorna ligger kvar tills de tas
     korTills(s, () => !s.rovare || !!f.klar, 3600, () => {
       const ta = SIM.rovarna(s, f).filter(r => r.gast?.gor === 'ta');
       if (ta.length && framme < 0) framme = s.now;
-      for (const r of ta) if (Math.hypot(r.x - m.x, r.y - m.y) > SIM.ROVARE.nara + 0.6) vid = false;
+      for (const r of ta) { if (Math.hypot(r.x - m.x, r.y - m.y) > SIM.ROVARE.nara + 0.6 && !r.gast?.taVid?.hog) vid = false; if (blommaAt.some(a => SIM.iRackvidd(r, a))) vidBlomma.add(r.id); }
       if (antalTagna() > 0 && forsta < 0) forsta = s.now;
     });
     const sek = (forsta - framme) / SIM.SEC, tagna = f.tagit ?? {};
     const tot = Object.values(tagna).reduce((a, b) => a + b, 0), klarSek = (s.now - framme) / SIM.SEC;
     return [
       ['rövarna står vid lagerplatsen med något i när de tar', framme > 0 && vid],
-      [`den första saken tas ${sek.toFixed(1)} sekunder efter att de börjat (en sak tar ${SIM.ROVARE.taSek} sekunder)`, framme > 0 && forsta > 0 && sek >= SIM.ROVARE.taSek - 1],
-      [`plundringen av ${tot} saker tar ${klarSek.toFixed(0)} sekunder: tiden följer bytet (högst en sak var ${SIM.ROVARE.taSek}:e sekund och rövare)`, tot > 2 && klarSek >= (tot / 2) * SIM.ROVARE.taSek - 1],
-      [`de tar det dyraste först: silvret (${30 - amountOf(s, 'silver')} av 30)`, (tagna.silver ?? 0) > 0 && amountOf(s, 'silver') < 30],
+      [`de tar när de är framme (${sek.toFixed(1)} sekunder efter att de börjat)`, framme > 0 && forsta > 0 && sek < 10],
+      [`plundringen av ${tot} saker tar ${klarSek.toFixed(0)} sekunder`, tot > 2 && klarSek < 10 * SIM.MIN / SIM.SEC],
+      [`de tar det dyraste inom räckhåll först: blommorna när de står vid dem (${30 - amountOf(s, 'blomma')} av 30, ${vidBlomma.size} stod vid dem)`, vidBlomma.size > 0 && (tagna.blomma ?? 0) > 0],
     ];
   },
 };

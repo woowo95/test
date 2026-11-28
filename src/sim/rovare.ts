@@ -12,7 +12,7 @@ import { eldPlats, getMap, vaderstreck } from './karta';
 import { Klan, kandIgen, klanById, klanerOf } from './klaner';
 import { klanHandelse } from './byrel';
 import { kantMot } from './grannbyar';
-import { addTo, amountOf, avbryt, carryKind, dropLoad, isCarrying, zoneAt, zoneOf, zonesOf } from './lager';
+import { LAGER, addTo, amountOf, iRackhall, iRackvidd, avbryt, carryKind, dropLoad, isCarrying, zoneAt, zoneOf, zonesOf } from './lager';
 import { hundSkaller, tamArt, tamStulen, tamUte } from './tamdjur';
 import { DORRAR, bitAt, bitsOf, freeNear, isWall, husById, roomAt } from './byggnad';
 import { LARM, handelse, horLarm } from './rykten';
@@ -97,7 +97,6 @@ export const ROVARE = balans('rovare', {
   flyBlod: 2.5, flyHot: 0.2, flyDoda: 0.4, // viljan att fly: blodet hen förlorat, övermakten hen ser (mindre för den modiga) och delen av flocken som är borta
   platsAvst: 10, // platserna att plundra väljs efter värdet delat med avståndet plus så här många rutor (steg 13.1.5) ...
   platsMin: 3, // ... och en plats där det som ligger är värt mindre än så här är inte värd besväret
-  taSek: 12, // så många sekunder tar det att ta en sak ur förrådet (steg 10.1.15): tiden följer hur mycket det finns att ta
   gavSig: 1, gavSigTim: 2, // den som flytt eller gett upp i striden har så här mycket mindre vilja att stå emot, och det avtar till noll på så här många timmar (steg 12.1.82)
   lyder: 0.5, lyderPlus: 0.15, iver: 0.2, // över den här Envälde-seden lyder man ledaren (så mycket mer vilja), och så mycket drar Fejd och Krig till striden eller från den (steg 8.7.9, 10.1.13)
   pliktPlus: 0.3, familjPlus: 0.05, smabarnMinus: 0.15, // lagen om stridsplikt, den som har partner eller barn i byn att försvara, och föräldern till ett litet barn (steg 10.1.13)
@@ -679,8 +678,9 @@ setRovarVal(rovarSkydd);
 //   - Mötet: den som står emot och rövaren som kommer nära varandra (ROVARE.moter) börjar slåss, där de står, i en strid på kartan
 //     (kartstrid.ts); de som kommer till ger sig in i samma strid. Om en rövare flyr avgörs av stridsmodet och hotet i striden och
 //     av poängen för att fly här (blodet, hur många som står emot och hur många i flocken som är kvar).
-//   - Plundringen: den som står vid en lagerplats där ingen står emot tar det mest värda, en sak i taget (ROVARE.taSek sekunder
-//     per sak), och bär hem det när hen bär så mycket hen orkar eller inget mer finns.
+//   - Plundringen: den som står vid en hög där ingen står emot tar på en gång så mycket hen bär av det mest värda inom räckhåll,
+//     som en bybo som hämtar (steg 15.1.65), och går sedan till nästa hög, eller bär hem det när hen bär så mycket hen orkar eller
+//     inget mer finns.
 export type RovarGor = 'tillRast' | 'rasta' | 'gaOmkring' | 'prata' | 'motMalet' | 'sla' | 'hota' | 'taBorda' | 'ta' | 'baraHem' | 'fly';
 interface RCtx { ev?: TalkEvent[]; s: State; f: Rovarflock; r: Person; folk: Person[]; dt: number; mal: { x: number; y: number }; fiende?: Person; ivagen?: Person; // fiende = den närmaste som står emot, ivagen = en vuxen som inte står emot men står i vägen
   hot: number; last: number; kvar: number; brus: (k: string) => number } // brus: rövarens slumptal för handlingen k, dragna en gång per val
@@ -766,7 +766,7 @@ function rastPunkt(c: RCtx) {
   return { x: g.vx, y: g.vy };
 }
 // på sin egen plats vid målet eller på väg dit, också när den ligger längre från målet (steg B.58)
-const vidTaPlats = (c: RCtx) => { const g = gr(c.r), v = g.taVid; return g.gor === 'ta' && !!v && Math.hypot(v.mx - c.mal.x, v.my - c.mal.y) <= 0.5 && avst(c.r, c.mal) <= ROVARE.taUt * 1.5 + 1; };
+const vidTaPlats = (c: RCtx) => { const g = gr(c.r), v = g.taVid; return g.gor === 'ta' && !!v && Math.hypot(v.mx - c.mal.x, v.my - c.mal.y) <= 0.5 && (!!v.hog || avst(c.r, c.mal) <= ROVARE.taUt * 1.5 + 1); }; // på väg till nästa hög (hog, steg 15.1.65) eller vid platsen intill målet
 const RGOR = Object.keys(ROVARHANDLINGAR) as RovarGor[];
 // går mot punkten, i en bybos fart med samma vägsökning. Svarar hur långt det är kvar, −1 när det inte finns någon väg
 // var och en går mot sin egen plats i klungan runt målet, så att de inte står på samma punkt
@@ -874,23 +874,32 @@ function taSteg(c: RCtx) {
   if (huggDorr(s, f, c.folk)) return; // en stängd dörr huggs sönder (steg 8.9.1–8.9.2)
   if (!paTaPlats(c)) return; // till sin egen plats vid förrådet (steg B.49)
   forlustFore(s, 'ran'); // förmögenheten när plundringen börjar (steg 12.1.131)
-  g.taTid = (g.taTid ?? 0) + c.dt;
-  while (g.taTid >= ROVARE.taSek) {
-    g.taTid -= ROVARE.taSek;
-    if (!taEn(s, f, r)) { // hen orkar inte bära mer, eller inget mer finns: hen är nöjd och bär hem. När alla är det är plundringen klar
-      g.nojd = true; g.taTid = 0;
-      if (rovarna(s, f).every(q => gr(q).nojd || gr(q).flytt)) taKlart(s, f);
-      return;
-    }
-  }
+  // framme vid högen tar hen på en gång så mycket hen bär av det mest värda inom räckhåll (steg 15.1.65), som en bybo som hämtar
+  iRackhall(r.x, r.y, () => { while (taEn(s, f, r, true)); });
+  const nasta = nastaHog(s, r);
+  if (nasta) { const at = freeNear(s, nasta.x + 0.5, nasta.y + 0.5); g.taVid = { x: at.x, y: at.y, mx: c.mal.x, my: c.mal.y, hog: 1 }; return; } // sedan till nästa hög
+  // hen orkar inte bära mer, eller inget mer finns: hen är nöjd och bär hem. När alla är det är plundringen klar
+  g.nojd = true;
+  if (rovarna(s, f).every(q => gr(q).nojd || gr(q).flytt)) taKlart(s, f);
+}
+// nästa hög (steg 15.1.65): den närmaste stacken utom räckhåll med något rövaren vill ha och orkar bära, och som går att ta (det som
+// inte är gömt), eller ett ledigt redskap som ligger framme
+function nastaHog(s: State, r: Person): { x: number; y: number } | undefined {
+  const kvar = ROVARE.bar * (living(s).some(p => p.task?.act === 'fly' && ageOf(p, s.now) >= ALDER.vuxen) ? ROVARE.gerUpp : 1) - lastAv(r);
+  const vill = (k: string) => viktOf(k) <= kvar && grundvarde(k) > 0;
+  let bast: { x: number; y: number } | undefined, bd = Infinity;
+  const prova = (x: number, y: number) => { const d = Math.hypot(x + 0.5 - r.x, y + 0.5 - r.y); if (d > LAGER.rackvidd && d < bd) { bd = d; bast = { x, y }; } };
+  for (const a of s.stackar ?? []) if (a.n >= 1 && !SAKER[a.k]?.redskap && vill(a.k) && iRackhall(a.x + 0.5, a.y + 0.5, () => amountOf(s, a.k)) >= 1) prova(a.x, a.y); // det som går att ta där
+  for (const t of tingOf(s)) if (t.x !== undefined && t.y !== undefined && t.bar === undefined && t.hos === undefined && t.lass === undefined && vill(t.k)) prova(t.x, t.y);
+  return bast;
 }
 // rövaren tar en sak: det dyraste per vikt som hen orkar bära, redskapen inräknade (steg 8.7.16). Svarar om något togs
 // en stulen karta (steg 11.7.5): rövaren lär sig platserna på den
 export function stulenKarta(s: State, r: Person, t: Ting) { for (const x of t.skrift?.platser ?? []) larOrt(s, r, x.nr, x.v, SKRIFT.kartaC, { t: x.t }); }
-function taEn(s: State, f: Rovarflock, r: Person) {
+function taEn(s: State, f: Rovarflock, r: Person, iRack = false) {
   const gavUpp = living(s).some(p => p.task?.act === 'fly' && ageOf(p, s.now) >= ALDER.vuxen); // att fly är att ge upp (steg 8.7.17)
   const bar = ROVARE.bar * (gavUpp ? ROVARE.gerUpp : 1), vikt = lastAv(r);
-  const fritt = (k: string) => tingOf(s).find(q => q.k === k && q.bar === undefined && q.hos === undefined && q.lass === undefined);
+  const fritt = (k: string) => tingOf(s).find(q => q.k === k && q.bar === undefined && q.hos === undefined && q.lass === undefined && (!iRack || q.x !== undefined && q.y !== undefined && iRackvidd(r, { x: q.x, y: q.y }))); // inom räckhåll (steg 15.1.65)
   const hl = handlarLast(s), vidH = hl && avst(r, hl) <= ROVARE.nara + 1 ? hl.h : undefined; // handlarens last som annat byte (steg 11.11.7)
   const iLast = (q: string) => !!vidH?.varor.some(w => w.k === q && w.n >= 1);
   // vid en grav tas bara det som ligger i den (steg 13.1.5)
@@ -1059,7 +1068,7 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
       if (p > bp) { bp = p; bast = k; }
     }
     const bytt = bast !== g.gor;
-    if (bytt) { g.gor = bast; g.vx = undefined; g.vy = undefined; g.taTid = 0; }
+    if (bytt) { g.gor = bast; g.vx = undefined; g.vy = undefined; }
     if (bytt || nytt) g.gorTill = s.now + mellan(s, ROVARE.rastSek) * SEC; // valet varar en stund, också när rövaren väljer samma igen
     ROVARHANDLINGAR[bast].gor(c);
     if (bast === 'sla') g.varStrid = true;

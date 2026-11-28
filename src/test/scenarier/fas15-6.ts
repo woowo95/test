@@ -166,3 +166,28 @@ SCENARIER.dorrlarm = {
     ];
   },
 };
+
+SCENARIER.rovartar = {
+  text: 'Steg 15.1.65: rövaren tar som byborna. En ensam rövare vid en hög med många lätta saker tar sin börda i ett slag, så mycket hen bär av det mest värda inom räckhåll, och går sedan hem i stället för att stå kvar och plocka en sak i taget',
+  kor: () => {
+    const s = SIM.createState(6, START); klockan(s, 11);
+    for (const c of SIM.klanerOf(s)) c.inst = -60;
+    const z = SIM.zoneOf(s)!, m = { x: z.x + z.w / 2, y: z.y + z.h / 2 };
+    for (const k of SIM.SAK_LIST) if (!SIM.SAKER[k]!.redskap && SIM.amountOf(s, k) > 0) SIM.setAmount(s, k, 0);
+    SIM.setAmount(s, 'blomma', 400); // många lätta saker i en hög
+    for (const p of SIM.living(s)) { Object.assign(p, SIM.freeNear(s, m.x + 30, m.y + 30)); p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * SIM.HOUR, carry: 0 } as SIM.Task; }
+    const f = rovarGang(s, 1, { x: m.x + 3, y: m.y }, { anfaller: true }), r = SIM.rovarna(s, f)[0];
+    const bar = () => Object.entries(r.gast?.bar ?? {}).reduce((a, [k, n]) => a + SIM.viktOf(k) * n, 0);
+    let forsta = -1, slagMedTa = 0, hem = -1, n0 = 0;
+    korTills(s, () => hem > 0 || !s.rovare, 1800, () => {
+      const n = Object.values(r.gast?.bar ?? {}).reduce((a, b) => a + b, 0);
+      if (n > n0) { slagMedTa++; if (forsta < 0) forsta = s.now; n0 = n; }
+      if (forsta > 0 && hem < 0 && r.gast?.gor === 'baraHem') hem = s.now;
+    });
+    const tog = r.gast?.bar?.blomma ?? 0, sek = (hem - forsta) / SIM.SEC;
+    return [
+      [`hen tog sin börda i ett slag (${tog} blommor, ${bar().toFixed(1)} av ${SIM.ROVARE.bar} i vikt, i ${slagMedTa} slag)`, slagMedTa === 1 && bar() > SIM.ROVARE.bar - 0.2],
+      [`och går hem strax efter (${sek.toFixed(0)} sekunder)`, hem > 0 && sek < 60],
+    ];
+  },
+};
