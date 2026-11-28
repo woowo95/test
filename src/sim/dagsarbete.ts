@@ -21,7 +21,7 @@ import { BYN, kyrkaId } from './egendom';
 import { FOOD } from './saker';
 import { foodDaysAll, matPerDygn } from './ekonomi';
 import { FORRADSMAL, buffert } from './forradsmal';
-import { egnaMatDygn, forsorjer, payable } from './behov';
+import { betalVarde, egnaMatDygn, forsorjer, payable } from './behov';
 import { kunnaFart } from './kunna';
 import { tanke } from './tankar';
 import { ledareOf } from './styre';
@@ -52,7 +52,6 @@ export interface Dagsverk {
   bud(s: State): LonBud[];
 }
 export const lonNu = (s: State) => lagGaller(s, 'lon') && lagGaller(s, 'skatt');
-export const anstAv = (s: State, p: Person) => s.anst?.find(a => a.p === p.id);
 // anställd av byn i arbetet arb (i år)
 export const anstByn = (p: Person, arb: string) => p.anst?.av === BYN && p.anst.arb === arb;
 // föräldern som försörjer p, modern först
@@ -61,11 +60,11 @@ const forsorjare = (s: State, p: Person) => [p.mother, p.father].map(id => livin
 const betalare = (s: State, p: Person) => forsorjare(s, p) ?? p;
 const silverAv = (s: State, id: number) => Math.floor(ownsId(s, id, 'silver') + 1e-9);
 // det id kan betala en lön med: dagsarbetet ligger på samma byten som allt annat (Gränsen mot fas 14 i fliken Människan), så en
-// person betalar med silvret och det hen har över, värderat efter grundvärdet (som kunden vid disken, kundPung i foretag.ts).
+// person betalar med silvret och det hen har över, värderat efter grundvärdet (som kunden vid disken: betalVarde i behov.ts).
 // Kyrkan betalar med sitt silver
-const formaga = (s: State, id: number) => {
+export const formaga = (s: State, id: number) => {
   const p = id > 0 ? byId(s, id) : undefined;
-  return p ? Math.floor(payable(s, p, []).reduce((a, w) => a + (w.t ? 0 : w.n * grundvarde(w.k)), 0) + 1e-9) : silverAv(s, id);
+  return p ? Math.floor(betalVarde(s, p) + 1e-9) : silverAv(s, id);
 };
 
 // det byn kan betala ur delen: delens andel av byns silver och av maten över bufferten
@@ -144,7 +143,7 @@ export function anstallDygn(s: State) {
     s.anst.push({ av: b.av, arb, p: p.id, lon, verk: 0, mal: b.mal, del: b.av === BYN ? DAGSVERK[arb].del : undefined, t: s.now });
     p.anst = { av: b.av, arb, mal: b.mal, w: lon / Math.max(1, Math.min(vantatVerk(p, arb), b.timMax ?? Infinity)) / ARBETE };
     upptagen.add(p); plats.set(b, (plats.get(b) ?? 0) + 1); kvar.set(kassa, tak - lon);
-    count(s, 'anstalld'); count(s, 'anstalld_' + arb);
+    count(s, 'anstalld_' + arb);
     if (forstaGang(s, 'anstalld')) { const l = ledareOf(s), av = b.av > 0 ? byId(s, b.av)?.name : b.av === BYN ? l?.name ?? 'Byn' : 'Kyrkan'; log(s, `${av} anställde ${p.name} för ett år: ${DAGSVERK[arb].namn.toLowerCase()}, ${lon} silver.`, 'world', [p.id]); }
   }
 }
@@ -165,22 +164,38 @@ function betala(s: State, a: Anst, till: number) {
   const id = a.del ? budgetId(a.del) : a.av, silver = Math.min(a.lon, silverAv(s, id));
   let kvar = a.lon - (silver >= 1 ? ownMove(s, 'silver', silver, id, till) : 0);
   if (kvar < a.lon) count(s, 'lonSilver', a.lon - kvar);
-  // en person betalar resten med det hen har över, det mest värda först, i hela saker som inte är värda mer än det som är kvar
+  // en person betalar resten med det hen har över, det mest värda först, i hela saker som inte är värda mer än det som är kvar.
+  // Blir det en rest ger hen en sak till, den minst värda som täcker resten (steg 15.1.157): skulden täcks och lite mer, och det
+  // som blir över är den anställdas
   const q = a.av > 0 ? byId(s, a.av) : undefined;
-  if (q && kvar >= 1 - 1e-9) for (const w of payable(s, q, ['silver']).filter(x => !x.t).sort((x, y) => grundvarde(y.k) - grundvarde(x.k) || (x.k < y.k ? -1 : 1))) {
-    const v = grundvarde(w.k), m = v > 0 ? Math.min(Math.floor(w.n + 1e-9), Math.floor(kvar / v + 1e-9)) : 0;
-    if (m < 1) continue;
-    const g = ownMove(s, w.k, m, a.av, till);
-    kvar -= g * v; if (g) count(s, 'lonVaror', g);
-    if (kvar < 1 - 1e-9) break;
+  if (q && kvar > 1e-9) {
+    const varor = () => payable(s, q, ['silver']).filter(x => !x.t && x.n >= 1 - 1e-9 && grundvarde(x.k) > 0);
+    for (const w of varor().sort((x, y) => grundvarde(y.k) - grundvarde(x.k) || (x.k < y.k ? -1 : 1))) {
+      const v = grundvarde(w.k), m = Math.min(Math.floor(w.n + 1e-9), Math.floor(kvar / v + 1e-9));
+      if (m < 1) continue;
+      const g = ownMove(s, w.k, m, a.av, till);
+      kvar -= g * v; if (g) count(s, 'lonVaror', g);
+      if (kvar <= 1e-9) break;
+    }
+    for (let i = 0; i < 8 && kvar > 1e-9; i++) { // resten: en sak till
+      const l = varor().sort((x, y) => grundvarde(x.k) - grundvarde(y.k) || (x.k < y.k ? -1 : 1)), w = l.find(x => grundvarde(x.k) >= kvar - 1e-9) ?? l[l.length - 1];
+      if (!w || ownMove(s, w.k, 1, a.av, till) < 1) break;
+      kvar -= grundvarde(w.k); count(s, 'lonVaror', 1); count(s, 'lonAvrundad');
+    }
   }
-  if (a.av === BYN) for (const k of FOOD) {
-    const v = grundvarde(k);
-    while (kvar >= v - 1e-9 && v > 0 && foodDaysAll(s) > buffert(s, 'mat')) {
-      if (bynsAv(s, k) >= 1) { if (fromByn(s, k, 1, till) < 1) break; }
-      else if (ownsId(s, BUDGET_KVAR, k) >= 1) { if (ownMove(s, k, 1, BUDGET_KVAR, till) < 1) break; }
-      else break;
-      kvar -= v; count(s, 'lonVaror', 1);
+  if (a.av === BYN) {
+    const ge = (k: string) => { if (bynsAv(s, k) >= 1) return fromByn(s, k, 1, till) >= 1; if (ownsId(s, BUDGET_KVAR, k) >= 1) return ownMove(s, k, 1, BUDGET_KVAR, till) >= 1; return false; };
+    for (const k of FOOD) {
+      const v = grundvarde(k);
+      while (kvar >= v - 1e-9 && v > 0 && foodDaysAll(s) > buffert(s, 'mat')) {
+        if (!ge(k)) break;
+        kvar -= v; count(s, 'lonVaror', 1);
+      }
+    }
+    // resten (steg 15.1.157): den minst värda maten byn har som täcker den
+    if (kvar > 1e-9 && foodDaysAll(s) > buffert(s, 'mat')) {
+      const k = FOOD.filter(q => grundvarde(q) >= kvar - 1e-9 && (bynsAv(s, q) >= 1 || ownsId(s, BUDGET_KVAR, q) >= 1)).sort((x, y) => grundvarde(x) - grundvarde(y) || (x < y ? -1 : 1))[0];
+      if (k && ge(k)) { kvar -= grundvarde(k); count(s, 'lonVaror', 1); count(s, 'lonAvrundad'); }
     }
   }
   return a.lon - Math.max(0, kvar);

@@ -12,10 +12,11 @@ import { knows } from './teknik';
 import { foretagOf, foretagRum, gastFlode, VERKSAMHETER, type Foretag } from './foretag';
 import { foretagBord, isKlar, stationDef, stationerOf, stationRum, type Station } from './stationer';
 import { grundvarde } from './varde';
+import { behovAv, DELA } from './behov';
 import { iHelaForradet, ownsId, use } from './lager';
 import { TAM_LIST, TAMDJUR, arHona, tamAlder, tamArt, tamdjurOf, type TamArtId, type Tamdjur } from './tamdjur';
 import { radPaslag } from './priser';
-import { klanById } from './klaner';
+import { gastRad } from './klaner';
 import { skick } from './foretag';
 import { FGAST } from './foretagsgast';
 
@@ -25,7 +26,7 @@ export const VERK = balans('verksamheter', {
   stall: 5, // så många silver är det värt för gästen att djuret får foder och vila
   baddar: 4, // så många bäddar har ett nattlogi högst
   par: 2, // så många av en djurart behåller ägaren
-  djurlust: 0.4, // det första djuret av sin sort är så mycket mer värt för den som inget har, gånger djurskötseln (full skicklighet)
+  djurlust: 0.4, // efterfrågans snitt: så stor del av djurets värde en kund väntas vinna (snitt nedan; kunden själv: BRUK_DJUR)
   djurDygn: 0.05, // så ofta per dygn (år i spelet) köper man ett djur
 });
 // vad ett verksamhetens rum har: stationerna av sorten
@@ -54,7 +55,6 @@ export function tillSalu(s: State, ag: number, art: TamArtId): Tamdjur | undefin
   return d.filter(q => tamAlder(s, q) >= tamArt(art).vuxen && (arHona(q) ? honor > 1 : d.length - honor > 1)).sort((a, b) => a.born - b.born || a.id - b.id)[0];
 }
 const arter = (s: State) => TAM_LIST.filter(a => tamdjurOf(s).some(d => d.art === a && tillSalu(s, d.agare ?? BYN, a) !== undefined));
-const radAv = (s: State, p: Person) => { const nr = klanById(s, p.gast?.klan)?.rad; return s.varld?.rader?.find(r => r.nr === nr); };
 // ---------- raderna ----------
 VERKSAMHETER.nattlogi = {
   namn: 'Nattlogi', sym: '🛏️', rum: ['sovrum', 'sovsal'], sak: 'halmbadd',
@@ -89,8 +89,8 @@ VERKSAMHETER.djurhandel = {
   varor: arter,
   noje: (s, p, k) => {
     const a = tamArt(k as TamArtId);
-    if (p.gast) { const r = radAv(s, p); return r && a.lev ? a.varde * Math.max(0, radPaslag(s, r, a.lev) - 1) : 0; } // det hembyn betalar mer
-    return tamdjurOf(s).some(d => d.art === k && d.agare === p.id) ? 0 : a.varde * VERK.djurlust * p.skill.skotsel / 20;
+    if (p.gast) { const r = gastRad(s, p); return r && a.lev ? a.varde * Math.max(0, radPaslag(s, r, a.lev) - 1) : 0; } // det hembyn betalar mer
+    return a.lev ? a.varde * Math.max(0, behovAv(s, p, a.lev) - DELA.over) : 0; // som en sak i affären: det djuret ger mot det hen saknar (BRUK_DJUR, steg 15.1.164)
   },
   snitt: k => tamArt(k as TamArtId).varde * VERK.djurlust * 0.25, grund: k => tamArt(k as TamArtId).varde,
   perDygn: (_s, p) => p.gast ? 0 : VERK.djurDygn,

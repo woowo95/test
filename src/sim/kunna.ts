@@ -27,18 +27,23 @@ const tekAv = (act: Act, k?: string) => (k ? tekFor(k) : undefined) ?? (tvAct ??
   ...Object.values(TILLVERKA).map(d => [d.act, d.tek] as const),
 ])).get(act);
 // ---------- vakten för skickligheten (steg 13.9.10) ----------
-// En handling som gör något (en sak i GORS, ett hantverk) har sin färdighet för fart och kvalitet: en färdighet i SKILLS och en
+// En handling som gör något (en sak i GORS, ett hantverk, ett arbete på en plats) har sin färdighet för fart och kvalitet: en färdighet i SKILLS och en
 // nivå att följa: sakens teknik, stationens, receptets eller handlingens eget kunnande (kunna i ACTS). Vakten i npm test och npm run balans (kor.ts) larmar
 // för de handlingar som saknar den, som vakten för arbetstiderna (tider.ts)
 // stationen, tillbehöret och dörren görs efter sitt recept (var i RECEPT), och nivån följer det som görs
 const receptVar = new Set<string>(Object.values(RECEPT as Record<string, { var: string }>).map(r => r.var));
-export function utanFardighet(acts: Record<string, ActDef> = ACTS, gors: Record<string, string[]> = GORS): string[] {
+// Vakten prövar varje handling som tar tid och gör något (steg 15.1.53): en sak i GORS, ett hantverk, eller ett arbete på en plats
+// (verb i ACTS, som städa, betjäna och ställa fram). Regeln gäller handlingarna från steg 13.9.7; de äldre arbetena nedan har ännu
+// inte skickligheten i sin tid, och listan står här så att en ny handling inte hamnar bland dem utan att det syns
+export const FORE_KUNNA: ReadonlySet<string> = new Set(['grop', 'vittja', 'skramma', 'ortPlocka', 'ortSatta', 'krukaHem', 'tatuera', 'hage', 'ang', 'staket', 'rojaSly', 'sopor', 'tomma_latrin', 'penna', 'passa']);
+const gorNagot = (d: ActDef, ks: string[]) => ks.length > 0 || !!d.hantverk || !!d.verb && !d.arbete; // arbetena för byn (arbete) får fart av färdigheten i det de ger
+export function utanFardighet(acts: Record<string, ActDef> = ACTS, gors: Record<string, string[]> = GORS, fore: ReadonlySet<string> = FORE_KUNNA): string[] {
   const ut: string[] = [];
   for (const a in acts) {
     const d = acts[a], ks = gors[a] ?? [];
     // en handling med yrke övar sin färdighet (steg 15.1.145), utom rollerna som räknas i timmar (dygn: vila, berätta, vakta) och eldens arbeten
-    if (d.yrke && !d.fardighet && !d.arbete && !d.hantverk && !d.dygn && d.slag !== 'elda') { ut.push(`${a}: yrket ${d.yrke} utan färdighet`); continue; }
-    if (!ks.length && !d.hantverk) continue; // gör inget
+    if (d.yrke && !d.fardighet && !d.arbete && !d.hantverk && !d.dygn && d.slag !== 'elda' && !fore.has(a)) { ut.push(`${a}: yrket ${d.yrke} utan färdighet`); continue; }
+    if (!gorNagot(d, ks) || fore.has(a)) continue; // gör inget
     const sk = d.fardighet ?? d.arbete ?? 'hantverk';
     if (!(SKILLS as readonly string[]).includes(sk)) ut.push(`${a}: färdigheten ${sk} finns inte`);
     else if (d.kunna === undefined && !tekAv(a as Act) && !ks.some(k => tekFor(k)) && !receptVar.has(a)) ut.push(`${a}: ingen nivå för skickligheten (teknik, station eller kunna)`);

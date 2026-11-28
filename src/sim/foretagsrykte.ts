@@ -1,5 +1,5 @@
 // ---------- företagens rykte (steg 14.1.10, Ekonomi och handel: Gästerna och ryktet, i fliken Människan) ----------
-// Varje besök ger ett omdöme (OMDOME: en rad per del). Det är kundens eget, och hen går hellre dit hen var nöjd (kundVal i
+// Varje besök ger ett omdöme (OMDOME: en rad per del). Det är kundens eget, och hen går hellre dit hen var nöjd (erbjudandet i
 // kassa.ts). I samtalen berättar man om det man varit mest nöjd eller missnöjd med, och den som reser eller går hem till sin by
 // berättar där. Företagets rykte i byn är medlet av allas omdömen, och i en grannby det som kommit dit
 import type { Person, State } from './typer';

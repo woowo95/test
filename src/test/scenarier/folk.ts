@@ -2871,7 +2871,7 @@ SCENARIER.rovarmote = {
   text: 'Försvararna går dit rövarna är på väg (steg 10.2.27 och B.5): de som ska slåss ställer sig mellan gänget och det gänget är ute efter, också en lagerplats i byns utkant, och väntar där, och striden börjar där de möts',
   kor: () => {
     const s = rovarBy();
-    SIM.skickaRovare(s, 2);
+    SIM.skickaRovare(s, 1); // en rövare: byborna i by 4 är svaga, och mot två tränade rövare är de för få räknat med stridsvärdet (steg 15.1.151); provet gäller var de ställer sig
     const f = s.rovare!, hem = SIM.malet(s);
     let gick = 0, strid: { x: number; y: number } | undefined;
     for (let i = 0; i < 600 && f.folk.length && !strid; i++) {

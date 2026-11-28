@@ -938,7 +938,7 @@ export function staketVal(s: State, p: Person) {
 export function staketKlar(s: State, p: Person, i?: number) {
   if (i === undefined || harStaket(s, i) || getable(s, p, 'grenar') < STAKET.grenar) return;
   takeMaterial(s, p, 'grenar', STAKET.grenar);
-  (s.staket ??= []).push(i); count(s, 'staket');
+  (s.staket ??= []).push(i);
   if (forstaGang(s, 'staket')) log(s, `${p.name} satte upp byns första staket runt fältet.`, 'world', [p.id]);
 }
 
@@ -974,7 +974,7 @@ export function skrammaKlar(s: State, p: Person, id?: number) {
   const f = faltById(s, id);
   if (!f || harSkramma(s, f) || getable(s, p, 'grenar') < skrammaHar.grenar || getable(s, p, 'torrgras') < skrammaHar.torrgras) return;
   takeMaterial(s, p, 'grenar', skrammaHar.grenar); takeMaterial(s, p, 'torrgras', skrammaHar.torrgras);
-  (s.skramma ??= []).push(f.id); count(s, 'skramma');
+  (s.skramma ??= []).push(f.id);
   if (forstaGang(s, 'skramma')) log(s, `${p.name} satte upp byns första fågelskrämma vid fältet.`, 'world', [p.id]);
 }
 
@@ -998,7 +998,7 @@ function vaxtsjukdom(s: State, f: Falt, dt: number) {
     const grannar = [k - 1, k + 1, k - f.w, k + f.w].filter(j => j >= 0 && j < f.n && r[j].sj !== undefined).length;
     const samma = vx.filter(y => y.g === x.g).length / vx.length;
     const risk = VAXTSJUK.risk * Math.max(0, 1 + VAXTSJUK.fukt * ((x.fu ?? 0.5) - 0.5)) * (1 + VAXTSJUK.granne * grannar) * (1 + VAXTSJUK.samma * samma);
-    if (hash(s.seed ^ 0x5b1c, faltRuta(f, k), h) < chansTid(risk, 3600, dt)) { x.sj = s.now; count(s, 'vaxtsjuk'); if (forstaGang(s, 'vaxtsjuk')) log(s, `En sjukdom har kommit på grödan på ett fält. De sjuka plantorna vissnar.`, 'world'); }
+    if (hash(s.seed ^ 0x5b1c, faltRuta(f, k), h) < chansTid(risk, 3600, dt)) { x.sj = s.now; if (forstaGang(s, 'vaxtsjuk')) log(s, `En sjukdom har kommit på grödan på ett fält. De sjuka plantorna vissnar.`, 'world'); }
   }
   if (dod.size) forlorad(s, f, 'sjukdom', dod);
 }

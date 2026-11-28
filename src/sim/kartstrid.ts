@@ -337,6 +337,7 @@ function kartStridSlut(s: State, g: KartStrid) {
     const p = personAv(s, k); if (!p || p.died !== undefined) continue;
     const mot = sidor[1 - k.sida];
     gjort(s, p, 'slagsmal'); if (vinnare === k.sida) gjort(s, p, 'vann');
+    if (st.avsikt === 'slagsmal' && k.skador.some(w => w.g > 0) && mot[0]) upplev(s, p, 'skadadSlagsmal', mot[0].name); // den som skadas drar mot Förlikning (steg 15.1.159)
     const kast = st.logg.filter(r => r.a === k.id && r.kast), vada = st.logg.filter(r => r.a === k.id && r.h === 'vada').length;
     if (kast.length) { gjort(s, p, 'kast', kast.length); const tr = kast.filter(r => r.h !== 'miss').length - vada; if (tr > 0) gjort(s, p, 'kastTraff', tr); }
     slitKastat(s, p, st, k);

@@ -910,6 +910,7 @@ SCENARIER.jarnnal = {
     const s = SIM.createState(1, START), vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen), [p, q] = vuxna;
     klockan(s, 10);
     for (const v of vuxna) Object.assign((v.tek ??= {}), { smedja: 1, bensyl: 1 });
+    SIM.setAmount(s, 'rep', 2); // repet till såret läggs först, medan lagret har plats (det som är över taket läggs utanför ett fullt lager, steg 15.1.45)
     const smedja = medBank(s, 'smedja'); medBank(s, 'flatarbank');
     SIM.setStock(s, { jarn: 2, kol: 4 });
     const fart0 = SIM.nalFart(s, q, 'rock'), kv0 = SIM.nalKv(s, q, 'rock_kaninskinn'), brist = SIM.jarnBrist(s, 'jarnnal');
@@ -928,7 +929,7 @@ SCENARIER.jarnnal = {
     s.ting = SIM.tingOf(s).filter(t => t !== halv);
     // ett sår sys med järnnålen som med bennålen
     const sy = SIM.VARD.sy, w = { d: 'armV', k: 'skarsar', g: 0.8, b: 0.5 } as SIM.Skada; q.skador = [w];
-    SIM.setAmount(s, 'rep', 2); p.skill.lakekonst = Math.max(p.skill.lakekonst, sy.fardighet ?? 0);
+    p.skill.lakekonst = Math.max(p.skill.lakekonst, sy.fardighet ?? 0);
     const syr = sy.krav(s, q, w, p) && SIM.vardKan(s, p, sy, q);
     return [
       [`järnnålen: ${JSON.stringify(R.av)} ger ${R.ger} nålar på ${R.min} minuter i smedjan`, R.av.jarn === 1 && R.ger === 2 && R.min === 3 && R.tek === 'smedja' && !!SIM.JARNSAKER.jarnnal],

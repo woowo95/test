@@ -47,7 +47,7 @@ SCENARIER.stada = {
     const dirty = SIM.smutsRutor(s, r).size, del0 = SIM.finhetDelar(s, r).tal, d = SIM.stadaVal(s, p), a = annan && SIM.stadaVal(s, annan);
     const rn = d!.rum, egen = d!.sc;
     // hen städar: uppgiften sätts som valet gör, och byn går en stund
-    const u = SIM.stadaUppgift(d!); p.toa = 1; p.hunger = 1; p.torst = 1;
+    const u = SIM.stadaUppgift(d!, s, p); Object.assign(p, { toa: 1, hunger: 1, torst: 1, rest: 1, social: 1 }); // inga behov som avbryter städningen
     p.x = u.spot.x; p.y = u.spot.y;
     p.task = { act: 'stada', phase: 'go', tx: u.spot.x, ty: u.spot.y, until: s.now + 60 * m, arbTid: u.min * m, carry: 0, why: u.text, ref: u.ref };
     const t0 = s.now; let s1 = s.now;
@@ -57,7 +57,7 @@ SCENARIER.stada = {
       [`ett rent rum ger inget att städa (${rent ? 'val' : 'inget'})`, !rent],
       [`blod och toaletternas fläckar räknas som smuts (${dirty} rutor)`, dirty === 4],
       [`den som bor där vill städa det smutsiga rummet (${egen.toFixed(2)}), någon annan mindre (${a ? a.sc.toFixed(2) : '–'})`, rn === r && egen > 0 && (!a || a.rum !== r || a.sc < egen)],
-      [`alla rutorna städas, en halv minut var (${kvar} kvar, ${min.toFixed(1)} min)`, kvar === 0 && min >= 4 * SIM.STADA.min - 0.1 && min <= 4],
+      [`alla rutorna städas, en halv minut var för den vanliga, delat med skickligheten (${kvar} kvar, ${min.toFixed(1)} min)`, kvar === 0 && min >= 4 * SIM.stadaMin(s, p) - 0.1 && min <= 4 * SIM.stadaMin(s, p) + 2],
       [`rummet är finare rent (${del0.toFixed(2)} → ${SIM.finhetDelar(s, r).tal.toFixed(2)})`, SIM.finhetDelar(s, r).tal > del0],
       [`det räknas i byns statistik (${s.stat?.stadat ?? 0})`, (s.stat?.stadat ?? 0) >= 1],
     ];
@@ -133,7 +133,7 @@ SCENARIER.foretag = {
 
 // steg 14.1.7: ägaren anställer den som betjänar när kunder fått gå
 SCENARIER.anstalld = {
-  text: 'Steg 14.1.7: ägaren anställer med dagsarbetet när hens timmar inte räcker och kunderna som går är värda mer än lönen; den anställda betjänar',
+  text: 'Steg 14.1.7: ägaren anställer med dagsarbetet när hens timmar inte räcker och kunderna som går är värda mer än lönen, och betalar med silvret och det hen har över (steg 15.1.27); den anställda betjänar',
   kor: () => {
     const { s, p, f } = foretagBy(), utan = SIM.DAGSVERK.foretag.bud(s).length;
     SIM.laggIn(s, 'silver', 40, p.id);
@@ -145,7 +145,7 @@ SCENARIER.anstalld = {
     // den anställda kallas till disken när ägaren sover
     let kallad = false;
     if (q) {
-      const k = SIM.living(s).find(x => x !== q && x !== p && SIM.kundVal(s, x, 'servering')), e = k && SIM.kundVal(s, k, 'servering');
+      const k = SIM.living(s).find(x => x !== q && x !== p && SIM.erbjudandet(s, x, 'servering')), e = k && SIM.erbjudandet(s, k, 'servering');
       if (k && e) { const st = SIM.stallIKo(s, k, e); k.x = st.spot.x; k.y = st.spot.y; k.task = { act: 'koaDisk', phase: 'do', tx: k.x, ty: k.y, until: s.now + 8 * 60000, carry: 0, why: '', ref: f.id }; }
       p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 3600000, carry: 0, why: '' };
       q.task = undefined;
@@ -156,7 +156,15 @@ SCENARIER.anstalld = {
     const s0 = q ? SIM.ownsAmount(s, q, 'silver') : 0;
     SIM.lonDygn(s);
     f.lamnat = 0;
+    // en ägare utan silver men med mat över anställer med det hen har (steg 15.1.27)
+    const b2 = foretagBy(); SIM.setAmount(b2.s, 'silver', 0);
+    b2.f.salt = { servering: 6 }; b2.f.vinst = 9; b2.f.lamnat = 6;
+    const silver2 = SIM.ownsId(b2.s, b2.p.id, 'silver'), bud2 = SIM.DAGSVERK.foretag.bud(b2.s)[0];
+    for (const x of b2.s.people) x.anst = undefined;
+    SIM.anstallDygn(b2.s);
+    const a2 = b2.s.anst?.find(x => x.arb === 'foretag');
     return [
+      [`ägaren utan silver (${silver2}) men med mat över kan betala (tak ${bud2?.tak}) och anställer (${a2 ? SIM.byId(b2.s, a2.p)?.name : 'ingen'})`, silver2 < 1 && (bud2?.tak ?? 0) >= 1 && !!a2],
       [`utan kunder som går anställs ingen (${utan})`, utan === 0],
       [`budet följer det kunderna hade gett (${bud?.tim.toFixed(0)} per timme, högst ${bud?.timMax?.toFixed(2)} timmar)`, !!bud && bud.tim * bud.timMax! > 1 && bud.mal === f.id],
       [`någon anställs för mindre än det är värt (${q?.name}, ${a?.lon} silver)`, !!a && a.lon >= 1 && a.lon <= bud.tim * bud.timMax!],
@@ -197,10 +205,10 @@ export function foretagBy(verk = ['servering'], silver = 60) {
 SCENARIER.kassa = {
   text: 'Steg 14.1.6: kunden köper maten vid disken när den är mer värd än den kostar, väntar där tills någon betjänar, och går om det dröjer för länge; poängen för att betjäna växer med kön och väntan',
   kor: () => {
-    const { s, p, f, disk, fin, vux } = foretagBy(), m = 60000, kan = vux.filter(q => SIM.kundVal(s, q, 'servering')), k = kan[0], k2 = kan[1];
-    const oppet = SIM.oppna(s, f), e = SIM.kundVal(s, k, 'servering');
-    const dyr = (() => { f.pris = { servering: 50 }; const x = SIM.kundVal(s, k, 'servering'); f.pris = undefined; return x; })();
-    const stalla = (q: typeof k, dt = 0) => { const x = SIM.kundVal(s, q, 'servering'); if (!x) return false; const o = SIM.stallIKo(s, q, x); q.x = o.spot.x; q.y = o.spot.y; q.task = { act: 'koaDisk', phase: 'do', tx: o.spot.x, ty: o.spot.y, until: s.now + o.dur - dt, carry: 0, why: o.why, ref: o.ref }; f.ko![f.ko!.length - 1].t = s.now - dt; return true; };
+    const { s, p, f, disk, fin, vux } = foretagBy(), m = 60000, kan = vux.filter(q => SIM.erbjudandet(s, q, 'servering')), k = kan[0], k2 = kan[1];
+    const oppet = SIM.oppna(s, f), e = SIM.erbjudandet(s, k, 'servering');
+    const dyr = (() => { f.pris = { servering: 50 }; const x = SIM.erbjudandet(s, k, 'servering'); f.pris = undefined; return x; })();
+    const stalla = (q: typeof k, dt = 0) => { const x = SIM.erbjudandet(s, q, 'servering'); if (!x) return false; const o = SIM.stallIKo(s, q, x); q.x = o.spot.x; q.y = o.spot.y; q.task = { act: 'koaDisk', phase: 'do', tx: o.spot.x, ty: o.spot.y, until: s.now + o.dur - dt, carry: 0, why: o.why, ref: o.ref }; f.ko![f.ko!.length - 1].t = s.now - dt; return true; };
     if (e) stalla(k);
     const p1 = SIM.betjanPoang(s, p, f);
     f.ko![0].t -= 4 * m; const p2 = SIM.betjanPoang(s, p, f);
@@ -267,7 +275,7 @@ SCENARIER.affar = {
     // en hög: virke som någon saknar
     SIM.stacksOf(s).push({ k: 'virke', n: 6, c: 1, ...vr(1), ag: { [p.id]: 6 } }); SIM.changed(s);
     f.pris = { affar: 0.5 }; // (ett lågt pris, så att köpet inte hänger på vad kunden råkar ha att betala med)
-    const kund = vux.find(q => SIM.kundVal(s, q, 'affar')), kanske = kund && SIM.kundVal(s, kund, 'affar'), dyr = (() => { f.pris = { affar: 80 }; const x = kund && SIM.kundVal(s, kund, 'affar'); f.pris = { affar: 0.5 }; return x; })();
+    const kund = vux.find(q => SIM.erbjudandet(s, q, 'affar')), kanske = kund && SIM.erbjudandet(s, kund, 'affar'), dyr = (() => { f.pris = { affar: 80 }; const x = kund && SIM.erbjudandet(s, kund, 'affar'); f.pris = { affar: 0.5 }; return x; })();
     let kopt = false, betalt = 0, bytt = false;
     if (kund && kanske) {
       const o = SIM.stallIKo(s, kund, kanske); kund.x = o.spot.x; kund.y = o.spot.y; kund.task = { act: 'koaDisk', phase: 'do', tx: kund.x, ty: kund.y, until: s.now + 480000, carry: 0, why: '', ref: f.id };
@@ -323,13 +331,13 @@ SCENARIER.konkurrens = {
     // hälften står nära var disk, så att avståndet inte avgör allt
     const d1 = SIM.diskarAv(s, f)[0], d2 = SIM.diskarAv(s, f2)[0];
     vux.forEach((q, i) => { const d = i % 2 ? d2 : d1; q.x = d.x + 0.5; q.y = d.y + 2.5; q.task = undefined; });
-    const val = (x: typeof f) => vux.filter(q => SIM.kundVal(s, q, 'servering')?.f === x).length;
+    const val = (x: typeof f) => vux.filter(q => SIM.erbjudandet(s, q, 'servering')?.f === x).length;
     satt(0.3, 0.3); f.pris = { servering: 1 }; f2.pris = { servering: 1 };
     f.dag = f2.dag = f.gap = f2.gap = undefined; const lika = [val(f), val(f2)], nej = Object.entries((f2 as SIM.Foretag).dag ?? {}).reduce((n, [q, d]) => n + (q.split(':')[0] === 'servering' ? d.nej?.length ?? 0 : 0), 0); // per vara (steg 15.1.98)
     f.pris = { servering: 2.5 }; const dyr = [val(f), val(f2)];
     satt(0.9, 0.1); f.pris = { servering: 1 }; const fint = [val(f), val(f2)];
     // den kräsne går till det fina och dyra, den som inte väntar sig något till det billiga
-    satt(0.95, 0.15); f.pris = { servering: 3 }; f2.pris = { servering: 0.8 }; // priset är i silver (steg 15.1.17): kundens vinst räknas inte längre dubbelt, så det fina får vara dyrare
+    satt(0.95, 0.15); f.pris = { servering: 2 }; f2.pris = { servering: 0.8 }; // priset är i silver (steg 15.1.17) och rätterna har sitt värde ur ingredienserna (steg 15.1.33): med 3 blir det fina för dyrt för alla, med 1,3 för billigt; 1,6–2 ger var sina kunder
     // kunderna har ingen egen mat över (den sparade byn kan ha gett dem mycket, och då är en måltid värd hälften för alla)
     const ids = new Set(vux.map(q => String(q.id)));
     s.stackar = (s.stackar ?? []).map(a => a.ag && SIM.FOOD.includes(a.k) ? { ...a, ag: Object.fromEntries(Object.entries(a.ag).filter(([id]) => !ids.has(id))) } : a);
@@ -473,7 +481,10 @@ SCENARIER.verksamheter = {
     s.tamdjur = []; const djur = [1, 2, 3, 4].map(() => SIM.nyttTamdjur(s, 'far', p.x, p.y, p.id, s.now - 3 * SIM.DAY));
     djur.forEach((d, i) => { d.hona = i % 2 === 0; });
     const kund = SIM.living(s).find(q => q !== p && !SIM.familjOf(s, p.id).includes(q) && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!; SIM.put(s, 'silver', 60, { [kund.id]: 60 }); kund.skill.skotsel = 20; kund.x = p.x; kund.y = p.y; kund.task = undefined; // bybon står i byn, nära affären
-    const eD = SIM.kundVal(s, kund, 'djurhandel'), kd = kop(kund, 'djurhandel', 'far'), agare = djur.filter(d => d.agare === kund.id).length;
+    // bybon behöver ull till sitt arbete och har ingen (steg 15.1.164: djuret är värt det det ger), så hen saknar ett får
+    SIM.setAmount(s, 'ull', 0); const recept0 = SIM.brukKrok.recept; SIM.brukKrok.recept = (s2, q) => q === kund ? [{ ull: 2 }, ...recept0(s2, q)] : recept0(s2, q); kund.bruk = undefined;
+    const eD = SIM.erbjudandet(s, kund, 'djurhandel'), kd = kop(kund, 'djurhandel', 'far'), agare = djur.filter(d => d.agare === kund.id).length;
+    SIM.brukKrok.recept = recept0;
     g.gast!.silver = 100; const kg = kop(g, 'djurhandel', 'far'), hemMed = g.gast!.kop?.levfar ?? 0, kvar = SIM.tamdjurOf(s).filter(d => d.agare === p.id).length, slut = SIM.tillSalu(s, p.id, 'far');
     return [
       [`nattlogiet räknar med gästerna (${g0.kunder.toFixed(2)} per dygn), och utan företag kommer inga (${ingen})`, g0.kunder > 0 && ingen === 0],
@@ -530,7 +541,7 @@ SCENARIER.stanga = {
 };
 
 SCENARIER.marknad = {
-  text: 'Steg 14.1.14: när byborna vinner på att mötas kallar någon till marknad på torget nästa dag, man går dit efter vad man själv vinner och byter med dem som är där, och finns inget att vinna blir det ingen',
+  text: 'Steg 14.1.14: när byborna vinner på att mötas kallar någon till marknad på torget nästa dag, man går dit efter vad man själv vinner och byter med dem som är där (också den som kommer senare, steg 15.1.22), och finns inget att vinna blir det ingen',
   kor: () => {
     const s = SIM.cloneState(testBy(25)), folk = SIM.living(s).filter(q => !q.gast && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && SIM.kanGa(q));
     s.marknad = undefined; s.foretag = [];
@@ -547,14 +558,25 @@ SCENARIER.marknad = {
     for (let i = 0; i < 12; i++) SIM.addTool(s, 'benspade', a);
     const lust = SIM.handelslust(s); SIM.marknadDygn(s); const m = s.marknad as SIM.Marknad | undefined;
     const v0 = SIM.marknadVikt(s, b); if (m) s.now = m.t + SIM.HOUR; const v1 = SIM.marknadVikt(s, b), vv = SIM.marknadVal(s, b);
-    if (m) for (const q of [a, b]) { q.x = m.x + (q === a ? 1 : -1); q.y = m.y; q.task = { act: 'marknad', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '' } as never; }
-    const mat0 = SIM.tingOf(s).filter(t => t.agare === b.id && t.k === 'benspade').length; SIM.iHelaForradet(() => SIM.marknadKlar(s, b)); const mat1 = SIM.tingOf(s).filter(t => t.agare === b.id && t.k === 'benspade').length, v2 = SIM.marknadVikt(s, b);
+    // b kommer fram först och står ensam; a kommer senare och byter med b när hen kommer fram (steg 15.1.22). Ingen står vid ett förråd
+    const spadar = () => SIM.tingOf(s).filter(t => t.agare === b.id && t.k === 'benspade').length, mat0 = spadar();
+    let ensam = -1, framme = -1;
+    if (m) {
+      for (const q of folk) if (q !== a && q !== b) q.task = undefined;
+      b.x = m.x - 1; b.y = m.y; b.task = { act: 'marknad', phase: 'do', tx: b.x, ty: b.y, until: s.now + 15 * SIM.MIN, carry: 0, why: '' } as never;
+      SIM.iRackhall(b.x, b.y, () => SIM.startWork(s, b, b.task!)); ensam = spadar();
+      s.now += 10 * SIM.MIN;
+      a.x = m.x + 1; a.y = m.y; a.task = { act: 'marknad', phase: 'do', tx: a.x, ty: a.y, until: s.now + 15 * SIM.MIN, carry: 0, why: '' } as never;
+      SIM.iRackhall(a.x, a.y, () => SIM.startWork(s, a, a.task!)); framme = spadar();
+    }
+    SIM.iRackhall(b.x, b.y, () => SIM.marknadKlar(s, b, b.task)); const mat1 = spadar(), v2 = SIM.marknadVikt(s, b);
     if (m) s.now = m.slut; const stangd = !SIM.marknadOppen(s);
     return [
       [`lusten i byn (${l0.toFixed(0)}), och saknar ingen något (${tomt}) blir det ingen marknad`, tomt === 0 && ingen],
       [`den som har och de som saknar vinner (${[a, b].map(q => (lust.get(q.id) ?? 0).toFixed(1)).join(', ')}), och någon kallar till marknad`, !!m && (lust.get(a.id) ?? 0) > 0 && (lust.get(b.id) ?? 0) > 0],
       [`den öppnar ${m && (SIM.hourOf(m.t)).toFixed(1)} på byns mitt`, !!m && Math.abs(SIM.hourOf(m.t) - SIM.MARKNAD.oppnar) < 0.01],
       [`ingen går dit innan (${v0}), men när den är öppen (${v1.toFixed(2)})`, v0 === 0 && v1 > 0 && !!vv],
+      [`den som kommer först och står ensam byter inget (${mat0} → ${ensam}), men när nästa kommer fram tio minuter senare byter de (${framme} benspadar)`, ensam === mat0 && framme > mat0],
       [`där byter man (${mat0} → ${mat1} benspadar, ${m?.byten} byten), och ärendet är gjort (${v2})`, mat1 > mat0 && (m?.byten ?? 0) >= 1 && v2 === 0],
       ['på kvällen är den slut', stangd],
     ];

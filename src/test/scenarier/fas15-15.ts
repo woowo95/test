@@ -105,7 +105,7 @@ SCENARIER.hagvatten = {
     for (let i = 0; i < 6; i++) { b = medHage(1, i); if (!b || !SIM.hageVidVatten(b.s, b.h)) break; }
     if (!b || SIM.hageVidVatten(b.s, b.h)) return [['en by med en hage som inte når vattnet', false]];
     const { s, h, p } = b, far = SIM.tamdjurOf(s)[0]; far.hage = undefined;
-    SIM.setAmount(s, 'rep', 4);
+    SIM.setAmount(s, 'grenar', 0); SIM.setAmount(s, 'rep', 4); // grenarna till staketet fyllde lagret, och repet hade då lagts utanför det (steg 15.1.45)
     const torr = SIM.hageDygn(s, h, 1), fore = SIM.vallaVal(s, p); SIM.vallaKlar(s, p, far.id);
     const inne = far.hage !== undefined, brist = SIM.hoBrist(s), plats = SIM.siteHo(s);
     if (!plats) return [['det finns plats för en ho i hagen', false]];

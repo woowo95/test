@@ -357,9 +357,10 @@ function boende(s: State): Boende {
   // sjukstugorna (steg 12.4.10 och 13.1.14): den som är sjuk eller skadad går före de friska till bäddarna i en sjukstuga, i vilket
   // hus den än står, och de med störst behov av att läka först (steg 12.1.235: sjukBehov i mobler.ts); en liten skada ligger hemma
   const sjuka = ppl.filter(q => sjukKrok.vill(s, q)).map(q => ({ q, b: sjukKrok.behov(s, q) })).sort((a, c) => c.b - a.b || a.q.id - c.q.id);
+  const stugBadd = new Set<number>(); // sjukstugans bäddar som de sjuka fått: de står fast när de som smittar läggs i rummets ena ände (steg 15.1.184)
   if (sjuka.length) {
     const sov = stationRutor(s).sov, sjukbaddar = gridOf(s).rooms.filter(r => r.tiles.length && sjukKrok.stuga(s, r)).flatMap(r => r.tiles.filter(i => sov.has(i)));
-    for (const [n, { q }] of sjuka.entries()) { if (n >= sjukbaddar.length) break; plats.set(q.id, sjukbaddar[n]); }
+    for (const [n, { q }] of sjuka.entries()) { if (n >= sjukbaddar.length) break; plats.set(q.id, sjukbaddar[n]); stugBadd.add(sjukbaddar[n]); }
   }
   const vaggor = stationerOf(s).filter(t => isKlar(t) && stationDef(t.k)?.vagga).map(t => ({ i: t.y * W + t.x, r: roomAt(s, t.x, t.y) })), iVagga = new Set<number>(); // vaggorna (steg 12.4.5)
   const fordela = (tiles: number[], folk: Person[]) => {
@@ -380,7 +381,7 @@ function boende(s: State): Boende {
   const overblivna: Person[] = [];
   for (const e of new Set(egna.values())) overblivna.push(...fordela(e.tiles, e.folk));
   fordela(gemensamt, [...ovriga, ...overblivna]);
-  sjukaISinAnde(s, ppl, plats, new Set([...agd.keys(), ...sjuka.map(x => plats.get(x.q.id)!)]));
+  sjukaISinAnde(s, ppl, plats, new Set([...agd.keys(), ...stugBadd]));
   b = { key, egna, gemensamt, ovriga, plats };
   boenden.set(s, b);
   return b;

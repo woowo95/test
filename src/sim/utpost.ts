@@ -72,7 +72,7 @@ function ledigRuta(vl: Varlden, v: VarldMark, k: LandmarkId, ax: number, ay: num
 function nyRad(vl: Varlden, v: VarldMark, r: VarldRad, p: VarldPlats, sort: 'utpost' | 'handelslager', folk: number, t: number): VarldRad {
   const nr = vl.nastaRad = (vl.nastaRad ?? 0) + 1;
   r.tal.folk -= folk;
-  const ny: VarldRad = { nr, sort, namn: p.namn, x: p.x, y: p.y, grundad: t, fran: r.nr, t, tal: { folk, mat: 0, rikedom: 0, silver: 0, styrka: 0 }, tek: [...r.tek], fasta: [] };
+  const ny: VarldRad = { nr, sort, namn: p.namn, x: p.x, y: p.y, grundad: t, fran: r.nr, t, tal: { folk, mat: 0, rikedom: 0, silver: 0, styrka: 0, kraft: 0 }, tek: [...r.tek], fasta: [] };
   ny.tal.styrka = styrkaMal(ny);
   vl.rader!.push(ny);
   p.by = nr; p.grannar = byGrannar(vl, v, p, t);

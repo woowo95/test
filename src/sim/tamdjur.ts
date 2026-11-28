@@ -139,7 +139,7 @@ export function mataKlar(s: State, p: Person, ref?: number) {
   if (!d) return;
   const k = foderFor(s, p, d);
   if (!k) return;
-  takeMaterial(s, p, k, 1);
+  takeMaterial(s, p, k, 1, d.agare !== p.id); // ett eget djur äter ägarens foder först och sedan byns, byns djur byns (steg 15.1.164)
   d.hunger = 0; // en sak foder gör djuret mätt
   (d.matad ??= {})[p.id] = (d.matad[p.id] ?? 0) + 1;
   if (d.art === 'hund' && d.agare === p.id) d.lojal = Math.min(1, (d.lojal ?? HUND.start) + HUND.mata);
@@ -257,7 +257,6 @@ export function hundSkaller(s: State, avst: (d: Tamdjur) => number) {
     if (d.art !== 'hund' || (d.lojal ?? HUND.start) < VAKTHUND.lojal || d.fahus !== undefined || d.agare === undefined || avst(d) >= VAKTHUND.hor) continue;
     const p = byId(s, d.agare);
     if (!p || p.died !== undefined) continue;
-    count(s, 'hundSkallde');
     if (forstaGang(s, 'hundSkallde')) log(s, `${gen(p.name)} hund skällde: den hade hört något ute i mörkret.`, 'world', [p.id]);
     return { hund: d, p };
   }

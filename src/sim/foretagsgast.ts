@@ -10,7 +10,7 @@ import { balans } from './balans';
 import { clamp, hash3 } from './slump';
 import { ALDER, count, log, makeName } from './folk';
 import { gastGar, gastLever, gastTillbaka, nyGast, nyttGastId } from './gast';
-import { kandIgen, klanById, klanerOf, KLAN, narhet, type Klan } from './klaner';
+import { gastRad, kandIgen, klanById, klanerOf, KLAN, narhet, type Klan } from './klaner';
 import { kantMot } from './grannbyar';
 import { klanHandelse } from './byrel';
 import { gaMot } from './rovare';
@@ -18,7 +18,7 @@ import { FORDON_TAL } from './fordon';
 import { hourOf } from './tid';
 import { diskarAv, erbjudandet, gastKund, KASSA, koaKlar, koPlats, omdome, stallIKo, type Erbjudande } from './kassa';
 import { foretagOf, gastFlode, oppna, VERKSAMHETER, type Foretag } from './foretag';
-import { ryktetI, omdomeAv } from './foretagsrykte';
+import { FRYKTE, ryktetI, omdomeAv } from './foretagsrykte';
 import { FORVANTAN } from './forvantan';
 import { radOverskott, radPaslag, radTar } from './priser';
 import { packaRad } from './byhandling';
@@ -40,7 +40,6 @@ export const FGAST = balans('foretagsgast', {
   rykte: 0.3, // ett helt gott rykte drar så mycket fler ...
   fin: 0.1, finRykte: 0.6, finInst: 0.2, // ... men gör mest gästerna finare: chansen att gästen är fin
   nara: 1.6, // så nära disken (rutor) ställer sig gästen i kön
-  kop: 4, // så många gånger köper en gäst högst under ett besök (så länge något lockar), också köp som inte blev av (steg 15.1.56)
   ata: 10, // så länge (minuter) sitter gästen med det hen köpt
   fran: 9, till: 18, // gästen kommer fram under dagen
   moten: 6, // det hen redan haft lockar mindre: 1 / (1 + antalet gånger × moten)
@@ -61,7 +60,6 @@ export const RANG = {
 export type RangId = keyof typeof RANG;
 const RANGER = Object.keys(RANG) as RangId[], FINA = RANGER.filter(x => (RANG[x] as Rang).fin);
 const R = (p: Person): Rang => RANG[p.gast!.rang ?? 'vanlig'];
-const radAv = (s: State, p: Person) => { const nr = klanById(s, p.gast?.klan)?.rad; return s.varld?.rader?.find(r => r.nr === nr); };
 
 // ---------- vem som kommer ----------
 export const oppnaForetag = (s: State): Foretag[] => foretagOf(s).filter(f => oppna(s, f).length && diskarAv(s, f).length);
@@ -125,7 +123,7 @@ export function nyForetagsgast(s: State, f: Foretag, k: Klan, rang?: RangId): Pe
 const buret = (p: Person) => [...Object.entries(p.gast!.kop ?? {}), ...Object.entries(p.gast!.varor ?? {})].reduce((a, [k, n]) => a + n * viktOf(k), 0);
 gastKund.part = (s, p): Part => ({
   id: p.id, namn: p.name, x: p.x, y: p.y, handel: p.skill.handel ?? 0,
-  varde: k => k === 'silver' ? 1 : isFood(k) ? 0.5 + (1 - p.hunger) : (r => r ? radPaslag(s, r, k) : 1)(radAv(s, p)), // hemma är saken värd det byn betalar för den
+  varde: k => k === 'silver' ? 1 : isFood(k) ? 0.5 + (1 - p.hunger) : (r => r ? radPaslag(s, r, k) : 1)(gastRad(s, p)), // hemma är saken värd det byn betalar för den
   over: utom => [...(p.gast!.silver ?? 0) >= 1 && !utom.includes('silver') ? [{ k: 'silver', n: p.gast!.silver! }] : [], ...Object.entries(p.gast!.varor ?? {}).filter(([k, n]) => n >= 1 && !utom.includes(k)).map(([k, n]) => ({ k, n }))], // silvret och varorna hen har med sig (steg 15.1.11)
 });
 // ju fler gånger hen redan ätit eller druckit här, desto mindre lockar det
@@ -151,6 +149,8 @@ gastKund.at = (_s, p, k) => ata(p, { [k]: KROPP.mattar });
 // varje köp vid disken räknas mot FGAST.kop, också det som föll för att varan aldrig kom fram (steg 15.1.56): annars ställer sig
 // gästen i kön igen och igen för samma vara
 gastKund.forsok = (_s, p) => { const g = p.gast!; g.gjort = (g.gjort ?? 0) + 1; };
+// ett köp som föll: varan lockar inte gästen igen under besöket, så hen ställer sig inte i kön för den igen och igen (steg 15.1.56)
+gastKund.fel = (_s, p, k) => { const g = p.gast!; (g.fel ??= []).includes(k) || g.fel.push(k); };
 gastKund.klar = (s, p, v, sitter) => {
   const g = p.gast!;
   (g.haft ??= {})[v] = (g.haft[v] ?? 0) + 1;
@@ -159,12 +159,13 @@ gastKund.klar = (s, p, v, sitter) => {
   p.task = undefined;
 };
 // hur hen blev bemött: medlet av besökets omdömen
-omdome.push((s, p, f, b) => { const g = p.gast; if (g?.sort !== 'kund') return; const v = b ? omdomeAv({ s, p, f, ...b }) : -1, o = g.bemott ??= { v: 0, n: 0 }; o.v += v; o.n++; });
+omdome.push((s, p, f, b) => { const g = p.gast; if (g?.sort !== 'kund') return; const v = b ? omdomeAv({ s, p, f, ...b }) : FRYKTE.utan, o = g.bemott ??= { v: 0, n: 0 }; o.v += v; o.n++; });
 
 // ---------- besöket (TAKTER, varje slag) ----------
 const basta = (s: State, p: Person, f: Foretag): Erbjudande | undefined => {
   let b: Erbjudande | undefined;
-  for (const v of f.verk) { const e = erbjudandet(s, p, v, f); if (e && e.net > (b?.net ?? 0)) b = e; }
+  const fel = p.gast?.fel;
+  for (const v of f.verk) { const e = erbjudandet(s, p, v, f, fel ? k => !fel.includes(k) : undefined); if (e && e.net > (b?.net ?? 0)) b = e; }
   return b;
 };
 // gästen går hem. Ett riddjur som inte fått foder gör gästen missnöjd, som en måltid hen inte fick (steg 15.1.170)
@@ -195,7 +196,7 @@ export function foretagsgastSteg(s: State, dtSec: number) {
         if (g.sovit) { g.sovit = undefined; g.gor = undefined; g.path = undefined; g.pk = undefined; }
         else if (gaMot(s, p, g.vx!, g.vy!, dtSec, t0) < 0.6) { p.x = g.vx!; p.y = g.vy!; g.sover = 1; g.sovit = 1; }
       } else {
-        const e = (g.gjort ?? 0) < FGAST.kop ? basta(s, p, f!) : undefined;
+        const e = basta(s, p, f!); // gästen köper så länge hen har silver, orkar bära och något lockar (steg 15.1.155)
         if (!e) { if (!g.gjort && !g.bemott) for (const o of omdome) o(s, p, f!); gaHem(p, s, f); continue; } // inget lockade, eller allt är slut
         const o = stallIKo(s, p, e);
         p.x = o.spot.x; p.y = o.spot.y; g.gor = 'ko';
@@ -209,7 +210,7 @@ export function foretagsgastSteg(s: State, dtSec: number) {
 }
 // gästen är hemma igen: det hen köpt och silvret hen har kvar kommer till byn, och relationen följer hur hen blev bemött
 export function gastHemIgen(s: State, p: Person) {
-  const g = p.gast!, r = radAv(s, p), k = klanById(s, g.klan);
+  const g = p.gast!, r = gastRad(s, p), k = klanById(s, g.klan);
   if (r) { radTar(r, 'silver', g.silver ?? 0); for (const q in g.kop) radTar(r, q, g.kop[q]); for (const q in g.varor) if (g.varor[q] >= 1) radTar(r, q, g.varor[q]); } // det hen inte betalade med går hem igen
   if (k && g.bemott?.n) { const v = g.bemott.v / g.bemott.n; klanHandelse(s.varld, k, v >= 0 ? 'bemott' : 'illaBemott', Math.abs(v) * R(p).vikt); count(s, v >= 0 ? 'gastNojd' : 'gastMissnojd'); }
   gastGar(s, p.id, true);

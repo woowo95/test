@@ -78,7 +78,7 @@ SCENARIER.avbrott = {
     const gjorde: string[] = [];
     kor(b.s, 1, () => { const k = b.p.task?.act ?? ''; if (gjorde.at(-1) !== k) gjorde.push(k); if (drick.has(k) || b.p.torst > 0.5) drack = true; }); // ett slag är längre än det tar att dricka
     // den som valde med törsten redan farlig och fick samma uppgift igen avbryts inte i varje slag
-    const c = pass(); c.p.torst = SIM.TORST.farligt - 0.03; c.p.task!.nodVald = true; let byten = 0, forra = c.p.task;
+    const c = pass(); c.p.torst = SIM.TORST.farligt - 0.03; c.p.task!.nod = 1; let byten = 0, forra = c.p.task;
     kor(c.s, 0.1, () => { if (c.p.task !== forra) { byten++; forra = c.p.task; } });
     return [
       [`vakten står kvar när törsten inte är farlig (${kvar})`, kvar === 'vakt'],
@@ -178,7 +178,7 @@ SCENARIER.gastbetalar = {
 };
 
 SCENARIER.efterfragan = {
-  text: 'Steg 15.1.12: efterfrågan på en affär räknar bara bybor som kan köpa och bara varor ägaren har över. Ägarens familj räknas inte, maten räknas som en vara, och den som saknar flera saker räknas som en kund för var och en',
+  text: 'Steg 15.1.12: efterfrågan på en affär räknar bara bybor som kan köpa och bara varor ägaren har över eller kan göra själv (steg 15.1.96). Ägarens familj räknas inte, maten räknas som en vara, och den som saknar flera saker räknas som en kund för var och en',
   kor: () => {
     const s = SIM.cloneState(testBy(25));
     const vux = SIM.living(s).filter(q => !q.gast && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
@@ -189,6 +189,8 @@ SCENARIER.efterfragan = {
     for (const q of SIM.living(s)) { q.bruk = undefined; q.hunger = 0.9; if (q !== ag) SIM.laggIn(s, 'silver', 200, q.id); } // kunderna har råd
     const kunder = (vem: SIM.Person[]) => { for (const q of SIM.living(s)) if (q !== ag) q.bruk = { t: Math.floor(s.now / SIM.HOUR), k: vem.includes(q) ? SIM.saknarNu((q.bruk = undefined, s), q).map(k => [0, k] as [number, string]) : [] }; return SIM.efterfragan(s, 'affar', ag.id).kunder; };
     const p = andra[0]!, A = SIM.VERKSAMHETER.affar, utan = kunder([p]);
+    // utan något över räknas bara det ägaren kan göra själv (steg 15.1.96)
+    const utanVaror = Object.keys(SIM.efterfragan(s, 'affar', ag.id).perVara).filter(k => (SIM.efterfragan(s, 'affar', ag.id).perVara[k] ?? 0) > 0), kanGora = SIM.kanSkaffaVaror(s, ag, utanVaror);
     // per vara: den som saknar just den
     p.bruk = undefined; const lar = SIM.saknarNu(s, p).filter(k => k !== 'mat'), inte = ['korg', 'yxa', 'spjut'].find(k => !lar.includes(k))!;
     const perVara = lar.every(k => A.perDygn(s, p, k) > 0) && A.perDygn(s, p, inte) === 0;
@@ -197,7 +199,7 @@ SCENARIER.efterfragan = {
     p.hunger = 0.2; SIM.laggIn(s, 'torrkott', 200, ag.id); p.bruk = undefined; const matNu = SIM.saknarNu(s, p).includes('mat'), mat1 = kunder([p]);
     SIM.laggIn(s, 'bar', 200, ag.id); SIM.laggIn(s, 'rotter', 200, ag.id); const mat3 = kunder([p]);
     return [
-      [`ägaren utan varor över ger ingen efterfrågan (${utan.toFixed(2)})`, utan === 0],
+      [`ägaren utan varor över ger bara efterfrågan på det hen kan göra själv (${utan.toFixed(2)}: ${utanVaror.join(', ') || 'inget'}; kan göra ${kanGora.join(', ') || 'inget'})`, utanVaror.every(k => kanGora.includes(k))],
       [`affären räknar per vara: den som saknar ${lar.join(', ')} räknas för var och en, men inte för ${inte}`, lar.length >= 2 && perVara],
       [`familjen räknas inte (${familj.toFixed(2)}, ${fam.length} i familjen)`, familj === 0],
       [`den som saknar mat räknas för maten ägaren har över (${matNu ? 'saknar mat' : 'saknar inte mat'}, ${mat1.toFixed(2)})`, matNu && mat1 > 0],

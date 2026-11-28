@@ -153,13 +153,13 @@ SCENARIER.vardfel = {
     const [g, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
     SIM.setAmount(s, 'rep', 500);
     const sy = (lake: number, n: number) => {
-      g.skill.lakekonst = lake; let fel = 0, varre = 0; const rep0 = SIM.amountOf(s, 'rep');
+      g.skill.lakekonst = lake; let fel = 0, varre = 0, rep = 0;
       for (let i = 0; i < n; i++) {
         const w: SIM.Skada = { d: 'armV', k: 'skarsar', g: 0.7, b: 1, g0: 0.7 };
-        SIM.vardGor(s, g, q, w, 'sy');
+        SIM.setAmount(s, 'rep', 5); SIM.vardGor(s, g, q, w, 'sy'); rep += 5 - SIM.amountOf(s, 'rep'); // repet fylls på: lagret rymmer inte allt
         if (!w.sydd) { fel++; if (w.g > 0.7) varre++; }
       }
-      return { fel: fel / n, varre, rep: rep0 - SIM.amountOf(s, 'rep') };
+      return { fel: fel / n, varre, rep };
     };
     const ovan = sy(0, 200), skicklig = sy(8, 200);
     const fore = Number(s.stat?.vardFel_sy ?? 0);

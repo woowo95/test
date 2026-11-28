@@ -2,7 +2,8 @@
 // Affären säljer det som ligger på varubordet i sitt rum: det ägaren har över bärs dit av ägaren eller en anställd, det som flest
 // i byn saknar först. Varubordets rutor hör till förrådet (lager.ts), men det som ligger där är ägarens och bärs inte därifrån av
 // andra. Kunden betalar vid disken (kassa.ts) och får saken: ett ting byter ägare, och en hög bärs hem till förrådet som kundens.
-import { W, type Person, type State, type Task } from './typer';
+import { kunnaFart } from './kunna';
+import { MIN, W, type Person, type State, type Task } from './typer';
 import { balans } from './balans';
 import { count, familjOf, living } from './folk';
 import { brukAv, MAT, ownFor, saknarNu } from './behov';
@@ -20,15 +21,15 @@ import type { Part } from './byte';
 export const AFFAR = balans('affar', {
   min: 1, // så lång tid (minuter) tar det att ta det som ska ställas fram
   buffert: 0.3, // den som saknar mat eller ved till sitt eget förråd räknas så mycket mot den som saknar det nu
-  bord: 3, // så många varubord vill en affär högst ha
   vikt: 0.5, // så mycket väger att ställa fram, per det de som saknar saken skulle betala
 });
 const varubord = (s: State, f: Foretag): Station[] => { const rum = foretagRum(s, f); return rum.length ? stationerOf(s).filter(t => stationDef(t.k)?.vara && isKlar(t) && rum.includes(stationRum(s, t)!)) : []; };
 const rutor = (s: State, f: Foretag) => varubord(s, f).flatMap(t => { const ut = []; const w = t.rot ? 1 : 2, h = t.rot ? 2 : 1; for (let y = t.y; y < t.y + h; y++) for (let x = t.x; x < t.x + w; x++) ut.push({ x, y }); return ut; });
 // bristen: rummen utan varubord, och de där alla är fulla
 const affarer = (s: State) => foretagOf(s).filter(f => f.verk.includes('affar') && foretagRum(s, f).length);
-// ett varubord till är bara värt något när det som står framme säljs, alltså när affären har en disk att sälja vid
-const vill = (s: State, f: Foretag) => { const rum = foretagRum(s, f), n = stationerOf(s).filter(t => stationDef(t.k)?.vara && rum.includes(stationRum(s, t)!)).length; return !n || n < AFFAR.bord && diskarAv(s, f).length > 0 && !ledigRuta(s, f) && !!attStalla(s, f, true); };
+// ett varubord till är bara värt något när det som står framme säljs, alltså när affären har en disk att sälja vid, och när
+// ägaren har mer att ställa fram än borden rymmer
+const vill = (s: State, f: Foretag) => { const rum = foretagRum(s, f), n = stationerOf(s).filter(t => stationDef(t.k)?.vara && rum.includes(stationRum(s, t)!)).length; return !n || diskarAv(s, f).length > 0 && !ledigRuta(s, f) && !!attStalla(s, f, true); }; // inget tak (steg 15.1.155): borden följer det ägaren har att sälja, och rummet sätter gränsen när inget bord får plats
 foretagBord.varuRum = s => { const f = affarer(s).find(q => vill(s, q)); return f && foretagRum(s, f)[0]; };
 foretagBord.varuEgen = (s, fam) => affarer(s).some(f => vill(s, f) && fam.some(q => q === foretagare(s, f.ag))) ? 1 : 0; // ägarens familj saknar varubordet i sin affär
 foretagBord.varuBrist = s => { const a = affarer(s); return a.length ? a.filter(f => vill(s, f)).length / a.length : 0; };
@@ -90,14 +91,29 @@ export function attStalla(s: State, f: Foretag, utanRuta = false): (HyllVara & {
   for (const h of fram) { const v = hyllVarde(s, f, G, m, h.k, h.n, framN(h.k) - h.n); if (!samst || v < samst.v) samst = { ...h, v }; }
   return samst && samst.v < bast.v ? { ...samst, tillbaka: true, v: bast.v - samst.v } : undefined;
 }
+// så många varor till som går att ställa fram: det ägaren har över som efterfrågas och inte ligger framme, högst de lediga rutorna
+function kvarAttStalla(s: State, f: Foretag): number {
+  const G = saljPart(s, f);
+  if (!G) return 0;
+  const m = efterfragat(s, f.ag), fram = new Set(hyllan(s, f).map(h => h.k));
+  const varor = G.over([]).filter(w => w.k !== 'silver' && w.n >= 1 && !fram.has(w.k) && lust(m, w.k) > 0 && (!!w.t || !isTool(w.k))).length;
+  const upp = new Set(stacksOf(s).filter(a => a.n > 1e-6).map(a => a.y * W + a.x));
+  for (const t of tingOf(s)) if (t.x !== undefined && t.hos === undefined) upp.add(t.y! * W + t.x);
+  for (const q of living(s)) if (q.task?.act === 'stallaFram') upp.add(Math.floor(q.task.ty) * W + Math.floor(q.task.tx));
+  return Math.min(varor, rutor(s, f).filter(q => !upp.has(q.y * W + q.x)).length);
+}
+// så lång tid det tar att ställa fram varorna, delat med skickligheten (steg 15.1.23)
+export const stallaTid = (s: State, p: Person) => AFFAR.min * MIN / kunnaFart(s, p, 'stallaFram');
 export function stallaVal(s: State, p: Person): { f: Foretag; h: HyllVara; sc: number } | undefined {
   let bast: { f: Foretag; h: HyllVara; sc: number } | undefined;
   for (const f of s.foretag ?? []) {
     if (!f.verk.includes('affar') || !diskarAv(s, f).length) continue; // utan disk kan inget säljas, och då är det inget värt att ställa fram (steg 15.1.14)
     const g = betjanar(s, p, f);
-    if (g <= 0 || living(s).some(q => q !== p && q.task?.act === 'stallaFram' && q.task.ref === f.id)) continue;
-    const h = attStalla(s, f);
-    if (h) { const sc = g * AFFAR.vikt * h.v; if (sc > (bast?.sc ?? 0)) bast = { f, h, sc }; }
+    if (g <= 0) continue;
+    // det som återstår delat med dem som redan ställer fram (steg 15.1.154): en till hjälper när det är mycket
+    const andra = living(s).filter(q => q !== p && q.task?.act === 'stallaFram' && q.task.ref === f.id).length;
+    const h = attStalla(s, f), kvar = andra ? kvarAttStalla(s, f) : 1;
+    if (h) { const sc = g * AFFAR.vikt * h.v * Math.min(1, kvar / (andra + 1)); if (sc > (bast?.sc ?? 0)) bast = { f, h, sc }; }
   }
   return bast;
 }

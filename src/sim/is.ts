@@ -37,6 +37,7 @@ export const IS = balans('is', {
   tunnKost: 20, // en ruta helt tunn is kostar som så här många rutors gång (vägsökningen), mindre ju tjockare
   tunnRadsla: 1, // fiskeplatsen ute på isen är värd så här mycket mindre gånger hur tunn isen är
   nivaer: 3,
+  vakIgen: 1, // en vak som frusit så här nära sjöns tjocklek (cm) är sjön igen (steg 15.1.185)
   vakNara: 1.5, // en vak räknas för den som hugger inom så här många rutor från den (steg 13.1.15)
   tunn: 12, // isen bär sämre ju tunnare den är under så här många cm: risken att gå genom den gånger 1 − cm / tunn (genomIsen i halsa.ts, steg 12.1.141)
 });
@@ -86,7 +87,7 @@ export function stepIs(s: State, h = 1) {
     // sjön och vakarna växer och smälter likadant, var och en från sin tjocklek (steg 13.1.15)
     const andra = (cm: number) => t < 0 ? cm + IS.vaxer * -t / (IS.bas + cm) * (1 - IS.snoSkyddar * snoPaMarken(s)) * h : Math.max(0, cm - IS.smalter * t * h);
     m.cm = andra(m.cm);
-    if (m.vakar) { for (const v of m.vakar) v.cm = Math.min(m.cm, andra(v.cm)); m.vakar = m.vakar.filter(v => v.cm < m.cm); if (!m.vakar.length) delete m.vakar; } // en vak som frusit som resten av sjön är borta
+    if (m.vakar) { for (const v of m.vakar) v.cm = Math.min(m.cm, andra(v.cm)); m.vakar = m.vakar.filter(v => v.cm < m.cm - IS.vakIgen); if (!m.vakar.length) delete m.vakar; } // en vak som frusit nästan lika tjock som resten av sjön är borta
   }
   if (m.cm <= 0) { delete m.vakar; iLand(s); }
 }

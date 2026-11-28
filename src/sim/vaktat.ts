@@ -23,7 +23,7 @@ import { avslutaUppdrag, fyndId, larUppdrag, uppdragen } from './uppdrag';
 import { grundvarde } from './varde';
 import { lista, packVarde, rovarKampe, taUrPack, VAKTKROK, vagStrid, vagValen } from './vagran';
 import { kanGa } from './halsa';
-import { anfallUtr, BYANFALL } from './radanfall';
+import { BYANFALL, flockKraft, radVarde } from './radanfall';
 import { State } from './typer';
 import type { Varlden } from './varlden';
 
@@ -80,7 +80,7 @@ export function vaktValen(s: State, sl: Sallskap, L: VarldRad): { kost: Record<V
   const folk = resenarer(s, sl).filter(p => kanGa(p));
   const smid = folk.length ? folk.reduce((a, p) => a + stat(p, 'smidighet', s.now), 0) / folk.length : 0;
   const smyg = folk.length ? clamp(VAKTAT.smyg + VAKTAT.smygVikt * (smid - 10) / 10, VAKTAT.smygMin, VAKTAT.smygMax) * 0.5 ** ((vakter - 1) / VAKTAT.smygHalv) : 0;
-  const pris = Math.ceil(v * VAKTAT.pris), slass = vagValen(s, sl, vakter * anfallUtr(L), 0).slass;
+  const pris = Math.ceil(v * VAKTAT.pris), slass = vagValen(s, sl, flockKraft(vakter, radVarde(L)), 0).slass;
   return { kost: { smyga: (1 - smyg) * slass, kopa: packVarde(sl) >= pris ? pris - v : Infinity, slass, ga: v }, vakter, smyg, pris };
 }
 const forst = (k: Record<VaktVal, number>): VaktVal => (['ga', 'kopa', 'smyga', 'slass'] as VaktVal[]).reduce((a, b) => k[b] < k[a] ? b : a);

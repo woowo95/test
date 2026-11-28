@@ -60,7 +60,12 @@ export function trampaFard(s: State, fran: number | undefined, till: number | un
   const vl = s.varld, v = vl && varldMarkFor(s);
   if (!vl || !v || fran === undefined || till === undefined) return;
   const a = byPlats(vl, fran), b = byPlats(vl, till);
-  if (!a || !b || a === b) return;
+  if (a && b) trampaPlatser(s, a, b, tyngd, t);
+}
+// samma mellan två platser (gruvfärden går till en gruva, steg 15.1.28)
+export function trampaPlatser(s: State, a: { x: number; y: number }, b: { x: number; y: number }, tyngd: number, t = s.now) {
+  const vl = s.varld, v = vl && varldMarkFor(s);
+  if (!vl || !v || a === b) return;
   const vag = vagMellan(vl, v, a.y * v.w + a.x, b.y * v.w + b.x, 'fots', t);
   if (vag) trampa(vl, vagRutor(vag, v.w), tyngd, t);
 }

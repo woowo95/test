@@ -67,7 +67,6 @@ export function smidaKlar(s: State, p: Person, tk: Task) {
     nyKvalitet(s, p, t, q, SAKER[k]!.namn.toLowerCase(), 'smide', kunnaVikt(p.task?.act ?? 'smida', k)); // det smidda med smidet (steg 13.9.7, 13.9.8)
     nyttVid(s, t); // sågen läggs vid klyvplatsen om dess plats står tom, och blir byns (steg 12.5.1)
   }
-  count(s, 'smitt_' + k);
   if (forstaGang(s, 'smitt_' + k)) log(s, d.forsta.replace('{namn}', p.name), 'world', [p.id]);
 }
 // ett projekt per järnsak (projekt.ts): vid städet i smedjan
@@ -94,7 +93,6 @@ function omsmidKlar(s: State, p: Person) {
   if (getable(s, p, 'jarnskrot') < JARNSAK.omSkrot) return;
   const ag = takeMaterial(s, p, 'jarnskrot', JARNSAK.omSkrot), agare = Object.keys(ag).sort((a, b) => ag[b] - ag[a])[0];
   put(s, 'jarn', 1, agare !== undefined ? { [agare]: 1 } : undefined);
-  count(s, 'omsmitt');
   if (forstaGang(s, 'omsmitt')) log(s, `${p.name} smidde om järnskrot till nytt järn.`, 'world', [p.id]);
 }
 // skrotets värde (steg 15.1.35, varde.ts): järnet det smids om till minus arbetet att smida om det, delat på skrotet som går åt.

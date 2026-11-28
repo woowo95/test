@@ -46,9 +46,9 @@ import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from '.
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
 import { FORRAD, FORRADSMAL, TROSKEL, buffert, foretagMal, lyxtak, materialTimme, materialTak, eldReserv, villHaAv } from './forradsmal';
-import { stallaVal, AFFAR } from './affar';
+import { stallaVal, stallaTid } from './affar';
 import { behovAv, saknarNu } from './behov';
-import { betjanVal, kundVal, stallIKo, KASSA, type Erbjudande } from './kassa';
+import { betjanVal, erbjudandet, stallIKo, KASSA, type Erbjudande } from './kassa';
 import { stadaUppgift, stadaVal } from './stada';
 import { tjaraUppgift, tjaraVal } from './tjara';
 import { ammoOk } from './strid';
@@ -680,7 +680,7 @@ export const FORBATTRA: readonly ForbRad[] = [
   // tjäran (steg 13.5.1, tjara.ts): det sparade värdet mot tjärans
   { id: 'tjara', kand: c => { const d = tjaraVal(c.s, c.p); if (!d) return undefined; return { sc: VAL.forbTjara * d.sc * brus(c), gor: () => projektVal(c.v, tjaraUppgift(d), 'Byn har det den behöver') }; } },
   // städningen (steg 14.1.2, stada.ts): finheten smutsen tar och äcklet, efter hur mycket rummet angår en
-  { id: 'stada', kand: c => { const d = stadaVal(c.s, c.p); if (!d) return undefined; return { sc: VAL.forbStada * d.sc * brus(c), gor: () => projektVal(c.v, stadaUppgift(d), 'Golvet är smutsigt') }; } },
+  { id: 'stada', kand: c => { const d = stadaVal(c.s, c.p); if (!d) return undefined; return { sc: VAL.forbStada * d.sc * brus(c), gor: () => projektVal(c.v, stadaUppgift(d, c.s, c.p), 'Golvet är smutsigt') }; } },
   { id: 'farga', kand: c => { const d = fargVal(c.s, c.p); if (!d) return undefined; return { sc: VAL.forbFarg * d.sc * brus(c), gor: () => { projektVal(c.v, { act: 'farga', text: `Badar ${d.t.t ? tingNamn(d.t.t).toLowerCase() : 'sin matta'} i ${FARGER[d.bad].namn.toLowerCase()} färg vid örtköket.`, min: FARG.min, tool: fargTool(d.bad, !!d.t.matta), ref: d.t.id }, 'Byn har det den behöver'); } }; } },
   // bryggningen, ullen, hamlingen, staketet och fågelskrämman (steg 13.8.7) vägs med poäng mot de andra raderna på Förbättra
   { id: 'brygga', kand: c => { if (c.a < ALDER.vuxen) return undefined; const { s, p, v } = c; const b = bryggVal(s, p); if (!b) return undefined; return { sc: VAL.forbBrygga * brus(c), gor: () => { projektVal(v, { act: b.act, text: b.act === 'tappa' ? (b.v === 'sprit' ? 'Häller upp spriten ur brännpannan i en liten lerkruka.' : 'Silar satsen och häller upp den i lerkrukor.') : b.act === 'branna' ? 'Häller vin eller öl i brännpannan och eldar under den.' : b.act === 'malta' ? 'Blöter korn och hänger upp det på torkställningen till malt.' : BRYGD[b.v].gor, min: b.act === 'tappa' ? BRYGG.tappMin : b.act === 'branna' ? BRYGG.brannMin : b.act === 'malta' ? BRYGG.maltMin : BRYGG.prepMin, spot: vidStation(b.kar), ref: b.kar.id }, b.act === 'tappa' ? 'Satsen i bryggkaret har jäst klart' : 'Byn vill ha mer att dricka'); } }; } }, // steg 9.6.12–9.6.13
@@ -731,11 +731,14 @@ const torstNod = ({ s, p, a, lazy }: Ctx) => tortarFarligt(p) ? VAL.nodTorst * n
 const nodUnder = (x: number, grans: number) => 1 + clamp(1 - x / grans, 0, 1); // 1 vid gränsen, 2 vid noll (steg 13.8.9)
 // ett farligt behov (steg 15.1.4): törsten, hungern eller kylan vid de gränser där nödraderna tar över. Det avbryter ett långt
 // arbete eller ett vaktpass som toan gör (taskStep i steg.ts), och den som valde sin uppgift med behovet redan farligt har
-// räknat med det i poängen och avbryts inte igen
+// räknat med det i poängen och avbryts inte igen. Toan är ett av dem (steg 15.1.181): uppgiften minns vilka behov som var
+// farliga när den valdes (Task.nod), och bara ett nytt farligt behov, eller ett som gått över, avbryter den
 // var man är, i ord: i huset, vid elden när en eld brinner nära, annars i mörkret eller ute (steg 15.1.5)
 export const platsOrd = (s: State, x: number, y: number) => roomAt(s, x, y) ? 'i huset' : brinnerNara(s, x, y, VAL.eldNara) ? 'vid elden' : isLight(s.now) ? 'ute' : 'i mörkret';
 export const eldOrd = (s: State, why: string, x: number, y: number) => why.replace(' vid elden', ' ' + platsOrd(s, x, y));
-export const farligtBehov = (p: Person) => tortarFarligt(p) || p.hunger < KROPP.hungrig * VARDRATT.snal || p.warm < KROPP.farligt;
+// de farliga behoven som bitar (steg 15.1.181): törsten 1, hungern 2, kylan 4 och toan 8, när nöden avbryter det man gör
+export const farligaBehov = (p: Person) => (tortarFarligt(p) ? 1 : 0) | (p.hunger < KROPP.hungrig * VARDRATT.snal ? 2 : 0) | (p.warm < KROPP.farligt ? 4 : 0) | (p.toa < KROPP.toaAvbryt ? 8 : 0);
+export const farligtBehov = (p: Person) => (farligaBehov(p) & 7) !== 0;
 // det som är moget att ta och som är mat (honungen, mjölken, fisken i mjärden): VAL.mognaVikt, och dessutom som maten (steg 15.1.183)
 const mognaMat = (c: Ctx) => { const d = dag(c); return VAL.mognaVikt + Math.max(d.wBy, d.wEgen) * d.rad.mat.sc; };
 export const ARBETEN: readonly Arbete[] = [
@@ -822,7 +825,7 @@ export const ARBETEN: readonly Arbete[] = [
     if (!hv) return false;
     set(v, hv.act, hv.why); v.spot = hv.spot; v.dur = hv.dur; v.ref = hv.ref; return true;
   } },
-  { id: 'djurkop', niva: 3, nar: 'dag', poang: c => { if (c.a < ALDER.vuxen || !c.s.foretag?.some(f => f.verk.includes('djurhandel'))) return 0; const e = ((c.kunder ??= {}).djurkop = kundVal(c.s, c.p, 'djurhandel')); return e ? VAL.tillAffar * Math.min(1, e.net) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.djurkop; return !!e && koa(s, p, v, e); } }, // ett djur (steg 14.1.12, verksamheter.ts)
+  { id: 'djurkop', niva: 3, nar: 'dag', poang: c => { if (c.a < ALDER.vuxen || !c.s.foretag?.some(f => f.verk.includes('djurhandel'))) return 0; const e = ((c.kunder ??= {}).djurkop = erbjudandet(c.s, c.p, 'djurhandel')); return e ? VAL.tillAffar * Math.min(1, e.net) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.djurkop; return !!e && koa(s, p, v, e); } }, // ett djur (steg 14.1.12, verksamheter.ts)
   // ett framträdande (steg 10.7.9, framtradande.ts): den som ville lyssna vid kallelsen går dit, men inte den som skäms
   { id: 'lyssna', niva: 3, poang: () => VAL.tillLyssna, prova: ({ s, p, v }) => {
     const l = skams(p, s.now) ? undefined : lyssnaVal(s, p, q => spotFor(s, 'beratta', q));
@@ -852,7 +855,7 @@ export const ARBETEN: readonly Arbete[] = [
     v.spot = bord; v.dur = (VAL.maltidMin + rnd(s, 'val', p) * VAL.maltidSpann) * MIN; return set(v, 'maltid', 'Är hungrig och äter vid bordet');
   } },
   // serveringen (steg 14.1.6, kassa.ts): den hungrige köper sin måltid när den är mer värd än den kostar
-  { id: 'servering', niva: 4, poang: c => { if (!c.s.foretag?.length || c.a < ALDER.hjalper || !MAT.behover(c.s, c.p)) return 0; const e = ((c.kunder ??= {}).servering = kundVal(c.s, c.p, 'servering')); return e ? VAL.grundMat * nodUnder(c.p.hunger, KROPP.hungrig) * (1 + KASSA.lust * Math.min(1, e.net)) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.servering; return !!e && koa(s, p, v, e); } },
+  { id: 'servering', niva: 4, poang: c => { if (!c.s.foretag?.length || c.a < ALDER.hjalper || !MAT.behover(c.s, c.p)) return 0; const e = ((c.kunder ??= {}).servering = erbjudandet(c.s, c.p, 'servering')); return e ? VAL.grundMat * nodUnder(c.p.hunger, KROPP.hungrig) * (1 + KASSA.lust * Math.min(1, e.net)) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.servering; return !!e && koa(s, p, v, e); } },
   // hungrig, och maten ligger inte där hen står: hen går till den närmaste stacken med mat hen får ta och äter där (steg 11.1.77)
   { id: 'ata', niva: 4, poang: matPoang, prova: ({ s, p, v }) => ataVal(s, p, v) },
   { id: 'utbrott', niva: 4, nar: 'dag', poang: () => VAL.grundUtbrott, prova: ({ s, p, v }) => utbrottVal(s, p, v) },
@@ -995,8 +998,8 @@ export const ARBETEN: readonly Arbete[] = [
   { id: 'betjana', niva: 6, poang: c => { if (!c.s.foretag?.length) return 0; const d = (c.betj = betjanVal(c.s, c.p)); return d ? VAL.tillBetjana * d.sc : 0; }, prova: ({ v, betj: d }) => { if (!d) return false; v.spot = d.spot; v.dur = d.dur; v.ref = d.f.id; return set(v, 'betjana', `Betjänar: ${d.f.namn}`); } },
   // affären (steg 14.1.8, affar.ts): den som saknar något köper det när det är mer värt än det kostar, och ägaren ställer fram.
   // Varje rad har sitt erbjudande i c.kunder, eftersom raderna på samma nivå räknas innan vinnaren provas
-  { id: 'affar', niva: 6, nar: 'dag', poang: c => { if (!c.s.foretag?.length || c.a < ALDER.hjalper || !saknarNu(c.s, c.p).length) return 0; const e = ((c.kunder ??= {}).affar = kundVal(c.s, c.p, 'affar')); return e ? VAL.tillAffar * Math.min(1, e.net) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.affar; return !!e && koa(s, p, v, e); } },
-  { id: 'stallaFram', niva: 6, nar: 'dag', poang: c => { if (!c.s.foretag?.length || c.a < ALDER.vuxen) return 0; const d = (c.stall = stallaVal(c.s, c.p)); return d ? Math.min(VAL.tillAffar, d.sc) : 0; }, prova: ({ v, stall: d }) => { if (!d) return false; v.spot = { x: d.h.x + 0.5, y: d.h.y + 0.5 }; v.dur = AFFAR.min * MIN; v.ref = d.f.id; v.tool = d.h.k; return set(v, 'stallaFram', d.h.tillbaka ? `Bär tillbaka varor som inte säljer: ${d.f.namn}` : `Ställer fram varor: ${d.f.namn}`); } }, // eller tillbaka till förrådet (steg 15.1.99)
+  { id: 'affar', niva: 6, nar: 'dag', poang: c => { if (!c.s.foretag?.length || c.a < ALDER.hjalper || !saknarNu(c.s, c.p).length) return 0; const e = ((c.kunder ??= {}).affar = erbjudandet(c.s, c.p, 'affar')); return e ? VAL.tillAffar * Math.min(1, e.net) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.affar; return !!e && koa(s, p, v, e); } },
+  { id: 'stallaFram', niva: 6, nar: 'dag', poang: c => { if (!c.s.foretag?.length || c.a < ALDER.vuxen) return 0; const d = (c.stall = stallaVal(c.s, c.p)); return d ? d.sc : 0; } /* vägs som annat arbete, utan tak (steg 15.1.155) */, prova: ({ v, stall: d, s, p }) => { if (!d) return false; v.spot = { x: d.h.x + 0.5, y: d.h.y + 0.5 }; v.dur = stallaTid(s, p); /* den skickliga fortare (steg 15.1.23) */ v.ref = d.f.id; v.tool = d.h.k; return set(v, 'stallaFram', d.h.tillbaka ? `Bär tillbaka varor som inte säljer: ${d.f.namn}` : `Ställer fram varor: ${d.f.namn}`); } }, // eller tillbaka till förrådet (steg 15.1.99)
   { id: 'kopaMat', niva: 6, nar: 'dag', poang: c => { const d = dag(c); if (!d.works || d.wEgen <= 0) return 0; const k = (c.kop = kopval(c.s, c.p, 'mat')); return k ? d.wEgen * d.rad.mat.sc * k.faktor : 0; }, prova: c => kopa(c) },
   { id: 'kopaVed', niva: 6, nar: 'dag', poang: c => { const d = dag(c); if (!d.works || d.wWood <= 0) return 0; const k = (c.kopV = kopval(c.s, c.p, 'ved')); return k ? d.wWood * d.rad.ved.sc * k.faktor : 0; }, prova: c => kopa(c, c.kopV) },
   { id: 'ved', niva: 6, nar: 'dag', poang: c => { const d = dag(c); return d.works && d.wd < buffert(c.s, 'ved') ? d.wWood * d.rad.ved.sc : 0; },
@@ -1125,7 +1128,7 @@ function valjTask(s: State, p: Person) {
   // texten säger "vid elden" bara när en eld brinner nära platsen (steg 15.1.5); slocknar den byts texten (taskStep i steg.ts)
   const vidE = v.why.includes(' vid elden');
   if (vidE) v.why = eldOrd(s, v.why, sp.x, sp.y);
-  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(farligtBehov(p) ? { nodVald: true as const } : {}), ...(vidE ? { eldText: true as const } : {}), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, fron: v.fron, hot: v.hot, falt: v.falt, sno: v.sno, ho: v.ho, gava: v.gava, skal: v.skal, hamtar: v.hamtar, lon: v.lon, brand: v.brand, kalla: v.kalla, stanna: v.stanna, eldFor: v.eldFor, pass: v.pass !== undefined ? s.now + v.pass : undefined };
+  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(farligaBehov(p) ? { nod: farligaBehov(p) } : {}), ...(vidE ? { eldText: true as const } : {}), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, fron: v.fron, hot: v.hot, falt: v.falt, sno: v.sno, ho: v.ho, gava: v.gava, skal: v.skal, hamtar: v.hamtar, lon: v.lon, brand: v.brand, kalla: v.kalla, stanna: v.stanna, eldFor: v.eldFor, pass: v.pass !== undefined ? s.now + v.pass : undefined };
   balteForband(s, p, p.task.act);
   if (ACTS[v.act].plats === 'station') { const st = stationFor(s, v.act, p); if (st && Math.hypot(sp.x - vidStation(st).x, sp.y - vidStation(st).y) < 2) stationBrukad(s, st); } // hur mycket stationen används (steg 9.4.8)
   if (v.act === 'samtal' && !v.spot) samtalMed(s, p); // fram till den man vill prata med (steg 4.5.6.7)
@@ -1660,7 +1663,7 @@ export const FRITID: readonly FritidRad[] = [
     gor: c => { const d = c.dr!, v = c.v; v.spot = { x: c.p.x, y: c.p.y }; v.dur = 0; v.tool = d; return set(v, 'dryck', `Dricker ${VATSKOR[d].namn.toLowerCase()} vid elden`); } },
   // en dryck hos den som säljer (steg 14.1.6, kassa.ts): lusten till rus och det kunden vinner på köpet
   { id: 'krog', nar: 'natt', kraver: 'ett företag som säljer dryck, och att kunna betala', ger: 'rus, humör och sällskap', drar: 'lusten till rus och priset', akt: ['koaDisk'],
-    vikt: c => { if (!c.s.foretag?.length || c.a < ALDER.vuxen || rusAv(c.p) >= RUS.mest || budHindrar(c.s, c.p, 'ingetRus')) return 0; c.kund = kundVal(c.s, c.p, 'dryck'); return c.kund ? kvallsVikt(c.s, c.p) * (1 + c.kund.net) : 0; },
+    vikt: c => { if (!c.s.foretag?.length || c.a < ALDER.vuxen || rusAv(c.p) >= RUS.mest || budHindrar(c.s, c.p, 'ingetRus')) return 0; c.kund = erbjudandet(c.s, c.p, 'dryck'); return c.kund ? kvallsVikt(c.s, c.p) * (1 + c.kund.net) : 0; },
     gor: c => !!c.kund && koa(c.s, c.p, c.v, c.kund) },
   // ett framträdande vid scenen eller elden (steg 4.3.2, 10.7.9 och 13.8.8, framtradande.ts): den som vill uppträda kallar
   { id: 'framtradande', nar: 'natt', kraver: 'en kväll utan framträdande, och att inte skämmas', ger: 'humör åt publiken och färdighet', drar: 'skaldskapet och karisman', akt: ['upptrada'],

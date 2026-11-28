@@ -121,7 +121,7 @@ SCENARIER.gastfel = {
     }
     return [
       [`gästen ställde sig i kön och köpet föll (${forsok} gånger)`, forsok >= 1],
-      [`gästen går hem efter några försök (${forsok}, högst ${SIM.FGAST.kop}) i stället för att köa igen och igen`, g.gast!.fas === 'gar' && forsok <= SIM.FGAST.kop],
+      [`gästen går hem efter några försök (${forsok}; varan som inte gick att få lockar inte igen) i stället för att köa igen och igen`, g.gast!.fas === 'gar' && forsok <= 2],
       [`besöken räknas (${g.gast!.gjort ?? 0})`, (g.gast!.gjort ?? 0) === forsok],
     ];
   },

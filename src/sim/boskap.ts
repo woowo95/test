@@ -12,7 +12,7 @@ import { spand } from './agande';
 import { ALDER, ageOf, byId, count, forstaGang, gjort, log, annanGor, alive } from './folk';
 import { desperatMat, getable, levKrok } from './behov';
 import { chansPer } from './slump';
-import { amountOf, changed, put, stacksOf, tidy } from './lager';
+import { amountOf, changed, ownsAmount, put, stacksOf, tidy } from './lager';
 import { kanGoras } from './stationer';
 import { DAY, Person, State } from './typer';
 import { HOST, iIstiden, isLight, kalender, VAR } from './tid';
@@ -59,7 +59,12 @@ export function djurMal(s: State, art: TamArtId | 'hons') {
 export const levMal = (s: State, k: string) => k === 'levhons' ? { behover: 1, buf: djurMal(s, 'hons') } : (m => ({ behover: m, buf: m }))(djurMal(s, LEVANDE[k]));
 // byn vill ha betesdjur (hagen märks ut innan de kommer, steg 15.1.143)
 export const villBetesdjur = (s: State) => (Object.keys(TAMDJUR) as TamArtId[]).some(a => tamArt(a).bete && djurMal(s, a) > 0);
-Object.assign(levKrok, { ar: arLevande, antal: levAntal, mal: levMal }); hageKrok.vill = villBetesdjur;
+// det djuret av den levande varan k ger som en person kan sakna (steg 15.1.164): ullen. Mjölken är byns i krukorna (steg 15.2.9)
+const gerAv = (k: string): readonly string[] => { const a = LEVANDE[k] && tamArt(LEVANDE[k]); return a?.ull ? ['ull'] : []; };
+// så många djur av varans art p äger, och varan hen äger (som blir ett djur)
+const egnaDjur = (s: State, p: Person, k: string) => ownsAmount(s, p, k) + (LEVANDE[k] ? tamdjurOf(s).filter(d => d.art === LEVANDE[k] && d.agare === p.id).length : 0);
+const LEV_LIST = Object.keys(LEVANDE);
+Object.assign(levKrok, { ar: arLevande, antal: levAntal, mal: levMal, alla: () => LEV_LIST, eget: egnaDjur, ger: gerAv }); hageKrok.vill = villBetesdjur;
 // hona eller hane: sätts när djuret kommer till byn (nyttTamdjur i tamdjur.ts), så att två djur av arten är ett par
 export const hona = arHona;
 const vuxen = (s: State, d: Tamdjur) => tamAlder(s, d) >= tamArt(d.art).vuxen;

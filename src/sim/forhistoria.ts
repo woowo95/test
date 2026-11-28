@@ -31,7 +31,7 @@ export function forhistoria(s: State, vl: Varlden, v: VarldMark) {
   vl.rader ??= [];
   for (const p of ur) {
     const folk = FORHIST.folkMin + Math.floor(hash3(vl.fro, p.nr, 0x464f4c4b) * (FORHIST.folkMax - FORHIST.folkMin + 1));
-    const r: VarldRad = { nr: vl.nastaRad = (vl.nastaRad ?? 0) + 1, sort: 'by', namn: p.namn, x: p.x, y: p.y, grundad: borjan, t: borjan, tal: { folk, mat: radKrok.startMat(folk), rikedom: 0, silver: 0, styrka: 0 }, tek: radKrok.startTek(), fasta: [] };
+    const r: VarldRad = { nr: vl.nastaRad = (vl.nastaRad ?? 0) + 1, sort: 'by', namn: p.namn, x: p.x, y: p.y, grundad: borjan, t: borjan, tal: { folk, mat: radKrok.startMat(folk), rikedom: 0, silver: 0, styrka: 0, kraft: 0 }, tek: radKrok.startTek(), fasta: [] };
     vl.rader.push(r);
     p.by = r.nr; p.fran = borjan;
     varldHandelse(vl, 'grundad', borjan, { by: r.nr });

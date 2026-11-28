@@ -177,7 +177,7 @@ export function ortPlockaKlar(s: State, p: Person, ref?: number) {
   if (!t || !t.vaxt || t.vaxt.v < 1 || !paRuta(t)) return;
   const g = t.vaxt.g as GrodaSlag;
   put(s, GRODOR[g].sak, ORTKRUKA.plock, { [p.id]: ORTKRUKA.plock });
-  t.vaxt.v = ORTKRUKA.ater; count(s, 'ortKruka'); ovning(p, 'odling', ORTKRUKA.ovning);
+  t.vaxt.v = ORTKRUKA.ater; ovning(p, 'odling', ORTKRUKA.ovning);
   if (forstaGang(s, 'ortKruka')) log(s, `${p.name} plockade röllekan som växer i ${hans(p)} lerkruka.`, 'world', [p.id]);
 }
 // ... och sätter ett frö i en ledig kruka (Förbättra, bredvid staketet): den växt som väger mest av dem hen har frö till (steg 10.7.3)

@@ -791,7 +791,7 @@ SCENARIER.barkraft = {
     const medFlod = SIM.grundtal(v, 2, 2);
     v.mark.fill(berg);
     const pabg = SIM.grundtal(v, 2, 2), kant = SIM.grundtal(v, 0, 0);
-    const r: SIM.VarldRad = { nr: 1, sort: 'by', namn: 'Prov', x: 2, y: 2, grundad: 0, t: 0, tal: { folk: 10, mat: 0, rikedom: 0, silver: 0, styrka: 0 }, tek: [], fasta: [] };
+    const r: SIM.VarldRad = { nr: 1, sort: 'by', namn: 'Prov', x: 2, y: 2, grundad: 0, t: 0, tal: { folk: 10, mat: 0, rikedom: 0, silver: 0, styrka: 0, kraft: 0 }, tek: [], fasta: [] };
     v.mark.fill(slatt); v.flod.fill(0);
     const utan = SIM.barkraft(v, r);
     r.tek = ['odling', 'tork'];
@@ -2740,7 +2740,11 @@ SCENARIER.fardruta = {
     if (f3) SIM.namnFolk(vl, f3, 1);
     const gammal = SIM.fardRuta(s, { ...f, folk: undefined }, SIM.BYHANDLING.barare)!;
     const kod = readFileSync(new URL('../../ui/varldskarta.ts', import.meta.url), 'utf8');
+    // rutan följer färden (steg 15.1.188): texten ändras medan den går, och klockan skriver om rutan för en vald färd när texten ändrats
+    const nu0 = s.now; s.now = f.t0 + (f.t1 - f.t0) * 0.9; const sen = SIM.fardRuta(s, f, SIM.BYHANDLING.barare)!; s.now = nu0;
+    const omskriv = /let sidaSist/.test(kod) && /valt\?\.fard !== undefined[^\n]*sidaHtml\(\); if \(h !== sidaSist\)/.test(kod) && !/sida\.innerHTML = sidaHtml\(\)/.test(kod);
     return [
+      [`rutan för en vald färd skrivs om när texten ändrats (framme om ${q.kvar.toFixed(2)} → ${sen.kvar.toFixed(2)} dygn; klockan skriver om: ${omskriv})`, sen.kvar < q.kvar && omskriv],
       [`två namngivna bärare (${q.folk.join(', ')}), som finns i byn och inte leder den`, q.folk.length === 2 && q.folk.every(n => i.includes(n) && n !== led)],
       [`rutan: ${q.titel}, från ${q.fran} till ${q.till}, ${q.varfor}, bär ${q.bar.join(', ')}, framme om ${q.kvar.toFixed(2)} dygn`, q.titel === 'Handelsfärd' && q.fran === r.namn && q.till === dyr.namn && /Sälja/.test(q.varfor) && q.bar.length === 1 && !q.hemat && q.kvar > 0],
       [`en plundring har andra namn (${fore.join(', ')}), och två döda försvinner`, fore.length === 4 && fore.every(n => !q.folk.includes(n)) && f2.folk!.length === 2],
@@ -3333,7 +3337,7 @@ SCENARIER.vagran = {
     sl.ruta = lp.y * w + lp.x;
     // valen: med en full packning och ett litet krav betalar man; utan något att betala med flyr eller slåss man
     sl.pack = { flintkniv: 3, skinn: 6, torkatKott: 10 };
-    const v1 = SIM.vagValen(s, sl, 3, 10), v2 = SIM.vagValen(s, sl, 3, 10000);
+    const tre = SIM.flockKraft(3, SIM.radVarde(L)), v1 = SIM.vagValen(s, sl, tre, 10), v2 = SIM.vagValen(s, sl, tre, 10000); // tre rövare ur lägret (styrkan i stridsvärde, steg 15.1.152)
     const val1 = (Object.keys(v1) as SIM.VagVal[]).reduce((a, b) => v1[b] < v1[a] ? b : a), val2 = (Object.keys(v2) as SIM.VagVal[]).reduce((a, b) => v2[b] < v2[a] ? b : a);
     // rånet: bytet går till lägret, och döda rövare dras ur lägret
     const lagerFore = SIM.radRikedomUr(L) + (L.tal.mat ?? 0), packFore = Object.values(sl.pack).reduce((a, x) => a + (x ?? 0), 0), lf = L.tal.folk;
@@ -4839,7 +4843,7 @@ SCENARIER.fangar = {
 
 SCENARIER.fangeval = {
   env: { BALANS: 'klan.taEmot=5' }, // fången vill stanna (avgörs som för främlingen)
-  text: 'Vad byn gör med fången (steg 11.12.7, FANGERADER i fangeval.ts): ett dygn efter att fången togs väljer ledaren raden med högst poäng ur seden Förlikning – Fejd, hårdheten och vad fången gjort. Förlikning släpper hen hem, Fejd dödar hen, en by i världen som kan betala skickar ett sändebud med lösen i silver och fången följer med hem, uteblir lösen väljs på nytt utan raden, och utan lösen och med en fånge som vill stanna tas hen upp i byn',
+  text: 'Vad byn gör med fången (steg 11.12.7, FANGERADER i fangeval.ts): ett dygn efter att fången togs väljer ledaren raden med högst poäng ur seden Förlikning – Fejd, hårdheten och vad fången gjort. Förlikning släpper hen hem, Fejd dödar hen, en by i världen som kan betala skickar ett sändebud med lösen ur det den har och fången följer med hem, uteblir lösen väljs på nytt utan raden, och utan lösen och med en fånge som vill stanna tas hen upp i byn',
   kor: () => {
     // en rövare från klanen klan som byn tagit för ett dygn sedan
     const fange = (s: SIM.State, klan?: number) => {
@@ -4873,9 +4877,11 @@ SCENARIER.fangeval = {
     };
     const l = forbered(), silver0 = SIM.amountOf(l.s, 'silver');
     const valdLosen = (l.s.stat?.fange_val_losen ?? 0) > 0;
-    let bud: SIM.Person | undefined;
-    korTills(l.s, () => !l.r.fange, 8 * 3600, () => { bud ??= l.s.people.find(q => q.gast?.losenFor === l.r.id); });
-    const losen = !!bud && !l.r.fange && (l.s.stat?.fange_losen ?? 0) > 0 && SIM.amountOf(l.s, 'silver') - silver0 >= SIM.FANGEVAL.losen;
+    let bud: SIM.Person | undefined, bar: { k: string; n: number }[] = [];
+    korTills(l.s, () => !l.r.fange, 8 * 3600, () => { if (!bud) { bud = l.s.people.find(q => q.gast?.losenFor === l.r.id); bar = (bud?.gast?.gava ?? []).map(w => ({ ...w })); } });
+    // lösen är det hembyn har (steg 15.1.26): silvret i den och varor, värt minst lösen, och silvret i förrådet är det som bars
+    const barSilver = bar.find(w => w.k === 'silver')?.n ?? 0, barVarde = bar.reduce((a, w) => a + w.n * SIM.grundvarde(w.k), 0);
+    const losen = !!bud && !l.r.fange && (l.s.stat?.fange_losen ?? 0) > 0 && barVarde >= SIM.FANGEVAL.losen - 1e-9 && Math.round(SIM.amountOf(l.s, 'silver') - silver0) === barSilver;
     // budet dör på vägen: ledaren väljer på nytt utan lösen
     const u = forbered();
     korTills(u.s, () => u.s.people.some(q => q.gast?.losenFor === u.r.id), 3600);
@@ -4887,7 +4893,7 @@ SCENARIER.fangeval = {
       [`med seden Förlikning släpps fången (${Object.keys(f.s.stat ?? {}).filter(k => k.startsWith('fange_val_'))}) och går hem`, slappt && hem],
       [`med seden Fejd dödas fången`, dod],
       [`utan by i världen och med en fånge som vill stanna tas hen upp i byn`, upp],
-      [`en by i världen som kan betala ger lösen (vald: ${valdLosen}): ett sändebud kommer med ${SIM.FANGEVAL.losen} silver, som hamnar i förrådet, och fången följer med hem`, valdLosen && losen],
+      [`en by i världen som kan betala ger lösen (vald: ${valdLosen}): ett sändebud kommer med det hembyn har (${bar.map(w => w.n + ' ' + w.k).join(', ')}), som hamnar i förrådet, och fången följer med hem`, valdLosen && losen],
       [`dör budet väljer ledaren på nytt utan lösen`, !!ub && igen],
     ];
   },

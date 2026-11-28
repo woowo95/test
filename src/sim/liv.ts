@@ -1,4 +1,5 @@
 import { gen, goraUtan } from './ord';
+import { foljdKrok } from './foljdkrok';
 import { antal, honom, och, talOrd } from './ord';
 import { gastensPlatser, horOmGast, raknaBynVet } from './ort';
 import { personNara } from './personlogg';
@@ -22,7 +23,7 @@ import { inherit, packUp } from './arv';
 import { balans } from './balans';
 import { RELT } from './relationer';
 import { rykteDod, startSmak, handelse } from './rykten';
-import { tecken, GudOmr, gudHandelse } from './religion';
+import { tecken, GudOmr, gudHandelse, inflyttadTro } from './religion';
 import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
 import { KLAN, klanById, klanerOf, narhet, type Klan } from './klaner';
 import { radKrok, type FlyttDelar } from './radtal';
@@ -106,7 +107,7 @@ const MEDHAVT: Record<string, number> = { rotter: LIV.medhavd };
 // då tas följden, guden, sorgen och räknaren från orsaken
 interface DodDef { text: string; sorg?: true; gud?: GudOmr; foljd?: UpplevelseTyp; foljdNar?: (s: State) => boolean; efter?: string }
 const DOD = {
-  svalt: { text: 'av svält', gud: 'skord', sorg: true },
+  svalt: { text: 'av svält', gud: 'skord', sorg: true, foljd: 'svaltVidSkog', foljdNar: s => foljdKrok.skogNara(s) && foljdKrok.viltNara(s) }, // med vilt och skog nära: mot det odlade (steg 15.1.159)
   kyla: { text: 'av kyla', gud: 'vintern', sorg: true, foljd: 'frosIhjal', foljdNar: s => amountOf(s, 'ved') >= 1 }, // medan andra hade ved
   jakt: { text: 'under en jakt', gud: 'jakt' },
   torst: { text: 'av törst' }, // steg 2.4.1
@@ -423,6 +424,7 @@ export function immigrate(s: State, alone: boolean): Person | undefined {
     { const k = barSmitta(s); if (k) insjukna(s, p, k, 'utifrån'); } // främlingen kan bära en sjukdom (steg 9.5.5)
     s.people.push(p);
     upplev(s, p, 'flyttade'); // steg 4.1.1.2
+    if (ur) inflyttadTro(s, p, ur); // hembyns tro följer med (steg 15.1.160)
     for (const k in MEDHAVT) put(s, k, MEDHAVT[k], { [p.id]: MEDHAVT[k] }); // lite mat från vandringen, så att man hinner samla innan man svälter
     return p;
   };

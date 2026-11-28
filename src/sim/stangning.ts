@@ -14,7 +14,7 @@ import { kronika } from './historik';
 import { ledareOf } from './styre';
 import { egetVarde } from './dagsarbete';
 import { BYN } from './egendom';
-import { dygnet, efterfragan, FORETAG, type Foretag, foretagare, foretagOf, sortNamn, startPoang } from './foretag';
+import { dygnet, efterfragan, FORETAG, type Foretag, foretagare, foretagOf, saltAv, sortNamn, startPoang } from './foretag';
 import { ryktet } from './foretagsrykte';
 
 export const STANG = balans('stangning', {
@@ -70,7 +70,7 @@ export function saljForetag(s: State, f: Foretag, h: Hus, kop: Person, bud?: Per
   if (!kopHus(s, h, kop.id, bud, { salj: foretagPris(s, f, h), hog: foretagHogst(s, f, kop.id), fn: 'naringshus', namn })) return false;
   lar(s, f);
   f.ag = kop.id; f.namn = namn; f.salu = f.resultat = f.oppnat = undefined;
-  count(s, 'foretagSalt');
+  count(s, 'foretagSaltHelt');
   const tx = `${kop.name} köpte ${/^Byns /.test(gammal) ? 'b' + gammal.slice(1) : gammal}.`; // liten bokstav mitt i meningen (steg 15.1.118)
   log(s, tx, 'world', [kop.id, ...(salj ? [salj.id] : [])]); kronika(s, tx, 'byte');
   return true;
@@ -89,7 +89,7 @@ dygnet.push(s => {
   for (const f of [...foretagOf(s)]) {
     const h = f.hus !== undefined ? husById(s, f.hus) : undefined;
     if (!h?.klar) continue;
-    const kunder = Object.values(f.salt ?? {}).reduce((a, b) => a + b, 0), vinst = f.vinst ?? 0, b = f.bok ?? { vinst: 0, kunder: 0 };
+    const kunder = saltAv(f), vinst = f.vinst ?? 0, b = f.bok ?? { vinst: 0, kunder: 0 };
     const r = dygnsResultat(s, f, vinst - b.vinst, kunder - b.kunder);
     f.bok = { vinst: vinst * (1 - FORETAG.minne), kunder: kunder * (1 - FORETAG.minne) }; // foretagDygn låter vinsten blekna med FORETAG.minne efter dygnet-raderna, så boken räknar med samma förfall
     f.resultat = f.resultat === undefined ? r : f.resultat + (r - f.resultat) * STANG.minne;

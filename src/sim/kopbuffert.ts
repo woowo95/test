@@ -7,7 +7,7 @@
 import { type Act, MIN, type Person, type State, type Task } from './typer';
 import { balans } from './balans';
 import { ageOf, ALDER, alive, byId, count, living } from './folk';
-import { type Behov, behovAv, betalaAv, betalVaror, bytaHos, grannensOver, MAT, osams, personPart } from './behov';
+import { type Behov, behovAv, betalaAv, betalVaror, bytaHos, MAT, overEget, osams, personPart } from './behov';
 import { VED } from './eld';
 import { grundvarde } from './varde';
 import { egetVarde } from './dagsarbete';
@@ -64,7 +64,7 @@ export function kopval(s: State, p: Person, id: 'mat' | 'ved'): Kopval | undefin
     if (g === p || g.gast || (g.task && SOVER.has(g.task.act)) || osams(s, g, p) || !vill.size) continue;
     const d = Math.hypot(g.x - p.x, g.y - p.y);
     if (d > KOPBUFFERT.langd) continue;
-    const over = grannensOver(s, g, b, p);
+    const over = overEget(s, g, b);
     if (over < b.minst) continue;
     M ??= personPart(s, p);
     let G: ReturnType<typeof personPart> | undefined, varor: ReturnType<typeof betalVaror> | undefined;

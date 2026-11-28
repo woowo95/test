@@ -511,6 +511,47 @@ export function predika(s: State, a: Person, b: Person, r: Rel, kind: string, ga
   log(s, `${a.name} har övertygat ${b.name}: ${tr.bakom} vill ${tr.vill}.`, 'rel', [a.id, b.id]);
 }
 
+// ---------- tron kommer utifrån (steg 15.1.160, Religion: Tron kommer utifrån) ----------
+// En tro kan komma till byn utan att någon där är andlig nog att grunda en. Den som flyttar in från en grannby med tro bär
+// hembyns tro (rt, raden i världen) och sprider den som de troende i byn. Tron är ny i byn (bekr nu), så den sprids lite
+// lättare i början (TRO.bekrFaktor i spridChans). Finns redan en tro med samma namn i byn är det den
+export function troUtifran(s: State, p: Person, rt: import('./radtal').RadTro, fran?: string): Tro | undefined {
+  const tron = (s.tron ??= []), finns = tron.find(t => t.slut === undefined && troNamn(t) === rt.namn);
+  if (finns) return finns;
+  if (!TRO_PROV.utanTak && tron.filter(t => t.slut === undefined).length >= TRO.takTro) return undefined; // högst några trosriktningar samtidigt
+  const typer = (Object.keys(TDEF) as TeckenTyp[]).filter(k => k !== 'tolkning'), k = typer[[...rt.namn].reduce((a, c) => a + c.charCodeAt(0), 0) % typer.length];
+  const tr = nyTro(s, p, TDEF[k], { id: tron.length + 1, grundare: p.id, gnamn: p.name, t: s.now, ar: yearNo(s), k });
+  tr.namn = rt.namn;
+  tron.push(tr);
+  for (const sk of s.troSkalor ?? []) satSkala(s, tr, sk);
+  if (tr.sk && 'krig' in tr.sk) tr.sk.krig = rt.krig; // hembyns läggning
+  count(s, 'tro_utifran');
+  const text = `${p.name} kom${fran ? ` från ${fran}` : ''} med ${rt.namn.toLowerCase()}, och tron finns nu i byn.`;
+  log(s, text, 'rel', [p.id]); kronika(s, text, 'tro'); notis(s, 'tro', text, [p.id]);
+  return tr;
+}
+// den som flyttar in från raden r bär dess tro, med chansen att hen hör till de troende där (andelen)
+export function inflyttadTro(s: State, p: Person, r: import('./radtal').VarldRad) {
+  const rt = r.tro;
+  if (!rt || rnd(s, 'tro', p) >= rt.andel / 100) return;
+  const tr = troUtifran(s, p, rt, r.namn);
+  if (tr) { p.tro = tr.id; p.troStyrka = TRO.styrka; count(s, 'tro_inflyttad'); }
+}
+// en gäst som kommer igen (handlaren, steg 15.1.160) talar med b och kan få hen att tro som i gästens hemby: samma chans som
+// när en troende i byn talar (spridChans), med tron som ny i byn
+export function gastPredika(s: State, g: Person, b: Person, rt: import('./radtal').RadTro, fran: string, kind: string) {
+  const f = SPRID_SLAG[kind];
+  if (!f || !alive(b) || b.tro !== undefined || ageOf(b, s.now) < UPPV.fran || andlighet(s, b) < TRO.spridMin) return;
+  const finns = (s.tron ?? []).find(t => t.slut === undefined && troNamn(t) === rt.namn), r = s.rels[relKey(g.id, b.id)] ?? { op: 0 } as Rel;
+  const ch = (finns ? spridChans(s, finns, g, b, r, f) : TRO.sprid * f * (stat(g, 'karisma', s.now) / TRO.spridKarisma) * (andlighet(s, g) / TRO.spridAnde) * (andlighet(s, b) / TRO.spridAnde) ** 2 * Math.max(0, 1 + r.op / TRO.spridRel) * TRO.bekrFaktor) * rt.andel / 100;
+  if (rnd(s, 'tro', b) >= ch) return;
+  const tr = finns ?? troUtifran(s, b, rt, fran);
+  if (!tr) return;
+  b.tro = tr.id; b.troStyrka = TRO.styrkaNy;
+  count(s, 'tro_gast');
+  log(s, `${g.name} från ${fran} har övertygat ${b.name}: ${tr.bakom} vill ${tr.vill}.`, 'rel', [b.id]);
+}
+
 // ---------- varje timme (steg.ts) ----------
 // drömmarna, barnet som blev friskt, tron som fick sitt namn och tron som dog med sin sista troende
 export function stepReligion(s: State, h = 1) { // h: timmarna sedan sist (TAKTER)
