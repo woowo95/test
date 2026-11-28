@@ -1,5 +1,9 @@
 # Väntande tester
 
+## System 15.1 (Rättningar från spelgranskningen), commit fc4df13a på varld
+
+- Körs nu i sju testchattar i molnet: scenarierna i fyra delar, `npm test`, `npm run kedja -- "npm run -s likhet" "npm run -s samma"` och `npm run balans -- 24 35`. Sedan nytt facit, och 15.1 publiceras.
+
 ## Steg 11.1.69 Gånganimationen (görs från MacBooken, med Mac minin)
 
 - Bilden avgör redan själv om någon går (riktning() och stalle() i ui/manniskor.ts, sedan steg 10.2.55): benen rör sig när personens plats i bilden (platsAv, utan knuffarna) flyttat sig mer än 1e-4 rutor sedan förra bilden. Ändå syns folk gå på stället.
