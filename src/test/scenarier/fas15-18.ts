@@ -1,6 +1,7 @@
 // Scenarier för fas 15, grupp 18 (steg 15.1.164–175).
 import * as SIM from '../../sim';
-import { SCENARIER } from './hjalp';
+import { SCENARIER, testBy } from './hjalp';
+import { harOver } from '../../sim/marknad';
 import { foretagBy } from './fas14';
 
 SCENARIER.forstagang = {
@@ -34,6 +35,30 @@ SCENARIER.gastutan = {
     return [
       [`gästen utan köp får omdömet FRYKTE.utan (${utan.v}), som i ryktet (${ryktet})`, utan.v === SIM.FRYKTE.utan && ryktet === SIM.FRYKTE.utan],
       [`relationen sjunker hälften så mycket utan köp (${utan.inst} mot ${dalig.inst})`, utan.inst < 0 && dalig.inst < utan.inst && Math.abs(utan.inst * 2 - dalig.inst) <= 1],
+    ];
+  },
+};
+
+SCENARIER.marknadover = {
+  text: 'Steg 15.1.173: marknaden frågar samma sak som bytet. Den som räknas som att ha mat över på marknaden (harOver med overOf) kan också byta bort den där, och den som inte räknas så kan det inte',
+  kor: () => {
+    const prov = (extra: number) => {
+      const s = SIM.cloneState(testBy(25)); s.marknad = undefined; s.foretag = [];
+      const folk = SIM.living(s).filter(q => !q.gast && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && SIM.kanGa(q));
+      const p = folk[0], g = folk.find(q => q !== p && !SIM.familjOf(s, p.id).includes(q) && !SIM.osams(s, q, p) && !SIM.osams(s, p, q))!, b = SIM.brukAv('mat').behov!();
+      for (const k of b.slag) SIM.setAmount(s, k, 0); // ingen mat i byn: p saknar, och bara grannen har
+      p.hunger = 0.2; SIM.laggIn(s, 'silver', 40, p.id);
+      const n = Math.max(1, Math.ceil(b.kvar(s, g) + b.minst + extra)); SIM.put(s, 'torrkott', n, { [g.id]: n });
+      p.bruk = g.bruk = undefined; g.x = p.x + 1; g.y = p.y;
+      const saknar = SIM.saknarNu(s, p).includes('mat'), har = harOver(s, g, p, 'mat');
+      const fore = SIM.ownFor(s, p, b); SIM.bytenMellan(s, p, g); const fick = SIM.ownFor(s, p, b) > fore + 1e-9;
+      return { saknar, har, fick, n, over: SIM.overOf(s, g, b, p) };
+    };
+    const ja = prov(1), nej = prov(-2);
+    return [
+      [`den som saknar mat saknar den (${ja.saknar}, ${nej.saknar})`, ja.saknar && nej.saknar],
+      [`med ${ja.n} torrkött har grannen mat över på marknaden, och bytet blir av (${ja.har}, ${ja.fick})`, ja.har && ja.fick],
+      [`med ${nej.n} torrkött har grannen inget över, och inget byte blir av (${nej.har}, ${nej.fick})`, !nej.har && !nej.fick],
     ];
   },
 };

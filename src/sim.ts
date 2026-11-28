@@ -157,6 +157,7 @@ export * from './sim/foretagsgast';
 export * from './sim/verksamheter';
 export * from './sim/stangning';
 export * from './sim/marknad';
+export { harOver } from './sim/utlysa'; // marknad.ts har en egen harOver (steg 15.1.173), som scenarierna läser därifrån
 export * from './sim/kopbuffert';
 export * from './sim/varde';
 export * from './sim/uppdrag';
