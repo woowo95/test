@@ -1288,7 +1288,7 @@ SCENARIER.handelsko = {
     h.varor = [{ k, n: 2 }]; h.silver = 20;
     const hk = SIM.klanById(s, SIM.hp(s, h).gast!.klan); if (hk) SIM.sattKlanPris(s, hk, { [k]: 1, skinn: 1 }); // (klanens priser som grundvärdet: kön prövas, inte priset)
     SIM.hp(s, h).skill.handel = 0; // (en ovan handlare: det prövade beror inte på vem som kom)
-    SIM.put(s, 'skinn', 6, { [a.id]: 6 }); for (const p of [a, b]) SIM.put(s, 'silver', 20, { [p.id]: 20 }); // b har bara silver: inget att sälja, så det enda b vill är köttet
+    SIM.put(s, 'skinn', 12, { [a.id]: 12 }); SIM.put(s, 'silver', 20, { [b.id]: 20 }); // b har bara silver: inget att sälja, så det enda b vill är köttet (a har inget silver: den som har silver betalar med det först, steg 15.1.29, och här prövas köpet med egna saker)
     const uppgift = (p: Person, v: Handla) => handlaUppgift(s, p, v, false);
     const va = SIM.handlaVal(s, a)!; uppgift(a, va);
     const vb = SIM.handlaVal(s, b)!; uppgift(b, vb);
@@ -1552,7 +1552,7 @@ SCENARIER.forhandling = {
     h.varor = [{ k, n: 2 }, { k: 'rep', n: 3 }]; h.silver = 20;
     const hk = SIM.klanById(s, SIM.hp(s, h).gast!.klan); if (hk) SIM.sattKlanPris(s, hk, { [k]: 1, rep: 1, skinn: 1 }); // (klanens priser som grundvärdet: förhandlingen prövas, inte priset)
     SIM.hp(s, h).skill.handel = 0; // (en ovan handlare: det prövade beror inte på vem som kom)
-    for (const p of [a, b]) { SIM.put(s, 'skinn', 6, { [p.id]: 6 }); SIM.put(s, 'silver', 20, { [p.id]: 20 }); }
+    for (const p of [a, b]) SIM.put(s, 'skinn', 12, { [p.id]: 12 }); // (inget silver: den som har silver betalar med det först, steg 15.1.29, och här prövas förhandlingen med varor)
     const aff = () => s.handlare?.affar;
     const uppgift = (p: Person, v: Handla) => { handlaUppgift(s, p, v); return v; };
     const v1 = uppgift(a, SIM.handlaVal(s, a)!);
