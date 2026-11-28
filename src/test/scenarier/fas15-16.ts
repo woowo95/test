@@ -58,3 +58,34 @@ SCENARIER.radstyrka = {
     ];
   },
 };
+
+SCENARIER.radvapen = {
+  text: 'Steg 15.1.153: anfallarna rustas efter hembyn. Ett gäng från en by med vapensmide bär svärd och järnskydd och är få; ett gäng från en by utan järn bär sten- och träredskap och är fler. Krönikan säger hur gänget var rustat',
+  kor: () => {
+    const prova = (tek: string[]) => {
+      const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+      const r = vl.rader!.find(x => SIM.lever(vl, x) && x.sort === 'by')!;
+      Object.assign(r, { tek }); Object.assign(r.tal, { folk: 200, styrka: 150, kraft: 0, rikedom: 200 * 600 });
+      SIM.skrivHuvudRad(s);
+      const h = SIM.radNr(vl, vl.huvud)!;
+      const hv = SIM.radVaror(h) as Record<string, number>; for (const g in hv) hv[g] = 0; h.tal.mat = 0; // inget att bära hem: storleken är styrkan som behövs
+      const n = SIM.flockStorlek(r, 0, h);
+      const f = SIM.radKommer(s, r.syn, n, undefined, undefined, r), folk = SIM.rovarna(s, f);
+      const bar = folk.map(p => SIM.gastTingOf(s, p).map(t => t.k));
+      return { n, folk: folk.length, bar, sv: folk.reduce((a, p) => a + SIM.stridsvarde(s, p), 0) / Math.max(1, folk.length), varld: SIM.radVarde(r), s, f };
+    };
+    const jarn = prova(SIM.TEKNIK.map(t => t.id)), sten = prova(['kniv', 'yxa', 'fiskespjut']);
+    const har = (b: string[][], k: string) => b.filter(x => x.includes(k)).length;
+    const JARN = ['svard', 'jarnyxa', 'jarnspjut', 'jarnkniv', 'ringbrynja_jarn', 'jarnhjalm_jarn', 'jarnskold'];
+    // krönikan: en strid med järngänget
+    const text = SIM.rustatText(SIM.rovarna(jarn.s, jarn.f).map(p => SIM.personKampe(jarn.s, p, 0, 1, 0, 0)));
+    return [
+      [`järngänget (${jarn.n}) bär svärd (${har(jarn.bar, 'svard')}) och järnskydd (${jarn.bar.filter(b => b.some(k => k === 'ringbrynja_jarn' || k === 'jarnhjalm_jarn')).length})`, har(jarn.bar, 'svard') >= jarn.n / 2 && jarn.bar.filter(b => b.some(k => k === 'ringbrynja_jarn' || k === 'jarnhjalm_jarn')).length >= jarn.n / 2],
+      [`några i järngänget skjuter med båge eller slunga (${har(jarn.bar, 'bage') + har(jarn.bar, 'slunga')})`, har(jarn.bar, 'bage') + har(jarn.bar, 'slunga') > 0],
+      [`stengänget (${sten.n}) bär inget järn (${sten.bar.flat().filter(k => JARN.includes(k)).length}) och har yxor eller spjut (${sten.bar.filter(b => b.some(k => k === 'yxa' || k === 'fiskespjut' || k === 'flintspjut')).length})`, !sten.bar.flat().some(k => JARN.includes(k)) && sten.bar.filter(b => b.some(k => k === 'yxa' || k === 'fiskespjut' || k === 'flintspjut')).length >= sten.n / 2],
+      [`järngänget är färre (${jarn.n} mot ${sten.n})`, jarn.n < sten.n],
+      [`gängets stridsvärde följer det världen räknade med (järn ${SIM.kortTal(jarn.sv)} mot ${SIM.kortTal(jarn.varld)}, sten ${SIM.kortTal(sten.sv)} mot ${SIM.kortTal(sten.varld)})`, jarn.sv > sten.sv * 1.5 && [jarn, sten].every(g => g.sv / g.varld > 0.7 && g.sv / g.varld < 1.7)], // rövarnas kropp (ROVARE) och kläderna mot kylan gör dem lite starkare än mittersta kroppen
+      [`krönikan säger hur gänget var rustat: ${text}`, /svärd/.test(text) && /järnhjälm|ringbrynja/.test(text)],
+    ];
+  },
+};

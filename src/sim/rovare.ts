@@ -1,4 +1,5 @@
-import { antal, lista, och, stor, tal } from './ord';
+import { antal, lista, och, sakOrd, stor, tal } from './ord';
+import { kladAv, PLAGG } from './klader';
 import { kartaBorta, larOrt, rovareSedda, gastensPlatser } from './ort';
 import { SKRIFT } from './skriftTal';
 import { runtByn, utanforByn } from './omrade';
@@ -193,7 +194,11 @@ export function rovarnaKommer(s: State, tvinga: number, direkt?: boolean, klan?:
     s.people.push(p);
     return p.id;
   });
-  if (ur?.sort === 'rovarlager') LAGERKROK.bevapna(s, ur, folk.map(id => gastAv(s, id)!)); // lägrets egna vapen och skydd (steg B.70)
+  // lägrets egna vapen och skydd (steg B.70); ett gäng från en by i världen rustas efter hembyn (steg 15.1.153): byn som skickade det,
+  // annars klanens by
+  const hemby = ur ?? (k?.rad !== undefined && s.varld ? radNr(s.varld, k.rad) : undefined);
+  if (hemby?.sort === 'rovarlager') LAGERKROK.bevapna(s, hemby, folk.map(id => gastAv(s, id)!));
+  else if (hemby) LAGERKROK.bevapnaBy(s, hemby, folk.map(id => gastAv(s, id)!));
   folk.forEach((id, j) => { const g = gastAv(s, id)?.gast; if (g) g.fil = j - (folk.length - 1) / 2; }); // var sin fil bredvid de andra (steg 10.2.25)
   const nr = s.rovarNr = (s.rovarNr ?? 0) + 1;
   // testläget (steg 9.2.103): gänget rastar ROVARE.testVanta minuter i stället för den vanliga väntan
@@ -1111,6 +1116,19 @@ function overtygad(s: State, f: Rovarflock, k: Kampe, p: Person) {
   k.st.mod += o; k.modNu = Math.min(1, k.modNu + o / 20 * STRID.modMod);
 }
 MED.rovare = (s, e, k, p) => { const f = rovarFlockar(s).find(q => q.id === e.flock); if (f && !p.gast) overtygad(s, f, k as Kampe, p); };
+// hur gänget var rustat (steg 15.1.153): vapnen de flesta bar och det skydd några hade, för krönikan
+export function rustatText(rov: Pick<Kampe, 'vapen' | 'klader' | 'skold' | 'skoldJarn'>[]) {
+  if (!rov.length) return '';
+  const vap = new Map<string, number>();
+  for (const k of rov) if (k.vapen !== 'hand') vap.set(k.vapen, (vap.get(k.vapen) ?? 0) + 1);
+  const skydd = new Map<string, number>();
+  for (const k of rov) { for (const c of k.klader) { const r = kladAv(c), pl = r && PLAGG[r.plagg as keyof typeof PLAGG]; if (pl && ['rustning', 'hjalm', 'jarnhjalm', 'ringbrynja'].includes(r!.plagg)) skydd.set(pl.namn.toLowerCase(), (skydd.get(pl.namn.toLowerCase()) ?? 0) + 1); } if (k.skold) skydd.set(k.skoldJarn ? 'järnsköld' : 'sköld', (skydd.get(k.skoldJarn ? 'järnsköld' : 'sköld') ?? 0) + 1); }
+  const v = [...vap].sort((a, b) => b[1] - a[1]).map(([k, m]) => { const [, en, fler] = sakOrd(k); return m > 1 ? fler : en; });
+  const sk = [...skydd].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  const de = rov.length > 1 ? 'De' : 'Hen';
+  if (!v.length && !sk.length) return `${de} hade inga vapen. `;
+  return `${de} bar ${v.length ? och(v) : 'inga vapen'}${sk.length ? `${v.length ? ', och ' : ' men '}${rov.length > 1 ? 'några hade ' : ''}${och(sk)}` : ''}. `;
+}
 EFTER.rovare = (s, e, vinnare, strid) => {
   const g = strid as KartStrid, st = g.st, f = rovarFlockar(s).find(q => q.id === e.flock);
   const bybor = st.kampar.filter(k => k.sida === 0).map(k => ({ k, p: k.pid !== undefined ? byId(s, k.pid) : undefined })), rov = st.kampar.filter(k => k.sida === 1);
@@ -1136,7 +1154,7 @@ EFTER.rovare = (s, e, vinnare, strid) => {
   if (forst) blodas(s, forst.x, forst.y, 'jakt', 1);
   const namn = lista(bybor.map(b => b.k.namn)), n = rov.length;
   const dodaBybor = bybor.filter(b => b.k.lage === 'dod').map(b => b.k.namn);
-  const text = `${namn} slogs med ${tal(n)} rövare ${f ? fran(s, f) : ''} ${f?.anfall ? 'i byn' : 'vid byn'}. ${doda ? `${stor(tal(doda))} rövare dog. ` : ''}${dodaBybor.length ? `${lista(dodaBybor)} dog. ` : ''}${vinnare === 1 ? `${n > 1 ? 'Rövarna' : 'Rövaren'} vann.` : vinnare === 0 ? `${n > 1 ? 'Rövarna' : 'Rövaren'} flydde.` : 'Ingen vann.'}${svara.length ? ` ${lista(svara)} skadades svårt.` : ''}`.replace(/ +/g, ' ');
+  const text = `${namn} slogs med ${tal(n)} rövare ${f ? fran(s, f) : ''} ${f?.anfall ? 'i byn' : 'vid byn'}. ${rustatText(rov)}${doda ? `${stor(tal(doda))} rövare dog. ` : ''}${dodaBybor.length ? `${lista(dodaBybor)} dog. ` : ''}${vinnare === 1 ? `${n > 1 ? 'Rövarna' : 'Rövaren'} vann.` : vinnare === 0 ? `${n > 1 ? 'Rövarna' : 'Rövaren'} flydde.` : 'Ingen vann.'}${svara.length ? ` ${lista(svara)} skadades svårt.` : ''}`.replace(/ +/g, ' ');
   const ids = bybor.map(b => b.k.pid!).filter(x => x !== undefined), plats = forst ? { x: Math.floor(forst.x), y: Math.floor(forst.y) } : undefined;
   if (harSlagits(st)) { log(s, text, 'world', ids); notis(s, 'strid', text, ids, plats); kronika(s, text, 'rovare'); } // (utan ett slag är det ingen strid att skriva om, steg B.18)
   if (f && vinnare === 0) for (const r of rovarna(s, f)) gr(r).flytt = true; // den slagna flocken flyr

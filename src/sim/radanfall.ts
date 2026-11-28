@@ -23,6 +23,7 @@ export const BYANFALL = balans('byanfall', {
   minst: 3, // ... och minst så många (har byn färre anfaller den inte)
   hemma: 1.5, // försvararnas skydd: de slåss hemma, vid husen och med det de har till hands
   utrDel: 1.5, // utrustningen var och en har (steg 15.1.152): vapen och skydd värda högst så många gånger rikedomen per person
+  kastDel: 0.3, // så stor del av ett gäng från en by som kan göra bågar eller slungor bär dem (steg 15.1.153)
   antalVikt: 1.2, // en flocks styrka är värdet per person gånger antalet upphöjt till detta: många kan gå flera mot en
   dod: 0.03, // så stor del av förlorarna dör (de flesta flyr eller skadas, som i testbyarnas strider med rövare)
   dodVinnare: 0.005, // så stor del av vinnarna dör
@@ -39,11 +40,11 @@ export const BYANFALL = balans('byanfall', {
 // tekniker kan göra och byns rikedom per person räcker till (STRIDSVARDE i strid.ts). En flocks styrka är värdet per person gånger
 // antalet upphöjt till BYANFALL.antalVikt, och chansen att vinna är den egna styrkan i kvadrat delad med båda sidornas
 // kan byn göra saken k: tekniken finns, och det den görs av kan byn också göra (eller samla utan teknik)
-function kanGora(tek: readonly string[], k: string, djup = 0): boolean {
+export function byKanGora(tek: readonly string[], k: string, djup = 0): boolean {
   const sk = SAKER[k]?.skaffa as { tek?: string; av?: Record<string, number> } | undefined;
   if (!sk) return false;
   if (sk.tek && !tek.includes(sk.tek)) return false;
-  return djup > 4 || Object.keys(sk.av ?? {}).every(m => !SAKER[m]?.skaffa || kanGora(tek, m, djup + 1));
+  return djup > 4 || Object.keys(sk.av ?? {}).every(m => !SAKER[m]?.skaffa || byKanGora(tek, m, djup + 1));
 }
 export interface RadUtr { vapen: Vapen; klader: string[]; skold?: true; skoldJarn?: true }
 const SKOLDAR = ['jarnskold', 'skold'];
@@ -59,21 +60,28 @@ export function utrustningFor(tek: readonly string[], budget: number): RadUtr {
   if (c) return c;
   const sv = (u: RadUtr) => stridsvardeAv({ st: MITTKROPP, ...u } as SvKampe);
   let kvar = b, u: RadUtr = { vapen: 'hand', klader: [] };
-  for (const v of MANNISKOVAPEN) if (v !== 'hand' && kanGora(tek, v) && grundvarde(v) <= b && sv({ ...u, vapen: v }) > sv(u)) u = { ...u, vapen: v };
+  for (const v of MANNISKOVAPEN) if (v !== 'hand' && byKanGora(tek, v) && grundvarde(v) <= b && sv({ ...u, vapen: v }) > sv(u)) u = { ...u, vapen: v };
   kvar -= u.vapen === 'hand' ? 0 : grundvarde(u.vapen);
   const plats = (k: string) => { const r = kladAv(k); return r ? (PLAGG as Record<string, { plats: string }>)[r.plagg]?.plats : k; };
   for (;;) {
     let bast: RadUtr | undefined, bv = 0, kost = 0;
     const prova = (n: RadUtr, k: string) => { const g = grundvarde(k), d = (sv(n) - sv(u)) / Math.max(1, g); if (g <= kvar && d > bv) { bv = d; bast = n; kost = g; } };
-    for (const k of Object.keys(SKYDD)) if (!u.klader.includes(k) && kanGora(tek, k)) prova({ ...u, klader: [...u.klader.filter(q => plats(q) !== plats(k)), k] }, k);
-    if (!u.skold && !TVA_HAND.has(u.vapen)) for (const k of SKOLDAR) if (kanGora(tek, k) && (k !== 'jarnskold' || kanGora(tek, 'jarn'))) prova({ ...u, skold: true, ...(k === 'jarnskold' ? { skoldJarn: true } : {}) }, k);
+    for (const k of Object.keys(SKYDD)) if (!u.klader.includes(k) && byKanGora(tek, k)) prova({ ...u, klader: [...u.klader.filter(q => plats(q) !== plats(k)), k] }, k);
+    if (!u.skold && !TVA_HAND.has(u.vapen)) for (const k of SKOLDAR) if (byKanGora(tek, k) && (k !== 'jarnskold' || byKanGora(tek, 'jarn'))) prova({ ...u, skold: true, ...(k === 'jarnskold' ? { skoldJarn: true } : {}) }, k);
     if (!bast) break;
     u = bast; kvar -= kost;
   }
   m.set(b, u);
   return u;
 }
-export const radUtrustning = (r: VarldRad) => utrustningFor(r.tek, r.tal.rikedom / Math.max(1, r.tal.folk) * BYANFALL.utrDel);
+export const radBudget = (r: VarldRad) => r.tal.rikedom / Math.max(1, r.tal.folk) * BYANFALL.utrDel;
+export const radUtrustning = (r: VarldRad) => utrustningFor(r.tek, radBudget(r));
+// det bästa vapnet att kasta eller skjuta med som byn r kan göra och har råd med (bågen, slungan), om något
+export function radKastvapen(r: VarldRad): Vapen | undefined {
+  const b = radBudget(r), sv = (v: Vapen) => stridsvardeAv({ st: MITTKROPP, vapen: v, klader: [] });
+  return MANNISKOVAPEN.filter(v => v !== 'hand' && SAKER[v] && (VAPEN_KAST.has(v)) && byKanGora(r.tek, v) && grundvarde(v) <= b).sort((a, c) => sv(c) - sv(a))[0];
+}
+const VAPEN_KAST = new Set<string>(['bage', 'slunga']);
 // stridsvärdet per person i byn r
 export const radVarde = (r: VarldRad) => stridsvardeAv({ st: MITTKROPP, ...radUtrustning(r) } as SvKampe);
 // försvararna: de som kan slåss

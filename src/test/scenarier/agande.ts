@@ -2925,7 +2925,7 @@ SCENARIER.rovarstrid = {
     let mitt = false, nara = true, slag = false, kom = false;
     korTills(s, () => !g || !!g.st.slut, 900, () => {
       if (!g!.st.slut) mitt = true;
-      for (const r of SIM.rovarna(s, f)) { const k = g!.st.kampar.find(q => q.pid === r.id); if (k && !g!.fri?.includes(r.id) && !['flykt', 'ger', 'borta', 'dod'].includes(k.lage) && (r.x !== k.x || r.y !== k.y || (g!.st.t < 60 && Math.hypot(r.x - m.x, r.y - m.y) > SIM.ROVARE.moter + 4))) nara = false; } // (den som flyr springer mot kanten, och den som backar undan drar striden med sig efter en stund)
+      for (const r of SIM.rovarna(s, f)) { const k = g!.st.kampar.find(q => q.pid === r.id); if (k && !g!.fri?.includes(r.id) && !['flykt', 'ger', 'borta', 'dod'].includes(k.lage) && (r.x !== k.x || r.y !== k.y || (g!.st.t < 60 && !((SIM.VAPEN[k.vapen] as { kast?: { reserv?: true } }).kast && !(SIM.VAPEN[k.vapen] as { kast?: { reserv?: true } }).kast?.reserv) && Math.hypot(r.x - m.x, r.y - m.y) > SIM.ROVARE.moter + 4))) nara = false; } // (den som skjuter eller kastar håller avståndet: gänget rustas efter hembyn, steg 15.1.153) // (den som flyr springer mot kanten, och den som backar undan drar striden med sig efter en stund)
       if (g!.st.kampar.some(k => k.pid === c.id)) kom = true;
       if (g!.st.logg.some(r => (r.h === 'traff' || r.h === 'miss' || r.h === 'tog') && r.a !== undefined && r.b !== undefined && g!.st.kampar.find(k => k.id === r.a)!.sida !== g!.st.kampar.find(k => k.id === r.b)!.sida)) slag = true;
     });
