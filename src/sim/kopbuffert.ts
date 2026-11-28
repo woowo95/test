@@ -59,8 +59,9 @@ export function kopval(s: State, p: Person, id: 'mat' | 'ved'): Kopval | undefin
   const vill = new Map<string, number>();
   for (const k of b.slag) { const v = vilMangd(s, p, k); if (Math.floor(v + 1e-9) >= 1) vill.set(k, v); }
   let M: ReturnType<typeof personPart> | undefined;
-  if (vill.size) for (const g of living(s)) {
-    if (g === p || g.gast || (g.task && SOVER.has(g.task.act)) || osams(s, g, p)) continue;
+  // grannarna gås igenom också när p inte vill ha något: osams skapar relationen (getRel) med slumpen när två inte mötts förut
+  for (const g of living(s)) {
+    if (g === p || g.gast || (g.task && SOVER.has(g.task.act)) || osams(s, g, p) || !vill.size) continue;
     const d = Math.hypot(g.x - p.x, g.y - p.y);
     if (d > KOPBUFFERT.langd) continue;
     const over = grannensOver(s, g, b, p);
