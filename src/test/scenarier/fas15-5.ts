@@ -1,4 +1,6 @@
 // Scenarier för fas 15, grupp 5 av 15.1.
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import * as SIM from '../../sim';
 import { START } from '../kor';
 import { SCENARIER, byggKlart, byggare, klockan, kor, setMat, tandEld, tandOchFlinta, testBy } from './hjalp';
@@ -135,6 +137,38 @@ SCENARIER.kronikaar = {
       [`ingen rad om tron börjar med året (${tro.find(medAr) ?? tro[tro.length - 1] ?? '-'})`, !tro.some(medAr) && !tro.some(t => /^Med .*, år \d/.test(t))],
       [`motgången står i krönikan (${mg[0] ?? '-'})`, mg.length > 0],
       [`raden om motgången börjar inte med året`, mg.length > 0 && !mg.some(medAr)],
+    ];
+  },
+};
+
+// kommentarerna i mallens stilmall och skript som inte stängs: (radnummer, början)
+export function oppnaKommentarer(html: string): { rad: number; text: string }[] {
+  const ut: { rad: number; text: string }[] = [];
+  for (const m of html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)) {
+    const css = m[1]!, bas = m.index! + m[0].indexOf(css);
+    let i = 0;
+    for (;;) {
+      const a = css.indexOf('/*', i);
+      if (a < 0) break;
+      const b = css.indexOf('*/', a + 2), nasta = css.indexOf('/*', a + 2);
+      if (b < 0 || nasta >= 0 && nasta < b) ut.push({ rad: html.slice(0, bas + a).split('\n').length, text: css.slice(a, a + 60).replace(/\s+/g, ' ') });
+      if (b < 0) break;
+      i = b + 2;
+    }
+  }
+  return ut;
+}
+
+SCENARIER.mallkommentar = {
+  text: 'Steg 15.1.52: varje kommentar i mallens stilmall (template.html) stängs, så att reglerna efter den gäller: sedernas vågar visar symbolen vid sina egna pilar och tal. Vakten larmar när en kommentar inte stängs',
+  kor: () => {
+    const html = readFileSync(fileURLToPath(new URL('../../template.html', import.meta.url)), 'utf8');
+    const oppna = oppnaKommentarer(html);
+    const prov = oppnaKommentarer('<style>a { b: 1; } /* stängd */ c { d: 2; } /* öppen\ne { f: 3; } /* nästa */</style>');
+    return [
+      [`vakten hittar en kommentar som inte stängs (${prov.map(x => `rad ${x.rad}`).join(', ') || 'ingen'})`, prov.length === 1 && prov[0]!.rad === 1],
+      [`varje kommentar i mallens stilmall stängs (${oppna.map(x => `rad ${x.rad}: ${x.text}`).join('; ') || 'alla'})`, oppna.length === 0],
+      ['regeln efter den förra öppna kommentaren läses (.sedvag .sedord:last-child)', /\*\/\s*\n\.sedvag \.sedord:last-child/.test(html)],
     ];
   },
 };

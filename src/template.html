@@ -320,7 +320,7 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 /* köpmansvågen (steg 6.9.9): orden vid ändarna och vågen ritad i punkter i mitten (vagSvg i ui/framsteg.ts) */
 .sedvag { display: grid; grid-template-columns: minmax(min-content, 1fr) auto minmax(min-content, 1fr); align-items: center; gap: 6px; margin: 2px 0; }
 .sedvag .sedord { font-size: 15px; line-height: 1.15; min-width: 0; hyphens: manual; overflow-wrap: normal; } /* hela ord på en rad, bara de avsedda delningarna (steg 13.10.42) */
-.panelkropp { container-type: inline-size; } .sedvag .vagliten { display: none; } @container (max-width: 320px) { .sedvag .vagstor { display: none; } .sedvag .vagliten { display: block; } } /* vågen krymper i en smal ruta
+.panelkropp { container-type: inline-size; } .sedvag .vagliten { display: none; } @container (max-width: 320px) { .sedvag .vagstor { display: none; } .sedvag .vagliten { display: block; } } /* vågen krymper i en smal ruta (kommentaren stängd i steg 15.1.52) */
 .sedvag .sedord:last-child { text-align: right; }
 .sedvag .vag { display: inline-flex; align-items: center; gap: 2px; }
 .sedformat { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; margin-top: 4px; font-size: 12px; } /* det som format seden, under vågen (steg 9.2.5) */
