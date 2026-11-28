@@ -1007,9 +1007,8 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
   }
   // hämnden som letat igenom alla hus utan att hitta den de söker ger sig av (letaSteg, steg 8.8.5)
   if (f.gor === 'letar' && f.anfaller && !f.klar && !f.letar?.length) letaSteg(s, f, folk);
-  const lagen: Record<string, number> = {};
   for (const r of fo) {
-    if (iStriden(s, f, r)) { lagen.sla = (lagen.sla ?? 0) + 1; gr(r).gor = 'sla'; gr(r).varStrid = true; continue; } // striden på kartan för hen
+    if (iStriden(s, f, r)) { gr(r).gor = 'sla'; gr(r).varStrid = true; continue; } // striden på kartan för hen
     const g = gr(r);
     if (g.varStrid && !g.flytt) { const st = flockStrid(s, f); if (!st || st.fri?.includes(r.id)) { if (st?.fri?.includes(r.id)) g.flytt = true; g.varStrid = undefined; } } // den som flytt ur striden flyr
     const narmast1 = (l: Person[]) => l.sort((a, b) => avst(a, r) - avst(b, r))[0];
@@ -1035,14 +1034,15 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
     const bytt = bast !== g.gor;
     if (bytt) { g.gor = bast; g.vx = undefined; g.vy = undefined; g.taTid = 0; }
     if (bytt || nytt) g.gorTill = s.now + mellan(s, ROVARE.rastSek) * SEC; // valet varar en stund, också när rövaren väljer samma igen
-    lagen[bast] = (lagen[bast] ?? 0) + 1;
     ROVARHANDLINGAR[bast].gor(c);
     if (bast === 'sla') g.varStrid = true;
   }
   // flockens läge, för bilden och texterna: det de flesta gör
   const kvar = rovarna(s, f);
   if (kvar.length) { f.x = kvar.reduce((a, r) => a + r.x!, 0) / kvar.length; f.y = kvar.reduce((a, r) => a + r.y!, 0) / kvar.length; } else count(s, 'rovarBorta'); // flockens plats är mitten av gänget (steg 10.2.25)
-  const mest = (ks: string[]) => ks.reduce((a, k) => a + (lagen[k] ?? 0), 0);
+  // läget räknas ur dem som är kvar i flocken och vad de gör nu (steg 15.1.57), inte ur alla handlingar i slaget: den som just gått
+  // ut ur kartan räknas inte, så att läget inte blinkar till "flyr" medan de andra slåss
+  const mest = (ks: string[]) => kvar.filter(r => ks.includes(gr(r).gor as string)).length;
   if ((f.gor as string) !== 'letar' || f.klar) f.gor = !kvar.length || mest(['fly', 'baraHem']) >= kvar.length ? 'flyr' : flockStrid(s, f) ? 'slass' : mest(['ta']) ? 'rotar' : f.anfaller ? 'kommer' : f.vantat ? 'vantar' : 'kommer';
 }
 // ---------- fångarna (steg 11.12.6, "Fångar från striden" i fliken Människan) ----------
