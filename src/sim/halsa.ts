@@ -50,7 +50,7 @@ import { notis } from './notiser';
 import { tingOf } from './agande';
 import { SAKER } from './saker';
 import { forlossBradska } from './forlossning';
-import { hotKrok, nyttILarmet, tryggast, vagMedHot } from './roller';
+import { LARMROLL, hotKrok, nyttILarmet, tryggast, vagMedHot } from './roller';
 import { toaNara } from './smuts';
 import { kn, learnK } from './kunskap';
 import { fangeMal } from './rovare'; // fången bärs till fängelset (steg 11.12.6)
@@ -111,6 +111,7 @@ export const HALSA = balans('halsa', {
   vardFel: 0.15, // man trycker på och lägger förband på sår av minst den här graden
   vardMin: 5, // minuter att trycka på såren, lägga förband och rengöra
   vardR: 30, // man går för att vårda den som är högst så här många rutor bort ...
+  vardBort: 10, // den som vårdar sig själv när rövarna är nära prövar också platserna så här många rutor bort åt alla håll (steg 15.1.60)
   ropR: 45, ropTim: 1, // ... och den som ropat på hjälp den senaste timmen hörs så här långt (steg 9.5.16)
   hamtaMarg: 1.5, hotTim: 3, /* hotet på vägen till lagret (0–1) väger så många timmars omväg (steg B.48) */ // vårdaren hämtar förband på vägen bara om tiden kvar räcker till vägen gånger detta (steg 9.5.16)
   ontGang: 0.3, // full smärta gör gången så här mycket långsammare (steg 9.5.12)
@@ -785,12 +786,24 @@ function stannaHos(s: State, g: Person, q: Person) {
 }
 // vården som väljs (val.ts): sjalv = sina egna sår (före det mesta), annars den närmaste andra som behöver vård och som ingen
 // annan redan går till. Den som vårdar någon annan är vuxen, kan gå och har händer som duger
+// platsen där den som vårdar sig själv gör det (steg 15.1.60): där hen står, men vet hen om rövare den tryggaste av platsen där hen står,
+// en bit bort (HALSA.vardBort rutor åt alla håll), vid elden och i sängen. Faran mäts på platsen som för de gömda (hotKrok.plats, steg
+// 15.1.58) och väger som vägen dit (LARMROLL.hotVikt)
+function sjalvPlats(s: State, p: Person) {
+  const har = { x: p.x, y: p.y };
+  if (!p.larm?.rovare) return har;
+  const e = eldPlats(s), bed = bedFor(s, p), platser = [har, freeNear(s, e.x + 0.5, e.y + 1.6), ...(bed ? [bed] : [])];
+  for (let i = 0; i < 8; i++) platser.push(freeNear(s, p.x + Math.cos(i * Math.PI / 4) * HALSA.vardBort, p.y + Math.sin(i * Math.PI / 4) * HALSA.vardBort));
+  let bast = har, bd = Infinity;
+  for (const at of platser) { const d = Math.hypot(at.x - p.x, at.y - p.y) + LARMROLL.hotVikt * hotKrok.plats(s, p, at.x, at.y); if (d < bd) { bd = d; bast = at; } }
+  return { x: bast.x, y: bast.y };
+}
 export function vardVal(s: State, p: Person, sjalv: boolean): { spot: { x: number; y: number }; ref: number; why: string; stanna?: boolean } | undefined {
   if (sjalv) {
     if (p.svimmat) return undefined; // den som svimmat kan inte trycka på sitt sår (steg 9.5.17)
     const b = vardBehov(s, p, p);
     if (!b) return undefined;
-    return { spot: { x: p.x, y: p.y }, ref: p.id, stanna: b.blod && stannaHos(s, p, p), why: b.blod ? 'Trycker på sitt sår så att det slutar blöda' : b.rengor ? 'Rengör sitt infekterade sår' : !(p.skador ?? []).length && b.tvatt ? 'Tvättar sig med tvål mot smittan' : b.te && !b.forband ? 'Dricker örtte av rölleka' : 'Lägger mossa på sitt sår' };
+    return { spot: sjalvPlats(s, p), ref: p.id, stanna: b.blod && stannaHos(s, p, p), why: b.blod ? 'Trycker på sitt sår så att det slutar blöda' : b.rengor ? 'Rengör sitt infekterade sår' : !(p.skador ?? []).length && b.tvatt ? 'Tvättar sig med tvål mot smittan' : b.te && !b.forband ? 'Dricker örtte av rölleka' : 'Lägger mossa på sitt sår' };
   }
   if (ageOf(p, s.now) < ALDER.vuxen || !kanGa(p) || handighet(p) < HALSA.vardHand) return undefined;
   // rätten till vård (steg 9.5.9): den närmaste, men sederna och styret flyttar fram somliga (vardRatt)
@@ -836,8 +849,9 @@ export function vardRatt(s: State, p: Person, q: Person) {
   if (p.anst?.arb === 'vard' && p.anst.mal === q.id) x *= 1 + p.anst.w; // den man är anställd att vårda (steg 14.1.4)
   return Math.max(0.1, x);
 }
-// på väg till den skadade, som kanske har flyttat sig (walk i steg.ts)
-export function vardMal(s: State, tk: Task) {
+// på väg till den skadade, som kanske har flyttat sig (walk i steg.ts). Den som vårdar sig själv går till platsen hen valt
+export function vardMal(s: State, p: Person, tk: Task) {
+  if (tk.act === 'varda' && tk.ref === p.id) return;
   const q = byId(s, tk.ref);
   if (q && Math.hypot(q.x - tk.tx, q.y - tk.ty) > 1.5) { const f = freeNear(s, q.x, q.y); tk.tx = f.x; tk.ty = f.y; }
 }

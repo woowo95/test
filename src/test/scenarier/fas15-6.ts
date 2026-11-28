@@ -87,3 +87,30 @@ SCENARIER.gomplats = {
     ];
   },
 };
+
+SCENARIER.flyktvard = {
+  text: 'Steg 15.1.60: den som flytt vårdar sig inte intill fienden. Med ett rövarlarm väljer den som vårdar sig själv den tryggaste platsen (där hen står, en bit bort, vid elden eller i sängen), med faran mätt som för de gömda, och den som flytt med ett sår vårdar sig längre från rövarna än hen stod när hen flydde',
+  kor: () => {
+    const s = rovarBy(11), e = SIM.eldPlats(s), f = rovarGang(s, 2, SIM.freeNear(s, e.x + 24, e.y), { anfaller: true }); ettGang(s, f); f.sedd = s.now;
+    const rov = SIM.rovarna(s, f).map(r => ({ r, x: r.x, y: r.y }));
+    const p = vuxnaI(s)[0]!, fran = SIM.freeNear(s, rov[0].x - 3, rov[0].y);
+    for (const q of SIM.living(s)) if (!q.gast && q !== p) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: s.now + SIM.HOUR, carry: 0, why: 'prov' } as SIM.Task;
+    Object.assign(p, fran); p.task = undefined; p.gavSig = s.now; // hen har just flytt ur striden
+    p.larm = { rovare: { t: s.now, vad: 'rovare', storlek: 2, led: 0, varnat: 1, om: [f.id] } };
+    p.skador = [{ d: 'armV', k: 'skarsar', g: 0.5, b: 1 }];
+    const nara = (at: { x: number; y: number }) => Math.min(...SIM.rovarna(s, f).map(r => Math.hypot(r.x - at.x, r.y - at.y)));
+    const d0 = nara(p), v = SIM.vardVal(s, p, true);
+    let vid: { x: number; y: number } | undefined;
+    korTills(s, () => !!vid || !(p.skador ?? []).some(w => w.b > 0), 300, () => {
+      ettGang(s, f); for (const o of rov) { o.r.x = o.x; o.r.y = o.y; } // gänget står kvar
+      for (const q of SIM.living(s)) if (!q.gast && q !== p) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: s.now + SIM.HOUR, carry: 0, why: 'prov' } as SIM.Task;
+      if (p.task?.act === 'varda' && p.task.phase !== 'go') vid = { x: p.x, y: p.y };
+    });
+    vid ??= { x: p.x, y: p.y };
+    return [
+      [`hen vårdar sig själv (${v?.why ?? 'inget'})`, !!v && v.ref === p.id],
+      [`platsen hen väljer ligger längre från rövarna (${v ? nara(v.spot).toFixed(1) : '-'} rutor) än där hen stod (${d0.toFixed(1)})`, !!v && nara(v.spot) > d0 + 3],
+      [`hen vårdar sig där, längre från rövarna (${nara(vid).toFixed(1)} rutor, såret ${(p.skador ?? []).some(w => w.b > 0) ? 'blöder' : 'blöder inte'})`, nara(vid) > d0 + 3],
+    ];
+  },
+};

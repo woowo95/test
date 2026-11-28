@@ -898,7 +898,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     const tk = p.task!, d = ACTS[tk.act];
     let used: number;
     if (tk.phase === 'go' || tk.phase === 'back') {
-      if ((tk.act === 'varda' && tk.phase === 'go' && !tk.site) || (tk.act === 'vatten' && tk.phase === 'back' && !tk.falt && !tk.ho)) vardMal(s, tk); // den skadade kan ha flyttat sig
+      if ((tk.act === 'varda' && tk.phase === 'go' && !tk.site) || (tk.act === 'vatten' && tk.phase === 'back' && !tk.falt && !tk.ho)) vardMal(s, p, tk); // den skadade kan ha flyttat sig
       const w = walk(s, p, tk, left);
       used = w.used;
       if (tk.bar !== undefined && !barMed(s, p, tk)) { left -= used; continue; } // den som bärs följer med

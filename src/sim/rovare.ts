@@ -485,10 +485,11 @@ hotKrok.plats = (s, p, x, y) => {
   }
   return h;
 };
-// den som gömt sig väljer om när faran på platsen har vuxit mycket sedan hen valde den (steg 15.1.58): gänget har kommit dit
+// den som gömt sig, och den som vårdar sig själv (steg 15.1.60), väljer om när faran på platsen har vuxit mycket sedan hen valde den
+// (steg 15.1.58): gänget har kommit dit
 function farligPlats(s: State, folk: Person[]) {
   for (const q of folk) {
-    const tk = q.task; if (!tk || tk.act !== 'gomma' || tk.hot !== 'rovare') continue;
+    const tk = q.task; if (!tk || !(tk.act === 'gomma' && tk.hot === 'rovare' || tk.act === 'varda' && tk.ref === q.id && !!q.larm?.rovare)) continue;
     const h = hotKrok.plats(s, q, tk.tx, tk.ty);
     if (tk.fara === undefined) tk.fara = h;
     else if (h - tk.fara > ROVARE.gomOm) { avbryt(s, q); q.task = undefined; count(s, 'rovarGomOm'); }
