@@ -2215,7 +2215,7 @@ SCENARIER.loggmallar = {
     const [p, q] = living(t);
     // varje loggmall har minst åtta varianter, och alla blir hela meningar med fälten ifyllda
     const mallar = Object.keys(SIM.BERATTELSER).filter(m => m.startsWith('l_')) as SIM.MallId[];
-    const f = { namn: 'Ask', med: 'Ylva', om: 'Ylva', mot: 'Ylva', vinnare: 'Ylva', orsak: 'efter ett gräl', hen: 'han', honom: 'honom', hans: 'hans', honom2: 'honom', fatt: 'tre harkött', betal: 'sex grenar', varor: 'ett träspjut', vad: 'rå fisk', vadtext: 'vargarna kommer', n: 'fem', lara: 'odla', av: 'Ylva', rykte: 'en lögnare', plats: 'vid stenarna' };
+    const f = { namn: 'Ask', med: 'Ylva', om: 'Ylva', mot: 'Ylva', vinnare: 'Ylva', orsak: 'efter ett gräl', hen: 'han', honom: 'honom', hans: 'hans', honom2: 'honom', fatt: 'tre harkött', betal: 'sex grenar', varor: 'ett träspjut', vad: 'rå fisk', vadtext: 'vargarna kommer', n: 'fem', lara: 'odla', av: 'Ylva', rykte: 'en lögnare', plats: 'vid stenarna', ggr: 'tio gånger', karlek: 'Ylva', yrke: 'jägare', sjukdom: 'förkylningen', fran: 'Ylva', till: 'Bo', bevis: 'stal en yxa' }; // fälten från steg 15.1.117
     const texter = mallar.flatMap(m => (SIM.BERATTELSER[m] as SIM.Variant[]).map(v => SIM.fyll(typeof v === 'string' ? v : v.t, f)));
     const hela = texter.filter(x => /[{}]|undefined|  /.test(x) || !/[.!]$/.test(x));
     // raderna i spelet minns mallen: två blir vänner, någon lär sig, en flinta hittas

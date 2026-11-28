@@ -815,7 +815,7 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
   rusSteg(s, p, dtSec); // berusningen går över (steg 9.6.14, rus.ts); drycken är en vald handling (steg 10.2.34)
   const sjukDod = sjukSteg(s, p, dtSec, p.task?.act === 'sova', !!p.task && !!ACTS[p.task.act].arbete && p.task.phase === 'do', teFaktor(s, p, SJUK.lakeort));
   if (sjukDod) { die(s, p, SJUK_DOD[sjukDod]); return true; }
-  if (p.sjuk && svartSjukNu(p, s.now) && !p.svartSjuk) { loggBer(s, 'l_svartSjuk', p.id, { namn: p.name, feber: !!SJUKDOMAR[p.sjuk.k].foljd.feber }, 'world', [p.id]); p.svartSjuk = 1; } // svårt sjuk: när sjukdomen är så svår att hen lägger sig (steg 12.1.46); ett tecken när hen blir frisk (steg 4.1.2.1)
+  if (p.sjuk && svartSjukNu(p, s.now) && !p.svartSjuk) { loggBer(s, 'l_svartSjuk', p.id, { namn: p.name, feber: !!SJUKDOMAR[p.sjuk.k].foljd.feber, forkyld: p.sjuk.k === 'forkylning', sjukdom: SJUKDOMAR[p.sjuk.k].bf }, 'world', [p.id]); p.svartSjuk = 1; } // svårt sjuk: när sjukdomen är så svår att hen lägger sig (steg 12.1.46); ett tecken när hen blir frisk (steg 4.1.2.1)
   p.health -= dtSec / HOUR_S * skorbjugg(p); // brist på vitaminer (steg 2.6.2)
   if (!p.sjuk) {
     // förkylningen av kyla, väta och trötthet (steg 9.5.1): oftare i istiden. Den svåra sjukdomen loggas när den kommit långt (sjukSvar nedan)
@@ -1199,9 +1199,9 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
       if (plockSlag === 'rotter') { bar('rotter', rd?.rotter ?? 1); count(s, 'samlat_rotter', 1); gjort(s, p, 'samlat', 1); }
       else if (plockSlag === 'sten') bar('sten', 1);
       else if (plockSlag === 'flinta') { // flintan vid stenarna eller i sanden: bara här hittas flinta, och då står det i loggen (steg 12.1.55)
-        const ff = flintFactor(s, tk.tx, tk.ty); count(s, ff > ELD.flintaStenar ? 'flintaSten' : 'flintaAnnan'); bar('flinta', 1);
+        const ff = flintFactor(s, tk.tx, tk.ty), slut = amountOf(s, 'flinta') === 0; count(s, ff > ELD.flintaStenar ? 'flintaSten' : 'flintaAnnan'); bar('flinta', 1); // slut: byn hade ingen flinta (steg 15.1.117)
         if (ff > ELD.flintaStenar) observe(s, p, 'flinta', tk.tx, tk.ty);
-        loggBer(s, 'l_flinta', p.id, { namn: p.name, plats: ff > ELD.flintaStenar ? 'vid stenarna' : ff > ELD.flintaSand ? 'i sanden vid stranden' : '' }, 'world', [p.id]);
+        loggBer(s, 'l_flinta', p.id, { namn: p.name, plats: ff > ELD.flintaStenar ? 'vid stenarna' : ff > ELD.flintaSand ? 'i sanden vid stranden' : '', slut }, 'world', [p.id]);
         if (ff <= ELD.flintaSand) tecken(s, p, 'fynd', 'flintan där ingen trodde att den fanns'); // fyndet på den märkliga platsen (steg 8.5.18)
       }
       else if (plockSlag === 'kantarell' || plockSlag === 'spindling') { const f = svampPlock(s, p, plockSlag); for (const k in f) bar(k, f[k]); }

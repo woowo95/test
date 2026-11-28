@@ -3,7 +3,7 @@ import { fargKrok } from './fargkrok';
 import { SAKER, isTool } from './saker';
 import { antal, och } from './ord';
 import { Ting } from './agande';
-import { ALDER, ageOf } from './folk';
+import { ALDER, REL, ageOf, getRel, isKin } from './folk';
 import { kronikaBer, loggBer } from './berattelser';
 import { ownMove, zoneAt } from './lager';
 import { bitAt, blocked } from './byggnad';
@@ -223,13 +223,13 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
   } else { overlamna(s, fatt, g, m); overlamna(s, betal, m, g); }
   // raden ur mallen l_byte (steg 6.7.7); vardagens byten samlas (steg 6.7.5)
   const vardag = !hf && !stort && !desperat, slag = (v: Vara[]) => och([...new Set(v.map(w => SAKER[w.k]?.namn.toLowerCase() ?? w.k))]);
-  const rad = loggBer(s, 'l_byte', Math.abs(m.id) * 997 + Math.abs(g.id), { namn: m.namn, med: g.namn, fatt: varorText(fatt), betal: varorText(betal), desperat }, 'rel', [m.id, g.id].filter(i => i > 0), vardag ? { slag: 'byte', k: 0, n: '', d: `${slag(fatt)} mot ${slag(betal)}` } : undefined);
+  const rad = loggBer(s, 'l_byte', Math.abs(m.id) * 997 + Math.abs(g.id), { namn: m.namn, med: g.namn, fatt: varorText(fatt), betal: varorText(betal), desperat, stort, handlare: hf?.handlare === g.id ? 'med' : hf?.handlare === m.id ? 'namn' : undefined }, 'rel', [m.id, g.id].filter(i => i > 0), vardag ? { slag: 'byte', k: 0, n: '', d: `${slag(fatt)} mot ${slag(betal)}` } : undefined);
   const text = rad.text;
   loggaByte(s, rad, minne, [m.p, g.p]);
   const varde = byteVarde(alla);
   if (varde >= BYTE.stort) { // viktigt efter vad som byttes (B.41): en rad i krönikan, och en notis när det är handlaren
     if (hf) notis(s, 'byte', text, [m.id, g.id].filter(i => i > 0));
-    kronikaBer(s, 'k_handel', Math.floor(s.now / HOUR), { a: m.namn, b: g.namn, fick: varorText(fatt), gav: varorText(betal) }, Math.round((1 + varde * BYTE.viktVarde) * 10) / 10);
+    kronikaBer(s, 'k_handel', Math.floor(s.now / HOUR), { a: m.namn, b: g.namn, fick: varorText(fatt), gav: varorText(betal), handlareB: hf?.handlare === g.id, stort }, Math.round((1 + varde * BYTE.viktVarde) * 10) / 10);
   }
   for (const f of vidByte) f(s, m, g, fatt, betal, minne);
   return stort;
@@ -241,6 +241,7 @@ export function gavaKlar(s: State, g: Part, m: Part, varor: Vara[], fara: boolea
   if (g.p && m.p) fargKrok.gava(s, g.p, m.p, varor.flatMap(w => w.t ? [w.t] : [])); // en färgad gåva (steg 13.3.5)
   const barn = !!m.p && ageOf(m.p, s.now) < ALDER.vuxen && varor.some(w => w.t || isTool(w.k));
   // raden ur mallen l_gava (steg 6.7.7); vardagens gåvor fyller inte loggen
-  const f = { namn: g.namn, om: m.namn, varor: varorText(varor), fara, barn: !!m.p && ageOf(m.p, s.now) < ALDER.vuxen, honom2: m.p?.sex === 'k' ? 'henne' : 'honom' };
+  const f = { namn: g.namn, om: m.namn, varor: varorText(varor), fara, barn: !!m.p && ageOf(m.p, s.now) < ALDER.vuxen, honom2: m.p?.sex === 'k' ? 'henne' : 'honom',
+    foralder: !!m.p && !!g.p && (m.p.mother === g.p.id || m.p.father === g.p.id), bast: !!m.p && m.p.bast === g.p?.id, inteVan: !!g.p && !!m.p && getRel(s, g.p, m.p).op <= REL.vanOrd && !isKin(g.p, m.p) }; // steg 15.1.117
   if (fara || varor.some(w => w.t || isTool(w.k))) { const rad = loggBer(s, 'l_gava', Math.abs(g.id) * 997 + Math.abs(m.id), f, 'rel', [g.id, m.id].filter(i => i > 0)); if (fara || barn) kronika(s, rad.text, 'gava'); }
 }

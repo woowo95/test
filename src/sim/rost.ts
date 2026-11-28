@@ -349,7 +349,7 @@ function stortas(s: State, l: Person, f: Fraktion) {
   const text = stor ? `Upproret bröt ut: ${led.name} och de missnöjda gick mot ${l.name}.` : `${led.name} utmanade ${l.name} om ledarskapet.`;
   log(s, text, 'world', [l.id, led.id]); notis(s, 'strid', text, [l.id, led.id]);
   // striden sker på kartan och tar tid (steg 10.1.7): utgången avgörs när den är slut (EFTER.ledarstrid)
-  kartStridBorja(s, 'skada', [a, b], stor ? 'uppror' : 'en ledarstrid', { typ: 'ledarstrid', led: led.id, l: l.id });
+  kartStridBorja(s, 'skada', [a, b], stor ? 'i ett uppror' : 'om makten i byn', { typ: 'ledarstrid', led: led.id, l: l.id });
 }
 EFTER.ledarstrid = (s, e, vinnare) => {
   const st = styreAv(s), led = byId(s, e.led as number), l = byId(s, e.l as number);

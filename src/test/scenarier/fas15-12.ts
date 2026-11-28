@@ -2,6 +2,7 @@
 import * as SIM from '../../sim';
 import { BERATTELSER, Fyllning, MallId, bedrifter, beskrivning, fyll } from '../../sim/berattelser';
 import { SCENARIER, testBy } from './hjalp';
+import { antal } from '../../sim/ord';
 
 // varianterna i en mall som gäller med fälten f
 const giltiga = (m: MallId, f: Fyllning) => BERATTELSER[m].filter(v => typeof v === 'string' || v.om(f)).map(v => fyll(typeof v === 'string' ? v : v.t, f));
@@ -62,6 +63,22 @@ SCENARIER.bytext = {
       ['det första året säger inte därpå eller sedan', ar.every(t => !/därpå|Sedan|Så gick/.test(t))],
       ['ett ensamt läger står inte i plural', lager.every(t => !/samlades|Deras|dem som/.test(t))],
       ['varan har sin artikel', hstart.some(t => /ett rep/.test(t)) && hstart.every(t => !/för byn för/.test(t))],
+    ];
+  },
+};
+
+SCENARIER.loggtext = {
+  text: 'Steg 15.1.117: texterna i loggen och samtalen. Krönikans dom står i dåtid med den dömde före efterledet, den som lärde sig i ett samtal "såg" inte "på", de som aldrig var vänner "är inte vänner längre" och saknamnen böjs i flertal',
+  kor: () => {
+    const ratt = giltiga('k_ratt', { namn: 'Omka', hen: 'hon', honom: 'henne', ledare: 'Ehild', Ledare: 'Ehild', brott: 'tog virke av Ehild', straff: 'dömde', straffEfter: ' till böter', arstid: 'hösten', person: false });
+    const lart = giltiga('l_lart', { namn: 'Ikel', hen: 'han', av: 'Ulhild', lara: 'tvinna rep', hur: 'samtal' });
+    const ovan = giltiga('l_ovanner', { namn: 'Fahild', med: 'Ikel', forr: false });
+    return [
+      ['domen står i dåtid med den dömde före efterledet', ratt.some(t => /dömde Omka till böter|dömde henne till böter/.test(t)) && ratt.every(t => !/dömde till böter Omka/.test(t))],
+      ['den som lärde sig i ett samtal såg inte på', lart.every(t => !/såg på när/.test(t))],
+      ['de som aldrig var vänner är inte "inte vänner längre"', ovan.every(t => !/inte vänner längre|Det som fanns/.test(t))],
+      [`saknamnen i flertal (${antal(3, 'jordgubbsplanta')})`, antal(3, 'jordgubbsplanta') === 'tre jordgubbsplantor'],
+      ['dödsorsaken och sjukdomen i bestämd form', SIM.SJUKDOMAR.magsjuka.bf === 'magsjukan'],
     ];
   },
 };

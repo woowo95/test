@@ -136,7 +136,7 @@ function forelasLar(s: State, p: Person, b: Person, x: FramLar, h: number, q: nu
   const t = TEK[x.tek];
   b.tek ??= {}; b.tek[t.id] = Math.min(1, (b.tek[t.id] ?? 0) + n * TEKTAL.larFramsteg * TEKTAL.larBas); count(s, 'forelasTek');
   if (b.tek[t.id]! < 1) return false;
-  learn(s, b, t, p); return true;
+  learn(s, b, t, p, 'forelasning'); return true;
 }
 
 // framträdandet som pågår: formen, den som uppträder, när det kallades (task.ref), började (borjar, efter väntan) och slutar,

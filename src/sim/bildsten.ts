@@ -72,7 +72,7 @@ export function bildHandelser(s: State, p: Person, finns: (om: number, t: number
   }
   // trons gudar: när guden visade sig, för grundaren som sin egen händelse
   const tr = troOf(s, p.tro);
-  if (tr) for (const g of gudarOf(tr)) lagg(lust(s, SKRIFT.uppVikt, 'helig', g.t, tr.grundare === p.id ? egen : SKRIFT.andras), 'helig', 'gud', g.t, { id: p.id, namn: p.name }, `${g.namn} visade sig för de troende`, undefined, `${formNamn(g.form, true).toLowerCase()} ${g.namn}${g.i ? ` som ${g.i}` : ''}`);
+  if (tr) for (const g of gudarOf(tr)) lagg(lust(s, SKRIFT.uppVikt, 'helig', g.t, tr.grundare === p.id ? egen : SKRIFT.andras), 'helig', 'gud', g.t, { id: p.id, namn: p.name }, `${g.namn} visade sig för de troende`, undefined, `${formNamn(g.form, true).toLowerCase()} ${g.namn}${g.i ? ` i ${g.i}` : ''}`); // var anden bor, utan ett andra 'som' (steg 15.1.117)
   return ut;
 }
 // hur många bildstenar byn har om motivet
@@ -90,7 +90,7 @@ export function bildText(s: State, ristare: Person, h: Pick<BildHandelse, 'motiv
   const rad = MOTIV[h.motiv], q = byId(s, h.om.id);
   const fig = rad.fig ?? (q ? (q.sex === 'k' ? 'en kvinna' : 'en man') : 'en man');
   const ting = h.ting ?? (h.motiv === 'uppfinning' || h.motiv === 'tavling' ? h.bev?.sak : undefined) ?? rad.ting[h.k] ?? rad.ting0;
-  const f: Fyllning = { motiv: h.motiv, fig, ting, gud: h.k === 'gud', vad: h.vad, nar: NAR[kalender(s, h.t).ai] ?? NAR[0], ristare: ristare.name };
+  const f: Fyllning = { motiv: h.motiv, fig, ting, gud: h.k === 'gud', vad: h.vad, nar: NAR[kalender(s, h.t).ai] ?? NAR[0], ristare: ristare.name, egen: ristare.id === h.om.id }; // ristaren står själv på stenen (steg 15.1.117)
   const del = (m: MallId, n: number) => fyll(valjVariant(s, m, id * 8 + n, f, 0), f);
   let bild = del('b_bild', 1);
   const tr = troOf(s, ristare.tro), gudar = tr ? gudarOf(tr) : [], ff = GUD_FOR[h.motiv];

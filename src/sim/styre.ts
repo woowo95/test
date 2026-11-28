@@ -490,15 +490,15 @@ export function slutarStyre(s: State, varfor: string) {
 }
 
 // ---------- straffen ----------
-// straffen (steg 8.4.8), från mildast till hårdast. Numren är de som rättegångarna sparar. Kräver = det som måste finnas i byn
+// straffen (steg 8.4.8), från mildast till hårdast. verb och efter: dåtiden delad, så att den dömde står mellan dem i krönikan ("dömde Omka till böter", steg 15.1.117). Numren är de som rättegångarna sparar. Kräver = det som måste finnas i byn
 export const STRAFF_REG = [
   { id: 0, namn: 'Tillrättavisning', da: 'tillrättavisade', inf: 'få höra hur fel det var', nu: 'tillrättavisar' },
   { id: 1, namn: 'Skam', da: 'skämde ut', inf: 'skämmas ut inför alla', nu: 'skämmer ut' },
   { id: 2, hard: true, namn: 'Slag', da: 'slog', inf: 'få stryk', nu: 'slår' },
   { id: 3, hard: true, egenRad: true, namn: 'Utvisning', da: 'drev ut', inf: 'drivas ut ur byn', nu: 'driver ut' },
-  { id: 4, namn: 'Böter', da: 'dömde till böter', inf: 'betala böter till den drabbade', nu: 'dömer till böter' },
-  { id: 5, namn: 'Samhällstjänst', da: 'dömde till extra arbete', inf: 'arbeta extra för byn', nu: 'dömer till extra arbete' },
-  { id: 6, hard: true, egenRad: true, namn: 'Döden', da: 'dömde till döden', inf: 'dö', nu: 'dömer till döden' },
+  { id: 4, namn: 'Böter', da: 'dömde till böter', verb: 'dömde', efter: ' till böter', inf: 'betala böter till den drabbade', nu: 'dömer till böter' },
+  { id: 5, namn: 'Samhällstjänst', da: 'dömde till extra arbete', verb: 'dömde', efter: ' till extra arbete', inf: 'arbeta extra för byn', nu: 'dömer till extra arbete' },
+  { id: 6, hard: true, egenRad: true, namn: 'Döden', da: 'dömde till döden', verb: 'dömde', efter: ' till döden', inf: 'dö', nu: 'dömer till döden' },
   { id: 7, namn: 'Förlorad rätt', da: 'tog rösten från', inf: 'förlora rösten', nu: 'tar rösten från' },
   { id: 8, namn: 'Ingen vård', da: 'tog rätten till vård från', inf: 'inte få vård', nu: 'tar rätten till vård från' }, // steg 9.5.30
   { id: 9, hard: true, namn: 'Fängelse', da: 'satte i fängelse', inf: 'sitta i fängelset', nu: 'sätter i fängelse' }, // steg 11.12.3: kräver ett fängelse med ledig plats (fangelse.ts)
@@ -573,8 +573,9 @@ function doma(s: State, l: Person) {
     count(s, 'straff'); count(s, 'straff_' + steg);
     log(s, `${l.name} ${STRAFF_REG[steg].nu} ${q.name} för att ${hon(q)} ${brottText(b)}.`, 'rel', [l.id, q.id]);
     if (!straffEgenRad(steg)) { // tinget dömde (steg 12.1.135); utvisningen och döden har sina rader och notiser (steg 12.1.253)
-      kronikaBer(s, 'k_ratt', q.id, { ...personFalt(q), ledare: l.name, brott: brottText(b), straff: STRAFF_REG[steg].nu });
-      notis(s, 'dom', `${l.name} ${STRAFF_REG[steg].nu} ${q.name} för att ${hon(q)} ${brottText(b)}.`, [l.id, q.id]);
+      const sr = STRAFF_REG[steg] as { da: string; verb?: string; efter?: string }; // krönikan och notisen i dåtid, och domaren som själv var drabbad heter inte två gånger (steg 15.1.117)
+      kronikaBer(s, 'k_ratt', q.id, { ...personFalt(q), ledare: l.name, brott: brottText(b, l.name, l), straff: sr.verb ?? sr.da, straffEfter: sr.efter ?? '', falsk: !!b.falsk, hard: steg > lagom, mild: nara && steg < lagom, publik: sett.length, egenSak: b.mot === l.id });
+      notis(s, 'dom', `${l.name} ${sr.verb ?? sr.da} ${q.name}${sr.efter ?? ''} för att ${hon(q)} ${brottText(b, l.name, l)}.`, [l.id, q.id]);
     }
     if (steg === 6) notis(s, 'avrattning', `${q.name} avrättades. ${l.name} dömde ${q.sex === 'k' ? 'henne' : 'honom'} till döden för att ${hon(q)} ${brottText(b)}.`, [q.id, l.id]); // (steg 12.1.137)
     allmant(s, q, b, STR.hord, sett); // de som ser straffet får höra om brottet

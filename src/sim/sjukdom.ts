@@ -32,6 +32,7 @@ import { kronikaBer } from './berattelser';
 export type SjukOrsak = 'vatten' | 'skamd' | 'ratt' | 'svamp' | 'kyla' | 'smitta';
 export interface SjukStadium { fran: number; text: string } // från hur långt sjukdomen kommit (0–1): det kortet säger
 export interface SjukDef {
+  bf: string; // namnet i bestämd form, för berättelserna ("magsjukan", steg 15.1.117)
   namn: string; orsak: SjukOrsak[]; utifran?: true; // utifran = uppstår aldrig i byn, kommer med handlare och främlingar (9.5.5)
   smitta: number; // hur starkt den smittar (0 = inte alls), prövas varje timme hos dem nära (9.5.3)
   inkubation: [number, number]; // dygn sjuk utan tecken
@@ -46,37 +47,37 @@ export interface SjukDef {
 }
 const DEF = {
   magsjuka: {
-    namn: 'Magsjuka', orsak: ['vatten', 'skamd', 'smitta'], smitta: 0.02, inkubation: [0.1, 0.3], langd: [1, 2],
+    namn: 'Magsjuka', bf: 'magsjukan', orsak: ['vatten', 'skamd', 'smitta'], smitta: 0.02, inkubation: [0.1, 0.3], langd: [1, 2],
     dod: { barn: 0.08, vuxen: 0, gammal: 0.05 }, foljd: { diarre: 1 }, vard: ['vatten', 'vila'], arbete: 0.4,
     stadier: [{ fran: 0, text: 'Magsjuk, ont i magen' }, { fran: 0.5, text: 'Magsjuk, diarré och kräkningar' }],
   },
   matforgiftning: {
-    namn: 'Matförgiftning', orsak: ['ratt'], smitta: 0, inkubation: [0.05, 0.15], langd: [0.3, 0.8],
+    namn: 'Matförgiftning', bf: 'matförgiftningen', orsak: ['ratt'], smitta: 0, inkubation: [0.05, 0.15], langd: [0.3, 0.8],
     dod: { barn: 0, vuxen: 0, gammal: 0 }, foljd: { diarre: 0.5 }, vard: ['vatten', 'vila'], arbete: 0.5,
     stadier: [{ fran: 0, text: 'Matförgiftad, illamående' }],
   },
   svampforgiftning: {
-    namn: 'Svampförgiftning', orsak: ['svamp'], smitta: 0, inkubation: [0.05, 0.1], langd: [0.8, 1.2],
+    namn: 'Svampförgiftning', bf: 'svampförgiftningen', orsak: ['svamp'], smitta: 0, inkubation: [0.05, 0.1], langd: [0.8, 1.2],
     dod: { barn: 0.4, vuxen: 0.15, gammal: 0.3 }, foljd: { feber: 0.5, diarre: 1 }, vard: ['motgift', 'vatten', 'vila'], arbete: 0.2,
     stadier: [{ fran: 0, text: 'Förgiftad av svamp, ont i magen' }, { fran: 0.5, text: 'Förgiftad av svamp, svag och yr' }],
   },
   forkylning: {
-    namn: 'Förkylning', orsak: ['kyla', 'smitta'], smitta: 0.04, inkubation: [0.3, 0.6], langd: [2, 3],
+    namn: 'Förkylning', bf: 'förkylningen', orsak: ['kyla', 'smitta'], smitta: 0.04, inkubation: [0.3, 0.6], langd: [2, 3],
     dod: { barn: 0, vuxen: 0, gammal: 0 }, foljd: { hosta: 0.5 }, vard: ['vila', 'varme'], arbete: 0.7, blir: { k: 'lunginflammation', why: 'efter en förkylning som inte vilades bort' },
     stadier: [{ fran: 0, text: 'Förkyld, snuvig' }, { fran: 0.4, text: 'Förkyld, hostar' }],
   },
   lunginflammation: {
-    namn: 'Lunginflammation', orsak: ['smitta'], smitta: 0.01, inkubation: [0.1, 0.2], langd: [4, 6],
+    namn: 'Lunginflammation', bf: 'lunginflammationen', orsak: ['smitta'], smitta: 0.01, inkubation: [0.1, 0.2], langd: [4, 6],
     dod: { barn: 0.2, vuxen: 0.02, gammal: 0.33 }, foljd: { feber: 1, hosta: 1 }, vard: ['vila', 'varme', 'lakeort'], arbete: 0.2,
     stadier: [{ fran: 0, text: 'Lunginflammation, hostar och har feber' }, { fran: 0.5, text: 'Lunginflammation, hög feber' }],
   },
   massling: {
-    namn: 'Mässlingen', orsak: ['smitta'], utifran: true, smitta: 0.3, inkubation: [0.5, 1], langd: [3, 4],
+    namn: 'Mässlingen', bf: 'mässlingen', orsak: ['smitta'], utifran: true, smitta: 0.3, inkubation: [0.5, 1], langd: [3, 4],
     dod: { barn: 0.1, vuxen: 0.02, gammal: 0.04 }, foljd: { feber: 1 }, vard: ['vila', 'vatten'], immun: true, arbete: 0.2,
     stadier: [{ fran: 0, text: 'Mässlingen, feber' }, { fran: 0.3, text: 'Mässlingen, feber och utslag' }],
   },
   koppor: {
-    namn: 'Kopporna', orsak: ['smitta'], utifran: true, smitta: 0.2, inkubation: [0.5, 1], langd: [6, 8],
+    namn: 'Kopporna', bf: 'kopporna', orsak: ['smitta'], utifran: true, smitta: 0.2, inkubation: [0.5, 1], langd: [6, 8],
     dod: { barn: 0.33, vuxen: 0.33, gammal: 0.33 }, foljd: { feber: 1 }, vard: ['vila', 'vatten'], immun: true, arbete: 0.1,
     stadier: [{ fran: 0, text: 'Kopporna, hög feber' }, { fran: 0.3, text: 'Kopporna, utslag över hela kroppen' }, { fran: 0.7, text: 'Kopporna, blåsor som torkar' }],
   },
@@ -169,7 +170,7 @@ export function smittaTimme(s: State, dt = 3600) {
   const e = s.epidemi; // utbrottet som krönikan skrev om är över när ingen längre är sjuk i det (steg 12.1.135)
   if (e?.skriven && !living(s).some(q => q.sjuk?.k === e.k)) {
     const doda = e.ids.filter(id => s.people.some(q => q.id === id && q.died !== undefined)).length;
-    kronikaBer(s, 'k_epidemi', e.ids[0] ?? 0, { sjukdom: SJUKDOMAR[e.k].namn.toLowerCase(), antal: tal(e.ids.length), doda: doda ? ` ${stor(tal(doda))} dog.` : '' });
+    kronikaBer(s, 'k_epidemi', e.ids[0] ?? 0, { sjukdom: SJUKDOMAR[e.k].bf, antal: tal(e.ids.length), doda: doda ? ` ${stor(tal(doda))} dog.` : '' });
     delete s.epidemi;
   }
   const sjuka = living(s).filter(p => p.sjuk && SJUKDOMAR[p.sjuk.k].smitta > 0);

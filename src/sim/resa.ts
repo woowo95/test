@@ -158,16 +158,16 @@ const slHem = (s: State, sl: Sallskap) => s.varld && byPlats(s.varld, sl.by);
 export const saljbar = (k: string) => !BEHALL.includes(k) && !FOOD.includes(k) && grundvarde(k) > 0;
 
 // skälen att resa: namnet, vilka sorters platser som är ett mål, och hur länge (dygn) sällskapet stannar framme
-export interface ResmalDef { namn: string; resa: string; mal: readonly LandmarkId[]; stannar: number } // resa: färden i en mening ("kom hem från en handelsresa")
+export interface ResmalDef { namn: string; resa: string; kort?: string; syfte?: string; mal: readonly LandmarkId[]; stannar: number } // kort och syfte: färden och syftet var för sig i krönikan (steg 15.1.117) // resa: färden i en mening ("kom hem från en handelsresa")
 export const RESMAL = {
   handel: { namn: 'Handel', resa: 'en handelsresa', mal: ['by', 'handelslager'], stannar: 1 },
   uppdrag: { namn: 'Uppdrag', resa: 'ett uppdrag', mal: ['by', 'ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'utpost', 'rovarlager', 'gomma'], stannar: 1 },
   turne: { namn: 'Turné', resa: 'en turné', mal: ['by'], stannar: 1 },
   slakt: { namn: 'Besök hos släkt', resa: 'ett besök hos släkten', mal: ['by'], stannar: 2 },
-  se: { namn: 'Se en plats', resa: 'en färd för att se platsen', mal: ['ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'karavanrest', 'rastplats', 'by', 'handelslager', 'utpost'], stannar: 0.25 },
-  sandebud: { namn: 'Sändebud', resa: 'en färd som sändebud', mal: ['by'], stannar: 1 },
-  budbarare: { namn: 'Budbärare', resa: 'en färd med ett bud', mal: ['by'], stannar: 0.25 }, // den som utlyst ett uppdrag skickar det till en grannby (steg 11.8.13, utlysa.ts)
-  hamta: { namn: 'Hämta', resa: 'en färd till gruvan', mal: ['silvergruva', 'jarngruva'], stannar: 1 }, // och malmen i järngruvan (steg 12.2.13) // det en plats ger: silvret i gruvan; tiden nere väljs i packskedet (steg 11.10.1)
+  se: { namn: 'Se en plats', resa: 'en färd för att se platsen', kort: 'en färd', syfte: ' för att se platsen', mal: ['ruin', 'helig', 'gravhog', 'runsten', 'fyndplats', 'karavanrest', 'rastplats', 'by', 'handelslager', 'utpost'], stannar: 0.25 },
+  sandebud: { namn: 'Sändebud', resa: 'en färd som sändebud', kort: 'en färd', syfte: ' som sändebud', mal: ['by'], stannar: 1 },
+  budbarare: { namn: 'Budbärare', resa: 'en färd med ett bud', kort: 'en färd', syfte: ' med ett bud', mal: ['by'], stannar: 0.25 }, // den som utlyst ett uppdrag skickar det till en grannby (steg 11.8.13, utlysa.ts)
+  hamta: { namn: 'Hämta', resa: 'en färd till gruvan', kort: 'en färd', mal: ['silvergruva', 'jarngruva'], stannar: 1 }, // och malmen i järngruvan (steg 12.2.13) // det en plats ger: silvret i gruvan; tiden nere väljs i packskedet (steg 11.10.1)
 } as const satisfies Record<string, ResmalDef>;
 export type ResmalId = keyof typeof RESMAL;
 // dygnen sällskapet stannar framme: tiden nere i gruvan när den är vald, annars skälets
@@ -1474,7 +1474,7 @@ export function redogorelse(s: State, sl: Sallskap, t: number) {
   notis(s, 'resa', text + upp, folk.map(p => p.id), undefined, { resa: sl.id });
   if (u) { kronika(s, `${text}${upp}`, 'uppdrag'); count(s, 'uppdrag berättat'); } // uppdragets redogörelse (steg 11.8.7)
   // en vanlig resa (utan uppdrag och turné) står i krönikan med mallen k_resa (steg 12.1.233)
-  else if (sl.turne === undefined && led) kronikaBer(s, 'k_resa', sl.id, { folk: och(folk.map(p => p.name)), resa: RESMAL[sl.skal].resa, mal: malNamn(s, sl) || 'grannbyn', borta: spelTid(dygn * DAY), De: folk.length > 1 ? 'De' : stor(han(led)) });
+  else if (sl.turne === undefined && led) kronikaBer(s, 'k_resa', sl.id, { folk: och(folk.map(p => p.name)), resa: (RESMAL[sl.skal] as ResmalDef).kort ?? RESMAL[sl.skal].resa, syfte: (RESMAL[sl.skal] as ResmalDef).syfte ?? '', ranad: !!sl.forlust?.length, tom: sl.borta === 1, red: (sl.rider?.length ?? 0) >= sl.medl.length, mal: malNamn(s, sl) || 'grannbyn', borta: spelTid(dygn * DAY), De: folk.length > 1 ? 'De' : stor(han(led)) });
   // ryktet och upplevelsen (steg 11.8.17): de som ser sällskapet komma hem med ett klarat uppdrag får intrycket äventyrare om var
   // och en som var med, och det sprids som andra rykten. Resan sitter en tid i humöret, glad eller besviken efter hur det gick
   if (sl.turne !== undefined) { // turnén (steg 11.8.18): den som uppträdde får en bedrift, och krönikan en rad

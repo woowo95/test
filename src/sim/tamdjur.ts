@@ -85,7 +85,7 @@ export function nyttTamdjur(s: State, art: TamArtId, x: number, y: number, agare
   l.push(d); count(s, `tam_${art}`);
   if (forstaGang(s, 'forstaTamdjur')) { // byns första tamdjur: krönikan (steg 12.1.135) och notisen (steg 12.1.137)
     const a = tamArt(art), q = agare !== undefined ? byId(s, agare) : undefined;
-    kronikaBer(s, 'k_djur', id, { forsta: true, djur: `${a.ord[0]} ${a.ord[1]}` });
+    kronikaBer(s, 'k_djur', id, { forsta: true, djur: `${a.ord[0]} ${a.ord[1]}`, agare: q?.name }); // ägaren (steg 15.1.117)
     notis(s, 'tamdjur', `Byn fick sitt första tamdjur: ${q ? `${q.name}s ${a.ord[1]}` : a.ord.slice(0, 2).join(' ')}.`, q ? [q.id] : [], { x, y });
   }
   return d;

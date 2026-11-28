@@ -91,7 +91,18 @@ export function sakOrd(k: string): Ord {
   // rätterna (steg 12.1.48): "Rotgröt · Fin" blir "en portion fin rotgröt" och "sju portioner fin rotgröt", med måltidens nivå som ett ord
   if (niva) { const r = `${RATT_ADJ[niva] ?? niva.toLowerCase()} ${n}`; return ['en', `portion ${r}`, `portioner ${r}`]; }
   if (d?.par) return ['ett', `par ${n}`, `par ${n}`]; // plaggen som är ett par (steg 13.2.2)
-  return [d?.ett ? 'ett' : 'en', n, n];
+  return [d?.ett ? 'ett' : 'en', n, d?.ett ? n : flertal(n)];
+}
+// flertalet av ett en-ord utan egen rad i SAKORD (steg 15.1.117): huvudordet före ' av ' böjs ("hattar av halm", "jordgubbsplantor")
+function flertal(n: string): string {
+  const av = n.indexOf(' av ');
+  if (av > 0) return flertal(n.slice(0, av)) + n.slice(av);
+  if (/a$/.test(n)) return n.slice(0, -1) + 'or';
+  if (/e$/.test(n)) return n.slice(0, -1) + 'ar';
+  if (/er$/.test(n)) return n; // barnkläder är redan flertal
+  if (/[^aeiouyåäö](el|en)$/.test(n)) return n.slice(0, -2) + n.slice(-1) + 'ar';
+  if (/[aeiouyåäö]$/.test(n)) return n + 'r';
+  return n + 'ar';
 }
 // en eller ett framför saken
 export const enEtt = (k: string) => sakOrd(k)[0];

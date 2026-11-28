@@ -1,7 +1,7 @@
 import { allaBarn, upplev } from './uppvaxt';
 import { personHand } from './personlogg';
 import { TROSKEL } from './forradsmal';
-import { delade, fyll, kronikaBer, larFalt, loggBer, personFalt } from './berattelser';
+import { BERATT, delade, fyll, kronikaBer, larFalt, loggBer, personFalt } from './berattelser';
 import { kronika } from './historik';
 import { ALDER, ageOf, alive, byId, count, forstaGang, living, log, stat, paKartan } from './folk';
 import { rnd } from './slump';
@@ -321,9 +321,9 @@ function kunna(p: Person, t: Tek) {
   if (p.halvminne) { p.halvminne = p.halvminne.filter(k => k !== t.id); if (!p.halvminne.length) p.halvminne = undefined; }
 }
 // den som kommer på eller lär sig något
-export function learn(s: State, p: Person, t: Tek, from?: Person) {
+export function learn(s: State, p: Person, t: Tek, from?: Person, hur?: 'samtal' | 'bredvid' | 'larling' | 'forelasning' | 'bok') { // hur: hur hen lärde sig, för loggens rad (steg 15.1.117)
   kunna(p, t);
-  if (from) { personHand(s, p, 'lart', `Lärde sig ${gora(t)} av ${from.name}.`); loggBer(s, 'l_lart', p.id * 997 + from.id, { ...larFalt(s, p), av: from.name, lara: goraUtan(t) }, 'skill', [p.id, from.id], { slag: 'lar', k: p.id, n: p.name, d: `${from.name}|${gora(t)}` }); return; }
+  if (from) { personHand(s, p, 'lart', `Lärde sig ${gora(t)} av ${from.name}.`); loggBer(s, 'l_lart', p.id * 997 + from.id, { ...larFalt(s, p), av: from.name, lara: goraUtan(t), hur, yngreLarare: ageOf(from, s.now) < ageOf(p, s.now) - BERATT.yngreLarare }, 'skill', [p.id, from.id], { slag: 'lar', k: p.id, n: p.name, d: `${from.name}|${gora(t)}` }); return; }
   const first = !s.people.some(q => q !== p && knows(q, t.id)) && !(s.stat?.['tek_' + t.id]);
   count(s, 'tek_' + t.id);
   // nivå 4–5: det episka ögonblicket, en egen rad per teknik (steg 4.2.1.3); annars en berättelse ur mallen
@@ -436,7 +436,7 @@ export function teach(s: State, a: Person, b: Person, slag: SamtalDef, mer = 1) 
     b.tek ??= {};
     const d = Math.min(1 - (b.tek[t.id] ?? 0), TEKTAL.larFramsteg * (TEKTAL.larBas + stat(b, 'intelligens', s.now) / 20));
     b.tek[t.id] = (b.tek[t.id] ?? 0) + d; count(s, 'tekLart', d);
-    if (b.tek[t.id] >= 1) learn(s, b, t, a);
+    if (b.tek[t.id] >= 1) learn(s, b, t, a, 'samtal');
   }
 }
 
@@ -465,7 +465,7 @@ export function arbetaBredvid(s: State, p: Person, tk: Task, dtSec: number) {
     p.tek ??= {};
     const d = Math.min(1 - (p.tek[t.id] ?? 0), dtSec / HOUR_S / (mastare ? TEKTAL.larlingTim : TEKTAL.bredvidTim) * (TEKTAL.larBas + stat(p, 'intelligens', s.now) / 20));
     p.tek[t.id] = (p.tek[t.id] ?? 0) + d; count(s, mastare ? 'tekLarling' : 'tekBredvid', d);
-    if (p.tek[t.id] >= 1) { learn(s, p, t, vid); if (mastare) count(s, 'larlingKlar'); }
+    if (p.tek[t.id] >= 1) { learn(s, p, t, vid, mastare ? 'larling' : 'bredvid'); if (mastare) count(s, 'larlingKlar'); }
   }
 }
 // lärlingen går till mästaren när hen arbetar med tekniken (valet i val.ts) och arbetar bredvid så länge mästaren håller på
