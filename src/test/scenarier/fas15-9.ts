@@ -99,7 +99,7 @@ SCENARIER.hyllval = {
     for (const q of vux) { SIM.laggIn(s, 'silver', 60, q.id); q.hunger = 0.3; q.bruk = undefined; }
     const val = SIM.attStalla(s, f), fullt = SIM.hyllan(s, f).filter(h => h.k === X).length;
     let tillbaka = false;
-    for (let i = 0; i < 3 * 360 && !(SIM.hyllan(s, f).some(h => h.k === fin) && !SIM.hyllan(s, f).some(h => h.k === X)); i++) { SIM.step(s, 10); if (p.task?.act === 'stallaFram' && p.task.tillbaka) tillbaka = true; }
+    for (let i = 0; i < 3 * 360 && !(SIM.hyllan(s, f).some(h => h.k === fin) && !SIM.hyllan(s, f).some(h => h.k === X)); i++) { SIM.step(s, 10); if (SIM.living(s).some(q => q.task?.act === 'stallaFram' && q.task.ref === f.id && q.task.tillbaka)) tillbaka = true; }
     const kvar = SIM.hyllan(s, f).filter(h => h.k === X).length, mat = SIM.hyllan(s, f).find(h => h.k === fin);
     // köpet vid hyllan är ett byte: säljaren övar handel och relationen växer
     const k = vux.find(q => SIM.kundVal(s, q, 'affar')), e = k && SIM.kundVal(s, k, 'affar');
@@ -111,7 +111,7 @@ SCENARIER.hyllval = {
     }
     return [
       [`varubordet är fullt av sten (${fullt} rutor), och det som ger minst ska bäras tillbaka (${val?.tillbaka ? val.k : 'inget'})`, fullt === 2 && !!val?.tillbaka && val.k === X],
-      [`ägaren bar tillbaka stenen (${kvar} rutor kvar)`, tillbaka && kvar < 2],
+      [`ägaren eller någon i familjen bar tillbaka stenen (${kvar} rutor kvar)`, tillbaka && kvar < 2],
       [`maten byborna saknar kom upp i stället (${mat ? `${mat.n} ${mat.k}` : 'ingen'})`, !!mat],
       [`en kund köpte vid hyllan (${e ? `${e.n} ${e.k}` : 'ingen kund'})`, kopt],
       [`säljaren övade handel (${hFore.toFixed(3)} → ${hEfter.toFixed(3)})`, hEfter > hFore],
