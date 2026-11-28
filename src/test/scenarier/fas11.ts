@@ -791,7 +791,7 @@ SCENARIER.barkraft = {
     const medFlod = SIM.grundtal(v, 2, 2);
     v.mark.fill(berg);
     const pabg = SIM.grundtal(v, 2, 2), kant = SIM.grundtal(v, 0, 0);
-    const r: SIM.VarldRad = { nr: 1, sort: 'by', namn: 'Prov', x: 2, y: 2, grundad: 0, t: 0, tal: { folk: 10, mat: 0, rikedom: 0, silver: 0, styrka: 0 }, tek: [], fasta: [] };
+    const r: SIM.VarldRad = { nr: 1, sort: 'by', namn: 'Prov', x: 2, y: 2, grundad: 0, t: 0, tal: { folk: 10, mat: 0, rikedom: 0, silver: 0, styrka: 0, kraft: 0 }, tek: [], fasta: [] };
     v.mark.fill(slatt); v.flod.fill(0);
     const utan = SIM.barkraft(v, r);
     r.tek = ['odling', 'tork'];
@@ -3333,7 +3333,7 @@ SCENARIER.vagran = {
     sl.ruta = lp.y * w + lp.x;
     // valen: med en full packning och ett litet krav betalar man; utan något att betala med flyr eller slåss man
     sl.pack = { flintkniv: 3, skinn: 6, torkatKott: 10 };
-    const v1 = SIM.vagValen(s, sl, 3, 10), v2 = SIM.vagValen(s, sl, 3, 10000);
+    const tre = SIM.flockKraft(3, SIM.radVarde(L)), v1 = SIM.vagValen(s, sl, tre, 10), v2 = SIM.vagValen(s, sl, tre, 10000); // tre rövare ur lägret (styrkan i stridsvärde, steg 15.1.152)
     const val1 = (Object.keys(v1) as SIM.VagVal[]).reduce((a, b) => v1[b] < v1[a] ? b : a), val2 = (Object.keys(v2) as SIM.VagVal[]).reduce((a, b) => v2[b] < v2[a] ? b : a);
     // rånet: bytet går till lägret, och döda rövare dras ur lägret
     const lagerFore = SIM.radRikedomUr(L) + (L.tal.mat ?? 0), packFore = Object.values(sl.pack).reduce((a, x) => a + (x ?? 0), 0), lf = L.tal.folk;

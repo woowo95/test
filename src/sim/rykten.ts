@@ -1,4 +1,5 @@
 import { horsel } from './halsa';
+import { upplev } from './uppvaxt';
 import { personHand } from './personlogg';
 import { KLADMATERIAL, kladAv } from './klader';
 import { han, honom } from './ord';
@@ -403,7 +404,7 @@ export function beratta(s: State, a: Person, b: Person, e: Intryck, r: Rel, vFas
   delade('rykte', 'i_' + e.k, e.namn); // samtalets ämne (steg 3.9.5)
   if (d.tecken < 0 && vFast === undefined) pratadeIlla(s, a, b, e); // skvallerbyttan (steg 10.8.6); inte det som framförs på en scen
   // påhittat om b själv, eller om något b var med om: b vet bättre (steg 3.3.3)
-  if (ex?.falsk && ex.mot === b.id) { ertappad(s, b, a, e, 'logn'); lognOmLedaren(s, b, a, e.om); return; } // fulspelet (steg 10.8.7)
+  if (ex?.falsk && ex.mot === b.id) { ertappad(s, b, a, e, 'logn'); lognOmLedaren(s, b, a, e.om); if (e.om === b.id) upplev(s, b, 'lognOmMig', a.name); return; } // fulspelet (steg 10.8.7); en lögn om en själv drar mot Förtegenhet (steg 15.1.159)
   const egen = intryckOm(b, e.om, e.k);
   if (egen && !egen.led && egen.src === undefined && egen.c >= RYKTE.ertappaSaker && v - egen.v > RYKTE.ertappa && v > egen.v * (1 + RYKTE.ertappa)) { ertappad(s, b, a, e, 'overdrev'); return; }
   if (egen && !egen.src && !egen.led) return; // det man såg själv väger tyngre

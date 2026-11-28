@@ -143,7 +143,7 @@ SCENARIER.stallfoder = {
     const kopt = SIM.iHelaForradet(() => SIM.kopVid(s, f, a, { p: a.id, v: 'stall', k: 'djurvard', n: 1, t: s.now }, p)), fodd = a.gast!.rodd === 1 && a.gast!.riddjur === undefined;
     // den vars riddjur inte får foder: stallet har inget foder kvar, och hen har redan köpt allt hen ville
     SIM.put(s, 'torrgras', -SIM.ownsId(s, p.id, 'torrgras'), { [p.id]: -SIM.ownsId(s, p.id, 'torrgras') });
-    const b = gast(); b.gast!.gjort = SIM.FGAST.kop; b.gast!.bemott = { v: 0.5, n: 1 };
+    const b = gast(); b.gast!.gjort = 1; b.gast!.bemott = { v: 0.5, n: 1 };
     const u0 = s.stat?.riddjurUtanFoder ?? 0; SIM.foretagsgastSteg(s, 1);
     const missnojd = (b.gast!.bemott?.v ?? 0) / (b.gast!.bemott?.n ?? 1) < 0.5 && (s.stat?.riddjurUtanFoder ?? 0) === u0 + 1 && b.gast!.fas === 'gar';
     // på väg hem: den med fött riddjur går fortare

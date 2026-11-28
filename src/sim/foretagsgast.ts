@@ -40,7 +40,6 @@ export const FGAST = balans('foretagsgast', {
   rykte: 0.3, // ett helt gott rykte drar så mycket fler ...
   fin: 0.1, finRykte: 0.6, finInst: 0.2, // ... men gör mest gästerna finare: chansen att gästen är fin
   nara: 1.6, // så nära disken (rutor) ställer sig gästen i kön
-  kop: 4, // så många gånger köper en gäst högst under ett besök (så länge något lockar), också köp som inte blev av (steg 15.1.56)
   ata: 10, // så länge (minuter) sitter gästen med det hen köpt
   fran: 9, till: 18, // gästen kommer fram under dagen
   moten: 6, // det hen redan haft lockar mindre: 1 / (1 + antalet gånger × moten)
@@ -151,6 +150,8 @@ gastKund.at = (_s, p, k) => ata(p, { [k]: KROPP.mattar });
 // varje köp vid disken räknas mot FGAST.kop, också det som föll för att varan aldrig kom fram (steg 15.1.56): annars ställer sig
 // gästen i kön igen och igen för samma vara
 gastKund.forsok = (_s, p) => { const g = p.gast!; g.gjort = (g.gjort ?? 0) + 1; };
+// ett köp som föll: varan lockar inte gästen igen under besöket, så hen ställer sig inte i kön för den igen och igen (steg 15.1.56)
+gastKund.fel = (_s, p, k) => { const g = p.gast!; (g.fel ??= []).includes(k) || g.fel.push(k); };
 gastKund.klar = (s, p, v, sitter) => {
   const g = p.gast!;
   (g.haft ??= {})[v] = (g.haft[v] ?? 0) + 1;
@@ -164,7 +165,8 @@ omdome.push((s, p, f, b) => { const g = p.gast; if (g?.sort !== 'kund') return; 
 // ---------- besöket (TAKTER, varje slag) ----------
 const basta = (s: State, p: Person, f: Foretag): Erbjudande | undefined => {
   let b: Erbjudande | undefined;
-  for (const v of f.verk) { const e = erbjudandet(s, p, v, f); if (e && e.net > (b?.net ?? 0)) b = e; }
+  const fel = p.gast?.fel;
+  for (const v of f.verk) { const e = erbjudandet(s, p, v, f, fel ? k => !fel.includes(k) : undefined); if (e && e.net > (b?.net ?? 0)) b = e; }
   return b;
 };
 // gästen går hem. Ett riddjur som inte fått foder gör gästen missnöjd, som en måltid hen inte fick (steg 15.1.170)
@@ -195,7 +197,7 @@ export function foretagsgastSteg(s: State, dtSec: number) {
         if (g.sovit) { g.sovit = undefined; g.gor = undefined; g.path = undefined; g.pk = undefined; }
         else if (gaMot(s, p, g.vx!, g.vy!, dtSec, t0) < 0.6) { p.x = g.vx!; p.y = g.vy!; g.sover = 1; g.sovit = 1; }
       } else {
-        const e = (g.gjort ?? 0) < FGAST.kop ? basta(s, p, f!) : undefined;
+        const e = basta(s, p, f!); // gästen köper så länge hen har silver, orkar bära och något lockar (steg 15.1.155)
         if (!e) { if (!g.gjort && !g.bemott) for (const o of omdome) o(s, p, f!); gaHem(p, s, f); continue; } // inget lockade, eller allt är slut
         const o = stallIKo(s, p, e);
         p.x = o.spot.x; p.y = o.spot.y; g.gor = 'ko';

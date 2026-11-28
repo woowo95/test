@@ -14,7 +14,7 @@ const [antal = 24, dagar = 35] = process.argv.slice(2).map(Number);
 const seeds = Array.from({ length: antal }, (_, i) => seedAv(i));
 type Sida = { vapen?: string; n: number; folk: number; dod: number; ger: number; flykt: number; nere: number; skadade: number; skador: number; slag: number; traffar: number };
 type Rad = { rena?: Record<string, [number, number]>; grader: number[]; flytt: [number, number][]; allvar: number; kampar: number; t0: number; t1: number; tunga: number; dag: number; orsak: string; vinnare: number; sek: number; vuxna: number; kom: number; by: Sida; mot: Sida; h: Record<string, number>; sort: string; forsok: Record<string, number>; slut: [string[], string[]]; efter: number };
-type Ut = { seed: number; pop: number; rader: Rad[]; anfall?: { n: number; sedd: number; dag: number; dagSedd: number }; vakter: number; larm: string[]; rikt?: number; lager?: number; lagerFolk?: Record<string, number>; gangen?: { ur?: string; namn?: string; vapen?: string[]; n: number; sedd?: number; framme?: number; anfall?: number; dag: boolean }[] };
+type Ut = { seed: number; pop: number; rader: Rad[]; anfall?: { n: number; sedd: number; dag: number; dagSedd: number }; vakter: number; larm: string[]; rikt?: number; lager?: number; lagerFolk?: Record<string, number>; gangen?: { ur?: string; namn?: string; vapen?: string[]; n: number; sedd?: number; framme?: number; anfall?: number; dag: boolean; chans?: number; vann?: boolean }[] };
 const t0 = Date.now();
 const git = (k: string) => { try { return execSync(`git ${k}`, { encoding: 'utf8' }).trim(); } catch { return ''; } };
 const orord = !git('status --porcelain --untracked-files=no -- src') && git('rev-parse --short HEAD'); // ett oändrat bygge fortsätter där det slutade
@@ -94,6 +94,14 @@ for (const ur of ['läger', 'by', 'okänd']) {
   const g = gg.filter(x => x.ur === ur); if (!g.length) continue;
   const vp: Record<string, number> = {}; for (const x of g) for (const k of x.vapen ?? []) vp[k] = (vp[k] ?? 0) + 1;
   console.log(`  från ${ur}: ${g.length} gäng, storlek median ${median(g.map(x => x.n))} (${g.map(x => x.n).sort((a, b) => a - b).join(', ')}), vapen ${Object.entries(vp).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(', ')}`);
+}
+// världens anfall (steg 15.1.152): chansen världen räknade med när flocken kom, och om gänget vann (tog något). Stämmer de inte ställs
+// BYANFALL.antalVikt in i fasens Balans
+const va = gg.filter(g => g.chans !== undefined);
+if (va.length) {
+  console.log(`\nVÄRLDENS ANFALL: ${va.length} gäng som världen skickade; chansen världen räknade med i snitt ${(100 * va.reduce((a, g) => a + g.chans!, 0) / va.length).toFixed(0)} %, gänget vann ${va.filter(g => g.vann).length} (${(100 * va.filter(g => g.vann).length / va.length).toFixed(0)} %)`);
+  for (const [fr, till] of [[0, 0.33], [0.33, 0.67], [0.67, 1.01]]) { const x = va.filter(g => g.chans! >= fr && g.chans! < till); if (x.length) console.log(`  chans ${(100 * fr).toFixed(0)}–${Math.min(100, 100 * till).toFixed(0)} %: ${x.length} gäng, vann ${x.filter(g => g.vann).length}`); }
+  for (const g of va) console.log(`  by ${g.seed}: ${g.n} från ${g.namn}, chans ${(100 * g.chans!).toFixed(0)} %, ${g.vann ? 'vann' : 'vann inte'}`);
 }
 const rikast = [...rs].sort((a, b) => (b.rikt ?? 0) - (a.rikt ?? 0)), tre = Math.max(1, Math.floor(rikast.length / 3)), gn = (r: Ut) => r.gangen?.length ?? 0;
 console.log('\nGÄNGEN PER BY (rikast per person först, snittet under tiden):');

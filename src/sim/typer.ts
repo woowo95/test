@@ -439,7 +439,7 @@ export interface State {
   morkPlats?: Record<number, number>; // ruta -> hur många timmar någon varit vaken i mörker där, som avtar (ljus.ts)
   kolnad?: number[]; // de kolnade stammarna efter en brand (steg 9.2.26, brand.ts): rutorna, torrakor tills de faller eller huggs
   stubbar?: { x: number; y: number; t: number; v?: number; kol?: 1 }[]; // stubbar efter fällda träd, t = när trädet fälldes, v = träet den ger när den grävs bort (steg 6.5.7)
-  nextStock?: number; fallda?: number;
+  nextStock?: number; fallda?: number; skogLangt?: 0 | 1; // skogen att fälla står långt från byn (steg 15.1.159, skogsvard.ts)
   matSnitt?: number; // maten i förrådet i dygn för alla, glidande snitt över ungefär ett år (liv.ts)
   halvfallt?: Record<number, number>; // träd som någon har börjat fälla: ruta -> hur länge (ms) man har arbetat med det (paborjat.ts)
   fynd?: string; // hur mycket som tagits ur varje plats (bär, vilt, fisk), packat

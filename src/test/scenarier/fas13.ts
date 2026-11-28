@@ -2627,6 +2627,7 @@ SCENARIER.overmakt = {
       const barn = SIM.living(s).filter(p => !p.gast && SIM.ageOf(p, s.now) < 12).slice(0, 1);
       s.people = s.people.filter(p => de.includes(p) || barn.includes(p) || p.gast);
       const f = rovarGang(s, n, { x: Math.min(SIM.W - 3, z.x + z.w + 25), y: z.y + z.h / 2 }, { anfaller: true }); f.sedd = s.now; f.anfallT = s.now;
+      for (const r of SIM.rovarna(s, f)) r.born = de[0].born; // rövare i sina bästa år: övermakten räknas med stridsvärdet, och klanens gamla rövare är svaga (steg 15.1.151)
       const m = SIM.malet(s);
       for (const p of de) { p.x = m.x + 1; p.y = m.y; p.health = 1; p.blod = 1; p.skador = []; p.task = undefined; p.larmRoll = undefined; p.gavSig = undefined; p.pot.mod = 11; p.larm = { rovare: { t: s.now, vad: 'rovare', storlek: n, led: 0, varnat: 1 } }; }
       const acts = new Set<string>(), roller = de.map(p => SIM.rollVid(s, p, 'rovare')); let moter = false, strid = false;

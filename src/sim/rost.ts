@@ -304,8 +304,10 @@ function fraktionTimme(s: State) {
   const g = st.frak;
   let bk = -1;
   for (const id of g.med) { const p = byId(s, id)!; if (p.pot.karisma > bk) { bk = p.pot.karisma; g.led = id; } } // den mest karismatiska leder den
-  const v = vikter(s), vikt = v.reduce((a, x) => a + (g.med.includes(x.p.id) ? x.andel : 0), 0);
-  if (vikt > legitimitet(s).v) stortas(s, l, g);
+  // fraktionens vikt bland de andra (steg 15.1.158): ledarens egen vikt räknas inte bland dem som ska övertygas, så att också en hård
+  // envåldshärskare kan störtas när de flesta är emot hen
+  const v = vikter(s), vikt = v.reduce((a, x) => a + (g.med.includes(x.p.id) ? x.andel : 0), 0), andra = v.reduce((a, x) => a + (x.p === l ? 0 : x.andel), 0);
+  if (andra > 0 && vikt / andra > legitimitet(s).v) stortas(s, l, g);
 }
 // hemligheten sprids i samtal till den man litar på, och de lojala kan avslöja den (från converse i samtal.ts)
 export function fraktionSamtal(s: State, a: Person, b: Person) {
