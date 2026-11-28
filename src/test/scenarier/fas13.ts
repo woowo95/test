@@ -2408,6 +2408,7 @@ SCENARIER.gangsyns = {
 };
 
 SCENARIER.redo = {
+  lang: true,
   text: 'Steg B.29: efter larmet arbetar ingen vuxen med vanliga sysslor fast gänget ligger stilla, och vid en lång väntan står kämparna med vapen i raden innan gänget anfaller; nöden går före, och den som redan vet behöver inget nytt larm när striden börjar',
   kor: () => {
     const prov = (timme: number) => {

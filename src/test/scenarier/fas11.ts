@@ -5172,6 +5172,7 @@ SCENARIER.vacktgast = {
 };
 
 SCENARIER.vacktvy = {
+  lang: true,
   text: 'Vyn i en väckt by (steg 11.13.11, vacktMedBesok i vacktgast.ts, gaIn och gaHem i ui/lage.ts): medan egna bybor är på besök går det att gå in i byn, som då visas i hela spelet medan huvudbyn räknas och sparas som förut. Hem visar huvudbyn igen, och när besöket är slut går det inte längre',
   kor: () => {
     const s = SIM.cloneState(testBy(3)), vl = s.varld!, [a] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18);
