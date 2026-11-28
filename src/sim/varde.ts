@@ -2,14 +2,15 @@
 // Varje sak har ett grundvärde som spelet räknar ur registren, ungefär i arbetstimmar (steg 1.4.1):
 // - det man samlar: tiden det tar att skaffa en (takten i arbetet i handlingar.ts, eller `tid` i saker.ts),
 // - det man gör: värdet av det den görs av plus arbetstiden (`av` och `min` i saker.ts),
-// - ett påslag per teknisk nivå (tekniken som behövs och de tekniker den bygger på, teknik.ts), och för sällsynta råvaror.
+// - ett påslag per teknisk nivå (tekniken som behövs och de tekniker den bygger på, teknik.ts) som saken ligger över sitt
+//   högsta material, och för sällsynta råvaror.
 // En sak från en senare teknik är alltid värd mer än de enkla råvarorna av samma slag (mappen i saker.ts), även när
 // råvaran tar längre tid att samla: kött är värt mer än bär. Grundvärdet är fast; i ett byte värderar var och en saken
 // som grundvärdet gånger sitt eget behov av den (behovAv i behov.ts). Ett ting och en stack är värda grundvärdet gånger sitt skick; kvaliteten räknas in
 // när den finns (steg 2.2.2).
 // Byns rikedom är förrådet, redskapen och husen (husets material och arbete). Delningen (delning.ts) läser den.
 import { ACTS, SNABBARE } from './handlingar';
-import { SAKER, SAK_LIST } from './saker';
+import { SAKER, SAK_LIST, gruppOf } from './saker';
 import { TEK } from './teknik';
 import { agarVarde, wornOf } from './lager';
 import { Ting, tingOf } from './agande';
@@ -73,7 +74,9 @@ function rakna(k: string): number {
     let x = (f.tid ?? 0) / SNABBARE + (f.act && f.tid === undefined ? actTid(f.act) : 0) + (f.min ?? 0) / 60 * ARBETE;
     for (const j in f.av ?? {}) x += f.av![j] * grundvarde(j);
     x /= f.ger ?? 1; // ett recept som ger flera (en ved blir fyra näver)
-    v = x * (1 + VARDE.nivaPaslag * nivaOf(k)) * (f.sallsynt ? VARDE.sallsynt : 1);
+    // påslaget räknas bara för de nivåer saken ligger över sitt högsta material: materialets värde bär redan sina (steg 15.1.30)
+    const matNiva = Math.max(0, ...Object.keys(f.av ?? {}).map(nivaOf));
+    v = x * (1 + VARDE.nivaPaslag * (nivaOf(k) - matNiva)) * (f.sallsynt ? VARDE.sallsynt : 1);
   }
   raVarde.set(k, v);
   return v;
@@ -89,6 +92,10 @@ export function grundvarde(k: string): number {
     const ra = SAK_LIST.filter(j => SAKER[j]!.mapp === mapp && nivaOf(j) === 0 && !SAKER[j]!.skaffa?.av && SAKER[j]!.varde === undefined).map(rakna); // det köpta med fast värde (saltet) höjer inte golvet
     if (ra.length) v = Math.max(v, Math.max(...ra) * (1 + VARDE.nivaPaslag * n));
   }
+  // och mer än det den ersätter (steg 15.1.30): den sämre saken i samma grupp (lägre rang) gånger påslaget för nivåerna emellan,
+  // så att en sak från en senare teknik är dyrare än den äldre också när tekniken gör arbetet fortare
+  const rang = SAKER[k]?.rang ?? 0;
+  if (rang > 0) for (const j of SAK_LIST) if ((SAKER[j]!.rang ?? 0) < rang && gruppOf(j) === gruppOf(k)) v = Math.max(v, grundvarde(j) * (1 + VARDE.nivaPaslag * Math.max(0, n - nivaOf(j))));
   varden.set(k, v);
   return v;
 }
