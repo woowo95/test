@@ -26,6 +26,7 @@ import './fas13';
 import './fas14';
 import './fas15';
 import './fas15-20';
+import './fas15-18';
 import './fas15-6';
 import './fas15-10';
 import './fas15-5';

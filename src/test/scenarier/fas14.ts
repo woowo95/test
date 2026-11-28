@@ -145,7 +145,7 @@ SCENARIER.anstalld = {
     // den anställda kallas till disken när ägaren sover
     let kallad = false;
     if (q) {
-      const k = SIM.living(s).find(x => x !== q && x !== p && SIM.kundVal(s, x, 'servering')), e = k && SIM.kundVal(s, k, 'servering');
+      const k = SIM.living(s).find(x => x !== q && x !== p && SIM.erbjudandet(s, x, 'servering')), e = k && SIM.erbjudandet(s, k, 'servering');
       if (k && e) { const st = SIM.stallIKo(s, k, e); k.x = st.spot.x; k.y = st.spot.y; k.task = { act: 'koaDisk', phase: 'do', tx: k.x, ty: k.y, until: s.now + 8 * 60000, carry: 0, why: '', ref: f.id }; }
       p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 3600000, carry: 0, why: '' };
       q.task = undefined;
@@ -205,10 +205,10 @@ export function foretagBy(verk = ['servering'], silver = 60) {
 SCENARIER.kassa = {
   text: 'Steg 14.1.6: kunden köper maten vid disken när den är mer värd än den kostar, väntar där tills någon betjänar, och går om det dröjer för länge; poängen för att betjäna växer med kön och väntan',
   kor: () => {
-    const { s, p, f, disk, fin, vux } = foretagBy(), m = 60000, kan = vux.filter(q => SIM.kundVal(s, q, 'servering')), k = kan[0], k2 = kan[1];
-    const oppet = SIM.oppna(s, f), e = SIM.kundVal(s, k, 'servering');
-    const dyr = (() => { f.pris = { servering: 50 }; const x = SIM.kundVal(s, k, 'servering'); f.pris = undefined; return x; })();
-    const stalla = (q: typeof k, dt = 0) => { const x = SIM.kundVal(s, q, 'servering'); if (!x) return false; const o = SIM.stallIKo(s, q, x); q.x = o.spot.x; q.y = o.spot.y; q.task = { act: 'koaDisk', phase: 'do', tx: o.spot.x, ty: o.spot.y, until: s.now + o.dur - dt, carry: 0, why: o.why, ref: o.ref }; f.ko![f.ko!.length - 1].t = s.now - dt; return true; };
+    const { s, p, f, disk, fin, vux } = foretagBy(), m = 60000, kan = vux.filter(q => SIM.erbjudandet(s, q, 'servering')), k = kan[0], k2 = kan[1];
+    const oppet = SIM.oppna(s, f), e = SIM.erbjudandet(s, k, 'servering');
+    const dyr = (() => { f.pris = { servering: 50 }; const x = SIM.erbjudandet(s, k, 'servering'); f.pris = undefined; return x; })();
+    const stalla = (q: typeof k, dt = 0) => { const x = SIM.erbjudandet(s, q, 'servering'); if (!x) return false; const o = SIM.stallIKo(s, q, x); q.x = o.spot.x; q.y = o.spot.y; q.task = { act: 'koaDisk', phase: 'do', tx: o.spot.x, ty: o.spot.y, until: s.now + o.dur - dt, carry: 0, why: o.why, ref: o.ref }; f.ko![f.ko!.length - 1].t = s.now - dt; return true; };
     if (e) stalla(k);
     const p1 = SIM.betjanPoang(s, p, f);
     f.ko![0].t -= 4 * m; const p2 = SIM.betjanPoang(s, p, f);
@@ -275,7 +275,7 @@ SCENARIER.affar = {
     // en hög: virke som någon saknar
     SIM.stacksOf(s).push({ k: 'virke', n: 6, c: 1, ...vr(1), ag: { [p.id]: 6 } }); SIM.changed(s);
     f.pris = { affar: 0.5 }; // (ett lågt pris, så att köpet inte hänger på vad kunden råkar ha att betala med)
-    const kund = vux.find(q => SIM.kundVal(s, q, 'affar')), kanske = kund && SIM.kundVal(s, kund, 'affar'), dyr = (() => { f.pris = { affar: 80 }; const x = kund && SIM.kundVal(s, kund, 'affar'); f.pris = { affar: 0.5 }; return x; })();
+    const kund = vux.find(q => SIM.erbjudandet(s, q, 'affar')), kanske = kund && SIM.erbjudandet(s, kund, 'affar'), dyr = (() => { f.pris = { affar: 80 }; const x = kund && SIM.erbjudandet(s, kund, 'affar'); f.pris = { affar: 0.5 }; return x; })();
     let kopt = false, betalt = 0, bytt = false;
     if (kund && kanske) {
       const o = SIM.stallIKo(s, kund, kanske); kund.x = o.spot.x; kund.y = o.spot.y; kund.task = { act: 'koaDisk', phase: 'do', tx: kund.x, ty: kund.y, until: s.now + 480000, carry: 0, why: '', ref: f.id };
@@ -331,7 +331,7 @@ SCENARIER.konkurrens = {
     // hälften står nära var disk, så att avståndet inte avgör allt
     const d1 = SIM.diskarAv(s, f)[0], d2 = SIM.diskarAv(s, f2)[0];
     vux.forEach((q, i) => { const d = i % 2 ? d2 : d1; q.x = d.x + 0.5; q.y = d.y + 2.5; q.task = undefined; });
-    const val = (x: typeof f) => vux.filter(q => SIM.kundVal(s, q, 'servering')?.f === x).length;
+    const val = (x: typeof f) => vux.filter(q => SIM.erbjudandet(s, q, 'servering')?.f === x).length;
     satt(0.3, 0.3); f.pris = { servering: 1 }; f2.pris = { servering: 1 };
     f.dag = f2.dag = f.gap = f2.gap = undefined; const lika = [val(f), val(f2)], nej = Object.entries((f2 as SIM.Foretag).dag ?? {}).reduce((n, [q, d]) => n + (q.split(':')[0] === 'servering' ? d.nej?.length ?? 0 : 0), 0); // per vara (steg 15.1.98)
     f.pris = { servering: 2.5 }; const dyr = [val(f), val(f2)];
@@ -481,7 +481,10 @@ SCENARIER.verksamheter = {
     s.tamdjur = []; const djur = [1, 2, 3, 4].map(() => SIM.nyttTamdjur(s, 'far', p.x, p.y, p.id, s.now - 3 * SIM.DAY));
     djur.forEach((d, i) => { d.hona = i % 2 === 0; });
     const kund = SIM.living(s).find(q => q !== p && !SIM.familjOf(s, p.id).includes(q) && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!; SIM.put(s, 'silver', 60, { [kund.id]: 60 }); kund.skill.skotsel = 20; kund.x = p.x; kund.y = p.y; kund.task = undefined; // bybon står i byn, nära affären
-    const eD = SIM.kundVal(s, kund, 'djurhandel'), kd = kop(kund, 'djurhandel', 'far'), agare = djur.filter(d => d.agare === kund.id).length;
+    // bybon behöver ull till sitt arbete och har ingen (steg 15.1.164: djuret är värt det det ger), så hen saknar ett får
+    SIM.setAmount(s, 'ull', 0); const recept0 = SIM.brukKrok.recept; SIM.brukKrok.recept = (s2, q) => q === kund ? [{ ull: 2 }, ...recept0(s2, q)] : recept0(s2, q); kund.bruk = undefined;
+    const eD = SIM.erbjudandet(s, kund, 'djurhandel'), kd = kop(kund, 'djurhandel', 'far'), agare = djur.filter(d => d.agare === kund.id).length;
+    SIM.brukKrok.recept = recept0;
     g.gast!.silver = 100; const kg = kop(g, 'djurhandel', 'far'), hemMed = g.gast!.kop?.levfar ?? 0, kvar = SIM.tamdjurOf(s).filter(d => d.agare === p.id).length, slut = SIM.tillSalu(s, p.id, 'far');
     return [
       [`nattlogiet räknar med gästerna (${g0.kunder.toFixed(2)} per dygn), och utan företag kommer inga (${ingen})`, g0.kunder > 0 && ingen === 0],

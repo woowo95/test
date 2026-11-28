@@ -78,6 +78,8 @@ export function klanerOf(s: State): Klan[] {
 // en by har gått under (byflytt.ts): listan räknas om
 export const klanerAndrade = (s: State) => { if (s.varld?.rader) lista.delete(s.varld.rader); };
 export const klanById = (s: State, id: number | undefined) => id === undefined ? undefined : klanerOf(s).find(k => k.id === id);
+// gästen p:s hemby i världen (raden), om hen har en
+export const gastRad = (s: State, p: Person) => { const nr = klanById(s, p.gast?.klan)?.rad; return s.varld?.rader?.find(r => r.nr === nr); };
 // hur nära byn ligger: 1 inom KLAN.naraDygn, sedan i proportion mot restiden
 export const narhet = (k: Klan) => k.dygn === undefined ? 1 : Math.min(1, KLAN.naraDygn / Math.max(1e-6, k.dygn));
 export const klanMellan = (s: State, [a, b]: readonly number[]) => a + rnd(s, 'klan') * (b - a);

@@ -21,7 +21,7 @@ import { BYN, kyrkaId } from './egendom';
 import { FOOD } from './saker';
 import { foodDaysAll, matPerDygn } from './ekonomi';
 import { FORRADSMAL, buffert } from './forradsmal';
-import { egnaMatDygn, forsorjer, payable } from './behov';
+import { betalVarde, egnaMatDygn, forsorjer, payable } from './behov';
 import { kunnaFart } from './kunna';
 import { tanke } from './tankar';
 import { ledareOf } from './styre';
@@ -52,7 +52,6 @@ export interface Dagsverk {
   bud(s: State): LonBud[];
 }
 export const lonNu = (s: State) => lagGaller(s, 'lon') && lagGaller(s, 'skatt');
-export const anstAv = (s: State, p: Person) => s.anst?.find(a => a.p === p.id);
 // anställd av byn i arbetet arb (i år)
 export const anstByn = (p: Person, arb: string) => p.anst?.av === BYN && p.anst.arb === arb;
 // föräldern som försörjer p, modern först
@@ -61,11 +60,11 @@ const forsorjare = (s: State, p: Person) => [p.mother, p.father].map(id => livin
 const betalare = (s: State, p: Person) => forsorjare(s, p) ?? p;
 const silverAv = (s: State, id: number) => Math.floor(ownsId(s, id, 'silver') + 1e-9);
 // det id kan betala en lön med: dagsarbetet ligger på samma byten som allt annat (Gränsen mot fas 14 i fliken Människan), så en
-// person betalar med silvret och det hen har över, värderat efter grundvärdet (som kunden vid disken, kundPung i foretag.ts).
+// person betalar med silvret och det hen har över, värderat efter grundvärdet (som kunden vid disken: betalVarde i behov.ts).
 // Kyrkan betalar med sitt silver
 export const formaga = (s: State, id: number) => {
   const p = id > 0 ? byId(s, id) : undefined;
-  return p ? Math.floor(payable(s, p, []).reduce((a, w) => a + (w.t ? 0 : w.n * grundvarde(w.k)), 0) + 1e-9) : silverAv(s, id);
+  return p ? Math.floor(betalVarde(s, p) + 1e-9) : silverAv(s, id);
 };
 
 // det byn kan betala ur delen: delens andel av byns silver och av maten över bufferten
@@ -144,7 +143,7 @@ export function anstallDygn(s: State) {
     s.anst.push({ av: b.av, arb, p: p.id, lon, verk: 0, mal: b.mal, del: b.av === BYN ? DAGSVERK[arb].del : undefined, t: s.now });
     p.anst = { av: b.av, arb, mal: b.mal, w: lon / Math.max(1, Math.min(vantatVerk(p, arb), b.timMax ?? Infinity)) / ARBETE };
     upptagen.add(p); plats.set(b, (plats.get(b) ?? 0) + 1); kvar.set(kassa, tak - lon);
-    count(s, 'anstalld'); count(s, 'anstalld_' + arb);
+    count(s, 'anstalld_' + arb);
     if (forstaGang(s, 'anstalld')) { const l = ledareOf(s), av = b.av > 0 ? byId(s, b.av)?.name : b.av === BYN ? l?.name ?? 'Byn' : 'Kyrkan'; log(s, `${av} anställde ${p.name} för ett år: ${DAGSVERK[arb].namn.toLowerCase()}, ${lon} silver.`, 'world', [p.id]); }
   }
 }

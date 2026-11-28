@@ -6,7 +6,7 @@
 import { HOUR, MIN, type Person, type State, type Task } from './typer';
 import { balans } from './balans';
 import { ageOf, ALDER, count, log, living } from './folk';
-import { brukAv, bytenMellan, DELA, materialOver, ownFor, saknarNu } from './behov';
+import { brukAv, bytenMellan, DELA, materialOver, overOf, saknarNu } from './behov';
 import { grundvarde } from './varde';
 import { hourOf } from './tid';
 import { freeNear } from './byggnad';
@@ -23,16 +23,14 @@ export const MARKNAD = balans('marknad', {
 });
 export interface Marknad { x: number; y: number; t: number; slut: number; lust: Record<number, number>; byten: number }
 export const marknadOppen = (s: State) => s.marknad && s.now >= s.marknad.t && s.now < s.marknad.slut ? s.marknad : undefined;
-// det g har över av slaget (eller behovet) k, så att någon annan kan få det
-const harOver = (s: State, g: Person, k: string) => { const r = brukAv(k), b = r.behov?.(); return b ? ownFor(s, g, b) > r.behall(s, g, k) + b.minst : r.ting ? !!r.over?.(s, g, k) : materialOver(s, g, k) >= 1; };
+// det g har över av slaget (eller behovet) k, så att p kan få det: samma fråga som bytet (overOf, Alla saker byts efter samma regler)
+export const harOver = (s: State, g: Person, p: Person, k: string) => { const r = brukAv(k), b = r.behov?.(); return b ? overOf(s, g, b, p) >= b.minst : r.ting ? !!r.over?.(s, g, k) : materialOver(s, g, k) >= 1; };
 const slagVarde = (k: string) => { const b = brukAv(k).behov?.(); return b ? Math.max(...b.slag.map(q => grundvarde(q))) : grundvarde(k); };
 // vad var och en skulle vinna på att alla möttes: hälften för den som får saken, och hälften för den som har den över
 export function handelslust(s: State): Map<number, number> {
-  const folk = living(s).filter(p => !p.gast && ageOf(p, s.now) >= ALDER.hjalper), ut = new Map<number, number>(), over = new Map<string, Person[]>();
+  const folk = living(s).filter(p => !p.gast && ageOf(p, s.now) >= ALDER.hjalper), ut = new Map<number, number>();
   for (const p of folk) for (const k of saknarNu(s, p)) {
-    let har = over.get(k);
-    if (!har) over.set(k, har = folk.filter(g => harOver(s, g, k)));
-    const andra = har.filter(g => g !== p);
+    const andra = folk.filter(g => g !== p && harOver(s, g, p, k));
     if (!andra.length) continue;
     const v = slagVarde(k) * (DELA.saknar - DELA.over);
     ut.set(p.id, (ut.get(p.id) ?? 0) + v / 2);

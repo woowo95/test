@@ -50,8 +50,8 @@ export function stepHons(s: State, dt = 3600) {
   if (n < 1) return;
   h.agg -= n;
   put(s, 'agg', n, h.agare !== undefined ? { [h.agare]: n } : undefined);
-  count(s, 'honsAgg', n);
-  if (forstaGang(s, 'honsAgg')) log(s, 'Hönsen värpte sina första ägg i byn.', 'world', h.agare !== undefined ? [h.agare] : []);
+  const forsta = !s.stat?.honsAgg; count(s, 'honsAgg', n); // äggen räknas en gång, och den första kullen ger raden
+  if (forsta) log(s, 'Hönsen värpte sina första ägg i byn.', 'world', h.agare !== undefined ? [h.agare] : []);
 }
 
 // de köpta hönorna (varan levhons) blir en del av flocken, ägd av den som köpte dem först

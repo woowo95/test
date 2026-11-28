@@ -524,7 +524,7 @@ export function skrivKlar(s: State, p: Person) {
     takeMaterial(s, p, 'pergament', 1, true, {}); const t = newTing(s, 'blad', 1, p.id); t.skrift = k; t.av = p.id; t.gjord = s.now;
     if (l.fran) { const o = tingOf(s).find(x => x.skrift && x.skrift.kid === undefined && x.id === l.fran!.kid); if (o) o.skrift!.kid = o.id; count(s, 'kartKopia'); } // originalet får sitt nummer när det skrivs av första gången
   }
-  count(s, 'skrivet'); count(s, 'skrivet_' + l.slag);
+  count(s, 'skrivet_' + l.slag);
   tanke(p, 'skrev', s.now, { titel: tx.titel.charAt(0).toLowerCase() + tx.titel.slice(1) });
   handelse(s, p, 'skrev', undefined, tx.titel.charAt(0).toLowerCase() + tx.titel.slice(1)); // (steg 12.1.134)
   if (forstaGang(s, 'skrivet')) log(s, `${p.name} skrev byns första blad: ${tx.titel.toLowerCase()}.`, 'skill', [p.id]);

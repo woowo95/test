@@ -11,7 +11,7 @@ SCENARIER.handelsfart = {
   kor: () => {
     const { s, p, f, vux } = foretagBy(), m = 60000;
     SIM.oppna(s, f);
-    const k = vux.find(q => SIM.kundVal(s, q, 'servering'))!, x = SIM.kundVal(s, k, 'servering')!, o = SIM.stallIKo(s, k, x);
+    const k = vux.find(q => SIM.erbjudandet(s, q, 'servering'))!, x = SIM.erbjudandet(s, k, 'servering')!, o = SIM.stallIKo(s, k, x);
     k.x = o.spot.x; k.y = o.spot.y; k.task = { act: 'koaDisk', phase: 'do', tx: o.spot.x, ty: o.spot.y, until: s.now + o.dur, carry: 0, why: o.why, ref: o.ref };
     const med = (sk: number, fn: () => number) => { const h = p.skill.handel, hv = p.skill.hantverk; p.skill.handel = sk; p.skill.hantverk = sk; try { return fn(); } finally { p.skill.handel = h; p.skill.hantverk = hv; } };
     const betj = (sk: number) => med(sk, () => (SIM.betjanVal(s, p)?.dur ?? 0) / m);
@@ -159,10 +159,10 @@ SCENARIER.silverforst = {
     const kop = (utanSilver: boolean) => {
       const { s, p, f, fin, vux } = foretagBy();
       SIM.oppna(s, f);
-      const k = vux.find(q => SIM.kundVal(s, q, 'servering'))!;
+      const k = vux.find(q => SIM.erbjudandet(s, q, 'servering'))!;
       SIM.laggIn(s, 'torrfisk', 40, k.id); // mat över
       if (utanSilver) SIM.use(s, undefined, 'silver', SIM.ownsAmount(s, k, 'silver'), false, k.id);
-      const e = SIM.kundVal(s, k, 'servering');
+      const e = SIM.erbjudandet(s, k, 'servering');
       if (!e) return { e, silver: 0, fisk: 0, gav: '' };
       const o = SIM.stallIKo(s, k, e);
       k.x = o.spot.x; k.y = o.spot.y; k.task = { act: 'koaDisk', phase: 'do', tx: o.spot.x, ty: o.spot.y, until: s.now + o.dur, carry: 0, why: o.why, ref: o.ref };

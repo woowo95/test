@@ -224,7 +224,7 @@ export function hamlaKlar(s: State, p: Person, i?: number) {
   const h = hamladeOf(s).find(q => q.i === i);
   if (!h) {
     (s.hamlade ??= []).push({ i, t: s.now }); s.byggV = (s.byggV ?? 0) + 1;
-    gain(s, p, 'grenar', VINTER.hamlaGrenar); count(s, 'hamlat');
+    gain(s, p, 'grenar', VINTER.hamlaGrenar);
     if (forstaGang(s, 'hamlat')) log(s, `${p.name} hamlade byns första björk. Om några år har den nya skott med löv åt djuren.`, 'world', [p.id]);
   } else {
     if (!moget(s, h)) return;

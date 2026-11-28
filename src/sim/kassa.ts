@@ -1,6 +1,6 @@
 // ---------- kassan (steg 14.1.6, Ekonomi och handel: Kassan och affären, i fliken Människan) ----------
 // Disken är en station i ett rum med verksamheten. Kunden väljer företaget när det hen får är mer värt för hen än det det
-// kostar (kundVal), går till disken och väntar där (koaDisk), flera i kö. Att betjäna är ett arbete (betjanVal, ARBETEN i
+// kostar (erbjudandet), går till disken och väntar där (koaDisk), flera i kö. Att betjäna är ett arbete (betjanVal, ARBETEN i
 // val.ts): poängen växer med dem som väntar och hur länge de väntat. Betjänaren tar emot den första i kön, som betalar med
 // silver och varor som i alla byten (byte.ts), och det hen köpte äts vid bordet. Den som väntat för länge går.
 import { kunnaFart } from './kunna';
@@ -145,7 +145,6 @@ const kundNoje = (s: State, p: Person, v: string, k: string) => p.gast ? gastKun
 // vad kunden p tycker om företaget utöver varan (finheten mot förväntan, ryktet: steg 14.1.9 och 14.1.10 lägger till)
 export const tycker: ((s: State, p: Person, f: Foretag, v: string) => number)[] = [];
 // det bästa p kan köpa av verksamheten v nu, om det är mer värt för hen än det kostar
-export const kundVal = (s: State, p: Person, v: string): Erbjudande | undefined => erbjudandet(s, p, v);
 // bara = bara det företaget (gästen som kommit dit)
 // kan = bara de varorna (kopbuffert.ts)
 export function erbjudandet(s: State, p: Person, v: string, bara?: Foretag, kan?: (k: string) => boolean): Erbjudande | undefined {
@@ -296,7 +295,7 @@ export function kopVid(s: State, f: Foretag, p: Person, r: KoRad, at: Person): b
   const betalt = b.betal.reduce((a, w) => a + grundvarde(w.k) * w.n, 0);
   const dk = varuNyckel(r.v, r.k); (f.dag ??= {})[dk] = { ...f.dag?.[dk], salt: (f.dag?.[dk]?.salt ?? 0) + 1 };
   (f.salt ??= {})[r.v] = (f.salt[r.v] ?? 0) + 1; (f.saltVara ??= {})[r.k] = (f.saltVara[r.k] ?? 0) + 1; f.vinst = (f.vinst ?? 0) + betalt - n * kv * (V.grund?.(r.k) ?? grundvarde(r.k) * G.varde(r.k));
-  count(s, 'foretagSalt'); count(s, 'foretagSalt_' + r.v);
+  count(s, 'foretagSalt_' + r.v);
   if (forstaGang(s, 'foretagSalt')) log(s, `${p.name} blev den första kunden: ${f.namn}.`, 'world', [p.id]);
   for (const g of omdome) g(s, p, f, { v: r.v, far, net: far - b.kost, kv, vantat: (s.now - r.t) / MIN });
   // kunden sätter sig vid ett bord i rummet med det hen köpt

@@ -10,7 +10,7 @@ import { balans } from './balans';
 import { clamp, hash3 } from './slump';
 import { ALDER, count, log, makeName } from './folk';
 import { gastGar, gastLever, gastTillbaka, nyGast, nyttGastId } from './gast';
-import { kandIgen, klanById, klanerOf, KLAN, narhet, type Klan } from './klaner';
+import { gastRad, kandIgen, klanById, klanerOf, KLAN, narhet, type Klan } from './klaner';
 import { kantMot } from './grannbyar';
 import { klanHandelse } from './byrel';
 import { gaMot } from './rovare';
@@ -18,7 +18,7 @@ import { FORDON_TAL } from './fordon';
 import { hourOf } from './tid';
 import { diskarAv, erbjudandet, gastKund, KASSA, koaKlar, koPlats, omdome, stallIKo, type Erbjudande } from './kassa';
 import { foretagOf, gastFlode, oppna, VERKSAMHETER, type Foretag } from './foretag';
-import { ryktetI, omdomeAv } from './foretagsrykte';
+import { FRYKTE, ryktetI, omdomeAv } from './foretagsrykte';
 import { FORVANTAN } from './forvantan';
 import { radOverskott, radPaslag, radTar } from './priser';
 import { packaRad } from './byhandling';
@@ -60,7 +60,6 @@ export const RANG = {
 export type RangId = keyof typeof RANG;
 const RANGER = Object.keys(RANG) as RangId[], FINA = RANGER.filter(x => (RANG[x] as Rang).fin);
 const R = (p: Person): Rang => RANG[p.gast!.rang ?? 'vanlig'];
-const radAv = (s: State, p: Person) => { const nr = klanById(s, p.gast?.klan)?.rad; return s.varld?.rader?.find(r => r.nr === nr); };
 
 // ---------- vem som kommer ----------
 export const oppnaForetag = (s: State): Foretag[] => foretagOf(s).filter(f => oppna(s, f).length && diskarAv(s, f).length);
@@ -124,7 +123,7 @@ export function nyForetagsgast(s: State, f: Foretag, k: Klan, rang?: RangId): Pe
 const buret = (p: Person) => [...Object.entries(p.gast!.kop ?? {}), ...Object.entries(p.gast!.varor ?? {})].reduce((a, [k, n]) => a + n * viktOf(k), 0);
 gastKund.part = (s, p): Part => ({
   id: p.id, namn: p.name, x: p.x, y: p.y, handel: p.skill.handel ?? 0,
-  varde: k => k === 'silver' ? 1 : isFood(k) ? 0.5 + (1 - p.hunger) : (r => r ? radPaslag(s, r, k) : 1)(radAv(s, p)), // hemma är saken värd det byn betalar för den
+  varde: k => k === 'silver' ? 1 : isFood(k) ? 0.5 + (1 - p.hunger) : (r => r ? radPaslag(s, r, k) : 1)(gastRad(s, p)), // hemma är saken värd det byn betalar för den
   over: utom => [...(p.gast!.silver ?? 0) >= 1 && !utom.includes('silver') ? [{ k: 'silver', n: p.gast!.silver! }] : [], ...Object.entries(p.gast!.varor ?? {}).filter(([k, n]) => n >= 1 && !utom.includes(k)).map(([k, n]) => ({ k, n }))], // silvret och varorna hen har med sig (steg 15.1.11)
 });
 // ju fler gånger hen redan ätit eller druckit här, desto mindre lockar det
@@ -160,7 +159,7 @@ gastKund.klar = (s, p, v, sitter) => {
   p.task = undefined;
 };
 // hur hen blev bemött: medlet av besökets omdömen
-omdome.push((s, p, f, b) => { const g = p.gast; if (g?.sort !== 'kund') return; const v = b ? omdomeAv({ s, p, f, ...b }) : -1, o = g.bemott ??= { v: 0, n: 0 }; o.v += v; o.n++; });
+omdome.push((s, p, f, b) => { const g = p.gast; if (g?.sort !== 'kund') return; const v = b ? omdomeAv({ s, p, f, ...b }) : FRYKTE.utan, o = g.bemott ??= { v: 0, n: 0 }; o.v += v; o.n++; });
 
 // ---------- besöket (TAKTER, varje slag) ----------
 const basta = (s: State, p: Person, f: Foretag): Erbjudande | undefined => {
@@ -211,7 +210,7 @@ export function foretagsgastSteg(s: State, dtSec: number) {
 }
 // gästen är hemma igen: det hen köpt och silvret hen har kvar kommer till byn, och relationen följer hur hen blev bemött
 export function gastHemIgen(s: State, p: Person) {
-  const g = p.gast!, r = radAv(s, p), k = klanById(s, g.klan);
+  const g = p.gast!, r = gastRad(s, p), k = klanById(s, g.klan);
   if (r) { radTar(r, 'silver', g.silver ?? 0); for (const q in g.kop) radTar(r, q, g.kop[q]); for (const q in g.varor) if (g.varor[q] >= 1) radTar(r, q, g.varor[q]); } // det hen inte betalade med går hem igen
   if (k && g.bemott?.n) { const v = g.bemott.v / g.bemott.n; klanHandelse(s.varld, k, v >= 0 ? 'bemott' : 'illaBemott', Math.abs(v) * R(p).vikt); count(s, v >= 0 ? 'gastNojd' : 'gastMissnojd'); }
   gastGar(s, p.id, true);

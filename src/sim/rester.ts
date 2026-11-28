@@ -85,7 +85,6 @@ export function latrinTomKlar(s: State, p: Person) {
   const n = Math.max(1, Math.round(REST.latrin * Math.min(1, l.fyllt ?? 0)));
   l.fyllt = 0; ko.kompost = { rest: (ko.kompost?.rest ?? 0) + n, mogna: ko.kompost?.mogna ?? 0 };
   if (!stationDef(l.k)?.dass) fyllIgen(s, l, false); // en grävd latrin som tömts går inte att använda igen; utedasset står kvar (steg 12.4.9)
-  count(s, 'latrinTomd');
   if (forstaGang(s, 'latrinTomd')) log(s, `${p.name} tömde latrinen i komposten, så att ingen ny grop behöver grävas.`, 'world', [p.id]);
 }
 // en gång i timmen: den som odlar kan märka att det växer bättre där resterna legat (tekniken Gödsel) och komposten mognar
@@ -101,7 +100,7 @@ export function stepKompost(s: State, dt = 3600) {
   c.mogna += (temperature(s) > REST.varm ? 1 : REST.kylaTakt) * dt / 3600 / (REST.kompostDygn * 24);
   if (c.mogna < 1) return;
   c.mogna = 0; c.rest -= REST.kompostRest;
-  put(s, 'kompost', 1); count(s, 'kompostKlar');
+  put(s, 'kompost', 1);
   if (forstaGang(s, 'kompostKlar')) log(s, 'Den första komposten är färdig. Den gör fälten bördigare.', 'world');
 }
 import { isKlar } from './stationer';

@@ -13,7 +13,7 @@ import { BYN, kyrkaId } from './egendom';
 import { kronika } from './historik';
 import { ledareOf } from './styre';
 import { prastOf } from './kult';
-import { behovAv, DELA, payable, personPart, saknarNu } from './behov';
+import { behovAv, betalVarde, DELA, personPart, saknarNu } from './behov';
 import { grundvarde, formogenheter } from './varde';
 import { kroppensMat } from './ekonomi';
 import { amountOf, ownsAmount } from './lager';
@@ -128,7 +128,6 @@ const husAv = (s: State, ag: number): Hus[] => housesOf(s).filter(h => h.fn === 
 // så många gäster per dygn väntas till byns företag (foretagsgast.ts)
 export const gastFlode: ((s: State, pris: number) => number)[] = []; // de som kan betala priset (steg 15.1.13)
 // vad kunden p kan betala per dygn: silvret och det hen har över, ska räcka en tid
-export const kundPung = (s: State, p: Person) => payable(s, p, []).reduce((a, w) => a + (w.t ? 0 : w.n * grundvarde(w.k)), 0);
 // det kunderna skulle ge per dygn utöver varans värde om de kunde köpa verksamheten v av ag: antalet kunder och vinsten
 // ett företag har öppnat: det har sitt hus och en disk i rummet (steg 15.1.13)
 const harDisk = (s: State, f: Foretag) => { const rum = foretagRum(s, f); return rum.length > 0 && stationerOf(s).some(t => t.k === 'disk' && isKlar(t) && rum.includes(stationRum(s, t)!)); };
@@ -136,7 +135,7 @@ export function efterfragan(s: State, v: string, ag: number, utan?: Foretag): { 
   const V = VERKSAMHETER[v], varor = V.varor(s, ag), fam = familjOf(s, ag), perVara: Record<string, number> = {}, vinstVara: Record<string, number> = {};
   if (!varor.length) return { kunder: 0, vinst: 0, perVara, vinstVara };
   // ägarens familj köper inte av hen (som i kassan, steg 15.1.12); affären räknas per vara, de andra efter den bästa
-  const kund = (p: Person, k: string, nj: number) => { const pris = (V.grund?.(k) ?? grundvarde(k)) + nj * FORETAG.del, n = Math.min(V.perDygn(s, p, k) * FORETAG.andel, kundPung(s, p) / FORETAG.pung / Math.max(0.1, pris)); perVara[k] = (perVara[k] ?? 0) + n; vinstVara[k] = (vinstVara[k] ?? 0) + n * nj * FORETAG.del; };
+  const kund = (p: Person, k: string, nj: number) => { const pris = (V.grund?.(k) ?? grundvarde(k)) + nj * FORETAG.del, n = Math.min(V.perDygn(s, p, k) * FORETAG.andel, betalVarde(s, p) / FORETAG.pung / Math.max(0.1, pris)); perVara[k] = (perVara[k] ?? 0) + n; vinstVara[k] = (vinstVara[k] ?? 0) + n * nj * FORETAG.del; };
   for (const p of living(s)) {
     if (p.id === ag || fam.includes(p) || ageOf(p, s.now) < ALDER.hjalper) continue;
     if (V.hylla) { // per vara, och maten som en vara: den bästa maten hen saknar
