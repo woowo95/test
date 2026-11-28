@@ -247,12 +247,17 @@ SCENARIER.vak = {
     const kallt = SIM.temperature(s) < 0;
     for (let i = 0; i < 6; i++) SIM.stepIs(s, 1);
     const efter = s.is!.vakar?.[0]?.cm ?? -1, sjoVaxt = s.is!.cm - sjo0;
+    // en vak som höggs när isen var tunn fryser igen och är borta efter några dygn i istiden (steg 15.1.185)
+    s.now = Date.parse('2027-01-10T08:00:00+01:00'); s.is = { vatten: 0, cm: 5, vakar: [{ x: plats.x, y: plats.y, cm: 0 }] } as typeof s.is;
+    let igen: number | undefined;
+    for (let h = 1; h <= 6 * 24 && igen === undefined; h++) { s.now += SIM.HOUR; SIM.stepIs(s, 1); if (!s.is!.vakar) igen = h; }
     s.is!.cm = 0.01; s.is!.vatten = 0; s.now = Date.parse('2027-05-15T12:00:00+02:00'); SIM.stepIs(s, 24);
     return [
       [`utan vak och utan isborr når yxan inte genom 40 cm is (${utanVak.val ?? 'inget'}, vatten ${utanVak.na})`, !utanVak.val && !utanVak.na && !utanVak.spot],
-      [`hålet blir en vak med 0 cm is (${vak ? `${vak.cm} cm vid ${vak.x},${vak.y}` : 'ingen'})`, !!vak && vak.cm === 0],
+      [`hålet blir en vak med 0 cm is (${vak ? `${fore} cm vid ${vak.x},${vak.y}` : 'ingen'})`, !!vak && fore === 0],
       [`genom den nyss huggna vaken når hen vattnet utan att hugga (${medVak.val ?? 'inget hål behövs'}, ${medVak.min} minuter, platsen ${medVak.spot ? `${medVak.spot.x},${medVak.spot.y}` : 'ingen'})`, !medVak.val && medVak.na && !!medVak.spot && Math.hypot(medVak.spot.x - plats.x, medVak.spot.y - plats.y) <= SIM.IS.vakNara && medVak.min === 0],
       [`i kylan växer vaken från ${fore} till ${efter.toFixed(2)} cm, fortare än sjön (${sjoVaxt.toFixed(2)} cm), och blir inte tjockare än sjön`, kallt && efter > fore && efter - fore > sjoVaxt && efter <= s.is!.cm + 50],
+      [`vaken som höggs i tunn is har frusit igen efter ${igen === undefined ? 'mer än sex dygn' : `${(igen / 24).toFixed(1)} dygn`} i istiden`, igen !== undefined && igen <= 6 * 24],
       [`när isen gått upp finns ingen vak kvar (${s.is!.cm} cm, ${s.is!.vakar?.length ?? 0} vakar)`, s.is!.cm === 0 && !s.is!.vakar],
     ];
   },
@@ -3624,6 +3629,8 @@ SCENARIER.lagervapen = {
     const ater = { ...L.stulet, ...L.vapen };
     tomt(); SIM.radLaggTill(L, 'redskap', 40);
     const v3 = vapen(gang(5, L)), red = SIM.radHar(L, 'redskap');
+    tomt(); SIM.radTar(L, 'ringbrynja_jarn', 1); SIM.radTar(L, 'jarnhjalm_jarn', 1); // steg 15.1.178: det bästa skyddet ur registret
+    const g4 = gang(3, L), brynja = g4.filter(p => SIM.gastTingOf(s, p).some(t => t.k === 'ringbrynja_jarn')).length, jhjalm = g4.filter(p => SIM.gastTingOf(s, p).some(t => t.k === 'jarnhjalm_jarn')).length;
     L.tal.folk = 6; L.tal.styrka = 6;
     const storst = SIM.flockStorlek(L, 0, vl.rader!.find(r => r.nr === vl.huvud)!);
     const vB = vapen(gang(6, by));
@@ -3634,6 +3641,7 @@ SCENARIER.lagervapen = {
       [`det bästa tas först, och hjälmen (${v2.join(', ')}, ${s2} skydd; kvar ${Object.keys(kvar).length})`, v2[0] === 'svard' && v2[1] === 'kniv' && s2 === 1 && !Object.keys(kvar).length],
       [`vapnen som kom hem är lägrets igen (${Object.entries(ater).map(([k, n]) => `${n} ${k}`).join(', ')})`, ater.svard === 1 && ater.kniv === 1 && ater.hjalm_lader === 1],
       [`varorna räcker till några (${v3.join(', ')}; ${red} kvar)`, v3.some(k => k !== 'sten') && red < 40],
+      [`en stulen ringbrynja och järnhjälm bärs av en rövare (${brynja} brynja, ${jhjalm} hjälm; först i LAGERSKYDD: ${SIM.LAGERSKYDD.map(l => l[0]).join(', ')})`, brynja === 1 && jhjalm === 1 && SIM.LAGERSKYDD[0][0] === 'ringbrynja_jarn' && SIM.LAGERSKYDD[1][0] === 'jarnhjalm_jarn'],
       [`gänget är inte fler än lägrets folk (${storst} av 6)`, storst <= 6],
       [`gänget från en by får vapen som förut (${vB.join(', ')})`, vB.some(k => k !== 'sten') && vB.every(k => k !== 'sten')],
       ['flocken vet vilket läger den kom från', namnet],

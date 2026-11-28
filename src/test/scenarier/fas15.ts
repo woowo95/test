@@ -78,7 +78,7 @@ SCENARIER.avbrott = {
     const gjorde: string[] = [];
     kor(b.s, 1, () => { const k = b.p.task?.act ?? ''; if (gjorde.at(-1) !== k) gjorde.push(k); if (drick.has(k) || b.p.torst > 0.5) drack = true; }); // ett slag är längre än det tar att dricka
     // den som valde med törsten redan farlig och fick samma uppgift igen avbryts inte i varje slag
-    const c = pass(); c.p.torst = SIM.TORST.farligt - 0.03; c.p.task!.nodVald = true; let byten = 0, forra = c.p.task;
+    const c = pass(); c.p.torst = SIM.TORST.farligt - 0.03; c.p.task!.nod = 1; let byten = 0, forra = c.p.task;
     kor(c.s, 0.1, () => { if (c.p.task !== forra) { byten++; forra = c.p.task; } });
     return [
       [`vakten står kvar när törsten inte är farlig (${kvar})`, kvar === 'vakt'],

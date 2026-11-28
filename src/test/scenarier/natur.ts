@@ -1151,6 +1151,7 @@ SCENARIER.latriner = {
 };
 
 SCENARIER.latrin = {
+  lang: true,
   text: 'Toa-smuts och latriner (steg 2.7.2): den som går på toa utanför en latrin lämnar en fläck som bleknar på två dygn. Den äcklar den som går förbi, gör det sämre att plocka där (maten kan ge magsjuka), och nära vattnet smutsar den vattnet. Latrinen är en grop i byns utkant som grävs med benspaden: man går dit, får vara ifred och lämnar ingen fläck, gropen fylls och fylls igen, och byn gräver en ny. Får någon ont i magen av toa-smutsat vatten lär sig byn att lägga latrinen långt från vattnet. Benspaden görs av tre ben, ett rep och en gren och gräver fram rötter fortare',
   kor: () => {
     const { flackarOf, toaBesok, akel, toaNara, toaVatten, vattenSmuts, smutsOf, smutsAvdrag, smutsigtPlock, smutsigtAtit, magont, latrinFor, latrinBrist, stationSite, utanforByn, STATION, shoreOf, tidyTools, stationerOf, isKlar } = SIM;

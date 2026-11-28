@@ -155,7 +155,7 @@ function oppna() {
   ruta.hidden = false;
   kronLista.innerHTML = kronikaHtml();
   if (vyFor !== s.varld) { vy = undefined; info.textContent = ''; valt = undefined; }
-  sida.innerHTML = sidaHtml();
+  skrivSida();
   rita();
   const b = bilden(), vl = s.varld, hb = huvudbynsPlats(vl);
   if (vyFor !== vl && b && hb && vy) {
@@ -168,7 +168,13 @@ const stang = () => { ruta.hidden = true; };
 window.addEventListener('varldskarta', oppna);
 ruta.querySelector('.vkStang')!.addEventListener('click', stang);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && visas()) { e.stopImmediatePropagation(); stang(); } }, true);
-setInterval(() => { if (visas() && (sallskapNu(s?.varld).length || s?.varld?.farder?.length)) senare(); }, 1000); // sällskapen rör sig
+// rutan för en vald färd eller ett sällskap följer färden (steg 15.1.188): klockan skriver om den när texten ändrats ("Framme om …",
+// lasten, och när färden kommit fram). Byns ruta skrivs inte om varje sekund
+setInterval(() => {
+  if (!visas()) return;
+  if (valt?.fard !== undefined || valt?.sl !== undefined) { const h = sidaHtml(); if (h !== sidaSist) { sidaSist = h; sida.innerHTML = h; } }
+  if (sallskapNu(s?.varld).length || s?.varld?.farder?.length) senare(); // sällskapen rör sig
+}, 1000);
 window.addEventListener('resize', () => { if (visas()) senare(); });
 
 // zooma kring en punkt, inom gränserna
@@ -223,9 +229,9 @@ const slapp = (e: PointerEvent) => {
       const fd = [...vl.farder ?? []].reverse().find(x => traff(fardLage(vl, x, s!.now, v.w)) && !!synlig(fardLage(vl, x, s!.now, v.w)));
       const sl = [...sallskapNu(vl)].reverse().find(x => traff(sallskapLage(s!, x)));
       const by = (vl.platser ?? []).find(p => p.x === q.x && p.y === q.y && syns(kn, p) && p.by !== undefined);
-      if (fd) { valt = { fard: fd.id }; sida.innerHTML = sidaHtml(); }
-      else if (sl) { valt = { sl: sl.id }; sida.innerHTML = sidaHtml(); }
-      else if (by) { valt = { by: by.nr }; sida.innerHTML = sidaHtml(); }
+      if (fd) { valt = { fard: fd.id }; skrivSida(); }
+      else if (sl) { valt = { sl: sl.id }; skrivSida(); }
+      else if (by) { valt = { by: by.nr }; skrivSida(); }
     }
   }
 };
@@ -275,6 +281,8 @@ export const BYFLIKAR = [
 ] as const;
 type ByFlikId = (typeof BYFLIKAR)[number]['id'];
 let valt: { by?: number; sl?: number; fard?: number } | undefined, byFlik: ByFlikId = 'oversikt';
+let sidaSist = ''; // det som senast skrevs i rutan (steg 15.1.188)
+function skrivSida() { sidaSist = sidaHtml(); sida.innerHTML = sidaSist; }
 const OKAND = '<span class="vkOkand" title="Byn vet inte">?</span>';
 function alderText(ar: number) { const n = kalender(s!, s!.now).ar - ar; return n <= 0 ? 'från i år' : n === 1 ? 'ett år gammal' : `${n} år gammal`; }
 function viss(r: PlatsRuta, sant?: string, varde?: string) {
@@ -330,7 +338,7 @@ function fardHtml(f: RadFard): string {
 }
 sida.addEventListener('click', e => {
   const el = e.target as HTMLElement, b = el.closest<HTMLElement>('[data-vkflik]');
-  if (b) { byFlik = b.dataset.vkflik as ByFlikId; sida.innerHTML = sidaHtml(); return; }
+  if (b) { byFlik = b.dataset.vkflik as ByFlikId; skrivSida(); return; }
   const nr = el.closest<HTMLElement>('[data-gain]')?.dataset.gain; // Gå in (steg 11.13.11)
   const v = nr !== undefined ? vacktMedBesok(huvud(), Number(nr)) : undefined;
   if (v) { stang(); gaIn(v); return; }

@@ -731,11 +731,14 @@ const torstNod = ({ s, p, a, lazy }: Ctx) => tortarFarligt(p) ? VAL.nodTorst * n
 const nodUnder = (x: number, grans: number) => 1 + clamp(1 - x / grans, 0, 1); // 1 vid gränsen, 2 vid noll (steg 13.8.9)
 // ett farligt behov (steg 15.1.4): törsten, hungern eller kylan vid de gränser där nödraderna tar över. Det avbryter ett långt
 // arbete eller ett vaktpass som toan gör (taskStep i steg.ts), och den som valde sin uppgift med behovet redan farligt har
-// räknat med det i poängen och avbryts inte igen
+// räknat med det i poängen och avbryts inte igen. Toan är ett av dem (steg 15.1.181): uppgiften minns vilka behov som var
+// farliga när den valdes (Task.nod), och bara ett nytt farligt behov, eller ett som gått över, avbryter den
 // var man är, i ord: i huset, vid elden när en eld brinner nära, annars i mörkret eller ute (steg 15.1.5)
 export const platsOrd = (s: State, x: number, y: number) => roomAt(s, x, y) ? 'i huset' : brinnerNara(s, x, y, VAL.eldNara) ? 'vid elden' : isLight(s.now) ? 'ute' : 'i mörkret';
 export const eldOrd = (s: State, why: string, x: number, y: number) => why.replace(' vid elden', ' ' + platsOrd(s, x, y));
-export const farligtBehov = (p: Person) => tortarFarligt(p) || p.hunger < KROPP.hungrig * VARDRATT.snal || p.warm < KROPP.farligt;
+// de farliga behoven som bitar (steg 15.1.181): törsten 1, hungern 2, kylan 4 och toan 8, när nöden avbryter det man gör
+export const farligaBehov = (p: Person) => (tortarFarligt(p) ? 1 : 0) | (p.hunger < KROPP.hungrig * VARDRATT.snal ? 2 : 0) | (p.warm < KROPP.farligt ? 4 : 0) | (p.toa < KROPP.toaAvbryt ? 8 : 0);
+export const farligtBehov = (p: Person) => (farligaBehov(p) & 7) !== 0;
 export const ARBETEN: readonly Arbete[] = [
   // 1 Fara: vargar är nära (steg 3.7.15), en tornado kommer (steg 3.8.4), det brinner (steg 3.8.5) eller vattnet stiger (steg 3.8.7)
   // den som brinner släcker sig själv först, och de som står nära hjälper hen före allt annat (steg 6.4.16)
@@ -1123,7 +1126,7 @@ function valjTask(s: State, p: Person) {
   // texten säger "vid elden" bara när en eld brinner nära platsen (steg 15.1.5); slocknar den byts texten (taskStep i steg.ts)
   const vidE = v.why.includes(' vid elden');
   if (vidE) v.why = eldOrd(s, v.why, sp.x, sp.y);
-  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(farligtBehov(p) ? { nodVald: true as const } : {}), ...(vidE ? { eldText: true as const } : {}), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, fron: v.fron, hot: v.hot, falt: v.falt, sno: v.sno, ho: v.ho, gava: v.gava, skal: v.skal, hamtar: v.hamtar, lon: v.lon, brand: v.brand, kalla: v.kalla, stanna: v.stanna, eldFor: v.eldFor, pass: v.pass !== undefined ? s.now + v.pass : undefined };
+  p.task = { act: v.act, phase: 'go', tx: sp.x, ty: sp.y, until: s.now + v.dur + (startsOnArrival(v.act) ? GA_TID : 0), ...(farligaBehov(p) ? { nod: farligaBehov(p) } : {}), ...(vidE ? { eldText: true as const } : {}), ...(ACTS[v.act].framme ? { arbTid: v.dur } : {}), carry: 0, why: v.why, ...(v.paus && v.act === 'vila' ? { paus: true as const } : {}), dark: !light, ref: v.ref, tool: v.tool, site: v.site, sok: v.sok, tandmat: v.tandmat, fron: v.fron, hot: v.hot, falt: v.falt, sno: v.sno, ho: v.ho, gava: v.gava, skal: v.skal, hamtar: v.hamtar, lon: v.lon, brand: v.brand, kalla: v.kalla, stanna: v.stanna, eldFor: v.eldFor, pass: v.pass !== undefined ? s.now + v.pass : undefined };
   balteForband(s, p, p.task.act);
   if (ACTS[v.act].plats === 'station') { const st = stationFor(s, v.act, p); if (st && Math.hypot(sp.x - vidStation(st).x, sp.y - vidStation(st).y) < 2) stationBrukad(s, st); } // hur mycket stationen används (steg 9.4.8)
   if (v.act === 'samtal' && !v.spot) samtalMed(s, p); // fram till den man vill prata med (steg 4.5.6.7)
