@@ -63,7 +63,7 @@ import { arbetsformaga, atSteg, foodDays, workRate } from './ekonomi';
 import { FYND, fyndAt, type FyndId, type Kind, svampPlock, toppOf, TRY_SEC, flintFactor, growFynd, handFish, lagren, stoneDist, packFynd, richness, richnessDelar, richnessFor, type Lager, takeFrom } from './fynd';
 import { halMin, halVal, isKost, isNiva, islagt, stepIs, halGjort } from './is';
 import { blotSteg, coldOf, forVarm, stepVader, temperature, VADER, vaderGrader, vaderNu, vaxtFaktor } from './vader';
-import { ELD, VED, brinnerNara, type Tand, turMal, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, letaFattas, letarNu, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tryLight, nagonEld, plockatKvar, woodDays } from './eld';
+import { ELD, VED, brinnerNara, type Tand, turMal, brandTand, vidEld, tandPaRutan, addFuel, canLight, eldById, eldXY, giveBack, letaFattas, letarNu, fireWant, forageItems, fuelFor, heatAt, varmasteHard, igniterOf, stepFire, takeCoal, takeFuel, tryLight, nagonEld, plockatKvar } from './eld';
 import { gastLever } from './gast';
 import { ALDER, KROPP, ageOf, alive, byId, count, dodKrok, forstaGang, gjort, isSick, living, log, ovning, stat } from './folk';
 import { missnojeDod } from './rost';
@@ -144,7 +144,7 @@ import { och } from './ord';
 import { stepPynt } from './pynt';
 import { glomByten, stadaByten } from './byte';
 import { stationById, stationFlyttTimme, stationFor, kvVid, slitRedskapVid, stationFlytta, finishStation, finishTillbehor, stationAt, stationRutor, stepStationer, tillbehorVarme, tillbehorVila, workStation, vidBordet } from './stationer';
-import { buffert, forbrukTimme, forradAv, materialTak, underBuffert, villHaAv, ostKrok } from './forradsmal';
+import { forbrukTimme, forradAv, materialTak, underBuffert, villHaAv, ostKrok } from './forradsmal';
 import { notis } from './notiser';
 import { stepKrukor } from './kruka';
 import { ar_vatska, fyllLampa, fyllVatska, karSomBlirLedig, ledigFor, taVatskaFran, teFaktor, vatskaAv, type VatskaId } from './vatskor';
@@ -882,10 +882,10 @@ function pregnancy(s: State, p: Person, a: number, pop: number, dtSec: number) {
   }
 }
 
-// den del av grenarna från en stam som huggs eller klyvs som följer med hem (steg 12.1.52, 13.8.4): alla under taket eller när
-// veden är under bufferten, och över taket en allt mindre del, (taket / det byn har)², som det mjuka taket i valet; resten lämnas på marken
+// den del av grenarna från en stam som huggs eller klyvs som följer med hem (steg 12.1.52, 13.8.4, 15.1.45): alla under grenarnas
+// materialtak, och över det en allt mindre del, (taket / det byn har)², som det mjuka taket i valet; resten lämnas på marken.
+// Grenarna som bränsle räknas i materialtaket (MATERIALMAL.grenar), inte i vedens
 export const grenarMed = (s: State, tk: Task) => {
-  if (woodDays(s) < buffert(s, 'ved')) return 1;
   const har = forradAv(s, 'grenar') + (tk.items?.grenar ?? 0), tak = materialTak(s, 'grenar');
   return har < tak ? 1 : (tak / Math.max(1e-9, har)) ** 2;
 };

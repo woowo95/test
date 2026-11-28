@@ -5,7 +5,7 @@ import { tal } from './ord';
 import { allaBarn } from './uppvaxt';
 import { kronikaBer, personFalt } from './berattelser';
 import { addTo, amountOf, type Uttag, avbryt, fetchSpot, iBordan, takeLimit, use, put } from './lager';
-import { forbrukat, materialBuffert, overOchUnder, tandBuffert } from './forradsmal';
+import { materialBuffert, overOchUnder, tandBuffert } from './forradsmal';
 import { Behov, getable, takeMaterial } from './behov';
 import { Del, addDel } from './egendom';
 import { coldOf, hardVinter, temperature, vaderNu, VADER } from './vader';
@@ -137,7 +137,7 @@ const minns = (tog: Tog | undefined, k: string, n: number, d: Del | undefined) =
 export function takeFuel(s: State, n0: number, p?: Person, ag?: Del, fran?: Person, tog?: Tog) {
   const gHar = () => Math.floor(takeLimit(s, 'grenar', p, fran) + (fran ? 0 : iBordan(p, 'grenar')) + 1e-9);
   const g0 = Math.min(Math.max(0, gHar() - Math.ceil(tandBuffert(s, 'grenar') - 1e-9)), Math.floor(n0 / GREN + 1e-9)); // hela grenar, aldrig mer än det som behövs
-  if (g0 > 0) { const d = use(s, p, 'grenar', g0, true, fran?.id); forbrukat(s, 'grenar', -g0); if (ag) addDel(ag, d, GREN); minns(tog, 'grenar', g0, d); }
+  if (g0 > 0) { const d = use(s, p, 'grenar', g0, true, fran?.id); if (ag) addDel(ag, d, GREN); minns(tog, 'grenar', g0, d); }
   const n = n0 - g0 * GREN;
   const v = Math.min(n, takeLimit(s, 'ved', p, fran) + (fran ? 0 : iBordan(p, 'ved')));
   const ut: Uttag = { blot: 0 }, w = use(s, p, 'ved', v, true, fran?.id, ut); minns(tog, 'ved', v, w);
@@ -147,7 +147,7 @@ export function takeFuel(s: State, n0: number, p?: Person, ag?: Del, fran?: Pers
   const tt = hel('torv', n - v);
   if (tt > 0) { const d = use(s, p, 'torv', tt, true, fran?.id); if (ag) addDel(ag, d, TORV.varde); minns(tog, 'torv', tt, d); }
   const g = Math.min(gHar(), Math.ceil((n - v - tt * TORV.varde) / GREN - 1e-9)); // hela grenar (steg 3.6.13)
-  if (g > 0) { const d = use(s, p, 'grenar', g, true, fran?.id); forbrukat(s, 'grenar', -g); if (ag) addDel(ag, d, GREN); minns(tog, 'grenar', g, d); } // grenarna som bränsle räknas i veden, inte som förbrukat material (steg 6.2.14)
+  if (g > 0) { const d = use(s, p, 'grenar', g, true, fran?.id); if (ag) addDel(ag, d, GREN); minns(tog, 'grenar', g, d); } // grenarna som bränsle räknas i grenarnas förbrukning och materialtak (MATERIALMAL.grenar, steg 15.1.45)
   const bt = hel('blottorv', n - v - tt * TORV.varde - g * GREN);
   if (bt > 0) {
     const d = use(s, p, 'blottorv', bt, true, fran?.id); if (ag) addDel(ag, d, TORV.varde); minns(tog, 'blottorv', bt, d);

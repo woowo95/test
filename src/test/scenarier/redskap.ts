@@ -257,7 +257,10 @@ SCENARIER.slitage = {
     for (let i = 0; i < 3 * 3600 / 2 && !isLight(n.now); i++) step(n, 2);
     const kvarNara = ute().some(g => g.x === nara!.x && g.y === nara!.y), kvarLangt = ute().some(g => g.x === langt!.x && g.y === langt!.y);
     klockan(n, 9);
-    for (let i = 0; i < 6 * 3600 / 2 && ute().length; i++) step(n, 2);
+    // på dagen bärs det in som förrådet har plats för; det som är över sitt tak ligger kvar ute (steg 15.1.45)
+    const kvarUte = () => ute().filter(g => !SIM.overTaket(n, g.k));
+    for (let i = 0; i < 6 * 3600 / 2 && (kvarUte().length || ute().some(g => g.x === langt!.x && g.y === langt!.y)); i++) step(n, 2);
+    const langtDag = ute().some(g => g.x === langt!.x && g.y === langt!.y), langtOver = SIM.overTaket(n, 'grenar');
     // yxan slits för varje träd som faller (steg 2.3.12), inte per timme: att hugga trä ur stammen sliter den inte mer
     const y = createState(4, START), yp = living(y).find(q => ageOf(q, y.now) >= 18)!;
     const yx = addTool(y, 'yxa', yp), PER = 1 / SIM.ACTS.falla.redskap!.yxa.haller!;
@@ -292,7 +295,7 @@ SCENARIER.slitage = {
       [`skämd mat gör den som blivit hungrig nog magsjuk (${sjuka} gånger på ${(timmar / 24).toFixed(1)} dygn; den mätte låter den ligga, steg 9.6.24)`, sjuka > 0 && tagg],
       [`den som kallas bort lägger bördan på marken (${lagd} högar)`, lagd === 2],
       ['på natten bärs högen nära lägret in men inte den långt bort', !kvarNara && kvarLangt],
-      ['på dagen bärs även det som ligger långt bort in', !ute().length],
+      [`på dagen bärs även det som ligger långt bort in när förrådet har plats, och det som är över taket ligger kvar (${ute().length} högar ute, alla över taket)`, (!langtDag || langtOver) && !kvarUte().length],
     ];
   },
 };
@@ -681,7 +684,7 @@ SCENARIER.underhall = {
 };
 
 SCENARIER.forradsmal = {
-  text: 'Materialen i FORRADSMAL (steg 6.2.14): det som tas ur förrådet räknas som förbrukat (inte grenarna som bränsle), förbrukningen glöms långsamt, bufferten följer förbrukningen och det bygget och projekten väntar på, under bufferten plockas materialet i förbifarten, och den som gått ut för att hämta det plockar också över taket (steg 13.8.4: turerna dit blir allt mer sällsynta i valet). Virket har ingen buffert av förbrukningen, bara det projekten väntar på',
+  text: 'Materialen i FORRADSMAL (steg 6.2.14): det som tas ur förrådet räknas som förbrukat (också grenarna som bränsle, steg 15.1.45), förbrukningen glöms långsamt, bufferten följer förbrukningen och det bygget och projekten väntar på, under bufferten plockas materialet i förbifarten, och den som gått ut för att hämta det plockar också över taket (steg 13.8.4: turerna dit blir allt mer sällsynta i valet). Virket har ingen buffert av förbrukningen, bara det projekten väntar på',
   kor: () => {
     const s = createState(4, START), q = living(s).find(x => ageOf(x, s.now) >= ALDER.vuxen)!;
     setItems(s, { grenar: 200, torrgras: 5, sten: 0, flinta: 0, virke: 0 });
@@ -714,8 +717,8 @@ SCENARIER.forradsmal = {
     const bVirke = SIM.materialBuffert(s, 'virke'), brist = SIM.PROJEKT.virke.brist(s);
     return [
       [`20 grenar ur förrådet räknas som förbrukade (${tagna})`, tagna === 20],
-      [`grenarna som bränsle räknas inte (${brand})`, brand === 20],
-      [`förbrukningen glöms långsamt (${glomt})`, glomt < 20 && glomt > 19],
+      [`grenarna som bränsle räknas också (${brand})`, brand === 30],
+      [`förbrukningen glöms långsamt (${glomt})`, glomt < brand && glomt > brand - 1],
       [`bufferten för grenar följer förbrukningen (${bGren}), för hö är den det tändmaterial byn vill ha, mer i kylan (${bHo}, steg 13.8.6)`, bGren === 40 && bHo === SIM.MATERIALMAL.torrgras.min(s) && bHo >= (s.fire.lit ? SIM.TROSKEL.tandVill : SIM.TROSKEL.tandVillSlocknad)],
       [`taket är högre än bufferten, högst så mycket lagret rymmer (${tak.toFixed(1)})`, tak > bGren && tak <= SIM.FORRAD.materialMatt * bGren],
       [`under bufferten plockas hö och grenar (${Object.keys(g1).join(', ')})`, (g1.torrgras ?? 0) > 0 && (g1.grenar ?? 0) > 0],
