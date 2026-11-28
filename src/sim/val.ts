@@ -69,7 +69,7 @@ import { allows, amountOf, avbryt, carryKind, iHelaForradet, iRackhall, narmaste
 import { BYGG, avail, bedFor, buildJob, siteOf } from './bygg';
 import { FALLOR, type Mjarde, kanVittja, timTillFull, trasig } from './fisk';
 import { bitAt, bitsOf, blocked, freeNear, friUteNear, husById, roomAt } from './byggnad';
-import { FOR_SIG, forSig, homeless, husIText, samlingRum, varmareInne } from './byggnader';
+import { FOR_SIG, arHem, forSig, homeless, husIText, samlingRum, varmareInne } from './byggnader';
 import { groundOf, isForest, punktIRuta, tileOf } from './mark';
 import { axeTask, egenStock, fallTid, stamTill, stockOverHus, stocks } from './skog';
 import { GA_TID, startWork, startsOnArrival } from './paborjat';
@@ -216,7 +216,7 @@ export const VAL = balans('val', {
   berattaAlder: 50, berattaBonus: 6, berattaDiv: 40, // berättande: (färdigheten + Bonus över Alder) / Div
   nattHantDiv: 70, // handarbete: (hantverk + flit) / Div
   nattNar: 2, nattLangt: 8, nattBara: 0.5, nattBaraTim: 2, // de modiga går upp till Nar + Langt rutor för att bära in, med vikten Bara, i så många timmar
-  nattBarnSamtal: 0.6, nattBarnSova: 0.4, // ett barn sitter med de vuxna eller sover, med dessa vikter
+  nattVilaBarn: 1.5, // barnets sömnbehov, större än en full vila: på natten vill barnet sova med vikten nattVilaVikt gånger (1 − vilan / detta), och sover så länge vilan räcker upp till det (steg 15.1.46)
   nattSamtal: 0.4, nattPaus: 0.1, // vikten för att umgås vid elden och för att bara vila där
   // borden (steg 2.2.15)
   maltidMin: 20, maltidSpann: 10, // en måltid vid bordet
@@ -1378,7 +1378,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
 
 // att bygga eller laga en del av ett hus. Saknas material hämtar man det först
 function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeof buildJob>>) {
-  const b = job.bit, hus = (h => h && husIText(h))(s.hus?.find(h => h.id === b.hus)) ?? 'huset';
+  const b = job.bit, hh = s.hus?.find(h => h.id === b.hus), hus = (hh && husIText(hh)) ?? 'huset';
   const over = job.fell ? stockOverHus(s) ?? egenStock(s, p) : undefined; // en stam över ett färdigt hus, eller den p själv fällt, huggs före nästa fällning (steg 9.2.86, 9.2.87)
   if (over) {
     // behöver byn virke (till timmerväggarna, steg 10.2.70) klyvs det ur stammen i stället för att den huggs till ved (steg 10.2.102)
@@ -1400,7 +1400,7 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
     v.ref = job.hugg; v.tool = 'yxa'; v.spot = k ? { x: k.x + 0.3, y: k.y + 0.2 } : { x: b.x + 0.5, y: b.y + 0.5 };
     return;
   }
-  set(v, 'bygga', job.repair ? (b.k === 'golv' ? `Golvet i ${hus} är slitet och behöver lagas.` : `En vägg i ${hus} är sliten och behöver lagas.`) : `${b.k === 'golv' ? 'Lägger golv i' : 'Bygger på'} ${hus}. ${homeless(s) > 0 ? 'Alla har inte en sovplats under tak.' : ''}`.trim());
+  set(v, 'bygga', job.repair ? (b.k === 'golv' ? `Golvet i ${hus} är slitet och behöver lagas.` : `En vägg i ${hus} är sliten och behöver lagas.`) : `${b.k === 'golv' ? 'Lägger golv i' : 'Bygger på'} ${hus}. ${homeless(s) > 0 && hh && arHem(hh) ? 'Alla har inte en sovplats under tak.' : ''}`.trim());
   v.tool = job.repair ? (b.k === 'golv' ? 'lagaGolv' : 'laga') : b.k === 'golv' ? 'golv' : 'vagg'; v.ref = b.id;
   v.dur = (VAL.byggMin + rnd(s, 'val', p) * VAL.byggSpann) * MIN * VAL.pass;
   const site = siteOf(s, b); v.spot = job.need > 0 ? fetchSpot(s, job.item!, p, () => avail(s, job.item!, p, b.hus, b)) : site; if (job.need > 0) v.site = site;
@@ -1568,9 +1568,10 @@ export const FRITID: readonly FritidRad[] = [
   { id: 'paus', nar: 'natt', kraver: 'inget', ger: 'vila', drar: 'inget annat lockar', akt: ['vila'],
     vikt: c => vuxen(c) ? VAL.nattPaus : 0,
     gor: c => viloSkal(c.v) && paus(c.v, 'Mörkt, vilar') },
-  { id: 'sova', nar: 'natt', kraver: 'att vara barn', ger: 'sömn', drar: 'barndomen', akt: ['sova'],
-    vikt: c => vuxen(c) ? 0 : VAL.nattBarnSova,
-    gor: c => set(c.v, 'sova', 'Barn sover på natten') },
+  // barnets sömn ur kroppen som de vuxnas vila (steg 15.1.46): vilan mot barnets större sömnbehov
+  { id: 'sova', nar: 'natt', kraver: 'att vara barn', ger: 'sömn', drar: 'tröttheten och barnets sömnbehov', akt: ['sova'],
+    vikt: c => !vuxen(c) && c.p.rest < VAL.nattVilaBarn ? VAL.nattVilaVikt * (1 - c.p.rest / VAL.nattVilaBarn) : 0,
+    gor: c => { set(c.v, 'sova', 'Barn sover på natten'); c.v.dur = (VAL.nattVilaBarn - c.p.rest) / KROPP.restVila * HOUR; return true; } }, // så länge vilan räcker upp till sömnbehovet
   { id: 'bara', nar: 'natt', kraver: 'något som ligger ute nära lägret', ger: 'saker i förrådet', drar: 'modet: de modiga går längre ut i mörkret', akt: ['bara'],
     vikt: c => c.a >= ALDER.ansvar && c.s.stackar?.length ? VAL.nattBara : 0,
     gor: c => {
@@ -1599,11 +1600,11 @@ export const FRITID: readonly FritidRad[] = [
     projektVal(c.v, pr.u, c.why); return true;
   }, 'material och ett projekt'),
   { id: 'samtal', kraver: 'sällskap', ger: 'umgänge', drar: 'det saknade umgänget', akt: ['samtal'],
-    vikt: c => c.natt ? (vuxen(c) ? VAL.nattSamtal : VAL.nattBarnSamtal) : (1 - c.p.social) * VAL.umgasVikt,
+    // på natten sitter man med de andra vid elden; barnet dessutom mer ju mer umgänge det saknar, som på dagen (steg 15.1.46)
+    vikt: c => c.natt ? VAL.nattSamtal + (vuxen(c) ? 0 : (1 - c.p.social) * VAL.umgasVikt) : (1 - c.p.social) * VAL.umgasVikt,
     gor: c => {
       if (!c.natt) return set(c.v, 'samtal', 'Vill umgås');
-      if (!vuxen(c)) return set(c.v, 'samtal', 'Mörkt, sitter med de vuxna vid elden');
-      set(c.v, 'samtal', 'Mörkt, umgås vid elden'); c.v.dur = (VAL.nattPrat + rnd(c.s, 'val', c.p) * VAL.nattPratSpann) * MIN; return true; // en stund, sedan går man en bit till nästa samtal
+      set(c.v, 'samtal', vuxen(c) ? 'Mörkt, umgås vid elden' : 'Mörkt, sitter med de vuxna vid elden'); c.v.dur = (VAL.nattPrat + rnd(c.s, 'val', c.p) * VAL.nattPratSpann) * MIN; return true; // en stund, sedan går man en bit till nästa samtal
     } },
   { id: 'promenad', nar: 'dag', kraver: 'inget', ger: 'humör', drar: 'nyfikenheten; nyfikna och modiga går längre', akt: ['promenad'],
     vikt: c => (VAL.promBas + stat(c.p, 'nyfikenhet', c.s.now) / VAL.promNyfiken) * c.calm,

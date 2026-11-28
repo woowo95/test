@@ -15,6 +15,7 @@ import { kvVarde } from './kvalitet';
 import { kronika } from './historik';
 import { balans } from './balans';
 import { notis } from './notiser';
+import { BYN } from './egendom';
 
 // ---------- ett bytessystem för alla byten (steg 4.4.1.1) ----------
 // Ett byte mellan två bybor och ett byte med handlaren (handel.ts) är samma byte: två parter (Part), samma värdering (var och
@@ -229,7 +230,9 @@ export function byteKlart(s: State, m: Part, g: Part, fatt: Vara[], betal: Vara[
   const varde = byteVarde(alla);
   if (varde >= BYTE.stort) { // viktigt efter vad som byttes (B.41): en rad i krönikan, och en notis när det är handlaren
     if (hf) notis(s, 'byte', text, [m.id, g.id].filter(i => i > 0));
-    kronikaBer(s, 'k_handel', Math.floor(s.now / HOUR), { a: m.namn, b: g.namn, fick: varorText(fatt), gav: varorText(betal) }, Math.round((1 + varde * BYTE.viktVarde) * 10) / 10);
+    // den som handlar för byn (steg 15.1.48): {afor} är namnet med "för byn" första gången, {a} och {b} namnet utan
+    const bara = (x: Part) => x.id === BYN && x.p ? x.p.name : x.namn;
+    kronikaBer(s, 'k_handel', Math.floor(s.now / HOUR), { afor: m.namn, a: bara(m), b: bara(g), bfor: g.namn, fick: varorText(fatt), gav: varorText(betal) }, Math.round((1 + varde * BYTE.viktVarde) * 10) / 10);
   }
   for (const f of vidByte) f(s, m, g, fatt, betal, minne);
   return stort;

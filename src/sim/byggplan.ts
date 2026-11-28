@@ -849,34 +849,42 @@ export function byggbart(s: State) {
   const utomElden = true, okMinne = new Int8Array(W * H).fill(-1); // huset får stå där elden står (steg 10.2.8): eldens plats är en kostnad i poängen (ELDFLYTT.husStraff), elden flyttas först
   return { okMinne, okAt: (i: number) => (okMinne[i] < 0 ? okMinne[i] = tileOk(s, i % W, Math.floor(i / W), utomElden) ? 1 : 0 : okMinne[i]) === 1 };
 }
+// spärren för att försöka planera igen (steg 15.1.47): en tid per behov och ägare ("sovsal:-1"), så att ett behov som inte fick
+// plats inte håller tillbaka de andra. ALLA_BYGGEN spärrar allt (testerna). En äldre sparning hade en enda tid
+export const ALLA_BYGGEN = 'alla';
+export function byggSok(s: State): Record<string, number> {
+  const g = s.byggSok as Record<string, number> | number | undefined;
+  return typeof g === 'object' ? g : (s.byggSok = typeof g === 'number' ? { [ALLA_BYGGEN]: g } : {});
+}
 export function planBuild(s: State) {
   const ppl = living(s);
   if (!ppl.length) return;
   const byggare = ppl.filter(p => canBuildWalls(p, s)).sort((a, b) => (b.skill.hantverk + stat(b, 'intelligens', s.now) / BYGG.byggareInt) - (a.skill.hantverk + stat(a, 'intelligens', s.now) / BYGG.byggareInt));
-  if (!byggare.length || s.now < (s.byggSok ?? 0)) return;
+  if (!byggare.length) return;
+  const sok = byggSok(s);
+  if (s.now < (sok[ALLA_BYGGEN] ?? 0)) return;
   const behov = byggbehov(s).filter(b => moget(s, b));
   // går det att bygga på rutan? Räknas först när sökningen frågar, och sparas under planeringen (steg 6.2.21). Elden flyttas bara om den kan tändas igen
   const { okAt, okMinne } = byggbart(s);
   // det mest akuta behovet för byn och för varje familj (steg 7.2.17), det första som går att göra något åt; är inget akut för byn, en förbättring
   planSkadat(s, okAt, byggare); // ett skadat hus som är värt mer på en ny plats (steg 9.4.6)
   const klara = new Set<number>();
-  let provat = false, funnit = false; // det som väntar på ett bygge eller ett köp prövas inte
   for (const u of behov) {
     const ag = u.a.tro !== undefined ? TRO_AG - u.a.tro : u.a.ag ?? -1;
-    if (klara.has(ag) || upptagen(s, ag) || s.husAffar?.ag === ag || u.fn === 'forrad' && hyllaPaVag(s)) continue; // den som väntar på att köpa ett hus bygger inget under tiden
+    const nyckel = `${u.fn}:${ag}`;
+    if (klara.has(ag) || upptagen(s, ag) || s.husAffar?.ag === ag || u.fn === 'forrad' && hyllaPaVag(s) || s.now < (sok[nyckel] ?? 0)) continue; // den som väntar på att köpa ett hus bygger inget under tiden
     const bast = valj(s, u, okAt);
-    provat = true;
-    if (!bast) continue;
-    funnit = true;
+    if (!bast) { sok[nyckel] = s.now + BYGG.omforsok * HOUR; continue; } // ingen plats för just det här behovet nu: det försöker igen om ett tag (steg 15.1.47)
+    delete sok[nyckel];
     klara.add(ag);
     utfor(s, bast, u, byggare, ppl);
     okMinne.fill(-1);
   }
-  if (provat && !funnit) s.byggSok = s.now + BYGG.omforsok * HOUR; // ingen plats nu: försök igen om ett tag
-  if (!byggbehov(s).some(b => b.a.ag === undefined && b.a.tro === undefined) && !upptagen(s, -1) && !bitsOf(s).some(b => b.forb) && !klara.has(-1)) {
+  if (!byggbehov(s).some(b => b.a.ag === undefined && b.a.tro === undefined) && !upptagen(s, -1) && !bitsOf(s).some(b => b.forb) && !klara.has(-1) && s.now >= (sok['forbattra:-1'] ?? 0)) {
     const u: ByggBehov = { fn: 'forbattra', a: { v: 1, plats: 0 }, sc: 0 }, f = valj(s, u, okAt);
-    if (f) utfor(s, f, u, byggare, ppl);
+    if (f) { utfor(s, f, u, byggare, ppl); delete sok['forbattra:-1']; } else sok['forbattra:-1'] = s.now + BYGG.omforsok * HOUR;
   }
+  for (const k in sok) if (sok[k]! <= s.now) delete sok[k]; // spärrar som gått ut
 }
 // ett nytt hus för behovet fn planeras direkt, som planBuild gör det, utan att vänta på byggare (den väckta byn, steg 11.13.5);
 // ger huset, eller undefined om inget nytt hus får plats

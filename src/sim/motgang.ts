@@ -4,7 +4,7 @@ import { ageOf, alive, count, isParent, livet, living, log, stat } from './folk'
 import { delade, kronikaBer } from './berattelser';
 import { kronika } from './historik';
 import { clamp, hash3, rnd } from './slump';
-import { kalender, yearNo } from './tid';
+import { kalender } from './tid';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { allaBarn, formas, upplev } from './uppvaxt';
 import { tornadoStorlek, tornadoTid } from './tornado';
@@ -204,7 +204,7 @@ export function stepMotgang(s: State) {
     count(s, 'motgang_' + nu.id);
     const borjar = DEF[nu.id].borjarNu?.(s, nu.start) ?? DEF[nu.id].borjar;
     log(s, borjar, 'world'); notis(s, 'motgang', borjar);
-    kronika(s, `År ${yearNo(s)}: ${borjar.split('.')[0]}.`, 'motgang');
+    kronika(s, `${borjar.split('.')[0]}.`, 'motgang'); // raden står under sitt år i krönikan (steg 15.1.49)
     allaBarn(s, nu.id);
   }
   for (const p of s.people) if (p.varsel && (!alive(p) || p.varsel.t < s.now - DAY * 7)) p.varsel = undefined;

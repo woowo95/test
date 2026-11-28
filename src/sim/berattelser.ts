@@ -2422,16 +2422,17 @@ const MDEF = {
     { t: '{Hen} har sett andra platser än byn.', om: iPerson },
     { t: '{namn} har gått långt bort från byn och kommit hem igen.', om: iPerson },
   ],
-  // handeln (behov.ts, vid ett stort byte): {a} och {b}, {fick} = det a fick, {gav} = det a gav
+  // handeln (behov.ts, vid ett stort byte): {a} och {b}, {fick} = det a fick, {gav} = det a gav. {afor} och {bfor} är namnet med
+  // "för byn" när någon handlar för byn; det står första gången namnet nämns, och sedan bara namnet (steg 15.1.48)
   k_handel: [
-    { t: '{a} bytte till sig {fick} av {b} för {gav}.', om: iBy },
-    { t: 'Det var {arstid} när {a} gjorde ett stort byte med {b}: {fick} för {gav}.', om: iBy },
-    { t: '{a} och {b} gjorde upp om ett byte: {gav} mot {fick}.', om: iBy },
-    { t: 'Byn talade länge om bytet då {a} fick {fick} av {b}.', om: iBy },
-    { t: '{a} gav {gav} och fick {fick} av {b}.', om: iBy },
-    { t: 'Ett stort byte: {a} lämnade {gav} och tog {fick} från {b}.', om: iBy },
-    { t: '{a} handlade med {b} och kom hem med {fick}.', om: iBy },
-    { t: '{b} fick {gav} av {a}, och {a} fick {fick}.', om: iBy },
+    { t: '{afor} bytte till sig {fick} av {bfor} och betalade med {gav}.', om: iBy },
+    { t: 'Det var {arstid} när {afor} gjorde ett stort byte med {bfor}: {fick} för {gav}.', om: iBy },
+    { t: '{afor} och {bfor} gjorde upp om ett byte: {gav} mot {fick}.', om: iBy },
+    { t: 'Byn talade länge om bytet då {afor} fick {fick} av {bfor}.', om: iBy },
+    { t: '{afor} gav {gav} och fick {fick} av {bfor}.', om: iBy },
+    { t: 'Ett stort byte: {afor} lämnade {gav} och tog {fick} från {bfor}.', om: iBy },
+    { t: '{afor} handlade med {bfor} och kom hem med {fick}.', om: iBy },
+    { t: '{bfor} fick {gav} av {afor}, och {a} fick {fick}.', om: iBy },
   ],
   // djuren (tamdjur.ts, när byn får sitt första tamdjur och när ett djur dör): {djur} = 'en ko', {hur} = 'av hunger', {agare}, {forsta}
   k_djur: [
