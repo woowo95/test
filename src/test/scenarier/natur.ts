@@ -137,11 +137,11 @@ SCENARIER.abborre = {
   },
 };
 
-SCENARIER.sjo = { // by 8: by 3 fiskade knappt efter steg 2.3.11, och by 4 fiskade inte de första sex dygnen sedan gåvan ser hela förrådet (4a0be24f)
+SCENARIER.sjo = { // by 9: by 3 fiskade knappt efter steg 2.3.11, by 4 inte de första sex dygnen sedan gåvan ser hela förrådet (4a0be24f), och by 8 knappt efter 15.1.43 (ce87e61); by 9 fiskar mest av byarna 3–10
   lang: true,
   text: 'Varje sammanhängande vatten är en sjö. Fiskeförsök, napp, fångade fiskar och bad räknas per sjö när de händer (sjöfliken)',
   kor: () => {
-    const s = createState(8, START), sj = SIM.sjoarna(s.seed), tiles = getMap(s.seed).tiles;
+    const s = createState(9, START), sj = SIM.sjoarna(s.seed), tiles = getMap(s.seed).tiles;
     let vatten = true; for (let i = 0; i < W * H; i++) if ((tiles[i] === T.Vatten) !== (sj.id[i] >= 0)) vatten = false;
     const storst = sj.rutor.every((r, n) => n === 0 || r.length <= sj.rutor[n - 1].length);
     // den som sitter vid stranden ser ut över sjön eller tjärnen hen sitter vid (steg 9.2.131)
