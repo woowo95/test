@@ -25,6 +25,7 @@ import { DAGSVERK, egetVarde } from './dagsarbete';
 import { rumTaggar } from './rum';
 import { foretagBord, isKlar, stationerOf, stationRum } from './stationer';
 import { RECEPT } from './recept';
+import { fardighetFor, gorKostnad, kanSkaffaVaror, varuOrd } from './foretagsvaror';
 
 export const FORETAG = balans('foretag', {
   humor: 20, // en hel punkt bättre humör under en tanke är värd så många silver för kunden
@@ -66,7 +67,7 @@ export interface Verksamhet {
   perDygn: (s: State, p: Person, k?: string) => number; // så många gånger per dygn kunden skulle kunna köpa (varan k: affären räknar per vara)
   gaster?: (s: State, pris: number) => number; // så många gäster per dygn väntas vilja ha den och kunna betala priset
   egen?: { har: (s: State, f: Foretag) => string[]; ge: (s: State, f: Foretag, p: Person, k: string) => void }; // det som inte är en sak i förrådet (verksamheter.ts)
-  kunnande: (p: Person) => number; // hur väl den som driver den kan den, 1 = vanligt
+  kunnande: (p: Person, s?: State, k?: string) => number; // hur väl den som driver den kan den (varan k: affären räknar per vara, steg 15.1.96), 1 = vanligt
 }
 // den bästa maten p har hemma
 const hemmaNoje = (s: State, p: Person) => FOOD.reduce((m, k) => { const n = MALTIDSNIVA[maltidsNiva(k)].humor; return n > m && ownsAmount(s, p, k) >= 1 ? n : m; }, 0);
@@ -91,16 +92,19 @@ export const VERKSAMHETER: Record<string, Verksamhet> = {
   // affären (steg 14.1.8, affar.ts): kunden vinner så mycket mer hen behöver saken än den som har den över
   affar: {
     namn: 'Affär', sym: '👛', rum: 'affar', hylla: true,
-    // det någon saknar (maten som all mat), och som ägaren har över; utan ägare det som finns i byn (steg 15.1.12)
+    // det någon saknar (maten som all mat), och som ägaren har över eller kan göra själv (steg 15.1.96); utan ägare det som finns i byn (steg 15.1.12)
     varor: (s, ag) => {
       const sak = new Set(living(s).flatMap(p => p.gast ? [] : saknarNu(s, p))), mat = sak.has('mat'), q = ag !== undefined && ag > 0 ? byId(s, ag) : undefined;
-      const har = q ? personPart(s, q).over([]).filter(w => w.n >= 1).map(w => w.k) : undefined;
-      return (har ?? [...sak, ...mat ? FOOD : []].filter(k => amountOf(s, k) >= 1)).filter(k => grundvarde(k) > 0 && (sak.has(k) || mat && FOOD.includes(k)));
+      const vill = [...sak, ...mat ? FOOD : []].filter(k => grundvarde(k) > 0 && (sak.has(k) || mat && FOOD.includes(k)));
+      if (!q) return vill.filter(k => amountOf(s, k) >= 1);
+      const over = new Set(personPart(s, q).over([]).filter(w => w.n >= 1).map(w => w.k));
+      return [...new Set([...vill.filter(k => over.has(k)), ...kanSkaffaVaror(s, q, vill.filter(k => !over.has(k)))])];
     },
     noje: (s, p, k) => grundvarde(k) * Math.max(0, behovAv(s, p, k) - DELA.over),
     snitt: k => grundvarde(k) * (DELA.saknar - DELA.over), grund: k => grundvarde(k) * DELA.over,
     perDygn: (s, p, k) => { if (p.gast) return 0; const sak = saknarNu(s, p); return k === undefined ? sak.length * FORETAG.saknarDygn : sak.includes(k) || FOOD.includes(k) && sak.includes('mat') ? FORETAG.saknarDygn : 0; }, // per vara: den som saknar just den
-    kunnande: p => skick(p.skill.handel),
+    // handeln och färdigheten i arbetet som ger varan, som serveringen väger matlagningen och handeln (steg 15.1.96)
+    kunnande: (p, s, k) => s && k ? skick((p.skill.handel + (p.skill[fardighetFor(s, p, k)] ?? 0)) / 2) : skick(p.skill.handel),
   },
 };
 // företagets sorts namn efter verksamheterna: servering och dryck tillsammans är en taverna
@@ -123,9 +127,9 @@ export const kundPung = (s: State, p: Person) => payable(s, p, []).reduce((a, w)
 // det kunderna skulle ge per dygn utöver varans värde om de kunde köpa verksamheten v av ag: antalet kunder och vinsten
 // ett företag har öppnat: det har sitt hus och en disk i rummet (steg 15.1.13)
 const harDisk = (s: State, f: Foretag) => { const rum = foretagRum(s, f); return rum.length > 0 && stationerOf(s).some(t => t.k === 'disk' && isKlar(t) && rum.includes(stationRum(s, t)!)); };
-export function efterfragan(s: State, v: string, ag: number): { kunder: number; vinst: number; perVara: Record<string, number> } {
+export function efterfragan(s: State, v: string, ag: number): { kunder: number; vinst: number; perVara: Record<string, number>; vinstVara: Record<string, number> } {
   const V = VERKSAMHETER[v], varor = V.varor(s, ag), fam = familjOf(s, ag), perVara: Record<string, number> = {}, vinstVara: Record<string, number> = {};
-  if (!varor.length) return { kunder: 0, vinst: 0, perVara };
+  if (!varor.length) return { kunder: 0, vinst: 0, perVara, vinstVara };
   // ägarens familj köper inte av hen (som i kassan, steg 15.1.12); affären räknas per vara, de andra efter den bästa
   const kund = (p: Person, k: string, nj: number) => { const pris = (V.grund?.(k) ?? grundvarde(k)) + nj * FORETAG.del, n = Math.min(V.perDygn(s, p, k) * FORETAG.andel, kundPung(s, p) / FORETAG.pung / Math.max(0.1, pris)); perVara[k] = (perVara[k] ?? 0) + n; vinstVara[k] = (vinstVara[k] ?? 0) + n * nj * FORETAG.del; };
   for (const p of living(s)) {
@@ -156,7 +160,7 @@ export function efterfragan(s: State, v: string, ag: number): { kunder: number; 
       if (tot > 0 && d > 0) for (const k in perVara) { vinstVara[k] *= 1 - d / tot; perVara[k] *= 1 - d / tot; }
     }
   }
-  return { kunder: Object.values(perVara).reduce((a, n) => a + n, 0), vinst: Object.values(vinstVara).reduce((a, n) => a + n, 0), perVara };
+  return { kunder: Object.values(perVara).reduce((a, n) => a + n, 0), vinst: Object.values(vinstVara).reduce((a, n) => a + n, 0), perVara, vinstVara };
 }
 // det företaget väntar sig när verksamheterna verk tas upp (steg 15.1.13): per verksamhet, och för affären per vara
 function vantas(s: State, ag: number, verk: string[]) {
@@ -170,7 +174,17 @@ export function startPoang(s: State, ag: number, verk: string[], kostar = husKos
   const p = foretagare(s, ag);
   if (!p) return { ag, verk, poang: 0, kunder: 0 };
   let kunder = 0, ut = -kostar / FORETAG.ar;
-  for (const v of verk) { const e = efterfragan(s, v, ag); kunder += e.kunder; ut += e.vinst * VERKSAMHETER[v].kunnande(p) - e.kunder * FORETAG.timKund * egetVarde(s, p); }
+  for (const v of verk) {
+    const e = efterfragan(s, v, ag), V = VERKSAMHETER[v], tim = FORETAG.timKund * egetVarde(s, p);
+    kunder += e.kunder;
+    if (!V.hylla || ag <= 0) { ut += e.vinst * V.kunnande(p) - e.kunder * tim; continue; }
+    // affären per vara (steg 15.1.96): kunnandet i varans arbete, och det som inte finns över kostar ägarens tid att göra
+    const over = new Map(personPart(s, p).over([]).map(w => [w.k, w.n]));
+    for (const k in e.perVara) {
+      const n = e.perVara[k]!, har = Math.min(n, over.get(k) ?? 0), gor = gorKostnad(s, p, k) ?? 0;
+      ut += e.vinstVara[k]! * V.kunnande(p, s, k) - n * tim - (n - har) * Math.max(0, gor - (V.grund?.(k) ?? grundvarde(k)));
+    }
+  }
   // läggningen: den som är driftig och modig startar hellre
   const lagg = clamp((stat(p, 'flit', s.now) + stat(p, 'mod', s.now) + stat(p, 'karisma', s.now)) / (3 * EGENSKAP.mitt), 0.3, 1.7);
   return { ag, verk, poang: ut > 0 ? ut * lagg : ut, kunder };
@@ -210,7 +224,10 @@ export function utoka(s: State, f: Foretag, verk: string[]) {
 }
 export function starta(s: State, ag: number, verk: string[]): Foretag {
   const vantat = vantas(s, ag, verk); // innan företaget finns: det drar inte av från sig självt
-  const f: Foretag = { id: (s.nextForetag = (s.nextForetag ?? 0) + 1), ag, verk, namn: `${agNamn(s, ag)} ${sortNamn(verk).toLowerCase()}`, t: s.now, vantat };
+  // en affär heter efter varan den väntas sälja mest av (steg 15.1.96): Hildulfs krukor
+  const mest = verk.length === 1 && VERKSAMHETER[verk[0]!]?.hylla ? Object.entries(vantat).filter(([q]) => q.startsWith(verk[0] + ':')).sort((a, b) => b[1] - a[1])[0] : undefined;
+  const sort = mest && mest[1] > 0 ? varuOrd(mest[0].slice(verk[0]!.length + 1)) : sortNamn(verk).toLowerCase();
+  const f: Foretag = { id: (s.nextForetag = (s.nextForetag ?? 0) + 1), ag, verk, namn: `${agNamn(s, ag)} ${sort}`, t: s.now, vantat };
   (s.foretag ??= []).push(f);
   count(s, 'foretagStart'); for (const v of verk) count(s, 'foretagStart_' + v);
   const p = foretagare(s, ag);

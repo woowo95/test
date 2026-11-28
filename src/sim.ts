@@ -148,6 +148,7 @@ export * from './sim/budget';
 export * from './sim/lon';
 export * from './sim/dagsarbete';
 export * from './sim/foretag';
+export * from './sim/foretagsvaror';
 export * from './sim/kassa';
 export * from './sim/affar';
 export * from './sim/konkurrens';
