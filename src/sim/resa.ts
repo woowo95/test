@@ -1432,8 +1432,8 @@ export const DAGBOK = {
   tappad: { namn: 'Tappat', sym: '👐' },
   mat: { namn: 'Mat', sym: '🫐' },
   hjul: { namn: 'Trasigt hjul', sym: '🛞' }, // steg 12.1.144
-  gral: { namn: 'Gräl', sym: '💢' }, // steg 15.1.92 (platshållare)
-  flod: { namn: 'Översvämning', sym: '🌊' }, // steg 15.1.92 (platshållare)
+  gral: { namn: 'Gräl', sym: '😠' }, // steg 15.1.92
+  flod: { namn: 'Översvämning', sym: '🌊' }, // steg 15.1.92
   vilt: { namn: 'Vilt', sym: '🦌' },
   ran: { namn: 'Rån', sym: '🗡️', stor: true },
   strid: { namn: 'Strid', sym: '⚔️', stor: true },

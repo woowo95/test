@@ -2092,7 +2092,9 @@ SCENARIER.sallskapfast = {
     // 3. ingen kommer: den ena kommer aldrig, och ledaren dör när hen packat. Resan ställs in, och packningen läggs på samlingsplatsen
     const s3 = SIM.cloneState(s0), a3 = s3.people.find(q => q.id === vuxna[0]!.id)!, b3 = s3.people.find(q => q.id === vuxna[1]!.id)!;
     a3.task = b3.task = undefined; // ledaren väljer att samla när hen är ledig, och den som följer med lämnar det hen gjorde
-    const sl3 = SIM.samlaResa(s3, a3, plan)!; SIM.foljMed(s3.varld!, sl3, b3);
+    const sl3 = SIM.samlaResa(s3, a3, plan)!;
+    for (const id of sl3.medl) { const q = s3.people.find(x => x.id === id); if (q && q !== a3 && q.task?.act === 'resa') q.task = undefined; } // bara ledaren och den som aldrig kommer (en tyngre packning kallar fler att bära, steg 15.1.88)
+    sl3.medl = [a3.id]; SIM.foljMed(s3.varld!, sl3, b3);
     korTills(s3, () => Object.keys(sl3.pack).length > 0 || !s3.varld!.sallskap!.includes(sl3), 4 * 3600, sover(s3, b3));
     const packat3 = Object.values(sl3.pack).reduce((a, n) => a + n, 0);
     if (packat3 > 0) SIM.die(s3, a3, 'jakt');
