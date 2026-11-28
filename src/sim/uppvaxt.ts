@@ -186,7 +186,10 @@ export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string, ggr =
   const d: UpplevelseDef = DEF[k];
   if (!alive(p)) return;
   const vuxen = !formas(s, p);
-  if (borjar && arFoljd(k)) foljdHande(s, p, k, chansFor(d, vuxen)); // följderna minns (steg 15.1.123, seder.ts)
+  if (borjar) {
+    if (arFoljd(k)) foljdHande(s, p, k, chansFor(d, vuxen)); // följderna minns (steg 15.1.123, seder.ts)
+    troUpplev(s, p, k, chansFor(d, vuxen)); // trons skalor rör sig efter det de troende varit med om, per händelse (steg 13.9.5, 15.1.124)
+  }
   if (d.vem === (vuxen ? 'barn' : 'vuxen') || (!vuxen && !d.tidig && ageOf(p, s.now) < UPPV.fran) || p.upp?.some(u => u.k === k && vuxenUpp(u) === vuxen)) return;
   if (rnd(s, 'uppvaxt', p) >= chansFor(d, vuxen)) return;
   const e0 = effektFor(d, pick(s, d.e, 'uppvaxt', p), vuxen), e = ggr === 1 ? e0 : Object.fromEntries(Object.entries(e0).map(([x, v]) => [x, Math.round((v ?? 0) * ggr)])) as typeof e0;
@@ -204,7 +207,6 @@ export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string, ggr =
   p.upp = lista;
   raknaPot(p);
   count(s, 'upp_' + k); if (vuxen) count(s, 'upp_vuxen');
-  troUpplev(s, p, k); // trons skalor rör sig efter det de troende varit med om (steg 13.9.5)
   if (vuxen) tatKrok.upplev(s, p, k); // händelsen kan märkas i huden (steg 10.7.5, tatuering.ts sätter kroken)
   log(s, `${p.name}, ${talOrd(u.a)} år, ${liten(upplevelseText(u))}.`, 'rel', [p.id]);
 }

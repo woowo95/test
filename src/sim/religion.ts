@@ -32,6 +32,7 @@ export const ANDE = balans('andlighet', {
   barn: 16, // ... och hos ett barn
 });
 export const TRO = balans('tro', {
+  skalaBy: 4, // ... gånger chansen, styrkan och så här mycket, delat på de troende (steg 15.1.124)
   skalaSteg: 1, // en upplevelse hos en troende flyttar trons skala så här många steg (av 100) åt det håll raden i SKALOR säger (steg 13.9.5)
   takTro: 4, // högst så många trosriktningar samtidigt i byn (steg 8.5.11)
   spridBy: 0.5, // så mycket ett samtal kan få den som tvivlar att byta tro (steg 8.5.12)
@@ -159,14 +160,18 @@ export const SKALA_IDS = Object.keys(SKALOR) as SkalaId[];
 // skalans värde för tron (natur och manga har alla; de andra när de låsts upp)
 export const skalaV = (tr: Tro, k: SkalaId) => k === 'natur' ? tr.natur : k === 'manga' ? tr.manga : tr.sk?.[k];
 export const skalaSyns = (s: State, k: SkalaId) => !SDEF[k].oppnas || !!s.troSkalor?.includes(k);
-// en troende var med om upplevelsen k (steg 13.9.5): trons skalor som raden i SKALOR säger flyttas, de som är upplåsta
-export function troUpplev(s: State, p: Person, k: string) {
+// en troende var med om upplevelsen k (steg 13.9.5): trons skalor som raden i SKALOR säger flyttas, de som är upplåsta. Per
+// händelse (steg 15.1.124): gånger upplevelsens chans w och den troendes styrka, delat på de troende, så att en händelse i
+// hela byn flyttar skalan lika mycket oavsett hur många som tror
+export function troUpplev(s: State, p: Person, k: string, w = 1) {
   const tr = p.tro !== undefined ? troOf(s, p.tro) : undefined;
   if (!tr || tr.slut !== undefined) return;
+  let n: number | undefined;
   for (const id of SKALA_IDS) {
     const d = SDEF[id].flyttas[k]; if (!d) continue;
     const v = skalaV(tr, id); if (v === undefined) continue;
-    const ny = clamp(v + d * TRO.skalaSteg, 0, 100);
+    n ??= Math.max(1, troende(s, tr).length);
+    const ny = clamp(v + d * TRO.skalaSteg * w * (p.troStyrka ?? 0) / 100 / n * TRO.skalaBy, 0, 100);
     if (id === 'natur' || id === 'manga') tr[id] = ny; else tr.sk![id] = ny;
     count(s, 'skalaFlytt');
   }

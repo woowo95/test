@@ -63,3 +63,42 @@ SCENARIER.foljder2 = {
     ];
   },
 };
+
+// en by med tio vuxna som alla tror på samma tro, med alla skalor på 50
+function troBy(seed: number) {
+  const s = SIM.createState(seed, START); klockan(s, 12);
+  while (SIM.living(s).length < 10) nyInvanare(s, SIM.living(s).length % 2 ? 'm' : 'k', 30);
+  const g = SIM.living(s)[0]!; SIM.grunda(s, g, 'blixt');
+  const tr = SIM.troOf(s, g.tro!)!;
+  for (const p of SIM.living(s)) { p.tro = tr.id; p.troStyrka = 80; }
+  tr.sk = { prast: 50, livet: 50, forlat: 50, fest: 50, krig: 50, oppen: 50, sprid: 50 }; tr.natur = 50; tr.manga = 50;
+  return { s, tr };
+}
+// timmar timmar i följd där tillst gäller för alla (eller bara de första n), med stepUppvaxt varje timme
+const timmar = (s: SIM.State, n: number, tillst: (p: SIM.Person) => void) => { for (let i = 0; i < n; i++) { for (const p of SIM.living(s)) { tillst(p); p.health = 0.3; } s.now += SIM.HOUR; SIM.stepUppvaxt(s); } };
+
+SCENARIER.troskala = {
+  text: 'Steg 15.1.124: trons skalor flyttas per händelse. En svår vinter där de troende är nära att frysa ihjäl flyttar skalan Fest – Försakelse mot Försakelse, och en svältperiod flyttar den en gång när svälten börjar och inte varje timme. En händelse i hela byn flyttar skalan lika mycket i en liten by som i en stor',
+  kor: () => {
+    const fest = (tr: SIM.Tro) => SIM.skalaV(tr, 'fest')!;
+    // vintern: alla fryser i tio timmar
+    const a = troBy(31); timmar(a.s, 10, p => { p.warm = SIM.KROPP.frysdod - 0.05; p.hunger = 0.9; });
+    const vinter = fest(a.tr) - 50, flyttVinter = a.s.stat?.skalaFlytt ?? 0;
+    // svälten: 24 timmar och 48 timmar ger samma flytt
+    const b = troBy(32); timmar(b.s, 24, p => { p.hunger = 0; p.warm = 0.9; }); const svalt24 = fest(b.tr) - 50;
+    timmar(b.s, 24, p => { p.hunger = 0; p.warm = 0.9; }); const svalt48 = fest(b.tr) - 50;
+    // svälten tar slut och börjar igen: då flyttas den en gång till
+    timmar(b.s, 2, p => { p.hunger = 0.9; p.warm = 0.9; }); timmar(b.s, 3, p => { p.hunger = 0; p.warm = 0.9; }); const igen = fest(b.tr) - 50;
+    // samma upplevelse hos alla i en by med tre troende och i en med tio: skalan flyttas lika mycket
+    const liten = troBy(33), stor = troBy(33);
+    for (const p of SIM.living(liten.s).slice(3)) p.tro = undefined;
+    for (const x of [liten, stor]) for (const p of SIM.living(x.s)) if (p.tro !== undefined) SIM.troUpplev(x.s, p, 'svalt', 0.5);
+    const dl = fest(liten.tr) - 50, ds = fest(stor.tr) - 50;
+    return [
+      [`vintern flyttade skalan mot Försakelse (${vinter.toFixed(2)} steg, ${flyttVinter} flyttar)`, vinter > 0 && flyttVinter > 0 && flyttVinter <= 10],
+      [`svälten flyttade skalan (${svalt24.toFixed(2)} steg efter ett dygn) och inte mer ett dygn till (${svalt48.toFixed(2)})`, svalt24 > 0 && Math.abs(svalt48 - svalt24) < 1e-9],
+      [`en ny svält flyttar den igen (${igen.toFixed(2)})`, igen > svalt48],
+      [`samma händelse hos alla flyttar skalan lika mycket med tre troende (${dl.toFixed(2)}) som med tio (${ds.toFixed(2)})`, dl > 0 && Math.abs(dl - ds) < 1e-9],
+    ];
+  },
+};
