@@ -1,4 +1,5 @@
 // Striden (fas 3, system 3.7). Grunden byggdes med testarenan (steg 3.7.5): en strid är två sidor av kämpar (Kampe) på en
+import { freeNear } from './byggnad';
 import { gastVapenKrok, loggNamn } from './gast';
 import { och, skada as skadaOrd, stor, tal } from './ord';
 import { kronikaBer, loggBer, personFalt } from './berattelser';
@@ -1338,8 +1339,10 @@ export function kastat(s: State, p: Person, v: string, d: number, x: number, y: 
   if (r() < KAST.borta * kastFaktor(s, x, y, d, kv.rack)) { wearTool(s, p, v, Infinity); count(s, 'kastBorta'); return 'borta'; }
   if (wearTool(s, p, v, r() * KAST.slit)) return 'trasig';
   // det som kastas blir ett ting på marken där det landade (steg 8.7.4); det ligger som allt annat utanför lagret och bärs in
-  const t = toolsOf(s, v).find(q => q.agare === p.id && q.bar === undefined) ?? toolsOf(s, v)[0];
-  if (t) { t.hos = undefined; t.lass = undefined; t.vid = undefined; t.x = Math.floor(x); t.y = Math.floor(y); count(s, 'kastLigger'); enPerRuta(s); ingetIElden(s); } // på en upptagen ruta i lagret får det en egen plats
+  // det som kastades är det hen höll i handen; annars hens eget som inte bärs på ryggen
+  const t = toolsOf(s, v).find(q => q.hos === p.id && q.bar === undefined) ?? toolsOf(s, v).find(q => q.agare === p.id && q.bar === undefined && q.x === undefined) ?? toolsOf(s, v).find(q => q.hos === undefined && q.x === undefined);
+  const at = freeNear(s, Math.floor(x) + 0.5, Math.floor(y) + 0.5); // det landar där något kan ligga: inte i en vägg eller i vattnet
+  if (t) { t.hos = undefined; t.lass = undefined; t.vid = undefined; t.x = Math.floor(at.x); t.y = Math.floor(at.y); count(s, 'kastLigger'); enPerRuta(s); ingetIElden(s); } // på en upptagen ruta i lagret får det en egen plats
   return undefined;
 }
 
