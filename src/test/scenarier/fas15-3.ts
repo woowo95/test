@@ -85,3 +85,19 @@ SCENARIER.vatskevarde = {
     ];
   },
 };
+
+SCENARIER.smafel = {
+  text: 'Steg 15.1.35: små fel i värdena. Flintpilarna ger 4 i receptet, gäddan 2 kött, skrotet är värt järnet minus arbetet att smida om det, det skrivna bladet pergamentet och skrivandet, krappen har ett fast värde och färgväxterna står bland skinnen och ullen',
+  kor: () => {
+    const omsmide = SIM.JARNSAK.omMin / 60, skrot = (v('jarn') - omsmide) / SIM.JARNSAK.omSkrot;
+    return [
+      [`flintpilarna ger ${SIM.RECEPT.pilar.ger} som järnpilarna (${SIM.RECEPT.jarnpilar.ger}) och tillverkningen (${SIM.TILLVERKA.gor_pilar.n})`, SIM.RECEPT.pilar.ger === 4 && SIM.TILLVERKA.gor_pilar.n === 4],
+      [`en flintpil (${t(v('pilar'))}) är billigare än en järnpil (${t(v('jarnpilar'))})`, v('pilar') < v('jarnpilar')],
+      [`gäddan ger ${SIM.RECEPT.gaddkott.ger} kött, som rensningen (${SIM.DJUR.gadda.slakt.gaddkott})`, SIM.RECEPT.gaddkott.ger === SIM.DJUR.gadda.slakt.gaddkott],
+      [`skrotet (${t(v('jarnskrot'))}) är värt järnet (${t(v('jarn'))}) minus arbetet, delat på skrotet (${t(skrot)})`, Math.abs(v('jarnskrot') - skrot) < 0.01 && v('jarnskrot') > 1],
+      [`ett skrivet blad (${t(v('blad'))}) är värt mer än pergamentet (${t(v('pergament'))})`, v('blad') > v('pergament')],
+      [`krappen har ett fast värde (${t(v('krapp'))}) som saltet (${t(v('salt'))})`, SIM.SAKER.krapp!.varde !== undefined && v('krapp') > 0],
+      [`färgväxterna står bland skinnen och ullen`, ['vejde', 'krapp', 'mara'].every(k => (SIM.VARUGRUPPER.skinn.saker as readonly string[]).includes(k)) && !['vejde', 'krapp', 'mara'].some(k => (SIM.VARUGRUPPER.dryck.saker as readonly string[]).includes(k))],
+    ];
+  },
+};

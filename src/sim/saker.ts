@@ -183,7 +183,7 @@ const DEF = {
   mara: { namn: 'Måra', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material' },
   vejde: { namn: 'Vejde', skaffa: { tid: 0.25, tek: 'fargning' }, stack: 25, vikt: 0.2, mapp: 'Material' },
   vejdefron: { namn: 'Vejdefrön', skaffa: { tid: 0.25, tek: 'fargning' }, stack: 25, vikt: 0.05, mapp: 'Material' },
-  krapp: { namn: 'Krapp', skaffa: { tid: 0.5, sallsynt: true }, stack: 25, vikt: 0.1, mapp: 'Material' }, // roten kommer från söder, med handlarna
+  krapp: { namn: 'Krapp', varde: 2, skaffa: { tid: 0.5, sallsynt: true }, stack: 25, vikt: 0.1, mapp: 'Material' }, // roten kommer från söder, med handlarna, och har ett fast värde som saltet (steg 15.1.35)
   trad: { namn: 'Lintråd', skaffa: RECEPT.trad, stack: 25, vikt: 0.1, mapp: 'Material' }, // steg 7.7.8
   lintyg: { namn: 'Lintyg', ett: true, skaffa: RECEPT.lintyg, stack: 10, vikt: 0.5, mapp: 'Material' }, // steg 7.7.9
   vargtand: { namn: 'Vargtand', skaffa: RECEPT.vargtand, stack: 25, vikt: 0.05, mapp: 'Material' }, // steg 7.7.5

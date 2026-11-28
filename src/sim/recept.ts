@@ -96,7 +96,7 @@ const DEF = {
   prastdrakt: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 }, tecken: { var: 'plagg', mangd: 1, av: { rep: 1 }, min: 3 }, mask: { var: 'plagg', mangd: 2, av: {}, min: 5 }, // system 8.5
   rokelse: { var: 'sak', av: { talg: 1 }, min: 5, slag: 'stor', tek: 'ortkok' }, brannolja: { var: 'sak', av: { talg: 1 }, min: 5, slag: 'stor', tek: 'ortkok' }, // steg 8.5.16
   rustning: { var: 'plagg', mangd: 4, av: { rep: 2 }, min: 5 }, hjalm: { var: 'plagg', mangd: 2, av: { rep: 1 }, min: 5 }, // steg 8.7.1–8.7.2
-  skold: { var: 'sak', av: { ved: 3, rep: 1, benlim: 1 }, min: 3, slag: 'liten', tek: 'skold', bank: 'snickarbank', bara: true }, bage: { var: 'sak', av: { virke: 2, rep: 1, benlim: 1 }, min: 3, slag: 'liten', tek: 'bage', bank: 'snickarbank', bara: true, kniv: true }, pilar: { var: 'sak', av: { ved: 1, flinta: 1, fjadrar: 1, benlim: 1 }, min: 3, slag: 'liten', tek: 'bage', bank: 'snickarbank' }, slunga: { var: 'sak', av: { lader: 1, rep: 1 }, min: 3, slag: 'liten', tek: 'slunga' }, horn: { var: 'sak', av: { djurhorn: 1 }, min: 3, slag: 'liten', tek: 'horn' }, // steg 8.7.3, 8.7.6, 8.7.11
+  skold: { var: 'sak', av: { ved: 3, rep: 1, benlim: 1 }, min: 3, slag: 'liten', tek: 'skold', bank: 'snickarbank', bara: true }, bage: { var: 'sak', av: { virke: 2, rep: 1, benlim: 1 }, min: 3, slag: 'liten', tek: 'bage', bank: 'snickarbank', bara: true, kniv: true }, pilar: { var: 'sak', av: { ved: 1, flinta: 1, fjadrar: 1, benlim: 1 }, ger: 4, min: 3, slag: 'liten', tek: 'bage', bank: 'snickarbank' }, slunga: { var: 'sak', av: { lader: 1, rep: 1 }, min: 3, slag: 'liten', tek: 'slunga' }, horn: { var: 'sak', av: { djurhorn: 1 }, min: 3, slag: 'liten', tek: 'horn' }, // steg 8.7.3, 8.7.6, 8.7.11
   mantel: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 }, // steg 8.3.14
   halsband: { var: 'plagg', mangd: 3, av: { rep: 1 }, min: 5 },
   tunika: { var: 'plagg', mangd: 3, av: {}, min: 5 },
@@ -107,7 +107,7 @@ const DEF = {
   rokfisk: { var: 'sak', av: { fisk: 1 }, min: 2, slag: 'liten' }, rokkott: { var: 'sak', av: { kott: 1 }, min: 2, slag: 'liten' }, // steg 9.6.8
   saltfisk: { var: 'sak', av: { fisk: 4, salt: 1 }, ger: 4, min: 3, slag: 'liten' }, saltkott: { var: 'sak', av: { kott: 4, salt: 1 }, ger: 4, min: 3, slag: 'liten' }, // steg 9.6.19
   malt: { var: 'sak', av: { korn: 4 }, ger: 4, min: 2, slag: 'liten' }, mjol: { var: 'sak', av: { korn: 4 }, ger: 4, min: 4, slag: 'liten' }, brod: { var: 'sak', av: { mjol: 4 }, ger: 4, min: 3, slag: 'liten' }, // steg 9.6.13, 9.6.22 och 9.6.23
-  gaddkott: { var: 'sak', av: { gadda: 1 }, min: 3, slag: 'liten' }, // gäddan ger 2 kött (steg 7.4.3)
+  gaddkott: { var: 'sak', av: { gadda: 1 }, ger: 2, min: 3, slag: 'liten' }, // gäddan ger 2 kött (steg 7.4.3)
   mortkott: { var: 'sak', av: { mort: 2 }, min: 2, slag: 'liten' }, // 2 mörtar rensas till 1 kött
   fangstbank: { var: 'station', av: { virke: 2, grenar: 2 }, min: 20, slag: 'stor', tek: 'fangstbank' }, // steg 7.4.1
   mjarde: { var: 'sak', av: { torrgras: 3, rep: 1 }, min: 5, slag: 'stor', tek: 'mjarde' }, // steg 7.4.2: görs bara vid fångstbänken

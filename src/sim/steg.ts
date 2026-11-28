@@ -1895,7 +1895,9 @@ import { stepHons } from './hons';
 import { baddVila, bredvidKaresta, iDass, sittVila, sattaKlar } from './mobler';
 import { mognadSteg, mognadVarde, tunnaRegn } from './tunna';
 import { vardeKrok } from './varde';
-vardeKrok.ur = k => vatskaUr(k) ?? mjolkUr(k); // det som görs av eller till en vätska (steg 15.1.34)
+import { skrotUr } from './jarnsaker';
+import { bladUr } from './skrift';
+vardeKrok.ur = k => vatskaUr(k) ?? mjolkUr(k) ?? skrotUr(k) ?? bladUr(k); // det som har sitt recept i systemets egen fil: vätskorna (steg 15.1.34), skrotet och bladet (steg 15.1.35)
 vardeKrok.inne = mognadVarde; // en mognad dryck är värd mer (steg 12.4.6): tunna.ts läses före varde.ts
 import { surnarSnart } from './vatskor';
 ostKrok.surnar = s => surnarSnart(s, 'mjolk'); // mjölken som annars skulle surna ystas (steg 12.4.7)

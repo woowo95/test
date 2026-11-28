@@ -19,10 +19,10 @@ export const VARUGRUPPER = {
   mat: { andel: 0, namn: 'Mat', ikon: '🍖', mapp: ['Mat'], saker: ['korn', 'mjol', 'radjur', 'vildsvin', 'bjorn', 'slaktfar', 'slaktget', 'slaktko', 'slaktgris', 'vargdel', 'vildsvindel', 'radjurdel', 'bjorndel', 'varg', 'levfar', 'levget', 'levko', 'levoxe', 'levhast', 'kulting', 'levhons', 'rovfron', 'artfron', 'kalfron', 'linfron', 'jordgubbsplanta', 'appelplanta', 'kompost'] },
   bransle: { andel: 0.1, namn: 'Bränsle', ikon: '🔥', mapp: ['Bränsle'], saker: ['talg', 'brannolja', 'bivax'] },
   sten: { andel: 0.08, namn: 'Sten och flinta', ikon: '🪨', mapp: ['Sten'], saker: ['huggen_sten'] },
-  skinn: { andel: 0.25, namn: 'Skinn och ull', ikon: '🧥', mapp: ['Kläder'], saker: ['remsa', 'skinn', 'farskinn', 'getskinn', 'svinskinn', 'kohud', 'vitskinn', 'vargskinn', 'radjursskinn', 'bjornskinn', 'lader', 'pergament', 'ull', 'ulltrad', 'ylle', 'fjadrar', 'lin', 'ratlin', 'lintyg'] },
+  skinn: { andel: 0.25, namn: 'Skinn och ull', ikon: '🧥', mapp: ['Kläder'], saker: ['remsa', 'skinn', 'farskinn', 'getskinn', 'svinskinn', 'kohud', 'vitskinn', 'vargskinn', 'radjursskinn', 'bjornskinn', 'lader', 'pergament', 'ull', 'ulltrad', 'ylle', 'fjadrar', 'lin', 'ratlin', 'lintyg', 'mara', 'vejde', 'vejdefron', 'krapp'] }, // färgväxterna där det de färgar finns (steg 15.1.35)
   virke: { andel: 0.15, namn: 'Virke och rep', ikon: '🌲', saker: ['rep', 'trad', 'virke', 'plankor', 'tjara', 'benlim', 'mossa', 'las'] },
   redskap: { andel: 0.25, namn: 'Redskap och vapen', ikon: '🪓', mapp: ['Redskap'], saker: ['ben', 'djurhorn'] },
-  dryck: { andel: 0.07, namn: 'Dryck och salt', ikon: '🧂', saker: ['salt', 'malt', 'rolleka', 'torrrolleka', 'salva', 'tval', 'rokelse', 'mara', 'vejde', 'vejdefron', 'krapp'] },
+  dryck: { andel: 0.07, namn: 'Dryck och salt', ikon: '🧂', saker: ['salt', 'malt', 'rolleka', 'torrrolleka', 'salva', 'tval', 'rokelse'] },
   prydnad: { andel: 0.1, namn: 'Prydnad', ikon: '✨', borjar: ['tecken_', 'halsband_', 'mask_'], saker: ['vargtand', 'blomma', 'leksak', 'trumma', 'benflojt', 'lyra', 'boll', 'bok'] },
 } as const satisfies Record<string, VarugruppDef>;
 export type VarugruppId = keyof typeof VARUGRUPPER;

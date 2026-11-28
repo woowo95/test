@@ -32,11 +32,12 @@ export const VARDE = balans('varde', {
 
 // det som kommer ur en bränning (kolet ur milan, järnet ur blästerugnen; brann.ts) görs som en sak: värdet av det som går in
 // plus arbetet vid stationen, delat på det som kommer ut, och tekniken för bränningen ger nivån. Registreras av brann.ts
-// En rätt (matlagning.ts, steg 15.1.33) registreras likadant, med ett påslag (pa) för en finare måltid
-export interface Ur { av: Record<string, number>; min: number; ger: number; tek?: string; pa?: number; tid?: undefined; act?: undefined; sallsynt?: undefined }
+// En rätt (matlagning.ts, steg 15.1.33) registreras likadant, med ett påslag (pa) för en finare måltid. niva = en egen nivå
+// för det som inte görs med en teknik (skrotet, som är det som blir kvar)
+export interface Ur { av: Record<string, number>; min: number; ger: number; tek?: string; pa?: number; niva?: number; tid?: undefined; act?: undefined; sallsynt?: undefined }
 const UR: Record<string, Ur> = {};
 export function vardeUr(k: string, u: Ur) { UR[k] = u; raVarde.clear(); varden.clear(); sakNiva.clear(); }
-// det som görs av eller till en vätska (steg 15.1.34) har sitt recept i vätskornas filer: vardeKrok.ur, satt i steg.ts
+// det som har sitt recept i systemets egen fil (vätskorna, steg 15.1.34; skrotet och bladet, steg 15.1.35): vardeKrok.ur, satt i steg.ts
 const urOf = (k: string): Ur | undefined => UR[k] ?? rattUr(k) ?? vardeKrok.ur(k);
 
 export const harVardeUr = (k: string) => !!urOf(k); // saken får sitt värde ur det den görs av utan ett recept i saker.ts
@@ -54,7 +55,7 @@ export function nivaOf(k: string): number {
   let n = sakNiva.get(k);
   if (n === undefined) {
     const f = urOf(k) ?? SAKER[k]?.skaffa;
-    n = Math.max(f?.tek ? nivaOfTek(f.tek) : 0, ...Object.keys(f?.av ?? {}).map(nivaOf));
+    n = f && 'niva' in f && f.niva !== undefined ? f.niva : Math.max(f?.tek ? nivaOfTek(f.tek) : 0, ...Object.keys(f?.av ?? {}).map(nivaOf));
     sakNiva.set(k, n);
   }
   return n;
@@ -88,7 +89,7 @@ function rakna(k: string): number {
     x /= f.ger ?? 1; // ett recept som ger flera (en ved blir fyra näver)
     // påslaget räknas bara för de nivåer saken ligger över sitt högsta material: materialets värde bär redan sina (steg 15.1.30)
     const matNiva = Math.max(0, ...Object.keys(f.av ?? {}).map(nivaOf));
-    v = x * (1 + VARDE.nivaPaslag * (nivaOf(k) - matNiva)) * (f.sallsynt ? VARDE.sallsynt : 1) * (1 + (urOf(k)?.pa ?? 0));
+    v = x * (1 + VARDE.nivaPaslag * Math.max(0, nivaOf(k) - matNiva)) * (f.sallsynt ? VARDE.sallsynt : 1) * (1 + (urOf(k)?.pa ?? 0));
   }
   raVarde.set(k, v);
   return v;
@@ -101,7 +102,7 @@ export function grundvarde(k: string): number {
   v = rakna(k);
   const n = nivaOf(k), mapp = SAKER[k]?.mapp;
   if (n > 0 && mapp) { // golvet: mer än de enkla råvarorna av samma slag
-    const ra = SAK_LIST.filter(j => SAKER[j]!.mapp === mapp && nivaOf(j) === 0 && !SAKER[j]!.skaffa?.av && SAKER[j]!.varde === undefined && !djurOf(j)).map(rakna); // det köpta med fast värde (saltet) och hela djur (steg 15.1.31) höjer inte golvet
+    const ra = SAK_LIST.filter(j => SAKER[j]!.mapp === mapp && nivaOf(j) === 0 && !(urOf(j) ?? SAKER[j]!.skaffa)?.av && SAKER[j]!.varde === undefined && !djurOf(j)).map(rakna); // det köpta med fast värde (saltet) och hela djur (steg 15.1.31) höjer inte golvet
     if (ra.length) v = Math.max(v, Math.max(...ra) * (1 + VARDE.nivaPaslag * n));
   }
   // och mer än det den ersätter (steg 15.1.30): den sämre saken i samma grupp (lägre rang) gånger påslaget för nivåerna emellan,
