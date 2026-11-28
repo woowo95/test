@@ -166,22 +166,38 @@ function betala(s: State, a: Anst, till: number) {
   const id = a.del ? budgetId(a.del) : a.av, silver = Math.min(a.lon, silverAv(s, id));
   let kvar = a.lon - (silver >= 1 ? ownMove(s, 'silver', silver, id, till) : 0);
   if (kvar < a.lon) count(s, 'lonSilver', a.lon - kvar);
-  // en person betalar resten med det hen har över, det mest värda först, i hela saker som inte är värda mer än det som är kvar
+  // en person betalar resten med det hen har över, det mest värda först, i hela saker som inte är värda mer än det som är kvar.
+  // Blir det en rest ger hen en sak till, den minst värda som täcker resten (steg 15.1.157): skulden täcks och lite mer, och det
+  // som blir över är den anställdas
   const q = a.av > 0 ? byId(s, a.av) : undefined;
-  if (q && kvar >= 1 - 1e-9) for (const w of payable(s, q, ['silver']).filter(x => !x.t).sort((x, y) => grundvarde(y.k) - grundvarde(x.k) || (x.k < y.k ? -1 : 1))) {
-    const v = grundvarde(w.k), m = v > 0 ? Math.min(Math.floor(w.n + 1e-9), Math.floor(kvar / v + 1e-9)) : 0;
-    if (m < 1) continue;
-    const g = ownMove(s, w.k, m, a.av, till);
-    kvar -= g * v; if (g) count(s, 'lonVaror', g);
-    if (kvar < 1 - 1e-9) break;
+  if (q && kvar > 1e-9) {
+    const varor = () => payable(s, q, ['silver']).filter(x => !x.t && x.n >= 1 - 1e-9 && grundvarde(x.k) > 0);
+    for (const w of varor().sort((x, y) => grundvarde(y.k) - grundvarde(x.k) || (x.k < y.k ? -1 : 1))) {
+      const v = grundvarde(w.k), m = Math.min(Math.floor(w.n + 1e-9), Math.floor(kvar / v + 1e-9));
+      if (m < 1) continue;
+      const g = ownMove(s, w.k, m, a.av, till);
+      kvar -= g * v; if (g) count(s, 'lonVaror', g);
+      if (kvar <= 1e-9) break;
+    }
+    for (let i = 0; i < 8 && kvar > 1e-9; i++) { // resten: en sak till
+      const l = varor().sort((x, y) => grundvarde(x.k) - grundvarde(y.k) || (x.k < y.k ? -1 : 1)), w = l.find(x => grundvarde(x.k) >= kvar - 1e-9) ?? l[l.length - 1];
+      if (!w || ownMove(s, w.k, 1, a.av, till) < 1) break;
+      kvar -= grundvarde(w.k); count(s, 'lonVaror', 1); count(s, 'lonAvrundad');
+    }
   }
-  if (a.av === BYN) for (const k of FOOD) {
-    const v = grundvarde(k);
-    while (kvar >= v - 1e-9 && v > 0 && foodDaysAll(s) > buffert(s, 'mat')) {
-      if (bynsAv(s, k) >= 1) { if (fromByn(s, k, 1, till) < 1) break; }
-      else if (ownsId(s, BUDGET_KVAR, k) >= 1) { if (ownMove(s, k, 1, BUDGET_KVAR, till) < 1) break; }
-      else break;
-      kvar -= v; count(s, 'lonVaror', 1);
+  if (a.av === BYN) {
+    const ge = (k: string) => { if (bynsAv(s, k) >= 1) return fromByn(s, k, 1, till) >= 1; if (ownsId(s, BUDGET_KVAR, k) >= 1) return ownMove(s, k, 1, BUDGET_KVAR, till) >= 1; return false; };
+    for (const k of FOOD) {
+      const v = grundvarde(k);
+      while (kvar >= v - 1e-9 && v > 0 && foodDaysAll(s) > buffert(s, 'mat')) {
+        if (!ge(k)) break;
+        kvar -= v; count(s, 'lonVaror', 1);
+      }
+    }
+    // resten (steg 15.1.157): den minst värda maten byn har som täcker den
+    if (kvar > 1e-9 && foodDaysAll(s) > buffert(s, 'mat')) {
+      const k = FOOD.filter(q => grundvarde(q) >= kvar - 1e-9 && (bynsAv(s, q) >= 1 || ownsId(s, BUDGET_KVAR, q) >= 1)).sort((x, y) => grundvarde(x) - grundvarde(y) || (x < y ? -1 : 1))[0];
+      if (k && ge(k)) { kvar -= grundvarde(k); count(s, 'lonVaror', 1); count(s, 'lonAvrundad'); }
     }
   }
   return a.lon - Math.max(0, kvar);

@@ -206,3 +206,24 @@ SCENARIER.marknadvinst = {
     ];
   },
 };
+
+SCENARIER.lonrest = {
+  text: 'Steg 15.1.157: lönen avrundas uppåt. En lön som är värd två och en halv sak betalas med tre hela saker och räknas som betald',
+  kor: () => {
+    const s = SIM.createState(6, START), [q, p] = SIM.living(s).filter(x => SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen);
+    SIM.setAmount(s, 'silver', 0);
+    // q har inget silver, bara en sorts sak över: en hel lön är två och en halv av dem
+    const k = ['skinn', 'rep', 'ben', 'virke'].find(x => SIM.grundvarde(x) > 0.5)!, v = SIM.grundvarde(k), lon = Math.round(2.5 * v);
+    for (const t of SIM.tingOf(s)) if (t.agare === q.id) t.agare = -1;
+    SIM.laggIn(s, k, 40, q.id);
+    s.anst = [{ av: q.id, arb: 'vard', p: p.id, lon, tim: 2, verk: 2, t: s.now }];
+    const fore = SIM.ownsId(s, p.id, k), qFore = SIM.ownsId(s, q.id, k);
+    SIM.lonDygn(s);
+    const fick = SIM.ownsId(s, p.id, k) - fore, gav = qFore - SIM.ownsId(s, q.id, k);
+    return [
+      [`lönen ${lon} silver är ${(lon / v).toFixed(2)} ${k} (${v.toFixed(2)} var)`, lon / v > 2 && lon / v < 3],
+      [`den anställda fick ${fick} hela, och den som betalade gav ${gav}`, fick === Math.ceil(lon / v - 1e-9) && Number.isInteger(fick) && gav === fick],
+      [`lönen räknas som betald (${p.lonObetald ?? 'betald'})`, p.lonObetald === undefined && (s.stat?.lonBetald ?? 0) >= 1 && !p.thoughts.some(t => t.k === 'lonObetald')],
+    ];
+  },
+};
