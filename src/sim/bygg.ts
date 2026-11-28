@@ -226,17 +226,17 @@ export function vaggRensa(s: State) {
 }
 // huset är färdigt: alla bitar byggda och inga fällda träd kvar inne i det. Prövas när en bit blir klar och när en stock huggits slut
 // en gång i timmen (stepByggnader): ett hus som väntade på att ett träd över det skulle fällas blir klart när det är borta
-export function husKlaraTimme(s: State) { const p = living(s)[0]; if (p) for (const h of housesOf(s)) if (!h.klar) husKlart(s, h, p); }
-export function husKlart(s: State, h: Hus, p: Person) {
+export function husKlaraTimme(s: State) { const p = living(s)[0]; if (p) for (const h of housesOf(s)) if (!h.klar) husKlart(s, h, p, true); } // ingen satte sista biten: huset blev klart när trädet över det fälldes (steg 15.1.118)
+export function husKlart(s: State, h: Hus, p: Person, utanByggare = false) {
   if (!h.klar && bitsOf(s).every(q => q.hus !== h.id || q.b >= 1) && !stockInne(s, h) && !kronaOver(s, h).length) { // ett träd vars krona når över huset fälls först (steg 9.2.49)
     h.klar = s.now;
     if (h.flyttFran !== undefined) flyttKlar(s, h);
     if (h.varKlar !== undefined) return;
-    livet(s, p, 'hus'); // satte sista biten (steg 3.9.8)
+    if (!utanByggare) livet(s, p, 'hus'); // satte sista biten (steg 3.9.8)
     const n = gridOf(s).rooms.filter(r => r.hus === h.id).reduce((a, r) => a + r.tiles.length, 0);
     const hf = husFalt(h.namn);
     if (fnOf(h).sover) log(s, `${stor(hf.hus)} är ${hf.klart}. Nu kan ${tal(sovPersoner(n))} sova under tak.`, 'world', [p.id]); // golvrutorna räknas om till personer (steg 12.1.119)
-    notis(s, 'hus', `${p.name} satte sista biten: ${hf.hus} är ${hf.klart}.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
+    notis(s, 'hus', utanByggare ? `${stor(hf.hus)} är ${hf.klart} nu när trädet över det är borta.` : `${p.name} satte sista biten: ${hf.hus} är ${hf.klart}.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
     if (h.tro !== undefined && h.fn !== 'naringshus') kronikaBer(s, 'k_tro', h.id, { huset: true, hus: husFalt(h.namn).hus }); // trons hus (steg 12.1.135)
     else { const hf = husFalt(h.namn), med = (h.byggare ?? []).filter(id => id !== p.id).map(id => byId(s, id)?.name).filter((x): x is string => !!x); kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...hf, sova: fnOf(h).sover ? tal(sovPersoner(n)) : undefined, byggare: med.length ? och(med) : undefined, forsta: (s.hus ?? []).filter(q => q.klar !== undefined && q.fn !== 'naringshus').length === 1, hus2: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hans(p)} `), hus3: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hf.klart === 'färdigt' ? 'sitt' : 'sin'} `) }); } husKlar(s, h); // hus3: när ägaren är subjektet ("gjorde klart sitt hus")
     if ((h.byggare?.length ?? 0) > 1) for (const q of living(s)) if (h.byggare!.includes(q.id)) upplev(s, q, 'byggdeHus', husFalt(h.namn).hus); // de byggde tillsammans (steg 4.5.4.9)

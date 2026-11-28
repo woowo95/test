@@ -1,5 +1,5 @@
 import { FANG, fangelseDygn, fangelseLedigt, satHardStraff, satt } from './fangelse';
-import { honom, slaktOrd, talOrd } from './ord';
+import { han, honom, slaktOrd, talOrd } from './ord';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, vuxnaOf } from './folk';
 import { LAGAR, efterlevs, lagForBrott, straffNu, straffSteg, tasUppKvall } from './lagar';
 import type { Lag } from './lagar';
@@ -421,7 +421,7 @@ function valj(s: State) {
   missnojeNoll(s);
   if (forsta) { st.oppna.push('rang'); best.fame.push('Byns första ledare'); kronikaBer(s, 'k_forstaLedare', best.id, { ...personFalt(best), titel: titel.toLowerCase(), satt: hur, vuxna: talOrd(vuxna.length) }); }
   else kronikaBer(s, 'k_ledare', best.id, { ...personFalt(best), titel: titel.toLowerCase(), satt: hur, forra: st.historia[st.historia.length - 2]?.namn });
-  const lt = forsta ? `Byn har fått sin första ledare: ${best.name}, ${titel.toLowerCase()}. Byn börjar fundera på om alla är lika mycket värda.` : `${best.name} är byns nya ledare, ${titel.toLowerCase()}.`;
+  const lt = forsta ? `Byn har fått sin första ledare: ${best.name}, ${titel.toLowerCase()}. Byn börjar fundera på om alla är lika mycket värda.` : `${best.name} är byns nya ledare och kallas ${titel.toLowerCase()}.`;
   log(s, lt, 'world', [best.id]); notis(s, 'ledare', lt, [best.id], undefined, { ton: 'gott' });
 }
 // de som svalt eller frusit ihjäl i byn
@@ -484,7 +484,8 @@ function drivUt(s: State, q: Person) {
 export function slutarStyre(s: State, varfor: string) {
   const st = s.styre!, h = st.historia[st.historia.length - 1], l = byId(s, st.ledare!);
   if (h && h.till === undefined) { h.till = s.now; h.slut = varfor; }
-  if (l) kronika(s, `${l.name} slutade leda byn (${varfor}).${l.left !== undefined && l.flyttSkal?.text ? ` ${l.flyttSkal.text}` : ''}`, 'ledare'); // den som flyttade: samma skäl (B.42)
+  const SLUT: Record<string, string> = { dog: `${l?.name} ledde byn tills ${l && han(l)} dog.`, 'lämnade byn': `${l?.name} lämnade byn och därmed också styret.`, avsattes: `${l?.name} avsattes som byns ledare.`, störtades: `${l?.name} störtades.`, 'drevs ut': `${l?.name} drevs ut ur byn och leder den inte längre.` }; // skälet i en mening, inte i en parentes (steg 15.1.118)
+  if (l) kronika(s, `${SLUT[varfor] ?? `${l.name} slutade leda byn.`}${l.left !== undefined && l.flyttSkal?.text ? ` ${l.flyttSkal.text}` : ''}`, 'ledare'); // den som flyttade: samma skäl (B.42)
   st.hanForbud = undefined; st.ledare = undefined; st.sedan = undefined; st.titel = undefined; st.pabud = undefined; st.pabudAi = undefined;
   if (!vuxnaOf(s).some(p => knows(p, 'ledarskap'))) log(s, 'Ingen i byn kan leda den längre. Påbuden gäller inte mer.', 'world');
 }

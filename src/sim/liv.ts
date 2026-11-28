@@ -1,4 +1,4 @@
-import { gen } from './ord';
+import { gen, goraUtan } from './ord';
 import { antal, honom, och, talOrd } from './ord';
 import { gastensPlatser, horOmGast, raknaBynVet } from './ort';
 import { personNara } from './personlogg';
@@ -383,7 +383,7 @@ export function framlingBeslut(s: State, p: Person) {
   if (!k) { g.fas = 'gar'; return undefined; }
   const tek = g.tek, v = taEmotVilja(s, k, tek);
   const ja = g.ja ?? rnd(s, 'klan') < v;
-  const l = ledarenNu(s), vem = l ? l.name : 'Byn', tekNamn = tek ? TEK[tek]?.namn.toLowerCase() : '';
+  const l = ledarenNu(s), vem = l ? l.name : 'Byn', tekNamn = tek && TEK[tek] ? goraUtan(TEK[tek]!) : ''; // ett verb efter kunde (steg 15.1.118)
   if (!ja) {
     klanHandelse(s.varld, k, 'bortvisad'); count(s, 'framlingNej');
     const hem = g.hemRad === undefined ? undefined : s.varld?.rader?.find(r => r.nr === g.hemRad);
@@ -400,7 +400,7 @@ export function framlingBeslut(s: State, p: Person) {
   upplev(s, p, 'flyttade');
   for (const m in MEDHAVT) put(s, m, MEDHAVT[m], { [p.id]: MEDHAVT[m] });
   klanHandelse(s.varld, k, 'mottagen'); count(s, 'framling'); if (tek) count(s, 'framlingTek'); budTillfalle(s, 'framling', p); // främlingen får mat (budet, steg 8.6.6)
-  const text = `${p.name} från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}, som ingen i byn kunde` : ''}. ${vem} lät ${honom(p)} stanna.`;
+  const text = `${p.name} från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}, något ingen i byn kunde` : ''}. ${vem} lät ${honom(p)} stanna.`;
   log(s, text, 'move', [p.id]); notis(s, 'inflytt', text, [p.id]);
   if (tek) kronika(s, text, 'flytt');
   return p;

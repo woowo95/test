@@ -141,6 +141,11 @@ export function insjukna(s: State, p: Person, k: SjukId, why?: string) {
 // har tecknen kommit (efter inkubationen): bara då är hen sjuk för sig själv och de andra
 export const isSick = (p: Person, now: number) => !!p.sjuk && now >= p.sjuk.tecken;
 // det kortet säger: stadiet och orsaken
+// symtomen som en verbfras efter sjukdomen ("och hostar"), för notiserna (steg 15.1.118)
+function symtomFras(p: Person) {
+  const j = p.sjuk!, d = SJUKDOMAR[j.k], st = [...d.stadier].reverse().find(q => j.grad >= q.fran) ?? d.stadier[0], l = st.text.split(', ').slice(1).map(x => x.toLowerCase());
+  return l.length ? ` och ${l.length > 1 ? l.slice(0, -1).join(', ') + ' och ' + l[l.length - 1] : l[0]}` : '';
+}
 export function sjukText(p: Person) {
   const j = p.sjuk;
   if (!j) return 'Sjuk';
@@ -231,7 +236,7 @@ export function sjukSteg(s: State, p: Person, dtSec: number, sover: boolean, arb
     larSmittan(s, p, j.k);
     epidemi(s, p, j.k);
     if (SJUKDOMAR[j.k].smitta > 0 && !living(s).some(q => q !== p && q.sjuk?.k === j.k && q.sjuk.st !== undefined)) notis(s, 'smitta', `${SJUKDOMAR[j.k].namn} har kommit till byn. ${p.name} är sjuk.`, [p.id]);
-    else notis(s, 'sjuk', `${p.name} har insjuknat: ${sjukText(p).toLowerCase()}.`, [p.id]);
+    else notis(s, 'sjuk', `${p.name} har insjuknat i ${SJUKDOMAR[j.k].bf}${symtomFras(p)}.`, [p.id]);
   }
   const d = SJUKDOMAR[j.k], h = dtSec / HOUR_S, bas = 1 / (((d.langd[0] + d.langd[1]) / 2) * 24); // i timmen: 1 på radens längd
   const naring = Math.max(SJUK.naringMin, mattnad(naringNu(p)));
@@ -262,6 +267,6 @@ export function sjukSteg(s: State, p: Person, dtSec: number, sover: boolean, arb
     return undefined;
   }
   const st = stadiumNu(j);
-  if (st > (j.st ?? 0)) { j.st = st; notis(s, 'sjuk', `${p.name} är sämre: ${sjukText(p).toLowerCase()}.`, [p.id]); }
+  if (st > (j.st ?? 0)) { j.st = st; notis(s, 'sjuk', `${p.name} har blivit sämre i ${SJUKDOMAR[j.k].bf}${symtomFras(p)}.`, [p.id]); }
   return undefined;
 }

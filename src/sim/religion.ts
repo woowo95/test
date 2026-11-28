@@ -342,7 +342,7 @@ function nyTro(s: State, p: Person, d: (typeof TDEF)[TeckenTyp], huvud: Pick<Tro
 // gudens berättelse: anden i i (form ande) eller guden som en människa, med tecknet h, året ar och trons namn tro (fynd 195)
 const gudBer = (form: 'ande' | 'gud', h: string, ar: number, tro: string, namn: string, om: string, i?: string) => form === 'ande'
   ? `Det började med ${h}, år ${ar}. De som tror på ${liten(tro)} förstod att det var anden i ${i} som visat sig. Anden heter ${namn} och råder över ${om}.`
-  : `År ${ar}, med ${h}, visade sig ${namn} för dem som tror på ${liten(tro)}. ${namn} ser ut som en människa och råder över ${om}.`;
+  : `Det började med ${h}, år ${ar}. Då visade sig ${namn} för dem som tror på ${liten(tro)}. ${namn} ser ut som en människa och råder över ${om}.`; // ett 'med att' blir ingen svenska (steg 15.1.118)
 export function grunda(s: State, p: Person, k: TeckenTyp, om?: string) {
   const d = TDEF[k], tron = (s.tron ??= []);
   if (!TRO_PROV.utanTak && tron.filter(t => t.slut === undefined).length >= TRO.takTro) return; // högst några trosriktningar samtidigt (steg 8.5.11)
@@ -424,7 +424,7 @@ function nyGud(s: State, tr: Tro, omr: GudOmr, h: string, p: Person | undefined)
   (tr.gudar ??= []).push(g);
   count(s, 'gud_ny'); count(s, 'gud_' + g.form);
   log(s, `${tro} har fått en ${formNamn(g.form)}: ${g.namn}, som råder över ${d.om}.`, 'rel', troende(s, tr).map(q => q.id));
-  kronika(s, `År ${ar}: ${g.ber}`, 'tro');
+  kronika(s, g.ber, 'tro'); // berättelsen säger redan året (steg 15.1.118)
 }
 function forfader(s: State, tr: Tro, p: Person, omr: GudOmr): Gud {
   const namn = forfaderNamn(p), ar = yearNo(s), dar = yearNo(s, p.died!);

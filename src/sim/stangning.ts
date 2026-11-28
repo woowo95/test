@@ -58,7 +58,7 @@ export function saljForetag(s: State, f: Foretag, h: Hus, kop: Person, bud?: Per
   if (!kopHus(s, h, kop.id, bud, { salj: foretagPris(s, f, h), hog: foretagHogst(s, f, kop.id), fn: 'naringshus', namn })) return false;
   f.ag = kop.id; f.namn = namn; f.salu = f.resultat = f.oppnat = undefined;
   count(s, 'foretagSalt');
-  const tx = `${kop.name} köpte ${gammal}.`;
+  const tx = `${kop.name} köpte ${/^Byns /.test(gammal) ? 'b' + gammal.slice(1) : gammal}.`; // liten bokstav mitt i meningen (steg 15.1.118)
   log(s, tx, 'world', [kop.id, ...(salj ? [salj.id] : [])]); kronika(s, tx, 'byte');
   return true;
 }

@@ -8,7 +8,8 @@ import type { MatchMinne } from './sport';
 import { SPORT, SPORT_AV } from './sport';
 import { bestamd, gen, sinOrd } from './ord';
 import { SAKER } from './saker';
-import { isLight } from './tid';
+import { isLight, kalender } from './tid';
+const ARSTID_SNO = (s: State, t: number) => kalender(s, t).ai === 0;
 import { MIN } from './typer';
 import { balans } from './balans';
 import { fyll, och, talOrd, valjVariant } from './berattelser';
@@ -50,6 +51,7 @@ export function matchBerattelse(s: State, m: MatchMinne): string {
     igen: !vl && !!fore.length && fore[fore.length - 1].k === m.k && fore[fore.length - 1].vinnare === m.vinnare && m.vinnare !== undefined,
     forstaVinst: !vl && m.vinnare !== undefined && (s.matcher?.length ?? 0) < SPORT.sparas && !fore.some(x => x.vinnare === m.vinnare),
     forsta: (s.matcher?.length ?? 0) < SPORT.sparas && !fore.some(x => x.k === m.k),
+    sno: ARSTID_SNO(s, m.t), // snön på marken när matchen spelades: istiden (steg 15.1.118)
   };
   const mening = (mall: 'm_start' | 'm_lopp' | 'm_vinst' | 'm_slut' | 'm_installd' | 'm_publik' | 'm_pris', i: number) => fyll(valjVariant(s, mall, m.nr * 16 + i, f, 0), f);
   if (m.installd) return mening('m_installd', 0);

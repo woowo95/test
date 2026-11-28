@@ -82,3 +82,18 @@ SCENARIER.loggtext = {
     ];
   },
 };
+
+SCENARIER.ovrigatext = {
+  text: 'Steg 15.1.118: de andra texterna. Teknikernas verkan har ett subjekt utanför kortet, latrinens text saknar moderna ord, en ensam vinnare i dragkamp står inte i lag, sporttiteln är hel svenska och publiken sitter inte i gräset i snön',
+  kor: () => {
+    const dar = Object.values(SIM.TEKNIK as unknown as Record<string, { effekt?: string }>).filter(t => /^Där\b/.test(t.effekt ?? ''));
+    const start = giltiga('m_start', { spelare: 'Bo och Ylva', Spelare: 'Bo och Ylva', sport: 'dragkamp', lag: true, n: 'två' });
+    const pub = giltiga('m_publik', { publik: 'Bo', Publik: 'Bo', nPub: 1, sport: 'brottning', sno: true });
+    return [
+      [`ingen teknik börjar sin verkan med "Där" (${dar.length})`, dar.length === 0],
+      ['latrinen nämner ingen toa', !/toa/i.test(String((SIM.TEKNIK as unknown as Record<string, { effekt?: string }>).latrin?.effekt))],
+      ['lagen i dragkamp drar inte i var sin ände', start.every(t => !/var sin ände/.test(t))],
+      ['ingen sitter i gräset i snön', pub.every(t => !/gräset/.test(t))],
+    ];
+  },
+};

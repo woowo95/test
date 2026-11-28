@@ -1842,7 +1842,6 @@ const MDEF = {
     '{Kund} gick fram till {handlare} och ville ha {envara}.',
     '{Kund} hade sett {vara} på filten och ville köpa.',
     '{Kund} satte sig vid filten mitt emot {handlare}. Det var {envara} {kund} ville ha.',
-    'Det var {vara} som fick {kund} att gå fram till {handlare}.',
     '{Kund} pekade på {vara} och frågade vad {handlare} ville ha för det.',
     '{Kund} hade länge velat ha {vara}, och nu låg det på filten.',
     { t: '{Kund} gick fram till {handlare} för byns räkning. Byn behövde {envara}.', om: f => f.byn === true && f.salj !== true },
@@ -1902,7 +1901,6 @@ const MDEF = {
     { t: '{Handlare} sa nej {nej} gång, och {kund} fick lägga till lite.', om: f => f.nejTal === 1 },
     { t: 'Det första budet räckte inte, men de var inte långt ifrån varandra.', om: f => f.nejTal === 1 },
     { t: '{Kund} fick höja en gång innan det började likna något.', om: f => f.nejTal === 1 },
-    { t: 'Det blev en seg förhandling. {Handlare} sa nej {nej} gånger.', om: f => Number(f.nejTal) > 1 },
     { t: 'De prutade länge, och {handlare} skakade på huvudet {nej} gånger.', om: f => Number(f.nejTal) > 1 },
     { t: '{Kund} lade till och tog bort, bud efter bud.', om: f => Number(f.nejTal) > 1 },
     { t: 'Stämningen blev sämre för varje nej.', om: f => Number(f.nejTal) > 1 && f.ner === true },
@@ -1969,6 +1967,8 @@ const MDEF = {
     { t: '{N} hade samlats för att lyssna.', om: f => Number(f.nTal) > 1 },
     { t: 'Nästan hela byn var där, {n} stycken.', om: f => Number(f.andel) >= 0.8 },
     { t: '{N} satt framför scenen och lyssnade.', om: f => Number(f.nTal) > 1 && !!f.scen },
+    { t: 'Det var så kallt att de satt tätt ihop medan de lyssnade.', om: f => f.kallt === true && Number(f.nTal) > 1 },
+    { t: 'Ingen av dem hade hört {namn} uppträda förut.', om: f => f.forsta === true },
   ],
   // mottagningen: bra = ett gott framträdande, dalig = ett dåligt (annars mitt emellan), form = formens id
   f_mott: [
@@ -1994,7 +1994,7 @@ const MDEF = {
     { t: 'Flera i publiken tyckte lite bättre om {ledare} efter det.', om: f => f.verkan === 'hylla' },
     { t: '{Hanad} tvivlade efteråt och tyckte sämre om {namn}.', om: f => f.verkan === 'hanaGud' },
     { t: 'De troende i publiken, {hanad}, gick därifrån med svagare tro.', om: f => f.verkan === 'hanaGud' },
-    { t: 'Publiken skrattade åt {ledare}, och {ledare} blev arg på {namn}.', om: f => f.verkan === 'hana' },
+    { t: 'Publiken skrattade åt {ledare}, som blev arg på {namn}.', om: f => f.verkan === 'hana' },
     { t: 'Det blev skratt, men {ledare} tyckte inte att det var roligt.', om: f => f.verkan === 'hana' },
     { t: 'Snart visste {rykte} vad {namn} tyckte om {om}.', om: f => f.verkan === 'rykte' },
     { t: 'Efteråt pratade {rykte} om det som sagts om {om}.', om: f => f.verkan === 'rykte' },
@@ -2015,7 +2015,7 @@ const MDEF = {
   m_start: [
     { t: '{Spelare} brottades mitt i byn.', om: f => f.sport === 'brottning' },
     { t: 'Det blev brottning i byn, och {spelare} tog tag i varandra.', om: f => f.sport === 'brottning' },
-    { t: '{Spelare} drog i var sin ände av repet.', om: f => f.sport === 'dragkamp' },
+    { t: '{Spelare} drog i var sin ände av repet.', om: f => f.sport === 'dragkamp' && !f.lag },
     { t: 'Det blev dragkamp i byn: {n} drog i repet.', om: f => f.sport === 'dragkamp' },
     { t: '{Spelare} kastade mot målet i tur och ordning.', om: f => f.sport === 'kast' },
     { t: 'Det blev kast mot mål i byn, och {n} ställde upp.', om: f => f.sport === 'kast' },
@@ -2026,6 +2026,7 @@ const MDEF = {
     { t: '{Spelare} spelade boll i byn.', om: f => f.sport === 'bollspel' },
     { t: 'Det blev bollspel, och {n} sprang efter bollen.', om: f => f.sport === 'bollspel' },
     { t: 'Det var första gången byn spelade {sportnamn}.', om: f => f.forsta === true },
+    { t: '{Spelare} delade upp sig i två lag och tog tag i repet.', om: f => f.sport === 'dragkamp' && !!f.lag },
   ],
   // hur matchen gick: jämnt, överlägset eller däremellan, och hur länge den höll på
   m_lopp: [
@@ -2039,13 +2040,14 @@ const MDEF = {
     { t: 'Det gick fram och tillbaka en stund.', om: f => f.jamnt !== true && f.overlagset !== true },
     { t: 'Det höll på en god stund.', om: f => f.jamnt !== true && f.overlagset !== true && f.kort !== true },
     { t: 'Det skilde bara en hårsmån mellan {vinnare} och {tvaan}.', om: f => f.jamnt === true && !!f.tvaan && !f.lag },
+    { t: 'Snön yrde, och det var svårt att se vem som träffade vem.', om: f => f.sport === 'snoboll' && f.jamnt === true },
+    { t: 'Båda föll i gräset flera gånger innan det var avgjort.', om: f => f.sport === 'brottning' && f.jamnt === true && !f.sno },
   ],
   // vem som vann: {vinnare}, och {bast} = den som var skickligast. skrall = den svagare vann
   m_vinst: [
     { t: 'Till slut vann {vinnare}, fast {bast} var skickligare.', om: f => f.skrall === true },
     { t: 'Ingen hade trott det, men {vinnare} vann över {bast}.', om: f => f.skrall === true },
     { t: '{Vinnare} vann oväntat, och {bast} fick se sig {slagen}.', om: f => f.skrall === true },
-    { t: 'Det var {vinnare} som vann, som alla hade trott.', om: f => f.skrall !== true && f.favorit === true },
     { t: '{Vinnare} var skickligast och vann.', om: f => f.skrall !== true && f.favorit === true },
     { t: 'Till slut vann {vinnare}.', om: f => f.skrall !== true },
     { t: '{Vinnare} vann och såg nöjd ut.', om: f => f.skrall !== true && !f.lag },
@@ -2083,7 +2085,7 @@ const MDEF = {
     { t: '{Publik} stod en bit bort och hejade på dem.', om: f => Number(f.nPub) === 1 },
     { t: 'Det var bara {publik} som tittade, men hejandet räckte för flera.', om: f => Number(f.nPub) === 1 },
     { t: '{Publik} samlades runt platsen för att se på.', om: f => Number(f.nPub) > 1 },
-    { t: '{Publik} satt i gräset och tittade på hela matchen.', om: f => Number(f.nPub) === 1 },
+    { t: '{Publik} satt i gräset och tittade på hela matchen.', om: f => Number(f.nPub) === 1 && f.sport !== 'snoboll' && !f.sno },
   ],
   // matchen som inte blev av: {sport} = sporten, {spelare} = de som kom
   m_installd: [
@@ -2277,7 +2279,6 @@ const MDEF = {
     { t: '{Hen} tar det med fattning.', om: f => f.modig === true },
     { t: '{Hen} biter ihop.', om: f => f.modig === true },
     { t: 'Det tynger {honom}.', om: f => f.nere === true },
-    { t: '{Hen} har inte orkat tänka på annat sedan dess.', om: f => f.nere === true },
     { t: '{Hen} försöker se framåt.', om: f => f.glad === true },
     { t: 'Det gnager i {honom}.', om: f => f.orolig === true || f.nere === true },
     { t: '{Hen} skakar av sig det så gott det går.', om: f => f.modig === true || f.glad === true },
@@ -2286,6 +2287,9 @@ const MDEF = {
     { t: '{Hen} skulle stå där igen om det behövdes.', om: f => f.slag === 'strid' && f.modig === true },
     { t: '{Hen} är rädd att det inte ska läka.', om: f => f.slag === 'skada' && f.orolig === true },
     { t: '{Hen} ser sig om oftare nu.', om: f => f.slag === 'fara' && f.orolig === true },
+    { t: 'Det kom mitt i en god tid för {honom}.', om: f => f.glad === true },
+    { t: 'Det krävs mer än så för att skrämma {honom}.', om: f => f.modig === true && (f.slag === 'fara' || f.slag === 'strid') },
+    { t: '{Hen} är inte den som tiger om sådant.', om: f => f.talfor === true },
   ],
   h_gott: [
     { t: '{Hen} är stolt över det.', om: f => f.modig === true || f.glad === true },
@@ -2293,13 +2297,15 @@ const MDEF = {
     { t: 'Det lyfte {honom} lite.', om: f => f.nere === true },
     { t: 'Det gjorde {honom} lite lugnare.', om: f => f.orolig === true },
     { t: '{Hen} log åt det.', om: f => f.orolig === true || f.glad === true },
-    { t: 'Det var en liten glädje, men den räckte en stund.', om: f => f.nere === true || f.orolig === true },
     { t: '{Hen} har berättat det för alla.', om: f => f.talfor === true },
     { t: 'Det gav {honom} mod.', om: f => f.orolig === true },
     { t: '{Hen} tänker gärna tillbaka på det.', om: f => f.glad === true || f.nere === true },
     { t: '', om: f => !f.orolig && !f.modig && !f.nere && !f.glad && !f.talfor },
     { t: '{Hen} gläds med dem.', om: f => f.slag === 'nara' && f.glad === true },
     { t: '{Hen} vill gärna visa vad {hen} kan nu.', om: f => f.slag === 'lart' && f.talfor === true },
+    { t: 'Det kom när allt annat kändes tungt.', om: f => f.nere === true },
+    { t: 'Det hade {hen} väntat länge på.', om: f => f.slag === 'lart' || f.slag === 'yrke' },
+    { t: 'Det var en stor dag för {honom}.', om: f => f.slag === 'nara' || f.slag === 'relation' },
   ],
   // ---- mallarna från de nya systemen (steg 12.1.135): krönikan skriver dem när händelsen sker (iBy), och beskrivningen och
   // eftermälet av en person som var med om den (person, varMed nedan). Fälten står vid varje mall
@@ -3381,7 +3387,7 @@ export function personRader(s: State, p: Person): VisadRad[] {
     grupp.reverse();
     const alla = grupp.map(r => r[2]), sist = grupp[grupp.length - 1];
     let text = alla.slice(0, PLOGG.visaHela).join(' ');
-    if (alla.length > PLOGG.visaHela) text += ` Och ${alla.length - PLOGG.visaHela} ${alla.length - PLOGG.visaHela === 1 ? 'sak' : 'saker'} till av samma slag det året.`;
+    if (alla.length > PLOGG.visaHela) text += ` Och ${talOrd(alla.length - PLOGG.visaHela)} ${alla.length - PLOGG.visaHela === 1 ? 'sak' : 'saker'} till av samma slag det året.`;
     const tillagg = kanslaRad(s, p, k, sist);
     ut.push({ t: sist[0], k, text: tillagg ? `${text} ${tillagg}` : text, alla });
   }

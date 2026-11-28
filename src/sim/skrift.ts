@@ -15,7 +15,7 @@ import { lightLevel } from './tid';
 import { NORMAL, nyKvalitet } from './kvalitet';
 import { clamp, rnd } from './slump';
 import { ljusAt } from './ljus';
-import { gen, han, slaktOrd } from './ord';
+import { gen, goraUtan, han, slaktOrd } from './ord';
 import { notis } from './notiser';
 import { kronika } from './historik';
 import { ARBETE, varuVarde } from './varde';
@@ -234,7 +234,7 @@ export function runstenTimme(s: State) {
   for (const b of bockerna(s)) for (const k of b.delar ?? []) {
     if (!k.tek || k.ensam || living(s).some(q => !q.gast && knows(q, k.tek!))) continue;
     k.ensam = true;
-    const rad = `Ingen i byn kan längre ${TEK[k.tek]!.namn.toLowerCase()}, men konsten står kvar i ${gen(k.av.namn)} bok.`;
+    const rad = `Ingen i byn kan längre ${goraUtan(TEK[k.tek]!)}, men konsten står kvar i ${gen(k.av.namn)} bok.`;
     log(s, rad, 'skill', [k.av.id]); kronika(s, rad, 'runsten');
   }
   if (!s.runstenar?.length) return;
