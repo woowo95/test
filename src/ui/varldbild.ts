@@ -61,6 +61,9 @@ export const TECKEN: Record<string, string[]> = {
   van: t('kkkk', 'kGGk', 'kGGk', 'kkkk'),
   ovan: t('kkkk', 'kRRk', 'kRRk', 'kkkk'),
   krig: t('', '', '', '', '', '', '', '', '', '', '', 'k...k', '.kSk', '..k', '.kSk', 'k...k'),
+  // röset (steg 15.1.82, platshållare): graven där någon dött på en färd, en hög av gråa stenar med en rest sten, så att den
+  // skiljer sig från gravhögen (hog) och fyndplatsens kors
+  rose: t('', '', '', '', '.......kk', '......kwSk', '......kSdk', '.....kkSdkk', '....kSdkkSdk', '...kSSdkSSdk', '..kSdkkSdkSdk', '..kkkkkkkkkkk'),
   // flocken (steg 15.1.79, platshållare): tre i rad åt höger, med spjut över axlarna
   flock: t('', '..........k', '.kk..kk..kk', 'kwwkkwwkkwwk', 'kwwkkwwkkwwk', '.kkk.kkk.kk.', 'krrkkrrkkrrk', 'krrkkrrkkrrk', 'krrkkrrkkrrk', '.kjk.kjk.kjk', '.k.k.k.k.k.k', '.k.k.k.k.k.k'),
   // packdjuret (steg 15.1.79, platshållare): en vandrare som leder ett djur med packning på ryggen

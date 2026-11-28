@@ -241,3 +241,17 @@ SCENARIER.bytecken = {
     ];
   },
 };
+
+SCENARIER.gravrose = {
+  text: 'Steg 15.1.82: graven där någon dött på en färd ritas med ett eget tecken, röset (TECKEN.rose), som skiljer sig från gravhögen och fyndplatsens kors',
+  kor: () => {
+    const r = VB.TECKEN.rose, kod = readFileSync(new URL('../../ui/varldskarta.ts', import.meta.url), 'utf8');
+    const form = r?.length === VB.VK && r.every(x => x.length === VB.VK && [...x].every(c => c === '.' || c in VB.TECKENPAL));
+    const skiljer = (a: string[]) => a.some((x, i) => x !== r![i]);
+    return [
+      ['röset är en platshållare i 16 × 16 punkter i paletten', !!form],
+      ['röset skiljer sig från gravhögen, korset och stenen', skiljer(VB.TECKEN.hog!) && skiljer(VB.TECKEN.kors!) && skiljer(VB.TECKEN.sten!) && SIM.LANDMARKEN.gravhog.tecken === 'hog'],
+      ['kartan ritar gravarna vid lederna med röset', /vl\.gravar \?\? \[\]\) g\.drawImage\(teckenBild\('rose'\)/.test(kod)],
+    ];
+  },
+};

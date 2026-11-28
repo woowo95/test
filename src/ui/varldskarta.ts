@@ -94,7 +94,7 @@ const vandrar = new Map<number, boolean>(); // åt vänster senast (står kvar n
 function ritaGommor(g: CanvasRenderingContext2D) {
   const vl = s?.varld, v = s && varldMark(s);
   if (!vl || !v) return;
-  for (const gr of vl.gravar ?? []) g.drawImage(teckenBild('kors'), (gr.ruta % v.w) * VK, Math.floor(gr.ruta / v.w) * VK); // gravarna vid leden (steg 11.5.18, platshållare: korset)
+  for (const gr of vl.gravar ?? []) g.drawImage(teckenBild('rose'), (gr.ruta % v.w) * VK, Math.floor(gr.ruta / v.w) * VK); // gravarna vid leden (steg 11.5.18), med röset (steg 15.1.82, platshållare)
 }
 function ritaSallskap(g: CanvasRenderingContext2D) {
   if (!s) return;
