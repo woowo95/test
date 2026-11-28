@@ -1677,6 +1677,7 @@ SCENARIER.brandkant = {
 };
 
 SCENARIER.brandfart = {
+  lang: true,
   text: 'Steg 6.4.1: branden räknas i steg om 5 sekunder och sprids efter markslaget. I torrt högt gräs går eldens kant ungefär en ruta på två till tre minuter (steg 10.2.17), så att en brand på en äng är några tiotal rutor efter tio minuter; i skog går det långsammare, och i blöt mark tar den sig inte vidare',
   kor: () => {
     const a = torrAng();

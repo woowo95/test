@@ -210,6 +210,7 @@ SCENARIER.fullaforrad = {
 };
 
 SCENARIER.omtanke = {
+  lang: true,
   text: 'Steg 10.5.2: omtanken. Det egna och familjens väger alltid 1, och byns arbete väger byns brist gånger omtanken om byn: 1 för en vanlig person, högre med empati, seden Sammanhållning och goda relationer i byn, lägre med Självförsörjning och osämja. Mot en bestämd person räknas samma tal med relationen till just hen, så att man hellre bygger på en väns hus än på en oväns',
   kor: () => {
     const s = by(4), p = vuxna(s)[0], fam = SIM.familjOf(s, p.id), andra = SIM.living(s).filter(q => q !== p);
