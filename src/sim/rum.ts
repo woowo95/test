@@ -134,7 +134,7 @@ export function rumInfo(s: State, r: Rum, utanFolk = false): RumInfo {
     if (d.fahus) i.krubba++;
     if (d.varmer) i.eld++; // fyrfatet värmer rummet som en härd (taggen Varmt, steg 12.4.11)
     if (d.kok) i.kok++;
-    if (d.gor.length && t.k !== 'scen' && t.k !== 'tork' && !d.kok) i.arbete++; // kökets stationer gör rummet till ett kök, inte en verkstad
+    if (d.gor.length && t.k !== 'scen' && t.k !== 'tork' && !d.kok && !d.disk) i.arbete++; // kökets stationer gör rummet till ett kök, inte en verkstad, och disken är ingen arbetsbänk (steg 15.1.16)
   }
   const e = eldPlats(s);
   if (rutor.has(e.y * W + e.x)) i.eld++;

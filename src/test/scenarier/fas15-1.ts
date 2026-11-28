@@ -1,6 +1,7 @@
 // Scenarier för fas 15, grupp 1 av 15.1 (Rättningar från spelgranskningen).
 import * as SIM from '../../sim';
 import { SCENARIER, byggKlart, testBy } from './hjalp';
+import { foretagBy } from './fas14';
 
 // en by med minst tio vuxna, utan företag, där ägaren har god mat och de andra silver
 function utanForetag() {
@@ -50,6 +51,36 @@ SCENARIER.foretagshus = {
       [`att lägga till stallet kostar krubban och utbyggnaden (${kostar.toFixed(0)} mot krubban ${sak.toFixed(0)})`, kostar > sak],
       [`stallet gör huset för litet: det byggs ut (${b.plats} rutor till i hus ${b.hus})`, b.v > 0 && b.hus === f.hus && golv2 > golv],
       [`efter utbyggnaden ryms krubban (${golv2} rutor, krubban i rummet: ${iRum(kr)})`, golv2 >= SIM.foretagPlats(f.verk) && iRum(kr)],
+    ];
+  },
+};
+
+SCENARIER.diskplats = {
+  text: 'Steg 15.1.16: disken står i företagets hus. Byggsystemet planerar ingen verkstad åt disken eller varubordet, disken gör inte rummet till en verkstad, och en disk som står utanför ett företags rum står i vägen: den flyttas dit eller tas isär',
+  kor: () => {
+    const { s, f, disk } = foretagBy(), W = SIM.W;
+    const iForetaget = (t?: SIM.Station) => !!t && SIM.stationRum(s, t)?.hus === f.hus;
+    const taggar = [...SIM.rumTaggar(s, SIM.stationRum(s, disk)!)];
+    // utan disk: den som byggs hamnar i företagets rum
+    s.stationer = s.stationer!.filter(t => t !== disk); SIM.touch(s); SIM.changed(s);
+    const ny = stallDit(s, 'disk'), nyRatt = iForetaget(ny);
+    // utan något företags rum med plats: ingen verkstad planeras åt disken eller varubordet
+    s.stationer = s.stationer!.filter(t => t !== ny); const hus = f.hus; f.hus = undefined; s.foretag = []; SIM.touch(s); SIM.changed(s);
+    const utan = SIM.inneUtanPlats(s), verkstad = SIM.BYGGNADER.verkstad.akut!(s);
+    // en disk i ett hus utan företag står i vägen
+    const r = SIM.gridOf(s).rooms.find(x => x.hus !== undefined && x.hus !== hus && SIM.husById(s, x.hus)?.klar && SIM.husById(s, x.hus)!.fn !== 'naringshus' && SIM.husById(s, x.hus)!.tro === undefined && x.tiles.length >= 6)!;
+    const at = SIM.siteInne(s, 'disk', r) ?? { x: r.tiles[0] % W, y: Math.floor(r.tiles[0] / W), inne: 1 as const };
+    const fel = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'disk', kvar: 0, ...at } as unknown as SIM.Station;
+    s.stationer!.push(fel); SIM.touch(s); SIM.changed(s);
+    for (const p of SIM.living(s)) if (SIM.stationRum(s, fel) && Math.hypot(p.x - fel.x, p.y - fel.y) < 3) { p.x = SIM.eldPlats(s).x + 0.5; p.y = SIM.eldPlats(s).y + 0.5; p.task = undefined; }
+    SIM.stepStationer(s);
+    const kvar = SIM.stationerOf(s).find(t => t.id === fel.id);
+    return [
+      [`disken gör inte företagets rum till en verkstad (${taggar.join(', ')})`, !taggar.includes('verkstad')],
+      [`en disk som byggs hamnar i företagets rum (${ny ? `${ny.x},${ny.y}` : 'ingen plats'})`, nyRatt],
+      [`utan företagets rum planeras ingen verkstad åt disken (${utan ?? 'ingen'}, verkstad ${verkstad.v})`, utan !== 'disk' && utan !== 'varubord'],
+      [`registret säger att disken och varubordet står i ett företags rum`, !!SIM.stationDef('disk')?.foretag && !!SIM.stationDef('varubord')?.foretag],
+      [`ett hus utan företag behåller ingen disk (${kvar ? 'står kvar' : 'borta'})`, !kvar],
     ];
   },
 };
