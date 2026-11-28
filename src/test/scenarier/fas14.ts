@@ -329,7 +329,7 @@ SCENARIER.konkurrens = {
     f.pris = { servering: 2.5 }; const dyr = [val(f), val(f2)];
     satt(0.9, 0.1); f.pris = { servering: 1 }; const fint = [val(f), val(f2)];
     // den kräsne går till det fina och dyra, den som inte väntar sig något till det billiga
-    satt(0.95, 0.15); f.pris = { servering: 3 }; f2.pris = { servering: 0.8 }; // priset är i silver (steg 15.1.17): kundens vinst räknas inte längre dubbelt, så det fina får vara dyrare
+    satt(0.95, 0.15); f.pris = { servering: 2 }; f2.pris = { servering: 0.8 }; // priset är i silver (steg 15.1.17) och rätterna har sitt värde ur ingredienserna (steg 15.1.33): med 3 blir det fina för dyrt för alla, med 1,3 för billigt; 1,6–2 ger var sina kunder
     // kunderna har ingen egen mat över (den sparade byn kan ha gett dem mycket, och då är en måltid värd hälften för alla)
     const ids = new Set(vux.map(q => String(q.id)));
     s.stackar = (s.stackar ?? []).map(a => a.ag && SIM.FOOD.includes(a.k) ? { ...a, ag: Object.fromEntries(Object.entries(a.ag).filter(([id]) => !ids.has(id))) } : a);
