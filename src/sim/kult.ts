@@ -28,7 +28,7 @@ import { kvarById, nara } from './kvarlevor';
 import { FOOD, SAKER } from './saker';
 import { takeMaterial } from './behov';
 import { PLAGG, kladAv } from './klader';
-import { FEST, farorNu, heligtDjurAv, matAvstar, nyRitual, satEgendomVarde, satGravVarde, vanhelgaPlats } from './kultlatt';
+import { BYTA, FEST, svikKrok, tvivla, farorNu, heligtDjurAv, matAvstar, nyRitual, satEgendomVarde, satGravVarde, vanhelgaPlats } from './kultlatt';
 import { tamdjurOf } from './tamdjur';
 import { grundvarde, tingVarde, varuVarde } from './varde';
 import { och, sakOrd, tal } from './ord';
@@ -53,6 +53,8 @@ export const KULT = balans('kult', {
   leddDygn: 2, // prästen leder en bön för tron med så här många dygns mellanrum (år i spelet, fynd 554)
   starkare: 1.5, // rökelse, trons tecken och prästens dräkt gör en bön så här mycket starkare
   nodAnde: 60, nodTro: 50, // bönen i nöd: den som har minst så här andlighet och tro
+  svikTro: 3, // bönen som inte hjälpte sänker tron så här mycket gånger tvivlet (steg 15.1.125) ...
+  offerSvekDygn: 2, // ... och den som offrat och får en motgång inom så här många dygn tvivlar (steg 15.1.125)
   hjalpDygn: 2, // går faran över inom så här många dygn (år i spelet) hjälpte bönen
   prastAnde: 55, // så andlig ska den som blir präst vara
   profetAnde: 88, profetKarisma: 13, profetChans: 0.0008, // profeten: andlighet, karisma och chansen per timme att få en syn
@@ -125,7 +127,8 @@ function bonSvar(s: State, p: Person) {
   const f = farorNu(s), over = b.o === 'svalt' ? !f.svalt : b.o === 'kyla' ? !f.kyla : frisk;
   if (over || s.now - b.t >= KULT.hjalpDygn * DAY || b.o === 'nara' && (!q || !alive(q))) {
     p.bonVan = undefined;
-    if (over) { upplev(s, p, 'bonHjalpte'); count(s, 'bon_hjalpte'); bonSvarPlats(s, p, b); tecken(s, p, 'bonSvar'); } else { upplev(s, p, 'bonInte'); p.tvivel = (p.tvivel ?? 0) + 1; count(s, 'bon_inte'); }
+    if (over) { upplev(s, p, 'bonHjalpte'); count(s, 'bon_hjalpte'); bonSvarPlats(s, p, b); tecken(s, p, 'bonSvar'); if (p.tvivel) p.tvivel = Math.max(0, p.tvivel - 1); }
+    else { upplev(s, p, 'bonInte'); tvivla(p, 1); p.troStyrka = Math.max(0, (p.troStyrka ?? 0) - KULT.svikTro * (p.tvivel ?? 0)); count(s, 'bon_inte'); } // tron sviktar (steg 15.1.125)
   }
 }
 // rutan där bönen i nöd hölls och fick svar blir en kandidat till en helig plats, också utan präst (steg 10.3.10)
@@ -430,7 +433,7 @@ export function hogtidSlut(s: State, tr: Tro, r: Ritual, med: Person[]) {
     // offret: den som följer budet lägger en hel mat, den hen äger mest av, på den heliga platsen, och den är borta
     if (p.tro !== tr.id || !budIn(tr, 'offer') || !foljer(p, 'offer')) return;
     const m = FOOD.filter(q => egen(p, q) >= 1).sort((a, b) => egen(p, b) - egen(p, a))[0];
-    if (m) { use(s, p, m, 1); p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KULT.offerTro); count(s, 'offer'); }
+    if (m) { use(s, p, m, 1); p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + KULT.offerTro); p.offrade = s.now; count(s, 'offer'); }
     else tanke(p, 'ingetOffra', s.now, { v: KULT.offerInget });
   });
   if (r.form !== 'fasta') hogtidOlKvade(s, tr, med); // ölet och kvädet (steg 10.3.23)
@@ -509,6 +512,22 @@ function myrOffra(s: State, tr: Tro, r: Ritual, med: Person[]): number {
   return Math.min(KULT.myrTak, 1 + v / KULT.myrVarde);
 }
 // ---------- varje timme ----------
+// tvivlet bleknar med tiden, och den vars tro blivit svagare än TRO.lamna lämnar den (steg 15.1.125). h: timmarna sedan sist (TAKTER)
+export function tvivelTimme(s: State, h: number) {
+  const f = Math.exp(-h / (BYTA.tvivelDygn * 24));
+  for (const p of living(s)) {
+    if (p.tvivel) { p.tvivel *= f; if (p.tvivel < 1e-3) p.tvivel = undefined; }
+    if (p.tro !== undefined && (p.troStyrka ?? 0) < TRO.lamna) lamnaTron(s, p);
+  }
+}
+function lamnaTron(s: State, p: Person) {
+  const tr = troOf(s, p.tro);
+  p.tro = undefined; p.troStyrka = undefined; p.tvivel = undefined; p.offrade = undefined;
+  count(s, 'lamnade_tron');
+  if (tr) log(s, `${p.name} har slutat tro på ${troNamn(tr).toLowerCase()}.`, 'rel', [p.id]);
+}
+// en motgång börjar: de troende som offrat de senaste dygnen tvivlar (steg 15.1.125)
+svikKrok.motgang = s => { for (const p of living(s)) if (p.tro !== undefined && p.offrade !== undefined && s.now - p.offrade < KULT.offerSvekDygn * DAY) tvivla(p, 1); };
 export function kultTimme(s: State, h = 1) { // h: timmarna sedan sist (TAKTER)
   for (const p of living(s)) { bonSvar(s, p); profetSteg(s, p, h); }
   livsRiter(s);

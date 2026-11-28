@@ -271,7 +271,7 @@ export interface Person {
   tiggde?: number; // senast hen fick mat av någon utanför familjen (steg 10.5.11, behov.ts): intrycket tiggare
   anst?: { av: number; arb: string; mal?: number; w: number }; verk?: Record<string, number>; // årets anställning (vem man arbetar åt, arbetet, lönen per timme mot en arbetstimmes värde) och det man hinner på ett år i varje arbete (steg 14.1.4, dagsarbete.ts)
   lonFick?: number; lonObetald?: number; // den del av lönen man fått de senaste åren, och den del man inte fick i fjol
-  bonD?: number; bonNodD?: number; bonVan?: { t: number; o: string; vem?: number; x?: number; y?: number }; tack?: string; tvivel?: number; profet?: boolean; sedDod?: number[]; sedSkand?: number[]; fasta?: number; skuld?: number; // bönen och tron (system 8.5)
+  bonD?: number; bonNodD?: number; bonVan?: { t: number; o: string; vem?: number; x?: number; y?: number }; tack?: string; tvivel?: number; offrade?: number; /* när personen sist offrade (steg 15.1.125) */ profet?: boolean; sedDod?: number[]; sedSkand?: number[]; fasta?: number; skuld?: number; // bönen och tron (system 8.5)
   drag?: { namn: string; v: number; t: number }; // anfallarnas tro som en dragning efter att ha svurit trohet (steg 8.8.6)
   missnoje?: number; // missnöjet med styret, 0–1 (steg 8.3.10, rost.ts)
   skatteskuld?: number; // skatten som inte kunde betalas, i grundvärde (steg 10.5.5, skatt.ts)

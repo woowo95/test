@@ -538,7 +538,7 @@ function budDygn(s: State) {
     // djuroffret en gång i veckan, och människooffret: bara den som dömts, högst en gång på offerDygn
     if ((dag + tr.id) % KYRKA.vecka === 0 && budIn(tr, 'djuroffer')) {
       const slag = KOTTSLAG.reduce((a, k) => takeLimit(s, k) > takeLimit(s, a) ? k : a, 'kott'); // det köttslag byn har mest av (steg 10.3.14)
-      if (takeLimit(s, slag) >= KYRKA.djur) { use(s, undefined, slag, KYRKA.djur, true); count(s, 'djuroffer'); for (const p of med('djuroffer')) p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + 2); }
+      if (takeLimit(s, slag) >= KYRKA.djur) { use(s, undefined, slag, KYRKA.djur, true); count(s, 'djuroffer'); for (const p of med('djuroffer')) { p.troStyrka = Math.min(100, (p.troStyrka ?? 0) + 2); p.offrade = s.now; } }
       else for (const p of med('djuroffer')) tanke(p, 'djurSaknas', s.now, { v: KYRKA.djurSakna });
     }
     if (budIn(tr, 'manniskooffer') && dag - (tr.offrad ?? -Infinity) >= KYRKA.offerDygn) {

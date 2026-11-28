@@ -39,7 +39,7 @@ import { grundvarde } from './varde';
 import { notis } from './notiser';
 import { vaderNu } from './vader';
 import { nyKvarleva } from './kvarlevor';
-import { gravgava } from './kultlatt';
+import { gravgava, tvivla } from './kultlatt';
 import { barSmitta, insjukna } from './sjukdom';
 import { nyttILarmet } from './roller';
 import { forlossRisk } from './forlossning';
@@ -179,6 +179,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   for (const q of living(s)) {
     // den som var gift sörjer mer, den bästa vännen länge och en nära vän lite mer än en vän (steg 3.1.1)
     const r = s.rels[relKey(p.id, q.id)], varPartner = q.partner === p.id;
+    if (q.bonVan?.vem === p.id) tvivla(q, 1); // den troende sörjer den hen bett för (steg 15.1.125)
     // sorgen i stadier (steg 9.2.33): först förlusten med stor tyngd, sedan sorgen och sist saknaden, svag och länge (sorgTimme)
     if (varPartner) { q.partner = undefined; const f = r?.gift !== undefined ? RELT.giftSorj : 1; sorj(s, q, p, 'sin partner', LIV.sorjPartner * f, LIV.sorjPartnerDygn * f, dodFarg); }
     else if (isParent(q, p)) sorj(s, q, p, 'sitt barn', LIV.sorjNara, LIV.sorjNaraDygn, dodFarg);

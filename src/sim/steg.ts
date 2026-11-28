@@ -127,7 +127,7 @@ import { kvarTimme } from './kvarlevor';
 import { lasKlar, runstenBorja, runstenKlar, runstenTimme, skrivKlar } from './skrift';
 import { fangeOde } from './fangeval';
 import { avrustaKlar, gravDygn, gravKlar, gravaMedan, gravbesokKlar, gravvardBorja, gravvardKlar, kroppUpp } from './grav';
-import { bonKlar, farorNu, kultTimme } from './kult';
+import { bonKlar, farorNu, kultTimme, tvivelTimme } from './kult';
 import { KYRKA_TIMME, andligTimme, kyrkaDygn, kyrkaRegister, kyrkaTimme, satBudHandelse, satOffrad } from './kyrka';
 import { lagRegister } from './lagar';
 import { raddDygn, raddRegister } from './radsla';
@@ -540,6 +540,7 @@ export const TAKTER: Takt[] = [
   { namn: 'gravDygn', sek: 86400, fas: 0.37, fn: s => { gravDygn(s); } }, // gravarna som vuxit igen helt (steg 10.4.8)
   { namn: 'gudlös', sek: 86400, fas: 0.81, fn: s => { gudlosDygn(s); } }, // den som håller sig borta från tron (rykten.ts, steg 12.1.173)
   { namn: 'kultTimme', sek: 3600, fn: (s, dt) => { kultTimme(s, dt / HOUR_S); } },
+  { namn: 'tvivlet', sek: 14400, fn: (s, dt) => { tvivelTimme(s, dt / HOUR_S); } }, // tvivlet bleknar, och den svaga tron lämnas (kult.ts, steg 15.1.125)
   { namn: 'kyrkaTimme', sek: 3600, fn: (s, dt) => { kyrkaTimme(s, dt / HOUR_S); } },
   { namn: 'kyrkans dygn', sek: 86400, fas: KYRKA_TIMME / 24, fn: s => { kyrkaDygn(s); } }, // skatten, helgonen, kvädena, välsignelsen och buden (kyrka.ts)
   { namn: 'seden andlig', sek: 3600, fn: s => { andligTimme(s); } }, // seden Världslig – Andlig låses upp (kyrka.ts)

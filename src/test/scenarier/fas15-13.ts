@@ -102,3 +102,34 @@ SCENARIER.troskala = {
     ];
   },
 };
+
+SCENARIER.tvivel = {
+  text: 'Steg 15.1.125: tron kan svikta och lämnas. Den som offrat och strax efter får en motgång tvivlar, tvivlet bleknar efter några dygn, en bön som inte hjälper sänker tron mer ju mer man tvivlar, och den vars tro blir svagare än 10 lämnar den. Hen kan sedan nås av en tro som vem som helst',
+  kor: () => {
+    const { s, tr } = troBy(41), folk = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    const [a, b, c] = folk as [SIM.Person, SIM.Person, SIM.Person];
+    // a offrade i går, b för länge sedan; sedan kommer en motgång
+    a.offrade = s.now - SIM.DAY; b.offrade = s.now - 5 * SIM.DAY;
+    SIM.svikKrok.motgang(s);
+    const ta = a.tvivel ?? 0, tb = b.tvivel ?? 0;
+    // tvivlet bleknar på några dygn (år i spelet)
+    SIM.tvivelTimme(s, 5 * 24); const ta5 = a.tvivel ?? 0;
+    SIM.tvivelTimme(s, 25 * 24); const ta30 = a.tvivel ?? 0;
+    // c ber för någon som sedan dör: bönen hjälpte inte, och tron sviktar
+    const sjuk = folk[3]!; c.troStyrka = 20; c.tvivel = 2;
+    c.bonVan = { t: s.now, o: 'nara', vem: sjuk.id };
+    SIM.die(s, sjuk, 'sjukdom');
+    const tc = c.tvivel ?? 0;
+    SIM.kultTimme(s, 1);
+    const styrka = c.troStyrka ?? 0, tc2 = c.tvivel ?? 0;
+    SIM.tvivelTimme(s, 4);
+    const lamnat = c.tro === undefined, stat = s.stat?.lamnade_tron ?? 0;
+    return [
+      [`den som offrade i går tvivlar efter motgången (${ta.toFixed(2)}), den som offrade för fem dygn sedan inte (${tb.toFixed(2)})`, ta >= 1 && tb === 0],
+      [`tvivlet bleknar: ${ta.toFixed(2)} → ${ta5.toFixed(2)} efter fem dygn → ${ta30.toFixed(2)} efter 30`, ta5 < ta * 0.7 && ta30 < ta * 0.1],
+      [`den som bett för den döda sörjer och tvivlar (2 → ${tc.toFixed(2)}), och bönen som inte hjälpte tvivlar hen mer (${tc2.toFixed(2)})`, tc >= 3 && tc2 >= tc + 1],
+      [`bönen som inte hjälpte sänkte tron från 20 till ${styrka.toFixed(1)}`, styrka < 10],
+      [`den vars tro blev svagare än 10 lämnade den (${lamnat ? 'utan tro' : 'tror'}, ${stat} lämnade)`, lamnat && stat >= 1 && tr.id !== undefined],
+    ];
+  },
+};

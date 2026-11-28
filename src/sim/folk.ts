@@ -353,7 +353,7 @@ export const MALL: Record<keyof Person, undefined> = {
   anlag: undefined, andlig: undefined, tro: undefined, troStyrka: undefined, svartSjuk: undefined, prat: undefined, binamn: undefined,
   varsel: undefined, forv: undefined, finForv: undefined, omd: undefined, utb: undefined, ubr: undefined, angr: undefined, lekt: undefined, morkT: undefined, larm: undefined,
   intryck: undefined, sedArv: undefined, sedTal: undefined, smak: undefined, reservAlltid: undefined, liv: undefined, skam: undefined,
-  foljd: undefined, uppNu: undefined, // steg 15.1.123
+  foljd: undefined, uppNu: undefined, offrade: undefined, // steg 15.1.123, 15.1.125
 };
 export const nyPerson = (p: Person): Person => ({ ...MALL, ...p }) as unknown as Person;
 // en sparad person i mallens form: bara mallens fält, så att ett fält som tagits bort ur Person inte följer med från en äldre sparning

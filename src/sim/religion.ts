@@ -52,6 +52,7 @@ export const TRO = balans('tro', {
   spridRel: 100, // ... 1 plus relationen (−100 till 100) delad med detta ...
   bekrTid: 3, // ... och gånger bekrFaktor om ett tecken bekräftat tron de senaste så här många dygnen (år i spelet)
   bekrFaktor: 2,
+  lamna: 10, // under så här stark tro lämnar man den (steg 15.1.125)
   styrkaNy: 40, // så stark är tron hos den som just börjat tro
   samtalStyrka: 2, // ett samtal mellan två som tror likadant gör lyssnarens tro så här mycket starkare
 });

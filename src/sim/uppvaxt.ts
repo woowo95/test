@@ -11,6 +11,7 @@ import { foodDays } from './ekonomi';
 import { arFoljd, foljdHande, type Sed } from './seder';
 import { svartSjukNu } from './sjukdom';
 import { STATIONER } from './stationer';
+import { tvivla } from './kultlatt';
 import { UPP_LAR } from './typer';
 import type { Skill } from './typer';
 
@@ -207,9 +208,12 @@ export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string, ggr =
   p.upp = lista;
   raknaPot(p);
   count(s, 'upp_' + k); if (vuxen) count(s, 'upp_vuxen');
+  if (UPP_TVIVEL.has(k)) tvivla(p, 0.5); // en stor livshändelse får en troende att tvivla (steg 15.1.125)
   if (vuxen) tatKrok.upplev(s, p, k); // händelsen kan märkas i huden (steg 10.7.5, tatuering.ts sätter kroken)
   log(s, `${p.name}, ${talOrd(u.a)} år, ${liten(upplevelseText(u))}.`, 'rel', [p.id]);
 }
+// de stora livshändelserna som får en troende att tvivla när de fastnar (steg 15.1.125)
+const UPP_TVIVEL = new Set<string>(['barnDod', 'dodade', 'fangelse', 'svalt']);
 // alla i byn var med om k (barnen och, sedan steg 4.1.1.2, de vuxna)
 export function allaBarn(s: State, k: UpplevelseTyp, om?: string) { for (const q of living(s)) upplev(s, q, k, om); }
 foljdKrok.ruttnade = s => allaBarn(s, 'ruttnade'); // maten som ruttnar i förrådet (steg 13.9.3, lager.ts)
