@@ -185,3 +185,42 @@ SCENARIER.prastbrot = {
     ];
   },
 };
+
+// en by med tolv vuxna med samma läggning och en ledare som satt sedan i dag
+function styrdBy(seed: number) {
+  const s = SIM.createState(seed, START); klockan(s, 12);
+  while (SIM.living(s).length < 12) nyInvanare(s, SIM.living(s).length % 2 ? 'm' : 'k', 30);
+  const folk = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), l = folk[0]!;
+  for (const p of folk) Object.assign(p.pot, { ...l.pot });
+  s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: [], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, vintrar: 2, vunna: 0, forlorade: 0, folk0: SIM.living(s).length } as never;
+  return { s, l, folk };
+}
+
+SCENARIER.maktslit = {
+  text: 'Steg 15.1.128: makten nöts. En ledare som förlorar strider mot rövarna och sitter många vintrar tappar legitimitet, de missnöjda stöder hen mindre, och missnöjet över sederna är ett eget minne som växer långsamt, inte nollas när ledaren byts, och till sist ger en fraktion',
+  kor: () => {
+    const a = styrdBy(71), st = a.s.styre!;
+    const ny = SIM.legitimitet(a.s);
+    st.forlorade = 3; const forlust = SIM.legitimitet(a.s);
+    st.forlorade = 0; st.vintrar = 14; const gammal = SIM.legitimitet(a.s);
+    st.vintrar = 2; for (const p of a.folk.slice(1)) p.missnoje = 0.4; const missnojda = SIM.legitimitet(a.s);
+    for (const p of a.folk) p.missnoje = undefined;
+    // sederna står långt från vad alla drar åt: missnöjet över sederna växer i 60 dygn (60 år i spelet)
+    const b = styrdBy(72), d = SIM.drar(b.s, b.folk[1]!);
+    for (const k of SIM.SED_LIST) b.s.seder.v[k] = d[k] >= 0 ? -1 : 1;
+    const agg = (n: number) => b.folk.slice(1).reduce((x, p) => x + (p.sedAgg ?? 0), 0) / n;
+    let agg10 = 0, fore = 0;
+    for (let i = 1; i <= 60 * 6 && !(b.s.stat?.fraktion); i++) {
+      b.s.now += 4 * SIM.HOUR; SIM.missnojeTimme(b.s, 4);
+      if (i === 60) { agg10 = agg(b.folk.length - 1); SIM.missnojeNoll(b.s); fore = agg(b.folk.length - 1); b.s.styre!.lugn = undefined; }
+    }
+    const dygn = (b.s.now - a.s.now) / SIM.DAY, frak = b.s.stat?.fraktion ?? 0;
+    return [
+      [`förlorade strider sänker framgången under noll och legitimiteten (${ny.v.toFixed(2)} → ${forlust.v.toFixed(2)}, framgången ${forlust.fram.toFixed(2)})`, forlust.fram < 0 && forlust.v < ny.v],
+      [`efter 14 vintrar har makten nötts (vintrarnas del ${ny.vint.toFixed(2)} → ${gammal.vint.toFixed(2)})`, gammal.vint < ny.vint * 0.25 && gammal.v < ny.v],
+      [`de missnöjda stöder ledaren mindre (stödet ${ny.stod.toFixed(2)} → ${missnojda.stod.toFixed(2)})`, missnojda.stod < ny.stod - 0.1],
+      [`missnöjet över sederna står kvar när ledaren byts (${agg10.toFixed(2)} → ${fore.toFixed(2)} efter tio dygn)`, agg10 > 0.2 && Math.abs(fore - agg10) < 1e-9],
+      [`till sist bildas en fraktion av det långa missnöjet över sederna (efter ${dygn.toFixed(0)} dygn)`, frak > 0],
+    ];
+  },
+};

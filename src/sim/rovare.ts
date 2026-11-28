@@ -135,7 +135,7 @@ export const rovarna = (s: State, f: { folk: number[] }): Person[] => f.folk.map
 const gr = (r: Person) => r.gast!;
 // x, y: mitten av gänget (steg 10.2.25), mx, my: målet. test: flocken kom från testläget och rastar kortare (steg 9.2.103).
 // anfall: flocken har setts i eller nära byn, och byn går mot den (steg 9.2.104). strider: hur många strider flocken varit i
-export interface Rovarflock { ingenMer?: number; /* så många hade larmet när alla på väg till raden var framme och inte räckte (steg B.47 och B.60) */ radMal?: { x: number; y: number }; /* målet raden väntar vid (steg B.33) */ ur?: number; /* numret på byn eller lägret som skickade flocken (steg B.70) */ fard?: number; hemN?: number; hemBar?: Record<string, number>; /* världens färd som skickade flocken, hur många som kommit hem och vad de bar (steg 11.6.20) */ rast?: { x: number; y: number }; vantat?: boolean; anfaller?: boolean; anfallT?: number; /* när det gick till anfall (steg B.13) */ kom?: number; frammeT?: number; /* när gänget kom, och när alla var framme vid rastplatsen, för mätningen (steg B.56) */ klar?: boolean; radKlar?: boolean; antal?: number; strider?: number; tagit?: Record<string, number>; gravTagit?: Record<string, number>; /* det som togs ur gravarna (steg 13.1.5) */ sx?: number; sy?: number; skal?: import('./rader').RadSkal; rad?: boolean; mal?: number; hugger?: { bit: number; till: number }; tant?: boolean; id: number; klan?: number; folk: number[]; x: number; y: number; mx: number; my: number; gor: 'kommer' | 'vantar' | 'slass' | 'flyr' | 'letar' | 'rotar'; /* det de flesta gör, för texterna (steg 10.2.30) */ letar?: number[]; letat?: boolean; till: number; sedd?: number; gissning?: number; test?: boolean; anfall?: boolean; bud?: { av: number; till: number; t: number } }
+export interface Rovarflock { forlorat?: boolean; /* byn har förlorat mot flocken, räknat i ledarens framgång (steg 15.1.128) */ ingenMer?: number; /* så många hade larmet när alla på väg till raden var framme och inte räckte (steg B.47 och B.60) */ radMal?: { x: number; y: number }; /* målet raden väntar vid (steg B.33) */ ur?: number; /* numret på byn eller lägret som skickade flocken (steg B.70) */ fard?: number; hemN?: number; hemBar?: Record<string, number>; /* världens färd som skickade flocken, hur många som kommit hem och vad de bar (steg 11.6.20) */ rast?: { x: number; y: number }; vantat?: boolean; anfaller?: boolean; anfallT?: number; /* när det gick till anfall (steg B.13) */ kom?: number; frammeT?: number; /* när gänget kom, och när alla var framme vid rastplatsen, för mätningen (steg B.56) */ klar?: boolean; radKlar?: boolean; antal?: number; strider?: number; tagit?: Record<string, number>; gravTagit?: Record<string, number>; /* det som togs ur gravarna (steg 13.1.5) */ sx?: number; sy?: number; skal?: import('./rader').RadSkal; rad?: boolean; mal?: number; hugger?: { bit: number; till: number }; tant?: boolean; id: number; klan?: number; folk: number[]; x: number; y: number; mx: number; my: number; gor: 'kommer' | 'vantar' | 'slass' | 'flyr' | 'letar' | 'rotar'; /* det de flesta gör, för texterna (steg 10.2.30) */ letar?: number[]; letat?: boolean; till: number; sedd?: number; gissning?: number; test?: boolean; anfall?: boolean; bud?: { av: number; till: number; t: number } }
 
 // för mätningen av striderna (npm run strid, steg B.56): varje gäng som kommer (läses aldrig av spelet)
 export const rovarProv: { kom?: (f: Rovarflock, s: State) => void } = {};
@@ -847,6 +847,7 @@ function taSteg(c: RCtx) {
   if (huggDorr(s, f, c.folk)) return; // en stängd dörr huggs sönder (steg 8.9.1–8.9.2)
   if (!paTaPlats(c)) return; // till sin egen plats vid förrådet (steg B.49)
   forlustFore(s, 'ran'); // förmögenheten när plundringen börjar (steg 12.1.131)
+  forloradMot(s, f); // byn plundras: en förlust i ledarens framgång (steg 15.1.128)
   g.taTid = (g.taTid ?? 0) + c.dt;
   while (g.taTid >= ROVARE.taSek) {
     g.taTid -= ROVARE.taSek;
@@ -1142,8 +1143,14 @@ EFTER.rovare = (s, e, vinnare, strid) => {
   if (harSlagits(st)) { log(s, text, 'world', ids); notis(s, 'strid', text, ids, plats); kronika(s, text, 'rovare'); } // (utan ett slag är det ingen strid att skriva om, steg B.18)
   if (f && vinnare === 0) for (const r of rovarna(s, f)) gr(r).flytt = true; // den slagna flocken flyr
   if (vinnare === 0 && s.styre && ledareOf(s)) s.styre.vunna = (s.styre.vunna ?? 0) + 1; // byn slog tillbaka rövarna: en vunnen strid i ledarens framgång (steg 8.3.9, fynd 456)
+  if (vinnare === 1 && f) forloradMot(s, f); // och en förlorad (steg 15.1.128)
   if (vinnare === 0) allaBarn(s, 'rovareBort'); // barnen som såg det (steg 12.1.133)
 };
+// byn förlorade mot flocken f, i striden eller när den plundrar: en gång per flock i ledarens framgång (steg 15.1.128)
+function forloradMot(s: State, f: Rovarflock) {
+  if (f.forlorat || !s.styre || !ledareOf(s)) return;
+  f.forlorat = true; s.styre.forlorade = (s.styre.forlorade ?? 0) + 1;
+}
 // två gäng som slagits (flockarMots): den slagna sidan flyr, och i den andra den som flydde eller gav upp, som mot byn
 EFTER.rovarMot = (s, _e, vinnare, strid) => { for (const k of (strid as KartStrid).st.kampar) { const r = k.pid !== undefined ? gastAv(s, k.pid) : undefined; if (r?.gast && r.died === undefined && (k.sida !== vinnare || k.lage === 'flykt' || k.lage === 'ger' || k.lage === 'borta')) gr(r).flytt = true; } };
 // en rövare dör i striden (gastKrok i efterstrid.ts): hen ligger kvar med det hen bar, klanen minns det och blir ovänligare

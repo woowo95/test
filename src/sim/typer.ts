@@ -330,6 +330,7 @@ export interface Person {
   larm?: Partial<Record<string, import('./rykten').Larm>>; // larmen man hört, det senaste av varje sort (steg 3.7.11 och 12.1.211, rykten.ts)
   sedTal?: { v: Partial<Record<keyof Seder['v'], number>>; t: number }; // det avvikarna fått personen att dra sederna åt, och när det sist ändrades (steg 13.9.4, seder.ts)
   foljd?: { v: Partial<Record<keyof Seder['v'], number>>; t: number }; // följderna personen varit med om, som drar sederna tillbaka och bleknar, och när de sist ändrades (steg 15.1.123, seder.ts)
+  sedAgg?: number; // missnöjet över sederna (0–1), som bleknar långsamt och inte nollas när ledaren byts (steg 15.1.128, rost.ts)
   uppNu?: string[]; // de tillstånd i UPPLEVELSER som pågår just nu (nära döden, överflöd): troUpplev och följden räknas bara när de börjar (steg 15.1.123–15.1.124, uppvaxt.ts)
   sedArv?: Partial<Record<keyof Seder['v'], number>>; // byns sed som personen tagit till sig, mest under uppväxten (steg 13.9.2, seder.ts)
   intryck?: import('./rykten').Intryck[]; // det personen tycker att andra är, och varför (steg 3.3, rykten.ts)

@@ -3,7 +3,7 @@ import { honom, slaktOrd } from './ord';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, vuxnaOf } from './folk';
 import { LAGAR, efterlevs, lagForBrott, straffNu, straffSteg, tasUppKvall } from './lagar';
 import type { Lag } from './lagar';
-import { ROST, FRAGOR, rostaOm, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, rostKvall, seOverMinistrar, vikter } from './rost';
+import { ROST, FRAGOR, rostaOm, missnojd, missnojeLatt, missnojeNoll, missnojeStrafft, missnojeTimme, oppnaSed, rostKvall, seOverMinistrar, vikter } from './rost';
 import type { Fraga, Fraktion, Omrostning, Rost } from './rost';
 import { kartStridBorja, stridPagar } from './kartstrid';
 import { EFTER } from './efterstrid';
@@ -66,6 +66,8 @@ export const LED = balans('ledare', {
   // legitimiteten (0 till 1): stödet (0,5 + snittrelationen / 200) gånger wStod och vintrarna (högst vintrar) gånger wVint,
   // plus hur ledaren tillsattes och framgångarna, minus orättvisan
   wStod: 0.6, wVint: 0.2, vintrar: 2,
+  slitVintrar: 6, // efter LED.vintrar vintrar nöts makten: vintrarnas del gånger exp(-(vintrar - vintrar) / slitVintrar) (steg 15.1.128)
+  missStod: 0.5, // stödet sjunker med så här mycket gånger byns missnöje, vägt med inflytandet (steg 15.1.128)
   orattDygn: 3, // orättvisan bleknar med en tidskonstant på så här många dygn
   tanke: 0.04, // ledaren mår så här mycket bättre (tanken Leder byn)
 });
@@ -270,7 +272,7 @@ export interface Styre {
   roster?: Omrostning[]; fragor?: Fraga[]; // omröstningarna och frågorna som väntar (steg 8.3.1, rost.ts)
   ministrar?: Record<string, number>; // ministrarna per post (steg 8.3.8)
   arvinge?: number; // den ledaren utsett till sin efterträdare (steg 8.3.6)
-  satt?: number; vunna?: number; // hur väl sättet ledaren tillsattes på passar sederna, och strider som vunnits (steg 8.3.9)
+  satt?: number; vunna?: number; forlorade?: number; /* strider mot rövarna som förlorats och plundringar under ledarens tid (steg 15.1.128) */ // hur väl sättet ledaren tillsattes på passar sederna, och strider som vunnits (steg 8.3.9)
   frak?: Fraktion; frakVald?: number; lugn?: number; // fraktionen, dess ledare efter ett skifte och när nästa fraktion tidigast bildas (steg 8.3.11–8.3.12)
   dogVinter?: number;
   kyrka?: number; kyrkaVikt?: number; // översteprästens välsignelse (1) eller fördömelse (−1) och vad den är värd (steg 8.6.16)
@@ -301,15 +303,16 @@ type Leg = { v: number; stod: number; satt: number; fram: number; vint: number; 
 export function legitimitet(s: State): Leg {
   const st = s.styre, l = ledareOf(s);
   if (!st || !l) return { v: 0, stod: 0, satt: 0, fram: 0, vint: 0, oratt: 0 };
-  let op = 0, w = 0;
+  let op = 0, w = 0, miss = 0;
   for (const q of living(s)) {
     if (q === l) continue;
     const wq = influence(s, q); if (!wq) continue;
-    op += (s.rels[relKey(l.id, q.id)]?.op ?? 0) * wq; w += wq;
+    op += (s.rels[relKey(l.id, q.id)]?.op ?? 0) * wq; w += wq; miss += missnojd(q) * wq;
   }
-  const stod = clamp(0.5 + (w ? op / w : 0) / 200, 0, 1);
-  const satt = st.satt ?? 1, fram = clamp((st.vunna ?? 0) / LED.vunna + (living(s).length - (st.folk0 ?? living(s).length)) / LED.vaxt, 0, 1); // hur ledaren tillsattes och framgångarna (steg 8.3.9)
-  const vint = Math.min(1, (st.vintrar ?? 0) / LED.vintrar);
+  const stod = clamp(0.5 + (w ? op / w : 0) / 200 - LED.missStod * (w ? miss / w : 0), 0, 1); // de missnöjda stöder ledaren mindre (steg 15.1.128)
+  // hur ledaren tillsattes och framgångarna (steg 8.3.9): de vunna minus de förlorade striderna och plundringarna (steg 15.1.128)
+  const satt = st.satt ?? 1, fram = clamp(((st.vunna ?? 0) - (st.forlorade ?? 0)) / LED.vunna + (living(s).length - (st.folk0 ?? living(s).length)) / LED.vaxt, -1, 1);
+  const vi = st.vintrar ?? 0, vint = Math.min(1, vi / LED.vintrar) * Math.exp(-Math.max(0, vi - LED.vintrar) / LED.slitVintrar); // makten åldras (steg 15.1.128)
   const oratt = (st.oratt ?? 0) * Math.exp(-(s.now - (st.orattT ?? s.now)) / (LED.orattDygn * DAY));
   return { v: clamp(stod * LED.wStod + satt * LED.wSatt + fram * LED.wFram + vint * LED.wVint - oratt + (st.kyrka ?? 0) * (st.kyrkaVikt ?? 0), 0, 1), stod, satt, fram, vint, oratt };
 }
@@ -412,7 +415,7 @@ function valj(s: State) {
   }
   if (!best) return;
   const st = stn, forsta = forstaVal;
-  st.hanForbud = undefined; st.ledare = best.id; best.ledde = true; st.sedan = s.now; st.vintrar = 0; st.vunna = 0; st.satt = satt; st.arvinge = undefined; st.pabud = undefined; st.oratt = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s); st.dogVinter = nodDod(s); // vintern där ingen dog räknas från nu
+  st.hanForbud = undefined; st.ledare = best.id; best.ledde = true; st.sedan = s.now; st.vintrar = 0; st.vunna = 0; st.forlorade = 0; st.satt = satt; st.arvinge = undefined; st.pabud = undefined; st.oratt = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s); st.dogVinter = nodDod(s); // vintern där ingen dog räknas från nu
   const titel = st.titel = titelFor(s, best, vuxna);
   st.historia.push({ id: best.id, namn: best.name, titel, fran: s.now });
   count(s, 'ledare_vald');
@@ -707,7 +710,7 @@ EFTER.holmgang = (s, e, vinnare) => {
 // Utan rader i loggen och notiser: det hände före besöket
 export function ledareUrRad(s: State, l: Person, sedan: number) {
   const st = styreAv(s), vuxna = vuxnaOf(s);
-  st.hanForbud = undefined; st.ledare = l.id; l.ledde = true; st.sedan = sedan; st.vintrar = 0; st.vunna = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s); st.dogVinter = nodDod(s);
+  st.hanForbud = undefined; st.ledare = l.id; l.ledde = true; st.sedan = sedan; st.vintrar = 0; st.vunna = 0; st.forlorade = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s); st.dogVinter = nodDod(s);
   const titel = st.titel = titelFor(s, l, vuxna);
   st.historia.push({ id: l.id, namn: l.name, titel, fran: sedan });
   if (!st.oppna.includes('rang')) st.oppna.push('rang');
