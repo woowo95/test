@@ -24,7 +24,7 @@ import { groundOf, punktIRuta } from './mark';
 import { findPath } from './vag';
 import { addTo, amountOf, avbryt, foodOf, zoneOf } from './lager';
 import { anseende, handelse, horLarm, larma, larmNu } from './rykten';
-import { KOTTSLAG, SAKER } from './saker';
+import { KOTTSLAG, SAKER, viktOf } from './saker';
 import { DJUR, type Djurart } from './redskap';
 import { vattenNu } from './sjo';
 import { avst, clamp, rnd, chansPer } from './slump';
@@ -81,8 +81,8 @@ export const VARG = balans('varg', {
   stjalHunger: 0.4, // på natten smyger en så här hungrig flock fram till förrådet ...
   stjalChans: 0.05, // ... med den här chansen på en minut (förr per slag om fem minuter, steg 10.2.15)
   vaken: 5, // och vänder om någon är vaken inom så här många rutor
-  stjalPer: 1.5, // så många saker mat (kött först) en varg tar, avrundat
-  stjalMat: 0.15, // hungern sjunker så här mycket per sak den tar
+  stjalKg: 5, // så många kilo mat (kött först) en varg bär från förrådet (steg 15.1.138) ...
+  stjalMatKg: 0.04, // ... och hungern sjunker så här mycket per kilo den tar
   tamMat: 0.5, // hungern sjunker så här mycket när flocken tar ett får eller en get (steg 9.8.12)
   ater: 0.1, // hungern sjunker så här mycket i minuten medan flocken äter av den den dödat (steg B.11)
   kaninR: 6, kaninChans: 0.4, kaninMat: 0.25, // en hungrig flock nära en kaningrupp tar en kanin i timmen med den här chansen, och hungern sjunker så här mycket
@@ -539,13 +539,16 @@ function vanta(s: State, f: Vargflock, folk: Person[], dtSec: number) {
 // förrådet kan också tas (det är avsiktligt, kodgenomgången 3.10.25). Listan byggs första gången, eftersom redskap.ts genom
 // sina importer läser den här filen
 let stjals: string[] | undefined;
-const STJALS = () => stjals ??= [...new Set([...Object.values(DJUR as Record<string, Djurart & { del?: string }>).filter(d => d.act !== 'rensa').flatMap(d => d.del ? [d.sak, d.del] : [d.sak]), ...KOTTSLAG, 'fisk', 'abborre', 'grillkott', 'torrkott', 'rokkott'])];
-function stjal(s: State, f: Vargflock) {
-  let n = Math.max(1, Math.round(f.vargar.length * VARG.stjalPer)), tog = 0;
+export const STJALS = () => stjals ??= [...new Set([...Object.values(DJUR as Record<string, Djurart & { del?: string }>).filter(d => d.act !== 'rensa').flatMap(d => d.del ? [d.sak, d.del] : [d.sak]), ...KOTTSLAG, 'fisk', 'abborre', 'grillkott', 'torrkott', 'rokkott'])];
+// flocken bär så mycket som vargarna orkar (stjalKg var, steg 15.1.138): en hel sak tas när den ryms i det som är kvar, och
+// hungern sjunker efter vikten den tog
+export function stjal(s: State, f: Vargflock) {
+  let kvar = f.vargar.length * VARG.stjalKg, tog = 0, kg = 0;
   const tagna: Record<string, number> = {};
-  for (const k of STJALS()) while (n > 0 && SAKER[k] && amountOf(s, k) >= 1) { addTo(s, k, -1); n--; tog++; tagna[k] = (tagna[k] ?? 0) + 1; }
+  for (const k of STJALS()) { const w = viktOf(k); while (SAKER[k] && amountOf(s, k) >= 1 && w <= kvar + 1e-9) { addTo(s, k, -1); kvar -= w; kg += w; tog++; tagna[k] = (tagna[k] ?? 0) + 1; } }
   if (!tog) return;
-  f.hunger = Math.max(0, f.hunger - VARG.stjalMat * tog);
+  f.hunger = Math.max(0, f.hunger - VARG.stjalMatKg * kg);
+  count(s, 'vargStalKg', kg);
   count(s, 'vargStal', tog);
   log(s, `Vargar smög in i byn i mörkret och tog ${och(Object.entries(tagna).map(([k, m]) => antal(m, k)))} ur förrådet.`, 'world');
 }

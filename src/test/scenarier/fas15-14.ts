@@ -219,3 +219,22 @@ SCENARIER.hundbjorn = {
     ];
   },
 };
+
+SCENARIER.vargstold = {
+  text: 'Steg 15.1.138: vargarna stjäl efter vikt. En flock på fyra tar inte en slaktad ko (40 kg), men tar köttbitar upp till 20 kg, och hungern sjunker efter vikten',
+  kor: () => {
+    const s = SIM.createState(6, START); klockan(s, 2);
+    const stj = SIM.STJALS();
+    for (const k of stj) if (SIM.SAKER[k]) SIM.setAmount(s, k, 0);
+    SIM.setAmount(s, 'slaktko', 1); SIM.setAmount(s, 'kokott', 10); SIM.setAmount(s, 'grillkott', 5);
+    const fore: Record<string, number> = {}; for (const k of stj) if (SIM.SAKER[k]) fore[k] = SIM.amountOf(s, k);
+    const f: SIM.Vargflock = { id: s.vargNr = 1, vargar: [10_000_008, 10_000_009, 10_000_010, 10_000_011], x: 2, y: 2, mx: 2, my: 2, gar: s.now + 48 * SIM.HOUR, hunger: 0.9, gor: 'stryker' };
+    SIM.stjal(s, f);
+    let kg = 0; for (const k in fore) kg += (fore[k] - SIM.amountOf(s, k)) * SIM.viktOf(k);
+    return [
+      [`kon är kvar (${SIM.amountOf(s, 'slaktko')})`, SIM.amountOf(s, 'slaktko') === 1],
+      [`flocken tog ${kg} kg kött (${10 - SIM.amountOf(s, 'kokott')} kokött, ${5 - SIM.amountOf(s, 'grillkott')} grillat), högst ${4 * SIM.VARG.stjalKg} kg`, kg > 4 * SIM.VARG.stjalKg - 4 && kg <= 4 * SIM.VARG.stjalKg],
+      [`hungern sjönk med ${(0.9 - f.hunger).toFixed(2)} (${SIM.VARG.stjalMatKg} per kg)`, Math.abs(0.9 - f.hunger - SIM.VARG.stjalMatKg * kg) < 1e-9],
+    ];
+  },
+};
