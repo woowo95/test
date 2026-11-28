@@ -17,7 +17,7 @@ import { skada, syn } from './halsa';
 import { groundOf, markslag, tileOf } from './mark';
 import { DJUR, KANIN } from './redskap';
 import { avst, clamp, rnd } from './slump';
-import { KAST, SLAGSMAL, STRID, VAPEN, Vapen, Uppstallning, chansMot, djurKampe, kastat, efterKampen, nyStrid, slump, traffa } from './strid';
+import { KAST, SLAGSMAL, STRID, VAPEN, Vapen, Uppstallning, ammoOk, chansMot, djurKampe, kastat, efterKampen, nyStrid, skottLandar, slump, traffa } from './strid';
 import { isLight } from './tid';
 import { HOUR, Jaktforsok, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { takeFrom, viltStart } from './fynd';
@@ -151,7 +151,7 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   const dj = djurOf(s, s.now, undefined, (gx, gy) => Math.hypot(gx - tk.tx, gy - tk.ty) < md + KANIN_UT || Math.hypot(gx - p.x, gy - p.y) < JAKT.letaR + KANIN_UT);
   // jägaren väljer bytet med högst värde (steg 10.2.37): det fällda djurets grundvärde, mindre ju längre bort det är. Rådjuren
   // (steg 6.6.2) fälls bara med spjutet och syns på längre håll; fåglarna (steg 6.6.3) och kaninerna inom räckhåll
-  const spjut = !!tk.tool && tk.tool in VAPEN && !!(VAPEN as Record<string, { kast?: unknown }>)[tk.tool].kast;
+  const spjut = !!tk.tool && tk.tool in VAPEN && !!(VAPEN as Record<string, { kast?: unknown }>)[tk.tool].kast && ammoOk(s, p, tk.tool); // också bågen och slungan med pilar och stenar (steg 15.1.133)
   let bv = 0;
   const svalt = farorNu(s).svalt;
   const prova = (d: NonNullable<typeof m>, r: number) => {
@@ -234,7 +234,9 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   // vildsvinet (steg 10.10.4): det som märkt jägaren eller blivit skadat vänder sig ibland mot hen i stället för att fly
   const anfall = !!rad && rad.tal.anfall > 0 && !dog && (sett || traff) && r() < rad.tal.anfall;
   // det kastade: stenen tappas oftast bort och då letar hen upp en ny, annars hämtas det som kastades
-  const extra = (kastD > 0 ? (v === 'sten' && r() < JAKT.stenBorta ? JAKT.stenSek : JAKT.hamtaSek) : 0) + Math.round(MOTVIND.runtSek * mv * (1 + rak) / 2);
+  // pilen och slungans sten hämtas inte: de ligger där de landade och bärs in som allt annat (steg 15.1.133)
+  const skott = !!(VAPEN[v] as { kast?: { ammo?: string } }).kast?.ammo;
+  const extra = (kastD > 0 && !skott ? (v === 'sten' && r() < JAKT.stenBorta ? JAKT.stenSek : JAKT.hamtaSek) : 0) + Math.round(MOTVIND.runtSek * mv * (1 + rak) / 2);
   // djuret kände lukten och flydde: jägaren lär sig lite om vinden (steg 6.6.7)
   if (sett && vm > 0) {
     const fore = kn(p, 'motvind'), efter = learnK(p, 'motvind', MOTVIND.lar * blast * vm, now);
@@ -260,7 +262,9 @@ export const jaktBar = (tk: Task) => !!tk.carry || jaktFallt(tk);
 export function jaktKlar(s: State, p: Person, tk: Task) {
   const f = tk.jf!, r = () => rnd(s, 'arbete', p);
   tk.jf = undefined;
-  if (f.kast > 0 && f.v !== 'sten') {
+  if (f.kast > 0 && skottLandar(s, p, f.v, f.kast, f.x, f.y, r)) { // en pil eller sten landar där den tog, och bågen slits (steg 15.1.133)
+    if (tk.tool && wearTool(s, p, tk.tool, r() * KAST.slit)) tk.tool = undefined;
+  } else if (f.kast > 0 && f.v !== 'sten') {
     const ut = kastat(s, p, f.v, f.kast, f.x, f.y, r);
     if (ut) {
       tk.tool = undefined;

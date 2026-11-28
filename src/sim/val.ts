@@ -50,6 +50,7 @@ import { saknarNu } from './behov';
 import { betjanVal, kundVal, stallIKo, KASSA, type Erbjudande } from './kassa';
 import { stadaUppgift, stadaVal } from './stada';
 import { tjaraUppgift, tjaraVal } from './tjara';
+import { ammoOk } from './strid';
 import { DJUR, DJURARTER, Djurart, GORS, canProcess, djurKvar, forstRuttnar, freeOfKinds, handelTask, toolGroups, underhallGrupp } from './redskap';
 import { PROJEKT, PROJEKT_LIST, PROJEKT_TAL, Uppgift, arv, bastaProjekt, bristAlla, hamtas, projektNu } from './projekt';
 import { omtanke } from './omtanke';
@@ -1442,6 +1443,7 @@ function withTools(s: State, p: Person, v: Val, best: Act, what: string, fara: F
   if (rader) for (const [g, ks] of Object.entries(toolGroups(v.act))) {
     if (!rader[ks[0]].tar) continue; // yxan väljs med arbetet (axeTask)
     if (g === 'korg' && ryggsack(s, p)) continue; // den som har en ryggsäck på sig tar ingen korg (steg 7.1.3)
+    if (!ammoOk(s, p, ks[0])) continue; // bågen utan pilar och slungan utan stenar (steg 15.1.133)
     const k = freeOfKinds(s, p, ks);
     if (k) { v.tool = k; v.why = v.why.replace(/\.$/, '') + '. ' + rader[k].tar; return; }
     const u = GORS[g] && nuForst(s, p, fara) ? projektNu(s, p, g, fara) : undefined; // redskapet görs som projekt (steg 6.2.17), vid sin egen plats: inget ärvs från flintletandet eller tändmaterialet
@@ -1456,6 +1458,7 @@ export function toolGain(s: State, p: Person, act: Act, fara: Faror) {
   for (const [g, ks] of Object.entries(toolGroups(act))) {
     if (g === 'korg' && ryggsack(s, p)) return ACTS[act].redskap![ks[0]].ger ?? 1; // ryggsäcken ger det korgen ger (steg 7.1.3)
     const ger = ACTS[act].redskap![ks[0]].ger ?? 1;
+    if (!ammoOk(s, p, ks[0])) continue; // bågen utan pilar och slungan utan stenar (steg 15.1.133)
     if (freeOfKinds(s, p, ks)) return ger;
     if (GORS[g] && PROJEKT[g].kan(s, p, fara)) return fara.kyla ? 1 + (ger - 1) * PROJEKT_TAL.kyla : ger; // i kylan görs det mer sällan först (nuForst, steg 10.2.6)
   }
