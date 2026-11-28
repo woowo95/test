@@ -1,7 +1,7 @@
 // Scenarier för fas 15, grupp 17 (steg 15.1.161–15.1.170).
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, klockan, kor, medBank, nyInvanare, testBy, utanWebblasare } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, nyInvanare, setMat, tandEld, testBy, utanWebblasare } from './hjalp';
 import { foretagBy } from './fas14';
 import { hus as husFlik } from '../../ui/flikar/hus';
 import { setByn, ui } from '../../ui/lage';
@@ -222,6 +222,63 @@ SCENARIER.affarruta = {
       [`varorna med priset i silver (${a.verk[0]?.varor.map(w => `${w.k} ${w.pris}`).join(', ')})`, (a.verk[0]?.varor.length ?? 0) > 0 && a.verk[0]!.varor.every(w => w.pris >= 1) && hasIcon('silver')],
       ['texten om affären kommer fram först när man trycker', /Vad affären gör/.test(html) && !html.includes(`${namn}: öppet, säljer`) && tryckt.includes(`${namn}: öppet, säljer`) && tryckt.includes('väntar i kön')],
       ['utan disk är den stängd', stangd.includes(`aria-label="${namn}: stängt"`) && hasIcon('sym_stangt')],
+    ];
+  },
+};
+
+SCENARIER.jaktsamling = {
+  text: 'Steg 15.1.167: jägarna samlas före djuret, om det behövs. Mätningen: hur ofta den som kallar till jakt möter djuret ensam, mot vargflocken och mot björnen. Den som kallar går före, men väntar vid djuret in de andra (jaktSamlas, VARG.samlasTim och BJORNJAKT.samlasTim), och flocken anfaller inte den som har jägare nära. Den som kallar möter djuret ensam i högst en av tio jakter. Mätt i steget: ingen av åtta vargjakter och ingen av tio björnjakter, så inget byggdes',
+  kor: () => {
+    // den första striden med djuret: hur många människor som var med, och om den som kallade var ensam
+    const forsta = (s: SIM.State, art: string, kallar: number, timmar: number, slut: () => boolean) => {
+      for (let i = 0; i < timmar * 360 && !slut(); i++) {
+        SIM.step(s, 10); // striden kan börja och sluta inom fem minuter
+        const g = SIM.kartStrider(s).find(x => x.djur?.some(d => d.art === art));
+        if (g) { const folk = g.st.kampar.filter(k => k.pid !== undefined).map(k => k.pid!); return { n: folk.length, ensam: folk.length === 1 && folk[0] === kallar }; }
+      }
+      return undefined;
+    };
+    // vargarna: en by i istiden med fem vuxna med spjut och en flock på två som just setts
+    const varg: { n: number; ensam: boolean }[] = [], vargUtan: string[] = [], bjornUtan: string[] = [];
+    for (let seed = 1; seed <= 10; seed++) {
+      const s = SIM.createState(seed, START); s.kal = SIM.nyKalender(s.now, 0); klockan(s, 10); tandEld(s);
+      for (const [x, a] of [['m', 30], ['k', 28], ['m', 35], ['k', 24], ['m', 40]] as const) nyInvanare(s, x, a);
+      setMat(s, { vilt: 60, bar: 60 });
+      for (const q of SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.ageOf(q, s.now) < 55)) { SIM.addTool(s, 'flintspjut', q).hos = q.id; q.pot.mod = 14; }
+      const c = SIM.bynsMitt(s), id = s.vargNr = 1;
+      const f: SIM.Vargflock = { id, vargar: [10_000_008, 10_000_009], x: c.x + 14, y: c.y, mx: c.x + 14, my: c.y, gar: s.now + 48 * SIM.HOUR, hunger: 0.5, gor: 'stryker', sedd: s.now };
+      (s.vargar ??= []).push(f);
+      for (let i = 0; i < 40 && !f.jagare; i++) SIM.jaktBeslut(s, f, SIM.living(s));
+      const k = f.jagare?.map(i => SIM.byId(s, i)!).find(q => q.task?.why === 'Kallar till vargjakt');
+      if (!k) continue;
+      const r = forsta(s, 'varg', k.id, 4, () => !f.jagare && !SIM.kartStrider(s).length && f.gor === 'flyr');
+      if (r) varg.push(r); else vargUtan.push(`${f.gor}/${s.stat?.vargjaktFlydde ?? 0}/${s.stat?.vargstrid ?? 0}`);
+    }
+    // björnen: som i scenariot bjornjakt, sex vuxna med spjut och en björn som just setts
+    const bjorn: { n: number; ensam: boolean }[] = [];
+    const s0 = SIM.createState(6, START);
+    let t0: number | undefined;
+    for (let t = s0.now; t < s0.now + 60 * SIM.DAY && t0 === undefined; t += 20 * SIM.MIN) { const b = SIM.bjornarOf(s0, t); if (b.length === 1 && SIM.isLight(t) && SIM.isLight(t + 4 * SIM.HOUR)) t0 = t; }
+    const json = JSON.stringify(s0);
+    for (let f = 0; f < 10 && t0 !== undefined; f++) {
+      const s = SIM.migrate(JSON.parse(json)); s.now = t0 + f * 7 * SIM.MIN;
+      for (let r = 0; r < f * 13; r++) SIM.rnd(s, 'bjorn');
+      for (const [x, a] of [['m', 30], ['k', 28], ['m', 35], ['k', 24], ['m', 40], ['k', 33]] as const) nyInvanare(s, x, a);
+      setMat(s, { vilt: 30, bar: 30 });
+      const vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 18 && SIM.ageOf(q, s.now) < 50);
+      for (const q of vuxna) { SIM.addTool(s, 'flintspjut', q).hos = q.id; SIM.addTool(s, 'kniv', q).hos = q.id; q.pot.mod = 18; q.pot.styrka = 16; }
+      s.bjornJakt = { ar: SIM.yearNo(s, s.now), sedd: s.now, sag: vuxna[0]!.id };
+      for (let i = 0; i < 30 && !s.bjornJakt?.jagare; i++) { s.bjornJakt!.timme = undefined; SIM.bjornSteg(s); }
+      const kallar = s.bjornJakt?.kallare;
+      if (kallar === undefined) continue;
+      const r = forsta(s, 'bjorn', kallar, 5, () => (s.stat?.bjornjaktGick ?? 0) > 0);
+      if (r) bjorn.push(r); else bjornUtan.push(`${s.stat?.bjornjaktGick ?? 0}/${s.stat?.bjornstrid ?? 0}`);
+    }
+    const ensamV = varg.filter(r => r.ensam).length, ensamB = bjorn.filter(r => r.ensam).length;
+    const snitt = (l: { n: number }[]) => l.length ? SIM.kortTal(l.reduce((a, r) => a + r.n, 0) / l.length) : '–';
+    return [
+      [`vargjakter med strid: ${varg.length}, den som kallade var ensam i ${ensamV} (i snitt ${snitt(varg)} jägare i striden; utan strid ${vargUtan.join(' ')})`, varg.length >= 5 && ensamV * 10 <= varg.length],
+      [`björnjakter med strid: ${bjorn.length}, den som kallade var ensam i ${ensamB} (i snitt ${snitt(bjorn)} jägare i striden; utan strid ${bjornUtan.join(' ')})`, bjorn.length >= 3 && ensamB * 10 <= bjorn.length],
     ];
   },
 };
