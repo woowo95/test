@@ -92,6 +92,7 @@ export const SJUK = balans('sjuk', {
   fryser: 0.5, // ... och hälften för den som fryser
   naringMin: 0.4, // motståndet vid full brist på protein eller vitaminer (naringMot, steg 15.1.107): en svältande har ändå lite motstånd
   lakeort: 2, // läkeörten eller teet (9.5.6) gånger motståndet
+  barnMot: 0.5, // motståndet gånger detta för barn under ALDER.barnsjuk (steg 15.1.112, Sjukdomar: Motståndet)
   // chansen att bli sjuk av orsaken, gånger det här: sjukdomarna varar dygn i stället för timmar som förut (steg 9.5.1), så
   // chansen är lika mycket mindre, och lika många är sjuka som förut. Vatten och skämd mat ger magsjuka, rått kött
   // matförgiftning och kylan förkylning
@@ -236,7 +237,7 @@ export function sjukSteg(s: State, p: Person, dtSec: number, sover: boolean, arb
     else notis(s, 'sjuk', `${p.name} har insjuknat: ${sjukText(p).toLowerCase()}.`, [p.id]);
   }
   const d = SJUKDOMAR[j.k], h = dtSec / HOUR_S, bas = 1 / (((d.langd[0] + d.langd[1]) / 2) * 24); // i timmen: 1 på radens längd
-  const mot = bas * naringMot(p) * (sover ? SJUK.vila : 1) * (p.warm < KROPP.kallt ? SJUK.fryser : 1) * lakeort;
+  const mot = bas * naringMot(p) * (sover ? SJUK.vila : 1) * (p.warm < KROPP.kallt ? SJUK.fryser : 1) * (ageOf(p, s.now) < ALDER.barnsjuk ? SJUK.barnMot : 1) * lakeort; // barn under fem har långsammare motstånd (steg 15.1.112)
   j.mot = Math.min(1, j.mot + mot * h);
   j.grad = Math.min(1, j.grad + bas * farlighet(d, p, s.now) * j.r * (arbetar ? SJUK.arbetar : 1) * h);
   if (j.grad >= 1 && j.mot < 1) {

@@ -77,7 +77,7 @@ export const KROPP = balans('kropp', {
   dodBas: 0,
   dodAlder: 0.00004,
   dodTakt: 0.105,
-  dodBarn: 0.02,
+  dodBarn: 0, // barnadödligheten kommer ur sjukdomarna (SJUK.barnMot, steg 15.1.112)
 });
 // Åldrar (år i spelet, alltså dygn) som styr vad man får och orkar göra. Gränserna skiljer sig med avsikt mellan handlingar
 // (barn blir vuxna för olika saker vid olika år), så varje handling har sitt eget namn även när siffran är densamma. Jämförelserna

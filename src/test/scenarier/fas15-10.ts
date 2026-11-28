@@ -200,3 +200,27 @@ SCENARIER.aldersdod = {
     ];
   },
 };
+
+SCENARIER.barnsjuk = {
+  text: 'Steg 15.1.112: barnadödligheten kommer ur sjukdomarna. Barn under fem år har långsammare motstånd (SJUK.barnMot), så ett sjukt barn dör oftare än en vuxen med samma sjukdom, och ett friskt barn dör inte av en tärning (KROPP.dodBarn är 0)',
+  kor: () => {
+    const s = SIM.createState(3, START), mall = vuxen(s);
+    // en mätt och varm person av en viss ålder med lunginflammation, som sover en tredjedel av dygnet
+    const prov = (alder: number, n: number) => {
+      let dog = 0;
+      for (let i = 0; i < n; i++) {
+        const p: SIM.Person = { ...mall, id: 23000 + i, rngs: undefined, born: s.now - alder * SIM.DAY, sjuk: undefined, immun: undefined, naring: undefined, hunger: 1, warm: 1 };
+        const t0 = s.now; SIM.insjukna(s, p, 'lunginflammation');
+        for (let tid = 0; p.sjuk && tid < 40 * SIM.DAY; ) { s.now += 600e3; tid += 600e3; if (SIM.sjukSteg(s, p, 600, (tid / 3600e3) % 24 < 8, false)) { dog++; break; } }
+        s.now = t0;
+      }
+      return dog / n;
+    };
+    const barn = prov(SIM.ALDER.smabarn, 200), vuxna = prov(30, 200); // ett barn som är lika farligt sjukt som en vuxen (SJUKDOMAR.dod), och skillnaden är motståndet
+    const K = SIM.KROPP, risk = (a: number) => K.dodBas + K.dodAlder * Math.exp(K.dodTakt * a) + K.dodBarn; // tärningen per dygn för ett litet barn
+    return [
+      [`ett treårigt barn med lunginflammation dör oftare än en vuxen (${Math.round(barn * 100)} % mot ${Math.round(vuxna * 100)} %)`, barn > vuxna * 2 && barn > 0.05],
+      [`ett friskt barn dör inte av en tärning: KROPP.dodBarn är 0 och risken för ett tvååring är ${(risk(2) * 100).toFixed(3)} % per dygn`, K.dodBarn === 0 && risk(2) < 1e-4],
+    ];
+  },
+};
