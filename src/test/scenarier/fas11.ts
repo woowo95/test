@@ -1170,7 +1170,7 @@ SCENARIER.radtro = {
     let n = 1000; while (!b.tro.annan && n < 1300) SIM.radTro(vl, b, n++);
     const fick = b.tro.annan?.namn === 'Grannens tro';
     for (let i = 0; i < 10; i++) SIM.radTro(vl, b, n++);
-    const vaxte = b.tro.annan?.andel ?? 0;
+    const vaxte = (b.tro.namn === 'Grannens tro' ? b.tro : b.tro.annan)?.andel ?? 0; // grannens tro kan ha blivit byns, när troernas mål skiljer (steg 15.1.78)
     rel(-40);
     for (let i = 0; i < 40 && b.tro.annan; i++) SIM.radTro(vl, b, n++);
     const doog = !b.tro.annan;

@@ -163,3 +163,24 @@ SCENARIER.plundradnod = {
     ];
   },
 };
+
+SCENARIER.tromal = {
+  text: 'Steg 15.1.78: varje tro i världen har ett eget mål för hur många som tror, RAD.troMal plus eller minus RAD.troSpann, så att troerna inte alla drar mot samma andel; andelen i en by går mot trons mål',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!;
+    const namn = ['Eldens väg', 'Isens tro', 'De gamlas sed', 'Åskans folk', 'Skogens ande', 'Stjärnornas lära'];
+    const mal = namn.map(n => SIM.troMal(vl, n)), olika = new Set(mal).size;
+    const inom = mal.every(m => Number.isInteger(m) && m >= SIM.RAD.troMal - SIM.RAD.troSpann && m <= SIM.RAD.troMal + SIM.RAD.troSpann);
+    // en by med tron går mot trons mål
+    const r = { ...vl.rader!.find(x => SIM.lever(vl, x))!, nr: -5 }; // utan plats och grannar: ingen annan tro sprids dit
+    r.tro = { namn: namn[0], andel: 1, krig: 50 };
+    const n0 = Math.floor((s.now - vl.borjan!) / 86400e3);
+    for (let d = 0; d < 60; d++) SIM.radTro(vl, r, n0 + d);
+    const slut = r.tro?.namn === namn[0] ? r.tro.andel : undefined;
+    return [
+      [`troerna har olika mål (${namn.map((n, i) => `${n} ${mal[i]} %`).join(', ')})`, olika >= 4 && inom],
+      [`samma tro har samma mål (${SIM.troMal(vl, namn[0])} och ${SIM.troMal(vl, namn[0])})`, SIM.troMal(vl, namn[0]) === mal[0]],
+      [`andelen i byn går mot trons mål (${slut} %, målet ${mal[0]} %)`, slut === mal[0]],
+    ];
+  },
+};

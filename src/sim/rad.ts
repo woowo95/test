@@ -72,6 +72,7 @@ export const RAD = balans('rad', {
   troSprid: 0.2, // chansen per dygn att en vänlig grannes tro sprids till byn (inom RAD.kontaktDygn)
   troStart: 10, // en ny tro i byn börjar med så många procent troende ...
   troMal: 25, // ... och andelen går mot så många procent ...
+  troSpann: 15, // ... plus eller minus högst så många, olika för varje tro (ur världens frö och trons namn, steg 15.1.78) ...
   troDygn: 0.2, // ... så stor del av vägen per dygn; en annan tro utan en vänlig granne som delar den går lika fort mot noll
 });
 
@@ -190,9 +191,13 @@ export function radKunskap(vl: Varlden, r: VarldRad, n: number) {
 // ---------- tron (steg 11.3.11) ----------
 // En by utan tro får en med RAD.troNy per dygn: ett namn som ingen annan by i världen har och en läggning från fridsam till
 // krigisk. Har en vänlig granne inom räckhåll en tro sprids den med RAD.troSprid: till en by utan tro blir den byns tro, och
-// till en by med en annan tro blir den byns andra tro (annan). Andelen troende går mot RAD.troMal, RAD.troDygn av vägen per
+// till en by med en annan tro blir den byns andra tro (annan). Andelen troende går mot trons eget mål (troMal), RAD.troDygn av vägen per
 // dygn och minst en procent; den andra tron växer bara medan en vänlig granne delar den och går annars mot noll. Blir den
 // andra tron större än byns byter de plats. Grannbyns krigiskhet (Klan.krigisk) följer tron.
+// trons eget mål för andelen troende (steg 15.1.78): RAD.troMal plus eller minus RAD.troSpann, lika för tron i alla byar och
+// fast för tron, så att troerna inte alla drar mot samma andel
+const namnTal = (namn: string) => { let h = 0; for (let i = 0; i < namn.length; i++) h = (h * 31 + namn.charCodeAt(i)) | 0; return h >>> 0; };
+export const troMal = (vl: Varlden, namn: string) => Math.round(RAD.troMal + (2 * varldSlump(vl, namnTal(namn), 0, K.tro + 99) - 1) * RAD.troSpann);
 const steg = (v: number, mal: number) => v === mal ? v : v + Math.sign(mal - v) * Math.max(1, Math.round(Math.abs(mal - v) * RAD.troDygn));
 function nyTroNamn(vl: Varlden, u: number) {
   const tagna = new Set((vl.rader ?? []).flatMap(r => [r.tro?.namn, r.tro?.annan?.namn]));
@@ -207,10 +212,10 @@ export function radTro(vl: Varlden, r: VarldRad, n: number) {
     if (fran) r.tro = { namn: fran.namn, andel: RAD.troStart, krig: fran.krig };
     else if (u(0) < RAD.troNy) r.tro = { namn: nyTroNamn(vl, u(1)), andel: RAD.troStart, krig: Math.round(u(2) * 100) };
   } else {
-    r.tro.andel = steg(r.tro.andel, RAD.troMal);
+    r.tro.andel = steg(r.tro.andel, troMal(vl, r.tro.namn));
     const a = r.tro.annan;
     if (a) {
-      a.andel = steg(a.andel, vanner.some(m => m.tro!.namn === a.namn) ? RAD.troMal : 0);
+      a.andel = steg(a.andel, vanner.some(m => m.tro!.namn === a.namn) ? troMal(vl, a.namn) : 0);
       if (a.andel <= 0) delete r.tro.annan;
       else if (a.andel > r.tro.andel) { const { annan: _, ...forr } = r.tro; r.tro = { ...a, annan: forr }; }
     } else if (fran) r.tro.annan = { namn: fran.namn, andel: RAD.troStart, krig: fran.krig };
