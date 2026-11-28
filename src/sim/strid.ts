@@ -262,6 +262,54 @@ const DELAR = Object.keys(TRAFFDEL) as Kroppsdel[];
 // materialets (PLAGG och KLADMATERIAL i klader.ts, steg 3.10.12). Rustningen kommer i 9.4.1
 export const SKYDD: Record<string, { delar: Kroppsdel[]; tar: Partial<Record<Slag, number>> }> = Object.fromEntries(KLAD_SLAG.flatMap(k => { const sk = kladSkyddStrid(k); return sk ? [[k, sk]] : []; }));
 
+// ---------- stridsvärdet (steg 15.1.151, Striden i detalj: Stridsvärdet) ----------
+// Ett tal för hur stark en person är i strid: kraften som hotet räknar (kraft nedan) för en frisk och utvilad person, gånger kroppen
+// (skickligheten, smidigheten, uthålligheten och modet, var och en med sin vikt) och delat med det skyddet inte släpper igenom.
+// Hotet och modet hos rövarna, vandrarens vapen och världens anfall räknar med samma tal, så att det finns ett mått på styrka
+export const STRIDSVARDE = balans('stridsvarde', {
+  skala: 10, // ett tal i hela steg: en vuxen med mittersta kropp och händerna är ungefär 6
+  skicklighet: 0.3, smidighet: 0.2, uthallighet: 0.2, mod: 0.2, // så mycket mer för varje 10 över 10 (mindre under) ...
+  golv: 0.3, // ... men aldrig under så stor del
+  skydd: 1, // skyddet: värdet delas med 1 − skydd × andelen av en träff som kläderna och skölden tar ...
+  skyddTak: 0.75, // ... högst så stor andel
+});
+// den mittersta kroppen: det en vuxen har när inget drar upp eller ned (världens byar, steg 15.1.152)
+export const MITTKROPP: KampeStats = { styrka: 10, uthallighet: 10, mod: 10, smidighet: 10, skicklighet: 7.5 };
+const SV_KROPP = ['skicklighet', 'smidighet', 'uthallighet', 'mod'] as const;
+// andelen av en träff som kläderna tar, vägd efter var träffarna hamnar och medel över hugg, stick och slag
+const skyddMinne = new Map<string, number>();
+function skyddAndel(klader: readonly string[]) {
+  const nyckel = klader.join(',');
+  let v = skyddMinne.get(nyckel);
+  if (v !== undefined) return v;
+  v = 0;
+  for (const d of DELAR) {
+    let tar = 0;
+    for (const c of klader) { const sk = SKYDD[c]; if (sk?.delar.includes(d)) tar = Math.max(tar, ((sk.tar.hugg ?? 0) + (sk.tar.stick ?? 0) + (sk.tar.slag ?? 0)) / 3); }
+    v += (TRAFFDEL[d] ?? 0) * tar;
+  }
+  skyddMinne.set(nyckel, v);
+  return v;
+}
+// kraften i hotet för en frisk och utvilad person med ett vapen som skadar så mycket
+const kraftFrisk = (st: KampeStats, skada: number) => (st.styrka / 10) * (0.5 + skada);
+// vapnets skada för stridsvärdet: det bästa av slaget och kastet
+const vapenVarde = (v: Vapen, kv = 1) => Math.max(VAP[v].skada, VAP[v].kast?.skada ?? 0) * kv;
+export type SvKampe = Pick<Kampe, 'st' | 'vapen' | 'klader' | 'skold' | 'skoldJarn' | 'kv'>;
+export function stridsvardeAv(k: SvKampe): number {
+  const kr = kraftFrisk(k.st, vapenVarde(k.vapen, k.kv?.[k.vapen] ?? 1)); // kraften (hotet nedan) för en frisk och utvilad
+  let kropp = 1;
+  for (const id of SV_KROPP) kropp *= Math.max(STRIDSVARDE.golv, 1 + STRIDSVARDE[id] * (k.st[id] - 10) / 10);
+  const kl = skyddAndel(k.klader), sk = k.skold ? (k.skoldJarn ? STRID.jarnSkoldSlag : STRID.skoldSlag) : 0;
+  const skydd = Math.min(STRIDSVARDE.skyddTak, STRIDSVARDE.skydd * (kl + (1 - kl) * sk));
+  return STRIDSVARDE.skala * kr * kropp / (1 - skydd);
+}
+// personens stridsvärde med det hen bär; vapen = med det vapnet i stället (det hen kan ta)
+export function stridsvarde(s: State, p: Person, vapen?: Vapen): number {
+  const k = personKampe(s, p, 0, 0, 0, 0);
+  return stridsvardeAv(vapen ? { ...k, vapen, kv: undefined } : k);
+}
+
 // ---------- avsikten (registret) ----------
 // vapen = man slåss med vapen (annars med händerna), nere = man slår den som ligger, slut = vad som avslutar striden för
 // den drabbade: 'skada' vid första skadan av graden STRID.lek, 'ge' att man ger upp när modet tar slut, 'fly' att man flyr
@@ -882,7 +930,7 @@ function plocka(st: Strid, k: Kampe) {
 }
 
 // hotet (steg 3.7.9): kämpens styrka i striden, och stridsmodet med sidans styrka mot motståndarnas och de främstas mod
-const kraft = (k: Kampe) => (k.st.styrka / 10) * (0.5 + VAP[k.vapen].skada) * (0.5 + 0.5 * k.ork) * Math.max(0.2, 1 - smartaAv(k)) * (k.ligger ? 0.5 : 1);
+const kraft = (k: Kampe) => kraftFrisk(k.st, VAP[k.vapen].skada) * (0.5 + 0.5 * k.ork) * Math.max(0.2, 1 - smartaAv(k)) * (k.ligger ? 0.5 : 1);
 function hotet(st: Strid): { andel: [number, number]; framst: [number, number]; led: [number, number] } {
   const kr = [0, 0], fr: [number, number] = [0.5, 0.5], led: [number, number] = [0, 0];
   for (const k of st.kampar) if (k.ledare && iStrid(k)) led[k.sida] = Math.max(led[k.sida], k.ledare === 'fram' ? STRID.ledFram : STRID.ledBak); // ledaren som står kvar (steg 3.7.12)

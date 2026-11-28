@@ -22,7 +22,7 @@ import { ledKlass } from './leder';
 import { rnd } from './slump';
 import { KROPPSDELAR, forlora, kanGa, skada } from './halsa';
 import { STRIDSLAG } from './efterstrid';
-import { Kampe, StridVarld, Uppstallning, djurKampe, nyStrid, personKampe, stridTillSlut } from './strid';
+import { Kampe, StridVarld, Uppstallning, djurKampe, nyStrid, personKampe, stridTillSlut, stridsvardeAv, type Vapen } from './strid';
 import { ROVARE } from './rovare';
 import { ageIndex, iIstiden } from './tid';
 import { byId, stat } from './folk';
@@ -119,10 +119,13 @@ export function vagStrid(s: State, sl: Sallskap, fiender: Uppstallning['kampar']
 }
 // en rövare ur lägret L som kämpe (rövarnas kropp ur ROVARE, vapnet efter lägrets utrustning)
 const mitt = ([a, b]: readonly number[]) => (a + b) / 2;
+// Vapnet väljs efter stridsvärdet (steg 15.1.151): det vars värde ligger närmast lägrets utrustning gånger värdet med kniven
+const ROVARVAPEN: Vapen[] = ['kniv', 'flintspjut', 'yxa'];
 export function rovarKampe(L: VarldRad): Uppstallning['kampar'][number] {
-  const u = anfallUtr(L), vapen = u >= 1.5 ? 'yxa' : u >= 1.2 ? 'flintspjut' : 'kniv';
-  return { id: 0, namn: 'Rövare', sida: 1, gast: 1, vapen, klader: [], fart: 1, x: 0, y: 0,
-    st: { styrka: mitt(ROVARE.styrka), uthallighet: mitt(ROVARE.uthallighet), mod: mitt(ROVARE.mod), smidighet: mitt(ROVARE.smidighet), skicklighet: Math.max(5, mitt(ROVARE.skicklighet)) } };
+  const st = { styrka: mitt(ROVARE.styrka), uthallighet: mitt(ROVARE.uthallighet), mod: mitt(ROVARE.mod), smidighet: mitt(ROVARE.smidighet), skicklighet: Math.max(5, mitt(ROVARE.skicklighet)) };
+  const sv = (v: Vapen) => stridsvardeAv({ st, vapen: v, klader: [] }), mal = anfallUtr(L) * sv('kniv');
+  const vapen = ROVARVAPEN.reduce((a, v) => Math.abs(sv(v) - mal) < Math.abs(sv(a) - mal) ? v : a);
+  return { id: 0, namn: 'Rövare', sida: 1, gast: 1, vapen, klader: [], fart: 1, x: 0, y: 0, st };
 }
 
 VAGHANDELSER.ran = {

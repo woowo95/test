@@ -19,7 +19,7 @@ import { LARM, handelse, horLarm } from './rykten';
 import { SAKER, SAK_LIST } from './saker';
 import { vattenNu } from './sjo';
 import { avst, clamp, hash3, rnd } from './slump';
-import { STRID, VAPEN, personKampe, efterKampen, harSlagits, type Kampe } from './strid';
+import { MITTKROPP, STRID, VAPEN, stridsvarde, stridsvardeAv, type Vapen, efterKampen, harSlagits, type Kampe } from './strid';
 import { isLight, lightLevel } from './tid';
 import { larmAvbryter } from './handlingar';
 import { lagGaller } from './lagar';
@@ -93,7 +93,6 @@ export const ROVARE = balans('rovare', {
   slaIvagen: 0.5, hotaPoang: 0.6, taBordaPoang: 0.8, // ... och den som inte står emot men är så nära: den aggressiva slår (gånger aggressionen / 10), den modiga hotar (gånger modet / 10), och den som har plats tar det hen bär (steg 10.2.26)
   slaOvetande: 0.5, // ... och så mycket mer mot den som inte vet om gänget: hen kan överraskas (steg B.57)
   slaMod: 0.5, slaHot: 0.6, // viljan att slå: per tio steg mod över 10, och minus detta per gång fler som står emot än de själva
-  hotVapen: 2, // i hotet räknas var och en som 1 + detta gånger vapnets skada
   flyBlod: 2.5, flyHot: 0.2, flyDoda: 0.4, // viljan att fly: blodet hen förlorat, övermakten hen ser (mindre för den modiga) och delen av flocken som är borta
   platsAvst: 10, // platserna att plundra väljs efter värdet delat med avståndet plus så här många rutor (steg 13.1.5) ...
   platsMin: 3, // ... och en plats där det som ligger är värt mindre än så här är inte värd besväret
@@ -537,15 +536,16 @@ export const gavSigAvdrag = (s: State, p: Person) => p.gavSig === undefined ? 0 
 // övermakten (steg B.32): gängets styrka som p vet om den (larmet säger hur många de är) delad med de egnas, räknad med vapnen som i hotet.
 // folk = de som skulle möta gänget: innan någon valt är det alla som kan slåss, sedan de som samlats (moterNu). Vapnet är det var och en
 // har eller kan ta, varje vapen en gång
-const kraftMed = (skada: number) => 1 + ROVARE.hotVapen * skada;
+// (styrkan är stridsvärdet, steg 15.1.151: kroppen, vapnet och skyddet)
+const ensamRovare = () => stridsvardeAv({ st: MITTKROPP, vapen: 'hand', klader: [] });
 export function overmakt(s: State, n: number, f: Rovarflock | undefined, folk: Person[]) {
   const fria = f ? rovarna(s, f).filter(q => !gr(q).flytt) : [], tagna = new Set<number>();
-  const en = fria.length ? fria.reduce((a, q) => a + kraftMed(vapenSkada(s, q)), 0) / fria.length : kraftMed(0);
+  const en = fria.length ? fria.reduce((a, q) => a + svMinne(s, q), 0) / fria.length : ensamRovare();
   let vi = 0;
   for (const q of folk) {
-    const har = vapenSkada(s, q), t = bastaVapen(s, q, tagna), b = t ? VAPEN[t.k as keyof typeof VAPEN].skada : 0;
+    const har = svMinne(s, q), t = bastaVapen(s, q, tagna), b = t && t.k in VAPEN ? stridsvarde(s, q, t.k as Vapen) : 0;
     if (t && b > har) tagna.add(t.id); // (reserveras bara när det är bättre än det hen har, steg B.55)
-    vi += kraftMed(Math.max(har, b));
+    vi += Math.max(har, b);
   }
   return n * en / Math.max(0.5, vi);
 }
@@ -910,19 +910,18 @@ function letaSteg(s: State, f: Rovarflock, folk: Person[]) {
   f.letar!.shift();
 }
 // hotet rövaren ser: de som står emot inom synhåll (KLOCKA.faraSyn), mot rövarna i flocken som är med (var och en räknad med sitt vapen)
-// vapnets skada för var och en räknas en gång per slag och inte för varje rövare (steg 10.2.101: hotet kostade mest i striden)
-const vapenMinne = new WeakMap<State, { t: number; m: Map<number, number> }>();
-function vapenSkada(s: State, p: Person) {
-  let c = vapenMinne.get(s);
-  if (!c || c.t !== s.now) vapenMinne.set(s, c = { t: s.now, m: new Map() });
+// stridsvärdet (steg 15.1.151) för var och en räknas en gång per slag
+const svMinneR = new WeakMap<State, { t: number; m: Map<number, number> }>();
+function svMinne(s: State, p: Person) {
+  let c = svMinneR.get(s);
+  if (!c || c.t !== s.now) svMinneR.set(s, c = { t: s.now, m: new Map() });
   let v = c.m.get(p.id);
-  if (v === undefined) c.m.set(p.id, v = VAPEN[personKampe(s, p, 0, 0, 0, 0).vapen].skada);
+  if (v === undefined) c.m.set(p.id, v = stridsvarde(s, p));
   return v;
 }
 function hotMot(s: State, f: Rovarflock, r: Person, folk: Person[]) {
-  const kraft = (p: Person) => 1 + ROVARE.hotVapen * vapenSkada(s, p);
-  const de = folk.filter(q => alive(q) && kanStaEmot(s, q) && avst(q, r) < KLOCKA.faraSyn).reduce((a, q) => a + kraft(q), 0);
-  const vi = rovarna(s, f).filter(q => !gr(q).flytt && avst(q, r) < KLOCKA.faraSyn).reduce((a, q) => a + kraft(q), 0);
+  const de = folk.filter(q => alive(q) && kanStaEmot(s, q) && avst(q, r) < KLOCKA.faraSyn).reduce((a, q) => a + svMinne(s, q), 0);
+  const vi = rovarna(s, f).filter(q => !gr(q).flytt && avst(q, r) < KLOCKA.faraSyn).reduce((a, q) => a + svMinne(s, q), 0);
   return de / Math.max(0.5, vi);
 }
 // De som möter gänget (steg B.17, "Mötet" i fliken Människan): de som hinner till raden före gänget, eller är samlade där byn väntar, om de är många
