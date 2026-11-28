@@ -203,7 +203,7 @@ body.vOppen .owned { display: none; }
 /* bandet dubbelt så stort, och remsan ut till panelens kanter (steg 6.9.3): sju punkter i dubbel skala mitt i bandet */
 .band { display: flex; justify-content: center; margin: 2px -14px 8px; background: linear-gradient(to bottom, transparent 19px, var(--bk) 19px, var(--bk) 21px, var(--bf) 21px, var(--bf) 33px, var(--bk) 33px, var(--bk) 35px, transparent 35px); }
 .panelkropp > .band:first-child { margin-right: -14px; margin-top: 16px; } /* bandet börjar högre (steg 9.2.1) */
-.band img { image-rendering: pixelated; display: block; }
+.band { overflow: hidden; } .band img { image-rendering: pixelated; display: block; flex: none; } /* bandets bild är bredare än en smal panel: den klipps i kanterna, så att panelen inte rullar i sidled (steg 15.1.51) */
 /* i mörkt läge får bilderna med kolkant (banden, den bleka runstenen) en ljus kant, så att de inte försvinner mot grunden (steg 6.9.17) */
 :root[data-tema="morkt"] .band img, :root[data-tema="morkt"] .runsten .sten.blek { filter: drop-shadow(1px 0 0 #7e7362) drop-shadow(-1px 0 0 #7e7362) drop-shadow(0 1px 0 #7e7362) drop-shadow(0 -1px 0 #7e7362); }
 #installKnapp { position: fixed; z-index: 3; right: 6px; bottom: 10px; width: calc(var(--stenar) - 12px); height: 34px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font: inherit; font-size: 17px; cursor: pointer; padding: 0; }
@@ -238,6 +238,9 @@ ul, ol { list-style: none; margin: 0; padding: 0; }
 .seder li { padding: 10px 0; border-top: 1px solid var(--line); }
 .seder > li.falla { position: relative; padding-left: 14px; } .seder > li.falla::before { position: absolute; left: 0; top: 34px; } /* pilen till vänster om vågen (steg 11.1.2) */
 .tekhead { display: flex; justify-content: flex-end; }
+.trolista { margin: 0; padding: 0 0 0 14px; list-style: none; } .trolista > li { margin: 4px 0; overflow-wrap: anywhere; } .trolista > li.falla { position: relative; } .trolista > li.falla::before { position: absolute; left: -14px; top: 0.3em; } /* prästen, platserna och buden: en rad var som bryts, så att fliken inte rullar i sidled (steg 15.1.51) */
+.rels.andlista { grid-template-columns: minmax(min-content, max-content) max-content minmax(0, 1fr); } .rels.andlista li > span:last-child { overflow-wrap: anywhere; } /* andligheten i byn: namnet blir aldrig smalare än sitt längsta ord (steg 15.1.51) */
+.trorad { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; margin: 6px 0 2px; min-width: 0; } .trorad > b { min-width: 0; overflow-wrap: anywhere; } .trorad > .hjalp { margin-left: auto; flex: none; } /* Tron-flikens rubrik och trons namn till vänster, knappen sist (steg 15.1.51) */
 .formnamn { text-align: center; font-size: 17px; display: flex; justify-content: center; align-items: center; gap: 6px; margin: 2px 0 6px; }
 .rutor { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 8px 0; }
 .ruta { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; min-width: 0; }
