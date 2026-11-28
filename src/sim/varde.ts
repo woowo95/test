@@ -63,11 +63,16 @@ function actTid(act: string) {
 }
 // värdet innan golvet för nivån
 const raVarde = new Map<string, number>();
+// ett fällt eller slaktat djur: raden i DJUR (redskap.ts) där det slaktas med kniven. Läses först när ett värde räknas
+let djurMap: Map<string, Djurart> | undefined;
+const djurOf = (k: string) => (djurMap ??= new Map(Object.values(DJUR as Record<string, Djurart>).filter(d => d.kniv).map(d => [d.sak, d]))).get(k);
 function rakna(k: string): number {
   let v = raVarde.get(k);
   if (v !== undefined) return v;
   const f = UR[k] ?? SAKER[k]?.skaffa;
+  const dj = djurOf(k);
   if (SAKER[k]?.varde !== undefined) v = SAKER[k]!.varde!; // silvret
+  else if (dj) v = varuVarde(dj.slakt) / dj.mat; // ett djur är värt det som slaktas ur det (steg 15.1.31)
   else if (!f) v = 0;
   else {
     // en sak med egen tid (hö, flinta) räknas på den; arbetet (act) säger då bara vem som skaffar den (steg 6.2.19)
@@ -89,7 +94,7 @@ export function grundvarde(k: string): number {
   v = rakna(k);
   const n = nivaOf(k), mapp = SAKER[k]?.mapp;
   if (n > 0 && mapp) { // golvet: mer än de enkla råvarorna av samma slag
-    const ra = SAK_LIST.filter(j => SAKER[j]!.mapp === mapp && nivaOf(j) === 0 && !SAKER[j]!.skaffa?.av && SAKER[j]!.varde === undefined).map(rakna); // det köpta med fast värde (saltet) höjer inte golvet
+    const ra = SAK_LIST.filter(j => SAKER[j]!.mapp === mapp && nivaOf(j) === 0 && !SAKER[j]!.skaffa?.av && SAKER[j]!.varde === undefined && !djurOf(j)).map(rakna); // det köpta med fast värde (saltet) och hela djur (steg 15.1.31) höjer inte golvet
     if (ra.length) v = Math.max(v, Math.max(...ra) * (1 + VARDE.nivaPaslag * n));
   }
   // och mer än det den ersätter (steg 15.1.30): den sämre saken i samma grupp (lägre rang) gånger påslaget för nivåerna emellan,
@@ -158,3 +163,4 @@ export function formogenhetDelar(s: State, id: number) {
 import { djurVarde, tamArt, tamdjurOf } from './tamdjur';
 import { honsVarde } from './hons';
 import { BIN, samhallen } from './bin';
+import { DJUR, Djurart } from './redskap';

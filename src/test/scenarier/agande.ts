@@ -492,7 +492,7 @@ SCENARIER.varde = {
     const v = grundvarde, s = createState(5, START);
     tomtForrad(s); s.ting = [];
     // registret: det som har ett sätt att skaffas (skaffa i saker.ts) har ett värde, det andra (giftsvamp, paborjat) inget
-    const utanVarde = SAK_LIST.filter(k => SAKER[k]!.skaffa && !(v(k) > 0 && isFinite(v(k)))), medVarde = SAK_LIST.filter(k => !SAKER[k]!.skaffa && SAKER[k]!.varde === undefined && v(k) !== 0);
+    const utanVarde = SAK_LIST.filter(k => SAKER[k]!.skaffa && !(v(k) > 0 && isFinite(v(k)))), medVarde = SAK_LIST.filter(k => !SAKER[k]!.skaffa && SAKER[k]!.varde === undefined && !SIM.DJURARTER.some(d => d.kniv && d.sak === k) && v(k) !== 0); // ett slaktat tamdjur är värt sina delar (steg 15.1.31)
     const tom = rikedom(s);
     setAmount(s, 'ved', 10); const tra = rikedom(s) - tom;
     addTool(s, 'yxa', living(s)[0]!); const yxa = rikedomDelar(s).redskap;

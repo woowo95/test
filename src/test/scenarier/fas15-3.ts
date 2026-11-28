@@ -22,3 +22,19 @@ SCENARIER.prisniva = {
     ];
   },
 };
+
+SCENARIER.djurvarde = {
+  text: 'Steg 15.1.31: ett fällt eller slaktat djur är värt summan av det som slaktas ur det, för de vilda och de tama, och djuren höjer inte golvet för nivån',
+  kor: () => {
+    const fel: string[] = [], djur = Object.values(SIM.DJUR as Record<string, SIM.Djurart>).filter(d => d.kniv);
+    for (const d of djur) { const delar = SIM.varuVarde(d.slakt) / d.mat; if (Math.abs(v(d.sak) - delar) > 0.01) fel.push(`${d.sak} ${t(v(d.sak))} mot delarna ${t(delar)}`); }
+    const delar = (k: string) => { const d = djur.find(x => x.sak === k)!; return t(SIM.varuVarde(d.slakt) / d.mat); };
+    return [
+      [`vargen (${t(v('varg'))}, delarna ${delar('varg')}) och rådjuret (${t(v('radjur'))}, delarna ${delar('radjur')}) är värda sina delar`, !fel.some(x => /^(varg|radjur) /.test(x))],
+      [`det slaktade fåret (${t(v('slaktfar'))}, delarna ${delar('slaktfar')}) och kon (${t(v('slaktko'))}) räknas likadant`, !fel.some(x => /^slakt/.test(x))],
+      [`varje djur som slaktas är värt sina delar${fel.length ? ': ' + fel.join(', ') : ''}`, fel.length === 0 && djur.length >= 10],
+      [`en varg (${t(v('varg'))}) är värd mer än en kanin (${t(v('vilt') * SIM.KANIN)})`, v('varg') > v('vilt') * SIM.KANIN],
+      [`djuren höjer inte golvet: odlat korn är värt ${t(v('korn'))}, inte omkring 40`, v('korn') < 5],
+    ];
+  },
+};
