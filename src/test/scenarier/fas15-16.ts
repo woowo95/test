@@ -1,7 +1,7 @@
 // Scenarier för fas 15, grupp 16 (steg 15.1.151–15.1.160).
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, testBy } from './hjalp';
+import { SCENARIER, korTills, testBy } from './hjalp';
 import { foretagBy } from './fas14';
 
 // en vuxen i en ny by, utan något på sig (det som bärs läggs till i scenariot)
@@ -224,6 +224,31 @@ SCENARIER.lonrest = {
       [`lönen ${lon} silver är ${(lon / v).toFixed(2)} ${k} (${v.toFixed(2)} var)`, lon / v > 2 && lon / v < 3],
       [`den anställda fick ${fick} hela, och den som betalade gav ${gav}`, fick === Math.ceil(lon / v - 1e-9) && Number.isInteger(fick) && gav === fick],
       [`lönen räknas som betald (${p.lonObetald ?? 'betald'})`, p.lonObetald === undefined && (s.stat?.lonBetald ?? 0) >= 1 && !p.thoughts.some(t => t.k === 'lonObetald')],
+    ];
+  },
+};
+
+SCENARIER.uppror2 = {
+  text: 'Steg 15.1.158: upproret räknar bara de andra. I en by med starkt envälde där de flesta är missnöjda blir det ett uppror som lyckas, fast ledaren själv väger nästan allt',
+  kor: () => {
+    const s = SIM.createState(6, START), v = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), l = v[0];
+    for (const p of v) (p.tek ??= {}).ledarskap = 1;
+    s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: ['rang'], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1, pabud: {} as never, lugn: 0 };
+    SIM.oppnaSed(s, 'fejd');
+    s.seder.v.rang = 1; s.seder.v.fortjanst = -0.5; s.seder.v.fejd = 0.8; // starkt envälde, och byn slåss om makten
+    const form = SIM.styrelseform(s).namn, vikter = SIM.vikter(s), ledVikt = vikter.find(x => x.p === l)?.andel ?? 0;
+    for (const p of v.slice(1)) p.missnoje = 1;
+    for (const r of Object.keys(s.rels)) s.rels[r].op = -50;
+    s.styre.frak = { led: v[1].id, med: v.slice(1).map(p => p.id) };
+    const medVikt = vikter.reduce((a, x) => a + (v.slice(1).includes(x.p) ? x.andel : 0), 0), leg = SIM.legitimitet(s).v;
+    SIM.missnojeTimme(s);
+    const uppror = (s.stat?.uppror ?? 0) >= 1;
+    korTills(s, () => !SIM.kartStrider(s).length, 1800);
+    const ny = s.styre?.ledare;
+    return [
+      [`styret är ${form}, och ledaren väger ${(100 * ledVikt).toFixed(0)} % (de missnöjda ${(100 * medVikt).toFixed(1)} %, legitimiteten ${leg.toFixed(2)})`, ledVikt > 0.5 && medVikt < leg],
+      [`det blir ett uppror (${s.stat?.uppror ?? 0})`, uppror],
+      [`upproret lyckas: ${l.name} leder inte längre (${ny === undefined ? 'ingen ledare' : SIM.byId(s, ny)?.name})`, uppror && ny !== l.id],
     ];
   },
 };
