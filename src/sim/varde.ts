@@ -18,6 +18,7 @@ import { kvVarde } from './kvalitet';
 import { Bit, Hus, MATERIAL, bitsOf, housesOf } from './byggnad';
 import { State } from './typer';
 import { balans } from './balans';
+import { KLADMATERIAL } from './klader';
 
 export const ARBETE = 1; // värdet av en arbetstimme
 // Balanstalen (regel 8). Läses bara inne i funktionerna: varde.ts ingår i en ring av importer
@@ -101,9 +102,13 @@ export function grundvarde(k: string): number {
   // så att en sak från en senare teknik är dyrare än den äldre också när tekniken gör arbetet fortare
   const rang = SAKER[k]?.rang ?? 0;
   if (rang > 0) for (const j of SAK_LIST) if ((SAKER[j]!.rang ?? 0) < rang && gruppOf(j) === gruppOf(k)) v = Math.max(v, grundvarde(j) * (1 + VARDE.nivaPaslag * Math.max(0, n - nivaOf(j))));
+  v *= skinnBitar(k); // ett skinn är värt efter hur många bitar det ger: golvet räknas för en bit (steg 15.1.32)
   varden.set(k, v);
   return v;
 }
+// hur många bitar ett skinn ger (bit i KLADMATERIAL, klader.ts): vargskinnet två, kohuden tre; allt annat 1
+let bitar: Map<string, number> | undefined;
+const skinnBitar = (k: string) => (bitar ??= new Map(Object.values(KLADMATERIAL).filter(m => m.slag === 'skinn').map(m => [m.sak, m.bit]))).get(k) ?? 1;
 
 // grundvärdet av en uppsättning saker (id till mängd), lagt till `start` (summeras i uppsättningens ordning)
 export function varuVarde(o: Record<string, number>, start = 0) { let v = start; for (const k in o) v += o[k] * grundvarde(k); return v; }

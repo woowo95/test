@@ -38,3 +38,15 @@ SCENARIER.djurvarde = {
     ];
   },
 };
+
+SCENARIER.skinnvarde = {
+  text: 'Steg 15.1.32: ett skinn är värt efter hur många bitar det ger, och vargtänder och djurhorn är värda som ben. Ett björnskinn är värt mer än ett harskinn, och ett halsband av vargtänder minst lika mycket som ett av ben',
+  kor: () => [
+    [`ett björnskinn (${t(v('bjornskinn'))}) är värt mer än ett harskinn (${t(v('skinn'))})`, v('bjornskinn') > v('skinn')],
+    [`ett vargskinn (${t(v('vargskinn'))}) är värt dubbelt så mycket som ett harskinn och en kohud (${t(v('kohud'))}) tre gånger`, Math.abs(v('vargskinn') - 2 * v('skinn')) < 0.01 && Math.abs(v('kohud') - 3 * v('skinn')) < 0.01],
+    [`en vargtand (${t(v('vargtand'))}) och ett djurhorn (${t(v('djurhorn'))}) är värda som ett ben (${t(v('ben'))})`, Math.abs(v('vargtand') - v('ben')) < 0.01 && Math.abs(v('djurhorn') - v('ben')) < 0.01],
+    [`ett halsband av vargtänder (${t(v('halsband_tandband'))}) är värt minst lika mycket som ett av ben (${t(v('halsband_benband'))})`, v('halsband_tandband') >= v('halsband_benband') - 0.01],
+    [`en mask av vargskinn (${t(v('mask_vargskinn'))}) är inte billigare än en av harskinn (${t(v('mask_kaninskinn'))})`, v('mask_vargskinn') >= v('mask_kaninskinn') - 0.01],
+    [`kohuden höjer inte kläderna: en mantel av harskinn är värd ${t(v('mantel_kaninskinn'))}`, v('mantel_kaninskinn') <= v('mantel_kohud') + 0.01 && v('mantel_kaninskinn') < 20],
+  ],
+};

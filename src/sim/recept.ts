@@ -117,6 +117,7 @@ const DEF = {
   rep: { var: 'sak', av: { torrgras: 2 }, min: 4, slag: 'liten', tek: 'rep' },
   talg: { var: 'sak', min: 3, slag: 'liten', tek: 'kniv' },
   ben: { var: 'sak', min: 3, slag: 'liten', tek: 'kniv' },
+  ...slakt(['vargtand', 'djurhorn'], 3, 'liten'), // tänderna och hornen räknas som ben (steg 15.1.32)
   flintspjut: { var: 'sak', av: { flinta: 1, rep: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'flintspjut', bank: 'snickarbank' },
   nat: { var: 'sak', av: { trad: 8, rep: 1, sten: 2 }, min: 5, slag: 'stor', tek: 'nat' }, // nätet (steg 9.6.16): mycket tråd, knutet vid slöjdbänken, med stenar som sänken
   metspo: { var: 'sak', av: { rep: 1, ben: 1, grenar: 1 }, min: 4, slag: 'liten', tek: 'metspo', bank: 'snickarbank' },
