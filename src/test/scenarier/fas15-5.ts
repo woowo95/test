@@ -107,3 +107,34 @@ SCENARIER.handelrad = {
     ];
   },
 };
+
+SCENARIER.kronikaar = {
+  text: 'Steg 15.1.49: året står en gång i krönikan: raderna om tron, gudarna och motgångarna under en årsrubrik börjar inte med "År 13:"',
+  kor: () => {
+    const rader = (s: SIM.State, slag: string) => (s.hist?.kronika ?? []).filter(k => k[2] === slag).map(k => k[1] as string);
+    const medAr = (t: string) => /^År \d/.test(t);
+    // tron får sitt namn och gudar av båda formerna (ande och gud i människoform)
+    const s = SIM.createState(10, START); klockan(s, 12);
+    const p = SIM.living(s)[0]!; SIM.grunda(s, p, 'blixt');
+    const tr = SIM.troOf(s, p.tro!)!;
+    for (const q of SIM.living(s).slice(1, 4)) q.tro = tr.id; // fler tror: tron får sitt namn och sin första gud
+    SIM.stepReligion(s);
+    const omr = Object.keys(SIM.GUDAR) as SIM.GudOmr[];
+    for (const natur of [0, 50]) {
+      tr.natur = natur; tr.manga = 0; const n0 = tr.gudar?.length ?? 0;
+      for (let i = 0; i < 400 && (tr.gudar?.length ?? 0) === n0; i++) { s.now += SIM.HOUR; SIM.gudHandelse(s, omr[i % omr.length]!, 'blixten som slog ner'); }
+    }
+    const tro = rader(s, 'tro'), former = new Set((tr.gudar ?? []).map(g => g.form));
+    // en motgång börjar
+    let gr: SIM.State | undefined, gm: ReturnType<typeof SIM.motgangNu>;
+    for (let seed = 1; seed < 400 && !gr; seed++) { const b = SIM.createState(seed, START); b.founded -= 20 * SIM.DAY; for (let w = 0; w < 64 && !gr; w++) { const m = SIM.motgangNu(b, b.now + w * 7 * SIM.DAY + SIM.DAY); if (m) { gr = b; gm = m; } } }
+    let mg: string[] = [];
+    if (gr && gm) { gr.now = gm.start; SIM.stepMotgang(gr); mg = rader(gr, 'motgang'); }
+    return [
+      [`tron och gudarna står i krönikan (${tro.length} rader, gudar som ${[...former].join(' och ')})`, tro.length >= 2 && former.has('ande') && former.has('gud')],
+      [`ingen rad om tron börjar med året (${tro.find(medAr) ?? tro[tro.length - 1] ?? '-'})`, !tro.some(medAr) && !tro.some(t => /^Med .*, år \d/.test(t))],
+      [`motgången står i krönikan (${mg[0] ?? '-'})`, mg.length > 0],
+      [`raden om motgången börjar inte med året`, mg.length > 0 && !mg.some(medAr)],
+    ];
+  },
+};

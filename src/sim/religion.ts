@@ -340,9 +340,10 @@ function nyTro(s: State, p: Person, d: (typeof TDEF)[TeckenTyp], huvud: Pick<Tro
   };
 }
 // gudens berättelse: anden i i (form ande) eller guden som en människa, med tecknet h, året ar och trons namn tro (fynd 195)
-const gudBer = (form: 'ande' | 'gud', h: string, ar: number, tro: string, namn: string, om: string, i?: string) => form === 'ande'
-  ? `Det började med ${h}, år ${ar}. De som tror på ${liten(tro)} förstod att det var anden i ${i} som visat sig. Anden heter ${namn} och råder över ${om}.`
-  : `År ${ar}, med ${h}, visade sig ${namn} för dem som tror på ${liten(tro)}. ${namn} ser ut som en människa och råder över ${om}.`;
+// utan året (ar undefined) för krönikan, där raden redan står under sitt år (steg 15.1.49)
+const gudBer = (form: 'ande' | 'gud', h: string, ar: number | undefined, tro: string, namn: string, om: string, i?: string) => form === 'ande'
+  ? `Det började med ${h}${ar !== undefined ? `, år ${ar}` : ''}. De som tror på ${liten(tro)} förstod att det var anden i ${i} som visat sig. Anden heter ${namn} och råder över ${om}.`
+  : `${ar !== undefined ? `År ${ar}, med ${h}, visade` : `Med ${h} visade`} sig ${namn} för dem som tror på ${liten(tro)}. ${namn} ser ut som en människa och råder över ${om}.`;
 export function grunda(s: State, p: Person, k: TeckenTyp, om?: string) {
   const d = TDEF[k], tron = (s.tron ??= []);
   if (!TRO_PROV.utanTak && tron.filter(t => t.slut === undefined).length >= TRO.takTro) return; // högst några trosriktningar samtidigt (steg 8.5.11)
@@ -383,7 +384,7 @@ function namnge(s: State, tr: Tro, folk: Person[]) {
   nyGud(s, tr, d.omr, teckenText(tr.k, tr.om), p); // den första guden kommer ur tecknet
   count(s, 'tro_namn');
   log(s, `${storOrd(tal(folk.length))} tror nu på ${liten(tr.bakom)}. Tron har fått ett namn: ${tr.namn}.`, 'rel', folk.map(q => q.id));
-  kronika(s, `År ${yearNo(s)}: ${tr.namn} fick sitt namn. ${tr.ber}`, 'tro');
+  kronika(s, `${tr.namn} fick sitt namn. ${tr.ber}`, 'tro'); // raden står under sitt år i krönikan (steg 15.1.49)
 }
 
 // ---------- gudarna (steg 4.1.5) ----------
@@ -412,19 +413,21 @@ function gudNamn(s: State, omr: GudOmr, p: Person | undefined) {
 function nyGud(s: State, tr: Tro, omr: GudOmr, h: string, p: Person | undefined) {
   const d = GUD_OMR[omr], ar = yearNo(s), tro = troNamn(tr);
   const fp = tr.natur > GUD.forfader ? s.people.find(q => !alive(q) && forfaderOmr(s, tr, q) === omr) : undefined;
-  let g: Gud;
-  if (fp) g = forfader(s, tr, fp, omr);
+  let g: Gud, kron = '';
+  if (fp) { g = forfader(s, tr, fp, omr); kron = g.ber; }
   else if (tr.natur < GUD.ande) {
     const t = TDEF[tr.k], i = pick(s, t?.i && t.omr === omr ? t.i : d.i, 'tro', p), namn = gudNamn(s, omr, p); // tecknet kan säga var anden bor (steg 13.1.9)
     g = { omr: [omr], namn, form: 'ande', i, t: s.now, ar, bekr: s.now, ber: gudBer('ande', h, ar, tro, namn, d.om, i) };
+    kron = gudBer('ande', h, undefined, tro, namn, d.om, i);
   } else {
     const namn = gudNamn(s, omr, p);
     g = { omr: [omr], namn, form: 'gud', t: s.now, ar, bekr: s.now, ber: gudBer('gud', h, ar, tro, namn, d.om) };
+    kron = gudBer('gud', h, undefined, tro, namn, d.om);
   }
   (tr.gudar ??= []).push(g);
   count(s, 'gud_ny'); count(s, 'gud_' + g.form);
   log(s, `${tro} har fått en ${formNamn(g.form)}: ${g.namn}, som råder över ${d.om}.`, 'rel', troende(s, tr).map(q => q.id));
-  kronika(s, `År ${ar}: ${g.ber}`, 'tro');
+  kronika(s, kron, 'tro'); // utan året: raden står under sitt år (steg 15.1.49)
 }
 function forfader(s: State, tr: Tro, p: Person, omr: GudOmr): Gud {
   const namn = forfaderNamn(p), ar = yearNo(s), dar = yearNo(s, p.died!);
@@ -460,7 +463,7 @@ function gudSteg(s: State, tr: Tro, h = 1) {
         const g = forfader(s, tr, fp, forfaderOmr(s, tr, fp)!);
         tr.gudar!.push(g); count(s, 'gud_ny'); count(s, 'gud_forfader');
         log(s, `${troNamn(tr)} har fått en förfader: ${g.namn}, som vakar över ${GUD_OMR[g.omr[0]].om}.`, 'rel', troende(s, tr).map(q => q.id));
-        kronika(s, `År ${yearNo(s)}: ${g.ber}`, 'tro');
+        kronika(s, g.ber, 'tro');
       }
     }
   }
