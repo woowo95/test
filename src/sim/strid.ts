@@ -447,9 +447,12 @@ function platsVid(st: Strid, k: Kampe, m: Kampe): { x: number; y: number } | und
 // hur illa det är för vännen v i striden (steg B.50): hen blöder eller har lite mod kvar. 0 = ingen nöd, 1 = den värsta
 const nodAv = (v: Kampe) => clamp((blodSek(v) > 0 ? 0.5 : 0) + (1 - v.blod) + Math.max(0, 1 - v.modNu / STRID.nodMod), 0, 1);
 // målet: den närmaste fienden som går att slå (den som ligger eller flyr bara om avsikten är att döda)
+// slår k den som ligger eller flyr? När avsikten är att döda, och den blodtörstiga också annars (steg 15.1.67: samma gräns som i
+// slagsmålet, STRID.ruser), men aldrig i leken
+const slarNere = (st: Strid, k: Kampe) => AVS[st.avsikt].nere || (!AVS[st.avsikt].lek && (k.st.torst ?? 0) >= STRID.ruser);
 function valjMal(st: Strid, k: Kampe) {
   if (k.jagar !== undefined) { const m = st.kampar.find(o => o.pid === k.jagar && iStrid(o)); if (m) return m; }
-  const nere = AVS[st.avsikt].nere;
+  const nere = slarNere(st, k);
   const led = k.skyddar !== undefined ? st.kampar.find(o => o.id === k.skyddar && iStrid(o)) : undefined;
   const fri = !st.kampar.some(o => o.sida !== k.sida && iStrid(o) && o.mal === k.id); // ingen slår mot hen: hen står bakom eller är en av många kring samma fiende (steg B.50)
   let bast: Kampe | undefined, bd = Infinity;
@@ -1066,7 +1069,7 @@ export function stridSteg(st: Strid) {
   // striden pågår så länge båda sidor har någon som står, tills de som flyr har kommit undan och, om avsikten är att
   // döda, tills de som ligger är döda
   const kvar = [0, 1].map(sd => st.kampar.some(k => k.sida === sd && iStrid(k) && !k.hjalp)); // hjälparna slåss inte (steg 9.5.20)
-  const ofardig = st.kampar.some(k => k.lage === 'flykt' || (avs.nere && k.lage === 'nere' && st.kampar.some(o => o.sida !== k.sida && iStrid(o) && !o.hjalp && st.t - (k.fallT ?? st.t) < sortAv(o).forfoljer)));
+  const ofardig = st.kampar.some(k => k.lage === 'flykt' || (k.lage === 'nere' && st.kampar.some(o => o.sida !== k.sida && iStrid(o) && !o.hjalp && slarNere(st, o) && st.t - (k.fallT ?? st.t) < sortAv(o).forfoljer)));
   if (kvar[0] && kvar[1]) st.avgjord = undefined; else st.avgjord ??= st.t; // när ena sidan inte längre har någon som slåss
   if ((!kvar[0] || !kvar[1]) && (!ofardig || st.t - (st.avgjord ?? st.t) >= STRID.efterTid) || st.t >= STRID.maxTid) {
     const vinnare = kvar[0] && !kvar[1] ? 0 : kvar[1] && !kvar[0] ? 1 : -1;

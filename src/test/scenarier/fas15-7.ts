@@ -58,3 +58,25 @@ SCENARIER.rustning = {
     ];
   },
 };
+
+SCENARIER.blodtorst = {
+  text: 'Steg 15.1.67: den blodtörstiga hugger den som ligger. En rövare med blodtörst minst STRID.ruser slår en bybo som fallit också när avsikten bara är att skada; en som inte är blodtörstig låter hen ligga',
+  kor: () => {
+    const prov = (torst: number) => {
+      let slag = 0, dog = 0;
+      for (let i = 0; i < 20; i++) {
+        const st = SIM.nyStrid({ avsikt: 'skada', w: 16, h: 8, kampar: [kampe(1, 0, 'yxa', 7, 4), kampe(2, 1, 'kniv', 9.5, 4, {}, { torst, mod: 16 })] }, i * 7919 + 5);
+        const b = st.kampar[0]; b.lage = 'nere'; b.fallT = 0; // bybon har redan fallit
+        stega(st);
+        slag += st.logg.filter(r => r.a === 2 && r.b === 1 && r.sl && (r.h === 'traff' || r.h === 'tog' || r.h === 'miss')).length;
+        if ((b.lage as string) === 'dod') dog++;
+      }
+      return { slag, dog };
+    };
+    const arg = prov(Math.max(1, SIM.STRID.ruser + 0.3)), snall = prov(0);
+    return [
+      [`den blodtörstiga rövaren slår den som ligger (${arg.slag} slag i 20 strider, ${arg.dog} dog)`, arg.slag >= 20],
+      [`den som inte är blodtörstig låter hen ligga (${snall.slag} slag)`, snall.slag === 0],
+    ];
+  },
+};
