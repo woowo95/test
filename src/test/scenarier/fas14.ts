@@ -47,7 +47,7 @@ SCENARIER.stada = {
     const dirty = SIM.smutsRutor(s, r).size, del0 = SIM.finhetDelar(s, r).tal, d = SIM.stadaVal(s, p), a = annan && SIM.stadaVal(s, annan);
     const rn = d!.rum, egen = d!.sc;
     // hen städar: uppgiften sätts som valet gör, och byn går en stund
-    const u = SIM.stadaUppgift(d!); p.toa = 1; p.hunger = 1; p.torst = 1;
+    const u = SIM.stadaUppgift(d!, s, p); Object.assign(p, { toa: 1, hunger: 1, torst: 1, rest: 1, social: 1 }); // inga behov som avbryter städningen
     p.x = u.spot.x; p.y = u.spot.y;
     p.task = { act: 'stada', phase: 'go', tx: u.spot.x, ty: u.spot.y, until: s.now + 60 * m, arbTid: u.min * m, carry: 0, why: u.text, ref: u.ref };
     const t0 = s.now; let s1 = s.now;
@@ -57,7 +57,7 @@ SCENARIER.stada = {
       [`ett rent rum ger inget att städa (${rent ? 'val' : 'inget'})`, !rent],
       [`blod och toaletternas fläckar räknas som smuts (${dirty} rutor)`, dirty === 4],
       [`den som bor där vill städa det smutsiga rummet (${egen.toFixed(2)}), någon annan mindre (${a ? a.sc.toFixed(2) : '–'})`, rn === r && egen > 0 && (!a || a.rum !== r || a.sc < egen)],
-      [`alla rutorna städas, en halv minut var (${kvar} kvar, ${min.toFixed(1)} min)`, kvar === 0 && min >= 4 * SIM.STADA.min - 0.1 && min <= 4],
+      [`alla rutorna städas, en halv minut var för den vanliga, delat med skickligheten (${kvar} kvar, ${min.toFixed(1)} min)`, kvar === 0 && min >= 4 * SIM.stadaMin(s, p) - 0.1 && min <= 4 * SIM.stadaMin(s, p) + 2],
       [`rummet är finare rent (${del0.toFixed(2)} → ${SIM.finhetDelar(s, r).tal.toFixed(2)})`, SIM.finhetDelar(s, r).tal > del0],
       [`det räknas i byns statistik (${s.stat?.stadat ?? 0})`, (s.stat?.stadat ?? 0) >= 1],
     ];
@@ -133,7 +133,7 @@ SCENARIER.foretag = {
 
 // steg 14.1.7: ägaren anställer den som betjänar när kunder fått gå
 SCENARIER.anstalld = {
-  text: 'Steg 14.1.7: ägaren anställer med dagsarbetet när hens timmar inte räcker och kunderna som går är värda mer än lönen; den anställda betjänar',
+  text: 'Steg 14.1.7: ägaren anställer med dagsarbetet när hens timmar inte räcker och kunderna som går är värda mer än lönen, och betalar med silvret och det hen har över (steg 15.1.27); den anställda betjänar',
   kor: () => {
     const { s, p, f } = foretagBy(), utan = SIM.DAGSVERK.foretag.bud(s).length;
     SIM.laggIn(s, 'silver', 40, p.id);
@@ -156,7 +156,15 @@ SCENARIER.anstalld = {
     const s0 = q ? SIM.ownsAmount(s, q, 'silver') : 0;
     SIM.lonDygn(s);
     f.lamnat = 0;
+    // en ägare utan silver men med mat över anställer med det hen har (steg 15.1.27)
+    const b2 = foretagBy(); SIM.setAmount(b2.s, 'silver', 0);
+    b2.f.salt = { servering: 6 }; b2.f.vinst = 9; b2.f.lamnat = 6;
+    const silver2 = SIM.ownsId(b2.s, b2.p.id, 'silver'), bud2 = SIM.DAGSVERK.foretag.bud(b2.s)[0];
+    for (const x of b2.s.people) x.anst = undefined;
+    SIM.anstallDygn(b2.s);
+    const a2 = b2.s.anst?.find(x => x.arb === 'foretag');
     return [
+      [`ägaren utan silver (${silver2}) men med mat över kan betala (tak ${bud2?.tak}) och anställer (${a2 ? SIM.byId(b2.s, a2.p)?.name : 'ingen'})`, silver2 < 1 && (bud2?.tak ?? 0) >= 1 && !!a2],
       [`utan kunder som går anställs ingen (${utan})`, utan === 0],
       [`budet följer det kunderna hade gett (${bud?.tim.toFixed(0)} per timme, högst ${bud?.timMax?.toFixed(2)} timmar)`, !!bud && bud.tim * bud.timMax! > 1 && bud.mal === f.id],
       [`någon anställs för mindre än det är värt (${q?.name}, ${a?.lon} silver)`, !!a && a.lon >= 1 && a.lon <= bud.tim * bud.timMax!],
@@ -530,7 +538,7 @@ SCENARIER.stanga = {
 };
 
 SCENARIER.marknad = {
-  text: 'Steg 14.1.14: när byborna vinner på att mötas kallar någon till marknad på torget nästa dag, man går dit efter vad man själv vinner och byter med dem som är där, och finns inget att vinna blir det ingen',
+  text: 'Steg 14.1.14: när byborna vinner på att mötas kallar någon till marknad på torget nästa dag, man går dit efter vad man själv vinner och byter med dem som är där (också den som kommer senare, steg 15.1.22), och finns inget att vinna blir det ingen',
   kor: () => {
     const s = SIM.cloneState(testBy(25)), folk = SIM.living(s).filter(q => !q.gast && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && SIM.kanGa(q));
     s.marknad = undefined; s.foretag = [];
@@ -547,14 +555,25 @@ SCENARIER.marknad = {
     for (let i = 0; i < 12; i++) SIM.addTool(s, 'benspade', a);
     const lust = SIM.handelslust(s); SIM.marknadDygn(s); const m = s.marknad as SIM.Marknad | undefined;
     const v0 = SIM.marknadVikt(s, b); if (m) s.now = m.t + SIM.HOUR; const v1 = SIM.marknadVikt(s, b), vv = SIM.marknadVal(s, b);
-    if (m) for (const q of [a, b]) { q.x = m.x + (q === a ? 1 : -1); q.y = m.y; q.task = { act: 'marknad', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '' } as never; }
-    const mat0 = SIM.tingOf(s).filter(t => t.agare === b.id && t.k === 'benspade').length; SIM.iHelaForradet(() => SIM.marknadKlar(s, b)); const mat1 = SIM.tingOf(s).filter(t => t.agare === b.id && t.k === 'benspade').length, v2 = SIM.marknadVikt(s, b);
+    // b kommer fram först och står ensam; a kommer senare och byter med b när hen kommer fram (steg 15.1.22). Ingen står vid ett förråd
+    const spadar = () => SIM.tingOf(s).filter(t => t.agare === b.id && t.k === 'benspade').length, mat0 = spadar();
+    let ensam = -1, framme = -1;
+    if (m) {
+      for (const q of folk) if (q !== a && q !== b) q.task = undefined;
+      b.x = m.x - 1; b.y = m.y; b.task = { act: 'marknad', phase: 'do', tx: b.x, ty: b.y, until: s.now + 15 * SIM.MIN, carry: 0, why: '' } as never;
+      SIM.iRackhall(b.x, b.y, () => SIM.startWork(s, b, b.task!)); ensam = spadar();
+      s.now += 10 * SIM.MIN;
+      a.x = m.x + 1; a.y = m.y; a.task = { act: 'marknad', phase: 'do', tx: a.x, ty: a.y, until: s.now + 15 * SIM.MIN, carry: 0, why: '' } as never;
+      SIM.iRackhall(a.x, a.y, () => SIM.startWork(s, a, a.task!)); framme = spadar();
+    }
+    SIM.iRackhall(b.x, b.y, () => SIM.marknadKlar(s, b, b.task)); const mat1 = spadar(), v2 = SIM.marknadVikt(s, b);
     if (m) s.now = m.slut; const stangd = !SIM.marknadOppen(s);
     return [
       [`lusten i byn (${l0.toFixed(0)}), och saknar ingen något (${tomt}) blir det ingen marknad`, tomt === 0 && ingen],
       [`den som har och de som saknar vinner (${[a, b].map(q => (lust.get(q.id) ?? 0).toFixed(1)).join(', ')}), och någon kallar till marknad`, !!m && (lust.get(a.id) ?? 0) > 0 && (lust.get(b.id) ?? 0) > 0],
       [`den öppnar ${m && (SIM.hourOf(m.t)).toFixed(1)} på byns mitt`, !!m && Math.abs(SIM.hourOf(m.t) - SIM.MARKNAD.oppnar) < 0.01],
       [`ingen går dit innan (${v0}), men när den är öppen (${v1.toFixed(2)})`, v0 === 0 && v1 > 0 && !!vv],
+      [`den som kommer först och står ensam byter inget (${mat0} → ${ensam}), men när nästa kommer fram tio minuter senare byter de (${framme} benspadar)`, ensam === mat0 && framme > mat0],
       [`där byter man (${mat0} → ${mat1} benspadar, ${m?.byten} byten), och ärendet är gjort (${v2})`, mat1 > mat0 && (m?.byten ?? 0) >= 1 && v2 === 0],
       ['på kvällen är den slut', stangd],
     ];

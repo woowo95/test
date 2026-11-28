@@ -9,7 +9,11 @@ import { balans } from './balans';
 import { ALDER, ageOf, count, log } from './folk';
 import { klanById, type Klan } from './klaner';
 import { BYLAGEN, byLage, klanHandelse } from './byrel';
-import { radVaror, radRikedomUr, VARUGRUPP_IDS } from './priser';
+import { gruppAv, radVaror, radRikedomUr, radTar, VARUGRUPP_IDS } from './priser';
+import { SAKER } from './saker';
+import { grundvarde } from './varde';
+import { antal, och } from './ord';
+import { HANDLARVAROR, type HVara } from './handel';
 import { lever } from './rad';
 import { radNr, VarldRad } from './radtal';
 import { slapps } from './fangelse';
@@ -26,7 +30,7 @@ import { DAY, Person, State } from './typer';
 export const FANGEVAL = balans('fangeval', {
   efter: 1, // så många dygn (år i spelet) efter att fången togs väljer ledaren
   losenDygn: 3, // budet med lösen kommer inom så många dygn
-  losen: 20, // lösen i silver (hela)
+  losen: 20, // lösen i grundvärde: först hembyns silver, sedan varor ur dess förråd i hela saker (steg 15.1.26)
   sed: 1, // seden Förlikning – Fejd (−1 till 1) drar åt Fejd så här mycket
   hard: 1, // ledarens hårdhet över 1 drar åt Fejd så här mycket per enhet
   dodat: 0.6, // varje bybo fången dödat drar åt Fejd så här mycket
@@ -39,12 +43,39 @@ function hemby(s: State, p: Person): { k: Klan; r?: VarldRad } | undefined {
   const vl = s.varld, r = vl && k.rad !== undefined ? radNr(vl, k.rad) : undefined;
   return { k, r: r && lever(vl!, r) ? r : undefined };
 }
-const losenVarde = () => FANGEVAL.losen; // silver har grundvärdet 1
+const losenVarde = () => FANGEVAL.losen;
+// det hembyn har att betala med: silvret och varorna utom maten, i grundvärde
+const losenHar = (r: VarldRad) => { const vr = radVaror(r); return Math.floor(r.tal.silver) * grundvarde('silver') + VARUGRUPP_IDS.reduce((a, g) => a + (g === 'mat' ? 0 : vr[g] ?? 0), 0); };
 function losenKan(s: State, p: Person) {
   const h = hemby(s, p), vl = s.varld;
   if (!h?.r || !vl || vl.huvud === undefined || BYLAGEN[byLage(vl, h.r.nr, vl.huvud)].fejd >= 1) return false;
-  const vr = radVaror(h.r);
-  return VARUGRUPP_IDS.reduce((a, g) => a + (g === 'mat' ? 0 : vr[g] ?? 0), 0) >= losenVarde();
+  return losenHar(h.r) >= losenVarde();
+}
+// lösen ur hembyn r (steg 15.1.26): först det silver den har, sedan varor ur förrådet i hela saker, ur den grupp den har mest av
+// först och de dyraste sakerna i gruppen först, samma varor som raden räknar av (radVaror) och som handlaren bär (HANDLARVAROR,
+// det byns tekniker kan göra). Det som inte går jämnt ut betalas
+// med en sak till av den billigaste som finns. Varorna tas ur raden, och sändebudet bär dem
+const losenSaker = (r: VarldRad, g: string) => HANDLARVAROR.map(v => v.k).filter(k => SAKER[k] && gruppAv(k) === g && grundvarde(k) > 0 && (!SAKER[k]!.skaffa?.tek || r.tek.includes(SAKER[k]!.skaffa!.tek!)));
+function losenVaror(r: VarldRad): HVara[] {
+  const ut: HVara[] = [], ta = (k: string, n: number) => { if (n < 1) return; radTar(r, k, -n); const f = ut.find(w => w.k === k); if (f) f.n += n; else ut.push({ k, n }); };
+  const gs = grundvarde('silver');
+  let kvar = losenVarde();
+  const sv = Math.min(Math.floor(r.tal.silver), Math.ceil(kvar / gs - 1e-9));
+  ta('silver', sv); kvar -= sv * gs;
+  const vr = () => radVaror(r);
+  for (const g of VARUGRUPP_IDS.filter(x => x !== 'mat').sort((a, b) => (vr()[b] ?? 0) - (vr()[a] ?? 0))) {
+    for (const k of losenSaker(r, g).sort((a, b) => grundvarde(b) - grundvarde(a))) {
+      if (kvar <= 1e-9) break;
+      const gv = grundvarde(k); ta(k, Math.min(Math.floor((vr()[g] ?? 0) / gv + 1e-9), Math.floor(kvar / gv + 1e-9))); kvar = losenVarde() - ut.reduce((a, w) => a + w.n * grundvarde(w.k), 0);
+    }
+  }
+  if (kvar > 1e-9) { // det sista: en sak till, den billigaste som ryms i någon grupp
+    let bast: string | undefined;
+    for (const g of VARUGRUPP_IDS) if (g !== 'mat') for (const k of losenSaker(r, g)) if ((vr()[g] ?? 0) >= grundvarde(k) - 1e-9 && (!bast || grundvarde(k) < grundvarde(bast))) bast = k;
+    if (bast) ta(bast, 1);
+  }
+  r.tal.rikedom = radRikedomUr(r);
+  return ut;
 }
 const slump = (s: State, p: Person, salt: number) => hash3(s.seed, p.id, Math.floor((p.gast!.tagen ?? 0) / 1000), salt);
 export const FANGERADER = {
@@ -95,13 +126,10 @@ function losenSteg(s: State, p: Person) {
   if (l.bud === undefined && s.now >= l.t) {
     const h = hemby(s, p);
     if (!h?.r || !losenKan(s, p)) { g.losen = undefined; (g.utan ??= []).push('losen'); count(s, 'fange_losen_uteblev'); valj(s, p); return; }
-    // hembyn betalar ur det den har mest av
-    const bud = sandebud(s, h.r.nr, 'besked', [{ k: 'silver', n: FANGEVAL.losen }]);
+    // hembyn betalar med det den har (losenVaror), och sändebudet bär det
+    if (!h.r.syn) { g.losen = undefined; (g.utan ??= []).push('losen'); valj(s, p); return; }
+    const bud = sandebud(s, h.r.nr, 'besked', losenVaror(h.r));
     if (!bud) { g.losen = undefined; (g.utan ??= []).push('losen'); valj(s, p); return; }
-    const vr = radVaror(h.r);
-    let kvar = losenVarde();
-    for (const grupp of VARUGRUPP_IDS.filter(x => x !== 'mat').sort((a, b) => (vr[b] ?? 0) - (vr[a] ?? 0))) { const n = Math.min(kvar, vr[grupp] ?? 0); vr[grupp] = (vr[grupp] ?? 0) - n; kvar -= n; if (kvar <= 0) break; }
-    h.r.tal.rikedom = radRikedomUr(h.r);
     bud.gast!.losenFor = p.id; l.bud = bud.id;
     count(s, 'fange_losen_bud');
     return;
@@ -111,13 +139,13 @@ function losenSteg(s: State, p: Person) {
 }
 // budet har pratat med ledaren: lösen läggs i förrådet och fången följer med hem
 budKrok.losen = (s, bud) => {
-  const g = bud.gast!, p = s.people.find(q => q.id === g.losenFor && q.gast && q.died === undefined);
+  const g = bud.gast!, p = s.people.find(q => q.id === g.losenFor && q.gast && q.died === undefined), betalt = och((g.gava ?? []).map(w => antal(w.n, w.k)));
   for (const w of g.gava ?? []) laggIn(s, w.k, w.n);
   g.gava = undefined;
   if (!p?.fange) return;
   const h = hemby(s, p); if (h) klanHandelse(s.varld, h.k, 'slappt');
   p.gast!.losen = undefined; slapps(s, p); count(s, 'fange_losen');
-  skriv(s, p, `Ett sändebud betalade ${FANGEVAL.losen} silver i lösen för ${p.name}, som följer med hem.`);
+  skriv(s, p, `Ett sändebud betalade ${betalt || 'lösen'} i lösen för ${p.name}, som följer med hem.`);
 };
 // en gång i timmen (TAKTER i steg.ts): fångarna som suttit ett dygn får sitt öde
 export function fangeOde(s: State) {

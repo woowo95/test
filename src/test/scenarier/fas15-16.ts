@@ -122,7 +122,7 @@ SCENARIER.tvadiskar = {
     t.flackar = []; t.blod = [];
     t.flackar = stort.tiles.slice(0, 10).map(j => ({ k: 'toa', i: j, n: 1, t: t.now }));
     const va = SIM.stadaVal(t, a)!;
-    const ua = SIM.stadaUppgift(va); a.task = { act: 'stada', phase: 'do', tx: ua.spot.x, ty: ua.spot.y, until: t.now + SIM.MIN, carry: 0, why: '', ref: ua.ref };
+    const ua = SIM.stadaUppgift(va, t, a); a.task = { act: 'stada', phase: 'do', tx: ua.spot.x, ty: ua.spot.y, until: t.now + SIM.MIN, carry: 0, why: '', ref: ua.ref };
     const vb = SIM.stadaVal(t, b);
     // samma rum med bara en smutsig ruta, som a redan torkar
     t.flackar = [{ k: 'toa', i: ua.ref, n: 1, t: t.now }];

@@ -4843,7 +4843,7 @@ SCENARIER.fangar = {
 
 SCENARIER.fangeval = {
   env: { BALANS: 'klan.taEmot=5' }, // fången vill stanna (avgörs som för främlingen)
-  text: 'Vad byn gör med fången (steg 11.12.7, FANGERADER i fangeval.ts): ett dygn efter att fången togs väljer ledaren raden med högst poäng ur seden Förlikning – Fejd, hårdheten och vad fången gjort. Förlikning släpper hen hem, Fejd dödar hen, en by i världen som kan betala skickar ett sändebud med lösen i silver och fången följer med hem, uteblir lösen väljs på nytt utan raden, och utan lösen och med en fånge som vill stanna tas hen upp i byn',
+  text: 'Vad byn gör med fången (steg 11.12.7, FANGERADER i fangeval.ts): ett dygn efter att fången togs väljer ledaren raden med högst poäng ur seden Förlikning – Fejd, hårdheten och vad fången gjort. Förlikning släpper hen hem, Fejd dödar hen, en by i världen som kan betala skickar ett sändebud med lösen ur det den har och fången följer med hem, uteblir lösen väljs på nytt utan raden, och utan lösen och med en fånge som vill stanna tas hen upp i byn',
   kor: () => {
     // en rövare från klanen klan som byn tagit för ett dygn sedan
     const fange = (s: SIM.State, klan?: number) => {
@@ -4877,9 +4877,11 @@ SCENARIER.fangeval = {
     };
     const l = forbered(), silver0 = SIM.amountOf(l.s, 'silver');
     const valdLosen = (l.s.stat?.fange_val_losen ?? 0) > 0;
-    let bud: SIM.Person | undefined;
-    korTills(l.s, () => !l.r.fange, 8 * 3600, () => { bud ??= l.s.people.find(q => q.gast?.losenFor === l.r.id); });
-    const losen = !!bud && !l.r.fange && (l.s.stat?.fange_losen ?? 0) > 0 && SIM.amountOf(l.s, 'silver') - silver0 >= SIM.FANGEVAL.losen;
+    let bud: SIM.Person | undefined, bar: { k: string; n: number }[] = [];
+    korTills(l.s, () => !l.r.fange, 8 * 3600, () => { if (!bud) { bud = l.s.people.find(q => q.gast?.losenFor === l.r.id); bar = (bud?.gast?.gava ?? []).map(w => ({ ...w })); } });
+    // lösen är det hembyn har (steg 15.1.26): silvret i den och varor, värt minst lösen, och silvret i förrådet är det som bars
+    const barSilver = bar.find(w => w.k === 'silver')?.n ?? 0, barVarde = bar.reduce((a, w) => a + w.n * SIM.grundvarde(w.k), 0);
+    const losen = !!bud && !l.r.fange && (l.s.stat?.fange_losen ?? 0) > 0 && barVarde >= SIM.FANGEVAL.losen - 1e-9 && Math.round(SIM.amountOf(l.s, 'silver') - silver0) === barSilver;
     // budet dör på vägen: ledaren väljer på nytt utan lösen
     const u = forbered();
     korTills(u.s, () => u.s.people.some(q => q.gast?.losenFor === u.r.id), 3600);
@@ -4891,7 +4893,7 @@ SCENARIER.fangeval = {
       [`med seden Förlikning släpps fången (${Object.keys(f.s.stat ?? {}).filter(k => k.startsWith('fange_val_'))}) och går hem`, slappt && hem],
       [`med seden Fejd dödas fången`, dod],
       [`utan by i världen och med en fånge som vill stanna tas hen upp i byn`, upp],
-      [`en by i världen som kan betala ger lösen (vald: ${valdLosen}): ett sändebud kommer med ${SIM.FANGEVAL.losen} silver, som hamnar i förrådet, och fången följer med hem`, valdLosen && losen],
+      [`en by i världen som kan betala ger lösen (vald: ${valdLosen}): ett sändebud kommer med det hembyn har (${bar.map(w => w.n + ' ' + w.k).join(', ')}), som hamnar i förrådet, och fången följer med hem`, valdLosen && losen],
       [`dör budet väljer ledaren på nytt utan lösen`, !!ub && igen],
     ];
   },

@@ -11,6 +11,7 @@ import { grundvarde } from './varde';
 import { hourOf } from './tid';
 import { freeNear } from './byggnad';
 import { bynsMitt } from './omrade';
+import { iHelaForradet } from './lager';
 
 export const MARKNAD = balans('marknad', {
   minst: 3, // vinsten per vuxen (i silver) som gör marknaden värd att kalla till
@@ -61,15 +62,26 @@ export function marknadVal(s: State, p: Person) {
   return { why: 'Går till marknaden', spot: freeNear(s, m.x + Math.cos(a) * r, m.y + Math.sin(a) * r), dur: MARKNAD.besok * MIN, ref: Math.round(m.t / 1000) };
 }
 export const paMarknaden = (s: State, m: Marknad) => living(s).filter(q => !q.gast && q.task?.act === 'marknad' && q.task.phase === 'do' && Math.hypot(q.x - m.x, q.y - m.y) <= MARKNAD.radie);
-// besöket är slut: p handlar med dem som är där, med den hen vinner mest hos först i BRUK:s ordning (KLAR i steg.ts)
-export function marknadKlar(s: State, p: Person, _t?: Task) {
+// p byter med alla som står på marknaden, med den hen vinner mest hos först i BRUK:s ordning (steg 15.1.22): när hen kommer fram och
+// när besöket är slut, så att två som är där samtidigt byter vem som än kom först. Bytet gäller allt de äger, inte bara det inom
+// räckhåll (som köpet hos grannen). Antalet byten under besöket räknas på uppgiften (prog)
+export function marknadByt(s: State, p: Person, t?: Task) {
   const m = marknadOppen(s);
   if (!m) return;
-  let kvar = MARKNAD.byten;
-  for (const g of paMarknaden(s, m)) {
-    if (g === p) continue;
-    while (kvar > 0 && bytenMellan(s, p, g) === 'byte') { kvar--; m.byten++; count(s, 'marknadByte'); }
-  }
+  let kvar = MARKNAD.byten - (t?.prog ?? 0);
+  iHelaForradet(() => {
+    for (const g of paMarknaden(s, m)) {
+      if (g === p) continue;
+      while (kvar > 0 && bytenMellan(s, p, g) === 'byte') { kvar--; m.byten++; count(s, 'marknadByte'); }
+    }
+  });
+  if (t) t.prog = MARKNAD.byten - kvar;
+}
+// besöket är slut (KLAR i steg.ts): de sista bytena, och ärendet är gjort
+export function marknadKlar(s: State, p: Person, t?: Task) {
+  const m = marknadOppen(s);
+  if (!m) return;
+  marknadByt(s, p, t);
   m.lust[p.id] = 0; // hen har gjort sina ärenden
-  if (m.byten && kvar < MARKNAD.byten) count(s, 'marknadBesok');
+  if (t?.prog) count(s, 'marknadBesok');
 }

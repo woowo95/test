@@ -3,7 +3,8 @@
 // kostar (kundVal), går till disken och väntar där (koaDisk), flera i kö. Att betjäna är ett arbete (betjanVal, ARBETEN i
 // val.ts): poängen växer med dem som väntar och hur länge de väntat. Betjänaren tar emot den första i kön, som betalar med
 // silver och varor som i alla byten (byte.ts), och det hen köpte äts vid bordet. Den som väntat för länge går.
-import { MIN, W, type Person, type State, type Task } from './typer';
+import { kunnaFart } from './kunna';
+import { HOUR, MIN, W, egen, tvaDelar, visning, type Person, type State, type Task } from './typer';
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, count, familjOf, forstaGang, living, log } from './folk';
 import { ACTS } from './handlingar';
@@ -19,8 +20,9 @@ import { SAK_LIST, isTool, viktOf } from './saker';
 import { type Ting, tingOf } from './agande';
 import { dryckAv } from './vatskor';
 import { drickAlkohol } from './rus';
-import { foretagOf, type Foretag, foretagare, foretagRum, FORETAG, oppna, troAvAgare, VERKSAMHETER } from './foretag';
-import { foretagBord, isKlar, ledigPlats, stationerOf, stationRum, storlekAv, type Station, vidStation } from './stationer';
+import { foretagOf, type Foretag, foretagare, foretagRum, FORETAG, oppna, startPoang, troAvAgare, VERKSAMHETER } from './foretag';
+import { receptKostnad } from './projekt';
+import { foretagBord, STATIONER, isKlar, ledigPlats, stationerOf, stationRum, storlekAv, type Station, vidStation } from './stationer';
 import { tanke } from './tankar';
 import { kvOf, kvVarde } from './kvalitet';
 
@@ -44,7 +46,24 @@ export const diskarAv = (s: State, f: Foretag): Station[] => { const rum = new S
 // företagen med ett rum som saknar en disk (också en som är under arbete räknas), eller en disk till när kön är lång (steg 15.1.154)
 const utanDisk = (s: State) => foretagOf(s).filter(f => { const rum = foretagRum(s, f); if (!rum.length) return false; const n = stationerOf(s).filter(t => t.k === 'disk' && rum.includes(stationRum(s, t)!)).length; return !n || framme(s, f).length >= KASSA.koDisk * n; });
 foretagBord.diskRum = s => { const f = utanDisk(s)[0]; return f && foretagRum(s, f)[0]; };
-foretagBord.diskEgen = (s, fam) => utanDisk(s).some(f => fam.some(q => q === foretagare(s, f.ag))) ? 1 : 0; // ägarens familj saknar disken i sitt företag
+// diskens värde för ägarens familj (steg 15.1.24): det företaget tjänar på ett år med disken (startPoang för verksamheterna, utan
+// huset som redan finns och utan företaget självt som konkurrent), delat med vad disken kostar. Den som väntar många kunder bygger först
+// Vinsten räknas en gång i timmen per företag (som timräkningen i val.ts): den frågas i varje val (gränssnittet i en egen del, typer.ts)
+const diskVinst = tvaDelar<{ t: number; v: Map<number, number> }>();
+const diskVinstNu = (s: State, f: Foretag) => {
+  const t = Math.floor(s.now / HOUR), d = egen(diskVinst);
+  let c = diskVinst.sim.get(s);
+  if (visning.pa && c?.t !== t) c = diskVinst.bild.get(s);
+  if (!c || c.t !== t) d.set(s, c = { t, v: new Map() });
+  let v = c.v.get(f.id);
+  if (v === undefined) c.v.set(f.id, v = startPoang(s, f.ag, f.verk, 0, f).poang);
+  return v;
+};
+foretagBord.diskEgen = (s, fam) => {
+  let v = 0;
+  for (const f of utanDisk(s)) if (fam.some(q => q === foretagare(s, f.ag))) v = Math.max(v, diskVinstNu(s, f) / Math.max(1e-9, receptKostnad(STATIONER.disk)));
+  return Math.max(0, v);
+};
 foretagBord.diskBrist = s => { const n = foretagOf(s).filter(f => foretagRum(s, f).length).length; return n ? utanDisk(s).length / n : 0; };
 // var kunden i kön står: rummets lediga rutor, närmast disken först, inte där betjänaren eller en annan kund står
 export function koPlats(s: State, t: Station, upptagna: { x: number; y: number }[] = []): { x: number; y: number } {
@@ -98,17 +117,12 @@ export function affarLage(s: State, f: Foretag) {
   });
   return { verk, ko: f.ko?.length ?? 0 };
 }
-// det M betalar: silver, varor eller allt hen har över, det som kostar minst för hen. Priset är i silver: G ska få lika mycket
-// som så många silver är värda för hen (steg 15.1.17)
+// det M betalar: silvret först och det som inte räcker med varor, som i alla byten (betalVaror, steg 15.1.29). Priset är i
+// silver: G ska få lika mycket som så många silver är värda för hen (steg 15.1.17)
 type Betalvaror = ReturnType<typeof betalVaror>;
 function betalar(varor: Betalvaror, G: Part, pris: number) {
-  let bast: ReturnType<typeof betalaAv> | undefined;
-  const mal = pris * silverVarde(G);
-  for (const del of [varor.filter(w => w.k === 'silver'), varor.filter(w => !w.t && w.k !== 'silver'), varor]) {
-    const b = betalaAv(del, G, mal);
-    if (b.fick >= mal - 1e-9 && (!bast || b.kost < bast.kost - 1e-9)) bast = b;
-  }
-  return bast;
+  const mal = pris * silverVarde(G), b = betalaAv(varor, G, mal);
+  return b.fick >= mal - 1e-9 ? b : undefined;
 }
 // ---------- kunden ----------
 import { hyllan, type HyllVara, taVaran, vilMangd } from './affar';
@@ -227,7 +241,7 @@ export function betjanPoang(s: State, p: Person, f: Foretag) {
 export function betjanVal(s: State, p: Person): { f: Foretag; sc: number; spot: { x: number; y: number }; dur: number } | undefined {
   let bast: { f: Foretag; sc: number; disk: Station } | undefined;
   for (const f of s.foretag ?? []) if (f.ko?.length) { const disk = ledigDisk(s, f, p), sc = disk && framme(s, f).length > betjanare(s, f, p).length ? betjanPoang(s, p, f) : 0; if (disk && sc > (bast?.sc ?? 0)) bast = { f, sc, disk }; }
-  return bast && { f: bast.f, sc: bast.sc, spot: vidStation(bast.disk), dur: KASSA.min * MIN };
+  return bast && { f: bast.f, sc: bast.sc, spot: vidStation(bast.disk), dur: KASSA.min * MIN / kunnaFart(s, p, 'betjana') }; // den skickliga betjänar fortare (steg 15.1.23)
 }
 // det den som betjänar hämtar till disken (hamtning.ts): maten kunderna framme vid den vill ha, av ägarens
 export function betjanHamtas(s: State, t: Task): Record<string, number> | undefined {

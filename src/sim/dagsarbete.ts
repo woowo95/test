@@ -63,7 +63,7 @@ const silverAv = (s: State, id: number) => Math.floor(ownsId(s, id, 'silver') + 
 // det id kan betala en lön med: dagsarbetet ligger på samma byten som allt annat (Gränsen mot fas 14 i fliken Människan), så en
 // person betalar med silvret och det hen har över, värderat efter grundvärdet (som kunden vid disken, kundPung i foretag.ts).
 // Kyrkan betalar med sitt silver
-const formaga = (s: State, id: number) => {
+export const formaga = (s: State, id: number) => {
   const p = id > 0 ? byId(s, id) : undefined;
   return p ? Math.floor(payable(s, p, []).reduce((a, w) => a + (w.t ? 0 : w.n * grundvarde(w.k)), 0) + 1e-9) : silverAv(s, id);
 };

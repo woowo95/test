@@ -46,7 +46,7 @@ import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from '.
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
 import { FORRAD, FORRADSMAL, TROSKEL, buffert, foretagMal, lyxtak, materialTimme, materialTak, eldReserv, villHaAv } from './forradsmal';
-import { stallaVal, AFFAR } from './affar';
+import { stallaVal, stallaTid } from './affar';
 import { behovAv, saknarNu } from './behov';
 import { betjanVal, kundVal, stallIKo, KASSA, type Erbjudande } from './kassa';
 import { stadaUppgift, stadaVal } from './stada';
@@ -680,7 +680,7 @@ export const FORBATTRA: readonly ForbRad[] = [
   // tjäran (steg 13.5.1, tjara.ts): det sparade värdet mot tjärans
   { id: 'tjara', kand: c => { const d = tjaraVal(c.s, c.p); if (!d) return undefined; return { sc: VAL.forbTjara * d.sc * brus(c), gor: () => projektVal(c.v, tjaraUppgift(d), 'Byn har det den behöver') }; } },
   // städningen (steg 14.1.2, stada.ts): finheten smutsen tar och äcklet, efter hur mycket rummet angår en
-  { id: 'stada', kand: c => { const d = stadaVal(c.s, c.p); if (!d) return undefined; return { sc: VAL.forbStada * d.sc * brus(c), gor: () => projektVal(c.v, stadaUppgift(d), 'Golvet är smutsigt') }; } },
+  { id: 'stada', kand: c => { const d = stadaVal(c.s, c.p); if (!d) return undefined; return { sc: VAL.forbStada * d.sc * brus(c), gor: () => projektVal(c.v, stadaUppgift(d, c.s, c.p), 'Golvet är smutsigt') }; } },
   { id: 'farga', kand: c => { const d = fargVal(c.s, c.p); if (!d) return undefined; return { sc: VAL.forbFarg * d.sc * brus(c), gor: () => { projektVal(c.v, { act: 'farga', text: `Badar ${d.t.t ? tingNamn(d.t.t).toLowerCase() : 'sin matta'} i ${FARGER[d.bad].namn.toLowerCase()} färg vid örtköket.`, min: FARG.min, tool: fargTool(d.bad, !!d.t.matta), ref: d.t.id }, 'Byn har det den behöver'); } }; } },
   // bryggningen, ullen, hamlingen, staketet och fågelskrämman (steg 13.8.7) vägs med poäng mot de andra raderna på Förbättra
   { id: 'brygga', kand: c => { if (c.a < ALDER.vuxen) return undefined; const { s, p, v } = c; const b = bryggVal(s, p); if (!b) return undefined; return { sc: VAL.forbBrygga * brus(c), gor: () => { projektVal(v, { act: b.act, text: b.act === 'tappa' ? (b.v === 'sprit' ? 'Häller upp spriten ur brännpannan i en liten lerkruka.' : 'Silar satsen och häller upp den i lerkrukor.') : b.act === 'branna' ? 'Häller vin eller öl i brännpannan och eldar under den.' : b.act === 'malta' ? 'Blöter korn och hänger upp det på torkställningen till malt.' : BRYGD[b.v].gor, min: b.act === 'tappa' ? BRYGG.tappMin : b.act === 'branna' ? BRYGG.brannMin : b.act === 'malta' ? BRYGG.maltMin : BRYGG.prepMin, spot: vidStation(b.kar), ref: b.kar.id }, b.act === 'tappa' ? 'Satsen i bryggkaret har jäst klart' : 'Byn vill ha mer att dricka'); } }; } }, // steg 9.6.12–9.6.13
@@ -997,7 +997,7 @@ export const ARBETEN: readonly Arbete[] = [
   // affären (steg 14.1.8, affar.ts): den som saknar något köper det när det är mer värt än det kostar, och ägaren ställer fram.
   // Varje rad har sitt erbjudande i c.kunder, eftersom raderna på samma nivå räknas innan vinnaren provas
   { id: 'affar', niva: 6, nar: 'dag', poang: c => { if (!c.s.foretag?.length || c.a < ALDER.hjalper || !saknarNu(c.s, c.p).length) return 0; const e = ((c.kunder ??= {}).affar = kundVal(c.s, c.p, 'affar')); return e ? VAL.tillAffar * Math.min(1, e.net) : 0; }, prova: ({ s, p, v, kunder }) => { const e = kunder?.affar; return !!e && koa(s, p, v, e); } },
-  { id: 'stallaFram', niva: 6, nar: 'dag', poang: c => { if (!c.s.foretag?.length || c.a < ALDER.vuxen) return 0; const d = (c.stall = stallaVal(c.s, c.p)); return d ? d.sc : 0; } /* vägs som annat arbete, utan tak (steg 15.1.155) */, prova: ({ v, stall: d }) => { if (!d) return false; v.spot = { x: d.h.x + 0.5, y: d.h.y + 0.5 }; v.dur = AFFAR.min * MIN; v.ref = d.f.id; v.tool = d.h.k; return set(v, 'stallaFram', d.h.tillbaka ? `Bär tillbaka varor som inte säljer: ${d.f.namn}` : `Ställer fram varor: ${d.f.namn}`); } }, // eller tillbaka till förrådet (steg 15.1.99)
+  { id: 'stallaFram', niva: 6, nar: 'dag', poang: c => { if (!c.s.foretag?.length || c.a < ALDER.vuxen) return 0; const d = (c.stall = stallaVal(c.s, c.p)); return d ? d.sc : 0; } /* vägs som annat arbete, utan tak (steg 15.1.155) */, prova: ({ v, stall: d, s, p }) => { if (!d) return false; v.spot = { x: d.h.x + 0.5, y: d.h.y + 0.5 }; v.dur = stallaTid(s, p); /* den skickliga fortare (steg 15.1.23) */ v.ref = d.f.id; v.tool = d.h.k; return set(v, 'stallaFram', d.h.tillbaka ? `Bär tillbaka varor som inte säljer: ${d.f.namn}` : `Ställer fram varor: ${d.f.namn}`); } }, // eller tillbaka till förrådet (steg 15.1.99)
   { id: 'kopaMat', niva: 6, nar: 'dag', poang: c => { const d = dag(c); if (!d.works || d.wEgen <= 0) return 0; const k = (c.kop = kopval(c.s, c.p, 'mat')); return k ? d.wEgen * d.rad.mat.sc * k.faktor : 0; }, prova: c => kopa(c) },
   { id: 'kopaVed', niva: 6, nar: 'dag', poang: c => { const d = dag(c); if (!d.works || d.wWood <= 0) return 0; const k = (c.kopV = kopval(c.s, c.p, 'ved')); return k ? d.wWood * d.rad.ved.sc * k.faktor : 0; }, prova: c => kopa(c, c.kopV) },
   { id: 'ved', niva: 6, nar: 'dag', poang: c => { const d = dag(c); return d.works && d.wd < buffert(c.s, 'ved') ? d.wWood * d.rad.ved.sc : 0; },

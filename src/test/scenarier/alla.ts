@@ -42,6 +42,7 @@ import './fas15-7';
 import './fas15-13';
 import './fas15-9';
 import './fas15-16';
+import './fas15-2';
 import './tankar';
 import './paneler';
 import './felsok'; // verktygen för att hitta felen (steg 12.1.40–12.1.44)
