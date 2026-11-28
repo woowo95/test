@@ -127,3 +127,33 @@ SCENARIER.prisisilver = {
     ];
   },
 };
+
+SCENARIER.bynsdel = {
+  text: 'Steg 15.1.18: byns del är bara byns. Allt som ägs av någon, också av handlare, kyrkor, döda och gäster, räknas bort, och det byn äger är för byn det ingen annan äger. Byns företag säljer bara det byn äger, och byns servering säljer en måltid ur byns förråd',
+  kor: () => {
+    const { s, h, fin, vux } = foretagBy();
+    // företaget och huset är byns, och maten finns i fyra delar: byns, en död bybos, kyrkans och en budgetdels
+    s.foretag = []; h.ag = undefined;
+    s.stackar = (s.stackar ?? []).filter(a => a.k !== fin); SIM.touch(s); SIM.changed(s);
+    const dod = vux[vux.length - 1], tro = (s.tron ?? []).find(q => q.slut === undefined) ?? (() => { const q = { id: 9999 } as SIM.Tro; (s.tron ??= []).push(q); return q; })();
+    const kyrka = SIM.kyrkaId(tro.id), budget = -2000000;
+    SIM.put(s, fin, 5, { [dod.id]: 5 }); SIM.put(s, fin, 4, { [kyrka]: 4 }); SIM.put(s, fin, 2, { [budget]: 2 }); SIM.put(s, fin, 3);
+    dod.died = s.now; // den döda äger det hen hade tills det läggs ner
+    const f = SIM.starta(s, SIM.BYN, ['servering']); SIM.foretagTimme(s); SIM.touch(s);
+    const del = SIM.bynsDel(s, fin), ager = SIM.ownsId(s, SIM.BYN, fin), G = SIM.saljPart(s, f)!, over = G.over([]).find(w => w.k === fin)?.n ?? 0;
+    // en kund köper en måltid; den som betjänar står vid disken, och maten ligger där
+    const kund = vux.find(q => q !== dod && SIM.kundVal(s, q, 'servering'))!, e = kund && SIM.kundVal(s, kund, 'servering');
+    const hog = s.stackar!.find(a => a.k === fin)!, at = SIM.foretagare(s, SIM.BYN) ?? vux.find(q => q !== kund)!; at.x = hog.x + 0.5; at.y = hog.y + 0.5; at.task = undefined; // den som betjänar har hämtat maten
+    const fore = { byn: SIM.ownsId(s, SIM.BYN, fin), dod: SIM.ownsId(s, dod.id, fin), budget: SIM.ownsId(s, budget, fin), kyrka: SIM.ownsId(s, kyrka, fin) };
+    let kopt = false;
+    if (e) { (f.ko ??= []).push({ p: kund.id, v: e.v, k: e.k, n: e.n, t: s.now }); kopt = SIM.iHelaForradet(() => SIM.kopVid(s, f, kund, f.ko![0], at)); }
+    const efter = { byn: SIM.ownsId(s, SIM.BYN, fin), dod: SIM.ownsId(s, dod.id, fin), budget: SIM.ownsId(s, budget, fin), kyrka: SIM.ownsId(s, kyrka, fin) };
+    return [
+      [`byns del räknar bort den dödas, kyrkans och budgetens mat (${del} av ${SIM.amountOf(s, fin) + (kopt ? 1 : 0)})`, del === 3],
+      [`det byn äger är byns del (${ager})`, ager === 3],
+      [`byns företag har bara det byn äger att sälja (${over})`, over <= 3],
+      [`en kund vill köpa en måltid av byns servering (${e ? `${e.k} för ${e.pris}` : 'ingen'})`, !!e],
+      [`måltiden såldes ur byns förråd (byn ${fore.byn} → ${efter.byn}, den döda ${fore.dod} → ${efter.dod}, kyrkan ${fore.kyrka} → ${efter.kyrka}, budgeten ${fore.budget} → ${efter.budget}; det den döda hade blir byns när högen rörs)`, kopt && efter.byn === fore.byn - 1 + fore.dod - efter.dod && efter.kyrka === fore.kyrka && efter.budget === fore.budget],
+    ];
+  },
+};
