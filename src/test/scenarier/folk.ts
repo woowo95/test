@@ -1074,6 +1074,9 @@ SCENARIER.titel = {
 
 SCENARIER.blockera = {
   lang: true,
+  // den som står i öppningen har farten 0 och kan inte kliva tillbaka in i den: utan knuffen och det tunga slaget som trycker
+  // tillbaka (steg 15.1.68, som scenariot knuffbak prövar) står hen kvar där scenariot ställt hen
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,strid.knuffBak=0,strid.vacklaBak=0' },
   text: 'Fiender blockerar vägen (steg 3.7.20): i striden går man inte närmare än STRID.kropp en fiende som står, utan runt hen, och inte genom väggar. Den som står i en dörröppning stänger den; när hen fallit går de andra igenom öppningen. Vänner och de som ligger går man igenom',
   kor: () => {
     const m = (id: number, sida: 0 | 1, vapen: SIM.Vapen, x: number, y: number, fart = 1) => ({ id, namn: `K${id}`, sida, st: { styrka: 10, uthallighet: 10, mod: 14, smidighet: 10, skicklighet: 10 }, vapen, klader: [] as string[], fart, x, y });
