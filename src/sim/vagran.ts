@@ -14,7 +14,9 @@ import { flockKraft, flockStorlek, BYANFALL, radUtrustning, radVarde } from './r
 import { VarldRad } from './radtal';
 import { radDoda } from './rad';
 import { radTar } from './priser';
-import { dagbok, dorPaVagen, GOMMAKROK, resenarer, saljbar, Sallskap, tappa, VAGHANDELSER } from './resa';
+import { folkPaVagen, dagbok, dorPaVagen, FARDVAG, GOMMAKROK, resenarer, saljbar, Sallskap, tappa, VAGHANDELSER } from './resa';
+import { radNr } from './radtal';
+import { varldHandelse } from './varldkronika';
 import { FOOD } from './saker';
 import { grundvarde } from './varde';
 import { varldMark } from './varlden';
@@ -70,16 +72,17 @@ export const djarv = (s: State, sl: Sallskap) => { const p = ledare(s, sl); retu
 // chansen att sällskapet vinner mot fienden: styrkan i kvadrat, som anfallen mellan byarna; fiende = fiendens styrka (flockKraft),
 // och sällskapets är de som kan gå med sina stridsvärden (steg 15.1.152)
 function vinst(s: State, sl: Sallskap, fiende: number) {
+  if (sl.fardAv) { const r = s.varld && radNr(s.varld, sl.by), ka = r ? flockKraft(sl.fardAv.n, radVarde(r)) : 0; return ka * ka / (ka * ka + fiende * fiende); } // en färd: dess folk med byns utrustning, som byarnas anfall (steg 15.1.87)
   const folk = resenarer(s, sl).filter(p => kanGa(p));
   if (!folk.length) return 0;
   const ka = flockKraft(folk.length, folk.reduce((a, p) => a + stridsvarde(s, p), 0) / folk.length);
   return ka * ka / (ka * ka + fiende * fiende);
 }
-const flyChans = (s: State, sl: Sallskap) => resenarer(s, sl).some(p => !kanGa(p)) ? 0 : VAGRAN.fly * (sl.djur.length || sl.fordon.length ? VAGRAN.flyDjur : 1);
+const flyChans = (s: State, sl: Sallskap) => !sl.fardAv && resenarer(s, sl).some(p => !kanGa(p)) ? 0 : VAGRAN.fly * (sl.djur.length || sl.fordon.length ? VAGRAN.flyDjur : 1);
 export type VagVal = 'betala' | 'fly' | 'slass';
 // det ledaren väntar sig att förlora med varje val (grundvärde)
 export function vagValen(s: State, sl: Sallskap, fiende: number, krav: number): Record<VagVal, number> {
-  const d = djarv(s, sl), n = resenarer(s, sl).length, p = vinst(s, sl, fiende);
+  const d = djarv(s, sl), n = folkPaVagen(s, sl), p = vinst(s, sl, fiende);
   const slass = (1 - p) * (packVarde(sl) + VAGRAN.sarVarde * n) * Math.max(0.2, 1 - VAGRAN.modVikt * d);
   const pf = flyChans(s, sl);
   const fly = (VAGRAN.flyTim * VAGRAN.timVarde + (1 - pf) * slass) * Math.max(0.2, 1 + VAGRAN.modVikt * d);
@@ -100,8 +103,10 @@ export const lista = (t: [string, number][]) => och(t.map(([k, n]) => { const [a
 
 // striden på vägen: sällskapet (sida 0) mot fienderna (sida 1); svarar med vinnaren och hur många fiender som dog
 export function vagStrid(s: State, sl: Sallskap, fiender: Uppstallning['kampar'], slag: string, t: number): { vann: boolean; doda: number } {
-  const folk = resenarer(s, sl).filter(p => kanGa(p));
-  const kampar = [...folk.map((p, i) => personKampe(s, p, i + 1, 0, 4, 3 + i)), ...fiender.map((k, j) => ({ ...k, id: 1000 + j, x: 16, y: 3 + j }))];
+  const folk = resenarer(s, sl).filter(p => kanGa(p)), r = sl.fardAv && s.varld ? radNr(s.varld, sl.by) : undefined;
+  // en färd från en by i världen: dess folk med byns utrustning, som rövarna med lägrets (steg 15.1.87)
+  const fardfolk = sl.fardAv && r ? Array.from({ length: sl.fardAv.n }, (_, i) => ({ ...rovarKampe(r), namn: 'Färdfolk', gast: undefined, sida: 0 as const, id: i + 1, x: 4, y: 3 + i })) : [];
+  const kampar = [...folk.map((p, i) => personKampe(s, p, i + 1, 0, 4, 3 + i)), ...fardfolk, ...fiender.map((k, j) => ({ ...k, id: 1000 + j, x: 16, y: 3 + j }))];
   const st = nyStrid({ avsikt: 'skada', w: 20, h: Math.max(10, kampar.length + 4), kampar }, Math.floor(rnd(s, 'resa') * 2 ** 31));
   const person = (k: Kampe): Person | undefined => k.pid !== undefined ? folk.find(p => p.id === k.pid) : undefined;
   const sl0 = STRIDSLAG[slag];
@@ -121,6 +126,7 @@ export function vagStrid(s: State, sl: Sallskap, fiender: Uppstallning['kampar']
   stridTillSlut(st, v);
   count(s, 'resa strid');
   const doda = st.kampar.filter(k => k.sida === 1 && k.lage === 'dod').length;
+  if (sl.fardAv) { const vara = st.kampar.filter(k => k.sida === 0 && k.lage === 'dod').length; if (vara) FARDVAG.dor?.(s, sl, vara, (sl0?.orsak ?? 'drap') as Parameters<typeof skada>[5], t); }
   return { vann: st.slut?.vinnare === 0, doda };
 }
 // en rövare ur lägret L som kämpe (rövarnas kropp ur ROVARE, vapnet efter lägrets utrustning)
@@ -138,13 +144,14 @@ VAGHANDELSER.ran = {
   risk: (s, sl) => lagerNara(s, sl).reduce((a, x) => a + x[1], 0),
   gor: (s, sl, t) => {
     const nara = lagerNara(s, sl);
-    if (!nara.length || !resenarer(s, sl).length) return;
+    if (!nara.length || !folkPaVagen(s, sl)) return;
     let x = rnd(s, 'resa') * nara.reduce((a, q) => a + q[1], 0), L = nara[0][0];
     for (const [r, f] of nara) { x -= f; if (x <= 0) { L = r; break; } }
     const n = Math.min(L.tal.folk, Math.max(BYANFALL.minst, flockStorlek(L)));
     if (n <= 0) return;
     const krav = Math.min(packVarde(sl), n * VAGRAN.krav), val = basta(vagValen(s, sl, flockKraft(n, radVarde(L)), krav));
     count(s, 'resa rån'); count(s, `resa rån ${val}`);
+    if (sl.fardAv && s.varld) varldHandelse(s.varld, 'fardRan', t, { by: sl.by, mot: L.nr }); // världens krönika (steg 15.1.87)
     const ge = (tog: [string, number][]) => { for (const [k, m] of tog) radTar(L, k, m); VAKTKROK.ranad(s, sl, L, t); VAKTKROK.forlorat(s, sl, L, tog); }; // bytet går till lägret, och det värdefulla vaktas där (steg 11.13.27)
     if (val === 'betala') {
       const tog = taUrPack(sl, krav); ge(tog);
@@ -173,7 +180,7 @@ VAGHANDELSER.rovdjur = {
   namn: 'Rovdjur', dygn: VAGRAN.varg,
   risk: (s, sl) => { const vl = s.varld; return (vl && sl.ruta !== undefined && ledKlass(vl, sl.ruta) === 'obanad' ? VAGRAN.vargObanad : 1) * (iIstiden(ageIndex(s)) ? VAGRAN.vargIstid : 1); },
   gor: (s, sl, t) => {
-    if (!resenarer(s, sl).length) return;
+    if (!folkPaVagen(s, sl)) return;
     const n = Math.round(VAGRAN.vargar[0] + rnd(s, 'resa') * (VAGRAN.vargar[1] - VAGRAN.vargar[0]));
     const mat = Object.keys(sl.pack).filter(k => FOOD.includes(k)).reduce((a, k) => a + Math.floor(sl.pack[k] ?? 0), 0);
     const krav = n * VAGRAN.vargMat, val = basta({ ...vagValen(s, sl, flockKraft(n, vargVarde()), krav * 2), ...(mat < krav ? { betala: Infinity } : {}) });

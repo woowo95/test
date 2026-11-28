@@ -57,7 +57,7 @@ import { SLAKTAD } from './boskap';
 import { handelsPris } from './handel';
 import { notis } from './notiser';
 import { ARMAR, BEN, FOTTER, HANDER, HALSA, VARD, halsaSteg, skada, vardGor, vardKalla, vardKan, type Kroppsdel, type SkadaTyp } from './halsa';
-import { SJUK_DOD, insjukna, sjukSteg, type SjukId } from './sjukdom';
+import { SJUKDOMAR, SJUK_DOD, insjukna, sjukSteg, type SjukId } from './sjukdom';
 import { DODSORSAKER, die, type Dodsorsak } from './liv';
 import { GRODOR, rutorAv } from './odling';
 import { TORKA } from './torka';
@@ -240,6 +240,7 @@ export interface Sallskap {
   nere?: number; silverArb?: number; // dygnen nere i gruvan, valda i packskedet, och arbetet mot nästa silver (steg 11.10.1)
   drag?: { g: number; d: number; p: number; ting?: Ting }; // vagnen eller släden (steg 12.1.10): tinget, dragdjuret och den som kör; tinget självt medan det är ute ur byn
   matt?: import('./resstat').ResMatt; // det npm run resor mäter: när sällskapet gav sig av, timmarna utan mat och vatten och de som skadats (steg 15.1.84)
+  fardAv?: { id: number; n: number }; // världens färd som går som ett sällskap genom vägens händelser, och hur många som går (steg 15.1.87, fardSom i fardresa.ts)
   gaster?: [number, number][]; vacktMat?: [string, number][]; // resenärerna som gäster i den väckta byn (personens id och gästens), och maten de tog med sig dit (steg 11.13.10, vacktgast.ts)
 }
 export type BurenSatt = 'vagn' | 'djur' | 'bar';
@@ -781,11 +782,14 @@ function kroppBarResan(s: State, sl: Sallskap, b: ResBehov, t: number, dt: numbe
 // Hur länge sällskapet stannar nere väljs i packskedet: den tid (i hela timmar, högst SILVER.maxDygn dygn) som ger mest silver
 // per dygn borta. Takten faller ju längre de är nere (kroppen tröttnar, silverMellan i gruva.ts), så en lång väg dit gör en
 // längre tid nere värd det, där resan dit och hem räknas med och maten för hela tiden tar plats som silvret annars fått. n resenärer,
-// rum = bärförmågan som blir över när vattnet och fodret är packade, vag = dygnen dit, marg = ledarens marginal
-export function silverPlan(n: number, rum: number, vag: number, marg: number, gruva = 'silvergruva'): { nere: number; silver: number } | undefined {
+// rum = bärförmågan som blir över när vattnet och fodret är packade, vag = dygnen dit, marg = ledarens marginal. Saknar gruvan
+// vatten (slut = dygnen från det sista vattnet dit) räcker tiden nere bara så länge som klunkarna i säckarna (vatten): sträckan
+// dit och tillbaka och tiden nere dricks ur dem, som på resan (packbehov)
+export function silverPlan(n: number, rum: number, vag: number, marg: number, gruva = 'silvergruva', slut = 0, vatten = Infinity): { nere: number; silver: number } | undefined {
   const g = GRUVSAK[gruva] ?? GRUVSAK.silvergruva, vs = viktOf(g.sak); // järngruvan ger malm (steg 12.2.13)
   let bast: { nere: number; silver: number; v: number } | undefined;
   for (let h = 1; h <= SILVER.maxDygn * 24; h++) {
+    if (slut > 0 && n * (2 * slut + h / 24) * drickPerResenar() > vatten + 1e-9) break; // vattnet räcker inte längre nere
     const dygn = 2 * vag + h / 24, mat = Math.ceil(n * matPerResenar() * (h / 24 + vag) * marg - 1e-9); // maten för vägen dit är uppäten framme
     const silver = Math.min(Math.floor(n * g.mellan(0, h) + 1e-9), Math.floor((rum - mat) / vs + 1e-9));
     if (silver <= 0) continue;
@@ -801,8 +805,10 @@ export function gruvPlanFor(s: State, sl: Sallskap) {
   const pb = packbehov(s, sl);
   sl.nere = nere;
   if (!pb) return undefined;
-  const led = s.people.find(p => p.id === sl.ledare), vag = pb.dygn / 2;
-  return silverPlan(sl.medl.length, pb.bar - pb.vatten * viktOf('vattensack') - pb.foder * viktOf('torrgras') - pb.talt * viktOf('talt'), vag, led ? marginal(led) : RESA.margMitt, gruvaFor(s, sl));
+  const led = s.people.find(p => p.id === sl.ledare), vag = pb.dygn / 2, n = sl.medl.length;
+  const v = varldMark(s)!, hem = slHem(s, sl)!, mal = slMal(s, sl)!, vd = vagDygn(s, hem.y * v.w + hem.x, mal.y * v.w + mal.x, fardsatt(sl));
+  const sackar = Math.min(n * RESA.sackar, Math.floor(amountOf(s, 'vattensack') + 1e-9)); // de säckar byn har, högst två var
+  return silverPlan(n, pb.bar - sackar * viktOf('vattensack') - pb.foder * viktOf('torrgras') - pb.talt * viktOf('talt'), vag, led ? marginal(led) : RESA.margMitt, gruvaFor(s, sl), vd?.slut ?? 0, sackar * klunkarPerSack());
 }
 // sällskapets bärförmåga nu: resenärerna och djuren
 const barNu = (s: State, sl: Sallskap) => resenarer(s, sl).reduce((a, p) => a + barResenar(s, p), 0) + barDjurAlla(s, sl);
@@ -1514,6 +1520,7 @@ export type DagbokId = keyof typeof DAGBOK;
 export function dagbok(s: State, sl: Sallskap, slag: DagbokId, text: string, t = s.now) {
   horText('dagbok', text);
   sl.dagbok.push([t, text, slag]);
+  if (sl.fardAv) return; // en färd från en annan by: ingen notis hemma (döden och rånet står i världens krönika, steg 15.1.87)
   if ((DAGBOK[slag] as DagbokDef).stor) notis(s, 'resa', `${RESMAL[sl.skal].namn}, ${malNamn(s, sl)}: ${text}`, sl.medl, undefined, { resa: sl.id });
 }
 const malNamn = (s: State, sl: Sallskap) => s.varld?.platser?.find(p => p.nr === sl.mal)?.namn ?? '';
@@ -1621,8 +1628,14 @@ export function redogorelseAv(s: State, id: number): Redogorelse | undefined {
 // som ändrar den (den bästa resenärens, fardighet; ett fynd blir vanligare, det andra ovanligare) och utfallet (gor). Risken är
 // en chans per tid: under en bit på dt sekunder sker händelsen med chansen 1 − e^(−risk·dt/dygn). Händelserna sker på vägen
 // (inte framme) och skrivs i dagboken. Här finns de ofarliga raderna; sjukdom, olycka, rån och rovdjur kommer senare.
-export interface VagHandelseDef { namn: string; dygn: number; fardighet?: Skill; okar?: true; risk?: (s: State, sl: Sallskap, t: number) => number; gor: (s: State, sl: Sallskap, t: number) => void }
-const basta = (s: State, sl: Sallskap, k: Skill) => Math.max(0, ...resenarer(s, sl).map(p => p.skill[k] ?? 0));
+export interface VagHandelseDef { namn: string; dygn: number; fardighet?: Skill; okar?: true; risk?: (s: State, sl: Sallskap, t: number) => number; gor: (s: State, sl: Sallskap, t: number) => void; fard?: (s: State, sl: Sallskap, t: number) => void } // fard: utfallet för en färd från en by i världen, i hela personer, när det skiljer sig (steg 15.1.87)
+// en färd från en by i världen som går genom vägens händelser (steg 15.1.87): fardresa.ts sätter krokarna (den importerar resa.ts)
+export const FARDVAG: { dor?: (s: State, sl: Sallskap, n: number, orsak: Dodsorsak, t: number) => void; skadad?: (s: State, sl: Sallskap, n: number) => void } = {};
+// så många som går: färdens folk, eller sällskapets levande resenärer
+export const folkPaVagen = (s: State, sl: Sallskap) => sl.fardAv ? sl.fardAv.n : resenarer(s, sl).length;
+// färdfolkets färdigheter är i mitten, som deras samlare (steg 15.1.86)
+const FARD_FARDIGHET = 10;
+const basta = (s: State, sl: Sallskap, k: Skill) => sl.fardAv ? FARD_FARDIGHET : Math.max(0, ...resenarer(s, sl).map(p => p.skill[k] ?? 0));
 export const VAGHANDELSER: Record<string, VagHandelseDef> = {
   vilse: {
     namn: 'Gå vilse', dygn: 0.06, fardighet: 'jakt', // på obanad mark; på stig och bättre RESA.vilseStig
@@ -1633,7 +1646,7 @@ export const VAGHANDELSER: Record<string, VagHandelseDef> = {
     namn: 'Oväder', dygn: 0.05,
     risk: (s, _sl, t) => 1 + RESA.ovaderNb * vaderNu(s, t).nb,
     gor: (s, sl, t) => {
-      const n = resenarer(s, sl).length, utan = n ? Math.max(0, n - RESA.talt * Math.floor(sl.pack.talt ?? 0)) / n : 0;
+      const n = folkPaVagen(s, sl), utan = n ? Math.max(0, n - RESA.talt * Math.floor(sl.pack.talt ?? 0)) / n : 0;
       sl.forlorat = (sl.forlorat ?? 0) + RESA.ovaderTim; const b = behovOf(sl); b.ork = clamp(b.ork - RESA.ovaderOrk * utan, 0, 1);
       dagbok(s, sl, 'ovader', `Ett oväder: väntade ut det i ${spelTid(RESA.ovaderTim * HOUR)}${utan > 0 ? ' utan tak' : ' i tälten'}.`, t);
     },
@@ -1663,6 +1676,13 @@ export const VAGHANDELSER: Record<string, VagHandelseDef> = {
       count(s, 'resa sjuk');
       dagbok(s, sl, 'skada', `${p.name} blev sjuk: ${k === 'forkylning' ? 'förkyld i kylan' : 'ont i magen av maten och vattnet'}.`, t);
     },
+    // en av färdfolket blir sjuk och dör med sjukdomens dödlighet för en vuxen (färdfolket är vuxna), i hela personer
+    fard: (s, sl, t) => {
+      const k: SjukId = temperature(s, t) < RESA.koldFran ? 'forkylning' : 'magsjuka';
+      count(s, 'resa sjuk');
+      dagbok(s, sl, 'skada', `En av dem blev sjuk: ${k === 'forkylning' ? 'förkyld i kylan' : 'ont i magen av maten och vattnet'}.`, t);
+      if (rnd(s, 'resa') < SJUKDOMAR[k].dod.vuxen) FARDVAG.dor?.(s, sl, 1, SJUK_DOD[k], t);
+    },
   },
   olycka: {
     namn: 'Olycka', dygn: 0.02,
@@ -1673,6 +1693,8 @@ export const VAGHANDELSER: Record<string, VagHandelseDef> = {
       const p = folk[Math.floor(rnd(s, 'resa') * folk.length)]!;
       olycka(s, sl, p, t, [...BEN, ...FOTTER, ...ARMAR], 'på resan', 'resa olycka', `${p.name} föll och skadade sig.`);
     },
+    // en av färdfolket skadar sig: armarna och benen, som för sällskapet, där en olycka inte dödar
+    fard: (s, sl, t) => { count(s, 'resa olycka'); FARDVAG.skadad?.(s, sl, 1); dagbok(s, sl, 'skada', 'En av dem föll och skadade sig.', t); },
   },
   // trasigt hjul (steg 12.1.144): bara för sällskap med ett fordon på hjul; den som kan hantverk bäst sänker risken och lagar fortare
   hjul: {
@@ -1736,7 +1758,7 @@ export const VAGHANDELSER: Record<string, VagHandelseDef> = {
     namn: 'Fynd av mat', dygn: 0.08, fardighet: 'samla', okar: true,
     risk: (s, _sl, t) => temperature(s, t) >= RESA.fyndVarm ? 1 : RESA.fyndKall,
     gor: (s, sl, t) => {
-      const m = Math.max(1, Math.floor(resenarer(s, sl).length * RESA.fyndMat));
+      const m = Math.max(1, Math.floor(folkPaVagen(s, sl) * RESA.fyndMat));
       sl.pack.bar = (sl.pack.bar ?? 0) + m; count(s, 'resa hittade mat', m);
       dagbok(s, sl, 'mat', `Hittade ${m} ${m === 1 ? 'portion' : 'portioner'} bär längs vägen.`, t);
     },
@@ -1783,7 +1805,7 @@ export function vagRisk(s: State, sl: Sallskap, id: string, t = s.now) {
 export function vagHandelser(s: State, sl: Sallskap, t: number, dt: number) {
   for (const id of vagHandelseIds()) {
     const p = 1 - Math.exp(-vagRisk(s, sl, id, t) * dt / DAY);
-    if (rnd(s, 'resa') < p) { VAGHANDELSER[id]!.gor(s, sl, t); count(s, `resa ${VAGHANDELSER[id]!.namn.toLowerCase()}`); resHandelse(s, sl, id); }
+    if (rnd(s, 'resa') < p) { const h = VAGHANDELSER[id]!; (sl.fardAv && h.fard ? h.fard : h.gor)(s, sl, t); count(s, `resa ${VAGHANDELSER[id]!.namn.toLowerCase()}`); resHandelse(s, sl, id); }
   }
 }
 

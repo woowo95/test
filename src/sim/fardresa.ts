@@ -20,7 +20,7 @@ import { viktOf } from './saker';
 import { enhet } from './radanfall';
 import { SLAKTAD } from './boskap';
 import { tamArt } from './tamdjur';
-import { behovSteg, fullaKlunkar, harNatt, letaFartAv, letaTaktVid, margAv, matPerResenar, MATSLUT, MATSLUT_IDS, packVatten, RESA, vagDygn, type MatLage, type Sallskap } from './resa';
+import { behovSteg, FARDVAG, fullaKlunkar, vagHandelser, harNatt, letaFartAv, letaTaktVid, margAv, matPerResenar, MATSLUT, MATSLUT_IDS, packVatten, RESA, vagDygn, type MatLage, type Sallskap } from './resa';
 import { varldMark, Varlden } from './varlden';
 import { byPlats, varldPlatsNr } from './landmarken';
 import { VARLD } from './varldmark';
@@ -31,6 +31,8 @@ import { isLight } from './tid';
 import { fardSlut, resStat } from './resstat';
 import { clamp } from './slump';
 import { DAY, HOUR, State } from './typer';
+import { tal } from './ord';
+import { varldHandelse } from './varldkronika';
 
 const platsFor = (vl: Varlden, nr: number) => byPlats(vl, nr) ?? varldPlatsNr(vl, nr);
 // färdens ledare: den första i färdfolket, och hens egenskaper (1–20)
@@ -71,10 +73,50 @@ export function fardBehov(s: State, vl: Varlden, f: RadFard, t: number, dt: numb
   if (!f.pack) return true;
   const n = fardAntal(f, BYHANDLING.barare);
   if (n <= 0) return true;
-  behovSteg(s, f as RadFard & { pack: Record<string, number> }, { n, ruta: f.vg?.ruta, framme, djur: djurAv(f), matslut: () => fardMatslut(s, vl, f, t) }, t, dt);
-  fardLeta(s, f, n, t, dt);
-  return fardKropp(s, vl, f, n, t, dt);
+  if (!framme && f.vg) { // vägens händelser som för sällskapet (steg 15.1.87); de kan döda hela färden
+    vagHandelser(s, fardSom(f), t, dt);
+    if (!vl.farder?.includes(f) || fardAntal(f, BYHANDLING.barare) <= 0) return false;
+  }
+  behovSteg(s, f as RadFard & { pack: Record<string, number> }, { n: fardAntal(f, BYHANDLING.barare), ruta: f.vg?.ruta, framme, djur: djurAv(f), matslut: () => fardMatslut(s, vl, f, t) }, t, dt);
+  fardLeta(s, f, fardAntal(f, BYHANDLING.barare), t, dt);
+  return fardKropp(s, vl, f, fardAntal(f, BYHANDLING.barare), t, dt);
 }
+// ---------- vägens händelser för världens färder (steg 15.1.87, Flera samhällen: Vägens händelser i tal) ----------
+// Färden går genom samma register som huvudbyns sällskap (VAGHANDELSER, rånen och vargarna i vagran.ts) som ett sällskap utan
+// personer: packningen, behoven, rutan och vägen är färdens, färdfolkets färdigheter är i mitten och de är så många som går.
+// Raderna som rör en person (sjukdom, olycka, striden) räknas i hela personer med samma tal; de som dör dras ur byns folk och
+// färdens namn. Det som händer skrivs i färdens dagbok, och döden och rånet i världens krönika.
+const somMinne = new WeakMap<RadFard, Sallskap>();
+export function fardSom(f: RadFard): Sallskap {
+  let sl = somMinne.get(f);
+  if (!sl) {
+    const g = f.vg!;
+    sl = { id: -f.id, by: f.fran, ledare: -1, medl: [], djur: [], fordon: [], mal: f.till, skal: `by:${fardSort(f)}` as Sallskap['skal'], skede: 'ute', borjan: f.t0, t: f.t0, pack: f.pack ??= {}, insatser: [], dagbok: f.dagbok ??= [], fardAv: { id: f.id, n: 0 } };
+    Object.defineProperty(sl, 'forlorat', { get: () => g.forlorat, set: (x: number) => { g.forlorat = x; }, enumerable: true }); // det som går förlorat är färdens gång
+    somMinne.set(f, sl);
+  }
+  sl.pack = f.pack ??= {}; sl.behov = f.behov; sl.ruta = f.vg?.ruta; sl.vag = f.vg?.vag; sl.pos = f.vg?.pos; sl.skede = f.gar === 'hem' ? 'hemat' : 'ute';
+  sl.fardAv!.n = fardAntal(f, BYHANDLING.barare); sl.fordon = f.last?.vagnar ? ['vagn'] : []; sl.djur = djurAv(f) ? [-1] : [];
+  return sl;
+}
+const fardAvSom = (vl: Varlden, sl: Sallskap) => (vl.farder ?? []).find(x => x.id === sl.fardAv?.id);
+// n av färdfolket dör: byn förlorar dem, färden deras namn, och världens krönika minns det; dör alla är färden slut
+function fardDor(s: State, vl: Varlden, f: RadFard, n: number, orsak: string, t: number) {
+  n = Math.min(n, fardAntal(f, BYHANDLING.barare));
+  if (n <= 0) return;
+  const r = radNr(vl, f.fran);
+  if (r) radDoda(r, n);
+  fardDoda(vl, f, n, t);
+  if (f.flytt) f.flytt -= n; else if (f.anfall) f.anfall -= n;
+  count(s, `fard dog ${orsak}`, n); resStat(s, `by:${fardSort(f)}`, 'döda', n);
+  (f.dagbok ??= []).push([t, n === 1 ? 'En av dem dog på vägen.' : `${tal(n)} av dem dog på vägen.`, 'dod']);
+  varldHandelse(vl, 'fardDod', t, { by: f.fran });
+  if (fardAntal(f, BYHANDLING.barare) > 0 && (f.folk?.length ?? 1) > 0) return;
+  vl.farder = (vl.farder ?? []).filter(x => x !== f); f.gar = undefined;
+  fardSlut(s, fardSort(f), (t - f.t0) / DAY);
+}
+FARDVAG.dor = (s, sl, n, orsak, t) => { const vl = s.varld, f = vl && fardAvSom(vl, sl); if (vl && f) fardDor(s, vl, f, n, orsak, t); };
+FARDVAG.skadad = (s, sl, n) => resStat(s, sl.skal, 'skadade', n);
 // kroppen bär resan (steg 15.1.89) för hela färden: svält och törst tar hälsa som i byn, och läker med mat och vatten nog
 function fardKropp(s: State, vl: Varlden, f: RadFard, n: number, t: number, dt: number) {
   const b = f.behov!, h = dt / HOUR;
@@ -83,12 +125,8 @@ function fardKropp(s: State, vl: Varlden, f: RadFard, n: number, t: number, dt: 
   else if (lage) f.halsa = (f.halsa ?? 1) - h / (lage === 'svalt' ? KROPP.svaltTim : TORST.tomTim);
   if ((f.halsa ?? 1) > 0) return true;
   // alla dör på vägen, i hela personer
-  const r = radNr(vl, f.fran);
-  if (r) radDoda(r, n);
-  fardDoda(vl, f, n, t);
-  count(s, lage === 'torst' ? 'fard törstade ihjäl' : 'fard svalt ihjäl', n); resStat(s, `by:${fardSort(f)}`, 'döda', n);
-  vl.farder = (vl.farder ?? []).filter(x => x !== f); f.gar = undefined;
-  fardSlut(s, fardSort(f), (t - f.t0) / DAY);
+  count(s, lage === 'torst' ? 'fard törstade ihjäl' : 'fard svalt ihjäl', n);
+  fardDor(s, vl, f, n, lage!, t);
   return false;
 }
 // när maten tagit slut letar färden hela dagen, som sällskapet (steg 15.1.90), och den del av dagen den letar går i halv fart

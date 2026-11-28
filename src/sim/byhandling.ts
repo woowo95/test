@@ -30,7 +30,7 @@ import { varldMark } from './varlden';
 import type { VarldPlats } from './landmarken';
 import { radKanner } from './ort';
 import { silverKvar } from './gruva';
-import { gruvPlanFor, RESA, sallskapNu, silverPlan, tomGruva } from './resa';
+import { gruvPlanFor, klunkarPerSack, RESA, sallskapNu, silverPlan, tomGruva, vagDygn } from './resa';
 import { anfallUtfall, BYANFALL, enhet, flockStorlek, forsvarare, lockVarde, radKraft, vinstChans } from './radanfall';
 import { varldHandelse } from './varldkronika';
 import { flockKrok } from './rovare';
@@ -218,7 +218,10 @@ function gruvAffar(c: ByCtx): { silver: number; nere: number; dygn: number } | u
   if (!q || r.nr === vl.huvud || r.tal.folk < BYHANDLING.barare * 2 || vl.farder?.some(f => f.fran === r.nr && f.gruva)) return undefined;
   const dygn = gruvRestid(s, vl, r, q);
   if (dygn === undefined) return undefined;
-  const plan = silverPlan(BYHANDLING.barare, BYHANDLING.barare * RESA.hander, dygn, RESA.margMitt);
+  // vattnet (steg 15.1.86): saknar gruvan vatten räcker tiden nere så länge som säckarna, högst två per bärare, när byn kan sy dem
+  const v = varldMark(s), h = byPlats(vl, r.nr), vd = v && h ? vagDygn(s, h.y * v.w + h.x, q.y * v.w + q.x) : undefined;
+  const sackar = r.tek.includes('vattensack') ? BYHANDLING.barare * RESA.sackar : 0;
+  const plan = silverPlan(BYHANDLING.barare, BYHANDLING.barare * RESA.hander - sackar * viktOf('vattensack'), dygn, RESA.margMitt, 'silvergruva', vd?.slut ?? 0, sackar * klunkarPerSack());
   const kvar = Math.floor(silverKvar(q) - gruvVantat(s, vl, q) + 1e-9), silver = Math.min(plan?.silver ?? 0, kvar);
   return plan && silver >= 1 ? { silver, nere: plan.nere, dygn } : undefined;
 }
@@ -324,7 +327,7 @@ export function byarnasHandlingar(s: State, vl: Varlden, n: number) {
 // mottagaren betalar med silver och, när silvret inte räcker, med det den själv har mest överflöd av. Betalningen bärs hem och
 // läggs i byns förråd när färden kommer hem. Färden trampar vägen åt båda håll och syns på världskartan. Huvudbyn som mål kommer
 // med handlaren (11.6.8).
-export interface RadFard { gruva?: true; vant?: number; nere?: number; /* gruvfärden (steg 15.1.28): till är gruvans plats, vant det väntade silvret och nere dygnen i gruvan */ uppdrag?: number; /* uppdraget färden går mot (steg 11.8.9) */ besked?: BeskedTon; /* sändebudets besked (steg 11.6.23) */ gava?: true; anfall?: number; byte?: Partial<Record<VarugruppId, number>>; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[]; folk?: string[] /* namnen på dem som går (steg B.39, fardfolk.ts) */; flytt?: number /* de som flyttar (steg 15.1.85) */; gar?: 'ut' | 'hem' /* färden går dit eller hem (steg 15.1.85) */; vg?: Gang /* gången längs vägen, som huvudbyns sällskap (steg 15.1.85) */; pack?: Record<string, number>; behov?: ResBehov; matNasta?: number; halsa?: number; letaHel?: number; letaArb?: number /* packningen, behoven, maten som tar slut, hälsan och letandet (steg 15.1.86, fardresa.ts) */; } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
+export interface RadFard { gruva?: true; vant?: number; nere?: number; /* gruvfärden (steg 15.1.28): till är gruvans plats, vant det väntade silvret och nere dygnen i gruvan */ uppdrag?: number; /* uppdraget färden går mot (steg 11.8.9) */ besked?: BeskedTon; /* sändebudets besked (steg 11.6.23) */ gava?: true; anfall?: number; byte?: Partial<Record<VarugruppId, number>>; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[]; folk?: string[] /* namnen på dem som går (steg B.39, fardfolk.ts) */; flytt?: number /* de som flyttar (steg 15.1.85) */; gar?: 'ut' | 'hem' /* färden går dit eller hem (steg 15.1.85) */; vg?: Gang /* gången längs vägen, som huvudbyns sällskap (steg 15.1.85) */; pack?: Record<string, number>; behov?: ResBehov; matNasta?: number; halsa?: number; letaHel?: number; letaArb?: number /* packningen, behoven, maten som tar slut, hälsan och letandet (steg 15.1.86, fardresa.ts) */; dagbok?: [number, string, import('./resa').DagbokId?][] /* det som hänt på vägen (steg 15.1.87) */; } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
 // tonen i beskedet och dess poäng: det vänliga eller det ovänliga, det som lönar sig mest (huvudbyns stat och kyrka väljer
 // likadant, sandebud.ts)
 // fejden (steg 12.1.114): ju längre ner byn ser på grannen under beskedRel, desto mindre vill den vara vänlig (gåvan och det

@@ -62,3 +62,34 @@ SCENARIER.fardpack = {
     ];
   },
 };
+
+SCENARIER.fardhandelser = {
+  text: 'Steg 15.1.87: vägens händelser för alla resor. En färd från en by i världen går genom samma VAGHANDELSER som huvudbyns sällskap: oväder och att gå vilse kostar tid, sjukdom och olyckor räknas i hela personer, och rövare från ett läger nära vägen stoppar färden, som betalar, flyr eller slåss med byns utrustning. De som dör dras ur byns folk och färdens namn. Det som händer skrivs i färdens dagbok, och döden och rånet i världens krönika',
+  kor: () => {
+    const x = radFard(testBy(3))!, { s, vl, f } = x, sl = SIM.fardSom(f);
+    // vägens händelser under tio dygn i spelet, var tionde minut
+    const st0 = { ...s.stat ?? {} };
+    for (let m = 0; m < 10 * 24 * 6; m++) SIM.vagHandelser(s, sl, s.now + m * 10 * SIM.MIN, 10 * SIM.MIN);
+    const hande = Object.keys(s.stat ?? {}).filter(k => k.startsWith('resor by:') && k.includes(' h ') && (s.stat![k]! - (st0[k] ?? 0)) > 0);
+    const dagbok = (f.dagbok ?? []).length;
+    // ett rövarläger vid vägen: rövarna stoppar färden tills den har slagits, och de som dör är hela personer ur byn
+    const r = vl.rader!.find(q => SIM.lever(vl, q) && q.sort === 'by' && q.nr !== f.fran && SIM.byPlats(vl, q.nr)?.grannar?.length)!;
+    const L = SIM.nyttLager(s, vl, r, 30, s.now)!, lp = SIM.byPlats(vl, L.nr)!, w = SIM.varldMark(s)!.w;
+    f.vg!.ruta = lp.y * w + lp.x; f.pack = {}; const som = SIM.fardSom(f); // inget att betala med: de flyr eller slåss
+    const folk0 = x.r.tal.folk, namn0 = f.folk!.length, kr0 = vl.nastaHandelse ?? 0, st1 = { ...s.stat ?? {} };
+    let i = 0;
+    for (; i < 10; i++) SIM.VAGHANDELSER.ran!.gor(s, som, s.now); // inget att betala med: de betalar inget och får gå
+    // en strid mot rövarna, som när färden inte kan betala: färdfolket slåss med byns utrustning
+    let strider = 0, vann = 0;
+    for (let j = 0; j < 20 && vl.farder!.includes(f) && f.folk!.length === namn0; j++) { const u = SIM.vagStrid(s, som, Array.from({ length: 6 }, () => SIM.rovarKampe(L)), 'rovare', s.now); strider++; if (u.vann) vann++; }
+    if (f.folk!.length === namn0) SIM.FARDVAG.dor!(s, som, 2, 'drap', s.now); // föll ingen i striderna: två dör av såren
+    const doda = namn0 - (f.folk?.length ?? 0), kron = (vl.kronika ?? []).filter(h => h.nr > kr0).map(h => h.k), val = ['betala', 'fly', 'slass'].map(k => `${k} ${(s.stat?.[`resa rån ${k}`] ?? 0) - (st1[`resa rån ${k}`] ?? 0)}`).join(', ');
+    const ranText = (f.dagbok ?? []).some(([, , k]) => k === 'ran' || k === 'strid');
+    return [
+      [`färden råkade ut för vägens händelser på tio dygn (${hande.map(k => k.split(' h ')[1]).join(', ') || 'inga'}) och de står i dess dagbok (${dagbok})`, hande.length > 0 && dagbok > 0],
+      [`rövarna stoppade färden (${i} gånger: ${val}) och det står i dagboken`, ranText],
+      [`${strider} strider mot sex rövare (färden vann ${vann}); ${doda} av färdfolket dog, i hela personer ur byns folk (${folk0} → ${x.r.tal.folk}) och färdens namn`, doda > 0 && folk0 - x.r.tal.folk === doda && Number.isInteger(x.r.tal.folk)],
+      [`världens krönika minns rånet och döden (${[...new Set(kron)].join(', ')})`, kron.includes('fardRan') && kron.includes('fardDod')],
+    ];
+  },
+};
