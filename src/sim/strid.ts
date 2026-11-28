@@ -539,6 +539,7 @@ function fri(st: Strid, k: Kampe, x: number, y: number, fi: Kampe[], mx: number,
   for (const o of fi) { const d = Math.hypot(o.x - x, o.y - y); if (d < kropp && d < dist(k, o) - 1e-9) return false; } // bort från en som står för nära går alltid
   for (const o of st.kampar) { // en på samma sida som står, flyr eller ligger: man står inte i varandra (steg 9.2.78) och inte över en vän som fallit
     if (o === k || o.sida !== k.sida || !(iStrid(o) || o.lage === 'flykt' || o.lage === 'nere')) continue;
+    if (o.lage === 'nere' && k.raddar === o.id) continue; // den fallne vän hen går till för att lyfta upp eller dra undan går hen inte förbi (steg 9.5.18 och 9.5.20)
     // den som är närmast dit hen ska går först, tätt förbi den andra: annars stänger två vänner en smal öppning för varandra (steg B.19)
     const d = Math.hypot(o.x - x, o.y - y); if (d < (flyr || o.lage !== 'nere' && Math.hypot(mx - o.x, my - o.y) > egen ? kropp : STRID.van) && d < dist(k, o) - 1e-9) return false; // (förbi en vän som ligger går man inte tätt, utom på flykten)
   }
