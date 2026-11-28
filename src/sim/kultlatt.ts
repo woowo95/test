@@ -57,6 +57,8 @@ export const BYTA = balans('bytatro', {
 // en troende tvivlar n mer (steg 15.1.125): bönen som inte hjälpte, den man bett för som dog, motgången efter offret och de stora
 // livshändelserna. Den som inte tror tvivlar inte
 export function tvivla(p: Person, n: number) { if (p.tro !== undefined) p.tvivel = (p.tvivel ?? 0) + n; }
+// det ett nytt intryck gör med den som får det, utöver relationen (rykten.ts anropar, kyrka.ts sätter hycklaren, steg 15.1.127)
+export const intryckKrok: Partial<Record<import('./rykten').IntryckTyp, (s: State, p: Person, om: number) => void>> = {};
 // motgången som kommer strax efter ett offer (kult.ts sätter kroken, motgang.ts anropar den när en motgång börjar)
 export const svikKrok = { motgang: (_s: State) => {} };
 export const bytaChans = (p: Person, oppen: number) => ((p.tvivel ?? 0) * BYTA.tvivel + BYTA.bas) * (1 - (p.troStyrka ?? 0) / BYTA.styrka) * (1 - oppen / BYTA.oppen);

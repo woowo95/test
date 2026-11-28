@@ -156,3 +156,32 @@ SCENARIER.andearv = {
     ];
   },
 };
+
+SCENARIER.prastbrot = {
+  text: 'Steg 15.1.127: prästen som bryter ett bud. De troende som ser trons präst bryta ett bud tvivlar och kan minnas det, skalan Präst flyttas mot Var och en, och brottet blir ett rykte: den troende som hör det tvivlar också. Ett bud som en vanlig troende bryter drabbar bara hen själv',
+  kor: () => {
+    const { s, tr } = troBy(61), folk = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    const pr = folk[0]!, nara = folk.slice(1, 4), borta = folk[5]!;
+    tr.prast = pr.id; tr.bud = [{ id: 'ingetRus', t: s.now }];
+    for (const p of folk) { p.task = undefined; p.tvivel = undefined; }
+    for (const q of nara) { q.x = pr.x + 1; q.y = pr.y; }
+    borta.x = pr.x + 40; borta.y = pr.y + 40;
+    // en vanlig troende bryter budet först
+    SIM.budBrutet(s, nara[0]!, 'ingetRus');
+    const vanlig = folk.filter(p => p !== nara[0] && (p.tvivel ?? 0) > 0).length;
+    const prast0 = SIM.skalaV(tr, 'prast')!;
+    SIM.budBrutet(s, pr, 'ingetRus');
+    const sag = nara.filter(q => (q.tvivel ?? 0) >= 1).length, minns = nara.filter(q => q.upp?.some(u => u.k === 'prastBrot')).length, prast1 = SIM.skalaV(tr, 'prast')!;
+    const bortaFore = borta.tvivel ?? 0;
+    // den som såg det berättar för den som var borta
+    const e = nara[1]!.intryck!.find(x => x.k === 'hycklare' && x.om === pr.id)!;
+    SIM.beratta(s, nara[1]!, borta, e, SIM.getRel(s, nara[1]!, borta));
+    const hort = borta.tvivel ?? 0;
+    return [
+      [`när en vanlig troende bryter budet tvivlar ingen annan (${vanlig})`, vanlig === 0],
+      [`${sag} av ${nara.length} som såg prästen bryta budet tvivlar, och ${minns} minns det`, sag === nara.length],
+      [`skalan Präst flyttas mot Var och en (${prast0.toFixed(2)} → ${prast1.toFixed(2)})`, prast1 < prast0],
+      [`den som var långt borta såg inget (${bortaFore}), men tvivlar när hen hör om det (${hort})`, bortaFore === 0 && hort >= 1],
+    ];
+  },
+};

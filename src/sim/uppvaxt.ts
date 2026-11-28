@@ -132,6 +132,7 @@ export const UPPLEVELSER = {
   fester: { text: 'Växte upp med fester, sport och framträdanden', chans: 0.02, e: [{ karisma: 2 }, { karisma: 1, empati: 1 }], vem: 'barn', sed: { prat: 1, gemenskap: 1 } }, // vid varje framträdande, match och gästabud
   lasaBarn: { text: 'Lärde sig läsa som barn', chans: 0.5, e: [{ intelligens: 1, minne: 1 }, { nyfikenhet: 2 }], vem: 'barn', sed: { nyfikenhet: 1 } },
   smedjan: { text: 'Växte upp vid smedjan', chans: 0.004, e: [{ flit: 1 }, { flit: 1, uthallighet: 1 }], vem: 'barn', lar: 'hantverk', sed: { arbete: 1 } }, // en timme i taget nära den som smider (steg 13.1.7); smidet är hantverk
+  prastBrot: { text: 'Såg prästen {om} bryta mot ett bud', kort: 'Såg prästen bryta mot ett bud', chans: 0.5, e: [{ empati: -1 }, { nyfikenhet: 1 }], vem: 'bada', vuxenTal: true, ande: true }, // steg 15.1.127 (kyrka.ts)
   // följderna som drar en sed tillbaka (steg 13.9.3, foljder i SEDER): de kommer av det byn gör
   frosIhjal: { text: 'Såg {om} frysa ihjäl medan andra hade ved', kort: 'Såg någon frysa ihjäl medan andra hade ved', chans: 0.5, e: [{ empati: 1 }, { empati: 1, flit: 1 }], vem: 'bada', vuxenTal: true, sed: { gemenskap: 2 } },
   stupade: { text: 'Miste {om} i en strid', kort: 'Miste någon i en strid', chans: 0.5, e: [{ aggression: -1 }, { mod: -1 }, { empati: 1 }], vem: 'bada', vuxenTal: true, ande: true, sed: { krig: -2 } },
