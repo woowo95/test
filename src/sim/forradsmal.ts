@@ -165,8 +165,9 @@ export const MATERIALMAL = {
   lera: { min: () => 0 }, // leran till krukorna är det krukans projekt saknar (projektSaknar, steg 13.8.12)
   // steg 10.2.12: det som görs och tas av förrådet följer också förbrukningen; minst en (en att börja med, innan något använts)
   rep: { min: () => 0 }, // repet görs när ett projekt behöver det (steg 13.8.4)
-  // kolet (steg 13.8.6): ingen buffert, så mycket som projekten saknar och det ässjan och fyrfaten bränner (kolKrok, satt i smedja.ts och mobler.ts)
-  kol: { min: s => kolKrok.eldar(s) },
+  // kolet (steg 13.8.6): ingen buffert, så mycket som projekten saknar och det ässjan och fyrfaten bränner (kolKrok, satt i smedja.ts och mobler.ts),
+  // och det de byggda blästerugnarna tar i en bränning (kolKrok.branning, brann.ts)
+  kol: { min: s => kolKrok.eldar(s) + kolKrok.branning(s) },
   mossa: { min: s => harMyr(s) ? living(s).length : 0 }, // förbanden: en mossa per invånare där den går att få (steg 12.1.6)
   // det som görs för att förbrukas (salvan, tjäran, limmet, tvålen och dryckerna) har en buffert efter förbrukningen, och en att börja med
   salva: { min: () => 1, buffert: true }, tjara: { min: () => 1, buffert: true }, benlim: { min: () => 1, buffert: true }, tval: { min: () => 1, buffert: true },
@@ -267,7 +268,7 @@ const spjutVill = (s: State) => (s.stat?.fiskeForsok ?? 0) > 0 || (s.stat?.prod_
 virkeKrok.mal = s => materialBuffert(s, 'virke'); // stammen blir virke eller ved (skog.ts, steg 13.10.26)
 export const flintaKrok = { verktyg: (_s: State) => 0 };
 // kolet som eldarna som bränner kol vill ha (ässjan, fyrfaten), satt där de finns (steg 13.8.6)
-export const kolKrok = { eldar: (_s: State) => 0 };
+export const kolKrok = { eldar: (_s: State) => 0, branning: (_s: State) => 0 };
 const ortkokKan = (s: State) => living(s).some(p => (p.tek?.ortkok ?? 0) >= 1); // någon kan koka i örtköket (steg 9.4.14)
 // hoten byn mött (steg 10.2.75): strider de senaste VILLTAL.hotDygn dygnen, och rövare, vargar eller björnen nära nu (0 till 1)
 export function hotNu(s: State) {

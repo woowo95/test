@@ -498,6 +498,8 @@ const receptMinne = new WeakMap<Person, { now: number; ut: Record<string, number
 let ravaror: Set<string> | undefined; // det som går åt i något recept, räknat när det frågas första gången
 // kolet som eldarna med kol som bränsle (ässjan, fyrfaten) rymmer: det byn vill ha i förrådet av kol (steg 13.8.6)
 kolKrok.eldar = s => { let n = 0; for (const t of stationerOf(s)) { const e = ELDSTATIONER[t.k]; if (e?.bransle === 'kol' && isKlar(t)) n += e.max; } return Math.ceil(n); };
+// det de byggda bränningsstationerna (blästerugnen) tar av kolet i en bränning, som det ässjan bränner (steg 13.8.6)
+kolKrok.branning = s => { let n = 0; for (const t of branningsStationer(s)) for (const d of Object.values(BRANNINGAR)) if (d.station === t.k) n += d.in.kol ?? 0; return Math.ceil(n); };
 type Faror = ReturnType<typeof dangers>;
 // det som väljs: handlingen, varför, hur länge, och var om det inte följer av handlingen
 const BALTE_FORBAND = new Set<Act>(['jakt', 'vargjakt', 'bjornjakt', 'forsvar', 'forsvarRovare', 'strid']);
@@ -1749,5 +1751,5 @@ import { KRUKA, ORTKRUKA, krukaHemVal, ortPlockaVal, ortSattaVal } from './kruka
 import { BIN, flyFranBin, retatNara, skattaVal } from './bin';
 import { BOSKAP, SLAKTDJUR, avlivaVal, klippVal, mjolkaVal, slaktOrsak } from './boskap';
 import { TORV, torvHellre } from './torv';
-import { attTomma, branningUppgift, passaUppgift, passaVal, passaVikt } from './brann';
+import { BRANNINGAR, attTomma, branningUppgift, branningsStationer, passaUppgift, passaVal, passaVikt } from './brann';
 import { LIE_FART } from './jarnsaker';
