@@ -154,3 +154,52 @@ SCENARIER.letaresa = {
     ];
   },
 };
+
+SCENARIER.gralflod = {
+  text: 'Steg 15.1.92: grälet och översvämningen i VAGHANDELSER. Grälet sänker relationen mellan två resenärer och händer oftare när sällskapet är hungrigt, törstigt och trött och mellan dem som tycker illa om varandra. Översvämningen händer när en flod på vägen stiger efter regn och snösmältning, och ledaren väger att vänta tills vattnet sjunkit eller ta en omväg',
+  kor: () => {
+    const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, hb = SIM.byPlats(vl0, vl0.huvud!)!, mal = hb.grannar![0]!.nr;
+    const vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50);
+    const ids = vuxna.slice(0, 3).map(p => p.id);
+    // grälet: risken med och utan nöd, och med två som tycker illa om varandra
+    const x = paVagen(s0, ids, mal), [a, b, c] = x.folk;
+    const satt = (op: [number, number, number]) => { SIM.getRel(x.s, a!, b!).op = op[0]; SIM.getRel(x.s, a!, c!).op = op[1]; SIM.getRel(x.s, b!, c!).op = op[2]; };
+    satt([0, 0, 0]);
+    x.sl.behov = { matt: 1, vatska: 1, ork: 1, fulla: 0, foder: 0 }; const mett = SIM.vagRisk(x.s, x.sl, 'gral');
+    x.sl.behov = { matt: 0.1, vatska: 0.1, ork: 0.1, fulla: 0, foder: 0 }; const nod = SIM.vagRisk(x.s, x.sl, 'gral');
+    x.sl.behov = { matt: 1, vatska: 1, ork: 1, fulla: 0, foder: 0 }; satt([-90, 0, 0]); const osams = SIM.vagRisk(x.s, x.sl, 'gral');
+    // vem som grälar: de som tycker illa om varandra oftast
+    let ab = 0, fall = 0, sjonk = true;
+    for (let i = 0; i < 300; i++) { satt([-90, 0, 0]); SIM.VAGHANDELSER.gral!.gor(x.s, x.sl, x.s.now); const o = [SIM.getRel(x.s, a!, b!).op, SIM.getRel(x.s, a!, c!).op, SIM.getRel(x.s, b!, c!).op]; if (o[0] < -90) ab++; if (!(o[0] < -90 || o[1] < 0 || o[2] < 0)) sjonk = false; fall++; }
+    const ensam = paVagen(s0, [ids[0]!], mal), ensamRisk = SIM.vagRisk(ensam.s, ensam.sl, 'gral');
+    // översvämningen: en flod på nästa ruta längs vägen
+    const f = paVagen(s0, ids, mal), w = SIM.varldMark(f.s)!, r = SIM.vagenRutor(f.s, f.sl);
+    f.sl.pos = 1; f.sl.ruta = r[1]; const j = 2; w.flod[r[j]!] = 1;
+    // en tid med regn och utan snö, och en torr tid utan snö
+    const tider = [...Array(24 * 200).keys()].map(h => f.s.now + h * SIM.HOUR);
+    const risk = (t: number) => { const n0 = f.s.now; f.s.now = t; const v = SIM.vagRisk(f.s, f.sl, 'oversvamning'); f.s.now = n0; return v; };
+    if (f.s.vader) f.s.vader.sno = 0; // ingen snö som smälter
+    const regn = tider.find(t => SIM.vaderNu(f.s, t).nb > 0.5), torrt = tider.find(t => SIM.vaderNu(f.s, t).nb === 0);
+    const smalt = (() => { const t = tider.find(u => SIM.vaderNu(f.s, u).nb === 0 && SIM.temperature(f.s, u) > 2); if (!t || !f.s.vader) return 0; f.s.vader.sno = 0.5; const v = risk(t); f.s.vader.sno = 0; return v; })();
+    const val = SIM.flodVal(f.s, f.sl), f0 = f.sl.forlorat ?? 0;
+    SIM.VAGHANDELSER.oversvamning!.gor(f.s, f.sl, f.s.now);
+    const valt = val[0]!, lagt = (f.sl.forlorat ?? 0) - f0;
+    // utan en grannruta att gå runt genom (floden går över hela bredden) väntar sällskapet
+    const g = paVagen(s0, ids, mal), wg = SIM.varldMark(g.s)!, rg = SIM.vagenRutor(g.s, g.sl);
+    g.sl.pos = 1; g.sl.ruta = rg[1];
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const i = rg[2]! + dy * wg.w + dx; if (i !== rg[1] && i !== rg[3]) wg.flod[i] = 1; }
+    const valG = SIM.flodVal(g.s, g.sl);
+    return [
+      [`ett hungrigt, törstigt och trött sällskap grälar oftare (${nod.toFixed(3)} mot ${mett.toFixed(3)} per dygn)`, nod > mett * 2],
+      [`två som tycker illa om varandra grälar oftare (${osams.toFixed(3)} mot ${mett.toFixed(3)})`, osams > mett * 1.5],
+      [`den som reser ensam grälar inte (${ensamRisk})`, ensamRisk === 0],
+      [`grälet sänker relationen, oftast mellan de osams (${ab} av ${fall})`, sjonk && ab > fall / 2],
+      [`grälet står i dagboken (${x.sl.dagbok.filter(d => d[2] === 'gral').length})`, x.sl.dagbok.some(d => d[2] === 'gral')],
+      [`floden på vägen stiger i regn (${regn ? risk(regn).toFixed(2) : '–'} per dygn) men inte en torr dag utan snö (${torrt ? risk(torrt) : '–'})`, !!regn && risk(regn) > 0 && !!torrt && risk(torrt) === 0],
+      [`och när snön smälter (${smalt.toFixed(2)} per dygn)`, smalt > 0],
+      [`ledaren väger att vänta eller gå runt (${val.map(v => `${v.id} ${v.tim.toFixed(1)} tim`).join(', ')}) och väljer det kortaste: ${valt.id}, ${lagt.toFixed(1)} timmar`, val.length === 2 && valt.tim <= val[1]!.tim && Math.abs(lagt - valt.tim) < 1e-9],
+      [`översvämningen står i dagboken`, f.sl.dagbok.some(d => d[2] === 'flod')],
+      [`när floden går över hela bredden finns ingen omväg, och sällskapet väntar (${valG.map(v => v.id).join(', ')})`, valG.length === 1 && valG[0]!.id === 'vanta' && valG[0]!.tim === SIM.RESA.flodTim],
+    ];
+  },
+};

@@ -66,6 +66,8 @@ import { antal, han, hans, honom, horText, och, spelTid, stor, tal } from './ord
 import { kronikaBer } from './berattelser';
 import { tanke } from './tankar';
 import { upplev } from './uppvaxt';
+import { SAMTAL } from './samtal';
+import { minnsRel } from './relationer';
 import { resBehov as resBehovMatt, resDod, resHandelse, resSkadad, resSlut, resUt } from './resstat';
 // "en sak", "tre saker"
 const saker = (n: number) => n === 1 ? 'en sak' : `${tal(n)} saker`;
@@ -129,6 +131,11 @@ export const RESA = balans('resa', {
   viltMin: 0.15, // chansen att fälla viltet för ett sällskap utan jägare; den bästa jägaren höjer den upp till 1 vid full färdighet (steg 12.1.144)
   viltKott: 3, // kött i packningen när sällskapet fäller viltet (en kanins kött)
   viltTim: 2, // timmar jakten tar, fälld eller inte
+  // grälet och översvämningen (steg 15.1.92)
+  gralNod: 1, // risken för gräl gånger 1 + så här mycket gånger nöden: hungern, törsten och tröttheten tillsammans (0–3) ...
+  gralOvan: 2, // ... och gånger 1 + så här mycket gånger hur illa de två som tycker sämst om varandra tycker (0–1, relationen under 0)
+  flodRegn: 1, flodSmalt: 1, // översvämningen: risken gånger regnet eller snöfallet (0–1) och snösmältningen (snö på marken i töväder)
+  flodTim: 12, // timmar i gång sällskapet väntar tills vattnet sjunkit
   // när maten tar slut (steg 11.5.15)
   hungerKost: 5, // det ett dygn utan mat kostar en resenär, i värde (samma skala som resans värde)
   tidKost: 3, // det ett dygn längre resa kostar en resenär, i värde
@@ -1425,6 +1432,8 @@ export const DAGBOK = {
   tappad: { namn: 'Tappat', sym: '👐' },
   mat: { namn: 'Mat', sym: '🫐' },
   hjul: { namn: 'Trasigt hjul', sym: '🛞' }, // steg 12.1.144
+  gral: { namn: 'Gräl', sym: '💢' }, // steg 15.1.92 (platshållare)
+  flod: { namn: 'Översvämning', sym: '🌊' }, // steg 15.1.92 (platshållare)
   vilt: { namn: 'Vilt', sym: '🦌' },
   ran: { namn: 'Rån', sym: '🗡️', stor: true },
   strid: { namn: 'Strid', sym: '⚔️', stor: true },
@@ -1621,6 +1630,42 @@ export const VAGHANDELSER: Record<string, VagHandelseDef> = {
       } else dagbok(s, sl, 'vilt', 'Fick syn på vilt, men det kom undan.', t);
     },
   },
+  // grälet (steg 15.1.92): två resenärer grälar, oftare när sällskapet är hungrigt, törstigt och trött och mellan dem som tycker
+  // illa om varandra; relationen sjunker som efter ett gräl i byn (samtal.ts)
+  gral: {
+    namn: 'Gräl', dygn: 0.05,
+    risk: (s, sl) => {
+      const folk = resenarer(s, sl);
+      if (folk.length < 2) return 0;
+      const b = behovOf(sl), nod = (1 - b.matt) + (1 - b.vatska) + (1 - b.ork);
+      return (1 + RESA.gralNod * nod) * (1 + RESA.gralOvan * Math.max(0, ...folkPar(folk).map(([x, y]) => ovan(s, x, y))));
+    },
+    gor: (s, sl, t) => {
+      const par = folkPar(resenarer(s, sl)), vikt = par.map(([x, y]) => 1 + RESA.gralOvan * ovan(s, x, y)), tot = vikt.reduce((a, v) => a + v, 0);
+      if (!par.length) return;
+      let u = rnd(s, 'resa') * tot, i = 0;
+      while (i < par.length - 1 && (u -= vikt[i]!) >= 0) i++;
+      const [x, y] = par[i]!, r = getRel(s, x, y);
+      r.op = clamp(r.op - SAMTAL.gralOp - rnd(s, 'resa') * SAMTAL.gralSpann, -100, 100);
+      minnsRel(s, x, y, 'gral');
+      tanke(x, 'gralade', t, { namn: y.name, v: -SAMTAL.gralTankeEgen, tid: SAMTAL.gralTim * HOUR });
+      tanke(y, 'gralAndra', t, { namn: x.name, v: -SAMTAL.gralTankeAndra, tid: SAMTAL.gralTim * HOUR });
+      dagbok(s, sl, 'gral', `${x.name} och ${y.name} grälade.`, t);
+    },
+  },
+  // översvämningen (steg 15.1.92): en flod på vägen stiger efter regn och snösmältning, och ledaren väger att vänta tills
+  // vattnet sjunkit eller ta en omväg runt den översvämmade rutan (floodVal)
+  oversvamning: {
+    namn: 'Översvämning', dygn: 0.5,
+    risk: (s, sl, t) => floodFram(s, sl) === undefined ? 0 : RESA.flodRegn * vaderNu(s, t).nb + (snoPaMarken(s) > 0 && temperature(s, t) > 0 ? RESA.flodSmalt : 0),
+    gor: (s, sl, t) => {
+      const v = flodVal(s, sl)[0];
+      if (!v) return;
+      sl.forlorat = (sl.forlorat ?? 0) + v.tim;
+      dagbok(s, sl, 'flod', v.id === 'omvag' ? `Floden hade stigit över vägen; sällskapet gick runt, ${spelTid(v.tim * HOUR)} längre.` : `Floden hade stigit över vägen; sällskapet väntade i ${spelTid(v.tim * HOUR)} tills vattnet sjunkit.`, t);
+      count(s, `resa översvämning ${v.id}`);
+    },
+  },
   mat: {
     namn: 'Fynd av mat', dygn: 0.08, fardighet: 'samla', okar: true,
     risk: (s, _sl, t) => temperature(s, t) >= RESA.fyndVarm ? 1 : RESA.fyndKall,
@@ -1631,6 +1676,36 @@ export const VAGHANDELSER: Record<string, VagHandelseDef> = {
     },
   },
 };
+// alla par i sällskapet, och hur illa a och b tycker om varandra (0–1: relationen under noll)
+const folkPar = (folk: Person[]) => folk.flatMap((x, i) => folk.slice(i + 1).map(y => [x, y] as [Person, Person]));
+const ovan = (s: State, a: Person, b: Person) => clamp(-getRel(s, a, b).op / 100, 0, 1);
+// den närmaste rutan framåt med en flod (den sällskapet står på eller de två nästa längs vägen)
+function floodFram(s: State, sl: Sallskap) {
+  const v = varldMark(s), r = vagenRutor(s, sl), p = sl.pos ?? 0;
+  if (!v || !r.length) return undefined;
+  for (let j = p; j <= Math.min(r.length - 1, p + 2); j++) if (v.flod[r[j]!]) return j;
+  return undefined;
+}
+// översvämningens utvägar: vänta RESA.flodTim timmar i gång, eller gå runt rutan genom en grannruta utan flod som når både rutan
+// före och efter (det grannrutan kostar mer än den översvämmade, i timmar i sällskapets fart); poängen är timmarna gånger resenärerna och RESA.tidKost
+export function flodVal(s: State, sl: Sallskap): { id: 'vanta' | 'omvag'; tim: number; sc: number }[] {
+  const vl = s.varld, v = varldMark(s), r = vagenRutor(s, sl), j = floodFram(s, sl), n = Math.max(1, resenarer(s, sl).length);
+  if (!vl || !v || j === undefined) return [];
+  const ut: { id: 'vanta' | 'omvag'; tim: number; sc: number }[] = [{ id: 'vanta', tim: RESA.flodTim, sc: 0 }];
+  const fore = r[j - 1], efter = r[j + 1];
+  if (fore !== undefined && efter !== undefined) {
+    const k = kostnader(vl, v, fardsatt(sl)), i = r[j]!, nara = (a: number, b: number) => Math.max(Math.abs(a % v.w - b % v.w), Math.abs(Math.floor(a / v.w) - Math.floor(b / v.w))) <= 1;
+    let bast: number | undefined;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const x = i % v.w + dx, y = Math.floor(i / v.w) + dy, m = y * v.w + x;
+      if ((!dx && !dy) || x < 0 || y < 0 || x >= v.w || y >= v.h || v.flod[m] || !isFinite(k[m]!) || !nara(m, fore) || !nara(m, efter)) continue;
+      if (bast === undefined || k[m]! < bast) bast = k[m]!;
+    }
+    if (bast !== undefined) ut.push({ id: 'omvag', tim: Math.max(0, bast - (isFinite(k[i]!) ? k[i]! : 0)) / (VARLD.gangPerDygn / RESA.dagTim * Math.max(0.05, sallskapFart(s, sl))), sc: 0 });
+  }
+  for (const u of ut) u.sc = -u.tim / 24 * n * RESA.tidKost;
+  return ut.sort((a, b) => b.sc - a.sc);
+}
 // (raderna kan läggas till från andra filer, som vagran.ts, så listan görs första gången den behövs)
 let vagIds: string[] | undefined;
 export const vagHandelseIds = () => vagIds ??= Object.keys(VAGHANDELSER).sort();
