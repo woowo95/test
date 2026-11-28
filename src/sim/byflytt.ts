@@ -64,10 +64,18 @@ const platsAv = (vl: Varlden, r: VarldRad) => { const p = byPlats(vl, r.nr); ret
 // platsen folk flyttar ifrån: byn, eller lägret (ett läger i nöd ger sig av som en by, steg B.69)
 const hemPlats = (vl: Varlden, r: VarldRad) => platsAv(vl, r) ?? (r.sort === 'rovarlager' ? byPlats(vl, r.nr) : undefined);
 
+// hur gott byn har det (0–1): maten, och nöden efter en plundring (steg 15.1.76), som driver folk ut som hungern gör
+export const radGott = (r: VarldRad) => matGottAv(matDygn(r)) * (1 - (r.nod ?? 0));
 // hur många som vill flytta ur raden per dygn (ett år i spelet): trängseln och hungern, med huvudbyns regler
-export const flyttPerDygn = (r: VarldRad) => emigrationRate(r.tal.folk, LIV.nojd) + hungerFlyttAv(matGottAv(matDygn(r)), r.tal.folk);
-// så stor del av dem som flyttar gör det för hungern (0 till 1)
-export const hungerDel = (r: VarldRad) => { const a = flyttPerDygn(r); return a > 0 ? hungerFlyttAv(matGottAv(matDygn(r)), r.tal.folk) / a : 0; };
+export const flyttPerDygn = (r: VarldRad) => emigrationRate(r.tal.folk, LIV.nojd) + hungerFlyttAv(radGott(r), r.tal.folk);
+// så stor del av dem som flyttar gör det för hungern och nöden (0 till 1)
+export const hungerDel = (r: VarldRad) => { const a = flyttPerDygn(r); return a > 0 ? hungerFlyttAv(radGott(r), r.tal.folk) / a : 0; };
+// nöden efter en plundring (steg 15.1.76): det som togs och de som dödades, som andel av det byn hade och dess folk, läggs till
+// nöden som finns; den går över per tid (ROVLAGER.nodDygn), en gång i timmen i flytten
+export function plundradNod(r: VarldRad, togVarde:7 extends 7 ? number : never, hadeVarde: number, doda: number) {
+  const v = Math.min(1, togVarde / Math.max(1, hadeVarde) + doda / Math.max(1, r.tal.folk + doda));
+  if (v > 0) r.nod = 1 - (1 - (r.nod ?? 0)) * (1 - v);
+}
 
 // rövarlägret (steg 11.6.17): de som flyttar för hunger kan slå läger som rövare i stället för att söka sig till en by, och
 // hungriga ur byarna intill dras dit; så också den som lämnar huvudbyn i missnöje eller utvisas ur den (steg B.68); lägret skaffar ingen egen mat och föder inga barn (BYSORTER), så det lever på det
@@ -78,6 +86,7 @@ export const ROVLAGER = balans('rovarlager', {
   missnoje: 0.5, // missnöjets del av flytten räknas så här mycket mot hungerns (ur huvudbyn, steg B.68)
   lockByte: 1, // lägret väger 1 + så mycket gånger hur mycket bättre ställt det är än byn man lämnar (−1 till 1, lagerByte), steg B.69
   fredlos: 0.5, // chansen att den utvisade slår läger
+  nodDygn: 1, // nöden efter en plundring går över: den sjunker till en tredjedel (1/e) på så många dygn (år i spelet), steg 15.1.76
 });
 // hur bytet lockar (steg B.69): lägrets mat och rikedom per person mot byns, där lika är 1 och bara det ena ställets är hela vägen
 const battre = (a: number, b: number) => a + b > 0 ? (a - b) / (a + b) : 0;
@@ -187,6 +196,7 @@ export const nyttLager = (s: State, vl: Varlden, r: VarldRad, grupp: number, t: 
 
 // en timme: de som flyttar ur raden grundar en egen by eller ger sig av tillsammans mot en by
 export function radFlytt(s: State, vl: Varlden, r: VarldRad, n: number) {
+  if (r.nod) { r.nod *= Math.exp(-1 / 24 / ROVLAGER.nodDygn); if (r.nod < 0.01) delete r.nod; } // nöden går över, en timme i taget
   const ant = Math.min(r.tal.folk, antalUr(flyttPerDygn(r) / 24, varldSlump(vl, r.nr, n, A.flytt)));
   if (!ant) return;
   if (varldSlump(vl, r.nr, n, A.lager) < lagerChans(r)) {

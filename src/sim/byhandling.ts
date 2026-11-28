@@ -19,7 +19,7 @@ import { SAKER, isFood, viktOf } from './saker';
 import { grundvarde } from './varde';
 import { Varlden } from './varlden';
 import { DAY, Stat, State } from './typer';
-import { gruppAv, radLaggTill, radMarkId, radOverskott, radTaUr, sakGrupp, radGruppPaslag, radTar, radVill, VARUGRUPP_IDS, VarugruppId } from './priser';
+import { radHar, gruppAv, radLaggTill, radMarkId, radOverskott, radTaUr, sakGrupp, radGruppPaslag, radTar, radVill, VARUGRUPP_IDS, VarugruppId } from './priser';
 import { RAD, radDoda, rikMal } from './rad';
 import { KOHANDELSER, laggIKo, periodSlut } from './varldslag';
 import { byPlats } from './landmarken';
@@ -32,6 +32,7 @@ import { radKommer } from './rader';
 import { VAKTKROK } from './vagran';
 import { avslutaUppdrag, belonVarde, fyndId, ruinKvar, ruinRad, taRuin, uppdragDef, uppdragNr } from './uppdrag';
 import { fardDoda, fardPerson, namnFolk } from './fardfolk';
+import { plundradNod } from './byflytt';
 import { valjDragfordon } from './fordon';
 import { ageIndex, iIstiden } from './tid';
 import { RECEPT } from './recept';
@@ -495,12 +496,14 @@ KOHANDELSER.fardHem = (s, vl, p) => {
 // och bärs hem, och försvararnas syn på anfallarna sjunker för plundringen och för varje dödad
 function anfallFram(s: State, vl: Varlden, f: RadFard, r: VarldRad, mot: VarldRad) {
   if (!BYSORTER[mot.sort].folk || mot.tal.folk <= 0) return; // byn finns inte längre: flocken går hem
+  const hade = VARUGRUPP_IDS.reduce((a, g) => a + radHar(mot, g) * enhet(g), 0); // det byn hade före anfallet (för nöden)
   const u = anfallUtfall(r, mot, f.anfall!, i => varldSlump(vl, r.nr, f.id, 0x414e + i), enhet);
   count(s, 'radanfall_med', f.anfall! + forsvarare(mot)); // alla som var med, för andelen döda (steg 11.6.19)
   radDoda(r, u.dodaA); radDoda(mot, u.dodaF);
   f.anfall! -= u.dodaA; fardDoda(vl, f, u.dodaA, f.t1);
   for (const [g, n] of Object.entries(u.byte) as [VarugruppId, number][]) radTaUr(mot, g, n);
   f.byte = u.byte;
+  plundradNod(mot, u.varde, hade, u.dodaF); // den plundrade byn får nöd, som driver folk ut (steg 15.1.76)
   fientlig(vl, r.nr, mot.nr); fientlig(vl, mot.nr, r.nr); // anfallet är en fientlig handling mellan byarna (steg 15.1.74)
   byHandelse(vl, 'plundring', r.nr, mot.nr);
   if (u.dodaF) byHandelse(vl, 'dodade', r.nr, mot.nr, u.dodaF);

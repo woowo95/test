@@ -129,3 +129,37 @@ SCENARIER.karavanrest = {
     ];
   },
 };
+
+SCENARIER.plundradnod = {
+  text: 'Steg 15.1.76: en by som plundras får nöd efter det som togs och de som dödades; nöden driver folk att flytta och dras till rövarlägren som hungern gör, och den går över med tiden',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!; vl.farder = [];
+    const r = vl.rader!.find(x => SIM.lever(vl, x) && SIM.BYSORTER[x.sort].ledare && SIM.radGrannar(vl, x).some(g => g.nr !== vl.huvud && x.sort === 'by'))!;
+    const mot = SIM.radGrannar(vl, r).find(g => g.nr !== vl.huvud && g.sort === 'by')!;
+    SIM.mots(vl, r.nr, mot.nr); vl.rel![`${r.nr}>${mot.nr}`] = -80;
+    r.tal.folk = 80; r.tal.styrka = 40; fyll(r); mot.tal.folk = 40; mot.tal.styrka = 4; fyll(mot, 2);
+    delete mot.nod;
+    const flytt0 = SIM.flyttPerDygn(mot), lust0 = SIM.lagerChans(mot);
+    const c = SIM.byCtx(s, vl, r, mot); c.led = { ...(c.led ?? {} as Record<SIM.Stat, number>), aggression: 19 }; c.krig = 1;
+    SIM.BYHANDLINGAR.plundra.gor(c);
+    const f = vl.farder!.find(x => x.fran === r.nr && x.anfall);
+    if (!f) return [['byn skickar en flock', false]];
+    s.now = Math.max(s.now, f.t1);
+    const fram = vl.ko!.find(q => q.typ === 'fardFram' && q.sak === f.id)!; vl.ko = vl.ko!.filter(q => q !== fram);
+    SIM.KOHANDELSER.fardFram(s, vl, fram);
+    const nod = mot.nod ?? 0, byte = Object.values(f.byte ?? {}).reduce((a, x) => a + x, 0);
+    // samma mat: bara nöden skiljer
+    const utan = { ...mot, nod: undefined };
+    const flytt1 = SIM.flyttPerDygn(mot), flyttUtan = SIM.flyttPerDygn(utan), lust1 = SIM.lagerChans(mot), lustUtan = SIM.lagerChans(utan);
+    // nöden går över: ett dygn (ett år i spelet) av timmar i flytten
+    const n0 = Math.floor((s.now - vl.borjan!) / 3600e3);
+    const m2 = { ...mot, tal: { ...mot.tal, folk: 0 } } as SIM.VarldRad; m2.nod = nod; for (let h = 0; h < 24; h++) SIM.radFlytt(s, vl, m2, n0 + h);
+    return [
+      [`flocken vann och tog ${byte} (vann: ${byte > 0})`, byte > 0],
+      [`den plundrade byn får nöd (${nod.toFixed(2)})`, nod > 0 && nod <= 1],
+      [`nöden driver fler att flytta (${flyttUtan.toFixed(2)} → ${flytt1.toFixed(2)} per dygn; före anfallet ${flytt0.toFixed(2)})`, flytt1 > flyttUtan],
+      [`och drar dem till rövarlägren som hungern (chansen att slå läger ${lustUtan.toFixed(2)} → ${lust1.toFixed(2)}; före ${lust0.toFixed(2)})`, lust1 > lustUtan],
+      [`nöden går över med tiden (${nod.toFixed(2)} → ${(m2.nod ?? 0).toFixed(2)} efter ett dygn)`, (m2.nod ?? 0) < nod * 0.5],
+    ];
+  },
+};
