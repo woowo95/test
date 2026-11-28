@@ -1764,7 +1764,7 @@ SCENARIER.sedarv = {
   text: 'Steg 13.9.2: kulturen förstärker sig själv. Det en person drar sederna åt har en tredje del, byns sed. I en by med seden Krig drar ett barn med en fredlig personlighet mer åt Krig efter uppväxten än samma barn i en fredlig by, och barnen tar mer av byns sed än de vuxna',
   kor: () => {
     const s = SIM.createState(4, START); klockan(s, 12);
-    const fred = { aggression: 4, mod: 6, empati: 16 };
+    const fred = { aggression: 8, mod: 9, empati: 12 }; // fredlig, men inte så mycket att läggningen står vid gränsen -1 (steg 15.1.121)
     const barn = nyInvanare(s, 'k', 4), vuxen = nyInvanare(s, 'm', 30);
     Object.assign(barn.pot, fred); Object.assign(vuxen.pot, fred);
     const fore = SIM.drarSed(s, barn, 'krig');
