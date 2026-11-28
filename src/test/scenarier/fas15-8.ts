@@ -87,3 +87,45 @@ SCENARIER.anfallminne = {
     ];
   },
 };
+
+SCENARIER.karavanrest = {
+  text: 'Steg 15.1.75: när rövarna vinner över ett sällskap på vägen stannar det av varorna de inte orkar bära kvar på platsen som en karavanrest, i hela saker; den som minns den väger den som ett uppdrag (Den plundrade karavanen), och den som kommer dit tar det som ryms',
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,vagran.krav=100000,vagran.sarVarde=0' }, // sällskapet slåss hellre än betalar: provet gäller det som blir kvar
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!, vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= 20 && SIM.ageOf(q, s.now) < 50 && SIM.kanGa(q));
+    const hb = SIM.byPlats(vl, vl.huvud!)!, v = SIM.varldMark(s)!;
+    const mal = hb.grannar!.map(g => SIM.varldPlatsNr(vl, g.nr)!).filter(p => p && SIM.vagMellan(vl, v, hb.y * v.w + hb.x, p.y * v.w + p.x, 'fots', s.now))[0]!;
+    const folk = vuxna.slice(0, 2);
+    const sl = SIM.nyttSallskap(s, folk[0]!, mal.nr, 'handel')!; SIM.foljMed(vl, sl, folk[1]!);
+    for (const x of folk) { SIM.gaBort(s, x); x.skador = undefined; x.sjuk = undefined; x.blod = 1; }
+    const vag = SIM.vagMellan(vl, v, hb.y * v.w + hb.x, mal.y * v.w + mal.x, 'fots', s.now)!;
+    sl.skede = 'ute'; sl.vag = { fran: vag.fran, till: vag.till, steg: vag.steg };
+    const rr = SIM.vagenRutor(s, sl); sl.pos = Math.floor((rr.length - 1) * 0.5); sl.ruta = rr[sl.pos]; sl.gang = 0;
+    sl.pack = { brod: 6, vattensack: 4, yxa: 60 }; sl.behov = { matt: 1, vatska: 1, ork: 1, fulla: 4, foder: 0 };
+    // ett stort rövarläger nära vägen
+    const L = vl.rader!.find(x => SIM.lever(vl, x) && x.nr !== mal.by)!;
+    L.sort = 'rovarlager'; L.tal.folk = 60; L.tal.styrka = 40; SIM.radVaror(L);
+    const fore = new Set((vl.platser ?? []).map(p => p.nr));
+    SIM.VAGHANDELSER.ran!.gor(s, sl, s.now);
+    const k = (vl.platser ?? []).find(p => p.k === 'karavanrest' && !fore.has(p.nr));
+    const tog = L.varor && SIM.radHar(L, SIM.sakGrupp('yxa'));
+    const dag = (sl.dagbok ?? []).map(d => d[1]).join(' ');
+    // en annan bybo hör om den och reser dit
+    const s2 = SIM.cloneState(s), led2 = s2.people.find(q => q.id === vuxna[2]!.id)!, k2 = k && SIM.varldPlatsNr(s2.varld!, k.nr);
+    if (k) SIM.FYNDSETT.karavanrest!(s2, led2, k.nr, s2.now);
+    const l = k && led2.lardomar?.find(x => x.k === 'uppdrag' && x.a === SIM.fyndId(k.nr));
+    const varde = k ? SIM.uppdragVid(s2, led2, k.nr)?.varde ?? 0 : 0;
+    const sl2 = k ? SIM.nyttSallskap(s2, led2, k.nr, 'uppdrag') : undefined;
+    const fore2 = k2?.inne?.yxa ?? 0;
+    if (sl2) { sl2.uppdrag = SIM.fyndId(k!.nr); SIM.gaBort(s2, led2); sl2.pack = {}; SIM.uppdragFram(s2, sl2, s2.now); }
+    // tiden går ut
+    const s4 = SIM.cloneState(s); s4.now += (SIM.RESA.karavanDygn + 1) * SIM.DAY; SIM.platserUpphor(s4.varld!, s4.now);
+    return [
+      [`rövarna vann och det de inte orkade bära ligger kvar som en karavanrest (${k ? JSON.stringify(k.inne) : 'ingen'}; dagboken: ${dag.slice(-120)})`, !!k && (k.inne?.yxa ?? 0) >= 1 && Object.values(k.inne ?? {}).every(Number.isInteger) && !sl.pack.yxa && !!tog],
+      [`sällskapet behåller maten, som inte är varor (${JSON.stringify(sl.pack)})`, (sl.pack.brod ?? 0) > 0],
+      [`den som hör om den minns den som Den plundrade karavanen (värde ${l?.v ?? 0}) och väger den som mål för en resa (${Math.round(varde)})`, l?.om === 'karavan' && (l.v ?? 0) > 0 && varde > 0 && (SIM.RESMAL.uppdrag.mal as readonly string[]).includes('karavanrest')],
+      [`den som kommer dit tar det som ryms (${sl2?.utfall?.hur}: ${JSON.stringify(sl2?.pack)}, av ${fore2} yxor)`, sl2?.utfall?.hur === 'klart' && (sl2.pack.yxa ?? 0) >= 1],
+      [`karavanresten är borta efter ${SIM.RESA.karavanDygn} dygn`, !!k && !(s4.varld!.platser ?? []).some(p => p.nr === k.nr)],
+    ];
+  },
+};
