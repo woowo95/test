@@ -1161,7 +1161,8 @@ SCENARIER.fangelse = {
     kor(s, 2, v => { if (sonder < 0 && !SIM.fangelseDorr(v, h)!.dorr) sonder = v.now; });
     const min = (sonder - t0) / SIM.MIN, fri = !p.fange, larm = s.people.some(q => q.larm?.rymning !== undefined);
     // byn hänger en ny trädörr: den som kan tekniken och har materialet
-    q.tek = { ...(q.tek ?? {}), tradorr: 1 }; SIM.setAmount(s, 'plankor', 10); SIM.setAmount(s, 'rep', 5);
+    for (const r of living(s).filter(x => x !== p && SIM.ageOf(x, s.now) >= SIM.ALDER.vuxen)) r.tek = { ...(r.tek ?? {}), tradorr: 1 }; // fler än en: den ena kan dö av ett sår under dygnet
+    SIM.setAmount(s, 'plankor', 10); SIM.setAmount(s, 'rep', 5);
     let ny = false; kor(s, 24, v => { if (SIM.fangelseDorr(v, h)?.dorr === 'tradorr') ny = true; }); // ett helt dygn: dörrar hängs på dagen
     return [
       [`utan domar och utan seden Rang vill byn inget fängelse (${utanLedare}), inte heller med Rang ensam (${utan}), och efter fyra hårda domar vill byn bygga ett (${med.v}, ${med.plats} plats)`, utanLedare === 0 && utan === 0 && med.v > 0 && med.plats >= 1],
