@@ -196,8 +196,17 @@ export function ratOverAv(s: State, ravaror: readonly string[]) {
   for (const ra of ravaror) { const r = { ra }, a = amountOf(s, r.ra); if (a < 1 || ejMat(r.ra)) continue; n += a; mat += a * (SAKER[r.ra]?.mat ?? 1); haller = Math.min(haller, SAKER[r.ra]?.haller ?? 1); }
   if (!n) return 0;
   const spara = torkVinter(s) ? 0 : matPerDygn(s) * (haller === Infinity ? 1 : haller);
-  return Math.max(0, Math.floor((mat - spara) / (mat / n)));
+  // resornas mat (steg 15.1.94): det råa som byn annars äter färskt är överskott upp till det resorna saknar av mat som håller
+  return Math.min(Math.floor(n + 1e-9), Math.max(0, Math.floor((mat - spara) / (mat / n))) + resMatBrist(s));
 }
+// ---------- resornas mat (steg 15.1.94, Mat, matlagning och dryck: Resornas mat) ----------
+// Den mat som håller är det torkade, rökta och syrade. Det resorna saknade av den när de vägdes (s.resMatBehov, resMal i resa.ts)
+// är byns behov det senaste dygnet (året i spelet): det största, som tälten. Behovet är ett förrådsmål för maten som håller,
+// bredvid vinterförrådet: det råa räknas som överskott upp till det (ratOverAv) och maten som håller är värd mer (sakPaslag).
+export const arHallbar = (k: string) => [...TORKAS, ...ROKAS, ...SYRAS].some(r => r.blir === k);
+export const hallbarMat = (s: State) => { let n = 0; for (const k of new Set([...TORKAS, ...ROKAS, ...SYRAS].map(r => r.blir))) if (SAKER[k]?.mat !== undefined) n += Math.floor(amountOf(s, k) + 1e-9); return n; };
+export function resMatVill(s: State) { let n = 0; for (const [t, m] of s.resMatBehov ?? []) if (t > s.now - DAY) n = Math.max(n, m); return Math.ceil(n - 1e-9); }
+export const resMatBrist = (s: State) => Math.max(0, resMatVill(s) - hallbarMat(s));
 // det som hämtas till torkställningen eller rökeriet (HAMTAS, hamtning.ts): det råa som får plats och hinns hängas upp i passet
 export function torkHamtas(s: State, tk: Task, k: TorkSlag = 'tork') {
   const ts = torkarna(s, k);

@@ -1404,8 +1404,14 @@ function resMal(s: State, p: Person, vl: Varlden, hem: VarldPlats): ResMal[] {
     const fara = 1 - Math.exp(-RESA.faraDygn * dygn), forsiktig = clamp((20 - mod) / 10, 0, 2);
     const lust = (ny + mod) / 20, dygnR = Math.round(dygn * 100) / 100;
     // räcker inte den mat som håller är dagarna utan mat en kostnad, som när maten tar slut (steg 15.1.93)
-    const utanMat = matUtan(s, Math.ceil(matPerResenar() * dygn * marginal(p) - 1e-9)) / matPerResenar() * RESA.hungerKost;
-    const bas = RESA.vikt * utfar * (varde - hemmaForlust(s, p, dygn) - utanMat) / dygn * lust * Math.max(0, 1 - fara * forsiktig);
+    const saknas = matUtan(s, Math.ceil(matPerResenar() * dygn * marginal(p) - 1e-9)), utanMat = saknas / matPerResenar() * RESA.hungerKost;
+    const netto = varde - hemmaForlust(s, p, dygn), bas = RESA.vikt * utfar * (netto - utanMat) / dygn * lust * Math.max(0, 1 - fara * forsiktig);
+    // det som saknas är byns behov av mat som håller (steg 15.1.94), vägt efter vad resan är värd: helt när resan bär maten den
+    // saknar, inget när den ändå inte skulle bli av
+    if (saknas > 0 && netto > 0) {
+      const b = s.resMatBehov = (s.resMatBehov ?? []).filter(([t]) => t > s.now - DAY), m = saknas * Math.min(1, netto / Math.max(1e-9, utanMat)), sist = b[b.length - 1];
+      if (sist && sist[0] > s.now - HOUR) sist[1] = Math.max(sist[1], m); else b.push([s.now, m]); // en rad i timmen: det största
+    }
     if (bas > 0) ut.push({ mal: q.nr, namn: q.namn, skal, varde: Math.round(varde * 10) / 10, dygn: dygnR, fara: Math.round(fara * 1000) / 1000, varor, kop, ...(uid !== undefined ? { uppdrag: uid } : {}), bas, d: dygn });
   }
   return ut;

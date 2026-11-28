@@ -5,6 +5,7 @@
 // missväxt all mat dyr på en gång, medan brist på just salt bara gör saltet dyrt. Inget pris slumpas.
 import { SAKER, SAK_LIST } from './saker';
 import { grundvarde } from './varde';
+import { arHallbar, hallbarMat, resMatVill } from './matlagning';
 
 export interface VarugruppDef {
   namn: string; ikon: string;
@@ -107,7 +108,8 @@ export const gruppPaslag = (s: State, g: VarugruppId) => { const [v, h] = gruppB
 // sakens eget påslag i huvudbyn: sakens brist mot gruppens, 1 för en sak utan eget mål (mat och bränsle räknas som grupp)
 export function sakPaslag(s: State, k: string, gp = gruppPaslag(s, gruppAv(k)!)): number {
   const g = gruppAv(k);
-  if (!g || g === 'mat' || g === 'bransle') return 1;
+  if (!g || g === 'bransle') return 1;
+  if (g === 'mat') return arHallbar(k) && resMatVill(s) > 0 ? paslag(resMatVill(s), hallbarMat(s)) / gp : 1; // maten som håller när resorna saknar den (steg 15.1.94)
   const vh = villOchHar(s, k);
   return vh ? paslag(vh[0], vh[1]) / gp : 1; // utan egna gränser: priset (byPaslag) har dem, så att brist på en sak bara höjer den
 }

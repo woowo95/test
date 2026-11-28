@@ -145,3 +145,34 @@ SCENARIER.ruttenresa = {
     ];
   },
 };
+
+SCENARIER.resmat = {
+  text: 'Steg 15.1.94: resorna visar behovet av mat som håller. När byn väger en resa och den mat som håller inte räcker, skrivs det som saknas upp som byns behov, vägt efter vad resan är värd. Behovet är ett förrådsmål för den torkade maten: det råa som byn annars äter färskt torkas upp till målet, och maten som håller är värd mer i handeln. En by som vill resa men bara har färsk mat torkar mer, och en by utan resor torkar som förut',
+  kor: () => {
+    const s0 = SIM.cloneState(testBy(3));
+    const by = (resa: boolean) => {
+      const s = SIM.cloneState(s0);
+      for (const k of SIM.FOOD) if (SIM.arHallbar(k)) SIM.addTo(s, k, -Math.floor(SIM.amountOf(s, k))); // ingen mat som håller
+      SIM.laggIn(s, 'fisk', 60, SIM.BYN); // färsk fisk
+      const over0 = SIM.ratOverAv(s, ['fisk']), pris0 = SIM.byPaslag(s, 'torrfisk');
+      if (resa) s.resMatBehov = [[s.now, 20]]; // en resa som är värd det saknade 20 portioner som håller
+      return { over: SIM.ratOverAv(s, ['fisk']), over0, pris: SIM.byPaslag(s, 'torrfisk'), pris0, vill: SIM.resMatVill(s) };
+    };
+    const med = by(true), utan = by(false);
+    // behovet skrivs upp när en resa vägs: en vuxen som vill resa långt i en by utan mat som håller
+    const s = SIM.cloneState(s0); for (const k of SIM.FOOD) SIM.addTo(s, k, -Math.floor(SIM.amountOf(s, k))); SIM.laggIn(s, 'fisk', 1, SIM.BYN); // nästan ingen mat alls
+    // en vuxen har hört talas om en plats bortom närområdet och vill se den
+    const vl = s.varld!, v = SIM.varldMark(s)!, hp = SIM.byPlats(vl, vl.huvud!)!, p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= 20 && SIM.ageOf(q, s.now) < 50)!;
+    const q = (vl.platser ?? []).filter(x => (SIM.RESMAL.se.mal as readonly string[]).includes(x.k) && x.k !== 'by').map(x => ({ x, d: SIM.vagDygn(s, hp.y * v.w + hp.x, x.y * v.w + x.x)?.dygn ?? 99 })).filter(x => x.d >= 1.5 && x.d <= 12 && SIM.kannerOrt(s, p, x.x.nr) === undefined).sort((a, b) => a.d - b.d)[0]!.x; // en plats hen inte känner till
+    p.lardomar = (p.lardomar ?? []).filter(l => l.k !== 'uppdrag' && l.k !== 'ort');
+    SIM.larOrt(s, p, q.nr, SIM.O_RYKTE, 1);
+    SIM.resaPlan(s, p, 99, 99);
+    const skrivet = SIM.resMatVill(s);
+    return [
+      [`resan saknade mat som håller: byn vill ha ${med.vill} portioner`, med.vill === 20 && utan.vill === 0],
+      [`det råa som finns över för torkningen: ${med.over} med resan mot ${utan.over} utan (${utan.over0} före)`, med.over > utan.over && utan.over === utan.over0],
+      [`maten som håller är värd mer (${med.pris.toFixed(2)} mot ${utan.pris.toFixed(2)})`, med.pris > utan.pris + 1e-6],
+      [`när byn väger resorna skrivs det som saknas upp (${skrivet} portioner)`, skrivet > 0],
+    ];
+  },
+};

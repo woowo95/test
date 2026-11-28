@@ -403,6 +403,7 @@ export interface State {
   log: LogEntry[];
   lastAgeIdx: number; lastGuardDay?: number; // lastGuardDay: kalenderns dygn då nattens vakt senast valdes (val.ts)
   arbBehov?: { mat: number; ved: number; arb: Record<'mat' | 'ved' | 'bygga' | 'tand' | 'leta' | 'kol' | 'fron', number>; mal?: Record<string, { b: number; t: number }>; brist?: Record<string, number>; bv?: number }; // byns behov för arbetsordningen och arbetarna för varje rad, räknat en gång i timmen (dygn mat och ved, val.ts steg 6.1.12–6.1.13; materialens buffert och lagrets plats, forradsmal.ts steg 6.2.14)
+  resMatBehov?: [number, number][]; // portionerna mat som håller som resorna saknade när de vägdes, vägt efter resans värde (steg 15.1.94, resMatVill i matlagning.ts)
   taltBehov?: [number, number][]; sadelBehov?: [number, number][]; // tälten resorna med en natt på vägen behövde när de packades: tiden och antalet (steg 11.11.1, taltVill i forradsmal.ts)
   forbruk?: Record<string, number>; // materialen som tagits ur förrådet, ett glidande medel över FORRAD.forbrukDygn (forradsmal.ts, steg 6.2.14)
   fire: Fire;
