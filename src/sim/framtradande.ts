@@ -147,7 +147,7 @@ export interface FramMinne { t: number; k: string; p: number; namn: string; text
   // en tyckte om den som uppträdde före och efter (r0, r1) och om ledaren (l0, l1, efter en hyllning eller ett hån), glädjen
   // (tanken i humöret), de som fick höra ryktet, de som tron övertygade, ledaren (namnet när budskapet gällde ledaren) och
   // om ingen kom (inget)
-  nr?: number; grupp?: { id: number; namn: string; inst?: string }[]; amne?: string; lart?: string[]; publik?: FramLyss[]; glad?: number; rykte?: string[]; tro?: string[]; ledare?: string; om?: string; inget?: true; vrid?: 1 | -1 } // vrid: gärningen gjordes större (1) eller tonades ned (-1), steg 10.4.11
+  nr?: number; grupp?: { id: number; namn: string; inst?: string }[]; amne?: string; lart?: string[]; publik?: FramLyss[]; glad?: number; rykte?: string[]; tro?: string[]; ledare?: string; om?: string; inget?: true; vrid?: 1 | -1; vuxna?: number } // vrid: gärningen gjordes större (1) eller tonades ned (-1), steg 10.4.11; vuxna = byns vuxna då, så att texten vet hur stor del som kom (steg 15.1.116)
 export interface FramMed { id: number; inst?: string } // en medspelare på scenen och instrumentet hen spelar (steg 10.7.11)
 export interface FramLyss { id: number; namn: string; r0: number; r1: number; l0?: number; l1?: number }
 
@@ -470,7 +470,7 @@ export function upptradaKlar(s: State, p: Person, t: Task) {
   const om = f.om !== undefined ? byId(s, f.om) : undefined, ledd = f.bud === 'hylla' || f.bud === 'hana' ? om : undefined;
   const m: FramMinne = { ...minneAv(p, f, med.length ? fyllDa(d, namn, p, f) : f.da ?? f.text, pub.length),
     ...(med.length ? { grupp: med.map(x => ({ id: x.id, namn: x.name, ...(f.grupp?.find(g => g.id === x.id)?.inst ? { inst: f.grupp.find(g => g.id === x.id)!.inst } : {}) })) } : {}), q: Math.round(q * 100) / 100,
-    nr: s.framNr = (s.framNr ?? 0) + 1, publik: [], ...(om || f.omNamn ? { om: om?.name ?? f.omNamn } : {}), ...(ledd || (f.bud === 'hylla' || f.bud === 'hana') && f.omNamn ? { ledare: ledd?.name ?? f.omNamn } : {}), ...(f.best !== undefined ? { bestallt: byId(s, f.best)?.name ?? '' } : {}) };
+    nr: s.framNr = (s.framNr ?? 0) + 1, publik: [], vuxna: living(s).filter(x => ageOf(x, s.now) >= ALDER.vuxen).length, ...(om || f.omNamn ? { om: om?.name ?? f.omNamn } : {}), ...(ledd || (f.bud === 'hylla' || f.bud === 'hana') && f.omNamn ? { ledare: ledd?.name ?? f.omNamn } : {}), ...(f.best !== undefined ? { bestallt: byId(s, f.best)?.name ?? '' } : {}) };
   const e0 = f.ver !== undefined ? intryckOm(p, f.om!, f.ik) : undefined; // gjordes gärningen större eller tonades den ned (steg 10.4.11)
   if (e0 && Math.abs(f.ver! - e0.v) >= 0.01) m.vrid = f.ver! > e0.v ? 1 : -1;
   if (!pub.length) { // ingen kom (steg 5.4.7.1): redogörelsen säger det

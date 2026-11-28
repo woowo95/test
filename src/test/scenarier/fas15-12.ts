@@ -45,3 +45,23 @@ SCENARIER.handelsetext = {
     ];
   },
 };
+
+SCENARIER.bytext = {
+  text: 'Steg 15.1.116: texterna om byn, krönikan och mästerverken. Elden nämns inte när framträdandet hölls på scenen, ett enda år står en gång, en ensam vinnare är inga vinnare, det första stycket säger inte "året därpå" och ett ensamt rövarläger står i singular',
+  kor: () => {
+    const publik = giltiga('f_publik', { n: 'tre', N: 'Tre', nTal: 3, scen: true, andel: 0.3 });
+    const alder = giltiga('b_alder', { arstid: 'våren', Arstid: 'Våren', fran: 13, till: 13, aren: 'år 13', forsta: true, dodaTal: 0, foddaTal: 0, tomt: false });
+    const slut = giltiga('m_slut', { vinnare: 'Ylva', Vinnare: 'Ylva', glad: true, lag: false, kort: false, nPub: 0 });
+    const ar = giltiga('b_ar', { ar: 4, forsta: true, dodaTal: 0, foddaTal: 0 });
+    const lager = giltiga('k_rovlager', { vem: 'Bo', lager: 'Hökvallen', skal: '', fler: false });
+    const hstart = giltiga('h_start', { kund: 'Ylva', Kund: 'Ylva', handlare: 'Bo', Handlare: 'Bo', vara: 'rep', envara: 'ett rep', byn: true, salj: false });
+    return [
+      ['publiken framför scenen satt inte runt elden', publik.every(t => !/elden/.test(t)) && publik.some(t => /scenen/.test(t))],
+      ['ett år står inte två gånger', alder.every(t => !/13 till 13/.test(t))],
+      ['en ensam vinnare kallas inte vinnarna', slut.every(t => !/vinnarna/.test(t))],
+      ['det första året säger inte därpå eller sedan', ar.every(t => !/därpå|Sedan|Så gick/.test(t))],
+      ['ett ensamt läger står inte i plural', lager.every(t => !/samlades|Deras|dem som/.test(t))],
+      ['varan har sin artikel', hstart.some(t => /ett rep/.test(t)) && hstart.every(t => !/för byn för/.test(t))],
+    ];
+  },
+};
