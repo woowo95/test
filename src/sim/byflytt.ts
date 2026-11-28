@@ -105,6 +105,13 @@ export const lagerProv: { kom?: (vl: Varlden, lager: VarldRad, fran: VarldRad, n
 export type LagerSkal = 'hunger' | 'missnoje' | 'fredlos';
 const lagerSkal = (d: FlyttDelar): LagerSkal => d.fredlos ? 'fredlos' : d.hunger >= ROVLAGER.missnoje * (d.missnoje ?? 0) ? 'hunger' : 'missnoje';
 
+// vikten för den som flyttar från r till m, dygn bort: trängseln där, relationen och avståndet (också när de möter ett sällskap
+// på vägen, vagmote.ts, steg 15.1.91)
+export function byFlyttVikt(vl: Varlden, v: VarldMark | undefined, r: VarldRad, m: VarldRad, dygn: number) {
+  const tr = clamp(FLYTT.trang - m.tal.folk / Math.max(1, barkraft(v, m)), 0, FLYTT.trang);
+  const rel = relation(vl, r.nr, m.nr) ?? grundlage(vl, r.nr, m.nr);
+  return tr * (1 + rel / 100) / 2 / (1 + dygn / FLYTT.narDygn);
+}
 // byarna inom räckhåll från raden, med vikten för den som flyttar dit
 export function flyttMal(vl: Varlden, v: VarldMark | undefined, r: VarldRad, d = radDelar(r)): { r: VarldRad; dygn: number; vikt: number }[] {
   const ut: { r: VarldRad; dygn: number; vikt: number }[] = [];
@@ -113,9 +120,7 @@ export function flyttMal(vl: Varlden, v: VarldMark | undefined, r: VarldRad, d =
     const p = varldPlatsNr(vl, g.nr), m = radNr(vl, p?.by);
     if (!m || m.nr === r.nr || !BYSORTER[m.sort].folk || (m.tal.folk <= 0 && m.nr !== vl.huvud)) continue;
     if (m.nr === vl.huvud && !r.syn) continue; // till huvudbyn flyttar den som har en förbindelse dit
-    const tr = clamp(FLYTT.trang - m.tal.folk / Math.max(1, barkraft(v, m)), 0, FLYTT.trang);
-    const rel = relation(vl, r.nr, m.nr) ?? grundlage(vl, r.nr, m.nr);
-    const vikt = tr * (1 + rel / 100) / 2 / (1 + g.dygn / FLYTT.narDygn);
+    const vikt = byFlyttVikt(vl, v, r, m, g.dygn);
     if (vikt > 0) ut.push({ r: m, dygn: g.dygn, vikt });
   }
   // rövarlägren inom räckhåll (lägrets grannät går till byarna omkring), för den som flyttar för hunger, missnöje eller är utvisad

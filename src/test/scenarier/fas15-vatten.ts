@@ -2,14 +2,14 @@
 // 15.1.93–15.1.95).
 import * as SIM from '../../sim';
 import { SCENARIER, testBy } from './hjalp';
-import { utanHandelser } from './fas15-11';
+import { paVagen, utanHandelser } from './fas15-11';
 
 // en färd från en by i världen (inte huvudbyns rad) till en granne, som packat och gett sig av; byn har mat nog och kan sy
 // vattensäckar och tält. g: varugruppen färden bär
-export function radFard(s0: SIM.State, opt: { min?: number; pack?: Record<string, number> } = {}) {
+export function radFard(s0: SIM.State, opt: { min?: number; pack?: Record<string, number>; syn?: true /* en by med förbindelse till huvudbyn och inom räckhåll för en flytt dit */ } = {}) {
   const s = SIM.cloneState(s0), vl = s.varld!;
   // grannarna längst bort först (en resa på några dygn), utom huvudbyn
-  const par = (vl.rader ?? []).filter(r => r.nr !== vl.huvud && r.tal.folk >= 4).flatMap(r => (SIM.byPlats(vl, r.nr)?.grannar ?? [])
+  const par = (vl.rader ?? []).filter(r => r.nr !== vl.huvud && r.tal.folk >= 4 && (!opt.syn || !!r.syn && !!SIM.byPlats(vl, r.nr)?.grannar?.some(g => SIM.varldPlatsNr(vl, g.nr)?.by === vl.huvud && g.dygn <= SIM.FLYTT.dygn))).flatMap(r => (SIM.byPlats(vl, r.nr)?.grannar ?? [])
     .map(g => ({ r, q: SIM.varldPlatsNr(vl, g.nr)?.by, dygn: g.dygn })).filter(x => x.q !== undefined && x.q !== vl.huvud && !!SIM.radNr(vl, x.q)))
     .filter(x => x.dygn >= (opt.min ?? 1.5)).sort((a, b) => a.dygn - b.dygn);
   for (const { r, q } of par) {
@@ -90,6 +90,32 @@ SCENARIER.fardhandelser = {
       [`rövarna stoppade färden (${i} gånger: ${val}) och det står i dagboken`, ranText],
       [`${strider} strider mot sex rövare (färden vann ${vann}); ${doda} av färdfolket dog, i hela personer ur byns folk (${folk0} → ${x.r.tal.folk}) och färdens namn`, doda > 0 && folk0 - x.r.tal.folk === doda && Number.isInteger(x.r.tal.folk)],
       [`världens krönika minns rånet och döden (${[...new Set(kron)].join(', ')})`, kron.includes('fardRan') && kron.includes('fardDod')],
+    ];
+  },
+};
+
+SCENARIER.flyttmote = {
+  text: 'Steg 15.1.91 (mötet): ett sällskap från huvudbyn möter några som flyttar från en by i nöd. De som inte har mat nog för vägen ber om mat, och ledaren väger varje portion med samma poäng som när maten tar slut: hungern hos dem som flyttar mot vad portionen är värd för det egna sällskapet. Det som ges är en gåva mellan byarna, och väger huvudbyn tyngre än målet följer de som flyttar med hem som nybyggare',
+  kor: () => {
+    const x = radFard(testBy(3), { pack: { torrkott: 1 }, min: 0 })!;
+    x.f.flytt = 4; delete x.f.folk; delete x.f.besked;
+    const vuxna = SIM.living(x.s).filter(q => SIM.ageOf(q, x.s.now) >= 20 && SIM.ageOf(q, x.s.now) < 50 && SIM.personFart(x.s, q) === 1);
+    const mal = SIM.byPlats(x.vl, x.vl.huvud!)!.grannar![0]!.nr;
+    const fore = (rik: boolean, trangt: boolean) => {
+      const y = paVagen(x.s, [vuxna[0]!.id, vuxna[1]!.id], mal), vl = y.s.varld!, f = vl.farder!.find(q => q.id === x.f.id)!, r = SIM.radNr(vl, f.fran)!;
+      y.sl.pack = rik ? { bar: 60 } : {}; // bär, som är värda mindre än hungern de stillar
+      if (trangt) SIM.radNr(vl, f.till)!.tal.folk = 100000; // målet är fullt: huvudbyn väger tyngre
+      const rel0 = SIM.relation(vl, r.nr, vl.huvud!) ?? 0, mat0 = SIM.FOOD.reduce((a, k) => a + Math.floor(f.pack![k] ?? 0), 0);
+      SIM.flyttMote(y.s, vl, y.sl, f, y.folk, y.s.now);
+      const mat = SIM.FOOD.reduce((a, k) => a + Math.floor(f.pack![k] ?? 0), 0);
+      return { gav: mat - mat0, rel: (SIM.relation(vl, r.nr, vl.huvud!) ?? 0) - rel0, till: f.till, huvud: vl.huvud!, bad: (y.s.stat?.['resa bön om mat'] ?? 0) > 0, dagbok: y.sl.dagbok.map(d => d[1]).join(' ') };
+    };
+    const rik = fore(true, false), fattig = fore(false, false), hem = fore(true, true);
+    return [
+      [`de som flyttar bad om mat och fick ${rik.gav} portioner av ett sällskap med mycket mat; relationen steg med ${rik.rel}`, rik.bad && rik.gav > 0 && rik.rel > 0],
+      [`ett sällskap utan mat att avvara gav inget (${fattig.gav}: ${fattig.dagbok})`, fattig.bad && fattig.gav === 0],
+      [`de flyttar dit de skulle när målet väger tyngre (${rik.till === rik.huvud ? 'till huvudbyn' : 'till målet'})`, rik.till !== rik.huvud],
+      [`och följer med hem som nybyggare när huvudbyn väger tyngre (${hem.till === hem.huvud ? 'till huvudbyn' : 'till målet'}: ${hem.dagbok})`, hem.till === hem.huvud],
     ];
   },
 };

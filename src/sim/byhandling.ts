@@ -626,7 +626,7 @@ KOHANDELSER.gruvUpp = (s, vl, p) => { const f = vl.farder?.find(x => x.id === p.
 // de som flyttade kommer fram (som KOHANDELSER.flytt i byflytt.ts): färden är slut
 function flyttFram(s: State, vl: Varlden, f: RadFard, t: number) {
   vl.farder = (vl.farder ?? []).filter(x => x !== f);
-  packaUr(radNr(vl, f.till) ?? radNr(vl, f.fran), f); // det som blev över har de med sig (steg 15.1.86)
+  packaUr(f.till === vl.huvud ? undefined : radNr(vl, f.till) ?? radNr(vl, f.fran), f); // det som blev över har de med sig (steg 15.1.86); till huvudbyn kommer de som främlingar och äter upp det på vägen
   fardSlut(s, 'flytt', (t - f.t0) / DAY); // (steg 15.1.84)
   KOHANDELSER.flytt?.(s, vl, { t, nr: 0, typ: 'flytt', sak: f.till, data: { fran: f.fran, n: f.flytt! } });
 }

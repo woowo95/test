@@ -18,7 +18,14 @@ import { grundvarde } from './varde';
 import { PERIODER, PERIODRADER, periodSlut } from './varldslag';
 import { Varlden, varldMark } from './varlden';
 import { fardDit, fardSpar, RadFard } from './byhandling';
-import { SEC, State } from './typer';
+import { SEC, State, type Person } from './typer';
+import { FOOD } from './saker';
+import { fardMatLage } from './fardresa';
+import { byFlyttVikt } from './byflytt';
+import { VARLD } from './varldmark';
+import { vagMellan } from './vagval';
+import { matLage, matPerResenar, RESA, resBehov } from './resa';
+import { stat } from './folk';
 
 type Part = { k: 's'; sl: Sallskap; rutor: Set<number> } | { k: 'f'; f: RadFard; rutor: Set<number> };
 const nyckel = (x: Part) => x.k === 's' ? `s${x.sl.id}` : `f${x.f.id}`;
@@ -87,6 +94,45 @@ function mote(s: State, vl: Varlden, sl: Sallskap, f: RadFard, t: number) {
   }
   dagbok(s, sl, 'vagmote', `Mötte folk från ${r.namn} på vägen${dit && dit.nr !== hem.nr ? ` till ${dit.namn}` : ''}${fick ? ` och sålde ${salda} saker för ${fick} silver` : ''}.`, t);
   count(s, 'resa möte');
+  flyttMote(s, vl, sl, f, folk, t);
+}
+
+// ---------- de som flyttar från en by i nöd (steg 15.1.91, Flera samhällen: Det man ser och möter på vägen) ----------
+// En flytt som inte har mat nog för vägen kvar ber sällskapet om mat. Ledaren väger varje portion med samma poäng som när maten
+// tar slut (MATSLUT): det ett dygn utan mat kostar en av dem som flyttar (RESA.hungerKost, mer för en ledare med empati), delat
+// med det en resenär äter per dygn, mot det portionen är värd för det egna sällskapet: RESA.behovVarde så länge resan behöver
+// den (resBehov), annars dess grundvärde för byn. Det som ges är en gåva mellan byarna. Sedan väljer de som flyttar igen bland
+// byarna de kan flytta till (flyttMal, med relationen efter gåvan), och väger huvudbyn tyngre än målet följer de med hem som
+// nybyggare: de går mot huvudbyn och kommer dit som främlingar.
+export function flyttMote(s: State, vl: Varlden, sl: Sallskap, f: RadFard, folk: Person[], t: number) {
+  const r = radNr(vl, f.fran);
+  if (!r || !f.flytt || f.gar !== 'ut' || f.till === vl.huvud || !f.pack) return;
+  const l = fardMatLage(s, vl, f, t), har = FOOD.reduce((a, k) => a + Math.floor(f.pack![k] ?? 0), 0);
+  const ber = Math.ceil(f.flytt * matPerResenar() * l.kvar - 1e-9) - har;
+  if (ber <= 0) return;
+  count(s, 'resa bön om mat');
+  const led = folk.find(p => p.id === sl.ledare) ?? folk[0];
+  const hjalp = RESA.hungerKost * (led ? Math.max(0, 1 + RESA.matEmpati * (stat(led, 'empati', s.now) - 10) / 10) : 1) / matPerResenar(); // en portion till den som flyttar
+  const behov = resBehov(sl, matLage(s, sl, t).kvar, folk.length).mat; // det det egna sällskapet behöver för dygnen som återstår
+  let gav = 0;
+  for (const k of [...FOOD].filter(q => Math.floor(sl.pack[q] ?? 0) >= 1).sort((a, b) => grundvarde(a) - grundvarde(b) || (a < b ? -1 : 1))) {
+    while (gav < ber && Math.floor(sl.pack[k] ?? 0) >= 1) {
+      const egen = FOOD.reduce((a, q) => a + Math.floor(sl.pack[q] ?? 0), 0), kost = egen <= behov ? RESA.behovVarde : grundvarde(k);
+      if (hjalp <= kost) break;
+      tappa(sl, k, 1); f.pack![k] = (f.pack![k] ?? 0) + 1; gav++;
+    }
+  }
+  if (gav) { byHandelse(vl, 'gava', vl.huvud!, r.nr, gav); count(s, 'resa gav mat', gav); }
+  dagbok(s, sl, 'vagmote', gav ? `De som flyttade från ${r.namn} bad om mat, och fick ${gav === 1 ? 'en portion' : `${gav} portioner`}.` : `De som flyttade från ${r.namn} bad om mat, men sällskapet hade ingen att ge.`, t);
+  // följa med hem: huvudbyn mot målet, med samma vikt som när de valde (byFlyttVikt), räknat härifrån: dygnen dit med sällskapet
+  // och dygnen kvar till målet
+  const v = varldMark(s), hp = byPlats(vl, vl.huvud!), h = radNr(vl, vl.huvud), m = radNr(vl, f.till);
+  if (!v || !hp || !h || !m || f.vg?.ruta === undefined) return;
+  const vag = vagMellan(vl, v, f.vg.ruta, hp.y * v.w + hp.x, 'fots', t);
+  if (!vag || byFlyttVikt(vl, v, r, h, vag.kostnad / VARLD.gangPerDygn) <= byFlyttVikt(vl, v, r, m, l.kvar)) return;
+  f.till = vl.huvud!; f.vg = { ...f.vg, vag: { fran: vag.fran, till: vag.till, steg: vag.steg }, pos: 0, gang: 0 };
+  count(s, 'resa nybyggare', f.flytt);
+  dagbok(s, sl, 'vagmote', `De som flyttade från ${r.namn} följer med hem för att bo i byn.`, t);
 }
 
 PERIODRADER.push({ namn: 'möten på vägen', period: 'timme', fn: (s, vl, n) => vagMoten(s, vl, n) });
