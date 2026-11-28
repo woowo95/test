@@ -17,7 +17,7 @@ import { dagbok, saljbar, resenarer, SAKNADKROK, Sallskap, sallskapNu, tappa } f
 import { grundvarde } from './varde';
 import { PERIODER, PERIODRADER, periodSlut } from './varldslag';
 import { Varlden, varldMark } from './varlden';
-import { fardSpar, RadFard } from './byhandling';
+import { fardDit, fardSpar, RadFard } from './byhandling';
 import { SEC, State } from './typer';
 
 type Part = { k: 's'; sl: Sallskap; rutor: Set<number> } | { k: 'f'; f: RadFard; rutor: Set<number> };
@@ -61,7 +61,7 @@ function mote2(s: State, vl: Varlden, a: RadFard, b: RadFard) {
 
 // huvudbyns sällskap möter en färd från en annan by
 function mote(s: State, vl: Varlden, sl: Sallskap, f: RadFard, t: number) {
-  const r = radNr(vl, f.fran), hem = r && byPlats(vl, r.nr), dit = byPlats(vl, f.till);
+  const r = radNr(vl, f.fran), hem = r && byPlats(vl, r.nr), dit = fardDit(vl, f); // gruvfärden går till gruvan (steg 15.1.28)
   SAKNADKROK.fard?.(s, sl, f, t); // en färd från en by som vet om vilsegången hittar den saknade (steg 11.8.13)
   const folk = resenarer(s, sl);
   if (!r || !hem || !folk.length) return;

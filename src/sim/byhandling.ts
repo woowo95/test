@@ -23,8 +23,14 @@ import { gruppAv, radLaggTill, radMarkId, radOverskott, radTaUr, sakGrupp, radGr
 import { RAD, radDoda, rikMal } from './rad';
 import { KOHANDELSER, laggIKo, periodSlut } from './varldslag';
 import { byPlats } from './landmarken';
-import { trampaFard, sallskapTyngd } from './leder';
-import { sparadVag, vagRutor } from './vagval';
+import { trampaFard, trampaPlatser, sallskapTyngd } from './leder';
+import { narmasteMal, packaVag, sparadVag, vagRutor } from './vagval';
+import { VARLD } from './varldmark';
+import { varldMark } from './varlden';
+import type { VarldPlats } from './landmarken';
+import { radKanner } from './ort';
+import { silverKvar } from './gruva';
+import { gruvPlanFor, RESA, sallskapNu, silverPlan, tomGruva } from './resa';
 import { anfallUtfall, BYANFALL, enhet, flockStorlek, forsvarare, lockVarde, vinstChans } from './radanfall';
 import { varldHandelse } from './varldkronika';
 import { flockKrok } from './rovare';
@@ -68,12 +74,13 @@ export const BYHANDLING = balans('byhandling', {
   beskedFull: 50, // ... och vill det fullt ut vid minus så mycket mer
   beskedKostnad: 0.15, // det sändebudet kostar i poäng (budets tid på vägen)
   uppdragKostnad: 0.2, // det ett uppdrag kostar i poäng utöver resan (risken, arbetet hemma) (steg 11.8.9)
+  gruvaKostnad: 0.2, // det en gruvfärd kostar i poäng utöver resan (risken i gruvan, arbetet hemma) (steg 15.1.28)
   krigKostnad: 0.3, // det kriget kostar i poäng (de döda och arbetet hemma)
   fredDygn: 8, // efter så många dygn (år i spelet) i krig väger tröttheten lika mycket som fejden
 });
 
 // det poängen räknas ur: byn som gör (r), grannen (mot), hur r ser på mot, ledarens egenskaper (1–20) och trons krigiskhet (0–1)
-export interface ByCtx { s: State; vl: Varlden; r: VarldRad; mot: VarldRad; rel: number; led?: Record<Stat, number>; krig: number; t: number } // t: när handlingen görs
+export interface ByCtx { s: State; vl: Varlden; r: VarldRad; mot: VarldRad; rel: number; led?: Record<Stat, number>; krig: number; t: number; gruva?: VarldPlats } // t: när handlingen görs; gruva: silvergruvan gruvfärden går till (steg 15.1.28)
 export interface ByHandlingDef { namn: string; poang: (c: ByCtx) => number; gor: (c: ByCtx) => void }
 // en egenskap hos ledaren från 0 till 1 (en by utan känd ledare är mitt emellan)
 export const ledDrag = (c: ByCtx, k: Stat) => ((c.led?.[k] ?? 10.5) - 1) / 19;
@@ -162,7 +169,63 @@ export const BYHANDLINGAR = {
       count(c.s, 'raduppdrag_ut');
     },
   },
+  // gruvfärden (steg 15.1.28): byn skickar bärare till en silvergruva den känner, när det väntade silvret är värt mer än resan,
+  // räknat som uppdraget; framme tas silvret ur gruvan så långt det räcker, och det bärs hem
+  gruva: {
+    namn: 'Gruvfärd',
+    poang: c => { const a = gruvAffar(c); return a ? (a.silver * grundvarde('silver') - BYHANDLING.barare * 2 * a.dygn * BYHANDLING.dygnKostnad) / BYHANDLING.skala - BYHANDLING.gruvaKostnad : -1; },
+    gor: c => {
+      const a = gruvAffar(c);
+      if (!a || !c.gruva) return;
+      skicka(c.s, c.vl, { id: fardNr(c.vl), fran: c.r.nr, till: c.gruva.nr, gruva: true, vant: a.silver, nere: a.nere, g: 'mat', n: 0, t0: c.t, t1: c.t + a.dygn * DAY }, BYHANDLING.barare);
+      count(c.s, 'radgruva_ut');
+    },
+  },
 } as const satisfies Record<string, ByHandlingDef>;
+// ---------- gruvfärden (steg 15.1.28, Silvergruvan i tal i fliken Samhället) ----------
+// restiden från byn r till platsen q med vägvalet till fots, som i grannätet (narmasteMal); vägen sparas i världen
+function gruvRestid(s: State, vl: Varlden, r: VarldRad, q: VarldPlats): number | undefined {
+  const h = byPlats(vl, r.nr), v = varldMark(s);
+  if (!h || !v) return undefined;
+  const a = h.y * v.w + h.x, b = q.y * v.w + q.x;
+  let vag = sparadVag(vl, 'fots', a, b);
+  if (!vag) {
+    const f = narmasteMal(vl, v, a, new Set([b]), 1, 'fots')[0];
+    if (!f) return undefined;
+    vag = { fran: a, till: b, fs: 'fots', steg: packaVag(f.rutor, v.w), kostnad: Math.round(f.kostnad * 1000) / 1000, t: s.now };
+    (vl.vagar ??= []).push(vag);
+  }
+  return Math.round(vag.kostnad / VARLD.gangPerDygn * 100) / 100;
+}
+// silvret de som redan är på väg till gruvan q väntas ta: byarnas gruvfärder och huvudbyns sällskap
+function gruvVantat(s: State, vl: Varlden, q: VarldPlats) {
+  let n = 0;
+  for (const f of vl.farder ?? []) if (f.gruva && f.till === q.nr && f.t2 === undefined) n += f.vant ?? 0;
+  for (const sl of sallskapNu(vl)) if (sl.skal === 'hamta' && sl.mal === q.nr && sl.skede !== 'hemat') n += gruvPlanFor(s, sl)?.silver ?? 0;
+  return n;
+}
+// det byn c.r väntar sig av en färd till gruvan c.gruva: silvret BYHANDLING.barare bärare med en vuxens bärförmåga bryter
+// (silverPlan, med RESA.margMitt), högst det som finns kvar när det andra väntas ta är draget, tiden nere och dygnen dit
+function gruvAffar(c: ByCtx): { silver: number; nere: number; dygn: number } | undefined {
+  const { s, vl, r, gruva: q } = c;
+  if (!q || r.nr === vl.huvud || r.tal.folk < BYHANDLING.barare * 2 || vl.farder?.some(f => f.fran === r.nr && f.gruva)) return undefined;
+  const dygn = gruvRestid(s, vl, r, q);
+  if (dygn === undefined) return undefined;
+  const plan = silverPlan(BYHANDLING.barare, BYHANDLING.barare * RESA.hander, dygn, RESA.margMitt);
+  const kvar = Math.floor(silverKvar(q) - gruvVantat(s, vl, q) + 1e-9), silver = Math.min(plan?.silver ?? 0, kvar);
+  return plan && silver >= 1 ? { silver, nere: plan.nere, dygn } : undefined;
+}
+// silvergruvorna byn r känner (radKanner): kända, besökta eller ett rykte
+const kandaGruvor = (vl: Varlden, r: VarldRad) => (vl.platser ?? []).filter(q => q.k === 'silvergruva' && radKanner(vl, r, q.nr) !== undefined);
+// färden är framme vid gruvan: silvret tas ur gruvan så långt det räcker och bärs hem; är gruvan tom tas den bort, som när
+// huvudbyns sällskap tömmer den (tomGruva i resa.ts)
+function gruvFardFram(s: State, vl: Varlden, f: RadFard) {
+  const q = varldPlatsNr(vl, f.till);
+  const fick = q?.k === 'silvergruva' ? Math.max(0, Math.min(f.vant ?? 0, Math.floor(silverKvar(q) + 1e-9))) : 0;
+  if (q && fick > 0) { (q.inne ??= {}).silver = Math.floor(silverKvar(q) + 1e-9) - fick; f.silver = (f.silver ?? 0) + fick; }
+  if (q && fick > 0 && silverKvar(q) < 1) tomGruva(s, q);
+  count(s, fick > 0 ? 'radgruva_silver' : 'radgruva_tom', Math.max(1, fick));
+}
 // det byn r väntar sig av ett uppdrag hos grannen mot (en levande by med ett utlyst uppdrag, eller en ruin): numret (fyndId för
 // ruinen), värdet (i grundvärde, högst det bärarna bär) och dygnen dit. Huvudbyn reser med verkliga bybor (resa.ts)
 function uppdragAffar(c: ByCtx): { id: number; varde: number; dygn: number } | undefined {
@@ -230,6 +293,11 @@ export function byVal(s: State, vl: Varlden, r: VarldRad, n: number): { id: ByHa
     const c = byCtx(s, vl, r, m, t), p = DEF.uppdrag.poang(c) + (varldSlump(vl, r.nr, n, 0x5255 + i) - 0.5) * 2 * BYHANDLING.slump;
     if (p > 0 && (!bast || p > bast.poang)) bast = { id: 'uppdrag', c, poang: p };
   });
+  // silvergruvorna byn känner: bara gruvfärden (steg 15.1.28)
+  kandaGruvor(vl, r).forEach((q, i) => {
+    const c = { ...byCtx(s, vl, r, r, t), gruva: q }, p = DEF.gruva.poang(c) + (varldSlump(vl, r.nr, n, 0x4752 + i) - 0.5) * 2 * BYHANDLING.slump;
+    if (p > 0 && (!bast || p > bast.poang)) bast = { id: 'gruva', c, poang: p };
+  });
   return bast;
 }
 // en gång om dygnet: varje by i världen med en ledare gör det den valt
@@ -249,7 +317,7 @@ export function byarnasHandlingar(s: State, vl: Varlden, n: number) {
 // mottagaren betalar med silver och, när silvret inte räcker, med det den själv har mest överflöd av. Betalningen bärs hem och
 // läggs i byns förråd när färden kommer hem. Färden trampar vägen åt båda håll och syns på världskartan. Huvudbyn som mål kommer
 // med handlaren (11.6.8).
-export interface RadFard { uppdrag?: number; /* uppdraget färden går mot (steg 11.8.9) */ besked?: BeskedTon; /* sändebudets besked (steg 11.6.23) */ gava?: true; anfall?: number; byte?: Partial<Record<VarugruppId, number>>; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[]; folk?: string[] /* namnen på dem som går (steg B.39, fardfolk.ts) */ } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
+export interface RadFard { gruva?: true; vant?: number; nere?: number; /* gruvfärden (steg 15.1.28): till är gruvans plats, vant det väntade silvret och nere dygnen i gruvan */ uppdrag?: number; /* uppdraget färden går mot (steg 11.8.9) */ besked?: BeskedTon; /* sändebudets besked (steg 11.6.23) */ gava?: true; anfall?: number; byte?: Partial<Record<VarugruppId, number>>; id: number; fran: number; till: number; g: VarugruppId; n: number; t0: number; t1: number; t2?: number; silver?: number; h?: VarugruppId; hn?: number; handlare?: true; last?: HandlarLast; hem?: HVara[]; mott?: string[]; folk?: string[] /* namnen på dem som går (steg B.39, fardfolk.ts) */ } // mott: de sällskap färden mött på vägen (steg 11.6.12) // last: handlarens varor och silver på väg till huvudbyn; hem: det hen bär hem (steg 11.6.9) // handlare: färden är en handlare som går till huvudbyn (steg 11.6.8)
 // tonen i beskedet och dess poäng: det vänliga eller det ovänliga, det som lönar sig mest (huvudbyns stat och kyrka väljer
 // likadant, sandebud.ts)
 // fejden (steg 12.1.114): ju längre ner byn ser på grannen under beskedRel, desto mindre vill den vara vänlig (gåvan och det
@@ -338,10 +406,19 @@ export function gavaAffar(c: ByCtx): FardAffar | undefined {
 // färderna mellan byarna (kodgenomgången, fynd 156): nästa nummer (det används i världens slump, så det tas när färden
 // skapas), färden som ger sig av med tyngd personer, den som vänder hem nu lika lång väg och de döda som dras av byns folk och styrka
 const fardNr = (vl: Varlden) => vl.nastaFard = (vl.nastaFard ?? 0) + 1;
+// platsen färden går till: grannbyns, eller gruvans för gruvfärden (steg 15.1.28)
+export const fardDit = (vl: Varlden, f: RadFard) => f.gruva ? varldPlatsNr(vl, f.till) : byPlats(vl, f.till);
+const fardPlats = (vl: Varlden, f: RadFard, nr: number) => nr === f.till ? fardDit(vl, f) : byPlats(vl, nr);
+// stigen trampas där färden går, dit eller (hem) tillbaka
+function trampaFardDit(s: State, f: RadFard, tyngd: number, t: number, hem = false) {
+  if (!f.gruva) { if (hem) trampaFard(s, f.till, f.fran, tyngd, t); else trampaFard(s, f.fran, f.till, tyngd, t); return; }
+  const vl = s.varld, a = vl && byPlats(vl, f.fran), b = vl && fardDit(vl, f);
+  if (a && b) trampaPlatser(s, hem ? b : a, hem ? a : b, tyngd, t);
+}
 function skicka(s: State, vl: Varlden, f: RadFard, tyngd: number) {
   (vl.farder ??= []).push(f);
   namnFolk(vl, f, f.handlare ? f.last?.folk ?? 1 : tyngd);
-  trampaFard(s, f.fran, f.till, sallskapTyngd(tyngd), f.t0);
+  trampaFardDit(s, f, sallskapTyngd(tyngd), f.t0);
   laggIKo(vl, f.t1, 'fardFram', { sak: f.id });
 }
 function vandHem(s: State, vl: Varlden, f: RadFard, tyngd: number) {
@@ -423,6 +500,7 @@ KOHANDELSER.fardFram = (s, vl, p) => {
   const f = vl.farder?.find(x => x.id === p.sak);
   if (!f) return;
   const r = radNr(vl, f.fran), mot = radNr(vl, f.till);
+  if (f.gruva) { f.t2 = f.t1 + (f.nere ?? 0) * DAY + (f.t1 - f.t0); gruvFardFram(s, vl, f); trampaFardDit(s, f, sallskapTyngd(BYHANDLING.barare), p.t, true); laggIKo(vl, f.t2, 'fardHem', { sak: f.id }); return; } // gruvfärden (steg 15.1.28)
   if (f.handlare) { handlarFram(s, f.fran); return; }
   if (f.uppdrag !== undefined) { f.t2 = f.t1 + (f.t1 - f.t0); uppdragFardFram(s, vl, f); trampaFard(s, f.till, f.fran, sallskapTyngd(BYHANDLING.barare), p.t); laggIKo(vl, f.t2, 'fardHem', { sak: f.id }); return; } // handlaren väntar vid kartans kant och går in när det är fritt (handel.ts)
   f.t2 = f.t1 + (f.t1 - f.t0);
@@ -533,7 +611,7 @@ export function fardSpar(vl: Varlden, f: RadFard, ta: number, tb: number, w: num
     if (b === undefined) continue;
     const lo = Math.max(ta, a), hi = Math.min(tb, b);
     if (hi < lo) continue;
-    const p = byPlats(vl, fr), q = byPlats(vl, ti), v = p && q ? fardRutor(vl, w, p.y * w + p.x, q.y * w + q.x) : undefined;
+    const p = fardPlats(vl, f, fr), q = fardPlats(vl, f, ti), v = p && q ? fardRutor(vl, w, p.y * w + p.x, q.y * w + q.x) : undefined;
     if (!v?.length) continue;
     const del = (t: number) => (t - a) / Math.max(1, b - a) * (v.length - 1);
     for (let i = Math.max(0, Math.floor(del(lo))); i <= Math.min(v.length - 1, Math.ceil(del(hi))); i++) ut.push(v[i]);
@@ -542,7 +620,7 @@ export function fardSpar(vl: Varlden, f: RadFard, ta: number, tb: number, w: num
 }
 export function fardLage(vl: Varlden, f: RadFard, t: number, w: number): { x: number; y: number; dx: number } | undefined {
   if (t >= f.t1 && f.t2 === undefined) return undefined; // framme (handlaren i huvudbyn)
-  const ut = t < f.t1, a = byPlats(vl, ut ? f.fran : f.till), b = byPlats(vl, ut ? f.till : f.fran);
+  const ut = t < f.t1, a = fardPlats(vl, f, ut ? f.fran : f.till), b = fardPlats(vl, f, ut ? f.till : f.fran);
   if (!a || !b) return undefined;
   const v = fardRutor(vl, w, a.y * w + a.x, b.y * w + b.x);
   if (!v?.length) return undefined;

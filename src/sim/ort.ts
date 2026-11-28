@@ -358,6 +358,13 @@ export function radKanner(vl: Varlden, r: VarldRad, nr: number): number | undefi
   const g = egen.grannar ?? [];
   if (g.some(x => x.nr === nr)) return O_KANT;
   for (const x of g) if (varldPlatsNr(vl, x.nr)?.grannar?.some(y => y.nr === nr)) return O_RYKTE;
+  // närområdet, som i huvudbyn (steg 15.1.28): en plats utan folk inom ORT.narDygn dygns gång är känd, och en som en granne
+  // känner så är ett rykte
+  const q = varldPlatsNr(vl, nr);
+  if (!q || (LANDMARKEN[q.k] as LandmarkDef).folk) return undefined;
+  const nara = (h: { x: number; y: number } | undefined) => !!h && Math.hypot(q.x - h.x, q.y - h.y) <= ORT.narDygn * VARLD.gangPerDygn;
+  if (nara(egen)) return O_KANT;
+  if (g.some(x => nara(varldPlatsNr(vl, x.nr)))) return O_RYKTE;
   return undefined;
 }
 

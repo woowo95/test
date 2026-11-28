@@ -119,3 +119,36 @@ SCENARIER.losen = {
     ];
   },
 };
+
+SCENARIER.radgruva = {
+  text: 'Steg 15.1.28: alla byar bryter silver. Gruvfärden är en rad i BYHANDLINGAR: en grannby med en silvergruva i närområdet skickar bärare dit när det väntade silvret är värt mer än resan, tar silvret ur gruvan och bär hem det, och en by som inte känner någon gruva skickar ingen',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), vl = s.varld!;
+    const byar = vl.rader!.filter(x => SIM.lever(vl, x) && x.nr !== vl.huvud && SIM.BYSORTER[x.sort].ledare && x.tal.folk >= 4);
+    const gruvor = (vl.platser ?? []).filter(q => q.k === 'silvergruva');
+    const r = byar[0], h = SIM.byPlats(vl, r.nr)!, q = gruvor[0];
+    if (!r || !q) return [[`en by (${r?.namn}) och en gruva (${q?.namn})`, false]];
+    // gruvan ligger några rutor från byn, i dess närområde
+    let p = -1, c = { ...SIM.byCtx(s, vl, r, r, s.now), gruva: q };
+    for (const [dx, dy] of [[3, 0], [-3, 0], [0, 3], [0, -3], [2, 2], [-2, -2], [2, -2], [-2, 2]]) { q.x = h.x + dx; q.y = h.y + dy; (q.inne ??= {}).silver = 40; p = SIM.BYHANDLINGAR.gruva.poang(c); if (p > 0) break; }
+    const kann = SIM.radKanner(vl, r, q.nr), silver0 = r.tal.silver, kvar0 = SIM.silverKvar(q);
+    const n0 = vl.nastaFard ?? 0;
+    SIM.BYHANDLINGAR.gruva.gor(c);
+    const f = (vl.farder ?? []).find(x => x.id > n0 && x.fran === r.nr && x.gruva);
+    if (f) SIM.KOHANDELSER.fardFram(s, vl, { sak: f.id } as never);
+    const kvar1 = SIM.silverKvar(q), bar = f?.silver ?? 0;
+    if (f) SIM.KOHANDELSER.fardHem(s, vl, { sak: f.id } as never);
+    const silver1 = r.tal.silver;
+    // en by som inte känner någon gruva
+    const r2 = byar.find(x => x !== r && !gruvor.some(g => SIM.radKanner(vl, x, g.nr) !== undefined));
+    const v2 = r2 ? SIM.byVal(s, vl, r2, 0) : undefined;
+    return [
+      [`${r.namn} känner gruvan i närområdet (${kann})`, kann !== undefined],
+      [`gruvfärden är värd mer än resan (poängen ${p.toFixed(2)})`, p > 0],
+      [`bärarna ger sig av (${f ? `färd ${f.id}, väntar ${f.vant} silver` : 'ingen'})`, !!f && (f.vant ?? 0) >= 1],
+      [`framme tas silvret ur gruvan (${kvar0} → ${kvar1}) och bärs (${bar})`, bar >= 1 && kvar1 === kvar0 - bar],
+      [`hemma har byn silvret (${silver0} → ${silver1})`, silver1 === silver0 + bar],
+      [`en by som inte känner någon gruva (${r2?.namn ?? 'ingen'}) skickar ingen (valet ${v2?.id ?? 'inget'})`, !!r2 && v2?.id !== 'gruva'],
+    ];
+  },
+};

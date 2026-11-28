@@ -769,12 +769,18 @@ function gruvBit(s: State, sl: Sallskap, t: number, dt: number) {
 }
 // gruvan är tom (steg 15.1.10): den tas bort ur världen, sällskapet vet att den är borta (byn får höra det när de kommer hem),
 // och en ny gruva läggs på ett berg där ingen gruva tömts, så att världen åter har SILVER.gruvor gruvor
-function gruvanTom(s: State, sl: Sallskap, q: VarldPlats, folk: Person[]) {
+// gruvan q är tom: den tas bort ur världen och en ny läggs (också när en grannbys gruvfärd tömmer den, steg 15.1.28)
+export function tomGruva(s: State, q: VarldPlats): boolean {
   const vl = s.varld, v = varldMark(s);
-  if (!vl || !vl.platser?.includes(q)) return;
+  if (!vl || !vl.platser?.includes(q)) return false;
   if (v) (vl.tommaGruvor ??= []).push(q.y * v.w + q.x);
-  taBortPlats(s, vl, q); vetBorta(s, folk, q.nr);
+  taBortPlats(s, vl, q);
   if (v) laggGruvor(vl, v, s.now);
+  return true;
+}
+function gruvanTom(s: State, sl: Sallskap, q: VarldPlats, folk: Person[]) {
+  if (!tomGruva(s, q)) return;
+  vetBorta(s, folk, q.nr);
   dagbok(s, sl, 'fram', `Gruvan är tom. Det sista silvret är brutet.`); count(s, 'gruvaTom');
 }
 // på väg ut ur byn sitter ryttaren på hästen: hästen följer hen till kanten (steg 11.11.4)

@@ -74,11 +74,11 @@ const grupp = (g: VarugruppId, n: number) => g === 'mat' ? `${n} portioner mat` 
 // så många är med på färden (utan namn i en äldre sparning)
 export const fardAntal = (f: RadFard, barare: number) => f.folk?.length ?? f.anfall ?? (f.besked ? 1 : f.handlare ? f.last?.folk ?? 1 : barare);
 export function fardRuta(s: State, f: RadFard, barare: number): FardRuta | undefined {
-  const vl = s.varld, a = vl && byPlats(vl, f.fran), b = vl && (byPlats(vl, f.till) ?? varldPlatsNr(vl, f.till));
+  const vl = s.varld, a = vl && byPlats(vl, f.fran), b = vl && (f.gruva ? varldPlatsNr(vl, f.till) : byPlats(vl, f.till) ?? varldPlatsNr(vl, f.till)); // gruvfärden går till gruvans plats (steg 15.1.28)
   if (!vl || !a || !b) return undefined;
   const hemat = f.t2 !== undefined && s.now >= f.t1, u = f.uppdrag !== undefined && f.uppdrag >= 0 ? uppdragNr(vl, f.uppdrag) : undefined;
-  const titel = f.uppdrag !== undefined ? 'Uppdrag' : f.besked ? 'Sändebud' : f.anfall !== undefined ? 'Plundring' : f.gava ? 'Gåva' : f.last?.vagnar ? 'Karavan' : f.handlare ? 'Handlare' : 'Handelsfärd';
-  const varfor = f.uppdrag !== undefined ? (u ? uppdragDef(u.k).namn : 'Hämta det som finns kvar i ruinen') : f.besked ? (f.besked === 'besked' ? 'Ett vänligt besked' : 'Ett ovänligt besked') : f.anfall !== undefined ? `Plundra ${b.namn}` : f.gava ? `Ge en gåva till ${b.namn}` : f.handlare ? `Handla i ${b.namn}` : `Sälja ${VARUGRUPPER[f.g].namn.toLowerCase()} i ${b.namn}`;
+  const titel = f.gruva ? 'Gruvfärd' : f.uppdrag !== undefined ? 'Uppdrag' : f.besked ? 'Sändebud' : f.anfall !== undefined ? 'Plundring' : f.gava ? 'Gåva' : f.last?.vagnar ? 'Karavan' : f.handlare ? 'Handlare' : 'Handelsfärd';
+  const varfor = f.gruva ? `Bryta silver i ${b.namn}` : f.uppdrag !== undefined ? (u ? uppdragDef(u.k).namn : 'Hämta det som finns kvar i ruinen') : f.besked ? (f.besked === 'besked' ? 'Ett vänligt besked' : 'Ett ovänligt besked') : f.anfall !== undefined ? `Plundra ${b.namn}` : f.gava ? `Ge en gåva till ${b.namn}` : f.handlare ? `Handla i ${b.namn}` : `Sälja ${VARUGRUPPER[f.g].namn.toLowerCase()} i ${b.namn}`;
   const bar: string[] = [], varor = new Map<string, number>();
   for (const w of [...f.last?.varor ?? [], ...f.hem ?? []]) varor.set(w.k, (varor.get(w.k) ?? 0) + w.n);
   for (const [k, n] of varor) bar.push(`${n} ${(SAKER[k as keyof typeof SAKER]?.namn ?? k).toLowerCase()}`);
