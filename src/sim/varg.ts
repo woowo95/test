@@ -13,7 +13,7 @@ import { blodas } from './blod';
 import { bedFor } from './bygg';
 import { varmareInne } from './byggnader';
 import { Bit, Rum, bitAt, bitsOf, dorrDef, roomAt, freeNear, gridOf } from './byggnad';
-import { dodaDjur, dragOf, djurOf, grupperOf, halsaOf, satDjurHalsa } from './djur';
+import { FLOCKARTER, dodaDjur, dragOf, djurOf, flockGrupper, flockOf, grupperOf, halsaOf, satDjurHalsa } from './djur';
 import { upplev } from './uppvaxt';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, isSick, livet, living, log, stat } from './folk';
 import { halsa, kanGa } from './halsa';
@@ -86,6 +86,8 @@ export const VARG = balans('varg', {
   tamMat: 0.5, // hungern sjunker så här mycket när flocken tar ett får eller en get (steg 9.8.12)
   ater: 0.1, // hungern sjunker så här mycket i minuten medan flocken äter av den den dödat (steg B.11)
   kaninR: 6, kaninChans: 0.4, kaninMat: 0.25, // en hungrig flock nära en kaningrupp tar en kanin i timmen med den här chansen, och hungern sjunker så här mycket
+  radjurMat: 0.5, // ... och ett rådjur (steg 15.1.139) sänker hungern så här mycket
+  bytesTryck: 0.3, // byn drar en flock till sig när hungern är över stjalHunger + så här mycket × tätheten av byten nära (steg 15.1.139)
   // att se vargar och väcka byn
   vaktSer: 24, folkSer: 10, nattSer: 0.6, // vakten ser vargar inom så här många rutor, andra inom folkSer, gånger nattSer i mörkret
   vack: 25, // vakten väcker byn när flocken är så här nära byns område (utanforByn)
@@ -203,7 +205,7 @@ function nyttMal(s: State, f: Vargflock, bort?: { x: number; y: number }) {
     const folk = living(s).filter(vaken);
     const mal: { x: number; y: number }[] = [
       ...grupperOf(s).filter(q => q.n > 0 && Math.hypot(q.x - ex, q.y - ey) > VARG.eldR * VARG.kaninEld),
-      ...tamUte(s).filter(d => !folk.some(q => avst(q, d) < VARG.vaken)),
+      ...(drasTillByn(s, f) ? tamUte(s).filter(d => !folk.some(q => avst(q, d) < VARG.vaken)) : []),
     ];
     const g = mal.sort((a, b) => avst(a, f) - avst(b, f))[0];
     if (g && avst(g, f) < VARG.vandra * 2) { f.mx = g.x; f.my = g.y; return; }
@@ -241,16 +243,25 @@ function kommer(s: State) {
   count(s, 'vargflockar'); count(s, 'vargar', n);
 }
 
-// en hungrig flock nära en kaningrupp tar en kanin
-function kaninJakt(s: State, f: Vargflock) {
+// en hungrig flock nära en kaningrupp tar en kanin, och nära en rådjursflock ett rådjur (steg 15.1.139): det närmaste bytet
+function bytesJakt(s: State, f: Vargflock) {
   if (f.hunger < VARG.kaninHunger) return;
-  const g = grupperOf(s).find(q => q.n > 0 && avst(q, f) < VARG.kaninR);
-  if (!g || rnd(s, 'varg') >= VARG.kaninChans) return;
-  const k = djurOf(s).find(d => d.grupp === g.id);
+  const g = grupperOf(s).find(q => q.n > 0 && avst(q, f) < VARG.kaninR), r = flockGrupper(s, FLOCKARTER.radjur).find(q => q.n > 0 && avst(q, f) < VARG.kaninR);
+  const radjur = !!r && (!g || avst(r, f) < avst(g, f));
+  if (!(g || r) || rnd(s, 'varg') >= VARG.kaninChans) return;
+  const k = radjur ? flockOf(s, FLOCKARTER.radjur).find(d => d.grupp === r!.id) : djurOf(s).find(d => d.grupp === g!.id);
   if (!k) return;
   dodaDjur(s, k.id); blodas(s, k.x, k.y, 'jakt', 1);
-  f.hunger = Math.max(0, f.hunger - VARG.kaninMat);
-  count(s, 'vargKanin');
+  f.hunger = Math.max(0, f.hunger - (radjur ? VARG.radjurMat : VARG.kaninMat));
+  count(s, radjur ? 'vargRadjur' : 'vargKanin');
+}
+// byn drar flocken till sig först när den är hungrigare än stjalHunger + bytesTryck × tätheten av byten nära (steg 15.1.139):
+// harars grupper och rådjursflockar inom vandra × 2, delat med 3. Tätheten räknas bara när hungern kan räcka
+function drasTillByn(s: State, f: Vargflock) {
+  if (f.hunger <= VARG.stjalHunger) return false;
+  if (f.hunger > VARG.stjalHunger + VARG.bytesTryck) return true;
+  const R = VARG.vandra * 2, n = grupperOf(s).filter(q => q.n > 0 && avst(q, f) < R).length + flockGrupper(s, FLOCKARTER.radjur).filter(q => q.n > 0 && avst(q, f) < R).length;
+  return f.hunger > VARG.stjalHunger + VARG.bytesTryck * Math.min(1, n / 3);
 }
 
 // de som är vakna ser flocken och ropar; vakten ser längst och väcker byn när flocken är nära
@@ -428,10 +439,11 @@ function flockSteg(s: State, f: Vargflock, folk: Person[], dtSec: number) {
     }
   }
   // ett får eller en get som står ute utan någon vaken nära (steg 9.8.12): djuret i fähuset är skyddat
-  const d = f.hunger > VARG.stjalHunger ? tamBytet(s, f, folk) : undefined;
+  const tillByn = drasTillByn(s, f); // en mätt flock med byten nära söker sig mer sällan till byn (steg 15.1.139)
+  const d = tillByn ? tamBytet(s, f, folk) : undefined;
   if (d && chansPer(s, VARG.stjalChans, 60, dtSec, 'varg')) { f.gor = 'smyger'; f.tam = d.id; f.mx = d.x; f.my = d.y; count(s, 'vargSmygerTam'); return; }
   const z = zoneOf(s);
-  if (z && !isLight(s.now) && f.hunger > VARG.stjalHunger && (!s.fire.lit || f.hunger >= VARG.eldHunger) && chansPer(s, VARG.stjalChans, 60, dtSec, 'varg')) {
+  if (z && !isLight(s.now) && tillByn && (!s.fire.lit || f.hunger >= VARG.eldHunger) && chansPer(s, VARG.stjalChans, 60, dtSec, 'varg')) {
     f.gor = 'smyger'; f.mx = z.x + z.w / 2; f.my = z.y + z.h / 2; count(s, 'vargSmyger'); return;
   }
   if (ga(s, f, VARG.gaFart, dtSec) < 1) nyttMal(s, f);
@@ -736,7 +748,7 @@ export function vargSteg(s: State, dtSec: number) {
   for (const f of s.vargar) {
     const strid = vargIStrid(s, f);
     if (strid) { const k = (strid.djur ?? []).map(d => strid.st.kampar.find(q => q.id === d.k)!).filter(q => q && q.lage !== 'dod' && q.lage !== 'borta'); if (k.length) { f.x = k.reduce((a, q) => a + q.x, 0) / k.length; f.y = k.reduce((a, q) => a + q.y, 0) / k.length; } continue; } // flocken slåss på kartan (steg 10.1.17): den står där vargarna står
-    if (nyTimme) { f.hunger = Math.min(1, f.hunger + VARG.hungerTim); kaninJakt(s, f); }
+    if (nyTimme) { f.hunger = Math.min(1, f.hunger + VARG.hungerTim); bytesJakt(s, f); }
     ses(s, f, folk);
     if (nyTimme) jaktBeslut(s, f, folk);
     if (f.vargar.length) flockSteg(s, f, folk, dtSec);

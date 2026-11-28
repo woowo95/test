@@ -238,3 +238,49 @@ SCENARIER.vargstold = {
     ];
   },
 };
+
+SCENARIER.vargradjur = {
+  text: 'Steg 15.1.139 (scenariot vargbyte i steget; namnet fanns redan): vargflocken jagar rådjur, och en mätt flock söker sig mer sällan till byn. En flock med rådjur nära smyger mer sällan till förrådet än en utan, och flocken tar ett rådjur ur en flock nära',
+  kor: () => {
+    const s0 = SIM.createState(6, START);
+    const z = SIM.zoneOf(s0)!, zx = z.x + z.w / 2, zy = z.y + z.h / 2, R = SIM.VARG.vandra * 2;
+    // där flocken står: en bit utanför förrådet. Nätter med en rådjursflock nära och nätter utan rådjur och harar nära
+    const nara = (s: SIM.State, x: number, y: number) => SIM.flockGrupper(s, SIM.FLOCKARTER.radjur).filter(q => q.n > 0 && Math.hypot(q.x - x, q.y - y) < R).length;
+    const harar = (s: SIM.State, x: number, y: number) => SIM.grupperOf(s).filter(q => q.n > 0 && Math.hypot(q.x - x, q.y - y) < R).length;
+    const px = zx + 12, py = zy;
+    const med: number[] = [], utan: number[] = [];
+    for (let d = 0; d < 60 && (med.length < 6 || utan.length < 6); d++) {
+      const k = SIM.cloneState(s0); k.now += d * SIM.DAY; klockan(k, 23);
+      const r = nara(k, px, py), h = harar(k, px, py);
+      if (r >= 1 && med.length < 6) med.push(k.now); else if (r === 0 && h === 0 && utan.length < 6) utan.push(k.now);
+    }
+    const prova = (t: number) => {
+      const k = SIM.cloneState(s0); k.now = t; k.fire.lit = false;
+      for (const q of SIM.living(k)) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: k.now + 8 * SIM.HOUR, carry: 0 };
+      let n = 0;
+      for (let i = 0; i < 30; i++) {
+        const f: SIM.Vargflock = { id: k.vargNr = (k.vargNr ?? 0) + 1, vargar: [10_000_008, 10_000_009], x: px, y: py, mx: px, my: py, gar: k.now + 48 * SIM.HOUR, hunger: 0.45, gor: 'stryker' };
+        k.vargar = [f];
+        for (let j = 0; j < 6 && f.gor !== 'smyger'; j++) { k.now += 10 * SIM.SEC; SIM.vargSteg(k, 10); }
+        if (f.gor === 'smyger') n++;
+      }
+      return n;
+    };
+    const sMed = med.reduce((a, t) => a + prova(t), 0), sUtan = utan.reduce((a, t) => a + prova(t), 0);
+    // flocken tar ett rådjur ur en flock nära
+    const k = SIM.cloneState(s0); k.now = med[0] ?? k.now;
+    const g = SIM.flockGrupper(k, SIM.FLOCKARTER.radjur).find(q => q.n > 0)!;
+    let tog = 0;
+    for (let i = 0; i < 20 && !tog; i++) {
+      const f: SIM.Vargflock = { id: k.vargNr = (k.vargNr ?? 0) + 1, vargar: [10_000_008, 10_000_009], x: g.x + 1, y: g.y, mx: g.x + 1, my: g.y, gar: k.now + 48 * SIM.HOUR, hunger: 0.9, gor: 'stryker' };
+      k.vargar = [f];
+      k.now = Math.ceil(k.now / SIM.HOUR) * SIM.HOUR + SIM.SEC; SIM.vargSteg(k, 2);
+      tog = k.stat?.vargRadjur ?? 0;
+    }
+    return [
+      [`nätter med rådjur nära (${med.length}) och utan byten nära (${utan.length})`, med.length >= 3 && utan.length >= 3],
+      [`med rådjur nära smyger flocken till förrådet ${sMed} gånger av ${med.length * 30}, utan ${sUtan} av ${utan.length * 30}`, sMed / Math.max(1, med.length) < sUtan / Math.max(1, utan.length)],
+      [`flocken tar ett rådjur ur en flock nära (${tog})`, tog > 0],
+    ];
+  },
+};
