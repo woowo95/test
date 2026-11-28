@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import * as SIM from '../../sim';
 import { husPa } from './byggnader';
-import { SCENARIER, byggare, klockan, kor, korTills, rovarGang, medBank, medHus, medVatska, naraGranne, nyInvanare, setFood, setMat, tandEld, testBy, utanWebblasare, vidStack } from './hjalp';
+import { tvaVarianter, SCENARIER, byggare, klockan, kor, korTills, rovarGang, medBank, medHus, medVatska, naraGranne, nyInvanare, setFood, setMat, tandEld, testBy, utanWebblasare, vidStack } from './hjalp';
 import { GRAFER, grafHtml } from '../../ui/graf';
 import { setByn } from '../../ui/lage';
 import { lasBy } from '../delby';
@@ -92,7 +92,7 @@ SCENARIER.kronikajarn = {
       [`det första järnet står i krönikan (${rader('k_forstaJarn')[0]?.[1] ?? 'inget'})`, efterEtt === 1],
       ['nästa blåsning står inte där', efterTva === 1],
       [`byns första smedja står i krönikan (${smRader[0]?.[1] ?? 'inget'})`, smRader.length === 1],
-      ['mallarna har minst åtta varianter var, som alla krönikans mallar', [B.k_forstaJarn, B.k_forstaSmedja].every(v => v.length >= 8)],
+      ['mallarna har minst två varianter var, som alla krönikans mallar', [B.k_forstaJarn, B.k_forstaSmedja].every(v => tvaVarianter(v))],
       ['händelserna hör till Bygge och uppfinningar', ['k_forstaJarn', 'k_forstaSmedja'].every(k => SIM.KRONIKA_KAT.find(c => c.id === 'bygge')?.slag.includes(k))],
     ];
   },
