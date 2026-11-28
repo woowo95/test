@@ -160,7 +160,7 @@ const IDEF = {
   scenDalig: { namn: 'dålig på scenen', tecken: -1, op: -3, sym: '🥱', betyder: 'Publiken tog illa emot framträdandet.' },
   skrivkunnig: { namn: 'skrivkunnig', tecken: 1, op: 5, sym: '🪶', sed: { nyfikenhet: 1 }, betyder: 'Har skrivit ett blad, en bok eller ristat en sten.' },
   from: { namn: 'from', tecken: 1, op: 4, sym: '🕯️', sed: { andlig: 1 }, betyder: 'Ber och offrar mycket.' },
-  hycklare: { namn: 'hycklare', tecken: -1, op: -15, sym: '🐍', som: 'en hycklare', sed: { andlig: -1 }, betyder: 'Har som präst brutit mot ett av trons bud.' }, // steg 15.1.127 (kyrka.ts)
+  hycklare: { namn: 'hycklare', tecken: -1, op: -15, sym: '{sym_daligt_rykte}', som: 'en hycklare', sed: { andlig: -1 }, betyder: 'Har som präst brutit mot ett av trons bud.' }, // steg 15.1.127 (kyrka.ts; symbolen är en platshållare tills bildstilens hycklare är vald)
   gudlos: { namn: 'gudlös', tecken: -1, op: -6, sym: '⛓️', sed: { andlig: -1 }, betyder: 'Har vanhelgat det heliga, stötts ut ur tron eller håller sig borta från tron när de andra tror.' },
   suput: { namn: 'suput', tecken: -1, op: -6, sym: '🍺', som: 'en suput', betyder: 'Är ofta full.' },
   lurendrejare: { namn: 'lurendrejare', tecken: -1, op: -20, sym: '🦊', som: 'en lurendrejare', betyder: 'Har lurat någon i ett byte.', dampar: { ge: 0.3 }, beteende: 'Man ger ogärna till en lurendrejare.' },

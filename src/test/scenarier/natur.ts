@@ -630,7 +630,7 @@ SCENARIER.slaktbank = {
     bearbetaVid(u, uq, DJUR.abborre, 1);
     const kvar = Math.abs(amountOf(u, 'vilt') - 3 * KANIN) < 1e-9 && amountOf(u, 'kott') < 1e-9 && Math.abs(amountOf(u, 'abborre') - 3) < 1e-9 && amountOf(u, 'fisk') < 1e-9;
     // jaktfärdigheten: mer kött för den som jagat mycket
-    const kott = (jakt: number) => { p.skill.jakt = jakt; setMat(s, { vilt: 3 * KANIN }); for (let i = 0; i < 3 && amountOf(s, 'vilt') > 0; i++) bearbetaVid(s, p, DJUR.kanin, 1); return amountOf(s, 'kott'); }; // (viltet kan ligga i två stackar)
+    const kott = (jakt: number) => { p.skill.jakt = jakt; s.stackar = (s.stackar ?? []).filter(a => a.k !== 'vilt'); setMat(s, { vilt: 3 * KANIN }); /* (också viltet som ligger utanför förrådet, över taket: steg 15.1.45) */ for (let i = 0; i < 12 && amountOf(s, 'vilt') > 0; i++) bearbetaVid(s, p, DJUR.kanin, 1); return amountOf(s, 'kott'); }; // (viltet kan ligga i två stackar, och den ovane slaktar långsammare)
     const ny = kott(0), van = kott(REDSKAP.kottFull);
     // vargen (steg 3.7.14): eget kött och skinn, samma ben
     setMat(s, { vilt: 0 }); const k0 = amountOf(s, 'kott'), b0 = amountOf(s, 'ben'), vk0 = amountOf(s, 'vargkott');
