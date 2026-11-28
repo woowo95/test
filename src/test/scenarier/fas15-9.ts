@@ -2,6 +2,7 @@
 import * as SIM from '../../sim';
 import { SCENARIER, klockan, testBy } from './hjalp';
 import { foretagBy } from './fas14';
+import { START } from '../kor';
 
 SCENARIER.affarstyrka = {
   text: 'Steg 15.1.96: affären byggs på det ägaren kan. En skicklig hantverkare som kan göra vattensäckar av skinnen i byn (det alla saknar) öppnar en affär som säljer dem och heter efter dem, och en bybo som varken har något över eller kan göra något öppnar ingen',
@@ -154,6 +155,38 @@ SCENARIER.affarkropp = {
       [`och betjänar när hen ätit (${skal[1]})`, matt === 'betjana'],
       [`kunden som fryser värmer sig först (${fryser})`, fryser !== 'koaDisk'],
       [`och handlar när hen är varm (${varm})`, varm === 'koaDisk' || varm === 'bytHos'],
+    ];
+  },
+};
+
+// en vuxen med ett sår och en vuxen bredvid som kan vårda (steg 15.1.101–15.1.104)
+function sarBy(sar: Partial<SIM.Skada>[], seed = 1) {
+  const s = SIM.createState(seed, START);
+  const vux = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen && !r.gast), q = vux[0]!, g = vux[1]!;
+  for (const r of SIM.living(s)) r.task = undefined;
+  q.skador = sar.map(w => ({ d: 'bal', k: 'sticksar', g: 0.9, b: 1, ...w } as SIM.Skada)); q.skador.forEach(w => { w.g0 ??= w.g; }); q.blod = 1;
+  g.x = q.x + 1; g.y = q.y;
+  return { s, q, g, vux };
+}
+
+SCENARIER.tryck = {
+  text: 'Steg 15.1.101: trycket halverar flödet medan man trycker. Ett stort sår blöder hälften så mycket medan någon trycker på det och fullt när hen släpper, och ett medelstort slutar blöda',
+  kor: () => {
+    const { s, q, g } = sarBy([{ g: 0.9 }, { d: 'armV', k: 'skarsar', g: 0.4 }]);
+    const [stort, medel] = q.skador!;
+    const fullt = SIM.blodning(q);
+    g.task = { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now + 600, carry: 0, ref: q.id, why: '' };
+    for (const w of q.skador!) if (SIM.VARD.trycka.krav(s, q, w, g)) SIM.VARD.trycka.gor(s, g, q, w);
+    SIM.halsaSteg(s, q, 1);
+    const stortFullt = SIM.blodning({ skador: [{ ...stort!, tr: undefined }] } as unknown as SIM.Person), med = SIM.blodning(q), trNu = stort!.tr;
+    g.task = undefined; SIM.halsaSteg(s, q, 1);
+    const slappt = SIM.blodning(q);
+    const stridTr = SIM.HALSA.tryck;
+    return [
+      [`det stora såret blöder hälften (${med.toFixed(3)} mot ${stortFullt.toFixed(3)}) medan någon trycker`, Math.abs(med - stortFullt * stridTr) < 1e-3 * stortFullt && trNu === g.id],
+      [`det medelstora slutade blöda (${medel!.b})`, medel!.b === 0],
+      [`när hen släpper blöder det stora fullt igen (${slappt.toFixed(3)}; båda såren från början ${fullt.toFixed(3)})`, Math.abs(slappt - stortFullt) < 1e-3 * stortFullt && !stort!.tr],
+      [`det finns ingen extra halvering i striden: ${'stridBlod' in SIM.HALSA ? 'stridBlod finns kvar' : 'stridBlod är borttagen'}`, !('stridBlod' in SIM.HALSA)],
     ];
   },
 };

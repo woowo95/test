@@ -19,7 +19,8 @@ import { GANG } from './gang';
 import { blocked, freeNear } from './byggnad';
 import { ALDER, ageOf, alive, byId, count, gjort, living, log, relKey, stat, paKartan } from './folk';
 import { tanke } from './tankar';
-import { KROPPSDELAR, forlora, kanGa, skada } from './halsa';
+import { KROPPSDELAR, arStort, forlora, kanGa, skada } from './halsa';
+import { tryckKrok } from './tryckkrok';
 import { blodas } from './blod';
 import { blodtorst } from './humor';
 import { isFamily, ranEfter, setRanStrid } from './behov';
@@ -67,6 +68,8 @@ export interface DjurMed { art: string; id: number; k: Uppstallning['kampar'][nu
 export const stridPagar = (s: State, typ: string, om?: (e: Efter) => boolean) => kartStrider(s).some(g => g.efter?.typ === typ && (!om || om(g.efter)));
 export const kartStrider = (s: State): KartStrid[] => s.kartStrider ?? [];
 // striden personen är med i (som kämpe som inte lämnat den)
+// den som ligger vaken i striden trycker på sina sår (steg 15.1.101): liggande och inte svimmad
+tryckKrok.ligger = (s, p) => !p.svimmat && !!kartStridAv(s, p)?.st.kampar.some(k => k.pid === p.id && k.lage === 'nere');
 export function kartStridAv(s: State, p: Person) { return kartStrider(s).find(g => !g.fri?.includes(p.id) && g.st.kampar.some(k => k.pid === p.id)); }
 const personAv = (s: State, k: Kampe) => k.pid === undefined ? undefined : byId(s, k.pid);
 const lekAv = (a: Avsikt) => !!(AVSIKTER[a] as { lek?: true }).lek;
@@ -200,9 +203,10 @@ function varldAv(s: State, g: KartStrid): StridVarld {
       count(s, 'kartSar');
       return dog;
     },
-    // personens sår blöder i hälsan, med ansträngningen i striden (HALSA.stridBlod), och trycket gäller personens öppna sår
-    halsaBlod: k => { const p = personAv(s, k); return !!p && p.died === undefined; },
-    tryck: k => { const p = personAv(s, k); for (const w of p?.skador ?? []) if (w.b > 0) w.b = 0; },
+    // personens sår blöder i hälsan. Den som ligger vaken trycker på alla sina öppna sår (steg 15.1.101, tryckKrok i halsa.ts)
+    halsaBlod: k => { const p = personAv(s, k); if (p && k.lage === 'nere' && !p.svimmat) for (const w of p.skador ?? []) if (w.b > 0) w.tr = p.id; return !!p && p.died === undefined; },
+    // den som hjälper trycker: ett sår som inte är stort slutar blöda, ett stort blöder mindre medan hen trycker (steg 15.1.101)
+    tryck: (k, a) => { const p = personAv(s, k), g = a && personAv(s, a); for (const w of p?.skador ?? []) if (w.b > 0) { if (arStort(w)) w.tr = (g ?? p)!.id; else w.b = 0; } },
     // den som dör i striden är död direkt
     fall: (k, h) => {
       const p = personAv(s, k);
