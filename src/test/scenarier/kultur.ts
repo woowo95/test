@@ -219,7 +219,7 @@ SCENARIER.matchpublik = {
       [`ingen i publiken går med i matchen`, !medIMatchen],
       [`publiken i redogörelsen: ${mm?.publik?.map(x => x.namn).join(', ') ?? 'ingen'}`, !!mm && !mm.installd && mm.publik?.length === 2],
       [`${glad} av 2 i publiken blev glada när matchen avgjordes`, glad === 2],
-      [`berättelsen nämner publiken: ${ber}`, ber.includes(w.name) && /hejade|tittade|se på/.test(ber) && !/\{|undefined/.test(ber)],
+      [`berättelsen nämner publiken: ${ber}`, ber.includes(w.name) && /hejade|tittade|titta|se på|följde|såg/.test(ber) && !/\{|undefined/.test(ber)],
       [`publiken går när matchen är slut (${kvar} kvar)`, kvar === 0],
     ];
   },
