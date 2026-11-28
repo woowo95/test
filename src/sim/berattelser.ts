@@ -241,6 +241,7 @@ const MDEF = {
     { t: '{namn} är en {alder} utan större styrkor eller svagheter.', om: f => !!f.alder },
     { t: '{namn} har inga utmärkande drag.', om: f => !f.alder },
     { t: 'Inga egenskaper sticker ut hos {namn}.', om: f => !f.alder },
+    { t: 'Det är svårt att säga något särskilt om {namn}, en {alder} som de flesta andra.', om: f => !!f.alder },
   ],
   // ett drag som går emot åldern (steg 6.7.2): {trots} = draget, en gammal som är vig eller ett barn som är klokt
   besk_trots: [
@@ -273,6 +274,8 @@ const MDEF = {
     '{Hen} arbetar som {yrke}, och de flesta i byn ser {honom} som {rykte}.',
     '{Hen} försörjer sig som {yrke} och anses vara {rykte}.',
     { t: '{Hen} arbetar mest som {yrke}, men det byn talar om är att {hen} {rskal}.', om: f => !!f.rskal },
+    'Som {yrke} gör {hen} sitt, men i byn talas det mest om att {hen} är {rykte}.',
+    'Arbetet som {yrke} fyller {hans} dagar, och byn håller {honom} för {rykte}.',
   ],
   besk_yrke: [
     '{Hen} arbetar mest som {yrke}.',
@@ -280,6 +283,9 @@ const MDEF = {
     'Byn känner {honom} som {yrke}.',
     'Det mesta av sin tid arbetar {hen} som {yrke}.',
     '{Hen} bidrar till byn som {yrke}.',
+    'Sysslan som {yrke} är det {hen} lägger sina dagar på.',
+    'När något behöver göras som {yrke} är det {honom} man går till.',
+    '{Hans} händer är vana vid arbetet som {yrke}.',
   ],
   besk_rykte: [
     'Byn ser {honom} som {rykte}.',
@@ -299,6 +305,8 @@ const MDEF = {
     '{Hen} är tillsammans med {partner} och har {van} som bästa vän.',
     '{partner} och {hen} hör ihop, och {van} är {hans} närmaste vän.',
     { t: '{Hen} är gift med {partner}, men det är med {van} {hen} pratar mest.', om: f => f.gift === true && f.vanPrat === true },
+    'Hemma väntar {partner}, men det är {van} {hen} söker upp när något tynger.',
+    '{partner} är den {hen} delar hus med, och {van} den {hen} litar mest på.',
   ],
   besk_partner: [
     '{Hen} lever med {partner}.',
@@ -308,6 +316,7 @@ const MDEF = {
     { t: '{Hen} är gift med {partner}.', om: f => f.gift === true },
     { t: '{Hen} och {partner} har hållit ihop i {parAr} år.', om: f => (f.parN as number) >= 3 },
     { t: '{Hen} och {partner} har fått {barnTills} tillsammans.', om: f => !!f.barnTills },
+    'Det är {partner} som {hen} vänder sig till först.',
   ],
   besk_van: [
     '{van} är {hans} bästa vän.',
@@ -328,6 +337,8 @@ const MDEF = {
     { t: 'Något av glansen från {vem}, som byn ser som {vad}, faller också på {honom}.', om: f => (f.vadTecken as number) > 0 && f.arv === true },
     { t: 'Byn ser {vem} som {vad}, och det hänger kvar också vid {honom}.', om: f => (f.vadTecken as number) < 0 && f.arv === true },
     { t: '{Hans} {foOrd} {vem} lever inte längre, men byn minns {vemHonom} som {vad}.', om: f => f.vemDod === true },
+    'När folk ser {honom} tänker de ofta på {vem}, som byn anser vara {vad}.',
+    'Vart {hen} än går följer namnet {vem} med, och byn anser att {vem} är {vad}.',
   ],
   besk_fiende: [
     { t: '{Hen} och {fiende} är ovänner.', om: f => f.omsesidig === true },
@@ -347,6 +358,8 @@ const MDEF = {
     '{Hen} är som gladast när {hen} {vad}.',
     '{Hen} klagar aldrig när {hen} {vad}.',
     '{Hans} humör stiger när {hen} {vad}.',
+    'Ingen behöver be {honom} två gånger när {hen} {vad}.',
+    'Tiden går fort för {honom} när {hen} {vad}.',
   ],
   besk_arbeteOgilla: [
     '{Hen} trivs inte när {hen} {vad}.',
@@ -356,6 +369,7 @@ const MDEF = {
     '{Hen} ogillar när {hen} {vad}.',
     'Det är när {hen} {vad} som {hen} trivs minst.',
     '{Hen} klagar ofta när {hen} {vad}.',
+    'Får {hen} välja, slipper {hen} helst när {hen} {vad}.',
   ],
   besk_matGilla: [
     '{Hen} äter helst {vad}.',
@@ -363,6 +377,9 @@ const MDEF = {
     '{Hen} tar gärna extra när det finns {vad}.',
     '{Hen} har alltid tyckt om {vad}.',
     '{Hen} äter gärna {vad}.',
+    'Om {hen} får välja blir det {vad}.',
+    '{vad} är det {hen} längtar efter när maten är knapp.',
+    'Bjuder man {honom} på {vad} blir {hen} glad.',
   ],
   besk_matOgilla: [
     '{Hen} äter helst inte {vad}.',
@@ -393,6 +410,8 @@ const MDEF = {
     { t: '{Hans} liv började svårt, för {hen} {minne} innan {hen} kunde gå.', om: f => f.svar === true },
     'Andra har berättat för {honom} att {hen} {minne} som spädbarn.',
     'Det hände innan {hen} fyllt ett år, och det har format {honom}: {hen} {minne}.',
+    'Det började redan första året: {hen} {minne}.',
+    { t: 'Som nyfödd {minne} {hen}, och det har satt sina spår.', om: f => !f.varaktig },
   ],
   // vem hen är i byn (steg 3.9.7). {ny} = grundade byn på nytt, {kvar} = lever
   besk_grundare: [
@@ -427,6 +446,8 @@ const MDEF = {
     '{namn} är lätt att känna igen på {del}.',
     '{namn} anses inte vacker; {hen} har {del}.',
     { t: '{namn} har {del}, men {partner} valde {honom} ändå.', om: f => !!f.partner },
+    'Barnen tittar gärna en extra gång på {namn}, som har {del}.',
+    'Ingen tar miste på {namn}, med {del}.',
   ],
   // {ar} = åldern
   besk_aldst: [
@@ -437,6 +458,7 @@ const MDEF = {
     '{namn} har levt i {ar} år, längre än någon annan i byn.',
     { t: '{namn} är äldst i byn, {ar} år gammal, och har {barnbarn} i livet.', om: f => !!f.barnbarn },
     { t: 'Sedan {namn} föddes har {doda} av byns folk dött.', om: f => (f.dodaN as number) >= 3 },
+    '{namn} har sett fler år än någon annan här, hela {ar}.',
   ],
   // {vad} = det hen är känd som ('mästare i snickeri', 'byns första ledare')
   besk_titel: [
@@ -446,6 +468,8 @@ const MDEF = {
     '{namn} är {vad}.',
     'I byn är {hen} känd som {vad}.',
     'Byn känner {honom} som {vad}.',
+    'Folk talar om {honom} som {vad}.',
+    'Det namn {hen} fått i byn är {vad}.',
   ],
   // {vad} = det hen uppfann ('lerkrukor och rep')
   besk_uppfann: [
@@ -455,6 +479,8 @@ const MDEF = {
     'Det var {namn} som först lärde byn att {vad}.',
     '{Hen} kom på hur man kan {vad}, något ingen i byn kunnat förut.',
     '{Hen} kom på hur man kan {vad}.',
+    'Utan {namn} hade byn kanske ännu inte vetat hur man kan {vad}.',
+    'Byn tackar {namn} för att den kan {vad}.',
   ],
   // {vad} = det hen gjorde ('tände byns första eld och fällde byns första träd')
   besk_bedrift: [
@@ -464,6 +490,8 @@ const MDEF = {
     '{namn} {vad}, vilket byn minns.',
     'Det var {namn} som en gång {vad}.',
     'Byn minns att {hen} {vad}.',
+    'Man berättar fortfarande att {hen} {vad}.',
+    'Byn har inte glömt att {namn} {vad}.',
   ],
   // ärren och det hen förlorat (steg 12.1.119): {vad} = 'har ett ärr i vänstra benet och har förlorat fingrarna på vänster hand'
   besk_skador: [
@@ -495,6 +523,7 @@ const MDEF = {
     { t: '{dod} dog för länge sedan, och {hen} minns det fortfarande.', om: f => f.lange === true },
     { t: '{Hen} såg {dod}, sin {vem}, dö.', om: f => f.sag === true },
     { t: '{dod}, {hans} {vem}, dog {orsak} för {sedanAr} år sedan.', om: f => !!f.orsak && (f.sedanN as number) >= 1 },
+    'Saknaden efter {dod}, {hans} {vem}, har aldrig riktigt gått över.',
   ],
   // vapnet hen föredrar: {vad} = vapnet ('flintkniv', 'bara händerna')
   besk_vapenGilla: [
@@ -525,6 +554,8 @@ const MDEF = {
     'I strid passar {vad} inte {honom}.',
     '{Hen} föredrar andra vapen än {vad}.',
     '{Hen} slåss sämre med {vad} än med något annat.',
+    '{vad} ligger illa i {hans} hand.',
+    'Med {vad} har {hen} sällan haft tur i en strid.',
   ],
   // mer ur livet (steg 3.9.8). {foralder} = 'mor' eller 'far', {vad} = 'fem barn'
   besk_barn: [
@@ -535,6 +566,7 @@ const MDEF = {
     '{Hen} är {foralder} och har {vad}.',
     '{Hen} har fostrat {vad}.',
     { t: 'Av {hans} {vad} lever {levande} än.', om: f => (f.dodaBarn as number) > 0 && (f.levandeN as number) > 0 },
+    'Som {foralder} har {hen} sett {vad} växa upp i byn.',
   ],
   besk_foraldralos: [
     '{Hen} förlorade både mor och far som liten.',
@@ -553,6 +585,8 @@ const MDEF = {
     'Byns första barn var {namn}.',
     'Det första barnet som föddes i byn var {namn}.',
     '{namn} föddes {iarstid} år {ar}, som det första barnet i byn.',
+    'Med {namn} började det: {hen} var den första som föddes här.',
+    'Alla som föddes i byn efter {honom} kom senare, för {namn} var först.',
   ],
   // {vem} = föräldern som grundade byn, {fo} = 'mor' eller 'far', {barnord} = 'dotter' eller 'son'
   besk_grundarbarn: [
@@ -585,6 +619,7 @@ const MDEF = {
     'Hittills har {namn} fällt {vad} i strid.',
     'I strid har {namn} dödat {vad}.',
     { t: '{namn} har fällt {vad} och bär själv märken efter ett vargbett.', om: f => f.bett === true },
+    'Vargarna har fått känna på {hans} vapen: {hen} har fällt {vad}.',
   ],
   besk_vardat: [
     '{Hen} har vårdat sjuka och skadade {vad}.',
@@ -604,6 +639,7 @@ const MDEF = {
     '{namn} har byggt {vad} med egna händer.',
     'Ett av husen i byn har {hen} byggt.',
     '{Hen} har rest {vad} i byn.',
+    'Mycket av {hans} arbete står kvar i byn: {hen} har byggt {vad}.',
   ],
   // {vem} = lärlingen eller läraren (mentorn, steg 3.1.1)
   besk_larare: [
@@ -626,6 +662,7 @@ const MDEF = {
     '{Hen} går i lära hos {vem}.',
     '{vem} har {honom} som lärling.',
     { t: '{Hen} går i lära hos {vem} i {amne}, tills {hen} har kommit ikapp.', om: f => !!f.amne },
+    'Varje dag tittar {hen} på hur {vem} arbetar och lär sig av det.',
   ],
   // rädslan efter ett vargbett; stark = en kontrast (stark men rädd)
   besk_raddVarg: [
@@ -646,6 +683,8 @@ const MDEF = {
     '{Hen} har varit nära döden: {hen} har överlevt {vad}.',
     '{Hen} har tagit sig igenom {vad}.',
     'Hittills har {hen} överlevt {vad}.',
+    'Livet har prövat {honom} hårt med {vad}, men {hen} står kvar.',
+    'Trots {vad} lever {hen} än.',
   ],
   // ägodelarna: {vad} = mästerverkets namn
   besk_mastarverk: [
@@ -668,6 +707,8 @@ const MDEF = {
     '{namn} äger ett eget hus, vilket inte alla i byn gör.',
     'I byn finns ett hus som är {hans}.',
     'Ett av husen i byn ägs av {namn}.',
+    '{Hen} har tak över huvudet som ingen annan bestämmer över.',
+    'Det hus {hen} sover i hör {honom} till.',
   ],
   besk_rik: [
     '{Hen} äger mer än de flesta i byn.',
@@ -676,6 +717,8 @@ const MDEF = {
     '{Hen} har samlat på sig många ägodelar.',
     '{namn} är en av de förmögnaste i byn.',
     '{Hen} är en av de rikaste i byn.',
+    '{Hans} förråd är fullare än grannarnas.',
+    'Det saknas sällan något hos {namn}.',
   ],
   besk_fattig: [
     '{Hen} äger nästan ingenting.',
@@ -684,6 +727,8 @@ const MDEF = {
     '{Hen} har knappt något eget.',
     '{Hen} är en av de fattigaste i byn.',
     'Av allt som finns i byn äger {hen} mycket lite.',
+    '{Hen} får klara sig med det lilla {hen} har.',
+    'Det mesta {hen} använder har {hen} lånat av andra.',
   ],
   // {titel} = ledarens titel ('Äldste', 'Den vise')
   besk_ledare: [
@@ -708,6 +753,8 @@ const MDEF = {
     'Byn vet att {hen} {vad}.',
     'Byn minns att {namn} {vad}.',
     'Till {hans} rykte hör att {hen} {vad}.',
+    'Det {hen} gjort har inte glömts: {hen} {vad}.',
+    'Folk ser på {honom} med andra ögon sedan {hen} {vad}.',
   ],
   // arvet: {vad} = egenskapen ('styrka'), {adj} = 'stark', {fo} = 'fars' eller 'mors', {fo2} = 'far' eller 'mor'
   besk_arv: [
@@ -728,6 +775,8 @@ const MDEF = {
     '{Hen} sover i byns utkant, en bit från de andra.',
     'I byns utkant har {hen} sin sovplats.',
     '{Hen} bor en bit från byns mitt.',
+    'Från {hans} sovplats är det långt till de andras hus.',
+    '{Hen} har valt att bo där byn tar slut.',
   ],
   besk_verkstad: [
     '{Hen} bor mitt emot verkstaden.',
@@ -737,6 +786,7 @@ const MDEF = {
     '{Hen} bor i närheten av verkstaden.',
     '{Hen} bor granne med verkstaden.',
     'Från {hans} dörr är det bara några steg till verkstaden.',
+    'Ljuden från verkstaden hör {hen} där {hen} sover.',
   ],
   besk_langeHus: [
     '{Hen} har bott länge i sitt hus.',
@@ -746,6 +796,7 @@ const MDEF = {
     '{Hen} har inte flyttat på länge.',
     '{Hen} har ägt sitt hus länge.',
     '{Hen} har sitt eget hus och har bott där länge.',
+    'Väggarna i {hans} hus har stått länge, och {hen} har bott där hela tiden.',
   ],
   besk_langtan: [
     '{Hen} är förälskad i {vem}.',
@@ -764,6 +815,8 @@ const MDEF = {
     '{Hen} har ännu inte gjort något som byn minns.',
     'Inget särskilt finns ännu att berätta om {honom}.',
     'Byn har ännu inget att berätta om {honom}.',
+    'Det mesta i {hans} liv ligger ännu framför {honom}.',
+    'Byn väntar fortfarande på att få se vad {hen} går för.',
   ],
   // eftermälet (steg 6.7.4, m_eftermale): en död beskrivs i dåtid. {orsak} = 'av svält', {arstid}, {ar} = året, {aldern} = åldern
   // med ord; spad = dog innan ett år, ung = under 25, gammal
@@ -1129,6 +1182,7 @@ const MDEF = {
     'Björnen slog sig fri från {folk} och sprang in i skogen.{svara}',
     '{folk} jagade björnen länge, men den var snabbare.{svara}',
     'Ingen fällde björnen den dagen, fast {folk} försökte.{svara}',
+    'Spåren efter björnen ledde djupt in i skogen, och där tog de slut. {folk} vände hem.{svara}',
   ],
   k_bjornSprang: [
     '{namn} gick på björnjakt{med}, men björnen hörde {dem} och försvann in i skogen.',
@@ -1148,6 +1202,7 @@ const MDEF = {
     'Byn hade aldrig fått en björn förut, men {namn} fällde en.',
     'Länge var björnen det byn var räddast för. Sedan fällde {namn} den första.',
     'Alla i byn kom ut för att se den första björnen. {namn} hade fällt den.',
+    'Byns första björn blev {hans} byte. Det var {namn} som fällde den.',
   ],
   k_bjornAnfall: [
     'En björn anföll {folk}.{svara}',
@@ -1319,6 +1374,7 @@ const MDEF = {
     '{namn} hade mycket att säga om {om}, och {med} lyssnade.',
     '{namn} och {med} undrade över {om}.',
     '{namn} visste något om {om} som {med} inte visste.',
+    '{med} fick höra av {namn} vad folk tror om {om}.',
   ],
   p_teknik: [
     '{namn} lärde {med} hur man ska {om}.',
@@ -1347,6 +1403,8 @@ const MDEF = {
     '{namn} och {med} jämförde var de hittat {om}.',
     '{namn} beskrev för {med} vägen till {om}.',
     '{namn} sa till {med} att det finns {om} på ett ställe {hen} vet.',
+    '{namn} lovade att visa {med} var {om} finns.',
+    '{med} frågade {namn} om {om}, och fick ett gott råd.',
   ],
   p_fjarran: [
     '{namn} berättade för {med} om {om}.',
@@ -1396,6 +1454,7 @@ const MDEF = {
     '{namn} satt hos {med} tills det kändes lite lättare.',
     '{namn} försökte muntra upp {med}.',
     '{med} berättade vad som tyngde, och {namn} lyssnade.',
+    '{namn} höll {med} i handen en lång stund.',
   ],
   p_dod: [
     '{namn} och {med} pratade om {om}, som är död.',
@@ -1445,6 +1504,8 @@ const MDEF = {
     '{namn} och {med} pratade om vad som ska göras i morgon.',
     '{namn} förklarade för {med} hur en {om} gör.',
     '{namn} och {med} pratade om hur arbetet går.',
+    '{namn} visade {med} ett knep som {hen} lärt sig som {om}.',
+    '{med} ville veta hur {namn} har det som {om}.',
   ],
   p_barn: [
     '{namn} och {med} pratade om barnen.',
@@ -1704,6 +1765,8 @@ const MDEF = {
     'De tänker ofta samma sak på samma gång.',
     'De drar sig till varandra.',
     'De skrattar åt samma saker.',
+    'De blir glada av att träffas.',
+    'De har aldrig behövt anstränga sig för att komma överens.',
   ],
   r_kemiDalig: [
     'De har haft svårt för varandra från början.',
@@ -1712,6 +1775,8 @@ const MDEF = {
     'Det har aldrig stämt mellan dem.',
     'De missförstår varandra hela tiden.',
     'De retar sig på varandra.',
+    'De går helst åt var sitt håll.',
+    'Det blir lätt tyst och kyligt när de möts.',
   ],
   // giftermålen i krönikan (steg 5.4.4, så att berättelsen om tiden borta kan nämna dem). {a} och {b} = paret
   k_gift: [
@@ -1758,6 +1823,7 @@ const MDEF = {
     { t: '{namn} kunde inte stanna, för ”{tanke}” tyngde mer för var dag.', om: f => !!f.tanke && !f.byn },
     { t: 'Skälet var enkelt: {byn}.', om: f => !f.tanke && !!f.byn },
     { t: '{Byn}.', om: f => !f.tanke && !!f.byn },
+    { t: '{namn} hade burit på ”{tanke}” länge, och till sist orkade {hen} inte mer.', om: f => !!f.tanke && !f.byn },
   ],
   // berättelsen om tiden borta (steg 5.4.4, ui/borta.ts): kronikans rader binds ihop av de här meningarna.
   // {ar} = antal år (i ord), {fore} och {nu} = invånare när man gick och nu, {fodda} och {doda} = antal (i ord)
@@ -1802,6 +1868,7 @@ const MDEF = {
     'År {ar} gick stilla förbi.',
     { t: 'År {ar} var ett stilla istidsår.', om: f => f.arstid === 'istiden' },
     { t: 'År {ar} var en stilla sommar.', om: f => f.arstid === 'sommaren' },
+    'År {ar} blev inget att minnas, och det var gott nog.',
   ],
   b_alder: [
     '{Arstid} varade {aren}.',
@@ -2010,6 +2077,7 @@ const MDEF = {
     '{Namn} såg sig omkring, men ingen satte sig för att lyssna.',
     { t: 'Elden sprakade, men ingen kom för att höra {namn}.', om: f => !f.scen },
     { t: '{Inst} låg kvar orörd vid scenen, för ingen kom.', om: f => !!f.inst && !!f.scen },
+    '{Namn} väntade länge, men ingen lyssnare kom.',
   ],
   // Berättelsen om en match (steg 5.4.8.2, matchber.ts): början efter sporten ({sport} = sporten, {spelare} = namnen, {n} = hur många)
   m_start: [
@@ -2086,6 +2154,9 @@ const MDEF = {
     { t: 'Det var bara {publik} som tittade, men hejandet räckte för flera.', om: f => Number(f.nPub) === 1 },
     { t: '{Publik} samlades runt platsen för att se på.', om: f => Number(f.nPub) > 1 },
     { t: '{Publik} satt i gräset och tittade på hela matchen.', om: f => Number(f.nPub) === 1 && f.sport !== 'snoboll' && !f.sno },
+    { t: 'Några stannade upp för att titta: {publik}.', om: f => Number(f.nPub) > 1 },
+    { t: '{Publik} följde matchen från början till slut.', om: f => Number(f.nPub) > 0 },
+    { t: 'Det var {publik} som såg det hela.', om: f => Number(f.nPub) > 0 },
   ],
   // matchen som inte blev av: {sport} = sporten, {spelare} = de som kom
   m_installd: [
@@ -2192,6 +2263,7 @@ const MDEF = {
     { t: 'Mitt i natten slogs {namn} och {mot}. {vinnare} vann.', om: f => !f.ingen && !!f.natt },
     { t: '{namn} och {mot} slogs {orsak}. Ingen vann.', om: f => !!f.ingen },
     { t: '{namn} och {mot} slogs {orsak}, men ingen av dem vann.', om: f => !!f.ingen },
+    { t: '{namn} och {mot} gick på varandra {orsak}, och {vinnare} stod kvar sist.', om: f => !f.ingen },
   ],
   l_larm: [ // {namn} ropade larm om {vadtext} ('vargarna kommer'); {n} hörde det, ensam = bara en, falskt = det var inte sant
     { t: '{namn} ropade larm: {vadtext}. {N} hörde det.', om: f => !f.falskt },
@@ -2213,6 +2285,8 @@ const MDEF = {
     'Skämd mat gjorde {namn} magsjuk.',
     '{namn} ligger med ont i magen. Maten var skämd.',
     'Det var något fel på maten, och nu är {namn} magsjuk.',
+    '{namn} litade på maten, men den hade blivit dålig. Nu har {hen} ont i magen.',
+    'Magen har vänt sig på {namn} efter skämd mat.',
   ],
   l_raMat: [ // {vad} = det som åts ('rå fisk')
     '{namn} blev matförgiftad av {vad}.',
@@ -2221,6 +2295,8 @@ const MDEF = {
     '{Vad} var inte bra för {namn}. Nu är {hen} matförgiftad.',
     '{namn} blev sjuk av {vad}.',
     'Maten var rå, och {namn} blev matförgiftad av {vad}.',
+    '{namn} åt {vad}, och nu har {hen} fått betala för det.',
+    'Efter {vad} ligger {namn} sjuk.',
   ],
   l_svartSjuk: [
     '{namn} blev svårt sjuk.',
@@ -2490,6 +2566,7 @@ const MDEF = {
     'Stenen ska minna om när {vad}.',
     'Den som kan läsa bilderna ser när {vad}.',
     { t: 'Det är {ristare} själv som står på stenen.', om: f => f.egen === true },
+    'Stenen håller kvar minnet av när {vad}.',
   ],
   k_ratt: [
     { t: 'Tinget dömde {namn} för att {hen} {brott}: {ledare} {straff} {honom}{straffEfter}.', om: f => iBy(f) && !f.fri },
