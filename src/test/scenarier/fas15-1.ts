@@ -90,7 +90,7 @@ function utanAllt(s: SIM.State, q: SIM.Person) {
   const id = String(q.id);
   for (const a of s.stackar ?? []) if (a.ag?.[id]) { a.n -= a.ag[id]; delete a.ag[id]; }
   s.stackar = (s.stackar ?? []).filter(a => a.n > 0);
-  s.ting = SIM.tingOf(s).filter(t => t.agare !== q.id); SIM.touch(s);
+  s.ting = SIM.tingOf(s).filter(t => t.agare !== q.id); SIM.touch(s); SIM.changed(s); // högarna ändrades här: ägandet räknas om
 }
 SCENARIER.prisisilver = {
   text: 'Steg 15.1.17: priset är i silver. Varans värde för ägaren räknas i silver, och kunden betalar det pris som står. Den som har något att betala med men inte nog räknas som en som avstod, så att priset sjunker; den som inget har påverkar inte priset',
@@ -100,19 +100,23 @@ SCENARIER.prisisilver = {
     const k = vux.find(q => SIM.kundVal(s, q, 'servering'))!, e = SIM.kundVal(s, k, 'servering')!;
     // kunder som har lite silver men inte nog: priset sjunker
     const dag = () => { f.dag = undefined; f.gap = undefined; };
-    const fattiga = vux.filter(q => q !== k).slice(0, 4), rika0 = f.pris?.servering ?? 1;
+    // priset och dagens köp per vara (steg 15.1.98): de som avstod från serveringen, och priset på varan kunden ville ha
+    const nej = () => Object.entries(f.dag ?? {}).reduce((n, [q, d]) => n + (q.split(':')[0] === 'servering' ? d.nej?.length ?? 0 : 0), 0);
+    const pris = (x?: SIM.Foretag['pris']) => x?.[SIM.varuNyckel('servering', e.k)] ?? x?.servering ?? 1;
+    const fattiga = vux.filter(q => q !== k).slice(0, 4), rika0 = pris(f.pris);
     for (const q of fattiga) { utanAllt(s, q); SIM.laggIn(s, 'silver', 1, q.id); }
+    const harLite = fattiga.filter(q => SIM.ownsAmount(s, q, 'silver') >= 1); // silvret kan hamna i en hög utanför lagret, och då räknas det inte som hens
     dag(); for (const q of fattiga) SIM.kundVal(s, q, 'servering');
-    const nejLite = f.dag?.servering?.nej?.length ?? 0;
+    const nejLite = nej();
     for (const g of SIM.dygnet) g(s);
-    const efterLite = f.pris?.servering ?? 1;
+    const efterLite = pris(f.pris);
     // kunder som inget har: priset står kvar
     f.pris = undefined as SIM.Foretag['pris'];
     for (const q of fattiga) utanAllt(s, q);
     dag(); for (const q of fattiga) SIM.kundVal(s, q, 'servering');
-    const nejInget = f.dag?.servering?.nej?.length ?? 0;
+    const nejInget = nej();
     for (const g of SIM.dygnet) g(s);
-    const efterInget = (f.pris as SIM.Foretag['pris'])?.servering ?? 1;
+    const efterInget = pris(f.pris as SIM.Foretag['pris']);
     f.pris = undefined as SIM.Foretag['pris'];
     // kunden står först i kön och ägaren betjänar
     const silver0 = SIM.ownsAmount(s, k, 'silver');
@@ -121,7 +125,7 @@ SCENARIER.prisisilver = {
     const kopt = SIM.iHelaForradet(() => SIM.kopVid(s, f, k, f.ko![0], p)), betalt = silver0 - SIM.ownsAmount(s, k, 'silver');
     return [
       [`kunden köpte (${kopt}) och betalade det pris som stod (${betalt} silver, priset ${e.pris}, ett silver är värt ${SIM.silverVarde(G).toFixed(2)} för ägaren)`, kopt && betalt === e.pris],
-      [`de som har lite silver men inte nog räknas som de som avstod (${nejLite} av ${fattiga.length})`, nejLite === fattiga.length],
+      [`de som har lite silver men inte nog räknas som de som avstod (${nejLite} av ${harLite.length})`, nejLite === harLite.length && harLite.length >= 2],
       [`då sjunker priset (${rika0.toFixed(2)} → ${efterLite.toFixed(2)})`, efterLite < rika0],
       [`de som inget har räknas inte (${nejInget}), och priset står kvar (${efterInget.toFixed(2)})`, nejInget === 0 && efterInget === 1],
     ];
