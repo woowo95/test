@@ -646,7 +646,11 @@ SCENARIER.bestalltminne = {
       const tr = x.s.tron![0]!;
       for (const q of vuxna(x.s)) { q.tro = 1; q.troStyrka = 30; q.andlig = 90; }
       tr.prast = P.id; SIM.getRel(x.s, P, x.A).op = -90;
-      SIM.put(x.s, 'bar', 5, { [SIM.kyrkaId(1)]: 5 }); tr.framPris = 'bar';
+      // kyrkan får fem av byns bär i förrådet: byn är rik och över matens tak, och det som läggs till då hamnar utanför förrådet (steg 15.1.45)
+      SIM.setAmount(x.s, 'bar', SIM.amountOf(x.s, 'bar') + 5);
+      const hog = (x.s.stackar ?? []).find(a => a.k === 'bar' && SIM.isStored(x.s, a.x, a.y) && a.n - Object.values(a.ag ?? {}).reduce((n, v) => n + v, 0) >= 5);
+      if (hog) { (hog.ag ??= {})[SIM.kyrkaId(1)] = (hog.ag[SIM.kyrkaId(1)] ?? 0) + 5; SIM.changed(x.s); }
+      tr.framPris = 'bar';
       if (!upptrad(x.s, x.u) || !x.s.fram?.kyrka) continue;
       kyrkForsok++;
       if (x.s.fram.bud === 'person' && x.s.fram.om === x.A.id && x.s.fram.best === P.id) kyrkOm++;
