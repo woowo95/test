@@ -4,7 +4,7 @@
 import { glesPlats } from './trangsel';
 import { tingOf } from './agande';
 import { balans } from './balans';
-import { freeNear } from './byggnad';
+import { friUteNear } from './byggnad';
 import { BYN } from './egendom';
 import { ACTS } from './handlingar';
 import { getMap, eldPlats } from './karta';
@@ -36,9 +36,9 @@ function punkt(s: State, i: number) {
     land = { x, y };
     if (ute) break;
   }
-  if (land) return freeNear(s, land.x + 0.5, land.y + 0.5);
+  if (land) return friUteNear(s, land.x + 0.5, land.y + 0.5);
   const e = eldPlats(s);
-  return { x: e.x + 0.5, y: e.y + 1.5 };
+  return friUteNear(s, e.x + 0.5, e.y + 1.5);
 }
 // vakten (och den som försvarar byn mot vargarna, varg.ts) tar sitt eget bästa vapen eller byns, som ingen annan har i handen eller bär
 export function bastaVapen(s: State, p: Person, utom?: Set<number>) {
@@ -61,7 +61,7 @@ export function vaktSteg(s: State, p: Person, tk: Task) {
   if (s.now < tk.stopp) return;
   tk.stopp = undefined;
   if (!tk.vidEld && (p.warm < VAKT.fryser || ++tk.varv! % VAKT.eldVar === 0)) {
-    const e = eldPlats(s), at = glesPlats(s, p, () => { const v = rnd(s, 'vakt', p) * Math.PI * 2; return freeNear(s, e.x + 0.5 + Math.cos(v) * ACTS.vakt.radie!, e.y + 0.5 + Math.sin(v) * ACTS.vakt.radie!); })!; // som första platsen (spotFor), men inte bland dem som vilar där (trängseln, steg B.21)
+    const e = eldPlats(s), at = glesPlats(s, p, () => { const v = rnd(s, 'vakt', p) * Math.PI * 2; return friUteNear(s, e.x + 0.5 + Math.cos(v) * ACTS.vakt.radie!, e.y + 0.5 + Math.sin(v) * ACTS.vakt.radie!); })!; // som första platsen (spotFor), men inte bland dem som vilar där (trängseln, steg B.21)
     tk.vidEld = true; tk.tx = at.x; tk.ty = at.y;
   } else {
     tk.vidEld = false; tk.runda = (tk.runda + 1) % VAKT.punkter; tk.varv ??= 0;

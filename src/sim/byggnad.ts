@@ -165,6 +165,16 @@ export function freeNear(s: State, x: number, y: number, inte = false) {
   }
   return { x, y };
 }
+// den lediga rutan utan rum som ligger närmast (x, y): det som görs utomhus (handlingens ute i ACTS, steg 15.1.61)
+export function friUteNear(s: State, x: number, y: number) {
+  const ok = (nx: number, ny: number) => inMap(nx, ny) && !blocked(s, nx, ny) && !roomAt(s, nx, ny);
+  if (ok(x, y)) return { x, y };
+  for (let r = 1; r < 20; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+    if (ok(x + dx, y + dy)) return { x: x + dx, y: y + dy };
+  }
+  return freeNear(s, x, y);
+}
 export function roomAt(s: State, x: number, y: number): Rum | undefined {
   if (!inMap(x, y)) return;
   const g = gridOf(s), r = g.tak[tileOf(x, y)];

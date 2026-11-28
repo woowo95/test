@@ -2,6 +2,7 @@
 import * as SIM from '../../sim';
 import { SCENARIER, klockan, korTills, rovarGang } from './hjalp';
 import { lasBy } from '../delby';
+import { START } from '../kor';
 import { husPa } from './byggnader';
 
 // den sparade byn vid klockan timme, med ovänliga grannar
@@ -111,6 +112,32 @@ SCENARIER.flyktvard = {
       [`hen vårdar sig själv (${v?.why ?? 'inget'})`, !!v && v.ref === p.id],
       [`platsen hen väljer ligger längre från rövarna (${v ? nara(v.spot).toFixed(1) : '-'} rutor) än där hen stod (${d0.toFixed(1)})`, !!v && nara(v.spot) > d0 + 3],
       [`hen vårdar sig där, längre från rövarna (${nara(vid).toFixed(1)} rutor, såret ${(p.skador ?? []).some(w => w.b > 0) ? 'blöder' : 'blöder inte'})`, nara(vid) > d0 + 3],
+    ];
+  },
+};
+
+SCENARIER.vaktute = {
+  text: 'Steg 15.1.61: vakten står ute. Vaktens plats (vid elden, stoppen på rundan och platsen när vakten väljs) är den lediga rutan utan rum närmast platsen vid elden, så i en by där ett hus står intill elden står vakten utomhus',
+  kor: () => {
+    const s = SIM.createState(6, START); klockan(s, 22);
+    const e = SIM.eldPlats(s), g = SIM.groundOf(s);
+    for (let yy = e.y - 5; yy < e.y + 6; yy++) for (let xx = e.x - 1; xx < e.x + 10; xx++) g.trees[yy * SIM.W + xx] = 0;
+    husPa(s, e.x + 2, e.y - 3, 6, 7, true); // huset intill elden: ringen runt elden går in i det
+    const ringInne = Array.from({ length: 16 }, (_, i) => SIM.freeNear(s, e.x + 0.5 + Math.cos(i * Math.PI / 8) * SIM.ACTS.vakt.radie!, e.y + 0.5 + Math.sin(i * Math.PI / 8) * SIM.ACTS.vakt.radie!)).filter(at => SIM.roomAt(s, Math.floor(at.x), Math.floor(at.y))).length;
+    const p = vuxnaI(s)[0]!; let val = 0, valInne = 0;
+    for (let i = 0; i < 40; i++) { const at = SIM.spotFor(s, 'vakt', p); val++; if (SIM.roomAt(s, Math.floor(at.x), Math.floor(at.y))) valInne++; }
+    // vakten går sin runda en natt och stannar vid elden ibland
+    p.task = { act: 'vakt', phase: 'do', tx: p.x, ty: p.y, until: s.now + 8 * SIM.HOUR, carry: 0, why: 'prov' } as SIM.Task;
+    let mal = 0, malInne = 0, vidEld = 0; const sett = new Set<string>();
+    for (let i = 0; i < 4000 && p.task?.act === 'vakt'; i++) {
+      SIM.vaktSteg(s, p, p.task); s.now += 10 * SIM.SEC;
+      const k = `${p.task.tx},${p.task.ty}`; if (sett.has(k)) continue; sett.add(k);
+      mal++; if (p.task.vidEld) vidEld++; if (SIM.roomAt(s, Math.floor(p.task.tx), Math.floor(p.task.ty))) malInne++;
+    }
+    return [
+      [`ringen runt elden går in i huset (${ringInne} av 16 platser inne)`, ringInne > 0],
+      [`platsen när vakten väljs är utomhus (${val - valInne} av ${val})`, valInne === 0],
+      [`stoppen på rundan och vid elden är utomhus (${mal - malInne} av ${mal}, ${vidEld} vid elden)`, mal > 5 && vidEld > 0 && malInne === 0],
     ];
   },
 };

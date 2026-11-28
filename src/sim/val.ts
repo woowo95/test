@@ -68,7 +68,7 @@ const stackPa = (s: State, x: number, y: number, k: string) => Math.floor((s.sta
 import { allows, amountOf, avbryt, carryKind, iHelaForradet, iRackhall, narmasteMed, fetchSpot, flodUndan, haulJob, isStored, timKvar, zoneAt, zonesOf } from './lager';
 import { BYGG, avail, bedFor, buildJob, siteOf } from './bygg';
 import { FALLOR, type Mjarde, kanVittja, timTillFull, trasig } from './fisk';
-import { bitAt, bitsOf, blocked, freeNear, husById, roomAt } from './byggnad';
+import { bitAt, bitsOf, blocked, freeNear, friUteNear, husById, roomAt } from './byggnad';
 import { FOR_SIG, forSig, homeless, husIText, samlingRum, varmareInne } from './byggnader';
 import { groundOf, isForest, punktIRuta, tileOf } from './mark';
 import { axeTask, egenStock, fallTid, stamTill, stockOverHus, stocks } from './skog';
@@ -290,7 +290,7 @@ function isarIRum(s: State, p: Person, rum: number[]) {
 // platsen för act; under en översvämning aldrig i vattnet: ett rum eller en säng kan stå under vatten (vaktlarmet i by 42
 // efter v271: en som lyssnade på musik i regnet satt i samlingshuset, där golvet stod under vatten), så då den närmaste torra rutan
 export function spotFor(s: State, act: Act, p: Person): { x: number; y: number } {
-  const u = platsFor(s, act, p);
+  const u0 = platsFor(s, act, p), u = ACTS[act].ute ? friUteNear(s, u0.x, u0.y) : u0; // det som görs utomhus (steg 15.1.61)
   return s.flod && inMap(u.x, u.y) && iVattnetNu(s, tileOf(u.x, u.y)) ? freeNear(s, u.x, u.y) : u;
 }
 // bryggan är en plats att vara på (steg 7.3.11): man sitter där och ser ut över vattnet, och man badar från den
@@ -338,7 +338,7 @@ function platsFor(s: State, act: Act, p: Person): { x: number; y: number } {
     // ... när det regnar (steg 2.11.1), och året runt är samlingssalen byns mötesplats (steg 7.2.7)
     // den som gör det sittande sätter sig på en ledig plats nära där hen annars skulle stå (vilPlats i mobler.ts, steg 13.8.18)
     const sitt = (u: { x: number; y: number }) => d.sitta && !sittAt(s, u.x, u.y) ? moblerKrok.vilPlats(s, p, u) ?? u : u;
-    if (sal && (c > 0 && varmareInne(s, sal, c, f) || nederbord(s) || c === 0 && rnd(s, 'val', p) < VAL.salMote)) return sitt(isarIRum(s, p, sal.tiles));
+    if (sal && !d.ute && (c > 0 && varmareInne(s, sal, c, f) || nederbord(s) || c === 0 && rnd(s, 'val', p) < VAL.salMote)) return sitt(isarIRum(s, p, sal.tiles));
     // annars sätter man sig ofta vid ett bord för att samtala och berätta, när det inte är kallt
     if (d.slag === 'prata' && bordenOf(s).length && coldOf(temperature(s)) === 0 && rnd(s, 'val', p) < VAL.bordSamtal) { const at = ledigPlats(s, p); if (at) return at; }
     return sitt(ringVid(s, p, d.radie, f));

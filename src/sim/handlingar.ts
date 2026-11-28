@@ -48,6 +48,7 @@ export interface ActDef {
   sitta?: true; // görs sittande när det finns en plats att sitta på (bilden, ui/stalle.ts); annars står man
   vidRutan?: true; // arbetet görs på en ruta (ett träd, en stam, en stubbe): figuren står på en ruta intill, vänd mot den (ui/stalle.ts)
   vaksam?: true; // den som gör det håller ögonen öppna och överraskas inte av en anfallare (steg B.52)
+  ute?: true; // görs utomhus: platsen är den lediga rutan utan rum närmast den vanliga platsen (friUteNear, steg 15.1.61)
   ansikte?: 'arg' | 'lugn' | 'radd'; // ansiktet handlingen ger i striden (ui/stridansikte.ts): arg, allvarlig eller rädd
   tecken?: string; // symbolen för en handling utan slag (personrutans tårtdiagram över tiden)
   ikon?: string; // pixelsymbolen över huvudet (ikoner.ts), t.ex. toa (steg 3.10.3); går före slagets symbol (skattningen, steg 11.14.1)
@@ -138,7 +139,7 @@ const DEF = {
   lyssna: { namn: 'Lyssnar', nara: true, sitta: true, tecken: '👂', vila: true, dygn: true, stilla: true, plats: 'elden' },
   beratta: { namn: 'Berättar vid elden', nara: true, sitta: true, yrke: 'Berättare', slag: 'prata', social: true, dygn: true, plats: 'elden' },
   hantverk: { namn: 'Gör handarbete', yrke: 'Hantverkare', slag: 'hantverk', verktyg: { rep: 'Tvinnar rep' }, vila: true, hantverk: true, kunna: 0.05, social: true, dygn: true, stilla: true, plats: 'elden' },
-  vakt: { vaksam: true, namn: 'Håller vakt', ansikte: 'lugn', yrke: 'Väktare', tecken: '👁️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.6, fortsatter: ['varg'] as const },
+  vakt: { vaksam: true, ute: true, namn: 'Håller vakt', ansikte: 'lugn', yrke: 'Väktare', tecken: '👁️', social: true, skamfri: true, dygn: true, stilla: true, vapen: true, plats: 'elden', radie: 2.6, fortsatter: ['varg'] as const },
   // när vargar är nära (steg 3.7.15, varg.ts): de svaga gömmer sig i huset, de modiga väntar med vapen vid elden
   // nöden avbryter inte den som gömmer sig eller väntar med vapen (nodFri): faran väljer ändå samma sak igen, och förut valde den som behövde gå på toa om sin uppgift i varje slag så länge vargarna var nära
   gomma: { vaksam: true, namn: 'Gömmer sig', ansikte: 'radd', tecken: '🫣', dygn: true, stilla: true, plats: 'sang', nodFri: true, fortsatter: ['varg'] as const },
