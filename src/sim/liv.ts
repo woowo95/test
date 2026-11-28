@@ -127,7 +127,7 @@ const DOD = {
   bistick: { text: 'av bistick' }, // steg 10.10.22 (halsa.ts binStick) // steg 3.8.5 (brand.ts)
   rovare: { text: 'av rövare', gud: 'kriget', sorg: true, foljd: 'stupade' }, // steg 4.4.5 (rovare.ts)
   avrattad: { text: 'för sitt brott', gud: 'kriget' }, // dödsstraffet (steg 8.4.8)
-  drap: { text: 'av våld', gud: 'kriget' },
+  drap: { text: 'av våld', gud: 'kriget', foljd: 'stupade' }, // den som dör på kartan i en strid utan ett STRIDSLAG dör av drap (kartstrid.ts, steg 15.1.123)
   forsvunnen: { text: 'på en resa och kom aldrig hem', sorg: true }, // steg 11.5.18 (resa.ts)
   offrad: { text: 'som offer', gud: 'kriget' }, // människooffret (budet, steg 8.6.6) // slagen till döds i ett utbrott (steg 3.2.3, humor.ts)
 } satisfies Record<string, DodDef>;

@@ -8,7 +8,7 @@ import { roomAt } from './byggnad';
 import { balans } from './balans';
 import { andeRiktning, troUpplev } from './religion';
 import { foodDays } from './ekonomi';
-import type { Sed } from './seder';
+import { arFoljd, foljdHande, type Sed } from './seder';
 import { svartSjukNu } from './sjukdom';
 import { STATIONER } from './stationer';
 import { UPP_LAR } from './typer';
@@ -180,10 +180,13 @@ function effektFor(d: UpplevelseDef, e: Partial<Record<Stat, number>>, vuxen: bo
 // gång i vuxenlivet; det fastnar med chansen i registret. Drar ur personens egen slumpföljd, så att inget annat ändras
 export const tatKrok = { upplev: (_s: State, _p: Person, _k: string) => {}, vuxen: (_s: State, _p: Person) => {} };
 // ggr (steg 11.12.4): en starkare upplevelse, effekten gånger så här mycket (fängelset efter dygnen inne)
-export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string, ggr = 1) {
+// borjar (steg 15.1.123): händelsen börjar nu. För ett tillstånd som prövas varje timme (nära döden, överflöd) bara den
+// timme det börjar; då händer följden, en gång per händelse och före spärrarna för upplevelsen
+export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string, ggr = 1, borjar = true) {
   const d: UpplevelseDef = DEF[k];
   if (!alive(p)) return;
   const vuxen = !formas(s, p);
+  if (borjar && arFoljd(k)) foljdHande(s, p, k, chansFor(d, vuxen)); // följderna minns (steg 15.1.123, seder.ts)
   if (d.vem === (vuxen ? 'barn' : 'vuxen') || (!vuxen && !d.tidig && ageOf(p, s.now) < UPPV.fran) || p.upp?.some(u => u.k === k && vuxenUpp(u) === vuxen)) return;
   if (rnd(s, 'uppvaxt', p) >= chansFor(d, vuxen)) return;
   const e0 = effektFor(d, pick(s, d.e, 'uppvaxt', p), vuxen), e = ggr === 1 ? e0 : Object.fromEntries(Object.entries(e0).map(([x, v]) => [x, Math.round((v ?? 0) * ggr)])) as typeof e0;
@@ -272,14 +275,21 @@ const smidesNara = (s: State, p: Person) => { const sm = (SMIDE ??= new Set<stri
 // en upplevelse med en färdighet (lar) gör den lättare att lära (ovning i folk.ts läser UPP_LAR)
 for (const [k, d] of Object.entries(DEF)) if (d.lar) UPP_LAR.k[k] = d.lar;
 UPP_LAR.fart = UPPV.lar;
+// tillståndet k gäller nu (nu) för p: sant bara den timme det börjar. p.uppNu minns vilka som pågår (steg 15.1.123)
+function borjarNu(p: Person, k: UpplevelseTyp, nu: boolean) {
+  const var_ = !!p.uppNu?.includes(k);
+  if (nu && !var_) (p.uppNu ??= []).push(k);
+  else if (!nu && var_) { p.uppNu = p.uppNu!.filter(x => x !== k); if (!p.uppNu.length) p.uppNu = undefined; }
+  return nu && !var_;
+}
 export function stepUppvaxt(s: State) {
   const overflod = foodDays(s) > UPPV.overflodDygn;
   for (const p of s.people) {
     if (paKartan(p)) for (const [k, nara] of NARA_DODEN) if (nara(p, s.now)) livet(s, p, k, true); // det hen överlevt (i byn; den som är borta, steg 11.2.4), i alla åldrar (steg 3.9.8)
     if (!alive(p) || ageOf(p, s.now) < UPPV.fran) continue;
     if (p.upp?.some(vuxenUpp)) blekna(s, p);
-    for (const [k, nara] of NARA_DODEN) if (nara(p, s.now)) upplev(s, p, k); // barn och vuxna (steg 4.1.1.2)
-    if (overflod) upplev(s, p, 'overflod');
+    for (const [k, nara] of NARA_DODEN) { const nu = nara(p, s.now), b = borjarNu(p, k, nu); if (nu) upplev(s, p, k, undefined, 1, b); } // barn och vuxna (steg 4.1.1.2)
+    { const b = borjarNu(p, 'overflod', overflod); if (overflod) upplev(s, p, 'overflod', undefined, 1, b); }
     if (!formas(s, p)) continue;
     if (p.task?.act === 'leka' && p.task.phase === 'do') upplev(s, p, 'lek');
     if (p.task?.act === 'odla' && p.task.phase === 'do') upplev(s, p, 'faltet'); // (steg 12.1.133)

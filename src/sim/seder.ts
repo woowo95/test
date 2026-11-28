@@ -3,7 +3,7 @@ import { personHand } from './personlogg';
 
 import { HOUR } from './typer';
 import { ALDER, ageOf, count, living, log } from './folk';
-import { clamp } from './slump';
+import { clamp, rnd } from './slump';
 import { DAY, Person, Seder, State } from './typer';
 import { balans } from './balans';
 import { kortTal } from './format';
@@ -38,6 +38,9 @@ export const SED = balans('seder', {
   rostBas: 0.5,
   rostKarisma: 20,
   minneSteg: 0.1, minneMax: 0.5, // minnet av en död drar så här mycket per steg i INTRYCK:s sedkolumn gånger minnets styrka, och alla minnen tillsammans högst minneMax per sed (steg 10.4.9)
+  // följderna minns (steg 15.1.123): varje följd drar personen upplevelsens sedkolumn gånger uppSteg, det bleknar med en
+  // tidskonstant på foljdDygn dygn, och tillsammans högst foljdMax åt varje håll
+  foljdDygn: 15, foljdMax: 0.8,
   uppSteg: 0.1, // en upplevelse drar personens hållning så här mycket per steg i sedkolumnen (UPPLEVELSER i uppvaxt.ts, steg 4.5.4.9)
   snittVikt: 1.1, // målet för en sed är byns snitt gånger så här mycket, från -1 till 1
   rorDygn: 6, // sederna rör sig mot målet med en tidskonstant på så här många dygn: byns minne, så att seden inte bara speglar vilka som bor där just nu
@@ -145,6 +148,7 @@ export function drar(s: State, p: Person) {
     if (e) for (const k in e) d[k as Sed] += e[k as Sed]! * SED.uppSteg;
   }
   for (const m of minnen(s, p).values()) for (const k in m.d) d[k as Sed] += m.d[k as Sed]!;
+  if (p.foljd) for (const k in p.foljd.v) d[k as Sed] += foljdNu(s, p, k as Sed);
   return d;
 }
 // en enda seds dragning, samma tal som drar(s, p)[k] med samma tillägg i samma ordning (steg 12.1.104): för den som bara läser en sed
@@ -152,7 +156,23 @@ export function drarSed(s: State, p: Person, k: Sed) {
   let v = laggning(s, p, k, foraldrar(s).has(p.id));
   for (const u of p.upp ?? []) { const e = upplevelseSed(u.k)?.[k]; if (e !== undefined) v += e * SED.uppSteg; }
   for (const m of minnen(s, p).values()) { const x = m.d[k]; if (x !== undefined) v += x; }
-  return v;
+  return v + foljdNu(s, p, k);
+}
+// det följderna drar personen i sed k, bleknat sedan det sist ändrades (steg 15.1.123)
+const foljdNu = (s: State, p: Person, k: Sed) => { const f = p.foljd, v = f?.v[k]; return v ? v * Math.exp(-(s.now - f!.t) / (SED.foljdDygn * DAY)) : 0; };
+// upplevelserna som är följder för någon sed (foljder i SEDER)
+let FOLJDER: Set<string> | undefined;
+export const arFoljd = (k: string) => (FOLJDER ??= new Set(SED_LIST.flatMap(x => SEDER[x].foljder ?? []))).has(k);
+// p var med om följden k (steg 15.1.123): med chansen fastnar den, en gång per händelse och utan spärren för samma
+// upplevelse, och drar personen upplevelsens sedkolumn gånger uppSteg. Det gamla bleknar först
+export function foljdHande(s: State, p: Person, k: UpplevelseTyp, chans: number) {
+  const e = upplevelseSed(k);
+  if (!e || rnd(s, 'foljd', p) >= chans) return;
+  const f = p.foljd ??= { v: {}, t: s.now }, g = Math.exp(-(s.now - f.t) / (SED.foljdDygn * DAY));
+  for (const x in f.v) f.v[x as Sed]! *= g;
+  f.t = s.now;
+  for (const x in e) f.v[x as Sed] = clamp((f.v[x as Sed] ?? 0) + e[x as Sed]! * SED.uppSteg, -SED.foljdMax, SED.foljdMax);
+  count(s, 'foljd_' + k);
 }
 // personens läggning i en sed (steg 15.1.121): personligheten (för Världslig – Andlig byns andlighet, steg 8.6.1), det man
 // tagit av byns sed och det avvikarna fått en att dra åt, inom -1 till 1

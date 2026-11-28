@@ -32,3 +32,34 @@ SCENARIER.sedrorelse = {
     ];
   },
 };
+
+// byns första vuxna leder byn, och seden k är öppen
+const oppna = (s: SIM.State, k: SIM.Sed) => { const l = SIM.living(s)[0]!; s.styre = { historia: [{ id: l.id, namn: l.name, titel: 'Ålderman', fran: s.now }], oppna: [k], ledare: l.id, sedan: s.now, titel: 'Ålderman', satt: 1 } as never; };
+
+SCENARIER.foljder2 = {
+  text: 'Steg 15.1.123: följderna minns. Var och en minns varje följd, en gång per händelse och inte en gång per livsdel. En krigisk by som mister tre i strid i rad drar seden Krig tydligt mot Fred, och efter 15 dygn (15 år i spelet) har följden bleknat',
+  kor: () => {
+    const k: SIM.Sed = 'krig', pot = { aggression: 20, mod: 20, empati: 1 };
+    const s = taketsBy(23, k, 1, pot); oppna(s, k);
+    while (SIM.living(s).length < 14) nyInvanare(s, SIM.living(s).length % 2 ? 'm' : 'k', 30);
+    for (const p of SIM.living(s)) { Object.assign(p.pot, pot); p.sedArv = { [k]: 1 }; }
+    const mal0 = SIM.sederTarget(s)[k], v0 = s.seder.v[k];
+    for (let i = 0; i < 3; i++) SIM.die(s, SIM.living(s).at(-1)!, 'rovare');
+    const kvar = SIM.living(s), f = (p: SIM.Person) => p.foljd?.v[k] ?? 0;
+    const flera = kvar.filter(p => f(p) < -0.25).length, mal1 = SIM.sederTarget(s)[k], snitt = kvar.reduce((a, p) => a + SIM.drarSed(s, p, k), 0) / kvar.length;
+    const fNu = () => kvar.reduce((a, p) => a + (p.foljd ? f(p) * Math.exp(-(s.now - p.foljd.t) / (SIM.SED.foljdDygn * SIM.DAY)) : 0), 0) / kvar.length;
+    const f0 = fNu();
+    lev(s, 6); const v6 = s.seder.v[k];
+    lev(s, 9); const f15 = fNu(), mal15 = SIM.sederTarget(s)[k];
+    // en död i strid utan ett stridslag (drap) är också en följd
+    const s2 = taketsBy(24, k, 1, pot); oppna(s2, k); SIM.die(s2, SIM.living(s2).at(-1)!, 'drap');
+    const drap = SIM.living(s2).filter(p => (p.foljd?.v[k] ?? 0) < 0).length;
+    return [
+      [`${flera} av ${kvar.length} minns mer än en av de tre (följden fastnar en gång per händelse)`, flera >= 2],
+      [`byns mål för Krig flyttas tydligt (${mal0.toFixed(2)} → ${mal1.toFixed(2)}; läggningen och följderna i snitt ${snitt.toFixed(2)})`, mal1 < mal0 - 0.15],
+      [`seden har rört sig mot Fred efter sex dygn (${v0.toFixed(2)} → ${v6.toFixed(2)})`, v6 < v0 - 0.05],
+      [`efter 15 dygn har följden bleknat (${f0.toFixed(2)} → ${f15.toFixed(2)} i snitt), och målet går tillbaka mot det första (${mal1.toFixed(2)} → ${mal15.toFixed(2)})`, Math.abs(f15) < Math.abs(f0) * 0.45 && mal15 > mal1 + 0.1],
+      [`den som dör av drap i en strid ger också följden stupade (${drap} minns)`, drap > 0],
+    ];
+  },
+};
