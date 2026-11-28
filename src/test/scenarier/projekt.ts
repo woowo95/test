@@ -212,6 +212,7 @@ SCENARIER.fullaforrad = {
 };
 
 SCENARIER.omtanke = {
+  lang: true,
   text: 'Steg 10.5.2: omtanken. Det egna och familjens väger alltid 1, och byns arbete väger byns brist gånger omtanken om byn: 1 för en vanlig person, högre med empati, seden Sammanhållning och goda relationer i byn, lägre med Självförsörjning och osämja. Mot en bestämd person räknas samma tal med relationen till just hen, så att man hellre bygger på en väns hus än på en oväns',
   kor: () => {
     const s = by(4), p = vuxna(s)[0], fam = SIM.familjOf(s, p.id), andra = SIM.living(s).filter(q => q !== p);
@@ -238,8 +239,11 @@ SCENARIER.omtanke = {
     const bp = vuxna(b)[0], bf = SIM.familjOf(b, bp.id), [bv, bo] = SIM.living(b).filter(q => q !== bp && !bf.includes(q) && SIM.ageOf(q, b.now) >= 18);
     if (h1 && h2) { h1.ag = bo.id; h2.ag = bv.id; SIM.getRel(b, bp, bv).op = 80; SIM.getRel(b, bp, bo).op = -80; }
     const jobb = SIM.buildJob(b, bp), paVan = !!jobb && jobb.bit.hus === h2?.id;
-    // byns ved: samma by med Sammanhållning och med Självförsörjning, ett dygn
-    const ved = (g: number) => { const v = SIM.cloneState(s); for (const q of SIM.living(v)) for (const r of SIM.living(v)) if (q !== r) { const x = v.rels[SIM.relKey(q.id, r.id)]; if (x) x.op = 0; } setAmount(v, 'ved', 2); let n = 0; kor(v, 24, w => { w.seder.v.gemenskap = g; setAmount(w, 'ved', 2); for (const q of SIM.living(w)) if (q.task?.act === 'ved' && q.task.why?.startsWith('Byn behöver ved')) n++; }); return n / STEG_TIM; }; // bara veden för byn, och bristen står kvar hela dygnet: ett försök att komma på något hugger också ved och fyller annars förrådet
+    // byns ved: samma byar med Sammanhållning och med Självförsörjning, ett dygn. Allt arbete för byns ved räknas (raden ved
+    // och det den går vidare till: fälla, hugga, göra en yxa), i tre byar, eftersom timmarna i en by är få. Byarna har gott om
+    // mat: byns mat väger också gånger omtanken, och annars tar maten timmarna från veden i den sammanhållna byn
+    const ved = (g: number) => [4, 5, 6].reduce((a, fro) => a + vedI(g, fro), 0);
+    const vedI = (g: number, fro: number) => { const v = by(fro); setFood(v, 400); for (const q of SIM.living(v)) for (const r of SIM.living(v)) if (q !== r) { const x = v.rels[SIM.relKey(q.id, r.id)]; if (x) x.op = 0; } setAmount(v, 'ved', 2); let n = 0; kor(v, 24, w => { w.seder.v.gemenskap = g; setAmount(w, 'ved', 2); for (const q of SIM.living(w)) if (q.task?.why?.startsWith('Byn behöver ved')) n++; }); return n / STEG_TIM; }; // bara veden för byn, och bristen står kvar hela dygnet: ett försök att komma på något hugger också ved och fyller annars förrådet
     const vedSam = ved(1), vedSjalv = ved(-1);
     return [
       [`en vanlig person med neutrala relationer i en by utan sed har omtanken 1 (${vanlig.toFixed(2)})`, Math.abs(vanlig - 1) < 1e-9],

@@ -199,6 +199,7 @@ SCENARIER.vildsvin = {
 };
 
 SCENARIER.byggsten = {
+  lang: true,
   text: 'Steg 10.10.5: byggstenen. Den bryts vid berget när Byggplanen planerat något av sten, blir liggande där eftersom ingen orkar bära den, och körs hem på kälken, en i taget, eller på släden: fyra med hästen och sex med oxen. Utan kälke eller släde blir stenen liggande',
   // scenariot prövar brytandet och frakten, inte hur högt byn sätter stenen bland projekten: i en ny by går latrinen, spjuten
   // och det andra före, så stenen får en hög vikt här (om stenen bryts i byarna avgörs i fasens Balans)

@@ -3241,6 +3241,7 @@ SCENARIER.flyktsar = {
 };
 
 SCENARIER.ingenvantan = {
+  lang: true,
   text: 'Steg B.47: om de egna räcker räknas likadant vid larmet och i mötet, och när alla på väg är framme och ändå inte räcker väljs rollen om: två kämpar mot sex rövare står inte kvar på väntplatsen',
   kor: () => {
     const prov = (n: number, kampar: number) => {

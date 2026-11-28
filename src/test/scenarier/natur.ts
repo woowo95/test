@@ -137,11 +137,11 @@ SCENARIER.abborre = {
   },
 };
 
-SCENARIER.sjo = { // by 8: by 3 fiskade knappt efter steg 2.3.11, och by 4 fiskade inte de första sex dygnen sedan gåvan ser hela förrådet (4a0be24f)
+SCENARIER.sjo = { // by 9: by 3 fiskade knappt efter steg 2.3.11, by 4 inte de första sex dygnen sedan gåvan ser hela förrådet (4a0be24f), och by 8 knappt efter 15.1.43 (ce87e61); by 9 fiskar mest av byarna 3–10
   lang: true,
   text: 'Varje sammanhängande vatten är en sjö. Fiskeförsök, napp, fångade fiskar och bad räknas per sjö när de händer (sjöfliken)',
   kor: () => {
-    const s = createState(8, START), sj = SIM.sjoarna(s.seed), tiles = getMap(s.seed).tiles;
+    const s = createState(9, START), sj = SIM.sjoarna(s.seed), tiles = getMap(s.seed).tiles;
     let vatten = true; for (let i = 0; i < W * H; i++) if ((tiles[i] === T.Vatten) !== (sj.id[i] >= 0)) vatten = false;
     const storst = sj.rutor.every((r, n) => n === 0 || r.length <= sj.rutor[n - 1].length);
     // den som sitter vid stranden ser ut över sjön eller tjärnen hen sitter vid (steg 9.2.131)
@@ -976,14 +976,15 @@ SCENARIER.bord = {
     // ett dygn med bordet: måltider och samtal vid det, och aldrig två på samma plats
     const plats = new Set(pl.map(q => q.y * W + q.x));
     let samtal = 0, krock = 0;
-    const mal0 = s.stat?.bordMal ?? 0;
+    const mal0 = s.stat?.bordMal ?? 0, gladaId = new Set<number>(); // de som blev glada av bordet under dygnet (tanken varar KROPP.bordGladTim)
     for (let i = 0; i < 144; i++) {
       kor(s, 0.5);
+      for (const p of living(s)) if (p.thoughts.some(t => t.text === 'Åt vid bordet')) gladaId.add(p.id);
       const vid = living(s).filter(p => p.task && plats.has(Math.floor(p.task.ty) * W + Math.floor(p.task.tx)) && ['maltid', 'samtal', 'beratta'].includes(p.task.act));
       samtal += vid.filter(p => p.task!.act !== 'maltid' && p.task!.phase === 'do').length;
       if (new Set(vid.map(p => Math.floor(p.task!.ty) * W + Math.floor(p.task!.tx))).size < vid.length) krock++;
     }
-    const mal = (s.stat?.bordMal ?? 0) - mal0, glada = living(s).filter(p => p.thoughts.some(t => t.text === 'Åt vid bordet')).length;
+    const mal = (s.stat?.bordMal ?? 0) - mal0, glada = gladaId.size;
     const tek = TEK.bord;
     return [
       [`alla storlekar har bristen efter platserna de fyller åt ${n} (${text00})`, alla],
