@@ -30,6 +30,7 @@ import { lamnaFallt, styckaFallt } from './styckning';
 import { upplev } from './uppvaxt';
 import { tecken } from './religion';
 import { H, HOUR, MIN, Person, SEC, State, Task, W } from './typer';
+import { hundSkaller } from './tamdjur';
 import { bynsMitt, utanforByn } from './omrade';
 import { tanke } from './tankar';
 
@@ -79,6 +80,15 @@ export function bjornSteg(s: State) {
   const ungar = alla.filter(d => d.art === 'bjornunge'), R = ungar.length ? BJORNMOTE.naraUngar : BJORNMOTE.nara;
   const ar = yearNo(s, s.now);
   if (s.bjornMott && s.bjornMott.ar !== ar) s.bjornMott = undefined;
+  // vakthunden hör björnen (steg 9.8.11, 15.1.137), en gång per minut: när den skäller och björnen är nära byn väcks ägaren och byn larmas
+  if (s.bjornHundT === undefined || s.now - s.bjornHundT >= MIN) {
+    s.bjornHundT = s.now;
+    const h = hundSkaller(s, d => Math.hypot(d.x - b.x, d.y - b.y));
+    if (h && utanforByn(s, b.x, b.y) <= BJORNMOTE.larmNara) {
+      if (h.p.task?.act === 'sova') { avbryt(s, h.p); h.p.task = undefined; }
+      if (!larmNu(s, h.p, 'bjorn')) { larma(s, 'bjorn', 1 + ungar.length, [h.p]); count(s, 'bjornHundLarm'); }
+    }
+  }
   // alla som är nya i mötet samlas först (de vakna inom R, eller nära en unge), och sedan slås en tärning för mötet (steg 15.1.136):
   // en grupp skrämmer björnen, så chansen delas med 1 + grupp för varje person utöver den första
   const ute = (q: Person) => vaken(q) && q.task?.act !== 'strid' && !roomAt(s, q.x, q.y);

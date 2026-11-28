@@ -191,3 +191,31 @@ SCENARIER.bjornmote2 = {
     ];
   },
 };
+
+SCENARIER.hundbjorn = {
+  text: 'Steg 15.1.137: vakthunden hör björnen. En björn nära byn får den lojala hunden att skälla, ägaren vaknar och byn larmas',
+  kor: () => {
+    const s = SIM.createState(6, START);
+    let t0: number | undefined;
+    for (let t = s.now; t < s.now + 120 * SIM.DAY && t0 === undefined; t += 20 * SIM.MIN) { const b = SIM.bjornarOf(s, t).find(d => d.art === 'bjorn'); if (b && SIM.utanforByn(s, b.x, b.y) <= SIM.BJORNMOTE.larmNara && SIM.utanforByn(s, b.x, b.y) > 0) t0 = t; }
+    if (t0 === undefined) return [['en björn nära byn', false]];
+    const prova = (lojal: number) => {
+      const k = SIM.cloneState(s); k.now = t0!;
+      const b = SIM.bjornarOf(k, k.now).find(d => d.art === 'bjorn')!, folk = SIM.living(k), p = folk.filter(r => SIM.ageOf(r, k.now) >= SIM.ALDER.vuxen)[0]!;
+      for (const q of folk) q.task = { act: 'sova', phase: 'do', tx: q.x, ty: q.y, until: k.now + 8 * SIM.HOUR, carry: 0 };
+      const d = Math.min(SIM.VAKTHUND.hor - 1, 10), vt = SIM.vattenNu(k);
+      let x = b.x + d, y = b.y;
+      for (let v = 0; v < 16 && vt[SIM.tileOf(x, y)] === SIM.T.Vatten; v++) { x = b.x + Math.cos(v / 16 * 6.283) * d; y = b.y + Math.sin(v / 16 * 6.283) * d; }
+      p.x = x; p.y = y; p.task = { act: 'sova', phase: 'do', tx: x, ty: y, until: k.now + 8 * SIM.HOUR, carry: 0 };
+      const h = SIM.nyttTamdjur(k, 'hund', x, y, p.id); h.lojal = lojal;
+      SIM.bjornSteg(k);
+      return { k, p };
+    };
+    const ja = prova(0.9), nej = prova(0.3);
+    return [
+      [`hunden skäller (${ja.k.stat?.hundSkallde ?? 0}) och byn larmas (${ja.k.stat?.bjornHundLarm ?? 0})`, (ja.k.stat?.hundSkallde ?? 0) >= 1 && (ja.k.stat?.bjornHundLarm ?? 0) === 1],
+      [`ägaren vaknar (${ja.p.task?.act ?? 'vaken'}) och har hört larmet`, ja.p.task?.act !== 'sova' && !!ja.p.larm],
+      ['en hund som inte är lojal skäller inte, och ägaren sover', !(nej.k.stat?.hundSkallde) && nej.p.task?.act === 'sova'],
+    ];
+  },
+};
