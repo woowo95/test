@@ -190,3 +190,33 @@ SCENARIER.tryck = {
     ];
   },
 };
+
+SCENARIER.forbandflode = {
+  text: 'Steg 15.1.102: förbandet tar det mesta av ett stort sår. Ett stort sår under mossa blöder 0,4 av flödet, ett gammalt förband blöder igenom, och avsnörningen lossas när förbandet ligger, utan men',
+  kor: () => {
+    const { s, q, g } = sarBy([{ g: 0.9 }]), w = q.skador![0]!;
+    const fullt = SIM.blodning(q);
+    w.f = 1; w.fT = s.now; SIM.halsaSteg(s, q, 1); const mossa = SIM.blodning(q);
+    s.now += (SIM.HALSA.bytaTim + 1) * SIM.HOUR; SIM.halsaSteg(s, q, 1); const gammalt = SIM.blodning(q), byta = SIM.VARD.byta.krav(s, q, w, g);
+    // avsnörningen: ett stort sår i benet snörs av, förbandet läggs och avsnörningen lossas
+    const b = sarBy([{ d: 'benV', k: 'skarsar', g: 0.9 }], 3), v = b.q.skador![0]!;
+    SIM.setAmount(b.s, 'rep', 3); SIM.setAmount(b.s, 'mossa', 3);
+    b.g.task = { act: 'varda', phase: 'do', tx: b.q.x, ty: b.q.y, until: b.s.now + 600, carry: 0, ref: b.q.id, why: '' };
+    const snor = SIM.VARD.avsnora.krav(b.s, b.q, v, b.g); if (snor) SIM.VARD.avsnora.gor(b.s, b.g, b.q, v);
+    const snortB = v.b, inteForst = !SIM.VARD.lossa.krav(b.s, b.q, v, b.g);
+    if (SIM.VARD.forband.krav(b.s, b.q, v, b.g)) SIM.VARD.forband.gor(b.s, b.g, b.q, v);
+    const intePaNytt = !SIM.VARD.avsnora.krav(b.s, b.q, v, b.g), lossa = SIM.VARD.lossa.krav(b.s, b.q, v, b.g);
+    if (lossa) SIM.VARD.lossa.gor(b.s, b.g, b.q, v);
+    b.g.task = undefined; b.q.blod = 1;
+    for (let i = 0; i < 4; i++) { SIM.halsaSteg(b.s, b.q, (SIM.HALSA.avsnoraTim + 0.5) * 3600 / 4); b.q.blod = 1; }
+    const men = (b.q.men ?? []).length, flode = SIM.blodning(b.q), stortBen = SIM.blodning({ skador: [{ ...v, f: undefined, fg: undefined }] } as unknown as SIM.Person);
+    return [
+      [`ett stort sår under mossa blöder ${(mossa / fullt).toFixed(2)} av flödet`, Math.abs(mossa / fullt - SIM.HALSA.forbandStor[1]!) < 1e-3],
+      [`ett gammalt förband blöder igenom (${(gammalt / fullt).toFixed(2)}) och ska bytas (${byta})`, Math.abs(gammalt / fullt - 1) < 0.01 && byta],
+      [`avsnörningen stoppar blödningen (${snortB}) och lossas inte förrän förbandet ligger`, snor && snortB === 0 && inteForst],
+      [`när förbandet ligger snörs det inte av igen, och avsnörningen lossas`, intePaNytt && lossa && v.av === undefined],
+      [`såret blöder sedan under förbandet (${(flode / stortBen).toFixed(2)} av flödet)`, flode > 0 && flode < stortBen * 0.5],
+      [`benet fick inget men (${men})`, men === 0],
+    ];
+  },
+};
