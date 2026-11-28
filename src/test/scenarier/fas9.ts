@@ -1662,6 +1662,7 @@ SCENARIER.blommor = {
 };
 
 SCENARIER.ortkruka = {
+  lang: true,
   text: 'Steg 9.7.16 och 10.10.11: örter i krukor. Örterna odlas inte på fälten utan i lerkrukor vid husen (kolumnen plats i GRODOR), och krukorna är också pynt. Ägaren sätter fröet och plockar den mogna örten som arbeten; inget flyttas utan att någon står vid krukan, örten växer lika mycket med korta som med långa slag, en kruka som bärs sås inte, och två tar aldrig samma kruka',
   kor: () => {
     const { stepOrtKrukor, addTool, setAmount, amountOf, GRODOR, grodorNu, ortSattaVal, ortSattaKlar, ortPlockaVal, ortPlockaKlar, ORTKRUKA } = SIM;

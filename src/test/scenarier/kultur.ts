@@ -608,6 +608,7 @@ SCENARIER.bestalld = {
   },
 };
 SCENARIER.bestalltminne = {
+  lang: true,
   text: 'Beställda minnen (steg 10.7.30): ledaren som betalar för ett framträdande kan beställa det om en annan person. Hen väljer det minne hos den som uppträder som hen själv har starkast åsikt om, vägt mot hyllningen, och hens åsikt läggs till den uppträdandes när versionen räknas. Kyrkans präst kan beställa på samma sätt. Redogörelsen säger vem som beställde',
   kor: () => {
     // u minns A och B som generösa (B starkare); ledaren l har åsikten opA om A och ingen om B
