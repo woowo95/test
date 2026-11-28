@@ -163,15 +163,20 @@ SCENARIER.byggblir = {
       // när det första virket ligger vid bygget avbryts den som bygger en stund
       if (!avbruten && !SIM.isKlar(b) && (s.stackar ?? []).some(g => g.k === 'virke' && vid(b, g.x + 0.5, g.y + 0.5)) && p.task?.act === 'station' && p.task.phase === 'go') {
         avbruten = true; SIM.avbryt(s, p);
-        p.task = { act: 'vila', phase: 'do', tx: p.x, ty: p.y, until: s.now + 2 * SIM.HOUR, carry: 0, why: 'Vilar' } as SIM.Task;
+        p.task = { act: 'vila', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.HOUR, carry: 0, dark: false, why: 'Vilar' } as SIM.Task;
       }
     };
     for (let i = 0; i < 360 && !avbruten; i++) { SIM.step(s, 5); varje(); } // vändorna i korta steg, så att avbrottet kommer mellan två av dem
-    kor(s, 10, varje);
+    kor(s, 1, varje); // medan hen vilar ligger virket kvar vid bygget
+    // sedan tar hen upp bygget igen, som valet gör när någon väljer den påbörjade stationen (kanBygga räknar det som ligger vid bygget)
+    const sp = SIM.stationSpot(s, 'flatarbank', p), kan = SIM.kanBygga(s, p, 'flatarbank');
+    if (sp && kan && !SIM.isKlar(bank()!)) { Object.assign(p, { hunger: 1, rest: 1, social: 1, toa: 1, torst: 1, warm: 1 }); p.task = { act: 'station', tool: 'flatarbank', phase: 'go', tx: sp.x, ty: sp.y, until: s.now + 2 * SIM.HOUR, carry: 0, dark: false, why: 'Bygger vidare på slöjdbänken' } as SIM.Task; }
+    kor(s, 3, varje);
     const b = bank();
     return [
       [`slöjdbänken blev byggd (${b ? SIM.isKlar(b) ? 'klar' : 'påbörjad' : 'ingen'})`, !!b && SIM.isKlar(b)],
       [`platsen låg fast (${plats})`, !flyttad && !!b],
+      [`den som byggde kan bygga vidare med det som ligger vid bygget (${kan ? 'ja' : 'nej'})`, kan],
       [`den som byggde avbröts när virket låg vid bygget (${avbruten ? 'ja' : 'nej'})`, avbruten],
       [`inget bars från bygget till förrådet medan det väntade på materialet (${bort.size} gånger)`, bort.size === 0],
     ];
@@ -222,7 +227,7 @@ SCENARIER.overtak = {
     const s = SIM.createState(5, START); klockan(s, 9); tandEld(s);
     const tak = SIM.materialTak(s, 'grenar');
     SIM.setAmount(s, 'grenar', 10 * Math.ceil(tak)); // långt över taket
-    const a0 = SIM.amountOf(s, 'grenar'), over = !SIM.villHaMer(s, 'grenar');
+    const a0 = SIM.amountOf(s, 'grenar'), over = SIM.overTaket(s, 'grenar');
     SIM.put(s, 'grenar', 30); // det som kommer hem när förrådet redan är fullt
     const put = SIM.amountOf(s, 'grenar') - a0;
     // grenar som ligger på marken en bit bort bärs inte in medan förrådet är över taket

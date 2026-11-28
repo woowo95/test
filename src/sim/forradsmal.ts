@@ -33,7 +33,7 @@ import { ALDER, ageOf, living } from './folk';
 import { TORST } from './torst';
 import { harMyr } from './myr';
 import { sportFor } from './sport';
-import { foretagBord, STATION, STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, kupBrist, harStation, isKlar, pyntBrist, pyntLust, stationerOf, tommaPlatser, villPynt } from './stationer';
+import { foretagBord, STATION, STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, kupBrist, harStation, isKlar, nastaAv, pyntBrist, pyntLust, stationerOf, tommaPlatser, villPynt } from './stationer';
 import { nTools } from './agande';
 import { brasaBrist, brasaStenMal } from './brasor';
 import { BYGGNADER, fahusUtanKrubba, fnId, langhusRum, sovplatser, utanBadd } from './byggnader';
@@ -194,10 +194,13 @@ export function materialTimme(s: State): Record<string, { b: number; t: number }
 }
 // bufferten och taket för materialet k: det minsta talet räknas nu (elden kan ha tänts sedan timmens början)
 // Ett material utan buffert (steg 13.8.4) vill byn ha så mycket av som projekten och byggena saknar (s.projektSaknar, en gång i timmen)
+// Det de påbörjade stationerna väntar på räknas med (steg 15.1.43, 15.1.45): det är ett behov, och det som bärs dit bärs in igen
 export function materialBuffert(s: State, k: Materialslag, m = s.arbBehov?.mal?.[k]) {
   const r: Materialmal = MATERIALMAL[k];
-  return Math.max(r.min(s), r.buffert ? m?.b ?? 0 : s.projektSaknar?.[k]?.beh ?? 0, lagerAv(k, pabud(s, `lager_${k}`)));
+  return Math.max(r.min(s), r.buffert ? m?.b ?? 0 : s.projektSaknar?.[k]?.beh ?? 0, lagerAv(k, pabud(s, `lager_${k}`)), byggenVantar(s, k));
 }
+// så mycket av materialet k de påbörjade stationerna väntar på (nästa del, eller hela stationen som påbörjades utan material)
+function byggenVantar(s: State, k: string) { let n = 0; for (const t of stationerOf(s)) if (!isKlar(t)) n += nastaAv(t.k, t)[k] ?? 0; return n; }
 // påbudet Förråden för materialet k (steg 13.8.15): över noll ett lager som växer med talet, hela saker; under noll inget
 export const lagerAv = (k: string, v: number) => v > 0 ? Math.ceil(v * FORRAD.lager * (SAKER[k]?.stack ?? 1) - 1e-9) : 0;
 // talen i påbudet Förråden, ett per material (styre.ts), läggs till när alla filer är lästa (lagerPabud i val.ts)
@@ -215,6 +218,15 @@ export function villHaMer(s: State, k: string) {
   if (isFood(k)) return foodDaysAll(s) < lyxtak(s, 'mat');
   if (k in MATERIALMAL) return amountOf(s, k) < FORRAD.materialMatt * Math.max(1, materialBuffert(s, k as Materialslag));
   return true;
+}
+// är förrådet av slaget k vid eller över sitt tak (steg 15.1.45)? Det som är över taket bärs inte in och räknas inte till förrådet
+// (lager.ts). Ett material har sitt tak (materialTak, också grenarna som tändmaterial), veden och maten sitt lyxtak i dygn; det
+// som saknar förrådsmål har inget tak. Samma fråga för alla saker
+export function overTaket(s: State, k: string) {
+  if (k in MATERIALMAL) return overTak(s, k as Materialslag);
+  if (k === 'ved') return woodDays(s) >= lyxtak(s, 'ved');
+  if (isFood(k)) return foodDaysAll(s) >= lyxtak(s, 'mat');
+  return false;
 }
 // är materialet under bufferten (ett behov), eller vid eller över taket (ingen plockar det)? Det man bär räknas med
 // så många av slaget k byn vill ha i förrådet (steg 10.2.12): bufferten ur förbrukningen, i hela saker

@@ -23,7 +23,7 @@ import { FOOD, SAKER, SAK_LIST, isFood, isTool, rutaOf, sakNamn, viktOf, iSlag }
 import { balans } from './balans';
 import { flodHotad, iVattnetNu, narmasteLand, underMinnet } from './sjo';
 import { FLOD } from './flod';
-import { forbrukat, villHaMer } from './forradsmal';
+import { forbrukat, overTaket } from './forradsmal';
 import { strakI } from './strak';
 import { slappPlanta } from './skogsvard';
 import { slappKruka } from './kruka';
@@ -676,10 +676,10 @@ function ringSpot(s: State, k: string, occ: Occ) {
   }
   return undefined;
 }
-// Det som är över förrådets tak (villHaMer i forradsmal.ts) läggs inte i ringen runt lagret, som räknas till förrådet, utan
+// Det som är över förrådets tak (overTaket i forradsmal.ts) läggs inte i ringen runt lagret, som räknas till förrådet, utan
 // längre ut, där det inte räknas (steg 15.1.45)
 function besideSpot(s: State, k: string, occ: Occ) {
-  const r = villHaMer(s, k) ? ringSpot(s, k, occ) : undefined;
+  const r = overTaket(s, k) ? undefined : ringSpot(s, k, occ);
   if (r) return r;
   const zs = zonesOf(s).filter(z => z.hus === undefined), base = zs.filter(z => allows(z, k));
   // nödlösning när också ringen är full: längre ut, på en ruta där inget annat ligger (aldrig ovanpå en annan sak) och
@@ -1500,7 +1500,7 @@ function barLista(s: State) {
     return hamnar.get(k)!;
   };
   const framme = besokLager.framme(s);
-  const vill = new Map<string, boolean>(), villIn = (k: string) => { if (!vill.has(k)) vill.set(k, villHaMer(s, k)); return vill.get(k)!; }; // förrådsmålen, en gång per slag
+  const vill = new Map<string, boolean>(), villIn = (k: string) => { if (!vill.has(k)) vill.set(k, !overTaket(s, k)); return vill.get(k)!; }; // förrådsmålen, en gång per slag
   // det som lagts vid ett bygge som pågår hör till bygget (steg 15.1.43): det slag den påbörjade stationen ännu väntar på bärs inte in
   const byggen = stationerOf(s).filter(t => !isKlar(t)).map(t => ({ v: vidStation(t), av: nastaAv(t.k, t) })).filter(b => Object.keys(b.av).length);
   const tillBygge = (a: { x: number; y: number; k: string }) => byggen.some(b => (b.av[a.k] ?? 0) > 0 && Math.hypot(a.x + 0.5 - b.v.x, a.y + 0.5 - b.v.y) <= LAGER.rackvidd + 0.5);

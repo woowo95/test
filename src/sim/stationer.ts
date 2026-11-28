@@ -17,7 +17,7 @@ import { Ting, freeTools, nTools, redskapSlitet, tingOf, wearTool, ingenHar } fr
 import { BYN, kyrkaId } from './egendom';
 import { troOf } from './religion';
 import { troshusRum, trosMobelBrist } from './troshus';
-import { Zone, amountOf, eldRutor, ingetIElden, bordanAv, flyttaLager, inZone, ownsId, pilesInne, put, stallBorta, usable, use, zoneAt, zonesOf } from './lager';
+import { LAGER, Zone, amountOf, eldRutor, isStored, stacksOf, ingetIElden, bordanAv, flyttaLager, inZone, ownsId, pilesInne, put, stallBorta, usable, use, zoneAt, zonesOf } from './lager';
 import { PLATS } from './plats';
 import { balans } from './balans';
 import { Hus, Rum, bitAt, blocked, gridOf, housesOf, husById, roofed, roomAt, touch } from './byggnad';
@@ -1290,12 +1290,18 @@ const nyPaVag = (s: State, k: string, p?: Person) => living(s).some(q => q !== p
 // den som bygger en station kan en av dess tekniker; en station utan tekniker (disken, varubordet) kan alla bygga, och ett vrak
 // (grundarnas trasiga vagn) bygger ingen
 export const kanTek = (p: Person, d: { tek: readonly string[]; vrak?: true }) => !d.vrak && (!d.tek.length || d.tek.some(t => knows(p, t)));
+// det av materialet m som ligger vid den påbörjade stationen t, utanför förrådet: det som bars dit hör till bygget (steg 15.1.43)
+function vidBygget(s: State, t: Station, m: string) {
+  const v = vidStation(t); let n = 0;
+  for (const a of stacksOf(s)) if (a.k === m && !isStored(s, a.x, a.y) && Math.hypot(a.x + 0.5 - v.x, a.y + 0.5 - v.y) <= LAGER.rackvidd + 0.5) n += a.n;
+  return n;
+}
 export function kanBygga(s: State, p: Person, k: StationSlag) {
   const d: StationDef = STATIONER[k];
   if (d.tro) return kanByggaTro(s, p, k);
   if (!enTill(s, 'station', p) || (d.brasa ? ageOf(p, s.now) < ALDER.ansvar : !kanTek(p, d)) || !(d.flera || d.hinner) && harStation(s, k) || d.verktyg && !freeTools(s, p, d.verktyg)) return false;
   const h = halvbyggd(s, k, p);
-  if (h) return Object.entries(nastaAv(k, h)).every(([m, n]) => getable(s, p, m) >= n); // nästa del tar sitt material (steg 12.1.17)
+  if (h) return Object.entries(nastaAv(k, h)).every(([m, n]) => getable(s, p, m) + vidBygget(s, h, m) >= n); // nästa del tar sitt material (steg 12.1.17), och det som redan bars dit räknas (steg 15.1.43)
   if (nyPaVag(s, k, p)) return false; // en annan är redan på väg att bygga en ny av sorten: det byn saknar är under arbete
   return (!d.forvar?.privat || villKista(s, p)) && (!d.pynt || villPynt(s, p, k)) && Object.entries(nastaAv(k)).every(([m, n]) => getable(s, p, m) >= n + eldReserv(s, m)) && !!stationSite(s, k, p);
 }
