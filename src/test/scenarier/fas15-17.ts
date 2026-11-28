@@ -2,6 +2,7 @@
 import * as SIM from '../../sim';
 import { START } from '../kor';
 import { SCENARIER, klockan } from './hjalp';
+import { foretagBy } from './fas14';
 
 SCENARIER.bjorngris = {
   text: 'Steg 15.1.166: björnen tar grisar. En gris som går lös nära björnen, utan någon vaken bredvid, tas med en chans per tid (samma prov som vargen, vaktat i tamdjur.ts); en gris i fähuset tas inte, och inte en med en vaken bredvid',
@@ -84,6 +85,42 @@ SCENARIER.viltbestand = {
       [`där ingen jagar växer beståndet till sig (${SIM.kortTal(bF)})`, bF > 1.05],
       [`när jakten slutar växer beståndet till igen på tjugo dygn (${SIM.kortTal(bJ)} till ${SIM.kortTal(igen)})`, igen > bJ + 0.2],
       ['vildsvinen har ett eget bestånd', SIM.viltBestand(jagad, 'vildsvin') > 1],
+    ];
+  },
+};
+
+SCENARIER.stallfoder = {
+  text: 'Steg 15.1.170: riddjuret behöver foder. En gäst med riddjur köper foder i stallet, och det födda riddjuret bär hen hem i ryttarens fart; en gäst vars riddjur inte får foder blir missnöjd, som av en måltid hen inte fick. Andelen gäster med riddjur är ett tal (FGAST.ridande), som stallet också räknar med',
+  kor: () => {
+    const { s, p, f, r, disk } = foretagBy(['servering']), W = SIM.W, k = SIM.klanerOf(s).find(q => q.rad !== undefined)!, rad = s.varld!.rader!.find(q => q.nr === k.rad)!;
+    for (const q of SIM.living(s)) { q.task = undefined; (q.tek ??= {}).snickarbank = 1; }
+    rad.tal.silver = 300; k.inst = 0;
+    s.stationer = (s.stationer ?? []).filter(q => !(q.k === 'krubba' && r.tiles.includes(q.y * W + q.x))); SIM.touch(s);
+    SIM.utoka(s, f, ['stall']);
+    const q = SIM.stationSite(s, 'krubba');
+    if (q) { s.stationer!.push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'krubba', x: q.x, y: q.y, rot: q.rot, kvar: 0, inne: 1 } as unknown as SIM.Station); SIM.touch(s); }
+    s.finhet = { ...s.finhet, [SIM.rumNyckel(SIM.foretagRum(s, f)[0])]: 0.6 };
+    SIM.put(s, 'torrgras', 3, { [p.id]: 3 }); f.pris = { ...f.pris, stall: 0.5 };
+    const gast = () => { const g = SIM.nyForetagsgast(s, f, k, 'rik')!; g.gast!.riddjur = 1; g.gast!.varor = undefined; g.gast!.silver = 50; const o = SIM.koPlats(s, disk); g.x = o.x; g.y = o.y; g.gast!.fas = 'pratar'; return g; };
+    // gästen med riddjur köper foder
+    const a = gast(), oppet = SIM.oppna(s, f).includes('stall'), e = SIM.erbjudandet(s, a, 'stall', f);
+    const kopt = SIM.iHelaForradet(() => SIM.kopVid(s, f, a, { p: a.id, v: 'stall', k: 'djurvard', n: 1, t: s.now }, p)), fodd = a.gast!.rodd === 1 && a.gast!.riddjur === undefined;
+    // den vars riddjur inte får foder: stallet har inget foder kvar, och hen har redan köpt allt hen ville
+    SIM.put(s, 'torrgras', -SIM.ownsId(s, p.id, 'torrgras'), { [p.id]: -SIM.ownsId(s, p.id, 'torrgras') });
+    const b = gast(); b.gast!.gjort = SIM.FGAST.kop; b.gast!.bemott = { v: 0.5, n: 1 };
+    const u0 = s.stat?.riddjurUtanFoder ?? 0; SIM.foretagsgastSteg(s, 1);
+    const missnojd = (b.gast!.bemott?.v ?? 0) / (b.gast!.bemott?.n ?? 1) < 0.5 && (s.stat?.riddjurUtanFoder ?? 0) === u0 + 1 && b.gast!.fas === 'gar';
+    // på väg hem: den med fött riddjur går fortare
+    a.gast!.fas = 'gar'; a.gast!.gor = undefined; a.x = b.x; a.y = b.y; a.task = undefined;
+    const fran = { ax: a.x, ay: a.y, bx: b.x, by: b.y };
+    for (let i = 0; i < 20; i++) { s.now += 1000; SIM.foretagsgastSteg(s, 1); }
+    const da = Math.hypot(a.x - fran.ax, a.y - fran.ay), db = Math.hypot(b.x - fran.bx, b.y - fran.by);
+    return [
+      [`stallet har öppet (${oppet}), och gästen med riddjur vill köpa foder (${e?.k ?? 'inget'})`, oppet && e?.k === 'djurvard'],
+      [`hen köper, och riddjuret är fött (${kopt}, ${fodd})`, kopt && fodd],
+      [`gästen vars riddjur inte fick foder blir missnöjd (${SIM.kortTal((b.gast!.bemott?.v ?? 0) / (b.gast!.bemott?.n ?? 1))}) och går hem`, missnojd],
+      [`det födda riddjuret bär gästen hem fortare (${SIM.kortTal(da)} mot ${SIM.kortTal(db)} rutor på 20 sekunder)`, da > db * 1.3],
+      [`stallet räknar med samma andel ridande som gästerna kommer med (${SIM.FGAST.ridande})`, !('ridande' in SIM.VERK)],
     ];
   },
 };
