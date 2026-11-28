@@ -4176,6 +4176,7 @@ SCENARIER.turne = {
     const r = SIM.radNr(vl, q.by!)!;
     SIM.larOrt(s, p, q.nr, SIM.O_BESOKT, 1); // (hen har varit där: annars kan resan dit vara för att se platsen)
     r.syn!.inst = 40; r.tal.silver = Math.max(r.tal.silver, 100);
+    SIM.laggIn(s, 'torrkott', 40, SIM.BYN); // mat som håller för resan (steg 15.1.93: annars väger dagarna utan mat mot resan)
     const okand = SIM.turneKraft(s, p);
     // hen blir skicklig och känd: skaldskapen och tävlingen som hela byn sett
     p.skill.skaldskap = 20;

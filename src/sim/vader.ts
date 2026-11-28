@@ -83,6 +83,12 @@ export function temperature(s: State, t = s.now) {
   const weather = VADER.vaderStor * Math.sin(t / (VADER.vaderStorTim * HOUR) * 2 * Math.PI + p) + VADER.vaderMellan * Math.sin(t / (VADER.vaderMellanTim * HOUR) * 2 * Math.PI + p * 3.1) + VADER.vaderLiten * Math.sin(t / (VADER.vaderLitenTim * HOUR) * 2 * Math.PI + p * 7.7);
   return base + sun + weather;
 }
+// den väntade temperaturen vid t: årstidens (med en hård vinter), utan solen över dygnet och vädret; den som packar för en resa
+// räknar med den (steg 15.1.93, resa.ts)
+export function vantadTemp(s: State, t = s.now) {
+  const c = yearPos(s, t), i = Math.floor(c), g = glid(c - i), a = VADER.medel[i], b = VADER.medel[(i + 1) % 4];
+  return a + (b - a) * g - hardKyla(s, t, i, g);
+}
 // hur långt temperaturen glidit mot nästa tidsålder (0–1), q = del av tidsåldern som gått
 const glid = (q: number) => { const f = clamp((q - VADER.glidFran) / VADER.glidSpann, 0, 1); return f * f * (3 - 2 * f); };
 // den hårda vintern (steg 3.8.1, motgang.ts): hur många grader kallare det är. Kylan glider in i slutet av hösten och ut

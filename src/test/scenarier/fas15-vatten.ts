@@ -119,3 +119,29 @@ SCENARIER.flyttmote = {
     ];
   },
 };
+
+SCENARIER.ruttenresa = {
+  text: 'Steg 15.1.93: maten ruttnar i packningen. Varje mat i packningen har sitt skick, som sjunker per timme efter hållbarheten och temperaturen, som i lagret utan tak, och det som ruttnat kastas. Den som packar räknar bara en portion som håller till dagen den äts, och väljer den som är värd minst för byn. En by med bara färsk fisk packar inte för en resa på en vecka, en by med torkat kött gör det, och färsk mat i packningen ruttnar fort i värmen och nästan inte i frost',
+  kor: () => {
+    const s = SIM.cloneState(testBy(3)), mat = Math.ceil(2 * SIM.matPerResenar() * 7 - 1e-9); // två resenärer i sju dygn
+    const fisk = SIM.packaMat(s, 2, mat, k => k === 'fisk' ? 200 : 0), kott = SIM.packaMat(s, 2, mat, k => k === 'torrkott' ? 200 : 0);
+    const bada = SIM.packaMat(s, 2, mat, k => k === 'torrkott' || k === 'fisk' ? 200 : 0);
+    // färsk fisk i packningen två dygn, i sommarvärme och i frost
+    const ett = (varm: boolean) => {
+      const x = SIM.cloneState(s);
+      for (let d = 0; d < 1600 && (varm ? SIM.temperature(x, x.now) < 20 : SIM.temperature(x, x.now) > -3); d++) x.now += SIM.DAY / 8;
+      const h: SIM.BehovHall = { pack: { fisk: 40 }, behov: { matt: 1, vatska: 1, ork: 1, fulla: 0, foder: 0 } };
+      const t0 = x.now, temp = SIM.temperature(x, t0);
+      for (let m = 0; m < 2 * 24 * 6; m++) { x.now += 10 * SIM.MIN; SIM.behovSteg(x, h, { n: 0, framme: true, djur: 0, matslut: () => {} }, x.now, 10 * SIM.MIN); }
+      return { kvar: h.pack.fisk ?? 0, skick: h.skick?.fisk?.[0] ?? 0, temp };
+    };
+    const varm = ett(true), kall = ett(false);
+    return [
+      [`bara färsk fisk: ${fisk.tar.fisk ?? 0} av ${mat} portioner håller sju dygn (${fisk.saknas} saknas)`, fisk.saknas > mat / 2],
+      [`torkat kött: allt packas (${kott.tar.torrkott ?? 0} av ${mat})`, kott.saknas === 0 && kott.tar.torrkott === mat],
+      [`med båda tas fisken för de första dagarna och köttet för resten (${JSON.stringify(bada.tar)})`, bada.saknas === 0 && (bada.tar.fisk ?? 0) > 0 && (bada.tar.torrkott ?? 0) > 0],
+      [`i värmen (${varm.temp.toFixed(0)} grader) ruttnade fisken på två dygn (${varm.kvar} kvar)`, varm.kvar === 0],
+      [`i frost (${kall.temp.toFixed(0)} grader) håller den nästan helt (skicket ${kall.skick.toFixed(2)}, ${kall.kvar} kvar)`, kall.kvar === 40 && kall.skick > 0.85],
+    ];
+  },
+};

@@ -8,12 +8,12 @@ import { TIMMINNEN } from './timminne';
 import { LandmarkId } from './landmarken';
 import { H, HOUR, Person, State, Task, W } from './typer';
 import { ageIndex, isLight } from './tid';
-import { temperature, vaderNu } from './vader';
+import { temperature, vaderNu, vantadTemp } from './vader';
 import { KROPP, count, alive, ageOf, ALDER, makeName, getRel, isSick, living, stat, log, ovning } from './folk';
 import { TORST } from './torst';
 import { SAKER, sakNamn } from './saker';
 import { BYN } from './egendom';
-import { amountOf, capacity, dropLoad, iHelaForradet, laggIn, load } from './lager';
+import { amountOf, capacity, dropLoad, iHelaForradet, laggIn, load, ruttTemp } from './lager';
 import { FOOD } from './saker';
 import { bynsMitt, utanforByn } from './omrade';
 import { blocked, freeNear } from './byggnad';
@@ -164,6 +164,7 @@ export const RESA = balans('resa', {
   behovVarde: 50, // så mycket (i värde) är en portion mat, en vattensäck, ett hö eller ett tält värt när resan behöver det för dygnen som återstår (steg 12.1.145)
   gommaDygn: 20, // det som släpps ligger i en gömma så här många dygn (år i spelet)
   karavanDygn: 20, // det rövarna inte orkar bära ligger i en karavanrest så här många dygn (år i spelet, steg 15.1.75)
+  hallerMax: 60, // dygn: så långt fram räknar den som packar med hur länge maten håller (steg 15.1.93)
   forsvunnen: 3, // kommer ingen hem räknas resenärerna som försvunna efter så många gånger den väntade tiden (steg 11.5.18)
 });
 // det en resenär äter och dricker per dygn på vägen (steg 15.1.88, Packningen i tal): kroppens tal, som i byn (kroppensMat i
@@ -221,6 +222,7 @@ export interface Sallskap {
   att?: Record<string, number>; // det ledaren bestämt att packa, som resenärerna hämtar ur förrådet och bär till samlingsplatsen (steg 12.1.8)
   ut?: Utgang; vid?: number[]; packar?: number; // samlingsplatsen och kanten, de som är framme vid samlingsplatsen och när packningen började (steg 11.5.5)
   behov?: ResBehov; // mättnaden, vätskan och orken på vägen, för hela gruppen (steg 11.5.6)
+  skick?: Record<string, [number, number]>; // matens skick i packningen och hur många det gällde (steg 15.1.93, ruttna)
   gang?: number; framme?: number; // gången mot nästa ruta (i rutans kostnad) och när sällskapet kom fram (steg 11.5.7)
   delning?: Andelar; // hur det delades hemma (steg 11.5.9)
   uppdrag?: number; // uppdraget sällskapet reser för (steg 11.8.4)
@@ -376,6 +378,50 @@ export function packbehov(s: State, sl: Sallskap): Packbehov | undefined {
     foder = Math.max(0, Math.min(foder, Math.floor(rum / vFoder)));
   }
   return { dygn: Math.round(dygn * 100) / 100, mat, vatten, foder, talt, taltBehov, bar, behov, vikt: mat * vMat + vatten * vVatten + foder * vFoder + talt * vTalt, ryms };
+}
+
+// ---------- maten som ruttnar i packningen (steg 15.1.93, Flera samhällen: Maten som ruttnar) ----------
+// Varje mat i packningen har sitt skick (1 = färsk), som sjunker per timme som i lagret utan tak: 1 / (hållbarheten i timmar)
+// gånger ruttTemp (fortare i värmen, nästan inte i frost). Det som kommer till packningen (letat, fällt, fått) är färskt och
+// drar upp skicket för sin sort efter hur många det är. När skicket är slut har sorten ruttnat och kastas.
+export const ruttPerTim = (k: string, temp: number) => { const h = SAKER[k]?.haller; return h === undefined ? 0 : ruttTemp(temp) / (h * 24); };
+function ruttna(s: State, h: BehovHall, t: number, tim: number) {
+  const temp = temperature(s, t), sk = h.skick ??= {};
+  for (const k of FOOD) {
+    const n = Math.floor(h.pack[k] ?? 0);
+    if (n < 1) { delete sk[k]; continue; }
+    let [q, m] = sk[k] ?? [1, n];
+    if (n > m) q = (q * m + (n - m)) / n; // det som kommit till är färskt
+    q -= tim * ruttPerTim(k, temp);
+    if (q <= 0) { tappa(h, k, n); delete sk[k]; count(s, 'resa maten ruttnade', n); continue; }
+    sk[k] = [q, n];
+  }
+  if (!Object.keys(sk).length) delete h.skick;
+}
+// dygnen maten k håller från t (med skicket q), med den väntade temperaturen på vägen efter årstiden; högst RESA.hallerMax
+export function hallerDygn(s: State, k: string, t = s.now, q = 1) {
+  if (SAKER[k]?.haller === undefined) return RESA.hallerMax;
+  let d = 0;
+  for (; q > 0 && d < RESA.hallerMax; d += 0.25) q -= 6 * ruttPerTim(k, vantadTemp(s, t + d * DAY));
+  return d;
+}
+// maten n resenärer kan packa för mat portioner: varje portion (den i:te äts på dygn i / (n · det en resenär äter per dygn))
+// räknas bara om den håller till dess, och av den mat som håller väljs den som är värd minst för byn (resans värde är
+// RESA.behovVarde så länge maten håller, och inget efter det: poängen är behovVarde minus grundvärdet). Det som inte håller
+// packas inte, och det som saknas är dagar utan mat i resans poäng (resMal)
+export function packaMat(s: State, n: number, mat: number, har: (k: string) => number, t = s.now): { tar: Record<string, number>; saknas: number } {
+  const fore = FOOD.map(k => ({ k, kvar: Math.floor(har(k) + 1e-9), d: 0, v: grundvarde(k) })).filter(x => x.kvar > 0);
+  for (const x of fore) x.d = hallerDygn(s, x.k, t);
+  const tar: Record<string, number> = {}, per = Math.max(1e-9, n * matPerResenar());
+  let i = 0;
+  for (; i < mat; i++) {
+    const dag = i / per;
+    let bast: (typeof fore)[number] | undefined;
+    for (const x of fore) if (x.kvar > 0 && x.d > dag && (!bast || RESA.behovVarde - x.v > RESA.behovVarde - bast.v + 1e-9 || Math.abs(x.v - bast.v) < 1e-9 && x.d < bast.d)) bast = x;
+    if (!bast) break;
+    bast.kvar--; tar[bast.k] = (tar[bast.k] ?? 0) + 1;
+  }
+  return { tar, saknas: mat - i };
 }
 
 // ---------- boken över insatserna (steg 11.5.4, Andelarna i tal) ----------
@@ -565,12 +611,8 @@ export function borjaPacka(s: State, sl: Sallskap): boolean {
   if (sl.skal === 'hamta') sl.nere = gruvPlanFor(s, sl)?.nere ?? RESMAL.hamta.stannar; // tiden nere (steg 11.10.1)
   const pb = packbehov(s, sl), ut = ut0;
   if (!pb) return false;
-  let mat = pb.mat;
-  for (const k of [...FOOD].sort((a, b) => amountOf(s, b) - amountOf(s, a))) {
-    if (mat <= 0) break;
-    const n = Math.min(mat, Math.floor(amountOf(s, k)));
-    if (n > 0) { taIPackning(s, sl, k, n, led); mat -= n; }
-  }
+  // maten som håller till dagen den äts, den som är värd minst för byn först (steg 15.1.93)
+  for (const [k, n] of Object.entries(packaMat(s, sl.medl.length, pb.mat, k => amountOf(s, k)).tar).sort((a, b) => a[0] < b[0] ? -1 : 1)) taIPackning(s, sl, k, n, led);
   const sack = Math.min(pb.vatten, Math.floor(amountOf(s, 'vattensack') + 1e-9)); // vattensäckarna (steg 15.1.88): byns säckar, så många som finns
   if (sack > 0) taIPackning(s, sl, 'vattensack', sack, led);
   const ho = Math.min(pb.foder, Math.floor(amountOf(s, 'torrgras')));
@@ -736,7 +778,7 @@ function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
 // ---------- behoven på vägen för alla resor (steg 11.5.6 och 15.1.86, Flera samhällen: Packningen i tal, Orken och tälten) ----------
 // Mättnaden, vätskan och orken för hela gruppen, lika för huvudbyns sällskap och världens byars färder: n resenärer på rutan
 // ruta, framme eller på väg, med djur som äter hö där de inte kan beta; matslut körs när maten är slut (ledaren väger MATSLUT)
-export interface BehovHall { pack: Record<string, number>; behov?: ResBehov; matNasta?: number }
+export interface BehovHall { pack: Record<string, number>; behov?: ResBehov; matNasta?: number; skick?: Record<string, [number, number]> }
 export interface BehovOm { n: number; ruta?: number; framme: boolean; djur: number; matslut: () => void }
 export function behovSteg(s: State, h: BehovHall, o: BehovOm, t: number, dt: number) {
   const b = h.behov ??= { matt: 1, vatska: 1, ork: 1, fulla: fullaKlunkar(h.pack), foder: 0 }, tim = dt / HOUR, dag = isLight(t), framme = o.framme, r = rutaVid(s, o.ruta), n = o.n;
@@ -747,6 +789,7 @@ export function behovSteg(s: State, h: BehovHall, o: BehovOm, t: number, dt: num
   if (b.matt <= 0) b.ork -= tim * RESA.orkSvalt; // den som inte ätit orkar mindre (steg 11.5.15)
   if (b.vatska <= 0) b.ork -= tim * RESA.orkSvalt; // och den som inte druckit, på samma sätt (steg 15.1.89)
   b.ork = clamp(b.ork, 0, 1);
+  ruttna(s, h, t, tim); // maten i packningen ruttnar (steg 15.1.93)
   // äta: en portion per resenär, den mat som håller kortast först
   while (b.matt < KROPP.hungrig) {
     let at = 0;
@@ -1307,6 +1350,20 @@ export function resaPlan(s: State, p: Person, fd: number, wd: number): ResPlan |
   }
   return bast;
 }
+// portionerna av mat för en resenär som byn inte har mat som håller till (steg 15.1.93): maten i byn efter hur länge den håller,
+// räknad en gång per val, och portionerna i den ordning de äts
+function matUtan(s: State, mat: number) {
+  const l = matHaller(s);
+  let i = 0;
+  for (const x of l) for (let m = x.n; m > 0 && i < mat && x.d > i / matPerResenar(); m--) i++;
+  return mat - i;
+}
+const hallerMinne = new WeakMap<State, { t: number; l: { d: number; n: number }[] }>();
+function matHaller(s: State) {
+  let e = hallerMinne.get(s);
+  if (e?.t !== s.now) hallerMinne.set(s, e = { t: s.now, l: FOOD.map(k => ({ d: hallerDygn(s, k), n: Math.floor(amountOf(s, k) + 1e-9) })).filter(x => x.n > 0).sort((a, b) => a.d - b.d) });
+  return e.l;
+}
 function resMal(s: State, p: Person, vl: Varlden, hem: VarldPlats): ResMal[] {
   const ut: ResMal[] = [];
   const ny = stat(p, 'nyfikenhet', s.now), mod = stat(p, 'mod', s.now), utfar = Math.max(0, 1 + pabud(s, 'utfarder') * PAB.utfarMax); // påbudet Utfärder (steg 11.8.15)
@@ -1346,7 +1403,9 @@ function resMal(s: State, p: Person, vl: Varlden, hem: VarldPlats): ResMal[] {
     const dygn = Math.max(RESA.minDygn, 2 * dygnDit(s, hem, q) + (nere ?? RESMAL[skal].stannar));
     const fara = 1 - Math.exp(-RESA.faraDygn * dygn), forsiktig = clamp((20 - mod) / 10, 0, 2);
     const lust = (ny + mod) / 20, dygnR = Math.round(dygn * 100) / 100;
-    const bas = RESA.vikt * utfar * (varde - hemmaForlust(s, p, dygn)) / dygn * lust * Math.max(0, 1 - fara * forsiktig);
+    // räcker inte den mat som håller är dagarna utan mat en kostnad, som när maten tar slut (steg 15.1.93)
+    const utanMat = matUtan(s, Math.ceil(matPerResenar() * dygn * marginal(p) - 1e-9)) / matPerResenar() * RESA.hungerKost;
+    const bas = RESA.vikt * utfar * (varde - hemmaForlust(s, p, dygn) - utanMat) / dygn * lust * Math.max(0, 1 - fara * forsiktig);
     if (bas > 0) ut.push({ mal: q.nr, namn: q.namn, skal, varde: Math.round(varde * 10) / 10, dygn: dygnR, fara: Math.round(fara * 1000) / 1000, varor, kop, ...(uid !== undefined ? { uppdrag: uid } : {}), bas, d: dygn });
   }
   return ut;
