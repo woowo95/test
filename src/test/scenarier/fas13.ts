@@ -3474,7 +3474,7 @@ SCENARIER.rikgang = {
 };
 
 SCENARIER.blodstrid = {
-  text: 'Steg B.67: striden syns blodig. I fyra mot fyra med vapen på kartan lägger varje träff som öppnar ett sår ett stänk på minst BLODET.minStank inom en ruta från den som träffades, åt hållet slaget gick; den som förlorat mer än 30 % av blodet har blodsteg 3, och den som blöder steg 1',
+  text: 'Steg B.67 och 15.1.62: striden syns blodig. I fyra mot fyra med vapen på kartan lägger varje träff som öppnar ett sår ett stänk på minst BLODET.minStank inom en ruta från den som träffades, åt hållet slaget gick, medan en skråma i en olycka bara ger lite blod; den som förlorat mer än 30 % av blodet har blodsteg 3, och den som blöder steg 1',
   kor: () => {
     const s = SIM.createState(6, START); klockan(s);
     for (const c of SIM.klanerOf(s)) c.inst = -60;
@@ -3501,12 +3501,16 @@ SCENARIER.blodstrid = {
     }
     const t = SIM.createState(6, START); t.blod = []; SIM.blodas(t, 20.5, 20.5, 'skada', 0.01, 0); const liten = SIM.blodOf(t).filter(b => b.f === 'stank')[0];
     t.blod = []; SIM.blodas(t, 20.5, 20.5, 'skada', 0.5, 0); const djup = SIM.blodOf(t).filter(b => b.f === 'stank')[0];
+    // en skråma i en olycka (ingen riktning): lite blod, och det minsta stänket gäller inte den eller pölen (steg 15.1.62)
+    t.blod = []; SIM.blodas(t, 20.5, 20.5, 'skada', 0.01); const skrama = SIM.blodOf(t).reduce((a, b) => a + b.m, 0);
+    t.blod = []; SIM.blodas(t, 20.5, 20.5, 'skada', 0.01, 0); const slagPol = SIM.blodOf(t).filter(b => b.f === 'pol').reduce((a, b) => a + b.m, 0);
     const p = alla[0]; p.blod = 0.65;
     return [
       [`varje träff som öppnar ett sår ger stänk (${ratt} av ${traffar})`, traffar >= 5 && ratt === traffar],
       [`stänket har en riktning (${hall} av ${traffar})`, hall === traffar],
       [`den minsta träffen ger minst ${SIM.BLODET.minStank} och den djupa mer (${liten.m} och ${djup.m})`, liten.m >= SIM.BLODET.minStank && djup.m > liten.m],
       [`stänket hamnar åt hållet slaget gick`, liten.a === 0 && liten.x >= 20.5],
+      [`en skråma i en olycka ger lite blod (${skrama}), och slagets minsta mängd läggs bara till stänket (pölen ${slagPol})`, skrama > 0 && skrama < SIM.BLODET.minStank / 3 && slagPol < SIM.BLODET.minStank / 3],
       [`under 0,7 av blodet är blodsteget 3 (${SIM.blodSyns(p)})`, SIM.blodSyns(p) === 3],
       [`blodsteget följer blodet under hela striden (${steg.r} av ${steg.t})`, steg.r === steg.t],
     ];
