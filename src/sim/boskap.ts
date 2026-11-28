@@ -12,7 +12,7 @@ import { spand } from './agande';
 import { ALDER, ageOf, byId, count, forstaGang, gjort, log, annanGor, alive } from './folk';
 import { desperatMat, getable, levKrok } from './behov';
 import { chansPer } from './slump';
-import { amountOf, changed, gain, put, stacksOf, tidy } from './lager';
+import { amountOf, changed, put, stacksOf, tidy } from './lager';
 import { kanGoras } from './stationer';
 import { DAY, Person, State } from './typer';
 import { HOST, iIstiden, isLight, kalender, VAR } from './tid';
@@ -118,7 +118,7 @@ function foda(s: State, dt: number) {
 }
 
 // ---------- att klippa fåren ----------
-// En vuxen med kniv eller ullsax klipper ett får vars ull vuxit ut, i dagsljus och utom i istiden; ullen blir hens (eller byns)
+// En vuxen med kniv eller ullsax klipper ett får vars ull vuxit ut, i dagsljus och utom i istiden; ullen blir fårets ägares (eller byns)
 export function klippVal(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || getable(s, p, 'kniv') < 1 && getable(s, p, 'ullsax') <= 0 /* ullsaxen (steg 12.5.2) */ || !isLight(s.now) || iIstiden(kalender(s).ai)) return undefined; // i istiden behöver fåret ullen
   let b: Tamdjur | undefined, bd = 40;
@@ -134,7 +134,7 @@ export function klippKlar(s: State, p: Person, ref?: number) {
   const d = tamdjurOf(s).find(q => q.id === ref);
   if (!d || (d.ull ?? 0) < 1) return;
   d.ull = 0;
-  gain(s, p, 'ull', tamArt(d.art).ull!);
+  put(s, 'ull', tamArt(d.art).ull!, d.agare !== undefined ? { [d.agare]: tamArt(d.art).ull! } : undefined); // det djuret ger är djurets ägares, som slakten (steg 15.1.147)
   ovaArbete(s, p, 'klippa', BOSKAP.klippMin); gjort(s, p, 'klippt'); count(s, 'klippt');
   if (forstaGang(s, 'klipptFar')) log(s, `${p.name} klippte byns första får och fick ull.`, 'world', [p.id]);
 }

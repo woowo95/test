@@ -165,3 +165,24 @@ SCENARIER.klippning = {
     ];
   },
 };
+
+SCENARIER.ullagare = {
+  text: 'Steg 15.1.147: det djuret ger är djurets ägares. Ullen från byns får hamnar i byns förråd, och ullen från ett eget får blir ägarens, som slakten',
+  kor: () => {
+    const s = SIM.createState(2, START); klockan(s, 10);
+    const [p, q] = SIM.living(s).filter(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen);
+    SIM.put(s, 'levfar', 1); SIM.put(s, 'levfar', 1, { [q.id]: 1 }); SIM.stepBoskap(s);
+    const byns = SIM.tamdjurOf(s).find(d => d.agare === undefined)!, egna = SIM.tamdjurOf(s).find(d => d.agare === q.id)!;
+    byns.ull = 1; egna.ull = 1;
+    const byn = () => SIM.amountOf(s, 'ull') - SIM.living(s).reduce((a, r) => a + SIM.ownsId(s, r.id, 'ull'), 0);
+    const n = SIM.tamArt('far').ull!, b0 = byn(), p0 = SIM.ownsId(s, p.id, 'ull'), q0 = SIM.ownsId(s, q.id, 'ull');
+    SIM.klippKlar(s, p, byns.id);
+    const b1 = byn(), p1 = SIM.ownsId(s, p.id, 'ull');
+    SIM.klippKlar(s, p, egna.id); // p klipper q:s får och arbetar för q
+    const q2 = SIM.ownsId(s, q.id, 'ull'), p2 = SIM.ownsId(s, p.id, 'ull');
+    return [
+      [`ullen från byns får blir byns (${b0} → ${b1}), inte den som klipper (${p0} → ${p1})`, b1 === b0 + n && p1 === p0],
+      [`ullen från ett eget får blir ägarens (${q0} → ${q2}), också när någon annan klipper (${p2})`, q2 === q0 + n && p2 === p0],
+    ];
+  },
+};
