@@ -574,6 +574,19 @@ function ga(st: Strid, k: Kampe, mx: number, my: number, langd: number, vrid = V
   if (fri(st, k, px, py, fi, mx, my)) { k.x = px; k.y = py; k.runtP = { x: p[0], y: p[1], mal: k.mal }; }
 }
 
+// hjälparens steg (steg 15.1.59): mot platsen, men aldrig närmare än STRID.hjalpAvst till en fiende när hen redan står längre
+// bort, och aldrig närmare än hen står: vägen går runt dem som slåss, och finns ingen sådan väg går hen rakt bort från den närmaste
+function hjalpGa(st: Strid, k: Kampe, mx: number, my: number, langd: number, fi: Kampe[]) {
+  const nar = (x: number, y: number) => narmastFi(fi, x, y), x0 = k.x, y0 = k.y, d0 = nar(x0, y0), v = Math.atan2(my - y0, mx - x0), r = Math.hypot(mx - x0, my - y0);
+  for (const a of [0, ...VRID, 2.1, -2.1]) {
+    k.x = x0; k.y = y0;
+    ga(st, k, x0 + Math.cos(v + a) * r, y0 + Math.sin(v + a) * r, langd);
+    if (nar(k.x, k.y) >= Math.min(STRID.hjalpAvst, d0) - 1e-6 && (k.x !== x0 || k.y !== y0)) return;
+  }
+  k.x = x0; k.y = y0;
+  const f = fi.reduce<Kampe | undefined>((b, o) => !b || Math.hypot(o.x - x0, o.y - y0) < dist(b, k) ? o : b, undefined);
+  if (f && d0 < STRID.hjalpAvst) { const d = Math.max(0.01, d0); ga(st, k, x0 + (x0 - f.x) / d * 2, y0 + (y0 - f.y) / d * 2, langd); }
+}
 // Flykten (steg B.31): hen väljer den närmaste tillflykten som det finns en väg till förbi fienderna, med de vänner som står och slåss
 // som hinder att gå runt, och helst på avstånd från fienderna. Finns ingen väg springer hen bort från de närmaste fienderna
 function flyVal(st: Strid, k: Kampe) {
@@ -999,8 +1012,13 @@ export function stridSteg(st: Strid) {
       const fi = () => st.kampar.filter(o => o.sida !== k.sida && iStrid(o) && !o.hjalp), f = narm(k, fi()), v = narm(k, st.kampar.filter(o => o.sida === k.sida && iStrid(o) && !o.hjalp && !o.backar));
       if (!f) continue;
       const e = v ? narm(v, fi())! : f, c = v ?? k, d = Math.max(0.01, dist(c, e)), bak = v ? STRID.hjalpBakom : 2;
-      const x = clamp(c.x + (c.x - e.x) / d * bak, 0.3, st.w - 0.3), y = clamp(c.y + (c.y - e.y) / d * bak, 0.3, st.h - 0.3), l = Math.hypot(x - k.x, y - k.y);
-      if (v ? l > 1 : dist(f, k) < STRID.hjalpAvst) ga(st, k, x, y, Math.min(l, farten(k) * dt));
+      let x = clamp(c.x + (c.x - e.x) / d * bak, 0.3, st.w - 0.3), y = clamp(c.y + (c.y - e.y) / d * bak, 0.3, st.h - 0.3);
+      // avståndet (steg 15.1.59): både den fiende som står närmast hjälparen och den som står närmast platsen räknas. Står
+      // någon av dem närmare än hjalpAvst går hjälparen dit, hur kort vägen än är, och platsen flyttas bort från fienden till det avståndet
+      const fp = narm({ x, y } as Kampe, fi())!, dp = Math.hypot(x - fp.x, y - fp.y), nara = dist(f, k) < STRID.hjalpAvst || dp < STRID.hjalpAvst;
+      if (dp < STRID.hjalpAvst) { const q = Math.max(0.01, dp), ux = dp > 0.01 ? (x - fp.x) / q : (k.x - fp.x) / Math.max(0.01, dist(k, fp)), uy = dp > 0.01 ? (y - fp.y) / q : (k.y - fp.y) / Math.max(0.01, dist(k, fp)); x = clamp(fp.x + ux * STRID.hjalpAvst, 0.3, st.w - 0.3); y = clamp(fp.y + uy * STRID.hjalpAvst, 0.3, st.h - 0.3); }
+      const l = Math.hypot(x - k.x, y - k.y);
+      if (nara ? l > 0.05 : v && l > 1) hjalpGa(st, k, x, y, Math.min(l, farten(k) * dt), fi());
       continue;
     }
     const m = valjMal(st, k);
