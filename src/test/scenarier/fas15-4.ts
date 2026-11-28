@@ -1,7 +1,9 @@
 // Scenarier för fas 15, grupp 4 av 15.1.
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, byggare, klockan, kor, medHus, tandEld, nyInvanare, rikBy, styreTimme, tandOchFlinta, tomtForrad, treVuxna, vidForradet } from './hjalp';
+import { carryTxt } from '../../ui/hjalp';
+import { setByn } from '../../ui/lage';
+import { SCENARIER, utanWebblasare, byggare, klockan, kor, medHus, setMat, tandEld, nyInvanare, rikBy, styreTimme, tandOchFlinta, tomtForrad, treVuxna, vidForradet } from './hjalp';
 
 SCENARIER.domsjalv = {
   text: 'Steg 15.1.38: ledaren som dömer för det hen själv förlorat. Loggen, krönikan och notisen säger "av henne själv" eller "av honom själv" när den drabbade är ledaren, som rättegångens rad redan gör',
@@ -172,6 +174,44 @@ SCENARIER.byggblir = {
       [`platsen låg fast (${plats})`, !flyttad && !!b],
       [`den som byggde avbröts när virket låg vid bygget (${avbruten ? 'ja' : 'nej'})`, avbruten],
       [`inget bars från bygget till förrådet medan det väntade på materialet (${bort.size} gånger)`, bort.size === 0],
+    ];
+  },
+};
+
+SCENARIER.forbifart = {
+  text: 'Steg 15.1.44: det man plockar i förbifarten tränger inte undan turens mål. Höet eller ägget som plockas på vägen tas bara med om en sak till av det turen gäller fortfarande ryms, så den som samlar utan korg med en hand upptagen går inte hem efter ett plock i förbifarten, och texten om vad hen kan bära säger den fria handen',
+  kor: () => {
+    const hem: { forbi: boolean; n: number }[] = [];
+    let text = '';
+    for (const seed of [42, 3]) {
+      const s = SIM.createState(seed, START); s.kal = SIM.nyKalender(s.now, SIM.SOMMAR); klockan(s, 8);
+      setMat(s, {}); SIM.setAmount(s, 'ved', 300);
+      s.ting = SIM.tingOf(s).filter(t => t.k !== 'korg'); // ingen korg
+      const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!, kniv = SIM.addTool(s, 'kniv', p);
+      const hall = () => { kniv.hos = p.id; kniv.x = kniv.y = kniv.krok = kniv.lass = undefined; }; // en hand är upptagen
+      hall();
+      const ut = () => { Object.assign(p, { hunger: 1, rest: 1, social: 1, toa: 1, torst: 1, warm: 1 }); p.task = { act: 'samla', phase: 'go', tx: p.x + 3, ty: p.y + 3, until: s.now + 3 * SIM.HOUR, carry: 0, dark: false, why: 'Samlar' } as SIM.Task; };
+      ut();
+      let last = '';
+      for (let i = 0, n = 0; i < 3 * 360 && n < 4; i++) {
+        SIM.step(s, 10); hall();
+        const t = p.task, ph = t?.act === 'samla' ? t.phase : '';
+        if (ph === 'back' && last !== 'back') {
+          n++;
+          const items = Object.entries(t!.items ?? {}).filter(([, v]) => v >= 1), egna = items.filter(([k]) => t!.plockat?.includes(k));
+          hem.push({ forbi: t!.carry < 1 && !egna.length && items.length > 0, n: t!.carry + egna.reduce((a, [, v]) => a + v, 0) });
+        }
+        last = ph;
+        if (t?.act !== 'samla') { SIM.avbryt(s, p); ut(); last = ''; } // något annat gick före: hen går ut och samlar igen
+      }
+      if (!text) { p.task = undefined; const t = SIM.tingOf(s).find(x => x.id === kniv.id)!; t.hos = p.id; utanWebblasare(); setByn(s); text = carryTxt(p); }
+    }
+    const forbi = hem.filter(h => h.forbi).length, flera = hem.filter(h => h.n >= 2).length;
+    return [
+      [`samlaren med en hand upptagen gick hem ${hem.length} gånger`, hem.length >= 4],
+      [`ingen gång bara med det hen plockat i förbifarten (${forbi} av ${hem.length})`, forbi === 0],
+      [`minst en tur bar hem två saker eller fler av det turen gällde (${flera} av ${hem.length})`, flera >= 1],
+      [`texten säger det hen faktiskt har fritt: ${text}`, /i den fria handen/.test(text) && !/båda händerna/.test(text)],
     ];
   },
 };
