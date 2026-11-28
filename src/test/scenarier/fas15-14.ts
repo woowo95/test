@@ -74,6 +74,7 @@ SCENARIER.jaktval = {
 };
 
 SCENARIER.fiskbyte = {
+  lang: true,
   text: 'Steg 15.1.132: fiskaren lämnar en utfiskad plats. En fiskare vid en tömd plats går till en annan inom en timme i spelet. I en by fiskar de där rikedomen är över 0,5, med 5–15 % napp per försök, och byter plats',
   kor: () => {
     const s = SIM.createState(6, START); klockan(s, 9); tandEld(s);
