@@ -14,7 +14,7 @@ import { anfallUtr, flockStorlek, BYANFALL } from './radanfall';
 import { VarldRad } from './radtal';
 import { radDoda } from './rad';
 import { radTar } from './priser';
-import { dagbok, dorPaVagen, resenarer, Sallskap, tappa, VAGHANDELSER } from './resa';
+import { dagbok, dorPaVagen, GOMMAKROK, resenarer, saljbar, Sallskap, tappa, VAGHANDELSER } from './resa';
 import { FOOD } from './saker';
 import { grundvarde } from './varde';
 import { varldMark } from './varlden';
@@ -153,7 +153,12 @@ VAGHANDELSER.ran = {
     radDoda(L, u.doda);
     if (u.vann) { dagbok(s, sl, 'strid', `${stor(heltOrd(n))} rövare från ${L.namn} anföll${val === 'fly' ? ' när sällskapet försökte fly' : ''}. Sällskapet slog dem tillbaka${u.doda ? ` och ${u.doda} rövare dog` : ''}.`, t); return; }
     const tog = taUrPack(sl, (n - u.doda) * BYANFALL.bar); ge(tog);
-    dagbok(s, sl, 'strid', `${stor(heltOrd(n))} rövare från ${L.namn} anföll och vann striden. De tog ${tog.length ? lista(tog) : 'inget'}.`, t);
+    // det rövarna inte orkar bära av varorna stannar kvar på platsen som en karavanrest (steg 15.1.75); sällskapet behåller det
+    // det reser med (maten och det det behåller, saljbar i resa.ts)
+    const rest: Record<string, number> = {};
+    for (const k of Object.keys(sl.pack).filter(k => saljbar(k) && Math.floor(sl.pack[k] ?? 0) >= 1)) { const m = Math.floor(sl.pack[k]!); rest[k] = m; tappa(sl, k, m); }
+    const kvar = Object.keys(rest).length && GOMMAKROK.lagg?.(s, sl, rest, t, 'karavanrest') as { namn: string } | undefined;
+    dagbok(s, sl, 'strid', `${stor(heltOrd(n))} rövare från ${L.namn} anföll och vann striden. De tog ${tog.length ? lista(tog) : 'inget'}${kvar ? `, och det de inte orkade bära lämnade de vid ${kvar.namn}` : ''}.`, t);
   },
 };
 

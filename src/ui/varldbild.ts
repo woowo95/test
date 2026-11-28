@@ -4,7 +4,7 @@
 // del av rutorna och platsernas tecken (LANDMARKEN) på sina rutor; huvudbyn får en ljus ram. Allt tar sina färger ur paletten.
 // Här finns bara det som går att räkna utan webbläsaren: bilden som punkter, tecknen (platshållare i 16 punkter tills Björn
 // valt i bildstilen) och vyns matematik för att dra och zooma. Knappen och rutan som visar kartan är ui/varldskarta.ts.
-import { BynsKarta, FLOD_NEDRE, LANDMARKEN, LEDER, LedId, ledKlass, MARK_IDS, O_KANT, syns, VARLDMARK, Varlden, VarldMark, VarldPlats } from '../sim';
+import { ByTecken, BynsKarta, FLOD_NEDRE, LANDMARKEN, LEDER, LedId, ledKlass, MARK_IDS, O_KANT, syns, VARLDMARK, Varlden, VarldMark, VarldPlats } from '../sim';
 import { hash3 } from '../sim/slump';
 import { farg } from '../palett';
 import { rgb255 } from './pixel';
@@ -54,10 +54,42 @@ export const TECKEN: Record<string, string[]> = {
   sallskap: t('', '', '.....kk.....kk', '....kwwk...kwwk', '....kwwk...kwwk', '..jj.kk.....kk', '.jJJkrrk...krrk', '.jJlkrrk...krrk', '.jJJkrrk...krrk', '..jjkrrk...krrk', '.....kjk....kjk', '.....k.k....k.k', '.....k.k....k.k', '....kk.kk..kk.kk'),
   // karavanen (steg 11.11.6, platshållare): en vagn med last, ett dragdjur framför och en vandrare
   karavan: t('', '', '...kk', '..kwwk', '..kwwk..kkkkkkk', '...kk..kJJJJJJk', '..kJJk.kJJJJJJk', '..kJJk.kjjjjjjk..kk', '..kJJkkkkkkkkkkkkJJk', '..kJJk.k.kk..kk.kJJk', '..kjjk..kWWk.kWWkkk', '..k.k....kk...kk.k.k', '..k.k............k.k'),
+  // byarna i tre storlekar (steg 15.1.80, platshållare): två och tre hus
+  hus2: t('', '', '', '...k', '..kJk.....k', '.kJJJk...kJk', 'kkkkkkk.kJJJk', '.kwjwk.kkkkkkk', '.kwjwk..kwwjk', '.kkkkk..kwwjk', '........kkkkk'),
+  hus3: t('', '', '.......k', '......kJk', '..k..kJJJk...k', '.kJk.kkkkkk.kJk', 'kJJJk.kwjwk.kJJJk', 'kkkkkkkwjwkkkkkkk', '.kwjk.kkkkk.kwjk', '.kwjk.......kwjk', '.kkkk.......kkkk'),
+  // märkena (steg 15.1.80, platshållare) i rutans övre vänstra hörn: vänlig (grön), ovänlig (röd) och krig (korsade svärd)
+  van: t('kkkk', 'kGGk', 'kGGk', 'kkkk'),
+  ovan: t('kkkk', 'kRRk', 'kRRk', 'kkkk'),
+  krig: t('', '', '', '', '', '', '', '', '', '', '', 'k...k', '.kSk', '..k', '.kSk', 'k...k'),
+  // röset (steg 15.1.82, platshållare): graven där någon dött på en färd, en hög av gråa stenar med en rest sten, så att den
+  // skiljer sig från gravhögen (hog) och fyndplatsens kors
+  rose: t('', '', '', '', '.......kk', '......kwSk', '......kSdk', '.....kkSdkk', '....kSdkkSdk', '...kSSdkSSdk', '..kSdkkSdkSdk', '..kkkkkkkkkkk'),
+  // flocken (steg 15.1.79, platshållare): tre i rad åt höger, med spjut över axlarna
+  flock: t('', '..........k', '.kk..kk..kk', 'kwwkkwwkkwwk', 'kwwkkwwkkwwk', '.kkk.kkk.kk.', 'krrkkrrkkrrk', 'krrkkrrkkrrk', 'krrkkrrkkrrk', '.kjk.kjk.kjk', '.k.k.k.k.k.k', '.k.k.k.k.k.k'),
+  // packdjuret (steg 15.1.79, platshållare): en vandrare som leder ett djur med packning på ryggen
+  packdjur: t('', '', '..kk', '.kwwk', '.kwwk.....kkkkk', '..kk.....kJlJlJk', '.krrk..kkkJJJJJkk', '.krrk.kjjjjjjjjjjk', '.krrkkjjjjjjjjjjk', '..kjk.kjjjjjjjjk', '..k.k..kjk...kjk', '..k.k..k.k...k.k'),
   // uppdragets märke (steg 11.8.16, platshållare): en liten rulle med ett rött sigill i rutans övre högra hörn, över platsens tecken
   uppdrag: t('', '', '....kk', '....kJkkkkk', '....kJRRRRrk', '....kJRRRrrrk', '....kJRRRRrk', '....kJkkkkk', '....kJk', '....kJk', '....kJk', '....kJk', '...kkJkk', '..kjjjjjk', '...kkkkk'),
   karta: t('', '', '', '', '', '.kkk........kkk', 'kwWWkkkkkkkkWWwk', 'kWwkwwwwwwwwkwWk', 'kWwkwGGwwsswkwWk', 'kWwkwwGwJssWkwWk', 'kWwkwwwJJwwWkwWk', 'kWwkwSwwwGGWkwWk', 'kWwkwwwwwGGWkwWk', 'kwWWkkkkkkkkWWwk', '.kkk........kkk'),
 };
+
+// färdernas tecken (steg 15.1.79): färdsättet och om sällskapet är beväpnat. Den första raden som passar ritas; flocken bär vapen.
+// ritas: tecknet ur TECKEN (platshållare tills Björn valt i bildstilen)
+export interface FardTeckenDef { namn: string; tecken: string; beväpnad: boolean; nar: (f: FardSatt) => boolean }
+export interface FardSatt { anfall?: boolean; vagn?: boolean; djur?: boolean }
+export const FARDTECKEN = {
+  flock: { namn: 'Flocken', tecken: 'flock', beväpnad: true, nar: f => !!f.anfall },
+  karavan: { namn: 'Karavanen', tecken: 'karavan', beväpnad: false, nar: f => !!f.vagn },
+  packdjur: { namn: 'Med packdjur', tecken: 'packdjur', beväpnad: false, nar: f => !!f.djur },
+  fots: { namn: 'Till fots', tecken: 'sallskap', beväpnad: false, nar: () => true },
+} as const satisfies Record<string, FardTeckenDef>;
+export type FardTeckenId = keyof typeof FARDTECKEN;
+export const fardTecken = (f: FardSatt): FardTeckenDef => (Object.values(FARDTECKEN) as FardTeckenDef[]).find(d => d.nar(f))!;
+// världsrutorna byn känner (lagret kant): de platser byn känner och närområdet (en färd i okänt land ritas inte)
+export function kandaRutor(vl: Varlden, v: VarldMark, kn: BynsKarta): (x: number, y: number) => boolean {
+  const kand = new Set((vl.platser ?? []).filter(p => (kn.niva(p.nr) ?? -1) >= O_KANT).map(p => p.y * v.w + p.x));
+  return (x, y) => lager(kn, kand, v.w, x, y) === 'kant';
+}
 
 // RGBA ur en färg i paletten
 const rgb = rgb255;
@@ -100,7 +132,8 @@ export function lager(kn: BynsKarta, kand: Set<number>, w: number, x: number, y:
   return kn.rykten.some(o => Math.hypot(x + 0.5 - o.x, y + 0.5 - o.y) < o.r) ? 'rykte' : 'blek';
 }
 // marken = platserna (världsplatsens nummer) där byn känner till ett uppdrag eller ett fynd (steg 11.8.16)
-export function ritaVarld(vl: Varlden, v: VarldMark, kn?: BynsKarta, marken?: number[]): VarldBild {
+// byar: byarnas tecken (steg 15.1.80) per platsens nummer, ur det byn tror (byTecken i sim/ort.ts)
+export function ritaVarld(vl: Varlden, v: VarldMark, kn?: BynsKarta, marken?: number[], byar?: Map<number, ByTecken>): VarldBild {
   const b: VarldBild = { w: v.w * VK, h: v.h * VK, data: new Uint8ClampedArray(v.w * VK * v.h * VK * 4) };
   for (let ry = 0; ry < v.h; ry++) for (let rx = 0; rx < v.w; rx++) {
     const c = MARKRGB[v.mark[ry * v.w + rx]];
@@ -118,7 +151,12 @@ export function ritaVarld(vl: Varlden, v: VarldMark, kn?: BynsKarta, marken?: nu
     const tk = (VARLDMARK[MARK_IDS[v.mark[ry * v.w + rx]]] as { tecken?: string }).tecken;
     if (tk && !upptagen.has(ry * v.w + rx) && !v.flod[ry * v.w + rx] && visarMarktecken(v, rx, ry)) ritaTecken(b, tk, rx, ry);
   }
-  for (const p of vl.platser ?? []) if (syns(kn, p)) ritaTecken(b, LANDMARKEN[p.k].tecken, p.x, p.y);
+  for (const p of vl.platser ?? []) if (syns(kn, p)) {
+    const bt = byar?.get(p.nr);
+    ritaTecken(b, bt?.tecken ?? LANDMARKEN[p.k].tecken, p.x, p.y);
+    if (bt?.hallning) ritaTecken(b, bt.hallning, p.x, p.y);
+    if (bt?.krig) ritaTecken(b, 'krig', p.x, p.y);
+  }
   if (kn) {
     const kand = new Set((vl.platser ?? []).filter(p => (kn.niva(p.nr) ?? -1) >= O_KANT).map(p => p.y * v.w + p.x)), rc = rgb(RYKTFARG), bc = rgb(BLEKFARG);
     for (let ry = 0; ry < v.h; ry++) for (let rx = 0; rx < v.w; rx++) {
@@ -148,6 +186,20 @@ export function namnPaKartan(vl: Varlden, kn?: BynsKarta): KartNamn[] {
     const egen = pl === hb;
     if (!egen && kn && (kn.niva(pl.nr) ?? -1) < O_KANT) continue;
     ut.push({ x: pl.x, y: pl.y, namn: pl.namn, egen });
+  }
+  return ut;
+}
+
+// namnen som ritas utan att krocka (steg 15.1.81): huvudbyns först, sedan i platsernas ordning; ett namn vars ruta på skärmen
+// (bredden ur bredd, NAMNHOJD hög, under tecknet) går in i ett namn som redan står hoppas över. z är skärmpunkter per bildpunkt
+export const NAMNHOJD = 13;
+export function namnUtanKrock(namn: KartNamn[], z: number, bredd: (n: KartNamn) => number): KartNamn[] {
+  const stod: { x0: number; x1: number; y0: number; y1: number }[] = [], ut: KartNamn[] = [];
+  for (const n of [...namn.filter(x => x.egen), ...namn.filter(x => !x.egen)]) {
+    const cx = (n.x + 0.5) * VK * z, y0 = (n.y + 1) * VK * z + 1, w = bredd(n);
+    const r = { x0: cx - w / 2, x1: cx + w / 2, y0, y1: y0 + NAMNHOJD };
+    if (stod.some(q => r.x0 < q.x1 && q.x0 < r.x1 && r.y0 < q.y1 && q.y0 < r.y1)) continue;
+    stod.push(r); ut.push(n);
   }
   return ut;
 }

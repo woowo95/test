@@ -19,7 +19,7 @@ import { SAKER, isFood, viktOf } from './saker';
 import { grundvarde } from './varde';
 import { Varlden } from './varlden';
 import { DAY, Stat, State } from './typer';
-import { gruppAv, radLaggTill, radMarkId, radOverskott, radTaUr, sakGrupp, radGruppPaslag, radTar, radVill, VARUGRUPP_IDS, VarugruppId } from './priser';
+import { radHar, gruppAv, radLaggTill, radMarkId, radOverskott, radTaUr, sakGrupp, radGruppPaslag, radTar, radVill, VARUGRUPP_IDS, VarugruppId } from './priser';
 import { RAD, radDoda, rikMal } from './rad';
 import { KOHANDELSER, laggIKo, periodSlut } from './varldslag';
 import { byPlats } from './landmarken';
@@ -32,6 +32,7 @@ import { radKommer } from './rader';
 import { VAKTKROK } from './vagran';
 import { avslutaUppdrag, belonVarde, fyndId, ruinKvar, ruinRad, taRuin, uppdragDef, uppdragNr } from './uppdrag';
 import { fardDoda, fardPerson, namnFolk } from './fardfolk';
+import { plundradNod } from './byflytt';
 import { valjDragfordon } from './fordon';
 import { ageIndex, iIstiden } from './tid';
 import { RECEPT } from './recept';
@@ -95,7 +96,7 @@ export const BYHANDLINGAR = {
   // och beskedet verkar efter samtalet med ledaren (liv.ts). Ett vänligt bud bär byns gåva när den har något över
   besked: {
     namn: 'Skicka besked',
-    poang: c => c.r.nr === c.vl.huvud || beskedUte(c.vl, c.r.nr, c.mot.nr) || beskedGivet(c) || restid(c.vl, c.r, c.mot) === undefined ? -1 : beskedTon(c).p,
+    poang: c => c.r.nr === c.vl.huvud || !kanSkicka(c.vl, c.r, 1) || beskedUte(c.vl, c.r.nr, c.mot.nr) || beskedGivet(c) || restid(c.vl, c.r, c.mot) === undefined ? -1 : beskedTon(c).p,
     gor: c => skickaBud(c, beskedTon(c).ton),
   },
   // plundringen (steg 11.6.16): en flock ur byns styrka anfaller en granne den ser ner på (en fejd), eller som den inte är vän med
@@ -103,7 +104,7 @@ export const BYHANDLINGAR = {
   plundra: {
     namn: 'Plundring',
     poang: c => {
-      const n = c.r.nr === c.vl.huvud ? 0 : flockStorlek(c.r, anfallUte(c.vl, c.r.nr), c.mot); // också mot huvudbyn: då kommer flocken som rövare (steg 11.6.20); så stor som bytet och försvaret drar (steg 12.1.21)
+      const n = c.r.nr === c.vl.huvud ? 0 : flockStorlek(c.r, radUte(c.vl, c.r.nr), c.mot); // också mot huvudbyn: då kommer flocken som rövare (steg 11.6.20); så stor som bytet och försvaret drar (steg 12.1.21)
       if (!n || restid(c.vl, c.r, c.mot) === undefined) return -1;
       const fejd = Math.max(BYLAGEN[byLage(c.vl, c.r.nr, c.mot.nr)].fejd, clamp((-c.rel - BYHANDLING.plundraRel) / BYHANDLING.plundraFull, 0, 1)); // i krig vill byn plundra fullt ut
       const svalt = c.rel < BYHANDLING.plundraVan ? clamp(1 - c.r.tal.mat / Math.max(1, radVill(c.r, 'mat', rikMal(c.r))), 0, 1) : 0;
@@ -115,7 +116,7 @@ export const BYHANDLINGAR = {
       return vilja * (p * byte - doda * BYHANDLING.dodVarde) / BYHANDLING.skala - BYHANDLING.plundraKostnad;
     },
     gor: c => {
-      const n = flockStorlek(c.r, anfallUte(c.vl, c.r.nr), c.mot), dygn = restid(c.vl, c.r, c.mot);
+      const n = flockStorlek(c.r, radUte(c.vl, c.r.nr), c.mot), dygn = restid(c.vl, c.r, c.mot);
       if (!n || dygn === undefined) return;
       skicka(c.s, c.vl, { id: fardNr(c.vl), fran: c.r.nr, till: c.mot.nr, g: 'mat', n: 0, anfall: n, t0: c.t, t1: c.t + dygn * DAY }, n);
       count(c.s, 'radanfall_ut');
@@ -154,7 +155,7 @@ export const BYHANDLINGAR = {
   // som finns kvar i en ruin i grannätet, när det väntade bytet är värt mer än resan; den som kommer först tar det
   uppdrag: {
     namn: 'Uppdrag',
-    poang: c => { const a = uppdragAffar(c); return a ? (a.varde - BYHANDLING.barare * 2 * a.dygn * BYHANDLING.dygnKostnad) / BYHANDLING.skala - BYHANDLING.uppdragKostnad : -1; },
+    poang: c => { const a = kanSkicka(c.vl, c.r, BYHANDLING.barare) ? uppdragAffar(c) : undefined; return a ? (a.varde - BYHANDLING.barare * 2 * a.dygn * BYHANDLING.dygnKostnad) / BYHANDLING.skala - BYHANDLING.uppdragKostnad : -1; },
     gor: c => {
       const a = uppdragAffar(c);
       if (!a) return;
@@ -269,6 +270,12 @@ export type BeskedTon = 'besked' | 'ovanligt';
 // val mot den grannen, och kriget är det. vl.ovanligt har relationen när beskedet skickades; har relationen stigit över gränsen
 // för beskedet (det hjälpte) gäller det inte längre
 const beskedGivet = (c: ByCtx) => { const v = c.vl.ovanligt?.[`${c.r.nr}>${c.mot.nr}`]; return v !== undefined && c.rel < -BYHANDLING.beskedRel; };
+// en fientlig handling mellan a och b (steg 15.1.74): det ovänliga beskedet och anfallet. vl.ovanligt får a:s syn på b just då,
+// om den inte redan har en lägre; minnet bleknar som relationen (relGlom i byrel.ts)
+function fientlig(vl: Varlden, a: number, b: number) {
+  const k = `${a}>${b}`, v = Math.round(relation(vl, a, b) ?? 0), o = (vl.ovanligt ??= {});
+  o[k] = o[k] === undefined ? v : Math.min(o[k], v);
+}
 // ett bud från byn a till b är redan på väg
 const beskedUte = (vl: Varlden, a: number, b: number) => !!vl.farder?.some(f => f.besked && f.fran === a && f.till === b);
 // budet ger sig av: en färd utan last, med byns gåva när beskedet är vänligt och byn har något över
@@ -276,8 +283,8 @@ function skickaBud(c: ByCtx, ton: BeskedTon) {
   const { s, vl, r, mot } = c, dygn = restid(vl, r, mot);
   if (dygn === undefined) return;
   const t0 = c.t, f: RadFard = { id: fardNr(vl), fran: r.nr, till: mot.nr, g: 'mat', n: 0, t0, t1: t0 + dygn * DAY, besked: ton };
-  if (ton === 'ovanligt') (vl.ovanligt ??= {})[`${r.nr}>${mot.nr}`] = Math.round(c.rel); // relationen när beskedet gick
-  const a = ton === 'besked' && r.tal.folk >= BYHANDLING.barare * 2 ? gavaGrupp(r) : undefined; // gåvan: det byn har mest över
+  if (ton === 'ovanligt') fientlig(vl, r.nr, mot.nr); // relationen när beskedet gick
+  const a = ton === 'besked' && kanSkicka(vl, r, BYHANDLING.barare) ? gavaGrupp(s, vl, r, mot) : undefined; // gåvan: det byn har mest över
   if (a) {
     if (mot.nr === vl.huvud) { let i = 0; const l = packaRad(r, () => varldSlump(vl, r.nr, f.id, 0x4247 + i++), g => g === a.g ? a.n : 0, radHandlarSort(s, r), radDjur(s, r), iIstiden(ageIndex(s, t0))); if (l.varor.length) f.last = { ...l, silver: 0 }; } // till huvudbyn: hela saker som budet bär
     else { f.g = a.g; f.n = a.n; radTaUr(r, a.g, a.n); f.gava = true; }
@@ -287,8 +294,15 @@ function skickaBud(c: ByCtx, ton: BeskedTon) {
 }
 // kriget gäller två byar i världen, inte huvudbyn (den väljer själv, senare)
 const krigUte = (c: ByCtx) => c.r.nr === c.vl.huvud || c.mot.nr === c.vl.huvud;
-// så många ur byn nr är ute i ett anfall (de kan inte gå med i ett till)
-export const anfallUte = (vl: Varlden, nr: number) => (vl.farder ?? []).reduce((a, f) => a + (f.anfall && f.fran === nr ? f.anfall : 0), 0);
+// så många ur byn nr är ute på en färd (steg 15.1.73): de räknas bort ur byns folk så länge de är borta, så att byn aldrig
+// skickar fler än den har (flocken, bärarna, budet och handlarens följe)
+export const radUte = (vl: Varlden, nr: number) => (vl.farder ?? []).reduce((a, f) => a + (f.fran === nr ? f.anfall ?? f.folk?.length ?? (f.besked ? 1 : BYHANDLING.barare) : 0), 0);
+// de vuxna i byn som är hemma och kan gå (de som kan slåss, utom de som är ute)
+export const ledigaVuxna = (vl: Varlden, r: VarldRad) => Math.max(0, Math.min(r.tal.folk, r.tal.styrka) - radUte(vl, r.nr));
+// en ny färd med n som går kräver minst dubbelt så många lediga vuxna (steg 15.1.73): byn behåller folk hemma
+export const kanSkicka = (vl: Varlden, r: VarldRad, n: number) => ledigaVuxna(vl, r) >= n * 2;
+// det som redan är på väg till byn nr i gruppen g (handelsfärder och gåvor som inte kommit fram, steg 15.1.73)
+export const paVag = (vl: Varlden, nr: number, g: VarugruppId) => (vl.farder ?? []).reduce((a, f) => a + (f.till === nr && f.t2 === undefined && !f.handlare && !f.anfall && f.g === g ? f.n : 0), 0);
 const restid = (vl: Varlden, r: VarldRad, mot: VarldRad) => {
   const p = byPlats(vl, r.nr), q = byPlats(vl, mot.nr);
   return p?.grannar?.find(g => g.nr === q?.nr)?.dygn;
@@ -310,7 +324,7 @@ export function fardAffar(c: ByCtx): FardAffar | undefined {
   if (c.rel < BYHANDLING.minRel || (relation(vl, mot.nr, r.nr) ?? 0) < BYHANDLING.minRel || !BYLAGEN[byLage(vl, r.nr, mot.nr)].handel) return undefined;
   const huvud = mot.nr === vl.huvud;
   if (huvud && (!r.syn || handlarUte(s, r.nr))) return undefined; // byns handlare är redan på väg till huvudbyn eller där
-  if (r.tal.folk < BYHANDLING.barare * 2) return undefined;
+  if (!kanSkicka(vl, r, BYHANDLING.barare)) return undefined;
   const dygn = restid(vl, r, mot);
   if (dygn === undefined) return undefined;
   const kostnad = 2 * dygn * BYHANDLING.barare * BYHANDLING.dygnKostnad;
@@ -318,7 +332,7 @@ export function fardAffar(c: ByCtx): FardAffar | undefined {
   for (const g of VARUGRUPP_IDS) {
     const ov = radOverskott(r, g);
     if (ov <= 0) continue;
-    const hemma = radGruppPaslag(s, r, g), dar = radGruppPaslag(s, mot, g);
+    const hemma = radGruppPaslag(s, r, g), dar = radGruppPaslag(s, mot, g, paVag(vl, mot.nr, g)); // mottagarens pris med det som redan är på väg dit
     if (dar <= hemma) continue;
     const b = huvud ? undefined : betalning(s, mot, g), kan = b ? (b.silver + b.hVarde) / dar : BYHANDLING.last; // så mycket grundvärde mottagaren kan köpa (huvudbyn betalar med det den har)
     const n = Math.floor(Math.min(ov, BYHANDLING.last / enhet(g), kan / enhet(g)));
@@ -331,14 +345,18 @@ export function fardAffar(c: ByCtx): FardAffar | undefined {
 // gåvan (steg 11.6.14): det byn har mest över (i grundvärde), högst BYHANDLING.gava, i hela enheter; inte till eller från huvudbyn
 export function gavaAffar(c: ByCtx): FardAffar | undefined {
   const { vl, r, mot } = c;
-  if (r.nr === vl.huvud || mot.nr === vl.huvud || r.tal.folk < BYHANDLING.barare * 2) return undefined;
-  const dygn = restid(vl, r, mot), b = gavaGrupp(r);
+  if (r.nr === vl.huvud || mot.nr === vl.huvud || !kanSkicka(vl, r, BYHANDLING.barare)) return undefined;
+  const dygn = restid(vl, r, mot), b = gavaGrupp(c.s, vl, r, mot);
   return dygn === undefined || !b ? undefined : { ...b, dygn, vinst: 0 };
 }
 // färderna mellan byarna (kodgenomgången, fynd 156): nästa nummer (det används i världens slump, så det tas när färden
 // skapas), färden som ger sig av med tyngd personer, den som vänder hem nu lika lång väg och de döda som dras av byns folk och styrka
 const fardNr = (vl: Varlden) => vl.nastaFard = (vl.nastaFard ?? 0) + 1;
+// färderna börjar utspridda över dygnet (steg 15.1.73): byn väljer en gång om dygnet, och de som går ger sig av vid en tid ur
+// världens slump under det kommande dygnet; de räknas som ute (radUte) från valet
 function skicka(s: State, vl: Varlden, f: RadFard, tyngd: number) {
+  const d = Math.floor(varldSlump(vl, f.fran, f.id, 0x55545350) * DAY);
+  f.t0 += d; f.t1 += d;
   (vl.farder ??= []).push(f);
   namnFolk(vl, f, f.handlare ? f.last?.folk ?? 1 : tyngd);
   trampaFard(s, f.fran, f.till, sallskapTyngd(tyngd), f.t0);
@@ -350,14 +368,16 @@ function vandHem(s: State, vl: Varlden, f: RadFard, tyngd: number) {
   trampaFard(s, f.till, f.fran, sallskapTyngd(tyngd));
   laggIKo(vl, f.t2, 'fardHem', { sak: f.id });
 }
-// det byn r har mest över (i grundvärde), högst BYHANDLING.gava, i hela enheter
-function gavaGrupp(r: VarldRad): { g: VarugruppId; n: number } | undefined {
-  let bast: { g: VarugruppId; n: number } | undefined;
+// gåvan: det byn r har över (högst BYHANDLING.gava i grundvärde, i hela enheter) som mottagaren mot behöver mest, efter
+// mottagarens pris med det den redan har och det som redan är på väg dit (steg 15.1.73); huvudbyn har ingen rad att se i
+function gavaGrupp(s: State, vl: Varlden, r: VarldRad, mot: VarldRad): { g: VarugruppId; n: number } | undefined {
+  let bast: { g: VarugruppId; n: number; v: number } | undefined;
   for (const g of VARUGRUPP_IDS) {
     const n = Math.floor(Math.min(radOverskott(r, g), BYHANDLING.gava / enhet(g)));
-    if (n > 0 && (!bast || n * enhet(g) > bast.n * enhet(bast.g))) bast = { g, n };
+    const v = n * enhet(g) * (mot.nr === vl.huvud ? 1 : radGruppPaslag(s, mot, g, paVag(vl, mot.nr, g)));
+    if (n > 0 && (!bast || v > bast.v)) bast = { g, n, v };
   }
-  return bast;
+  return bast && { g: bast.g, n: bast.n };
 }
 function skickaFard(c: ByCtx, a: FardAffar, gava = false) {
   const { s, vl, r, mot } = c, t0 = c.t, huvud = mot.nr === vl.huvud, n = huvud ? 0 : a.n; // till huvudbyn går handlaren (lasten: 11.6.9)
@@ -476,12 +496,15 @@ KOHANDELSER.fardHem = (s, vl, p) => {
 // och bärs hem, och försvararnas syn på anfallarna sjunker för plundringen och för varje dödad
 function anfallFram(s: State, vl: Varlden, f: RadFard, r: VarldRad, mot: VarldRad) {
   if (!BYSORTER[mot.sort].folk || mot.tal.folk <= 0) return; // byn finns inte längre: flocken går hem
+  const hade = VARUGRUPP_IDS.reduce((a, g) => a + radHar(mot, g) * enhet(g), 0); // det byn hade före anfallet (för nöden)
   const u = anfallUtfall(r, mot, f.anfall!, i => varldSlump(vl, r.nr, f.id, 0x414e + i), enhet);
   count(s, 'radanfall_med', f.anfall! + forsvarare(mot)); // alla som var med, för andelen döda (steg 11.6.19)
   radDoda(r, u.dodaA); radDoda(mot, u.dodaF);
   f.anfall! -= u.dodaA; fardDoda(vl, f, u.dodaA, f.t1);
   for (const [g, n] of Object.entries(u.byte) as [VarugruppId, number][]) radTaUr(mot, g, n);
   f.byte = u.byte;
+  plundradNod(mot, u.varde, hade, u.dodaF); // den plundrade byn får nöd, som driver folk ut (steg 15.1.76)
+  fientlig(vl, r.nr, mot.nr); fientlig(vl, mot.nr, r.nr); // anfallet är en fientlig handling mellan byarna (steg 15.1.74)
   byHandelse(vl, 'plundring', r.nr, mot.nr);
   if (u.dodaF) byHandelse(vl, 'dodade', r.nr, mot.nr, u.dodaF);
   varldHandelse(vl, 'rad', f.t1, { by: r.nr, mot: mot.nr });
@@ -541,6 +564,7 @@ export function fardSpar(vl: Varlden, f: RadFard, ta: number, tb: number, w: num
   return ut;
 }
 export function fardLage(vl: Varlden, f: RadFard, t: number, w: number): { x: number; y: number; dx: number } | undefined {
+  if (t < f.t0) return undefined; // har inte gett sig av än (steg 15.1.73)
   if (t >= f.t1 && f.t2 === undefined) return undefined; // framme (handlaren i huvudbyn)
   const ut = t < f.t1, a = byPlats(vl, ut ? f.fran : f.till), b = byPlats(vl, ut ? f.till : f.fran);
   if (!a || !b) return undefined;

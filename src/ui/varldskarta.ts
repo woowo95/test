@@ -4,11 +4,11 @@
 // platserna där, och ett tryck utan att dra skriver det nere till vänster. Byns, sällskapets eller färdens ruta ligger ovanpå
 // kartan till höger, och på en smal skärm under den.
 // Själva bilden räknas i ui/varldbild.ts.
-import { BYHANDLING, fardRuta, RadFard, byFlikar, PlatsRuta, Sallskap, TEKNIK, vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
+import { BYHANDLING, byTecken, fardRuta, RadFard, byFlikar, PlatsRuta, Sallskap, TEKNIK, vacktMedBesok, bynsUppdrag, fardLage, bynsKarta, DAGBOK, DAY, hortHandelse, kalender, platsRuta, sallskapLage, sallskapNu, sallskapRuta, syns, varldHandelseText, varldMark, Varlden } from '../sim';
 import { farg } from '../palett';
 import { gaIn, huvud, s } from './lage';
 import { durTxt, ejLig, esc, omUngefar } from './hjalp';
-import { TECKEN, TECKENPAL, VK, huvudbynsPlats, Vy, begransa, dra, helaKartan, namnPaKartan, NAMNZOOM, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
+import { TECKEN, TECKENPAL, VK, fardTecken, kandaRutor, huvudbynsPlats, Vy, begransa, dra, helaKartan, namnPaKartan, namnUtanKrock, NAMNZOOM, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
 import { bildDuk } from './bildduk';
 
 const stil = document.createElement('style');
@@ -70,19 +70,21 @@ const duk = ruta.querySelector('canvas')!, info = ruta.querySelector<HTMLElement
 const visas = () => !ruta.hidden;
 
 // bilden räknas en gång per värld och när platserna ändrats
-let bild: HTMLCanvasElement | undefined, bildFor: Varlden | undefined, bildPlatser = -1, bildVet = -1, bildLed = -1, bildMark = '';
+let bild: HTMLCanvasElement | undefined, bildFor: Varlden | undefined, bildPlatser = -1, bildVet = -1, bildLed = -1, bildMark = '', bildByar = '';
 // platserna med ett uppdrag eller fynd som byn känner till och tror på (steg 11.8.16)
 const markNr = () => [...new Set(bynsUppdrag(s!).filter(u => u.nr !== undefined && !u.tomt && u.tilltro >= 0.25).map(u => u.nr!))].sort((a, b) => a - b);
 function bilden() {
   const vl = s?.varld, v = s && varldMark(s);
   if (!vl || !v) return undefined;
   const n = vl.platser?.length ?? 0, vet = s!.bynVet?.t ?? 0, led = vl.ledVer ?? 0, mk = markNr(), mks = mk.join(',');
-  if (!bild || bildFor !== vl || bildPlatser !== n || bildVet !== vet || bildLed !== led || bildMark !== mks) { // och när en led bytt klass (steg 11.5.1) // och när det byn vet räknats om (steg 11.4.7)
-    const b = ritaVarld(vl, v, bynsKarta(s!), mk);
+  const byar = new Map((vl.platser ?? []).filter(p => p.k === 'by').map(p => [p.nr, byTecken(s!, p.nr)] as const)); // byarnas tecken (steg 15.1.80)
+  const bys = [...byar.values()].map(b => `${b.tecken}${b.hallning ?? ''}${b.krig ? 'k' : ''}`).join(',');
+  if (!bild || bildFor !== vl || bildPlatser !== n || bildVet !== vet || bildLed !== led || bildMark !== mks || bildByar !== bys) { // och när en led bytt klass (steg 11.5.1) // och när det byn vet räknats om (steg 11.4.7)
+    const b = ritaVarld(vl, v, bynsKarta(s!), mk, byar);
     bild = document.createElement('canvas'); bild.width = b.w; bild.height = b.h;
     const g = bild.getContext('2d')!, id = g.createImageData(b.w, b.h);
     id.data.set(b.data); g.putImageData(id, 0, 0);
-    bildFor = vl; bildPlatser = n; bildVet = vet; bildLed = led; bildMark = mks;
+    bildFor = vl; bildPlatser = n; bildVet = vet; bildLed = led; bildMark = mks; bildByar = bys;
   }
   return bild;
 }
@@ -92,7 +94,7 @@ const vandrar = new Map<number, boolean>(); // åt vänster senast (står kvar n
 function ritaGommor(g: CanvasRenderingContext2D) {
   const vl = s?.varld, v = s && varldMark(s);
   if (!vl || !v) return;
-  for (const gr of vl.gravar ?? []) g.drawImage(teckenBild('kors'), (gr.ruta % v.w) * VK, Math.floor(gr.ruta / v.w) * VK); // gravarna vid leden (steg 11.5.18, platshållare: korset)
+  for (const gr of vl.gravar ?? []) g.drawImage(teckenBild('rose'), (gr.ruta % v.w) * VK, Math.floor(gr.ruta / v.w) * VK); // gravarna vid leden (steg 11.5.18), med röset (steg 15.1.82, platshållare)
 }
 function ritaSallskap(g: CanvasRenderingContext2D) {
   if (!s) return;
@@ -101,12 +103,14 @@ function ritaSallskap(g: CanvasRenderingContext2D) {
     const l = sallskapLage(s, sl);
     if (!l) continue;
     if (l.dx) vandrar.set(sl.id, l.dx < 0);
-    g.drawImage(teckenBild('sallskap', vandrar.get(sl.id) ?? false), Math.round(l.x * VK), Math.round(l.y * VK));
+    g.drawImage(teckenBild(fardTecken({ vagn: sl.fordon.length > 0, djur: sl.djur.length > 0 }).tecken, vandrar.get(sl.id) ?? false), Math.round(l.x * VK), Math.round(l.y * VK));
   }
-  const vl = s.varld, v = varldMark(s);
-  if (vl && v) for (const f of vl.farder ?? []) { // byarnas handelsfärder (steg 11.6.6), med sällskapets bild
+  const vl = s.varld, v = varldMark(s), kn = bynsKarta(s), kand = vl && v && kn ? kandaRutor(vl, v, kn) : () => true;
+  if (vl && v) for (const f of vl.farder ?? []) { // byarnas färder (steg 11.6.6), med tecknet för färdsättet (FARDTECKEN, steg 15.1.79)
     const l = fardLage(vl, f, s.now, v.w);
-    if (l) g.drawImage(teckenBild(f.last?.vagnar ? 'karavan' : 'sallskap', l.dx < 0), Math.round(l.x * VK), Math.round(l.y * VK));
+    if (!l || !kand(Math.round(l.x), Math.round(l.y))) continue; // en färd i land byn inte känner ritas inte
+    const tk = fardTecken({ anfall: !!f.anfall, vagn: !!f.last?.vagnar, djur: !!f.last?.djur }).tecken;
+    g.drawImage(teckenBild(tk, l.dx < 0), Math.round(l.x * VK), Math.round(l.y * VK));
   }
 }
 
@@ -131,9 +135,11 @@ function ritaNamn(g: CanvasRenderingContext2D, dpr: number) {
   const vl = s?.varld; if (!vl || !vy || vy.z < NAMNZOOM) return;
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.textAlign = 'center'; g.textBaseline = 'top'; g.lineJoin = 'round'; g.lineWidth = 3;
-  for (const n of namnPaKartan(vl, bynsKarta(s!))) {
+  const font = (n: { egen: boolean }) => `${n.egen ? 700 : 500} 12px "Pixelify Sans", system-ui, sans-serif`;
+  const bredd = (n: { egen: boolean; namn: string }) => { g.font = font(n); return g.measureText(ejLig(n.namn)).width + 4; }; // med den ljusa kanten
+  for (const n of namnUtanKrock(namnPaKartan(vl, bynsKarta(s!)), vy.z, bredd)) { // huvudbyns först, och inget namn över ett annat (steg 15.1.81)
     const sx = ((n.x + 0.5) * VK - vy.x) * vy.z, sy = ((n.y + 1) * VK - vy.y) * vy.z + 1;
-    g.font = `${n.egen ? 700 : 500} 12px "Pixelify Sans", system-ui, sans-serif`;
+    g.font = font(n);
     const namn = ejLig(n.namn); // fi och fl slås inte ihop, i kanten och fyllningen (steg 12.1.50, 12.1.204)
     g.strokeStyle = farg('ben', 3); g.strokeText(namn, sx, sy);
     g.fillStyle = n.egen ? farg('rost', 0) : farg('kol', 1); g.fillText(namn, sx, sy);
@@ -213,7 +219,8 @@ const slapp = (e: PointerEvent) => {
       // symbolen där den ritas, den översta först (steg B.39)
       const mx = vy.x + (e.clientX - r.left) / vy.z, my = vy.y + (e.clientY - r.top) / vy.z;
       const traff = (l?: { x: number; y: number }) => !!l && mx >= Math.round(l.x * VK) && mx < Math.round(l.x * VK) + VK && my >= Math.round(l.y * VK) && my < Math.round(l.y * VK) + VK;
-      const fd = [...vl.farder ?? []].reverse().find(x => traff(fardLage(vl, x, s!.now, v.w)));
+      const kand = kn ? kandaRutor(vl, v, kn) : () => true, synlig = (l?: { x: number; y: number }) => !!l && kand(Math.round(l.x), Math.round(l.y)) ? l : undefined; // en färd i okänt land syns inte och går inte att trycka på
+      const fd = [...vl.farder ?? []].reverse().find(x => traff(fardLage(vl, x, s!.now, v.w)) && !!synlig(fardLage(vl, x, s!.now, v.w)));
       const sl = [...sallskapNu(vl)].reverse().find(x => traff(sallskapLage(s!, x)));
       const by = (vl.platser ?? []).find(p => p.x === q.x && p.y === q.y && syns(kn, p) && p.by !== undefined);
       if (fd) { valt = { fard: fd.id }; sida.innerHTML = sidaHtml(); }

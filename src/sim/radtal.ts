@@ -54,6 +54,7 @@ export interface VarldRad {
   nr: number; sort: BysortId; namn: string; x?: number; y?: number; grundad: number; fran?: number; lyder?: number;
   t: number; tal: Record<RadtalId, number>; tek: string[]; tro?: RadTro; ledare?: number; fasta: FastPerson[];
   kalla?: number; // fyndplatsen utposten bryter ur (steg 11.6.18, utpost.ts)
+  nod?: number; // nöden efter en plundring, 0–1 (steg 15.1.76, byflytt.ts)
   svalt?: number; // senaste svälten (steg 11.3.2, rad.ts)
   kvar?: Record<string, number>; kvarT?: number; // det som finns kvar i en ruin, i hela saker (steg 11.3.8, byflytt.ts), och när det räknades (vittringen, steg 11.8.2)
   besokt?: number[]; // platserna byns sällskap och handlare besökt (steg 11.4.10, ort.ts)
