@@ -8,7 +8,7 @@ import { BYHANDLING, fardRuta, RadFard, byFlikar, PlatsRuta, Sallskap, TEKNIK, v
 import { farg } from '../palett';
 import { gaIn, huvud, s } from './lage';
 import { durTxt, ejLig, esc, omUngefar } from './hjalp';
-import { TECKEN, TECKENPAL, VK, huvudbynsPlats, Vy, begransa, dra, helaKartan, namnPaKartan, NAMNZOOM, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
+import { TECKEN, TECKENPAL, VK, fardTecken, kandaRutor, huvudbynsPlats, Vy, begransa, dra, helaKartan, namnPaKartan, NAMNZOOM, ritaVarld, rutaText, rutaVid, zooma, ZOOM_MAX, zoomMin } from './varldbild';
 import { bildDuk } from './bildduk';
 
 const stil = document.createElement('style');
@@ -101,12 +101,14 @@ function ritaSallskap(g: CanvasRenderingContext2D) {
     const l = sallskapLage(s, sl);
     if (!l) continue;
     if (l.dx) vandrar.set(sl.id, l.dx < 0);
-    g.drawImage(teckenBild('sallskap', vandrar.get(sl.id) ?? false), Math.round(l.x * VK), Math.round(l.y * VK));
+    g.drawImage(teckenBild(fardTecken({ vagn: sl.fordon.length > 0, djur: sl.djur.length > 0 }).tecken, vandrar.get(sl.id) ?? false), Math.round(l.x * VK), Math.round(l.y * VK));
   }
-  const vl = s.varld, v = varldMark(s);
-  if (vl && v) for (const f of vl.farder ?? []) { // byarnas handelsfärder (steg 11.6.6), med sällskapets bild
+  const vl = s.varld, v = varldMark(s), kn = bynsKarta(s), kand = vl && v && kn ? kandaRutor(vl, v, kn) : () => true;
+  if (vl && v) for (const f of vl.farder ?? []) { // byarnas färder (steg 11.6.6), med tecknet för färdsättet (FARDTECKEN, steg 15.1.79)
     const l = fardLage(vl, f, s.now, v.w);
-    if (l) g.drawImage(teckenBild(f.last?.vagnar ? 'karavan' : 'sallskap', l.dx < 0), Math.round(l.x * VK), Math.round(l.y * VK));
+    if (!l || !kand(Math.round(l.x), Math.round(l.y))) continue; // en färd i land byn inte känner ritas inte
+    const tk = fardTecken({ anfall: !!f.anfall, vagn: !!f.last?.vagnar, djur: !!f.last?.djur }).tecken;
+    g.drawImage(teckenBild(tk, l.dx < 0), Math.round(l.x * VK), Math.round(l.y * VK));
   }
 }
 
@@ -213,7 +215,8 @@ const slapp = (e: PointerEvent) => {
       // symbolen där den ritas, den översta först (steg B.39)
       const mx = vy.x + (e.clientX - r.left) / vy.z, my = vy.y + (e.clientY - r.top) / vy.z;
       const traff = (l?: { x: number; y: number }) => !!l && mx >= Math.round(l.x * VK) && mx < Math.round(l.x * VK) + VK && my >= Math.round(l.y * VK) && my < Math.round(l.y * VK) + VK;
-      const fd = [...vl.farder ?? []].reverse().find(x => traff(fardLage(vl, x, s!.now, v.w)));
+      const kand = kn ? kandaRutor(vl, v, kn) : () => true, synlig = (l?: { x: number; y: number }) => !!l && kand(Math.round(l.x), Math.round(l.y)) ? l : undefined; // en färd i okänt land syns inte och går inte att trycka på
+      const fd = [...vl.farder ?? []].reverse().find(x => traff(fardLage(vl, x, s!.now, v.w)) && !!synlig(fardLage(vl, x, s!.now, v.w)));
       const sl = [...sallskapNu(vl)].reverse().find(x => traff(sallskapLage(s!, x)));
       const by = (vl.platser ?? []).find(p => p.x === q.x && p.y === q.y && syns(kn, p) && p.by !== undefined);
       if (fd) { valt = { fard: fd.id }; sida.innerHTML = sidaHtml(); }

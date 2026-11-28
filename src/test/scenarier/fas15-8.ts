@@ -1,6 +1,8 @@
 // Scenarier för fas 15, grupp 8 (steg 15.1.73–15.1.83): världens byar och omvärlden.
 import * as SIM from '../../sim';
 import { SCENARIER, testBy, varldEfter } from './hjalp';
+import * as VB from '../../ui/varldbild';
+import { readFileSync } from 'node:fs';
 
 // byn har precis det den vill ha av allt
 const fyll = (r: SIM.VarldRad, ganger = 1) => {
@@ -181,6 +183,28 @@ SCENARIER.tromal = {
       [`troerna har olika mål (${namn.map((n, i) => `${n} ${mal[i]} %`).join(', ')})`, olika >= 4 && inom],
       [`samma tro har samma mål (${SIM.troMal(vl, namn[0])} och ${SIM.troMal(vl, namn[0])})`, SIM.troMal(vl, namn[0]) === mal[0]],
       [`andelen i byn går mot trons mål (${slut} %, målet ${mal[0]} %)`, slut === mal[0]],
+    ];
+  },
+};
+
+SCENARIER.fardtecken = {
+  text: 'Steg 15.1.79: registret FARDTECKEN säger tecknet för varje färdsätt (flocken, karavanen, packdjuret, till fots) och om sällskapet är beväpnat; flocken och packdjuret har platshållare i paletten, och en färd i land byn inte känner ritas inte',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10)), vl = s.varld!, v = SIM.varldMark(s)!, kn = SIM.bynsKarta(s)!;
+    const val = (f: VB.FardSatt) => VB.fardTecken(f).tecken;
+    const ratt = val({ anfall: true }) === 'flock' && val({ vagn: true, djur: true }) === 'karavan' && val({ djur: true }) === 'packdjur' && val({}) === 'sallskap';
+    const vapen = Object.entries(VB.FARDTECKEN).filter(([, d]) => d.beväpnad).map(([k]) => k);
+    const form = ['flock', 'packdjur'].every(k => VB.TECKEN[k]?.length === VB.VK && VB.TECKEN[k]!.every(r => r.length === VB.VK && [...r].every(c => c === '.' || c in VB.TECKENPAL)));
+    const kand = VB.kandaRutor(vl, v, kn), hb = VB.huvudbynsPlats(vl)!;
+    let okand: [number, number] | undefined;
+    for (let y = 0; y < v.h && !okand; y++) for (let x = 0; x < v.w && !okand; x++) if (!kand(x, y)) okand = [x, y];
+    const kod = readFileSync(new URL('../../ui/varldskarta.ts', import.meta.url), 'utf8');
+    return [
+      [`färdsättet ger tecknet (flock, karavan, packdjur, till fots)`, ratt],
+      [`flocken är beväpnad, de andra inte (${vapen.join(', ')})`, vapen.length === 1 && vapen[0] === 'flock'],
+      ['flocken och packdjuret har platshållare i 16 × 16 punkter i paletten', form],
+      [`huvudbyns ruta är känd, och det finns land byn inte känner (${okand?.join(', ')})`, kand(hb.x, hb.y) && !!okand],
+      ['kartan ritar färderna med FARDTECKEN och hoppar över dem i okänt land', /fardTecken\(/.test(kod) && /if \(!l \|\| !kand\(/.test(kod)],
     ];
   },
 };

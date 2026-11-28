@@ -54,10 +54,32 @@ export const TECKEN: Record<string, string[]> = {
   sallskap: t('', '', '.....kk.....kk', '....kwwk...kwwk', '....kwwk...kwwk', '..jj.kk.....kk', '.jJJkrrk...krrk', '.jJlkrrk...krrk', '.jJJkrrk...krrk', '..jjkrrk...krrk', '.....kjk....kjk', '.....k.k....k.k', '.....k.k....k.k', '....kk.kk..kk.kk'),
   // karavanen (steg 11.11.6, platshållare): en vagn med last, ett dragdjur framför och en vandrare
   karavan: t('', '', '...kk', '..kwwk', '..kwwk..kkkkkkk', '...kk..kJJJJJJk', '..kJJk.kJJJJJJk', '..kJJk.kjjjjjjk..kk', '..kJJkkkkkkkkkkkkJJk', '..kJJk.k.kk..kk.kJJk', '..kjjk..kWWk.kWWkkk', '..k.k....kk...kk.k.k', '..k.k............k.k'),
+  // flocken (steg 15.1.79, platshållare): tre i rad åt höger, med spjut över axlarna
+  flock: t('', '..........k', '.kk..kk..kk', 'kwwkkwwkkwwk', 'kwwkkwwkkwwk', '.kkk.kkk.kk.', 'krrkkrrkkrrk', 'krrkkrrkkrrk', 'krrkkrrkkrrk', '.kjk.kjk.kjk', '.k.k.k.k.k.k', '.k.k.k.k.k.k'),
+  // packdjuret (steg 15.1.79, platshållare): en vandrare som leder ett djur med packning på ryggen
+  packdjur: t('', '', '..kk', '.kwwk', '.kwwk.....kkkkk', '..kk.....kJlJlJk', '.krrk..kkkJJJJJkk', '.krrk.kjjjjjjjjjjk', '.krrkkjjjjjjjjjjk', '..kjk.kjjjjjjjjk', '..k.k..kjk...kjk', '..k.k..k.k...k.k'),
   // uppdragets märke (steg 11.8.16, platshållare): en liten rulle med ett rött sigill i rutans övre högra hörn, över platsens tecken
   uppdrag: t('', '', '....kk', '....kJkkkkk', '....kJRRRRrk', '....kJRRRrrrk', '....kJRRRRrk', '....kJkkkkk', '....kJk', '....kJk', '....kJk', '....kJk', '...kkJkk', '..kjjjjjk', '...kkkkk'),
   karta: t('', '', '', '', '', '.kkk........kkk', 'kwWWkkkkkkkkWWwk', 'kWwkwwwwwwwwkwWk', 'kWwkwGGwwsswkwWk', 'kWwkwwGwJssWkwWk', 'kWwkwwwJJwwWkwWk', 'kWwkwSwwwGGWkwWk', 'kWwkwwwwwGGWkwWk', 'kwWWkkkkkkkkWWwk', '.kkk........kkk'),
 };
+
+// färdernas tecken (steg 15.1.79): färdsättet och om sällskapet är beväpnat. Den första raden som passar ritas; flocken bär vapen.
+// ritas: tecknet ur TECKEN (platshållare tills Björn valt i bildstilen)
+export interface FardTeckenDef { namn: string; tecken: string; beväpnad: boolean; nar: (f: FardSatt) => boolean }
+export interface FardSatt { anfall?: boolean; vagn?: boolean; djur?: boolean }
+export const FARDTECKEN = {
+  flock: { namn: 'Flocken', tecken: 'flock', beväpnad: true, nar: f => !!f.anfall },
+  karavan: { namn: 'Karavanen', tecken: 'karavan', beväpnad: false, nar: f => !!f.vagn },
+  packdjur: { namn: 'Med packdjur', tecken: 'packdjur', beväpnad: false, nar: f => !!f.djur },
+  fots: { namn: 'Till fots', tecken: 'sallskap', beväpnad: false, nar: () => true },
+} as const satisfies Record<string, FardTeckenDef>;
+export type FardTeckenId = keyof typeof FARDTECKEN;
+export const fardTecken = (f: FardSatt): FardTeckenDef => (Object.values(FARDTECKEN) as FardTeckenDef[]).find(d => d.nar(f))!;
+// världsrutorna byn känner (lagret kant): de platser byn känner och närområdet (en färd i okänt land ritas inte)
+export function kandaRutor(vl: Varlden, v: VarldMark, kn: BynsKarta): (x: number, y: number) => boolean {
+  const kand = new Set((vl.platser ?? []).filter(p => (kn.niva(p.nr) ?? -1) >= O_KANT).map(p => p.y * v.w + p.x));
+  return (x, y) => lager(kn, kand, v.w, x, y) === 'kant';
+}
 
 // RGBA ur en färg i paletten
 const rgb = rgb255;
