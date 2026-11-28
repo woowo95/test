@@ -1901,7 +1901,7 @@ SCENARIER.individer = {
     SIM.satDjurHalsa(s, b.id, 0.9, 0); // den läkta glöms när en annan sparas
     const glomd = !s.djurHalsa!.some(h => h.id === a.id);
     s.now = fore; s.djurHalsa = undefined;
-    // en dödad kanin är borta, men gruppen syns fortfarande lika stor (tills lagret tömts)
+    // en dödad kanin är borta, och gruppen syns en mindre: den dödade räknas en gång, i lagret (steg 15.1.129)
     const n0 = djurOf(s).filter(d => d.grupp === b.grupp).length;
     SIM.dodaDjur(s, b.id);
     const efter = djurOf(s).filter(d => d.grupp === b.grupp);
@@ -1910,7 +1910,7 @@ SCENARIER.individer = {
       [`${dj.length} kaniner har egna egenskaper som är desamma varje gång och efter inläsning`, dj.length > 0 && samma && kopia],
       [`åldern är 1–${art.alder} år, styrkan och snabbheten finns och skillnader mellan kaninerna`, iSpann && olika],
       [`en skadad kanin (blod ${Math.round(skadad.blod * 100)} %) läker med tiden (${Math.round(sen.blod * 100)} % efter 6 timmar, ${Math.round(lakt.blod * 100)} % efter två dygn) och glöms när den läkt`, skadad.blod < sen.blod && sen.blod < 1 && lakt.blod === 1 && lakt.sar === 0 && glomd],
-      [`en dödad kanin syns inte längre (${n0} före, ${efter.length} efter, men inte den dödade)`, !efter.some(d => d.id === b.id) && efter.length === n0 && SIM.halsaOf(s, b.id).dod],
+      [`en dödad kanin syns inte längre (${n0} före, ${efter.length} efter, men inte den dödade)`, !efter.some(d => d.id === b.id) && efter.length === n0 - 1 && SIM.halsaOf(s, b.id).dod],
     ];
   },
 };
