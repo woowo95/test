@@ -1826,6 +1826,7 @@ SCENARIER.avvikare = {
     const s = SIM.createState(9, START); klockan(s, 12);
     const a = nyInvanare(s, 'm', 30), b = nyInvanare(s, 'k', 30), c = nyInvanare(s, 'k', 30);
     Object.assign(a.pot, { karisma: 18, aggression: 20, mod: 20, empati: 1, flit: 20, intelligens: 20, nyfikenhet: 20 });
+    for (const q of [b, c]) for (const x in q.pot) q.pot[x as keyof typeof q.pot] = SIM.SED.mitt; // vännerna har en vanlig läggning, långt från läggningens gräns (steg 15.1.121)
     const d = drar(s, a), k = SED_LIST.filter(x => sedOppen(s, x)).sort((x, y) => Math.abs(d[y]) - Math.abs(d[x]))[0]!, rikt = Math.sign(d[k]);
     const fore = drarSed(s, b, k) * rikt;
     for (let i = 0; i < 10; i++) { talaForSed(s, a, b, 60); talaForSed(s, a, c, 5); }
