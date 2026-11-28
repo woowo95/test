@@ -1,5 +1,5 @@
 import { FANG, fangelseDygn, fangelseLedigt, satHardStraff, satt } from './fangelse';
-import { honom, slaktOrd } from './ord';
+import { honom, slaktOrd, talOrd } from './ord';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, vuxnaOf } from './folk';
 import { LAGAR, efterlevs, lagForBrott, straffNu, straffSteg, tasUppKvall } from './lagar';
 import type { Lag } from './lagar';
@@ -49,6 +49,7 @@ import { tanke } from './tankar';
 // ---------- balanstal (regel 8) ----------
 export const LED = balans('ledare', {
   wSatt: 0.1, wFram: 0.1, // hur ledaren tillsattes och framgångarna i legitimiteten (steg 8.3.9)
+  svag: 0.35, // under den här legitimiteten säger beskrivningen att allt fler är missnöjda med ledaren (steg 15.1.115)
   vunna: 3, vaxt: 12, // så många vunna strider, och så många fler invånare, ger full framgång
   egenRost: 40, // så mycket man tycker om sig själv i valet
   vuxna: 6, // en ledare väljs först när byn har minst så här många vuxna ...
@@ -271,7 +272,7 @@ export interface Styre {
   ministrar?: Record<string, number>; // ministrarna per post (steg 8.3.8)
   arvinge?: number; // den ledaren utsett till sin efterträdare (steg 8.3.6)
   satt?: number; vunna?: number; // hur väl sättet ledaren tillsattes på passar sederna, och strider som vunnits (steg 8.3.9)
-  frak?: Fraktion; frakVald?: number; lugn?: number; // fraktionen, dess ledare efter ett skifte och när nästa fraktion tidigast bildas (steg 8.3.11–8.3.12)
+  frak?: Fraktion; frakVald?: number; frakStrid?: true; lugn?: number; // frakStrid = frakVald vann striden om ledarskapet (krönikan, steg 15.1.115) // fraktionen, dess ledare efter ett skifte och när nästa fraktion tidigast bildas (steg 8.3.11–8.3.12)
   dogVinter?: number;
   kyrka?: number; kyrkaVikt?: number; // översteprästens välsignelse (1) eller fördömelse (−1) och vad den är värd (steg 8.6.16)
   hanForbud?: boolean; // förbudet mot hån (steg 8.3.13); det gäller ledaren det handlade om och upphör när ledaren byts (fynd 491)
@@ -380,9 +381,9 @@ function valj(s: State) {
   if (vuxna.length < LED.vuxna) return;
   const stn = styreAv(s), forstaVal = !stn.historia.length;
   if (!forstaVal) oppnaSed(s, 'fortjanst'); // Förtjänst – Härkomst låses upp första gången en ny ska väljas (steg 8.3.4)
-  let best: Person | undefined, satt = 1;
-  const fv = byId(s, stn.frakVald); stn.frakVald = undefined;
-  if (fv && alive(fv) && vuxna.includes(fv)) { best = fv; satt = stn.satt ?? ROST.frakSatt; }
+  let best: Person | undefined, satt = 1, hur: string; // hur = hur ledaren kom till makten, för krönikan (steg 15.1.115)
+  const fv = byId(s, stn.frakVald), frakStrid = stn.frakStrid; stn.frakVald = undefined; stn.frakStrid = undefined;
+  if (fv && alive(fv) && vuxna.includes(fv)) { best = fv; satt = stn.satt ?? ROST.frakSatt; hur = frakStrid ? 'strid' : 'frak'; }
   else {
     const satet = tronfoljd(s);
     if (satet === 'arv') best = arvinge(s, vuxna);
@@ -406,6 +407,7 @@ function valj(s: State) {
     }
     const tom = !best; // sättet gav ingen kandidat (steg 12.1.60: den som både ärver och vinner omröstningen börjar inte lågt)
     best ??= valet;
+    hur = tom || satet === 'val' ? 'val' : satet;
     if (tom && best && satet !== 'val') satt = TRON.sattFel + TRON.sattTom; // det passade inte sederna
     const rec = stn.roster?.[stn.roster.length - 1];
     if (rec?.f === 'ledare' && rec.t === s.now) rec.gick = best === valet; // omröstningen avgjorde bara om den valda blev ledare
@@ -417,8 +419,8 @@ function valj(s: State) {
   st.historia.push({ id: best.id, namn: best.name, titel, fran: s.now });
   count(s, 'ledare_vald');
   missnojeNoll(s);
-  if (forsta) { st.oppna.push('rang'); best.fame.push('Byns första ledare'); kronikaBer(s, 'k_forstaLedare', best.id, { ...personFalt(best), titel: titel.toLowerCase() }); }
-  else kronikaBer(s, 'k_ledare', best.id, { ...personFalt(best), titel: titel.toLowerCase() });
+  if (forsta) { st.oppna.push('rang'); best.fame.push('Byns första ledare'); kronikaBer(s, 'k_forstaLedare', best.id, { ...personFalt(best), titel: titel.toLowerCase(), satt: hur, vuxna: talOrd(vuxna.length) }); }
+  else kronikaBer(s, 'k_ledare', best.id, { ...personFalt(best), titel: titel.toLowerCase(), satt: hur, forra: st.historia[st.historia.length - 2]?.namn });
   const lt = forsta ? `Byn har fått sin första ledare: ${best.name}, ${titel.toLowerCase()}. Byn börjar fundera på om alla är lika mycket värda.` : `${best.name} är byns nya ledare, ${titel.toLowerCase()}.`;
   log(s, lt, 'world', [best.id]); notis(s, 'ledare', lt, [best.id], undefined, { ton: 'gott' });
 }
@@ -691,7 +693,7 @@ export const styrelseform = (s: State) => FORMER.find(f => f.passar(s))!;
 // striden om ledarskapet: vinnaren blir ledare vid nästa val (som den fraktionen valt, frakVald)
 EFTER.tronstrid = (s, e, vinnare) => {
   const v = byId(s, (vinnare === 1 ? e.b : e.a) as number), stn = styreAv(s);
-  if (v && alive(v) && vinnare !== -1) { stn.frakVald = v.id; stn.satt = 1; }
+  if (v && alive(v) && vinnare !== -1) { stn.frakVald = v.id; stn.frakStrid = true; stn.satt = 1; }
 };
 // holmgången: vann den anklagade är saken avgjord. Förlorade hen tas brottet upp igen på nästa ting, utan ny holmgång
 EFTER.holmgang = (s, e, vinnare) => {

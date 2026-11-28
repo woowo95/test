@@ -1,8 +1,8 @@
 import { husNytt } from './byggnad';
 import { omtankeOm } from './omtanke';
-import { bestamd, gen, hans, husIMening, iMening, stor, tal } from './ord';
+import { bestamd, gen, hans, husIMening, iMening, och, stor, tal } from './ord';
 import { upplev } from './uppvaxt';
-import { ALDER, ageOf, count, andraGor, forstaGang, livet, living, log } from './folk';
+import { ALDER, ageOf, byId, count, andraGor, forstaGang, livet, living, log } from './folk';
 import { kronikaBer, personFalt } from './berattelser';
 import { bitAt, vagBort, Bit, DORRAR, DorrDef, DorrSlag, Hus, MATERIAL, bitById, dorrDef, dorrRang, bitsOf, blocked, freeNear, gridOf, isWall, housesOf, husById, touch } from './byggnad';
 import { vaderSlit } from './vader';
@@ -238,7 +238,7 @@ export function husKlart(s: State, h: Hus, p: Person) {
     if (fnOf(h).sover) log(s, `${stor(hf.hus)} är ${hf.klart}. Nu kan ${tal(sovPersoner(n))} sova under tak.`, 'world', [p.id]); // golvrutorna räknas om till personer (steg 12.1.119)
     notis(s, 'hus', `${p.name} satte sista biten: ${hf.hus} är ${hf.klart}.`, [p.id], { x: Math.floor(p.x), y: Math.floor(p.y) });
     if (h.tro !== undefined && h.fn !== 'naringshus') kronikaBer(s, 'k_tro', h.id, { huset: true, hus: husFalt(h.namn).hus }); // trons hus (steg 12.1.135)
-    else { const hf = husFalt(h.namn); kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...hf, hus2: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hans(p)} `), hus3: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hf.klart === 'färdigt' ? 'sitt' : 'sin'} `) }); } husKlar(s, h); // hus3: när ägaren är subjektet ("gjorde klart sitt hus")
+    else { const hf = husFalt(h.namn), med = (h.byggare ?? []).filter(id => id !== p.id).map(id => byId(s, id)?.name).filter((x): x is string => !!x); kronikaBer(s, 'k_husKlar', h.id, { ...personFalt(p), ...hf, sova: fnOf(h).sover ? tal(sovPersoner(n)) : undefined, byggare: med.length ? och(med) : undefined, forsta: (s.hus ?? []).filter(q => q.klar !== undefined && q.fn !== 'naringshus').length === 1, hus2: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hans(p)} `), hus3: hf.hus.replace(new RegExp(`^${gen(p.name)} `), `${hf.klart === 'färdigt' ? 'sitt' : 'sin'} `) }); } husKlar(s, h); // hus3: när ägaren är subjektet ("gjorde klart sitt hus")
     if ((h.byggare?.length ?? 0) > 1) for (const q of living(s)) if (h.byggare!.includes(q.id)) upplev(s, q, 'byggdeHus', husFalt(h.namn).hus); // de byggde tillsammans (steg 4.5.4.9)
     h.byggare = undefined;
   }

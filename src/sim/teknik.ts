@@ -328,7 +328,7 @@ export function learn(s: State, p: Person, t: Tek, from?: Person) {
   count(s, 'tek_' + t.id);
   // nivå 4–5: det episka ögonblicket, en egen rad per teknik (steg 4.2.1.3); annars en berättelse ur mallen
   if (first && t.episk) kronika(s, fyll(t.episk, personFalt(p)), 'episk');
-  else if (first) kronikaBer(s, 'k_uppfann', p.id, { ...personFalt(p), teknik: t.namn.toLowerCase(), lara: goraUtan(t), hantverk: t.omr.includes('hantverk') });
+  else if (first) kronikaBer(s, 'k_uppfann', p.id, { ...personFalt(p), teknik: t.namn.toLowerCase(), lara: goraUtan(t), hantverk: t.omr.includes('hantverk'), ung: ageOf(p, s.now) < ALDER.vuxen, effekt: t.effekt, fler: p.fame.filter(x => x.startsWith('Uppfann ')).length }); // vem, vad det betydde och om hen kommit på saker förut (steg 15.1.115)
   log(s, `${p.name} kom på hur man kan ${goraUtan(t)}. ${t.effekt}`, 'skill', [p.id]);
   personHand(s, p, 'lart', `Kom på hur man kan ${goraUtan(t)}.`); // steg 9.2.107
   if (first) notis(s, 'teknik', `${p.name} kom på hur man kan ${goraUtan(t)}. ${t.effekt}`, [p.id]);

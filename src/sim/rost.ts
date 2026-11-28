@@ -1,4 +1,4 @@
-import { gen } from './ord';
+import { gen, han, honom } from './ord';
 // Omröstningarna och maktens delar (system 8.3). Allt byn avgör är en fråga i registret FRAGOR: vem som får lägga fram den, vilka som
 // röstar (kretsen) och vad ett ja gör. Frågan avgörs genom handuppräckning vid elden klockan 20 (rostKvall, från stepStyre). Alla vuxna
 // röstar efter egna åsikter och eget intresse, och summan av vikterna avgör (`vikter`, samma tal som i sederna). Här finns också
@@ -323,7 +323,7 @@ function avslojad(s: State, l: Person, f: Fraktion, ang: Person) {
   log(s, `${ang.name} berättade för ${l.name} att ${q.name} och några till vill byta ledare.`, 'rel', [l.id, ang.id, q.id]);
   tanke(ang, 'angav', s.now);
   const hard = 1 + (s.seder.v.rang ?? 0) + (s.seder.v.fejd ?? 0) * MISS.hardFejd;
-  if (hard >= MISS.hard) { utvisa(s, q, l, 'för att ha velat störta ledaren'); for (const id of f.med) { const m = byId(s, id); if (m && m !== q) m.missnoje = clamp((m.missnoje ?? 0) + MISS.utvisadMiss, 0, 1); } }
+  if (hard >= MISS.hard) { utvisa(s, q, l, `för att ${han(q)} velat störta ${honom(l)}`); for (const id of f.med) { const m = byId(s, id); if (m && m !== q) m.missnoje = clamp((m.missnoje ?? 0) + MISS.utvisadMiss, 0, 1); } }
   else { for (const id of f.med) { const m = byId(s, id); if (m) m.missnoje = (m.missnoje ?? 0) * MISS.gavEfter; } log(s, `${l.name} gav efter för missnöjet och lyssnade på ${q.name}.`, 'rel', [l.id, q.id]); }
 }
 // avsättning, kupp och uppror (steg 8.3.12)
@@ -356,11 +356,11 @@ EFTER.ledarstrid = (s, e, vinnare) => {
   if (!led || !l) return;
   if (vinnare === 0) {
     st.frakVald = alive(led) ? led.id : undefined; st.satt = 0.5;
-    if (alive(l)) { if (rnd(s, 'strid') < MISS.stortUt) utvisa(s, l, led, 'efter att ha störtats'); else slutarStyre(s, 'störtades'); }
+    if (alive(l)) { if (rnd(s, 'strid') < MISS.stortUt) utvisa(s, l, led, `sedan ${han(l)} störtats`); else slutarStyre(s, 'störtades'); }
     if (s.styre?.ledare !== undefined) slutarStyre(s, 'störtades');
     missnojeNoll(s);
   } else {
-    if (alive(led)) utvisa(s, led, l, 'för att ha försökt ta makten');
+    if (alive(led)) utvisa(s, led, l, `för att ${han(led)} försökt ta makten`);
     st.frak = undefined; st.lugn = s.now + MISS.lugnDygn * DAY;
   }
 };

@@ -26,3 +26,22 @@ SCENARIER.persontext = {
     ];
   },
 };
+
+SCENARIER.handelsetext = {
+  text: 'Steg 15.1.115: texterna om händelserna i byn. Elden nämns bara när den brinner, den som dog vid elden "kom" inte "aldrig tillbaka", modern som dör i barnsäng håller inte barnet hela natten, en ensam jägare är ingen "de" och resan har inget eget verb i dödsorsaken',
+  kor: () => {
+    const bas = { namn: 'Ylva', helt: 'Ylva', hen: 'hon', Hen: 'Hon', honom: 'henne', hans: 'hennes', orsak: 'av kyla', alder: 'tre', natt: true, eld: false };
+    const dog = giltiga('k_dog', { ...bas, nar: 'när hon lade ved på elden', orsakId: 'olycka' });
+    const fodd = giltiga('k_fodd', { namn: 'Ask', barnet: 'son', mor: 'Ylva', foraldrar: 'Ylva och Bo', morDor: true, kallt: true, eld: false });
+    const bjorn = giltiga('k_bjornjakt', { folk: 'Bo', de: 'han', De: 'Han', arstid: 'hösten', svara: '' });
+    const ratt = giltiga('r_ratt', { ledare: 'Bo', namn: 'Ylva', hen: 'hon', honom: 'henne', straff: 'tillrättavisade', brott: 'tog bär', eld: false });
+    return [
+      ['elden brann lågt står inte när elden är släckt', dog.every(t => !/Elden brann/.test(t))],
+      ['den som dog vid elden kom inte "aldrig tillbaka"', dog.every(t => !/aldrig tillbaka/.test(t))],
+      ['modern som dör håller inte barnet hela natten, och ingen samlas kring en släckt eld', fodd.every(t => !/famnen|kring elden/.test(t))],
+      ['en ensam björnjägare kallas inte de', bjorn.every(t => !/\b[Dd]e (fällde|orkade)/.test(t))],
+      ['tinget samlas inte vid en släckt eld', ratt.every(t => !/vid elden|till elden/.test(t))],
+      ['den försvunna dog "på en resa", utan "kom aldrig hem"', SIM.DODSORSAKER.forsvunnen.text === 'på en resa'],
+    ];
+  },
+};

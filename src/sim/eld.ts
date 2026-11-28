@@ -318,7 +318,7 @@ function lightFire(s: State, p: Person, f: Fire, brand?: string) {
   else log(s, `${p.name} lyckades tända ${eldOrd(s, f)}${onCoal ? ' på den gamla kolhögen' : ''}${f.tries > 1 ? ` efter ${tal(f.tries, true)} försök` : ''}.`, 'world', [p.id]);
   tanke(p, 'tandeElden', s.now, { v: ELD.tandGlad, tid: ELD.tandGladDygn * DAY });
   if (f !== s.fire) count(s, 'brasaTand'); // en lägereld till (brasor.ts)
-  if (f === s.fire && f.lightings === 1) { p.fame.push('Tände byns första eld'); allaBarn(s, 'uppfinning', 'tände sin första eld'); kronikaBer(s, 'k_forstaEld', p.id, personFalt(p)); }
+  if (f === s.fire && f.lightings === 1) { p.fame.push('Tände byns första eld'); allaBarn(s, 'uppfinning', 'tände sin första eld'); kronikaBer(s, 'k_forstaEld', p.id, { ...personFalt(p), forsok: tal(f.tries), forsokN: f.tries, ring: !!f.ring, antal: tal(living(s).length), antalN: living(s).length }); } // försöken, ringen och hur liten byn var (steg 15.1.115)
   f.tries = 0;
 }
 // Varje misslyckat försök sedan elden senast brann gör nästa lättare: man får kläm på det och tändmaterialet blir
