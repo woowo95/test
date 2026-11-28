@@ -2815,7 +2815,7 @@ export const BESK_DELAR: BeskDel[] = [
   } },
   { id: 'ledare', vikt: b => alive(b.p) && b.s.styre?.ledare === b.p.id ? 0.95 : 0, text: b => {
     const st = b.s.styre!, folkN = living(b.s).length, folk0N = st.folk0 ?? folkN, v = st.vintrar ?? 0;
-    Object.assign(b.f, { titel: (st.titel ?? 'ledare').toLowerCase(), folkN, folk: heltOrd(folkN), folk0N, folk0: heltOrd(folk0N), vintrarN: v, vintrar: v === 1 ? 'en istid' : `${heltOrd(v)} istider`, vintrarTal: talOrd(v), forra: st.historia[st.historia.length - 2]?.namn, svag: legitimitet(b.s).v < LED.svag }); // steg 15.1.114
+    Object.assign(b.f, { titel: (st.titel ?? 'ledare').toLowerCase(), folkN, folk: heltOrd(folkN), folk0N, folk0: heltOrd(folk0N), vintrarN: v, vintrar: v === 1 ? 'en istid' : `${heltOrd(v)} istider`, vintrarTal: talOrd(v), forra: st.historia?.[st.historia.length - 2]?.namn, svag: legitimitet(b.s).v < LED.svag }); // steg 15.1.114
     return mening(b, 'besk_ledare', 20);
   } },
   { id: 'namn', vikt: b => b.f.binamn ? 0.9 : b.f.yrke && b.f.rykte ? 0.85 : b.f.rykte ? 0.8 : b.f.yrke ? 0.5 : 0,
