@@ -38,12 +38,13 @@ const gruppAvKrok = (k: string) => prisKrok.grupp(k);
 import { BYREL, klanHandelse } from './byrel';
 import { handelse } from './rykten';
 import { radNr } from './radtal';
+import { gastPredika } from './religion';
 import { foddNar, gastNyckel } from './gastliv';
 import { affarMed, gastRel, gillar, glomIrritation, kravMax, kravRel, luradMed, nejTill } from './gastrel';
 import { handelsArg } from './handelsber';
 import { notis } from './notiser';
 import { barSmitta } from './sjukdom';
-import { gastAv, gastGar, gastTillbaka, hp, nyGast, nyttGastId } from './gast';
+import { gastAv, gastGar, gastIgen, gastTillbaka, hp, nyGast, nyttGastId } from './gast';
 import { valkomnaHandlare, valkomnas } from './kyrka';
 import { FORDON, lassAv } from './fordon';
 import { tamArt, type TamArtId } from './tamdjur';
@@ -623,6 +624,7 @@ export function pratMedHandlare(s: State, dtSec: number, events?: TalkEvent[]) {
   const h = s.handlare;
   if (!h || (h.fas !== 'vantar' && h.fas !== 'handlar')) return;
   const H = hp(s, h); // handlaren slås upp en gång
+  const hem = s.varld && radNr(s.varld, klanById(s, H.gast?.klan)?.rad), hemTro = hem?.tro && { ...hem.tro, fran: hem.namn };
   for (const p of s.people) {
     if (!paKartan(p) || ageOf(p, s.now) < ALDER.smabarn || Math.hypot(p.x - H.x, p.y - H.y) >= SAMTAL.radie) continue;
     if (!isSocial(p) || h.affar) continue; // den som handlar och handlaren pratar bara om affären (steg 4.5.7.5)
@@ -631,6 +633,7 @@ export function pratMedHandlare(s: State, dtSec: number, events?: TalkEvent[]) {
     tanke(p, out > 0 ? 'smaprat' : 'smapratTrogt', s.now, { namn: H.name, v: out > 0 ? HANDEL.pratTanke : -HANDEL.pratTanke, tid: HANDEL.pratTim * HOUR });
     events?.push({ a: p.id, b: h.id, kind: 'småprat', good: out > 0, t: s.now });
     if (out > 0) { prisIPrat(s, p, H, h.varor.map(w => w.k)); horOmGast(s, p, H, ORT.prat); } // när det går bra berättar handlaren vad något kostar hemma (steg 10.5.15) och var hen bor (steg 11.4.2)
+    if (out > 0 && hemTro && gastIgen(s, H)) gastPredika(s, H, p, hemTro, hemTro.fran, 'småprat'); // den som kommer igen kan sprida sin hembys tro (steg 15.1.160)
     count(s, 'handlarPrat');
   }
 }

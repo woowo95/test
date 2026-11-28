@@ -1,7 +1,7 @@
 // Scenarier för fas 15, grupp 16 (steg 15.1.151–15.1.160).
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, korTills, nyInvanare, testBy } from './hjalp';
+import { SCENARIER, korTills, naraGranne, nyInvanare, testBy } from './hjalp';
 import { foretagBy } from './fas14';
 
 // en vuxen i en ny by, utan något på sig (det som bärs läggs till i scenariot)
@@ -274,6 +274,29 @@ SCENARIER.sedfoljd = {
       [`följderna drar åt båda hållen (${rader.map(r => `${r.k}: ${r.f.join(' ')}`).join(', ')})`, bada],
       [`${skadade} som skadades i ett slagsmål minns det`, skadade > 0],
       [`byn rör sig mot Förlikning (målet för Fejd ${fore.toFixed(3)} → ${efter.toFixed(3)})`, efter < fore],
+    ];
+  },
+};
+
+SCENARIER.troutifran = {
+  text: 'Steg 15.1.160: tron kommer utifrån. En världslig by som får en troende inflyttare från en grannby med tro har en tro med fler än en troende inom 20 dygn (20 år i spelet), och tron är ny i byn',
+  lang: true,
+  kor: () => {
+    const s = SIM.cloneState(testBy(30, naraGranne)), vl = s.varld!;
+    s.tron = []; for (const p of s.people) { p.tro = undefined; p.troStyrka = undefined; }
+    const rt = { namn: 'Älvens tro', andel: 100, krig: 30 };
+    for (const r of vl.rader ?? []) if (r.nr !== vl.huvud && SIM.lever(vl, r)) { r.tro = { ...rt }; r.tal.folk = Math.max(r.tal.folk, 20); }
+    const forut = new Set(SIM.living(s).map(q => q.id));
+    let p: SIM.Person | undefined;
+    for (let i = 0; i < 6 && !p?.tro; i++) p = SIM.immigrate(s, false);
+    const tr = p?.tro !== undefined ? SIM.troOf(s, p.tro) : undefined, ny = !!tr && s.now - tr.bekr < SIM.DAY;
+    const t0 = s.now, troende = () => tr ? SIM.living(s).filter(q => q.tro === tr.id).length : 0, bybor = () => tr ? SIM.living(s).filter(q => q.tro === tr.id && forut.has(q.id)).length : 0; // byborna som börjat tro, utan de som flyttade in
+    korTills(s, () => bybor() >= 1, 20 * 24 * 3600);
+    const dygn = (s.now - t0) / SIM.DAY;
+    return [
+      [`byn var världslig, och inflyttaren ${p?.name} bär ${tr ? SIM.troNamn(tr) : 'ingen tro'}`, !!tr && SIM.troNamn(tr) === rt.namn],
+      ['tron är ny i byn: den sprids lite lättare i början', ny],
+      [`tron har ${troende()} troende efter ${dygn.toFixed(1)} dygn, varav ${bybor()} som bodde i byn förut`, troende() > 1 && bybor() >= 1 && dygn <= 20],
     ];
   },
 };

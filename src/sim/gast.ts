@@ -184,6 +184,8 @@ export function gastHem(s: State, p: Person) {
   count(s, 'gast hem');
 }
 // gästen kommer igen (handel.ts, rovare.ts): den nya gästen blir den sparade personen, med besökets id, plats och gästrad
+// gästen har varit här förut: hens kropp är sparad hos klanen (steg 15.1.160)
+export const gastIgen = (s: State, p: Person) => !!klanById(s, p.gast?.klan)?.personer.some(q => q.namn === p.name && q.sex === p.sex && q.kropp);
 export function gastTillbaka(s: State, p: Person) {
   const kp = klanById(s, p.gast?.klan)?.personer.find(q => q.namn === p.name && q.sex === p.sex);
   if (!kp?.kropp) return false;

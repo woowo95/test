@@ -23,7 +23,7 @@ import { inherit, packUp } from './arv';
 import { balans } from './balans';
 import { RELT } from './relationer';
 import { rykteDod, startSmak, handelse } from './rykten';
-import { tecken, GudOmr, gudHandelse } from './religion';
+import { tecken, GudOmr, gudHandelse, inflyttadTro } from './religion';
 import { TEK, TEKNIK, knows, kunskapDod } from './teknik';
 import { KLAN, klanById, klanerOf, narhet, type Klan } from './klaner';
 import { radKrok, type FlyttDelar } from './radtal';
@@ -416,6 +416,7 @@ export function immigrate(s: State, alone: boolean): Person | undefined {
     { const k = barSmitta(s); if (k) insjukna(s, p, k, 'utifrån'); } // främlingen kan bära en sjukdom (steg 9.5.5)
     s.people.push(p);
     upplev(s, p, 'flyttade'); // steg 4.1.1.2
+    if (ur) inflyttadTro(s, p, ur); // hembyns tro följer med (steg 15.1.160)
     for (const k in MEDHAVT) put(s, k, MEDHAVT[k], { [p.id]: MEDHAVT[k] }); // lite mat från vandringen, så att man hinner samla innan man svälter
     return p;
   };
