@@ -1907,7 +1907,7 @@ SCENARIER.budget = {
     planBuild(s); byggKlart(s);
     const h0 = housesOf(s).find(h => h.ag === undefined && h.tro === undefined)!;
     medLagar(s, [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: living(s)[0].id, om: '' }]);
-    const virkeByn = (n: number) => { setAmount(s, 'virke', 0); put(s, 'virke', n); };
+    const virkeByn = (n: number) => setAmount(s, 'virke', n); // där det räknas, också över taket (steg 15.1.45)
     const del = (id: string) => Math.floor(SIM.ownsId(s, SIM.budgetId(id), 'virke') + 1e-9);
     // utan delar är allt som förut
     s.budget = { delar: [] }; virkeByn(12);
@@ -1957,7 +1957,7 @@ SCENARIER.budget = {
     };
     virkeByn(1);
     const ar1 = ettAr();
-    put(s, 'virke', 1);
+    setAmount(s, 'virke', amountOf(s, 'virke') + 1);
     const ar2 = ettAr();
     return [
       ['utan delar äger ingen del något, och allt kan tas som förut', utan],
