@@ -683,6 +683,13 @@ function taktDt(s: State, t: Takt, i: number, now: number, dtSec: number) {
   tk[t.namn] = now;
   return (now - sist) / SEC;
 }
+// raderna i TAKTER med de här namnen, räknade som slaget räknar dem (taktDt), utan resten av slaget: för mätverktygen som bara
+// kör en del av byn (npm run radhandel kör handlarnas rader, steg 15.1.83). Spelet anropar den aldrig
+export function taktRader(s: State, namn: readonly string[], dtSec: number) {
+  s.now += dtSec * SEC;
+  const c: Slag = { dt: dtSec, t0: s.now - dtSec * SEC, now: s.now, ai: ageIndex(s), ppl: [], social: [] };
+  TAKTER.forEach((t, i) => { if (!namn.includes(t.namn)) return; const dt = taktDt(s, t, i, s.now, dtSec); if (dt !== undefined) t.fn(s, dt, c); });
+}
 function slag(s: State, dtSec: number, events?: TalkEvent[]) {
   useMap(s);
   const t0 = s.now;
