@@ -1005,8 +1005,9 @@ export function betalaAv(varor: ReturnType<typeof betalVaror>, G: Part, mal: num
 // ett byte som båda gått med på genomförs: M får fatt av G och betalar betal. Sakerna flyttas, båda är nöjda och övar Handel,
 // och bytet står i loggen (byteKlart). lurare = den som lurade den andra (lura). Samma för vardagens byten (bytaMed) och
 // förhandlingen med handlaren (steg 4.5.7.4, handel.ts)
-export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[], typ: string, desperat = false, delad = false, lurare?: Part) {
-  for (const w of fatt) flytta(s, w, G, M);
+// flyttad: det M fick har redan bytt ägare (varan från varubordet som kunden bär hem, steg 15.1.99)
+export function genomfor(s: State, M: Part, G: Part, fatt: Vara[], betal: Vara[], typ: string, desperat = false, delad = false, lurare?: Part, flyttad = false) {
+  if (!flyttad) for (const w of fatt) flytta(s, w, G, M);
   for (const w of betal) flytta(s, w, M, G);
   if (M.p && G.p) { const r = getRel(s, M.p, G.p); r.op = clamp(r.op + HANDLA.byteRel, -100, 100); }
   if (M.p) tanke(M.p, 'bytte', s.now, { varor: varorText(fatt), namn: G.namn, v: HANDLA.byteTanke, tid: HANDLA.byteTim * HOUR });

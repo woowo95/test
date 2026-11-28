@@ -240,8 +240,8 @@ export function kopVid(s: State, f: Foretag, p: Person, r: KoRad, at: Person): b
   if (!b) return fel();
   const betala = () => { if (p.gast) gastKund.betalar(s, f, p, b.betal); else for (const w of b.betal) flytta(s, w, M, G); };
   if (h) {
-    betala();
-    if (p.gast) gastKund.far(s, f, p, h, n); else taVaran(s, f, p, h, n);
+    if (p.gast) { betala(); gastKund.far(s, f, p, h, n); }
+    else { const v = taVaran(s, f, p, h, n); if (v < 1) return fel(); genomfor(s, M, G, [{ k: r.k, n: v, ...h.t ? { t: h.t } : {} }], b.betal, r.v, false, false, undefined, true); } // ett byte som andra (steg 15.1.99): säljaren övar handel och relationen växer
   } else if (V.egen) {
     betala();
     V.egen.ge(s, f, p, r.k);

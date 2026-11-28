@@ -83,3 +83,38 @@ SCENARIER.prispervara = {
     ];
   },
 };
+
+SCENARIER.hyllval = {
+  text: 'Steg 15.1.99: hyllan väljs efter poäng. En vara på ett fullt varubord som ingen vill ha bärs tillbaka till förrådet och byts mot maten byborna saknar, och den som säljer vid hyllan övar handel som i andra byten',
+  kor: () => {
+    const { s, p, f, vux, fin } = foretagBy(['affar']);
+    for (const q of s.people) q.task = undefined;
+    for (const m of SIM.FOOD) if (m !== fin) SIM.setAmount(s, m, 0); // bara ägaren har mat, och de andra är hungriga
+    const v1 = SIM.stationSite(s, 'varubord')!;
+    s.stationer!.push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'varubord', x: v1.x, y: v1.y, rot: v1.rot, kvar: 0, inne: 1 } as unknown as SIM.Station); SIM.touch(s);
+    const X = 'sten', rutor = v1.rot ? [{ x: v1.x, y: v1.y }, { x: v1.x, y: v1.y + 1 }] : [{ x: v1.x, y: v1.y }, { x: v1.x + 1, y: v1.y }];
+    for (const r of rutor) s.stackar!.push({ k: X, n: 3, c: 1, x: r.x, y: r.y, ag: { [p.id]: 3 } }); // varubordet är fullt av sten
+    SIM.touch(s);
+    for (const q of vux) { SIM.laggIn(s, 'silver', 60, q.id); q.hunger = 0.3; q.bruk = undefined; }
+    const val = SIM.attStalla(s, f), fullt = SIM.hyllan(s, f).filter(h => h.k === X).length;
+    let tillbaka = false;
+    for (let i = 0; i < 3 * 360 && !(SIM.hyllan(s, f).some(h => h.k === fin) && !SIM.hyllan(s, f).some(h => h.k === X)); i++) { SIM.step(s, 10); if (p.task?.act === 'stallaFram' && p.task.tillbaka) tillbaka = true; }
+    const kvar = SIM.hyllan(s, f).filter(h => h.k === X).length, mat = SIM.hyllan(s, f).find(h => h.k === fin);
+    // köpet vid hyllan är ett byte: säljaren övar handel och relationen växer
+    const k = vux.find(q => SIM.kundVal(s, q, 'affar')), e = k && SIM.kundVal(s, k, 'affar');
+    let hFore = 0, hEfter = 0, rFore = 0, rEfter = 0, kopt = false;
+    if (k && e) {
+      hFore = p.skill.handel; rFore = SIM.getRel(s, k, p).op;
+      kopt = SIM.kopVid(s, f, k, { p: k.id, v: 'affar', k: e.k, n: e.n, t: s.now }, p);
+      hEfter = p.skill.handel; rEfter = SIM.getRel(s, k, p).op;
+    }
+    return [
+      [`varubordet är fullt av sten (${fullt} rutor), och det som ger minst ska bäras tillbaka (${val?.tillbaka ? val.k : 'inget'})`, fullt === 2 && !!val?.tillbaka && val.k === X],
+      [`ägaren bar tillbaka stenen (${kvar} rutor kvar)`, tillbaka && kvar < 2],
+      [`maten byborna saknar kom upp i stället (${mat ? `${mat.n} ${mat.k}` : 'ingen'})`, !!mat],
+      [`en kund köpte vid hyllan (${e ? `${e.n} ${e.k}` : 'ingen kund'})`, kopt],
+      [`säljaren övade handel (${hFore.toFixed(3)} → ${hEfter.toFixed(3)})`, hEfter > hFore],
+      [`relationen växte (${rFore.toFixed(1)} → ${rEfter.toFixed(1)})`, rEfter > rFore],
+    ];
+  },
+};

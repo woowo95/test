@@ -7,9 +7,9 @@ import { balans } from './balans';
 import { count, familjOf, living } from './folk';
 import { brukAv, MAT, ownFor, saknarNu } from './behov';
 import { VED } from './eld';
-import { foretagare, foretagOf, foretagRum, type Foretag } from './foretag';
+import { FORETAG, foretagare, foretagOf, foretagRum, type Foretag } from './foretag';
 import { arAgd, taUrStack, lying, rymdPa, stacksOf, changed, tidy, dropSpot, besokLager, stallPaRutan, iHelaForradet } from './lager';
-import { betjanar, diskarAv, saljPart } from './kassa';
+import { betjanar, diskarAv, prisAv, saljPart } from './kassa';
 import { foretagBord, isKlar, type Station, stationDef, stationerOf, stationRum } from './stationer';
 import { grundvarde } from './varde';
 import { isTool, viktOf } from './saker';
@@ -33,7 +33,7 @@ foretagBord.varuRum = s => { const f = affarer(s).find(q => vill(s, q)); return 
 foretagBord.varuEgen = (s, fam) => affarer(s).some(f => vill(s, f) && fam.some(q => q === foretagare(s, f.ag))) ? 1 : 0; // ägarens familj saknar varubordet i sin affär
 foretagBord.varuBrist = s => { const a = affarer(s); return a.length ? a.filter(f => vill(s, f)).length / a.length : 0; };
 // ---------- det som är till salu ----------
-export interface HyllVara { k: string; n: number; x: number; y: number; t?: Ting }
+export interface HyllVara { k: string; n: number; x: number; y: number; t?: Ting; tillbaka?: true /* bärs från varubordet till förrådet (steg 15.1.99) */ }
 export function hyllan(s: State, f: Foretag): HyllVara[] {
   const ut: HyllVara[] = [], r = new Set(rutor(s, f).map(q => q.y * W + q.x));
   if (!r.size) return ut;
@@ -61,21 +61,34 @@ export function efterfragat(s: State, ag: number): Map<string, number> {
 }
 const BEHOVEN: string[] = [MAT.id, VED.id]; // deras nyckel är behovets
 const lust = (m: Map<string, number>, k: string) => (m.get(k) ?? (MAT.slag.includes(k) ? m.get(MAT.id) : VED.slag.includes(k) ? m.get(VED.id) : undefined) ?? 0) * grundvarde(k);
-// det ägaren har över som flest saknar och som inte redan ligger framme
-export function attStalla(s: State, f: Foretag, utanRuta = false): HyllVara | undefined {
-  if (!utanRuta && !ledigRuta(s, f)) return undefined;
+// hur mycket n av varan k väntas ge på varubordet (steg 15.1.99): kunderna per dygn, det som sålts av den och de som saknar
+// den, upp till n, gånger det ägaren får över det varan är värd för hen
+export function hyllVarde(s: State, f: Foretag, G: Part, m: Map<string, number>, k: string, n: number, framme = 0) {
+  const gv = grundvarde(k), kunder = Math.max(0, (f.saltVara?.[k] ?? 0) * FORETAG.minne + (gv > 0 ? lust(m, k) / gv : 0) - framme);
+  return Math.min(n, kunder) * Math.max(0, prisAv(s, f, 'affar', k, G) - gv * G.varde(k));
+}
+// varje plats på varubordet till den vara som väntas ge mest (steg 15.1.99): det ägaren har över, och det som redan ligger
+// framme räknas av från de kunder varan väntar. Är varubordet fullt och ger det som ligger där mindre än det bästa som väntar,
+// bärs det tillbaka till förrådet (tillbaka). v = det varan väntas ge
+export function attStalla(s: State, f: Foretag, utanRuta = false): (HyllVara & { v: number }) | undefined {
   const G: Part | undefined = saljPart(s, f);
   if (!G) return undefined;
-  const m = efterfragat(s, f.ag), fram = new Set(hyllan(s, f).map(h => h.k)), r = new Set(rutor(s, f).map(q => q.y * W + q.x));
-  let bast: HyllVara | undefined, bl = 0;
+  const m = efterfragat(s, f.ag), fram = hyllan(s, f), r = new Set(rutor(s, f).map(q => q.y * W + q.x)), framN = (k: string) => fram.reduce((n, h) => n + (h.k === k ? h.n : 0), 0);
+  let bast: (HyllVara & { v: number }) | undefined;
   for (const w of G.over([])) {
-    if (w.k === 'silver' || w.n < 1 || fram.has(w.k) || lust(m, w.k) <= bl) continue;
-    if (w.t) { const t = lying(s).find(q => q.k === w.k && q.agare === f.ag && !r.has(q.y! * W + q.x!)); if (!t) continue; bast = { k: w.k, n: 1, x: t.x!, y: t.y!, t }; bl = lust(m, w.k); continue; }
+    if (w.k === 'silver' || w.n < 1) continue;
+    if (w.t) { const v = hyllVarde(s, f, G, m, w.k, 1, framN(w.k)); if (v <= (bast?.v ?? 0)) continue; const t = lying(s).find(q => q.k === w.k && q.agare === f.ag && !r.has(q.y! * W + q.x!)); if (t) bast = { k: w.k, n: 1, x: t.x!, y: t.y!, t, v }; continue; }
     if (isTool(w.k)) continue;
     const a = stacksOf(s).find(q => q.k === w.k && !r.has(q.y * W + q.x) && arAgd(q, f.ag) >= 1);
-    if (a) { bast = { k: w.k, n: Math.min(Math.floor(w.n), Math.floor(arAgd(a, f.ag) + 1e-9)), x: a.x, y: a.y }; bl = lust(m, w.k); }
+    if (!a) continue;
+    const n = Math.min(Math.floor(w.n), Math.floor(arAgd(a, f.ag) + 1e-9)), v = hyllVarde(s, f, G, m, w.k, n, framN(w.k));
+    if (v > (bast?.v ?? 0)) bast = { k: w.k, n, x: a.x, y: a.y, v };
   }
-  return bast;
+  if (!bast || utanRuta || ledigRuta(s, f)) return bast;
+  // fullt: det som ger minst bärs tillbaka, när det ger mindre än det bästa som väntar
+  let samst: (HyllVara & { v: number }) | undefined;
+  for (const h of fram) { const v = hyllVarde(s, f, G, m, h.k, h.n, framN(h.k) - h.n); if (!samst || v < samst.v) samst = { ...h, v }; }
+  return samst && samst.v < bast.v ? { ...samst, tillbaka: true, v: bast.v - samst.v } : undefined;
 }
 export function stallaVal(s: State, p: Person): { f: Foretag; h: HyllVara; sc: number } | undefined {
   let bast: { f: Foretag; h: HyllVara; sc: number } | undefined;
@@ -84,13 +97,15 @@ export function stallaVal(s: State, p: Person): { f: Foretag; h: HyllVara; sc: n
     const g = betjanar(s, p, f);
     if (g <= 0 || living(s).some(q => q !== p && q.task?.act === 'stallaFram' && q.task.ref === f.id)) continue;
     const h = attStalla(s, f);
-    if (h) { const sc = g * AFFAR.vikt * lust(efterfragat(s, f.ag), h.k); if (sc > (bast?.sc ?? 0)) bast = { f, h, sc }; }
+    if (h) { const sc = g * AFFAR.vikt * h.v; if (sc > (bast?.sc ?? 0)) bast = { f, h, sc }; }
   }
   return bast;
 }
 // framme vid saken (KLAR): ägarens del av högen, så mycket som går att bära och ryms på varubordet, eller tinget
 export function stallaKlar(s: State, p: Person, t: Task) {
-  const f = foretagOf(s).find(q => q.id === t.ref), till = f && ledigRutaFor(s, f, p), x = Math.floor(t.tx), y = Math.floor(t.ty);
+  const f = foretagOf(s).find(q => q.id === t.ref), x = Math.floor(t.tx), y = Math.floor(t.ty);
+  if (f && rutor(s, f).some(q => q.x === x && q.y === y)) return tillbakaKlar(s, p, t, f, x, y); // från varubordet till förrådet (steg 15.1.99)
+  const till = f && ledigRutaFor(s, f, p);
   if (!f || !till) return;
   const g = lying(s).find(q => q.x === x && q.y === y && q.k === t.tool && q.agare === f.ag);
   if (g) { g.x = g.y = undefined; g.lass = p.id; (t.ting ??= []).push(g.id); changed(s); return; }
@@ -102,12 +117,25 @@ export function stallaKlar(s: State, p: Person, t: Task) {
   while (n < max && r({ [a.k]: (n + 1) * viktOf(a.k) })) n++;
   if (n > 0) { taUrStack(s, a, n, f.ag, t); tidy(s); }
 }
+// varan på varubordet tas upp och bärs till förrådet som ägarens (backSpot i lager.ts)
+function tillbakaKlar(s: State, p: Person, t: Task, f: Foretag, x: number, y: number) {
+  t.tillbaka = true;
+  const g = lying(s).find(q => q.x === x && q.y === y && q.k === t.tool && q.agare === f.ag);
+  if (g) { g.x = g.y = undefined; g.lass = p.id; (t.ting ??= []).push(g.id); changed(s); return; }
+  const a = stacksOf(s).find(q => q.x === x && q.y === y && q.k === t.tool);
+  if (!a) return;
+  const max = Math.floor(arAgd(a, f.ag) + 1e-9), r = ryms(s, p);
+  let n = 0;
+  while (n < max && r({ [a.k]: (n + 1) * viktOf(a.k) })) n++;
+  if (n > 0) { taUrStack(s, a, n, f.ag, t); tidy(s); count(s, 'burenTillbaka'); }
+}
 const ledigRutaFor = (s: State, f: Foretag, p: Person) => { const t = p.task; p.task = undefined; try { return ledigRuta(s, f); } finally { p.task = t; } };
 // dit det ska (backSpot i lager.ts); är det fullt bärs det till förrådet
-besokLager.till.stallaFram = (s, t) => { const f = foretagOf(s).find(q => q.id === t.ref), r = f && ledigRuta(s, f); return r && { x: r.x + 0.5, y: r.y + 0.5 }; };
+besokLager.till.stallaFram = (s, t) => { if (t.tillbaka) return undefined; const f = foretagOf(s).find(q => q.id === t.ref), r = f && ledigRuta(s, f); return r && { x: r.x + 0.5, y: r.y + 0.5 }; };
 // framme vid varubordet (LAMNA i steg.ts)
 export function stallaFramme(s: State, t: Task) {
   const f = foretagOf(s).find(q => q.id === t.ref), at = { x: Math.floor(t.tx), y: Math.floor(t.ty) };
+  if (t.tillbaka) return false; // till förrådet
   if (f && rutor(s, f).some(q => q.x === at.x && q.y === at.y) && stallPaRutan(s, t, at.x, at.y)) { count(s, 'stalltFram'); return true; }
   return false;
 }
