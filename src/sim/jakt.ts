@@ -37,8 +37,6 @@ import { kn, learnK, useK } from './kunskap';
 // Kaninen slår aldrig tillbaka, men den som griper en levande kanin kan bli biten. Hela försöket räknas när det börjar
 // med stridens regler och en egen slumpföljd (fröet ur jägarens följd), så att det blir likadant i båda lägena. Gruppen
 // skräms av varje försök och är svårare att smyga på en stund. Stenen träffar sämre och tappas oftast bort
-// det fällda djuret av varje art, vars grundvärde bytet väljs efter (steg 10.2.37)
-const BYTE: Record<string, string> = { kanin: 'vilt', fagel: 'fagel' }; // flockarterna: saken på artens rad (FLOCKARTER)
 export const JAKT = balans('jakt', {
   smygSek: 120, // ett försök: så många sekunder att leta upp en kanin och smyga sig fram
   letaR: 30, // finns ingen kanin nära jaktplatsen går jägaren till den närmaste gruppen inom så här många rutor ...
@@ -159,7 +157,8 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   const prova = (d: NonNullable<typeof m>, r: number) => {
     const dd = Math.hypot(d.x - tk.tx, d.y - tk.ty);
     if (dd >= r || heligtAvstar(s, p, d.art, svalt)) return; // det heliga djuret jagas inte, utom i svält (steg 10.3.15)
-    const v = grundvarde(BYTE[d.art] ?? FLOCKARTER[d.art]?.sak ?? 'vilt') / (1 + dd / JAKT.bytesNara);
+    // det fällda djurets värde, ur artens rad i DJUR: en hare är DJUR.kanin.mat fällt vilt (steg 15.1.131)
+    const rad = (DJUR as Record<string, { sak: string }>)[d.art], v = grundvarde(rad?.sak ?? 'vilt') * (d.art === 'kanin' ? DJUR.kanin.mat : 1) / (1 + dd / JAKT.bytesNara);
     if (v > bv) { bv = v; m = d; }
   };
   for (const d of dj) prova(d, md);

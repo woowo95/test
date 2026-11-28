@@ -17,6 +17,7 @@ import { kvVarde } from './kvalitet';
 import { Bit, Hus, MATERIAL, bitsOf, housesOf } from './byggnad';
 import { State } from './typer';
 import { balans } from './balans';
+import { DJUR } from './redskap';
 
 export const ARBETE = 1; // värdet av en arbetstimme
 // Balanstalen (regel 8). Läses bara inne i funktionerna: varde.ts ingår i en ring av importer
@@ -89,6 +90,11 @@ export function grundvarde(k: string): number {
     const ra = SAK_LIST.filter(j => SAKER[j]!.mapp === mapp && nivaOf(j) === 0 && !SAKER[j]!.skaffa?.av && SAKER[j]!.varde === undefined).map(rakna); // det köpta med fast värde (saltet) höjer inte golvet
     if (ra.length) v = Math.max(v, Math.max(...ra) * (1 + VARDE.nivaPaslag * n));
   }
+  // ett fällt djur är värt minst det slakten ger, per fällt djur (steg 15.1.131): jakttiden ensam gjorde haren, rådjuret och
+  // vildsvinet lika mycket värda. Köttet och det andra slakten ger har egna recept, och golvet ovan räknas på jakttiden
+  // (rakna), så räkningen går inte runt
+  const f = SAKER[k]?.skaffa, dj = f?.act === 'jakt' ? Object.values(DJUR).find(d => d.sak === k && d.slakt) : undefined;
+  if (dj) v = Math.max(v, varuVarde(dj.slakt) / dj.mat);
   varden.set(k, v);
   return v;
 }

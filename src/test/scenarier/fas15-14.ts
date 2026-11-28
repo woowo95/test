@@ -1,7 +1,7 @@
 // Scenarier för fas 15, grupp 14 (steg 15.1.129–15.1.140).
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, klockan } from './hjalp';
+import { SCENARIER, jaktFran, klockan } from './hjalp';
 
 // en jägare fångar haren d (som jaktKlar gör när försöket slutar med en fångst)
 function fanga(s: SIM.State, p: SIM.Person, d: { id: number; x: number; y: number }) {
@@ -34,6 +34,41 @@ SCENARIER.harutjakt = {
       [`den jagade gruppen har färre harar (${n}) än den orörda (${nOrord})`, n < nOrord],
       [`en dödad hare räknas en gång: ${synsNu} syns, och lagret säger ${n}`, synsNu === Math.min(n, g0.n0 - fangade) && synsNu <= g0.n - Math.min(fangade, g0.n) + 1],
       [`gruppen har fler igen efter återväxten (${n} → ${nAter})`, nAter > n],
+    ];
+  },
+};
+
+SCENARIER.jaktval = {
+  text: 'Steg 15.1.131: ett fällt djur är värt det slakten ger. En jägare med spjut, ett rådjur på 10 rutor och en hare på 4 väljer rådjuret',
+  kor: () => {
+    const s = SIM.createState(6, START); klockan(s, 10);
+    const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!, tiles = SIM.getMap(s.seed).tiles;
+    // en plats med en hare på 4 rutor och ett rådjur på 10 (där cirklarna kring dem möts)
+    let plats: { x: number; y: number; h: number; r: number } | undefined;
+    for (let t = 0; t < 400 && !plats; t++) {
+      s.now += SIM.HOUR / 2;
+      const hararna = SIM.djurOf(s, s.now, []), rad = SIM.flockOf(s, SIM.FLOCKARTER.radjur, s.now, []);
+      for (const h of hararna) for (const r of rad) {
+        const d = Math.hypot(r.x - h.x, r.y - h.y);
+        if (d < 7 || d > 13) continue;
+        const a = (16 - 100 + d * d) / (2 * d), b = Math.sqrt(16 - a * a), ux = (r.x - h.x) / d, uy = (r.y - h.y) / d;
+        for (const sg of [1, -1]) {
+          const x = h.x + ux * a - uy * b * sg, y = h.y + uy * a + ux * b * sg;
+          if (!plats && SIM.inMap(Math.floor(x), Math.floor(y)) && tiles[Math.floor(y) * SIM.W + Math.floor(x)] !== SIM.T.Vatten && !SIM.blocked(s, x, y)) plats = { x, y, h: h.id, r: r.id };
+        }
+      }
+    }
+    if (!plats) return [['en plats med en hare på 4 rutor och ett rådjur på 10', false]];
+    p.x = plats.x; p.y = plats.y;
+    const tk = jaktFran(s, p, 'flintspjut', plats);
+    SIM.jaktForsok(s, p, tk);
+    const val = tk.jf?.id, valt = SIM.flockArtAv(val ?? -1)?.art ?? (val === undefined ? 'inget' : 'hare eller fågel'), alla = [...SIM.djurOf(s, s.now), ...SIM.flockOf(s, SIM.FLOCKARTER.radjur, s.now)];
+    const avs = (id: number) => { const d = alla.find(q => q.id === id); return d ? Math.hypot(d.x - p.x, d.y - p.y).toFixed(1) : '?'; };
+    return [
+      [`haren på ${avs(plats.h)} rutor och rådjuret på ${avs(plats.r)}`, true],
+      [`jägaren väljer ett rådjur (valde ${valt}${val !== undefined ? ' på ' + avs(val) + ' rutor' : ''})`, valt === 'radjur'],
+      [`det fällda djuret är värt det slakten ger: vilt ${SIM.grundvarde('vilt').toFixed(1)}, rådjur ${SIM.grundvarde('radjur').toFixed(1)}, vildsvin ${SIM.grundvarde('vildsvin').toFixed(1)}, fågel ${SIM.grundvarde('fagel').toFixed(1)}`,
+        SIM.grundvarde('radjur') > SIM.grundvarde('vilt') * 3 && SIM.grundvarde('vildsvin') > SIM.grundvarde('radjur')],
     ];
   },
 };
