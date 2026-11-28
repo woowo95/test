@@ -1,6 +1,7 @@
 // Scenarier för fas 15, grupp 18 (steg 15.1.164–175).
 import * as SIM from '../../sim';
-import { SCENARIER, testBy } from './hjalp';
+import { SCENARIER, rikBy, tandEld, testBy } from './hjalp';
+import { BEAT, START } from '../kor';
 import { harOver } from '../../sim/marknad';
 import { foretagBy } from './fas14';
 
@@ -59,6 +60,49 @@ SCENARIER.marknadover = {
       [`den som saknar mat saknar den (${ja.saknar}, ${nej.saknar})`, ja.saknar && nej.saknar],
       [`med ${ja.n} torrkött har grannen mat över på marknaden, och bytet blir av (${ja.har}, ${ja.fick})`, ja.har && ja.fick],
       [`med ${nej.n} torrkött har grannen inget över, och inget byte blir av (${nej.har}, ${nej.fick})`, !nej.har && !nej.fick],
+    ];
+  },
+};
+
+SCENARIER.egetdjur = {
+  text: 'Steg 15.1.164: djuren ägs som sakerna. En bybo som behöver ull och har silver saknar ett får (BRUK_DJUR) och köper det av handlaren, fåret blir hens och ullen hens; den som inte behöver ull köper inget, och hens eget får äter hens hö först',
+  kor: () => {
+    const s = SIM.createState(6, START);
+    rikBy(s); tandEld(s); SIM.setAmount(s, 'ved', 40); SIM.setAmount(s, 'grenar', 30); SIM.setAmount(s, 'torrgras', 30);
+    SIM.handlarFram(s, (SIM.handlarKlan(s) ?? SIM.handlarKlan(s, true))!.klan.rad!);
+    for (let i = 0; i < 40 && s.handlare?.fas !== 'handlar'; i++) { SIM.step(s, BEAT); if (s.handlare?.fas === 'vantar') s.handlare.kvall = s.now + (BEAT - 2) * SIM.SEC; }
+    const h = s.handlare!; h.utr = 'vagn'; h.bynKlar = true; delete h.affar;
+    for (const p of SIM.living(s)) if (p.task?.act === 'handla') p.task = undefined;
+    const vuxna = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen), [a, b] = vuxna;
+    h.varor = [{ k: 'levfar', n: 1 }]; h.silver = 20;
+    const hk = SIM.klanById(s, SIM.hp(s, h).gast!.klan); if (hk) SIM.sattKlanPris(s, hk, { levfar: 1 }); // (klanens pris som grundvärdet)
+    SIM.setAmount(s, 'ull', 0); for (const p of [a, b]) SIM.put(s, 'silver', 60, { [p.id]: 60 });
+    // a väver ylle (ett recept som behöver ull), b gör inget med ull
+    const recept0 = SIM.brukKrok.recept; SIM.brukKrok.recept = (s2, q) => q === a ? [{ ull: 2 }, ...recept0(s2, q)] : recept0(s2, q);
+    a.bruk = b.bruk = undefined;
+    const saknarA = SIM.saknarNu(s, a).includes('levfar'), saknarB = SIM.saknarNu(s, b).includes('levfar'), vA = SIM.behovAv(s, a, 'levfar'), vB = SIM.behovAv(s, b, 'levfar');
+    const aff = () => s.handlare?.affar, valB = SIM.handlaVal(s, b), koarB = !!valB && !aff();
+    let steg = 0;
+    for (let i = 0; i < 60 && (i === 0 || aff()?.vem === a.id); i++) {
+      const v = SIM.handlaVal(s, a); if (!v) break;
+      a.x = v.spot.x; a.y = v.spot.y; a.task = { act: 'handla', phase: 'do', tx: v.spot.x, ty: v.spot.y, until: s.now + v.dur, carry: 0, ref: v.ref, dark: false, why: v.why } as SIM.Task;
+      SIM.handlaKlar(s, a, a.task); steg++;
+    }
+    a.task = undefined; SIM.brukKrok.recept = recept0;
+    const kopt = SIM.ownsAmount(s, a, 'levfar'); SIM.stepBoskap(s);
+    const far = SIM.tamdjurOf(s).find(d => d.art === 'far' && d.agare === a.id);
+    a.bruk = undefined; const sedan = SIM.behovAv(s, a, 'levfar');
+    // ullen är ägarens, också när b klipper
+    let ull = false; if (far) { far.ull = 1; far.born = s.now - 2 * SIM.DAY; const u0 = SIM.ownsAmount(s, a, 'ull'); SIM.klippKlar(s, b, far.id); ull = SIM.ownsAmount(s, a, 'ull') === u0 + SIM.tamArt('far').ull!; }
+    // fåret äter ägarens hö före byns
+    let ho = false; if (far) { SIM.put(s, 'torrgras', 3, { [a.id]: 3 }); far.hunger = 1; const e0 = SIM.ownsAmount(s, a, 'torrgras'), b0 = SIM.amountOf(s, 'torrgras') - SIM.living(s).reduce((x, q) => x + SIM.ownsAmount(s, q, 'torrgras'), 0); SIM.mataKlar(s, a, far.id); ho = SIM.ownsAmount(s, a, 'torrgras') === e0 - 1 && SIM.amountOf(s, 'torrgras') - SIM.living(s).reduce((x, q) => x + SIM.ownsAmount(s, q, 'torrgras'), 0) === b0; }
+    return [
+      [`den som behöver ull saknar ett får (${saknarA}, värt ${vA}), den andra inte (${saknarB}, ${vB})`, saknarA && !saknarB && vA === SIM.DELA.saknar && vB < 1],
+      [`den som inte behöver ull står inte i kö för fåret (${valB?.why ?? 'inget'})`, !valB || !koarB],
+      [`a köper fåret av handlaren (${kopt} efter ${steg} steg) och det blir hens (${far?.id})`, kopt === 1 && !!far],
+      [`med ett eget får saknar hen inget (${sedan})`, sedan < SIM.DELA.saknar],
+      ['ullen blir ägarens, också när någon annan klipper', ull],
+      ['det egna fåret äter ägarens hö, inte byns', ho],
     ];
   },
 };

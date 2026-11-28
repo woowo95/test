@@ -605,8 +605,10 @@ export const BRUK_REDSKAP: BrukRad = {
 // plaggen efter det man bär: p saknar ett plagg som passar hen och som hen skulle ta på sig (plaggPoang) när hen inte äger
 // något på samma platser; g har över ett plagg hen inte har på sig, när hen äger ett annat på samma platser eller det inte passar hen
 // plaggen och projekten läses efter den här filen: krokarna sätts i val.ts
-// de levande djuren (boskap.ts, steg 15.1.143): varan, hur många byn har av den (djuren inräknade) och hur många den vill ha
-export const levKrok: { ar: (k: string) => boolean; antal: (s: State, k: string) => number; mal: (s: State, k: string) => { behover: number; buf: number } } = { ar: () => false, antal: () => 0, mal: () => ({ behover: 0, buf: 0 }) };
+// de levande djuren (boskap.ts, steg 15.1.143): varan, hur många byn har av den (djuren inräknade) och hur många den vill ha;
+// alla levande varor, hur många djur av varans art p äger (och varan hen äger) och det djuret ger (steg 15.1.164)
+export const levKrok: { ar: (k: string) => boolean; antal: (s: State, k: string) => number; mal: (s: State, k: string) => { behover: number; buf: number }; alla: () => readonly string[]; eget: (s: State, p: Person, k: string) => number; ger: (k: string) => readonly string[] } =
+  { ar: () => false, antal: () => 0, mal: () => ({ behover: 0, buf: 0 }), alla: () => [], eget: () => 0, ger: () => [] };
 const arLevande = (k: string) => levKrok.ar(k), levAntal = (s: State, k: string) => levKrok.antal(s, k), levMal = (s: State, k: string) => levKrok.mal(s, k);
 export const brukKrok = {
   kladFor: (_s: State, _p: Person, _k: string) => true, kladPlatser: (_k: string): string[] => [], plaggVill: (_s: State, _p: Person, _k: string) => false,
@@ -622,6 +624,15 @@ export const BRUK_PLAGG: BrukRad = {
   over: (s, g, k) => tingOf(s).find(t => t.agare === g.id && t.k === k && t.bar !== g.id && t.hos === undefined && t.halv === undefined && t.helig === undefined && t.lass === undefined && (!kladFor(s, g, k) || agerPa(s, g, k, t))),
   kandidater: s => { const k = new Set<string>(); for (const t of tingOf(s)) if (SAKER[t.k]?.klad && t.agare !== undefined && t.agare !== BYN) k.add(t.k); return k; }, // plagg som någon i byn äger
 };
+// djuren ägs som sakerna (steg 15.1.164, Ägande: Djuren ägs som sakerna): ett levande djur är värt det det ger. En vuxen som inte
+// äger något djur av arten och saknar något det ger (ullen till sitt arbete) saknar djuret, och köper det som allt annat (av
+// handlaren eller djurhandeln). Det varan hen äger behåller hen: den blir hens djur (boskap.ts)
+export const BRUK_DJUR: BrukRad = {
+  id: 'djur', namn: 'djur', ar: k => arLevande(k),
+  saknar: (s, p, k) => ageOf(p, s.now) >= ALDER.vuxen && levKrok.eget(s, p, k) < 1 && levKrok.ger(k).some(q => brukAv(q).saknar(s, p, q) > 0) ? 1 : 0,
+  behall: (s, p, k) => ownsAmount(s, p, k),
+  kandidater: () => levKrok.alla(),
+};
 // materialet efter det ens arbete saknar: recepten i projekten vars arbete p gör (habitShare över DELA.yrke). Materialet är
 // förrådsmålens material och allt annat som går åt i ett recept (skinnet, linet, järnet; vakten för skickligheten, steg 13.9.10)
 const egnaRecept = (s: State, p: Person) => brukKrok.recept(s, p);
@@ -633,7 +644,7 @@ export const BRUK_MATERIAL: BrukRad = {
 };
 // det övriga: ingen saknar det, och ingen behöver behålla det
 export const BRUK_OVRIGT: BrukRad = { id: 'ovrigt', namn: 'saker', ar: () => true, saknar: () => 0, behall: () => 0, kandidater: () => [] };
-export const BRUK: BrukRad[] = [behovRad(() => MAT), behovRad(() => VED), BRUK_REDSKAP, BRUK_PLAGG, BRUK_MATERIAL, BRUK_OVRIGT];
+export const BRUK: BrukRad[] = [behovRad(() => MAT), behovRad(() => VED), BRUK_REDSKAP, BRUK_PLAGG, BRUK_DJUR, BRUK_MATERIAL, BRUK_OVRIGT];
 const brukMinne = new Map<string, BrukRad>();
 export const brukAv = (k: string) => { let r = brukMinne.get(k); if (!r) brukMinne.set(k, r = BRUK.find(q => q.ar(k))!); return r; };
 // vakten för skickligheten (steg 13.9.10): varje sak har sin rad i BRUK, och det som går åt i ett recept är ett material, ett

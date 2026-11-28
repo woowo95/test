@@ -473,7 +473,10 @@ SCENARIER.verksamheter = {
     s.tamdjur = []; const djur = [1, 2, 3, 4].map(() => SIM.nyttTamdjur(s, 'far', p.x, p.y, p.id, s.now - 3 * SIM.DAY));
     djur.forEach((d, i) => { d.hona = i % 2 === 0; });
     const kund = SIM.living(s).find(q => q !== p && !SIM.familjOf(s, p.id).includes(q) && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!; SIM.put(s, 'silver', 60, { [kund.id]: 60 }); kund.skill.skotsel = 20; kund.x = p.x; kund.y = p.y; kund.task = undefined; // bybon står i byn, nära affären
+    // bybon behöver ull till sitt arbete och har ingen (steg 15.1.164: djuret är värt det det ger), så hen saknar ett får
+    SIM.setAmount(s, 'ull', 0); const recept0 = SIM.brukKrok.recept; SIM.brukKrok.recept = (s2, q) => q === kund ? [{ ull: 2 }, ...recept0(s2, q)] : recept0(s2, q); kund.bruk = undefined;
     const eD = SIM.erbjudandet(s, kund, 'djurhandel'), kd = kop(kund, 'djurhandel', 'far'), agare = djur.filter(d => d.agare === kund.id).length;
+    SIM.brukKrok.recept = recept0;
     g.gast!.silver = 100; const kg = kop(g, 'djurhandel', 'far'), hemMed = g.gast!.kop?.levfar ?? 0, kvar = SIM.tamdjurOf(s).filter(d => d.agare === p.id).length, slut = SIM.tillSalu(s, p.id, 'far');
     return [
       [`nattlogiet räknar med gästerna (${g0.kunder.toFixed(2)} per dygn), och utan företag kommer inga (${ingen})`, g0.kunder > 0 && ingen === 0],

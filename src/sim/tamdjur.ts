@@ -139,7 +139,7 @@ export function mataKlar(s: State, p: Person, ref?: number) {
   if (!d) return;
   const k = foderFor(s, p, d);
   if (!k) return;
-  takeMaterial(s, p, k, 1);
+  takeMaterial(s, p, k, 1, d.agare !== p.id); // ett eget djur äter ägarens foder först och sedan byns, byns djur byns (steg 15.1.164)
   d.hunger = 0; // en sak foder gör djuret mätt
   (d.matad ??= {})[p.id] = (d.matad[p.id] ?? 0) + 1;
   if (d.art === 'hund' && d.agare === p.id) d.lojal = Math.min(1, (d.lojal ?? HUND.start) + HUND.mata);
