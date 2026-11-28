@@ -22,7 +22,7 @@ import { gridOf, housesOf, Hus } from './byggnad';
 import { rumTaggar } from './rum';
 import { komposten } from './rester';
 import { betesTal, betesdjurOf, hagarOf } from './hage';
-import { Tamdjur, tamDor, tamEg } from './tamdjur';
+import { Tamdjur, tamArt, tamDor, tamEg } from './tamdjur';
 import { faltRiktning, faltSite } from './odling';
 import { iByn } from './omrade';
 import { paStrak } from './strak';
@@ -57,6 +57,13 @@ export function angRutor(a: Ang) { const r: number[] = []; for (let y = a.y; y <
 // små för höet djuren behöver i istiden märker någon ut en ny, så stor som det som saknas, på samma sorts plats som ett fält
 const angBehov = (s: State) => Math.ceil(betesTal(s) * VINTER.hoPerDjur / VINTER.ho * VINTER.angMarg); // rutorna djuren behöver
 const angHar = (s: State) => angarOf(s).reduce((n, a) => n + a.w * a.h, 0);
+// det som står på spel för skäran (steg 15.1.165, SPEL i projekt.ts): höet som saknas till vintern, när byn har en äng, värt
+// det som hänger på det: den del av betesdjuren som inte klarar vintern utan det, efter deras värde
+export const hoFattas = (s: State) => {
+  const beh = betesTal(s) * VINTER.hoPerDjur;
+  if (!angarOf(s).length || beh <= 0) return 0;
+  return Math.max(0, 1 - amountOf(s, 'torrgras') / beh) * betesdjurOf(s).reduce((a, d) => a + tamArt(d.art).varde, 0);
+};
 export const angBrist = (s: State) => betesdjurOf(s).length && hagarOf(s).length && angHar(s) * VINTER.angMarg < angBehov(s) ? 1 : 0;
 const angSida = (s: State) => Math.min(VINTER.angMax, Math.max(VINTER.angMin, Math.ceil(Math.sqrt(Math.max(1, angBehov(s) - angHar(s))))));
 // projektets arbete för p: att märka ut ängen

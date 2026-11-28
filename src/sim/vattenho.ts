@@ -8,7 +8,7 @@ import { Ting } from './agande';
 import { getMap } from './karta';
 import { Station, isKlar, ledig, stationerOf } from './stationer';
 import { Hage, hagarOf } from './hage';
-import { tamdjurOf } from './tamdjur';
+import { TAM, tamArt, tamdjurOf, tamEg } from './tamdjur';
 import { vaderNu } from './vader';
 import { blocked } from './byggnad';
 import { bynsMitt } from './omrade';
@@ -33,6 +33,14 @@ export const hoI = (s: State, h: Hage) => hoarOf(s).find(t => iHagen(h, t.x, t.y
 const behoverHo = (s: State) => hagarOf(s).filter(h => tamdjurOf(s).some(d => d.hage === h.id) && !hageVidVatten(s, h));
 const utanHo = (s: State) => behoverHo(s).filter(h => !hoI(s, h));
 // en ho i varje hage med djur som inte når vattnet (stationBrist i forradsmal.ts)
+// det som står på spel när en hage saknar ho (steg 15.1.165, SPEL i projekt.ts): djurens värde, gånger hur törstiga de är:
+// törsten (0 till 1) och sedan timmarna utan vatten mot dem djuret tål
+export const hoSpel = (s: State) => {
+  const utan = new Set(utanHo(s).map(h => h.id));
+  let v = 0;
+  for (const d of tamdjurOf(s)) if (d.hage !== undefined && utan.has(d.hage)) v += tamArt(d.art).varde * ((d.torst ?? 0) + (d.torstTim ?? 0) / (TAM.torstDod * tamEg(d).talighet));
+  return v;
+};
 export function hoBrist(s: State) {
   const behov = behoverHo(s);
   return behov.length ? behov.filter(h => !hoI(s, h)).length / behov.length : 0;

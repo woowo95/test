@@ -1,7 +1,7 @@
 // Scenarier för fas 15, grupp 17 (steg 15.1.161–15.1.170).
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, klockan, medBank, nyInvanare } from './hjalp';
+import { SCENARIER, klockan, kor, medBank, nyInvanare, testBy } from './hjalp';
 import { foretagBy } from './fas14';
 
 SCENARIER.latrinko = {
@@ -153,6 +153,48 @@ SCENARIER.stallfoder = {
       [`gästen vars riddjur inte fick foder blir missnöjd (${SIM.kortTal((b.gast!.bemott?.v ?? 0) / (b.gast!.bemott?.n ?? 1))}) och går hem`, missnojd],
       [`det födda riddjuret bär gästen hem fortare (${SIM.kortTal(da)} mot ${SIM.kortTal(db)} rutor på 20 sekunder)`, da > db * 1.3],
       [`stallet räknar med samma andel ridande som gästerna kommer med (${SIM.FGAST.ridande})`, !('ridande' in SIM.VERK)],
+    ];
+  },
+};
+
+SCENARIER.hovarde = {
+  text: 'Steg 15.1.165: vattenhon och skäran väger det som står på spel. Projektet ärver värdet av det som hänger på det (spel i ProjektDef, registret SPEL i projekt.ts): vattenhon djuren som väntar på vatten, mer ju törstigare de är, och skäran betesdjuren som inte klarar vintern utan höet som saknas. En by med törstiga får i en hage utan vatten bygger vattenhon inom ett dygn, och en by med äng och för lite hö gör en skära',
+  kor: () => {
+    // en testby med får i en hage som inte når vattnet (som hageUtanVatten i fas10.ts, men i en by med alla sina projekt)
+    const hageBy = () => {
+      const b = SIM.cloneState(testBy(15, x => SIM.living(x).length >= 10 && SIM.temperature(x) > 8)); klockan(b, 8);
+      const p = SIM.living(b).filter(r => SIM.ageOf(r, b.now) >= SIM.ALDER.vuxen)[0]!;
+      SIM.setAmount(b, 'levfar', 3); SIM.stepBoskap(b);
+      for (const q of SIM.living(b)) (q.tek ??= {}).staket = 1;
+      SIM.setAmount(b, 'grenar', 400); SIM.setAmount(b, 'rep', 4);
+      const mat = SIM.hageUppgift(b, p); if (mat?.ref === -1) SIM.hageKlar(b, p, -1);
+      for (let v = SIM.hageVal(b, p), n = 0; v && n < 200; v = SIM.hageVal(b, p), n++) SIM.hageKlar(b, p, v.i);
+      const h = SIM.hagarOf(b)[0];
+      if (h) for (const d of SIM.tamdjurOf(b)) if (SIM.tamArt(d.art).bete) { d.hage = h.id; d.x = h.x + 1.5; d.y = h.y + 1.5; }
+      return { b, h };
+    };
+    const plats = (s: SIM.State, k: string) => SIM.projekt(s).findIndex(r => r.k === k) + 1;
+    // vattenhon
+    const { b, h } = hageBy();
+    if (!h || SIM.hageVidVatten(b, h)) return [['en testby med får i en hage utan vatten', false]];
+    for (const d of SIM.tamdjurOf(b)) { d.torst = 1; d.torstTim = 6; }
+    const p0 = plats(b, 'vattenho'), spel0 = SIM.hoSpel(b);
+    SIM.setAmount(b, 'virke', Math.max(SIM.amountOf(b, 'virke'), 4));
+    let tim = 0;
+    for (; tim < 24 && !SIM.hoarOf(b).some(SIM.isKlar); tim++) kor(b, 1);
+    // skäran
+    const s = hageBy().b, c = SIM.bynsMitt(s);
+    s.angar = [{ id: 1, x: Math.floor(c.x) + 8, y: Math.floor(c.y) + 8, w: 4, h: 4 }]; SIM.setAmount(s, 'torrgras', 0);
+    s.ting = SIM.tingOf(s).filter(t => !SIM.GORS.skara?.includes(t.k)); SIM.setAmount(s, 'flinta', Math.max(SIM.amountOf(s, 'flinta'), 4));
+    for (const q of SIM.living(s)) (q.tek ??= {}).kniv = 1;
+    const p1 = plats(s, 'skara'), spel = SIM.hoFattas(s);
+    let st = 0;
+    for (; st < 24 && !SIM.tingOf(s).some(t => SIM.GORS.skara?.includes(t.k)); st++) kor(s, 1);
+    return [
+      [`vattenhon står på plats ${p0} av ${SIM.projekt(b).length} när fåren törstar (${SIM.kortTal(spel0)} silver på spel)`, p0 >= 1 && p0 <= 3],
+      [`vattenhon byggs inom ett dygn (${tim} timmar)`, SIM.hoarOf(b).some(SIM.isKlar) && tim < 24],
+      [`skäran står på plats ${p1} med äng och utan hö (${SIM.kortTal(spel)} silver på spel)`, p1 >= 1 && p1 <= 10 && spel > 0],
+      [`en skära görs inom ett dygn (${st} timmar)`, SIM.tingOf(s).some(t => SIM.GORS.skara?.includes(t.k))],
     ];
   },
 };
