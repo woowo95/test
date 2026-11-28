@@ -1171,8 +1171,9 @@ export function rustatText(rov: Pick<Kampe, 'vapen' | 'klader' | 'skold' | 'skol
   for (const k of rov) { for (const c of k.klader) { const r = kladAv(c), pl = r && PLAGG[r.plagg as keyof typeof PLAGG]; if (pl && ['rustning', 'hjalm', 'jarnhjalm', 'ringbrynja'].includes(r!.plagg)) skydd.set(pl.namn.toLowerCase(), (skydd.get(pl.namn.toLowerCase()) ?? 0) + 1); } if (k.skold) skydd.set(k.skoldJarn ? 'järnsköld' : 'sköld', (skydd.get(k.skoldJarn ? 'järnsköld' : 'sköld') ?? 0) + 1); }
   const v = [...vap].sort((a, b) => b[1] - a[1]).map(([k, m]) => { const [, en, fler] = sakOrd(k); return m > 1 ? fler : en; });
   const sk = [...skydd].sort((a, b) => b[1] - a[1]).map(([k]) => k);
-  const de = rov.length > 1 ? 'De' : 'Hen';
+  const de = rov.length > 1 ? 'De' : 'Rövaren'; // ett namn och inte hen om en viss person
   if (!v.length && !sk.length) return `${de} hade inga vapen. `;
+  if (rov.length === 1) return `${de} bar ${v.length ? och([...v, ...sk]) : `inga vapen men ${och(sk)}`}. `;
   return `${de} bar ${v.length ? och(v) : 'inga vapen'}${sk.length ? `${v.length ? ', och ' : ' men '}${rov.length > 1 ? 'några hade ' : ''}${och(sk)}` : ''}. `;
 }
 EFTER.rovare = (s, e, vinnare, strid) => {

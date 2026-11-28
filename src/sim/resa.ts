@@ -1184,7 +1184,8 @@ function delaHemma(s: State, sl: Sallskap) {
   sl.pack = {}; sl.delning = a;
   count(s, 'resa bytets värde', Math.round(a.varde));
   if (sl.skal === 'hamta') count(s, 'silver hämtat', a.byte.reduce((x, [, sak, n]) => x + (sak === 'silver' ? n : 0), 0)); // silvret ur gruvan (steg 11.10.1)
-  dagbok(s, sl, 'hem', `Hemma: bytet var värt ${antal(a.varde / grundvarde('silver'), 'silver')}, och det som gått åt ${antal(a.gatt / grundvarde('silver'), 'silver')}.`);
+  const iSilver = (v: number) => v / grundvarde('silver') < 0.5 ? 'nästan inget silver' : antal(v / grundvarde('silver'), 'silver');
+  dagbok(s, sl, 'hem', `Väl hemma räknade sällskapet efter: bytet var värt ${iSilver(a.varde)}, och det som gått åt var värt ${iSilver(a.gatt)}.`); // en berättande mening, inte ett formulär (steg 15.1.119)
 }
 
 // ---------- att samla till en resa (steg 11.5.10, Flera samhällen: Sällskapet) ----------
