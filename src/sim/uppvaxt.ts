@@ -117,7 +117,7 @@ export const UPPLEVELSER = {
   // de som formar sederna i stället för de gamla händelserna (steg 4.5.4.9)
   byggdeHus: { text: 'Byggde {om} tillsammans med andra', chans: 0.5, e: [{ empati: 1 }, { flit: 1 }], vem: 'bada', vuxenTal: true, sed: { gemenskap: 1 }, kort: 'Byggde ett hus tillsammans med andra' },
   forstaMastare: { text: 'Såg {om} bli byns första mästare', chans: 0.3, e: [{ nyfikenhet: 1 }, { flit: 1 }], vem: 'bada', vuxenTal: true, sed: { nyfikenhet: 1 }, kort: 'Såg någon bli byns första mästare' },
-  overflod: { text: 'Levde i överflöd', chans: 0.01, e: [{ flit: -1 }, { karisma: 1 }], vem: 'bada', vuxenTal: true, sed: { arbete: -1 } },
+  overflod: { text: 'Levde i överflöd', chans: 0.01, e: [{ flit: -1 }, { karisma: 1 }], vem: 'bada', vuxenTal: true, sed: { arbete: -2 } }, // drar starkare mot vilan (steg 15.1.159)
   fangelse: { text: 'Satt i fängelset {om}', kort: 'Satt i fängelset', chans: 1, e: [{ mod: -1 }, { aggression: 1, empati: -1 }, { flit: 1 }, { mod: -1, karisma: -1 }], vem: 'bada', sed: { forsiktighet: 1, rang: -1 }, vuxenTal: true, ande: true, tung: true }, // tiden inne när fången släpps (steg 11.12.4, fangelse.ts): en kan bli försiktigare, en annan bittrare
   sorjde: { text: 'Sörjde {om}', chans: 0.5, e: [{ empati: 1 }, { mod: -1 }], vem: 'bada', vuxenTal: true, ande: true, sed: { forsiktighet: 1 }, kort: 'Sörjde någon' },
   // barndomen i de nya systemen (steg 12.1.133)
@@ -136,6 +136,14 @@ export const UPPLEVELSER = {
   stupade: { text: 'Miste {om} i en strid', kort: 'Miste någon i en strid', chans: 0.5, e: [{ aggression: -1 }, { mod: -1 }, { empati: 1 }], vem: 'bada', vuxenTal: true, ande: true, sed: { krig: -2 } },
   grannRedskap: { text: 'Såg {om} hos handlaren, ett redskap byn inte kan göra', kort: 'Såg ett redskap byn inte kan göra', chans: 0.3, e: [{ nyfikenhet: 1 }, { intelligens: 1 }], vem: 'bada', vuxenTal: true, sed: { nyfikenhet: 2 } },
   ruttnade: { text: 'Såg maten ruttna i förrådet', chans: 0.1, e: [{ flit: -1 }, { nyfikenhet: 1 }], vem: 'bada', vuxenTal: true, sed: { forsiktighet: -2 } },
+  // följderna åt båda hållen (steg 15.1.159): varje sed har en händelse åt varje håll där det behövs
+  skadadSlagsmal: { text: 'Skadades i ett slagsmål med {om}', kort: 'Skadades i ett slagsmål', chans: 0.5, e: [{ aggression: -1 }, { mod: -1 }, { empati: 1 }], vem: 'bada', vuxenTal: true, sed: { fejd: -2 } }, // mot Förlikning
+  bestulenMild: { text: 'Blev bestulen av {om}, som bara fick en tillrättavisning', kort: 'Blev bestulen, och tinget var milt', chans: 0.5, e: [{ aggression: 1 }, { empati: -1 }], vem: 'bada', vuxenTal: true, sed: { fejd: 2 } }, // mot Fejd: man får ta saken i egna händer
+  skogenSlut: { text: 'Såg skogen nära byn ta slut', chans: 0.3, e: [{ empati: 1 }, { flit: -1 }], vem: 'bada', vuxenTal: true, sed: { natur: -2 } }, // mot Värna
+  svaltVidSkog: { text: 'Såg {om} svälta med vilt och skog nära byn', kort: 'Såg någon svälta med vilt och skog nära', chans: 0.5, e: [{ flit: 1 }, { mod: 1 }], vem: 'bada', vuxenTal: true, sed: { natur: 2 } }, // mot Bruka
+  lognOmMig: { text: 'Ertappade {om} med en lögn om sig själv', kort: 'Ertappade en lögn om sig själv', chans: 0.5, e: [{ empati: -1 }, { karisma: -1 }], vem: 'bada', vuxenTal: true, sed: { prat: -2 } }, // mot Förtegenhet
+  ovardigArvinge: { text: 'Såg {om} ärva ledarskapet utan att duga till det', kort: 'Såg en oduglig arvinge ta över', chans: 0.5, e: [{ intelligens: 1 }, { aggression: 1 }], vem: 'bada', vuxenTal: true, sed: { fortjanst: -2 } }, // mot Förtjänst
+  forbiSlakten: { text: 'Såg {om} gå förbi släkten och bli ledare', kort: 'Såg en duglig gå förbi släkten', chans: 0.5, e: [{ empati: 1 }, { karisma: -1 }], vem: 'bada', vuxenTal: true, sed: { fortjanst: 2 } }, // mot Härkomst
   faltet: { text: 'Hjälpte till på fältet', chans: 0.004, e: [{ flit: 2 }, { flit: 1, uthallighet: 1 }], vem: 'barn', sed: { arbete: 1 } }, // en timme i taget på fältet
 } satisfies Record<string, UpplevelseDef>;
 export type UpplevelseTyp = keyof typeof UPPLEVELSER;
@@ -208,6 +216,7 @@ export function upplev(s: State, p: Person, k: UpplevelseTyp, om?: string, ggr =
 // alla i byn var med om k (barnen och, sedan steg 4.1.1.2, de vuxna)
 export function allaBarn(s: State, k: UpplevelseTyp, om?: string) { for (const q of living(s)) upplev(s, q, k, om); }
 foljdKrok.ruttnade = s => allaBarn(s, 'ruttnade'); // maten som ruttnar i förrådet (steg 13.9.3, lager.ts)
+foljdKrok.alla = (s, k) => allaBarn(s, k as UpplevelseTyp); // (steg 15.1.159)
 // barnen till a och b var med om k
 export function barnTill(s: State, a: Person, b: Person | undefined, k: UpplevelseTyp, om?: string) {
   for (const q of living(s)) if (isParent(a, q) || (b && isParent(b, q))) upplev(s, q, k, om);

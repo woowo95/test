@@ -13,6 +13,8 @@ import { faltOf, faltRutor } from './odling';
 import { freeTools } from './agande';
 import { wearUsed } from './redskap';
 import { tanke } from './tankar';
+import { foljdKrok } from './foljdkrok';
+import { grupperOf, radjurGrupper } from './djur';
 
 // ---------- skogen som byn sköter (steg 6.5.2) ----------
 // Med tekniken Skogsvård kan man gräva upp en planta och sätta den på en annan jordruta. Tekniken kommer man på när man fäller
@@ -28,6 +30,7 @@ export const SKOGSVARD = balans('skogsvard', {
   spade: 0.5, // ... och så här stor del av tiden med benspaden
   tanke: 1, // den som fäller ett träd långt bort tänker på skogsvården så här många gånger fällningstiden
   glad: 0.04, glatTim: 6, // den som satt en planta mår så här mycket bättre i så här många timmar
+  viltNara: 30, // vilt så här nära byns mitt (rutor) räknas som nära byn (steg 15.1.159)
 });
 
 // avståndet utanför byn till det närmaste träd som kan fällas (som treeSpot i skog.ts letar), Infinity om inget finns
@@ -154,3 +157,14 @@ export function vindfallen(s: State) {
     if (forstaGang(s, 'vindfallForsta')) log(s, 'Ett träd föll i den hårda vinden och ligger nu i skogen.', 'world', []);
   }
 }
+
+// ---------- skogen som tar slut (steg 15.1.159, Vilja och seder: Sedernas följder åt båda hållen) ----------
+// När de närmaste träden att fälla hamnar långt från byn (SKOGSVARD.langt) är skogen nära byn slut: byn var med om det (upplevelsen
+// skogenSlut drar mot Värna), en gång när det sker. Växer skogen tillbaka kan det hända igen. En timme i taget (TAKTER)
+export function skogFoljdTimme(s: State) {
+  const langt = narmasteFall(s) >= SKOGSVARD.langt ? 1 : 0;
+  if (s.skogLangt === 0 && langt) foljdKrok.alla(s, 'skogenSlut');
+  s.skogLangt = langt;
+}
+foljdKrok.skogNara = s => narmasteFall(s) < SKOGSVARD.langt;
+foljdKrok.viltNara = s => { const m = bynsMitt(s), nara = (g: { x: number; y: number }) => Math.hypot(g.x - m.x, g.y - m.y) <= SKOGSVARD.viltNara; return grupperOf(s).some(nara) || radjurGrupper(s).some(nara); };

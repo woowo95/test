@@ -38,7 +38,7 @@ import { stepMotgang } from './motgang';
 import { stepTorka } from './torka';
 import { stepFlod } from './flod';
 import { tornadoSteg } from './tornado';
-import { fallTanke, plantaSatt, plantaUppgravd, vindfallen } from './skogsvard';
+import { fallTanke, plantaSatt, plantaUppgravd, skogFoljdTimme, vindfallen } from './skogsvard';
 import { askaSteg, brandHetta, blixtTimme, brandSteg, snoSmalt, brinnerSteg, hjalpaKlar, slackaFram, slackaFylld, slackaSigKlar, slackaSteg } from './brand';
 import { loggBer, stepBerattelser } from './berattelser';
 import { UTBROTT_ACTS, moodOf, stepHumor, utbrottKlar } from './humor';
@@ -477,6 +477,7 @@ export const TAKTER: Takt[] = [
   // (fynden som växer igen, glömskan, ryktena, husens slitage) räknas glesare och får tiden sedan sist
   { namn: 'atSteg', sek: 3600, fn: s => { atSteg(s); } },
   { namn: 'stepSeder', sek: 3600, fn: s => { stepSeder(s); } },
+  { namn: 'skogen tar slut', sek: 3600, fn: s => skogFoljdTimme(s) }, // en följd för seden Bruka – Värna (steg 15.1.159, skogsvard.ts)
   { namn: 'updateTags', sek: 3600, fn: s => { updateTags(s); } },
   { namn: 'stepRelationer', sek: 3600, fn: s => { stepRelationer(s); } },
   { namn: 'stepUppvaxt', sek: 3600, fn: s => { stepUppvaxt(s); } },

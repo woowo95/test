@@ -1,7 +1,7 @@
 // Scenarier för fas 15, grupp 16 (steg 15.1.151–15.1.160).
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, korTills, testBy } from './hjalp';
+import { SCENARIER, korTills, nyInvanare, testBy } from './hjalp';
 import { foretagBy } from './fas14';
 
 // en vuxen i en ny by, utan något på sig (det som bärs läggs till i scenariot)
@@ -249,6 +249,31 @@ SCENARIER.uppror2 = {
       [`styret är ${form}, och ledaren väger ${(100 * ledVikt).toFixed(0)} % (de missnöjda ${(100 * medVikt).toFixed(1)} %, legitimiteten ${leg.toFixed(2)})`, ledVikt > 0.5 && medVikt < leg],
       [`det blir ett uppror (${s.stat?.uppror ?? 0})`, uppror],
       [`upproret lyckas: ${l.name} leder inte längre (${ny === undefined ? 'ingen ledare' : SIM.byId(s, ny)?.name})`, uppror && ny !== l.id],
+    ];
+  },
+};
+
+SCENARIER.sedfoljd = {
+  text: 'Steg 15.1.159: sedernas följder åt båda hållen. Fejd, Natur, Pratsamhet, Förtjänst och Arbete har följder i sedernas register, och en by där många skadas i slagsmål rör sig mot Förlikning',
+  kor: () => {
+    const { SEDER, upplevelseSed } = SIM;
+    const rader = (['fejd', 'natur', 'prat', 'fortjanst', 'arbete'] as const).map(k => ({ k, f: (SEDER[k].foljder ?? []).map(f => upplevelseSed(f as SIM.UpplevelseTyp)?.[k] ?? 0) }));
+    const f = (k: string) => rader.find(r => r.k === k)!.f, bada = ['fejd', 'natur', 'fortjanst'].every(k => f(k).some(v => v > 0) && f(k).some(v => v < 0)) && f('prat').some(v => v < 0) && f('arbete').some(v => v < -1); // pratsamheten mot tystnad, och överflödet starkare mot vilan
+    // slagsmål där någon skadas
+    const s = SIM.createState(5, START); SIM.oppnaSed(s, 'fejd');
+    while (SIM.living(s).length < 12) nyInvanare(s, SIM.living(s).length % 2 ? 'm' : 'k', 25);
+    const fore = SIM.sederTarget(s).fejd, folk = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    for (let i = 0; i + 1 < folk.length; i += 2) {
+      const [a, b] = [folk[i], folk[i + 1]];
+      const g = SIM.kartStridBorja(s, 'slagsmal', [[a], [b]], 'prov');
+      for (let n = 0; n < 600 && !g.st.slut; n++) SIM.step(s, 1);
+    }
+    for (let n = 0; n < 30; n++) SIM.step(s, 2);
+    const skadade = SIM.living(s).filter(p => p.upp?.some(u => u.k === 'skadadSlagsmal')).length, efter = SIM.sederTarget(s).fejd;
+    return [
+      [`följderna drar åt båda hållen (${rader.map(r => `${r.k}: ${r.f.join(' ')}`).join(', ')})`, bada],
+      [`${skadade} som skadades i ett slagsmål minns det`, skadade > 0],
+      [`byn rör sig mot Förlikning (målet för Fejd ${fore.toFixed(3)} → ${efter.toFixed(3)})`, efter < fore],
     ];
   },
 };

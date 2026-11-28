@@ -97,6 +97,7 @@ export const TRON = balans('tron', {
   arv: 0.3, // så här mycket Härkomst ger arv (steg 8.3.6)
   utse: 0.4, // ... så här mycket Envälde att ledaren utser sin efterträdare
   strid: 0.4, // ... så här mycket Fejd en strid om makten
+  duglig: 0.8, // den som når så stor del av den dugligastes förstånd och karisma duger att leda (följderna, steg 15.1.159)
   kris: 0.15, // två sätt väger ungefär lika mycket: mindre än så här skiljer, och olika kandidater ger en tronföljdskris
   sattTom: 0.2, // ... och när sättet sederna vill ha inte gav någon och byns röst fick avgöra, så här mycket mer
   sattFel: 0.3, // en ledare som kom till makten på ett sätt sederna inte godtar börjar med så här mycket av den delen av legitimiteten
@@ -375,6 +376,16 @@ export function rostval(s: State, vuxna: Person[]) {
   if (st.roster.length > ROST.sparas) st.roster.splice(0, st.roster.length - ROST.sparas);
   return best;
 }
+// Härkomst – Förtjänst åt båda hållen (steg 15.1.159, Sedernas följder åt båda hållen): en arvinge utan duglighet som tar över drar
+// byn mot Förtjänst, och en duglig som går förbi släkten drar släkten mot Härkomst. Dugligheten är förståndet och karisman
+function dugligFoljd(s: State, vuxna: Person[], best: Person) {
+  const forra = byId(s, s.styre?.historia[s.styre.historia.length - 1]?.id);
+  if (!forra || forra === best) return;
+  const kand = vuxna.filter(c => kanLeda(s, c)), dug = (c: Person) => stat(c, 'intelligens', s.now) + stat(c, 'karisma', s.now);
+  const bast = Math.max(dug(best), ...kand.map(dug)), slakt = (c: Person) => isParent(forra, c) || isKin(forra, c), duger = dug(best) >= bast * TRON.duglig;
+  if (slakt(best) && !duger) { for (const q of vuxna) if (q !== best) upplev(s, q, 'ovardigArvinge', best.name); }
+  else if (!slakt(best) && duger) { for (const q of vuxna) if (q !== best && slakt(q) && kanLeda(s, q)) upplev(s, q, 'forbiSlakten', best.name); }
+}
 function valj(s: State) {
   const vuxna = vuxnaOf(s);
   if (vuxna.length < LED.vuxna) return;
@@ -411,6 +422,7 @@ function valj(s: State) {
     if (rec?.f === 'ledare' && rec.t === s.now) rec.gick = best === valet; // omröstningen avgjorde bara om den valda blev ledare
   }
   if (!best) return;
+  dugligFoljd(s, vuxna, best);
   const st = stn, forsta = forstaVal;
   st.hanForbud = undefined; st.ledare = best.id; best.ledde = true; st.sedan = s.now; st.vintrar = 0; st.vunna = 0; st.satt = satt; st.arvinge = undefined; st.pabud = undefined; st.oratt = 0; st.krig0 = krig(s); st.folk0 = living(s).length; st.dog0 = nodDod(s); st.dogVinter = nodDod(s); // vintern där ingen dog räknas från nu
   const titel = st.titel = titelFor(s, best, vuxna);
@@ -489,6 +501,7 @@ export function slutarStyre(s: State, varfor: string) {
 
 // ---------- straffen ----------
 // straffen (steg 8.4.8), från mildast till hårdast. Numren är de som rättegångarna sparar. Kräver = det som måste finnas i byn
+const STOLD = new Set<string>(['stold', 'stoldLindrig', 'gravstold', 'boskapsstold']); // stölderna, för följden när tinget är milt (steg 15.1.159)
 export const STRAFF_REG = [
   { id: 0, namn: 'Tillrättavisning', da: 'tillrättavisade', inf: 'få höra hur fel det var', nu: 'tillrättavisar' },
   { id: 1, namn: 'Skam', da: 'skämde ut', inf: 'skämmas ut inför alla', nu: 'skämmer ut' },
@@ -586,6 +599,7 @@ function doma(s: State, l: Person) {
     if (steg === 8) q.utanVard = now + STR.vardDygn * DAY; // ingen vårdar hen under tiden (vardRatt i halsa.ts)
     if (steg === 6) { r.dog = true; q.brottsling = true; kronika(s, `${q.name} dömdes till döden.`, 'ledare'); die(s, q, 'avrattad'); continue; }
     if (steg === 1) q.skam = now + STR.skamDygn * DAY;
+    if (steg === 0 && STOLD.has(b.h) && drabbad && alive(drabbad) && drabbad !== q) upplev(s, drabbad, 'bestulenMild', q.name); // den bestulna drar mot Fejd (steg 15.1.159)
     if (steg === 9) { const h = fangelseLedigt(s); if (h) { const dygn = fangelseDygn(vikt); r.dygn = dygn; satt(s, q, h, `Dömd för att ${hon(q)} ${brottText(b)}`, now + dygn * DAY, true); q.fange!.av = l.id; } }
     if (steg === 2) { const dod = skada(s, q, 'bal', 'blamarke', STR.slagG, 'drap', `när ${l.name} straffade hen`); if (dod) { r.dog = true; die(s, q, dod); continue; } }
     if (steg === 3) { kronikaBer(s, 'k_utvisad', q.id, { ...personFalt(q), ledare: l.name, varfor: `för att ${hon(q)} ${brottText(b)}` }); count(s, 'utvisad'); notis(s, 'utflytt', `${q.name} blev utvisad ur byn av ${l.name}.`, [q.id, l.id]); drivUt(s, q); }

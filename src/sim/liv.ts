@@ -1,4 +1,5 @@
 import { gen } from './ord';
+import { foljdKrok } from './foljdkrok';
 import { antal, honom, och, talOrd } from './ord';
 import { gastensPlatser, horOmGast, raknaBynVet } from './ort';
 import { personNara } from './personlogg';
@@ -104,7 +105,7 @@ const MEDHAVT: Record<string, number> = { rotter: LIV.medhavd };
 // foljd (steg 13.9.3): upplevelsen de levande får av dödsfallet, när foljdNar gäller (en följd som drar en sed tillbaka, foljder i SEDER)
 interface DodDef { text: string; sorg?: true; gud?: GudOmr; foljd?: UpplevelseTyp; foljdNar?: (s: State) => boolean }
 const DOD = {
-  svalt: { text: 'av svält', gud: 'skord', sorg: true },
+  svalt: { text: 'av svält', gud: 'skord', sorg: true, foljd: 'svaltVidSkog', foljdNar: s => foljdKrok.skogNara(s) && foljdKrok.viltNara(s) }, // med vilt och skog nära: mot det odlade (steg 15.1.159)
   kyla: { text: 'av kyla', gud: 'vintern', sorg: true, foljd: 'frosIhjal', foljdNar: s => amountOf(s, 'ved') >= 1 }, // medan andra hade ved
   jakt: { text: 'under en jakt', gud: 'jakt' },
   torst: { text: 'av törst' }, // steg 2.4.1
