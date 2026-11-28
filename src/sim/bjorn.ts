@@ -16,9 +16,9 @@ import { freeNear, roomAt } from './byggnad';
 import { djurStrid } from './kampar';
 import { jaktFoljer, jaktKallare, jaktPlatsVid, jaktSamlas } from './rovdjursjakt';
 import { bjornarOf, dodaDjur, halsaOf, satDjurHalsa } from './djur';
-import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, isSick, livet, living, log, stat } from './folk';
+import { alive, byId, count, forstaGang, livet, living, log, stat } from './folk';
 import { isLight, yearNo } from './tid';
-import { halsa, kanGa } from './halsa';
+import { kanSlass } from './halsa';
 import { avbryt, foodOf } from './lager';
 import { notis } from './notiser';
 import { handelse, larma, larmNu } from './rykten';
@@ -148,7 +148,7 @@ function jaktBeslut(s: State, bx: number, by: number) {
   const j = s.bjornJakt!;
   if (j.jagare || j.ar !== yearNo(s, s.now) || !isLight(s.now) || s.now - j.sedd > BJORNJAKT.vet * HOUR) return;
   const folk = living(s);
-  const kan = folk.filter(q => ageOf(q, s.now) >= ALDER.vaktFran && ageOf(q, s.now) < ALDER.vaktTill && !isSick(q, s.now) && halsa(q) >= KROPP.svag && kanGa(q) && q.task?.act !== 'strid' && q.task?.act !== 'vargjakt' && q.task?.act !== 'bjornjakt' && !larmNu(s, q, 'fara')?.falskt && harSpjut(s, q));
+  const kan = folk.filter(q => kanSlass(s, q) && q.task?.act !== 'strid' && q.task?.act !== 'vargjakt' && q.task?.act !== 'bjornjakt' && !larmNu(s, q, 'fara')?.falskt && harSpjut(s, q));
   if (!kan.length) return;
   const kraftAv = (l: Person[]) => l.reduce((a, q) => a + BJORNJAKT.kraftBas + BJORNJAKT.kraftSkada * VAPEN[personKampe(s, q, 0, 0, 0, 0).vapen].skada, 0);
   // hur många som vågar och om jakten blir av kommer ur jägarnas styrka mot björnens (steg 10.1.17), inte ur fasta antal

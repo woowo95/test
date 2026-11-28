@@ -38,7 +38,6 @@ export const KAMPAR = {
   bjornunge: djur('Björnungen', 'Björnunge', 2, { styrka: 5, uthallighet: 6, mod: 4, smidighet: 10, skicklighet: 4 }, 1.2, 'vargbett'), // liten och svag, men björnen försvarar den (steg 6.6.5)
 } satisfies Record<string, KampeSort>;
 export type KampeSortId = keyof typeof KAMPAR;
-export const KAMPE_LIST = Object.keys(KAMPAR) as KampeSortId[];
 // raden för en sort; den som inte säger något är en människa
 export const kampeSort = (sort?: string): KampeSort => (KAMPAR as Record<string, KampeSort>)[sort ?? 'manniska'] ?? manniska;
 // det artens värden var i djurregistret förut (DJUR.strid): raden med kroppens tal utlagda och det vanliga vapnet
