@@ -4,7 +4,7 @@
 // val.ts): poängen växer med dem som väntar och hur länge de väntat. Betjänaren tar emot den första i kön, som betalar med
 // silver och varor som i alla byten (byte.ts), och det hen köpte äts vid bordet. Den som väntat för länge går.
 import { kunnaFart } from './kunna';
-import { MIN, W, type Person, type State, type Task } from './typer';
+import { HOUR, MIN, W, egen, tvaDelar, visning, type Person, type State, type Task } from './typer';
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, count, familjOf, forstaGang, living, log } from './folk';
 import { ACTS } from './handlingar';
@@ -47,9 +47,20 @@ const utanDisk = (s: State) => foretagOf(s).filter(f => { const rum = foretagRum
 foretagBord.diskRum = s => { const f = utanDisk(s)[0]; return f && foretagRum(s, f)[0]; };
 // diskens värde för ägarens familj (steg 15.1.24): det företaget tjänar på ett år med disken (startPoang för verksamheterna, utan
 // huset som redan finns och utan företaget självt som konkurrent), delat med vad disken kostar. Den som väntar många kunder bygger först
+// Vinsten räknas en gång i timmen per företag (som timräkningen i val.ts): den frågas i varje val (gränssnittet i en egen del, typer.ts)
+const diskVinst = tvaDelar<{ t: number; v: Map<number, number> }>();
+const diskVinstNu = (s: State, f: Foretag) => {
+  const t = Math.floor(s.now / HOUR), d = egen(diskVinst);
+  let c = diskVinst.sim.get(s);
+  if (visning.pa && c?.t !== t) c = diskVinst.bild.get(s);
+  if (!c || c.t !== t) d.set(s, c = { t, v: new Map() });
+  let v = c.v.get(f.id);
+  if (v === undefined) c.v.set(f.id, v = startPoang(s, f.ag, f.verk, 0, f).poang);
+  return v;
+};
 foretagBord.diskEgen = (s, fam) => {
   let v = 0;
-  for (const f of utanDisk(s)) if (fam.some(q => q === foretagare(s, f.ag))) v = Math.max(v, startPoang(s, f.ag, f.verk, 0, f).poang / Math.max(1e-9, receptKostnad(STATIONER.disk)));
+  for (const f of utanDisk(s)) if (fam.some(q => q === foretagare(s, f.ag))) v = Math.max(v, diskVinstNu(s, f) / Math.max(1e-9, receptKostnad(STATIONER.disk)));
   return Math.max(0, v);
 };
 foretagBord.diskBrist = s => { const n = foretagOf(s).filter(f => foretagRum(s, f).length).length; return n ? utanDisk(s).length / n : 0; };
