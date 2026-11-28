@@ -1,5 +1,5 @@
 import { FANG, fangelseDygn, fangelseLedigt, satHardStraff, satt } from './fangelse';
-import { han, honom, slaktOrd, talOrd } from './ord';
+import { han, heltOrd, honom, slaktOrd } from './ord';
 import { ALDER, REL, ageOf, alive, byId, count, franMitt, isKin, isParent, living, log, relKey, stat, vuxnaOf } from './folk';
 import { LAGAR, efterlevs, lagForBrott, straffNu, straffSteg, tasUppKvall } from './lagar';
 import type { Lag } from './lagar';
@@ -436,7 +436,7 @@ function valj(s: State) {
   st.historia.push({ id: best.id, namn: best.name, titel, fran: s.now });
   count(s, 'ledare_vald');
   missnojeNoll(s);
-  if (forsta) { st.oppna.push('rang'); best.fame.push('Byns första ledare'); kronikaBer(s, 'k_forstaLedare', best.id, { ...personFalt(best), titel: titel.toLowerCase(), satt: hur, vuxna: talOrd(vuxna.length) }); }
+  if (forsta) { st.oppna.push('rang'); best.fame.push('Byns första ledare'); kronikaBer(s, 'k_forstaLedare', best.id, { ...personFalt(best), titel: titel.toLowerCase(), satt: hur, vuxna: heltOrd(vuxna.length) }); }
   else kronikaBer(s, 'k_ledare', best.id, { ...personFalt(best), titel: titel.toLowerCase(), satt: hur, forra: st.historia[st.historia.length - 2]?.namn });
   const lt = forsta ? `Byn har fått sin första ledare: ${best.name}, ${titel.toLowerCase()}. Byn börjar fundera på om alla är lika mycket värda.` : `${best.name} är byns nya ledare och kallas ${titel.toLowerCase()}.`;
   log(s, lt, 'world', [best.id]); notis(s, 'ledare', lt, [best.id], undefined, { ton: 'gott' });
