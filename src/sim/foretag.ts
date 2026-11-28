@@ -16,12 +16,12 @@ import { prastOf } from './kult';
 import { behovAv, DELA, payable, personPart, saknarNu } from './behov';
 import { grundvarde, formogenheter } from './varde';
 import { kroppensMat } from './ekonomi';
-import { amountOf, ownsAmount, ownsId } from './lager';
+import { amountOf, ownsAmount } from './lager';
 import { rusLust } from './rus';
 import { FOOD } from './saker';
 import { MALTIDSNIVA, maltidsNiva } from './ratter';
 import { DRYCKER, dryckAv, vatskaAv, type VatskaId } from './vatskor';
-import { DAGSVERK, egetVarde } from './dagsarbete';
+import { DAGSVERK, egetVarde, formaga } from './dagsarbete';
 import { rumTaggar } from './rum';
 import { foretagBord, isKlar, stationerOf, stationRum } from './stationer';
 import { RECEPT } from './recept';
@@ -241,11 +241,12 @@ export function oppna(s: State, f: Foretag): string[] {
 // det en kund ger utöver varan, efter det som sålts
 export const saltAv = (f: Foretag) => Object.values(f.salt ?? {}).reduce((a, b) => a + b, 0);
 export const kundVinst = (f: Foretag) => Math.max(0, saltAv(f) >= 0.5 ? (f.vinst ?? 0) / saltAv(f) : 1);
-// kunderna som gått utan att bli betjänade är det ägarens timmar inte räckte till: en timme till vid disken är värd det de hade gett
+// kunderna som gått utan att bli betjänade är det ägarens timmar inte räckte till: en timme till vid disken är värd det de hade gett.
+// Taket är det ägaren kan betala med, silvret och det hen har över, som i resten av dagsarbetet (steg 15.1.27)
 DAGSVERK.foretag = { namn: 'Företaget', sym: '💰', gor: (_s, a, _p, tk) => (tk?.act === 'betjana' || tk?.act === 'stallaFram') && tk.ref === a.mal,
   bud: s => foretagOf(s).flatMap(f => {
     const g = f.lamnat ?? 0, p = foretagare(s, f.ag);
-    return g > 0 && p && foretagRum(s, f).length ? [{ av: f.ag, antal: 1, tim: kundVinst(f) / FORETAG.timKund, tak: Math.floor(ownsId(s, f.ag, 'silver') + 1e-9), timMax: g * FORETAG.timKund, mal: f.id, kan: (q: Person) => q.id !== p.id && !familjOf(s, p.id).includes(q) }] : [];
+    return g > 0 && p && foretagRum(s, f).length ? [{ av: f.ag, antal: 1, tim: kundVinst(f) / FORETAG.timKund, tak: formaga(s, f.ag), timMax: g * FORETAG.timKund, mal: f.id, kan: (q: Person) => q.id !== p.id && !familjOf(s, p.id).includes(q) }] : [];
   }) };
 // ---------- varje timme och dygn (TAKTER) ----------
 export function foretagTimme(s: State) {

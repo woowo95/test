@@ -133,7 +133,7 @@ SCENARIER.foretag = {
 
 // steg 14.1.7: ägaren anställer den som betjänar när kunder fått gå
 SCENARIER.anstalld = {
-  text: 'Steg 14.1.7: ägaren anställer med dagsarbetet när hens timmar inte räcker och kunderna som går är värda mer än lönen; den anställda betjänar',
+  text: 'Steg 14.1.7: ägaren anställer med dagsarbetet när hens timmar inte räcker och kunderna som går är värda mer än lönen, och betalar med silvret och det hen har över (steg 15.1.27); den anställda betjänar',
   kor: () => {
     const { s, p, f } = foretagBy(), utan = SIM.DAGSVERK.foretag.bud(s).length;
     SIM.laggIn(s, 'silver', 40, p.id);
@@ -156,7 +156,15 @@ SCENARIER.anstalld = {
     const s0 = q ? SIM.ownsAmount(s, q, 'silver') : 0;
     SIM.lonDygn(s);
     f.lamnat = 0;
+    // en ägare utan silver men med mat över anställer med det hen har (steg 15.1.27)
+    const b2 = foretagBy(); SIM.setAmount(b2.s, 'silver', 0);
+    b2.f.salt = { servering: 6 }; b2.f.vinst = 9; b2.f.lamnat = 6;
+    const silver2 = SIM.ownsId(b2.s, b2.p.id, 'silver'), bud2 = SIM.DAGSVERK.foretag.bud(b2.s)[0];
+    for (const x of b2.s.people) x.anst = undefined;
+    SIM.anstallDygn(b2.s);
+    const a2 = b2.s.anst?.find(x => x.arb === 'foretag');
     return [
+      [`ägaren utan silver (${silver2}) men med mat över kan betala (tak ${bud2?.tak}) och anställer (${a2 ? SIM.byId(b2.s, a2.p)?.name : 'ingen'})`, silver2 < 1 && (bud2?.tak ?? 0) >= 1 && !!a2],
       [`utan kunder som går anställs ingen (${utan})`, utan === 0],
       [`budet följer det kunderna hade gett (${bud?.tim.toFixed(0)} per timme, högst ${bud?.timMax?.toFixed(2)} timmar)`, !!bud && bud.tim * bud.timMax! > 1 && bud.mal === f.id],
       [`någon anställs för mindre än det är värt (${q?.name}, ${a?.lon} silver)`, !!a && a.lon >= 1 && a.lon <= bud.tim * bud.timMax!],
