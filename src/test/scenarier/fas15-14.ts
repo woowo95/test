@@ -163,3 +163,31 @@ SCENARIER.vargbett = {
     ];
   },
 };
+
+SCENARIER.bjornmote2 = {
+  text: 'Steg 15.1.136: björnen slår en tärning per möte. En grupp om tre anfalls ungefär hälften så ofta som en ensam (BJORNMOTE.grupp), och alla i mötet räknas på en gång',
+  kor: () => {
+    const s = SIM.createState(6, START), STEG = 20 * SIM.MIN;
+    let utan: number | undefined;
+    for (let t = s.now; t < s.now + 60 * SIM.DAY && utan === undefined; t += STEG) { const b = SIM.bjornarOf(s, t); if (b.some(d => d.art === 'bjorn') && !b.some(d => d.art === 'bjornunge')) utan = t; }
+    if (utan === undefined) return [['ett ögonblick med björnen ute utan ungar', false]];
+    const prova = (n: number, N: number) => {
+      let anfall = 0, moten = 0, folk = 0;
+      for (let i = 0; i < N; i++) {
+        const k = SIM.cloneState(s); k.now = utan!;
+        for (let r = 0; r < i; r++) SIM.rnd(k, 'bjorn'); // en annan slump i varje försök
+        const mor = SIM.bjornarOf(k, k.now).find(d => d.art === 'bjorn')!, alla = SIM.living(k).filter(q => SIM.ageOf(q, k.now) >= SIM.ALDER.vuxen);
+        for (const q of SIM.living(k)) { q.x = 2; q.y = 2; q.task = undefined; }
+        alla.slice(0, n).forEach((q, j) => { q.x = mor.x + 1; q.y = mor.y + (j - 1) * 0.5; });
+        SIM.bjornSteg(k);
+        anfall += k.stat?.bjornmoteAnfall ?? 0; moten += k.stat?.bjornmoten ?? 0; folk += k.stat?.bjornmoteFolk ?? 0;
+      }
+      return { andel: anfall / Math.max(1, moten), moten, folk };
+    };
+    const N = 400, en = prova(1, N), tre = prova(3, N);
+    return [
+      [`en ensam anfalls i ${(en.andel * 100).toFixed(0)} % av ${en.moten} möten, en grupp om tre i ${(tre.andel * 100).toFixed(0)} % av ${tre.moten}`, en.andel > 0 && tre.andel > en.andel * 0.3 && tre.andel < en.andel * 0.75],
+      [`ett möte per grupp, med alla tre i det (${tre.folk} personer i ${tre.moten} möten)`, tre.moten === N && tre.folk === 3 * N],
+    ];
+  },
+};
