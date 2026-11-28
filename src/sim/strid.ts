@@ -167,6 +167,8 @@ export const STRID = balans('strid', {
   fallBas: 0.22, // chansen att en knuff fäller någon lika stark, utvilad och frisk på torr mark ...
   fallStyrka: 0.06, // ... gånger 1 + (styrkan − den knuffades styrka) × detta ...
   fallTrott: 1, fallSkadad: 1.5, fallTung: 1, fallHalt: 1.5, // ... och gånger 1 + detta × tröttheten (1 − ork), skadorna (1 − rörligheten), bördan och halkan (0–1)
+  knuffBak: 1, // en knuff som inte fäller trycker den knuffade så här många rutor bort (gånger styrkan som i fallet, steg 15.1.68) ...
+  vackla: 0.5, vacklaBak: 0.8, // ... och ett slag med minst den här tyngden får den som står att backa vacklaBak × tyngden rutor
   ligga: 1.5, // sekunder den som fallit ligger innan hen är uppe (dubbelt så länge för den utmattade)
   halka: 0.05, // chansen i sekunden att halka omkull när man springer, gånger halkan
   leraFran: 0.6, // marken blir hal av fukten över så här mycket (vader.ts) ...
@@ -292,6 +294,7 @@ export const STRIDHANDELSER = {
   parera: { tecken: '⚔️', namn: 'Parerar' }, // steg 3.7.2
   duck: { tecken: '🌀', namn: 'Duckar' },
   backar: { tecken: '↩️', namn: 'Backar' },
+  trycks: { tecken: '💨', namn: 'Trycks bakåt' }, // knuffen och det tunga slaget (steg 15.1.68)
   avstand: { tecken: '🏹', namn: 'Håller avståndet' }, // steg 3.7.7
   byter: { tecken: '🔁', namn: 'Byter vapen' },
   vantar: { tecken: '✋', namn: 'Väntar på fritt läge' },
@@ -774,7 +777,8 @@ function slaEtt0(st: Strid, a: Kampe, b: Kampe) {
     }
     if (duckar(st, b)) { st.logg.push({ t: st.t, h: 'duck', a: b.id, b: a.id }); return; }
   }
-  traffa(st, a, b, v.skada * tyngd(st, b), a.vapen === 'bjornram' && (a.traffar % STRID.bjornBett) === STRID.bjornBett - 1 ? 'bett' : v.slag); // björnen biter vart tredje slag med käftarna, annars river den (steg 9.5.13)
+  const ty = tyngd(st, b);
+  traffa(st, a, b, v.skada * ty, a.vapen === 'bjornram' && (a.traffar % STRID.bjornBett) === STRID.bjornBett - 1 ? 'bett' : v.slag, undefined, ty); // björnen biter vart tredje slag med käftarna, annars river den (steg 9.5.13)
 }
 // vännen som står i närstrid med målet m (för skytten a), om någon
 const vanVid = (st: Strid, a: Kampe, m: Kampe) => st.kampar.find(f => f.sida === a.sida && f !== a && iStrid(f) && dist(f, m) <= STRID.vadaNara && (f.mal === m.id || m.mal === f.id));
@@ -810,7 +814,8 @@ export const TRAFFDEL_PROV: { del?: Kroppsdel } = {};
 // en träff av graden skada med slaget sl: kroppsdelen, kläderna, skadan och följderna
 // stridsmodet sjunker bara av den del av ett sår som är djupare än en skråma (steg B.65); i brottningen och leken räknas hela slaget (steg B.63)
 const modSar = (g: number, hela?: boolean) => hela ? g : Math.max(0, g - HALSA.skrama);
-export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, kast?: true) {
+// ty = slagets tyngd (steg 15.1.68): ett tungt slag får den som står att backa
+export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, kast?: true, ty?: number) {
   skada0 *= a.kv?.[a.vapen] ?? 1; // vapnets kvalitet (steg 12.2.6)
   const kastad = kast ? VAP[a.vapen].kast : undefined;
   if (kastad?.pil && a.pil) skada0 *= PILSLAG[a.pil]?.() ?? 1; // järnpilen skadar mer (steg 13.4.2)
@@ -853,6 +858,19 @@ export function traffa(st: Strid, a: Kampe, b: Kampe, skada0: number, sl: Slag, 
   if (b.lage === 'nere') return; // den som redan ligger
   if ((iStrid(b) || b.lage === 'flykt') && !kanGaK(b)) { b.kryper = 0; return falla(st, b, 'nere', 'kryper'); } // kan inte resa sig utan kryper undan (steg 3.7.19)
   if (smartaAv(b) >= STRID.nere) return falla(st, b, sport ? 'ger' : 'nere'); // den som har för ont i brottningen ger sig
+  if (ty !== undefined && ty >= STRID.vackla && iStrid(b) && !utsatt(b)) trycka(st, a, b, STRID.vacklaBak * ty); // det tunga slaget får hen att backa (steg 15.1.68)
+}
+// b trycks l rutor rakt bort från a (steg 15.1.68: knuffen och det tunga slaget), och stannar vid en vägg, kanten eller en annan kropp
+function trycka(st: Strid, a: Kampe, b: Kampe, l: number) {
+  const d = Math.max(0.01, dist(a, b)), ux = (b.x - a.x) / d, uy = (b.y - a.y) / d, mx = b.x + ux * l, my = b.y + uy * l;
+  const fi = st.kampar.filter(o => o.sida !== b.sida && iStrid(o) && o !== a);
+  let gatt = 0;
+  while (gatt < l - 1e-9) {
+    const steg = Math.min(0.1, l - gatt), x = b.x + ux * steg, y = b.y + uy * steg;
+    if (x < KANT || y < KANT || x > st.w - KANT || y > st.h - KANT || !fri(st, b, x, y, fi, mx, my)) break;
+    b.x = x; b.y = y; gatt += steg;
+  }
+  if (gatt > 0) { b.runtP = undefined; st.logg.push({ t: st.t, h: 'trycks', a: b.id, b: a.id }); }
 }
 
 // knuffen (steg 3.7.8): ingen skada, men den kan fälla. Den som ser den komma kan kliva undan
@@ -861,7 +879,8 @@ function knuffa(st: Strid, a: Kampe, b: Kampe) {
   if (iStrid(b) && b.mal === a.id && duckar(st, b)) { st.logg.push({ t: st.t, h: 'duck', a: b.id, b: a.id }); return; }
   const c = STRID.fallBas * Math.max(0.2, 1 + (a.st.styrka - b.st.styrka) * STRID.fallStyrka)
     * (1 + STRID.fallTrott * (1 - b.ork) + STRID.fallSkadad * (1 - rorlighet(b)) + STRID.fallTung * (b.tung ?? 0) + STRID.fallHalt * st.halt);
-  if (slump(st) < c * tyngdSnitt()) omkull(st, b, a); else st.logg.push({ t: st.t, h: 'knuff', a: a.id, b: b.id });
+  if (slump(st) < c * tyngdSnitt()) omkull(st, b, a);
+  else { st.logg.push({ t: st.t, h: 'knuff', a: a.id, b: b.id }); trycka(st, a, b, STRID.knuffBak * Math.max(0.2, 1 + (a.st.styrka - b.st.styrka) * STRID.fallStyrka)); } // knuffen trycker tillbaka den som står kvar (steg 15.1.68)
   b.overraskad = undefined;
 }
 // k faller omkull (knuffad av av, annars halkade hen) och kan tappa vapnet
@@ -1111,6 +1130,7 @@ export function stridText(st: Strid, r: StridRad): string {
     case 'parera': return `${a} parerar slaget från ${b}${med}.`;
     case 'duck': return `${a} duckar undan slaget från ${b}.`;
     case 'backar': return `${a} drar sig bakom vännerna och hämtar andan.`;
+    case 'trycks': return `${a} trycks bakåt av ${b}.`;
     case 'tog': return `${a} ${r.kast ? 'träffar' : v?.ord ?? 'slår'} ${b} i ${delNamn(r.d!)}${med}, men ${sakNamn(r.kl ?? '').toLowerCase()} tar slaget.`;
     case 'traff': return `${a} ${r.kast ? 'kastar och träffar' : v?.ord ?? 'slår'} ${b} i ${delNamn(r.d!)}${med}: ${skadaOrd(SKADOR[r.k!].ett, r.g!)}${r.kl ? ` (${sakNamn(r.kl).toLowerCase()} tog en del)` : ''}.`;
     case 'knuff': return `${a} knuffar ${b}, men ${b} står kvar.`;

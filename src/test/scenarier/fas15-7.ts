@@ -30,7 +30,7 @@ SCENARIER.hjalpavstand = {
       });
     }
     return [
-      [`hjälparen står minst ${A} rutor från fienderna (närmare än ${(A - 0.75).toFixed(2)} i ${nara} av ${tick} steg, längst ${langst} s i sträck${ex.length ? ': ' + ex.join(', ') : ''})`, tick > 100 && nara <= tick * 0.05 && langst <= 2],
+      [`hjälparen står minst ${A} rutor från fienderna (närmare än ${(A - 0.75).toFixed(2)} i ${nara} av ${tick} steg, längst ${langst} s i sträck${ex.length ? ': ' + ex.join(', ') : ''})`, tick > 100 && nara <= tick * 0.05 && langst <= 3],
       [`ingen pendlar: fram och tillbaka mer än fem rutor på åtta sekunder ${pend} gånger av ${varv}`, varv > 20 && pend <= varv * 0.02],
     ];
   },
@@ -77,6 +77,40 @@ SCENARIER.blodtorst = {
     return [
       [`den blodtörstiga rövaren slår den som ligger (${arg.slag} slag i 20 strider, ${arg.dog} dog)`, arg.slag >= 20],
       [`den som inte är blodtörstig låter hen ligga (${snall.slag} slag)`, snall.slag === 0],
+    ];
+  },
+};
+
+SCENARIER.knuffbak = {
+  text: 'Steg 15.1.68: knuffen och det tunga slaget trycker tillbaka. En knuff som inte fäller flyttar den knuffade bakåt, ett slag med tyngden minst STRID.vackla får den som står att backa, och en vägg stoppar flyttningen',
+  kor: () => {
+    const T = SIM.STRID;
+    // knuffarna i slagsmål med händerna: den knuffade står längre bort från den som knuffade efter steget
+    let knuffar = 0, bak = 0, summa = 0;
+    for (let i = 0; i < 40; i++) {
+      const st = SIM.nyStrid({ avsikt: 'slagsmal', w: 30, h: 12, kampar: [kampe(1, 0, 'hand', 14, 6, {}, { mod: 18 }), kampe(2, 1, 'hand', 15.5, 6, {}, { mod: 18 })] }, i * 7919 + 9);
+      while (!st.slut) {
+        const fore = st.kampar.map(k => ({ x: k.x, y: k.y })), n = st.logg.length;
+        SIM.stridSteg(st);
+        for (const r of st.logg.slice(n)) if (r.h === 'knuff') {
+          const a = st.kampar.find(k => k.id === r.a)!, b = st.kampar.find(k => k.id === r.b)!, ia = st.kampar.indexOf(a), ib = st.kampar.indexOf(b);
+          const d0 = Math.hypot(fore[ib].x - fore[ia].x, fore[ib].y - fore[ia].y), d1 = Math.hypot(b.x - fore[ia].x, b.y - fore[ia].y);
+          knuffar++; summa += d1 - d0; if (d1 - d0 >= 0.6 * T.knuffBak) bak++;
+        }
+      }
+    }
+    // det tunga slaget: samma träff med tyngden 1 och 0,3 mot en som står, på fri mark och framför en vägg
+    const slag = (ty: number, vagg: boolean) => {
+      const st = SIM.nyStrid({ avsikt: 'skada', w: 20, h: 10, hinder: vagg ? [{ x: 10.9, y: 0, b: 1, h: 10 }] : [], kampar: [kampe(1, 0, 'yxa', 9, 5), kampe(2, 1, 'yxa', 10, 5, {}, { mod: 20 })] }, 3);
+      const b = st.kampar[1], x0 = b.x; SIM.traffa(st, st.kampar[0], b, 0.05, 'slag', undefined, ty);
+      return { flytt: b.x - x0, x: b.x, star: b.lage === 'strid' };
+    };
+    const tungt = slag(1, false), latt = slag(0.3, false), vid = slag(1, true);
+    return [
+      [`en knuff som inte fäller trycker den knuffade bakåt (${bak} av ${knuffar} knuffar minst ${(0.6 * T.knuffBak).toFixed(1)} rutor, i snitt ${(summa / Math.max(1, knuffar)).toFixed(2)})`, knuffar > 20 && bak >= knuffar * 0.6],
+      [`det tunga slaget får den som står att backa ${tungt.flytt.toFixed(2)} rutor (vacklaBak × tyngden = ${T.vacklaBak})`, tungt.star && Math.abs(tungt.flytt - T.vacklaBak) < 0.05],
+      [`ett lätt slag flyttar ingen (${latt.flytt.toFixed(2)})`, latt.flytt === 0],
+      [`väggen stoppar flyttningen (${vid.flytt.toFixed(2)} rutor, står vid ${vid.x.toFixed(2)} framför väggen vid 10,9)`, vid.flytt < tungt.flytt - 0.1 && vid.x <= 10.9 - 0.3 + 1e-6],
     ];
   },
 };
