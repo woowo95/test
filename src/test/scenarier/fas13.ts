@@ -3488,6 +3488,9 @@ SCENARIER.rikgang = {
       const rik = (r: SIM.VarldRad, folk: number, per: number) => { r.tal.folk = folk; r.tal.styrka = Math.round(folk / 2); r.tal.mat = folk * 400; r.varor = undefined; r.egen = undefined; r.hus = undefined; r.tal.rikedom = folk * per; SIM.radVaror(r); r.tal.rikedom = SIM.radRikedomUr(r); };
       rik(h, 12, 20 * ggr);
       for (const g of gr) { rik(g, 30, 20); delete g.tro; SIM.mots(vl, g.nr, h.nr); if (g.syn) g.syn.inst = 0; else vl.rel = { ...vl.rel, [`${g.nr}>${h.nr}`]: 0 }; }
+      // grannarnas folk är hemma: i den sparade testbyn har en granne fem ute på andra färder, och då kan bara fyra gå (flockStorlek,
+      // minst dubbelt så många lediga som går), vilket prövar något annat än rikedomen
+      vl.farder = (vl.farder ?? []).filter(f => !gr.some(g => g.nr === f.fran));
       let n = 0, max = -9;
       for (let d = 0; d < 10; d++) for (const g of gr) {
         const v = SIM.byVal(s, vl, g, Math.floor(s.now / SIM.DAY) + d);
