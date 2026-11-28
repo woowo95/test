@@ -1,4 +1,5 @@
-import { spelTid, styck } from '../sim/ord';
+import { och, spelTid, styck } from '../sim/ord';
+import { handPlatser } from '../sim/utrustning';
 import { iconImg, kvSvg, tecknet } from '../ikoner';
 import { framstegSvg } from './framsteg';
 import { halsa, moodOf, kalender, NORMAL, kvEffekt, kvHaller, kvNamn, kvOf, kvVarde, viktOf, HOUR, KROPP, LogEntry, MIN, Person, REL, byId, capacity, carryKind, clamp, isParent, isSick, ledareOf, load, num, anseende, sak, sakNamn, skadeLista, timeLabel, egetNamn } from '../sim';
@@ -182,7 +183,13 @@ export function carryTxt(p: Person) {
   const kg = (n: number) => `${num(n).replace(',0', '')} kg`, bors = (k: string, n: number) => `${styck(n, k, fmtN)} (${kg(n * viktOf(k))})`;
   if (t && t.carry > 0) parts.push(bors(carryKind(t.act), t.carry));
   for (const k in t?.items ?? {}) if (t!.items![k] > 0 && !sak(k)?.dold) parts.push(bors(k, t!.items![k]));
-  return parts.length ? `Bär ${parts.join(' och ')}, ${kg(load(t!, s))} (${Math.round(load(t!, s) / orkar * 100)} % av vad hen orkar)` : `Bär inget just nu, orkar bära ${kg(orkar)} med båda händerna och ${kg(orkar / 2)} i en`;
+  if (parts.length) return `Bär ${parts.join(' och ')}, ${kg(load(t!, s))} (${Math.round(load(t!, s) / orkar * 100)} % av vad hen orkar)`;
+  // platserna hen faktiskt har fria: korgen, händerna som inte håller något och ryggsäcken (steg 15.1.44)
+  const pl = handPlatser(s, p), hander = pl.filter(x => x.hand !== 'rygg' && !x.korg);
+  const ut = [...pl.filter(x => x.korg).map(x => `${kg(x.kap)} i korgen`),
+    ...(hander.length === 2 ? [`${kg(hander[0].kap + hander[1].kap)} med båda händerna och ${kg(hander[0].kap)} i en`] : hander.map(x => `${kg(x.kap)} i ${pl.some(y => y.korg) ? 'den andra handen' : 'den fria handen'}`)),
+    ...pl.filter(x => x.hand === 'rygg').map(x => `${kg(x.kap)} i ryggsäcken`)];
+  return ut.length ? `Bär inget just nu, har plats för ${och(ut)}` : 'Bär inget just nu och har inga händer fria';
 }
 // en rad i loggen där namnen går att trycka på
 // Namnen letas upp i den ursprungliga texten och byts i ett svep, så att samma namn två gånger, eller ett namn som är

@@ -1,5 +1,6 @@
 // Vakten patrullerar (steg 3.7.4, beslut Björn efter v158): nattens vakt går runt byn hela tiden och stannar bara kort vid
-// elden ibland för att värma sig, lägga på ved eller för ett kort samtal. Vakten tar sitt eget bästa vapen eller ett som
+// elden ibland för att värma sig, lägga på ved eller för ett kort samtal. Den som fryser på passet gör vid nästa stopp det
+// värmen erbjuder (VARMA i varme.ts: tänder elden, lägger på ved eller går in en stund) och går sedan vakt igen (steg 15.1.42). Vakten tar sitt eget bästa vapen eller ett som
 // byn äger, aldrig någon annans, och har det i handen hela natten (striden räknar med det, strid.ts: personKampe)
 import { glesPlats } from './trangsel';
 import { tingOf } from './agande';
@@ -19,9 +20,10 @@ export const VAKT = balans('vakt', {
   stoppMin: [0.3, 1.5], // minuter vakten stannar och ser sig om vid varje stopp
   eldVar: 5, // efter så här många stopp går vakten till elden ...
   eldMin: [2, 5], // ... och stannar så här många minuter (värmer sig, lägger på ved, pratar)
-  fryser: 0.6, // är kroppsvärmen under detta går vakten till elden direkt
 });
 
+// fryser vakten, som valet räknar det (val.ts sätter kroken: raden fryser i ARBETEN)
+export const vaktKrok = { fryser: (_s: State, _p: Person) => false };
 const mellan = (s: State, p: Person, [a, b]: readonly number[]) => (a + rnd(s, 'vakt', p) * (b - a)) * MIN;
 // stoppet nummer i längs rundan: en punkt på land strax utanför byns område, i riktningen från områdets mitt (närmare
 // om det är vatten där)
@@ -60,7 +62,10 @@ export function vaktSteg(s: State, p: Person, tk: Task) {
   if (tk.stopp === undefined) { tk.stopp = s.now + mellan(s, p, tk.vidEld ? VAKT.eldMin : VAKT.stoppMin); return; }
   if (s.now < tk.stopp) return;
   tk.stopp = undefined;
-  if (!tk.vidEld && (p.warm < VAKT.fryser || ++tk.varv! % VAKT.eldVar === 0)) {
+  // fryser vakten lämnar hen passet här, och valet väljer som för vem som helst: värmen (raden fryser i ARBETEN, val.ts) går före
+  // vakten, som väljs igen när hen är varm. Inom passet går bara Fara och Nöd före det
+  if (vaktKrok.fryser(s, p)) { p.task = undefined; return; }
+  if (!tk.vidEld && ++tk.varv! % VAKT.eldVar === 0) {
     const e = eldPlats(s), at = glesPlats(s, p, () => { const v = rnd(s, 'vakt', p) * Math.PI * 2; return friUteNear(s, e.x + 0.5 + Math.cos(v) * ACTS.vakt.radie!, e.y + 0.5 + Math.sin(v) * ACTS.vakt.radie!); })!; // som första platsen (spotFor), men inte bland dem som vilar där (trängseln, steg B.21)
     tk.vidEld = true; tk.tx = at.x; tk.ty = at.y;
   } else {

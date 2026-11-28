@@ -184,11 +184,14 @@ export function slitRygg(s: State, t: Ting, y: number, haller: number) {
 // ryms bördan b i p:s fria händer (och ryggsäcken)?
 export const ryms = (s: State, p: Person) => { const pl = handPlatser(s, p); return (b: Record<string, number>) => !!fordela(pl, b); };
 // är bördan full: ryms inte en sak till av det arbetet ger (steg 6.1.8)?
-export function fullBorda(s: State, p: Person, t: Task) {
-  // en till av turens mål (hö, grenar, steg 13.10.7), annars en till av det arbetet ger
-  const b = bordSlag(t), till = turMal(t) ?? [carryKind(t.act)], fo = fordonI(s, t);
-  if (fo && !fo.f.falt) return !till.some(k => rymsI(fo)({ ...b, [k]: (b[k] ?? 0) + viktOf(k) })); // kälken (steg 10.10.2)
-  return !till.some(k => fordela(handPlatser(s, p), { ...b, [k]: (b[k] ?? 0) + viktOf(k) }));
+export const fullBorda = (s: State, p: Person, t: Task) => !rymsTurMer(s, p, t, bordSlag(t));
+// ryms en sak till av det turen gäller, ovanpå bördan b (slag → vikt)? Det är turens mål (hö, grenar, steg 13.10.7), annars det
+// arbetet ger och det rundan plockat på turen (rötterna, svampen). Det man plockar i förbifarten tas bara med om det gör, så att
+// det inte tränger undan det turen gäller (steg 15.1.44)
+export function rymsTurMer(s: State, p: Person, t: Task, b: Record<string, number>) {
+  const till = turMal(t) ?? [carryKind(t.act), ...(t.plockat ?? [])], fo = fordonI(s, t);
+  if (fo && !fo.f.falt) return till.some(k => rymsI(fo)({ ...b, [k]: (b[k] ?? 0) + viktOf(k) })); // kälken (steg 10.10.2)
+  return till.some(k => !!fordela(handPlatser(s, p), { ...b, [k]: (b[k] ?? 0) + viktOf(k) }));
 }
 // hur mycket p kan bära i de fria händerna, i vikt (för texterna och testerna)
 export const bordPlats = (s: State, p: Person) => handPlatser(s, p).reduce((a, x) => a + x.kap, 0);

@@ -340,7 +340,7 @@ function bynByte(s: State, a: Person, b: Person) {
   const L = s.projektSaknar, f = L && forByn(s);
   if (!L || !f || (a !== f && b !== f)) return false;
   const g = a === f ? b : a;
-  if (g.gast || osams(s, g, f)) return false;
+  if (g.gast || osams(s, g, f) || !ansvarar(s, g)) return false; // barnen byter inte (steg 15.1.40)
   for (const w of payable(s, g, ['silver'])) {
     const ps = L[w.k];
     if (w.t || !ps || ps.n < 1) continue;
@@ -351,6 +351,9 @@ function bynByte(s: State, a: Person, b: Person) {
 }
 // a och b talar. Saknar någon av dem något som den andra har över? Då byter de, eller så ger den andra det. Ger true om
 // något bytte ägare
+// bytena och gåvorna i samtalen och på marknaden (steg 15.1.40): den som är gammal nog att ansvara för sig byter och ger. Ett barn
+// försörjs av familjen: det kan få en gåva men köper inget och ger inget bort, inte heller det det nyss fått
+const ansvarar = (s: State, p: Person) => ageOf(p, s.now) >= ALDER.ansvar;
 export function askForGift(s: State, a: Person, b: Person) {
   return !!brukByte(s, a, b, BRUK) || eveningTrade(s, a, b) || bynByte(s, a, b);
 }
@@ -358,6 +361,7 @@ export function askForGift(s: State, a: Person, b: Person) {
 // (b.kvar) och den andra mer, byter de när båda tjänar på det: vinsten delas (delad i byte). Samtalen hålls mest vid
 // elden på kvällar och nätter (val.ts), så det är då de flesta sådana byten blir av
 function eveningTrade(s: State, a: Person, b: Person) {
+  if (!ansvarar(s, a) || !ansvarar(s, b)) return false; // barnen byter inte (steg 15.1.40)
   for (const n of BEHOV()) for (const [m, g] of [[a, b], [b, a]]) {
     const rest = Math.min(behalls(s, m, n) - ownFor(s, m, n), ownFor(s, g, n) - n.kvar(s, g)); // maten upp till den egna gränsen (steg 13.9.6)
     if (rest < n.minst) continue;
@@ -653,21 +657,23 @@ function brukByte(s: State, a: Person, b: Person, rader: readonly BrukRad[], nu 
   for (const r of rader) {
     const ri = BRUK.indexOf(r);
     for (const [m, g] of [[a, b], [b, a]]) {
+      if (!ansvarar(s, g)) continue; // ett barn ger och säljer inget (steg 15.1.40)
+      const kopa = ansvarar(s, m);
       const keys = nu ? [...r.kandidater(s, m)] : saknarLista(s, m).filter(e => e[0] === ri).map(e => e[1]);
       for (const k of keys) {
         if (r.saknar(s, m, k) <= 0) continue; // det kan ha ändrats sedan timmen började
-        const res = r.behov ? ((!osams(s, g, m) && tradeFor(s, m, g, r.behov())) ? 'byte' : gift(s, m, g, r.behov()) ? 'gåva' : undefined)
-          : r.ting ? tingFran(s, m, g, r, k) : mangdFran(s, m, g, r, k);
+        const res = r.behov ? ((kopa && !osams(s, g, m) && tradeFor(s, m, g, r.behov())) ? 'byte' : gift(s, m, g, r.behov()) ? 'gåva' : undefined)
+          : r.ting ? tingFran(s, m, g, r, k, kopa) : mangdFran(s, m, g, r, k, kopa);
         if (res) return res;
       }
     }
   }
 }
 // m byter till sig eller får tinget av slaget k som g har över
-function tingFran(s: State, m: Person, g: Person, r: BrukRad, k: string): 'gåva' | 'byte' | undefined {
+function tingFran(s: State, m: Person, g: Person, r: BrukRad, k: string, kopa: boolean): 'gåva' | 'byte' | undefined {
   const t = r.over!(s, g, k);
   if (!t) return;
-  if (!osams(s, g, m) && byte(s, m, g, [{ k, n: 1, t }], { behov: DELA.saknar, minst: 1, fara: 0, typ: r.id, utom: [k] })) return 'byte';
+  if (kopa && !osams(s, g, m) && byte(s, m, g, [{ k, n: 1, t }], { behov: DELA.saknar, minst: 1, fara: 0, typ: r.id, utom: [k] })) return 'byte';
   if (rnd(s, 'dela', g) >= willing(s, g, m, ownedKind(s, g, k))) return;
   give(t, g, m);
   const namn = `${SAKER[k]?.ett ? 'ett' : 'en'} ${(SAKER[k]?.namn ?? k).toLowerCase()}`, rel = getRel(s, m, g); // rätt genus (ett träspjut)
@@ -682,10 +688,10 @@ function tingFran(s: State, m: Person, g: Person, r: BrukRad, k: string): 'gåva
 // det g har över av materialet k: det g äger utöver det hens eget arbete behöver
 export const materialOver = (s: State, g: Person, k: string) => Math.max(0, ownsAmount(s, g, k) - brukAv(k).behall(s, g, k));
 // m byter till sig eller får så mycket av materialet k som m saknar och g har över, i hela saker
-function mangdFran(s: State, m: Person, g: Person, r: BrukRad, k: string): 'gåva' | 'byte' | undefined {
+function mangdFran(s: State, m: Person, g: Person, r: BrukRad, k: string, kopa: boolean): 'gåva' | 'byte' | undefined {
   const n = Math.min(r.saknar(s, m, k), helt(materialOver(s, g, k)));
   if (n < 1) return;
-  if (!osams(s, g, m) && byte(s, m, g, [{ k, n }], { behov: DELA.saknar, minst: 1, fara: 0, typ: r.id, utom: [k] })) return 'byte';
+  if (kopa && !osams(s, g, m) && byte(s, m, g, [{ k, n }], { behov: DELA.saknar, minst: 1, fara: 0, typ: r.id, utom: [k] })) return 'byte';
   if (rnd(s, 'dela', g) >= willing(s, g, m, ownsAmount(s, g, k) / n)) return;
   const v = ownMove(s, k, n, g.id, m.id);
   const rel = getRel(s, m, g); rel.op = clamp(rel.op + 1, -100, 100); minnsGava(s, g, m);

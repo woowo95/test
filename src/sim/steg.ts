@@ -136,7 +136,7 @@ import { lagRegister } from './lagar';
 import { raddDygn, raddRegister } from './radsla';
 import { LARM, handelse, larma } from './rykten';
 import { tal, horsel, barMed, binStick, burenSteg, halsa, halsaSteg, hemma, lakerFullt, lamnaAv, vardKlar, vardMal } from './halsa';
-import { bordPlats, fullBorda, kladVarme, klaAvKlar, klaPaKlar, rustaKlar, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
+import { bordPlats, fullBorda, rymsTurMer, kladVarme, klaAvKlar, klaPaKlar, rustaKlar, ryggKorg, ryms, slitRygg, stepKlader } from './utrustning';
 import { dragdjurBredvid, fartI, fordonI, rymsI } from './fordon';
 import { KLADER, NAKEN_PLATS, PLAGG, kladAv } from './klader';
 import { allaTing, type Ting } from './agande';
@@ -1154,7 +1154,7 @@ function arrive(s: State, p: Person, tk: Task, light: boolean) {
 // det ett arbete för byn ger, per handling. y = det platsen gav den här biten (takten gånger platsens värde rich), rd = redskapet
 // i handen, a = åldern, bar = lägg något bredvid bördan (grenar, rötter, svamp). Svarar raden true har den själv lagt det i bördan
 // delar = platsens värde per lager före uttaget (richnessDelar), när arbetet tar ur flera lager
-interface Arbetsbit { y: number; rich: number; delar?: number[]; rd: ReturnType<typeof toolRow>; dtSec: number; a: number; bar: (k: string, n: number) => void; slag?: string }
+interface Arbetsbit { y: number; rich: number; delar?: number[]; rd: ReturnType<typeof toolRow>; dtSec: number; a: number; bar: (k: string, n: number, plockat?: true) => void; slag?: string } // plockat = det rundan plockade, det turen gäller (steg 15.1.44)
 const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) => boolean | void>> = {
   // fiske med händerna, spjut eller metspö: ett försök i taget, och fiskaren går hem med varje fångst
   fiske: (s, p, tk, { rd, dtSec, a, bar }) => {
@@ -1211,16 +1211,16 @@ const UTFALL: Partial<Record<Act, (s: State, p: Person, tk: Task, b: Arbetsbit) 
   },
   samla: (s, p, tk, { rd, dtSec, bar, slag: plockSlag }) => {
     { // på rundan (steg 9.2.55): det som plockades, en hel sak. Allt samlande går på rundan, så slaget är alltid satt ('' medan plocket pågår)
-      if (plockSlag === 'rotter') { bar('rotter', rd?.rotter ?? 1); count(s, 'samlat_rotter', 1); gjort(s, p, 'samlat', 1); }
-      else if (plockSlag === 'sten') bar('sten', 1);
+      if (plockSlag === 'rotter') { bar('rotter', rd?.rotter ?? 1, true); count(s, 'samlat_rotter', 1); gjort(s, p, 'samlat', 1); }
+      else if (plockSlag === 'sten') bar('sten', 1, true);
       else if (plockSlag === 'flinta') { // flintan vid stenarna eller i sanden: bara här hittas flinta, och då står det i loggen (steg 12.1.55)
-        const ff = flintFactor(s, tk.tx, tk.ty), slut = amountOf(s, 'flinta') === 0; count(s, ff > ELD.flintaStenar ? 'flintaSten' : 'flintaAnnan'); bar('flinta', 1); // slut: byn hade ingen flinta (steg 15.1.117)
+        const ff = flintFactor(s, tk.tx, tk.ty), slut = amountOf(s, 'flinta') === 0; count(s, ff > ELD.flintaStenar ? 'flintaSten' : 'flintaAnnan'); bar('flinta', 1, true); // slut: byn hade ingen flinta (steg 15.1.117)
         if (ff > ELD.flintaStenar) observe(s, p, 'flinta', tk.tx, tk.ty);
         loggBer(s, 'l_flinta', p.id, { namn: p.name, plats: ff > ELD.flintaStenar ? 'vid stenarna' : ff > ELD.flintaSand ? 'i sanden vid stranden' : '', slut }, 'world', [p.id]);
         if (ff <= ELD.flintaSand) tecken(s, p, 'fynd', 'flintan där ingen trodde att den fanns'); // fyndet på den märkliga platsen (steg 8.5.18)
       }
-      else if (plockSlag === 'kantarell' || plockSlag === 'spindling') { const f = svampPlock(s, p, plockSlag); for (const k in f) bar(k, f[k]); }
-      else if (plockSlag === 'honung') { const g = BIN.vildTim * dtSec / HOUR_S; takeFrom(s, 'honung', Math.floor(tk.tx) + 0.5, Math.floor(tk.ty) + 0.5, g); bar('honung', g); binStick(s, p, dtSec, BIN.vildStick * fyndAt(s, 'honung', Math.floor(tk.ty) * W + Math.floor(tk.tx))); count(s, 'honungVild', g); if (g > 0 && !s.stat?.vildboHittat && forstaGang(s, 'vildboHittat')) log(s, `${p.name} hittade ett bo med vildbin och tog honung ur det.`, 'world', [p.id]); } // vildboet (steg 10.10.15)
+      else if (plockSlag === 'kantarell' || plockSlag === 'spindling') { const f = svampPlock(s, p, plockSlag); for (const k in f) bar(k, f[k], true); }
+      else if (plockSlag === 'honung') { const g = BIN.vildTim * dtSec / HOUR_S; takeFrom(s, 'honung', Math.floor(tk.tx) + 0.5, Math.floor(tk.ty) + 0.5, g); bar('honung', g, true); binStick(s, p, dtSec, BIN.vildStick * fyndAt(s, 'honung', Math.floor(tk.ty) * W + Math.floor(tk.tx))); count(s, 'honungVild', g); if (g > 0 && !s.stat?.vildboHittat && forstaGang(s, 'vildboHittat')) log(s, `${p.name} hittade ett bo med vildbin och tog honung ur det.`, 'world', [p.id]); } // vildboet (steg 10.10.15)
       else if (plockSlag) { tk.carry += 1; count(s, 'samlat_bar', 1); gjort(s, p, 'samlat', 1); }
     }
     // på rundan hittar man det andra (hö, kvistar, ägg, frön) under hela tiden ute, också gången sedan förra plocket (tk.letat)
@@ -1675,12 +1675,19 @@ function workStep(s: State, p: Person, tk: Task, dtSec: number, a: number, learn
   // det arbetet ger läggs i bördan; något annat än det arbetet ger tas bara med om det ryms i händerna (steg 6.1.8),
   // utom ett sällsynt fynd (flintan), som man inte lämnar
   const smt = res === 'samla' && s.flackar?.length ? toaNara(s, tileOf(tk.tx, tk.ty)) : 0; // plockat där det är toa-smuts (steg 10.11.14)
-  const bar = (k: string, n: number) => {
+  const bar = (k: string, n: number, plockat?: true) => {
     if (!(n > 0)) return;
+    if (plockat && !tk.plockat?.includes(k)) (tk.plockat ??= []).push(k); // det turen gäller (fullBorda)
     // platsen i händerna prövas först när det blir en hel sak till: arbetet mot nästa sak (p.delar) tar ingen plats. Förut föll
     // varje liten del bort när händerna var fulla, så att ägg, mossa och frön nästan aldrig hittades (steg 9.9.5)
     const fore = (tk.items?.[k] ?? 0) + (p.delar?.[k] ?? 0), nyHel = Math.floor(fore + n + 1e-9) > Math.floor(fore + 1e-9);
-    if (nyHel && k !== carryKind(tk.act) && !SAKER[k]?.skaffa?.sallsynt) { const b = bordSlag(tk), w = viktOf(k); if (!ryms(s, p)({ ...b, [k]: Math.ceil((b[k] ?? 0) / w + n - 1e-9) * w })) return; } // bördan blir hela saker (helaIBordan)
+    // det som plockas i förbifarten (inte turens mål eller det som plockades) tas bara med om en sak till av turens mål ryms
+    // efteråt: det tränger inte undan det turen gäller (steg 15.1.44, rymsTurMer i utrustning.ts)
+    if (nyHel && k !== carryKind(tk.act) && !SAKER[k]?.skaffa?.sallsynt) {
+      const b = bordSlag(tk), w = viktOf(k), ny = { ...b, [k]: Math.ceil((b[k] ?? 0) / w + n - 1e-9) * w };
+      const forbi = !plockat && !turMal(tk)?.includes(k as Tand);
+      if (forbi ? !rymsTurMer(s, p, tk, ny) : !ryms(s, p)(ny)) return; // bördan blir hela saker (helaIBordan)
+    }
     tk.items ??= {}; tk.items[k] = (tk.items[k] ?? 0) + n;
     if (smt) smutsigtPlock(s, k, n, smt); // (bara det som ryms och bärs hem)
   };

@@ -17,7 +17,7 @@ import { Ting, freeTools, nTools, redskapSlitet, tingOf, wearTool, ingenHar } fr
 import { BYN, kyrkaId } from './egendom';
 import { troOf } from './religion';
 import { troshusRum, trosMobelBrist } from './troshus';
-import { Zone, amountOf, eldRutor, ingetIElden, bordanAv, flyttaLager, inZone, ownsId, pilesInne, put, stallBorta, usable, use, zoneAt, zonesOf } from './lager';
+import { LAGER, Zone, amountOf, eldRutor, isStored, stacksOf, ingetIElden, bordanAv, flyttaLager, inZone, ownsId, pilesInne, put, stallBorta, usable, use, zoneAt, zonesOf } from './lager';
 import { PLATS } from './plats';
 import { balans } from './balans';
 import { Hus, Rum, bitAt, blocked, gridOf, housesOf, husById, roofed, roomAt, touch } from './byggnad';
@@ -499,7 +499,7 @@ for (const [k, d] of Object.entries(STATIONER as Record<string, StationDef>)) if
 // med = tillbehören som ligger i den (TILLBEHOR, t.ex. skinnfällen i bädden), fyllt = hur full latrinen är (0–1, smuts.ts)
 // tork = det som hänger på torkställningen (matlagning.ts): råvaran, hur mycket, när det hängdes upp och vems det är
 // ag = ägaren till en kista i sovrummet (steg 2.10.18)
-export interface Station { farg?: string; /* den färgade mattans färg (steg 13.3.3, farg.ts) */ sate?: string[]; /* det som står på bordets platser, i bordPlatser-ordning (pallen och stolen, steg 12.4.4) */ vatten?: number; regn?: number; /* vattnet i vattenhon och regnet mot nästa hela vatten (steg 10.10.30) */ bi?: number; /* bisamhället i kupan: honungen i kakor (steg 10.10.17) */ skattat?: number; /* skattade kakor mot nästa bivax (steg 10.10.20) */ skattare?: number; /* den som skattade sist (steg 10.10.21) */ grop?: { r: string; n: number; kvar: number; ag: Record<string, number>; h?: number }; /* festmåltiden i kokgropen (steg 10.7.28) */ tro?: number; kompost?: { rest: number; mogna: number }; deg?: { n: number; kvar: number; ag: Record<string, number> }; sats?: { v: import('./vatskor').VatskaId; n: number; jas: number; dygn: number; klar?: 1; sur?: 1 }; bran?: { n: number; kvar: number }; /* bran = det som bränns i brännpannan: så mycket sprit och tiden kvar (steg 10.7.26) */ brygt?: number; brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1; kvar?: number; mat?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; anv?: number; /* anv = senaste besöket i latrinen (steg 11.1.71) */ q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number>; rok?: number }[]; ag?: number; eld?: { ved: number; lit?: 1; glod?: number } } // rok: ms det rökts (steg 10.2.85); eld: stationens egen eld (stationseld.ts)
+export interface Station { utanMat?: 1; /* påbörjad när hämtningen började: materialet tas när det är framme (steg 15.1.43) */ farg?: string; /* den färgade mattans färg (steg 13.3.3, farg.ts) */ sate?: string[]; /* det som står på bordets platser, i bordPlatser-ordning (pallen och stolen, steg 12.4.4) */ vatten?: number; regn?: number; /* vattnet i vattenhon och regnet mot nästa hela vatten (steg 10.10.30) */ bi?: number; /* bisamhället i kupan: honungen i kakor (steg 10.10.17) */ skattat?: number; /* skattade kakor mot nästa bivax (steg 10.10.20) */ skattare?: number; /* den som skattade sist (steg 10.10.21) */ grop?: { r: string; n: number; kvar: number; ag: Record<string, number>; h?: number }; /* festmåltiden i kokgropen (steg 10.7.28) */ tro?: number; kompost?: { rest: number; mogna: number }; deg?: { n: number; kvar: number; ag: Record<string, number> }; sats?: { v: import('./vatskor').VatskaId; n: number; jas: number; dygn: number; klar?: 1; sur?: 1 }; bran?: { n: number; kvar: number }; /* bran = det som bränns i brännpannan: så mycket sprit och tiden kvar (steg 10.7.26) */ brygt?: number; brukat?: number; brukatT?: number; delar?: { x: number; y: number; rot?: 1; kvar?: number; mat?: 1 }[]; id: number; k: string; x: number; y: number; kvar: number; vem?: number[]; klar?: number; rot?: 1; inne?: 1; med?: string[]; fyllt?: number; anv?: number; /* anv = senaste besöket i latrinen (steg 11.1.71) */ q?: number; ber?: import('./berattelser').SakMinne; tork?: { k: string; n: number; t: number; ag?: Record<string, number>; rok?: number }[]; ag?: number; eld?: { ved: number; lit?: 1; glod?: number } } // rok: ms det rökts (steg 10.2.85); eld: stationens egen eld (stationseld.ts)
 const NONE: Station[] = [];
 export const stationerOf = (s: State) => s.stationer ?? NONE;
 // finns det en möbel bara för slaget k (bokhyllan för blad och böcker, steg 10.6.16)?
@@ -516,7 +516,7 @@ const summaKvar = (t: Station) => { if (t.delar?.length && stationDef(t.k)?.dela
 export function nastaAv(k: string, t?: Station): Record<string, number> {
   const d = stationDef(k), dl = d?.delar;
   if (!t) return dl?.[0]?.av ?? d?.av ?? {};
-  if (!dl || !t.delar?.length) return {};
+  if (!dl || !t.delar?.length) return t.utanMat ? d?.av ?? {} : {};
   const i = delSomByggs(t);
   return i < 0 || t.delar[i].mat ? {} : dl[i]?.av ?? {};
 }
@@ -1293,12 +1293,18 @@ const nyPaVag = (s: State, k: string, p?: Person) => living(s).some(q => q !== p
 // den som bygger en station kan en av dess tekniker; en station utan tekniker (disken, varubordet) kan alla bygga, och ett vrak
 // (grundarnas trasiga vagn) bygger ingen
 export const kanTek = (p: Person, d: { tek: readonly string[]; vrak?: true }) => !d.vrak && (!d.tek.length || d.tek.some(t => knows(p, t)));
+// det av materialet m som ligger vid den påbörjade stationen t, utanför förrådet: det som bars dit hör till bygget (steg 15.1.43)
+function vidBygget(s: State, t: Station, m: string) {
+  const v = vidStation(t); let n = 0;
+  for (const a of stacksOf(s)) if (a.k === m && !isStored(s, a.x, a.y) && Math.hypot(a.x + 0.5 - v.x, a.y + 0.5 - v.y) <= LAGER.rackvidd + 0.5) n += a.n;
+  return n;
+}
 export function kanBygga(s: State, p: Person, k: StationSlag) {
   const d: StationDef = STATIONER[k];
   if (d.tro) return kanByggaTro(s, p, k);
   if (!enTill(s, 'station', p) || (d.brasa ? ageOf(p, s.now) < ALDER.ansvar : !kanTek(p, d)) || !(d.flera || d.hinner) && harStation(s, k) || d.verktyg && !freeTools(s, p, d.verktyg)) return false;
   const h = halvbyggd(s, k, p);
-  if (h) return Object.entries(nastaAv(k, h)).every(([m, n]) => getable(s, p, m) >= n); // nästa del tar sitt material (steg 12.1.17)
+  if (h) return Object.entries(nastaAv(k, h)).every(([m, n]) => getable(s, p, m) + vidBygget(s, h, m) >= n); // nästa del tar sitt material (steg 12.1.17), och det som redan bars dit räknas (steg 15.1.43)
   if (nyPaVag(s, k, p)) return false; // en annan är redan på väg att bygga en ny av sorten: det byn saknar är under arbete
   return (!d.forvar?.privat || villKista(s, p)) && (!d.pynt || villPynt(s, p, k)) && Object.entries(nastaAv(k)).every(([m, n]) => getable(s, p, m) >= n + eldReserv(s, m)) && !!stationSite(s, k, p);
 }
@@ -1338,6 +1344,37 @@ export function stationSpot(s: State, k: string, p?: Person) {
   return at ? vidStation({ id: 0, k, kvar: 1, x: at.x, y: at.y, rot: at.rot }) : undefined;
 }
 // framme: bygg vidare på den halvbyggda, eller ta materialet och börja. Saknas materialet eller platsen blir det inget
+// en ny station av sorten k på platsen at, byggd av p. utanMat = materialet är inte taget än: stationen påbörjas när hämtningen
+// börjar, så att platsen ligger fast och det som bärs dit hör till bygget (steg 15.1.43). En station i delar väntar då på
+// den första delens material, som de andra delarna
+function nyStation(s: State, p: Person, k: string, at: NonNullable<ReturnType<typeof stationSite>>, tro?: number, gammal?: Station, utanMat = false): Station {
+  const d = stationDef(k)!;
+  const t: Station = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: at.x, y: at.y, kvar: d.min * MIN };
+  if (at.rot) t.rot = 1;
+  if ('inne' in at) t.inne = 1;
+  const delar = delarIRad(k, at.x, at.y, at.rot); if (delar) t.delar = delar; // delarna i en rad, som de byggs (steg 9.4.1)
+  if (delar && d.delar) { delar.forEach((q, i) => { q.kvar = delMin(d, i) * MIN; }); if (!utanMat) delar[0].mat = 1; summaKvar(t); } // varje del sitt bygge (steg 12.1.17)
+  else if (utanMat) t.utanMat = 1;
+  if (tro !== undefined) t.tro = tro;
+  if (agarenBygger(d)) t.ag = p.id; // kistan och pyntet är hens (steg 2.10.18, 4.3.4)
+  if (gammal) moblerKrok.ersatt(s, gammal, t); // halmbädden tas isär, och sängen får dess ägare och skinnfäll (mobler.ts)
+  (s.stationer ??= []).push(t);
+  if (!t.inne && !d.forvar) { const { w, h } = storlekAv(t); for (const z of zonesOf(s).filter(z => z.hus === undefined && rutorAv(t.x, t.y, w, h).some(q => inZone(z, q.x, q.y)))) flyttaLager(s, z); } // lagret i vägen (steg 8.1.15)
+  s.byggV = (s.byggV ?? 0) + 1; // en ny sak på kartan: vägarna och platserna räknas om
+  return t;
+}
+// hämtningen till en ny station börjar (HAMTAS.station i hamtning.ts): stationen påbörjas på sin plats, utan material, så att
+// platsen ligger fast medan materialet bärs dit (steg 15.1.43). Det som byter ut en möbel och trons möbler påbörjas när
+// materialet är framme, som förut
+export function stationBorja(s: State, p: Person, tk: Task) {
+  const k = tk.tool ?? '', d = stationDef(k);
+  if (!d || d.ersatter || d.tro || halvbyggd(s, k, p) || (!d.flera && stationerOf(s).some(q => q.k === k))) return;
+  const at = stationSite(s, k, p);
+  if (!at) return;
+  const t = nyStation(s, p, k, at, undefined, undefined, true), sp = stationSpot(s, k, p);
+  tk.ref = t.id;
+  if (sp) { tk.tx = sp.x; tk.ty = sp.y; } // materialet bärs till stationen där den påbörjades
+}
 export function startStation(s: State, p: Person, tk: Task) {
   const k = tk.tool ?? '', d = stationDef(k);
   let t = halvbyggd(s, k, p);
@@ -1348,21 +1385,12 @@ export function startStation(s: State, p: Person, tk: Task) {
     const gammal = at && d.ersatter ? stationerOf(s).find(q => q.k === d.ersatter && q.x === at.x && q.y === at.y && isKlar(q)) : undefined; // möbeln som byts ut (steg 12.4.3)
     if (at && (!d.ersatter || gammal) && (!d.tro || kyrka !== undefined) && Object.entries(av).every(([m, n]) => (kyrka !== undefined ? ownsId(s, kyrka, m) + bordanAv(p, kyrka, m) : getable(s, p, m)) >= n)) {
       for (const [m, n] of Object.entries(av)) if (kyrka !== undefined) use(s, p, m, n, true, kyrka); else takeMaterial(s, p, m, n); // det hen bär hit (steg 11.1.74)
-      t = { id: s.nextStation = (s.nextStation ?? 0) + 1, k, x: at.x, y: at.y, kvar: d.min * MIN };
-      if (at.rot) t.rot = 1;
-      if ('inne' in at) t.inne = 1;
-      const delar = delarIRad(k, at.x, at.y, at.rot); if (delar) t.delar = delar; // delarna i en rad, som de byggs (steg 9.4.1)
-      if (delar && d.delar) { delar.forEach((q, i) => { q.kvar = delMin(d, i) * MIN; }); delar[0].mat = 1; summaKvar(t); } // varje del sitt bygge (steg 12.1.17)
-      if (tro) t.tro = tro.id;
-      if (agarenBygger(d)) t.ag = p.id; // kistan och pyntet är hens (steg 2.10.18, 4.3.4)
-      if (gammal) moblerKrok.ersatt(s, gammal, t); // halmbädden tas isär, och sängen får dess ägare och skinnfäll (mobler.ts)
-      (s.stationer ??= []).push(t);
-      if (!t.inne && !d.forvar) { const { w, h } = storlekAv(t); for (const z of zonesOf(s).filter(z => z.hus === undefined && rutorAv(t!.x, t!.y, w, h).some(q => inZone(z, q.x, q.y)))) flyttaLager(s, z); } // lagret i vägen (steg 8.1.15)
-      s.byggV = (s.byggV ?? 0) + 1; // en ny sak på kartan: vägarna och platserna räknas om
+      t = nyStation(s, p, k, at, tro?.id, gammal);
     }
   } else if (t) {
     const i = delSomByggs(t), q = i >= 0 ? t.delar![i] : undefined, av = nastaAv(k, t);
     if (q && !q.mat) { if (Object.entries(av).every(([m, n]) => getable(s, p, m) >= n)) { for (const [m, n] of Object.entries(av)) takeMaterial(s, p, m, n); q.mat = 1; count(s, 'del påbörjad'); } else t = undefined; } // nästa del tar sitt material (steg 12.1.17)
+    else if (!q && t.utanMat) { if (Object.entries(av).every(([m, n]) => getable(s, p, m) >= n)) { for (const [m, n] of Object.entries(av)) takeMaterial(s, p, m, n); t.utanMat = undefined; count(s, 'station påbörjad'); } else t = undefined; } // stationen som påbörjades när hämtningen började tar sitt material (steg 15.1.43)
     if (t) count(s, 'fortsatt');
   }
   if (!t) { tk.ref = undefined; tk.until = s.now; return; }
@@ -1375,6 +1403,7 @@ export function workStation(s: State, p: Person, tk: Task, dtSec: number) {
   const t = stationById(s, tk.ref);
   if (!t) return;
   const i = delSomByggs(t), q = i >= 0 ? t.delar![i] : undefined, f = kunnaFart(s, p, 'station', t.k); // skickligheten (steg 13.9.8)
+  if (!q && t.utanMat) { tk.until = s.now; return; } // materialet är inte framme (steg 15.1.43)
   if (q) { // delen som byggs nu (steg 12.1.17); utan material blir det inget arbete
     if (!q.mat) { tk.until = s.now; return; }
     q.kvar = Math.max(0, q.kvar! - dtSec * SEC * f); summaKvar(t);
@@ -1935,7 +1964,7 @@ function scenIn(s: State) {
 // igen på en ny plats när behovet och värdet finns kvar; scenens instrument blir kvar i byn
 export function rivStation(s: State, t: Station, text: string) {
   taBort(s, t);
-  for (const [k, n] of Object.entries(stationDef(t.k)!.av)) { const m = Math.floor(n * HUS.rivTillbaka); if (m > 0) put(s, k, m); }
+  if (!t.utanMat) for (const [k, n] of Object.entries(stationDef(t.k)!.av)) { const m = Math.floor(n * HUS.rivTillbaka); if (m > 0) put(s, k, m); } // det påbörjade utan material ger inget tillbaka
   log(s, text, 'world');
 }
 export function rivScenen(s: State, text: string) { const t = stationerOf(s).find(q => q.k === 'scen'); if (t) rivStation(s, t, text); }

@@ -7,7 +7,7 @@ import { groundOf } from './mark';
 import { FOREST, findPath, nasbara } from './vag';
 import { Ting, halvKlar, nTools, newTing, redskapSlitet, tingOf, ingenHar } from './agande';
 import { kvHaller } from './kvalitet';
-import { baraForvar, delarAv, forvarAt, isKlar, sittAt, stationAt, stationDef, stationRutor, stationerOf, tillbakaVid, vidRutaAr } from './stationer';
+import { baraForvar, delarAv, forvarAt, isKlar, nastaAv, sittAt, stationAt, stationDef, stationRutor, stationerOf, tillbakaVid, vidRutaAr, vidStation } from './stationer';
 import { eldDef } from './stationseld';
 import { faltAt } from './odling';
 import { ruttSmuts } from './smuts';
@@ -23,7 +23,7 @@ import { FOOD, SAKER, SAK_LIST, isFood, isTool, rutaOf, sakNamn, viktOf, iSlag }
 import { balans } from './balans';
 import { flodHotad, iVattnetNu, narmasteLand, underMinnet } from './sjo';
 import { FLOD } from './flod';
-import { forbrukat } from './forradsmal';
+import { forbrukat, overTaket } from './forradsmal';
 import { strakI } from './strak';
 import { slappPlanta } from './skogsvard';
 import { slappKruka } from './kruka';
@@ -682,8 +682,10 @@ function ringSpot(s: State, k: string, occ: Occ) {
   }
   return undefined;
 }
+// Det som är över förrådets tak (overTaket i forradsmal.ts) läggs inte i ringen runt lagret, som räknas till förrådet, utan
+// längre ut, där det inte räknas (steg 15.1.45)
 function besideSpot(s: State, k: string, occ: Occ) {
-  const r = ringSpot(s, k, occ);
+  const r = overTaket(s, k) ? undefined : ringSpot(s, k, occ);
   if (r) return r;
   const zs = zonesOf(s).filter(z => z.hus === undefined), base = zs.filter(z => allows(z, k));
   // nödlösning när också ringen är full: längre ut, på en ruta där inget annat ligger (aldrig ovanpå en annan sak) och
@@ -1516,13 +1518,19 @@ function barLista(s: State) {
     return hamnar.get(k)!;
   };
   const framme = besokLager.framme(s);
+  const vill = new Map<string, boolean>(), villIn = (k: string) => { if (!vill.has(k)) vill.set(k, !overTaket(s, k)); return vill.get(k)!; }; // förrådsmålen, en gång per slag
+  // det som lagts vid ett bygge som pågår hör till bygget (steg 15.1.43): det slag den påbörjade stationen ännu väntar på bärs inte in
+  const byggen = stationerOf(s).filter(t => !isKlar(t)).map(t => ({ v: vidStation(t), av: nastaAv(t.k, t) })).filter(b => Object.keys(b.av).length);
+  const tillBygge = (a: { x: number; y: number; k: string }) => byggen.some(b => (b.av[a.k] ?? 0) > 0 && Math.hypot(a.x + 0.5 - b.v.x, a.y + 0.5 - b.v.y) <= LAGER.rackvidd + 0.5);
   for (const a of things(s)) {
+    if (byggen.length && !isStored(s, a.x, a.y) && tillBygge(a)) continue;
     const fa = framme.size ? framme.get(a.y * W + a.x) : undefined;
     if (fa !== undefined && (a.id !== undefined ? (a.ag ? a.ag[fa] : fa === BYN) : arAgd(a, fa) > a.n - 1e-9)) continue; // ägarens varor på varubordet (steg 14.1.8)
     const d = utanforByn(s, a.x, a.y); // nära lägret: elden eller någon lagerplats
     const zi = zoneAt(s, a.x, a.y);
     let why: string | undefined, sc = d, min: number | undefined;
-    if (!isStored(s, a.x, a.y)) { if (rymsIn(a.k) || (d - hamnarVid(a.k)) * clamp(grundvarde(a.k) / LAGER.barVarde, LAGER.barVardeMin, LAGER.barVardeMax) > LAGER.barFullt) why = 'Det ligger saker på marken som ska in i lagret'; }
+    // det som är över förrådets tak bärs inte in (steg 15.1.45): målen frågas, för alla saker, innan något bärs in
+    if (!isStored(s, a.x, a.y)) { if (villIn(a.k) && (rymsIn(a.k) || (d - hamnarVid(a.k)) * clamp(grundvarde(a.k) / LAGER.barVarde, LAGER.barVardeMin, LAGER.barVardeMax) > LAGER.barFullt)) why = 'Det ligger saker på marken som ska in i lagret'; }
     else if (zi < 0) { if (spot(a.k, -Infinity)) { why = 'Det ligger saker bredvid lagret och nu finns det plats'; sc += LAGER.barBredvid; min = -Infinity; } }
     else if (!allows(zs[zi], a.k)) { if (spot(a.k, -Infinity)) { why = `Sorterar: flyttar ${sakNamn(a.k).toLowerCase()} till ${zs.find(z => allows(z, a.k))?.namn?.toLowerCase() ?? 'rätt lager'}`; sc += LAGER.barSortera; min = -Infinity; } }
     else if (spot(a.k, zs[zi].prio ?? 0)) { why = 'Flyttar saker till ett lager närmare elden'; sc += LAGER.barNarmare; min = zs[zi].prio ?? 0; }
