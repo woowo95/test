@@ -138,3 +138,28 @@ SCENARIER.jaktbage = {
     ];
   },
 };
+
+SCENARIER.vargbett = {
+  text: 'Steg 15.1.135: vargbettet följer reglerna för alla sår. Efter en vargstrid är andelen infekterade bett densamma som för andra bett, och infektionerna räknas per sårslag',
+  kor: () => {
+    const s = SIM.createState(5, START); klockan(s, 10);
+    const p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
+    const prova = (varg: boolean, n: number) => {
+      let inf = 0;
+      for (let i = 0; i < n; i++) {
+        Object.assign(p, { rest: 1, toa: 1, hunger: 1, social: 1, warm: 1, health: 1, torst: 1, blod: 1, skador: undefined, task: undefined });
+        SIM.skada(s, p, 'benV', 'bett', 0.25, varg ? 'varg' : 'olycka', '', varg);
+        if (varg) SIM.STRIDSLAG.varg.sar!(s, p, { k: 'bett', g: 0.25 });
+        for (let m = 0; m < 6 * 60; m++) SIM.halsaSteg(s, p, 60);
+        if (p.skador?.some(w => w.k === 'bett' && w.inf !== undefined)) inf++;
+      }
+      return inf / n;
+    };
+    const N = 300, varg = prova(true, N), andra = prova(false, N);
+    return [
+      [`infekterade vargbett ${(varg * 100).toFixed(0)} %, andra bett ${(andra * 100).toFixed(0)} % (${N} av varje, sex timmar)`, Math.abs(varg - andra) < 0.08],
+      [`infektionerna räknas per sårslag (infektioner_bett ${s.stat?.infektioner_bett ?? 0} av ${s.stat?.infektioner ?? 0})`, (s.stat?.infektioner_bett ?? 0) > 0 && s.stat?.infektioner_bett === s.stat?.infektioner],
+      ['balanstalet VARG.bettInf är borta', !('bettInf' in SIM.VARG)],
+    ];
+  },
+};
