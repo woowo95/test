@@ -6,6 +6,7 @@ import { troshusKlart } from './troshus';
 import { DAY, HOUR, Person, Rel, State } from './typer';
 import { balans } from './balans';
 import { ALDER, ageOf, alive, count, isParent, living, log, relKey, stat } from './folk';
+import { influence } from './seder';
 import { UPPV, formas, upplev } from './uppvaxt';
 import { yearNo } from './tid';
 import { kronika } from './historik';
@@ -24,8 +25,8 @@ import { kronikaBer } from './berattelser';
 // ---------- balanstal (regel 8) ----------
 export const ANDE = balans('andlighet', {
   dromDygn: 7, dromOp: 50, // den som sover ensam drömmer om en död hen stått nära (bättre relation än dromOp) som dött de senaste dromDygn dygnen
-  arv: 0.6, // så stor del av ett barns andlighet kommer från föräldrarnas snitt; resten är en egen dragning
-  arvSlump: 8, // så mycket (gånger gauss) det ärvda ändras
+  arv: 0.6, // så stor del av ett barns andlighet kommer från föräldrarnas snitt; resten från byns andlighet (steg 15.1.126)
+  arvSlump: 12, // så mycket (gånger gauss) det ärvda ändras
   // upplevelserna som flyttar andligheten (steg 4.1.1.3, "Andlighetens riktning" i designdokumentet)
   riktning: 0.6, // chansen att den går uppåt är hälften plus så här mycket gånger (andligheten − 50) / 100: den troende ser ett tecken, den tvivlande en slump
   vuxen: 8, // så mycket en upplevelse flyttar andligheten hos en vuxen ...
@@ -78,12 +79,20 @@ export const GUD = balans('gudar', {
 });
 
 // en ny persons andlighet: grundarna och de som flyttar in slumpas jämnt över 0–100, ett barn får en del av föräldrarnas
-// snitt. Drar ur personens egen följd 'tro', så att inget annat ändras
+// snitt och resten av byns andlighet (steg 15.1.126), så att byns andlighet blir ett minne som förs vidare. Drar ur personens
+// egen följd 'tro', så att inget annat ändras (slumpen dras som förut också för barnet)
 export function nyAndlighet(s: State, p: Person, mother?: Person, father?: Person) {
   const egen = rnd(s, 'tro', p) * 100;
   if (!mother || !father) return Math.round(egen);
   const snitt = (andlighet(s, mother) + andlighet(s, father)) / 2;
-  return Math.round(clamp(ANDE.arv * snitt + (1 - ANDE.arv) * egen + gauss(s, 'tro', p) * ANDE.arvSlump, 0, 100));
+  return Math.round(clamp(ANDE.arv * snitt + (1 - ANDE.arv) * byAndlighet(s, p) + gauss(s, 'tro', p) * ANDE.arvSlump, 0, 100));
+}
+// byns andlighet (steg 15.1.126): de levande vuxnas snitt, vägt med inflytandet i sederna (influence i seder.ts), utom p och
+// gästerna. 50 om ingen finns
+export function byAndlighet(s: State, utom?: Person) {
+  let sum = 0, w = 0;
+  for (const q of living(s)) { if (q === utom || q.gast) continue; const v = influence(s, q); if (v > 0) { sum += andlighet(s, q) * v; w += v; } }
+  return w > 0 ? sum / w : 50;
 }
 // ett barn växer upp i föräldrarnas tro (steg 12.1.22, Religion: Tron får fäste): det föds in i den tro föräldrarna som lever
 // har, och har den som vuxen om inte något hen varit med om (tvivlet, en annan tro, en syn) får hen att lämna den. Tror

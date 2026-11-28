@@ -133,3 +133,26 @@ SCENARIER.tvivel = {
     ];
   },
 };
+
+SCENARIER.andearv = {
+  text: 'Steg 15.1.126: andligheten förs vidare från byn. Ett barns andlighet är en del föräldrarnas snitt och resten byns andlighet, vägd med inflytandet bland de vuxna, och lite slump. Barnen till samma föräldrar blir andligare i en andlig by än i en världslig, och barnen skiljer sig från varandra',
+  kor: () => {
+    const barnI = (andlig: number) => {
+      const s = SIM.createState(51, START);
+      while (SIM.living(s).length < 12) nyInvanare(s, SIM.living(s).length % 2 ? 'm' : 'k', 30);
+      const vuxna = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+      for (const p of vuxna) { p.andlig = andlig; p.upp = []; }
+      const mor = vuxna.find(p => p.sex === 'k')!, far = vuxna.find(p => p.sex === 'm')!;
+      mor.andlig = 50; far.andlig = 50;
+      const by = SIM.byAndlighet(s);
+      const barn = Array.from({ length: 40 }, (_, i) => SIM.andlighet(s, SIM.newPerson(s, i % 2 ? 'm' : 'k', s.now, mor, far)));
+      return { by, snitt: barn.reduce((a, v) => a + v, 0) / barn.length, min: Math.min(...barn), max: Math.max(...barn) };
+    };
+    const a = barnI(90), v = barnI(10);
+    return [
+      [`byns andlighet följer de vuxna (${a.by.toFixed(0)} i den andliga byn, ${v.by.toFixed(0)} i den världsliga)`, a.by > 70 && v.by < 30],
+      [`barnen blir andligare i den andliga byn (${a.snitt.toFixed(0)}) än i den världsliga (${v.snitt.toFixed(0)})`, a.snitt - v.snitt > 20],
+      [`barnen skiljer sig från varandra (${a.min}–${a.max} i den andliga byn)`, a.max - a.min >= 15],
+    ];
+  },
+};
