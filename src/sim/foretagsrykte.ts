@@ -68,8 +68,8 @@ export function byHor(s: State, nr: number, p: Person) {
   for (const f of foretagOf(s)) {
     const o = p.omd?.[f.id];
     if (!o || Math.abs(o.v) < FRYKTE.minst) continue;
-    const r = (f.byar ??= {})[nr] ??= { v: 0, n: 0 };
-    r.v += (o.v - r.v) * FRYKTE.by; r.n++;
+    const r = (f.byar ??= {})[nr] ??= { v: 0 };
+    r.v += (o.v - r.v) * FRYKTE.by;
     count(s, 'omdomeGrannby');
   }
 }

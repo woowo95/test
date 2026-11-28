@@ -49,12 +49,11 @@ export interface RumsTyp {
   namn: string; ikon: string; om: string; slag: RumSlag;
   krav: (i: RumInfo, t: Set<string>) => boolean;
   delar?: string[]; // kombinationen visas i stället för de här taggarna
-  sova?: true; ata?: true; // här sover eller äter man (rummens plus, steg 12.1.143)
 }
 export const RUMSTYPER = {
-  sovrum: { namn: 'Sovrum', ikon: '🛏️', slag: 'grund', om: 'En eller två sover här', sova: true, krav: i => i.sov >= 1 && i.sov <= RUM.sovrumMax },
-  sovsal: { namn: 'Sovsal', ikon: '🛏️', slag: 'grund', om: 'Tre eller fler kan sova här', sova: true, krav: i => i.sov > RUM.sovrumMax },
-  matsal: { namn: 'Matsal', ikon: 'bord', slag: 'grund', om: 'Här står ett bord, så att man kan äta under tak', ata: true, krav: i => i.bord >= 1 },
+  sovrum: { namn: 'Sovrum', ikon: '🛏️', slag: 'grund', om: 'En eller två sover här', krav: i => i.sov >= 1 && i.sov <= RUM.sovrumMax },
+  sovsal: { namn: 'Sovsal', ikon: '🛏️', slag: 'grund', om: 'Tre eller fler kan sova här', krav: i => i.sov > RUM.sovrumMax },
+  matsal: { namn: 'Matsal', ikon: 'bord', slag: 'grund', om: 'Här står ett bord, så att man kan äta under tak', krav: i => i.bord >= 1 },
   kok: { namn: 'Kök', ikon: 'lagereld', slag: 'grund', om: 'Här finns en härd, ett örtkök, en bakugn eller en kvarnsten', krav: i => i.eld >= 1 || i.kok >= 1 }, // steg 10.2.92
   forrad: { namn: 'Förråd', ikon: '📦', slag: 'grund', om: 'Hyllor, kistor, ställ eller lagerrutor', krav: i => i.forvar >= RUM.forradMin },
   verkstad: { namn: 'Verkstad', ikon: 'verkstad', slag: 'grund', om: 'Här står en arbetsbänk', krav: i => i.arbete >= 1 },

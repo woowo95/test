@@ -46,7 +46,7 @@ export const FORETAG = balans('foretag', {
 // resultat = medlet av vinsten mot vad ägaren kunde tjäna på annat, bok = det som var kvar sedan förra dygnet, salu = till salu sedan (stangning.ts)
 // byar = ryktet i grannbyarna, efter radens nummer (foretagsrykte.ts)
 // det företaget sålt: n = kunder och v = värdet, per dygn (glöms med FORETAG.minne)
-export interface Foretag { id: number; ag: number; hus?: number; verk: string[]; namn: string; t: number; salt?: Record<string, number>; saltVara?: Record<string, number>; /* det sålda per vara, halveras varje dygn (steg 15.1.13) */ vantat?: Record<string, number>; /* kunderna per dygn det väntade sig när verksamheten togs upp, per verksamhet och vara (steg 15.1.13) */ intakt?: number; vinst?: number; pris?: Record<string, number>; ko?: import('./kassa').KoRad[]; lamnat?: number; kallad?: number; dag?: Record<string, { salt?: number; nej?: number[]; gatt?: number }>; gap?: { n: number; v: number; vem: number[] }; enkelt?: number; byar?: Record<number, { v: number; n: number }>; bok?: { vinst: number; kunder: number }; resultat?: number; oppnat?: number; salu?: number }
+export interface Foretag { id: number; ag: number; hus?: number; verk: string[]; namn: string; t: number; salt?: Record<string, number>; saltVara?: Record<string, number>; /* det sålda per vara, halveras varje dygn (steg 15.1.13) */ vantat?: Record<string, number>; /* kunderna per dygn det väntade sig när verksamheten togs upp, per verksamhet och vara (steg 15.1.13) */ vinst?: number; pris?: Record<string, number>; ko?: import('./kassa').KoRad[]; lamnat?: number; kallad?: number; dag?: Record<string, { salt?: number; nej?: number[]; gatt?: number }>; gap?: { n: number; v: number; vem: number[] }; enkelt?: number; byar?: Record<number, { v: number }>; bok?: { vinst: number; kunder: number }; resultat?: number; oppnat?: number; salu?: number }
 export const foretagOf = (s: State): Foretag[] => s.foretag ?? [];
 export const foretagAvHus = (s: State, hus?: number) => hus === undefined ? undefined : foretagOf(s).find(f => f.hus === hus);
 
@@ -266,7 +266,7 @@ export const dygnet: ((s: State) => void)[] = [];
 // en gång per dygn (ett år i spelet): den som tjänar mest på det startar ett företag, och det som sålts glöms
 export function foretagDygn(s: State) {
   for (const g of dygnet) g(s);
-  for (const f of foretagOf(s)) { for (const v in f.salt) f.salt[v] *= 1 - FORETAG.minne; for (const k in f.saltVara) f.saltVara[k] *= 1 - FORETAG.minne; if (f.intakt !== undefined) f.intakt *= 1 - FORETAG.minne; if (f.vinst !== undefined) f.vinst *= 1 - FORETAG.minne; if (f.lamnat !== undefined) f.lamnat *= 1 - FORETAG.minne; }
+  for (const f of foretagOf(s)) { for (const v in f.salt) f.salt[v] *= 1 - FORETAG.minne; for (const k in f.saltVara) f.saltVara[k] *= 1 - FORETAG.minne; if (f.vinst !== undefined) f.vinst *= 1 - FORETAG.minne; if (f.lamnat !== undefined) f.lamnat *= 1 - FORETAG.minne; }
   const b = bastaStart(s);
   const u = bastaUtok(s);
   if (u && u.poang > (b?.poang ?? 0)) utoka(s, u.f, u.verk);

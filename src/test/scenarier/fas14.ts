@@ -152,7 +152,7 @@ SCENARIER.anstalld = {
       kallad = SIM.betjanVal(s, q)?.f === f;
       f.ko = [];
     }
-    if (a) { a.verk = 1; a.tim = 1; }
+    if (a) a.verk = 1;
     const s0 = q ? SIM.ownsAmount(s, q, 'silver') : 0;
     SIM.lonDygn(s);
     f.lamnat = 0;
@@ -400,7 +400,7 @@ SCENARIER.foretagsgast = {
     for (const q of SIM.living(s)) q.task = undefined;
     k.inst = 0; const neutral = SIM.lockar(f, k), finN = SIM.finChans(f, k);
     k.inst = 60; const van = SIM.lockar(f, k); k.inst = -15; const lite = SIM.lockar(f, k), finL = SIM.finChans(f, k); k.inst = -60; const ovan = SIM.lockar(f, k); k.inst = 0;
-    f.byar = { [k.rad!]: { v: 1, n: 3 } }; const gott = SIM.lockar(f, k), finG = SIM.finChans(f, k); f.byar = undefined;
+    f.byar = { [k.rad!]: { v: 1 } }; const gott = SIM.lockar(f, k), finG = SIM.finChans(f, k); f.byar = undefined;
     const ut = [SIM.klanerOf(s).filter(q => q.rad === undefined).every(q => SIM.lockar(f, q) === 0)];
     // gästen kommer, ställer sig i kön, köper, äter och går hem
     s.finhet = { ...s.finhet, [SIM.rumNyckel(r)]: 0.5 };

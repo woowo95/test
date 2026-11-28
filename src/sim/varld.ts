@@ -312,6 +312,10 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     for (const p of s.people) if (p.task?.act === 'station' && p.task.tool === 'sjukbadd') p.task = undefined;
   }],
   [69, 'hantverkets egna färdigheter (steg 13.9.7): smide, krukmakeri, vävning och sömnad börjar på det värde personen har i hantverket', s => { for (const p of s.people) for (const k of HANT_SKILLS) p.skill[k] ??= p.skill.hantverk ?? 0; }],
+  [70, 'fälten som ingen läser tas bort (steg 15.1.54): företagens intäkt, anställningarnas timmar och räkningen av omdömena i grannbyarna', s => {
+    for (const f of (s.foretag ?? []) as (import('./foretag').Foretag & { intakt?: number })[]) { delete f.intakt; for (const nr in f.byar ?? {}) delete (f.byar![+nr] as { n?: number }).n; }
+    for (const a of (s.anst ?? []) as (import('./dagsarbete').Anst & { tim?: number })[]) delete a.tim;
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }
