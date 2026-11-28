@@ -1899,7 +1899,7 @@ SCENARIER.sparren = {
   text: 'Steg 13.9.6: spärren för den egna maten. Raden för egen mat är full när familjen har sin gräns (egenFull i FORRADSMAL, halva familjens buffert), så den som har mer än så går vidare till annat arbete. Den som har silver köper mat upp till gränsen av den som har mer, och den som säljer behåller lika mycket för sin egen familj. Den fattiga utan silver samlar själv.',
   kor: () => {
     const { MAT, FORRADSMAL, egenGrans, gain, ownsAmount, chooseTask, askForGift, payable } = SIM;
-    const s = SIM.createState(5, START); klockan(s, 10); tandEld(s); setFood(s, 300); SIM.setAmount(s, 'ved', 80); s.delning = { andel: 0 };
+    const s = SIM.createState(5, START); klockan(s, 10); tandEld(s); setFood(s, 40); SIM.setAmount(s, 'ved', 80); s.delning = { andel: 0 }; // byns mat under förrådets tak, så att det bybornas eget läggs i förrådet (steg 15.1.45)
     const halv = nyInvanare(s, 'm', 30), fattig = nyInvanare(s, 'k', 30), kopare = nyInvanare(s, 'm', 30), odlare = nyInvanare(s, 'k', 30);
     const grans = egenGrans(s, halv), dygn = MAT.kvar(s, halv), full = grans / (FORRADSMAL.mat.egenFull ?? 1);
     const egenMat = (q: SIM.Person) => { let n = 0; for (let i = 0; i < 30; i++) { q.task = undefined; chooseTask(s, q); if ((q.task as SIM.Task | undefined)?.why?.startsWith('Behöver egen mat')) n++; } return n; };
