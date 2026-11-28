@@ -768,16 +768,17 @@ export const LARM = balans('larm', {
 });
 export interface Larm { t: number; vad: string; storlek: number; led: number; falskt?: true; varnat?: 1; slut?: 1 /* larmet har bleknat (larmGaller, steg B.59) */; om?: number[] /* rövargängen larmet gäller (steg B.51) */ } // varnat: hen har själv varnat vidare (steg 10.1.12, rovare.ts)
 
-// ett larm om vad (storleken: hur många eller hur farligt). ropare ropar först (de vet redan). Returnerar de
-// som hörde det
+// ett larm om vad (storleken: hur många eller hur farligt). ropare ropar först (de vet redan). om: rövargängen larmet gäller
+// (steg 15.1.63), som läggs till dem man redan vet om; utan om gäller larmet varje gäng. Returnerar de som hörde det
 // vad ett larm gällde, med ord (l_larm, steg 6.7.7); nycklarna är vad i larma()
 export const LARM_VAD: Record<string, string> = { 'slagsmål': 'det slåss i byn', fara: 'det är fara på väg', varg: 'vargarna kommer', rovare: 'rövare är på väg', brand: 'det brinner', tornado: 'en storm är på väg', rymning: 'någon slår på fängelsets dörr', bjorn: 'en björn är nära byn', flod: 'vattnet stiger mot husen' }; // björnen och översvämningen (steg 12.1.142) // rymningen (steg 11.12.5)
-export function larma(s: State, vad: string, storlek: number, ropare: Person[], falskt = false): Person[] {
+export function larma(s: State, vad: string, storlek: number, ropare: Person[], falskt = false, om?: number[]): Person[] {
   // hornet hörs över hela kartan och trumman längre än ett rop (steg 8.7.11–8.7.12)
   const harHorn = ropare.some(p => (s.ting ?? []).some(t => t.k === 'horn' && (t.hos === p.id || t.agare === p.id || t.agare === undefined))), harTrumma = !harHorn && ropare.some(p => (s.ting ?? []).some(t => t.k === 'trumma' && (t.hos === p.id || t.agare === p.id)));
   const hor = harHorn ? 1e4 : LARM.hor * (isLight(s.now) ? 1 : LARM.natt) * (harTrumma ? LARM.trumma : 1);
   const vet = new Set<Person>(ropare), hort: Person[] = [];
-  for (const p of ropare) horLarm(p, { t: s.now, vad, storlek, led: 0, ...(falskt ? { falskt: true as const } : {}) });
+  const omFor = (p: Person) => om ? { om: [...new Set([...(p.larm?.[vad]?.om ?? []), ...om])] } : {};
+  for (const p of ropare) horLarm(p, { t: s.now, vad, storlek, led: 0, ...(falskt ? { falskt: true as const } : {}), ...omFor(p) });
   let ropar = [...ropare];
   for (let led = 1; ropar.length; led++) {
     const nya: Person[] = [];
@@ -787,7 +788,7 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
       if (!fran) continue;
       vet.add(q); hort.push(q);
       const st = Math.max(1, Math.round((fran.larm?.[vad]?.storlek ?? storlek) * (1 + LARM.forvrang * (2 * rnd(s, 'rykte', q) - 1))));
-      horLarm(q, { t: s.now, vad, storlek: st, led, ...(falskt ? { falskt: true as const } : {}) });
+      horLarm(q, { t: s.now, vad, storlek: st, led, ...(falskt ? { falskt: true as const } : {}), ...omFor(q) });
       tanke(q, 'hordeRop', s.now, { vad, v: -LARM.oro, tid: LARM.oroTim * HOUR });
       count(s, 'larm_hort');
       if (rnd(s, 'rykte', q) < LARM.vidare) nya.push(q);

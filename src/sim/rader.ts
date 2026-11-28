@@ -15,7 +15,8 @@ import { gastAv } from './gast';
 import { vanhelgaPlats } from './kultlatt';
 import { andlighet, troNamn, troende } from './religion';
 import { rivStation, stationerOf } from './stationer';
-import { larma } from './rykten';
+import { LARM, larma } from './rykten';
+import { horsel } from './halsa';
 import { die } from './liv';
 import { amountOf, addTo, ownsAmount } from './lager';
 import { SAKER, SAK_LIST } from './saker';
@@ -196,7 +197,9 @@ export function huggDorr(s: State, f: Rovarflock, folk: Person[], mal?: Bit) {
   const yxa = f.folk.some(id => (s.gastTing ?? []).some(t => t.agare === id && iSlag(t.k, 'yxa'))) /* en yxa bland det de bär (steg 10.1.8) */, bom = bommad(s, b) ? RADER.dorrBom : 1;
   f.hugger = { bit: b.id, till: s.now + (yxa ? RADER.dorrYxa : RADER.dorrMin) * bom * MIN };
   count(s, bom > 1 ? 'dorr_bommad' : 'dorr_hugg');
-  larma(s, 'rovare', f.folk.length, folk.slice(0, 1));
+  // den som är närmast dörren och hör hugget ropar, och larmet gäller gänget som hugger (steg 15.1.63)
+  const dx = b.x + 0.5, dy = b.y + 0.5, ropar = folk.filter(q => alive(q) && !q.gast && horsel(q) >= LARM.dov && Math.hypot(q.x - dx, q.y - dy) <= LARM.hor).sort((a, c) => Math.hypot(a.x - dx, a.y - dy) - Math.hypot(c.x - dx, c.y - dy))[0];
+  if (ropar) larma(s, 'rovare', f.folk.length, [ropar], false, [f.id]);
   return true;
 }
 // att tända ett hus (steg 8.9.3): det tar tid, går inte i regn och görs bara för att utrota byn eller av de blodtörstiga

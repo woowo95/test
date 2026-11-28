@@ -141,3 +141,28 @@ SCENARIER.vaktute = {
     ];
   },
 };
+
+SCENARIER.dorrlarm = {
+  text: 'Steg 15.1.63: larmet från dörren gäller gänget som hugger. Den som är närmast dörren och hör hugget ropar, larmet gäller det gänget, och ett andra gäng som kommer senare får ett eget larm när det syns',
+  kor: () => {
+    const s = rovarBy(11), mitt = medForradshus(s), b = SIM.bitsOf(s).find(q => q.m === 'oppning' && Math.hypot(q.x - mitt.x, q.y - mitt.y) < 6)!; b.dorr = 'tradorr';
+    const f1 = rovarGang(s, 2, SIM.freeNear(s, b.x + 0.5, b.y + 2.5), { anfaller: true }); f1.vantat = true; f1.till = s.now + SIM.HOUR; ettGang(s, f1);
+    const folk = SIM.living(s).filter(p => !p.gast), nara = folk.map(p => ({ p, d: Math.hypot(p.x - b.x - 0.5, p.y - b.y - 0.5) })).sort((x, y) => x.d - y.d)[0].p;
+    for (const p of folk) p.larm = undefined;
+    const hugger = SIM.huggDorr(s, f1, SIM.living(s), b);
+    const forsta = nara.larm?.rovare, alla = folk.filter(p => p.larm?.rovare);
+    // ett gäng till kommer senare, och en vakt ser det
+    const f2 = rovarGang(s, 2, SIM.freeNear(s, mitt.x + 40, mitt.y)); f2.vantat = true; f2.till = s.now + SIM.HOUR;
+    const q = folk.find(p => p !== nara && p.larm?.rovare && SIM.vuxenKan(s, p)) ?? folk.find(p => SIM.vuxenKan(s, p))!;
+    for (const p of SIM.living(s)) if (!p.gast && p !== q) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + SIM.HOUR, carry: 0, why: 'prov' } as SIM.Task;
+    q.task = { act: 'vakt', phase: 'do', tx: 0, ty: 0, until: s.now + SIM.HOUR, carry: 0, why: 'prov' } as SIM.Task; Object.assign(q, SIM.freeNear(s, f2.x - 5, f2.y));
+    const omFore = [...(q.larm?.rovare?.om ?? [])];
+    for (let i = 0; i < 120 && !q.larm?.rovare?.om?.includes(f2.id); i++) SIM.rovarSteg(s, 1);
+    return [
+      [`gänget hugger dörren (${hugger})`, hugger],
+      [`den närmast dörren ropar, och larmet gäller gänget som hugger (${forsta ? `om ${JSON.stringify(forsta.om)}` : 'inget'})`, !!forsta && forsta.led === 0 && forsta.om?.length === 1 && forsta.om[0] === f1.id],
+      [`de som hörde har larmet om det gänget (${alla.filter(p => p.larm!.rovare!.om?.includes(f1.id)).length} av ${alla.length})`, alla.length > 1 && alla.every(p => p.larm!.rovare!.om?.includes(f1.id))],
+      [`vakten visste om det första gänget (${JSON.stringify(omFore)}) och får ett eget larm om det andra när det syns (${JSON.stringify(q.larm?.rovare?.om)})`, omFore.includes(f1.id) && !!q.larm?.rovare?.om?.includes(f2.id)],
+    ];
+  },
+};
