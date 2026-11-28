@@ -118,6 +118,17 @@ export function rikedomDelar(s: State): Rikedom {
   for (const b of bitsOf(s)) if (b.hus !== undefined) hus += bitVarde(b);
   return { forrad, redskap, hus };
 }
+// byns saker per varugrupp (steg 15.1.64, huvudbyns rad i radtal.ts), i grundvärde och hela, som en rad i världen sparar dem (r.varor,
+// priser.ts): förrådet efter sakernas grundvärde, tingen efter sitt värde och djuren med redskapen, som i rikedomDelar. grupp = sakens
+// varugrupp (gruppAv i priser.ts). Maten räknas i radens tal och inte här
+export function varorPerGrupp(s: State, grupp: (k: string) => string | undefined): Partial<Record<string, number>> {
+  const v: Record<string, number> = {}, lagg = (g: string | undefined, n: number) => { if (g && g !== 'mat' && n > 0) v[g] = (v[g] ?? 0) + n; };
+  for (const k of SAK_LIST) if (!SAKER[k]!.redskap) lagg(grupp(k), wornOf(s, k) * grundvarde(k));
+  for (const t of tingOf(s)) lagg(grupp(t.k) ?? 'redskap', tingVarde(t));
+  lagg('redskap', djurVarde(s));
+  for (const g in v) v[g] = Math.floor(v[g]);
+  return v;
+}
 // husen: materialet som lagts i väggar och golv och arbetet med dem, gånger skicket
 const bitVarde = (b: Bit) => { const M = MATERIAL[b.m]; return M ? ((M.item ? b.mat * grundvarde(M.item) : 0) + M.tim * Math.min(1, b.b) * ARBETE) * b.c : 0; };
 export const husVarde = (s: State, h: Hus) => bitsOf(s).reduce((a, b) => a + (b.hus === h.id ? bitVarde(b) : 0), 0);

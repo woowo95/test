@@ -3449,7 +3449,7 @@ SCENARIER.brottning = {
 };
 
 SCENARIER.rikgang = {
-  text: 'Rikedomen lockar plundrare också utan fejd (steg B.66): samma värld två gånger, där huvudbyn i den ena är fyra gånger så rik per person som grannarna, relationen till grannarna är 0 och ingen svälter: under tio dygn (tio år i spelet) väljer någon granne plundringen mot den rika byn, men ingen mot den fattiga',
+  text: 'Rikedomen lockar plundrare också utan fejd (steg B.66 och 15.1.64; huvudbyns rad visar byns saker och hus): samma värld två gånger, där huvudbyn i den ena är fyra gånger så rik per person som grannarna, relationen till grannarna är 0 och ingen svälter: under tio dygn (tio år i spelet) väljer någon granne plundringen mot den rika byn, men ingen mot den fattiga',
   kor: () => {
     const prov = (ggr: number) => {
       const s = SIM.cloneState(testBy(10, naraGranne)), vl = s.varld!, h = vl.rader!.find(r => r.nr === vl.huvud)!;
@@ -3466,7 +3466,13 @@ SCENARIER.rikgang = {
       return { n, max, gr: gr.length, per: h.tal.rikedom / h.tal.folk };
     };
     const rik = prov(4), fattig = prov(1);
+    // huvudbyns rad visar byns saker (steg 15.1.64): husen och sakerna per varugrupp ur byn, så att bytet följer rikedomen
+    const b = SIM.cloneState(testBy(10, naraGranne)), hb = SIM.huvudRad(b)!; hb.varor = {}; hb.hus = 0;
+    SIM.skrivHuvudRad(b);
+    const matV = SIM.sakerIGrupp('mat').reduce((a, k) => a + SIM.wornOf(b, k) * SIM.grundvarde(k), 0); // maten står i radens tal, i portioner
+    const ur = SIM.radRikedomUr(hb), byt = SIM.bytesVarde(hb), mat = SIM.radHar(hb, 'mat') * SIM.enhet('mat') * SIM.BYANFALL.byte;
     return [
+      [`huvudbyns rad visar byns saker och hus (${Math.round(ur)} och maten ${Math.round(matV)} av rikedomen ${hb.tal.rikedom}, bytet utom maten ${Math.round(byt - mat)})`, ur + matV >= hb.tal.rikedom * 0.95 && ur <= hb.tal.rikedom + 1 && byt - mat >= (ur - (hb.hus ?? 0)) * SIM.BYANFALL.byte * 0.9],
       [`någon granne väljer plundringen mot den rika byn (${rik.n} gånger av ${rik.gr} grannar, ${rik.per.toFixed(2)} per person, poängen ${rik.max.toFixed(2)})`, rik.n > 0],
       [`ingen mot den fattiga (${fattig.n} gånger, ${fattig.per.toFixed(2)} per person, poängen ${fattig.max.toFixed(2)})`, fattig.n === 0],
     ];

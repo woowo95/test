@@ -13,7 +13,7 @@ import { knows, TEKNIK } from './teknik';
 import { amountOf, foodOf } from './lager';
 import { vuxenKan } from './rovare';
 import { Person, State } from './typer';
-import { rikedom } from './varde';
+import { rikedom, rikedomDelar, varorPerGrupp } from './varde';
 
 export interface RadtalDef { namn: string; las: (s: State) => number }
 export const RADTAL = {
@@ -123,11 +123,15 @@ export function huvudRad(s: State): VarldRad | undefined {
   }
   return r;
 }
-// en gång i timmen (TAKTER): huvudbyns rad skrivs ur byn, talen och de fasta fälten
+// sakens varugrupp (gruppAv i priser.ts, som sätter den när filen laddas, så att radtal.ts inte behöver ladda priserna)
+export const varuKrok = { grupp: (_k: string): string | undefined => undefined };
+// en gång i timmen (TAKTER): huvudbyns rad skrivs ur byn, talen, de fasta fälten och byns saker och hus (steg 15.1.64), så att
+// grannbyarna ser huvudbyns verkliga rikedom (bytet och lockelsen i radanfall.ts, priserna i priser.ts)
 export function skrivHuvudRad(s: State) {
   const r = huvudRad(s);
   if (!r) return;
   r.t = s.now; r.tal = lasRad(s); lasFasta(s, r);
+  r.hus = Math.floor(rikedomDelar(s).hus); r.varor = varorPerGrupp(s, varuKrok.grupp);
   const p = s.varld!.platser?.find(q => q.by === r.nr);
   if (p) p.namn = r.namn; // huvudbyns plats heter som byn
 }

@@ -127,7 +127,7 @@ export function byPaslag(s: State, k: string): number {
 // avviker från sin grupp (r.egen): det som är sällsynt på byns mark börjar högre (PRIS.sallsynt) och det marken ger mycket av
 // lägre (PRIS.vanligt), och det byn nyss köpt eller sålt flyttas (PRIS.salt per silver i värde). Varje dygn glöms det eget
 // påslaget mot det marken ger med PRIS.glom av vägen, och en post som nått det tas bort. Inget pris slumpas.
-import { VarldRad, radNr } from './radtal';
+import { VarldRad, radNr, varuKrok } from './radtal';
 import { MARK_IDS, VARLDMARK } from './varldmark';
 import { varldMark } from './varlden';
 import { Varlden } from './varlden';
@@ -261,3 +261,4 @@ prisKrok.satt = (s, r, slag, v) => sattRadPris(s, r, slag, v);
 prisKrok.radPris = (s, nr, sl) => { const r = radNr(s.varld ?? {}, nr); return !r ? 1 : sl.startsWith(GRUPP) ? radGruppPaslag(s, r, sl.slice(GRUPP.length) as VarugruppId) : radPaslag(s, r, sl); };
 prisKrok.grupp = k => gruppAv(k);
 prisKrok.gruppNamn = id => (VARUGRUPPER as Record<string, VarugruppDef>)[id]?.namn ?? id;
+varuKrok.grupp = gruppAv; // huvudbyns rad sparar byns saker per grupp (steg 15.1.64, radtal.ts)
