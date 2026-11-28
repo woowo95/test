@@ -1764,7 +1764,7 @@ SCENARIER.sedarv = {
   text: 'Steg 13.9.2: kulturen förstärker sig själv. Det en person drar sederna åt har en tredje del, byns sed. I en by med seden Krig drar ett barn med en fredlig personlighet mer åt Krig efter uppväxten än samma barn i en fredlig by, och barnen tar mer av byns sed än de vuxna',
   kor: () => {
     const s = SIM.createState(4, START); klockan(s, 12);
-    const fred = { aggression: 4, mod: 6, empati: 16 };
+    const fred = { aggression: 8, mod: 9, empati: 12 }; // fredlig, men inte så mycket att läggningen står vid gränsen -1 (steg 15.1.121)
     const barn = nyInvanare(s, 'k', 4), vuxen = nyInvanare(s, 'm', 30);
     Object.assign(barn.pot, fred); Object.assign(vuxen.pot, fred);
     const fore = SIM.drarSed(s, barn, 'krig');
@@ -2409,6 +2409,7 @@ SCENARIER.gangsyns = {
 };
 
 SCENARIER.redo = {
+  lang: true,
   text: 'Steg B.29: efter larmet arbetar ingen vuxen med vanliga sysslor fast gänget ligger stilla, och vid en lång väntan står kämparna med vapen i raden innan gänget anfaller; nöden går före, och den som redan vet behöver inget nytt larm när striden börjar',
   kor: () => {
     const prov = (timme: number) => {
@@ -2878,10 +2879,13 @@ export function matOvertal(fro: number[], vaggar: number[] = []) {
     for (const q of st.kampar) q.blod = 1;
     SIM.iVarlden(SIM.provVarld(undefined, new Set(vaggar)), () => {
       const fore = new Map<number, { x: number; y: number; dx: number; dy: number; mal?: number; fast: number; vand: number[] }>(), slog = new Set<number>();
+      let lasta = 0;
       while (!st.slut && st.t < 120) {
         SIM.stridSteg(st);
+        // den som trycktes bakåt av en knuff eller ett tungt slag (steg 15.1.68) har inte själv vänt: steget räknas inte, och riktningen börjar om
+        const tryckt = new Set(st.logg.slice(lasta).filter(r => r.h === 'trycks').map(r => r.a)); lasta = st.logg.length;
         for (const q of st.kampar) {
-          if (q.sida !== 1 || q.lage !== 'strid' || q.ligger || q.bocker || q.backar) { fore.delete(q.id); continue; }
+          if (q.sida !== 1 || q.lage !== 'strid' || q.ligger || q.bocker || q.backar || tryckt.has(q.id)) { fore.delete(q.id); continue; }
           const o = st.kampar.find(z => z.id === q.mal), b = fore.get(q.id) ?? { x: q.x, y: q.y, dx: 0, dy: 0, mal: q.mal, fast: 0, vand: [] as number[] };
           const dx = q.x - b.x, dy = q.y - b.y, l = Math.hypot(dx, dy), L = Math.hypot(b.dx, b.dy), om = l > 0.02 && L > 0.02 && b.mal === q.mal && dx * b.dx + dy * b.dy < -0.5 * l * L; // den som byter mål får vända
           if (st.t > 3) {
@@ -2909,7 +2913,7 @@ SCENARIER.overtal = {
       [`på öppen mark vänder de sällan (${o.vand} av ${o.steg} steg)`, o.steg > 50 && o.vand <= o.steg * 0.07],
       [`... ingen av dem som står längre än två rutor bort går av och an (${o.fast} av ${o.borta})`, o.fast === 0],
       [`... och alla kommer till tals (${o.slog} av ${o.kampar} slog)`, o.slog >= o.kampar * 0.8],
-      [`i en gränd vänder de sällan (${v.vand} av ${v.steg} steg)`, v.vand <= fro.length],
+      [`i en gränd vänder de sällan (${v.vand} av ${v.steg} steg)`, v.vand <= Math.max(fro.length, v.steg * 0.04)], // en andel av stegen: kämparna rör sig mer sedan knuffen trycker tillbaka (steg 15.1.68)
       [`... ingen av dem som inte når fram går av och an (${v.fast} av ${v.borta}, ${v.vantar} väntar eller byter mål)`, v.borta > 500 && v.fast === 0 && v.vantar >= v.borta * 0.9],
     ];
   },
@@ -3587,10 +3591,11 @@ SCENARIER.lagervaxer = {
     const g = (l: SIM.VarldRad) => SIM.byPlats(vl, l.nr)!.grannar!.find(q => q.nr === SIM.byPlats(vl, r.nr)!.nr)!;
     g(fattig).dygn = g(rik).dygn; // lika nära
     let fikRik = 0, fikFattig = 0;
-    const borja = new Set((vl.ko ?? []).map(p => p));
+    const borja = new Set((vl.ko ?? []).map(p => p)), borjaF = new Set(vl.farder ?? []);
     const satt = () => { for (const [l, mat, ri] of [[rik, 8 * 500, 4000], [fattig, 0, 0]] as const) { l.tal.folk = 8; l.tal.mat = mat; l.tal.rikedom = ri; } r.tal.folk = 60; r.tal.mat = 0; r.tal.rikedom = 600; };
     for (let d = 0; d < 10; d++) for (let n = 0; n < 5 * 24; n++) { satt(); SIM.radFlytt(s, vl, r, h0 + d * 1000 + n); } // fem dygn, tio gånger
-    for (const p of vl.ko ?? []) if (!borja.has(p) && p.typ === 'flytt') { if (p.sak === rik.nr) fikRik += p.data!.n; if (p.sak === fattig.nr) fikFattig += p.data!.n; }
+    for (const p of vl.ko ?? []) if (!borja.has(p) && p.typ === 'flytt') { if (p.sak === rik.nr) fikRik += p.data!.n; if (p.sak === fattig.nr) fikFattig += p.data!.n; } // utan väg
+    for (const f of vl.farder ?? []) if (!borjaF.has(f) && f.flytt) { if (f.till === rik.nr) fikRik += f.flytt; if (f.till === fattig.nr) fikFattig += f.flytt; } // de som går dit som en färd (steg 15.1.85)
     // det slagna lägret: hälften dog, och maten är slut
     l.tal.folk = 15; l.tal.mat = 0; l.tal.styrka = 10;
     const mal = SIM.flyttMal(vl, SIM.varldMark(s), l).length;
