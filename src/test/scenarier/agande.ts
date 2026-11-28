@@ -764,6 +764,7 @@ SCENARIER.ryggsack = {
 };
 
 SCENARIER.balte = {
+  lang: true,
   text: 'Steg 2.3.3: bältet flätas av rep vid elden av den som kan tekniken, och den som saknar ett tar på sig ett. När man bär hem hänger redskapet i bältet: det tar inga händer, så den som har yxan i bältet bär lika mycket som med tomma händer. En korg hänger inte i bältet. Steg 7.1.1: bältet har två krokar, så ett eget redskap (kniven, yxan, spaden) hänger där medan man arbetar med ett annat och tas fram när det behövs. Spjutet hänger på axeln, inte i bältet',
   kor: () => {
     const s = createState(2, START); tandEld(s);

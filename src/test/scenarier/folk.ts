@@ -1705,6 +1705,7 @@ SCENARIER.larm = {
 };
 
 SCENARIER.ledarstrid = {
+  lang: true,
   text: 'Ledaren i strid (steg 3.7.12): en modig och aggressiv ledare går först och ger sidan mer mod, en försiktig står bakom och leder, de närmaste vännerna skyddar ledaren och kliver emellan, och när ledaren faller sjunker modet hos de andra',
   kor: () => {
     type K = SIM.Uppstallning['kampar'][number];

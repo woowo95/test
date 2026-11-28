@@ -2360,6 +2360,7 @@ SCENARIER.vaknar = {
 };
 
 SCENARIER.kortvantan = {
+  lang: true,
   text: 'Steg B.27: gänget stannar på rastplatsen tills alla har kommit fram och sedan en kort stund, och anfaller inom fem minuter efter att den sista kommit fram',
   kor: () => {
     const prov = (seed: number) => {
