@@ -1,6 +1,6 @@
 // Scenarier för fas 15, grupp 10 av system 15.1 (hälsan: infektionen, motståndet, vården och döden).
 import * as SIM from '../../sim';
-import { SCENARIER, nyInvanare } from './hjalp';
+import { SCENARIER, kor, nyInvanare } from './hjalp';
 import { START } from '../kor';
 import { execSync } from 'child_process';
 
@@ -176,6 +176,27 @@ SCENARIER.vardfel = {
       [`felen räknas (vardFel_sy ${fore})`, fore === Math.round((ovan.fel + skicklig.fel) * 200)],
       [`avsnörningen för hårt räknas från halva tiden (${av ? ((s.now - av.av!) / SIM.HOUR).toFixed(1) : '–'} timmar)`, !!av && Math.abs((s.now - av.av!) / SIM.HOUR - H.avsnoraTim / 2) < 1e-6],
       [`benet som sattes fel läker snett (${ben ? 'ja' : 'nej'})`, !!ben && !ben.satt],
+    ];
+  },
+};
+
+SCENARIER.aldersdod = {
+  text: 'Steg 15.1.111: ingen dör i en olycka som aldrig hände. Tärningen som växer med åldern är kroppen som slits ut: en frisk vuxen som dör av den dör av ålderdom, ett litet barn av en barnsjukdom, ingen i en olycka, och ingen plats blir fruktad. KROPP.dodBas är 0, så olyckorna kommer bara ur OLYCKOR',
+  env: { BALANS: 'karta.bredd=120,karta.hojd=120,start.klader=0,kropp.dodAlder=50' }, // tärningen slår genast, så att provet gäller vad den heter
+  kor: () => {
+    const s = SIM.createState(4, START);
+    const fara = () => SIM.living(s).reduce((a, p) => a + (p.lardomar ?? []).filter(l => l.k === 'fara').length, 0) + s.people.filter(p => p.died !== undefined).reduce((a, p) => a + (p.lardomar ?? []).filter(l => l.k === 'fara').length, 0);
+    const fara0 = fara();
+    SIM.HALSA_PROV.grov = true;
+    kor(s, 1);
+    SIM.HALSA_PROV.grov = false;
+    const doda = s.people.filter(p => p.died !== undefined), orsaker = [...new Set(doda.map(p => p.cause))];
+    return [
+      [`KROPP.dodBas är 0 (${SIM.KROPP.dodBas})`, SIM.KROPP.dodBas === 0],
+      [`de som dog av tärningen dog av ålderdom eller en barnsjukdom (${doda.length} döda: ${orsaker.join(', ')})`, doda.length > 0 && doda.every(p => p.cause === SIM.DODSORSAKER.alderdom.text || p.cause === SIM.DODSORSAKER.barnsjukdom.text)],
+      [`de vuxna dog av ålderdom (${doda.filter(p => SIM.ageOf(p, p.died!) >= SIM.ALDER.barnsjuk).map(p => p.cause).join(', ')})`, doda.filter(p => SIM.ageOf(p, p.died!) >= SIM.ALDER.barnsjuk).every(p => p.cause === SIM.DODSORSAKER.alderdom.text)],
+      [`ingen dog i en olycka (${doda.filter(p => p.cause === SIM.DODSORSAKER.olycka.text).length})`, !doda.some(p => p.cause === SIM.DODSORSAKER.olycka.text)],
+      [`ingen plats blev fruktad (${fara() - fara0} nya)`, fara() === fara0],
     ];
   },
 };

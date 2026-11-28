@@ -822,9 +822,10 @@ function healthStep(s: State, p: Person, a: number, ai: number, dtSec: number) {
     if (chance(s, forkylning(ai), dtSec, 'halsa', p)) insjukna(s, p, 'forkylning');
   }
   if (p.health <= 0) { die(s, p, p.hunger <= 0 ? 'svalt' : p.warm < KROPP.frysdod ? 'kyla' : p.torst <= 0 ? 'torst' : (p.poisonUntil ?? 0) > now ? 'svamp' : skorbjugg(p) > 0 && !isSick(p, now) ? 'skorbjugg' : 'sjukdom'); return true; }
-  // ålderdom och olyckor (Gompertz, per år = per dygn)
+  // kroppen som slits ut (Gompertz, per år = per dygn). Olyckorna kommer bara ur OLYCKOR och OLYCKOR_LAGE (halsa.ts), så den här
+  // döden är ålderdom, och för de små en barnsjukdom (steg 15.1.111, Döden)
   const q = KROPP.dodBas + KROPP.dodAlder * Math.exp(KROPP.dodTakt * a) + (a < ALDER.barnsjuk ? KROPP.dodBarn : 0);
-  if (chance(s, q / 86400, dtSec, 'halsa', p)) { die(s, p, a > ALDER.alderdom ? 'alderdom' : a < ALDER.barnsjuk ? 'barnsjukdom' : 'olycka'); if (a >= ALDER.barnsjuk && a <= ALDER.alderdom) fearPlace(s, p, DODSORSAKER.olycka.text); return true; }
+  if (chance(s, q / 86400, dtSec, 'halsa', p)) { die(s, p, a < ALDER.barnsjuk ? 'barnsjukdom' : 'alderdom'); return true; }
   const dod = halsaSteg(s, p, dtSec); // kroppen: olyckor i farligt arbete, blödning och läkning (steg 2.5.1)
   if (dod) { die(s, p, dod); if (dod === 'bistick') binDod(s, p); fearPlace(s, p, DODSORSAKER[dod].text); return true; }
   return false;

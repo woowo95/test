@@ -72,8 +72,9 @@ export const KROPP = balans('kropp', {
   toaAvbryt: 0.08, // under detta avbryter nöden det man håller på med
   // hälsa (health)
   svag: 0.4, // under detta är man för svag för att orka något
-  // risken per dygn att dö av olycka eller ålder (Gompertz): dodBas + dodAlder * e^(dodTakt * ålder), dodBarn extra för små barn
-  dodBas: 0.0015,
+  // risken per dygn att dö av att kroppen slits ut (Gompertz): dodBas + dodAlder * e^(dodTakt * ålder), dodBarn extra för små barn.
+  // dodBas är 0: olyckorna kommer ur OLYCKOR i halsa.ts (steg 15.1.111)
+  dodBas: 0,
   dodAlder: 0.00004,
   dodTakt: 0.105,
   dodBarn: 0.02,
