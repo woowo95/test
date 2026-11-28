@@ -1275,7 +1275,7 @@ SCENARIER.fangvakt = {
   kor: () => {
     const by = (food: number) => {
       const { s, h } = fangelseBy(); tandEld(s);
-      setFood(s, food);
+      setFood(s, food); setAmount(s, 'ved', 60); // (veden finns: med ved för mindre än ett dygn går veden före vakten, som maten i en by i nöd)
       const q = SIM.newPerson(s, 'm', s.now - 30 * DAY); s.people.push(q); Object.assign(q, { x: living(s)[0]!.x, y: living(s)[0]!.y, hunger: 1, torst: 1, warm: 1, rest: 1 });
       q.pot.aggression = 18; q.pot.mod = 8; SIM.satt(s, q, h, 'Dömd', s.now + 5 * DAY);
       return { s, h, q };
