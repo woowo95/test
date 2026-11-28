@@ -215,3 +215,31 @@ SCENARIER.forbifart = {
     ];
   },
 };
+
+SCENARIER.overtak = {
+  text: 'Steg 15.1.45: det som är över taket bärs inte in. Det som lämnas för att förrådet är fullt läggs utanför lagret, där det inte räknas till förrådet, och bärlistan frågar förrådsmålen innan något bärs in. Samma regel för alla saker',
+  kor: () => {
+    const s = SIM.createState(5, START); klockan(s, 9); tandEld(s);
+    const tak = SIM.materialTak(s, 'grenar');
+    SIM.setAmount(s, 'grenar', 10 * Math.ceil(tak)); // långt över taket
+    const a0 = SIM.amountOf(s, 'grenar'), over = !SIM.villHaMer(s, 'grenar');
+    SIM.put(s, 'grenar', 30); // det som kommer hem när förrådet redan är fullt
+    const put = SIM.amountOf(s, 'grenar') - a0;
+    // grenar som ligger på marken en bit bort bärs inte in medan förrådet är över taket
+    const z = SIM.zonesOf(s)[0], ute = SIM.freeNear(s, z.x + z.w + 12, z.y + 2), ux = Math.floor(ute.x), uy = Math.floor(ute.y);
+    SIM.laggPaRutan(s, 'grenar', 20, ux, uy);
+    const bort = new Set<SIM.Task>();
+    kor(s, 4, b => { for (const q of SIM.living(b)) if (q.task?.act === 'bara' && Math.hypot(q.task.tx - ux - 0.5, q.task.ty - uy - 0.5) < 4) bort.add(q.task); });
+    // under taket bärs de in som förut
+    const u = SIM.createState(5, START); klockan(u, 9); tandEld(u);
+    const z2 = SIM.zonesOf(u)[0], ute2 = SIM.freeNear(u, z2.x + z2.w + 12, z2.y + 2);
+    SIM.laggPaRutan(u, 'grenar', 20, Math.floor(ute2.x), Math.floor(ute2.y));
+    SIM.setAmount(u, 'grenar', 0); const lista = SIM.haulJob(u);
+    return [
+      [`grenarna är långt över taket (${SIM.kortTal(a0)} mot taket ${SIM.kortTal(tak)})`, over],
+      [`det som läggs i ett fullt förråd över taket räknas inte till förrådet (${put} av 30)`, put === 0],
+      [`grenarna på marken bärs inte in när förrådet är över taket (${bort.size} gånger)`, bort.size === 0],
+      [`under taket bär någon in dem (${lista?.why ?? 'ingen'})`, !!lista && lista.k === 'grenar' && Math.hypot(lista.x - ute2.x, lista.y - ute2.y) < 4],
+    ];
+  },
+};
