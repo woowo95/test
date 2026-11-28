@@ -1,5 +1,5 @@
 import { loggNamn } from './gast';
-import { gen, heltOrd } from './ord';
+import { bestamd, gen, heltOrd } from './ord';
 import { doljISno } from './utrustning';
 import { heligtAvstar } from './kultlatt';
 import { antal, han, honom, lista, stor, svaraText, tal } from './ord';
@@ -24,7 +24,7 @@ import { groundOf, punktIRuta } from './mark';
 import { findPath } from './vag';
 import { addTo, amountOf, avbryt, foodOf, zoneOf } from './lager';
 import { anseende, handelse, horLarm, larma, larmNu } from './rykten';
-import { KOTTSLAG, SAKER } from './saker';
+import { KOTTSLAG, SAKER, sakNamn } from './saker';
 import { DJUR, type Djurart } from './redskap';
 import { vattenNu } from './sjo';
 import { avst, clamp, rnd, chansPer } from './slump';
@@ -672,7 +672,7 @@ function vargSlut(s: State, efter: Efter, vinnare: 0 | 1 | -1, g: KartStrid) {
       const r = [...st.logg].reverse().find(x => x.h === 'traff' && x.b === k.id), fk = r && st.kampar.find(q => q.id === r.a), fallde = fk?.pid !== undefined ? byId(s, fk.pid) : undefined;
       const forsta = !fallde?.gast && forstaGang(s, 'vargDodad'); // räknar också; rövarens byte är inte byns (steg B.18)
       if (fallde) { handelse(s, fallde, 'vargdodare'); livet(s, fallde, 'vargar'); upplev(s, fallde, 'fallde'); if (r?.v) sakVarg(s, redskapIHanden(s, fallde, r.v), fallde); // vapnet minns vargen (steg 3.9.4)
-         if (forsta) { log(s, `${fallde.name} dödade byns första varg.`, 'world', [fallde.id]); kronikaBer(s, 'k_forstaVarg', fallde.id, personFalt(fallde)); } }
+         if (forsta) { log(s, `${fallde.name} dödade byns första varg.`, 'world', [fallde.id]); kronikaBer(s, 'k_forstaVarg', fallde.id, { ...personFalt(fallde), vapnet: r?.v && SAKER[r.v as keyof typeof SAKER] ? bestamd(sakNamn(r.v), SAKER[r.v as keyof typeof SAKER]?.ett)[0] : undefined, spar }); } } // vapnet och blodspåret (steg 15.1.115)
       doda.push(fallde ?? folk[0] ?? alla[0]);
     } else { kvar.push(id); satDjurHalsa(s, id, k.blod, halsaOf(s, id).sar + k.skador.reduce((a, w) => a + w.g, 0)); }
   });
@@ -700,7 +700,7 @@ function vargSlut(s: State, efter: Efter, vinnare: 0 | 1 | -1, g: KartStrid) {
   const stText = `${namn} slogs med ${n > 1 ? `${tal(n)} vargar` : 'en varg'} ${orsak}. ${doda.length ? `${stor(tal(doda.length))} ${doda.length === 1 ? 'varg dog' : 'vargar dog'}. ` : ''}${vinnare === 0 ? `${vargarna} förlorade.` : vinnare === 1 ? `${vargarna} vann.` : 'Ingen vann.'}`;
   if (harSlagits(st)) { log(s, stText, 'world', folk.map(p => p.id)); notis(s, 'strid', stText, folk.map(p => p.id), { x: Math.floor(folk[0].x), y: Math.floor(folk[0].y) }); } // (steg B.18)
   // krönikan (steg 3.7.16): varje vargjakt, och den som skadades svårt när vargarna anföll (döden skriver die)
-  if (avsikt === 'doda') kronikaBer(s, 'k_vargjakt', folk[0].id, { folk: och(folk.map(p => p.name)), de: folk.length > 1 ? 'de' : han(folk[0]), vargar: n > 1 ? `${tal(n)} vargar` : 'en varg', fallde: tal(doda.length), svara: svaraText(folk, svara) });
+  if (avsikt === 'doda') kronikaBer(s, 'k_vargjakt', folk[0].id, { folk: och(folk.map(p => p.name)), de: folk.length > 1 ? 'de' : han(folk[0]), vargar: n > 1 ? `${tal(n)} vargar` : 'en varg', fallde: tal(doda.length), svara: svaraText(folk, svara), spjut: folk.every(p => /spjut/.test(kampeAv(p)?.vapen ?? '')), falldeN: doda.length, kvarN: doda.length - bar.size, Kvar: stor(tal(doda.length - bar.size)) }); // spjuten, de fällda och de som blev kvar (steg 15.1.115)
   else if (svara.length) kronikaBer(s, 'k_vargAnfall', folk[0].id, { svara: och(svara) });
   if (avsikt === 'doda' && !f.vargar.length && f.valp) { f.valp = undefined; vargValp(s, folk.filter(p => p.died === undefined)); } // valpen står kvar (steg 9.8.2)
   efterSegern(s, f, alla, vinnare);

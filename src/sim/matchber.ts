@@ -5,7 +5,11 @@
 // så att samma match alltid berättas likadant och ingen slump dras. Lagen (steg 10.7.14) och publiken (steg 10.7.16, en mening när någon tittade) står med
 import type { State } from './typer';
 import type { MatchMinne } from './sport';
-import { SPORT_AV } from './sport';
+import { SPORT, SPORT_AV } from './sport';
+import { bestamd, gen, sinOrd } from './ord';
+import { SAKER } from './saker';
+import { isLight, kalender } from './tid';
+const ARSTID_SNO = (s: State, t: number) => kalender(s, t).ai === 0;
 import { MIN } from './typer';
 import { balans } from './balans';
 import { fyll, och, talOrd, valjVariant } from './berattelser';
@@ -26,6 +30,7 @@ export function matchBerattelse(s: State, m: MatchMinne): string {
   const lag = m.vinnLag !== undefined ? ([0, 1] as const).map(l => sp.filter(x => x.l === l)) : undefined;
   const sum = (l: typeof sp, k: 'f' | 'v') => l.reduce((a, x) => a + x[k], 0), laget = (l: typeof sp) => `laget med ${och(l.map(x => x.namn))}`;
   const vl = lag?.[m.vinnLag!], fl = lag?.[1 - m.vinnLag!];
+  const fore = (s.matcher ?? []).filter(x => x.nr < m.nr && !x.installd); // matcherna före den här (steg 15.1.116)
   const f = {
     sport: m.k, sportnamn: (d?.namn ?? 'match').toLowerCase(), spelare: och(sp.map(x => x.namn)), n: talOrd(sp.length),
     ...(vl && fl ? {
@@ -39,6 +44,14 @@ export function matchBerattelse(s: State, m: MatchMinne): string {
     publik: och((m.publik ?? []).map(x => x.namn)), nPub: m.publik?.length ?? 0,
     pris: m.pris?.sak ?? '', givare: m.pris?.avNamn ?? '', fick: m.pris?.fickNamn ?? '', prisKvar: m.pris?.fick !== undefined, sjalv: m.pris?.fick === m.pris?.av,
     lang: min >= MATCHBER.lang, kort: min < MATCHBER.kort, glad: m.glad > 0,
+    // steg 15.1.116: lagen, genitivet och sakens genus i priset, tvåan, mörkret och om det hänt förut
+    lag: !!vl, slagen: vl ? 'slaget' : 'slagen', givares: gen(m.pris?.avNamn ?? ''), ficks: gen(m.pris?.fickNamn ?? ''),
+    sin: sinOrd({ ett: !!(m.pris && SAKER[m.pris.k as keyof typeof SAKER]?.ett) }), den: m.pris ? bestamd(m.pris.sak, SAKER[m.pris.k as keyof typeof SAKER]?.ett)[1] : 'den',
+    tvaan: vl ? undefined : sp.filter(x => x.id !== m.vinnare).sort((a, b) => b.v - a.v)[0]?.namn, morkt: isLight(m.t) && !isLight(m.slut),
+    igen: !vl && !!fore.length && fore[fore.length - 1].k === m.k && fore[fore.length - 1].vinnare === m.vinnare && m.vinnare !== undefined,
+    forstaVinst: !vl && m.vinnare !== undefined && (s.matcher?.length ?? 0) < SPORT.sparas && !fore.some(x => x.vinnare === m.vinnare),
+    forsta: (s.matcher?.length ?? 0) < SPORT.sparas && !fore.some(x => x.k === m.k),
+    sno: ARSTID_SNO(s, m.t), // snön på marken när matchen spelades: istiden (steg 15.1.118)
   };
   const mening = (mall: 'm_start' | 'm_lopp' | 'm_vinst' | 'm_slut' | 'm_installd' | 'm_publik' | 'm_pris', i: number) => fyll(valjVariant(s, mall, m.nr * 16 + i, f, 0), f);
   if (m.installd) return mening('m_installd', 0);

@@ -40,7 +40,7 @@ export type { DjurStrid } from './kampar';
 import { KLAD_SLAG, SAKER, sakNamn } from './saker';
 import { kladSkyddStrid, kladTung } from './klader';
 import { clamp, rnd } from './slump';
-import { byId, count, getRel, log, ovning, relKey, stat } from './folk';
+import { REL, byId, count, getRel, log, ovning, relKey, stat } from './folk';
 import { minnsRel } from './relationer';
 import { ledareOf } from './styre';
 import { blodtorst } from './humor';
@@ -1341,7 +1341,7 @@ export function efterStrid(s: State, st: Strid, k: Kampe, p: Person, mot: Person
   ovaNarstrid(p, st, k, lek ? SLAGSMAL.ovningLek : SLAGSMAL.ovning);
   // tycket för vapnet (steg 3.7.10): den som vann eller övade med det gillar det, en svår förlust ger ogillande
   const svar = k.lage === 'nere' || k.skador.reduce((a, w) => a + w.g, 0) >= STRID.tyckeSvar;
-  if (svartSkadad(k)) { notis(s, 'strid', `${p.name} skadades svårt i ${lek ? 'en lek' : 'ett slagsmål'} med ${och(mot.map(loggNamn))}.`, [p.id, ...mot.map(q => q.id)], { x: Math.floor(p.x), y: Math.floor(p.y) }); kronikaBer(s, lek ? 'k_skadadLek' : 'k_skadad', p.id, { ...personFalt(p), mot: och(mot.map(q => q.name)), flera: mot.length > 1 }); } // steg 3.7.16: döden skriver die
+  if (svartSkadad(k)) { notis(s, 'strid', `${p.name} skadades svårt i ${lek ? 'en lek' : 'ett slagsmål'} med ${och(mot.map(loggNamn))}.`, [p.id, ...mot.map(q => q.id)], { x: Math.floor(p.x), y: Math.floor(p.y) }); kronikaBer(s, lek ? 'k_skadadLek' : 'k_skadad', p.id, { ...personFalt(p), mot: och(mot.map(q => q.name)), flera: mot.length > 1, vann: vinnare === k.sida, del: k.skador.length ? KROPPSDELAR[[...k.skador].sort((a, b) => b.g - a.g)[0].d].i : undefined, ovan: mot.length > 0 && (s.rels[relKey(p.id, mot[0].id)]?.op ?? 0) < REL.ovan, vanner: vanner.filter(q => q !== p).length ? och(vanner.filter(q => q !== p).map(q => q.name)) : undefined }); } // vem som vann, såret, ovänskapen och den egna sidan (steg 15.1.115) // steg 3.7.16: döden skriver die
   if (lek) smaka(p, 'v:' + k.vapen, STRID.tyckeLek);
   else if (vinnare === k.sida) smaka(p, 'v:' + k.vapen, STRID.tyckeVann);
   else if (vinnare !== -1 && svar) smaka(p, 'v:' + k.vapen, -STRID.tyckeForlust);

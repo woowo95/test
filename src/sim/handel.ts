@@ -435,7 +435,7 @@ function lagUt(s: State, h: Handlare) {
   h.fas = 'handlar'; h.kom = s.now; h.gar = nastaKl(s.now, HANDEL.morgon); h.kvall = undefined;
   (s.filtar ??= []).push({ x: hp(s, h).x, y: hp(s, h).y + BYTE.bakom, slut: h.gar, varor: [], handlare: h.id, vem: h.id, par: nyttPar(s) }); // varorna ligger kvar i packningen (steg 4.5.7.4)
   grannRedskap(s, h.varor);
-  log(s, `${hp(s, h).name} har brett ut en filt nära elden och väntar på kunder.`, 'world'); notis(s, 'gast', `${hp(s, h).name} från ${hp(s, h).gast!.hem!} har brett ut en filt nära elden och väntar på kunder.`, [], { x: Math.floor(hp(s, h).x), y: Math.floor(hp(s, h).y) });
+  log(s, `${hp(s, h).name} har brett ut en filt strax utanför byn och väntar på kunder.`, 'world'); notis(s, 'gast', `${hp(s, h).name} från ${hp(s, h).gast!.hem!} har brett ut en filt strax utanför byn och väntar på kunder.`, [], { x: Math.floor(hp(s, h).x), y: Math.floor(hp(s, h).y) });
   if (forstaGang(s, 'handlareFramme')) kronika(s, `Den första handlaren kom till byn: ${hp(s, h).name} från ${hp(s, h).gast!.hem!}, med ${bestamd(HANDLAR_UTR[h.utr].namn)[0]} ${bestamd(HANDLAR_UTR[h.utr].namn)[1] === 'det' ? 'fullt' : 'full'} av varor.`, 'handel');
 }
 

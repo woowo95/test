@@ -192,7 +192,7 @@ export const tilltro = (s: State, l: Lardom) => l.c * 0.5 ** (Math.max(0, s.now 
 export function berattaUppdrag(s: State, a: Person, b: Person, l: Lardom, r: Rel) {
   l.c = stark(l.c);
   const vl = s.varld, u = vl && uppdragNr(vl, l.a), q = u && vl && varldPlatsNr(vl, u.mal);
-  delade('fjarran', 'karta', u ? `${uppdragDef(u.k).namn.toLowerCase()}${q ? ` vid ${q.namn}` : ''}` : 'ett uppdrag');
+  delade('fjarran', 'karta', u ? `${uppdragDef(u.k).namn.toLowerCase()}${q ? ` vid ${q.namn}` : ''}` : 'ett uppdrag', 1); // ett uppdrag, ingen plats (steg 15.1.115)
   const trust = tillit(a, b, r), fore = findL(b, 'uppdrag', l.a);
   larUppdrag(s, b, l.a, l.c * trust * MINNE.troDel, { t: l.t, v: l.v, mal: l.g ?? -1, k: (l.om ?? 'leverans') as UppdragId, src: a.id, led: (l.led ?? 0) + 1 });
   if (!fore) count(s, 'uppdragBerattat');

@@ -343,7 +343,7 @@ function nyTro(s: State, p: Person, d: (typeof TDEF)[TeckenTyp], huvud: Pick<Tro
 // utan året (ar undefined) för krönikan, där raden redan står under sitt år (steg 15.1.49)
 const gudBer = (form: 'ande' | 'gud', h: string, ar: number | undefined, tro: string, namn: string, om: string, i?: string) => form === 'ande'
   ? `Det började med ${h}${ar !== undefined ? `, år ${ar}` : ''}. De som tror på ${liten(tro)} förstod att det var anden i ${i} som visat sig. Anden heter ${namn} och råder över ${om}.`
-  : `${ar !== undefined ? `År ${ar}, med ${h}, visade` : `Med ${h} visade`} sig ${namn} för dem som tror på ${liten(tro)}. ${namn} ser ut som en människa och råder över ${om}.`;
+  : `Det började med ${h}${ar !== undefined ? `, år ${ar}` : ''}. Då visade sig ${namn} för dem som tror på ${liten(tro)}. ${namn} ser ut som en människa och råder över ${om}.`; // ett 'med att' blir ingen svenska (steg 15.1.118)
 export function grunda(s: State, p: Person, k: TeckenTyp, om?: string) {
   const d = TDEF[k], tron = (s.tron ??= []);
   if (!TRO_PROV.utanTak && tron.filter(t => t.slut === undefined).length >= TRO.takTro) return; // högst några trosriktningar samtidigt (steg 8.5.11)

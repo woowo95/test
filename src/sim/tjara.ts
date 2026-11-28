@@ -82,6 +82,6 @@ export function tjaraKlar(s: State, p: Person, tk: Task) {
   const g = grupp(s, slag, m, alla), till = s.now + TJARA.dygn * DAY;
   for (const q of g) q.satt(till);
   ovning(p, 'hantverk', 0.02); gjort(s, p, 'tjarat'); count(s, 'tjarat'); count(s, 'tjarat_' + slag, g.length);
-  personHand(s, p, 'tjarade', `Tjärade ${slag === 'fordon' ? 'ett fordon' : slag === 'staket' ? `${g.length} rutor staket` : `${g.length} rutor trä`}.`);
+  personHand(s, p, 'tjarade', `Tjärade ${slag === 'fordon' ? 'ett fordon' : slag === 'staket' ? 'staketet' : 'virket i huset'}.`);
   if (forstaGang(s, 'forstaTjara')) log(s, `${p.name} strök tjära på byns trä för första gången. Det som är tjärat slits hälften så fort.`, 'world', [p.id]);
 }

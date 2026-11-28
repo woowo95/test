@@ -376,9 +376,9 @@ export function brandSteg(s: State, dtSec: number) {
   // branden är slut
   const delar = [`brände ${mark(b.ut.length)}`, b.trad && `${tal(b.trad, true)} träd`, b.vagg && `rev ${b.vagg === 1 ? 'en vägg' : `${tal(b.vagg)} väggar`}`, b.saker && `${b.saker === 1 ? 'en sak' : `${tal(b.saker)} saker`}`, b.brann && `och det här brann upp: ${brannText(b)}`].filter(Boolean);
   count(s, 'brandSlocknat');
-  log(s, `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${tal(b.skadade)} brändes` : ''}.`, 'world');
+  log(s, `Branden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${tal(b.skadade)} brändes` : ''}.`, 'world');
   if (b.hot || b.ut.length >= BRAND.stor) {
-    notis(s, 'motgang', `Elden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${tal(b.skadade)} brändes` : ''}.`);
+    notis(s, 'motgang', `Branden har slocknat. Den ${delar.join(', ')}${b.skadade ? `, och ${tal(b.skadade)} brändes` : ''}.`);
     kronikaBer(s, 'k_brand', b.t, { mark: mark(b.ut.length), vaggar: b.vagg ? ` och ${b.vagg === 1 ? 'en vägg' : `${tal(b.vagg)} väggar`}` : '', blixt: b.kalla === 'blixt', nara: !!b.hot }); // mallen (steg 12.1.135)
     allaBarn(s, 'brand');
     for (const p of living(s)) if (p.born < b.t) livet(s, p, 'mg:brand'); // de som klarade den (steg 3.9.8)

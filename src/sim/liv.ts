@@ -1,4 +1,4 @@
-import { gen } from './ord';
+import { gen, goraUtan } from './ord';
 import { antal, honom, och, talOrd } from './ord';
 import { gastensPlatser, horOmGast, raknaBynVet } from './ort';
 import { personNara } from './personlogg';
@@ -130,7 +130,7 @@ const DOD = {
   rovare: { text: 'av rövare', gud: 'kriget', sorg: true, foljd: 'stupade', efter: 'efter rövarnas anfall' }, // steg 4.4.5 (rovare.ts)
   avrattad: { text: 'för sitt brott', gud: 'kriget' }, // dödsstraffet (steg 8.4.8)
   drap: { text: 'av våld', gud: 'kriget', efter: 'efter ett slagsmål' },
-  forsvunnen: { text: 'på en resa och kom aldrig hem', sorg: true }, // steg 11.5.18 (resa.ts)
+  forsvunnen: { text: 'på en resa', sorg: true }, // ett eget verb efter orsaken blir fel i krönikan (steg 15.1.115) // steg 11.5.18 (resa.ts)
   offrad: { text: 'som offer', gud: 'kriget' }, // människooffret (budet, steg 8.6.6) // slagen till döds i ett utbrott (steg 3.2.3, humor.ts)
 } satisfies Record<string, DodDef>;
 export type Dodsorsak = keyof typeof DOD;
@@ -165,7 +165,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   const a = Math.floor(ageOf(p, s.now));
   const aText = a < 1 ? 'som spädbarn' : `${a <= 12 ? talOrd(a) : a} år gammal`; // åldern med ord för de små (steg 12.1.120)
   log(s, `${p.name} dog ${cause}, ${aText}.`, 'death', [p.id]); notis(s, 'dod', `${p.name} dog ${cause}, ${aText}.`, [p.id], p.ute === undefined ? { x: Math.floor(p.x), y: Math.floor(p.y) } : undefined);
-  count(s, 'doda'); count(s, 'dog ' + DODSORSAKER[orsak].text); if (efter) count(s, 'dog ' + efter.text); /* räknaren för sättet och för orsaken (steg 15.1.108) */ personNara(s, p, `${p.name} dog ${cause}, ${aText}.`, [], 'ont'); /* de som stod hen nära (steg 9.2.107) */ kronikaBer(s, a < 1 ? 'k_dogSpad' : 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a <= 12 ? talOrd(a) : a, nar: orsak === 'olycka' && akt && NAR_AKT[akt] ? `när ${hen(p)} ${NAR_AKT[akt]}` : undefined, sorjer: sorjer(s, p), mor: byId(s, p.mother)?.name ?? 'Modern', partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), ...(n => ({ barn: n, barnOrd: talOrd(n) }))(s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length) });
+  count(s, 'doda'); count(s, 'dog ' + DODSORSAKER[orsak].text); if (efter) count(s, 'dog ' + efter.text); /* räknaren för sättet och för orsaken (steg 15.1.108) */ personNara(s, p, `${p.name} dog ${cause}, ${aText}.`, [], 'ont'); /* de som stod hen nära (steg 9.2.107) */ kronikaBer(s, a < 1 ? 'k_dogSpad' : 'k_dog', p.id, { ...personFalt(p), orsak: cause, orsakId: orsak, borta: p.ute !== undefined, forsta: s.stat?.doda === 1, alder: a <= 12 ? talOrd(a) : a, nar: orsak === 'olycka' && akt && NAR_AKT[akt] ? `när ${hen(p)} ${NAR_AKT[akt]}` : undefined, sorjer: sorjer(s, p), mor: byId(s, p.mother)?.name ?? 'Modern', partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), ...(n => ({ barn: n, barnOrd: talOrd(n) }))(s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length) });
   if (p.ute === undefined) nyKvarleva(s, 'kropp', p, p.name); // kroppen ligger kvar där hen dog (steg 8.5.1); den som dör på resan ligger inte på byns karta
   gravgava(s, p); // gravgåvan läggs undan innan arvet (steg 8.5.6)
   skuldKrok.f?.(s, p);
@@ -183,7 +183,7 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
     // den som var gift sörjer mer, den bästa vännen länge och en nära vän lite mer än en vän (steg 3.1.1)
     const r = s.rels[relKey(p.id, q.id)], varPartner = q.partner === p.id;
     // sorgen i stadier (steg 9.2.33): först förlusten med stor tyngd, sedan sorgen och sist saknaden, svag och länge (sorgTimme)
-    if (varPartner) { q.partner = undefined; const f = r?.gift !== undefined ? RELT.giftSorj : 1; sorj(s, q, p, 'sin partner', LIV.sorjPartner * f, LIV.sorjPartnerDygn * f, dodFarg); }
+    if (varPartner) { q.partner = undefined; const f = r?.gift !== undefined ? RELT.giftSorj : 1; sorj(s, q, p, p.sex === 'k' ? (r?.gift !== undefined ? 'sin hustru' : 'sin kvinna') : 'sin man', LIV.sorjPartner * f, LIV.sorjPartnerDygn * f, dodFarg); }
     else if (isParent(q, p)) sorj(s, q, p, 'sitt barn', LIV.sorjNara, LIV.sorjNaraDygn, dodFarg);
     else if (isParent(p, q)) sorj(s, q, p, p.sex === 'k' ? 'sin mor' : 'sin far', LIV.sorjNara, LIV.sorjNaraDygn, dodFarg);
     else if (q.bast === p.id) sorj(s, q, p, 'sin vän', RELT.bastSorj, RELT.bastSorjDygn, dodFarg);
@@ -209,7 +209,10 @@ export function birth(s: State, mother: Person) {
   s.people.push(ch);
   // loggen, notisen och krönikan får samma text ur mallen k_fodd (steg 6.7.7)
   if (vaderNu(s).aska) { for (const q of [mother, father]) if (q) tecken(s, q, 'barnAska'); count(s, 'barn i åska'); } // steg 8.5.18
-  const ft = kronikaBer(s, 'k_fodd', ch.id, { namn: ch.name, barnet: ch.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== ch && q.mother === mother.id).length });
+  const efter = ch.uppkallad !== undefined ? byId(s, ch.uppkallad) : undefined, forstaBarn = !s.stat?.fodda; // vem barnet heter efter och byns första barn (steg 15.1.115)
+  // om modern dör i barnsäng avgörs före raden (samma dragning som förut, ur moderns egen följd), så att texten inte säger att hon höll barnet hela natten
+  const morDor = rnd(s, 'halsa', mother) < risk.mor;
+  const ft = kronikaBer(s, 'k_fodd', ch.id, { namn: ch.name, barnet: ch.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== ch && q.mother === mother.id).length, efter: efter?.name, efterDod: !!efter && !alive(efter), forsta: forstaBarn, morDor });
   log(s, ft + (risk.f.namn !== 'Vanlig' ? ' ' + risk.f.text : ''), 'birth', [ch.id, mother.id, ...(father ? [father.id] : [])]).m = 'k_fodd'; notis(s, 'fodd', ft + (risk.f.namn !== 'Vanlig' ? ' ' + risk.f.text : ''), [ch.id, mother.id, ...(father ? [father.id] : [])]); // texten om förloppet (steg 9.5.29)
   count(s, 'fodda'); personNara(s, ch, ft, [mother.id, ...(father ? [father.id] : [])], 'gott'); // syskonen (steg 9.2.107)
   uppvaxtFodd(s, ch); startSmak(s, ch); uppkalladLogg(s, ch);
@@ -218,8 +221,8 @@ export function birth(s: State, mother: Person) {
   if (father && alive(father)) tanke(father, 'fickBarnet', s.now, { namn: ch.name, v: LIV.fodFar, tid: LIV.fodDygn * DAY });
   const kids = s.people.filter(q => q.mother === mother.id).length;
   if (kids === 6) mother.fame.push('Mor till många barn');
-  if (risk.tva && s.people.filter(q => q.mother === mother.id && q.born === s.now).length < 2) { const tv = newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', s.now, mother, father); tv.x = mother.x; tv.y = mother.y; s.people.push(tv); const ft2 = kronikaBer(s, 'k_fodd', tv.id, { namn: tv.name, barnet: tv.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== tv && q.mother === mother.id).length }); log(s, ft2, 'birth', [tv.id, mother.id, ...(father ? [father.id] : [])]).m = 'k_fodd'; notis(s, 'fodd', ft2, [tv.id, mother.id, ...(father ? [father.id] : [])]); /* tvillingen får sin rad i loggen, notiserna och krönikan (steg 9.9.3) */ count(s, 'fodda'); count(s, 'tvillingar'); uppvaxtFodd(s, tv); startSmak(s, tv); uppkalladLogg(s, tv); } // tvillingar (steg 9.5.29)
-  if (rnd(s, 'halsa', mother) < risk.mor) die(s, mother, 'barnsang');
+  if (risk.tva && s.people.filter(q => q.mother === mother.id && q.born === s.now).length < 2) { const tv = newPerson(s, rnd(s, 'folk') < 0.5 ? 'm' : 'k', s.now, mother, father); tv.x = mother.x; tv.y = mother.y; s.people.push(tv); const ft2 = kronikaBer(s, 'k_fodd', tv.id, { namn: tv.name, barnet: tv.sex === 'k' ? 'dotter' : 'son', mor: mother.name, foraldrar: mother.name + (father ? ' och ' + father.name : ''), syskon: s.people.filter(q => q !== tv && q.mother === mother.id).length, syskonet: ch.name, morDor }); log(s, ft2, 'birth', [tv.id, mother.id, ...(father ? [father.id] : [])]).m = 'k_fodd'; notis(s, 'fodd', ft2, [tv.id, mother.id, ...(father ? [father.id] : [])]); /* tvillingen får sin rad i loggen, notiserna och krönikan (steg 9.9.3) */ count(s, 'fodda'); count(s, 'tvillingar'); uppvaxtFodd(s, tv); startSmak(s, tv); uppkalladLogg(s, tv); } // tvillingar (steg 9.5.29)
+  if (morDor) die(s, mother, 'barnsang');
   const tv = s.people.filter(q => q.mother === mother.id && q.born === s.now && alive(q));
   if (tv.length >= 2) for (const q of [mother, father]) if (q) tecken(s, q, 'tvillingar', tv.map(b => b.name).join(' och ')); // tvillingar som föds levande (steg 10.3.7)
 }
@@ -383,7 +386,7 @@ export function framlingBeslut(s: State, p: Person) {
   if (!k) { g.fas = 'gar'; return undefined; }
   const tek = g.tek, v = taEmotVilja(s, k, tek);
   const ja = g.ja ?? rnd(s, 'klan') < v;
-  const l = ledarenNu(s), vem = l ? l.name : 'Byn', tekNamn = tek ? TEK[tek]?.namn.toLowerCase() : '';
+  const l = ledarenNu(s), vem = l ? l.name : 'Byn', tekNamn = tek && TEK[tek] ? goraUtan(TEK[tek]!) : ''; // ett verb efter kunde (steg 15.1.118)
   if (!ja) {
     klanHandelse(s.varld, k, 'bortvisad'); count(s, 'framlingNej');
     const hem = g.hemRad === undefined ? undefined : s.varld?.rader?.find(r => r.nr === g.hemRad);
@@ -400,7 +403,7 @@ export function framlingBeslut(s: State, p: Person) {
   upplev(s, p, 'flyttade');
   for (const m in MEDHAVT) put(s, m, MEDHAVT[m], { [p.id]: MEDHAVT[m] });
   klanHandelse(s.varld, k, 'mottagen'); count(s, 'framling'); if (tek) count(s, 'framlingTek'); budTillfalle(s, 'framling', p); // främlingen får mat (budet, steg 8.6.6)
-  const text = `${p.name} från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}, som ingen i byn kunde` : ''}. ${vem} lät ${honom(p)} stanna.`;
+  const text = `${p.name} från ${k.namn} kom till byn${tek ? ` och kunde ${tekNamn}, något ingen i byn kunde` : ''}. ${vem} lät ${honom(p)} stanna.`;
   log(s, text, 'move', [p.id]); notis(s, 'inflytt', text, [p.id]);
   if (tek) kronika(s, text, 'flytt');
   return p;

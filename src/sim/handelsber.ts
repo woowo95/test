@@ -12,7 +12,7 @@ import { balans } from './balans';
 import { sakNamn } from './saker';
 import { NORMAL } from './kvalitet';
 import { fyll, talOrd, valjVariant } from './berattelser';
-import { heltOrd } from './ord';
+import { antal, heltOrd } from './ord';
 import { bynsNamn } from './bynamn';
 
 // det argumenten frågar efter: kunden, handlarens skicklighet, det kunden vill ha (q = kvaliteten), hur mycket kunden
@@ -52,9 +52,11 @@ export const handelsArg = (l: ArgLage) => HANDELSARG.filter(a => a.om(l)).map(a 
 export function handelBerattelse(s: State, b: ByteMinne): string {
   const f0 = b.forsok?.[0];
   if (!f0) return '';
-  const salj = f0.vill[0]?.k === 'silver', vara = sakNamn((salj ? f0.bud : f0.vill)[0]?.k ?? '').toLowerCase();
+  const salj = f0.vill[0]?.k === 'silver', vk = (salj ? f0.bud : f0.vill)[0]?.k ?? '', vara = sakNamn(vk).toLowerCase();
   const nej = b.forsok!.filter(f => !f.ja).length, d = b.rel ? b.rel[1] - b.rel[0] : 0;
-  const f = { kund: b.an, handlare: b.bn, vara, salj, byn: b.arg?.includes('byn') ?? false, bud: heltOrd(b.forsok!.length), nej: talOrd(nej), nejTal: nej, upp: d > 0, ner: d < 0, avbruten: !!b.avbruten, bynamn: bynsNamn(s) }; // handlaren säger byns namn, byborna säger byn (steg 10.9.5)
+  // kunden för byns räkning heter i partens namn 'X för byn'; i berättelsen står namnet, och byn säger det (steg 15.1.116)
+  const forByn = / för byn$/.test(b.an);
+  const f = { kund: b.an.replace(/ för byn$/, ''), handlare: b.bn, vara, envara: vk ? antal(1, vk) : vara, salj, byn: (b.arg?.includes('byn') ?? false) || forByn, bud: heltOrd(b.forsok!.length, true), nej: talOrd(nej), nejTal: nej, upp: d > 0, ner: d < 0, avbruten: !!b.avbruten, bynamn: bynsNamn(s) }; // handlaren säger byns namn, byborna säger byn (steg 10.9.5)
   let arg = (b.arg ?? []).filter(a => a !== 'langt');
   if (arg.length > ARG.max) arg = [...arg.slice(0, ARG.max - (arg.includes('irriterad') ? 1 : 0)), ...arg.includes('irriterad') ? ['irriterad'] : []];
   if (!arg.length && b.arg?.includes('langt')) arg = ['langt'];

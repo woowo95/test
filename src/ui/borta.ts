@@ -7,6 +7,8 @@
 import { ARSTIDER, Borta, DAY, HOUR, MallId, State, WEEK, berattelse, kalender, ledareOf, living, olasta, talOrd } from '../sim';
 import { esc, kronikaLank } from './hjalp';
 import { heltOrd, spelTid, tal as talMangd } from '../sim/ord';
+import { KRONIKA_KAT, kronikaKat } from '../sim/historik';
+const OBEST_AR = ['istid', 'vår', 'sommar', 'höst'];
 import { s } from './lage';
 
 // registret: kronikans slag (raden får mallens id eller ett eget slag) och hur viktiga de är i berättelsen, högst först.
@@ -48,7 +50,11 @@ function valj(rader: Rad[], max: number) {
 function stycke(st: State, rader: Rad[], max: number, nyckel: number, forst?: string) {
   const { ut, over } = valj(rader, max);
   const m = ut.map(r => utanAr(r.text));
-  if (over) m.push(berattelse(st, 'b_ovrigt', nyckel, { n: talMangd(over) }));
+  if (over) { // det vanligaste slaget bland raderna som inte fick plats (steg 15.1.116)
+    const n = new Map<string, number>(); for (const r of rader) if (!ut.includes(r)) { const k = kronikaKat(r.slag); if (k) n.set(k, (n.get(k) ?? 0) + 1); }
+    const mest = [...n].sort((a, b) => b[1] - a[1])[0];
+    m.push(berattelse(st, 'b_ovrigt', nyckel, { n: talMangd(over), slagord: mest ? KRONIKA_KAT.find(k => k.id === mest[0])?.ord : undefined }));
+  }
   return [forst, ...m].filter(Boolean).join('\n'); // en rad per händelse (steg 8.1.10)
 }
 const tal = (rader: Rad[]) => ({ dodaTal: rader.filter(isDod).length, foddaTal: rader.filter(isFodd).length });
@@ -58,7 +64,8 @@ export function bortaBerattelse(st: State, b: Borta): string[] {
   const ar = (st.now - b.fran) / DAY, L = BORTA_LANGD.find(l => ar < l.till)!;
   const rader: Rad[] = (st.hist?.kronika ?? []).map((k, i) => ({ t: k[0], text: k[1], v: k[3] ?? vikt(k[2]), i, slag: k[2] })).filter(r => r.t >= b.fran);
   const kallt = kalender(st).ai === 0;
-  if (!rader.length && L.dela === 'en') return [berattelse(st, 'b_lugnt', b.fran, { kallt })];
+  const obest = (t?: number) => OBEST_AR[kalender(st, t).ai]; // årstiden utan artikel, när man gick och nu (steg 15.1.116)
+  if (!rader.length && L.dela === 'en') return [berattelse(st, 'b_lugnt', b.fran, { kallt, forra: obest(b.fran), nuarstid: obest() })];
   const ut: string[] = [];
   if (L.dela === 'en') return [stycke(st, rader, L.max, b.fran)];
   const nu = living(st).length, fore = b.folk ?? nu - ((st.stat?.fodda ?? 0) - b.fodda) + ((st.stat?.doda ?? 0) - b.doda);
@@ -79,7 +86,8 @@ export function bortaBerattelse(st: State, b: Borta): string[] {
     g.rader.push(r);
   }
   for (const g of grupper) {
-    const f = { ar: g.fran, fran: g.fran, till: g.till, arstid: ARSTIDER[g.ai], tomt: !g.rader.length, ...tal(g.rader) };
+    const t = tal(g.rader); // aren: ett enda år står en gång, forsta: gruppen då man gick (steg 15.1.116)
+    const f = { ar: g.fran, fran: g.fran, till: g.till, aren: g.fran === g.till ? `år ${g.fran}` : `år ${g.fran} till ${g.till}`, forsta: g === grupper[0], arstid: ARSTIDER[g.ai], tomt: !g.rader.length, ...t, fodda: heltOrd(t.foddaTal, true), doda: heltOrd(t.dodaTal) };
     if (L.dela === 'ar' && !g.rader.length) { ut.push(berattelse(st, 'b_arLugnt', g.nyckel, f)); continue; }
     const forst = berattelse(st, (L.dela === 'ar' ? 'b_ar' : 'b_alder') as MallId, g.nyckel, f);
     // en lång tidsålder (den första kan vara många år) får fler meningar: två till per två år, högst tio

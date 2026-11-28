@@ -64,17 +64,17 @@ const histOf = (s: State) => (s.hist ??= ny());
 // krönikans kategorier (steg 9.2.73): en rad per kategori med namnet, symbolen (ikoner.ts) och de slag av krönikerader som hör
 // dit (mallens namn i berattelser.ts eller slaget som kronika får). Ett nytt slag är ett namn i en rad här; en rad med ett slag
 // som inte står här visas bara när ingen kategori är vald
-export interface KronikaKat { id: string; namn: string; ikon: string; tecken: string; slag: string[] }
+export interface KronikaKat { id: string; namn: string; ikon: string; tecken: string; slag: string[]; ord?: string } // ord = det kategorin handlar om i en mening ("mest strider", steg 15.1.116)
 export const KRONIKA_KAT: KronikaKat[] = [
-  { id: 'liv', namn: 'Liv', ikon: 'kk_liv', tecken: '❤️', slag: ['k_fodd', 'k_dog', 'k_dogSpad', 'k_gift', 'k_atergrundad', 'k_djur', 'arv', 'flytt', 'k_flytt', 'k_rovlager', 'utflytt', 'forlat'] }, // utflytt: de som flyttade till en by i världen (steg 11.3.5)
-  { id: 'styre', namn: 'Styre', ikon: 'kk_styre', tecken: '👑', slag: ['ledare', 'k_ledare', 'k_forstaLedare', 'k_utvisad', 'k_ratt', 'bynamn'] },
-  { id: 'strid', namn: 'Strid', ikon: 'kk_strid', tecken: '⚔️', slag: ['rovare', 'k_rovare', 'k_vargAnfall', 'k_vargSprang', 'k_vargjakt', 'k_forstaVarg', 'k_bjornAnfall', 'k_bjornSprang', 'k_bjornjakt', 'k_bjornjaktMiss', 'k_forstaBjorn', 'k_skadad'] },
-  { id: 'tro', namn: 'Tro', ikon: 'kk_tro', tecken: '☀️', slag: ['tro', 'k_tro'] },
-  { id: 'bygge', namn: 'Bygge och uppfinningar', ikon: 'kk_bygge', tecken: '🏠', slag: ['bygge', 'k_husKlar', 'k_uppfann', 'k_forstaEld', 'k_forstaJarn', 'k_forstaSmedja', 'episk', 'forlust', 'mat'] }, // mat: byns egen rätt (special.ts, steg 10.7.29)
-  { id: 'motgang', namn: 'Motgångar', ikon: 'kk_motgang', tecken: '⚡', slag: ['motgang', 'sjukdom', 'k_brand', 'k_tornado', 'k_flod', 'k_epidemi'] },
-  { id: 'grannar', namn: 'Handel och grannar', ikon: 'kk_grannar', tecken: '🤝', slag: ['handel', 'k_handel', 'k_resa', 'byte', 'gava', 'utbrytning', 'nyhet', 'sandebud', 'uppdrag', 'grannar'] }, // grannar: hemkomsten från en turné (resa.ts) // sandebud: beskeden åt båda hållen (steg 11.6.23); nyhet: nyheter från världen (ort.ts, steg 11.4.13)
-  { id: 'skrift', namn: 'Skrifter', ikon: 'kk_skrift', tecken: '📜', slag: ['runsten', 'skrift'] }, // stenarna, bladen och böckerna (steg 10.6.8)
-  { id: 'fritid', namn: 'Fritid', ikon: 'kk_fritid', tecken: '🎲', slag: ['fritid', 'hedersnamn', 'oknamn', 'slaktnamn', 'k_skadadLek'] },
+  { id: 'liv', ord: 'födslar, dödsfall och bröllop', namn: 'Liv', ikon: 'kk_liv', tecken: '❤️', slag: ['k_fodd', 'k_dog', 'k_dogSpad', 'k_gift', 'k_atergrundad', 'k_djur', 'arv', 'flytt', 'k_flytt', 'k_rovlager', 'utflytt', 'forlat'] }, // utflytt: de som flyttade till en by i världen (steg 11.3.5)
+  { id: 'styre', ord: 'sådant som rörde styret', namn: 'Styre', ikon: 'kk_styre', tecken: '👑', slag: ['ledare', 'k_ledare', 'k_forstaLedare', 'k_utvisad', 'k_ratt', 'bynamn'] },
+  { id: 'strid', ord: 'strider', namn: 'Strid', ikon: 'kk_strid', tecken: '⚔️', slag: ['rovare', 'k_rovare', 'k_vargAnfall', 'k_vargSprang', 'k_vargjakt', 'k_forstaVarg', 'k_bjornAnfall', 'k_bjornSprang', 'k_bjornjakt', 'k_bjornjaktMiss', 'k_forstaBjorn', 'k_skadad'] },
+  { id: 'tro', ord: 'sådant som rörde tron', namn: 'Tro', ikon: 'kk_tro', tecken: '☀️', slag: ['tro', 'k_tro'] },
+  { id: 'bygge', ord: 'byggen och uppfinningar', namn: 'Bygge och uppfinningar', ikon: 'kk_bygge', tecken: '🏠', slag: ['bygge', 'k_husKlar', 'k_uppfann', 'k_forstaEld', 'k_forstaJarn', 'k_forstaSmedja', 'episk', 'forlust', 'mat'] }, // mat: byns egen rätt (special.ts, steg 10.7.29)
+  { id: 'motgang', ord: 'motgångar', namn: 'Motgångar', ikon: 'kk_motgang', tecken: '⚡', slag: ['motgang', 'sjukdom', 'k_brand', 'k_tornado', 'k_flod', 'k_epidemi'] },
+  { id: 'grannar', ord: 'handel och grannar', namn: 'Handel och grannar', ikon: 'kk_grannar', tecken: '🤝', slag: ['handel', 'k_handel', 'k_resa', 'byte', 'gava', 'utbrytning', 'nyhet', 'sandebud', 'uppdrag', 'grannar'] }, // grannar: hemkomsten från en turné (resa.ts) // sandebud: beskeden åt båda hållen (steg 11.6.23); nyhet: nyheter från världen (ort.ts, steg 11.4.13)
+  { id: 'skrift', ord: 'skrifter', namn: 'Skrifter', ikon: 'kk_skrift', tecken: '📜', slag: ['runsten', 'skrift'] }, // stenarna, bladen och böckerna (steg 10.6.8)
+  { id: 'fritid', ord: 'lek och fritid', namn: 'Fritid', ikon: 'kk_fritid', tecken: '🎲', slag: ['fritid', 'hedersnamn', 'oknamn', 'slaktnamn', 'k_skadadLek'] },
 ];
 const KAT_AV = new Map(KRONIKA_KAT.flatMap(k => k.slag.map(sl => [sl, k.id] as const)));
 // kategorin för ett slag av krönikerad (undefined = ingen, t.ex. en rad i en gammal sparfil utan slag)
@@ -82,8 +82,14 @@ export const kronikaKat = (slag?: string) => slag === undefined ? undefined : KA
 // vikt: hur viktig raden är i sammanfattningen (ui/borta.ts), när det inte följer av slaget (ett byte efter värdet, B.41)
 export const kronika = (s: State, text: string, slag?: string, vikt?: number) => kronikaVid(s, s.now, text, slag, vikt);
 // en rad vid en annan tid än nu (den väckta byns krönika bakåt, steg 11.13.17)
+// början på en rad utan namnen (ord med stor bokstav): 'Sige prövade och misslyckades' och 'Gunve prövade och …' är samma början
+export const tre = (x: string) => x.split(/\s+/).filter(o => !/^[A-ZÅÄÖ]/.test(o)).slice(0, 3).join(' ').toLowerCase().replace(/[^a-zåäö ]/g, '');
+// krönikans minne (steg 15.1.120): början på de KRON_MINNE senaste raderna, vilken mall de än kom ur. Det ligger utanför
+// historiken, så att byn blir likadan utan den
+export const KRON_MINNE = 6;
 export function kronikaVid(s: State, tid: number, text: string, slag?: string, vikt?: number) {
   horText('kronika', text);
+  const m = ((s.textminne ??= {})['*'] ??= []); m.push(tre(text)); if (m.length > KRON_MINNE) m.splice(0, m.length - KRON_MINNE);
   const k = histOf(s).kronika, t = Math.round(tid);
   let i = k.length;
   while (i > 0 && k[i - 1][0] > t) i--;

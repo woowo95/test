@@ -15,7 +15,7 @@ import { lightLevel } from './tid';
 import { NORMAL, nyKvalitet } from './kvalitet';
 import { clamp, rnd } from './slump';
 import { ljusAt } from './ljus';
-import { gen, han, slaktOrd } from './ord';
+import { gen, goraUtan, han, slaktOrd } from './ord';
 import { notis } from './notiser';
 import { kronika } from './historik';
 import { ARBETE, varuVarde } from './varde';
@@ -234,7 +234,7 @@ export function runstenTimme(s: State) {
   for (const b of bockerna(s)) for (const k of b.delar ?? []) {
     if (!k.tek || k.ensam || living(s).some(q => !q.gast && knows(q, k.tek!))) continue;
     k.ensam = true;
-    const rad = `Ingen i byn kan längre ${TEK[k.tek]!.namn.toLowerCase()}, men konsten står kvar i ${gen(k.av.namn)} bok.`;
+    const rad = `Ingen i byn kan längre ${goraUtan(TEK[k.tek]!)}, men konsten står kvar i ${gen(k.av.namn)} bok.`;
     log(s, rad, 'skill', [k.av.id]); kronika(s, rad, 'runsten');
   }
   if (!s.runstenar?.length) return;
@@ -538,7 +538,7 @@ export function lasKlar(s: State, q: Person, t: Task) {
   if (k.tek) { // handboken: tekniken lärs utan lärare, långsammare än av en mästare, och ur en dålig bara en del av vägen
     const tk = TEK[k.tek]!, d = SKRIFT.bokLar * (TEKTAL.larBas + stat(q, 'intelligens', s.now) / 20);
     q.tek ??= {}; q.tek[tk.id] = Math.max(q.tek[tk.id] ?? 0, Math.min(nar, (q.tek[tk.id] ?? 0) + d));
-    if (q.tek[tk.id]! >= 1) { q.tek[tk.id] = 0; learn(s, q, tk, s.people.find(x => x.id === k.av.id)); log(s, `${q.name} lärde sig ${tk.namn.toLowerCase()} ur ${gen(k.av.namn)} bok.`, 'skill', [q.id]); count(s, 'bokLart'); }
+    if (q.tek[tk.id]! >= 1) { q.tek[tk.id] = 0; learn(s, q, tk, s.people.find(x => x.id === k.av.id), 'bok'); log(s, `${q.name} lärde sig ${tk.namn.toLowerCase()} ur ${gen(k.av.namn)} bok.`, 'skill', [q.id]); count(s, 'bokLart'); }
   }
   if (k.tro !== undefined) tanke(q, 'lasteHeliga', s.now, { v: SKRIFT.heligTanke, tid: SKRIFT.heligTim * HOUR });
   if (k.lar) lasLardom(s, q, { ...k.lar, c: k.lar.c * nar }, k.av.id);

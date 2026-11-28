@@ -423,7 +423,7 @@ function bastI(s: State, d: SportDef, bast: Person) {
   const fore = bast0 !== undefined ? s.people.find(q => q.id === bast0) : undefined;
   if (fore && (fore.sportVinst?.[d.id] ?? 0) >= n) return;
   s.sportBast[d.id] = bast.id;
-  const titel = `Den bästa i ${d.namn.toLowerCase()}${d.id === 'kast' ? '' : 'en'}`;
+  const titel = `Den bästa i byn på ${d.namn.toLowerCase()}`; // 'bågskytteen' blev fel (steg 15.1.118)
   if (!bast.fame.includes(titel)) { bast.fame.push(titel); personHand(s, bast, 'titel', `${titel}.`); }
   const text = fore && alive(fore) ? `${bast.name} har vunnit fler matcher i ${d.namn.toLowerCase()} än ${fore.name} och är nu den bästa i byn.` : `${bast.name} har vunnit ${tal(n)} matcher i ${d.namn.toLowerCase()} och är den bästa i byn.`;
   log(s, text, 'world', [bast.id]); kronika(s, text, 'fritid');

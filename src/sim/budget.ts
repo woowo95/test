@@ -225,7 +225,8 @@ function budgetForslag(s: State, p: Person) {
     return steg >= 1 ? [{ fr: { f: 'budget', d: { id, v: vill }, fram: p.id }, prio: clamp(steg / 3, 0, 1), varfor: `${p.name} vill ändra budgetens del för ${def.namn.toLowerCase()}` }] : [];
   });
 }
-const procent = (s: State, id: string) => `${Math.round(budgetAndel(s, id) * 100)} %`;
+// andelen i ord för krönikan, där procenttecknet inte hör hemma (steg 15.1.118)
+const andelOrd = (s: State, id: string) => { const a = budgetAndel(s, id); return a >= 0.97 ? 'allt' : Math.abs(a - 0.75) < 0.05 ? 'tre fjärdedelar' : Math.abs(a - 0.5) < 0.05 ? 'hälften' : Math.abs(a - 0.25) < 0.05 ? 'en fjärdedel' : a < 0.03 ? 'inget' : a > 0.5 ? 'mer än hälften' : 'en mindre del'; };
 // raderna i FRAGOR och TAS_UPP läggs till när allt är laddat (steg.ts)
 export function budgetRegister() {
   TAS_UPP.push({ id: 'budget', lista: budgetForslag });
@@ -240,12 +241,11 @@ export function budgetRegister() {
       return { v, why: v > 0 ? `Vill ge ${BUDGET[d.id as string].namn.toLowerCase()} vikten ${vill}` : 'Tycker att det är bra som det är' };
     },
     gor: (s, d, fram) => {
-      const id = d.id as string, b = (s.budget ??= { delar: [] }), x = b.delar.find(q => q.id === id), ny = !x;
+      const id = d.id as string, b = (s.budget ??= { delar: [] }), x = b.delar.find(q => q.id === id);
       if (x) x.vikt = d.v as number; else b.delar.push({ id, vikt: d.v as number });
       count(s, 'budget');
       const led = ledareOf(s), ensam = !!led && (vikter(s).find(v => v.p === led)?.andel ?? 0) > 0.5;
-      const t = ny ? `${ensam ? `${led!.name} påbjöd` : 'Byn bestämde'} att budgeten ska ge till ${BUDGET[id].namn.toLowerCase()} (${procent(s, id)}).`
-        : `${ensam ? `${led!.name} påbjöd en ändring av` : 'Byn ändrade'} budgetens del för ${BUDGET[id].namn.toLowerCase()} till ${procent(s, id)}.`;
+      const t = `${ensam ? `${led!.name} påbjöd` : 'Byn bestämde'} att ${andelOrd(s, id)} av det gemensamma silvret ska gå till ${BUDGET[id].namn.toLowerCase()}.`;
       log(s, t, 'world', fram ? [fram.id] : []); kronika(s, t, 'ledare');
     },
   };

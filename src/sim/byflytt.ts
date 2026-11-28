@@ -221,7 +221,7 @@ radKrok.utflytt = (s, n, o) => {
     if (ny) { // krönikan säger varför, med skälet till att hen gick (B.42)
       const p = o.med[0], barn = o.med.filter(q => ageOf(q, s.now) < ALDER.vuxen).length;
       const vem = och(o.med.filter(q => ageOf(q, s.now) >= ALDER.vuxen).map(q => q.name)) + (barn ? ` med ${barn === 1 ? 'ett barn' : `${tal(barn)} barn`}` : '');
-      kronikaBer(s, 'k_rovlager', p.id, { ...personFalt(p), vem, lager: ny.namn, skal: p.flyttSkal?.text ?? '', fredlos: skal === 'fredlos' });
+      kronikaBer(s, 'k_rovlager', p.id, { ...personFalt(p), vem, lager: ny.namn, skal: p.flyttSkal?.text ?? '', fredlos: skal === 'fredlos', fler: o.med.length > 1 }); // en ensam slår läger, flera samlas (steg 15.1.116)
       count(s, 'lagerAvBybor', n);
       return;
     }

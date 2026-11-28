@@ -2215,7 +2215,7 @@ SCENARIER.loggmallar = {
     const [p, q] = living(t);
     // varje loggmall har minst åtta varianter, och alla blir hela meningar med fälten ifyllda
     const mallar = Object.keys(SIM.BERATTELSER).filter(m => m.startsWith('l_')) as SIM.MallId[];
-    const f = { namn: 'Ask', med: 'Ylva', om: 'Ylva', mot: 'Ylva', vinnare: 'Ylva', orsak: 'efter ett gräl', hen: 'han', honom: 'honom', hans: 'hans', honom2: 'honom', fatt: 'tre harkött', betal: 'sex grenar', varor: 'ett träspjut', vad: 'rå fisk', vadtext: 'vargarna kommer', n: 'fem', lara: 'odla', av: 'Ylva', rykte: 'en lögnare', plats: 'vid stenarna' };
+    const f = { namn: 'Ask', med: 'Ylva', om: 'Ylva', mot: 'Ylva', vinnare: 'Ylva', orsak: 'efter ett gräl', hen: 'han', honom: 'honom', hans: 'hans', honom2: 'honom', fatt: 'tre harkött', betal: 'sex grenar', varor: 'ett träspjut', vad: 'rå fisk', vadtext: 'vargarna kommer', n: 'fem', lara: 'odla', av: 'Ylva', rykte: 'en lögnare', plats: 'vid stenarna', ggr: 'tio gånger', karlek: 'Ylva', yrke: 'jägare', sjukdom: 'förkylningen', fran: 'Ylva', till: 'Bo', bevis: 'stal en yxa' }; // fälten från steg 15.1.117
     const texter = mallar.flatMap(m => (SIM.BERATTELSER[m] as SIM.Variant[]).map(v => SIM.fyll(typeof v === 'string' ? v : v.t, f)));
     const hela = texter.filter(x => /[{}]|undefined|  /.test(x) || !/[.!]$/.test(x));
     // raderna i spelet minns mallen: två blir vänner, någon lär sig, en flinta hittas
@@ -2394,7 +2394,14 @@ SCENARIER.kronika = {
     const slag = new Set(ber.map(k => k[2]));
     const fodda = ber.filter(k => k[2] === 'k_fodd').map(k => k[1]);
     const logFodd = t.log.find(l => l.kind === 'birth' && l.m === 'k_fodd')?.text ?? '';
+    // krönikans minne gäller hela krönikan (steg 15.1.120): två rader efter varandra börjar inte likadant, vilken mall de än kom ur
+    const u = SIM.cloneState(t), mallar = ['k_fodd', 'k_dog', 'k_husKlar', 'k_uppfann', 'k_forstaEld'] as const, folk = SIM.living(u);
+    const fore = (u.hist?.kronika ?? []).length;
+    for (let i = 0; i < 40; i++) { const p = folk[i % folk.length]!; SIM.kronikaBer(u, mallar[i % mallar.length], p.id + i * 101, { ...SIM.personFalt(p), barnet: 'son', mor: p.name, foraldrar: p.name, orsak: 'av kyla', alder: 'tre', hus: 'huset', Hus: 'Huset', klart: 'färdigt', hus2: 'huset', hus3: 'huset', lara: 'odla', teknik: 'odling' }); u.now += SIM.HOUR; }
+    const nya = (u.hist?.kronika ?? []).slice(fore).map(k => SIM.tre(k[1]));
+    const lika = nya.filter((x, i) => i > 0 && x === nya[i - 1]).length;
     return [
+      [`två rader efter varandra börjar inte likadant (${lika} av ${nya.length})`, nya.length >= 30 && lika === 0],
       [`krönikan har berättelser (${ber.length} av ${rader.length} rader, ${slag.size} slag)`, ber.length >= 5 && slag.size >= 3],
       [`varje berättelse är hel (t.ex. ${ber.slice(0, 3).map(k => k[1]).join(' | ')})`, hela],
       [`födslarna berättas olika (${new Set(fodda).size} texter av ${fodda.length})`, fodda.length >= 3 && new Set(fodda).size >= 2],
@@ -2636,7 +2643,7 @@ SCENARIER.sorg = {
     s.now += 3 * DAY; SIM.sorgTimme(s);
     const t3 = tanke().join(', '), v3 = a.thoughts.find(t => t.text.startsWith('Saknar'))?.v ?? 0;
     return [
-      [`först förlusten: ${t1}`, /^Förlorade sin partner/.test(t1) && !/Sörjer/.test(t1)],
+      [`först förlusten: ${t1}`, /^Förlorade sin (man|hustru|kvinna)/.test(t1) && !/Sörjer/.test(t1)],
       [`sedan sorgen, med mindre tyngd: ${t2}`, /Sörjer/.test(t2) && !/Förlorade/.test(t2) && Math.abs(v2) < Math.abs(v1)],
       [`sist saknaden, svagast: ${t3}`, /Saknar/.test(t3) && Math.abs(v3) < Math.abs(v2)],
     ];

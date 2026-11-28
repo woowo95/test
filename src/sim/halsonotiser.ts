@@ -21,7 +21,7 @@ interface TeckenDef {
 const blods = (p: Person) => blodning(p) > 0 && tidKvar(p) < HALSA.blodsTim;
 const delNamn = (d: Del) => KROPPSDELAR[d].namn.toLowerCase();
 const BLOD_TEXT = ['', 'är blek och yr', 'orkar inte slåss', 'kan bara krypa']; // som BLODSTEG i halsa.ts
-const behovText = (b: string) => b ? ` Behöver: ${b}.` : '';
+const behovText = (b: string) => b ? ` Det som behövs är att ${b.replace(/, (?=[^,]*$)/, " och ")}.` : ''; // ett kolon efter ett ord låter som ett formulär (steg 15.1.119)
 
 export const HALSOTECKEN: Record<string, TeckenDef> = {
   blodsteg: { notis: 'blodsteg', varde: (_s, p) => blodSteg(p),
@@ -37,7 +37,7 @@ export const HALSOTECKEN: Record<string, TeckenDef> = {
   infborta: { notis: 'infborta', varde: (_s, p) => (p.skador ?? []).filter(w => w.inf !== undefined).length,
     text: (p, f, t) => t < f && t === 0 ? `Infektionen hos ${p.name} är borta.` : undefined },
   benbrott: { notis: 'benbrott', varde: (_s, p) => (p.skador ?? []).filter(w => w.k === 'benbrott').length,
-    text: (p, f, t, b) => { const w = t > f ? [...(p.skador ?? [])].reverse().find(x => x.k === 'benbrott') : undefined; return w ? `${p.name} har brutit ${delNamn(w.d)}.${behovText(b)}` : undefined; } },
+    text: (p, f, t, b) => { const w = t > f ? [...(p.skador ?? [])].reverse().find(x => x.k === 'benbrott') : undefined; return w ? `${p.name} har brutit ${KROPPSDELAR[w.d].i}.${behovText(b)}` : undefined; } },
   satt: { notis: 'bensatt', varde: (_s, p) => (p.skador ?? []).filter(w => w.k === 'benbrott' && w.satt).length,
     text: (p, f, t) => t > f ? `Benbrottet hos ${p.name} är satt.` : undefined },
   snett: { notis: 'snett', varde: (_s, p) => (p.skador ?? []).filter(w => w.k === 'benbrott' && w.snett).length,

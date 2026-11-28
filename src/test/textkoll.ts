@@ -4,7 +4,7 @@
 // titta(s) skriver de texter som bara visas när man trycker på något, som om någon tittade (beskrivningen av en person,
 // samtalet, relationerna och sakernas berättelser).
 import { personRader, State, alive, byId, living } from '../sim';
-import { Fyllning, beskrivning, pratText, relationText, sakBerattelse } from '../sim/berattelser';
+import { BERATTELSER, Fyllning, Variant, beskrivning, pratText, relationText, sakBerattelse } from '../sim/berattelser';
 import { SAKER, sakNamn } from '../sim/saker';
 import { STATIONER } from '../sim/stationer';
 import { DAY, framBerattelse, handelBerattelse, matchBerattelse } from '../sim';
@@ -59,6 +59,10 @@ export const KONTROLLER: Kontroll[] = [
   { id: 'litetNamn', namn: 'Ett namn med liten bokstav (ylvgerds hus)', hitta: (t, _f, kon) => { for (const m of t.matchAll(/(^|[^\p{L}])(\p{Ll}\p{L}{3,})s (?=\p{L})/gu)) { const n = m[2][0].toUpperCase() + m[2].slice(1); if (kon(n) !== undefined) return `${m[2]}s`; } return undefined; } },
   { id: 'ochoch', namn: 'Namn fogade med och … och (A och B och C)', hitta: t => /(\p{Lu}\p{Ll}+) och (\p{Lu}\p{Ll}+) och (\p{Lu}\p{Ll}+)/u.exec(t)?.[0] },
 ];
+// formulär (steg 15.1.119): ett kolon efter ett substantiv i början av en mening ("Härkomst:", "Partner:") och gränssnittets
+// ord i berättande text låter som en tabell och inte som en berättare
+const FORMORD = /(^|[^\p{L}])(binamn|binamnet|partner|partnern|färdighet|färdigheten|genomsnitt|genomsnittet|genomsnittlig|genomsnittliga|omdöme|omdömet)(?=[^\p{L}]|$)/iu;
+KONTROLLER.push({ id: 'formular', namn: 'Formulärets språk: kolon efter ett ord i början av en mening, eller gränssnittets ord (partner, färdighet, omdöme)', hitta: t => /(^|[.!?] )(\p{Lu}\p{Ll}+):/u.exec(t)?.[2] ?? FORMORD.exec(t)?.[2] });
 // vanliga ord som råkar vara ett namn med en ändelse (Inge + n = Ingen)
 const VANLIGA = new Set(['ingen', 'inget', 'inga']);
 const ARTIKEL = new RegExp(`(^|[^\\p{L}])(som|är|var) (lögnare|tjuv|klåpare|vargdödare)(?=[^\\p{L}]|$)`, 'iu');
@@ -109,3 +113,39 @@ export function titta(s: State) {
     bortaBerattelse(s, { fran, fodda: (s.stat?.fodda ?? 0) - sedan('k_fodd'), doda: (s.stat?.doda ?? 0) - sedan('k_dog') - sedan('k_dogSpad') });
   }
 }
+
+// ---------- kontrollerna av mallarna (steg 15.1.119) ----------
+// De läser registret BERATTELSER, inte texterna: två varianter som säger samma sak med andra ord (omskrivning), och en variant
+// som nämner elden, kvällen eller natten, snön, kylan eller regnet utan ett villkor på det fältet (läge). npm run texter skriver larmen
+const SMAORD = new Set(['och', 'men', 'att', 'som', 'det', 'den', 'de', 'en', 'ett', 'är', 'var', 'har', 'hade', 'han', 'hon', 'hen', 'honom', 'henne', 'hans', 'hennes', 'sin', 'sitt', 'sina', 'i', 'på', 'av', 'till', 'med', 'för', 'om', 'från', 'när', 'så', 'nu', 'än', 'inte', 'också', 'även', 'bara', 'mest', 'mer', 'alla', 'byn', 'byns', 'sig', 'vid', 'efter', 'under', 'över', 'blev', 'kan', 'ska', 'skulle', 'där', 'här', 'man', 'något', 'någon', 'dem', 'deras', 'vad', 'vem', 'ännu', 'redan', 'fortfarande']);
+const text = (v: Variant) => typeof v === 'string' ? v : v.t;
+const villkor = (v: Variant) => typeof v === 'string' ? '' : v.om.toString().replace(/\s+/g, ' ');
+const falt = (v: Variant) => [...text(v).matchAll(/\{(\w+)\}/g)].map(m => m[1].toLowerCase()).sort().join(',');
+const innehall = (v: Variant) => [...new Set(text(v).replace(/\{\w+\}s?/g, ' ').toLowerCase().split(/[^\p{L}]+/u).filter(o => o.length > 2 && !SMAORD.has(o)))].sort().join(' ');
+// läget: orden och fältet som villkoret ska läsa
+const LAGE: [RegExp, RegExp, string][] = [
+  [/(^|[^\p{L}])(elden|eldens|elds)(?=[^\p{L}]|$)/iu, /\.eld\b|\beld\b/, 'eld'],
+  [/(^|[^\p{L}])(kväll|kvällen|natt|natten|nattens)(?=[^\p{L}]|$)/iu, /\.natt\b|\bnatt\b/, 'natt'],
+  [/(^|[^\p{L}])(snö|snön|snöns)(?=[^\p{L}]|$)/iu, /\.sno\b|\bsno\b/, 'sno'],
+  [/(^|[^\p{L}])(kyla|kylan|kallt)(?=[^\p{L}]|$)/iu, /\.kallt\b|\bkallt\b|\.arstid\b/, 'kallt'],
+  [/(^|[^\p{L}])(regn|regnet|regnade)(?=[^\p{L}]|$)/iu, /\.regn\b|\bregn\b/, 'regn'],
+];
+export interface MallLarm { id: string; mall: string; vad: string }
+export type Register = Record<string, Variant[]>;
+export const MALLKOLL: { id: string; namn: string; hitta: (reg?: Register) => MallLarm[] }[] = [
+  { id: 'omskrivning', namn: 'Två varianter i samma mall med samma fält, samma villkor och samma innehållsord', hitta: (reg: Register = BERATTELSER) => {
+    const ut: MallLarm[] = [];
+    for (const [m, v] of Object.entries(reg)) {
+      const nyck = new Map<string, number>();
+      v.forEach((x, i) => { const k = `${falt(x)}|${villkor(x)}|${innehall(x)}`; const j = nyck.get(k); if (j !== undefined) ut.push({ id: 'omskrivning', mall: m, vad: `[${j}] och [${i}]: ${text(x)}` }); else nyck.set(k, i); });
+    }
+    return ut;
+  } },
+  { id: 'lage', namn: 'En variant som nämner elden, natten, snön, kylan eller regnet utan villkor på det fältet', hitta: (reg: Register = BERATTELSER) => {
+    const ut: MallLarm[] = [];
+    for (const [m, v] of Object.entries(reg)) v.forEach((x, i) => {
+      for (const [ord, fält, namn] of LAGE) if (ord.test(text(x)) && !fält.test(villkor(x))) ut.push({ id: 'lage', mall: m, vad: `[${i}] ${namn}: ${text(x)}` });
+    });
+    return ut;
+  } },
+];

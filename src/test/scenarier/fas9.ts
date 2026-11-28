@@ -770,7 +770,7 @@ SCENARIER.halsonotiser = {
     const rader = HALSOTECKEN_LIST.every(k => NOTISER[HALSOTECKEN[k].notis]);
     return [
       [`varje tecken har en rad i NOTISER (${HALSOTECKEN_LIST.join(', ')})`, rader],
-      [`blodet sjunker ett steg, med vad som behövs ("${steg}")`, steg.includes(p.name) && steg.includes('Behöver')],
+      [`blodet sjunker ett steg, med vad som behövs ("${steg}")`, steg.includes(p.name) && steg.includes('Det som behövs')],
       [`blödningen stoppas ("${stopp}") och börjar igen ("${igen}")`, !!stopp && !!igen],
       [`hen svimmar ("${svim}")`, !!svim],
       [`en infektion börjar ("${inf}") och går över ("${borta}")`, !!inf && !!borta],

@@ -9,7 +9,7 @@ import '../sim'; // simuleringen först, så att filerna laddas i samma ordning 
 import { BERATTELSER, BESK_DELAR } from '../sim/berattelser';
 import { korJson, pool, seedAv, sek } from './pool';
 import type { Fel, Samlat } from './texter-en';
-import { KONTROLLER, STIL } from './textkoll';
+import { KONTROLLER, MALLKOLL, STIL } from './textkoll';
 
 const [byar = 8, dagar = 45] = process.argv.slice(2).map(Number);
 const t0 = Date.now();
@@ -70,8 +70,11 @@ for (const k of [...KONTROLLER, ...STIL]) {
   felRader.push(`  ${k.namn}: ${x ? `${x.n} gånger` : 'inga'}${STIL.includes(k) ? ' (stilen, i beskrivningarna)' : ''}`);
   for (const e of x?.ex ?? []) felRader.push(`           – ${e.mall} (${e.vad}): ${e.text}`);
 }
+// kontrollerna av mallarna (steg 15.1.119)
+const mallLarm = MALLKOLL.map(k => ({ k, l: k.hitta() }));
+for (const { k, l } of mallLarm) { felRader.push(`  ${k.namn}: ${l.length ? `${l.length} varianter` : 'inga'} (mallarna)`); for (const x of l.slice(0, 40)) felRader.push(`           – ${x.mall} ${x.vad}`); }
 felRader.push('');
-rader.push(`Fel: ${[...KONTROLLER, ...STIL].map(k => `${k.id} ${fel[k.id]?.n ?? 0}`).join(', ')} (se nedan)`);
+rader.push(`Fel: ${[...KONTROLLER, ...STIL].map(k => `${k.id} ${fel[k.id]?.n ?? 0}`).join(', ')}, ${mallLarm.map(x => `${x.k.id} ${x.l.length}`).join(', ')} (se nedan)`);
 rader.push(`Beskrivningens delar som aldrig användes: ${BESK_DELAR.filter(d => !alla['del:' + d.id]).map(d => d.id).join(', ') || 'inga'}`, '');
 writeFileSync('texter.txt', [...rader, ...felRader, ...del].join('\n') + '\n');
 console.log(rader.join('\n'));

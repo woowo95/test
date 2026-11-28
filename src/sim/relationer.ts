@@ -1,7 +1,7 @@
 import { honom } from './ord';
 import { personHand, personNara } from './personlogg';
 import { upplev } from './uppvaxt';
-import { ALDER, REL, ageOf, count, getRel, isParent, living, log, relKey } from './folk';
+import { ALDER, REL, ageOf, count, getRel, isKin, isParent, living, log, relKey } from './folk';
 import { DAY, HOUR, Person, Rel, SKILLS, Skill, State } from './typer';
 import { balans } from './balans';
 import { ACTS } from './handlingar';
@@ -117,7 +117,7 @@ export function stepRelationer(s: State) {
     const q = topp.get(p), ny = q && topp.get(q) === p ? q.id : undefined;
     if (ny !== undefined && p.bast !== ny && p.id < ny) {
       const r = rel(p, q!)!; count(s, 'bastaVan');
-      if (!(r.flags & 8)) { r.flags |= 8; loggBer(s, 'l_bastaVanner', p.id * 997 + ny, { namn: p.name, med: q!.name }, 'rel', [p.id, ny]); }
+      if (!(r.flags & 8)) { r.flags |= 8; const g = r.minns?.gav; loggBer(s, 'l_bastaVanner', p.id * 997 + ny, { namn: p.name, med: q!.name, rival: !!(r.flags & 4), ovanForr: !!(r.flags & 2), barnBada: ageOf(p, s.now) < ALDER.vuxen && ageOf(q!, s.now) < ALDER.vuxen, partner: p.partner !== undefined, gavBada: !!g?.[0] && !!g?.[1] }, 'rel', [p.id, ny]); } // steg 15.1.117
       personHand(s, p, 'relation', `Blev bästa vän med ${q!.name}.`, 'gott'); personHand(s, q!, 'relation', `Blev bästa vän med ${p.name}.`, 'gott'); // steg 9.2.107
       upplev(s, p, 'bastaVan', q!.name); upplev(s, q!, 'bastaVan', p.name); // barn minns sin bästa vän (steg 3.1.2)
     }
@@ -132,7 +132,7 @@ export function stepRelationer(s: State) {
       const v = r.op - (p.arke === q.id ? RELT.arkeSlut - RELT.arke : 0);
       if (v < RELT.arke && v < wv) { wv = v; worst = q; }
     }
-    if (worst && p.arke !== worst.id) { count(s, 'arkefiende'); loggBer(s, 'l_arke', p.id * 997 + worst.id, { namn: p.name, om: worst.name, hans: p.sex === 'm' ? 'hans' : 'hennes' }, 'rel', [p.id, worst.id]); }
+    if (worst && p.arke !== worst.id) { count(s, 'arkefiende'); loggBer(s, 'l_arke', p.id * 997 + worst.id, { namn: p.name, om: worst.name, hans: p.sex === 'm' ? 'hans' : 'hennes', omsesidig: worst.arke === p.id, forr: !!((rel(p, worst)?.flags ?? 0) & 1), slag: !!rel(p, worst)?.minns?.slag, kin: isKin(p, worst) }, 'rel', [p.id, worst.id]); }
     p.arke = worst?.id;
   }
   // äktenskap: ett par som varit tillsammans giftDygn dygn och fortfarande är goda vänner
@@ -163,7 +163,8 @@ export function stepRelationer(s: State) {
     }
     for (const id of nu) if (!fore.includes(id) && p.id < id) {
       const q = byId.get(id)!, r = getRel(s, p, q); count(s, 'rival');
-      if (!(r.flags & 4)) { r.flags |= 4; loggBer(s, 'l_rivaler', p.id * 997 + id, { namn: p.name, med: q.name }, 'rel', [p.id, id]); }
+      if (!(r.flags & 4)) { const yrke = !!p.tag && p.tag === q.tag && p.tag !== 'Dagdrivare' ? p.tag.toLowerCase() : undefined, karlek = romans.get(p)?.find(c => c !== q && romans.get(q)?.includes(c))?.name; // vad de tävlar om, för just det paret (steg 15.1.117)
+        loggBer(s, 'l_rivaler', p.id * 997 + id, { namn: p.name, med: q.name, yrke, karlek, forr: !!(r.flags & 1) }, 'rel', [p.id, id]); r.flags |= 4; }
     }
     p.rivaler = nu.length ? nu : undefined; p.rivalom = om;
   }

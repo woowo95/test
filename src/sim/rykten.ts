@@ -234,7 +234,7 @@ const HDEF = {
   sprang: { i: 'feg', vikt: 0.3, text: 'sprang när rövarna kom' },
   botade: { i: 'botare', vikt: 0.4, text: 'botade {om}', prestation: true },
   vardDog: { i: 'daligLakare', vikt: 0.3, text: 'vårdade {om}, som dog ändå' },
-  scenBra: { i: 'scenBra', vikt: 0.25, text: 'fick publiken med sig i {sak}', prestation: true },
+  scenBra: { i: 'scenBra', vikt: 0.25, text: 'fick publiken med sig', prestation: true }, // 'i föreläsning' är ingen svenska (steg 15.1.117)
   scenDalig: { i: 'scenDalig', vikt: 0.2, text: 'tråkade ut publiken med {sak}' },
   skrev: { i: 'skrivkunnig', vikt: 0.3, text: 'skrev {sak}', prestation: true },
   bad: { i: 'from', vikt: 0.05, text: 'bad och offrade till gudarna' },
@@ -411,7 +411,8 @@ export function beratta(s: State, a: Person, b: Person, e: Intryck, r: Rel, vFas
   const ny = intryckOm(b, e.om, e.k);
   if (vFast !== undefined && ny && ny.v > vb) ny.v -= (ny.v - vb) * RYKTE.scenNed; // scenens mindre version drar ner
   if (ny && ex) for (const x of e.bev!.slice(1)) addBevis(ny, { ...x, sett: undefined } as Bevis);
-  if (forstaGang(s, 'rykte:' + e.om + ':' + e.k) && q) loggBer(s, 'l_rykte', e.om * 31 + e.k.length, { namn: q.name, hen: q.sex === 'm' ? 'han' : 'hon', rykte: d.som ?? d.namn, heder: d.tecken > 0 }, 'rel', [e.om]);
+  if (forstaGang(s, 'rykte:' + e.om + ':' + e.k) && q) loggBer(s, 'l_rykte', e.om * 31 + e.k.length, { namn: q.name, hen: q.sex === 'm' ? 'han' : 'hon', rykte: d.som ?? d.namn, heder: d.tecken > 0,
+    fran: a.name, till: b.name, bevis: ex ? HANDELSER[ex.h].text.replace('{om}', ex.motNamn ?? 'någon').replace('{sak}', ex.sak ?? 'något') : undefined, falsk: !!ex?.falsk, scen: vFast !== undefined, dod: !alive(q) }, 'rel', [e.om]); // vem som berättade, vad det byggde på och om det var en scen (steg 15.1.117)
 }
 // Skvallerbyttor (steg 10.8.6): den som berättar ett dåligt rykte om en annan, sant eller påhittat, får lite av intrycket
 // skvallerbytta hos den som lyssnar. Det väger mindre i en pratsam by (inget vid full Pratsamhet) och upp till dubbelt i en
@@ -797,7 +798,7 @@ export function larma(s: State, vad: string, storlek: number, ropare: Person[], 
   }
   count(s, falskt ? 'larm_falskt' : 'larm');
   // raden ur mallen l_larm (steg 6.7.7): vad ropet gällde med ord ur LARM_VAD
-  if (hort.length) loggBer(s, 'l_larm', ropare[0].id, { namn: lista(ropare.map(p => p.name)), vad, vadtext: LARM_VAD[vad] ?? vad, n: tal(hort.length), ensam: hort.length === 1, falskt }, 'rel', ropare.map(p => p.id));
+  if (hort.length) loggBer(s, 'l_larm', ropare[0].id, { namn: lista(ropare.map(p => p.name)), vad, vadtext: LARM_VAD[vad] ?? vad, n: tal(hort.length), ensam: hort.length === 1, falskt, horn: harHorn, trumma: harTrumma }, 'rel', ropare.map(p => p.id));
   return hort;
 }
 // En person minns ett larm per sort (steg 12.1.211): ett rop om björnen skriver inte över det man vet om rövarna, och varje

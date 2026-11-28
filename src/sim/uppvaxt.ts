@@ -223,7 +223,7 @@ export function uppvaxtDod(s: State, p: Person) {
       if (!annan || !alive(annan)) upplev(s, q, 'foraldralos');
     } else if (isParent(q, p)) upplev(s, q, 'barnDod', `sin ${p.sex === 'k' ? 'dotter' : 'son'} ${p.name}`);
     else if ((q.mother !== undefined && q.mother === p.mother) || (q.father !== undefined && q.father === p.father)) upplev(s, q, 'syskon', `sin ${p.sex === 'k' ? 'syster' : 'bror'} ${p.name}`);
-    else if (q.partner === p.id) upplev(s, q, 'syskon', `sin partner ${p.name}`);
+    else if (q.partner === p.id) upplev(s, q, 'syskon', `${p.sex === 'k' ? 'sin hustru' : 'sin man'} ${p.name}`); // gränssnittets ord står inte i berättande text (steg 15.1.119)
     else if (q.bast === p.id) upplev(s, q, 'syskon', `sin bästa vän ${p.name}`);
     else if (Math.hypot(q.x - p.x, q.y - p.y) <= UPPV.sagDod) upplev(s, q, 'sagDod', p.name);
     if (Math.abs(q.born - p.born) <= UPPV.jamnarig * DAY && ageOf(q, s.now) >= UPPV.gammal && !s.people.some(o => o !== q && o !== p && alive(o) && Math.abs(o.born - q.born) <= UPPV.jamnarig * DAY)) upplev(s, q, 'gammal');

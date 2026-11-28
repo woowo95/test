@@ -236,7 +236,7 @@ function bjornSlut(s: State, efter: Efter, vinnare: 0 | 1 | -1, g: KartStrid) {
   const text = jakt ? `${namn} gick på björnjakt. ${falld ? 'Björnen dog.' : 'Björnen kom undan.'}`
     : `En björn${medUngar ? ' med ungar' : ''} anföll ${namn}. ${falld ? 'Björnen dog.' : vinnare === 0 ? 'Björnen gav sig av.' : 'Björnen vann och gick sin väg.'}`;
   if (jakt || harSlagits(st)) { log(s, text, 'world', folk.map(p => p.id)); notis(s, 'strid', text, folk.map(p => p.id), { x: Math.floor(folk[0].x), y: Math.floor(folk[0].y) }); } // (steg B.18)
-  if (jakt) kronikaBer(s, falld ? 'k_bjornjakt' : 'k_bjornjaktMiss', folk[0].id, { folk: namn, svara: svaraT });
+  if (jakt) kronikaBer(s, falld ? 'k_bjornjakt' : 'k_bjornjaktMiss', folk[0].id, { folk: namn, svara: svaraT, de: folk.length > 1 ? 'de' : han(folk[0]) }); // en ensam jägare är ingen de (steg 15.1.115)
   else if (harSlagits(st)) kronikaBer(s, 'k_bjornAnfall', folk[0].id, { folk: namn, svara: svaraT });
   if (!falld) bjornGarUndan(s, folk[0].x, folk[0].y); // björnen som vunnit eller gett upp går bort från byn (steg 9.2.30)
 }

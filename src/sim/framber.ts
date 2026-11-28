@@ -8,7 +8,8 @@ import type { State } from './typer';
 import type { FramMinne } from './framtradande';
 import { FRAM, INSTRUMENT } from './framtradande';
 import { balans } from './balans';
-import { fyll, och, valjVariant } from './berattelser';
+import { ARSTIDER, fyll, och, valjVariant } from './berattelser';
+import { kalender } from './tid';
 import { heltOrd } from './ord';
 
 export const FRAMBER = balans('framber', {
@@ -23,6 +24,9 @@ export function framBerattelse(s: State, m: FramMinne): string {
     om: m.om ?? '', ledare: m.ledare ?? '', betalt: m.betalt ?? '', kyrka: m.kyrka ?? '', bestallt: m.bestallt ?? '', n: heltOrd(m.n), nTal: m.n,
     bra: m.q >= FRAMBER.bra, dalig: m.q < FRAM.mottagning, ner: d < 0,
     rykte: och(m.rykte ?? []), tro: och(m.tro ?? []), hanad: och(m.hanad ?? []),
+    // steg 15.1.116: scenen, hur stor del av byn som kom, om den som berättelsen handlar om stod med, årstiden, gärningen förstorad eller nedtonad och om publiken tyckte bättre om den som uppträdde
+    scen: m.scen !== undefined, andel: m.vuxna ? m.n / m.vuxna : 0, omMed: !!m.om && (m.namn === m.om || !!m.grupp?.some(g => g.namn === m.om)), Om: m.om ?? '',
+    arstid: ARSTIDER[kalender(s, m.t).ai], vrid: m.vrid ?? 0, upp: d > 0,
   };
   const mening = (mall: 'f_start' | 'f_bud' | 'f_publik' | 'f_mott' | 'f_verkan' | 'f_inget', i: number, g = {}) => { const x = { ...f, ...g }; return fyll(valjVariant(s, mall, (m.nr ?? 0) * 16 + i, x, 0), x); };
   if (m.inget) return mening('f_inget', 0);

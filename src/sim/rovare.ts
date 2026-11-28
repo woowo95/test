@@ -1,4 +1,4 @@
-import { antal, lista, och, stor, tal } from './ord';
+import { antal, heltOrd, lista, och, stor, tal } from './ord';
 import { kartaBorta, larOrt, rovareSedda, gastensPlatser } from './ort';
 import { SKRIFT } from './skriftTal';
 import { runtByn, utanforByn } from './omrade';
@@ -386,7 +386,7 @@ function seSteg(s: State, f: Rovarflock, folk: Person[], dtSec: number) {
       f.sedd = s.now; f.gissning = Math.max(1, Math.round(n * (1 + fel))); f.sx = f.x; f.sy = f.y; // där flocken sågs (steg 9.2.122)
       count(s, 'rovarSedda');
       rovareSedda(s, q, f.klan); // ett rykte om byn de kom ifrån (steg 11.4.2)
-      const text = `${q.name} såg rövare ${f.anfaller ? 'på väg mot byn' : 'utanför byn'}, ungefär ${f.gissning} (${fran(s, f)}).`;
+      const text = `${q.name} såg ungefär ${heltOrd(f.gissning)} rövare ${fran(s, f)} ${f.anfaller ? 'på väg mot byn' : 'utanför byn'}.`; // talet i ord och ingen parentes (steg 15.1.118)
       log(s, text, 'world', [q.id]); notis(s, 'anfall', text, [q.id], { x: Math.floor(f.x), y: Math.floor(f.y) });
     }
     larmOm(s, q, f, f.gissning ?? f.folk.length, 0);

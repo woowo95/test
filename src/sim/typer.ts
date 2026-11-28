@@ -387,7 +387,7 @@ export interface State {
   vackHall?: 1; // väckt med testknappen: somnar inte förrän knappen trycks igen
   hist?: Historik; // byns historik: nyckeltal och krönika (historik.ts)
   bynVet?: import('./ort').BynVet; // det byn vet om platserna i världen (steg 11.4.6, ort.ts)
-  textminne?: Record<string, string[]>; // textminnet (steg 6.7.3): början på de tre senaste krönikaraderna per mall, utan historiken
+  textminne?: Record<string, string[]>; // textminnet (steg 6.7.3, 15.1.120): under '*' början på de sex senaste raderna i krönikan, oavsett mall, utan historiken
   notiser?: import('./notiser').Notiser; // notiserna som spelaren inte tagit bort (notiser.ts, steg 5.4.3)
   W?: number; H?: number; // kartans storlek (saknas i de äldsta byarna: 64×40)
   varldmark?: import('./varldmark').MarkId; // en väckt by: världsrutans marksort, som flyttar kartans trösklar (steg 11.13.2, kartrecept.ts)
