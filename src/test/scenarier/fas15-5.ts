@@ -83,3 +83,27 @@ SCENARIER.byggbehov = {
     ];
   },
 };
+
+SCENARIER.handelrad = {
+  text: 'Steg 15.1.48: krönikan skriver namnet på den som handlar för byn och "för byn" en gång i meningen, inte "Igik för byn" två gånger, åt båda hållen i bytet',
+  kor: () => {
+    const s = SIM.createState(6, START);
+    const [a, b] = SIM.living(s).filter(p => SIM.ageOf(p, s.now) >= SIM.ALDER.vuxen);
+    if (!a || !b) return [['byn har två vuxna', false]];
+    const rader = () => (s.hist?.kronika ?? []).filter(k => k[2] === 'k_handel').map(k => k[1] as string);
+    for (let i = 0; i < 48; i++) {
+      s.now += SIM.HOUR; // en ny timme ger en ny variant ur mallen
+      const byn = SIM.bynPart(s, a.x, a.y, a), b2 = SIM.personPart(s, b, true);
+      if (i % 2) SIM.byteKlart(s, byn, b2, [{ k: 'ved', n: 20 }], [{ k: 'silver', n: 20 }]);
+      else SIM.byteKlart(s, b2, byn, [{ k: 'ved', n: 20 }], [{ k: 'silver', n: 20 }]);
+    }
+    const r = rader(), ggr = (t: string, d: string) => t.split(d).length - 1;
+    const fel = r.filter(t => ggr(t, 'för byn') !== 1 || ggr(t, a.name) < 1);
+    const varianter = new Set(r.map(t => t.replace(/[0-9]+/g, '').replace(a.name, 'A').replace(b.name, 'B').replace(/ved|silver/g, ''))).size;
+    return [
+      [`stora byten ger rader i krönikan (${r.length}, ${varianter} olika)`, r.length >= 10 && varianter >= 6],
+      [`varje rad säger "för byn" en gång och namnet på den som handlar (${fel.length} fel: ${fel[0] ?? r[0] ?? '-'})`, fel.length === 0],
+      [`namnet med "för byn" står aldrig två gånger (${r.find(t => ggr(t, `${a.name} för byn`) > 1) ?? 'ingen'})`, !r.some(t => ggr(t, `${a.name} för byn`) > 1)],
+    ];
+  },
+};
