@@ -222,10 +222,12 @@ export const lagerAv = (k: string, v: number) => v > 0 ? Math.ceil(v * FORRAD.la
 // talen i påbudet Förråden, ett per material (styre.ts), läggs till när alla filer är lästa (lagerPabud i val.ts)
 export const lagerPabud = () => { for (const k of Object.keys(MATERIALMAL)) nyttPabud(`lager_${k}`, { grupp: 'forrad', namn: SAKER[k]?.namn ?? k, text: `Hur stort lager byn har av ${(SAKER[k]?.namn ?? k).toLowerCase()}`, sed: 'forsiktighet', asikt: (s, l) => lagerAsikt(s, l) }); };
 export function materialTak(s: State, k: Materialslag) { return takOch(s, k).tak; }
-// taket och bufferten för slaget k: bufferten, och högst FORRAD.materialMatt gånger den eller det platsen rymmer
+// taket och bufferten för slaget k: bufferten, och högst FORRAD.materialMatt gånger den eller det platsen rymmer. Taket är
+// alltid minst en hel sak, också när bufferten är 0: det första av ett material (repet, kolet) läggs i lagret och räknas, kan
+// förbrukas och får sedan ett tak efter förbrukningen
 function takOch(s: State, k: Materialslag) {
   const m = s.arbBehov?.mal?.[k], b = materialBuffert(s, k, m);
-  return { b, tak: Math.max(b, Math.min(FORRAD.materialMatt * b, m?.t ?? Infinity)) };
+  return { b, tak: Math.max(1, b, Math.min(FORRAD.materialMatt * b, m?.t ?? Infinity)) };
 }
 // vill byn ha mer av slaget k än det har (steg 7.2.18)? Målen före begränsningen mot platsen: lagret görs större bara för det som
 // fattas upp till lyxtaket, inte för allt som råkar ligga bredvid
