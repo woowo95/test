@@ -177,3 +177,32 @@ SCENARIER.affartak = {
     ];
   },
 };
+
+SCENARIER.marknadvinst = {
+  text: 'Steg 15.1.156: marknaden följer vinsten. En by med två vuxna och mycket att byta håller marknad; en stor by utan något att byta gör det inte, och lusten att gå dit har inget tak',
+  kor: () => {
+    // två vuxna: den ena har benspadar över, och den andra saknar en
+    const s = SIM.cloneState(testBy(25)), folk = SIM.living(s).filter(q => !q.gast && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && SIM.kanGa(q));
+    const a = folk[0], b = folk.find(q => q !== a && !SIM.familjOf(s, a.id).includes(q))!;
+    s.people = s.people.filter(q => q === a || q === b); s.marknad = undefined; s.foretag = [];
+    b.habit = { samla: 1000 } as never; a.habit = { vakt: 1000 } as never;
+    for (const q of [a, b]) { q.task = undefined; q.bruk = undefined; }
+    s.ting = s.ting!.filter(t => t.k !== 'benspade');
+    for (let i = 0; i < 40; i++) SIM.addTool(s, 'benspade', a);
+    const vuxna = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen).length;
+    const lust = [...SIM.handelslust(s).values()].reduce((x, y) => x + y, 0);
+    SIM.marknadDygn(s); const m = s.marknad as SIM.Marknad | undefined, liten = !!m;
+    if (m) { s.now = m.t + SIM.HOUR; m.lust[b.id] = 30; } // en stor vinst för den som saknar
+    const vikt = SIM.marknadVikt(s, b);
+    // en stor by där ingen saknar något
+    const t = SIM.cloneState(testBy(25)); t.marknad = undefined; t.foretag = [];
+    const stora = SIM.living(t).filter(q => !q.gast && SIM.ageOf(q, t.now) >= SIM.ALDER.vuxen).length;
+    for (const q of SIM.living(t)) q.bruk = { t: Math.floor(t.now / SIM.HOUR), k: [] };
+    SIM.marknadDygn(t); const stor = !!t.marknad;
+    return [
+      [`byn med ${vuxna} vuxna och mycket att byta (lust ${lust.toFixed(0)}) håller marknad`, vuxna === 2 && liten],
+      [`lusten att gå dit följer vinsten utan tak (${vikt.toFixed(2)} för en vinst på 30 silver)`, Math.abs(vikt - 30 * SIM.MARKNAD.vikt) < 1e-9 && vikt > 2],
+      [`den stora byn (${stora} vuxna) utan något att byta håller ingen`, stora >= 5 && !stor],
+    ];
+  },
+};
