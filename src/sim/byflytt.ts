@@ -42,6 +42,7 @@ import { ALDER } from './folk';
 import { och, tal } from './ord';
 import { kronika } from './historik';
 import { DAY, State } from './typer';
+import { fardSlut } from './resstat';
 
 export const FLYTT = balans('flytt', {
   dygn: 3, // byarna i grannätet så här många dygns gång bort (år i spelet) eller närmare är inom räckhåll
@@ -208,6 +209,7 @@ export function radFlytt(s: State, vl: Varlden, r: VarldRad, n: number) {
   if (val.r.sort === 'rovarlager') lagerProv.kom?.(vl, val.r, r, ant, 'hunger');
   mots(vl, r.nr, val.r.nr);
   laggIKo(vl, periodSlut(vl, 'timme', n) + val.dygn * DAY, 'flytt', { sak: val.r.nr, data: { fran: r.nr, n: ant } });
+  fardSlut(s, 'flytt', val.dygn); // (steg 15.1.84)
 }
 
 // de som lämnar huvudbyn (emigrate i liv.ts) väljer en by i världen på samma sätt och kommer fram efter restiden; slumpen är
@@ -233,6 +235,7 @@ radKrok.utflytt = (s, n, o) => {
   if (val.r.sort === 'rovarlager') { lagerProv.kom?.(vl, val.r, h, n, skal); count(s, 'tillLager', n); }
   mots(vl, h.nr, val.r.nr);
   laggIKo(vl, s.now + val.dygn * DAY, 'flytt', { sak: val.r.nr, data: { fran: h.nr, n } });
+  fardSlut(s, 'flytt', val.dygn); // (steg 15.1.84)
 };
 // nybyggarna till huvudbyn (immigrate i liv.ts) kommer ur en by i grannätet inom räckhåll som har fler än de n som går, oftare
 // ur en by nära (steg 11.6.13); finns ingen sådan by kommer ingen

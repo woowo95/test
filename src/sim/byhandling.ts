@@ -37,6 +37,7 @@ import { ageIndex, iIstiden } from './tid';
 import { RECEPT } from './recept';
 import { HANDEL, HANDLARSORTER, HANDLARVAROR, HANDLAR_UTR, HVara, HandlarLast, KARAVAN, handlarFram, handlarKrok, kgOf, utrVikt } from './handel';
 import type { TamArtId } from './tamdjur';
+import { fardSlut, resStat } from './resstat';
 
 export const BYHANDLING = balans('byhandling', {
   slump: 0.1, // så mycket kan slumpen flytta en poäng åt varje håll
@@ -464,6 +465,7 @@ KOHANDELSER.fardHem = (s, vl, p) => {
   if (i < 0) return;
   const f = vl.farder![i], r = radNr(vl, f.fran);
   vl.farder!.splice(i, 1);
+  fardSlut(s, fardSort(f), (p.t - f.t0) / DAY); // (steg 15.1.84)
   if (!r || !BYSORTER[r.sort].folk || r.tal.folk <= 0) return;
   r.tal.silver += f.silver ?? 0;
   if (f.h && f.hn) radLaggTill(r, f.h, f.hn);
@@ -478,7 +480,7 @@ function anfallFram(s: State, vl: Varlden, f: RadFard, r: VarldRad, mot: VarldRa
   if (!BYSORTER[mot.sort].folk || mot.tal.folk <= 0) return; // byn finns inte längre: flocken går hem
   const u = anfallUtfall(r, mot, f.anfall!, i => varldSlump(vl, r.nr, f.id, 0x414e + i), enhet);
   count(s, 'radanfall_med', f.anfall! + forsvarare(mot)); // alla som var med, för andelen döda (steg 11.6.19)
-  radDoda(r, u.dodaA); radDoda(mot, u.dodaF);
+  radDoda(r, u.dodaA); radDoda(mot, u.dodaF); resStat(s, 'by:anfall', 'döda', u.dodaA);
   f.anfall! -= u.dodaA; fardDoda(vl, f, u.dodaA, f.t1);
   for (const [g, n] of Object.entries(u.byte) as [VarugruppId, number][]) radTaUr(mot, g, n);
   f.byte = u.byte;
@@ -501,11 +503,11 @@ flockKrok.slut = (s, fl) => {
   const hem = fl.hemN ?? 0, doda = Math.max(0, f.anfall! - hem);
   if (r) radDoda(r, doda);
   fardDoda(vl, f, doda, s.now);
-  count(s, 'varldsanfall_doda', doda);
+  count(s, 'varldsanfall_doda', doda); resStat(s, 'by:anfall', 'döda', doda);
   f.anfall = hem;
   f.hem = Object.entries(fl.hemBar ?? {}).filter(([k, n]) => k in SAKER && n > 0).map(([k, n]) => ({ k: k as HVara['k'], n }));
   if (r && f.hem.length) varldHandelse(vl, 'rad', s.now, { by: r.nr, mot: vl.huvud });
-  if (!hem) { vl.farder = vl.farder!.filter(x => x !== f); return; }
+  if (!hem) { vl.farder = vl.farder!.filter(x => x !== f); fardSlut(s, fardSort(f), (s.now - f.t0) / DAY); return; }
   vandHem(s, vl, f, hem);
 };
 // byns handlare är på väg till huvudbyn, väntar vid kanten eller är där
@@ -518,7 +520,9 @@ handlarKrok.hem = (s, rad, last) => {
   if (bar) { f.silver = bar.silver; f.hem = bar.varor; delete f.last; }
   vandHem(s, vl, f, 1);
 };
-handlarKrok.borta = (s, rad) => { const vl = s.varld; if (vl?.farder) vl.farder = vl.farder.filter(x => !(x.handlare && x.fran === rad)); };
+handlarKrok.borta = (s, rad) => { const vl = s.varld; if (vl?.farder) vl.farder = vl.farder.filter(x => { const ut = !!x.handlare && x.fran === rad; if (ut) fardSlut(s, 'handlare', (s.now - x.t0) / DAY); return !ut; }); };
+// färdens sort i världens statistik (npm run resor, steg 15.1.84)
+export const fardSort = (f: RadFard) => f.uppdrag !== undefined ? 'uppdrag' : f.besked ? 'besked' : f.anfall !== undefined ? 'anfall' : f.gava ? 'gava' : f.handlare ? 'handlare' : 'handel';
 // var färden är nu, i världens rutor (för kartan): längs vägen ut och sedan hem
 const fardRutor = (vl: Varlden, w: number, a: number, b: number) => {
   const v = sparadVag(vl, 'fots', a, b);

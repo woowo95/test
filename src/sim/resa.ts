@@ -66,6 +66,7 @@ import { antal, han, hans, honom, horText, och, spelTid, stor, tal } from './ord
 import { kronikaBer } from './berattelser';
 import { tanke } from './tankar';
 import { upplev } from './uppvaxt';
+import { resBehov as resBehovMatt, resDod, resHandelse, resSkadad, resSlut, resUt } from './resstat';
 // "en sak", "tre saker"
 const saker = (n: number) => n === 1 ? 'en sak' : `${tal(n)} saker`;
 
@@ -208,6 +209,7 @@ export interface Sallskap {
   buren?: [number, BurenSatt][]; utvagNasta?: number; // de som bärs och hur, och när ledaren väger nästa gång om någon är långsam (steg 11.5.17)
   nere?: number; silverArb?: number; // dygnen nere i gruvan, valda i packskedet, och arbetet mot nästa silver (steg 11.10.1)
   drag?: { g: number; d: number; p: number; ting?: Ting }; // vagnen eller släden (steg 12.1.10): tinget, dragdjuret och den som kör; tinget självt medan det är ute ur byn
+  matt?: import('./resstat').ResMatt; // det npm run resor mäter: när sällskapet gav sig av, timmarna utan mat och vatten och de som skadats (steg 15.1.84)
   gaster?: [number, number][]; vacktMat?: [string, number][]; // resenärerna som gäster i den väckta byn (personens id och gästens), och maten de tog med sig dit (steg 11.13.10, vacktgast.ts)
 }
 export type BurenSatt = 'vagn' | 'djur' | 'bar';
@@ -584,7 +586,7 @@ export function resaSteg(s: State, p: Person, tk: Task) {
     if (sl.drag && !sl.drag.ting) utanVagn(s, sl); // vagnen kom aldrig med ut
     for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.dog === undefined) d.ute = s.now; // djuren följer med ut
     const hem = slHem(s, sl), v = varldMark(s);
-    sl.skede = 'ute'; sl.t = s.now; sl.ruta = hem && v ? hem.y * v.w + hem.x : undefined; sl.pos = 0; sl.gang = 0;
+    sl.skede = 'ute'; sl.t = s.now; sl.ruta = hem && v ? hem.y * v.w + hem.x : undefined; sl.pos = 0; sl.gang = 0; resUt(sl, s.now);
     satVag(s, sl, true);
     dagbok(s, sl, 'ut', 'Gav sig av.');
     const mal = slMal(s, sl), vd = hem && v && mal ? vagDygn(s, hem.y * v.w + hem.x, mal.y * v.w + mal.x, fardsatt(sl)) : undefined;
@@ -708,6 +710,7 @@ function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
     b.foder += sl.djur.length * RESA.foderPerDygn * tim / 24;
     while (b.foder >= 1 - 1e-9) { if ((sl.pack.torrgras ?? 0) < 1) { count(s, 'resa djur utan foder'); b.foder = 0; break; } tappa(sl, 'torrgras', 1); b.foder = Math.max(0, b.foder - 1); }
   }
+  resBehovMatt(sl, t, tim, b.matt, b.vatska); // timmarna utan mat och vatten (steg 15.1.84)
 }
 // ---------- silvergruvan (steg 11.10.1, Flera samhällen: Silvergruvan i tal) ----------
 // Hur länge sällskapet stannar nere väljs i packskedet: den tid (i hela timmar, högst SILVER.maxDygn dygn) som ger mest silver
@@ -745,6 +748,7 @@ function olycka(s: State, sl: Sallskap, p: Person, t: number, delar: Kroppsdel[]
   const typer: SkadaTyp[] = ['krossar', 'benbrott', 'skarsar'];
   const k = typer[Math.floor(rnd(s, 'resa') * typer.length)]!, d = delar[Math.floor(rnd(s, 'resa') * delar.length)]!, u = rnd(s, 'resa');
   const dod = skada(s, p, d, k, RESA.olyckaMin + u * u * (RESA.olyckaMax - RESA.olyckaMin), 'olycka', var_);
+  resSkadad(sl, p, t);
   count(s, stat);
   dagbok(s, sl, 'skada', text, t);
   if (dod) dorPaVagen(s, sl, p, dod, t);
@@ -891,7 +895,7 @@ export function hemkomst(s: State, sl: Sallskap, t: number) {
   beskedet(s, sl); // den som dog på vägen: arvet delas nu (steg 11.5.18)
   if (sl.borta) vetBorta(s, living(s).filter(p => !p.gast), sl.mal); // nyheten att platsen är borta når byn (steg 12.1.146)
   sl.skede = 'hemma'; sl.t = t;
-  count(s, 'resa hemma');
+  count(s, 'resa hemma'); resSlut(s, sl, t, FOOD.reduce((a, k) => a + Math.floor(sl.pack[k] ?? 0), 0));
   redogorelse(s, sl, t);
   HEMKROK.f?.(s, sl, t); // den som förlorat något på vägen utlyser (steg 11.8.11, utlysa.ts)
 }
@@ -1601,7 +1605,7 @@ export function vagRisk(s: State, sl: Sallskap, id: string, t = s.now) {
 export function vagHandelser(s: State, sl: Sallskap, t: number, dt: number) {
   for (const id of vagHandelseIds()) {
     const p = 1 - Math.exp(-vagRisk(s, sl, id, t) * dt / DAY);
-    if (rnd(s, 'resa') < p) { VAGHANDELSER[id]!.gor(s, sl, t); count(s, `resa ${VAGHANDELSER[id]!.namn.toLowerCase()}`); }
+    if (rnd(s, 'resa') < p) { VAGHANDELSER[id]!.gor(s, sl, t); count(s, `resa ${VAGHANDELSER[id]!.namn.toLowerCase()}`); resHandelse(s, sl, id); }
   }
 }
 
@@ -1724,7 +1728,7 @@ export function dorPaVagen(s: State, sl: Sallskap, p: Person, orsak: Dodsorsak, 
   p.dodVag = { orsak, t }; p.sjuk = undefined;
   if (sl.ledare === p.id) { const ny = resenarer(s, sl)[0]; if (ny) sl.ledare = ny.id; } // den som är kvar leder
   if (sl.buren) { sl.buren = sl.buren.filter(b => b[0] !== p.id); if (!sl.buren.length) delete sl.buren; }
-  count(s, 'resa död');
+  count(s, 'resa död'); resDod(s, sl);
   dagbok(s, sl, 'dod', `${p.name} dog ${DODSORSAKER[orsak].text} på vägen.`, t);
   // de andra begraver hen vid leden
   const vl = s.varld;
@@ -1761,7 +1765,7 @@ function forsvunnet(s: State, sl: Sallskap, hittad?: string) {
   if (!hittad && s.now - sl.borjan < RESA.forsvunnen * Math.max(1, vantadDygn(s, sl)) * DAY) return;
   const namn = resenarNamn(s, sl);
   beskedet(s, sl, 'forsvunnen');
-  sl.skede = 'forsvunnet'; sl.t = s.now;
+  sl.skede = 'forsvunnet'; sl.t = s.now; resSlut(s, sl, s.now, 0, true);
   if (s.tamdjur && sl.djur.length) s.tamdjur = s.tamdjur.filter(d => !(sl.djur.includes(d.id) && d.ute !== undefined)); // djuren som följde med är borta med sällskapet
   count(s, 'resa försvunnet');
   const text = hittad ? `${hittad} hittade ${namn} döda vid leden till ${malNamn(s, sl)}.` : `${namn} kom aldrig hem från ${RESMAL[sl.skal].namn.toLowerCase()} till ${malNamn(s, sl)} och räknas som försvunna.`;

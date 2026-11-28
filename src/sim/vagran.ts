@@ -27,6 +27,7 @@ import { ROVARE } from './rovare';
 import { ageIndex, iIstiden } from './tid';
 import { byId, stat } from './folk';
 import { Person, State } from './typer';
+import { resSkadad } from './resstat';
 
 // de rånade vet var rövarna kom ifrån (vaktat.ts sätter kroken)
 export const VAKTKROK = { ranad: (_s: State, _sl: Sallskap, _L: VarldRad, _t: number) => {}, plundrad: (_s: State, _L: VarldRad, _tog: [string, number][]) => {}, forlorat: (_s: State, _sl: Sallskap, _L: VarldRad, _tog: [string, number][]) => {} }; // forlorat: de rånade minns vad de förlorat (steg 11.8.11, utlysa.ts)
@@ -107,6 +108,7 @@ export function vagStrid(s: State, sl: Sallskap, fiender: Uppstallning['kampar']
       const p = person(k);
       if (!p || p.dodVag) return false;
       const dod = skada(s, p, w.d, w.k, w.g, (sl0?.orsak ?? 'drap') as Parameters<typeof skada>[5], 'på resan', true);
+      resSkadad(sl, p, t);
       if (!dod && w.av && !(KROPPSDELAR[w.d] as { livsviktig?: true }).livsviktig) forlora(s, p, w.d, 'höggs av'); // olyckshugget (steg 9.5.22): striden avgör (steg 12.1.82)
       if (dod) dorPaVagen(s, sl, p, dod, t);
       return !!dod;
