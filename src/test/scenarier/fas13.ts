@@ -2617,6 +2617,7 @@ SCENARIER.samlad = {
 };
 
 SCENARIER.overmakt = {
+  lang: true,
   text: 'Steg B.32: övermakten väger i viljan att möta gänget: en ensam vuxen mot fem rövare gömmer sig eller hjälper, och tre mot två möter dem',
   kor: () => {
     const prova = (byn: number, n: number) => {

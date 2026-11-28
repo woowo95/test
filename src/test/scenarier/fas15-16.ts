@@ -246,7 +246,7 @@ SCENARIER.uppror2 = {
     korTills(s, () => !SIM.kartStrider(s).length, 1800);
     const ny = s.styre?.ledare;
     return [
-      [`styret är ${form}, och ledaren väger ${(100 * ledVikt).toFixed(0)} % (de missnöjda ${(100 * medVikt).toFixed(1)} %, legitimiteten ${leg.toFixed(2)})`, ledVikt > 0.5 && medVikt < leg],
+      [`styret är ${form}, och ledaren väger ${(100 * ledVikt).toFixed(0)} % (de missnöjda ${(100 * medVikt).toFixed(1)} %, legitimiteten ${leg.toFixed(2)}): de andra väger lite`, ledVikt > 0.5 && medVikt < 0.1],
       [`det blir ett uppror (${s.stat?.uppror ?? 0})`, uppror],
       [`upproret lyckas: ${l.name} leder inte längre (${ny === undefined ? 'ingen ledare' : SIM.byId(s, ny)?.name})`, uppror && ny !== l.id],
     ];
