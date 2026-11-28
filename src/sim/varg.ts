@@ -520,7 +520,7 @@ function borjaVanta(s: State, f: Vargflock, o: Bit, folk: Person[]) {
   const r = vantarVid(s, f), inne = folk.filter(q => r && roomAt(s, q.x, q.y) === r);
   // de som är vakna i huset slutar med det de gör och håller sig gömda
   for (const q of inne) if (q.task && larmAvbryter(q.task.act, 'varg') && q.task.act !== 'sova') { avbryt(s, q); q.task = undefined; }
-  log(s, `${f.vargar.length > 1 ? 'Vargarna' : 'Vargen'} väntar utanför dörren${inne.length ? `, och ${och(inne.map(q => q.name))} är instängda` : ''}.`, 'world', inne.map(q => q.id));
+  log(s, `${f.vargar.length > 1 ? 'Vargarna' : 'Vargen'} väntar utanför dörren${inne.length ? `, och ${och(inne.map(q => q.name))} är instängd${inne.length > 1 ? 'a' : ''}` : ''}.`, 'world', inne.map(q => q.id));
 }
 // de vuxna i huset som vågar gå ut och möta flocken: de vars roll vid larmet är kämpe (rollVid, som vargSkydd; steg 12.1.82)
 const modiga = (s: State, inne: Person[]) => inne.filter(q => rollVid(s, q, 'varg') === 'kampe');

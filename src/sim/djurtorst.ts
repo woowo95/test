@@ -36,7 +36,7 @@ export function djurTorstSteg(s: State, dt: number) {
     d.torstTim = (d.torstTim ?? 0) + dt / HOUR_S;
     if (d.torstTim >= TAM.torstDod * tamEg(d).talighet) {
       const q = d.agare !== undefined ? byId(s, d.agare) : undefined;
-      tamDor(s, d, 'av törst');
+      tamDor(s, d, 'torst');
       notis(s, 'djurtorst', `${q ? `${gen(q.name)}` : 'Byns'} ${tamArt(d.art).ord[1]} dog av törst.`, q ? [q.id] : [], { x: d.x, y: d.y });
     }
   }
