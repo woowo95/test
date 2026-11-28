@@ -2746,7 +2746,15 @@ SCENARIER.rovarflyr = {
       q.task = { act: 'gomma', phase: 'do', tx: q.x, ty: q.y, until: s.now + 4 * HOUR, carry: 0 };
       q.larmRoll = { hot: 'rovare', roll: 'gomd', v: s.larmV ?? 0, t: s.now }; // hen har valt att gömma sig
       gomda++;
-      const f = rovarGang(s, 3, { x: q.x + 2, y: q.y + 2 }, { anfaller: true }); f.sedd = s.now;
+      // gänget går förbi utanför: på den närmaste fria rutan utanför rummet, minst två rutor bort (steg 15.1.58: väggarna dämpar
+      // bara faran från den som inte är i samma rum)
+      let ute = { x: q.x + 2, y: q.y + 2 };
+      for (let r = 2, hittad = false; r < 12 && !hittad; r++) for (let dy = -r; dy <= r && !hittad; dy++) for (let dx = -r; dx <= r && !hittad; dx++) {
+        const x = Math.floor(q.x) + dx, y = Math.floor(q.y) + dy;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r || !SIM.inMap(x, y) || SIM.blocked(s, x, y) || SIM.roomAt(s, x, y)) continue;
+        ute = { x: x + 0.5, y: y + 0.5 }; hittad = true;
+      }
+      const f = rovarGang(s, 3, ute, { anfaller: true }); f.sedd = s.now;
       const t0 = s.now; let drog = false, lamnade = false;
       korTills(s, () => s.now - t0 > 20 * 60 * 1000, 1500, () => { if (SIM.kartStrider(s).some(g => g.st.kampar.some(k => k.pid === q.id))) drog = true; if (s.rovare && f.folk.length && f.gor !== 'flyr' && !(q.task?.act === 'gomma' && SIM.iHus(s, q))) lamnade = true; });
       if (drog) drogs++;
