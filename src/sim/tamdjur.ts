@@ -241,7 +241,16 @@ export function stepHund(s: State, d: Tamdjur, tim = 1) {
 export const VAKTHUND = balans('vakthund', {
   lojal: 0.6, // hunden vaktar när lojaliteten är minst så här stor
   hor: 32, // hunden hör och vädrar faran inom så här många rutor, dag som natt
+  skrammer: 2, // en vakthund skrämmer rovdjuret på så här många gånger avståndet där en vaken människa gör det (steg 15.1.168)
 });
+// de vakthundar som vaktar nu: lojala nog, ute och med en ägare som lever
+export const vakthundar = (s: State) => tamdjurOf(s).filter(d => d.art === 'hund' && (d.lojal ?? HUND.start) >= VAKTHUND.lojal && d.fahus === undefined && d.agare !== undefined && byId(s, d.agare)?.died === undefined);
+// platsen (x, y) är vaktad för ett rovdjur (steg 9.8.12, 15.1.166 och 15.1.168): någon vaken är inom R rutor, eller en vakthund
+// inom VAKTHUND.skrammer × R. Samma prov för vargflocken och björnen, för djuren och förrådet
+export function vaktat(s: State, x: number, y: number, R: number, folk: Person[]) {
+  return folk.some(q => q.task?.act !== 'sova' && Math.hypot(q.x - x, q.y - y) < R)
+    || vakthundar(s).some(d => Math.hypot(d.x - x, d.y - y) < VAKTHUND.skrammer * R);
+}
 // en vakthund som hör faran (avst: avståndet från hunden till faran), och ägaren som hör den skälla, eller undefined
 export function hundSkaller(s: State, avst: (d: Tamdjur) => number) {
   for (const d of tamdjurOf(s)) {
