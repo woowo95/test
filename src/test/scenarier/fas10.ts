@@ -28,6 +28,7 @@ const hageUtanVatten = (faren: number): { s?: SIM.State; h?: SIM.Hage } => {
     for (let v = SIM.hageVal(b, p), n = 0; v && n < 200; v = SIM.hageVal(b, p), n++) SIM.hageKlar(b, p, v.i);
     for (let d = SIM.vallaVal(b, p), n = 0; d && n < 5; d = SIM.vallaVal(b, p), n++) SIM.vallaKlar(b, p, d.id);
     const hg = SIM.hagarOf(b)[0];
+    if (hg && !SIM.hageVidVatten(b, hg)) for (const d of SIM.tamdjurOf(b)) d.hage ??= hg.id; // ingen vallar in djuren i en hage utan vatten (steg 15.1.144): de står där redan
     if (hg && !SIM.hageVidVatten(b, hg) && SIM.tamdjurOf(b).some(d => d.hage === hg.id)) return { s: b, h: hg };
   }
   return {};
@@ -86,8 +87,10 @@ SCENARIER.dragdjur = {
       const mat = SIM.hageUppgift(s, p); if (mat?.ref === -1) SIM.hageKlar(s, p, -1);
       for (let v = SIM.hageVal(s, p), n = 0; v && n < 200; v = SIM.hageVal(s, p), n++) SIM.hageKlar(s, p, v.i);
       setAmount(s, 'rep', 2);
+      const hg = SIM.hagarOf(s)[0], ho = hg && !SIM.hageVidVatten(s, hg) ? SIM.siteHo(s) : undefined; // vatten i hagen, annars vallas inga djur dit (steg 15.1.144)
+      if (ho) { s.stationer = [...(s.stationer ?? []), { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'vattenho', x: ho.x, y: ho.y, kvar: 0, vatten: SIM.HO.rymmer } as unknown as SIM.Station]; SIM.touch(s); }
       for (let d = SIM.vallaVal(s, p), n = 0; d && n < 5; d = SIM.vallaVal(s, p), n++) SIM.vallaKlar(s, p, d.id);
-      return { s, p, h: SIM.hagarOf(s)[0] };
+      return { s, p, h: hg };
     };
     const utanDjur = villAv(medHage(5, false).s, 'slade');
     const { s, p, h } = medHage(5);
@@ -1196,7 +1199,7 @@ SCENARIER.vattenho = {
     if (tb) { tb.vatten = 0; for (let i = 0; i < 24 * 30; i++) { b.now += 3600_000; hoRegn(b, 3600); max = Math.max(max, tb.vatten ?? 0); } }
     return [
       [`hagen utan vatten saknar en ho (brist ${brist.toFixed(2)}), och den huggs ur ${JSON.stringify(RECEPT.vattenho.av)} på ${RECEPT.vattenho.min} minuter`, brist > 0 && RECEPT.vattenho.av.virke === 1 && RECEPT.vattenho.min === 10],
-      [`hon byggdes i hagen (${byggd}) och bristen är borta (${efter})`, byggd && efter === 0],
+      [`hon byggdes i hagen (${byggd}) och bristen är mindre (${brist} → ${efter}; en ny hage som inte når vattnet vill också ha en, steg 15.1.144)`, byggd && efter < brist],
       [`en full mellanstor kruka ger ${n1} vatten i hon och krukan blir kvar tom (${tom})`, n1 === 5 && tom],
       [`full ho: ${n2} hälls i, ${rest} blir kvar i krukan och hon har ${full}`, n2 === 2 && rest === 3 && full === HO.rymmer],
       [`första påfyllningen står i loggen (${forstaRad ? 'ja' : 'nej'})`, forstaRad],

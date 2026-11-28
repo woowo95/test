@@ -1,7 +1,7 @@
 import { DAY, HONS, HOUR, INDIVID, TAMDJUR, byId, tamArt, fahusOf, hageById, honsOf, iIstiden, kalender, tamAlder, tamNamn, tamEg, HO, hoI, hageVidVatten, bjornarOf, stridOf, djurOf, dragOf, fagelFlockar, faglarOf, grupperOf, halsaOf, kortTal, FLOCKARTER, flockGrupper, flockdjurOf, vargarOf } from '../../sim';
 import { djurBild, hasIcon, iconCanvas, iconImg } from '../../ikoner';
 import { bar, condBar, esc, pLink } from '../hjalp';
-import { HONS_ID0, arHona, arTamt, djurSynliga } from '../vaxter';
+import { HONS_ID0, arHona, arTamt, djurSynliga, tamBild } from '../vaxter';
 import { s, ui } from '../lage';
 import type { Flik } from '../panel';
 
@@ -20,6 +20,13 @@ function levande(d: { art: string; id: number }) {
   const c = iconCanvas(k), sk = Math.max(1, Math.min(4, Math.floor(64 / Math.max(c.width, c.height))));
   return `<img class="ikon" src="${c.toDataURL()}" width="${c.width * sk}" height="${c.height * sk}" alt="" style="image-rendering: pixelated">`;
 }
+// det tama djurets porträtt (steg 15.1.150): artens egen bild från sidan (tamBild, samma som på kartan), annars dess symbol
+function tamPortratt(d: { id: number; art: string; born: number }) {
+  const k = tamBild(d)('sida');
+  if (!k) return iconImg(d.art, 32);
+  const c = iconCanvas(k), sk = Math.max(1, Math.min(4, Math.floor(64 / Math.max(c.width, c.height))));
+  return `<img class="ikon" src="${c.toDataURL()}" width="${c.width * sk}" height="${c.height * sk}" alt="" style="image-rendering: pixelated">`;
+}
 // rutornas rader: symbolen och värdet med texten när musen är över, jämförelsen med de flesta av arten och procenten
 const rd = (sym: string, text: string, inre: string) => `<dt title="${esc(text)}">${sym}</dt><dd title="${esc(text)}">${inre}</dd>`;
 const jfr = (v: number, bas: number) => v > bas * 1.08 ? 'mer än de flesta' : v < bas * 0.92 ? 'mindre än de flesta' : 'som de flesta';
@@ -34,7 +41,7 @@ function tamHtml() {
   const ho = hage ? hoI(s, hage) : undefined;
   const plats = fahus ? rd('Plats', 'Står i fähuset under istiden', 'Fähuset') : hage ? rd('Plats', ho ? `Går i hagen och betar. Vattenhon har ${ho.vatten ?? 0} av ${HO.rymmer} vatten` : hageVidVatten(s, hage) ? 'Går i hagen och betar, och dricker vid stranden' : 'Går i hagen och betar', `Hagen ${hage.w} × ${hage.h}${ho ? ` · ${ho.vatten ?? 0}/${HO.rymmer}` : ''}`) : rd('🍃', 'Går lös och betar där det finns bete', 'Lös');
   return `
-    <div class="phead">${levande({ art: a.ikon, id: d.id })}<div><h2 class="rutrub" data-passa="12">${esc(tamNamn(d))}</h2></div></div>
+    <div class="phead">${tamPortratt(d)}<div><h2 class="rutrub" data-passa="12">${esc(tamNamn(d))}</h2></div></div>
     <dl class="kv">
       ${rd('Ålder', `${alder} år gammal. ${tamNamn(d)} lever högst ${a.liv} år`, `${alder} år`)}
       ${rad('Mättnad', 1 - d.hunger, pr(1 - d.hunger), d.hunger >= 1 ? 'Svälter' : d.hunger >= 0.5 ? 'Hungrig: behöver mat' : 'Mätt', d.hunger > 0.6 ? 'low' : '')}

@@ -184,7 +184,7 @@ function ritaDjur(art: Djur['art'], id: number, x: number, y: number, sedd: Set<
 const lador = new Map<number, { w: number; h: number; fot: number }>();
 // de tama djurens bilder (Björns val, steg 11.14.1): hunden (valpen tills den är vuxen), fåret och geten i tre utseenden efter id:t;
 // de andra har en platshållare (TAMDJUR.ikon): ett djur utan egen bild (hasIcon) ritas med den
-function tamBild(d: { id: number; art: string; born: number }): (h: DjurHall) => string | undefined {
+export function tamBild(d: { id: number; art: string; born: number }): (h: DjurHall) => string | undefined {
   const a = d.art;
   const ung = a === 'hund' && (ui.nu - d.born) / DAY < TAMDJUR.hund.vuxen, art = ung ? 'valp' : a, n = hasIcon(`kb_tam_${art}_4_sida`) ? 4 : 3, v = 1 + Math.abs(d.id) % n; // kon har fyra utseenden (steg 12.6.1)
   return h => { const k = `kb_tam_${art}_${v}_${h}`; return hasIcon(k) ? k : undefined; };

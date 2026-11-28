@@ -37,6 +37,17 @@ export function laggTillFas12(PIX: Pix, PAL: Pal, iRutan: (b: Bild) => string[])
     const b = KARTBILDER[`tam_${a}_${v}`]; if (!b) continue;
     lagg(`kb_tam_${a}_${v}_sida`, b); lagg(`kb_tam_${a}_${v}_fram`, b); lagg(`kb_tam_${a}_${v}_vast`, b, spegla(b.rader)); lagg(`kb_tam_${a}_${v}_bak`, b, spegla(b.rader));
   }
+  // oxen och hästen (steg 15.1.150): platshållare i paletten tills Björn valt, kons form från sidan i oxens mörkbruna och hästens
+  // grå färger, hästen utan horn. Samma bild i de tre utseendena (tamBild i ui/vaxter.ts)
+  const ko = KARTBILDER.tam_ko_1;
+  if (ko) {
+    const oxe: Bild = { ...ko, pal: { ...ko.pal, d: '#521100', f: '#742a01', e: '#7d5b40', h: '#5e3c24' } };
+    const hast: Bild = { ...ko, rader: ko.rader.map((r, i) => i < 2 ? r.replace(/[ab]/g, '.') : r), pal: { ...ko.pal, d: '#7e7362', f: '#a0947d', e: '#bdb39b', h: '#987e62' } };
+    for (const [a, b] of [['oxe', oxe], ['hast', hast]] as const) {
+      for (let v = 1; v <= 3; v++) { lagg(`kb_tam_${a}_${v}_sida`, b); lagg(`kb_tam_${a}_${v}_fram`, b); lagg(`kb_tam_${a}_${v}_vast`, b, spegla(b.rader)); lagg(`kb_tam_${a}_${v}_bak`, b, spegla(b.rader)); }
+      for (const k of [a, `lev${a}`]) lagg(k, b, iRutan(b));
+    }
+  }
   // vildsvinet i skogen i tre utseenden (djurBild i ikoner.ts), likadant från sidan
   for (let v = 1; v <= 3; v++) {
     const b = KARTBILDER[`vildsvin_${v}`]; if (!b) continue;

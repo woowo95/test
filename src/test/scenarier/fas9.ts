@@ -1810,6 +1810,14 @@ SCENARIER.hund = {
   },
 };
 
+// en färdig vattenho med vatten i hagen h, om hagen inte når vattnet: utan vatten vallas inga djur dit (steg 15.1.144)
+const medHo = (s: SIM.State, h?: SIM.Hage) => {
+  if (!h || SIM.hageVidVatten(s, h) || SIM.hoI(s, h)) return;
+  for (let y = h.y; y < h.y + h.h; y++) for (let x = h.x; x < h.x + h.w; x++) if (!SIM.blocked(s, x + 0.5, y + 0.5)) {
+    s.stationer = [...(s.stationer ?? []), { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'vattenho', x, y, kvar: 0, vatten: SIM.HO.rymmer } as unknown as SIM.Station]; SIM.touch(s); return;
+  }
+};
+
 SCENARIER.hage = {
   text: 'Steg 9.8.4: hagen. Byn med betesdjur märker ut en hage och sätter staket runt den, djuren leds in med rep och betar gräset, buskarna och ungträden; staketet slits, och genom ett hål rymmer djuren',
   kor: () => {
@@ -1825,6 +1833,7 @@ SCENARIER.hage = {
     let n = 0;
     for (let v = hageVal(s, p); v && n < 200; v = hageVal(s, p), n++) hageKlar(s, p, v.i);
     const hel = !!h && hageHel(s, h);
+    medHo(s, h);
     for (let d = vallaVal(s, p); d; d = vallaVal(s, p)) vallaKlar(s, p, d.id);
     const inne = tamdjurOf(s).every(d => d.hage === h?.id);
     const g = groundOf(s), gras0 = h ? hageRutor(h).reduce((a, i) => a + g.cover[i], 0) : 0;
@@ -1876,7 +1885,7 @@ SCENARIER.boskap = {
     const ull1 = amountOf(s, 'ull');
     // våren: honan får unga, när betet i en hage och höet räcker för ett till (steg 10.2.33)
     const var0 = kalender(s).ai === VAR;
-    const hg = { id: 1, x: Math.floor(p.x) - 4, y: Math.floor(p.y) - 4, w: 8, h: 8 }; s.hagar = [hg]; for (const q of tamdjurOf(s)) q.hage = hg.id;
+    const hg = { id: 1, x: Math.floor(p.x) - 4, y: Math.floor(p.y) - 4, w: 8, h: 8 }; s.hagar = [hg]; for (const q of tamdjurOf(s)) q.hage = hg.id; medHo(s, hg);
     for (const i of SIM.hageRutor(hg)) SIM.groundOf(s).cover[i] = 1;
     setAmount(s, 'torrgras', 200);
     let h = 0;
@@ -1904,7 +1913,7 @@ SCENARIER.hagflytt = {
     const m = SIM.bynsMitt(s);
     nyttTamdjur(s, 'far', m.x, m.y); nyttTamdjur(s, 'far', m.x + 1, m.y); nyttTamdjur(s, 'get', m.x, m.y + 1);
     const bygg = () => { for (let v = hageVal(s, p), n = 0; v && n < 400; v = hageVal(s, p), n++) hageKlar(s, p, v.i); };
-    matUt(); bygg();
+    matUt(); bygg(); medHo(s, hagarOf(s)[0]);
     for (let d = vallaVal(s, p); d; d = vallaVal(s, p)) vallaKlar(s, p, d.id);
     const h1 = hagarOf(s)[0];
     // betet tar slut i hagen
@@ -1913,7 +1922,7 @@ SCENARIER.hagflytt = {
     const ned = nedbetad(s, h1);
     matUt();
     const ny = hagarOf(s).length;
-    bygg();
+    bygg(); medHo(s, hagarOf(s)[1]);
     const d1 = vallaVal(s, p);
     if (d1) vallaKlar(s, p, d1.id);
     const flyttad = djurIHagen(s, h1).length;

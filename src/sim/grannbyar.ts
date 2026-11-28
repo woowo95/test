@@ -11,7 +11,7 @@ import { notis } from './notiser';
 import { KLAN, Klan, KlanPerson, klanById, klanMellan, nyKlan } from './klaner';
 import { eldPlats, getMap } from './karta';
 import { streckAv } from './ord';
-import { byGrannar } from './grannat';
+import { nyaGrannar } from './grannat';
 import { hinder, laggPlats, VarldPlats } from './landmarken';
 import { byRutor } from './placering';
 import { BYSORTER, radKrok, VarldRad } from './radtal';
@@ -58,8 +58,7 @@ function nyPlats(s: State, namn: string): { p: VarldPlats; dygn: number } | unde
   const [f] = narmasteMal(vl, v, h.y * v.w + h.x, lediga, 1, 'fots');
   const p = f && laggPlats(vl, v, 'by', f.till % v.w, Math.floor(f.till / v.w), s.now, { namn });
   if (!p) return undefined;
-  p.grannar = byGrannar(vl, v, p, s.now);
-  h.grannar = byGrannar(vl, v, h, s.now);
+  nyaGrannar(vl, v, [p, h], s.now); // en väg går åt båda hållen (steg 15.1.142)
   return { p, dygn: Math.round(f.kostnad / VARLD.gangPerDygn * 100) / 100 };
 }
 

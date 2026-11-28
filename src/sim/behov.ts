@@ -603,6 +603,9 @@ export const BRUK_REDSKAP: BrukRad = {
 // plaggen efter det man bär: p saknar ett plagg som passar hen och som hen skulle ta på sig (plaggPoang) när hen inte äger
 // något på samma platser; g har över ett plagg hen inte har på sig, när hen äger ett annat på samma platser eller det inte passar hen
 // plaggen och projekten läses efter den här filen: krokarna sätts i val.ts
+// de levande djuren (boskap.ts, steg 15.1.143): varan, hur många byn har av den (djuren inräknade) och hur många den vill ha
+export const levKrok: { ar: (k: string) => boolean; antal: (s: State, k: string) => number; mal: (s: State, k: string) => { behover: number; buf: number } } = { ar: () => false, antal: () => 0, mal: () => ({ behover: 0, buf: 0 }) };
+const arLevande = (k: string) => levKrok.ar(k), levAntal = (s: State, k: string) => levKrok.antal(s, k), levMal = (s: State, k: string) => levKrok.mal(s, k);
 export const brukKrok = {
   kladFor: (_s: State, _p: Person, _k: string) => true, kladPlatser: (_k: string): string[] => [], plaggVill: (_s: State, _p: Person, _k: string) => false,
   recept: (_s: State, _p: Person): Record<string, number>[] => [],
@@ -777,6 +780,7 @@ export const villGrupp = (s: State, g: string) => REDSKAPMAL[g]?.(s) ?? 1;
 export function bynKvar(s: State, k: string, i: number) {
   if (k === 'silver') return 1;
   if (isTool(k)) { const g = gruppOf(k), n = iGruppen(s, g).length - i; return n < 1 ? DELA.saknar : n < (REDSKAPMAL[g]?.(s) ?? 0) ? 1 : DELA.over; }
+  if (arLevande(k)) { const n = levAntal(s, k) - i, m = levMal(s, k); return n < m.behover - 2e-6 ? DELA.saknar : n < m.buf ? 1 : DELA.over; } // djuren i byn räknas (steg 15.1.143)
   const b = behovMed(k);
   if (!b) { const n = amountOf(s, k) - i; return n < 1 - 2e-6 ? DELA.saknar : n < behalla(s, k) ? 1 : DELA.over; }
   const { har, behover } = bynNod(s, b), { har: hb, buf } = bynBuffert(s, b), d = i * perOf(b, k);
@@ -791,6 +795,7 @@ export function bynBehov(s: State, k: string) {
 }
 function bynBehovUtan(s: State, k: string) {
   if (isTool(k)) { const g = gruppOf(k), n = iGruppen(s, g).length; return n < 1 ? DELA.saknar : n < villGrupp(s, g) ? 1 : DELA.over; }
+  if (arLevande(k)) { const n = levAntal(s, k), m = levMal(s, k); return n < m.behover ? DELA.saknar : n < m.buf ? 1 : DELA.over; }
   const b = behovMed(k);
   if (!b) { const n = amountOf(s, k); return n < 1 ? DELA.saknar : n < behalla(s, k) ? 1 : DELA.over; }
   const { har, behover } = bynNod(s, b);
@@ -804,6 +809,7 @@ function bynBehovUtan(s: State, k: string) {
 export function bynKopAntal(s: State, k: string, valt?: Map<Behov, number>) {
   if (isTool(k)) return 1;
   const minst = bynBehovUtan(s, k) >= DELA.saknar ? 1 : 0, b = behovMed(k);
+  if (arLevande(k)) return Math.max(minst, Math.ceil(levMal(s, k).buf - levAntal(s, k) - 1e-9));
   if (!b) return Math.max(minst, Math.ceil(behalla(s, k) - amountOf(s, k) - 1e-9));
   const { har, buf } = bynBuffert(s, b), fore = valt?.get(b) ?? 0;
   return Math.max(fore > 0 ? 0 : minst, Math.ceil((buf - har - fore) / perOf(b, k) - 1e-9));

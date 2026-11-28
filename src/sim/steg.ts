@@ -1,4 +1,5 @@
 import { SKATT, skattDygn, skattRegister } from './skatt';
+import { ovaKrok } from './kunna';
 import { varmeKrok } from './varme';
 import { TIMMINNEN, timminnenIn, timminnenUt } from './timminne';
 import { raknaBynVet, sparaHistorik } from './ort';
@@ -21,6 +22,7 @@ import { personHand } from './personlogg';
 import { hamtaForst, hamtat, taMed } from './hamtning';
 import { sorgTimme } from './liv';
 import { lagerIStraket } from './strak';
+import { lagerIHagen } from './lager';
 import { angIVagen, angMark } from './slatter';
 import { tamFaraSteg } from './djurflykt';
 import { hoRegn } from './vattenho';
@@ -184,6 +186,7 @@ const STEG = balans('steg', {
   minneSek: 1800, // den som arbetar ser sig omkring och minns området ungefär så här ofta (sekunder)
   svaltTanke: 7200, // tanken Svälter kommer ungefär så här ofta (sekunder)
 });
+ovaKrok.ova = (s, p, sk, tim) => ovning(p, sk, tim * STEG.ovningArbete * (STEG.ovningBas + stat(p, 'intelligens', s.now) / 20)); // övningen per arbetad tid (kunna.ts, steg 15.1.145)
 
 // spelet ritar folk där de är medan slaget visas: var och ens väg under det senaste slaget, som
 // [tid, x, y, tid, x, y, ...]. Bara för att visa; simuleringen läser det aldrig. Uppgiften sparas också med tiden varje
@@ -556,7 +559,7 @@ export const TAKTER: Takt[] = [
   { namn: 'planBuild', sek: PLAN.varTim * 3600, fn: s => { planBuild(s); } }, // byggplanen (steg 7.2.3)
   { namn: 'stationFlytt', sek: 24 * 3600, fn: s => { stationFlyttTimme(s); } }, // en station ute närmare dem som använder den (steg 9.4.8); en gång per dygn: var folk bor och arbetar ändras långsamt, och sökningen är dyr
   { namn: 'stepEldFlytt', sek: 3600, fn: s => { stepEldFlytt(s); } },
-  { namn: 'lagerIStraket', sek: 3600, fn: s => { lagerIStraket(s); } },
+  { namn: 'lagerIStraket', sek: 3600, fn: s => { lagerIStraket(s); lagerIHagen(s); } }, // och i en hage (steg 15.1.148)
   { namn: 'stepPaborjat', sek: 3600, fn: s => { stepPaborjat(s); } },
   { namn: 'stepStationer', sek: 3600, fn: s => { stepStationer(s); } },
   { namn: 'stepPynt', sek: 3600, fn: (s, dt) => { stepPynt(s, dt / HOUR_S); } },

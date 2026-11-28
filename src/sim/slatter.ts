@@ -6,8 +6,9 @@
 // På sensommaren och hösten slås ängen med skäran (en ny sak) i handlingen slatter, och höet bärs hem till förrådet. Djuren i
 // fähuset ger gödsel, som hamnar i komposten (rester.ts). Byn slaktar på hösten de djur den inte har hö till (slaktOrsak i
 // boskap.ts). Allt stegas en gång i timmen (stepVinter, steg.ts), likadant i båda lägena, utan slump.
+import { ovaArbete } from './kunna';
 import { balans } from './balans';
-import { ALDER, ageOf, count, forstaGang, gjort, living, log, ovning, annanGor } from './folk';
+import { ALDER, ageOf, count, forstaGang, gjort, living, log, annanGor } from './folk';
 import { getable } from './behov';
 import { amountOf, gain } from './lager';
 import { DAY, H, HOUR, Person, State, T, W } from './typer';
@@ -33,7 +34,6 @@ export const VINTER = balans('vinter', {
   angMatMin: 3, // minuter för att märka ut en äng
   ho: 3, // så mycket hö en ruta högt gräs ger när den slås
   slaMin: 4, // minuter för att slå en ruta (en liten sak)
-  ovning: 0.02, // djurskötseln växer så här mycket när man slår
   kylaHunger: 1 / 48, // ett djur utan fähus i istiden blir så här mycket hungrigare i timmen av kylan ...
   frysTim: 72, // ... och fryser ihjäl efter så här många timmar (tre dygn) ute i istiden
   perRuta: 1, // så många djur som står på en ruta golv i fähuset
@@ -121,7 +121,7 @@ export function slaKlar(s: State, p: Person, i?: number) {
   if (i === undefined || g.cover[i] < HIGH || getable(s, p, 'skara') < 1) return;
   g.cover[i] = BAR + 0.05; // stubben står kvar och växer upp igen till nästa år
   gain(s, p, 'torrgras', VINTER.ho);
-  ovning(p, 'skotsel', VINTER.ovning); gjort(s, p, 'slagit'); count(s, 'angSlagen');
+  ovaArbete(s, p, 'slatter', VINTER.slaMin); gjort(s, p, 'slagit'); count(s, 'angSlagen');
   if (forstaGang(s, 'slatter')) log(s, `${p.name} slog byns första äng med skäran och bar hem höet åt djuren.`, 'world', [p.id]);
 }
 
@@ -232,7 +232,7 @@ export function hamlaKlar(s: State, p: Person, i?: number) {
     gain(s, p, 'lovkarve', VINTER.lov); count(s, 'lovkarvar', VINTER.lov);
     if (forstaGang(s, 'lovtakt')) log(s, `${p.name} skar de första lövkärvarna av den hamlade björken.`, 'world', [p.id]);
   }
-  ovning(p, 'skotsel', VINTER.ovning); gjort(s, p, 'hamlat');
+  ovaArbete(s, p, 'hamla', VINTER.hamlaMin); gjort(s, p, 'hamlat');
 }
 // varje timme (stepVinter): ett hamlat träd som inte står kvar glöms
 function glomHamlade(s: State) {

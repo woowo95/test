@@ -124,11 +124,12 @@ export function isStored(s: State, x: number, y: number) {
 }
 // isStored med rutnätet g hämtat en gång (lagerRutor), för slingor över många stackar
 const lagradI = (s: State, g: Uint8Array, x: number, y: number) => (x | 0) === x && (y | 0) === y && inMap(x, y) ? g[y * W + x] === 1 : isStoredNu(s, x, y);
+const iHagen = (s: State, x: number, y: number) => !!s.hagar?.some(h => x >= h.x && x < h.x + h.w && y >= h.y && y < h.y + h.h);
 function isStoredNu(s: State, x: number, y: number) {
   const zs = zonesOf(s);
   // en ruta på ett fält hör aldrig till förrådet, också när en lagerplats flyttats eller vuxit intill fältet: det som ligger där
   // ligger utanför lagret och bärs in som annat utanför
-  for (let i = 0; i < zs.length; i++) if (nearZone(zs[i], x, y, LAGER.bredvid)) return !faltAt(s, x, y);
+  for (let i = 0; i < zs.length; i++) if (nearZone(zs[i], x, y, LAGER.bredvid)) return !faltAt(s, x, y) && !iHagen(s, x, y); // inte heller inne i en hage (steg 15.1.148)
   return varuRutor(s).includes(Math.floor(y) * W + Math.floor(x));
 }
 // ---------- förrådets rutor i ett rutnät (steg 12.1.186) ----------
@@ -177,7 +178,7 @@ export function lagerRutor(s: State) {
   for (const z of zs) for (let y = Math.max(0, z.y - d); y < Math.min(H, z.y + z.h + d); y++) for (let x = Math.max(0, z.x - d); x < Math.min(W, z.x + z.w + d); x++) {
     const i = y * W + x;
     if (r.g[i]) continue;
-    if (!faltAt(s, x, y)) { r.g[i] = 1; r.satta.push(i); }
+    if (!faltAt(s, x, y) && !iHagen(s, x, y)) { r.g[i] = 1; r.satta.push(i); } // inte i en hage (steg 15.1.148; hagen ändrar byggV)
   }
   r.zs = zs; r.k = [W, H, s.byggV ?? 0, s.falt?.length ?? 0, s.nextFalt ?? 0, zs.length, s.stationer?.length ?? 0];
   for (const i of varuRutor(s)) if (!r.g[i]) { r.g[i] = 1; r.satta.push(i); }
@@ -484,12 +485,16 @@ function shareOf(ag: Del | undefined, n: number, owner = BYN, s?: State, k?: str
 // kan något ligga eller byggas på rutan? Inte på vatten, sten, inpå elden, i ett hus eller där en station står (stationer.ts),
 // utom förvaringen. utomElden = bortse från elden (ett hus som får byggas där elden står, när elden flyttas, eldflytt.ts)
 // utomStation: en station, möbel eller eld som står ute hindrar inte (den rivs innan huset byggs, steg 10.2.77)
-export function usable(s: State, x: number, y: number, utomElden = false, utomStation = false, utomVag = false) {
+// rutan ligger i en hage eller på dess staket (samma test som rutaFri i odling.ts, skrivet här för att undvika ett importvarv, steg 15.1.148)
+export const iHageRuta = (s: State, x: number, y: number) => !!s.hagar?.some(h => x >= h.x - 1 && x <= h.x + h.w && y >= h.y - 1 && y <= h.y + h.h);
+// utomHage: det som står i hagen (vattenhon) får stå där
+export function usable(s: State, x: number, y: number, utomElden = false, utomStation = false, utomVag = false, utomHage = false) {
   const m = getMap(s.seed), f = eldPlats(s);
   if (!inMap(x, y)) return false;
   const t = m.tiles[y * W + x];
   if (s.torg && x >= s.torg.x && y >= s.torg.y && x < s.torg.x + s.torg.w && y < s.torg.y + s.torg.h) return false; // på torget byggs och ställs inget (steg 7.3.13)
   if (t === T.Vatten || s.flod && iVattnetNu(s, y * W + x) || t === T.Sten || !utomElden && Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1 || bitAt(s, x, y) && !(utomVag && MATERIAL[bitAt(s, x, y)!.m]?.vag && !MATERIAL[bitAt(s, x, y)!.m].brygga) || sittAt(s, x, y) && !utomStation || faltAt(s, x, y) || angAt(s, x, y)) return false; // inte heller på ett fält (odling.ts) eller en slåtteräng (slatter.ts, steg 10.11.5)
+  if (!utomHage && iHageRuta(s, x, y)) return false; // inget läggs eller byggs i en hage eller på dess staket (steg 15.1.148)
   if (s.heliga?.length && heligRuta(s, x, y)) return false;
   if (s.runstenar?.some(r => r.x === x && r.y === y)) return false; // runstenen står kvar (steg 10.6.1) // på en helig plats byggs inget (steg 8.5.5)
   const st = stationAt(s, x, y);
@@ -1196,6 +1201,17 @@ export function lagerStorre(s: State) {
   return true;
 }
 const mittAvst = (s: State, z: { x: number; y: number; w: number; h: number }) => { const m = omrade(s).mitt; return Math.hypot(z.x + z.w / 2 - m.x - 0.5, z.y + z.h / 2 - m.y - 0.5); };
+// en lagerplats (utanför husen) som ligger i en hage eller på dess staket flyttas, en i timmen (lagrets rad i TAKTER, som
+// lagret i ett gångstråk, steg 15.1.148)
+export function lagerIHagen(s: State) {
+  if (!s.hagar?.length) return;
+  for (const z of zonesOf(s)) {
+    if (z.hus !== undefined) continue;
+    let i = false;
+    for (let y = z.y; y < z.y + z.h && !i; y++) for (let x = z.x; x < z.x + z.w && !i; x++) i = iHageRuta(s, x, y);
+    if (i) { count(s, 'lagerIHagen'); flyttaLager(s, z); return; }
+  }
+}
 // lagerplatsen z ligger i vägen för ett hus (steg 8.1.15): den flyttas till närmaste plats där den får ligga, med samma namn och
 // samma slag, och den gamla finns inte längre. Det som ligger kvar där hamnar utanför och bärs in som annat utanför lagret
 export function flyttaLager(s: State, z: Zone) {

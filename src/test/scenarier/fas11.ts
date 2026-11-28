@@ -665,20 +665,21 @@ SCENARIER.grannat = {
     const s = SIM.cloneState(testBy(10)); delete s.varld; // en ny värld: grannätet som det räknas när världen skapas
     const t0 = performance.now(), vl = SIM.medVarld(s), tid = performance.now() - t0, v = SIM.varldMark(s)!;
     const byar = vl.platser!.filter(p => p.k === 'by'), N = SIM.GRANNAT.antal;
-    const alla = byar.every(p => Array.isArray(p.grannar) && p.grannar.length <= N);
-    const fulla = byar.filter(p => p.grannar!.length === N).length;
+    const fram = (p: SIM.VarldPlats) => p.grannar!.filter(g => !g.bak); // de närmaste; resten har byn bland sina (steg 15.1.142)
+    const alla = byar.every(p => Array.isArray(p.grannar) && fram(p).length <= N);
+    const fulla = byar.filter(p => fram(p).length === N).length;
     const sorterade = byar.every(p => p.grannar!.every((g, i) => i === 0 || g.kostnad >= p.grannar![i - 1].kostnad));
     const restid = byar.every(p => p.grannar!.every(g => Math.abs(g.dygn - g.kostnad / SIM.VARLD.gangPerDygn) < 0.006));
     // vägen finns för varje granne och går från byn till grannen
     const ruta = (nr: number) => { const q = SIM.varldPlatsNr(vl, nr)!; return q.y * v.w + q.x; };
-    const vagar = byar.every(p => p.grannar!.every(g => { const w = vl.vagar!.find(x => x.fs === 'fots' && x.fran === p.y * v.w + p.x && x.till === ruta(g.nr)); return !!w && SIM.vagRutor(w, v.w).at(-1) === ruta(g.nr) && Math.abs(w.kostnad - g.kostnad) < 1e-9; }));
+    const vagar = byar.every(p => fram(p).every(g => { const w = vl.vagar!.find(x => x.fs === 'fots' && x.fran === p.y * v.w + p.x && x.till === ruta(g.nr)); return !!w && SIM.vagRutor(w, v.w).at(-1) === ruta(g.nr) && Math.abs(w.kostnad - g.kostnad) < 1e-9; }));
     // huvudbyns grannar är de närmaste: ingen annan by går att nå billigare än den sista grannen
-    const hb = byar.find(p => p.by === vl.huvud)!, sista = hb.grannar!.at(-1)?.kostnad ?? Infinity, egna = new Set(hb.grannar!.map(g => g.nr));
+    const hb = byar.find(p => p.by === vl.huvud)!, sista = fram(hb).at(-1)?.kostnad ?? Infinity, egna = new Set(hb.grannar!.map(g => g.nr));
     const narmare = byar.filter(q => q !== hb && !egna.has(q.nr)).filter(q => (SIM.billigasteVag(vl, v, hb.y * v.w + hb.x, q.y * v.w + q.x, 'fots')?.kostnad ?? Infinity) < sista - 1e-6);
     const inteFagel = byar.some(p => { const f = [...byar].filter(q => q !== p).sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y))[0]; return f && p.grannar![0] && p.grannar![0].nr !== f.nr; });
     const storlek = JSON.stringify(vl).length;
     return [
-      [`varje by har högst ${N} grannar (${byar.length} byar, ${fulla} med alla ${N})`, alla && fulla > byar.length / 2],
+      [`varje by har högst ${N} närmaste grannar (${byar.length} byar, ${fulla} med alla ${N})`, alla && fulla > byar.length / 2],
       ['grannarna står i ordning efter vägens kostnad, med restiden i dygn (kostnaden delad med gången per dygn)', sorterade && restid],
       ['vägen till varje granne är sparad i världen och går fram till grannen', vagar],
       [`huvudbyns grannar är de närmaste att nå (${hb.grannar!.map(g => g.dygn).join(', ')} dygn till fots)`, hb.grannar!.length > 0 && narmare.length === 0],

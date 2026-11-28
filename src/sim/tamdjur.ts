@@ -6,11 +6,12 @@ import { gen, honom } from './ord';
 // ärvs som redskapen (arv.ts); byns rikedom räknar djuren (varde.ts). Djurskötsel är en färdighet som växer när man matar,
 // mjölkar, klipper och vallar, så att någon blir byns herde. Allt stegas en gång i timmen (stepTamdjur, steg.ts), likadant i
 // båda lägena, med byns följd 'tamdjur'.
+import { ovaArbete } from './kunna';
 import { notis } from './notiser';
 import { balans } from './balans';
 import { farorNu } from './kult';
 import { KOTTSLAG, isFood } from './saker';
-import { ALDER, ageOf, byId, count, enTillDar, forstaGang, gjort, log, ovning, alive } from './folk';
+import { ALDER, ageOf, byId, count, enTillDar, forstaGang, gjort, log, alive } from './folk';
 import { getable, takeMaterial } from './behov';
 import { chansPer, hash3, rnd } from './slump';
 import { put } from './lager';
@@ -57,7 +58,6 @@ export const TAM = balans('tamdjur', {
   matas: 0.5, // den som sköter djuren matar dem när hungern är minst så här stor
   svaltTim: 48, // ett djur som svultit (hunger 1) så här många timmar dör
   mataMin: 6, // minuter det tar att mata ett djur
-  ovning: 0.04, // djurskötseln växer så här mycket när man matar
   mataR: 30, // den som sköter djuren går högst så här långt (rutor) för att mata dem
   torstTim: 12, // djuret dricker en gång på så här många timmar (steg 10.10.31)
   torstDod: 24, // ett djur utan vatten så här många timmar dör, gånger tåligheten
@@ -143,7 +143,7 @@ export function mataKlar(s: State, p: Person, ref?: number) {
   d.hunger = 0; // en sak foder gör djuret mätt
   (d.matad ??= {})[p.id] = (d.matad[p.id] ?? 0) + 1;
   if (d.art === 'hund' && d.agare === p.id) d.lojal = Math.min(1, (d.lojal ?? HUND.start) + HUND.mata);
-  ovning(p, 'skotsel', TAM.ovning); gjort(s, p, 'matat'); handelse(s, p, 'skotteDjur', undefined, tamArt(d.art).ord[3]); // (steg 12.1.134)
+  ovaArbete(s, p, 'mata', TAM.mataMin); gjort(s, p, 'matat'); handelse(s, p, 'skotteDjur', undefined, tamArt(d.art).ord[3]); // (steg 12.1.134)
   if (forstaGang(s, 'matatDjur')) log(s, `${p.name} matade byns ${tamArt(d.art).ord[1]} för första gången.`, 'world', [p.id]);
 }
 // vad byns djur är värda (byns rikedom, varde.ts) och vad en persons djur är värda (förmögenheten)

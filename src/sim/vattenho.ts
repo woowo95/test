@@ -7,7 +7,7 @@ import { balans } from './balans';
 import { Ting } from './agande';
 import { getMap } from './karta';
 import { Station, isKlar, ledig, stationerOf } from './stationer';
-import { Hage, hagarOf } from './hage';
+import { Hage, betesdjurOf, hageHel, hageKrok, hagarOf } from './hage';
 import { TAM, tamArt, tamdjurOf, tamEg } from './tamdjur';
 import { vaderNu } from './vader';
 import { blocked } from './byggnad';
@@ -30,7 +30,11 @@ export const hoarOf = (s: State) => stationerOf(s).filter(t => t.k === 'vattenho
 // hon i hagen, om det står en (färdig eller påbörjad)
 export const hoI = (s: State, h: Hage) => hoarOf(s).find(t => iHagen(h, t.x, t.y));
 // hagarna med djur som inte når vattnet (de behöver en ho), och de av dem som saknar en
-const behoverHo = (s: State) => hagarOf(s).filter(h => tamdjurOf(s).some(d => d.hage === h.id) && !hageVidVatten(s, h));
+// En hel hage som inte når vattnet behöver en ho så snart byn har betesdjur, annars byggs hon aldrig (steg 15.1.144)
+const behoverHo = (s: State) => hagarOf(s).filter(h => (tamdjurOf(s).some(d => d.hage === h.id) || hageHel(s, h) && betesdjurOf(s).length > 0) && !hageVidVatten(s, h));
+// hur många dygn vattnet i hagen räcker för djur som dricker så mycket (hageDygn i hage.ts): hela tiden vid vattnet, hons vatten
+// delat med det djuren dricker per dygn om hon står färdig, och annars inget
+hageKrok.vattenDygn = (s, h, dricker) => { if (hageVidVatten(s, h)) return Infinity; const ho = hoI(s, h); if (!ho || !isKlar(ho)) return 0; return dricker > 0 ? (ho.vatten ?? 0) / (dricker * 24 / TAM.torstTim) : Infinity; };
 const utanHo = (s: State) => behoverHo(s).filter(h => !hoI(s, h));
 // en ho i varje hage med djur som inte når vattnet (stationBrist i forradsmal.ts)
 // det som står på spel när en hage saknar ho (steg 15.1.165, SPEL i projekt.ts): djurens värde, gånger hur törstiga de är:
@@ -51,7 +55,7 @@ export function siteHo(s: State) {
   let best: { x: number; y: number; rot?: 1 } | undefined, bd = Infinity;
   for (const h of utanHo(s)) for (let y = h.y; y < h.y + h.h; y++) for (let x = h.x; x < h.x + h.w; x++) {
     const d = Math.hypot(x + 0.5 - m.x, y + 0.5 - m.y);
-    if (d < bd && ledig(s, x, y) && !blocked(s, x + 0.5, y + 0.5)) { bd = d; best = { x, y }; }
+    if (d < bd && ledig(s, x, y, undefined, true) && !blocked(s, x + 0.5, y + 0.5)) { bd = d; best = { x, y }; }
   }
   return best;
 }

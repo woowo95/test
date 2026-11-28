@@ -353,15 +353,17 @@ function rutaFri(s: State, g: Grans, x: number, y: number) {
 // var ett nytt fält med n rutor och bredden w läggs: alla rutor fria och utanför byns gräns, första raden högst faltTill rutor
 // utanför byns område och så nära det som det går (utanforByn), lite ungskog. Samma plats varje gång (ingen slump). Sparas per by och timme (regel 4)
 const siteCache = new WeakMap<State, { key: string; at?: { x: number; y: number } }>();
-export function faltSite(s: State, w: number, n: number, utanStrak = false) {
-  const key = `${utanStrak ? 's' : ''}${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${faltOf(s).length}:${s.stackar?.length ?? 0}:${s.hagar?.length ?? 0}:${s.angar?.length ?? 0}:${w}:${n}`;
+// vatten: hagens plats (steg 15.1.144), som kostar 1 + vatten × avståndet till vattnet / sidan gånger mer
+export function faltSite(s: State, w: number, n: number, utanStrak = false, vatten = 0) {
+  const key = `${utanStrak ? 's' : ''}${vatten ? `v${vatten}` : ''}${Math.floor(s.now / HOUR)}:${s.byggV ?? 0}:${faltOf(s).length}:${s.stackar?.length ?? 0}:${s.hagar?.length ?? 0}:${s.angar?.length ?? 0}:${w}:${n}`;
   const c = siteCache.get(s);
   if (c && c.key === key) return c.at;
-  const at = hittaSite(s, w, n, utanStrak);
+  const at = hittaSite(s, w, n, utanStrak, vatten);
   siteCache.set(s, { key, at });
   return at;
 }
-function hittaSite(s: State, w: number, n: number, utanStrak: boolean) {
+function hittaSite(s: State, w: number, n: number, utanStrak: boolean, vatten: number) {
+  const land = vatten ? djupOf(s.seed).land : undefined;
   const o = omrade(s), gr = byGrans(s), g = groundOf(s), rader = Math.ceil(n / w), b = Math.min(w, n);
   const R = ODLING.faltTill + w + rader + 1;
   let best: { x: number; y: number } | undefined, bs = Infinity;
@@ -369,10 +371,10 @@ function hittaSite(s: State, w: number, n: number, utanStrak: boolean) {
     const mx = x + b / 2, my = y + 0.5, u0 = utanforByn(s, mx, my), u = u0 + JORD.vattenKost * Math.min(djupOf(s.seed).land[y * W + x], JORD.vattenMax); // ett fält nära vatten är värt mer (steg 9.7.4)
     if (u0 > ODLING.faltTill || u >= bs) continue; // längre bort än den bästa hittills: blir aldrig bättre
     const ny = { x, y, w, dir: faltRiktning(s, y), n } as Falt;
-    let ok = true, unga = 0;
-    for (let k = 0; k < n && ok; k++) { const r = rutaXY(ny, k); if (!rutaFri(s, gr, r.x, r.y) || utanStrak && paStrak(s, r.x, r.y)) ok = false; else { const tr = g.trees[r.y * W + r.x]; unga += tr >= FOREST ? ODLING.skogKost : tr; if (u + unga >= bs) ok = false; } }
+    let ok = true, unga = 0, vd = Infinity;
+    for (let k = 0; k < n && ok; k++) { const r = rutaXY(ny, k); if (!rutaFri(s, gr, r.x, r.y) || utanStrak && paStrak(s, r.x, r.y)) ok = false; else { const tr = g.trees[r.y * W + r.x]; unga += tr >= FOREST ? ODLING.skogKost : tr; if (land) vd = Math.min(vd, land[r.y * W + r.x] - 1); if (u + unga >= bs) ok = false; } }
     if (!ok) continue;
-    const sc = u + unga;
+    const sc = (u + unga) * (land ? 1 + vatten * Math.max(0, vd) / w : 1); // hagen: närmare vattnet är bättre (steg 15.1.144)
     if (sc < bs) { bs = sc; best = { x, y }; }
   }
   return best;
