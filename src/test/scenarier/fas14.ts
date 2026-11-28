@@ -47,7 +47,7 @@ SCENARIER.stada = {
     const dirty = SIM.smutsRutor(s, r).size, del0 = SIM.finhetDelar(s, r).tal, d = SIM.stadaVal(s, p), a = annan && SIM.stadaVal(s, annan);
     const rn = d!.rum, egen = d!.sc;
     // hen städar: uppgiften sätts som valet gör, och byn går en stund
-    const u = SIM.stadaUppgift(d!); p.toa = 1; p.hunger = 0;
+    const u = SIM.stadaUppgift(d!, s, p); Object.assign(p, { toa: 1, hunger: 1, torst: 1, rest: 1, social: 1 }); // inga behov som avbryter städningen
     p.x = u.spot.x; p.y = u.spot.y;
     p.task = { act: 'stada', phase: 'go', tx: u.spot.x, ty: u.spot.y, until: s.now + 60 * m, arbTid: u.min * m, carry: 0, why: u.text, ref: u.ref };
     const t0 = s.now; let s1 = s.now;
@@ -57,7 +57,7 @@ SCENARIER.stada = {
       [`ett rent rum ger inget att städa (${rent ? 'val' : 'inget'})`, !rent],
       [`blod och toaletternas fläckar räknas som smuts (${dirty} rutor)`, dirty === 4],
       [`den som bor där vill städa det smutsiga rummet (${egen.toFixed(2)}), någon annan mindre (${a ? a.sc.toFixed(2) : '–'})`, rn === r && egen > 0 && (!a || a.rum !== r || a.sc < egen)],
-      [`alla rutorna städas, en halv minut var (${kvar} kvar, ${min.toFixed(1)} min)`, kvar === 0 && min >= 4 * SIM.STADA.min - 0.1 && min <= 4],
+      [`alla rutorna städas, en halv minut var för den vanliga, delat med skickligheten (${kvar} kvar, ${min.toFixed(1)} min)`, kvar === 0 && min >= 4 * SIM.stadaMin(s, p) - 0.1 && min <= 4 * SIM.stadaMin(s, p) + 2],
       [`rummet är finare rent (${del0.toFixed(2)} → ${SIM.finhetDelar(s, r).tal.toFixed(2)})`, SIM.finhetDelar(s, r).tal > del0],
       [`det räknas i byns statistik (${s.stat?.stadat ?? 0})`, (s.stat?.stadat ?? 0) >= 1],
     ];

@@ -3,6 +3,7 @@
 // kostar (kundVal), går till disken och väntar där (koaDisk), flera i kö. Att betjäna är ett arbete (betjanVal, ARBETEN i
 // val.ts): poängen växer med dem som väntar och hur länge de väntat. Betjänaren tar emot den första i kön, som betalar med
 // silver och varor som i alla byten (byte.ts), och det hen köpte äts vid bordet. Den som väntat för länge går.
+import { kunnaFart } from './kunna';
 import { MIN, W, type Person, type State, type Task } from './typer';
 import { balans } from './balans';
 import { ALDER, ageOf, alive, byId, count, familjOf, forstaGang, living, log } from './folk';
@@ -205,7 +206,7 @@ export function betjanVal(s: State, p: Person): { f: Foretag; sc: number; spot: 
   let bast: { f: Foretag; sc: number } | undefined;
   for (const f of s.foretag ?? []) if (f.ko?.length) { const sc = betjanPoang(s, p, f); if (sc > (bast?.sc ?? 0) && !nagonBetjanar(s, f, p)) bast = { f, sc }; }
   const disk = bast && diskarAv(s, bast.f)[0];
-  return bast && disk ? { ...bast, spot: vidStation(disk), dur: KASSA.min * MIN } : undefined;
+  return bast && disk ? { ...bast, spot: vidStation(disk), dur: KASSA.min * MIN / kunnaFart(s, p, 'betjana') } : undefined; // den skickliga betjänar fortare (steg 15.1.23)
 }
 // det den som betjänar hämtar till disken (hamtning.ts): maten kunderna framme vid den vill ha, av ägarens
 export function betjanHamtas(s: State, t: Task): Record<string, number> | undefined {

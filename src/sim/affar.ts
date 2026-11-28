@@ -2,7 +2,8 @@
 // Affären säljer det som ligger på varubordet i sitt rum: det ägaren har över bärs dit av ägaren eller en anställd, det som flest
 // i byn saknar först. Varubordets rutor hör till förrådet (lager.ts), men det som ligger där är ägarens och bärs inte därifrån av
 // andra. Kunden betalar vid disken (kassa.ts) och får saken: ett ting byter ägare, och en hög bärs hem till förrådet som kundens.
-import { W, type Person, type State, type Task } from './typer';
+import { kunnaFart } from './kunna';
+import { MIN, W, type Person, type State, type Task } from './typer';
 import { balans } from './balans';
 import { count, familjOf, living } from './folk';
 import { brukAv, MAT, ownFor, saknarNu } from './behov';
@@ -77,6 +78,8 @@ export function attStalla(s: State, f: Foretag, utanRuta = false): HyllVara | un
   }
   return bast;
 }
+// så lång tid det tar att ställa fram varorna, delat med skickligheten (steg 15.1.23)
+export const stallaTid = (s: State, p: Person) => AFFAR.min * MIN / kunnaFart(s, p, 'stallaFram');
 export function stallaVal(s: State, p: Person): { f: Foretag; h: HyllVara; sc: number } | undefined {
   let bast: { f: Foretag; h: HyllVara; sc: number } | undefined;
   for (const f of s.foretag ?? []) {

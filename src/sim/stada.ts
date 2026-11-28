@@ -1,6 +1,7 @@
 // Städningen (steg 14.1.2, Byggsystemet: Rummens finhet). Den som bor i rummet, eller hen eller familjen äger huset, torkar golvet
 // ruta för ruta: blodet (blod.ts) och toaletternas fläckar (smuts.ts) på rutan tas bort när den är klar. Värdet av att städa är
 // det finheten vinner (rum.ts) och det äcklet kostar dem som bor där (smuts.ts)
+import { kunnaFart } from './kunna';
 import { balans } from './balans';
 import { blodOf } from './blod';
 import { gridOf, husById, roomAt, type Rum } from './byggnad';
@@ -57,7 +58,9 @@ function smutsigaRum(s: State): Rum[] {
   for (const b of blodOf(s)) { const r = roomAt(s, Math.floor(b.x), Math.floor(b.y)); if (r) ut.add(r); }
   return gridOf(s).rooms.filter(r => ut.has(r));
 }
-export const stadaUppgift = (d: StadaVal) => ({ act: 'stada' as const, text: 'Torkar golvet rent.', min: STADA.min, spot: { x: d.i % W + 0.5, y: Math.floor(d.i / W) + 0.5 }, ref: d.i });
+// en ruta tar så många minuter, delat med skickligheten (steg 15.1.23)
+export const stadaMin = (s: State, p: Person) => STADA.min / kunnaFart(s, p, 'stada');
+export const stadaUppgift = (d: StadaVal, s: State, p: Person) => ({ act: 'stada' as const, text: 'Torkar golvet rent.', min: stadaMin(s, p), spot: { x: d.i % W + 0.5, y: Math.floor(d.i / W) + 0.5 }, ref: d.i });
 // rutan är torkad: smutsen på den är borta, och hen går till nästa smutsiga ruta i rummet
 export function stadaKlar(s: State, p: Person, tk: Task) {
   const i = tk.ref ?? -1, r = i >= 0 ? roomAt(s, i % W, Math.floor(i / W)) : undefined;
@@ -73,5 +76,5 @@ export function stadaKlar(s: State, p: Person, tk: Task) {
     return;
   }
   tk.ref = n; tk.tx = n % W + 0.5; tk.ty = Math.floor(n / W) + 0.5; tk.phase = 'go'; tk.pk = undefined; tk.path = undefined;
-  tk.arbTid = STADA.min * MIN; tk.until = s.now + GA_TID;
+  tk.arbTid = stadaMin(s, p) * MIN; tk.until = s.now + GA_TID;
 }
