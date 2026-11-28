@@ -125,6 +125,10 @@ SCENARIER.affarkropp = {
   kor: () => {
     const { s, p, f, vux } = foretagBy(['affar']);
     klockan(s, 11);
+    // förrådet i ordning, så att inget behöver bäras in eller sorteras före affären: en hage över materiallagret gör att det som
+    // ligger där inte räknas som lagrat (steg 15.1.148), och silvret som scenarierna lagt in ligger i matförrådet
+    s.hagar = []; SIM.touch(s); SIM.changed(s);
+    for (const a of s.stackar ?? []) if (a.k === 'silver') { const d = SIM.dropSpot(s, 'silver'); a.x = Math.floor(d.x); a.y = Math.floor(d.y); SIM.touch(s); SIM.changed(s); }
     for (const q of s.people) q.task = undefined;
     // bara ägaren har mat, och den ligger på varubordet: de andra saknar den
     const { fin } = { fin: SIM.FOOD.find(k => SIM.maltidsNiva(k) === 'fin')! };
@@ -142,7 +146,7 @@ SCENARIER.affarkropp = {
     k.task = { act: 'koaDisk', phase: 'do', tx: ko.spot.x, ty: ko.spot.y, until: s.now + ko.dur, carry: 0, ref: f.id, why: ko.why };
     const val = (q: SIM.Person) => { SIM.chooseTask(s, q); const tk = (q as { task?: SIM.Task }).task, a = tk?.act ?? 'inget'; skal.push(`${a}: ${tk?.why ?? ''}`); q.task = undefined; return a; }, skal: string[] = [];
     // ägaren: byn har mat för en tid, så att försörjningen inte brådskar
-    SIM.setAmount(s, 'rotter', 2000); SIM.setAmount(s, 'ved', 2000);
+    SIM.setAmount(s, 'rotter', 300); SIM.setAmount(s, 'ved', 200);
     kropp(p); p.hunger = 0.05; const hungrig = val(p);
     kropp(p); const matt = val(p);
     SIM.setAmount(s, 'rotter', 0);
