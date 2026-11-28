@@ -1629,7 +1629,6 @@ SCENARIER.sanggang = {
     // en natt i byn: ingen som är på väg till sin sovplats räknas som sovande
     const b = createState(3, START);
     klockan(b, 21); tandEld(b);
-    for (const q of living(b)) q.rest = 0.4; // trötta efter dagen: barnen sover efter vilan (steg 15.1.46)
     let fel = 0, sover = 0;
     kor(b, 10, x => { for (const q of living(x)) if (q.task?.act === 'sova') { if (q.task.phase === 'go' && SIM.soverNu(q, q.task)) fel++; if (SIM.soverNu(q, q.task)) sover++; } });
     return [

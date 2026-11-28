@@ -216,7 +216,7 @@ export const VAL = balans('val', {
   berattaAlder: 50, berattaBonus: 6, berattaDiv: 40, // berättande: (färdigheten + Bonus över Alder) / Div
   nattHantDiv: 70, // handarbete: (hantverk + flit) / Div
   nattNar: 2, nattLangt: 8, nattBara: 0.5, nattBaraTim: 2, // de modiga går upp till Nar + Langt rutor för att bära in, med vikten Bara, i så många timmar
-  nattVilaBarn: 0.8, // barnets sömnbehov: på natten vill barnet vars vila är under detta sova, med vikten nattVilaVikt gånger (1 − vilan / detta) (steg 15.1.46)
+  nattVilaBarn: 1.5, // barnets sömnbehov, större än en full vila: på natten vill barnet sova med vikten nattVilaVikt gånger (1 − vilan / detta), och sover så länge vilan räcker upp till det (steg 15.1.46)
   nattSamtal: 0.4, nattPaus: 0.1, // vikten för att umgås vid elden och för att bara vila där
   // borden (steg 2.2.15)
   maltidMin: 20, maltidSpann: 10, // en måltid vid bordet
@@ -1571,7 +1571,7 @@ export const FRITID: readonly FritidRad[] = [
   // barnets sömn ur kroppen som de vuxnas vila (steg 15.1.46): vilan mot barnets större sömnbehov
   { id: 'sova', nar: 'natt', kraver: 'att vara barn', ger: 'sömn', drar: 'tröttheten och barnets sömnbehov', akt: ['sova'],
     vikt: c => !vuxen(c) && c.p.rest < VAL.nattVilaBarn ? VAL.nattVilaVikt * (1 - c.p.rest / VAL.nattVilaBarn) : 0,
-    gor: c => set(c.v, 'sova', 'Barn sover på natten') },
+    gor: c => { set(c.v, 'sova', 'Barn sover på natten'); c.v.dur = (VAL.nattVilaBarn - c.p.rest) / KROPP.restVila * HOUR; return true; } }, // så länge vilan räcker upp till sömnbehovet
   { id: 'bara', nar: 'natt', kraver: 'något som ligger ute nära lägret', ger: 'saker i förrådet', drar: 'modet: de modiga går längre ut i mörkret', akt: ['bara'],
     vikt: c => c.a >= ALDER.ansvar && c.s.stackar?.length ? VAL.nattBara : 0,
     gor: c => {
