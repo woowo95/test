@@ -1,4 +1,5 @@
 import { eldaForst } from './stationseld';
+import { marknadByt } from './marknad';
 import { Act, DAY, HOUR, MIN, Person, SEC, State, Task } from './typer';
 import { LJUS, UPPSATT } from './ljus';
 import { halvOf, newTing, tingOf } from './agande';
@@ -45,6 +46,7 @@ export function startWork(s: State, p: Person, tk: Task) {
   const e = eldaForst(s, p, tk);
   if (e === false) { tk.until = s.now; return; }
   startWork0(s, p, tk);
+  if (tk.act === 'marknad') marknadByt(s, p, tk); // den som kommer fram till marknaden byter med dem som redan står där (steg 15.1.22)
   if (e > 0) tk.until += e * MIN;
 }
 function startWork0(s: State, p: Person, tk: Task) {
