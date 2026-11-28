@@ -503,11 +503,12 @@ SCENARIER.gris = {
     g.born = s.now - 9 * DAY; const gammal = slaktOrsak(s, g);
     (s.stationer ??= []).push({ id: 9902, k: 'slaktbank', x: Math.floor(p.x) + 2, y: Math.floor(p.y), kvar: 0 }); SIM.touch(s);
     (p.tek ??= {}).kniv = 1; setAmount(s, 'kniv', 1); setAmount(s, 'kott', 200); p.skill.jakt = 100; // köttet efter skickligheten (kottAv): den skickliga får allt
-    const fore = { k: amountOf(s, 'svinkott'), b: amountOf(s, 'ben'), sk: amountOf(s, 'svinskinn'), t: amountOf(s, 'talg') };
+    const allt = (k: string) => amountOf(s, k) + SIM.paMarken(s, k); // också det som läggs utanför förrådet när det är över taket (steg 15.1.45)
+    const fore = { k: allt('svinkott'), b: allt('ben'), sk: allt('svinskinn'), t: allt('talg') };
     avlivaKlar(s, p, g.id);
     const kropp = amountOf(s, 'slaktgris');
     if (canProcess(s, p, DJUR.gris)) bearbetaVid(s, p, DJUR.gris, 2);
-    const fick = { k: amountOf(s, 'svinkott') - fore.k, b: amountOf(s, 'ben') - fore.b, sk: amountOf(s, 'svinskinn') - fore.sk, t: amountOf(s, 'talg') - fore.t };
+    const fick = { k: allt('svinkott') - fore.k, b: allt('ben') - fore.b, sk: allt('svinskinn') - fore.sk, t: allt('talg') - fore.t };
     const hela = Object.values(fick).every(n => Number.isInteger(n));
     return [
       [`grisen får slaktrensen, sedan växtresterna och sist rötterna (${f1}, ${f2}, ${f3})`, f1 === 'slaktrens' && f2 === 'vaxtrest' && f3 === 'rotter'],

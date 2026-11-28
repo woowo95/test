@@ -853,7 +853,7 @@ SCENARIER.lim = {
   kor: () => {
     const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
     (p.tek ??= {}).bage = 1;
-    SIM.put(s, 'virke', 4, { [p.id]: 4 }); SIM.put(s, 'rep', 2, { [p.id]: 2 });
+    SIM.setAmount(s, 'virke', 4); SIM.setAmount(s, 'rep', 2); // (setAmount lägger det i förrådet också över taket, steg 15.1.45)
     const kniv = SIM.tingOf(s).some(t => t.k === 'kniv') || !!SIM.addTool(s, 'kniv', p);
     const bagar = () => SIM.tingOf(s).filter(t => t.k === 'bage').length, b0 = bagar();
     const utan = SIM.canMake(s, p, 'bage');
