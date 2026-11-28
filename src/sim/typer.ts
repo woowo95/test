@@ -138,6 +138,7 @@ export const GREN = 0.4; // en gren ger lika mycket bränsle som 0,4 ved: grenar
 export interface Thought { text: string; v: number; until: number; k?: string } // k: raden i TANKAR (steg 12.1.234)
 // Det en person håller på med (p.task, sparas med personen). Fälten utan frågetecken finns alltid
 export interface Task {
+  vg?: string[]; // varda: behandlingarna som gjorts under vården, en i taget (steg 15.1.104, halsa.ts)
   tillbaka?: true; // stallaFram: varan bärs från varubordet tillbaka till ägarens förråd (steg 15.1.99, affar.ts)
   eldFor?: Act; // tanda och elda: arbetet vid elden som elden tänds eller får ved för (ELDARBETEN i eld.ts)
   sele?: number; // barnet som modern bär i bärselen (steg 13.2.3, barsele.ts)

@@ -1688,7 +1688,7 @@ export function vandHem(s: State, sl: Sallskap) {
 // inget hamnar på byns karta. Vården är densamma som i byn (VARD) med materialet ur sällskapets packning i stället för byns
 // förråd (vardKalla): den resenär som kan läkekonsten bäst vårdar de andra, och den skadade sig själv i det som går att göra
 // själv. På vägen görs det som går med händerna och packningen; det som kräver byn (salvan, nålen, amputationen) väntar.
-export const VAGVARD = ['avsnora', 'dra_ut', 'trycka', 'forband', 'byta', 'satta', 'spala', 'skolja'];
+export const VAGVARD = ['avsnora', 'dra_ut', 'trycka', 'forband', 'byta', 'lossa', 'satta', 'spala', 'skolja']; // avsnörningen lossas när förbandet ligger (steg 15.1.102)
 function kropparPaVagen(s: State, sl: Sallskap, t: number, dt: number) {
   const folk = resenarer(s, sl);
   if (!folk.some(p => p.skador?.length || p.sjuk)) return;

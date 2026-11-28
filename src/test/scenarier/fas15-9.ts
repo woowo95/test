@@ -240,3 +240,32 @@ SCENARIER.levra = {
     ];
   },
 };
+
+SCENARIER.vardturer = {
+  text: 'Steg 15.1.104: vården är en behandling i taget, och hjälpen kommer. Förbandet verkar när det lagts och inte först när hela vården är slut, en annan kommer medan den skadade trycker på sitt sår, och den som svimmar ropar och får hjälp',
+  kor: () => {
+    const { s, q, g } = sarBy([{ g: 0.9 }]), w = q.skador![0]!;
+    SIM.setAmount(s, 'mossa', 3);
+    const t: SIM.Task = { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, ref: q.id, why: '' };
+    g.task = t;
+    const tid0 = SIM.vardTid(s, g, t);
+    SIM.vardKlar(s, g, t); const forst = { tr: w.tr, f: w.f, till: (t.until - s.now) / SIM.MIN, kvar: g.task === t };
+    s.now = t.until; SIM.vardKlar(s, g, t); const sedan = { f: w.f };
+    SIM.halsaSteg(s, q, 1); const flode = SIM.blodning(q), fullt = SIM.blodning({ skador: [{ ...w, f: undefined, tr: undefined }] } as unknown as SIM.Person);
+    // en annan kommer medan den skadade trycker på sitt eget sår
+    const b = sarBy([{ g: 0.9 }], 2);
+    b.q.task = { act: 'varda', phase: 'do', tx: b.q.x, ty: b.q.y, until: b.s.now + 600, carry: 0, ref: b.q.id, why: '' };
+    const hjalp = SIM.vardVal(b.s, b.g, false);
+    // den som svimmar ropar
+    const c = sarBy([{ g: 0.9 }], 3); c.q.blod = SIM.HALSA.svim - 0.01; c.q.ropT = undefined;
+    SIM.halsaSteg(c.s, c.q, 1);
+    const ropar = !!c.q.svimmat && c.q.ropT === c.s.now, kommer = SIM.vardVal(c.s, c.g, false);
+    return [
+      [`vården börjar med den mest brådskande behandlingen (${tid0} min, att trycka)`, tid0 === SIM.VARD.trycka.tid],
+      [`först trycks det (${forst.tr === g.id ? 'trycker' : 'trycker inte'}), och förbandet väntar (${forst.f ?? 'inget'}) ${forst.till} minuter`, forst.tr === g.id && forst.f === undefined && forst.kvar && Math.abs(forst.till - SIM.VARD.forband.tid) < 1e-9],
+      [`sedan ligger förbandet (${sedan.f}) och verkar genast (${(flode / fullt).toFixed(2)} av flödet)`, sedan.f !== undefined && flode < fullt * 0.5],
+      [`en annan kommer medan den skadade trycker själv (${hjalp ? 'kommer' : 'kommer inte'})`, hjalp?.ref === b.q.id],
+      [`den som svimmar ropar (${ropar}) och får hjälp (${kommer ? 'kommer' : 'kommer inte'})`, ropar && kommer?.ref === c.q.id],
+    ];
+  },
+};

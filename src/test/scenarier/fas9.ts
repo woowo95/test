@@ -328,6 +328,7 @@ function forbanden(): [string, boolean][] {
   const plagg = q.skador![0].f === 2 && rock.c < c0;
   // avsnörningen: ett stort sår i benet slutar blöda, men sitter den för länge skadas benet
   setAmount(s, 'rep', 2);
+  for (const t of s.ting ?? []) if ((t.bar === q.id || t.bar === g.id) && SIM.SAKER[t.k]?.klad) t.bar = undefined; // inget att riva en remsa ur: avsnörningen lossas när ett förband ligger (steg 15.1.102)
   q.skador = [{ d: 'benV', k: 'skarsar', g: 0.8, b: 1 }]; q.men = undefined; vard(s, g, q);
   const snord = q.skador![0].av !== undefined && q.skador![0].b === 0;
   s.now += (HALSA.avsnoraTim + 0.5) * SIM.HOUR; halsaSteg(s, q, 300);
