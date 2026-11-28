@@ -1,7 +1,7 @@
 // Scenarier för fas 15, grupp 17 (steg 15.1.161–15.1.170).
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, klockan, kor, nyInvanare, testBy } from './hjalp';
+import { SCENARIER, klockan } from './hjalp';
 
 SCENARIER.bjorngris = {
   text: 'Steg 15.1.166: björnen tar grisar. En gris som går lös nära björnen, utan någon vaken bredvid, tas med en chans per tid (samma prov som vargen, vaktat i tamdjur.ts); en gris i fähuset tas inte, och inte en med en vaken bredvid',
@@ -57,6 +57,33 @@ SCENARIER.hundvarg = {
       [`flocken tar fåret utan hund (efter ${utan.min} minuter)`, utan.tagen],
       ['flocken tar inte fåret med en lojal hund bredvid på fyra timmar', !med.tagen],
       [`en hund som inte är lojal skyddar inte fåret (${olojal.tagen ? 'taget' : 'kvar'})`, olojal.tagen],
+    ];
+  },
+};
+
+SCENARIER.viltbestand = {
+  text: 'Steg 15.1.169: viltet kan jagas ut. Rådjurens och vildsvinens bestånd kring byn minskar med varje fällt djur och växer tillbaka per tid (raden viltet i TAKTER), och flockens storlek följer beståndet: en by som fäller många rådjur ser mindre flockar efter tio dygn, och de växer till igen när jakten slutar',
+  kor: () => {
+    const flockar = (s: SIM.State) => SIM.radjurGrupper(s).reduce((a, g) => a + g.n, 0);
+    const kor10 = (s: SIM.State, jaga: boolean, dygn = 10) => {
+      let falld = 0;
+      for (let i = 0; i < dygn * 144; i++) {
+        s.now += 10 * SIM.MIN; SIM.viltSteg(s, 600);
+        if (jaga && i % 36 === 0) { const d = SIM.radjurOf(s)[0]; if (d) { SIM.dodaDjur(s, d.id); falld++; } } // ett rådjur var sjätte timme
+      }
+      return falld;
+    };
+    const jagad = SIM.createState(3, START), fri = SIM.cloneState(jagad);
+    const fore = flockar(jagad), falld = kor10(jagad, true); kor10(fri, false);
+    const efter = flockar(jagad), friN = flockar(fri), bJ = SIM.viltBestand(jagad, 'radjur'), bF = SIM.viltBestand(fri, 'radjur');
+    kor10(jagad, false, 20);
+    const igen = SIM.viltBestand(jagad, 'radjur');
+    return [
+      [`byn fällde ${falld} rådjur på tio dygn, och beståndet sjönk (${SIM.kortTal(bJ)} mot ${SIM.kortTal(bF)} utan jakt)`, falld >= 5 && bJ < 0.6],
+      [`flockarna är mindre där byn jagar (${efter} rådjur mot ${friN} utan jakt, ${fore} när byn grundades)`, efter < friN && efter < fore],
+      [`där ingen jagar växer beståndet till sig (${SIM.kortTal(bF)})`, bF > 1.05],
+      [`när jakten slutar växer beståndet till igen på tjugo dygn (${SIM.kortTal(bJ)} till ${SIM.kortTal(igen)})`, igen > bJ + 0.2],
+      ['vildsvinen har ett eget bestånd', SIM.viltBestand(jagad, 'vildsvin') > 1],
     ];
   },
 };

@@ -87,7 +87,7 @@ import { FOREST, findPath, wear } from './vag';
 import { barKropp, gangVakt, kroppFart, rutFart, smidig, snoFart } from './gang';
 import { facklorTimme, finishLjus, finishUppsatt, morkFart, morkHumor } from './ljus';
 import { VAL, arbetsTimme, chooseTask, eldOrd, farligtBehov, nastaRedskap, spotFor } from './val';
-import { FAGEL, djurSteg } from './djur';
+import { FAGEL, djurSteg, viltSteg } from './djur';
 import { vargSteg, vargjaktSteg } from './varg';
 import { bjornSteg, bjornjaktSteg } from './bjorn';
 import { resaSteg, resaBehov, ridBredvid } from './resa';
@@ -459,6 +459,7 @@ export const TAKTER: Takt[] = [
   { namn: 'rummens finhet', sek: 3600, fas: 0.02, fn: s => { finhetTimme(s); forvantanTimme(s); } }, // steg 14.1.1 och 14.1.3
   { namn: 'tidsåldern', sek: 60, fn: (s, _dt, c) => { if (c.ai !== s.lastAgeIdx) { s.lastAgeIdx = c.ai; log(s, AGES_BORJAR[c.ai], 'world'); } } },
   { namn: 'kaninerna', sek: 10, fn: (s, dt) => djurSteg(s, dt) }, // kaningrupperna väljer plats när deras tid börjar
+  { namn: 'viltet', sek: 600, fn: (s, dt) => viltSteg(s, dt) }, // rådjurens och vildsvinens bestånd växer, och flockarna får sin storlek (djur.ts, steg 15.1.169)
   { namn: 'giftermålen', sek: 3600, fn: (s, dt) => giftSteg(s, dt) }, // med någon i en vänlig grannby (giftermal.ts, steg 11.3.6)
   { namn: 'handlaren som väntar', sek: 3600, fn: s => handlarVantarTimme(s) }, // en handlare som en by skickat går in (handel.ts, steg 12.1.107)
   { namn: 'handlaren', sek: 0, fn: (s, dt) => handelSteg(s, dt) }, // kommer, handlar och går (handel.ts, steg 4.4.1)

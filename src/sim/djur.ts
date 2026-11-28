@@ -5,7 +5,7 @@ import { FOREST, isSoil } from './vag';
 import { clamp } from './slump';
 import { count, living } from './folk';
 import { motgangNu } from './motgang';
-import { H, HOUR, SEC, State, T, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
+import { DAY, H, HOUR, SEC, State, T, W, egen, inMap, mapKey, tvaDelar, visning } from './typer';
 import { vattenNu } from './sjo';
 import { balans } from './balans';
 import { busksort } from './buskar';
@@ -345,9 +345,47 @@ export function flockGrupper(s: State, f: FlockArt, t = s.now, bara?: (x: number
     if (!st) continue;
     const id = f.G + e * f.tal.grupper + k, fl = flyttAv(s, id, t), x = fl ? clamp(st.x + fl.dx, 1, W - 1) : st.x, y = fl ? clamp(st.y + fl.dy, 1, H - 1) : st.y;
     if (bara && !bara(x, y)) continue;
-    ut.push({ id, x, y, n: st.n });
+    const n = flockStorlek(s, f, id, st.n); // storleken följer beståndet (steg 15.1.169)
+    if (n > 0) ut.push({ id, x, y, n });
   }
   return ut;
+}
+// ---------- beståndet (steg 15.1.169, Viltet: Beståndet) ----------
+// Varje flockart har ett bestånd kring byn (s.vilt, 1 = som när byn grundades) som minskar med varje fällt djur och växer
+// tillbaka per tid, mot tak: långsamt där det är litet (få djur får få ungar) och där det närmar sig taket, och lite av sig
+// självt (djur som vandrar in). En flock får sin storlek ur beståndet när den dyker upp och behåller den medan den håller
+// till på platsen; ett fällt djur är borta ur den (s.djurDoda), och beståndet minskar med ett djur av artens alla
+export const VILT = balans('vilt', {
+  tak: 1.5, // beståndet växer högst till så här många gånger det byn grundades med
+  vaxer: 0.1, // så här stor del i dygnet växer det, gånger beståndet och det som är kvar till taket
+  invandrar: 0.02, // och så här mycket i dygnet av sig självt, gånger det som är kvar till taket
+});
+const viltAv = (s: State, f: FlockArt) => (s.vilt ??= {})[f.art] ??= { b: 1 };
+export const viltBestand = (s: State, art: string) => s.vilt?.[art]?.b ?? 1;
+// artens djur på kartan när beståndet är fullt: grupperna gånger den mittersta storleken
+const viltFullt = (f: FlockArt) => f.tal.grupper * (f.tal.storlek[0] + f.tal.storlek[1]) / 2;
+// flockens storlek: den som sattes när flocken dök upp, annars dess slumpade storlek gånger beståndet nu
+const flockStorlek = (s: State, f: FlockArt, id: number, n0: number) => s.vilt?.[f.art]?.n?.[id] ?? Math.min(8, Math.round(n0 * viltBestand(s, f.art))); // högst åtta: djurens id är flockens gånger åtta
+// TAKTER (steg.ts): beståndet växer, och flockarna som syns nu får sin storlek
+export function viltSteg(s: State, dt: number) {
+  for (const f of FLOCK_LIST()) {
+    const v = viltAv(s, f), kvar = Math.max(0, 1 - v.b / VILT.tak);
+    v.b = Math.min(VILT.tak, v.b + (VILT.vaxer * v.b + VILT.invandrar) * kvar * dt * SEC / DAY);
+    satFlockStorlek(s, f, v);
+  }
+}
+function satFlockStorlek(s: State, f: FlockArt, v: { b: number; n?: Record<number, number> }) {
+  const n: Record<number, number> = {};
+  for (const g of flockGrupper(s, f)) n[g.id] = g.n;
+  v.n = n;
+}
+// ett fällt djur (dodaDjur): flockens storlek står fast, och beståndet minskar med ett djur av artens alla
+function viltFallt(s: State, id: number) {
+  const f = flockArtAv(id);
+  if (!f) return;
+  const v = viltAv(s, f);
+  satFlockStorlek(s, f, v);
+  v.b = Math.max(0, v.b - 1 / viltFullt(f));
 }
 export const radjurGrupper = (s: State, t = s.now, bara?: (x: number, y: number) => boolean) => flockGrupper(s, FLOCKARTER.radjur, t, bara);
 // så långt (rutor) ett djur kan stå från flockens mitt: betet, flykten och vägen till land
@@ -665,6 +703,7 @@ export function satDjurHalsa(s: State, id: number, blod: number, sar: number) {
   s.djurHalsa = h.length ? h : undefined;
 }
 export function dodaDjur(s: State, id: number) {
+  if (!s.djurDoda?.some(d => d.id === id)) viltFallt(s, id); // beståndet (steg 15.1.169)
   s.djurHalsa = s.djurHalsa?.filter(x => x.id !== id);
   if (!s.djurHalsa?.length) s.djurHalsa = undefined;
   s.djurDoda = [...(s.djurDoda ?? []).filter(d => s.now - d.t < INDIVID.glomTim * HOUR), { id, t: s.now }];

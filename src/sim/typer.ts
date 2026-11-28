@@ -469,6 +469,7 @@ export interface State {
   sankta?: { vem: number; namn: string; x: number; y: number; t: number; sjo: number; med?: string[]; gavor?: number; saker?: import('./kvarlevor').GravSak[] }[]; // de döda som sänkts i sjön (steg 10.4.5), och gåvorna vid stranden (steg 10.4.8)
   styre?: import('./styre').Styre; // ledaren, påbuden, straffen och vågskålarna (steg 3.5, styre.ts)
   djurHalsa?: import('./djur').DjurHalsa[]; djurDoda?: { id: number; t: number }[]; // skadade och dödade djur (steg 3.7.13, djur.ts)
+  vilt?: Record<string, { b: number; n?: Record<number, number> }>; // flockarternas bestånd kring byn (1 = som när byn grundades) och storleken på de flockar som syns nu, efter flockens id (steg 15.1.169, djur.ts)
   bjornMott?: { ar: number; ids: number[] }; // de som mött björnen i år (steg 6.6.5, bjorn.ts): var och en en gång per år
   // björnjakten (steg 6.6.6, bjorn.ts): när och av vem björnen senast sågs, jägarna och den som kallade, och året björnen fälldes
   bjornJakt?: { ar: number; sedd: number; sag: number; x?: number; y?: number; timme?: number; jagare?: number[]; kallare?: number; kallTill?: number; jaktTill?: number; samlas?: number };
