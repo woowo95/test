@@ -7,7 +7,7 @@ import { groundOf } from './mark';
 import { FOREST, findPath, nasbara } from './vag';
 import { Ting, halvKlar, nTools, newTing, redskapSlitet, tingOf, ingenHar } from './agande';
 import { kvHaller } from './kvalitet';
-import { baraForvar, delarAv, forvarAt, isKlar, sittAt, stationAt, stationDef, stationRutor, stationerOf, tillbakaVid, vidRutaAr } from './stationer';
+import { baraForvar, delarAv, forvarAt, isKlar, nastaAv, sittAt, stationAt, stationDef, stationRutor, stationerOf, tillbakaVid, vidRutaAr, vidStation } from './stationer';
 import { eldDef } from './stationseld';
 import { faltAt } from './odling';
 import { ruttSmuts } from './smuts';
@@ -1498,7 +1498,11 @@ function barLista(s: State) {
     return hamnar.get(k)!;
   };
   const framme = besokLager.framme(s);
+  // det som lagts vid ett bygge som pågår hör till bygget (steg 15.1.43): det slag den påbörjade stationen ännu väntar på bärs inte in
+  const byggen = stationerOf(s).filter(t => !isKlar(t)).map(t => ({ v: vidStation(t), av: nastaAv(t.k, t) })).filter(b => Object.keys(b.av).length);
+  const tillBygge = (a: { x: number; y: number; k: string }) => byggen.some(b => (b.av[a.k] ?? 0) > 0 && Math.hypot(a.x + 0.5 - b.v.x, a.y + 0.5 - b.v.y) <= LAGER.rackvidd + 0.5);
   for (const a of things(s)) {
+    if (byggen.length && !isStored(s, a.x, a.y) && tillBygge(a)) continue;
     const fa = framme.size ? framme.get(a.y * W + a.x) : undefined;
     if (fa !== undefined && (a.id !== undefined ? (a.ag ? a.ag[fa] : fa === BYN) : arAgd(a, fa) > a.n - 1e-9)) continue; // ägarens varor på varubordet (steg 14.1.8)
     const d = utanforByn(s, a.x, a.y); // nära lägret: elden eller någon lagerplats

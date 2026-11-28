@@ -1,7 +1,7 @@
 // Scenarier för fas 15, grupp 4 av 15.1.
 import * as SIM from '../../sim';
 import { START } from '../kor';
-import { SCENARIER, klockan, kor, medHus, nyInvanare, rikBy, styreTimme, tandOchFlinta, tomtForrad, treVuxna, vidForradet } from './hjalp';
+import { SCENARIER, byggare, klockan, kor, medHus, tandEld, nyInvanare, rikBy, styreTimme, tandOchFlinta, tomtForrad, treVuxna, vidForradet } from './hjalp';
 
 SCENARIER.domsjalv = {
   text: 'Steg 15.1.38: ledaren som dömer för det hen själv förlorat. Loggen, krönikan och notisen säger "av henne själv" eller "av honom själv" när den drabbade är ledaren, som rättegångens rad redan gör',
@@ -135,6 +135,43 @@ SCENARIER.vaktvarm = {
       [`värmen blir aldrig farlig (lägst ${minVarm.toFixed(2)}, farligt under ${SIM.KROPP.farligt})`, minVarm >= SIM.KROPP.farligt],
       [`vakten går vakt igen när hen är varm (${gjorde.join(' → ')})`, gjorde.lastIndexOf('vakt') > 0],
       [`vakten står inte vid en slocknad eld och fryser (${s.fire.lit ? 'elden brinner' : 'elden är släckt'}, värmen ${p.warm.toFixed(2)})`, s.fire.lit || p.warm >= SIM.KROPP.kallt || !!SIM.roomAt(s, p.x, p.y)],
+    ];
+  },
+};
+
+SCENARIER.byggblir = {
+  text: 'Steg 15.1.43: bygget som påbörjas blir byggt. Stationen påbörjas på sin plats när hämtningen börjar, så att platsen ligger fast, och det som lagts vid bygget hör till det och bärs inte tillbaka till förrådet, också när den som bygger avbryts. En slöjdbänk som påbörjas blir byggd utan att materialet bärs hem igen',
+  kor: () => {
+    const s = SIM.createState(1, START); klockan(s, 8); medHus(s); tandEld(s); byggare(s, 16);
+    const v = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
+    for (const q of v) (q.tek ??= {}).flatarbank = 1;
+    const p = v[0], sp0 = SIM.stationSpot(s, 'flatarbank', p)!;
+    SIM.setAmount(s, 'virke', 6); SIM.setAmount(s, 'grenar', 8); // virket bärs ett i taget: hen går flera vändor
+    Object.assign(p, { hunger: 1, rest: 1, social: 1, toa: 1, torst: 1, warm: 1 });
+    p.task = { act: 'station', tool: 'flatarbank', phase: 'go', tx: sp0.x, ty: sp0.y, until: s.now + 2 * SIM.HOUR, carry: 0, dark: false, why: 'Byn saknar slöjdbänk' } as SIM.Task;
+    const bank = () => SIM.stationerOf(s).find(q => q.k === 'flatarbank');
+    let plats = '', flyttad = false, avbruten = false;
+    const bort = new Set<SIM.Task>(); // de som går för att bära något från bygget in i förrådet medan bygget väntar på det
+    const vid = (b: SIM.Station, x: number, y: number) => Math.hypot(x - SIM.vidStation(b).x, y - SIM.vidStation(b).y) <= SIM.LAGER.rackvidd + 0.5;
+    const varje = () => {
+      const b = bank();
+      if (!b) return;
+      const pl = `${b.x},${b.y}`; if (plats && pl !== plats) flyttad = true; plats = pl;
+      if (!SIM.isKlar(b)) for (const q of SIM.living(s)) if (q.task?.act === 'bara' && q.task.phase === 'go' && vid(b, q.task.tx, q.task.ty)) bort.add(q.task);
+      // när det första virket ligger vid bygget avbryts den som bygger en stund
+      if (!avbruten && !SIM.isKlar(b) && (s.stackar ?? []).some(g => g.k === 'virke' && vid(b, g.x + 0.5, g.y + 0.5)) && p.task?.act === 'station' && p.task.phase === 'go') {
+        avbruten = true; SIM.avbryt(s, p);
+        p.task = { act: 'vila', phase: 'do', tx: p.x, ty: p.y, until: s.now + 2 * SIM.HOUR, carry: 0, why: 'Vilar' } as SIM.Task;
+      }
+    };
+    for (let i = 0; i < 360 && !avbruten; i++) { SIM.step(s, 5); varje(); } // vändorna i korta steg, så att avbrottet kommer mellan två av dem
+    kor(s, 10, varje);
+    const b = bank();
+    return [
+      [`slöjdbänken blev byggd (${b ? SIM.isKlar(b) ? 'klar' : 'påbörjad' : 'ingen'})`, !!b && SIM.isKlar(b)],
+      [`platsen låg fast (${plats})`, !flyttad && !!b],
+      [`den som byggde avbröts när virket låg vid bygget (${avbruten ? 'ja' : 'nej'})`, avbruten],
+      [`inget bars från bygget till förrådet medan det väntade på materialet (${bort.size} gånger)`, bort.size === 0],
     ];
   },
 };
