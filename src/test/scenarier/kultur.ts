@@ -973,7 +973,7 @@ SCENARIER.matchrapport = {
     const m0 = s.matcher?.find(x => !x.installd), vq = m0?.vinnare === a.id ? a : b, fq = vq === a ? b : a;
     const vt = tanke(vq, /^Vann kast/), ft = tanke(fq, /^Förlorade kast/);
     kor(s, 1.2);
-    const borta = !tanke(vq, /^Vann/) && !tanke(fq, /^Förlorade/);
+    const borta = !!vt && !!ft && vt.until <= s.now && ft.until <= s.now; // tankarna från den här matchen: en ny match under timmen ger en ny tanke
     kor(s, 1);
     const m = s.matcher?.find(x => !x.installd), rad = s.log.find(l => l.match !== undefined && l.match === m?.nr);
     const n = s.notiser?.lista.find(x => x.id === 'match'), nIdx = n?.match?.indexOf(m?.nr ?? -1) ?? -1;
