@@ -36,7 +36,7 @@ import { arTand, tandStalle, turMal, eldFor, eldForst, eldXY, nagonGlod, eldarOf
 import { ALDER, KROPP, REL, ageOf, count, enTill, enTillDar, familjOf, isSick, living, relKey, stat } from './folk';
 import { RELT, bredvidVikt } from './relationer';
 import { onskan } from './naring';
-import { VARDRATT, forbandHot, halsa, hemma, kanGa, kroppLust, vardBehov, vardVal, vilaHellre, vilaSkal } from './halsa';
+import { VARDRATT, forbandHot, halsa, hemma, kanGa, kanSlass, kroppLust, vardBehov, vardVal, vilaHellre, vilaSkal } from './halsa';
 import { kopval, type Kopval } from './kopbuffert';
 import { marknadVal, marknadVikt } from './marknad';
 import { DELA, MAT, brukKrok, bynsMatAndel, egnaMatDygn, familjMatDygn, getable, harMat, takeMaterial, vatskaMaterial } from './behov';
@@ -1721,7 +1721,7 @@ function vaktVal(s: State, p: Person, v: Val, a: number) {
   const guardDay = yearNo(s, now - VAL.vaktByte * HOUR); // vaktdygnet är kalenderns dygn, förskjutet så att det byts kl. 7
   if (guardDay !== s.lastGuardDay) {
     // välj nattens vakter bland de vuxna som orkar (den sjuka, svaga eller skadade sover), byts varje natt
-    const adults = living(s).filter(q => ageOf(q, now) >= ALDER.vaktFran && ageOf(q, now) < ALDER.vaktTill && !isSick(q, now) && halsa(q) >= KROPP.svag && kanGa(q) && !vilaHellre(q) && q.task?.act !== 'strid' && !skams(q, now) && (q === p || ledig(q))); // inte den som slåss (strid.ts) eller skäms
+    const adults = living(s).filter(q => kanSlass(s, q) && !vilaHellre(q) && q.task?.act !== 'strid' && !skams(q, now) && (q === p || ledig(q))); // inte den som slåss (strid.ts) eller skäms
     if (adults.length) {
       s.lastGuardDay = guardDay;
       // ett slumptal per vuxen i byns ordning, sedan de högsta (inte i sorteringens jämförelser: deras antal beror på webbläsaren)

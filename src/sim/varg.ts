@@ -15,8 +15,8 @@ import { varmareInne } from './byggnader';
 import { Bit, Rum, bitAt, bitsOf, dorrDef, roomAt, freeNear, gridOf } from './byggnad';
 import { FLOCKARTER, dodaDjur, dragOf, djurOf, flockGrupper, flockOf, grupperOf, halsaOf, satDjurHalsa } from './djur';
 import { upplev } from './uppvaxt';
-import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, isSick, livet, living, log, stat } from './folk';
-import { halsa, kanGa } from './halsa';
+import { ALDER, ageOf, alive, byId, count, forstaGang, franMitt, livet, living, log, stat } from './folk';
+import { kanGa, kanSlass } from './halsa';
 import { Act, larmAvbryter } from './handlingar';
 import { brinnerNara, eldXY, eldarOf } from './eld';
 import { eldPlats, getMap } from './karta';
@@ -589,7 +589,7 @@ const jaktPlats = (s: State, f: Vargflock) => jaktPlatsVid(s, f.x, f.y);
 // (steg 3.10.20). Hur många som följer beror också på gehöret för den som kallar
 export function jaktBeslut(s: State, f: Vargflock, folk: Person[]) {
   if (f.jagare || f.gor === 'flyr' || !isLight(s.now) || f.sedd === undefined || s.now - f.sedd > VARG.jaktVet * HOUR) return;
-  const kan = folk.filter(q => ageOf(q, s.now) >= ALDER.vaktFran && ageOf(q, s.now) < ALDER.vaktTill && !isSick(q, s.now) && halsa(q) >= KROPP.svag && kanGa(q) && q.task?.act !== 'strid' && q.task?.act !== 'vargjakt' && !larmNu(s, q, 'fara')?.falskt);
+  const kan = folk.filter(q => kanSlass(s, q) && q.task?.act !== 'strid' && q.task?.act !== 'vargjakt' && !larmNu(s, q, 'fara')?.falskt);
   if (!kan.length) return;
   const vagar = (q?: Person) => !!q && kan.includes(q) && rollVid(s, q, 'varg') === 'kampe'; // rollen vid larmet (steg 12.1.82)
   const { kallar, led } = jaktKallare(s, kan, f.sag === undefined ? undefined : byId(s, f.sag), vagar);

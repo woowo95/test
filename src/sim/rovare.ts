@@ -6,8 +6,8 @@ import { runtByn, utanforByn } from './omrade';
 import { balans } from './balans';
 import { KLOCKA, SLAGHINDER, kanNa } from './klocka';
 import { blodas } from './blod';
-import { isParent, ALDER, KROPP, ageOf, alive, byId, count, isSick, living, log, makeName, stat } from './folk';
-import { halsa, horsel, kanGa } from './halsa';
+import { isParent, ALDER, ageOf, alive, byId, count, isSick, living, log, makeName, stat } from './folk';
+import { halsa, horsel, kanGa, vuxenKan } from './halsa';
 import { kronika } from './historik';
 import { eldPlats, getMap, vaderstreck } from './karta';
 import { Klan, kandIgen, klanById, klanerOf } from './klaner';
@@ -46,7 +46,7 @@ import { bjornStrid } from './bjorn';
 import { tingOf, type Ting } from './agande';
 import { viktOf } from './saker';
 import { LARMHOT, hotKrok, larmBleknar, larmGaller, nyttILarmet, rollVid, viljaKrok } from './roller';
-import { KartStrid, djurIKartStrid, kartStridBorja, kartStridMed, kartStrider } from './kartstrid';
+import { KartStrid, djurIKartStrid, kartStridAv, kartStridBorja, kartStridMed, kartStrider } from './kartstrid';
 import { EFTER, FAROR, MED, gastKrok } from './efterstrid';
 import { tanke } from './tankar';
 import { forlustFore, forlustEfter } from './tankelage';
@@ -143,7 +143,6 @@ export interface Rovarflock { chans?: number; /* chansen att vinna som världen 
 export const rovarProv: { kom?: (f: Rovarflock, s: State) => void } = {};
 const vaken = (p: Person) => p.task?.act !== 'sova';
 const mellan = (s: State, [a, b]: readonly number[]) => a + rnd(s, 'rovare') * (b - a);
-export const vuxenKan = (s: State, p: Person) => { const a = ageOf(p, s.now); return a >= ALDER.vaktFran && a < ALDER.vaktTill && halsa(p) >= KROPP.svag && kanGa(p); }; // den sjuka kan slåss men vill mindre (ROVARE.sjuk i rovarVilja)
 
 // (steg 8.7.14) skyddet efter ett anfall avtar med tiden i stället för en fast vila
 export const efterAnfall = (s: State) => s.rovarVila === undefined ? 1 : 1 - Math.exp(-Math.max(0, s.now - s.rovarVila) / (ROVARE.vilaDygn * DAY));
@@ -700,7 +699,6 @@ const kanStaEmot = (s: State, q: Person) => starEmot(q) && vuxenKan(s, q);
 // flockens strid på kartan, om den pågår
 export const flockStrid = (s: State, f: Rovarflock) => kartStrider(s).find(g => g.efter?.typ === 'rovare' && g.efter.flock === f.id);
 // rövaren är med i en strid på kartan, flockens eller någon annan (steg 10.2.96: den som striden flyttar går inte samtidigt)
-const iStriden = (_s: State, _f: Rovarflock, p: Person) => kartStrider(_s).some(g => !g.fri?.includes(p.id) && !g.st.slut && g.st.kampar.some(k => k.pid === p.id));
 // det rövaren bär av bytet, i vikt
 const lastAv = (r: Person) => Object.entries(gr(r).bar ?? {}).reduce((a, [k, n]) => a + viktOf(k) * n, 0);
 // lagerplatsen närmast rövaren där det ligger något att ta
@@ -1007,7 +1005,7 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
   if (!f.rast) { const m = malet(s); f.rast = lurPlats(s, f, m) ?? { x: f.x, y: f.y }; f.vantat = false; }
   const fo = rovarna(s, f);
   if (!f.anfaller) {
-    const gar = fo.filter(r => !gr(r).flytt && kanGa(r) && !iStriden(s, f, r)); // de som är på väg till rastplatsen eller framme
+    const gar = fo.filter(r => !gr(r).flytt && kanGa(r) && !kartStridAv(s, r)); // de som är på väg till rastplatsen eller framme
     // den som inte kommer vidare väntar gänget inte på (steg B.44): den utan väg dit, eller som stått still en stund
     for (const r of fo) { const g = gr(r); if (!g.still || Math.hypot(g.still.x - r.x, g.still.y - r.y) > 0.5) g.still = { x: r.x, y: r.y, t: s.now }; }
     const framme = (r: Person) => avst(r, f.rast!) <= ROVARE.rastR * 1.5, fast = (r: Person) => gr(r).ingen !== undefined && s.now - gr(r).still!.t > 5 * SEC || s.now - gr(r).still!.t > ROVARE.stillSek * SEC;
@@ -1060,7 +1058,7 @@ function flockVal(s: State, f: Rovarflock, folk: Person[], dtSec: number, ev?: T
   // hämnden som letat igenom alla hus utan att hitta den de söker ger sig av (letaSteg, steg 8.8.5)
   if (f.gor === 'letar' && f.anfaller && !f.klar && !f.letar?.length) letaSteg(s, f, folk);
   for (const r of fo) {
-    if (iStriden(s, f, r)) { gr(r).gor = 'sla'; gr(r).varStrid = true; continue; } // striden på kartan för hen
+    if (kartStridAv(s, r)) { gr(r).gor = 'sla'; gr(r).varStrid = true; continue; } // striden på kartan för hen
     const g = gr(r);
     if (g.varStrid && !g.flytt) { const st = flockStrid(s, f); if (!st || st.fri?.includes(r.id)) { if (st?.fri?.includes(r.id)) g.flytt = true; g.varStrid = undefined; } } // den som flytt ur striden flyr
     const narmast1 = (l: Person[]) => l.sort((a, b) => avst(a, r) - avst(b, r))[0];
