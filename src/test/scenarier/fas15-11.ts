@@ -2,6 +2,24 @@
 import * as SIM from '../../sim';
 import { SCENARIER, testBy } from './hjalp';
 
+// en färds post i kön, eller (sedan steg 15.1.85, när färderna går) en post för den färd som är på väg dit eller hem
+export function fardPost(vl: SIM.Varlden, f: SIM.RadFard, typ: 'fardFram' | 'fardHem'): SIM.KoPost | undefined {
+  const k = vl.ko?.find(q => q.typ === typ && q.sak === f.id);
+  if (k) return k;
+  return (typ === 'fardFram' ? f.gar === 'ut' : f.gar === 'hem') ? { t: typ === 'fardFram' ? f.t1 : f.t2 ?? f.t1, nr: 0, typ, sak: f.id } : undefined;
+}
+// flytten: köposterna och (sedan steg 15.1.85) färderna med de som flyttar, som poster med samma fält (sak: dit, data: fran och n)
+const flyttMinne = new WeakMap<SIM.RadFard, SIM.KoPost>();
+export function flyttPoster(vl: SIM.Varlden): SIM.KoPost[] {
+  const ko = (vl.ko ?? []).filter(p => p.typ === 'flytt');
+  const f = (vl.farder ?? []).filter(x => x.flytt).map(x => { let p = flyttMinne.get(x); if (!p) { p = { t: x.t1, nr: 0, typ: 'flytt', sak: x.till, data: { fran: x.fran, n: x.flytt! } }; flyttMinne.set(x, p); } return p; });
+  return [...ko, ...f];
+}
+// alla som flyttar kommer fram nu
+export function flyttFramNu(s: SIM.State, vl: SIM.Varlden) {
+  for (const p of (vl.ko ?? []).filter(q => q.typ === 'flytt')) { vl.ko = vl.ko!.filter(q => q !== p); SIM.KOHANDELSER.flytt!(s, vl, p); }
+  for (const f of (vl.farder ?? []).filter(x => x.flytt)) SIM.fardFramme(s, vl, f, s.now);
+}
 // ett sällskap ute på vägen från huvudbyn till platsen mal, med personerna ids (den första leder), i dagsljuset dagen efter
 export function paVagen(s0: SIM.State, ids: number[], mal: number, skal: SIM.ResmalId = 'handel') {
   const s = SIM.cloneState(s0); s.now = Math.floor(s0.now / SIM.DAY) * SIM.DAY + SIM.DAY + 7 * SIM.HOUR;
