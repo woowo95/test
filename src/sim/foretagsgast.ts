@@ -18,7 +18,7 @@ import { FORDON_TAL } from './fordon';
 import { hourOf } from './tid';
 import { diskarAv, erbjudandet, gastKund, KASSA, koaKlar, koPlats, omdome, stallIKo, type Erbjudande } from './kassa';
 import { foretagOf, gastFlode, oppna, VERKSAMHETER, type Foretag } from './foretag';
-import { ryktetI, omdomeAv } from './foretagsrykte';
+import { FRYKTE, ryktetI, omdomeAv } from './foretagsrykte';
 import { FORVANTAN } from './forvantan';
 import { radOverskott, radPaslag, radTar } from './priser';
 import { packaRad } from './byhandling';
@@ -158,7 +158,7 @@ gastKund.klar = (s, p, v, sitter) => {
   p.task = undefined;
 };
 // hur hen blev bemött: medlet av besökets omdömen
-omdome.push((s, p, f, b) => { const g = p.gast; if (g?.sort !== 'kund') return; const v = b ? omdomeAv({ s, p, f, ...b }) : -1, o = g.bemott ??= { v: 0, n: 0 }; o.v += v; o.n++; });
+omdome.push((s, p, f, b) => { const g = p.gast; if (g?.sort !== 'kund') return; const v = b ? omdomeAv({ s, p, f, ...b }) : FRYKTE.utan, o = g.bemott ??= { v: 0, n: 0 }; o.v += v; o.n++; });
 
 // ---------- besöket (TAKTER, varje slag) ----------
 const basta = (s: State, p: Person, f: Foretag): Erbjudande | undefined => {

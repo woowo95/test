@@ -19,3 +19,21 @@ SCENARIER.forstagang = {
     ];
   },
 };
+
+SCENARIER.gastutan = {
+  text: 'Steg 15.1.172: en gäst som inget lockade är inte illa bemött. Hen sänker relationen till hembyn hälften så mycket som en gäst som fått dåliga varor, med samma tal som ryktet (FRYKTE.utan)',
+  kor: () => {
+    const { s, f } = foretagBy(), k = SIM.klanerOf(s).find(q => q.rad !== undefined)!;
+    if (!k.personer.some(q => /hövding/i.test(q.roll))) k.personer.push({ namn: 'Alvhild', sex: 'k', roll: 'hövding' }); // hövdingen väger mest, så att skillnaden syns i heltalen
+    const besok = (dalig: boolean) => {
+      k.inst = 0; const g = SIM.nyForetagsgast(s, f, k, 'hovding')!;
+      if (dalig) g.gast!.bemott = { v: -1, n: 1 }; else for (const o of SIM.omdome) o(s, g, f); // de sämsta varorna ger omdömet −1
+      const v = g.gast!.bemott?.v ?? 0, omd = g.omd?.[f.id]?.v; SIM.gastHemIgen(s, g); return { v, omd, inst: k.inst };
+    };
+    const utan = besok(false), dalig = besok(true), ryktet = utan.omd;
+    return [
+      [`gästen utan köp får omdömet FRYKTE.utan (${utan.v}), som i ryktet (${ryktet})`, utan.v === SIM.FRYKTE.utan && ryktet === SIM.FRYKTE.utan],
+      [`relationen sjunker hälften så mycket utan köp (${utan.inst} mot ${dalig.inst})`, utan.inst < 0 && dalig.inst < utan.inst && Math.abs(utan.inst * 2 - dalig.inst) <= 1],
+    ];
+  },
+};
