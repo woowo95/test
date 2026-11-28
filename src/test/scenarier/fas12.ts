@@ -151,7 +151,7 @@ SCENARIER.kolmila = {
     SIM.addTool(s, 'benspade', p);
     const bygga = SIM.PROJEKT.kolmila?.kan(s, p, { kyla: false, gras: 0 }) ?? false;
     const t = medBank(s, 'kolmila');
-    SIM.setStock(s, { ved: 30 });
+    SIM.setStock(s, { ved: 30 }); setFood(s, 60); // mat i förrådet: annars jagar de vuxna egen mat i stället för att tömma milan (prövas inte här)
     const egen = SIM.projektVarde(s, 'kol'), u = SIM.PROJEKT.kol!.uppgift(s, p);
     // ladda och tända
     const tk = { act: 'kola', phase: 'do', tx: t.x, ty: t.y, until: s.now, carry: 0, why: '', ref: t.id } as SIM.Task;
