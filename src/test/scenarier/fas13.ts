@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import * as SIM from '../../sim';
 import { husPa } from './byggnader';
-import { SCENARIER, byggare, klockan, kor, korTills, rovarGang, medBank, medHus, medVatska, naraGranne, nyInvanare, setFood, setMat, tandEld, testBy, utanWebblasare, vidStack } from './hjalp';
+import { tvaVarianter, SCENARIER, byggare, klockan, kor, korTills, rovarGang, medBank, medHus, medVatska, naraGranne, nyInvanare, setFood, setMat, tandEld, testBy, utanWebblasare, vidStack } from './hjalp';
 import { GRAFER, grafHtml } from '../../ui/graf';
 import { setByn } from '../../ui/lage';
 import { lasBy } from '../delby';
@@ -92,7 +92,7 @@ SCENARIER.kronikajarn = {
       [`det första järnet står i krönikan (${rader('k_forstaJarn')[0]?.[1] ?? 'inget'})`, efterEtt === 1],
       ['nästa blåsning står inte där', efterTva === 1],
       [`byns första smedja står i krönikan (${smRader[0]?.[1] ?? 'inget'})`, smRader.length === 1],
-      ['mallarna har minst åtta varianter var, som alla krönikans mallar', [B.k_forstaJarn, B.k_forstaSmedja].every(v => v.length >= 8)],
+      ['mallarna har minst två varianter var, som alla krönikans mallar', [B.k_forstaJarn, B.k_forstaSmedja].every(v => tvaVarianter(v))],
       ['händelserna hör till Bygge och uppfinningar', ['k_forstaJarn', 'k_forstaSmedja'].every(k => SIM.KRONIKA_KAT.find(c => c.id === 'bygge')?.slag.includes(k))],
     ];
   },
@@ -2723,8 +2723,10 @@ export function matStrid(n = 3, seeds = [6, 7, 8, 9]) {
       for (const p of s.people.filter(q => q.died === undefined && (iSt.has(q.id) || q.gast))) {
         const k = iSt.get(p.id), b = fore.get(p.id), mal = k ? 'k' + k.mal : `${p.task?.act}:${Math.round(p.task?.tx ?? 0)},${Math.round(p.task?.ty ?? 0)}`;
         const dx = b ? p.x - b.x : 0, dy = b ? p.y - b.y : 0, l = Math.hypot(dx, dy);
-        if (b && l > 0.02) { const L = Math.hypot(b.dx, b.dy), om = L > 0.02 && (dx * b.dx + dy * b.dy) < -0.5 * l * L; if (k) { m.steg++; if (om) { m.vand++; const o = k.hjalp ? 'hjalp' : k.backar ? 'backar' : k.skott ? 'kast' : k.ledare ? 'ledare' : 'annan'; h[o] = (h[o] ?? 0) + 1; } } else { m.ute++; if (om) { m.uteVand++; const o = 'ute:' + p.gast?.sort + ':' + p.gast?.gor + (b.mal !== mal ? ':nyttmal' : ''); h[o] = (h[o] ?? 0) + 1; } } }
-        if (b && b.mal !== mal) { if (k) m.mal++; else m.uteMal++; }
+        // (steg 15.1.68: den som tryckts bakåt av en knuff eller ett tungt slag går inte av och an, och den som byter från ett mål som fallit eller flytt byter inte fram och tillbaka)
+        const tryckt = k && SIM.kartStrider(s).some(g => g.st.logg.some(r => r.h === 'trycks' && r.a === k.id && r.t > g.st.t - 2)), gamla = k && b?.mal?.startsWith('k') ? SIM.kartStrider(s).flatMap(g => g.st.kampar).find(q => 'k' + q.id === b.mal) : undefined;
+        if (b && l > 0.02) { const L = Math.hypot(b.dx, b.dy), om = L > 0.02 && (dx * b.dx + dy * b.dy) < -0.5 * l * L; if (k) { if (tryckt) { /* tryckt bakåt */ } else { m.steg++; if (om) { m.vand++; const o = k.hjalp ? 'hjalp' : k.backar ? 'backar' : k.skott ? 'kast' : k.ledare ? 'ledare' : 'annan'; h[o] = (h[o] ?? 0) + 1; } } } else { m.ute++; if (om) { m.uteVand++; const o = 'ute:' + p.gast?.sort + ':' + p.gast?.gor + (b.mal !== mal ? ':nyttmal' : ''); h[o] = (h[o] ?? 0) + 1; } } }
+        if (b && b.mal !== mal && !(gamla && gamla.lage !== 'strid')) { if (k) m.mal++; else m.uteMal++; }
         fore.set(p.id, { x: p.x, y: p.y, dx: l > 0.02 ? dx : b?.dx ?? 0, dy: l > 0.02 ? dy : b?.dy ?? 0, mal });
       }
     });

@@ -143,7 +143,8 @@ const BDEF: Record<IntryckTyp, BinamnDef> = {
 };
 export const BINAMN: Record<IntryckTyp, BinamnDef> = BDEF;
 
-// mallarna: id → varianterna (minst åtta). {namn} = förnamnet, {binamn} = namnet byn gav, {helt} = båda, {skal} = varför
+// mallarna: id → varianterna. Varje variant säger något eget, inga omskrivningar av samma påstående; antalet följer av hur mycket
+// det finns att säga och hur ofta mallen läses, och aldrig färre än två (Berättelser: Registret). {namn} = förnamnet, {binamn} = namnet byn gav, {helt} = båda, {skal} = varför
 // (det som hänt), {tillstand} = det byn tycker att hen är när ingen har ett bevis (tillst, steg 6.7.6)
 // mallarna från de nya systemen (steg 12.1.135): krönikans varianter (iBy) och personens (iPerson, beskrivningen och eftermälet)
 const iBy = (f: Fyllning) => f.person !== true, iPerson = (f: Fyllning) => f.person === true;

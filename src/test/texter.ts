@@ -1,6 +1,6 @@
 // npm run texter -- [byar = 8] [dygn = 45] (steg 4.5.1.1): alla texter som spelet skriver, sorterade efter mall och variant.
 // Kör byarna parallellt (texter-en.ts) och skriver texter.txt: för varje mall i BERATTELSER hur många gånger den användes och
-// hur många av varianterna som valdes, och för varje variant hur ofta den valdes, mallen och några exempel ifyllda. Varianter
+// hur många av varianterna som valdes och hur många gånger den lästes per variant (steg 15.1.72), och för varje variant hur ofta den valdes, mallen och några exempel ifyllda. Varianter
 // som aldrig valdes står med "aldrig". Delarna av beskrivningen (BESK_DELAR) står sist, med exempel. Mallar som aldrig
 // användes alls står överst i sammanfattningen. texter.json har samma sak för kontrollerna (steg 4.5.1.2)
 import './utc';
@@ -38,11 +38,14 @@ let aldrig = 0, varianter = 0;
 const del: string[] = [];
 // steg 6.7.8 (roten r_prov): en variant utan villkor som valts mer än dubbelt så ofta som snittet i sin mall märks
 const forOfta: string[] = [];
+// steg 15.1.72: hur många gånger mallen lästes per variant (användningar delat med varianter), så att det syns vilka mallar som läses mycket och har få varianter
+const perVariant: [string, number, number][] = [];
 for (const m of mallar) {
   const v = BERATTELSER[m], a = alla[m] ?? {}, n = Object.values(a).reduce((x, y) => x + y.n, 0);
   const valda = v.filter((_, i) => a[i]).length;
   varianter += v.length; aldrig += v.length - valda;
-  del.push(`== ${m}: använd ${n} gånger, ${valda} av ${v.length} varianter valda`);
+  perVariant.push([m, n / Math.max(1, v.length), v.length]);
+  del.push(`== ${m}: använd ${n} gånger, ${valda} av ${v.length} varianter valda, ${(n / Math.max(1, v.length)).toFixed(1)} läsningar per variant`);
   // olika texter per variant utan villkor (en variant med villkor kan sällan väljas och drar ner snittet)
   const fria = v.map((x, i) => typeof x === 'string' ? a[i]?.u ?? 0 : -1).filter(u => u >= 0);
   const snitt = fria.reduce((x, y) => x + y, 0) / Math.max(1, fria.length);
@@ -63,6 +66,7 @@ for (const d of BESK_DELAR) {
 }
 rader.push(`${mallar.length} mallar med ${varianter} varianter; ${aldrig} varianter valdes aldrig.`);
 rader.push(`Varianter utan villkor med mer än dubbelt så många olika texter som snittet i sin mall (${forOfta.length}): ${forOfta.join(', ') || 'inga'}`);
+rader.push(`Mest lästa per variant (användningar delat med varianter): ${perVariant.sort((a, b) => b[1] - a[1]).slice(0, 15).map(([m, x, n]) => `${m} ${x.toFixed(1)} (${n} varianter)`).join(', ')}`);
 rader.push(`Mallar som aldrig användes (${oanvanda.length}): ${oanvanda.join(', ') || 'inga'}`);
 const felRader: string[] = ['== Fel som kontrollerna hittade (steg 4.5.1.2)'];
 for (const k of [...KONTROLLER, ...STIL]) {

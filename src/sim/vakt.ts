@@ -13,6 +13,9 @@ import { bynsMitt, utanforByn } from './omrade';
 import { rnd } from './slump';
 import { MANNISKOVAPEN, VAPEN } from './strid';
 import { MIN, Person, State, T, Task, W, inMap } from './typer';
+import { amountOf, iRackhall, laggPaRutan, put } from './lager';
+// att ta ur förrådet (behov.ts) sätts i steg.ts: en direkt import ger en importcirkel
+export const stenKrok: { ta: typeof import('./behov').takeMaterial } = { ta: () => ({}) };
 
 export const VAKT = balans('vakt', {
   utom: 1, // vakten går runt byn så här många rutor utanför dess område (omrade.ts, steg 6.2.4)
@@ -48,9 +51,37 @@ export function bastaVapen(s: State, p: Person, utom?: Set<number>) {
   return tingOf(s).filter(t => !utom?.has(t.id) && ok.includes(t.k) && !t.halv && t.helig === undefined && (t.agare === p.id || t.agare === BYN) && (t.hos === undefined || t.hos === p.id) && (t.krok === undefined || t.krok === p.id) && t.lass === undefined && (t.bar === undefined || t.bar === p.id))
     .sort((a, b) => (VAPEN as Record<string, { skada: number }>)[b.k].skada - (VAPEN as Record<string, { skada: number }>)[a.k].skada || b.c - a.c)[0];
 }
+// stenarna (steg 15.1.69): den som inget vapen får när larmet går tar så många stenar ur förrådet som man kastar (kast.skott
+// för vapnet sten) och bär dem. Hämtningen (HAMTAS i hamtning.ts) går till stacken med dem, som för allt annat arbete
+export const stenarVidLarm = (s: State, p: Person): Record<string, number> | undefined => bastaVapen(s, p) || (p.stenar?.n ?? 0) >= VAPEN.sten.kast.skott ? undefined : { sten: VAPEN.sten.kast.skott - (p.stenar?.n ?? 0) };
+// stenarna (steg 15.1.69): den som inget vapen får när larmet går tar så många stenar ur förrådet som man kastar (kast.skott för
+// vapnet sten), av byns först, och har dem i handen som ett vapen (Person.stenar). Striden räknar dem som ett vapen hen bär
+export function taStenar(s: State, p: Person) {
+  const n = VAPEN.sten.kast.skott - (p.stenar?.n ?? 0);
+  if (n < 1) return (p.stenar?.n ?? 0) >= 1;
+  const ag = stenKrok.ta(s, p, 'sten', Math.min(n, Math.floor(amountOf(s, 'sten') + 1e-9)), true), hela: Record<number, number> = {}; // det som ligger inom räckhåll (anroparen säger var, iRackhall)
+  for (const [o, v] of Object.entries(ag)) { const h = Math.floor(v + 1e-9); if (h >= 1) hela[+o] = h; if (v - h > 1e-9) put(s, 'sten', v - h, { [+o]: v - h }); } // bara hela stenar
+  const g = Object.values(hela).reduce((a, b) => a + b, 0);
+  if (g >= 1) { p.stenar ??= { n: 0, ag: {} }; p.stenar.n += g; for (const [o, v] of Object.entries(hela)) p.stenar.ag[+o] = (p.stenar.ag[+o] ?? 0) + v; }
+  return (p.stenar?.n ?? 0) >= 1;
+}
+// den som inte längre väntar på faran eller slåss lägger stenarna där hen står, med ägarna, och de bärs in som allt annat som ligger
+// utanför förrådet (steg 15.1.69); också den som dött eller flytt
+// stenarna som hämtats till platsen (HAMTAS i hamtning.ts) tas i handen, och de som ligger inom räckhåll (MEDAN i steg.ts)
+export function stenarIHanden(s: State, p: Person, tk: Task) {
+  const n = Math.floor((tk.items?.sten ?? 0) + 1e-9), ag = tk.ag?.sten;
+  if (n >= 1 && ag) { p.stenar ??= { n: 0, ag: {} }; p.stenar.n += n; for (const [o, v] of Object.entries(ag)) if (v > 1e-9) p.stenar.ag[+o] = (p.stenar.ag[+o] ?? 0) + v; delete tk.items!.sten; delete tk.ag!.sten; }
+  if (!bastaVapen(s, p)) taStenar(s, p);
+}
+export function slappStenar(s: State) {
+  for (const p of s.people) if (p.stenar && (p.died !== undefined || !p.task || !(ACTS[p.task.act].vapen || p.task.act === 'strid'))) {
+    if (p.died === undefined || p.x !== undefined) for (const [o, v] of Object.entries(p.stenar.ag)) laggPaRutan(s, 'sten', v, p.x, p.y, { [+o]: v });
+    p.stenar = undefined;
+  }
+}
 export function taVapen(s: State, p: Person) {
   const t = bastaVapen(s, p);
-  if (!t) return false;
+  if (!t) { iRackhall(p.x, p.y, () => taStenar(s, p)); return false; } // stenarna inom räckhåll; annars hämtas de när hen är framme (HAMTAS)
   if (t.hos === p.id) return true;
   for (const o of tingOf(s)) if (o.hos === p.id) o.hos = undefined;
   t.hos = p.id; t.x = t.y = t.krok = undefined;

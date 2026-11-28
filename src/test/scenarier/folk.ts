@@ -7,7 +7,7 @@ import { byId, isSocial, TalkEvent } from '../../sim';
 import { BEAT, START, STEG_DYGN, STEG_TIM } from '../kor';
 import * as SLAGLANGD from '../slaglangd';
 import { hasIcon } from '../../ikoner';
-import { medTal, testBy, stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank, utanWebblasare, styreTimme } from './hjalp';
+import { tvaVarianter, medTal, testBy, stridIByn, rovarGang, korTills, setFood, kor, klockan, tandEld, byggare, SCENARIER, pct, grenarUte, barGrenar, nyInvanare, valjer, MATARBETE, TRAARBETE, REDSKAPSARBETE, FORBATTRING, MATMEDREDSKAP, rikBy, medHus, medBank, utanWebblasare, styreTimme } from './hjalp';
 import { type BildSteg, bildSteg, garNu, simPlats, stalle, sittande, vidArbetet, vidStationen } from '../../ui/stalle';
 import { styre as styreFlikF } from '../../ui/flikar/styre';
 import { setByn, ui as uiLage } from '../../ui/lage';
@@ -2052,7 +2052,7 @@ SCENARIER.slagsmal = {
 };
 
 SCENARIER.berattelser = {
-  text: 'Steg 3.9.1: berättelserna är mallar i registret BERATTELSER med minst åtta varianter var, valda ur byns frö, personen och tiden (aldrig spelets slump). När minst hälften av de andra vuxna har samma starka intryck av någon får hen ett öknamn eller hedersnamn efter det ("Ask Tjuven"). Namnet syns i loggen och krönikan och står kvar livet ut, och ett nytt tar bara över om det är mycket starkare',
+  text: 'Steg 3.9.1: berättelserna är mallar i registret BERATTELSER med minst två varianter var, valda ur byns frö, personen och tiden (aldrig spelets slump). När minst hälften av de andra vuxna har samma starka intryck av någon får hen ett öknamn eller hedersnamn efter det ("Ask Tjuven"). Namnet syns i loggen och krönikan och står kvar livet ut, och ett nytt tar bara över om det är mycket starkare',
   kor: () => {
     const t = createState(9, START);
     klockan(t, 12);
@@ -2081,8 +2081,8 @@ SCENARIER.berattelser = {
     for (const q of vuxna) q.intryck = [];
     SIM.stepBerattelser(t);
     const stannar = p.binamn?.k === 'flitig';
-    // varianterna: minst åtta i varje mall, båda formerna i varje namn, och samma nyckel ger samma text
-    const mallar = Object.values(SIM.BERATTELSER).every(v => v.length >= 8);
+    // varianterna: minst två utan villkor i varje mall (steg 15.1.72), båda formerna i varje namn, och samma nyckel ger samma text
+    const mallar = Object.values(SIM.BERATTELSER).every(v => tvaVarianter(v));
     const namn = Object.values(SIM.BINAMN).every(b => b.namn.length >= 3 && b.namn.every(([m, k]) => m && k));
     const f = { namn: 'Ask', binamn: 'Tjuven', helt: 'Ask Tjuven', hen: 'han', skal: 'stal en yxa' };
     const lika = SIM.berattelse(t, 'oknamn', 7, f) === SIM.berattelse(t, 'oknamn', 7, f);
@@ -2114,7 +2114,7 @@ SCENARIER.berattelser = {
       [`ett mycket starkare gör det (${p.binamn?.namn ?? '–'})`, bytt],
       ['namnet stannar när intrycken bleknar', stannar],
       ['personens viktiga händelser minns namnet', p.fame.some(x => /Kallades/.test(x))],
-      ['minst åtta varianter i varje mall, och båda formerna av varje namn', mallar && namn],
+      ['minst två varianter i varje mall, och båda formerna av varje namn', mallar && namn],
       [`samma nyckel ger samma text, olika nycklar olika (${olika} av 12)`, lika && olika >= 5],
     ];
   },
@@ -2208,12 +2208,12 @@ SCENARIER.smatext = {
 };
 
 SCENARIER.loggmallar = {
-  text: 'Steg 6.7.7: de vanligaste raderna i loggen skrivs ur mallar (l_byte, l_vanner, l_lart …) med minst åtta varianter, och raden minns mallen. Relationerna, samtalen, beskrivningen och döden har fått fler varianter med nya fält: vad de varit med om, årstiden och vädret, vad den döda gjorde vid olyckan och vem som sörjer mest',
+  text: 'Steg 6.7.7: de vanligaste raderna i loggen skrivs ur mallar (l_byte, l_vanner, l_lart …) med minst två varianter, och raden minns mallen. Relationerna, samtalen, beskrivningen och döden har fått fler varianter med nya fält: vad de varit med om, årstiden och vädret, vad den döda gjorde vid olyckan och vem som sörjer mest',
   kor: () => {
     const t = createState(15, START);
     klockan(t, 12);
     const [p, q] = living(t);
-    // varje loggmall har minst åtta varianter, och alla blir hela meningar med fälten ifyllda
+    // varje loggmall har minst två varianter, och alla blir hela meningar med fälten ifyllda
     const mallar = Object.keys(SIM.BERATTELSER).filter(m => m.startsWith('l_')) as SIM.MallId[];
     const f = { namn: 'Ask', med: 'Ylva', om: 'Ylva', mot: 'Ylva', vinnare: 'Ylva', orsak: 'efter ett gräl', hen: 'han', honom: 'honom', hans: 'hans', honom2: 'honom', fatt: 'tre harkött', betal: 'sex grenar', varor: 'ett träspjut', vad: 'rå fisk', vadtext: 'vargarna kommer', n: 'fem', lara: 'odla', av: 'Ylva', rykte: 'en lögnare', plats: 'vid stenarna', ggr: 'tio gånger', karlek: 'Ylva', yrke: 'jägare', sjukdom: 'förkylningen', fran: 'Ylva', till: 'Bo', bevis: 'stal en yxa' }; // fälten från steg 15.1.117
     const texter = mallar.flatMap(m => (SIM.BERATTELSER[m] as SIM.Variant[]).map(v => SIM.fyll(typeof v === 'string' ? v : v.t, f)));
@@ -2233,7 +2233,7 @@ SCENARIER.loggmallar = {
     const r = getRel(t, p, q); r.talks = 25; r.minns = { ...r.minns, sida: 2 };
     const rel = SIM.relationText(t, p, q, r);
     return [
-      [`${mallar.length} loggmallar med minst åtta varianter var`, mallar.length >= 14 && mallar.every(m => SIM.BERATTELSER[m].length >= 8)],
+      [`${mallar.length} loggmallar med minst två varianter var`, mallar.length >= 14 && mallar.every(m => tvaVarianter(SIM.BERATTELSER[m]))],
       [`alla varianter blir hela meningar (${hela.slice(0, 2).join(' | ') || 'inga fel'})`, !hela.length],
       [`raden minns sin mall (${vanner.text})`, vanner.m === 'l_vanner' && vanner.text.includes(p.name) && vanner.text.includes(q.name)],
       [`den som dog i en olycka: ${dod.nar}, och ${dod.sorjer} sörjer`, /när (han|hon) fällde ett träd/.test(String(dod.nar)) && dod.sorjer === p.name],
@@ -2269,7 +2269,7 @@ SCENARIER.vemibyn = {
     hus.ag = hq.id; hus.klar = u.now - 11 * DAY; const bor = SIM.BESK_DELAR.find(d => d.id === 'langeHus')!;
     const lange = SIM.bedTile(u, hq) !== undefined && bor.vikt({ s: u, p: hq, f: {}, nyck: () => 0, borjan: new Set() } as never) > 0;
     const varianter = ['besk_utkant', 'besk_verkstad', 'besk_langeHus', 'besk_grundare', 'besk_vacker', 'besk_ful', 'besk_aldst', 'besk_titel', 'besk_uppfann', 'besk_bedrift', 'besk_sorjer', 'besk_saknar', 'besk_vapenGilla', 'besk_vapenOgilla']
-      .every(m => (SIM.BERATTELSER as Record<string, unknown[]>)[m].length >= 8);
+      .every(m => tvaVarianter((SIM.BERATTELSER as Record<string, unknown[]>)[m]));
     return [
       [`registret har delarna (${SIM.BESK_DELAR.length})`, SIM.BESK_DELAR.length >= 12 && SIM.BESK_DELAR.filter(d => d.fast).length === 3],
       [`grundaren och skönheten står med, och beskrivningen är kort: egenskaperna och de två fasta delarna (steg 10.2.52) (${b1})`, p.grundare === true && /grund|först|början|stigarna|slog sig ner/.test(b1) && meningar(b1) === 3],
@@ -2278,7 +2278,7 @@ SCENARIER.vemibyn = {
       ['den döda hen sörjer står med före smaken', b2.includes(barn.name)],
       ['seg heter nu uthållig', !alla.some(x => /\bseg\b|snart trött/.test(x))],
       [`alla i byn får en hel text med 2–5 meningar (${alla.length})`, alla.every(x => hel(x) && meningar(x) >= 2 && meningar(x) <= 5)],
-      ['minst åtta varianter i varje ny mall', varianter],
+      ['minst två varianter i varje ny mall', varianter],
       ['den som äger huset hen sover i och haft det länge får en mening om det (steg 10.2.52)', lange],
     ];
   },
@@ -2345,7 +2345,7 @@ SCENARIER.merliv = {
       [`mästerverket (${bma})`, bma.includes('Vintervargen')],
       [`räknarna fylls i en vanlig by efter 8 dygn (${liv} personer har något i p.liv)`, liv >= 1],
       [`alla får en hel text (${alla.length})`, alla.every(hel)],
-      ['minst åtta varianter i varje ny mall', nya.every(m => (SIM.BERATTELSER as Record<string, unknown[]>)[m].length >= 8)],
+      ['minst två varianter i varje ny mall', nya.every(m => tvaVarianter((SIM.BERATTELSER as Record<string, unknown[]>)[m]))],
     ];
   },
 };

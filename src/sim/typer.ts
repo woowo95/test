@@ -335,6 +335,7 @@ export interface Person {
   sedArv?: Partial<Record<keyof Seder['v'], number>>; // byns sed som personen tagit till sig, mest under uppväxten (steg 13.9.2, seder.ts)
   intryck?: import('./rykten').Intryck[]; // det personen tycker att andra är, och varför (steg 3.3, rykten.ts)
   smak?: Record<string, number>; // tycke och smak: 'a:' + arbete, 'm:' + mat eller 'v:' + vapen (steg 3.7.10), -1 till 1 (steg 3.3.5, rykten.ts)
+  stenar?: { n: number; ag: Record<number, number> }; // stenarna att kasta som hen tog ur förrådet när larmet gick och inget vapen fanns, med ägarna (steg 15.1.69, vakt.ts)
   reservAlltid?: true; // blev ifattsprungen utan reservvapen: tar alltid med ett i strid (steg 3.7.7, strid.ts)
   liv?: Record<string, number>; // det hen varit med om och gjort, i tal: vargar hen dödat, folk hen vårdat, hus, svält hen överlevt … och 't:' + slaget = när det senast räknades (steg 3.9.8, folk.ts livet)
   skam?: number; // straffad med skam av ledaren: håller sig undan elden och samtalen till dess (steg 3.5.3, styre.ts)

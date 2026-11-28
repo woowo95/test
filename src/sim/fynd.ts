@@ -21,9 +21,8 @@ import { smakGift } from './rykten';
 import { tecken } from './religion';
 import { insjukna } from './sjukdom';
 import { NARA } from './nara';
-// hur rikt vildbinas lager måste vara för att ett bo ska finnas där (BIN.boSyns, satt av bin.ts så att filerna inte importerar varandra)
-// och hur många kakor i timmen den som står vid boet tar (BIN.vildTim, steg 12.1.263)
-export const vildboKrok = { syns: () => 0.6, tim: () => 6 };
+import { vildboKrok } from './vildbo';
+export { vildboKrok } from './vildbo';
 
 // ---------- balanstal (regel 8) ----------
 // Fångst och insamling: var viltet håller sig borta, hur fort platserna tömmas och växer tillbaka, fiske, flinta och svamp.

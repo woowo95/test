@@ -48,7 +48,7 @@ type Val = [string | null, number][];
 export interface GastUtrustning { vapen: Val; reserv: Val; plagg: Record<string, Val>; arr: number; drakt?: { luva: number; duk: number; rovarskinn: number } }
 export const GASTUTRUSTNING: Record<GastSort, GastUtrustning> = {
   rovare: {
-    vapen: [['yxa', 3], ['flintspjut', 3], ['fiskespjut', 2], ['kniv', 3], ['bage', 0.4], [null, 1]], reserv: [['kniv', 1], [null, 2]],
+    vapen: [['yxa', 3], ['flintspjut', 3], ['fiskespjut', 2], ['kniv', 3], ['bage', 1.5], ['slunga', 1.5], [null, 1]], reserv: [['kniv', 1], [null, 2]], // ungefär en av sex har ett vapen för avstånd (steg 15.1.71; bågen 0,4 före)
     plagg: { rock: [['rock_vargskinn', 2], ['rock_kaninskinn', 3], ['rock_bjornskinn', 0.5], [null, 2.5]], byxor: [['byxor_kaninskinn', 2], ['byxor_lader', 1], [null, 2]], skor: [['skor_kaninskinn', 3], ['skor_vargskinn', 1], [null, 2]],
       mossa: [['mossa_kaninskinn', 1], [null, 4]], balte: [['balte_rep', 1], [null, 1]], skydd: [['rustning_lader', 0.4], ['hjalm_lader', 0.4], [null, 6]], fackla: [['fackla', 3], [null, 2]] }, // facklan bärs löst och tänds på natten (steg 10.1.10)
     arr: 0.45, drakt: { luva: 0.35, duk: 0.3, rovarskinn: 0.45 },
@@ -90,7 +90,10 @@ function utrusta(s: State, p: Person, r: () => number) {
   const u = GASTUTRUSTNING[p.gast!.sort], lista = (s.gastTing ??= []);
   const ny = (k: string, falt: 'hos' | 'bar' | undefined) => { lista.push({ id: -(s.gastTingNr = (s.gastTingNr ?? 0) + 1), k, c: 0.5 + r() * 0.5, agare: p.id, ...(falt ? { [falt]: p.id } : {}) }); };
   const vapen = valj(u.vapen, r()); if (vapen) ny(vapen, 'hos');
-  const reserv = valj(u.reserv, r()); if (reserv && reserv !== vapen) ny(reserv, undefined);
+  // den som har ett vapen för avstånd (bågen, slungan: kastet utan reserv, strid.ts) har alltid en kniv i bältet för när någon kommer nära (steg 15.1.71)
+  const kv = vapen ? gastVapenKrok.kast(vapen) : undefined, skytt = !!kv && !kv.reserv;
+  const reserv = skytt ? 'kniv' : valj(u.reserv, r()); if (reserv && reserv !== vapen) ny(reserv, undefined);
+  if (skytt) p.reservAlltid = true;
   for (const v of Object.values(u.plagg)) { const k = valj(v, r()); if (k) ny(k, SAKER[k]?.klad ? 'bar' : undefined); } // plaggen på sig, det andra (facklan) löst
   for (let i = 0; i < 2; i++) if (r() < u.arr) (p.arr ??= []).push({ d: ARRDELAR[Math.floor(r() * ARRDELAR.length)], n: Math.floor(r() * 10) + 1 });
   if (p.gast!.klan !== undefined) klanTatKrok.klan(s, p, p.gast!.klan, r); // klanens märken (steg 12.1.165)
@@ -200,3 +203,5 @@ export function gastTillbaka(s: State, p: Person) {
 }
 // slaget hålls kort medan en gäst är i byn (klocka.ts, steg 10.2.14)
 SLAGHINDER.push(s => gasterNu(s).length ? KLOCKA.slag : undefined);
+// vapnets kast (strid.ts, som sätter kroken): en direkt import av strid.ts ger en importcirkel
+export const gastVapenKrok: { kast: (v: string) => { reserv?: true } | undefined } = { kast: () => undefined };

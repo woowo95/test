@@ -2,7 +2,7 @@
 // som var med, hur länge den varade, utgången och vad som hände var och en. Skriver JSON (används av strid.ts)
 import './utc';
 import { korBy } from './kor';
-import { ALDER, HALSA, ageOf, isLight, living, rovarProv, stridProv, lagerProv, gastAv, gastTingOf, radNr, lever, PERIODRADER, type Rovarflock } from '../sim';
+import { ALDER, HALSA, SKYDD, ageOf, isLight, living, rovarProv, stridProv, lagerProv, gastAv, gastTingOf, radNr, lever, PERIODRADER, type Rovarflock } from '../sim';
 const [seed, dagar] = process.argv.slice(2).map(Number);
 const rader: Record<string, unknown>[] = [];
 const saren: { rad: Record<string, unknown>; pid: number; t: number }[] = []; // de som lever med sår när striden är slut: förblöder de efteråt?
@@ -46,13 +46,19 @@ stridProv.slut = (s, m) => {
       return r?.h === 'avstar' ? 'drog sig undan' : r?.h === 'skild' ? 'skildes åt' : k.lage === 'nere' ? 'för skadad' : k.lage === 'ger' ? 'gav upp' : 'flydde';
     });
     for (const k of st.kampar) { const p = k.pid !== undefined ? s.people.find(q => q.id === k.pid) : undefined; if (p && p.died === undefined && p.skador?.length) saren.push({ rad: {}, pid: p.id, t: s.now }); }
+    // de rena slagen efter skyddet på delen som träffades (steg 15.1.66): ringbrynja, annat skydd eller inget
+    const rena: Record<string, [number, number]> = { ring: [0, 0], annat: [0, 0], inget: [0, 0] };
+    for (const x of st.logg) if ((x.h === 'traff' || x.h === 'tog') && x.sl && !x.kast && x.d && st.avsikt !== 'lek' && st.avsikt !== 'brottning') {
+      const b = st.kampar.find(k => k.id === x.b), pa = (b?.klader ?? []).filter(c => SKYDD[c]?.delar.includes(x.d!)), kat = pa.some(c => c.startsWith('ringbrynja')) ? 'ring' : pa.length ? 'annat' : 'inget';
+      rena[kat][1]++; if (x.h === 'traff' && (x.g ?? 0) >= 0.2) rena[kat][0]++;
+    }
     const tunga = st.logg.filter(x => x.h === 'traff' && x.sl && !x.kast && (x.g ?? 0) >= 0.2).length; // de riktiga slagen: de som ger mer än en skråma
     const langd = st.slut?.t ?? st.t;
     // skadan per träff (graden, inte i brottningen och leken) och hur skadade de som flydde var: det svåraste såret och blodet (steg B.65)
     const grader = st.avsikt === 'lek' || st.avsikt === 'brottning' ? [] : st.logg.filter(x => x.h === 'traff').map(x => +(x.g ?? 0).toFixed(3));
     const varst = (k: typeof st.kampar[number]) => +Math.max(0, ...k.skador.map(w => w.g)).toFixed(2), flytt = st.kampar.filter(k => ['flykt', 'borta'].includes(k.lage)).map(k => [varst(k), +k.blod.toFixed(2)]);
     const allvar = st.kampar.filter(k => varst(k) >= 0.2 || k.blod < 0.85).length;
-    const rad = { grader, flytt, allvar, kampar: st.kampar.length, t0: s.now - langd * 1000, t1: s.now, tunga, sort, forsok, slut: [slut(0), slut(1)], efter: 0, dag: +((s.now - s.founded) / 86400000).toFixed(1), orsak, vinnare: st.slut?.vinnare ?? -1, sek: Math.round(st.slut?.t ?? st.t), vuxna, kom, by: per(0), mot: per(1), h, ...(bilder.has(m) ? { bilder: bilder.get(m) } : {}) };
+    const rad = { rena, grader, flytt, allvar, kampar: st.kampar.length, t0: s.now - langd * 1000, t1: s.now, tunga, sort, forsok, slut: [slut(0), slut(1)], efter: 0, dag: +((s.now - s.founded) / 86400000).toFixed(1), orsak, vinnare: st.slut?.vinnare ?? -1, sek: Math.round(st.slut?.t ?? st.t), vuxna, kom, by: per(0), mot: per(1), h, ...(bilder.has(m) ? { bilder: bilder.get(m) } : {}) };
     for (const x of saren) if (x.t === s.now && !Object.keys(x.rad).length) x.rad = rad;
     rader.push(rad);
 };

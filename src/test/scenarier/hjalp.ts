@@ -407,3 +407,5 @@ export function medTroshus(s: State, tr: SIM.Tro, altare = true) {
   if (altare && at) { (s.stationer ??= []).push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'altare', x: at.x, y: at.y, kvar: 0, klar: s.now, tro: tr.id, inne: 1, ...(at.rot ? { rot: 1 as const } : {}) }); SIM.touch(s); }
   return h;
 }
+// en mall har minst två varianter, vilken mall det än är (regeln för varianterna, steg 15.1.72: aldrig färre än två)
+export const tvaVarianter = (v: readonly unknown[]) => v.length >= 2;

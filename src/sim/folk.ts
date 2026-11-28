@@ -334,7 +334,7 @@ export const namnUr = (sex: 'm' | 'k', r: () => number) => { const p = <X>(l: X[
 // valfritt fält tas bort med p.f = undefined, aldrig med delete (som gör om personen till en ordbok). Ett nytt fält i
 // Person-typen får en rad här; vakten i testerna (formVakt) larmar annars
 export const MALL: Record<keyof Person, undefined> = {
-  te: undefined, tval: undefined, smittNara: undefined, larmRoll: undefined, foder: undefined, krycka: undefined, forbandMed: undefined, ropT: undefined, rus: undefined,
+  stenar: undefined, te: undefined, tval: undefined, smittNara: undefined, larmRoll: undefined, foder: undefined, krycka: undefined, forbandMed: undefined, ropT: undefined, rus: undefined,
   supit: undefined, fylla: undefined, bak: undefined, protMinne: undefined, hn: undefined, hnBlodat: undefined,
   gift: undefined, blodNotis: undefined, bedrift: undefined, sorg: undefined, tat: undefined, tatV: undefined,
   gravBesok: undefined, paminnd: undefined, pratArbete: undefined, id: undefined, name: undefined, sex: undefined, uppkallad: undefined,
