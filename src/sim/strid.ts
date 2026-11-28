@@ -1041,6 +1041,10 @@ export function stridSteg(st: Strid) {
       if (dp < STRID.hjalpAvst) { const q = Math.max(0.01, dp), ux = dp > 0.01 ? (x - fp.x) / q : (k.x - fp.x) / Math.max(0.01, dist(k, fp)), uy = dp > 0.01 ? (y - fp.y) / q : (k.y - fp.y) / Math.max(0.01, dist(k, fp)); x = clamp(fp.x + ux * STRID.hjalpAvst, 0.3, st.w - 0.3); y = clamp(fp.y + uy * STRID.hjalpAvst, 0.3, st.h - 0.3); }
       const l = Math.hypot(x - k.x, y - k.y);
       if (nara ? l > 0.05 : v && l > 1) hjalpGa(st, k, x, y, Math.min(l, farten(k) * dt), fi());
+      // hjälparen med ett kastvapen (sten, slunga, båge) kastar från platsen bakom raden mot den närmaste fienden inom räckhåll, efter
+      // skyttens regler (kastaMot: vänta eller byta mål när en vän står i vägen, den ovana chansar), och går aldrig fram (steg 15.1.70)
+      const kv = VAP[k.vapen].kast;
+      if (kv && !kv.reserv && k.skott) { const m = narm(k, fi().filter(o => dist(k, o) <= kv.rack)); if (m) kastaMot(st, k, m); }
       continue;
     }
     const m = valjMal(st, k);

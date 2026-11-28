@@ -148,3 +148,30 @@ SCENARIER.stenkast = {
     ];
   },
 };
+
+SCENARIER.hjalpkast = {
+  text: 'Steg 15.1.70: hjälparna kastar bakom raden. En hjälpare med stenar kastar från platsen bakom vännerna mot gänget och går aldrig fram i närstrid',
+  kor: () => {
+    const A = SIM.STRID.hjalpAvst;
+    let kast = 0, slag = 0, nara = 0, vada = 0, strider = 0;
+    for (let i = 0; i < 20; i++) {
+      const st = SIM.nyStrid({ avsikt: 'skada', w: 40, h: 30, kampar: [
+        kampe(1, 0, 'yxa', 18, 14, {}, { mod: 16 }), kampe(2, 0, 'yxa', 18, 16.5, {}, { mod: 16 }), kampe(3, 0, 'sten', 15.5, 15.3, { hjalp: true }, { mod: 14 }),
+        kampe(4, 1, 'kniv', 22, 14.8, {}, { mod: 16 }), kampe(5, 1, 'kniv', 22.5, 16.5, {}, { mod: 16 }),
+      ] }, i * 7919 + 13);
+      const h = st.kampar[2];
+      stega(st, s => {
+        for (const r of s.logg) if (r.t === s.t && r.a === h.id && r.sl) {
+          if (r.kast) { kast++; const fi = s.kampar.filter(o => o.sida === 1 && o.lage === 'strid'); if (fi.length && Math.min(...fi.map(o => Math.hypot(o.x - h.x, o.y - h.y))) < A - 0.75) nara++; } else slag++;
+          if (r.h === 'vada') vada++;
+        }
+      });
+      strider++;
+    }
+    return [
+      [`hjälparen kastar sina stenar (${kast} kast i ${strider} strider, ${vada} vådaträffar)`, kast >= strider],
+      [`... från bakom raden: ${nara} kast närmare än ${(A - 0.75).toFixed(2)} rutor från en fiende`, nara <= kast * 0.1],
+      [`hjälparen går aldrig fram i närstrid (${slag} slag)`, slag === 0],
+    ];
+  },
+};
