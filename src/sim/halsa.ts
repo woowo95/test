@@ -213,7 +213,7 @@ const SKADA: Record<SkadaTyp, SkadaDef> = SKADOR;
 // en skada: del, typ, grad (0–1, sjunker när den läker) och blödningen kvar (1 = som nyss, 0 = levrad).
 // f = ett förband av mossa ligger på, inf = infektionen (0–1; vid 1 dör man), ren = rengjord till den tiden (steg 2.5.2)
 export interface Men { d: Kroppsdel; fel: number; ont: number }
-export interface Skada { n?: number; /* bisticken: antalet stick på delen (steg 10.10.22) */ fT?: number; rh?: 1 | 2; /* rena händer, 2 = tvättade med tvål (steg 12.4.12) */ vardare?: number; d: Kroppsdel; k: SkadaTyp; g: number; b: number; g0?: number; f?: 1 | 2 | 3; inf?: number; ren?: number; fast?: 1; salva?: number; av?: number; sydd?: 1; drog?: number; infNotis?: number; oppet?: 1; satt?: 1; snett?: 1; t0?: number; spala?: 1; gled?: 1 /* benet gled utan spjäla (steg B.36) */; smuts?: 1 /* vapnet eller käften var blodig (steg 15.1.105) */; mot?: number; r?: number /* motståndet mot infektionen och infektionens takt (steg 15.1.106) */ } // benbrottet: öppet, satt (9.5.28) eller snett läkt (steg 9.5.27) // drog = vapnet drogs ut och såret blöder mer till den tiden (steg 9.5.21) // f: 1 mossa, 2 en remsa (steg 9.5.15); av = avsnört sedan den tiden, sydd = såret är sytt // salva = läkesalvan på såret, med salvans kvalitet (steg 9.5.10) // fast = ett spjut sitter kvar i såret (steg 3.7.7)
+export interface Skada { n?: number; /* bisticken: antalet stick på delen (steg 10.10.22) */ fT?: number; rh?: 1 | 2; /* rena händer, 2 = tvättade med tvål (steg 12.4.12) */ vardare?: number; d: Kroppsdel; k: SkadaTyp; g: number; b: number; g0?: number; f?: 1 | 2 | 3; inf?: number; ren?: number; fast?: 1; salva?: number; av?: number; sydd?: 1; drog?: number; infNotis?: number; oppet?: 1; satt?: 1; snett?: 1; t0?: number; spala?: 1; gled?: 1 /* benet gled utan spjäla (steg B.36) */; smuts?: 1 /* vapnet eller käften var blodig (steg 15.1.105) */; mot?: number; r?: number /* motståndet mot infektionen och infektionens takt (steg 15.1.106) */; o?: Dodsorsak /* dödsorsaken: det som gav såret (steg 15.1.108) */ } // benbrottet: öppet, satt (9.5.28) eller snett läkt (steg 9.5.27) // drog = vapnet drogs ut och såret blöder mer till den tiden (steg 9.5.21) // f: 1 mossa, 2 en remsa (steg 9.5.15); av = avsnört sedan den tiden, sydd = såret är sytt // salva = läkesalvan på såret, med salvans kvalitet (steg 9.5.10) // fast = ett spjut sitter kvar i såret (steg 3.7.7)
 const oppet = (w: Skada) => SKADA[w.k].blod > 0; // ett öppet sår (inte ett benbrott)
 
 // ---------- olyckorna (registret) ----------
@@ -366,10 +366,20 @@ export function tidKvar(p: Person) { const b = blodning(p); return b > 0 ? Math.
 // är blek, 3 = genomblodig när hen inte orkar slåss
 export const blodSyns = (p: Person) => blodSteg(p) >= 1 ? Math.min(3, blodSteg(p) + 1) : blodning(p) > 0 ? 1 : 0;
 // blodet personen förlorar i timmen just nu
+// orsaken till döden av ett sår (steg 15.1.108, Döden): vid blödningen det sår som blöder mest (annars det största), vid
+// kallbranden det mest infekterade. die (liv.ts) skriver orsaken efter sättet ("av blodförlust efter rövarnas anfall")
+const sarBlod = (w: Skada) => SKADA[w.k].blod * w.g * w.b * (w.fast ? HALSA.fastPlugg : 1) * (w.drog !== undefined ? HALSA.draBlod : 1);
+export function sarOrsak(p: Person, satt: Dodsorsak): Dodsorsak | undefined {
+  const sar = p.skador ?? [];
+  if (!sar.length || (satt !== 'blod' && satt !== 'kallbrand')) return undefined;
+  const mest = (f: (w: Skada) => number) => sar.reduce((a, w) => f(w) > f(a) ? w : a);
+  const w = satt === 'kallbrand' ? mest(x => x.inf ?? -1) : sar.some(x => sarBlod(x) > 0) ? mest(sarBlod) : mest(x => x.g);
+  return w.o;
+}
 export function blodning(p: Person) {
   let v = 0;
   const f = p.task?.act === 'strid' ? HALSA.stridBlod : 1;
-  for (const w of p.skador ?? []) v += f * HALSA.blodTim * SKADA[w.k].blod * w.g * w.b * (w.fast ? HALSA.fastPlugg : 1) * (w.drog !== undefined ? HALSA.draBlod : 1); // pluggat av vapnet, mer när det dragits ut (steg 9.5.21)
+  for (const w of p.skador ?? []) v += f * HALSA.blodTim * sarBlod(w); // pluggat av vapnet, mer när det dragits ut (steg 9.5.21)
   return v;
 }
 // hälsan som visas och som valet läser: den gamla hälsan (svält, kyla, törst, sjukdom), blodet och smärtan
@@ -450,10 +460,10 @@ export function skada(s: State, p: Person, d: Kroppsdel, k: SkadaTyp, g: number,
   // en skråma där det redan finns ett likadant öppet sår gör det såret värre, och det blöder igen (steg B.10)
   p.skador ??= [];
   const gammalt = g < HALSA.skrama && k !== 'benbrott' && k !== 'bistick' ? p.skador.find(w => w.d === d && w.k === k && !w.f && w.inf === undefined && !w.fast && w.av === undefined) : undefined;
-  if (gammalt) { gammalt.g = Math.min(1, gammalt.g + g); gammalt.g0 = Math.max(gammalt.g0 ?? 0, gammalt.g); if (SKADA[k].blod > 0) gammalt.b = 1; }
-  else p.skador.push({ d, k, g, b: SKADA[k].blod > 0 ? 1 : 0, g0: g, ...(k === 'benbrott' ? { t0: s.now } : {}) });
+  if (gammalt) { gammalt.g = Math.min(1, gammalt.g + g); gammalt.g0 = Math.max(gammalt.g0 ?? 0, gammalt.g); gammalt.o = dod; if (SKADA[k].blod > 0) gammalt.b = 1; } // såret som blev värre får den nya orsaken (steg 15.1.108)
+  else p.skador.push({ d, k, g, b: SKADA[k].blod > 0 ? 1 : 0, g0: g, o: dod, ...(k === 'benbrott' ? { t0: s.now } : {}) });
   // ett öppet benbrott är ett stort sår dessutom (steg 9.5.27)
-  if (k === 'benbrott' && !HALSA_PROV.grov && rnd(s, 'halsa', p) < HALSA.oppetBrott) { p.skador[p.skador.length - 1].oppet = 1; p.skador.push({ d, k: 'skarsar', g: Math.max(HALSA.storSar, g), b: 1, g0: g }); }
+  if (k === 'benbrott' && !HALSA_PROV.grov && rnd(s, 'halsa', p) < HALSA.oppetBrott) { p.skador[p.skador.length - 1].oppet = 1; p.skador.push({ d, k: 'skarsar', g: Math.max(HALSA.storSar, g), b: 1, g0: g, o: dod }); }
   uppdateraSinnen(p);
   if (SKADA[k].blod > 0 && g >= HALSA.vardFel) { p.ropT = s.now; nyttILarmet(s); } // den skadade ropar på hjälp (steg 9.5.16), och rollerna vid larmet väljs om (steg 9.5.19)
   if (!iStrid && (k === 'skarsar' || k === 'bett') && DEL[d].ute && g >= HALSA.forloraGrad && !HALSA_PROV.grov && rnd(s, 'halsa', p) < HALSA.forloraChans) forlora(s, p, d, k === 'bett' ? 'bets av' : 'höggs av');

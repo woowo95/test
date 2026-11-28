@@ -1,6 +1,6 @@
 // Scenarier för fas 15, grupp 10 av system 15.1 (hälsan: infektionen, motståndet, vården och döden).
 import * as SIM from '../../sim';
-import { SCENARIER } from './hjalp';
+import { SCENARIER, nyInvanare } from './hjalp';
 import { START } from '../kor';
 import { execSync } from 'child_process';
 
@@ -103,6 +103,45 @@ SCENARIER.infmot = {
       [`en sköljning botar rodnaden (${rodnad === undefined ? 'botad' : rodnad.toFixed(2)})`, rodnad === undefined],
       [`febern behöver flera sköljningar (${feber === undefined ? 'botad' : feber.toFixed(2)} kvar av 0,4)`, feber !== undefined && feber < 0.4],
       [`sköljningen hjälper inte i kallbranden (${kall === undefined ? 'botad' : kall.toFixed(2)} från 0,7)`, kall !== undefined && kall > 0.7],
+    ];
+  },
+};
+
+SCENARIER.dodsorsak = {
+  text: 'Steg 15.1.108: dödsorsaken följer såret. Den som förblöder efter ett rövaranfall dog "av blodförlust efter rövarnas anfall" och räknas som stupad: följden, sorgen och räknaren dog av rövare tas från orsaken, och räknaren för blodförlusten står kvar. Den som får kallbrand i ett vargbett dog av kallbrand efter vargarnas bett, och ett sår ur en olycka heter som förut',
+  kor: () => {
+    const s = SIM.createState(6, START);
+    while (SIM.living(s).length < 10) nyInvanare(s, SIM.living(s).length % 2 ? 'm' : 'k', 25);
+    SIM.HALSA_PROV.grov = true;
+    // en vuxen får ett stort sår av rövarna och förblöder
+    const p = vuxen(s);
+    SIM.skada(s, p, 'benV', 'sticksar', 0.9, 'rovare', 'i en strid med rövare', true);
+    let satt: SIM.Dodsorsak | undefined;
+    for (let m = 0; m < 48 * 60 && !satt; m++) { s.now += 60e3; satt = SIM.halsaSteg(s, p, 60); }
+    if (satt) SIM.die(s, p, satt);
+    const stupade = SIM.living(s).filter(q => q.upp?.some(u => u.k === 'stupade')).length;
+    // ett vargbett som fått kallbrand
+    const q = SIM.living(s).find(r => r !== p && SIM.ageOf(r, s.now) >= 20)!;
+    SIM.skada(s, q, 'armV', 'bett', 0.2, 'varg', 'i en strid med vargar', true);
+    SIM.skada(s, q, 'benH', 'skarsar', 0.2, 'olycka', 'när hen högg ved');
+    q.skador![0].inf = 0.99; q.skador![0].mot = 0; q.skador![0].r = 1.5; q.skador![1].inf = 0.5;
+    let satt2: SIM.Dodsorsak | undefined;
+    for (let m = 0; m < 10 * 60 && !satt2; m++) { s.now += 60e3; satt2 = SIM.halsaSteg(s, q, 60); }
+    if (satt2) SIM.die(s, q, satt2);
+    // ett sår ur en olycka
+    const o = SIM.living(s).find(r => r !== p && r !== q && SIM.ageOf(r, s.now) >= 20)!;
+    SIM.skada(s, o, 'armV', 'skarsar', 0.9, 'olycka', 'när hen högg ved');
+    let satt3: SIM.Dodsorsak | undefined;
+    for (let m = 0; m < 48 * 60 && !satt3; m++) { s.now += 60e3; satt3 = SIM.halsaSteg(s, o, 60); }
+    if (satt3) SIM.die(s, o, satt3);
+    SIM.HALSA_PROV.grov = false;
+    const st = s.stat ?? {};
+    return [
+      [`den som förblödde efter rövarnas anfall dog ${p.cause}`, satt === 'blod' && p.cause === 'av blodförlust efter rövarnas anfall'],
+      [`räknaren dog av rövare (${st['dog av rövare'] ?? 0}) och dog av blodförlust (${st['dog av blodförlust'] ?? 0}) räknar hen`, (st['dog av rövare'] ?? 0) === 1 && (st['dog av blodförlust'] ?? 0) >= 1],
+      [`de levande fick upplevelsen att ha mist någon i en strid (${stupade})`, stupade > 0],
+      [`kallbranden i vargbettet: dog ${q.cause}`, satt2 === 'kallbrand' && q.cause === 'av kallbrand efter vargarnas bett'],
+      [`såret ur en olycka: dog ${o.cause}`, satt3 === 'blod' && o.cause === 'av blodförlust'],
     ];
   },
 };

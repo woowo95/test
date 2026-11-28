@@ -44,7 +44,7 @@ import { barSmitta, insjukna } from './sjukdom';
 import { nyttILarmet } from './roller';
 import { forlossRisk } from './forlossning';
 import { tanke, tankeText } from './tankar';
-import { HALSA } from './halsa';
+import { HALSA, sarOrsak } from './halsa';
 import { flyttRad, flyttVikt, sattFlyttSkal, type BynsSkal } from './flyttskal';
 
 // ---------- balanstal (regel 8) ----------
@@ -102,7 +102,9 @@ const MEDHAVT: Record<string, number> = { rotter: LIV.medhavd };
 // sorg = familjen och vännerna sörjer på ett sätt som gör dem mer förutseende (upplevelsen sorjde, steg 4.5.4.9). En olycka i ett farligt arbete (OLYCKOR i halsa.ts) pekar hit
 // gud = gudens område som döden hör till (steg 4.1.5); de andra dödsfallen hör till Döden
 // foljd (steg 13.9.3): upplevelsen de levande får av dödsfallet, när foljdNar gäller (en följd som drar en sed tillbaka, foljder i SEDER)
-interface DodDef { text: string; sorg?: true; gud?: GudOmr; foljd?: UpplevelseTyp; foljdNar?: (s: State) => boolean }
+// efter (steg 15.1.108): texten efter sättet när den som dog av blodförlust eller kallbrand fick såret så ("efter rövarnas anfall");
+// då tas följden, guden, sorgen och räknaren från orsaken
+interface DodDef { text: string; sorg?: true; gud?: GudOmr; foljd?: UpplevelseTyp; foljdNar?: (s: State) => boolean; efter?: string }
 const DOD = {
   svalt: { text: 'av svält', gud: 'skord', sorg: true },
   kyla: { text: 'av kyla', gud: 'vintern', sorg: true, foljd: 'frosIhjal', foljdNar: s => amountOf(s, 'ved') >= 1 }, // medan andra hade ved
@@ -120,14 +122,14 @@ const DOD = {
   olycka: { text: 'i en olycka' },
   drunkning: { text: 'under isen', gud: 'vintern', sorg: true }, // genom isen (OLYCKOR_LAGE i halsa.ts, steg 12.1.141)
   barnsang: { text: 'i barnsäng', gud: 'atten' },
-  varg: { text: 'av vargar', gud: 'jakt', sorg: true }, // steg 3.7.1 (varg.ts)
+  varg: { text: 'av vargar', gud: 'jakt', sorg: true, efter: 'efter vargarnas bett' }, // steg 3.7.1 (varg.ts)
   bjorn: { text: 'av en björn', gud: 'jakt', sorg: true }, // steg 6.6.5 (bjorn.ts)
   tornado: { text: 'i en tornado', gud: 'aska' }, // steg 3.8.4 (tornado.ts)
   brand: { text: 'i en eldsvåda', gud: 'elden' },
   bistick: { text: 'av bistick' }, // steg 10.10.22 (halsa.ts binStick) // steg 3.8.5 (brand.ts)
-  rovare: { text: 'av rövare', gud: 'kriget', sorg: true, foljd: 'stupade' }, // steg 4.4.5 (rovare.ts)
+  rovare: { text: 'av rövare', gud: 'kriget', sorg: true, foljd: 'stupade', efter: 'efter rövarnas anfall' }, // steg 4.4.5 (rovare.ts)
   avrattad: { text: 'för sitt brott', gud: 'kriget' }, // dödsstraffet (steg 8.4.8)
-  drap: { text: 'av våld', gud: 'kriget' },
+  drap: { text: 'av våld', gud: 'kriget', efter: 'efter ett slagsmål' },
   forsvunnen: { text: 'på en resa och kom aldrig hem', sorg: true }, // steg 11.5.18 (resa.ts)
   offrad: { text: 'som offer', gud: 'kriget' }, // människooffret (budet, steg 8.6.6) // slagen till döds i ett utbrott (steg 3.2.3, humor.ts)
 } satisfies Record<string, DodDef>;
@@ -151,7 +153,9 @@ function sorjer(s: State, p: Person) {
 export const skuldKrok: { f?: (s: State, p: Person) => void } = {};
 export function die(s: State, p: Person, orsak: Dodsorsak) {
   nyttILarmet(s); // en död: rollerna vid larmet väljs om (steg 9.5.19)
-  const { text: cause, sorg } = DODSORSAKER[orsak], akt = p.task?.act;
+  // den som dog av ett sår dog av det som gav såret (steg 15.1.108): sättet och orsaken ("av blodförlust efter rövarnas anfall")
+  const efterK = sarOrsak(p, orsak), efter = efterK && DODSORSAKER[efterK].efter ? DODSORSAKER[efterK] : undefined;
+  const fd: DodDef = efter ?? DODSORSAKER[orsak], cause = DODSORSAKER[orsak].text + (efter ? ' ' + efter.efter : ''), sorg = fd.sorg, akt = p.task?.act;
   avbryt(s, p); // bördan läggs ner medan hen ännu lever, så att den ärvs
   p.died = s.now; p.cause = cause;
   if (p.vardadAv && s.now - p.vardadAv.t <= HALSA.botDygn * DAY && (p.sjuk || p.skador?.length)) { const v = byId(s, p.vardadAv.id); if (v && alive(v)) handelse(s, v, 'vardDog', p); } // dog i någons vård (steg 12.1.134)
@@ -161,17 +165,16 @@ export function die(s: State, p: Person, orsak: Dodsorsak) {
   const a = Math.floor(ageOf(p, s.now));
   const aText = a < 1 ? 'som spädbarn' : `${a <= 12 ? talOrd(a) : a} år gammal`; // åldern med ord för de små (steg 12.1.120)
   log(s, `${p.name} dog ${cause}, ${aText}.`, 'death', [p.id]); notis(s, 'dod', `${p.name} dog ${cause}, ${aText}.`, [p.id], p.ute === undefined ? { x: Math.floor(p.x), y: Math.floor(p.y) } : undefined);
-  count(s, 'doda'); count(s, 'dog ' + cause); personNara(s, p, `${p.name} dog ${cause}, ${aText}.`, [], 'ont'); /* de som stod hen nära (steg 9.2.107) */ kronikaBer(s, a < 1 ? 'k_dogSpad' : 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a <= 12 ? talOrd(a) : a, nar: orsak === 'olycka' && akt && NAR_AKT[akt] ? `när ${hen(p)} ${NAR_AKT[akt]}` : undefined, sorjer: sorjer(s, p), mor: byId(s, p.mother)?.name ?? 'Modern', partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), ...(n => ({ barn: n, barnOrd: talOrd(n) }))(s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length) });
+  count(s, 'doda'); count(s, 'dog ' + DODSORSAKER[orsak].text); if (efter) count(s, 'dog ' + efter.text); /* räknaren för sättet och för orsaken (steg 15.1.108) */ personNara(s, p, `${p.name} dog ${cause}, ${aText}.`, [], 'ont'); /* de som stod hen nära (steg 9.2.107) */ kronikaBer(s, a < 1 ? 'k_dogSpad' : 'k_dog', p.id, { ...personFalt(p), orsak: cause, alder: a <= 12 ? talOrd(a) : a, nar: orsak === 'olycka' && akt && NAR_AKT[akt] ? `när ${hen(p)} ${NAR_AKT[akt]}` : undefined, sorjer: sorjer(s, p), mor: byId(s, p.mother)?.name ?? 'Modern', partner: (q => q && alive(q) ? q.name : undefined)(byId(s, p.partner)), ...(n => ({ barn: n, barnOrd: talOrd(n) }))(s.people.filter(q => (q.mother === p.id || q.father === p.id) && alive(q)).length) });
   if (p.ute === undefined) nyKvarleva(s, 'kropp', p, p.name); // kroppen ligger kvar där hen dog (steg 8.5.1); den som dör på resan ligger inte på byns karta
   gravgava(s, p); // gravgåvan läggs undan innan arvet (steg 8.5.6)
   skuldKrok.f?.(s, p);
   const dodFarg = fargKrok.dodFarg(s, p); // färgen hen bar, innan kläderna ärvs (steg 13.3.5)
   inherit(s, p); // arvingarna får det hen ägde (arv.ts); efter dödsraden, så att orsaken står före verkan (steg 6.7.5)
   releaseOwner(s, p.id); // det som blev kvar blir byns
-  gudHandelse(s, DODSORSAKER[orsak].gud ?? 'doden', `döden som tog ${p.name}`); // tron söker en gud för det (steg 4.1.5)
+  gudHandelse(s, fd.gud ?? 'doden', `döden som tog ${p.name}`); // tron söker en gud för det (steg 4.1.5)
   if (a >= ALDER.hogAlder) p.fame.push(`Blev ${a} år gammal`);
   uppvaxtDod(s, p); // barnen som miste hen eller såg det (steg 3.1.2)
-  const fd: DodDef = DODSORSAKER[orsak];
   if (fd.foljd && !p.gast && (fd.foljdNar?.(s) ?? true)) for (const q of living(s)) if (q !== p && !q.gast) upplev(s, q, fd.foljd, p.name); // följden för byn (steg 13.9.3)
   rykteDod(s, p); // byn minns hen (steg 3.4.1)
   kunskapDod(s, p); // lärlingen och det som ingen annan kan (steg 4.2.3.4)
