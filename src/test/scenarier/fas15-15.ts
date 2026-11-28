@@ -1,6 +1,6 @@
 // Scenarier för fas 15, grupp 15 (steg 15.1.141–15.1.150).
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, kor, tandEld } from './hjalp';
+import { SCENARIER, klockan, kor, tandEld, testBy } from './hjalp';
 import { START } from '../kor';
 import { foretagBy } from './fas14';
 
@@ -206,6 +206,37 @@ SCENARIER.hagelager = {
       [`lagret växer (${vaxt} gånger) och har ${efterVaxt} rutor i hagen eller på staketet`, vaxt > 0 && efterVaxt === 0],
       [`en ruta inne i hagen hör inte till förrådet (${forrad})`, !forrad],
       [`ett lager i hagen (${fore} rutor) flyttas ut (${efter})`, fore > 0 && efter === 0],
+    ];
+  },
+};
+
+SCENARIER.betevagg = {
+  text: 'Steg 15.1.149: djuren betar inte i väggar. Ett löst djur intill ett hus står aldrig på en vägg under ett dygn (ett år i spelet), när det letar bete som när det strövar',
+  kor: () => {
+    const s = SIM.cloneState(testBy(10, b => SIM.housesOf(b).some(h => h.klar))), W = SIM.W;
+    // en ruta utanför en husvägg, med gräs på väggens ruta
+    let vid: { x: number; y: number } | undefined;
+    for (let i = 0; i < W * SIM.H && !vid; i++) {
+      const x = i % W, y = Math.floor(i / W);
+      if (!SIM.isWall(s, x, y) || SIM.roomAt(s, x + 0.5, y + 0.5)) continue;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!vid && SIM.inMap(x + dx, y + dy) && !SIM.blocked(s, x + dx + 0.5, y + dy + 0.5) && !SIM.roomAt(s, x + dx + 0.5, y + dy + 0.5)) vid = { x: x + dx, y: y + dy };
+    }
+    if (!vid) return [['ett hus med en vägg mot marken', false]];
+    s.tamdjur = []; s.hagar = [];
+    const g = SIM.groundOf(s);
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const x = vid.x + dx, y = vid.y + dy; if (SIM.inMap(x, y)) { g.cover[y * W + x] = 1; if (g.buske) g.buske[y * W + x] = SIM.isWall(s, x, y) ? 1 : 0; } } // gräs och buskar också i väggen
+    const get = SIM.nyttTamdjur(s, 'get', vid.x + 0.5, vid.y + 0.5, undefined, s.now - 3 * SIM.DAY), far = SIM.nyttTamdjur(s, 'far', vid.x + 0.5, vid.y + 0.5, undefined, s.now - 3 * SIM.DAY);
+    let iVagg = 0, at = 0;
+    for (let t = 0; t < 24; t++) {
+      s.now += SIM.HOUR;
+      for (const d of [get, far]) d.hunger = 0.6;
+      SIM.stepHagar(s);
+      for (const d of [get, far]) { if (SIM.blocked(s, d.x, d.y)) iVagg++; }
+      at += (s.stat?.betadeGras ?? 0) + (s.stat?.betadeBuskar ?? 0) > 0 ? 1 : 0;
+    }
+    return [
+      [`djuren betar (${s.stat?.betadeGras ?? 0} gräs, ${s.stat?.betadeBuskar ?? 0} buskar)`, at > 0],
+      [`inget djur står på en vägg (${iVagg} timmar)`, iVagg === 0],
     ];
   },
 };

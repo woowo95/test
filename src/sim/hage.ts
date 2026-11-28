@@ -175,12 +175,13 @@ function slitStaket(s: State, rs: number[], c: number, dt: number) {
 // rutan djuret helst äter på av rutorna rs (geten buskar och ungträd först), eller undefined
 function betesRuta(s: State, d: Tamdjur, rs: number[]) {
   const g = groundOf(s), t = getMap(s.seed).tiles, bete = tamArt(d.art).bete;
+  const fri = (i: number) => !blocked(s, i % W + 0.5, Math.floor(i / W) + 0.5); // inte i en vägg, som strövandet (steg 15.1.149)
   if (bete === 'buskar') {
-    const b = rs.find(i => g.buske?.[i]); if (b !== undefined) return { i: b, slag: 'buske' as const };
-    const u = rs.find(i => g.trees[i] > 0 && g.trees[i] < FOREST); if (u !== undefined) return { i: u, slag: 'trad' as const };
+    const b = rs.find(i => g.buske?.[i] && fri(i)); if (b !== undefined) return { i: b, slag: 'buske' as const };
+    const u = rs.find(i => g.trees[i] > 0 && g.trees[i] < FOREST && fri(i)); if (u !== undefined) return { i: u, slag: 'trad' as const };
   }
   let bi = -1, bc = BAR + HAGE.bett / 2;
-  for (const i of rs) if (t[i] !== T.Vatten && g.cover[i] > bc) { bc = g.cover[i]; bi = i; }
+  for (const i of rs) if (t[i] !== T.Vatten && g.cover[i] > bc && fri(i)) { bc = g.cover[i]; bi = i; }
   return bi >= 0 ? { i: bi, slag: 'gras' as const } : undefined;
 }
 // en timme för ett betesdjur: rymmer genom ett hål, äter i hagen (eller där det strövar) och flyttar sig
