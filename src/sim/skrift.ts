@@ -552,3 +552,6 @@ export function lasKlar(s: State, q: Person, t: Task) {
   count(s, 'last'); count(s, 'last_' + k.slag);
 }
 import { nTools, wearTool } from './agande';
+// det skrivna bladets värde (steg 15.1.35, varde.ts): pergamentet, en dos bläck och skrivandet
+export const bladUr = (k: string): Ur | undefined => k === 'blad' ? { av: { pergament: 1, black: 1 }, min: SKRIFT.skrivMin, ger: 1 } : undefined;
+import type { Ur } from './varde';

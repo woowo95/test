@@ -41,7 +41,7 @@ export const DAGS = balans('dagsarbete', {
   fickMinne: 0.5, // så stor del av den del av lönen man fått som är fjolårets
 });
 // mal: det anställningen gäller (den skadade, eleven). till: den som får lönen när det inte är den anställda själv
-export interface Anst { av: number; arb: string; p: number; lon: number; tim: number; verk: number; mal?: number; del?: string; t: number }
+export interface Anst { av: number; arb: string; p: number; lon: number; verk: number; mal?: number; del?: string; t: number }
 // ett bud: av vill ha antal personer, en timmes vanligt verk är värt tim, och det finns högst timMax timmar att göra. tak: det av kan betala
 export interface LonBud { av: number; antal: number; tim: number; tak: number; timMax?: number; mal?: number; kan?(p: Person): boolean }
 export interface Dagsverk {
@@ -141,7 +141,7 @@ export function anstallDygn(s: State) {
     const annat = par.reduce((m, q) => q.p === p && q.b !== b && (plats.get(q.b) ?? 0) < q.b.antal ? Math.max(m, (q.krav + q.varde) / 2) : m, krav);
     const lon = Math.min(tak, Math.floor(varde + 1e-9), Math.max(1, Math.round(Math.max(annat, (krav + varde) / 2))));
     if (lon < 1 || lon < krav - 1e-9) continue;
-    s.anst.push({ av: b.av, arb, p: p.id, lon, tim: 0, verk: 0, mal: b.mal, del: b.av === BYN ? DAGSVERK[arb].del : undefined, t: s.now });
+    s.anst.push({ av: b.av, arb, p: p.id, lon, verk: 0, mal: b.mal, del: b.av === BYN ? DAGSVERK[arb].del : undefined, t: s.now });
     p.anst = { av: b.av, arb, mal: b.mal, w: lon / Math.max(1, Math.min(vantatVerk(p, arb), b.timMax ?? Infinity)) / ARBETE };
     upptagen.add(p); plats.set(b, (plats.get(b) ?? 0) + 1); kvar.set(kassa, tak - lon);
     count(s, 'anstalld'); count(s, 'anstalld_' + arb);
@@ -149,12 +149,11 @@ export function anstallDygn(s: State) {
   }
 }
 // ---------- arbetet och lönen ----------
-// varje minut (TAKTER): timmarna och verket räknas, och den som inte fick sin lön blir missnöjd
+// varje minut (TAKTER): verket räknas, och den som inte fick sin lön blir missnöjd
 export function lonRakna(s: State, dt: number) {
   for (const a of s.anst ?? []) {
     const p = byId(s, a.p), q = a.arb === 'undervisning' ? byId(s, a.mal) : p;
     if (!p || p.died !== undefined || !DAGSVERK[a.arb]?.gor(s, a, p, p.task)) continue;
-    a.tim += dt / HOUR_S;
     a.verk += dt / HOUR_S * (q?.task ? kunnaFart(s, p, q.task.act, q.task.tool) : 1);
   }
   for (const p of living(s)) if (p.lonObetald) p.missnoje = clamp((p.missnoje ?? 0) + DAGS.miss * p.lonObetald * dt / HOUR_S, 0, 1);

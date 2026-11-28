@@ -226,3 +226,6 @@ export function avlivaKlar(s: State, p: Person, ref?: number) {
 }
 import { handelse } from './rykten';
 import { tanke } from './tankar';
+// mjölkens värde (steg 15.1.34, varde.ts): arbetet att mjölka en get, delat på mjölken den ger
+export const mjolkUr = (k: string): Ur | undefined => k === 'mjolk' ? { av: {}, min: BOSKAP.mjolkMin, ger: tamArt('get').mjolk! } : undefined;
+import type { Ur } from './varde';

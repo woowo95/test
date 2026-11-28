@@ -97,3 +97,7 @@ function omsmidKlar(s: State, p: Person) {
   count(s, 'omsmitt');
   if (forstaGang(s, 'omsmitt')) log(s, `${p.name} smidde om järnskrot till nytt järn.`, 'world', [p.id]);
 }
+// skrotets värde (steg 15.1.35, varde.ts): järnet det smids om till minus arbetet att smida om det, delat på skrotet som går åt.
+// Skrotet görs inte med någon teknik (nivå 0): det är det som blir kvar
+export const skrotUr = (k: string): Ur | undefined => k === 'jarnskrot' ? { av: { jarn: 1 }, min: -JARNSAK.omMin, ger: JARNSAK.omSkrot, niva: 0 } : undefined;
+import type { Ur } from './varde';

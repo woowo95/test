@@ -39,7 +39,7 @@ export const FGAST = balans('foretagsgast', {
   rykte: 0.3, // ett helt gott rykte drar så mycket fler ...
   fin: 0.1, finRykte: 0.6, finInst: 0.2, // ... men gör mest gästerna finare: chansen att gästen är fin
   nara: 1.6, // så nära disken (rutor) ställer sig gästen i kön
-  kop: 4, // så många gånger köper en gäst högst under ett besök (så länge något lockar)
+  kop: 4, // så många gånger köper en gäst högst under ett besök (så länge något lockar), också köp som inte blev av (steg 15.1.56)
   ata: 10, // så länge (minuter) sitter gästen med det hen köpt
   fran: 9, till: 18, // gästen kommer fram under dagen
   moten: 6, // det hen redan haft lockar mindre: 1 / (1 + antalet gånger × moten)
@@ -147,9 +147,12 @@ gastKund.far = (s, f, p, h, n) => {
   kop[h.k] = (kop[h.k] ?? 0) + v; tidy(s);
 };
 gastKund.at = (_s, p, k) => ata(p, { [k]: KROPP.mattar });
+// varje köp vid disken räknas mot FGAST.kop, också det som föll för att varan aldrig kom fram (steg 15.1.56): annars ställer sig
+// gästen i kön igen och igen för samma vara
+gastKund.forsok = (_s, p) => { const g = p.gast!; g.gjort = (g.gjort ?? 0) + 1; };
 gastKund.klar = (s, p, v, sitter) => {
   const g = p.gast!;
-  (g.haft ??= {})[v] = (g.haft[v] ?? 0) + 1; g.gjort = (g.gjort ?? 0) + 1;
+  (g.haft ??= {})[v] = (g.haft[v] ?? 0) + 1;
   if (g.gor === 'sover') { p.task = undefined; return; } // bädden hen köpt (verksamheter.ts)
   if (sitter) { const q = ledigPlats(s, p); g.gor = 'ater'; g.till = s.now + FGAST.ata * MIN; g.vx = q?.x ?? p.x; g.vy = q?.y ?? p.y; } else g.gor = undefined;
   p.task = undefined;

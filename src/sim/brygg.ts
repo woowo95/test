@@ -4,7 +4,7 @@
 // satsen är klar silas den och hälls upp i stora lerkrukor, och karet är tomt igen. Vinet och ölet är rader i VATSKOR
 // (vatskor.ts) och står i krukorna, där vinet blir bättre med tiden (MOGNAD i tunna.ts). Registret BRYGD har en rad per dryck.
 import { balans } from './balans';
-import { isFood } from './saker';
+import { SAKER, isFood } from './saker';
 import { foodDays } from './ekonomi';
 import { buffert, villHaAv, Materialslag } from './forradsmal';
 import { count, forstaGang, gjort, log } from './folk';
@@ -174,3 +174,23 @@ import { amountOf } from './lager';
 import { brannKrok, eldKan, stationBrinner } from './stationseld';
 import { specialSats } from './special';
 import { ageIndex } from './tid';
+
+// ---------- vätskornas värde (steg 15.1.34, varde.ts) ----------
+// en vätska är värd det den görs av och arbetet, som en sak man gör: raden i TILLVERKA som ger den (saften, teet, buljongen),
+// satsen i bryggkaret (BRYGD) och bränningen (spriten ur vinet, en sprit per bränning; den vane får två). Det som görs av en
+// vätska (osten av mjölken) räknar vätskan bland sitt material. Vattnet och snön är inget arbete och värda inget; mjölken
+// står i boskap.ts. Vätskor som också är saker (tjäran, salvan, limmet, brännoljan) har sitt värde som sak, och mognaden
+// lägger sitt värde ovanpå (mognadVarde i tunna.ts)
+const vatskeUr = new Map<string, Ur | undefined>();
+export function vatskaUr(k: string): Ur | undefined {
+  if (vatskeUr.has(k)) return vatskeUr.get(k);
+  let u: Ur | undefined;
+  const t = Object.values(TILLVERKA).find(d => d.ger === k && (!SAKER[k] || d.vatska));
+  if (t) u = { av: { ...t.av, ...(t.eller ? { [t.eller.av[0]!]: t.eller.n } : {}), ...(t.vatska ? { [t.vatska.v]: t.vatska.n } : {}) }, min: t.min, ger: t.n, tek: t.tek };
+  else if (k === 'sprit') u = { av: { vin: BRYGG.brannVin }, min: BRYGG.brannMin + BRYGG.tappMin, ger: 1, tek: 'sprit' };
+  else if (BRYGD[k]) u = { av: BRYGD[k]!.av, min: BRYGG.prepMin + BRYGG.tappMin, ger: BRYGD[k]!.ger, tek: BRYGD[k]!.tek };
+  vatskeUr.set(k, u);
+  return u;
+}
+import type { Ur } from './varde';
+import { TILLVERKA } from './tillverka';

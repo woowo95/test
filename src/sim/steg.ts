@@ -1866,7 +1866,7 @@ function glomDod(s: State, p: Person) {
 import { SYRA, bakaKlar, gropKlar, kokaKlar, stekaKlar, stepBak, stepKok } from './matlagning';
 import { stepStationsEld } from './stationseld';
 import { vatskorTimme } from './vatskor';
-import { brannKlar, bryggKlar, maltaKlar, stepBrygg } from './brygg';
+import { brannKlar, bryggKlar, maltaKlar, stepBrygg, vatskaUr } from './brygg';
 import { rusSteg } from './rus';
 import { latrinTomKlar, soporKlar, stepKompost, stepSophog } from './rester';
 import { skrammaKlar, staketKlar } from './odling';
@@ -1891,7 +1891,7 @@ function vildNara(s: State, k: VildOrt, x: number, y: number, ar = VAXTAR) {
 import { blommaVill, krukaNer, krukaUpp, ortPlockaKlar, ortSattaKlar, stepOrtKrukor } from './kruka';
 import { mataKlar, stepTamdjur } from './tamdjur';
 import { hageKlar, stepHagar, vallaKlar } from './hage';
-import { avlivaKlar, klippKlar, mjolkaKlar, stepBoskap } from './boskap';
+import { avlivaKlar, klippKlar, mjolkUr, mjolkaKlar, stepBoskap } from './boskap';
 import { tatKlar } from './tatuering';
 import { barGillad, fargaKlar, FARG, stepFargsmak } from './farg';
 import { tjaraKlar } from './tjara';
@@ -1904,6 +1904,9 @@ import { stepHons } from './hons';
 import { baddVila, bredvidKaresta, iDass, sittVila, sattaKlar } from './mobler';
 import { mognadSteg, mognadVarde, tunnaRegn } from './tunna';
 import { vardeKrok } from './varde';
+import { skrotUr } from './jarnsaker';
+import { bladUr } from './skrift';
+vardeKrok.ur = k => vatskaUr(k) ?? mjolkUr(k) ?? skrotUr(k) ?? bladUr(k); // det som har sitt recept i systemets egen fil: vätskorna (steg 15.1.34), skrotet och bladet (steg 15.1.35)
 vardeKrok.inne = mognadVarde; // en mognad dryck är värd mer (steg 12.4.6): tunna.ts läses före varde.ts
 import { surnarSnart } from './vatskor';
 ostKrok.surnar = s => surnarSnart(s, 'mjolk'); // mjölken som annars skulle surna ystas (steg 12.4.7)

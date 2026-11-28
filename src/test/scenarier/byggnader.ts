@@ -2021,7 +2021,7 @@ SCENARIER.lon = {
       SIM.lonRakna(s, tim * 3600);
     };
     const gorUpp = () => { // samma tre anställda varje år, så att betalningen prövas för sig
-      s.anst = [['vakt', vakt], ['forradet', barare], ['forradet', lat]].map(([arb, p]) => ({ av: BYN, arb: arb as string, p: (p as typeof vakt).id, lon: 5, tim: 0, verk: 0, del: arb === 'vakt' ? 'vakter' : 'forradet', t: s.now }));
+      s.anst = [['vakt', vakt], ['forradet', barare], ['forradet', lat]].map(([arb, p]) => ({ av: BYN, arb: arb as string, p: (p as typeof vakt).id, lon: 5, verk: 0, del: arb === 'vakt' ? 'vakter' : 'forradet', t: s.now }));
       for (const a of s.anst) SIM.byId(s, a.p)!.anst = { av: BYN, arb: a.arb, w: 0.5 };
     };
     // före lagen anställer byn ingen
@@ -2147,7 +2147,7 @@ SCENARIER.forsorjning = {
     medLagar(s, [{ id: 'skatt', t: s.now - 3 * DAY, straff: 4, av: g.id, om: '' }, { id: 'lon', t: s.now, straff: 0, av: g.id, om: '' }]);
     s.budget = { delar: [{ id: 'forradet', vikt: 1 }] };
     setAmount(s, 'silver', 0); put(s, 'silver', 20);
-    s.anst = [{ av: BYN, arb: 'forradet', p: c.id, lon: 5, tim: 10, verk: 10, del: 'forradet', t: s.now }];
+    s.anst = [{ av: BYN, arb: 'forradet', p: c.id, lon: 5, verk: 10, del: 'forradet', t: s.now }];
     const g0 = SIM.ownsAmount(s, g, 'silver');
     SIM.budgetDygn(s); SIM.lonDygn(s);
     const tillForalder = SIM.ownsAmount(s, g, 'silver') - g0, tillBarn = SIM.ownsAmount(s, c, 'silver');

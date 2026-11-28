@@ -139,8 +139,8 @@ const DEF = {
   vitskinn: { namn: 'Vitt harskinn', ett: true, skaffa: RECEPT.vitskinn, stack: 30, mapp: 'Material', slits: 0.0006 }, // harens vinterpäls (steg 10.7.22): en hare som slaktas under istiden
   vargkott: { namn: 'Vargkött', ett: true, skaffa: RECEPT.vargkott, stack: 25, ruta: 75, mapp: 'Mat', mat: 2, naring: { protein: 2, fett: 1.2, energi: 0.8, mineral: 0.6, vitamin: 0.3 }, ra: true, haller: 2 },
   vargskinn: { namn: 'Vargskinn', ett: true, skaffa: RECEPT.vargskinn, stack: 5, mapp: 'Material', slits: 0.0006 },
-  slaktfar: { vikt: 12, namn: 'Slaktat får', ett: true, varde: 20, stack: 1, mapp: 'Material', haller: 3 }, slaktget: { vikt: 12, namn: 'Slaktad get', varde: 20, stack: 1, mapp: 'Material', haller: 3 }, slaktko: { vikt: 40, namn: 'Slaktad ko', varde: 50, stack: 1, mapp: 'Material', haller: 3 }, // steg 9.8.7: ett tamdjur som avlivats, slaktas vid slaktbänken som viltet
-  djurhorn: { namn: 'Djurhorn', ett: true, varde: 2, stack: 20, vikt: 0.2, mapp: 'Material' }, fiskrens: { namn: 'Fiskrens', stack: 25, ruta: 50, mapp: 'Material', haller: 2 }, // steg 9.8.7: hornen från fåren och getterna, och fiskrensen som blir agn
+  slaktfar: { vikt: 12, namn: 'Slaktat får', ett: true, stack: 1, mapp: 'Material', haller: 3 }, slaktget: { vikt: 12, namn: 'Slaktad get', stack: 1, mapp: 'Material', haller: 3 }, slaktko: { vikt: 40, namn: 'Slaktad ko', stack: 1, mapp: 'Material', haller: 3 }, // steg 9.8.7: ett tamdjur som avlivats, slaktas vid slaktbänken som viltet
+  djurhorn: { namn: 'Djurhorn', ett: true, skaffa: RECEPT.djurhorn, stack: 20, vikt: 0.2, mapp: 'Material' }, fiskrens: { namn: 'Fiskrens', stack: 25, ruta: 50, mapp: 'Material', haller: 2 }, // steg 9.8.7: hornen från fåren och getterna, och fiskrensen som blir agn
   radjur: { vikt: 15, namn: 'Fällt rådjur', ett: true, skaffa: { act: 'jakt' }, stack: 1, mapp: 'Material', haller: 3 }, // steg 6.6.2: en full famn, som vargen
   fagel: { namn: 'Fälld fågel', skaffa: { act: 'jakt' }, stack: 5, vikt: 8, ruta: 20, mapp: 'Mat', mat: 1, naring: { protein: 2, fett: 0.8, energi: 0.7, mineral: 0.5, vitamin: 0.3 }, ra: true, haller: 2 }, // steg 6.6.3: orre, ripa eller skogsduva, samma sak
   fjadrar: { namn: 'Fjädrar', skaffa: RECEPT.fjadrar, stack: 50, mapp: 'Material' }, // steg 6.6.3: från fåglarna, till pilar och prydnader senare
@@ -183,10 +183,10 @@ const DEF = {
   mara: { namn: 'Måra', skaffa: { act: 'samla' }, stack: 25, vikt: 0.1, mapp: 'Material' },
   vejde: { namn: 'Vejde', skaffa: { tid: 0.25, tek: 'fargning' }, stack: 25, vikt: 0.2, mapp: 'Material' },
   vejdefron: { namn: 'Vejdefrön', skaffa: { tid: 0.25, tek: 'fargning' }, stack: 25, vikt: 0.05, mapp: 'Material' },
-  krapp: { namn: 'Krapp', skaffa: { tid: 0.5, sallsynt: true }, stack: 25, vikt: 0.1, mapp: 'Material' }, // roten kommer från söder, med handlarna
+  krapp: { namn: 'Krapp', varde: 2, skaffa: { tid: 0.5, sallsynt: true }, stack: 25, vikt: 0.1, mapp: 'Material' }, // roten kommer från söder, med handlarna, och har ett fast värde som saltet (steg 15.1.35)
   trad: { namn: 'Lintråd', skaffa: RECEPT.trad, stack: 25, vikt: 0.1, mapp: 'Material' }, // steg 7.7.8
   lintyg: { namn: 'Lintyg', ett: true, skaffa: RECEPT.lintyg, stack: 10, vikt: 0.5, mapp: 'Material' }, // steg 7.7.9
-  vargtand: { namn: 'Vargtand', skaffa: { tid: 0.1 }, stack: 25, vikt: 0.05, mapp: 'Material' }, // steg 7.7.5
+  vargtand: { namn: 'Vargtand', skaffa: RECEPT.vargtand, stack: 25, vikt: 0.05, mapp: 'Material' }, // steg 7.7.5
   leksak: { namn: 'Leksak', skaffa: RECEPT.leksak, stack: 10, vikt: 0.2, mapp: 'Redskap' }, // steg 7.5.4
   snara: { namn: 'Snara', skaffa: RECEPT.snara, stack: 5, vikt: 0.2, mapp: 'Redskap' }, // steg 7.5.10
   bur: { namn: 'Bur', skaffa: RECEPT.bur, stack: 1, vikt: 1, mapp: 'Redskap' }, // steg 10.10.13
@@ -313,7 +313,7 @@ const DEF = {
   appel: { namn: 'Äpplen', skaffa: { tid: 0.3, tek: 'odling' }, stack: 25, ruta: 75, mapp: 'Mat', mat: 3.8, naring: { vitamin: 1.6, energi: 0.9, mineral: 0.3 }, haller: 8 }, // steg 9.7.13
   ull: { namn: 'Ull', varde: 3, stack: 20, vikt: 0.2, mapp: 'Material' }, // klipps av fåren (steg 9.8.5, boskap.ts)
   levfar: { namn: 'Levande får', levande: true, ett: true, varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levget: { namn: 'Levande get', levande: true, varde: 25, stack: 1, vikt: 0, mapp: 'Material' }, levko: { namn: 'Levande ko', levande: true, varde: 60, stack: 1, vikt: 0, mapp: 'Material' }, // kon (steg 10.10.1)
-  levoxe: { namn: 'Levande oxe', levande: true, varde: 50, stack: 1, vikt: 0, mapp: 'Material' }, levhast: { namn: 'Levande häst', levande: true, varde: 80, stack: 1, vikt: 0, mapp: 'Material' }, kulting: { namn: 'Kulting', levande: true, varde: 10, stack: 1, vikt: 0, mapp: 'Material' }, slaktgris: { vikt: 15, namn: 'Slaktad gris', varde: 25, stack: 1, mapp: 'Material', haller: 3 }, // grisen (steg 10.10.13) // dragdjuren (steg 10.10.3)
+  levoxe: { namn: 'Levande oxe', levande: true, varde: 50, stack: 1, vikt: 0, mapp: 'Material' }, levhast: { namn: 'Levande häst', levande: true, varde: 80, stack: 1, vikt: 0, mapp: 'Material' }, kulting: { namn: 'Kulting', levande: true, varde: 10, stack: 1, vikt: 0, mapp: 'Material' }, slaktgris: { vikt: 15, namn: 'Slaktad gris', stack: 1, mapp: 'Material', haller: 3 }, // grisen (steg 10.10.13) // dragdjuren (steg 10.10.3)
   levhons: { namn: 'Höna', levande: true, varde: 4, stack: 20, vikt: 0, mapp: 'Material' }, // köps av handlaren och blir ett djur (steg 9.8.5)
   appelplanta: { namn: 'Äppelplanta', varde: 2, stack: 10, vikt: 0.5, mapp: 'Material', haller: 20 },
   bivax: { namn: 'Bivax', ett: true, varde: 2, stack: 30, vikt: 0.2, mapp: 'Material' }, // de tomma vaxkakorna som skärs bort när bikupan skattas (steg 10.10.20): blir vaxljus
@@ -368,7 +368,7 @@ const DEF = {
   // dryckeshornet (steg 13.4.1, rus.ts): den som dricker öl, mjöd eller vin dricker ur sitt eget horn eller byns, och hornet slits för varje dryck
   dryckeshorn: { namn: 'Dryckeshorn', ett: true, skaffa: RECEPT.dryckeshorn, vikt: 0.3, stack: 1, mapp: 'Redskap', redskap: true, trasig: { stat: 'dryckeshornTrasiga', text: '{namn}s dryckeshorn sprack.' },
     gors: { text: 'Skrapar ur ett djurhorn till ett dryckeshorn.', stat: 'dryckeshornGjorda', forsta: '{namn} gjorde byns första dryckeshorn av ett djurhorn.' } },
-  jarnpilar: { namn: 'Järnpilar', skaffa: RECEPT.jarnpilar, vikt: 0.1, stack: 20, mapp: 'Redskap' }, // steg 13.4.2: skadar mer än flintpilen, och skytten tar dem först (strid.ts)
+  jarnpilar: { namn: 'Järnpilar', grupp: 'pilar', rang: 1, skaffa: RECEPT.jarnpilar, vikt: 0.1, stack: 20, mapp: 'Redskap' }, // steg 13.4.2: skadar mer än flintpilen, och skytten tar dem först (strid.ts)
 } satisfies Record<string, SakDef>;
 
 type Sak = keyof typeof DEF;
