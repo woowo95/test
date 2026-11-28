@@ -3622,6 +3622,8 @@ SCENARIER.lagervapen = {
     const ater = { ...L.stulet, ...L.vapen };
     tomt(); SIM.radLaggTill(L, 'redskap', 40);
     const v3 = vapen(gang(5, L)), red = SIM.radHar(L, 'redskap');
+    tomt(); SIM.radTar(L, 'ringbrynja_jarn', 1); SIM.radTar(L, 'jarnhjalm_jarn', 1); // steg 15.1.178: det bästa skyddet ur registret
+    const g4 = gang(3, L), brynja = g4.filter(p => SIM.gastTingOf(s, p).some(t => t.k === 'ringbrynja_jarn')).length, jhjalm = g4.filter(p => SIM.gastTingOf(s, p).some(t => t.k === 'jarnhjalm_jarn')).length;
     L.tal.folk = 6; L.tal.styrka = 6;
     const storst = SIM.flockStorlek(L, 0, vl.rader!.find(r => r.nr === vl.huvud)!);
     const vB = vapen(gang(6, by));
@@ -3632,6 +3634,7 @@ SCENARIER.lagervapen = {
       [`det bästa tas först, och hjälmen (${v2.join(', ')}, ${s2} skydd; kvar ${Object.keys(kvar).length})`, v2[0] === 'svard' && v2[1] === 'kniv' && s2 === 1 && !Object.keys(kvar).length],
       [`vapnen som kom hem är lägrets igen (${Object.entries(ater).map(([k, n]) => `${n} ${k}`).join(', ')})`, ater.svard === 1 && ater.kniv === 1 && ater.hjalm_lader === 1],
       [`varorna räcker till några (${v3.join(', ')}; ${red} kvar)`, v3.some(k => k !== 'sten') && red < 40],
+      [`en stulen ringbrynja och järnhjälm bärs av en rövare (${brynja} brynja, ${jhjalm} hjälm; först i LAGERSKYDD: ${SIM.LAGERSKYDD.map(l => l[0]).join(', ')})`, brynja === 1 && jhjalm === 1 && SIM.LAGERSKYDD[0][0] === 'ringbrynja_jarn' && SIM.LAGERSKYDD[1][0] === 'jarnhjalm_jarn'],
       [`gänget är inte fler än lägrets folk (${storst} av 6)`, storst <= 6],
       [`gänget från en by får vapen som förut (${vB.join(', ')})`, vB.some(k => k !== 'sten') && vB.every(k => k !== 'sten')],
       ['flocken vet vilket läger den kom från', namnet],

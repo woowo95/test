@@ -6,7 +6,8 @@
 import { GASTUTRUSTNING, gastAv, gastTingOf, LAGERKROK } from './gast';
 import { gruppAv, radHar, radTar, radTaUr } from './priser';
 import { SAKER } from './saker';
-import { VAPEN, VAPEN_LIST } from './strid';
+import { kladAv, PLAGG } from './klader';
+import { SKYDD, VAPEN, VAPEN_LIST } from './strid';
 import type { VarldRad } from './radtal';
 import type { Person, State } from './typer';
 import { grundvarde } from './varde';
@@ -14,9 +15,13 @@ import { grundvarde } from './varde';
 // vapnen en rövare kan bära, det bästa först (slagets skada, eller kastets för det som mest kastas eller skjuts), och skydden, ett av varje slag
 const styrka = (k: string) => { const v = VAPEN[k as keyof typeof VAPEN] as { skada: number; kast?: { skada: number } }; return Math.max(v.skada, v.kast?.skada ?? 0); };
 export const LAGERVAPEN = VAPEN_LIST.filter(k => k !== 'sten' && SAKER[k]?.redskap).sort((a, b) => styrka(b) - styrka(a)) as string[];
-export const LAGERSKYDD: readonly (readonly string[])[] = [['rustning_lader'], ['hjalm_lader'], ['jarnskold', 'skold']];
-const SKYDD = LAGERSKYDD.flat();
-export const arVapen = (k: string) => LAGERVAPEN.includes(k) || SKYDD.includes(k);
+// skydden ur registret (steg 15.1.178): för kroppen och huvudet de plagg i SKYDD (strid.ts) som rustningen eller vapensmidet gör,
+// det som tar mest först, och sist sköldarna
+const skyddSumma = (k: string) => Object.values(SKYDD[k].tar).reduce((a, b) => a + (b ?? 0), 0);
+const skyddPa = (plats: string) => Object.keys(SKYDD).filter(k => { const r = kladAv(k), pl = r && PLAGG[r.plagg]; return !!pl && pl.plats === plats && (pl.tek === 'rustning' || pl.tek === 'vapensmide'); }).sort((a, b) => skyddSumma(b) - skyddSumma(a));
+export const LAGERSKYDD: readonly (readonly string[])[] = [skyddPa('yttre'), skyddPa('huvud'), ['jarnskold', 'skold']];
+const ALLA_SKYDD = LAGERSKYDD.flat();
+export const arVapen = (k: string) => LAGERVAPEN.includes(k) || ALLA_SKYDD.includes(k);
 // det en rövare brukar ha (utan null och facklan): bara det görs ur lägrets varor
 const vanliga = (v: [string | null, number][]) => v.flatMap(([k]) => k ? [k] : []);
 const pris = (k: string) => Math.max(1, Math.round(grundvarde(k)));
