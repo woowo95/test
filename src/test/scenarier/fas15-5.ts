@@ -46,6 +46,7 @@ SCENARIER.barnnatt = {
 };
 
 SCENARIER.byggbehov = {
+  lang: true,
   text: 'Steg 15.1.47: spärren för att försöka planera igen gäller varje byggbehov och ägare för sig. En by som saknar en sovplats planerar sovsalen strax efter att ett annat bygge blivit klart, fast ett annat behov just fick vänta, och skälet "Alla har inte en sovplats" sägs bara vid ett hus som ger en sovplats',
   kor: () => {
     const s = SIM.createState(8, START); klockan(s); byggare(s); tandEld(s); tandOchFlinta(s); SIM.setAmount(s, 'ved', 200); for (const k of ['torrgras', 'grenar', 'flinta', 'sten'] as const) SIM.setAmount(s, k, 60); SIM.setAmount(s, 'yxa', 6); SIM.setAmount(s, 'virke', 300); setMat(s, { torrkott: 400 }); for (const p of SIM.living(s)) SIM.put(s, 'torrkott', 60, { [p.id]: 60 }); SIM.stepBehov(s);
