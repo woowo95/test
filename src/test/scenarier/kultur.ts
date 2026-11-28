@@ -666,7 +666,8 @@ SCENARIER.kyrkfram = {
       blixtTro(s, u, { sprid, prast: 50, oppen: 50 });
       for (const q of vuxna(s)) { q.tro = 1; q.troStyrka = 80; q.andlig = 90; }
       const tr = s.tron![0]!, k = SIM.kyrkaId(1);
-      SIM.put(s, 'bar', 5, { [k]: 5 }); SIM.put(s, 'sten', 3, { [k]: 3 });
+      // kyrkans saker läggs i förrådet: maten under lyxtaket, så att bären inte hamnar utanför lagret (steg 15.1.45)
+      setFood(s, 30); SIM.put(s, 'bar', 5, { [k]: 5 }); SIM.put(s, 'sten', 3, { [k]: 3 });
       return tr;
     };
     // omröstningen: med Sprider sig är framträdandet det som väger tyngst, med Ärvs finns det inte
