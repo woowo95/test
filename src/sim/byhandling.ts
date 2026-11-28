@@ -25,7 +25,7 @@ import { KOHANDELSER, laggIKo, periodSlut } from './varldslag';
 import { byPlats } from './landmarken';
 import { trampaFard, sallskapTyngd } from './leder';
 import { sparadVag, vagRutor } from './vagval';
-import { anfallUtfall, BYANFALL, enhet, flockStorlek, forsvarare, lockVarde, vinstChans } from './radanfall';
+import { anfallUtfall, BYANFALL, enhet, flockStorlek, forsvarare, lockVarde, radKraft, vinstChans } from './radanfall';
 import { varldHandelse } from './varldkronika';
 import { flockKrok } from './rovare';
 import { radKommer } from './rader';
@@ -78,7 +78,7 @@ export interface ByHandlingDef { namn: string; poang: (c: ByCtx) => number; gor:
 // en egenskap hos ledaren från 0 till 1 (en by utan känd ledare är mitt emellan)
 export const ledDrag = (c: ByCtx, k: Stat) => ((c.led?.[k] ?? 10.5) - 1) / 19;
 // hur mycket starkare grannen är, mellan 1/radsla och radsla
-const radsla = (c: ByCtx) => clamp((c.mot.tal.styrka + 1) / (c.r.tal.styrka + 1), 1 / BYHANDLING.radsla, BYHANDLING.radsla);
+const radsla = (c: ByCtx) => clamp((radKraft(c.mot) + 1) / (radKraft(c.r) + 1), 1 / BYHANDLING.radsla, BYHANDLING.radsla); // stridsvärdet (steg 15.1.152)
 
 export const BYHANDLINGAR = {
   // gåvan (steg 11.6.14): byn ger bort det den har mest över till en granne den vill stå väl med, mer av en ledare med
@@ -492,6 +492,7 @@ function anfallFram(s: State, vl: Varlden, f: RadFard, r: VarldRad, mot: VarldRa
 function huvudAnfall(s: State, f: RadFard, r: VarldRad) {
   const fl = radKommer(s, r.syn, f.anfall!, undefined, Array.from({ length: f.anfall! }, (_, i) => fardPerson(s.varld!, f, i)), r);
   fl.fard = f.id;
+  const h = radNr(s.varld!, s.varld!.huvud); if (h) fl.chans = vinstChans(r, h, f.anfall!); // det världen räknade med, för npm run strid (steg 15.1.152)
   count(s, 'varldsanfall');
 }
 // flocken är borta från huvudbyns karta: de som inte kom hem är döda, och det de bar går hem till byn

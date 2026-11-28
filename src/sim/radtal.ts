@@ -1,7 +1,7 @@
 // ---------- raden i tal (steg 11.2.9, Flera samhällen: Raden i tal) ----------
 // En by i världen är en rad med hela tal. Registret RADTAL säger hur varje tal läses ur en by som går i simuleringen: folket
 // (byborna, också de som är borta), maten i portioner (en vuxens måltid är en portion), rikedomen (samma mått som byns rikedom),
-// silvret i förrådet och styrkan (de vuxna i byn som kan slåss, samma som försvaret räknar). Huvudbyn har därför också en rad, som skrivs
+// silvret i förrådet, styrkan (de vuxna i byn som kan slåss, samma som försvaret räknar) och stridsvärdet (summan av deras stridsvärden, steg 15.1.152). Huvudbyn har därför också en rad, som skrivs
 // en gång i timmen ur byn (en rad i TAKTER), och en väckt by skrivs senare tillbaka på samma sätt. Att läsa raden ändrar inget i
 // byn och drar inget ur dess slump.
 import { alive, living } from './folk';
@@ -12,6 +12,7 @@ import { ledareOf } from './styre';
 import { knows, TEKNIK } from './teknik';
 import { amountOf, foodOf } from './lager';
 import { vuxenKan } from './rovare';
+import { stridsvarde } from './strid';
 import { Person, State } from './typer';
 import { rikedom } from './varde';
 
@@ -22,6 +23,7 @@ export const RADTAL = {
   rikedom: { namn: 'Rikedom', las: s => Math.round(rikedom(s)) },
   silver: { namn: 'Silver', las: s => Math.floor(amountOf(s, 'silver')) },
   styrka: { namn: 'Styrka', las: s => living(s).filter(p => vuxenKan(s, p)).length },
+  kraft: { namn: 'Stridsvärde', las: s => Math.round(living(s).filter(p => vuxenKan(s, p)).reduce((a, p) => a + stridsvarde(s, p), 0)) }, // de vuxnas stridsvärden med det de bär (steg 15.1.152)
 } as const satisfies Record<string, RadtalDef>;
 export type RadtalId = keyof typeof RADTAL;
 export const RADTAL_IDS = Object.keys(RADTAL) as RadtalId[];

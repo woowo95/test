@@ -8,7 +8,12 @@
 // knappt en av hundra som är med när rövare kommer, och den som är fler vinner nästan alltid. Vem som anfaller och varför står i BYHANDLINGAR
 // (plundringen i byhandling.ts); det här är bara uträkningen.
 import { balans } from './balans';
-import { RAD, tekTillskott } from './rad';
+import { lever } from './rad';
+import { MANNISKOVAPEN, MITTKROPP, SKYDD, stridsvardeAv, TVA_HAND, type SvKampe, type Vapen } from './strid';
+import { SAKER } from './saker';
+import { grundvarde } from './varde';
+import { kladAv, PLAGG } from './klader';
+import { EFTERSTEG } from './varldslag';
 import { radHar, RADPRIS, VARUGRUPP_IDS, VarugruppId } from './priser';
 import { VarldRad } from './radtal';
 import { antalUr } from './varldslag';
@@ -17,8 +22,8 @@ export const BYANFALL = balans('byanfall', {
   skicka: 0.6, // så stor del av byns styrka går med ett anfall ...
   minst: 3, // ... och minst så många (har byn färre anfaller den inte)
   hemma: 1.5, // försvararnas skydd: de slåss hemma, vid husen och med det de har till hands
-  rikVikt: 0.3, // utrustningen ur rikedomen: så mycket mer per RAD.rikPer per person ...
-  rikTak: 1, // ... högst så många RAD.rikPer
+  utrDel: 1.5, // utrustningen var och en har (steg 15.1.152): vapen och skydd värda högst så många gånger rikedomen per person
+  antalVikt: 1.2, // en flocks styrka är värdet per person gånger antalet upphöjt till detta: många kan gå flera mot en
   dod: 0.03, // så stor del av förlorarna dör (de flesta flyr eller skadas, som i testbyarnas strider med rövare)
   dodVinnare: 0.005, // så stor del av vinnarna dör
   bar: 10, // så mycket (i grundvärde) bär varje överlevande anfallare hem
@@ -29,17 +34,68 @@ export const BYANFALL = balans('byanfall', {
   lockMer: 0.25,
 });
 
-// utrustningen per person: teknikernas styrka (vapen, sköld) och rikedomen
-export const anfallUtr = (r: VarldRad) => 1 + tekTillskott(r, 'styrka') + Math.min(BYANFALL.rikTak, r.tal.rikedom / Math.max(1, r.tal.folk) / RAD.rikPer) * BYANFALL.rikVikt;
+// ---------- stridsvärdet i världen (steg 15.1.152, Striden i detalj: Stridsvärdet, Rikedomen lockar) ----------
+// En by i världen har ett stridsvärde per person: en person med mittersta kropp och det bästa vapnet och skyddet som byns
+// tekniker kan göra och byns rikedom per person räcker till (STRIDSVARDE i strid.ts). En flocks styrka är värdet per person gånger
+// antalet upphöjt till BYANFALL.antalVikt, och chansen att vinna är den egna styrkan i kvadrat delad med båda sidornas
+// kan byn göra saken k: tekniken finns, och det den görs av kan byn också göra (eller samla utan teknik)
+function kanGora(tek: readonly string[], k: string, djup = 0): boolean {
+  const sk = SAKER[k]?.skaffa as { tek?: string; av?: Record<string, number> } | undefined;
+  if (!sk) return false;
+  if (sk.tek && !tek.includes(sk.tek)) return false;
+  return djup > 4 || Object.keys(sk.av ?? {}).every(m => !SAKER[m]?.skaffa || kanGora(tek, m, djup + 1));
+}
+export interface RadUtr { vapen: Vapen; klader: string[]; skold?: true; skoldJarn?: true }
+const SKOLDAR = ['jarnskold', 'skold'];
+const utrMinne = new WeakMap<readonly string[], Map<number, RadUtr>>();
+const BUDGETSTEG = 5;
+// det bästa en person kan bära när byn kan göra det med teknikerna tek och har råd med budget (grundvärde): först vapnet, sedan
+// skyddet, det som ger mest stridsvärde för sitt värde först, ett plagg på varje plats
+export function utrustningFor(tek: readonly string[], budget: number): RadUtr {
+  const b = Math.max(0, Math.floor(budget / BUDGETSTEG) * BUDGETSTEG);
+  let m = utrMinne.get(tek);
+  if (!m) utrMinne.set(tek, m = new Map());
+  const c = m.get(b);
+  if (c) return c;
+  const sv = (u: RadUtr) => stridsvardeAv({ st: MITTKROPP, ...u } as SvKampe);
+  let kvar = b, u: RadUtr = { vapen: 'hand', klader: [] };
+  for (const v of MANNISKOVAPEN) if (v !== 'hand' && kanGora(tek, v) && grundvarde(v) <= b && sv({ ...u, vapen: v }) > sv(u)) u = { ...u, vapen: v };
+  kvar -= u.vapen === 'hand' ? 0 : grundvarde(u.vapen);
+  const plats = (k: string) => { const r = kladAv(k); return r ? (PLAGG as Record<string, { plats: string }>)[r.plagg]?.plats : k; };
+  for (;;) {
+    let bast: RadUtr | undefined, bv = 0, kost = 0;
+    const prova = (n: RadUtr, k: string) => { const g = grundvarde(k), d = (sv(n) - sv(u)) / Math.max(1, g); if (g <= kvar && d > bv) { bv = d; bast = n; kost = g; } };
+    for (const k of Object.keys(SKYDD)) if (!u.klader.includes(k) && kanGora(tek, k)) prova({ ...u, klader: [...u.klader.filter(q => plats(q) !== plats(k)), k] }, k);
+    if (!u.skold && !TVA_HAND.has(u.vapen)) for (const k of SKOLDAR) if (kanGora(tek, k) && (k !== 'jarnskold' || kanGora(tek, 'jarn'))) prova({ ...u, skold: true, ...(k === 'jarnskold' ? { skoldJarn: true } : {}) }, k);
+    if (!bast) break;
+    u = bast; kvar -= kost;
+  }
+  m.set(b, u);
+  return u;
+}
+export const radUtrustning = (r: VarldRad) => utrustningFor(r.tek, r.tal.rikedom / Math.max(1, r.tal.folk) * BYANFALL.utrDel);
+// stridsvärdet per person i byn r
+export const radVarde = (r: VarldRad) => stridsvardeAv({ st: MITTKROPP, ...radUtrustning(r) } as SvKampe);
 // försvararna: de som kan slåss
 export const forsvarare = (r: VarldRad) => Math.max(0, Math.min(r.tal.folk, Math.round(r.tal.styrka)));
+// byns samlade stridsvärde: huvudbyn (och en väckt by) räknar sina vuxna (RADTAL.kraft), en by i världen sina försvarare gånger
+// värdet per person; där står kraft som 0, så att talet följer raden när den lever efter radens regler igen
+export const radKraft = (r: VarldRad) => (r.tal.kraft ?? 0) > 0 ? r.tal.kraft : forsvarare(r) * radVarde(r);
+EFTERSTEG.push((_s, vl) => { for (const r of vl.rader ?? []) if (lever(vl, r) && r.tal.kraft) r.tal.kraft = 0; });
+// stridsvärdet per person bland försvararna
+const perPerson = (r: VarldRad) => forsvarare(r) > 0 ? radKraft(r) / forsvarare(r) : radVarde(r);
+// en flocks styrka: n personer med värdet v var
+export const flockKraft = (n: number, v: number) => n <= 0 ? 0 : v * Math.pow(n, BYANFALL.antalVikt);
+// försvarets styrka i byn f: de slåss hemma
+const forsvarKraft = (f: VarldRad) => flockKraft(forsvarare(f), perPerson(f)) * BYANFALL.hemma;
 // så många skickar byn r i ett anfall, 0 om den är för svag; ute = de som redan är ute i ett anfall (steg 11.6.20)
-// mot = byn som anfalls (steg 12.1.21): då går så många som bytet och försvaret drar, och aldrig fler än byn kan skicka
+// mot = byn som anfalls (steg 12.1.21): då går så många som bytet och försvaret drar, och aldrig fler än byn kan skicka.
+// Styrkan som behövs delas med värdet per person (steg 15.1.152): en utvecklad by skickar få och välrustade, en primitiv många och svaga
 export const flockStorlek = (r: VarldRad, ute = 0, mot?: VarldRad) => {
   const n = Math.floor(Math.min(r.tal.folk, r.tal.styrka) * BYANFALL.skicka) - ute;
   if (n < BYANFALL.minst) return 0;
   if (!mot) return n;
-  const kraft = Math.ceil(forsvarare(mot) * anfallUtr(mot) * BYANFALL.hemma * BYANFALL.vinstMal / anfallUtr(r)); // så många som behövs för att vinna
+  const kraft = Math.ceil(Math.pow(forsvarKraft(mot) * BYANFALL.vinstMal / Math.max(1e-6, perPerson(r)), 1 / BYANFALL.antalVikt)); // så många som behövs för att vinna
   const bara = Math.ceil(bytesVarde(mot) / BYANFALL.bar); // så många som behövs för att bära bytet
   return Math.min(n, Math.max(BYANFALL.minst, kraft, bara));
 };
@@ -53,7 +109,7 @@ export function lockVarde(f: VarldRad, n: number) {
 }
 // chansen att n anfallare från a vinner mot f
 export function vinstChans(a: VarldRad, f: VarldRad, n: number): number {
-  const ka = n * anfallUtr(a), kf = forsvarare(f) * anfallUtr(f) * BYANFALL.hemma;
+  const ka = flockKraft(n, perPerson(a)), kf = forsvarKraft(f);
   return ka <= 0 ? 0 : ka * ka / (ka * ka + kf * kf);
 }
 export interface AnfallUtfall { vann: boolean; dodaA: number; dodaF: number; byte: Partial<Record<VarugruppId, number>>; varde: number }

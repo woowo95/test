@@ -62,5 +62,5 @@ const st = r.s.stat ?? {}, anfall = { n: st.rovarGarTill ?? 0, sedd: st.rovarGar
 const efter = (f: Rovarflock, t?: number) => t === undefined ? undefined : Math.round((t - f.kom!) / 1000);
 const avs = (f: Rovarflock) => f.ur !== undefined ? radNr(r.s.varld ?? {}, f.ur) : undefined;
 const lager = (r.s.varld?.rader ?? []).filter(x => x.sort === 'rovarlager' && lever(r.s.varld!, x)).length;
-const gangen = gang.map(f => ({ ur: avs(f)?.sort === 'rovarlager' ? 'läger' : avs(f) ? 'by' : 'okänd', namn: avs(f)?.namn ?? '?', vapen: vapnen.get(f) ?? [], n: f.antal ?? f.folk.length, sedd: efter(f, f.sedd), framme: efter(f, f.frammeT), anfall: efter(f, f.anfallT), dag: f.anfallT !== undefined && isLight(f.anfallT) }));
+const gangen = gang.map(f => ({ ur: avs(f)?.sort === 'rovarlager' ? 'läger' : avs(f) ? 'by' : 'okänd', namn: avs(f)?.namn ?? '?', vapen: vapnen.get(f) ?? [], n: f.antal ?? f.folk.length, sedd: efter(f, f.sedd), framme: efter(f, f.frammeT), anfall: efter(f, f.anfallT), dag: f.anfallT !== undefined && isLight(f.anfallT), chans: f.chans, vann: Object.values(f.tagit ?? {}).some(n => n > 0) }));
 console.log(JSON.stringify({ seed, pop: r.n.pop, rader, gangen, rikt: rikt.reduce((a, x) => a + x, 0) / Math.max(1, rikt.length), lager, lagerFolk, anfall, vakter: r.vakter.length, larm: r.vakter }));

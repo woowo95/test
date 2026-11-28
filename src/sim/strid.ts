@@ -1219,7 +1219,7 @@ export function korManga(u: Uppstallning, fro: number, n: number, v?: StridVarld
 // pilarnas slag (steg 13.4.2) och hur mycket mer de skadar: skytten skjuter de bästa pilarna byn har
 export const PILSLAG: Record<string, () => number> = { pilar: () => 1, jarnpilar: () => STRID.jarnPil };
 const bastaAmmo = (s: State, am: string) => am === 'pilar' ? Object.keys(PILSLAG).filter(k => amountOf(s, k) >= 1).sort((a, b) => PILSLAG[b]() - PILSLAG[a]())[0] : amountOf(s, am) >= 1 ? am : undefined;
-const TVA_HAND = new Set<string>(['flintspjut', 'fiskespjut', 'bage', 'jarnspjut']); // med båda händerna: ingen sköld
+export const TVA_HAND = new Set<string>(['flintspjut', 'fiskespjut', 'bage', 'jarnspjut']); // med båda händerna: ingen sköld
 // kläderna skyddar bara den som har dem på sig, också rustningen och hjälmen (steg 8.7.8)
 export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: number, y: number): Uppstallning['kampar'][number] {
   // det hen bär, äger och har i handen (man tar med sina saker), men inte det hen äger som någon annan har på sig, i handen

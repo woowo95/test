@@ -51,7 +51,7 @@ export function somna(s: State, b: State) {
   if (!r || b.vackI !== undefined) return; // en by som inte byggts färdigt har inte ändrat något
   useMap(b);
   const nu = lasRad(b), fore = b.vackFore;
-  for (const k of RADTAL_IDS) r.tal[k] = Math.max(0, Math.round(r.tal[k] + nu[k] - (fore?.[k] ?? nu[k])));
+  for (const k of RADTAL_IDS) r.tal[k] = Math.max(0, Math.round((r.tal[k] ?? 0) + nu[k] - (fore?.[k] ?? nu[k])));
   const kan = new Set<string>();
   for (const p of b.people) if (p.died === undefined && !p.gast) for (const [id, n] of Object.entries(p.tek ?? {})) if (n >= 1) kan.add(id);
   for (const id of [...kan].sort()) if (!r.tek.includes(id)) r.tek.push(id);
