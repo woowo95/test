@@ -686,8 +686,10 @@ function ringSpot(s: State, k: string, occ: Occ) {
 }
 // Det som är över förrådets tak (overTaket i forradsmal.ts) läggs inte i ringen runt lagret, som räknas till förrådet, utan
 // längre ut, där det inte räknas (steg 15.1.45)
+// setAmount sätter förrådet: det som läggs då ligger alltid där det räknas (satter)
+let satter = false;
 function besideSpot(s: State, k: string, occ: Occ) {
-  const r = overTaket(s, k) ? undefined : ringSpot(s, k, occ);
+  const r = overTaket(s, k) && !satter ? undefined : ringSpot(s, k, occ);
   if (r) return r;
   const zs = zonesOf(s).filter(z => z.hus === undefined), base = zs.filter(z => allows(z, k));
   // nödlösning när också ringen är full: längre ut, på en ruta där inget annat ligger (aldrig ovanpå en annan sak) och
@@ -926,13 +928,13 @@ export function gain(s: State, p: Person, k: string, n: number) { const w = n > 
 export function use(s: State, p: Person | undefined, k: string, n: number, common = false, fran?: number, ut?: Uttag) { return takeOwn(s, k, n, p, common, fran, false, ut).ag; }
 // det av slaget k som ligger i högar på marken utanför lagret (amountOf räknar lagret)
 export const paMarken = (s: State, k: string) => (s.stackar ?? []).reduce((n, a) => a.k === k && !isStored(s, a.x, a.y) ? n + a.n : n, 0);
-// för nya byar och tester: förrådet av slaget k blir n, och det som läggs till är byns
+// för nya byar och tester: förrådet av slaget k blir n, och det som läggs till är byns och ligger där det räknas, också över taket (steg 15.1.45)
 // (i hela saker, steg 2.10.7)
 export function setAmount(s: State, k: string, n: number) {
   s.arbBehov = undefined; // byns behov för arbetsordningen räknas om vid nästa val (val.ts, steg 6.1.12)
   if (isTool(k)) { setTools(s, k, n); return; }
   const d = Math.round(n) - amountOf(s, k);
-  if (d > 0) place(s, k, d, 1); else if (d < 0) taBort(s, k, -d);
+  if (d > 0) { satter = true; try { place(s, k, d, 1); } finally { satter = false; } } else if (d < 0) taBort(s, k, -d);
 }
 // redskapen: nya är byns och hela; det som tas bort tas först av det som ligger i förrådet, sämsta skicket först
 function setTools(s: State, k: string, n: number) {
