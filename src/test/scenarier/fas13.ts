@@ -1412,8 +1412,9 @@ SCENARIER.forbvillkor = {
   kor: () => {
     const rad = (id: string) => SIM.ARBETEN.find(a => a.id === id);
     const forbRader = ['sopor', 'baka', 'slatterForb'].filter(id => rad(id)?.forb && rad(id)?.niva === 8);
+    // klippningen är ett moget arbete på nivå 6 sedan steg 15.1.146, en egen rad i ARBETEN som också vägs med poäng
     const vagda = ['brygga', 'klippa', 'hamla', 'staket', 'skramma'];
-    const iPoang = vagda.filter(id => SIM.FORBATTRA.some(f => f.id === id) && !!rad(id)?.poang);
+    const iPoang = vagda.filter(id => (id === 'klippa' || SIM.FORBATTRA.some(f => f.id === id)) && !!rad(id)?.poang);
     // bagaren i en by med bakugn och mjöl: med mat i förrådet bakar någon, när byn svälter ingen
     const bak = (mat: number) => {
       const s = SIM.createState(1, START); klockan(s, 10);
