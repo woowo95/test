@@ -1,6 +1,7 @@
 // Scenarier för fas 15, grupp 3 (grundvärdet, steg 15.1.30–15.1.56).
 import * as SIM from '../../sim';
 import { SCENARIER } from './hjalp';
+import { START } from '../kor';
 
 const v = (k: string) => SIM.grundvarde(k), t = (x: number) => SIM.kortTal(x);
 
@@ -63,6 +64,24 @@ SCENARIER.rattvarde = {
       [`varje rätt (${ratter.length}) är värd mer än sina ingredienser per portion${fel.length ? ': ' + fel.slice(0, 5).join(', ') : ''}`, fel.length === 0],
       [`köttgrytan (${t(v(gryta))}) är värd mer än det råa köttet (${t(v('kott'))}), och den fina (${t(v(fin))}) mer än den lagade`, v(gryta) > v('kott') && v(fin) > v(gryta)],
       [`den billigaste festen (${t(minFest)}) är värd mer än den dyraste vardagsrätten (${t(maxLagad)})`, minFest > maxLagad],
+    ];
+  },
+};
+
+SCENARIER.vatskevarde = {
+  text: 'Steg 15.1.34: varje vätska får ett grundvärde ur det den görs av och arbetet, så att en full kruka öl, vin, mjöd, cider, mjölk, saft eller sprit är värd mer än den tomma krukan, och osten räknar mjölken bland sitt material',
+  kor: () => {
+    const s = SIM.createState(1, START), p = SIM.living(s)[0]!, fel: string[] = [];
+    const krukaMed = (v: SIM.VatskaId) => { const k = (SIM.VATSKOR[v].i as string[]).find(x => x.startsWith('lerkruka'))!, t = SIM.addTool(s, k, p); const tom = SIM.tingVarde(t); SIM.fyllVatska(s, v, 99, t); return { tom, full: SIM.tingVarde(t), k }; };
+    const rader: string[] = [];
+    for (const v of ['ol', 'vin', 'mjod', 'cider', 'mjolk', 'saft', 'sprit'] as SIM.VatskaId[]) { const r = krukaMed(v); rader.push(`${v} ${t(r.full)} mot ${t(r.tom)}`); if (!(r.full > r.tom)) fel.push(v); }
+    const ystaUr = SIM.varuVarde({ mjolk: SIM.TILLVERKA.ysta.vatska!.n });
+    return [
+      [`en full kruka är värd mer än den tomma (${rader.join(', ')})`, fel.length === 0],
+      [`en del öl (${t(v('ol'))}) har ett värde ur maltet och arbetet`, v('ol') > 0],
+      [`spriten (${t(v('sprit'))}) är värd mer än vinet den bränns av (${t(v('vin'))})`, v('sprit') > v('vin')],
+      [`osten (${t(v('ost'))}) är värd mer än mjölken den görs av (${t(ystaUr)})`, v('ost') > ystaUr && ystaUr > 0],
+      [`vattnet (${t(v('vatten'))}) är inget arbete och värt inget`, v('vatten') === 0],
     ];
   },
 };
