@@ -160,7 +160,7 @@ SCENARIER.fullaforrad = {
         s.delning = { andel: 1 }; // byn delar all mat, så att ingen familj fyller sin egen buffert (bufferten per jag, steg 6.2.20)
         // alla har en sovplats under tak från början och inget nytt hus planeras, så att bygget (nivå 7) inte tar tiden som provet gäller
         for (let i = 0; i < 6; i++) { s.byggSok = undefined; SIM.planBuild(s); if (!byggKlart(s)) break; }
-        s.byggSok = Number.MAX_SAFE_INTEGER;
+        s.byggSok = { [SIM.ALLA_BYGGEN]: Number.MAX_SAFE_INTEGER };
         SIM.arbetsTimme(s);
         const mat = full ? 1.5 * SIM.lyxtak(s, 'mat') : 1.1 * SIM.buffert(s, 'mat'), vd = full ? 1.3 * SIM.lyxtak(s, 'ved') : 0.8 * SIM.buffert(s, 'ved');
         setFood(s, 100); for (let i = 0; i < 40 && SIM.foodDaysAll(s) < mat; i++) setFood(s, SIM.foodOf(s) * 1.1);

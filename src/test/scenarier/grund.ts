@@ -79,7 +79,7 @@ SCENARIER.yxa = {
     const s = createState(15, START); // by 15 sedan 10.9: i by 13 och 14 gick stigarna rakt över de första fällplatserna nära lägret, så mest bar jord
     setAmount(s, 'yxa', 1);
     tandEld(s); // elden brinner: annars hänger provet på när flintan råkar lyckas (ungefär vart femtionde försök)
-    s.byggSok = Infinity; // inget hus: träden på en husplats fälls för bygget, inte för ved
+    s.byggSok = { [SIM.ALLA_BYGGEN]: Infinity }; // inget hus: träden på en husplats fälls för bygget, inte för ved
     const fallda = new Map<number, number>(); // rutan där ett träd fälldes och när
     let ved = 0;
     const rojs = new Set<number>(); // träd i ett lager i skogen (steg 3.6.9): de fälls i förväg och huggs upp när byn behöver ved

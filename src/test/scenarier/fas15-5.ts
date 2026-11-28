@@ -1,6 +1,7 @@
 // Scenarier för fas 15, grupp 5 av 15.1.
 import * as SIM from '../../sim';
-import { SCENARIER, klockan, kor, testBy } from './hjalp';
+import { START } from '../kor';
+import { SCENARIER, byggKlart, byggare, klockan, kor, setMat, tandEld, tandOchFlinta, testBy } from './hjalp';
 
 // barnen som har sin egen natt: över det lilla barnets ålder och under den som hjälper till
 const nattBarn = (s: SIM.State) => SIM.living(s).filter(p => { const a = SIM.ageOf(p, s.now); return a >= SIM.ALDER.smabarn && a < SIM.ALDER.hjalper; });
@@ -38,6 +39,47 @@ SCENARIER.barnnatt = {
       [`ett trött barn sover (${sover} av 40)`, sover >= 30],
       [`ett barn som saknar umgänge sitter med de vuxna (${prat} av 40)`, prat >= 20],
       ['barnets samtal har de vuxnas längd (VAL.nattPrat och nattPratSpann)', pratLangd],
+    ];
+  },
+};
+
+SCENARIER.byggbehov = {
+  text: 'Steg 15.1.47: spärren för att försöka planera igen gäller varje byggbehov och ägare för sig. En by som saknar en sovplats planerar sovsalen strax efter att ett annat bygge blivit klart, fast ett annat behov just fick vänta, och skälet "Alla har inte en sovplats" sägs bara vid ett hus som ger en sovplats',
+  kor: () => {
+    const s = SIM.createState(8, START); klockan(s); byggare(s); tandEld(s); tandOchFlinta(s); SIM.setAmount(s, 'ved', 200); for (const k of ['torrgras', 'grenar', 'flinta', 'sten'] as const) SIM.setAmount(s, k, 60); SIM.setAmount(s, 'yxa', 6); SIM.setAmount(s, 'virke', 300); setMat(s, { torrkott: 400 }); for (const p of SIM.living(s)) SIM.put(s, 'torrkott', 60, { [p.id]: 60 }); SIM.stepBehov(s);
+    for (const k in s.byggBehov ?? {}) s.byggBehov![k] -= 24 * SIM.HOUR;
+    const saknar = SIM.homeless(s);
+    // ett annat bygge pågår för byn: ett förrådshus som inte är klart
+    SIM.planBuild(s);
+    const forst = SIM.housesOf(s).find(h => !h.klar);
+    if (!forst) return [['byn planerar ett första hus', false]];
+    // tomten är röjd, så att byggarna bygger och inte fäller träd först
+    const rojd = (h: SIM.Hus) => { const g = SIM.groundOf(s); for (let y = h.y - 1; y <= h.y + h.h; y++) for (let x = h.x - 1; x <= h.x + h.w; x++) g.trees[y * SIM.W + x] = 0; s.stubbar = s.stubbar?.filter(k => !(k.x >= h.x - 1 && k.y >= h.y - 1 && k.x <= h.x + h.w && k.y <= h.y + h.h)); SIM.touch(s); };
+    rojd(forst); forst.fn = 'forrad';
+    // en familj fick inte plats med sitt hus: just det behovet väntar
+    const sok = SIM.byggSok(s), annat = 'familjehus:' + SIM.living(s)[0]!.id; sok[annat] = s.now + SIM.BYGG.omforsok * SIM.HOUR;
+    // skälet medan förrådshuset byggs: ingen sovplats i det
+    const skal = (h: SIM.Hus, tim = 3) => {
+      for (const q of SIM.housesOf(s)) if (!q.klar) rojd(q);
+      const ut: string[] = [];
+      kor(s, tim, b => { for (const p of SIM.living(b)) { const tk = p.task; if (tk?.act === 'bygga' && tk.why?.includes(SIM.husIText(h))) ut.push(tk.why);  } });
+      return ut;
+    };
+    SIM.planBuild(s);
+    const underTiden = SIM.housesOf(s).filter(h => !h.klar && h.ag === undefined).length;
+    const vidForrad = skal(forst, 8);
+    const vantar = (SIM.byggSok(s)[annat] ?? 0) > s.now;
+    byggKlart(s, forst); SIM.planBuild(s); // nästa planering, strax efter att förrådshuset blivit klart
+    const ny = SIM.housesOf(s).find(h => !h.klar && h.fn === 'sovsal');
+    const t0 = s.now; klockan(s, 9); if (s.now < t0) s.now += SIM.DAY; // nästa morgon
+    const vidSovsal = ny ? skal(ny) : [];
+    return [
+      [`byn saknar sovplatser (${saknar})`, saknar > 0],
+      [`medan förrådshuset byggs planeras inget annat hus för byn (${underTiden})`, underTiden === 1],
+      [`det andra behovet väntar för sig (${annat})`, vantar],
+      [`strax efter att förrådshuset blivit klart planeras sovsalen (${ny?.namn ?? 'inget'}, ${ny?.fn})`, !!ny && SIM.arHem(ny)],
+      [`vid förrådshuset sägs inte att alla inte har en sovplats (${vidForrad.length} skäl: ${vidForrad[0] ?? '-'})`, vidForrad.length > 0 && !vidForrad.some(w => w.includes('sovplats'))],
+      [`vid huset med sovplatser sägs det (${vidSovsal[0] ?? '-'})`, vidSovsal.some(w => w.includes('Alla har inte en sovplats'))],
     ];
   },
 };

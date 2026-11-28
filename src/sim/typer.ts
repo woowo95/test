@@ -434,7 +434,7 @@ export interface State {
   matSnitt?: number; // maten i förrådet i dygn för alla, glidande snitt över ungefär ett år (liv.ts)
   halvfallt?: Record<number, number>; // träd som någon har börjat fälla: ruta -> hur länge (ms) man har arbetat med det (paborjat.ts)
   fynd?: string; // hur mycket som tagits ur varje plats (bär, vilt, fisk), packat
-  byggen?: import('./byggnad').Bit[]; hus?: import('./byggnad').Hus[]; byggV?: number; nextBit?: number; byggSok?: number; byggBehov?: Record<string, number>; hyllPlan?: { x: number; y: number; t: number }; /* hyllan byggplanen valt (steg B.37) */ mjardar?: import('./fisk').Mjarde[]; torg?: { x: number; y: number; w: number; h: number }; infart?: { klar?: 1; stopp?: 1 }; bryggV?: number; byplan?: import('./byggplan').Byplan; // väggar, golv och öppningar, husen byn planerat, ändringsräknare
+  byggen?: import('./byggnad').Bit[]; hus?: import('./byggnad').Hus[]; byggV?: number; nextBit?: number; byggSok?: Record<string, number>; /* spärren per byggbehov och ägare (byggplan.ts, steg 15.1.47) */ byggBehov?: Record<string, number>; hyllPlan?: { x: number; y: number; t: number }; /* hyllan byggplanen valt (steg B.37) */ mjardar?: import('./fisk').Mjarde[]; torg?: { x: number; y: number; w: number; h: number }; infart?: { klar?: 1; stopp?: 1 }; bryggV?: number; byplan?: import('./byggplan').Byplan; // väggar, golv och öppningar, husen byn planerat, ändringsräknare
   kal?: { t0: number; a0: number; b0: number }; // kalendern: tidsåldern a0 började t0 och slutar måndagen b0 (dagens nummer), se tid.ts
   ruttet?: number; // mat som ruttnat bort på sistone (glöms med tiden, byggnader.ts)
   skramma?: number[]; // fälten som har en fågelskrämma (steg 9.7.11, odling.ts)

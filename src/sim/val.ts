@@ -69,7 +69,7 @@ import { allows, amountOf, avbryt, carryKind, iHelaForradet, iRackhall, narmaste
 import { BYGG, avail, bedFor, buildJob, siteOf } from './bygg';
 import { FALLOR, type Mjarde, kanVittja, timTillFull, trasig } from './fisk';
 import { bitAt, bitsOf, blocked, freeNear, husById, roomAt } from './byggnad';
-import { FOR_SIG, forSig, homeless, husIText, samlingRum, varmareInne } from './byggnader';
+import { FOR_SIG, arHem, forSig, homeless, husIText, samlingRum, varmareInne } from './byggnader';
 import { groundOf, isForest, punktIRuta, tileOf } from './mark';
 import { axeTask, egenStock, fallTid, stamTill, stockOverHus, stocks } from './skog';
 import { GA_TID, startWork, startsOnArrival } from './paborjat';
@@ -1378,7 +1378,7 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
 
 // att bygga eller laga en del av ett hus. Saknas material hämtar man det först
 function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeof buildJob>>) {
-  const b = job.bit, hus = (h => h && husIText(h))(s.hus?.find(h => h.id === b.hus)) ?? 'huset';
+  const b = job.bit, hh = s.hus?.find(h => h.id === b.hus), hus = (hh && husIText(hh)) ?? 'huset';
   const over = job.fell ? stockOverHus(s) ?? egenStock(s, p) : undefined; // en stam över ett färdigt hus, eller den p själv fällt, huggs före nästa fällning (steg 9.2.86, 9.2.87)
   if (over) {
     // behöver byn virke (till timmerväggarna, steg 10.2.70) klyvs det ur stammen i stället för att den huggs till ved (steg 10.2.102)
@@ -1400,7 +1400,7 @@ function building(s: State, p: Person, v: Val, job: NonNullable<ReturnType<typeo
     v.ref = job.hugg; v.tool = 'yxa'; v.spot = k ? { x: k.x + 0.3, y: k.y + 0.2 } : { x: b.x + 0.5, y: b.y + 0.5 };
     return;
   }
-  set(v, 'bygga', job.repair ? (b.k === 'golv' ? `Golvet i ${hus} är slitet och behöver lagas.` : `En vägg i ${hus} är sliten och behöver lagas.`) : `${b.k === 'golv' ? 'Lägger golv i' : 'Bygger på'} ${hus}. ${homeless(s) > 0 ? 'Alla har inte en sovplats under tak.' : ''}`.trim());
+  set(v, 'bygga', job.repair ? (b.k === 'golv' ? `Golvet i ${hus} är slitet och behöver lagas.` : `En vägg i ${hus} är sliten och behöver lagas.`) : `${b.k === 'golv' ? 'Lägger golv i' : 'Bygger på'} ${hus}. ${homeless(s) > 0 && hh && arHem(hh) ? 'Alla har inte en sovplats under tak.' : ''}`.trim());
   v.tool = job.repair ? (b.k === 'golv' ? 'lagaGolv' : 'laga') : b.k === 'golv' ? 'golv' : 'vagg'; v.ref = b.id;
   v.dur = (VAL.byggMin + rnd(s, 'val', p) * VAL.byggSpann) * MIN * VAL.pass;
   const site = siteOf(s, b); v.spot = job.need > 0 ? fetchSpot(s, job.item!, p, () => avail(s, job.item!, p, b.hus, b)) : site; if (job.need > 0) v.site = site;
