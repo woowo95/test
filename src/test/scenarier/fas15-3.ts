@@ -2,6 +2,7 @@
 import * as SIM from '../../sim';
 import { SCENARIER } from './hjalp';
 import { START } from '../kor';
+import { foretagBy } from './fas14';
 
 const v = (k: string) => SIM.grundvarde(k), t = (x: number) => SIM.kortTal(x);
 
@@ -98,6 +99,30 @@ SCENARIER.smafel = {
       [`ett skrivet blad (${t(v('blad'))}) är värt mer än pergamentet (${t(v('pergament'))})`, v('blad') > v('pergament')],
       [`krappen har ett fast värde (${t(v('krapp'))}) som saltet (${t(v('salt'))})`, SIM.SAKER.krapp!.varde !== undefined && v('krapp') > 0],
       [`färgväxterna står bland skinnen och ullen`, ['vejde', 'krapp', 'mara'].every(k => (SIM.VARUGRUPPER.skinn.saker as readonly string[]).includes(k)) && !['vejde', 'krapp', 'mara'].some(k => (SIM.VARUGRUPPER.dryck.saker as readonly string[]).includes(k))],
+    ];
+  },
+};
+
+SCENARIER.gastfel = {
+  text: 'Steg 15.1.56: ett köp vid disken som faller för en gäst (varan kom aldrig fram) räknas som ett besök, så att gästen inte ställer sig i kön igen och igen för samma vara: en gäst vars vara inte går att nå går hem efter några försök',
+  kor: () => {
+    const { s, p, f, r: rum, disk } = foretagBy(), k = SIM.klanerOf(s).find(q => q.rad !== undefined)!, rad = s.varld!.rader!.find(q => q.nr === k.rad)!;
+    for (const q of SIM.living(s)) q.task = undefined;
+    k.inst = 0; s.finhet = { ...s.finhet, [SIM.rumNyckel(rum)]: 0.5 }; rad.tal.silver = 200; // som i scenariot foretagsgast
+    const g = SIM.nyForetagsgast(s, f, k, 'rik')!, o = SIM.koPlats(s, disk); g.x = o.x; g.y = o.y; g.hunger = 0.4;
+    let forsok = 0;
+    for (let i = 0; i < 40 && g.gast!.fas !== 'gar'; i++) {
+      SIM.foretagsgastSteg(s, 1);
+      const r = f.ko?.find(q => q.p === g.id);
+      if (g.gast!.gor !== 'ko' || !r) continue;
+      p.x = 1; p.y = 1; // den som betjänar står långt från maten: varan kommer aldrig fram
+      f.ko = f.ko!.filter(q => q !== r);
+      if (!SIM.kopVid(s, f, g, r, p)) forsok++;
+    }
+    return [
+      [`gästen ställde sig i kön och köpet föll (${forsok} gånger)`, forsok >= 1],
+      [`gästen går hem efter några försök (${forsok}, högst ${SIM.FGAST.kop}) i stället för att köa igen och igen`, g.gast!.fas === 'gar' && forsok <= SIM.FGAST.kop],
+      [`besöken räknas (${g.gast!.gjort ?? 0})`, (g.gast!.gjort ?? 0) === forsok],
     ];
   },
 };

@@ -106,6 +106,7 @@ export const gastKund = {
   far: (_s: State, _f: Foretag, _p: Person, _h: HyllVara, _n: number) => {},
   at: (_s: State, _p: Person, _k: string) => {},
   klar: (_s: State, _p: Person, _v: string, _sitter: boolean) => {},
+  forsok: (_s: State, _p: Person) => {}, // ett köp vid disken, också ett som inte blir av (steg 15.1.56)
 };
 const kundPart = (s: State, p: Person) => p.gast ? gastKund.part(s, p) : personPart(s, p);
 const kundNoje = (s: State, p: Person, v: string, k: string) => p.gast ? gastKund.noje(s, p, v, k) : VERKSAMHETER[v].noje(s, p, k);
@@ -230,6 +231,7 @@ export function betjanaKlar(s: State, q: Person, t: Task) {
 export function kopVid(s: State, f: Foretag, p: Person, r: KoRad, at: Person): boolean {
   const V = VERKSAMHETER[r.v], G = saljPart(s, f), M = kundPart(s, p), t = V.vatska ? karl(s, f, r.k) : undefined;
   p.task = undefined;
+  if (p.gast) gastKund.forsok(s, p); // köpet räknas som ett besök vid disken, vare sig det blir av eller inte (steg 15.1.56)
   const fel = () => { for (const g of omdome) g(s, p, f); count(s, 'koUtan'); return false; };
   if (V.ats && iRackhall(at.x, at.y, () => ownsId(s, f.ag, r.k)) < 1) return fel(); // maten kom aldrig fram
   if (!G || (V.vatska ? !t : !varorAv(s, f, r.v, G).includes(r.k))) return fel(); // slut
