@@ -3512,6 +3512,8 @@ SCENARIER.blodstrid = {
     const mal = SIM.malet(s), by = vuxnaI(s).slice(0, 4);
     for (const p of SIM.living(s)) p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: s.now + 20 * SIM.HOUR, carry: 0 };
     const f = rovarGang(s, 4, { x: mal.x + 2, y: mal.y }), rov = SIM.rovarna(s, f);
+    // rövarna med vapen som öppnar sår: gänget rustas efter hembyn (steg 15.1.153), och den här byns gäng hade bara stenar
+    rov.forEach((r, i) => SIM.gastVapenSatt(s, r, (['yxa', 'kniv', 'flintspjut', 'yxa'] as const)[i]));
     by.forEach((p, i) => Object.assign(p, SIM.freeNear(s, mal.x - 1, mal.y - 3 + i * 2)));
     rov.forEach((r, i) => Object.assign(r, SIM.freeNear(s, mal.x + 1, mal.y - 3 + i * 2)));
     for (const p of [...by, ...rov]) { p.pot.mod = 20; p.blod = 1; }
