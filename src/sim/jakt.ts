@@ -17,7 +17,7 @@ import { skada, syn } from './halsa';
 import { groundOf, markslag, tileOf } from './mark';
 import { DJUR, KANIN } from './redskap';
 import { avst, clamp, rnd } from './slump';
-import { KAST, SLAGSMAL, STRID, VAPEN, Vapen, Uppstallning, ammoOk, chansMot, djurKampe, kastat, efterKampen, nyStrid, skottLandar, slump, traffa } from './strid';
+import { KAST, SLAGSMAL, STRID, VAPEN, Vapen, Uppstallning, ammoHar, chansMot, djurKampe, kastat, efterKampen, nyStrid, skottLandar, slump, traffa } from './strid';
 import { isLight } from './tid';
 import { HOUR, Jaktforsok, Person, SEC, State, T, Task, W, inMap } from './typer';
 import { takeFrom, viltStart } from './fynd';
@@ -151,7 +151,7 @@ export function jaktForsok(s: State, p: Person, tk: Task, t = s.now): number {
   const dj = djurOf(s, s.now, undefined, (gx, gy) => Math.hypot(gx - tk.tx, gy - tk.ty) < md + KANIN_UT || Math.hypot(gx - p.x, gy - p.y) < JAKT.letaR + KANIN_UT);
   // jägaren väljer bytet med högst värde (steg 10.2.37): det fällda djurets grundvärde, mindre ju längre bort det är. Rådjuren
   // (steg 6.6.2) fälls bara med spjutet och syns på längre håll; fåglarna (steg 6.6.3) och kaninerna inom räckhåll
-  const spjut = !!tk.tool && tk.tool in VAPEN && !!(VAPEN as Record<string, { kast?: unknown }>)[tk.tool].kast && ammoOk(s, p, tk.tool); // också bågen och slungan med pilar och stenar (steg 15.1.133)
+  const spjut = !!tk.tool && tk.tool in VAPEN && !!(VAPEN as Record<string, { kast?: unknown }>)[tk.tool].kast && ammoHar(p, tk.tool); // också bågen och slungan med pilar och stenar (steg 15.1.133)
   let bv = 0;
   const svalt = farorNu(s).svalt;
   const prova = (d: NonNullable<typeof m>, r: number) => {

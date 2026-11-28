@@ -107,34 +107,37 @@ SCENARIER.fiskbyte = {
 };
 
 SCENARIER.jaktbage = {
-  text: 'Steg 15.1.133: pilbågen och slungan jagar. En jägare med båge fäller fler harar per timme än en med träspjut; pilen tas ur förrådet och landar där den tog, och bågen tas bara när det finns pilar',
+  text: 'Steg 15.1.133: pilbågen och slungan jagar. En jägare med båge fäller fler harar per timme än en med träspjut; jägaren tar med sig pilarna, pilen tas ur det hen bär och landar där den tog, och bågen tas bara när det finns pilar och skjuter bara med dem hen har med sig (steg 15.1.69)',
   kor: () => {
     const s0 = SIM.createState(6, START); klockan(s0, 10);
     const p0 = SIM.living(s0).find(q => SIM.ageOf(q, s0.now) >= SIM.ALDER.vuxen)!, alla = SIM.djurOf(s0).map(d => d.id);
     const prova = (verktyg: string) => {
       const s = SIM.cloneState(s0), p = SIM.byId(s, p0.id)!;
       if (verktyg === 'bage') SIM.put(s, 'pilar', 2000);
-      const pil0 = SIM.amountOf(s, 'pilar');
-      let fangst = 0, tid = 0;
+      let fangst = 0, tid = 0, skjutna = 0;
       for (let i = 0; i < 300; i++) {
         const tk = jaktFran(s, p, verktyg, () => SIM.djurOf(s).find(d => d.id === alla[i % alla.length]) ?? SIM.djurOf(s)[0]);
-        p.x = tk.tx + 3; p.y = tk.ty;
-        if (SIM.jaktForsok(s, p, tk) < 0) continue;
+        p.x = tk.tx + 3; p.y = tk.ty; p.task = tk;
+        if (verktyg === 'bage') { const ag = SIM.use(s, p, 'pilar', 12, true); tk.items = { pilar: 12 }; tk.ag = { pilar: ag }; } // det hen tog med sig (HAMTAS.jakt)
+        const atervand = () => { if (tk.items?.pilar) { skjutna -= tk.items.pilar; SIM.put(s, 'pilar', tk.items.pilar); } if (verktyg === 'bage') skjutna += 12; };
+        if (SIM.jaktForsok(s, p, tk) < 0) { atervand(); continue; }
         tid += SIM.JAKT.smygSek + tk.jf!.extra;
         const fore = tk.carry; SIM.jaktKlar(s, p, tk); if (tk.carry > fore) fangst++;
+        atervand();
         p.skador?.splice(0); p.health = 1; s.ting = (s.ting ?? []).filter(t => t.k !== verktyg);
       }
-      return { perTim: fangst / Math.max(1, tid / 3600), fangst, sedd: s.stat?.jaktSedd ?? 0, pilar: pil0 - SIM.amountOf(s, 'pilar'), ligger: s.stat?.pilLigger ?? 0 };
+      p.task = undefined;
+      return { perTim: fangst / Math.max(1, tid / 3600), fangst, sedd: s.stat?.jaktSedd ?? 0, pilar: skjutna, ligger: s.stat?.pilLigger ?? 0 };
     };
     const bage = prova('bage'), spjut = prova('fiskespjut');
     // utan pilar tas inte bågen: valet ger träspjutet (eller inget) i stället
     const s = SIM.cloneState(s0), p = SIM.byId(s, p0.id)!, b = SIM.addTool(s, 'bage', p); b.agare = p.id;
     SIM.setAmount(s, 'pilar', 0);
-    const utan = SIM.ammoOk(s, p, 'bage'); SIM.put(s, 'pilar', 5); const med = SIM.ammoOk(s, p, 'bage');
+    const utan = SIM.ammoFinns(s, p, 'bage'); SIM.put(s, 'pilar', 5); const med = SIM.ammoFinns(s, p, 'bage'), harInga = SIM.ammoHar(p, 'bage'), vill = SIM.ammoTill(s, p, 'bage');
     return [
       [`med båge ${bage.perTim.toFixed(1)} harar i timmen (${bage.fangst} av 300 försök, sedd först ${bage.sedd}), med träspjut ${spjut.perTim.toFixed(1)} (${spjut.fangst}, sedd ${spjut.sedd})`, bage.perTim > spjut.perTim],
-      [`pilarna tas ur förrådet (${bage.pilar}) och en del ligger kvar där de landade (${bage.ligger})`, bage.pilar > 0 && bage.ligger > 0],
-      [`bågen tas bara när det finns pilar (utan: ${utan}, med: ${med})`, !utan && med],
+      [`pilarna tas ur det jägaren bär (${bage.pilar} skjutna) och en del ligger kvar där de landade (${bage.ligger})`, bage.pilar > 0 && bage.ligger > 0],
+      [`bågen tas bara när det finns pilar (utan: ${utan}, med: ${med}), och den som inte har pilarna med sig skjuter inte (${harInga}) utan hämtar dem (${JSON.stringify(vill)})`, !utan && med && !harInga && (vill?.pilar ?? 0) >= 1],
       ['bågen och slungan står i jaktens redskap', !!SIM.ACTS.jakt.redskap?.bage && !!SIM.ACTS.jakt.redskap?.slunga],
     ];
   },

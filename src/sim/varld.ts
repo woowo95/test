@@ -316,6 +316,9 @@ const UPPGRADERINGAR: [number, string, (s: State) => void][] = [
     for (const f of (s.foretag ?? []) as (import('./foretag').Foretag & { intakt?: number })[]) { delete f.intakt; for (const nr in f.byar ?? {}) delete (f.byar![+nr] as { n?: number }).n; }
     for (const a of (s.anst ?? []) as (import('./dagsarbete').Anst & { tim?: number })[]) delete a.tim;
   }],
+  [71, 'stenarna i handen (Person.stenar, steg 15.1.69) blir ett slag bland det man har att kasta och skjuta (Person.ammo), som pilarna', s => {
+    for (const p of s.people) { const q = p as Person & { stenar?: { n: number; ag: Record<number, number> } }; if (q.stenar) { (p.ammo ??= {}).sten = q.stenar; delete q.stenar; } }
+  }],
 ];
 export const SPARVERSION = UPPGRADERINGAR[UPPGRADERINGAR.length - 1][0];
 export function migrate(s: State) { return simulera(() => uppgradera(s)); }

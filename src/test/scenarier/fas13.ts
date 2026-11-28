@@ -718,13 +718,13 @@ SCENARIER.jarnpil = {
     const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
     const utanSmedja = !SIM.kanGoras(s, 'smida_pilar' as SIM.Act);
     s.ting = SIM.tingOf(s).filter(t => !SIM.MANNISKOVAPEN.includes(t.k as never)); SIM.addTool(s, 'bage', p);
-    SIM.gain(s, p, 'pilar', 8);
+    p.ammo = { pilar: { n: 8, ag: { [p.id]: 8 } } }; // pilarna hen har med sig (steg 15.1.69)
     const flint = SIM.personKampe(s, p, 1, 0, 0, 0);
-    SIM.gain(s, p, 'jarnpilar', 8);
+    p.ammo.jarnpilar = { n: 8, ag: { [p.id]: 8 } };
     const jarn = SIM.personKampe(s, p, 1, 0, 0, 0);
     const st = { logg: [1, 2, 3, 4].map(t => ({ t, h: 'traff', a: jarn.id, b: 2, v: 'bage', kast: 1 })) } as unknown as SIM.Strid;
     SIM.slitKastat(s, p, st, jarn as unknown as SIM.Kampe);
-    const kvarJarn = SIM.amountOf(s, 'jarnpilar') + SIM.paMarken(s, 'jarnpilar'), kvarFlint = SIM.amountOf(s, 'pilar') + SIM.paMarken(s, 'pilar');
+    const kvarJarn = SIM.amountOf(s, 'jarnpilar') + SIM.paMarken(s, 'jarnpilar') + (p.ammo?.jarnpilar?.n ?? 0), kvarFlint = SIM.amountOf(s, 'pilar') + SIM.paMarken(s, 'pilar') + (p.ammo?.pilar?.n ?? 0);
     return [
       ['pilarna tar 1 fjäder per sats om 4, och järnpilarna 1 ved, 1 järn och 1 fjäder, 4 på 3 minuter med Pilbåge', recept],
       ['järnpilarna smids vid smedjan och bara där', vidSmedjan && utanSmedja],
@@ -779,7 +779,7 @@ SCENARIER.pilting = {
       const s = SIM.createState(1, START), p = SIM.living(s).find(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen)!;
       klockan(s, 9);
       s.ting = SIM.tingOf(s).filter(t => !SIM.MANNISKOVAPEN.includes(t.k as never)); SIM.addTool(s, 'bage', p);
-      SIM.put(s, 'pilar', skott, { [p.id]: skott });
+      p.ammo = { pilar: { n: skott, ag: { [p.id]: skott } } }; // pilarna hen har med sig (steg 15.1.69)
       const f = SIM.eldXY(s, s.fire); // en bit från lagret, på öppen mark
       for (let d = 8; d < 30; d++) { const x = Math.floor(f.x) + d, y = Math.floor(f.y); if (SIM.usable(s, x, y) && !SIM.isStored(s, x, y)) { p.x = x + 0.5; p.y = y + 0.5; break; } }
       s.vader = { ...(s.vader ?? { fukt: 0.5 }), sno } as typeof s.vader;
