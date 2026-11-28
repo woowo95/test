@@ -248,7 +248,14 @@ export function ranEfter(s: State, pid: number, offerId: number, behov: string, 
   handelse(s, p, vann ? 'ran' : 'ranForsok', offer, b.namn);
   if (!vann || !alive(offer) || ownFor(s, offer, b) < b.minst) return; // det fanns kvar att ta
   count(s, 'ranVann'); livet(s, p, 'ran');
-  b.anvand(s, p, offer);
+  // saken blir rånarens (steg 3.7.17): ägandet går över i förrådet som vid ett byte eller en gåva (ownMove), och hen hämtar och
+  // använder den sedan som allt annat hen äger, där den ligger. Så mycket som hen tar på en gång (b.mangd), i hela saker
+  let kvar = b.mangd(p, s.now);
+  for (const k of b.slag) {
+    if (kvar < b.minst - 1e-9) break;
+    const n = Math.min(Math.floor(ownsAmount(s, offer, k) + 1e-9), Math.ceil(kvar / perOf(b, k) - 1e-9));
+    if (n >= 1) kvar -= ownMove(s, k, n, offer.id, p.id) * perOf(b, k);
+  }
   log(s, `${p.name} tog ${b.namn} av ${offer.name} med våld.`, 'rel', [p.id, offer.id]);
   upplev(s, offer, 'ranad', p.name); // steg 4.1.1.2: ett rån formar mer än en stöld
 }
