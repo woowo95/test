@@ -705,6 +705,7 @@ function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
   if (dag && !framme) b.ork -= tim * RESA.orkGang;
   else if (!dag) b.ork += tim * RESA.orkVila - (framme ? 0 : tim * nattTapp(s, sl, t));
   if (b.matt <= 0) b.ork -= tim * RESA.orkSvalt; // den som inte ätit orkar mindre (steg 11.5.15)
+  if (b.vatska <= 0) b.ork -= tim * RESA.orkSvalt; // och den som inte druckit, på samma sätt (steg 15.1.89)
   b.ork = clamp(b.ork, 0, 1);
   // äta: en portion per resenär, den mat som håller kortast först
   while (b.matt < KROPP.hungrig) {
@@ -725,6 +726,18 @@ function behovBit(s: State, sl: Sallskap, t: number, dt: number) {
     while (b.foder >= 1 - 1e-9) { if ((sl.pack.torrgras ?? 0) < 1) { count(s, 'resa djur utan foder'); b.foder = 0; break; } tappa(sl, 'torrgras', 1); b.foder = Math.max(0, b.foder - 1); }
   }
   resBehovMatt(sl, t, tim, b.matt, b.vatska); // timmarna utan mat och vatten (steg 15.1.84)
+  kroppBarResan(s, sl, b, t, dt);
+}
+// kroppen bär resan (steg 15.1.89, Orken och tälten på resan): utan mat eller vatten tär det på hälsan som i byn (halsaLage i
+// steg.ts: svälten på KROPP.svaltTim timmar, törsten på TORST.tomTim), till sist döden; med mat och vatten nog läker hälsan som där
+function kroppBarResan(s: State, sl: Sallskap, b: ResBehov, t: number, dt: number) {
+  const h = dt / HOUR, lage = b.matt <= 0 ? 'svalt' : b.vatska <= 0 ? 'torst' : b.matt > KROPP.lakerMat && b.vatska > TORST.laker ? 'laker' : undefined;
+  if (!lage) return;
+  for (const p of resenarer(s, sl)) {
+    if (lage === 'laker') { if (!p.sjuk) p.health = clamp(p.health + h / KROPP.lakerTim, 0, 1); continue; }
+    p.health -= h / (lage === 'svalt' ? KROPP.svaltTim : TORST.tomTim);
+    if (p.health <= 0) { p.health = 0; count(s, lage === 'svalt' ? 'resa svalt ihjäl' : 'resa törstade ihjäl'); dorPaVagen(s, sl, p, lage, t); }
+  }
 }
 // ---------- silvergruvan (steg 11.10.1, Flera samhällen: Silvergruvan i tal) ----------
 // Hur länge sällskapet stannar nere väljs i packskedet: den tid (i hela timmar, högst SILVER.maxDygn dygn) som ger mest silver
@@ -901,7 +914,9 @@ function ga(s: State, sl: Sallskap, t: number, dt: number) {
 }
 // sällskapet är hemma: resenärerna kommer in vid kanten de gick ut från, och djuren med dem
 export function hemkomst(s: State, sl: Sallskap, t: number) {
-  const in_ = sl.ut?.kant ?? bynsMitt(s);
+  const in_ = sl.ut?.kant ?? bynsMitt(s), b = sl.behov;
+  // var och en tar med sig sällskapets mättnad, vätska och ork (steg 15.1.89)
+  if (b) for (const p of resenarer(s, sl)) if (ute(p)) { p.hunger = b.matt; p.torst = b.vatska; p.rest = b.ork; }
   for (const p of resenarer(s, sl)) if (ute(p)) { const borta = t - (p.ute ?? t); kommHem(s, p, in_.x, in_.y); tanke(p, 'komHem', t); upplev(s, p, 'resaBarn'); if (borta >= RYKTE.berestDygn * DAY) handelse(s, p, 'reste'); } // (steg 12.1.131)
   for (const d of s.tamdjur ?? []) if (sl.djur.includes(d.id) && d.ute !== undefined) { delete d.ute; d.x = in_.x; d.y = in_.y; }
   vagnHem(s, sl, in_.x, in_.y);

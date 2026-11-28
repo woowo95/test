@@ -59,3 +59,49 @@ SCENARIER.packresa = {
   },
 };
 
+// en ruta i världen utan vatten på eller bredvid (ingen flod, sjö eller myr)
+export function torrRuta(s: SIM.State) {
+  const v = SIM.varldMark(s)!, vat = (i: number) => !!v.flod[i] || !!SIM.VARLDMARK[SIM.MARK_IDS[v.mark[i]]].vatten;
+  for (let i = 0; i < v.w * v.h; i++) {
+    const x = i % v.w, y = Math.floor(i / v.w);
+    if (x < 1 || y < 1 || x >= v.w - 1 || y >= v.h - 1 || vat(i) || SIM.MARK_IDS[v.mark[i]] === 'hav') continue;
+    if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => vat((y + dy!) * v.w + x + dx!))) continue;
+    if (SIM.varldPlatserPa(s.varld!, x, y).some(p => p.k === 'by')) continue;
+    return i;
+  }
+  return undefined;
+}
+
+SCENARIER.kroppresa = {
+  text: 'Steg 15.1.89: kroppen bär resan. Utan vatten sjunker orken på samma sätt som utan mat, och den som länge är utan mat eller vatten får samma följder som i byn, till sist döden. När resenärerna kommer hem tar var och en med sig sällskapets mättnad, vätska och ork',
+  kor: () => {
+    const s0 = SIM.cloneState(testBy(3)), vl0 = s0.varld!, hb = SIM.byPlats(vl0, vl0.huvud!)!, mal = hb.grannar![0]!.nr, torr = torrRuta(s0)!;
+    const vuxna = SIM.living(s0).filter(q => SIM.ageOf(q, s0.now) >= 20 && SIM.ageOf(q, s0.now) < 50);
+    // sällskapet står framme på en torr ruta på dagen (ingen gång), med behoven b och tom packning, i tim timmar
+    const sta = (b: Partial<SIM.ResBehov>, tim: number) => {
+      const x = paVagen(s0, [vuxna[0]!.id, vuxna[1]!.id], mal);
+      x.sl.skede = 'framme'; x.sl.framme = x.s.now; x.sl.ruta = torr; x.sl.pack = {};
+      x.sl.behov = { matt: 1, vatska: 1, ork: 1, fulla: 0, foder: 0, ...b };
+      for (let m = 0; m < tim * 6 && x.sl.skede === 'framme'; m++) { x.s.now += 10 * SIM.MIN; SIM.resaBehov(x.s, 10 * SIM.MIN); }
+      return x;
+    };
+    // orken: med vatten och mat, utan vatten och utan mat, två timmar (vätskan och mättnaden hålls på noll)
+    const ork = (b: Partial<SIM.ResBehov>) => { const x = sta({ ork: 0.8, ...b }, 2); return x.sl.behov!.ork; };
+    const med = ork({ vatska: 1, matt: 1 }), utanVatten = ork({ vatska: 0 }), utanMat = ork({ matt: 0 });
+    const torst = sta({ vatska: 0 }, 9), svalt = sta({ matt: 0, vatska: 0 }, 9), dod = (x: ReturnType<typeof sta>) => x.folk.map(p => p.dodVag?.orsak ?? '-').join(', ');
+    const halv = sta({ vatska: 0 }, 2), halsa = halv.folk[0]!.health;
+    // hemkomsten: var och en tar med sig sällskapets tal
+    const hem = paVagen(s0, [vuxna[0]!.id, vuxna[1]!.id], mal);
+    hem.sl.behov = { matt: 0.6, vatska: 0.7, ork: 0.3, fulla: 0, foder: 0 }; hem.sl.skede = 'hemat';
+    SIM.hemkomst(hem.s, hem.sl, hem.s.now);
+    const p = hem.folk[0]!;
+    return [
+      [`hittade en torr ruta (${torr})`, torr !== undefined],
+      [`utan vatten sjunker orken som utan mat (${utanVatten.toFixed(3)} och ${utanMat.toFixed(3)} mot ${med.toFixed(3)} med båda)`, Math.abs(utanVatten - utanMat) < 1e-9 && utanVatten < med - 0.02],
+      [`två timmar utan vatten tär på hälsan som i byn (${halsa.toFixed(2)}, i byn ${(1 - 2 / SIM.TORST.tomTim).toFixed(2)})`, Math.abs(halsa - (1 - 2 / SIM.TORST.tomTim)) < 0.02],
+      [`länge utan vatten dör de av törst (${dod(torst)})`, torst.folk.every(q => q.dodVag?.orsak === 'torst')],
+      [`länge utan mat dör de av svält (${dod(svalt)})`, svalt.folk.every(q => q.dodVag?.orsak === 'svalt')],
+      [`hemma har ${p.name} sällskapets mättnad, vätska och ork (${p.hunger}, ${p.torst}, ${p.rest})`, (hem.sl.skede as string) === 'hemma' && p.hunger === 0.6 && p.torst === 0.7 && p.rest === 0.3],
+    ];
+  },
+};

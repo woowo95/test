@@ -4323,7 +4323,7 @@ SCENARIER.silvergruva = {
       const vag = (pb.dygn - (sl.nere ?? 0)) / 2;
       sl.pack = { brod: Math.ceil(pb.mat * (vag + (sl.nere ?? 0)) / pb.dygn) }; // maten för vägen dit är uppäten
       if (nere) sl.nere = nere; // länge nere: olyckorna, en på 125 timmar per person
-      sl.skede = 'framme'; sl.framme = s2.now; sl.behov = { matt: 0.5, vatska: 1, ork: 1, fulla: 0, foder: 0 }; // halvmätta efter vägen dit: de äter också när tiden nere är kort
+      sl.skede = 'framme'; sl.framme = s2.now; sl.ruta = g!.y * SIM.varldMark(s2)!.w + g!.x; sl.behov = { matt: 0.5, vatska: 1, ork: 1, fulla: 0, foder: 0 }; // halvmätta efter vägen dit: de äter också när tiden nere är kort
       const silver: number[] = [], rum: boolean[] = [];
       const skador = () => sl.medl.reduce((x, id) => { const q = s2.people.find(y => y.id === id); return x + (q?.skador?.length ?? 0) + (q && !SIM.alive(q) ? 99 : 0); }, 0);
       let skadad = false;
