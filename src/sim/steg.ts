@@ -1,4 +1,5 @@
 import { SKATT, skattDygn, skattRegister } from './skatt';
+import { ovaKrok } from './kunna';
 import { varmeKrok } from './varme';
 import { TIMMINNEN, timminnenIn, timminnenUt } from './timminne';
 import { raknaBynVet, sparaHistorik } from './ort';
@@ -183,6 +184,7 @@ const STEG = balans('steg', {
   minneSek: 1800, // den som arbetar ser sig omkring och minns området ungefär så här ofta (sekunder)
   svaltTanke: 7200, // tanken Svälter kommer ungefär så här ofta (sekunder)
 });
+ovaKrok.ova = (s, p, sk, tim) => ovning(p, sk, tim * STEG.ovningArbete * (STEG.ovningBas + stat(p, 'intelligens', s.now) / 20)); // övningen per arbetad tid (kunna.ts, steg 15.1.145)
 
 // spelet ritar folk där de är medan slaget visas: var och ens väg under det senaste slaget, som
 // [tid, x, y, tid, x, y, ...]. Bara för att visa; simuleringen läser det aldrig. Uppgiften sparas också med tiden varje

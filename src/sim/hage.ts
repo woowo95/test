@@ -1,9 +1,10 @@
 import { gen } from './ord';
 // ---------- hagen (steg 9.8.4–9.8.6, Djuren i detalj: Hagen) ----------
 // En egen fil för hagen och betet, så att tamdjur.ts (som varg.ts och arv.ts läser tidigt) inte drar in marken och odlingen.
+import { ovaArbete } from './kunna';
 import { balans } from './balans';
 import { spand } from './agande';
-import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, ovning, annanGor } from './folk';
+import { ALDER, ageOf, byId, count, forstaGang, gjort, living, log, annanGor } from './folk';
 import { getable, takeMaterial } from './behov';
 import { chansPer, rnd } from './slump';
 import { H, Person, State, T, W, inMap } from './typer';
@@ -45,7 +46,6 @@ export const HAGE = balans('hage', {
   buskMat: 0.5, // en buske stillar så mycket hunger (geten äter upp den)
   tradMat: 0.3, // ett ungträd stillar så mycket hunger (geten äter upp det)
   vallaMin: 5, // minuter för att leda ett djur med rep in i hagen (en stor sak)
-  ovning: 0.03, // djurskötseln växer så mycket när man vallar
   fri: 12, // ett djur utan hage strövar högst så här långt (rutor) från byns mitt
   flyttDygn: 1, // en hage vars bete räcker kortare än så här många dygn för djuren i den är nedbetad: djuren flyttas (steg 9.8.6)
   hundLojal: 0.6, // en hund som är minst så här lojal hjälper ägaren att valla hela flocken på en gång
@@ -261,7 +261,7 @@ export function vallaKlar(s: State, p: Person, ref?: number) {
   const rs = hageRutor(h);
   const fria = rs.filter(i => !blocked(s, i % W + 0.5, Math.floor(i / W) + 0.5)), plats = fria.length ? fria : rs; // inte i ett träd eller en vägg
   for (const q of fl) { const i = plats[Math.floor(rnd(s, 'tamdjur') * plats.length)]; q.hage = h.id; q.x = i % W + 0.5; q.y = Math.floor(i / W) + 0.5; }
-  ovning(p, 'skotsel', HAGE.ovning); gjort(s, p, 'vallat'); count(s, 'vallat', fl.length);
+  ovaArbete(s, p, 'valla', HAGE.vallaMin); gjort(s, p, 'vallat'); count(s, 'vallat', fl.length);
   if (fran) count(s, 'hageFlytt');
   if (fl.length > 1) count(s, 'vallatMedHund');
   if (fran && forstaGang(s, 'hageFlytt')) log(s, `${p.name} flyttade ${fl.length > 1 ? 'djuren med hundens hjälp' : tamArt(d.art).ord[3]} till en ny hage, och den gamla fick växa igen.`, 'world', [p.id]);

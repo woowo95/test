@@ -36,6 +36,8 @@ export function utanFardighet(acts: Record<string, ActDef> = ACTS, gors: Record<
   const ut: string[] = [];
   for (const a in acts) {
     const d = acts[a], ks = gors[a] ?? [];
+    // en handling med yrke övar sin färdighet (steg 15.1.145), utom rollerna som räknas i timmar (dygn: vila, berätta, vakta) och eldens arbeten
+    if (d.yrke && !d.fardighet && !d.arbete && !d.hantverk && !d.dygn && d.slag !== 'elda') { ut.push(`${a}: yrket ${d.yrke} utan färdighet`); continue; }
     if (!ks.length && !d.hantverk) continue; // gör inget
     const sk = d.fardighet ?? d.arbete ?? 'hantverk';
     if (!(SKILLS as readonly string[]).includes(sk)) ut.push(`${a}: färdigheten ${sk} finns inte`);
@@ -50,3 +52,7 @@ export const kunnaSkill = (act: Act): Skill => ACTS[act]?.fardighet ?? ACTS[act]
 // hur fort p gör k med handlingen act, gånger receptets fart: 1 för den vanliga skickligheten (mitt)
 export const fartAv = (w: number, sk: number) => Math.min(KUNTAL.fartMax, Math.max(KUNTAL.fartMin, 1 + w * (sk - KUNTAL.mitt) / KUNTAL.fartSteg));
 export const kunnaFart = (_s: State, p: Person, act: Act, k?: string) => fartAv(kunnaVikt(act, k), p.skill[kunnaSkill(act)] ?? 0);
+// övningen per arbetad tid (steg 15.1.145): min minuter arbete med act, så fort som p gör det, övar handlingens färdighet som arbetet
+// gör (ovaKrok.ova sätts i steg.ts, med arbetets övning per timme)
+export const ovaKrok: { ova: (s: State, p: Person, sk: Skill, tim: number) => void } = { ova: () => {} };
+export const ovaArbete = (s: State, p: Person, act: Act, min: number) => ovaKrok.ova(s, p, kunnaSkill(act), min / kunnaFart(s, p, act) / 60);

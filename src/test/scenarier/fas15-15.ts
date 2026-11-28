@@ -122,3 +122,24 @@ SCENARIER.hagvatten = {
     ];
   },
 };
+
+SCENARIER.herde = {
+  text: 'Steg 15.1.145: djurskötseln gör arbetet fortare. Skötselns handlingar har färdigheten skötsel, den med skötsel 6 mjölkar fortare än den med skötsel 1, övningen följer den arbetade tiden, och vakten kräver färdigheten för en handling med yrke',
+  kor: () => {
+    const s = SIM.createState(3, START); klockan(s, 10);
+    const [a, b] = SIM.living(s).filter(q => SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen);
+    a.skill.skotsel = 6; b.skill.skotsel = 1;
+    const acts = ['mata', 'mjolka', 'klippa', 'valla', 'avliva', 'slatter', 'hamla', 'skatta'] as const;
+    const alla = acts.every(k => SIM.ACTS[k].fardighet === 'skotsel' && SIM.ACTS[k].kunna === 0.5);
+    const fa = SIM.kunnaFart(s, a, 'mjolka'), fb = SIM.kunnaFart(s, b, 'mjolka');
+    const fore = b.skill.skotsel; SIM.ovaArbete(s, b, 'mjolka', SIM.BOSKAP.mjolkMin); const ovat = b.skill.skotsel - fore;
+    const c0 = a.skill.skotsel; SIM.ovaArbete(s, a, 'mjolka', SIM.BOSKAP.mjolkMin); const ovatA = a.skill.skotsel - c0;
+    const vakt = SIM.utanFardighet({ ...SIM.ACTS, provherde: { namn: 'Prövar', slag: 'odla', yrke: 'Herde' } as SIM.ActDef }, SIM.GORS);
+    return [
+      [`skötselns handlingar har färdigheten skötsel och kunna 0,5`, alla],
+      [`den med skötsel 6 mjölkar fortare (${SIM.kortTal(SIM.BOSKAP.mjolkMin / fa)} min) än den med skötsel 1 (${SIM.kortTal(SIM.BOSKAP.mjolkMin / fb)} min)`, fa > fb],
+      [`övningen följer den arbetade tiden: den långsamma övar mer på samma mjölkning (${ovat.toFixed(4)} mot ${ovatA.toFixed(4)})`, ovat > ovatA && ovatA > 0],
+      [`vakten larmar för en handling med yrke utan färdighet (${vakt.join('; ')}), och inte för spelets (${SIM.utanFardighet().length})`, vakt.some(x => x.startsWith('provherde')) && SIM.utanFardighet().length === 0],
+    ];
+  },
+};

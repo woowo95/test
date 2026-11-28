@@ -6,9 +6,10 @@ import { gen } from './ord';
 // BOSKAP.flock av arten. Fåren ger ull: den växer ut på ett par dygn (år i spelet) och klipps med kniven (handlingen klippa).
 // Getterna mjölkas (steg 9.8.8), och slakten med kött, skinn, horn och talg (steg 9.8.7) byggs i sina steg. Allt stegas en gång i timmen
 // (stepBoskap, steg.ts), likadant i båda lägena, med byns följd 'tamdjur'.
+import { ovaArbete } from './kunna';
 import { balans } from './balans';
 import { spand } from './agande';
-import { ALDER, ageOf, byId, count, forstaGang, gjort, log, ovning, annanGor, alive } from './folk';
+import { ALDER, ageOf, byId, count, forstaGang, gjort, log, annanGor, alive } from './folk';
 import { desperatMat, getable, levKrok } from './behov';
 import { chansPer } from './slump';
 import { amountOf, changed, gain, put, stacksOf, tidy } from './lager';
@@ -30,7 +31,6 @@ export const BOSKAP = balans('boskap', {
   sistVarde: 5, // det sista djuret av sitt kön i arten är så här mycket mer värt att behålla
   ullTim: 1 / 48, // ullen växer ut på två dygn (två år i spelet)
   klippMin: 5, // minuter det tar att klippa ett får (en stor sak i Arbetstider)
-  ovning: 0.03, // djurskötseln växer så här mycket när man klipper
   mjolkTim: 1 / 12, // en vuxen get har mjölk att ge två gånger om dygnet (utom i istiden)
   mjolkMin: 3, // minuter det tar att mjölka en get (en liten sak)
 });
@@ -135,7 +135,7 @@ export function klippKlar(s: State, p: Person, ref?: number) {
   if (!d || (d.ull ?? 0) < 1) return;
   d.ull = 0;
   gain(s, p, 'ull', tamArt(d.art).ull!);
-  ovning(p, 'skotsel', BOSKAP.ovning); gjort(s, p, 'klippt'); count(s, 'klippt');
+  ovaArbete(s, p, 'klippa', BOSKAP.klippMin); gjort(s, p, 'klippt'); count(s, 'klippt');
   if (forstaGang(s, 'klipptFar')) log(s, `${p.name} klippte byns första får och fick ull.`, 'world', [p.id]);
 }
 
@@ -162,7 +162,7 @@ export function mjolkaKlar(s: State, p: Person, ref?: number) {
   const t = mjolkKar(s, n);
   if (!t || !fyllVatska(s, 'mjolk', n, t)) return;
   d.mjolk = 0; d.mjolkRest = Math.max(0, n - karRymmer(t)) || undefined;
-  ovning(p, 'skotsel', BOSKAP.ovning); gjort(s, p, 'mjolkat'); count(s, 'mjolkat');
+  ovaArbete(s, p, 'mjolka', BOSKAP.mjolkMin); gjort(s, p, 'mjolkat'); count(s, 'mjolkat');
   forstaGang(s, 'mjolkHaft'); // byn har haft mjölk (tekniken Ost, steg 12.4.7)
   if (forstaGang(s, 'mjolkatGet')) log(s, `${p.name} mjölkade byns första ${tamArt(d.art).ord[1]}.`, 'world', [p.id]);
 }
@@ -246,7 +246,7 @@ export function avlivaKlar(s: State, p: Person, ref?: number) {
     handelse(s, p, 'boskapsstold', agare, tamArt(d.art).ord[1], agare);
     log(s, `${p.name} slaktade ${gen(agare.name)} ${tamArt(d.art).ord[1]} i hungern.`, 'rel', [p.id, agare.id]);
   }
-  count(s, 'tamDog_slaktad'); count(s, `slaktad_${orsak}`); gjort(s, p, 'avlivat');
+  count(s, 'tamDog_slaktad'); count(s, `slaktad_${orsak}`); gjort(s, p, 'avlivat'); ovaArbete(s, p, 'avliva', SLAKTDJUR.min);
   if (forstaGang(s, 'slaktatTamdjur')) log(s, `${p.name} avlivade ${tamArt(d.art).ord[3]} och bar det till slaktbänken.`, 'world', [p.id]);
 }
 import { handelse } from './rykten';
