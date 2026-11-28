@@ -1,0 +1,28 @@
+===== seed 1001 (från dygn 0.0, 20 dygn)
+--- start: dygn 0.0, folk 5, gäster nu 0 (silver )
+  silver: bybor med silver 0/5, summa hos bybor 0, i byn totalt 0
+  värld: rader 92, med silver 0, summa 0, största 0 | gruvor [1303:300 1304:300] tomma 0 | gruvfärder nu 0
+  anställningar: 0 (åt företag 0)
+--- efter 5 dygn: dygn 5.0, folk 7, gäster nu 0 (silver )
+  silver: bybor med silver 0/7, summa hos bybor 0, i byn totalt 0
+  värld: rader 96, med silver 0, summa 0, största 0 | gruvor [1303:204 1304:300] tomma 0 | gruvfärder nu 5
+  anställningar: 0 (åt företag 0)
+--- efter 10 dygn: dygn 10.0, folk 10, gäster nu 0 (silver )
+  silver: bybor med silver 0/10, summa hos bybor 0, i byn totalt 0
+  värld: rader 96, med silver 1, summa 64, största 64 | gruvor [1303:151 1304:300] tomma 0 | gruvfärder nu 6
+  anställningar: 0 (åt företag 0)
+--- efter 15 dygn: dygn 15.0, folk 13, gäster nu 0 (silver )
+  silver: bybor med silver 2/13, summa hos bybor 53, i byn totalt 53
+  värld: rader 97, med silver 3, summa 129, största 76 | gruvor [1304:300 1350:300] tomma 1 | gruvfärder nu 3
+  anställningar: 0 (åt företag 0)
+--- efter 20 dygn: dygn 20.0, folk 8, gäster nu 0 (silver )
+  silver: bybor med silver 4/8, summa hos bybor 31, i byn totalt 31
+  värld: rader 100, med silver 3, summa 95, största 62 | gruvor [1304:300 1350:300] tomma 1 | gruvfärder nu 0
+  anställningar: 1 (åt företag 0)
+  räknare (ökning på 20 dygn): kopGranne 10, radgruva_ut 10, radgruva_silver 300, lonVaror 38, lonAvrundad 6, lonBetald 6, handelByten 7, handelBesok 11, egnaByten 25
+  sålt per verksamhet (ökning): 
+  start per verksamhet (ökning): anstalld_bygghjalp 7, anstalld_undervisning 1
+  köp vid disken: bybor 0 (0.00/dygn) {}, med silver 0, silver betalt 0; gäster 0 (0.00/dygn) {}, med silver 0, silver betalt 0
+  timmar bybor (riktig tid i timmar): sova 1001, vila 821, leka 302, samtal 300, beratta 246, vakt 220, fiske 170, bygga 114, promenad 106, strand 105, maltid 86, toa 61, sport 57, klyva 46, samla 42, hugga 40, jakt 33, stubbe 33, bada 29, tanda 26, foder 22, dricka 22
+  handelstimmar: betjana 0.0, stallaFram 0.0, stada 0.0, koaDisk 0.0, marknad 0.0, bytHos 1.3
+  ägarnas timmar: 

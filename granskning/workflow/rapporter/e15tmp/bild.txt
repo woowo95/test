@@ -1,0 +1,1 @@
+hittad {"x":102,"y":95.5,"f":"Ashilds affär hylla grillfisk1,rotter1","vem":["Madleif:koaDisk","Edgaut:koaDisk","Ashild:betjana"]} timme 9 ljus 1.00

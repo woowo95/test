@@ -1,0 +1,28 @@
+===== seed 16839 (från dygn 0.0, 20 dygn)
+--- start: dygn 0.0, folk 5, gäster nu 0 (silver )
+  silver: bybor med silver 0/5, summa hos bybor 0, i byn totalt 0
+  värld: rader 80, med silver 0, summa 0, största 0 | gruvor [984:300 985:300] tomma 0 | gruvfärder nu 0
+  anställningar: 0 (åt företag 0)
+--- efter 5 dygn: dygn 5.0, folk 7, gäster nu 0 (silver )
+  silver: bybor med silver 0/7, summa hos bybor 0, i byn totalt 0
+  värld: rader 78, med silver 0, summa 0, största 0 | gruvor [984:300 985:300] tomma 0 | gruvfärder nu 0
+  anställningar: 0 (åt företag 0)
+--- efter 10 dygn: dygn 10.0, folk 9, gäster nu 0 (silver )
+  silver: bybor med silver 0/9, summa hos bybor 0, i byn totalt 0
+  värld: rader 77, med silver 0, summa 0, största 0 | gruvor [984:300 985:300] tomma 0 | gruvfärder nu 0
+  anställningar: 2 (åt företag 0)
+--- efter 15 dygn: dygn 15.0, folk 9, gäster nu 0 (silver )
+  silver: bybor med silver 0/9, summa hos bybor 0, i byn totalt 0
+  värld: rader 75, med silver 0, summa 0, största 0 | gruvor [984:300 985:300] tomma 0 | gruvfärder nu 0
+  anställningar: 2 (åt företag 0)
+--- efter 20 dygn: dygn 20.0, folk 9, gäster nu 0 (silver )
+  silver: bybor med silver 0/9, summa hos bybor 0, i byn totalt 0
+  värld: rader 78, med silver 0, summa 0, största 0 | gruvor [984:300 985:300] tomma 0 | gruvfärder nu 0
+  anställningar: 3 (åt företag 0)
+  räknare (ökning på 20 dygn): kopGranne 25, lonVaror 50, lonAvrundad 4, lonBetald 4, handelByten 3, handelBesok 8, egnaByten 26
+  sålt per verksamhet (ökning): 
+  start per verksamhet (ökning): anstalld_bygghjalp 4, anstalld_undervisning 27
+  köp vid disken: bybor 0 (0.00/dygn) {}, med silver 0, silver betalt 0; gäster 0 (0.00/dygn) {}, med silver 0, silver betalt 0
+  timmar bybor (riktig tid i timmar): sova 759, leka 492, vila 389, samtal 370, beratta 350, vakt 208, sport 120, forsok 116, promenad 108, bygga 102, strand 86, jakt 78, samla 64, toa 58, klyva 42, bada 41, fiske 39, lyssna 36, tanda 31, station 24, svalka 23, bensyl 23
+  handelstimmar: betjana 0.0, stallaFram 0.0, stada 0.0, koaDisk 0.0, marknad 0.0, bytHos 4.0
+  ägarnas timmar: 

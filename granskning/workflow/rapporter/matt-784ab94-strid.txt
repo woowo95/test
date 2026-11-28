@@ -1,0 +1,205 @@
+
+> samhallssimulatorn@1.0.0 strid
+> tsx src/test/strid.ts 16 35
+
+by 8920 klar (1 av 16, 653 s)
+by 16839 klar (2 av 16, 667 s)
+by 1001 klar (3 av 16, 690 s)
+by 24758 klar (4 av 16, 782 s)
+by 32677 klar (5 av 16, 1269 s)
+by 56434 klar (6 av 16, 1663 s)
+by 64353 klar (7 av 16, 2022 s)
+by 72272 klar (8 av 16, 2251 s)
+by 48515 klar (9 av 16, 2412 s)
+by 80191 klar (10 av 16, 2464 s)
+by 88110 klar (11 av 16, 2932 s)
+by 103948 klar (12 av 16, 3109 s)
+by 96029 klar (13 av 16, 3201 s)
+by 40596 klar (14 av 16, 3507 s)
+by 111867 klar (15 av 16, 3567 s)
+by 119786 klar (16 av 16, 3639 s)
+16 av 16 byar, 35 dygn (35 år i spelet), 3639 s datorns tid; 15934 strider
+
+I BROTTNINGEN: 14451 strider i 16 av 16 byar
+  på byns sida (median) 1, varav bybor 1, som kom till under striden 0 i allt; motståndare 1
+  andel av byns vuxna som var med (median) 20 %
+  längd: median 75 s, kortast 0 s, längst 689 s (sekunder i verkligheten, som striden spelas)
+  byns sida vann 7872, förlorade 5123, oavgjort 1456
+  när byn var minst lika många (med dem som kom till) vann den 7872 av 14451; när den var färre 0 av 0
+  byns vapen när striden börjar: hand 14451
+  byns sida: döda 0, skadade 13962 (66408 skador), gav upp 5099, flydde 1480, låg nere 0; slag 455178, träffar 157622 (35 %)
+  motståndarna: döda 0, skadade 14199 (75435 skador), gav upp 7853, flydde 1475, låg nere 0; slag 457337, träffar 130735 (29 %)
+  händelser per strid: traff 19.9, miss 18.4, trycks 17.3, knuff 15.7, duck 5.7, parera 2.8, borjar 1.0, slut 1.0, ger 0.9, upp 0.7, omkull 0.6, later 0.5
+
+EFTER ETT GRÄL: 1231 strider i 16 av 16 byar
+  på byns sida (median) 1, varav bybor 1, som kom till under striden 0 i allt; motståndare 1
+  andel av byns vuxna som var med (median) 17 %
+  längd: median 15 s, kortast 0 s, längst 1200 s (sekunder i verkligheten, som striden spelas)
+  byns sida vann 147, förlorade 137, oavgjort 947
+  när byn var minst lika många (med dem som kom till) vann den 147 av 1231; när den var färre 0 av 0
+  byns vapen när striden börjar: hand 1231
+  byns sida: döda 0, skadade 934 (4073 skador), gav upp 1081, flydde 0, låg nere 2; slag 48240, träffar 16444 (34 %)
+  motståndarna: döda 0, skadade 954 (4362 skador), gav upp 1093, flydde 0, låg nere 0; slag 48222, träffar 15322 (32 %)
+  händelser per strid: traff 25.8, miss 22.7, trycks 21.9, knuff 19.8, duck 6.2, parera 3.0, skild 1.5, upp 1.0, borjar 1.0, slut 1.0, omkull 0.9, ger 0.2
+
+ANFÖLLS AV ETT VILDSVIN: 98 strider i 16 av 16 byar
+  på byns sida (median) 1, varav bybor 1, som kom till under striden 0 i allt; motståndare 1
+  andel av byns vuxna som var med (median) 14 %
+  längd: median 117 s, kortast 5 s, längst 503 s (sekunder i verkligheten, som striden spelas)
+  byns sida vann 60, förlorade 38, oavgjort 0
+  när byn var minst lika många (med dem som kom till) vann den 60 av 98; när den var färre 0 av 0
+  byns vapen när striden börjar: yxa 33, fiskespjut 22, hand 21, kniv 7, flintspjut 6, jarnkniv 5, jarnyxa 4
+  byns sida: döda 10, skadade 94 (618 skador), gav upp 0, flydde 11, låg nere 17; slag 3492, träffar 1624 (47 %)
+  motståndarna: döda 49, skadade 96 (795 skador), gav upp 0, flydde 11, låg nere 0; slag 3282, träffar 1148 (35 %)
+  händelser per strid: traff 28.3, miss 22.7, trycks 9.6, knuff 8.1, duck 5.4, parera 4.3, borjar 1.0, slut 1.0, nere 0.7, dod 0.6, omkull 0.4, upp 0.3
+
+PÅ LEK: 58 strider i 15 av 16 byar
+  på byns sida (median) 1, varav bybor 1, som kom till under striden 0 i allt; motståndare 1
+  andel av byns vuxna som var med (median) 25 %
+  längd: median 85 s, kortast 14 s, längst 234 s (sekunder i verkligheten, som striden spelas)
+  byns sida vann 31, förlorade 27, oavgjort 0
+  när byn var minst lika många (med dem som kom till) vann den 31 av 58; när den var färre 0 av 0
+  byns vapen när striden börjar: hand 58
+  byns sida: döda 0, skadade 57 (309 skador), gav upp 27, flydde 0, låg nere 0; slag 1581, träffar 592 (37 %)
+  motståndarna: döda 0, skadade 58 (304 skador), gav upp 31, flydde 0, låg nere 0; slag 1601, träffar 583 (36 %)
+  händelser per strid: traff 20.3, trycks 16.5, knuff 14.9, miss 12.1, duck 3.6, parera 3.5, borjar 1.0, ger 1.0, slut 1.0, upp 0.6, omkull 0.5, later 0.5
+
+ANFÖLLS AV EN BJÖRN: 51 strider i 13 av 16 byar
+  på byns sida (median) 1, varav bybor 1, som kom till under striden 0 i allt; motståndare 1
+  andel av byns vuxna som var med (median) 20 %
+  längd: median 46 s, kortast 0 s, längst 307 s (sekunder i verkligheten, som striden spelas)
+  byns sida vann 13, förlorade 38, oavgjort 0
+  när byn var minst lika många (med dem som kom till) vann den 13 av 51; när den var färre 0 av 0
+  byns vapen när striden börjar: yxa 18, hand 17, kniv 7, flintspjut 5, benspade 2, fiskespjut 2, jarnyxa 1
+  byns sida: döda 2, skadade 49 (247 skador), gav upp 0, flydde 37, låg nere 0; slag 1033, träffar 467 (45 %)
+  motståndarna: döda 1, skadade 44 (212 skador), gav upp 0, flydde 3, låg nere 9; slag 919, träffar 348 (38 %)
+  händelser per strid: traff 16.0, miss 12.4, trycks 6.2, knuff 4.8, duck 3.0, parera 2.1, borjar 1.0, slut 1.0, borta 0.8, flykt 0.8, nere 0.2, omkull 0.1
+
+VARGAR PÅ VARGJAKT: 27 strider i 14 av 16 byar
+  på byns sida (median) 2, varav bybor 2, som kom till under striden 2 i allt; motståndare 1
+  andel av byns vuxna som var med (median) 33 %
+  längd: median 124 s, kortast 20 s, längst 411 s (sekunder i verkligheten, som striden spelas)
+  byns sida vann 20, förlorade 7, oavgjort 0
+  när byn var minst lika många (med dem som kom till) vann den 20 av 24; när den var färre 0 av 3
+  byns vapen när striden börjar: yxa 32, fiskespjut 10, flintspjut 9, kniv 7, jarnyxa 6, hand 6, jarnkniv 3, benspade 1
+  byns sida: döda 1, skadade 54 (393 skador), gav upp 0, flydde 6, låg nere 5; slag 2067, träffar 826 (40 %)
+  motståndarna: döda 18, skadade 50 (432 skador), gav upp 0, flydde 26, låg nere 0; slag 1748, träffar 827 (47 %)
+  händelser per strid: traff 61.2, miss 48.6, knuff 14.5, trycks 13.8, duck 9.6, parera 6.9, upp 1.7, skyddar 1.5, flykt 1.4, halkar 1.3, borta 1.1, borjar 1.0
+
+VARGAR NÄR VARGARNA ANFÖLL: 15 strider i 10 av 16 byar
+  på byns sida (median) 1, varav bybor 1, som kom till under striden 3 i allt; motståndare 4
+  andel av byns vuxna som var med (median) 17 %
+  längd: median 78 s, kortast 22 s, längst 268 s (sekunder i verkligheten, som striden spelas)
+  byns sida vann 0, förlorade 15, oavgjort 0
+  när byn var minst lika många (med dem som kom till) vann den 0 av 1; när den var färre 0 av 14
+  byns vapen när striden börjar: yxa 8, kniv 4, jarnyxa 2, flintspjut 2, fiskespjut 1, hand 1
+  byns sida: döda 0, skadade 15 (138 skador), gav upp 0, flydde 9, låg nere 6; slag 346, träffar 109 (32 %)
+  motståndarna: döda 0, skadade 16 (69 skador), gav upp 0, flydde 1, låg nere 0; slag 725, träffar 445 (61 %)
+  händelser per strid: traff 36.9, miss 20.0, knuff 7.4, parera 3.7, duck 3.1, trycks 2.6, upp 2.4, halkar 2.3, borjar 1.0, slut 1.0, flykt 0.7, borta 0.7
+
+OM MAKTEN I BYN: 3 strider i 1 av 16 byar
+  på byns sida (median) 1, varav bybor 1, som kom till under striden 0 i allt; motståndare 2
+  andel av byns vuxna som var med (median) 17 %
+  längd: median 98 s, kortast 83 s, längst 183 s (sekunder i verkligheten, som striden spelas)
+  byns sida vann 1, förlorade 2, oavgjort 0
+  när byn var minst lika många (med dem som kom till) vann den 1 av 1; när den var färre 0 av 2
+  byns vapen när striden börjar: yxa 1, benspade 1, kniv 1, jarnyxa 1
+  byns sida: döda 0, skadade 3 (28 skador), gav upp 0, flydde 1, låg nere 1; slag 99, träffar 32 (32 %)
+  motståndarna: döda 1, skadade 5 (24 skador), gav upp 0, flydde 2, låg nere 0; slag 141, träffar 54 (38 %)
+  händelser per strid: traff 28.7, miss 25.7, knuff 14.0, trycks 10.7, parera 8.7, duck 2.7, halkar 1.7, upp 1.7, flykt 1.3, borjar 1.0, leder 1.0, borta 1.0
+
+PER SORTS STRID (de som förlorade eller lämnade striden; står = slogs till slutet)
+  rövare: ingen
+  VARGAR: 42 strider, varav 0 på 0 sekunder (räknas inte i längden), längd median 115 s (en fjärdedel under 69, en fjärdedel över 167, längst 411); byns sida vann 20 av 42, oavgjort 0
+    försöken (116 per strid): 244 av 4883 blev ett slag som gav mer än en skråma (5.0 %); träffar 45 %, missar 33 %, pareras 5 %, duckas 6 %, knuffar 11 %
+    träffar på minst 0,2 efter skyddet på delen: utan skydd 11.1 % (244 av 2205), annat skydd – % (0 av 0), ringbrynja – % (0 av 0)
+    skadan per träff: median 0.010 (en fjärdedel över 0.050); av 42 som flydde hade 37 ett ordentligt sår (svåraste såret minst 0,2 eller blodet under 85 %); av 209 som slogs fick 96 ett; döda 0.45 per strid och efteråt 0.00
+    striderna slutade mest med att förlorarna: flydde 55 %, för skadad 24 %, förblödde 21 %
+    byns sida: flydde 15, för skadad 11, förblödde 1, står 65; motståndarna: flydde 27, förblödde 18, står 72; förblödde inom ett dygn efteråt 0
+  BJÖRNEN: 51 strider, varav 4 på 0 sekunder (räknas inte i längden), längd median 52 s (en fjärdedel under 18, en fjärdedel över 109, längst 307); byns sida vann 13 av 51, oavgjort 0
+    försöken (42 per strid): 89 av 1952 blev ett slag som gav mer än en skråma (4.6 %); träffar 42 %, missar 32 %, pareras 5 %, duckas 8 %, knuffar 13 %
+    träffar på minst 0,2 efter skyddet på delen: utan skydd 10.7 % (84 av 782), annat skydd 15.2 % (5 av 33), ringbrynja – % (0 av 0)
+    skadan per träff: median 0.015 (en fjärdedel över 0.049); av 40 som flydde hade 39 ett ordentligt sår (svåraste såret minst 0,2 eller blodet under 85 %); av 103 som slogs fick 67 ett; döda 0.06 per strid och efteråt 0.00
+    striderna slutade mest med att förlorarna: flydde 75 %, för skadad 18 %, dog direkt 6 %, drog sig undan 2 %
+    byns sida: flydde 36, drog sig undan 1, dog direkt 2, står 13; motståndarna: flydde 3, för skadad 9, dog direkt 1, står 38; förblödde inom ett dygn efteråt 0
+  VILDSVINET: 98 strider, varav 0 på 0 sekunder (räknas inte i längden), längd median 117 s (en fjärdedel under 58, en fjärdedel över 196, längst 503); byns sida vann 60 av 98, oavgjort 0
+    försöken (69 per strid): 380 av 6774 blev ett slag som gav mer än en skråma (5.6 %); träffar 41 %, missar 33 %, pareras 6 %, duckas 8 %, knuffar 12 %
+    träffar på minst 0,2 efter skyddet på delen: utan skydd 13.7 % (380 av 2769), annat skydd 0.0 % (0 av 3), ringbrynja – % (0 av 0)
+    skadan per träff: median 0.012 (en fjärdedel över 0.073); av 22 som flydde hade 22 ett ordentligt sår (svåraste såret minst 0,2 eller blodet under 85 %); av 196 som slogs fick 145 ett; döda 0.60 per strid och efteråt 0.00
+    striderna slutade mest med att förlorarna: förblödde 59 %, flydde 22 %, för skadad 17 %, dog direkt 1 %
+    byns sida: flydde 11, för skadad 17, förblödde 10, står 60; motståndarna: flydde 11, dog direkt 1, förblödde 48, står 38; förblödde inom ett dygn efteråt 0
+  SLAGSMÅL: 1231 strider, varav 44 på 0 sekunder (räknas inte i längden), längd median 16 s (en fjärdedel under 6, en fjärdedel över 168, längst 1200); byns sida vann 147 av 1231, oavgjort 947
+    försöken (81 per strid): 106 av 96462 blev ett slag som gav mer än en skråma (0.1 %); träffar 33 %, missar 29 %, pareras 4 %, duckas 8 %, knuffar 26 %
+    träffar på minst 0,2 efter skyddet på delen: utan skydd 0.3 % (105 av 30938), annat skydd 0.1 % (1 av 828), ringbrynja – % (0 av 0)
+    skadan per träff: median 0.004 (en fjärdedel över 0.017); av 0 som flydde hade 0 ett ordentligt sår (svåraste såret minst 0,2 eller blodet under 85 %); av 2462 som slogs fick 516 ett; döda 0.00 per strid och efteråt 0.00
+    striderna slutade mest med att förlorarna: gav upp 99 %, för skadad 1 %
+    byns sida: gav upp 135, för skadad 2, skildes åt 946, står 148; motståndarna: gav upp 147, skildes åt 946, står 138; förblödde inom ett dygn efteråt 0
+  BROTTNING: 14451 strider, varav 61 på 0 sekunder (räknas inte i längden), längd median 76 s (en fjärdedel under 43, en fjärdedel över 124, längst 689); byns sida vann 7872 av 14451, oavgjort 1456
+    försöken (63 per strid): 0 av 912515 blev ett slag som gav mer än en skråma (0.0 %); träffar 32 %, missar 29 %, pareras 4 %, duckas 9 %, knuffar 26 %
+    träffar på minst 0,2 efter skyddet på delen: utan skydd – % (0 av 0), annat skydd – % (0 av 0), ringbrynja – % (0 av 0)
+    striderna slutade mest med att förlorarna: gav upp 100 %, flydde 0 %
+    byns sida: flydde 1480, gav upp 5099, står 7872; motståndarna: flydde 1475, gav upp 7853, står 5123; förblödde inom ett dygn efteråt 0
+  LEK: 58 strider, varav 0 på 0 sekunder (räknas inte i längden), längd median 85 s (en fjärdedel under 52, en fjärdedel över 117, längst 234); byns sida vann 31 av 58, oavgjort 0
+    försöken (55 per strid): 0 av 3182 blev ett slag som gav mer än en skråma (0.0 %); träffar 37 %, missar 22 %, pareras 6 %, duckas 7 %, knuffar 28 %
+    träffar på minst 0,2 efter skyddet på delen: utan skydd – % (0 av 0), annat skydd – % (0 av 0), ringbrynja – % (0 av 0)
+    striderna slutade mest med att förlorarna: gav upp 100 %
+    byns sida: gav upp 27, står 31; motståndarna: gav upp 31, står 27; förblödde inom ett dygn efteråt 0
+  ANNAN STRID MELLAN BYBOR: 3 strider, varav 0 på 0 sekunder (räknas inte i längden), längd median 98 s (en fjärdedel under 83, en fjärdedel över 183, längst 183); byns sida vann 1 av 3, oavgjort 0
+    försöken (80 per strid): 12 av 240 blev ett slag som gav mer än en skråma (5.0 %); träffar 36 %, missar 32 %, pareras 11 %, duckas 3 %, knuffar 18 %
+    träffar på minst 0,2 efter skyddet på delen: utan skydd 14.0 % (12 av 86), annat skydd – % (0 av 0), ringbrynja – % (0 av 0)
+    skadan per träff: median 0.017 (en fjärdedel över 0.094); av 3 som flydde hade 3 ett ordentligt sår (svåraste såret minst 0,2 eller blodet under 85 %); av 10 som slogs fick 6 ett; döda 0.33 per strid och efteråt 0.00
+    striderna slutade mest med att förlorarna: för skadad 33 %, flydde 33 %, förblödde 33 %
+    byns sida: flydde 1, för skadad 1, står 2; motståndarna: flydde 2, förblödde 1, står 3; förblödde inom ett dygn efteråt 0
+  RÅNEN: 0, strider per rån (median) –, från första till sista striden (median) – minuter, längst – minuter
+
+RÖVARNAS ANFALL: 2 gånger gick ett gäng till anfall; byn hade sett det innan 2 gånger, på dagen 1 av 1
+
+GÄNGEN: 2 kom (tiden i verkligheten från att gänget kom; median: sågs 4.7 min, alla framme 4.9 min, anfall 7.4 min); anföll 2, sågs innan anfallet på dagen 1 av 1, på natten 1 av 1
+  by 56434: 4 rövare, sågs 3.6 min, alla framme 3.5 min, anfall 5.4 min (natt)
+  by 96029: 10 rövare, sågs 4.7 min, alla framme 4.9 min, anfall 7.4 min (dag)
+  från by: 2 gäng, storlek median 10 (4, 10), vapen svard 10, bage 4
+
+VÄRLDENS ANFALL: 2 gäng som världen skickade; chansen världen räknade med i snitt 82 %, gänget vann 2 (100 %)
+  chans 67–100 %: 2 gäng, vann 2
+  by 56434: 4 från Lindholm, chans 73 %, vann
+  by 96029: 10 från Stenryd, chans 91 %, vann
+
+GÄNGEN PER BY (rikast per person först, snittet under tiden):
+  by 80191: rikedom 256 per person, 0 gäng; 0 läger i världen
+  by 119786: rikedom 196 per person, 0 gäng; 0 läger i världen
+  by 96029: rikedom 173 per person, 1 gäng (10 från Stenryd); 0 läger i världen
+  by 72272: rikedom 159 per person, 0 gäng; 0 läger i världen, folket kom från grannbyarna, hunger 3; huvudbyn, missnoje 4
+  by 32677: rikedom 150 per person, 0 gäng; 0 läger i världen
+  by 16839: rikedom 146 per person, 0 gäng; 0 läger i världen
+  by 64353: rikedom 132 per person, 0 gäng; 0 läger i världen, folket kom från grannbyarna, hunger 1
+  by 111867: rikedom 129 per person, 0 gäng; 0 läger i världen
+  by 1001: rikedom 126 per person, 0 gäng; 0 läger i världen, folket kom från grannbyarna, hunger 1
+  by 56434: rikedom 125 per person, 1 gäng (4 från Lindholm); 0 läger i världen
+  by 48515: rikedom 120 per person, 0 gäng; 0 läger i världen, folket kom från grannbyarna, hunger 1
+  by 8920: rikedom 114 per person, 0 gäng; 0 läger i världen
+  by 24758: rikedom 113 per person, 0 gäng; 0 läger i världen
+  by 103948: rikedom 112 per person, 0 gäng; 0 läger i världen, folket kom från grannbyarna, hunger 2
+  by 88110: rikedom 111 per person, 0 gäng; 0 läger i världen, folket kom från huvudbyn, missnoje 1
+  by 40596: rikedom 99 per person, 0 gäng; 1 läger i världen, folket kom från grannbyarna, hunger 2; huvudbyn, missnoje 1
+  rikaste tredjedelen 1 gäng (median 0), fattigaste 0; gräns: minst dubbelt så många och median minst 2 ✗; från läger 0, från byar 2 ✗
+
+Vakter: inga fel.
+
+ARENAN: samma strider 300 gånger var, jämnstarka vuxna; slutet för den ena sidan | den andra
+  tre med spjut mot tre rövare med yxa: vann 51 %, förlorade 49 %, oavgjort 0 %; längd 144 s (104–204); träffar 36 %, parerar 14 %, duckar 6 %, missar 34 %, knuffar 11 %; slut: flydde 46 %, står 45 %, för skadad 9 %, dog direkt 0 % | står 44 %, flydde 38 %, för skadad 17 %, drog sig undan 1 %, förblödde 0 %
+  en med yxa mot en med yxa, för att skada: vann 45 %, förlorade 55 %, oavgjort 0 %; längd 107 s (55–180); träffar 32 %, parerar 16 %, duckar 7 %, missar 35 %, knuffar 10 %; slut: flydde 51 %, står 45 %, för skadad 4 % | står 55 %, flydde 40 %, för skadad 5 %, drog sig undan 0 %
+  en med yxa mot en med yxa, för att döda: vann 45 %, förlorade 55 %, oavgjort 0 %; längd 107 s (55–180); träffar 33 %, parerar 15 %, duckar 7 %, missar 34 %, knuffar 10 %; slut: flydde 50 %, står 45 %, förblödde 4 %, dog direkt 0 % | står 55 %, flydde 39 %, förblödde 5 %, dog direkt 0 %, drog sig undan 0 %
+  slagsmål, en mot en: vann 51 %, förlorade 49 %, oavgjort 0 %; längd 471 s (365–571); träffar 31 %, parerar 4 %, duckar 9 %, missar 30 %, knuffar 26 %; slut: står 51 %, gav upp 49 % | gav upp 51 %, står 49 %
+  brottning, en mot en: vann 50 %, förlorade 50 %, oavgjort 0 %; längd 104 s (74–137); träffar 32 %, parerar 5 %, duckar 10 %, missar 28 %, knuffar 26 %; slut: gav upp 50 %, står 50 % | står 50 %, gav upp 50 %
+  lek, en mot en: vann 50 %, förlorade 50 %, oavgjort 0 %; längd 104 s (74–137); träffar 32 %, parerar 5 %, duckar 10 %, missar 28 %, knuffar 26 %; slut: står 50 %, gav upp 50 % | gav upp 50 %, står 50 %
+  en obeväpnad mot en varg: vann 19 %, förlorade 81 %, oavgjort 0 %; längd 303 s (230–374); träffar 33 %, parerar 3 %, duckar 11 %, missar 35 %, knuffar 18 %; slut: flydde 72 %, står 19 %, för skadad 9 % | står 81 %, flydde 19 %
+  en med spjut mot en varg: vann 90 %, förlorade 10 %, oavgjort 0 %; längd 136 s (79–205); träffar 34 %, parerar 8 %, duckar 9 %, missar 39 %, knuffar 10 %; slut: står 90 %, flydde 9 %, för skadad 1 % | flydde 62 %, förblödde 28 %, står 10 %, dog direkt 0 %
+  tre med spjut mot fyra vargar: vann 79 %, förlorade 21 %, oavgjort 0 %; längd 140 s (91–195); träffar 39 %, parerar 7 %, duckar 8 %, missar 37 %, knuffar 10 %; slut: står 74 %, flydde 23 %, för skadad 2 %, förblödde 2 % | flydde 69 %, står 20 %, förblödde 11 %, för skadad 1 %
+  en med spjut mot ett vildsvin: vann 85 %, förlorade 15 %, oavgjort 0 %; längd 124 s (72–181); träffar 38 %, parerar 9 %, duckar 8 %, missar 35 %, knuffar 10 %; slut: står 85 %, flydde 13 %, för skadad 1 %, förblödde 1 % | förblödde 44 %, flydde 41 %, står 15 %
+  en med spjut mot björnen: vann 44 %, förlorade 56 %, oavgjort 0 %; längd 86 s (42–131); träffar 41 %, parerar 8 %, duckar 7 %, missar 33 %, knuffar 10 %; slut: flydde 54 %, står 44 %, för skadad 1 %, dog direkt 0 %, förblödde 0 % | står 56 %, förblödde 33 %, flydde 11 %
+  tre med spjut mot björnen: vann 99 %, förlorade 1 %, oavgjort 0 %; längd 41 s (25–55); träffar 59 %, parerar 4 %, duckar 4 %, missar 21 %, knuffar 11 %; slut: står 93 %, flydde 7 %, dog direkt 0 % | förblödde 91 %, flydde 8 %, står 1 %, dog direkt 0 %
+  fem med spjut mot björnen: vann 100 %, förlorade 0 %, oavgjort 0 %; längd 21 s (15–29); träffar 73 %, parerar 3 %, duckar 3 %, missar 10 %, knuffar 11 %; slut: står 98 %, flydde 1 %, dog direkt 0 %, förblödde 0 % | förblödde 95 %, flydde 5 %
+
+real	61m19.341s
+user	221m41.195s
+sys	2m13.356s

@@ -1,0 +1,6 @@
+start {"r":0,"gruva":600,"fard":0,"sall":0,"byn":0,"gast":0,"h":0,"summa":0,"tomma":0}
+dygn 1: {"r":0,"gruva":600,"fard":0,"sall":0,"byn":0,"gast":0,"h":0,"summa":0,"tomma":0} brutet 0 (rader 0, byn 0) skillnad 0 grav tog 0 rader med silver 0/95
+dygn 2: {"r":0,"gruva":600,"fard":0,"sall":0,"byn":0,"gast":0,"h":0,"summa":0,"tomma":0} brutet 0 (rader 0, byn 0) skillnad 0 grav tog 0 rader med silver 0/96
+dygn 3: {"r":0,"gruva":600,"fard":0,"sall":0,"byn":0,"gast":0,"h":0,"summa":0,"tomma":0} brutet 0 (rader 0, byn 0) skillnad 0 grav tog 0 rader med silver 0/97
+dygn 4: {"r":0,"gruva":536,"fard":64,"sall":0,"byn":0,"gast":0,"h":0,"summa":64,"tomma":0} brutet 64 (rader 64, byn 0) skillnad 0 grav tog 0 rader med silver 0/97
+dygn 5: {"r":0,"gruva":504,"fard":96,"sall":0,"byn":0,"gast":0,"h":0,"summa":96,"tomma":0} brutet 96 (rader 96, byn 0) skillnad 0 grav tog 0 rader med silver 0/96

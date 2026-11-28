@@ -1,0 +1,38 @@
+===== 4634-45.json.gz (från dygn 45.0, 8 dygn)
+--- start: dygn 45.0, folk 8, gäster nu 0 (silver )
+  silver: bybor med silver 0/8, summa hos bybor 0, i byn totalt 0
+  värld: rader 72, med silver 0, summa 0, största 0 | gruvor [1028:300 1029:300] tomma 0 | gruvfärder nu 0
+  #2 ag 19 [affar,nattlogi,stall,servering] start d29.6 hus klart diskar 1 öppna [affar,nattlogi] sålt {"affar":0.003} perVara {} vinst 0.0 resultat -3.24 pris {"affar":0.74,"nattlogi":0.4} kö 0 hylla [grenar5] salu -
+  #3 ag 0 [affar] start d38.6 hus – diskar 0 öppna [] sålt {} perVara {} vinst 0.0 resultat – pris {} kö 0 hylla [] salu -
+  anställningar: 3 (åt företag 0)
+--- efter 2 dygn: dygn 47.0, folk 9, gäster nu 0 (silver )
+  silver: bybor med silver 0/9, summa hos bybor 0, i byn totalt 0
+  värld: rader 72, med silver 0, summa 0, största 0 | gruvor [1028:300 1029:267] tomma 0 | gruvfärder nu 9
+  #2 ag 19 [affar,nattlogi,stall,servering] start d29.6 hus klart diskar 1 öppna [affar,nattlogi] sålt {"affar":3.50075,"nattlogi":0.75} perVara {"natt":0.75,"grillfisk":0.5,"rotter":2.5,"bar":0.5} vinst 32.2 resultat 16.50 pris {"affar":0.74,"nattlogi":0.4,"affar:grenar":0.53,"nattlogi:natt":0.4,"affar:grillfisk":0.74,"affar:rotter":0.73,"affar:bar":0.74,"affar:ved":0.63} kö 0 hylla [rotter1] salu -
+  #3 ag 0 [affar] start d38.6 hus – diskar 0 öppna [] sålt {} perVara {} vinst 0.0 resultat – pris {} kö 0 hylla [] salu -
+  anställningar: 4 (åt företag 1)
+--- efter 4 dygn: dygn 49.0, folk 8, gäster nu 0 (silver )
+  silver: bybor med silver 0/8, summa hos bybor 0, i byn totalt 0
+  värld: rader 75, med silver 0, summa 0, största 0 | gruvor [1028:300 1184:300] tomma 1 | gruvfärder nu 9
+  #2 ag 0 [affar,nattlogi,stall,servering] start d29.6 hus klart diskar 1 öppna [affar,nattlogi] sålt {"affar":3.1251875,"nattlogi":0.6875} perVara {"natt":0.69,"grillfisk":0.63,"rotter":2.38,"bar":0.13} vinst 14.3 resultat 10.61 pris {"affar":0.74,"nattlogi":0.4,"affar:grenar":0.45,"nattlogi:natt":0.4,"affar:grillfisk":0.74,"affar:rotter":0.68,"affar:bar":0.63,"affar:ved":0.53} kö 0 hylla [] salu -
+  #3 ag 0 [affar] start d38.6 hus – diskar 0 öppna [] sålt {} perVara {} vinst 0.0 resultat – pris {} kö 0 hylla [] salu -
+  anställningar: 3 (åt företag 1)
+--- efter 6 dygn: dygn 51.0, folk 8, gäster nu 0 (silver )
+  silver: bybor med silver 0/8, summa hos bybor 0, i byn totalt 0
+  värld: rader 71, med silver 1, summa 33, största 33 | gruvor [1028:300 1184:265] tomma 1 | gruvfärder nu 10
+  #2 ag 0 [affar,nattlogi,stall,servering] start d29.6 hus klart diskar 1 öppna [affar,nattlogi] sålt {"affar":2.031296875,"nattlogi":0.171875} perVara {"natt":0.17,"grillfisk":0.16,"rotter":1.09,"bar":0.03,"r_rot_grot_lagad_h4":0.25,"grillkott":0.5} vinst 5.4 resultat 5.13 pris {"affar":0.74,"nattlogi":0.4,"affar:grenar":0.45,"nattlogi:natt":0.4,"affar:grillfisk":0.74,"affar:rotter":0.71,"affar:bar":0.63,"affar:ved":0.45,"affar:fiskespjut":0.63,"affar:r_rot_grot_lagad_h4":0.74,"affar:grillkott":0.85} kö 0 hylla [] salu -
+  #3 ag 0 [affar] start d38.6 hus – diskar 0 öppna [] sålt {} perVara {} vinst 0.0 resultat – pris {} kö 0 hylla [] salu -
+  anställningar: 2 (åt företag 0)
+--- efter 8 dygn: dygn 53.0, folk 8, gäster nu 0 (silver )
+  silver: bybor med silver 0/8, summa hos bybor 0, i byn totalt 0
+  värld: rader 70, med silver 7, summa 236, största 35 | gruvor [1028:300 1184:232] tomma 1 | gruvfärder nu 9
+  #2 ag 0 [affar,nattlogi,stall,servering] start d29.6 hus klart diskar 1 öppna [affar,nattlogi] sålt {"affar":0.50782421875,"nattlogi":0.79296875} perVara {"natt":0.79,"grillfisk":0.04,"rotter":0.27,"bar":0.01,"r_rot_grot_lagad_h4":0.06,"grillkott":0.13} vinst 2.3 resultat 1.89 pris {"affar":0.74,"nattlogi":0.4,"affar:grenar":0.45,"nattlogi:natt":0.4,"affar:grillfisk":0.74,"affar:rotter":0.71,"affar:bar":0.63,"affar:ved":0.4,"affar:fiskespjut":0.63,"affar:r_rot_grot_lagad_h4":0.74,"affar:grillkott":0.85} kö 0 hylla [] salu -
+  #3 ag 0 [affar] start d38.6 hus – diskar 0 öppna [] sålt {} perVara {} vinst 0.0 resultat – pris {} kö 0 hylla [] salu -
+  anställningar: 3 (åt företag 0)
+  räknare (ökning på 8 dygn): foretagsgast 23, koLamnat 4, koUtan 3, stalltFram 63, kopGranne 22, radgruva_ut 17, radgruva_silver 368, lonVaror 21, lonAvrundad 4, lonBetald 4, lonStruket 6, handelByten 5, handelBesok 4, egnaByten 13, riddjurUtanFoder 5
+  sålt per verksamhet (ökning): affar 16, nattlogi 5
+  start per verksamhet (ökning): anstalld_bygghjalp 6, anstalld_undervisning 16, foretagsgast_vanlig 23, anstalld_foretag 4
+  köp vid disken: bybor 16 (2.00/dygn) {"affar":16}, med silver 0, silver betalt 0; gäster 5 (0.63/dygn) {"nattlogi":5}, med silver 0, silver betalt 0
+  timmar bybor (riktig tid i timmar): beratta 213, vila 211, sova 148, samtal 140, sport 134, fiske 112, strand 104, vakt 82, skams 72, lyssna 36, promenad 32, toa 28, titta 27, grilla 25, bada 18, dricka 15, rensa 14, forsok 13, samla 13, leka 13, stallaFram 13, bygga 13
+  handelstimmar: betjana 0.5, stallaFram 12.8, stada 0.0, koaDisk 1.2, marknad 0.0, bytHos 1.7
+  ägarnas timmar: skams 29, beratta 9, vila 9, fiske 9, strand 4, samtal 3, bada 3, sport 2, forsok 2, toa 2, samla 1, jakt 1, grilla 1, sova 1

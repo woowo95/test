@@ -1,0 +1,30 @@
+===== seed 40596 (från dygn 0.0, 20 dygn)
+--- start: dygn 0.0, folk 5, gäster nu 0 (silver )
+  silver: bybor med silver 0/5, summa hos bybor 0, i byn totalt 0
+  värld: rader 128, med silver 0, summa 0, största 0 | gruvor [1373:300 1374:300] tomma 0 | gruvfärder nu 0
+  anställningar: 0 (åt företag 0)
+--- efter 5 dygn: dygn 5.0, folk 8, gäster nu 0 (silver )
+  silver: bybor med silver 0/8, summa hos bybor 0, i byn totalt 0
+  värld: rader 140, med silver 0, summa 0, största 0 | gruvor [1373:300 1374:212] tomma 0 | gruvfärder nu 7
+  anställningar: 4 (åt företag 0)
+--- efter 10 dygn: dygn 10.0, folk 11, gäster nu 0 (silver )
+  silver: bybor med silver 0/11, summa hos bybor 0, i byn totalt 0
+  värld: rader 135, med silver 5, summa 144, största 30 | gruvor [1373:300 1374:100] tomma 0 | gruvfärder nu 4
+  anställningar: 0 (åt företag 0)
+--- efter 15 dygn: dygn 15.0, folk 11, gäster nu 0 (silver )
+  silver: bybor med silver 0/11, summa hos bybor 0, i byn totalt 0
+  värld: rader 142, med silver 5, summa 171, största 58 | gruvor [1373:300 1374:5] tomma 0 | gruvfärder nu 2
+  anställningar: 0 (åt företag 0)
+--- efter 20 dygn: dygn 20.0, folk 10, gäster nu 0 (silver )
+  silver: bybor med silver 5/10, summa hos bybor 18, i byn totalt 25
+  värld: rader 147, med silver 4, summa 175, största 61 | gruvor [1373:300 1374:5] tomma 0 | gruvfärder nu 0
+  #1 ag 0 [servering] start d18.6 hus – diskar 0 öppna [] sålt {} perVara {} vinst 0.0 resultat – pris {} kö 0 hylla [] salu -
+  #2 ag 4 [nattlogi] start d19.6 hus – diskar 0 öppna [] sålt {} perVara {} vinst 0.0 resultat – pris {} kö 0 hylla [] salu -
+  anställningar: 1 (åt företag 0)
+  räknare (ökning på 20 dygn): foretagStart 2, marknad 1, kopGranne 12, radgruva_ut 10, radgruva_silver 295, lonVaror 44, lonAvrundad 5, lonBetald 6, handelByten 23, handelBesok 19, egnaByten 42
+  sålt per verksamhet (ökning): 
+  start per verksamhet (ökning): anstalld_bygghjalp 16, anstalld_undervisning 3, foretagStart_servering 1, foretagStart_nattlogi 1
+  köp vid disken: bybor 0 (0.00/dygn) {}, med silver 0, silver betalt 0; gäster 0 (0.00/dygn) {}, med silver 0, silver betalt 0
+  timmar bybor (riktig tid i timmar): sova 867, vila 486, leka 427, samtal 405, beratta 371, vakt 219, promenad 180, jakt 116, strand 103, bygga 97, sport 96, samla 72, toa 62, fiske 61, lyssna 51, bada 47, svalka 44, maltid 41, klyva 38, hugga 36, dricka 32, stubbe 31
+  handelstimmar: betjana 0.0, stallaFram 0.0, stada 0.0, koaDisk 0.0, marknad 0.7, bytHos 0.8
+  ägarnas timmar: beratta 3, samtal 3, vila 1, upptrada 1, maltid 0, toa 0, dryck 0, dricka 0

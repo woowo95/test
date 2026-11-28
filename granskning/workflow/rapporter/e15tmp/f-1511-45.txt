@@ -1,0 +1,37 @@
+===== 1511-45.json.gz (från dygn 45.0, 8 dygn)
+--- start: dygn 45.0, folk 17, gäster nu 0 (silver )
+  silver: bybor med silver 0/17, summa hos bybor 0, i byn totalt 0
+  värld: rader 62, med silver 0, summa 0, största 0 | gruvor [754:300 755:300] tomma 0 | gruvfärder nu 0
+  #1 ag 12 [affar,nattlogi,stall,servering] start d1.6 hus klart diskar 1 öppna [nattlogi] sålt {} perVara {} vinst 0.0 resultat -2.71 pris {"nattlogi":0.4} kö 0 hylla [] salu -
+  anställningar: 5 (åt företag 0)
+--- efter 2 dygn: dygn 47.0, folk 19, gäster nu 0 (silver )
+  silver: bybor med silver 0/19, summa hos bybor 0, i byn totalt 0
+  värld: rader 60, med silver 0, summa 0, största 0 | gruvor [754:300 755:300] tomma 0 | gruvfärder nu 7
+  #1 ag 6 [affar,nattlogi,stall,servering] start d1.6 hus klart diskar 1 öppna [] sålt {} perVara {} vinst 0.0 resultat -2.13 pris {"nattlogi":0.4} kö 0 hylla [] salu -
+  #2 ag 0 [servering] start d45.6 hus – diskar 0 öppna [] sålt {} perVara {} vinst 0.0 resultat – pris {} kö 0 hylla [] salu -
+  anställningar: 10 (åt företag 0)
+--- efter 4 dygn: dygn 49.0, folk 18, gäster nu 0 (silver )
+  silver: bybor med silver 0/18, summa hos bybor 0, i byn totalt 0
+  värld: rader 60, med silver 0, summa 0, största 0 | gruvor [754:176 755:300] tomma 0 | gruvfärder nu 9
+  #1 ag 6 [affar,nattlogi,stall,servering] start d1.6 hus klart diskar 1 öppna [] sålt {} perVara {} vinst 0.0 resultat -2.13 pris {"nattlogi":0.4} kö 0 hylla [] salu -
+  #2 ag 0 [servering] start d45.6 hus – diskar 0 öppna [] sålt {} perVara {} vinst 0.0 resultat – pris {} kö 0 hylla [] salu -
+  anställningar: 8 (åt företag 0)
+--- efter 6 dygn: dygn 51.0, folk 19, gäster nu 0 (silver )
+  silver: bybor med silver 0/19, summa hos bybor 0, i byn totalt 0
+  värld: rader 61, med silver 2, summa 66, största 33 | gruvor [754:94 755:300] tomma 0 | gruvfärder nu 7
+  #1 ag 6 [affar,nattlogi,stall,servering] start d1.6 hus klart diskar 1 öppna [] sålt {} perVara {} vinst 0.0 resultat -2.13 pris {"nattlogi":0.4} kö 0 hylla [] salu -
+  #2 ag 0 [servering] start d45.6 hus – diskar 0 öppna [] sålt {} perVara {} vinst 0.0 resultat – pris {} kö 0 hylla [] salu -
+  anställningar: 7 (åt företag 0)
+--- efter 8 dygn: dygn 53.0, folk 22, gäster nu 0 (silver )
+  silver: bybor med silver 0/22, summa hos bybor 0, i byn totalt 0
+  värld: rader 59, med silver 3, summa 124, största 63 | gruvor [754:42 755:300] tomma 0 | gruvfärder nu 6
+  #1 ag 22 [affar,nattlogi,stall,servering] start d1.6 hus klart diskar 1 öppna [] sålt {} perVara {} vinst 0.0 resultat -2.13 pris {"nattlogi":0.4} kö 0 hylla [] salu -
+  #2 ag 0 [servering] start d45.6 hus – diskar 0 öppna [] sålt {} perVara {} vinst 0.0 resultat – pris {} kö 0 hylla [] salu -
+  anställningar: 10 (åt företag 0)
+  räknare (ökning på 8 dygn): foretagStart 1, foretagTillSalu 2, foretagSaltHelt 2, foretagsgast 1, marknad 1, kopGranne 3, radgruva_ut 10, radgruva_silver 258, lonVaror 88, lonAvrundad 9, lonBetald 12, handelByten 2, handelBesok 3, egnaByten 12
+  sålt per verksamhet (ökning): 
+  start per verksamhet (ökning): anstalld_bygghjalp 35, anstalld_undervisning 33, foretagsgast_vanlig 1, foretagStart_servering 1
+  köp vid disken: bybor 0 (0.00/dygn) {}, med silver 0, silver betalt 0; gäster 0 (0.00/dygn) {}, med silver 0, silver betalt 0
+  timmar bybor (riktig tid i timmar): sova 827, leka 415, samtal 388, vila 355, beratta 201, promenad 115, sport 110, maltid 104, jakt 104, vakt 88, samla 70, lyssna 66, forsok 63, toa 52, strand 47, bygga 41, fiske 34, grilla 33, sopor 26, uppsatt 24, klyva 21, svalka 20
+  handelstimmar: betjana 0.0, stallaFram 0.0, stada 0.0, koaDisk 0.0, marknad 1.2, bytHos 0.5
+  ägarnas timmar: beratta 46, vila 21, promenad 17, samtal 12, maltid 8, grilla 6, forsok 6, odla 6, strand 5, lyssna 5, sport 5, krossa_saft 4, bygga 4, slakta 4
