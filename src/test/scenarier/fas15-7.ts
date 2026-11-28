@@ -179,8 +179,9 @@ SCENARIER.hjalpkast = {
 SCENARIER.rovarskytt = {
   text: 'Steg 15.1.71: rövarna har ibland bågar och slungor. Ungefär en rövare av sex har ett vapen för avstånd och en kniv i reserven; skytten håller avståndet och skjuter, och byter till kniven när någon kommer nära',
   kor: () => {
-    // rövarna som kommer: hur många har båge eller slunga, och har de kniven med sig
-    const s = SIM.createState(6, START); let alla = 0, skyttar = 0, kniv = 0;
+    // rövarna som kommer: hur många har båge eller slunga, och har de kniven med sig. Registret (GASTUTRUSTNING) gäller gänget
+    // utan en by i världen bakom sig; ett gäng från en by eller ett läger rustas efter den (steg 15.1.153, B.70)
+    const s = SIM.createState(6, START); s.varld = undefined; let alla = 0, skyttar = 0, kniv = 0;
     for (let i = 0; i < 30; i++) {
       const f = rovarGang(s, 6);
       for (const p of SIM.rovarna(s, f)) { alla++; const v = SIM.gastVapen(s, p); if (v === 'bage' || v === 'slunga') { skyttar++; if (SIM.gastTingOf(s, p).some(t => t.k === 'kniv') && SIM.personKampe(s, p, 1, 1, p.x, p.y).reserv === 'kniv') kniv++; } }
