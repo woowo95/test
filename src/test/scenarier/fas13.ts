@@ -452,10 +452,11 @@ SCENARIER.kudde = {
       const q = SIM.cloneState(s), t = q.stationer!.find(r => r.id === b.id)!, p = SIM.living(q)[0]!;
       t.med = med as typeof t.med;
       p.x = t.x + 0.5; p.y = t.y + 0.5; p.task = { act: 'sova', phase: 'do', tx: p.x, ty: p.y, until: q.now + SIM.HOUR, carry: 0 } as SIM.Task;
-      const kyla = varmeDelar(q, p, 1, new Map([[roomAt(q, p.x, p.y)!.id, 1]])).kyla;
+      // kylan och täcket räknas på bädden som den ställts i ordning: under stegen kan någon i byn hinna lägga ett nytt tillbehör i den
+      const kyla = varmeDelar(q, p, 1, new Map([[roomAt(q, p.x, p.y)!.id, 1]])).kyla, tacker = SIM.tillbehorTacker(t);
       p.rest = 0.1; const r0 = p.rest;
       for (let i = 0; i < 3; i++) { p.task!.until = q.now + SIM.HOUR; SIM.step(q, BEAT); }
-      return { kyla, vila: p.rest - r0, tacker: SIM.tillbehorTacker(t) };
+      return { kyla, vila: p.rest - r0, tacker };
     };
     const utan = sover([]), fall = sover(['skinnfall']), tacke = sover(['ylletacke']), bada = sover(['skinnfall', 'ylletacke']), kudde = sover(['kudde']), allt = sover(['skinnfall', 'kudde']);
     const nara = (a: number, x: number) => Math.abs(a - x) < 1e-9;
