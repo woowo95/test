@@ -9,6 +9,7 @@
 // ledaren står för anställningen. För ett barn betalar föräldern, och barnets lön går till föräldern som försörjer det (10.5.10).
 // I valet av arbete ger anställningen mer omtanke om den man arbetar åt (omtanke.ts, vardRatt i halsa.ts, vakterna i val.ts).
 import { HOUR_S, Person, State, Task } from './typer';
+import { heltOrd } from './ord';
 import { balans } from './balans';
 import { clamp } from './slump';
 import { ALDER, ageOf, byId, count, forstaGang, living, log } from './folk';
@@ -144,7 +145,7 @@ export function anstallDygn(s: State) {
     p.anst = { av: b.av, arb, mal: b.mal, w: lon / Math.max(1, Math.min(vantatVerk(p, arb), b.timMax ?? Infinity)) / ARBETE };
     upptagen.add(p); plats.set(b, (plats.get(b) ?? 0) + 1); kvar.set(kassa, tak - lon);
     count(s, 'anstalld_' + arb);
-    if (forstaGang(s, 'anstalld')) { const l = ledareOf(s), av = b.av > 0 ? byId(s, b.av)?.name : b.av === BYN ? l?.name ?? 'Byn' : 'Kyrkan'; log(s, `${av} anställde ${p.name} för ett år: ${DAGSVERK[arb].namn.toLowerCase()}, ${lon} silver.`, 'world', [p.id]); }
+    if (forstaGang(s, 'anstalld')) { const l = ledareOf(s), av = b.av > 0 ? byId(s, b.av)?.name : b.av === BYN ? l?.name ?? 'Byn' : 'Kyrkan'; log(s, `${av} anställde ${p.name} till ${DAGSVERK[arb].namn.toLowerCase()} i ett år, mot ${heltOrd(lon)} silver.`, 'world', [p.id]); }
   }
 }
 // ---------- arbetet och lönen ----------
