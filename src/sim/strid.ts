@@ -478,7 +478,7 @@ const KANT = 0.3; // så nära en vägg eller planens kant kommer man
 // vatten, och det som händer blir riktigt direkt: såret sätts på personen när slaget träffar (skada svarar om hen dog av det), och
 // den som dör är död (fall). Utan värld (testarenan tills steg 10.1.6, och de äldre striderna) gäller platsens egna hinder
 // blodet (steg 12.1.58): en kämpe som är en person blöder i hälsan (halsa.ts), inte i striden, och trycket på såret gäller personens sår
-export interface StridVarld { vagg(x: number, y: number): boolean; skada?(k: Kampe, w: Kampe['skador'][number], av: Kampe): boolean; fall?(k: Kampe, h: KampeLage): void; halsaBlod?(k: Kampe): boolean; tryck?(k: Kampe): void }
+export interface StridVarld { vagg(x: number, y: number): boolean; skada?(k: Kampe, w: Kampe['skador'][number], av: Kampe): boolean; fall?(k: Kampe, h: KampeLage): void; halsaBlod?(k: Kampe): boolean; tryck?(k: Kampe, av?: Kampe): void }
 let varld: StridVarld | undefined;
 export function iVarlden<T>(v: StridVarld, f: () => T): T { const forr = varld; varld = v; try { return f(); } finally { varld = forr; } }
 const iVagg = (st: Strid, x: number, y: number) => varld ? varld.vagg(x, y) : !!st.hinder?.some(o => x > o.x - KANT && x < o.x + o.b + KANT && y > o.y - KANT && y < o.y + o.h + KANT);
@@ -683,7 +683,7 @@ function raddaSteg(st: Strid, k: Kampe, dt: number) {
     if (!iVagg(st, v.x, v.y)) { k.x = v.x; k.y = v.y; }
   }
   for (const w of v.skador) w.ny = 0;
-  varld?.tryck?.(v);
+  varld?.tryck?.(v, k);
   st.logg.push({ t: st.t, h: 'raddar', a: k.id, b: v.id });
   k.raddar = undefined;
   return true;
@@ -701,7 +701,7 @@ function barSteg(st: Strid, k: Kampe, dt: number) {
     if (dist(f, k) < STRID.hjalpAvst) return true;
   }
   for (const w of v.skador) w.ny = 0;
-  varld?.tryck?.(v);
+  varld?.tryck?.(v, k);
   st.logg.push({ t: st.t, h: 'raddar', a: k.id, b: v.id });
   k.bar = undefined;
   return true;

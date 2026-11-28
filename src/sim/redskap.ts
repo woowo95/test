@@ -10,7 +10,7 @@ import { NORMAL, kvOf, nyKvalitet } from './kvalitet';
 import { amountOf, gain, harTillHands, iBordan, put, timKvar, use } from './lager';
 import { getable, Recept, saknatAv, takeMaterial, takeRecipe, tillHands } from './behov';
 import { addDel } from './egendom';
-import { eldReserv, villAv, villHaAv } from './forradsmal';
+import { eldReserv, foretagBrist, villAv, villHaAv } from './forradsmal';
 import { addTool, freeTools, halvOf, ledigaRedskap, ledigtTing, nTools, ownsFree, slitTing, take, tingOf, wearTool } from './agande';
 import { RUS, hornKrok } from './rus';
 import { tanke } from './tankar';
@@ -300,7 +300,7 @@ export function handelTask(s: State, p: Person, k: string) {
 export const wantsTool = (s: State, p: Person, g: string, spar = 0) => {
   const ks = GORS[g];
   return kanGoras(s, g as Act, p) && (!!halvOf(s, p, ks) || ks.some(k => canMake(s, p, k) && (!av(k).torrgras || amountOf(s, 'torrgras') >= spar)))
-    && harAv(s, g) < takAv(s, g) && villAv(s, g) > 0 && enTill(s, g as Act, p); // också över bufferten, upp till taket (steg 10.2.74)
+    && (harAv(s, g) < takAv(s, g) && villAv(s, g) > 0 || foretagBrist(s, p.id, ks) > 0) && enTill(s, g as Act, p); // också över bufferten, upp till taket (steg 10.2.74), och det ägarens affär säljer (steg 15.1.97)
 };
 // underhållet (steg 6.2.12, nivån Förbättra i val.ts): en grupp där byn har så många den vill, men några av dem är slitna
 // (REDSKAP.slitet) så att de hela är färre än byn vill ha. Inget lagas: ett nytt görs medan det gamla håller, och det gamla

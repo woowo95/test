@@ -5,7 +5,7 @@
 import type { Person, State } from './typer';
 import { balans } from './balans';
 import { clamp } from './slump';
-import { tycker, fragat } from './kassa';
+import { tycker, fragat, varuNyckel } from './kassa';
 import { dygnet, type Foretag, foretagare, foretagOf, foretagRum, VERKSAMHETER } from './foretag';
 import { finhetAv } from './rum';
 import { foretagBord } from './stationer';
@@ -29,18 +29,19 @@ export const foretagFinhet = (s: State, f: Foretag, v: string): number | undefin
 export const overForvantan = (s: State, p: Person, f: Foretag, v: string) => { const x = foretagFinhet(s, f, v); return x === undefined ? 0 : x - (p.finForv ?? FORVANTAN.grund); };
 tycker.push((s, p, f, v) => (d => d > 0 ? d * KONKURRENS.over : d)(overForvantan(s, p, f, v)) * KONKURRENS.finhet * (VERKSAMHETER[v].hylla ? KONKURRENS.hylla : 1));
 // dagens kunder: den som avstod, och hur fint hen väntat sig att det var
-fragat.push((s, p, f, v, valde) => {
-  const d = (f.dag ??= {})[v] ??= {}, i = d.nej?.indexOf(p.id) ?? -1;
+fragat.push((s, p, f, v, valde, k) => {
+  const d = (f.dag ??= {})[varuNyckel(v, k)] ??= {}, i = d.nej?.indexOf(p.id) ?? -1;
   if (valde) { if (i >= 0) d.nej!.splice(i, 1); } else if (i < 0) (d.nej ??= []).push(p.id);
   const g = f.gap ??= { n: 0, v: 0, vem: [] };
   if (!g.vem.includes(p.id)) { g.vem.push(p.id); g.n++; g.v += Math.max(0, -overForvantan(s, p, f, v)); }
 });
-// en gång per dygn: priset och det ägaren vill göra finare
+// en gång per dygn: priset per vara (steg 15.1.98) och det ägaren vill göra finare. En vara som inte haft något pris börjar
+// från verksamhetens (det sparade från före steget)
 dygnet.push(s => {
   for (const f of foretagOf(s)) {
-    for (const v in f.dag) {
-      const d = f.dag[v], ja = (d.salt ?? 0) + (d.gatt ?? 0) * KONKURRENS.gatt, nej = d.nej?.length ?? 0;
-      if (ja + nej > 0) (f.pris ??= {})[v] = clamp((f.pris[v] ?? 1) * (1 + KONKURRENS.steg * (ja - nej) / (ja + nej)), KONKURRENS.min, KONKURRENS.max);
+    for (const vk in f.dag) {
+      const d = f.dag[vk], ja = (d.salt ?? 0) + (d.gatt ?? 0) * KONKURRENS.gatt, nej = d.nej?.length ?? 0;
+      if (ja + nej > 0) (f.pris ??= {})[vk] = clamp((f.pris[vk] ?? f.pris[vk.split(':')[0]!] ?? 1) * (1 + KONKURRENS.steg * (ja - nej) / (ja + nej)), KONKURRENS.min, KONKURRENS.max);
     }
     f.dag = undefined;
     f.enkelt = f.gap ? f.gap.v / Math.max(1, f.gap.n) : undefined; // ingen som avstod för att rummet var för enkelt: ingen brist

@@ -131,7 +131,9 @@ export const medVatska = (s: State, p: Person, k: string, v: string, n: number) 
 // g vårdar q och vården blir klar, med g bredvid q om flytta är satt
 export const vardPa = (s: State, g: Person, q: Person, flytta = true) => {
   if (flytta) { g.x = q.x; g.y = q.y; }
-  SIM.vardKlar(s, g, { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: q.id });
+  // ett helt besök: vården görs en behandling i taget (steg 15.1.104), och här alla direkt efter varandra
+  const t: SIM.Task = { act: 'varda', phase: 'do', tx: q.x, ty: q.y, until: s.now, carry: 0, why: '', ref: q.id };
+  for (let i = 0; i < 30; i++) { t.until = s.now; SIM.vardKlar(s, g, t); if (t.act !== 'varda' || t.until <= s.now) break; }
 };
 // ett tomt styre utan ledare, med lagarna
 export const medLagar = (s: State, lagar: { id: string; t: number; straff: number; av: number; om: string }[]) => {

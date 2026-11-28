@@ -589,8 +589,8 @@ SCENARIER.kropp = {
     for (let i = 0; i < 2000 && !(s.stat?.skador); i++) halsaSteg(s, p, MIN60 * 30);
     const olycka = (s.stat?.skador ?? 0) >= 1;
     // ett lätt skärsår blöder en stund och levrar sig; ett mycket svårt kan förblöda
-    fyll(); p.task = undefined; skada(s, p, 'handH', 'skarsar', 0.25, 'olycka', ''); // ett litet sår (under HALSA.smaSar) levrar sig av sig själv (steg 9.5.14)
-    const blodNy = blodning(p), dogLatt = timmar(3), blodLatt = p.blod, levrat = blodning(p) === 0;
+    fyll(); p.task = undefined; skada(s, p, 'handH', 'skarsar', 0.25, 'olycka', ''); // ett lätt, medelstort sår (smaSar är 0,15 sedan steg 15.1.103) levrar sig långsamt av sig själv (steg 9.5.14)
+    const blodNy = blodning(p), dogLatt = timmar(4), blodLatt = p.blod, levrat = blodning(p) === 0;
     const hFore = halsa(p);
     const laktTid = (() => { for (let h = 1; h <= 24; h++) { timmar(1); if (!p.skador) return h; } return 99; })();
     const blodTillbaka = p.blod;

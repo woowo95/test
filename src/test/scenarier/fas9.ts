@@ -328,6 +328,7 @@ function forbanden(): [string, boolean][] {
   const plagg = q.skador![0].f === 2 && rock.c < c0;
   // avsnörningen: ett stort sår i benet slutar blöda, men sitter den för länge skadas benet
   setAmount(s, 'rep', 2);
+  for (const t of s.ting ?? []) if ((t.bar === q.id || t.bar === g.id) && SIM.SAKER[t.k]?.klad) t.bar = undefined; // inget att riva en remsa ur: avsnörningen lossas när ett förband ligger (steg 15.1.102)
   q.skador = [{ d: 'benV', k: 'skarsar', g: 0.8, b: 1 }]; q.men = undefined; vard(s, g, q);
   const snord = q.skador![0].av !== undefined && q.skador![0].b === 0;
   s.now += (HALSA.avsnoraTim + 0.5) * SIM.HOUR; halsaSteg(s, q, 300);
@@ -354,8 +355,8 @@ SCENARIER.blodning = {
     const { halsaSteg, tidKvar, sarStorlek, HALSA } = SIM;
     const s = createState(1, START), p = SIM.living(s).find(r => SIM.ageOf(r, s.now) >= SIM.ALDER.vuxen)!;
     const prov = (g: number, tim: number) => { const c = SIM.cloneState(s), q = c.people.find(r => r.id === p.id)!; q.skador = [{ d: 'benV', k: 'skarsar', g, b: 1 }]; q.blod = 1; halsaSteg(c, q, tim * 3600); return { b: q.skador?.[0]?.b ?? 0, q, c }; };
-    const litet = prov(0.2, 2), medel = prov(0.45, 2), stort = prov(0.8, 0.5);
-    const storlekar = [sarStorlek({ d: 'benV', k: 'skarsar', g: 0.2, b: 1 }), sarStorlek({ d: 'benV', k: 'skarsar', g: 0.45, b: 1 }), sarStorlek({ d: 'benV', k: 'skarsar', g: 0.8, b: 1 })].join(', ');
+    const litet = prov(0.1, 2), medel = prov(0.45, 2), stort = prov(0.8, 0.5); // ett litet sår är under HALSA.smaSar, 0,15 (steg 15.1.103)
+    const storlekar = [sarStorlek({ d: 'benV', k: 'skarsar', g: 0.1, b: 1 }), sarStorlek({ d: 'benV', k: 'skarsar', g: 0.45, b: 1 }), sarStorlek({ d: 'benV', k: 'skarsar', g: 0.8, b: 1 })].join(', ');
     // ett stort sår: tiden kvar sjunker, och när den är kort kommer notisen
     const c = SIM.cloneState(s), q = c.people.find(r => r.id === p.id)!;
     q.skador = [{ d: 'bal', k: 'sticksar', g: 0.9, b: 1 }]; q.blod = 1;

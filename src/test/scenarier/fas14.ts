@@ -325,7 +325,7 @@ SCENARIER.konkurrens = {
     vux.forEach((q, i) => { const d = i % 2 ? d2 : d1; q.x = d.x + 0.5; q.y = d.y + 2.5; q.task = undefined; });
     const val = (x: typeof f) => vux.filter(q => SIM.kundVal(s, q, 'servering')?.f === x).length;
     satt(0.3, 0.3); f.pris = { servering: 1 }; f2.pris = { servering: 1 };
-    f.dag = f2.dag = f.gap = f2.gap = undefined; const lika = [val(f), val(f2)], nej = (f2 as SIM.Foretag).dag?.servering?.nej?.length ?? 0;
+    f.dag = f2.dag = f.gap = f2.gap = undefined; const lika = [val(f), val(f2)], nej = Object.entries((f2 as SIM.Foretag).dag ?? {}).reduce((n, [q, d]) => n + (q.split(':')[0] === 'servering' ? d.nej?.length ?? 0 : 0), 0); // per vara (steg 15.1.98)
     f.pris = { servering: 2.5 }; const dyr = [val(f), val(f2)];
     satt(0.9, 0.1); f.pris = { servering: 1 }; const fint = [val(f), val(f2)];
     // den kräsne går till det fina och dyra, den som inte väntar sig något till det billiga

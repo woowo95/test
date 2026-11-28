@@ -3107,13 +3107,13 @@ SCENARIER.kronikakat = {
     kronikaVal.kat = 'strid';
     const strid = kronikaFlik.html();
     kronikaVal.kat = undefined;
-    const symboler = (alla.match(/data-kkat=/g) ?? []).length;
+    const symboler = (alla.match(/data-kkat=/g) ?? []).length, utanTaggar = (h: string) => h.replace(/<[^>]+>/g, '');
     return [
       [`alla slag i krönikan har en kategori${okanda.length ? ` (saknas: ${okanda.join(', ')})` : ''}`, okanda.length === 0],
       [`alla ${iKoden.length} slag som koden skriver har en kategori${utanKat.length ? ` (saknas: ${utanKat.join(', ')})` : ''}`, iKoden.length > 20 && utanKat.length === 0],
       [`en födsel hamnar under Liv (${fodd[2]} → ${SIM.kronikaKat(fodd[2])})`, SIM.kronikaKat(fodd[2]) === 'liv'],
       [`raden med kategoriernas symboler: sju i Händelser, Skrifter och Fritid är egna delar (${symboler}, steg 11.1.34)`, symboler === SIM.KRONIKA_KAT.length - 2 && /data-kdel="skrifter"/.test(alla) && /data-kdel="fritid"/.test(alla) && !/data-kkat="(skrift|fritid)"/.test(alla)],
-      ['Liv visar födseln, Strid inte', liv.includes(fodd[1].slice(0, 10)) && !strid.includes(fodd[1].slice(0, 10))],
+      ['Liv visar födseln, Strid inte', utanTaggar(liv).includes(fodd[1].slice(0, 10)) && !utanTaggar(strid).includes(fodd[1].slice(0, 10))], // texten utan märkningen: namnen är länkar
       ['raden utan slag står bara när ingen kategori är vald', alla.includes('En rad ur en gammal sparfil') && !liv.includes('En rad ur en gammal sparfil')],
     ];
   },

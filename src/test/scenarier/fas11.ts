@@ -2346,7 +2346,7 @@ SCENARIER.vagsjuk = {
     const dkv = SIM.kvarlevor(d.s).length; kor(d, 1);
     return [
       [`riskerna: sjukdom ${sjuk.toFixed(3)}, olycka ${stig.toFixed(3)} på stig och ${obanad.toFixed(3)} på obanad mark per dygn`, Math.abs(sjuk - 0.03) < 1e-9 && Math.abs(stig - 0.02) < 1e-9 && Math.abs(obanad - 0.04) < 1e-9],
-      [`det stora såret slutade blöda och fick förband ur packningen (blöder ${w?.b}, förband ${w?.f}, av ${w?.av !== undefined}; kvar ${JSON.stringify(k.sl.pack)})`, !!w && w.b === 0 && (w.f === 2 || w.av !== undefined) && (k.sl.pack.remsa ?? 0) < 2],
+      [`det stora såret snördes av eller fick förband ur packningen, och avsnörningen lossades när förbandet låg (steg 15.1.102; blöder ${w?.b}, förband ${w?.f}, av ${w?.av !== undefined}; kvar ${JSON.stringify(k.sl.pack)})`, !!w && (w.f === 2 ? w.av === undefined : w.av !== undefined && w.b === 0) && (k.sl.pack.remsa ?? 0) < 2],
       [`benbrottet spjälades med grenarna ur packningen (spjäla ${bw?.spala}, satt ${bw?.satt ?? bw?.snett}; grenar kvar ${br.sl.pack.grenar ?? 0})`, !!bw?.spala && !br.sl.pack.grenar],
       [`packningen är hela saker`, [k, br].every(x => Object.values(x.sl.pack).every(Number.isInteger))],
       [`inget blod och ingen kroppsdel på byns karta (${SIM.kvarlevor(k.s).length - kv0} nya kvarlevor)`, SIM.kvarlevor(k.s).length === kv0 && JSON.stringify(k.s.blod ?? null) === blod0],
