@@ -35,7 +35,7 @@ const receptVar = new Set<string>(Object.values(RECEPT as Record<string, { var: 
 // Vakten prövar varje handling som tar tid och gör något (steg 15.1.53): en sak i GORS, ett hantverk, eller ett arbete på en plats
 // (verb i ACTS, som städa, betjäna och ställa fram). Regeln gäller handlingarna från steg 13.9.7; de äldre arbetena nedan har ännu
 // inte skickligheten i sin tid, och listan står här så att en ny handling inte hamnar bland dem utan att det syns
-export const FORE_KUNNA: ReadonlySet<string> = new Set(['grop', 'vittja', 'slatter', 'skramma', 'avliva', 'ortPlocka', 'ortSatta', 'krukaHem', 'mjolka', 'skatta', 'tatuera', 'klippa', 'hamla', 'mata', 'hage', 'ang', 'valla', 'staket', 'rojaSly', 'sopor', 'tomma_latrin', 'penna', 'passa']);
+export const FORE_KUNNA: ReadonlySet<string> = new Set(['grop', 'vittja', 'skramma', 'ortPlocka', 'ortSatta', 'krukaHem', 'tatuera', 'hage', 'ang', 'staket', 'rojaSly', 'sopor', 'tomma_latrin', 'penna', 'passa']);
 const gorNagot = (d: ActDef, ks: string[]) => ks.length > 0 || !!d.hantverk || !!d.verb && !d.arbete; // arbetena för byn (arbete) får fart av färdigheten i det de ger
 export function utanFardighet(acts: Record<string, ActDef> = ACTS, gors: Record<string, string[]> = GORS, fore: ReadonlySet<string> = FORE_KUNNA): string[] {
   const ut: string[] = [];
