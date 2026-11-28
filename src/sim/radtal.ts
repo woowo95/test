@@ -11,7 +11,7 @@ import { skalaV, troNamn, troOf } from './religion';
 import { ledareOf } from './styre';
 import { knows, TEKNIK } from './teknik';
 import { amountOf, foodOf } from './lager';
-import { vuxenKan } from './rovare';
+import { vuxenKan } from './halsa';
 import { stridsvarde } from './strid';
 import { Person, State } from './typer';
 import { rikedom, rikedomDelar, varorPerGrupp } from './varde';

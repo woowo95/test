@@ -319,6 +319,10 @@ export const rorlighet = (p: Person) => forlust(p, 'rorlighet') * yrselFaktor(p)
 export const GADELAR: readonly Kroppsdel[] = [...BEN, ...FOTTER]; // delarna man går med
 // ett förlorat ben eller en fot: man går ändå, sämre, så länge det andra benet och den andra foten håller. Den som svimmat går inte
 export const kanGa = (p: Person) => !p.svimmat && blodSteg(p) < 3 && (!harFel(p) || !GADELAR.some(d => !p.saknas?.includes(d) && delFel(p, d) >= HALSA.krypFel)) && (p.saknas?.filter(d => GADELAR.includes(d)).length ?? 0) < 2;
+// vem som kan slåss (steg 15.1.180): i åldern för vakten, frisk nog och kan gå. vuxenKan räknar inte sjukdomen (den sjuka kan slåss
+// mot rövarna men vill mindre, ROVARE.sjuk i rovarVilja), kanSlass gör det
+export const vuxenKan = (s: State, p: Person) => { const a = ageOf(p, s.now); return a >= ALDER.vaktFran && a < ALDER.vaktTill && halsa(p) >= KROPP.svag && kanGa(p); };
+export const kanSlass = (s: State, p: Person) => vuxenKan(s, p) && !isSick(p, s.now);
 export const hemma = (s: State, p: Person) => utanforByn(s, Math.floor(p.x), Math.floor(p.y)) <= HALSA.hemma;
 const infektion = (p: Person) => { let v = 0; for (const w of p.skador ?? []) v = Math.max(v, w.inf ?? 0); return v; };
 // arbetet gånger detta (workRate i ekonomi.ts): skadorna och styrkan, som sjunker av brist på protein och mineraler (steg 2.6.2)
