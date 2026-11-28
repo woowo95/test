@@ -1,6 +1,7 @@
 // Scenarier för fas 15, grupp 7 av system 15.1 (striden: hjälparna, slagen, knuffen, stenarna och rövarnas skyttar).
 import * as SIM from '../../sim';
-import { SCENARIER } from './hjalp';
+import { SCENARIER, klockan, korTills, rovarGang } from './hjalp';
+import { START } from '../kor';
 
 type K = SIM.Uppstallning['kampar'][number];
 // en kämpe i arenan
@@ -111,6 +112,39 @@ SCENARIER.knuffbak = {
       [`det tunga slaget får den som står att backa ${tungt.flytt.toFixed(2)} rutor (vacklaBak × tyngden = ${T.vacklaBak})`, tungt.star && Math.abs(tungt.flytt - T.vacklaBak) < 0.05],
       [`ett lätt slag flyttar ingen (${latt.flytt.toFixed(2)})`, latt.flytt === 0],
       [`väggen stoppar flyttningen (${vid.flytt.toFixed(2)} rutor, står vid ${vid.x.toFixed(2)} framför väggen vid 10,9)`, vid.flytt < tungt.flytt - 0.1 && vid.x <= 10.9 - 0.3 + 1e-6],
+    ];
+  },
+};
+
+// en by vars vuxna inget vapen har (ting som är vapen tas bort) och som har stenar i förrådet, och ett gäng som går till anfall
+export function stenBy(seed = 6, n = 3) {
+  const s = SIM.createState(seed, START); klockan(s, 11); for (const c of SIM.klanerOf(s)) c.inst = -60;
+  const vapen = new Set<string>(SIM.MANNISKOVAPEN.filter(v => v !== 'hand'));
+  s.ting = SIM.tingOf(s).filter(t => !vapen.has(t.k));
+  SIM.setAmount(s, 'sten', 40);
+  const z = SIM.zoneOf(s)!, f = rovarGang(s, n, { x: Math.min(SIM.W - 3, z.x + z.w + 40), y: z.y + z.h / 2 }, { anfaller: true }); // långt bort: byn hinner göra sig redo f.sedd = s.now; f.anfallT = s.now;
+  for (const p of SIM.living(s)) { p.pot.mod = 16; p.larm = { rovare: { t: s.now, vad: 'rovare', storlek: n, led: 0, varnat: 1 } }; p.task = undefined; }
+  return { s, f };
+}
+
+SCENARIER.stenkast = {
+  text: 'Steg 15.1.69: stenen är ett vapen man hämtar. Bybor utan vapen tar stenar ur förrådet när larmet går och kastar dem mot gänget, och de kastade stenarna ligger på marken efter striden',
+  kor: () => {
+    const { s } = stenBy();
+    const z = SIM.zoneOf(s)!, iForradet = (x: number, y: number) => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h;
+    let bar = 0, stenKampe = 0, kast = 0; const sedda = new Set<number>();
+    const ligger0 = s.stat?.kastLigger ?? 0;
+    korTills(s, () => !s.rovare && !SIM.kartStrider(s).length, 900, () => {
+      for (const p of SIM.living(s)) if (!p.gast && (p.stenar?.n ?? 0) >= 1) bar = Math.max(bar, p.stenar!.n);
+      for (const g of SIM.kartStrider(s)) for (const k of g.st.kampar) if (k.sida === 0 && !k.gast && !sedda.has(k.id * 1000 + g.id)) { sedda.add(k.id * 1000 + g.id); if (k.vapen === 'sten') stenKampe++; }
+      for (const g of SIM.kartStrider(s)) kast = Math.max(kast, g.st.logg.filter(r => r.kast && r.v === 'sten').length);
+    });
+    const ute = (s.stackar ?? []).filter(q => q.k === 'sten' && !iForradet(q.x, q.y)).reduce((a, q) => a + q.n, 0), ligger = (s.stat?.kastLigger ?? 0) - ligger0;
+    return [
+      [`en bybo utan vapen bär stenar ur förrådet (som mest ${bar}, kast.skott ${SIM.VAPEN.sten.kast.skott})`, bar >= 1 && bar <= SIM.VAPEN.sten.kast.skott],
+      [`... och går in i striden med stenen som vapen (${stenKampe} kämpar)`, stenKampe > 0],
+      [`stenarna kastas (som mest ${kast} kast i en strid)`, kast > 0],
+      [`de kastade stenarna ligger på marken efter striden (${ligger} landade, ${ute} stenar utanför förrådet)`, ligger > 0 && ute > 0],
     ];
   },
 };

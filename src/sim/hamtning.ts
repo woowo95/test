@@ -101,6 +101,12 @@ HAMTAS.skriva = { av: () => ({ pergament: 1 }), byns: true };
 // betet till fisket: fiskrens, eller en mört hen äger (steg.ts UTFALL.fiske)
 HAMTAS.fiske = { av: (s, p): Record<string, number> | undefined => mayTake(s, p, 'fiskrens') >= 1 ? { fiskrens: 1 } : ownsAmount(s, p, 'mort') >= 1 ? { mort: 1 } : undefined };
 
+// stenarna att kasta för den som inget vapen fick när larmet gick (steg 15.1.69, vakt.ts), av byns först. Väl framme tar hen dem i
+// handen (stenarIHanden)
+HAMTAS.forsvarRovare = { av: (s, p) => stenarVidLarm(s, p), byns: true };
+HAMTAS.hjalpaRovare = HAMTAS.forsvarRovare; HAMTAS.forsvar = HAMTAS.forsvarRovare;
+import { stenarVidLarm } from './vakt';
+
 // elden som ska tändas (eld.ts, steg 11.1.75): tändmaterialet, bränslet och stenarna, av byns först
 HAMTAS.tanda = { av: (s, p, tk) => tandHamtas(s, p, tk), byns: true };
 

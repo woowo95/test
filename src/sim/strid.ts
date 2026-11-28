@@ -1219,6 +1219,7 @@ export function personKampe(s: State, p: Person, id: number, sida: 0 | 1, x: num
   // eller i bördan (samma regel som taVapen i vakt.ts)
   const egen = (t: { hos?: number; lass?: number; bar?: number }) => (t.hos === undefined || t.hos === p.id) && (t.lass === undefined || t.lass === p.id) && (t.bar === undefined || t.bar === p.id);
   const bar = [...new Set([...paSig(s, p), ...ownedBy(s, p).filter(egen), ...allaTing(s).filter(t => t.hos === p.id)].map(t => t.k))]; // också det en gäst bär (steg 10.1.8)
+  if ((p.stenar?.n ?? 0) >= 1) bar.push('sten'); // stenarna i handen är ett vapen hen bär (steg 15.1.69, vakt.ts)
   const val = (v: Vapen) => VAP[v].skada * (1 + STRID.tyckeVal * smakAv(p, 'v:' + v)); // tycket drar i valet (steg 3.7.10)
   const ammoOk = (v: Vapen) => { const am = VAP[v].kast?.ammo; return !am || !!p.gast || !!bastaAmmo(s, am); }; // en gäst har sina egna pilar // bågen utan pilar och slungan utan stenar tas inte (steg 8.7.6)
   const vapen = MANNISKOVAPEN.filter(v => bar.includes(v) && ammoOk(v)).sort((a, b) => val(b) - val(a))[0] ?? 'hand';
@@ -1290,8 +1291,18 @@ export function kastat(s: State, p: Person, v: string, d: number, x: number, y: 
 export function slitKastat(s: State, p: Person, st: Strid, k: Kampe) {
   if (k.skold) { const t = toolsOf(s, 'skold').find(q => q.agare === p.id) ; if (t) wearTool(s, p, 'skold', st.logg.filter(r => r.a === k.id && r.h === 'parera').length * 0.05); } // skölden slits (steg 8.7.3)
   let skott = 0;
-  for (const r of st.logg) if (r.a === k.id && r.v && r.kast) { const am = VAP[r.v].kast!.ammo; if (am) { if (VAP[r.v].kast!.pil) skott++; continue; } kastat(s, p, r.v, VAP[r.v].kast!.rack / 2, p.x, p.y, () => rnd(s, 'strid')); }
+  for (const r of st.logg) if (r.a === k.id && r.v && r.kast) { const am = VAP[r.v].kast!.ammo; if (am) { if (VAP[r.v].kast!.pil) skott++; continue; } if (r.v === 'sten') { stenLandar(s, p, st, r); continue; } kastat(s, p, r.v, VAP[r.v].kast!.rack / 2, p.x, p.y, () => rnd(s, 'strid')); }
   if (!p.gast) skjutnaPilar(s, p, k.pil ?? 'pilar', skott, VAP.bage.kast!.rack);
+}
+// den kastade stenen (steg 15.1.69) landar där den som den kastades mot stod när striden var slut, som det kastade spjutet: den tas
+// ur kastarens hand och läggs på rutan med sin ägare. Den som slängs bort i snön eller vattnet kan försvinna (kastFaktor)
+function stenLandar(s: State, p: Person, st: Strid, r: StridRad) {
+  const h = p.stenar, agare = h && Object.keys(h.ag).find(o => h.ag[+o] >= 1 - 1e-9);
+  if (!h || h.n < 1 || agare === undefined) return;
+  h.n -= 1; h.ag[+agare] -= 1; if (h.ag[+agare] < 1e-9) delete h.ag[+agare]; if (h.n < 1) p.stenar = undefined;
+  const b = st.kampar.find(q => q.id === r.b), x = b?.x ?? p.x, y = b?.y ?? p.y;
+  if (rnd(s, 'strid') < KAST.borta * kastFaktor(s, x, y, Math.hypot(x - p.x, y - p.y), VAP.sten.kast!.rack)) { count(s, 'kastBorta'); return; }
+  laggPaRutan(s, 'sten', 1, x, y, { [+agare]: 1 }); count(s, 'kastLigger');
 }
 // pilarna landar (steg 13.4.5): de skott pilar av slaget pil (de bästa byn har, steg 13.4.2) som p sköt tas ur förrådet. Var och en
 // går sönder med chansen STRID.pilSonder, kan försvinna där den landade med samma chans som ett kastat spjut (kastFaktor), och

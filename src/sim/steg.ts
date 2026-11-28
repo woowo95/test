@@ -650,7 +650,7 @@ export const TAKTER: Takt[] = [
   // relationer bleknar långsamt utan umgänge
   { namn: 'relationerna', sek: STEG.blekSek, fn: (s, dt) => { const k = Math.exp(-STEG.blek * dt / 86400); for (const key in s.rels) { const r = s.rels[key]; r.op *= k; r.rom *= k; } } },
   { namn: 'flytt och nybyggare', sek: 60, fn: (s, dt) => { if (!s.people.some(alive)) log(s, 'Byn är tom. Ingen finns kvar vid elden.', 'world'); regulate(s, dt); } },
-  { namn: 'redskapen', sek: 60, fn: s => { tidyTools(s); placeTools(s); } }, // redskapen som släpptes läggs i förrådet
+  { namn: 'redskapen', sek: 60, fn: s => { tidyTools(s); slappStenar(s); placeTools(s); } }, // redskapen som släpptes läggs i förrådet
   { namn: 'ängen i vägen', sek: 3600, fn: s => { angIVagen(s); } }, // ängen som byn eller ett stråk når flyttas (slatter.ts, steg 10.10.28); sist, så att de andra radernas förskjutning är som förut
   { namn: 'tunnorna', sek: 600, fn: (s, dt) => tunnaRegn(s, dt) }, // regnet fyller tunnorna ute (tunna.ts, steg 12.4.6)
   { namn: 'mognaden', sek: 3600, fn: s => mognadSteg(s) }, // vinet och mjödet mognar (tunna.ts, steg 12.4.6)
@@ -1902,3 +1902,5 @@ import { tanke } from './tankar';
 import { tankarTimme } from './tankelage';
 import { drommar } from './drommar';
 import { gudlosDygn } from './rykten';
+import { slappStenar, stenarIHanden } from './vakt';
+for (const act of ['forsvarRovare', 'hjalpaRovare', 'forsvar'] as const) MEDAN[act] ??= (s, p, t) => stenarIHanden(s, p, t); // stenarna i handen (steg 15.1.69)
