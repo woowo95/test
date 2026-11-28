@@ -23,7 +23,7 @@ import { ACTS } from './handlingar';
 import { ALDER, KROPP, ageOf, alive, byId, count, forstaGang, franMitt, gjort, isParent, livet, living, log, ovning, raddAkt, paKartan } from './folk';
 import { amountOf, avbryt, fetchSpot } from './lager';
 import { fearPlace } from './minne';
-import { SJUK, SJUKDOMAR, foljd, isSick, ligger } from './sjukdom';
+import { SJUK, SJUKDOMAR, foljd, isSick, ligger, naringMot } from './sjukdom';
 // febern av en sjukdom: medvetandet utan klockan (sjukdomen vet när tecknen kommit, st)
 const sjukFeber = (p: Person) => p.sjuk?.st !== undefined ? foljd(p, p.sjuk.tecken, 'feber') : 0;
 import { TORST } from './torst';
@@ -105,7 +105,8 @@ export const HALSA = balans('halsa', {
   // stump av graden ampYxa med yxan, ampKniv med kniven, ampJarnkniv med järnkniven och ampSag med sågen (AMPUTERA_MED, steg 12.5.1)
   bytaTim: 12, gammaltForband: 2, renaHander: 0.5, tval: 0.3, tvalSmitta: 0.5, tvalTim: 24, // tvålen mot smittan (steg 13.5.3): den som tvättat sig smittar och smittas så här mycket i så många timmar
   kokt: 2, vatten: 1, sprit: 3, torrt: 0.5, vilaInf: 0.7, ampYxa: 0.7, ampKniv: 0.5, ampJarnkniv: 0.45, ampSag: 0.35, renaLar: 0.4,
-  infLak: 8, // timmar för en rengjord infektion att gå tillbaka helt ...
+  infLak: 8, // timmar för en rengjord infektion att gå tillbaka från ingenting (bromsen minskar mot kallbranden, steg 15.1.106) ...
+  infMotTim: 60, // timmar för motståndet mot en infektion att växa till 1 för en mätt som inte vilar (steg 15.1.106)
   renTim: 6, // ... och så länge ett rengjort sår håller sig rent
   lakeRen: 0.05, lakeOvning: 0.3, // läkekonsten (steg 9.5.7): rent så här mycket längre per poäng, och så mycket övning per vårdtillfälle
   kallbrand: 0.6, // från här är infektionen kallbrand, och att rengöra hjälper inte längre
@@ -212,7 +213,7 @@ const SKADA: Record<SkadaTyp, SkadaDef> = SKADOR;
 // en skada: del, typ, grad (0–1, sjunker när den läker) och blödningen kvar (1 = som nyss, 0 = levrad).
 // f = ett förband av mossa ligger på, inf = infektionen (0–1; vid 1 dör man), ren = rengjord till den tiden (steg 2.5.2)
 export interface Men { d: Kroppsdel; fel: number; ont: number }
-export interface Skada { n?: number; /* bisticken: antalet stick på delen (steg 10.10.22) */ fT?: number; rh?: 1 | 2; /* rena händer, 2 = tvättade med tvål (steg 12.4.12) */ vardare?: number; d: Kroppsdel; k: SkadaTyp; g: number; b: number; g0?: number; f?: 1 | 2 | 3; inf?: number; ren?: number; fast?: 1; salva?: number; av?: number; sydd?: 1; drog?: number; infNotis?: number; oppet?: 1; satt?: 1; snett?: 1; t0?: number; spala?: 1; gled?: 1 /* benet gled utan spjäla (steg B.36) */; smuts?: 1 /* vapnet eller käften var blodig (steg 15.1.105) */ } // benbrottet: öppet, satt (9.5.28) eller snett läkt (steg 9.5.27) // drog = vapnet drogs ut och såret blöder mer till den tiden (steg 9.5.21) // f: 1 mossa, 2 en remsa (steg 9.5.15); av = avsnört sedan den tiden, sydd = såret är sytt // salva = läkesalvan på såret, med salvans kvalitet (steg 9.5.10) // fast = ett spjut sitter kvar i såret (steg 3.7.7)
+export interface Skada { n?: number; /* bisticken: antalet stick på delen (steg 10.10.22) */ fT?: number; rh?: 1 | 2; /* rena händer, 2 = tvättade med tvål (steg 12.4.12) */ vardare?: number; d: Kroppsdel; k: SkadaTyp; g: number; b: number; g0?: number; f?: 1 | 2 | 3; inf?: number; ren?: number; fast?: 1; salva?: number; av?: number; sydd?: 1; drog?: number; infNotis?: number; oppet?: 1; satt?: 1; snett?: 1; t0?: number; spala?: 1; gled?: 1 /* benet gled utan spjäla (steg B.36) */; smuts?: 1 /* vapnet eller käften var blodig (steg 15.1.105) */; mot?: number; r?: number /* motståndet mot infektionen och infektionens takt (steg 15.1.106) */ } // benbrottet: öppet, satt (9.5.28) eller snett läkt (steg 9.5.27) // drog = vapnet drogs ut och såret blöder mer till den tiden (steg 9.5.21) // f: 1 mossa, 2 en remsa (steg 9.5.15); av = avsnört sedan den tiden, sydd = såret är sytt // salva = läkesalvan på såret, med salvans kvalitet (steg 9.5.10) // fast = ett spjut sitter kvar i såret (steg 3.7.7)
 const oppet = (w: Skada) => SKADA[w.k].blod > 0; // ett öppet sår (inte ett benbrott)
 
 // ---------- olyckorna (registret) ----------
@@ -625,23 +626,28 @@ const infOppet = (w: Skada) => oppet(w) && !w.sydd && (w.b > 0 || w.av !== undef
 function infSteg(s: State, p: Person, w: Skada, h: number, dtSec: number) {
   if (w.inf === undefined) {
     if (!infOppet(w) || !chance(s, HALSA.infRisk * (SKADA[w.k].inf ?? 1) * (0.5 + w.g) * (vilaLak(s, p) > 1 ? HALSA.vilaRisk : 1) * (w.smuts ? HALSA.blodigt : 1) * (1 + HALSA.infSmuts * toaNara(s, tileOf(p.x, p.y))) * ((w.ren ?? 0) > s.now ? HALSA.infRen : 1) * forbandRisk(w.f) * (forbandGammalt(s, w) ? HALSA.gammaltForband : 1) * (w.rh === 2 ? HALSA.tval : w.rh ? HALSA.renaHander : 1) * (w.fast ? HALSA.fastInf : 1) * (1 - SALVA.skydd * salvaVerkan(w)) / HOUR_S, dtSec, 'halsa', p)) return; // ett gammalt förband och rena händer (steg 9.5.25) // sårslaget, smutsen, rengöringen och förbandet (steg 9.5.24); läkesalvan sänker risken (steg 9.5.10)
-    w.inf = 0; count(s, 'infektioner');
+    w.inf = 0; w.mot = 0; w.r = 1 - SJUK.spann + 2 * SJUK.spann * rnd(s, 'halsa', p); count(s, 'infektioner'); // infektionens egen takt (steg 15.1.106)
     const v = w.vardare !== undefined ? byId(s, w.vardare) : undefined; // den som vårdade såret förstår att händerna och redskapen inte var rena (steg 9.5.25)
     if (v && alive(v) && kn(v, 'renahander') < 1) { learnK(v, 'renahander', HALSA.renaLar, s.now); count(s, 'renaHanderLart'); }
     if (w.g >= HALSA.logg) log(s, `${gen(p.name)} sår i ${DEL[w.d].i} blev infekterat.`, 'world', [p.id]);
     return;
   }
-  if ((w.ren ?? 0) > s.now && w.inf < HALSA.kallbrand) {
-    w.inf -= h / HALSA.infLak;
-    if (w.inf <= 0) { w.inf = undefined; w.ren = undefined; count(s, 'infektioner botade'); }
-    return;
-  }
+  // kroppen kämpar mot infektionen (steg 15.1.106, Sjukdomar: Motståndet): motståndet växer med näringen, vilan, värmen och
+  // örtteet som i sjukdomarna, och när det når 1 är infektionen botad. Från kallbranden i en arm eller ett ben räddar bara amputationen
+  const vilar = vilaLak(s, p) > 1, varm = p.warm >= KROPP.kallt;
+  w.mot = Math.min(1, (w.mot ?? 0) + h / HALSA.infMotTim * naringMot(p) * (vilar ? SJUK.vila : 1) * (varm ? 1 : SJUK.fryser) * teKrok.faktor(s, p));
+  if (w.mot >= 1 && !(w.inf >= HALSA.kallbrand && DEL[w.d].ute)) { infBotad(s, w); count(s, 'infMotVann'); return; }
   const fore = w.inf;
   infStadieNotis(s, p, w);
-  if (w.salva !== undefined && w.inf < HALSA.kallbrand) { w.inf = Math.max(0, w.inf - h / HALSA.infLak * SALVA.dampa * salvaVerkan(w)); if (w.inf <= 0) { w.inf = undefined; count(s, 'infektioner botade'); } return; } // salvan dämpar en infektion som börjat (steg 9.5.10)
-  w.inf += h / HALSA.infTim * (vilaLak(s, p) > 1 && p.warm >= KROPP.kallt ? HALSA.vilaInf : 1); // vila i värme (steg 9.5.25)
+  // infektionen växer i sin egen takt, långsammare för den som vilar i värme (steg 9.5.25); sköljningen och salvan bromsar, mest i
+  // rodnaden och inte alls i kallbranden (steg 9.5.10 och 15.1.106)
+  const broms = ((w.ren ?? 0) > s.now ? 1 : 0) + (w.salva !== undefined ? SALVA.dampa * salvaVerkan(w) : 0);
+  w.inf += h * ((w.r ?? 1) / HALSA.infTim * (vilar && varm ? HALSA.vilaInf : 1) - broms / HALSA.infLak * Math.max(0, 1 - w.inf / HALSA.kallbrand));
+  if (w.inf <= 0) { infBotad(s, w); return; }
   if (fore < HALSA.kallbrand && w.inf >= HALSA.kallbrand) { count(s, 'kallbrand'); log(s, `${p.name} fick kallbrand i ${DEL[w.d].i}.`, 'world', [p.id]); }
 }
+
+function infBotad(s: State, w: Skada) { w.inf = w.mot = w.r = w.ren = w.infNotis = undefined; count(s, 'infektioner botade'); }
 
 // benbrottet (steg 9.5.27): revbenen (bålen) och skallen (huvudet) sätts inte utan vilas bara; barn läker fortare och gamla långsammare
 export const BARA_VILA = new Set<Kroppsdel>(['bal', 'huvud']);
@@ -683,7 +689,7 @@ function ta(s: State, g: Person, k: string, n: number) {
   if (!pk) { takeMaterial(s, g, k, n); return; }
   pk[k] = (pk[k] ?? 0) - n; if (pk[k]! <= 0) delete pk[k];
 }
-export const teKrok = { vill: (_s: State, _q: Person) => false, drick: (_s: State, _q: Person) => {} };
+export const teKrok = { vill: (_s: State, _q: Person) => false, drick: (_s: State, _q: Person) => {}, faktor: (_s: State, _q: Person) => 1 }; // faktor: teet gånger motståndet (steg 15.1.106)
 export const VARD: Record<string, VardDef> = {
   dra_ut: { namn: 'Dra ut pilen', text: 'Drar ut det som sitter fast i såret', krav: (_s, _q, w) => stor(w) && !!w.fast, tid: 1, risk: 0, bradska: 4, gor: (s, _g, _q, w) => { w.fast = undefined; w.drog = s.now + HALSA.draTim * HOUR; w.b = Math.max(w.b, 1); count(s, 'spjut utdragna'); } }, // den som vårdar tar ut det som fastnat (steg 3.7.7): det blöder mer en stund (steg 9.5.21)
   trycka: { namn: 'Trycka', text: 'Trycker på såret så att det slutar blöda', krav: (_s, _q, w) => stor(w) && w.b > 0, tid: 1, risk: 0, bradska: 5, gor: (s, _g, _q, w) => { w.b = 0; count(s, 'sar tryckta'); } },
