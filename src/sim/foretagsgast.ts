@@ -39,7 +39,6 @@ export const FGAST = balans('foretagsgast', {
   rykte: 0.3, // ett helt gott rykte drar så mycket fler ...
   fin: 0.1, finRykte: 0.6, finInst: 0.2, // ... men gör mest gästerna finare: chansen att gästen är fin
   nara: 1.6, // så nära disken (rutor) ställer sig gästen i kön
-  kop: 4, // så många gånger köper en gäst högst under ett besök (så länge något lockar)
   ata: 10, // så länge (minuter) sitter gästen med det hen köpt
   fran: 9, till: 18, // gästen kommer fram under dagen
   moten: 6, // det hen redan haft lockar mindre: 1 / (1 + antalet gånger × moten)
@@ -186,7 +185,7 @@ export function foretagsgastSteg(s: State, dtSec: number) {
         if (g.sovit) { g.sovit = undefined; g.gor = undefined; g.path = undefined; g.pk = undefined; }
         else if (gaMot(s, p, g.vx!, g.vy!, dtSec, t0) < 0.6) { p.x = g.vx!; p.y = g.vy!; g.sover = 1; g.sovit = 1; }
       } else {
-        const e = (g.gjort ?? 0) < FGAST.kop ? basta(s, p, f!) : undefined;
+        const e = basta(s, p, f!); // gästen köper så länge hen har silver, orkar bära och något lockar (steg 15.1.155)
         if (!e) { if (!g.gjort && !g.bemott) for (const o of omdome) o(s, p, f!); gaHem(p); continue; } // inget lockade, eller allt är slut
         const o = stallIKo(s, p, e);
         p.x = o.spot.x; p.y = o.spot.y; g.gor = 'ko';

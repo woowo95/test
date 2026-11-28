@@ -20,15 +20,15 @@ import type { Part } from './byte';
 export const AFFAR = balans('affar', {
   min: 1, // så lång tid (minuter) tar det att ta det som ska ställas fram
   buffert: 0.3, // den som saknar mat eller ved till sitt eget förråd räknas så mycket mot den som saknar det nu
-  bord: 3, // så många varubord vill en affär högst ha
   vikt: 0.5, // så mycket väger att ställa fram, per det de som saknar saken skulle betala
 });
 const varubord = (s: State, f: Foretag): Station[] => { const rum = foretagRum(s, f); return rum.length ? stationerOf(s).filter(t => stationDef(t.k)?.vara && isKlar(t) && rum.includes(stationRum(s, t)!)) : []; };
 const rutor = (s: State, f: Foretag) => varubord(s, f).flatMap(t => { const ut = []; const w = t.rot ? 1 : 2, h = t.rot ? 2 : 1; for (let y = t.y; y < t.y + h; y++) for (let x = t.x; x < t.x + w; x++) ut.push({ x, y }); return ut; });
 // bristen: rummen utan varubord, och de där alla är fulla
 const affarer = (s: State) => foretagOf(s).filter(f => f.verk.includes('affar') && foretagRum(s, f).length);
-// ett varubord till är bara värt något när det som står framme säljs, alltså när affären har en disk att sälja vid
-const vill = (s: State, f: Foretag) => { const rum = foretagRum(s, f), n = stationerOf(s).filter(t => stationDef(t.k)?.vara && rum.includes(stationRum(s, t)!)).length; return !n || n < AFFAR.bord && diskarAv(s, f).length > 0 && !ledigRuta(s, f) && !!attStalla(s, f, true); };
+// ett varubord till är bara värt något när det som står framme säljs, alltså när affären har en disk att sälja vid, och när
+// ägaren har mer att ställa fram än borden rymmer
+const vill = (s: State, f: Foretag) => { const rum = foretagRum(s, f), n = stationerOf(s).filter(t => stationDef(t.k)?.vara && rum.includes(stationRum(s, t)!)).length; return !n || diskarAv(s, f).length > 0 && !ledigRuta(s, f) && !!attStalla(s, f, true); }; // inget tak (steg 15.1.155): borden följer det ägaren har att sälja, och rummet sätter gränsen när inget bord får plats
 foretagBord.varuRum = s => { const f = affarer(s).find(q => vill(s, q)); return f && foretagRum(s, f)[0]; };
 foretagBord.varuEgen = (s, fam) => affarer(s).some(f => vill(s, f) && fam.some(q => q === foretagare(s, f.ag))) ? 1 : 0; // ägarens familj saknar varubordet i sin affär
 foretagBord.varuBrist = s => { const a = affarer(s); return a.length ? a.filter(f => vill(s, f)).length / a.length : 0; };

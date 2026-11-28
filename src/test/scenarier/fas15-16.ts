@@ -136,3 +136,44 @@ SCENARIER.tvadiskar = {
     ];
   },
 };
+
+SCENARIER.affartak = {
+  text: 'Steg 15.1.155: inga tak i företagen. En affär med många varor i ett stort rum vill ha fler än tre varubord, och en rik gäst köper fler än fyra gånger när det lockar',
+  kor: () => {
+    const { s, p, f, r, disk } = foretagBy(['affar']), W = SIM.W;
+    for (const q of s.people) q.task = undefined;
+    for (const m of SIM.FOOD) SIM.setAmount(s, m, 0);
+    // fyra varubord i rummet, där det får plats
+    const fritt = (j: number) => r.tiles.includes(j) && !SIM.stationerOf(s).some(t => { const { w, h } = SIM.storlekAv(t); return j % W >= t.x && j % W < t.x + w && Math.floor(j / W) >= t.y && Math.floor(j / W) < t.y + h; }) && Math.hypot(j % W - disk.x, Math.floor(j / W) - disk.y) > 2;
+    const bord: SIM.Station[] = [];
+    for (const j of r.tiles) { if (bord.length >= 4) break; if (fritt(j) && fritt(j + 1) && Math.floor((j + 1) / W) === Math.floor(j / W)) { const t = { id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'varubord', x: j % W, y: Math.floor(j / W), kvar: 0, inne: 1 } as unknown as SIM.Station; s.stationer!.push(t); bord.push(t); } }
+    SIM.touch(s);
+    // ägaren har många sorters saker: en hög av varje på varje ruta, och mer i förrådet
+    const sorter = ['rep', 'lader', 'skinn', 'ben', 'ull', 'lin', 'benlim', 'virke'].filter(k => SIM.SAKER[k]);
+    let i = 0;
+    for (const t of bord) for (const d of [0, 1]) { const k = sorter[i++ % sorter.length]; SIM.stacksOf(s).push({ k, n: 2, c: 1, x: t.x + d, y: t.y, ag: { [p.id]: 2 } } as never); }
+    for (const k of sorter) SIM.laggIn(s, k, 30, p.id);
+    SIM.changed(s);
+    for (const q of SIM.living(s)) { q.bruk = undefined; SIM.saknarNu(s, q); }
+    const n = SIM.stationerOf(s).filter(t => t.k === 'varubord').length, brist = SIM.foretagBord.varuBrist(s), vill = SIM.foretagBord.varuRum(s);
+    // en rik gäst från grannbyn
+    const k = SIM.klanerOf(s).find(q => q.rad !== undefined)!, rad = s.varld!.rader!.find(q => q.nr === k.rad)!;
+    k.inst = 20; rad.tal.silver = 2000; rad.egen = { ...rad.egen, ...Object.fromEntries(sorter.map(q => [q, 3])) }; // hemma är sakerna värda mycket: de lockar
+    const g = SIM.nyForetagsgast(s, f, k, 'rik')!; g.gast!.silver = 400; g.gast!.varor = {}; // med silver och utan last, så att hen orkar bära det hen köper
+    const o = SIM.koPlats(s, disk); g.x = o.x; g.y = o.y;
+    f.pris = { affar: 0.5 }; // (ett lågt pris, så att köpet inte hänger på vad gästen råkar ha att betala med)
+    let kop = 0;
+    for (let v = 0; v < 12; v++) {
+      for (let j = 0; j < 5 && g.gast!.gor !== 'ko' && g.gast!.fas === 'pratar'; j++) SIM.foretagsgastSteg(s, 1);
+      if (g.gast!.gor !== 'ko') { for (let j = 0; j < 5 && g.gast!.fas === 'kommer'; j++) SIM.foretagsgastSteg(s, 1); if (g.gast!.gor !== 'ko') { SIM.foretagsgastSteg(s, 1); if (g.gast!.gor !== 'ko') break; } }
+      const ro = f.ko?.find(q => q.p === g.id);
+      if (!ro) break;
+      p.task = { act: 'betjana', phase: 'do', tx: p.x, ty: p.y, until: s.now, carry: 0, why: '', ref: f.id };
+      SIM.betjanaKlar(s, p, p.task); p.task = undefined; kop = g.gast!.gjort ?? 0;
+    }
+    return [
+      [`affären har ${n} varubord och vill ha fler när ägaren har mer att sälja (brist ${brist}, rummet ${vill ? 'finns' : 'saknas'})`, n === 4 && brist > 0 && vill?.hus === f.hus],
+      [`den rika gästen köpte fler än fyra gånger (${kop}, köpt ${JSON.stringify(g.gast!.kop ?? {})})`, kop > 4],
+    ];
+  },
+};
