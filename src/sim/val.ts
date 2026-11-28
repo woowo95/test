@@ -84,7 +84,7 @@ import { Act, Fire, H, HOUR, MIN, Person, Skill, Stat, State, T, Task, W, inMap 
 import { FOOD, SAKER, isFood, sakNamn, tingNamn, viktOf } from './saker';
 import { RECEPT } from './recept';
 import { TILLVERKA, TILLVERKA_LIST } from './tillverka';
-import { materialBuffert, tandBuffert } from './forradsmal';
+import { MATERIALMAL, Materialslag, materialBuffert, tandBuffert } from './forradsmal';
 import { balans } from './balans';
 import { TRANGSEL, glesPlats } from './trangsel';
 export { TRANGSEL, glesPlats } from './trangsel';
@@ -713,8 +713,7 @@ export const FORBATTRA: readonly ForbRad[] = [
   ...(['grenar', 'torrgras'] as const).map(k => ({ id: 'fylla_' + k, fylla: true as const, kand: (c: Ctx): ForbKand | undefined => {
     const { s, p } = c, pavag = living(s).reduce((n, q) => n + (q !== p && q.task?.hamtar === k ? q.task.items?.[k] ?? 0 : 0), 0);
     // samma kurva som maten och veden (steg 13.8.4): fullt upp till bufferten, sedan ner mot vedens MinMatt vid taket och vidare mot noll
-    const har = amountOf(s, k) + pavag, b = materialBuffert(s, k), V = FORRADSMAL.ved;
-    const kvar = har <= b ? 1 : mjuktTak(har, b, Math.max(b + 1, materialTak(s, k)), 1, V.minMatt / V.min);
+    const kvar = materialKvar(s, k, pavag);
     if (!tandStalle(s, p, [k])) return undefined; // inget att hämta i närheten
     return { sc: VAL.forbFylla * kvar * brus(c), gor: () => arbeta(c, 'samla', `Mer ${k === 'grenar' ? 'grenar' : 'hö'} till förrådet`, { hamtar: k }) };
   } })),
@@ -1341,6 +1340,13 @@ const lagrat = (s: State, k: (k: string) => boolean) => (a: { k: string; x: numb
 // det mjuka taket (steg 10.2.4): från bufferten (b) sjunker behovet från min till minMatt vid taket (tak), och därefter vidare
 // som (tak / x)², aldrig tvärt till noll. Fritiden (VAL.forbFritid på Förbättra) väger mot det
 const mjuktTak = (x: number, b: number, tak: number, min: number, minMatt: number) => x <= tak ? min - (min - minMatt) * (x - b) / Math.max(1e-9, tak - b) : minMatt * (tak / x) ** 2;
+// hur mycket byn vill ha mer av materialet k (steg 13.8.4, 15.1.45): fullt upp till bufferten, sedan ner mot vedens minMatt vid
+// taket och vidare mot noll, som det mjuka taket. Det andra redan bär hem (pavag) räknas med. Samma fråga för varje arbete som ger
+// ett material, så att ingen skaffar det över taket (grenarna som bränsle också, MATERIALMAL.grenar)
+export function materialKvar(s: State, k: Materialslag, pavag = 0) {
+  const har = amountOf(s, k) + pavag, b = materialBuffert(s, k), V = FORRADSMAL.ved;
+  return har <= b ? 1 : mjuktTak(har, b, Math.max(b + 1, materialTak(s, k)), 1, V.minMatt / V.min);
+}
 // byns egna mattal: maten byn äger i dygn, och bufferten byn vill ha av den, så stor del av hela bufferten som byn delar (mer: ett varsel)
 export const matTal = (s: State, fd: number, mer = 0) => ({ fdBy: fd * bynsMatAndel(s), malBy: buffert(s, 'mat', mer) * (s.delning?.andel ?? 1) });
 function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: number, fara: Faror) {
@@ -1390,14 +1396,16 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     const yieldF = tinder ? 1 : yieldR, season = d.sasong![ai];
     // maten som någon längtar efter är mer värd att hämta (steg 2.6.2)
     // tändmaterialet vägs efter det som fattas av det (wTand, steg 13.8.5), och arbetet efter det mest behövda av det och dess eget behov
-    const colEget = need * (!d.resurs ? 1 : season * yieldF * onskan(p, w, s.now)) * fullVikt(s, p, d.behov!); // raden som har sina arbetare väger en tredjedel (steg 6.1.13)
+    // det arbetet ger är ett material med ett tak (grenarna): behovet gånger det mjuka taket för materialet (materialKvar)
+    const takF = d.ger && d.ger in MATERIALMAL ? materialKvar(s, d.ger as Materialslag) : 1;
+    const colEget = need * takF * (!d.resurs ? 1 : season * yieldF * onskan(p, w, s.now)) * fullVikt(s, p, d.behov!); // raden som har sina arbetare väger en tredjedel (steg 6.1.13)
     const col = tinder ? Math.max(colEget, wTand * fullVikt(s, p, 'tand')) : colEget;
     const like = lust(s, p, w as Skill, ACTS[w].egenskap!, [w], tot) * (VAL.brusMin + rnd(s, 'val', p) * VAL.brusSpann) * bredvidVikt(s, p, w, ppl); // egen lust och vana, och vad vänner och ovänner gör (steg 3.1.1)
     const sc = col * like;
     burg = Math.max(burg, col);
     if (sc > bs) { bs = sc; best = w; }
     if (tinder) radBast('tand', w, like);
-    radBast(d.behov!, w, (!d.resurs ? 1 : season * yieldR * onskan(p, w, s.now)) * like);
+    radBast(d.behov!, w, takF * (!d.resurs ? 1 : season * yieldR * onskan(p, w, s.now)) * like);
   }
   return { best, burg, wBy, wEgen, egen: wNod >= wFam ? egen : famDygn, fdBy, malBy, wWood, wTand, rad };
 }
