@@ -1,6 +1,6 @@
 // Scenarier för fas 15, grupp 9 (steg 15.1.96–15.1.104).
 import * as SIM from '../../sim';
-import { SCENARIER, testBy } from './hjalp';
+import { SCENARIER, klockan, testBy } from './hjalp';
 import { foretagBy } from './fas14';
 
 SCENARIER.affarstyrka = {
@@ -115,6 +115,45 @@ SCENARIER.hyllval = {
       [`en kund köpte vid hyllan (${e ? `${e.n} ${e.k}` : 'ingen kund'})`, kopt],
       [`säljaren övade handel (${hFore.toFixed(3)} → ${hEfter.toFixed(3)})`, hEfter > hFore],
       [`relationen växte (${rFore.toFixed(1)} → ${rEfter.toFixed(1)})`, rEfter > rFore],
+    ];
+  },
+};
+
+SCENARIER.affarkropp = {
+  text: 'Steg 15.1.100: affärsarbetet viker för kroppen. En hungrig ägare med en kund vid disken äter först och betjänar sedan, och en kund som fryser värmer sig innan hen handlar',
+  kor: () => {
+    const { s, p, f, vux } = foretagBy(['affar']);
+    klockan(s, 11);
+    for (const q of s.people) q.task = undefined;
+    // bara ägaren har mat, och den ligger på varubordet: de andra saknar den
+    const { fin } = { fin: SIM.FOOD.find(k => SIM.maltidsNiva(k) === 'fin')! };
+    for (const m of SIM.FOOD) if (m !== fin) SIM.setAmount(s, m, 0);
+    SIM.setAmount(s, 'ved', 300);
+    const v1 = SIM.stationSite(s, 'varubord')!;
+    s.stationer!.push({ id: s.nextStation = (s.nextStation ?? 0) + 1, k: 'varubord', x: v1.x, y: v1.y, rot: v1.rot, kvar: 0, inne: 1 } as unknown as SIM.Station); SIM.touch(s);
+    s.stackar!.push({ k: fin, n: 10, c: 1, x: v1.x, y: v1.y, ag: { [p.id]: 10 } }); SIM.touch(s);
+    const kropp = (q: SIM.Person) => { Object.assign(q, { hunger: 0.9, rest: 0.9, social: 0.9, toa: 0.9, torst: 0.9, warm: 0.9, health: 1 }); q.bruk = undefined; q.task = undefined; };
+    const kund = (q: SIM.Person) => { kropp(q); q.hunger = 0.3; }; // kunderna är lite hungriga och har ingen egen mat
+    for (const q of vux) { SIM.laggIn(s, 'silver', 60, q.id); kund(q); }
+    const kunder = vux.filter(q => SIM.kundVal(s, q, 'affar')), k = kunder[0], c = kunder[1];
+    if (!k || !c) return [[`två kunder vill köpa mat (${kunder.length})`, false]];
+    const e = SIM.kundVal(s, k, 'affar')!, ko = SIM.stallIKo(s, k, e);
+    k.task = { act: 'koaDisk', phase: 'do', tx: ko.spot.x, ty: ko.spot.y, until: s.now + ko.dur, carry: 0, ref: f.id, why: ko.why };
+    const val = (q: SIM.Person) => { SIM.chooseTask(s, q); const tk = (q as { task?: SIM.Task }).task, a = tk?.act ?? 'inget'; skal.push(`${a}: ${tk?.why ?? ''}`); q.task = undefined; return a; }, skal: string[] = [];
+    // ägaren: byn har mat för en tid, så att försörjningen inte brådskar
+    SIM.setAmount(s, 'rotter', 2000); SIM.setAmount(s, 'ved', 2000);
+    kropp(p); p.hunger = 0.05; const hungrig = val(p);
+    kropp(p); const matt = val(p);
+    SIM.setAmount(s, 'rotter', 0);
+    kund(c); c.warm = 0.05; const fryser = val(c);
+    kund(c); const varm = val(c);
+    const rader = ['betjana', 'affar', 'stallaFram', 'kopaMat'].map(id => SIM.ARBETEN.find(r => r.id === id)?.niva);
+    return [
+      [`betjäna, affären och ställa fram står på samma nivå som att köpa mat (${rader.join(', ')})`, rader.every(n => n === rader[3])],
+      [`den hungriga ägaren äter först (${hungrig}) fast en kund väntar vid disken`, hungrig !== 'betjana'],
+      [`och betjänar när hen ätit (${skal[1]})`, matt === 'betjana'],
+      [`kunden som fryser värmer sig först (${fryser})`, fryser !== 'koaDisk'],
+      [`och handlar när hen är varm (${varm})`, varm === 'koaDisk' || varm === 'bytHos'],
     ];
   },
 };
