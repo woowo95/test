@@ -44,7 +44,7 @@ import { coldOf, forVarm, nederbord, snoPaMarken, temperature, vaderNu } from '.
 // barnen leker i snön när den ligger, som de vuxna har snöbollskrig (steg 4.3.1.3, sport.ts)
 const lekText = (s: State) => snoPaMarken(s) > 0 ? 'Är barn och leker i snön' : 'Är barn och leker';
 import { varselSamla } from './motgang';
-import { FORRAD, FORRADSMAL, TROSKEL, buffert, lyxtak, materialTimme, materialTak, eldReserv, villHaAv } from './forradsmal';
+import { FORRAD, FORRADSMAL, TROSKEL, buffert, foretagMal, lyxtak, materialTimme, materialTak, eldReserv, villHaAv } from './forradsmal';
 import { stallaVal, AFFAR } from './affar';
 import { saknarNu } from './behov';
 import { betjanVal, kundVal, stallIKo, KASSA, type Erbjudande } from './kassa';
@@ -1336,7 +1336,9 @@ function bestWork(s: State, p: Person, fd: number, wd: number, ai: number, tot: 
     : mjuktTak(fdBy, malBy, malBy * M.matt, M.min, M.minMatt)) * om;
   // spärren för den egna maten (steg 13.9.6): raden för egen mat är full när familjen har sin gräns, egenFull gånger
   // familjens buffert, och personen själv har lika stor del av bufferten. Över gränsen går hen vidare till bygget och projekten
-  const famDygn = familjMatDygn(s, familjOf(s, p.id)), malFam = onskat * (1 - delas) * M.egenFull;
+  // maten ägarens servering och affär sålt är ägarens förrådsmål (steg 15.1.97): de dygn den räcker familjen läggs till gränsen
+  const saljMat = s.foretag?.length ? FOOD.reduce((n, k) => n + foretagMal(s, p.id, k) * (MAT.per?.[k] ?? 1), 0) / Math.max(1e-6, MAT.kvar(s, p)) : 0;
+  const famDygn = familjMatDygn(s, familjOf(s, p.id)), malFam = onskat * (1 - delas) * M.egenFull + saljMat;
   const wFam = famDygn < malFam ? clamp(FORRAD.behovTomt - famDygn / malFam * (FORRAD.behovTomt - M.min), M.min, FORRAD.behovMax) : 0;
   // den som själv har mat (sin egen, byns och familjens) för kortare tid än gränsen arbetar för maten, hur fullt
   // byns förråd än är (steg 3.10.26, 13.8.6, 13.9.6)

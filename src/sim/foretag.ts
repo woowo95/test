@@ -25,6 +25,7 @@ import { DAGSVERK, egetVarde } from './dagsarbete';
 import { rumTaggar } from './rum';
 import { foretagBord, isKlar, stationerOf, stationRum } from './stationer';
 import { RECEPT } from './recept';
+import { saljKrok } from './forradsmal';
 import { fardighetFor, gorKostnad, kanSkaffaVaror, varuOrd } from './foretagsvaror';
 
 export const FORETAG = balans('foretag', {
@@ -278,6 +279,9 @@ export function foretagTimme(s: State) {
   for (const f of s.foretag) if (f.hus === undefined) { const h = husAv(s, f.ag).find(q => !tagna.has(q.id)); if (h) { f.hus = h.id; tagna.add(h.id); } }
   s.foretag = s.foretag.filter(f => f.hus !== undefined || f.ag === BYN || foretagare(s, f.ag) || troAvAgare(s, f.ag)); // ägaren dog innan något byggts
 }
+// det ägaren sålt per dygn av varje vara, ägarens förrådsmål (steg 15.1.97, forradsmal.ts): det sålda glöms med FORETAG.minne,
+// så det som sålts på ett dygn är minnet gånger minne
+saljKrok.salt = (s, ag) => { const ut: Record<string, number> = {}; for (const f of foretagOf(s)) if (f.ag === ag) for (const k in f.saltVara) ut[k] = (ut[k] ?? 0) + f.saltVara[k]! * FORETAG.minne; return ut; };
 // det som görs per dygn före det nya företaget (konkurrens.ts)
 export const dygnet: ((s: State) => void)[] = [];
 // en gång per dygn (ett år i spelet): den som tjänar mest på det startar ett företag, och det som sålts glöms

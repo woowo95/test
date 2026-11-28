@@ -10,7 +10,7 @@ import { familjOf } from './folk';
 import { omtanke } from './omtanke';
 import { clamp } from './slump';
 import { amountOf, capacity } from './lager';
-import { koKrok, materialBuffert, stationBrist, tillverkVill, villAv, villHaAv } from './forradsmal';
+import { foretagBrist, koKrok, materialBuffert, stationBrist, tillverkVill, villAv, villHaAv } from './forradsmal';
 import { SAKER, viktOf } from './saker';
 import { KLADER, NAKEN_PLATS, PLAGG, PLAGG_LIST, plaggVarmer } from './klader';
 import { coldOf, temperature } from './vader';
@@ -213,8 +213,8 @@ const tillverk = (k: string): ProjektDef => {
     arbete: { act: d.act, min: d.min },
     ko: { act: d.act, min: d.min, saknas: s => Math.max(0, Math.ceil((vill(s) - antal(s)) / d.n - 1e-9)) }, // omgångar om n
     kostnad: () => receptKostnad(d),
-    kan: (s, p) => { const av = har(s, p) && kar(s) && antal(s) < vill(s) ? tillverkAv(d, q => getable(s, p, q) - utsadeKrok.av(s, q)) : undefined; return !!av && Object.entries(av).every(([q, n]) => getable(s, p, q) - utsadeKrok.av(s, q) >= n); }, // utsädet sparas (steg 9.6.22)
-    recept: (s, p) => { const av = har(s, p) && antal(s) < vill(s) ? tillverkAv(d, q => getable(s, p, q)) : undefined; return av ? { av } : undefined; },
+    kan: (s, p) => { const av = har(s, p) && kar(s) && (antal(s) < vill(s) || foretagBrist(s, p.id, [d.ger]) > 0) ? tillverkAv(d, q => getable(s, p, q) - utsadeKrok.av(s, q)) : undefined; return !!av && Object.entries(av).every(([q, n]) => getable(s, p, q) - utsadeKrok.av(s, q) >= n); }, // utsädet sparas (steg 9.6.22)
+    recept: (s, p) => { const av = har(s, p) && (antal(s) < vill(s) || foretagBrist(s, p.id, [d.ger]) > 0) ? tillverkAv(d, q => getable(s, p, q)) : undefined; return av ? { av } : undefined; },
     // i en station som går fortare (sländan i vävstolen, steg 7.7.9), med redskapet som ligger där
     uppgift: (s, p) => { const t = stationFor(s, d.act); return { act: d.act, text: d.text, min: d.min / (t && stationDef(t.k)?.fart?.[d.act] || 1) / (redskapVidAct(s, d.act)?.fart ?? 1) /* sågen vid klyvplatsen (steg 12.5.1) */ / kunnaFart(s, p, d.act, d.ger) /* skickligheten (steg 13.9.8) */, tool: d.verktyg && !verktygVid(s, d.act, d.verktyg) ? d.verktyg : undefined }; },
   };
@@ -448,8 +448,10 @@ export const bristNu = (s: State, k: string) => {
   if (a.bv !== (s.byggV ?? 0)) { a.bv = s.byggV ?? 0; a.brist = bristAlla(s); } // bv först: slöjdbänkens brist frågar efter bristNu under räkningen (koKrok.vid) och får då den förra
   return a.brist[k] ?? 0;
 };
+// det projektet k gör (redskapen i gruppen, det som tillverkas): ägarens förrådsmål för affären räknas som en egen brist (steg 15.1.97)
+const projektGer = (k: string): readonly string[] => GORS[k] ?? (TILLVERKA[k] ? [TILLVERKA[k].ger] : []);
 export function personVarde(s: State, k: string, fam: readonly Person[], om: number, p?: Person) {
-  const d = PROJEKT[k], e = d.egen ? d.egen(s, fam, p) : 0;
+  const d = PROJEKT[k], e = Math.min(1, (d.egen ? d.egen(s, fam, p) : 0) + (p && s.foretag?.length ? foretagBrist(s, p.id, projektGer(k)) : 0));
   // det de andra redan är på väg att göra räknas med (steg 12.1.53)
   const b = om ? Math.max(0, bristNu(s, k) - (d.paVag?.(s, p) ?? 0)) : 0;
   return d.vikt * kylFaktor(s, d) * (b * om + e) / Math.max(PROJEKT_TAL.minKostnad, kostnadFor(s, d, p));
@@ -524,7 +526,7 @@ export function bastaProjekt(s: State, p: Person, f: ProjektFara, egen = false) 
   for (const k of PROJEKT_LIST) {
     // när kylan är en fara är projekten mindre värda: tiden går helst till värmen (steg 10.2.6, PROJEKT_TAL.kyla), utom det som
     // skyddar mot kylan (steg 10.2.71)
-    const d = PROJEKT[k], v = (egen ? (d.egen ? personVarde(s, k, fam, 0, p) : 0) : personVarde(s, k, fam, om, p)) * (f.kyla && !d.motKyla ? PROJEKT_TAL.kyla : 1);
+    const d = PROJEKT[k], v = (egen ? personVarde(s, k, fam, 0, p) : personVarde(s, k, fam, om, p)) * (f.kyla && !d.motKyla ? PROJEKT_TAL.kyla : 1);
     if (v <= 0 || best && v * Math.max(1, SMIDE.brinner) <= best.varde) continue; // (ässjan kan höja värdet efteråt, smidaFaktor)
     // kan och uppgift frågar ofta om samma plats (stationerna): den söks en gång (medPlatsMinne)
     const u = medPlatsMinne(() => d.kan(s, p, f) ? d.uppgift(s, p) ?? null : undefined);

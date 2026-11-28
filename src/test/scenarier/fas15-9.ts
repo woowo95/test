@@ -1,6 +1,7 @@
 // Scenarier för fas 15, grupp 9 (steg 15.1.96–15.1.104).
 import * as SIM from '../../sim';
 import { SCENARIER, testBy } from './hjalp';
+import { foretagBy } from './fas14';
 
 SCENARIER.affarstyrka = {
   text: 'Steg 15.1.96: affären byggs på det ägaren kan. En skicklig hantverkare som kan göra vattensäckar av skinnen i byn (det alla saknar) öppnar en affär som säljer dem och heter efter dem, och en bybo som varken har något över eller kan göra något öppnar ingen',
@@ -33,6 +34,32 @@ SCENARIER.affarstyrka = {
       [`hantverkarens poäng är positiv (${pp.toFixed(2)}), den andras inte (${qp.toFixed(2)})`, pp > 0 && qp <= 0],
       [`skickligheten ger mer (${pp.toFixed(2)} mot ${osk.toFixed(2)} utan den)`, pp > osk],
       [`affären heter efter vattensäckarna (${f.namn})`, /vattensäckar$/.test(f.namn)],
+    ];
+  },
+};
+
+SCENARIER.affarmal = {
+  text: 'Steg 15.1.97: det en affär sålt av en vara blir ägarens förrådsmål för den, räknat ur försäljningen. Varan som säljer får ett mål och blir ägarens eget projekt, och en vara som aldrig sålt får inget mål',
+  kor: () => {
+    const { s, p, f } = foretagBy(['affar']);
+    const fam = SIM.familjOf(s, p.id), F = { kyla: false, gras: 0 };
+    // ett redskap ägaren kan göra
+    const g = Object.keys(SIM.GORS).find(x => SIM.PROJEKT[x] && SIM.GORS[x]!.some(k => SIM.canMake(s, p, k)) && SIM.kanGoras(s, x as SIM.Act, p) && SIM.enTill(s, x as SIM.Act, p));
+    if (!g) return [['ägaren kan göra något redskap', false]];
+    const k = SIM.GORS[g]!.find(q => SIM.canMake(s, p, q))!, aldrig = Object.keys(SIM.GORS).find(x => x !== g)!;
+    for (const t of s.ting ?? []) if (t.agare === p.id && SIM.GORS[g]!.includes(t.k)) t.agare = undefined as never; // ägaren har inga av dem själv
+    f.saltVara = {};
+    const utanMal = SIM.foretagMal(s, p.id, k), utanV = SIM.personVarde(s, g, fam, 0, p), utanVill = SIM.wantsTool(s, p, g);
+    f.saltVara = { [k]: 4 };
+    const mal = SIM.foretagMal(s, p.id, k), medV = SIM.personVarde(s, g, fam, 0, p), medVill = SIM.wantsTool(s, p, g), aldrigMal = SIM.foretagMal(s, p.id, SIM.GORS[aldrig]![0]!);
+    const b = SIM.bastaProjekt(s, p, F, true);
+    return [
+      [`utan försäljning inget mål för ${k} (${utanMal})`, utanMal === 0],
+      [`det sålda ger ägaren ett mål (${mal} ${k})`, mal >= 1],
+      [`en vara som aldrig sålt får inget mål (${aldrigMal})`, aldrigMal === 0],
+      [`projektet är värt mer för ägaren (${utanV.toFixed(3)} → ${medV.toFixed(3)})`, medV > utanV],
+      [`ägaren vill göra ${k} när den säljer (${utanVill ? 'ville förut också' : 'ville inte förut'})`, medVill],
+      [`ägarens eget projekt är det (${b?.k ?? 'inget'})`, b?.k === g],
     ];
   },
 };

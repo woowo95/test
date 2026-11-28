@@ -24,7 +24,7 @@ import { foodDaysAll } from './ekonomi';
 import { ERSATT, SAKER, isFood } from './saker';
 import { ljusPlatser } from './ljus';
 import { virkeKrok } from './skog';
-import { allows, amountOf as iForradet, iHelaForradet, rymd, zonesOf } from './lager';
+import { allows, amountOf as iForradet, iHelaForradet, ownsId, rymd, zonesOf } from './lager';
 // förrådsmålen gäller hela byns förråd, också när frågan ställs mitt i ett arbete där bara det inom räckhåll nås (steg 11.1.74)
 // det som kan användas i stället (ERSATT, den torkade röllekan, steg 13.6.1) räknas med
 const amountOf = (s: State, k: string) => iHelaForradet(() => (ERSATT[k] ?? []).reduce((n, q) => n + iForradet(s, q), iForradet(s, k)));
@@ -34,7 +34,7 @@ import { TORST } from './torst';
 import { harMyr } from './myr';
 import { sportFor } from './sport';
 import { foretagBord, STATION, STATIONER, StationDef, StationSlag, bordBrist, forvarBrist, kupBrist, harStation, isKlar, pyntBrist, pyntLust, stationerOf, tommaPlatser, villPynt } from './stationer';
-import { nTools } from './agande';
+import { nTools, tingOf } from './agande';
 import { brasaBrist, brasaStenMal } from './brasor';
 import { BYGGNADER, fahusUtanKrubba, fnId, langhusRum, sovplatser, utanBadd } from './byggnader';
 import { fahusHus } from './slatter';
@@ -127,6 +127,20 @@ export const onskatDygn = (k: Resurs, v: number, extra = 0) => { const r = FORRA
 export const kallt = (s: State) => kallTid(ageIndex(s));
 export const buffert = (s: State, k: Resurs, extra = 0) => onskatDygn(k, pabud(s, FORRADSMAL[k].pabud), extra) * (k === 'ved' && kallt(s) ? FORRAD.kyla : 1);
 export const lyxtak = (s: State, k: Resurs, extra = 0) => FORRADSMAL[k].matt * buffert(s, k, extra);
+
+// ---------- företagens varor (steg 15.1.97) ----------
+// Det ett företag sålt av varje vara blir ägarens eget förrådsmål för varan, räknat ur försäljningen som byns mål räknas ur
+// förbrukningen: det sålt per dygn gånger materialDygn. Ägarens vanliga arbete fyller på (projekten och den egna maten, val.ts).
+// En vara som aldrig säljer får inget mål. salt = det ägaren ag sålt per dygn av varje vara (foretag.ts)
+export const saljKrok = { salt: (_s: State, _ag: number): Record<string, number> => ({}) };
+export function foretagMal(s: State, ag: number, k: string) { const n = saljKrok.salt(s, ag)[k] ?? 0; return n > 0 ? Math.ceil(n * FORRAD.materialDygn - 1e-9) : 0; }
+// så mycket av målet som fattas: det ägaren har av varan (högarna och tingen) räknas av
+export function foretagSaknar(s: State, ag: number, k: string) {
+  const m = foretagMal(s, ag, k);
+  return m > 0 ? Math.max(0, m - iHelaForradet(() => ownsId(s, ag, k)) - tingOf(s).filter(t => t.k === k && t.agare === ag).length) : 0;
+}
+// hur stor del av målet som fattas för det bästa av ks (0 till 1): projektets egen brist hos ägaren
+export const foretagBrist = (s: State, ag: number, ks: readonly string[]) => ks.reduce((b, k) => { const m = foretagMal(s, ag, k); return m > 0 ? Math.max(b, foretagSaknar(s, ag, k) / m) : b; }, 0);
 
 // ---------- materialen (steg 6.2.14) ----------
 interface Materialmal {
