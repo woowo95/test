@@ -1854,11 +1854,13 @@ SCENARIER.runsten = {
   kor: () => {
     const a = medLedare(), s = a.s, d = a.v[1], w = a.v[2], annan = a.v[3];
     klockan(s, 8); setFood(s, 400); SIM.setAmount(s, 'ved', 300); SIM.setAmount(s, 'huggen_sten', 3);
-    for (const p of a.v) (p.tek ??= {}).stenhuggarplats = 1;
+    for (const p of a.v) if (p.tek) delete p.tek.stenhuggarplats;
+    for (const p of [w, annan]) (p.tek ??= {}).stenhuggarplats = 1; // bara de två kan hugga sten
     gift(s, w, d);
     SIM.handelse(s, d, 'bjorndodare', undefined, undefined, w, 2);
     // den som inte såg något har ingen lust; den som såg björnen fällas vill resa en bildsten om den (steg 13.9.15)
     const utan = SIM.runstenLust(s, annan) === undefined, sag = SIM.runstenLust(s, w);
+    delete annan.tek!.stenhuggarplats; // sedan bara den som sörjer: den som kommer på något under tiden reser annars en sten om det först (steg 13.9.15)
     SIM.die(s, d, 'alderdom');
     const lust = SIM.runstenLust(s, w);
     const ingenBedrift = () => { for (const p of SIM.living(s)) p.bedrift = undefined; }; // det som kommer på något under tiden vill resa en sten om det
