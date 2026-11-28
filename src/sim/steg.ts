@@ -113,7 +113,7 @@ import { lonDygn, lonRakna } from './dagsarbete';
 import { foretagDygn, foretagTimme } from './foretag';
 import { foretagMarknad } from './stangning';
 import { marknadDygn, marknadKlar } from './marknad';
-import { bytHosKlar } from './kopbuffert';
+import { bytHosKlar, samlaTimme } from './kopbuffert';
 import { finishOdla, froFynd, stepOdling, workOdla } from './odling';
 import { balans } from './balans';
 import { grilla, torka } from './matlagning';
@@ -336,7 +336,7 @@ KLAR.valla = (s, p, t) => vallaKlar(s, p, t.ref);
 KLAR.klippa = (s, p, t) => { klippKlar(s, p, t.ref); wearUsed(s, p, 1); }; // ullsaxen slits för varje får (steg 12.5.2)
 KLAR.tatuera = (s, p, t) => tatKlar(s, p, t.ref);
 KLAR.farga = fargaKlar; // färgbadet (farg.ts, steg 13.3.2)
-KLAR.bytHos = (s, p, t) => { iHelaForradet(() => bytHosKlar(s, p, t)); }; // köpet hos grannen (kopbuffert.ts, steg 14.1.15)
+MEDAN.bytHos = (s, p, t) => { if (!t.bytt) { t.bytt = true; iHelaForradet(() => bytHosKlar(s, p, t)); } }; // köpet hos grannen (kopbuffert.ts, steg 14.1.15) prövas när man kommit fram (steg 15.1.20)
 KLAR.marknad = marknadKlar; // marknaden (marknad.ts, steg 14.1.14)
 KLAR.stallaFram = stallaKlar; KLAR.koaDisk = koaKlar; KLAR.betjana = betjanaKlar; // kassan (kassa.ts, steg 14.1.6)
 KLAR.stada = stadaKlar; // städningen (stada.ts, steg 14.1.2)
@@ -477,6 +477,7 @@ export const TAKTER: Takt[] = [
   // (fynden som växer igen, glömskan, ryktena, husens slitage) räknas glesare och får tiden sedan sist
   { namn: 'atSteg', sek: 3600, fn: s => { atSteg(s); } },
   { namn: 'stepSeder', sek: 3600, fn: s => { stepSeder(s); } },
+  { namn: 'vad samlandet ger', sek: 3600, fn: (s, dt) => samlaTimme(s, dt) }, // det glidande medlet som köpet vägs mot (kopbuffert.ts, steg 15.1.19)
   { namn: 'updateTags', sek: 3600, fn: s => { updateTags(s); } },
   { namn: 'stepRelationer', sek: 3600, fn: s => { stepRelationer(s); } },
   { namn: 'stepUppvaxt', sek: 3600, fn: s => { stepUppvaxt(s); } },
@@ -899,7 +900,7 @@ function taskStep(s: State, p: Person, a: number, t1: number, dtSec: number, lea
     const tk = p.task!, d = ACTS[tk.act];
     let used: number;
     if (tk.phase === 'go' || tk.phase === 'back') {
-      if ((tk.act === 'varda' && tk.phase === 'go' && !tk.site) || (tk.act === 'vatten' && tk.phase === 'back' && !tk.falt && !tk.ho)) vardMal(s, p, tk); // den skadade kan ha flyttat sig
+      if ((tk.act === 'varda' && tk.phase === 'go' && !tk.site) || (tk.act === 'vatten' && tk.phase === 'back' && !tk.falt && !tk.ho) || d.foljer && tk.phase === 'go') vardMal(s, p, tk); // den skadade, eller den man går till, kan ha flyttat sig
       const w = walk(s, p, tk, left);
       used = w.used;
       if (tk.bar !== undefined && !barMed(s, p, tk)) { left -= used; continue; } // den som bärs följer med

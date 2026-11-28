@@ -16,7 +16,7 @@ import { Ting, newTing, tingOf } from './agande';
 import { kvEffekt } from './kvalitet';
 import { bordVid, moblerKrok } from './stationer';
 import { BYN, Del, addDel, sumOf } from './egendom';
-import { amountOf, helt, iBordan, kyrkornas, slagFinns, iRackhall, iHelaForradet, urBordan, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, type Uttag, use } from './lager';
+import { amountOf, helt, iBordan, kyrkornas, slagFinns, iRackhall, iHelaForradet, urBordan, mayTake, ownMove, ownedSum, ownsAmount, put, takeFood, type Uttag, use, villageAmount } from './lager';
 import { eatPoison } from './fynd';
 import { ata } from './naring';
 import { ratt } from './matlagning';
@@ -758,7 +758,7 @@ export function personPart(s: State, p: Person, silver = true): Part {
 // x, y = där den som handlar för byn står
 // det byn behåller av materialet k när den byter: bufferten i förrådsmålen (villHaAv), och utsädet (steg 10.2.32)
 const behalla = (s: State, k: string) => Math.max(arMaterial(k) ? villHaAv(s, k) : 0, utsadeKrok.av(s, k));
-export const bynsDel = (s: State, k: string) => { let n = amountOf(s, k); for (const p of living(s)) n -= ownsAmount(s, p, k); return Math.max(0, helt(n)); };
+export const bynsDel = (s: State, k: string) => Math.max(0, helt(villageAmount(s, k))); // allt som ägs av någon räknas bort (steg 15.1.18)
 function bynNod(s: State, b: Behov) { let n = 0; for (const j of b.slag) n += amountOf(s, j) * perOf(b, j); return { har: n, behover: living(s).reduce((a, q) => a + b.kvar(s, q), 0) }; }
 // byns del av mat eller ved, och bufferten för den, i behovets enheter
 function bynBuffert(s: State, b: Behov) {

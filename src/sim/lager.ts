@@ -277,12 +277,13 @@ export const wornOf = (s: State, k: string) => isTool(k) ? amountOf(s, k) : summ
 export function foodOf(s: State) { const n = summa(s).n; let f = 0; for (const k of FOOD) f += n[k] ?? 0; return f; }
 
 // ---------- vems det är (egendom.ts) ----------
-export const ownsId = (s: State, id: number, k: string) => agOf(s, k)?.[id] ?? 0;
+// byns del är det ingen annan äger (stackarna sparar bara de andra ägarna, steg 15.1.18)
+export const ownsId = (s: State, id: number, k: string) => id === BYN ? villageAmount(s, k) : agOf(s, k)?.[id] ?? 0;
 export const ownsAmount = (s: State, p: Person, k: string) => ownsId(s, p.id, k);
 // hur mycket av slaget k invånarna äger tillsammans (resten är byns)
 export const ownedSum = (s: State, k: string) => sumOf(agOf(s, k));
-// det av slaget k som är byns
-const villageAmount = (s: State, k: string) => Math.max(0, amountOf(s, k) - ownedSum(s, k));
+// det av slaget k som är byns: det som inte ägs av någon, levande, död, gäst, handlare eller kyrka (steg 15.1.18)
+export const villageAmount = (s: State, k: string) => Math.max(0, amountOf(s, k) - ownedSum(s, k));
 // det av slaget k som p får ta: sitt eget och byns
 export const mayTake = (s: State, p: Person, k: string) => ownsAmount(s, p, k) + villageAmount(s, k);
 // det av slaget k som får tas: den personens (fran, stöld), annars p:s eget och byns, annars allt
@@ -1330,6 +1331,7 @@ function aterlagt(s: State, t: Task) {
 export function storeLoad(s: State, t: Task, x?: number, y?: number, owner = BYN) {
   aterlagt(s, t);
   const all = loadOf(t), at = x !== undefined ? { x: Math.floor(x), y: Math.floor(y!) } : undefined;
+  if (ACTS[t.act]?.arbete && ACTS[t.act]?.ger) { let v = 0; for (const k in all) v += all[k] * grundvarde(k); if (v > 0) (s.hemburet ??= {})[t.act] = (s.hemburet[t.act] ?? 0) + v; } // vad arbetet bar hem (kopbuffert.ts, steg 15.1.19)
   if ((all.virke ?? 0) > 1e-9) count(s, 'virkeBuret', all.virke); // virket som burits hem: släden prövas fram av den som ofta bär virke (steg 10.10.2)
   const fo = t.ting?.map(id => tingOf(s).find(g => g.id === id)).find(g => g && SAKER[g.k]?.fordon);
   if (fo) { count(s, `fordonTur_${fo.k}`); count(s, 'fordonTur'); if (fo.djur !== undefined) count(s, 'dragdjurTur'); count(s, 'fordonSaker', Object.values(all).reduce((n, v) => n + v, 0)); } // turerna med kälken och det den drog (steg 10.10.2)

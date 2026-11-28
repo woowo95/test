@@ -329,7 +329,7 @@ SCENARIER.konkurrens = {
     f.pris = { servering: 2.5 }; const dyr = [val(f), val(f2)];
     satt(0.9, 0.1); f.pris = { servering: 1 }; const fint = [val(f), val(f2)];
     // den kräsne går till det fina och dyra, den som inte väntar sig något till det billiga
-    satt(0.95, 0.15); f.pris = { servering: 2 }; f2.pris = { servering: 0.8 };
+    satt(0.95, 0.15); f.pris = { servering: 3 }; f2.pris = { servering: 0.8 }; // priset är i silver (steg 15.1.17): kundens vinst räknas inte längre dubbelt, så det fina får vara dyrare
     // kunderna har ingen egen mat över (den sparade byn kan ha gett dem mycket, och då är en måltid värd hälften för alla)
     const ids = new Set(vux.map(q => String(q.id)));
     s.stackar = (s.stackar ?? []).map(a => a.ag && SIM.FOOD.includes(a.k) ? { ...a, ag: Object.fromEntries(Object.entries(a.ag).filter(([id]) => !ids.has(id))) } : a);
@@ -341,7 +341,7 @@ SCENARIER.konkurrens = {
     for (const g of SIM.dygnet) g(s);
     const upp = f.pris!.servering, ner = f2.pris!.servering, finare = SIM.foretagBord.finare(s, p);
     const G = SIM.saljPart(s, f)!, fin = SIM.varorAv(s, f, 'servering', G)[0];
-    f.pris = { servering: 0.01 }; const golv = SIM.prisAv(s, f, 'servering', fin, G), eget = SIM.grundvarde(fin) * G.varde(fin);
+    f.pris = { servering: 0.01 }; const golv = SIM.prisAv(s, f, 'servering', fin, G), eget = SIM.grundvarde(fin) * G.varde(fin) / SIM.silverVarde(G); // i silver (steg 15.1.17)
     f.enkelt = 0; const nojd = SIM.foretagBord.finare(s, p);
     return [
       [`båda serveringarna är öppna (${oppna.join(',')})`, oppna.every(Boolean)],
@@ -509,8 +509,13 @@ SCENARIER.stanga = {
     const pris1 = SIM.foretagPris(s, f, h), k = SIM.foretagKopare(s, f, h), hog = k ? SIM.foretagHogst(s, f, k.id) : 0;
     if (k) { k.x = p.x; k.y = p.y; k.task = p.task = undefined; }
     const silv0 = SIM.formogenheter(s).egen.get(p.id) ?? 0;
+    // en annan som kunde köpa, och vad hen skulle ge före försäljningen (steg 15.1.21)
+    const annan = SIM.living(s).find(q => !q.gast && q !== k && q !== p && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && !SIM.foretagOf(s).some(x => x.ag === q.id)), forut = annan ? SIM.foretagHogst(s, f, annan.id) : 0;
+    delete s.foretagLart;
     SIM.iHelaForradet(() => { SIM.foretagMarknad(s); });
     const silv1 = SIM.formogenheter(s).egen.get(p.id) ?? 0;
+    // företaget hade inte sålt något: byn har lärt sig det, och ingen köper det igen till samma pris
+    const lartSalt = (s.foretagLart as SIM.State["foretagLart"])?.servering, sedan = annan ? SIM.foretagHogst(s, f, annan.id) : 0;
     return [
       [`företaget som går bra stannar (resultat ${res.toFixed(1)} per dygn)`, kvar && res > 0],
       [`ägaren prövar först (${provar}), sedan är det till salu (${salu})`, provar && salu],
@@ -518,6 +523,8 @@ SCENARIER.stanga = {
       [`ett gott rykte gör det värt mer (${pris0.toFixed(0)} → ${pris1.toFixed(0)})`, pris1 > pris0 * 1.3],
       [`den som tjänar på det köper (${k?.name}, högst ${hog.toFixed(0)}): ägare ${f.ag === k?.id}, ${f.namn}`, !!k && hog >= pris1 && f.ag === k.id && h.ag === k.id && h.fn === 'naringshus' && f.salu === undefined],
       [`säljaren fick betalt (förmögenhet ${silv0.toFixed(0)} → ${silv1.toFixed(0)}, huset borta)`, silv1 > 0 && !!k],
+      [`företaget hade inte sålt något: byn lärde sig det när det såldes (${lartSalt?.toFixed(2)})`, lartSalt !== undefined && lartSalt < 0.1],
+      [`och en annan köper det inte igen till samma pris (högst ${forut.toFixed(0)} → ${sedan.toFixed(0)})`, !!annan && forut > 0 && sedan < forut / 2],
     ];
   },
 };
@@ -583,6 +590,19 @@ SCENARIER.kopabuffert = {
     f.pris = { affar: 0.5 }; // priset har följt kunderna ner
     const eR = SIM.kopval(s, rik, 'mat'), eF = SIM.kopval(s, fattig, 'mat');
     const grans = SIM.vilMangd(s, rik, mat);
+    // vägen dit går i köparens fart (steg 15.1.55): den gamla som går långsamt får mindre ut av en timme att köpa
+    const ger1 = s.samlaGer; s.samlaGer = { mat: { v: 2000, h: 10 } }; // under taket, så att skillnaden syns
+    const b0 = rik.born, langsam = (() => { rik.born = s.now - (SIM.ALDER.gangGammal + 20) * SIM.DAY; try { return SIM.kopval(s, rik, 'mat')?.faktor ?? 0; } finally { rik.born = b0; } })(), vanlig = SIM.kopval(s, rik, 'mat')?.faktor ?? 0;
+    s.samlaGer = ger1;
+    // köpet vägs mot vad en timme samlande faktiskt ger (steg 15.1.19): det glidande medlet av det som burits hem
+    const ger0 = s.samlaGer; s.samlaGer = undefined; s.hemburet = { samla: 6, jakt: 2, ved: 50 };
+    const samlare = SIM.living(s).filter(q => q !== rik && q !== fattig && q !== p).slice(0, 2), uppg = samlare.map(q => q.task);
+    for (const q of samlare) q.task = { act: 'samla', phase: 'do', tx: q.x, ty: q.y, until: s.now + SIM.HOUR, carry: 0, why: '' } as never;
+    SIM.samlaTimme(s, 3600); samlare.forEach((q, i) => { q.task = uppg[i]; });
+    const medel = SIM.samlaPerTimme(s, 'mat'), utanVed = SIM.samlaPerTimme(s, 'ved');
+    s.samlaGer = { mat: { v: 0.5, h: 10 } }; const lite = SIM.kopval(s, rik, 'mat')?.faktor ?? 0;
+    s.samlaGer = { mat: { v: 2000, h: 10 } }; const mycket = SIM.kopval(s, rik, 'mat')?.faktor ?? 0;
+    s.samlaGer = ger0;
     // hos grannen: bytet
     p.task = undefined; s.foretag = []; p.x = rik.x; p.y = rik.y;
     const g = SIM.kopval(s, rik, 'mat'); const m0 = SIM.FOOD.reduce((a, k) => a + SIM.ownsAmount(s, rik, k), 0);
@@ -591,8 +611,11 @@ SCENARIER.kopabuffert = {
     return [
       [`utan affär: grannen med över (${gr?.granne === p.id}); sover hen finns inget att köpa (${ingen?.faktor ?? 0})`, gr?.granne === p.id && !ingen && alla.includes(f)],
       [`den rika köper i affären (${eR?.kund?.k}, ${eR?.kund?.n}, en timme ger ${eR?.faktor.toFixed(2)} mot samlandet), högst till sin gräns (${grans})`, !!eR?.kund && eR.kund.n <= grans && eR.faktor > 0.5],
+      [`vägen räknas i köparens fart, utan ett eget tal för gången (${vanlig.toFixed(3)}, som gammal och långsam ${langsam.toFixed(3)})`, langsam < vanlig && !('gang' in SIM.KOPBUFFERT)],
       [`den fattiga utan något att betala med samlar (${eF?.faktor ?? 0}, ${fatt?.faktor ?? 0})`, !eF && !fatt],
       [`hos grannen byter hen till sig mat (${m0} → ${m1})`, m1 > m0],
+      [`en timme samlande ger det som burits hem delat med timmarna (${medel?.toFixed(1)}: 8 på två timmar), och veden utan någon som hugger har inget medel (${utanVed})`, medel !== undefined && Math.abs(medel - 4) < 1e-9 && utanVed === undefined],
+      [`den rika köper när samlandet ger lite (${lite.toFixed(2)} gånger en timme samlande) och samlar när det ger mycket (${mycket.toFixed(2)})`, lite > 1 && mycket < 1],
     ];
   },
 };

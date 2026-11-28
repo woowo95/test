@@ -81,15 +81,19 @@ export function varorAv(s: State, f: Foretag, v: string, G = saljPart(s, f)): st
   return alla.filter(k => har.has(k));
 }
 // priset på en vara i hela silver: det varan är värd för ägaren och hälften av det en vanlig kund vinner, gånger ägarens pris (steg 14.1.9)
-// (konkurrens.ts), men aldrig under det varan är värd för ägaren: för mindre säljer hen inte
-export const prisAv = (s: State, f: Foretag, v: string, k: string, G: Part, n = 1) => { const egen = n * kvAv(s, f, v, k) * (VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * G.varde(k)); return Math.max(1, Math.ceil(egen - 1e-9), Math.round((egen + n * VERKSAMHETER[v].snitt(k) * FORETAG.del) * (f.pris?.[v] ?? 1))); };
-// det M betalar: silver, varor eller allt hen har över, det som kostar minst för hen
+// (konkurrens.ts), men aldrig under det varan är värd för ägaren: för mindre säljer hen inte. Varans värde för ägaren räknas i
+// silver, delat med vad ett silver är värt för hen (steg 15.1.17)
+export const silverVarde = (G: Part) => Math.max(1e-9, grundvarde('silver') * G.varde('silver'));
+export const prisAv = (s: State, f: Foretag, v: string, k: string, G: Part, n = 1) => { const egen = n * kvAv(s, f, v, k) * (VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * G.varde(k) / silverVarde(G)); return Math.max(1, Math.ceil(egen - 1e-9), Math.round((egen + n * VERKSAMHETER[v].snitt(k) * FORETAG.del) * (f.pris?.[v] ?? 1))); };
+// det M betalar: silver, varor eller allt hen har över, det som kostar minst för hen. Priset är i silver: G ska få lika mycket
+// som så många silver är värda för hen (steg 15.1.17)
 type Betalvaror = ReturnType<typeof betalVaror>;
 function betalar(varor: Betalvaror, G: Part, pris: number) {
   let bast: ReturnType<typeof betalaAv> | undefined;
+  const mal = pris * silverVarde(G);
   for (const del of [varor.filter(w => w.k === 'silver'), varor.filter(w => !w.t && w.k !== 'silver'), varor]) {
-    const b = betalaAv(del, G, pris);
-    if (b.fick >= pris - 1e-9 && (!bast || b.kost < bast.kost - 1e-9)) bast = b;
+    const b = betalaAv(del, G, mal);
+    if (b.fick >= mal - 1e-9 && (!bast || b.kost < bast.kost - 1e-9)) bast = b;
   }
   return bast;
 }
@@ -135,9 +139,10 @@ export function erbjudandet(s: State, p: Person, v: string, bara?: Foretag, kan?
       const n = VERKSAMHETER[v].hylla ? kopMangd(s, p, f, k) : 1;
       if (n < 1 || VERKSAMHETER[v].egen && kundNoje(s, p, v, k) <= 0) continue; // den som inte har någon nytta av tjänsten
       const kv = kvAv(s, f, v, k), far = n * kv * ((VERKSAMHETER[v].grund?.(k) ?? grundvarde(k) * M.varde(k)) + kundNoje(s, p, v, k)) + om, pris = prisAv(s, f, v, k, G, n);
-      if (far > 0 && !ville.includes(f)) ville.push(f);
-      if (far <= (bast?.net ?? 0)) continue;
+      if (far <= 0) continue;
       varor ??= betalVaror(M, G, []);
+      if (varor.length && !ville.includes(f)) ville.push(f); // den som inget har att betala med påverkar inte priset (steg 15.1.17)
+      if (far <= (bast?.net ?? 0)) continue;
       const b = betalar(varor, G, pris);
       if (!b) continue; // kan inte betala
       const net = far - b.kost;

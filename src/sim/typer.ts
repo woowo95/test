@@ -142,6 +142,7 @@ export interface Task {
   sele?: number; // barnet som modern bär i bärselen (steg 13.2.3, barsele.ts)
   paus?: true; // vilan är en paus när inget annat lockar, inte trötthet (steg 11.1.72)
   fr?: number; // odla: rutan på fältet man arbetar på (steg 9.7.1, odling.ts)
+  bytt?: true; // bytHos: bytet hos grannen är prövat (kopbuffert.ts, steg 15.1.20)
   arbTid?: number; // ett arbete som räknas från framkomsten (framme i ACTS): så lång tid tar det när man är framme (steg 9.2.130)
   mortBete?: 0 | 1; // fiske: en mört används som bete (steg 7.4.4)
   blotVed?: number; // så stor del av veden som bärs som är blöt (steg 7.3.4)
@@ -477,6 +478,8 @@ export interface State {
   flod?: { niva: number; hogst?: number; mindes?: 1 }; // översvämningen (steg 3.8.3, flod.ts): så många rutor upp på land som vattnet står, det högsta det nått och om byn redan minns det (steg 3.8.7)
   marknad?: import('./marknad').Marknad; // marknaden som kallats (marknad.ts)
   foretagLart?: Record<string, number>; // så stor del av de väntade kunderna ett stängt företag fick (stangning.ts)
+  hemburet?: Record<string, number>; // värdet (grundvärde) som burits hem i varje arbete sedan förra timmen (kopbuffert.ts, steg 15.1.19)
+  samlaGer?: Record<string, { v: number; h: number }>; // det glidande medlet av värdet som burits hem och timmarna i arbetena, för maten och veden (kopbuffert.ts)
   husAffar?: { hus: number; ag: number; t: number }; // ett hus som ska byta ägare när köparen och säljaren möts (steg 7.2.12, byggplan.ts)
   flodHot?: number; flodBlot?: number; flodMinne?: number; // medan vattnet stiger: så många rutor upp på land som byn bär undan maten från; så många som är blöta (vattnet står där nu eller stod där nyss, ingen sover där); och så högt som byn minns att vattnet nått (inget byggs där). Räknas varje timme (steg 3.8.7, flod.ts, flodHotad i sjo.ts)
   tornadoStig?: number[]; // rutorna där tornadon slet upp gräset till en jordstig, bara för bilden (steg 6.4.13): de syns tills gräset vuxit tillbaka

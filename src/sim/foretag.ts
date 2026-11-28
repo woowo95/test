@@ -23,7 +23,7 @@ import { MALTIDSNIVA, maltidsNiva } from './ratter';
 import { DRYCKER, dryckAv, vatskaAv, type VatskaId } from './vatskor';
 import { DAGSVERK, egetVarde } from './dagsarbete';
 import { rumTaggar } from './rum';
-import { foretagBord, isKlar, stationerOf, stationRum } from './stationer';
+import { foretagBord, isKlar, stationerOf, stationRum, storlek } from './stationer';
 import { RECEPT } from './recept';
 
 export const FORETAG = balans('foretag', {
@@ -36,7 +36,6 @@ export const FORETAG = balans('foretag', {
   timKund: 0.04, // så många timmar arbete tar en kund
   ar: 30, // huset ska vara betalt på så många dygn (år i spelet)
   pung: 15, // det kunden kan betala med räcker så många dygn
-  plats: 9, // så många golvrutor har ett nytt hus
   bordKunder: 6, // så många platser vid bord vill ett företag högst ha
   samtidigt: 0.15, // så stor del av dygnets kunder kommer samtidigt
   akut: 0.6, // hur akut ett företags hus är att bygga (familjens hus är HUS.familjAkut)
@@ -55,7 +54,7 @@ export const foretagAvHus = (s: State, hus?: number) => hus === undefined ? unde
 export interface Verksamhet {
   namn: string; sym: string;
   rum: string | readonly string[]; // rumstypen (någon av dem)
-  sak?: string; // stationen den kräver utöver disken (utbyggnaden kostar den)
+  sak?: string; // stationen den kräver utöver disken (huset rymmer den, och utbyggnaden kostar den)
   varor: (s: State, ag?: number) => string[]; // det som går att sälja i byn nu (av ägaren ag, när det gäller en start)
   noje: (s: State, p: Person, k: string) => number; // det kunden vinner mot att ta det hen har hemma, i silver
   snitt: (k: string) => number; // det en vanlig kund vinner, i silver
@@ -73,7 +72,7 @@ const hemmaNoje = (s: State, p: Person) => FOOD.reduce((m, k) => { const n = MAL
 export const skick = (n: number) => clamp(0.6 + n / 25, 0.6, 1.4);
 export const VERKSAMHETER: Record<string, Verksamhet> = {
   servering: {
-    namn: 'Servering', sym: '🍽', rum: 'matsal',
+    namn: 'Servering', sym: '🍽', rum: 'matsal', sak: 'bord',
     varor: s => FOOD.filter(k => MALTIDSNIVA[maltidsNiva(k)].humor > 0 && amountOf(s, k) >= 1),
     noje: (s, p, k) => FORETAG.humor * Math.max(0, MALTIDSNIVA[maltidsNiva(k)].humor - hemmaNoje(s, p)),
     snitt: k => FORETAG.humor * MALTIDSNIVA[maltidsNiva(k)].humor, ats: true,
@@ -81,7 +80,7 @@ export const VERKSAMHETER: Record<string, Verksamhet> = {
     kunnande: p => skick((p.skill.matlagning + p.skill.handel) / 2),
   },
   dryck: {
-    namn: 'Dryck', sym: '🍺', rum: 'matsal',
+    namn: 'Dryck', sym: '🍺', rum: 'matsal', sak: 'bord',
     varor: s => DRYCKER.filter(v => dryckAv(v)?.alkohol && vatskaAv(s, v as VatskaId) >= 1),
     noje: (_s, p, k) => FORETAG.dryck * (dryckAv(k)?.kvall ?? 0.5) * rusLust(_s, p),
     snitt: k => FORETAG.dryck * (dryckAv(k)?.kvall ?? 0.5), grund: () => FORETAG.dryckVarde, vatska: true,
@@ -90,7 +89,7 @@ export const VERKSAMHETER: Record<string, Verksamhet> = {
   },
   // affären (steg 14.1.8, affar.ts): kunden vinner så mycket mer hen behöver saken än den som har den över
   affar: {
-    namn: 'Affär', sym: '👛', rum: 'affar', hylla: true,
+    namn: 'Affär', sym: '👛', rum: 'affar', sak: 'varubord', hylla: true,
     // det någon saknar (maten som all mat), och som ägaren har över; utan ägare det som finns i byn (steg 15.1.12)
     varor: (s, ag) => {
       const sak = new Set(living(s).flatMap(p => p.gast ? [] : saknarNu(s, p))), mat = sak.has('mat'), q = ag !== undefined && ag > 0 ? byId(s, ag) : undefined;
@@ -104,6 +103,11 @@ export const VERKSAMHETER: Record<string, Verksamhet> = {
   },
 };
 // företagets sorts namn efter verksamheterna: servering och dryck tillsammans är en taverna
+// ---------- huset rymmer verksamheterna (steg 15.1.15) ----------
+// stationerna verksamheterna verk behöver: disken och var och ens sak, en av varje sort
+export const foretagStationer = (verk: readonly string[]) => [...new Set(['disk', ...verk.flatMap(v => VERKSAMHETER[v]?.sak ? [VERKSAMHETER[v].sak!] : [])])];
+// golvrutorna de behöver: varje station och golvet framför den, och rutan innanför dörren
+export const foretagPlats = (verk: readonly string[]) => 1 + foretagStationer(verk).reduce((n, k) => { const { w, h } = storlek(k); return n + w * (h + 1); }, 0);
 export const sortNamn = (verk: string[]) => verk.includes('servering') && verk.includes('dryck') ? 'Taverna' : VERKSAMHETER[verk[0]]?.namn ?? 'Företag';
 
 // ---------- ägaren ----------
@@ -166,7 +170,7 @@ function vantas(s: State, ag: number, verk: string[]) {
 }
 export interface Forsok { ag: number; verk: string[]; poang: number; kunder: number }
 // vad det är värt för ag att starta verksamheterna verk: vinsten per dygn minus arbetet och huset
-export function startPoang(s: State, ag: number, verk: string[], kostar = husKostnad(FORETAG.plats)): Forsok {
+export function startPoang(s: State, ag: number, verk: string[], kostar = husKostnad(foretagPlats(verk))): Forsok {
   const p = foretagare(s, ag);
   if (!p) return { ag, verk, poang: 0, kunder: 0 };
   let kunder = 0, ut = -kostar / FORETAG.ar;
@@ -175,9 +179,9 @@ export function startPoang(s: State, ag: number, verk: string[], kostar = husKos
   const lagg = clamp((stat(p, 'flit', s.now) + stat(p, 'mod', s.now) + stat(p, 'karisma', s.now)) / (3 * EGENSKAP.mitt), 0.3, 1.7);
   return { ag, verk, poang: ut > 0 ? ut * lagg : ut, kunder };
 }
-// alla som kan starta ett företag nu: vuxna som inte har något, byn och kyrkorna, om de äger så mycket att huset går att betala
+// alla som kan starta ett företag nu: vuxna som inte har något, byn och kyrkorna, om de äger så mycket att det minsta huset går att betala
 export function startare(s: State): number[] {
-  const f = formogenheter(s), kostar = husKostnad(FORETAG.plats), har = new Set(foretagOf(s).map(q => q.ag)), ut: number[] = [];
+  const f = formogenheter(s), kostar = Math.min(...Object.keys(VERKSAMHETER).map(v => husKostnad(foretagPlats([v])))), har = new Set(foretagOf(s).map(q => q.ag)), ut: number[] = [];
   if (!har.has(BYN) && f.byn >= kostar) ut.push(BYN);
   for (const t of s.tron ?? []) { const id = kyrkaId(t.id); if (t.slut === undefined && !har.has(id) && (f.egen.get(id) ?? 0) >= kostar) ut.push(id); }
   for (const p of living(s)) if (!p.gast && ageOf(p, s.now) >= ALDER.vuxen && !har.has(p.id) && (f.egen.get(p.id) ?? 0) >= kostar) ut.push(p.id);
@@ -191,12 +195,18 @@ export function bastaStart(s: State): Forsok | undefined {
   return bast;
 }
 // det bästa tillägget: ett företag som har sitt hus tar upp en verksamhet till, med samma poäng som ett nytt. Det kostar stationen
+// som inte redan finns, och golvet huset behöver byggas ut med för att rymma den (steg 15.1.15)
 export interface Utok extends Forsok { f: Foretag }
+export const foretagGolv = (s: State, f: Foretag) => foretagRum(s, f).reduce((n, r) => n + r.tiles.length, 0);
+export const utokKostnad = (s: State, f: Foretag, v: string) => {
+  const har = foretagStationer(f.verk), sak = VERKSAMHETER[v].sak, golv = foretagGolv(s, f), behov = foretagPlats([...f.verk, v]);
+  return (sak && !har.includes(sak) ? sakKostnad(sak) : 0) + (behov > golv ? husKostnad(behov) - husKostnad(golv) : 0);
+};
 const sakKostnad = (k?: string) => Object.entries((RECEPT as Record<string, { av?: Record<string, number> }>)[k ?? '']?.av ?? {}).reduce((a, [q, n]) => a + n * grundvarde(q), 0);
 export function bastaUtok(s: State): Utok | undefined {
   let bast: Utok | undefined;
   for (const f of foretagOf(s)) if (foretagRum(s, f).length) for (const v of Object.keys(VERKSAMHETER)) if (!f.verk.includes(v)) {
-    const q = startPoang(s, f.ag, [v], sakKostnad(VERKSAMHETER[v].sak));
+    const q = startPoang(s, f.ag, [v], utokKostnad(s, f, v));
     if (q.poang > (bast?.poang ?? 0)) bast = { ...q, f };
   }
   return bast;
@@ -220,13 +230,19 @@ export function starta(s: State, ag: number, verk: string[]): Foretag {
 }
 // ---------- huset ----------
 // företaget som saknar hus får ägarens lediga; annars vill byggsystemet ha ett (naringshus)
+// Huset rymmer stationerna verksamheterna behöver (steg 15.1.15): ett hus som är för litet byggs ut (Akut.hus)
+const vem = (s: State, f: Foretag) => (tr => tr ? { tro: tr.id } : f.ag > 0 ? { ag: f.ag } : {})(troAvAgare(s, f.ag));
 foretagKrok.akut = s => {
   const f = foretagOf(s).find(q => q.hus === undefined && foretagare(s, q.ag));
-  if (!f) return { v: 0, plats: 0 };
-  const tr = troAvAgare(s, f.ag);
-  return { v: FORETAG.akut, plats: FORETAG.plats, ...(tr ? { tro: tr.id } : f.ag > 0 ? { ag: f.ag } : {}) };
+  if (f) return { v: FORETAG.akut, plats: foretagPlats(f.verk), ...vem(s, f) };
+  for (const q of foretagOf(s)) {
+    if (q.hus === undefined || !foretagare(s, q.ag)) continue;
+    const golv = foretagGolv(s, q), behov = foretagPlats(q.verk);
+    if (golv > 0 && behov > golv) return { v: FORETAG.akut, plats: behov - golv, hus: q.hus, ...vem(s, q) };
+  }
+  return { v: 0, plats: 0 };
 };
-foretagKrok.namn = (s, a: Akut) => foretagOf(s).find(q => q.hus === undefined && (a.tro !== undefined ? q.ag === kyrkaId(a.tro) : q.ag === (a.ag ?? BYN)))?.namn ?? 'Företaget';
+foretagKrok.namn = (s, a: Akut) => foretagOf(s).find(q => a.hus !== undefined ? q.hus === a.hus : q.hus === undefined && (a.tro !== undefined ? q.ag === kyrkaId(a.tro) : q.ag === (a.ag ?? BYN)))?.namn ?? 'Företaget';
 export const foretagRum = (s: State, f: Foretag): Rum[] => f.hus === undefined || !husById(s, f.hus)?.klar ? [] : gridOf(s).rooms.filter(r => r.hus === f.hus && r.tiles.length);
 // så många kunder väntas samtidigt, och så många platser vid bord vill företaget ha
 export const vantadeKunder = (s: State, f: Foretag) => f.verk.reduce((n, v) => n + Math.max(f.salt?.[v] ?? 0, living(s).length * FORETAG.andel), 0);

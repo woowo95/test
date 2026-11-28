@@ -162,7 +162,7 @@ interface StationDel { namn: string; ikon?: string; w: number; h: number; arbete
 // sjuk = en bädd för den som är sjuk eller skadad (sjukbädden, steg 12.4.10, mobler.ts): ingen sovplats för någon annan
 // varmer = står inne och värmer rummet med en stationseld (fyrfatet, steg 12.4.11, mobler.ts): byn ställer det i ett rum med sovplatser långt från en eld
 // ljus = ett talgljus kan stå på möbeln (ljusPlatser i ljus.ts)
-export interface StationDef { vara?: true; disk?: true; vaxerIgen?: true; ljus?: true; varmer?: true; dass?: { smuts: number }; finare?: string; vagga?: true; ersatter?: string; vila?: { tim: number; tanke: 'sovSang' | 'sovVagga'; glad: number }; byggNamn?: string; kv?: number; delar?: StationDel[]; hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number; langhus?: true; sittplats?: true; agd?: true; enda?: true; fahus?: true; kok?: true; tro?: true; golv?: true; hage?: true; rund?: true; pyntQ?: number; smak?: string; vrak?: true; hinner?: number } // hinner = så många minuter arbete som får vänta vid en: väntar mer vill byn ha en till (slöjdbänken, steg 12.1.150) // vrak = byggs aldrig, står där grundarna kom (vagnen, steg 11.6.13); hage = står i en hage (vattenhon, steg 10.10.30); golv = ligger på golvet som en matta: man går över den och annat står på den (steg 10.7.6); pyntQ = så många kvalitetssteg finare som pynt; smak = sorten i smaken (PYNT_SMAK) när den inte är stationens id // kok = en av kökets stationer: står inne och ger rummet taggen Kök (steg 10.2.91–10.2.92) // fahus = står i fähuset (krubban, steg 10.2.88); enda = byn har bara en (högsätet); langhus = står i långhuset (steg 10.2.68); sittplats = rutorna är sittplatser (bänken)
+export interface StationDef { foretag?: true; /* står bara i ett företags rum: utanför står den i vägen (iVagen, steg 15.1.16) */ vara?: true; disk?: true; vaxerIgen?: true; ljus?: true; varmer?: true; dass?: { smuts: number }; finare?: string; vagga?: true; ersatter?: string; vila?: { tim: number; tanke: 'sovSang' | 'sovVagga'; glad: number }; byggNamn?: string; kv?: number; delar?: StationDel[]; hard?: true; namn: string; ett?: true; ikon: string; w: number; h: number; tek: string[]; av: Record<string, number>; min: number; gor: Act[]; bara?: Act[]; vid?: Record<string, number>; verktyg?: string; utkant?: Utkant; eld?: true; kraver?: Partial<Record<Act, string>>; smutsar?: Partial<Record<Act, string>>; bygger: string; forsta: string; inne?: true; mobel?: true; flera?: true; fart?: Partial<Record<Act, number>>; brasa?: true; sover?: true; sitt?: true; platser?: true; forvar?: Forvar; pynt?: true; samtidigt?: number; langhus?: true; sittplats?: true; agd?: true; enda?: true; fahus?: true; kok?: true; tro?: true; golv?: true; hage?: true; rund?: true; pyntQ?: number; smak?: string; vrak?: true; hinner?: number } // hinner = så många minuter arbete som får vänta vid en: väntar mer vill byn ha en till (slöjdbänken, steg 12.1.150) // vrak = byggs aldrig, står där grundarna kom (vagnen, steg 11.6.13); hage = står i en hage (vattenhon, steg 10.10.30); golv = ligger på golvet som en matta: man går över den och annat står på den (steg 10.7.6); pyntQ = så många kvalitetssteg finare som pynt; smak = sorten i smaken (PYNT_SMAK) när den inte är stationens id // kok = en av kökets stationer: står inne och ger rummet taggen Kök (steg 10.2.91–10.2.92) // fahus = står i fähuset (krubban, steg 10.2.88); enda = byn har bara en (högsätet); langhus = står i långhuset (steg 10.2.68); sittplats = rutorna är sittplatser (bänken)
 // de enkla redskapen: görs vid slöjdbänken om byn har en, lite fortare där (fart), annars vid elden som förut (Björn, efter v90)
 const ENKLA: Act[] = ['yxa', 'kniv', 'bensyl', 'balte', 'boll', 'benflojt', 'fackla', 'talgljus', 'naverask', 'ogonlapp', 'nal'];
 // träsakerna vid snickarbänken (steg 9.4.5): receptets kolumn bank säger var det görs fortare och bättre, bara att det bara görs
@@ -240,12 +240,12 @@ export const STATIONER = {
   },
   // disken (steg 14.1.6, kassa.ts): i ett företags rum, där den som betjänar tar emot kunderna
   disk: {
-    namn: 'Disk', ikon: 'disk', w: 2, h: 1, tek: [], av: RECEPT.disk.av, min: RECEPT.disk.min, gor: ['betjana'], inne: true, disk: true, flera: true,
+    namn: 'Disk', ikon: 'disk', w: 2, h: 1, tek: [], av: RECEPT.disk.av, min: RECEPT.disk.min, gor: ['betjana'], inne: true, disk: true, foretag: true, flera: true,
     bygger: 'Bygger en disk av virke.', forsta: '{namn} byggde byns första disk. Där tar företaget emot sina kunder.',
   },
   // varubordet (steg 14.1.8, affar.ts): i en affärs rum, där ägaren ställer det som är till salu
   varubord: {
-    namn: 'Varubord', ett: true, ikon: 'varubord', w: 2, h: 1, tek: [], av: RECEPT.varubord.av, min: RECEPT.varubord.min, gor: [], inne: true, vara: true, mobel: true, flera: true,
+    namn: 'Varubord', ett: true, ikon: 'varubord', w: 2, h: 1, tek: [], av: RECEPT.varubord.av, min: RECEPT.varubord.min, gor: [], inne: true, vara: true, foretag: true, mobel: true, flera: true,
     bygger: 'Bygger ett varubord av virke.', forsta: '{namn} byggde byns första varubord. Där ligger det som affären säljer.',
   },
   // skrivpulpeten (steg 10.6.11): står inne med en sittplats. Där skrivs bladen fortare och bättre; utan den skrivs de för hand vid elden
@@ -986,7 +986,7 @@ export function golvNas(s: State, r: Rum, ny: readonly number[] = []) {
 // inne: i ett färdigt hus (en möbel man sover i bara där man sover, det andra inte i ett förrådshus), på lediga golvrutor med
 // golv framför sig, och bara om den inte tar en sovplats som någon behöver. Helst mot en vägg och inte vid öppningen, och en
 // bädd aldrig i ingången. bara = bara i det rummet, far = bara i de husen (ingen bygger i någon annans hus, steg 3.10.2)
-function siteInne(s: State, k: string, bara?: Rum, far?: (h: Hus) => boolean) {
+export function siteInne(s: State, k: string, bara?: Rum, far?: (h: Hus) => boolean) {
   const d = stationDef(k)!, g = gridOf(s);
   let best: { x: number; y: number; rot?: 1; inne: 1 } | undefined, bs = Infinity;
   for (const r of g.rooms) {
@@ -1269,7 +1269,7 @@ function utanLager(s: State) {
 export function inneUtanPlats(s: State): StationSlag | undefined {
   return STATION_LIST.find(k => {
     const d: StationDef = STATIONER[k];
-    return d.inne && !d.sover && !d.golv && !harStation(s, k) && !halvbyggd(s, k) && living(s).some(p => kanTek(p, d)) && !stationSite(s, k) && stationBrist(s, k) > 0; // ett rum bara åt en station byn saknar (disken och varubordet saknas bara i ett företags hus)
+    return allmanInne(k) && !harStation(s, k) && !halvbyggd(s, k) && living(s).some(p => kanTek(p, d)) && !stationSite(s, k) && stationBrist(s, k) > 0; // ett rum bara åt en station byn saknar som följer den allmänna regeln: disken och varubordet har sin plats i företagets hus (steg 15.1.16)
   });
 }
 // rummet där en station som står inne står
@@ -1761,18 +1761,20 @@ function stangerGolv(s: State, t: Station) {
 }
 // en av byns stationer i ett företags hus (ställd där innan företagets hus hölls åt företaget, steg 14.1.6)
 const iForetag = (s: State, t: Station) => t.inne && allmanInne(t.k) && husAv(s, t)?.fn === 'naringshus';
+// en station som bara står i ett företags rum (disken och varubordet) men står utanför (steg 15.1.16)
+const utanforForetag = (s: State, t: Station) => !!stationDef(t.k)?.foretag && (!t.inne || husAv(s, t)?.fn !== 'naringshus');
 function iVagen(s: State) {
   const fram = framRutor(s);
   const t = [...stationerOf(s)].reverse().find(t => { // den senast byggda först: när två saker tillsammans stänger in golvet står den senare fel
     const d = stationDef(t.k);
     if (!d || !isKlar(t) || d.eld || d.brasa || d.forvar && !iIngangen(s, t)) return false;
     const { w, h } = storlekAv(t), rutor = rutorAv(t.x, t.y, w, h);
-    if (!rutor.some(q => fram.has(q.y * W + q.x)) && !iIngangen(s, t) && !(arbetar(d) && !framLand(s, t.x, t.y, w, h)) && !(t.inne && stangerGolv(s, t)) && !iForetag(s, t)) return false;
+    if (!rutor.some(q => fram.has(q.y * W + q.x)) && !iIngangen(s, t) && !(arbetar(d) && !framLand(s, t.x, t.y, w, h)) && !(t.inne && stangerGolv(s, t)) && !iForetag(s, t) && !utanforForetag(s, t)) return false;
     return !living(s).some(q => arbetarVid(t, q)) && !living(s).some(p => rutor.some(q => q.x === Math.floor(p.x) && q.y === Math.floor(p.y)));
   });
   if (!t) return;
   const d = stationDef(t.k)!, { w, h } = storlekAv(t);
-  const var_ = iForetag(s, t) ? 'i ett företags hus' : rutorAv(t.x, t.y, w, h).some(q => fram.has(q.y * W + q.x)) ? 'där man arbetar vid en bänk' : arbetar(d) && !framLand(s, t.x, t.y, w, h) ? 'så att man fick stå i vattnet' : iIngangen(s, t) ? 'i ingången' : 'så att man inte kom fram i huset';
+  const var_ = iForetag(s, t) ? 'i ett företags hus' : utanforForetag(s, t) ? 'utanför ett företags hus' : rutorAv(t.x, t.y, w, h).some(q => fram.has(q.y * W + q.x)) ? 'där man arbetar vid en bänk' : arbetar(d) && !framLand(s, t.x, t.y, w, h) ? 'så att man fick stå i vattnet' : iIngangen(s, t) ? 'i ingången' : 'så att man inte kom fram i huset';
   const at = utan(s, t, () => stationSite(s, t.k, byId(s, t.ag)));
   count(s, 'station i vägen');
   if (t.k === 'scen') { rivStation(s, t, `Scenen revs eftersom den stod ${var_}.`); return; } // scenen bärs aldrig (steg 8.1.16)
