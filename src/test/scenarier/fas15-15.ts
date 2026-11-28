@@ -1,6 +1,6 @@
 // Scenarier för fas 15, grupp 15 (steg 15.1.141–15.1.150).
 import * as SIM from '../../sim';
-import { SCENARIER, kor } from './hjalp';
+import { SCENARIER, klockan, kor } from './hjalp';
 import { START } from '../kor';
 import { foretagBy } from './fas14';
 
@@ -43,6 +43,55 @@ SCENARIER.grannat2 = {
       [`varje by finns i sina grannars listor när världen skapas (${byar.length} byar, huvudbyn har ${hbGr} grannar)`, fore && hbGr > 0],
       [`huvudbyn får en handlare inom 20 dygn (${kom === undefined ? 'ingen' : `efter ${SIM.kortTal((kom - START) / SIM.DAY)} dygn`})`, kom !== undefined],
       [`grannätet är ömsesidigt också efter dygnen (${efter.length} byar)`, bada(efter)],
+    ];
+  },
+};
+
+// en by med en färdig hage, staketet runt om, och faren får (som hageUtanVatten i fas10.ts, men vilken hage som helst)
+const medHage = (faren: number) => {
+  for (let seed = 3; seed < 30; seed++) {
+    const b = SIM.createState(seed, START); klockan(b, 8);
+    const p = SIM.living(b).filter(r => SIM.ageOf(r, b.now) >= SIM.ALDER.vuxen)[0];
+    if (faren) { SIM.setAmount(b, 'levfar', faren); SIM.stepBoskap(b); }
+    for (const q of SIM.living(b)) (q.tek ??= {}).staket = 1;
+    SIM.setAmount(b, 'grenar', 400); SIM.setAmount(b, 'rep', 4);
+    const mat = SIM.hageUppgift(b, p); if (mat?.ref === -1) SIM.hageKlar(b, p, -1);
+    for (let v = SIM.hageVal(b, p), n = 0; v && n < 200; v = SIM.hageVal(b, p), n++) SIM.hageKlar(b, p, v.i);
+    const h = SIM.hagarOf(b)[0];
+    if (h && SIM.hageHel(b, h)) { for (const d of SIM.tamdjurOf(b)) d.hage = h.id; return { s: b, h, p }; }
+  }
+  return undefined;
+};
+
+SCENARIER.stampar = {
+  text: 'Steg 15.1.143: levande djur byts som allt annat. Djuren i byn räknas i det byn har av den levande varan: en by med en tacka, en hage och hö nog till vintern saknar en bagge och köper en, inte fler, och nästa vår föds ett lamm',
+  kor: () => {
+    const b = medHage(1);
+    if (!b) return [['en by med en hage och en tacka', false]];
+    const { s, h } = b, tacka = SIM.tamdjurOf(s)[0]; tacka.hona = true;
+    const utanHo = SIM.bynKopAntal(s, 'levfar'), utanHoBehov = SIM.bynBehov(s, 'levfar');
+    SIM.setAmount(s, 'torrgras', 60);
+    const behov = SIM.bynBehov(s, 'levfar'), antal = SIM.bynKopAntal(s, 'levfar'), getter = SIM.bynKopAntal(s, 'levget');
+    // handlaren lämnar det byn köpt
+    SIM.put(s, 'levfar', antal); SIM.stepBoskap(s);
+    const nya = SIM.tamdjurOf(s).filter(d => d !== tacka && d.art === 'far'), bagge = nya.length === 1 && !SIM.arHona(nya[0]);
+    for (const d of nya) d.hage = h.id;
+    const efter = SIM.bynBehov(s, 'levfar');
+    // till våren: djuren är mätta och har vatten
+    let lamm = 0;
+    for (let i = 0; i < 24 * 60 && !lamm; i++) {
+      s.now += SIM.HOUR;
+      for (const d of SIM.tamdjurOf(s)) { d.hunger = 0; d.torstTim = 0; d.torst = 0; }
+      SIM.setAmount(s, 'torrgras', 60);
+      SIM.stepBoskap(s, 3600);
+      lamm = SIM.tamdjurOf(s).filter(d => d.art === 'far').length - 2;
+    }
+    return [
+      [`utan hö räcker en tacka (köper ${utanHo}, behovet ${SIM.kortTal(utanHoBehov)})`, utanHo === 0 && utanHoBehov < SIM.DELA.saknar],
+      [`med hage och hö saknar byn ett får (behovet ${SIM.kortTal(behov)}) och köper ett (${antal}), och av getterna köps paret (${getter})`, behov >= SIM.DELA.saknar && antal === 1 && getter === 2],
+      [`det köpta fåret är en bagge (${nya.map(d => SIM.arHona(d) ? 'tacka' : 'bagge').join(', ')})`, bagge],
+      [`sedan saknar byn inga får (behovet ${SIM.kortTal(efter)})`, efter < SIM.DELA.saknar],
+      [`på våren föds ett lamm (${lamm})`, lamm >= 1],
     ];
   },
 };

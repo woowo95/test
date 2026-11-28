@@ -9,14 +9,15 @@ import { gen } from './ord';
 import { balans } from './balans';
 import { spand } from './agande';
 import { ALDER, ageOf, byId, count, forstaGang, gjort, log, ovning, annanGor, alive } from './folk';
-import { desperatMat, getable } from './behov';
+import { desperatMat, getable, levKrok } from './behov';
 import { chansPer } from './slump';
 import { amountOf, changed, gain, put, stacksOf, tidy } from './lager';
 import { kanGoras } from './stationer';
 import { DAY, Person, State } from './typer';
 import { HOST, iIstiden, isLight, kalender, VAR } from './tid';
 import { VINTER, hoAv, hoRacker } from './slatter';
-import { HAGE, betesTal, djurIHagen, hageDygn, hagarOf } from './hage';
+import { HONS, honsOf } from './hons';
+import { HAGE, betesTal, djurIHagen, hageDygn, hageHel, hageKrok, hagarOf } from './hage';
 import { farorNu } from './kult';
 import { heligtAvstar } from './kultlatt';
 import { fyllVatska, karRymmer, ledigFor, ledigaFor } from './vatskor';
@@ -37,6 +38,28 @@ export const BOSKAP = balans('boskap', {
 export const LEVANDE: Record<string, TamArtId> = Object.fromEntries((Object.keys(TAMDJUR) as TamArtId[]).filter(id => tamArt(id).lev).map(id => [tamArt(id).lev!, id]));
 // de levande bytena ur fällorna, och arten de blir (kultingen ur buren blir en ung gris, steg 10.10.13)
 export const FANGADE: Record<string, TamArtId> = Object.fromEntries((Object.keys(TAMDJUR) as TamArtId[]).filter(id => tamArt(id).fangas).map(id => [tamArt(id).fangas!, id]));
+// levande djur byts som allt annat (steg 15.1.143): så många av den levande varan k som byn har, i förrådet och som djur (hönsen i flocken)
+export function levAntal(s: State, k: string) {
+  if (k === 'levhons') return amountOf(s, k) + (honsOf(s)?.n ?? 0);
+  const art = LEVANDE[k];
+  return amountOf(s, k) + (art ? tamdjurOf(s).filter(d => d.art === art).length : 0);
+}
+export const arLevande = (k: string) => k === 'levhons' || LEVANDE[k] !== undefined;
+// så många djur av arten byn vill ha: ett av varje art handlaren säljer, och paret av en art som får ungar när en hage står klar
+// och höet räcker till vintern också för det nya djuret. Hönsen är en flock, högst HONS.max
+export function djurMal(s: State, art: TamArtId | 'hons') {
+  if (art === 'hons') return HONS.max;
+  const a = tamArt(art);
+  if (!a.lev) return 0;
+  const hage = !a.bete || hagarOf(s).some(h => hageHel(s, h));
+  return a.unge && hage && hoAv(s) >= (betesTal(s) + a.ater) * VINTER.hoPerDjur ? 2 : 1;
+}
+// samma tre steg som för allt annat (bynBehov i behov.ts): under behover saknar byn varan, under buf vill den ha fler. Djuren byn vill ha
+// saknas tills de finns; hönsen saknas tills byn har en flock och är värda sitt grundvärde tills flocken är full
+export const levMal = (s: State, k: string) => k === 'levhons' ? { behover: 1, buf: djurMal(s, 'hons') } : (m => ({ behover: m, buf: m }))(djurMal(s, LEVANDE[k]));
+// byn vill ha betesdjur (hagen märks ut innan de kommer, steg 15.1.143)
+export const villBetesdjur = (s: State) => (Object.keys(TAMDJUR) as TamArtId[]).some(a => tamArt(a).bete && djurMal(s, a) > 0);
+Object.assign(levKrok, { ar: arLevande, antal: levAntal, mal: levMal }); hageKrok.vill = villBetesdjur;
 // hona eller hane: sätts när djuret kommer till byn (nyttTamdjur i tamdjur.ts), så att två djur av arten är ett par
 export const hona = arHona;
 const vuxen = (s: State, d: Tamdjur) => tamAlder(s, d) >= tamArt(d.art).vuxen;
@@ -66,6 +89,8 @@ function kopta(s: State) {
       const agare = Object.keys(ag).map(Number).filter(id => ag[id] >= 1 - 1e-9).sort((x, y) => ag[y] - ag[x] || x - y)[0];
       if (agare !== undefined) ag[agare] -= 1;
       const d = nyttTamdjur(s, art, a.x + 0.5, a.y + 0.5, agare, fangad ? s.now : s.now - tamArt(art).vuxen * DAY);
+      const andra = tamdjurOf(s).filter(q => q !== d && q.art === art), honor = andra.some(hona), hanar = andra.some(q => !hona(q));
+      if (!fangad && honor !== hanar) d.hona = !honor; // det köpta djuret har det kön som arten saknar i byn (steg 15.1.143)
       d.ull = 1; a.n -= 1; n++;
       count(s, fangad ? 'boskapFangad' : 'boskapKopt');
       const q = agare !== undefined ? byId(s, agare) : undefined;

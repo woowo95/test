@@ -107,14 +107,17 @@ export function malHage(s: State, n: number, fran?: Hage) {
 export const hageSida = (s: State) => Math.min(HAGE.maxSida, Math.max(HAGE.minSida, Math.ceil(Math.sqrt(Math.max(1, betesTal(s)) * HAGE.perDjur))));
 // behöver djuren en ny hage? När det inte finns någon, eller en hage är nedbetad och ingen annan har bete (steg 9.8.6); en
 // nedbetad hage står kvar och växer igen. En hage som inte har staket runt om än blir färdig först
+// byn vill ha betesdjur (boskap.ts sätter den, steg 15.1.143)
+export const hageKrok = { vill: (_s: State) => false };
+const villBetesdjur = (s: State) => hageKrok.vill(s);
 export function nyHageBehov(s: State) {
-  if (!betesdjurOf(s).length) return false;
+  if (!betesdjurOf(s).length && !villBetesdjur(s)) return false; // hagen märks ut för de djur byn vill ha, innan de kommer (steg 15.1.143)
   const hs = hagarOf(s);
   if (hs.some(h => !hageHel(s, h))) return false;
   return !hs.length || hs.some(h => nedbetad(s, h) && !malHage(s, djurIHagen(s, h).length, h));
 }
 // projektets brist (raden hage i PROJEKT): staket att sätta, eller djur som behöver en ny hage, när någon kan sätta staket
-export const hageBrist = (s: State) => betesdjurOf(s).length && living(s).some(p => knows(p, 'staket')) && (hagarOf(s).some(h => !hageHel(s, h)) || nyHageBehov(s)) ? 1 : 0;
+export const hageBrist = (s: State) => (betesdjurOf(s).length || villBetesdjur(s)) && living(s).some(p => knows(p, 'staket')) && (hagarOf(s).some(h => !hageHel(s, h)) || nyHageBehov(s)) ? 1 : 0;
 // projektets arbete för p: nästa staketruta, eller att märka ut en ny hage där ett fält skulle kunna ligga (ref −1)
 export function hageUppgift(s: State, p: Person) {
   if (ageOf(p, s.now) < ALDER.vuxen || !knows(p, 'staket')) return undefined;
