@@ -226,8 +226,8 @@ const oppet = (w: Skada) => SKADA[w.k].blod > 0; // ett öppet sår (inte ett be
 interface OlyckaDef { risk: number; typer: SkadaTyp[]; delar: Kroppsdel[]; min: number; max: number; dod: Dodsorsak; nar: string; fardighet?: Skill; lugnar?: Record<string, number>; riskAv?: (s: State, p: Person) => number; bistick?: true; lage?: (s: State, p: Person) => number }
 let skattaRisk: number | undefined; // ett prov kan sätta risken (BIN.stick annars)
 // djuret man sköter sparkar: hur mycket efter arten (spark i TAMDJUR, tamdjur.ts), djurskötseln sänker risken
-const SPARK: OlyckaDef = { risk: 0.01, typer: ['blamarke', 'krossar', 'benbrott'], delar: [...BEN, ...ARMAR, 'bal', 'huvud'], min: 0.05, max: 0.9, dod: 'olycka', nar: 'när ett djur sparkade hen', fardighet: 'skotsel', riskAv: (s, p) => { const d = tamdjurOf(s).find(q => q.id === p.task?.ref); return d ? tamArt(d.art).spark ?? 0 : 0; } };
-const SMEDJA: OlyckaDef = { risk: 0.01, typer: ['brannskada'], delar: [...HANDER, ...ARMAR], min: 0.05, max: 0.7, dod: 'olycka', nar: 'vid smedjan', fardighet: 'smide' }; // smidet (steg 13.9.7)
+const SPARK: OlyckaDef = { risk: 0.02, typer: ['blamarke', 'krossar', 'benbrott'], delar: [...BEN, ...ARMAR, 'bal', 'huvud'], min: 0.05, max: 0.9, dod: 'olycka', nar: 'när ett djur sparkade hen', fardighet: 'skotsel', riskAv: (s, p) => { const d = tamdjurOf(s).find(q => q.id === p.task?.ref); return d ? tamArt(d.art).spark ?? 0 : 0; } };
+const SMEDJA: OlyckaDef = { risk: 0.02, typer: ['brannskada'], delar: [...HANDER, ...ARMAR], min: 0.05, max: 0.7, dod: 'olycka', nar: 'vid smedjan', fardighet: 'smide' }; // smidet (steg 13.9.7)
 // olyckorna som hör till läget och inte till handlingen (steg 12.1.141): lage ger hur mycket av risken som gäller just nu (0 = ingen)
 export const OLYCKOR_LAGE: Record<string, OlyckaDef> = {
   // den som kör eller åker en vagn eller släde och är på väg faller av; djurskötseln sänker risken
@@ -236,12 +236,12 @@ export const OLYCKOR_LAGE: Record<string, OlyckaDef> = {
   genomIsen: { risk: 0.3, typer: ['kalltvatten'], delar: ['lungor'], min: 0.3, max: 1, dod: 'drunkning', nar: 'när isen brast', lage: (s, p) => { const cm = isCm(s); return cm > 0 && cm < IS.tunn && iVattnetNu(s, tileOf(p.x, p.y)) ? 1 - cm / IS.tunn : 0; } },
 };
 export const OLYCKOR: Partial<Record<Act, OlyckaDef>> = {
-  jakt: { risk: 0.01, typer: ['bett', 'klos', 'benbrott'], delar: [...ARMAR, ...HANDER, ...BEN, ...FOTTER, 'bal'], min: 0.1, max: 1, dod: 'jakt', nar: 'under en jakt' },
-  falla: { risk: 0.03, typer: ['krossar', 'benbrott'], delar: [...BEN, ...FOTTER, ...ARMAR, 'huvud'], min: 0.15, max: 1, dod: 'olycka', nar: 'när ett träd föll' },
-  hugga: { risk: 0.005, typer: ['skarsar'], delar: [...FOTTER, ...BEN], min: 0.1, max: 0.9, dod: 'olycka', nar: 'med yxan' },
-  slakta: { risk: 0.01, typer: ['skarsar'], delar: HANDER, min: 0.05, max: 0.8, dod: 'olycka', nar: 'när hen slaktade' },
-  rensa: { risk: 0.005, typer: ['skarsar'], delar: HANDER, min: 0.05, max: 0.6, dod: 'olycka', nar: 'när hen rensade fisk' },
-  kniv: { risk: 0.01, typer: ['skarsar'], delar: HANDER, min: 0.05, max: 0.7, dod: 'olycka', nar: 'när hen slog flinta' },
+  jakt: { risk: 0.02, typer: ['bett', 'klos', 'benbrott'], delar: [...ARMAR, ...HANDER, ...BEN, ...FOTTER, 'bal'], min: 0.1, max: 1, dod: 'jakt', nar: 'under en jakt' },
+  falla: { risk: 0.06, typer: ['krossar', 'benbrott'], delar: [...BEN, ...FOTTER, ...ARMAR, 'huvud'], min: 0.15, max: 1, dod: 'olycka', nar: 'när ett träd föll' },
+  hugga: { risk: 0.01, typer: ['skarsar'], delar: [...FOTTER, ...BEN], min: 0.1, max: 0.9, dod: 'olycka', nar: 'med yxan' },
+  slakta: { risk: 0.02, typer: ['skarsar'], delar: HANDER, min: 0.05, max: 0.8, dod: 'olycka', nar: 'när hen slaktade' },
+  rensa: { risk: 0.01, typer: ['skarsar'], delar: HANDER, min: 0.05, max: 0.6, dod: 'olycka', nar: 'när hen rensade fisk' },
+  kniv: { risk: 0.02, typer: ['skarsar'], delar: HANDER, min: 0.05, max: 0.7, dod: 'olycka', nar: 'när hen slog flinta' },
   // bisticken vid kupan (steg 10.10.22): BIN.stick stick i timmen för den ovana vid ett fullt bo, gånger honungen i kupan
   // fler olyckor (steg 12.1.141): sparken av ett stort tamdjur (djurets spark i TAMDJUR) och brännskadan vid smedjan
   mjolka: SPARK, klippa: SPARK, valla: SPARK, mata: SPARK,
