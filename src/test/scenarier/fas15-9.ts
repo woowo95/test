@@ -63,3 +63,23 @@ SCENARIER.affarmal = {
     ];
   },
 };
+
+SCENARIER.prispervara = {
+  text: 'Steg 15.1.98: priset gäller per vara. I en affär med två varor, där den ena säljer slut och den andra står kvar, blir den första dyrare och den andra billigare, och de som avstod räknas för varan de ville ha',
+  kor: () => {
+    const { s, f, vux } = foretagBy(['affar']);
+    const G = SIM.saljPart(s, f)!, [a, b] = ['korg', 'rep'], A = SIM.varuNyckel('affar', a), B = SIM.varuNyckel('affar', b);
+    const fore = [SIM.prisAv(s, f, 'affar', a, G), SIM.prisAv(s, f, 'affar', b, G)];
+    f.pris = undefined; f.dag = { [A]: { salt: 5 } };
+    for (const q of vux.slice(0, 3)) for (const g of SIM.fragat) g(s, q, f, 'affar', false, b); // de som ville ha repet men avstod
+    const nej = f.dag[B]?.nej?.length ?? 0, nejA = f.dag[A]?.nej?.length ?? 0;
+    for (let i = 0; i < 6; i++) { f.dag = { [A]: { salt: 5 }, [B]: { nej: vux.slice(0, 3).map(q => q.id) } }; for (const g of SIM.dygnet) g(s); }
+    const efter = [SIM.prisAv(s, f, 'affar', a, G), SIM.prisAv(s, f, 'affar', b, G)], pris = (f as SIM.Foretag).pris;
+    return [
+      [`de som avstod räknas för repet (${nej}), inte för korgen (${nejA})`, nej === 3 && nejA === 0],
+      [`korgen som säljer slut blir dyrare (${fore[0]} → ${efter[0]} silver, ${pris?.[A]?.toFixed(2)})`, (pris?.[A] ?? 1) > 1 && efter[0]! >= fore[0]!],
+      [`repet som står kvar blir billigare (${pris?.[B]?.toFixed(2)})`, (pris?.[B] ?? 1) < 1],
+      [`verksamheten har inget gemensamt pris (${Object.keys(f.pris ?? {}).join(', ')})`, pris?.affar === undefined],
+    ];
+  },
+};
