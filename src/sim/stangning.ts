@@ -52,10 +52,23 @@ export function foretagKopare(s: State, f: Foretag, h: Hus): Person | undefined 
   }
   return bast;
 }
+// byn lär sig av ett företag som stängs eller säljs (steg 15.1.21): hur stor del av den väntade efterfrågan, räknad utan
+// företaget, som köptes (f.salt per dygn). Efterfrågan räknas redan med det byn lärt sig förut, så det nya är en del av den
+function lar(s: State, f: Foretag) {
+  const alla = s.foretag;
+  s.foretag = foretagOf(s).filter(q => q !== f);
+  try {
+    for (const v of f.verk) {
+      const e = efterfragan(s, v, f.ag).kunder, fore = s.foretagLart?.[v] ?? 1;
+      if (e > 0) (s.foretagLart ??= {})[v] = Math.min(1, fore * (f.salt?.[v] ?? 0) * FORETAG.minne / e);
+    }
+  } finally { s.foretag = alla; }
+}
 export function saljForetag(s: State, f: Foretag, h: Hus, kop: Person, bud?: Person): boolean {
   const gammal = f.namn, salj = byId(s, f.ag);
   const n = kop.name, namn = `${/[sxz]$/i.test(n) ? n : n + 's'} ${sortNamn(f.verk).toLowerCase()}`;
   if (!kopHus(s, h, kop.id, bud, { salj: foretagPris(s, f, h), hog: foretagHogst(s, f, kop.id), fn: 'naringshus', namn })) return false;
+  lar(s, f);
   f.ag = kop.id; f.namn = namn; f.salu = f.resultat = f.oppnat = undefined;
   count(s, 'foretagSalt');
   const tx = `${kop.name} köpte ${gammal}.`;
@@ -65,10 +78,8 @@ export function saljForetag(s: State, f: Foretag, h: Hus, kop: Person, bud?: Per
 export function stangForetag(s: State, f: Foretag) {
   const h = f.hus !== undefined ? husById(s, f.hus) : undefined, p = foretagare(s, f.ag);
   // byn har sett hur många kunder det blev mot vad den räknat med
-  const utan = s.foretag;
+  lar(s, f);
   s.foretag = foretagOf(s).filter(q => q !== f);
-  for (const v of f.verk) { const e = efterfragan(s, v, f.ag).kunder; if (e > 0) (s.foretagLart ??= {})[v] = Math.min(s.foretagLart?.[v] ?? 1, (f.salt?.[v] ?? 0) * FORETAG.minne / e); }
-  s.foretag = utan!.filter(q => q !== f);
   count(s, 'foretagStangt'); log(s, `${f.namn} stängde: det lönade sig inte.`, 'world', p ? [p.id] : []); kronika(s, `${f.namn} stängde.`, 'byte');
   if (h && h.tro === undefined) bytFn(s, h, h.ag === undefined || f.ag === BYN ? 'sovsal' : 'familjehus');
 }

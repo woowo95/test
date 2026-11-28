@@ -509,8 +509,13 @@ SCENARIER.stanga = {
     const pris1 = SIM.foretagPris(s, f, h), k = SIM.foretagKopare(s, f, h), hog = k ? SIM.foretagHogst(s, f, k.id) : 0;
     if (k) { k.x = p.x; k.y = p.y; k.task = p.task = undefined; }
     const silv0 = SIM.formogenheter(s).egen.get(p.id) ?? 0;
+    // en annan som kunde köpa, och vad hen skulle ge före försäljningen (steg 15.1.21)
+    const annan = SIM.living(s).find(q => !q.gast && q !== k && q !== p && SIM.ageOf(q, s.now) >= SIM.ALDER.vuxen && !SIM.foretagOf(s).some(x => x.ag === q.id)), forut = annan ? SIM.foretagHogst(s, f, annan.id) : 0;
+    delete s.foretagLart;
     SIM.iHelaForradet(() => { SIM.foretagMarknad(s); });
     const silv1 = SIM.formogenheter(s).egen.get(p.id) ?? 0;
+    // företaget hade inte sålt något: byn har lärt sig det, och ingen köper det igen till samma pris
+    const lartSalt = (s.foretagLart as SIM.State["foretagLart"])?.servering, sedan = annan ? SIM.foretagHogst(s, f, annan.id) : 0;
     return [
       [`företaget som går bra stannar (resultat ${res.toFixed(1)} per dygn)`, kvar && res > 0],
       [`ägaren prövar först (${provar}), sedan är det till salu (${salu})`, provar && salu],
@@ -518,6 +523,8 @@ SCENARIER.stanga = {
       [`ett gott rykte gör det värt mer (${pris0.toFixed(0)} → ${pris1.toFixed(0)})`, pris1 > pris0 * 1.3],
       [`den som tjänar på det köper (${k?.name}, högst ${hog.toFixed(0)}): ägare ${f.ag === k?.id}, ${f.namn}`, !!k && hog >= pris1 && f.ag === k.id && h.ag === k.id && h.fn === 'naringshus' && f.salu === undefined],
       [`säljaren fick betalt (förmögenhet ${silv0.toFixed(0)} → ${silv1.toFixed(0)}, huset borta)`, silv1 > 0 && !!k],
+      [`företaget hade inte sålt något: byn lärde sig det när det såldes (${lartSalt?.toFixed(2)})`, lartSalt !== undefined && lartSalt < 0.1],
+      [`och en annan köper det inte igen till samma pris (högst ${forut.toFixed(0)} → ${sedan.toFixed(0)})`, !!annan && forut > 0 && sedan < forut / 2],
     ];
   },
 };
